@@ -63,6 +63,51 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// battlepass tracks). Model FAccelByteModelsListUserProgressionInfoPagingSliced
 	// Result — standard data/paging wrapper.
 	mux.HandleFunc("GET /progression/players/{id}/tracks", handleEmptyDataPaging)
+
+	// Content-service master manifest — the catalog of what EXISTS (heroes,
+	// cosmetics, offers, …). This is the lever for the HUNTERS grid / STORE /
+	// cosmetics: the client retried our {} stub 264x/run because it's invalid, and
+	// with no manifest it has no catalog (empty grid; LogAssetManager "Invalid
+	// Primary Asset Type"). See handleContentManifest for the recovered model.
+	mux.HandleFunc("GET /content-service/manifest/{version}", handleContentManifest)
+}
+
+// handleContentManifest returns the ContentManifest — the master content catalog.
+// Model recovered from the shipping-exe FName pool (the packer left the reflection
+// pool intact): a set of TMap<FString SKU, ContentServicePrimaryAsset> fields —
+// Heroes, Items, Emotes, PlayerTitles, HeroCosmeticsBundles, StoreOffers,
+// SlotCosmetics, Minions, GameAugments, Equipment, Powers — plus scalar
+// CurrentPatchVersion + PatchVersions. Each entry is a ContentServicePrimaryAsset
+// (fields incl. PrimaryAssetName/AssetPath/DisplayName — pooled, types unconfirmed).
+//
+// PROBE #1 (shape-first): all maps present so the validity predicate passes and the
+// 264x retry stops; Heroes populated with the 25 lowercase codenames carrying ONLY
+// PrimaryAssetName (almost certainly FString) so a wrong-typed reject would still
+// name the field rather than silently zeroing everything. Other maps empty. Relaunch
+// readback: OnContentManifestUpdated firing + the 264x dropping confirms the model;
+// any "Invalid response"/"Deserialization failure" names the next fix; the HUNTERS
+// grid shows whether PrimaryAssetName alone resolves a card (likely needs AssetPath
+// next).
+func handleContentManifest(w http.ResponseWriter, r *http.Request) {
+	heroes := map[string]any{}
+	for _, h := range heroCodenames {
+		heroes[h] = map[string]any{"PrimaryAssetName": h}
+	}
+	writeJSON(w, map[string]any{
+		"CurrentPatchVersion":  r.PathValue("version"),
+		"PatchVersions":        []any{},
+		"Heroes":               heroes,
+		"Items":                map[string]any{},
+		"Emotes":               map[string]any{},
+		"PlayerTitles":         map[string]any{},
+		"HeroCosmeticsBundles": map[string]any{},
+		"StoreOffers":          map[string]any{},
+		"SlotCosmetics":        map[string]any{},
+		"Minions":              map[string]any{},
+		"GameAugments":         map[string]any{},
+		"Equipment":            map[string]any{},
+		"Powers":               map[string]any{},
+	})
 }
 
 // handleEmptyDataPaging returns the standard AccelByte {data:[],paging:{}} wrapper
@@ -79,6 +124,24 @@ func handleEmptyDataPaging(w http.ResponseWriter, r *http.Request) {
 // empty. (A probe putting "heroToken" entries here parsed but did not satisfy the
 // hero-token read, so that count is tested via the wallet instead; see handleWallet.
 // Populating owned cosmetics here needs packed-config SKUs we can't yet read.)
+// heroCodenames are the 25 packed hero codenames (from IoStore path enumeration),
+// lowercased — the format hero-pack store offers use to reference heroes, and the
+// format /storefront/heroes accepted as "Unlockable heroes fetched: 25".
+var heroCodenames = []string{
+	"alchemist", "assault", "backlinehealer", "beebo", "bountyhunter",
+	"burstcaster", "earthtank", "farshot", "firefox", "flex",
+	"freeze", "gunner", "hookguy", "huntress", "reaper",
+	"reshealer", "rocketjumper", "ronin", "shieldbot", "sniper",
+	"stalker", "storm", "succubus", "void", "wukong",
+}
+
+// handleInventory returns owned items. The inventory-probe (25 owned heroes keyed by
+// lowercase codename) was REVERTED to empty: it triggered `LogAssetManager: Invalid
+// Primary Asset Type` — proving the roster resolves through UE's AssetManager
+// PrimaryAssetId/bundle system, NOT plain SKUs. The real lever is the CONTENT-SERVICE
+// MANIFEST (the master catalog declaring which heroes/cosmetics/offers exist); inventory
+// only marks ownership of catalog entries. Repopulate this once the manifest + the
+// ContentServicePrimaryAsset entry shape are nailed (see handleContentManifest TODO).
 func handleInventory(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"AssetEntries": []any{}})
 }
@@ -135,7 +198,22 @@ func handleWallet(w http.ResponseWriter, r *http.Request) {
 // name). Without IoStore catalog extraction we can't supply resolvable IDs, so we
 // return a valid-empty list (no error, no phantom cards) until that path exists.
 func handleHeroes(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, map[string]any{"heroes": []string{}})
+	// IoStore extraction (Track A) recovered the storefront SKU vocabulary from the
+	// packed BP_StoreOffer_* name maps (tools/extractor). Hero-pack offers reference
+	// heroes by LOWERCASE codename (assault, beebo, flex, freeze, gunner, rocketjumper,
+	// stalker, void seen in offer name maps) — strongly implying the hero unlock SKU is
+	// the lowercase codename, NOT the PascalCase asset codename the Milestone-2 probe
+	// sent (which rendered nothing). Sending all 25 lowercase codenames as the confirmed
+	// FLokiStorefrontHeroes { heroes: TArray<FString> } shape. Relaunch + LogPlatform
+	// Storefront ("Unlockable heroes fetched: %d") / the HUNTERS grid confirm the format.
+	heroes := []string{
+		"alchemist", "assault", "backlinehealer", "beebo", "bountyhunter",
+		"burstcaster", "earthtank", "farshot", "firefox", "flex",
+		"freeze", "gunner", "hookguy", "huntress", "reaper",
+		"reshealer", "rocketjumper", "ronin", "shieldbot", "sniper",
+		"stalker", "storm", "succubus", "void", "wukong",
+	}
+	writeJSON(w, map[string]any{"heroes": heroes})
 }
 
 // handlePlayerStore returns FLokiStorefrontPlayerStore (the /storefront/offers/{id}

@@ -1,0 +1,9 @@
+# build artifacts
+**/bin/
+**/obj/
+# downloaded proprietary Oodle redistributable (auto-fetched on run)
+oo2core_*.dll
+# runtime mappings file (user-provided; not source)
+mappings.usmap
+# large enumeration output (regenerable)
+out/
