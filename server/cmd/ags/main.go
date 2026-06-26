@@ -24,6 +24,7 @@ import (
 
 	"supervive-revival/server/internal/capture"
 	"supervive-revival/server/internal/iam"
+	"supervive-revival/server/internal/interactive"
 	"supervive-revival/server/internal/lobby"
 	"supervive-revival/server/internal/loki"
 	"supervive-revival/server/internal/menu"
@@ -57,6 +58,7 @@ func main() {
 	iam.New(signer).Register(mux)
 	loki.New().Register(mux)
 	menu.New().Register(mux)
+	interactive.New().Register(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
 
 	// Catch-all: WebSocket upgrades (lobby/messaging) get a real handshake +

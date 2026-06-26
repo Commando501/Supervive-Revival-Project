@@ -16,7 +16,7 @@ using Newtonsoft.Json;
 // /content-service/manifest?" Reading asset *property values* (DataTable rows)
 // comes later and may need a .usmap.
 
-var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall") ? args[0] : null;
+var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema") ? args[0] : null;
 var dumpMode = cmd == "dump";
 var pakDir = (cmd == null && args.Length > 0)
     ? args[0]
@@ -98,6 +98,141 @@ if (dumpMode)
             Console.WriteLine($"FAIL {path}\n     {e.GetType().Name}: {e.Message}");
         }
     }
+    return;
+}
+
+// schema mode: print the EXACT reflected layout of one or more C++ USTRUCT/UCLASS
+// types straight from the loaded .usmap — field names + property types, recursively
+// expanding any referenced struct types. This is how we recover the ContentManifest /
+// ContentServicePrimaryAsset shape WITHOUT a serialized instance to guess from.
+//   run -- schema ContentManifest ContentServicePrimaryAsset
+// The usmap type table lives behind MappingsContainer.MappingsForGame.Types; member
+// naming in CUE4Parse mixes public fields and properties across versions, so we walk
+// it with reflection to stay robust.
+if (args.Length >= 2 && args[0] == "schema")
+{
+    if (provider.MappingsContainer == null)
+    {
+        Console.WriteLine("No .usmap loaded — drop Mappings.usmap in tools\\extractor\\ first.");
+        return;
+    }
+
+    // Reflection helper: read a member (field OR property), case-insensitive, by any
+    // of the candidate names. Returns null if none match.
+    static object? Member(object? obj, params string[] names)
+    {
+        if (obj == null) return null;
+        var t = obj.GetType();
+        foreach (var n in names)
+        {
+            var p = t.GetProperty(n, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+            if (p != null) return p.GetValue(obj);
+            var f = t.GetField(n, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+            if (f != null) return f.GetValue(obj);
+        }
+        return null;
+    }
+
+    // Format a PropertyType node into a readable type string, e.g.
+    //   Map<Str, Struct ContentServicePrimaryAsset>  /  Array<Struct Foo>  /  Str
+    string FormatType(object? pt, ISet<string> discovered)
+    {
+        if (pt == null) return "?";
+        var type = Member(pt, "Type", "MappingType")?.ToString() ?? "?";
+        var structType = Member(pt, "StructType", "structType")?.ToString();
+        var enumName = Member(pt, "EnumName", "enumName")?.ToString();
+        var inner = Member(pt, "InnerType", "innerType");
+        var value = Member(pt, "ValueType", "valueType");
+
+        if (!string.IsNullOrEmpty(structType)) { discovered.Add(structType); }
+
+        // Strip the trailing "Property" UE convention for readability.
+        string Short(string s) => s.EndsWith("Property") ? s[..^"Property".Length] : s;
+        var baseName = Short(type);
+
+        switch (baseName)
+        {
+            case "Struct":
+                return $"Struct {structType}";
+            case "Array":
+            case "Set":
+                return $"{baseName}<{FormatType(inner, discovered)}>";
+            case "Map":
+                return $"Map<{FormatType(inner, discovered)}, {FormatType(value, discovered)}>";
+            case "Enum":
+            case "Byte" when !string.IsNullOrEmpty(enumName):
+                return $"Enum {enumName}";
+            default:
+                return baseName + (string.IsNullOrEmpty(structType) ? "" : $" {structType}");
+        }
+    }
+
+    var mappings = Member(provider.MappingsContainer, "MappingsForGame", "MappingsForThisGame");
+    var typesObj = Member(mappings, "Types", "types");
+    if (typesObj is not System.Collections.IDictionary typeDict)
+    {
+        Console.WriteLine($"Could not read the usmap type table (got {typesObj?.GetType().FullName ?? "null"}).");
+        return;
+    }
+
+    // Build a case-insensitive lookup of the type table keys once.
+    var keyIndex = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+    foreach (System.Collections.DictionaryEntry e in typeDict)
+        keyIndex[e.Key.ToString()!] = e.Key;
+    Console.WriteLine($"usmap type table: {typeDict.Count} structs/classes.\n");
+
+    var queue = new Queue<string>(args.Skip(1));
+    var printed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var sb = new System.Text.StringBuilder();
+
+    while (queue.Count > 0)
+    {
+        var want = queue.Dequeue();
+        if (!printed.Add(want)) continue;
+        if (!keyIndex.TryGetValue(want, out var realKey) || typeDict[realKey] is not object structObj)
+        {
+            sb.AppendLine($"// NOT FOUND in usmap: {want}");
+            // Suggest near-matches to catch naming drift (e.g. F-prefix, plural).
+            var near = keyIndex.Keys.Where(k => k.Contains(want, StringComparison.OrdinalIgnoreCase)
+                                              || want.Contains(k, StringComparison.OrdinalIgnoreCase))
+                                    .Take(8).ToList();
+            if (near.Count > 0) sb.AppendLine($"//   near: {string.Join(", ", near)}");
+            sb.AppendLine();
+            continue;
+        }
+
+        var superType = Member(structObj, "SuperType", "superType")?.ToString();
+        sb.AppendLine($"struct {want}{(string.IsNullOrEmpty(superType) ? "" : $" : {superType}")}");
+        sb.AppendLine("{");
+
+        var discovered = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var props = Member(structObj, "Properties", "properties");
+        if (props is System.Collections.IEnumerable propEnum)
+        {
+            foreach (var prop in propEnum)
+            {
+                // Properties may be stored as a dict (int->PropertyInfo); unwrap values.
+                var pi = prop;
+                if (prop is System.Collections.DictionaryEntry de) pi = de.Value;
+                var pname = Member(pi, "Name", "name")?.ToString() ?? "?";
+                var mtype = Member(pi, "MappingType", "mappingType");
+                var arrayDim = Member(pi, "ArrayDim", "arrayDim");
+                var dimSuffix = (arrayDim is int ad && ad > 1) ? $"[{ad}]" : "";
+                sb.AppendLine($"    {FormatType(mtype, discovered),-48} {pname}{dimSuffix};");
+            }
+        }
+        sb.AppendLine("}");
+        sb.AppendLine();
+
+        // Recurse into referenced struct types we haven't printed yet.
+        foreach (var d in discovered) if (!printed.Contains(d)) queue.Enqueue(d);
+    }
+
+    Directory.CreateDirectory(outDir);
+    var schemaOut = Path.Combine(outDir, $"schema_{args[1]}.txt");
+    File.WriteAllText(schemaOut, sb.ToString());
+    Console.Write(sb.ToString());
+    Console.WriteLine($"-> {schemaOut}");
     return;
 }
 

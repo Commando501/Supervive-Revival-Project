@@ -8,6 +8,9 @@
 /docs/server.out.log
 /server/docs/
 
+# Interactive (Track B) runtime player state
+/server/state/
+
 # Editor / OS
 .DS_Store
 Thumbs.db
