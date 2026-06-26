@@ -5,6 +5,7 @@
 
 # Capture logs (regenerated at runtime)
 /docs/capture.log
+/docs/server.out.log
 /server/docs/
 
 # Editor / OS
