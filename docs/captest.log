@@ -1,0 +1,5 @@
+
+#1 19:29:11.904  GET /configuration/public?language=en
+    -> 200  (0s)
+    User-Agent: curl/8.7.1
+    Accept: */*

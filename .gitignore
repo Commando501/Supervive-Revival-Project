@@ -1,0 +1,14 @@
+# Go build output
+*.exe
+/server/ags
+/server/ags.exe
+
+# Capture logs (regenerated at runtime)
+/docs/capture.log
+/server/docs/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
