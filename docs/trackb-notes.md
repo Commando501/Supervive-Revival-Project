@@ -87,6 +87,108 @@ relaunch. Mailbox version key still ambiguous (no error either way now).
 4. **progression:** does `GET /progression/players/{id}` stop logging "Invalid response
    received"? Then RE the `PUT .../mission` request/response for real claim/track.
 
+## Tutorial / match launch flow (in progress 2026-06-26)
+
+GOAL: make the Tutorials cards (Basic Training etc.) actually launch. The Tutorials
+catalog *renders* (the maps are packaged + preloaded locally — Loki.log shows
+`/Game/Loki/Core/GameModes/Objectives/Tutorial/Basics/BP_DropPod_Tutorial` added to the
+actor pool at startup), so unlike PvP/Co-op these need **no dedicated server**.
+
+**Confirmed blocker = the party.** Clicking Basic Training sends **no request at all** —
+it is a silent **client-side** no-op. The client polls
+`GET /party/players/{id}?defaultQueue=tutorialNew` and, with the `{}` stub, its
+PartyManager believes the player is not in a party (`LogPartyManager: Warning: skipping
+set referral code, player not in party`), so the launch button does nothing.
+
+Fix (this iteration): `GET /party/players/{id}` now returns a valid **solo party** (the
+player as the JOINED leader/member). Model = AccelByte V2 session party (member status
+`JOINED`/`CONNECTED`, `PartyMembers`, `PartyReservation`, `RemovedPartyMembers`, `TeamNum`)
+wrapped by Theorycraft's /party service. No response body was ever captured, so the JSON
+is a **superset probe** (PascalCase keys, UE matches case-insensitively; unmatched keys
+ignored). Queues recovered: `special practice customgame dropin tutorialNew training`.
+
+Launch chain (for later steps): `GET /core-game/players/{id}` (110k polls — "active match
+to rejoin?", model `CoreGameMatchModel` = MatchInfo/HeroSelectModel/Player/Region; still
+`{}`, tolerated) and `GET /core-game/regions` (`GetRegions`, RegionName/RouteName) are the
+next links once the party gate clears. Left unchanged this cycle to keep the experiment
+single-variable.
+
+PROBE #1 (flat field-superset, no `configuration`): client ACCEPTED it (no
+deserialize/Invalid-response error in Loki.log) but did NOT adopt it — still "player not
+in party", slots empty, tutorial click still a no-op. So the shape was semantically
+insufficient.
+
+PROBE #2 (current): faithful **AccelByte V2 party session** — confirmed the model is
+`AccelByteModelsV2PartySession` (+ `V2SessionConfiguration` + `V2SessionUser`) in the exe.
+The miss in #1 was the **`configuration` block**: a V2 session with no/invalid
+configuration is treated as not-a-real-session. Now emits the full documented model
+(camelCase) — id/namespace/isActive/isFull/leaderId/createdBy/version + a real
+`configuration` (type NONE, joinability INVITE_ONLY, max 4) + `members:[{id,status:JOINED,
+statusV2:JOINED,platformId,platformUserId}]` + invitees/code.
+
+PROBE #2 result: ALSO not adopted (`player not in party` still logs 1002×, no error). The
+client only sends friends + setUserStatus over WS (never a party frame), and never POSTs a
+party — so the server is meant to hand back an auto-created party on the GET.
+
+KEY DISCOVERY (UTF-16 endpoint table in exe): `/party` is a **bespoke Theorycraft REST
+API**, NOT AccelByte V2. Operations: `/party/players/`, `/party/parties/`,
+`d?defaultQueue=`, `/leave`, `/join?joinSecret=`, `/members/`, `/joinQueue`, `/leaveQueue`,
+`/setTargetQueues`, `/setExcludedRegions`, `/setIsOpen/`, `/setFillTeam/`, `/latencies`,
+`/referral`, **`/startSoloMode?mode=`**, `/reconcile`, `/owner`, `/voiceToken`,
+`/sendInvite/`, `/requestInvite`, `/custom?custom=`, `/custom/start`, `/team/` … all under
+`UPartyManager`/`UPartyModel`. **`/startSoloMode?mode=<queue>` is almost certainly the
+tutorial/practice launch call.** Validity gated by `OnPartyValidChanged` ("Party in bad
+state, reconciling").
+
+PROBE #3 (current): confirmed Theorycraft party fields (FName pool, camelCase): party =
+`{partyId, leader/leaderId, ownerId, members, invitees, invitationToken, joinSecret,
+inQueue, isOpen, fillTeam, createdAt}`; member = `{id/userId/memberId, displayName, ready,
+isReady, inQueue, region, leader}`. Solo party, player = sole ready leader.
+
+NEXT RELAUNCH — watch: does `player not in party` clear / slots show the player? Then click
+Basic Training: does it load the local map, or emit `/party/.../startSoloMode?mode=...` or
+`/joinQueue` (capture it — that's the next link to build)?
+
+✅ PROBE #3 WORKED. Live readback: `player not in party` dropped **1002 → 2** (only the 2
+startup polls before the first fetch), and the PARTY panel now renders (header, Invite-to-
+Party slots, Party Options, Friends). The confirmed Theorycraft field family was the fix.
+
+NEXT LINK FOUND: once it has the partyId, the client polls `GET /party/parties/{partyId}`
+(380×/session) for the full party — that was hitting the {} stub, leaving the panel's member
+slots empty. Now implemented (`handleGetPartyDetail`, shares `buildSoloParty`; player id
+recovered from the "party-<id>" partyId, JWT-sub fallback). This should put the player in
+slot 1.
+
+REMAINING for tutorial launch: with a valid populated party, clicking a tutorial should fire
+`/party/.../startSoloMode?mode=<queue>` or `/joinQueue` + `/setTargetQueues` — none seen yet
+(player hadn't clicked since the party started working). Capture those next, then wire
+core-game to report the (local) match so the map loads.
+
+The party/matchmaking system is still the largest remaining flow, but it is now yielding to
+incremental endpoint-by-endpoint RE (no usmap needed so far).
+
+✅ FULL PARTY FLOW WORKING: `/party/players/{id}` + `/party/parties/{partyId}` both serve the
+solo party; the player shows as leader in slot 1, player card populates.
+
+⛔ TUTORIAL LAUNCH NOW BLOCKED BY TRACK A (hero asset resolution). Evidence from the latest
+run after clicking FIND MATCH:
+- Every hunter renders as `BP_LokiHeroSelectPreview_UnknownHero_C` (the giant "?") because
+  `SetHero is clearing TargetAssetId because incoming id was not valid` — the hero IDs we
+  send (`/storefront/heroes` 25 lowercase codenames) do NOT resolve to valid PrimaryAssetIds
+  (same AssetManager "Invalid Primary Asset Type" gate as the HUNTERS grid/missions).
+- Hero panel shows `PURCHASE 20,000` — player OWNS no hunters (inventory empty).
+- **FIND MATCH fires ZERO network calls** — hard client-side gate: no valid/owned/selected
+  hunter ⇒ cannot queue. Even Basic Training must spawn its pre-assigned hero, whose asset
+  also won't resolve.
+
+⇒ The launch gate is hero asset resolution + ownership = **Track A** (content manifest must
+declare hero PrimaryAssetTypes so AssetManager resolves them; inventory must grant ownership).
+Track B's launch infra (party ✅) is done up to this gate. Remaining Track-B-only infra that
+can be staged but won't visibly unblock until heroes resolve: `/core-game/regions` (region
+ping; currently {} ⇒ `??? — ms`, missing `ST_ServerLocations`), `/core-game/players/{id}`
+"no active match" shape (polled 837×), then `/startSoloMode`/`/joinQueue` once a hero is
+selectable.
+
 ## Progression / mission flow (analyzed 2026-06-26)
 
 The only mission-related endpoints the client calls (whole capture.log): the battlepass

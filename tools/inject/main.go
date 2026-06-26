@@ -89,6 +89,27 @@ func moduleLoaded(pid uint32, baseName string) bool {
 	return false
 }
 
+// moduleBase returns the load address of the named module in the target, or 0.
+// The real base matters for a packed exe: the on-disk image base (0x140000000) is
+// NOT where the unpacked image lives, so a read there is a false negative.
+func moduleBase(pid uint32, baseName string) uintptr {
+	snap, _, _ := procCreateToolhelp32Snap.Call(th32csSnapModule|th32csSnapModule32, uintptr(pid))
+	if snap == 0 || snap == ^uintptr(0) {
+		return 0
+	}
+	defer procCloseHandle.Call(snap)
+	var me moduleEntry32
+	me.Size = uint32(unsafe.Sizeof(me))
+	ret, _, _ := procModule32FirstW.Call(snap, uintptr(unsafe.Pointer(&me)))
+	for ret != 0 {
+		if strings.EqualFold(syscall.UTF16ToString(me.ModuleName[:]), baseName) {
+			return me.ModBaseAddr
+		}
+		ret, _, _ = procModule32NextW.Call(snap, uintptr(unsafe.Pointer(&me)))
+	}
+	return 0
+}
+
 type processEntry32 struct {
 	Size            uint32
 	Usage           uint32
@@ -178,32 +199,49 @@ func diag(name string) {
 		defer procCloseHandle.Call(hq)
 		var sig, dyn uint32
 		// ProcessSignaturePolicy = 8, ProcessDynamicCodePolicy = 2.
-		procGetProcMitigation.Call(hq, 8, uintptr(unsafe.Pointer(&sig)), 4)
-		procGetProcMitigation.Call(hq, 2, uintptr(unsafe.Pointer(&dyn)), 4)
-		fmt.Printf("\nSignaturePolicy   = 0x%X  (MicrosoftSignedOnly=%v StoreSignedOnly=%v)\n",
-			sig, sig&1 != 0, sig&2 != 0)
-		fmt.Printf("DynamicCodePolicy = 0x%X  (ProhibitDynamicCode=%v)\n", dyn, dyn&1 != 0)
+		// NOTE: the GET form of GetProcessMitigationPolicy is only reliable on the
+		// CURRENT process; cross-process it usually fails and leaves the out-param
+		// untouched (=> a bogus 0x0). So we MUST check the BOOL return, and we treat
+		// the empirical inject/probe tests below as authoritative, not this read.
+		okSig, _, _ := procGetProcMitigation.Call(hq, 8, uintptr(unsafe.Pointer(&sig)), 4)
+		okDyn, _, _ := procGetProcMitigation.Call(hq, 2, uintptr(unsafe.Pointer(&dyn)), 4)
+		if okSig != 0 {
+			fmt.Printf("\nSignaturePolicy   = 0x%X  (MicrosoftSignedOnly=%v StoreSignedOnly=%v)\n",
+				sig, sig&1 != 0, sig&2 != 0)
+		} else {
+			fmt.Println("\nSignaturePolicy   = <unreadable cross-process>  (use the inject test, not this)")
+		}
+		if okDyn != 0 {
+			fmt.Printf("DynamicCodePolicy = 0x%X  (ProhibitDynamicCode=%v)\n", dyn, dyn&1 != 0)
+		} else {
+			fmt.Println("DynamicCodePolicy = <unreadable cross-process>  (use `inject probe` instead)")
+		}
 	} else {
 		fmt.Println("\n(could not open a query handle — cannot read mitigation policy)")
 	}
 
-	// Can we ReadProcessMemory? (decides external no-injection dumper viability)
+	// Can we ReadProcessMemory at the REAL module base? (decides external dumper viability)
 	hr, _, _ := procOpenProcess.Call(0x0010|0x1000, 0, uintptr(pid))
 	if hr != 0 {
 		defer procCloseHandle.Call(hr)
+		base := moduleBase(pid, name)
+		if base == 0 {
+			base = 0x140000000 // fallback; will likely false-negative on a packed exe
+		}
 		buf := make([]byte, 2)
 		var read uintptr
-		ok, _, e := procReadProcessMemory.Call(hr, 0x140000000,
+		ok, _, e := procReadProcessMemory.Call(hr, base,
 			uintptr(unsafe.Pointer(&buf[0])), 2, uintptr(unsafe.Pointer(&read)))
-		fmt.Printf("ReadProcessMemory test @0x140000000: ok=%v read=%d (%v)\n", ok != 0, read, e)
+		fmt.Printf("ReadProcessMemory @real base 0x%X: ok=%v read=%d MZ=%v (%v)\n",
+			base, ok != 0, read, ok != 0 && buf[0] == 'M' && buf[1] == 'Z', e)
 	}
 
-	fmt.Println("\nVERDICT:")
-	fmt.Println("  MicrosoftSignedOnly=true => LoadLibrary of unsigned DLLs blocked; only")
-	fmt.Println("    MANUAL MAPPING could load UE4SS (use `inject probe` for ACG check).")
-	fmt.Println("  ProhibitDynamicCode=true => manual mapping's exec also blocked => pivot")
-	fmt.Println("    to an EXTERNAL ReadProcessMemory usmap dumper (no injection).")
-	fmt.Println("  VM_READ granted + RPM ok => external dumper viable regardless of policy.")
+	fmt.Println("\nVERDICT (empirical tests are authoritative, not the policy read):")
+	fmt.Println("  - Signed DLL injects OK but UNSIGNED fails => Code Integrity Guard is ON =>")
+	fmt.Println("    LoadLibrary of our DLLs is blocked. Bypass: MANUAL MAP (skips the loader),")
+	fmt.Println("    or go injection-free with an EXTERNAL ReadProcessMemory dumper.")
+	fmt.Println("  - `inject probe` testing PAGE_EXECUTE_READWRITE alloc => is ACG on? (gates manual map)")
+	fmt.Println("  - RPM @real base ok=true (MZ=true) => external read-only dumper is viable.")
 }
 
 func main() {
