@@ -54,7 +54,21 @@ returns `{}` and every request is logged to `docs/capture.log`.
 |---|---|---|---|
 | GET | `/progression/players/{id}` , `/progression/players/{id}/tracks` | ❓ | player's progression/level — feeds party-slot level + battlepass progress |
 | GET | `/storefront/heroes` | ❓ | hero roster/catalog (party slots show `ShowUnknownForEmpty` w/o it) |
-| GET | `/storefront/wallet/{id}` | ❓ | currency balances |
+| GET | `/storefront/wallet/{id}` | ✅ | **Solved.** `FLokiStorefrontPlayerWallet { Balances: TMap<FString,int> }`. Purple counter key = **`vp`** (Vive Points), decoded via sentinel-value probe. The GOLD counter = **Theorycraft Coins**, the real-money premium currency → a fresh account has **0 authentically** (not a virtual-wallet entry; 91 candidate keys confirmed it's not wallet-sourced). `LogPlatformStorefront: Wallet balance: <code>, <int>` logs every key sent = readback channel |
+| GET | `/storefront/heroes` | 🧪 | `FLokiStorefrontHeroes` — array field = **`heroes`** (decoded via element-count probe → `Unlockable heroes fetched: %d`). Element type likely `TArray<FString>` (hero IDs): 12 object-elements counted but rendered nothing in the HUNTERS "ALL HUNTERS" grid. Probing string format (codename `ShieldBot` vs display `Bishop`). Real roster (from Armory dropdown + asset paths): Beebo, Bishop(=ShieldBot), Brall(=HookGuy), Carbine, Celeste, Crysta, Elluna, Eva, Felix, … codenames: Alchemist Assault BacklineHealer Beebo BountyHunter BurstCaster Earthtank FarShot FireFox Flex Freeze Gunner HookGuy Huntress Reaper ResHealer RocketJumper Ronin ShieldBot Sniper Storm Succubus Void Wukong |
+| GET | `/inventory/players/{id}` , `/inventory/free` | 🟡 | `LokiPlatformInventory { AssetEntries: [...] }`; `LogPlatformInventory: Refreshed player inventory` on valid-empty. Owned heroes/cosmetics live here keyed by **packed-config SKUs** (not exe strings) → can't populate without IoStore catalog extraction. Returning valid-empty wrappers |
+| GET | `/storefront/real/offers/{id}` | 🟡 | real-money store (drives STORE tab). Valid-empty `FLokiStorefrontPlayerStore`-shaped wrapper; real offers need packed item SKUs |
+| GET | `/progression/players/{id}/tracks` | 🟡 | `FAccelByteModelsListUserProgressionInfoPagingSlicedResult` → valid-empty `{data:[],paging:{}}` |
+
+### Session-end status — backend-reachable ceiling
+
+The menu is **broadly populated/alive**. What renders correctly now: nav, party slots, level/rank badges, Vive Points (`vp`=2004), Customization (local cosmetics + emote wheel + "0/331"), **Career→Stats** (authentic 0s), **Career→Ranked** (full Season-2 ladder, Bronze IV 0/200 RP), **Career→History** (empty = correct for new account), lobby/friends/voice.
+
+**Confirmed NOT backend-fixable** (need IoStore `.pak`/`.ucas` extraction, separate workstream):
+- `<MISSING STRING TABLE ENTRY>`, "ITEM NAME", "TEXT BLOCK" placeholders = packed UI **string tables** failing to resolve (`LogStringTable: Failed to find ST_Cosmetics_Categories…`).
+- HUNTERS "ALL HUNTERS" grid, STORE offers, owned cosmetics, PASSES tier detail = all keyed off **packed item/hero SKUs**.
+- Hero-token count (`LogBattlepassHeroUnlocker: Failed to get hero token amount`) = comes from battlepass reward-track claim state (reward SKUs); confirmed NOT a wallet balance (`heroToken` parsed but ignored).
+| GET | `/storefront/offers/{id}` | 🧪 | `FLokiStorefrontPlayerStore { RotatingOffers, FeaturedItemOffers, TypeOffers (arrays), NextRotation (FDateTime, omitted) }` — returns empty-valid wrapper; item-offer fields (`FLokiStorefrontItemOffer`, `…CurrencyAmount`, `…OfferingCost{IsVirtual}`) mostly pooled |
 | GET | `/storefront/real/offers/{id}` | ❓ | real-money offers |
 | GET | `/referral/player/{id}` , `/referral/player/{id}/points` | ❓ | referral state |
 | GET | `/mmr/player-ratings/{id}/rank` | ❓ | rank badge |

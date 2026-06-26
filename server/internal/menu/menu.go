@@ -42,7 +42,50 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// render empty), so populating them can't tight-loop; worst case a wrong-typed
 	// *matched* field rejects the doc back to empty.
 	mux.HandleFunc("GET /storefront/wallet/{id}", handleWallet)
+	mux.HandleFunc("GET /storefront/heroes", handleHeroes)
 	mux.HandleFunc("GET /storefront/offers/{id}", handlePlayerStore)
+
+	// Platform inventory (UPlatformInventoryManager). Model LokiPlatformInventory
+	// { AssetEntries: TArray<...> }. The hero-token count the Hunters screen wants
+	// ("LogBattlepassHeroUnlocker: Failed to get hero token amount") is a currency
+	// exchange token coded "heroToken" (a literal string, not a packed SKU), held
+	// as an AssetEntries entry.
+	mux.HandleFunc("GET /inventory/players/{id}", handleInventory)
+	mux.HandleFunc("GET /inventory/free", handleFreeInventory)
+
+	// Real-money store (UStorefrontManager::GetRealMoneyStorefront) — drives the
+	// STORE tab. Valid-empty PlayerStore-shaped wrapper so the FEATURED carousel
+	// settles instead of spinning on the {} catch-all. (Populating real offers
+	// needs packed-config item SKUs.)
+	mux.HandleFunc("GET /storefront/real/offers/{id}", handlePlayerStore)
+
+	// AccelByte per-player progression tracks (distinct from the storefront
+	// battlepass tracks). Model FAccelByteModelsListUserProgressionInfoPagingSliced
+	// Result — standard data/paging wrapper.
+	mux.HandleFunc("GET /progression/players/{id}/tracks", handleEmptyDataPaging)
+}
+
+// handleEmptyDataPaging returns the standard AccelByte {data:[],paging:{}} wrapper
+// for list endpoints whose required field is `data` (present-but-empty satisfies
+// the validity predicate without a wrong-type risk).
+func handleEmptyDataPaging(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]any{
+		"data":   []any{},
+		"paging": map[string]any{"previous": "", "next": ""},
+	})
+}
+
+// handleInventory returns LokiPlatformInventory { AssetEntries: [...] } — valid
+// empty. (A probe putting "heroToken" entries here parsed but did not satisfy the
+// hero-token read, so that count is tested via the wallet instead; see handleWallet.
+// Populating owned cosmetics here needs packed-config SKUs we can't yet read.)
+func handleInventory(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]any{"AssetEntries": []any{}})
+}
+
+// handleFreeInventory returns the free-rotation inventory — valid empty wrapper.
+func handleFreeInventory(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]any{"AssetEntries": []any{}})
 }
 
 // handleWallet returns FLokiStorefrontPlayerWallet. Binary shows exactly one
@@ -58,12 +101,41 @@ func (s *Service) Register(mux *http.ServeMux) {
 // so the keys here are best-guess and may need correction once the value type is
 // confirmed.
 func handleWallet(w http.ResponseWriter, r *http.Request) {
+	// Balances is TMap<FString,int> (confirmed). DECODE RESULTS so far:
+	//   - purple counter showed 2004 => Vive Points key is "vp"  ✅
+	//   - gold counter (Theorycraft Coins, premium) stayed 0 => none of batch-1's
+	//     premium candidates (coins/Coins/theorycraft_coins/TheorycraftCoins/tc/
+	//     premium_currency/premium/tc_coin/PremiumCurrency/gold/Gold) is the key.
+	//
+	// DECODE COMPLETE. "vp" => Vive Points (purple counter). The GOLD counter is
+	// Theorycraft Coins — the real-money premium currency; a fresh account has 0,
+	// so 0 is AUTHENTIC (and is why all 91 wallet-key candidates failed: premium
+	// balance isn't a virtual-wallet entry). Probe retired; real balances below.
 	writeJSON(w, map[string]any{
 		"Balances": map[string]any{
-			"hero_tokens":  100,
-			"power_shards": 5000,
+			"vp": 2004, // Vive Points (purple counter) — the one wallet currency the
+			// menu surfaces. Gold counter = Theorycraft Coins = real-money premium,
+			// authentically 0. (Confirmed a "heroToken" wallet balance does NOT feed
+			// UBattlepassHeroUnlocker — the hero-token count comes from the battlepass
+			// reward-track claim state, which needs packed reward SKUs.)
 		},
 	})
+}
+
+// handleHeroes returns FLokiStorefrontHeroes. CONFIRMED last relaunch: the array
+// field is "heroes" (the probe element-count 2 => "Unlockable heroes fetched: 2").
+// Real HeroId codenames came from asset paths in Loki.log (/Game/Loki/Characters/
+// Heroes/<Name>): ShieldBot, HookGuy, Beebo, Wukong, Ronin, Huntress, Stalker,
+// Reaper, Storm, Void, Freeze, Gunner, Alchemist, Sniper, ...
+//
+// handleHeroes returns FLokiStorefrontHeroes { heroes: TArray<FString> } (hero
+// IDs). CONFIRMED the array parses strings cleanly, but the "ALL HUNTERS" grid
+// resolves each ID against the packed hero catalog by a SKU/asset-id format that
+// is baked into the IoStore .pak data (not in the exe, not the codename/display
+// name). Without IoStore catalog extraction we can't supply resolvable IDs, so we
+// return a valid-empty list (no error, no phantom cards) until that path exists.
+func handleHeroes(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]any{"heroes": []string{}})
 }
 
 // handlePlayerStore returns FLokiStorefrontPlayerStore (the /storefront/offers/{id}
