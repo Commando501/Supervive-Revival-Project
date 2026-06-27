@@ -316,8 +316,13 @@ func main() {
 		cmdObjects(os.Args[2])
 		return
 	}
+	if len(os.Args) == 3 && os.Args[1] == "extract" {
+		cmdExtract(os.Args[2])
+		return
+	}
 	fmt.Println("usage: usmapdump info    <process-name-or-pid>   (R2.1: PE/section recon)")
 	fmt.Println("       usmapdump names   <process-name-or-pid>   (R2.2: locate GNames, decode FNames)")
 	fmt.Println("       usmapdump objects <process-name-or-pid>   (R2.3: locate GUObjectArray, iterate)")
+	fmt.Println("       usmapdump extract <process-name-or-pid>   (R2.4: extract full schema)")
 	os.Exit(2)
 }

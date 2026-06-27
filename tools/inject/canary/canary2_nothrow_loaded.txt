@@ -1,0 +1,1 @@
+canary2_nothrow OK: tls_cb=1 (expect 1) in PID 27388

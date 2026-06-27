@@ -42,6 +42,7 @@ var (
 	procGetProcAddress       = kernel32.NewProc("GetProcAddress")
 	procGetProcMitigation    = kernel32.NewProc("GetProcessMitigationPolicy")
 	procReadProcessMemory    = kernel32.NewProc("ReadProcessMemory")
+	procGetModuleFileNameW   = kernel32.NewProc("GetModuleFileNameW")
 )
 
 const (
@@ -245,6 +246,10 @@ func diag(name string) {
 }
 
 func main() {
+	if len(os.Args) >= 2 && os.Args[1] == "mmap" {
+		mmapMain(os.Args[2:])
+		return
+	}
 	if len(os.Args) == 3 && os.Args[1] == "diag" {
 		diag(os.Args[2])
 		return
@@ -273,8 +278,10 @@ func main() {
 	}
 
 	if len(os.Args) != 3 {
-		fmt.Println(`usage: inject <process-name-or-pid> <dll-path>`)
-		fmt.Println(`       inject probe <process-name-or-pid>`)
+		fmt.Println(`usage: inject <process-name-or-pid> <dll-path>     (LoadLibrary; blocked by CIG)`)
+		fmt.Println(`       inject mmap <process-name-or-pid> <dll-path> (manual map; bypasses CIG)`)
+		fmt.Println(`       inject diag <process-name-or-pid>            (read-only diagnostics)`)
+		fmt.Println(`       inject probe <process-name-or-pid>           (RWX-alloc test for ACG)`)
 		os.Exit(2)
 	}
 
