@@ -1,7 +1,61 @@
-# Next session kickoff — Milestone 3: make the menu *functional* (Track A via real .usmap)
+# Next session kickoff — Milestone 3 Track B (AssetRegistry repack route)
 
-> Paste the fenced block below into a new session to continue. Everything above the
-> line is notes; the prompt itself is the fenced block.
+> Paste the fenced block below into a new session to continue. The older usmap-route
+> prompt (kept below for history) is no longer relevant.
+
+---
+
+```
+We're picking up the AssetRegistry.bin repack route to unblock missions/hunters/store/
+cosmetics in SUPERVIVE. Project root: G:\git\Supervive Revival Project. The game install
+backup is at G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\.
+
+READ FIRST: docs/trackb-assetregistry-route.md — full plan, format facts, host-side
+workflow, kill criteria. Also docs/trackb-notes.md ("Update 2026-06-28") for the
+history of why we're here.
+
+Why this route: LokiAssetManager (UAssetManager subclass) registers primary assets
+ONLY from the content-service manifest's 11 named maps and never runs the standard
+config-driven directory scan. Baked primary assets (Mission/MissionPool/Hero/StoreOffer/
+Item/HeroCosmetic/SlotCosmetic) therefore never register — same root cause behind
+empty Missions modal, Hunters grid, Store, Cosmetics. The native scan-call shim
+(tools/inject/shim/scan_shim.cpp) crashes in __report_gsfailure inside the scan
+function even with empty configs — closed route, not to be re-attempted.
+
+The cooked Loki/AssetRegistry.bin (36 MB, extracted to tools/extractor/out/
+AssetRegistry.bin) already contains every asset with its full class info, path, tags,
+and bundles. Grep confirms DA_MissionPoolDailyChallenge, LokiDataAsset_MissionPool,
+LokiDataAsset_Mission, BP_HeroAsset_Assault, etc. Smallest viable proof = one daily
+mission visible in the Missions modal after a relaunch.
+
+TOOLING ALREADY IN PLACE (built last session, untested):
+- tools/extractor/extractor/Program.cs gained an `assetregistry` mode with five
+  subcommands: stats, classes, inspect <needle>, candidates <classNeedle>, namemap.
+  Standalone — no paks, no .usmap, no Oodle. CUE4Parse-based read path on UE5.4.
+- Default ar.bin path: tools/extractor/out/AssetRegistry.bin. Override by passing
+  an explicit path as args[2].
+
+START BY (diagnostic — answers which patch variant we need):
+  cd tools\extractor\extractor
+  & "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release -- assetregistry stats
+  & "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release -- assetregistry classes
+  & "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release -- assetregistry candidates LokiDataAsset_Mission
+  & "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release -- assetregistry inspect DA_MissionPoolDailyChallenge
+
+Smoking-gun output: `stats` prints a tag-key histogram. If PrimaryAssetType /
+PrimaryAssetName appear, the cook ALREADY baked the metadata onto FAssetData entries
+and the route shifts to SURGICAL: flip one entry's class FName index or rewrite its
+tag-pair pointer. If those keys are absent, the cook stripped them and the route
+shifts to GROWING the FStore (add new strings + new pair) — a much bigger edit.
+
+Read the JSON outputs (tools/extractor/out/assetregistry_*.json), decide the patch
+variant, then implement `assetregistry apply-patch`. Back up Loki/AssetRegistry.bin
+before any write to it; the launch script configs/launch-redirect.ps1 needs admin
+(elevated shell already, no UAC). Memory file is the canonical state record —
+update it as findings land.
+
+The legacy usmap-route prompt below is OBSOLETE — kept only for history.
+```
 
 ---
 

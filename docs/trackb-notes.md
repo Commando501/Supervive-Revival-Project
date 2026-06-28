@@ -231,6 +231,29 @@ Heroes/Items/Emotes/… but **no MissionPool/Missions map** — that (plus the c
 `ContentServicePrimaryAsset` entry shape) is what `ChangeBundleStateForPrimaryAssets`
 needs. Add a mission-pool asset type to the manifest to unblock the modal.
 
+### Update 2026-06-28 — manifest route exhausted; AssetRegistry repack route opened
+
+Further RE established that **LokiAssetManager (UAssetManager subclass) registers primary
+assets ONLY from the content-service manifest's 11 named maps and never runs the standard
+config-driven directory scan**. Same single root cause behind empty Missions modal,
+Hunters grid, Store, and Cosmetics.
+
+The native scan-call shim (tools/inject/shim/scan_shim.cpp) reached the real game
+thread via QueueUserAPC but crashed in `__report_gsfailure` (stack-cookie) inside the
+scan function even with empty config arrays. **Closed route.**
+
+**New route:** modify `Loki/AssetRegistry.bin` so the missing primary-asset
+registrations happen during the game's NORMAL startup. The cooked
+`AssetRegistry.bin` (36 MB, extracted to `tools/extractor/out/AssetRegistry.bin`)
+already contains every asset with its full class info and path — grep confirms
+`DA_MissionPoolDailyChallenge`, `LokiDataAsset_MissionPool`, `LokiDataAsset_Mission`,
+`BP_HeroAsset_Assault`, etc.
+
+See **`docs/trackb-assetregistry-route.md`** for the full plan + format facts.
+Read-only `assetregistry` subcommands (stats / classes / inspect / candidates /
+namemap) implemented this session in `tools/extractor/extractor/Program.cs`;
+diagnostic step runs next.
+
 ## Deferred (need Track A catalog SKUs)
 
 Cosmetic/skin EQUIP (loadout, `HeroCosmeticsBundlePreference`,

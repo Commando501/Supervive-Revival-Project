@@ -1,8 +1,11 @@
 using CUE4Parse.Compression;
 using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
+using CUE4Parse.UE4.AssetRegistry;
+using CUE4Parse.UE4.AssetRegistry.Objects;
 using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Objects.Core.Misc;
+using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Versions;
 using Newtonsoft.Json;
 
@@ -16,7 +19,7 @@ using Newtonsoft.Json;
 // /content-service/manifest?" Reading asset *property values* (DataTable rows)
 // comes later and may need a .usmap.
 
-var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema") ? args[0] : null;
+var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema" || args[0] == "assetregistry") ? args[0] : null;
 var dumpMode = cmd == "dump";
 var pakDir = (cmd == null && args.Length > 0)
     ? args[0]
@@ -28,6 +31,229 @@ Directory.CreateDirectory(outDir);
 
 Console.WriteLine($"Paks: {pakDir}");
 Console.WriteLine($"Out:  {outDir}");
+
+// assetregistry mode: read the cooked Loki/AssetRegistry.bin standalone — no paks, no
+// .usmap, no Oodle. The cook bakes EVERY content asset (Mission/MissionPool/Hero/
+// StoreOffer/Item/cosmetic) into this file with its FAssetData (PackagePath, AssetClass,
+// PackageName, AssetName, tags, bundles). LokiAssetManager bypasses the standard
+// AssetManager directory scan, so these entries are present but never registered as
+// primary assets at runtime — these subcommands let us SEE exactly what's in the
+// registry so we can decide which entries to flip and how.
+//
+//   usage: assetregistry <inspect|stats|namemap|classes|candidates> [ar.bin] [args...]
+//          ar.bin defaults to <outDir>\AssetRegistry.bin
+if (cmd == "assetregistry")
+{
+    if (args.Length < 2)
+    {
+        Console.WriteLine("usage: assetregistry <inspect|stats|namemap|classes|candidates> [ar.bin] [args...]");
+        Console.WriteLine($"       (ar.bin defaults to {Path.Combine(outDir, "AssetRegistry.bin")})");
+        return;
+    }
+
+    var sub = args[1];
+    // Path-or-arg disambiguation: args[2] is the bin path iff it points at an existing
+    // file; otherwise treat args[2..] as sub-command args and use the default bin path.
+    var defaultBin = Path.Combine(outDir, "AssetRegistry.bin");
+    var arPath = (args.Length >= 3 && File.Exists(args[2])) ? args[2] : defaultBin;
+    var subArgs = args.Skip(arPath == defaultBin ? 2 : 3).ToArray();
+
+    if (!File.Exists(arPath))
+    {
+        Console.WriteLine($"AssetRegistry.bin not found at {arPath}");
+        Console.WriteLine("Pass an explicit path as args[2], or copy the extracted bin to the default location.");
+        return;
+    }
+    Console.WriteLine($"AR bin: {arPath}  ({new FileInfo(arPath).Length:N0} bytes)");
+
+    // EGame.GAME_UE5_4 picks the right version-gated branches in the FAssetRegistryState
+    // reader (RemoveAssetPathFNames + ClassPaths + MarshalledTextAsUTF8String + the
+    // AddedDependencyFlags dependency-section header). Wrong game → silent misparse.
+    using var fs = File.OpenRead(arPath);
+    var Ar = new FStreamArchive(arPath, fs, new VersionContainer(EGame.GAME_UE5_4));
+    var state = new FAssetRegistryState(Ar);
+    var entries = state.PreallocatedAssetDataBuffers;
+    Console.WriteLine($"Loaded {entries.Length:N0} FAssetData / "
+                    + $"{state.PreallocatedDependsNodeDataBuffers.Length:N0} DependsNode / "
+                    + $"{state.PreallocatedPackageDataBuffers.Length:N0} PackageData.");
+
+    // Per-entry formatter shared by inspect & candidates. Tags are pulled from the
+    // FStore via FAssetData.TagsAndValues (already string-resolved by the reader).
+    // Bundles uses a typed empty array on the null branch so the ternary stays in one
+    // anonymous-type family (mixing with object[] breaks C# type inference).
+    static object Snapshot(FAssetData a)
+    {
+        var bundles = (a.TaggedAssetBundles?.Bundles ?? Array.Empty<FAssetBundleEntry>())
+            .Select(b => new
+            {
+                Name = b.BundleName.Text,
+                Assets = b.BundleAssets.Select(p => p.ToString()).ToArray(),
+            }).ToArray();
+        return new
+        {
+            PackageName = a.PackageName.Text,
+            AssetName = a.AssetName.Text,
+            PackagePath = a.PackagePath.Text,
+            AssetClass = a.AssetClass.Text,
+            ChunkIDs = a.ChunkIDs,
+            PackageFlags = ((uint) a.PackageFlags).ToString("X8"),
+            Tags = a.TagsAndValues?.ToDictionary(kv => kv.Key.Text, kv => kv.Value)
+                ?? new Dictionary<string, string>(),
+            Bundles = bundles,
+        };
+    }
+
+    Directory.CreateDirectory(outDir);
+
+    switch (sub)
+    {
+        case "inspect":
+        {
+            // Substring filter (case-insensitive) across PackageName / PackagePath /
+            // AssetClass / AssetName. Empty filter = dump everything (a few hundred MB
+            // of JSON — only useful piped through grep).
+            var needle = subArgs.FirstOrDefault() ?? "";
+            bool Match(FAssetData a) => needle.Length == 0
+                || a.PackageName.Text.Contains(needle, StringComparison.OrdinalIgnoreCase)
+                || a.PackagePath.Text.Contains(needle, StringComparison.OrdinalIgnoreCase)
+                || a.AssetClass.Text.Contains(needle, StringComparison.OrdinalIgnoreCase)
+                || a.AssetName.Text.Contains(needle, StringComparison.OrdinalIgnoreCase);
+            var hits = entries.Where(Match).Select(Snapshot).ToList();
+            var safe = string.IsNullOrEmpty(needle) ? "ALL" : needle.Replace('/', '_').Replace('\\', '_');
+            var outFile = Path.Combine(outDir, $"assetregistry_inspect_{safe}.json");
+            File.WriteAllText(outFile, JsonConvert.SerializeObject(hits, Formatting.Indented));
+            Console.WriteLine($"  matched {hits.Count:N0} / {entries.Length:N0} entries -> {outFile}");
+            // Also surface the first ~20 hits to stdout so the operator sees results
+            // immediately without opening the JSON.
+            foreach (var h in hits.Take(20)) Console.WriteLine($"    {((dynamic) h).AssetClass,-48} {((dynamic) h).PackageName}");
+            if (hits.Count > 20) Console.WriteLine($"    ... +{hits.Count - 20} more in JSON");
+            return;
+        }
+
+        case "stats":
+        {
+            // Two histograms: (a) every AssetClass with its entry count, (b) every tag
+            // KEY ever attached to ANY entry, with the number of entries carrying it.
+            // The tag-key histogram is the smoking gun for "did the cooker bake the
+            // PrimaryAssetType / PrimaryAssetName tags into the asset metadata, or did
+            // it strip them?". If those keys appear, the data is in the registry and
+            // the only thing missing is the runtime registration step.
+            var classHisto = entries.GroupBy(e => e.AssetClass.Text)
+                .Select(g => new { Class = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count).ToList();
+            var tagHisto = entries.Where(e => e.TagsAndValues != null)
+                .SelectMany(e => e.TagsAndValues.Keys.Select(k => k.Text))
+                .GroupBy(k => k)
+                .Select(g => new { Tag = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count).ToList();
+
+            // Primary-asset suggestive classes — string-match what we know LokiAssetManager
+            // declares (Mission / MissionPool / Hero / StoreOffer / Item / cosmetic bundles).
+            // Substring match catches Loki* / BP_*Asset_* / DA_* naming variations.
+            string[] needles = ["Mission", "MissionPool", "Hero", "StoreOffer", "Item",
+                                "HeroCosmetic", "SlotCosmetic", "Emote", "PlayerTitle",
+                                "LobbyPlatform", "GameAugment", "Equipment", "Power", "Minion"];
+            var primaryCandidates = classHisto.Where(c => needles.Any(n =>
+                    c.Class.Contains(n, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            var outFile = Path.Combine(outDir, "assetregistry_stats.json");
+            File.WriteAllText(outFile, JsonConvert.SerializeObject(new
+            {
+                Totals = new { Entries = entries.Length, UniqueClasses = classHisto.Count },
+                PrimaryAssetSuggestiveClasses = primaryCandidates,
+                AllClassesTop100 = classHisto.Take(100),
+                AllClasses = classHisto,
+                TagKeyHistogram = tagHisto,
+            }, Formatting.Indented));
+            Console.WriteLine($"  {classHisto.Count:N0} unique classes; primary-suggestive:");
+            foreach (var c in primaryCandidates.Take(30))
+                Console.WriteLine($"    {c.Count,6}  {c.Class}");
+            Console.WriteLine($"  top tag keys:");
+            foreach (var t in tagHisto.Take(15))
+                Console.WriteLine($"    {t.Count,6}  {t.Tag}");
+            Console.WriteLine($"  -> {outFile}");
+            return;
+        }
+
+        case "namemap":
+        {
+            // We need the NameMap as plain text to find indices of class FName strings
+            // we want to write into modified FAssetData entries (the surgical patch
+            // pre-step). FAssetRegistryState doesn't expose the NameMap directly; we
+            // re-read just the header + LoadNameBatch on a fresh stream and write
+            // "index : name" lines. (LoadNameBatch is internal-style; re-using the
+            // public FAssetRegistryReader is cheaper than reimplementing it.)
+            using var fs2 = File.OpenRead(arPath);
+            var Ar2 = new FStreamArchive(arPath, fs2, new VersionContainer(EGame.GAME_UE5_4));
+            var header = new FAssetRegistryHeader(Ar2);
+            var reader = new FAssetRegistryReader(Ar2, header);
+            var outFile = Path.Combine(outDir, "assetregistry_namemap.txt");
+            using (var sw = new StreamWriter(outFile))
+            {
+                sw.WriteLine($"# NameMap: {reader.NameMap.Length:N0} entries");
+                sw.WriteLine($"# version: {header.Version}");
+                for (var i = 0; i < reader.NameMap.Length; i++)
+                {
+                    sw.WriteLine($"{i,7}  {reader.NameMap[i].Name}");
+                }
+            }
+            Console.WriteLine($"  {reader.NameMap.Length:N0} names -> {outFile}");
+            return;
+        }
+
+        case "classes":
+        {
+            // Just the unique AssetClass strings, sorted alphabetically, one per line.
+            // Companion to `namemap` — much smaller and easier to grep for primary-
+            // asset-type candidates ("LokiDataAsset_", "BP_HeroAsset_", "DA_*").
+            var classes = entries.Select(e => e.AssetClass.Text).Distinct()
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+            var outFile = Path.Combine(outDir, "assetregistry_classes.txt");
+            File.WriteAllLines(outFile, classes);
+            Console.WriteLine($"  {classes.Count:N0} unique AssetClass values -> {outFile}");
+            return;
+        }
+
+        case "candidates":
+        {
+            // For one primary-asset-type pattern (substring, case-insensitive), list
+            // every FAssetData whose AssetClass matches. Writes a JSON file with full
+            // snapshot per hit — that's the input to the future `apply-patch` step.
+            //   assetregistry candidates Mission
+            //   assetregistry candidates LokiHero
+            // The output also surfaces TAGS on each hit, so we can confirm whether the
+            // cook baked PrimaryAssetType/PrimaryAssetName tags on these entries.
+            if (subArgs.Length < 1)
+            {
+                Console.WriteLine("usage: assetregistry candidates <classNeedle>");
+                Console.WriteLine("       e.g. Mission, LokiDataAsset_Mission, BP_HeroAsset, StoreOffer");
+                return;
+            }
+            var needle = subArgs[0];
+            var hits = entries
+                .Where(e => e.AssetClass.Text.Contains(needle, StringComparison.OrdinalIgnoreCase))
+                .Select(Snapshot).ToList();
+            var safe = needle.Replace('/', '_').Replace('\\', '_');
+            var outFile = Path.Combine(outDir, $"assetregistry_candidates_{safe}.json");
+            File.WriteAllText(outFile, JsonConvert.SerializeObject(hits, Formatting.Indented));
+            Console.WriteLine($"  {hits.Count:N0} entries with class matching '{needle}' -> {outFile}");
+            foreach (var h in hits.Take(20))
+            {
+                dynamic d = h;
+                var tagKeys = string.Join(",", ((Dictionary<string, string>) d.Tags).Keys.Take(8));
+                Console.WriteLine($"    {d.AssetClass,-44} {d.PackageName}  [tags: {tagKeys}]");
+            }
+            if (hits.Count > 20) Console.WriteLine($"    ... +{hits.Count - 20} more in JSON");
+            return;
+        }
+
+        default:
+            Console.WriteLine($"unknown assetregistry subcommand: {sub}");
+            Console.WriteLine("known: inspect, stats, namemap, classes, candidates");
+            return;
+    }
+}
 
 // Oodle: the .ucas blocks are Oodle-compressed; CUE4Parse needs oo2core_9_win64.dll.
 // The game ships it statically linked, so fetch the redistributable once and init.
