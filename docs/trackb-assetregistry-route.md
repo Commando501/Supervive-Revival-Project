@@ -183,27 +183,109 @@ nothing — **the exe is packed**, so the relevant strings only exist in the
 running process's unpacked memory (per prior native-shim RE: module RVAs
 become stable once unpacked at process load).
 
-## Signature-bypass research (option 1, next attempt)
+## Signature-bypass attempt (option 1) — proven mechanism, ROUTE STILL BLOCKED
 
-Three options to unblock Route 2, ranked by effort:
+Built `tools/sigbypass-mod/` + `tools/inject` `launch`/`watch-now` subcommands
+and ran the full chain end to end. **Patch lands correctly but ~50ms too late**
+because the shipping exe's packer commits .text pages on demand via a page-fault
+handler — the function's bytes only appear at the EXACT MOMENT the engine first
+calls it, with no observable window between "appear" and "execute" from outside
+the kernel.
 
-1. **Find a signature-bypass CVar in unpacked memory** via `tools/usmapdump`
-   (RPM + xref + strings infrastructure already built). If UE has a runtime
-   flag like `Pak.bRequireSignedFile` somewhere, flipping it in memory before
-   the mount check fires would let unsigned paks load. Procedure:
-   - Use `tools/usmapdump strings <proc> <substr>` to find narrow-char and
-     wide-char occurrences of `Couldn't find pak signature file` (the exact
-     log message) in unpacked memory.
-   - `tools/usmapdump xref <proc> <rva>` to find the code that emits it.
-   - Walk back to the call site, identify any `mov reg, [rip+disp]` slot
-     that holds a bool/flag the function reads; that's the candidate CVar.
-   - Patch the slot or shim a one-time write before pak mount fires.
-2. **Binary-patch `FPakFile::LoadSignatureFile`** call site to skip the
-   check entirely. Same machinery, different target. Probably 1-3 byte
-   patch at a stable module RVA.
-3. **Hook the pak mount path** with a manual-mapped DLL that
-   intercepts `FPakFile::Initializer` before signature check. Most
-   complex; lowest priority.
+### What works
+
+- **UE4SS recon**: UE4SS is installed (`Loki\Binaries\Win64\ue4ss\` with
+  `UE4SS.dll`, configs, multiple existing mods) but the dwmapi.dll proxy NEVER
+  loads — the shipping exe's import directory is stripped (RVA=0); it imports
+  only `preloader.dll` (the packer bootstrap). All UE4SS-based deployment is
+  dead in this build.
+- **Live-process RE** (`tools/usmapdump` strings/wstrings/xrefstr/findptr/
+  callxref/peek/disasm): located the full pak-sig warning chain.
+  - L"Couldn't find pak signature file" @ in-module RVA 0x79E17F0.
+  - UE log-record struct (str ptr + file ptr + line + verbosity) @ +0x79E17C8.
+  - Unique LEA loading the log struct into `rdx` @ +0x204836D.
+  - Enclosing function (`FPakSignatureFile::Load`) entry @ +0x2047EE0
+    (standard MSVC big-function prologue
+    `40 55 53 41 54 41 55 41 56 41 57 48 8D 6C 24 F8`).
+  - Direct callers via `callxref`: +0x2036560 (FPakFile ctor) and +0x2056624.
+  - Both callers invoke the sig-load function UNCONDITIONALLY — no preceding
+    `cmp/jz` gate that could be flipped.
+- **Patch mechanism** (`tools/sigbypass-mod/main.cpp`): UE4SS-style C++ DLL
+  that `VirtualProtect`s the page and overwrites the prologue with
+  `B0 01 C3 90 90 ...` (`mov al, 1; ret` + NOP pad). Build with
+  `clang++ -shared -O2 main.cpp -o main.dll -lkernel32`.
+- **Injection** (`tools/inject` `mmap`): manual-mapping bypasses CIG, runs
+  DllMain, sets up .pdata. ACG is OFF (`inject probe` confirms RWX alloc OK)
+  so `WriteProcessMemory` + `VirtualProtectEx` work freely.
+- **Suspended launch** (`tools/inject launch`): `CreateProcessW` with
+  `CREATE_SUSPENDED` → manual-map inject while main thread paused →
+  `ResumeThread(main)`. Tested end-to-end via
+  `tools/sigbypass-mod/race-suspended.ps1`.
+
+### Two correctness gotchas discovered (documented for future RE)
+
+1. **Clang `__try/__except` hangs in manual-mapped DLL** when an AV fires —
+   the SEH chain isn't set up the way Windows expects despite `.pdata` being
+   registered. Workaround: use `VirtualQuery` to gate reads on
+   `MEM_COMMIT` + readable protection instead of `__try`'ing them.
+2. **DllMain MUST spawn a worker (not block in-line)** under `CREATE_SUSPENDED`.
+   A synchronous spin in DllMain prevents `inject launch` from returning to
+   `ResumeThread(main)` — the packer (which runs on main) never executes →
+   prologue never appears → deadlock.
+
+### Why the patch still doesn't work — empirical race timeline
+
+```
+T+0    ResumeThread(main); packer starts.
+T+5ms  Packer unpacks .text near WinMain; engine init begins.
+T+50ms Pak mount loop reaches pakchunk999_P; calls FPakSignatureFile::Load.
+T+50ms CPU faults at +0x2047EE0; packer commits the page atomically;
+       function executes with ORIGINAL bytes; returns failure.
+T+51ms Pak rejected ("Couldn't find pak signature file → Failed to mount").
+T+235ms Our worker thread finally sees the page as MEM_COMMIT + readable;
+       VirtualProtect + memcpy; marker confirms `B0 01 C3 90 90 ...` is in
+       place — but the function won't be called again, so the patch has zero
+       observable effect.
+```
+
+Page commit and function execution are atomic from the engine's perspective.
+There's no software-visible window for a co-resident patcher to interpose.
+
+## Three remaining options (all multi-day RE)
+
+1. **Hook `FPakPlatformFile::Mount` + call it from our worker AFTER patching**.
+   Mount the mod pak at RUNTIME instead of relying on startup mount. With the
+   sig-load function now patched, the runtime mount call would succeed.
+   ALSO requires finding + calling an AR-reload entry (the cooked AR.bin is
+   already loaded by the time worker runs; UE doesn't auto-re-scan AR when a
+   new pak is mounted at runtime). Multi-day work: locate `Mount` and the
+   AR-reload via signature scans / xrefs, marshal args correctly, get the
+   calls on the right thread (probably via APC).
+2. **Hook the packer's page-fault handler**. Intercept after it unpacks our
+   function's page, apply the 3-byte patch BEFORE returning to the original
+   faulting instruction. Probably a user-mode vectored exception handler
+   we'd register before the packer's. Requires understanding the packer's
+   handler layout (the `runtime.dll` + `preloader.dll` + packer0..42 sections
+   in the shipping exe).
+3. **Hunt for `bRequireSignedPak`-style config flag in unpacked memory**.
+   Static-string search of the exe found nothing (exe is packed). Would need
+   to live-process search for ini-parser code paths that read pak-signing
+   config keys, then flip the flag they set. Meta-RE; uncertain payoff.
+
+## Kill criteria
+
+- `assetregistry stats` shows **no** primary-asset-suggestive class entries
+  for Mission / MissionPool / Hero / StoreOffer → cook stripped the metadata,
+  route can't work without a much bigger edit. ✅ NOT FIRED — see Diagnostic
+  findings above; 16,158 entries carry these tags.
+- A one-mission patch deploys but `LogAssetManager` STILL warns "Invalid
+  Primary Asset Type" → `LokiAssetManager` never consults the AR for primary
+  asset registration; route is logically dead even with a working deployment.
+  ⏳ STILL UNTESTABLE — deployment is blocked at the pak-signing layer, which
+  is below the layer we want to test. The loose-file Test 1 result (zero log
+  differential) is consistent with this prediction but isn't conclusive
+  because the pak shadowed the loose file.
+- A patched mission appears in the Missions modal → scale to other types.
 
 ## Kill criteria
 
@@ -230,8 +312,10 @@ Three options to unblock Route 2, ranked by effort:
   file and the real 36 MB patched AR.bin.
 - ⛔ **Loose-file deployment** — proven inert (pak shadows it).
 - ⛔ **Mod-pak deployment** — blocked by pak signature requirement.
-- ⏳ **NEXT: signature-bypass research** via `tools/usmapdump` against the
-  live process. Per the three-option ranking above. If option 1 lands a
-  bypass, drop the mod pak again and we finally test the route's kill
-  criterion; if it doesn't, options 2 and 3 are progressively more invasive
-  but mechanically known-feasible.
+- ⛔ **Sig-bypass via inject + WPM** — patch lands correctly but ~50ms after
+  the function has already returned. Packer's lazy page-commit + execute is
+  atomic from our perspective; can't interpose.
+- ✅ Reusable RE tooling: `tools/usmapdump` (strings/wstrings/xrefstr/findptr/
+  callxref/peek/disasm), `tools/inject` (mmap/launch/watch-now/probe/diag),
+  `tools/sigbypass-mod/main.cpp` (UE4SS-style C++ patch DLL skeleton).
+- ⏳ Three remaining options listed above, each multi-day. Decision pending.
