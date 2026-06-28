@@ -38,6 +38,7 @@
 #include <windows.h>
 #include <cstdint>
 #include <cstdio>
+#include <emmintrin.h>   // _mm_pause
 
 // Marker file path — written from DllMain so we can confirm externally (via
 // `cat`) that the mod loaded AND the patch landed without relying on the
@@ -60,43 +61,143 @@ static const uint8_t kPatch[16] = {
     0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
 };
 
+// Append-mode marker writer. Each call adds a line; the race.ps1 wipes the
+// file before launching so we start fresh per run.
 static void WriteMarker(const char* msg) {
-    HANDLE h = CreateFileA(kMarkerPath, GENERIC_WRITE, FILE_SHARE_READ, nullptr,
-                           CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    HANDLE h = CreateFileA(kMarkerPath, FILE_APPEND_DATA, FILE_SHARE_READ, nullptr,
+                           OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (h == INVALID_HANDLE_VALUE) return;
     DWORD written = 0;
     WriteFile(h, msg, (DWORD)strlen(msg), &written, nullptr);
     CloseHandle(h);
 }
 
+// Check if the page containing `target` is committed and readable. SEH-free
+// alternative to wrapping reads in __try (clang's SEH for x64 doesn't reliably
+// work in our manual-mapped DLL — observed: __try block hangs the thread when
+// an AV fires inside it, no exception handler runs).
+static bool PageReadable(const void* target) {
+    MEMORY_BASIC_INFORMATION mbi = {0};
+    if (VirtualQuery(target, &mbi, sizeof(mbi)) != sizeof(mbi)) return false;
+    if (mbi.State != MEM_COMMIT) return false;
+    if (mbi.Protect & PAGE_GUARD) return false;
+    const DWORD readMask =
+        PAGE_READONLY | PAGE_READWRITE | PAGE_WRITECOPY |
+        PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
+    return (mbi.Protect & readMask) != 0;
+}
+
+// SEH-free read of 8 bytes. Returns false if the page isn't readable (per
+// VirtualQuery); otherwise reads directly (no exception path).
+static bool SafeReadEight(const uint8_t* target, uint8_t out[8]) {
+    if (!PageReadable(target)) return false;
+    for (int i = 0; i < 8; i++) out[i] = target[i];
+    return true;
+}
+
+// Wait for the prologue bytes to appear at the target RVA. The packer doesn't
+// immediately populate the engine's .text section — when our DllMain runs
+// (post manual-map), the packer may still be unpacking, AND the .text page may
+// not even be committed yet (= AV on read). We use SEH-protected reads + a
+// retry loop that YIELDS THE CPU between iterations (Sleep(0)) so the packer
+// thread can make progress; a tight _mm_pause spin starves the packer of
+// cycles, defeating the purpose of waiting for it.
+// Caps at ~5 seconds of total wall time to avoid hanging if the function moved.
+// `notReadable` returns how many iterations failed with AV (page not committed).
+static bool WaitForPrologue(uint8_t* target, uint64_t& iterations, uint64_t& notReadable) {
+    const DWORD kStart = GetTickCount();
+    const DWORD kDeadline = kStart + 5000; // 5 seconds wall time
+    uint8_t buf[8];
+    notReadable = 0;
+    iterations = 0;
+    while (GetTickCount() < kDeadline) {
+        iterations++;
+        if (!SafeReadEight(target, buf)) {
+            notReadable++;
+            Sleep(0); // yield so the packer (other threads) can make progress
+            continue;
+        }
+        if (buf[0] == 0x40 && buf[1] == 0x55 && buf[2] == 0x53 &&
+            buf[3] == 0x41 && buf[4] == 0x54 && buf[5] == 0x41 &&
+            buf[6] == 0x55 && buf[7] == 0x41) {
+            return true;
+        }
+        Sleep(0); // page exists but not patched yet (packer mid-write) — yield
+    }
+    return false;
+}
+
 static bool ApplyPatch() {
+    WriteMarker("[1] DllMain entered\r\n");
+
     HMODULE hExe = GetModuleHandleA("SUPERVIVE-Win64-Shipping.exe");
     if (!hExe) {
-        WriteMarker("FAIL: GetModuleHandleA returned NULL for shipping exe\r\n");
+        WriteMarker("[2] FAIL: GetModuleHandleA returned NULL\r\n");
         return false;
+    }
+    {
+        char m[96]; snprintf(m, sizeof(m), "[2] hExe = 0x%p\r\n", (void*) hExe);
+        WriteMarker(m);
     }
 
     uint8_t* target = reinterpret_cast<uint8_t*>(hExe) + kPakSigLoadRva;
+    {
+        char m[128]; snprintf(m, sizeof(m), "[3] target = 0x%p (mod-RVA 0x%llX)\r\n",
+            (void*) target, (unsigned long long) kPakSigLoadRva);
+        WriteMarker(m);
+    }
 
-    // Save original bytes for diagnostics + to detect if someone else patched.
-    char buf[512];
+    uint8_t initialBytes[16] = {0};
+    bool initialOk = PageReadable(target);
+    if (initialOk) {
+        for (int i = 0; i < 16; i++) initialBytes[i] = target[i];
+    }
+    {
+        char m[256];
+        if (initialOk) {
+            snprintf(m, sizeof(m),
+                "[4] initial-read OK: %02X %02X %02X %02X %02X %02X %02X %02X "
+                                     "%02X %02X %02X %02X %02X %02X %02X %02X\r\n",
+                initialBytes[0], initialBytes[1], initialBytes[2], initialBytes[3],
+                initialBytes[4], initialBytes[5], initialBytes[6], initialBytes[7],
+                initialBytes[8], initialBytes[9], initialBytes[10], initialBytes[11],
+                initialBytes[12], initialBytes[13], initialBytes[14], initialBytes[15]);
+        } else {
+            snprintf(m, sizeof(m), "[4] initial: page not committed/readable yet (spin will wait)\r\n");
+        }
+        WriteMarker(m);
+    }
+
+    WriteMarker("[5] spinning for prologue...\r\n");
+    uint64_t spinIters = 0, avCount = 0;
+    DWORD t0 = GetTickCount();
+    bool gotPrologue = WaitForPrologue(target, spinIters, avCount);
+    DWORD elapsedMs = GetTickCount() - t0;
+    char midmark[128];
+    snprintf(midmark, sizeof(midmark), "SigBypass: spin done after %u ms (got=%d iters=%llu avs=%llu)\r\n",
+             (unsigned) elapsedMs, gotPrologue ? 1 : 0,
+             (unsigned long long) spinIters, (unsigned long long) avCount);
+    WriteMarker(midmark);
+
+    char buf[1024];
     snprintf(buf, sizeof(buf),
         "SigBypass:\r\n"
         "  module base : 0x%p\r\n"
         "  patch addr  : 0x%p  (mod-RVA 0x%llX)\r\n"
-        "  before bytes: %02X %02X %02X %02X %02X %02X %02X %02X "
-                          "%02X %02X %02X %02X %02X %02X %02X %02X\r\n",
+        "  initial bytes (at DllMain entry): "
+            "%02X %02X %02X %02X %02X %02X %02X %02X "
+            "%02X %02X %02X %02X %02X %02X %02X %02X\r\n"
+        "  prologue wait: %s after %llu spin iter(s), %llu AV (uncommitted)\r\n",
         (void*)hExe, (void*)target, (unsigned long long)kPakSigLoadRva,
-        target[0], target[1], target[2], target[3],
-        target[4], target[5], target[6], target[7],
-        target[8], target[9], target[10], target[11],
-        target[12], target[13], target[14], target[15]);
+        initialBytes[0], initialBytes[1], initialBytes[2], initialBytes[3],
+        initialBytes[4], initialBytes[5], initialBytes[6], initialBytes[7],
+        initialBytes[8], initialBytes[9], initialBytes[10], initialBytes[11],
+        initialBytes[12], initialBytes[13], initialBytes[14], initialBytes[15],
+        gotPrologue ? "FOUND" : "TIMEOUT (5s)",
+        (unsigned long long) spinIters, (unsigned long long) avCount);
 
-    // The expected prologue is "40 55 53 41 54 41 55 41 56 41 57 48 8D 6C 24 F8"
-    // (push rbp + push r12-r15 + push rbx + lea rbp,[rsp-8]) — bail if we see
-    // something completely unexpected so we don't trash a different function.
-    if (target[0] != 0x40 || target[1] != 0x55) {
-        strncat_s(buf, sizeof(buf), "  ABORT: prologue mismatch (function moved?)\r\n", _TRUNCATE);
+    if (!gotPrologue) {
+        strncat_s(buf, sizeof(buf), "  ABORT: prologue never appeared\r\n", _TRUNCATE);
         WriteMarker(buf);
         return false;
     }
@@ -125,12 +226,23 @@ static bool ApplyPatch() {
     return true;
 }
 
-// Patch from DllMain so we land as early as possible — UE4SS loads our DLL
-// during its mod-init phase, which fires before the engine's pak mount loop.
+// Background worker that polls for the prologue and patches when it appears.
+// Spawned from DllMain so DllMain can return immediately — this is critical for
+// the CREATE_SUSPENDED-then-inject flow: DllMain blocks the inject_mmap caller,
+// and the caller needs to ResumeThread(main) after inject completes. If DllMain
+// spun in-line, the packer (which runs on main) would be paused forever and
+// the prologue would never appear → deadlock.
+static DWORD WINAPI PatchWorker(LPVOID) {
+    ApplyPatch();
+    return 0;
+}
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID /*reserved*/) {
     if (reason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hModule);
-        ApplyPatch();
+        WriteMarker("[0] DllMain spawning patch worker\r\n");
+        HANDLE th = CreateThread(nullptr, 0, PatchWorker, nullptr, 0, nullptr);
+        if (th) CloseHandle(th);
     }
     return TRUE;
 }
