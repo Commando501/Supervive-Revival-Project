@@ -287,6 +287,25 @@ Three remaining options, all multi-day RE work — see "Three remaining options"
 section in `docs/trackb-assetregistry-route.md`. Until one is pursued, the
 unified content unlock for missions / hunters / store / cosmetics remains gated.
 
+### Update 2026-06-28 (option 3 flag hunt) — CLOSED
+
+Ran the full live-process candidate-needle sweep (13 flag/CVar strings +
+3 sanity controls) against the running game. All 16 needles returned 0 hits
+despite substrate being healthy (peek + control wstrings confirmed). Critically,
+`Pak.MountReadOrderPriority` (a known-vanilla UE CVar registered in
+`FPakPlatformFile::FPakPlatformFile`) and `FAutoConsoleVariable` (the registry
+class name itself) are both absent — this build has its CVar name strings
+stripped entirely (shipping-build optimization). Deeper disasm of both
+`FPakSignatureFile::Load` callers re-confirmed unconditional calls; the
+conditional bytes nearby trace to command-line parse-once sentinels +
+log-verbosity gates, not signing.
+
+Verdict: no string-named pak-signing flag exists in this binary to flip.
+Option 3 is closed. Option 1 (hook `FPakPlatformFile::Mount` + force AR
+reload) is the recommended next pursuit. Full details + per-needle hit counts
+in `docs/trackb-assetregistry-route.md` "Option 3 ... CLOSED" section and
+the `supervive-milestone3-trackb-status` memory file.
+
 ## Deferred (need Track A catalog SKUs)
 
 Cosmetic/skin EQUIP (loadout, `HeroCosmeticsBundlePreference`,
