@@ -251,26 +251,66 @@ T+235ms Our worker thread finally sees the page as MEM_COMMIT + readable;
 Page commit and function execution are atomic from the engine's perspective.
 There's no software-visible window for a co-resident patcher to interpose.
 
-## Three remaining options (all multi-day RE)
+## Three remaining options — status
 
-1. **Hook `FPakPlatformFile::Mount` + call it from our worker AFTER patching**.
-   Mount the mod pak at RUNTIME instead of relying on startup mount. With the
-   sig-load function now patched, the runtime mount call would succeed.
-   ALSO requires finding + calling an AR-reload entry (the cooked AR.bin is
-   already loaded by the time worker runs; UE doesn't auto-re-scan AR when a
-   new pak is mounted at runtime). Multi-day work: locate `Mount` and the
-   AR-reload via signature scans / xrefs, marshal args correctly, get the
-   calls on the right thread (probably via APC).
-2. **Hook the packer's page-fault handler**. Intercept after it unpacks our
-   function's page, apply the 3-byte patch BEFORE returning to the original
-   faulting instruction. Probably a user-mode vectored exception handler
-   we'd register before the packer's. Requires understanding the packer's
-   handler layout (the `runtime.dll` + `preloader.dll` + packer0..42 sections
-   in the shipping exe).
-3. **Hunt for `bRequireSignedPak`-style config flag in unpacked memory**.
-   Static-string search of the exe found nothing (exe is packed). Would need
-   to live-process search for ini-parser code paths that read pak-signing
-   config keys, then flip the flag they set. Meta-RE; uncertain payoff.
+### Option 3 (flag hunt in unpacked memory) — CLOSED 2026-06-28
+
+Ran the full live-process sweep against the shipping game at the main menu.
+Substrate proven healthy by control probes (`peek +0x79E17F0` returns the
+known wide string; `wstrings "LogPakFile"` and `wstrings "Couldn't find pak
+signature file"` both hit at expected RVAs with two heap copies each).
+
+Sweep across 13 candidate flag/CVar strings — **0 hits**:
+- `Pak.SkipSignatureCheck`, `Pak.SignatureCheck`, `RequireSignedPak`,
+  `bRequireSignedPak`, `SignedPak`, `GetPakSigningKeys`, `FPakSignatureFile`,
+  `[Core.System]`, `Pak.RsaPublicKey`, `Pak.AlwaysVerify`, `bSigningEnforced`,
+  `EPakSignatureCheckResult`, `AllowUnsigned`, `PakSigning` — all wide+narrow.
+
+Sanity controls — **also 0 hits**:
+- `Pak.MountReadOrderPriority` (vanilla UE CVar registered in
+  `FPakPlatformFile::FPakPlatformFile`).
+- `FAutoConsoleVariable` (the CVar registry class name itself).
+
+The pak-related log strings exist in unpacked memory, but the CVar/flag name
+strings do not — this build has its CVar registrations stripped (shipping-
+build optimization). Even if a flag existed in this code path it would not be
+findable via string search, and the standard `bRequireSignedPak` UE source
+identifier produces zero ANSI or wide hits in the running module.
+
+Deeper disasm of both callers of `FPakSignatureFile::Load` confirms prior
+analysis: no caller-level bool/byte gate, return value treated as a struct
+pointer and field-copied. Caller #2 (+0x2056624) has nearby conditionals but
+they trace to **command-line parse-once sentinels and UE log-verbosity gates**
+(the LEAs at +0x2056547 and +0x2056569 load the `CachePerPak`/`NewTrimCache`
+wide strings in the same `.rdata` cluster as the sig warning) — not signing.
+
+Any remaining gating logic lives inside the load function's failure path or
+in a downstream consumer of the returned struct, both inside packer-managed
+pages with the same atomic commit-and-execute property that defeated the
+entry-point patch.
+
+**Verdict: there is no string-named pak-signing flag to find in this exe.**
+Option 3 in its original "find a flag, flip via WPM" form is impossible.
+
+### Option 1 — next pursuit
+
+**Hook `FPakPlatformFile::Mount` + call it from our worker AFTER patching**.
+Mount the mod pak at RUNTIME instead of relying on startup mount. With the
+sig-load function now patched, the runtime mount call would succeed.
+ALSO requires finding + calling an AR-reload entry (the cooked AR.bin is
+already loaded by the time worker runs; UE doesn't auto-re-scan AR when a
+new pak is mounted at runtime). Multi-day work: locate `Mount` and the
+AR-reload via signature scans / xrefs, marshal args correctly, get the
+calls on the right thread (probably via APC).
+
+### Option 2 — last resort
+
+**Hook the packer's page-fault handler**. Intercept after it unpacks our
+function's page, apply the 3-byte patch BEFORE returning to the original
+faulting instruction. Probably a user-mode vectored exception handler
+we'd register before the packer's. Requires understanding the packer's
+handler layout (the `runtime.dll` + `preloader.dll` + packer0..42 sections
+in the shipping exe). High variance, fragile.
 
 ## Kill criteria
 
@@ -315,7 +355,12 @@ There's no software-visible window for a co-resident patcher to interpose.
 - ⛔ **Sig-bypass via inject + WPM** — patch lands correctly but ~50ms after
   the function has already returned. Packer's lazy page-commit + execute is
   atomic from our perspective; can't interpose.
+- ⛔ **Sig-bypass flag hunt (option 3)** — 13 candidates + 3 sanity controls
+  all 0 hits. CVar name strings stripped from this shipping build; no flag
+  to find. Closed 2026-06-28.
 - ✅ Reusable RE tooling: `tools/usmapdump` (strings/wstrings/xrefstr/findptr/
   callxref/peek/disasm), `tools/inject` (mmap/launch/watch-now/probe/diag),
   `tools/sigbypass-mod/main.cpp` (UE4SS-style C++ patch DLL skeleton).
-- ⏳ Three remaining options listed above, each multi-day. Decision pending.
+- ⏳ Option 1 (hook `FPakPlatformFile::Mount` + force AR reload) is the
+  recommended next pursuit. 3-4 sessions. Option 2 (page-fault handler hook)
+  is last resort.
