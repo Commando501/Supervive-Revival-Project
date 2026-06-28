@@ -19,7 +19,7 @@ using Newtonsoft.Json;
 // /content-service/manifest?" Reading asset *property values* (DataTable rows)
 // comes later and may need a .usmap.
 
-var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema" || args[0] == "assetregistry") ? args[0] : null;
+var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema" || args[0] == "assetregistry" || args[0] == "wherefile" || args[0] == "mkpak" || args[0] == "peekpak") ? args[0] : null;
 var dumpMode = cmd == "dump";
 var pakDir = (cmd == null && args.Length > 0)
     ? args[0]
@@ -31,6 +31,278 @@ Directory.CreateDirectory(outDir);
 
 Console.WriteLine($"Paks: {pakDir}");
 Console.WriteLine($"Out:  {outDir}");
+
+// peekpak mode: open one .pak directly via PakFileReader, print MountPoint + every file
+// path + per-file sizes. Used to debug mkpak output without relying on the full provider.
+if (cmd == "peekpak")
+{
+    if (args.Length < 2) { Console.WriteLine("usage: peekpak <pakPath>"); return; }
+    var pakPath = args[1];
+    try
+    {
+        var reader = new CUE4Parse.UE4.Pak.PakFileReader(pakPath, new VersionContainer(EGame.GAME_UE5_4));
+        Console.WriteLine($"  Mounting {pakPath}...");
+        reader.Mount(StringComparer.OrdinalIgnoreCase);
+        Console.WriteLine($"  MountPoint    : '{reader.MountPoint}'");
+        Console.WriteLine($"  Info.Version  : {reader.Info.Version}");
+        Console.WriteLine($"  Info.IndexOffset/Size: {reader.Info.IndexOffset} / {reader.Info.IndexSize}");
+        Console.WriteLine($"  Files mounted : {reader.Files.Count}");
+        foreach (var kv in reader.Files.Take(20))
+        {
+            Console.WriteLine($"    {kv.Value.Size,10}  {kv.Key}");
+            // Also extract + show a hash so we can verify the bytes match the source.
+            try
+            {
+                var data = kv.Value.Read();
+                var h = System.Security.Cryptography.SHA1.HashData(data);
+                Console.WriteLine($"               extracted {data.Length} bytes, SHA1={Convert.ToHexString(h)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"               EXTRACT FAILED: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"  EXCEPTION: {e.GetType().Name}: {e.Message}");
+        Console.WriteLine(e.StackTrace);
+    }
+    return;
+}
+
+// mkpak mode: build a UE legacy .pak v11 containing one uncompressed, unencrypted
+// file at a given virtual path. Used to deploy the patched AssetRegistry.bin as a
+// higher-priority mod pak that overrides the version embedded in pakchunk0.
+//
+//   usage: mkpak <inputFile> <virtualPath> <outputPak>
+//   e.g.   mkpak out/AssetRegistry.stage2.bin Loki/AssetRegistry.bin
+//          ".../Loki/Content/Paks/pakchunk999_P-WindowsClient.pak"
+//
+// Format (mirrors CUE4Parse's PakFileReader.ReadIndexUpdated + FPakInfo for v11):
+//   [file 0: FPakEntry header (53 bytes) + raw file bytes]
+//   [primary index: mountpoint + filecount + pathhash flags + dirindex offsets
+//                   + encoded-entries section (empty) + non-encoded entries (1 here)]
+//   [directory index: 1 dir, 1 file pointing at non-encoded entry 0]
+//   [footer: 221 bytes — keyguid + encrypted flag + magic + version + index offset/size/hash
+//            + 5×32-byte compression method names ("Oodle" + 4 empty slots)]
+// Length-preserving FName cell layout from the AR patch is not relevant here; we only
+// concern ourselves with the pak format.
+if (cmd == "mkpak")
+{
+    if (args.Length < 4)
+    {
+        Console.WriteLine("usage: mkpak <inputFile> <virtualPath> <outputPak>");
+        Console.WriteLine("       e.g. mkpak out/AssetRegistry.stage2.bin Loki/AssetRegistry.bin out/mod_P.pak");
+        return;
+    }
+    var inputFile = args[1];
+    var virtualPath = args[2].Replace('\\', '/').TrimStart('/');
+    var outputPak = args[3];
+    if (!File.Exists(inputFile)) { Console.WriteLine($"input file not found: {inputFile}"); return; }
+
+    var fileBytes = File.ReadAllBytes(inputFile);
+    using var sha1 = System.Security.Cryptography.SHA1.Create();
+    var fileHash = sha1.ComputeHash(fileBytes);
+
+    // Mount point matches the cooked pakchunk0 ("../../../"), and dir/file split mirrors
+    // how the reader splits: directory is the prefix incl. trailing '/' AND leading '/'
+    // (the reader's trimDir code strips one of the '/' when both mount and dir have one).
+    int lastSlash = virtualPath.LastIndexOf('/');
+    // Match cooked pak convention: directory is `<dir>/` with NO leading slash. Cooked
+    // pakchunk0 uses this form ("Loki/" not "/Loki/") and produces paths like
+    // "Loki/AssetRegistry.bin" after ValidateMountPoint strips the "../../../" prefix.
+    string dirPath = lastSlash >= 0 ? virtualPath.Substring(0, lastSlash + 1) : "";
+    string fileName = lastSlash >= 0 ? virtualPath.Substring(lastSlash + 1) : virtualPath;
+    const string mountPoint = "../../../";
+    string[] compressionMethods = { "Oodle", "", "", "", "" }; // 5 slots × 32 bytes — matches pakchunk0
+
+    // FString writer: int32 length (incl. null terminator), then ASCII bytes incl null.
+    // v11 doesn't support UTF8 in pak index, so ASCII is correct for our paths.
+    void WriteFString(BinaryWriter w, string s)
+    {
+        int len = s.Length + 1;
+        w.Write(len);
+        w.Write(System.Text.Encoding.ASCII.GetBytes(s));
+        w.Write((byte) 0);
+    }
+
+    // Full FPakEntry serializer (v11, no compression, no encryption). 53 bytes total.
+    // Mirrors FPakEntry's archive ctor — int64 offset/compressedSize/uncompressedSize,
+    // int32 compressionMethodIndex, 20-byte hash, byte flags, uint32 compressionBlockSize.
+    // This blob is duplicated as the per-file PREPENDED header in the data section.
+    void WritePakEntry(BinaryWriter w, long offset, long size, byte[] hash)
+    {
+        w.Write(offset);
+        w.Write(size); // CompressedSize
+        w.Write(size); // UncompressedSize
+        w.Write((int) 0); // CompressionMethodIndex (0 = None — index into CompressionMethods)
+        w.Write(hash, 0, 20);
+        w.Write((byte) 0); // Flags (not encrypted, not deleted)
+        w.Write((uint) 0); // CompressionBlockSize
+    }
+
+    // Encoded FPakEntry serializer — the compact form FPakFile::DecodePakEntry expects
+    // when a directory-index entry points into the EncodedPakEntries blob. CUE4Parse 1.2.2
+    // calls this byte* ctor UNCONDITIONALLY for every dir-index entry (no NonEncodedEntries
+    // fallback in 1.2.2 — that array path is master-only), so we MUST encode here.
+    //
+    // Bitfield layout (bit ranges, per FPakEntry byte* ctor):
+    //   [0..5]   compressionBlockSize, encoded as (bs >> 11); if == 0x3f, read extra uint32
+    //   [6..21]  compressionBlocksCount (16 bits)
+    //   bit 22   IsEncrypted
+    //   [23..28] CompressionMethodIndex (6 bits)
+    //   bit 29   bIsSize32BitSafe         (compressedSize fits in uint32)
+    //   bit 30   bIsUncompressedSize32BitSafe
+    //   bit 31   bIsOffset32BitSafe
+    //
+    // For our use (uncompressed, unencrypted, single entry, all sizes < 4GB): bitfield =
+    // (1<<29) | (1<<30) | (1<<31) = 0xE0000000, followed by uint32 Offset and uint32
+    // UncompressedSize. No CompressedSize (only written when CompressionMethod != None),
+    // no compression blocks. 12 bytes total per entry.
+    int WriteEncodedEntry(BinaryWriter w, long offset, long uncompressedSize)
+    {
+        const uint bitfield = (1u << 29) | (1u << 30) | (1u << 31);
+        w.Write(bitfield);
+        w.Write((uint) offset);
+        w.Write((uint) uncompressedSize);
+        return 12;
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPak)!);
+    using var fs = File.Create(outputPak);
+    using var bw = new BinaryWriter(fs);
+
+    // === Section 1: file 0 — prepended FPakEntry header (Offset = 0 == this entry's
+    // own offset in the pak file) followed by raw bytes. The reader extracts via
+    // pakEntry.Offset + pakEntry.StructSize, so the data starts at file offset 53.
+    long fileEntryOffset = bw.BaseStream.Position; // 0
+    WritePakEntry(bw, fileEntryOffset, fileBytes.LongLength, fileHash);
+    bw.Write(fileBytes);
+
+    // === Section 2: build directory index in a memory buffer first so we can hash it
+    // and know its length BEFORE the primary index (which references it by offset).
+    byte[] dirBytes;
+    using (var dirMem = new MemoryStream())
+    using (var dw = new BinaryWriter(dirMem))
+    {
+        dw.Write((int) 1); // DirectoryIndexLength (number of directories)
+        WriteFString(dw, dirPath);
+        dw.Write((int) 1); // FileEntriesCount in this dir
+        WriteFString(dw, fileName);
+        dw.Write((int) 0); // Offset = 0 (byte offset into EncodedPakEntries blob — first/only entry)
+        dw.Flush();
+        dirBytes = dirMem.ToArray();
+    }
+    var dirHash = sha1.ComputeHash(dirBytes);
+
+    // === Section 3: build primary index — placed RIGHT AFTER the file data, with
+    // dirIndexOffset = indexOffset + primaryIndex.Length. We need primary length up
+    // front; compute by serializing once (its content is fully determined except the
+    // dir-offset/dir-size/dir-hash fields, which we now know — dir bytes computed above).
+    long indexOffset = bw.BaseStream.Position;
+    long dirIndexOffset = 0; // patched below after we know primary length
+    byte[] primaryBytes;
+    int primaryLen;
+
+    // CUE4Parse's ReadIndexUpdated REQUIRES bHasPathHashIndex == true (throws otherwise);
+    // it then skips 36 bytes of pathHash metadata (offset+size+hash) without actually
+    // consuming a separate PathHashIndex section. So we write the flag = true and 36 zero
+    // bytes of dummy metadata — no separate index section needed; engine just trusts the
+    // FullDirectoryIndex for lookups in pak v11.
+    // Build encoded entries blob (12 bytes for our one entry — uncompressed, 32-bit-safe).
+    byte[] encodedEntries;
+    using (var encMem = new MemoryStream())
+    using (var ew = new BinaryWriter(encMem))
+    {
+        WriteEncodedEntry(ew, fileEntryOffset, fileBytes.LongLength);
+        ew.Flush();
+        encodedEntries = encMem.ToArray();
+    }
+
+    // CUE4Parse 1.2.2's ReadIndexUpdated requires bHasPathHashIndex == true (throws on
+    // false) then skips 36 bytes of path-hash metadata without consuming a separate
+    // section. We write the flag = true + 36 zero bytes (offset/size/hash) — no separate
+    // PathHashIndex section is emitted; the reader only uses the FullDirectoryIndex.
+    // After the encoded-entries blob it reads a non-negative int32 (throws if negative);
+    // we write 0 there since 1.2.2 doesn't actually use a non-encoded entries array.
+    // First pass: compute primary length with placeholder dirIndexOffset.
+    using (var probe = new MemoryStream())
+    using (var pw = new BinaryWriter(probe))
+    {
+        WriteFString(pw, mountPoint);
+        pw.Write((int) 1); // FileCount
+        pw.Write((ulong) 0); // PathHashSeed
+        pw.Write((int) 1); // bHasPathHashIndex = true (REQUIRED — reader throws otherwise)
+        pw.Write((long) 0); // PathHashIndexOffset (skipped by reader)
+        pw.Write((long) 0); // PathHashIndexSize
+        pw.Write(new byte[20]); // PathHashIndexHash
+        pw.Write((int) 1); // bHasFullDirectoryIndex = true
+        pw.Write((long) 0); // dirIndexOffset placeholder
+        pw.Write((long) dirBytes.Length);
+        pw.Write(dirHash, 0, 20);
+        pw.Write((int) encodedEntries.Length); // EncodedPakEntriesSize
+        pw.Write(encodedEntries);
+        pw.Write((int) 0); // trailing count (non-encoded entries — unused in 1.2.2)
+        pw.Flush();
+        primaryLen = (int) probe.Length;
+    }
+    dirIndexOffset = indexOffset + primaryLen;
+
+    // Second pass: serialize the real primary index with the now-known dirIndexOffset.
+    using (var primaryMem = new MemoryStream())
+    using (var pw = new BinaryWriter(primaryMem))
+    {
+        WriteFString(pw, mountPoint);
+        pw.Write((int) 1);
+        pw.Write((ulong) 0);
+        pw.Write((int) 1);
+        pw.Write((long) 0);
+        pw.Write((long) 0);
+        pw.Write(new byte[20]);
+        pw.Write((int) 1);
+        pw.Write((long) dirIndexOffset);
+        pw.Write((long) dirBytes.Length);
+        pw.Write(dirHash, 0, 20);
+        pw.Write((int) encodedEntries.Length);
+        pw.Write(encodedEntries);
+        pw.Write((int) 0);
+        pw.Flush();
+        primaryBytes = primaryMem.ToArray();
+    }
+    var indexHash = sha1.ComputeHash(primaryBytes);
+
+    // Write primary index, then dir index, then footer.
+    bw.Write(primaryBytes);
+    bw.Write(dirBytes);
+
+    // === Section 4: footer (size 221 = OffsetsToTry.Size8a — 5 compression methods)
+    bw.Write(new byte[16]);          // EncryptionKeyGuid (zero GUID)
+    bw.Write((byte) 0);              // EncryptedIndex = false
+    bw.Write((uint) 0x5A6F12E1);     // PAK_FILE_MAGIC
+    bw.Write((int) 11);              // EPakFileVersion.PakFile_Version_Fnv64BugFix
+    bw.Write((long) indexOffset);
+    bw.Write((long) primaryBytes.Length);
+    bw.Write(indexHash, 0, 20);
+    foreach (var m in compressionMethods)
+    {
+        var buf = new byte[32]; // padded with nulls
+        var enc = System.Text.Encoding.ASCII.GetBytes(m);
+        Array.Copy(enc, buf, Math.Min(enc.Length, 32));
+        bw.Write(buf);
+    }
+    bw.Flush();
+
+    var finalSize = bw.BaseStream.Length;
+    Console.WriteLine($"  wrote {outputPak}");
+    Console.WriteLine($"    input          : {inputFile}  ({fileBytes.LongLength:N0} bytes)");
+    Console.WriteLine($"    virtual path   : {virtualPath}");
+    Console.WriteLine($"    mount + dir/fn : '{mountPoint}' + '{dirPath}' + '{fileName}'");
+    Console.WriteLine($"    pak total      : {finalSize:N0} bytes");
+    Console.WriteLine($"    index @{indexOffset:N0}  size={primaryBytes.Length}  hash={Convert.ToHexString(indexHash)}");
+    Console.WriteLine($"    dir   @{dirIndexOffset:N0}  size={dirBytes.Length}  hash={Convert.ToHexString(dirHash)}");
+    return;
+}
 
 // assetregistry mode: read the cooked Loki/AssetRegistry.bin standalone — no paks, no
 // .usmap, no Oodle. The cook bakes EVERY content asset (Mission/MissionPool/Hero/
@@ -503,6 +775,51 @@ if (usmap != null)
 else
 {
     Console.WriteLine("No .usmap found — enumeration works; `dump`/`names` need one.");
+}
+
+// wherefile mode: report which container backs a given virtual path. Used to confirm
+// whether AssetRegistry.bin sources from a legacy .pak or an IoStore .ucas before we
+// pick which writer format to implement for the mod-pak deployment route.
+//   usage: wherefile <virtualPathSubstring>...
+if (cmd == "wherefile")
+{
+    var needles = args.Skip(1).Where(a => !Directory.Exists(a)).ToArray();
+    if (needles.Length == 0) { Console.WriteLine("usage: wherefile <pathNeedle>..."); return; }
+    foreach (var n in needles)
+    {
+        var hits = provider.Files
+            .Where(kv => kv.Key.Contains(n, StringComparison.OrdinalIgnoreCase))
+            .Take(20)
+            .ToList();
+        Console.WriteLine($"  '{n}': {hits.Count} hits");
+        foreach (var h in hits)
+        {
+            // GameFile has a Vfs property that tells us the source container (pak or IoStore).
+            var vfs = h.Value.GetType().GetProperty("Vfs")?.GetValue(h.Value);
+            var src = vfs?.ToString() ?? "?";
+            Console.WriteLine($"    {h.Value.Size,10}  {h.Key}");
+            Console.WriteLine($"               via: {src}");
+            // Reflect interesting properties off the Vfs container — version, encryption,
+            // mount point, entry count. Tells us what to mirror in the writer.
+            if (vfs != null)
+            {
+                foreach (var prop in new[] { "Version", "SubVersion", "PakVersion", "MountPoint", "EncryptionKeyGuid", "IsEncrypted", "FileCount", "Length", "Magic", "Info", "Type" })
+                {
+                    var pi = vfs.GetType().GetProperty(prop);
+                    if (pi != null)
+                    {
+                        try
+                        {
+                            var v = pi.GetValue(vfs);
+                            if (v != null) Console.WriteLine($"               {prop}: {v}");
+                        }
+                        catch { }
+                    }
+                }
+            }
+        }
+    }
+    return;
 }
 
 // dump mode: load each given package path and write its exports as JSON (needs usmap).
