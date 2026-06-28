@@ -16,7 +16,7 @@ using Newtonsoft.Json;
 // /content-service/manifest?" Reading asset *property values* (DataTable rows)
 // comes later and may need a .usmap.
 
-var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema") ? args[0] : null;
+var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema" || args[0] == "raw") ? args[0] : null;
 var dumpMode = cmd == "dump";
 var pakDir = (cmd == null && args.Length > 0)
     ? args[0]
@@ -76,6 +76,27 @@ if (usmap != null)
 else
 {
     Console.WriteLine("No .usmap found — enumeration works; `dump`/`names` need one.");
+}
+
+// raw mode: extract raw file bytes (e.g. .ini config) straight from the mounted paks.
+if (args.Length >= 2 && args[0] == "raw")
+{
+    Directory.CreateDirectory(outDir);
+    foreach (var path in args.Skip(1))
+    {
+        try
+        {
+            var bytes = provider.SaveAsset(path);
+            var name = path.Split('/').Last();
+            File.WriteAllBytes(Path.Combine(outDir, name), bytes);
+            Console.WriteLine($"OK   {path} ({bytes.Length} bytes) -> {name}");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"FAIL {path}\n     {e.GetType().Name}: {e.Message}");
+        }
+    }
+    return;
 }
 
 // dump mode: load each given package path and write its exports as JSON (needs usmap).
@@ -214,6 +235,7 @@ if (args.Length >= 2 && args[0] == "schema")
                 // Properties may be stored as a dict (int->PropertyInfo); unwrap values.
                 var pi = prop;
                 if (prop is System.Collections.DictionaryEntry de) pi = de.Value;
+                else { var v = Member(prop, "Value"); if (v != null) pi = v; } // KeyValuePair<int,PropertyInfo>
                 var pname = Member(pi, "Name", "name")?.ToString() ?? "?";
                 var mtype = Member(pi, "MappingType", "mappingType");
                 var arrayDim = Member(pi, "ArrayDim", "arrayDim");

@@ -189,6 +189,138 @@ ping; currently {} ⇒ `??? — ms`, missing `ST_ServerLocations`), `/core-game/
 "no active match" shape (polled 837×), then `/startSoloMode`/`/joinQueue` once a hero is
 selectable.
 
+## Menu system buildout (usmap landed 2026-06-27)
+
+The usmap is DONE — `tools/extractor` now `dump`s full property values. Roadmap: (1) hero
+resolution [linchpin], (2) tutorial/match launch, (3) cosmetics/customization, (4) store,
+(5) missions/progression, (6) mailbox/career.
+
+### Phase 1 — hero resolution (content manifest), in progress
+Extracted `BP_HeroAsset_<Hero>` for all 25 heroes: `InternalName` = lowercase codename (the
+SKU), `HeroUniqueTag` = `Hero.<Codename>`, asset path `/Game/Loki/Characters/Heroes/<Folder>/
+BP_HeroAsset_<Folder>`, plus portrait/cosmetics-bundle refs. The cosmetics-bundle ref dumped as
+`PrimaryAssetType:{Name:"HeroCosmeticsBundle"}` / `PrimaryAssetName:"AssaultDefault"` — proving
+Loki assets override GetPrimaryAssetId to a CLEAN name (so hero PrimaryAssetName = codename was
+right; the gap was the missing TYPE).
+
+Rebuilt `menu.go handleContentManifest` Heroes (PROBE #2): each entry now carries
+`PrimaryAssetType:"HeroAsset"` (class LokiHeroAsset minus Loki, matching the HeroCosmeticsBundle
+convention), `PrimaryAssetName:<codename>`, real `AssetPath`, `DisplayName`. PROBE #1 sent only
+the name → "Invalid Primary Asset Type" (every hunter = UnknownHero "?"). Added `heroFolders`
+(SKU→PascalCase folder). Builds clean.
+
+PROBE #2 result: manifest DESERIALIZED FINE (no manifest error) but AssetManager still logged
+`Invalid Primary Asset Type ... failed to find NameData` — so "HeroAsset" is NOT a registered
+type. KEY INSIGHT: registered PrimaryAssetTypes = SINGULAR of the manifest map name (the
+"HeroCosmeticsBundles" map's entries are type "HeroCosmeticsBundle"). So "Heroes" → type
+**"Hero"**. PROBE #3 (current): PrimaryAssetType "Hero". Also fixed: staged `/core-game/regions`
+returned a bare array → "Deserialization failure"; now wrapped in an object (regions/Regions/data
+probe keys).
+
+PROBE #3 ("Hero" flat string) result: SAME "failed to find NameData" — but the
+`/core-game/regions` Deserialization failure CLEARED (object wrapper fix worked, confirming my
+edits land). Loki.log: `AssetRegistry.bin` IS loaded; no startup primary-asset scan line.
+ROOT CAUSE (probe #4): it was FIELD TYPES, not the value. The BP_HeroAsset dump shows its own
+FPrimaryAssetType fields serialize `{"Name":...}` and FSoftObjectPath fields
+`{"AssetPathName","SubPathString"}`. We sent flat strings → UE silently skips wrong-typed
+fields → type+path registered EMPTY → "failed to find NameData" (and the manifest still
+"deserialized fine" because skip≠fail). PROBE #4: PrimaryAssetType `{"Name":"Hero"}`, AssetPath
+`{"AssetPathName":<path>,"SubPathString":""}`. Verified serialization.
+
+PROBE #4 (nested forms) result: still "failed to find NameData". So I extracted the GROUND
+TRUTH — added a `raw` mode to the extractor and pulled `Loki/Config/DefaultGame.ini`. The
+[AssetManagerSettings] `PrimaryAssetTypesToScan` registry is now in `tools/extractor/out/
+DefaultGame.ini` — the MASTER KEY for the whole menu. Hero entry:
+`PrimaryAssetType="Hero", AssetBaseClass=/Script/Loki.LokiHeroAsset,
+Directories=("/Game/Loki/Characters/Heroes")`. And `bShouldManagerDetermineTypeAndName=True`
+⇒ the manager derives PrimaryAssetName from the asset SHORT NAME, not GetPrimaryAssetId — so the
+real id is `Hero:BP_HeroAsset_Assault`, NOT `Hero:assault` (codename gave "Invalid Primary
+Asset Id"). PROBE #5 (current, ground-truth): type {Name:"Hero"}, name "BP_HeroAsset_<Folder>",
+AssetPath {AssetPathName,SubPathString}. Verified.
+
+### The full PrimaryAssetType registry (from DefaultGame.ini) — drives EVERY menu category
+Hero→LokiHeroAsset (/Game/Loki/Characters/Heroes); Item→LokiBaseItem (/Game/Loki/Items);
+Emote→LokiDataAsset_Emote (/Personalization/Emotes); PlayerTitle (/Personalization);
+Mission→LokiDataAsset_Mission (/Core/Missions); MissionPool→LokiDataAsset_MissionPool
+(/Core/Missions/Pools); HeroCosmeticsBundle→LokiHeroCosmeticsBundle (/Characters/);
+SlotCosmetics→LokiSlotCosmeticsAsset (/Personalization); LobbyPlatform→LokiLobbyPlatform_Asset
+(/Personalization); StoreOffer→LokiDataAsset_StoreOffer (/Core/StoreOffer);
+ExchangeToken (/Core/StoreOffer/ExchangeToken); Power→LokiDataAsset_Power
+(/Items/ActiveItems/DataAssets); Equipment→LokiDataAsset_Equipment (/Items/Equipment/DataAssets);
+GameAugment, HeroMastery, LoginReward, EventTrack, ProgressionTrack, Season, Capsule,
+ArmoryCraftOffer, ArmoryTables, GameFeature, MapIcon, HeroAnimation, XPCategory.
+ALL use bManagerDetermineName=True ⇒ PrimaryAssetName = asset short name.
+
+PROBE #5 (nested forms, name BP_HeroAsset_Assault) result: STILL failed. So I dug to the
+bottom: (a) the cooked `AssetRegistry.bin` (extracted via `raw`) has `PrimaryAssetType` only
+ONCE in 36MB — i.e. NO baked primary-asset registry, so SUPERVIVE registers primary assets at
+RUNTIME from the content-service manifest (the manifest IS the lever, confirmed). (b) Fixed the
+extractor's `schema` mode (props are KeyValuePair<int,PropertyInfo>, not DictionaryEntry) and
+dumped the EXACT struct:
+```
+ContentServicePrimaryAsset { Str PrimaryAssetType; Str PrimaryAssetName; Str AssetPath; Str Status; Bool IsDefault; }
+```
+ALL plain FStrings + one bool — so the nested {Name}/{AssetPathName} forms (probes #4/#5) were
+wrong-typed and silently skipped (→ empty type → "failed to find NameData"). PROBE #6 (current,
+schema-exact): flat "Hero" / "BP_HeroAsset_<Folder>" / flat path / Status "Released" / IsDefault
+false. This flat+correct-name+all-5-fields combo was never tried. Verified serialization.
+
+PROBE #6 (schema-exact entries) result: STILL failed — because the TOP-LEVEL manifest was
+incomplete. The manifest fetch is `?nonEnabledOnly=true` retried **3338x** (reject/retry loop =
+never processed). Dumped ContentServiceContentManifest schema:
+```
+{ Str ID; Str ETag; Int64 Version; Struct PrimaryAssetId CurrentSeason; Str CurrentPatchVersion;
+  Array PatchVersions; Map Heroes; Map Items; ... }
+```
+We were omitting ID/ETag/Version/CurrentSeason. PROBE #7 (current): added all 4. CurrentSeason is
+an FPrimaryAssetId (nested: {PrimaryAssetType:{Name:"Season"},PrimaryAssetName:"S2_Season"}).
+Manifest is now COMPLETE at both levels (top + entry). Verified.
+
+✅ PROBE #7 (complete top-level manifest) = BREAKTHROUGH. The 3338x retry loop dropped to 1 and
+the generic "Invalid Primary Asset Type" was REPLACED by named errors — the client now CONSUMES
+the manifest. Proof: it read my CurrentSeason and logged "Invalid Primary Asset Id Season:S2_Season"
+(harmless — no Seasons map; cosmetic banner only). The missing ID/ETag/Version/CurrentSeason were
+blocking ALL processing.
+
+NEXT LAYER (current): hero "?" is now the COSMETICS, not the hero. Log shows
+`Entering SetHero with CosmeticsAssetId ( - true)` = EMPTY — the hero MODEL is its default
+cosmetics bundle, referenced by the hero asset as `HeroCosmeticsBundle:<Hero>Default` (e.g.
+"AssaultDefault"). HeroCosmeticsBundles map was empty. Now populated for the 14 heroes with a
+canonical BP_<Hero>_DefaultCosmeticsBundle (key+name="<Folder>Default", real AssetPath). The
+other 11 (Alchemist, Beebo, BountyHunter, BurstCaster, Earthtank, FarShot, Reaper, ResHealer,
+Stalker, Succubus, Wukong) use irregular bundle names — add after validating.
+
+PROBE #8 (cosmetics map populated) result: still "?". Logs: cosmetic ASSETS load fine (actor
+pooling), manifest IS consumed, but hero-preview CosmeticsAssetId stays EMPTY and `Hero:BP_HeroAsset_*`
+is NEVER referenced — i.e. the client isn't resolving heroes via the manifest PrimaryAssetId for
+the preview. Combined with the persistent "PURCHASE 20,000" (not-owned), the leading hypothesis is
+now OWNERSHIP: an unowned hero shows the locked "?" placeholder.
+
+PROBE #9 (current): granted OWNERSHIP via inventory. Got the exact model (usmap):
+LokiPlatformInventory{ AssetEntries[], Int64 Version }; entry =
+LokiPlatformInventoryAssetEntry{ PrimaryAssetId AssetId (nested), bool IsOwned/IsFree/IsDefault/
+IsPremiumBenefit, EntitlementIDs[] }. handleInventory now returns all 25 heroes (Hero:BP_HeroAsset_<X>)
++ 14 cosmetics (HeroCosmeticsBundle:<X>Default) as IsOwned:true (39 entries).
+
+PROBE #9 (codename ids) result: still "?" + PURCHASE. PROBE #10 = DIAGNOSTIC (pointed CurrentSeason
+at Hero:assault, which IS in the Heroes map). RESULT = ✅ DEFINITIVE: NO "Invalid Primary Asset Id
+Hero:assault" error (vs Season:S2_Season which DOES error). So the manifest's maps DO register
+primary assets, and **"Hero:assault" (codename) is the correct, valid, registered hero id.**
+Registration WORKS — the foundation is proven and this IS backend-fixable. Reverted CurrentSeason.
+
+Remaining = downstream of registration:
+- OWNERSHIP: inventory IS processed (LogPlatformInventory: Refreshed player inventory) but heroes
+  still show PURCHASE 20,000. Ownership is via /inventory/players/{id} (no separate entitlements
+  endpoint). IsOwned:true alone isn't flipping it — may need EntitlementIDs populated, or heroes
+  use a separate unlock-state (LogBattlepassHeroUnlocker: "Failed to get hero token amount").
+- RENDER: CosmeticsAssetId is EMPTY (not wrong) → "?". ClientProfileData only holds
+  ClientVisibilityTracking (no cosmetics prefs), so the preview must derive the default from the
+  loaded hero asset's DefaultCosmeticsBundle. Empty = chain breaks (hero not loaded for preview,
+  or unowned-hero shows locked "?").
+
+NEXT: user testing ASSAULT (confirmed SKU) in the running game — if it renders, pipeline proven +
+just fix other heroes' SKUs; if "?", rendering is gated uniformly (ownership / hero-load chain).
+
 ## Progression / mission flow (analyzed 2026-06-26)
 
 The only mission-related endpoints the client calls (whole capture.log): the battlepass

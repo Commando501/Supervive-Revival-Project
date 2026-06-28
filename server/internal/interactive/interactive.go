@@ -226,10 +226,11 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleCoreGameRegions returns the region list the latency manager pings (fixes the menu's
-// "??? - ms" + missing ST_ServerLocations). STAGED probe: one region pointed at the local
-// backend so the ping can resolve. Fields are the confirmed model names (RegionName/RouteName)
-// plus a superset of plausible host/port/display keys (UE ignores unmatched, matches
-// case-insensitively). Returned as a bare array (regions is a TArray<FCoreGameRegion>).
+// "??? - ms" + missing ST_ServerLocations). A bare array gave "Deserialization failure on
+// GET /core-game/regions" (the client wants an OBJECT, not a TArray at top level), so the
+// regions are wrapped. Region keys are the confirmed model names (RegionName/RouteName) plus
+// a superset of host/port/display keys; the wrapper key is probed (regions/data/Regions).
+// STAGED: one region at the local backend so the ping can resolve.
 func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) {
 	region := map[string]any{
 		"RegionName":  "na",
@@ -241,7 +242,12 @@ func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) 
 		"Port":        443,
 		"Enabled":     true,
 	}
-	writeJSON(w, []any{region})
+	regions := []any{region}
+	writeJSON(w, map[string]any{
+		"regions": regions,
+		"Regions": regions,
+		"data":    regions,
+	})
 }
 
 func (s *Service) handleMailboxConfigVersion(w http.ResponseWriter, r *http.Request) {
