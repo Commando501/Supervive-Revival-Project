@@ -292,16 +292,53 @@ entry-point patch.
 **Verdict: there is no string-named pak-signing flag to find in this exe.**
 Option 3 in its original "find a flag, flip via WPM" form is impossible.
 
-### Option 1 — next pursuit
+### Option 1 — next pursuit (live recon landed 2026-06-28)
 
 **Hook `FPakPlatformFile::Mount` + call it from our worker AFTER patching**.
 Mount the mod pak at RUNTIME instead of relying on startup mount. With the
-sig-load function now patched, the runtime mount call would succeed.
-ALSO requires finding + calling an AR-reload entry (the cooked AR.bin is
-already loaded by the time worker runs; UE doesn't auto-re-scan AR when a
-new pak is mounted at runtime). Multi-day work: locate `Mount` and the
-AR-reload via signature scans / xrefs, marshal args correctly, get the
-calls on the right thread (probably via APC).
+sig-load function patched at the moment we trigger the call, the runtime
+mount succeeds — and the AR reload happens FOR FREE via UE's delegate chain
+(`FCoreDelegates::OnPakFileMounted2.Broadcast` → AR listener →
+`ScanPathsSynchronous` on the new pak's paths). So we do NOT need a
+separate AR-reload entry; one Mount call covers both halves.
+
+**RVAs landed via live recon (stable across launches — only ASLR base
+moves):**
+- `FPakSignatureFile::Load` entry (sig-bypass patch target): **+0x2047EE0**
+  — patch to `B0 01 C3` (`mov al, 1; ret`).
+- `FPakPlatformFile::Mount` wrapper (2-arg public API): **+0x204FFD0** —
+  constructs empty FString mountpoint, calls impl with 3 args. Simpler to
+  invoke from the shim.
+- `FPakPlatformFile::Mount` impl (3-arg, full body): **+0x2050020** — MSVC
+  big-function prologue (sub rsp 0x120, security cookie at [rbp-0x10]).
+  Args: rcx=this, rdx=pakName, r8=mountpoint FString*.
+- Internal mount helper containing the OnPakFileMounted2 broadcast +
+  timing UE_LOG: **+0x204F130** — 9-register-save prologue, 0x478 frame,
+  cookie at [rbp+0x340]. Called from Mount impl. Confirms the delegate
+  fires inside the mount path.
+- `GGameThreadId` slot (for APC targeting): **+0x9D49158** (existing).
+
+**Still to find at shim-build time:**
+- FPakPlatformFile singleton ptr. Anchor: narrow `FPakPlatformFile::Initialize`
+  TRACE scope name at module-RVA **+0x79E4FC8**. Chain: xref this string to
+  find the Initialize entry → look at its enclosing ctor → find
+  `mov [rax], &vtable` to get the vtable RVA → live-scan committed memory
+  for an object whose `[+0]==vtable_addr` (same singleton-finder pattern
+  used for `LokiAssetManager` earlier in this branch).
+- Mount's full arg ABI verification (3 vs 4 args incl. `PakOrder uint32` and
+  `bLoadAsIostoreContainer bool` defaults). Disasm impl in detail at
+  build-time.
+
+**Worker thread plan:**
+1. Inject DLL early (CREATE_SUSPENDED + manual-map, proven mechanism).
+2. Worker polls for `.text` page commit at +0x2047EE0.
+3. Patch sig-load entry to `B0 01 C3`.
+4. Resolve FPakPlatformFile singleton via vtable scan.
+5. `QueueUserAPC` on the game thread (TID from +0x9D49158) → APC body calls
+   `Mount(singleton, pakPath)`.
+6. Mount's success path fires OnPakFileMounted2 → AR auto-reloads.
+7. Open the Missions modal → check whether the AR class flips actually
+   trigger primary-asset registration (the route's REAL kill criterion).
 
 ### Option 2 — last resort
 
