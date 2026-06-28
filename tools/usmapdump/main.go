@@ -320,9 +320,67 @@ func main() {
 		cmdExtract(os.Args[2])
 		return
 	}
-	fmt.Println("usage: usmapdump info    <process-name-or-pid>   (R2.1: PE/section recon)")
-	fmt.Println("       usmapdump names   <process-name-or-pid>   (R2.2: locate GNames, decode FNames)")
-	fmt.Println("       usmapdump objects <process-name-or-pid>   (R2.3: locate GUObjectArray, iterate)")
-	fmt.Println("       usmapdump extract <process-name-or-pid>   (R2.4: extract full schema)")
+	// strings/wstrings: <proc> <needle> [maxhits]
+	if (len(os.Args) == 4 || len(os.Args) == 5) && (os.Args[1] == "strings" || os.Args[1] == "wstrings") {
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdStrings(os.Args[2], os.Args[3], mh, os.Args[1] == "wstrings")
+		return
+	}
+	// xrefstr: <proc> <hexAddr> [maxhits]
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "xrefstr" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdXrefStr(os.Args[2], addr, mh)
+		return
+	}
+	// callxref: <proc> <hexAddr> [maxhits] — find direct CALL/JMP targeting addr
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "callxref" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdCallXref(os.Args[2], addr, mh)
+		return
+	}
+	// findptr: <proc> <hexAddr> [maxhits] — find qwords in memory equal to addr
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "findptr" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdFindPtr(os.Args[2], addr, mh)
+		return
+	}
+	// peek: <proc> <addrOrRva> [bytes] — hex+ascii dump (RVA form: "+0xNNNN")
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "peek" {
+		n := parseMaxHits(os.Args, 4, 128)
+		cmdPeek(os.Args[2], os.Args[3], n)
+		return
+	}
+	// disasm: <proc> <addrOrRva> [bytes] — x86-64 disassembly
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "disasm" {
+		n := parseMaxHits(os.Args, 4, 128)
+		cmdDisasm(os.Args[2], os.Args[3], n)
+		return
+	}
+	fmt.Println("usage: usmapdump info     <proc-name-or-pid>                  (PE/section recon)")
+	fmt.Println("       usmapdump names    <proc-name-or-pid>                  (locate GNames)")
+	fmt.Println("       usmapdump objects  <proc-name-or-pid>                  (locate GUObjectArray)")
+	fmt.Println("       usmapdump extract  <proc-name-or-pid>                  (extract full schema)")
+	fmt.Println("       usmapdump strings  <proc-name-or-pid> <needle> [N]     (ANSI byte search)")
+	fmt.Println("       usmapdump wstrings <proc-name-or-pid> <needle> [N]     (UTF-16 LE search)")
+	fmt.Println("       usmapdump xrefstr  <proc-name-or-pid> 0xADDR    [N]    (rip-rel LEA xref)")
+	fmt.Println("       usmapdump callxref <proc-name-or-pid> 0xADDR    [N]    (E8/E9 disp32 xref)")
+	fmt.Println("       usmapdump findptr  <proc-name-or-pid> 0xADDR    [N]    (find qword == ADDR)")
+	fmt.Println("       usmapdump peek     <proc-name-or-pid> ADDR_OR_+RVA [N] (hex+ascii dump)")
+	fmt.Println("       usmapdump disasm   <proc-name-or-pid> ADDR_OR_+RVA [N] (x86-64 disasm)")
 	os.Exit(2)
 }
