@@ -22,6 +22,7 @@ package menu
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -93,6 +94,25 @@ func handleContentManifest(w http.ResponseWriter, r *http.Request) {
 	for _, h := range heroCodenames {
 		heroes[h] = map[string]any{"PrimaryAssetName": h}
 	}
+	// Single-variable test (2026-06-28): populate HeroCosmeticsBundles with the 25
+	// default cosmetic bundles to see whether (a) the ALL HUNTERS grid populates
+	// (currently empty even with Heroes map filled — suggests grid keys off
+	// cosmetics-bundle assets, not Hero PrimaryAssetIds), and (b) SetHero in
+	// PartySlot resolves to a visible preview instead of the "?" UnknownHero
+	// placeholder. AssetPath points at the cooked default-skin blueprint per the
+	// IoStore catalog (tools/extractor/out/catalog/bundles/BP_<Hero>_Default_
+	// CosmeticsBundle.json).
+	heroCosmeticsBundles := map[string]any{}
+	for _, pascal := range pascalHeroByLower {
+		name := pascal + "Default"
+		heroCosmeticsBundles[name] = map[string]any{
+			"PrimaryAssetType": "HeroCosmeticsBundle",
+			"PrimaryAssetName": name,
+			"AssetPath": fmt.Sprintf(
+				"/Game/Loki/Characters/Heroes/%s/Cosmetics/Default/BP_%s_Default_CosmeticsBundle",
+				pascal, pascal),
+		}
+	}
 	writeJSON(w, map[string]any{
 		"CurrentPatchVersion":  r.PathValue("version"),
 		"PatchVersions":        []any{},
@@ -100,7 +120,7 @@ func handleContentManifest(w http.ResponseWriter, r *http.Request) {
 		"Items":                map[string]any{},
 		"Emotes":               map[string]any{},
 		"PlayerTitles":         map[string]any{},
-		"HeroCosmeticsBundles": map[string]any{},
+		"HeroCosmeticsBundles": heroCosmeticsBundles,
 		"StoreOffers":          map[string]any{},
 		"SlotCosmetics":        map[string]any{},
 		"Minions":              map[string]any{},
@@ -133,6 +153,39 @@ var heroCodenames = []string{
 	"freeze", "gunner", "hookguy", "huntress", "reaper",
 	"reshealer", "rocketjumper", "ronin", "shieldbot", "sniper",
 	"stalker", "storm", "succubus", "void", "wukong",
+}
+
+// pascalHeroByLower maps the lowercase codename to the PascalCase form used in
+// asset paths (/Game/Loki/Characters/Heroes/<Pascal>/...). Recovered from the
+// extractor catalog directory names — note "Earthtank" (lower 't'), "FireFox",
+// "ResHealer", "RocketJumper" etc. The PrimaryAssetName for each
+// HeroCosmeticsBundle is "<Pascal>Default".
+var pascalHeroByLower = map[string]string{
+	"alchemist":      "Alchemist",
+	"assault":        "Assault",
+	"backlinehealer": "BacklineHealer",
+	"beebo":          "Beebo",
+	"bountyhunter":   "BountyHunter",
+	"burstcaster":    "BurstCaster",
+	"earthtank":      "Earthtank",
+	"farshot":        "FarShot",
+	"firefox":        "FireFox",
+	"flex":           "Flex",
+	"freeze":         "Freeze",
+	"gunner":         "Gunner",
+	"hookguy":        "HookGuy",
+	"huntress":       "Huntress",
+	"reaper":         "Reaper",
+	"reshealer":      "ResHealer",
+	"rocketjumper":   "RocketJumper",
+	"ronin":          "Ronin",
+	"shieldbot":      "ShieldBot",
+	"sniper":         "Sniper",
+	"stalker":        "Stalker",
+	"storm":          "Storm",
+	"succubus":       "Succubus",
+	"void":           "Void",
+	"wukong":         "Wukong",
 }
 
 // handleInventory returns owned items. The inventory-probe (25 owned heroes keyed by
