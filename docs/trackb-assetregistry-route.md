@@ -318,16 +318,32 @@ moves):**
   fires inside the mount path.
 - `GGameThreadId` slot (for APC targeting): **+0x9D49158** (existing).
 
-**Still to find at shim-build time:**
-- FPakPlatformFile singleton ptr. Anchor: narrow `FPakPlatformFile::Initialize`
-  TRACE scope name at module-RVA **+0x79E4FC8**. Chain: xref this string to
-  find the Initialize entry → look at its enclosing ctor → find
-  `mov [rax], &vtable` to get the vtable RVA → live-scan committed memory
-  for an object whose `[+0]==vtable_addr` (same singleton-finder pattern
-  used for `LokiAssetManager` earlier in this branch).
-- Mount's full arg ABI verification (3 vs 4 args incl. `PakOrder uint32` and
-  `bLoadAsIostoreContainer bool` defaults). Disasm impl in detail at
-  build-time.
+**Vtable + singleton-finder LANDED 2026-06-28** (second live run):
+- `FPakPlatformFile::Initialize` entry: module-RVA **+0x204AAD0**. Verified
+  twice: TRACE-name xref at +0x79E4FC8 AND UE_LOG format string at +0x79E4DF8
+  reads literally "Initializing PakPlatformFile" (the message Initialize
+  emits at entry).
+- **FPakPlatformFile vtable A starts at module-RVA +0x79E0C78.** Slot 0 =
+  deleting destructor at +0x203AE10. Dtor frees exactly **0x268 (616) bytes**
+  — `sizeof(FPakPlatformFile)`, definitive class identification. Slot 11 at
+  +0x79E0CD0 holds Initialize at +0x204AAD0.
+- FPakPlatformFile vtable B (multiple-inheritance second base) at +0x79E0C80.
+- Object layout: `+0x00` vtable A, `+0x08` refcount (uint32, observed 1 or 2),
+  `+0x10` vtable B, `+0x18` Inner IPlatformFile ptr, `+0x20..` per-instance
+  fields. Instance size 0x268; array stride 0x280.
+- **10 instances** in heap (contiguous array). UE 5.4 vanilla has single
+  inheritance + singleton — this build's MI + array pattern is a Loki-specific
+  extension. Any of the 10 works for a Mount call (Mount is non-virtual, all
+  instances share the global `FCoreDelegates::OnPakFileMounted2.Broadcast`).
+- Singleton-finder: scan committed `MEM_PRIVATE` regions for a qword equal to
+  `module_base + 0x79E0C78`. Validate hits via `[+0x08]` (small ref count) and
+  `[+0x10] == module_base + 0x79E0C80`. Take the first match.
+
+**Still to verify at shim-build time:**
+- Mount's full arg ABI (3 vs 4 args including `PakOrder uint32` and
+  `bLoadAsIostoreContainer bool` defaults). The 2-arg wrapper at +0x204FFD0
+  works for the simplest case; deeper disasm of impl at +0x2050020 will
+  confirm whether wrapper supplies a default PakOrder we need to override.
 
 **Worker thread plan:**
 1. Inject DLL early (CREATE_SUSPENDED + manual-map, proven mechanism).
