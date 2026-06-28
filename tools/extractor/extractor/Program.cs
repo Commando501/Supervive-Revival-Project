@@ -248,12 +248,213 @@ if (cmd == "assetregistry")
             return;
         }
 
+        case "apply-patch":
+        {
+            // Walker helper, declared inside this case so top-level statements aren't
+            // interrupted by a type declaration. An asset-data FName cell is uint32 index;
+            // if the high bit (0x80000000 = AssetRegistryNumberedNameBit) is set, a uint32
+            // number follows ⇒ cell width 4 or 8 bytes on the wire.
+            static void SkipFName(CUE4Parse.UE4.Readers.FArchive Ar)
+            {
+                uint raw = Ar.Read<uint>();
+                if ((raw & 0x80000000u) != 0) Ar.Read<uint>();
+            }
+            // Surgical 8-byte flip of one or more FAssetData entries' AssetClass
+            // FTopLevelAssetPath (two FName cells: PackageName + AssetName). File length is
+            // preserved when neither original NOR replacement uses the numbered-name bit —
+            // class names like "Blueprint" or "LokiDataAsset_MissionPool" never do, so the
+            // patch is exactly 8 bytes per matched entry, no offset fixups needed in the
+            // dependency-block section header.
+            //
+            //   usage: apply-patch --target <PkgNeedle>[:<AssetExact>] --to <Pkg>:<Asset>
+            //                      [--out <patched.bin>]
+            //   e.g.  apply-patch --target DA_MissionPoolDailyChallenge
+            //                     --to /Script/Loki:LokiDataAsset_MissionPool
+            //
+            // --target matches entries whose PackageName CONTAINS the pkg needle (case-
+            // insensitive). If :AssetExact is given, AssetName must match it exactly (case-
+            // insensitive) — useful for picking only the BlueprintGeneratedClass _C entry.
+            //
+            // Algorithm:
+            //   1. Re-parse the header/namemap/FStore via FAssetRegistryReader. After
+            //      construction the reader's archive Position sits at int32 numAssetData
+            //      (the very next read in CUE4Parse's FAssetRegistryState.Load).
+            //   2. Walk each FAssetData manually, mirroring CUE4Parse's reader byte-for-byte
+            //      so we can record the byte offset of the AssetClass field for each entry.
+            //      Cross-check by reading the entry's PackageName FName indices and confirming
+            //      they match the state-parsed entries[i].PackageName.Text via NameMap.
+            //   3. For matched entries with non-numbered AssetClass FNames, overwrite 8 bytes
+            //      at the recorded offset in a COPY of the file. Original untouched.
+            string? targetArg = null, toArg = null, outPath = null;
+            for (int i = 0; i < subArgs.Length; i++)
+            {
+                if (subArgs[i] == "--target" && i + 1 < subArgs.Length) targetArg = subArgs[++i];
+                else if (subArgs[i] == "--to" && i + 1 < subArgs.Length) toArg = subArgs[++i];
+                else if (subArgs[i] == "--out" && i + 1 < subArgs.Length) outPath = subArgs[++i];
+            }
+            if (targetArg == null || toArg == null)
+            {
+                Console.WriteLine("usage: assetregistry apply-patch --target <PkgNeedle>[:<AssetExact>] --to <Pkg>:<Asset> [--out <patched.bin>]");
+                Console.WriteLine("       e.g. --target DA_MissionPoolDailyChallenge --to /Script/Loki:LokiDataAsset_MissionPool");
+                return;
+            }
+
+            var toParts = toArg.Split(':', 2);
+            if (toParts.Length != 2) { Console.WriteLine("--to must be PackageName:AssetName"); return; }
+            var (toPkg, toAsset) = (toParts[0], toParts[1]);
+
+            string targetPkg; string targetAssetExact = "";
+            var tp = targetArg.Split(':', 2);
+            targetPkg = tp[0]; if (tp.Length == 2) targetAssetExact = tp[1];
+
+            // Re-load via the same archive instance: FAssetRegistryReader's Position is
+            // shared with the underlying FStreamArchive (the reader only overrides FName
+            // reads; raw byte reads still go through the stream). After the reader is
+            // constructed the archive Position is at numAssetData.
+            using var fs3 = File.OpenRead(arPath);
+            var Ar3 = new FStreamArchive(arPath, fs3, new VersionContainer(EGame.GAME_UE5_4));
+            var hdr = new FAssetRegistryHeader(Ar3);
+            var rdr = new FAssetRegistryReader(Ar3, hdr);
+
+            // Resolve the --to PackageName/AssetName to NameMap indices. Case-insensitive
+            // match — UE FName comparison is case-insensitive; for our patch we only need
+            // some matching index, the runtime treats them as equal.
+            var nameIdx = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
+            for (uint i = 0; i < rdr.NameMap.Length; i++)
+            {
+                var n = rdr.NameMap[i].Name;
+                if (n != null && !nameIdx.ContainsKey(n)) nameIdx[n] = i;
+            }
+            if (!nameIdx.TryGetValue(toPkg, out uint toPkgIdx))
+            {
+                Console.WriteLine($"ERROR: --to package '{toPkg}' not in NameMap (no FName to write).");
+                return;
+            }
+            if (!nameIdx.TryGetValue(toAsset, out uint toAssetIdx))
+            {
+                Console.WriteLine($"ERROR: --to asset '{toAsset}' not in NameMap (no FName to write).");
+                return;
+            }
+            Console.WriteLine($"--to AssetClass FName cells: pkg='{toPkg}'(idx {toPkgIdx})  asset='{toAsset}'(idx {toAssetIdx})");
+
+            // Read numAssetData (sanity check vs. state-parsed length).
+            var count = Ar3.Read<int>();
+            if (count != entries.Length)
+            {
+                Console.WriteLine($"ERROR: walker found numAssetData={count} but state has {entries.Length} — abort.");
+                return;
+            }
+
+            // Walk every entry, recording its AssetClass offset. Cross-check the PackageName
+            // first FName index against the state-parsed entries[i] to catch any walker
+            // drift early — drift would silently mis-target later entries.
+            var hits = new List<(long offset, int idx, string pkgName, string assetName,
+                                 uint origPkgIdx, uint origAssetIdx)>();
+            int verifiedAlignment = 0;
+            for (int idx = 0; idx < count; idx++)
+            {
+                SkipFName(Ar3); // PackagePath
+                long acOffset = Ar3.Position;
+                // Inline AssetClass FTopLevelAssetPath read so we can record both indices.
+                uint acPkgRaw = Ar3.Read<uint>();
+                bool acPkgNumbered = (acPkgRaw & 0x80000000u) != 0;
+                uint acPkgIdx = acPkgNumbered ? (acPkgRaw & 0x7FFFFFFFu) : acPkgRaw;
+                if (acPkgNumbered) Ar3.Read<uint>();
+                uint acAssetRaw = Ar3.Read<uint>();
+                bool acAssetNumbered = (acAssetRaw & 0x80000000u) != 0;
+                uint acAssetIdx = acAssetNumbered ? (acAssetRaw & 0x7FFFFFFFu) : acAssetRaw;
+                if (acAssetNumbered) Ar3.Read<uint>();
+                // PackageName (first 4-8 bytes is its FName index — read raw so we can
+                // cross-check it against entries[idx].PackageName via NameMap).
+                uint pkgNameRaw = Ar3.Read<uint>();
+                bool pkgNameNumbered = (pkgNameRaw & 0x80000000u) != 0;
+                uint pkgNameIdx = pkgNameNumbered ? (pkgNameRaw & 0x7FFFFFFFu) : pkgNameRaw;
+                if (pkgNameNumbered) Ar3.Read<uint>();
+                SkipFName(Ar3); // AssetName
+                if (!hdr.bFilterEditorOnlyData) SkipFName(Ar3); // OptionalOuterPath
+                Ar3.Read<ulong>(); // packed Tags+Bundles header (Num + PairBegin + bHasNumberlessKeys)
+                int nBundles = Ar3.Read<int>();
+                for (int b = 0; b < nBundles; b++)
+                {
+                    SkipFName(Ar3); // BundleName
+                    int nAssets = Ar3.Read<int>();
+                    for (int a = 0; a < nAssets; a++)
+                    {
+                        SkipFName(Ar3); // FTopLevelAssetPath.PackageName
+                        SkipFName(Ar3); // FTopLevelAssetPath.AssetName
+                        int slen = Ar3.Read<int>();
+                        Ar3.Position += slen >= 0 ? slen : (-slen) * 2;
+                    }
+                }
+                int nChunks = Ar3.Read<int>();
+                Ar3.Position += (long) nChunks * 4;
+                Ar3.Read<uint>(); // PackageFlags
+
+                // Cross-check: the PackageName FName text via NameMap should match the
+                // state-parsed entries[idx].PackageName text. Any mismatch means walker
+                // drift — abort with a useful message.
+                if (pkgNameIdx < rdr.NameMap.Length)
+                {
+                    var walkedName = rdr.NameMap[pkgNameIdx].Name;
+                    // PackageName is stored as a single FName carrying the full path text
+                    // (e.g. "/Game/Loki/Core/Missions/Pools/DA_MissionPoolDailyChallenge").
+                    if (walkedName != null && walkedName.Equals(entries[idx].PackageName.Text, StringComparison.OrdinalIgnoreCase))
+                        verifiedAlignment++;
+                }
+
+                var e = entries[idx];
+                var pkgName = e.PackageName.Text;
+                var assetName = e.AssetName.Text;
+                bool pkgMatch = pkgName.Contains(targetPkg, StringComparison.OrdinalIgnoreCase);
+                bool assetMatch = targetAssetExact.Length == 0
+                    || assetName.Equals(targetAssetExact, StringComparison.OrdinalIgnoreCase);
+                if (pkgMatch && assetMatch)
+                {
+                    if (acPkgNumbered || acAssetNumbered)
+                    {
+                        Console.WriteLine($"  SKIP idx={idx} {pkgName}:{assetName} (AssetClass FName is numbered — can't fit 8-byte overwrite)");
+                        continue;
+                    }
+                    hits.Add((acOffset, idx, pkgName, assetName, acPkgIdx, acAssetIdx));
+                }
+            }
+            Console.WriteLine($"  walker alignment verified on {verifiedAlignment:N0} / {count:N0} entries (PackageName FName text matched)");
+            Console.WriteLine($"  matched {hits.Count} target entries:");
+            foreach (var h in hits)
+            {
+                var origPkgName = h.origPkgIdx < rdr.NameMap.Length ? rdr.NameMap[h.origPkgIdx].Name : "?";
+                var origAssetName = h.origAssetIdx < rdr.NameMap.Length ? rdr.NameMap[h.origAssetIdx].Name : "?";
+                Console.WriteLine($"    idx={h.idx,7}  offset=0x{h.offset:X10}  {h.pkgName} : {h.assetName}");
+                Console.WriteLine($"      origAssetClass: {origPkgName}.{origAssetName}");
+            }
+            if (hits.Count == 0) { Console.WriteLine("  no hits — nothing to patch."); return; }
+
+            outPath ??= Path.Combine(Path.GetDirectoryName(arPath)!,
+                                     Path.GetFileNameWithoutExtension(arPath) + ".patched.bin");
+            File.Copy(arPath, outPath, overwrite: true);
+            using (var rwfs = File.Open(outPath, FileMode.Open, FileAccess.ReadWrite))
+            {
+                var buf = new byte[8];
+                BitConverter.GetBytes(toPkgIdx).CopyTo(buf, 0);
+                BitConverter.GetBytes(toAssetIdx).CopyTo(buf, 4);
+                foreach (var h in hits)
+                {
+                    rwfs.Position = h.offset;
+                    rwfs.Write(buf, 0, 8);
+                }
+                rwfs.Flush();
+            }
+            Console.WriteLine($"  wrote patched bin -> {outPath} ({new FileInfo(outPath).Length:N0} bytes)");
+            return;
+        }
+
         default:
             Console.WriteLine($"unknown assetregistry subcommand: {sub}");
-            Console.WriteLine("known: inspect, stats, namemap, classes, candidates");
+            Console.WriteLine("known: inspect, stats, namemap, classes, candidates, apply-patch");
             return;
     }
 }
+
 
 // Oodle: the .ucas blocks are Oodle-compressed; CUE4Parse needs oo2core_9_win64.dll.
 // The game ships it statically linked, so fetch the redistributable once and init.
