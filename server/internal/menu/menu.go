@@ -22,7 +22,6 @@ package menu
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -89,29 +88,19 @@ func (s *Service) Register(mux *http.ServeMux) {
 // any "Invalid response"/"Deserialization failure" names the next fix; the HUNTERS
 // grid shows whether PrimaryAssetName alone resolves a card (likely needs AssetPath
 // next).
+// Reverted 2026-06-28 after probe #2 (populated HeroCosmeticsBundles with 25 entries
+// carrying PrimaryAssetType/PrimaryAssetName/AssetPath) produced ZERO observable
+// effect: grid still empty, "?" preview unchanged, no new ChangeBundleState log
+// activity for any of the registered bundle IDs. Combined with probe #3 (inventory
+// ownership entries — see handleInventory) and the prior session's RE, this confirms
+// `LokiAssetManager` registers manifest assets but the menu's grid/store enumeration
+// queries through `ScanPrimaryAssetTypesFromConfig` (deliberately bypassed in this
+// build), NOT through manifest registrations. Backend route closed; see
+// docs/hero-roster-attempts.md for the full attempt log.
 func handleContentManifest(w http.ResponseWriter, r *http.Request) {
 	heroes := map[string]any{}
 	for _, h := range heroCodenames {
 		heroes[h] = map[string]any{"PrimaryAssetName": h}
-	}
-	// Single-variable test (2026-06-28): populate HeroCosmeticsBundles with the 25
-	// default cosmetic bundles to see whether (a) the ALL HUNTERS grid populates
-	// (currently empty even with Heroes map filled — suggests grid keys off
-	// cosmetics-bundle assets, not Hero PrimaryAssetIds), and (b) SetHero in
-	// PartySlot resolves to a visible preview instead of the "?" UnknownHero
-	// placeholder. AssetPath points at the cooked default-skin blueprint per the
-	// IoStore catalog (tools/extractor/out/catalog/bundles/BP_<Hero>_Default_
-	// CosmeticsBundle.json).
-	heroCosmeticsBundles := map[string]any{}
-	for _, pascal := range pascalHeroByLower {
-		name := pascal + "Default"
-		heroCosmeticsBundles[name] = map[string]any{
-			"PrimaryAssetType": "HeroCosmeticsBundle",
-			"PrimaryAssetName": name,
-			"AssetPath": fmt.Sprintf(
-				"/Game/Loki/Characters/Heroes/%s/Cosmetics/Default/BP_%s_Default_CosmeticsBundle",
-				pascal, pascal),
-		}
 	}
 	writeJSON(w, map[string]any{
 		"CurrentPatchVersion":  r.PathValue("version"),
@@ -120,7 +109,7 @@ func handleContentManifest(w http.ResponseWriter, r *http.Request) {
 		"Items":                map[string]any{},
 		"Emotes":               map[string]any{},
 		"PlayerTitles":         map[string]any{},
-		"HeroCosmeticsBundles": heroCosmeticsBundles,
+		"HeroCosmeticsBundles": map[string]any{},
 		"StoreOffers":          map[string]any{},
 		"SlotCosmetics":        map[string]any{},
 		"Minions":              map[string]any{},
@@ -155,46 +144,17 @@ var heroCodenames = []string{
 	"stalker", "storm", "succubus", "void", "wukong",
 }
 
-// pascalHeroByLower maps the lowercase codename to the PascalCase form used in
-// asset paths (/Game/Loki/Characters/Heroes/<Pascal>/...). Recovered from the
-// extractor catalog directory names — note "Earthtank" (lower 't'), "FireFox",
-// "ResHealer", "RocketJumper" etc. The PrimaryAssetName for each
-// HeroCosmeticsBundle is "<Pascal>Default".
-var pascalHeroByLower = map[string]string{
-	"alchemist":      "Alchemist",
-	"assault":        "Assault",
-	"backlinehealer": "BacklineHealer",
-	"beebo":          "Beebo",
-	"bountyhunter":   "BountyHunter",
-	"burstcaster":    "BurstCaster",
-	"earthtank":      "Earthtank",
-	"farshot":        "FarShot",
-	"firefox":        "FireFox",
-	"flex":           "Flex",
-	"freeze":         "Freeze",
-	"gunner":         "Gunner",
-	"hookguy":        "HookGuy",
-	"huntress":       "Huntress",
-	"reaper":         "Reaper",
-	"reshealer":      "ResHealer",
-	"rocketjumper":   "RocketJumper",
-	"ronin":          "Ronin",
-	"shieldbot":      "ShieldBot",
-	"sniper":         "Sniper",
-	"stalker":        "Stalker",
-	"storm":          "Storm",
-	"succubus":       "Succubus",
-	"void":           "Void",
-	"wukong":         "Wukong",
-}
-
-// handleInventory returns owned items. The inventory-probe (25 owned heroes keyed by
-// lowercase codename) was REVERTED to empty: it triggered `LogAssetManager: Invalid
-// Primary Asset Type` — proving the roster resolves through UE's AssetManager
-// PrimaryAssetId/bundle system, NOT plain SKUs. The real lever is the CONTENT-SERVICE
-// MANIFEST (the master catalog declaring which heroes/cosmetics/offers exist); inventory
-// only marks ownership of catalog entries. Repopulate this once the manifest + the
-// ContentServicePrimaryAsset entry shape are nailed (see handleContentManifest TODO).
+// handleInventory returns owned items. Earlier probe (25 owned heroes keyed by
+// lowercase codename) triggered `LogAssetManager: Invalid Primary Asset Type`
+// because the field is interpreted as a typed PrimaryAssetId, not a plain SKU.
+//
+// 2026-06-28 probe #3 (the "ownership gates grid" hypothesis): returned 50 entries
+// of shape `{"AssetId": "Hero:<lower>"}` + `{"AssetId": "HeroCosmeticsBundle:<Pascal>Default"}`.
+// Result: parser accepted the payload (no deserialization error, `LogPlatformInventory:
+// Refreshed player inventory` succeeded), but UI was identical — grid empty, "?" preview,
+// zero new ChangeBundleState activity. Combined with probe #2 (manifest cosmetics-bundle
+// population), confirms the menu doesn't enumerate from either source. Reverted. See
+// docs/hero-roster-attempts.md.
 func handleInventory(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"AssetEntries": []any{}})
 }
