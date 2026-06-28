@@ -339,11 +339,22 @@ moves):**
   `module_base + 0x79E0C78`. Validate hits via `[+0x08]` (small ref count) and
   `[+0x10] == module_base + 0x79E0C80`. Take the first match.
 
-**Still to verify at shim-build time:**
-- Mount's full arg ABI (3 vs 4 args including `PakOrder uint32` and
-  `bLoadAsIostoreContainer bool` defaults). The 2-arg wrapper at +0x204FFD0
-  works for the simplest case; deeper disasm of impl at +0x2050020 will
-  confirm whether wrapper supplies a default PakOrder we need to override.
+**Mount ABI nailed down 2026-06-28 (deeper disasm of wrapper + impl):**
+- Wrapper at +0x204FFD0 = `bool Mount(FPakPlatformFile* this, const wchar_t*
+  mountDirectory)`. NOT a single-pak mount — it's a directory-scan-and-mount-all.
+  The wrapper constructs an FString from the wide literal at module-RVA
+  +0x76DC9C0, which decodes to **`L"*.pak"`** (wildcard mask). Passes
+  `(this, dir, &maskFString)` to impl.
+- Impl at +0x2050020 = `bool Mount(this, mountDir, FString* fileMask)`. Allocates
+  a `TArray<FString>` at [rsp+0x38]/[rsp+0x40], calls FindFiles-equivalent at
+  +0x2044430, then per-match emits "Mounting pak file %s." (the LEA at +0x20502D1
+  we anchored) and runs per-pak mount work inline.
+
+**Shim implication:** call wrapper with a fresh subdirectory containing only
+our mod pak (e.g. `Loki/Content/Mods/`). The default "*.pak" mask finds it
+without re-triggering mount on the 16 cooked paks. Alternative: chase the
+per-pak inner mount called from impl's loop body if directory isolation
+turns out unwieldy.
 
 **Worker thread plan:**
 1. Inject DLL early (CREATE_SUSPENDED + manual-map, proven mechanism).
