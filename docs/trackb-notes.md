@@ -254,6 +254,39 @@ Read-only `assetregistry` subcommands (stats / classes / inspect / candidates /
 namemap) implemented this session in `tools/extractor/extractor/Program.cs`;
 diagnostic step runs next.
 
+### Update 2026-06-28 (later) — AR repack route blocked at the packer
+
+End-to-end exec proved the AR repack route's design is sound but the deployment
+is blocked at a lower layer than expected. Full chain runs cleanly:
+
+- `assetregistry apply-patch` flips entries; CUE4Parse re-parses; file length
+  preserved (verified for 4 pool + 12 mission entries).
+- `mkpak` writes a UE pak v11 with our patched AR.bin; `peekpak` round-trips
+  to identical SHA1.
+- Loose-file drop is INERT — UE always loads the pak-embedded AR even with
+  a truncated/garbage loose `Loki\AssetRegistry.bin` (truncate kill-test
+  confirmed: 32 bytes of `0xDEADBEEF` and the game still boots normally).
+- Mod-pak deployment requires a valid `.sig` file (engine rejects unsigned
+  paks with "Couldn't find pak signature file → Failed to mount"); we don't
+  have the developer's RSA key.
+- Sig-bypass attempt via injected DLL: full mechanism works (manual-map,
+  WPM, marker confirms `mov al,1; ret` lands at `FPakSignatureFile::Load`
+  entry, mod-RVA `0x2047EE0`) — BUT the patch always lands ~50ms AFTER the
+  function has executed. The shipping exe's packer commits .text pages
+  on-demand via a page-fault handler; the function bytes only appear when
+  the engine first calls the function, and the commit → execute sequence is
+  atomic from our perspective. UE4SS is installed but never loads either
+  (exe's import directory is stripped — no proxy DLL path).
+
+Tooling built this session and committed for any future fix:
+`tools/usmapdump` (strings / wstrings / xrefstr / findptr / callxref / peek /
+disasm), `tools/inject` (`mmap`, `launch`, `watch-now`, `probe`, `diag`),
+`tools/sigbypass-mod` (UE4SS-style C++ patch DLL + race scripts).
+
+Three remaining options, all multi-day RE work — see "Three remaining options"
+section in `docs/trackb-assetregistry-route.md`. Until one is pursued, the
+unified content unlock for missions / hunters / store / cosmetics remains gated.
+
 ## Deferred (need Track A catalog SKUs)
 
 Cosmetic/skin EQUIP (loadout, `HeroCosmeticsBundlePreference`,
