@@ -16,3 +16,9 @@
 Thumbs.db
 .idea/
 .vscode/
+
+# Native shim build artifacts + runtime markers
+/tools/inject/shim/*.dll
+/tools/inject/shim/*.exp
+/tools/inject/shim/*.lib
+/tools/inject/shim/scan_shim_result.txt

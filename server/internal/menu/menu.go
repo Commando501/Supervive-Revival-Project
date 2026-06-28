@@ -131,6 +131,13 @@ func handleContentManifest(w http.ResponseWriter, r *http.Request) {
 			"IsDefault":        false,
 		}
 	}
+	// MISSION PROBE #2 RESULT (2026-06-28): injecting a MissionPool entry into the proven-
+	// consumed Heroes map (per-entry PrimaryAssetType "MissionPool") STILL failed —
+	// "Invalid Primary Asset Id MissionPool:DA_MissionPoolDailyChallenge: failed to find
+	// NameData". So the manifest consumer keys the registered type off the MAP NAME, not the
+	// entry's PrimaryAssetType field. With no mission map in ContentServiceContentManifest, the
+	// manifest CANNOT register missions/pools — confirmed not backend-fixable. The fix is
+	// native (trigger LokiAssetManager's primary-asset scan). Probe reverted.
 	// HeroCosmeticsBundles: the hero's 3D model on the pedestal/grid is its DEFAULT
 	// cosmetics bundle, which the hero asset references as HeroCosmeticsBundle:<Hero>Default
 	// (e.g. "AssaultDefault"). With this map empty the client logs "SetHero with CosmeticsAssetId
@@ -150,6 +157,18 @@ func handleContentManifest(w http.ResponseWriter, r *http.Request) {
 			"IsDefault":        true,
 		}
 	}
+
+	// MISSIONS: NOT backend-fixable via this manifest. MISSION PROBE #1 (2026-06-28) injected
+	// the 16 mission pools (each self-describing PrimaryAssetType "MissionPool") into the Powers
+	// map + pointed CurrentSeason at MissionPool:DA_MissionPoolDailyChallenge. Relaunch result:
+	// "Invalid Primary Asset Id MissionPool:DA_MissionPoolDailyChallenge: ... failed to find
+	// NameData" — so the manifest keys the registered type off the MAP NAME, not each entry's
+	// PrimaryAssetType field, and there is no Missions/MissionPool map in
+	// ContentServiceContentManifest. Missions are local UE primary assets the modal must
+	// ENUMERATE (LokiDataAsset_MissionPool/_Mission under /Game/Loki/Core/Missions); that
+	// enumeration is dead in this build (stripped AssetRegistry.bin + no runtime scan) — the
+	// SAME client-side blocker as the hunters grid. Fix is client-side (repack AssetRegistry.bin
+	// with primary-asset data, or AngelScript), not this server. Probe reverted below.
 
 	// Top-level ContentServiceContentManifest fields (usmap schema): ID, ETag, Version
 	// (Int64), CurrentSeason (FPrimaryAssetId), CurrentPatchVersion, PatchVersions, + the

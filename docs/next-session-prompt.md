@@ -1,145 +1,87 @@
-# Next session kickoff — Milestone 3: make the menu *functional* (Track A via real .usmap)
+# Next session kickoff — AssetRegistry.bin repack route
 
-> Paste the fenced block below into a new session to continue. Everything above the
-> line is notes; the prompt itself is the fenced block.
+Use the fenced block below as the opening message of a new Claude Code session.
 
 ---
 
 ```
-We're continuing the SUPERVIVE Revival Project (G:\git\Supervive Revival Project) —
-reviving the shut-down game with a self-hosted zero-dep Go backend. Build the server with
-  & "$env:ProgramFiles\Go\bin\go.exe" build -o ags.exe ./cmd/ags   (run from server\)
-Milestones 1 (reach the menu) and 2 (populate the menu) are DONE: the client loads into a
-fully rendered, broadly-alive main menu. Milestone 3 = make menu SYSTEMS actually WORK,
-before gameplay. Two tracks: A = IoStore extraction (the content catalog), B = interactive
-backend flows. We are leading with Track A.
+Read C:\Users\eastr\.claude\projects\G--git-Supervive-Revival-Project\memory\supervive-milestone3-trackb-status.md and docs/next-session-prompt.md first. We're picking up the AssetRegistry.bin repack route to unblock missions/hunters/store/cosmetics in SUPERVIVE. The native shim route was exhausted last session and is not to be re-attempted.
 
-READ FIRST (hold everything learned; the supervive-milestone3-status memory also auto-loads):
-- docs/findings.md — full RE journey incl. the "Track A" section (paks unencrypted; packed
-  exe; usmap story; binary-RE technique).
-- docs/endpoints.md — every endpoint's status + the "Invalid response received" validity model.
-- server/internal/menu/menu.go — current handlers incl. handleContentManifest (probe #1) and
-  handleHeroes (25 lowercase codenames).
-- tools/extractor/README.md — the CUE4Parse extractor (how to run, the usmap requirement).
+Brief summary of where we are:
+- LokiAssetManager (custom UAssetManager subclass) registers primary assets ONLY from the content-service manifest's 11 named maps and never runs the standard config-driven directory scan. So baked primary assets (Mission, MissionPool, Hero, StoreOffer, Item, ...) never register — same single root cause behind the empty Missions modal, Hunters grid, Store, and Cosmetics.
+- The cooked Loki/AssetRegistry.bin (36 MB, extracted to tools/extractor/out/AssetRegistry.bin) DOES contain every asset with its full class info and path. Grep confirms DA_MissionPoolDailyChallenge, LokiDataAsset_MissionPool, LokiDataAsset_Mission, BP_HeroAsset_Assault, etc.
+- The native scan-call shim was built end-to-end in tools/inject/shim/scan_shim.cpp and got as far as running on the real game thread via QueueUserAPC — but the scan function crashes with __report_gsfailure (stack-cookie) even with empty config arrays. Further diagnosis requires an attached kernel debugger. Do NOT pursue.
 
-THE BREAKTHROUGH THAT DEFINES THIS SESSION: MANUAL MAPPING WORKS. The shipping exe is a
-PACKED binary (PE imports only preloader.dll; preloader+runtime.dll unpack the real UE5.4
-engine at runtime), so UE4SS's dwmapi proxy never loads and a simple LoadLibrary injector
-(tools/inject/) is blocked by the process's DLL-signature mitigation. BUT the user has
-CONFIRMED a manual mapper bypasses this. There is NO EasyAntiCheat (verified). So we can
-finally get a real .usmap, which unblocks Track A cleanly.
+This session's goal: modify AssetRegistry.bin so the missing primary-asset registrations happen during the game's NORMAL startup — no injection, just a data-file change. Smallest viable proof: get one daily mission to appear in the Missions modal after a relaunch.
 
-IMMEDIATE PLAN (Track A, the high-leverage path):
-1. usmap: user injects UE4SS (the experimental build, already deployed at
-   "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\", with the
-   ue4ss\ subfolder; ConsoleEnabled=1) via the working MANUAL MAPPER, reaches the menu, and
-   presses Ctrl+NumPad6 (UE4SS "DumpUSMAP" keybind, confirmed in
-   ue4ss\Mods\Keybinds\Scripts\main.lua). UE4SS writes Mappings.usmap to the Win64 folder.
-2. Copy Mappings.usmap into tools\extractor\ (the extractor auto-loads any *.usmap; DELETE the
-   placeholder tools\extractor\empty.usmap first so the real one is used).
-3. With the real usmap, run the extractor in `dump` mode to read EXACT structured JSON for:
-   - the ContentManifest model + its ContentServicePrimaryAsset entry shape (so we stop
-     guessing the manifest field/types),
-   - the cosmetic definition assets (BP_<Hero>_DefaultCosmeticsBundle etc.) to get each hero's
-     real PrimaryAssetId (Type:Name),
-   - DA_ArmoryTables_S1 / DT_* / store-offer BPs for prices and structured relationships.
-4. Build GET /content-service/manifest/{version} (handleContentManifest) correctly — it is THE
-   master catalog and the lever for HUNTERS / STORE / cosmetics (see "architecture" below).
-   Then wire /storefront/heroes, /inventory ownership, and the store offers using the real SKUs
-   + PrimaryAssetIds. Then move to Track B (equip cosmetic, etc.).
+Start by:
+1. Reading the trackb-status memory file for full context.
+2. Checking what AssetRegistry parsing already exists in tools/extractor/extractor/ (it's CUE4Parse-based; that library can already read AssetRegistry).
+3. Inspecting the file format — version, header, where FAssetData entries live, and what tag/field marks an entry as a primary asset of a given type.
 
-PROVEN METHOD (unchanged):
-- Go server listens HTTP :8080 (AccelByte + PostAuth via -ini: URL overrides) + HTTPS :443
-  (Theorycraft hosts via hosts-file redirect). Logs every request to docs\capture.log (WS
-  frames as WS <- / WS ->).
-- I (agent) CANNOT launch the game. The user runs .\configs\launch-redirect.ps1 (elevated;
-  rebuilds from source; GameRoot defaults to the backup) and reports back / sends screenshots.
-- Recon: %LOCALAPPDATA%\SUPERVIVE\Saved\Logs\Loki.log (UTC, OVERWRITTEN per launch — cross-check
-  docs\capture.log, the HTTP ground truth). LogPlatformStorefront / LogPlatformInventory /
-  LogAssetManager / LogStringTable are the readback channels.
-- Binary RE: static string scans of the shipping exe WORK (the packer only stripped imports;
-  the UE FName reflection pool is intact, roughly offsets 124M–146M). Use Python to scan ASCII
-  + UTF-16LE and cluster names by offset (a struct's UNIQUE fields cluster near its type name;
-  SHARED/pooled fields live elsewhere — use the decode-probe loop when clustering isn't enough).
+The full plan, file paths to read, constraints, and how-to-test instructions are in docs/next-session-prompt.md — read that document fully before starting work.
 
-TOOLS BUILT THIS PROJECT:
-- tools/extractor/ — headless CUE4Parse (.NET 9) reader of the UE5.4 paks at
-  "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Content\Paks". Paks are NOT
-  encrypted (no AES key) and keep their directory index. Run from tools\extractor\extractor:
-    & "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release                      (enumerate -> out\)
-    ... run -c Release -- names <pkgpath...>            (dump a package NameMap)
-    ... run -c Release -- namesall <substr> <outfile>   (union NameMaps of all matching .uasset)
-    ... run -c Release -- dump  <pkgpath...>            (FULL exports as JSON — needs real usmap)
-  Oodle auto-fetched (OodleHelper.DownloadOodleDllFromOodleUEAsync; the plain DownloadOodleDll
-  URL is dead). With empty.usmap, only NameMap reads work; with a REAL usmap, `dump` works.
-- tools/inject/ — a verifying CreateRemoteThread+LoadLibraryW injector (kept for reference;
-  insufficient here — use the manual mapper instead).
-
-WHAT WE ALREADY EXTRACTED / KNOW (so you don't re-derive):
-- 107,123 files mounted keyless. Content is all baked into the shipped paks (NOT
-  content-service-delivered). The "missing" string tables exist (ST_Cosmetics_Categories/_Names,
-  ST_Storefront, ST_MainMenu, ST_Currencies, ST_Items, …) — the client resolves display strings
-  from its OWN packed tables, so the backend only needs to send the right SKU KEYS.
-- 25 hero codenames: Alchemist Assault BacklineHealer Beebo BountyHunter BurstCaster Earthtank
-  FarShot FireFox Flex Freeze Gunner HookGuy Huntress Reaper ResHealer RocketJumper Ronin
-  ShieldBot Sniper Stalker Storm Succubus Void Wukong. /storefront/heroes accepted all 25 as
-  LOWERCASE codenames ("Unlockable heroes fetched: 25").
-- Full storefront catalog SKUs harvested offline -> tools/extractor/out/storeoffers.names.txt:
-  currency vp10..vp480 / tp475..tp11000 (+*token); cosmetics AVATAR_* GLIDER_* WISP_* SPRAY_*,
-  skin codes (WukongCYBER, HuntressGODQU…), PlayerTitle, LobbyPlatform, Emote; bundle IDs
-  (CyberpunkWukongPack, starter2024…). Store offers live at Loki/Content/Loki/Core/StoreOffer/
-  BP_StoreOffer_*. Each hero's default skin asset = BP_<Hero>_DefaultCosmeticsBundle.
-
-THE ARCHITECTURE (recovered via binary RE — this is the key mental model):
-- GET /content-service/manifest/{version}  = MASTER CATALOG (what EXISTS). We stubbed {} and it
-  retried 264x/run. Model = ContentManifest: TMap<FString SKU, ContentServicePrimaryAsset> for
-  Heroes, Items, Emotes, PlayerTitles, HeroCosmeticsBundles, StoreOffers, SlotCosmetics, Minions,
-  GameAugments, Equipment, Powers; plus scalar CurrentPatchVersion + PatchVersions. Entry =
-  ContentServicePrimaryAsset (fields incl. PrimaryAssetName / AssetPath / DisplayName — pooled,
-  exact types unconfirmed → the usmap will confirm). Event OnContentManifestUpdated.
-  -> The "ALL HUNTERS" grid, STORE, and cosmetics ALL populate from this manifest.
-- GET /storefront/heroes  = the UNLOCKABLE (purchasable) subset.
-- GET /inventory/players/{id}  = the OWNED subset (model LokiPlatformInventory { AssetEntries:
-  [ LokiAssetEntry ] }). Heroes/cosmetics resolve via UE AssetManager PrimaryAssetId (Type:Name),
-  NOT plain SKUs — an inventory probe of 25 lowercase codenames produced
-  "LogAssetManager: Invalid Primary Asset Type" and rendered nothing (since reverted to empty).
-  Registered cosmetic primary-asset types include HeroCosmetic / SlotCosmetic / LokiHero /
-  LokiCosmetic.
-
-CURRENT menu.go STATE:
-- handleHeroes -> 25 lowercase codenames (harmless; correct unlockable subset).
-- handleContentManifest -> PROBE #1: all 11 maps present, Heroes populated with {PrimaryAssetName}
-  only, scalars set. NOT yet relaunch-tested. With the real usmap, REPLACE this guess with the
-  exact ContentServicePrimaryAsset shape + real PrimaryAssetIds/AssetPaths.
-- handleInventory -> empty (the probe was reverted).
-
-TRACK B request shapes already spotted in the exe (for later): SetClientProfileRequest,
-SetLuxeSkinChromaPreferenceRequest, LokiPlatformCurrencyExchangeRequest,
-SetLobbyPlatformPreferenceRequest, LobbyPlatformAssetID.
-
-CRITICAL GOTCHAS (don't re-learn):
-- List/object endpoints want the required field PRESENT, else "Invalid response received".
-- UE's JsonObjectStringToUStruct IGNORES JSON keys matching no UPROPERTY and ONLY rejects the
-  whole doc when a MATCHED key has the wrong TYPE — so probe liberally with safe string/int/array
-  values; omit fields whose type you're unsure of (esp. FText/FSoftObjectPath/bool).
-- Service name in serviceHostnames has NO hyphen (contentservice); the URL path DOES
-  (/content-service). Same for coregame -> /core-game.
-- The server runs elevated; my non-elevated shell can't kill it — the launch script restarts it.
-- tools/extractor auto-loads any *.usmap in tools\extractor\ (and the build dir). DELETE
-  empty.usmap once the real Mappings.usmap is in place.
-
-START BY: confirming the user has Mappings.usmap from the manual-mapped UE4SS dump (Ctrl+NumPad6).
-Once it's in tools\extractor\, run `dump` on the ContentManifest-bearing assets + a couple cosmetic
-bundles to read exact types, then build /content-service/manifest correctly and iterate via
-relaunch. If the usmap isn't ready yet, you can still relaunch-test handleContentManifest probe #1
-(watch capture.log for the 264x retry collapsing and Loki.log for OnContentManifestUpdated).
+Game install is at G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\. Back up Loki\AssetRegistry.bin before any write to it. The launch script configs/launch-redirect.ps1 requires admin (the shell here is already elevated; no UAC needed). Memory file is the canonical state record — update it as findings land.
 ```
 
 ---
 
-## Why this framing
-- The packed exe killed the proxy + simple-injection usmap routes; the user's confirmed
-  manual mapper reopens the clean usmap path, which is far faster than blind-probing the
-  nested ContentManifest TMaps.
-- Everything needed to act fast is captured: the architecture, the extractor + how to run it,
-  the harvested SKUs, the recovered models, and the exact current menu.go state.
+## Detailed reference for the next session (Claude: read this in full before starting)
+
+### Why this approach
+
+The full root-cause analysis from the prior session: SUPERVIVE's `Loki/AssetRegistry.bin` already contains every asset with its full class and path. UE5's standard `UAssetManager::ScanPathsForPrimaryAssets` matches assets to primary-asset types by directory + base class (NOT by a baked tag). So the data needed to register every primary asset is PRESENT in the registry. The blocker is that the game's custom `LokiAssetManager` registers primary assets ONLY from the content-service manifest's 11 named maps and NEVER runs the standard config-driven directory scan. The native shim approach to trigger that scan at runtime got as far as running on the real game thread via APC but the scan function itself crashes with a stack-cookie failure pattern — uncatchable without a kernel debugger.
+
+The repack route sidesteps the runtime problem entirely. If we can encode the missing primary-asset registrations directly into `AssetRegistry.bin`, the game picks them up during its NORMAL startup — same code path that already works for the 11 manifest-driven types. No injection. No shim. Just a data file change.
+
+### Confirmed facts (DO NOT re-verify; treat as ground truth)
+
+- `AssetManagerClassName=/Script/Loki.LokiAssetManager` in `Loki/Config/DefaultEngine.ini`.
+- `[/Script/Engine.AssetManagerSettings]` in `Loki/Config/DefaultGame.ini` declares the right `PrimaryAssetTypesToScan` entries (Hero/Mission/MissionPool/Item/Emote/StoreOffer/etc.) with `bShouldManagerDetermineTypeAndName=True`. So in stock UE this would Just Work; the override skips it.
+- `ContentServiceContentManifest` has exactly 11 maps: Heroes, Items, Emotes, PlayerTitles, HeroCosmeticsBundles, StoreOffers, SlotCosmetics, Minions, GameAugments, Equipment, Powers. No mission map. Schema dump at `tools/extractor/out/schema_ContentServiceContentManifest.txt`.
+- `ContentServicePrimaryAsset` schema: `{Str PrimaryAssetType, PrimaryAssetName, AssetPath, Status; Bool IsDefault}` (flat strings + one bool). Schema dump at `tools/extractor/out/schema_ContentServicePrimaryAsset.txt`.
+- The manifest CONSUMER keys the registered PrimaryAssetType off the MAP NAME, not each entry's PrimaryAssetType field. This was confirmed by two probes from inside `handleContentManifest` in `server/internal/menu/menu.go`.
+
+### What to do
+
+1. **Read what already exists.** Walk `tools/extractor/extractor/` — it's a .NET 9 CUE4Parse-based tool. CUE4Parse has full `FAssetRegistryState` parsing. Check whether it can already deserialize `AssetRegistry.bin`. If yes, our path is: load the file via CUE4Parse, inspect the structure, modify entries in-memory, re-serialize. If not, we'll need to either extend CUE4Parse usage or write our own parser in Go (parallel to `tools/usmapdump`).
+
+2. **Understand the format.** UE5 `FAssetRegistryState::Serialize` writes:
+   - `FAssetRegistryHeader` (magic + version + flags + sub-counts)
+   - Name table
+   - Tag table (FAssetData tag map keys)
+   - `TArray<FAssetData>` — each entry has `ObjectPath`, `PackagePath`, `AssetClass`, `Tags` map, `ChunkIDs`, `PackageFlags`. The `Tags` are FName→FString.
+   - `TArray<FDependsNode>` — dependency graph
+   - `TArray<FAssetPackageData>` — package-level metadata
+   The header magic is `0x35DB1E54` ("hash of asset registry" or similar) in some versions; the actual constant lives in UE source.
+
+3. **Confirm the registration mechanism.** Two competing hypotheses to test:
+   - **(A) Tag-based**: a specific tag on `FAssetData` (e.g. `"PrimaryAssetType"`) makes the asset register as a primary asset of that type, regardless of the directory walk. Test by reading existing manifest-registered assets in the registry — if they have such a tag, this is the path.
+   - **(B) Directory-walk-only**: primary-asset registration ONLY happens via the `PrimaryAssetTypesToScan` directory walk + per-asset `GetPrimaryAssetId()` call at runtime. In that case, the bin alone isn't enough; we'd need to verify whether the override actually skips the directory walk or whether it's running but finding nothing. We can test by checking whether ANY primary asset (e.g. a Hero) is registered via the directory walk in the current game session — if Hunters grid renders even without the manifest registering them, the walk IS running and we have a different problem.
+
+4. **Round-trip first.** Build a parser that reads `tools/extractor/out/AssetRegistry.bin`, fully deserializes, then re-serializes to a different file. Hash-compare. This proves we understand the format completely before we modify anything.
+
+5. **Smallest viable mutation.** Add the minimum to make ONE asset (e.g. `DA_MissionPoolDailyChallenge`) register as a `MissionPool` primary asset. Write to a copy. Replace the install's `Loki/AssetRegistry.bin` (BACK UP FIRST — there's only one copy at `G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\AssetRegistry.bin`). Launch via `configs/launch-redirect.ps1`. Open the Missions modal. Read `%LOCALAPPDATA%\SUPERVIVE\Saved\Logs\Loki.log` for `LogAssetManager` lines. Success = no "Invalid Primary Asset Id MissionPool:DA_MissionPoolDailyChallenge" error AND the modal shows the daily mission.
+
+### Files / locations you'll need
+
+- `tools/extractor/out/AssetRegistry.bin` — safe working copy
+- `G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\AssetRegistry.bin` — game install (BACK UP BEFORE TOUCHING)
+- `tools/extractor/extractor/` — CUE4Parse-based extractor
+- `tools/extractor/out/DefaultGame.ini` — full `PrimaryAssetTypesToScan` registry
+- `tools/extractor/out/catalog/da/DA_MissionPool*.json` — all 16 mission pool assets dumped
+- `tools/extractor/out/catalog/da/DA_Mission_*.json` — ~330 mission assets dumped
+- `tools/extractor/mappings.usmap` — usmap if structured access needed
+- `tools/inject/shim/scan_shim.cpp` — abandoned native shim, keep, do not touch
+- Memory: `C:\Users\eastr\.claude\projects\G--git-Supervive-Revival-Project\memory\supervive-milestone3-trackb-status.md`
+
+### Constraints
+
+- Always back up `AssetRegistry.bin` before replacing the install copy. There's no second source.
+- `configs/launch-redirect.ps1` requires admin; the elevated PowerShell tool in this session can run it directly. The hosts file briefly locks (Defender scanning); just wait ~15s and retry.
+- After each game crash, ports 8080/443 sometimes stay bound; killing `ags.exe`/`go.exe` + a brief wait clears them.
+- Each test cycle = ~1 minute (launch + reach menu + open modal + close).
+
+### If you hit a wall
+
+Save findings to the trackb-status memory file before pivoting. The most likely thing wrong with this plan is hypothesis (A) above — the manifest-driven path may use a totally different mechanism than `FAssetData` tagging, in which case the next-best path is to RE the manifest consumer's code path inside `LokiAssetManager` (RVA-relative, addresses already partially documented in memory) to learn what data structure it actually populates, then synthesize equivalent state directly via either a tiny VirtualProtect+memcpy from a SECOND shim attempt, OR by understanding what file the manifest gets persisted to and modifying THAT instead of `AssetRegistry.bin`.

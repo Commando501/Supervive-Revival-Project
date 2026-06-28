@@ -320,6 +320,38 @@ func main() {
 		cmdExtract(os.Args[2])
 		return
 	}
+	if len(os.Args) == 3 && os.Args[1] == "assetmgr" {
+		cmdAssetMgr(os.Args[2])
+		return
+	}
+	if len(os.Args) == 4 && os.Args[1] == "strings" {
+		cmdStrings(os.Args[2], os.Args[3])
+		return
+	}
+	if len(os.Args) == 4 && os.Args[1] == "xref" {
+		cmdXref(os.Args[2], os.Args[3])
+		return
+	}
+	if len(os.Args) == 4 && os.Args[1] == "disasm" {
+		cmdDisasm(os.Args[2], os.Args[3])
+		return
+	}
+	if len(os.Args) == 5 && os.Args[1] == "wstrings" {
+		cmdWStrings(os.Args[2], os.Args[3], os.Args[4])
+		return
+	}
+	if len(os.Args) == 4 && os.Args[1] == "peek" {
+		cmdPeek(os.Args[2], os.Args[3])
+		return
+	}
+	if len(os.Args) == 3 && os.Args[1] == "threads" {
+		cmdThreads(os.Args[2])
+		return
+	}
+	if len(os.Args) == 3 && os.Args[1] == "findgametid" {
+		cmdFindGameTid(os.Args[2])
+		return
+	}
 	fmt.Println("usage: usmapdump info    <process-name-or-pid>   (R2.1: PE/section recon)")
 	fmt.Println("       usmapdump names   <process-name-or-pid>   (R2.2: locate GNames, decode FNames)")
 	fmt.Println("       usmapdump objects <process-name-or-pid>   (R2.3: locate GUObjectArray, iterate)")
