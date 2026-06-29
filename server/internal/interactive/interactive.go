@@ -264,16 +264,63 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleCoreGamePlayer returns a "no active match" core-game state — the player is idle in
-// the menu, not in/rejoining a match. STAGED probe: omits a MatchInfo/Player object entirely
-// (an absent field defaults safely; a wrong-typed present one would reject), which is the
-// correct "nothing to rejoin" signal. When a match starts, this is where the match + server
-// connection info goes.
+// phantomMatchProbe toggles the dedicated-server-stub chapter's first probe:
+// when true, handleCoreGamePlayer claims an active match at 127.0.0.1:7777 in
+// the "Allocating" lifecycle state so the client thinks its server is being
+// prepared. The goal is to observe (in Loki.log) which fields the client reads
+// off matchInfo, when/whether it opens a NetConnection, and what control-channel
+// messages it sends. Flip back to false to restore the menu-idle behavior.
+const phantomMatchProbe = true
+
+// handleCoreGamePlayer is the "is there an active match to rejoin?" heartbeat
+// (polled hundreds of times per session). Two modes:
+//
+//   - phantomMatchProbe=false: the historical "no active match" reply. Omits
+//     MatchInfo/Player entirely so absent fields default safely.
+//   - phantomMatchProbe=true (dedicated-server-stub probe, 2026-06-29): claims
+//     an Allocating match at 127.0.0.1:7777. Nothing is listening on 7777 — the
+//     connection attempt itself is the signal we want to capture.
+//
+// Phantom-mode payload is a SUPERSET probe (PascalCase UPROPERTY convention; UE
+// matches case-insensitively and silently ignores unmatched keys, while a
+// matched-but-wrong-typed field rejects the whole doc with "Deserialization
+// failure"). Likely connection fields covered: Address, Port, ServerUrl,
+// SessionToken, MatchId, State, Region. Track A endpoints.md confirms the
+// `CoreGamePlayer` model contains MatchInfo, MatchParticipant, CanDisassociate,
+// ContentServicePrimaryAsset, ContentServiceContentManifest, with State enum
+// `ECoreGameMatchState` (PreHeroSelect/HeroSelect/Preallocate/Allocating/
+// AwaitingReady/InProgress/Deallocating/Closing/Unknown).
 func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
+	if !phantomMatchProbe {
+		writeJSON(w, map[string]any{
+			"hasActiveMatch": false,
+			"matchInfo":      nil,
+			"player":         nil,
+		})
+		return
+	}
+
+	// Phantom match: server being prepared at 127.0.0.1:7777, nothing listening.
+	// Fixed MatchId/SessionToken so log lines stay greppable across restarts.
+	matchInfo := map[string]any{
+		"MatchId":      "phantom-match-0001",
+		"SessionId":    "phantom-session-0001",
+		"SessionToken": "phantom-token-0001",
+		"State":        "Allocating",
+		"Region":       "na",
+		"Address":      "127.0.0.1",
+		"Port":         7777,
+		"ServerUrl":    "127.0.0.1:7777",
+		"Url":          "127.0.0.1:7777",
+	}
 	writeJSON(w, map[string]any{
-		"hasActiveMatch": false,
-		"matchInfo":      nil,
+		"hasActiveMatch": true,
+		"matchInfo":      matchInfo,
+		"MatchInfo":      matchInfo, // PascalCase + camelCase, in case the wrapper itself is case-strict
 		"player":         nil,
+		// Top-level State mirrors matchInfo.State in case the lifecycle state is
+		// read from the wrapper rather than the nested object.
+		"State": "Allocating",
 	})
 }
 
