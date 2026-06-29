@@ -851,7 +851,43 @@ The DIAGNOSTIC for Route 2 succeeded: we now know
 - The vtable virtual that processes scan entries (slot 131) is identified
 - It internally calls slot 132 with extracted flags
 
-The ENGINEERING TASK to actually call this from a shim requires:
+### Final negative result on AddDynamicAsset route (2026-06-29)
+
+Built `tools/sigbypass-mod/regen-registrations.ps1` — a pipeline that runs
+`usmapdump nameid` against the live game to resolve all 48 needed FName
+indices (16 PrimaryAssetNames + 16 PackageNames + 16 _C class names) at
+their CURRENT-RUN values, patches `registration_shim.cpp`'s `kRegistrations`
+table in place, and rebuilds the DLL.
+
+Re-injected. All 16 calls returned cleanly with the up-to-date FName
+indices. External read of MissionPool's AssetMap data ptr (still at
+0x16AFC503620) shows our new FName 0x004AF6C3 (= current
+`DA_MissionPoolArmoryOnboarding`) present in the bytes — registration
+write-path confirmed working with correct FName IDs.
+
+**Modal STILL renders empty.** Zero new Loki.log AssetManager warnings, zero
+ChangeBundleState activity for our IDs, no category buttons created in the
+modal — identical to all prior runs with stale FNames.
+
+**Definitive conclusion: AddDynamicAsset is NOT the mechanism that drives
+the Missions modal**, regardless of whether the registrations have correct
+or stale FName IDs. The modal queries a path that bypasses
+`AssetTypeMap[MissionPool].AssetMap` entirely.
+
+This rules out Route 1 (AddDynamicAsset-based shim) as a viable fix path.
+The remaining options narrow:
+
+- Route 2 proper (call ScanPathsForPrimaryAssets-equivalent vtable slot 131
+  with a synthesized entry struct) — still 2-3 sessions of careful work,
+  requires reverse-engineering the entry layout + flag bits.
+- Route 3 (in-memory FAssetRegistry injection) — bypass AssetManager
+  entirely, inject FAssetData entries directly into the AR singleton. AR
+  anchors known from prior recon (+0x79D5DF0 / +0x79D5B40).
+- Route 4 (NEW): hook into the modal's actual data path. Find what
+  WBP_UI_MissionModalCategory's `BindToMissions` function reads from, then
+  inject at that layer. Requires Blueprint VM decompilation.
+
+### The ENGINEERING TASK to actually call this from a shim requires:
 - Constructing a 28-byte entry struct matching FPrimaryAssetTypeInfo's
   on-disk layout (FName Type + 8 bytes class info + Directories TArray
   header + flags) — currently approximate, needs validation
