@@ -1549,3 +1549,90 @@ property values; its UClass at 0x16B98C2E930 has property metadata for all
 member fields. Walking that gives us the full per-category data shape, which
 combined with the BP bytecode tells us authoritatively where the modal
 sources its per-category data.
+
+### Plan C DONE — MissionPoolIDs owner = LokiPlayerState_Missions (no live instance at menu)
+
+`usmapdump nameid` for `Default__LokiPlayerState*` returned **5 distinct
+sub-CDOs**:
+
+| CDO Name | FName id |
+|----------|----------|
+| `Default__LokiPlayerState` | 0x006B2304 |
+| `Default__LokiPlayerStateArmoryRewardComponent` | 0x006B2325 |
+| `Default__LokiPlayerStatePawnComponent` | 0x006B233D |
+| `Default__LokiPlayerState_HeroAffiliated` | 0x006B2351 |
+| **`Default__LokiPlayerState_Missions`** | **0x006B2366** |
+
+The last one — `LokiPlayerState_Missions` — is the **dedicated missions
+sub-class** on the player state. Almost certainly the owning class for the
+MissionPoolIDs FProperty (matches the "missions, on player state" picture
+from prior recon, but more specific).
+
+CDO at `0x16AC8BD2250` (ObjectFlags=0x31, RF_Public|RF_ClassDefaultObject).
+Its UClass at `0x016ACDFB7400`. Vtable `0x7FF668109150`.
+
+**findptr on that vtable returns ONLY ONE HIT — just the CDO itself. No
+live instance.** This matches the prior session's "ALokiPlayerState only
+spawns in matches, not at menu" finding, extended to its sub-classes.
+
+So MissionPoolIDs (TArray<FPrimaryAssetId>) on LokiPlayerState_Missions is
+ALWAYS empty at the menu — because there is no instance to populate.
+
+### Combined picture from Plans A+B+C
+
+```
+WBP_UI_MissionModal_C::Construct():
+  -> creates 5 HARDCODED category widgets (Dailies/Weekly/Seasonal/Onboarding/PCBang)
+
+Each WBP_UI_MissionModalCategory_C widget:
+  -> calls BindToMissions UFunction (BP, 1136 bytes bytecode @ 0x016B98DF9C80)
+  -> BindToMissions internally accesses some data source(s)
+       - GetMissionsModel() returns mm1 (UMissionsModel @ 0x16B77E50100, empty)
+       - GetProgressionManager() returns live UProgressionManager @ 0x16AC4957A20
+       - Possibly tries to read MissionPoolIDs from LokiPlayerState_Missions
+         (no live instance at menu → naturally empty)
+  -> Per category, also calls Make Date Time with zero inputs → 1 of the
+     6 "DateTime in bad format" warnings per modal open
+
+Where the data SHOULD come from (best current guess):
+  -> UMissionsModel has 8 fields. 3 are empty TMaps at +0x30 / +0x80 / +0xD0,
+     3 are TArrays at +0x120 / +0x130 / +0x140 (populated only on mm2).
+  -> One of the TMaps is almost certainly MissionPoolAssets
+     (TMap<FPrimaryAssetId, X>, where X is per-pool aggregated mission data).
+  -> Both models have these TMaps empty.
+  -> Populating one of the TMaps with our 16 cooked MissionPool entries
+     would likely move the modal — but the VALUE TYPE of the TMap is
+     unknown without BP bytecode decompile or property-walk of UMissionsModel.
+```
+
+### What the 3 plans collectively prove
+
+KNOW NOW (post Plans A+B+C):
+- Categories (5) are hardcoded in modal — every open creates exactly these 5
+- BindToMissions is BP-compiled on WBP_UI_MissionModalCategory_C
+- DateTime warnings come from `UKismetMathLibrary::MakeDateTime` being
+  called with zero inputs — 6 per modal open from BP code
+- MissionPoolIDs lives on LokiPlayerState_Missions, no live instance at menu
+- mm1's +0x120-+0x14F TArrays are NOT the modal's read source (smoke test
+  proved it)
+- mm1 and mm2 differ ONLY in those 3 TArrays + the +0x160-0x17F hash bytes
+
+NEXT-SESSION ROUTES (now better-anchored):
+
+1. **Decompile BindToMissions BP bytecode** — 1136 bytes at 0x016B98DF9C80.
+   CUE4Parse has BP VM bytecode disassembler support. This is the
+   authoritative way to know what data BindToMissions reads.
+
+2. **Walk WBP_UI_MissionModalCategory_C class properties** — find what fields
+   the per-category widget itself has (e.g., does it have its own
+   `MissionPool` field that's set per-instance? Each of the 5 categories
+   might have a hardcoded pool reference).
+
+3. **Identify UMissionsModel's 3 TMaps by name** — search for FProperty
+   entries with `MissionPoolAssets` FName id (0x0064E8E7). Find their
+   offsets within UMissionsModel. If one is at +0x30 / +0x80 / +0xD0, we
+   know which TMap to populate.
+
+4. **Populate UMissionsModel.MissionPoolAssets** — once the TMap value
+   type is known, smoke-test by writing 16 entries via `usmapdump poke`
+   into the TMap's internal hash structure.
