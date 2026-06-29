@@ -375,7 +375,77 @@ least one ID (would force conflict warning IF entries persisted), OR (b) a UI
 test of the Missions modal — opening it and observing whether mission pools
 appear.
 
-### Next decision point — UI test or further programmatic validation
+### UI test executed 2026-06-28 evening — Missions modal still empty
+
+Opened the Missions modal after 3 successful registration runs (48 total
+AddDynamicAsset calls across 16 MissionPool IDs). Result:
+
+- Modal opens cleanly, title "MISSIONS" renders.
+- Body is **completely empty** — no category tabs, no mission cards. (Baseline
+  per prior PROBE was "5 empty category tabs render, no missions"; current state
+  is even more empty, no tabs.)
+- Closing + reopening doesn't change the state.
+- Game is **alive and stable** through 3 inject cycles + the UI test — no crash,
+  main menu intact, all category buttons (HUNTERS / ARMORY / PASSES /
+  CUSTOMIZATION / STORE / CAREER / MISSIONS) still clickable.
+
+### Diagnosis — three competing hypotheses
+
+1. **UI kill criterion fired (per MISSION PROBE #2 prediction).** Modal
+   enumerates via a DIFFERENT mechanism than `UAssetManager::RegisteredPrimaryAssets`
+   — most likely a direct `IAssetRegistry::GetAssetsByClass(LokiDataAsset_MissionPool)`
+   query. Our entries are in LokiAssetManager's TMap but the modal never reads it.
+   **Route closes at the UI layer.** Remaining open routes: (a) RE
+   `WBP_UI_MissionModal_C` blueprint data binding; (b) in-memory FAssetRegistry
+   patch (Approach C — add AssetData entries where the widget actually looks).
+
+2. **Registration didn't persist** (despite clean returns). LokiAssetManager's
+   override of AddDynamicAsset might early-return without touching AssetTypeMap,
+   making each of our 16 calls a silent no-op. The 3rd run's deliberately-wrong-path
+   variant did NOT produce a `"AddDynamicAsset on %s called with conflicting AssetId %s"`
+   warning in Loki.log — consistent EITHER with "didn't persist" OR with "log
+   filter suppresses that warning category" (LogAssetManager.Warning fired
+   twice on initial menu load, so the category isn't globally suppressed —
+   tilts the evidence toward "didn't persist").
+
+3. **Registration persisted but assets not loaded.** UAssetManager's
+   AddDynamicAsset only REGISTERS the asset path; it doesn't async-load the
+   actual `.uasset`. The Missions modal may need the loaded asset's data
+   (Icon texture, MaxActive, GrantCount, etc. — visible in
+   `tools/extractor/out/catalog/da/DA_MissionPoolDailyChallenge.json`) to render
+   anything. Calling `ChangeBundleStateForPrimaryAssets` on our 16 IDs after
+   registration might trigger the load → repopulate modal. (Loki.log shows
+   ZERO ChangeBundleState activity for our IDs after registration — they're
+   registered but never queried/loaded.)
+
+### Next-session work order to disambiguate
+
+In priority order:
+
+1. **Programmatic persistence proof via a different path.** Find one of:
+   - `UAssetManager::GetPrimaryAssetData(FPrimaryAssetId, FAssetData&)` — virtual,
+     should also be in the LokiAssetManager vtable. Call it for one of our
+     registered IDs; non-null return = registration persisted.
+   - `UAssetManager::GetPrimaryAssetIdList(FName Type, TArray<FPrimaryAssetId>&)`
+     — exposed via AngelScript bind (per prior recon). Returns all registered
+     IDs of a type. After our shim runs, calling this for `MissionPool` should
+     return ≥16 entries.
+   Either disambiguates hypothesis 2 from 1 & 3.
+
+2. **Trigger asset load via `ChangeBundleStateForPrimaryAssets` or `AsyncLoadPrimaryAssets`.**
+   Both are virtuals on UAssetManager — find their vtable slots, build a
+   follow-up call in the shim that runs after registration. If the modal
+   populates after load, hypothesis 3 is the cause and the route is open
+   (just needed the load step). If still empty, hypothesis 1 stands.
+
+3. **If hypotheses 1 & 3 both ruled out and registration confirmed persistent:**
+   the kill criterion is real. Pivot routes:
+   - **RE `WBP_UI_MissionModal_C`** to identify the actual data source the
+     widget binds against. Substantial — Blueprint VM bytecode in cooked
+     assets, no decompiler runs against shipping pak chunks.
+   - **In-memory FAssetRegistry patch** (Approach C above). Find the live
+     FAssetRegistry singleton (anchors at +0x79D5DF0, +0x79D5B40); inject
+     FAssetData entries directly. Modal queries AR → sees our entries.
 
 The path-conflict re-run is purely programmatic + definitive: change one byte
 of one PackageName in the shim, rebuild, re-inject. Conflict warning fires →
