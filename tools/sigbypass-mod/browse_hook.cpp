@@ -332,8 +332,44 @@ static DWORD WINAPI Worker(LPVOID) {
     }
     Markerf("[1] gameTid=%lu\r\n", gameTid);
 
-    // Snapshot original prologue bytes.
-    memcpy(g_origBytes, (const void*)g_browseAddr, kPatchSize);
+    // Wait for the packer to actually unpack the .text page containing
+    // UEngine::Browse before we try to read its prologue. With CREATE_SUSPENDED
+    // launch (inject launch) — and even with watch-now timing — GGameThreadId
+    // can be set BEFORE the packer commits the page our patch target is in,
+    // so a naive memcpy would AV the worker thread and silently kill it.
+    //
+    // Poll on (a) page committed-and-readable, then (b) first 13 bytes match
+    // the known prologue. Either condition false → sleep + retry. 30s timeout.
+    static const uint8_t kExpected[kPatchSize] = {
+        0x40, 0x55, 0x53, 0x56, 0x57,
+        0x41, 0x54, 0x41, 0x55, 0x41, 0x56, 0x41, 0x57
+    };
+    DWORD deadline = GetTickCount() + 30000;
+    int unpackPolls = 0;
+    bool unpacked = false;
+    while (GetTickCount() < deadline) {
+        unpackPolls++;
+        MEMORY_BASIC_INFORMATION mbi{};
+        if (VirtualQuery((void*)g_browseAddr, &mbi, sizeof(mbi)) == 0 ||
+            !(mbi.State & MEM_COMMIT) ||
+            (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD))) {
+            Sleep(5);
+            continue;
+        }
+        // Page committed & readable. Snapshot and compare.
+        memcpy(g_origBytes, (const void*)g_browseAddr, kPatchSize);
+        if (memcmp(g_origBytes, kExpected, kPatchSize) == 0) {
+            unpacked = true;
+            break;
+        }
+        Sleep(5);
+    }
+    if (!unpacked) {
+        Marker("[2] FAIL: prologue never matched (packer / wrong RVA) — refusing to patch\r\n");
+        return 3;
+    }
+    Markerf("[2] page unpacked after %d poll(s); orig 13 bytes match expected\r\n",
+            unpackPolls);
     Markerf("[2] orig 13 bytes: %02X %02X %02X %02X %02X %02X %02X "
             "%02X %02X %02X %02X %02X %02X\r\n",
             g_origBytes[ 0], g_origBytes[ 1], g_origBytes[ 2],
@@ -342,19 +378,7 @@ static DWORD WINAPI Worker(LPVOID) {
             g_origBytes[ 9], g_origBytes[10], g_origBytes[11],
             g_origBytes[12]);
 
-    // Sanity-check: the bytes MUST match the recon expectation
-    // (40 55 53 56 57 41 54 41 55 41 56 41 57). If a future game patch
-    // shifts the function, our patch would land mid-instruction and
-    // crash the engine — refuse to install instead.
-    static const uint8_t kExpected[kPatchSize] = {
-        0x40, 0x55, 0x53, 0x56, 0x57,
-        0x41, 0x54, 0x41, 0x55, 0x41, 0x56, 0x41, 0x57
-    };
-    if (memcmp(g_origBytes, kExpected, kPatchSize) != 0) {
-        Marker("[2] FAIL: prologue bytes don't match recon expectation; "
-               "refusing to patch (RVA may need update for this build)\r\n");
-        return 3;
-    }
+    // (Prologue-match check is now done during the unpack-poll above.)
 
     // Build trampoline + hook stub.
     g_trampoline = BuildTrampoline(g_browseAddr);
