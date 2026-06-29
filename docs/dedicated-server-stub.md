@@ -223,3 +223,171 @@ Existing Go server: `server/cmd/ags` + per-package handlers in
 `server/internal/*`. Plays the HTTP/HTTPS + WebSocket roles for the
 client's REST surface; dedicated-server work would extend this OR
 launch as a sibling process.
+
+## Session 1 (2026-06-29, branch `dedicated-server-stub`)
+
+### Setup
+
+- Created branch `dedicated-server-stub` from the tip of
+  `claude/assetregistry-primary-assets-w7pljz` (88a4e36). The old branch
+  name was misleading once the AR-repack route closed; new branch reflects
+  this chapter's actual scope and carries all design docs forward.
+- UE5.4 install located at `H:\Unreal Engine\UE_5.4` (Epic Games Launcher
+  install, but includes `Source/Runtime/Engine` + UnrealBuildTool). That's
+  sufficient to build a custom Server target via UBT — **Path A is fully
+  viable now**. (Previously assumed Path A would need engine-source clone;
+  the Launcher install already exposes what UBT needs for server builds.)
+
+### Probes #1 + #2 — HTTP `/core-game/players/{id}` is NOT the trigger
+
+Two staged probes of `handleCoreGamePlayer` returning
+`hasActiveMatch=true` with phantom matchInfo at `127.0.0.1:7777`:
+
+| Probe | State           | Result                                                                  |
+|-------|-----------------|-------------------------------------------------------------------------|
+| #1    | `Allocating`    | Response parses cleanly (zero LogJson errors). No client action.        |
+| #2    | `AwaitingReady` | Response parses cleanly (zero LogJson errors). No client action.        |
+
+Critical observations across both probes (verified via fresh Loki.log
+post-relaunch):
+
+- **Zero LogNet*, NetConnection, NetDriver, or port-7777 traffic** in
+  Loki.log. The client is not attempting a NetConnection.
+- **Menu state visually identical to baseline** in both runs. No
+  "preparing match" overlay, no degraded UI.
+- **Server capture log confirms client IS polling** `/core-game/players/{id}`
+  ~3×/sec, receiving 200s from our handler — the response is being
+  CONSUMED, just not acted on.
+
+**Conclusion:** the HTTP `/core-game/players/{id}` response is the
+"rejoin" channel, not the primary connect trigger. Advancing State alone
+through `Allocating` → `AwaitingReady` produces no NetConnection attempt,
+even with full payload (Address/Port/ServerUrl/SessionToken/MatchId).
+
+Code state at end of session: `phantomMatchState = ""` (probe disabled,
+menu in known-clean state). Toggle constant in
+`server/internal/interactive/interactive.go:267` to re-enable.
+
+### Binary recon — `AccelByteModelsServerClaimedNotification` is the trigger
+
+Grepped the shipping exe for AccelByte-style notification model names
+and found:
+
+```
+AccelByteModelsServerClaimedNotification    <- THE PUSH WE NEED
+AccelByteModelsDSClaimedPayload             <- inner payload
+AccelByteModelsDsNotice                     <- classic AccelByte DS notice
+AccelByteModelsDSMSession                   <- DSM session model
+AccelByteModelsDSMServer                    <- DSM server model
+AccelByteModelsDSMClient
+AccelByteModelsDSBackfillProposal{Accepted,Received,Rejected}Payload
+AccelByteModelsDSGameClient{Joined,Left}Payload
+AccelByteModelsDSHub{Connected,Disconnected}Payload
+AccelByteModelsDSRegisteredPayload
+AccelByteModelsDSUnregisteredPayload
+AccelByteModelsSessionEndedNotification
+```
+
+Plus PascalCase field-name hits in the binary (matches AccelByte SDK
+JSON conventions): `Status`, `Address`, `GameMode`, `Port`, `Region`,
+`MatchId`, `SessionId`, `ServerID`, `ServerName`, `PartyId`,
+`GameSessionId`, `Namespace`, `IpAddress`.
+
+This pins the architecture:
+
+```
+SUPERVIVE matchmaking architecture (now understood):
+  Theorycraft's bespoke /party REST API drives the matchmaking-start
+  UX. Once a match is allocated, the lobby/notification WebSocket
+  pushes AccelByteModelsServerClaimedNotification carrying the DS
+  IP/port/session info. UE NetConnection then opens to that DS.
+```
+
+The push surface uses AccelByte SessionV2 + DSM messages even though
+the request surface is bespoke. That's a known AccelByte integration
+pattern: overlay your own party/matchmaking UX, rely on the SDK's
+lobby-to-DS bridge.
+
+### Confirmed: the client never sends matchmaking WS frames
+
+Cross-checked capture.log: across the entire session, the client's only
+distinct WS TEXT messages are `listOfFriendsRequest`,
+`listIncomingFriendsRequest`, `listOutgoingFriendsRequest`,
+`setUserStatusRequest`, plus empty heartbeats. **The client does NOT
+initiate matchmaking over WS.** Either matchmaking-start is HTTP-only
+(via Theorycraft's `/party/.../startSoloMode` or `/party/joinQueue`,
+neither captured yet because of upstream gates), OR matchmaking can be
+triggered server-side without any client-initiated message — the server
+just pushes `ServerClaimedNotification` and the client honors it.
+
+That second possibility is what makes the next probe so cheap: **push
+an unsolicited `AccelByteModelsServerClaimedNotification` on /lobby**
+when the client connects, see if the client opens a NetConnection on
+the supplied IP/port. If YES, we've established the trigger end-to-end
+and Path A's scope crystallizes around what to put on the DS side.
+
+## Path decision (post-Session 1)
+
+**Recommended: Path C** (hybrid Go backend + UE5.4 dedicated server).
+
+Why Path A's pure-UE approach is overkill: our existing Go `ags` already
+handles every menu HTTP endpoint and the WebSocket channels. Adding the
+`ServerClaimedNotification` push to the Go lobby handler is small. The
+UE5.4 server only needs to (eventually) replicate `LokiPlayerState_Missions`
+to incoming clients. Splitting responsibility this way keeps each side
+small.
+
+Why Path B (pure-Go netcode emulator) loses: UE replication protocol is
+large and version-coupled; matching SUPERVIVE's specific replicated
+classes (UMissionModel field offsets, FName-ID compatibility) requires
+either reading UE 5.4 source for the wire format OR running a real UE
+client/server pair side-by-side to capture and mimic. The "match real
+UE" reading work that Path B would require is the same work that lets
+Path C just *use* UE5.4 directly.
+
+## Next-session concrete first moves
+
+1. **Probe #3: unsolicited push of `AccelByteModelsServerClaimedNotification`
+   on /lobby.** Implement in `server/internal/lobby/lobby.go` — when a
+   WS client connects to `/lobby`, push the notification after a short
+   delay (~2 seconds, so we're sure the WS handshake has fully settled).
+   Use the AccelByte SDK's JSON shape (the SDK is open source —
+   `Plugins/AccelByteUe4Sdk/Source/AccelByteUe4Sdk/Public/Models/AccelByteSessionModels.h`
+   has the full struct definition). Phantom DS at `127.0.0.1:7777`, same
+   as the HTTP probes; the connection failure mode in Loki.log
+   (LogNet*) is the signal.
+
+2. **If probe #3 triggers a NetConnection:** the SUPERVIVE-side recon
+   is essentially done. Begin scaffolding the Path C UE5.4 project:
+   - New UE5.4 C++ project under `unreal-stub/` in the repo
+   - `Target.cs` with `Type = TargetType.Server`
+   - Minimal `ALokiPlayerState_Missions` class with the field shape we've
+     RE'd (PoolId, flag bytes, etc.) — UClass NAME must match the cooked
+     client's expectation so NetGUIDs resolve
+
+3. **If probe #3 does NOT trigger NetConnection:** the missing piece is
+   probably a prior client-initiated message we need to handle first
+   (e.g., `partyStartMatchmakingRequest` or session-join). Capture the
+   exact Loki.log activity around the push, then iterate the WS protocol
+   surface (likely a few-message handshake before the DS push lands).
+
+4. **Either way:** once the trigger is end-to-end, the actual stub
+   server work begins. Multi-session from there. Treat the next session's
+   probe #3 as the milestone gate between "we don't know the protocol"
+   and "we know the protocol, now we build."
+
+### Key files for next session's start
+
+- `server/internal/lobby/lobby.go` — add the `ServerClaimedNotification`
+  push. Existing structure: `Service.Handle` runs the read loop,
+  `respondText` builds typed replies; the new push is server-initiated
+  (no client request to reply to), so write it from a goroutine spawned
+  at WS connect time with a small delay.
+- AccelByte UE4 SDK source: search for
+  `FAccelByteModelsServerClaimedNotification` in the public SDK repo at
+  https://github.com/AccelByte/accelbyte-unreal-sdk-source (or similar
+  fork) to confirm the JSON field shape. The SDK serializes via UE's
+  `JsonObjectStringToUStruct`, so field names match the UStruct exactly.
+- `server/internal/interactive/interactive.go:267` — `phantomMatchState`
+  constant still in place; leave at `""` while running probe #3 so the
+  HTTP/WS variables are isolated.
