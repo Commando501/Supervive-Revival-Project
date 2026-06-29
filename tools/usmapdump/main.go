@@ -387,6 +387,17 @@ func main() {
 		cmdVtSlot(os.Args[2], slot, addr, mh)
 		return
 	}
+	// vtdump: <proc> <hexVtableAddr> [numSlots] — dump vtable contents slot-by-slot
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "vtdump" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad vtable address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		ns := parseMaxHits(os.Args, 4, 128)
+		cmdVtDump(os.Args[2], addr, ns)
+		return
+	}
 	fmt.Println("usage: usmapdump info     <proc-name-or-pid>                  (PE/section recon)")
 	fmt.Println("       usmapdump names    <proc-name-or-pid>                  (locate GNames)")
 	fmt.Println("       usmapdump objects  <proc-name-or-pid>                  (locate GUObjectArray)")
@@ -400,5 +411,7 @@ func main() {
 	fmt.Println("       usmapdump disasm   <proc-name-or-pid> ADDR_OR_+RVA [N] (x86-64 disasm)")
 	fmt.Println("       usmapdump vtslot   <proc-name-or-pid> SLOT 0xFN_ADDR [N]")
 	fmt.Println("                                                                (find vtables where [base+slot*8]==fn)")
+	fmt.Println("       usmapdump vtdump   <proc-name-or-pid> 0xVTABLE_ADDR [SLOTS]")
+	fmt.Println("                                                                (dump vtable slot-by-slot, mark shared/unique)")
 	os.Exit(2)
 }
