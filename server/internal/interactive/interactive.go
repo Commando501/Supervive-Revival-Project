@@ -232,26 +232,34 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
 	nextRefresh := now.Add(24 * time.Hour)
 	expiry := now.Add(7 * 24 * time.Hour)
+	// FPrimaryAssetId in UE5 JSON serializes as "Type:Name" string.
+	poolEntry := map[string]any{
+		"PoolId":            "MissionPool:DA_MissionPoolDailyEasy",
+		"MissionAssetId":    "Mission:DA_Mission_ArmoryDaily_PlayAGame",
+		"GrantedAt":         now.Format(time.RFC3339),
+		"Expiry":            expiry.Format(time.RFC3339),
+		"MillisUntilExpiry": int64(7 * 24 * 3600 * 1000),
+		"Progress":          0,
+		"MaxProgress":       1,
+		"StartingProgress":  0,
+		"Failed":            false,
+		"Complete":          false,
+		"ObjectiveProgress": map[string]any{},
+	}
 	writeJSON(w, map[string]any{
 		"Completions":               map[string]any{},
 		"TrackIDToClaimableRewards": map[string]any{},
 		"NewMissionTime":            nextRefresh.Format(time.RFC3339),
 		"MillisUntilNewMission":     int64(24 * 3600 * 1000),
-		"Pools": []map[string]any{
-			{
-				// FPrimaryAssetId serializes as "Type:Name" string in UE5 JSON
-				"PoolId":            "MissionPool:DA_MissionPoolDailyEasy",
-				"MissionAssetId":    "Mission:DA_Mission_ArmoryDaily_PlayAGame",
-				"GrantedAt":         now.Format(time.RFC3339),
-				"Expiry":            expiry.Format(time.RFC3339),
-				"MillisUntilExpiry": int64(7 * 24 * 3600 * 1000),
-				"Progress":          0,
-				"MaxProgress":       1,
-				"StartingProgress":  0,
-				"Failed":            false,
-				"Complete":          false,
-				"ObjectiveProgress": map[string]any{},
-			},
+		// Pools FProperty has 5 hits across classes with ElementSizes 0x10, 0x18,
+		// 0x28, 0x50, 0x50 — the 0x50 ones are full TMap headers. On MissionData
+		// the field type is unconfirmed; we send a TMap<FPrimaryAssetId, PoolData>
+		// shape (UE5 JSON encodes TMap<FName-keyed> as a JSON object). If the
+		// actual type is TArray UE will silently ignore this Pools key (unknown
+		// field → no error). If wrong-typed match, the whole doc rejects with
+		// "Deserialization failure" in Loki.log.
+		"Pools": map[string]any{
+			"MissionPool:DA_MissionPoolDailyEasy": poolEntry,
 		},
 	})
 }
