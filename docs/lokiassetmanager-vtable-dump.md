@@ -1885,3 +1885,110 @@ Next concrete steps:
    (registration → load → bind chain)
 4. Consider deeper inspection of OnMissionsModelUpdated / OnManifestUpdated
    to see what triggers re-render
+
+### E1-E3 (2026-06-29) — FModel JSON export DECODES the modal's lookup chain
+
+CUE4Parse 1.2.2 STILL can't deserialize BP bytecode for this build's IoPackage.
+BUT FModel exports the asset with FULL property NAMES (our `bpdump` showed
+"?" because reflection couldn't find the name field — FModel has it).
+
+User exported `WBP_UI_MissionModalCategory.uasset` via FModel
+right-click → Save Package Properties (.json) →
+`G:\git\Supervive Revival Project\Output\Exports\Loki\Content\Loki\Core\Missions\WBP_UI_MissionModalCategory.json`
+(56KB / 1671 lines). Saved a copy to `docs/exports/` for git tracking.
+
+**The data flow is now FULLY DECODED via BP local variable names** (UE BP
+compiler generates predictable names like `CallFunc_<FunctionName>_ReturnValue`):
+
+WBP_UI_MissionModalCategory_C class fields:
+  PoolAsset           TArray<TSubclassOf<LokiDataAsset_MissionPool>>  -- pre-baked BP defaults
+  HeaderName          TextProperty                                     -- category label
+  CategoryIcon        PaperSprite                                      -- icon
+  CategoryIconTexture Texture2D
+  PoolIds             TSet<FPrimaryAssetId>  -- RUNTIME-COMPUTED from PoolAsset
+
+BindToMissions(...) — local vars reveal the algorithm:
+  - Loop through MissionsContainer_v2's children (CallFunc_GetAllChildren)
+  - For each child, DynamicCast to WBP_UI_Mission_Container
+  - Iterate PoolAsset[] (the pre-baked class refs)
+  - For each pool class: GetPrimaryAssetIdFromClass(class) -> FPrimaryAssetId
+  - Get MissionsModel via GetMissionsModel()
+  - Get ProgressionManager via GetProgressionManager()
+  - Create delegate bindings (K2Node_CreateDelegate)
+
+UpdateMetaMission(...) — THE LOOKUP, by BP local var names:
+  - IsValidPrimaryAssetId  -> validates each ID
+  - GetMissionsModel       -> mm1 or mm2?
+  - **GetClaimableMissionModel_ReturnValue**  <- LOOKUP #1
+  - **GetActiveMissionModel_ReturnValue**     <- LOOKUP #2
+  - IsValid -> bool check on returned mission
+
+CreateAssetsForPools(...) — populates the per-pool container widgets:
+  - Iterates PoolAsset[]
+  - CallFunc_Create_ReturnValue          -- creates WBP_UI_Mission_Container
+  - CallFunc_AddChildToVerticalBox_ReturnValue  -- adds to MissionsContainer_v2
+
+UpdatePoolAssets(TArray<TSubclassOf<LokiDataAsset_MissionPool>> Pools)
+  -- the param IS the PoolAsset[] array, name confirmed: "Pools"
+
+### THE LOOKUP CHAIN — end-to-end
+
+```
+WBP_UI_MissionModal::Construct
+  -> for each category {Dailies, Weekly, Seasonal, Onboarding, PCBang}:
+       category.PoolAsset = pre-baked TArray (from CDO)
+       category.CreateAssetsForPools(category.PoolAsset)
+         -> for each pool class P in PoolAsset:
+              fpaid = GetPrimaryAssetIdFromClass(P)
+                -- e.g. MissionPool:DA_MissionPoolDailyEasy
+              container = Create WBP_UI_Mission_Container
+              container.BindToMissions(...)
+                -> for each pool class P:
+                     fpaid = GetPrimaryAssetIdFromClass(P)
+                     model = GetMissionsModel()         -- mm1 (empty)
+                     activeMission = model.GetActiveMissionModel(fpaid)
+                     claimMission  = model.GetClaimableMissionModel(fpaid)
+                     if (IsValid(activeMission) OR IsValid(claimMission)):
+                       render UI for this mission
+                     else: empty
+```
+
+### E3 — Native function addresses identified
+
+| Function | FName id | UFunction obj | Func native ptr |
+|----------|----------|---------------|-----------------|
+| GetActiveMissionModel | 0x0058FEFF | 0x16AC8904A90 | 0x7FF664B75A20 (RVA +0x54A5A20) |
+| GetClaimableMissionModel | 0x0058FF0B | 0x16AC8904B80 | (immediately after, +0xF0) |
+| GetMissionsModel | 0x00590BBE | (sibling) | (TBD) |
+| GetProgressionManager | 0x00590BC7 | (sibling) | (TBD) |
+| GetPrimaryAssetIdFromClass | 0x000374D8 | (UAssetManager method) | (TBD) |
+| IsValidPrimaryAssetId | 0x000376A3 | (UAssetManager method) | (TBD) |
+
+UFunction at 0x16AC8904A90 has Outer = 0x016ACDFE1F00, whose NamePrivate
+CmpIdx is 0x0058FEC9 — matches the UMissionsModel UClass name
+(mm1/mm2 NamePrivate had low bytes 0x58FEC9). **DEFINITIVE: these are
+native methods on UMissionsModel.**
+
+Disasm of native Func at 0x7FF664B75A20 shows a standard UHT-generated exec
+thunk pattern (read FPrimaryAssetId from FFrame, call inner impl, write
+result). The actual impl is called at **0x7FF664DB5E30 (RVA +0x56E5E30)** —
+next session: disasm that to identify which TArray/TMap on UMissionsModel
+these methods iterate.
+
+### The fix is now well-scoped
+
+Once we know which field GetActiveMissionModel reads from inside UMissionsModel,
+we can populate THAT field via `usmapdump poke`. With our existing pool
+registrations and DynamicMissionPools data intact, the chain should resolve
+end-to-end and the categories should render.
+
+Candidate target fields on UMissionsModel:
+- 3 empty TMaps at +0x30 / +0x80 / +0xD0 (one likely MissionPoolAssets)
+- 3 TArrays at +0x120 / +0x130 / +0x140 (populated only on mm2)
+- The hash-data region at +0x160
+
+If GetActiveMissionModel iterates a TArray<UMissionModel*> looking for one
+whose `PoolId` field matches the input, that TArray is the populate target.
+If it does a TMap lookup keyed by FPrimaryAssetId, that TMap is the target.
+
+Disasm of 0x7FF664DB5E30 will answer which.
