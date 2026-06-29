@@ -277,7 +277,7 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 //
 // Other valid enum values from ECoreGameMatchState: PreHeroSelect, HeroSelect,
 // Preallocate, Deallocating, Closing, Unknown.
-const phantomMatchState = "AwaitingReady"
+const phantomMatchState = ""
 
 // handleCoreGamePlayer is the "is there an active match to rejoin?" heartbeat
 // (polled hundreds of times per session). When phantomMatchState is non-empty,
