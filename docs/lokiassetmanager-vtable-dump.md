@@ -142,6 +142,86 @@ build; layout summary on the singleton (per peek):
 +0x4AC: TMap meta uint32
 ```
 
+### FName layout — 8 bytes (verified by disasm + CDO peek)
+
+The `usmapdump/objects.go:findMetaclass` block comment hedges toward a 12-byte
+case-preserving FName, but the actual layout in this build's UObject
+`NamePrivate` and in the function args passed to `AddDynamicAsset` is the
+vanilla **8-byte** form. Two independent confirmations:
+
+1. **`AddDynamicAsset` disasm reads exactly 16 bytes for the `FPrimaryAssetId`**:
+   ```
+   +0x34AB897  mov rbx, qword ptr [rdx]      ; read PrimaryAssetType FName (8 bytes)
+   +0x34AB8B6  mov rax, qword ptr [rdx+0x8]  ; read PrimaryAssetName FName (8 bytes)
+   +0x34AB8AD  cmp rbx, rcx                  ; rcx=0 — ensure Type FName non-zero
+   +0x34AB8BF  cmp rax, rcx                  ; ensure Name FName non-zero
+   ```
+   If FName were 12 bytes, `FPrimaryAssetId` would be 24 bytes and the second
+   FName would start at `[rdx+0xC]`, not `[rdx+0x8]`. The 16-byte read pattern is
+   definitive.
+
+2. **CDO NamePrivate decodes cleanly as 8-byte FName**: at `+0x20` of the CDO
+   we observed `7B 05 6B 00 00 00 00 00 | B0 3A FE F3 CB 01 00 00`. As an 8-byte
+   FName: `ComparisonIndex=0x6B057B, Number=0`. Next field at `+0x28` is
+   `OuterPrivate = 0x01CBF3FE3AB0` (a valid heap ptr). If FName were 12 bytes,
+   `OuterPrivate` would be at `+0x2C` (misaligned, half inside the FName's
+   would-be Number slot) — and `Number` would need to read `0xF3FE3AB0` which is
+   implausibly huge.
+
+The Len10+probehash NamePool layout refers to how individual *name entries* are
+stored in the pool (10-bit length prefix + probe hash byte), not to the FName
+struct itself. Don't conflate the two.
+
+**Sizeof table** for shim arg construction (vanilla layouts apply):
+
+| Type | Size | Layout |
+|---|---|---|
+| `FName` | 8 | `{ uint32 ComparisonIndex; uint32 Number; }` |
+| `FPrimaryAssetId` | 16 | two FNames (PrimaryAssetType + PrimaryAssetName) |
+| `FTopLevelAssetPath` | 16 | two FNames (PackageName + AssetName) |
+| `FString` (empty, no alloc) | 16 | `{ TCHAR* Data=null; int32 Num=0; int32 Max=0; }` |
+| `FSoftObjectPath` | 32 | `{ FTopLevelAssetPath; FString SubPath; }` |
+| `TArray<FName>` (empty) | 16 | `{ FName* Data=null; int32 Num=0; int32 Max=0; }` |
+
+### FName construction — open sub-problem before the shim can build
+
+The shim needs to produce FName values for: type names (`Mission`, `MissionPool`,
+`Hero`, `HeroCosmeticsBundle`, `StoreOffer`, ...), per-asset names
+(`DA_Mission_*`, `FireFox`, `assault`, ...), and package/asset path FNames
+(`/Game/Loki/Characters/Heroes/FireFox/...`, `BP_FireFox_Default_CosmeticsBundle`).
+
+Two routes; one must be picked at the start of the shim session:
+
+**Route A — Lookup all needed FName IDs from the live NamePool and bake them
+into the shim.** Cleanest because all target names are cooked → already pooled.
+But `usmapdump`'s existing `findNameID` (in `objects.go`) walks ONLY block 0
+(first 4MB). Most Loki-specific names live in later blocks. **Need to extend
+`usmapdump` with a new `nameid <substring> [maxhits]` subcommand** that walks
+all 128 blocks and prints `block:offset (= 32-bit ComparisonIndex value)` for
+each match. Then bake a constant table into the shim like:
+
+```cpp
+constexpr uint32 kNameId_Mission           = 0x......; // from nameid lookup
+constexpr uint32 kNameId_DA_Mission_Mortar = 0x......;
+// etc., one per name we need
+```
+
+ComparisonIndex calc per `objects.go:43` is `off / fnameStride` for block 0
+(typically `fnameStride = 2`), then extended for block N as
+`(N << 16) | (off / 2)` — confirm encoding by cross-checking against the CDO's
+known-good NamePrivate value at scan time. **~1 session for tooling +
+exhaustive-id extraction + bake; another session for shim build itself.**
+
+**Route B — Find `FName::FName(const TCHAR*)` in the binary and call it from
+the shim.** Faster shim (no per-name bake), but FName ctor RTTI strings are
+stripped in this shipping build (verified: `wstrings "FName::FName"` → 0 hits).
+Would need to identify it via a TRACE-name, a known constant pattern (the
+ePackageHashing seed, the empty-name slot ID, etc.), or by finding `FString`
+→ `FName` glue inside a known-anchored function. Higher RE variance.
+
+Pick Route A. The bake table is mechanical and reproducible; Route B's hunt for
+an un-anchored ctor is open-ended.
+
 ### Shim plan (ready to build — next session)
 
 Extend `tools/sigbypass-mod/mount_shim.cpp` framework into a new
