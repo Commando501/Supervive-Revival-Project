@@ -441,6 +441,75 @@ to garbage strings, but the count matches our call count.)
    the existing 30 registered types (Hero, HeroCosmeticsBundle, etc. — for
    which actual cooked assets exist), it's not reading from this TMap at all.
 
+### UI data-source RE 2026-06-28 (very late) — UMissionsModel + local init
+
+Drilled into the Missions modal's compiled-blueprint data. Findings:
+
+**Widget chain identified:**
+- `WBP_UI_MissionModal_C` (the modal) — opens, async-loads a `LokiDataAsset_Season`,
+  iterates the Season's `MissionPools` array (a `TArray<TSubclassOf<LokiDataAsset_MissionPool>>`),
+  async-loads each pool, creates a `WBP_UI_MissionModalCategoryButton_C` +
+  `WBP_UI_MissionModalCategory_C` per pool.
+- `WBP_UI_MissionModalCategory_C` (per-pool category) — calls
+  **`GetMissionsModel()`** + `GetProgressionManager()` + `BindToMissions(...)`.
+  This is the actual data binding.
+
+**Native class identified:** `UMissionsModel` — owns the data. Confirmed via
+wstrings hits:
+- `"UMissionsModel"`
+- `"UMissionsModel::OnMissionAssetLoaded"` — per-asset async-load callback
+- `"UMissionsModel::OnPSMissionsUpdated"` — populated when external mission
+  data arrives (likely from a parent subsystem broadcasting on player state
+  changes)
+
+**Class that owns MissionPoolIDs identified** (one class — same metadata
+cluster):
+- `MissionPoolIDs` (member, `TArray<FPrimaryAssetId>` — the master list of pools)
+- `GetMissionPoolFromPrimaryAssetId` (lookup)
+- `GetAllClaimableMissionRewardsForPools` (rewards iteration)
+- `OnLocalMissionsInitialized` + `OnLocalXPInitialized` (init-complete delegates)
+
+**Critical assumption REWRITE** (from prior recon at
+`docs/trackb-notes.md` "Mission flow" section):
+> "Missions are UE Primary Assets the client loads LOCALLY, not backend list
+>  data. **There is no missions-list endpoint.**"
+
+This rules out the backend approach entirely. The blocker is **local init
+populating `MissionPoolIDs`** — which is empty for some reason.
+
+**Cooked content gap discovered:** The catalog has only 7 `LokiDataAsset_*`
+classes — `Mission`, `MissionPool`, `ArmoryTables`, `Capsule`,
+`ArmoryOnboardingCapsule`, `Equipment`, `Power`. **No `LokiDataAsset_Season`
+data assets are cooked**. So the modal's "async-load a Season → get its
+MissionPools" path is unsatisfiable. The Season class exists in `/Script/Loki`
+but no concrete `DA_Season*.uasset` exists to load.
+
+If the modal can't load any Season (no concrete asset to load), Construct's
+load-Season-then-iterate path fails silently → zero category buttons get
+created → modal is empty.
+
+### Concrete next-session focus
+
+Two routes both worth pursuing in parallel:
+
+1. **Find what populates `MissionPoolIDs`.** Either:
+   - Find the function that calls `MissionPoolIDs.Add(...)` — callxref any
+     pattern that mutates a TArray<FPrimaryAssetId> in the LokiMissionsSubsystem
+     class. Substantial.
+   - Or find what fires `OnLocalMissionsInitialized` — that's the "all
+     populated" signal. Find its `Broadcast()` call site → the function
+     that calls Broadcast IS the initializer.
+2. **Synthesize a `LokiDataAsset_Season` at runtime** with our 16 MissionPool
+   classes in its MissionPools array. Either:
+   - Add an in-memory FAssetData entry for a fake Season asset, then register
+     it via AddDynamicAsset → modal might load it → iterate MissionPools →
+     populate UMissionsModel.
+   - Or hook the modal's Season-load-completion delegate to inject our pool
+     list directly.
+
+Route 1 is more diagnostic (tells us why it's empty); route 2 is more
+constructive (fixes it by feeding the right shape).
+
 ### Next route — RE the UI's actual enumeration source
 
 Given hypothesis 1's strong support, the productive next pursuit shifts to
