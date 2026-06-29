@@ -356,7 +356,7 @@ without re-triggering mount on the 16 cooked paks. Alternative: chase the
 per-pak inner mount called from impl's loop body if directory isolation
 turns out unwieldy.
 
-**Worker thread plan:**
+**Worker thread plan (initial — superseded by shim execution findings below):**
 1. Inject DLL early (CREATE_SUSPENDED + manual-map, proven mechanism).
 2. Worker polls for `.text` page commit at +0x2047EE0.
 3. Patch sig-load entry to `B0 01 C3`.
@@ -366,6 +366,122 @@ turns out unwieldy.
 6. Mount's success path fires OnPakFileMounted2 → AR auto-reloads.
 7. Open the Missions modal → check whether the AR class flips actually
    trigger primary-asset registration (the route's REAL kill criterion).
+
+### Shim execution 2026-06-28 — what we learned by actually running it
+
+Built `tools/sigbypass-mod/mount_shim.cpp` end to end and ran 4 iterations.
+Several pillars of the plan held; one fell over and exposed that Loki's pak
+architecture is **not the vanilla UE single-singleton model**.
+
+**Pillars confirmed:**
+- Sig-bypass `B0 01 C3` patch at `+0x2047EE0` lands cleanly when applied
+  from a worker thread that waits for the `.text` page to commit
+  (~115k spin iterations / ~1.1s wall time of `MEM_COMMIT` check polling).
+- Manual-mapped DLL + CREATE_SUSPENDED inject + ResumeThread proven for
+  this binary (`tools/inject launch`).
+- `GGameThreadId` slot at +0x9D49158 reliably contains the engine main
+  thread ID (~190ms after `ResumeThread`).
+- Singleton-finder scan for `qword == module_base + 0x79E0C78` is fast
+  (~15k regions, ~few hundred ms) and produces consistent results across
+  launches.
+
+**Pillars broken:**
+
+1. **Patching sig-load EARLY (from worker) crashes the game later.** The
+   patched function returns success without filling the FPakSignatureFile
+   struct. Cooked paks ALL have real `.sig` files so the original code
+   would have populated chunk hashes etc. Returning empty-struct leaves
+   downstream chunk-verification code reading zero-valued hashes, which
+   eventually trips an AV elsewhere. **Mitigation:** delay the patch
+   until AFTER the cooked-pak mount loop completes — apply it from the
+   APC body, not the worker. Verified this works (cooked paks mount
+   normally, patch lands later).
+
+2. **The 16 vtable-A holders are NOT singletons.** Across three game
+   launches, the scan consistently finds **16 instances** of an object
+   whose first qword is `module_base + 0x79E0C78`. Their layout looks
+   FPakPlatformFile-like at first glance (vtable A at +0, second-base
+   vtable B at +0x10) but:
+   - `+0x08` is a small integer (1 or 2), NOT a heap pointer. In vanilla
+     UE this would be `IPlatformFile* LowerLevel`. Reading it as a ptr
+     and calling through it (which `Mount` does at its inner
+     `mov rcx, [rcx+0x8]; call ...` site) causes an immediate AV.
+   - `+0x18` IS a heap pointer (per-instance data), and consecutive
+     instances' `+0x18` ptrs are spaced 0x480 bytes apart in a second
+     array — suggesting they're per-pak data structs.
+   - The 16 instances are contiguous in heap with a 0x280-byte stride.
+   - **16 matches the number of cooked .pak files** (pakchunk0 +
+     pakchunk0_s1..s15). They are *per-pak* objects, not singletons.
+
+   So either: (a) MSVC ICF folded `FPakPlatformFile::Initialize` and
+   `FPakFile::Initialize` into the same function body, and the vtable
+   we found is FPakFile's; or (b) Loki actually has 16 FPakPlatformFile
+   instances in a custom per-chunk architecture. Either way, the
+   "find the singleton, call its Mount" plan doesn't apply.
+
+3. **APC dispatch isn't reliable in early-init game state.** When login
+   fails (no hosts redirect, real backend rejects), the game thread sits
+   in non-alertable HTTP retry loops and our APC never fires (3+ minutes
+   observed). With successful login the alertable waits (Vivox / UI tick)
+   do happen and APCs fire within ~30s — but this dependency is fragile.
+   **Mitigation:** run pure-read diagnostics (singleton scan, reference
+   scan) directly from the worker thread; only put state-mutating calls
+   (patch + Mount) inside the APC.
+
+**Reference scan from per-pak wrapper #1 (`0x...CE00`) — 30 hits.**
+The most informative hit was at `0x2490E3D76F8` with `prev2 =
+0x249624ED080` (= wrapper #2). Peeking around it revealed:
+
+```
+0x...7600  BB D6 / 1D D7 / 1E D7 / ... / 2A D7    ← 15 uint32 chunk sub-IDs (0xD6BB,
+0x...7630  28 D7 / 29 D7 / 2A D7 / 49 02            0xD71D..0xD72A in 16-bit range)
+0x...7640  [3, wrapper #12 (0x249624EE980)]        ← 16-byte entries, REVERSE order
+0x...7650  [3, wrapper #11]
+0x...7660  [3, wrapper #10]
+...
+0x...76F0  [3, wrapper #1 (0x249624ECE00)]         ← our anchor
+0x...7700  [module ptr 0x7FF667B76168, 0, ...]     ← sentinel
+```
+
+12 wrappers visible in this region (#1-#12). 4 more (#13-#16) presumably
+in adjacent blocks not captured. Each entry is `(uint64 tag=3, void* ptr)`.
+
+The active TArray header pointing at this region lives at `0x2492FA12778`
+with `Num=15, Max=64` — but it points at `0x2490E3D7600` (the uint32
+sub-ID array, not the wrapper-ptr region). So this is a **per-chunk
+metadata block, not a `PakFiles` TArray**.
+
+Peeking the broader context at `0x2492FA126XX` shows the container is an
+**array of per-chunk blocks**, each ~0x50 bytes with multiple TArrays
+inside (chunk_id, sub_IDs TArray, wrapper-ptrs region, more TArrays).
+This is custom Loki architecture; vanilla UE has nothing analogous.
+
+**Module sentinel at +0x84A6168:** referenced ONLY at `0x...7700` (the
+slot after the wrapper-pointer region). Not a vtable.
+
+**Where this leaves option 1:**
+- "Call Mount on the singleton" doesn't apply — there's no singleton in
+  the expected form.
+- The actual "add a pak" function in this build likely takes different
+  args and uses a different `this` shape. We'd need to find it via
+  recon of one of the OTHER pak-mount log strings (e.g., "Successfully
+  mounted deferred pak file") and disasm the function emitting it.
+- Even if we found the right call, the route's deeper kill criterion
+  (LokiAssetManager not querying AR for primary-asset registration)
+  might still fire, voiding the whole effort.
+
+**Sub-option: in-memory AR patch (not yet tried).** Instead of mounting
+a new pak, find the loaded `FAssetRegistry` singleton and patch its
+in-memory `FAssetData` entries directly (same 16 class flips as on
+disk). Anchors exist: `"FAssetRegistry took"` wide string at module-RVA
++0x79D5DF0 with unique LEA at +0x1FD8DBE; `"Premade AssetRegistry
+loaded from"` at +0x79D5B40. No sig-bypass needed, no Mount needed. Same
+deeper-kill-criterion risk.
+
+**Reusable tooling shipped:** `tools/sigbypass-mod/mount_shim.cpp` (full
+worker + APC framework with marker logging, vtable scan, ref scan, safety
+checks) + `race-mount-suspended.ps1` orchestrator. Patches and infrastructure
+will apply to any future approach in this architecture.
 
 ### Option 2 — last resort
 
