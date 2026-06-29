@@ -1992,3 +1992,79 @@ whose `PoolId` field matches the input, that TArray is the populate target.
 If it does a TMap lookup keyed by FPrimaryAssetId, that TMap is the target.
 
 Disasm of 0x7FF664DB5E30 will answer which.
+
+### F1-F3 (2026-06-29 late) — Root cause finally landed: NO UMissionModel instances exist
+
+Disasm of helper 0x7FF664DBA410 (the function called by GetActiveMissionModel
+inner impl 0x7FF664DB5E30) reveals the FULL data structure:
+
+```
+UMissionsModel + 0x30 = TSparseArray/TSet of entries
+  Each entry: 32-byte stride
+  Entry[+0x10] = UMissionModel*  (pointer to mission UObject)
+
+UMissionModel + 0x40, +0x48 = FPrimaryAssetId (PoolId)
+UMissionModel + 0xB8, +0xB9  = byte flags (active/claimable bool checks)
+```
+
+The helper:
+1. Iterates TSparseArray at this+0x30 using TBitArray.AllocationFlags
+2. For each allocated entry: read UMissionModel* at +0x10
+3. Compare missionObj+0x40,+0x48 against input FPrimaryAssetId (16 bytes)
+4. If match: append to output TArray<UMissionModel*>
+5. Caller (GetActive/GetClaimable) then filters by flag at +0xB8 / +0xB9
+
+**Verified mm1 AND mm2 BOTH have empty TMap at +0x30** — even the
+"populated" mm2 has zeros except for the HashSize=0x80 / FirstFreeIndex=-1
+sentinels. So GetActiveMissionModel/GetClaimableMissionModel ALWAYS
+return null regardless of which UMissionsModel the modal queries.
+
+**Definitive root cause**: NO UMissionModel UObjects exist anywhere in
+the process. `findptr` on UMissionModel CDO vtable (0x7FF66817DC10)
+returns ONLY the CDO at 0x16AC8BFA4E0 — NO live instances.
+
+Confirmation FNames found in NamePool (all native):
+- `MissionModel` (id 0x0058FE9D)
+- `CreateMissionModelFromFinalProgress` (0x0058FEE1) — the factory function
+- `OnPSMissionsUpdated` (0x0058FF4F) — event fired when server sends mission data
+- `OnLocalMissionsInitialized` (0x0065754A) — local init event
+
+**The chain that's broken**:
+```
+Server sends mission list (we don't serve)
+  -> Client's PlayerState/MissionsModel receives data
+  -> OnPSMissionsUpdated fires
+  -> Each mission becomes UMissionModel via CreateMissionModelFromFinalProgress
+  -> Stored in UMissionsModel.TMap at +0x30
+  -> GetActiveMissionModel/GetClaimableMissionModel can find them
+  -> Modal renders
+```
+
+Without the server-side mission delivery, the entire chain stalls at
+the first step. No HTTP `/missions` paths in the binary (likely delivered
+via WebSocket messenger).
+
+### The realistic fix paths
+
+1. **Server-side mission delivery in `ags`** — implement whatever
+   message/endpoint the client expects to trigger `OnPSMissionsUpdated`.
+   Likely a WebSocket push message after login.
+   Scope: 1-2 sessions of network capture analysis + server impl.
+
+2. **Client-side shim that fabricates UMissionModel objects** — call
+   `CreateMissionModelFromFinalProgress` via APC with synthetic args,
+   populate the TMap manually. Substantial — needs:
+   - Address of `CreateMissionModelFromFinalProgress` UFunction
+   - Synthetic input data (mission ID, pool ID, flags, etc.)
+   - TMap insertion (UE5 TMap requires hash recompute on insert)
+
+3. **Accept the limitation** — modal stays empty at the menu. The rest
+   of the menu works.
+
+The diagnostic phase is DEFINITIVELY complete. We know:
+- The exact data structure
+- The exact field offsets
+- The exact function chain
+- The exact missing piece (UMissionModel UObjects from the server)
+
+The fix is purely engineering scope, with two clear paths above.
