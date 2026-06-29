@@ -521,3 +521,100 @@ session-end docs):
 - `b739df9` Probe #4 — CoreGamePlayer correct shape
 - `321dbe5` Probe #5 — matchmakingNotif start→done sequence
 - (session 2 writeup commit follows)
+
+## Session 3 (2026-06-29 continued — UE console open path exhausted)
+
+### Probes #6 + #7 — shipping build hardened against arbitrary network connections
+
+| # | Mechanism                              | Result                                                                |
+|---|----------------------------------------|-----------------------------------------------------------------------|
+| 6 | `-ExecCmds="open 127.0.0.1:7777"`      | Honored as CmdLine text (line 338); `UEngine::Browse` never called    |
+| 7 | Positional URL `127.0.0.1:7777`        | Honored as CmdLine text (line 338); `UEngine::Browse` only fired for LVL_Login |
+
+Both probes verified: the launch arg made it into UE's parsed CommandLine
+(visible at `LogInit: Command Line: ...` in Loki.log). `UEngine::Browse`
+fired only for the configured DefaultMap (`/Game/Loki/Maps/LVL_Login`) +
+the menu (`LVL_LobbyV2_Persistent`). Zero Browse calls referencing
+`127.0.0.1:7777`. Zero `LogNet*` activity. Menu reached normally in
+both probes.
+
+### Binary scan confirmed dev console is fully stripped
+
+```
+FOUND:  UCheatManager, CheatManager, UConsole, IpNetDriver, GameNetDriver,
+        NetDriverDef, UEngine::Browse
+ABSENT: EnableCheats, -cheat, -cheats, ConsoleKey, ConsoleKeys,
+        DebugExecBindings, ConsoleClass, allowcheats,
+        /Script/Engine.Console, CheatManagerClass
+```
+
+The Console UObject class is in the binary (so the runtime supports it)
+but every config-side enable knob is gone. `EnableConsole` is a false
+positive — it's actually `EnableConsole120Fps` (a 120fps cvar). So
+manual console entry post-menu is also not an option without modding.
+
+### Architectural finding (Session 3)
+
+> **Shipping UE5.4 in this build is hardened against arbitrary network
+> connections from the command line.** Both `-ExecCmds=open <url>` AND
+> the positional URL form (`Game.exe URL`) are silently dropped before
+> reaching `UEngine::Browse`. The dev console is fully stripped at the
+> config-enable level. This is consistent with Theorycraft hardening
+> shipping against cheating (arbitrary server connections were the
+> kind of thing that lets players join unauthorized custom servers).
+
+### Three remaining forward paths — all in-process injection
+
+All cheap external paths are now exhausted. The remaining options
+require in-process code:
+
+1. **Hook `UEngine::Browse` externally.** Manual-map a DLL via the
+   existing `tools/inject` framework that intercepts the Browse call
+   (function exists in this binary per the binary scan + log evidence)
+   and rewrites the URL. Bypasses all CmdLine gating.
+
+2. **Call `ConsoleCommand` on a live `PlayerController`.** Find the
+   PC instance in memory via `tools/usmapdump`, invoke the UFunction
+   externally via APC. Same technique family as the AddDynamicAsset
+   registration_shim work in `docs/lokiassetmanager-vtable-dump.md`.
+
+3. **Poke `MatchInfo` directly in a `CoreGameSubsystem`.** Find the
+   subsystem instance, write `MatchInfo` fields, let
+   `OnMatchInfoUpdated` fire naturally (delegate name confirmed
+   in-binary by session 2's scan). Mirrors the UMissionsModel TSet
+   poke approach from prior sessions.
+
+Each is multi-session work. The chapter's "easy bypass" hypothesis
+(UE console / launch arg) was the correct first thing to try but
+didn't pan out for this build.
+
+### Code state at end of session 3
+
+- `configs/launch-redirect.ps1` — `-Open <addr>:<port>` parameter
+  kept in place (does nothing useful right now, but the framework is
+  there for future probes if Theorycraft updates the build, or as
+  part of a hooked launch flow). When set, appends `<addr>:<port>`
+  as the positional URL arg.
+- No code changes to `server/` — Go backend is in its clean baseline
+  from end of session 2 (all probe constants disabled).
+
+Commits added this session:
+- `3946366` Probe #6 — `-Open` flag adds `-ExecCmds="open ..."`
+- `c3faddf` Probe #7 — switch `-Open` to positional URL form
+- (session 3 writeup commit follows)
+
+### Next session's first move
+
+Either:
+- **Path 1 (`UEngine::Browse` hook)** — already have the binary RE
+  primitives (`tools/usmapdump strings` for finding the Browse function
+  address, `tools/inject` for the DLL injection). Smallest scope of
+  the three remaining options; one hooked function = arbitrary travel.
+- **Path 3 (poke `MatchInfo`)** — most consistent with the prior
+  TMap/TSet poke work; might reuse existing `usmapdump poke` directly
+  if we can find the right subsystem field offset.
+
+Either path lands us back at "now we need a UE5.4 stub server to
+actually receive the NetConnection." The stub-server work itself is
+unblocked by the existence of UE5.4 at `H:\Unreal Engine\UE_5.4` —
+that part has been clear since session 1.
