@@ -2068,3 +2068,67 @@ The diagnostic phase is DEFINITIVELY complete. We know:
 - The exact missing piece (UMissionModel UObjects from the server)
 
 The fix is purely engineering scope, with two clear paths above.
+
+### G1-G2 — Server-side delivery probe: HTTP path is NOT the mechanism (2026-06-29)
+
+Tried enriching `PUT /progression/players/{id}/mission` response with a full
+MissionData payload including `Pools: TMap<FPrimaryAssetId, PoolEntry>`,
+`NewMissionTime`, `MillisUntilNewMission`, and per-pool fields matching the
+MissionData FName cluster in NamePool block 96. User restarted the game; the
+first PUT after login (04:30:46) received our enriched response.
+
+**RESULT: NEGATIVE.**
+- Modal renders identically empty post-restart.
+- DateTime "year 0" warnings CONTINUE firing in Loki.log AFTER our enriched
+  response. If our `NewMissionTime` value were being consumed those warnings
+  would stop. They don't — meaning the response payload is parsed cleanly
+  (no Deserialization failure) but NOT read into UMissionsModel.
+- ZERO `LogPlatformMissions` entries in Loki.log — there is no Loki
+  PlatformService-style mission manager that fetches via HTTP at login
+  (compare: `LogPlatformInventory`, `LogPlatformStorefront` ARE logged).
+- ZERO LogJson / LokiPlatformQuery warnings on our `/mission` endpoint.
+
+Searched binary for HTTP mission paths: only `/mission`, `/mission/`, and
+`/mission/rewards/claim`. NO `/missions/list` or similar GET-list path
+exists. Searched for `UpdateMissions` / `RefreshMissions` functions: 0 hits
+in the binary's exported wstrings.
+
+**Architectural conclusion**: missions are NOT delivered via HTTP. The only
+mechanism that populates UMissionsModel is `OnPSMissionsUpdated`, which
+fires from **UE Network Replication on the LokiPlayerState_Missions
+actor**. That actor exists only during gameplay (CDO-only at menu,
+confirmed via findptr both pre- and post-restart).
+
+The original architecture: missions get rolled by a real backend on a
+schedule (daily/weekly cron). When a player connects, a UE dedicated
+server holds their PlayerState with mission data; the data replicates
+to the client on session join. The Missions modal reads from
+UMissionsModel, which is populated by these replication events.
+
+**Implications**: implementing the mission flow requires either:
+1. A UE 5.4 dedicated server build that holds player session + replicates
+   missions to the client. MASSIVE scope — would require the original
+   game's server code or a custom impl of LokiPlayerState_Missions
+   replication.
+2. An in-process shim that constructs UMissionModel UObjects via
+   NewObject<>() and inserts them into the TSet at UMissionsModel+0x30.
+   Substantial — UE TSet/UObject manipulation externally is non-trivial
+   (bit-array allocation flags, hash table, GUObjectArray entries all
+   must be properly maintained).
+3. Accept the limitation — modal stays empty; rest of menu works.
+
+### Validates the user's hypothesis
+
+The user's intuition that "the menu blocker is server-side" is CORRECT at
+the architectural level. Missions, hero ownership, store offers, and the
+cosmetics browser all expect data delivered via mechanisms (PlayerState
+replication, asset registration via cooked manifests) that require server
+infrastructure or content-pipeline work the original devs controlled.
+Without that infrastructure, these systems will remain empty regardless of
+HTTP response shapes.
+
+The 5 categories DO get created. The lookup chain IS intact. The pool
+references ARE wired in BP defaults. The blocker is at one specific point:
+**no UMissionModel UObjects exist in the process because none were created
+via the only mechanism the engine supports** (PlayerState replication of
+mission data, requiring a UE dedicated server).
