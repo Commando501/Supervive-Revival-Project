@@ -31,7 +31,7 @@ import (
 // but NOT `dsNotice` (the classic v1 DS notice). Best guess given that absence:
 // matchmakingNotif carries the DS info inline (or via a nested dsInfo field),
 // which is one common AccelByte integration pattern when dsNotice is unused.
-const phantomDsPushDelay = 5 * time.Second
+const phantomDsPushDelay = 0
 
 // phantomDsPushPath restricts the probe push to one WS path. Empty matches any
 // path; "/lobby" matches the AccelByte classic lobby; "/notifications/players/"

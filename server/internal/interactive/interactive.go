@@ -267,31 +267,49 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 // phantomMatchState drives the dedicated-server-stub chapter's probes of the
 // /core-game/players/{id} endpoint. Empty string disables the probe (the
 // historical "no active match" reply). Non-empty sets the ECoreGameMatchState
-// value returned in the phantom matchInfo, letting us walk the state machine
+// value returned in the phantom MatchInfo, letting us walk the state machine
 // one constant flip at a time:
 //
 //	""             — disabled, menu-idle (revert target if anything breaks)
-//	"Allocating"   — probe #1 (2026-06-29): accepted silently, no client action
-//	"AwaitingReady"— probe #2 (current): expect client to open NetConnection
+//	"Allocating"   — probe #1 (2026-06-29): wrong field shape, silently absorbed
+//	"AwaitingReady"— probe #2 (2026-06-29): wrong field shape, silently absorbed
+//	"AwaitingReady"— probe #4 (current): CORRECT model shape — CoreGamePlayer
+//	                with MatchParticipant containing MatchInfo + ContentService*
 //	"InProgress"   — fallback if AwaitingReady doesn't trigger connect
 //
 // Other valid enum values from ECoreGameMatchState: PreHeroSelect, HeroSelect,
 // Preallocate, Deallocating, Closing, Unknown.
-const phantomMatchState = ""
+//
+// PROBE #4 SHAPE NOTE (2026-06-29 late):
+// Probes #1-2 returned {hasActiveMatch, matchInfo, player} — these are NOT
+// fields of the actual CoreGamePlayer model. UTF-16 binary scan confirmed
+// `hasActiveMatch`/`HasActiveMatch` are ABSENT from the exe; UE silently
+// ignored them as unmatched keys, so those probes effectively returned empty
+// payloads. The real model (binary-confirmed) is:
+//   CoreGamePlayer {
+//     MatchParticipant         (struct)
+//     ContentServicePrimaryAsset (FString or FPrimaryAssetId)
+//     ContentServiceContentManifest (FString)
+//     ...
+//   }
+// MatchInfo lives nested inside MatchParticipant. The client decides
+// "has active match" by checking whether MatchParticipant is populated
+// (not via a separate boolean field).
+const phantomMatchState = "AwaitingReady"
 
 // handleCoreGamePlayer is the "is there an active match to rejoin?" heartbeat
 // (polled hundreds of times per session). When phantomMatchState is non-empty,
-// claims an active match at 127.0.0.1:7777 in that lifecycle state. Nothing is
-// listening on 7777 — the connection ATTEMPT itself is the protocol signal we
-// want to capture in Loki.log (LogNet*, NetDriver choice, control-channel
-// behavior, retry/timeout shape).
+// claims an active match at 127.0.0.1:7777 in that lifecycle state via the
+// CORRECT CoreGamePlayer model shape (probe #4): MatchParticipant containing
+// a MatchInfo struct with Address/Port/State/MatchId, plus the ContentService*
+// fields the client needs to know what map to preload.
 //
-// Payload is a SUPERSET probe (PascalCase UPROPERTY convention; UE matches
-// case-insensitively and silently ignores unmatched keys, while a matched-but-
-// wrong-typed field rejects the whole doc with "Deserialization failure").
-// Track A endpoints.md confirms the `CoreGamePlayer` model contains MatchInfo,
-// MatchParticipant, CanDisassociate, ContentServicePrimaryAsset,
-// ContentServiceContentManifest.
+// SUPERSET probe — PascalCase UPROPERTY convention. UE matches case-
+// insensitively and silently ignores unmatched keys, while matched-but-wrong-
+// typed fields trip "Deserialization failure" in Loki.log (LogJson warning
+// names the offending field). Legacy hasActiveMatch/matchInfo keys are kept
+// alongside the new shape — they were always ignored, so leaving them is
+// harmless and preserves the regression-free baseline.
 func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 	if phantomMatchState == "" {
 		writeJSON(w, map[string]any{
@@ -302,27 +320,57 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Phantom match: server claimed at 127.0.0.1:7777, nothing listening.
-	// Fixed MatchId/SessionToken so log lines stay greppable across restarts.
+	// MatchInfo — the inner connection-info struct. Fixed IDs so log lines stay
+	// greppable across restarts. Address/Port/HostName cover the likely DS-
+	// endpoint field names. PrimaryAssetId points at a real Tutorial map asset
+	// so ContentServicePrimaryAsset can resolve (Tutorial maps are packaged
+	// locally per trackb-notes.md, so no AssetManager gate to clear).
 	matchInfo := map[string]any{
-		"MatchId":      "phantom-match-0001",
-		"SessionId":    "phantom-session-0001",
-		"SessionToken": "phantom-token-0001",
-		"State":        phantomMatchState,
-		"Region":       "na",
-		"Address":      "127.0.0.1",
-		"Port":         7777,
-		"ServerUrl":    "127.0.0.1:7777",
-		"Url":          "127.0.0.1:7777",
+		"MatchId":        "phantom-match-0001",
+		"SessionId":      "phantom-session-0001",
+		"SessionToken":   "phantom-token-0001",
+		"State":          phantomMatchState,
+		"Status":         phantomMatchState,
+		"Region":         "na",
+		"Address":        "127.0.0.1",
+		"Port":           7777,
+		"HostName":       "127.0.0.1",
+		"ServerUrl":      "127.0.0.1:7777",
+		"Url":            "127.0.0.1:7777",
+		"GameMode":       "tutorialNew",
+		"GameMap":        "DA_Tutorial_Basics",
+		"PrimaryAssetId": "Map:DA_Tutorial_Basics",
 	}
+
+	// MatchParticipant — wraps the player's role in the match plus the
+	// MatchInfo. The client's CoreGamePlayer model expects this struct to be
+	// populated when there's an active match.
+	matchParticipant := map[string]any{
+		"MatchInfo":      matchInfo,
+		"MatchId":        "phantom-match-0001",
+		"SessionId":      "phantom-session-0001",
+		"State":          phantomMatchState,
+		"Status":         phantomMatchState,
+		"PrimaryAssetId": "Hero:firefox",
+	}
+
 	writeJSON(w, map[string]any{
+		// CORRECT CoreGamePlayer fields (probe #4):
+		"MatchParticipant":              matchParticipant,
+		"MatchInfo":                     matchInfo, // top-level too, in case the model has both
+		"ContentServicePrimaryAsset":    "Map:DA_Tutorial_Basics",
+		"ContentServiceContentManifest": "release2.4.live-156430-shipping",
+		"State":                         phantomMatchState,
+		"Status":                        phantomMatchState,
+		"CanDisassociate":               false,
+		"Region":                        "na",
+
+		// Legacy keys kept for regression-free baseline (UE ignores these as
+		// unmatched, so they're harmless; removing them changes more than one
+		// variable per probe):
 		"hasActiveMatch": true,
 		"matchInfo":      matchInfo,
-		"MatchInfo":      matchInfo, // PascalCase + camelCase, in case the wrapper itself is case-strict
 		"player":         nil,
-		// Top-level State mirrors matchInfo.State in case the lifecycle state is
-		// read from the wrapper rather than the nested object.
-		"State": phantomMatchState,
 	})
 }
 
