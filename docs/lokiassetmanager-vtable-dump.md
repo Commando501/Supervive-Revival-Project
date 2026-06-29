@@ -934,6 +934,51 @@ driven by:
 Without confirming the source, Route 3's significant engineering investment
 could be wasted.
 
+### Option A executed 2026-06-29 — UProgressionManager owns the populated model
+
+Did `findptr` on both UMissionsModel instances + decoded their outer classes:
+
+| Model | State | Owner | Ptr-to-model field offset |
+|-------|-------|-------|----------------------------|
+| #1 @ 0x16B77E50100 | EMPTY | `UEndOfGameModel` | outer+0x580 |
+| #2 @ 0x16B7C654A80 | POPULATED (42 entries @ +0x120) | **`UProgressionManager`** | outer+0x3B8 |
+
+`UProgressionManager` (decoded from CDO `Default__ProgressionManager` at id
+0x006B32C8, block 107 offset 0x6590) is the LIVE production-progression
+tracking system. Its UMissionsModel instance HAS DATA. The populator code
+path EXISTS and RUNS — it's just operating on the UProgressionManager-owned
+model, not the UEndOfGameModel-owned one.
+
+**The modal's `GetMissionsModel()` returns the EndOfGameModel-owned empty
+instance** (we proved this via shim — registering MissionPool entries had
+no effect on what the modal renders).
+
+The WBP recon earlier showed the category widget calls both:
+- `CallFunc_GetMissionsModel_ReturnValue` (returns the empty model #1)
+- `CallFunc_GetProgressionManager_ReturnValue` (could reach model #2 via
+  `ProgressionManager->MissionsModel` field at offset 0x3B8)
+
+So the modal HAS access to UProgressionManager directly. But the model it
+queries via `GetMissionsModel()` is the WRONG one for menu-state rendering.
+
+### Two paths from here
+
+1. **Reroute `GetMissionsModel()` to return UProgressionManager's model.**
+   Find the function's implementation; patch it (or swap an outer chain
+   pointer) so the modal queries model #2. This makes the modal see populated
+   data — but the data shape is "progress tracking" entries, not the pool/
+   mission catalog the modal probably expects to render.
+
+2. **Run the same populator code on model #1.** Find the function in
+   UProgressionManager that populates ITS UMissionsModel; call the same
+   function with model #1 as the target. This populates model #1 (which the
+   modal already queries) with the right data shape.
+
+Route (2) is cleaner but requires finding the populator function in
+UProgressionManager. The populator likely writes to known offsets within
+UMissionsModel — and we have both an empty and populated instance to
+byte-diff for finding the right write target.
+
 ### Revised recommendation
 
 Before continuing Route 3, run a smaller diagnostic: trace
