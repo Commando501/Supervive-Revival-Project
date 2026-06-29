@@ -320,9 +320,113 @@ func main() {
 		cmdExtract(os.Args[2])
 		return
 	}
-	fmt.Println("usage: usmapdump info    <process-name-or-pid>   (R2.1: PE/section recon)")
-	fmt.Println("       usmapdump names   <process-name-or-pid>   (R2.2: locate GNames, decode FNames)")
-	fmt.Println("       usmapdump objects <process-name-or-pid>   (R2.3: locate GUObjectArray, iterate)")
-	fmt.Println("       usmapdump extract <process-name-or-pid>   (R2.4: extract full schema)")
+	// strings/wstrings: <proc> <needle> [maxhits]
+	if (len(os.Args) == 4 || len(os.Args) == 5) && (os.Args[1] == "strings" || os.Args[1] == "wstrings") {
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdStrings(os.Args[2], os.Args[3], mh, os.Args[1] == "wstrings")
+		return
+	}
+	// xrefstr: <proc> <hexAddr> [maxhits]
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "xrefstr" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdXrefStr(os.Args[2], addr, mh)
+		return
+	}
+	// callxref: <proc> <hexAddr> [maxhits] — find direct CALL/JMP targeting addr
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "callxref" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdCallXref(os.Args[2], addr, mh)
+		return
+	}
+	// findptr: <proc> <hexAddr> [maxhits] — find qwords in memory equal to addr
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "findptr" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdFindPtr(os.Args[2], addr, mh)
+		return
+	}
+	// peek: <proc> <addrOrRva> [bytes] — hex+ascii dump (RVA form: "+0xNNNN")
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "peek" {
+		n := parseMaxHits(os.Args, 4, 128)
+		cmdPeek(os.Args[2], os.Args[3], n)
+		return
+	}
+	// disasm: <proc> <addrOrRva> [bytes] — x86-64 disassembly
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "disasm" {
+		n := parseMaxHits(os.Args, 4, 128)
+		cmdDisasm(os.Args[2], os.Args[3], n)
+		return
+	}
+	// vtslot: <proc> <slot> <hexFnAddr> [maxhits] — find vtables where [base+slot*8] == fn
+	if (len(os.Args) == 5 || len(os.Args) == 6) && os.Args[1] == "vtslot" {
+		slot, err := parseDecimal(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad slot (must be decimal int like 11):", err)
+			os.Exit(1)
+		}
+		addr, err := parseHex(os.Args[4])
+		if err != nil {
+			fmt.Println("ERROR: bad fn address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 5, 30)
+		cmdVtSlot(os.Args[2], slot, addr, mh)
+		return
+	}
+	// nameid: <proc> <substring> [maxhits] — find pooled FNames by ANSI substring,
+	// print the 32-bit ComparisonIndex you'd use to construct an FName in a shim
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "nameid" {
+		mh := parseMaxHits(os.Args, 4, 64)
+		cmdNameID(os.Args[2], os.Args[3], mh)
+		return
+	}
+	// poke: <proc> <addr> <hex-bytes> — WriteProcessMemory at addr with given bytes
+	if len(os.Args) == 5 && os.Args[1] == "poke" {
+		cmdPoke(os.Args[2], os.Args[3], os.Args[4])
+		return
+	}
+	// vtdump: <proc> <hexVtableAddr> [numSlots] — dump vtable contents slot-by-slot
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "vtdump" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad vtable address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		ns := parseMaxHits(os.Args, 4, 128)
+		cmdVtDump(os.Args[2], addr, ns)
+		return
+	}
+	fmt.Println("usage: usmapdump info     <proc-name-or-pid>                  (PE/section recon)")
+	fmt.Println("       usmapdump names    <proc-name-or-pid>                  (locate GNames)")
+	fmt.Println("       usmapdump objects  <proc-name-or-pid>                  (locate GUObjectArray)")
+	fmt.Println("       usmapdump extract  <proc-name-or-pid>                  (extract full schema)")
+	fmt.Println("       usmapdump strings  <proc-name-or-pid> <needle> [N]     (ANSI byte search)")
+	fmt.Println("       usmapdump wstrings <proc-name-or-pid> <needle> [N]     (UTF-16 LE search)")
+	fmt.Println("       usmapdump xrefstr  <proc-name-or-pid> 0xADDR    [N]    (rip-rel LEA xref)")
+	fmt.Println("       usmapdump callxref <proc-name-or-pid> 0xADDR    [N]    (E8/E9 disp32 xref)")
+	fmt.Println("       usmapdump findptr  <proc-name-or-pid> 0xADDR    [N]    (find qword == ADDR)")
+	fmt.Println("       usmapdump peek     <proc-name-or-pid> ADDR_OR_+RVA [N] (hex+ascii dump)")
+	fmt.Println("       usmapdump disasm   <proc-name-or-pid> ADDR_OR_+RVA [N] (x86-64 disasm)")
+	fmt.Println("       usmapdump vtslot   <proc-name-or-pid> SLOT 0xFN_ADDR [N]")
+	fmt.Println("                                                                (find vtables where [base+slot*8]==fn)")
+	fmt.Println("       usmapdump vtdump   <proc-name-or-pid> 0xVTABLE_ADDR [SLOTS]")
+	fmt.Println("                                                                (dump vtable slot-by-slot, mark shared/unique)")
+	fmt.Println("       usmapdump nameid   <proc-name-or-pid> <ansi-substr>  [N] (substring search across all FNamePool blocks)")
+	fmt.Println("       usmapdump poke     <proc-name-or-pid> ADDR_OR_+RVA <hex-bytes>")
+	fmt.Println("                                                                (WriteProcessMemory — \"AA BB CC\" or \"AABBCC\")")
 	os.Exit(2)
 }

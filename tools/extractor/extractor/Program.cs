@@ -1,8 +1,11 @@
 using CUE4Parse.Compression;
 using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
+using CUE4Parse.UE4.AssetRegistry;
+using CUE4Parse.UE4.AssetRegistry.Objects;
 using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Objects.Core.Misc;
+using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Versions;
 using Newtonsoft.Json;
 
@@ -16,7 +19,7 @@ using Newtonsoft.Json;
 // /content-service/manifest?" Reading asset *property values* (DataTable rows)
 // comes later and may need a .usmap.
 
-var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema") ? args[0] : null;
+var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema" || args[0] == "assetregistry" || args[0] == "wherefile" || args[0] == "mkpak" || args[0] == "peekpak" || args[0] == "bpdump") ? args[0] : null;
 var dumpMode = cmd == "dump";
 var pakDir = (cmd == null && args.Length > 0)
     ? args[0]
@@ -28,6 +31,702 @@ Directory.CreateDirectory(outDir);
 
 Console.WriteLine($"Paks: {pakDir}");
 Console.WriteLine($"Out:  {outDir}");
+
+// peekpak mode: open one .pak directly via PakFileReader, print MountPoint + every file
+// path + per-file sizes. Used to debug mkpak output without relying on the full provider.
+if (cmd == "peekpak")
+{
+    if (args.Length < 2) { Console.WriteLine("usage: peekpak <pakPath>"); return; }
+    var pakPath = args[1];
+    try
+    {
+        var reader = new CUE4Parse.UE4.Pak.PakFileReader(pakPath, new VersionContainer(EGame.GAME_UE5_4));
+        Console.WriteLine($"  Mounting {pakPath}...");
+        reader.Mount(StringComparer.OrdinalIgnoreCase);
+        Console.WriteLine($"  MountPoint    : '{reader.MountPoint}'");
+        Console.WriteLine($"  Info.Version  : {reader.Info.Version}");
+        Console.WriteLine($"  Info.IndexOffset/Size: {reader.Info.IndexOffset} / {reader.Info.IndexSize}");
+        Console.WriteLine($"  Files mounted : {reader.Files.Count}");
+        foreach (var kv in reader.Files.Take(20))
+        {
+            Console.WriteLine($"    {kv.Value.Size,10}  {kv.Key}");
+            // Also extract + show a hash so we can verify the bytes match the source.
+            try
+            {
+                var data = kv.Value.Read();
+                var h = System.Security.Cryptography.SHA1.HashData(data);
+                Console.WriteLine($"               extracted {data.Length} bytes, SHA1={Convert.ToHexString(h)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"               EXTRACT FAILED: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"  EXCEPTION: {e.GetType().Name}: {e.Message}");
+        Console.WriteLine(e.StackTrace);
+    }
+    return;
+}
+
+// mkpak mode: build a UE legacy .pak v11 containing one uncompressed, unencrypted
+// file at a given virtual path. Used to deploy the patched AssetRegistry.bin as a
+// higher-priority mod pak that overrides the version embedded in pakchunk0.
+//
+//   usage: mkpak <inputFile> <virtualPath> <outputPak>
+//   e.g.   mkpak out/AssetRegistry.stage2.bin Loki/AssetRegistry.bin
+//          ".../Loki/Content/Paks/pakchunk999_P-WindowsClient.pak"
+//
+// Format (mirrors CUE4Parse's PakFileReader.ReadIndexUpdated + FPakInfo for v11):
+//   [file 0: FPakEntry header (53 bytes) + raw file bytes]
+//   [primary index: mountpoint + filecount + pathhash flags + dirindex offsets
+//                   + encoded-entries section (empty) + non-encoded entries (1 here)]
+//   [directory index: 1 dir, 1 file pointing at non-encoded entry 0]
+//   [footer: 221 bytes — keyguid + encrypted flag + magic + version + index offset/size/hash
+//            + 5×32-byte compression method names ("Oodle" + 4 empty slots)]
+// Length-preserving FName cell layout from the AR patch is not relevant here; we only
+// concern ourselves with the pak format.
+if (cmd == "mkpak")
+{
+    if (args.Length < 4)
+    {
+        Console.WriteLine("usage: mkpak <inputFile> <virtualPath> <outputPak>");
+        Console.WriteLine("       e.g. mkpak out/AssetRegistry.stage2.bin Loki/AssetRegistry.bin out/mod_P.pak");
+        return;
+    }
+    var inputFile = args[1];
+    var virtualPath = args[2].Replace('\\', '/').TrimStart('/');
+    var outputPak = args[3];
+    if (!File.Exists(inputFile)) { Console.WriteLine($"input file not found: {inputFile}"); return; }
+
+    var fileBytes = File.ReadAllBytes(inputFile);
+    using var sha1 = System.Security.Cryptography.SHA1.Create();
+    var fileHash = sha1.ComputeHash(fileBytes);
+
+    // Mount point matches the cooked pakchunk0 ("../../../"), and dir/file split mirrors
+    // how the reader splits: directory is the prefix incl. trailing '/' AND leading '/'
+    // (the reader's trimDir code strips one of the '/' when both mount and dir have one).
+    int lastSlash = virtualPath.LastIndexOf('/');
+    // Match cooked pak convention: directory is `<dir>/` with NO leading slash. Cooked
+    // pakchunk0 uses this form ("Loki/" not "/Loki/") and produces paths like
+    // "Loki/AssetRegistry.bin" after ValidateMountPoint strips the "../../../" prefix.
+    string dirPath = lastSlash >= 0 ? virtualPath.Substring(0, lastSlash + 1) : "";
+    string fileName = lastSlash >= 0 ? virtualPath.Substring(lastSlash + 1) : virtualPath;
+    const string mountPoint = "../../../";
+    string[] compressionMethods = { "Oodle", "", "", "", "" }; // 5 slots × 32 bytes — matches pakchunk0
+
+    // FString writer: int32 length (incl. null terminator), then ASCII bytes incl null.
+    // v11 doesn't support UTF8 in pak index, so ASCII is correct for our paths.
+    void WriteFString(BinaryWriter w, string s)
+    {
+        int len = s.Length + 1;
+        w.Write(len);
+        w.Write(System.Text.Encoding.ASCII.GetBytes(s));
+        w.Write((byte) 0);
+    }
+
+    // Full FPakEntry serializer (v11, no compression, no encryption). 53 bytes total.
+    // Mirrors FPakEntry's archive ctor — int64 offset/compressedSize/uncompressedSize,
+    // int32 compressionMethodIndex, 20-byte hash, byte flags, uint32 compressionBlockSize.
+    // This blob is duplicated as the per-file PREPENDED header in the data section.
+    void WritePakEntry(BinaryWriter w, long offset, long size, byte[] hash)
+    {
+        w.Write(offset);
+        w.Write(size); // CompressedSize
+        w.Write(size); // UncompressedSize
+        w.Write((int) 0); // CompressionMethodIndex (0 = None — index into CompressionMethods)
+        w.Write(hash, 0, 20);
+        w.Write((byte) 0); // Flags (not encrypted, not deleted)
+        w.Write((uint) 0); // CompressionBlockSize
+    }
+
+    // Encoded FPakEntry serializer — the compact form FPakFile::DecodePakEntry expects
+    // when a directory-index entry points into the EncodedPakEntries blob. CUE4Parse 1.2.2
+    // calls this byte* ctor UNCONDITIONALLY for every dir-index entry (no NonEncodedEntries
+    // fallback in 1.2.2 — that array path is master-only), so we MUST encode here.
+    //
+    // Bitfield layout (bit ranges, per FPakEntry byte* ctor):
+    //   [0..5]   compressionBlockSize, encoded as (bs >> 11); if == 0x3f, read extra uint32
+    //   [6..21]  compressionBlocksCount (16 bits)
+    //   bit 22   IsEncrypted
+    //   [23..28] CompressionMethodIndex (6 bits)
+    //   bit 29   bIsSize32BitSafe         (compressedSize fits in uint32)
+    //   bit 30   bIsUncompressedSize32BitSafe
+    //   bit 31   bIsOffset32BitSafe
+    //
+    // For our use (uncompressed, unencrypted, single entry, all sizes < 4GB): bitfield =
+    // (1<<29) | (1<<30) | (1<<31) = 0xE0000000, followed by uint32 Offset and uint32
+    // UncompressedSize. No CompressedSize (only written when CompressionMethod != None),
+    // no compression blocks. 12 bytes total per entry.
+    int WriteEncodedEntry(BinaryWriter w, long offset, long uncompressedSize)
+    {
+        const uint bitfield = (1u << 29) | (1u << 30) | (1u << 31);
+        w.Write(bitfield);
+        w.Write((uint) offset);
+        w.Write((uint) uncompressedSize);
+        return 12;
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPak)!);
+    using var fs = File.Create(outputPak);
+    using var bw = new BinaryWriter(fs);
+
+    // === Section 1: file 0 — prepended FPakEntry header (Offset = 0 == this entry's
+    // own offset in the pak file) followed by raw bytes. The reader extracts via
+    // pakEntry.Offset + pakEntry.StructSize, so the data starts at file offset 53.
+    long fileEntryOffset = bw.BaseStream.Position; // 0
+    WritePakEntry(bw, fileEntryOffset, fileBytes.LongLength, fileHash);
+    bw.Write(fileBytes);
+
+    // === Section 2: build directory index in a memory buffer first so we can hash it
+    // and know its length BEFORE the primary index (which references it by offset).
+    byte[] dirBytes;
+    using (var dirMem = new MemoryStream())
+    using (var dw = new BinaryWriter(dirMem))
+    {
+        dw.Write((int) 1); // DirectoryIndexLength (number of directories)
+        WriteFString(dw, dirPath);
+        dw.Write((int) 1); // FileEntriesCount in this dir
+        WriteFString(dw, fileName);
+        dw.Write((int) 0); // Offset = 0 (byte offset into EncodedPakEntries blob — first/only entry)
+        dw.Flush();
+        dirBytes = dirMem.ToArray();
+    }
+    var dirHash = sha1.ComputeHash(dirBytes);
+
+    // === Section 3: build primary index — placed RIGHT AFTER the file data, with
+    // dirIndexOffset = indexOffset + primaryIndex.Length. We need primary length up
+    // front; compute by serializing once (its content is fully determined except the
+    // dir-offset/dir-size/dir-hash fields, which we now know — dir bytes computed above).
+    long indexOffset = bw.BaseStream.Position;
+    long dirIndexOffset = 0; // patched below after we know primary length
+    byte[] primaryBytes;
+    int primaryLen;
+
+    // CUE4Parse's ReadIndexUpdated REQUIRES bHasPathHashIndex == true (throws otherwise);
+    // it then skips 36 bytes of pathHash metadata (offset+size+hash) without actually
+    // consuming a separate PathHashIndex section. So we write the flag = true and 36 zero
+    // bytes of dummy metadata — no separate index section needed; engine just trusts the
+    // FullDirectoryIndex for lookups in pak v11.
+    // Build encoded entries blob (12 bytes for our one entry — uncompressed, 32-bit-safe).
+    byte[] encodedEntries;
+    using (var encMem = new MemoryStream())
+    using (var ew = new BinaryWriter(encMem))
+    {
+        WriteEncodedEntry(ew, fileEntryOffset, fileBytes.LongLength);
+        ew.Flush();
+        encodedEntries = encMem.ToArray();
+    }
+
+    // CUE4Parse 1.2.2's ReadIndexUpdated requires bHasPathHashIndex == true (throws on
+    // false) then skips 36 bytes of path-hash metadata without consuming a separate
+    // section. We write the flag = true + 36 zero bytes (offset/size/hash) — no separate
+    // PathHashIndex section is emitted; the reader only uses the FullDirectoryIndex.
+    // After the encoded-entries blob it reads a non-negative int32 (throws if negative);
+    // we write 0 there since 1.2.2 doesn't actually use a non-encoded entries array.
+    // First pass: compute primary length with placeholder dirIndexOffset.
+    using (var probe = new MemoryStream())
+    using (var pw = new BinaryWriter(probe))
+    {
+        WriteFString(pw, mountPoint);
+        pw.Write((int) 1); // FileCount
+        pw.Write((ulong) 0); // PathHashSeed
+        pw.Write((int) 1); // bHasPathHashIndex = true (REQUIRED — reader throws otherwise)
+        pw.Write((long) 0); // PathHashIndexOffset (skipped by reader)
+        pw.Write((long) 0); // PathHashIndexSize
+        pw.Write(new byte[20]); // PathHashIndexHash
+        pw.Write((int) 1); // bHasFullDirectoryIndex = true
+        pw.Write((long) 0); // dirIndexOffset placeholder
+        pw.Write((long) dirBytes.Length);
+        pw.Write(dirHash, 0, 20);
+        pw.Write((int) encodedEntries.Length); // EncodedPakEntriesSize
+        pw.Write(encodedEntries);
+        pw.Write((int) 0); // trailing count (non-encoded entries — unused in 1.2.2)
+        pw.Flush();
+        primaryLen = (int) probe.Length;
+    }
+    dirIndexOffset = indexOffset + primaryLen;
+
+    // Second pass: serialize the real primary index with the now-known dirIndexOffset.
+    using (var primaryMem = new MemoryStream())
+    using (var pw = new BinaryWriter(primaryMem))
+    {
+        WriteFString(pw, mountPoint);
+        pw.Write((int) 1);
+        pw.Write((ulong) 0);
+        pw.Write((int) 1);
+        pw.Write((long) 0);
+        pw.Write((long) 0);
+        pw.Write(new byte[20]);
+        pw.Write((int) 1);
+        pw.Write((long) dirIndexOffset);
+        pw.Write((long) dirBytes.Length);
+        pw.Write(dirHash, 0, 20);
+        pw.Write((int) encodedEntries.Length);
+        pw.Write(encodedEntries);
+        pw.Write((int) 0);
+        pw.Flush();
+        primaryBytes = primaryMem.ToArray();
+    }
+    var indexHash = sha1.ComputeHash(primaryBytes);
+
+    // Write primary index, then dir index, then footer.
+    bw.Write(primaryBytes);
+    bw.Write(dirBytes);
+
+    // === Section 4: footer (size 221 = OffsetsToTry.Size8a — 5 compression methods)
+    bw.Write(new byte[16]);          // EncryptionKeyGuid (zero GUID)
+    bw.Write((byte) 0);              // EncryptedIndex = false
+    bw.Write((uint) 0x5A6F12E1);     // PAK_FILE_MAGIC
+    bw.Write((int) 11);              // EPakFileVersion.PakFile_Version_Fnv64BugFix
+    bw.Write((long) indexOffset);
+    bw.Write((long) primaryBytes.Length);
+    bw.Write(indexHash, 0, 20);
+    foreach (var m in compressionMethods)
+    {
+        var buf = new byte[32]; // padded with nulls
+        var enc = System.Text.Encoding.ASCII.GetBytes(m);
+        Array.Copy(enc, buf, Math.Min(enc.Length, 32));
+        bw.Write(buf);
+    }
+    bw.Flush();
+
+    var finalSize = bw.BaseStream.Length;
+    Console.WriteLine($"  wrote {outputPak}");
+    Console.WriteLine($"    input          : {inputFile}  ({fileBytes.LongLength:N0} bytes)");
+    Console.WriteLine($"    virtual path   : {virtualPath}");
+    Console.WriteLine($"    mount + dir/fn : '{mountPoint}' + '{dirPath}' + '{fileName}'");
+    Console.WriteLine($"    pak total      : {finalSize:N0} bytes");
+    Console.WriteLine($"    index @{indexOffset:N0}  size={primaryBytes.Length}  hash={Convert.ToHexString(indexHash)}");
+    Console.WriteLine($"    dir   @{dirIndexOffset:N0}  size={dirBytes.Length}  hash={Convert.ToHexString(dirHash)}");
+    return;
+}
+
+// assetregistry mode: read the cooked Loki/AssetRegistry.bin standalone — no paks, no
+// .usmap, no Oodle. The cook bakes EVERY content asset (Mission/MissionPool/Hero/
+// StoreOffer/Item/cosmetic) into this file with its FAssetData (PackagePath, AssetClass,
+// PackageName, AssetName, tags, bundles). LokiAssetManager bypasses the standard
+// AssetManager directory scan, so these entries are present but never registered as
+// primary assets at runtime — these subcommands let us SEE exactly what's in the
+// registry so we can decide which entries to flip and how.
+//
+//   usage: assetregistry <inspect|stats|namemap|classes|candidates> [ar.bin] [args...]
+//          ar.bin defaults to <outDir>\AssetRegistry.bin
+if (cmd == "assetregistry")
+{
+    if (args.Length < 2)
+    {
+        Console.WriteLine("usage: assetregistry <inspect|stats|namemap|classes|candidates> [ar.bin] [args...]");
+        Console.WriteLine($"       (ar.bin defaults to {Path.Combine(outDir, "AssetRegistry.bin")})");
+        return;
+    }
+
+    var sub = args[1];
+    // Path-or-arg disambiguation: args[2] is the bin path iff it points at an existing
+    // file; otherwise treat args[2..] as sub-command args and use the default bin path.
+    var defaultBin = Path.Combine(outDir, "AssetRegistry.bin");
+    var arPath = (args.Length >= 3 && File.Exists(args[2])) ? args[2] : defaultBin;
+    var subArgs = args.Skip(arPath == defaultBin ? 2 : 3).ToArray();
+
+    if (!File.Exists(arPath))
+    {
+        Console.WriteLine($"AssetRegistry.bin not found at {arPath}");
+        Console.WriteLine("Pass an explicit path as args[2], or copy the extracted bin to the default location.");
+        return;
+    }
+    Console.WriteLine($"AR bin: {arPath}  ({new FileInfo(arPath).Length:N0} bytes)");
+
+    // EGame.GAME_UE5_4 picks the right version-gated branches in the FAssetRegistryState
+    // reader (RemoveAssetPathFNames + ClassPaths + MarshalledTextAsUTF8String + the
+    // AddedDependencyFlags dependency-section header). Wrong game → silent misparse.
+    using var fs = File.OpenRead(arPath);
+    var Ar = new FStreamArchive(arPath, fs, new VersionContainer(EGame.GAME_UE5_4));
+    var state = new FAssetRegistryState(Ar);
+    var entries = state.PreallocatedAssetDataBuffers;
+    Console.WriteLine($"Loaded {entries.Length:N0} FAssetData / "
+                    + $"{state.PreallocatedDependsNodeDataBuffers.Length:N0} DependsNode / "
+                    + $"{state.PreallocatedPackageDataBuffers.Length:N0} PackageData.");
+
+    // Per-entry formatter shared by inspect & candidates. Tags are pulled from the
+    // FStore via FAssetData.TagsAndValues (already string-resolved by the reader).
+    // Bundles uses a typed empty array on the null branch so the ternary stays in one
+    // anonymous-type family (mixing with object[] breaks C# type inference).
+    static object Snapshot(FAssetData a)
+    {
+        var bundles = (a.TaggedAssetBundles?.Bundles ?? Array.Empty<FAssetBundleEntry>())
+            .Select(b => new
+            {
+                Name = b.BundleName.Text,
+                Assets = b.BundleAssets.Select(p => p.ToString()).ToArray(),
+            }).ToArray();
+        return new
+        {
+            PackageName = a.PackageName.Text,
+            AssetName = a.AssetName.Text,
+            PackagePath = a.PackagePath.Text,
+            AssetClass = a.AssetClass.Text,
+            ChunkIDs = a.ChunkIDs,
+            PackageFlags = ((uint) a.PackageFlags).ToString("X8"),
+            Tags = a.TagsAndValues?.ToDictionary(kv => kv.Key.Text, kv => kv.Value)
+                ?? new Dictionary<string, string>(),
+            Bundles = bundles,
+        };
+    }
+
+    Directory.CreateDirectory(outDir);
+
+    switch (sub)
+    {
+        case "inspect":
+        {
+            // Substring filter (case-insensitive) across PackageName / PackagePath /
+            // AssetClass / AssetName. Empty filter = dump everything (a few hundred MB
+            // of JSON — only useful piped through grep).
+            var needle = subArgs.FirstOrDefault() ?? "";
+            bool Match(FAssetData a) => needle.Length == 0
+                || a.PackageName.Text.Contains(needle, StringComparison.OrdinalIgnoreCase)
+                || a.PackagePath.Text.Contains(needle, StringComparison.OrdinalIgnoreCase)
+                || a.AssetClass.Text.Contains(needle, StringComparison.OrdinalIgnoreCase)
+                || a.AssetName.Text.Contains(needle, StringComparison.OrdinalIgnoreCase);
+            var hits = entries.Where(Match).Select(Snapshot).ToList();
+            var safe = string.IsNullOrEmpty(needle) ? "ALL" : needle.Replace('/', '_').Replace('\\', '_');
+            var outFile = Path.Combine(outDir, $"assetregistry_inspect_{safe}.json");
+            File.WriteAllText(outFile, JsonConvert.SerializeObject(hits, Formatting.Indented));
+            Console.WriteLine($"  matched {hits.Count:N0} / {entries.Length:N0} entries -> {outFile}");
+            // Also surface the first ~20 hits to stdout so the operator sees results
+            // immediately without opening the JSON.
+            foreach (var h in hits.Take(20)) Console.WriteLine($"    {((dynamic) h).AssetClass,-48} {((dynamic) h).PackageName}");
+            if (hits.Count > 20) Console.WriteLine($"    ... +{hits.Count - 20} more in JSON");
+            return;
+        }
+
+        case "stats":
+        {
+            // Two histograms: (a) every AssetClass with its entry count, (b) every tag
+            // KEY ever attached to ANY entry, with the number of entries carrying it.
+            // The tag-key histogram is the smoking gun for "did the cooker bake the
+            // PrimaryAssetType / PrimaryAssetName tags into the asset metadata, or did
+            // it strip them?". If those keys appear, the data is in the registry and
+            // the only thing missing is the runtime registration step.
+            var classHisto = entries.GroupBy(e => e.AssetClass.Text)
+                .Select(g => new { Class = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count).ToList();
+            var tagHisto = entries.Where(e => e.TagsAndValues != null)
+                .SelectMany(e => e.TagsAndValues.Keys.Select(k => k.Text))
+                .GroupBy(k => k)
+                .Select(g => new { Tag = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count).ToList();
+
+            // Primary-asset suggestive classes — string-match what we know LokiAssetManager
+            // declares (Mission / MissionPool / Hero / StoreOffer / Item / cosmetic bundles).
+            // Substring match catches Loki* / BP_*Asset_* / DA_* naming variations.
+            string[] needles = ["Mission", "MissionPool", "Hero", "StoreOffer", "Item",
+                                "HeroCosmetic", "SlotCosmetic", "Emote", "PlayerTitle",
+                                "LobbyPlatform", "GameAugment", "Equipment", "Power", "Minion"];
+            var primaryCandidates = classHisto.Where(c => needles.Any(n =>
+                    c.Class.Contains(n, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            var outFile = Path.Combine(outDir, "assetregistry_stats.json");
+            File.WriteAllText(outFile, JsonConvert.SerializeObject(new
+            {
+                Totals = new { Entries = entries.Length, UniqueClasses = classHisto.Count },
+                PrimaryAssetSuggestiveClasses = primaryCandidates,
+                AllClassesTop100 = classHisto.Take(100),
+                AllClasses = classHisto,
+                TagKeyHistogram = tagHisto,
+            }, Formatting.Indented));
+            Console.WriteLine($"  {classHisto.Count:N0} unique classes; primary-suggestive:");
+            foreach (var c in primaryCandidates.Take(30))
+                Console.WriteLine($"    {c.Count,6}  {c.Class}");
+            Console.WriteLine($"  top tag keys:");
+            foreach (var t in tagHisto.Take(15))
+                Console.WriteLine($"    {t.Count,6}  {t.Tag}");
+            Console.WriteLine($"  -> {outFile}");
+            return;
+        }
+
+        case "namemap":
+        {
+            // We need the NameMap as plain text to find indices of class FName strings
+            // we want to write into modified FAssetData entries (the surgical patch
+            // pre-step). FAssetRegistryState doesn't expose the NameMap directly; we
+            // re-read just the header + LoadNameBatch on a fresh stream and write
+            // "index : name" lines. (LoadNameBatch is internal-style; re-using the
+            // public FAssetRegistryReader is cheaper than reimplementing it.)
+            using var fs2 = File.OpenRead(arPath);
+            var Ar2 = new FStreamArchive(arPath, fs2, new VersionContainer(EGame.GAME_UE5_4));
+            var header = new FAssetRegistryHeader(Ar2);
+            var reader = new FAssetRegistryReader(Ar2, header);
+            var outFile = Path.Combine(outDir, "assetregistry_namemap.txt");
+            using (var sw = new StreamWriter(outFile))
+            {
+                sw.WriteLine($"# NameMap: {reader.NameMap.Length:N0} entries");
+                sw.WriteLine($"# version: {header.Version}");
+                for (var i = 0; i < reader.NameMap.Length; i++)
+                {
+                    sw.WriteLine($"{i,7}  {reader.NameMap[i].Name}");
+                }
+            }
+            Console.WriteLine($"  {reader.NameMap.Length:N0} names -> {outFile}");
+            return;
+        }
+
+        case "classes":
+        {
+            // Just the unique AssetClass strings, sorted alphabetically, one per line.
+            // Companion to `namemap` — much smaller and easier to grep for primary-
+            // asset-type candidates ("LokiDataAsset_", "BP_HeroAsset_", "DA_*").
+            var classes = entries.Select(e => e.AssetClass.Text).Distinct()
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+            var outFile = Path.Combine(outDir, "assetregistry_classes.txt");
+            File.WriteAllLines(outFile, classes);
+            Console.WriteLine($"  {classes.Count:N0} unique AssetClass values -> {outFile}");
+            return;
+        }
+
+        case "candidates":
+        {
+            // For one primary-asset-type pattern (substring, case-insensitive), list
+            // every FAssetData whose AssetClass matches. Writes a JSON file with full
+            // snapshot per hit — that's the input to the future `apply-patch` step.
+            //   assetregistry candidates Mission
+            //   assetregistry candidates LokiHero
+            // The output also surfaces TAGS on each hit, so we can confirm whether the
+            // cook baked PrimaryAssetType/PrimaryAssetName tags on these entries.
+            if (subArgs.Length < 1)
+            {
+                Console.WriteLine("usage: assetregistry candidates <classNeedle>");
+                Console.WriteLine("       e.g. Mission, LokiDataAsset_Mission, BP_HeroAsset, StoreOffer");
+                return;
+            }
+            var needle = subArgs[0];
+            var hits = entries
+                .Where(e => e.AssetClass.Text.Contains(needle, StringComparison.OrdinalIgnoreCase))
+                .Select(Snapshot).ToList();
+            var safe = needle.Replace('/', '_').Replace('\\', '_');
+            var outFile = Path.Combine(outDir, $"assetregistry_candidates_{safe}.json");
+            File.WriteAllText(outFile, JsonConvert.SerializeObject(hits, Formatting.Indented));
+            Console.WriteLine($"  {hits.Count:N0} entries with class matching '{needle}' -> {outFile}");
+            foreach (var h in hits.Take(20))
+            {
+                dynamic d = h;
+                var tagKeys = string.Join(",", ((Dictionary<string, string>) d.Tags).Keys.Take(8));
+                Console.WriteLine($"    {d.AssetClass,-44} {d.PackageName}  [tags: {tagKeys}]");
+            }
+            if (hits.Count > 20) Console.WriteLine($"    ... +{hits.Count - 20} more in JSON");
+            return;
+        }
+
+        case "apply-patch":
+        {
+            // Walker helper, declared inside this case so top-level statements aren't
+            // interrupted by a type declaration. An asset-data FName cell is uint32 index;
+            // if the high bit (0x80000000 = AssetRegistryNumberedNameBit) is set, a uint32
+            // number follows ⇒ cell width 4 or 8 bytes on the wire.
+            static void SkipFName(CUE4Parse.UE4.Readers.FArchive Ar)
+            {
+                uint raw = Ar.Read<uint>();
+                if ((raw & 0x80000000u) != 0) Ar.Read<uint>();
+            }
+            // Surgical 8-byte flip of one or more FAssetData entries' AssetClass
+            // FTopLevelAssetPath (two FName cells: PackageName + AssetName). File length is
+            // preserved when neither original NOR replacement uses the numbered-name bit —
+            // class names like "Blueprint" or "LokiDataAsset_MissionPool" never do, so the
+            // patch is exactly 8 bytes per matched entry, no offset fixups needed in the
+            // dependency-block section header.
+            //
+            //   usage: apply-patch --target <PkgNeedle>[:<AssetExact>] --to <Pkg>:<Asset>
+            //                      [--out <patched.bin>]
+            //   e.g.  apply-patch --target DA_MissionPoolDailyChallenge
+            //                     --to /Script/Loki:LokiDataAsset_MissionPool
+            //
+            // --target matches entries whose PackageName CONTAINS the pkg needle (case-
+            // insensitive). If :AssetExact is given, AssetName must match it exactly (case-
+            // insensitive) — useful for picking only the BlueprintGeneratedClass _C entry.
+            //
+            // Algorithm:
+            //   1. Re-parse the header/namemap/FStore via FAssetRegistryReader. After
+            //      construction the reader's archive Position sits at int32 numAssetData
+            //      (the very next read in CUE4Parse's FAssetRegistryState.Load).
+            //   2. Walk each FAssetData manually, mirroring CUE4Parse's reader byte-for-byte
+            //      so we can record the byte offset of the AssetClass field for each entry.
+            //      Cross-check by reading the entry's PackageName FName indices and confirming
+            //      they match the state-parsed entries[i].PackageName.Text via NameMap.
+            //   3. For matched entries with non-numbered AssetClass FNames, overwrite 8 bytes
+            //      at the recorded offset in a COPY of the file. Original untouched.
+            string? targetArg = null, toArg = null, outPath = null;
+            for (int i = 0; i < subArgs.Length; i++)
+            {
+                if (subArgs[i] == "--target" && i + 1 < subArgs.Length) targetArg = subArgs[++i];
+                else if (subArgs[i] == "--to" && i + 1 < subArgs.Length) toArg = subArgs[++i];
+                else if (subArgs[i] == "--out" && i + 1 < subArgs.Length) outPath = subArgs[++i];
+            }
+            if (targetArg == null || toArg == null)
+            {
+                Console.WriteLine("usage: assetregistry apply-patch --target <PkgNeedle>[:<AssetExact>] --to <Pkg>:<Asset> [--out <patched.bin>]");
+                Console.WriteLine("       e.g. --target DA_MissionPoolDailyChallenge --to /Script/Loki:LokiDataAsset_MissionPool");
+                return;
+            }
+
+            var toParts = toArg.Split(':', 2);
+            if (toParts.Length != 2) { Console.WriteLine("--to must be PackageName:AssetName"); return; }
+            var (toPkg, toAsset) = (toParts[0], toParts[1]);
+
+            string targetPkg; string targetAssetExact = "";
+            var tp = targetArg.Split(':', 2);
+            targetPkg = tp[0]; if (tp.Length == 2) targetAssetExact = tp[1];
+
+            // Re-load via the same archive instance: FAssetRegistryReader's Position is
+            // shared with the underlying FStreamArchive (the reader only overrides FName
+            // reads; raw byte reads still go through the stream). After the reader is
+            // constructed the archive Position is at numAssetData.
+            using var fs3 = File.OpenRead(arPath);
+            var Ar3 = new FStreamArchive(arPath, fs3, new VersionContainer(EGame.GAME_UE5_4));
+            var hdr = new FAssetRegistryHeader(Ar3);
+            var rdr = new FAssetRegistryReader(Ar3, hdr);
+
+            // Resolve the --to PackageName/AssetName to NameMap indices. Case-insensitive
+            // match — UE FName comparison is case-insensitive; for our patch we only need
+            // some matching index, the runtime treats them as equal.
+            var nameIdx = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
+            for (uint i = 0; i < rdr.NameMap.Length; i++)
+            {
+                var n = rdr.NameMap[i].Name;
+                if (n != null && !nameIdx.ContainsKey(n)) nameIdx[n] = i;
+            }
+            if (!nameIdx.TryGetValue(toPkg, out uint toPkgIdx))
+            {
+                Console.WriteLine($"ERROR: --to package '{toPkg}' not in NameMap (no FName to write).");
+                return;
+            }
+            if (!nameIdx.TryGetValue(toAsset, out uint toAssetIdx))
+            {
+                Console.WriteLine($"ERROR: --to asset '{toAsset}' not in NameMap (no FName to write).");
+                return;
+            }
+            Console.WriteLine($"--to AssetClass FName cells: pkg='{toPkg}'(idx {toPkgIdx})  asset='{toAsset}'(idx {toAssetIdx})");
+
+            // Read numAssetData (sanity check vs. state-parsed length).
+            var count = Ar3.Read<int>();
+            if (count != entries.Length)
+            {
+                Console.WriteLine($"ERROR: walker found numAssetData={count} but state has {entries.Length} — abort.");
+                return;
+            }
+
+            // Walk every entry, recording its AssetClass offset. Cross-check the PackageName
+            // first FName index against the state-parsed entries[i] to catch any walker
+            // drift early — drift would silently mis-target later entries.
+            var hits = new List<(long offset, int idx, string pkgName, string assetName,
+                                 uint origPkgIdx, uint origAssetIdx)>();
+            int verifiedAlignment = 0;
+            for (int idx = 0; idx < count; idx++)
+            {
+                SkipFName(Ar3); // PackagePath
+                long acOffset = Ar3.Position;
+                // Inline AssetClass FTopLevelAssetPath read so we can record both indices.
+                uint acPkgRaw = Ar3.Read<uint>();
+                bool acPkgNumbered = (acPkgRaw & 0x80000000u) != 0;
+                uint acPkgIdx = acPkgNumbered ? (acPkgRaw & 0x7FFFFFFFu) : acPkgRaw;
+                if (acPkgNumbered) Ar3.Read<uint>();
+                uint acAssetRaw = Ar3.Read<uint>();
+                bool acAssetNumbered = (acAssetRaw & 0x80000000u) != 0;
+                uint acAssetIdx = acAssetNumbered ? (acAssetRaw & 0x7FFFFFFFu) : acAssetRaw;
+                if (acAssetNumbered) Ar3.Read<uint>();
+                // PackageName (first 4-8 bytes is its FName index — read raw so we can
+                // cross-check it against entries[idx].PackageName via NameMap).
+                uint pkgNameRaw = Ar3.Read<uint>();
+                bool pkgNameNumbered = (pkgNameRaw & 0x80000000u) != 0;
+                uint pkgNameIdx = pkgNameNumbered ? (pkgNameRaw & 0x7FFFFFFFu) : pkgNameRaw;
+                if (pkgNameNumbered) Ar3.Read<uint>();
+                SkipFName(Ar3); // AssetName
+                if (!hdr.bFilterEditorOnlyData) SkipFName(Ar3); // OptionalOuterPath
+                Ar3.Read<ulong>(); // packed Tags+Bundles header (Num + PairBegin + bHasNumberlessKeys)
+                int nBundles = Ar3.Read<int>();
+                for (int b = 0; b < nBundles; b++)
+                {
+                    SkipFName(Ar3); // BundleName
+                    int nAssets = Ar3.Read<int>();
+                    for (int a = 0; a < nAssets; a++)
+                    {
+                        SkipFName(Ar3); // FTopLevelAssetPath.PackageName
+                        SkipFName(Ar3); // FTopLevelAssetPath.AssetName
+                        int slen = Ar3.Read<int>();
+                        Ar3.Position += slen >= 0 ? slen : (-slen) * 2;
+                    }
+                }
+                int nChunks = Ar3.Read<int>();
+                Ar3.Position += (long) nChunks * 4;
+                Ar3.Read<uint>(); // PackageFlags
+
+                // Cross-check: the PackageName FName text via NameMap should match the
+                // state-parsed entries[idx].PackageName text. Any mismatch means walker
+                // drift — abort with a useful message.
+                if (pkgNameIdx < rdr.NameMap.Length)
+                {
+                    var walkedName = rdr.NameMap[pkgNameIdx].Name;
+                    // PackageName is stored as a single FName carrying the full path text
+                    // (e.g. "/Game/Loki/Core/Missions/Pools/DA_MissionPoolDailyChallenge").
+                    if (walkedName != null && walkedName.Equals(entries[idx].PackageName.Text, StringComparison.OrdinalIgnoreCase))
+                        verifiedAlignment++;
+                }
+
+                var e = entries[idx];
+                var pkgName = e.PackageName.Text;
+                var assetName = e.AssetName.Text;
+                bool pkgMatch = pkgName.Contains(targetPkg, StringComparison.OrdinalIgnoreCase);
+                bool assetMatch = targetAssetExact.Length == 0
+                    || assetName.Equals(targetAssetExact, StringComparison.OrdinalIgnoreCase);
+                if (pkgMatch && assetMatch)
+                {
+                    if (acPkgNumbered || acAssetNumbered)
+                    {
+                        Console.WriteLine($"  SKIP idx={idx} {pkgName}:{assetName} (AssetClass FName is numbered — can't fit 8-byte overwrite)");
+                        continue;
+                    }
+                    hits.Add((acOffset, idx, pkgName, assetName, acPkgIdx, acAssetIdx));
+                }
+            }
+            Console.WriteLine($"  walker alignment verified on {verifiedAlignment:N0} / {count:N0} entries (PackageName FName text matched)");
+            Console.WriteLine($"  matched {hits.Count} target entries:");
+            foreach (var h in hits)
+            {
+                var origPkgName = h.origPkgIdx < rdr.NameMap.Length ? rdr.NameMap[h.origPkgIdx].Name : "?";
+                var origAssetName = h.origAssetIdx < rdr.NameMap.Length ? rdr.NameMap[h.origAssetIdx].Name : "?";
+                Console.WriteLine($"    idx={h.idx,7}  offset=0x{h.offset:X10}  {h.pkgName} : {h.assetName}");
+                Console.WriteLine($"      origAssetClass: {origPkgName}.{origAssetName}");
+            }
+            if (hits.Count == 0) { Console.WriteLine("  no hits — nothing to patch."); return; }
+
+            outPath ??= Path.Combine(Path.GetDirectoryName(arPath)!,
+                                     Path.GetFileNameWithoutExtension(arPath) + ".patched.bin");
+            File.Copy(arPath, outPath, overwrite: true);
+            using (var rwfs = File.Open(outPath, FileMode.Open, FileAccess.ReadWrite))
+            {
+                var buf = new byte[8];
+                BitConverter.GetBytes(toPkgIdx).CopyTo(buf, 0);
+                BitConverter.GetBytes(toAssetIdx).CopyTo(buf, 4);
+                foreach (var h in hits)
+                {
+                    rwfs.Position = h.offset;
+                    rwfs.Write(buf, 0, 8);
+                }
+                rwfs.Flush();
+            }
+            Console.WriteLine($"  wrote patched bin -> {outPath} ({new FileInfo(outPath).Length:N0} bytes)");
+            return;
+        }
+
+        default:
+            Console.WriteLine($"unknown assetregistry subcommand: {sub}");
+            Console.WriteLine("known: inspect, stats, namemap, classes, candidates, apply-patch");
+            return;
+    }
+}
+
 
 // Oodle: the .ucas blocks are Oodle-compressed; CUE4Parse needs oo2core_9_win64.dll.
 // The game ships it statically linked, so fetch the redistributable once and init.
@@ -76,6 +775,51 @@ if (usmap != null)
 else
 {
     Console.WriteLine("No .usmap found — enumeration works; `dump`/`names` need one.");
+}
+
+// wherefile mode: report which container backs a given virtual path. Used to confirm
+// whether AssetRegistry.bin sources from a legacy .pak or an IoStore .ucas before we
+// pick which writer format to implement for the mod-pak deployment route.
+//   usage: wherefile <virtualPathSubstring>...
+if (cmd == "wherefile")
+{
+    var needles = args.Skip(1).Where(a => !Directory.Exists(a)).ToArray();
+    if (needles.Length == 0) { Console.WriteLine("usage: wherefile <pathNeedle>..."); return; }
+    foreach (var n in needles)
+    {
+        var hits = provider.Files
+            .Where(kv => kv.Key.Contains(n, StringComparison.OrdinalIgnoreCase))
+            .Take(20)
+            .ToList();
+        Console.WriteLine($"  '{n}': {hits.Count} hits");
+        foreach (var h in hits)
+        {
+            // GameFile has a Vfs property that tells us the source container (pak or IoStore).
+            var vfs = h.Value.GetType().GetProperty("Vfs")?.GetValue(h.Value);
+            var src = vfs?.ToString() ?? "?";
+            Console.WriteLine($"    {h.Value.Size,10}  {h.Key}");
+            Console.WriteLine($"               via: {src}");
+            // Reflect interesting properties off the Vfs container — version, encryption,
+            // mount point, entry count. Tells us what to mirror in the writer.
+            if (vfs != null)
+            {
+                foreach (var prop in new[] { "Version", "SubVersion", "PakVersion", "MountPoint", "EncryptionKeyGuid", "IsEncrypted", "FileCount", "Length", "Magic", "Info", "Type" })
+                {
+                    var pi = vfs.GetType().GetProperty(prop);
+                    if (pi != null)
+                    {
+                        try
+                        {
+                            var v = pi.GetValue(vfs);
+                            if (v != null) Console.WriteLine($"               {prop}: {v}");
+                        }
+                        catch { }
+                    }
+                }
+            }
+        }
+    }
+    return;
 }
 
 // dump mode: load each given package path and write its exports as JSON (needs usmap).
@@ -298,6 +1042,290 @@ if (args.Length >= 3 && args[0] == "namesall")
     sw.WriteLine("# ===== UNION (all unique names) =====");
     foreach (var n in union) sw.WriteLine(n);
     Console.WriteLine($"  parsed {ok}/{targets.Count}; {union.Count} unique names -> {outFile}");
+    return;
+}
+
+// bpdump mode: find a UFunction (by name) inside an asset (by path substring),
+// and pretty-print its KismetExpression bytecode tree. The whole point is to
+// answer "what does this BP function actually do" without a Unreal Editor.
+//
+//   run -- bpdump <asset-path-substr> <function-name>
+//
+// CUE4Parse 1.2.2 deserializes UFunction.ScriptBytecode into a typed
+// KismetExpression[] array. We walk the tree with reflection — public
+// fields + properties — and emit a per-line indented dump. FPackageIndex
+// values are resolved against the package's import/export map for readable
+// names; FName values are printed as strings.
+if (args.Length >= 3 && args[0] == "bpdump")
+{
+    var pathSubstr = args[1];
+    var fnNeedle = args[2];
+    var matches = provider.Files.Keys
+        .Where(k => k.EndsWith(".uasset", StringComparison.OrdinalIgnoreCase)
+                 && k.Contains(pathSubstr, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    Console.WriteLine($"bpdump: {matches.Count} .uasset matches for '{pathSubstr}'");
+    if (matches.Count == 0) { Console.WriteLine("(no asset found)"); return; }
+    if (matches.Count > 10) { foreach (var m in matches.Take(10)) Console.WriteLine("  " + m); Console.WriteLine("  ... (truncated to 10)"); }
+    else { foreach (var m in matches) Console.WriteLine("  " + m); }
+
+    // Try each matched asset; first one with a UFunction matching the needle wins.
+    foreach (var assetPath in matches)
+    {
+        CUE4Parse.UE4.Assets.IPackage pkg;
+        try { pkg = provider.LoadPackage(assetPath); }
+        catch (Exception e) { Console.WriteLine($"  LOAD FAIL {assetPath}: {e.Message}"); continue; }
+        var exports = pkg.GetExports().ToList();
+        var ufuncs = exports.OfType<CUE4Parse.UE4.Objects.UObject.UFunction>().ToList();
+        if (ufuncs.Count == 0) continue;
+        Console.WriteLine($"  {assetPath}: {ufuncs.Count} UFunction export(s)");
+        // Special needle '@props' = dump every UObject export's serialized property
+        // values to a text file. Per-instance overrides (e.g. which mission pool a
+        // specific MissionModalCategory_Dailies_1 instance points to) live here.
+        if (fnNeedle == "@props")
+        {
+            var summaryFile = Path.Combine(outDir, $"bpdump_{Path.GetFileNameWithoutExtension(assetPath)}_PROPS.txt");
+            using var ssw = new StreamWriter(summaryFile);
+            ssw.WriteLine($"# Asset: {assetPath}");
+            ssw.WriteLine($"# {exports.Count} exports total\n");
+            foreach (var e in exports)
+            {
+                if (e == null) continue;
+                ssw.WriteLine($"## [{e.GetType().Name}] {e.Name}  (ExportType={e.ExportType})");
+                try
+                {
+                    var props = e.Properties;
+                    if (props == null || props.Count == 0) { ssw.WriteLine("   (no properties)"); continue; }
+                    foreach (var prop in props)
+                    {
+                        try
+                        {
+                            var tag = prop.Tag;
+                            // For Array/Set/Struct/Map property tags, recurse into contained values.
+                            // CUE4Parse's tag classes: ArrayProperty.Value -> UScriptArray with .Properties (List<FPropertyTagType>).
+                            if (tag != null)
+                            {
+                                var tagType = tag.GetType();
+                                var valProp = tagType.GetProperty("Value");
+                                var inner = valProp?.GetValue(tag);
+                                // UScriptArray / UScriptSet have a Properties list (try property OR field).
+                                System.Collections.IEnumerable? listInner = null;
+                                if (inner != null)
+                                {
+                                    var pi = inner.GetType().GetProperty("Properties");
+                                    if (pi != null) listInner = pi.GetValue(inner) as System.Collections.IEnumerable;
+                                    if (listInner == null)
+                                    {
+                                        var fi = inner.GetType().GetField("Properties");
+                                        if (fi != null) listInner = fi.GetValue(inner) as System.Collections.IEnumerable;
+                                    }
+                                }
+                                if (listInner != null)
+                                {
+                                    ssw.WriteLine($"   - {prop.Name} ({prop.PropertyType}):");
+                                    int idx = 0;
+                                    foreach (var item in listInner)
+                                    {
+                                        ssw.WriteLine($"       [{idx}] {TruncStr(item?.ToString() ?? "null", 200)}");
+                                        // Direct FStructFallback, or a StructProperty tag wrapping one.
+                                        CUE4Parse.UE4.Assets.Objects.FStructFallback? fsb = null;
+                                        if (item is CUE4Parse.UE4.Assets.Objects.FStructFallback direct) fsb = direct;
+                                        else if (item != null)
+                                        {
+                                            var itemType = item.GetType();
+                                            var nestedVal = itemType.GetProperty("Value")?.GetValue(item)
+                                                          ?? itemType.GetProperty("Struct")?.GetValue(item)
+                                                          ?? itemType.GetProperty("StructType")?.GetValue(item);
+                                            if (nestedVal is CUE4Parse.UE4.Assets.Objects.FStructFallback wrapped) fsb = wrapped;
+                                        }
+                                        if (fsb?.Properties != null)
+                                        {
+                                            foreach (var subProp in fsb.Properties)
+                                            {
+                                                try { ssw.WriteLine($"           . {subProp.Name} = {TruncStr(subProp.Tag?.ToString() ?? "null", 300)}"); }
+                                                catch (Exception ex) { ssw.WriteLine($"           . {subProp?.Name}: ERR {ex.Message}"); }
+                                            }
+                                        }
+                                        idx++;
+                                        if (idx > 40) { ssw.WriteLine("       ... (truncated)"); break; }
+                                    }
+                                    continue;
+                                }
+                            }
+                            ssw.WriteLine($"   - {prop.Name} ({prop.PropertyType}) = {TruncStr(tag?.ToString() ?? "null", 256)}");
+                        }
+                        catch (Exception ex) { ssw.WriteLine($"   - {prop?.Name}: ERR {ex.GetType().Name} {ex.Message}"); }
+                    }
+                }
+                catch (Exception ex) { ssw.WriteLine($"   ! ERR reading properties: {ex.GetType().Name} {ex.Message}"); }
+                ssw.WriteLine();
+            }
+            Console.WriteLine($"  -> wrote {summaryFile}");
+            return;
+
+            static string TruncStr(string s, int max)
+            {
+                if (s.Length <= max) return s;
+                return s.Substring(0, max) + "...(+" + (s.Length - max) + ")";
+            }
+        }
+
+        // Special needle '*' or '' = dump ALL functions in this asset to a summary file.
+        if (fnNeedle == "*")
+        {
+            var summaryFile = Path.Combine(outDir, $"bpdump_{Path.GetFileNameWithoutExtension(assetPath)}_ALL.txt");
+            using var ssw = new StreamWriter(summaryFile);
+            ssw.WriteLine($"# Asset: {assetPath}");
+            ssw.WriteLine($"# {exports.Count} exports total");
+            ssw.WriteLine();
+            ssw.WriteLine("## All exports:");
+            foreach (var e in exports) ssw.WriteLine($"  [{e.GetType().Name}] {e.Name}");
+            ssw.WriteLine();
+            ssw.WriteLine($"## All UFunctions ({ufuncs.Count}) with parameter chains:");
+            foreach (var f in ufuncs)
+            {
+                ssw.WriteLine($"\n### {f.Name}");
+                ssw.WriteLine($"   FunctionFlags: {f.FunctionFlags}");
+                ssw.WriteLine($"   ScriptBytecode: {(f.ScriptBytecode?.Length ?? 0)} entries");
+                if (f.ChildProperties != null)
+                {
+                    int j = 0;
+                    foreach (var cp in f.ChildProperties)
+                    {
+                        if (cp == null) { ssw.WriteLine($"     [{j++}] (null)"); continue; }
+                        var nm = cp.GetType().GetProperty("Name")?.GetValue(cp)?.ToString() ?? "?";
+                        ssw.WriteLine($"     [{j++}] {cp.GetType().Name}  {nm}");
+                    }
+                }
+            }
+            Console.WriteLine($"  -> wrote {summaryFile}");
+            return;
+        }
+
+        var hit = ufuncs.FirstOrDefault(f => f.Name.Equals(fnNeedle, StringComparison.OrdinalIgnoreCase))
+               ?? ufuncs.FirstOrDefault(f => f.Name.Contains(fnNeedle, StringComparison.OrdinalIgnoreCase));
+        if (hit == null) continue;
+        Console.WriteLine($"  -> matched UFunction '{hit.Name}' (ScriptBytecode count: {hit.ScriptBytecode?.Length ?? 0})");
+
+        var outFile = Path.Combine(outDir, $"bpdump_{hit.Name}.txt");
+        using var sw = new StreamWriter(outFile);
+        sw.WriteLine($"# Asset:         {assetPath}");
+        sw.WriteLine($"# UFunction:     {hit.Name}");
+        sw.WriteLine($"# FunctionFlags: {hit.FunctionFlags}");
+        sw.WriteLine($"# Outer class:   {hit.Outer?.Name ?? "?"}");
+        sw.WriteLine($"# ScriptBytecode entries: {hit.ScriptBytecode?.Length ?? 0}");
+        sw.WriteLine($"# ChildProperties: {hit.ChildProperties?.Length ?? 0}");
+        if (hit.ChildProperties != null && hit.ChildProperties.Length > 0)
+        {
+            sw.WriteLine("# --- Parameters / locals (FField chain) ---");
+            int pi = 0;
+            foreach (var ch in hit.ChildProperties)
+            {
+                if (ch == null) { sw.WriteLine($"#   [{pi++}] (null)"); continue; }
+                var t = ch.GetType();
+                var name = t.GetProperty("Name", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)?.GetValue(ch)?.ToString() ?? "?";
+                sw.WriteLine($"#   [{pi++}] {t.Name}  {name}");
+            }
+        }
+        sw.WriteLine();
+        sw.WriteLine("# --- ScriptBytecode tree ---");
+
+        // Resolver: turn FPackageIndex into a readable object path for the dump.
+        string ResolveIdx(object? idx)
+        {
+            if (idx == null) return "<null>";
+            try
+            {
+                var resolveMethod = idx.GetType().GetMethod("ResolvedObject",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                var prop = idx.GetType().GetProperty("ResolvedObject",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                var resolved = prop?.GetValue(idx);
+                if (resolved != null)
+                {
+                    var nameProp = resolved.GetType().GetProperty("Name");
+                    var n = nameProp?.GetValue(resolved)?.ToString();
+                    if (!string.IsNullOrEmpty(n)) return n!;
+                }
+            }
+            catch { /* fall through */ }
+            return idx.ToString() ?? "<?>";
+        }
+
+        // Recursive expression printer. Skip the "Token" property (printed in the header)
+        // and recurse into nested KismetExpression / KismetExpression[] fields. Resolve
+        // FPackageIndex via the package's import/export map.
+        void DumpExpr(CUE4Parse.UE4.Kismet.KismetExpression expr, int depth, int? idx, StreamWriter w)
+        {
+            string indent = new string(' ', depth * 2);
+            var t = expr.GetType();
+            var tokenName = t.Name; // EX_* subclass name already encodes the opcode
+            string idxStr = idx.HasValue ? $"[{idx,3}] " : "";
+            w.WriteLine($"{indent}{idxStr}{tokenName}");
+
+            foreach (var p in t.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                if (p.Name == "Token") continue; // implied by subclass name
+                object? v;
+                try { v = p.GetValue(expr); } catch { continue; }
+                if (v == null) continue;
+
+                if (v is CUE4Parse.UE4.Kismet.KismetExpression nested)
+                {
+                    w.WriteLine($"{indent}  {p.Name}:");
+                    DumpExpr(nested, depth + 2, null, w);
+                }
+                else if (v is CUE4Parse.UE4.Kismet.KismetExpression[] arr)
+                {
+                    w.WriteLine($"{indent}  {p.Name}: [{arr.Length}]");
+                    int j = 0;
+                    foreach (var sub in arr)
+                    {
+                        if (sub == null) { w.WriteLine($"{indent}    [{j++}] (null)"); continue; }
+                        DumpExpr(sub, depth + 2, j++, w);
+                    }
+                }
+                else if (v.GetType().Name == "FPackageIndex")
+                {
+                    w.WriteLine($"{indent}  {p.Name}: {ResolveIdx(v)}");
+                }
+                else if (v.GetType().Name == "FKismetPropertyPointer")
+                {
+                    // FKismetPropertyPointer wraps either an FPackageIndex (old) or
+                    // a path through FField (new). Pull whatever's most readable.
+                    var ptrField = v.GetType().GetProperty("Old", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                                 ?? v.GetType().GetProperty("Path", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    var ptrVal = ptrField?.GetValue(v);
+                    w.WriteLine($"{indent}  {p.Name}: {(ptrVal != null ? ResolveIdx(ptrVal) : v.ToString())}");
+                }
+                else if (v is Array a && a.Length > 0)
+                {
+                    w.Write($"{indent}  {p.Name}: [");
+                    for (int j = 0; j < a.Length && j < 16; j++)
+                    {
+                        if (j > 0) w.Write(", ");
+                        w.Write(a.GetValue(j)?.ToString() ?? "null");
+                    }
+                    if (a.Length > 16) w.Write(", ...");
+                    w.WriteLine("]");
+                }
+                else if (v is string || v.GetType().IsPrimitive || v.GetType().IsEnum
+                         || v.GetType().Name.StartsWith("F"))
+                {
+                    w.WriteLine($"{indent}  {p.Name}: {v}");
+                }
+            }
+        }
+
+        int ix = 0;
+        foreach (var expr in hit.ScriptBytecode ?? Array.Empty<CUE4Parse.UE4.Kismet.KismetExpression>())
+            DumpExpr(expr, 0, ix++, sw);
+
+        Console.WriteLine($"  -> wrote {outFile}");
+        return;
+    }
+    Console.WriteLine($"No matching UFunction '{fnNeedle}' found in any of the {matches.Count} assets.");
     return;
 }
 

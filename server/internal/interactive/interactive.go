@@ -190,25 +190,77 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 	// The PUT carries an EMPTY body (Content-Length 0) — it is a fire-and-forget
 	// "reconcile my mission progress" trigger (exe: ServerAddMissionProgress /
-	// SetMissionProgress), not a claim with a payload. Real mission *progress* is
-	// added server-side during matches, so in the menu there is nothing per-player
-	// to persist here.
+	// SetMissionProgress), not a claim with a payload.
 	//
-	// Response is the player's mission/progression state — model MissionData (exe
-	// FName cluster). We return only its two TMap fields, each confirmed a map by a
-	// `_Key` companion (Completions, TrackIDToClaimableRewards), as empty objects.
-	// The sibling fields ClaimableProgressionTrackClaimData /
-	// ClaimableProgressionTrackRewards have no `_Key` (array-or-struct, type
-	// unconfirmed) so are omitted per the validity rule — an absent field defaults
-	// safely; a wrong-typed present one would reject the whole doc.
+	// Response model = `MissionData` (exe FName cluster, block 96). The OLD note
+	// here said the Missions modal blocker was the AssetManager Track A gate — that
+	// was based on the prior session's hypothesis. END-OF-2026-06-29 RE chain
+	// proved otherwise: AddDynamicAsset registrations don't move the modal. The
+	// real chain is:
+	//   modal categories iterate PoolAsset[] -> GetPrimaryAssetIdFromClass(P) ->
+	//     UMissionsModel.GetActive/GetClaimableMissionModel(id)
+	//   which iterates a TSet at UMissionsModel+0x30 holding UMissionModel* with
+	//     PoolId field at +0x40. findptr on UMissionModel CDO vtable returns
+	//     ONLY the CDO — NO live UMissionModel UObjects exist anywhere in the
+	//     process. The pipeline waits for the server to populate them.
+	//   OnPSMissionsUpdated (FName 0x0058FF4F) fires when server pushes the data;
+	//   CreateMissionModelFromFinalProgress (0x0058FEE1) is the factory.
 	//
-	// NOTE: the Missions modal stays empty regardless of this response — that is the
-	// AssetManager "Invalid Primary Asset Type" gate (mission pools are UE Primary
-	// Assets the client loads locally once the content-service manifest declares
-	// their asset type). That is Track A's content manifest, not this endpoint.
+	// Hypothesis: this PUT's response (or a sibling endpoint we haven't found)
+	// carries the per-pool mission data the client deserializes into
+	// UMissionModels. The MissionData struct's NamePool-clustered field names
+	// (around the struct's own FName id 0x006002E0 in block 96 / 98) include:
+	//   Completions / Completions_Key (TMap)
+	//   TrackIDToClaimableRewards / _Key (TMap)
+	//   Pools (TArray or TMap — type unconfirmed)
+	//   NewMissionTime (DateTime — the "year 0" warning source)
+	//   MillisUntilNewMission (int64)
+	//   PoolId (FPrimaryAssetId, per-pool field)
+	//   GrantedAt / Expiry / MillisUntilExpiry (DateTime, int64)
+	//   Progress / MaxProgress / StartingProgress (int)
+	//   Failed / Complete (bool)
+	//   ObjectiveProgress / ObjectiveName (TMap, string)
+	//   InitialArmoryContext
+	//
+	// The validity rule still applies: an absent field is safe; a wrong-typed
+	// matched field rejects the whole doc. We add fields in dependency order,
+	// most-confident-types first, and observe Loki.log on each rebuild for
+	// "Deserialization failure" / "Invalid response received". One pool entry
+	// for DA_MissionPoolDailyEasy is the smoke-test target — if the Dailies
+	// category renders ANYTHING on the next modal open, the chain is correct
+	// and we iterate to add the other 12 pools.
+	now := time.Now().UTC()
+	nextRefresh := now.Add(24 * time.Hour)
+	expiry := now.Add(7 * 24 * time.Hour)
+	// FPrimaryAssetId in UE5 JSON serializes as "Type:Name" string.
+	poolEntry := map[string]any{
+		"PoolId":            "MissionPool:DA_MissionPoolDailyEasy",
+		"MissionAssetId":    "Mission:DA_Mission_ArmoryDaily_PlayAGame",
+		"GrantedAt":         now.Format(time.RFC3339),
+		"Expiry":            expiry.Format(time.RFC3339),
+		"MillisUntilExpiry": int64(7 * 24 * 3600 * 1000),
+		"Progress":          0,
+		"MaxProgress":       1,
+		"StartingProgress":  0,
+		"Failed":            false,
+		"Complete":          false,
+		"ObjectiveProgress": map[string]any{},
+	}
 	writeJSON(w, map[string]any{
 		"Completions":               map[string]any{},
 		"TrackIDToClaimableRewards": map[string]any{},
+		"NewMissionTime":            nextRefresh.Format(time.RFC3339),
+		"MillisUntilNewMission":     int64(24 * 3600 * 1000),
+		// Pools FProperty has 5 hits across classes with ElementSizes 0x10, 0x18,
+		// 0x28, 0x50, 0x50 — the 0x50 ones are full TMap headers. On MissionData
+		// the field type is unconfirmed; we send a TMap<FPrimaryAssetId, PoolData>
+		// shape (UE5 JSON encodes TMap<FName-keyed> as a JSON object). If the
+		// actual type is TArray UE will silently ignore this Pools key (unknown
+		// field → no error). If wrong-typed match, the whole doc rejects with
+		// "Deserialization failure" in Loki.log.
+		"Pools": map[string]any{
+			"MissionPool:DA_MissionPoolDailyEasy": poolEntry,
+		},
 	})
 }
 
@@ -229,7 +281,20 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 // "??? - ms" + missing ST_ServerLocations). STAGED probe: one region pointed at the local
 // backend so the ping can resolve. Fields are the confirmed model names (RegionName/RouteName)
 // plus a superset of plausible host/port/display keys (UE ignores unmatched, matches
-// case-insensitively). Returned as a bare array (regions is a TArray<FCoreGameRegion>).
+// case-insensitively).
+//
+// 2026-06-29 — PROBE #2: object-envelope. Live readback (Loki.log):
+//   LogJson: Warning: JsonObjectStringToUStruct - Unable to parse json=[[{"Address":...}]]
+//   LogLokiPlatformQuery: Error: Deserialization failure on Query: GET .../core-game/regions
+// UE's warning format is literally `json=[%s]` (outer brackets are part of the log format,
+// not the body) so the body the server emitted was the single-wrapped bare array
+// `[{...}]\n`. Per the validity model documented at the top of menu.go ("a bare [] hits
+// Deserialization failure — array vs. object struct"), the target UStruct is an object,
+// so a bare TArray top-level fails. PROBE #1's "returned as a bare array" comment was
+// wrong about what the call site expects. Flipping to an object envelope with the obvious
+// field name (`Regions`, matching `GetRegions`'s return). If "Regions" is the wrong field
+// name the symptom will flip from Deserialization failure → Invalid response received
+// (predicate fails), which would name the next probe.
 func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) {
 	region := map[string]any{
 		"RegionName":  "na",
@@ -241,7 +306,9 @@ func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) 
 		"Port":        443,
 		"Enabled":     true,
 	}
-	writeJSON(w, []any{region})
+	writeJSON(w, map[string]any{
+		"Regions": []any{region},
+	})
 }
 
 func (s *Service) handleMailboxConfigVersion(w http.ResponseWriter, r *http.Request) {

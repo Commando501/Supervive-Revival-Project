@@ -1,0 +1,26 @@
+[+] mount_shim DLL attached, spawning worker
+[0] mount_shim worker started
+[0] modBase = 0x7FF65F6D0000
+[1] waiting for GGameThreadId to be non-zero (60s)...
+[gametid] slot ptr = 00007FF669419158 (mod-RVA 0x9D49158)
+[gametid] VirtualQuery: ret=48 base=00007FF669419000 regsize=0x368000 state=0x1000 protect=0x8 type=0x40000
+[gametid] loop=1 readable=1
+[gametid] FOUND tid=7660 at loop=18
+[2] sleeping 5s to let cooked-pak mount + AR-init complete...
+[scan] looking for vtableA=0x7FF6670B0C78 vtableB=0x7FF6670B0C80
+[scan] cand #1 @0000017B3BB8CE00: +0x08=0x2 +0x10=0x7FF6670B0C80 +0x18=0x17B44669F80 valid=1 v8ptr=0
+[scan] cand #2 @0000017B3BB8D080: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B4466A400 valid=1 v8ptr=0
+[scan] cand #3 @0000017B3BB8D300: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B4466A880 valid=1 v8ptr=0
+[scan] cand #4 @0000017B3BB8D580: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44669100 valid=1 v8ptr=0
+[scan] cand #5 @0000017B3BB8D800: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44669580 valid=1 v8ptr=0
+[scan] cand #6 @0000017B3BB8DA80: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44669A00 valid=1 v8ptr=0
+[scan] cand #7 @0000017B3BB8DD00: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44669E80 valid=1 v8ptr=0
+[scan] cand #8 @0000017B3BB8DF80: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44668200 valid=1 v8ptr=0
+[scan] cand #9 @0000017B3BB8E200: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44668680 valid=1 v8ptr=0
+[scan] cand #10 @0000017B3BB8E480: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44668B00 valid=1 v8ptr=0
+[scan] cand #11 @0000017B3BB8E700: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44665F80 valid=1 v8ptr=0
+[scan] cand #12 @0000017B3BB8E980: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44667200 valid=1 v8ptr=0
+[scan] cand #13 @0000017B3BB8EC00: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44667680 valid=1 v8ptr=0
+[scan] cand #14 @0000017B3BB8EE80: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44667B00 valid=1 v8ptr=0
+[scan] cand #15 @0000017B3BB8F100: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44665F00 valid=1 v8ptr=0
+[scan] cand #16 @0000017B3BB8F380: +0x08=0x1 +0x10=0x7FF6670B0C80 +0x18=0x17B44666480 valid=1 v8ptr=0

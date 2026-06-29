@@ -25,6 +25,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // rfc6455GUID is the magic value concatenated with Sec-WebSocket-Key to derive
@@ -173,6 +174,12 @@ func (c *Conn) Close() error {
 	_ = c.WriteFrame(OpClose, nil)
 	return c.c.Close()
 }
+
+// SetReadDeadline forwards to the underlying net.Conn. Used by the lobby
+// service to wake a blocked ReadFrame on a timer so it can push a proactive
+// server-initiated heartbeat (the Theorycraft messenger socket's watchdog
+// trips ~60s after connect even though we echo "hb" on receive).
+func (c *Conn) SetReadDeadline(t time.Time) error { return c.c.SetReadDeadline(t) }
 
 func tokenHeaderContains(header, want string) bool {
 	for _, part := range strings.Split(header, ",") {

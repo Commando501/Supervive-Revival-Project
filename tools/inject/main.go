@@ -15,12 +15,14 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -38,6 +40,8 @@ var (
 	procProcess32NextW       = kernel32.NewProc("Process32NextW")
 	procModule32FirstW       = kernel32.NewProc("Module32FirstW")
 	procModule32NextW        = kernel32.NewProc("Module32NextW")
+	procCreateProcessW       = kernel32.NewProc("CreateProcessW")
+	procResumeThread         = kernel32.NewProc("ResumeThread")
 	procGetModuleHandleW     = kernel32.NewProc("GetModuleHandleW")
 	procGetProcAddress       = kernel32.NewProc("GetProcAddress")
 	procGetProcMitigation    = kernel32.NewProc("GetProcessMitigationPolicy")
@@ -245,9 +249,222 @@ func diag(name string) {
 	fmt.Println("  - RPM @real base ok=true (MZ=true) => external read-only dumper is viable.")
 }
 
+// launchSuspendedAndInject creates the target exe with CREATE_SUSPENDED (main
+// thread paused at entry), manual-maps the DLL while the process is frozen,
+// then resumes the main thread. The injected DLL's DllMain should spawn its
+// own worker thread for any spin-wait (NOT block in DllMain) — main is still
+// suspended when DllMain runs, so any code that depends on main thread
+// progressing (like waiting for the packer to commit .text) would deadlock if
+// it spun synchronously in DllMain.
+//
+// extraArgs is appended to the command line (each space-quoted as needed).
+func launchSuspendedAndInject(exePath, dllPath string, extraArgs []string) {
+	fmt.Printf("launch: %q with %d extra arg(s); will inject %s\n", exePath, len(extraArgs), dllPath)
+	if _, err := os.Stat(exePath); err != nil {
+		fmt.Println("ERROR: exe not found:", err)
+		os.Exit(1)
+	}
+	if _, err := os.Stat(dllPath); err != nil {
+		fmt.Println("ERROR: dll not found:", err)
+		os.Exit(1)
+	}
+
+	// Build a single quoted command line: "<exe>" "<arg1>" "<arg2>"...
+	var cmd strings.Builder
+	cmd.WriteString("\"")
+	cmd.WriteString(exePath)
+	cmd.WriteString("\"")
+	for _, a := range extraArgs {
+		cmd.WriteString(" ")
+		// Naive quoting — wrap in "..." and escape any embedded " as \"
+		if strings.ContainsAny(a, " \t\"") {
+			cmd.WriteString("\"")
+			cmd.WriteString(strings.ReplaceAll(a, "\"", "\\\""))
+			cmd.WriteString("\"")
+		} else {
+			cmd.WriteString(a)
+		}
+	}
+	cmdUtf16, err := syscall.UTF16PtrFromString(cmd.String())
+	if err != nil {
+		fmt.Println("ERROR: cmdline encode:", err)
+		os.Exit(1)
+	}
+	exeUtf16, _ := syscall.UTF16PtrFromString(exePath)
+
+	// STARTUPINFOW + PROCESS_INFORMATION (sizes per WinAPI docs)
+	var si [104]byte                                     // STARTUPINFOW is 104 bytes on x64
+	*(*uint32)(unsafe.Pointer(&si[0])) = 104              // cb
+	var pi [24]byte                                      // PROCESS_INFORMATION
+	const CREATE_SUSPENDED = 0x00000004
+	ok, _, err := procCreateProcessW.Call(
+		uintptr(unsafe.Pointer(exeUtf16)),
+		uintptr(unsafe.Pointer(cmdUtf16)),
+		0, 0, // pProcessAttr, pThreadAttr
+		0,                              // bInheritHandles
+		CREATE_SUSPENDED,               // dwCreationFlags
+		0,                              // lpEnvironment (inherit)
+		0,                              // lpCurrentDirectory (inherit)
+		uintptr(unsafe.Pointer(&si[0])),
+		uintptr(unsafe.Pointer(&pi[0])),
+	)
+	if ok == 0 {
+		fmt.Println("ERROR: CreateProcessW failed:", err)
+		os.Exit(1)
+	}
+	hProc := *(*uintptr)(unsafe.Pointer(&pi[0]))
+	hThread := *(*uintptr)(unsafe.Pointer(&pi[8]))
+	pid := *(*uint32)(unsafe.Pointer(&pi[16]))
+	fmt.Printf("launch: process created (PID=%d), main thread suspended\n", pid)
+
+	// Manual-map the DLL while main is paused. DllMain runs in a worker (created
+	// by the mapper via CreateRemoteThread); it'll spawn its own polling thread
+	// and return immediately.
+	mmapMain([]string{strconv.FormatUint(uint64(pid), 10), dllPath})
+	fmt.Println("launch: inject complete, resuming main thread")
+
+	r, _, _ := procResumeThread.Call(hThread)
+	fmt.Printf("launch: ResumeThread returned %d (previous suspend count)\n", int32(r))
+	procCloseHandle.Call(hThread)
+	procCloseHandle.Call(hProc)
+	fmt.Println("launch: done; the game is now running")
+}
+
+// watchInjectLoop polls for `procName` until the process appears, then immediately
+// manual-maps `dllPath` and additionally waits for the target byte sequence at
+// `mod-base + targetRVA` to match `expectedPrologue` before injecting — this gates
+// on the packer having finished unpacking the .text section that contains our
+// patch site. Without that wait, we'd patch packer placeholder bytes that get
+// overwritten when the unpacker runs.
+//
+// Used for the pak-signature-bypass race: pak mount starts ~100-500ms after the
+// packer finishes unpacking; we need our DllMain to patch FPakSignatureFile::Load
+// in that window. Polling at 5ms intervals gives us tens of attempts inside the
+// window.
+func watchInjectLoop(procName, dllPath string, targetRVA uintptr, expected []byte) {
+	fmt.Printf("watch: waiting for %q to appear, then mmap-injecting %s\n", procName, dllPath)
+	fmt.Printf("       gating on prologue at mod-base+0x%X = % X\n", targetRVA, expected)
+	var pid uint32
+	var base uintptr
+	// Phase 1: poll for the process. Tight loop, 1ms sleep.
+	for attempt := 0; ; attempt++ {
+		if p, err := findPID(procName); err == nil {
+			pid = p
+			fmt.Printf("watch: process appeared after %d poll(s); PID=%d\n", attempt, pid)
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	// Phase 2: wait for module base to be queryable.
+	for attempt := 0; ; attempt++ {
+		base = moduleBase(pid, procName)
+		if base != 0 {
+			fmt.Printf("watch: module base resolved after %d poll(s); base=0x%X\n", attempt, base)
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	// Phase 3: wait for prologue bytes to appear (= packer unpacked the .text).
+	h, _, _ := procOpenProcess.Call(0x0010|0x1000, 0, uintptr(pid)) // VM_READ | QUERY_LIMITED
+	if h == 0 {
+		fmt.Println("watch: OpenProcess(VM_READ) failed")
+		os.Exit(1)
+	}
+	buf := make([]byte, len(expected))
+	for attempt := 0; ; attempt++ {
+		var got uintptr
+		procReadProcessMemory.Call(h, base+targetRVA,
+			uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf)), uintptr(unsafe.Pointer(&got)))
+		match := got == uintptr(len(expected))
+		if match {
+			for i := range expected {
+				if buf[i] != expected[i] {
+					match = false
+					break
+				}
+			}
+		}
+		if match {
+			fmt.Printf("watch: prologue matched after %d poll(s); injecting now\n", attempt)
+			break
+		}
+		if attempt > 0 && attempt%500 == 0 {
+			fmt.Printf("watch: still waiting (%d polls); current bytes: % X\n", attempt, buf)
+		}
+		time.Sleep(time.Millisecond)
+	}
+	procCloseHandle.Call(h)
+	// Phase 4: hand off to the existing mmap path.
+	mmapMain([]string{strconv.FormatUint(uint64(pid), 10), dllPath})
+}
+
 func main() {
 	if len(os.Args) >= 2 && os.Args[1] == "mmap" {
 		mmapMain(os.Args[2:])
+		return
+	}
+	// watch: <procName> <dllPath> <targetRVAHex> <expectedHex>
+	// Polls for the process, waits for `expectedHex` (e.g. "405553415441554156415748" = the
+	// FPakSignatureFile::Load prologue) at the target RVA, then mmap-injects. Race the pak mount.
+	if len(os.Args) == 6 && os.Args[1] == "watch" {
+		var rva uintptr
+		fmt.Sscanf(os.Args[4], "0x%x", &rva)
+		expected, err := hex.DecodeString(strings.TrimPrefix(strings.TrimPrefix(os.Args[5], "0x"), "0X"))
+		if err != nil {
+			fmt.Println("ERROR: bad expected hex:", err)
+			os.Exit(1)
+		}
+		watchInjectLoop(os.Args[2], os.Args[3], rva, expected)
+		return
+	}
+	// launch: <exePath> <dllPath> [cmdline...]
+	// CreateProcess(CREATE_SUSPENDED) so the main thread is paused at entry —
+	// THEN mmap-inject the DLL (DllMain runs in a worker, spawns a polling
+	// background thread, returns immediately) — THEN ResumeThread(main). This
+	// gives the injected DLL a fair race against the engine's pak mount loop:
+	// the worker thread is already polling when the packer (now running on the
+	// resumed main thread) commits the .text page with the function we want
+	// to patch. Without SUSPENDED, the packer + pak mount finish before any
+	// external injector can attach.
+	if len(os.Args) >= 4 && os.Args[1] == "launch" {
+		exePath := os.Args[2]
+		dllPath := os.Args[3]
+		extraArgs := os.Args[4:]
+		launchSuspendedAndInject(exePath, dllPath, extraArgs)
+		return
+	}
+	// watch-now: <procName> <dllPath>
+	// Polls for the process, then mmap-injects immediately (no prologue gate).
+	// Use when the injected DLL's DllMain does its own in-process spin-wait for
+	// the unpacked bytes — in-process polling is orders of magnitude faster than
+	// external RPM polling, so injecting as soon as we can open a handle gives
+	// the DLL the best chance to win the race against the engine's pak mount.
+	if len(os.Args) == 4 && os.Args[1] == "watch-now" {
+		procName := os.Args[2]
+		dllPath := os.Args[3]
+		fmt.Printf("watch-now: waiting for %q, then mmap-injecting %s\n", procName, dllPath)
+		var pid uint32
+		for attempt := 0; ; attempt++ {
+			if p, err := findPID(procName); err == nil {
+				pid = p
+				fmt.Printf("watch-now: process appeared after %d poll(s); PID=%d\n", attempt, pid)
+				break
+			}
+			time.Sleep(time.Millisecond)
+		}
+		// Poll briefly until the process is open-able (it may not accept handles
+		// the literal instant it appears in the process table).
+		var hP uintptr
+		for attempt := 0; ; attempt++ {
+			hP, _, _ = procOpenProcess.Call(processAllAccess, 0, uintptr(pid))
+			if hP != 0 {
+				procCloseHandle.Call(hP)
+				fmt.Printf("watch-now: PROCESS_ALL_ACCESS handle obtained after %d poll(s)\n", attempt)
+				break
+			}
+			time.Sleep(time.Millisecond)
+		}
+		mmapMain([]string{strconv.FormatUint(uint64(pid), 10), dllPath})
 		return
 	}
 	if len(os.Args) == 3 && os.Args[1] == "diag" {
@@ -282,6 +499,12 @@ func main() {
 		fmt.Println(`       inject mmap <process-name-or-pid> <dll-path> (manual map; bypasses CIG)`)
 		fmt.Println(`       inject diag <process-name-or-pid>            (read-only diagnostics)`)
 		fmt.Println(`       inject probe <process-name-or-pid>           (RWX-alloc test for ACG)`)
+		fmt.Println(`       inject watch <name> <dll> <RVAhex> <expectedHex>`)
+		fmt.Println(`                                                    (race the pak mount: poll for proc,`)
+		fmt.Println(`                                                     wait for unpacked prologue, then mmap)`)
+		fmt.Println(`       inject watch-now <name> <dll>                (poll for proc then mmap immediately)`)
+		fmt.Println(`       inject launch <exe> <dll> [args...]          (CREATE_SUSPENDED + mmap + Resume —`)
+		fmt.Println(`                                                     beats the pak mount: inject before main runs)`)
 		os.Exit(2)
 	}
 

@@ -1,145 +1,153 @@
-# Next session kickoff — Milestone 3: make the menu *functional* (Track A via real .usmap)
+# Next session prompt — SUPERVIVE Revival dedicated-server stub
 
-> Paste the fenced block below into a new session to continue. Everything above the
-> line is notes; the prompt itself is the fenced block.
-
----
-
-```
-We're continuing the SUPERVIVE Revival Project (G:\git\Supervive Revival Project) —
-reviving the shut-down game with a self-hosted zero-dep Go backend. Build the server with
-  & "$env:ProgramFiles\Go\bin\go.exe" build -o ags.exe ./cmd/ags   (run from server\)
-Milestones 1 (reach the menu) and 2 (populate the menu) are DONE: the client loads into a
-fully rendered, broadly-alive main menu. Milestone 3 = make menu SYSTEMS actually WORK,
-before gameplay. Two tracks: A = IoStore extraction (the content catalog), B = interactive
-backend flows. We are leading with Track A.
-
-READ FIRST (hold everything learned; the supervive-milestone3-status memory also auto-loads):
-- docs/findings.md — full RE journey incl. the "Track A" section (paks unencrypted; packed
-  exe; usmap story; binary-RE technique).
-- docs/endpoints.md — every endpoint's status + the "Invalid response received" validity model.
-- server/internal/menu/menu.go — current handlers incl. handleContentManifest (probe #1) and
-  handleHeroes (25 lowercase codenames).
-- tools/extractor/README.md — the CUE4Parse extractor (how to run, the usmap requirement).
-
-THE BREAKTHROUGH THAT DEFINES THIS SESSION: MANUAL MAPPING WORKS. The shipping exe is a
-PACKED binary (PE imports only preloader.dll; preloader+runtime.dll unpack the real UE5.4
-engine at runtime), so UE4SS's dwmapi proxy never loads and a simple LoadLibrary injector
-(tools/inject/) is blocked by the process's DLL-signature mitigation. BUT the user has
-CONFIRMED a manual mapper bypasses this. There is NO EasyAntiCheat (verified). So we can
-finally get a real .usmap, which unblocks Track A cleanly.
-
-IMMEDIATE PLAN (Track A, the high-leverage path):
-1. usmap: user injects UE4SS (the experimental build, already deployed at
-   "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\", with the
-   ue4ss\ subfolder; ConsoleEnabled=1) via the working MANUAL MAPPER, reaches the menu, and
-   presses Ctrl+NumPad6 (UE4SS "DumpUSMAP" keybind, confirmed in
-   ue4ss\Mods\Keybinds\Scripts\main.lua). UE4SS writes Mappings.usmap to the Win64 folder.
-2. Copy Mappings.usmap into tools\extractor\ (the extractor auto-loads any *.usmap; DELETE the
-   placeholder tools\extractor\empty.usmap first so the real one is used).
-3. With the real usmap, run the extractor in `dump` mode to read EXACT structured JSON for:
-   - the ContentManifest model + its ContentServicePrimaryAsset entry shape (so we stop
-     guessing the manifest field/types),
-   - the cosmetic definition assets (BP_<Hero>_DefaultCosmeticsBundle etc.) to get each hero's
-     real PrimaryAssetId (Type:Name),
-   - DA_ArmoryTables_S1 / DT_* / store-offer BPs for prices and structured relationships.
-4. Build GET /content-service/manifest/{version} (handleContentManifest) correctly — it is THE
-   master catalog and the lever for HUNTERS / STORE / cosmetics (see "architecture" below).
-   Then wire /storefront/heroes, /inventory ownership, and the store offers using the real SKUs
-   + PrimaryAssetIds. Then move to Track B (equip cosmetic, etc.).
-
-PROVEN METHOD (unchanged):
-- Go server listens HTTP :8080 (AccelByte + PostAuth via -ini: URL overrides) + HTTPS :443
-  (Theorycraft hosts via hosts-file redirect). Logs every request to docs\capture.log (WS
-  frames as WS <- / WS ->).
-- I (agent) CANNOT launch the game. The user runs .\configs\launch-redirect.ps1 (elevated;
-  rebuilds from source; GameRoot defaults to the backup) and reports back / sends screenshots.
-- Recon: %LOCALAPPDATA%\SUPERVIVE\Saved\Logs\Loki.log (UTC, OVERWRITTEN per launch — cross-check
-  docs\capture.log, the HTTP ground truth). LogPlatformStorefront / LogPlatformInventory /
-  LogAssetManager / LogStringTable are the readback channels.
-- Binary RE: static string scans of the shipping exe WORK (the packer only stripped imports;
-  the UE FName reflection pool is intact, roughly offsets 124M–146M). Use Python to scan ASCII
-  + UTF-16LE and cluster names by offset (a struct's UNIQUE fields cluster near its type name;
-  SHARED/pooled fields live elsewhere — use the decode-probe loop when clustering isn't enough).
-
-TOOLS BUILT THIS PROJECT:
-- tools/extractor/ — headless CUE4Parse (.NET 9) reader of the UE5.4 paks at
-  "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Content\Paks". Paks are NOT
-  encrypted (no AES key) and keep their directory index. Run from tools\extractor\extractor:
-    & "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release                      (enumerate -> out\)
-    ... run -c Release -- names <pkgpath...>            (dump a package NameMap)
-    ... run -c Release -- namesall <substr> <outfile>   (union NameMaps of all matching .uasset)
-    ... run -c Release -- dump  <pkgpath...>            (FULL exports as JSON — needs real usmap)
-  Oodle auto-fetched (OodleHelper.DownloadOodleDllFromOodleUEAsync; the plain DownloadOodleDll
-  URL is dead). With empty.usmap, only NameMap reads work; with a REAL usmap, `dump` works.
-- tools/inject/ — a verifying CreateRemoteThread+LoadLibraryW injector (kept for reference;
-  insufficient here — use the manual mapper instead).
-
-WHAT WE ALREADY EXTRACTED / KNOW (so you don't re-derive):
-- 107,123 files mounted keyless. Content is all baked into the shipped paks (NOT
-  content-service-delivered). The "missing" string tables exist (ST_Cosmetics_Categories/_Names,
-  ST_Storefront, ST_MainMenu, ST_Currencies, ST_Items, …) — the client resolves display strings
-  from its OWN packed tables, so the backend only needs to send the right SKU KEYS.
-- 25 hero codenames: Alchemist Assault BacklineHealer Beebo BountyHunter BurstCaster Earthtank
-  FarShot FireFox Flex Freeze Gunner HookGuy Huntress Reaper ResHealer RocketJumper Ronin
-  ShieldBot Sniper Stalker Storm Succubus Void Wukong. /storefront/heroes accepted all 25 as
-  LOWERCASE codenames ("Unlockable heroes fetched: 25").
-- Full storefront catalog SKUs harvested offline -> tools/extractor/out/storeoffers.names.txt:
-  currency vp10..vp480 / tp475..tp11000 (+*token); cosmetics AVATAR_* GLIDER_* WISP_* SPRAY_*,
-  skin codes (WukongCYBER, HuntressGODQU…), PlayerTitle, LobbyPlatform, Emote; bundle IDs
-  (CyberpunkWukongPack, starter2024…). Store offers live at Loki/Content/Loki/Core/StoreOffer/
-  BP_StoreOffer_*. Each hero's default skin asset = BP_<Hero>_DefaultCosmeticsBundle.
-
-THE ARCHITECTURE (recovered via binary RE — this is the key mental model):
-- GET /content-service/manifest/{version}  = MASTER CATALOG (what EXISTS). We stubbed {} and it
-  retried 264x/run. Model = ContentManifest: TMap<FString SKU, ContentServicePrimaryAsset> for
-  Heroes, Items, Emotes, PlayerTitles, HeroCosmeticsBundles, StoreOffers, SlotCosmetics, Minions,
-  GameAugments, Equipment, Powers; plus scalar CurrentPatchVersion + PatchVersions. Entry =
-  ContentServicePrimaryAsset (fields incl. PrimaryAssetName / AssetPath / DisplayName — pooled,
-  exact types unconfirmed → the usmap will confirm). Event OnContentManifestUpdated.
-  -> The "ALL HUNTERS" grid, STORE, and cosmetics ALL populate from this manifest.
-- GET /storefront/heroes  = the UNLOCKABLE (purchasable) subset.
-- GET /inventory/players/{id}  = the OWNED subset (model LokiPlatformInventory { AssetEntries:
-  [ LokiAssetEntry ] }). Heroes/cosmetics resolve via UE AssetManager PrimaryAssetId (Type:Name),
-  NOT plain SKUs — an inventory probe of 25 lowercase codenames produced
-  "LogAssetManager: Invalid Primary Asset Type" and rendered nothing (since reverted to empty).
-  Registered cosmetic primary-asset types include HeroCosmetic / SlotCosmetic / LokiHero /
-  LokiCosmetic.
-
-CURRENT menu.go STATE:
-- handleHeroes -> 25 lowercase codenames (harmless; correct unlockable subset).
-- handleContentManifest -> PROBE #1: all 11 maps present, Heroes populated with {PrimaryAssetName}
-  only, scalars set. NOT yet relaunch-tested. With the real usmap, REPLACE this guess with the
-  exact ContentServicePrimaryAsset shape + real PrimaryAssetIds/AssetPaths.
-- handleInventory -> empty (the probe was reverted).
-
-TRACK B request shapes already spotted in the exe (for later): SetClientProfileRequest,
-SetLuxeSkinChromaPreferenceRequest, LokiPlatformCurrencyExchangeRequest,
-SetLobbyPlatformPreferenceRequest, LobbyPlatformAssetID.
-
-CRITICAL GOTCHAS (don't re-learn):
-- List/object endpoints want the required field PRESENT, else "Invalid response received".
-- UE's JsonObjectStringToUStruct IGNORES JSON keys matching no UPROPERTY and ONLY rejects the
-  whole doc when a MATCHED key has the wrong TYPE — so probe liberally with safe string/int/array
-  values; omit fields whose type you're unsure of (esp. FText/FSoftObjectPath/bool).
-- Service name in serviceHostnames has NO hyphen (contentservice); the URL path DOES
-  (/content-service). Same for coregame -> /core-game.
-- The server runs elevated; my non-elevated shell can't kill it — the launch script restarts it.
-- tools/extractor auto-loads any *.usmap in tools\extractor\ (and the build dir). DELETE
-  empty.usmap once the real Mappings.usmap is in place.
-
-START BY: confirming the user has Mappings.usmap from the manual-mapped UE4SS dump (Ctrl+NumPad6).
-Once it's in tools\extractor\, run `dump` on the ContentManifest-bearing assets + a couple cosmetic
-bundles to read exact types, then build /content-service/manifest correctly and iterate via
-relaunch. If the usmap isn't ready yet, you can still relaunch-test handleContentManifest probe #1
-(watch capture.log for the 264x retry collapsing and Loki.log for OnContentManifestUpdated).
-```
+Paste the section below as the first message of the new session. It
+bootstraps the agent fully without re-reading dozens of files.
 
 ---
 
-## Why this framing
-- The packed exe killed the proxy + simple-injection usmap routes; the user's confirmed
-  manual mapper reopens the clean usmap path, which is far faster than blind-probing the
-  nested ContentManifest TMaps.
-- Everything needed to act fast is captured: the architecture, the extractor + how to run it,
-  the harvested SKUs, the recovered models, and the exact current menu.go state.
+We're starting a new chapter of the SUPERVIVE Revival project on branch
+`claude/assetregistry-primary-assets-w7pljz`. Repo at
+`G:\git\Supervive Revival Project`. The diagnostic phase for the menu data
+blockers is COMPLETE. This session begins the **dedicated-server stub**
+work, which is required to unblock the Missions modal (and likely Store,
+Cosmetics, Hunters grid, all in-match features).
+
+START BY (in this order):
+  cd "G:\git\Supervive Revival Project"
+  git status
+  git log --oneline -15
+  # Then read in order:
+  #   docs/dedicated-server-stub.md   (★ this chapter's design notes — read first)
+  #   docs/lokiassetmanager-vtable-dump.md  (the full RE diagnostic, ~2000 lines;
+  #     skim to the "G1-G2 NEGATIVE" section at the end for the latest verdict)
+  #   docs/trackb-notes.md  (HTTP endpoint surface; `handleCoreGamePlayer`
+  #     stub commentary mentions where match-server connect info goes)
+  #   docs/endpoints.md     (every endpoint + handler status)
+  # Memory file [[supervive-hero-roster-blocker]] auto-loads with the
+  # latest verdict.
+
+THE CORE FINDING THIS CHAPTER ACTS ON:
+
+The Missions modal calls `UMissionsModel.GetActiveMissionModel(fpaid)` /
+`GetClaimableMissionModel(fpaid)`. Both are NATIVE methods on
+UMissionsModel that iterate a TSet at `UMissionsModel+0x30` containing
+`UMissionModel*` pointers. That TSet is populated ONLY by
+`OnPSMissionsUpdated` (FName 0x0058FF4F), which fires from UE Network
+Replication on `LokiPlayerState_Missions`.
+
+At the menu, there is NO live `LokiPlayerState_Missions` instance
+(CDO-only, confirmed via findptr on its vtable, both pre- and
+post-restart). So no missions, hence empty modal.
+
+Enriching `PUT /progression/players/{id}/mission` response with a full
+MissionData payload was tested (commits `368b675` + `435b739`) and
+CONFIRMED to NOT trigger UMissionModel creation — the HTTP path is
+write-only. The architectural reality: missions arrive via a UE
+dedicated server replicating `LokiPlayerState_Missions` to the
+connected client.
+
+THIS CHAPTER'S GOAL:
+
+Bring up a UE5.4 dedicated server stub that the client connects to and
+that replicates enough of `LokiPlayerState_Missions` for the Missions
+modal to render at least 1 mission. Treat that 1-mission render as the
+"hello world" smoke test; everything else (more missions, Store /
+Cosmetics replication, in-match logic) follows the same path.
+
+Per `docs/dedicated-server-stub.md`, three implementation paths exist
+(Path A = full UE5.4 dedicated server, Path B = Go netcode emulator,
+Path C = hybrid). Decide which is tractable based on what's available
+on the user's machine.
+
+START-OF-CHAPTER CONCRETE STEPS:
+
+1. **Survey UE5.4 install** — does the user have UE5.4 source / editor
+   installed? If yes, what path? If only the binary launcher install,
+   server targets aren't directly buildable without the source. Run
+   `Get-ChildItem 'C:\Program Files\Epic Games\UE_5.4' -ErrorAction SilentlyContinue`
+   and similar paths. Ask the user if not found.
+
+2. **Capture the post-matchmaking protocol** — modify
+   `server/internal/interactive/interactive.go::handleCoreGamePlayer`
+   to return a phantom matchInfo pointing at `127.0.0.1:7777` (or
+   another test port nothing's listening on). Restart `ags`, watch
+   Loki.log for what the client tries to do next when it thinks there's
+   an active match. That tells us the protocol surface to implement.
+
+   The current handler returns
+   `{hasActiveMatch:false, matchInfo:null, player:null}`. The shape of
+   matchInfo when populated is unknown — needs experimentation. Likely
+   fields: server address, server port, session token, match ID.
+
+3. **Decide on Path A/B/C** based on findings + scope appetite. Document
+   the choice in `docs/dedicated-server-stub.md`.
+
+KEY TECHNICAL ANCHORS (already RE'd):
+
+UMissionsModel layout — what replication needs to fill on the client:
+```
+UMissionsModel
+  +0x30 : TSet<UMissionModel*>  ← populate via OnPSMissionsUpdated
+UMissionModel
+  +0x40, +0x48 : FPrimaryAssetId PoolId — the lookup key
+  +0xB8, +0xB9 : flag bytes — both must be 0 to qualify as
+                   "active" / "claimable" per native impl disasm
+```
+
+Per-category pool wiring (from
+`docs/exports/WBP_UI_MissionModalCategory.json`):
+
+| Category | PoolAsset BP classes (FPrimaryAssetIds when GetPrimaryAssetIdFromClass'd) |
+|---|---|
+| Dailies | DA_MissionPoolDailyEasy_C, DailyChallenge_C, DailyEasy_Planbee_C, DailyChallenge_Planbee_C |
+| Weekly | DA_MissionPoolWeekly_C, WeeklyChallenge_C, Weekly_Planbee_C, WeeklyChallenge_Planbee_C |
+| Seasonal | DA_MissionPool_Tournament_C |
+| Onboarding | DA_MissionPoolOnboardingPlanbee_C, MissionPoolOnboarding_C |
+| PCBang | DA_MissionPoolDailyPCB_C, DA_MissionPoolDailyPCB_Armory_C |
+
+For the smoke test, even 1 UMissionModel with PoolId =
+`MissionPool:DA_MissionPoolDailyEasy` + flags=0 in the TSet would make
+the Dailies tab render that 1 entry.
+
+GUARDRAILS (per CLAUDE.md):
+
+- Commit + push each meaningful step. Push needs `gh auth` or system
+  git credential helper — interactive prompt fails in the Claude shell,
+  so user pushes manually.
+- DON'T mutate the game's running state without showing the user the
+  command and the expected effect first.
+- The HTTP/HTTPS redirect is already working; don't touch
+  `launch-redirect.ps1` casually.
+- Steam must be running before the game launches (else Auth Failure
+  14005). Easy to miss.
+
+LARGER CONTEXT REMINDER:
+
+The user's strategic intuition that "the menu blocker is server-side"
+was proven correct this session. The dedicated server stub is the next
+required-but-hard milestone for the project; the user said: "The
+dedicated server stub was always going to be a major requirement for
+this project to work at all. I know for a fact that most of the game
+will not be playable or triggerable without the dedicated server
+allowing the client to do so." Treat this chapter as a multi-session
+effort. The first session is mostly surveying + the matchmaking-protocol
+probe; it's fine to end without ANY actual server code if the recon
+clarifies what the implementation needs to be.
+
+TOOLING ALREADY BUILT (do not duplicate):
+
+- `tools/usmapdump` (external RPM, includes `poke` for WriteProcessMemory
+  experiments and `nameid` for FName resolution — note: `nameid`'s pool
+  discovery sometimes fails on fresh processes; you may need a few
+  launch attempts)
+- `tools/extractor` (CUE4Parse-based, includes `bpdump` for cooked-asset
+  property inspection)
+- `tools/inject` (manual-map DLL injector for in-process shims like
+  `registration_shim.cpp`)
+- FModel installed at `G:\Tools\FModel` (configured for SUPERVIVE
+  GAME_UE5_4) — use for any further cooked-asset inspection where
+  property names matter
+
+If you propose to run a long shell command or modify a critical file,
+state the intent in one sentence before the tool call so the user can
+veto. Otherwise proceed at the same pace as prior sessions.

@@ -10,11 +10,25 @@
 package lobby
 
 import (
+	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"supervive-revival/server/internal/ws"
 )
+
+// messengerHeartbeatInterval is how often the server proactively pushes a
+// binary "hb" frame on the Theorycraft messenger socket (path
+// /notifications/players/{id}). The client's LogMessenger watchdog fires
+// "heartbeat not received in 5 seconds. Last heartbeat sent: <T>" ~60s after
+// connect and tears the socket down with a clean status-1000 close, even with
+// our on-receive "hb" echo wired up. The on-receive echo races the watchdog
+// trigger; pushing server-initiated frames before the watchdog's silence
+// threshold is what other AccelByte/Theorycraft-style notification clients
+// expect. 30s = ~half the observed 60s send-cycle, leaving slack for the 5s
+// reply window.
+const messengerHeartbeatInterval = 30 * time.Second
 
 // EventLogger records frame activity to the capture log.
 type EventLogger interface {
@@ -29,6 +43,21 @@ func New(log EventLogger) *Service { return &Service{log: log} }
 
 // Handle upgrades a WebSocket request and serves the read loop. The caller
 // should route here when ws.IsUpgrade(r) is true.
+//
+// 2026-06-29 — Messenger heartbeat probe. The Theorycraft LokiPlatformMessenger
+// socket (path /notifications/players/{id}) was tearing down every ~60s with
+// "LogMessenger: Warning: heartbeat not received in 5 seconds. Last heartbeat
+// sent: <T>" followed by a clean status-1000 close. Wire-level capture showed
+// the client sending one BINARY "hb" (0x68 0x62) every ~55-60s and closing
+// 5.0s later; nothing else over the socket. Echoing "hb" on receive was
+// insufficient (had improved the cycle from ~5s to ~60s in an earlier session
+// but the watchdog still trips). Hypothesis: the watchdog model is "haven't
+// received anything from server in N seconds → probe + close on no reply",
+// and the on-receive echo races the watchdog. Fix: push proactive "hb" frames
+// every 30s by setting a ReadFrame deadline and writing on timeout. Single
+// goroutine, no write-mutex needed (reads and writes both happen on this
+// goroutine). Only applied to the messenger path so the AccelByte /lobby
+// socket — which works on TEXT heartbeats and has no watchdog — is unchanged.
 func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 	conn, err := ws.Upgrade(w, r)
 	if err != nil {
@@ -41,9 +70,24 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 		s.log.Event("WS closed %s", r.URL.Path)
 	}()
 
+	isMessenger := strings.HasPrefix(r.URL.Path, "/notifications/players/")
+
 	for {
+		if isMessenger {
+			_ = conn.SetReadDeadline(time.Now().Add(messengerHeartbeatInterval))
+		}
 		f, err := conn.ReadFrame()
 		if err != nil {
+			if isMessenger {
+				if ne, ok := err.(net.Error); ok && ne.Timeout() {
+					s.log.Event("WS -> %s BINARY hb (proactive %s keepalive)", r.URL.Path, messengerHeartbeatInterval)
+					if werr := conn.WriteFrame(ws.OpBinary, []byte("hb")); werr != nil {
+						s.log.Event("WS proactive hb write FAILED %s: %v", r.URL.Path, werr)
+						return
+					}
+					continue
+				}
+			}
 			s.log.Event("WS read end %s: %v", r.URL.Path, err)
 			return
 		}
@@ -57,9 +101,13 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 		case ws.OpBinary:
 			s.log.Event("WS <- %s BINARY (%d bytes) %x", r.URL.Path, len(f.Payload), f.Payload)
 			// AccelByte notification/lobby heartbeat is the binary token "hb";
-			// echo it back or the socket closes and reconnects every ~5s.
+			// echo it back. Kept alongside the proactive push above: the echo
+			// is what stopped the initial ~5s close-cycle in an earlier
+			// session, and a client probe should still get a reply.
 			if string(f.Payload) == "hb" {
-				_ = conn.WriteFrame(ws.OpBinary, []byte("hb"))
+				if werr := conn.WriteFrame(ws.OpBinary, []byte("hb")); werr != nil {
+					s.log.Event("WS hb echo write FAILED %s: %v", r.URL.Path, werr)
+				}
 			}
 		case ws.OpPing:
 			s.log.Event("WS <- %s PING", r.URL.Path)
