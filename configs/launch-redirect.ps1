@@ -46,7 +46,13 @@ param(
   [string]$GameRoot = "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE",
   [switch]$Revert,
   [switch]$NoLaunch,
-  [string]$Open = ""
+  [string]$Open = "",
+  [string]$Hook = ""    # path to a manual-map shim DLL (browse_hook.dll, etc.)
+                         # Uses inject.exe launch (CREATE_SUSPENDED+mmap+Resume)
+                         # so the DLL is loaded BEFORE the game's first
+                         # UEngine::Browse call at startup. Required to catch
+                         # the natural LVL_Login + LVL_LobbyV2 startup
+                         # browses for testing the hook end-to-end.
 )
 
 $ErrorActionPreference = "Stop"
@@ -71,6 +77,7 @@ if (-not $isAdmin) {
   if ($Revert)   { $argList += "-Revert" }
   if ($NoLaunch) { $argList += "-NoLaunch" }
   if ($Open)     { $argList += @("-Open",$Open) }
+  if ($Hook)     { $argList += @("-Hook",$Hook) }
   Start-Process powershell -Verb RunAs -ArgumentList $argList
   return
 }
@@ -220,5 +227,18 @@ if ($Open) {
   Write-Host "Probe #7 active: positional URL $Open (replaces DefaultMap browse)" -ForegroundColor Yellow
   $iniArgs += $Open
 }
-Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
-& $exe @iniArgs
+if ($Hook) {
+  if (-not (Test-Path $Hook)) {
+    throw "Hook DLL not found: $Hook"
+  }
+  $injectExe = Join-Path $repoRoot "tools\inject\inject.exe"
+  if (-not (Test-Path $injectExe)) {
+    throw "inject.exe not found at $injectExe (build it with 'go build -C tools/inject -o inject.exe .')"
+  }
+  Write-Host "Launching SUPERVIVE via inject (DLL: $Hook)..." -ForegroundColor Cyan
+  Write-Host "  CREATE_SUSPENDED + manual-map + Resume — DLL loaded BEFORE first Browse" -ForegroundColor DarkGray
+  & $injectExe launch $exe $Hook @iniArgs
+} else {
+  Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
+  & $exe @iniArgs
+}
