@@ -685,6 +685,65 @@ identified. Everything from here is either fix-it engineering OR more
 diagnostics to disprove the "directly-populate-the-model fixes it"
 hypothesis.
 
+### Route 1 attempt — partial / inconclusive (2026-06-28 final)
+
+Tried the "direct UMissionsModel state injection" smoke test. Hit two
+blockers that mean Route 1 needs significantly more recon than initially
+scoped:
+
+**Surprise finding — 2 instances, one of them partially populated.** Of the
+2 live UMissionsModel instances, instance #2 (@0x16B7C654A80) has a TArray
+at offset +0x120 with Num=42, Max=56 (data ptr 0x16AF2347400). Instance #1
+(@0x16B77E50100) at same offset is empty.
+
+But: **the populated TArray entries do NOT decode as FPrimaryAssetId**. The
+first 4-byte slot of each entry holds values like 0x00016F03 / 0x00016F05 /
+0x00016F07 — these land mid-string in NamePool block 1 (specifically
+inside "MissionExpeditionRewards"), so they're NOT valid FName
+ComparisonIndex values. The 16-byte stride is real but the struct is
+something else — possibly an FMissionProgress-like record (paired uint32s
++ a smallish uint64 that isn't a heap pointer either).
+
+**Implications:**
+- We don't yet know which offset is `MissionPoolIDs` vs `MissionPoolAssets`
+  vs other fields like `ProgressTracker`. Both instances might have their
+  actual MissionPool data empty.
+- The populated TArray at +0x120 is NOT the MissionPoolIDs field. So
+  "copy the populated TArray header to the empty model" wouldn't smoke-
+  test the right thing.
+- Writing blindly into unknown offsets risks crashing the game or silently
+  no-op'ing.
+
+**To unblock Route 1, we need one of:**
+- (A) UE5 reflection metadata parsing — walk `UMissionsModel`'s UClass
+  property chain and extract each field's `Offset_Internal`. This requires
+  understanding the FProperty linked-list format in this build.
+- (B) Find a function in the binary that writes to MissionPoolIDs (e.g.,
+  via `MissionPoolIDs.Add(...)`) and disassemble it. The instruction
+  pattern reveals the offset directly.
+- (C) Decode the populated-TArray-at-+0x120 struct to confirm it ISN'T
+  MissionPoolIDs (we suspect this; can confirm with more analysis).
+
+Each is substantial.
+
+**Pragmatic pivot — try Route 2 next?** Route 2 (PrimaryAssetTypesToScan
+injection) is actually more tractable because:
+- The scan config lives in UAssetManager's known structure (we already
+  decoded AssetTypeMap at +0x478).
+- We've identified that Mission's scan config IS populated (TArray fields
+  at known offsets within FPrimaryAssetTypeData) and MissionPool's is NOT.
+- Comparing Mission's vs MissionPool's TypeData byte-by-byte would reveal
+  which sub-field is the Directories TArray that needs population.
+- Once we know the offset, write the missing scan path + call a re-scan
+  function (need to find one — `ScanPathForPrimaryAssets` is a vtable
+  virtual we could anchor).
+
+This stays within the work we've already done (TypeData walking), avoids
+the UMissionsModel field-layout decode problem entirely, and fixes at the
+right layer (root cause, not symptom).
+
+**Recommendation: Route 2 should be the next attempt.**
+
 ### Next route — RE the UI's actual enumeration source
 
 Given hypothesis 1's strong support, the productive next pursuit shifts to
