@@ -887,6 +887,65 @@ The remaining options narrow:
   WBP_UI_MissionModalCategory's `BindToMissions` function reads from, then
   inject at that layer. Requires Blueprint VM decompilation.
 
+### Route 3 attempted: FAssetRegistry singleton hunt — also hits a wall
+
+Tried to locate the live `UAssetRegistryImpl` singleton via the standard
+CDO+vtable+findptr chain:
+
+1. Found `Default__AssetRegistryImpl` FName id 0x005BB216 → CDO @ 0x16AC83F63B0.
+2. CDO vtable = +0x79D5328.
+3. `findptr` on that vtable → ONLY ONE HIT (the CDO itself). **No live
+   UAssetRegistryImpl instance exists.**
+
+Tried `Default__AssetRegistry` (the abstract base) — found CDO with vtable
++0x76EF750. findptr returned 10 hits, but all are flagged 0x31 (CDO). These
+are 10 subclass CDOs sharing the base vtable, not live instances.
+
+Confirmed log anchors are correct:
+- "FAssetRegistry took %0.4f seconds" @ +0x79D5DF0, log struct @ +0x79D5DD0,
+  unique LEA @ +0x1FD8DBE (deep inside the timing-emit function).
+- "Premade AssetRegistry loaded from '%s'" @ +0x79D5B40, log struct @
+  +0x79D5B20, unique LEA @ +0x1FF5113. Function accesses `[rdi+0x38]` (file
+  path FString.Data) and writes a byte at `[rdi+0x301]` — meaning `this` (the
+  AR object) is at least 0x302 bytes.
+
+So the active runtime AR DOES exist (it logged at startup), but it's NOT a
+UAssetRegistryImpl OR UAssetRegistry UObject — at least not findable via the
+standard CDO+vtable scan. Likely it's an FAssetRegistryImpl (struct, not
+UObject) accessed via the IAssetRegistry module interface. UE5 sometimes
+splits the C++ FAssetRegistryImpl from the UAssetRegistryImpl UObject
+wrapper.
+
+### Strategic concern: would Route 3 even work?
+
+Even if we find FAssetRegistryImpl + figure out how to inject FAssetData
+entries (substantial work — FAssetData layout decode + hash bucket updates
++ tag store rebuild), the question remains: **does UMissionsModel's
+population path actually query IAssetRegistry?**
+
+We have no evidence either way. UMissionsModel's population (via
+`OnLocalMissionsInitialized` and `OnPSMissionsUpdated` events) could be
+driven by:
+- An IAssetRegistry::GetAssetsByClass query (Route 3 would help)
+- A LokiAssetManager call into AssetTypeMap (Route 3 wouldn't help — we
+  already tested via AddDynamicAsset and it doesn't move the modal)
+- A separately-loaded config or hardcoded list (Route 3 wouldn't help)
+
+Without confirming the source, Route 3's significant engineering investment
+could be wasted.
+
+### Revised recommendation
+
+Before continuing Route 3, run a smaller diagnostic: trace
+UMissionsModel's population code by finding what mutates the empty TMaps
+inside it (the ones at +0x130/+0x180/+0x1C4 with HashSize=128/FirstFree=-1).
+Even if we can't easily decode the field layout, finding a single
+WRITE-XREF to one of those addresses would reveal the populator function.
+
+Or: pivot to Route 4 — Blueprint VM decompilation of
+`WBP_UI_MissionModalCategory_C::BindToMissions`. The actual data binding
+inside the widget tells us authoritatively what data source to populate.
+
 ### The ENGINEERING TASK to actually call this from a shim requires:
 - Constructing a 28-byte entry struct matching FPrimaryAssetTypeInfo's
   on-disk layout (FName Type + 8 bytes class info + Directories TArray
