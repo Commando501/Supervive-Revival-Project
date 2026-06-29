@@ -264,34 +264,36 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// phantomMatchProbe toggles the dedicated-server-stub chapter's first probe:
-// when true, handleCoreGamePlayer claims an active match at 127.0.0.1:7777 in
-// the "Allocating" lifecycle state so the client thinks its server is being
-// prepared. The goal is to observe (in Loki.log) which fields the client reads
-// off matchInfo, when/whether it opens a NetConnection, and what control-channel
-// messages it sends. Flip back to false to restore the menu-idle behavior.
-const phantomMatchProbe = true
+// phantomMatchState drives the dedicated-server-stub chapter's probes of the
+// /core-game/players/{id} endpoint. Empty string disables the probe (the
+// historical "no active match" reply). Non-empty sets the ECoreGameMatchState
+// value returned in the phantom matchInfo, letting us walk the state machine
+// one constant flip at a time:
+//
+//	""             — disabled, menu-idle (revert target if anything breaks)
+//	"Allocating"   — probe #1 (2026-06-29): accepted silently, no client action
+//	"AwaitingReady"— probe #2 (current): expect client to open NetConnection
+//	"InProgress"   — fallback if AwaitingReady doesn't trigger connect
+//
+// Other valid enum values from ECoreGameMatchState: PreHeroSelect, HeroSelect,
+// Preallocate, Deallocating, Closing, Unknown.
+const phantomMatchState = "AwaitingReady"
 
 // handleCoreGamePlayer is the "is there an active match to rejoin?" heartbeat
-// (polled hundreds of times per session). Two modes:
+// (polled hundreds of times per session). When phantomMatchState is non-empty,
+// claims an active match at 127.0.0.1:7777 in that lifecycle state. Nothing is
+// listening on 7777 — the connection ATTEMPT itself is the protocol signal we
+// want to capture in Loki.log (LogNet*, NetDriver choice, control-channel
+// behavior, retry/timeout shape).
 //
-//   - phantomMatchProbe=false: the historical "no active match" reply. Omits
-//     MatchInfo/Player entirely so absent fields default safely.
-//   - phantomMatchProbe=true (dedicated-server-stub probe, 2026-06-29): claims
-//     an Allocating match at 127.0.0.1:7777. Nothing is listening on 7777 — the
-//     connection attempt itself is the signal we want to capture.
-//
-// Phantom-mode payload is a SUPERSET probe (PascalCase UPROPERTY convention; UE
-// matches case-insensitively and silently ignores unmatched keys, while a
-// matched-but-wrong-typed field rejects the whole doc with "Deserialization
-// failure"). Likely connection fields covered: Address, Port, ServerUrl,
-// SessionToken, MatchId, State, Region. Track A endpoints.md confirms the
-// `CoreGamePlayer` model contains MatchInfo, MatchParticipant, CanDisassociate,
-// ContentServicePrimaryAsset, ContentServiceContentManifest, with State enum
-// `ECoreGameMatchState` (PreHeroSelect/HeroSelect/Preallocate/Allocating/
-// AwaitingReady/InProgress/Deallocating/Closing/Unknown).
+// Payload is a SUPERSET probe (PascalCase UPROPERTY convention; UE matches
+// case-insensitively and silently ignores unmatched keys, while a matched-but-
+// wrong-typed field rejects the whole doc with "Deserialization failure").
+// Track A endpoints.md confirms the `CoreGamePlayer` model contains MatchInfo,
+// MatchParticipant, CanDisassociate, ContentServicePrimaryAsset,
+// ContentServiceContentManifest.
 func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
-	if !phantomMatchProbe {
+	if phantomMatchState == "" {
 		writeJSON(w, map[string]any{
 			"hasActiveMatch": false,
 			"matchInfo":      nil,
@@ -300,13 +302,13 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Phantom match: server being prepared at 127.0.0.1:7777, nothing listening.
+	// Phantom match: server claimed at 127.0.0.1:7777, nothing listening.
 	// Fixed MatchId/SessionToken so log lines stay greppable across restarts.
 	matchInfo := map[string]any{
 		"MatchId":      "phantom-match-0001",
 		"SessionId":    "phantom-session-0001",
 		"SessionToken": "phantom-token-0001",
-		"State":        "Allocating",
+		"State":        phantomMatchState,
 		"Region":       "na",
 		"Address":      "127.0.0.1",
 		"Port":         7777,
@@ -320,7 +322,7 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 		"player":         nil,
 		// Top-level State mirrors matchInfo.State in case the lifecycle state is
 		// read from the wrapper rather than the nested object.
-		"State": "Allocating",
+		"State": phantomMatchState,
 	})
 }
 
