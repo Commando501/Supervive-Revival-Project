@@ -323,6 +323,72 @@ modal widget. If pools appear in the modal, the same pattern scales mechanically
 to the 105 mission assets + the 25 hero assets + the 25 cosmetics bundles +
 the store offers etc.
 
+### Smoke test executed 2026-06-28 evening — 16/16 registrations succeeded (twice)
+
+`tools/sigbypass-mod/registration_shim.cpp` built, injected (live process via
+`tools/inject mmap`), ran end-to-end twice in succession on the same running
+game. Marker file at `docs/registration-shim-marker.txt`.
+
+Per-run sequence (both identical):
+1. DllMain attached at remote heap base, worker spawned (no DllMain blocking).
+2. GGameThreadId resolved on loop=1 (slot at +0x9D49158 confirmed stable).
+3. 10s grace + singleton scan.
+4. Scan filter results: ~19,790 regions, 5-6 vt-ptr hits, 1 self-skip (our DLL),
+   2-3 badClassSkips (stack-region coincidental matches), 1 CDO, 1 singleton.
+   Picked singleton = **0x1CBB033EE90** (exactly matching recon).
+5. APC queued on game thread tid=36396; fires within seconds on next alertable
+   wait (Vivox/UI tick).
+6. APC body resolved `vtable[94] = AddDynamicAsset @ 0x7FF662B7B870`
+   (= module base 0x7FF65F6D0000 + RVA 0x34AB870 — exactly the value derived
+   from string-anchor → log-record → xrefstr in recon).
+7. All 16 MissionPool registrations called sequentially; each returned cleanly.
+   Marker logged `[apc] DONE: 16 / 16 registrations completed`.
+
+**Self-match filter was critical.** First attempt (without filter) picked a
+spurious match in a low-address stack region (0x000000C8...) because our DLL has
+the LokiAssetManager vtable address baked in as a constant, AND nearby stack
+qwords coincidentally match. The re-validation step in the APC body caught it
+(singleton ptr no longer readable → graceful abort, no crash). Filters added:
+- Skip qwords inside our own DLL's image range (captured in `DllMain` from
+  `hModule` + reading `OptionalHeader.SizeOfImage` at +0x50 of NT headers).
+- `[+0x18]` (ClassPrivate) must be 8-byte-aligned heap-range pointer AND must
+  be a readable page (PageReadable check).
+- These together reduced "5 hits" → "1 singleton + 1 CDO" — matches the
+  `findptr` recon result exactly.
+
+**Game state after 2 successful runs:** alive, ~5.85 GB working set (slightly
+down from peak — likely GC), Loki.log shows zero NEW `LogAssetManager`
+warnings (the only 2 in the log predate injection by 38 minutes, from the
+initial SetHero("") path). Zero `ChangeBundleStateForPrimaryAssets` activity
+for `MissionPool:*` IDs — registration is complete BUT NOT YET TRIGGERED by
+any UI/code path.
+
+**Vanilla UE conflict-warning is silent on identical re-registration.** UE
+source's `AddDynamicAsset` only emits the
+`"AddDynamicAsset on %s called with conflicting AssetId %s"` warning when the
+NEW path differs from the EXISTING path. Run 2 used the same paths as run 1,
+so the absence of warnings is consistent with both: "registrations landed in
+run 1 and were re-found by exact match in run 2" AND "registrations did not
+land in run 1 and run 2 silently created fresh entries". Confirming which
+requires either: (a) a third run with a DELIBERATELY DIFFERENT path for at
+least one ID (would force conflict warning IF entries persisted), OR (b) a UI
+test of the Missions modal — opening it and observing whether mission pools
+appear.
+
+### Next decision point — UI test or further programmatic validation
+
+The path-conflict re-run is purely programmatic + definitive: change one byte
+of one PackageName in the shim, rebuild, re-inject. Conflict warning fires →
+proven persistence. No warning → either run-1 calls were no-ops or our second
+run's path-FName-id pointed at the same string.
+
+The UI test is the actual goal: open the Missions modal and see if anything
+appears. If yes, the smoke test scales to the 105 missions / 25 heroes / 25
+cosmetics bundles + the route is open. If no, the downstream UI kill criterion
+has fired (UI enumerates via AR query, not RegisteredPrimaryAssets) and we
+pivot to RE'ing `WBP_UI_MissionModal_C` data binding OR the in-memory
+FAssetRegistry patch route (Approach C from this doc).
+
 ### Concrete next-session work order for shim build
 
 1. **Enumerate exact asset names per type** via `tools/extractor` catalog. We
