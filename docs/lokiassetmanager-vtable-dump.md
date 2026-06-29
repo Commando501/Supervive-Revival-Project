@@ -744,6 +744,65 @@ right layer (root cause, not symptom).
 
 **Recommendation: Route 2 should be the next attempt.**
 
+### Route 2 attempt — scan PATHS are correct; scan ITSELF didn't run (2026-06-28 ++)
+
+Read both Mission and MissionPool `FPrimaryAssetTypeData` (456 bytes each)
+and diffed them. The wide-char fragments in MissionPool's TypeData turned
+out to be **uninitialized heap leftover from our late-shim allocation** —
+the meaningful fields are clean numeric/pointer values matching Mission's
+layout.
+
+Both TypeData structs have a TArray at offset `+0x70` (Num=1, Max=4) — that
+field IS the `Directories` (or first scan-path TArray). Reading the TArray
+data:
+
+| Type | First Directory string | Length |
+|------|------------------------|--------|
+| Mission | `/Game/Loki/Core/Missions` | 24 chars |
+| MissionPool | `/Game/Loki/Core/Missions/Pools` | 30 chars |
+
+**Both directories are CORRECT.** The MissionPool path points exactly where
+its 16 `.uasset` files (DA_MissionPoolDailyChallenge.uasset, etc.) are
+cooked. So injecting a directory path is NOT the fix — the directory is
+already configured.
+
+**The actual asymmetry: scan was performed for Mission, not for MissionPool.**
+The configured directory is there but `ScanPathForPrimaryAssets("MissionPool",
+"/Game/Loki/Core/Missions/Pools", ...)` was never called at startup.
+
+Per prior recon (`docs/trackb-assetregistry-route.md`),
+`UAssetManager::ScanPrimaryAssetTypesFromConfig` (the bulk scan trigger) is
+overridden in LokiAssetManager to be a no-op or crashes via
+`__report_gsfailure` when called externally — that explains why Mission's
+scan ran but MissionPool's didn't if Loki has a HARDCODED list of types to
+scan that's missing MissionPool.
+
+### The actual fix — call ScanPathForPrimaryAssets for MissionPool
+
+We need to invoke `UAssetManager::ScanPathForPrimaryAssets(FName Type,
+FString Path, UClass* BaseClass)` — a virtual on the LokiAssetManager
+vtable. Once called, UE's standard scan code walks the directory, finds
+the cooked LokiDataAsset_MissionPool .uasset files, and populates
+AssetTypeMap[MissionPool].AssetMap automatically. From there, UMissionsModel's
+population path (whatever it is — likely triggered by some
+`OnAssetTypeAdded` delegate) should fire and the modal renders.
+
+**Next-session work plan:**
+1. Locate `ScanPathForPrimaryAssets` in the vtable. It's a UE5 virtual,
+   should be in slots 0–127 of LokiAssetManager's vtable (we already have
+   the dump). Likely findable by signature pattern or by searching the binary
+   for the function's UE_LOG strings (`"Scanning path %s for primary assets
+   of type %s"` or similar).
+2. Extend `registration_shim.cpp` to call this vtable slot with args
+   `(singleton, FName="MissionPool", FString="/Game/Loki/Core/Missions/Pools",
+   UClass*=LokiDataAsset_MissionPool)`.
+3. The UClass* for `LokiDataAsset_MissionPool` — already at known heap
+   address 0x16ACDCBF880 (from MissionPool TypeData +0x30 in this run);
+   findable each launch via findptr on the class CDO.
+4. Inject + run + check: AssetTypeMap[MissionPool].AssetMap.Num should jump
+   from 16 (our shim) to ~32 (cooked count) + 16 = 48.
+5. Open Missions modal and observe.
+
 ### Next route — RE the UI's actual enumeration source
 
 Given hypothesis 1's strong support, the productive next pursuit shifts to
