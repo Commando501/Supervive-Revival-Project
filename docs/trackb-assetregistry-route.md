@@ -483,6 +483,95 @@ worker + APC framework with marker logging, vtable scan, ref scan, safety
 checks) + `race-mount-suspended.ps1` orchestrator. Patches and infrastructure
 will apply to any future approach in this architecture.
 
+### Mount call-graph mapping 2026-06-28 (deeper, post-architecture-finding)
+
+After confirming the 16-instance per-pak architecture, traced the actual
+call graph for mount-related functions via `callxref`. The picture is more
+complex than initial guesses:
+
+**`+0x204FFD0` (Mount wrapper, 2-arg) — DEAD IN THIS BUILD.**
+- `callxref` returns 0 direct callers.
+- `findptr` returns 0 references anywhere (no vtable slot, no fn-ptr table).
+- The wrapper exists in `.text` but is never invoked. Either ICF-survivor
+  dead code, or only ever called via inlined paths that got optimized out.
+
+**`+0x2050020` (Mount impl, 3-arg) — called by 2 sites:**
+- `+0x204FFFC` (inside the dead wrapper above — never reached).
+- **`+0x204B2E5` — inside `FPakPlatformFile::Initialize` (+0x204AAD0)**, at
+  offset +0x815 into the function. So **Initialize is the actual mount
+  entry**: during engine init it iterates the cooked-pak directory and
+  calls Mount impl once per pak. This produces the 16 per-pak FPakFile
+  instances we observed.
+
+**`+0x204F130` (internal mount helper with OnPakFileMounted2 broadcast)
+— called by 4 sites:**
+- `+0x205031E` (inside Mount impl, expected).
+- `+0x2055A5B` (inside the deferred-mount handler at +0x2055950).
+- **`+0x204979C` (NEW) — inside `FPakPlatformFile::Initialize` near the
+  start (~0xCCC bytes in), separate from the Mount-impl call at +0x204B2E5.**
+- **`+0x204E6F7` (NEW) — unknown function, worth disasming.**
+
+So Initialize calls BOTH the internal mount helper (+0x204F130) AT ONE
+POINT and Mount impl (+0x2050020) AT ANOTHER POINT. Likely a two-phase
+init: first phase registers something then loops mount-impl per pak.
+
+**`+0x2055950` ("Successfully mounted deferred pak file" emitter).**
+- `callxref` returns 0 direct callers.
+- `findptr` returns 1 heap hit at `0x15A3A9E35D0` (no module hits).
+- Context at that heap slot (peeked at +/-0x20 bytes) shows a **48-byte
+  entry pattern**: `(code_ptr, padding, uint32_id, heap_ptr, code_ptr,
+  padding)`. Looks like a TFunction/delegate dispatch table holding queued
+  deferred-mount jobs.
+- Engine creates a deferred-mount job → wraps it in a TFunction →
+  stores in this dispatch table → later dispatcher fires the TFunction
+  which calls +0x2055950 → which calls +0x204F130 (the internal mount
+  helper) → which adds the FPakFile to the singleton's pak registry +
+  fires the OnPakFileMounted2 delegate.
+
+**Practical implication: the master singleton ISN'T findable via any
+direct vtable scan in this build.** The 16 per-pak instances DO have
+vtable A (with Initialize at slot 11), but no DIFFERENT object holds
+the same vtable A. So either:
+- (a) The master FPakPlatformFile has a different vtable than vtable A,
+  but its Initialize was ICF-folded to share the same +0x204AAD0 code
+  address. To find it we'd need to scan for objects whose vtable[+0x58]
+  (slot 11) equals +0x204AAD0, regardless of vtable base. New scanner.
+- (b) The master is found via a global pointer in module `.data`. To find
+  it: scan code for `mov rcx, [rip+disp32]; call qword [rcx + 0x58]` —
+  the load+invoke-Initialize pattern — and resolve `disp32` to a `.data`
+  slot, then read the slot's contents. New tooling, but tractable.
+- (c) The master is constructed but not held in any field — it's an
+  inline member of some larger struct. Would require deeper struct
+  walking.
+
+**Three remaining sub-options for option 1, ranked by tractability:**
+
+1. **Enqueue to the deferred-mount dispatch table** (1-2 sessions). We
+   know the table is at heap `0x15A3A9E35D0` (in one launch — heap addresses
+   vary). We'd need to:
+   - Find the table dynamically (scan for code that LEAs into the table
+     region — the table itself probably has a known marker).
+   - Construct a deferred-mount job entry (48 bytes with our pak path).
+   - Append to the table.
+   - Let the engine's natural dispatch fire our entry on the right thread.
+
+2. **Find master via "mov rcx, [rip+disp]; call qword [rcx+0x58]" pattern
+   scan** (2-3 sessions). New `usmapdump` subcommand to scan for that
+   specific 13-byte instruction sequence in `.text`, extract the `disp32`,
+   resolve to `.data` slot, read singleton ptr.
+
+3. **In-memory FAssetRegistry patch (alternative route)** (2-3 sessions).
+   Skip Mount entirely. Find the loaded `FAssetRegistry` singleton and
+   patch its `FAssetData` entries directly. Anchors: `"FAssetRegistry took"`
+   wide @+0x79D5DF0 (unique LEA at +0x1FD8DBE), `"Premade AssetRegistry
+   loaded from"` @+0x79D5B40. Same downstream-kill-criterion risk as Mount
+   approach.
+
+**ALL THREE share the SAME kill criterion** at the end: even if successful,
+LokiAssetManager may not consult AR for primary asset registration (per
+prior MISSION PROBE #2 analysis), making the whole effort produce zero
+behavior change.
+
 ### Option 2 — last resort
 
 **Hook the packer's page-fault handler**. Intercept after it unpacks our
