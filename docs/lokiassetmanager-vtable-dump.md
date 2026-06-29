@@ -626,6 +626,65 @@ WITHOUT POPULATING". Two follow-ups:
 
 Route (1) is recon-only; route (2) is the actual fix attempt. Both productive.
 
+### Mission vs MissionPool TypeData asymmetry — DEFINITIVE root cause (2026-06-28 final)
+
+Walked Mission's `FPrimaryAssetTypeData` (the value ptr in AssetTypeMap entry 6
+= 0x16AC7AC9E00) the same way we walked MissionPool's earlier. Result:
+
+| Type | TypeData ptr | AssetMap ptr | AssetMap.Num | AssetMap.Max |
+|------|--------------|--------------|--------------|--------------|
+| Mission     | 0x16AC7AC9E00 | 0x16B6 7878 E400 | **330** | 350 |
+| MissionPool | 0x16B62968000 | 0x16AFC503620 | 16 (= our shim) | 17 |
+
+**Mission's local scan path RUNS and populates 330 entries** (matches half the
+cooked AR.bin count of 660 — the other half may be subobjects filtered out).
+**MissionPool's local scan path NEVER RUNS** — Mission FPrimaryAssetTypeData
+has many non-zero TArray counts in early fields (Directories,
+SpecificAssets, AssetScanPaths), MissionPool's are all zero.
+
+The asymmetry is at the **scan-config layer**, not the registration layer.
+LokiAssetManager registers BOTH types (both appear in AssetTypeMap as keys),
+but only Mission has scan directories configured to actually find + register
+asset entries. MissionPool has no directories → directory enumeration finds
+nothing → AssetMap stays empty → all the downstream things that depend on
+"list of mission pools" (UMissionsModel.MissionPoolIDs, Season's
+MissionPools array, modal category enumeration) come up empty.
+
+**This is the actual root cause.** Hypothesis 1 (UI kill criterion) was
+correct in spirit but wrong about the layer — it's not that the UI ignores
+RegisteredPrimaryAssets, it's that the upstream UMissionsModel population
+chain never gets the MissionPool ID list because Loki's local scan never
+configures the MissionPool directory.
+
+**Where this fix lands — three candidates by tractability:**
+
+1. **Runtime PrimaryAssetTypesToScan injection.** Find LokiAssetManager's
+   PrimaryAssetTypesToScan TArray (member of UAssetManagerSettings, copied
+   into LokiAssetManager state at init), find the offset within the
+   singleton, append an FPrimaryAssetTypeInfo for `MissionPool` with
+   directory `/Game/Loki/Core/Missions/Pools`. Then trigger a re-scan via
+   `ScanPathForPrimaryAssets`. Substantial but mechanical.
+2. **In-memory FAssetData injection.** Bypass the scan path entirely. Find
+   the live FAssetRegistry singleton (anchors from prior recon at
+   +0x79D5DF0 / +0x79D5B40) → walk FAssetData TArray → inject 16 entries
+   tagged as `LokiDataAsset_MissionPool`. If the populator queries AR for
+   these, it'd find them.
+3. **Direct UMissionsModel state injection.** Skip the upstream entirely.
+   With UMissionsModel at known address (0x16B77E50100), decode its field
+   layout (which TMap is MissionPoolIDs, MissionPoolAssets), and write
+   entries directly via WriteProcessMemory or via the existing shim
+   framework. Smallest scope; doesn't fix the root, just the symptom.
+
+Route (1) is the "fix it at the right layer" approach. Route (3) is the
+"smoke test the UI binding" approach — if we directly populate the model
+and the modal STILL doesn't render, then there's a downstream binding gap
+we don't yet understand. Both worth pursuing in parallel.
+
+The diagnostic phase is now **complete**. The blocker is precisely
+identified. Everything from here is either fix-it engineering OR more
+diagnostics to disprove the "directly-populate-the-model fixes it"
+hypothesis.
+
 ### Next route — RE the UI's actual enumeration source
 
 Given hypothesis 1's strong support, the productive next pursuit shifts to
