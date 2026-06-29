@@ -130,38 +130,47 @@ static bool WaitForPrologue(uint8_t* target, uint64_t& iterations, uint64_t& not
     return false;
 }
 
-// ─── patch step ──────────────────────────────────────────────────────────────
-
-static bool ApplyPatch(uintptr_t modBase) {
+// ─── patch step (called from APC, runs on game thread post-init) ─────────────
+// Earlier design patched from the worker thread during early init — this
+// caused the process to crash because the cooked pak mount loop calls
+// FPakSignatureFile::Load for each .pak; returning success without filling
+// the FPakSignatureFile struct (chunk hashes etc.) left zero-initialized
+// data that downstream chunk-verification code dereferenced → fatal.
+//
+// Fix: patch ONLY at APC time, by which point all cooked paks are already
+// mounted (we don't want our patch active during their mount). The page is
+// long-committed by then so no prologue-wait needed.
+static bool ApplyPatchInPlace(uintptr_t modBase) {
     uint8_t* target = reinterpret_cast<uint8_t*>(modBase + kPakSigLoadRva);
-    WriteMarker("[patch] waiting for FPakSignatureFile::Load prologue...\r\n");
-    uint64_t iters = 0, avs = 0;
-    bool got = WaitForPrologue(target, iters, avs);
-    {
-        char m[160];
-        snprintf(m, sizeof(m), "[patch] wait done: got=%d iters=%llu avs=%llu\r\n",
-                 got ? 1 : 0, (unsigned long long)iters, (unsigned long long)avs);
-        WriteMarker(m);
+    if (!PageReadable(target)) {
+        WriteMarker("[apc] PATCH FAIL: page not readable\r\n");
+        return false;
     }
-    if (!got) return false;
-
     DWORD oldProtect = 0;
     if (!VirtualProtect(target, sizeof(kPatch), PAGE_EXECUTE_READWRITE, &oldProtect)) {
-        WriteMarker("[patch] FAIL: VirtualProtect denied\r\n");
+        WriteMarker("[apc] PATCH FAIL: VirtualProtect denied\r\n");
         return false;
     }
     memcpy(target, kPatch, sizeof(kPatch));
     VirtualProtect(target, sizeof(kPatch), oldProtect, &oldProtect);
     FlushInstructionCache(GetCurrentProcess(), target, sizeof(kPatch));
-    WriteMarker("[patch] OK: mov al,1;ret applied at FPakSignatureFile::Load entry\r\n");
+    WriteMarker("[apc] PATCH OK: mov al,1;ret applied\r\n");
     return true;
 }
 
 // ─── singleton scanner ───────────────────────────────────────────────────────
 
-// Scan committed MEM_PRIVATE for any qword equal to vtableA. For each hit log the
-// surrounding bytes so we can pick the "right" instance if the first attempt fails.
-// Returns the first hit whose [+0x10] == vtableB (= validated FPakPlatformFile).
+// Heuristic: does `v` look like a user-mode heap/code pointer? Used to filter
+// out small ints that show up at +0x08 of per-pak wrappers vs. real LowerLevel
+// pointers in the master singleton.
+static bool LooksLikePtr(uintptr_t v) {
+    return v >= 0x10000 && v < 0x0001000000000000ULL && (v & 0x7) == 0;
+}
+
+// Scan committed MEM_PRIVATE for any qword equal to vtableA. Pick the first
+// validated candidate whose [+0x08] ALSO looks like a real pointer (= LowerLevel
+// is set). If none qualify, return null and let APC body abort cleanly with
+// diagnostics — better than crashing on a bad Mount call.
 static void* ScanForSingleton(uintptr_t modBase) {
     const uintptr_t vtableA = modBase + kVtableARva;
     const uintptr_t vtableB = modBase + kVtableBRva;
@@ -176,9 +185,10 @@ static void* ScanForSingleton(uintptr_t modBase) {
     uintptr_t addr = (uintptr_t)si.lpMinimumApplicationAddress;
     const uintptr_t maxAddr = (uintptr_t)si.lpMaximumApplicationAddress;
 
-    int regions = 0, vtaHits = 0, validated = 0;
-    void* firstValid = nullptr;
-    const int kMaxLogged = 16; // log up to 16 candidates so all 10 expected ones fit
+    int regions = 0, vtaHits = 0, validated = 0, ptrAt8 = 0;
+    void* firstValid = nullptr;          // first with vtableB match (may have bad +0x08)
+    void* firstValidWithPtr = nullptr;   // first ALSO with +0x08 looking like a ptr
+    const int kMaxLogged = 32;
 
     while (addr < maxAddr) {
         MEMORY_BASIC_INFORMATION mbi = {0};
@@ -190,7 +200,6 @@ static void* ScanForSingleton(uintptr_t modBase) {
             (mbi.Protect & PAGE_GUARD) == 0) {
             regions++;
             const uintptr_t* p = (const uintptr_t*)mbi.BaseAddress;
-            // Stride one qword at a time. -3 to leave headroom for the +0x10/+0x18 reads.
             const uintptr_t* end = (const uintptr_t*)regionEnd - 3;
             for (; p < end; p++) {
                 if (*p != vtableA) continue;
@@ -199,19 +208,24 @@ static void* ScanForSingleton(uintptr_t modBase) {
                 const uintptr_t v10 = p[2]; // [obj + 0x10]
                 const uintptr_t v18 = p[3]; // [obj + 0x18]
                 bool isValid = (v10 == vtableB);
+                bool v8IsPtr = LooksLikePtr(v8);
                 if (isValid) {
                     validated++;
                     if (!firstValid) firstValid = (void*)p;
+                    if (v8IsPtr) {
+                        ptrAt8++;
+                        if (!firstValidWithPtr) firstValidWithPtr = (void*)p;
+                    }
                 }
                 if (vtaHits <= kMaxLogged) {
-                    char m[224];
+                    char m[256];
                     snprintf(m, sizeof(m),
-                        "[scan] cand #%d @%p: +0x08=0x%llX +0x10=0x%llX +0x18=0x%llX valid=%d\r\n",
+                        "[scan] cand #%d @%p: +0x08=0x%llX +0x10=0x%llX +0x18=0x%llX valid=%d v8ptr=%d\r\n",
                         vtaHits, (void*)p,
                         (unsigned long long)v8,
                         (unsigned long long)v10,
                         (unsigned long long)v18,
-                        isValid ? 1 : 0);
+                        isValid ? 1 : 0, v8IsPtr ? 1 : 0);
                     WriteMarker(m);
                 }
             }
@@ -219,34 +233,139 @@ static void* ScanForSingleton(uintptr_t modBase) {
         addr = regionEnd;
     }
 
+    void* picked = firstValidWithPtr ? firstValidWithPtr : firstValid;
     {
-        char m[160];
+        char m[256];
         snprintf(m, sizeof(m),
-                 "[scan] done: regions=%d vtableA-hits=%d validated=%d picked=%p\r\n",
-                 regions, vtaHits, validated, firstValid);
+                 "[scan] done: regions=%d vtableA-hits=%d validated=%d "
+                 "ptrAt8=%d picked=%p (with-ptr=%p)\r\n",
+                 regions, vtaHits, validated, ptrAt8, picked, firstValidWithPtr);
         WriteMarker(m);
     }
-    return firstValid;
+    return picked;
 }
 
-// ─── APC body that runs Mount on the game thread ─────────────────────────────
+// Secondary scan: find every qword in committed memory equal to `target`.
+// We use this to find slots that REFERENCE one of our per-pak instances —
+// those slots are typically inside the parent singleton's PakFiles[] array,
+// giving us a path to the actual mount-everything FPakPlatformFile.
+static void ScanForReferences(const void* target, int maxHits) {
+    SYSTEM_INFO si; GetSystemInfo(&si);
+    uintptr_t addr = (uintptr_t)si.lpMinimumApplicationAddress;
+    const uintptr_t maxAddr = (uintptr_t)si.lpMaximumApplicationAddress;
+    uintptr_t wantVal = (uintptr_t)target;
+
+    int hits = 0;
+    while (addr < maxAddr && hits < maxHits) {
+        MEMORY_BASIC_INFORMATION mbi = {0};
+        if (VirtualQuery((LPCVOID)addr, &mbi, sizeof(mbi)) != sizeof(mbi)) break;
+        const uintptr_t regionEnd = (uintptr_t)mbi.BaseAddress + mbi.RegionSize;
+        if (mbi.State == MEM_COMMIT && mbi.Type == MEM_PRIVATE &&
+            (mbi.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE)) != 0 &&
+            (mbi.Protect & PAGE_GUARD) == 0) {
+            const uintptr_t* p = (const uintptr_t*)mbi.BaseAddress;
+            const uintptr_t* end = (const uintptr_t*)regionEnd;
+            for (; p < end && hits < maxHits; p++) {
+                if (*p == wantVal) {
+                    hits++;
+                    // p-1 and p-2 give hints about what struct this is inside.
+                    uintptr_t prev1 = (p > (const uintptr_t*)mbi.BaseAddress) ? p[-1] : 0;
+                    uintptr_t prev2 = ((const uintptr_t*)p - 2 >= (const uintptr_t*)mbi.BaseAddress) ? p[-2] : 0;
+                    char m[224];
+                    snprintf(m, sizeof(m),
+                        "[refs] @%p ← target=%p (prev2=0x%llX prev1=0x%llX)\r\n",
+                        (void*)p, target,
+                        (unsigned long long)prev2, (unsigned long long)prev1);
+                    WriteMarker(m);
+                }
+            }
+        }
+        addr = regionEnd;
+    }
+    char m[96];
+    snprintf(m, sizeof(m), "[refs] done: %d hit(s) for %p\r\n", hits, target);
+    WriteMarker(m);
+}
+
+// ─── APC body: patch + Mount, both on game thread ────────────────────────────
+
+// Module base stored at APC-queue time so APC body can reach it without
+// re-resolving (GetModuleHandleA from APC should also work, but this avoids
+// any module-handle-validity gotcha).
+static uintptr_t g_modBase = 0;
 
 static void NTAPI MountApcCallback(ULONG_PTR /*param*/) {
-    if (!g_Mount || !g_singleton || !g_modDir) {
-        WriteMarker("[apc] FAIL: globals not set\r\n");
+    if (!g_Mount || !g_singleton || !g_modDir || !g_modBase) {
+        WriteMarker("[apc] FIRE FAIL: globals not set\r\n");
         return;
     }
     {
-        char m[224];
+        char m[256];
         snprintf(m, sizeof(m),
-                 "[apc] FIRING on game thread: Mount=%p singleton=%p\r\n"
-                 "[apc]   modDir = (see kModDirPath in shim source)\r\n",
-                 (void*)g_Mount, g_singleton);
+                 "[apc] FIRING on game thread tid=%lu: Mount=%p singleton=%p\r\n",
+                 GetCurrentThreadId(), (void*)g_Mount, g_singleton);
         WriteMarker(m);
     }
-    // No SEH wrap — clang's __try on x64 manual-mapped DLL doesn't dispatch
-    // reliably; an AV here will crash the game thread and we'll see the
-    // failure mode in dr-watson / Loki.log rather than a graceful return.
+
+    // Step 1: patch FPakSignatureFile::Load now that cooked-pak mount is done.
+    if (!ApplyPatchInPlace(g_modBase)) return;
+
+    // Step 2: revalidate the singleton's first qword — make sure it still has
+    // vtable A. If the engine destructed/reconstructed it between scan and APC,
+    // we'd crash inside Mount. Better to abort cleanly.
+    if (!PageReadable(g_singleton)) {
+        WriteMarker("[apc] FAIL: singleton ptr no longer readable\r\n");
+        return;
+    }
+    uintptr_t firstQword = *(const uintptr_t*)g_singleton;
+    uintptr_t expectedVtableA = g_modBase + kVtableARva;
+    if (firstQword != expectedVtableA) {
+        char m[128];
+        snprintf(m, sizeof(m),
+                 "[apc] FAIL: singleton vtable changed (got 0x%llX want 0x%llX)\r\n",
+                 (unsigned long long)firstQword,
+                 (unsigned long long)expectedVtableA);
+        WriteMarker(m);
+        return;
+    }
+
+    // Also dump the singleton's first 0x40 bytes — by APC time the engine
+    // should have populated +0x08 (LowerLevel etc.). If it's still zero we
+    // know our scan picked an uninitialized instance.
+    {
+        const uintptr_t* p = (const uintptr_t*)g_singleton;
+        char m[256];
+        snprintf(m, sizeof(m),
+                 "[apc] singleton @APC time: +0=0x%llX +8=0x%llX +10=0x%llX "
+                 "+18=0x%llX +20=0x%llX +28=0x%llX +30=0x%llX +38=0x%llX\r\n",
+                 (unsigned long long)p[0], (unsigned long long)p[1],
+                 (unsigned long long)p[2], (unsigned long long)p[3],
+                 (unsigned long long)p[4], (unsigned long long)p[5],
+                 (unsigned long long)p[6], (unsigned long long)p[7]);
+        WriteMarker(m);
+    }
+
+    // Step 3: SAFETY CHECK. Mount's impl reads `[this+0x08]` (LowerLevel in
+    // vanilla UE) and calls a method on it. If that field isn't a real pointer
+    // we'll AV inside Mount and crash the game (observed last run on a per-pak
+    // wrapper whose +0x08 was 0x2). Abort cleanly instead.
+    uintptr_t v8 = ((const uintptr_t*)g_singleton)[1];
+    if (!LooksLikePtr(v8)) {
+        char m[256];
+        snprintf(m, sizeof(m),
+                 "[apc] ABORT: singleton +0x08=0x%llX doesn't look like a pointer.\r\n"
+                 "[apc]   This is a per-pak wrapper, not the master singleton.\r\n"
+                 "[apc]   Running secondary scan to find slots that reference it...\r\n",
+                 (unsigned long long)v8);
+        WriteMarker(m);
+        ScanForReferences(g_singleton, 30);
+        return;
+    }
+
+    // Step 4: call Mount. No SEH wrap — clang's __try in our manual-mapped
+    // DLL doesn't dispatch reliably. If Mount AVs we'll see it in Loki.log /
+    // a crash dump rather than a graceful return.
+    WriteMarker("[apc] singleton +0x08 looks like a real ptr, calling Mount...\r\n");
     bool ok = g_Mount(g_singleton, g_modDir);
     {
         char m[64];
@@ -257,6 +376,70 @@ static void NTAPI MountApcCallback(ULONG_PTR /*param*/) {
 
 // ─── main worker ─────────────────────────────────────────────────────────────
 
+// Wait for GGameThreadId slot to contain a non-zero TID. This is the cleanest
+// signal that engine init has started executing on the main thread. Heavy
+// diagnostics — the prior run mysteriously dropped between [scan] done and
+// the polling loop's outcome, so we want every step visible.
+static DWORD WaitForGameTid(uintptr_t modBase, DWORD timeoutMs) {
+    uint32_t* gameTidSlot = (uint32_t*)(modBase + kGGameTidRva);
+    {
+        char m[128];
+        snprintf(m, sizeof(m), "[gametid] slot ptr = %p (mod-RVA 0x%llX)\r\n",
+                 (void*)gameTidSlot, (unsigned long long)kGGameTidRva);
+        WriteMarker(m);
+    }
+
+    // Initial VirtualQuery dump so we see what the page state is.
+    {
+        MEMORY_BASIC_INFORMATION mbi = {0};
+        SIZE_T qr = VirtualQuery(gameTidSlot, &mbi, sizeof(mbi));
+        char m[256];
+        snprintf(m, sizeof(m),
+                 "[gametid] VirtualQuery: ret=%llu base=%p regsize=0x%llX "
+                 "state=0x%lX protect=0x%lX type=0x%lX\r\n",
+                 (unsigned long long)qr,
+                 (void*)mbi.BaseAddress, (unsigned long long)mbi.RegionSize,
+                 mbi.State, mbi.Protect, mbi.Type);
+        WriteMarker(m);
+    }
+
+    const DWORD deadline = GetTickCount() + timeoutMs;
+    int loop = 0;
+    int lastReadable = -1;
+    while (GetTickCount() < deadline) {
+        loop++;
+        bool readable = PageReadable(gameTidSlot);
+        if ((int)readable != lastReadable) {
+            char m[96];
+            snprintf(m, sizeof(m), "[gametid] loop=%d readable=%d\r\n",
+                     loop, readable ? 1 : 0);
+            WriteMarker(m);
+            lastReadable = (int)readable;
+        }
+        if (readable) {
+            // Use memcpy to defeat any compiler reordering of the read vs. the
+            // PageReadable check (function calls act as memory barriers anyway,
+            // but explicit is safer).
+            uint32_t v = 0;
+            memcpy(&v, gameTidSlot, sizeof(v));
+            if (v != 0) {
+                char m[96];
+                snprintf(m, sizeof(m), "[gametid] FOUND tid=%lu at loop=%d\r\n",
+                         (unsigned long)v, loop);
+                WriteMarker(m);
+                return v;
+            }
+        }
+        if (loop % 200 == 0) {
+            char m[96];
+            snprintf(m, sizeof(m), "[gametid] loop=%d still waiting\r\n", loop);
+            WriteMarker(m);
+        }
+        Sleep(10);
+    }
+    return 0;
+}
+
 static DWORD WINAPI Worker(LPVOID) {
     WriteMarker("[0] mount_shim worker started\r\n");
 
@@ -266,16 +449,34 @@ static DWORD WINAPI Worker(LPVOID) {
         return 1;
     }
     const uintptr_t modBase = (uintptr_t)hExe;
+    g_modBase = modBase;
     {
         char m[96]; snprintf(m, sizeof(m), "[0] modBase = 0x%llX\r\n",
                              (unsigned long long)modBase);
         WriteMarker(m);
     }
 
-    // Step 1: patch FPakSignatureFile::Load.
-    if (!ApplyPatch(modBase)) return 2;
+    // Step 1: wait for game thread to start running engine code (GGameThreadId
+    // becomes non-zero). This also ensures cooked-pak mount + early init are
+    // well underway, so the FPakPlatformFile singleton is fully constructed
+    // by the time we scan for it. DO NOT patch yet — patching during cooked-
+    // pak mount caused the prior run to crash (empty FPakSignatureFile struct
+    // returned from patched function → downstream chunk-verify AVs).
+    WriteMarker("[1] waiting for GGameThreadId to be non-zero (60s)...\r\n");
+    DWORD gameTid = WaitForGameTid(modBase, 60000);
+    if (gameTid == 0) {
+        WriteMarker("[1] FAIL: GGameThreadId stayed 0 for 60s — wrong RVA?\r\n");
+        return 2;
+    }
 
-    // Step 2: find a singleton.
+    // Step 2: extra grace period — let cooked-pak mount + AR-init complete so
+    // the FPakPlatformFile singleton's fields (notably +0x08 LowerLevel) are
+    // populated. Cooked mount loop is ~80ms, AR init a couple seconds. 5s is
+    // generous.
+    WriteMarker("[2] sleeping 5s to let cooked-pak mount + AR-init complete...\r\n");
+    Sleep(5000);
+
+    // Step 3: scan for the singleton (now in steady state).
     void* singleton = ScanForSingleton(modBase);
     if (!singleton) {
         WriteMarker("[scan] FAIL: no validated FPakPlatformFile instance found\r\n");
@@ -285,35 +486,46 @@ static DWORD WINAPI Worker(LPVOID) {
     g_Mount     = (PFN_Mount)(modBase + kMountWrapperRva);
     g_modDir    = kModDirPath;
 
-    // Step 3: read GGameThreadId. Engine sets it early; if we're injected
-    // pre-Resume it might still be zero, so poll briefly.
-    uint32_t* gameTidSlot = (uint32_t*)(modBase + kGGameTidRva);
-    DWORD gameTid = 0;
+    // Step 4: Run the secondary scan DIRECTLY from the worker thread (it's
+    // pure reads, doesn't need game-thread context). This gives us the
+    // structural data we need regardless of whether the APC ever fires —
+    // the prior run had the APC queued but never dispatched (UE's main tick
+    // uses non-alertable Sleep + the alertable waits in MsgWait/Vivox weren't
+    // being hit during the LOGIN screen state).
     {
-        const DWORD deadline = GetTickCount() + 10000;
-        while (GetTickCount() < deadline) {
-            if (PageReadable(gameTidSlot)) {
-                uint32_t v = *gameTidSlot;
-                if (v != 0) { gameTid = v; break; }
-            }
-            Sleep(10);
+        // Sanity-check our picked singleton's +0x08 first — if it's not a
+        // pointer, log + run the secondary scan to find the master singleton.
+        uintptr_t v8 = ((const uintptr_t*)singleton)[1];
+        if (!LooksLikePtr(v8)) {
+            char m[256];
+            snprintf(m, sizeof(m),
+                     "[main] picked singleton +0x08=0x%llX isn't a pointer.\r\n"
+                     "[main] Running secondary scan to find slots that reference it...\r\n",
+                     (unsigned long long)v8);
+            WriteMarker(m);
+            ScanForReferences(singleton, 30);
+
+            // Also dump the singleton's full first 0x40 bytes for context.
+            const uintptr_t* p = (const uintptr_t*)singleton;
+            char m2[256];
+            snprintf(m2, sizeof(m2),
+                     "[main] singleton dump: +0=0x%llX +8=0x%llX +10=0x%llX "
+                     "+18=0x%llX +20=0x%llX +28=0x%llX +30=0x%llX +38=0x%llX\r\n",
+                     (unsigned long long)p[0], (unsigned long long)p[1],
+                     (unsigned long long)p[2], (unsigned long long)p[3],
+                     (unsigned long long)p[4], (unsigned long long)p[5],
+                     (unsigned long long)p[6], (unsigned long long)p[7]);
+            WriteMarker(m2);
         }
     }
-    if (gameTid == 0) {
-        WriteMarker("[apc] FAIL: GGameThreadId still 0 after 10s\r\n");
-        return 4;
-    }
-    {
-        char m[96]; snprintf(m, sizeof(m), "[apc] GGameThreadId = %lu (0x%lX)\r\n",
-                             gameTid, gameTid);
-        WriteMarker(m);
-    }
 
-    // Step 4: queue the APC.
+    // Step 5: queue the APC on the game thread anyway. If it fires, the APC
+    // body will patch sig-load + (if singleton[+0x8] looks like a ptr) call
+    // Mount. If it doesn't fire we already have the diagnostic data.
     HANDLE gameThread = OpenThread(THREAD_SET_CONTEXT, FALSE, gameTid);
     if (!gameThread) {
         char m[96];
-        snprintf(m, sizeof(m), "[apc] FAIL: OpenThread(%lu) err=%lu\r\n",
+        snprintf(m, sizeof(m), "[apc] OPEN FAIL: OpenThread(%lu) err=%lu\r\n",
                  gameTid, GetLastError());
         WriteMarker(m);
         return 5;
@@ -322,12 +534,18 @@ static DWORD WINAPI Worker(LPVOID) {
     CloseHandle(gameThread);
     if (!apcOk) {
         char m[96];
-        snprintf(m, sizeof(m), "[apc] FAIL: QueueUserAPC err=%lu\r\n",
+        snprintf(m, sizeof(m), "[apc] QUEUE FAIL: QueueUserAPC err=%lu\r\n",
                  GetLastError());
         WriteMarker(m);
         return 6;
     }
-    WriteMarker("[apc] APC queued; will fire on next alertable wait\r\n");
+    {
+        char m[96];
+        snprintf(m, sizeof(m),
+                 "[apc] APC queued on tid=%lu; fires on next alertable wait\r\n",
+                 gameTid);
+        WriteMarker(m);
+    }
     return 0;
 }
 
