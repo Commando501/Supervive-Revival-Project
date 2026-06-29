@@ -510,6 +510,62 @@ Two routes both worth pursuing in parallel:
 Route 1 is more diagnostic (tells us why it's empty); route 2 is more
 constructive (fixes it by feeding the right shape).
 
+### Route A recon 2026-06-28 (latest) — class ownership identified
+
+Walked the reflection metadata around `MissionPoolIDs` /
+`OnLocalMissionsInitialized`. Owning class identified:
+
+**`ALokiPlayerState`** — the player's local state class (UE actor, A-prefix).
+- Static helper: **`GetLocalLokiPlayerState`** (function — discoverable by
+  the same name in the binary).
+- Members include: `Wallet`, `HeroAffiliatedObject`, `StatsObject`,
+  `PawnComponent`, `bNeedsInitialInventory`, `bNeedsInitialCharacterEffects`,
+  `OnPlayerUIDataChanged`, `OnAnyUIEvent`, **`OnLocalStatsInitialized`**,
+  **`OnLocalMissionsInitialized`**, **`OnLocalXPInitialized`** (sibling local-
+  init delegates), `Knocker`, `GameEvent_GameReady_Controller`, etc. The
+  property cluster appears at module addr 0x16AAC0B6C00..D00 in this run
+  (heap; ASLR'd) — searchable by any of the above strings + walking the
+  cluster.
+
+**`UMissionsModel`** — separate object owned/referenced by PlayerState.
+- Source file confirmed: `...issions\MissionsModel.cpp` (UE C++).
+- Owning class has a member named **`MissionsModel`** (property), a factory
+  **`CreateMissionsModel`**, and a getter **`GetMissionsModel`** (returns
+  `UMissionsModel*`). The modal category widget's `CallFunc_GetMissionsModel`
+  resolves to this.
+- Methods: `UMissionsModel::OnMissionAssetLoaded` (async-load completion),
+  `UMissionsModel::OnPSMissionsUpdated` (Platform-Service mission data
+  ingest — name strongly implies server-pushed data).
+
+**Data flow inference** (best current model):
+1. ALokiPlayerState init creates UMissionsModel via `CreateMissionsModel`.
+2. ALokiPlayerState's local-asset init populates `MissionPoolIDs`
+   (`TArray<FPrimaryAssetId>` — the master pool list). When complete, it
+   fires `OnLocalMissionsInitialized.Broadcast()`.
+3. Server-side mission data (PSMissions) eventually arrives → routed to
+   `UMissionsModel::OnPSMissionsUpdated` → populates per-mission progress.
+4. Modal opens → calls `GetMissionsModel()` → reads UMissionsModel state.
+
+If step 2 silently fails (e.g., the local-asset enumeration finds zero
+MissionPool primary assets via some Loki-specific scan path that we haven't
+identified yet), `MissionPoolIDs` stays empty → `OnLocalMissionsInitialized`
+either never fires or fires with zero pools → modal renders empty.
+
+### The one concrete next step
+
+**Locate the function that calls `OnLocalMissionsInitialized.Broadcast()`** —
+this IS the local-init completion point. Once we know it, we can:
+- Disassemble it to see what feeds `MissionPoolIDs` (= a config read? an AR
+  scan? a hardcoded asset list?).
+- Decide whether the right fix is config-side, AR-side, or shim-side.
+
+Path: find `OnLocalMissionsInitialized` as a UPROPERTY name in the
+ALokiPlayerState reflection metadata → derive the property offset within
+the class → search code for `lea rcx, [this + <offset>]; call <Broadcast>`
+to find broadcast call sites. Alternative: find the static
+`GetLocalLokiPlayerState` (we have its name as a string anchor) → walk
+calls from there to functions that touch the same offset.
+
 ### Next route — RE the UI's actual enumeration source
 
 Given hypothesis 1's strong support, the productive next pursuit shifts to
