@@ -572,6 +572,58 @@ LokiAssetManager may not consult AR for primary asset registration (per
 prior MISSION PROBE #2 analysis), making the whole effort produce zero
 behavior change.
 
+### Slot-11 vtable scanner — ICF hypothesis FALSIFIED 2026-06-28
+
+Built `tools/usmapdump vtslot <proc> <slot> <fnAddr>` to scan committed
+memory for ANY vtable whose specified slot holds a target function. This
+would find ICF-folded vtables (different classes sharing the same code
+address for a method).
+
+Ran `vtslot SUPERVIVE-Win64-Shipping.exe 11 0x7FF66171AAD0` (looking for
+any vtable with +0x204AAD0 = "FPakPlatformFile::Initialize" code address
+at slot 11). **Result: exactly 3 hits, all with IDENTICAL slot contents
+slot 0 through slot 11** — meaning they're THE SAME vtable, just appearing
+in module .rdata + two heap-cached copies. No separate vtable shares the
+slot value.
+
+**Conclusion: ICF folding is NOT the explanation. There is exactly ONE
+class with `Initialize` at slot 11, and the 16 per-pak instances ARE
+that class.** No "master" FPakPlatformFile exists in a different class
+elsewhere.
+
+**Architectural verdict:** this build appears to use a per-chunk
+FPakPlatformFile architecture where each cooked .pak chunk gets its
+own standalone FPakPlatformFile-like instance. The `+0x08` small int
+is likely a chunk index, not `IPlatformFile* LowerLevel`. There is no
+master "PakFiles registry" — each instance manages exactly one .pak.
+
+Implications:
+- The 2-arg Mount wrapper is dead code because there's no master to
+  invoke it on.
+- Mount impl is only ever called by `FPakPlatformFile::Initialize`
+  during engine startup, once per cooked pak chunk.
+- **There is no runtime path to add a NEW pak in this architecture.**
+  The engine assumes pak chunks are immutable after init.
+
+To add a runtime pak in this design, one would need to:
+1. Heap-allocate a new 0x268-byte FPakPlatformFile-shaped object.
+2. Hand-initialize all its fields (chunk index, internal data ptr at
+   +0x18 with 0x480 bytes of per-pak state, vtable pointers).
+3. Invoke `Initialize` on it (or its mount logic).
+4. Insert into whatever container `FPlatformFileManager` uses to hold
+   the 16 chunk instances (currently unknown structure).
+5. Fire `OnPakFileMounted2` to notify FAssetRegistry.
+
+This is a multi-week reverse-engineering effort with significant
+construction-of-engine-state complexity. Combined with the route's
+own kill criterion (LokiAssetManager not querying AR for primary
+asset registration regardless), **this entire option-1 pursuit is
+effectively closed.**
+
+The reusable tooling (mount_shim, vtslot scanner, sigbypass tooling)
+stands as documented infrastructure for any future approach that
+might revisit this from a different angle.
+
 ### Option 2 — last resort
 
 **Hook the packer's page-fault handler**. Intercept after it unpacks our
