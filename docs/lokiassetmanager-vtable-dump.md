@@ -1721,3 +1721,92 @@ list per `tools/extractor/out/catalog/da_index.csv`:
 - 1 TutorialMaps (UNUSED by any category)
 
 So 14 pools used + 2 unused = 16 cooked.
+
+### D1-D4 (2026-06-29) — DynamicMissionPools decoded: 36 SeasonalArmory entries baked into CDO
+
+Walked the live runtime to inspect what the modal actually has at runtime:
+
+1. **Live modal instance found**: `WBP_UI_MissionModal_C_2147458383` at
+   `0x16B8E267480` (NamePrivate qword `0x7FFF9D5000117FAC` — CmpIdx
+   0x00117FAC = "WBP_UI_MissionModal_C" base, Number 0x7FFF9D50). Outer
+   at +0x28 = `0x016B88B0EC00`. Vtable + class match CDO at
+   `0x16B987CE2F0`.
+
+2. **DynamicMissionPools field offset**: walked the FProperty chain for
+   FName id 0x007B4FD5 (DynamicMissionPools). 2 entries returned (the
+   FArrayProperty + the FStructProperty inner). The Inner FProperty has
+   Offset_Internal = **0x4F0 (1264)** in the widget class. Each element
+   is **16 bytes** (FStructProperty ElementSize=0x10).
+
+3. **DynamicMissionPools populated**: at runtime, the TArray at
+   `[modal + 0x4F0]` has **Num=36, Max=36** with Data ptr
+   `0x016BF4C95080`. The CDO has the SAME 36 entries at
+   `0x016B6552E080`. So the wiring DEFAULTS DID propagate from CDO to
+   the live instance. The 36 entries are pre-baked, not runtime-populated.
+
+4. **Entry layout — each is FPrimaryAssetId** (16 bytes = two FNames):
+   - Type FName = MissionPool (CmpIdx=0x00016F06, Number=0) for EVERY entry
+   - Name FName = SeasonalArmory mission name, Number = 2 / 3 / 4
+
+   Decoded the 12 unique Name FNames (each appearing 3× with Number 2/3/4):
+   - `SeasonalArmory_AcademyResearch`  (FName 0x007B50F1)
+   - `SeasonalArmory_Bloodshed`        (0x007B5101)
+   - `SeasonalArmory_FelixFamous`      (0x007B510E)
+   - `SeasonalArmory_HuntSoulborn`     (0x007B511C)
+   - `SeasonalArmory_Kobayashi`        (0x007B512B)
+   - `SeasonalArmory_ProtectHavenshard` (0x007B5138)
+   - `SeasonalArmory_ProveYourWorth`   (0x007B5149)
+   - `SeasonalArmory_RisenEmpire`      (0x007B5159)
+   - `SeasonalArmory_ScoutTheBreach`   (0x007B5167)
+   - `SeasonalArmory_Skysharks`        (0x007B5177)
+   - `SeasonalArmory_SubdueScavbay`    (0x007B5184)
+   - `SeasonalArmory_WinterDance`      (0x007B5193)
+
+5. **CRITICAL CROSS-CATEGORY INSIGHT**: DynamicMissionPools contains
+   ONLY SeasonalArmory entries (12 missions × 3 difficulty/index variants
+   = 36). It does NOT contain entries for Daily / Weekly / Onboarding /
+   PCBang category pools. So:
+   - All 5 categories filter their per-category PoolAsset against
+     DynamicMissionPools' 36 entries
+   - Daily, Weekly, Onboarding, PCBang filters find ZERO matches
+     (DynamicMissionPools has no Daily/Weekly/etc. entries)
+   - Seasonal filter looks for DA_MissionPool_Tournament_C class match
+     but entries reference SeasonalArmory_X_N — different FNames
+   - ALL 5 categories render empty for different reasons
+
+   This explains why our earlier AddDynamicAsset shim (which registered
+   the 16 BASE pool names like `MissionPool:DA_MissionPoolDailyEasy`)
+   didn't move the modal — it modified the AssetTypeMap registration but
+   NOT the DynamicMissionPools array the modal actually iterates.
+
+6. **D4 smoke test**: poked first DynamicMissionPools entry from
+   `MissionPool:SeasonalArmory_ProveYourWorth_1` →
+   `MissionPool:DA_MissionPoolDailyEasy` (FName 0x002A7E5A, Number=0).
+   Write succeeded; user re-opened modal; **result pending** as of doc
+   update.
+
+### Concrete fix candidates (post-smoke-test)
+
+If smoke test SUCCEEDS (Dailies tab shows 1 entry):
+- The fix is to APPEND ~30+ more entries to DynamicMissionPools, one per
+  Daily/Weekly/Onboarding/PCBang pool that we want rendered
+- Each entry: `{Type=MissionPool, Name=DA_MissionPool<XYZ>}` matching the
+  category's PoolAsset BlueprintGeneratedClasses
+- For Seasonal, swap the existing entries to use the
+  `DA_MissionPool_Tournament` name instead of SeasonalArmory_*
+- Implementation: extend `registration_shim.cpp` to poke
+  DynamicMissionPools at runtime, OR direct WriteProcessMemory poke
+- Caveat: TArray growth requires allocating a new buffer. For Num→48
+  (current 36 + 12 new), Max=36 means we need to reallocate or
+  in-place-replace existing entries
+
+If smoke test FAILS (Dailies still empty):
+- The lookup chain needs more than just the FPrimaryAssetId match
+- Likely requires the asset to be REGISTERED in UAssetManager's
+  primary asset table (UAssetManager::GetPrimaryAssetData succeeds)
+- Or requires the asset to be LOADED (asset object exists, not just
+  registered)
+- Need to register the specific entry's full FSoftObjectPath + load it
+
+Next session — depending on smoke test outcome — implement either the
+poke-based fix or the deeper registration + load chain.
