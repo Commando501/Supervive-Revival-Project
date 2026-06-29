@@ -1420,3 +1420,74 @@ ASSUME (still to verify):
 - Some "live" data source on UProgressionManager or a subsystem (not
   ALokiPlayerState, since no instance at menu) is what feeds the modal's
   per-category data.
+
+### Plan A DONE — empirical FProperty layout + DateTime source (2026-06-29)
+
+96 `LogScript Warning: DateTime in bad format (year 0)` warnings total in
+the live session log, **in clusters of exactly 6 per modal-open** (16 opens
+× 6 = 96). The format string lives ONLY in heap (UE shipping build
+stripped it from .rdata), so no xref anchor for it directly. Instead
+identified via UE source reading: `UKismetMathLibrary::MakeDateTime` is
+the function that emits this exact warning when BP code calls "Make Date
+Time" with all-zero inputs. The UFunction `MakeDateTime` (id 0x00035AD3)
+and `CallFunc_MakeDateTime_ReturnValue` (id 0x007A1DEA) both exist as
+pooled FNames — definitive proof a Blueprint calls Make Date Time.
+
+`usmapdump nameid` batch found per-category DateTime fields:
+
+| FName | id | Owner offset | Type |
+|-------|----|--------------|------|
+| `NextWeeklyRefreshTime` | 0x00627B86 | 0x38 | FDateTime |
+| `NextDailiesRefreshTime` | 0x00627B92 | 0x30 | FDateTime |
+
+ONLY Weekly and Dailies have explicit refresh-time fields — Seasonal /
+Onboarding / PCBang do not. So the "6 warnings per modal = 5 categories +
+1 modal" mapping is **wrong**. The 6 warnings come from somewhere else
+(possibly the Make Date Time node is called for multiple uses per category
+read — e.g., parse + format + display), or there's a generic per-mission
+GrantedAt read iterating 6 missions, or something else.
+
+**Empirical FProperty layout** derived from peek of 4 adjacent entries:
+
+```
++0x00 (8): FName NamePrivate
++0x08 (4): InternalIndex 0x45 (consistent — could be owner-UClass index
+                                 or FFieldClass index, not yet confirmed)
++0x0C (4): unknown (often 0)
++0x10 (4): int32 ArrayDim
++0x14 (4): int32 ElementSize ← matches type sizes (8=FDateTime,
+                                16=FPrimaryAssetId, 0x28=TMap header)
++0x18 (8): EPropertyFlags
++0x20 (4): unknown (often 0)
++0x24 (4): int32 Offset_Internal ← empirically verified: 0x30
+                                    for NextDailies, 0x38 for NextWeekly
++0x28..0x4F: zeros / sparse
++0x50 (8): owner UObject* heap ptr
++0x60 (8): vtable-ish .rdata ptr (FFieldClass*?) — shared across FProperty
+                                                    instances of same type
++0x68 (8): another .rdata ptr (shared)
++0x70 (8): heap ptr to neighboring FProperty
++0x78 (8): heap ptr to next FProperty in chain
+```
+
+Total stride **0x80 bytes per FProperty**.
+
+Note: layout does NOT match vanilla UE5.4 `FField`/`FProperty` from
+public Engine source (which has FName at +0x20, not +0x00). Loki has
+either customized the layout OR these entries are a different reflection
+structure (FCachedProperty? FFieldData?). Doesn't change the conclusion —
+the per-entry fields decode consistently.
+
+**MissionPoolIDs re-examined with the corrected schema:**
+- Entry 1 @0x16AECEDDCA0: ElementSize=0x10, Offset_Internal=0 (suspicious
+  — offset 0 means it's the first field of its owning USTRUCT, or the
+  FName/InternalIndex parse is off for this entry)
+- Entry 2 @0x16AECEDDD20: ElementSize=0x10, Offset_Internal=0x10
+
+The +0x80 spacing pattern is identical to the NextRefreshTime chain. So
+MissionPoolIDs has two FProperty entries possibly representing two
+classes that both define a `MissionPoolIDs` field (e.g., maybe the
+modal's per-category widget has its OWN MissionPoolIDs subset?).
+
+**Anchor for Plan B**: the per-category data binding goes through
+`BindToMissions` (FName id 0x007B4871). That's the next thing to track.
