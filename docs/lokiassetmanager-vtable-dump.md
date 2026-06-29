@@ -284,6 +284,45 @@ Sample batch hits showed:
 - `DA_Mission_Mortar01` not yet looked up directly — substring "DA_Mission" returned 7 hero-mission variants. Each of the 16 daily missions needs an exact-name lookup to extract its ComparisonIndex.
 - `/Game/Loki/Core/Missions/...` whole paths exist as single FNames (verified for several `BP_MissionObjective_*` and `DA_Mission_*` packages).
 
+### Baked MissionPool PrimaryAssetName FName indices (16/16, validated 2026-06-28)
+
+All 16 `LokiDataAsset_MissionPool` PrimaryAssetNames enumerated from
+`tools/extractor/out/catalog/da_index.csv` and batch-looked-up in one
+`nameid` call. **16/16 hits, all `kName_*` constants are ready to bake.**
+(One pool name — `DA_MissionPoolTutorialMaps` — appears in two NamePool slots;
+either id resolves to the same string, pick the first.)
+
+```cpp
+// All 16 LokiDataAsset_MissionPool PrimaryAssetName FName ComparisonIndex values.
+// PrimaryAssetType for every entry = kType_MissionPool (0x00016F06).
+constexpr uint32 kName_DA_MissionPoolDailyEasy_Planbee        = 0x000646D1;
+constexpr uint32 kName_DA_MissionPoolTutorialMaps             = 0x00117A37;
+constexpr uint32 kName_DA_MissionPoolWeekly_Planbee           = 0x00137B5D;
+constexpr uint32 kName_DA_MissionPoolDailyChallenge           = 0x0013D7DA;
+constexpr uint32 kName_DA_MissionPool_Tournament              = 0x00148033;
+constexpr uint32 kName_DA_MissionPoolDailyPCB_Armory          = 0x00148041;
+constexpr uint32 kName_DA_MissionPoolOnboardingPlanbee        = 0x001F4BD2;
+constexpr uint32 kName_DA_MissionPoolOnboarding               = 0x0025292C;
+constexpr uint32 kName_DA_MissionPoolWeekly                   = 0x0025D9CE;
+constexpr uint32 kName_DA_MissionPoolDailyEasy                = 0x0029D2DA;
+constexpr uint32 kName_DA_MissionPoolWeeklyChallenge          = 0x002EFC99;
+constexpr uint32 kName_DA_MissionPoolWeeklyChallenge_Planbee  = 0x002F52FC;
+constexpr uint32 kName_DA_MissionPoolDailyChallenge_Planbee   = 0x0034A90E;
+constexpr uint32 kName_DA_MissionPoolHunterMissions           = 0x0047A890;
+constexpr uint32 kName_DA_MissionPoolArmoryOnboarding         = 0x004A410E;
+constexpr uint32 kName_DA_MissionPoolDailyPCB                 = 0x0056032C;
+```
+
+This single PrimaryAssetType is sufficient for a SMOKE-TEST shim: register all
+16 mission pools, observe Loki.log for `ChangeBundleStateForPrimaryAssets`
+activity against `MissionPool:DA_MissionPool*` IDs (the missing piece that
+PROBE #3 confirmed as the trigger for grid population). If the smoke test
+shows registration + warnings clear but the Missions modal still renders no
+pools, the downstream UI kill criterion is real and we pivot to RE'ing the
+modal widget. If pools appear in the modal, the same pattern scales mechanically
+to the 105 mission assets + the 25 hero assets + the 25 cosmetics bundles +
+the store offers etc.
+
 ### Concrete next-session work order for shim build
 
 1. **Enumerate exact asset names per type** via `tools/extractor` catalog. We
