@@ -203,13 +203,22 @@ $iniArgs = @(
 # failure mode). Nothing needs to be listening on the port for the probe
 # to be diagnostic.
 if ($Open) {
-  # -ExecCmds value contains a space, so we MUST embed inner quotes — without
-  # them Windows arg parsing splits at the space and the engine sees
-  # -ExecCmds=open as the entire value (127.0.0.1:7777 would then be treated
-  # as a positional URL arg). FParse::Value supports quoted values directly.
-  $execCmd = "-ExecCmds=`"open $Open`""
-  Write-Host "Probe #6 active: $execCmd" -ForegroundColor Yellow
-  $iniArgs += $execCmd
+  # Probe #6 result (2026-06-29): -ExecCmds="open $Open" reached the engine's
+  # CommandLine (logged at engine init) but never produced a Browse to the
+  # target - the DefaultMap browse to LVL_Login fired in the same frame and
+  # clobbered the open command. Shipping build also stripped the dev console
+  # (ConsoleKeys/EnableCheats/ConsoleClass strings ALL absent from the exe),
+  # so manual console entry post-menu isn't an option either.
+  #
+  # Probe #7: positional URL form. UE's startup parser treats the first
+  # non-switch arg as the initial URL - it REPLACES DefaultMap entirely, so
+  # there's no race with LVL_Login. The game won't reach the menu (we go
+  # straight to a NetConnection attempt), but Loki.log will name the
+  # NetDriver, the StatelessConnect handler, and the first control-channel
+  # message - exactly the protocol surface we need to size the UE5.4 stub
+  # server build.
+  Write-Host "Probe #7 active: positional URL $Open (replaces DefaultMap browse)" -ForegroundColor Yellow
+  $iniArgs += $Open
 }
 Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
 & $exe @iniArgs
