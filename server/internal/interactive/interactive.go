@@ -229,7 +229,20 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 // "??? - ms" + missing ST_ServerLocations). STAGED probe: one region pointed at the local
 // backend so the ping can resolve. Fields are the confirmed model names (RegionName/RouteName)
 // plus a superset of plausible host/port/display keys (UE ignores unmatched, matches
-// case-insensitively). Returned as a bare array (regions is a TArray<FCoreGameRegion>).
+// case-insensitively).
+//
+// 2026-06-29 — PROBE #2: object-envelope. Live readback (Loki.log):
+//   LogJson: Warning: JsonObjectStringToUStruct - Unable to parse json=[[{"Address":...}]]
+//   LogLokiPlatformQuery: Error: Deserialization failure on Query: GET .../core-game/regions
+// UE's warning format is literally `json=[%s]` (outer brackets are part of the log format,
+// not the body) so the body the server emitted was the single-wrapped bare array
+// `[{...}]\n`. Per the validity model documented at the top of menu.go ("a bare [] hits
+// Deserialization failure — array vs. object struct"), the target UStruct is an object,
+// so a bare TArray top-level fails. PROBE #1's "returned as a bare array" comment was
+// wrong about what the call site expects. Flipping to an object envelope with the obvious
+// field name (`Regions`, matching `GetRegions`'s return). If "Regions" is the wrong field
+// name the symptom will flip from Deserialization failure → Invalid response received
+// (predicate fails), which would name the next probe.
 func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) {
 	region := map[string]any{
 		"RegionName":  "na",
@@ -241,7 +254,9 @@ func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) 
 		"Port":        443,
 		"Enabled":     true,
 	}
-	writeJSON(w, []any{region})
+	writeJSON(w, map[string]any{
+		"Regions": []any{region},
+	})
 }
 
 func (s *Service) handleMailboxConfigVersion(w http.ResponseWriter, r *http.Request) {
