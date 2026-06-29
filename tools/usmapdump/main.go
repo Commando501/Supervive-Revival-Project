@@ -371,6 +371,22 @@ func main() {
 		cmdDisasm(os.Args[2], os.Args[3], n)
 		return
 	}
+	// vtslot: <proc> <slot> <hexFnAddr> [maxhits] — find vtables where [base+slot*8] == fn
+	if (len(os.Args) == 5 || len(os.Args) == 6) && os.Args[1] == "vtslot" {
+		slot, err := parseDecimal(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad slot (must be decimal int like 11):", err)
+			os.Exit(1)
+		}
+		addr, err := parseHex(os.Args[4])
+		if err != nil {
+			fmt.Println("ERROR: bad fn address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 5, 30)
+		cmdVtSlot(os.Args[2], slot, addr, mh)
+		return
+	}
 	fmt.Println("usage: usmapdump info     <proc-name-or-pid>                  (PE/section recon)")
 	fmt.Println("       usmapdump names    <proc-name-or-pid>                  (locate GNames)")
 	fmt.Println("       usmapdump objects  <proc-name-or-pid>                  (locate GUObjectArray)")
@@ -382,5 +398,7 @@ func main() {
 	fmt.Println("       usmapdump findptr  <proc-name-or-pid> 0xADDR    [N]    (find qword == ADDR)")
 	fmt.Println("       usmapdump peek     <proc-name-or-pid> ADDR_OR_+RVA [N] (hex+ascii dump)")
 	fmt.Println("       usmapdump disasm   <proc-name-or-pid> ADDR_OR_+RVA [N] (x86-64 disasm)")
+	fmt.Println("       usmapdump vtslot   <proc-name-or-pid> SLOT 0xFN_ADDR [N]")
+	fmt.Println("                                                                (find vtables where [base+slot*8]==fn)")
 	os.Exit(2)
 }
