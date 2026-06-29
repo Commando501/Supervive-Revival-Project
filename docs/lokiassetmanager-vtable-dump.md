@@ -375,6 +375,61 @@ least one ID (would force conflict warning IF entries persisted), OR (b) a UI
 test of the Missions modal — opening it and observing whether mission pools
 appear.
 
+### CRITICAL: FName ComparisonIndex is NOT stable across launches (2026-06-28 late)
+
+Discovered during the persistence-probe attempt: per-launch FName indices DRIFT
+for any name added to the pool AFTER engine init's earliest phase. Verified by
+running `nameid` against two distinct game sessions and comparing.
+
+**Stable across launches** (block 1 — engine-init core names):
+- `Mission`     = 0x000162B8 (block 1, offset 0xC570) ✓ same both runs
+- `MissionPool` = 0x00016F06 (block 1, offset 0xDE0C) ✓ same both runs
+- `Hero`        = 0x0001A568 (block 1, offset 0x14AD0) ✓ same both runs
+- All 13 PrimaryAssetType FNames stable (live in blocks 1, 94, 98)
+
+**Drifts per launch** (blocks 6+ — cooked asset names added during AR.bin load):
+| Name | Run 1 | Run 2 |
+|---|---|---|
+| `DA_MissionPoolDailyChallenge` | 0x0013D7DA | 0x00148086 |
+| `DA_MissionPoolDailyEasy` | 0x0029D2DA | 0x002A7E5A |
+| `DA_MissionPool_Tournament` | 0x00148033 | 0x001529AC |
+| `DA_MissionPool_Tournament_C` | 0x00074446 | 0x0007EB5F |
+| `/Game/Loki/...DA_MissionPool_Tournament` | 0x00243D04 | 0x0023E81E AND 0x0024E81E (2 hits!) |
+| `LokiAssetManager` (singleton's NamePrivate) | 0x00586413 | 0x0029F49F |
+
+This means **the 16 per-asset FName indices baked into
+`registration_shim.cpp::kRegistrations` are valid ONLY for the session they
+were extracted from.** Subsequent launches register entries under whatever
+junk string happens to live at those indices in the new run's pool. The TYPE
+key (MissionPool=0x00016F06) is stable, so we always add entries to the right
+TMap bucket, but with wrong sub-keys.
+
+**Why the drift:** UE 5.4's FNamePool grows by appending entries as code paths
+register them. The order depends on engine init ordering, async loading
+schedule, GC behavior, and any non-deterministic startup variance (network
+timing, file IO order). Block 1's names get registered during the same
+deterministic compile-time init each launch; later blocks fill from cooked
+AR.bin in arbitrary order.
+
+**Implications for the shim:**
+
+- **Option A (right fix):** make the shim do RUNTIME lookup against the live
+  NamePool — port `nameid`'s pool walker into the shim, look up each needed
+  string at shim init time, build the kRegistrations table from runtime
+  indices. ~2-3 hours of shim work.
+- **Option B (smaller test):** restrict the test to TYPE-only registrations
+  (e.g., create a fake PrimaryAssetType entry and see if the UI shows
+  ANYTHING) — but Mission/MissionPool types may already exist in the manifest
+  consumer's silent-failure list, so this might not surface as a clean test.
+- **Option C (external):** dump AssetTypeMap externally via
+  ReadProcessMemory after the shim runs, see how many MissionPool sub-entries
+  ended up there — regardless of names, count of 16 means writes landed.
+  Doesn't validate semantic correctness but proves the write path works.
+- **Option D (accept partial):** keep baked indices, run the shim on whatever
+  launch we care about, do the UI test immediately, accept that the
+  registered entries have garbage names (UI might still render category tabs
+  based on TYPE registration alone).
+
 ### UI test executed 2026-06-28 evening — Missions modal still empty
 
 Opened the Missions modal after 3 successful registration runs (48 total

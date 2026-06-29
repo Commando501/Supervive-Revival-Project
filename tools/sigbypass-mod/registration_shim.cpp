@@ -56,7 +56,19 @@ static const char* kMarkerPath =
 // Module-relative offsets (stable per build).
 constexpr uintptr_t kLokiAssetMgrVTableRva = 0x888CB78;  // LokiAssetManager UClass vtable
 constexpr uintptr_t kAddDynamicAssetVtSlot = 94;         // vtable slot for AddDynamicAsset
+constexpr uintptr_t kGetNameDataVtSlot     = 159;        // vtable slot for GetNameData (persistence probe)
 constexpr uintptr_t kGGameTidRva           = 0x9D49158;  // GGameThreadId (uint32 slot)
+//
+// GetNameData @ +0x34D67F0 identification chain (recon 2026-06-28 evening):
+//   wstrings "Invalid Primary Asset Type" → fmt @ +0x7F70B30
+//   log-record @ +0x7F70B10
+//   xrefstr → unique LEA @ +0x34D6982 (loads SECOND log struct in same function;
+//     the FIRST log struct at +0x34D6960 references "Invalid Primary Asset Id"
+//     format @ +0x7F70AD0 — both warnings emit from this single helper)
+//   function entry @ +0x34D67F0 (3-arg prologue: rcx=this, rdx=FPrimaryAssetId*,
+//     r8=bool bCheckRedirector); returns FPrimaryAssetData* (non-null = lookup
+//     hit in AssetTypeMap, null = not found + warning emitted)
+//   findptr +0x34D67F0 → hit at +0x888D070 = vtable base 0x888CB78 + 159*8 ✓
 
 // Object-flag bits we care about (this build: ObjectFlags @ +0x0C of UObject).
 constexpr uintptr_t kObjFlagsOffset        = 0x0C;
@@ -304,6 +316,17 @@ typedef void (*PFN_AddDynamicAsset)(
     const FSoftObjectPath* assetPath,
     const TArray<FName>* bundles);
 
+// GetNameData (slot 159): persistence probe. Returns FPrimaryAssetData* — we
+// don't care about the struct contents, only whether the return value is null
+// vs non-null. A registered ID should yield non-null; a non-registered ID
+// yields null AND emits "Invalid Primary Asset {Type,Id}" warnings to
+// Loki.log — giving us a definitive yes/no for whether AddDynamicAsset
+// persisted in the AssetTypeMap.
+typedef void* (*PFN_GetNameData)(
+    void* self,
+    const FPrimaryAssetId* assetId,
+    bool bCheckRedirector);
+
 static void NTAPI RegisterApcCallback(ULONG_PTR /*param*/) {
     if (!g_singleton || !g_modBase || !g_vtableAddr) {
         WriteMarker("[apc] FIRE FAIL: globals not set\r\n");
@@ -390,6 +413,14 @@ static void NTAPI RegisterApcCallback(ULONG_PTR /*param*/) {
     snprintf(m, sizeof(m), "[apc] DONE: %d / %zu registrations completed\r\n",
              ok, kRegCount);
     WriteMarker(m);
+
+    // Persistence probe DISABLED — vtable[159] (+0x34D67F0) turned out to be a
+    // warning-emitter helper, NOT GetNameData. Its third arg is FString const&
+    // (the error context), not a bool. Passing bool false (=0) made it deref
+    // [rsi+0x8] → AV → game crash. See crash callstack 2026-06-28 in Loki.log
+    // around 02:55:18 with frame at +0x34D693D (inside the helper's warning
+    // emission). Need to RE the actual GetNameData / GetPrimaryAssetIdList
+    // vtable slot before re-enabling a probe.
 }
 
 // ─── worker ───────────────────────────────────────────────────────────────────
