@@ -222,6 +222,88 @@ ePackageHashing seed, the empty-name slot ID, etc.), or by finding `FString`
 Pick Route A. The bake table is mechanical and reproducible; Route B's hunt for
 an un-anchored ctor is open-ended.
 
+### `usmapdump nameid` — LANDED 2026-06-28
+
+Multi-needle batch lookup across all 128 NamePool blocks. Single pool discovery
+(~30s) → many needles scanned in one walk. Exact-match `=` prefix avoids noise
+on short common tokens.
+
+```
+usmapdump nameid <proc> <needle1>[,<needle2>,...] [maxhits-per-needle]
+```
+
+**Validated identification:** "LokiAssetManager" lookup returned id=0x00586413,
+which matches EXACTLY the ComparisonIndex observed at the singleton's
+`NamePrivate@+0x20`. "Default__LokiAssetManager" returned id=0x006B057B, the
+exact value at the CDO's `NamePrivate@+0x20`. Both confirm the encoding
+`id = (block << 16) | (offset_in_block / 2)` and confirm our singleton + CDO
+identification is correct.
+
+### Baked PrimaryAssetType FName indices (2026-06-28)
+
+All 13 type names registered/known by LokiAssetManager are pooled. One batch
+command extracted them all:
+
+```cpp
+// All 13 PrimaryAssetType FName ComparisonIndex values, this build/run.
+// FName.Number = 0 in every case (these are unsuffixed type names).
+constexpr uint32 kType_StoreOffer          = 0x00016257; // block=1   off=0xC4AE
+constexpr uint32 kType_Mission             = 0x000162B8; // block=1   off=0xC570
+constexpr uint32 kType_MissionPool         = 0x00016F06; // block=1   off=0xDE0C
+constexpr uint32 kType_Hero                = 0x0001A568; // block=1   off=0x14AD0
+constexpr uint32 kType_HeroCosmeticsBundle = 0x0001A572; // block=1   off=0x14AE4
+constexpr uint32 kType_SlotCosmetics       = 0x0001A58C; // block=1   off=0x14B18
+constexpr uint32 kType_Equipment           = 0x0001A5D1; // block=1   off=0x14BA2
+constexpr uint32 kType_Items               = 0x005E69D6; // block=94  off=0xD3AC
+constexpr uint32 kType_Powers              = 0x00627C84; // block=98  off=0xF908
+constexpr uint32 kType_GameAugments        = 0x00628068; // block=98  off=0x100D0
+constexpr uint32 kType_Minions             = 0x00628078; // block=98  off=0x100F0
+constexpr uint32 kType_PlayerTitles        = 0x006280B6; // block=98  off=0x1016C
+constexpr uint32 kType_Emotes              = 0x006280C6; // block=98  off=0x1018C
+```
+
+Note the clustering: the 11 type names registered by the manifest consumer
+(per prior PROBE #2 analysis: StoreOffer, Mission *implicit*, MissionPool
+*implicit*, Hero, HeroCosmeticsBundle, SlotCosmetics, Equipment, Items, Powers,
+GameAugments, Minions, PlayerTitles, Emotes) live in adjacent NamePool offsets
+within blocks 1, 94, 98. Mission and MissionPool ARE pooled (visible in the
+batch above) — they just don't have a corresponding map in the manifest's
+`ContentServiceContentManifest` struct, which is why the manifest can't carry
+them. That asymmetry is the WHOLE reason this route exists.
+
+### Sample per-asset names + package paths — pooled, ready to bake
+
+```
+DA_Mission_Mortar01           — example daily mission asset name (need exact form for each of the 16)
+DA_MissionPoolDailyChallenge  — the pool name we already patched in AR.bin
+/Game/Loki/Characters/Heroes/FireFox/...  — full package paths exist as single FNames
+FireFox / Earthtank / ...     — hero codenames (PascalCase, exact case from cooked catalog)
+```
+
+Sample batch hits showed:
+- `DA_Mission_Mortar01` not yet looked up directly — substring "DA_Mission" returned 7 hero-mission variants. Each of the 16 daily missions needs an exact-name lookup to extract its ComparisonIndex.
+- `/Game/Loki/Core/Missions/...` whole paths exist as single FNames (verified for several `BP_MissionObjective_*` and `DA_Mission_*` packages).
+
+### Concrete next-session work order for shim build
+
+1. **Enumerate exact asset names per type** via `tools/extractor` catalog. We
+   already have `tools/extractor/out/catalog/` containing per-bundle JSON with
+   asset paths. For each of the 16 missions / 4 mission pools / 25 heroes / 25
+   cosmetics bundles, extract the exact PrimaryAssetName + PackageName +
+   AssetName + AssetPath strings.
+2. **Single batch `nameid` lookup** for all extracted strings — at this scale
+   (~150-200 needles) one pool walk finishes in ~30s + per-needle scan time.
+   Bake the resulting `kName_*` constants into the shim.
+3. **Build `tools/sigbypass-mod/registration_shim.cpp`** modeled on
+   `mount_shim.cpp`'s worker+APC framework. Singleton finder per spec above.
+   Loop body calls `vtable[94](singleton, &id, &path, &bundles)` per asset
+   with structs constructed from the baked FName indices.
+4. **Verify by relaunching + signing in + opening Missions modal.** Watch
+   marker file + Loki.log for `Invalid Primary Asset Type/Id` warnings clearing
+   + `ChangeBundleStateForPrimaryAssets` activity for our registered IDs.
+5. **If warnings clear but UI is still empty**, downstream kill criterion has
+   fired and route closes at UI layer (see below).
+
 ### Shim plan (ready to build — next session)
 
 Extend `tools/sigbypass-mod/mount_shim.cpp` framework into a new
