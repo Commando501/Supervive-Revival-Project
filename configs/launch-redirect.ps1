@@ -235,9 +235,22 @@ if ($Hook) {
   if (-not (Test-Path $injectExe)) {
     throw "inject.exe not found at $injectExe (build it with 'go build -C tools/inject -o inject.exe .')"
   }
-  Write-Host "Launching SUPERVIVE via inject (DLL: $Hook)..." -ForegroundColor Cyan
-  Write-Host "  CREATE_SUSPENDED + manual-map + Resume — DLL loaded BEFORE first Browse" -ForegroundColor DarkGray
-  & $injectExe launch $exe $Hook @iniArgs
+  # watch-now (not launch): polls every 1ms for the SUPERVIVE process to
+  # appear, then immediately manual-maps the DLL. We launch the game via
+  # the normal `& $exe @iniArgs` path so Steam's DRM init runs as expected
+  # (CREATE_SUSPENDED + Resume bypasses Steam handshake and the game won't
+  # show a window). The race window for "engine init finishes before our
+  # mmap completes" is on the order of 1-2 seconds; the polling loop wins.
+  Write-Host "Spawning inject watch-now to catch the game on launch..." -ForegroundColor Cyan
+  Write-Host "  DLL: $Hook" -ForegroundColor DarkGray
+  $watchProc = Start-Process -FilePath $injectExe `
+      -ArgumentList @("watch-now", "SUPERVIVE-Win64-Shipping.exe", $Hook) `
+      -WindowStyle Minimized -PassThru
+  Start-Sleep -Milliseconds 200   # let watch-now's poll loop spin up
+  Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
+  & $exe @iniArgs
+  # When the game exits, the watch-now process is harmless (loop ends when
+  # it finds the process). It exits on its own after a successful mmap.
 } else {
   Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
   & $exe @iniArgs
