@@ -387,6 +387,13 @@ func main() {
 		cmdVtSlot(os.Args[2], slot, addr, mh)
 		return
 	}
+	// nameid: <proc> <substring> [maxhits] — find pooled FNames by ANSI substring,
+	// print the 32-bit ComparisonIndex you'd use to construct an FName in a shim
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "nameid" {
+		mh := parseMaxHits(os.Args, 4, 64)
+		cmdNameID(os.Args[2], os.Args[3], mh)
+		return
+	}
 	// vtdump: <proc> <hexVtableAddr> [numSlots] — dump vtable contents slot-by-slot
 	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "vtdump" {
 		addr, err := parseHex(os.Args[3])
@@ -413,5 +420,6 @@ func main() {
 	fmt.Println("                                                                (find vtables where [base+slot*8]==fn)")
 	fmt.Println("       usmapdump vtdump   <proc-name-or-pid> 0xVTABLE_ADDR [SLOTS]")
 	fmt.Println("                                                                (dump vtable slot-by-slot, mark shared/unique)")
+	fmt.Println("       usmapdump nameid   <proc-name-or-pid> <ansi-substr>  [N] (substring search across all FNamePool blocks)")
 	os.Exit(2)
 }
