@@ -375,6 +375,100 @@ least one ID (would force conflict warning IF entries persisted), OR (b) a UI
 test of the Missions modal — opening it and observing whether mission pools
 appear.
 
+### External AssetTypeMap walk — persistence PROVEN, hypothesis 2 falsified (2026-06-28 late)
+
+After re-injecting the safe shim against the fresh launch (singleton @
+0x16AF849E8C0), externally read the TMap at `[singleton + 0x478]` via
+`usmapdump peek`. **Persistence is real** — and the deeper finding is even
+more important: the blocker is NOT type-or-name registration.
+
+**Outer AssetTypeMap header at `[singleton + 0x478]` (0x16AF849ED38):**
+
+```
++0x00 (data ptr): 0x16B64E195B0   (TArray.Data — TSparseArray of pair elements)
++0x08 (Num):      0x0000001E       (30 entries — see breakdown below)
++0x0C (Max):      0x0000001F       (31 capacity)
++0x40 (hash ptr): 0x16B628CEE00    (hash bucket array)
++0x48 (mask):     0x00000020       (32 buckets, mask = 0x1F)
+```
+
+Element stride **32 bytes**, key (FName) at element +0x00, value ptr (to
+0x1c8-byte `FPrimaryAssetTypeData`) at element +0x08.
+
+**Decoded 30 entries** include keys that confirm hypothesis assumptions:
+
+| Idx | Key (decoded)        | FName id    | Notes |
+|-----|----------------------|-------------|-------|
+| 2   | `Hero`               | 0x0001A568  | manifest type |
+| 6   | **`Mission`**        | 0x000162B8  | **TYPE REGISTERED AT STARTUP** — not by our shim |
+| 7   | `HeroCosmeticsBundle`| 0x0001A572  | manifest type |
+| 11  | **`MissionPool`**    | 0x00016F06  | the one we (re-)called AddDynamicAsset on |
+| ... | (other 26 types)     |             | Loki types beyond the 11 manifest-mapped |
+
+**This falsifies the long-standing assumption that Mission and MissionPool
+have NO registration path** (per Attempts 3-4 in
+[docs/hero-roster-attempts.md](hero-roster-attempts.md)). Both types ARE
+registered in AssetTypeMap at startup — by Loki code that runs independent of
+the manifest consumer. The "Invalid Primary Asset Id MissionPool:..." warning
+we saw in Mission Probe #3 was because the probe injected via the wrong
+channel (Powers map), not because the type was missing.
+
+**Inner MissionPool FPrimaryAssetTypeData at value ptr 0x16B62968000:**
+
+```
++0x00 (Type key):       0x00016F06 (MissionPool) ✓
++0x178 (AssetMap data): 0x16AFC503620
++0x180 (AssetMap.Num):  16   ← our 16 AddDynamicAsset calls landed here
++0x184 (AssetMap.Max):  17
+```
+
+The 16 sub-entries are present. The shim's write path works end-to-end — the
+function executes, the TMap accepts the writes, the count rises from
+whatever-it-was to 16+. (Stale FName indices in this run mean the keys decode
+to garbage strings, but the count matches our call count.)
+
+### Verdict — three earlier hypotheses now settled
+
+1. **UI kill criterion is real**. ✓ Most likely the right diagnosis. The
+   modal does NOT enumerate via RegisteredPrimaryAssets — even with 30 types
+   registered (including Mission + MissionPool) and our 16 explicit entries,
+   the modal renders empty.
+2. **Registration didn't persist** — **FALSIFIED**. Entries are in the TMap.
+   AddDynamicAsset works.
+3. **Registered but assets not loaded (need ChangeBundleState/AsyncLoad)** —
+   still possible, would require triggering a load to test. But hypothesis 1
+   is now the parsimonious explanation: if the UI doesn't even acknowledge
+   the existing 30 registered types (Hero, HeroCosmeticsBundle, etc. — for
+   which actual cooked assets exist), it's not reading from this TMap at all.
+
+### Next route — RE the UI's actual enumeration source
+
+Given hypothesis 1's strong support, the productive next pursuit shifts to
+**finding what data source the Missions modal / Hunters grid actually reads**.
+Candidates (in order of likely productivity):
+
+1. **IAssetRegistry direct query**. The widget likely calls
+   `IAssetRegistry::GetAssetsByClass(LokiDataAsset_MissionPool)` or
+   `GetAssetsByClass(LokiDataAsset_Mission)` to enumerate. AssetRegistry
+   anchors from prior recon: "FAssetRegistry took" at +0x79D5DF0 (unique LEA
+   at +0x1FD8DBE), "Premade AssetRegistry loaded from" at +0x79D5B40.
+   In-memory FAssetRegistry patch (Approach C) would directly add AssetData
+   entries to where the widget actually looks.
+2. **Direct asset enumeration via `FAssetData[]` walk of an internal Loki
+   manifest cache**. Loki may have its own per-type cache populated during
+   init (separate from UAssetManager's). Discoverable by tracing what
+   `WBP_UI_MissionModal_C` binds against. Substantial — Blueprint VM bytecode
+   inspection.
+3. **A LokiDataAsset_Mission registration path**. Different from
+   AddDynamicAsset — perhaps a custom `LokiAssetManager::RegisterLokiAsset`
+   or similar that updates BOTH UAssetManager state AND Loki's own caches.
+   Findable by string-anchoring "LokiDataAsset" within the LokiAssetManager.cpp
+   range and tracing what functions touch it.
+
+The UI kill criterion is now the OFFICIAL diagnosis. AddDynamicAsset route is
+done with respect to registration — it works, it persists, it just doesn't
+move the UI.
+
 ### CRITICAL: FName ComparisonIndex is NOT stable across launches (2026-06-28 late)
 
 Discovered during the persistence-probe attempt: per-launch FName indices DRIFT
