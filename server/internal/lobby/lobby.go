@@ -18,6 +18,28 @@ import (
 	"supervive-revival/server/internal/ws"
 )
 
+// phantomDsPushDelay > 0 enables the dedicated-server-stub chapter's probe #3:
+// after a client connects to /lobby, push an unsolicited AccelByte v1 lobby
+// `matchmakingNotif` carrying a phantom DS at 127.0.0.1:7777 after the given
+// delay. The goal is to determine whether the WS push channel is what triggers
+// UE NetConnection (vs. the HTTP /core-game polling which was ruled out by
+// probes #1+#2). Set to 0 to disable.
+//
+// Field shape uses AccelByte v1 classic lobby format (newline-separated
+// `key: value` lines) — binary-confirmed type-name strings in this build
+// include `messageNotif`, `matchmakingNotif`, `partyNotif`, `rematchmakingNotif`,
+// but NOT `dsNotice` (the classic v1 DS notice). Best guess given that absence:
+// matchmakingNotif carries the DS info inline (or via a nested dsInfo field),
+// which is one common AccelByte integration pattern when dsNotice is unused.
+const phantomDsPushDelay = 5 * time.Second
+
+// phantomDsPushPath restricts the probe push to one WS path. Empty matches any
+// path; "/lobby" matches the AccelByte classic lobby; "/notifications/players/"
+// (prefix match) matches the messenger. Defaults to /lobby because the
+// matchmaking notif family is a v1 lobby concept; if /lobby doesn't trigger a
+// NetConnection, flip this to the messenger path and re-test.
+const phantomDsPushPath = "/lobby"
+
 // messengerHeartbeatInterval is how often the server proactively pushes a
 // binary "hb" frame on the Theorycraft messenger socket (path
 // /notifications/players/{id}). The client's LogMessenger watchdog fires
@@ -71,6 +93,15 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	isMessenger := strings.HasPrefix(r.URL.Path, "/notifications/players/")
+
+	// Dedicated-server-stub probe #3: if enabled and this path matches, push
+	// an unsolicited matchmakingNotif (carrying phantom DS connect info) after
+	// phantomDsPushDelay. Runs on a separate goroutine — the read loop owns
+	// reads but writes are serialized via ws.Conn.writeMu, so this is safe to
+	// race against the read loop's hb echoes / reply text writes.
+	if phantomDsPushDelay > 0 && pathMatchesPushTarget(r.URL.Path) {
+		go s.phantomDsPush(conn, r.URL.Path)
+	}
 
 	for {
 		if isMessenger {
@@ -165,4 +196,80 @@ func buildLobby(msgType, id string, fields ...string) string {
 	lines := []string{"type: " + msgType, "id: " + id}
 	lines = append(lines, fields...)
 	return strings.Join(lines, "\n")
+}
+
+// pathMatchesPushTarget reports whether the connection path is the one
+// phantomDsPushPath selects (exact match, or prefix for /notifications/players/).
+func pathMatchesPushTarget(path string) bool {
+	if phantomDsPushPath == "" {
+		return true
+	}
+	if strings.HasSuffix(phantomDsPushPath, "/") {
+		return strings.HasPrefix(path, phantomDsPushPath)
+	}
+	return path == phantomDsPushPath
+}
+
+// phantomDsPush sleeps phantomDsPushDelay, then writes a single AccelByte v1
+// `matchmakingNotif` text frame carrying phantom DS info. The notif is built as
+// a SUPERSET probe of plausible field names (UE matches case-insensitively and
+// silently ignores unmatched keys; a matched-but-wrong-typed field rejects the
+// whole notif with a LogJson warning we'll see in Loki.log). Includes both
+// inline IP/Port AND a JSON-encoded `dsInfo` field so a parser that wants
+// either layout finds something.
+//
+// Expected outcomes (each diagnostic):
+//   - Loki.log emits `LogNet*`/`NetConnection`/`Failed to connect` against
+//     127.0.0.1:7777  -> the push IS the trigger; the wire shape is at least
+//     close enough. Path C scaffolding begins next session.
+//   - Loki.log emits `LogJson` deserialize warnings naming a specific field ->
+//     field type is wrong; the warning names the field, we fix and re-push.
+//   - Loki.log silent (no error, no NetConnection) -> the wrong notif type
+//     name, the wrong push channel, or a missing precondition (e.g. client
+//     must send startMatchmakingRequest first). Iterate by flipping
+//     phantomDsPushPath to /notifications/... or trying messageNotif instead.
+func (s *Service) phantomDsPush(conn *ws.Conn, path string) {
+	time.Sleep(phantomDsPushDelay)
+
+	// dsInfo is the inner JSON payload — AccelByte SDK convention is to nest
+	// DS connection info under a `dsInfo` key for v1 matchmakingNotif. Field
+	// names use camelCase (AccelByte JSON style) AND PascalCase variants
+	// (since some Theorycraft layers prefer Pascal); UE will ignore whichever
+	// it doesn't match.
+	dsInfoJSON := `{"status":"READY","matchId":"phantom-match-0001","sessionId":"phantom-session-0001","ip":"127.0.0.1","port":7777,"podName":"phantom-pod","gameMode":"tutorialNew","region":"na","namespace":"supervive","serverId":"phantom-server-0001","deployment":"phantom","gameVersion":"release2.4.live-156430-shipping"}`
+
+	notif := buildLobby(
+		"matchmakingNotif",
+		"phantom-notif-0001",
+		"status: done",
+		"matchId: phantom-match-0001",
+		"sessionId: phantom-session-0001",
+		"gameMode: tutorialNew",
+		"clientVersion: release2.4.live-156430-shipping",
+		"namespace: supervive",
+		"region: na",
+		"joinable: true",
+		"queuedAt: "+time.Now().UTC().Format(time.RFC3339),
+		"matchingAllies: []",
+		"partyAttributes: {}",
+		// Inline DS info (top-level — Pascal+camel variants):
+		"ip: 127.0.0.1",
+		"port: 7777",
+		"Address: 127.0.0.1",
+		"Port: 7777",
+		"ServerUrl: 127.0.0.1:7777",
+		"Url: 127.0.0.1:7777",
+		"podName: phantom-pod",
+		"serverId: phantom-server-0001",
+		// Nested DS info — AccelByte convention:
+		"dsInfo: "+dsInfoJSON,
+		"DsInfo: "+dsInfoJSON,
+		"serverInfo: "+dsInfoJSON,
+		"ServerInfo: "+dsInfoJSON,
+	)
+
+	s.log.Event("WS -> %s TEXT %q (phantom matchmakingNotif push)", path, notif)
+	if err := conn.WriteText(notif); err != nil {
+		s.log.Event("WS phantom matchmakingNotif push FAILED %s: %v", path, err)
+	}
 }

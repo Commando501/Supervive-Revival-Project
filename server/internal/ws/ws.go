@@ -25,6 +25,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -39,9 +40,15 @@ func IsUpgrade(r *http.Request) bool {
 }
 
 // Conn is a minimal WebSocket connection over a hijacked TCP socket.
+//
+// writeMu serializes WriteFrame calls so a goroutine pushing a server-initiated
+// notification (e.g. the dedicated-server-stub chapter's matchmaking-notif
+// probe in package lobby) doesn't race the read-loop's frame writes (hb echoes,
+// reply text). Reads are still single-goroutine (the read loop's responsibility).
 type Conn struct {
-	c  net.Conn
-	br *bufio.Reader
+	c       net.Conn
+	br      *bufio.Reader
+	writeMu sync.Mutex
 }
 
 // Opcodes (RFC 6455 §5.2).
@@ -141,7 +148,11 @@ func (c *Conn) ReadFrame() (Frame, error) {
 }
 
 // WriteFrame writes a single (FIN) server→server frame, unmasked per spec.
+// Serialized via writeMu so concurrent writers (e.g. the read loop's hb echo
+// + a probe-push goroutine) don't interleave on the underlying TCP socket.
 func (c *Conn) WriteFrame(opcode byte, payload []byte) error {
+	c.writeMu.Lock()
+	defer c.writeMu.Unlock()
 	var hdr []byte
 	b0 := byte(0x80) | (opcode & 0x0f) // FIN + opcode
 	n := len(payload)
