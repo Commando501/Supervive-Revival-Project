@@ -1810,3 +1810,78 @@ If smoke test FAILS (Dailies still empty):
 
 Next session — depending on smoke test outcome — implement either the
 poke-based fix or the deeper registration + load chain.
+
+### D4 SMOKE TEST RESULT: NEGATIVE (2026-06-29)
+
+Poked 5 DynamicMissionPools entries (0-4) with category-matching pool refs:
+- [0] `MissionPool:DA_MissionPoolDailyEasy` (FName 0x002A7E5A, Number=0)
+- [1] `MissionPool:DA_MissionPoolDailyChallenge` (FName 0x00148086)
+- [2] `MissionPool:DA_MissionPoolWeekly` (FName 0x00268463)
+- [3] `MissionPool:DA_MissionPoolOnboarding` (FName 0x0025D3CE)
+- [4] `MissionPool:DA_MissionPool_Tournament` (FName 0x001529AC)
+
+User closed + reopened modal. **All 5 categories STILL empty** — modal
+rendered identically to before. Pokes were verified post-write, in-place.
+
+**DEFINITIVE: DynamicMissionPools is NOT the modal's data source for
+per-category rendering.** The 36 SeasonalArmory entries are present but
+the modal doesn't iterate them for category content.
+
+Restored all 5 entries to their original SeasonalArmory values.
+
+### Next data-source candidates (post-D4)
+
+The remaining candidates for the modal's per-category data source:
+
+A. **`MissionPoolAssets` TMap** — FName 0x0064E8E7 confirmed in NamePool +
+   `_Key` companion (FName 0x0064E8F1) proves it's a TMap. FProperty
+   findptr returned 2 hits:
+   - @0x16AC7CB9680: full TMap FMapProperty, ElementSize=0x50,
+     **Offset_Internal=0x1C0 (448)** in some owning class
+   - @0x16AECF18FA0: Value FProperty (FObjectProperty?), ElementSize=0x08
+     (= sizeof UObject*), Offset 0x10
+   - And the _Key FProperty: ElementSize=0x10 (= sizeof FPrimaryAssetId)
+
+   So MissionPoolAssets is `TMap<FPrimaryAssetId, UObject*>` at offset
+   0x1C0 of its owning class. **Owner class NOT YET IDENTIFIED** — checked
+   UProgressionManager+0x1C0 = empty TMap (zeros). Could be on
+   `LokiPlayerState_Missions` (no live instance at menu) OR on some
+   other class we haven't enumerated.
+
+B. **Per-category widget's runtime state** — each
+   `WBP_UI_MissionModalCategory_C` instance has its own UpdatePoolAssets,
+   CreateAssetsForPools, BindToMissions UFunctions. These manage per-
+   category state directly. Maybe each category populates its own widget
+   based on a different lookup.
+
+C. **A subsystem function** — e.g. `LokiMissionSubsystem::GetMissionsForPool(class)`
+   called per category. Need string anchor / vtable walk.
+
+D. **Loading-state gate** — modal might render empty until
+   `OnMissionsModelUpdated` fires. With server disconnect logged
+   (LogMessenger heartbeat fail) + WS bouncing 571MB → 7548MB → 6672MB,
+   the data load might be failing/pending. Modal stays in "loading"
+   state forever.
+
+### Honest assessment
+
+The diagnostic story so far:
+- We know exactly WHICH WIDGETS (5 categories) are created
+- We know WHICH POOL CLASSES each category references (from BP defaults)
+- We know what's in the LIVE modal's DynamicMissionPools (36 entries,
+  all SeasonalArmory)
+- We've PROVEN the modal doesn't render based on DynamicMissionPools
+- We've identified MissionPoolAssets TMap as a strong candidate but
+  haven't found its owning class instance yet
+
+Without BP bytecode decompilation (CUE4Parse 1.2.2 doesn't support this
+build's IoPackage format), we're constrained to runtime memory inspection.
+That's slow but tractable.
+
+Next concrete steps:
+1. Find MissionPoolAssets owning class via FProperty back-walk
+2. Check if any live instance has populated MissionPoolAssets TMap
+3. If empty everywhere, the lookup is failing at a deeper layer
+   (registration → load → bind chain)
+4. Consider deeper inspection of OnMissionsModelUpdated / OnManifestUpdated
+   to see what triggers re-render
