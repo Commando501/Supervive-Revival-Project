@@ -394,6 +394,11 @@ func main() {
 		cmdNameID(os.Args[2], os.Args[3], mh)
 		return
 	}
+	// poke: <proc> <addr> <hex-bytes> — WriteProcessMemory at addr with given bytes
+	if len(os.Args) == 5 && os.Args[1] == "poke" {
+		cmdPoke(os.Args[2], os.Args[3], os.Args[4])
+		return
+	}
 	// vtdump: <proc> <hexVtableAddr> [numSlots] — dump vtable contents slot-by-slot
 	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "vtdump" {
 		addr, err := parseHex(os.Args[3])
@@ -421,5 +426,7 @@ func main() {
 	fmt.Println("       usmapdump vtdump   <proc-name-or-pid> 0xVTABLE_ADDR [SLOTS]")
 	fmt.Println("                                                                (dump vtable slot-by-slot, mark shared/unique)")
 	fmt.Println("       usmapdump nameid   <proc-name-or-pid> <ansi-substr>  [N] (substring search across all FNamePool blocks)")
+	fmt.Println("       usmapdump poke     <proc-name-or-pid> ADDR_OR_+RVA <hex-bytes>")
+	fmt.Println("                                                                (WriteProcessMemory — \"AA BB CC\" or \"AABBCC\")")
 	os.Exit(2)
 }
