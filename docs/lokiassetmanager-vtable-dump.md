@@ -803,6 +803,70 @@ population path (whatever it is — likely triggered by some
    from 16 (our shim) to ~32 (cooked count) + 16 = 48.
 5. Open Missions modal and observe.
 
+### Vtable slot for type-scan virtual landed — but it's a wrapper chain
+
+Disassembled `ScanPrimaryAssetTypesFromConfig` at +0x34D0807. The loop body
+calls a virtual at `[rax+0x418]` = **vtable slot 131** for each entry in
+PrimaryAssetTypesToScan. Args (per caller):
+- rcx = this
+- rdx = `[rsp+0x40]` (16 bytes copied from entry — FName Type + 8 bytes pad)
+- r8 = `[rbx+0x10]` (entry+0x10, points into the FPrimaryAssetTypeInfo's
+  middle — first 16 bytes of the 12-byte tail-region containing some flags
+  + TArray.Num)
+
+**Slot 131 (+0x34D32D0)** turned out to be a **filter/wrapper**:
+- Reads multiple bytes/dwords from r8 at various offsets (+0, +4, +8, +9, +0xC)
+- Compares each against module-global config bytes (`cmp byte [rip+...]`)
+- Combines results via bitwise OR into r10b
+- Writes the final flag byte to a local buffer at [rsp+0x2C]
+- Calls **vtable slot 132 (+0x34D3380)** with `(this, &16-byte-FName,
+  &16-byte-buf-with-flags)`
+
+**Slot 132's body** does more processing:
+- Tests `[r8+0xC] & 0xF` (the flag byte from wrapper) for non-zero
+- Branches into one of two paths: an inline-add path (`sub rcx, -0x80; call
+  +0x34CD7C0`) or a hash-lookup path (calls FName-hash, then accesses TMap
+  at `[this+0x80]` — NOT AssetTypeMap at +0x478)
+
+`[this+0x80]` is a different TMap than AssetTypeMap. Possibly an
+`AssetTypeInfos` cache TArray that's separate from the data we walked.
+
+**The wrapper chain is more involved than expected.** Slot 131 is a
+config-driven path that EXTRACTS flags from PrimaryAssetTypesToScan entries
+and processes them through slot 132. Calling slot 131 directly requires
+constructing an entry-shaped struct (28-byte stride, partial overlap with
+FPrimaryAssetTypeInfo). Calling slot 132 directly requires already knowing
+how the flag bits get computed.
+
+Neither matches UE's vanilla `ScanPathsForPrimaryAssets(Type, TArray<FString>,
+UClass*, ...)` signature cleanly — Loki has WRAPPED the standard scan path
+with its own filtering/registration logic, and the vanilla scan virtual may
+not be directly on this vtable in the form we'd expect.
+
+### Honest assessment — Route 2's fix is multi-session work
+
+The DIAGNOSTIC for Route 2 succeeded: we now know
+- Both Mission and MissionPool have configured scan paths
+- Mission's scan runs at startup; MissionPool's doesn't
+- The vtable virtual that processes scan entries (slot 131) is identified
+- It internally calls slot 132 with extracted flags
+
+The ENGINEERING TASK to actually call this from a shim requires:
+- Constructing a 28-byte entry struct matching FPrimaryAssetTypeInfo's
+  on-disk layout (FName Type + 8 bytes class info + Directories TArray
+  header + flags) — currently approximate, needs validation
+- Constructing the matching FName + flags buffer for the slot-131 call
+- Potentially recovering the global config bytes that the wrapper compares
+  against
+- Testing on a stable game state without crashing
+
+This is genuinely 2-3 sessions of careful work — comparable in scope to the
+original AddDynamicAsset shim development.
+
+**The diagnostic chain is COMPLETE** — we know what's wrong, where the fix
+needs to go, and approximately how to invoke it. The fix itself is a
+separate engineering effort.
+
 ### Next route — RE the UI's actual enumeration source
 
 Given hypothesis 1's strong support, the productive next pursuit shifts to
