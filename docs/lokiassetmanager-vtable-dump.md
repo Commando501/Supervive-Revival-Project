@@ -71,33 +71,113 @@ as a likely candidate at slot 47 with its 8-register-save prologue).
 The goal: **find a way to register additional primary assets at runtime**, bypassing
 LokiAssetManager's manifest-only registration limit.
 
-**Approach A — Find AddDynamicAsset and call it directly.** UE source has:
-```cpp
-virtual void UAssetManager::AddDynamicAsset(
-    const FPrimaryAssetId& AssetId,
-    const FSoftObjectPath& AssetPath,
-    const TArray<FName>& Bundles
-);
+### Approach A — AddDynamicAsset direct call — RVA LANDED 2026-06-28
+
+**`LokiAssetManager::AddDynamicAsset` at module-RVA `+0x34AB870` (vtable slot 94).**
+
+Identification chain (proven repeatable on this build):
+
+1. `usmapdump wstrings SUPERVIVE-Win64-Shipping.exe "AddDynamicAsset" 5`
+   → one in-module hit at mod-RVA **+0x7F6F8B0**, UTF-16:
+   `"AddDynamicAsset on %s called with conflicting AssetId %s"` (the
+   conflict-detected `UE_LOG(LogAssetManager, Warning, ...)` inside
+   `UAssetManager::AddDynamicAsset` — vanilla UE5.4 source line).
+2. The standard UE `FStaticLogRecord` struct sits 0x20 bytes before the format
+   string: log-record at mod-RVA **+0x7F6F890** (format ptr +0x7F6F8B0, file ptr,
+   line `0x520` = 1312, verbosity `0x03` = Warning, FName category ptr).
+3. `usmapdump xrefstr SUPERVIVE-Win64-Shipping.exe <abs of log-record> 10`
+   → exactly ONE LEA targeting the log-record at mod-RVA **+0x34ABCC9**
+   (`48 8D 15 C0 3B AC 04` — `lea rdx, [rip+0x04AC3BC0]`).
+4. The LEA at +0x34ABCC9 sits inside the function entering at **+0x34AB870** —
+   the very slot we already saw at vtable position **94** in the dump above.
+   Offset of LEA into function: 0x459.
+5. `usmapdump vtdump SUPERVIVE-Win64-Shipping.exe 0x7FF667F5CE68 5` reads
+   slots 94..98 directly; slot 94 prologue
+   `4C 89 4C 24 20 4C 89 44 24 18 48 89 4C 24 08 55` matches the function entry
+   (saves r9/r8/rcx home slots then `push rbp; push rbx; push rsi; push rdi;
+   push r12..r15` — 9 reg saves, 0x108 frame, ample state — fits a real virtual
+   that walks a hash map and may allocate).
+
+**Body sanity** (first 256 bytes disasmed): standard UE TMap hash lookup pattern
+walking `[this+0x478]` (likely `AssetTypeMap`), with `mov ecx, 0x1c8; call <alloc>`
+for the not-found branch — `0x1c8` matches `sizeof(FPrimaryAssetTypeData)` in
+vanilla UE5.4. **Real implementation, not a stub.** Calling vtable[94] performs
+actual registration.
+
+### Singleton finder — LANDED 2026-06-28
+
+`usmapdump findptr SUPERVIVE-Win64-Shipping.exe 0x7FF667F5CB78 20` (abs addr of
+the LokiAssetManager UClass vtable at module-base + 0x888CB78) returns exactly
+**2 hits** at the steady-state menu:
+
+| Hit | Address (this run)   | [+0x0C] ObjectFlags | Verdict |
+|-----|----------------------|---------------------|---------|
+| 1   | `0x1CBB033EE90`      | `0x00000000`        | **Real singleton** |
+| 2   | `0x1CBF474A120`      | `0x00000031`        | CDO (bit `0x10` = `RF_ClassDefaultObject` set) |
+
+Both objects share `ClassPrivate` at `[+0x18]` = `0x01CBF9CE6280` (the
+LokiAssetManager `UClass*`). Singleton filter is therefore:
+
+1. Scan committed `MEM_PRIVATE` for any qword equal to `modBase + 0x888CB78`.
+2. For each hit, read `[+0x0C]` (uint32 ObjectFlags) and skip those with bit
+   `0x10` set.
+3. Take the first remaining match.
+
+In-process heap addresses are NOT stable across runs — the singleton scan must
+happen each launch — but the SHAPE of the hits (count = 2, exactly one with
+flags=0) is stable. The CLAUDE.md ObjectFlags-at-+0x0C note is correct for this
+build; layout summary on the singleton (per peek):
+
 ```
-This is a virtual method in UAssetManager. It SHOULD be in our vtable dump. To
-identify:
-1. Search the live process for `"AddDynamicAsset"` ANSI/wide string (likely emitted
-   by an UE_LOG inside the function or a TRACE scope name).
-2. xrefstr the string addr to find the LEA + enclosing function.
-3. Match the function's RVA to one of our 128 vtable slots — that slot index is
-   AddDynamicAsset's vtable position.
++0x00: vtable ptr        (LokiAssetManager UClass vtable = modBase + 0x888CB78)
++0x08: InternalIndex     (uint32, e.g. 0)
++0x0C: ObjectFlags       (uint32; CDO has 0x10 bit set, singleton = 0)
++0x10: another uint32    (e.g. 0xB016 on singleton, 0x8DAA on CDO)
++0x18: ClassPrivate      (UClass* — same value for CDO + real instance)
++0x20: NamePrivate       (FName, 8 bytes)
++0x28: OuterPrivate      (UObject*)
+... per-class fields ...
++0x478: AssetTypeMap     (TMap<FName, FPrimaryAssetTypeData> — per disasm)
++0x480: TMap meta uint32
++0x4AC: TMap meta uint32
+```
 
-Then build a shim that:
-1. Finds LokiAssetManager singleton (proven mechanism from prior `scan_shim`).
-2. Calls vtable[slot] with crafted args:
-   - FPrimaryAssetId: 16 bytes, (FName Type, FName Name)
-   - FSoftObjectPath: 24 bytes, (FTopLevelAssetPath + FString SubPath)
-   - TArray<FName>: 16 bytes (Data ptr, Num, Max)
-3. Loop over all 16 missions + 25 heroes + 25 hero cosmetics bundles + N
-   store offers etc.
+### Shim plan (ready to build — next session)
 
-If AddDynamicAsset doesn't have stack-cookie / engine-state preconditions like
-ScanPrimaryAssetTypesFromConfig did, it should work cleanly.
+Extend `tools/sigbypass-mod/mount_shim.cpp` framework into a new
+`registration_shim.cpp` that:
+
+1. Waits for `GGameThreadId` non-zero (proven mechanism, slot at +0x9D49158),
+   then sleeps a few seconds to let LokiAssetManager finish init.
+2. Singleton finder: scans `MEM_PRIVATE` for `qword == modBase + 0x888CB78`
+   then filters by `*(uint32*)(p + 0x0C) & 0x10 == 0`. Picks first match.
+3. Constructs the three argument structs per registration:
+   - `FPrimaryAssetId { FName Type; FName Name; }` — 16 bytes.
+   - `FSoftObjectPath { FTopLevelAssetPath{FName PackageName; FName AssetName}; FString SubPath; }`
+     — 24 bytes (16 for the two FNames + 16 for the empty FString).
+   - `TArray<FName> Bundles { void* Data; int32 Num; int32 Max; }` — 16 bytes.
+   FNames must be EXISTING NamePool indices (asset names are already pooled
+   because they're cooked into AR.bin and the manifest consumer). Lookup via
+   `usmapdump names` + per-name index extraction; bake the table into the shim
+   at build time. Avoids calling `FName::FName(TCHAR*)` (which would itself need
+   an RVA we don't have).
+4. APC-queues a callback on the game thread that loops over the registration
+   table and invokes `vtable[94](singleton, &id, &path, &bundles)` for each
+   entry.
+5. Marker logging per-call so we see exactly which ID succeeded vs. crashed.
+
+### Kill criterion to bear in mind
+
+Per the MISSION PROBE #2 analysis at the bottom of `docs/hero-roster-attempts.md`,
+even a successful `AddDynamicAsset` for every missing primary asset may not
+populate the UI. The Missions modal / hero grid / store / cosmetics widgets may
+enumerate via a DIFFERENT path (direct AssetRegistry query filtered by AssetClass)
+that doesn't read `RegisteredPrimaryAssets`. If the shim runs cleanly + the
+`Invalid Primary Asset Type/Id` warnings disappear + new `ChangeBundleState`
+activity appears for the registered IDs, but the UI still renders empty, the
+route closes at the UI layer and the remaining options are: (a) RE the
+`WBP_UI_*_C` blueprint widgets' data sources; (b) in-memory FAssetRegistry patch
+(Approach C).
 
 **Approach B — Patch LokiAssetManager vtable to call UAssetManager base impls.**
 For each slot in 88–127 that overrides a UAssetManager virtual:
