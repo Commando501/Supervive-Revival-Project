@@ -475,3 +475,20 @@ FAssetArchive Info: Loki/Content/Loki/Core/Missions/TX_Missions_Panel_BG.uasset 
    at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
    at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
    at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 04:16:47 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Content/Loki/Cheats/GP_TestProcEveryFrame.uasset'
+2026-06-29 04:16:47 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read GP_TestProcEveryFrame_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<GameplayTagContainer> CooldownTags
+ ---> CUE4Parse.UE4.Exceptions.ParserException: FName could not be read, requested index 395136, name map size 22
+FAssetArchive Info: Loki/Content/Loki/Cheats/GP_TestProcEveryFrame.uasset | Pos:2598 Length:2611 (99.5% done)
+   at CUE4Parse.UE4.Objects.GameplayTags.FGameplayTag..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Objects.GameplayTags.FGameplayTagContainer.<>c__DisplayClass1_0.<.ctor>b__0()
+   at CUE4Parse.UE4.Objects.GameplayTags.FGameplayTagContainer..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 04:17:34 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Plugins/AccelByteUe4Sdk/AccelByteUe4Sdk.uplugin'
