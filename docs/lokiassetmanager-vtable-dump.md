@@ -1636,3 +1636,88 @@ NEXT-SESSION ROUTES (now better-anchored):
 4. **Populate UMissionsModel.MissionPoolAssets** — once the TMap value
    type is known, smoke-test by writing 16 entries via `usmapdump poke`
    into the TMap's internal hash structure.
+
+### NEXT — bpdump tool + per-category pool wiring (2026-06-29)
+
+New tool: `tools/extractor/extractor` subcommand `bpdump`:
+- `bpdump <asset-substr> <fn-name>` — find UFunction, attempt BP bytecode
+  walk (KismetExpression[]); CUE4Parse 1.2.2 returns NULL for ScriptBytecode
+  on this build's IoPackage format, so the bytecode walk doesn't produce
+  output. The tool's actual value is its summary modes:
+- `bpdump <asset-substr> *` — emit all UFunctions + their ChildProperties
+  signature (param/local type list). Names stripped but types remain.
+- `bpdump <asset-substr> @props` — emit every UObject export's serialized
+  property values, recursing into ArrayProperty.Value.Properties.
+
+Running it on `WBP_UI_MissionModal.uasset`:
+
+**Per-category PoolAsset wiring** (the missing piece — each category widget
+has its own TArray<TSubclassOf<...>>):
+
+| Category | PoolAsset classes |
+|----------|-------------------|
+| Dailies | `DA_MissionPoolDailyEasy_C`, `DailyChallenge_C`, `DailyEasy_Planbee_C`, `DailyChallenge_Planbee_C` |
+| Weekly | `DA_MissionPoolWeekly_C`, `WeeklyChallenge_C`, `Weekly_Planbee_C`, `WeeklyChallenge_Planbee_C` |
+| Seasonal | `DA_MissionPool_Tournament_C` |
+| Onboarding | `DA_MissionPoolOnboardingPlanbee_C`, `DA_MissionPoolOnboarding_C` |
+| PCBang | `DA_MissionPoolDailyPCB_C`, `DA_MissionPoolDailyPCB_Armory_C` |
+| ArmoryTest (hidden) | `DA_MissionPoolArmoryOnboarding_C` |
+
+All 13 unique pool classes match what we already registered via
+AddDynamicAsset shim. So the registration was on-target but the
+**categories don't query AssetTypeMap** — they query something else.
+
+**The modal CDO has `DynamicMissionPools (ArrayProperty)` with 36 baked
+struct entries** in `Default__WBP_UI_MissionModal_C`. The struct
+elements' field contents not yet expanded (FStructFallback recursion fix
+TBD), but their EXISTENCE is significant: the modal class itself has
+baked pool-config data, not just runtime-discovered.
+
+**Other modal-level fields/functions discovered**:
+- `OnMissionsModelUpdated` — modal listens for MissionsModel changes
+- `OnManifestUpdated` — modal listens for content manifest updates
+- `Ubergraph` has 89 local variables (huge event graph)
+- 7 hardcoded category instances total (5 visible + 2 hidden ArmoryTest/Config)
+
+**Per-category UFunctions** (12 on `WBP_UI_MissionModalCategory_C`):
+- `BindToMissions` — 20 properties (FUNC_BlueprintCallable, FUNC_BlueprintEvent)
+- `CreateAssetsForPools` — 10 properties incl. FClassProperty
+- `UpdatePoolAssets` — 1 FArrayProperty (the assets array)
+- `UpdateMissionPoolTimer` — 10 properties (FStructProperty likely the FDateTime)
+- `UpdateMetaMission` — 27 properties (huge — meta-mission update)
+- `OnChildrenCountChanged` — 1 FIntProperty
+- `OnInitialized`, `Construct`, `OnUpdated`, `BP_GetDesiredFocusTarget`,
+  `BndEvt__*_OnClaimed_*`, `ExecuteUbergraph_*`
+
+Widget tree under each category: `VerticalBox -> ScrollBox ->
+MissionsContainer_v2 (WBP_UI_MissionContainer_v2)` — the container that
+actually renders the missions.
+
+### Concrete actionable fix path (post bpdump session)
+
+1. **Find live WBP_UI_MissionModal_C widget instance in memory** — opens
+   each time user clicks Missions. Its DynamicMissionPools field is at
+   some offset > 0 (need to find).
+2. **Check if DynamicMissionPools has 36 entries at runtime** — if yes,
+   wiring is intact, blocker is per-entry mission data. If 0/empty,
+   CDO defaults aren't propagating and that's the deeper bug.
+3. **Decode a DynamicMissionPool struct entry** (improve bpdump struct
+   recursion or read raw bytes from the live CDO). Likely fields:
+   FName/FClass pool ref + TArray of mission entries + DateTime fields.
+4. **For each empty category**, populate via WriteProcessMemory if data
+   path can be replicated.
+
+Cooked content has 16 MissionPool .uassets — exactly 13 are referenced by
+categories + 3 are unused (likely deprecated or test-only). The complete
+list per `tools/extractor/out/catalog/da_index.csv`:
+- All 4 Dailies-category pools (Easy, Challenge, Easy_Planbee, Challenge_Planbee)
+- All 4 Weekly-category pools
+- 1 Seasonal: DA_MissionPool_Tournament
+- 2 Onboarding pools
+- 2 PCBang pools
+- 1 ArmoryOnboarding (used by ArmoryTest, hidden)
+- 1 ArmoryDaily (PCBang variant — DA_MissionPoolDailyPCB_Armory)
+- 1 HunterMissions (UNUSED by any category)
+- 1 TutorialMaps (UNUSED by any category)
+
+So 14 pools used + 2 unused = 16 cooked.
