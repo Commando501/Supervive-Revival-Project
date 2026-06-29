@@ -492,3 +492,44 @@ FAssetArchive Info: Loki/Content/Loki/Cheats/GP_TestProcEveryFrame.uasset | Pos:
    at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
    at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
 2026-06-29 04:17:34 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Plugins/AccelByteUe4Sdk/AccelByteUe4Sdk.uplugin'
+2026-06-29 04:37:34 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Plugins/AccelByteUe4Sdk/Config/FilterPlugin.ini'
+2026-06-29 04:37:40 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Plugins/AccelByteUe4Sdk/AccelByteUe4Sdk.uplugin'
+2026-06-29 04:38:11 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Plugins/AccelByteUe4SdkCustomization/AccelByteUe4SdkCustomization.uplugin'
+2026-06-29 04:38:25 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Plugins/LokiSocketSubsystem/LokiSocketSubsystem.uplugin'
+2026-06-29 04:38:40 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Plugins/LowEntryExtStdLib/LowEntryExtStdLib.uplugin'
+2026-06-29 04:39:36 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Plugins/LokiSocketSubsystem/LokiSocketSubsystem.uplugin'
+2026-06-29 04:39:51 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Content/PipelineCaches/Windows/Loki_PCD3D_ES31.stable.upipelinecache'
+2026-06-29 04:41:18 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (272)
+FAssetArchive Info: Loki/Content/L10N/zh/Loki/UI/Widgets/FrontEnd/MainMenu/Battlepass/TX_GroupHeroLarge.uasset | Pos:441 Length:331655 (0.1% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 04:41:19 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Content/L10N/zh/Loki/UI/Widgets/FrontEnd/MainMenu/Battlepass/TX_GroupHeroLarge.uasset'
+2026-06-29 04:41:19 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (272)
+FAssetArchive Info: Loki/Content/L10N/zh/Loki/UI/Widgets/FrontEnd/MainMenu/Battlepass/TX_GroupHeroLarge.uasset | Pos:441 Length:331655 (0.1% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 14:23:21 [INF] FModel.Services.DiscordHandler+<>c.<Initialize>b__6_0: @themob.org (104296236906971136) is now ready
