@@ -1257,3 +1257,166 @@ kill criterion (whether the UI actually QUERIES the modified entries).
 - `tools/usmapdump vtslot <proc> <slot> <hexFnAddr> [maxhits]` — find any
   vtable in committed memory whose specified slot holds a target function.
   Useful for detecting MSVC ICF folding across class hierarchies.
+
+### Route 1 sub-path 3 smoke test — NEGATIVE (2026-06-29)
+
+Built `tools/usmapdump poke <proc> <addr> <hex-bytes>` (first write-capable
+subcommand — opens with VM_WRITE|VM_OPERATION|VM_READ, BEFORE/PAYLOAD/AFTER +
+verify). Used it to alias mm2's 3 populated TArray headers (+0x120..+0x14F,
+48 bytes) into mm1. Game survived the write cleanly; user opened Missions
+modal; **modal STILL renders empty.** Restored mm1's zeros.
+
+Per the kill criterion documented in the next-session prompt: this fires
+"the modal might be guarded by an additional condition" — but the analysis
+goes further than that. Tail of Loki.log around modal open reveals two
+significant findings:
+
+1. **The 5 categories are HARDCODED, not iterated from Season.**
+   LogUIActionRouter consistently lists exactly these 5 child widgets when
+   the modal opens:
+   - `MissionModalCategory_Dailies_1`
+   - `MissionModalCategory_Weekly_1`
+   - `MissionModalCategory_Seasonal_1`
+   - `MissionModalCategory_Onboarding_1`
+   - `MissionModalCategory_PCBang_1`
+
+   This INVALIDATES the prior session's hypothesis ("No DA_Season cooked →
+   modal can't iterate Season.MissionPools → 0 categories"). The modal
+   creates the categories regardless of Season state. The categories then
+   each render based on their own data lookup (per-pool missions), and that
+   lookup is what comes up empty.
+
+2. **6 `DateTime in bad format (year 0)` LogScript Blueprint warnings fire
+   right before the modal open**, lines 11821-11826 of Loki.log. One per
+   category? Or per a different per-something logic. Whatever's computing
+   these DateTimes (mission GrantedAt? season end? refresh-cycle?) hits
+   zero values and silently produces empty rows.
+
+### Schema research — property names confirmed in NamePool
+
+`usmapdump nameid` batch lookup found these property/function names live in
+the NamePool of this build:
+
+| Name | FName id | Notes |
+|------|----------|-------|
+| `MissionPoolIDs` | 0x0064D7B8 | block 100, off 0x1AF70 — property name |
+| `MissionPoolAssets` | 0x0064E8E7 | block 100, off 0x1D1CE — TMap value field |
+| `MissionPoolAssets_Key` | 0x0064E8F1 | block 100, off 0x1D1E2 — TMap key companion |
+| `BindToMissions` | 0x007B4871 | block 123, off 0x90E2 — function name |
+| `Categories` | 0x00006468 | generic; not necessarily the modal's |
+
+The MissionPoolAssets_Key companion confirms `MissionPoolAssets` is a TMap
+field (UE5's reflection emits a `_Key` FProperty alongside each TMap value
+FProperty).
+
+`MissionsModel` (plural, the container) schema extracted via
+`extractor schema MissionsModel` returns 8 unknown fields (`?`) — usmap was
+generated against a build with stripped property names for this class. So
+we cannot directly read off field offsets.
+
+### Direct FProperty findptr — 2 hits for MissionPoolIDs
+
+`findptr` on the FName qword `0x0000000000064D7B8` (FName CmpIdx +
+Number=0) returns **exactly 2 hits**: 0x16AECEDDCA0 and 0x16AECEDDD20.
+Both have this prefix:
+
+```
++0x00: FName(MissionPoolIDs)              // 8 bytes
++0x08: 0x45 (= 69)                        // 4 bytes — possibly ClassInternalIndex of owner
++0x0C: 0                                  // 4 bytes
++0x10: 0x01 (ArrayDim)                    // 4 bytes
++0x14: 0x10 (= 16, ElementSize)           // 4 bytes ← sizeof(FPrimaryAssetId)
++0x18-0x1F: EPropertyFlags                // differs between the 2 hits
++0x60: ptr ~0x7FF666DFAA30 (.rdata)       // looks like a vtable ptr
++0x78: ptr to neighboring FProperty       // linked-list "Next"
+```
+
+**CAUTION — half-wrong reading.** The 0x10 at +0x14 is `ElementSize`
+(`sizeof(FPrimaryAssetId)=16`), NOT `Offset_Internal`. The actual
+Offset_Internal is somewhere later in this FProperty layout — we don't yet
+know exactly where. Peeking the FProperty's +0x60 (`0x7FF666DFAA30`) showed
+a chain of 8 distinct ptrs into .rdata — looks like a vtable, not a single
+UClass ptr. So the owner-discovery anchor needs more work.
+
+Peek of `[UProgressionManager + 0x10] = 0x16AC4957A30` shows:
+
+```
++0x10: F1 D5 00 00 00 00 00 00   ← InternalIndex 0xD5F1 (uint32 in UObject hdr)
++0x18: 80 6C FE CD 6A 01 00 00   ← ClassPrivate 0x016ACDFE6C80
++0x20: 5F 0B 59 00 6A FB FF 7F   ← NamePrivate
++0x28: 80 7D 90 FC 6A 01 00 00   ← Outer 0x016AFC907D80
+```
+
+UProgressionManager's +0x10 is part of the UObject header — definitely
+NOT a TArray. So MissionPoolIDs is NOT at +0x10 of UProgressionManager
+either. The prior recon's claim that MissionPoolIDs is on
+`ALokiPlayerState` may still be the right owner (no live instance at
+menu — so MissionPoolIDs naturally empty there).
+
+### Updated mental model (2026-06-29 mid-session)
+
+```
+WBP_UI_MissionModal_C::Construct():
+  -> creates 5 HARDCODED category widgets (Dailies/Weekly/Seasonal/Onboarding/PCBang)
+  -> NO Season iteration — categories are wired statically
+                            ↓
+Each WBP_UI_MissionModalCategory::Construct():
+  -> CallFunc_GetMissionsModel_ReturnValue       ← returns mm1 (empty) — proven RED HERRING
+  -> CallFunc_GetProgressionManager_ReturnValue  ← live instance exists
+  -> BindToMissions(...)                         ← reads FROM somewhere
+  -> If lookup returns 0 entries → render empty (zero size)
+                            ↓
+DateTime warnings:
+  -> 6 Script warnings ("DateTime in bad format (year 0)") right before modal open
+  -> Possibly per-category (5) + 1 modal-level, or 6 sub-checks
+  -> All zero → silent empty rendering
+```
+
+The smoke test definitively rules out the `mm1.+0x120` TArrays as the
+modal's data source. The categories ARE created; their per-pool data
+lookup is what fails.
+
+### Concrete next-session work
+
+The path forward branches by what we want to learn next. In rough order of
+productivity-per-session-cost:
+
+1. **Decompile WBP_UI_MissionModalCategory_C::BindToMissions** (Blueprint
+   VM bytecode in the cooked .uasset). This is the authoritative source for
+   what data the categories read. Substantial — requires CUE4Parse BP VM
+   support OR external uasset extraction + bytecode reading.
+
+2. **Find the owning UClass for MissionPoolIDs FProperty** — disasm a
+   small area starting from one of the 2 FProperty entries
+   (0x16AECEDDCA0 / 0x16AECEDDD20). Walk the FField chain to find the
+   parent UClass. Read its name FName. That definitively answers "where
+   does MissionPoolIDs live."
+
+3. **Investigate the 6 DateTime warnings** — `Select-String` in Loki.log
+   around modal open might show which Blueprint widget/function emits
+   them. UE5 Script warnings usually log the calling context.
+
+4. **Decode UProgressionManager's full layout** by walking its UClass
+   property chain (the same approach as #2 but for a class we already have
+   a live instance of). Would tell us all 11 fields' offsets — including
+   whether MissionsModel is at +0x3B8 (per prior recon) and if there's a
+   different field on UProgressionManager that holds the modal's data.
+
+### What we now KNOW vs. ASSUME
+
+KNOW:
+- mm1 (UEndOfGameModel-owned) and mm2 (UProgressionManager-owned) are real
+  but **the modal doesn't directly query either's +0x120 TArrays**.
+- 5 categories are hardcoded and DO get created when the modal opens.
+- `MissionPoolIDs`, `MissionPoolAssets`, `MissionPoolAssets_Key`,
+  `BindToMissions` all exist as pooled FNames in this build.
+- Exactly 2 FProperty entries for `MissionPoolIDs` exist, ElementSize=16.
+- UProgressionManager+0x10 is UObject header (ClassPrivate), not a property.
+
+ASSUME (still to verify):
+- The owning class for MissionPoolIDs is ALokiPlayerState (per prior
+  recon — needs FProperty owner walk to confirm).
+- The 6 DateTime warnings are tied to per-category logic.
+- Some "live" data source on UProgressionManager or a subsystem (not
+  ALokiPlayerState, since no instance at menu) is what feeds the modal's
+  per-category data.
