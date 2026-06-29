@@ -40,7 +40,7 @@ const phantomDsPushPath = "/lobby"
 //
 // Set false to disable. Timing: status=start fires at phantomMmStartDelay
 // after the WS handshake; status=done fires phantomMmDoneDelay later.
-const phantomMatchmakingSequence = true
+const phantomMatchmakingSequence = false
 
 // Timing for probe #5's start→done sequence.
 //   - phantomMmStartDelay: wait this long after WS connect before pushing

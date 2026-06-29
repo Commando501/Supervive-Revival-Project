@@ -391,3 +391,133 @@ Path C just *use* UE5.4 directly.
 - `server/internal/interactive/interactive.go:267` — `phantomMatchState`
   constant still in place; leave at `""` while running probe #3 so the
   HTTP/WS variables are isolated.
+
+## Session 2 (2026-06-29 continued)
+
+### Probes #3, #4, #5 — all silently absorbed, but architecturally informative
+
+| # | Channel  | Payload                                                       | Result |
+|---|----------|---------------------------------------------------------------|--------|
+| 3 | WS /lobby | Single `matchmakingNotif` status=done with phantom DS info    | Silent |
+| 4 | HTTP     | `CoreGamePlayer` with CORRECT `MatchParticipant + MatchInfo` shape | Silent |
+| 5 | WS /lobby | `matchmakingNotif` start→done 2-frame sequence                | Silent |
+
+Each probe was verified server-side (capture.log shows the frames going
+out, WS connection stays open, no protocol errors). Zero `LogJson`,
+`LogPlatformLobby`, `LogPlatformQuery`, `LogNet`, `NetConnection`, or
+`Rejoin` activity in Loki.log on the client side. Menu visually
+unchanged across all three.
+
+### Discovery: probes #1+#2 used invented field names
+
+UTF-16 binary scan during this session proved `hasActiveMatch` /
+`HasActiveMatch` are ABSENT from the shipping exe — those keys were
+never UPROPERTY fields. The actual `CoreGamePlayer` model is:
+
+```
+CoreGamePlayer {
+  MatchParticipant            (struct)
+  ContentServicePrimaryAsset  (FString or FPrimaryAssetId)
+  ContentServiceContentManifest (FString)
+  CanDisassociate             (bool)
+}
+```
+
+with `MatchInfo` nested INSIDE `MatchParticipant`. The client decides
+"has active match" by checking whether `MatchParticipant` is populated.
+Probe #4 re-implemented the response with the correct shape — and
+still got silent absorption, which moves the negative result deeper
+(the shape is now structurally correct).
+
+### Binary WS protocol-name evidence
+
+UTF-16 scan confirmed which AccelByte v1 lobby type-name strings exist
+in this build (and which don't):
+
+```
+FOUND: listOfFriendsRequest, setUserStatusRequest, messageNotif,
+       matchmakingNotif, partyDataUpdateNotif, startMatchmakingRequest,
+       partyNotif, rematchmakingNotif, setReadyConsentRequest,
+       partyJoinNotif, partyKickNotif, partyLeaveNotif, partyChatNotif,
+       channelChatNotif, LobbyMessage, MMv2
+ABSENT: dsNotice, dsClaimedNotif, serverClaimedNotif, dsStatusChangedNotif,
+        sessionNotif, sessionV2DsStatusChanged
+```
+
+So SUPERVIVE uses AccelByte v1 classic lobby (text key:value format) +
+`MMv2` (matchmaking V2). The `dsNotice` classic DS notice is absent — DS
+info is presumably delivered inside one of the `*Notif` envelopes (we
+tried matchmakingNotif both single-frame and sequenced; both silent).
+
+Also decoded the base64 `activity` field in the client's own
+`setUserStatusRequest`: a SUPERVIVE-specific player status payload
+containing `dsId: ""` — the dedicated-server-id field the client carries
+in its own presence. When non-empty, the client is in a match. This
+confirms that DS state is tracked client-side as part of presence, not
+purely as a server-pushed notif.
+
+### Architectural conclusion: matchmaking state machine requires a ticket id
+
+The five negative probes converge on one structural finding:
+
+> **SUPERVIVE's client matchmaking subsystem only acts on `matchmakingNotif`
+> messages that match a `ticketId` from a previously-sent
+> `startMatchmakingRequest`. Unsolicited pushes from a fresh menu carry no
+> recognized ticket and are silently dropped.**
+
+The client never sends `startMatchmakingRequest` from a fresh menu
+because of the upstream hero-asset gate (Track A; documented as exhausted
+in `docs/trackb-assetregistry-route.md` and the hero-roster-blocker
+memory file). So spoofing the matchmaking flow purely via server-pushed
+messages is structurally blocked.
+
+This invalidates Path C's premise as originally written. Pushing
+`ServerClaimedNotification` or `matchmakingNotif` from /lobby cannot
+drive UE NetConnection without legitimate client state — and we can't
+legitimately set that state without fixing the upstream gate.
+
+### Three remaining forward paths
+
+1. **UE console `open 127.0.0.1:7777` (lowest cost, highest leverage)** —
+   UE's built-in NetConnection travel command bypasses the matchmaking
+   state machine entirely. If the dev console can be enabled via
+   `Engine.ini` `[ConsoleVariables]` / `EnableCheats=true` or a launch
+   arg in shipping builds, the player types one command and the client
+   opens a NetConnection to whatever address we point at. This makes
+   the actual stub server (Path A/C UE5.4 dedicated server build) the
+   ONLY remaining work — no Go-side matchmaking spoofing needed at all.
+   Next session's first move: try various Engine.ini console-unlock
+   approaches, also try `-ExecCmds=open 127.0.0.1:7777` as a launch arg.
+
+2. **Inject matchmaking state externally** — use `tools/usmapdump poke`
+   to write a phantom ticket id + "in matchmaking" enum value directly
+   into the client's `UMatchmakingSubsystem` memory. Then our
+   `matchmakingNotif` with that ticketId would be recognized. Heavy RE
+   (need to find the subsystem instance, decode its TMap of pending
+   tickets, write a synthetic entry). Falls back to this if path 1 is
+   blocked.
+
+3. **Fix the upstream hero-asset gate (Track A redux)** — this was
+   declared CLOSED with three single-variable negative tests + AR-repack
+   route exhausted. Re-opening would mean revisiting the in-memory
+   AssetRegistry hook approach which is multi-session-deep.
+
+### What this session leaves behind
+
+Code state — all five probes reverted to disabled:
+- `server/internal/interactive/interactive.go:280` — `phantomMatchState = ""`
+- `server/internal/lobby/lobby.go` — `phantomDsPushDelay = 0`,
+  `phantomMatchmakingSequence = false`
+- All probe scaffolding stays in place (functions + constants); to
+  re-enable any probe, flip its constant.
+
+Commits on `dedicated-server-stub` branch (5 probes + reverts +
+session-end docs):
+- `37dfb4f` Probe #1 — phantom matchInfo Allocating
+- `c89e2fb` Probe #2 — AwaitingReady + state-name refactor
+- `42db787` Revert probe #1+#2 to disabled
+- `fc10733` Session 1 writeup
+- `72b4452` Probe #3 — matchmakingNotif on /lobby
+- `b739df9` Probe #4 — CoreGamePlayer correct shape
+- `321dbe5` Probe #5 — matchmakingNotif start→done sequence
+- (session 2 writeup commit follows)

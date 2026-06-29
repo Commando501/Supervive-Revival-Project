@@ -295,7 +295,7 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 // MatchInfo lives nested inside MatchParticipant. The client decides
 // "has active match" by checking whether MatchParticipant is populated
 // (not via a separate boolean field).
-const phantomMatchState = "AwaitingReady"
+const phantomMatchState = ""
 
 // handleCoreGamePlayer is the "is there an active match to rejoin?" heartbeat
 // (polled hundreds of times per session). When phantomMatchState is non-empty,
