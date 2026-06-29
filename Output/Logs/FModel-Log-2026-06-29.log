@@ -2,3 +2,476 @@
 2026-06-29 03:20:21 [INF] FModel.App.OnStartup: Windows 10 Pro (64-bit)
 2026-06-29 03:20:21 [INF] FModel.App.OnStartup: .NET 8.0.12
 2026-06-29 03:20:21 [INF] FModel.App.OnStartup: Culture en-US
+2026-06-29 03:24:22 [INF] CUE4Parse.Compression.ZlibHelper+<DownloadDllAsync>d__10.MoveNext: Successfully downloaded Zlib-ng dll at G:\git\Supervive Revival Project\Output\.data\zlib-ng2.dll
+2026-06-29 03:24:23 [WRN] FModel.ViewModels.ApiEndpoints.FModelApiEndpoint.CheckForUpdateEvent: A new update is available! Version 4.4.4.0 (afd159eb031447c6c6125c1bc208c5508b4a5b00)
+2026-06-29 03:24:23 [INF] FModel.ViewModels.CUE4ParseViewModel.<Initialize>b__50_0: GAME_UE5_4 (DesktopMobile) | Archives: x34 | AES: x0 | Loose Files: x113
+2026-06-29 03:24:23 [ERR] FModel.App.OnUnhandledException: System.NotSupportedException: This type of CollectionView does not support changes to its SourceCollection from a thread different from the Dispatcher thread.
+   at System.Windows.Data.CollectionView.OnCollectionChanged(Object sender, NotifyCollectionChangedEventArgs args)
+   at System.Collections.ObjectModel.ObservableCollection`1.OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+   at FModel.Framework.RangeObservableCollection`1.OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+   at FModel.ViewModels.CUE4ParseViewModel.ClearProvider()
+   at FModel.ViewModels.ApplicationViewModel.UpdateProvider(Boolean isLaunch)
+   at FModel.MainWindow.OnLoaded(Object sender, RoutedEventArgs e)
+   at System.Threading.Tasks.Task.<>c.<ThrowAsync>b__128_0(Object state)
+   at System.Windows.Threading.ExceptionWrapper.InternalRealCall(Delegate callback, Object args, Int32 numArgs)
+   at System.Windows.Threading.ExceptionWrapper.TryCatchWhen(Object source, Delegate callback, Object args, Int32 numArgs, Delegate catchHandler)
+2026-06-29 03:25:09 [INF] FModel.App.AppExit: ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+2026-06-29 03:26:35 [INF] FModel.App.OnStartup: Version 4.4.4.0 (afd159eb031447c6c6125c1bc208c5508b4a5b00)
+2026-06-29 03:26:35 [INF] FModel.App.OnStartup: Windows 10 Pro (64-bit)
+2026-06-29 03:26:35 [INF] FModel.App.OnStartup: .NET 10.0.9
+2026-06-29 03:26:35 [INF] FModel.App.OnStartup: Culture en-US
+2026-06-29 03:26:36 [INF] FModel.ViewModels.CUE4ParseViewModel.<Initialize>b__53_0: GAME_UE5_4 (DesktopMobile) | Archives: x34 | AES: x0 | Loose Files: x113
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s12-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s10-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s10-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0053559
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s12-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0053572
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s4-WindowsClient.utoc": 4674 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0241647
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s2-WindowsClient.utoc": 5555 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0255232
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s3-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s3-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0003016
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s14-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s14-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001375
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s2-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s2-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0000905
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s13-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s13-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001383
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s1-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s1-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0002315
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s4-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s4-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001283
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s6-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s6-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0007853
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s15-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s15-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001091
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s9-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s11-WindowsClient.pak": 117 files, mount point: "Loki/Content/Loki/UI/Fonts/", order 3, version 11 in 00:00:00.0006400
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s9-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001311
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s8-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s8-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0003754
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s5-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s5-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001164
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s15-WindowsClient.utoc": 61 files, mount point: "Loki/", order 3, version 6 in 00:00:00.0168933
+2026-06-29 03:26:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s7-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s7-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001766
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s13-WindowsClient.utoc": 3639 files, mount point: "Loki/Content/Loki/World/", order 3, version 6 in 00:00:00.0333393
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0-WindowsClient.pak": 4495 files, order 3, version 11 in 00:00:00.0578535
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s3-WindowsClient.utoc": 4097 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0567199
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s6-WindowsClient.utoc": 6242 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0708277
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0-WindowsClient.utoc": 5233 files, order 3, version 6 in 00:00:00.0864368
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s1-WindowsClient.utoc": 3859 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0859382
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s11-WindowsClient.utoc": 7454 files, mount point: "Loki/Content/Loki/", order 3, version 6 in 00:00:00.0860119
+2026-06-29 03:26:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s7-WindowsClient.utoc": 5850 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0901686
+2026-06-29 03:26:37 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s8-WindowsClient.utoc": 8837 files, mount point: "Loki/Content/Loki/", order 3, version 6 in 00:00:00.1142713
+2026-06-29 03:26:37 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s5-WindowsClient.utoc": 6121 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.1082607
+2026-06-29 03:26:37 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s10-WindowsClient.utoc": 7168 files, mount point: "Loki/Content/Loki/", order 3, version 6 in 00:00:00.1392947
+2026-06-29 03:26:37 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "CrashReportClient.pak": 6883 files, mount point: "Engine/", order 3, version 11 in 00:00:00.1421351
+2026-06-29 03:26:37 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s12-WindowsClient.utoc": 7399 files, mount point: "Loki/Content/Loki/World/", order 3, version 6 in 00:00:00.1426668
+2026-06-29 03:26:37 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s9-WindowsClient.utoc": 12955 files, mount point: "Loki/Content/Loki/", order 3, version 6 in 00:00:00.1838126
+2026-06-29 03:26:37 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s14-WindowsClient.utoc": 13367 files, mount point: "Loki/Content/", order 3, version 6 in 00:00:00.1849182
+2026-06-29 03:26:37 [INF] FModel.ViewModels.CUE4ParseViewModel.LoadVfs: Project: Loki | Mounted: 33/34 | AES: 1/1 | Files: x114119
+2026-06-29 03:26:37 [INF] FModel.ViewModels.ApiEndpoints.FModelApiEndpoint+<GetNewsAsync>d__8.MoveNext: ["Get"] [OK(200)] 'https://api.fmodel.app/v1/news/4.4.4.0?game=Loki'
+2026-06-29 03:26:37 [INF] CUE4Parse_Conversion.Textures.BC.DetexHelper+<LoadDllAsync>d__10.MoveNext: Successfully loaded Detex DLL from embedded resources to "G:\git\Supervive Revival Project\Output\.data\Detex.dll"
+2026-06-29 03:27:34 [INF] FModel.App.AppExit: ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+2026-06-29 03:27:34 [INF] FModel.App.OnStartup: Version 4.4.4.0 (afd159eb031447c6c6125c1bc208c5508b4a5b00)
+2026-06-29 03:27:34 [INF] FModel.App.OnStartup: Windows 10 Pro (64-bit)
+2026-06-29 03:27:34 [INF] FModel.App.OnStartup: .NET 10.0.9
+2026-06-29 03:27:34 [INF] FModel.App.OnStartup: Culture en-US
+2026-06-29 03:27:36 [INF] FModel.ViewModels.CUE4ParseViewModel.<Initialize>b__53_0: GAME_UE5_4 (DesktopMobile) | Archives: x33 | AES: x0 | Loose Files: x0
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s10-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s12-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s12-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0075080
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s10-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0072317
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s4-WindowsClient.utoc": 4674 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0226601
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s2-WindowsClient.utoc": 5555 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0240537
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s3-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s3-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0004016
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s14-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s14-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001666
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s13-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s13-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001279
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s1-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s1-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001057
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s4-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s2-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s4-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001540
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s2-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0003984
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s7-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s7-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0001779
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s15-WindowsClient.utoc": 61 files, mount point: "Loki/", order 3, version 6 in 00:00:00.0002111
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s6-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s6-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0002830
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s15-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s15-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0002443
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s11-WindowsClient.pak": 117 files, mount point: "Loki/Content/Loki/UI/Fonts/", order 3, version 11 in 00:00:00.0003789
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s13-WindowsClient.utoc": 3639 files, mount point: "Loki/Content/Loki/World/", order 3, version 6 in 00:00:00.0398493
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s8-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s8-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0018445
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0-WindowsClient.pak": 4495 files, order 3, version 11 in 00:00:00.0389788
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s5-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s5-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0002769
+2026-06-29 03:27:36 [WRN] CUE4Parse.UE4.VirtualFileSystem.AbstractVfsReader.ValidateMountPoint: "pakchunk0_s9-WindowsClient.pak" has strange mount point "/", mounting to root
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.Pak.PakFileReader.Mount: Pak "pakchunk0_s9-WindowsClient.pak": 0 files, order 3, version 11 in 00:00:00.0006180
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s1-WindowsClient.utoc": 3859 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0707889
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s3-WindowsClient.utoc": 4097 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.0872206
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0-WindowsClient.utoc": 5233 files, order 3, version 6 in 00:00:00.0912520
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s5-WindowsClient.utoc": 6121 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.1098480
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s10-WindowsClient.utoc": 7168 files, mount point: "Loki/Content/Loki/", order 3, version 6 in 00:00:00.1147883
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s12-WindowsClient.utoc": 7399 files, mount point: "Loki/Content/Loki/World/", order 3, version 6 in 00:00:00.0403384
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s7-WindowsClient.utoc": 5850 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.1169731
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s8-WindowsClient.utoc": 8837 files, mount point: "Loki/Content/Loki/", order 3, version 6 in 00:00:00.1742907
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s11-WindowsClient.utoc": 7454 files, mount point: "Loki/Content/Loki/", order 3, version 6 in 00:00:00.1042317
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s9-WindowsClient.utoc": 12955 files, mount point: "Loki/Content/Loki/", order 3, version 6 in 00:00:00.1942086
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s6-WindowsClient.utoc": 6242 files, mount point: "Loki/Content/Loki/Characters/Heroes/", order 3, version 6 in 00:00:00.1558647
+2026-06-29 03:27:36 [INF] CUE4Parse.UE4.IO.IoStoreReader.Mount: IoStore "pakchunk0_s14-WindowsClient.utoc": 13367 files, mount point: "Loki/Content/", order 3, version 6 in 00:00:00.2101204
+2026-06-29 03:27:36 [INF] FModel.ViewModels.CUE4ParseViewModel.LoadVfs: Project: Loki | Mounted: 32/33 | AES: 1/1 | Files: x107123
+2026-06-29 03:27:36 [INF] FModel.ViewModels.ApiEndpoints.FModelApiEndpoint+<GetNewsAsync>d__8.MoveNext: ["Get"] [OK(200)] 'https://api.fmodel.app/v1/news/4.4.4.0?game=Loki'
+2026-06-29 03:28:14 [INF] FModel.ViewModels.CUE4ParseViewModel+<>c__DisplayClass59_0.<InitMappings>b__0: Mappings pulled from 'mappings.usmap'
+2026-06-29 03:29:02 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (272)
+FAssetArchive Info: Loki/Content/Loki/TX_Hud_AbilityMaskingImage.uasset | Pos:417 Length:21267 (2.0% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.StructProperty..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:29:02 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (272)
+FAssetArchive Info: Loki/Content/Loki/TX_HealthbarGradient.uasset | Pos:398 Length:1276 (31.2% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.StructProperty..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:29:08 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (16)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/TX_Missions_Panel_BG.uasset | Pos:404 Length:66049 (0.6% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.StructProperty..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:29:52 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (16)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/TX_Missions_Panel_BG.uasset | Pos:404 Length:66049 (0.6% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.StructProperty..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:29:53 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset'
+2026-06-29 03:29:53 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read ComponentDelegateBinding correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType ArrayProperty<StrProperty> ComponentDelegateBindings
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid FString length '5637888'
+   at CUE4Parse.UE4.Readers.FArchive.ReadFString()
+   at CUE4Parse.UE4.Assets.Objects.Properties.StrProperty..ctor(FArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.UScriptArray..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.Properties.ArrayProperty..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:29:53 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read ScrollBox correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType DelegateProperty ToolTipTextDelegate
+ ---> CUE4Parse.UE4.Exceptions.ParserException: FName could not be read, requested index 1075314688, name map size 100
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20001 Length:21371 (93.6% done)
+   at CUE4Parse.UE4.Objects.UObject.FScriptDelegate..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.Properties.DelegateProperty..ctor(FAssetArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:29:53 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MetaMissionProgress_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (1377054)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20218 Length:21371 (94.6% done)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:29:53 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MissionContainer_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (34931202)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20232 Length:21371 (94.7% done)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:29:53 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MissionModalCategory_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType TextProperty ToolTipText
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid FString length '167903232'
+   at CUE4Parse.UE4.Readers.FArchive.ReadFString()
+   at CUE4Parse.UE4.Objects.Core.i18N.FTextHistory.Base..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Objects.Core.i18N.FText..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.Properties.TextProperty..ctor(FAssetArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:30:04 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (16)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/TX_Missions_Panel_BG.uasset | Pos:404 Length:66049 (0.6% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.StructProperty..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:30:08 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset'
+2026-06-29 03:30:08 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read ComponentDelegateBinding correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType ArrayProperty<StrProperty> ComponentDelegateBindings
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid FString length '5637888'
+   at CUE4Parse.UE4.Readers.FArchive.ReadFString()
+   at CUE4Parse.UE4.Assets.Objects.Properties.StrProperty..ctor(FArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.UScriptArray..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.Properties.ArrayProperty..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:30:08 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read ScrollBox correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType DelegateProperty ToolTipTextDelegate
+ ---> CUE4Parse.UE4.Exceptions.ParserException: FName could not be read, requested index 1075314688, name map size 100
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20001 Length:21371 (93.6% done)
+   at CUE4Parse.UE4.Objects.UObject.FScriptDelegate..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.Properties.DelegateProperty..ctor(FAssetArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:30:08 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MetaMissionProgress_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (1377054)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20218 Length:21371 (94.6% done)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:30:08 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MissionContainer_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (34931202)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20232 Length:21371 (94.7% done)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:30:08 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MissionModalCategory_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType TextProperty ToolTipText
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid FString length '167903232'
+   at CUE4Parse.UE4.Readers.FArchive.ReadFString()
+   at CUE4Parse.UE4.Objects.Core.i18N.FTextHistory.Base..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Objects.Core.i18N.FText..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.Properties.TextProperty..ctor(FAssetArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:30:28 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (16)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/TX_Missions_Panel_BG.uasset | Pos:404 Length:66049 (0.6% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:32:31 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset'
+2026-06-29 03:32:31 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read ComponentDelegateBinding correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType ArrayProperty<StrProperty> ComponentDelegateBindings
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid FString length '5637888'
+   at CUE4Parse.UE4.Readers.FArchive.ReadFString()
+   at CUE4Parse.UE4.Assets.Objects.Properties.StrProperty..ctor(FArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.UScriptArray..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.Properties.ArrayProperty..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:32:31 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read ScrollBox correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType DelegateProperty ToolTipTextDelegate
+ ---> CUE4Parse.UE4.Exceptions.ParserException: FName could not be read, requested index 1075314688, name map size 100
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20001 Length:21371 (93.6% done)
+   at CUE4Parse.UE4.Objects.UObject.FScriptDelegate..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.Properties.DelegateProperty..ctor(FAssetArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:32:31 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MetaMissionProgress_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (1377054)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20218 Length:21371 (94.6% done)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:32:31 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MissionContainer_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (34931202)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20232 Length:21371 (94.7% done)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:32:31 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MissionModalCategory_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType TextProperty ToolTipText
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid FString length '167903232'
+   at CUE4Parse.UE4.Readers.FArchive.ReadFString()
+   at CUE4Parse.UE4.Objects.Core.i18N.FTextHistory.Base..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Objects.Core.i18N.FText..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.Properties.TextProperty..ctor(FAssetArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:38:58 [INF] FModel.ViewModels.CUE4ParseViewModel.ExportData: WBP_UI_MissionModalCategory.uasset successfully exported
+2026-06-29 03:39:05 [INF] FModel.ViewModels.CUE4ParseViewModel.ExportData: WBP_UI_MissionModalCategory.uasset successfully exported
+2026-06-29 03:39:08 [INF] FModel.ViewModels.CUE4ParseViewModel.ExportData: WBP_UI_MissionModalCategory.uasset successfully exported
+2026-06-29 03:39:55 [INF] FModel.ViewModels.CUE4ParseViewModel.Extract: User DOUBLE-CLICKED to extract 'Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset'
+2026-06-29 03:39:55 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read ComponentDelegateBinding correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType ArrayProperty<StrProperty> ComponentDelegateBindings
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid FString length '5637888'
+   at CUE4Parse.UE4.Readers.FArchive.ReadFString()
+   at CUE4Parse.UE4.Assets.Objects.Properties.StrProperty..ctor(FArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.UScriptArray..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.Properties.ArrayProperty..ctor(FAssetArchive Ar, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:39:55 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read ScrollBox correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType DelegateProperty ToolTipTextDelegate
+ ---> CUE4Parse.UE4.Exceptions.ParserException: FName could not be read, requested index 1075314688, name map size 100
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20001 Length:21371 (93.6% done)
+   at CUE4Parse.UE4.Objects.UObject.FScriptDelegate..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.Properties.DelegateProperty..ctor(FAssetArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:39:55 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MetaMissionProgress_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (1377054)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20218 Length:21371 (94.6% done)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:39:55 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MissionContainer_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (34931202)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/WBP_UI_MissionModalCategory.uasset | Pos:20232 Length:21371 (94.7% done)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:39:55 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read WBP_UI_MissionModalCategory_C correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType TextProperty ToolTipText
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid FString length '167903232'
+   at CUE4Parse.UE4.Readers.FArchive.ReadFString()
+   at CUE4Parse.UE4.Objects.Core.i18N.FTextHistory.Base..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Objects.Core.i18N.FText..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.Properties.TextProperty..ctor(FAssetArchive Ar, ReadType type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:39:55 [INF] FModel.ViewModels.TabItem.SaveCheck: WBP_UI_MissionModalCategory.json successfully saved
+2026-06-29 03:41:07 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (16)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/TX_Missions_Panel_BG.uasset | Pos:404 Length:66049 (0.6% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
+2026-06-29 03:43:09 [ERR] CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject: Could not read Texture2D correctly
+CUE4Parse.UE4.Exceptions.ParserException: Failed to read FPropertyTagType StructProperty<PerPlatformFloat> Downscale
+ ---> CUE4Parse.UE4.Exceptions.ParserException: Invalid bool value (16)
+FAssetArchive Info: Loki/Content/Loki/Core/Missions/TX_Missions_Panel_BG.uasset | Pos:404 Length:66049 (0.6% done)
+   at CUE4Parse.UE4.Objects.Engine.TPerPlatformProperty`1..ctor(FAssetArchive Ar, Func`1 getValue)
+   at CUE4Parse.UE4.Objects.Engine.FPerPlatformFloat..ctor(FAssetArchive Ar)
+   at CUE4Parse.UE4.Assets.Objects.FScriptStruct..ctor(FAssetArchive Ar, String structName, UStruct struc, Nullable`1 type)
+   at CUE4Parse.UE4.Assets.Objects.Properties.FPropertyTagType.ReadPropertyTagType(FAssetArchive Ar, String propertyType, FPropertyTagData tagData, ReadType type, Int32 size)
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   --- End of inner exception stack trace ---
+   at CUE4Parse.UE4.Assets.Objects.FPropertyTag..ctor(FAssetArchive Ar, PropertyInfo info, ReadType type)
+   at CUE4Parse.UE4.Assets.Exports.UObject.DeserializePropertiesUnversioned(List`1 properties, FAssetArchive Ar, UStruct struc)
+   at CUE4Parse.UE4.Assets.Exports.UObject.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
+   at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
