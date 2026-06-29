@@ -25,14 +25,28 @@
 .PARAMETER GameRoot   SUPERVIVE install (folder containing Loki\Binaries).
 .PARAMETER Revert     Undo hosts + cacert.pem changes and exit.
 .PARAMETER NoLaunch   Set up redirect + start server, but don't launch the game.
+.PARAMETER Open       Dedicated-server-stub probe #6 (UE console): append
+                      -ExecCmds="open <Open>" to the game's launch args so the
+                      UE engine fires its built-in NetConnection travel command
+                      after init. Use to bypass the matchmaking state machine
+                      (which probes #1-5 proved is ticket-id-gated and can't
+                      be spoofed from a fresh menu). Format "ip:port", e.g.
+                      "127.0.0.1:7777". The Loki.log LogNet* / LogPlatformFile
+                      / Failed-to-connect activity that follows is the
+                      protocol-shape signal — even with nothing listening on
+                      the port, the client-side handshake attempt names the
+                      driver, the StatelessConnect handler, and the first
+                      control-channel message it tries to send.
 
 .EXAMPLE  .\launch-redirect.ps1
 .EXAMPLE  .\launch-redirect.ps1 -Revert
+.EXAMPLE  .\launch-redirect.ps1 -Open "127.0.0.1:7777"
 #>
 param(
   [string]$GameRoot = "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE",
   [switch]$Revert,
-  [switch]$NoLaunch
+  [switch]$NoLaunch,
+  [string]$Open = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,6 +70,7 @@ if (-not $isAdmin) {
   $argList = @("-NoExit","-ExecutionPolicy","Bypass","-File",$PSCommandPath,"-GameRoot",$GameRoot)
   if ($Revert)   { $argList += "-Revert" }
   if ($NoLaunch) { $argList += "-NoLaunch" }
+  if ($Open)     { $argList += @("-Open",$Open) }
   Start-Process powershell -Verb RunAs -ArgumentList $argList
   return
 }
@@ -181,5 +196,20 @@ $iniArgs = @(
   "-ini:Game:[$loki]:ProdClientConfigURL=$local",
   "-log"
 )
+# Probe #6: append UE's built-in `open <addr>:<port>` console command via
+# -ExecCmds. Fires after engine init, so it'll race the login flow - if it
+# triggers a NetConnection attempt before login completes, we still get the
+# Loki.log signal we want (driver name, control-channel first message,
+# failure mode). Nothing needs to be listening on the port for the probe
+# to be diagnostic.
+if ($Open) {
+  # -ExecCmds value contains a space, so we MUST embed inner quotes — without
+  # them Windows arg parsing splits at the space and the engine sees
+  # -ExecCmds=open as the entire value (127.0.0.1:7777 would then be treated
+  # as a positional URL arg). FParse::Value supports quoted values directly.
+  $execCmd = "-ExecCmds=`"open $Open`""
+  Write-Host "Probe #6 active: $execCmd" -ForegroundColor Yellow
+  $iniArgs += $execCmd
+}
 Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
 & $exe @iniArgs
