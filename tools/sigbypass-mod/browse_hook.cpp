@@ -101,6 +101,23 @@ static uint8_t   g_origBytes[kPatchSize]; // saved prologue
 static uint8_t*  g_trampoline  = nullptr;
 static uint8_t*  g_hookStub    = nullptr;
 
+// ───────── deferred-log ring ──────────────────────────────────────────
+//
+// File I/O from the engine thread crashed the game (v2+v3 both lost when the
+// handler called CreateFile/WriteFile/FlushFileBuffers). UE's main thread
+// likely can't tolerate synchronous disk syscalls inside a Browse call —
+// possibly because Browse is part of a critical map-load path that has its
+// own I/O state machine, possibly because the watchdog fires on a delayed
+// frame. Either way the fix is to keep file I/O off the engine thread.
+//
+// Pattern: handler appends bytes to a fixed-size in-DLL buffer with an
+// atomic position counter. The worker thread polls the buffer every 200ms
+// and dumps any new bytes to the marker file. Zero file I/O from the
+// handler's thread of execution.
+constexpr size_t kLogBufSize = 64 * 1024;     // 64KB — enough for many calls
+static char           g_logBuf[kLogBufSize];
+static volatile LONG64 g_logHead = 0;          // monotonic-ish byte count
+
 // ───────── C hook handler ─────────────────────────────────────────────
 //
 // Called by g_hookStub with the original parameters in (rcx, rdx, r8, r9).
@@ -117,15 +134,41 @@ static uint8_t*  g_hookStub    = nullptr;
 // For probe #8 (log-only) we just print the pointer values plus a few words
 // of memory at *r8 so the next iteration knows the FURL layout.
 
+// FormatHex8 — turn a 64-bit value into a 16-char hex string. Pure register
+// arithmetic, no CRT, no TLS. Output is upper-case hex with no prefix.
+static void FormatHex8(uintptr_t val, char* out16) {
+    static const char kHex[] = "0123456789ABCDEF";
+    for (int i = 15; i >= 0; i--) {
+        out16[i] = kHex[val & 0xF];
+        val >>= 4;
+    }
+}
+
 extern "C" void browse_hook_handler(uintptr_t rcx, uintptr_t rdx,
                                     uintptr_t r8, uintptr_t r9) {
-    // First-pass safety: NO memory dereferences. Just log the four register
-    // values and return. This verifies the hook stub itself is sound (correct
-    // calling convention, no shadow-space corruption, marker file writeable
-    // from arbitrary engine threads). The next iteration will add the FURL
-    // deref once we know the surrounding plumbing works.
-    Markerf("[browse] rcx=%p rdx=%p r8=%p r9=%p\r\n",
-            (void*)rcx, (void*)rdx, (void*)r8, (void*)r9);
+    // v5: deferred-log path. NO file I/O on the engine thread — just append
+    // the formatted line to g_logBuf with an atomic head-bump. Worker thread
+    // (FlushRing in the worker loop below) dumps to disk every 200ms.
+    //
+    // Layout: "[browse] rcx=XXXXXXXXXXXXXXXX rdx=YYYYYYYYYYYYYYYY r8 = ZZ... r9 = WW...\r\n"
+    char line[96];
+    static const char kPrefix[] = "[browse] rcx=";
+    int p = 0;
+    for (size_t i = 0; i < sizeof(kPrefix) - 1; i++) line[p++] = kPrefix[i];
+    FormatHex8(rcx, line + p); p += 16;
+    line[p++] = ' '; line[p++] = 'r'; line[p++] = 'd'; line[p++] = 'x'; line[p++] = '=';
+    FormatHex8(rdx, line + p); p += 16;
+    line[p++] = ' '; line[p++] = 'r'; line[p++] = '8';  line[p++] = '='; line[p++] = ' ';
+    FormatHex8(r8,  line + p); p += 16;
+    line[p++] = ' '; line[p++] = 'r'; line[p++] = '9';  line[p++] = '='; line[p++] = ' ';
+    FormatHex8(r9,  line + p); p += 16;
+    line[p++] = '\r'; line[p++] = '\n';
+
+    LONG64 pos = InterlockedExchangeAdd64(&g_logHead, (LONG64)p);
+    if (pos + p > (LONG64)sizeof(g_logBuf)) return;   // buffer full; drop
+    // Single-writer per slot: each call gets a unique range via the atomic
+    // bump, so this memcpy doesn't race with other handler invocations.
+    for (int i = 0; i < p; i++) g_logBuf[pos + i] = line[i];
 }
 
 // ───────── machine-code emitters ─────────────────────────────────────
@@ -322,8 +365,12 @@ static DWORD WINAPI Worker(LPVOID) {
     }
     Markerf("[3] trampoline @ %p\r\n", (void*)g_trampoline);
 
-    g_hookStub = BuildHookStub((void*)&browse_hook_handler,
-                               (void*)g_trampoline);
+    // DIAGNOSTIC v4 (2026-06-29): v3 with kBypassHandler=true PROVED the
+    // patch+trampoline mechanics are sound (party menu opened cleanly when
+    // we skipped the handler). Re-enable the C handler — now with an empty
+    // body in v4 — to test whether the stub→handler call sequence itself
+    // is the problem (vs. the file I/O inside the handler).
+    g_hookStub = BuildHookStub((void*)&browse_hook_handler, (void*)g_trampoline);
     if (!g_hookStub) {
         Markerf("[3] FAIL: VirtualAlloc hook stub (err=%lu)\r\n",
                 GetLastError());
@@ -354,7 +401,60 @@ static DWORD WINAPI Worker(LPVOID) {
                           (void*)g_browseAddr, kPatchSize);
 
     Marker("[4] HOOK INSTALLED\r\n");
-    return 0;
+
+    // v5: deferred-log flush loop. Poll g_logHead every 200ms and append any
+    // new bytes to the marker file. This runs forever on the worker thread
+    // (the only thread that touches the marker file post-install).
+    //
+    // Also: emit a heartbeat once per ~3s with g_logHead so we can tell from
+    // the marker file whether the handler is firing at all (a flat g_logHead
+    // for many seconds = handler isn't being called = function we hooked
+    // isn't on the path we expected).
+    LONG64 lastFlushed   = 0;
+    DWORD  lastHeartbeat = GetTickCount();
+    while (true) {
+        Sleep(200);
+        LONG64 head = g_logHead;
+        if (head > (LONG64)sizeof(g_logBuf)) head = (LONG64)sizeof(g_logBuf);
+
+        // Flush any new bytes.
+        if (head > lastFlushed) {
+            HANDLE h = CreateFileA(kMarkerPath, FILE_APPEND_DATA,
+                                   FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                   nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL,
+                                   nullptr);
+            if (h != INVALID_HANDLE_VALUE) {
+                DWORD wrote = 0;
+                WriteFile(h, g_logBuf + lastFlushed,
+                          (DWORD)(head - lastFlushed), &wrote, nullptr);
+                CloseHandle(h);
+                lastFlushed = head;
+            }
+        }
+
+        // Heartbeat every ~3s.
+        DWORD now = GetTickCount();
+        if (now - lastHeartbeat >= 3000) {
+            char hb[64];
+            int hbp = 0;
+            static const char kHbPrefix[] = "[hb] head=";
+            for (size_t i = 0; i < sizeof(kHbPrefix) - 1; i++)
+                hb[hbp++] = kHbPrefix[i];
+            FormatHex8((uintptr_t)g_logHead, hb + hbp); hbp += 16;
+            hb[hbp++] = '\r'; hb[hbp++] = '\n';
+
+            HANDLE h = CreateFileA(kMarkerPath, FILE_APPEND_DATA,
+                                   FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                   nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL,
+                                   nullptr);
+            if (h != INVALID_HANDLE_VALUE) {
+                DWORD wrote = 0;
+                WriteFile(h, hb, (DWORD)hbp, &wrote, nullptr);
+                CloseHandle(h);
+            }
+            lastHeartbeat = now;
+        }
+    }
 }
 
 // ───────── DllMain ───────────────────────────────────────────────────
