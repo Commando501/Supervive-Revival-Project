@@ -18,27 +18,39 @@ import (
 	"supervive-revival/server/internal/ws"
 )
 
-// phantomDsPushDelay > 0 enables the dedicated-server-stub chapter's probe #3:
-// after a client connects to /lobby, push an unsolicited AccelByte v1 lobby
-// `matchmakingNotif` carrying a phantom DS at 127.0.0.1:7777 after the given
-// delay. The goal is to determine whether the WS push channel is what triggers
-// UE NetConnection (vs. the HTTP /core-game polling which was ruled out by
-// probes #1+#2). Set to 0 to disable.
-//
-// Field shape uses AccelByte v1 classic lobby format (newline-separated
-// `key: value` lines) — binary-confirmed type-name strings in this build
-// include `messageNotif`, `matchmakingNotif`, `partyNotif`, `rematchmakingNotif`,
-// but NOT `dsNotice` (the classic v1 DS notice). Best guess given that absence:
-// matchmakingNotif carries the DS info inline (or via a nested dsInfo field),
-// which is one common AccelByte integration pattern when dsNotice is unused.
+// phantomDsPushDelay > 0 enables the dedicated-server-stub chapter's probe #3
+// (legacy: single-frame matchmakingNotif push). Superseded by probe #5's
+// start→done sequence (see phantomMatchmakingSequence below). Kept here as
+// the single-frame fallback if start→done turns out to be the wrong model.
 const phantomDsPushDelay = 0
 
-// phantomDsPushPath restricts the probe push to one WS path. Empty matches any
+// phantomDsPushPath restricts probe-pushes to one WS path. Empty matches any
 // path; "/lobby" matches the AccelByte classic lobby; "/notifications/players/"
-// (prefix match) matches the messenger. Defaults to /lobby because the
-// matchmaking notif family is a v1 lobby concept; if /lobby doesn't trigger a
-// NetConnection, flip this to the messenger path and re-test.
+// (prefix match) matches the messenger.
 const phantomDsPushPath = "/lobby"
+
+// phantomMatchmakingSequence enables probe #5: walk the client through a fake
+// matchmaking state machine via two server-pushed `matchmakingNotif` frames
+// on /lobby. The hypothesis is that the client's matchmaking subsystem refuses
+// to act on an unsolicited "match found" because its INTERNAL state isn't
+// "in matchmaking" — probe #3's lone status=done frame was silently ignored
+// for that reason. Pushing status=start first should flip the client into
+// the matchmaking state so that the subsequent status=done WITH DS info
+// triggers the connect path.
+//
+// Set false to disable. Timing: status=start fires at phantomMmStartDelay
+// after the WS handshake; status=done fires phantomMmDoneDelay later.
+const phantomMatchmakingSequence = true
+
+// Timing for probe #5's start→done sequence.
+//   - phantomMmStartDelay: wait this long after WS connect before pushing
+//     status=start. Gives the client's lobby subsystem time to finish handling
+//     friends/status traffic (those land in the first ~2s post-connect).
+//   - phantomMmDoneDelay: wait this long after status=start before pushing
+//     status=done. Simulates the natural matchmaking duration; some clients
+//     gate the done-handler behind "must have been start for at least N ms".
+const phantomMmStartDelay = 3 * time.Second
+const phantomMmDoneDelay = 2 * time.Second
 
 // messengerHeartbeatInterval is how often the server proactively pushes a
 // binary "hb" frame on the Theorycraft messenger socket (path
@@ -94,13 +106,17 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 
 	isMessenger := strings.HasPrefix(r.URL.Path, "/notifications/players/")
 
-	// Dedicated-server-stub probe #3: if enabled and this path matches, push
-	// an unsolicited matchmakingNotif (carrying phantom DS connect info) after
-	// phantomDsPushDelay. Runs on a separate goroutine — the read loop owns
-	// reads but writes are serialized via ws.Conn.writeMu, so this is safe to
-	// race against the read loop's hb echoes / reply text writes.
-	if phantomDsPushDelay > 0 && pathMatchesPushTarget(r.URL.Path) {
-		go s.phantomDsPush(conn, r.URL.Path)
+	// Dedicated-server-stub probes #3 and #5: unsolicited server-pushed
+	// notifications. Runs on a separate goroutine — writes are serialized
+	// via ws.Conn.writeMu, so this is safe to race against the read loop's
+	// hb echoes / reply text writes.
+	if pathMatchesPushTarget(r.URL.Path) {
+		if phantomDsPushDelay > 0 {
+			go s.phantomDsPush(conn, r.URL.Path)
+		}
+		if phantomMatchmakingSequence {
+			go s.phantomMatchmakingFlow(conn, r.URL.Path)
+		}
 	}
 
 	for {
@@ -271,5 +287,87 @@ func (s *Service) phantomDsPush(conn *ws.Conn, path string) {
 	s.log.Event("WS -> %s TEXT %q (phantom matchmakingNotif push)", path, notif)
 	if err := conn.WriteText(notif); err != nil {
 		s.log.Event("WS phantom matchmakingNotif push FAILED %s: %v", path, err)
+	}
+}
+
+// phantomMatchmakingFlow drives probe #5: a two-frame matchmakingNotif
+// sequence that simulates the client walking through "start matchmaking" and
+// then "match found" purely from server-pushed messages. Hypothesis: the
+// client's matchmaking subsystem won't act on status=done unless its own
+// internal state is "matchmaking in progress" — pushing status=start first
+// flips it into that state so status=done is then accepted.
+//
+// Timing:
+//
+//	t=0                          WS handshake completes; this goroutine starts
+//	t=phantomMmStartDelay         push status=start
+//	t=start + phantomMmDoneDelay  push status=done WITH DS info at 127.0.0.1:7777
+//
+// Outcomes (mirror probe #3's diagnostic table):
+//   - LogNet*/NetConnection against 127.0.0.1:7777 -> WIN, state-machine
+//     bootstrap works, Path C scaffolding begins.
+//   - LogJson "Deserialization failure" naming a field -> the warning names it.
+//   - LogPlatformLobby acknowledging matchmakingNotif but no NetConnection ->
+//     state changed but DS info field shape wrong; iterate the done payload.
+//   - Silent (no LogNet, no warning, no menu change) -> the matchmakingNotif
+//     type itself is gated behind something we don't have (e.g. requires a
+//     matchmakingRequest reply with the same ticket id BEFORE the notif).
+func (s *Service) phantomMatchmakingFlow(conn *ws.Conn, path string) {
+	// --- Stage 1: matchmaking started ---
+	time.Sleep(phantomMmStartDelay)
+	start := buildLobby(
+		"matchmakingNotif",
+		"phantom-mm-start-0001",
+		"status: start",
+		"matchId: phantom-match-0001",
+		"sessionId: phantom-session-0001",
+		"namespace: supervive",
+		"gameMode: tutorialNew",
+		"clientVersion: release2.4.live-156430-shipping",
+		"queuedAt: "+time.Now().UTC().Format(time.RFC3339),
+		"partyAttributes: {}",
+	)
+	s.log.Event("WS -> %s TEXT %q (phantom matchmakingNotif status=start, probe #5 stage 1)", path, start)
+	if err := conn.WriteText(start); err != nil {
+		s.log.Event("WS phantom mm start push FAILED %s: %v", path, err)
+		return
+	}
+
+	// --- Stage 2: match found, DS ready ---
+	time.Sleep(phantomMmDoneDelay)
+	dsInfoJSON := `{"status":"READY","matchId":"phantom-match-0001","sessionId":"phantom-session-0001","ip":"127.0.0.1","port":7777,"podName":"phantom-pod","gameMode":"tutorialNew","region":"na","namespace":"supervive","serverId":"phantom-server-0001","deployment":"phantom","gameVersion":"release2.4.live-156430-shipping"}`
+	done := buildLobby(
+		"matchmakingNotif",
+		"phantom-mm-done-0001",
+		"status: done",
+		"matchId: phantom-match-0001",
+		"sessionId: phantom-session-0001",
+		"namespace: supervive",
+		"gameMode: tutorialNew",
+		"clientVersion: release2.4.live-156430-shipping",
+		"region: na",
+		"joinable: true",
+		"queuedAt: "+time.Now().UTC().Format(time.RFC3339),
+		"matchingAllies: []",
+		"partyAttributes: {}",
+		// Inline DS info — Pascal+camel variants for case-strict fields:
+		"ip: 127.0.0.1",
+		"port: 7777",
+		"Address: 127.0.0.1",
+		"Port: 7777",
+		"HostName: 127.0.0.1",
+		"ServerUrl: 127.0.0.1:7777",
+		"Url: 127.0.0.1:7777",
+		"podName: phantom-pod",
+		"serverId: phantom-server-0001",
+		// Nested DS info — AccelByte convention:
+		"dsInfo: "+dsInfoJSON,
+		"DsInfo: "+dsInfoJSON,
+		"serverInfo: "+dsInfoJSON,
+		"ServerInfo: "+dsInfoJSON,
+	)
+	s.log.Event("WS -> %s TEXT %q (phantom matchmakingNotif status=done, probe #5 stage 2)", path, done)
+	if err := conn.WriteText(done); err != nil {
+		s.log.Event("WS phantom mm done push FAILED %s: %v", path, err)
 	}
 }
