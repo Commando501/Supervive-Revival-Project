@@ -190,25 +190,69 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 	// The PUT carries an EMPTY body (Content-Length 0) — it is a fire-and-forget
 	// "reconcile my mission progress" trigger (exe: ServerAddMissionProgress /
-	// SetMissionProgress), not a claim with a payload. Real mission *progress* is
-	// added server-side during matches, so in the menu there is nothing per-player
-	// to persist here.
+	// SetMissionProgress), not a claim with a payload.
 	//
-	// Response is the player's mission/progression state — model MissionData (exe
-	// FName cluster). We return only its two TMap fields, each confirmed a map by a
-	// `_Key` companion (Completions, TrackIDToClaimableRewards), as empty objects.
-	// The sibling fields ClaimableProgressionTrackClaimData /
-	// ClaimableProgressionTrackRewards have no `_Key` (array-or-struct, type
-	// unconfirmed) so are omitted per the validity rule — an absent field defaults
-	// safely; a wrong-typed present one would reject the whole doc.
+	// Response model = `MissionData` (exe FName cluster, block 96). The OLD note
+	// here said the Missions modal blocker was the AssetManager Track A gate — that
+	// was based on the prior session's hypothesis. END-OF-2026-06-29 RE chain
+	// proved otherwise: AddDynamicAsset registrations don't move the modal. The
+	// real chain is:
+	//   modal categories iterate PoolAsset[] -> GetPrimaryAssetIdFromClass(P) ->
+	//     UMissionsModel.GetActive/GetClaimableMissionModel(id)
+	//   which iterates a TSet at UMissionsModel+0x30 holding UMissionModel* with
+	//     PoolId field at +0x40. findptr on UMissionModel CDO vtable returns
+	//     ONLY the CDO — NO live UMissionModel UObjects exist anywhere in the
+	//     process. The pipeline waits for the server to populate them.
+	//   OnPSMissionsUpdated (FName 0x0058FF4F) fires when server pushes the data;
+	//   CreateMissionModelFromFinalProgress (0x0058FEE1) is the factory.
 	//
-	// NOTE: the Missions modal stays empty regardless of this response — that is the
-	// AssetManager "Invalid Primary Asset Type" gate (mission pools are UE Primary
-	// Assets the client loads locally once the content-service manifest declares
-	// their asset type). That is Track A's content manifest, not this endpoint.
+	// Hypothesis: this PUT's response (or a sibling endpoint we haven't found)
+	// carries the per-pool mission data the client deserializes into
+	// UMissionModels. The MissionData struct's NamePool-clustered field names
+	// (around the struct's own FName id 0x006002E0 in block 96 / 98) include:
+	//   Completions / Completions_Key (TMap)
+	//   TrackIDToClaimableRewards / _Key (TMap)
+	//   Pools (TArray or TMap — type unconfirmed)
+	//   NewMissionTime (DateTime — the "year 0" warning source)
+	//   MillisUntilNewMission (int64)
+	//   PoolId (FPrimaryAssetId, per-pool field)
+	//   GrantedAt / Expiry / MillisUntilExpiry (DateTime, int64)
+	//   Progress / MaxProgress / StartingProgress (int)
+	//   Failed / Complete (bool)
+	//   ObjectiveProgress / ObjectiveName (TMap, string)
+	//   InitialArmoryContext
+	//
+	// The validity rule still applies: an absent field is safe; a wrong-typed
+	// matched field rejects the whole doc. We add fields in dependency order,
+	// most-confident-types first, and observe Loki.log on each rebuild for
+	// "Deserialization failure" / "Invalid response received". One pool entry
+	// for DA_MissionPoolDailyEasy is the smoke-test target — if the Dailies
+	// category renders ANYTHING on the next modal open, the chain is correct
+	// and we iterate to add the other 12 pools.
+	now := time.Now().UTC()
+	nextRefresh := now.Add(24 * time.Hour)
+	expiry := now.Add(7 * 24 * time.Hour)
 	writeJSON(w, map[string]any{
 		"Completions":               map[string]any{},
 		"TrackIDToClaimableRewards": map[string]any{},
+		"NewMissionTime":            nextRefresh.Format(time.RFC3339),
+		"MillisUntilNewMission":     int64(24 * 3600 * 1000),
+		"Pools": []map[string]any{
+			{
+				// FPrimaryAssetId serializes as "Type:Name" string in UE5 JSON
+				"PoolId":            "MissionPool:DA_MissionPoolDailyEasy",
+				"MissionAssetId":    "Mission:DA_Mission_ArmoryDaily_PlayAGame",
+				"GrantedAt":         now.Format(time.RFC3339),
+				"Expiry":            expiry.Format(time.RFC3339),
+				"MillisUntilExpiry": int64(7 * 24 * 3600 * 1000),
+				"Progress":          0,
+				"MaxProgress":       1,
+				"StartingProgress":  0,
+				"Failed":            false,
+				"Complete":          false,
+				"ObjectiveProgress": map[string]any{},
+			},
+		},
 	})
 }
 
