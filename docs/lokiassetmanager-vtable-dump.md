@@ -1491,3 +1491,61 @@ modal's per-category widget has its OWN MissionPoolIDs subset?).
 
 **Anchor for Plan B**: the per-category data binding goes through
 `BindToMissions` (FName id 0x007B4871). That's the next thing to track.
+
+### Plan B DONE — BindToMissions identified as BP UFunction (2026-06-29)
+
+`findptr` on the BindToMissions FName id (0x007B4871) returns 3 distinct
+aligned hits, including one at heap address `0x16B98E02E20` (= 0x20 into a
+UObject — the NamePrivate offset). Peek of the UObject at `0x16B98E02E00`
+shows the standard UE5.4 UObject + UStruct + UFunction layout:
+
+```
+0x16B98E02E00  (= BindToMissions UFunction)
+  +0x00: vtable          0x7FF666DCEB60  (RVA 0x76FEB60, .rdata UFunction vtable)
+  +0x0C: ObjectFlags     0x00280001
+  +0x18: ClassPrivate    0x016AB8B7B000  (UFunction's UClass*)
+  +0x20: NamePrivate     FName(BindToMissions) + 0
+  +0x28: Outer           0x016B98C2E930  (the owning class)
+  +0x50: Children        0x016B98DF9C80
+  +0x60: PropertiesSize  0x98 (152 bytes — the function's stack frame)
+  +0x64: MinAlignment    0x08
+  +0x68: ChildProperties 0x016B98C2E4A0  (FProperty linked list — params + locals)
+  +0x70: Script.Num=0x470 (1136), Script.Max=0x490 (1168)
+  +0x78: Script.Data     0x016B98DF9C80
+```
+
+The Outer of BindToMissions is **`WBP_UI_MissionModalCategory_C`** —
+verified by reverse-looking up the Outer's NamePrivate FName id (0x0047678A
+= block 71, off 0xCF14) via `nameid` substring search:
+
+```
+[WBP_UI_MissionModalCategory_C] block=71  off=0xCF14   id=0x0047678A
+                                          "WBP_UI_MissionModalCategory_C"
+```
+
+So **BindToMissions is a Blueprint-compiled UFunction belonging to the
+category widget class itself.** The 1136 bytes of bytecode at 0x016B98DF9C80
+contain the actual data-binding logic. To know what data the modal categories
+read, that bytecode needs to be decompiled (UE BP VM bytecode).
+
+Related discovered names (all in NamePool):
+
+| FName | id | Notes |
+|-------|----|-------|
+| `WBP_UI_MissionModalCategory_C` | 0x0047678A | the class itself |
+| `Default__WBP_UI_MissionModalCategory_C` | 0x007B4933 | CDO |
+| `ExecuteUbergraph_WBP_UI_MissionModalCategory` | 0x007B48C2 | event graph bytecode |
+| `ExecuteUbergraph_WBP_UI_MissionModalCategoryButton` | 0x007A1E21 | sibling category-button BP |
+| `ExecuteUbergraph_WBP_UI_MissionModal_MissionEntry` | 0x007B4725 | per-mission entry BP |
+| `ExecuteUbergraph_WBP_UI_MissionModal` | 0x007B4FE0 | the modal's own event graph |
+
+**Concrete handles for next-session BP decompile work**:
+- BindToMissions UFunction: 0x16B98E02E00 (Script at +0x78 = 0x016B98DF9C80, 1136 bytes)
+- Parent class UClass: 0x16B98C2E930
+- ChildProperties linked list head: 0x016B98C2E4A0 (walk these for parameter signature)
+
+The CDO of `WBP_UI_MissionModalCategory_C` will reveal the class's default
+property values; its UClass at 0x16B98C2E930 has property metadata for all
+member fields. Walking that gives us the full per-category data shape, which
+combined with the BP bytecode tells us authoritatively where the modal
+sources its per-category data.
