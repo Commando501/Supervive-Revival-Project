@@ -566,6 +566,66 @@ to find broadcast call sites. Alternative: find the static
 `GetLocalLokiPlayerState` (we have its name as a string anchor) → walk
 calls from there to functions that touch the same offset.
 
+### Route A2 — UMissionsModel external read 2026-06-28 (definitive)
+
+Pivoted from the heavy broadcast-call-site hunt to a lightweight external
+read. Used the same FName→CDO→vtable→findptr pattern from prior recon.
+
+**ALokiPlayerState instance scan:**
+- CDO @ 0x16AC8BCE6D0 (flags 0x31). Vtable @ +0x8A2D718.
+- `findptr` returns ONE additional hit @ 0x16B8AD46670 — but its
+  `ClassPrivate@+0x18` is 0x1557B (not a heap pointer) → false positive.
+- **No live ALokiPlayerState instance exists at the menu.** PlayerState
+  only spawns in active matches, so MissionPoolIDs on PlayerState never
+  populates in the menu. This rewrites the prior hypothesis that
+  ALokiPlayerState owns the menu's mission data — it doesn't.
+
+**UMissionsModel instance scan:**
+- CDO @ 0x16AC8BFA600 (flags 0x31). Vtable @ +0x88ADED0.
+- 2 LIVE instances: 0x16B77E50100 + 0x16B7C654A80 (flags 0x00 — UE5.4 default-
+  spawn pattern; ClassPrivate is a valid heap ptr → validated).
+- Reading instance 0x16B77E50100 (384 bytes): **the entire body is zeros**
+  except for default-empty TSparseArray/TMap meta values (HashSize=0x80,
+  FirstFreeIndex=-1) at regularly spaced offsets (+0x15C, +0x1AC, +0x1F0,
+  ...).
+
+**Verdict (Route A2 result):** UMissionsModel exists in memory but **all of
+its data structures are empty** — no MissionPoolIDs, no MissionPoolAssets,
+no per-mission state. The model was constructed but never populated. The
+modal correctly calls `GetMissionsModel()` and gets back this empty model,
+which is why the modal renders zero categories.
+
+**Outer chain decoded:**
+- UMissionsModel.OuterPrivate@+0x28 = UEndOfGameModel instance (decoded via
+  CDO scan of the Outer's vtable, found "Default__EndOfGameModel" at
+  block 107 offset 0x5A in NamePool).
+- UEndOfGameModel.OuterPrivate = another transient (likely a per-LocalPlayer
+  or per-GameInstance summary holder; vtable shared by 5 CDOs suggests it
+  may itself be a UClass instance / metaclass).
+
+The "EndOfGame" naming suggests UMissionsModel was originally designed as
+part of the end-of-match summary and reused for the menu Missions modal.
+Either way, it's a real long-lived UObject, just unfilled.
+
+**Next pursuit (route picked):** the EMPTY model is the smoking gun. The
+relevant question is no longer "does init run" but "does init COMPLETE
+WITHOUT POPULATING". Two follow-ups:
+
+1. **Find the function that creates UMissionsModel** (via `CreateMissionsModel`
+   string anchor we already have). Its caller chain reveals which subsystem/
+   class is responsible for init — and likely contains the population logic
+   that we'd expect to fill MissionPoolIDs. If that logic has an early-exit
+   path that skips population (e.g., gated on "is in match"), that's our
+   blocker.
+2. **Hook `GetMissionsModel` to return our own populated model.** A more
+   constructive route — synthesize a UMissionsModel-shaped struct, fill its
+   TMaps with 16 entries, and either patch the function to return our ptr
+   or patch the field that holds the model ptr in its Outer chain. Needs the
+   field layout of UMissionsModel decoded (which TMap is MissionPoolIDs vs.
+   MissionPoolAssets) — currently unknown.
+
+Route (1) is recon-only; route (2) is the actual fix attempt. Both productive.
+
 ### Next route — RE the UI's actual enumeration source
 
 Given hypothesis 1's strong support, the productive next pursuit shifts to
