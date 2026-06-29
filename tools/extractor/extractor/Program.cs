@@ -1080,6 +1080,97 @@ if (args.Length >= 3 && args[0] == "bpdump")
         var ufuncs = exports.OfType<CUE4Parse.UE4.Objects.UObject.UFunction>().ToList();
         if (ufuncs.Count == 0) continue;
         Console.WriteLine($"  {assetPath}: {ufuncs.Count} UFunction export(s)");
+        // Special needle '@props' = dump every UObject export's serialized property
+        // values to a text file. Per-instance overrides (e.g. which mission pool a
+        // specific MissionModalCategory_Dailies_1 instance points to) live here.
+        if (fnNeedle == "@props")
+        {
+            var summaryFile = Path.Combine(outDir, $"bpdump_{Path.GetFileNameWithoutExtension(assetPath)}_PROPS.txt");
+            using var ssw = new StreamWriter(summaryFile);
+            ssw.WriteLine($"# Asset: {assetPath}");
+            ssw.WriteLine($"# {exports.Count} exports total\n");
+            foreach (var e in exports)
+            {
+                if (e == null) continue;
+                ssw.WriteLine($"## [{e.GetType().Name}] {e.Name}  (ExportType={e.ExportType})");
+                try
+                {
+                    var props = e.Properties;
+                    if (props == null || props.Count == 0) { ssw.WriteLine("   (no properties)"); continue; }
+                    foreach (var prop in props)
+                    {
+                        try
+                        {
+                            var tag = prop.Tag;
+                            // For Array/Set/Struct/Map property tags, recurse into contained values.
+                            // CUE4Parse's tag classes: ArrayProperty.Value -> UScriptArray with .Properties (List<FPropertyTagType>).
+                            if (tag != null)
+                            {
+                                var tagType = tag.GetType();
+                                var valProp = tagType.GetProperty("Value");
+                                var inner = valProp?.GetValue(tag);
+                                // UScriptArray / UScriptSet have a Properties list (try property OR field).
+                                System.Collections.IEnumerable? listInner = null;
+                                if (inner != null)
+                                {
+                                    var pi = inner.GetType().GetProperty("Properties");
+                                    if (pi != null) listInner = pi.GetValue(inner) as System.Collections.IEnumerable;
+                                    if (listInner == null)
+                                    {
+                                        var fi = inner.GetType().GetField("Properties");
+                                        if (fi != null) listInner = fi.GetValue(inner) as System.Collections.IEnumerable;
+                                    }
+                                }
+                                if (listInner != null)
+                                {
+                                    ssw.WriteLine($"   - {prop.Name} ({prop.PropertyType}):");
+                                    int idx = 0;
+                                    foreach (var item in listInner)
+                                    {
+                                        ssw.WriteLine($"       [{idx}] {TruncStr(item?.ToString() ?? "null", 200)}");
+                                        // Direct FStructFallback, or a StructProperty tag wrapping one.
+                                        CUE4Parse.UE4.Assets.Objects.FStructFallback? fsb = null;
+                                        if (item is CUE4Parse.UE4.Assets.Objects.FStructFallback direct) fsb = direct;
+                                        else if (item != null)
+                                        {
+                                            var itemType = item.GetType();
+                                            var nestedVal = itemType.GetProperty("Value")?.GetValue(item)
+                                                          ?? itemType.GetProperty("Struct")?.GetValue(item)
+                                                          ?? itemType.GetProperty("StructType")?.GetValue(item);
+                                            if (nestedVal is CUE4Parse.UE4.Assets.Objects.FStructFallback wrapped) fsb = wrapped;
+                                        }
+                                        if (fsb?.Properties != null)
+                                        {
+                                            foreach (var subProp in fsb.Properties)
+                                            {
+                                                try { ssw.WriteLine($"           . {subProp.Name} = {TruncStr(subProp.Tag?.ToString() ?? "null", 300)}"); }
+                                                catch (Exception ex) { ssw.WriteLine($"           . {subProp?.Name}: ERR {ex.Message}"); }
+                                            }
+                                        }
+                                        idx++;
+                                        if (idx > 40) { ssw.WriteLine("       ... (truncated)"); break; }
+                                    }
+                                    continue;
+                                }
+                            }
+                            ssw.WriteLine($"   - {prop.Name} ({prop.PropertyType}) = {TruncStr(tag?.ToString() ?? "null", 256)}");
+                        }
+                        catch (Exception ex) { ssw.WriteLine($"   - {prop?.Name}: ERR {ex.GetType().Name} {ex.Message}"); }
+                    }
+                }
+                catch (Exception ex) { ssw.WriteLine($"   ! ERR reading properties: {ex.GetType().Name} {ex.Message}"); }
+                ssw.WriteLine();
+            }
+            Console.WriteLine($"  -> wrote {summaryFile}");
+            return;
+
+            static string TruncStr(string s, int max)
+            {
+                if (s.Length <= max) return s;
+                return s.Substring(0, max) + "...(+" + (s.Length - max) + ")";
+            }
+        }
+
         // Special needle '*' or '' = dump ALL functions in this asset to a summary file.
         if (fnNeedle == "*")
         {
