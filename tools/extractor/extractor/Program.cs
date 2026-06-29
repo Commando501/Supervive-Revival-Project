@@ -19,7 +19,7 @@ using Newtonsoft.Json;
 // /content-service/manifest?" Reading asset *property values* (DataTable rows)
 // comes later and may need a .usmap.
 
-var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema" || args[0] == "assetregistry" || args[0] == "wherefile" || args[0] == "mkpak" || args[0] == "peekpak") ? args[0] : null;
+var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema" || args[0] == "assetregistry" || args[0] == "wherefile" || args[0] == "mkpak" || args[0] == "peekpak" || args[0] == "bpdump") ? args[0] : null;
 var dumpMode = cmd == "dump";
 var pakDir = (cmd == null && args.Length > 0)
     ? args[0]
@@ -1042,6 +1042,199 @@ if (args.Length >= 3 && args[0] == "namesall")
     sw.WriteLine("# ===== UNION (all unique names) =====");
     foreach (var n in union) sw.WriteLine(n);
     Console.WriteLine($"  parsed {ok}/{targets.Count}; {union.Count} unique names -> {outFile}");
+    return;
+}
+
+// bpdump mode: find a UFunction (by name) inside an asset (by path substring),
+// and pretty-print its KismetExpression bytecode tree. The whole point is to
+// answer "what does this BP function actually do" without a Unreal Editor.
+//
+//   run -- bpdump <asset-path-substr> <function-name>
+//
+// CUE4Parse 1.2.2 deserializes UFunction.ScriptBytecode into a typed
+// KismetExpression[] array. We walk the tree with reflection — public
+// fields + properties — and emit a per-line indented dump. FPackageIndex
+// values are resolved against the package's import/export map for readable
+// names; FName values are printed as strings.
+if (args.Length >= 3 && args[0] == "bpdump")
+{
+    var pathSubstr = args[1];
+    var fnNeedle = args[2];
+    var matches = provider.Files.Keys
+        .Where(k => k.EndsWith(".uasset", StringComparison.OrdinalIgnoreCase)
+                 && k.Contains(pathSubstr, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    Console.WriteLine($"bpdump: {matches.Count} .uasset matches for '{pathSubstr}'");
+    if (matches.Count == 0) { Console.WriteLine("(no asset found)"); return; }
+    if (matches.Count > 10) { foreach (var m in matches.Take(10)) Console.WriteLine("  " + m); Console.WriteLine("  ... (truncated to 10)"); }
+    else { foreach (var m in matches) Console.WriteLine("  " + m); }
+
+    // Try each matched asset; first one with a UFunction matching the needle wins.
+    foreach (var assetPath in matches)
+    {
+        CUE4Parse.UE4.Assets.IPackage pkg;
+        try { pkg = provider.LoadPackage(assetPath); }
+        catch (Exception e) { Console.WriteLine($"  LOAD FAIL {assetPath}: {e.Message}"); continue; }
+        var exports = pkg.GetExports().ToList();
+        var ufuncs = exports.OfType<CUE4Parse.UE4.Objects.UObject.UFunction>().ToList();
+        if (ufuncs.Count == 0) continue;
+        Console.WriteLine($"  {assetPath}: {ufuncs.Count} UFunction export(s)");
+        // Special needle '*' or '' = dump ALL functions in this asset to a summary file.
+        if (fnNeedle == "*")
+        {
+            var summaryFile = Path.Combine(outDir, $"bpdump_{Path.GetFileNameWithoutExtension(assetPath)}_ALL.txt");
+            using var ssw = new StreamWriter(summaryFile);
+            ssw.WriteLine($"# Asset: {assetPath}");
+            ssw.WriteLine($"# {exports.Count} exports total");
+            ssw.WriteLine();
+            ssw.WriteLine("## All exports:");
+            foreach (var e in exports) ssw.WriteLine($"  [{e.GetType().Name}] {e.Name}");
+            ssw.WriteLine();
+            ssw.WriteLine($"## All UFunctions ({ufuncs.Count}) with parameter chains:");
+            foreach (var f in ufuncs)
+            {
+                ssw.WriteLine($"\n### {f.Name}");
+                ssw.WriteLine($"   FunctionFlags: {f.FunctionFlags}");
+                ssw.WriteLine($"   ScriptBytecode: {(f.ScriptBytecode?.Length ?? 0)} entries");
+                if (f.ChildProperties != null)
+                {
+                    int j = 0;
+                    foreach (var cp in f.ChildProperties)
+                    {
+                        if (cp == null) { ssw.WriteLine($"     [{j++}] (null)"); continue; }
+                        var nm = cp.GetType().GetProperty("Name")?.GetValue(cp)?.ToString() ?? "?";
+                        ssw.WriteLine($"     [{j++}] {cp.GetType().Name}  {nm}");
+                    }
+                }
+            }
+            Console.WriteLine($"  -> wrote {summaryFile}");
+            return;
+        }
+
+        var hit = ufuncs.FirstOrDefault(f => f.Name.Equals(fnNeedle, StringComparison.OrdinalIgnoreCase))
+               ?? ufuncs.FirstOrDefault(f => f.Name.Contains(fnNeedle, StringComparison.OrdinalIgnoreCase));
+        if (hit == null) continue;
+        Console.WriteLine($"  -> matched UFunction '{hit.Name}' (ScriptBytecode count: {hit.ScriptBytecode?.Length ?? 0})");
+
+        var outFile = Path.Combine(outDir, $"bpdump_{hit.Name}.txt");
+        using var sw = new StreamWriter(outFile);
+        sw.WriteLine($"# Asset:         {assetPath}");
+        sw.WriteLine($"# UFunction:     {hit.Name}");
+        sw.WriteLine($"# FunctionFlags: {hit.FunctionFlags}");
+        sw.WriteLine($"# Outer class:   {hit.Outer?.Name ?? "?"}");
+        sw.WriteLine($"# ScriptBytecode entries: {hit.ScriptBytecode?.Length ?? 0}");
+        sw.WriteLine($"# ChildProperties: {hit.ChildProperties?.Length ?? 0}");
+        if (hit.ChildProperties != null && hit.ChildProperties.Length > 0)
+        {
+            sw.WriteLine("# --- Parameters / locals (FField chain) ---");
+            int pi = 0;
+            foreach (var ch in hit.ChildProperties)
+            {
+                if (ch == null) { sw.WriteLine($"#   [{pi++}] (null)"); continue; }
+                var t = ch.GetType();
+                var name = t.GetProperty("Name", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)?.GetValue(ch)?.ToString() ?? "?";
+                sw.WriteLine($"#   [{pi++}] {t.Name}  {name}");
+            }
+        }
+        sw.WriteLine();
+        sw.WriteLine("# --- ScriptBytecode tree ---");
+
+        // Resolver: turn FPackageIndex into a readable object path for the dump.
+        string ResolveIdx(object? idx)
+        {
+            if (idx == null) return "<null>";
+            try
+            {
+                var resolveMethod = idx.GetType().GetMethod("ResolvedObject",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                var prop = idx.GetType().GetProperty("ResolvedObject",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                var resolved = prop?.GetValue(idx);
+                if (resolved != null)
+                {
+                    var nameProp = resolved.GetType().GetProperty("Name");
+                    var n = nameProp?.GetValue(resolved)?.ToString();
+                    if (!string.IsNullOrEmpty(n)) return n!;
+                }
+            }
+            catch { /* fall through */ }
+            return idx.ToString() ?? "<?>";
+        }
+
+        // Recursive expression printer. Skip the "Token" property (printed in the header)
+        // and recurse into nested KismetExpression / KismetExpression[] fields. Resolve
+        // FPackageIndex via the package's import/export map.
+        void DumpExpr(CUE4Parse.UE4.Kismet.KismetExpression expr, int depth, int? idx, StreamWriter w)
+        {
+            string indent = new string(' ', depth * 2);
+            var t = expr.GetType();
+            var tokenName = t.Name; // EX_* subclass name already encodes the opcode
+            string idxStr = idx.HasValue ? $"[{idx,3}] " : "";
+            w.WriteLine($"{indent}{idxStr}{tokenName}");
+
+            foreach (var p in t.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                if (p.Name == "Token") continue; // implied by subclass name
+                object? v;
+                try { v = p.GetValue(expr); } catch { continue; }
+                if (v == null) continue;
+
+                if (v is CUE4Parse.UE4.Kismet.KismetExpression nested)
+                {
+                    w.WriteLine($"{indent}  {p.Name}:");
+                    DumpExpr(nested, depth + 2, null, w);
+                }
+                else if (v is CUE4Parse.UE4.Kismet.KismetExpression[] arr)
+                {
+                    w.WriteLine($"{indent}  {p.Name}: [{arr.Length}]");
+                    int j = 0;
+                    foreach (var sub in arr)
+                    {
+                        if (sub == null) { w.WriteLine($"{indent}    [{j++}] (null)"); continue; }
+                        DumpExpr(sub, depth + 2, j++, w);
+                    }
+                }
+                else if (v.GetType().Name == "FPackageIndex")
+                {
+                    w.WriteLine($"{indent}  {p.Name}: {ResolveIdx(v)}");
+                }
+                else if (v.GetType().Name == "FKismetPropertyPointer")
+                {
+                    // FKismetPropertyPointer wraps either an FPackageIndex (old) or
+                    // a path through FField (new). Pull whatever's most readable.
+                    var ptrField = v.GetType().GetProperty("Old", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                                 ?? v.GetType().GetProperty("Path", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    var ptrVal = ptrField?.GetValue(v);
+                    w.WriteLine($"{indent}  {p.Name}: {(ptrVal != null ? ResolveIdx(ptrVal) : v.ToString())}");
+                }
+                else if (v is Array a && a.Length > 0)
+                {
+                    w.Write($"{indent}  {p.Name}: [");
+                    for (int j = 0; j < a.Length && j < 16; j++)
+                    {
+                        if (j > 0) w.Write(", ");
+                        w.Write(a.GetValue(j)?.ToString() ?? "null");
+                    }
+                    if (a.Length > 16) w.Write(", ...");
+                    w.WriteLine("]");
+                }
+                else if (v is string || v.GetType().IsPrimitive || v.GetType().IsEnum
+                         || v.GetType().Name.StartsWith("F"))
+                {
+                    w.WriteLine($"{indent}  {p.Name}: {v}");
+                }
+            }
+        }
+
+        int ix = 0;
+        foreach (var expr in hit.ScriptBytecode ?? Array.Empty<CUE4Parse.UE4.Kismet.KismetExpression>())
+            DumpExpr(expr, 0, ix++, sw);
+
+        Console.WriteLine($"  -> wrote {outFile}");
+        return;
+    }
+    Console.WriteLine($"No matching UFunction '{fnNeedle}' found in any of the {matches.Count} assets.");
     return;
 }
 
