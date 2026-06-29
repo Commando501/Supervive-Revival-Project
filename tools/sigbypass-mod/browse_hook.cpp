@@ -144,31 +144,121 @@ static void FormatHex8(uintptr_t val, char* out16) {
     }
 }
 
+// SafeReadable: VirtualQuery-based bounds check. Returns true if the page
+// containing [addr, addr+size) is committed AND has read access. Avoids the
+// SEH-from-clang reliability question by checking BEFORE we touch the page.
+static bool SafeReadable(const void* addr, size_t size) {
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (VirtualQuery(addr, &mbi, sizeof(mbi)) == 0) return false;
+    if (!(mbi.State & MEM_COMMIT)) return false;
+    if (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) return false;
+    // Crude: trust that the region is contiguous (good enough for stack /
+    // heap / data sections).
+    uintptr_t start = (uintptr_t)addr;
+    uintptr_t end   = start + size;
+    return end <= (uintptr_t)mbi.BaseAddress + mbi.RegionSize;
+}
+
+// AppendBytes: copy a byte range into g_logBuf via atomic head bump. Returns
+// the position we wrote at; returns -1 if the buffer is full.
+static LONG64 AppendBytes(const char* src, int n) {
+    LONG64 pos = InterlockedExchangeAdd64(&g_logHead, (LONG64)n);
+    if (pos + n > (LONG64)sizeof(g_logBuf)) return -1;
+    for (int i = 0; i < n; i++) g_logBuf[pos + i] = src[i];
+    return pos;
+}
+
 extern "C" void browse_hook_handler(uintptr_t rcx, uintptr_t rdx,
                                     uintptr_t r8, uintptr_t r9) {
-    // v5: deferred-log path. NO file I/O on the engine thread — just append
-    // the formatted line to g_logBuf with an atomic head-bump. Worker thread
-    // (FlushRing in the worker loop below) dumps to disk every 200ms.
+    // v9: deref FURL at *r8 — layout VERIFIED from v8 hex dump 2026-06-29:
+    //   +0x00 FString Protocol  (16B = TCHAR*, int32 Num, int32 Max)
+    //   +0x10 FString Host
+    //   +0x20 int32 Port (default 7777) + int32 Valid (=1)
+    //   +0x28 FString Map         <-- THE URL we want to capture/rewrite
+    //   +0x38 FString RedirectURL
+    //   +0x48 TArray<FString> Op  (16B header)
+    //   +0x58 FString Portal
+    //   total: 0x68 = 104 bytes
     //
-    // Layout: "[browse] rcx=XXXXXXXXXXXXXXXX rdx=YYYYYYYYYYYYYYYY r8 = ZZ... r9 = WW...\r\n"
-    char line[96];
-    static const char kPrefix[] = "[browse] rcx=";
+    // The 8-byte miss in v8 came from assuming each "section" is 16-byte
+    // aligned. UE's FURL packs Port+Valid into the 8 bytes following Host
+    // (no extra padding), so Map starts at +0x28.
+    //
+    // Strategy: log the 4 registers, then for each FString-shaped field at
+    // 0x00, 0x10, 0x30, 0x40, 0x60 — if its Data pointer is page-readable,
+    // copy the wchar_t bytes (up to 200 chars) as low-byte ASCII into the log.
+    char line[1024];
     int p = 0;
-    for (size_t i = 0; i < sizeof(kPrefix) - 1; i++) line[p++] = kPrefix[i];
-    FormatHex8(rcx, line + p); p += 16;
-    line[p++] = ' '; line[p++] = 'r'; line[p++] = 'd'; line[p++] = 'x'; line[p++] = '=';
-    FormatHex8(rdx, line + p); p += 16;
-    line[p++] = ' '; line[p++] = 'r'; line[p++] = '8';  line[p++] = '='; line[p++] = ' ';
-    FormatHex8(r8,  line + p); p += 16;
-    line[p++] = ' '; line[p++] = 'r'; line[p++] = '9';  line[p++] = '='; line[p++] = ' ';
-    FormatHex8(r9,  line + p); p += 16;
-    line[p++] = '\r'; line[p++] = '\n';
 
-    LONG64 pos = InterlockedExchangeAdd64(&g_logHead, (LONG64)p);
-    if (pos + p > (LONG64)sizeof(g_logBuf)) return;   // buffer full; drop
-    // Single-writer per slot: each call gets a unique range via the atomic
-    // bump, so this memcpy doesn't race with other handler invocations.
-    for (int i = 0; i < p; i++) g_logBuf[pos + i] = line[i];
+    auto append = [&](const char* s, size_t n) {
+        for (size_t i = 0; i < n; i++) line[p++] = s[i];
+    };
+    auto append_hex8 = [&](uintptr_t v) {
+        FormatHex8(v, line + p); p += 16;
+    };
+
+    append("[browse] rcx=", 13);
+    append_hex8(rcx);
+    append(" rdx=", 5);
+    append_hex8(rdx);
+    append(" r8=", 4);
+    append_hex8(r8);
+    append(" r9=", 4);
+    append_hex8(r9);
+    append("\r\n", 2);
+
+    // Dump first 96 bytes of *r8 (the FURL) as both hex AND low-byte ASCII —
+    // we want to spot the URL string regardless of which field carries it.
+    if (SafeReadable((const void*)r8, 96)) {
+        uint8_t furl[96];
+        memcpy(furl, (const void*)r8, sizeof(furl));
+        append("[furl] hex:", 11);
+        for (int i = 0; i < 96; i++) {
+            line[p++] = ' ';
+            static const char kHex[] = "0123456789ABCDEF";
+            line[p++] = kHex[(furl[i] >> 4) & 0xF];
+            line[p++] = kHex[furl[i] & 0xF];
+        }
+        append("\r\n", 2);
+
+        // Correct FString offsets (verified from v8 hex dump):
+        static const int kOffsets[] = {0x00, 0x10, 0x28, 0x38, 0x58};
+        static const char* kNames[] = {
+            "Protocol", "Host    ", "Map     ", "Redirect", "Portal  "
+        };
+        for (size_t i = 0; i < sizeof(kOffsets)/sizeof(kOffsets[0]); i++) {
+            int off = kOffsets[i];
+            // FString = TCHAR* Data (8 bytes), int32 Num (4 bytes), int32 Max (4 bytes)
+            wchar_t* data = *(wchar_t**)(furl + off);
+            int32_t  num  = *(int32_t*)(furl + off + 8);
+            append("[fstring] ", 10);
+            append(kNames[i], 8);
+            append(" off=0x", 7);
+            FormatHex8((uintptr_t)off, line + p); p += 16;
+            append(" data=", 6);
+            FormatHex8((uintptr_t)data, line + p); p += 16;
+            append(" num=", 5);
+            FormatHex8((uintptr_t)(uint32_t)num, line + p); p += 16;
+            if (data && num > 0 && num < 1024 && SafeReadable(data, num * 2)) {
+                append(" str=\"", 6);
+                int copy = num > 200 ? 200 : num;
+                for (int j = 0; j < copy; j++) {
+                    wchar_t c = data[j];
+                    if (c == 0) break;
+                    line[p++] = (char)(c & 0x7F);
+                }
+                append("\"", 1);
+            }
+            append("\r\n", 2);
+        }
+    } else {
+        append("[furl] r8 not safely readable\r\n", 31);
+    }
+    append("\r\n", 2);
+
+    // Single-writer per slot via the atomic bump — multiple handler calls in
+    // flight can't tread on each other's range.
+    AppendBytes(line, p);
 }
 
 // ───────── machine-code emitters ─────────────────────────────────────
