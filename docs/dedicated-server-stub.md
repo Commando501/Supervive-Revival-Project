@@ -1079,3 +1079,171 @@ for the Host buffer.
 
 The `udp7777-listener.ps1` script lives at `unreal-stub/` for future
 diagnostic re-runs.
+
+## Session 8 (2026-06-30 — devirtualization proven; v12 Realloc-patch route blocked by suspected packer integrity check)
+
+Session 8 attacked blocker #2 (FString destructor frees Host.Data via
+FMallocBinned2 → canary panic) on two fronts. Both were exhausted; we
+exit session 8 with a new pattern-scan utility, a v11 wrap-and-restore
+Browse hook design, a v12.x Realloc whitelist hook architecture with
+thread suspension + RIP-check, hosts-lock retry in the launch script,
+and a strong empirical case that PACKER_VERSION 3 has runtime integrity
+checks on FMallocBinned2::Realloc that detect any patch and kill the
+process before UE's own fatal log can fire.
+
+### Front 1: byte-pattern scan for GMalloc — falsified
+
+Built `tools/usmapdump/pattern.go` (new `pattern` subcommand) implementing
+the prompt's recommended strategy: scan for inlined `FMemory::Malloc`
+pattern `48 8B 05 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8B 00 ... FF 60 ??`,
+collect rip-rel global-load targets, the most-common is GMalloc.
+
+Three pattern variants tested:
+1. Loose prefix only (15 bytes): 56 hits, top target NULL pointer (not
+   GMalloc — generic singleton-with-null-check pattern, not FMalloc).
+2. Strict prefix + `FF 60 ??` tail-call: 0 hits.
+3. Two-pass (find `48 8B 00 ... FF (60|A0) ??` then trace backward for
+   `48 8B 05 ?? ?? ?? ??`): exactly **1 hit** across 47MB of unpacked
+   executable memory, and that target dereferenced to NULL too.
+
+The build's devirtualization is comprehensive. Almost no virtual dispatch
+through global singletons survives in the unpacked code. GMalloc-via-
+byte-pattern is dead for this build. Conclusion captured in
+`memory/supervive-hero-roster-blocker.md` and in the pattern.go file
+header comment.
+
+### Front 2: browse_hook v11 wrap-and-restore — disproved session 7's crash hypothesis
+
+`tools/sigbypass-mod/browse_hook.cpp` extended from v10 to v11: changed
+the hook stub from JMP-tail to CALL-then-POST so we wrap Browse. PRE
+mutates URL.Host to our static `g_redirect_host` buffer; POST zeroes
+URL.Host to `{Data=nullptr, Num=0, Max=0}` before the FURL destructor
+fires. The theory: Browse's `Pending->URL = URL` copies our buffer via
+FString::operator= which calls FMemory::Malloc → proper FMallocBinned2
+allocation; after Browse returns we restore URL.Host to empty so its
+destructor short-circuits on null Data.
+
+End-to-end test: SUPERVIVE crashed at the SAME FMallocBinned2 canary
+fatal as v10. Crashstack (clearer this time because we wrapped) revealed
+the truth: the crash is at mod-RVA `0x3EC6312` (= +0xB42 inside
+UEngine::Browse), with our hook stub at offset 0x44 (the byte right
+after `call trampoline`). **Browse internally frees URL.Host via Realloc
+BEFORE returning to our POST handler.** Session 7's model
+(`FURL destructor frees Host.Data → CRASH`) was wrong; the realloc
+fires mid-Browse, not after. POST-handler restoration cannot fix this
+because the destructive call has already happened.
+
+Positive byproduct: Loki.log now shows `LogHandshake: Stateless
+Handshake: NetDriverDefinition 'GameNetDriver' CachedClientID: 7`
+and `LogNetVersion: Loki 1.0.0.0, NetCL: 0, EngineNetworkVersion: 34,
+GameNetworkVersion: 0 (Checksum: 3716198887)` BEFORE the crash — the
+engine reaches NetConnection + StatelessConnect handler init and assigns
+a ClientID. We're past v10's reach.
+
+### Front 3: browse_hook v12.x Realloc whitelist — blocked, suspected packer integrity check
+
+Pivoted to patching `FMallocBinned2::Realloc` (RVA 0xFE25A9) at entry to
+make calls with `rdx == &g_redirect_host[0]` return NULL immediately
+(no canary check, no fatal). Function entry verified via disasm: 13-byte
+clean cut at `sub rsp, 0x78; mov rax, rdx; push rbx; push rsi;
+push rdi; push r14`. `FMallocBinned2::Free` is at RVA 0xFDFE70 (confirmed
+via `test rdx, rdx; jz 0xFE00EB; mov r11, rsp; ...`).
+
+Six iterations:
+- **v12.0**: install at worker-thread time. Game crashed before reaching
+  LobbyV2 → race condition (engine threads mid-Realloc during patch
+  write).
+- **v12.1**: defer install to first PRE handler call. Game still crashed
+  immediately after install — race with non-engine threads (render,
+  audio, worker pools) doing Realloc.
+- **v12.2**: SuspendThread on every other process thread before the
+  patch write. Suspended 136 threads on a typical test. Still crashed —
+  some suspended thread's RIP was inside the 13-byte patch range and
+  executed corrupted bytes on resume.
+- **v12.3**: extended v12.2 with GetThreadContext RIP-check on every
+  suspended thread; retry suspend if any RIP in `[reallocAddr,
+  reallocAddr+13)`. Marker showed RIP-check passed in one attempt
+  (148 threads, none in range), patch applied cleanly → game still
+  crashed.
+- **v12.4**: added synchronous `Marker()` diagnostic calls at every
+  PRE phase boundary (entered, /Game detected, Install returned,
+  URL.Host mutated, AppendBytes done, returning). **Critical finding:**
+  PRE completes ALL phases successfully and writes "[PRE] returning to
+  hook stub" to disk; POST handler's "[POST] entered" never fires.
+  The crash is in Browse body AFTER PRE returns.
+- **v12.5**: rewrote trampoline + hook stub to use `r10` (volatile
+  scratch) instead of `rax` for the jump-target register, preserving
+  the original prologue's `mov rax, rdx` semantics through the jump.
+  Identical crash pattern as v12.4 — rax preservation wasn't the bug.
+- **v12.6**: added byte-dump of trampoline and hook stub to the marker
+  immediately after construction. Both confirmed bytes-perfect against
+  the intended encoding. So the patch is what we think it is.
+
+**Hypothesis: PACKER_VERSION 3 (Theorycraft's anti-tamper, per
+Loki.log) has runtime integrity verification of
+FMallocBinned2::Realloc.** Evidence:
+- v11 produces a clean UE_LOG fatal ("Attempt to realloc an unrecognized
+  block ...") visible in Loki.log.
+- v12.x produces a HARD CRASH (silent termination, only Sentry crashpad
+  catches it) — no Fatal/FMalloc/Critical/Callstack lines in Loki.log.
+  A different failure category than v11.
+- The Browse function we patched (RVA 0x3EC57D0) has no equivalent
+  protection — the v10/v11 Browse hook has fired thousands of times
+  across sessions without integrity-check repercussions.
+- Realloc is a frequently-instrumented function in anti-cheat /
+  anti-tamper systems because it's a common hook target for cheats.
+
+If correct, no amount of trampoline/encoding tuning will bypass v12.
+Need a different attack surface.
+
+### Tooling delivered
+
+- `tools/usmapdump/pattern.go` — new `pattern` subcommand. Scans exec
+  memory for the inlined `FMemory::Malloc` shape, reports rip-rel
+  targets sorted by hit count, samples a call site per target, includes
+  helpful next-step `peek`/`disasm`/`vtdump` commands at the end. Three
+  match-strictness levels in the code: loose prefix, +vtable-jmp tail,
+  and two-pass (anchor on `48 8B 00 ... FF 60`, trace backward for
+  `48 8B 05`).
+- `configs/launch-redirect.ps1` — hosts-file write now retries up to
+  20 times at 250ms intervals on `IOException`. Defender/SmartScreen
+  intermittently holds an exclusive scan handle on hosts; the retry
+  loop hides it. Previously failed launches 4-5 times per session;
+  with the retry it succeeds first try every time.
+- `tools/sigbypass-mod/browse_hook.cpp` — v12.6 source with the full
+  Realloc whitelist infrastructure: pre-built trampoline + hook stub
+  (r10-based jumps, byte-dump on construction), `SuspendOtherThreads` +
+  `AnyRipInRange` + `ResumeOtherThreads` helpers, `InstallReallocPatchOnce`
+  with up-to-20-attempt RIP-check loop, synchronous diagnostic markers
+  throughout PRE/POST. The Realloc install itself is currently behind
+  the "no apparent bug but still crashes" wall; the infrastructure is
+  reusable for any future entry-patch hook.
+
+### Possible next-session strategies
+
+1. **Patch the canary check site instead of function entry.** RVA
+   0xFE25FD is `cmp al, 0xE3`. Inserting a whitelist check there only
+   affects realloc/free failures (rare), not every Realloc call (vast).
+   If the packer's integrity scope is narrower than the whole function
+   body, this might evade it. Requires more disasm to size the patch.
+2. **GMalloc via `GMalloc_CLASS=%d` wstring xref.** Session 7 dismissed
+   this as "not directly cross-referenceable" but didn't actually run
+   `xrefstr 0x81C3AE2`. Even an obscure debug-dump path is a thread to
+   pull on — the loader of that string accesses GMalloc somehow.
+3. **Hook UNetConnection downstream.** Instead of mutating URL.Host
+   (which forces us into the FString-buffer-lifetime mess), hook the
+   socket-creation or address-resolution path so the engine resolves to
+   127.0.0.1 without us touching FString. Requires FURL.Host to be
+   non-empty for the engine to enter NetConnection at all — chicken-and-
+   egg, but maybe solvable by hooking earlier (URL parser).
+4. **Find a less-protected memory-API entry.** FMemory::Free,
+   FMallocBinned2::Trim, FMallocBinned2::OOMShutdownActions etc. might
+   be less integrity-checked than Realloc. If we can intercept any
+   allocation path with the same effect (no-op our buffer), we're done.
+
+### Commits this session
+
+- (session 8 writeup commit follows)
+- The chapter's tail end is now: blocker #2 is structurally harder than
+  expected; blocker #1 (NetCL mismatch) remains queued for after #2
+  resolves.

@@ -399,6 +399,14 @@ func main() {
 		cmdPoke(os.Args[2], os.Args[3], os.Args[4])
 		return
 	}
+	// pattern: <proc> [topN] — scan for inlined FMemory::Malloc pattern,
+	// report rip-rel global-pointer targets sorted by hit count. The
+	// most-common target is GMalloc.
+	if (len(os.Args) == 3 || len(os.Args) == 4) && os.Args[1] == "pattern" {
+		top := parseMaxHits(os.Args, 3, 20)
+		cmdPattern(os.Args[2], top)
+		return
+	}
 	// vtdump: <proc> <hexVtableAddr> [numSlots] — dump vtable contents slot-by-slot
 	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "vtdump" {
 		addr, err := parseHex(os.Args[3])
@@ -428,5 +436,7 @@ func main() {
 	fmt.Println("       usmapdump nameid   <proc-name-or-pid> <ansi-substr>  [N] (substring search across all FNamePool blocks)")
 	fmt.Println("       usmapdump poke     <proc-name-or-pid> ADDR_OR_+RVA <hex-bytes>")
 	fmt.Println("                                                                (WriteProcessMemory — \"AA BB CC\" or \"AABBCC\")")
+	fmt.Println("       usmapdump pattern  <proc-name-or-pid> [topN]")
+	fmt.Println("                                                                (find inlined FMemory::Malloc; report GMalloc by frequency)")
 	os.Exit(2)
 }

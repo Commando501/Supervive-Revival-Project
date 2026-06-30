@@ -84,7 +84,18 @@ if (-not $isAdmin) {
 
 function Remove-HostsEntries {
   $lines = Get-Content $hostsFile | Where-Object { $_ -notmatch [regex]::Escape($Marker) }
-  Set-Content -Path $hostsFile -Value $lines -Encoding ascii
+  # Defender / SmartScreen occasionally holds an exclusive scan handle on
+  # hosts for ~100-500ms. Retry briefly instead of aborting the whole launch.
+  $maxTries = 20
+  for ($i=0; $i -lt $maxTries; $i++) {
+    try {
+      Set-Content -Path $hostsFile -Value $lines -Encoding ascii -ErrorAction Stop
+      return
+    } catch [System.IO.IOException] {
+      if ($i -eq $maxTries - 1) { throw }
+      Start-Sleep -Milliseconds 250
+    }
+  }
 }
 
 # ---- revert mode ----
