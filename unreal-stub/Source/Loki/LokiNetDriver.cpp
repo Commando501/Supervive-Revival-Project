@@ -69,23 +69,38 @@ void ULokiNetDriver::LowLevelSend(TSharedPtr<const FInternetAddr> Address,
 		const int32 InnerBytes = (CountBits + 7) / 8;
 		const int32 OuterBytes = LokiStatelessConnect::LokiWrapperBytes + InnerBytes;
 
+		// Session 15: mirror bytes 1 and 6 from the last incoming packet.
+		// If LokiNetSocketSubsystem on the client uses these as session-state
+		// identifiers, mirroring them tells the client "this reply is part of
+		// the same conversation."
+		uint8 Byte1 = static_cast<uint8>(FMath::Rand() % 256);
+		uint8 Byte6 = static_cast<uint8>(FMath::Rand() % 256);
+		TSharedPtr<StatelessConnectHandlerComponent> SC = StatelessConnectComponent.Pin();
+		LokiStatelessConnect* LokiSC = SC.IsValid() ? static_cast<LokiStatelessConnect*>(SC.Get()) : nullptr;
+		if (LokiSC != nullptr && LokiSC->bHasLastIncoming)
+		{
+			Byte1 = LokiSC->LastIncomingByte1;
+			Byte6 = LokiSC->LastIncomingByte6;
+		}
+
 		TArray<uint8> Wrapped;
 		Wrapped.AddZeroed(OuterBytes);
 		Wrapped[0] = LokiStatelessConnect::LokiWrapperByte0;
-		Wrapped[1] = static_cast<uint8>(FMath::Rand() % 256);
+		Wrapped[1] = Byte1;
 		Wrapped[2] = LokiStatelessConnect::LokiWrapperByte2;
 		Wrapped[3] = LokiStatelessConnect::LokiWrapperByte3;
 		Wrapped[4] = LokiStatelessConnect::LokiWrapperByte4;
 		Wrapped[5] = LokiStatelessConnect::LokiWrapperByte5;
-		Wrapped[6] = static_cast<uint8>(FMath::Rand() % 256);
+		Wrapped[6] = Byte6;
 		Wrapped[7] = LokiStatelessConnect::LokiWrapperByte7;
 		FMemory::Memcpy(Wrapped.GetData() + LokiStatelessConnect::LokiWrapperBytes, Data, InnerBytes);
 
 		const int32 NewCountBits = CountBits + LokiStatelessConnect::LokiWrapperBits;
 
 		UE_LOG(LogLokiNet, Verbose,
-		       TEXT("LowLevelSend: wrapping handshake reply %d bits -> %d bits"),
-		       CountBits, NewCountBits);
+		       TEXT("LowLevelSend: wrapping handshake reply %d bits -> %d bits (wrapper bytes %02X %02X %02X %02X %02X %02X %02X %02X)"),
+		       CountBits, NewCountBits,
+		       Wrapped[0], Wrapped[1], Wrapped[2], Wrapped[3], Wrapped[4], Wrapped[5], Wrapped[6], Wrapped[7]);
 
 		Super::LowLevelSend(Address, Wrapped.GetData(), NewCountBits, Traits);
 	}

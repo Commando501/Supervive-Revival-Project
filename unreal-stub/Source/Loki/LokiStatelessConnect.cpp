@@ -60,6 +60,14 @@ void LokiStatelessConnect::IncomingConnectionless(FIncomingPacketRef PacketRef)
 	       OriginalBits, InnerBits,
 	       Data[0], Data[1], Data[2], Data[3], Data[4], Data[5], Data[6], Data[7]);
 
+	// Session 15: capture wrapper bytes 1 and 6 to mirror in our reply.
+	// 172 captured packets showed no CRC/sum/hash pattern but the values are
+	// effectively unique per packet — likely session-state assigned by the
+	// client-side LokiNetSocketSubsystem.
+	LastIncomingByte1 = Data[1];
+	LastIncomingByte6 = Data[6];
+	bHasLastIncoming = true;
+
 	Packet.SetData(Inner.GetData(), InnerBits);
 
 	StatelessConnectHandlerComponent::IncomingConnectionless(PacketRef);
