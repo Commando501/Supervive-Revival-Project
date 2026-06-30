@@ -1,19 +1,26 @@
-// Dedicated server target — THE TARGET this chapter exists to build.
+// Dedicated server target — DEFINED but NOT BUILDABLE with the current UE5.4
+// engine install.
 //
-// `Type = TargetType.Server` tells UnrealBuildTool to produce a headless
-// server binary (LokiServer.exe under Binaries/Win64/) instead of a client
-// executable. The compiled server reuses the engine's GameNetDriver (=
-// IpNetDriver) — which is exactly the NetDriverDefinition the SUPERVIVE
-// client's StatelessConnect handshake reports (per Loki.log captured in
-// session 5: "NetDriverDefinition 'GameNetDriver' CachedClientID: 7").
+// First build attempt 2026-06-30 failed with:
 //
-// To build:
-//   "H:\Unreal Engine\UE_5.4\Engine\Build\BatchFiles\Build.bat" `
-//     LokiServer Win64 Development `
-//     -Project="G:\git\Supervive Revival Project\unreal-stub\Loki.uproject"
+//   "Server targets are not currently supported from this engine distribution."
 //
-// To launch:
-//   Binaries\Win64\LokiServer.exe -log -Port=7777
+// The Epic Games Launcher install of UE5.4 (the one at H:\Unreal Engine\UE_5.4)
+// includes Editor + Game + Editor targets prebuilt, plus Engine source for
+// reference, but NOT Server-target build support. A real Server-target build
+// requires the UE5 Source distribution from GitHub
+// (https://github.com/EpicGames/UnrealEngine) — ~100GB clone + 1-3 hour
+// compile of the engine itself first.
+//
+// Workaround used this chapter: build the Game target (Loki.Target.cs) and
+// launch it with `-server`. UE's Game executable, when launched with `-server`,
+// runs as a dedicated-server-emulation mode: no client window, no rendering,
+// listens on the configured port, accepts NetConnections. Functionally
+// equivalent for our purposes (responding to the client's StatelessConnect
+// handshake + replicating LokiPlayerState_Missions).
+//
+// This target file is kept as documentation of the "right" build path for
+// when/if the user later installs UE5 from source.
 
 using UnrealBuildTool;
 using System.Collections.Generic;
