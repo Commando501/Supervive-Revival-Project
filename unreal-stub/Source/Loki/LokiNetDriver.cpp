@@ -47,36 +47,47 @@ void ULokiNetDriver::LowLevelSend(TSharedPtr<const FInternetAddr> Address,
                                   void* Data, int32 CountBits, FOutPacketTraits& Traits)
 {
 	// Stock SendToClient sets ConnectionlessHandler->SetRawSend(true) just before
-	// calling LowLevelSend, then back to false after. So when bRawSend is true,
-	// we know we're sending a handshake reply packet that needs TheoryCraft
-	// padding.
+	// calling LowLevelSend, then back to false after. When bRawSend is true,
+	// we know we're sending a stateless handshake reply.
 	const bool bIsHandshakeReply = ConnectionlessHandler.IsValid()
 	                               && ConnectionlessHandler->GetRawSend();
 
 	if (bIsHandshakeReply && Data != nullptr && CountBits > 0)
 	{
-		const int32 OriginalBytes = (CountBits + 7) / 8;
-		const int32 PaddedBytes = OriginalBytes + (TheoryCraftExtraPaddingBits / 8);
+		// Prepend the 8-byte TheoryCraft wrapper:
+		//   byte 0: 0xBB  (stable signature)
+		//   byte 1: random (per-packet nonce)
+		//   byte 2: 0xDC  (stable)
+		//   byte 3: 0x21  (stable)
+		//   byte 4: 0xA6  (stable)
+		//   byte 5: 0xA3  (stable)
+		//   byte 6: random (per-packet nonce)
+		//   byte 7: 0xFB  (stable)
+		// Bytes 1 and 6 are random in captures (per-packet nonce/checksum). Random
+		// values should work if the client doesn't validate them strictly. If
+		// validation rejects, we'll need to compute them properly.
+		const int32 InnerBytes = (CountBits + 7) / 8;
+		const int32 OuterBytes = LokiStatelessConnect::LokiWrapperBytes + InnerBytes;
 
-		TArray<uint8> Padded;
-		Padded.AddZeroed(PaddedBytes);
-		FMemory::Memcpy(Padded.GetData(), Data, OriginalBytes);
-		// Append 8 random bytes — stock CapHandshakePacket uses FMath::Rand so
-		// match the entropy style. Predictable values would still parse fine
-		// (TheoryCraft's parser treats them as random padding), but random is
-		// closer to what the client sees from a real server.
-		for (int32 i = OriginalBytes; i < PaddedBytes; ++i)
-		{
-			Padded[i] = static_cast<uint8>(FMath::Rand() % 255);
-		}
+		TArray<uint8> Wrapped;
+		Wrapped.AddZeroed(OuterBytes);
+		Wrapped[0] = LokiStatelessConnect::LokiWrapperByte0;
+		Wrapped[1] = static_cast<uint8>(FMath::Rand() % 256);
+		Wrapped[2] = LokiStatelessConnect::LokiWrapperByte2;
+		Wrapped[3] = LokiStatelessConnect::LokiWrapperByte3;
+		Wrapped[4] = LokiStatelessConnect::LokiWrapperByte4;
+		Wrapped[5] = LokiStatelessConnect::LokiWrapperByte5;
+		Wrapped[6] = static_cast<uint8>(FMath::Rand() % 256);
+		Wrapped[7] = LokiStatelessConnect::LokiWrapperByte7;
+		FMemory::Memcpy(Wrapped.GetData() + LokiStatelessConnect::LokiWrapperBytes, Data, InnerBytes);
 
-		const int32 NewCountBits = CountBits + TheoryCraftExtraPaddingBits;
+		const int32 NewCountBits = CountBits + LokiStatelessConnect::LokiWrapperBits;
 
 		UE_LOG(LogLokiNet, Verbose,
-		       TEXT("LowLevelSend: padding handshake reply %d bits -> %d bits"),
+		       TEXT("LowLevelSend: wrapping handshake reply %d bits -> %d bits"),
 		       CountBits, NewCountBits);
 
-		Super::LowLevelSend(Address, Padded.GetData(), NewCountBits, Traits);
+		Super::LowLevelSend(Address, Wrapped.GetData(), NewCountBits, Traits);
 	}
 	else
 	{
