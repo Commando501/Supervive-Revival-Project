@@ -55,10 +55,19 @@ void LokiStatelessConnect::IncomingConnectionless(FIncomingPacketRef PacketRef)
 	TArray<uint8> Inner;
 	Inner.Append(Data + LokiWrapperBytes, InnerBytes);
 
+	// Session 16: hex-dump full incoming packet so we can decode the inner
+	// content and cross-reference against our outgoing reply.
+	FString FullHex;
+	FullHex.Reserve(OriginalBytes * 3);
+	for (int64 i = 0; i < OriginalBytes; ++i)
+	{
+		FullHex.Appendf(TEXT("%02X "), Data[i]);
+	}
 	UE_LOG(LogLokiStateless, Verbose,
 	       TEXT("Stripping wrapper: %lld bits -> %lld bits (wrapper bytes: %02X %02X %02X %02X %02X %02X %02X %02X)"),
 	       OriginalBits, InnerBits,
 	       Data[0], Data[1], Data[2], Data[3], Data[4], Data[5], Data[6], Data[7]);
+	UE_LOG(LogLokiStateless, Verbose, TEXT("Stripping wrapper: full %lld bytes: %s"), OriginalBytes, *FullHex);
 
 	// Session 15: capture wrapper bytes 1 and 6 to mirror in our reply.
 	// 172 captured packets showed no CRC/sum/hash pattern but the values are
