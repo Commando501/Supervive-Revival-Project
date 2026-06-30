@@ -32,9 +32,10 @@ try {
     $remote = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
     $bytes  = $udp.Receive([ref]$remote)
     $ts     = Get-Date -Format 'HH:mm:ss.fff'
-    $take   = [Math]::Min($bytes.Length, 64)
-    $hex    = ($bytes[0..($take-1)] | ForEach-Object { '{0:X2}' -f $_ }) -join ' '
-    $line   = "[$ts] RX $($bytes.Length)B from $remote : $hex" + $(if ($bytes.Length -gt 64) { '...' } else { '' })
+    # Dump the FULL packet so we can compare to UE5.4 StatelessConnect format.
+    # Handshake packets are typically <200 bytes.
+    $hex    = ($bytes | ForEach-Object { '{0:X2}' -f $_ }) -join ' '
+    $line   = "[$ts] RX $($bytes.Length)B from $remote : $hex"
     Write-Host $line -ForegroundColor Green
     Add-Content -Path $logPath -Value $line
   }
