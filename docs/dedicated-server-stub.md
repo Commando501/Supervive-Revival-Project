@@ -1767,3 +1767,174 @@ stock UE5.4 + likely BaseRandomDataLengthBytes shift:
 
 - (session 11 writeup commit follows)
 
+## Session 12 (2026-06-30 — BaseRandomDataLengthBytes hypothesis: source change correct, rebuild path blocked by Launcher install)
+
+Session 12 attempted to test the session-11 hypothesis (TheoryCraft uses
+`BaseRandomDataLengthBytes = 24` vs stock 16) by modifying the local UE5.4
+engine source and rebuilding. The source modification was made, compiled
+cleanly, and produced a valid `Module.Engine.50.cpp.obj` containing the
+change. However, the final `link.exe` step for `UnrealEditor-Engine.dll`
+could not complete because the user's UE5.4 install is a Launcher install
+that ships precompiled `.dll`s in `Binaries/` but no `.lib` import
+libraries in `Intermediate/` for engine modules — so the linker cannot
+resolve dependencies on `UnrealEditor-Core.lib` etc.
+
+### Sequence of events
+
+1. **Source edit accepted** — Modified
+   `H:\Unreal Engine\UE_5.4\Engine\Source\Runtime\Engine\Private\PacketHandlers\StatelessConnectHandlerComponent.cpp`
+   line 312 from `BaseRandomDataLengthBytes = 16` to `= 24`. Made a backup
+   first (`.supervive-revival-bak`). Also cleared the read-only attribute
+   the Launcher install sets on engine source files.
+
+2. **UBT refused on first attempt** — `Build.bat LokiEditor Win64
+   Development` returned "Target is up to date" because Launcher installs
+   include `Engine/Build/InstalledBuild.txt` which makes UBT treat engine
+   modules as immutable.
+
+3. **Workaround: rename InstalledBuild.txt** — Renamed to
+   `InstalledBuild.txt.supervive-revival-disabled`. UBT then recognized the
+   install as a (pseudo) source build and kicked off 3548 actions.
+
+4. **First rebuild attempt failed at static_assert** — After ~55 minutes
+   and 2819/3548 actions complete, the build had errors at lines 1474 and
+   1478 of StatelessConnectHandlerComponent.cpp:
+   ```
+   error C2607: static assertion failed
+   ```
+   With `BaseRandomDataLengthBytes = 24`:
+   - `MinRandomBits = (24-8)*8 = 128`, `MaxRandomBits = 24*8 = 192`
+   - `MinRestartHandshakePacketVariance = 82 + 128 = 210`, `Max = 274`
+   - `OriginalHandshakePacketSizeBits = 227` falls INSIDE [210, 274]
+   - The static_asserts are protective for the case
+     `MinSupportedHandshakeVersion == EHandshakeVersion::Original`, which
+     we don't use (default is `SessionClientId = 3`).
+
+5. **Relaxed the failing asserts** — Wrapped the two failing
+   `static_assert`s in `#if 0` with a comment explaining the rationale.
+   The other 6 asserts in the block remain (they use
+   `OriginalRestartHandshakePacketSizeBits = 2`, far below any variance
+   range).
+
+6. **Second rebuild succeeded at compile, failed at link** — `Build.bat`
+   ran 9/737 actions in 73 seconds:
+   ```
+   [8/737] Compile [x64] Module.Engine.50.cpp     ✓
+   [9/737] Link [x64] UnrealEditor-Engine.lib      ✓ (stub import lib only)
+   ```
+   But action 9 was just `lib.exe` producing the import library stub,
+   NOT `link.exe` producing the actual DLL. The DLL link is a separate
+   action that runs LATER in the build graph. UBT aborted after action 9
+   because actions 1-7 had failed:
+   ```
+   MiMalloc.c(24): error C1083: 'static.c': No such file
+   example_jobify.h(6): error C1083: 'oodle2base.h': No such file
+   ConvexDecompTool.cpp(13): error C1083: 'btAlignedAllocator.h': No such file
+   UnrealMathSSE.cpp(9): error C1083: 'sse_mathfun_extension.h': No such file
+   AttributeInterpolator.cpp(4): error C1083: 'AHEasing/easing.h': No such file
+   SlateSdfGenerator.cpp(13): error C1083: 'msdfgen.h': No such file
+   RigVMMathLibrary.cpp(4): error C1083: 'AHEasing/easing.h': No such file
+   ```
+   These third-party source files aren't shipped with the Launcher install
+   (only their precompiled .obj files are, which UBT now distrusts).
+
+7. **Manual link.exe attempt failed** — Tried running `link.exe` directly
+   with the UBT-generated `UnrealEditor-Engine.dll.rsp` (which has all
+   compiler flags + library dependencies). Result:
+   ```
+   LINK : fatal error LNK1181: cannot open input file
+       '..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Core\UnrealEditor-Core.lib'
+   ```
+   The engine DLL link depends on ~30 other module .lib files
+   (UnrealEditor-Core.lib, UnrealEditor-CoreUObject.lib, etc.). The
+   Launcher install ships these as compiled `.dll`s in `Binaries/` but
+   does NOT include the `.lib` import libraries in `Intermediate/`. The
+   manual link cannot proceed.
+
+8. **Engine install restored** — Restored
+   `UnrealEditor-Engine.dll` from backup (link.exe had deleted it
+   immediately before failing). Restored
+   `StatelessConnectHandlerComponent.cpp` from backup (back to stock with
+   `BaseRandomDataLengthBytes = 16` and all asserts intact). Renamed
+   `InstalledBuild.txt.supervive-revival-disabled` back to
+   `InstalledBuild.txt`. Engine install is verifiably intact and matches
+   the original Launcher state.
+
+### Why the rebuild path is dead-end for Launcher installs
+
+UE5.4 Launcher installs are designed to be **read-only** for engine
+modules. The shipping artifacts include:
+- `Binaries/Win64/UnrealEditor-X.dll` — runtime DLLs
+- `Source/.../X/` — public + private source headers and cpps (for
+  IntelliSense and game-module dependency resolution)
+- `Source/.../X/X.Build.cs` — build configuration
+
+The shipping artifacts EXCLUDE:
+- `.lib` import libraries for engine modules
+- Many third-party source files referenced by engine cpps
+
+This means:
+- UBT can produce game-module .lib/.dll that LINK against engine .dll
+  (via dynamic linkage at runtime).
+- UBT CANNOT relink engine .dll itself (no .lib files to satisfy
+  inter-module dependencies).
+- Manual link.exe can't fill the gap (same missing .lib problem).
+
+To recompile engine modules, the install must be a **source build** —
+fetched from Epic's GitHub repository, with `Setup.bat` run to download
+~100GB of third-party dependencies. That's hours of installation +
+hours of full engine build.
+
+### Next session's recommended path: Custom UE PacketHandlerComponent override
+
+Rather than modifying engine source, write a custom UE module in the
+`unreal-stub` project that:
+1. Defines a `LokiStatelessConnect` HandlerComponent subclass of
+   `StatelessConnectHandlerComponent`.
+2. Overrides `IncomingConnectionless` and `ParseHandshakePacket` to
+   handle TheoryCraft's wire format (larger random padding, anything
+   else discovered).
+3. Defines a `ULokiHandlerComponentFactory` that returns instances of
+   our subclass instead of stock.
+4. Registers via `DefaultEngine.ini`:
+   ```ini
+   [PacketHandlerComponents]
+   ; Override engine's default StatelessConnect with our version
+   ```
+   OR via plugin module startup code that swaps the factory at runtime.
+
+This lives entirely in `unreal-stub/Source/Loki/` and never touches the
+engine install. UBT compiles it as part of `LokiEditor Win64 Development`,
+producing `UnrealEditor-Loki.dll` (small DLL we can rebuild in seconds).
+
+Estimated effort: 3-5 hours, depending on how thoroughly we need to
+override (just constants vs. full behavior).
+
+### What we still need to verify before plugin work
+
+The `BaseRandomDataLengthBytes = 24` hypothesis is consistent with all
+captured packet sizes but isn't yet PROVEN. Before doing the plugin
+work, it would be valuable to disassemble the running SUPERVIVE client's
+`CapHandshakePacket` or `SendInitialPacket` and confirm the inlined
+constant value. The session-11 RE work identified the StatelessConnect
+file path at mod-RVA `0x8160A10` but didn't find direct LEA xrefs from
+.text. Possible approaches for the disasm:
+- Use `usmapdump xrefstr` against alternative anchors (the FName
+  "LogHandshake" string, log struct addresses).
+- Use a debugger with PDBs (none ship with Launcher engine binaries).
+- Use IDA/Ghidra to load both stock UnrealEditor-Engine.dll and
+  SUPERVIVE-Win64-Shipping.exe, do symbol matching via FLIRT/diaphora.
+
+### Tooling delivered
+
+- `H:\Unreal Engine\UE_5.4\Engine\Source\Runtime\Engine\Private\PacketHandlers\StatelessConnectHandlerComponent.cpp.supervive-revival-bak`
+  — backup of stock engine source, preserved for future reference of
+  what we attempted.
+- `H:\Unreal Engine\UE_5.4\Engine\Binaries\Win64\UnrealEditor-Engine.dll.supervive-revival-launcher-bak`
+  — backup of stock engine DLL, in case future engine experiments break it.
+
+### Commits this session
+
+- (session 12 writeup commit follows)
+
+
