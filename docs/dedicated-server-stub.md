@@ -618,3 +618,126 @@ Either path lands us back at "now we need a UE5.4 stub server to
 actually receive the NetConnection." The stub-server work itself is
 unblocked by the existence of UE5.4 at `H:\Unreal Engine\UE_5.4` —
 that part has been clear since session 1.
+
+## Session 4 (2026-06-29 continued — UEngine::Browse hook BUILT AND WORKING)
+
+### Probe #8 (10 sub-iterations) — manual-mapped DLL hook of UEngine::Browse
+
+Took Path 1 from session 3's three remaining options. Delivered an
+externally-injected hook of `UEngine::Browse` that intercepts every map
+travel call, captures the URL string from the FURL parameter, and
+(experimentally in v10) rewrites the FURL.Host field to redirect travel
+to `127.0.0.1`.
+
+### Reverse-engineering UEngine::Browse
+
+Found the function via the same xref-the-log-string technique used
+throughout this project. The ANSI string `"UEngine::Browse"` (a
+`__FUNCTION__` literal for the `LogGlobalStatus` wrapper) lives at
+mod-RVA `0x8248AC0`; exactly one rip-relative LEA targets it from
+mod-RVA `0x3EC586C`. Scanning backward from the LEA finds the
+function entry at **mod-RVA `0x3EC57D0`**.
+
+Function signature (verified by disasm + parameter trace):
+
+```
+UEngine::Browse(FWorldContext& WorldContext, FURL URL, FString& Error)
+  rcx = UEngine*
+  rdx = FWorldContext& (pointer)
+  r8  = FURL* (passed by address; stack-allocated by caller)
+  r9  = FString& Error (pointer)
+```
+
+Patch design:
+
+- The first 13 bytes of the function are exactly 8 push instructions
+  (`40 55 53 56 57 41 54 41 55 41 56 41 57`) — a clean
+  instruction-boundary cut.
+- Patch = `mov rax, hookStub ; jmp rax ; nop` (10+2+1 bytes), an
+  absolute 64-bit jump so the hook stub can live anywhere in virtual
+  address space.
+- Trampoline = 25 bytes: replays the 8 pushes (preserving callee-saved
+  registers) then abs-jumps to `original+13` to continue the function.
+- Hook stub = ~70 bytes of hand-emitted x64 machine code that spills
+  rcx/rdx/r8/r9 ABOVE the C-handler's shadow space, calls the C handler,
+  reloads the volatile regs, and tail-jumps to the trampoline.
+
+### Bugs found and fixed across v1-v10
+
+| Version | Symptom                              | Root cause                                                                                                            | Fix                                                                              |
+|---------|--------------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| v1      | Crash on first Browse                 | C handler used `_vsnprintf_s` — CRT TLS not initialized for game's pre-existing threads                                | Strip all CRT; use manual hex formatter + `CreateFile`/`WriteFile`                |
+| v2      | Crash on first Browse                 | Hook stub spilled rcx/rdx/r8/r9 INTO the C handler's shadow space — handler clobbered the saves                       | Allocate 0x48 bytes, spill ABOVE shadow at +0x20/0x28/0x30/0x38                  |
+| v3      | Verified patch+trampoline are sound   | Bypass C handler entirely: stub == trampoline                                                                          | Confirmed mechanics OK; bug must be in handler path                              |
+| v4      | Verified empty C handler works        | Empty body → no crash → call sequence OK; isolated bug to file I/O                                                    | —                                                                                |
+| v5      | Verified handler doesn't crash with deferred-log buffer | File I/O from engine thread is what kills the process (UE main thread doesn't tolerate synchronous disk syscalls) | In-DLL ring buffer with atomic head bump; worker thread flushes every 200ms      |
+| v6      | Verified hook is installed but quiet  | Heartbeat in marker shows `head=0` — function not actually called during normal menu use                              | Engine only calls Browse at map transitions; menu UI doesn't trigger it          |
+| v7      | First Browse captured                  | watch-now injection + worker polls for prologue bytes before patching (handles packer race)                            | Got first `[browse]` entry: rcx/rdx/r8/r9 with stack-address FURL pointer        |
+| v8      | FURL layout decoded                    | Hex dump revealed Map FString at +0x28 (not +0x30 as my guess) — UE packs Port+Valid into the 8 bytes after Host       | Update offset table                                                              |
+| v9      | URL string captured verbatim            | Map = `/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent` (Num=47, 46 chars + null)                                       | THE WIN — confirmed end-to-end hook with URL decode                              |
+| v10     | Rewrite mechanism added (untested)     | Random crash before LobbyV2 browse fired (build instability we've seen all chapter, unrelated to our patch)            | Document and retry next session                                                  |
+
+### FURL layout (UE5.4 SUPERVIVE build, verified empirically)
+
+```
++0x00  FString Protocol     (16B)  "unreal" for net-travel browses
++0x10  FString Host         (16B)  empty for local map browses
++0x20  int32 Port           (4B)   7777 (UE default network port)
++0x24  int32 Valid          (4B)   1
++0x28  FString Map          (16B)  THE URL — what we want to rewrite
++0x38  FString RedirectURL  (16B)  empty
++0x48  TArray<FString> Op   (16B)  empty
++0x58  FString Portal       (16B)  empty
+total: 0x68 = 104 bytes
+```
+
+### Supporting infrastructure
+
+- `configs/launch-redirect.ps1`: added `-Hook <dll>` flag that uses
+  `inject.exe watch-now` in parallel with the normal Steam-compatible
+  `& $exe @iniArgs` launch. The watch-now polls every 1ms for the
+  SUPERVIVE process to appear and manual-maps the shim DLL the moment
+  it's visible. (Initial attempt used `inject.exe launch` with
+  CREATE_SUSPENDED, which **bypassed Steam DRM** and the game hung
+  forever without a window — confirmed Steam authentication is a
+  hard gate at process start in this build.)
+- `tools/sigbypass-mod/browse_hook.cpp`: the manual-mapped shim itself.
+  Self-contained, KERNEL32-only, mirrors `registration_shim.cpp`'s
+  worker pattern. The worker polls for the prologue bytes (avoiding
+  the packer-unpack race) before patching, then enters a heartbeat
+  loop that flushes the deferred-log ring to
+  `docs/browse-hook-marker.txt` every 200ms.
+
+### Path C is now structurally feasible
+
+With v10's URL-rewrite mechanism (modulo build-instability retries),
+the chapter's premise is back on track:
+
+1. ✅ External Browse hook intercepts every map travel
+2. ✅ Hook rewrites FURL.Host to point at our stub server's IP
+3. ⏳ Engine attempts NetConnection to that IP:7777 — we get
+   `LogNet*` / `IpNetDriver` activity in Loki.log proving the trigger
+   works
+4. ⏳ Build a UE5.4 dedicated server that accepts the NetConnection
+   and replicates `LokiPlayerState_Missions` (well-documented earlier
+   in this file). Stub server scope crystallizes once we capture the
+   protocol surface from item 3.
+
+### Next session's first move
+
+Re-test v10 (already committed as `cf72ebb`):
+- Close + relaunch with `-Hook` flag
+- If LobbyV2 browse fires before random crash, our handler logs the
+  capture AND rewrites Host. Loki.log should show LogNet activity.
+- If the build keeps crashing before LobbyV2: shorten the window by
+  rebuilding ags to skip some lobby-side init, or improve the
+  watch-now race to catch LVL_Login's browse instead (current poll
+  takes 4.5s — LVL_Login fires at ~1.5s into runtime, way too early).
+
+Commits this session (on `dedicated-server-stub` branch):
+- `cf769d4` browse_hook v1 — initial scaffolding + shadow-space fix
+- `ca582ff` browse_hook v6 — deferred-log + heartbeat (verified hook works)
+- `9e61d49` browse_hook v7 + watch-now (Steam DRM compat + packer-race fix)
+- `f9682d5` browse_hook v9 — corrected FURL offsets → URL captured
+- `cf72ebb` browse_hook v10 — FURL.Host rewrite mechanism
+- (session 4 writeup commit follows)
