@@ -2160,5 +2160,207 @@ subclassing StatelessConnectHandlerComponent. We need to know:
 
 - (session 13 writeup commit follows)
 
+## Session 14 (2026-06-30 — wrapper architecture IDENTIFIED + half the handshake works: server's stock parser succeeds, SendConnectChallenge fires; client rejects our wrapped reply)
+
+Session 14 made the biggest qualitative jump of the chapter. Identified
+TheoryCraft's wire format: an 8-byte WRAPPER prepended to every UE5.4
+stateless handshake packet. Built matching wrap/unwrap logic in our
+LokiNetDriver/LokiStatelessConnect subclasses. Server-side path now
+works end-to-end: incoming packets are wrapper-stripped, stock UE5.4's
+ParseHandshakePacket succeeds, SendConnectChallenge fires (the
+breakthrough signal we've been chasing for 4 sessions), and our reply
+is wrapper-prepended on outgoing. But the client REJECTS our reply
+with "Packet failed PacketHandler processing" within 1s — the random
+wrapper bytes 1 and 6 aren't actually random; they're likely a
+CRC/checksum/hash the client validates.
+
+### How the wrapper was identified
+
+`usmapdump wstrings` for "LokiNet" in the running SUPERVIVE process
+returned 6 hits. One hit at mod-RVA `0x84F2BFE` showed the UTF-16
+string `LogLokiNet`, immediately followed in `.rdata` by these raw
+bytes:
+
+```
+BB 53 DC 21 A6 A3 85 FB 82 9B F5 4A 34 33 21 93
+```
+
+Cross-referenced against session 10's captured packet structure:
+
+```
+Byte 0:     0xBB         ← matches constant byte 0
+Byte 1:     random       ← (53 in constant — varies per packet)
+Bytes 2-5:  DC 21 A6 A3  ← matches constant bytes 2-5 EXACTLY
+Byte 6:     random       ← (85 in constant — varies per packet)
+Byte 7:     0xFB         ← matches constant byte 7
+Bytes 8+:   variable     ← THIS is where stock UE5.4 begins
+```
+
+Bit-decoding captured bytes 8-10 (`A4 01 02`) as STOCK UE5.4 handshake
+header with EMPTY inner MagicHeader:
+
+- byte 8 = 0xA4 → LSB-first bits 0,0,1,0,0,1,0,1
+  - SessionID (bits 0-1) = 0 ✓
+  - ClientID (bits 2-4) = 1 ✓
+  - bHandshakePacket (bit 5) = **1** ✓ (the bit we were missing in session 13!)
+  - bRestartHandshake (bit 6) = 0 ✓
+  - MinVersion bit 0 (bit 7) = 1
+- byte 9 = 0x01 → continues MinVersion = 3 (= `EHandshakeVersion::SessionClientId`)
+- byte 10 = 0x02 → CurVersion = 4 (= `EHandshakeVersion::NetCLUpgradeMessage`)
+
+These are EXACTLY stock UE5.4 defaults. Proves the inner packet is
+stock UE5.4 with no inner MagicHeader, wrapped by an 8-byte outer
+TheoryCraft layer. Architecture confirmed: client uses
+LokiNetSocketSubsystem (found in same string search) — a custom UE
+SocketSubsystem returning custom FSocket instances that wrap/unwrap
+at the FSocket level, leaving stock UE5.4's PacketHandler chain
+unchanged. (Consistent with the client log showing ONLY
+StatelessConnectHandlerComponent in the PacketHandler chain — no
+custom HandlerComponent for wrapping.)
+
+### What was built (working)
+
+`LokiStatelessConnect.h/.cpp` updated:
+- Override `IncomingConnectionless` to validate the 6 stable signature
+  bytes (BB at 0, DC 21 A6 A3 at 2-5, FB at 7) and strip the 8-byte
+  wrapper from the front before delegating to stock
+  `StatelessConnectHandlerComponent::IncomingConnectionless`.
+- Logs `Stripping wrapper: NNN bits -> MMM bits (wrapper bytes: ...)`
+  on every stripped packet, including the actual wrapper bytes.
+
+`LokiNetDriver.h/.cpp` updated:
+- Override `LowLevelSend` (already had this from session 13).
+- For `ConnectionlessHandler->GetRawSend() == true` (handshake replies):
+  prepend the 8-byte wrapper. Stable bytes 0, 2-5, 7 are filled with
+  the signature; random bytes 1 and 6 are filled with `FMath::Rand()`.
+- Forwards to `Super::LowLevelSend` with the wrapped buffer.
+
+`DefaultEngine.ini` updated:
+- `net.MagicHeader=` (empty) — stock UE5.4 parses immediately after our
+  strip, no inner magic to read.
+- `net.VerifyMagicHeader=0` — disabled (no header to verify).
+
+Build path was already established in session 13 (`UnrealEditor-Core.lib`
+generated via `dumpbin`+`lib /def:`). This session's incremental
+rebuild took ~8 min (first build that touches engine .gen.cpp files)
+and produced UnrealEditor-Loki.dll at 14:57:27.
+
+### Smoke test + end-to-end test signals
+
+Server log on launch:
+```
+LogConfig: Set CVar [[net.MagicHeader:]]
+LogConfig: Set CVar [[net.VerifyMagicHeader:0]]
+LogLokiStateless: Display: LokiStatelessConnect constructed — 8-byte wrapper adapter active.
+LogLokiNet: Display: LokiNetDriver: connectionless handler initialized with LokiStatelessConnect.
+LogNet: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0 IpNetDriver listening on port 7777
+```
+
+After client launched with browse_hook:
+```
+LogNet: NotifyAcceptingConnection accepted from: 127.0.0.1:52596
+LogLokiStateless: Verbose: Stripping wrapper: 464 bits -> 400 bits (wrapper bytes: BB 8B DC 21 A6 A3 1A FB)
+LogHandshake: SendConnectChallenge. Timestamp: 335.113976, Cookie: 177011039060136031127150111043116139043235003104040254101107
+LogLokiNet: Verbose: LowLevelSend: wrapping handshake reply 385 bits -> 449 bits
+LogNet: NotifyAcceptingConnection accepted from: 169.254.83.107:49969
+LogLokiStateless: Verbose: Stripping wrapper: 456 bits -> 392 bits (wrapper bytes: BB 6B DC 21 A6 A3 B3 FB)
+LogHandshake: SendConnectChallenge. Timestamp: 341.609449, Cookie: 060022191047236218120253015015013031025026194130031001117165
+LogLokiNet: Verbose: LowLevelSend: wrapping handshake reply 433 bits -> 497 bits
+```
+
+- ✓ Two independent connections from different local IPs both reached
+  this state
+- ✓ Wrapper signature validated correctly (BB, DC 21 A6 A3, FB at the
+  expected offsets across multiple packets)
+- ✓ Stock UE5.4 ParseHandshakePacket SUCCEEDED — confirming the
+  wrapper-strip + empty-magic theory
+- ✓ `SendConnectChallenge` fired — the breakthrough signal we've been
+  chasing for 4 sessions
+- ✓ Reply built + wrapper-prepended + sent
+
+### Client-side rejection
+
+```
+[client] LogNet: Warning: Packet failed PacketHandler processing.
+[client] LogNet: Error: PendingConnectionFailure: Your connection to the host has been lost.
+```
+
+Within 1 second of receiving our wrapped Challenge reply (much faster
+than a 20s timeout). So the client RECEIVED our packet but the
+PacketHandler chain rejected it during processing.
+
+`Packet failed PacketHandler processing` is from
+`NetConnection.cpp:1899` — fires when `PacketHandler::Incoming`
+returns Error. In stock UE5.4, this happens when any HandlerComponent
+sets `Packet.SetError()` during processing.
+
+### Likely cause of client-side rejection
+
+The wrapper bytes 1 and 6 (which our server filled with `FMath::Rand()`)
+are probably NOT random in the actual TheoryCraft protocol. Most
+plausible options:
+
+1. **byte 1 = CRC8 of wrapper bytes 2-7** — small checksum the client
+   validates at FSocket level
+2. **byte 6 = CRC8 of inner packet** — checksum of the inner payload
+3. **bytes 1 + 6 = some other lightweight integrity check** — e.g., a
+   16-bit hash split across the two positions
+
+If the client's FSocket subclass validates these on receive and drops
+malformed packets, our reply with random values fails validation, gets
+dropped at FSocket layer (before reaching PacketHandler), and the
+client's StatelessConnect times out... but actually the log shows
+"PacketHandler processing" failure — so the wrapper IS being stripped
+at FSocket layer (otherwise wouldn't reach PacketHandler), but then
+PacketHandler rejects the INNER content.
+
+So the alternative theory: the inner packet content we send doesn't
+match what the client expects. Differences could be:
+- Wrong handshake version in Challenge (stock UE5.4 uses negotiated
+  version; maybe our server uses Latest)
+- ClientID in Challenge doesn't echo correctly
+- Cookie format different than TheoryCraft expects
+
+Both possibilities need session-15 investigation.
+
+### Next session strategies
+
+1. **Add hex-dump logging of outgoing reply bytes** — modify
+   `LokiNetDriver::LowLevelSend` to log the actual bytes we send (both
+   wrapper and inner). Compare against what stock UE5.4 should
+   produce.
+
+2. **Capture the client's RESPONSE packet to our Challenge** — if the
+   client did process our Challenge before failing, it might have sent
+   a ChallengeResponse. The server log would show another incoming
+   packet. If yes, we know the wrapper bytes are OK (just the inner
+   content differs). If no, the wrapper bytes failed validation.
+
+3. **Hook the CLIENT's FSocket.RecvFrom or PacketHandler.Incoming** to
+   log the actual bytes the client's UE pipeline receives. Compare
+   against what we sent. Any pre-PacketHandler transformation (e.g.,
+   FSocket wrapper strip) would be visible here.
+
+4. **Investigate CRC/checksum candidates** for wrapper bytes 1 and 6.
+   Common: CRC-8, CRC-CCITT, simple XOR sum. Computable from the
+   surrounding wrapper bytes or inner packet content. Test each by
+   re-running with computed values and seeing if the rejection
+   changes.
+
+### Tooling delivered (session 14)
+
+- `unreal-stub/Source/Loki/LokiStatelessConnect.h` + `.cpp` — refined
+  to strip the 8-byte wrapper (FRONT, not trailing) with signature
+  validation.
+- `unreal-stub/Source/Loki/LokiNetDriver.h` + `.cpp` — refined to
+  prepend the 8-byte wrapper on outgoing handshake replies.
+- `unreal-stub/Config/DefaultEngine.ini` — `net.MagicHeader=` (empty),
+  `net.VerifyMagicHeader=0`.
+
+### Commits this session
+
+- (session 14 writeup commit follows)
+
+
 
 

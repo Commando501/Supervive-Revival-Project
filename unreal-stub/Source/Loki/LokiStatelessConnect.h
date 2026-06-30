@@ -1,26 +1,29 @@
 // LokiStatelessConnect — subclass of UE5.4's StatelessConnectHandlerComponent
-// that adapts the stock packet-size variance check to accept TheoryCraft's
-// SUPERVIVE client handshake packets.
+// that adapts the stock parser to TheoryCraft's wrapped wire format.
 //
-// Session 11 RE established that SUPERVIVE compiles stock UE5.4 source for
-// StatelessConnectHandlerComponent.cpp (build path
-// C:\TheoryCraft\build-staging\..., log call-site line numbers match stock at
-// 441/493/579/878/1053). Session 11 packet-size analysis suggests TheoryCraft
-// bumped BaseRandomDataLengthBytes from stock 16 to 24 — captured packets are
-// 56-64 bytes (= +8 byte shift on stock's 48-57 byte expected range, 9-byte
-// variance matching stock's RandomDataLengthVarianceBytes=8).
+// Session 14 RE finding: TheoryCraft prepends an 8-byte WRAPPER to every
+// stateless handshake packet. The wrapper is:
 //
-// Session 12 attempted to test by editing engine source + rebuilding. That
-// path is dead-end for Launcher installs (no .lib import files shipped). This
-// file is session 13's workaround: stay on stock engine, fix the protocol
-// mismatch via a subclass that lives in our game module.
+//   byte 0:     0xBB         — stable wrapper magic
+//   byte 1:     random       — per-packet random/nonce
+//   bytes 2-5:  DC 21 A6 A3  — stable wrapper signature
+//   byte 6:     random       — per-packet random/nonce
+//   byte 7:     0xFB         — stable wrapper signature
+//   bytes 8+:   stock UE5.4 handshake packet (with empty inner MagicHeader)
 //
-// Approach: override IncomingConnectionless to truncate 8 trailing bytes off
-// incoming packets before delegating to the stock parent. The 8 truncated
-// bytes are the EXTRA random padding TheoryCraft adds — stock's parser
-// treats remaining bits beyond fixed handshake fields as random padding
-// anyway. After truncation the packet falls back into stock's expected size
-// variance range and ParseHandshakePacket succeeds.
+// The 16-byte constant near LogLokiNet in mod-RVA 0x84F2C10 of
+// SUPERVIVE-Win64-Shipping.exe is BB 53 DC 21 A6 A3 85 FB ... — the SAME
+// signature byte positions match captured packets exactly, with the random
+// positions varying per packet.
+//
+// Bit-decoded inner bytes (capture 1 bytes 8-10: A4 01 02) yielded:
+// SessionID=0, ClientID=1, bHandshakePacket=1, bRestartHandshake=0,
+// MinVersion=3 (SessionClientId), CurVersion=4 (NetCLUpgradeMessage). Exact
+// stock UE5.4 defaults — confirming inner is stock with no inner MagicHeader.
+//
+// This file: strip the 8-byte wrapper from incoming packets before delegating
+// to stock IncomingConnectionless. Pairs with LokiNetDriver.cpp which prepends
+// the wrapper on outgoing replies.
 
 #pragma once
 
@@ -34,21 +37,21 @@ public:
 
 protected:
 	/**
-	 * Intercept incoming connectionless packets. If the packet is larger than
-	 * stock's max accepted handshake size, truncate the trailing random padding
-	 * by 64 bits (8 bytes) and delegate to parent's IncomingConnectionless.
+	 * Strip TheoryCraft's 8-byte wrapper from the front of incoming packets,
+	 * then delegate to stock IncomingConnectionless.
 	 */
 	virtual void IncomingConnectionless(FIncomingPacketRef PacketRef) override;
 
-private:
-	/**
-	 * Stock UE5.4 HANDSHAKE_PACKET_SIZE_BITS (307) + MagicHeader/SessionID/
-	 * ClientID prefix (13 bits) + max stock random padding (128 bits) + 1
-	 * termination bit = 449 bits. Packets above this threshold are likely
-	 * TheoryCraft's enlarged handshake; truncate 64 bits off them.
-	 */
-	static constexpr int64 StockMaxHandshakeBits = 449;
+public:
+	/** Size of TheoryCraft's wrapper prefix on every stateless handshake packet. */
+	static constexpr int32 LokiWrapperBytes = 8;
+	static constexpr int32 LokiWrapperBits = LokiWrapperBytes * 8;
 
-	/** TheoryCraft adds 8 bytes (64 bits) of extra random padding vs stock. */
-	static constexpr int64 TheoryCraftExtraPaddingBits = 64;
+	/** Stable signature bytes in the wrapper, at the given offsets. */
+	static constexpr uint8 LokiWrapperByte0 = 0xBB;
+	static constexpr uint8 LokiWrapperByte2 = 0xDC;
+	static constexpr uint8 LokiWrapperByte3 = 0x21;
+	static constexpr uint8 LokiWrapperByte4 = 0xA6;
+	static constexpr uint8 LokiWrapperByte5 = 0xA3;
+	static constexpr uint8 LokiWrapperByte7 = 0xFB;
 };
