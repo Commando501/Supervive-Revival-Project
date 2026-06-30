@@ -1575,3 +1575,195 @@ stock UE5.4 SessionID/ClientID; that's a TheoryCraft custom field.
 ### Commits this session
 
 - (session 10 writeup commit follows)
+
+## Session 11 (2026-06-30 — strategy #3 sanity-check confirmed handshake gate; strategy #1 confirmed stock UE5.4 with likely BaseRandomDataLengthBytes tweak)
+
+Session 11 attacked blocker #1's INNER layer (parse-handshake-packet
+failure) via two parallel angles: (3) a 10-minute server-side bypass
+sanity check, and (1) static RE of TheoryCraft's StatelessConnect
+implementation. The bypass produced a clean failure-mode change that
+proves the server can accept the client's UDP traffic; the RE proves
+TheoryCraft uses stock UE5.4 source and points at a single likely
+constant tweak.
+
+### Strategy #3: `-NoPacketHandler` bypass — server accepts, client times out
+
+Added `-NoPacketHandler` to the stub server launch command. In non-shipping
+UE5.4 builds (`UE_BUILD_SHIPPING == 0`), this flag has two effects:
+1. `UNetDriver::InitConnectionlessHandler` (line 1931) skips creating
+   the `ConnectionlessHandler` / `StatelessConnectComponent` entirely.
+2. `UIpNetDriver::ProcessConnectionlessPacket` (line 1436) auto-marks
+   incoming packets as `bPassedChallenge = true` instead of rejecting
+   them when the stateless component is null.
+
+Server log progression with the flag:
+
+```
+LogNet: Accepting connection without handshake, due to '-NoPacketHandler'.
+LogNet: Server accepting post-challenge connection from: 169.254.83.107:57311
+LogNet: IpConnection_1 setting maximum channels to: 32767
+LogNet: SetClientLoginState: State changing from Invalid to LoggingIn
+LogNet: SetExpectedClientLoginMsgType: Type same: [0]Hello
+LogNet: AddClientConnection: Added client connection ...
+```
+
+The server allocates a proper `UNetConnection` for the client and is
+parked in `LoggingIn` state waiting for `NMT_Hello`. Three independent
+network interfaces — 127.0.0.1, 169.254.83.107, 10.5.0.2 — all reached
+this state across the test (client tried multiple local IPs).
+
+But the client side stays committed to UE5.4's StatelessConnect
+protocol regardless. The client's PendingNetDriver sends handshake
+packets, waits 20 seconds for a server challenge-ack reply, gets none
+(because our server has no stateless component to reply with), times
+out, and Sentry catches the ungraceful `NetworkFailure: ConnectionTimeout`
+as a crash:
+
+```
+06:31:12 UEngine::Browse Started Browse: ""
+06:31:12 PacketHandlerLog: Loaded PacketHandler component: ... (StatelessConnectHandlerComponent)
+06:31:12 LogHandshake: Stateless Handshake: NetDriverDefinition 'GameNetDriver' CachedClientID: 0
+06:31:32 LogNet: Warning: UNetConnection::Tick: Connection TIMED OUT ... Threshold: 20.00
+06:31:35 LogSentrySdk: invoking on_crash hook
+```
+
+Conclusion: strategy #3 alone is insufficient — the server-side bypass
+opens the gate but the client still expects a stateless challenge-ack
+to unlock NMT_Hello. We'd need to *either* implement the stateless
+reply on the server *or* bypass the client's StatelessConnect too. The
+right path is the former because (a) hooking the packer-protected
+client is high-friction and (b) UE5.4's server stateless handshake is
+already implemented if we just configure it correctly.
+
+### Strategy #1: RE the SUPERVIVE exe — TheoryCraft uses stock UE5.4
+
+`usmapdump wstrings` for "StatelessConnect" returned 15 heap hits but
+zero hits in the main module — meaning the class isn't named at
+class-registration sites in code; it's only constructed at runtime in
+the heap. `usmapdump strings` for the ANSI ASCII variant found ONE main-
+module hit at mod-RVA `0x8160A61` — and `usmapdump peek` of the
+surrounding `.rdata` revealed:
+
+```
+C:\TheoryCraft\build-staging\Engine\Source\Runtime\Engine\Private\PacketHandlers\StatelessConnectHandlerComponent.cpp
+```
+
+That's a `__FILE__` literal — TheoryCraft compiled UE5.4's
+StatelessConnect source from THEIR build tree, not subclassed it.
+Following the log-entry registration table downstream of the file
+path string identified five log call sites with their `__LINE__`
+values embedded as 32-bit integers:
+
+| In-binary line | Stock UE5.4 line | Log message |
+|---|---|---|
+| 441 | 441 | "CVar net.MagicHeader is too long (%i), maximum size is 32 bits: %s" |
+| 493 | 493 | "Tried to send handshake connect packet without a server connection." |
+| 579 | 579 | "Tried to send handshake response packet without a server connection." |
+| 878 | 878 | "Stateless Handshake: NetDriverDefinition '%s' CachedClientID: %u" |
+| 1053 | 1053 | "Server is running an incompatible version of the game..." |
+
+Every line number matches stock UE5.4 *exactly*. The build path is
+TheoryCraft's, but the source contents at these checkpoints are
+identical to Epic's. So they're using stock or near-stock UE5.4's
+StatelessConnect, not a custom subclass.
+
+### Why session 10's ParseHandshakePacket still failed
+
+With confirmed stock source, the rejection at line 1430
+(`IncomingConnectionless: Error reading handshake packet.`) means
+`ParseHandshakePacket` returned `false`. The earliest failure in that
+function is the size-variance check at line 1502-1515:
+
+```cpp
+const int32 MinBitsLeftExclHandshake = BitsLeft - (HANDSHAKE_PACKET_SIZE_BITS - 1);
+const int32 MaxBitsLeftExclHandshake = BitsLeft - (VerRandomizedHandshakePacketSizeBits - 1);
+...
+const int32 MinRandomBits = (BaseRandomDataLengthBytes - RandomDataLengthVarianceBytes) * 8;
+const int32 MaxRandomBits = BaseRandomDataLengthBytes * 8;
+const bool bMaybeHandshakePacket = MaxBitsLeftExclHandshake >= MinRandomBits && MinBitsLeftExclHandshake <= MaxRandomBits;
+```
+
+Stock UE5.4 constants:
+- `BaseRandomDataLengthBytes` = 16 → `MaxRandomBits` = 128
+- `RandomDataLengthVarianceBytes` = 8 → `MinRandomBits` = 64
+- `HANDSHAKE_PACKET_SIZE_BITS` = 307 (Latest version, includes NetCL)
+- With MagicHeader(8) + SessionID(2) + ClientID(3) prefix = 13 bits before ParseHandshakePacket
+- Expected total packet size: 307 + 13 + [64..128] + 1 termination bit = 385..449 bits = **48..57 bytes**
+
+Captured packets in `udp7777-rx.log`: **56..64 bytes** (9-byte variance,
+matching 9 = `RandomDataLengthVarianceBytes + 1` so the variance
+constant is unchanged).
+
+The packet size range is shifted UP by exactly 8 bytes from stock
+expectations. The leading hypothesis: **TheoryCraft increased
+`BaseRandomDataLengthBytes` from 16 to 24** (variance still 8). That
+would produce random data of 16..24 bytes and total packet sizes of
+56..64 bytes — exactly matching capture.
+
+This is consistent with: TheoryCraft inheriting Epic's source, but
+tweaking the random-padding base value (a one-line change in
+`StatelessConnectHandlerComponent.cpp` line 312) without touching any
+log lines.
+
+### Captured packet's "stable bytes" reinterpretation
+
+Session 10 noted stable bytes `DC 21 A6 A3` at packet positions 2-5
+and `01 02` at positions 9-10. With confirmation that the protocol is
+stock UE5.4 + likely BaseRandomDataLengthBytes shift:
+
+- The MagicHeader is bit-packed at bits 0-7 (= byte 0 = `0xBB`).
+- Bytes 1+ contain bit-packed fields including SessionID, ClientID,
+  HandshakeBit, MinVersion, CurVersion, HandshakePacketType,
+  SentHandshakePacketCount, LocalNetworkVersion (32 bits), and
+  LocalNetworkFeatures (16 bits).
+- The bit-level offset of `LocalNetworkVersion` (3716198887 = 0xDD80B1E7)
+  in the wire format depends on the exact bit boundaries — needs full
+  bit-by-bit decode to confirm position. The captured bytes 2-5
+  `DC 21 A6 A3` are NOT the LocalNetworkVersion value (0xDD80B1E7), so
+  the position needs more bit-level math.
+- The "alternating 80/00" at position 11 and "increments 80-89" at
+  position 12 in session 10's analysis match `SentHandshakePacketCount`
+  bit-shifting through byte boundaries as it increments per packet.
+
+### Tooling delivered
+
+- (none — pure analysis session)
+
+### Next session strategies
+
+1. **Modify our UE5.4 engine's `StatelessConnectHandlerComponent.cpp`
+   line 312** to set `BaseRandomDataLengthBytes = 24` (matching the
+   TheoryCraft hypothesis), rebuild the engine module (UnrealEngine
+   target), restart the stub server WITHOUT `-NoPacketHandler`. If the
+   server's ParseHandshakePacket no longer rejects the client's
+   packets, the stock handshake flow takes over and we should see
+   `SendConnectChallenge`, then `SendChallengeAck`, then NMT_Hello.
+   ~30 min build + test.
+
+2. **Hook the running game** to confirm `BaseRandomDataLengthBytes`
+   value before changing the engine. Disassemble `CapHandshakePacket`
+   or `SendInitialPacket` (line 465 of stock UE5.4) and look for the
+   immediate operand `0x10` (16) or `0x18` (24). Anchor: the file path
+   string at mod-RVA `0x8160A10` references every UE_LOG site in this
+   file; finding the LEA xref to it from .text gives us code addresses
+   in the function range. ~60 min RE, useful if (1) fails to fix.
+
+3. **Disable `net.VerifyNetSessionID` server-side** as a parallel
+   probe — set `[ConsoleVariables] net.VerifyNetSessionID=0`. This
+   only matters if the client's SessionID doesn't match the server's
+   `CachedGlobalNetTravelCount` (= 0 fresh boot). Per the source
+   logic, `bInitialConnect` already bypasses the SessionID check, so
+   this likely doesn't change anything — but cheap to try.
+
+4. If (1) fails, expand search to the captured packets' OTHER
+   non-stock-expected bytes (positions 9-10 `01 02`, position 13-16
+   `F3 58 C0 6E`) — these are bit-aligned with `LocalNetworkVersion`
+   and `LocalNetworkFeatures`, which depend on the override mechanism
+   we set up in session 10. Cross-check that the bit-decoded values
+   match `3716198887` and the captured `EEngineNetworkRuntimeFeatures`
+   value.
+
+### Commits this session
+
+- (session 11 writeup commit follows)
+
