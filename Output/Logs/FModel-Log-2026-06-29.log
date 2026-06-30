@@ -533,3 +533,4 @@ FAssetArchive Info: Loki/Content/L10N/zh/Loki/UI/Widgets/FrontEnd/MainMenu/Battl
    at CUE4Parse.UE4.Assets.Exports.Texture.UTexture2D.Deserialize(FAssetArchive Ar, Int64 validPos)
    at CUE4Parse.UE4.Assets.AbstractUePackage.DeserializeObject(UObject obj, FAssetArchive Ar, Int64 serialSize)
 2026-06-29 14:23:21 [INF] FModel.Services.DiscordHandler+<>c.<Initialize>b__6_0: @themob.org (104296236906971136) is now ready
+2026-06-29 18:32:40 [INF] FModel.Services.DiscordHandler+<>c.<Initialize>b__6_0: @themob.org (104296236906971136) is now ready

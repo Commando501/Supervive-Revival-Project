@@ -1,0 +1,10 @@
+[0] browse_hook worker started
+[0] modBase=0x7FF67E4A0000  UEngine::Browse=0x7FF6823657D0
+[1] waiting for GGameThreadId (60s)...
+[1] gameTid=43252
+[2] page unpacked after 923 poll(s); orig 13 bytes match expected
+[2] orig 13 bytes: 40 55 53 56 57 41 54 41 55 41 56 41 57
+[3] trampoline @ 0000020B85540000
+[3] hook stub @ 0000020B85550000 (handler @ 0000020AB6951000)
+[4] HOOK INSTALLED
+[hb] head=0000000000000000
