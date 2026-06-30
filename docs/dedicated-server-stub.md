@@ -1430,3 +1430,148 @@ only, no client-side work.
 
 - (session 9 writeup commit follows)
 - v13 is the milestone artifact. Future sessions extend from this base.
+
+## Session 10 (2026-06-30 — blocker #1 peeled: MagicHeader byte 0xBB solved; deeper packet customization remains)
+
+Session 9's `v13` win held: the SUPERVIVE client successfully sends UDP
+to the stub server on every test. Session 10 attacked blocker #1 (the
+"server can't parse client's handshake packet" failure) on multiple
+fronts. We peeled the OUTER layer (MagicHeader, the 8-bit prefix
+the client adds to every packet) and identified that the inner
+packet body has Theorycraft-customized fields beyond stock UE5.4.
+
+### Server-side fix #1: FNetworkVersion overrides — in place but not the bottleneck
+
+Added `unreal-stub/Source/Loki/Loki.cpp`'s `FLokiModule::StartupModule()`
+that binds:
+- `FNetworkVersion::GetLocalNetworkVersionOverride` → returns
+  `3716198887` (the client's captured checksum from Session 5)
+- `FNetworkVersion::IsNetworkCompatibleOverride` → returns `true` for
+  any (local, remote) pair (belt-and-suspenders for future client builds)
+
+Rebuilt the Loki module via `UnrealBuildTool` ("Build.bat LokiEditor
+Win64 Development" — 85s build). Server log confirms: `Loki stub: NetCL
+overrides bound. Local checksum forced to 3716198887; IsNetworkCompatible
+accepts any remote.`
+
+This fix is necessary but NOT sufficient — `CheckVersion` is called
+AFTER `ParseHandshakePacket`, and we never reached it because parsing
+failed earlier.
+
+### The diagnostic UDP listener — captured 35+ handshake packets
+
+Enhanced `unreal-stub/udp7777-listener.ps1` to dump full packet hex
+(was 64-byte preview). Stopped the UE5.4 stub server, ran the
+listener, launched SUPERVIVE with v13 hook, captured ~35 packets from
+two sources (127.0.0.1 + 169.254.83.107 link-local).
+
+Common structure (every packet):
+
+```
+Byte 0     : 0xBB         ← stable across ALL packets (magic)
+Byte 1     : random        ← per-packet (maybe checksum or nonce)
+Bytes 2-5  : DC 21 A6 A3   ← stable across ALL packets/sources
+Byte 6     : random
+Byte 7     : 0xFB          ← stable
+Byte 8     : BC or A0      ← varies by source IP
+Bytes 9-10 : 01 02         ← stable
+Byte 11    : 0x80 / 0x00   ← alternates (handshake type flag)
+Byte 12    : 0x80-0x89     ← increments per packet pair (sequence)
+Bytes 13-16: F3 58 C0 6E   ← stable
+Bytes 17-48: 32 × 0x00     ← cookie field (initial=zero)
+Bytes 49+  : variable tail ← cookie response / signature
+```
+
+### Server-side fix #2: MagicHeader CVar — SOLVED with two iterations
+
+UE5.4 `StatelessConnectHandlerComponent` reads
+`CVarNetMagicHeader` at construction time and uses it as a fixed bit
+prefix on every packet. SUPERVIVE's client uses `0xBB`. We configured
+matching MagicHeader on the server.
+
+**Iteration 1 — string `"10111011"`:**
+
+Tried `[ConsoleVariables] net.MagicHeader=10111011` (binary string of
+`0xBB`'s bits MSB-first) in `unreal-stub/Config/DefaultEngine.ini`.
+Result: server's own diagnostic `Rejecting packet with invalid magic
+header '000000BB' vs '000000DD' (8 bits)`. Mismatch! Server computed
+`0xDD` from `"10111011"`.
+
+**Bit-ordering math (verified by the server's error message):**
+
+The TBitArray's `Add` puts the FIRST char of the string into bit 0
+(LSB) of the resulting uint32. So:
+
+- `"10111011"` → bits [0]=1, [1]=0, [2]=1, [3]=1, [4]=1, [5]=0,
+  [6]=1, [7]=1 → uint32 `0b11011101` = `0xDD`
+- To produce uint32 `0xBB` (binary `10111011` MSB-first) we need
+  bits LSB-first matching: bit 0=1, bit 1=1, bit 2=0, bit 3=1,
+  bit 4=1, bit 5=1, bit 6=0, bit 7=1 → string `"11011101"`
+
+**Iteration 2 — string `"11011101"`:**
+
+Server's MagicHeader uint32 now correctly computes to `0xBB`. The
+"invalid magic header" error is GONE.
+
+`-ExecCmds` is too late for this CVar — `StatelessConnectHandlerComponent`'s
+constructor reads it during engine init. MUST go in
+`[ConsoleVariables]` in `DefaultEngine.ini` so it's available
+pre-construction. Also setting `net.VerifyMagicHeader=1` explicitly
+(default may be 0).
+
+### What's left: ParseHandshakePacket body format mismatch
+
+After MagicHeader matches, server progresses one layer deeper and
+hits `IncomingConnectionless: Error reading handshake packet` from
+`StatelessConnectHandlerComponent::ParseHandshakePacket()` returning
+false. The first check in `ParseHandshakePacket` is a packet-size
+validation against `HANDSHAKE_PACKET_SIZE_BITS`,
+`RESTART_HANDSHAKE_PACKET_SIZE_BITS`, `RESTART_RESPONSE_SIZE_BITS`,
+`VERSION_UPGRADE_SIZE_BITS` (plus random padding variance). If the
+client's packet sizes don't fall within these expected ranges, parse
+fails before reading any handshake fields — no `CheckVersion` log
+ever fires either.
+
+The captured packet sizes are 56-64 bytes (9-byte variance). UE5.4
+stock `BaseRandomDataLengthBytes` + `RandomDataLengthVarianceBytes`
+implies a similar variance. But the packet BODY layout (after the
+8-bit magic and the 7 bits of SessionID/ClientID/Handshake/Restart)
+clearly differs from stock — note the stable `DC 21 A6 A3` at bytes
+2-5 that varies neither per-packet nor per-source. That's NOT
+stock UE5.4 SessionID/ClientID; that's a TheoryCraft custom field.
+
+### Tooling delivered
+
+- `unreal-stub/Source/Loki/Loki.cpp` — custom `FLokiModule` that
+  binds FNetworkVersion overrides in `StartupModule()` /
+  `Unbind()` in `ShutdownModule()`. Includes `LogLokiStub` log category
+  for diagnostic visibility.
+- `unreal-stub/Config/DefaultEngine.ini` — `[ConsoleVariables]`
+  section with `net.MagicHeader=11011101` and `net.VerifyMagicHeader=1`.
+- `unreal-stub/udp7777-listener.ps1` — now dumps full packet hex
+  (was 64-byte preview).
+- Captured packets in `unreal-stub/Saved/Logs/udp7777-rx.log`
+  (35+ packets, structure analyzed above).
+
+### Next session strategies
+
+1. **Hook the CLIENT's `StatelessConnectHandlerComponent::Outgoing`**
+   to capture pre-bit-pack handshake fields. We'd see
+   `RemoteCurVersion`, `RemoteMinVersion`, `HandshakePacketType`,
+   `RemoteNetworkVersion`, `RemoteSentHandshakePacketCount`, and the
+   cookie — knowing the unencoded values lets us reverse the wire
+   format.
+2. **Search for TheoryCraft's custom `StatelessConnect`-derived class**
+   in the SUPERVIVE shipping exe. They may have subclassed +
+   overridden `IncomingConnectionless` / `Outgoing`. Find via string
+   xrefs to `StatelessConnect`-related literals.
+3. **Patch our SERVER's `ParseHandshakePacket`** to accept the
+   observed packet sizes and parse the custom layout — requires
+   recompiling UE5.4 engine source, big effort.
+4. **Skip the StatelessConnect handshake entirely** — disable it on
+   both sides. Client side requires hooking; server side via
+   `bRequiresHandshake = false` on the handler.
+
+### Commits this session
+
+- (session 10 writeup commit follows)
