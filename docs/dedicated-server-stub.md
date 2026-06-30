@@ -1247,3 +1247,186 @@ Need a different attack surface.
 - The chapter's tail end is now: blocker #2 is structurally harder than
   expected; blocker #1 (NetCL mismatch) remains queued for after #2
   resolves.
+
+## Session 9 (2026-06-30 — BLOCKER #2 RESOLVED: client UDP packets reach the stub server)
+
+The chapter's defining win. Session 9 closes blocker #2 (FMallocBinned2
+canary crash on URL.Host destruction) by switching from "patch
+FMallocBinned2 in place" to "USE FMallocBinned2 to allocate our buffer."
+The SUPERVIVE client now successfully reaches StatelessConnect
+handshake send and the UE5.4 stub server LOGS INCOMING UDP PACKETS from
+the client. Only blocker #1 (NetCL mismatch — server NetCL=33043543 vs
+client NetCL=0) remains, and its fix is well-scoped (register
+`FNetworkVersion::ProcessOverrideCallback` in the Loki module).
+
+### Frontline negative results (eliminate stale assumptions)
+
+1. **GMalloc-via-`GMalloc_CLASS=%d` string xref is truly dead** (vs
+   session 7's "dismissed without test"). Found the wstring at mod-RVA
+   0x81C3A60 (full string starts at +0xA60, not +0xAE2 as session 7 cited
+   for the mid-string match), and its FStaticLogRecord at mod-RVA
+   0x81C3A40. xrefstr AND findptr on every variant (string addr, struct
+   addr, unpacked copies in private memory) return 0 hits. The
+   debug-dump function that would use this log isn't unpacked in this
+   shipping build (cheats=0, console=0 per Loki.log) and may never run.
+
+2. **Patching the canary check at RVA 0xFE25FD is logically
+   insufficient.** After the canary cmp at 0xFE25FD, Realloc's body
+   continues with `movzx r15d, [rbp]`, `movzx ecx, [rbp+2]`, etc. —
+   multiple FMallocBinned2 metadata reads at offsets relative to
+   pool_base. For our static buffer those reads return garbage from our
+   DLL's memory; bypassing only the canary leaves the metadata-read
+   crashes intact. Bypassing the canary doesn't fix the bug.
+
+### The breakthrough — tracing UNetConnection downstream found GMalloc
+
+The v11 crashstack pointed at mod-RVA 0x3EC6312 (Browse+0xB42). At that
+address, Browse calls a function at mod-RVA 0x32BCB70. That function is
+a destructor-like cleanup that frees FURL fields' FString.Data via a
+helper at mod-RVA 0xFF9302. Disasm of 0xFF9302 revealed it as
+**FMemory::Free** — a callable wrapper that:
+
+```
+0xFF9302: mov [rsp+0x20], rax            ; (shadow space)
+0xFF9307: push rdi
+... (more saves) ...
+0xFF931A: mov rbx, rcx                    ; save Ptr arg
+0xFF931D: mov rcx, [rip+0x8D4FE5C]        ; LOAD GMALLOC  ←←←
+0xFF9324: test rcx, rcx
+0xFF9327: jnz 0xFF9335
+0xFF9329: call GCreateMalloc              ; init if null
+0xFF932E: mov rcx, [rip+0x8D4FE4B]        ; reload
+0xFF9335: mov rax, [rcx]                  ; vtable
+0xFF9338: mov rdx, rbx                    ; arg
+0xFF933B: call [rax+0x48]                  ; FMalloc::Free (slot 9)
+```
+
+Computing the GMalloc address from the rip-rel load:
+- `0xFF9324 + 0x08D4FE5C = 0x09D49180`
+- So **GMalloc is at mod-RVA 0x9D49180**. Peeking at runtime confirmed:
+  the qword there holds the FMallocBinned2* instance pointer
+  (`0x000002300935B9E0` on the test launch — varies per-launch due to
+  heap ASLR).
+
+### FMallocBinned2 vtable layout (verified via `usmapdump vtdump`)
+
+Vtable at mod-RVA 0x76A0370 (in .rdata). 20-slot dump:
+
+```
+slot 0  = ~FMalloc (dtor)
+slots 1–4 = shared empty-impl  (Exec / GetAllocatorStats defaults / etc.)
+slot 5  = TryMalloc        (real body — sub rsp, …; mov esi, r8d; …)
+slot 6  = Malloc           (thunk: mov rax,[rcx]; jmp [rax+0x28] — calls slot 5)
+slot 7  = TryRealloc       (real body)
+slot 8  = Realloc          (thunk: mov rax,[rcx]; jmp [rax+0x38] — calls slot 7)
+slot 9  = Free             (real body — verified by FMemory::Free dispatching [rax+0x48])
+slots 10–19 = Trim/Setup/etc.
+```
+
+Calling slot 6 (Malloc) from outside the engine works because slot 6 is
+itself a thunk forwarding to slot 5 (TryMalloc). The Realloc function
+that session 8's v12 hooked at 0xFE25A9 was NOT in this vtable — it's
+an orphan function, possibly an unused ICF-merged copy of the original
+FMallocBinned2::Realloc. That's why v12.x's hook installed cleanly but
+didn't intercept the engine's actual realloc traffic (different code
+path → unrelated crash AFTER PRE returned, exactly as v12.4 markers
+showed).
+
+### v13 design — read GMalloc + call its allocator
+
+`tools/sigbypass-mod/browse_hook.cpp` v13:
+- At DLL init (in the worker, after the Browse page unpacks), poll for
+  GMalloc page committed, then read the FMalloc* instance pointer.
+- Cast the qword at `[instance]` to the vtable, look up slot 6 (Malloc),
+  emit a Win64-ABI indirect call: `vtable[6](GMalloc, 20, 16)`.
+- Returned buffer is a real FMallocBinned2 allocation. Write L"127.0.0.1\0"
+  into it.
+- PRE handler points `URL.Host.Data` at this engine-allocated buffer
+  (10 wchars including null, with Num=10, Max=10).
+- Engine destructor eventually calls Realloc(buf, 0, _) on it; canary
+  check passes (we got it from FMallocBinned2), pool lookup works (it
+  IS in the pool), Free succeeds.
+- POST handler still zeroes URL.Host as a belt-and-suspenders cleanup,
+  but the engine's natural destructor would have handled it fine.
+
+**Zero function-entry patches.** We only READ and CALL the engine's
+own code — no instruction stream modifications. No packer integrity
+concerns.
+
+### End-to-end test result (CONCLUSIVE WIN)
+
+Marker file traversal (synchronous diagnostic Markers from v12.4 still
+in place):
+```
+[GM] GMalloc=00007FF68C7C9180 instance=0000021764866CE0
+     vtable=00007FF68A120370 Malloc=00007FF683A8FE80
+[GM] engine-allocated host buffer @ 00000217E49F6AA0 ("127.0.0.1\0", num=10)
+[5] engine-host buffer READY after 1 poll(s)
+[PRE] entered r8=0xECE71DF450
+[PRE] /Game/ map detected; mutating URL.Host -> 0x217E49F6AA0
+[PRE] URL.Host mutated to engine buffer; appending
+[PRE] AppendBytes done; PRE returning to hook stub
+[POST] entered (mutated=1)         ← FIRST TIME POST EVER RAN!
+[POST] returning                    ← Browse completed cleanly!
+[REWRITE] FURL.Host = engine-allocated 127.0.0.1 buffer (FMallocBinned2-tracked)
+[RESTORE] FURL.Host zeroed; destructor will short-circuit on null Data
+```
+
+Client Loki.log:
+```
+LogGlobalStatus: UEngine::Browse Started Browse:
+    "127.0.0.1/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent"
+PacketHandlerLog: Loaded PacketHandler component: StatelessConnectHandlerComponent
+LogHandshake: Stateless Handshake: NetDriverDefinition 'GameNetDriver' CachedClientID: 7
+LogNetVersion: Loki 1.0.0.0, NetCL: 0, EngineNetworkVersion: 34,
+    GameNetworkVersion: 0 (Checksum: 3716198887)
+```
+
+UE5.4 stub server log (`unreal-stub/Saved/Logs/Loki.log`):
+```
+LogNet: NotifyAcceptingConnection accepted from: 127.0.0.1:54710
+LogHandshake: IncomingConnectionless: Error reading handshake packet.
+[1s later] LogNet: NotifyAcceptingConnection accepted from: 127.0.0.1:54710
+[1s later] (3rd retry)
+[1s later] (4th retry — then client gives up)
+```
+
+**The client successfully sent four UDP handshake attempts to the stub
+server's port 7777.** The server's "Error reading handshake packet"
+fails are blocker #1 (NetCL mismatch — see Session 6 close): the server
+reports NetCL=33043543, the client reports NetCL=0; StatelessConnect
+rejects the protocol mismatch. The client retries 4× over 4 seconds,
+then a connect-timeout fires and Sentry catches the resulting crash.
+
+This is a **different failure category** from the v11 FMallocBinned2
+fatal — the client got past Browse and into NetConnection-runtime; the
+crash is a normal handshake-failure path, not memory corruption. Blocker
+#2 IS resolved.
+
+### Infrastructure delivered
+
+- `tools/sigbypass-mod/browse_hook.cpp` v13: GMalloc-aware allocator
+  use. The v12.x patch infrastructure (SuspendOtherThreads, AnyRipInRange,
+  trampoline+stub builders) is preserved under `#if 0` for future
+  function-entry-patch needs. Includes `ms_abi` typedef pattern for
+  Win64-ABI vtable calls from clang.
+- Diagnostic Markers from v12.4 still in place — confirmed PRE+POST
+  full traversal on first test. (Bonus: gives us a great template for
+  any future hook work.)
+
+### Next session: blocker #1 fix (server-side)
+
+The fix has been queued since Session 6: register
+`FNetworkVersion::ProcessOverrideCallback` in the Loki module's
+`StartupModule()` to force NetCL=0. With that, the server reports the
+same NetCL as the client, the handshake parser accepts the packets,
+and we should see the next stage of NetConnection setup (Open Channel,
+etc.) — or hit whatever blocker comes next.
+
+This is normal UE5.4 module init code; touches `unreal-stub/Source/Loki/`
+only, no client-side work.
+
+### Commits this session
+
+- (session 9 writeup commit follows)
+- v13 is the milestone artifact. Future sessions extend from this base.

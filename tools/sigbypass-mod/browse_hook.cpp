@@ -68,24 +68,22 @@ constexpr uintptr_t kUEngineBrowseRva = 0x3EC57D0;  // function entry
 constexpr uintptr_t kGGameTidRva       = 0x9D49158;  // GGameThreadId (uint32 slot)
 constexpr size_t    kPatchSize         = 13;        // 8 pushes worth of bytes
 
-// v12: whitelist the g_redirect_host buffer in FMallocBinned2::Realloc so the
-// engine's destructor of URL.Host (which calls Realloc(_, 0, _) on our static
-// pointer) doesn't trip the canary panic. Realloc-zero-size internally calls
-// a free-helper that emits the "Attempt to realloc an unrecognized block"
-// fatal — patching Realloc entry catches it before the internal route.
+// v13: instead of patching FMallocBinned2 (packer integrity), CALL it. At
+// DLL init, read GMalloc from its global slot and call its Malloc method via
+// vtable to allocate a proper FMallocBinned2-tracked buffer for the redirect
+// Host. URL.Host.Data points to that buffer; engine destructor frees it
+// through the same vtable — no canary mismatch, no fatal.
 //
-// Realloc entry disasm (verified 2026-06-30):
-//   0xFE25A9  48 83 EC 78      sub rsp, 0x78         (4 bytes)
-//   0xFE25AD  48 8B C2         mov rax, rdx           (3 bytes)
-//   0xFE25B0  40 53            push rbx               (2 bytes)
-//   0xFE25B2  56               push rsi               (1 byte)
-//   0xFE25B3  57               push rdi               (1 byte)
-//   0xFE25B4  41 56            push r14               (2 bytes)
-//   ===== 13 bytes — clean cut boundary =====
-//   0xFE25B6  48 83 EC 38      sub rsp, 0x38
-// Signature: (rcx=this, rdx=Original, r8=NewSize, r9d=Alignment)
-constexpr uintptr_t kReallocRva       = 0xFE25A9;
-constexpr size_t    kReallocPatchSize = 13;
+// GMalloc discovered 2026-06-30 by tracing UNetConnection downstream: the
+// FString destructor for FURL fields calls FMemory::Free (a callable wrapper
+// at mod-RVA 0xFF9302) which loads GMalloc from [rip+0x8D4FE5C] →
+// mod-RVA 0x9D49180. Vtable layout verified via vtdump:
+//   slot 5 = TryMalloc        slot 6 = Malloc  (thunk: mov rax,[rcx]; jmp [rax+0x28])
+//   slot 7 = TryRealloc       slot 8 = Realloc (thunk: mov rax,[rcx]; jmp [rax+0x38])
+//   slot 9 = Free  (verified — FMemory::Free dispatches via [rax+0x48])
+constexpr uintptr_t kGMallocRva       = 0x9D49180;  // FMalloc** GMalloc;
+constexpr int       kMallocVtableSlot = 6;          // slot 6 → calls TryMalloc internally
+constexpr int       kFreeVtableSlot   = 9;          // slot 9 → Free
 
 // ───────── marker file logging ────────────────────────────────────────
 //
@@ -121,12 +119,10 @@ static uint8_t   g_origBytes[kPatchSize]; // saved prologue
 static uint8_t*  g_trampoline  = nullptr;
 static uint8_t*  g_hookStub    = nullptr;
 
-// v12 Realloc whitelist
-static uintptr_t g_reallocAddr            = 0;
-static uint8_t   g_reallocOrig[kReallocPatchSize];
-static uint8_t*  g_reallocTrampoline      = nullptr;
-static uint8_t*  g_reallocHookStub        = nullptr;
-static volatile LONG g_reallocInstalled   = 0;  // 1 once patch is live
+// v13 GMalloc redirect buffer
+static wchar_t*  g_engineHostBuffer       = nullptr;  // FMallocBinned2-allocated
+static int32_t   g_engineHostBufferNum    = 0;        // wchars including null
+static int32_t   g_engineHostBufferMax    = 0;
 
 // ───────── deferred-log ring ──────────────────────────────────────────
 //
@@ -211,8 +207,8 @@ static wchar_t g_redirect_host[]   = L"127.0.0.1";
 static int32_t g_redirect_host_num = 10;   // 9 chars + null
 static int32_t g_redirect_host_max = 10;
 
-// Forward decl: defined below BuildHookStub.
-static void InstallReallocPatchOnce();
+// Forward decl: defined in Worker once the page has unpacked.
+static bool AllocateEngineHostBuffer();
 
 // v11: track whether PRE mutated this Browse so POST knows to restore.
 // Browse is called only on the game thread (single-threaded for map travel)
@@ -330,18 +326,25 @@ extern "C" void browse_hook_handler(uintptr_t rcx, uintptr_t rdx,
                           map_data[4] == L'e' && map_data[5] == L'/';
         }
         if (isLocalGame) {
-            Marker("[PRE] /Game/ map detected, calling Install...\r\n");
-            InstallReallocPatchOnce();
-            Marker("[PRE] Install returned; about to mutate URL.Host\r\n");
-
-            // FURL.Host @ +0x10: Data (8), Num (4), Max (4)
-            *(wchar_t**)((uint8_t*)r8 + 0x10) = g_redirect_host;
-            *(int32_t*)((uint8_t*)r8 + 0x18)  = g_redirect_host_num;
-            *(int32_t*)((uint8_t*)r8 + 0x1C)  = g_redirect_host_max;
-            g_pre_mutated = true;
-            Marker("[PRE] URL.Host mutated, appending [REWRITE]\r\n");
-            append("[REWRITE] FURL.Host set to 127.0.0.1; "
-                   "engine should switch to NetConnection\r\n", 78);
+            if (!g_engineHostBuffer) {
+                Marker("[PRE] /Game/ but no engine-allocated buffer; SKIP\r\n");
+                append("[REWRITE] skipped (no engine buffer)\r\n", 38);
+            } else {
+                Markerf("[PRE] /Game/ map detected; mutating URL.Host -> 0x%llX\r\n",
+                        (unsigned long long)g_engineHostBuffer);
+                // FURL.Host @ +0x10: Data (8), Num (4), Max (4). Engine
+                // destructor calls Realloc(Data, 0, _) on whatever's here;
+                // since g_engineHostBuffer was allocated by GMalloc->Malloc,
+                // FMallocBinned2 recognizes it (canary OK) and frees it
+                // cleanly. No fatal, no crash.
+                *(wchar_t**)((uint8_t*)r8 + 0x10) = g_engineHostBuffer;
+                *(int32_t*)((uint8_t*)r8 + 0x18)  = g_engineHostBufferNum;
+                *(int32_t*)((uint8_t*)r8 + 0x1C)  = g_engineHostBufferMax;
+                g_pre_mutated = true;
+                Marker("[PRE] URL.Host mutated to engine buffer; appending\r\n");
+                append("[REWRITE] FURL.Host = engine-allocated 127.0.0.1 "
+                       "buffer (FMallocBinned2-tracked)\r\n", 81);
+            }
         } else {
             append("[REWRITE] skipped (Map not local /Game/...)\r\n", 45);
         }
@@ -527,14 +530,76 @@ static uint8_t* BuildHookStub(void* preHandler, void* postHandler,
     return p;
 }
 
-// v12 Realloc whitelist trampoline: replays Realloc's first 13 bytes, then
-// jumps to Realloc+13 to continue the original function.
+// v13 AllocateEngineHostBuffer — read GMalloc, then call vtable[6] (Malloc)
+// to obtain a real FMallocBinned2-tracked buffer for the redirect Host. Done
+// ONCE from the worker after the page containing GMalloc is committed.
+// The buffer survives the engine's eventual Realloc(buf, 0, _) call cleanly:
+// FMallocBinned2's canary check passes (we allocated it), pool lookup
+// works (it's in the pool), Free succeeds.
 //
-// v12.5: use r10 (volatile scratch) instead of rax for the jump trampoline,
-// so we PRESERVE rax = rdx (Original) that the original prologue's
-// `mov rax, rdx` at byte 4 just set. The body downstream may read rax
-// expecting Original — clobbering it with the jump target would corrupt
-// state. r10 is caller-saved/volatile in Win64, so we can use it freely.
+// Vtable call ABI (Win64 member function):
+//   rcx = this (FMalloc*)
+//   rdx = arg1 (SIZE_T Count)
+//   r8  = arg2 (uint32 Alignment)
+// We use the `__attribute__((ms_abi))` form via a typedef to make clang
+// emit a clean Win64-ABI indirect call. The vtable[6] entry is itself a
+// thunk that forwards to vtable[5] (TryMalloc) — calling it directly is
+// the SAME as calling Malloc.
+typedef void* (__attribute__((ms_abi)) *MallocFn)(void* self, size_t count, uint32_t alignment);
+
+static bool AllocateEngineHostBuffer() {
+    if (g_engineHostBuffer) return true;  // idempotent
+
+    void** gmallocSlot = (void**)(g_modBase + kGMallocRva);
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (VirtualQuery(gmallocSlot, &mbi, sizeof(mbi)) == 0 ||
+        !(mbi.State & MEM_COMMIT) ||
+        (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD))) {
+        Marker("[GM] GMalloc page not committed\r\n");
+        return false;
+    }
+    void* gmalloc = *gmallocSlot;
+    if (!gmalloc) {
+        Marker("[GM] GMalloc still NULL (engine not yet initialized)\r\n");
+        return false;
+    }
+    void** vtable = *(void***)gmalloc;
+    if (!vtable) {
+        Marker("[GM] FMallocBinned2 instance has NULL vtable\r\n");
+        return false;
+    }
+    MallocFn pMalloc = (MallocFn)vtable[kMallocVtableSlot];
+    if (!pMalloc) {
+        Marker("[GM] Malloc vtable slot is NULL\r\n");
+        return false;
+    }
+    Markerf("[GM] GMalloc=%p instance=%p vtable=%p Malloc=%p\r\n",
+            (void*)gmallocSlot, gmalloc, (void*)vtable, (void*)pMalloc);
+
+    // Allocate 12 wchars (24 bytes) — "127.0.0.1\0" is 10 wchars, round up
+    // to 12 for safety. Alignment 16 matches what FStrings use by default.
+    const wchar_t kHost[] = L"127.0.0.1";
+    const size_t kHostLen = 10;  // includes null
+    const size_t kBytes   = kHostLen * sizeof(wchar_t);
+
+    wchar_t* buf = (wchar_t*)pMalloc(gmalloc, kBytes, 16);
+    if (!buf) {
+        Marker("[GM] GMalloc->Malloc returned NULL\r\n");
+        return false;
+    }
+    for (size_t i = 0; i < kHostLen; i++) buf[i] = kHost[i];
+
+    g_engineHostBuffer    = buf;
+    g_engineHostBufferNum = (int32_t)kHostLen;
+    g_engineHostBufferMax = (int32_t)kHostLen;
+    Markerf("[GM] engine-allocated host buffer @ %p (\"127.0.0.1\\0\", num=%d)\r\n",
+            (void*)buf, g_engineHostBufferNum);
+    return true;
+}
+
+// (unused-static stubs preserved for now; removed in cleanup) — keep
+// BuildReallocTrampoline et al. for diagnostic re-runs of v12 if needed.
+#if 0
 static uint8_t* BuildReallocTrampoline(uintptr_t reallocAddr) {
     uint8_t* p = (uint8_t*)VirtualAlloc(nullptr, 0x40,
                                        MEM_COMMIT | MEM_RESERVE,
@@ -753,6 +818,7 @@ static void InstallReallocPatchOnce() {
     ResumeOtherThreads(susp, nSusp);
     Marker("[5b] Realloc HOOK INSTALLED (from PRE, suspended+RIP-checked)\r\n");
 }
+#endif  // 0 — end of v12 block
 
 // ───────── worker ───────────────────────────────────────────────────
 
@@ -899,53 +965,24 @@ static DWORD WINAPI Worker(LPVOID) {
 
     Marker("[4] HOOK INSTALLED\r\n");
 
-    // v12: pre-build the Realloc trampoline + hook stub on the worker thread
-    // (allocation is cheap and race-free). The actual PATCH on
-    // FMallocBinned2::Realloc's entry is deferred to the first time PRE
-    // handler fires for a /Game/... browse — at that moment the engine
-    // thread is paused inside our hook stub (NOT executing Realloc), so the
-    // race window for cross-thread instruction-stream corruption is
-    // dramatically smaller than installing from the worker during init.
-    g_reallocAddr = g_modBase + kReallocRva;
-    Markerf("[5] Realloc target @ 0x%llX (RVA 0x%llX); install DEFERRED until first /Game/ browse\r\n",
-            (unsigned long long)g_reallocAddr,
-            (unsigned long long)kReallocRva);
-    g_reallocTrampoline = BuildReallocTrampoline(g_reallocAddr);
-    g_reallocHookStub   = BuildReallocHookStub(g_reallocTrampoline,
-                                                (void*)&g_redirect_host[0]);
-    if (!g_reallocTrampoline || !g_reallocHookStub) {
-        Markerf("[5] FAIL: VirtualAlloc realloc trampoline/stub (err=%lu)\r\n",
-                GetLastError());
-    } else {
-        Markerf("[5] Realloc trampoline @ %p, hook stub @ %p (whitelist=%p) — READY\r\n",
-                (void*)g_reallocTrampoline, (void*)g_reallocHookStub,
-                (void*)&g_redirect_host[0]);
-        // v12.6: dump the actual bytes of trampoline + hook stub so we can
-        // verify the encoding matches what we intended. Helps localize
-        // whether subtle encoding bugs caused the post-PRE crash.
-        {
-            char hex[200]; int p = 0;
-            const uint8_t* t = (const uint8_t*)g_reallocTrampoline;
-            for (int i = 0; i < 32; i++) {
-                static const char H[] = "0123456789ABCDEF";
-                hex[p++] = H[(t[i] >> 4) & 0xF];
-                hex[p++] = H[t[i] & 0xF];
-                hex[p++] = ' ';
-            }
-            hex[p] = 0;
-            Markerf("[5] trampoline first 32B: %s\r\n", hex);
+    // v13: read GMalloc and pre-allocate the redirect host buffer via the
+    // engine's own allocator. The page containing GMalloc may not be
+    // committed yet at this moment (packer-unpack-on-demand); retry briefly.
+    {
+        DWORD gmDeadline = GetTickCount() + 20000;
+        bool ok = false;
+        int gmPolls = 0;
+        while (GetTickCount() < gmDeadline) {
+            gmPolls++;
+            if (AllocateEngineHostBuffer()) { ok = true; break; }
+            Sleep(20);
         }
-        {
-            char hex[200]; int p = 0;
-            const uint8_t* t = (const uint8_t*)g_reallocHookStub;
-            for (int i = 0; i < 32; i++) {
-                static const char H[] = "0123456789ABCDEF";
-                hex[p++] = H[(t[i] >> 4) & 0xF];
-                hex[p++] = H[t[i] & 0xF];
-                hex[p++] = ' ';
-            }
-            hex[p] = 0;
-            Markerf("[5] hook stub first 32B:  %s\r\n", hex);
+        if (!ok) {
+            Marker("[5] FAIL: could not allocate engine-host buffer in 20s\r\n");
+            // Browse hook is still active — PRE will detect missing buffer
+            // and skip the URL.Host mutation gracefully.
+        } else {
+            Markerf("[5] engine-host buffer READY after %d poll(s)\r\n", gmPolls);
         }
     }
 
