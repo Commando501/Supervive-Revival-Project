@@ -2361,6 +2361,166 @@ Both possibilities need session-15 investigation.
 
 - (session 14 writeup commit follows)
 
+## Session 15 (2026-06-30 — wrapper bytes 1/6 analyzed and mirrored, but client still rejects; failure is elsewhere)
+
+Session 15 tackled the session-14 cliff (client rejecting our wrapped
+reply) from two angles: brute-force analysis of captured wrapper bytes
+1/6 for a pattern, and a mirroring strategy that echoes incoming b1/b6
+back in the reply. The mirroring works mechanically but doesn't resolve
+the client's rejection — confirming that bytes 1 and 6 are NOT the
+problem.
+
+### Byte 1/6 pattern analysis (negative result)
+
+Parsed all 172 captured packets from `unreal-stub/Saved/Logs/udp7777-rx.log`
+(session 10 capture). Tested byte 1 and byte 6 against:
+
+- **CRC-8** with 13 polynomials × multiple init values (0, 0x55, 0xAA,
+  0xBB, 0xDC, 0xFB, 0xFF) × 12 byte ranges (wrapper subsets, inner
+  packet, full packet, with/without target byte). Both forward and
+  reflected polynomials.
+- **XOR-sum** and **SUM-mod-256** over the same ranges.
+- **FNV-1a hash** over the inner packet.
+- **CRC-16 CCITT** split across bytes 1+6 (16-bit pair).
+
+ZERO matches above the 25% threshold. Byte 1 has 153 distinct values
+across 172 packets (≈89% unique); byte 6 has 126 distinct values
+(≈73% unique). Within a single (src, byte8, byte12) group (typically
+2 packets each), b1 and b6 are ALWAYS distinct — no determinism on
+visible packet state. So bytes 1/6 are effectively random per packet
+(or derived from per-packet random tail entropy we can't see).
+
+### Mirroring strategy: works mechanically, doesn't fix rejection
+
+Added per-instance state to `LokiStatelessConnect`:
+- `LastIncomingByte1`, `LastIncomingByte6`, `bHasLastIncoming` —
+  captured by `IncomingConnectionless` from every received packet.
+
+Modified `LokiNetDriver::LowLevelSend`:
+- For connectionless handshake replies, mirror the last-received b1/b6
+  values into the outgoing wrapper (instead of `FMath::Rand`).
+
+Server log confirms exact mirror:
+```
+LokiStateless: Stripping wrapper: 456 bits -> 392 bits (wrapper bytes: BB FB DC 21 A6 A3 C3 FB)
+LogHandshake: SendConnectChallenge. Timestamp: 41.741932, Cookie: ...
+LokiNet: LowLevelSend: wrapping handshake reply 417 bits -> 481 bits (wrapper bytes BB FB DC 21 A6 A3 C3 FB)
+```
+
+Mirror successful: outgoing wrapper `BB FB DC 21 A6 A3 C3 FB` matches
+incoming wrapper exactly.
+
+Client side (unchanged):
+```
+[client] LogNet: Warning: Packet failed PacketHandler processing.
+[client] LogNet: Error: PendingConnectionFailure: Your connection to the host has been lost.
+```
+
+**Same rejection mode as session 14**. So bytes 1 and 6 are NOT what
+the client validates.
+
+### What the client log tells us
+
+```
+LogHandshake: Stateless Handshake: NetDriverDefinition 'GameNetDriver' CachedClientID: 7
+LogNetVersion: Loki 1.0.0.0, NetCL: 0, EngineNetworkVersion: 34, GameNetworkVersion: 0 (Checksum: 3716198887)
+```
+
+- Client's `CachedClientID = 7` (bumped from 0 last session — every
+  new connection per `GameNetDriver` definition increments it).
+- Client's `NetworkChecksum = 3716198887` (matches our server's
+  override).
+- Client's PacketHandler chain has ONLY stock StatelessConnect
+  (confirmed: no custom HandlerComponent — wrapping is at FSocket
+  level as suspected).
+
+### Where the rejection actually originates
+
+`"Packet failed PacketHandler processing"` fires from
+`NetConnection.cpp:1899` when `PacketHandler::Incoming` returns Error.
+The handler chain has only StatelessConnect, so StatelessConnect's
+`Incoming` must be setting `Packet.SetError()`.
+
+Stock UE5.4 `StatelessConnectHandlerComponent::Incoming` (line 947+):
+1. Reads MagicHeader (none, empty config)
+2. Reads SessionID + ClientID + handshake bit
+3. If handshake bit set, calls `ParseHandshakePacket`
+4. If valid Challenge, calls `SendChallengeResponse`
+
+Possible error paths inside this flow:
+- Size variance check inside `ParseHandshakePacket` fails (returns
+  false, sets `Packet.SetError()`)
+- `CachedClientID` mismatch — but server echoes back the same ClientID
+  client sent, so should match
+- `CachedGlobalNetTravelCount` mismatch — server has GlobalNetTravelCount=0,
+  matches client's initial value
+- Cookie format / size mismatch
+- Some validation we haven't traced
+
+### Three remaining hypotheses for session 16
+
+1. **Server-direction wrapper differs from client-direction.**
+   Captured packets are all CLIENT→SERVER. Maybe SERVER→CLIENT packets
+   have different signature bytes (e.g., byte 0 = 0xCC instead of
+   0xBB, or different stable bytes). Our reply mirrors the CLIENT's
+   format — wrong for server-direction. **Verification approach**:
+   hook the CLIENT's FSocket.RecvFrom to log incoming wrapper bytes
+   when our reply arrives. Compare to what we sent.
+
+2. **Inner Challenge has a subtle content mismatch.** Stock UE5.4
+   SendConnectChallenge builds the packet from current server state.
+   Maybe a specific field (e.g., HandshakeVersion in Challenge,
+   Timestamp encoding, Cookie size if TheoryCraft modified
+   COOKIE_BYTE_SIZE) doesn't match what TheoryCraft expects.
+   **Verification approach**: dump our outgoing INNER bytes (post-wrap-strip
+   equivalent) and bit-decode against captured client→server Initial
+   bytes. Look for structural differences.
+
+3. **PacketHandler.Incoming termination-bit detection failing.** Stock
+   UE5.4 PacketHandler::Incoming_Internal expects the last byte to
+   have a termination bit (high bit set). If our wrapping changes the
+   last-byte structure somehow, client gets garbage bit count.
+   **Verification approach**: log the actual byte we send as final
+   byte. Should have high bit set.
+
+### Plan for session 16
+
+- **Step 1**: Add hex dump of our outgoing INNER bytes (the actual
+  Challenge content, pre-wrap) to `LokiNetDriver::LowLevelSend`.
+  Cross-reference with bit-decoded captured client→server bytes.
+  Identify what (if anything) we send that's structurally different.
+
+- **Step 2**: If inner content looks OK, hook the CLIENT side to
+  observe the rejection in real-time. Two options:
+  - Cheaper: hook `PacketHandler::Incoming` entry in the CLIENT's
+    UnrealEditor-Engine.dll equivalent (statically linked in the
+    SUPERVIVE binary; can find via xref to "Packet failed PacketHandler
+    processing" string at NetConnection.cpp:1899 location).
+  - Heavier: build a DLL that hooks the CLIENT's FSocket.RecvFrom and
+    logs the post-strip bytes. Compare to what our server sent.
+
+- **Step 3**: If hypothesis 1 (server-direction wrapper) is the answer,
+  test by manually setting wrapper bytes to different values (e.g.,
+  0xCC at position 0 instead of 0xBB) and see if the client's
+  rejection mode changes.
+
+### Tooling delivered (session 15)
+
+- `unreal-stub/Source/Loki/LokiStatelessConnect.h` + `.cpp` — added
+  `LastIncomingByte1/6` + `bHasLastIncoming` state, captured in
+  `IncomingConnectionless`.
+- `unreal-stub/Source/Loki/LokiNetDriver.cpp` — `LowLevelSend` now
+  mirrors incoming b1/b6 into outgoing wrapper. Also logs the full
+  outgoing wrapper bytes for debugging.
+- `scratchpad/analyze_packets.py` + `analyze_v2.py` + `analyze_v3.py`
+  — Python tools for byte-pattern analysis. Reusable for future
+  byte-formula investigations.
+
+### Commits this session
+
+- (session 15 writeup commit follows)
+
+
 
 
 

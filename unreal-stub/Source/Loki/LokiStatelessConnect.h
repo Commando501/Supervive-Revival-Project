@@ -39,6 +39,12 @@ protected:
 	/**
 	 * Strip TheoryCraft's 8-byte wrapper from the front of incoming packets,
 	 * then delegate to stock IncomingConnectionless.
+	 *
+	 * Also captures the last received wrapper's bytes 1 and 6 into
+	 * LastIncomingByte1/LastIncomingByte6 so LokiNetDriver::LowLevelSend can
+	 * echo them in our reply (session 15 mirroring strategy — bytes 1 and 6
+	 * across 172 captured packets show no checksum pattern but are likely
+	 * session-state values the FSocket layer assigns).
 	 */
 	virtual void IncomingConnectionless(FIncomingPacketRef PacketRef) override;
 
@@ -54,4 +60,15 @@ public:
 	static constexpr uint8 LokiWrapperByte4 = 0xA6;
 	static constexpr uint8 LokiWrapperByte5 = 0xA3;
 	static constexpr uint8 LokiWrapperByte7 = 0xFB;
+
+	/**
+	 * Last-received wrapper bytes 1 and 6, captured by IncomingConnectionless
+	 * for LokiNetDriver::LowLevelSend to echo back in our reply. Mirroring
+	 * strategy: if these bytes are session-specific state assigned by the
+	 * client's LokiNetSocketSubsystem, echoing them ensures the client
+	 * recognizes our reply as part of the same conversation.
+	 */
+	uint8 LastIncomingByte1 = 0;
+	uint8 LastIncomingByte6 = 0;
+	bool bHasLastIncoming = false;
 };
