@@ -1,0 +1,18 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.4",
+	"Category": "",
+	"Description": "Dedicated server stub for SUPERVIVE Revival. Receives the redirected NetConnection from the browse_hook.dll client-side rewrite and answers the StatelessConnect handshake with the version fields captured in session 5 (NetworkChecksum=3716198887, EngineNetworkVersion=34, GameNetworkVersion=0). Once the connection completes, the goal is to replicate LokiPlayerState_Missions to the connected client so the Missions modal populates.",
+	"Modules": [
+		{
+			"Name": "Loki",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine",
+				"CoreUObject",
+				"NetCore"
+			]
+		}
+	]
+}
