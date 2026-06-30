@@ -168,6 +168,15 @@ static LONG64 AppendBytes(const char* src, int n) {
     return pos;
 }
 
+// v10: static buffer in our DLL's writable data segment. UE's FString
+// destructor may call free() on this pointer later — that'll AV — but the
+// engine's NetConnection attempt fires FIRST, and we'll see the LogNet*
+// activity in Loki.log before the eventual crash. For probe purposes the
+// failure mode IS the win.
+static wchar_t g_redirect_host[]   = L"127.0.0.1";
+static int32_t g_redirect_host_num = 10;   // 9 chars + null
+static int32_t g_redirect_host_max = 10;
+
 extern "C" void browse_hook_handler(uintptr_t rcx, uintptr_t rdx,
                                     uintptr_t r8, uintptr_t r9) {
     // v9: deref FURL at *r8 — layout VERIFIED from v8 hex dump 2026-06-29:
@@ -253,6 +262,36 @@ extern "C" void browse_hook_handler(uintptr_t rcx, uintptr_t rdx,
         }
     } else {
         append("[furl] r8 not safely readable\r\n", 31);
+    }
+
+    // ───── v10 REDIRECT ─────────────────────────────────────────────────
+    // If Map is a local "/Game/..." URL, mutate FURL.Host in place to make
+    // the engine treat this as a remote URL. FURL lives on the caller's
+    // stack (r8 pointed at stack memory in v8 capture) — that's RW so the
+    // write is safe at the page level. Engine's Browse logic checks
+    // Host.IsEmpty() to decide local vs. NetConnection: a non-empty Host
+    // flips it to NetConnection mode using Host:Port (Port is already
+    // 7777 from the FURL we captured).
+    if (SafeReadable((const void*)r8, 0x28 + 16)) {
+        wchar_t* map_data  = *(wchar_t**)((const uint8_t*)r8 + 0x28);
+        int32_t  map_num   = *(int32_t*)((const uint8_t*)r8 + 0x30);
+        bool isLocalGame = false;
+        if (map_data && map_num >= 6 && SafeReadable(map_data, 12)) {
+            // Match L"/Game/" literally — UTF-16 LE.
+            isLocalGame = map_data[0] == L'/' && map_data[1] == L'G' &&
+                          map_data[2] == L'a' && map_data[3] == L'm' &&
+                          map_data[4] == L'e' && map_data[5] == L'/';
+        }
+        if (isLocalGame) {
+            // FURL.Host @ +0x10: Data (8), Num (4), Max (4)
+            *(wchar_t**)((uint8_t*)r8 + 0x10) = g_redirect_host;
+            *(int32_t*)((uint8_t*)r8 + 0x18)  = g_redirect_host_num;
+            *(int32_t*)((uint8_t*)r8 + 0x1C)  = g_redirect_host_max;
+            append("[REWRITE] FURL.Host set to 127.0.0.1; "
+                   "engine should switch to NetConnection\r\n", 78);
+        } else {
+            append("[REWRITE] skipped (Map not local /Game/...)\r\n", 45);
+        }
     }
     append("\r\n", 2);
 
