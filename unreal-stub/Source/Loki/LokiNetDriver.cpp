@@ -97,10 +97,20 @@ void ULokiNetDriver::LowLevelSend(TSharedPtr<const FInternetAddr> Address,
 
 		const int32 NewCountBits = CountBits + LokiStatelessConnect::LokiWrapperBits;
 
+		// Session 16: hex-dump the full wrapped packet for diagnostics. Compare
+		// against captured client→server bytes to find structural mismatches.
+		FString FullHex;
+		FullHex.Reserve(OuterBytes * 3);
+		for (int32 i = 0; i < OuterBytes; ++i)
+		{
+			FullHex.Appendf(TEXT("%02X "), Wrapped[i]);
+		}
+
 		UE_LOG(LogLokiNet, Verbose,
 		       TEXT("LowLevelSend: wrapping handshake reply %d bits -> %d bits (wrapper bytes %02X %02X %02X %02X %02X %02X %02X %02X)"),
 		       CountBits, NewCountBits,
 		       Wrapped[0], Wrapped[1], Wrapped[2], Wrapped[3], Wrapped[4], Wrapped[5], Wrapped[6], Wrapped[7]);
+		UE_LOG(LogLokiNet, Verbose, TEXT("LowLevelSend: full %d bytes: %s"), OuterBytes, *FullHex);
 
 		Super::LowLevelSend(Address, Wrapped.GetData(), NewCountBits, Traits);
 	}

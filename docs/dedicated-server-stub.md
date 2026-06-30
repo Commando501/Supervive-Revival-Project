@@ -2520,6 +2520,151 @@ Possible error paths inside this flow:
 
 - (session 15 writeup commit follows)
 
+## Session 16 (2026-06-30 — outgoing inner bytes captured + bit-decoded; PERFECTLY stock UE5.4 Challenge format; rejection cause is above the inner-content layer)
+
+Session 16 added hex-dump logging to LokiStatelessConnect (incoming
+wrapper-strip side) and LokiNetDriver (outgoing wrap side), captured the
+exact bytes of both directions during a real client-server exchange,
+and bit-decoded them against stock UE5.4 protocol expectations. The
+conclusion is decisive: our outgoing Challenge is a PERFECTLY formed
+stock UE5.4 packet. The client's rejection has nothing to do with the
+inner content — it must be at a layer above (wrapper direction
+asymmetry, undocumented MAC, or LokiNet-FSocket validation).
+
+### Captured packets
+
+Server log after running stub + client with `-Hook`:
+
+```
+LokiStateless: Stripping wrapper: 504 bits -> 440 bits (wrapper bytes: BB 0B DC 21 A6 A3 4C FB)
+LokiStateless: Stripping wrapper: full 63 bytes: BB 0B DC 21 A6 A3 4C FB BC 01 02 80 80 F3 58 C0 6E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 18 00 48 60 BE 7A 29 9E 85 51 0C D3 5E FC 08 A1
+LogHandshake: SendConnectChallenge. Timestamp: 38.151915, Cookie: 125217138189072171241138143138202028068102208254010167217056
+LokiNet: LowLevelSend: wrapping handshake reply 433 bits -> 497 bits (wrapper bytes BB 0B DC 21 A6 A3 4C FB)
+LokiNet: LowLevelSend: full 63 bytes: BB 0B DC 21 A6 A3 4C FB BC 01 82 80 80 F3 58 C0 6E 00 00 00 00 10 F5 71 13 43 40 7D D9 8A BD 48 AB F1 8A 8F 8A CA 1C 44 66 D0 FE 0A A7 D9 38 B4 03 BA DA D2 8E 35 9F 39 44 BF D0 3D 61 21 01
+```
+
+### Bit-decoded incoming Initial (client→server)
+
+After stripping the 8-byte wrapper:
+
+```
+SessionID                 = 0
+ClientID                  = 7
+bHandshakePacket          = 1
+bRestartHandshake         = 0
+MinVersion                = 3  (SessionClientId)
+CurVersion                = 4  (NetCLUpgradeMessage)
+HandshakePacketType       = 0  (InitialPacket)
+SentHandshakePacketCount  = 1
+LocalNetworkVersion       = 3716198887       ← matches client log
+LocalNetworkFeatures      = 0x0000
+SecretIdPad               = 0
+PacketSizeFiller (28 B)   = 00 00 00 00 ... (all zeros — correct for Initial)
+random tail (16 bytes)    = 18 00 48 60 BE 7A 29 9E 85 51 0C D3 5E FC 08 A1
+```
+
+EXACT stock UE5.4 Initial format with TheoryCraft's expected defaults.
+
+### Bit-decoded outgoing Challenge (server→client, our reply)
+
+After stripping the 8-byte wrapper:
+
+```
+SessionID                 = 0
+ClientID                  = 7                ← correctly echoed from incoming
+bHandshakePacket          = 1
+bRestartHandshake         = 0
+MinVersion                = 3
+CurVersion                = 4
+HandshakePacketType       = 1  (Challenge)   ← correctly toggled from Initial
+SentHandshakePacketCount  = 1                ← correctly echoed
+LocalNetworkVersion       = 3716198887       ← matches our override
+LocalNetworkFeatures      = 0x0000
+ActiveSecret              = 0
+Timestamp                 = 38.151915200054646  ← matches server log "Timestamp: 38.151915"
+Cookie (20 bytes)         = 7D D9 8A BD 48 AB F1 8A 8F 8A CA 1C 44 66 D0 FE 0A A7 D9 38  ← matches server log
+```
+
+Byte-by-byte diff vs incoming shows ONLY these (all expected):
+- Byte 10: 0x02 → 0x82 (HandshakePacketType Initial=0 → Challenge=1, bit 23 flip)
+- Bytes 21-46: Initial's zeros → Challenge's Timestamp+Cookie
+- Bytes 47-62: Different random padding (per-packet, expected)
+
+**The Challenge packet our server sends is a textbook stock UE5.4 Challenge.**
+
+### Architecturally, this packet should be accepted
+
+Per stock UE5.4 source:
+- `bHasValidClientID = (ClientID == CachedClientID)` → Client has CachedClientID=7
+  (per client log), our reply has ClientID=7 → MATCH
+- `bHasValidSessionID = (SessionID == CachedGlobalNetTravelCount)` → Client has
+  CachedGlobalNetTravelCount=0 (fresh), our reply has SessionID=0 → MATCH
+- `bIsChallengePacket = (HandshakePacketType == Challenge && Timestamp > 0.0)`
+  → both true → would trigger SendChallengeResponse on client
+- Cookie format: stock UE5.4 GenerateCookie → 20 bytes ✓
+
+Yet the client rejects with `Packet failed PacketHandler processing`.
+
+### Three remaining hypotheses
+
+1. **Wrapper has DIRECTION-asymmetric stable bytes.** Captured packets
+   are all CLIENT→SERVER. We've been MIRRORING the client's wrapper
+   format in our SERVER→CLIENT replies. Maybe the wrapper signature
+   bytes (0xBB at byte 0, DC 21 A6 A3 at bytes 2-5, 0xFB at byte 7)
+   are CLIENT-ORIGIN markers. The SERVER's wrapper might need
+   DIFFERENT stable bytes (e.g., 0xCC at byte 0, or different
+   signature) to identify it as server-origin.
+
+2. **Crypto/MAC layer below the wrapper.** The wrapper bytes 1 and 6
+   (which we established are NOT a CRC of visible content) might be
+   keyed-hash output of some hidden state. The client validates them.
+   Our mirrored values from the client's outgoing don't match what
+   the client expects for incoming-from-server.
+
+3. **LokiNet-FSocket-level packet validation.** The custom FSocket
+   subclass (which we couldn't find by name searching) implements
+   wrap/unwrap. Its unwrap might check more than just the visible
+   signature bytes — maybe inspects packet size, address-derived
+   token, or per-connection state.
+
+### How to discriminate
+
+- For hypothesis #1: try setting outgoing wrapper byte 0 to different
+  values (CC, AA, BB+server-flag-bit-set, etc.) and see if client
+  rejection mode CHANGES. If client logs different errors, byte 0 IS
+  validated.
+- For hypothesis #2/#3: hook the client's UE code to log what its
+  FSocket.RecvFrom returns vs what the PacketHandler.Incoming sees.
+  Compare to identify if any layer strips/transforms before PacketHandler.
+
+### Next session strategies
+
+**Cheap experiment to start session 17 with:** vary the outgoing
+wrapper byte 0 (try CC, then AA, then leave as BB). If any variation
+causes the client to behave differently (longer connection time,
+different log message, no rejection), we've found a validation point.
+
+**If experimentation doesn't reveal:** build a CLIENT-side hook DLL
+that intercepts `FBitReader::SetData` or the `PacketHandler::Incoming`
+entry in the SUPERVIVE binary, dumps what it sees, and logs the
+specific point of rejection. Uses existing `tools/inject` infrastructure
+similar to browse_hook. ~3-5 hours work.
+
+### Tooling delivered (session 16)
+
+- `unreal-stub/Source/Loki/LokiNetDriver.cpp` — `LowLevelSend` now
+  also dumps full outgoing packet hex.
+- `unreal-stub/Source/Loki/LokiStatelessConnect.cpp` —
+  `IncomingConnectionless` now also dumps full incoming packet hex.
+- `scratchpad/decode_packets.py` — bit-decoder for stock UE5.4
+  handshake packets (incoming Initial + outgoing Challenge variants).
+  Reusable for future packet analysis.
+
+### Commits this session
+
+- (session 16 writeup commit follows)
+
+
 
 
 
