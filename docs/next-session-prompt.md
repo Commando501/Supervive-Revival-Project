@@ -1,153 +1,216 @@
-# Next session prompt — SUPERVIVE Revival dedicated-server stub
+# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 8
 
-Paste the section below as the first message of the new session. It
-bootstraps the agent fully without re-reading dozens of files.
+Paste the section between the `---` lines below as the first message of
+the new session. It bootstraps the agent fully without re-reading dozens
+of files.
 
 ---
 
-We're starting a new chapter of the SUPERVIVE Revival project on branch
-`claude/assetregistry-primary-assets-w7pljz`. Repo at
-`G:\git\Supervive Revival Project`. The diagnostic phase for the menu data
-blockers is COMPLETE. This session begins the **dedicated-server stub**
-work, which is required to unblock the Missions modal (and likely Store,
-Cosmetics, Hunters grid, all in-match features).
+We're continuing the SUPERVIVE Revival dedicated-server-stub chapter on
+branch `dedicated-server-stub` at `G:\git\Supervive Revival Project`.
+This is **session 8** of the chapter. Sessions 1–7 captured the
+protocol surface, built a working `browse_hook.dll` that hooks
+`UEngine::Browse` and rewrites `FURL.Host` to `127.0.0.1`, scaffolded a
+UE5.4 stub server that listens on UDP 7777 with the correct
+`GameNetDriver` + `StatelessConnectHandlerComponent`, and PROVED via a
+diagnostic UDP listener that **the client crashes before sending its
+first byte** — strictly in `FMallocBinned2.realloc` when UE's FString
+destructor tries to free our static-buffer Host pointer. Today's job
+is to fix that ONE crash so the engine actually reaches the wire.
 
 START BY (in this order):
   cd "G:\git\Supervive Revival Project"
   git status
-  git log --oneline -15
-  # Then read in order:
-  #   docs/dedicated-server-stub.md   (★ this chapter's design notes — read first)
-  #   docs/lokiassetmanager-vtable-dump.md  (the full RE diagnostic, ~2000 lines;
-  #     skim to the "G1-G2 NEGATIVE" section at the end for the latest verdict)
-  #   docs/trackb-notes.md  (HTTP endpoint surface; `handleCoreGamePlayer`
-  #     stub commentary mentions where match-server connect info goes)
-  #   docs/endpoints.md     (every endpoint + handler status)
-  # Memory file [[supervive-hero-roster-blocker]] auto-loads with the
-  # latest verdict.
+  git log --oneline -8
+  # Then read:
+  #   docs/dedicated-server-stub.md   (the whole chapter; jump to "Session 7"
+  #     section at the bottom — that's where you pick up)
+  #   tools/sigbypass-mod/browse_hook.cpp  (current v10 hook implementation;
+  #     this is what gets modified)
+  # The hero-roster-blocker memory auto-loads and has session 7's
+  # writeup at the very top — read that.
 
-THE CORE FINDING THIS CHAPTER ACTS ON:
+THE EXACT BLOCKER:
 
-The Missions modal calls `UMissionsModel.GetActiveMissionModel(fpaid)` /
-`GetClaimableMissionModel(fpaid)`. Both are NATIVE methods on
-UMissionsModel that iterate a TSet at `UMissionsModel+0x30` containing
-`UMissionModel*` pointers. That TSet is populated ONLY by
-`OnPSMissionsUpdated` (FName 0x0058FF4F), which fires from UE Network
-Replication on `LokiPlayerState_Missions`.
+`browse_hook` v10 sets `FURL.Host.Data` to a `static wchar_t
+g_redirect_host[]` array inside our DLL's data segment. UE's FString
+destructor unconditionally calls `FMemory::Free(Data)` which routes to
+`FMallocBinned2::Realloc(Data, 0, ...)`. Realloc's canary check fails
+because our pointer isn't in an FMallocBinned2 bin, fatal error fires
+(`canary == 0x0 != 0xe3`), process exits. ALL of this happens BEFORE
+the engine sends its first UDP packet — confirmed in session 7 with a
+PowerShell listener bound on :7777 that received zero packets.
 
-At the menu, there is NO live `LokiPlayerState_Missions` instance
-(CDO-only, confirmed via findptr on its vtable, both pre- and
-post-restart). So no missions, hence empty modal.
+The fix is browse_hook **v11**: allocate the Host buffer through UE's
+own allocator so the destructor's Free path doesn't fail canary.
 
-Enriching `PUT /progression/players/{id}/mission` response with a full
-MissionData payload was tested (commits `368b675` + `435b739`) and
-CONFIRMED to NOT trigger UMissionModel creation — the HTTP path is
-write-only. The architectural reality: missions arrive via a UE
-dedicated server replicating `LokiPlayerState_Missions` to the
-connected client.
+THE RECON YOU NEED:
 
-THIS CHAPTER'S GOAL:
+The naive approach (find FMallocBinned2's vtable via `vtslot`, locate
+Malloc slot) is DEAD: session 7 confirmed `findptr` and `callxref`
+return zero hits for both `FMallocBinned2::Realloc` (mod-RVA `0xFE25A9`)
+and `FMallocBinned2::Free` (mod-RVA `0xFDFE70`). Both function bodies
+exist in the binary but nothing references them — they're inlined and
+devirtualized at every call site. The vtable approach doesn't exist
+here.
 
-Bring up a UE5.4 dedicated server stub that the client connects to and
-that replicates enough of `LokiPlayerState_Missions` for the Missions
-modal to render at least 1 mission. Treat that 1-mission render as the
-"hello world" smoke test; everything else (more missions, Store /
-Cosmetics replication, in-match logic) follows the same path.
+Use the byte-pattern approach instead:
 
-Per `docs/dedicated-server-stub.md`, three implementation paths exist
-(Path A = full UE5.4 dedicated server, Path B = Go netcode emulator,
-Path C = hybrid). Decide which is tractable based on what's available
-on the user's machine.
+  1. Inlined `FMemory::Malloc` compiles to this x64 pattern in shipping:
 
-START-OF-CHAPTER CONCRETE STEPS:
+       48 8B 05 ?? ?? ?? ??     ; mov rax, [rip+disp]    ; load GMalloc
+       48 85 C0                  ; test rax, rax
+       74 ??                     ; jz <init-path>
+       48 8B 00                  ; mov rax, [rax]         ; load vtable
+       ... mov regs for args ...
+       FF 60 ??                  ; jmp [rax+slot]         ; tail call
 
-1. **Survey UE5.4 install** — does the user have UE5.4 source / editor
-   installed? If yes, what path? If only the binary launcher install,
-   server targets aren't directly buildable without the source. Run
-   `Get-ChildItem 'C:\Program Files\Epic Games\UE_5.4' -ErrorAction SilentlyContinue`
-   and similar paths. Ask the user if not found.
+  2. Scan the main module's executable pages for this 3-instruction
+     prefix. Collect every distinct `[rip+disp]` target.
+  3. The most-common target is GMalloc (it's used by EVERY allocation
+     in UE; thousands of hits). Other less-common targets are unrelated
+     globals.
+  4. The slot offset in `FF 60 ??` is 8 * Malloc's vtable index. UE5
+     FMalloc's vtable has Malloc at an index we'll learn from this
+     scan.
 
-2. **Capture the post-matchmaking protocol** — modify
-   `server/internal/interactive/interactive.go::handleCoreGamePlayer`
-   to return a phantom matchInfo pointing at `127.0.0.1:7777` (or
-   another test port nothing's listening on). Restart `ags`, watch
-   Loki.log for what the client tries to do next when it thinks there's
-   an active match. That tells us the protocol surface to implement.
+usmapdump doesn't currently have a byte-pattern command. You'll
+probably want to add a `pattern` subcommand (or write a small
+sibling Go tool) — see `tools/usmapdump/scan.go` and `helpers.go` for
+the read-page-by-page substrate already there. Reusing that
+infrastructure is much faster than starting from scratch. Once you
+have the scanner, dump the top-10 most-common targets; GMalloc should
+be 100×–1000× more common than the next.
 
-   The current handler returns
-   `{hasActiveMatch:false, matchInfo:null, player:null}`. The shape of
-   matchInfo when populated is unknown — needs experimentation. Likely
-   fields: server address, server port, session token, match ID.
+After identifying GMalloc:
+  - `usmapdump peek <pid> 0x<GMalloc_addr> 8`  → read the FMalloc*
+  - The first 8 bytes of the FMalloc instance are the vtable pointer
+  - `usmapdump peek <pid> 0x<vtable_addr> 80` → dump the vtable
+  - Cross-reference with one of the inlined call sites' `FF 60 XX` to
+    figure out which slot is Malloc
 
-3. **Decide on Path A/B/C** based on findings + scope appetite. Document
-   the choice in `docs/dedicated-server-stub.md`.
+THE FIX (browse_hook v11):
 
-KEY TECHNICAL ANCHORS (already RE'd):
+In `tools/sigbypass-mod/browse_hook.cpp`:
 
-UMissionsModel layout — what replication needs to fill on the client:
-```
-UMissionsModel
-  +0x30 : TSet<UMissionModel*>  ← populate via OnPSMissionsUpdated
-UMissionModel
-  +0x40, +0x48 : FPrimaryAssetId PoolId — the lookup key
-  +0xB8, +0xB9 : flag bytes — both must be 0 to qualify as
-                   "active" / "claimable" per native impl disasm
-```
+  - Add a worker-time recon step that finds GMalloc + Malloc slot
+    (you can either bake the addresses as constants once known, or do
+    runtime scanning inside the DLL)
+  - Allocate the Host buffer via
+    `GMalloc->Malloc(size_in_bytes, alignment)` where alignment is
+    typically 16 (the default for `wchar_t[]`)
+  - Copy `"127.0.0.1\0"` into it and use it as `FURL.Host.Data`
 
-Per-category pool wiring (from
-`docs/exports/WBP_UI_MissionModalCategory.json`):
+Then rebuild and retest end-to-end:
 
-| Category | PoolAsset BP classes (FPrimaryAssetIds when GetPrimaryAssetIdFromClass'd) |
-|---|---|
-| Dailies | DA_MissionPoolDailyEasy_C, DailyChallenge_C, DailyEasy_Planbee_C, DailyChallenge_Planbee_C |
-| Weekly | DA_MissionPoolWeekly_C, WeeklyChallenge_C, Weekly_Planbee_C, WeeklyChallenge_Planbee_C |
-| Seasonal | DA_MissionPool_Tournament_C |
-| Onboarding | DA_MissionPoolOnboardingPlanbee_C, MissionPoolOnboarding_C |
-| PCBang | DA_MissionPoolDailyPCB_C, DA_MissionPoolDailyPCB_Armory_C |
+  1. Start the UE5.4 stub server (still running from session 6's setup):
+       Start-Process -FilePath `
+         'H:\Unreal Engine\UE_5.4\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' `
+         -ArgumentList '"G:\git\Supervive Revival Project\unreal-stub\Loki.uproject"', `
+           '/Engine/Maps/Entry?listen','-game','-server','-log','-Port=7777', `
+           '-nullrhi','-NoSplash','-Unattended'
+     Wait ~15-20s for engine init. Verify with
+     `Get-NetUDPEndpoint -LocalPort 7777`.
 
-For the smoke test, even 1 UMissionModel with PoolId =
-`MissionPool:DA_MissionPoolDailyEasy` + flags=0 in the TSet would make
-the Dailies tab render that 1 entry.
+  2. (Optional) Re-bind the diagnostic listener — but actually no, with
+     a real server you don't need it. The server's Loki.log will show
+     incoming connections directly.
+
+  3. Launch the SUPERVIVE client with -Hook:
+       .\configs\launch-redirect.ps1 -Hook .\tools\sigbypass-mod\browse_hook.dll
+
+  4. Expected outcome: client reaches LobbyV2 browse, rewrites Host,
+     dials our server. Server's Loki.log shows a NEW client connection
+     attempt. The StatelessConnect handshake will then either complete
+     or fail on the NetCL mismatch (server reports `NetCL: 33043543`,
+     client reports `NetCL: 0`). That's blocker #1 from session 6 — fix
+     it next by adding `FNetworkVersion::ProcessOverrideCallback` to
+     the Loki module's `StartupModule()` (see Loki.cpp, currently just
+     IMPLEMENT_PRIMARY_GAME_MODULE).
+
+KEY ADDRESSES + ANCHORS (mod-RVAs in SUPERVIVE-Win64-Shipping.exe;
+each session's launch shifts the absolute base but RVAs are stable):
+
+  UEngine::Browse                          0x3EC57D0   (entry; hooked by v10)
+  FMallocBinned2::Realloc (body, inlined)  0xFE25A9    (canary at 0xFE25FD)
+  FMallocBinned2::Free   (body, inlined)   0xFDFE70
+  GGameThreadId slot                       0x9D49158
+  "FMallocBinned2 Attempt to realloc..."    0x76A0C20
+  "FMallocBinned2 Attempt to free..."       0x76A0AD0
+  "GMalloc_CLASS=%d..."                    0x81C3AE2  (debug only)
+
+CHAPTER STATE AT END OF SESSION 7:
+
+  Server-side:  UE5.4 stub server is RUNNING when launched. UDP 7777
+                  listens. GameNetDriver + StatelessConnectHandlerComponent
+                  loaded. Server's Loki.log waits for incoming
+                  connections. The server's NetCL is 33043543 (vs
+                  client's 0) — blocker #1 — but that doesn't matter
+                  until blocker #2 is fixed because no client packet
+                  reaches the server yet.
+
+  Client-side:  browse_hook v10 (`tools/sigbypass-mod/browse_hook.dll`)
+                  successfully patches `UEngine::Browse`, reads the FURL,
+                  rewrites Host to `127.0.0.1`. Client crashes in
+                  FMallocBinned2 before sending any UDP — blocker #2 —
+                  which is what this session fixes.
 
 GUARDRAILS (per CLAUDE.md):
 
-- Commit + push each meaningful step. Push needs `gh auth` or system
-  git credential helper — interactive prompt fails in the Claude shell,
-  so user pushes manually.
-- DON'T mutate the game's running state without showing the user the
-  command and the expected effect first.
-- The HTTP/HTTPS redirect is already working; don't touch
-  `launch-redirect.ps1` casually.
+- Branch is `dedicated-server-stub`. Commit + push each meaningful step.
+  Push needs `gh auth` or system git credential helper; user pushes
+  manually if interactive prompts fail.
+- Don't mutate the running game without warning the user first.
+- The hosts file redirect is already active; don't run
+  `configs/launch-redirect.ps1 -Revert` casually.
 - Steam must be running before the game launches (else Auth Failure
-  14005). Easy to miss.
-
-LARGER CONTEXT REMINDER:
-
-The user's strategic intuition that "the menu blocker is server-side"
-was proven correct this session. The dedicated server stub is the next
-required-but-hard milestone for the project; the user said: "The
-dedicated server stub was always going to be a major requirement for
-this project to work at all. I know for a fact that most of the game
-will not be playable or triggerable without the dedicated server
-allowing the client to do so." Treat this chapter as a multi-session
-effort. The first session is mostly surveying + the matchmaking-protocol
-probe; it's fine to end without ANY actual server code if the recon
-clarifies what the implementation needs to be.
+  14005).
+- If the new pattern-scan subcommand to usmapdump produces gigabytes of
+  output, redirect to a file or paginate.
 
 TOOLING ALREADY BUILT (do not duplicate):
 
-- `tools/usmapdump` (external RPM, includes `poke` for WriteProcessMemory
-  experiments and `nameid` for FName resolution — note: `nameid`'s pool
-  discovery sometimes fails on fresh processes; you may need a few
-  launch attempts)
-- `tools/extractor` (CUE4Parse-based, includes `bpdump` for cooked-asset
-  property inspection)
-- `tools/inject` (manual-map DLL injector for in-process shims like
-  `registration_shim.cpp`)
-- FModel installed at `G:\Tools\FModel` (configured for SUPERVIVE
-  GAME_UE5_4) — use for any further cooked-asset inspection where
-  property names matter
+  tools/usmapdump/usmapdump.exe  (subcommands: info, names, objects,
+                                  extract, strings, wstrings, xrefstr,
+                                  callxref, findptr, peek, disasm,
+                                  vtslot, vtdump, nameid, poke. Add
+                                  a `pattern` subcommand for this
+                                  session's recon.)
+  tools/inject/inject.exe         (manual-map DLL injector; supports
+                                  mmap, watch, watch-now, launch
+                                  subcommands)
+  tools/sigbypass-mod/browse_hook.cpp   (the v10 hook — extend here for v11)
+  configs/launch-redirect.ps1     (already has -Hook flag from session 4)
+  unreal-stub/                    (the UE5.4 Loki project — Game + Editor
+                                  targets built. Loki.exe Game build
+                                  has an engine-content asset bug;
+                                  use UnrealEditor-Cmd.exe with the
+                                  project instead — pattern documented
+                                  in docs/dedicated-server-stub.md
+                                  Session 6 section.)
+  unreal-stub/udp7777-listener.ps1   (diagnostic UDP listener; only
+                                  needed if the recon goes sideways
+                                  and you want to re-verify the
+                                  client sends nothing pre-crash.
+                                  Already proven once; can ignore.)
 
-If you propose to run a long shell command or modify a critical file,
-state the intent in one sentence before the tool call so the user can
-veto. Otherwise proceed at the same pace as prior sessions.
+LARGER CONTEXT REMINDER:
+
+The original goal of this multi-chapter project is to make the
+SUPERVIVE Missions modal (and other content panels) populate after
+the official servers were retired. The diagnostic phase (sessions 1-5
+of the chapter prior to this one) established that the menu's empty
+state is server-replication-dependent and only a UE5.4 stub server can
+deliver the data. Sessions 1-7 of THIS chapter built the trigger
+(browse_hook rewrites the engine's Browse URL to our stub) and the
+receiver (UE5.4 stub server listening on UDP 7777). Today closes
+the last gap so the engine actually connects.
+
+Once the StatelessConnect handshake completes end-to-end, the rest of
+the chapter is "write the Loki module's `ALokiPlayerState_Missions`
+class and have it replicate mission data on join." That's normal
+UE5.4 dev work, not RE work.
+
+If you have any doubt about a step, ask the user before running it —
+the chapter has had a lot of trial-and-error and the user has good
+intuition about what's safe vs. risky.
