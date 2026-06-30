@@ -1937,4 +1937,228 @@ file path at mod-RVA `0x8160A10` but didn't find direct LEA xrefs from
 
 - (session 12 writeup commit follows)
 
+## Session 13 (2026-06-30 — custom LokiStatelessConnect override mechanism works; BaseRandomDataLengthBytes=24 hypothesis FALSIFIED; TheoryCraft's packet format is structurally different from stock UE5.4)
+
+Session 13 built a custom UE module-level override mechanism for
+StatelessConnectHandlerComponent to bypass the Launcher-install rebuild
+blocker from session 12. The mechanism works correctly. But the
+hypothesis it was designed to test (`BaseRandomDataLengthBytes = 24`)
+was falsified by the actual server behavior — TheoryCraft's packet
+format diverges from stock UE5.4 in MORE than just trailing random
+padding length.
+
+### Mechanism built (working)
+
+Created three new files in `unreal-stub/Source/Loki/`:
+
+- **`LokiStatelessConnect.h/.cpp`** — subclass of
+  `StatelessConnectHandlerComponent` that overrides
+  `IncomingConnectionless(FIncomingPacketRef PacketRef)`. When incoming
+  packet exceeds `StockMaxHandshakeBits = 449` (stock's max accepted
+  handshake size in bits), truncate the trailing 64 bits (8 bytes) of
+  random padding and delegate to parent's IncomingConnectionless. This
+  was the test of the session-11 hypothesis: bigger random padding
+  should be the only difference.
+
+- **`LokiNetDriver.h/.cpp`** — subclass of `UIpNetDriver` (UCLASS,
+  UObject) that overrides `InitConnectionlessHandler()` to construct
+  `LokiStatelessConnect` directly instead of going through stock's
+  `Engine.EngineHandlerComponentFactory(StatelessConnectHandlerComponent)`
+  factory. Also overrides `LowLevelSend()` to pad outgoing
+  connectionless packets (detected via
+  `ConnectionlessHandler->GetRawSend() == true`) with +8 random bytes
+  so the client's parser would accept our replies.
+
+- **DefaultEngine.ini** updated to register the custom NetDriver:
+  ```ini
+  [/Script/Engine.GameEngine]
+  +NetDriverDefinitions=(DefName="GameNetDriver",
+    DriverClassName="/Script/Loki.LokiNetDriver",
+    DriverClassNameFallback="/Script/OnlineSubsystemUtils.IpNetDriver")
+  ```
+
+- **Loki.Build.cs** updated with `PacketHandler`,
+  `OnlineSubsystemUtils`, `Sockets` deps for the new code.
+
+### Build path: Launcher install required generating UnrealEditor-Core.lib
+
+The added dependencies forced Loki.dll to link against
+`UnrealEditor-Core.lib`, which the Launcher install doesn't ship (only
+the `.dll` is included). The build failed with `LNK1181: cannot open
+input file UnrealEditor-Core.lib`. Worked around by generating the
+import library from the existing DLL using:
+
+```powershell
+dumpbin /exports UnrealEditor-Core.dll | grep -oE 'symbol pattern' > exports.txt
+echo "LIBRARY UnrealEditor-Core" > UnrealEditor-Core.def
+echo "EXPORTS" >> UnrealEditor-Core.def
+cat exports.txt >> UnrealEditor-Core.def
+lib /def:UnrealEditor-Core.def /machine:x64 /out:UnrealEditor-Core.lib
+```
+
+Produced a 3MB import library with 6964 exports. After this, the build
+completed in 1.4 seconds and produced `UnrealEditor-Loki.dll` (97 KB,
+with `UnrealEditor-Loki.pdb` for debugging).
+
+This `dumpbin + lib /def:` workaround is generally applicable to any
+missing `.lib` in a Launcher install — Core was just the first hit.
+Other engine modules' `.lib` files were already present in the install's
+`Intermediate/Build/Win64/x64/UnrealEditor/Development/X/` directories
+(see session 12 writeup for which ones).
+
+### Smoke test: server loaded LokiNetDriver cleanly
+
+Server boot log:
+```
+LogLokiStateless: Display: LokiStatelessConnect constructed — handshake size adapter active.
+LogLokiNet: Display: LokiNetDriver: connectionless handler initialized with LokiStatelessConnect.
+LogNet: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0 IpNetDriver listening on port 7777
+```
+
+Our custom NetDriver loaded, our subclass was constructed, UDP 7777
+listening. The DefaultEngine.ini routing worked end-to-end. The
+mechanism is sound — meaning ANY future custom HandlerComponent or
+NetDriver work in this project can build on this foundation without
+touching engine source.
+
+### End-to-end test: hypothesis falsified
+
+Client launched, browse_hook fired, packets arrived. Server log:
+```
+NotifyAcceptingConnection accepted from: 127.0.0.1:60644
+LogLokiStateless: Verbose: Truncating handshake packet from 472 bits to 408 bits
+NotifyAcceptingConnection accepted from: 127.0.0.1:60644
+LogLokiStateless: Verbose: Truncating handshake packet from 480 bits to 416 bits
+... (more accepts and truncations)
+LogLokiStateless: Verbose: Truncating handshake packet from 464 bits to 400 bits
+LogNetVersion: Checksum from delegate: 3716198887
+LogHandshake: Verbose: SendRestartHandshakeRequest.
+LogLokiNet: Verbose: LowLevelSend: padding handshake reply 216 bits -> 280 bits
+```
+
+Truncation fired on packets >449 bits (472, 480, 464). Truncated sizes
+(408, 416, 400) fell within stock UE5.4's accepted size variance. So
+`ParseHandshakePacket` SHOULD have succeeded. Instead, server reached
+the `else if (bHasValidSessionID)` branch (line 1440 of stock UE5.4
+StatelessConnectHandlerComponent.cpp) which fires when
+`bHandshakePacket = 0`. The branch's purpose is to handle non-handshake
+packets from clients that might have changed address — it sends a
+`RestartHandshakeRequest` to ask the client to re-establish.
+
+So stock UE5.4's bit-13 read (which expects `bHandshakePacket` after
+MagicHeader+SessionID+ClientID) is reading **0** from TheoryCraft's
+packets. That's not consistent with the BaseRandomDataLengthBytes=24
+hypothesis — that hypothesis predicts stock UE5.4 layout from the
+start, just with bigger trailing padding.
+
+### What the captured byte layout actually shows
+
+Re-examining session 10's captured packets with this result in mind:
+
+```
+Byte 0:     0xBB (stable, MagicHeader)
+Byte 1:     RANDOM per-packet — bit 5 distributes ~50/50 across packets
+Bytes 2-5:  DC 21 A6 A3 (stable across ALL packets/sources)
+Byte 6:     random
+Byte 7:     0xFB (stable)
+Byte 8:     varies by source IP
+Bytes 9-10: 01 02 (stable)
+Byte 11:    0x80/0x00 alternating
+Byte 12:    incrementing per packet pair (sequence)
+Bytes 13-16: F3 58 C0 6E (stable)
+Bytes 17-48: 32 × 0x00 (zero-filled)
+Bytes 49+:  variable tail
+```
+
+Across 17 sampled packets, byte-1 bit-5 (the position stock UE5.4
+would read as `bHandshakePacket` after the 8-bit MagicHeader, 2-bit
+SessionID, 3-bit ClientID) is randomly 0 or 1. If TheoryCraft used
+stock format, this bit would be CONSTANT (always 1 for handshake
+packets, always 0 for non-handshake). The randomness proves the bit
+isn't at position 13 in TheoryCraft's format.
+
+Stable byte 1 random + bytes 2-5 stable + byte 6 random + byte 7 stable
+pattern doesn't match anything in stock UE5.4's bit-packed handshake.
+The structure looks like a **wrapping layer** atop the handshake:
+
+- Byte 0 (8 bits): MagicHeader (correctly identified)
+- Byte 1 (8 bits): per-packet random — looks like a nonce, sequence
+  byte, or IV byte
+- Bytes 2-5 (32 bits): stable application/session identifier
+- Byte 6 (8 bits): random — maybe checksum or counter
+- Byte 7 (8 bits): another stable protocol byte (0xFB)
+- ... and so on
+
+This is consistent with TheoryCraft having added a custom
+`HandlerComponent` to their PacketHandler chain. Stock UE5.4 supports
+this via `[PacketHandlerComponents]` in DefaultEngine.ini:
+```ini
+[PacketHandlerComponents]
+EncryptionComponent=AESGCMHandlerComponent
++Components=SomeCustomTheoryHandler
+```
+
+Each HandlerComponent in the chain wraps/unwraps packets. The
+`StatelessConnectHandlerComponent` is just ONE component in the chain;
+others can prepend/append bytes around it.
+
+### Outgoing reply problem (related)
+
+Even ignoring incoming, our outgoing `SendRestartHandshakeRequest`
+reply was a stock UE5.4 packet (with our +8 random padding bytes). The
+client expects TheoryCraft's wrapping bytes at the front; ours had
+none. So the client received a malformed packet and likely crashed
+parsing it.
+
+### What this means for session 14
+
+The custom-override infrastructure is the right foundation but it
+needs to be applied at the **PacketHandler chain level**, not just by
+subclassing StatelessConnectHandlerComponent. We need to know:
+
+1. **What HandlerComponent(s) TheoryCraft added to their chain.** Look
+   for class names in the SUPERVIVE-Win64-Shipping.exe via
+   `usmapdump wstrings`/`strings` for substrings like "Loki",
+   "Theory", "Cipher", "Encryption", "Signature", "Handler".
+
+2. **The wrapping wire format**: prepend bytes (presumably), then the
+   stock UE5.4 packet, then maybe append bytes too. Once known, we
+   write a matching HandlerComponent in our `Loki` module that:
+   - Reads the wrapping bytes in `IncomingConnectionless` and strips
+     them before delegating
+   - Writes the wrapping bytes in `Outgoing` before delegating
+
+3. Possibly hook the client's PacketHandler::Initialize to log which
+   components it registers (would give us the exact factory string).
+
+### Tooling delivered (session 13)
+
+- `unreal-stub/Source/Loki/LokiStatelessConnect.h` + `.cpp` — subclass
+  with `IncomingConnectionless` override. Truncation strategy is wrong
+  for current hypothesis but the framework is correct for future
+  per-bit format adaptation.
+
+- `unreal-stub/Source/Loki/LokiNetDriver.h` + `.cpp` — UCLASS subclass
+  of `UIpNetDriver` that overrides `InitConnectionlessHandler` and
+  `LowLevelSend`. Cleanly registered via DefaultEngine.ini. The
+  `LowLevelSend` override's bRawSend-based detection is correct
+  approach — it just needs the right padding bytes.
+
+- `H:\Unreal Engine\UE_5.4\Engine\Intermediate\Build\Win64\x64\UnrealEditor\Development\Core\UnrealEditor-Core.lib`
+  — generated import library, enables future builds of Loki module
+  against Core symbols. NOT a backup — created from Core.dll via
+  `dumpbin /exports + lib /def:`. Persists across game updates as long
+  as Core.dll's export set doesn't change.
+
+- `unreal-stub/Source/Loki/Loki.Build.cs` updated with additional
+  module deps for the above.
+
+- `unreal-stub/Config/DefaultEngine.ini` updated to route GameNetDriver
+  through LokiNetDriver.
+
+### Commits this session
+
+- (session 13 writeup commit follows)
+
+
 
