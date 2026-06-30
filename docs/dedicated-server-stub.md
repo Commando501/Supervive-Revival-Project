@@ -988,3 +988,94 @@ Launch the client (in a separate elevated PS):
 
 - `d985e4d` unreal-stub scaffold + editor-binary pivot
 - (session 6 writeup commit follows)
+
+## Session 7 (2026-06-30 — diagnostic confirms blocker #2 is pre-send)
+
+### Recon: FMemory::Malloc address in SUPERVIVE shipping exe
+
+Pursued blocker #2 from session 6 (browse_hook v11 needs UE's allocator
+so FString destructor frees cleanly). What we found:
+
+- **`FMallocBinned2::Realloc` body at mod-RVA `0xFE25A9`.** Canary check
+  at `0xFE25FD` (`cmp al, 0xe3`) followed by `jz +0x21` at `0xFE25FF`
+  to canary-OK path or fall through to the fatal log call at `0xFE261D`.
+  Verified by tracing `xrefstr` on the FStaticLogRecord at `0x76A0C00`
+  (which references the "FMallocBinned2 Attempt to realloc an
+  unrecognized block" wstring at `0x76A0C20`).
+- **`FMallocBinned2::Free` body at mod-RVA `0xFDFE70`.** Entry `test
+  rdx, rdx; jz <skip>; ...`. Located via `xrefstr` on the FStaticLogRecord
+  at `0x76A0AB0` referencing the "Attempt to free an unrecognized" wstring.
+- **`GMalloc` symbol exists in the binary as a class-debug wstring**
+  (`"GMalloc_CLASS=%d (should be set as 1...)"` at mod-RVA `0x81C3AE2`),
+  but only used in a debug dump path. Not directly cross-referenceable
+  to a usable global address.
+
+Critical limitation: `findptr` and `callxref` both returned **zero hits**
+for `0xFE25A9` and `0xFDFE70`. Both Realloc and Free are devirtualized
+AND inlined into every call site. The function bodies exist but nothing
+references them via vtable or direct call — they're orphan compiler
+artifacts. So `vtslot` can't locate the FMallocBinned2 vtable, and we
+can't trace from a known caller's vtable load to GMalloc.
+
+To find GMalloc cleanly, the next session would need to:
+- Scan for the byte pattern `48 8B 05 ?? ?? ?? ??` (mov rax, [rip+disp])
+  followed by `48 85 C0` (test rax, rax) followed by `48 8B 00`
+  (mov rax, [rax]) — that's the FMemory::Malloc inlined pattern
+- Find the most-common rip-rel target across all such patterns → GMalloc
+
+### Diagnostic UDP listener test
+
+To confirm whether browse_hook v11 is actually required (vs. e.g.
+"crash happens AFTER first send, ignore-and-continue might work"):
+
+1. Started a PowerShell UDP listener bound on `:7777`
+   (`unreal-stub/udp7777-listener.ps1`).
+2. Launched SUPERVIVE with `-Hook` (v10 redirect active).
+3. Client reached login, attempted LobbyV2 browse → crashed.
+
+**Listener received ZERO UDP packets.** The FMallocBinned2 crash fires
+strictly BEFORE the engine sends a single byte to our server. The
+StatelessConnect first-send happens AFTER FString destruction of the
+mutated FURL, which crashes before reaching the wire.
+
+### Conclusion: v11 work cannot be skipped
+
+The pre-handshake order is:
+
+```
+1. browse_hook fires           [done -- v10]
+2. FURL.Host mutated to 127.0.0.1   [done -- v10]
+3. Browse body runs            [done]
+4. FURL destructor fires       [done]
+5. FString destructor frees Host.Data via FMallocBinned2  [CRASH HERE -- v10's static buffer]
+6. ... never reaches:
+7. NetDriver opens UDP socket and sends first StatelessConnect packet
+8. Server receives + responds
+```
+
+Item 5 IS the bottleneck. Until v11 allocates Host.Data through UE's
+allocator, items 6-8 never happen. No diagnostic shortcut bypasses this.
+
+### Next session's first move
+
+Find GMalloc via byte-pattern scan:
+
+1. Use `usmapdump` (or a small custom Go tool) to scan main module's
+   executable pages for the inlined `FMemory::Malloc` pattern (3-5
+   instructions starting with `mov rax, [rip+disp]; test rax, rax`).
+2. Collect all `[rip+disp]` targets, sort by frequency.
+3. The most-common target is GMalloc.
+4. Use `peek` on the GMalloc address to read the FMalloc* pointer.
+5. Read its vtable (first 8 bytes of the FMallocBinned2 instance).
+6. Find the Malloc slot via disasm of one of the inlined sites.
+
+Then update `browse_hook.cpp` to call `GMalloc->Malloc(size, alignment)`
+for the Host buffer.
+
+### Commits this session
+
+- `c9d74b3` Session 6 close (carried over)
+- (session 7 writeup commit follows)
+
+The `udp7777-listener.ps1` script lives at `unreal-stub/` for future
+diagnostic re-runs.
