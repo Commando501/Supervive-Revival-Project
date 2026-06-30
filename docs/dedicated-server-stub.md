@@ -842,3 +842,149 @@ that chapter:
    complete — and replicated `LokiPlayerState_Missions` should make
    the Missions modal populate, finally closing the chapter's
    original "fix the empty Missions modal" goal.
+
+## Session 6 (2026-06-30 — stub server up and listening on UDP 7777)
+
+### What landed
+
+UE5.4 project scaffolded, Editor target built, **server is running**.
+End-to-end pipe wired: client successfully redirects to server, server
+accepts the IpNetDriver socket bind. Two pre-handshake blockers identified
+for next session.
+
+### Project scaffold (committed at `d985e4d`)
+
+```
+unreal-stub/
+├── Loki.uproject              EngineAssociation 5.4
+├── .gitignore                  Binaries/Intermediate/Saved/DDC excluded
+├── Config/
+│   ├── DefaultEngine.ini       GameNetDriver definition + bShareMaterialShaderCode=False
+│   └── DefaultGame.ini         ProjectName=Loki, ProjectVersion=1.0.0.0
+└── Source/
+    ├── Loki.Target.cs          Type = TargetType.Game (built OK)
+    ├── LokiServer.Target.cs    Type = TargetType.Server (UNBUILDABLE — see below)
+    ├── LokiEditor.Target.cs    Type = TargetType.Editor (built OK)
+    └── Loki/
+        ├── Loki.Build.cs       Core, CoreUObject, Engine, NetCore
+        ├── Loki.h
+        └── Loki.cpp            IMPLEMENT_PRIMARY_GAME_MODULE
+```
+
+### Launcher-install gotchas (took the bulk of the session)
+
+1. **Server-target build blocked.** First build attempt with
+   `Type = TargetType.Server` failed with
+   `"Server targets are not currently supported from this engine
+   distribution."` The Epic Launcher install of UE5.4 includes Editor +
+   Game + Editor targets prebuilt but **NOT** Server-target build
+   support. Real Server-target build requires the Source distribution
+   from GitHub (~100GB clone + 1-3 hour engine compile).
+
+2. **Standalone Loki.exe Game build is unrunnable.** Built cleanly
+   (`Loki.exe` 266MB at 20:32) but on launch hit:
+   ```
+   Serialization Error: "Corrupt data found, please verify your installation"
+   Assertion failed at AsyncLoading.cpp:8521 —
+   Seeked past end of file /Engine/EngineMaterials/WorldGridMaterial (30170/30169)
+   ```
+   1-byte off-by-one in the asset stream reader during default-material
+   init. Known UE5.4 Launcher-install issue with non-editor binaries
+   against uncooked engine content.
+
+3. **Workaround: Editor binary loads our Loki module.** Built
+   `LokiEditor` target → produced `UnrealEditor-Loki.dll` (48KB) →
+   ran via `UnrealEditor-Cmd.exe Loki.uproject -game -server -log
+   -Port=7777 -nullrhi -NoSplash -Unattended /Engine/Maps/Entry?listen`.
+   Editor binary is prebuilt by Epic and reads engine content correctly.
+
+### Server is LIVE
+
+Per `unreal-stub/Saved/Logs/Loki.log` (lines 778-782):
+
+```
+LogNet: Created socket for bind address: 0.0.0.0:7777
+PacketHandlerLog: Loaded PacketHandler component:
+    Engine.EngineHandlerComponentFactory (StatelessConnectHandlerComponent)
+LogNet: Name:GameNetDriver Def:GameNetDriver IpNetDriver_0
+    IpNetDriver listening on port 7777
+```
+
+UDP 7777 confirmed via `Get-NetUDPEndpoint`. All three protocol-surface
+components from session 5 verified:
+- ✅ `GameNetDriver` (= `IpNetDriver`)
+- ✅ `StatelessConnectHandlerComponent`
+- ✅ Listening on UDP 7777
+
+### End-to-end test (with the client)
+
+Launched SUPERVIVE with `-Hook`. browse_hook v10 rewrote the lobby URL:
+
+```
+LogGlobalStatus: UEngine::Browse Started Browse:
+    "127.0.0.1/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent"
+PacketHandlerLog: Loaded PacketHandler component: StatelessConnectHandlerComponent
+LogNetVersion: Loki 1.0.0.0, NetCL: 0, EngineNetworkVersion: 34,
+    GameNetworkVersion: 0 (Checksum: 3716198887)
+```
+
+Then immediately:
+
+```
+LogWindows: Error: appError called: Fatal error:
+[File:.../MallocBinned2.cpp] [Line: 1322]
+FMallocBinned2 Attempt to realloc an unrecognized block 000001D737920000
+canary == 0x0 != 0xe3
+```
+
+**Same crash as session 5.** Our v10 static-buffer hack causes FString
+destructor to free a non-UE-allocated pointer → fatal. The client dies
+**before** sending its first UDP packet — server log shows zero
+incoming connections.
+
+### Two pre-handshake blockers for next session
+
+| # | Blocker                                                          | Side    | Fix                                                                                                              |
+|---|------------------------------------------------------------------|---------|------------------------------------------------------------------------------------------------------------------|
+| 1 | Server `NetCL: 33043543` vs client `NetCL: 0`                    | Server  | C++ hook via `FNetworkVersion::ProcessOverrideCallback` to override NetCL at module init                         |
+| 2 | Client crashes in `FMallocBinned2.realloc` before first UDP send | Client  | `browse_hook` v11: find UE's `FMemory::Malloc` and allocate the Host buffer through it (or set `Max=0` if UE checks) |
+
+Blocker #2 is the proximate crash. Blocker #1 wouldn't matter until #2
+is solved (no packet ever reaches the server). Once both fixed, the
+StatelessConnect handshake should complete and we can see what the
+client tries to do next (probably hero-data replication or login token
+exchange).
+
+### Commands for next session
+
+Build (re-run if any code changes):
+```powershell
+& 'H:\Unreal Engine\UE_5.4\Engine\Build\BatchFiles\Build.bat' `
+  LokiEditor Win64 Development `
+  "-Project=G:\git\Supervive Revival Project\unreal-stub\Loki.uproject" `
+  -WaitMutex
+```
+
+Launch the server:
+```powershell
+$editorCmd = 'H:\Unreal Engine\UE_5.4\Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
+$proj = 'G:\git\Supervive Revival Project\unreal-stub\Loki.uproject'
+Start-Process -FilePath $editorCmd -ArgumentList "`"$proj`"",`
+  '/Engine/Maps/Entry?listen','-game','-server','-log','-Port=7777',`
+  '-nullrhi','-NoSplash','-Unattended' -PassThru
+```
+
+Once running, verify:
+```powershell
+Get-NetUDPEndpoint -LocalPort 7777
+```
+
+Launch the client (in a separate elevated PS):
+```powershell
+.\configs\launch-redirect.ps1 -Hook .\tools\sigbypass-mod\browse_hook.dll
+```
+
+### Commits this session
+
+- `d985e4d` unreal-stub scaffold + editor-binary pivot
+- (session 6 writeup commit follows)
