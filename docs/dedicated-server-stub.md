@@ -741,3 +741,104 @@ Commits this session (on `dedicated-server-stub` branch):
 - `f9682d5` browse_hook v9 — corrected FURL offsets → URL captured
 - `cf72ebb` browse_hook v10 — FURL.Host rewrite mechanism
 - (session 4 writeup commit follows)
+
+## Session 5 (2026-06-30 — protocol surface CAPTURED end-to-end)
+
+### Result: chapter's recon premise PROVEN
+
+Re-launched with `-Hook` flag. v10 rewrite triggered cleanly on the
+LobbyV2 browse. Engine accepted the mutated FURL, initialized
+NetConnection, dialed `127.0.0.1`, crashed in `FMallocBinned2.realloc`
+on FString destructor (predicted from the start) — but **before the
+crash, Loki.log captured the exact protocol surface the UE5.4 stub
+server needs to implement**.
+
+### Browse + handshake init from Loki.log
+
+```
+[00:16:08.103] LogGlobalStatus: UEngine::Browse Started Browse:
+    "127.0.0.1/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent"
+[00:16:08.106] PacketHandlerLog: Loaded PacketHandler component:
+    Engine.EngineHandlerComponentFactory (StatelessConnectHandlerComponent)
+[00:16:08.106] LogHandshake: Stateless Handshake:
+    NetDriverDefinition 'GameNetDriver' CachedClientID: 7
+[00:16:08.106] LogNetVersion: Loki 1.0.0.0, NetCL: 0,
+    EngineNetworkVersion: 34, GameNetworkVersion: 0
+    (Checksum: 3716198887)
+```
+
+The URL prefix `"127.0.0.1/..."` confirms `FURL.Host` was applied —
+UE serializes net-travel URLs as `Host/MapPath?Options`.
+
+### Protocol surface — exactly what the stub server must match
+
+| Field                    | Value                                                         |
+|--------------------------|---------------------------------------------------------------|
+| Transport                | UDP                                                           |
+| Port                     | 7777 (UE default; already what client dialed)                 |
+| NetDriver class          | `GameNetDriver` (= UE's standard `IpNetDriver`)               |
+| First handshake component | `StatelessConnectHandlerComponent` (UE5 encryption setup)    |
+| `EngineNetworkVersion`   | 34 (= UE5.4)                                                  |
+| `GameNetworkVersion`     | 0 (= Theorycraft's project-specific version)                  |
+| `NetworkChecksum`        | `3716198887` (the version checksum the server must match)     |
+| `NetCL`                  | 0                                                             |
+| Project name             | "Loki 1.0.0.0"                                                |
+
+### The crash (predicted, harmless to the recon)
+
+```
+LogWindows: Error: appError called: Fatal error:
+[File:C:\TheoryCraft\build-staging\Engine\Source\Runtime\Core\Private\HAL\MallocBinned2.cpp]
+[Line: 1322]
+FMallocBinned2 Attempt to realloc an unrecognized block 0000015D9E220000
+canary == 0x0 != 0xe3
+```
+
+Address `0x15D9E220000` is our DLL's data segment where the static
+`g_redirect_host[]` buffer lives. UE's allocator looks for its canary
+byte `0xe3` in the block's metadata header, doesn't find it (we
+didn't allocate via FMalloc), panics. This is the
+crash-after-success outcome the v10 commit message documented as
+acceptable for the probe — fired AFTER the engine had captured all
+the protocol surface above.
+
+### Chapter status — Path C unblocked
+
+The entire recon premise from session 1 is now empirically proven:
+
+1. ✅ External Browse hook intercepts every map travel
+2. ✅ Hook rewrites FURL.Host to redirect to our IP
+3. ✅ Engine initializes NetConnection with the mutated FURL
+4. ✅ Engine emits the exact NetDriver + version data the server must match
+5. ⏳ Build a UE5.4 dedicated server with these exact fields and wait
+   for the connection
+
+Items 1-4 are all done — for the first time in the chapter, the
+client's "open a network connection to my server" flow is fully wired.
+Item 5 is the new chapter — a UE5.4 C++ project under `unreal-stub/`
+(or similar) with `Type = TargetType.Server` that listens on UDP 7777
+and answers the StatelessConnect handshake with the matching version
+fields.
+
+### Commits this session
+
+- `cf72ebb` (carried over from session 4) — v10 rewrite mechanism
+- (session 5 writeup commit follows)
+
+### Next chapter
+
+**Build the UE5.4 dedicated server stub.** Concrete first moves for
+that chapter:
+
+1. Create new UE5.4 project at `H:\Unreal Engine\UE_5.4`-based location
+   (e.g., `G:\git\Supervive Revival Project\unreal-stub\`)
+2. Add a `*.Target.cs` with `Type = TargetType.Server`
+3. Set `NetworkChecksum = 3716198887`, `EngineNetworkVersion = 34`,
+   `GameNetworkVersion = 0` via the appropriate project config
+4. Minimal `ALokiPlayerState_Missions` class with the field shape
+   documented in `docs/lokiassetmanager-vtable-dump.md`
+5. Launch the server, then launch the SUPERVIVE client with `-Hook`
+   pointed at the stub server's address. Connection should now
+   complete — and replicated `LokiPlayerState_Missions` should make
+   the Missions modal populate, finally closing the chapter's
+   original "fix the empty Missions modal" goal.
