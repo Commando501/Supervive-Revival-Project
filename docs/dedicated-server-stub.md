@@ -3685,6 +3685,131 @@ straightforward.
 
 - (session 24 writeup commit follows)
 
+## Session 25 (2026-07-01 — SERVER-SIDE RPC BYTE CAPTURE + FIELD-HEADER DECODED)
+
+Session 24's pivot recommendation: hook server-side to capture RPC sub-reader
+bytes directly. Session 25 executed that and successfully decoded the RPC
+field header, isolating the exact 2298-bit RPC arg struct.
+
+### Fix delivered: LokiActorChannel subclass
+
+Added `unreal-stub/Source/Loki/LokiActorChannel.h + .cpp` — subclass of
+`UActorChannel` overriding `ReceivedBunch(FInBunch& Bunch)`. Uses
+`FBitReaderMark` to non-destructively extract the bunch's raw bit stream
+into a byte buffer, hex-dumps it with ChIndex/ChSequence/NumBits/bReliable
+metadata, then Mark.Pop's the reader back so Super sees a fresh bunch.
+
+Registered via `unreal-stub/Config/DefaultEngine.ini`
+`[/Script/OnlineSubsystemUtils.IpNetDriver] ChannelDefinitions` — replaces
+stock `ActorChannel` class with `/Script/Loki.LokiActorChannel`.
+
+Verified: the Channel-3 bunch containing ServerVerifyViewTarget now logs:
+```
+LogLokiActorChannel: ReceivedBunch: ChIndex=3 ChSeq=176 bReliable=1
+    bOpen=0 bClose=0 NumBits=2339 StartPos=0 remaining=2339 bits
+LogLokiActorChannel: ReceivedBunch: bytes (293) 8E 90 78 EB 45 16 00 8C 0B ...
+```
+
+Full 293-byte dump saved to `docs/session-25-bunch-capture.txt`.
+
+### Bit-level decoding of the bunch (offline)
+
+Wrote `docs/session-25-bunch-decoder.py` (212 lines) that parses the
+captured bytes:
+
+```
+Total bunch bits: 2339
+
+Content block header (bits 0-1, 2 bits):
+  bOutHasRepLayout = 0 (no property replication in this bunch)
+  bIsActor         = 1 (this bunch is for the actor, not sub-object)
+
+Outer SerializeIntPacked NumPayloadBits (bits 2-17, 16 bits):
+  NumPayloadBits = 2321 (FObjectReplicator payload size)
+
+Field header (bits 18-40, 23 bits) — walks the RPC dispatch loop:
+  RepIndex (SerializeInt(MaxIndex+1), assuming MaxIndex=100) = 94
+  Inner NumPayloadBits (SerializeIntPacked)                  = 2298
+
+RPC arg struct (bits 41-2338, 2298 bits = 287.25 bytes)
+```
+
+The 2298-bit RPC arg struct is what SUPERVIVE's client marshalled and
+what our stock `APlayerController::ServerVerifyViewTarget` (0 args) failed
+to consume — hence `Reader.GetBitsLeft() != 0 → Mismatch read`.
+
+### RPC arg struct: FString + more
+
+The FString `/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass` appears
+BYTE-ALIGNED in the raw bunch bytes at offset 128 with proper UE
+serialization (int32 count=47 followed by 46 chars + null). That's 47*8
+= 376 bits for chars + 32 bits for count = 408 bits total for that
+FString alone.
+
+Remaining 2298 - 408 = 1890 bits (~236 bytes) of additional parameters
+before/after the FString.
+
+### Session 26 plan
+
+Now that we know the exact bit budget (2298 bits) and confirmed at least
+one FString parameter, we can iterate:
+
+1. Add a `UFUNCTION(reliable, server, WithValidation) ServerVerifyViewTarget(FString)`
+   to LokiStubPlayerController. Log the leftover bits from
+   `Reader.GetBitsLeft()` after Super::ProcessBunch — this tells us how
+   many bits remain unconsumed.
+2. If ~1890 bits remain after FString: add more params until it drops to 0.
+   Candidates: FVector (96 bits), FRotator_NetQuantize (24 bits), FQuat_NetQuantize
+   (64 bits), TArray<FStructOrStringOrBlob>, etc.
+3. Try common anti-cheat "verify view target" args:
+   - `FString ViewTargetName` (or `FName`)
+   - `FVector_NetQuantize CameraLocation`
+   - `FRotator CameraRotation`
+   - `float ClientTime`
+   - `int32 VerifyCounter`
+   - `TArray<uint8> SignatureBlob` (large!)
+   
+4. Or the SUPERVIVE-specific "modified for lobby mode" signature that
+   carries a matchmaking-mode name (LobbyV2_BattlePass = one of the
+   game modes).
+
+Also — solve the class-name resolution problem (still open from session
+21). Now that we have a matching UFUNCTION, we need our class to receive
+the RPC. Options:
+- Continue using stock APlayerController (session 23 config) — but our
+  override methods need to be on the actual dispatched class. Adding
+  UFUNCTIONs to stock APlayerController isn't directly possible.
+- Use `ALokiStubPlayerController` (session 21) with a runtime class-name
+  rename to `/Script/Engine.PlayerController` (careful CDO handling).
+- Register UFUNCTION on the stock class via UClass function-table
+  manipulation at Loki module init.
+
+### Tooling artifacts (session 25)
+
+- `unreal-stub/Source/Loki/LokiActorChannel.h + .cpp` (NEW).
+- `unreal-stub/Config/DefaultEngine.ini` (`ChannelDefinitions` override).
+- `docs/session-25-bunch-capture.txt` — 18-line log excerpt + decode
+  summary.
+- `docs/session-25-bunch-decoder.py` — 212-line Python bit-level decoder.
+
+### Chapter state (end of session 25)
+
+- Handshake, packet handler wiring, control messages, map validation,
+  Join, PC spawn, checksum bypass: ALL DONE (sessions 17-20)
+- SUPERVIVE engine mods confirmed: DONE (session 22)
+- RPC bunch bytes captured: DONE (session 23)
+- Bit-level packet header parsing: DONE (session 24)
+- Server-side per-bunch instrumentation: DONE (session 25)
+- Bunch content-block header + field header decoded: DONE (session 25)
+- RPC arg struct isolated (2298 bits, contains at least FString): DONE (session 25)
+- Full RPC parameter list decoded: TODO (session 26 — trial signatures)
+- Add matching UFUNCTION + class-name resolution: TODO (session 26-27)
+- Menu-data replication: TODO (session 28+)
+
+### Commits this session
+
+- (session 25 writeup commit follows)
+
 
 
 
