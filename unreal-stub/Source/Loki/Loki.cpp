@@ -17,6 +17,7 @@
 #include "Modules/ModuleManager.h"
 #include "Misc/NetworkVersion.h"
 #include "Engine/World.h"
+#include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "UObject/Class.h"
 #include "UObject/Package.h"
@@ -199,24 +200,22 @@ private:
                     "(NumParms=%d, ParmsSize=%d, FunctionFlags=0x%08X)"),
                Func->NumParms, Func->ParmsSize, (uint32)Func->FunctionFlags);
 
-        // Session 29 trial: (FVector_NetQuantize100 CamLoc, int32 CamPitchAndYaw,
-        // FString MapName). Modeled on stock UE `ServerUpdateCamera(FVector_NetQuantize
-        // CamLoc, int32 CamPitchAndYaw)` — SUPERVIVE may have merged that RPC's
-        // payload into ServerVerifyViewTarget.
+        // Session 30 trial: (AActor* NewViewTarget, FString ClientMapName).
+        // Modeled on stock UE ClientSetViewTarget(AActor* A, ...) — SUPERVIVE's
+        // ServerVerifyViewTarget likely uses the mirror pattern where the
+        // client tells the server what it BELIEVES the current view target is.
         //
-        // Session 29 analysis: bit 0 of RPC payload = 1, which matches
-        // FVector_NetQuantize's "non-zero-vector" flag. Plain FVector/FRotator/
-        // FQuat interpretations produce values like 1e+27 (impossible).
-        AppendStructParam(Func, TEXT("CamLocation"),
-                          TEXT("/Script/Engine.Vector_NetQuantize100"));
-        AppendIntParam(Func, TEXT("CamPitchAndYaw"));
+        // Session 29 confirmed first param bit 0 = 1, which for FObjectProperty
+        // = "valid NetGUID follows". Actor pointer serialization uses
+        // PackageMap->SerializeObject which writes variable-bit NetGUID.
+        AppendObjectParam(Func, TEXT("NewViewTarget"), AActor::StaticClass());
         AppendStringParam(Func, TEXT("ClientMapName"));
 
         Func->StaticLink(true);
         PCClass->ClearFunctionMapsCaches();
 
         UE_LOG(LogLokiStub, Display,
-               TEXT("InjectServerVerifyViewTarget: added FVector+FRotator+FString params. "
+               TEXT("InjectServerVerifyViewTarget: trial signature injected. "
                     "New NumParms=%d, ParmsSize=%d"),
                Func->NumParms, Func->ParmsSize);
     }
@@ -281,6 +280,21 @@ private:
     {
         FByteProperty* Prop = new FByteProperty(Func, FName(Name), RF_Public | RF_Transient);
         Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor | CPF_HasGetValueTypeHash;
+        Prop->ArrayDim = 1;
+        AppendToChildProperties(Func, Prop);
+    }
+
+    // Session 30: FObjectProperty for actor / object pointer params. On the
+    // wire an Actor* is serialized as a NetGUID (variable bits, typically
+    // 8-40 depending on cache state).
+    static void AppendObjectParam(UFunction* Func, const TCHAR* Name,
+                                  UClass* PropertyClass)
+    {
+        FObjectProperty* Prop = new FObjectProperty(Func, FName(Name),
+                                                    RF_Public | RF_Transient);
+        Prop->PropertyClass = PropertyClass;
+        Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor
+                            | CPF_InstancedReference | CPF_HasGetValueTypeHash;
         Prop->ArrayDim = 1;
         AppendToChildProperties(Func, Prop);
     }

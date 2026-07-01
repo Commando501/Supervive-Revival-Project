@@ -4177,6 +4177,90 @@ Given exhaustive scalar/simple-struct rule-outs, session 30 should:
 
 - (session 29 writeup commit follows)
 
+## Session 30 (2026-07-01 — AActor* trial reveals PRECISE ENGINE-SIDE BIT-CONSUMPTION diagnostic)
+
+Session 29 established that plain scalar types can't be the first RPC
+param. Session 30 tried `(AActor* NewViewTarget, FString ClientMapName)`
+— stock UE `ClientSetViewTarget` pattern that SUPERVIVE may mirror. The
+test still failed with `Reader.IsError()`, but the engine emitted a
+DIAGNOSTIC log line that unlocks precise iteration.
+
+### Delivered
+
+- `AppendObjectParam(Func, Name, UClass* PropertyClass)` — FObjectProperty
+  helper for injecting Actor / UObject pointer params. NetGUID
+  serialization uses `PackageMap->SerializeObject` (variable bits).
+- Trial signature: `(AActor* NewViewTarget, FString ClientMapName)`.
+  Injection succeeded (NumParms 0 → 2, ParmsSize 0 → 24).
+
+### KEY breakthrough: engine-side bit-consumption diagnostic
+
+Server log during RPC deserialization emitted:
+```
+Ensure condition failed: false [File:Serialization/BitReader.cpp] [Line: 276]
+FBitReader::SetOverflowed() called! (ReadLen: 2952, Remaining: 2248, Max: 2298)
+```
+
+Decoded:
+- `Max: 2298` = sub-reader's total capacity — **matches session-25 decode
+  exactly**. This is independent engine-side confirmation of our bunch
+  bit budget.
+- `Remaining: 2248` = bits left when overflow fired.
+- **AActor* NetGUID consumed exactly 50 bits** (2298 − 2248 = 50).
+- Then FString read at bit 50 attempted to consume 2952 more bits (the
+  count read at bit 50 was ~369, way too many chars for the remaining
+  2216 bits).
+
+### Why this is game-changing
+
+Every trial now gives us TWO independent measurements from UE itself:
+1. How many bits the current param sequence consumed.
+2. The specific position where overflow happened.
+
+We no longer need to guess signatures blindly. We can:
+- Add a candidate first param → see how many bits it consumes.
+- If close to 991 (target position of FString), we're on the right track.
+- If overflow happens BEFORE bit 991, our param is too large; try smaller.
+- If overflow happens AFTER FString read starts (garbage bits), our param
+  is too small; try larger.
+
+Session 30's trial (AActor*, FString) consumed 50 bits for Actor pointer.
+We need 991 total before FString. So we need to add ~941 more bits of
+intermediate param(s).
+
+### Session 31 plan
+
+1. Iterate: try `(AActor*, X, FString)` where X consumes ~941 bits.
+   Candidates for X:
+   - `FRepMovement` (contains FVector + FRotator + bools, custom NetSerialize,
+     variable ~150-300 bits)
+   - Multiple sub-params: `(int32, float, int32, float, ...)` totaling 941 bits
+   - Another `AActor*` or two (more NetGUIDs)
+   - `TArray<uint8>` with a specific length
+2. Watch the engine's `SetOverflowed` diagnostic each iteration.
+3. When bit consumption before FString reaches exactly 991, we've found
+   the correct signature.
+
+### Tooling artifacts (session 30)
+
+- `unreal-stub/Source/Loki/Loki.cpp` (FObjectProperty helper added)
+- `docs/session-30-actor-trial.txt` (23-line log excerpt + summary)
+
+### Chapter state (end of session 30)
+
+- Everything through PC spawn: DONE
+- Bunch bytes captured + decoded (2298 bits): DONE
+- Runtime UFunction injection with FObjectProperty support: DONE
+- ENGINE-SIDE BIT-COUNT DIAGNOSTIC discovered: DONE (session 30 — huge)
+- AActor* NetGUID first-param consumes 50 bits: MEASURED (session 30)
+- Middle-param signature (~941 bits): TODO (session 31 — iterate with
+  engine feedback)
+- Menu-data replication: TODO (session 32+)
+
+### Commits this session
+
+- (session 30 writeup commit follows)
+
 
 
 
