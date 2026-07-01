@@ -1,0 +1,152 @@
+=== 11361 UStructs ===
+  A2CSPose : UStruct:A2Pose  (1 props)
+      ComponentSpaceFlags              ArrayProperty<StructProperty UStruct:Transform>
+  A2Pose :   (1 props)
+      Bones                            ArrayProperty<StructProperty UStruct:AnimSegment>
+  AIAsyncTaskBlueprintProxy : UClass:Object  (2 props)
+      OnSuccess                        MulticastInlineDelegateProperty
+      OnFail                           MulticastInlineDelegateProperty
+  AIBlueprintHelperLibrary : UClass:BlueprintFunctionLibrary  (0 props)
+  AIController : UClass:Controller  (15 props)
+      bStartAILogicOnPossess           BoolProperty
+      bStopAILogicOnUnposses           BoolProperty
+      bLOSflag                         BoolProperty
+      bSkipExtraLOSChecks              BoolProperty
+      bAllowStrafe                     BoolProperty
+      bWantsPlayerState                BoolProperty
+      bSetControlRotationFromPawnOrientation BoolProperty
+      PathFollowingComponent           ObjectProperty (UClass:PathFollowingComponent)
+      BrainComponent                   ObjectProperty (UClass:BrainComponent)
+      PerceptionComponent              ObjectProperty (UClass:AIPerceptionComponent)
+      ActionsComp                      ObjectProperty (UClass:PawnActionsComponent)
+      Blackboard                       ObjectProperty (UClass:BlackboardComponent)
+      CachedGameplayTasksComponent     ObjectProperty (UClass:GameplayTasksComponent)
+      DefaultNavigationFilterClass     ClassProperty (UClass:Class)
+      ReceiveMoveCompleted             MulticastInlineDelegateProperty
+  AIDamageEvent :   (6 props)
+      Amount                           FloatProperty
+      Location                         StructProperty (UStruct:Vector)
+      HitLocation                      StructProperty (UStruct:Vector)
+      DamagedActor                     ObjectProperty (UClass:Actor)
+      Instigator                       ObjectProperty (UClass:Actor)
+      Tag                              NameProperty
+  AIDataProvider : UClass:Object  (0 props)
+  AIDataProviderBoolValue : UStruct:AIDataProviderTypedValue  (1 props)
+      DefaultValue                     BoolProperty
+  AIDataProviderFloatValue : UStruct:AIDataProviderTypedValue  (1 props)
+      DefaultValue                     FloatProperty
+  AIDataProviderIntValue : UStruct:AIDataProviderTypedValue  (1 props)
+      DefaultValue                     IntProperty
+  AIDataProviderStructValue : UStruct:AIDataProviderValue  (0 props)
+  Actor : UClass:Object  (103 props)
+      PrimaryActorTick                 StructProperty (UStruct:ActorTickFunction)
+      bNetTemporary                    BoolProperty
+      bOnlyRelevantToOwner             BoolProperty
+      bAlwaysRelevant                  BoolProperty
+      bReplicateMovement               BoolProperty
+      bCallPreReplication              BoolProperty
+      bCallPreReplicationForReplay     BoolProperty
+      bHidden                          BoolProperty
+      bTearOff                         BoolProperty
+      bForceNetAddressable             BoolProperty
+      bExchangedRoles                  BoolProperty
+      bNetLoadOnClient                 BoolProperty
+      bNetUseOwnerRelevancy            BoolProperty
+      bRelevantForNetworkReplays       BoolProperty
+      bRelevantForLevelBounds          BoolProperty
+      bReplayRewindable                BoolProperty
+      bAllowTickBeforeBeginPlay        BoolProperty
+      bAutoDestroyWhenFinished         BoolProperty
+      bCanBeDamaged                    BoolProperty
+      bBlockInput                      BoolProperty
+      bCollideWhenPlacing              BoolProperty
+      bFindCameraComponentWhenViewTarget BoolProperty
+      bGenerateOverlapEventsDuringLevelStreaming BoolProperty
+      bIgnoresOriginShifting           BoolProperty
+      bEnableAutoLODGeneration         BoolProperty
+      bIsEditorOnlyActor               BoolProperty
+      bActorSeamlessTraveled           BoolProperty
+      bCanEverReplicate                BoolProperty
+      bReplicates                      BoolProperty
+      bCanBeInCluster                  BoolProperty
+      bAllowReceiveTickEventOnDedicatedServer BoolProperty
+      bReplicateUsingRegisteredSubObjectList BoolProperty
+      bActorEnableCollision            BoolProperty
+      bActorIsBeingDestroyed           BoolProperty
+      bAsyncPhysicsTickEnabled         BoolProperty
+      UpdateOverlapsMethodDuringLevelStreaming EnumProperty<ByteProperty>
+      DefaultUpdateOverlapsMethodDuringLevelStreaming EnumProperty<ByteProperty UEnum:ENetRole>
+      RemoteRole                       ByteProperty (UEnum:ENetRole)
+      InitialLifeSpan                  FloatProperty
+      CustomTimeDilation               FloatProperty
+      RayTracingGroupId                IntProperty
+      AttachmentReplication            StructProperty (UStruct:RepAttachment)
+      ReplicatedMovement               StructProperty (UStruct:RepMovement)
+      Owner                            ObjectProperty (UClass:Actor)
+      NetDriverName                    NameProperty
+      Role                             ByteProperty (UEnum:ENetRole)
+      NetDormancy                      ByteProperty (UEnum:ENetDormancy)
+      SpawnCollisionHandlingMethod     EnumProperty<ByteProperty UEnum:EAutoReceiveInput>
+      AutoReceiveInput                 ByteProperty (UEnum:EAutoReceiveInput)
+      InputPriority                    IntProperty
+      InputComponent                   ObjectProperty (UClass:InputComponent)
+      NetCullDistanceSquared           FloatProperty
+      NetTag                           IntProperty
+      NetUpdateFrequency               FloatProperty
+      MinNetUpdateFrequency            FloatProperty
+      NetPriority                      FloatProperty
+      PhysicsReplicationMode           EnumProperty<ObjectProperty UClass:Pawn>
+      Instigator                       ObjectProperty (UClass:Pawn)
+      Children                         ArrayProperty<ObjectProperty UClass:SceneComponent>
+      RootComponent                    ObjectProperty (UClass:SceneComponent)
+      Layers                           ArrayProperty<WeakObjectProperty UClass:ChildActorComponent>
+      ParentComponent                  WeakObjectProperty (UClass:ChildActorComponent)
+      bCopyTagsFromStaticMeshes        BoolProperty
+      bAggregateTicks                  BoolProperty
+      Tags                             ArrayProperty<NameProperty>
+      StaticMeshTags                   ArrayProperty<MulticastSparseDelegateProperty>
+      OnTakeAnyDamage                  MulticastSparseDelegateProperty
+      OnTakePointDamage                MulticastSparseDelegateProperty
+      OnTakeRadialDamage               MulticastSparseDelegateProperty
+      OnActorBeginOverlap              MulticastSparseDelegateProperty
+      OnActorEndOverlap                MulticastSparseDelegateProperty
+      OnBeginCursorOver                MulticastSparseDelegateProperty
+      OnEndCursorOver                  MulticastSparseDelegateProperty
+      OnClicked                        MulticastSparseDelegateProperty
+      OnReleased                       MulticastSparseDelegateProperty
+      OnInputTouchBegin                MulticastSparseDelegateProperty
+      OnInputTouchEnd                  MulticastSparseDelegateProperty
+      OnInputTouchEnter                MulticastSparseDelegateProperty
+      OnInputTouchLeave                MulticastSparseDelegateProperty
+      OnActorHit                       MulticastSparseDelegateProperty
+      OnChildActorAttached             MulticastSparseDelegateProperty
+      OnChildActorDetached             MulticastSparseDelegateProperty
+      OnDestroyed                      MulticastSparseDelegateProperty
+      OnEndPlay                        MulticastSparseDelegateProperty
+      OnLokiEndPlay                    MulticastSparseDelegateProperty
+      OnTornOff                        MulticastSparseDelegateProperty
+      OnPooledActorTornOff             MulticastSparseDelegateProperty
+      InstanceComponents               ArrayProperty<ObjectProperty UClass:ActorComponent>
+      BlueprintCreatedComponents       ArrayProperty<BoolProperty>
+      bDebugTarget                     BoolProperty
+      bEnablePooling                   BoolProperty
+      bCanPrimeOnServer                BoolProperty
+      bCanPrimeOnClient                BoolProperty
+      bCanPrimeInArena                 BoolProperty
+      bCanPrimeInBattleRoyale          BoolProperty
+      bAlwaysDestroyInsteadOfReturningToPool BoolProperty
+      MaxPoolSize                      IntProperty
+      PoolPrimeSize                    IntProperty
+      SimulatedTearOffIdleTimeInSeconds FloatProperty
+      ServerState                      StructProperty (UStruct:PoolableActorServerState)
+      InitiallyVisibleComponents       ArrayProperty<WeakObjectProperty UClass:ActorPoolManager>
+      PoolManager                      WeakObjectProperty (UClass:ActorPoolManager)
+      LokiReplicationStrategy          StructProperty (UStruct:LokiReplicationStrategy)
+
+=== LokiReplicationStrategy struct ===
+  LokiReplicationStrategy :   (5 props)
+      CustomReplicationStrategy        EnumProperty<BoolProperty>
+      bOwningPlayer                    BoolProperty
+      bDistanceBased                   BoolProperty
+      bVision                          BoolProperty
+      bTeamBased                       BoolProperty

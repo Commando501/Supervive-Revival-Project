@@ -3333,6 +3333,120 @@ the SUPERVIVE-modified `ServerVerifyViewTarget` signature. Requires:
 
 - (session 21 writeup commit follows)
 
+## Session 22 (2026-07-01 — SUPERVIVE's engine modifications CONFIRMED via usmapdump extract; RPC signature RE deferred)
+
+Session 22 attempted to RE SUPERVIVE's `ServerVerifyViewTarget` RPC signature.
+Used `tools/usmapdump/usmapdump.exe extract` to dump the live SUPERVIVE
+process's UClass schema. The tool writes to `schema.txt` (70,996 lines) and
+also produces a fresh `mappings.usmap`.
+
+### Key finding: TheoryCraft heavily modified engine base classes
+
+The extracted `AActor` UClass has 103 FProperties — significantly more than
+stock UE5.4's ~85. New TheoryCraft-added properties on `AActor`:
+
+- `LokiReplicationStrategy` (StructProperty, UStruct:LokiReplicationStrategy)
+  — a 5-field struct: `CustomReplicationStrategy` (enum), `bOwningPlayer`,
+  `bDistanceBased`, `bVision`, `bTeamBased`. **This is a per-actor
+  replication-control struct that runs on EVERY actor in the game.**
+- `ServerState` (StructProperty, UStruct:PoolableActorServerState) — actor
+  pooling infrastructure
+- `bCopyTagsFromStaticMeshes`, `bAggregateTicks`, `StaticMeshTags` —
+  tag/tick additions
+- `bDebugTarget`, `bEnablePooling`, `bCanPrimeOnServer`, `bCanPrimeOnClient`,
+  `bCanPrimeInArena`, `bCanPrimeInBattleRoyale`,
+  `bAlwaysDestroyInsteadOfReturningToPool`, `MaxPoolSize`, `PoolPrimeSize`,
+  `SimulatedTearOffIdleTimeInSeconds`, `InitiallyVisibleComponents`,
+  `PoolManager` — actor pooling system
+- `OnLokiEndPlay`, `OnPooledActorTornOff` — Loki-specific delegates
+
+Full excerpt saved to
+[docs/session-22-schema-actor-loki-mods.txt](session-22-schema-actor-loki-mods.txt).
+
+### But: PlayerController properties look STOCK vanilla
+
+The extracted `APlayerController` has 56 FProperties — all match stock UE5.4
+names. No obvious SUPERVIVE additions at the base PlayerController level.
+
+That means the `ServerVerifyViewTarget` RPC mismatch isn't from added
+FProperties on PlayerController; it must be from either:
+1. Added parameters on the `ServerVerifyViewTarget` UFUNCTION itself, OR
+2. Engine-level RPC-envelope modification (e.g., every RPC bunch has extra
+   TheoryCraft metadata prepended/appended)
+
+### Why we couldn't extract the exact signature
+
+`usmapdump extract` only dumps FProperty registrations (member variables),
+NOT UFunction registrations. Nothing in the schema.txt shows RPC parameter
+lists.
+
+Also tried `usmapdump wstrings` for the RPC name — got 8 hits including one
+that showed `"ServerVerifyViewTarget()"` with EMPTY parens (which SUGGESTS
+a zero-arg signature, matching stock — but this is a debug string not a
+real reflection dump, so unreliable).
+
+`usmapdump xrefstr` on the RPC name string returned 0 hits — the string is
+referenced indirectly (via a name-pool index or dynamic construction, not
+via a rip-rel LEA).
+
+`usmapdump nameid` confirmed just one entry: `ServerVerifyViewTarget` at
+NamePool id 0xA3F7.
+
+### Session 23 plan
+
+Two viable paths:
+
+**Path A: Live bunch decoding**
+Add hex-dump logging in the stub's `UActorChannel::ReceivedBunch` path (or
+even simpler: add a `LogNet` Verbose CVar so UE's own bunch parser logs each
+byte). Then compute what bits the client sent between `Function name/hash`
+end and bunch end. Cross-reference with UE's BunchFormat spec to identify
+parameter types. Slow but definitive.
+
+**Path B: Proper class dumper**
+Use a stronger UE reflection dumper (SDKGen-style: walk the entire
+GUObjectArray and enumerate all UFunction objects with their Children FProperty
+list). Would need to write custom code (usmapdump doesn't currently do this)
+OR use an external tool like Dumper-7 (community UE dumper for shipping games).
+
+Path A is faster to iterate but manual. Path B is more general-purpose.
+Recommend starting with Path A on the ONE known-failing RPC.
+
+Also worth investigating: whether there's a client-side CVar that would
+LOG each RPC's expected arg count client-side (e.g., `net.LogRPCs=1`).
+Might reveal the args from the CLIENT side directly.
+
+### Task list from this session
+
+Created 5 tasks: launch (completed), extract schema (completed), add matching
+UFUNCTION (deferred — need signature), solve class-name resolution (deferred),
+end-to-end test (deferred).
+
+### Tooling artifacts (session 22)
+
+- `docs/session-22-schema-actor-loki-mods.txt` — filtered schema showing
+  SUPERVIVE's AActor modifications and the LokiReplicationStrategy struct.
+- (Existing) `schema.txt` was refreshed by usmapdump — 4.28 MB, 70,996 lines,
+  full class + struct + enum schema of the live game. Not committed
+  (too large) but present in repo root.
+- (Existing) `tools/extractor/mappings.usmap` — refreshed usmap file for
+  future .pak content extraction.
+
+### Chapter state (end of session 22)
+
+- Handshake: DONE (session 17)
+- Post-handshake packet-handler wiring: DONE (session 18)
+- NMT_Hello / NMT_Login / NMT_Welcome control-channel messages: DONE (session 18)
+- Post-Welcome map validation: DONE (session 19)
+- NMT_Join / PostLogin / PC spawn server-side: DONE (session 19)
+- Client-side PC actor spawn (stock class): DONE (session 20)
+- Server-side RPC deserialization for modified engine RPCs: TODO (session 23 — needs Path A or B RE approach)
+- Replicating hero-roster / mission / store data to client: TODO (session 24+)
+
+### Commits this session
+
+- (session 22 writeup commit follows)
+
 
 
 
