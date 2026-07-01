@@ -4853,5 +4853,80 @@ settled, route-around works, live parse deterministic.
 
 - (session 35 writeup commit follows)
 
+## Session 36 (2026-07-01 — diagnosis of client-initiated close)
+
+Session 35 got the RPC through cleanly but noted the client tore down the
+connection at the same moment. Session 36 read the client-side log carefully
+and pinned the actual cause.
+
+### The smoking gun (client log)
+
+At `18:09:54.528` (~16ms before our RPC arrives on server clock):
+
+```
+LogRep: Error: ReceivedBunch: Invalid replicated field 0 in
+  PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.
+    LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_2147481890
+```
+
+Source: `FObjectReplicator::ReceivedBunch` at `DataReplication.cpp:1182`.
+The client's `FClassNetCache` entry for the received field's NetIndex
+resolves to something that is neither an `FStructProperty` (custom delta) nor
+a `UFunction` (RPC). Once `ReceivedBunch` returns false, the connection is
+torn down with `ObjectReplicatorReceivedBunchFail`.
+
+### Root cause: PlayerController class-net-cache divergence
+
+Our stub uses **stock** UE 5.4 `APlayerController`. SUPERVIVE's client uses
+their patched `APlayerController` with (session 22-confirmed) engine-level
+modifications. The two `FClassNetCache`s have different NetIndex → field
+mappings.
+
+When the stub sends normal PC state replication, field NetIndex 0 on our side
+(probably `AcknowledgedPawn` — first alphabetical entry in the sorted stock
+list) maps on the client's side to something SUPERVIVE moved to that position.
+If that "something" isn't an RPC or a custom-delta struct, the client rejects.
+
+### Why session 25 didn't hit this
+
+Session 25 also had connection close but on a different error path:
+`ReceivePropertiesForRPC - Mismatch read`. The RPC failure fired first on
+the same channel-3 bunch — the underlying property-replication rejection was
+almost certainly happening then too, just eclipsed.
+
+Sessions 30–35 fixed the RPC path, exposing this class-cache divergence.
+
+### The path forward (recommendation: A first)
+
+**A. Suppress outbound PC replication.** Fastest and least invasive. Set
+`NetUpdateFrequency = 0` on the stub's PC, override `PreReplication` to skip,
+or use a low-level netdriver filter. If the client tolerates an open actor
+channel with no property updates, we buy time to focus on menu-data
+replication (the chapter's original goal). Risk: the client may hang waiting
+for expected fields (Pawn, PlayerState, ViewTarget) to hydrate its UI.
+
+**B. Match the class net cache by injecting matching replicated properties
+on our PC** — runtime injection similar to session 27–32 but for
+`ReplicatedProperties` rather than RPC params. Substantial engineering.
+
+**C. Native patch of the client's or server's cache-build logic.**
+Most invasive, most robust.
+
+### Chapter state (end of session 36)
+
+- Full RPC signature validated: DONE (session 35)
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Client-close root cause identified: DONE (session 36)
+- Suppress or match outbound PC replication: TODO (session 37 — try A first)
+- Menu-data replication: TODO (session 38+ — after A/B unblocks the connection)
+
+### Tooling artifacts (session 36)
+
+- `docs/session-36-close-diagnosis.md` — full analysis + fix options.
+
+### Commits this session
+
+- (session 36 writeup commit follows)
+
 
 
