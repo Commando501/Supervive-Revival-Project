@@ -46,13 +46,19 @@ void ULokiNetDriver::InitConnectionlessHandler()
 void ULokiNetDriver::LowLevelSend(TSharedPtr<const FInternetAddr> Address,
                                   void* Data, int32 CountBits, FOutPacketTraits& Traits)
 {
-	// Stock SendToClient sets ConnectionlessHandler->SetRawSend(true) just before
-	// calling LowLevelSend, then back to false after. When bRawSend is true,
-	// we know we're sending a stateless handshake reply.
+	// Session 17 (attempt 3): test one-directional wrap hypothesis. Client sent
+	// 30 seconds of Initial retries with our server-signature wrapper reply — no
+	// PacketHandler rejection (progress vs sessions 14-16) but no ChallengeResponse
+	// either. Maybe the client's LokiNet FSocket only WRAPS outgoing, doesn't
+	// STRIP incoming. If so, our wrapped reply arrives at client's PacketHandler
+	// as garbage (wrapper bytes read as SessionID/ClientID/handshake bit fields).
+	// Try sending stock UE5.4 packets without any wrap — client should process
+	// them normally if hypothesis is correct.
+	constexpr bool bDisableOutgoingWrap = true;
 	const bool bIsHandshakeReply = ConnectionlessHandler.IsValid()
 	                               && ConnectionlessHandler->GetRawSend();
 
-	if (bIsHandshakeReply && Data != nullptr && CountBits > 0)
+	if (!bDisableOutgoingWrap && bIsHandshakeReply && Data != nullptr && CountBits > 0)
 	{
 		// Prepend the 8-byte TheoryCraft wrapper:
 		//   byte 0: 0xBB  (stable signature)
@@ -69,30 +75,27 @@ void ULokiNetDriver::LowLevelSend(TSharedPtr<const FInternetAddr> Address,
 		const int32 InnerBytes = (CountBits + 7) / 8;
 		const int32 OuterBytes = LokiStatelessConnect::LokiWrapperBytes + InnerBytes;
 
-		// Session 15: mirror bytes 1 and 6 from the last incoming packet.
-		// If LokiNetSocketSubsystem on the client uses these as session-state
-		// identifiers, mirroring them tells the client "this reply is part of
-		// the same conversation."
-		uint8 Byte1 = static_cast<uint8>(FMath::Rand() % 256);
-		uint8 Byte6 = static_cast<uint8>(FMath::Rand() % 256);
-		TSharedPtr<StatelessConnectHandlerComponent> SC = StatelessConnectComponent.Pin();
-		LokiStatelessConnect* LokiSC = SC.IsValid() ? static_cast<LokiStatelessConnect*>(SC.Get()) : nullptr;
-		if (LokiSC != nullptr && LokiSC->bHasLastIncoming)
-		{
-			Byte1 = LokiSC->LastIncomingByte1;
-			Byte6 = LokiSC->LastIncomingByte6;
-		}
+		// Session 17: server-direction wrapper signature CONFIRMED via
+		// experiment (client stopped outright rejecting our replies, connection
+		// timed out normally at 30s stock UE5.4 timeout instead of failing in 1s).
+		// Now testing the fixed byte 1 and byte 6 hypothesis: the raw 16-byte
+		// constant bytes 8-15 = 82 9B F5 4A 34 33 21 93. Try using 9B and 21
+		// literally (instead of random) to see if server-direction bytes 1 and 6
+		// are actually FIXED validation values (different from client-direction
+		// where they're random per our 172-packet analysis).
+		const uint8 Byte1 = 0x9B;
+		const uint8 Byte6 = 0x21;
 
 		TArray<uint8> Wrapped;
 		Wrapped.AddZeroed(OuterBytes);
-		Wrapped[0] = LokiStatelessConnect::LokiWrapperByte0;
+		Wrapped[0] = LokiStatelessConnect::ServerToClientByte0;
 		Wrapped[1] = Byte1;
-		Wrapped[2] = LokiStatelessConnect::LokiWrapperByte2;
-		Wrapped[3] = LokiStatelessConnect::LokiWrapperByte3;
-		Wrapped[4] = LokiStatelessConnect::LokiWrapperByte4;
-		Wrapped[5] = LokiStatelessConnect::LokiWrapperByte5;
+		Wrapped[2] = LokiStatelessConnect::ServerToClientByte2;
+		Wrapped[3] = LokiStatelessConnect::ServerToClientByte3;
+		Wrapped[4] = LokiStatelessConnect::ServerToClientByte4;
+		Wrapped[5] = LokiStatelessConnect::ServerToClientByte5;
 		Wrapped[6] = Byte6;
-		Wrapped[7] = LokiStatelessConnect::LokiWrapperByte7;
+		Wrapped[7] = LokiStatelessConnect::ServerToClientByte7;
 		FMemory::Memcpy(Wrapped.GetData() + LokiStatelessConnect::LokiWrapperBytes, Data, InnerBytes);
 
 		const int32 NewCountBits = CountBits + LokiStatelessConnect::LokiWrapperBits;
