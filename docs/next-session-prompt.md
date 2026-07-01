@@ -1,4 +1,4 @@
-# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 8
+# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 20
 
 Paste the section between the `---` lines below as the first message of
 the new session. It bootstraps the agent fully without re-reading dozens
@@ -8,209 +8,248 @@ of files.
 
 We're continuing the SUPERVIVE Revival dedicated-server-stub chapter on
 branch `dedicated-server-stub` at `G:\git\Supervive Revival Project`.
-This is **session 8** of the chapter. Sessions 1–7 captured the
-protocol surface, built a working `browse_hook.dll` that hooks
-`UEngine::Browse` and rewrites `FURL.Host` to `127.0.0.1`, scaffolded a
-UE5.4 stub server that listens on UDP 7777 with the correct
-`GameNetDriver` + `StatelessConnectHandlerComponent`, and PROVED via a
-diagnostic UDP listener that **the client crashes before sending its
-first byte** — strictly in `FMallocBinned2.realloc` when UE's FString
-destructor tries to free our static-buffer Host pointer. Today's job
-is to fix that ONE crash so the engine actually reaches the wire.
+This is **session 20** of the chapter. Session 19 was another big
+qualitative jump — the SUPERVIVE client now completes stateless
+handshake + NMT_Hello + NMT_Login + NMT_Welcome + NMT_Netspeed +
+NMT_Join with the stub server, reaches `ReceivedJoin` state, and 8
+control channels open server-side. Then the client fails to spawn the
+server's replicated PlayerController on Channel 3, sends
+`NMT_ActorChannelFailure(3)`, and the connection closes. Today's job
+is to fix that one client-side actor-spawn failure.
 
 START BY (in this order):
   cd "G:\git\Supervive Revival Project"
   git status
   git log --oneline -8
   # Then read:
-  #   docs/dedicated-server-stub.md   (the whole chapter; jump to "Session 7"
-  #     section at the bottom — that's where you pick up)
-  #   tools/sigbypass-mod/browse_hook.cpp  (current v10 hook implementation;
-  #     this is what gets modified)
-  # The hero-roster-blocker memory auto-loads and has session 7's
-  # writeup at the very top — read that.
+  #   docs/dedicated-server-stub.md   (full chapter — jump to
+  #     "Session 19" at the bottom, that's where you pick up.
+  #     Session 18 is the previous UNetConnection wiring win.
+  #     Session 17 has the wrapper-architecture discovery and the
+  #     16-byte constant we anchor on. Session 14 has TheoryCraft's
+  #     wire-format ID.)
+  #   docs/session-19-stub-log-excerpt.txt  (the filtered stub log
+  #     showing world-rename + Join succeeded + ActorChannelFailure —
+  #     24 lines, read all of it)
+  #   unreal-stub/Source/Loki/LokiGameInstance.h + .cpp  (session-19
+  #     ModifyClientTravelLevelURL override — LevelName rewrite)
+  #   unreal-stub/Source/Loki/Loki.cpp  (session-19 world/package
+  #     rename hook at FWorldDelegates::OnPostWorldInitialization)
+  #   unreal-stub/Source/Loki/LokiIpConnection.h + .cpp  (session-18
+  #     UNetConnection InitHandler override — wires LokiStatelessConnect)
+  #   unreal-stub/Source/Loki/LokiNetDriver.h + .cpp  (session-18
+  #     constructor sets NetConnectionClass = ULokiIpConnection)
+  #   unreal-stub/Source/Loki/LokiStatelessConnect.h + .cpp  (session-17
+  #     wrapper-strip logic for both connectionless and per-connection
+  #     packets)
+  #   H:\Unreal Engine\UE_5.4\Engine\Source\Runtime\Engine\Private\PackageMapClient.cpp
+  #     lines 700-760 — where SerializeNewActor decides whether the client
+  #     can spawn a server-replicated actor. Failure paths: unresolved
+  #     Archetype GUID, SpawnActorAbsolute returned null, invalid ActorLevel.
+  #   The hero-roster-blocker memory auto-loads and has session 19's
+  #   writeup at the very top.
 
 THE EXACT BLOCKER:
 
-`browse_hook` v10 sets `FURL.Host.Data` to a `static wchar_t
-g_redirect_host[]` array inside our DLL's data segment. UE's FString
-destructor unconditionally calls `FMemory::Free(Data)` which routes to
-`FMallocBinned2::Realloc(Data, 0, ...)`. Realloc's canary check fails
-because our pointer isn't in an FMallocBinned2 bin, fatal error fires
-(`canary == 0x0 != 0xe3`), process exits. ALL of this happens BEFORE
-the engine sends its first UDP packet — confirmed in session 7 with a
-PowerShell listener bound on :7777 that received zero packets.
+After the client sends NMT_Join and server's `GameMode.PostLogin` spawns
+a stock `APlayerController`, the server opens an ActorChannel (Channel 3)
+for the PC and starts replicating it. The client tries to instantiate the
+actor via `UPackageMapClient::SerializeNewActor`, but that returns null —
+so the client sends `NMT_ActorChannelFailure(ChannelIndex=3)` back. Server
+sees this at DataChannel.cpp:1750 and logs:
 
-The fix is browse_hook **v11**: allocate the Host buffer through UE's
-own allocator so the destructor's Free path doesn't fail canary.
+    LogNet: Server connection received: ActorChannelFailure 3
+    LogNet: Actor channel failed: PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+    LogNet: UNetConnection::Close: ... Channels: 8
+    LogNet: SetClientLoginState: ReceivedJoin -> CleanedUp
 
-THE RECON YOU NEED:
+Note: the `3` in `ActorChannelFailure 3` is the CHANNEL INDEX (not a
+reason code). The PC is on channel 3 (0=Control, 1-2=some default,
+3=PC). ActorChannelFailure is generated by client at
+PackageMapClient.cpp:3151 when `Archetype == null` in SerializeNewActor,
+or PackageMapClient.cpp:748 when `SpawnActorAbsolute` returns null.
 
-The naive approach (find FMallocBinned2's vtable via `vtslot`, locate
-Malloc slot) is DEAD: session 7 confirmed `findptr` and `callxref`
-return zero hits for both `FMallocBinned2::Realloc` (mod-RVA `0xFE25A9`)
-and `FMallocBinned2::Free` (mod-RVA `0xFDFE70`). Both function bodies
-exist in the binary but nothing references them — they're inlined and
-devirtualized at every call site. The vtable approach doesn't exist
-here.
+TOP HYPOTHESES (in order of likelihood):
 
-Use the byte-pattern approach instead:
+1. **Class-GUID mismatch on PlayerControllerClass**. Client's cooked
+   LobbyV2 map has a specific GameMode expecting `ALokiLobbyController`
+   (or similar Loki-specific PC class). Our stub spawns stock
+   `APlayerController`. When the class's NetGUID is replicated, the
+   client either:
+   - (a) can't resolve `/Script/Engine.PlayerController` at all (unlikely —
+     stock class), OR
+   - (b) resolves it fine but LobbyV2's client-side GameMode rejects the
+     stock PC when it tries to become the local player. Result: the
+     spawned actor becomes null or the archetype lookup fails.
 
-  1. Inlined `FMemory::Malloc` compiles to this x64 pattern in shipping:
+2. **Missing subobjects**. PC has replicated components (PlayerState,
+   InputComponent, HUD). If any of those reference Loki-specific classes
+   that aren't in our stub's package registry, `SerializeNewActor`'s
+   archetype resolution can fail.
 
-       48 8B 05 ?? ?? ?? ??     ; mov rax, [rip+disp]    ; load GMalloc
-       48 85 C0                  ; test rax, rax
-       74 ??                     ; jz <init-path>
-       48 8B 00                  ; mov rax, [rax]         ; load vtable
-       ... mov regs for args ...
-       FF 60 ??                  ; jmp [rax+slot]         ; tail call
+3. **World Partition or streaming level mismatch**. Client's LobbyV2 is
+   likely a World Partition map. Our stub has a bare "Entry"-shaped world
+   that we renamed to LobbyV2's package path. The `ULevel` object that
+   the actor is spawned into might not match what the client thinks the
+   level looks like. See PackageMapClient.cpp:717 — `SpawnLevel->GetWorld()`
+   must be non-null.
 
-  2. Scan the main module's executable pages for this 3-instruction
-     prefix. Collect every distinct `[rip+disp]` target.
-  3. The most-common target is GMalloc (it's used by EVERY allocation
-     in UE; thousands of hits). Other less-common targets are unrelated
-     globals.
-  4. The slot offset in `FF 60 ??` is 8 * Malloc's vtable index. UE5
-     FMalloc's vtable has Malloc at an index we'll learn from this
-     scan.
+RECOMMENDED SESSION 20 APPROACH:
 
-usmapdump doesn't currently have a byte-pattern command. You'll
-probably want to add a `pattern` subcommand (or write a small
-sibling Go tool) — see `tools/usmapdump/scan.go` and `helpers.go` for
-the read-page-by-page substrate already there. Reusing that
-infrastructure is much faster than starting from scratch. Once you
-have the scanner, dump the top-10 most-common targets; GMalloc should
-be 100×–1000× more common than the next.
+Step 1 (5 min): Verify the hypothesis by making it more diagnostic.
+  Look at the client's Loki.log after a session-19 run — the client
+  emits `LogNetPackageMap: Warning: SerializeNewActor: Failed to spawn actor for NetGUID: X`
+  or `LogNetPackageMap: Error: Unresolved Archetype GUID` etc. If shipping
+  build strips those logs, this won't help; then proceed to Step 2.
+  Client log path: `C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log`
 
-After identifying GMalloc:
-  - `usmapdump peek <pid> 0x<GMalloc_addr> 8`  → read the FMalloc*
-  - The first 8 bytes of the FMalloc instance are the vtable pointer
-  - `usmapdump peek <pid> 0x<vtable_addr> 80` → dump the vtable
-  - Cross-reference with one of the inlined call sites' `FF 60 XX` to
-    figure out which slot is Malloc
+Step 2 (30 min): Find the client's expected LobbyV2 PC class via static
+  RE. From `G:\git\Supervive Revival Project`:
 
-THE FIX (browse_hook v11):
+    tools\usmapdump\usmapdump.exe wstrings "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\SUPERVIVE-Win64-Shipping.exe" | grep -iE "LobbyV2.*Controller|Lobby.*Controller|LokiLobby.*PC|LokiPlayerController"
 
-In `tools/sigbypass-mod/browse_hook.cpp`:
+  Look for the specific ALokiLobbyController-style class name. Also
+  check `tools\usmapdump\usmapdump.exe strings` (ANSI) for `LokiLobby*`
+  class references. usmapdump also has `namesall` which enumerates every
+  FName in the exe — grep that for `LokiLobby` too.
 
-  - Add a worker-time recon step that finds GMalloc + Malloc slot
-    (you can either bake the addresses as constants once known, or do
-    runtime scanning inside the DLL)
-  - Allocate the Host buffer via
-    `GMalloc->Malloc(size_in_bytes, alignment)` where alignment is
-    typically 16 (the default for `wchar_t[]`)
-  - Copy `"127.0.0.1\0"` into it and use it as `FURL.Host.Data`
+Step 3 (60-120 min): Create a stub subclass matching the client's class,
+  and a GameMode that spawns it. Plan:
+  - Add `unreal-stub/Source/Loki/LokiStubPlayerController.h + .cpp`
+    Subclass of `APlayerController` (or the exact client-expected class
+    if we can generate a header for it). Use a UCLASS() macro that
+    matches the client's expected class path (may need to override the
+    generated package name at runtime, similar to session 19's world
+    rename).
+  - Add `unreal-stub/Source/Loki/LokiStubGameMode.h + .cpp`
+    Custom `AGameModeBase` subclass that sets `PlayerControllerClass =
+    ULokiStubPlayerController::StaticClass()` in constructor.
+  - Register the GameMode in DefaultEngine.ini:
 
-Then rebuild and retest end-to-end:
+        [/Script/EngineSettings.GameMapsSettings]
+        GlobalDefaultGameMode=/Script/Loki.LokiStubGameMode
 
-  1. Start the UE5.4 stub server (still running from session 6's setup):
-       Start-Process -FilePath `
-         'H:\Unreal Engine\UE_5.4\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' `
-         -ArgumentList '"G:\git\Supervive Revival Project\unreal-stub\Loki.uproject"', `
-           '/Engine/Maps/Entry?listen','-game','-server','-log','-Port=7777', `
-           '-nullrhi','-NoSplash','-Unattended'
-     Wait ~15-20s for engine init. Verify with
-     `Get-NetUDPEndpoint -LocalPort 7777`.
+  - Build + test. If the class-name approach works, client should
+    successfully spawn the PC and the connection stays open. Next expected
+    events: `ClientHasInitializedLevel`, `AcknowledgePossession`,
+    `InitInputSystem`, `NotifyLoadedWorld`, `ServerReadyToBeginPlay` etc.
 
-  2. (Optional) Re-bind the diagnostic listener — but actually no, with
-     a real server you don't need it. The server's Loki.log will show
-     incoming connections directly.
+  If class renaming isn't enough (Loki PC probably has properties/BP
+  logic our stub doesn't have), we need to actually author a stub
+  Blueprint or C++ class that matches the client's expected class layout
+  for replicated properties. This may push into session 21+.
 
-  3. Launch the SUPERVIVE client with -Hook:
-       .\configs\launch-redirect.ps1 -Hook .\tools\sigbypass-mod\browse_hook.dll
+WHAT'S ALREADY BUILT (do not re-derive):
 
-  4. Expected outcome: client reaches LobbyV2 browse, rewrites Host,
-     dials our server. Server's Loki.log shows a NEW client connection
-     attempt. The StatelessConnect handshake will then either complete
-     or fail on the NetCL mismatch (server reports `NetCL: 33043543`,
-     client reports `NetCL: 0`). That's blocker #1 from session 6 — fix
-     it next by adding `FNetworkVersion::ProcessOverrideCallback` to
-     the Loki module's `StartupModule()` (see Loki.cpp, currently just
-     IMPLEMENT_PRIMARY_GAME_MODULE).
+Server-side plumbing (all working):
+  - Stateless handshake (sessions 13-17)
+  - LokiStatelessConnect wrapper strip on both connectionless + per-connection
+    packet handler chains (session 17 + 18)
+  - LokiNetDriver + LokiIpConnection wiring
+  - LokiGameInstance::ModifyClientTravelLevelURL rewriting NMT_Welcome's
+    LevelName (session 19)
+  - World package + object rename at OnPostWorldInitialization so
+    server-spawned actor NetGUID paths match client's cooked LobbyV2
+    (session 19)
 
-KEY ADDRESSES + ANCHORS (mod-RVAs in SUPERVIVE-Win64-Shipping.exe;
-each session's launch shifts the absolute base but RVAs are stable):
+Client-side hook infrastructure (all working):
+  - browse_hook.dll v13 rewrites LobbyV2 browse to 127.0.0.1
+  - inject.exe watch-now manual-maps the DLL post-CreateProcess
+  - configs/launch-redirect.ps1 orchestrates hosts file + certs +
+    ags backend + game exe launch
 
-  UEngine::Browse                          0x3EC57D0   (entry; hooked by v10)
-  FMallocBinned2::Realloc (body, inlined)  0xFE25A9    (canary at 0xFE25FD)
-  FMallocBinned2::Free   (body, inlined)   0xFDFE70
-  GGameThreadId slot                       0x9D49158
-  "FMallocBinned2 Attempt to realloc..."    0x76A0C20
-  "FMallocBinned2 Attempt to free..."       0x76A0AD0
-  "GMalloc_CLASS=%d..."                    0x81C3AE2  (debug only)
+Backend infrastructure (all working):
+  - ags Go backend at :8080 HTTP + :443 HTTPS with AccelByte + Loki
+    endpoints stubbed
 
-CHAPTER STATE AT END OF SESSION 7:
+STUB SERVER LAUNCH COMMAND (from elevated PowerShell, works today):
 
-  Server-side:  UE5.4 stub server is RUNNING when launched. UDP 7777
-                  listens. GameNetDriver + StatelessConnectHandlerComponent
-                  loaded. Server's Loki.log waits for incoming
-                  connections. The server's NetCL is 33043543 (vs
-                  client's 0) — blocker #1 — but that doesn't matter
-                  until blocker #2 is fixed because no client packet
-                  reaches the server yet.
+    Stop-Process -Name UnrealEditor-Cmd -Force -ErrorAction SilentlyContinue
+    & 'H:\Unreal Engine\UE_5.4\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' `
+        '"G:\git\Supervive Revival Project\unreal-stub\Loki.uproject"' `
+        '/Engine/Maps/Entry?listen' -game -server -log -Port=7777 `
+        -nullrhi -NoSplash -Unattended `
+        -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose"
 
-  Client-side:  browse_hook v10 (`tools/sigbypass-mod/browse_hook.dll`)
-                  successfully patches `UEngine::Browse`, reads the FURL,
-                  rewrites Host to `127.0.0.1`. Client crashes in
-                  FMallocBinned2 before sending any UDP — blocker #2 —
-                  which is what this session fixes.
+Build after Loki source changes (~5-15 sec incremental):
+
+    & 'H:\Unreal Engine\UE_5.4\Engine\Build\BatchFiles\Build.bat' `
+        LokiEditor Win64 Development `
+        '"G:\git\Supervive Revival Project\unreal-stub\Loki.uproject"' `
+        -WaitMutex
+
+Client launch (from elevated PowerShell, Steam must be running):
+
+    # Simplest: launch-redirect.ps1 (handles cert + hosts + ags + client + hook)
+    cd "G:\git\Supervive Revival Project"
+    .\configs\launch-redirect.ps1 -Hook ".\tools\sigbypass-mod\browse_hook.dll"
+
+Alternative iterative flow (Claude used this in session 19):
+    # 1. ags backend
+    Start-Process -FilePath 'G:\git\Supervive Revival Project\server\ags.exe' `
+        -ArgumentList '-http :8080 -https :443 -log "G:\...\docs\capture.log" -certs "G:\...\certs"' `
+        -WorkingDirectory 'G:\git\Supervive Revival Project\server'
+    # 2. inject watch-now (BEFORE game launch, single-quoted args due to path spaces)
+    Start-Process 'G:\...\tools\inject\inject.exe' `
+        -ArgumentList 'watch-now SUPERVIVE-Win64-Shipping.exe "G:\...\browse_hook.dll"' `
+        -RedirectStandardOutput 'inject.log' -WindowStyle Hidden
+    # 3. game exe with -ini overrides (see launch-redirect.ps1:200-215 for the array)
+    Start-Process 'G:\...\SUPERVIVE-Win64-Shipping.exe' -ArgumentList $iniArgs
 
 GUARDRAILS (per CLAUDE.md):
 
-- Branch is `dedicated-server-stub`. Commit + push each meaningful step.
-  Push needs `gh auth` or system git credential helper; user pushes
-  manually if interactive prompts fail.
-- Don't mutate the running game without warning the user first.
-- The hosts file redirect is already active; don't run
-  `configs/launch-redirect.ps1 -Revert` casually.
-- Steam must be running before the game launches (else Auth Failure
-  14005).
-- If the new pattern-scan subcommand to usmapdump produces gigabytes of
-  output, redirect to a file or paginate.
+  - Branch is `dedicated-server-stub`. Commit + push each meaningful
+    step. Push needs `gh auth` or system git credential helper; user
+    pushes manually if interactive prompts fail.
+  - Don't mutate the running game without warning the user first.
+  - Hosts file redirect is already active; don't run
+    `configs/launch-redirect.ps1 -Revert` casually.
+  - Steam must be running before the game launches (else Auth Failure
+    14005).
+  - browse_hook v13 has a small (<10%) crash rate on the client during
+    Browse rewrite. If the client dies before Initial fires, just kill
+    the game + inject and retry.
+  - Do NOT re-enable outgoing wrap in LokiNetDriver::LowLevelSend
+    (`bDisableOutgoingWrap = true` was session 17's fix that made the
+    handshake work). Sending wrapped replies breaks the client.
+  - Do NOT touch the world/package rename in Loki.cpp — session 19
+    proved it's required.
+
+CHAPTER STATE AT END OF SESSION 19:
+
+  - Handshake: DONE (session 17)
+  - Post-handshake packet-handler wiring: DONE (session 18)
+  - NMT_Hello / NMT_Login / NMT_Welcome control-channel messages: DONE (session 18)
+  - Post-Welcome map validation: DONE (session 19, ModifyClientTravelLevelURL)
+  - NMT_Join / PostLogin / PC spawn server-side: DONE (session 19, world rename)
+  - Client-side PC actor spawn: TODO (session 20 — this session's focus)
+  - Replicating hero-roster / mission / store data to client: TODO (session 21+)
 
 TOOLING ALREADY BUILT (do not duplicate):
 
-  tools/usmapdump/usmapdump.exe  (subcommands: info, names, objects,
-                                  extract, strings, wstrings, xrefstr,
-                                  callxref, findptr, peek, disasm,
-                                  vtslot, vtdump, nameid, poke. Add
-                                  a `pattern` subcommand for this
-                                  session's recon.)
-  tools/inject/inject.exe         (manual-map DLL injector; supports
-                                  mmap, watch, watch-now, launch
-                                  subcommands)
-  tools/sigbypass-mod/browse_hook.cpp   (the v10 hook — extend here for v11)
-  configs/launch-redirect.ps1     (already has -Hook flag from session 4)
-  unreal-stub/                    (the UE5.4 Loki project — Game + Editor
-                                  targets built. Loki.exe Game build
-                                  has an engine-content asset bug;
-                                  use UnrealEditor-Cmd.exe with the
-                                  project instead — pattern documented
-                                  in docs/dedicated-server-stub.md
-                                  Session 6 section.)
-  unreal-stub/udp7777-listener.ps1   (diagnostic UDP listener; only
-                                  needed if the recon goes sideways
-                                  and you want to re-verify the
-                                  client sends nothing pre-crash.
-                                  Already proven once; can ignore.)
+  tools/usmapdump/usmapdump.exe — RE tool. Session 20 will USE this to find
+    the client's LobbyV2 PC class name via `wstrings` + grep.
+  tools/inject/inject.exe — manual-map DLL injector.
+  tools/sigbypass-mod/browse_hook.dll — LobbyV2 browse rewriter (v13).
+  unreal-stub/ — UE5.4 project with LokiEditor target. Rebuild after any
+    Loki module change.
 
 LARGER CONTEXT REMINDER:
 
-The original goal of this multi-chapter project is to make the
-SUPERVIVE Missions modal (and other content panels) populate after
-the official servers were retired. The diagnostic phase (sessions 1-5
-of the chapter prior to this one) established that the menu's empty
-state is server-replication-dependent and only a UE5.4 stub server can
-deliver the data. Sessions 1-7 of THIS chapter built the trigger
-(browse_hook rewrites the engine's Browse URL to our stub) and the
-receiver (UE5.4 stub server listening on UDP 7777). Today closes
-the last gap so the engine actually connects.
+The original goal of this multi-chapter project is to make the SUPERVIVE
+Missions modal (and other content panels — All Hunters, Store, Cosmetics)
+populate after the official servers were retired. Sessions 1-19 established
+that the menu's empty state is server-replication-dependent and only a UE5.4
+stub server can deliver the data. The dedicated-server-stub chapter has now
+completed the entire connection handshake through NMT_Join.
 
-Once the StatelessConnect handshake completes end-to-end, the rest of
-the chapter is "write the Loki module's `ALokiPlayerState_Missions`
-class and have it replicate mission data on join." That's normal
-UE5.4 dev work, not RE work.
+Remaining gap between us and "SUPERVIVE menu with missions populated":
+  1. Session 20: make the client successfully spawn the server-replicated
+     PlayerController (this session's focus).
+  2. Session 21+: normal UE5.4 dev work. Write Loki module's LobbyState or
+     LokiPlayerState classes that replicate mission/hero-roster data, have
+     the client's LobbyV2 GameState receive the data and populate the UI.
 
-If you have any doubt about a step, ask the user before running it —
-the chapter has had a lot of trial-and-error and the user has good
+If you have any doubt about a step, ask the user before running it. The
+chapter has accumulated a lot of trial-and-error and the user has good
 intuition about what's safe vs. risky.
