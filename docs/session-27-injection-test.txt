@@ -1,0 +1,17 @@
+714:[2026.07.01-07.09.20:413][  0]LogLokiStub: Display: InjectServerVerifyViewTarget: found UFunction on APlayerController (NumParms=0, ParmsSize=0, FunctionFlags=0x80220CC2)
+715:[2026.07.01-07.09.20:413][  0]LogLokiStub: Display: InjectServerVerifyViewTarget: added FStrProperty ClientMapName. New NumParms=1, ParmsSize=16
+953:[2026.07.01-07.10.05:217][350]LogNet: Join succeeded: 9b9d2c887e2524f918e3
+1131:[2026.07.01-07.10.05:471][358]LogLokiActorChannel: Verbose: ReceivedBunch: ChIndex=3 ChSeq=543 bReliable=1 bOpen=0 bClose=0 NumBits=2339 StartPos=0 remaining=2339 bits
+1135:[2026.07.01-07.10.05:472][358]LogRep: Error: ReceivedRPC: ReceivePropertiesForRPC - Reader.IsError() == true: Function: ServerVerifyViewTarget, Object: PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+1139:[2026.07.01-07.10.05:474][358]LogNet:  - Result=ObjectReplicatorReceivedBunchFail, ErrorContext="ObjectReplicatorReceivedBunchFail"
+1166:[2026.07.01-07.10.05:480][358]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from ReceivedJoin to CleanedUp
+
+=== KEY OBSERVATION ===
+
+Before injection (sessions 20-25): Reader.GetBitsLeft() != 0 -> 'Mismatch read'.
+After injection (session 27): Reader.IsError() == true -> deserialization overflow.
+
+This confirms UE's RepLayout picked up our injected FStrProperty. FString serialize
+reads int32 count from bit 0 of the RPC payload, then N chars. Since the payload's
+first 991 bits are OTHER params (from session-25 analysis), the FString count is
+reading garbage bits and trying to read more chars than available -> overflow.
