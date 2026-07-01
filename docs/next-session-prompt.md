@@ -1,4 +1,4 @@
-# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 30
+# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 31
 
 Paste the section between the `---` lines below as the first message.
 
@@ -6,102 +6,110 @@ Paste the section between the `---` lines below as the first message.
 
 We're continuing the SUPERVIVE Revival dedicated-server-stub chapter on
 branch `dedicated-server-stub` at `G:\git\Supervive Revival Project`.
-This is **session 30** of the chapter. Session 29 analytically ruled out
-plain scalar types (FVector, FRotator, FQuat as 3-4 floats) as the first
-RPC param — their bit-level interpretations produce impossible values
-like 1e+27. Bit 0 = 1 is consistent with FVector_NetQuantize OR NetGUID.
-Session 29's trial (FVector_NetQuantize100, int32, FString) also failed
-with Reader.IsError.
+This is **session 31** of the chapter. Session 30 achieved a HUGE
+breakthrough: the engine's `FBitReader::SetOverflowed` ensure emits a
+diagnostic line that tells us EXACTLY how many bits were consumed and
+where overflow happened. We now have engine-side feedback for iteration.
 
-Session 30: try FObjectProperty (Actor pointer) or a specific
-SUPERVIVE-Loki-USTRUCT.
+Session 30's trial `(AActor* NewViewTarget, FString ClientMapName)`
+revealed:
+- Sub-reader Max: 2298 bits (confirmed matches session-25 decode)
+- AActor* NetGUID consumed exactly **50 bits**
+- Need ~941 more bits between AActor* and FString to reach the target
+  FString position at bit 991
 
 START BY (in this order):
   cd "G:\git\Supervive Revival Project"
   git status
   git log --oneline -10
   # Then read:
-  #   docs/dedicated-server-stub.md   (jump to "Session 29" at bottom)
-  #   docs/session-29-trials.txt      (session 29 log + summary)
-  #   docs/session-25-bunch-capture.txt   (raw RPC bunch bytes)
-  #   docs/session-25-bunch-decoder.py    (Python decoder)
-  #   docs/session-22-schema-actor-loki-mods.txt  (SUPERVIVE-added props)
+  #   docs/dedicated-server-stub.md   (jump to "Session 30" at bottom)
+  #   docs/session-30-actor-trial.txt   (23-line session-30 log excerpt)
+  #   docs/session-25-bunch-capture.txt (raw bunch bytes)
+  #   docs/session-25-bunch-decoder.py  (Python decoder)
   #   unreal-stub/Source/Loki/Loki.cpp
-  #     (has InjectServerVerifyViewTargetFStringParam +
-  #      AppendString/Struct/Vector/Rotator/Int/Float/Byte helpers)
-  #   schema.txt (repo root, ~71k lines — search for USTRUCTs that might
-  #     be first param)
+  #     (helpers: AppendString/Struct/Vector/Rotator/Int/Float/Byte/Object)
   #   The hero-roster-blocker memory auto-loads.
 
-WHAT WE KNOW:
+THE ENGINE DIAGNOSTIC (session 30 discovery):
 
-- RPC arg struct = 2298 bits
-- FString "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass" at bit 991
-- First 32 bits = 0x05C6000B (int32) — not FString count, not float
-- First 96 bits as FVector: impossible coordinates
-- Bit 0 = 1 (non-zero-vector flag or NetGUID valid flag)
-- **Confirmed: first param is variable-bit-encoded** (NetSerialize custom
-  struct OR FObjectProperty NetGUID)
+When our signature is wrong, UE emits an ensure with EXACT bit counts:
 
-STEP-BY-STEP PLAN:
+    LogOutputDevice: Error: Ensure condition failed: false
+        [File:Serialization/BitReader.cpp] [Line: 276]
+    LogOutputDevice: Error: FBitReader::SetOverflowed() called!
+        (ReadLen: N, Remaining: M, Max: 2298)
 
-Step 1 (30 min): Add FObjectProperty helper to Loki.cpp:
+Where:
+- Max = 2298 = total bit budget of the RPC sub-reader
+- Remaining = M = bits left when overflow fired
+- ReadLen = N = the read that overflowed (typically FString read amount)
+
+Bits consumed by preceding params = 2298 - M.
+
+For session 30's AActor*+FString trial: M = 2248, so first param = 50 bits.
+
+WHAT TO TRY:
+
+Step 1 (30 min): Iterate the middle param. We need ~941 bits between
+AActor* and FString. Try in this order:
+
+Trial A: `(AActor*, AActor*, FString)` — 50 + 50 + FString? Likely not
+  enough. Watch diagnostic. Expected: Remaining = 2298 - 100 = 2198 when
+  FString fails. If Remaining > 2298 - 991, param sequence is too short.
+
+Trial B: `(AActor*, FRepMovement, FString)` — FRepMovement has custom
+  NetSerialize, variable bits, typical ~150-250 bits.
+  AppendStructParam(Func, "Movement", "/Script/Engine.RepMovement")
+
+Trial C: `(AActor*, TArray<uint8> Payload, FString)` — TArray reads
+  int32 count then N bytes. If count value from wire = ~113, absorbs
+  32 + 113*8 = 936 bits ≈ close to 941.
+  Need to add AppendArrayParam helper (FArrayProperty of FByteProperty).
+
+Trial D: `(AActor*, int32, int32, ..., int32, FString)` — N int32s
+  totaling 941 bits: 941/32 = 29.4, so 29 int32 (928 bits) + a few more.
+
+Watch the diagnostic each iteration:
+- Remaining ≥ 2298 - 991 → we haven't reached bit 991 yet, ADD more params
+- Remaining < 2298 - 991 → we've passed bit 991, REMOVE some params
+- No overflow → we found it! Look for "Received RPC:" log line.
+
+Step 2 (30 min): Add FArrayProperty helper. UE FArrayProperty needs
+Inner property set:
 
 ```cpp
-static void AppendObjectParam(UFunction* Func, const TCHAR* Name,
-                              UClass* PropertyClass)
+static void AppendUInt8ArrayParam(UFunction* Func, const TCHAR* Name)
 {
-    FObjectProperty* Prop = new FObjectProperty(Func, FName(Name),
-                                                 RF_Public | RF_Transient);
-    Prop->PropertyClass = PropertyClass;
+    FArrayProperty* Prop = new FArrayProperty(Func, FName(Name),
+                                               RF_Public | RF_Transient);
     Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor;
     Prop->ArrayDim = 1;
+    // Set Inner property
+    FByteProperty* Inner = new FByteProperty(Prop, FName("Inner"),
+                                              RF_Public | RF_Transient);
+    Inner->PropertyFlags = CPF_ZeroConstructor | CPF_HasGetValueTypeHash;
+    Inner->ArrayDim = 1;
+    Prop->Inner = Inner;
     AppendToChildProperties(Func, Prop);
 }
 ```
 
-Then trial: `(AActor* NewViewTarget, FString ClientMapName)`.
+Step 3 (analytical): Once we know exactly where FString goes, we still
+need TAIL params (899 bits after FString). Same iteration approach.
 
-If IsError persists but changes byte offset, we may be closer.
+Step 4: When entire signature matches, log will show:
+- No SetOverflowed ensure
+- No "Reader.IsError" from ReceivedRPC
+- Possibly `LogRepTraffic: Received RPC: ServerVerifyViewTarget`
 
-Step 2 (30 min): Explore SUPERVIVE-Loki USTRUCTs from schema.txt. Grep
-for likely first-param structs:
-
-```
-grep -E "^  LokiViewTarget|^  LokiCameraInfo|^  Loki.*Verify|
-        ^  LokiPlayerState" schema.txt | head -20
-```
-
-Any struct with 6-15 fields and a mix of scalars is a candidate. Try
-`AppendStructParam(Func, ..., "/Script/Loki.LokiXxxxxx")`.
-
-Step 3 (60 min): Python offline signature-matcher. Write
-`scratchpad/decode_bunch_v3.py`:
-- Load captured bunch bytes (docs/session-25-bunch-capture.txt)
-- Extract RPC payload bit stream (2298 bits starting at bit 41)
-- For each SIGNATURE CANDIDATE (list of param types + bit lengths):
-  - Simulate FRepLayout::ReceivePropertiesForRPC reading
-  - Check if all bits consumed AND intermediate values plausible
-  - Emit "candidate: X params, N bits consumed, sanity check pass/fail"
-
-Signatures to try:
-- (FObjectProperty[Actor], FString): ~30 bits NetGUID + 32+N*8 FString
-- (FUniqueNetIdRepl, FVector_NetQuantize100, FString): ~50+100+FString
-- (SUPERVIVE-Loki-USTRUCT, FString): unknown struct bits + FString
-- Many-scalar combos: (int32, float, int32, float, ..., FString)
-
-Step 4: Debugger route (fallback). Attach Visual Studio to LokiEditor,
-set breakpoint at `FRepLayout::ReceivePropertiesForRPC` in
-RepLayout.cpp:6972. Watch Reader.GetPosBits() before/after each property
-read. This tells us EXACTLY where FString read begins and what property
-type matches SUPERVIVE's first param.
+Then connection should proceed to Whatever's next!
 
 WHAT'S ALREADY BUILT (all working):
 
-- Sessions 17-28 infrastructure — DO NOT TOUCH:
-  * All engine overrides (session 17-20)
-  * Bunch hex dumps (session 23, 25)
-  * UFunction injection hook + helpers (session 27-29)
+- Sessions 17-29 infrastructure — DO NOT TOUCH
+- Session 30 FObjectProperty helper — KEEP
+- Session 30 discovered engine diagnostic — LEVERAGE for iteration
 
 STUB LAUNCH:
 
@@ -124,14 +132,26 @@ Client:
     cd "G:\git\Supervive Revival Project"
     .\configs\launch-redirect.ps1 -Hook ".\tools\sigbypass-mod\browse_hook.dll"
 
-CHAPTER STATE AT END OF SESSION 29:
+FEEDBACK LOOP (each iteration):
+
+1. Modify the AppendXxx sequence in InjectServerVerifyViewTargetFStringParam
+2. Rebuild (~5s)
+3. Launch stub + ags + client (~30s)
+4. Wait for the ChIndex=3 bunch to arrive
+5. Grep for "FBitReader::SetOverflowed" — read Remaining value
+6. Compute bits_consumed = 2298 - Remaining
+7. Compare with target 991 (position of FString)
+8. Adjust signature; repeat.
+
+CHAPTER STATE AT END OF SESSION 30:
 
 - Everything through PC spawn: DONE
-- Bunch bytes captured + decoded (2298 bits): DONE
-- Runtime UFunction injection: DONE
-- Plain scalar first-param types: RULED OUT (session 29)
-- Variable-bit type identified: TODO (session 30 — Actor* / NetGUID
-  / Loki struct)
-- Menu-data replication: TODO (session 31+)
+- Bunch bytes captured (2298 bits): DONE
+- Runtime UFunction injection (multiple types): DONE
+- Engine-side bit-count diagnostic: DISCOVERED (session 30)
+- AActor* NetGUID = 50 bits: MEASURED (session 30)
+- Middle-param signature (~941 bits): TODO (session 31)
+- Tail-param signature (~899 bits after FString): TODO
+- Menu-data replication: TODO (session 32+)
 
-If in doubt about a step, ask the user.
+If in doubt, ask the user.
