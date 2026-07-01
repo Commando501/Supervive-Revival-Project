@@ -17,7 +17,11 @@
 #include "Modules/ModuleManager.h"
 #include "Misc/NetworkVersion.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
+#include "UObject/Class.h"
 #include "UObject/Package.h"
+#include "UObject/UnrealType.h"
+#include "UObject/FieldPathProperty.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiStub, Log, All);
 
@@ -70,6 +74,18 @@ public:
         // /Engine/Maps/Entry.Entry doesn't exist in the shipping client.
         WorldInitHandle = FWorldDelegates::OnPostWorldInitialization.AddStatic(
             &FLokiModule::OnPostWorldInitialization);
+
+        // Session 27: inject a modified ServerVerifyViewTarget signature onto
+        // stock APlayerController. Session 25 decoded that the RPC arg struct is
+        // 2298 bits containing an FString "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass".
+        // Stock UE's ServerVerifyViewTarget takes 0 args → mismatch. Session 26
+        // proved subclass UFUNCTION override with different params is UHT-rejected.
+        // Session 27 approach: add an FStrProperty to the existing stock UFunction's
+        // ChildProperties list and re-link, so deserialization consumes the FString.
+        //
+        // Runs from OnPostEngineInit so APlayerController's UClass is fully loaded.
+        PostEngineInitHandle = FCoreDelegates::OnPostEngineInit.AddStatic(
+            &FLokiModule::InjectServerVerifyViewTargetFStringParam);
     }
 
     virtual void ShutdownModule() override
@@ -77,6 +93,7 @@ public:
         FNetworkVersion::GetLocalNetworkVersionOverride.Unbind();
         FNetworkVersion::IsNetworkCompatibleOverride.Unbind();
         FWorldDelegates::OnPostWorldInitialization.Remove(WorldInitHandle);
+        FCoreDelegates::OnPostEngineInit.Remove(PostEngineInitHandle);
         FDefaultGameModuleImpl::ShutdownModule();
     }
 
@@ -133,6 +150,75 @@ private:
     }
 
     FDelegateHandle WorldInitHandle;
+    FDelegateHandle PostEngineInitHandle;
+
+    // Session 27: bypass UHT's UFUNCTION-override-parity constraint by
+    // constructing an FStrProperty at runtime and appending it to the existing
+    // APlayerController::ServerVerifyViewTarget UFunction's ChildProperties
+    // list. Then re-link so UE's RepLayout picks up the new signature.
+    static void InjectServerVerifyViewTargetFStringParam()
+    {
+        UClass* PCClass = APlayerController::StaticClass();
+        if (!PCClass)
+        {
+            UE_LOG(LogLokiStub, Warning,
+                   TEXT("InjectServerVerifyViewTarget: APlayerController class not found"));
+            return;
+        }
+
+        UFunction* Func = PCClass->FindFunctionByName(
+            FName(TEXT("ServerVerifyViewTarget")),
+            EIncludeSuperFlag::ExcludeSuper);
+        if (!Func)
+        {
+            UE_LOG(LogLokiStub, Warning,
+                   TEXT("InjectServerVerifyViewTarget: ServerVerifyViewTarget UFunction not "
+                        "found on APlayerController"));
+            return;
+        }
+
+        const int32 OriginalNumProps = Func->NumParms;
+        const int32 OriginalPropsSize = Func->ParmsSize;
+        UE_LOG(LogLokiStub, Display,
+               TEXT("InjectServerVerifyViewTarget: found UFunction on APlayerController "
+                    "(NumParms=%d, ParmsSize=%d, FunctionFlags=0x%08X)"),
+               OriginalNumProps, OriginalPropsSize, (uint32)Func->FunctionFlags);
+
+        // Construct an FStrProperty as the new parameter. The property's outer
+        // is the UFunction itself so it participates in normal FField ownership.
+        FStrProperty* NewProp = new FStrProperty(Func,
+            FName(TEXT("ClientMapName")), RF_Public | RF_Transient);
+        NewProp->PropertyFlags = CPF_Parm | CPF_ConstParm | CPF_ReferenceParm
+                               | CPF_ZeroConstructor | CPF_HasGetValueTypeHash;
+        NewProp->ArrayDim = 1;
+
+        // Append to ChildProperties linked list (tail append). Existing UFunction
+        // might already have some children; we want the FString AFTER them.
+        FField** Tail = &Func->ChildProperties;
+        while (*Tail)
+        {
+            Tail = &(*Tail)->Next;
+        }
+        *Tail = NewProp;
+
+        // StaticLink recomputes ParmsSize, PropertyLink chain, ReturnValueOffset,
+        // and MinAlignment. Pass bRelinkExistingProperties=true so the parent's
+        // properties are relinked too.
+        Func->StaticLink(true);
+
+        // Bind() (re-)computes the native function pointer. Since we're not
+        // changing the native impl, keep the existing binding.
+
+        // Clear the class net cache so RepLayout regenerates with the new
+        // parameter list. Without this, the cached FClassNetCache would still
+        // show 0 args.
+        PCClass->ClearFunctionMapsCaches();
+
+        UE_LOG(LogLokiStub, Display,
+               TEXT("InjectServerVerifyViewTarget: added FStrProperty ClientMapName. "
+                    "New NumParms=%d, ParmsSize=%d"),
+               Func->NumParms, Func->ParmsSize);
+    }
 };
 
 IMPLEMENT_PRIMARY_GAME_MODULE(FLokiModule, Loki, "Loki");

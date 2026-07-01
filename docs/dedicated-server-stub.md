@@ -3881,6 +3881,114 @@ UE's normal error path.
 
 - (session 26 writeup commit follows)
 
+## Session 27 (2026-07-01 — UFUNCTION runtime injection WORKS; class-name issue BYPASSED; iterate param order next)
+
+Session 26 established that UHT rejects subclass UFUNCTION override with
+different params. Session 27 implemented the runtime function-table
+injection alternative — and IT WORKS.
+
+### Implementation
+
+Added `FLokiModule::InjectServerVerifyViewTargetFStringParam()` in
+`unreal-stub/Source/Loki/Loki.cpp`. Registered via
+`FCoreDelegates::OnPostEngineInit` so it runs after UE has fully loaded
+class metadata but before any client connects.
+
+The function:
+1. Gets `APlayerController::StaticClass()`
+2. Finds the existing `ServerVerifyViewTarget` UFunction (stock: 0 args)
+3. Constructs a new `FStrProperty` with `CPF_Parm | CPF_ConstParm |
+   CPF_ReferenceParm` flags, owned by the UFunction
+4. Appends it to `Func->ChildProperties` linked list
+5. Calls `Func->StaticLink(true)` to recompute `NumParms`, `ParmsSize`,
+   `PropertyLink`, `ReturnValueOffset`
+6. Calls `PCClass->ClearFunctionMapsCaches()` to invalidate cached
+   FClassNetCache
+
+Verified in log:
+```
+LogLokiStub: InjectServerVerifyViewTarget: found UFunction on APlayerController
+    (NumParms=0, ParmsSize=0, FunctionFlags=0x80220CC2)
+LogLokiStub: InjectServerVerifyViewTarget: added FStrProperty ClientMapName.
+    New NumParms=1, ParmsSize=16
+```
+
+### Result: error mode changed — UE picked up the new signature
+
+Before injection (sessions 20-25): `LogNet: Error: ReceivedRPC:
+ReceivePropertiesForRPC - Mismatch read` (Reader.GetBitsLeft() != 0
+after successful deserialization of 0 params).
+
+After injection (session 27): `LogRep: Error: ReceivedRPC:
+ReceivePropertiesForRPC - Reader.IsError() == true` (deserialization
+overflowed).
+
+This confirms UE's RepLayout picked up our injected FStrProperty and
+tried to deserialize the payload as an FString. The overflow happens
+because FString serialize reads a 32-bit int32 count from bit 0 of the
+RPC payload — but session 25's analysis showed the payload's FIRST
+991 bits are OTHER params, and the actual FString starts at bit 991.
+So reading garbage bits as the count leads to reading more chars than
+available.
+
+### KEY architectural wins from session 27
+
+1. **UFunction runtime injection works**. We can modify stock
+   APlayerController's signature at runtime without touching engine
+   source and without UHT rejection.
+
+2. **Class-name resolution problem BYPASSED**. Session 21's dead-end
+   (custom PC class name unresolvable client-side) is dodged entirely.
+   Server spawns stock APlayerController — client resolves it just
+   fine — but our injected UFunction is what UE dispatches to.
+
+3. **Session 28's job is much simpler**: just iterate the parameter
+   ordering. Try FVector + FRotator + FString (matches "verify view
+   target with camera location, rotation, and current-view-target-name"
+   semantics), etc.
+
+### Session 28 plan
+
+1. Update `InjectServerVerifyViewTargetFStringParam` to be a more general
+   `InjectServerVerifyViewTargetSignature` that adds multiple params in
+   order.
+2. Trial common anti-cheat "verify view target" signatures:
+   - `void ServerVerifyViewTarget(FVector, FRotator, FString)` — 96 + 96
+     + FString = ~200 bits + FString ≠ 991 + FString
+   - `void ServerVerifyViewTarget(TArray<uint8> AntiCheatBlob, FString)`
+     — variable + FString
+   - Try incremental adds via test-fail-observe loop.
+3. When the FString consumes correctly (no Reader.IsError), we've
+   correctly positioned it. Then check the tail — likely more params
+   after.
+4. When ALL bits consumed exactly (no Mismatch, no IsError), we're done.
+
+### Tooling artifacts (session 27)
+
+- `unreal-stub/Source/Loki/Loki.cpp` (extended with UFunction injector
+  runtime hook)
+- `docs/session-27-injection-test.txt` (17-line log excerpt showing
+  before/after error-mode change)
+
+### Chapter state (end of session 27)
+
+- Everything through PC spawn: DONE (sessions 17-20)
+- SUPERVIVE engine mods confirmed: DONE (session 22)
+- RPC bunch bytes captured + decoded: DONE (sessions 23-25)
+- Server-side per-bunch instrumentation: DONE (session 25)
+- Bunch content-block header + field header decoded: DONE (session 25)
+- RPC arg struct isolated (2298 bits): DONE (session 25)
+- UHT-rejection of subclass override: CONFIRMED (session 26)
+- Runtime UFunction injection technique: WORKING (session 27)
+- Class-name resolution problem: BYPASSED (session 27)
+- Full RPC parameter list identified: TODO (session 28 — iterate
+  param orders)
+- Menu-data replication: TODO (session 29+)
+
+### Commits this session
+
+- (session 27 writeup commit follows)
+
 
 
 
