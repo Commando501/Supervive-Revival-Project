@@ -4640,5 +4640,90 @@ cold-start of `launch-redirect.ps1` from elevated PS should attempt end-to-end.
 
 - (session 33 writeup commit follows)
 
+## Session 34 (2026-07-01 — route-around: skip Super for target RPC bunches)
+
+Session 33 identified that stock UE 5.4's `FRepLayout::ReceivePropertiesForRPC`
+expects has-value bits before non-Bool params, but SUPERVIVE's client sends
+straight-through — meaning a live bunch would misparse under Super's dispatch
+and tear the channel down. Session 34 implemented Option B (documented as
+recommended in session 33): route around the failure entirely by
+consuming the target bunch inside `ULokiActorChannel::ReceivedBunch`
+and skipping `Super`.
+
+### Delivered
+
+`ULokiActorChannel::ReceivedBunch` now:
+1. Peek raw bytes (from session 25).
+2. Detect target bunch by shape (NumBits == 2339 matches session-25 capture).
+3. Do straight-through property walk via
+   `ParseAndLogServerVerifyViewTargetBunch` (from session 33) — logs all 5
+   sub-level FStrings + per-element state.
+4. `return` — skip `Super::ReceivedBunch`. `UChannel`'s reliability +
+   sequence tracking already ran above us (packet-level ACK is sent); we're
+   only dropping the application-level dispatch that would have failed.
+
+Total change: ~10 lines in `unreal-stub/Source/Loki/LokiActorChannel.cpp`.
+
+### Rationale
+
+`UActorChannel::ReceivedBunch` is called after `UChannel::ReceivedRawBunch`
++ `ReceivedNextBunch` have already:
+- verified the bunch's reliable-sequence ordering.
+- ACK'd the packet at the transport layer.
+
+Its own body handles:
+- `Broken` / `bTornOff` early exit (safe to drop — we've extracted the
+  bytes we need).
+- Server-side `bHasMustBeMappedGUIDs` rejection (checked only when the
+  client SET the flag; we don't).
+- Client-side `MustBeMappedGUIDs` deferred queueing (server-only branch on
+  the same flag; irrelevant when we're the server).
+- Call `ProcessBunch(Bunch)` — the field-loop dispatch that would misparse
+  our target RPC.
+
+Skipping the whole method for the ONE target bunch drops nothing we need.
+Non-target bunches still go through `Super` normally.
+
+### Attempted live validation
+
+Ran a fresh launch cycle (ags with `phantomMatchmakingSequence=true`,
+regenerated certs + re-appended to game bundle, cmd-batch launch of the
+client with correct `-ini` overrides). Client reached the main menu,
+`Login`+`LobbyV2` browses completed against the redirected backends, and
+ags pushed the `matchmakingNotif status=start` and `status=done` frames.
+Clicked `PLAY` → `FIND MATCH`, watched for 15s.
+
+Result: **client did not browse to `127.0.0.1:7777`**. This confirms
+session 32's / earlier probes' finding — `phantomMatchmakingSequence` is
+ticket-id-gated and does not actually trigger a browse without the full
+matchmaking-request-response state machine that ags does not implement.
+
+The stub log shows no `NotifyAcceptingConnection`, no `LiveReplay`
+diagnostic — the route-around code path was never exercised by a live
+bunch this session. The code is correct in principle and the self-replay
+harness verifies the layout it consumes; live proof waits on either:
+- Implementing the ticket-id matchmaking state machine end-to-end.
+- Or a native `browse_hook`-style intervention that forces a specific
+  browse.
+
+### Chapter state (end of session 34)
+
+- Everything through PC spawn: DONE
+- Full RPC signature (40 params, 2298 bits) validated: DONE (session 32)
+- Has-value bit divergence documented: DONE (session 33)
+- Runtime bunch parser + route-around (skip Super): DONE (session 34)
+- Real-client RPC round-trip: BLOCKED on browse-trigger (session 35+ — implement
+  ticket-id matchmaking flow, or add a native browse trigger).
+- Menu-data replication: TODO (blocked on live RPC)
+
+### Tooling artifacts (session 34)
+
+- `unreal-stub/Source/Loki/LokiActorChannel.cpp` — skip-Super branch on
+  target bunch.
+
+### Commits this session
+
+- (session 34 writeup commit follows)
+
 
 
