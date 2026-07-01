@@ -4994,5 +4994,117 @@ Recommendation: try the ReplicateActor override first. Much smaller change.
 
 - (session 37 writeup commit follows)
 
+## Session 38 (2026-07-01 — FClassNetCache divergence SUPPRESSED, connection survives 51s)
 
+Session 37 exhausted Option A. Session 38 tried the prompt's suggested
+`ULokiActorChannel::ReplicateActor` override — that fails to compile:
+`ReplicateActor` is NOT declared virtual in UE 5.4 (`ActorChannel.h:190`,
+verified). Pivoted to the equivalent higher-level virtual pair:
+`UNetDriver::ShouldReplicateActor` + `UNetDriver::ShouldReplicateFunction`.
+That combination successfully suppressed every server-outbound bunch for
+SUPERVIVE's patched-checksum class set, and kept the connection stable
+past the RPC-arrival moment for the first time.
+
+### The three iterations (all documented in docs/session-38-connection-stays-alive.txt)
+
+- **Iter 1**: `ShouldReplicateActor` returning false for `APlayerController` alone.
+  Failed. `UNetDriver::ProcessRemoteFunction` (`NetDriver.cpp:2536`) creates a
+  fresh actor channel via `CreateChannelByName` whenever any server-side code
+  calls a client RPC on the PC — bypassing `NetworkObjectList`. First bunch on
+  that new channel is the initial actor replication bunch. Same
+  `ObjectReplicatorReceivedBunchFail` close.
+
+- **Iter 2**: added `ShouldReplicateFunction` override — gates both
+  `AActor::CallRemoteFunction` and `UActorComponent::CallRemoteFunction` before
+  `ProcessRemoteFunction` runs. Stub log now shows 8 server→client RPCs
+  suppressed (`ClientSetHUD`, `ClientVoiceHandshakeComplete`,
+  `ClientEnableNetworkVoice`, `ClientCapBandwidth`, `ClientRestart`,
+  `ClientSetViewTarget`, `ClientSetCameraMode`, `ClientSetRotation`). Still
+  closed. Client log now points at `GameStateBase` + `PlayerState` (channel 5)
+  — `ReadFieldHeaderAndPayload: Error reading payload. OutField: bReplicateMovement`
+  and `bFromPreviousLevel has likely corrupted serialization`. Session 20's
+  patched-checksum finding covers `PlayerController, HUD, GameStateBase,
+  GameModeBase, PlayerState, DefaultPawn, SpectatorPawn` — divergence affects
+  the whole set.
+
+- **Iter 3**: extended `IsClassNetCacheDivergent()` to cover the full
+  session-20 set (GameModeBase omitted — server-only, doesn't replicate).
+  Result: **connection reached ReceivedJoin and stayed there for 51.5 seconds**.
+  Zero `ObjectReplicatorReceivedBunchFail`. Server-side `Cleanup` close
+  finally fired — the client had gone silent (no bunches either way for
+  51 seconds), so UE's timeout tracker collected the idle connection.
+
+### Delivered
+
+- `unreal-stub/Source/Loki/LokiNetDriver.{h,cpp}` — two virtuals overridden.
+  Log lines confirm suppression for each divergent class + each blocked RPC.
+- `docs/session-38-connection-stays-alive.txt` — full evidence chain per iter.
+
+### The new blocker: client silent post-Join
+
+Client log during the 51-second window shows nothing from the netdriver code
+path — just unrelated Vivox voice login retries. The client's own state
+machine goes idle after Join because it's waiting for server-side actor
+replication (PC / GameState) that our full suppression has cut off. That's a
+DIFFERENT blocker than the class-net-cache divergence — it's an "expected
+state hasn't arrived" wait, not a wire-level rejection.
+
+Two harmless client-side warnings at Join+immediate (non-fatal):
+`SerializeNewActor failed to find/spawn actor. Actor: None, Channel: 3` and
+`Channel: 4`. Two channels the server opened for actors outside our divergent
+set (level actors, TBD which ones — investigation for session 39+).
+
+### Chapter state (end of session 38)
+
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Client-close root cause identified: DONE (session 36)
+- Option A (all variants): FAILED (session 37 — documented)
+- FClassNetCache divergence suppression via ShouldReplicateActor/Function
+  covering full session-20 divergent class set: DONE (session 38 iter 3)
+- Connection stable past RPC-arrival moment: DONE (51.5 s vs prior milliseconds)
+- Client sends further activity post-Join: NOT YET — waits for server state
+  that we suppressed
+- Menu-data replication: TODO (blocked on client-side activity trigger)
+
+### What session 39+ needs
+
+Two paths forward (docs/session-38-connection-stays-alive.txt has the full
+menu):
+
+- **A**: server-side keep-alive on the control channel — extends the
+  observation window past 51 s while we investigate. 10 minutes of engineering.
+  Confirms timeout is the only remaining problem.
+- **B**: proper fix — runtime FProperty injection matching SUPERVIVE's PC /
+  GameState / PlayerState schema (same primitive as sessions 27–32's UFunction
+  param injection, applied to top-level UProperties). Requires
+  `usmapdump.exe schema` output for each class. Substantial. Then un-suppress
+  those classes.
+- **C**: half-B — hand-craft ONE bunch that satisfies whatever minimum state
+  check the client makes post-Join. Requires reversing the client's
+  `ReceivedJoin` → next state transition to identify the trigger.
+
+Recommendation: A first (quick observation-window extension), then investigate
+which state the client is waiting for, then invest in B or C accordingly.
+
+### DO NOT for session 39+
+
+- Don't try `ULokiActorChannel::ReplicateActor` as a `virtual override` — it's
+  not virtual in UE 5.4 (compile error `C3668: method with override specifier
+  'override' did not override any base class methods`, verified session 38).
+- Don't remove `ShouldReplicateActor` / `ShouldReplicateFunction` overrides
+  from `LokiNetDriver` — they are load-bearing for the 51-s stable window.
+- Don't add `AGameModeBase` to `IsClassNetCacheDivergent()` — it's server-only.
+
+### Tooling artifacts (session 38)
+
+- `docs/session-38-connection-stays-alive.txt` — full three-iter evidence
+  chain with iteration-by-iteration client log grep + stub log timeline.
+- `unreal-stub/Source/Loki/LokiNetDriver.h` — declarations + full session-38
+  block-comment on both overrides.
+- `unreal-stub/Source/Loki/LokiNetDriver.cpp` — `IsClassNetCacheDivergent()`
+  helper + two virtual overrides, each logs once per unique actor / function.
+
+### Commits this session
+
+- (session 38 writeup commit follows)
 

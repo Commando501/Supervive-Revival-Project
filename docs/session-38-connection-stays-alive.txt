@@ -1,0 +1,217 @@
+=== SESSION 38 — CLASS-NET-CACHE DIVERGENCE SUPPRESSED, CONNECTION SURVIVES ===
+
+Session 37 exhausted the Option A knobs (CDO NetDormancy, PostLogin dormancy,
+CPF_Net stripping) — none could suppress the initial replication bunch that
+carries the FClassNetCache-diverging property block. Session 38 tried the
+prompt's suggested "Option A'''" — an override on
+ULokiActorChannel::ReplicateActor — and immediately hit a hard block: that
+method is NOT declared virtual in UE 5.4 (ActorChannel.h:190). Pivoted to
+the equivalent higher-level virtual: UNetDriver::ShouldReplicateActor
+(NetDriver.h:1928) combined with UNetDriver::ShouldReplicateFunction
+(NetDriver.h:1922) — both of which SUPPRESS the initial bunch at its source.
+
+Iter 3 KEPT THE CONNECTION ALIVE FOR 51.5 SECONDS post-Join.
+Zero ObjectReplicatorReceivedBunchFail. Server-side Cleanup timeout finally
+closed it because client went silent — a new blocker, not the old one.
+
+--- Iteration 1: ShouldReplicateActor for APlayerController alone (FAILED) ---
+
+Setup: override UNetDriver::ShouldReplicateActor returning false when
+Actor->IsA<APlayerController>().
+
+Stub log confirms our suppression fired:
+    LogLokiNet: Display: ShouldReplicateActor: SUPPRESSING replication for
+      PlayerController_0 (APlayerController) to avoid FClassNetCache divergence
+      with SUPERVIVE's client-patched PC.
+
+The suppression prevented the PC from being added to the NetworkObjectList
+(NetworkObjectList.cpp:102 — the FindOrAdd gate), so
+ServerReplicateActors never picked it up for a normal replication cycle.
+
+BUT the connection still closed with ObjectReplicatorReceivedBunchFail after
+the ServerVerifyViewTarget RPC arrived via the route-around (session 34's
+skip-Super code path still fired cleanly). The client's error:
+
+    LogRep: Error: ReceivedBunch: Invalid replicated field 0 in PlayerController
+    /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.
+      LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_2147481890
+    LogNet: Error: UActorChannel::ProcessBunch: Replicator.ReceivedBunch failed.
+      Closing connection. RepObj: PlayerController ...
+
+Root cause diagnosed: UNetDriver::ProcessRemoteFunction (NetDriver.cpp:2536)
+opens a fresh actor channel via CreateChannelByName + SetChannelActor
+WHENEVER server-side code calls a client RPC on the PC. Independent of the
+NetworkObjectList. The first bunch on that new channel is still the initial
+actor replication bunch — same divergent property block.
+
+--- Iteration 2: ShouldReplicateFunction added (PARTIAL — moved the failure) ---
+
+Setup: added second override UNetDriver::ShouldReplicateFunction returning
+false when Actor->IsA<APlayerController>(). This gates both
+AActor::CallRemoteFunction (Actor.cpp:5065) and
+UActorComponent::CallRemoteFunction (ActorComponent.cpp:834) — the paths that
+call ProcessRemoteFunction.
+
+Stub log now shows a cascade of PC RPC suppressions:
+    ShouldReplicateFunction: SUPPRESSING RPC ClientSetHUD on PlayerController_0
+    ShouldReplicateFunction: SUPPRESSING RPC ClientVoiceHandshakeComplete on ...
+    ShouldReplicateFunction: SUPPRESSING RPC ClientEnableNetworkVoice on ...
+    ShouldReplicateFunction: SUPPRESSING RPC ClientCapBandwidth on ...
+    ShouldReplicateFunction: SUPPRESSING RPC ClientRestart on ...
+    ShouldReplicateFunction: SUPPRESSING RPC ClientSetViewTarget on ...
+    ShouldReplicateFunction: SUPPRESSING RPC ClientSetCameraMode on ...
+    ShouldReplicateFunction: SUPPRESSING RPC ClientSetRotation on ...
+
+RPC-dispatch-driven channel opens for the PC are now blocked. Route-around
+does NOT fire — no bunch arrives (the client didn't send
+ServerVerifyViewTarget this time).
+
+But connection STILL closed with ObjectReplicatorReceivedBunchFail. Client
+log:
+    LogNet: Error: ReadFieldHeaderAndPayload: Error reading payload.
+      Object: GameStateBase /...:PersistentLevel.GameStateBase_2147481888,
+      OutField: bReplicateMovement
+    LogRep: Error: Replicated property BoolProperty
+      /Script/Engine.PlayerState:bFromPreviousLevel has likely corrupted
+      serialization of PlayerState /...:PersistentLevel.PlayerState_2147481885.
+    LogRep: Error: ReceiveProperties: Invalid property terminator handle - Handle=14
+    LogRep: Error: RepLayout->ReceiveProperties FAILED: PlayerState ...
+    LogNet: Error: UActorChannel::ProcessBunch: Replicator.ReceivedBunch failed.
+      Closing connection. RepObj: PlayerState ..., Channel: 5
+
+FClassNetCache divergence is NOT limited to APlayerController — GameStateBase
+and PlayerState both diverge too. Session 20 identified the full patched-class
+set: PlayerController, HUD, GameStateBase, GameModeBase, PlayerState,
+DefaultPawn, SpectatorPawn. Iter 2 confirmed the divergence for the second
+class (GameStateBase / PlayerState) in the set.
+
+--- Iteration 3: expand suppression to ALL divergent classes (WORKING) ---
+
+Setup: extended IsClassNetCacheDivergent() to cover the full session-20 set
+(PC, HUD, GameStateBase, PlayerState, DefaultPawn, SpectatorPawn — GameModeBase
+excluded because it's server-only).
+
+Stub log shows suppression firing across the full set:
+    ShouldReplicateActor: SUPPRESSING replication for GameStateBase_0 (GameStateBase)
+    ShouldReplicateActor: SUPPRESSING replication for PlayerController_0 (PlayerController)
+    ShouldReplicateActor: SUPPRESSING replication for PlayerState_0 (PlayerState)
+    ShouldReplicateActor: SUPPRESSING replication for DefaultPawn_0 (DefaultPawn)
+    [+ full PC RPC set from iter 2]
+
+Result:
+- NO ObjectReplicatorReceivedBunchFail
+- NO client-side "Invalid replicated field" errors
+- Connection reached ReceivedJoin at 20:12:39.165
+- Connection STAYED IN ReceivedJoin STATE for 51.5 seconds
+- Server-side Cleanup finally closed at 20:13:30.724
+
+The Cleanup close reason is not the class-net-cache blocker — it's a plain
+connection timeout because the client went silent post-Join. Client log
+during the quiet window shows only Vivox voice login retries (unrelated to
+our netdriver). No LogRep errors, no LogNet warnings from server-sent bunches.
+
+Two harmless client-side warnings at Join+immediate:
+    LogNet: Warning: UActorChannel::ProcessBunch: SerializeNewActor failed to
+      find/spawn actor. Actor: None, Channel: 3
+    LogNet: Warning: UActorChannel::ProcessBunch: SerializeNewActor failed to
+      find/spawn actor. Actor: None, Channel: 4
+
+These are WARNINGS (connection didn't die from them). Two actor channels were
+opened by the server despite our suppression — probably level-actors we don't
+have on the class-divergent list. Not the same failure mode.
+
+--- The chapter-38 outcome ---
+
+FClassNetCache divergence blocker: DEFEATED.
+The exact suppression that keeps the connection alive:
+
+    server/../unreal-stub/Source/Loki/LokiNetDriver.h — declares:
+        virtual bool ShouldReplicateActor(AActor* Actor) const override;
+        virtual bool ShouldReplicateFunction(AActor* Actor, UFunction* Function)
+            const override;
+
+    server/../unreal-stub/Source/Loki/LokiNetDriver.cpp — implements:
+        static bool IsClassNetCacheDivergent(AActor* Actor)
+        {
+            return Actor && (
+                Actor->IsA<APlayerController>() ||
+                Actor->IsA<AGameStateBase>() ||
+                Actor->IsA<APlayerState>() ||
+                Actor->IsA<AHUD>() ||
+                Actor->IsA<ADefaultPawn>() ||
+                Actor->IsA<ASpectatorPawn>());
+        }
+        (ShouldReplicateActor + ShouldReplicateFunction both gate on this.)
+
+--- What's needed for session 39+ ---
+
+The new blocker: client goes silent for 51 seconds, then server-timeout closes.
+Root cause: the client's post-Join flow expects SOMETHING from the server
+(most likely PC / GameState replication) before it will send its
+ServerVerifyViewTarget RPC or drive its own state machine forward. Our full
+suppression makes the server invisible.
+
+Two paths forward:
+
+  A. Server-side keep-alive to prevent timeout while we investigate.
+     Simplest — just send heartbeat bunches on the control channel so the
+     server-side idle-timeout tracker sees activity. Buys diagnostic time,
+     doesn't solve the actual problem.
+
+  B. Option B (proper fix): runtime FProperty injection to make our
+     APlayerController's replicated schema MATCH SUPERVIVE's client
+     expectation. Same primitive as sessions 27–32's UFunction param
+     injection, applied to top-level UProperties on APlayerController /
+     AGameStateBase / APlayerState. Requires reverse-engineering SUPERVIVE's
+     schema via usmapdump.exe schema (session 22 established that route
+     works). Then un-suppress those classes.
+
+  C. Half-Option-B (compromise): keep suppression, but ADD one hand-crafted
+     bunch that satisfies whatever minimum state check the client makes
+     post-Join. Requires reading the client's ReceivedJoin → next state
+     transition code to identify the trigger.
+
+Recommendation for session 39: A first (10 minutes of engineering — confirms
+timeout is really the only remaining issue, buys observation time). Then
+survey the client's post-Join code path (via usmapdump.exe / disassembly) to
+figure out what state it's waiting for. That informs whether B or C is the
+right investment.
+
+--- Live evidence timeline (iter 3) ---
+
+STUB LOG (stub-s38-iter3.log):
+    20:11:54:674  [boot]      GameStateBase_0 suppressed
+    20:12:38:200  [connect]   Invalid -> LoggingIn
+    20:12:38:266  [login]     LoggingIn -> Welcomed
+    20:12:39:159  [netspeed]  Netspeed accepted
+    20:12:39:160  [join]      Join request received
+    20:12:39:160  [suppress]  PC, PS, DefaultPawn actor-replication all SUPPRESSED
+    20:12:39:161  [suppress]  All 8 known ClientXxx RPCs on PC SUPPRESSED
+    20:12:39:165  [state]     Welcomed -> ReceivedJoin       ← chapter goal
+    20:12:39 - 20:13:30       [SILENCE — no bunches either way, no errors]
+    20:13:30:722  [cleanup]   UNetConnection::Cleanup (server-initiated timeout)
+    20:13:30:724  [state]     ReceivedJoin -> CleanedUp
+
+CLIENT LOG (Loki.log):
+    20:12:38:272  [loadmap]   127.0.0.1/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent
+    20:12:39:469  [warning]   SerializeNewActor failed Ch=3 Actor=None (non-fatal)
+    20:12:39:472  [warning]   SerializeNewActor failed Ch=4 Actor=None (non-fatal)
+    20:12:39 - 20:13:30       [SILENCE from netdriver code; only Vivox voice retries]
+
+Total post-Join stable time: 51.55 seconds.
+Pre-session-38 stable time: milliseconds (client closed on first PC bunch).
+
+--- Chapter state (end of session 38) ---
+
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Client-close root cause identified: DONE (session 36)
+- FClassNetCache divergence suppression that keeps connection alive: DONE
+  (session 38 iter 3)
+- Client sends further activity post-Join: NOT YET — client goes silent
+- Menu-data replication: TODO (blocked on client-side activity trigger)
+
+Session 38 doesn't finish the chapter, but it moves the blocker from
+"class-net-cache divergence" (unblocked) to "client waits for expected
+state before sending anything" (new blocker). Big functional improvement:
+we now have a stable 51-second observation window instead of a millisecond
+one. Follow-up sessions can drive experiments against that window.
