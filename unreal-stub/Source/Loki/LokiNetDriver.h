@@ -25,6 +25,14 @@ class ULokiNetDriver : public UIpNetDriver
 	GENERATED_BODY()
 
 public:
+	// Session 18: constructor sets NetConnectionClass = ULokiIpConnection so
+	// per-connection PacketHandler chains get our LokiStatelessConnect instead
+	// of the stock class. Without this the driver-level override in
+	// InitConnectionlessHandler only affects connectionless packets — post-
+	// handshake UNetConnection-level packets go through the stock class and
+	// die when they encounter our 8-byte wrapper.
+	ULokiNetDriver(const FObjectInitializer& ObjectInitializer);
+
 	virtual void InitConnectionlessHandler() override;
 
 	virtual void LowLevelSend(TSharedPtr<const FInternetAddr> Address,

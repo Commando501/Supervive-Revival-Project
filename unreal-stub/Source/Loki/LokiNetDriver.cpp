@@ -1,10 +1,26 @@
 #include "LokiNetDriver.h"
+#include "LokiIpConnection.h"
 #include "LokiStatelessConnect.h"
 #include "PacketHandler.h"
 #include "PacketHandlers/StatelessConnectHandlerComponent.h"
 #include "Net/Core/Misc/DDoSDetection.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiNet, Log, All);
+
+ULokiNetDriver::ULokiNetDriver(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	// Force per-connection instantiation of our LokiIpConnection subclass so
+	// each UNetConnection's PacketHandler chain gets LokiStatelessConnect
+	// (which strips the 8-byte TheoryCraft wrapper) instead of the stock
+	// StatelessConnectHandlerComponent (which misreads wrapper bytes as
+	// handshake bit fields and fails ParseHandshakePacket).
+	//
+	// UNetDriver::InitConnectionClass() checks `NetConnectionClass == NULL`
+	// before loading from NetConnectionClassName, so this assignment
+	// short-circuits the config-driven default (IpConnection).
+	NetConnectionClass = ULokiIpConnection::StaticClass();
+}
 
 void ULokiNetDriver::InitConnectionlessHandler()
 {

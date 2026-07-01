@@ -2815,6 +2815,134 @@ LokiStatelessConnect subclass. Options in order of preference:
 
 - (session 17 writeup commit follows)
 
+## Session 18 (2026-06-30 → 2026-07-01 — UNetConnection PACKET HANDLER WIRED; client reaches Welcomed with 3 channels)
+
+Session 17's blocker was that `UNetConnection::InitHandler`
+(UE5.4 NetConnection.cpp:687-712) hardcodes the stock
+`StatelessConnectHandlerComponent` factory string, so our
+`LokiStatelessConnect` never got installed at the per-connection
+layer. Session 18 fixes this by subclassing `UIpConnection`,
+overriding `InitHandler`, and pointing `NetConnectionClass` at the
+subclass in the `ULokiNetDriver` constructor.
+
+### The fix
+
+Three touched files:
+
+- `unreal-stub/Source/Loki/LokiIpConnection.h + .cpp` (new) — subclass
+  of `UIpConnection`. Overrides `InitHandler` to replicate stock
+  UE5.4 `UNetConnection::InitHandler` verbatim EXCEPT for one line:
+  instead of calling
+  `Handler->AddHandler(TEXT("Engine.EngineHandlerComponentFactory(StatelessConnectHandlerComponent)"), true)`,
+  we construct `LokiStatelessConnect` directly and pass it to the
+  overload `Handler->AddHandler(TSharedPtr<HandlerComponent>&, bool)`.
+  All the other stock init plumbing (mode selection, `NotifyAddHandler`
+  lambda binding `InitFaultRecovery`, `InitializeDelegates`,
+  `NotifyAnalyticsProvider`, `Initialize`, cast to
+  `StatelessConnectComponent`, `SetDriver`,
+  `SetHandshakeFailureCallback` for `WrongVersion` upgrade,
+  `InitializeComponents`, and `MaxPacketHandlerBits` write-back) is
+  preserved bit-for-bit.
+
+- `unreal-stub/Source/Loki/LokiNetDriver.h + .cpp` — added a
+  `(const FObjectInitializer&)` constructor that sets
+  `NetConnectionClass = ULokiIpConnection::StaticClass()` before
+  `UNetDriver::InitConnectionClass()` runs. `InitConnectionClass`
+  early-outs when `NetConnectionClass != NULL`, so our assignment
+  wins over the config default (`IpConnection`).
+
+Build succeeded (72s total, 8 actions).
+
+### Result: HANDSHAKE + LOGIN + WELCOME all complete
+
+Stub server log with `LogLokiIpConnection Verbose` added to `-LogCmds`
+(new log category from the new file). See
+[docs/session-18-stub-log-excerpt.txt](session-18-stub-log-excerpt.txt)
+for the filtered sequence. Key lines:
+
+```
+LogHandshake: SendConnectChallenge. Cookie: 232103...
+LogHandshake: SendChallengeAck. InCookie: 232103...
+LogNet: Server accepting post-challenge connection from: 127.0.0.1:57753
+LogNet: LokiIpConnection_0 setting maximum channels to: 32767       ← OUR SUBCLASS
+LogLokiStateless: LokiStatelessConnect constructed — 8-byte wrapper adapter active.
+LogLokiIpConnection: LokiIpConnection: per-connection PacketHandler initialized with LokiStatelessConnect (reserved bits: 7).
+LogNet: SetClientLoginState: State changing from Invalid to LoggingIn
+LogNet: NotifyAcceptedConnection: [UNetConnection] Name: LokiIpConnection_0
+LogNet: AddClientConnection: Added client connection: LokiIpConnection_0
+LogLokiStateless: [Incoming] Stripping wrapper: 299 bits -> 235 bits (wrapper bytes: BB 75 DC 21 A6 A3 DF FB)
+LogNet: SetExpectedClientLoginMsgType: Type changing from [0]Hello to [5]Login   ← NMT_Hello received
+LogLokiStateless: [Incoming] Stripping wrapper: 817 bits -> 753 bits (wrapper bytes: BB A4 DC 21 A6 A3 FA FB)
+LogNet: SetClientLoginState: State changing from LoggingIn to Welcomed           ← NMT_Login/Welcome
+LogLokiStateless: [Incoming] Stripping wrapper: 136 bits -> 72 bits
+LogLokiStateless: [Incoming] Stripping wrapper: 301 bits -> 237 bits
+LogNet: UChannel::CleanUp: ChIndex == 0.
+LogNet: UNetConnection::Close: ... Channels: 3
+LogNet: UNetConnection::PendingConnectionLost.
+LogNet: SetClientLoginState: State changing from Welcomed to CleanedUp
+```
+
+Every predicted checkpoint from the session-18 plan fires:
+
+- Server side loads OUR `LokiStatelessConnect` (not stock) in the
+  UNetConnection's PacketHandler chain
+- Our `Incoming(FBitReader&)` override fires on post-handshake packets
+  and cleanly strips the 8-byte wrapper (`BB ?? DC 21 A6 A3 ?? FB`)
+- Client's `NMT_Hello` is received (state Hello → Login)
+- Client's `NMT_Login` is received, server sends `NMT_Welcome`, state
+  moves LoggingIn → Welcomed
+- 3 UE control channels open (Control + probably map + game state)
+- Connection lives 113ms end-to-end from Initial to close (was 27ms
+  in session 17)
+
+### New blocker: post-Welcome client-side disconnect
+
+After Welcomed state and 3 channels, the client sent one more bunch
+(301 bits → 237 bits post-strip) then closed the connection cleanly
+(`PendingConnectionLost` from client's side, `Channels: 3`,
+`bPendingDestroy=0`). The disconnect is client-initiated. Most likely
+cause: the client sent `NMT_Join` expecting a specific map/game
+package to load, but our stub's `Entry` map is empty and doesn't
+match the client's expected `LobbyV2` scaffold, so the client's
+`UPendingNetGame::LoadMapCompleted` decided not to proceed.
+
+This is NORMAL UE dev work now, not protocol reverse-engineering. The
+stateless handshake is completely solved. From here forward this is a
+standard "author a listen server that matches what your client's
+control channel expects" problem. Session 19+ will:
+
+1. Look at the client's UE log around the disconnect for the specific
+   `NMT_*` message that failed or the map/package name it complained
+   about.
+2. Author minimal listen-server plumbing (GameMode, GameState, PC
+   class) matching what the client expects to load.
+3. Get to the point where the client reaches "menu populated" state
+   with data replicated from our stub server.
+
+### Tooling delivered (session 18)
+
+- `unreal-stub/Source/Loki/LokiIpConnection.h + .cpp` — the new
+  UIpConnection subclass with `InitHandler` override.
+- `unreal-stub/Source/Loki/LokiNetDriver.h + .cpp` — constructor sets
+  `NetConnectionClass` to route per-connection instantiation to
+  `ULokiIpConnection`.
+- `docs/session-18-stub-log-excerpt.txt` — filtered stub log showing
+  the end-to-end handshake+login+welcome sequence.
+
+### Chapter state (end of session 18)
+
+- Handshake: **DONE** (session 17)
+- Post-handshake packet-handler wiring: **DONE** (session 18)
+- NMT_Hello / NMT_Login / NMT_Welcome control-channel messages:
+  **DONE** (session 18 — reached Welcomed with 3 channels open)
+- Post-Welcome map/GameMode acceptance: TODO (session 19)
+- Replicating hero-roster / mission / store data to the client: TODO
+  (session 20+)
+
+### Commits this session
+
+- (session 18 writeup commit follows)
+
 
 
 
