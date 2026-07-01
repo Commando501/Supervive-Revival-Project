@@ -1,5 +1,5 @@
-2026/07/01 02:51:21 SUPERVIVE Revival AGS backend
-2026/07/01 02:51:21   capture log: G:\git\Supervive Revival Project\docs\capture.log
-2026/07/01 02:51:21   TLS cert (append to game cacert.pem): G:\git\Supervive Revival Project\certs\root.crt
-2026/07/01 02:51:21   HTTPS  listening on :443
-2026/07/01 02:51:21   HTTP   listening on :8080
+2026/07/01 08:17:11 SUPERVIVE Revival AGS backend
+2026/07/01 08:17:11   capture log: G:\git\Supervive Revival Project\docs\capture.log
+2026/07/01 08:17:11   TLS cert (append to game cacert.pem): G:\git\Supervive Revival Project\certs\root.crt
+2026/07/01 08:17:11   HTTP   listening on :8080
+2026/07/01 08:17:11   HTTPS  listening on :443
