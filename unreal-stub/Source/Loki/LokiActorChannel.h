@@ -27,4 +27,14 @@ class ULokiActorChannel : public UActorChannel
 
 public:
 	virtual void ReceivedBunch(FInBunch& Bunch) override;
+
+private:
+	// Session 33: heuristic runtime parser for our target RPC bunch. If the
+	// bunch matches the ServerVerifyViewTarget shape (~2339 bits, RepIndex ~94,
+	// inner payload ~2298 bits), do a straight-through property walk over the
+	// arg struct and log the decoded values. Non-destructive (uses
+	// FBitReaderMark to restore the reader before Super sees it). Independent
+	// of the boot-time SelfReplayCapturedRPC test in Loki.cpp — that one uses
+	// the compiled-in session-25 bytes; this one uses the live-client bytes.
+	void ParseAndLogServerVerifyViewTargetBunch(const uint8* BunchBytes, int64 BunchNumBits);
 };

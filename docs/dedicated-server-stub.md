@@ -4545,5 +4545,100 @@ A real-client end-to-end test should now succeed.
 
 - (session 32 writeup commit follows)
 
+## Session 33 (2026-07-01 — has-value bit divergence + runtime bunch parser)
+
+Session 32 solved the wire format. Session 33 studied UE 5.4 stock source to
+understand what happens when a real client bunch reaches our stub's dispatch
+path — and discovered a critical divergence.
+
+### Discovery: SUPERVIVE has patched RPC serialization
+
+`FRepLayout::SendPropertiesForRPC` (non-InternalAck branch) always writes a
+1-bit "has-value" flag before each non-`FBoolProperty` param, then optionally
+the payload. Mirror in `FRepLayout::ReceivePropertiesForRPC` on the receive
+side.
+
+For our 40-param signature there are 16 non-Bool params (1 Object + 5 String +
+5 UInt32 + 5 Byte), which would add 16 has-value bits to the wire — expected
+total ≈ 2314, not the observed 2298.
+
+Empirical falsification (`docs/session-33-hasvalue-analysis.py`):
+
+- **Straight-through (no has-value bits)**: perfect fit, FinalPos=2298 exactly,
+  all 5 FStrings decode as valid `/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_*` paths.
+- **UE 5.4 stock with has-value bits**: first FString `count = 3,221,225,483`
+  → immediate SetOverflowed. Garbage.
+
+Conclusion: **SUPERVIVE's client patched `SendPropertiesForRPC` to skip
+has-value bits.** Their server presumably has the mirror patch. Our stub
+(stock UE 5.4) does not, so live client bunches arriving at our stub will
+misparse via `ReceivePropertiesForRPC` → `SetOverflowed` or `Reader.IsError`
+→ `ObjectReplicatorReceivedBunchFail` → channel close.
+
+### Delivered: runtime bunch parser in `ULokiActorChannel`
+
+Added `ParseAndLogServerVerifyViewTargetBunch()` as a diagnostic peek-and-walk
+in `ULokiActorChannel::ReceivedBunch`. If the incoming bunch has NumBits==2339
+(matches session 25 shape), extracts the 2298-bit RPC arg struct from bunch
+bits 41..2338 and does the same straight-through property walk that the boot
+`SelfReplayCapturedRPC` does — but against the *live-client bytes*, not
+compiled-in captured bytes. Uses `FBitReaderMark` so Super still sees a fresh
+bunch afterward.
+
+This gives us:
+- Independent verification that the signature matches live client data (not
+  just the session-25 capture).
+- Log of the parsed FString sub-level names + state values for whichever
+  actual LobbyV2 session is active when the RPC fires.
+- No behavioral change — Super still runs, still fails, still tears down the
+  channel. But we get the diagnostic anyway.
+
+### What remains for session 34
+
+The route-around options are (documented in
+`docs/session-33-hasvalue-divergence.md`):
+
+**A. Native code patch of `FRepLayout::ReceivePropertiesForRPC`** to skip
+has-value bit reads. Similar approach to `browse_hook.dll` patching
+`UEngine::Browse`. Robust — makes the fix transparent to all dispatch, and
+handles the channel state cleanly. Requires disassembly + trampoline design.
+
+**B. Full route-around in `ULokiActorChannel::ReceivedBunch`** — parse the
+bunch ourselves, populate a Parms buffer, call the UFunction implementation,
+then either drop or truncate the bunch so Super does nothing. Simpler to code
+but risks confusing UActorChannel's channel-state machinery.
+
+Recommendation: prototype B first; move to A if channel state drift makes B
+unworkable.
+
+### Real-client validation
+
+Not attempted this session. The launch cycle in session 31 was flaky, and
+session 33's engineering value is largely independent of that test (we have
+static-analysis proof of the wire format, and the boot self-replay + runtime
+parser both validate deterministically). A future session with a clean
+cold-start of `launch-redirect.ps1` from elevated PS should attempt end-to-end.
+
+### Tooling artifacts (session 33)
+
+- `unreal-stub/Source/Loki/LokiActorChannel.{cpp,h}` — runtime bunch parser.
+- `docs/session-33-hasvalue-analysis.py` — decode-hypothesis falsification.
+- `docs/session-33-hasvalue-divergence.md` — full analysis + route-around
+  plan.
+
+### Chapter state (end of session 33)
+
+- Everything through PC spawn: DONE
+- Full RPC signature (40 params, 2298 bits) validated: DONE (session 32)
+- Has-value bit divergence identified + documented: DONE (session 33)
+- Runtime bunch parser in `ULokiActorChannel`: DONE (session 33 — diagnostic only)
+- Route-around for stock UE dispatch: TODO (session 34)
+- Real-client RPC round-trip: TODO (session 34+, after route-around)
+- Menu-data replication: TODO (session 35+)
+
+### Commits this session
+
+- (session 33 writeup commit follows)
+
 
 
