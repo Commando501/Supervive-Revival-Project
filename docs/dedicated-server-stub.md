@@ -2943,6 +2943,153 @@ control channel expects" problem. Session 19+ will:
 
 - (session 18 writeup commit follows)
 
+## Session 19 (2026-07-01 — client reaches JOIN SUCCEEDED, PC spawns server-side; new blocker at client-side ActorChannel spawn)
+
+Session 18 unblocked the UNetConnection-level PacketHandler wiring. Client
+completed handshake through Welcomed with 3 channels, then cleanly closed the
+control channel. Session 19 identified WHY (client's `MakeSureMapNameIsValid`
+rejected our stub's `/Engine/Maps/Entry` map name because Entry is editor-only
+content not in the cooked shipping build) and fixed it in two independent
+layers.
+
+### Fix 1: ULokiGameInstance::ModifyClientTravelLevelURL override
+
+Added `unreal-stub/Source/Loki/LokiGameInstance.h + .cpp` — subclass of
+UGameInstance that overrides `ModifyClientTravelLevelURL(FString&)`.
+`UWorld::WelcomePlayer` calls this hook by reference right before sending
+`NMT_Welcome` (World.cpp:6201-6204), giving us a clean seam to rewrite the
+LevelName without patching engine source. Rewrite target:
+`/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent` — the exact path the client
+browsed to via browse_hook, guaranteed to exist in its cooked packages.
+
+Registered via DefaultEngine.ini:
+```
+[/Script/EngineSettings.GameMapsSettings]
+GameInstanceClass=/Script/Loki.LokiGameInstance
+```
+
+### Fix 2: FWorldDelegates::OnPostWorldInitialization — rename world package + object
+
+Fix 1 alone got the client to send `NMT_Netspeed`, then still crashed at the
+actor channel for the server-spawned PlayerController. Root cause: our stub's
+world still LIVES at `/Engine/Maps/Entry.Entry`, so the server-spawned actor's
+full path is `/Engine/Maps/Entry.Entry:PersistentLevel.PlayerController_0` —
+which is what gets replicated in the NetGUID hierarchy. Client can't resolve
+`/Engine/Maps/Entry.Entry` (editor-only, not cooked) → `SerializeNewActor`
+fails at `Archetype == null` → `NMT_ActorChannelFailure(ChIndex=3)` back to
+server → PC channel breaks → connection closes.
+
+Fix: added `FWorldDelegates::OnPostWorldInitialization` hook to `Loki.cpp`
+that renames the game world's OUTER PACKAGE AND WORLD OBJECT to the client's
+expected path:
+- Package: `/Engine/Maps/Entry` → `/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent`
+- World object: `Entry` → `LVL_LobbyV2_Persistent`
+
+Uses `UPackage::Rename` and `UWorld::Rename` with
+`REN_ForceNoResetLoaders | REN_DoNotDirty | REN_DontCreateRedirectors`. Fires
+once at server startup after world init, before any client connects. Verified
+in log:
+```
+LogLokiStub: Renaming game world package: /Engine/Maps/Entry -> /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent
+LogLokiStub: Renaming world object: Entry -> LVL_LobbyV2_Persistent
+LogWorld: Bringing World /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent up for play
+```
+
+Server-spawned actor paths now look like:
+```
+PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+```
+
+### Result: end-to-end sequence through Join succeeded
+
+Server log (`docs/session-19-stub-log-excerpt.txt`):
+```
+LogNet: Server accepting post-challenge connection from: 127.0.0.1:54720
+LogNet: NotifyAcceptingChannel Control 0 server World /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent: Accepted
+LogNet: Login request: ?Name=9b9d2c887e2524f918e383a895f2f1c2 ...
+LogLokiGameInstance: ModifyClientTravelLevelURL: /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent -> (same)
+LogNet: SetClientLoginState: State changing from LoggingIn to Welcomed
+LogNet: Join request: /Engine/Maps/Entry?Name=9b9d... ?SplitscreenCount=1
+LogNet: Join succeeded: 9b9d2c887e2524f918e3                              ← NEW MILESTONE
+LogNet: SetClientLoginState: State changing from Welcomed to ReceivedJoin ← NEW MILESTONE
+LogNet: Server connection received: ActorChannelFailure 3
+LogNet: Actor channel failed: PlayerController .../LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+LogNet: SetClientLoginState: State changing from ReceivedJoin to CleanedUp
+```
+
+Every checkpoint through NMT_Login → NMT_Welcome → NMT_Netspeed → NMT_Join →
+GameMode.PostLogin → PlayerController spawn now fires. Server successfully
+opens 8 channels for the connection. Then the client's `SerializeNewActor`
+fails on channel 3 (the PC) and sends NMT_ActorChannelFailure back, causing
+teardown.
+
+### New blocker (session 20): client-side SerializeNewActor for PlayerController
+
+`Server connection received: ActorChannelFailure` decodes to
+`NMT_ActorChannelFailure(int32 ChannelIndex)` sent from
+`UPackageMapClient::SerializeNewActor` at PackageMapClient.cpp:3151 when
+`SerializeNewActor` returns null actor. The client-side failure paths from
+PackageMapClient.cpp:611-758:
+- `Unresolved Archetype GUID. Guid not registered`
+- `SerializeNewActor: Failed to spawn actor for NetGUID` (SpawnActorAbsolute returned null)
+- `SerializeNewActor: Actor level has invalid world (may be streamed out)`
+
+The number `3` in `ActorChannelFailure 3` is the CHANNEL INDEX (not a reason
+code) — channel 3 is the PC actor channel.
+
+Most likely causes:
+1. Server-spawned PC is stock `APlayerController` but client's LobbyV2 map
+   loaded a specific `ALokiLobbyPlayerController` class via its cooked
+   GameMode — class-GUID resolution mismatch.
+2. PC's replicated subobjects (PlayerState, HUD, etc.) fail to resolve.
+3. Client's LobbyV2 map's GameMode is stricter about PC classes.
+
+### Session 20 plan
+
+Investigate client-side actor spawn failure. Add `LogNetPackageMap Log` to
+the client via `-LogCmds` (won't help — client is shipping and log verbosity
+is compiled out). Better: attach a debugger or look at `Loki.log` for any
+client-side actor spawn errors — the client does emit warnings.
+
+Alternative: override the server's `GameMode.PlayerControllerClass` to match
+what the client's LobbyV2 GameMode expects. Requires:
+1. Discovering the client's LobbyV2 GameMode class name (usmapdump strings
+   the exe for `ALokiLobbyGameMode` or similar)
+2. Creating a stub PC subclass of the client's expected PC class in our Loki
+   module
+3. Registering it via `AGameModeBase::PlayerControllerClass` in a custom
+   GameMode
+
+Alternatively: keep server PC as stock APlayerController but investigate
+whether the client's LobbyV2 map has a bunch of level-persistent actors that
+need to exist server-side too (level actor replication).
+
+### Tooling delivered (session 19)
+
+- `unreal-stub/Source/Loki/LokiGameInstance.h + .cpp` — GameInstance subclass
+  with `ModifyClientTravelLevelURL` override rewriting LevelName in NMT_Welcome.
+- `unreal-stub/Source/Loki/Loki.cpp` — added `OnPostWorldInitialization` hook
+  that renames the game world's package + object to
+  `/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent`.
+- `unreal-stub/Config/DefaultEngine.ini` — added
+  `[/Script/EngineSettings.GameMapsSettings] GameInstanceClass=/Script/Loki.LokiGameInstance`.
+- `docs/session-19-stub-log-excerpt.txt` — filtered server log showing
+  world-rename + Join succeeded + ActorChannelFailure sequence.
+
+### Chapter state (end of session 19)
+
+- Handshake: **DONE** (session 17)
+- Post-handshake packet-handler wiring: **DONE** (session 18)
+- NMT_Hello / NMT_Login / NMT_Welcome control-channel messages: **DONE** (session 18)
+- Post-Welcome map validation: **DONE** (session 19, via ModifyClientTravelLevelURL)
+- NMT_Join / GameMode.PostLogin / PC spawn (server side): **DONE** (session 19, via world/object rename)
+- Client-side PC actor spawn: TODO (session 20 — class mismatch or subobject resolution)
+- Replicating hero-roster / mission / store data to the client: TODO (session 21+)
+
+### Commits this session
+
+- (session 19 writeup commit follows)
+
 
 
 
