@@ -52,14 +52,29 @@ void ULokiActorChannel::ReceivedBunch(FInBunch& Bunch)
 
 		// Session 33: if this bunch shape matches the ServerVerifyViewTarget
 		// bunch we're targeting (2339 bits total, per session 25's capture),
-		// try the straight-through property walk over the runtime bytes and
-		// log the decoded values. This is diagnostic-only — Super still fires
-		// and will fail (SUPERVIVE's client patched out has-value bits, so
-		// stock UE's ReceivePropertiesForRPC will misread). See
-		// docs/session-33-hasvalue-divergence.md.
+		// do the straight-through property walk over the runtime bytes and
+		// log the decoded values.
+		//
+		// Session 34: SKIP Super for this bunch to prevent stock UE's
+		// ReceivePropertiesForRPC (which expects has-value bits — see
+		// docs/session-33-hasvalue-divergence.md) from misreading the
+		// straight-through payload → SetOverflowed / Mismatch → channel close.
+		//
+		// Reliability + sequence tracking already happened above us in
+		// UChannel::ReceivedNextBunch; the ACK to the client is already sent
+		// at the packet level. UActorChannel::ReceivedBunch is only the
+		// application-level dispatch, so skipping it drops the bunch's
+		// RPC/property work but preserves the transport-level state. The
+		// client sent → we ACK'd → we consumed the payload ourselves →
+		// channel stays alive for the next bunch.
 		if (TotalNumBits == 2339)
 		{
 			ParseAndLogServerVerifyViewTargetBunch(Buf.GetData(), TotalNumBits);
+			UE_LOG(LogLokiActorChannel, Display,
+			       TEXT("ReceivedBunch: SKIPPING Super for target ServerVerifyViewTarget bunch "
+			            "(ChIndex=%d ChSeq=%d) to avoid stock has-value-bit dispatch failure."),
+			       ChIndex, Bunch.ChSequence);
+			return;
 		}
 	}
 
