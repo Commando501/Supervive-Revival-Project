@@ -3090,6 +3090,132 @@ need to exist server-side too (level actor replication).
 
 - (session 19 writeup commit follows)
 
+## Session 20 (2026-07-01 — client PC ACTOR SPAWNS; new blocker at RPC signature mismatch)
+
+Session 19's blocker was `ActorChannelFailure(3)` — client couldn't instantiate
+the server-replicated PlayerController. Session 20 identified the root cause
+from client-log `LogNetPackageMap` warnings AND fixed it in one line.
+
+### Root cause: per-class NetworkChecksum mismatch
+
+Client's Loki.log after session-19 test showed:
+```
+LogNetPackageMap: Warning: GetObjectFromNetGUID: Network checksum mismatch.
+    FullNetGUIDPath: /Script/Engine.Default__PlayerController, 2497074788, 939521608
+LogNetPackageMap: Warning: ... Default__HUD, 2302596731, 388723456
+LogNetPackageMap: Warning: ... Default__DefaultPawn, 1041852434, 1673433460
+LogNetPackageMap: Warning: ... Default__GameStateBase, 2773682451, 1156806299
+LogNetPackageMap: Warning: ... GameModeBase, 2302596731, 388723456
+LogNetPackageMap: Warning: ... SpectatorPawn, 1041852434, 1673433460
+LogNetPackageMap: Warning: ... Default__PlayerState, 264646587, 96879716
+LogNetPackageMap: Error: SerializeNewActor. Unresolved Archetype GUID. Path: Default__PlayerController
+LogNet: Warning: Network Failure: GameNetDriver[NetChecksumMismatch]
+```
+
+Every stock replicated class had a checksum mismatch. SUPERVIVE ships modified
+engine base classes (extra replicated properties on APlayerController,
+APlayerState, AGameStateBase, AGameModeBase, AHUD, ADefaultPawn, ASpectatorPawn)
+— so their schema fingerprints differ from stock UE5.4's.
+
+### Fix: server sets NetworkChecksumMode=None
+
+`UPackageMapClient::SerializeExportInternal` (PackageMapClient.cpp:883) omits
+`bHasNetworkChecksum` from the ExportFlags when `NetworkChecksumMode == None`.
+`UPackageMapClient::GetObjectFromNetGUID` (PackageMapClient.cpp:3633) skips the
+checksum comparison when `CacheObjectPtr->NetworkChecksum == 0`. So if the
+server doesn't send the checksum, the client doesn't check it.
+
+Added `ULokiNetDriver::InitBase` override that calls
+`GuidCache->SetNetworkChecksumMode(FNetGUIDCache::ENetworkChecksumMode::None)`
+right after `Super::InitBase` creates the cache. Three lines total:
+
+```cpp
+if (GuidCache.IsValid()) {
+    GuidCache->SetNetworkChecksumMode(FNetGUIDCache::ENetworkChecksumMode::None);
+}
+```
+
+Attempted first via client-side `-ExecCmds="net.IgnoreNetworkChecksumMismatch 1"`
+— the CVar didn't take effect (SUPERVIVE's shipping build likely ignores
+`-ExecCmds` or the CVar is set too late). Server-side omission works.
+
+### Result: PC actor spawns client-side; new blocker at RPC signature mismatch
+
+Server log (`docs/session-20-stub-log-excerpt.txt`):
+```
+LogLokiNet: NetworkChecksumMode set to None (bypasses per-class schema fingerprint check on client).
+...
+LogNet: Join succeeded: 9b9d2c887e2524f918e3
+LogNet: SetClientLoginState: Welcomed -> ReceivedJoin
+[LokiStateless] Incoming: 136 bits -> 72 bits (a client bunch)
+[LokiStateless] Incoming: 2958 bits -> 2894 bits (a 370-byte client RPC bunch)
+LogNet: Error: ReceivedRPC: ReceivePropertiesForRPC - Mismatch read.
+    Function: ServerVerifyViewTarget,
+    Object: PlayerController .../LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+LogNet: Error: UActorChannel::ProcessBunch: Replicator.ReceivedBunch failed. Closing connection.
+    RepObj: PlayerController, Channel: 3
+LogNet: UNetConnection::Close: ... Result=ObjectReplicatorReceivedBunchFail
+LogNet: SetClientLoginState: ReceivedJoin -> CleanedUp
+```
+
+Client got past the checksum stage, INSTANTIATED the PlayerController actor,
+and called `ServerVerifyViewTarget` RPC on it. Server tried to deserialize the
+RPC's arguments — mismatch. `ServerVerifyViewTarget` is a stock UE
+APlayerController RPC, but SUPERVIVE's version has different parameters.
+
+### New blocker (session 21): stock UE RPC signatures differ from SUPERVIVE's
+
+Same underlying root cause as the checksum mismatch — SUPERVIVE modified
+`APlayerController`. This time it's an RPC parameter list mismatch, and there's
+no "ignore RPC signature" CVar because deserialization is a byte-stream parse
+that has to structurally match.
+
+### Session 21 plan
+
+Options:
+1. **Reverse-engineer SUPERVIVE's APlayerController modifications** and mirror
+   the RPC signatures in a `ULokiStubPlayerController` subclass. Requires
+   reading the exe for the modified `ServerVerifyViewTarget` signature (and
+   probably other modified RPCs — likely dozens). Then register the subclass
+   as the GameMode's `PlayerControllerClass`.
+2. **Suppress RPC processing server-side** for RPCs we don't care about. E.g.,
+   override `AGameModeBase::PlayerControllerClass` with a stub PC that has
+   `ServerVerifyViewTarget` UFUNCTION that just returns immediately.
+3. **Skip PC spawning entirely** — override `AGameModeBase::PostLogin` to not
+   spawn a PC, only spawn game/replication-visible actors we author. Not
+   compatible with normal UE flow but might work for our narrow menu-population
+   goal.
+
+Recommend Option 1 or 2. Start by `usmapdump wstrings` on the exe to find
+`ServerVerifyViewTarget` and check what other modified RPCs there are:
+```
+tools\usmapdump\usmapdump.exe wstrings "G:\...\SUPERVIVE-Win64-Shipping.exe" | grep -iE "ServerVerify|ServerAcknowledge|ServerUpdateCamera|Server.*ViewTarget"
+```
+
+### Tooling delivered (session 20)
+
+- `unreal-stub/Source/Loki/LokiNetDriver.cpp + .h` — added `InitBase` override
+  that sets `GuidCache->NetworkChecksumMode = None` immediately after
+  `Super::InitBase`.
+- `docs/session-20-stub-log-excerpt.txt` — filtered server log showing
+  Join succeeded → PC spawns client-side → RPC signature mismatch on
+  ServerVerifyViewTarget.
+
+### Chapter state (end of session 20)
+
+- Handshake: DONE (session 17)
+- Post-handshake packet-handler wiring: DONE (session 18)
+- NMT_Hello / NMT_Login / NMT_Welcome control-channel messages: DONE (session 18)
+- Post-Welcome map validation: DONE (session 19, ModifyClientTravelLevelURL)
+- NMT_Join / PostLogin / PC spawn server-side: DONE (session 19, world rename)
+- Client-side PC actor spawn: DONE (session 20, NetworkChecksumMode=None)
+- Server-side RPC deserialization for modified engine RPCs: TODO (session 21)
+- Replicating hero-roster / mission / store data to client: TODO (session 22+)
+
+### Commits this session
+
+- (session 20 writeup commit follows)
+
 
 
 

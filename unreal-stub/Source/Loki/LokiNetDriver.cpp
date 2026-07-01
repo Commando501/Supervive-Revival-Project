@@ -4,8 +4,41 @@
 #include "PacketHandler.h"
 #include "PacketHandlers/StatelessConnectHandlerComponent.h"
 #include "Net/Core/Misc/DDoSDetection.h"
+#include "Engine/PackageMapClient.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiNet, Log, All);
+
+bool ULokiNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify,
+                              const FURL& URL, bool bReuseAddressAndPort,
+                              FString& Error)
+{
+	const bool bOk = Super::InitBase(bInitAsClient, InNotify, URL, bReuseAddressAndPort, Error);
+	if (!bOk)
+	{
+		return false;
+	}
+
+	// Session 20: disable per-class NetworkChecksum so the client doesn't reject
+	// server actors whose UClass replication schema fingerprint differs. The
+	// SUPERVIVE shipping client has modified engine base classes (APlayerController,
+	// APlayerState, AGameStateBase, AHUD, ADefaultPawn, ASpectatorPawn) with extra
+	// replicated properties, so a stock UE5.4 stub sends "wrong" checksums.
+	// Setting mode to None makes the server omit bHasNetworkChecksum in its
+	// NetGUID exports (PackageMapClient.cpp:883), which makes client's
+	// PackageMapClient.cpp:3633 skip the check (`NetworkChecksum != 0` guard).
+	if (GuidCache.IsValid())
+	{
+		GuidCache->SetNetworkChecksumMode(FNetGUIDCache::ENetworkChecksumMode::None);
+		UE_LOG(LogLokiNet, Display,
+		       TEXT("LokiNetDriver: NetworkChecksumMode set to None (bypasses per-class schema fingerprint check on client)."));
+	}
+	else
+	{
+		UE_LOG(LogLokiNet, Warning,
+		       TEXT("LokiNetDriver::InitBase: GuidCache invalid after Super — checksum override skipped."));
+	}
+	return true;
+}
 
 ULokiNetDriver::ULokiNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

@@ -1,4 +1,4 @@
-# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 20
+# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 21
 
 Paste the section between the `---` lines below as the first message of
 the new session. It bootstraps the agent fully without re-reading dozens
@@ -8,14 +8,15 @@ of files.
 
 We're continuing the SUPERVIVE Revival dedicated-server-stub chapter on
 branch `dedicated-server-stub` at `G:\git\Supervive Revival Project`.
-This is **session 20** of the chapter. Session 19 was another big
-qualitative jump — the SUPERVIVE client now completes stateless
-handshake + NMT_Hello + NMT_Login + NMT_Welcome + NMT_Netspeed +
-NMT_Join with the stub server, reaches `ReceivedJoin` state, and 8
-control channels open server-side. Then the client fails to spawn the
-server's replicated PlayerController on Channel 3, sends
-`NMT_ActorChannelFailure(3)`, and the connection closes. Today's job
-is to fix that one client-side actor-spawn failure.
+This is **session 21** of the chapter. Session 20 unblocked the
+client-side `ActorChannelFailure` on the server-replicated PlayerController
+(via `GuidCache->SetNetworkChecksumMode(None)` — SUPERVIVE ships modified
+engine base classes so the stock-vs-Loki class checksum comparison always
+failed). Client now instantiates the PC actor and starts sending RPCs
+back. NEW blocker: SUPERVIVE's `APlayerController` has modified RPC
+signatures. The client's `ServerVerifyViewTarget` RPC arguments don't
+deserialize against stock UE5.4's `ServerVerifyViewTarget` signature. Today's
+job is to give the server a PC class whose RPC signatures match SUPERVIVE's.
 
 START BY (in this order):
   cd "G:\git\Supervive Revival Project"
@@ -23,144 +24,98 @@ START BY (in this order):
   git log --oneline -8
   # Then read:
   #   docs/dedicated-server-stub.md   (full chapter — jump to
-  #     "Session 19" at the bottom, that's where you pick up.
-  #     Session 18 is the previous UNetConnection wiring win.
-  #     Session 17 has the wrapper-architecture discovery and the
-  #     16-byte constant we anchor on. Session 14 has TheoryCraft's
-  #     wire-format ID.)
-  #   docs/session-19-stub-log-excerpt.txt  (the filtered stub log
-  #     showing world-rename + Join succeeded + ActorChannelFailure —
-  #     24 lines, read all of it)
+  #     "Session 20" at the bottom, that's where you pick up.
+  #     Session 19 solved the map/world rename problem. Session 18 solved
+  #     the UNetConnection PacketHandler wiring. Session 17 solved the
+  #     stateless handshake wrapper.)
+  #   docs/session-20-stub-log-excerpt.txt  (the filtered stub log
+  #     showing NetworkChecksumMode=None + Join succeeded + PC actor
+  #     spawn + ServerVerifyViewTarget RPC mismatch — 17 lines)
+  #   unreal-stub/Source/Loki/LokiNetDriver.cpp + .h  (session-20
+  #     InitBase override that sets NetworkChecksumMode=None)
   #   unreal-stub/Source/Loki/LokiGameInstance.h + .cpp  (session-19
-  #     ModifyClientTravelLevelURL override — LevelName rewrite)
+  #     ModifyClientTravelLevelURL override)
   #   unreal-stub/Source/Loki/Loki.cpp  (session-19 world/package
-  #     rename hook at FWorldDelegates::OnPostWorldInitialization)
-  #   unreal-stub/Source/Loki/LokiIpConnection.h + .cpp  (session-18
-  #     UNetConnection InitHandler override — wires LokiStatelessConnect)
-  #   unreal-stub/Source/Loki/LokiNetDriver.h + .cpp  (session-18
-  #     constructor sets NetConnectionClass = ULokiIpConnection)
-  #   unreal-stub/Source/Loki/LokiStatelessConnect.h + .cpp  (session-17
-  #     wrapper-strip logic for both connectionless and per-connection
-  #     packets)
-  #   H:\Unreal Engine\UE_5.4\Engine\Source\Runtime\Engine\Private\PackageMapClient.cpp
-  #     lines 700-760 — where SerializeNewActor decides whether the client
-  #     can spawn a server-replicated actor. Failure paths: unresolved
-  #     Archetype GUID, SpawnActorAbsolute returned null, invalid ActorLevel.
-  #   The hero-roster-blocker memory auto-loads and has session 19's
+  #     rename hook)
+  #   H:\Unreal Engine\UE_5.4\Engine\Source\Runtime\Engine\Classes\GameFramework\PlayerController.h
+  #     — find stock ServerVerifyViewTarget signature (look for
+  #     UFUNCTION(Server, Reliable, WithValidation)). Compare with
+  #     SUPERVIVE's version by RE'ing the exe.
+  #   The hero-roster-blocker memory auto-loads and has session 20's
   #   writeup at the very top.
 
 THE EXACT BLOCKER:
 
-After the client sends NMT_Join and server's `GameMode.PostLogin` spawns
-a stock `APlayerController`, the server opens an ActorChannel (Channel 3)
-for the PC and starts replicating it. The client tries to instantiate the
-actor via `UPackageMapClient::SerializeNewActor`, but that returns null —
-so the client sends `NMT_ActorChannelFailure(ChannelIndex=3)` back. Server
-sees this at DataChannel.cpp:1750 and logs:
+Client instantiates the server-replicated `APlayerController` cleanly, then
+calls RPCs on it. First RPC arriving server-side is `ServerVerifyViewTarget`
+(stock UE APlayerController RPC). Server's `UObjectReplicator::ReceivedRPC`
+tries to deserialize the RPC arguments against `APlayerController::ExecServerVerifyViewTarget`
+signature — mismatch. Byte-stream parse fails at the arg-count or arg-type
+level. UE closes the actor channel with:
 
-    LogNet: Server connection received: ActorChannelFailure 3
-    LogNet: Actor channel failed: PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
-    LogNet: UNetConnection::Close: ... Channels: 8
+    LogNet: Error: ReceivedRPC: ReceivePropertiesForRPC - Mismatch read.
+        Function: ServerVerifyViewTarget,
+        Object: PlayerController .../LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+    LogNet: Error: UActorChannel::ProcessBunch: Replicator.ReceivedBunch failed.
+        Closing connection. RepObj: PlayerController, Channel: 3
+    LogNet: UNetConnection::Close: ... Result=ObjectReplicatorReceivedBunchFail
     LogNet: SetClientLoginState: ReceivedJoin -> CleanedUp
 
-Note: the `3` in `ActorChannelFailure 3` is the CHANNEL INDEX (not a
-reason code). The PC is on channel 3 (0=Control, 1-2=some default,
-3=PC). ActorChannelFailure is generated by client at
-PackageMapClient.cpp:3151 when `Archetype == null` in SerializeNewActor,
-or PackageMapClient.cpp:748 when `SpawnActorAbsolute` returns null.
+Note: This is the SAME class-modification pattern that caused
+session-19's `ActorChannelFailure` (which was the class-schema checksum
+comparison). Session 20 disabled the checksum check, but the RPC
+signature check is structural — you can't disable byte-stream parsing
+of arguments against a struct that doesn't match.
 
-TOP HYPOTHESES (in order of likelihood):
+RECOMMENDED SESSION 21 APPROACH:
 
-1. **Class-GUID mismatch on PlayerControllerClass**. Client's cooked
-   LobbyV2 map has a specific GameMode expecting `ALokiLobbyController`
-   (or similar Loki-specific PC class). Our stub spawns stock
-   `APlayerController`. When the class's NetGUID is replicated, the
-   client either:
-   - (a) can't resolve `/Script/Engine.PlayerController` at all (unlikely —
-     stock class), OR
-   - (b) resolves it fine but LobbyV2's client-side GameMode rejects the
-     stock PC when it tries to become the local player. Result: the
-     spawned actor becomes null or the archetype lookup fails.
+Step 1 (30 min): RE SUPERVIVE's ServerVerifyViewTarget signature.
 
-2. **Missing subobjects**. PC has replicated components (PlayerState,
-   InputComponent, HUD). If any of those reference Loki-specific classes
-   that aren't in our stub's package registry, `SerializeNewActor`'s
-   archetype resolution can fail.
+    tools\usmapdump\usmapdump.exe wstrings "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\SUPERVIVE-Win64-Shipping.exe" | grep -iE "ServerVerify|VerifyViewTarget"
 
-3. **World Partition or streaming level mismatch**. Client's LobbyV2 is
-   likely a World Partition map. Our stub has a bare "Entry"-shaped world
-   that we renamed to LobbyV2's package path. The `ULevel` object that
-   the actor is spawned into might not match what the client thinks the
-   level looks like. See PackageMapClient.cpp:717 — `SpawnLevel->GetWorld()`
-   must be non-null.
+  Also look at LogNet Verbose output on the server — the RPC bunch size
+  is 2894 bits post-wrapper-strip = 361 bytes. Stock ServerVerifyViewTarget
+  takes 1 param (AActor* TargetActor). If SUPERVIVE's takes an extra
+  FVector or FQuat, the size delta explains the mismatch.
 
-RECOMMENDED SESSION 20 APPROACH:
+  Alternative: look at UE-modified games with published sources
+  (Ark Ascended, some UE5 games have -Shipping symbol tables) for how
+  they modify ServerVerifyViewTarget — often it's for anti-cheat.
 
-Step 1 (5 min): Verify the hypothesis by making it more diagnostic.
-  Look at the client's Loki.log after a session-19 run — the client
-  emits `LogNetPackageMap: Warning: SerializeNewActor: Failed to spawn actor for NetGUID: X`
-  or `LogNetPackageMap: Error: Unresolved Archetype GUID` etc. If shipping
-  build strips those logs, this won't help; then proceed to Step 2.
-  Client log path: `C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log`
-
-Step 2 (30 min): Find the client's expected LobbyV2 PC class via static
-  RE. From `G:\git\Supervive Revival Project`:
-
-    tools\usmapdump\usmapdump.exe wstrings "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\SUPERVIVE-Win64-Shipping.exe" | grep -iE "LobbyV2.*Controller|Lobby.*Controller|LokiLobby.*PC|LokiPlayerController"
-
-  Look for the specific ALokiLobbyController-style class name. Also
-  check `tools\usmapdump\usmapdump.exe strings` (ANSI) for `LokiLobby*`
-  class references. usmapdump also has `namesall` which enumerates every
-  FName in the exe — grep that for `LokiLobby` too.
-
-Step 3 (60-120 min): Create a stub subclass matching the client's class,
-  and a GameMode that spawns it. Plan:
-  - Add `unreal-stub/Source/Loki/LokiStubPlayerController.h + .cpp`
-    Subclass of `APlayerController` (or the exact client-expected class
-    if we can generate a header for it). Use a UCLASS() macro that
-    matches the client's expected class path (may need to override the
-    generated package name at runtime, similar to session 19's world
-    rename).
-  - Add `unreal-stub/Source/Loki/LokiStubGameMode.h + .cpp`
-    Custom `AGameModeBase` subclass that sets `PlayerControllerClass =
-    ULokiStubPlayerController::StaticClass()` in constructor.
-  - Register the GameMode in DefaultEngine.ini:
-
+Step 2 (60-120 min): Author a stub PC class with matching RPCs. Plan:
+  - Create `unreal-stub/Source/Loki/LokiStubPlayerController.h + .cpp`
+    Subclass of `APlayerController`. Override `ServerVerifyViewTarget_Implementation`
+    with the SUPERVIVE-matched parameters. If need be, use SUPERVIVE's
+    class name via `UCLASS(hidedropdown, config=Engine)` or via a runtime
+    UPackage::Rename similar to session 19's world rename.
+  - Create `unreal-stub/Source/Loki/LokiStubGameMode.h + .cpp`
+    Custom `AGameModeBase` subclass. Constructor:
+      PlayerControllerClass = ULokiStubPlayerController::StaticClass();
+  - Register the GameMode:
+    DefaultEngine.ini:
         [/Script/EngineSettings.GameMapsSettings]
         GlobalDefaultGameMode=/Script/Loki.LokiStubGameMode
+  - If SUPERVIVE calls MORE modified RPCs after ServerVerifyViewTarget,
+    add them as you see each new error. Iterate.
 
-  - Build + test. If the class-name approach works, client should
-    successfully spawn the PC and the connection stays open. Next expected
-    events: `ClientHasInitializedLevel`, `AcknowledgePossession`,
-    `InitInputSystem`, `NotifyLoadedWorld`, `ServerReadyToBeginPlay` etc.
+Step 3 (fallback if RPC RE is intractable): Reject client RPCs entirely.
+  Override `AGameModeBase::PostLogin` to spawn a PC with `bBlockClientRPCs`
+  or similar. Or set `bDisableRPCs` on the PC. This may leave the
+  connection alive without letting the client's RPCs work, but the
+  server-side actors still replicate to the client. Menu-population
+  server → client should still work.
 
-  If class renaming isn't enough (Loki PC probably has properties/BP
-  logic our stub doesn't have), we need to actually author a stub
-  Blueprint or C++ class that matches the client's expected class layout
-  for replicated properties. This may push into session 21+.
+WHAT'S ALREADY BUILT (all working):
 
-WHAT'S ALREADY BUILT (do not re-derive):
+  Session 20 additions:
+  - `ULokiNetDriver::InitBase` override → `GuidCache->NetworkChecksumMode = None`.
+    Server omits per-class checksums, client skips checksum check.
 
-Server-side plumbing (all working):
-  - Stateless handshake (sessions 13-17)
-  - LokiStatelessConnect wrapper strip on both connectionless + per-connection
-    packet handler chains (session 17 + 18)
-  - LokiNetDriver + LokiIpConnection wiring
-  - LokiGameInstance::ModifyClientTravelLevelURL rewriting NMT_Welcome's
-    LevelName (session 19)
-  - World package + object rename at OnPostWorldInitialization so
-    server-spawned actor NetGUID paths match client's cooked LobbyV2
-    (session 19)
-
-Client-side hook infrastructure (all working):
-  - browse_hook.dll v13 rewrites LobbyV2 browse to 127.0.0.1
-  - inject.exe watch-now manual-maps the DLL post-CreateProcess
-  - configs/launch-redirect.ps1 orchestrates hosts file + certs +
-    ags backend + game exe launch
-
-Backend infrastructure (all working):
-  - ags Go backend at :8080 HTTP + :443 HTTPS with AccelByte + Loki
-    endpoints stubbed
+  Sessions 17-19 (see previous session's pickup prompt for context):
+  - Full stateless handshake + wrapper strip both directions
+  - Custom UNetConnection subclass with our StatelessConnect in the chain
+  - LevelName rewrite via ModifyClientTravelLevelURL
+  - World package + object rename to /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent
 
 STUB SERVER LAUNCH COMMAND (from elevated PowerShell, works today):
 
@@ -184,72 +139,60 @@ Client launch (from elevated PowerShell, Steam must be running):
     cd "G:\git\Supervive Revival Project"
     .\configs\launch-redirect.ps1 -Hook ".\tools\sigbypass-mod\browse_hook.dll"
 
-Alternative iterative flow (Claude used this in session 19):
+Alternative iterative flow (used through session 20):
     # 1. ags backend
-    Start-Process -FilePath 'G:\git\Supervive Revival Project\server\ags.exe' `
-        -ArgumentList '-http :8080 -https :443 -log "G:\...\docs\capture.log" -certs "G:\...\certs"' `
-        -WorkingDirectory 'G:\git\Supervive Revival Project\server'
     # 2. inject watch-now (BEFORE game launch, single-quoted args due to path spaces)
-    Start-Process 'G:\...\tools\inject\inject.exe' `
-        -ArgumentList 'watch-now SUPERVIVE-Win64-Shipping.exe "G:\...\browse_hook.dll"' `
-        -RedirectStandardOutput 'inject.log' -WindowStyle Hidden
-    # 3. game exe with -ini overrides (see launch-redirect.ps1:200-215 for the array)
-    Start-Process 'G:\...\SUPERVIVE-Win64-Shipping.exe' -ArgumentList $iniArgs
+    # 3. game exe with -ini overrides
+    # See launch-redirect.ps1:130-165 for the exact args.
 
 GUARDRAILS (per CLAUDE.md):
 
   - Branch is `dedicated-server-stub`. Commit + push each meaningful
-    step. Push needs `gh auth` or system git credential helper; user
-    pushes manually if interactive prompts fail.
+    step. Push needs `gh auth` or system git credential helper.
   - Don't mutate the running game without warning the user first.
   - Hosts file redirect is already active; don't run
     `configs/launch-redirect.ps1 -Revert` casually.
-  - Steam must be running before the game launches (else Auth Failure
-    14005).
+  - Steam must be running before the game launches.
   - browse_hook v13 has a small (<10%) crash rate on the client during
-    Browse rewrite. If the client dies before Initial fires, just kill
-    the game + inject and retry.
-  - Do NOT re-enable outgoing wrap in LokiNetDriver::LowLevelSend
-    (`bDisableOutgoingWrap = true` was session 17's fix that made the
-    handshake work). Sending wrapped replies breaks the client.
-  - Do NOT touch the world/package rename in Loki.cpp — session 19
-    proved it's required.
+    Browse rewrite. Retry on crash.
+  - Do NOT touch:
+    * bDisableOutgoingWrap in LokiNetDriver::LowLevelSend (session 17)
+    * World/package rename in Loki.cpp (session 19)
+    * NetworkChecksumMode=None in LokiNetDriver::InitBase (session 20)
+    All are required for the current progress point.
 
-CHAPTER STATE AT END OF SESSION 19:
+CHAPTER STATE AT END OF SESSION 20:
 
   - Handshake: DONE (session 17)
   - Post-handshake packet-handler wiring: DONE (session 18)
   - NMT_Hello / NMT_Login / NMT_Welcome control-channel messages: DONE (session 18)
-  - Post-Welcome map validation: DONE (session 19, ModifyClientTravelLevelURL)
-  - NMT_Join / PostLogin / PC spawn server-side: DONE (session 19, world rename)
-  - Client-side PC actor spawn: TODO (session 20 — this session's focus)
-  - Replicating hero-roster / mission / store data to client: TODO (session 21+)
+  - Post-Welcome map validation: DONE (session 19)
+  - NMT_Join / PostLogin / PC spawn server-side: DONE (session 19)
+  - Client-side PC actor spawn: DONE (session 20, NetworkChecksumMode=None)
+  - Server-side RPC deserialization for modified engine RPCs: TODO (session 21 — this session's focus)
+  - Replicating hero-roster / mission / store data to client: TODO (session 22+)
 
 TOOLING ALREADY BUILT (do not duplicate):
 
-  tools/usmapdump/usmapdump.exe — RE tool. Session 20 will USE this to find
-    the client's LobbyV2 PC class name via `wstrings` + grep.
+  tools/usmapdump/usmapdump.exe — RE tool. Session 21 will USE this to find
+    SUPERVIVE's modified ServerVerifyViewTarget signature and any other
+    modified RPCs.
   tools/inject/inject.exe — manual-map DLL injector.
   tools/sigbypass-mod/browse_hook.dll — LobbyV2 browse rewriter (v13).
-  unreal-stub/ — UE5.4 project with LokiEditor target. Rebuild after any
-    Loki module change.
+  unreal-stub/ — UE5.4 project with LokiEditor target.
 
 LARGER CONTEXT REMINDER:
 
 The original goal of this multi-chapter project is to make the SUPERVIVE
 Missions modal (and other content panels — All Hunters, Store, Cosmetics)
-populate after the official servers were retired. Sessions 1-19 established
-that the menu's empty state is server-replication-dependent and only a UE5.4
-stub server can deliver the data. The dedicated-server-stub chapter has now
-completed the entire connection handshake through NMT_Join.
+populate after the official servers were retired. Sessions 1-20 completed
+the entire connection handshake through client-side PlayerController
+instantiation. Only client→server RPCs currently fail.
 
 Remaining gap between us and "SUPERVIVE menu with missions populated":
-  1. Session 20: make the client successfully spawn the server-replicated
-     PlayerController (this session's focus).
-  2. Session 21+: normal UE5.4 dev work. Write Loki module's LobbyState or
-     LokiPlayerState classes that replicate mission/hero-roster data, have
-     the client's LobbyV2 GameState receive the data and populate the UI.
+  1. Session 21: match SUPERVIVE's PC RPC signatures OR suppress client
+     RPCs entirely (this session's focus).
+  2. Session 22+: normal UE5.4 dev work. Write Loki module's LobbyState or
+     LokiPlayerState classes that replicate mission/hero-roster data.
 
-If you have any doubt about a step, ask the user before running it. The
-chapter has accumulated a lot of trial-and-error and the user has good
-intuition about what's safe vs. risky.
+If you have any doubt about a step, ask the user before running it.
