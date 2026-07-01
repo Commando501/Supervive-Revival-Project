@@ -1,0 +1,99 @@
+=== SESSION 40 VULKAN TEST — INCONCLUSIVE (client hangs during Vulkan init) ===
+
+After the DX11 test showed the crash isn't D3D12-specific, tried `-vulkan`
+cmdline as the second renderer-variant test. Expectation was either:
+(a) Vulkan crashes at the same address → class is fully renderer-independent
+(b) Vulkan runs cleanly → workaround found (unlikely since DX11 didn't work)
+
+**Actual result: (c) — Vulkan hangs during RHI init, client never boots
+past the map-load phase. No connection, no menu-load, no crash reached.**
+
+--- Test setup ---
+
+New batch `scratchpad/launch-sv-open-vulkan.bat` = same as `-DX11` variant
+but with `-vulkan` swapped in. Same session-38 stub + session-38 code
+state.
+
+--- Test result ---
+
+Client log ends at:
+
+    [23:43:35:094] LogRHI: Using Forced RHI: Vulkan
+
+No further log activity. Process still running 3.8 minutes later but only
+0.2 min of CPU time (5% utilization) and 231 MB working set (normal boot
+is 1-2 GB). Client is stuck in RHI init.
+
+Sentry logged a session CrashGUID `UECC-Windows-571F879A47082B8CF18E109104BF6447`
+but no corresponding CrashContext.runtime-xml was produced — the process
+isn't crashing, just hung.
+
+Stub side saw no connection activity.
+
+--- Interpretation ---
+
+SUPERVIVE's shipping build likely doesn't ship Vulkan shaders or Vulkan
+runtime binaries. Common in AAA UE 5 games where the packer / anti-cheat
+is tuned specifically to DX12 code paths. `LogRHI: Using Forced RHI: Vulkan`
+just prints the requested mode; the actual Vulkan driver / shader
+initialization silently blocks.
+
+Rules out `-vulkan` as a workaround, but doesn't answer the question we
+wanted: is the crash class renderer-independent?
+
+--- What this rules IN and OUT ---
+
+RULED OUT:
+- Vulkan mode as a workaround for the SUPERVIVE Revival goal
+- Vulkan as a rendering path for further tests
+
+STILL OPEN:
+- Whether the crash class is renderer-independent
+- What subsystem SPECIFICALLY holds the uninit TArray
+
+--- Renderer test matrix (final) ---
+
+| Renderer | Result                                        | Time to crash |
+|----------|-----------------------------------------------|---------------|
+| D3D12    | Menu loads 25 heroes, crashes after wallet    | 64 s post-Join |
+| DX11     | Menu loads 25 heroes, crashes after wallet    | 24 s post-Join |
+| Vulkan   | Hangs in RHI init, never boots                | N/A           |
+
+DX11 → D3D12 delta of 40 seconds suggests the crash-triggering subscriber
+adds happen at DIFFERENT rates under different renderers. That's the only
+distinguishing signal we have between the two mode results.
+
+--- What to try next (session 41+) ---
+
+Renderer variants are exhausted (nullrhi would probably crash the client
+too since it's a shipping game that requires a renderer). Real options:
+
+- **`-nullrhi`** — cheap to try, informative only if it happens to work
+- **Path B-lite** — the multi-hour engineering commitment. Now with slight
+  extra justification: since the crash isn't fully renderer-specific and
+  timing differs with renderer, a subscriber-based system whose subscribers
+  come from AActor replication IS a plausible root cause.
+- **Live debugger session** (Ghidra Debugger or WinDbg attached to
+  running SUPERVIVE) — set breakpoint at the crash instruction and
+  inspect who's calling, what the object is, what it thinks it is via
+  RTTI at runtime. Fast if it works, requires bypassing the packer's
+  anti-debug (documented in CLAUDE.md as intrusive).
+
+--- Chapter state (end of session 40 renderer-variant matrix) ---
+
+- Route-around fires cleanly against live bunches: DONE (S35)
+- Full suppression keeps connection stable through Join: DONE (S39)
+- Client reaches menu, fetches 25 heroes + inventory + wallet: DONE (S39)
+- Crash class identified as UE 5.4 FD3D12CommandContext: WRONG (S40 A1)
+- Crash reproduces in DX11 mode with faster timing: DONE (S40 DX11)
+- Vulkan hangs in init (can't even test the crash path): DONE (this test)
+- Menu-data replication: TODO
+
+--- DO NOT for session 41+ ---
+
+- Don't try Vulkan for anything else. Not viable on this build.
+- Don't invest more in identifying the class via static Ghidra —
+  the "TArray Add on uninit data" pattern is common in UE and could
+  belong to many subsystems (RHI, GPUscene, streaming, RDG, etc.).
+- Do consider a live debugger session for step-through analysis if
+  fresh session time is available.
