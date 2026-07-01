@@ -3216,6 +3216,123 @@ tools\usmapdump\usmapdump.exe wstrings "G:\...\SUPERVIVE-Win64-Shipping.exe" | g
 
 - (session 20 writeup commit follows)
 
+## Session 21 (2026-07-01 — bReplicates=false PC approach FAILS; class-name resolution is a hard wall)
+
+Session 20's blocker was `ReceivedRPC: Mismatch read` on `ServerVerifyViewTarget`
+— stock UE APlayerController takes 0 args but SUPERVIVE's client-side version
+sends ~2894 bits of arguments. Session 21 attempted a workaround: subclass
+APlayerController with `bReplicates = false` so the client never receives a PC
+and therefore never sends PC-level RPCs back.
+
+### Attempt: LokiStubPlayerController with bReplicates=false
+
+Added three files:
+- `unreal-stub/Source/Loki/LokiStubPlayerController.h + .cpp` — subclass of
+  APlayerController with `bReplicates = false`, `NetDormancy = DORM_DormantAll`.
+- `unreal-stub/Source/Loki/LokiStubGameMode.h + .cpp` — AGameModeBase subclass
+  that sets `PlayerControllerClass = ALokiStubPlayerController::StaticClass()`.
+- `unreal-stub/Config/DefaultEngine.ini` — registered
+  `[/Script/EngineSettings.GameMapsSettings] GlobalDefaultGameMode=/Script/Loki.LokiStubGameMode`.
+
+### Result: NEW failure at ActorChannelFailure with different close reason
+
+Server log:
+```
+LogLokiStubGM: LokiStubGameMode constructed with PlayerControllerClass=LokiStubPlayerController
+LogLoad: Game class is 'LokiStubGameMode'
+LogLokiStubPC: LokiStubPlayerController constructed (bReplicates=false, ...)
+[connection sequence through Welcomed]
+LogNet: Join request: /Engine/Maps/Entry?Name=9b9d... ?SplitscreenCount=1
+LogNet: Join succeeded: 9b9d2c887e2524f918e3
+LogNet: SetClientLoginState: Welcomed -> ReceivedJoin
+LogNet: Server connection received: ActorChannelFailure 3
+    ... Actor: LokiStubPlayerController .../PersistentLevel.LokiStubPlayerController_0 ...
+    PC: LokiStubPlayerController_0, Owner: LokiStubPlayerController_0
+LogNet: Warning: UControlChannel::ReceivedBunch: NetConnection::Close() ...
+    failed to initialize the PlayerController channel. Closing connection.
+LogNet: SendCloseReason: Result=ControlChannelPlayerChannelFail
+LogNet: SetClientLoginState: ReceivedJoin -> CleanedUp
+```
+
+Root cause of the new failure: `AGameModeBase::PostLogin` calls `SpawnPlayActor`
+which forcibly opens an ActorChannel for the PC EVEN IF `bReplicates=false`.
+The channel-open bunch sends the actor's CLASS GUID as
+`/Script/Loki.LokiStubPlayerController`. Client tries to resolve this — it's
+not in the cooked SUPERVIVE package registry (only stock
+`/Script/Engine.PlayerController` is). Client's `SerializeNewActor` returns
+null → `NMT_ActorChannelFailure(3)` back to server → connection dies with
+`Result=ControlChannelPlayerChannelFail` (different from session 20's
+`Result=ObjectReplicatorReceivedBunchFail`).
+
+### Dead-ends discovered
+
+Two paths are now proven closed:
+1. **Custom PC class name**: breaks client-side actor spawn because our class
+   isn't in SUPERVIVE's cooked package registry.
+2. **Stock APlayerController class**: succeeds through actor spawn but hits
+   RPC signature mismatch when client's SUPERVIVE-modified APlayerController
+   calls `ServerVerifyViewTarget` back with non-zero arg payload.
+
+`bReplicates=false` doesn't help because UE's actor-channel setup for the PC
+is not gated by bReplicates in the join flow — the channel opens
+unconditionally, and the class GUID is always sent.
+
+Attempted a class-rename trick (rename `/Script/Loki.LokiStubPlayerController`
+to `/Script/Engine.PlayerController` at runtime — session-19-style) but
+reverted after realizing it would collide with the existing loaded stock
+`APlayerController` CDO in the same path. UE forbids two UClasses at the same
+package path.
+
+### New blocker (session 22): must match SUPERVIVE's RPC signature
+
+Path forward: keep `PlayerControllerClass = APlayerController::StaticClass()`
+(so class GUID resolves client-side) and add a UFUNCTION override that matches
+the SUPERVIVE-modified `ServerVerifyViewTarget` signature. Requires:
+
+1. RE the signature via `usmapdump wstrings` / `usmapdump nameid` on a LIVE
+   running SUPERVIVE process (usmapdump attaches to a process, not a static
+   exe — needs the game running for the packer to have unpacked strings).
+2. Optionally: `usmapdump extract` to dump the full property schema — this
+   may give us the exact FProperty layout of the modified
+   `ServerVerifyViewTarget_Parms` struct.
+3. Add matching UFUNCTION to `ALokiStubPlayerController` (which becomes a
+   proper subclass of APlayerController that overrides the RPC).
+4. Register `LokiStubPlayerController` as `PlayerControllerClass` in a
+   custom GameMode — but ONLY if we can also make the client resolve it
+   as APlayerController. Options:
+   - Add UClassRedirect from `/Script/Engine.PlayerController` →
+     `/Script/Loki.LokiStubPlayerController` at server-side.
+   - Or: keep GameMode's PC class as stock APlayerController, and register
+     our RPC override on the stock class via `UFUNCTION(Server, ...)` in a
+     side-loaded UObject that hooks the class's function table.
+
+### Tooling delivered (session 21)
+
+- `unreal-stub/Source/Loki/LokiStubPlayerController.h + .cpp` — APlayerController
+  subclass. Currently has bReplicates=false + NetDormancy=DormantAll. Both
+  attributes preserved as documentation of what didn't work; session 22 will
+  either flip them or introduce a matching RPC UFUNCTION.
+- `unreal-stub/Source/Loki/LokiStubGameMode.h + .cpp` — AGameModeBase subclass
+  registering LokiStubPlayerController.
+- `unreal-stub/Config/DefaultEngine.ini` — GlobalDefaultGameMode registration.
+- `docs/session-21-stub-log-excerpt.txt` — filtered stub log showing
+  ControlChannelPlayerChannelFail failure mode.
+
+### Chapter state (end of session 21)
+
+- Handshake: DONE (session 17)
+- Post-handshake packet-handler wiring: DONE (session 18)
+- NMT_Hello / NMT_Login / NMT_Welcome control-channel messages: DONE (session 18)
+- Post-Welcome map validation: DONE (session 19)
+- NMT_Join / PostLogin / PC spawn server-side: DONE (session 19)
+- Client-side PC actor spawn (stock class): DONE (session 20)
+- Server-side RPC deserialization for modified engine RPCs: TODO (session 22)
+- Replicating hero-roster / mission / store data to client: TODO (session 23+)
+
+### Commits this session
+
+- (session 21 writeup commit follows)
+
 
 
 
