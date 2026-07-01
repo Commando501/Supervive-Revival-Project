@@ -1,0 +1,169 @@
+=== SESSION 40 PATH A3 — instances found but class name still elusive ===
+
+Path A3 continuation of session 40's crash-site identification effort.
+Method: use `usmapdump.exe findptr` on the static vtable address to find
+live instances of the crashing class, then walk their headers to identify
+the UClass. Result: PARTIAL — found instances + more class characteristics,
+but the class NAME remains elusive without symbol reconstruction.
+
+--- What A3 confirmed ---
+
+`usmapdump.exe findptr` at vtable address `0x7FF68A61E188` (mod-RVA +0x7B9E188)
+returned **exactly 2 live instances** in the process memory:
+
+    @0x13A5E020040   (first live instance)
+    @0x13B0EBAC010   (second live instance)
+
+Both share:
+- Offset 0x00: vtable = 0x7FF68A61E188 (our target)
+- Offset 0x08: shared metadata pointer 0x13A4FA55D40 (SAME across both
+  instances — this is a shared "profile"/"config"/"descriptor")
+- Offset 0x38: same shared metadata pointer again
+
+Both differ:
+- Offset 0x10 (int32): instance 1 has `0x00000101_00000000`,
+  instance 2 has `0x00000002_00000000` — looks like an index/id field
+
+**Only 2 live instances** — the class isn't UClass-registered (else it'd
+have a CDO instance too, giving us 3+). Combined with `findptr` on the
+constructor + factory address returning 0 hits for pointer references,
+this class is NOT registered in UE's UClass reflection system. It's a
+raw C++ class instantiated via a factory tail-call wrapper at +0x29BBBC9.
+
+--- Shared metadata object details ---
+
+The shared metadata at 0x13A4FA55D40 starts with `01 00 00 00 01 00 00 00`
+— NOT a vtable pointer. So it's a plain-old-data struct, not a C++ class.
+It has:
+- Offset 0x00: `01 00 00 00` (int32=1)
+- Offset 0x04: `01 00 00 00` (int32=1)
+- Offset 0x18: 0x13A5D40B700 (heap pointer)
+- Offset 0x20: 0x13A2C386140 (heap pointer)
+- Offset 0x28: 0x13A57B0B140 (heap pointer)
+- Offset 0x38: 0x7FF68CA32800 (code addr mod-RVA 0x1FB2800 — a fn ptr)
+- Offset 0x40: 0x7FF68A623FA8 (.rdata addr mod-RVA 0x7BA3FA8 — 6-fn
+  dispatch table)
+
+The dispatch table at +0x7BA3FA8 is 6 function pointers all in the same
+mod-RVA cluster (0x298xxxx-0x2AExxxx) as the crashing code. That's more
+evidence this whole cluster is ONE subsystem's implementation.
+
+--- Additional class characteristics discovered ---
+
+- **Object size**: 0x3C90 (15,504 bytes) — confirmed by factory pre-alloc
+  size (mov ecx, 0x3c90; call FMemory::Malloc)
+- **Primary vtable** at +0x7B9E188 has 12 slots (96 bytes) before
+  transitioning to secondary vtable at +0x7B9E1E8 (offset 0xE8 on the
+  instance — the second inheritance chain's vtable)
+- **12 primary virtuals** (slot 0 = dtor, slot 1 = crash-site Add)
+- Slot 2 (+0x296F160) accesses `[this+0x3698]` (near end of object) and
+  dispatches through it — subscription/tick path
+- Slot 3 (+0x296EE00) resets state — memsets 0x300 bytes at +0x37C0,
+  writes both vtables — classic "Reset without free" pattern
+- Constructor at +0x29676C0 initializes ~15KB with:
+  - Three inline "slot" structures at 0x28-0x84 (each 0x20 bytes,
+    counts of 2 and 3)
+  - 768-byte hash table at +0x37c0 (memset zero)
+  - Six 0x38-byte inline "slots" at 0x3af0..0x3c08 (TInlineArray<T, 6>)
+
+Constructor + factory:
+- `+0x29BBBC9` factory: allocates 0x3C90 via FMemory::Malloc, tail-JMPs
+  to constructor. Zero E8/E9 callers, zero LEA refs, zero qword pointer
+  refs. Meaning this factory is called via a pattern that neither
+  callxref nor findptr can trace — maybe an inline call inside another
+  factory or a table lookup with indirect dispatch.
+- `+0x29676C0` constructor: 1 direct caller (the factory JMP), zero
+  other refs.
+
+--- FName pool searches that came back empty ---
+
+Tested `usmapdump.exe nameid` for:
+- `Storefront*` — found 20 model class names (LokiStorefrontItemInfo,
+  LokiStorefrontHeroes, LokiStorefrontPlayerStore, etc.) but no manager
+- `Manager` filtered by loki/store/inventory/hero/hunter — 0 hits
+- `Subsystem` filtered by loki — found 6 subsystems (LokiSocketSubsystem,
+  LokiBattleRoyaleSpawnerSubsystem, LokiCursorCharacterAimSubsystem,
+  LokiMusicManagerSubsystem, LokiSpellInstanceSubsystem,
+  LokiStatusDumpSubsystem), none menu/storefront
+- `AccelByte` — 40+ Models but no manager
+- `Roster`, `HeroRoster`, `HunterLibrary`, `RosterUpdated`,
+  `HeroDataUpdated`, `LokiSubsystem`, `MenuSubsystem`, `LokiRoster`,
+  `LokiOnline`, `MessengerSubsystem`, `LokiPCG` — 0 hits
+- `DebuggerCategory`, `GameplayTasks`, `UOnlineSession`, `FUniqueNetIdRepl`,
+  `FGameplayDebuggerCategoryReplicator`, `InputProcessor`,
+  `GameNetworkManager` — 0 hits
+
+The class is either:
+- A name not in any obvious pattern (something less searchable), OR
+- A raw C++ class whose type name is only in stripped RTTI (Shipping build
+  strips MSVC type_info), OR
+- A composite factory-generated class where the name lives in a runtime
+  type registry, not FName pool
+
+--- Path A3 stopping point ---
+
+Given zero pointer refs to constructor/factory AND zero FName-pool
+matches on obvious patterns AND stripped RTTI, Path A3 has hit its
+ceiling with usmapdump.exe alone.
+
+To finish identification we'd need:
+- **A1 (Ghidra + auto-analysis)**: full RE session with disassembler
+  symbols. Would take a fresh session with Ghidra installed and the
+  patience to auto-analyze a 175MB shipping exe.
+- Continued disasm walking of the crash callers up +0x21BDCFE and beyond
+  might hit a log-string reference identifying the module. High effort,
+  low predictability.
+
+--- What A3 DOES give us ---
+
+Even without the class name, we know MORE about the crash context:
+
+1. Only 2 instances exist (no CDO) — the class is instance-based, not
+   UClass-based. Rules out most "UObject-derived subsystem" hypotheses.
+2. Both instances share config metadata — they're likely "channel-per-X"
+   duplicates (e.g., two data streams, two players, two swap-chain
+   buffers, or two accounts).
+3. Instance offset 0x10 differs (0x101 vs 0x2) — an id/index field.
+4. The class is FActive C++ (no UClass), so it can't be "un-suppressed"
+   via ShouldReplicateActor — this crash is NOT DIRECTLY caused by our
+   PC/GameState/PlayerState suppression via UE replication. The crash is
+   in a client-side subsystem that runs independent of UE replication.
+
+--- Chapter state (end of session 40 A3) ---
+
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Client-close root cause identified: DONE (session 36)
+- Full session-20 + WorldSettings + GameplayDebuggerCategoryReplicator
+  suppression: DONE (session 39 iter 4)
+- Connection stable through Join into MENU LOAD: DONE (~64 s survival)
+- Client fetches heroes / inventory / wallet data via ags Messenger: DONE
+- Client crashes at deterministic call chain during menu load: KNOWN
+- Crash class: instance-based (not UClass-registered), 15KB, 2 lives,
+  shared metadata, 12 virtuals + secondary vtable, factory-instantiated
+- Crash class NAME: STILL UNKNOWN
+
+--- What session 41+ needs ---
+
+Path A is definitively at its ceiling without heavier tooling. Two
+remaining forward options:
+
+- **A1 (heavy)**: Ghidra + full auto-analysis. High cost, deterministic
+  output.
+- **B-lite (medium)**: schema-inject SUPERVIVE's expected replicated
+  fields onto stock APlayerController, un-suppress PC. If the crash
+  class initializes off PC data (e.g., a per-player something-manager),
+  this fixes it at the source. Session 22 has the schema RE'd.
+- **C (pragmatic pause)**: accept that we've made major progress (menu
+  loads 25 heroes) and document the ceiling. Move to a different chapter
+  or defer further work.
+
+Given A3's finding that the crash class is NOT UClass-registered (only
+2 live instances, no CDO), the class is likely a plain C++ subsystem
+data structure. Its Add-to-TArray crash is probably a "cleanup happened
+too early" or "init happened too late" race condition specific to
+SUPERVIVE's own client-side menu loading. Path B-lite might or might not
+help — depends on whether the class's init is triggered by PC data.
+
+--- Tooling artifacts (session 40 A3) ---
+
+- `docs/session-40-path-a3-partial.txt` — this analysis.
