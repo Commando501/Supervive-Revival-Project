@@ -3447,6 +3447,136 @@ end-to-end test (deferred).
 
 - (session 22 writeup commit follows)
 
+## Session 23 (2026-07-01 — RPC bunch BYTES captured; FString parameter confirmed)
+
+Session 22's plan Path A: log the actual bunch bytes and decode the RPC
+parameter structure empirically. Session 23 executed that.
+
+### What was added
+
+1. `LogNetTraffic VeryVerbose` + `LogRep VeryVerbose` on the stub's -LogCmds.
+   UE's built-in bunch tracer now logs per-packet Send/Receive details
+   including bunch-level info: `Reliable Bunch, Channel %i Sequence %i:
+   Size %.1f+%.1f` (header/payload sizes).
+
+2. Full inner-packet hex dump in
+   `unreal-stub/Source/Loki/LokiStatelessConnect.cpp` `Incoming(FBitReader&)`
+   override — dumps the full post-wrapper-strip byte sequence for any
+   packet larger than 128 bits. This gives us the raw RPC bytes.
+
+3. Modified `LokiStubGameMode` to use STOCK `APlayerController` (instead of
+   session-21's LokiStubPlayerController) so the client can spawn the PC
+   and actually fire the ServerVerifyViewTarget RPC. (Session-24 will swap
+   back to a Loki subclass with the matching UFUNCTION.)
+
+### Result: RPC bunch bytes captured, FString parameter confirmed
+
+Server log for the failing bunch (Channel 3, Sequence 549, size 5.8+292.4):
+
+The 362-byte inner packet post-wrapper-strip contains a valid UE-format
+FString at byte offset 145:
+```
+0091: 2F 00 00 00        // int32 LE count = 47 (chars + null)
+0095: 2F 47 61 6D 65 2F  // "/Game/"
+      4C 6F 6B 69 2F     // "Loki/"
+      4D 61 70 73 2F     // "Maps/"
+      4C 6F 62 62 79 56 32 2F  // "LobbyV2/"
+      4C 56 4C 5F 4C 6F 62 62 79 56 32 5F 42 61 74 74 6C 65 50 61 73 73  // "LVL_LobbyV2_BattlePass"
+      00                 // null terminator
+```
+
+That's the ONLY ASCII string in the packet. Full byte dump saved to
+[docs/session-23-rpc-bunch-bytes.txt](session-23-rpc-bunch-bytes.txt).
+
+**Hypothesis**: SUPERVIVE's `ServerVerifyViewTarget` takes at least one
+`FString` parameter, likely the current lobby-mode map name (client tells
+server "I'm on LobbyV2_BattlePass now"). The remaining ~245 bytes of the
+payload contain additional structured data (bit-packed, hard to identify
+without more analysis) — likely more parameters.
+
+Interpretation: SUPERVIVE repurposed `ServerVerifyViewTarget` from its
+stock "verify current view target actor" semantics into a lobby-mode
+handshake RPC. Makes sense — TheoryCraft removed most of stock UE's
+gameplay-style RPCs in favor of their custom lobby+matchmaking pipeline.
+
+### The bunch payload structure
+
+The 292.4-byte payload has three visually distinct sections:
+- Bytes 0-90: Structured binary (repeated patterns like `AC AD EC 85`,
+  `AC BE CA C0`, `AC BC D2 F0` — variable-length quantities or
+  bit-packed enum/int fields)
+- Bytes 91-137: `2F 00 00 00` + `/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass\0`
+  (FString #1)
+- Bytes 138-292: More structured binary, no ASCII strings
+
+The other structured sections look like they could be:
+- Compressed/packed integer arrays
+- Enum lookups (repeated similar bytes suggest tokenized values)
+- Possibly OTHER FStrings serialized with UE's Huffman-style compression
+  (`FString::SerializeAsANSICharArray`) — but stock UE doesn't use
+  Huffman for FString.
+
+### New blocker (session 24)
+
+Still need to identify the EXACT parameter list of
+`ServerVerifyViewTarget`. Session 24 approach:
+
+1. Enable `LogRepTraffic Verbose` on the stub (this session forgot; only
+   had `LogRep VeryVerbose`). LogRepTraffic prints "Received RPC: %s" and
+   should log the sub-reader's NumPayloadBits value explicitly — that
+   tells us the exact bit count of the RPC's arg struct.
+
+2. Write a bit-level packet parser (Python or Rust). Read the packet header
+   (FNetPacketNotify), skip to bunch on channel 3, read bunch header
+   (bReliable, bOpen, ChIndex encoded, ChSequence, NumBits), then parse
+   the field header + SerializeIntPacked NumPayloadBits + payload bits.
+
+3. Once we know NumPayloadBits, try trial signatures:
+   - Try `FString` — see if it consumes all bits.
+   - If not, try `FString + something` — iterate.
+   - Common candidates: FString ClientMapName, FVector2D/FVector Location,
+     FQuat Rotation, uint32 timestamp/hash, bytes Payload.
+
+4. Add matching UFUNCTION to `ALokiStubPlayerController`, flip
+   `PlayerControllerClass` back to Loki subclass, re-run. Repeat for any
+   additional modified RPCs SUPERVIVE calls after this one.
+
+### Task list from session 23
+
+Created 3 new tasks (all completed): enable LogNetTraffic Verbose, extract
+RPC bunch bytes, decode format vs UE spec. Session 24 will need fresh
+tasks for the bit-level parsing.
+
+### Tooling artifacts (session 23)
+
+- `docs/session-23-rpc-bunch-bytes.txt` — 15-line capture of the RPC
+  bunch bytes + observations.
+- `scratchpad/decode_rpc_bunch.py` — Python decoder that identifies ASCII
+  runs, FString-shaped patterns, and dumps the packet header. Not
+  committed (session-local scratch).
+- Modified `LokiStatelessConnect.cpp` (`Incoming` now dumps full inner
+  hex for >128-bit packets).
+- Modified `LokiStubGameMode.cpp` (PlayerControllerClass swapped to stock
+  APlayerController for RE mode).
+
+### Chapter state (end of session 23)
+
+- Handshake: DONE (session 17)
+- Post-handshake packet-handler wiring: DONE (session 18)
+- Control-channel messages (Hello / Login / Welcome): DONE (session 18)
+- Post-Welcome map validation: DONE (session 19)
+- NMT_Join / PostLogin / PC spawn server-side: DONE (session 19)
+- Client-side PC actor spawn: DONE (session 20)
+- SUPERVIVE engine modifications confirmed: DONE (session 22)
+- RPC bunch bytes captured: DONE (session 23)
+- Exact RPC parameter list identified: TODO (session 24 — bit-level parse)
+- Add matching UFUNCTION + solve class-name resolution: TODO (session 24-25)
+- Replicating hero-roster / mission / store data to client: TODO (session 26+)
+
+### Commits this session
+
+- (session 23 writeup commit follows)
+
 
 
 
