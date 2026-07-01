@@ -3810,6 +3810,77 @@ the RPC. Options:
 
 - (session 25 writeup commit follows)
 
+## Session 26 (2026-07-01 — UHT rejects UFUNCTION override with different params; runtime function-table injection required)
+
+Session 26 attempted the direct approach from session 25's plan: add a
+`UFUNCTION(reliable, server, WithValidation) ServerVerifyViewTarget(const FString& ClientMapName)`
+override to `ALokiStubPlayerController`, hoping UE would use the subclass's
+version instead of stock's 0-arg version.
+
+### Finding: UHT enforces UFUNCTION parameter parity across override
+
+UnrealHeaderTool rejected the build with:
+```
+LokiStubPlayerController.h(42): Error: Override of UFUNCTION
+'ServerVerifyViewTarget' in parent 'APlayerController' cannot have a
+UFUNCTION() declaration above it; it will use the same parameters as the
+original declaration.
+```
+
+This is a hard UE contract: subclass UFUNCTION overrides MUST match the
+parent's signature exactly. Adding new parameters via subclass override is
+not permitted through the UHT / UPROPERTY reflection system.
+
+### Session 27 plan — runtime UClass function-table injection
+
+To register a UFUNCTION with a different signature under the name
+`ServerVerifyViewTarget`, we need to bypass UHT and construct the UFunction
+at runtime:
+
+1. In `FLokiModule::StartupModule` (or a delegate), find
+   `APlayerController::StaticClass()`.
+2. Construct a new `UFunction` object with our target signature
+   (FString + more params as needed).
+3. Set its FName to `ServerVerifyViewTarget`.
+4. Insert into APlayerController's FuncMap, replacing the existing entry.
+5. Ensure the class's ClassNetCache is rebuilt so RepLayout picks up
+   the new signature.
+
+Complex but doable. UE's plugin/mod ecosystem has done similar tricks
+(e.g., Blueprint-injected UFunctions).
+
+Alternative (simpler): use the `AddNativeFunction` mechanism if it
+supports overriding existing entries.
+
+Also: session 26 confirmed we can keep the LokiActorChannel bunch-dump
+capability alongside these attempts — it's non-destructive and preserves
+UE's normal error path.
+
+### Files changed in session 26
+
+- `unreal-stub/Source/Loki/LokiStubPlayerController.h + .cpp` — attempted
+  UFUNCTION override, reverted after UHT rejection. Preserved documentation
+  comment explaining the constraint.
+- `unreal-stub/Source/Loki/LokiStubGameMode.cpp` — reverted to stock
+  APlayerController class after finding.
+
+### Chapter state (end of session 26)
+
+- Everything through PC spawn: DONE (sessions 17-20)
+- SUPERVIVE engine mods confirmed: DONE (session 22)
+- RPC bunch bytes captured + decoded: DONE (sessions 23-25)
+- Server-side per-bunch instrumentation: DONE (session 25)
+- Bunch content-block header + field header decoded: DONE (session 25)
+- RPC arg struct isolated (2298 bits, FString + ~236 more bytes): DONE (session 25)
+- UFUNCTION subclass override strategy: DEAD-END (session 26, UHT enforced)
+- Runtime UClass function-table injection: TODO (session 27)
+- Full RPC parameter list: TODO (session 27)
+- Menu-data replication: TODO (session 28+)
+
+### Commits this session
+
+- (session 26 writeup commit follows)
+
 
 
 

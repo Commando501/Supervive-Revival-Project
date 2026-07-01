@@ -1,4 +1,4 @@
-# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 26
+# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 27
 
 Paste the section between the `---` lines below as the first message.
 
@@ -6,126 +6,102 @@ Paste the section between the `---` lines below as the first message.
 
 We're continuing the SUPERVIVE Revival dedicated-server-stub chapter on
 branch `dedicated-server-stub` at `G:\git\Supervive Revival Project`.
-This is **session 26** of the chapter. Session 25 successfully captured
-the exact bunch bytes AND decoded the RPC field header: the
-ServerVerifyViewTarget RPC arg struct is **2298 bits (287.25 bytes)**
+This is **session 27** of the chapter. Session 26 discovered UE's UHT
+enforces UFUNCTION parameter parity across override — meaning we CAN'T
+just add a differently-parametered `ServerVerifyViewTarget` UFUNCTION to
+a subclass of APlayerController. Session 27 needs to bypass UHT via
+runtime UClass function-table manipulation.
+
+Session 25 has confirmed the RPC arg struct is **2298 bits (287.25 bytes)**
 starting at bit 41 of the bunch, containing at least an FString
-"/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass" (408 bits) plus ~1890
-bits of additional parameters. Today: iterate on trial UFUNCTION
-signatures until Reader.GetBitsLeft() == 0.
+`/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass` (408 bits) plus ~1890
+bits of additional parameters.
 
 START BY (in this order):
   cd "G:\git\Supervive Revival Project"
   git status
   git log --oneline -10
   # Then read:
-  #   docs/dedicated-server-stub.md   (jump to "Session 25" at bottom)
-  #   docs/session-25-bunch-capture.txt  (18-line log excerpt + decode)
-  #   docs/session-25-bunch-decoder.py   (212-line Python decoder)
-  #   unreal-stub/Source/Loki/LokiActorChannel.h + .cpp  (session-25 hook)
-  #   unreal-stub/Source/Loki/LokiStubPlayerController.h + .cpp
-  #     (session-21 subclass — currently bReplicates=false; we'll flip
-  #     that back and add the RPC override in session 26)
-  #   unreal-stub/Source/Loki/LokiStubGameMode.cpp  (currently uses
-  #     stock APlayerController for RE mode; may need to flip back)
-  #   H:\Unreal Engine\UE_5.4\Engine\Source\Runtime\Engine\Private\DataReplication.cpp
-  #     lines 1340-1360 (Reader.GetBitsLeft() check)
+  #   docs/dedicated-server-stub.md   (jump to "Session 26" at bottom)
+  #   docs/session-25-bunch-capture.txt  (18 lines — the bunch bytes)
+  #   docs/session-25-bunch-decoder.py   (212 lines — Python decoder)
+  #   unreal-stub/Source/Loki/LokiStubPlayerController.h + .cpp  (has
+  #     the session-26 comment explaining the UHT constraint)
+  #   H:\Unreal Engine\UE_5.4\Engine\Source\Runtime\CoreUObject\Public\UObject\Class.h
+  #     — UClass::AddFunctionToFunctionMap, UClass::CreateNetFunctions
+  #     — UFunction::Bind, UFunction::Link
+  #     — how to construct a UFunction at runtime with an arbitrary
+  #       property list
   #   The hero-roster-blocker memory auto-loads.
 
-THE EXACT BLOCKER (still same as session 20 at protocol level):
+THE PATH FORWARD:
 
-Stock APlayerController::ServerVerifyViewTarget takes 0 args. SUPERVIVE's
-version takes SOMETHING that occupies exactly 2298 bits. Server reads 0,
-sees 2298 leftover, logs "Mismatch read", closes connection.
+Session 26 dead-end confirmed: subclass UFUNCTION override with different
+parameters is impossible via UHT. UE forces param parity.
 
-DECODED so far:
-- Bunch total: 2339 bits (Channel 3, Sequence varies per test)
-- Content block header: bOutHasRepLayout=0, bIsActor=1 (2 bits)
-- Outer NumPayloadBits: 2321 (SerializeIntPacked at bits 2-17)
-- Field header: RepIndex=94 (SerializeInt(MaxIndex+1)) + inner
-  NumPayloadBits=2298 (bits 18-40)
-- RPC arg struct: bits 41-2338, exactly 2298 bits, 287.25 bytes
+But we CAN construct a UFunction at runtime with any signature we want
+and inject it into an existing UClass's FuncMap. UE Blueprint compiler
+does this all the time. See UBlueprintFunctionLibrary in UE source, or
+`UEdGraphNode_Reference::CreateAndInjectFunction`.
 
-Within the RPC arg struct, byte-aligned bytes at bunch offset 128
-contain a proper UE FString "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass"
-(int32 count=47 + 46 chars + null = 408 bits total).
+BROAD APPROACH:
 
-STEP-BY-STEP PLAN:
+Step 1 (60 min): Research the exact API to inject a UFunction at runtime.
+Look at:
+- UClass::AddFunctionToFunctionMap
+- UFunction::Bind
+- UClass::CreateDefaultObject
+- Class registration flow in UObject::CreateNativeFunction
 
-Step 1 (30 min): Confirm the FString hypothesis by adding a matching
-UFUNCTION.
+Ideally, in FLokiModule::StartupModule:
+```cpp
+UClass* PCClass = APlayerController::StaticClass();
+UFunction* OldFunc = PCClass->FindFunctionByName("ServerVerifyViewTarget");
+UFunction* NewFunc = NewObject<UFunction>(PCClass, "ServerVerifyViewTarget", RF_Public);
+// Set up NewFunc's Children linked list with FStringProperty etc.
+NewFunc->FunctionFlags = FUNC_Net | FUNC_NetServer | FUNC_NetValidate | FUNC_NetReliable;
+NewFunc->Bind();
+NewFunc->StaticLink(true);
+PCClass->AddFunctionToFunctionMap(NewFunc);
+PCClass->ClassNetCacheMgr->ClearClassNetCache(PCClass); // invalidate cache
+```
 
-  Modify `unreal-stub/Source/Loki/LokiStubPlayerController.h`:
-    - Set bReplicates=true (session 21 disabled it)
-    - Add: UFUNCTION(reliable, server, WithValidation)
-           void ServerVerifyViewTarget(const FString& ClientMapName);
-    - Also add _Implementation (empty body) and _Validate (return true).
+Step 2 (30 min): Author a matching signature. We know the arg struct is
+2298 bits. Try:
+- `void ServerVerifyViewTarget(FString ClientMapName)` — 408 bits ≠ 2298
+- Add FVector, FRotator, etc. until 2298 exactly
 
-  Modify `unreal-stub/Source/Loki/LokiStubGameMode.cpp` to use
-  LokiStubPlayerController instead of stock APlayerController.
+Or a big struct-based approach:
+- Define a USTRUCT containing (FString, FVector, FRotator, ...)
+- Register the RPC as taking this struct
 
-  DON'T EXPECT this to work end-to-end yet — the client sends class GUID
-  /Script/Loki.LokiStubPlayerController which the SUPERVIVE cooked package
-  can't resolve (ActorChannelFailure per session 21). But the RPC won't
-  fire because ActorChannelFailure kills before RPC dispatch. So we need
-  BOTH signature match AND class-name resolution before this works.
+Step 3 (test iterate): Test end-to-end. Watch stub log for
+`Reader.GetBitsLeft()` — every mismatch tells us how many bits are still
+unconsumed. Iterate on signature until 0.
 
-Step 2 (30 min): Alternative — capture with stock APlayerController but
-enhance server logging to show how many bits remain unused. This tells us
-if 408-bit FString consumes correctly. If yes, we know FString is the
-first param and can iterate.
+Step 4 (30 min): Also solve the class-name issue if using subclass.
+Options same as session 21/25:
+- Client cannot resolve /Script/Loki.LokiStubPlayerController → ActorChannelFailure
+- Stick with stock APlayerController and inject into ITS FuncMap directly
+- Rename LokiStubPlayerController's UClass path via UPackage::Rename
 
-  Modify `LokiActorChannel::ReceivedBunch` to catch the Mismatch error
-  path and log the sub-reader position on failure. Or hook via
-  UNetConnection error handler.
+Recommended: inject into stock APlayerController::StaticClass()'s FuncMap.
+No subclass needed; no class-name resolution issue.
 
-  Actually simpler: add an override on APlayerController's ProcessEvent
-  via UClass::AddNativeFunction hackery — assign a runtime function
-  pointer to ServerVerifyViewTarget's UFUNCTION entry in APlayerController's
-  UClass. Complex but avoids class-name-resolution.
-
-Step 3 (30-60 min): Given the bit budget (2298 total, FString ~408 bits),
-try iterating signatures. Since we don't have a good way to test each
-without full end-to-end connection, use the OFFLINE Python decoder to
-try interpretations of the raw bytes:
-
-  Decoder reads bit-by-bit starting at bit 41:
-  - Try `FString ClientMapName` first (408 bits) — check if next 32 bits
-    look like a valid FString count, an int32 hash, or float bit pattern.
-  - Iterate. Look for patterns.
-
-  The bunch bytes are already saved to
-  `docs/session-25-bunch-capture.txt`. The parser
-  `docs/session-25-bunch-decoder.py` gives us the byte-shifted RPC payload
-  starting at bit 41.
-
-Step 4: Class-name resolution.
-
-  Options remain from session 21 (all still open):
-  - Runtime UClassRedirect (client-side config we can't modify)
-  - Rename ULokiStubPlayerController's UClass path to
-    /Script/Engine.PlayerController at runtime — session 21 warned about
-    CDO collision, but might be feasible with careful handling
-  - Register the modified ServerVerifyViewTarget UFUNCTION on the stock
-    APlayerController UClass at Loki module init via reflection hackery
-  - Hook FObjectReplicator dispatch — but FObjectReplicator isn't a
-    UObject, so we can't override its ReceivedRPC directly
-
-WHAT'S ALREADY BUILT (all working through PC actor spawn on client):
+WHAT'S ALREADY BUILT (all working):
 
 - Full stateless handshake + wrapper strip (sessions 17-18)
 - Custom UNetConnection with LokiStatelessConnect (session 18)
 - LevelName rewrite via ModifyClientTravelLevelURL (session 19)
-- World package + object rename to LobbyV2 path (session 19)
-- NetworkChecksumMode=None on GuidCache (session 20)
-- LokiStubGameMode + LokiStubPlayerController (session 21 — but PC needs
-  updates in session 26)
+- World package + object rename (session 19)
+- NetworkChecksumMode=None (session 20)
+- LokiStubGameMode + LokiStubPlayerController (session 21)
 - Full inner-packet hex dump in LokiStatelessConnect::Incoming (session 23)
-- Stock APlayerController config for RE mode (session 23)
-- LokiActorChannel per-bunch hex dump (session 25 — KEEP THIS)
-- Bunch bit-level decoder (session 25 — Python offline)
+- LokiActorChannel per-bunch hex dump (session 25)
+- Bunch bit-level decoder confirming 2298-bit RPC struct with FString (session 25)
+- UHT-constraint confirmed (session 26)
 
-STUB SERVER LAUNCH COMMAND:
+STUB LAUNCH COMMAND:
 
     Stop-Process -Name UnrealEditor-Cmd -Force -ErrorAction SilentlyContinue
     & 'H:\Unreal Engine\UE_5.4\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' `
@@ -134,7 +110,7 @@ STUB SERVER LAUNCH COMMAND:
         -nullrhi -NoSplash -Unattended `
         -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose, LogLokiStubGM Verbose, LogLokiStubPC Verbose, LogNetTraffic VeryVerbose, LogLokiActorChannel Verbose"
 
-Build after Loki source changes:
+Build:
 
     & 'H:\Unreal Engine\UE_5.4\Engine\Build\BatchFiles\Build.bat' `
         LokiEditor Win64 Development `
@@ -155,29 +131,21 @@ GUARDRAILS:
   * bDisableOutgoingWrap in LokiNetDriver::LowLevelSend (session 17)
   * World/package rename in Loki.cpp (session 19)
   * NetworkChecksumMode=None in LokiNetDriver::InitBase (session 20)
-  * Session-23 hex dump in LokiStatelessConnect::Incoming (needed for RE)
+  * Session-23 hex dump in LokiStatelessConnect::Incoming
   * Session-25 LokiActorChannel hex dump + ChannelDefinitions config
-    (needed for RE)
+- Do NOT re-attempt subclass UFUNCTION override with different params
+  (session 26 established UHT rejects it).
 
-CHAPTER STATE AT END OF SESSION 25:
+CHAPTER STATE AT END OF SESSION 26:
 
-- Everything through PC spawn: DONE (sessions 17-20)
-- SUPERVIVE engine mods confirmed: DONE (session 22)
-- RPC bunch bytes captured + decoded: DONE (sessions 23-25)
-- Bunch content-block + field header decoded: DONE (session 25)
-- RPC arg struct isolated (2298 bits, FString + ~236 more bytes): DONE (session 25)
-- Full RPC parameter list: TODO (session 26 — trial signatures)
-- Class-name resolution: TODO (session 26-27)
-- Menu-data replication: TODO (session 28+)
-
-LARGER CONTEXT:
-
-The goal is populating SUPERVIVE's Missions modal after official servers
-went down. Sessions 17-25 have surgically decoded the last protocol
-obstacle: SUPERVIVE's modified ServerVerifyViewTarget RPC signature. We
-now have the EXACT byte-aligned 287-byte arg struct. Session 26 needs to
-identify the param types (FString confirmed, rest TBD), add matching
-UFUNCTION, and solve the class-name issue so the RPC actually dispatches
-to our override.
+- Everything through PC spawn: DONE
+- SUPERVIVE engine mods confirmed: DONE
+- RPC bunch bytes captured + decoded: DONE
+- Bunch content-block + field header decoded: DONE
+- RPC arg struct isolated (2298 bits, FString + ~236 more bytes): DONE
+- UFUNCTION subclass override strategy: DEAD-END (session 26)
+- Runtime UClass function-table injection: TODO (session 27 — this session)
+- Full RPC parameter list: TODO
+- Menu-data replication: TODO
 
 If in doubt about a step, ask the user.
