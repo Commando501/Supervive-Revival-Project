@@ -37,29 +37,63 @@ public:
 
 protected:
 	/**
-	 * Strip TheoryCraft's 8-byte wrapper from the front of incoming packets,
-	 * then delegate to stock IncomingConnectionless.
+	 * Strip TheoryCraft's 8-byte wrapper from the front of incoming CONNECTIONLESS
+	 * packets (handshake), then delegate to stock IncomingConnectionless.
 	 *
 	 * Also captures the last received wrapper's bytes 1 and 6 into
 	 * LastIncomingByte1/LastIncomingByte6 so LokiNetDriver::LowLevelSend can
-	 * echo them in our reply (session 15 mirroring strategy — bytes 1 and 6
-	 * across 172 captured packets show no checksum pattern but are likely
-	 * session-state values the FSocket layer assigns).
+	 * echo them in our reply (session 15 mirroring strategy).
 	 */
 	virtual void IncomingConnectionless(FIncomingPacketRef PacketRef) override;
+
+	/**
+	 * Strip TheoryCraft's 8-byte wrapper from the front of incoming CONNECTION
+	 * packets (post-handshake game data). Session 17: after handshake completes,
+	 * the client keeps wrapping outgoing packets with the client→server signature
+	 * (BB ?? DC 21 A6 A3 ?? FB). The UNetConnection's PacketHandler chain calls
+	 * this Incoming, not IncomingConnectionless. Without stripping, stock code
+	 * reads 0xBB's bits as SessionID/ClientID/handshake — bHandshakePacket=1 →
+	 * calls ParseHandshakePacket on garbage → error → connection closed.
+	 */
+	virtual void Incoming(FBitReader& Packet) override;
 
 public:
 	/** Size of TheoryCraft's wrapper prefix on every stateless handshake packet. */
 	static constexpr int32 LokiWrapperBytes = 8;
 	static constexpr int32 LokiWrapperBits = LokiWrapperBytes * 8;
 
-	/** Stable signature bytes in the wrapper, at the given offsets. */
-	static constexpr uint8 LokiWrapperByte0 = 0xBB;
-	static constexpr uint8 LokiWrapperByte2 = 0xDC;
-	static constexpr uint8 LokiWrapperByte3 = 0x21;
-	static constexpr uint8 LokiWrapperByte4 = 0xA6;
-	static constexpr uint8 LokiWrapperByte5 = 0xA3;
-	static constexpr uint8 LokiWrapperByte7 = 0xFB;
+	/** CLIENT→SERVER wrapper stable signature bytes at the given offsets.
+	 *  Derived from session 10 capture analysis (172 packets, all match).
+	 */
+	static constexpr uint8 ClientToServerByte0 = 0xBB;
+	static constexpr uint8 ClientToServerByte2 = 0xDC;
+	static constexpr uint8 ClientToServerByte3 = 0x21;
+	static constexpr uint8 ClientToServerByte4 = 0xA6;
+	static constexpr uint8 ClientToServerByte5 = 0xA3;
+	static constexpr uint8 ClientToServerByte7 = 0xFB;
+
+	/** SERVER→CLIENT wrapper stable signature bytes — session 17 hypothesis.
+	 *  Derived from bytes 8-15 of the 16-byte constant near LogLokiNet at
+	 *  mod-RVA 0x84F2C10 of SUPERVIVE-Win64-Shipping.exe:
+	 *    BB 53 DC 21 A6 A3 85 FB | 82 9B F5 4A 34 33 21 93
+	 *    └─ client→server ─────┘   └─ server→client ────┘
+	 *  Bytes 1 and 6 of EACH half (53/85 and 9B/21) are presumed random
+	 *  per-packet (matches our analysis of 172 client→server captures).
+	 */
+	static constexpr uint8 ServerToClientByte0 = 0x82;
+	static constexpr uint8 ServerToClientByte2 = 0xF5;
+	static constexpr uint8 ServerToClientByte3 = 0x4A;
+	static constexpr uint8 ServerToClientByte4 = 0x34;
+	static constexpr uint8 ServerToClientByte5 = 0x33;
+	static constexpr uint8 ServerToClientByte7 = 0x93;
+
+	/** Backward-compat aliases for the incoming-strip code (client→server). */
+	static constexpr uint8 LokiWrapperByte0 = ClientToServerByte0;
+	static constexpr uint8 LokiWrapperByte2 = ClientToServerByte2;
+	static constexpr uint8 LokiWrapperByte3 = ClientToServerByte3;
+	static constexpr uint8 LokiWrapperByte4 = ClientToServerByte4;
+	static constexpr uint8 LokiWrapperByte5 = ClientToServerByte5;
+	static constexpr uint8 LokiWrapperByte7 = ClientToServerByte7;
 
 	/**
 	 * Last-received wrapper bytes 1 and 6, captured by IncomingConnectionless

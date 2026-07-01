@@ -2664,6 +2664,158 @@ similar to browse_hook. ~3-5 hours work.
 
 - (session 16 writeup commit follows)
 
+## Session 17 (2026-06-30 → 2026-07-01 — STATELESS HANDSHAKE COMPLETES END-TO-END; new blocker at UNetConnection's own PacketHandler chain)
+
+Massive session. Went from "client outright rejects our reply in 1s" to
+"full stateless handshake completes, UNetConnection created, expecting
+NMT_Hello". Discovered THREE distinct facts about TheoryCraft's LokiNet
+architecture, each unblocking a previous blocker.
+
+### Discovery 1: 16-byte constant encodes BOTH directions
+
+Re-examined the `LogLokiNet` constant we found in session 14 (mod-RVA
+`0x84F2C10` in SUPERVIVE-Win64-Shipping.exe):
+
+```
+BB 53 DC 21 A6 A3 85 FB | 82 9B F5 4A 34 33 21 93
+└─ client→server ─────┘   └─ server→client ────┘
+```
+
+Sessions 14-16 mirrored bytes 0-7 in our server-direction replies →
+client kept rejecting. Session 17 first attempt used bytes 8-15 as
+server-direction signature. Client's rejection MODE changed
+immediately:
+
+- Sessions 14-16: `Packet failed PacketHandler processing` →
+  `PendingConnectionFailure` within 1s (fatal outright rejection)
+- Session 17: client stayed alive for full 30-second UE5.4 handshake
+  timeout, sent Initial retries at 1Hz, then timed out with
+  `ConnectionTimeout` (normal handshake failure, not fatal rejection)
+
+Server-direction wrapper is a real thing. Bytes 0-7 of the constant
+are the CLIENT→SERVER template; bytes 8-15 are the SERVER→CLIENT
+template. Byte 0 = `0xBB` (client), `0x82` (server). Byte 7 = `0xFB`
+(client), `0x93` (server). Bytes 2-5 stable signature per direction,
+bytes 1 and 6 random per packet.
+
+### Discovery 2: Fixed vs random for bytes 1/6 doesn't matter
+
+Session 17 second attempt used the LITERAL constant bytes 1/6 values
+(`0x9B` and `0x21`) instead of random. Client behavior UNCHANGED —
+same 30-second timeout. So bytes 1/6 are truly per-packet random nonce
+(as our 172-packet analysis in session 15 suggested).
+
+### Discovery 3: The client accepts UNWRAPPED replies too
+
+Session 17 third attempt DISABLED the outgoing wrap entirely
+(`bDisableOutgoingWrap = true`) — server sends raw stock UE5.4
+handshake packets, no wrapper at all. **The client accepted them AND
+completed the handshake.** Server log:
+
+```
+LogHandshake: SendConnectChallenge. Timestamp: 34.076447, Cookie: ...
+LogHandshake: SendChallengeAck. InCookie: 009129133243...
+LogNet: Server accepting post-challenge connection from: 127.0.0.1:58828
+LogNet: IpConnection_0 setting maximum channels to: 32767
+PacketHandlerLog: Loaded PacketHandler component: Engine.EngineHandlerComponentFactory (StatelessConnectHandlerComponent)
+LogNet: SetClientLoginState: State changing from Invalid to LoggingIn
+LogNet: SetExpectedClientLoginMsgType: Type same: [0]Hello
+LogNet: NotifyAcceptedConnection: [UNetConnection] RemoteAddr: 127.0.0.1:58828, IpConnection_0
+LogNet: AddClientConnection: Added client connection
+```
+
+**Every checkpoint of the stock UE5.4 stateless handshake fires** —
+Challenge sent → Response received → Ack sent → UNetConnection created
+→ expecting `NMT_Hello`. This is the state we've been chasing since
+session 8 of the chapter.
+
+The architecture inference: TheoryCraft's LokiNetSocketSubsystem
+`RecvFrom` conditionally strips wrapper (accepts unwrapped) but always
+wraps `SendTo`. So the client can talk to either wrapped or unwrapped
+servers.
+
+### Discovery 4 (new blocker): UNetConnection has its OWN PacketHandler chain with stock StatelessConnect
+
+After UNetConnection creation, next packet from client fails within
+27ms:
+
+```
+LogHandshake: Incoming: Error reading handshake packet.
+LogNet: Warning: Packet failed PacketHandler processing.
+LogNet: UNetConnection::Close: [UNetConnection] ... Result=PacketHandlerIncomingError
+LogNet: SetClientLoginState: State changing from LoggingIn to CleanedUp
+```
+
+Root cause: `UNetConnection::InitHandler` (NetConnection.cpp:687-712)
+creates its OWN `PacketHandler` chain and hardcodes
+`Engine.EngineHandlerComponentFactory(StatelessConnectHandlerComponent)`
+— **the stock class, NOT our `LokiStatelessConnect`**. Our subclass
+only handled connectionless packets via `LokiNetDriver`'s
+`ConnectionlessHandler` (server-driver level). The
+UNetConnection-level chain is separate.
+
+Post-handshake, the client still wraps outgoing packets. Byte 8 of the
+inner packet has `bHandshakePacket=0` (post-handshake game data), but
+the WRAPPER byte 0 = `0xBB` reads as `bHandshakePacket=1` at the stock
+StatelessConnect layer. Stock code sees "handshake" → calls
+`ParseHandshakePacket` on garbage → `Incoming: Error reading handshake
+packet` (line 1202) → connection killed.
+
+Attempted a fix in-session by overriding `LokiStatelessConnect::Incoming`
+too, but it doesn't fire because the UNetConnection instantiates stock
+StatelessConnect, not our subclass.
+
+### Client-side signal that we're close
+
+Client log at 00:25:19.132 shows the client's own `LogHandshake:
+Stateless Handshake: NetDriverDefinition 'GameNetDriver'
+CachedClientID: 7` moments before the server-side handshake succeeds.
+Client kept the connection alive for 9 seconds after handshake before
+crashing at 00:19:36 (during `sendReply` → server-side connection
+already closed).
+
+### Session 18 plan
+
+Need to make the UNetConnection's PacketHandler use our
+LokiStatelessConnect subclass. Options in order of preference:
+
+1. **Subclass UIpConnection + override InitHandler** — override the
+   connection's PacketHandler chain init to add
+   `LokiStatelessConnect` directly. Register the subclass as
+   `NetConnectionClass` in `LokiNetDriver` so
+   `Driver->InternalCreateChildConnection` spawns our subclass.
+   Cleanest option.
+
+2. **Subclass UIpConnection + override ReceivedRawPacket** — intercept
+   incoming packets before the PacketHandler chain and strip the
+   wrapper. Then delegate to `Super::ReceivedRawPacket`. Simpler if
+   InitHandler isn't virtual.
+
+3. **Swap the StatelessConnect component post-init** — after
+   InitHandler runs with stock, swap
+   `StatelessConnectComponent.Pin()` with a fresh
+   `LokiStatelessConnect`. Fragile — much state would need copying.
+
+### Tooling delivered (session 17)
+
+- `unreal-stub/Source/Loki/LokiStatelessConnect.h` + `.cpp` — added
+  `ServerToClientByte*` constants + `Incoming(FBitReader&)` override
+  that also strips the wrapper. The Incoming override doesn't fire on
+  UNetConnection-level packets yet (subclass isn't wired up there),
+  but the logic is ready for session 18.
+
+- `unreal-stub/Source/Loki/LokiNetDriver.cpp` — `LowLevelSend` now has
+  `bDisableOutgoingWrap = true` constexpr, sending raw stock UE5.4
+  handshake replies. Confirmed the client accepts them.
+
+- `scratchpad/analyze_packets.py`, `analyze_v2.py`, `analyze_v3.py`,
+  `decode_packets.py` — reusable analysis tools.
+
+### Commits this session
+
+- (session 17 writeup commit follows)
+
+
 
 
 

@@ -81,3 +81,47 @@ void LokiStatelessConnect::IncomingConnectionless(FIncomingPacketRef PacketRef)
 
 	StatelessConnectHandlerComponent::IncomingConnectionless(PacketRef);
 }
+
+void LokiStatelessConnect::Incoming(FBitReader& Packet)
+{
+	const int64 OriginalBits = Packet.GetNumBits();
+
+	// Same 8-byte-front-strip logic as IncomingConnectionless. Only strip if
+	// packet is at least 8 bytes and the signature bytes match (skip through if
+	// they don't — this lets us tolerate the very first pre-handshake packets
+	// that might be routed through Incoming for any reason).
+	if (OriginalBits >= LokiWrapperBits)
+	{
+		const uint8* Data = Packet.GetData();
+		const bool bSignatureValid =
+			Data[0] == LokiWrapperByte0 &&
+			Data[2] == LokiWrapperByte2 &&
+			Data[3] == LokiWrapperByte3 &&
+			Data[4] == LokiWrapperByte4 &&
+			Data[5] == LokiWrapperByte5 &&
+			Data[7] == LokiWrapperByte7;
+
+		if (bSignatureValid)
+		{
+			const int64 OriginalBytes = (OriginalBits + 7) / 8;
+			const int64 InnerBytes = OriginalBytes - LokiWrapperBytes;
+			const int64 InnerBits = OriginalBits - LokiWrapperBits;
+
+			TArray<uint8> Inner;
+			Inner.Append(Data + LokiWrapperBytes, InnerBytes);
+
+			UE_LOG(LogLokiStateless, Verbose,
+			       TEXT("[Incoming] Stripping wrapper: %lld bits -> %lld bits (wrapper bytes: %02X %02X %02X %02X %02X %02X %02X %02X)"),
+			       OriginalBits, InnerBits,
+			       Data[0], Data[1], Data[2], Data[3], Data[4], Data[5], Data[6], Data[7]);
+
+			LastIncomingByte1 = Data[1];
+			LastIncomingByte6 = Data[6];
+			bHasLastIncoming = true;
+
+			Packet.SetData(Inner.GetData(), InnerBits);
+		}
+	}
+
+	StatelessConnectHandlerComponent::Incoming(Packet);
+}
