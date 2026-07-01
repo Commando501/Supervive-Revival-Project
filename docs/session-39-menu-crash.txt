@@ -1,0 +1,229 @@
+=== SESSION 39 — CONNECTION REACHES MENU, CLIENT CRASHES INSIDE MENU LOAD ===
+
+Session 38 iter 3 stabilized the connection past Join for 51.5 seconds using
+suppression on the session-20 divergent class set. Session 39 iter 4
+extended that set by two more classes and observed the client's post-Join
+behavior in detail — revealing that the connection now survives long enough
+for the client to enter MENU territory before crashing.
+
+--- Iter 4 change: WorldSettings + GameplayDebuggerCategoryReplicator ---
+
+Iter 3 stub log carried two NMT_ActorChannelFailure messages 324 ms after
+Join, on channels the server had opened for actors outside session 20's
+patched set:
+
+    Server connection received: ActorChannelFailure 3 [ChIndex: 0, ...]
+    Actor channel failed: [Actor: WorldSettings /Game/Loki/Maps/LobbyV2/
+      LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.WorldInfo_1
+      Role: 3, RemoteRole: 1 [ChIndex: 3]]
+    Server connection received: ActorChannelFailure 4 ...
+    Actor channel failed: [Actor: GameplayDebuggerCategoryReplicator ...
+      GameplayDebuggerCategoryReplicator_0, [ChIndex: 4]]
+
+Client-side warning (non-fatal, from iter 3's client log):
+    LogNet: Warning: UActorChannel::ProcessBunch: SerializeNewActor failed
+      to find/spawn actor. Actor: None, Channel: 3
+    (and Channel: 4)
+
+Both actors' classes match the divergence pattern — patched schemas the
+client can't resolve. Added both to IsClassNetCacheDivergent(). WorldSettings
+via GameFramework/WorldSettings.h include. GameplayDebuggerCategoryReplicator
+via runtime FName string-match (lives in GameplayDebugger module, avoid
+adding a dep).
+
+--- Iter 4 result: NO ActorChannelFailure, connection ~64 s stable ---
+
+Stub log (stub-s39-iter4.log):
+
+    21:10:12:314  [boot]  WorldInfo_1 (WorldSettings) SUPPRESSED (map load time)
+    21:10:12:332  [boot]  GameStateBase_0 SUPPRESSED
+    21:11:07:746  [connect]  Invalid -> LoggingIn
+    21:11:07:811  [login]  LoggingIn -> Welcomed
+    21:11:08:672  [join]  PC, PS, DefaultPawn SUPPRESSED
+    21:11:08:672  [join]  All 8 ClientXxx RPCs on PC SUPPRESSED
+    21:11:08:675  [state]  Welcomed -> ReceivedJoin
+    21:11:08:904  [worldstart]  GameplayDebuggerCategoryReplicator_0 SUPPRESSED
+    (~63.7 s of quiet on the netdriver side)
+    21:12:12:380  [cleanup]  UNetConnection::Cleanup (server-initiated)
+    21:12:12:382  [state]  ReceivedJoin -> CleanedUp
+
+**Zero ActorChannelFailure this iteration.** The channel-open path for both
+new-suppressed classes never fires. Server had only 3 channels open at
+cleanup (down from iter 3's 5).
+
+Also: 63.7 s survival vs iter 3's 51.5 s — a modest but real improvement.
+
+--- The real reason for the timing: CLIENT-SIDE CRASH ---
+
+Iter 3 and iter 4 both closed at "Result=Cleanup, ErrorContext=Cleanup" —
+not "ConnectionTimeout". That's `UNetConnection::CleanUp` at
+NetConnection.cpp:1265, called externally on the server-side connection.
+
+The root cause of the server calling CleanUp: the CLIENT process died.
+Client-side Loki.log for iter 4 (last lines):
+
+    [21:12:07:829] LogLokiClientAnalytics: Sending performance snapshot
+      (Map: LVL_LobbyV2_Persistent, Mode: None)
+    [21:12:09:908] LogPlatformStorefront: Wallet fetched: 1 balances
+    [21:12:09:908] LogPlatformStorefront: Wallet balance: vp, 2004
+    [21:12:11:550] LogSentrySdk: flushing session and queue before crashpad handler
+    [21:12:11:550] LogSentrySdk: Verbose: invoking `on_crash` hook
+    [21:12:11:551] LogSentrySdk: Sentry HandleBeforeCrash Begin
+    ...
+
+Client CRASH at 21:12:11.550. Server-side Cleanup at 21:12:12.380 —
+server detected the closed socket 830 ms later.
+
+Same crash across iter 3 and iter 4:
+
+    ErrorMessage: Unhandled Exception: EXCEPTION_ACCESS_VIOLATION writing
+      address 0x00007ff68a55b368
+    PCallStackHash: 771B16831B5A288D9965304142173931609EADE1
+    SecondsSinceStart: 30 (Sentry captures this at fixed point — always 30)
+
+Same PCallStack every time — deterministic bug in the same code path.
+
+--- What the client accomplished before crashing ---
+
+The iter 4 log shows the CLIENT REACHED MENU TERRITORY:
+
+    [21:11:57] LogMessenger: Last heartbeat sent (WebSocket to ags healthy)
+    [21:12:02] LogMessenger: Warning: heartbeat not received in 5 seconds
+    [21:12:02] Messenger reconnect
+    [21:12:03] LogMessenger: connection established
+    [21:12:03:834] LogPlatformStorefront: Unlockable heroes fetched: 25 heroes
+    [21:12:03:862] LogPlatformInventory: Refreshed player inventory
+    [21:12:07:829] Sending performance snapshot (Map: LVL_LobbyV2_Persistent)
+    [21:12:09:908] Wallet fetched
+    [21:12:11:550] CRASH
+
+That "Unlockable heroes fetched: 25 heroes" is significant — the exact data
+that the ALL HUNTERS grid needs (the chapter's original blocker). The
+client's Messenger WebSocket to ags works. The Storefront and Inventory
+subsystems are pulling real data. The menu is LOADING. But it crashes
+during that load.
+
+--- Crash-site disassembly ---
+
+`usmapdump.exe disasm SUPERVIVE-Win64-Shipping.exe +0x2976F70 200`:
+
+    +0x2976F70   push rdi; sub rsp, 0x20             ; FUNCTION START
+    +0x2976F7F   mov rax, qword ptr [rcx+0xb0]       ; this->m_field_0xb0
+    +0x2976F86   mov rbx, rcx
+    +0x2976F89   test rax, rax
+    +0x2976F8C   jnz +0x2976FA1                       ; if already-set, skip lazy-init
+    ; lazy-init path (m_field_0xb0 was null)
+    +0x2976F8E   mov edx, dword ptr [rcx+0x10]        ; arg2 = this->0x10 (int32)
+    +0x2976F91   mov rcx, qword ptr [rcx+0x8]         ; arg1 = this->0x8 (pointer)
+    +0x2976F95   call +0x2976F95+5+0x2A366 = +0x2999EFF ; helper
+    +0x2976FA1   ...
+    +0x2976FC4   call +0x2949220                      ; something returns rax
+    +0x2976FC9   movsxd rsi, dword ptr [rax+0x58]     ; rsi = rax->count_at_0x58
+    +0x2976FCD   lea rdi, ptr [rax+0x50]              ; rdi = &(rax->array_at_0x50)
+    +0x2976FD1   lea eax, ptr [rsi+0x1]               ; new size
+    +0x2976FD4   mov dword ptr [rdi+0x8], eax         ; array.Num = new size
+    +0x2976FD7   cmp eax, dword ptr [rdi+0xc]         ; new size vs array.Max
+    +0x2976FDA   jbe +0x2976FE6                        ; if Num <= Max, skip Grow
+    +0x2976FDC   mov edx, esi                         ; arg2 = old size
+    +0x2976FDE   mov rcx, rdi                         ; arg1 = &array
+    +0x2976FE1   call +0x2138F0                       ; TArray Grow helper
+    +0x2976FE6   mov rcx, qword ptr [rdi]             ; rcx = array.GetData()
+    +0x2976FE9   mov rax, qword ptr [rbx+0xa8]        ; rax = this->m_field_0xa8
+    +0x2976FF0   mov qword ptr [rcx+8*rsi], rax       ; array[rsi] = rax  <-- CRASH
+
+Classic TArray::Add pattern:
+
+    UObject* this;
+    int32 idx = arr.Num();
+    arr.SetNum(idx + 1);
+    if (idx + 1 > arr.Max()) arr.Grow();
+    arr[idx] = someValue;  // <-- crashes because arr.GetData() points at .rdata
+
+Failed write target 0x00007ff68a55b368 = base + 0x7ADB368 — an address
+inside the exe's read-only data or code segment. This is what you get when
+a TArray's data pointer holds a stale/default value pointing into .rdata
+instead of a heap allocation.
+
+--- Interpretation ---
+
+The TArray at `[this+0x50]` on some UObject has:
+- .Num incremented to > 0 (either by SetNum here or previously)
+- .Max large enough that Grow() didn't fire
+- .Data pointing at .rdata (never actually allocated a heap buffer)
+
+This inconsistency between .Num/.Max and .Data usually happens when a
+UObject was constructed but its TArray wasn't properly initialized before
+Add(). Session 38's full suppression left many UObjects in an "exists but
+missing expected server-side data" state. One of them has a TArray field
+that later code assumes was initialized.
+
+Session 39 does NOT identify which specific UObject/field. That requires
+Ghidra/IDA symbols or a targeted Fname-based search of the exe for the
+containing class name.
+
+--- Chapter state (end of session 39) ---
+
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Client-close root cause identified: DONE (session 36)
+- Full session-20 divergent-class suppression: DONE (session 38 iter 3)
+- Session-38-plus WorldSettings + GameplayDebuggerCategoryReplicator
+  suppression: DONE (session 39 iter 4)
+- Connection stable through Join into MENU LOAD: DONE (~64 s survival)
+- Client fetches heroes, inventory, wallet data via ags Messenger: DONE
+- Client crashes at deterministic call chain during menu load: NEW BLOCKER
+
+**We're now inside menu territory but crashing on a TArray inconsistency
+that traces to our full-suppression strategy. The chapter's original goal
+(populate the ALL HUNTERS grid) is closer than it's ever been.**
+
+--- What session 40+ needs ---
+
+Two orthogonal paths:
+
+- **A** (surgical): identify the specific UObject / class whose TArray
+  is being Add()'d to at crash time, then feed it enough state via our
+  stub so the array is properly initialized before menu code touches it.
+  Requires either Ghidra symbols or targeted usmapdump `wstrings` / `disasm`
+  work at the crash callers (+0x2984F45, +0x2983C27, +0x29838BE, +0x29CCD3E)
+  to identify the module.
+
+- **B** (breadth): reverse the FClassNetCache divergent classes by injecting
+  matching UProperties on the stub-side classes and un-suppressing them.
+  That way the client receives the state it expects and the "missing
+  initialization" problem never arises. Same primitive as sessions 27-32's
+  UFunction param injection, applied to top-level UProperties on the
+  session-20 divergent classes. Substantial engineering — needs
+  usmapdump.exe schema output for each class.
+
+- **B-lite**: pick JUST APlayerController (the most-relied-on class) for
+  the schema-injection treatment. Get a real PC replicated to the client
+  and see whether the crash mode changes.
+
+Recommendation: A first (cheap information — surface the crash class name),
+then B-lite (if A reveals the culprit is PC-owned state). Full B is the
+long-term fix but expensive.
+
+--- DO NOT for session 40+ ---
+
+- Don't remove WorldSettings or GameplayDebuggerCategoryReplicator from
+  IsClassNetCacheDivergent() — they caused ActorChannelFailure in iter 3.
+- Don't skip the class-name string-match pattern used for
+  GameplayDebuggerCategoryReplicator (it's how we avoid adding a
+  GameplayDebugger module dependency for a runtime pattern).
+- Don't blindly extend the suppression list further without a concrete
+  ActorChannelFailure or client-log rejection to justify it — over-
+  suppression may itself be causing the menu-load crash.
+
+--- Files touched (session 39) ---
+
+- unreal-stub/Source/Loki/LokiNetDriver.cpp — IsClassNetCacheDivergent()
+  extended with AWorldSettings + string-match for
+  GameplayDebuggerCategoryReplicator. Include added for WorldSettings.h.
+- docs/session-39-menu-crash.txt — this analysis.
+- docs/dedicated-server-stub.md — session 39 chapter to be appended.
+
+--- Iter 4 launch procedure (delta from session 35 recipe) ---
+
+Same recipe as session 35 (elevated inject + positional URL in cmd batch)
+but launched into stub-s39-iter4.log. No new tooling needed. Sessions 39+
+should follow the same procedure — it Just Works.

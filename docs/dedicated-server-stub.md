@@ -5108,3 +5108,122 @@ which state the client is waiting for, then invest in B or C accordingly.
 
 - (session 38 writeup commit follows)
 
+## Session 39 (2026-07-01 — MENU IS LOADING, client crashes mid-menu)
+
+Session 38 iter 3 stabilized the connection past Join for 51.5 s. Session 39
+tightened the suppression to eliminate the visible remaining
+`ActorChannelFailure` warnings (WorldSettings + GameplayDebuggerCategoryReplicator),
+then observed what the client actually does in the stable window. Result:
+the client enters MENU territory and starts loading the roster before
+crashing on a deterministic TArray inconsistency.
+
+### Iter 4 delivered
+
+Extended `IsClassNetCacheDivergent()` in `LokiNetDriver.cpp` with:
+
+- `AWorldSettings` via `GameFramework/WorldSettings.h` include.
+- `GameplayDebuggerCategoryReplicator` via runtime `FName` string-match
+  (lives in the `GameplayDebugger` module; runtime match avoids adding a
+  module dependency for a class we never touch by concrete UClass).
+
+Confirmed via stub log: `SUPPRESSING replication for WorldInfo_1
+(WorldSettings)` + `SUPPRESSING replication for GameplayDebuggerCategoryReplicator_0
+(GameplayDebuggerCategoryReplicator)` both fire. **Zero
+NMT_ActorChannelFailure** this iteration (down from 2 in iter 3). Server had
+only 3 open channels at cleanup (down from 5).
+
+### The client reaches menu territory
+
+Connection survived ~64 s (up from iter 3's 51.5 s). Client-side Loki.log in
+the stable window shows real menu-load activity:
+
+    LogMessenger: connection established           (WebSocket to ags OK)
+    LogPlatformStorefront: Unlockable heroes fetched: 25 heroes
+    LogPlatformInventory: Refreshed player inventory
+    LogLokiClientAnalytics: Sending performance snapshot
+       (Map: LVL_LobbyV2_Persistent, Mode: None)
+    LogPlatformStorefront: Wallet fetched
+    → CRASH
+
+That "Unlockable heroes fetched: 25 heroes" is directly relevant to the
+chapter's original goal — the ALL HUNTERS grid's data. The client's
+Messenger WebSocket to ags is fully functional. The Storefront and
+Inventory paths are pulling real data. The menu is LOADING. The crash is
+during that load, not on the UDP netdriver path.
+
+### The crash
+
+Deterministic across iter 3 and iter 4 (same `PCallStackHash`,
+`ErrorMessage`, and address):
+
+    Unhandled Exception: EXCEPTION_ACCESS_VIOLATION
+      writing address 0x00007ff68a55b368
+
+At SUPERVIVE-Win64-Shipping.exe `+0x2976FF0`. `usmapdump.exe disasm` shows
+this is the last instruction of a classic TArray::Add pattern:
+
+    mov qword ptr [rcx+8*rsi], rax   ; array[idx] = value
+
+`rcx` is the array's data pointer (loaded from `[this+0x50 + 0]`). The
+failing address `0x7ff68a55b368` is inside the exe's read-only segment —
+what you get when a TArray never actually got a heap buffer and its
+`Data` field still points at the default zero-size const array in `.rdata`.
+
+`Num` was incremented and `Max` was somehow ≥ `Num` (Grow() didn't fire),
+but Data was never populated. Classic post-partial-init state — likely
+because our full server-side suppression left this UObject without the
+initial replicated state it expects before menu code touches it.
+
+Full disassembly + call-chain analysis in
+`docs/session-39-menu-crash.txt`.
+
+### Chapter state (end of session 39)
+
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Client-close root cause identified: DONE (session 36)
+- Full session-20 + WorldSettings + GameplayDebuggerCategoryReplicator
+  suppression: DONE (session 39 iter 4)
+- Connection stable through Join into MENU LOAD: DONE (~64 s survival)
+- Client fetches heroes / inventory / wallet data via ags Messenger: DONE
+- Client crashes at deterministic call chain during menu load: NEW BLOCKER
+- Menu-data replication: TODO (contingent on unwedging the crash)
+
+### What session 40+ needs
+
+Two orthogonal paths, tradeoffs in `docs/session-39-menu-crash.txt`:
+
+- **A** (surgical): identify the specific UObject / TArray field via
+  usmapdump `wstrings` + `disasm` work at the crashing call chain
+  (`+0x2984F45`, `+0x2983C27`, `+0x29838BE`, `+0x29CCD3E`). Then feed it
+  the initial state it wants via targeted server bunches.
+- **B-lite** (medium): schema-inject just APlayerController with
+  SUPERVIVE's expected replicated fields (session 22 already dumped the
+  full class schema — we have the RE data), un-suppress the PC, and see
+  whether the crash goes away because the PC's initial state now populates
+  the client-side property tables the menu code depends on.
+- **B-full** (heavy): same as B-lite but for the whole session-20 divergent
+  class set. Substantial engineering — same primitive as sessions 27-32's
+  UFunction param injection.
+
+Recommendation: A first (cheap information — surfaces the class name),
+then B-lite if A points at a PC-owned field.
+
+### DO NOT for session 40+
+
+- Don't remove `AWorldSettings` / `GameplayDebuggerCategoryReplicator`
+  from `IsClassNetCacheDivergent()` — they caused `ActorChannelFailure`
+  in iter 3.
+- Don't blindly extend the suppression list further — over-suppression
+  may itself be the root cause of the menu-load crash.
+
+### Tooling artifacts (session 39)
+
+- `docs/session-39-menu-crash.txt` — full iter 4 evidence chain + crash-site
+  disassembly + hypothesis + session 40+ path forward.
+
+### Commits this session
+
+- (session 39 writeup commit follows)
+
+
+

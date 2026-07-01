@@ -11,6 +11,7 @@
 #include "GameFramework/HUD.h"
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/SpectatorPawn.h"
+#include "GameFramework/WorldSettings.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiNet, Log, All);
 
@@ -178,23 +179,39 @@ void ULokiNetDriver::LowLevelSend(TSharedPtr<const FInternetAddr> Address,
 	}
 }
 
-// Session 38 iter 3: session 20 identified per-class NetworkChecksum
-// divergence on this full set — APlayerController, AHUD, AGameStateBase,
+// Session 38 iter 3 + session 39 iter 4: session 20 identified per-class
+// NetworkChecksum divergence on APlayerController, AHUD, AGameStateBase,
 // AGameModeBase, APlayerState, ADefaultPawn, ASpectatorPawn. Iter 2 proved
-// the divergence is real (iter 2's client log showed the failure moved
-// from PlayerController to GameStateBase + PlayerState after we suppressed
-// PC replication). Suppressing all of them until we understand which fields
-// SUPERVIVE actually needs.
+// the divergence is real (client failure moved from PlayerController to
+// GameStateBase + PlayerState after we suppressed PC replication). Iter 3
+// stabilized the connection past Join with the session-20 set. But iter 3
+// stub log also showed the client sending NMT_ActorChannelFailure for two
+// MORE server-opened channels immediately after Join:
+//   Channel 3 = WorldSettings (WorldInfo_1)
+//   Channel 4 = GameplayDebuggerCategoryReplicator (GameplayDebuggerCategoryReplicator_0)
+// Iter 4 adds both to the divergent set. WorldSettings is available via
+// GameFramework/WorldSettings.h. GameplayDebuggerCategoryReplicator lives
+// in the GameplayDebugger module — matched by class-name string here to
+// avoid adding a module dependency for a runtime pattern that never actually
+// needs the concrete UClass.
 static bool IsClassNetCacheDivergent(AActor* Actor)
 {
 	if (!Actor) return false;
 	// GameModeBase is server-only, doesn't replicate. Left out on purpose.
-	return Actor->IsA<APlayerController>()
-	    || Actor->IsA<AGameStateBase>()
-	    || Actor->IsA<APlayerState>()
-	    || Actor->IsA<AHUD>()
-	    || Actor->IsA<ADefaultPawn>()
-	    || Actor->IsA<ASpectatorPawn>();
+	if (Actor->IsA<APlayerController>()
+	 || Actor->IsA<AGameStateBase>()
+	 || Actor->IsA<APlayerState>()
+	 || Actor->IsA<AHUD>()
+	 || Actor->IsA<ADefaultPawn>()
+	 || Actor->IsA<ASpectatorPawn>()
+	 || Actor->IsA<AWorldSettings>())
+	{
+		return true;
+	}
+	// String-match to avoid pulling in the GameplayDebugger module dependency.
+	static const FName GameplayDebuggerCategoryReplicatorName(
+		TEXT("GameplayDebuggerCategoryReplicator"));
+	return Actor->GetClass()->GetFName() == GameplayDebuggerCategoryReplicatorName;
 }
 
 bool ULokiNetDriver::ShouldReplicateActor(AActor* Actor) const
