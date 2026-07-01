@@ -1,0 +1,165 @@
+=== SESSION 40 PATH A — PARTIAL: crash site is vtable slot 1 of a ~15KB class ===
+
+Session 39 identified the crash as EXCEPTION_ACCESS_VIOLATION at
+SUPERVIVE-Win64-Shipping.exe +0x2976FF0 — the last instruction of a classic
+TArray::Add pattern. Session 40 Path A investigated via usmapdump.exe to
+identify which UE class contains the crashing method. RESULT: PARTIAL —
+we identified the class vtable but not the class NAME. Deeper RE (Ghidra
+symbols / IDA) needed for full identification, or pivot to Path B-lite.
+
+--- What Path A confirmed ---
+
+Crash target function starts at exe mod-RVA `+0x2976F70` and is the SLOT 1
+virtual method of a class whose static vtable is at .rdata mod-RVA
+`+0x7B9E188`. Two dynamic/heap vtable copies exist (probably per-instance
+or trampoline variants) but they share the same slot 0 dtor and slot 1
+target.
+
+`usmapdump.exe vtslot` output confirming:
+
+    vtable @ 0x7B9E188          (static, in .rdata)
+      slot 0 = +0x296BD10       (dtor)
+      slot 1 = +0x2976F70       (crashing fn)
+    vtable @ 0x2B007B9E188      (heap alias)
+      slot 0 = +0x296BD10
+      slot 1 = +0x2976F70
+    vtable @ 0x2B01258E188      (heap alias)
+      slot 0 = +0x296BD10
+      slot 1 = +0x2976F70
+
+The dtor at +0x296BD10 tail-calls the parent-class dtor at +0x2969D70 and
+frees an object of size **0x3C90 bytes (15,504 bytes)** — this class is
+LARGE. That matches something like UAbilitySystemComponent-sized subsystems
+or a SUPERVIVE-specific manager class.
+
+Constructor at +0x2967700 initializes:
+- +0x28..+0x84: three "slot" structures each 0x20 bytes with counts of 2 & 3
+- +0x88..+0xE0: mostly zeros
+- +0xE8: writes a SECOND vtable pointer (multiple inheritance — the class
+  has TWO vtables: primary at 0x7B9E188, secondary at 0x7B9E1DB nearby)
+- +0x210: another sub-structure region begins
+- +0x37c0: memset zero of 0x300 bytes (768-byte hash table or ring buffer)
+- +0x3ac0..+0x3ae4: TArray-like fields
+- +0x3af0, +0x3b28, +0x3b60, +0x3b98, +0x3bd0, +0x3c08: six identical 0x38-
+  byte "slot" structures — likely an inline TInlineArray<T, 6>
+
+The primary-vtable static address `+0x7B9E188` is loaded via LEA in only
+TWO code sites (both class constructors: `+0x29677C5` and `+0x2969D84`).
+That's low enough that the class isn't heavily-instantiated but has one
+concrete constructor + one inherited-constructor delegating.
+
+--- What Path A did NOT resolve ---
+
+We do NOT have the class NAME. usmapdump.exe's `extract` command dumps
+UStruct/UEnum schema but does not build a vtable→UClass mapping. UE
+strips RTTI symbols in Shipping builds, so MSVC type_info is gone. The
+class is likely a UObject-derived class but could equally be a raw C++
+class registered separately.
+
+Sample string searches (`wstrings` on characteristic Loki class prefixes)
+found candidate classes but none whose xrefs land near the crashing region:
+`Storefront`, `Cosmetic`, `BattlePass`, `Missions` all exist as wide
+strings but at heap-only locations (FName pool), no direct code refs.
+
+--- What the crash pattern tells us ---
+
+The crashing function's body is a lazy-init-then-append pattern:
+
+    void Class::slot1(void* arg1) {
+        if (!this->m_field_0xb0)                     // lazy init
+            this->m_field_0xb0 = helper(this->m_0x8, this->m_0x10);
+        auto* holder = helper2(this, arg1);          // arg-dependent lookup
+        int32 idx = holder->count_at_0x58;            // rsi
+        auto& arr = holder->array_at_0x50;
+        arr.SetNum(idx + 1);
+        if (arr.Num() > arr.Max()) arr.Grow();
+        arr[idx] = this->m_field_0xa8;                // crash if arr.Data == const_default
+    }
+
+Where "holder" is the object returned by helper2, and its TArray at offset
+0x50 is what's crashed. The crash is the CROSS-OBJECT WRITE — this class's
+slot1 method takes a target arg (the "holder") and appends this class's
+m_field_0xa8 into that target's TArray.
+
+That's the shape of a **notification / subscriber-list registration** —
+"register this class instance with a target holder's subscriber list".
+
+--- Interpretation ---
+
+The crash means a `holder` object exists (its address was returned by
+helper2), its TArray at 0x50 has Num > 0 and Max ≥ Num, but its Data
+pointer still holds a default zero-size const-array pointer from .rdata.
+That is post-partial-init state where Num/Max got set (via some earlier
+path) but a heap buffer was never allocated for Data.
+
+Root cause hypothesis remains from session 39: our full server-side
+suppression left this `holder` UObject in a partial-init state. Some
+initialization step that would run during normal PC / GameState /
+PlayerState replication never fired, so when the menu load later tries
+to register a subscriber into the holder's array, we hit the stale
+default Data.
+
+--- Path A stopping point ---
+
+To finish class identification we'd need one of:
+
+- **A1**: Ghidra + PDB or reconstructed symbols. Non-trivial without a
+  matching PDB, but SUPERVIVE's exe is 175MB and Ghidra's auto-analysis
+  will resolve most functions and give us names for the parent dtor and
+  the class constructor. Would take a fresh session with Ghidra installed.
+- **A2**: Continue disasm walking the caller-of-caller chain (+0x29CCD3E
+  and further) hoping to hit a log-string reference we can identify. High
+  effort, unpredictable payoff.
+- **A3**: Use `usmapdump findptr` at the vtable static address to find
+  UClass instances that reference it. UClass registration in UE stores the
+  vtable in the class's ClassDefaultObject's `.Class` pointer. If we can
+  find a UClass instance whose CDO's vtable is +0x7B9E188, we get the
+  class name from the UClass's Name field. Tractable but multi-step.
+
+Recommended next step: **A3** as a targeted follow-up if a fresh probe
+process is running, else **pivot to B-lite**.
+
+--- Path B-lite (recommended pivot for session 41) ---
+
+Rather than continue identifying the exact class, invest in fixing what
+the client expects at the source: schema-inject SUPERVIVE's expected
+replicated fields onto our stock APlayerController, un-suppress the PC,
+and see whether:
+
+- The client's PC-owned holder objects then initialize properly (crash
+  goes away).
+- Or the crash moves to a different site, giving us a new arrow to follow.
+
+Session 22 already dumped the full class schema via `usmapdump extract`
+— we have the RE data for APlayerController's expected properties. The
+primitive is the same as sessions 27-32's UFunction param injection,
+applied to top-level UProperties instead of function-parameter UProperties.
+
+Estimated engineering: ~2-4 hours of session time to build the property-
+injection helpers + populate PC's replicated field list to match SUPERVIVE.
+
+--- Chapter state (end of session 40) ---
+
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Client-close root cause identified: DONE (session 36)
+- Full session-20 + WorldSettings + GameplayDebuggerCategoryReplicator
+  suppression: DONE (session 39 iter 4)
+- Connection stable through Join into MENU LOAD: DONE (~64 s survival)
+- Client fetches heroes / inventory / wallet data via ags Messenger: DONE
+- Client crashes at deterministic call chain during menu load: KNOWN
+- Crash class name identified: PARTIAL (vtable + size only, no name)
+- Menu-data replication: BLOCKED on either A3 or B-lite
+
+--- Tooling artifacts (session 40) ---
+
+- `docs/session-40-crash-site-partial.txt` — this analysis.
+
+--- DO NOT for session 41+ ---
+
+- Don't invest more time in `wstrings`/`disasm` walking without a
+  concrete lead — Path A hit diminishing returns fast.
+- Don't guess the class name from the object size + vtable shape; we've
+  seen enough "characteristic of X" hints to know they're not conclusive.
+- Don't remove any existing IsClassNetCacheDivergent() entries when
+  pivoting to B-lite — start by ADDING PC replication back, then removing
+  the PC suppression if that works. Incremental un-suppression.
