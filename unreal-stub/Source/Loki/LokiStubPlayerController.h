@@ -29,4 +29,22 @@ class ALokiStubPlayerController : public APlayerController
 
 public:
 	ALokiStubPlayerController(const FObjectInitializer& ObjectInitializer);
+
+	// Session 26 FINDING: Cannot override stock APlayerController's
+	// ServerVerifyViewTarget with different parameters via UFUNCTION macro.
+	// UHT rejects with: "Override of UFUNCTION 'ServerVerifyViewTarget' in
+	// parent 'APlayerController' cannot have a UFUNCTION() declaration above
+	// it; it will use the same parameters as the original declaration."
+	//
+	// UE forces subclass UFUNCTION overrides to match parent's signature.
+	// To add different parameters, we need either:
+	//   (a) Runtime UClass function-table manipulation (add UFunction with
+	//       same name but different signature to subclass's FuncMap)
+	//   (b) Rename our subclass's UClass path to /Script/Engine.PlayerController
+	//       so client sees stock class and dispatches normally, then hook
+	//       ProcessEvent to intercept the RPC name
+	//   (c) Use engine source patch (not possible with Launcher install)
+	//
+	// Session 27 will attempt option (a) via UClass::CreateNetFunctions and
+	// manual UFunction construction.
 };
