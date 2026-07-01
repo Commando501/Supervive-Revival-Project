@@ -23,6 +23,7 @@
 #include "UObject/Package.h"
 #include "UObject/UnrealType.h"
 #include "UObject/FieldPathProperty.h"
+#include "Serialization/BitReader.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiStub, Log, All);
 
@@ -200,30 +201,76 @@ private:
                     "(NumParms=%d, ParmsSize=%d, FunctionFlags=0x%08X)"),
                Func->NumParms, Func->ParmsSize, (uint32)Func->FunctionFlags);
 
-        // Session 31 trial 31A: (AActor*, bool×3, FString S1).
+        // Session 32 Trial 32B: full 5-FString signature.
         //
-        // Session 31 exhaustive FString search found FIVE FStrings in the
-        // 2298-bit RPC arg struct at sub-bits 21, 466, 991, 1444, 1881 — all
-        // /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_* sub-level paths, separated by
-        // 45-bit gaps of near-zero data. Structure:
-        //   [21 bits header] + [FString + 45 bits] × 4 + FString + [41 bits] = 2298
+        // Trial 31A validated (in session 32 via self-replay harness): the
+        // prefix (AActor*, bool×3, FString) correctly aligns FString #1 at
+        // bit 21 and reads "LVL_LobbyV2_PartyMenu" cleanly. FinalPos=421 with
+        // 1877 leftover bits to consume.
         //
-        // Session 30 misinterpretation corrected: AActor* actually consumed
-        // 18 bits (not 50). Session 30's Remaining=2248 included FString count
-        // read (32 bits): 18 + 32 = 50. Count read yielded 369, ReadLen=369*8=2952.
+        // Session 31's structural analysis: after each of the 5 FStrings
+        // (except the last) is a 45-bit "state" struct — likely
+        // (uint32, uint8, bool×5) = 32 + 8 + 5 = 45 bits per element. After
+        // the last FString is a 41-bit trailer, likely (uint32, uint8, bool)
+        // = 32 + 8 + 1 = 41 bits.
         //
-        // Hypothesis for hitting bit 21: AActor* (18 bits) + 3 bools (3 bits) = 21.
-        // At bit 21, FString count = 46 chars = LVL_LobbyV2_PartyMenu (verified via
-        // Python decode).
+        // Total: 21 + 400 + 45 + 480 + 45 + 408 + 45 + 392 + 45 + 376 + 41 = 2298 ✓
         //
-        // This trial validates the (AActor*, bool×3, FString) prefix. Expect
-        // NO SetOverflowed on FString read; Reader.IsError expected due to
-        // under-consumed sub-reader (only 421 of 2298 bits parsed).
+        // Self-replay tests the full signature without needing a client. If
+        // FinalPos=2298 and all 5 FStrings decode as valid sub-level paths,
+        // the signature is CORRECT.
+
+        // Prefix: 18-bit AActor* + 3-bit bool padding = 21 bits.
         AppendObjectParam(Func, TEXT("NewViewTarget"), AActor::StaticClass());
         AppendBoolParam(Func, TEXT("PadBit1"));
         AppendBoolParam(Func, TEXT("PadBit2"));
         AppendBoolParam(Func, TEXT("PadBit3"));
-        AppendStringParam(Func, TEXT("ClientMapPartyMenu"));
+
+        // Element 1: FString + 45-bit state struct.
+        AppendStringParam(Func, TEXT("Map1_Name"));
+        AppendUInt32Param(Func, TEXT("Map1_U32"));
+        AppendByteParam  (Func, TEXT("Map1_U8"));
+        AppendBoolParam  (Func, TEXT("Map1_B0"));
+        AppendBoolParam  (Func, TEXT("Map1_B1"));
+        AppendBoolParam  (Func, TEXT("Map1_B2"));
+        AppendBoolParam  (Func, TEXT("Map1_B3"));
+        AppendBoolParam  (Func, TEXT("Map1_B4"));
+
+        // Element 2.
+        AppendStringParam(Func, TEXT("Map2_Name"));
+        AppendUInt32Param(Func, TEXT("Map2_U32"));
+        AppendByteParam  (Func, TEXT("Map2_U8"));
+        AppendBoolParam  (Func, TEXT("Map2_B0"));
+        AppendBoolParam  (Func, TEXT("Map2_B1"));
+        AppendBoolParam  (Func, TEXT("Map2_B2"));
+        AppendBoolParam  (Func, TEXT("Map2_B3"));
+        AppendBoolParam  (Func, TEXT("Map2_B4"));
+
+        // Element 3.
+        AppendStringParam(Func, TEXT("Map3_Name"));
+        AppendUInt32Param(Func, TEXT("Map3_U32"));
+        AppendByteParam  (Func, TEXT("Map3_U8"));
+        AppendBoolParam  (Func, TEXT("Map3_B0"));
+        AppendBoolParam  (Func, TEXT("Map3_B1"));
+        AppendBoolParam  (Func, TEXT("Map3_B2"));
+        AppendBoolParam  (Func, TEXT("Map3_B3"));
+        AppendBoolParam  (Func, TEXT("Map3_B4"));
+
+        // Element 4.
+        AppendStringParam(Func, TEXT("Map4_Name"));
+        AppendUInt32Param(Func, TEXT("Map4_U32"));
+        AppendByteParam  (Func, TEXT("Map4_U8"));
+        AppendBoolParam  (Func, TEXT("Map4_B0"));
+        AppendBoolParam  (Func, TEXT("Map4_B1"));
+        AppendBoolParam  (Func, TEXT("Map4_B2"));
+        AppendBoolParam  (Func, TEXT("Map4_B3"));
+        AppendBoolParam  (Func, TEXT("Map4_B4"));
+
+        // Element 5: FString + 41-bit trailer (last element has 1 fewer bool).
+        AppendStringParam(Func, TEXT("Map5_Name"));
+        AppendUInt32Param(Func, TEXT("Map5_U32"));
+        AppendByteParam  (Func, TEXT("Map5_U8"));
+        AppendBoolParam  (Func, TEXT("Map5_B0"));
 
         Func->StaticLink(true);
         PCClass->ClearFunctionMapsCaches();
@@ -232,6 +279,13 @@ private:
                TEXT("InjectServerVerifyViewTarget: trial signature injected. "
                     "New NumParms=%d, ParmsSize=%d"),
                Func->NumParms, Func->ParmsSize);
+
+        // Session 32: self-replay harness. Feed the captured 2298-bit RPC arg
+        // struct directly to a walk of the injected UFunction's properties,
+        // without needing a client to send the RPC. Log Pos after each
+        // property so we can see exactly where each param starts/ends and
+        // whether any overflow fires.
+        SelfReplayCapturedRPC(Func);
     }
 
     // Helper: append an FStrProperty to a UFunction's ChildProperties tail.
@@ -365,6 +419,137 @@ private:
             Tail = &(*Tail)->Next;
         }
         *Tail = Prop;
+    }
+
+    // Session 32: self-replay harness. Walks the injected UFunction's params
+    // over a BitReader wrapping the captured 2298-bit RPC arg struct (from
+    // session 25). For each param, calls NetSerializeItem and logs position
+    // deltas — this lets us iterate signature trials without needing a live
+    // client to send the RPC. FObjectProperty is special-cased: it needs a
+    // UPackageMap (client's NetGUID cache), so we can't feed it real bytes;
+    // instead we manually skip 18 bits (measured empirically in session 30
+    // via the real client's SetOverflowed diagnostic).
+    static void SelfReplayCapturedRPC(UFunction* Func)
+    {
+        // 293-byte captured bunch from session 25 (docs/session-25-bunch-capture.txt).
+        // Bunch total = 2339 bits. RPC arg struct = bits 41..2338 (2298 bits).
+        static const uint8 kBunchBytes[] = {
+            0x8E, 0x90, 0x78, 0xEB, 0x45, 0x16, 0x00, 0x8C, 0x0B, 0x00, 0x00, 0xC0, 0xCB, 0x51, 0x58, 0x5B,
+            0xD9, 0x0B, 0xD3, 0xDB, 0x5A, 0xDA, 0x4B, 0x53, 0x18, 0xDC, 0xDC, 0x0B, 0xD3, 0x9B, 0x98, 0x58,
+            0x9E, 0x95, 0xCC, 0x0B, 0x93, 0x15, 0xD3, 0x17, 0xD3, 0x9B, 0x98, 0x58, 0x9E, 0x95, 0xCC, 0x17,
+            0x54, 0x98, 0x1C, 0x5D, 0x5E, 0x53, 0x99, 0x5B, 0x1D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xC1,
+            0x01, 0x00, 0x00, 0x78, 0x39, 0x0A, 0x6B, 0x2B, 0x7B, 0x61, 0x7A, 0x5B, 0x4B, 0x7B, 0x69, 0x0A,
+            0x83, 0x9B, 0x7B, 0x61, 0x7A, 0x13, 0x13, 0xCB, 0xB3, 0x92, 0x79, 0x61, 0xB2, 0x62, 0xFA, 0x62,
+            0x7A, 0x13, 0x13, 0xCB, 0xB3, 0x92, 0xF9, 0x42, 0x2A, 0x93, 0x7B, 0x9B, 0x2A, 0x63, 0x2B, 0x1B,
+            0xA3, 0xFB, 0x9A, 0x5A, 0xCB, 0x63, 0x0B, 0x73, 0x23, 0x9B, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x30, 0x2F, 0x00, 0x00, 0x00, 0x2F, 0x47, 0x61, 0x6D, 0x65, 0x2F, 0x4C, 0x6F, 0x6B, 0x69, 0x2F,
+            0x4D, 0x61, 0x70, 0x73, 0x2F, 0x4C, 0x6F, 0x62, 0x62, 0x79, 0x56, 0x32, 0x2F, 0x4C, 0x56, 0x4C,
+            0x5F, 0x4C, 0x6F, 0x62, 0x62, 0x79, 0x56, 0x32, 0x5F, 0x42, 0x61, 0x74, 0x74, 0x6C, 0x65, 0x50,
+            0x61, 0x73, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA6, 0x05, 0x00, 0x00, 0xE0, 0xE5, 0x28,
+            0xAC, 0xAD, 0xEC, 0x85, 0xE9, 0x6D, 0x2D, 0xED, 0xA5, 0x29, 0x0C, 0x6E, 0xEE, 0x85, 0xE9, 0x4D,
+            0x4C, 0x2C, 0xCF, 0x4A, 0xE6, 0x85, 0xC9, 0x8A, 0xE9, 0x8B, 0xE9, 0x4D, 0x4C, 0x2C, 0xCF, 0x4A,
+            0xE6, 0x8B, 0x29, 0xED, 0x0C, 0x8D, 0x2E, 0xCD, 0xED, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0,
+            0xAC, 0x00, 0x00, 0x00, 0xBC, 0x1C, 0x85, 0xB5, 0x95, 0xBD, 0x30, 0xBD, 0xAD, 0xA5, 0xBD, 0x34,
+            0x85, 0xC1, 0xCD, 0xBD, 0x30, 0xBD, 0x89, 0x89, 0xE5, 0x59, 0xC9, 0xBC, 0x30, 0x59, 0x31, 0x7D,
+            0x31, 0xBD, 0x89, 0x89, 0xE5, 0x59, 0xC9, 0x7C, 0x05, 0xC9, 0xB5, 0xBD, 0xC9, 0xE5, 0x01, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00,
+        };
+        static constexpr int32 kRPCStartBit = 41;
+        static constexpr int32 kRPCNumBits  = 2298;
+
+        // Extract kRPCNumBits from kBunchBytes starting at kRPCStartBit into
+        // a fresh LSB-packed buffer starting at bit 0.
+        constexpr int32 kArgByteCount = (kRPCNumBits + 7) / 8;
+        uint8 ArgBytes[kArgByteCount];
+        FMemory::Memzero(ArgBytes, kArgByteCount);
+        for (int32 i = 0; i < kRPCNumBits; ++i)
+        {
+            const int32 SrcBit = kRPCStartBit + i;
+            const uint8 Bit = (kBunchBytes[SrcBit / 8] >> (SrcBit % 8)) & 1;
+            ArgBytes[i / 8] |= (Bit << (i % 8));
+        }
+
+        FBitReader Reader(ArgBytes, kRPCNumBits);
+
+        // Allocate params buffer.
+        void* Parms = FMemory_Alloca(Func->ParmsSize);
+        FMemory::Memzero(Parms, Func->ParmsSize);
+        for (TFieldIterator<FProperty> It(Func); It; ++It)
+        {
+            FProperty* Prop = *It;
+            if (!(Prop->PropertyFlags & CPF_Parm)) break;
+            if (!(Prop->PropertyFlags & CPF_ZeroConstructor))
+            {
+                Prop->InitializeValue_InContainer(Parms);
+            }
+        }
+
+        UE_LOG(LogLokiStub, Display,
+               TEXT("SelfReplay START: Func=%s NumParms=%d ParmsSize=%d BitReader.Max=%lld"),
+               *Func->GetName(), Func->NumParms, Func->ParmsSize, Reader.GetNumBits());
+
+        int32 ParamIdx = 0;
+        for (TFieldIterator<FProperty> It(Func); It; ++It)
+        {
+            FProperty* Prop = *It;
+            if (!(Prop->PropertyFlags & CPF_Parm)) break;
+
+            const int32 PosBefore = Reader.GetPosBits();
+
+            if (FObjectProperty* ObjProp = CastField<FObjectProperty>(Prop))
+            {
+                // No PackageMap → can't call NetSerializeItem. Skip 18 bits
+                // per session 30's real-client measurement of AActor* NetGUID.
+                uint8 Skip[8] = {};
+                Reader.SerializeBits(Skip, 18);
+                UE_LOG(LogLokiStub, Display,
+                       TEXT("  [%d] %s (%s) SKIPPED 18 bits: Pos %d -> %d"),
+                       ParamIdx, *Prop->GetName(), *Prop->GetClass()->GetName(),
+                       PosBefore, Reader.GetPosBits());
+            }
+            else
+            {
+                void* PropData = Prop->ContainerPtrToValuePtr<void>(Parms);
+                Prop->NetSerializeItem(Reader, /*Map=*/nullptr, PropData);
+                const int32 PosAfter = Reader.GetPosBits();
+                const bool bError = Reader.IsError();
+                UE_LOG(LogLokiStub, Display,
+                       TEXT("  [%d] %s (%s) consumed %d bits: Pos %d -> %d error=%d"),
+                       ParamIdx, *Prop->GetName(), *Prop->GetClass()->GetName(),
+                       PosAfter - PosBefore, PosBefore, PosAfter, bError ? 1 : 0);
+
+                // Log FString content when we hit an FStrProperty (very useful).
+                if (Prop->IsA<FStrProperty>() && !bError)
+                {
+                    const FString& S = *reinterpret_cast<FString*>(PropData);
+                    UE_LOG(LogLokiStub, Display, TEXT("      FString = \"%s\""), *S);
+                }
+
+                if (bError)
+                {
+                    UE_LOG(LogLokiStub, Warning,
+                           TEXT("  OVERFLOW at param [%d] %s — stopping."),
+                           ParamIdx, *Prop->GetName());
+                    break;
+                }
+            }
+
+            ++ParamIdx;
+        }
+
+        const int32 FinalPos = Reader.GetPosBits();
+        const int32 Leftover = kRPCNumBits - FinalPos;
+        UE_LOG(LogLokiStub, Display,
+               TEXT("SelfReplay END: FinalPos=%d Leftover=%d IsError=%d (Expected: FinalPos=%d, Leftover=0)"),
+               FinalPos, Leftover, Reader.IsError() ? 1 : 0, kRPCNumBits);
+
+        // Destroy allocated params.
+        for (TFieldIterator<FProperty> It(Func); It; ++It)
+        {
+            FProperty* Prop = *It;
+            if (!(Prop->PropertyFlags & CPF_Parm)) break;
+            Prop->DestroyValue_InContainer(Parms);
+        }
     }
 };
 

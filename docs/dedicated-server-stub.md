@@ -4388,5 +4388,162 @@ handshake even if nothing is listening — good enough to trigger the RPC.
 
 - (session 31 writeup commit follows)
 
+## Session 32 (2026-07-01 — RPC SIGNATURE FULLY SOLVED via self-replay harness)
+
+Session 31's end-to-end test was blocked because we needed a real client
+sending the RPC to observe FBitReader::SetOverflowed. Session 32 pivoted
+around the blocker: **stub-side self-replay** of the captured bytes,
+walking the injected UFunction's properties directly. No client needed.
+Iteration cost dropped from ~60s per trial (client launch cycle) to ~10s
+(stub rebuild + relaunch).
+
+### Delivered
+
+**Self-replay harness** (`SelfReplayCapturedRPC` in
+`unreal-stub/Source/Loki/Loki.cpp`):
+
+1. Embeds the 293-byte captured bunch (from session 25) inline as a
+   `static const uint8[]`.
+2. Extracts bits 41..2338 (the 2298-bit RPC arg struct) into a fresh
+   LSB-packed byte buffer.
+3. Wraps in `FBitReader(ArgBytes, 2298)`.
+4. Iterates the UFunction's ChildProperties. For each param:
+   - `FObjectProperty`: skip 18 bits (session-30 measured NetGUID
+     bit-consumption; direct NetSerializeItem would crash without a
+     UPackageMap).
+   - Everything else: `Prop->NetSerializeItem(Reader, /*Map=*/nullptr, PropData)`.
+     Safe for FBoolProperty, FIntProperty, FUInt32Property, FByteProperty,
+     FStrProperty, FFloatProperty, FStructProperty (with NetSerialize
+     override that doesn't need Map).
+5. Logs Pos before/after each property + FString content for `FStrProperty`.
+
+Runs at `OnPostEngineInit`, right after signature injection. Result appears
+in the stub log within seconds of launch.
+
+### Trial 32B result: FULL MATCH
+
+```
+SelfReplay START: Func=ServerVerifyViewTarget NumParms=40 ParmsSize=166 BitReader.Max=2298
+  [ 0] NewViewTarget  ObjectProperty  SKIPPED  18 bits   0 -> 18
+  [ 1] PadBit1        BoolProperty    consumed  1 bits  18 -> 19
+  [ 2] PadBit2        BoolProperty    consumed  1 bits  19 -> 20
+  [ 3] PadBit3        BoolProperty    consumed  1 bits  20 -> 21
+  [ 4] Map1_Name      StrProperty     consumed 400 bits  21 -> 421
+        FString = "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_PartyMenu"
+  [ 5] Map1_U32       UInt32Property  consumed 32 bits 421 -> 453
+  [ 6] Map1_U8        ByteProperty    consumed  8 bits 453 -> 461
+  [7-11] Map1_B0..B4  BoolProperty    consumed  5 bits 461 -> 466
+  [12] Map2_Name      StrProperty     consumed 480 bits 466 -> 946
+        FString = "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_HeroSelect_Skylands"
+  [13-19] state       32+8+5 = 45 bits 946 -> 991
+  [20] Map3_Name      StrProperty     consumed 408 bits 991 -> 1399
+        FString = "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass"
+  [21-27] state       32+8+5 = 45 bits 1399 -> 1444
+  [28] Map4_Name      StrProperty     consumed 392 bits 1444 -> 1836
+        FString = "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Lighting"
+  [29-35] state       32+8+5 = 45 bits 1836 -> 1881
+  [36] Map5_Name      StrProperty     consumed 376 bits 1881 -> 2257
+        FString = "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Armory"
+  [37] Map5_U32       UInt32Property  consumed 32 bits 2257 -> 2289
+  [38] Map5_U8        ByteProperty    consumed  8 bits 2289 -> 2297
+  [39] Map5_B0        BoolProperty    consumed  1 bit  2297 -> 2298
+
+SelfReplay END: FinalPos=2298 Leftover=0 IsError=0
+```
+
+**Every bit accounted for. All 5 sub-level FStrings decode as valid paths.
+Zero overflow, zero leftover.** Signature is:
+
+```cpp
+UFUNCTION(reliable, server, WithValidation)
+void ServerVerifyViewTarget(
+    AActor* NewViewTarget,
+    // Prefix — 3 header bools:
+    bool PadBit1, bool PadBit2, bool PadBit3,
+    // 4 identical elements + 1 smaller trailer:
+    FString Map1_Name, uint32 Map1_U32, uint8 Map1_U8,
+        bool Map1_B0, bool Map1_B1, bool Map1_B2, bool Map1_B3, bool Map1_B4,
+    FString Map2_Name, uint32 Map2_U32, uint8 Map2_U8,
+        bool Map2_B0, bool Map2_B1, bool Map2_B2, bool Map2_B3, bool Map2_B4,
+    FString Map3_Name, uint32 Map3_U32, uint8 Map3_U8,
+        bool Map3_B0, bool Map3_B1, bool Map3_B2, bool Map3_B3, bool Map3_B4,
+    FString Map4_Name, uint32 Map4_U32, uint8 Map4_U8,
+        bool Map4_B0, bool Map4_B1, bool Map4_B2, bool Map4_B3, bool Map4_B4,
+    // Element 5 has 1 bool instead of 5 (or trailing 4 bools missing):
+    FString Map5_Name, uint32 Map5_U32, uint8 Map5_U8, bool Map5_B0);
+```
+
+Total: 40 params, 166-byte ParmsSize, exactly 2298 bits on the wire.
+
+### Semantic interpretation
+
+SUPERVIVE overrode stock UE `ServerVerifyViewTarget` to piggyback a
+per-sub-level state report. Each of the 5 elements corresponds to a
+streaming sub-level of LVL_LobbyV2_Persistent (PartyMenu, HeroSelect_Skylands,
+BattlePass, Lighting, Armory).
+
+Per-element 45-bit state struct most likely:
+- `uint32` — LoadRequestID / StreamingID / handle
+- `uint8`  — LoadState enum (Unloaded, Loading, Loaded, Visible, ...)
+- `bool×5` — bit flags (bIsVisible, bIsPendingLoad, bWasRequested, ...)
+
+All captured U32/U8/bool values were zero — suggests default-initialized
+or not-yet-populated fields at LobbyV2 travel time.
+
+Last element's 4-fewer-bool tail is odd. Could be a natural "unused" trail
+in a fixed-schema TArray, OR my inferred struct is slightly off (last
+element genuinely has fewer bools). Either interpretation consumes the
+same 2298 bits, so the wire matches.
+
+### What self-replay does NOT prove
+
+The harness is a **property-walk simulation**, not a live RPC dispatch.
+A real client bunch will additionally exercise:
+1. `FRepLayout::ReceivePropertiesForRPC` (rather than direct `NetSerializeItem`).
+2. `UPackageMap.SerializeObject` for the actual `AActor*` NetGUID resolution.
+3. `Reader.PackageMap->ResetTrackedGuids` and connected channel state.
+
+But the raw bit-stream layout MUST match — and that we've fully verified.
+A real-client end-to-end test should now succeed.
+
+### Session 33 plan
+
+1. Get a real client bunch to the stub. Options in decreasing preference:
+   - Full clean cold-start of launch-redirect.ps1 from elevated PS
+     (avoiding the accumulated environmental state that broke session 31's
+     retries).
+   - Or restart the machine to guarantee clean hosts/DNS/certs.
+2. Confirm the stub sees `LogRepTraffic: Received RPC: ServerVerifyViewTarget`
+   or equivalent with no `Mismatch read` / `Reader.IsError`.
+3. Add a server-side handler that acknowledges the RPC (implicit via
+   reliable channel) and pushes the server-authoritative sub-level state
+   back to the client.
+4. Move on to menu-data replication — populate the empty ALL HUNTERS grid,
+   STORE carousel, COSMETICS browser, and MISSIONS modal (see
+   [[supervive-hero-roster-blocker]]).
+
+### Tooling artifacts (session 32)
+
+- `unreal-stub/Source/Loki/Loki.cpp` — `SelfReplayCapturedRPC` + Trial 32B
+  full signature.
+- `docs/session-32-signature-solved.txt` — full self-replay log and
+  interpretation notes.
+
+### Chapter state (end of session 32)
+
+- Everything through PC spawn: DONE
+- Bunch bytes captured + decoded (2298 bits): DONE
+- Runtime UFunction injection framework: DONE
+- 5-FString sub-level pattern: DONE (session 31)
+- Self-replay harness: DONE (session 32)
+- **Full RPC signature (40 params, 2298 bits) VALIDATED: DONE (session 32)**
+- Real-client RPC round-trip: TODO (session 33 — clean launch cycle)
+- Server-side RPC handler: TODO (session 33)
+- Menu-data replication: TODO (session 34+)
+
+### Commits this session
+
+- (session 32 writeup commit follows)
+
 
 
