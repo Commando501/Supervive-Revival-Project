@@ -16,8 +16,19 @@
 #include "Loki.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/NetworkVersion.h"
+#include "Engine/World.h"
+#include "UObject/Package.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiStub, Log, All);
+
+// Session 19 blocker (session 18 unblocked stateless handshake, session 19
+// unblocked NMT_Welcome/Login/Join via LokiGameInstance::ModifyClientTravelLevelURL,
+// but the client's actor channel for the server-spawned PlayerController fails
+// because the actor's outer package resolves as /Engine/Maps/Entry.Entry which
+// doesn't exist in the client's cooked shipping build). Fix attempt: rename our
+// stub's game world package at post-init to the map path the client expects.
+static const FString kLokiExpectedWorldPackage =
+    TEXT("/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent");
 
 // Captured from the SUPERVIVE client at LobbyV2 browse — the network
 // checksum the client computes for itself and expects to match. Composed
@@ -52,12 +63,20 @@ public:
                TEXT("Loki stub: NetCL overrides bound. Local checksum forced to %u; "
                     "IsNetworkCompatible accepts any remote."),
                kLokiClientNetworkChecksum);
+
+        // Session 19: rename the game world's outer package so replicated actors
+        // (PlayerController especially) reference a package path the client has
+        // cooked. Without this, the client's ActorChannel fails on the PC because
+        // /Engine/Maps/Entry.Entry doesn't exist in the shipping client.
+        WorldInitHandle = FWorldDelegates::OnPostWorldInitialization.AddStatic(
+            &FLokiModule::OnPostWorldInitialization);
     }
 
     virtual void ShutdownModule() override
     {
         FNetworkVersion::GetLocalNetworkVersionOverride.Unbind();
         FNetworkVersion::IsNetworkCompatibleOverride.Unbind();
+        FWorldDelegates::OnPostWorldInitialization.Remove(WorldInitHandle);
         FDefaultGameModuleImpl::ShutdownModule();
     }
 
@@ -74,6 +93,46 @@ private:
                LocalVersion, RemoteVersion);
         return true;
     }
+
+    static void OnPostWorldInitialization(UWorld* World, const UWorld::InitializationValues)
+    {
+        if (!World || !World->IsGameWorld())
+        {
+            return;
+        }
+        UPackage* Pkg = World->GetOutermost();
+        if (!Pkg)
+        {
+            return;
+        }
+        const FString OldPkgName = Pkg->GetName();
+        if (OldPkgName != kLokiExpectedWorldPackage)
+        {
+            UE_LOG(LogLokiStub, Display,
+                   TEXT("Renaming game world package: %s -> %s"),
+                   *OldPkgName, *kLokiExpectedWorldPackage);
+            Pkg->Rename(*kLokiExpectedWorldPackage, nullptr,
+                        REN_ForceNoResetLoaders | REN_DoNotDirty | REN_DontCreateRedirectors);
+        }
+
+        // Also rename the world object inside the package so replicated actor
+        // paths look like /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PC
+        // instead of ...LVL_LobbyV2_Persistent.Entry:PersistentLevel.PC. The
+        // client's cooked package has ONE world object whose name matches the
+        // package basename, so its ActorChannel resolver expects the same shape.
+        const FString ExpectedWorldName = TEXT("LVL_LobbyV2_Persistent");
+        const FString OldWorldName = World->GetName();
+        if (OldWorldName != ExpectedWorldName)
+        {
+            UE_LOG(LogLokiStub, Display,
+                   TEXT("Renaming world object: %s -> %s"),
+                   *OldWorldName, *ExpectedWorldName);
+            World->Rename(*ExpectedWorldName, Pkg,
+                          REN_ForceNoResetLoaders | REN_DoNotDirty | REN_DontCreateRedirectors);
+        }
+    }
+
+    FDelegateHandle WorldInitHandle;
 };
 
 IMPLEMENT_PRIMARY_GAME_MODULE(FLokiModule, Loki, "Loki");
