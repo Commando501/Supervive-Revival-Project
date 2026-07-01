@@ -33,6 +33,15 @@ public:
 	// die when they encounter our 8-byte wrapper.
 	ULokiNetDriver(const FObjectInitializer& ObjectInitializer);
 
+	// Session 20: after Super::InitBase creates the GuidCache, disable per-class
+	// network checksums so the client's stock-vs-Loki APlayerController /
+	// AGameStateBase / APlayerState schema fingerprints don't get checked.
+	// SUPERVIVE's shipping build has modified those core classes with extra
+	// replicated properties, so their checksums differ from our stock UE5.4 stub.
+	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify,
+	                      const FURL& URL, bool bReuseAddressAndPort,
+	                      FString& Error) override;
+
 	virtual void InitConnectionlessHandler() override;
 
 	virtual void LowLevelSend(TSharedPtr<const FInternetAddr> Address,
