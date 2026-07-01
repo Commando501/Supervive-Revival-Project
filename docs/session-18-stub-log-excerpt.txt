@@ -1,0 +1,32 @@
+26:LogCsvProfiler: Display: Metadata set : commandline="" "G:\git\Supervive Revival Project\unreal-stub\Loki.uproject" /Engine/Maps/Entry?listen -game -server -log -Port=7777 -nullrhi -NoSplash -Unattended -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose" -abslog=C:\Users\eastr\AppData\Local\Temp\claude\G--git-Supervive-Revival-Project\5b4acdf2-d9b7-4354-9798-58d8015eafa3\scratchpad\stub-s18.log""
+224:LogHAL: Log category LogHandshake verbosity has been raised to Verbose.
+227:LogHAL: Log category LogLokiStateless verbosity has been raised to Verbose.
+228:LogHAL: Log category LogLokiIpConnection verbosity has been raised to Verbose.
+270:LogInit: Command Line: /Engine/Maps/Entry?listen -game -server -log -Port=7777 -nullrhi -NoSplash -Unattended -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose" -abslog=C:\Users\eastr\AppData\Local\Temp\claude\G--git-Supervive-Revival-Project\5b4acdf2-d9b7-4354-9798-58d8015eafa3\scratchpad\stub-s18.log
+789:[2026.07.01-00.46.37:471][  0]LogLokiStateless: Display: LokiStatelessConnect constructed — 8-byte wrapper adapter active.
+790:[2026.07.01-00.46.37:471][  0]LogLokiNet: Display: LokiNetDriver: connectionless handler initialized with LokiStatelessConnect.
+805:[2026.07.01-00.53.56:582][253]LogLokiStateless: Verbose: Stripping wrapper: 472 bits -> 408 bits (wrapper bytes: BB BB DC 21 A6 A3 B7 FB)
+806:[2026.07.01-00.53.56:582][253]LogLokiStateless: Verbose: Stripping wrapper: full 59 bytes: BB BB DC 21 A6 A3 B7 FB BC 01 02 80 80 F3 58 C0 6E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FB 35 D7 04 FC 2C 61 7C A6 07 9E 6F 
+808:[2026.07.01-00.53.56:584][253]LogHandshake: SendConnectChallenge. Timestamp: 439.086334, Cookie: 232103136231007120055108065198251114158235202119217076205140
+811:[2026.07.01-00.53.56:614][254]LogLokiStateless: Verbose: Stripping wrapper: 440 bits -> 376 bits (wrapper bytes: BB 22 DC 21 A6 A3 D9 FB)
+812:[2026.07.01-00.53.56:614][254]LogLokiStateless: Verbose: Stripping wrapper: full 55 bytes: BB 22 DC 21 A6 A3 D9 FB BC 01 02 01 81 F3 58 C0 6E 00 80 00 00 13 A0 61 71 7B 40 E8 67 88 E7 07 78 37 6C 41 C6 FB 72 9E EB CA 77 D9 4C CD 8C E8 3B 35 C4 FA 57 02 CC 
+813:[2026.07.01-00.53.56:614][254]LogHandshake: SendChallengeAck. InCookie: 232103136231007120055108065198251114158235202119217076205140
+814:[2026.07.01-00.53.56:615][254]LogNet: Server accepting post-challenge connection from: 127.0.0.1:57753
+815:[2026.07.01-00.53.56:615][254]LogNet: LokiIpConnection_0 setting maximum channels to: 32767
+816:[2026.07.01-00.53.56:616][254]LogLokiStateless: Display: LokiStatelessConnect constructed — 8-byte wrapper adapter active.
+817:[2026.07.01-00.53.56:616][254]LogLokiIpConnection: Display: LokiIpConnection: per-connection PacketHandler initialized with LokiStatelessConnect (reserved bits: 7).
+818:[2026.07.01-00.53.56:618][254]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from Invalid to LoggingIn
+819:[2026.07.01-00.53.56:618][254]LogNet: Verbose: UNetConnection::SetExpectedClientLoginMsgType: Type same: [0]Hello
+821:[2026.07.01-00.53.56:619][254]LogNet: NotifyAcceptedConnection: Name: Entry, TimeStamp: 06/30/26 19:53:56, [UNetConnection] RemoteAddr: 127.0.0.1:57753, Name: LokiIpConnection_0, Driver: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0, IsServer: YES, PC: NULL, Owner: NULL, UniqueId: INVALID
+822:[2026.07.01-00.53.56:620][254]LogNet: AddClientConnection: Added client connection: [UNetConnection] RemoteAddr: 127.0.0.1:57753, Name: LokiIpConnection_0, Driver: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0, IsServer: YES, PC: NULL, Owner: NULL, UniqueId: INVALID
+823:[2026.07.01-00.53.56:622][254]LogLokiStateless: Verbose: [Incoming] Stripping wrapper: 299 bits -> 235 bits (wrapper bytes: BB 75 DC 21 A6 A3 DF FB)
+828:[2026.07.01-00.53.56:629][254]LogNet: Verbose: UNetConnection::SetExpectedClientLoginMsgType: Type changing from [0]Hello to [5]Login
+829:[2026.07.01-00.53.56:652][255]LogLokiStateless: Verbose: [Incoming] Stripping wrapper: 817 bits -> 753 bits (wrapper bytes: BB A4 DC 21 A6 A3 FA FB)
+832:[2026.07.01-00.53.56:656][255]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from LoggingIn to Welcomed
+833:[2026.07.01-00.53.56:656][255]LogLokiStateless: Verbose: [Incoming] Stripping wrapper: 136 bits -> 72 bits (wrapper bytes: BB 5F DC 21 A6 A3 D7 FB)
+834:[2026.07.01-00.53.56:685][256]LogLokiStateless: Verbose: [Incoming] Stripping wrapper: 301 bits -> 237 bits (wrapper bytes: BB 16 DC 21 A6 A3 F6 FB)
+838:[2026.07.01-00.53.56:695][256]LogNet: UChannel::CleanUp: ChIndex == 0. Closing connection. [UChannel] ChIndex: 0, Closing: 0 [UNetConnection] RemoteAddr: 127.0.0.1:57753, Name: LokiIpConnection_0, Driver: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0, IsServer: YES, PC: NULL, Owner: NULL, UniqueId: NULL:9b9d2c887e2524f918e383a895f2f1c2
+839:[2026.07.01-00.53.56:700][256]LogNet: UNetConnection::Close: [UNetConnection] RemoteAddr: 127.0.0.1:57753, Name: LokiIpConnection_0, Driver: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0, IsServer: YES, PC: NULL, Owner: NULL, UniqueId: NULL:9b9d2c887e2524f918e383a895f2f1c2, Channels: 3, Time: 2026.07.01-00.53.56
+842:[2026.07.01-00.53.56:710][256]LogNet: UChannel::Close: Sending CloseBunch. ChIndex == 0. Name: [UChannel] ChIndex: 0, Closing: 0 [UNetConnection] RemoteAddr: 127.0.0.1:57753, Name: LokiIpConnection_0, Driver: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0, IsServer: YES, PC: NULL, Owner: NULL, UniqueId: NULL:9b9d2c887e2524f918e383a895f2f1c2
+843:[2026.07.01-00.53.56:712][256]LogNet: UNetConnection::PendingConnectionLost. [UNetConnection] RemoteAddr: 127.0.0.1:57753, Name: LokiIpConnection_0, Driver: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0, IsServer: YES, PC: NULL, Owner: NULL, UniqueId: NULL:9b9d2c887e2524f918e383a895f2f1c2 bPendingDestroy=0 
+844:[2026.07.01-00.53.56:713][256]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from Welcomed to CleanedUp
