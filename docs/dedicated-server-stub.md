@@ -3577,6 +3577,114 @@ tasks for the bit-level parsing.
 
 - (session 23 writeup commit follows)
 
+## Session 24 (2026-07-01 — bit-level packet parser: packet header WORKS, bunch header stuck; pivot recommended)
+
+Session 24 extended `scratchpad/decode_rpc_bunch.py` (also saved to
+`docs/session-24-packet-parser.py`) to attempt bit-level parsing of the
+session-23 captured packet.
+
+### What works
+
+- **StatelessConnect prefix**: The captured bytes are AFTER our
+  LokiStatelessConnect wrapper strip but BEFORE `StatelessConnectHandlerComponent::Incoming`
+  runs. The stock impl reads:
+  ```
+  SessionID (2 bits) + ClientID (3 bits) + bHandshakePacket (1 bit) = 6 bits
+  ```
+  Verified from `H:\...\PacketHandlers\StatelessConnectHandlerComponent.h:533,536`
+  (SessionIDSizeBits=2, ClientIDSizeBits=3). Skipping 6 bits at the start
+  of the packet gets us aligned with UE's own view.
+
+- **FNetPacketNotify header**: 32-bit PackedHeader (Seq14 + AckedSeq14 +
+  HistoryWordCount-1_4) + `HistoryWordCount * 32` bits of history data.
+  Parser decodes:
+    Seq=1577, AckedSeq=354, HistoryWordCount=1
+  Which matches the stub log's
+    `LogNetTraffic: Verbose: FNetPacketNotify::ReadHeader - Seq 1577, AckedSeq 354 HistorySizeInWords 1`
+  exactly. ✓
+
+- **PacketInfo section**: `bHasPacketInfoPayload=1` (1 bit) followed by
+  `JitterClockTime` (10 bits, per
+  `H:\...\NetConnection.h:72 NumBitsForJitterClockTimeInHeader = 10`).
+  Parser decodes JitterClockTime=439 with reader at bit 81.
+
+### Where it hits a wall
+
+Bunch header parsing at bit 81 reads:
+  - Bit 81 (bControl/bIsOpenOrClose): 1
+  - Bit 82 (bOpen): 0
+  - Bit 83 (bClose): 0
+
+But bIsOpenOrClose=1 implies at least one of bOpen/bClose must be 1
+(the write side ORs them). This bunch is the Channel-3 RPC bunch that
+UE's own trace showed as `Reliable Bunch, Channel 3 Sequence 549:
+Size 5.8+292.4` — so it should have bReliable=1, bOpen=0, bClose=0.
+That means bIsOpenOrClose should be 0, not 1.
+
+Either the parser has a subtle off-by-one (unlikely — packet header
+decoded correctly), OR there's an additional bit/prefix between the
+JitterClock section and the first bunch that we're not accounting for.
+
+Candidates for the missing bit(s):
+- Some engine version has a `bHasSecurityData` or similar bit.
+- Possibly SUPERVIVE's wire-format has an extra byte/bit beyond the
+  8-byte outer wrapper — we handle the outer wrapper but may need to
+  strip more.
+
+### Pivot recommendation for session 25
+
+Rather than continue bit-level RE, add SERVER-SIDE instrumentation to
+capture the RPC's sub-reader bytes at the point of `ReceivePropertiesForRPC`:
+
+1. Subclass FObjectReplicator (or hook the connection's FieldCache path)
+   to log the exact sub-reader payload of `ServerVerifyViewTarget`.
+   Since sub-reader bit-count == NumPayloadBits, we know EXACTLY what
+   the client sent as arguments (byte-aligned within the sub-buffer).
+
+2. Alternative: modify our stub PC's `CallRemoteFunction`-side handler
+   to intercept the incoming RPC bytes.
+
+3. Alternative: add `LogNet.RepLayoutTrace` or similar CVars that force
+   UE to log per-property bit consumption in ReceivePropertiesForRPC.
+
+Once we have the byte-aligned param struct, decoding it manually is
+straightforward.
+
+### What's confirmed
+
+- The RPC bunch payload contains a properly-encoded UE FString
+  `/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass` (int32 count=47 +
+  46 chars + null).
+- Bunch payload is ~292 bytes total — likely multiple additional
+  parameters beyond just the FString.
+- Client's `ServerVerifyViewTarget` has been repurposed by SUPERVIVE
+  (from stock UE's 0-arg "verify view target actor" to a lobby-mode
+  handshake carrying a map name + more).
+
+### Tooling artifacts (session 24)
+
+- `docs/session-24-packet-parser.py` — 309-line Python parser
+  (partial). Decodes StatelessConnect prefix, FNetPacketNotify header,
+  JitterClock; leaves bunch header parsing as an exercise (or session
+  25 pivots away from this approach).
+
+### Chapter state (end of session 24)
+
+- Handshake, packet handler wiring, control messages, map validation,
+  Join, PC spawn, checksum bypass: ALL DONE (sessions 17-20)
+- SUPERVIVE engine mods confirmed: DONE (session 22)
+- RPC bunch bytes captured: DONE (session 23)
+- FString parameter identified: DONE (session 23)
+- Bit-level packet header parsing: DONE (session 24, `docs/session-24-packet-parser.py`)
+- Full RPC parameter list identified: TODO (session 25 — pivot to
+  server-side sub-reader instrumentation)
+- Add matching UFUNCTION + solve class-name: TODO (session 25-26)
+- Menu-data replication: TODO (session 27+)
+
+### Commits this session
+
+- (session 24 writeup commit follows)
+
 
 
 
