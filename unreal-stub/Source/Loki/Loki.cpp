@@ -199,15 +199,17 @@ private:
                     "(NumParms=%d, ParmsSize=%d, FunctionFlags=0x%08X)"),
                Func->NumParms, Func->ParmsSize, (uint32)Func->FunctionFlags);
 
-        // Signature trial: (FVector Location, FRotator Rotation, FString MapName)
-        // Rationale: common anti-cheat "verify view target" pattern is
-        // (camera position, camera rotation, current view target name).
-        // 96 + 96 + 32 + N*8 bits = 224 + 408 (for our 46-char string+null) = 632 bits.
-        // Total 2298 bits - 632 = 1666 bits still unconsumed. But this gets us
-        // FString-consumption at bit 224, and if IsError fires we know the
-        // structure has DIFFERENT prefix.
-        AppendVectorParam(Func, TEXT("CameraLocation"));
-        AppendRotatorParam(Func, TEXT("CameraRotation"));
+        // Session 29 trial: (FVector_NetQuantize100 CamLoc, int32 CamPitchAndYaw,
+        // FString MapName). Modeled on stock UE `ServerUpdateCamera(FVector_NetQuantize
+        // CamLoc, int32 CamPitchAndYaw)` — SUPERVIVE may have merged that RPC's
+        // payload into ServerVerifyViewTarget.
+        //
+        // Session 29 analysis: bit 0 of RPC payload = 1, which matches
+        // FVector_NetQuantize's "non-zero-vector" flag. Plain FVector/FRotator/
+        // FQuat interpretations produce values like 1e+27 (impossible).
+        AppendStructParam(Func, TEXT("CamLocation"),
+                          TEXT("/Script/Engine.Vector_NetQuantize100"));
+        AppendIntParam(Func, TEXT("CamPitchAndYaw"));
         AppendStringParam(Func, TEXT("ClientMapName"));
 
         Func->StaticLink(true);
@@ -256,6 +258,31 @@ private:
     static void AppendRotatorParam(UFunction* Func, const TCHAR* Name)
     {
         AppendStructParam(Func, Name, TEXT("/Script/CoreUObject.Rotator"));
+    }
+
+    // Session 29: additional scalar helpers for trial signatures.
+    static void AppendIntParam(UFunction* Func, const TCHAR* Name)
+    {
+        FIntProperty* Prop = new FIntProperty(Func, FName(Name), RF_Public | RF_Transient);
+        Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor | CPF_HasGetValueTypeHash;
+        Prop->ArrayDim = 1;
+        AppendToChildProperties(Func, Prop);
+    }
+
+    static void AppendFloatParam(UFunction* Func, const TCHAR* Name)
+    {
+        FFloatProperty* Prop = new FFloatProperty(Func, FName(Name), RF_Public | RF_Transient);
+        Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor | CPF_HasGetValueTypeHash;
+        Prop->ArrayDim = 1;
+        AppendToChildProperties(Func, Prop);
+    }
+
+    static void AppendByteParam(UFunction* Func, const TCHAR* Name)
+    {
+        FByteProperty* Prop = new FByteProperty(Func, FName(Name), RF_Public | RF_Transient);
+        Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor | CPF_HasGetValueTypeHash;
+        Prop->ArrayDim = 1;
+        AppendToChildProperties(Func, Prop);
     }
 
     // Tail-append to a UFunction's ChildProperties linked list.
