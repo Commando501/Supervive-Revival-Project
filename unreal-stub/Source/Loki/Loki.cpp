@@ -286,6 +286,22 @@ private:
         // property so we can see exactly where each param starts/ends and
         // whether any overflow fires.
         SelfReplayCapturedRPC(Func);
+
+        // Session 37 Option A / A' / A'' exhaustively tested and ALL FAILED:
+        //   A  (strip CPF_Net at runtime)     - crashed stub on client connect
+        //                                       ("Array index out of bounds")
+        //   A' (PostLogin SetNetDormancy)      - too late; initial actor bunch
+        //                                       already sent by then
+        //   A'' (CDO NetDormancy = DormantAll) - dormancy doesn't skip initial
+        //                                       bunch, only subsequent updates
+        //
+        // The INITIAL actor bunch is where the property data lives, and
+        // there's no simple runtime knob to suppress it. Client hits
+        // "Invalid replicated field 0" and closes.
+        //
+        // Session 38 needs Option B (inject matching replicated properties
+        // so our stub's FClassNetCache aligns with SUPERVIVE's client) or a
+        // native ReplicateActor patch.
     }
 
     // Helper: append an FStrProperty to a UFunction's ChildProperties tail.

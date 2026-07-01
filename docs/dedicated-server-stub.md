@@ -4928,5 +4928,71 @@ Most invasive, most robust.
 
 - (session 36 writeup commit follows)
 
+## Session 37 (2026-07-01 — Option A EXHAUSTED, all variants fail)
+
+Session 36 recommended Option A (suppress outbound PC replication cheaply)
+before B (inject matching properties) or C (native patch). Session 37 tried
+three variants of Option A. **None worked.** Details in
+`docs/session-37-option-a-negative.md`.
+
+### Variants tried
+
+| Variant | What | Why it failed |
+|---|---|---|
+| **A** | strip `CPF_Net` from every FProperty on `APlayerController`, empty ClassReps | crashed stub on client connect with `Array index out of bounds: 0 into an array of size 0` in a downstream RepLayout code path; also can't `StaticLink(true)` because CLASS_Intrinsic asserts |
+| **A'** | `PostLogin` → `SetNetDormancy(DORM_DormantAll)` | too late — initial actor bunch already in flight by `PostLogin`; dormancy only affects subsequent update cycles |
+| **A''** | Set `APlayerController` CDO `NetDormancy = DORM_DormantAll` | dormancy still doesn't skip the INITIAL bunch, only subsequent ones. Client still hit "Invalid replicated field 0" |
+
+### The core insight
+
+The `FClassNetCache` divergence exists AT the initial replication bunch.
+UE bundles two logically distinct things into that bunch:
+
+1. Actor identity (class, spawn info, NetGUID) — required for client
+   spawning a replica
+2. Initial property values — this is where the offending field lives
+
+There's no runtime knob to send (1) without (2). Any Option A variant that
+only affects "future replication cycles" is dead on arrival.
+
+### What session 38 needs
+
+Two remaining paths:
+
+**Native `ReplicateActor` override in `ULokiActorChannel`** — subclass
+override that returns 0 for `APlayerController` actors, sending nothing.
+Simpler than Option B. If the client tolerates an actor channel with no
+inbound bunches, RPCs still route via the client's local PC's NetGUID.
+
+**Option B** — inject matching FProperty entries on `APlayerController`'s
+replicated set (same primitive as sessions 27–32's UFunction param
+injection, applied to top-level UProperties instead). Substantial but
+guaranteed to fix the divergence at the source.
+
+Recommendation: try the ReplicateActor override first. Much smaller change.
+
+### What session 37 leaves in place
+
+- Loki.cpp's `InjectServerVerifyViewTargetFStringParam` unchanged
+- `LokiStubGameMode::PostLogin` override kept as a documented no-op hook site
+- Everything else reverted; repo state is safe
+
+### Chapter state (end of session 37)
+
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Client-close root cause identified: DONE (session 36)
+- Option A (all variants): FAILED (session 37 — documented)
+- Route-around at `ReplicateActor` level: TODO (session 38 — first try)
+- Menu-data replication: TODO (session 39+, after connection stays alive)
+
+### Tooling artifacts (session 37)
+
+- `docs/session-37-option-a-negative.md` — full analysis of each variant's
+  failure mode.
+
+### Commits this session
+
+- (session 37 writeup commit follows)
+
 
 
