@@ -1,4 +1,4 @@
-# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 28
+# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 29
 
 Paste the section between the `---` lines below as the first message.
 
@@ -6,101 +6,105 @@ Paste the section between the `---` lines below as the first message.
 
 We're continuing the SUPERVIVE Revival dedicated-server-stub chapter on
 branch `dedicated-server-stub` at `G:\git\Supervive Revival Project`.
-This is **session 28** of the chapter. Session 27 achieved TWO
-architectural wins:
+This is **session 29** of the chapter. Session 27 proved runtime UFunction
+injection works. Session 28 generalized the injector with helpers for
+FStrProperty, FStructProperty, FVector, FRotator. First multi-param trial
+`(FVector, FRotator, FString)` still failed with Reader.IsError() — the
+first 32 bits of RPC payload (0x05C6000B) don't fit FVector.X.
 
-1. **UFunction runtime injection WORKS** — we can modify stock
-   APlayerController's UFunction signature at runtime by appending
-   FProperties to ChildProperties and calling StaticLink(true).
-2. **Class-name resolution problem BYPASSED** — no more session-21
-   hard wall, no subclass needed.
-
-Session 27's test: injected a single FStrProperty. UE's error changed
-from "Mismatch read" (Reader.GetBitsLeft()!=0) to "Reader.IsError()"
-(overflow). Confirms UE's RepLayout picked up our new signature. But
-FString is NOT the first param — session 25's decode showed 991 bits
-of preceding params in the 2298-bit RPC struct.
-
-Session 28's job: **iterate param orderings until Reader.GetBitsLeft() = 0**.
+Today: expand injector helpers, iterate signatures more systematically,
+consider that SUPERVIVE's RPC may use a Loki-specific USTRUCT.
 
 START BY (in this order):
   cd "G:\git\Supervive Revival Project"
   git status
   git log --oneline -10
   # Then read:
-  #   docs/dedicated-server-stub.md   (jump to "Session 27" at bottom)
-  #   docs/session-27-injection-test.txt  (17 lines — injection log)
-  #   unreal-stub/Source/Loki/Loki.cpp  (has the injector — see
-  #     FLokiModule::InjectServerVerifyViewTargetFStringParam)
-  #   docs/session-25-bunch-capture.txt  (the raw bunch bytes)
-  #   docs/session-25-bunch-decoder.py   (Python decoder)
+  #   docs/dedicated-server-stub.md   (jump to "Session 28" at bottom)
+  #   docs/session-28-injection-trial.txt  (21-line trial log)
+  #   docs/session-25-bunch-capture.txt  (raw RPC bunch bytes)
+  #   docs/session-25-bunch-decoder.py   (Python bunch decoder)
+  #   unreal-stub/Source/Loki/Loki.cpp
+  #     (has InjectServerVerifyViewTargetFStringParam +
+  #      AppendStringParam/AppendStructParam/AppendVectorParam helpers)
+  #   docs/session-22-schema-actor-loki-mods.txt  (SUPERVIVE-added
+  #      AActor props — could hint at custom struct types)
   #   The hero-roster-blocker memory auto-loads.
 
 WHAT WE KNOW:
 
-- RPC arg struct = 2298 bits starting at bit 41 of the bunch
-- Contains FString "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass" at
-  bunch bit 1032 (= RPC-struct bit 991)
-- Preceding params: 991 bits worth
-- Trailing params: 899 bits worth
-- Total: 991 + 408 (FString) + 899 = 2298 ✓
+- RPC arg struct = 2298 bits (session 25)
+- First 32 bits = 0x05C6000B = 96862219 (int32) — not a plausible FString
+  count, FVector.X, or int32 hash
+- FString "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass" at bit 991
+- Session 28 confirmed first param is NOT FVector (would need X ≈ 0)
+- Tried: `FString` (session 27), `(FVector, FRotator, FString)` (session 28)
+  — both IsError
 
-WHAT TO TRY:
+STEP-BY-STEP PLAN:
 
-Step 1: Generalize the injector. Rename
-`InjectServerVerifyViewTargetFStringParam` to
-`InjectServerVerifyViewTargetSignature` and support ADDING multiple
-FProperty types in order:
-- FStrProperty (FString) — 32 + N*8 bits (N chars incl null)
-- FStructProperty for FVector, FRotator — need to look up matching UScriptStruct
-- FArrayProperty for TArray<uint8> — 32 bits count + N*8 chars
-- FIntProperty, FFloatProperty, FBoolProperty for scalars
+Step 1 (30 min): Expand injector helper coverage. Add:
+```cpp
+static void AppendByteParam(UFunction*, const TCHAR*);           // FByteProperty
+static void AppendIntParam(UFunction*, const TCHAR*);            // FIntProperty
+static void AppendUInt32Param(UFunction*, const TCHAR*);         // FUInt32Property
+static void AppendFloatParam(UFunction*, const TCHAR*);          // FFloatProperty
+static void AppendBoolParam(UFunction*, const TCHAR*);           // FBoolProperty (1-bit)
+static void AppendUInt8ArrayParam(UFunction*, const TCHAR*);     // FArrayProperty(FByteProperty)
+static void AppendNameParam(UFunction*, const TCHAR*);           // FNameProperty
+```
 
-Step 2: Trial signatures. Watch stub log for `Reader.IsError()` vs
-`Mismatch read`:
-- `Mismatch read` with leftover count means we consumed too few bits
-- `Reader.IsError()` means we tried to read more bits than available
+Step 2 (60 min): Systematic trial matrix. Add a debug CVar or config
+option to select which signature to test, then rebuild+launch:
 
-The GOAL is: neither error, meaning all bits consumed exactly.
+Trials to try:
+- `(TArray<uint8> Data, FString MapName)` — TArray absorbs 991 bits
+  minus 32 (count) = 959 bits. But 959/8 = 119.875 (not integer). Fails.
+- `(FVector_NetQuantize100, FVector_NetQuantize100, FString)` — variable
+  bit encoding, might land at 991
+- `(FQuat, FVector_NetQuantize100, FString)` — quaternion + position
+- `(FString First, ..., FString ClientMapName)` — maybe first param
+  is another FString with N=? Compute N: 32 + N*8 = 991 → N = 119.875. Nope.
+- `(int32, int32, FVector, FRotator, FString)` — 32+32+96+96+... = 256+
+- `(FRepMovement, FString)` — FRepMovement has NetSerialize; may match
 
-Trial ideas in order of likelihood:
-1. `(FVector, FRotator, FString)` — 96+96+408 = 600 bits (still < 2298)
-2. `(FVector, FRotator, FString, FVector, FRotator, ...)` — see how the
-   pattern extends
-3. `(FVector Location, FRotator Rotation, float Timestamp, int32 Hash,
-   FString MapName, TArray<uint8> Signature)` — mixed
-4. `(TArray<uint8> AntiCheatBlob, FString MapName, TArray<uint8> Sig2)`
-   — variable-size blobs before/after FString
+Step 3 (30 min): Look at SUPERVIVE-specific USTRUCTs from
+`docs/session-22-schema-actor-loki-mods.txt`:
+- `LokiReplicationStrategy` (5 fields: enum + 4 bools)
+- `PoolableActorServerState` (2 fields)
 
-Anti-cheat patterns:
-- BattlEye/EAC verify-view-target payloads often contain:
-  - Client view position (FVector or FVector_NetQuantize)
-  - Client view rotation (FRotator or FQuat)
-  - Server time (float or double)
-  - Client-computed hash of critical state (uint32 or FMD5Hash)
-  - Anti-cheat signature/token (byte array)
-  - Current gameplay context (map name, game mode name)
+Check if any of these match. Look up their FBitReader consumption via
+extracted schema.txt (in repo root, ~71k lines).
 
-Step 3: Since FString is at bit 991 (= 123.875 bytes into RPC struct),
-whatever comes before totals 991 bits. Since 991 is odd, it's a
-non-byte-aligned sequence of bit-level params. Look for combinations
-that sum to 991 bits.
+Step 4 (analytical): Since 991 mod 8 = 7, ONE preceding param must
+contribute an odd bit count. Candidates:
+- FBoolProperty: 1 bit
+- Bit-packed struct member
+- FVector_NetQuantize with variable bits
 
-If assuming byte-aligned params: 991 doesn't fit. So some param is
-bit-packed (like FBool = 1 bit, FQuat_NetQuantize = 24 bits, etc.).
+For example, `(FBool, FVector, FRotator, FVector, FRotator, ..., FString)`:
+1 + N*96 + 32 + M*8 = 991
+N=6, M=54: 1 + 576 + 32 + 432 = 1041 (no)
+N=5, M=66: 1 + 480 + 32 + 528 = 1041 (no)
 
-Step 4: Also solve TRAILING 899 bits. Similar iterate.
+Actually 991 - 1 (bool) = 990. 990 / 96 = 10.3 → not clean.
 
-WHAT'S ALREADY BUILT (all working):
+Trial with `(FBool, FString)`:
+1 + 32 + N*8 = 991 → N*8 = 958 → N = 119.75. Nope.
 
-- Everything through PC spawn: sessions 17-20
-- SUPERVIVE engine mods confirmed via schema extract: session 22
-- Full inner-packet hex dump in LokiStatelessConnect::Incoming: session 23
-- Per-bunch hex dump in LokiActorChannel: session 25
-- Bunch decoder Python + 2298-bit isolation: session 25
-- UHT parity constraint confirmed: session 26
-- Runtime UFunction injection working: session 27
-- FStrProperty successfully appended, StaticLink recomputes ParmsSize: session 27
+None of my back-of-envelope combos work. May need to actually match
+SUPERVIVE's custom USTRUCT.
+
+WHAT'S ALREADY BUILT:
+
+- All sessions 17-27 infrastructure — DO NOT TOUCH:
+  * bDisableOutgoingWrap in LokiNetDriver::LowLevelSend (session 17)
+  * World/package rename in Loki.cpp (session 19)
+  * NetworkChecksumMode=None in LokiNetDriver::InitBase (session 20)
+  * Session-23 hex dump in LokiStatelessConnect::Incoming
+  * Session-25 LokiActorChannel + ChannelDefinitions
+  * Session-27 FCoreDelegates::OnPostEngineInit hook for UFunction injection
+  * Session-28 generalized injector helpers in Loki.cpp
 
 STUB LAUNCH:
 
@@ -109,7 +113,7 @@ STUB LAUNCH:
         '"G:\git\Supervive Revival Project\unreal-stub\Loki.uproject"' `
         '/Engine/Maps/Entry?listen' -game -server -log -Port=7777 `
         -nullrhi -NoSplash -Unattended `
-        -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose, LogLokiStubGM Verbose, LogLokiStubPC Verbose, LogNetTraffic VeryVerbose, LogLokiActorChannel Verbose, LogRep VeryVerbose"
+        -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose, LogLokiStubGM Verbose, LogLokiStubPC Verbose, LogNetTraffic VeryVerbose, LogLokiActorChannel Verbose"
 
 Build:
 
@@ -125,25 +129,18 @@ Client:
 
 GUARDRAILS:
 
-- Branch `dedicated-server-stub`. Commit + push each meaningful step.
-- Steam running before game launch.
-- browse_hook v13 small crash rate; retry.
-- Do NOT touch:
-  * Session 17: bDisableOutgoingWrap in LokiNetDriver::LowLevelSend
-  * Session 19: World/package rename in Loki.cpp
-  * Session 20: NetworkChecksumMode=None in LokiNetDriver::InitBase
-  * Session 23: hex dump in LokiStatelessConnect::Incoming
-  * Session 25: LokiActorChannel + ChannelDefinitions config
-  * Session 27: FCoreDelegates::OnPostEngineInit hook for UFunction
-    injection
+- Steam must be running.
+- browse_hook v13 crash rate ~10%; retry on crash.
+- Branch `dedicated-server-stub`; commit each meaningful step.
 
-CHAPTER STATE AT END OF SESSION 27:
+CHAPTER STATE AT END OF SESSION 28:
 
 - Everything through PC spawn: DONE
-- Bunch bytes captured + decoded: DONE
-- Runtime UFunction injection working: DONE
-- Class-name resolution: BYPASSED
-- Full RPC parameter list: TODO (session 28 — trial signatures)
-- Menu-data replication: TODO (session 29+)
+- Bunch bytes captured + decoded (2298 bits): DONE
+- Runtime UFunction injection working (single and multi-property): DONE
+- FString-alone trial: IsError (session 27)
+- (FVector, FRotator, FString) trial: IsError (session 28)
+- Correct RPC signature: TODO (session 29 — expand helpers + more trials)
+- Menu-data replication: TODO (session 30+)
 
 If in doubt about a step, ask the user.

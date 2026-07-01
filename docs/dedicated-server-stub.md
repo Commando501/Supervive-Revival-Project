@@ -3989,6 +3989,106 @@ available.
 
 - (session 27 writeup commit follows)
 
+## Session 28 (2026-07-01 — generalized injector + first multi-param trial; iteration continues)
+
+Session 27 established that runtime UFunction injection works. Session 28
+generalized the injector infrastructure and made the first multi-property
+trial.
+
+### Delivered: generalized injector helpers
+
+Extended `unreal-stub/Source/Loki/Loki.cpp` with reusable helpers:
+- `AppendStringParam(Func, Name)` — appends FStrProperty
+- `AppendStructParam(Func, Name, StructPath)` — appends FStructProperty
+  looking up UScriptStruct by path (e.g., `/Script/CoreUObject.Vector`)
+- `AppendVectorParam(Func, Name)` — FVector shortcut
+- `AppendRotatorParam(Func, Name)` — FRotator shortcut
+- `AppendToChildProperties(Func, Prop)` — tail-append to
+  Func->ChildProperties linked list
+
+### First multi-param trial: (FVector, FRotator, FString)
+
+Rationale: common anti-cheat "verify view target" signature pattern —
+(camera location, camera rotation, current-target name). Bit budget:
+96 (FVector) + 96 (FRotator) + 32 (FString count) + N*8 (chars) = variable.
+
+Injection log confirms it worked:
+```
+LogLokiStub: InjectServerVerifyViewTarget: found UFunction on
+    APlayerController (NumParms=0, ParmsSize=0, FunctionFlags=0x80220CC2)
+LogLokiStub: InjectServerVerifyViewTarget: added FVector+FRotator+FString
+    params. New NumParms=3, ParmsSize=64
+```
+
+Test outcome: STILL `Reader.IsError() == true` (same overflow error mode
+as session 27). Confirms FVector at bit 0 doesn't match the actual first
+param of SUPERVIVE's RPC.
+
+### Byte-level analysis
+
+Analyzed the raw RPC payload's first 32 bits at bit 0:
+- Value = 0x05C6000B = 96862219 as int32 LE
+- As float32: ~1.86e-35 (denormalized, essentially zero)
+
+Neither interpretation matches a plausible FVector X component or FString
+count. First param must be a **fixed-size struct with specific bit
+alignment** OR a **NetSerialize custom struct** whose bit-consumption
+pattern isn't a simple UPROPERTY read.
+
+### Why 991 bits before FString is unusual
+
+Session-25 analysis: FString `/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass`
+starts at RPC-payload bit 991 (= bunch bit 1032, byte-aligned in raw
+bunch). Preceding params sum to 991 bits. But:
+
+- 991 mod 8 = 7 → not a multiple of byte
+- 991 doesn't decompose cleanly into simple UPROPERTY combos:
+  - FVector (96) + FRotator (96) = 192, remaining 799 doesn't fit FString+int32
+  - N * FVector = 991: N = 10.32 (no)
+  - FString(N=115) + FString(N=M) = 991: various N,M don't align
+  - TArray<uint8> (32 + N*8) = 991: N = 119.875 (no)
+- Suggests SUPERVIVE's first param is a **custom USTRUCT with NetSerialize
+  override** (like FVector_NetQuantize but variable-length) OR contains
+  bit-level packed fields (bools, enums).
+
+### Session 29 plan
+
+1. Add more property helpers: FByteProperty, FIntProperty, FFloatProperty,
+   FBoolProperty, FArrayProperty<uint8>, more UScriptStruct paths for
+   FVector_NetQuantize / FQuat / FRotator_NetQuantize.
+2. Try trial signatures more systematically:
+   - `(TArray<uint8>, FString)` — TArray absorbs variable prefix
+   - `(FVector_NetQuantize100, FVector_NetQuantize100, FString)` — variable
+     bit encoding for vectors
+   - `(FQuat, FString)` — quaternion for rotation
+   - `(FString First, FString ClientMapName)` — maybe two FStrings
+   - `(FUniqueNetIdRepl, FString)` — player identity + map
+3. Consider that the RPC arg struct may include a large USTRUCT with
+   custom NetSerialize. In that case, we'd need to find or construct
+   a matching USTRUCT.
+4. Explore: SUPERVIVE's `usmapdump extract` schema showed several Loki-
+   specific structs like `LokiReplicationStrategy`. Could one of these be
+   the RPC's first param?
+
+### Tooling artifacts (session 28)
+
+- `unreal-stub/Source/Loki/Loki.cpp` (generalized injector)
+- `docs/session-28-injection-trial.txt` (21-line log excerpt + summary)
+
+### Chapter state (end of session 28)
+
+- Everything through PC spawn: DONE
+- Bunch bytes captured + decoded: DONE
+- Runtime UFunction injection working with multiple property types: DONE
+- Trial 1 (FString): Reader.IsError (session 27)
+- Trial 2 (FVector, FRotator, FString): Reader.IsError (session 28)
+- Correct RPC signature: TODO (session 29 — iterate more)
+- Menu-data replication: TODO (session 30+)
+
+### Commits this session
+
+- (session 28 writeup commit follows)
+
 
 
 
