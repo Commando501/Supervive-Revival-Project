@@ -5,6 +5,12 @@
 #include "PacketHandlers/StatelessConnectHandlerComponent.h"
 #include "Net/Core/Misc/DDoSDetection.h"
 #include "Engine/PackageMapClient.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerState.h"
+#include "GameFramework/HUD.h"
+#include "GameFramework/DefaultPawn.h"
+#include "GameFramework/SpectatorPawn.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiNet, Log, All);
 
@@ -170,4 +176,80 @@ void ULokiNetDriver::LowLevelSend(TSharedPtr<const FInternetAddr> Address,
 	{
 		Super::LowLevelSend(Address, Data, CountBits, Traits);
 	}
+}
+
+// Session 38 iter 3: session 20 identified per-class NetworkChecksum
+// divergence on this full set — APlayerController, AHUD, AGameStateBase,
+// AGameModeBase, APlayerState, ADefaultPawn, ASpectatorPawn. Iter 2 proved
+// the divergence is real (iter 2's client log showed the failure moved
+// from PlayerController to GameStateBase + PlayerState after we suppressed
+// PC replication). Suppressing all of them until we understand which fields
+// SUPERVIVE actually needs.
+static bool IsClassNetCacheDivergent(AActor* Actor)
+{
+	if (!Actor) return false;
+	// GameModeBase is server-only, doesn't replicate. Left out on purpose.
+	return Actor->IsA<APlayerController>()
+	    || Actor->IsA<AGameStateBase>()
+	    || Actor->IsA<APlayerState>()
+	    || Actor->IsA<AHUD>()
+	    || Actor->IsA<ADefaultPawn>()
+	    || Actor->IsA<ASpectatorPawn>();
+}
+
+bool ULokiNetDriver::ShouldReplicateActor(AActor* Actor) const
+{
+	// Session 38: suppress replication of every actor whose class SUPERVIVE
+	// has patched in ways that make its FClassNetCache diverge from stock
+	// UE 5.4. See the header comment on this override for the full rationale
+	// and session-38 notes for the exhaustive session-37 negative-result table.
+	// Iter 3: expanded from just APlayerController to session-20's full list
+	// after iter 2's client log showed the failure moved to GameStateBase +
+	// PlayerState once the PC path was closed.
+	//
+	// Log once per unique actor name so the stub log confirms we're taking
+	// the skip path without spamming every ServerReplicateActors tick.
+	if (IsClassNetCacheDivergent(Actor))
+	{
+		static TSet<FName> LoggedNames;
+		const FName ActorName = Actor->GetFName();
+		if (!LoggedNames.Contains(ActorName))
+		{
+			LoggedNames.Add(ActorName);
+			UE_LOG(LogLokiNet, Display,
+			       TEXT("ShouldReplicateActor: SUPPRESSING replication for %s (%s) "
+			            "to avoid FClassNetCache divergence with SUPERVIVE's client-patched class. "
+			            "See session-38 iter 3 notes."),
+			       *Actor->GetName(), *Actor->GetClass()->GetName());
+		}
+		return false;
+	}
+	return Super::ShouldReplicateActor(Actor);
+}
+
+bool ULokiNetDriver::ShouldReplicateFunction(AActor* Actor, UFunction* Function) const
+{
+	// Session 38 iter 2/3: also block RPC-dispatch-driven channel creation
+	// for every actor class in the divergent set. See the header comment on
+	// this override for the full rationale — ShouldReplicateActor is not
+	// enough because the RPC path in ProcessRemoteFunction opens a fresh
+	// channel independent of the network object list, and the very first
+	// bunch on that channel is the initial actor replication with the bad
+	// property block.
+	if (IsClassNetCacheDivergent(Actor))
+	{
+		static TSet<FName> LoggedFuncs;
+		const FName FuncName = Function ? Function->GetFName() : NAME_None;
+		if (!LoggedFuncs.Contains(FuncName))
+		{
+			LoggedFuncs.Add(FuncName);
+			UE_LOG(LogLokiNet, Display,
+			       TEXT("ShouldReplicateFunction: SUPPRESSING RPC %s on %s (%s) "
+			            "to prevent RPC-dispatch-driven actor channel open + initial bunch. "
+			            "See session-38 iter 2/3 notes."),
+			       *FuncName.ToString(), *Actor->GetName(), *Actor->GetClass()->GetName());
+		}
+		return false;
+	}
+	return Super::ShouldReplicateFunction(Actor, Function);
 }
