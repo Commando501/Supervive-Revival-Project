@@ -1,4 +1,4 @@
-# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 29
+# Next session prompt — SUPERVIVE Revival dedicated-server stub, session 30
 
 Paste the section between the `---` lines below as the first message.
 
@@ -6,105 +6,102 @@ Paste the section between the `---` lines below as the first message.
 
 We're continuing the SUPERVIVE Revival dedicated-server-stub chapter on
 branch `dedicated-server-stub` at `G:\git\Supervive Revival Project`.
-This is **session 29** of the chapter. Session 27 proved runtime UFunction
-injection works. Session 28 generalized the injector with helpers for
-FStrProperty, FStructProperty, FVector, FRotator. First multi-param trial
-`(FVector, FRotator, FString)` still failed with Reader.IsError() — the
-first 32 bits of RPC payload (0x05C6000B) don't fit FVector.X.
+This is **session 30** of the chapter. Session 29 analytically ruled out
+plain scalar types (FVector, FRotator, FQuat as 3-4 floats) as the first
+RPC param — their bit-level interpretations produce impossible values
+like 1e+27. Bit 0 = 1 is consistent with FVector_NetQuantize OR NetGUID.
+Session 29's trial (FVector_NetQuantize100, int32, FString) also failed
+with Reader.IsError.
 
-Today: expand injector helpers, iterate signatures more systematically,
-consider that SUPERVIVE's RPC may use a Loki-specific USTRUCT.
+Session 30: try FObjectProperty (Actor pointer) or a specific
+SUPERVIVE-Loki-USTRUCT.
 
 START BY (in this order):
   cd "G:\git\Supervive Revival Project"
   git status
   git log --oneline -10
   # Then read:
-  #   docs/dedicated-server-stub.md   (jump to "Session 28" at bottom)
-  #   docs/session-28-injection-trial.txt  (21-line trial log)
-  #   docs/session-25-bunch-capture.txt  (raw RPC bunch bytes)
-  #   docs/session-25-bunch-decoder.py   (Python bunch decoder)
+  #   docs/dedicated-server-stub.md   (jump to "Session 29" at bottom)
+  #   docs/session-29-trials.txt      (session 29 log + summary)
+  #   docs/session-25-bunch-capture.txt   (raw RPC bunch bytes)
+  #   docs/session-25-bunch-decoder.py    (Python decoder)
+  #   docs/session-22-schema-actor-loki-mods.txt  (SUPERVIVE-added props)
   #   unreal-stub/Source/Loki/Loki.cpp
   #     (has InjectServerVerifyViewTargetFStringParam +
-  #      AppendStringParam/AppendStructParam/AppendVectorParam helpers)
-  #   docs/session-22-schema-actor-loki-mods.txt  (SUPERVIVE-added
-  #      AActor props — could hint at custom struct types)
+  #      AppendString/Struct/Vector/Rotator/Int/Float/Byte helpers)
+  #   schema.txt (repo root, ~71k lines — search for USTRUCTs that might
+  #     be first param)
   #   The hero-roster-blocker memory auto-loads.
 
 WHAT WE KNOW:
 
-- RPC arg struct = 2298 bits (session 25)
-- First 32 bits = 0x05C6000B = 96862219 (int32) — not a plausible FString
-  count, FVector.X, or int32 hash
+- RPC arg struct = 2298 bits
 - FString "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass" at bit 991
-- Session 28 confirmed first param is NOT FVector (would need X ≈ 0)
-- Tried: `FString` (session 27), `(FVector, FRotator, FString)` (session 28)
-  — both IsError
+- First 32 bits = 0x05C6000B (int32) — not FString count, not float
+- First 96 bits as FVector: impossible coordinates
+- Bit 0 = 1 (non-zero-vector flag or NetGUID valid flag)
+- **Confirmed: first param is variable-bit-encoded** (NetSerialize custom
+  struct OR FObjectProperty NetGUID)
 
 STEP-BY-STEP PLAN:
 
-Step 1 (30 min): Expand injector helper coverage. Add:
+Step 1 (30 min): Add FObjectProperty helper to Loki.cpp:
+
 ```cpp
-static void AppendByteParam(UFunction*, const TCHAR*);           // FByteProperty
-static void AppendIntParam(UFunction*, const TCHAR*);            // FIntProperty
-static void AppendUInt32Param(UFunction*, const TCHAR*);         // FUInt32Property
-static void AppendFloatParam(UFunction*, const TCHAR*);          // FFloatProperty
-static void AppendBoolParam(UFunction*, const TCHAR*);           // FBoolProperty (1-bit)
-static void AppendUInt8ArrayParam(UFunction*, const TCHAR*);     // FArrayProperty(FByteProperty)
-static void AppendNameParam(UFunction*, const TCHAR*);           // FNameProperty
+static void AppendObjectParam(UFunction* Func, const TCHAR* Name,
+                              UClass* PropertyClass)
+{
+    FObjectProperty* Prop = new FObjectProperty(Func, FName(Name),
+                                                 RF_Public | RF_Transient);
+    Prop->PropertyClass = PropertyClass;
+    Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor;
+    Prop->ArrayDim = 1;
+    AppendToChildProperties(Func, Prop);
+}
 ```
 
-Step 2 (60 min): Systematic trial matrix. Add a debug CVar or config
-option to select which signature to test, then rebuild+launch:
+Then trial: `(AActor* NewViewTarget, FString ClientMapName)`.
 
-Trials to try:
-- `(TArray<uint8> Data, FString MapName)` — TArray absorbs 991 bits
-  minus 32 (count) = 959 bits. But 959/8 = 119.875 (not integer). Fails.
-- `(FVector_NetQuantize100, FVector_NetQuantize100, FString)` — variable
-  bit encoding, might land at 991
-- `(FQuat, FVector_NetQuantize100, FString)` — quaternion + position
-- `(FString First, ..., FString ClientMapName)` — maybe first param
-  is another FString with N=? Compute N: 32 + N*8 = 991 → N = 119.875. Nope.
-- `(int32, int32, FVector, FRotator, FString)` — 32+32+96+96+... = 256+
-- `(FRepMovement, FString)` — FRepMovement has NetSerialize; may match
+If IsError persists but changes byte offset, we may be closer.
 
-Step 3 (30 min): Look at SUPERVIVE-specific USTRUCTs from
-`docs/session-22-schema-actor-loki-mods.txt`:
-- `LokiReplicationStrategy` (5 fields: enum + 4 bools)
-- `PoolableActorServerState` (2 fields)
+Step 2 (30 min): Explore SUPERVIVE-Loki USTRUCTs from schema.txt. Grep
+for likely first-param structs:
 
-Check if any of these match. Look up their FBitReader consumption via
-extracted schema.txt (in repo root, ~71k lines).
+```
+grep -E "^  LokiViewTarget|^  LokiCameraInfo|^  Loki.*Verify|
+        ^  LokiPlayerState" schema.txt | head -20
+```
 
-Step 4 (analytical): Since 991 mod 8 = 7, ONE preceding param must
-contribute an odd bit count. Candidates:
-- FBoolProperty: 1 bit
-- Bit-packed struct member
-- FVector_NetQuantize with variable bits
+Any struct with 6-15 fields and a mix of scalars is a candidate. Try
+`AppendStructParam(Func, ..., "/Script/Loki.LokiXxxxxx")`.
 
-For example, `(FBool, FVector, FRotator, FVector, FRotator, ..., FString)`:
-1 + N*96 + 32 + M*8 = 991
-N=6, M=54: 1 + 576 + 32 + 432 = 1041 (no)
-N=5, M=66: 1 + 480 + 32 + 528 = 1041 (no)
+Step 3 (60 min): Python offline signature-matcher. Write
+`scratchpad/decode_bunch_v3.py`:
+- Load captured bunch bytes (docs/session-25-bunch-capture.txt)
+- Extract RPC payload bit stream (2298 bits starting at bit 41)
+- For each SIGNATURE CANDIDATE (list of param types + bit lengths):
+  - Simulate FRepLayout::ReceivePropertiesForRPC reading
+  - Check if all bits consumed AND intermediate values plausible
+  - Emit "candidate: X params, N bits consumed, sanity check pass/fail"
 
-Actually 991 - 1 (bool) = 990. 990 / 96 = 10.3 → not clean.
+Signatures to try:
+- (FObjectProperty[Actor], FString): ~30 bits NetGUID + 32+N*8 FString
+- (FUniqueNetIdRepl, FVector_NetQuantize100, FString): ~50+100+FString
+- (SUPERVIVE-Loki-USTRUCT, FString): unknown struct bits + FString
+- Many-scalar combos: (int32, float, int32, float, ..., FString)
 
-Trial with `(FBool, FString)`:
-1 + 32 + N*8 = 991 → N*8 = 958 → N = 119.75. Nope.
+Step 4: Debugger route (fallback). Attach Visual Studio to LokiEditor,
+set breakpoint at `FRepLayout::ReceivePropertiesForRPC` in
+RepLayout.cpp:6972. Watch Reader.GetPosBits() before/after each property
+read. This tells us EXACTLY where FString read begins and what property
+type matches SUPERVIVE's first param.
 
-None of my back-of-envelope combos work. May need to actually match
-SUPERVIVE's custom USTRUCT.
+WHAT'S ALREADY BUILT (all working):
 
-WHAT'S ALREADY BUILT:
-
-- All sessions 17-27 infrastructure — DO NOT TOUCH:
-  * bDisableOutgoingWrap in LokiNetDriver::LowLevelSend (session 17)
-  * World/package rename in Loki.cpp (session 19)
-  * NetworkChecksumMode=None in LokiNetDriver::InitBase (session 20)
-  * Session-23 hex dump in LokiStatelessConnect::Incoming
-  * Session-25 LokiActorChannel + ChannelDefinitions
-  * Session-27 FCoreDelegates::OnPostEngineInit hook for UFunction injection
-  * Session-28 generalized injector helpers in Loki.cpp
+- Sessions 17-28 infrastructure — DO NOT TOUCH:
+  * All engine overrides (session 17-20)
+  * Bunch hex dumps (session 23, 25)
+  * UFunction injection hook + helpers (session 27-29)
 
 STUB LAUNCH:
 
@@ -127,20 +124,14 @@ Client:
     cd "G:\git\Supervive Revival Project"
     .\configs\launch-redirect.ps1 -Hook ".\tools\sigbypass-mod\browse_hook.dll"
 
-GUARDRAILS:
-
-- Steam must be running.
-- browse_hook v13 crash rate ~10%; retry on crash.
-- Branch `dedicated-server-stub`; commit each meaningful step.
-
-CHAPTER STATE AT END OF SESSION 28:
+CHAPTER STATE AT END OF SESSION 29:
 
 - Everything through PC spawn: DONE
 - Bunch bytes captured + decoded (2298 bits): DONE
-- Runtime UFunction injection working (single and multi-property): DONE
-- FString-alone trial: IsError (session 27)
-- (FVector, FRotator, FString) trial: IsError (session 28)
-- Correct RPC signature: TODO (session 29 — expand helpers + more trials)
-- Menu-data replication: TODO (session 30+)
+- Runtime UFunction injection: DONE
+- Plain scalar first-param types: RULED OUT (session 29)
+- Variable-bit type identified: TODO (session 30 — Actor* / NetGUID
+  / Loki struct)
+- Menu-data replication: TODO (session 31+)
 
 If in doubt about a step, ask the user.

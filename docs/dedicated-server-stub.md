@@ -4089,6 +4089,94 @@ bunch). Preceding params sum to 991 bits. But:
 
 - (session 28 writeup commit follows)
 
+## Session 29 (2026-07-01 — analytical rule-out + FVector_NetQuantize trial; iteration continues)
+
+Session 29 added analytical rigor and expanded injector helpers.
+
+### Injector helper expansion
+
+Added `AppendIntParam`, `AppendFloatParam`, `AppendByteParam` to
+`unreal-stub/Source/Loki/Loki.cpp`. Uses `AppendStructParam` with path
+lookup for FVector_NetQuantize100:
+```cpp
+AppendStructParam(Func, TEXT("CamLocation"),
+                  TEXT("/Script/Engine.Vector_NetQuantize100"));
+```
+
+### Analytical: rule out scalar first-param types
+
+Analyzed the first 96-128 bits of the RPC payload against common UE
+struct layouts:
+
+- **FVector as 3 floats**: X=1.86e-35, Y=-1.32e+23, Z=-1.68e+27. IMPOSSIBLE
+  for real coordinates.
+- **FRotator as 3 floats**: same nonsense values. IMPOSSIBLE.
+- **FQuat as 4 floats**: norm = 1.68e+27, should be near 1.0. IMPOSSIBLE.
+- **Bit 0 of payload = 1**: consistent with either
+  - `FVector_NetQuantize100` non-zero-vector flag
+  - `NetGUID` valid-reference flag (for FObjectProperty)
+
+**Conclusion**: first param must be a **variable-bit-encoded type** (custom
+NetSerialize struct or NetGUID via FObjectProperty). Plain UPROPERTY scalars
+are ruled out.
+
+### Session 29 trial: (FVector_NetQuantize100, int32, FString)
+
+Modeled on stock UE `ServerUpdateCamera(FVector_NetQuantize CamLoc,
+int32 CamPitchAndYaw)` — SUPERVIVE may have merged that payload into
+ServerVerifyViewTarget.
+
+Injection succeeded (NumParms 0 → 3, ParmsSize 0 → 48).
+
+Test outcome: still `Reader.IsError() == true`. FVector_NetQuantize100
+either doesn't match SUPERVIVE's first param type, or the total bit count
+of the combination doesn't equal 2298.
+
+### Session 30 plan
+
+Given exhaustive scalar/simple-struct rule-outs, session 30 should:
+
+1. **Add FObjectProperty helper** — construct with a UClass* target
+   (e.g., `AActor::StaticClass()`). Try `(AActor* NewViewTarget, FString)`.
+   Actor pointers on wire are NetGUIDs (variable bits).
+
+2. **Explore FUniqueNetIdRepl** — SUPERVIVE has player-identity
+   verification; this struct has custom NetSerialize.
+
+3. **Try SUPERVIVE-specific Loki structs** — `LokiReplicationStrategy`,
+   `PoolableActorServerState`, and other Loki-named structs from
+   `docs/session-22-schema-actor-loki-mods.txt`.
+
+4. **Alternative**: write a Python bit-decoder that tries a MATRIX of
+   possible signatures against the captured bytes. For each combination,
+   check if all 2298 bits are exactly consumed AND if the intermediate
+   values are "reasonable" (float values in [-1e5, 1e5], counts in
+   [0, 1000], etc.). This narrows the search space analytically.
+
+5. **Attach debugger** — the ultimate escape hatch. Load LokiEditor
+   under a debugger, set a breakpoint at
+   `FRepLayout::ReceivePropertiesForRPC`, step through with our
+   FStrProperty signature, watch where FString read starts. Repeat with
+   Loki-specific structs.
+
+### Tooling artifacts (session 29)
+
+- `unreal-stub/Source/Loki/Loki.cpp` (int/float/byte helpers added)
+- `docs/session-29-trials.txt` (20-line trial log + summary)
+
+### Chapter state (end of session 29)
+
+- Everything through PC spawn: DONE
+- Bunch bytes captured + decoded (2298 bits): DONE
+- Runtime UFunction injection working (multiple types): DONE
+- Plain scalar first-param types RULED OUT: DONE (session 29)
+- Correct RPC signature: TODO (session 30 — variable-bit types)
+- Menu-data replication: TODO (session 31+)
+
+### Commits this session
+
+- (session 29 writeup commit follows)
+
 
 
 
