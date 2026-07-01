@@ -1,0 +1,150 @@
+=== SESSION 40 DX11 TEST — NEGATIVE RESULT (crash NOT D3D12-specific) ===
+
+Session 40 Path A1 identified the crash class as UE 5.4's
+FD3D12CommandContext (or similar D3D12 RHI class) based on log-string
+evidence pointing at D3D12CommandList.cpp / D3D12CommandContext.cpp /
+D3D12Residency.h. A logical prediction was: force DX11 mode via `-DX11`
+cmdline flag, avoid the D3D12 code path, avoid the crash.
+
+**Test result: HYPOTHESIS FALSIFIED. DX11 mode still crashes at the
+same address, even earlier than D3D12 mode.**
+
+--- Test setup ---
+
+New batch `scratchpad/launch-sv-open-dx11.bat` = same as the working
+launch-sv-open.bat with `-DX11` added as the last-but-one cmdline arg
+before the URL. Same session-38 stub + session-38 suppression state
+(no code changes to the stub between D3D12 and DX11 tests).
+
+--- Test result: DX11 mode IS active ---
+
+Client log confirms DX11 RHI initialization:
+
+    [23:23:17:473] LogD3D11RHI: DedicatedVideoMemory: 25314721792 bytes
+    [23:23:17:942] LogD3D11RHI: RHI has support for 64 bit atomics
+    [23:23:17:942] LogD3D11RHI: Async texture creation enabled
+    [23:23:17:945] LogD3D11RHI: D3D11_MAP_WRITE_NO_OVERWRITE for dynamic
+                                 buffer SRVs is supported
+    [23:23:17:947] LogD3D11RHI: Array index from any shader is supported
+    [23:23:17:948] LogD3D11RHI: HDR output is supported on display 0
+    [23:23:17:972] LogD3D11RHI: GPU Timing Frequency: 1000.000000
+    [23:23:20:162] LogWindows: C:\WINDOWS\SYSTEM32\d3d11.dll
+
+`LogD3D11RHI` messages instead of `LogD3D12RHI` — DX11 is the active
+renderer. Sentry's `gpu.featurelevel: SM6, gpu.shadermodel: PCD3D_SM6`
+tags are STATIC compile-time tags baked into the exe, not reflective
+of the current run's RHI.
+
+--- The crash still happens, faster ---
+
+Client reached ReceivedJoin at 23:23:31, loaded menu (25 heroes fetched
+at 23:23:25.145), and Sentry HandleBeforeCrash fired at 23:23:54.964.
+Stub-side Cleanup at 23:23:55.706 (client dead, socket closed).
+
+Timing:
+- Join → crash under D3D12 mode (session 39 iter 4): **~64 seconds**
+- Join → crash under DX11 mode (this test):            **~24 seconds**
+
+DX11 crashes FASTER. Same crash address (Sentry-cached from a prior D3D12
+run is D06CC5..., dated 15:10 — that's stale; the new DX11 crash didn't
+write a fresh CrashContext.runtime-xml, only Sentry-flushed to its
+transport).
+
+--- Interpretation ---
+
+The FD3D12CommandContext identification in `session-40-path-a1-D3D12-
+identified.txt` was TOO SPECIFIC. Some possibilities:
+
+1. **The class isn't renderer-specific**. The log strings referencing
+   D3D12CommandList.cpp happen to be near the vtable in `.rdata`, but
+   the actual vtable belongs to a different (more general) class.
+   The MSVC linker places `.rdata` strings roughly in source-file order,
+   so nearby strings often but not always belong to the class whose
+   vtable is nearby.
+2. **The D3D12 subsystem is still initialized in DX11 mode** — some
+   UE 5.4 subsystems (RayTracing, GPU capture, DirectStorage, etc.)
+   may create D3D12 contexts even when the primary renderer is DX11.
+   If those subsystems' contexts hit our crash path, DX11 mode doesn't
+   help.
+3. **The crash is post-RHI, in a subsystem that both DX11 and D3D12
+   modes use**. The crash-fn is at RVA 0x2976F70; the log-string
+   parent-slot-2 was at RVA 0x296F2C0. Only slot 2 (out of 12 primary
+   slots) proved to have D3D12 log strings — the class might have
+   D3D12-conditional code paths in specific slots but be a more
+   general class overall.
+
+--- What this tells us about the actual root cause ---
+
+Time-to-crash is renderer-mode-dependent (24s in DX11, 64s in D3D12).
+That's consistent with "the crash class is in some subsystem that ticks
++ tries to Add() to a subscriber list, and the tick rate / activation
+differs between renderers". It's NOT consistent with "the crash is a
+one-time hit in the D3D12 command context init".
+
+--- Committed Path A1 finding needs REVISION ---
+
+`session-40-path-a1-D3D12-identified.txt` overstates the confidence.
+The evidence supports:
+- The crash class's vtable is in `.rdata` NEAR D3D12RHI code strings
+- The crash class inherits from a class whose slot 2 assertion logs
+  reference D3D12CommandList.cpp
+- Class object size is 15,504 bytes; parent 232 bytes
+
+The evidence does NOT support:
+- FD3D12CommandContext specifically (falsified by this DX11 test)
+
+More accurate identification: **the class is likely still an RHI-related
+or graphics-subsystem class, but not renderer-specific enough to be
+avoided by DX11 mode. It might be a base class that has both DX11 and
+D3D12 concrete subclasses, or a subsystem that both use.**
+
+--- What to try next (session 41+) ---
+
+Given DX11 fails equally, the useful next tests are:
+
+- **`-vulkan` cmdline** — try a completely different RHI. If Vulkan
+  also crashes, the class is definitively renderer-independent.
+- **`-nullrhi`** — no rendering at all. If the client boots and reaches
+  ReceivedJoin AT ALL without a renderer, and reaches menu-load state
+  without crashing, then the crash IS renderer-related just not
+  D3D12-specific.
+- **Investigate WHAT SPECIFICALLY differs between D3D12 (64s survival)
+  and DX11 (24s survival)** — the 40-second delta tells us the crash-
+  causing code has different frequency of invocation under the two
+  renderers. Could be per-frame vs per-tick differences, could be
+  render-command-list generation cadence, etc. Doesn't help identify
+  the class directly but gives us a knob.
+- **Test the crash under DIFFERENT graphics quality / resolution
+  settings** — some UE renderer paths only activate at specific
+  quality levels.
+
+**PATH B-LITE re-evaluation:** Given the crash isn't renderer-tied, it
+IS still worth trying Path B-lite (schema-inject replicated fields on
+PC + un-suppress) as the next investment. The 40-second timing delta
+between D3D12 and DX11 modes suggests the crash-cause TArray is populated
+by some subscriber that ticks at different rates per RHI. If the
+subscribers are UE Actor components (which they often are for rendering-
+related work), then AActor replication state might indirectly fix the
+init sequence.
+
+--- Chapter state (end of session 40, DX11 test complete) ---
+
+- Route-around fires cleanly against live bunches: DONE (S35)
+- Full suppression keeps connection stable through Join: DONE (S39)
+- Client reaches menu, fetches 25 heroes + inventory + wallet: DONE (S39)
+- Crash class identified as UE 5.4 FD3D12CommandContext: WRONG (S40 A1)
+- Crash class is in a graphics/render subsystem NEAR D3D12 code
+  strings but NOT D3D12-specific: DONE (this test)
+- Crash reproduces in DX11 mode with faster timing (24s vs 64s):
+  DONE (this test)
+- Menu-data replication: TODO
+
+--- DO NOT for session 41+ ---
+
+- Don't rely on the "FD3D12CommandContext" specific identification —
+  the class is more general than that.
+- Don't repeat DX11-only workarounds — this negative result rules that
+  out.
+- Don't spend more Ghidra time trying to name the class UNLESS a
+  future test surfaces new evidence (e.g., a distinctive string
+  in an actual log or a call chain).
