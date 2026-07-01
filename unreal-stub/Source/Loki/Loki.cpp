@@ -152,10 +152,27 @@ private:
     FDelegateHandle WorldInitHandle;
     FDelegateHandle PostEngineInitHandle;
 
-    // Session 27: bypass UHT's UFUNCTION-override-parity constraint by
-    // constructing an FStrProperty at runtime and appending it to the existing
+    // Session 27-28: bypass UHT's UFUNCTION-override-parity constraint by
+    // constructing FProperties at runtime and appending them to the existing
     // APlayerController::ServerVerifyViewTarget UFunction's ChildProperties
     // list. Then re-link so UE's RepLayout picks up the new signature.
+    //
+    // Session 28 goal: iterate parameter orderings until Reader.GetBitsLeft()
+    // == 0 and no Reader.IsError. Session 25 established the RPC arg struct
+    // is 2298 bits containing FString "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass"
+    // at bit 991 (byte-aligned in raw bunch).
+    //
+    // Signature trial for session 28: (TArray<uint8> Preamble, FString MapName)
+    //   - TArray reads int32 count + count*8 bits of data
+    //   - Then FString at whatever bit position remains
+    // If the first 32 bits happen to be a reasonable count value that ends
+    // the TArray near bit 991, then FString will land at the right spot.
+    // Otherwise we'll see IsError or Mismatch, telling us to try a different
+    // combination.
+    //
+    // First 32 bits of payload = 0x05C6000B = 96862219 (unreasonably big for
+    // TArray count). So TArray<uint8> first isn't going to work as-is.
+    // Trying (FString, ..., FString) or (FVector, FRotator, FString, ...) next.
     static void InjectServerVerifyViewTargetFStringParam()
     {
         UClass* PCClass = APlayerController::StaticClass();
@@ -177,47 +194,79 @@ private:
             return;
         }
 
-        const int32 OriginalNumProps = Func->NumParms;
-        const int32 OriginalPropsSize = Func->ParmsSize;
         UE_LOG(LogLokiStub, Display,
                TEXT("InjectServerVerifyViewTarget: found UFunction on APlayerController "
                     "(NumParms=%d, ParmsSize=%d, FunctionFlags=0x%08X)"),
-               OriginalNumProps, OriginalPropsSize, (uint32)Func->FunctionFlags);
+               Func->NumParms, Func->ParmsSize, (uint32)Func->FunctionFlags);
 
-        // Construct an FStrProperty as the new parameter. The property's outer
-        // is the UFunction itself so it participates in normal FField ownership.
-        FStrProperty* NewProp = new FStrProperty(Func,
-            FName(TEXT("ClientMapName")), RF_Public | RF_Transient);
-        NewProp->PropertyFlags = CPF_Parm | CPF_ConstParm | CPF_ReferenceParm
-                               | CPF_ZeroConstructor | CPF_HasGetValueTypeHash;
-        NewProp->ArrayDim = 1;
+        // Signature trial: (FVector Location, FRotator Rotation, FString MapName)
+        // Rationale: common anti-cheat "verify view target" pattern is
+        // (camera position, camera rotation, current view target name).
+        // 96 + 96 + 32 + N*8 bits = 224 + 408 (for our 46-char string+null) = 632 bits.
+        // Total 2298 bits - 632 = 1666 bits still unconsumed. But this gets us
+        // FString-consumption at bit 224, and if IsError fires we know the
+        // structure has DIFFERENT prefix.
+        AppendVectorParam(Func, TEXT("CameraLocation"));
+        AppendRotatorParam(Func, TEXT("CameraRotation"));
+        AppendStringParam(Func, TEXT("ClientMapName"));
 
-        // Append to ChildProperties linked list (tail append). Existing UFunction
-        // might already have some children; we want the FString AFTER them.
+        Func->StaticLink(true);
+        PCClass->ClearFunctionMapsCaches();
+
+        UE_LOG(LogLokiStub, Display,
+               TEXT("InjectServerVerifyViewTarget: added FVector+FRotator+FString params. "
+                    "New NumParms=%d, ParmsSize=%d"),
+               Func->NumParms, Func->ParmsSize);
+    }
+
+    // Helper: append an FStrProperty to a UFunction's ChildProperties tail.
+    static void AppendStringParam(UFunction* Func, const TCHAR* Name)
+    {
+        FStrProperty* Prop = new FStrProperty(Func, FName(Name), RF_Public | RF_Transient);
+        Prop->PropertyFlags = CPF_Parm | CPF_ConstParm | CPF_ReferenceParm
+                            | CPF_ZeroConstructor | CPF_HasGetValueTypeHash;
+        Prop->ArrayDim = 1;
+        AppendToChildProperties(Func, Prop);
+    }
+
+    // Helper: append an FStructProperty referencing a UScriptStruct by path.
+    static void AppendStructParam(UFunction* Func, const TCHAR* Name,
+                                  const TCHAR* StructPath)
+    {
+        UScriptStruct* Struct = FindObject<UScriptStruct>(nullptr, StructPath);
+        if (!Struct)
+        {
+            UE_LOG(LogLokiStub, Warning,
+                   TEXT("AppendStructParam: UScriptStruct not found at %s"), StructPath);
+            return;
+        }
+        FStructProperty* Prop = new FStructProperty(Func, FName(Name), RF_Public | RF_Transient);
+        Prop->Struct = Struct;
+        Prop->PropertyFlags = CPF_Parm | CPF_ConstParm | CPF_ReferenceParm
+                            | CPF_ZeroConstructor | CPF_NoDestructor;
+        Prop->ArrayDim = 1;
+        AppendToChildProperties(Func, Prop);
+    }
+
+    static void AppendVectorParam(UFunction* Func, const TCHAR* Name)
+    {
+        AppendStructParam(Func, Name, TEXT("/Script/CoreUObject.Vector"));
+    }
+
+    static void AppendRotatorParam(UFunction* Func, const TCHAR* Name)
+    {
+        AppendStructParam(Func, Name, TEXT("/Script/CoreUObject.Rotator"));
+    }
+
+    // Tail-append to a UFunction's ChildProperties linked list.
+    static void AppendToChildProperties(UFunction* Func, FField* Prop)
+    {
         FField** Tail = &Func->ChildProperties;
         while (*Tail)
         {
             Tail = &(*Tail)->Next;
         }
-        *Tail = NewProp;
-
-        // StaticLink recomputes ParmsSize, PropertyLink chain, ReturnValueOffset,
-        // and MinAlignment. Pass bRelinkExistingProperties=true so the parent's
-        // properties are relinked too.
-        Func->StaticLink(true);
-
-        // Bind() (re-)computes the native function pointer. Since we're not
-        // changing the native impl, keep the existing binding.
-
-        // Clear the class net cache so RepLayout regenerates with the new
-        // parameter list. Without this, the cached FClassNetCache would still
-        // show 0 args.
-        PCClass->ClearFunctionMapsCaches();
-
-        UE_LOG(LogLokiStub, Display,
-               TEXT("InjectServerVerifyViewTarget: added FStrProperty ClientMapName. "
-                    "New NumParms=%d, ParmsSize=%d"),
-               Func->NumParms, Func->ParmsSize);
+        *Tail = Prop;
     }
 };
 
