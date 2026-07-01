@@ -1,0 +1,249 @@
+=== SESSION 40 PATH B-LITE ANALYSIS — the shape of the schema-match problem ===
+
+Session 40 Path A hit its ceiling at "class vtable + size + 2 live instances,
+name unknown, not UClass-registered". User picked Path B-lite as the next
+try — schema-inject SUPERVIVE's expected replicated fields onto stock
+APlayerController and un-suppress PC. This document records what B-lite
+would actually require, based on reading UE 5.4's FClassNetCache build code.
+
+--- What we already have ---
+
+Sessions 27-32 already built a full set of runtime injection primitives
+for `UFunction` params in `unreal-stub/Source/Loki/Loki.cpp`:
+
+    AppendStringParam       (FStrProperty)
+    AppendBoolParam         (FBoolProperty, native bool, 1 wire bit)
+    AppendIntParam          (FIntProperty)
+    AppendFloatParam        (FFloatProperty)
+    AppendByteParam         (FByteProperty)
+    AppendObjectParam       (FObjectProperty, NetGUID on wire)
+    AppendUInt32Param       (FUInt32Property)
+    AppendUInt8ArrayParam   (FArrayProperty<FByteProperty>)
+    AppendStructParam       (FStructProperty, requires UScriptStruct path)
+    AppendVectorParam       (FStructProperty CoreUObject.Vector)
+    AppendRotatorParam      (FStructProperty CoreUObject.Rotator)
+
+Plus `AppendToChildProperties()` — the linked-list tail insertion helper.
+
+These are for UFunction (RPC params). They tail-append to
+`Func->ChildProperties`. To use them for UClass replicated properties we'd
+need equivalent helpers that tail-append to `Class->ChildProperties` AND
+tail-append to `Class->ClassReps` (both are required — see below).
+
+--- How FClassNetCache actually works in UE 5.4 (source-verified) ---
+
+From `H:/Unreal Engine/UE_5.4/Engine/Source/Runtime/CoreUObject/Private/UObject/Class.cpp`
+`UClass::SetUpRuntimeReplicationData()`:
+
+    if (SuperClass) {
+        SuperClass->SetUpRuntimeReplicationData();
+        ClassReps = SuperClass->ClassReps;                // COPY parent's array
+        FirstOwnedClassRep = ClassReps.Num();             // where THIS class starts
+    }
+
+    // Walk THIS class's own FProperties, filter CPF_Net
+    TArray<FProperty*> NetProperties;
+    for (TFieldIterator<FField> It(this, ExcludeSuper); It; ++It) {
+        if (Prop->PropertyFlags & CPF_Net && Prop->GetOwner<UObject>() == this)
+            NetProperties.Add(Prop);
+    }
+
+    // For NATIVE classes: NO sort, keep declaration order
+    // For BLUEPRINT classes: sort by memory offset
+
+    // Append NetProperties to ClassReps, assigning RepIndex to each
+    for (i = 0; i < NetProperties.Num(); i++) {
+        NetProperties[i]->RepIndex = (uint16)ClassReps.Num();
+        for (j = 0; j < ArrayDim; j++) ClassReps.Emplace(NetProperties[i], j);
+    }
+
+And from `.../CoreUObject/Private/UObject/CoreNet.cpp`
+`FClassNetCacheMgr::GetClassNetCache(UClass* Class)`:
+
+    Result->FieldsBase = Result->Super->GetMaxIndex();    // start above super's
+
+    // Iterate THIS class's OWN reps only
+    for (i = Class->FirstOwnedClassRep; i < Class->ClassReps.Num(); i++) {
+        FProperty* Property = Class->ClassReps[i].Property;
+        const int32 ThisIndex = Result->GetMaxIndex();   // ABSOLUTE cache index
+        Result->Fields.Add(FFieldNetCache(Property, ThisIndex, Checksum));
+    }
+
+    // Also iterate this class's NetFields (RPCs)
+    for (Field : Class->NetFields) {
+        const int32 ThisIndex = Result->GetMaxIndex();
+        Result->Fields.Add(FFieldNetCache(Field, ThisIndex, Checksum));
+    }
+
+**Absolute NetIndex on the wire.** Every replicated prop / RPC gets a global
+NetIndex computed by walking Super chain and counting all reps + NetFields
+above it.
+
+--- Concrete implication for our stub ---
+
+Session 22's schema dump shows SUPERVIVE's AActor has 103 properties vs
+stock UE 5.4's ~85. The added props include:
+
+    bAggregateTicks, bCopyTagsFromStaticMeshes, bDebugTarget, bEnablePooling,
+    bCanPrimeOnServer/Client/Arena/BattleRoyale, bAlwaysDestroyInsteadOfReturningToPool,
+    MaxPoolSize, PoolPrimeSize, SimulatedTearOffIdleTimeInSeconds,
+    ServerState (PoolableActorServerState struct),
+    InitiallyVisibleComponents (Array<WeakObj>),
+    PoolManager (WeakObj), LokiReplicationStrategy (struct),
+    StaticMeshTags (Array<MulticastSparseDelegate>),
+    OnLokiEndPlay, OnPooledActorTornOff (delegates)
+
+Not all of these are REPLICATED. Delegates aren't (they never are). Config
+fields like MaxPoolSize probably aren't. The most-likely-replicated ones
+are `ServerState` and `LokiReplicationStrategy` (both by naming convention).
+
+If SUPERVIVE added M replicated fields to AActor, then:
+
+    stock AActor.MaxIndex        = N_stock
+    SUPERVIVE AActor.MaxIndex    = N_stock + M
+
+For any AActor-descendant class like APlayerController:
+
+    stock server sends NetIndex 5 for a PC-local field:
+      NetIndex 5 on server (relative to server's stock AActor MaxIndex)
+      NetIndex 5 on client → but client's AActor MaxIndex is N_stock + M
+      → client interprets index 5 as a AActor field, but server meant a
+         PC-local field
+      → MISMATCH → "Invalid replicated field 5 in PlayerController"
+
+Session 36's client-side error was specifically NetIndex 0 — the FIRST
+replicated field. That means the server sent a bunch with `bHasRepLayout=0`
++ a field header pointing to NetIndex 0. On the client, NetIndex 0 in PC's
+ClassCache resolves to... something. But it's not a struct or a function,
+so it fails the "must be StructProperty or UFunction" gate in
+DataReplication.cpp:1182 (that gate only accepts `bHasRepLayout=0` payloads
+for CUSTOM DELTA STRUCTS or RPCS — not regular property updates).
+
+Which means our server was actually sending an RPC header on NetIndex 0 or
+a custom-delta struct header — and the client's NetIndex 0 resolves to
+something that isn't either.
+
+--- What B-lite would need to do ---
+
+To make our stock AActor's ClassReps match SUPERVIVE's, we'd need to:
+
+1. **Identify the exact SUPERVIVE AActor replicated fields**. Session 22's
+   schema dump lists all AActor properties but does NOT include CPF_Net
+   flag. Need to run `usmapdump extract` in a mode that emits flags OR
+   read the Loki paks with a UE editor to see the true annotation.
+
+2. **Match the declaration order** (native-class rule keeps declaration
+   order). Even a correctly-typed prop at the wrong position produces
+   wrong NetIndex.
+
+3. **Add new injection primitives for UClass reps** — extend the sessions
+   27-32 primitives to also append to `Class->ClassReps` and set
+   `Property->RepIndex`. The existing primitives only handle UFunctions.
+
+4. **Handle struct properties like `LokiReplicationStrategy` and
+   `ServerState`** — these need UScriptStruct definitions matching
+   SUPERVIVE's exact layout, or the client will fail on struct-inner
+   parsing. This is the HARDEST part because we don't have the
+   UScriptStruct symbols in our stub.
+
+5. **Rebuild ClassNetCache after injection** — call
+   `NetDriver->NetCache->ClearClassNetCache()` and then have UE lazily
+   rebuild. Similar to how session 27's UFunction injection was followed
+   by `PCClass->ClearFunctionMapsCaches()`.
+
+6. **Then un-suppress APlayerController** from `IsClassNetCacheDivergent()`
+   and test.
+
+Estimated engineering: **8-15 hours** of session time, most of it spent
+on struct-property injection primitives (steps 4). Struct properties
+require nested FProperty walks over the struct's own members, which needs
+matching UScriptStruct definitions server-side.
+
+--- Alternative: minimal B-lite (schema-match RPCs only, not props) ---
+
+Session 22's schema dump doesn't distinguish CPF_Net from other flags.
+But we DO know one thing SUPERVIVE modified: `ServerVerifyViewTarget` RPC
+signature (sessions 25-35). If SUPERVIVE added / modified other RPCs on
+AActor/APlayerController, those matter too for FClassNetCache.
+
+If we could enumerate SUPERVIVE's PC RPC list vs stock and match those
+too, we'd converge FClassNetCache without touching replicated props.
+That's a MUCH smaller injection set. But still needs:
+- Enumeration of SUPERVIVE's PC RPCs (usmapdump doesn't do this today)
+- Injection primitives for adding UFunctions to a UClass (not just params
+  to an existing UFunction — new fn entirely). We have PARTIAL infra
+  from sessions 27-32 for adding params, need to extend for adding the
+  UFunction shell itself.
+
+Estimated engineering: **4-8 hours**. Still substantial.
+
+--- Alternative: send an EMPTY property block ---
+
+Fresh angle not yet explored. `FObjectReplicator::ReplicateProperties()`
+is what emits the property block on outgoing bunches. If we could
+intercept it for PC/GameState/PS and write ZERO properties, we'd send
+actor-identity-only bunches. Client would spawn its replica but never
+process any property updates.
+
+This is speculative — might trigger different failures downstream
+(client waits for expected fields to hydrate its UI, some field never
+arrives, some subsystem doesn't init). But it might also just work.
+
+`FObjectReplicator` isn't easily subclassable in UE 5.4. We'd need a hook
+in `UActorChannel::ReplicateActor` or an override on the FRepLayout used
+for the target class. Neither is straightforward.
+
+Estimated engineering: **3-6 hours** to explore. Risk of dead-end.
+
+--- Recommendation ---
+
+Given three options each measured in hours:
+
+- **B-lite proper** (8-15h): schema-match AActor's replicated props +
+  RPCs. Complete fix but expensive.
+- **B-lite (RPCs only)** (4-8h): match just the RPC surface. May not
+  fully close the divergence but reduces it.
+- **Empty property block** (3-6h): send actor-identity-only bunches.
+  Cheap experiment, might work, might dead-end.
+
+None of these is a "1-hour probe". The pragmatic path from here is
+**pause and decide with Ghidra access next session**:
+
+- With Ghidra + auto-analysis, we get names on the crash class + the
+  functions around it, which might reveal that the crash is a UE-known
+  subsystem with a known init sequence. Then we can either work around
+  it or feed it enough state to init properly.
+- Without Ghidra, B-lite is the only forward path but each variant is
+  a multi-hour engineering commitment.
+
+--- Chapter state (end of session 40 with B-lite ANALYSIS complete) ---
+
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Full session-20 + WorldSettings + GameplayDebuggerCategoryReplicator
+  suppression keeps connection stable through Join: DONE (session 39)
+- Client reaches menu, fetches 25 heroes + inventory + wallet: DONE
+- Client crashes at deterministic call chain during menu load: KNOWN
+- Crash class: 15KB, 2 live instances, not UClass-registered: DOCUMENTED
+- Crash class name: UNKNOWN (Path A ceiling)
+- FClassNetCache divergence mechanics: FULLY UNDERSTOOD (this doc)
+- Actual B-lite fix: SCOPED (this doc, three variants, each 3-15h)
+
+--- What session 41+ needs (updated) ---
+
+Same three options as before, but now with clearer sizing:
+
+- **A1 (heavy, requires Ghidra)**: install Ghidra, auto-analyze the
+  175MB exe, get symbol names on the crash class + call chain. Fresh
+  session investment: ~2-4 hours setup + analysis.
+- **B-lite proper (heavy engineering)**: schema-match AActor's replicated
+  props + RPCs. 8-15 hours per this doc's analysis.
+- **B-lite empty-block (cheap experiment)**: send actor-identity-only
+  bunches, no property block. 3-6 hours per this doc's analysis. Risk of
+  dead-end but might just work.
+- **Pragmatic pause**: commit this analysis, defer to a fresh session
+  with Ghidra ready.
+
+--- Tooling artifacts (session 40 B-lite analysis) ---
+
+- `docs/session-40-path-b-lite-analysis.txt` — this doc. Full mechanics
+  + scoping.
