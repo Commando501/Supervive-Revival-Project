@@ -200,16 +200,30 @@ private:
                     "(NumParms=%d, ParmsSize=%d, FunctionFlags=0x%08X)"),
                Func->NumParms, Func->ParmsSize, (uint32)Func->FunctionFlags);
 
-        // Session 30 trial: (AActor* NewViewTarget, FString ClientMapName).
-        // Modeled on stock UE ClientSetViewTarget(AActor* A, ...) — SUPERVIVE's
-        // ServerVerifyViewTarget likely uses the mirror pattern where the
-        // client tells the server what it BELIEVES the current view target is.
+        // Session 31 trial 31A: (AActor*, bool×3, FString S1).
         //
-        // Session 29 confirmed first param bit 0 = 1, which for FObjectProperty
-        // = "valid NetGUID follows". Actor pointer serialization uses
-        // PackageMap->SerializeObject which writes variable-bit NetGUID.
+        // Session 31 exhaustive FString search found FIVE FStrings in the
+        // 2298-bit RPC arg struct at sub-bits 21, 466, 991, 1444, 1881 — all
+        // /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_* sub-level paths, separated by
+        // 45-bit gaps of near-zero data. Structure:
+        //   [21 bits header] + [FString + 45 bits] × 4 + FString + [41 bits] = 2298
+        //
+        // Session 30 misinterpretation corrected: AActor* actually consumed
+        // 18 bits (not 50). Session 30's Remaining=2248 included FString count
+        // read (32 bits): 18 + 32 = 50. Count read yielded 369, ReadLen=369*8=2952.
+        //
+        // Hypothesis for hitting bit 21: AActor* (18 bits) + 3 bools (3 bits) = 21.
+        // At bit 21, FString count = 46 chars = LVL_LobbyV2_PartyMenu (verified via
+        // Python decode).
+        //
+        // This trial validates the (AActor*, bool×3, FString) prefix. Expect
+        // NO SetOverflowed on FString read; Reader.IsError expected due to
+        // under-consumed sub-reader (only 421 of 2298 bits parsed).
         AppendObjectParam(Func, TEXT("NewViewTarget"), AActor::StaticClass());
-        AppendStringParam(Func, TEXT("ClientMapName"));
+        AppendBoolParam(Func, TEXT("PadBit1"));
+        AppendBoolParam(Func, TEXT("PadBit2"));
+        AppendBoolParam(Func, TEXT("PadBit3"));
+        AppendStringParam(Func, TEXT("ClientMapPartyMenu"));
 
         Func->StaticLink(true);
         PCClass->ClearFunctionMapsCaches();
@@ -296,6 +310,49 @@ private:
         Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor
                             | CPF_InstancedReference | CPF_HasGetValueTypeHash;
         Prop->ArrayDim = 1;
+        AppendToChildProperties(Func, Prop);
+    }
+
+    // Session 31: FBoolProperty for single-bit wire params. SetBoolSize with
+    // bIsNativeBool=true configures the C++ bool type; on the wire UE writes
+    // exactly 1 bit via FBoolProperty::NetSerializeItem.
+    static void AppendBoolParam(UFunction* Func, const TCHAR* Name)
+    {
+        FBoolProperty* Prop = new FBoolProperty(Func, FName(Name),
+                                                RF_Public | RF_Transient);
+        Prop->SetBoolSize(sizeof(bool), /*bIsNativeBool=*/true, /*InBitMask=*/1);
+        Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor
+                            | CPF_HasGetValueTypeHash;
+        Prop->ArrayDim = 1;
+        AppendToChildProperties(Func, Prop);
+    }
+
+    // Session 31: FUInt32Property for uint32 params (32 bits on wire, same
+    // as FIntProperty but semantic differs). Provided for clarity when
+    // matching an unsigned field.
+    static void AppendUInt32Param(UFunction* Func, const TCHAR* Name)
+    {
+        FUInt32Property* Prop = new FUInt32Property(Func, FName(Name),
+                                                    RF_Public | RF_Transient);
+        Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor
+                            | CPF_HasGetValueTypeHash;
+        Prop->ArrayDim = 1;
+        AppendToChildProperties(Func, Prop);
+    }
+
+    // Session 31: FArrayProperty<FByteProperty> for TArray<uint8> params.
+    // TArray net serialization: uint16 count (16 bits) + count * 8 bits data.
+    static void AppendUInt8ArrayParam(UFunction* Func, const TCHAR* Name)
+    {
+        FArrayProperty* Prop = new FArrayProperty(Func, FName(Name),
+                                                  RF_Public | RF_Transient);
+        Prop->PropertyFlags = CPF_Parm | CPF_ZeroConstructor;
+        Prop->ArrayDim = 1;
+        FByteProperty* Inner = new FByteProperty(Prop, FName("Inner"),
+                                                 RF_Public | RF_Transient);
+        Inner->PropertyFlags = CPF_ZeroConstructor | CPF_HasGetValueTypeHash;
+        Inner->ArrayDim = 1;
+        Prop->Inner = Inner;
         AppendToChildProperties(Func, Prop);
     }
 

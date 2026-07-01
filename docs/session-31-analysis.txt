@@ -1,0 +1,115 @@
+=== SESSION 31 STRUCTURAL DISCOVERY ===
+
+Building on session 30's engine-side bit-count diagnostic, session 31 exhaustively
+scanned the captured 2298-bit RPC arg struct for FStrings and found FIVE.
+
+--- Exhaustive FString search across sub-reader ---
+
+  sub-bit   21 (bunch bit   62): count=46 '/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_PartyMenu'
+  sub-bit  466 (bunch bit  507): count=56 '/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_HeroSelect_Skylands'
+  sub-bit  991 (bunch bit 1032): count=47 '/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass'
+  sub-bit 1444 (bunch bit 1485): count=45 '/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Lighting'
+  sub-bit 1881 (bunch bit 1922): count=43 '/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Armory'
+
+These are all SUB-LEVELS of the LobbyV2 world. SUPERVIVE's client streams these
+in as sub-levels of LVL_LobbyV2_Persistent. So ServerVerifyViewTarget likely
+reports "here are all the sub-levels I have loaded" to the server.
+
+--- Structural layout ---
+
+  Bits    0..  20 (21 bits): HEADER
+  Bits   21.. 420 (400 bits): FString "LVL_LobbyV2_PartyMenu" (count=46, wire=32+368)
+  Bits  421.. 465 (45 bits): GAP1 (all zeros except bit 43-44)
+  Bits  466.. 945 (480 bits): FString "LVL_LobbyV2_HeroSelect_Skylands" (count=56, wire=32+448)
+  Bits  946.. 990 (45 bits): GAP2 (all zeros)
+  Bits  991..1398 (408 bits): FString "LVL_LobbyV2_BattlePass" (count=47, wire=32+376)
+  Bits 1399..1443 (45 bits): GAP3 (all zeros)
+  Bits 1444..1835 (392 bits): FString "LVL_LobbyV2_Lighting" (count=45, wire=32+360)
+  Bits 1836..1880 (45 bits): GAP4 (all zeros)
+  Bits 1881..2256 (376 bits): FString "LVL_LobbyV2_Armory" (count=43, wire=32+344)
+  Bits 2257..2297 (41 bits): TRAILER (all zeros)
+
+  Total: 21 + 400 + 45 + 480 + 45 + 408 + 45 + 392 + 45 + 376 + 41 = 2298 ✓
+
+--- 21-bit HEADER decoded ---
+
+  Raw bits (LSB first): 110100000000000001100
+  Byte 0 = 0x0B, byte 1 = 0x00, bits 16-20 = 0b01100
+
+  As SerializeIntPacked over first 16 bits:
+    Byte 0 = 0x0B (11): continuation=1, data=5. Value = 5.
+    Byte 1 = 0x00: continuation=0, data=0. STOP. Value = 5.
+  → SerializeIntPacked value = 5 (matches "5 elements" in TArray!)
+
+  Bits 16-20 (5 bits) = value 6 (0b00110 in LSB order = bit 1,2 set)
+
+  Interpretation: 16-bit SerializeIntPacked count=5 + 5-bit element[0] pre-header.
+
+--- 45-bit gap decoded ---
+
+  All 45 bits are ZERO for gaps 2/3/4 and TRAILER.
+  Gap 1 has bits 43-44 set (value 0x6 << 40) — inside element[0]'s "post" region
+  which is actually element[1]'s 5-bit pre-header = value 6.
+
+  So each element's "5 bits pre-header" appears at the END of the previous
+  element's post-region in my split. Reinterpreted:
+    Element[0] pre = bits 16..20 = value 6 (before first FString)
+    Element[1] pre = bits 461..465 = value 6 (5 bits before FString2)
+    Element[2] pre = bits 986..990 = value 0
+    Element[3] pre = bits 1439..1443 = value 0
+    Element[4] pre = bits 1876..1880 = value 0
+
+  Pattern: value 6 for elements 0,1 (loaded sub-levels?), value 0 for elements 2,3,4.
+  40-bit post for each element = all zeros.
+
+  Possible element struct = {
+    uint8/enum State :5;    // 5 bits (6 or 0)
+    FString PackageName;    // variable
+    uint32 A;               // 32 bits = 0
+    uint8 B;                // 8 bits = 0
+  };  // per-element size = 5 + FString + 40
+
+  BUT: 16-bit array count + 5*(45 bit + FString) = 16 + 5*45 + 2056 = 2297.
+  Off by 1! Need 2298. Possible +1 bit terminator at bit 2297.
+
+--- Session 30 correction ---
+
+Session 30's log said "AActor* consumed 50 bits". This was wrong.
+
+FBitReader::SetOverflowed reports Remaining AT TIME OF FAILED READ.
+The failed read = FString chars read (not count read).
+Pos at failed read = 50 (Remaining = 2248 = 2298 - 50).
+
+Sequence:
+  1. AActor* parser consumes X bits. Pos = X.
+  2. FString count read consumes 32 bits. Pos = X + 32.
+  3. FString chars read attempts count*8 = 2952 bits. Pos = X + 32. Remaining = 2298 - X - 32.
+  4. Overflow with Remaining = 2248 → X + 32 = 50 → X = 18.
+
+  → AActor* consumed 18 bits, NOT 50.
+
+Session 30's ReadLen=2952 = 8 × 369. Count=369 at sub-bit 18 verified via Python
+decode. Everything self-consistent.
+
+--- Session 31 hypothesis for first param ---
+
+If real first param consumes 21 bits (before PartyMenu FString), and AActor*
+consumes 18 bits, then we need 3 more bits to reach bit 21.
+
+Cleanest option: (AActor*, bool, bool, bool, FString S1, ...) — bit 18+3 = 21.
+
+At bit 21, FString count = 46 = valid PartyMenu length. 46 chars decode as
+"/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_PartyMenu" — EXACT match with search.
+
+--- Full trial signature hypothesis for session 31 ---
+
+  (AActor*, bool×3, FString S1,
+   uint32+uint8+bool×5, FString S2,
+   uint32+uint8+bool×5, FString S3,
+   uint32+uint8+bool×5, FString S4,
+   uint32+uint8+bool×5, FString S5,
+   uint32+uint8+bool)     // 41-bit trailer
+
+  Total bits: 18 + 3 + 400 + (32+8+5) + 480 + (32+8+5) + 408 + (32+8+5) + 392 + (32+8+5) + 376 + (32+8+1)
+            = 21 + 400 + 45 + 480 + 45 + 408 + 45 + 392 + 45 + 376 + 41
+            = 2298 ✓

@@ -4261,9 +4261,132 @@ intermediate param(s).
 
 - (session 30 writeup commit follows)
 
+## Session 31 (2026-07-01 — 5-FSTRING PATTERN DISCOVERED via exhaustive scan)
 
+Session 30's engine-side bit-count diagnostic unlocked precise iteration.
+Session 31 pivoted BEFORE running trial iterations: exhaustively scanned the
+captured 2298-bit RPC arg struct for FString-shaped reads at every bit position.
 
+### Discovery: RPC contains FIVE FStrings, all sub-level paths
 
+```
+sub-bit   21: "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_PartyMenu"        (count=46)
+sub-bit  466: "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_HeroSelect_Skylands" (count=56)
+sub-bit  991: "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass"       (count=47)
+sub-bit 1444: "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Lighting"         (count=45)
+sub-bit 1881: "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Armory"           (count=43)
+```
+
+All five are SUB-LEVELS of LVL_LobbyV2_Persistent (SUPERVIVE's lobby world
+is composed of streaming sub-levels). This strongly suggests SUPERVIVE
+overrode `ServerVerifyViewTarget` with a payload reporting *which sub-levels
+the client currently has loaded/streaming*.
+
+### Structural layout (2298 bits total)
+
+```
+Bits    0.. 20 ( 21 bits): HEADER — begins with 0x0B 0x00 (SerializeIntPacked
+                            = 5, matching 5 elements) + 5 more bits (value=6)
+Bits   21..420 (400 bits): FString #1 PartyMenu (32-bit count + chars)
+Bits  421..465 ( 45 bits): GAP1 (all zeros except a tiny value at end — element[1] pre-header)
+Bits  466..945 (480 bits): FString #2 HeroSelect_Skylands
+Bits  946..990 ( 45 bits): GAP2 (all zeros)
+Bits  991..1398 (408 bits): FString #3 BattlePass
+Bits 1399..1443 ( 45 bits): GAP3 (all zeros)
+Bits 1444..1835 (392 bits): FString #4 Lighting
+Bits 1836..1880 ( 45 bits): GAP4 (all zeros)
+Bits 1881..2256 (376 bits): FString #5 Armory
+Bits 2257..2297 ( 41 bits): TRAILER (all zeros)
+```
+
+Pattern fits `TArray<FSomeStruct>` where count=5 and each element =
+{ 5-bit prefix + FString + 40-bit suffix }, with a 1-bit terminator.
+First two elements' 5-bit prefix = value 6 (loaded/visible sub-level?),
+last three = 0 (not loaded?). All 40-bit suffixes are zero.
+
+### Session 30 correction
+
+Session 30's log said "AActor* consumed 50 bits". That was wrong. Correct:
+
+- FBitReader::SetOverflowed reports Remaining AT the failed read.
+- Sequence was AActor* → FString count read → FString chars read (which failed).
+- Remaining=2248 → Pos=50 at overflow. Since FString count read consumes 32
+  bits, AActor* consumed 50 − 32 = **18 bits**.
+- Verified: reading 32 bits at sub-bit 18 gives count=369 → attempted read
+  of 369×8=2952 bits (matches session 30's ReadLen=2952).
+
+### Delivered
+
+- `AppendBoolParam` — FBoolProperty helper (1-bit wire, SetBoolSize with
+  bIsNativeBool=true, BitMask=1).
+- `AppendUInt32Param` — FUInt32Property helper (32-bit wire).
+- `AppendUInt8ArrayParam` — FArrayProperty+FByteProperty helper for
+  TArray&lt;uint8&gt; (uint16 count + count×8 bits).
+- Trial 31A signature injected: `(AActor* NewViewTarget, bool×3 PadBits,
+  FString ClientMapPartyMenu)`. Log confirms NumParms=5, ParmsSize=32.
+
+Rationale for bool×3: to reach exactly bit 21 (start of FString #1),
+AActor* (18 bits per session 30) + 3 bools = 21 bits. Then FString count
+reads value 46 = PartyMenu length.
+
+### Session 32 plan
+
+Trial 31A is BUILT but the end-to-end test cycle was blocked in session 31:
+after the ags restart to enable phantomMatchmakingSequence, the client's
+`/lobby` WS did not reconnect (only `/notifications/players/...` did), so
+the phantom `matchmakingNotif start→done` push never fired and the client
+never browsed to 127.0.0.1:7777. The stub log shows zero incoming handshake
+activity, confirmed via a PowerShell UDP test that DID reach the stub.
+
+Recipe for session 32:
+
+1. Enable `phantomMatchmakingSequence = true` in
+   `server/internal/lobby/lobby.go`.
+2. Full restart via `.\configs\launch-redirect.ps1 -Hook .\tools\sigbypass-mod\browse_hook.dll`
+   (so the fresh client establishes a fresh `/lobby` WS and phantom push
+   fires 3s after connect).
+3. Watch stub log for `ChIndex=3` bunch AND `FBitReader::SetOverflowed`.
+4. Read `Remaining` value:
+   - If Remaining = 2298 − 21 − 32 = 2245 → bit 21 alignment achieved,
+     FString count read = 46 = PartyMenu. Trial 31A prefix WORKS.
+   - Different value → adjust prefix (add/remove bools) until Remaining
+     matches expectation for a valid FString start.
+5. Extend signature toward full 5-FString structure. For each 45-bit gap
+   try `(uint32, uint8, bool×5)` (32+8+5=45). For 41-bit trailer try
+   `(uint32, uint8, bool)` (32+8+1=41).
+6. Once all 2298 bits consumed with no overflow and no Reader.IsError,
+   grep for `Received RPC: ServerVerifyViewTarget`. That confirms the
+   signature is correct. From there, connection proceeds; menu-data
+   replication becomes the next problem (session 32+).
+
+Alternative (if phantomMatchmakingSequence still doesn't fire the browse):
+launch with `-Open "127.0.0.1:7777"` to force `open` console command
+in `-ExecCmds`. Comment in launch-redirect.ps1 says this always fires the
+handshake even if nothing is listening — good enough to trigger the RPC.
+
+### Tooling artifacts (session 31)
+
+- `unreal-stub/Source/Loki/Loki.cpp` — Bool/UInt32/UInt8Array helpers +
+  Trial 31A signature.
+- `docs/session-31-analysis.txt` — full structural discovery notes.
+
+### Chapter state (end of session 31)
+
+- Everything through PC spawn: DONE
+- Bunch bytes captured + decoded (2298 bits): DONE
+- Runtime UFunction injection with Object/Bool/UInt32/UInt8Array helpers: DONE
+- ENGINE-SIDE BIT-COUNT DIAGNOSTIC discovered: DONE (session 30)
+- **RPC contains 5 sub-level FStrings + 21-bit header + 4×45-bit gaps +
+  41-bit trailer: DONE (session 31 — structural breakthrough)**
+- AActor* NetGUID = 18 bits (corrected from session 30's 50): MEASURED
+- Trial 31A signature built (AActor*, bool×3, FString): DONE
+- Trial 31A end-to-end test: BLOCKED (client `/lobby` WS didn't reconnect)
+- Full signature + Received RPC log line: TODO (session 32)
+- Menu-data replication: TODO (session 33+)
+
+### Commits this session
+
+- (session 31 writeup commit follows)
 
 
 
