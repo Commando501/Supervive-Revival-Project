@@ -115,6 +115,23 @@ void LokiStatelessConnect::Incoming(FBitReader& Packet)
 			       OriginalBits, InnerBits,
 			       Data[0], Data[1], Data[2], Data[3], Data[4], Data[5], Data[6], Data[7]);
 
+			// Session 23: hex-dump the FULL inner bytes for the RPC bunch RE work.
+			// The ServerVerifyViewTarget RPC arrives on a channel-3 bunch inside a
+			// large packet; we need the raw bytes to decode the RPC arg struct.
+			// Only dump packets larger than 128 bits post-strip to avoid spamming
+			// the log with routine acks/heartbeats.
+			if (InnerBits > 128)
+			{
+				FString FullHex;
+				FullHex.Reserve(InnerBytes * 3);
+				for (int64 i = 0; i < InnerBytes; ++i)
+				{
+					FullHex.Appendf(TEXT("%02X "), Inner[i]);
+				}
+				UE_LOG(LogLokiStateless, Verbose,
+				       TEXT("[Incoming] full inner %lld bytes: %s"), InnerBytes, *FullHex);
+			}
+
 			LastIncomingByte1 = Data[1];
 			LastIncomingByte6 = Data[6];
 			bHasLastIncoming = true;
