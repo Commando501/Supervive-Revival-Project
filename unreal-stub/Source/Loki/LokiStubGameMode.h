@@ -18,4 +18,11 @@ class ALokiStubGameMode : public AGameModeBase
 
 public:
 	ALokiStubGameMode(const FObjectInitializer& ObjectInitializer);
+
+	// Session 37 Option A': mark the newly-logged-in PC as fully dormant so
+	// its actor channel opens (client sees the PC replica) but no property
+	// replication ever fires. This dodges the FClassNetCache divergence that
+	// crashes the client with "Invalid replicated field 0" (see
+	// docs/session-36-close-diagnosis.md).
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 };
