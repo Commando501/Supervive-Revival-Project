@@ -1,0 +1,131 @@
+=== SESSION 40 PATH A1 VERIFICATION — LEGITIMATE CRASH, ID CONFIRMED ===
+
+After discovering the anti-cheat fail-fast pattern (identical hardcoded
+`Rbp=0x537AC9E1` / `R11=0x95654773B3BC` / `Rip=0xF0400001` across 4 test
+configs), the concern was raised: is the Path A1 D3D12 crash also an
+anti-cheat fail-fast in disguise?
+
+**Verified head-to-head. The D3D12 crash is a LEGITIMATE natural crash
+at our target class, structurally distinct from the anti-cheat pattern.**
+
+--- Method ---
+
+`scratchpad/verify-a1.py` extracts registers from both dump types and
+compares against the anti-cheat fingerprint (all three markers: Rip, Rbp,
+R11) AND against the expected D3D12-mode-legitimate-crash pattern.
+
+Also reads the memory at Rbx (the `this` pointer) to verify the vtable
+pointer matches our target class's RVA `+0x7B9E188`.
+
+--- Head-to-head register comparison ---
+
+| Register | D3D12 (Path A1)              | Anti-cheat (r.RayTracing=0)   |
+|----------|------------------------------|-------------------------------|
+| Rip      | 0x007FF6853F6FF0 (SUPERVIVE) | 0x007FF8F0400001 (ntdll)      |
+| Rbp      | 0x00000000000001             | 0x00000000537AC9E1 (SIGNATURE)|
+| R11      | 0x007FF8EFD55880 (kernel32)  | 0x0095654773B3BC (SIGNATURE)  |
+| Rax      | 0x0002241D946A00 (heap)      | 0x00000000000000              |
+| Rcx      | 0x007FF68A55B368 (.rdata)    | 0x00000000000000              |
+| Rsi      | 0x00000000000000             | 0x00000000000000              |
+| Rbx      | 0x00022424310040 (heap)      | 0x5C3466BA98554807 (garbage)  |
+| Rdx      | 0x00022443FA0020 (heap)      | 0x39DFBC476FA177F3 (garbage)  |
+| Rdi      | 0x0002256934B550 (heap)      | 0x00002C9C51FB48 (stack ptr)  |
+| R8       | 0x00000000000020             | 0xC34B9923AB6B4EAD (garbage)  |
+| R9       | 0x00000000000000             | 0xCBA88DC187C16B9A (garbage)  |
+| R10      | 0x007FF682A80000 (SV base)   | 0x5C3466BA98554807 (garbage)  |
+| R12      | 0x00000000000004             | 0x00000000000000              |
+| R13      | 0x0000007FFFFFFF             | 0x00000000000000              |
+| R14      | 0x000224C0787E00 (heap)      | 0x00000000000000              |
+| R15      | 0x0000B9EFCBF7BC (stack)     | 0x00000000000000              |
+
+Every marker differs.
+
+--- Anti-cheat fingerprint check ---
+
+`D3D12 dump`:  Rip=AC:**False**  Rbp=AC:**False**  R11=AC:**False**
+              → **DIFFERENT CRASH (legitimate)**
+
+`r.RayTracing=0 dump`: Rip=AC:True  Rbp=AC:True  R11=AC:True
+              → ANTI-CHEAT (confirmed)
+
+--- D3D12 crash semantic verification (from real class execution) ---
+
+All markers consistent with the natural crash at our target class:
+
+    Rip - SV_BASE = 0x2976FF0           # Expected: 0x2976FF0 ✓
+    Rcx - SV_BASE = 0x7ADB368           # Expected: 0x7ADB368 ✓ (.rdata)
+    Rbx is a heap pointer               # ✓
+    *Rbx (vtable) RVA = +0x7B9E188      # Expected: +0x7B9E188 ✓
+    → **VTABLE MATCH: True**
+
+The `this` pointer holds an object whose vtable is at our target vtable
+address. This is the class we identified in Path A1.
+
+--- Additional evidence of legitimate crash ---
+
+Beyond the register values, the D3D12 dump shows structural coherence:
+
+- The failed write target `Rcx = 0x7FF68A55B368` is in the exe's `.rdata`
+  section (read-only) — matches the "TArray Data still points at const
+  default" hypothesis from Path A1 analysis
+- `Rax` and `Rdx` and `Rdi` and `R14` all contain valid heap pointers in
+  the `0x00000200_xxxxxxxx` range (typical Windows heap layout)
+- `R10 = SUPERVIVE base` — a common intermediate value when the code
+  computes RVA-based addresses
+- `R11 = 0x7FF8EFD55880` — inside `kernel32.dll` code (0x7FF8EFD40000-
+  0x7FF8EFE02000 from module listing), consistent with a recent Windows
+  API return
+- `R12=4, R13=0x7FFFFFFF, R15=stack` — normal register values from
+  regular code execution
+
+vs. anti-cheat dumps:
+- Rip in ntdll at a fixed hardcoded target (0xF0400001)
+- Rbp/R11 exactly match hardcoded signature values every session
+- Multiple registers set to 0 or filled with high-entropy garbage
+  characteristic of a fastfail call that zeros the low regs and passes
+  a "context" in Rbp/R11
+
+--- Conclusion ---
+
+The Path A1 identification is **DEFINITIVELY CONFIRMED as a legitimate
+natural crash** at the target class whose vtable is at exe RVA +0x7B9E188.
+This is a UE 5.4 D3D12 RHI class (per session 40 A1's .rdata string
+analysis + session 40 minidump-CONFIRMED call stack showing D3D12Core.dll
+frames).
+
+The class is real. The crash is real. Path B-lite (schema-inject
+replicated fields, un-suppress PC) is the recommended path forward if
+the SUPERVIVE Revival goal is to be pursued further.
+
+--- Chapter state (end of session 40 verification) ---
+
+- Full suppression keeps connection stable through Join: DONE (S39)
+- Client reaches menu, fetches 25 heroes: DONE (S39)
+- Crash class D3D12-related identification: **DEFINITIVELY CONFIRMED**
+  (this doc; Rip, Rbp, R11 all differ from anti-cheat; vtable match at
+  RVA +0x7B9E188)
+- Anti-cheat fail-fast on renderer/subsystem flags + r.RayTracing CVar:
+  CONFIRMED
+- Menu-data replication: TODO
+
+--- What Path B-lite would need to do (if next chapter is pursued) ---
+
+Same scoping as `docs/session-40-path-b-lite-analysis.txt`:
+- Enumerate SUPERVIVE's CPF_Net field set on AActor (session 22's schema
+  dump doesn't emit flags; may need targeted usmapdump extension)
+- Extend injection primitives to handle UClass replicated properties
+  (not just UFunction params)
+- Handle `LokiReplicationStrategy` and `ServerState` struct properties
+  (requires matching UScriptStruct defs)
+- Rebuild `ClassNetCache` after injection
+- Un-suppress `APlayerController` from `IsClassNetCacheDivergent()`
+
+Estimated: 8-15 hours engineering. Success would allow PC to replicate
+properly to the client, potentially fixing the initialization sequence
+that leaves the target class's slot-parent TArray in a partial-init
+state.
+
+--- Files added this session ---
+
+- `scratchpad/verify-a1.py` — reusable register-pattern comparator
+- `docs/session-40-path-A1-VERIFIED.txt` — this doc
