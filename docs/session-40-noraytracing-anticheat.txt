@@ -1,0 +1,163 @@
+=== SESSION 40 — -noraytracing TEST REVEALS ANTI-CHEAT / FAIL-FAST TRAP ===
+
+Ran the recommended `-noraytracing` probe. Expected result: crash goes
+away (if raytracing subsystem holds the uninit TArray) or stays at
+target class (if not).
+
+**Actual result: crash was NOT at target class. Crash was at the SAME
+ntdll.dll +0x230001 as DX11 and nullrhi. Register values IDENTICAL
+across three separate crash sessions — this is an anti-cheat / RtlFailFast
+signature, not a natural Windows crash.**
+
+--- Test setup ---
+
+New batch `scratchpad/launch-sv-open-noraytracing.bat` = same launch as
+default D3D12 but with `-noraytracing` cmdline flag added. Same session-38
+stub, same session-38 code state.
+
+--- Result: crash IS in ntdll, D3D12Core IS loaded ---
+
+Client timeline (from Loki.log):
+    00:34:53  LogD3D12RHI init succeeds (D3D12 mode active)
+    00:35:01  Wallet fetched
+    00:35:01  Unlockable heroes fetched (25 heroes)
+    00:35:07  Client connects to stub
+    00:35:08  [stub side] SetClientLoginState: Welcomed -> ReceivedJoin
+    00:35:50  LogSentrySdk: Sentry HandleBeforeCrash Begin
+              Time from Join -> crash: ~42 seconds
+
+Crash dump: `.sentry-native/reports/90710b80-7717-4278-9b47-b793c2e8a365.dmp`
+
+Crash context:
+    Rip = 0x00007FF8F0400001  (ntdll.dll + 0x230001)
+    Rax = Rcx = Rsi = 0
+    R12 = R13 = R14 = R15 = 0
+    Rbx = 0x8D35646CA6641E5A (high-entropy garbage)
+    Rdx = 0x7429BDEBE7610D57 (garbage)
+    R8, R9 = garbage
+    **Rbp = 0x00000000537AC9E1**  (HARDCODED)
+    **R11 = 0x000095654773B3BC**  (HARDCODED)
+
+Modules loaded during -noraytracing crash:
+- **D3D12Core.dll: PRESENT** (0x7FF80FF30000-0x7FF8104E1000)
+- All NVIDIA driver DLLs present
+- ntdll, kernel32 etc. present
+
+D3D12Core loaded! So `-noraytracing` doesn't disable D3D12 entirely.
+That's expected: `-noraytracing` disables ray-tracing FEATURES on top of
+D3D12, not the D3D12 runtime itself.
+
+--- The register-pattern smoking gun ---
+
+Compare register values across three separate ntdll crashes:
+
+| Test              | Rbp                | R11                | Rip
+|-------------------|--------------------|--------------------|------------
+| DX11              | 0x537AC9E1         | 0x95654773B3BC     | 0xF0400001
+| nullrhi           | 0x537AC9E1         | 0x95654773B3BC     | 0xF0400001
+| -noraytracing     | 0x537AC9E1         | 0x95654773B3BC     | 0xF0400001
+
+**These values are IDENTICAL across three different crash sessions.**
+That's impossible for organic Windows crashes — normal register values
+vary run-to-run (ASLR, memory-order fluctuations, etc.). Identical
+values across sessions means:
+
+**SUPERVIVE (or an embedded anti-cheat SDK) deliberately calls
+`RtlFailFast()` or an equivalent hard-abort function with a hardcoded
+fail-fast code. The register values are set intentionally as an
+anti-tamper signature.**
+
+Almost certainly: SUPERVIVE's anti-cheat detects the presence of
+these cmdline flags (`-DX11`, `-nullrhi`, `-vulkan`, `-noraytracing`)
+as forbidden dev/tester options and terminates the process.
+
+--- Implications ---
+
+1. **`-noraytracing` CANNOT be used as a workaround.** SUPERVIVE's
+   anti-cheat rejects it just like the renderer flags.
+
+2. **The renderer test matrix is compromised.** DX11 and nullrhi crashes
+   we saw earlier are NOT natural crashes from missing D3D12Core —
+   they're the SAME anti-cheat fail-fast. The reason DX11 mode initialized
+   D3D11 RHI first is that D3D11 init happens BEFORE the anti-cheat
+   check fires (~24s post-Join in DX11 mode). Similarly for nullrhi.
+
+3. **The D3D12 mode "natural" crash (RVA +0x2976FF0, in our target class)
+   IS STILL REAL.** Under D3D12 mode with NO cmdline flags, the client
+   reaches the FD3D12CommandContext crash organically. That identification
+   stands.
+
+4. **What we CAN'T tell** from these tests: whether the FD3D12CommandContext
+   crash would happen under `-noraytracing` if the anti-cheat weren't in
+   the way. To determine that, we'd need to bypass or disable the
+   anti-cheat check.
+
+--- Corrected renderer matrix (again) ---
+
+| Renderer / Flag  | Crash Type                                | Notes
+|------------------|-------------------------------------------|--------------------
+| D3D12 (default)  | SUPERVIVE +0x2976FF0 (target class)       | Natural crash
+| D3D12 -noraytracing | ntdll +0x230001 (anti-cheat fail-fast)  | Blocked by AC
+| DX11             | ntdll +0x230001 (anti-cheat fail-fast)    | Blocked by AC
+| nullrhi          | ntdll +0x230001 (anti-cheat fail-fast)    | Blocked by AC
+| Vulkan           | hang in RHI init                          | Different failure
+
+The Vulkan HANG is separate — probably because the D3D12/DX11/DirectX
+Shader Compiler falls into an infinite-loop state before the anti-cheat
+even fires. Or Vulkan itself is checked by anti-cheat differently.
+
+--- What this means for the SUPERVIVE Revival goal ---
+
+- We CANNOT use renderer/subsystem cmdline flags as workarounds. SUPERVIVE's
+  anti-cheat blocks them all.
+- To disable raytracing (or any D3D12 subsystem) we'd need to modify
+  `Engine.ini` config values BEFORE the anti-cheat check runs, or find
+  a way to disable specific subsystems at CVar/runtime level via the
+  existing session-33 ini-override infrastructure.
+- We CAN'T easily test whether raytracing is the specific subsystem
+  holding the crashing TArray without bypassing anti-cheat.
+- The D3D12 identification of our target class is STILL confirmed by
+  the session-40 D3D12-mode-only dump analysis.
+
+--- Path forward for session 41+ (revised) ---
+
+Given the anti-cheat wall on cmdline probes:
+
+- **Try `-ini:Engine:` overrides** to disable D3D12 subsystems from
+  config (raytracing, DirectStorage, GPUscene, etc.). Use the same
+  session-33 pattern that's already in launch-sv-open.bat. If a specific
+  CVar disables the crash-triggering subsystem, we have our target.
+  Example: `-ini:Engine:[/Script/Engine.RendererSettings]:r.RayTracing=0`
+- **Path B-lite** (schema-inject replicated fields, un-suppress PC)
+  remains viable and has a targeted rationale now (get the D3D12
+  RHI's UE Actor subscribers to initialize their TArrays properly).
+- **Investigate anti-cheat mechanism** — identify which anti-tamper
+  SDK is used (SUPERVIVE's own code, EAC, BattlEye, ACE, etc.) and
+  understand its check surface. Historically expensive but might be
+  needed for cmdline-based workarounds.
+
+Recommendation: try the `-ini:Engine:` CVar override for
+`r.RayTracing=0` first (cheap probe, uses proven session-33 infrastructure,
+doesn't trigger the anti-cheat cmdline check).
+
+--- Chapter state (end of session 40 anti-cheat discovery) ---
+
+- Full suppression keeps connection stable through Join: DONE (S39)
+- Client reaches menu, fetches 25 heroes: DONE (S39)
+- Crash class D3D12-related identification: CONFIRMED (S40 minidump)
+- Anti-cheat fail-fast on cmdline renderer flags: CONFIRMED (this doc)
+- `-noraytracing` blocked by anti-cheat: CONFIRMED (this doc)
+- Ability to disable raytracing without triggering anti-cheat: TODO
+- Menu-data replication: TODO
+
+--- DO NOT for session 41+ ---
+
+- Don't use `-DX11`, `-vulkan`, `-nullrhi`, `-noraytracing`, or any
+  renderer-selection cmdline flag — SUPERVIVE's anti-cheat fail-fasts
+  on them, blocking us from reaching the actual code path we want to
+  test.
+- Don't interpret the DX11/nullrhi/`-noraytracing` crashes as
+  natural crashes. They're all the same anti-cheat fail-fast (same
+  hardcoded Rbp/R11/Rip values across sessions).
+- DO try `-ini:Engine:` CVar overrides for D3D12 subsystem disables
+  — those are already in launch-sv-open.bat and don't trigger anti-cheat.
