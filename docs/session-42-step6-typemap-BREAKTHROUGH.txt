@@ -134,6 +134,40 @@ usmapdump poke (WPM, non-elevated) could patch the in-memory AR and/or directly
 populate the Hero type's AssetMap. Needs the correct FPrimaryAssetTypeData/AssetMap
 layout + FPrimaryAssetData construction. (Hero AssetMap Num==0 now CONFIRMED above.)
 
+*** FINAL DIAGNOSIS (2026-07-02, decisive) — the in-game AR is FULL and correct;
+LokiAssetManager just never scans it into the per-type AssetMaps. ***
+Found the live UAssetRegistryImpl (CDO 0x1C66C2F63B0 — only ONE object carries its
+vtable 0x7FF68A455328; the registry data lives in the CDO's inline FAssetRegistryImpl
+GuardedData). Scanned it: a map at CDO+0x38/+0x58 has **Num = 103,841** = EXACTLY the
+baked AssetRegistry.bin entry count. So the IN-GAME registry is FULLY POPULATED (all
+103,841 entries, incl. the 25 correctly-tagged heroes). => Hypothesis A (sparse in-game
+AR) is RULED OUT. Hypothesis B CONFIRMED: the registry has everything, correctly tagged,
+but the manager's per-type AssetMaps are empty => LokiAssetManager registers each type's
+Info (from PrimaryAssetTypesToScan config) but NEVER runs the directory-scan / AR-query
+step that would populate the per-type AssetMap from the (full, correct) registry. It
+relies on the content-service MANIFEST (ags, sparse ~1175) instead. THIS is the precise,
+final root cause. (The "0.0008s FAssetRegistry startup" was the module init, not the
+premade-AR content load — the content IS present, 103,841 entries.)
+
+FIX DIRECTION (final, corrected)
+--------------------------------
+NOT an AR patch (the AR is already full + correctly tagged). The fix = make the manager
+populate its per-type AssetMaps FROM the already-present registry. Options:
+  1. RUNTIME TRIGGER (most promising): invoke UAssetManager::ScanPathsForPrimaryAssets
+     (or GetPrimaryAssetIdList/a re-scan) for the types at runtime — the AR is full, so a
+     single scan per type WOULD find the heroes and fill the grid. Via injection (proven
+     browse_hook) call the scan on the game thread. RISK: the prior native-shim call to
+     ScanPrimaryAssetTypesFromConfig __report_gsfailure'd — but that was a DIFFERENT fn in
+     a forced off-thread context; ScanPathsForPrimaryAssets on the game thread may differ.
+  2. UN-SKIP THE NATIVE SCAN: RE LokiAssetManager's StartInitialLoading override to find
+     WHY it skips the AR directory-scan, then poke the gating condition so the natural
+     startup scan runs. Needs the vtable-slot map (diff stock UE5.4 UAssetManager).
+  3. DIRECT WPM POPULATE: read the 25 hero FAssetData from the live AR and construct
+     FPrimaryAssetData entries into the Hero type's AssetMap. Hardest.
+Recommend option 1 first (cheapest test: does one scan call fill the grid?).
+
+(HISTORICAL — superseded by the FINAL DIAGNOSIS above) the notes below explored a
+sparse-AR hypothesis and an AR class-flip; both are now ruled out (AR is full + correct).
 *** CRUCIAL UPDATE — the AR entries are ALREADY correctly tagged; a class-flip is
 NOT the fix. The problem is upstream (sparse in-game AR, or AR-scan skipped). ***
 Ran `assetregistry inspect BP_HeroAsset` on the extracted Premade AR (out/AssetRegistry.bin,
