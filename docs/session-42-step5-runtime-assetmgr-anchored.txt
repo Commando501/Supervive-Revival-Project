@@ -74,9 +74,39 @@ UClass ChildProperties chain at UClass+0x58 — each FProperty carries NamePriva
 @+0x20 and Offset_Internal — OR from `usmapdump extract`). LokiAssetManagerSettings
 likely holds the manifest/asset-manager-class config instead.
 
-THE DECISIVE READ (do first next session — read-only, cheap):
-1. Find Default__AssetManagerSettings (engine UAssetManagerSettings) via its name id.
-2. Read its PrimaryAssetTypesToScan (TArray<FPrimaryAssetTypeInfo> UPROPERTY):
+*** RESULT (read this launch) — the config is POPULATED, so the cheap -ini: path
+is MOOT; the scan is CONFIGURED but not producing a populated manager map => native
+case (ii). ***
+Read engine Default__AssetManagerSettings CDO = 0x1C66C89DEF0 (name id 0x65F84F).
+Arrays in the config-property region:
+  +0x30: EMPTY TArray {null,0,0}   (a property before/around PrimaryAssetTypesToScan)
+  +0x40: TArray {Data=0x1C672124450, Num=32, Max=32}  <-- PrimaryAssetTypesToScan
+  +0x50: TArray {Data=0x1C6E1B706C0, Num=2, Max=2}     (e.g. MetaDataTags: "/Game/Loki")
+The +0x40 elements are FPrimaryAssetTypeInfo-shaped: element0 = FName type (id 0x2FF)
++ soft-class ptr + a nested Directories TArray {Num=1,Max=4}. => PrimaryAssetTypesTo
+Scan is POPULATED with 32 types. The config is NOT empty.
+CONSEQUENCE: a -ini: PrimaryAssetTypesToScan override is MOOT (already 32 types). The
+game is CONFIGURED to scan 32 primary-asset types at startup, yet the live manager's
+type map comes up empty (step-4 ChangeBundleState "failed to find NameData"). => The
+standard config scan is NOT effectively registering into the live manager — i.e.
+LokiAssetManager bypasses/short-circuits ScanPrimaryAssetTypesFromConfig (native
+case ii). A fix must force/restore that scan. usmapdump poke (WPM) works non-elevated
+so a native intervention needs no injection — BUT the prior native-shim CALLED
+ScanPrimaryAssetTypesFromConfig and it __report_gsfailure'd (CLAUDE.md do-not), so
+"just call the scan" is fraught; the real target is WHY LokiAssetManager skips it.
+
+TRULY DECISIVE NEXT READ (confirms case ii precisely):
+1. Find the LokiAssetManager INSTANCE (not CDO): findptr <LokiAssetManager UClass>
+   -> hits at instance+0x18; the non-CDO hit is the singleton.
+2. Read the instance's live primary-asset TYPE MAP (native member; get its offset by
+   RE'ing UAssetManager layout / diffing a stock UE5.4 UAssetManager). Count entries:
+   0 => scan fully bypassed; ~32 => scan ran (grid-empty is a DIFFERENT issue, e.g.
+   the UI wants manifest-only hero SKUs not among the 32); ~11 => only manifest types.
+3. Resolve the 32 configured type FNames (element[i].PrimaryAssetType, stride ~0x70)
+   and check whether Hero/Mission/StoreOffer are among them — tells us if the grid's
+   types are even in the scan set.
+
+(Superseded) earlier hypothesis — read PrimaryAssetTypesToScan to see if empty:
    - Get the property's byte offset from `usmapdump extract` -> mappings.usmap ->
      tools/extractor schema for LokiAssetManagerSettings (or UAssetManagerSettings).
    - peek CDO+<offset>: read TArray {Data ptr, Num i32, Max i32}. Num>0 => config
