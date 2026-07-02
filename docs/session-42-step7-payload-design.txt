@@ -34,7 +34,7 @@ RECON DONE
   H:\Unreal Engine\UE_5.4\...\Engine\Classes\Engine\AssetManager.h. ScanPathsForPrimary
   Assets is the 1st NEW UAssetManager virtual (line 104), i.e. vtable slot =
   (UObject vtable slot count). Nothing editor-only precedes it, so its slot is stable.
-- LokiAssetManager vtable = module RVA +0x88CB78 (stable). Base virtuals in slots
+- LokiAssetManager vtable = module RVA +0x888CB78 (stable). Base virtuals in slots
   0..~87; the runtime UAssetManager virtuals Loki cares about are OVERRIDDEN and live
   in the 0x12Cxxxx .text cluster (per the step-5 vtdump). ScanPathsForPrimaryAssets is
   almost certainly one of these 0x12Cxxxx slots.
