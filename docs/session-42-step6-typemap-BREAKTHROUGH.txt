@@ -88,6 +88,33 @@ Num + a few asset-id keys — decides (a) vs (b). (2) Visually confirm the grid 
 extractor `assetregistry` tooling — but now with the knowledge that the manager DOES
 consume the AR, so the fix is making the type Directories resolve baked assets.
 
+VISUAL CONFIRMATION (computer-use screenshot, 2026-07-02, this same run)
+-----------------------------------------------------------------------
+Opened the HUNTERS screen in the live client:
+- The "ALL HUNTERS" grid (left) is VISUALLY EMPTY — zero hunter tiles, only the
+  role-filter icon column. So the enumeration that fills the grid returns nothing.
+- The right-hand DETAIL panel shows a REAL hero: "Frontline Pyromaniac" (ability
+  icon on PRIMARY, 3-star difficulty, PURCHASE 20,000, "Recommended for new
+  players"). So a specific hero loads by DIRECT reference (likely the current-season
+  / default/featured hero, by ID) even though the grid enumeration is empty.
+- The centre hero MODEL is the magenta "?" placeholder (3D model/preview not loaded).
+This GROUNDS the memory read precisely: the Hero primary-asset TYPE is registered
+(so a hero can load by id), but the Hero type's enumerable per-type asset list is
+empty (so GetPrimaryAssetIdList(Hero) -> 0 -> empty grid). The blocker is the
+per-type AssetMap being unpopulated, NOT the type/scan being absent.
+
+REFINED FIX DIRECTION
+---------------------
+The Hero type registered but ScanPathsForPrimaryAssets(Hero, Directories) populated
+0 enumerable assets. So the fix is to make the Hero type's scanned Directories
+resolve the 25 baked hero primary assets. Since the manager DOES consult the AR
+(proven by 30 types registering), the AR-patch route is logic-viable again — the
+open problem reverts to DEPLOYMENT (pak signing, still blocked) OR a RUNTIME path:
+usmapdump poke (WPM, non-elevated) could patch the in-memory AR and/or directly
+populate the Hero type's AssetMap. Needs the correct FPrimaryAssetTypeData/AssetMap
+layout + FPrimaryAssetData construction. Next session: get that layout (diff stock
+UE5.4 UAssetManager) and read Hero's AssetMap to confirm Num==0.
+
 STATE
 -----
 - Normal client still RUNNING at the menu (PID 70960). All heap addresses above are
