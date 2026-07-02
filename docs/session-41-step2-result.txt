@@ -1,0 +1,106 @@
+SESSION 41 — STEP 2 RESULT: ServerState injection FIXED N=0; advanced to a
+RepLayout handle-space mismatch (ServerState wire format)
+==============================================================================
+Date: 2026-07-01 ~23:15 → 2026-07-02 ~04:16 (local/UTC log stamps)
+Branch: dedicated-server-stub
+
+HEADLINE
+--------
+Path B-lite step 2 (inject SUPERVIVE's AActor.ServerState replicated property)
+WORKS at the field-index level: the client no longer rejects the PlayerController
+bunch with "Invalid replicated field 0". The failure ADVANCED to a finer-grained
+RepLayout handle-space error, which pinpoints the remaining work: ServerState's
+exact wire representation.
+
+WHAT WAS IMPLEMENTED (all committed-pending in the working tree)
+---------------------------------------------------------------
+1. unreal-stub/Source/Loki/LokiReplicatedStructs.h — USTRUCT
+   FPoolableActorServerState { int32 State; int32 Version; } mirroring
+   SUPERVIVE's PoolableActorServerState (session-41-supervive-pc-repschema.txt).
+2. Loki.cpp InjectServerStateReplicatedProperty() — creates a CPF_Net
+   FStructProperty "ServerState" referencing that struct, appends to
+   AActor->ChildProperties tail (=> RepIndex 10, matching the client).
+3. Two engine-invariant obstacles found + solved along the way:
+   a. ValidateGeneratedRepEnums HARD-ASSERTS ("UHT Generated Rep Indices do not
+      match runtime" in Controller.gen.cpp) because adding ServerState to AActor
+      shifts every AActor subclass's inherited RepIndices. The gating static
+      GValidateReplicatedProperties (1 in editor builds) CANNOT be changed via
+      the net.ValidateReplicatedPropertyRegistration CVar (it's an
+      FAutoConsoleVariable initialized by-value, decoupled from the static).
+      SOLUTION: ForceSetUpReplicationData() — a validation-free mirror of
+      UClass::SetUpRuntimeReplicationData that pre-builds ClassReps+NetFields for
+      every AActor-derived class and sets CLASS_ReplicationDataIsSetUp, so the
+      engine's validating version early-returns. (239 actor classes rebuilt.)
+   b. FRepLayout (RepLayout.cpp:6118) ASSERTS replicated-property offsets are
+      non-decreasing in ClassReps order. ServerState at default offset 0 (after
+      Instigator's large offset) tripped it and CRASHED THE STUB.
+      SOLUTION: give ServerState Instigator's offset (the last/highest AActor-rep
+      offset) via a trivial FStructProperty subclass exposing the protected
+      SetOffset_Internal. offset=440 at runtime. Read-only for send; harmless.
+
+VERIFICATION (headless, no game needed)
+---------------------------------------
+Stub boots clean; log shows:
+  InjectServerState: added CPF_Net FStructProperty ServerState
+    (struct=PoolableActorServerState ElementSize=8 offset=440) ... rebuilt rep
+    data for 239 actor class(es) via validation-free ForceSetUpReplicationData.
+  NetCacheDump: Actor ClassReps=11, ServerState @ [10] RepIndex=10;
+    Controller PlayerState/Pawn @ [11]/[12]; PlayerController props @ [13..15];
+    ServerVerifyViewTarget @ net [95]  (all +1 vs stock, matching the client).
+
+LIVE TEST PROGRESSION (three runs)
+----------------------------------
+- live (step-5, no injection): client "Invalid replicated field 0" instantly.
+- live2 (ServerState, offset 0): STUB crashed on RepLayout.cpp:6118 offset
+  assert before sending the bunch; client then timed out (server gone).
+- live3 (ServerState, offset 440): STUB SURVIVES replication. Connection reaches
+  ReceivedJoin, ServerVerifyViewTarget RPC parses cleanly (LiveReplay
+  FinalPos=2298). Client NO LONGER logs "Invalid replicated field". Instead:
+      LogRep: Error: ReceiveProperties: Invalid property terminator handle - Handle=22
+      LogRep: Error: RepLayout->ReceiveProperties FAILED: PlayerController ...
+      LogNet: Error: ProcessBunch: Replicator.ReceivedBunch failed. Closing. Channel 3
+  => ObjectReplicatorReceivedBunchFail, connection closed.
+
+INTERPRETATION — the remaining blocker
+---------------------------------------
+"Invalid property terminator handle - Handle=22" is a RepLayout HANDLE-space
+mismatch (finer-grained than the field-index space that N=0 lived in). The
+field mapping now aligns (no more "Invalid replicated field"), but the flattened
+property-cmd HANDLE stream desyncs: the client reads handle 22 where it expects
+the block terminator (handle 0). The bits within ServerState desynced the reader.
+
+Cause: our ServerState wire representation (member-wise int32 State + int32
+Version = 2 RepLayout cmds, 64 bits) does NOT bit-match the client's
+PoolableActorServerState. Candidates for the mismatch:
+  - State is an EnumProperty<UInt32Property> on the client; RepLayout/enum net
+    serialization may use a BIT-PACKED width (< 32 bits) rather than full 32,
+    so our 32-bit int32 over-reads and desyncs everything after it.
+  - PoolableActorServerState may have a custom NetSerialize (WithNetSerializer)
+    => a SINGLE opaque cmd, not 2 member cmds. Then handle counts differ.
+All stock structs (RepMovement/RepAttachment/Rotator/Vector) expand identically
+on both sides, so ServerState is the sole novel expansion and the prime suspect.
+
+NEXT STEP (step 2, iteration 2)
+-------------------------------
+Determine PoolableActorServerState's EXACT replicated wire format and match it:
+  1. Check whether the struct has a custom NetSerialize (WithNetSerializer). If
+     so, mirror it (single opaque cmd) — likely via a matching USTRUCT with a
+     NetSerialize override, or mark the property so RepLayout treats it as one cmd.
+  2. If member-wise, fix State's bit width: try a real UENUM-backed enum (so
+     RepLayout uses the enum's packed width) OR match the client's exact bits.
+  3. Re-run the live probe; watch whether "Invalid property terminator handle"
+     moves/disappears. When the property block reads clean, the PC bunch should
+     be fully accepted and the connection should reach the session-38 "post-Join
+     silent" ceiling (or further — actual menu render).
+The instrumentation exists: DumpClassNetCacheLayout + the live LiveReplay logs.
+Consider adding a per-handle RepLayout dump on the stub to compare cmd counts.
+
+STATE AT END
+------------
+Game client killed. ags backend left running (reusable). Stub server killed
+after the test. All step-2 code is in the working tree (uncommitted):
+  unreal-stub/Source/Loki/LokiReplicatedStructs.h (new)
+  unreal-stub/Source/Loki/Loki.cpp (InjectServerState + ForceSetUpReplicationData
+    + FLokiStructPropertyWithOffset)
+  tools/usmapdump/extract.go + usmapdump.exe (CPF_Net emission, from earlier)
+  unreal-stub/Source/Loki/LokiNetDriver.cpp (step-5 un-suppress, from earlier)

@@ -1,0 +1,106 @@
+SESSION 41 — STEP 2 BREAKTHROUGH: PlayerController replication FIXED; client
+loads the LobbyV2 map + fetches 25 heroes
+==============================================================================
+Date: 2026-07-02
+Branch: dedicated-server-stub
+
+HEADLINE
+--------
+Path B-lite step 2 is DONE for the PlayerController: injecting SUPERVIVE's
+AActor.ServerState replicated property — as a CUSTOM-NetSerialize struct so it
+occupies a single RepLayout cmd — realigned the PC's replicated schema with the
+client. The client now ACCEPTS the PC's initial bunch (no field error, no
+handle error, no BunchFail), completes net travel, brings up
+LVL_LobbyV2_Persistent, and fetches "25 heroes". This is far past every prior
+ceiling (sessions 20-40 all died at the PC bunch or the post-join timeout).
+
+THE FULL ROOT-CAUSE CHAIN (all now understood)
+----------------------------------------------
+1. N=0 "Invalid replicated field 0" — the FIELD-INDEX space diverged because
+   SUPERVIVE's AActor has 11 CPF_Net props (stock 10). FIXED by injecting
+   ServerState at RepIndex 10 (step 2 v1).
+2. "Invalid property terminator handle - Handle=22" — the finer REPLAYOUT
+   HANDLE space still diverged. Diagnosed via LogRepProperties VeryVerbose on
+   the stub: our stub emitted a MAX handle of 22, the client's layout tops out
+   at 21 — a clean off-by-one. Root cause: our ServerState mirror was a plain
+   member-wise USTRUCT (2 cmds: State + Version), but SUPERVIVE's
+   PoolableActorServerState is a SINGLE RepLayout cmd (custom NetSerialize, like
+   stock FRepMovement). Every handle after ServerState was shifted +1.
+   (Note: an intermediate attempt to fix State's enum bit-width — plain int32
+   32 bits vs the client enum's CeilLogTwo(4)=2 bits — did NOT change Handle=22,
+   which is what proved the issue was structural/count, not bit-width.)
+3. FIX: gave FPoolableActorServerState a NetSerialize + TStructOpsTypeTraits
+   WithNetSerializer=true. RepLayout then collapses it to ONE cmd. Verified live
+   via LogRepProperties: our stub's max handle dropped 22 -> 21, matching the
+   client. PC bunch accepted.
+
+WHAT THE CLIENT DID AFTER THE FIX (live5b run)
+----------------------------------------------
+  LogGlobalStatus: LoadMap complete /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent
+  LogGlobalStatus: UPendingNetGame::TravelCompleted Pending net game travel completed
+  ... Vivox voice + ToxMod init (lobby-level systems) ...
+  LogPlatformStorefront: Unlockable heroes fetched: 25 heroes
+Stub side: ReceivedJoin, ServerVerifyViewTarget LiveReplay END FinalPos=2298,
+NO ObjectReplicatorReceivedBunchFail. Connection stayed up through lobby load.
+
+TWO REMAINING BLOCKERS (both DOWNSTREAM of the now-fixed PC replication)
+-----------------------------------------------------------------------
+A. ClientSetViewTarget RPC signature mismatch (NON-FATAL):
+     LogRep: Error: ReceivedRPC: ReceivePropertiesForRPC - Reader.IsError()==true:
+       Function: ClientSetViewTarget, Object: PlayerController ...
+   SUPERVIVE modified this SERVER->CLIENT RPC's signature (same class of problem
+   as ServerVerifyViewTarget, which sessions 27-32 solved by runtime UFunction
+   param injection). The stub sends the stock signature; the client's reader
+   errors. The client LOGGED it and CONTINUED (non-fatal), but it should be
+   fixed the same way (inject matching params onto ClientSetViewTarget, or don't
+   send it). Our stub's PostLogin/view-target path triggers it.
+
+B. The session-40 D3D12 crash STILL occurs (Sentry/crashpad fired; crash module
+   list includes d3d12.dll + D3D12Core.dll). Proper PC replication did NOT
+   unwedge the FD3D12CommandContext crash — so that crash is a SEPARATE problem
+   from the PC replication, contrary to the Path B-lite hypothesis. The client
+   reaches the lobby + heroes, then crashes (same rough point as session 39's
+   "crashes mid-menu-load"). Needs minidump confirmation that it's the same
+   +0x2976FF0 crash (session-40 tooling: scratchpad/parse-any-dump.py).
+
+ASSESSMENT vs the Path B-lite hypothesis
+----------------------------------------
+Path B-lite's DIRECT goal (make the PC replicate cleanly so the connection
+isn't torn down) is ACHIEVED and verified. Its SPECULATIVE goal (that fixing PC
+replication would also fix the D3D12 crash) is NOT borne out — the D3D12 crash
+persists. But the PC-replication unblock is real, durable progress: the
+long-standing FClassNetCache/RepLayout divergence (blocking since session 20) is
+solved, and the client now runs the lobby with the PC in place.
+
+CODE (all in working tree, uncommitted)
+---------------------------------------
+- unreal-stub/Source/Loki/LokiReplicatedStructs.h — FPoolableActorServerState
+  (UENUM EPoolableActorServerState + int32 Version) with a custom NetSerialize +
+  WithNetSerializer trait (=> single RepLayout cmd).
+- unreal-stub/Source/Loki/Loki.cpp — InjectServerStateReplicatedProperty (offset
+  = Instigator's, via FLokiStructPropertyWithOffset), ForceSetUpReplicationData
+  (validation-free rep-data rebuild for all 239 actor classes),
+  FPoolableActorServerState::NetSerialize, headless width-verify logging.
+- unreal-stub/Source/Loki/LokiNetDriver.cpp — step-5 PC un-suppress (committed).
+- tools/usmapdump/extract.go + usmapdump.exe — CPF_Net emission.
+
+NEXT STEPS (priority order)
+---------------------------
+1. Fix ClientSetViewTarget the ServerVerifyViewTarget way (runtime param
+   injection to match SUPERVIVE's modified signature), OR suppress the stub from
+   sending it. This clears blocker A.
+2. Confirm blocker B is the session-40 +0x2976FF0 D3D12 crash via minidump. If
+   so, the D3D12 crash is the true remaining wall for a rendered menu, separate
+   from networking — re-open the session-40 analysis (anti-cheat blocks all
+   renderer workarounds; the crash class is a D3D12 RHI class).
+3. If the client can be kept alive past the D3D12 crash, check whether the
+   ALL HUNTERS grid actually RENDERS (the 25 heroes are fetched; the question is
+   whether the grid enumeration — the LokiAssetManager blocker — populates).
+
+HOW TO REPRODUCE
+----------------
+Same live cycle as docs/session-41-step2-result.txt. Enable
+"LogRepProperties VeryVerbose" on the stub to see the sent handle list
+(our max handle should be 21). browse_hook injection occasionally loses a race
+(caught before ntdll loads) — just kill the game and re-run inject+client.
+Login through ags occasionally flakes at the Steam login screen — re-run.
