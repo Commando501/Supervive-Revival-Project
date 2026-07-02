@@ -134,6 +134,45 @@ usmapdump poke (WPM, non-elevated) could patch the in-memory AR and/or directly
 populate the Hero type's AssetMap. Needs the correct FPrimaryAssetTypeData/AssetMap
 layout + FPrimaryAssetData construction. (Hero AssetMap Num==0 now CONFIRMED above.)
 
+*** CRUCIAL UPDATE — the AR entries are ALREADY correctly tagged; a class-flip is
+NOT the fix. The problem is upstream (sparse in-game AR, or AR-scan skipped). ***
+Ran `assetregistry inspect BP_HeroAsset` on the extracted Premade AR (out/AssetRegistry.bin,
+103,841 entries): it CONTAINS all 25 heroes — BP_HeroAsset_Alchemist ... under
+/Game/Loki/Characters/Heroes/<Hero>/ (50 entries = 25 x Blueprint+BlueprintGeneratedClass).
+The Alchemist BlueprintGeneratedClass entry's tags:
+    AssetClass       = BlueprintGeneratedClass
+    NativeParentClass = /Script/CoreUObject.Class'/Script/Loki.LokiHeroAsset'   <-- MATCHES the Hero scan's base class
+    ParentClass      = BP_LokiHeroAsset_C
+    PrimaryAssetName = Alchemist
+    PrimaryAssetType = Hero                                                       <-- already tagged
+So the baked AR entries are ALREADY set up exactly the way the Hero scan
+(BaseClass=LokiHeroAsset, bHasBlueprintClasses) expects. => The trackb AR-patch
+class-flip is NOT needed and would NOT help; the entries already register-able.
+YET the live Hero AssetMap is empty. So the failure is UPSTREAM of the AR content:
+  Hypothesis A (leading): the IN-GAME FAssetRegistry does NOT actually contain these
+    entries — it loads sparse/empty. Clues: the live log's "FAssetRegistry took 0.0008
+    seconds to start up" (far too fast to have parsed 103,841 entries), and the live
+    manager only knows ~1175 assets (instance maps at +0x120/+0x200 Num=1175/1110),
+    not 103k. The ~1175 likely came from the content-service MANIFEST (ags), NOT from
+    the baked AR. So the baked AssetRegistry.bin (with the heroes) may be loaded as a
+    "premade" registry but NOT populated into the queryable registry the scan uses —
+    OR the game intentionally uses a content-service-delivered registry that our ags
+    doesn't fully provide.
+  Hypothesis B: the AR-scan step (ScanPathsForPrimaryAssets' AR query) is skipped for
+    these types even though the type registers (Info present, AssetMap not populated).
+DECISIVE NEXT READ: find the live FAssetRegistry (FAssetRegistryImpl) singleton and
+count its FAssetData entries. ~103k => AR loaded, scan/query is the bug (Hyp B / a
+filter issue). ~1175 or few => in-game AR is sparse (Hyp A) and the fix is to make the
+game's queryable registry contain the hero entries (inject them into the in-memory AR
+before the scan, via early injection) — the baked data is right, it just isn't in the
+live registry. This REVIVES the "in-memory AR" idea but as ADD-ENTRIES, not class-flip.
+Anchors for finding FAssetRegistry: log "Premade AssetRegistry loaded from
+'../../../Loki/AssetRegistry.bin'"; the manager's AssetPathMap (1175) is a lead to the
+registrations it DID get (probably manifest-sourced).
+
+(SUPERSEDED) earlier fix plan below assumed a class-flip; keep for context but see the
+CRUCIAL UPDATE above — the AR is already correctly tagged.
+
 RECOMMENDED FIX PLAN (synthesis of everything learned)
 ------------------------------------------------------
 Best path = EARLY-INJECTION IN-MEMORY AR PATCH (combines proven pieces, no pak sign):
