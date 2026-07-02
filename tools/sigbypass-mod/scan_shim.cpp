@@ -189,12 +189,16 @@ static DWORD WINAPI Worker(LPVOID) {
     if (!gameTid) { WriteMarker("[1] FAIL: GGameThreadId stayed 0\r\n"); return 2; }
     snprintf(m, sizeof(m), "[1] gameTid=%lu\r\n", gameTid); WriteMarker(m);
 
-    // Grace: this shim is injected at the MENU (post-init) so the manager is already
-    // built; a short settle is plenty.
-    Sleep(1500);
-
-    void* mgr = ScanForManager(g_modBase);
-    if (!mgr) { WriteMarker("[scan] FAIL: no LokiAssetManager singleton found\r\n"); return 3; }
+    // Poll for the manager singleton with a POPULATED AssetTypeMap (num>0). This makes
+    // the shim robust to injection timing: injected early (watch-now at launch) it waits
+    // for StartInitialLoading to register the types, THEN scans — which completes BEFORE
+    // the menu builds its (currently cached-empty) hero list. Injected late it's immediate.
+    void* mgr = nullptr;
+    for (int tries = 0; tries < 120 && !mgr; tries++) {   // up to ~120s
+        mgr = ScanForManager(g_modBase);
+        if (!mgr) Sleep(1000);
+    }
+    if (!mgr) { WriteMarker("[scan] FAIL: no populated LokiAssetManager singleton in 120s\r\n"); return 3; }
     g_manager = mgr;
     g_Scan = (PFN_ScanPaths)(g_modBase + kScanPathsRva);
 
