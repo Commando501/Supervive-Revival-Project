@@ -45,15 +45,21 @@ NO ObjectReplicatorReceivedBunchFail. Connection stayed up through lobby load.
 
 TWO REMAINING BLOCKERS (both DOWNSTREAM of the now-fixed PC replication)
 -----------------------------------------------------------------------
-A. ClientSetViewTarget RPC signature mismatch (NON-FATAL):
+A. ClientSetViewTarget RPC signature mismatch — *** FIXED (2026-07-02) ***:
      LogRep: Error: ReceivedRPC: ReceivePropertiesForRPC - Reader.IsError()==true:
        Function: ClientSetViewTarget, Object: PlayerController ...
    SUPERVIVE modified this SERVER->CLIENT RPC's signature (same class of problem
-   as ServerVerifyViewTarget, which sessions 27-32 solved by runtime UFunction
-   param injection). The stub sends the stock signature; the client's reader
-   errors. The client LOGGED it and CONTINUED (non-fatal), but it should be
-   fixed the same way (inject matching params onto ClientSetViewTarget, or don't
-   send it). Our stub's PostLogin/view-target path triggers it.
+   as ServerVerifyViewTarget). The stub sent the stock signature; the client's
+   reader overflowed. FIX: suppress the send in
+   ULokiNetDriver::ShouldReplicateFunction (return false for the UFunction named
+   "ClientSetViewTarget"). ShouldReplicateFunction is checked in
+   AActor::CallRemoteFunction (Actor.cpp:5065), so this stops the outgoing RPC.
+   A server-driven view target isn't needed for the lobby (the client drives its
+   own lobby camera), and we don't have the modified signature to match. VERIFIED
+   live: stub logs "SUPPRESSING ClientSetViewTarget on PlayerController_0" and the
+   client's ReceivePropertiesForRPC error is GONE — no RPC/rep/net errors remain
+   after lobby load. The client still crashes (blocker B, D3D12) — confirming the
+   crash is INDEPENDENT of this RPC error.
 
 B. The session-40 D3D12 crash STILL occurs (Sentry/crashpad fired; crash module
    list includes d3d12.dll + D3D12Core.dll). Proper PC replication did NOT

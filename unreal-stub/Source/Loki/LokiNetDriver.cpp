@@ -263,6 +263,32 @@ bool ULokiNetDriver::ShouldReplicateActor(AActor* Actor) const
 
 bool ULokiNetDriver::ShouldReplicateFunction(AActor* Actor, UFunction* Function) const
 {
+	// Session 41 step-2 follow-up: with the PlayerController now un-suppressed
+	// and replicating cleanly (ServerState fix), the client reaches the lobby but
+	// logs "ReceivedRPC: ReceivePropertiesForRPC - Reader.IsError()" on the
+	// server->client RPC ClientSetViewTarget. SUPERVIVE modified that RPC's
+	// signature (like ServerVerifyViewTarget), so our stub's STOCK-signature send
+	// under-runs what the client's reader expects and overflows. We don't have
+	// the modified signature, and a server-driven view target isn't needed for
+	// the lobby (the client drives its own lobby camera), so suppress this one
+	// RPC rather than feed the client malformed data. ShouldReplicateFunction is
+	// checked in AActor::CallRemoteFunction (Actor.cpp:5065), so returning false
+	// stops the send. See docs/session-41-step2-BREAKTHROUGH.txt.
+	if (Function && Function->GetFName() == FName(TEXT("ClientSetViewTarget")))
+	{
+		static bool bLoggedCSVT = false;
+		if (!bLoggedCSVT)
+		{
+			bLoggedCSVT = true;
+			UE_LOG(LogLokiNet, Display,
+			       TEXT("ShouldReplicateFunction: SUPPRESSING ClientSetViewTarget on %s "
+			            "(SUPERVIVE-modified RPC signature; stock send overflows the client's "
+			            "RPC reader). See session-41-step2-BREAKTHROUGH.txt."),
+			       Actor ? *Actor->GetName() : TEXT("<null>"));
+		}
+		return false;
+	}
+
 	// Session 38 iter 2/3: also block RPC-dispatch-driven channel creation
 	// for every actor class in the divergent set. See the header comment on
 	// this override for the full rationale — ShouldReplicateActor is not
