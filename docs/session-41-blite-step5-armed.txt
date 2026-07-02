@@ -1,0 +1,179 @@
+SESSION 41 — Path B-lite STEP 5 ARMED (un-suppress PC, no injection yet)
+=========================================================================
+Date: 2026-07-01
+Branch: dedicated-server-stub
+Status: CODE CHANGE MADE + BUILD-VERIFIED. AWAITING LIVE VALIDATION.
+        (The live test needs Steam running + a user UAC "YES" click on the
+         elevated injector; it cannot be run headless, so this session
+         stops at "armed + compiled" and hands off the test + interpretation.)
+
+WHAT CHANGED
+------------
+File: unreal-stub/Source/Loki/LokiNetDriver.cpp
+Function: IsClassNetCacheDivergent(AActor*)
+
+APlayerController was REMOVED from the suppression set. Everything else in
+the session-20 divergent set stays suppressed:
+    AGameStateBase, APlayerState, AHUD, ADefaultPawn, ASpectatorPawn,
+    AWorldSettings, and GameplayDebuggerCategoryReplicator (by name).
+
+This is intentionally a SINGLE-VARIABLE change (project convention). It is
+Path B-lite step 5 from docs/session-40-path-b-lite-analysis.txt and the
+recommended cheap first probe from docs/next-session-prompt-s41.md.
+
+Why remove PC WITHOUT injecting anything yet:
+  We want the stub's ALokiStubPlayerController to replicate with its STOCK
+  UE 5.4 property block. The SUPERVIVE client will process the initial actor
+  bunch and — because our stock ClassReps don't match SUPERVIVE's patched
+  APlayerController — log which specific replicated NetIndex it expected.
+  That integer N is the one data point that scopes the property injection in
+  the NEXT iteration (step 2). Guessing at fields before we have N would burn
+  cycles; the divergent-field index tells us exactly what to inject.
+
+  NetworkChecksumMode is None (set in ULokiNetDriver::InitBase), so the client
+  will NOT reject PC on the schema fingerprint. It attempts deserialization and
+  hits the field-index mismatch — which is exactly the diagnostic we want.
+
+Both ShouldReplicateActor and ShouldReplicateFunction gate on the same
+IsClassNetCacheDivergent(), so this one edit un-suppresses PC on BOTH the
+network-object-list replication path and the RPC-dispatch-driven channel-open
+path. No other file needed to change.
+
+Reversibility: to restore full suppression, re-add
+`Actor->IsA<APlayerController>() ||` as the first term of the OR in
+IsClassNetCacheDivergent(). (Documented inline in the code comment.)
+
+BUILD VERIFICATION
+------------------
+Command:
+  & 'H:\Unreal Engine\UE_5.4\Engine\Build\BatchFiles\Build.bat' \
+    LokiEditor Win64 Development \
+    '"G:\git\Supervive Revival Project\unreal-stub\Loki.uproject"' -WaitMutex
+
+Result: SUCCESS. Adaptive build excluded LokiNetDriver.cpp from unity,
+recompiled it, relinked UnrealEditor-Loki.dll. Total 7.12s. No warnings/errors.
+So the DLL on disk already contains the step-5 change — a fresh test run does
+not strictly need to rebuild, but the launch recipe rebuilds anyway (harmless).
+
+THE TEST (must be run by the user — needs Steam + UAC)
+------------------------------------------------------
+Preconditions:
+  - Steam is RUNNING (else Auth Failure 14005 / SteamAPI init fails).
+  - Hosts file has the SUPERVIVE-REVIVAL entries.
+
+Recipe (unchanged from sessions 35-40; full form in docs/next-session-prompt-s41.md
+and docs/session-35-live-validation.txt):
+  0. Kill: UnrealEditor-Cmd, ags, SUPERVIVE-Win64-Shipping, inject, crashpad_handler
+  1. Rebuild + launch the stub server (UnrealEditor-Cmd -game -server -Port=7777
+     -nullrhi) with LogNet/LogRep Verbose to a fresh stub-s41.log.
+       NOTE: -nullrhi here is on the STUB SERVER (UnrealEditor-Cmd), NOT the
+       game client. The anti-cheat wall is on the CLIENT only. Do NOT pass any
+       renderer flag to the game client (see "DO NOT" below).
+  2. Regen ags certs + re-append to the game cacert bundle from backup.
+  3. Elevated PS spawns:
+       inject.exe watch-now SUPERVIVE-Win64-Shipping.exe \
+         "G:\git\Supervive Revival Project\tools\sigbypass-mod\browse_hook.dll"
+     >>> USER MUST CLICK YES ON THE UAC PROMPT <<<
+  4. Launch the client via the cmd batch (positional 127.0.0.1:7777 as the
+     final URL arg before -log). Working copy for this session at:
+       <session-scratchpad>\launch-sv-open.bat
+     (also preserved at the two prior-session scratchpad paths.)
+
+WHAT TO LOOK FOR
+----------------
+Two logs matter:
+  - Client (game): C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log
+  - Stub server:   stub-s41.log (scratchpad)
+
+Expected primary signal (Scenario A) — in the CLIENT log:
+    LogRep: Error: ReceivedBunch: Invalid replicated field N in PlayerController
+            /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent...PlayerController_...
+
+Capture the integer N. Also grab any nearby LogNet/LogRep lines and the
+"RepLayout"/"ClassNetCache" context around it.
+
+INTERPRETATION OF N (this is the whole point of step 5)
+-------------------------------------------------------
+N is a NetIndex into SUPERVIVE's APlayerController ClassReps that our stock
+stub ClassReps don't satisfy.
+  - If N == 0: the client expects a replicated field at the very first index
+    that our stock class doesn't have first. We must inject at least one
+    replicated field ahead of whatever is currently ClassReps[0] on our side.
+    (Session 36 saw N=0, but that was with the OLD path and no context; treat
+    a fresh N=0 here as "add >=1 rep field at the front".)
+  - If N > 0: N counts past the stock replicated fields our class already has.
+    Cross-reference against the stock UE 5.4 APlayerController ClassReps order
+    (SetUpRuntimeReplicationData preserves native declaration order) to find
+    which SUPERVIVE-added field sits at that index. The strong Loki-addition
+    candidates by naming (docs/session-22-schema-actor-loki-mods.txt) are
+    ServerState, LokiReplicationStrategy, PoolableActorServerState.
+
+Secondary outcome: if the client does NOT hit the FD3D12CommandContext crash
+at +0x2976FF0 within ~90s and instead progresses, that alone is signal that
+PC replication interacts with the D3D12 init path. Unlikely with no injection,
+but note it if it happens.
+
+If the client crashes the STUB, or the stub logs an array-index-out-of-bounds
+on the PC replication path, that is the session-37 Option-A failure mode
+resurfacing — capture it; it would mean stock PC replication itself is unsafe
+on this setup and step 2 must construct a full valid ClassReps block, not
+lean on the stock one.
+
+PRE-STAGED STEP 2 DESIGN (implement AFTER we have N)
+----------------------------------------------------
+Not implemented this session on purpose: without N we'd be guessing which
+field(s) to inject, and the injection code is unverifiable until the live test
+runs. Design so the next iteration is fast:
+
+Add to unreal-stub/Source/Loki/Loki.cpp a parallel primitive to the existing
+AppendToChildProperties() UFunction helpers, but targeting a UCLASS's
+replicated-property list:
+
+    static void AppendReplicatedPropertyToClass(UClass* Cls, FProperty* Prop)
+    {
+        // 1. Link Prop into Cls->ChildProperties (so it's a real FProperty on
+        //    the class, addressable by RepLayout).
+        // 2. Set CPF_Net on Prop->PropertyFlags.
+        // 3. Append to Cls->ClassReps as an FRepRecord and assign
+        //    Prop->RepIndex = Cls->ClassReps.Num()-1 (native classes keep
+        //    declaration order; do NOT sort by offset — that's the blueprint
+        //    path).
+        // 4. Bump Cls->NetFields / ClassReps bookkeeping as
+        //    SetUpRuntimeReplicationData() does.
+    }
+
+Reference sources (Launcher UE 5.4 install):
+  H:\Unreal Engine\UE_5.4\Engine\Source\Runtime\CoreUObject\Private\UObject\Class.cpp
+    -> SetUpRuntimeReplicationData()   (ClassReps build order)
+  H:\Unreal Engine\UE_5.4\Engine\Source\Runtime\CoreUObject\Private\UObject\CoreNet.cpp
+    -> FClassNetCacheMgr::GetClassNetCache()   (NetIndex computation)
+
+After injecting the field(s) N points to:
+  - Invalidate the cached FClassNetCache. For UFunctions session 27 used
+    PCClass->ClearFunctionMapsCaches(); for ClassReps we need the NetDriver's
+    NetCache cleared — GetNetDriver()->NetCache->ClearClassNetCache() (or
+    equivalent) right after injection at OnPostEngineInit.
+  - Struct fields (LokiReplicationStrategy, PoolableActorServerState) are the
+    hard part: AppendStructParam needs a registered UScriptStruct server-side.
+    Either UHT a mirror struct or construct the UScriptStruct at runtime
+    (analogous to the sessions 27-32 UFunction construction). Defer until N
+    proves a struct field is actually the divergence point — a scalar/bool
+    divergence would be far cheaper to satisfy.
+
+DO NOT (carried over, still binding)
+------------------------------------
+  - No renderer/subsystem cmdline flags on the CLIENT (-DX11, -vulkan, -nullrhi,
+    -noraytracing) — all trigger the anti-cheat fail-fast (session 40).
+  - No r.RayTracing / CVar changes via -ini: on the client — also blocked.
+  - Do NOT read the Rip=0xF0400001 / Rbp=0x537AC9E1 / R11=0x95654773B3BC
+    register pattern as a natural crash — it's the anti-cheat fail-fast
+    signature (verified 4x, session 40).
+  - Do NOT run launch-redirect.ps1 (wiped hosts in S31/S37). Use the manual
+    step-by-step launch sequence.
+
+WRAP-UP EXPECTATION FOR WHOEVER RUNS THE TEST
+---------------------------------------------
+Record N (and log context) into a docs/session-41-*.txt follow-up. That single
+integer decides the step-2 injection scope. If PC replication instead unwedges
+the D3D12 crash outright, commit "Session 41: B-lite step 5 unstuck the
+FD3D12CommandContext crash" with the client-progresses-past-64s evidence.

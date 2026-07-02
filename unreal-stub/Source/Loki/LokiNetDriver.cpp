@@ -198,8 +198,25 @@ static bool IsClassNetCacheDivergent(AActor* Actor)
 {
 	if (!Actor) return false;
 	// GameModeBase is server-only, doesn't replicate. Left out on purpose.
-	if (Actor->IsA<APlayerController>()
-	 || Actor->IsA<AGameStateBase>()
+	//
+	// Session 41 Path B-lite step 5 (diagnostic probe): APlayerController is
+	// DELIBERATELY removed from this suppression set. We now WANT the stub's
+	// ALokiStubPlayerController to replicate with its stock UE 5.4 property
+	// block so the SUPERVIVE client processes the initial actor bunch and
+	// tells us — via a "ReceivedBunch: Invalid replicated field N in
+	// PlayerController ..." log — exactly which NetIndex it expects but our
+	// stock ClassReps don't provide. That N is the single data point that
+	// scopes the property injection in the next iteration (step 2). The other
+	// divergent classes stay suppressed so PC is the ONLY variable under test
+	// (project convention: single-variable probes).
+	//
+	// NetworkChecksumMode is None (see InitBase), so the client won't reject
+	// PC on the schema fingerprint — it will attempt deserialization and hit
+	// the field-index mismatch, which is the diagnostic we want.
+	//
+	// To restore full suppression, re-add `Actor->IsA<APlayerController>() ||`
+	// as the first term below.
+	if (Actor->IsA<AGameStateBase>()
 	 || Actor->IsA<APlayerState>()
 	 || Actor->IsA<AHUD>()
 	 || Actor->IsA<ADefaultPawn>()
