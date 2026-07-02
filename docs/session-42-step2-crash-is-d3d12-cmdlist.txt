@@ -1,0 +1,98 @@
+SESSION 42 — STEP 2 (static validation): the lobby crash is FD3D12CommandList::Close
+(D3D12 residency / command-list submission), NOT a view-target problem.
+The view-target lead is disproven for this crash.
+==============================================================================
+Date: 2026-07-02
+Branch: dedicated-server-stub
+Method: disassembled the S41 lobby crash site (+0x296F591) from session 40's
+runtime-DECRYPTED code dump (scratchpad/runtime-dumps/code_rva_2900000_2MB.bin,
+covers RVA 0x2900000-0x2B00000) with capstone, and read the referenced .rdata
+strings from rdata_rva_7B90000_128KB.bin. NO live cycle needed. The .text is
+packed on disk, but session 40's runtime dump already has the decrypted bytes
+for this whole region.
+
+WHY THIS STEP: the user chose the "view-target lead first" fork. Before REing +
+injecting the modified ClientSetViewTarget signature (a whole-session effort,
+like ServerVerifyViewTarget in S27-32), validate the hypothesis cheaply: is the
+null+0x28 read in FRDGBuilder::Execute actually a null view/scene, or something
+else? Answer: something else.
+
+THE CRASH INSTRUCTION
+---------------------
+  +0x296F58B: mov  r15d, [rdi+0x10]
+  +0x296F58F: xor  eax, eax
+  +0x296F591: mov  rcx, [rbx+0x28]        <<< CRASH, rbx = 0 (reads addr 0x28)
+  +0x296F595: lock cmpxchg [rcx], r12     ; atomic swap on the (null) object's ptr
+  +0x296F59A: shr  rax, 0x1a              ; test bit 26 of old value (residency state)
+Data flow to the null:
+  rdi = *(*(rsi+0x38))         ; object pulled from a slot/container at rsi->0x38
+  rbx = rdi->[8]              ; a sub-pointer of that object -> IS NULL
+  crash reads rbx->[0x28].
+Surrounding code is UE's refcounted-RHI-resource smart-pointer boilerplate
+(AddRef = `lock inc [obj+8]`, Release = `lock xadd [obj+8]` then vcall dtor when
+refcount hits 1). So rbx is a refcounted RHI object that was never populated.
+
+IDENTIFICATION (conclusive) — the enclosing function's .rdata refs:
+------------------------------------------------------------------
+  +0x7BA19B0: "C:\TheoryCraft\build-staging\Engine\Source\Runtime\D3D12RHI\Private\D3D12CommandList.cpp"
+  +0x7BA1DA8: "Interfaces.CopyCommandList->Close()"       (line 0x11b = 283)
+  +0x7BA1DD0: "Interfaces.GraphicsCommandList->Close()"   (line 0x11f = 287)
+  +0x7B9DC60: "C:\TheoryCraft\...\D3D12RHI\Private\D3D12Residency.h"
+  +0x7B9DCC8: "pSet->Close()"                             (line 0x9d = 157)
+These are __FILE__/__LINE__/condition strings fed to a check-fail logger
+(call 0x29e9950). The function is FD3D12CommandList::Close() (closes the
+graphics + copy command lists and the residency set). These strings sit
+immediately next to session 40's identified target vtable (+0x7B9E188), i.e.
+this is the SAME D3D12-RHI command-list/residency subsystem S40 pinned — the
+S41 lobby crash is a different instruction in the SAME family.
+
+WHAT THIS MEANS
+---------------
+- The null object is a D3D12 RESIDENCY / command-list sub-object (an FRHIResource
+  refcounted pointer), null during command-list Close/submit. It is several
+  layers BELOW the scene view/camera. A missing view target does not create this
+  object, so giving the client a view target will not fix this crash.
+  => THE VIEW-TARGET LEAD IS DISPROVEN for this crash.
+- This confirms & refines session 40: the crash is a D3D12 RHI object that was
+  never initialized ("some earlier init step was skipped"). The manifestation
+  moved (S40: TArray write in cmd recording; S41: null residency ptr in cmd
+  Close) but the root subsystem is identical: FD3D12CommandList / D3D12Residency.
+- Residual uncertainty (small): it is conceivable the residency set is null
+  because the render graph took a degenerate path from an incomplete client
+  scene, and a fuller client setup would build it. But the direct evidence is a
+  D3D12-RHI-level init gap, not a gameplay/view gap. Betting a whole session on
+  the CSVT RE against this evidence is not justified.
+
+CONSEQUENCE FOR STRATEGY
+------------------------
+The remaining wall on the dedicated-server path is now precisely characterized:
+a null D3D12 residency/command-list object in FD3D12CommandList::Close, on the
+client RHI thread, reached via FRDGBuilder::Execute when the lobby renders.
+Fixing it means either:
+  (1) Native patch: force-initialize the residency set / guard the Close path
+      via injection. Fragile, multi-session, and it's a MOVING target (the crash
+      RIP wanders run-to-run — see session-42-step1), so guarding one site just
+      exposes the next. This is session 40's already-deep native route.
+  (2) Find & fix the skipped D3D12 init upstream. Requires deep RE of the
+      command-list/residency init chain; the renderer-config knobs that could
+      side-step it are anti-cheat-walled (S40).
+Neither is cheap, and even success here does NOT guarantee the ALL HUNTERS grid
+populates (the LokiAssetManager enumeration bypass is a separate blocker).
+
+RECOMMENDATION
+--------------
+The view-target probe is closed. Two honest options for the user:
+  A. Pivot to the IoStore mod-pak overlay route for the ORIGINAL enumeration
+     blocker (the actual cause of the empty grid). The dedicated-server path has
+     delivered its big, durable win — full stateless handshake + login + PC
+     replication + lobby map load + net travel, zero net errors — and its
+     remaining wall is now confirmed to be deep, fragile D3D12-RHI territory.
+  B. If the user still wants a rendered menu on THIS path, commit to the native
+     D3D12 residency-init RE/patch (route 1/2 above) as a multi-session effort,
+     eyes open to the moving-target and anti-cheat constraints.
+
+ARTIFACTS
+---------
+- /tmp disasm scripts (disasm-crash.py, disasm-fn.py, rdata-str.py) — trivial to
+  recreate; they read scratchpad/runtime-dumps/*.bin with capstone 5.0.7.
+- Runtime dumps: session-40 scratchpad runtime-dumps/ (code + rdata, decrypted).
