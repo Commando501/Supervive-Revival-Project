@@ -14,6 +14,7 @@
 // GameNetworkVersion: 0 (Checksum: 3716198887)").
 
 #include "Loki.h"
+#include "LokiReplicatedStructs.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/NetworkVersion.h"
 #include "Engine/World.h"
@@ -22,10 +23,48 @@
 #include "UObject/Class.h"
 #include "UObject/Package.h"
 #include "UObject/UnrealType.h"
+#include "UObject/EnumProperty.h"
 #include "UObject/FieldPathProperty.h"
+#include "UObject/UObjectIterator.h"
+#include "HAL/IConsoleManager.h"
+#include "Algo/Sort.h"
 #include "Serialization/BitReader.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiStub, Log, All);
+
+// Session 41: FProperty::SetOffset_Internal is protected and only UStruct::Link
+// assigns offsets. To place our runtime-injected ServerState property at a valid
+// in-object offset (required by FRepLayout, which asserts replicated-property
+// offsets are non-decreasing in ClassReps order — RepLayout.cpp:6118) without
+// relinking the native AActor, we expose the protected setter via a trivial
+// FStructProperty subclass. The FFieldClass (ClassPrivate) is still set by the
+// FStructProperty base constructor, so the object is a bona fide StructProperty
+// (CastField<FStructProperty> and RepLayout treat it normally).
+struct FLokiStructPropertyWithOffset : public FStructProperty
+{
+	FLokiStructPropertyWithOffset(FFieldVariant InOwner, const FName& InName, EObjectFlags InFlags)
+		: FStructProperty(InOwner, InName, InFlags) {}
+	void SetRepOffset(int32 InOffset) { SetOffset_Internal(InOffset); }
+};
+
+// Custom net serializer for our ServerState mirror. Its ONLY structural job is
+// to make RepLayout treat FPoolableActorServerState as a single cmd (via the
+// WithNetSerializer trait), matching SUPERVIVE's client layout so the PC's
+// replicated handle space lines up. Content is best-effort: 2-bit State (the
+// enum's GetMaxNetSerializeBits width) + 32-bit Version. On a freshly-spawned
+// PC, ServerState == CDO, so this isn't actually invoked in the initial bunch.
+bool FPoolableActorServerState::NetSerialize(FArchive& Ar, UPackageMap* /*Map*/, bool& bOutSuccess)
+{
+	uint8 S = (uint8)State;
+	Ar.SerializeBits(&S, 2);
+	if (Ar.IsLoading())
+	{
+		State = (EPoolableActorServerState)S;
+	}
+	Ar << Version;
+	bOutSuccess = true;
+	return true;
+}
 
 // Session 19 blocker (session 18 unblocked stateless handshake, session 19
 // unblocked NMT_Welcome/Login/Join via LokiGameInstance::ModifyClientTravelLevelURL,
@@ -286,6 +325,18 @@ private:
         // property so we can see exactly where each param starts/ends and
         // whether any overflow fires.
         SelfReplayCapturedRPC(Func);
+
+        // Session 41 Path B-lite step 2: inject SUPERVIVE's AActor.ServerState
+        // replicated property so our RepLayout matches the client's. Must run
+        // BEFORE DumpClassNetCacheLayout so the dump reflects the injected
+        // state (AActor should show 11 reps with ServerState at [10]).
+        InjectServerStateReplicatedProperty();
+
+        // Session 41 Path B-lite step 5 support: dump APlayerController's full
+        // hierarchical net-index -> field table so the step-5 probe's client
+        // error "ReceivedBunch: Invalid replicated field N" can be mapped to a
+        // concrete field on our (stock) side. See DumpClassNetCacheLayout.
+        DumpClassNetCacheLayout(PCClass);
 
         // Session 37 Option A / A' / A'' exhaustively tested and ALL FAILED:
         //   A  (strip CPF_Net at runtime)     - crashed stub on client connect
@@ -566,6 +617,305 @@ private:
             if (!(Prop->PropertyFlags & CPF_Parm)) break;
             Prop->DestroyValue_InContainer(Parms);
         }
+    }
+
+    // Session 41 Path B-lite step 2: inject SUPERVIVE's AActor.ServerState
+    // replicated property onto stock AActor so our RepLayout matches the
+    // client's. Session 41 RE (docs/session-41-supervive-pc-repschema.txt)
+    // proved this is the SOLE replicated-schema difference: SUPERVIVE's AActor
+    // has 11 CPF_Net props (stock 10) — the extra one is
+    //     ServerState : StructProperty(PoolableActorServerState) @ RepIndex 10
+    // appended after Instigator. Everything else in the PC hierarchy matches
+    // stock counts + names. The missing property resized our RepLayout block
+    // and desynced the client's read cursor -> "Invalid replicated field 0"
+    // (session 41 N=0 live probe). Adding it should realign the net-index space.
+    //
+    // Runs at OnPostEngineInit — before any connection/replication, before
+    // RepLayouts/FClassNetCaches are built, and before DumpClassNetCacheLayout —
+    // so SetUpRuntimeReplicationData rebuilds AActor's ClassReps to include
+    // ServerState at the tail (RepIndex 10; native classes preserve field
+    // iteration order and we append to the ChildProperties tail).
+    static void InjectServerStateReplicatedProperty()
+    {
+        UClass* ActorClass = AActor::StaticClass();
+        if (!ActorClass)
+        {
+            UE_LOG(LogLokiStub, Warning, TEXT("InjectServerState: AActor class not found"));
+            return;
+        }
+
+        // Idempotency: skip if a ServerState property already exists on AActor.
+        for (FField* F = ActorClass->ChildProperties; F; F = F->Next)
+        {
+            if (F->GetFName() == FName(TEXT("ServerState")))
+            {
+                UE_LOG(LogLokiStub, Display,
+                       TEXT("InjectServerState: ServerState already present on AActor; skipping."));
+                return;
+            }
+        }
+
+        UScriptStruct* StateStruct = FPoolableActorServerState::StaticStruct();
+        if (!StateStruct)
+        {
+            UE_LOG(LogLokiStub, Warning,
+                   TEXT("InjectServerState: FPoolableActorServerState::StaticStruct() is null"));
+            return;
+        }
+
+        // NOTE: we CANNOT disable the engine's replicated-property validation via
+        // the "net.ValidateReplicatedPropertyRegistration" CVar — it is an
+        // FAutoConsoleVariable initialized by-VALUE from the file-static
+        // GValidateReplicatedProperties (Class.cpp), so setting the CVar does not
+        // change the static that SetUpRuntimeReplicationData actually reads.
+        // Instead we sidestep validation entirely below by pre-building ClassReps
+        // ourselves and setting CLASS_ReplicationDataIsSetUp, so the engine's
+        // (validating) SetUpRuntimeReplicationData early-returns. This is required
+        // because injecting ServerState onto AActor shifts EVERY AActor subclass's
+        // inherited RepIndices, which would trip ValidateGeneratedRepEnums'
+        // hard check (UHT compile-time enum indices vs runtime) for any such class.
+
+        // Build a CPF_Net FStructProperty referencing our mirror struct, owned
+        // by AActor (via the offset-exposing subclass).
+        FLokiStructPropertyWithOffset* Prop = new FLokiStructPropertyWithOffset(
+            ActorClass, FName(TEXT("ServerState")), RF_Public | RF_Transient);
+        Prop->Struct = StateStruct;
+        Prop->PropertyFlags = CPF_Net;
+        Prop->ArrayDim = 1;
+        Prop->ElementSize = StateStruct->GetStructureSize();
+
+        // Offset: FRepLayout (RepLayout.cpp:6118) asserts replicated-property
+        // offsets are NON-DECREASING in ClassReps order. ServerState comes right
+        // after Instigator (the last stock AActor rep, which has the highest
+        // AActor-rep offset), so we give ServerState Instigator's offset — that
+        // satisfies `>= LastOffset` and stays below AController's field offsets.
+        // We must NOT relink the native AActor (that would corrupt every
+        // property's C++-fixed offset). RepLayout only READS this property to
+        // serialize out (the server never writes it), so reading Instigator's
+        // 8 bytes is in-bounds and harmless — the VALUE is irrelevant; only the
+        // wire size/position must line up with the client.
+        int32 RepOffset = 0;
+        if (FProperty* Instigator = FindFProperty<FProperty>(ActorClass, TEXT("Instigator")))
+        {
+            RepOffset = Instigator->GetOffset_ForGC();
+        }
+        Prop->SetRepOffset(RepOffset);
+
+        // Append to AActor->ChildProperties tail => last in field iteration =>
+        // RepIndex 10 after the stock 10, matching the client's ordering.
+        FField** Tail = &ActorClass->ChildProperties;
+        while (*Tail)
+        {
+            Tail = &(*Tail)->Next;
+        }
+        *Tail = Prop;
+
+        // Rebuild replication data for AActor AND every AActor-derived class,
+        // bypassing the engine's validating path. First clear any already-set-up
+        // flags (so our builder rebuilds fresh), then ForceSetUpReplicationData
+        // on every actor class — recursion builds supers first, so ServerState
+        // (now on AActor) propagates into every subclass's ClassReps at RepIndex 10.
+        int32 Cleared = 0, Built = 0;
+        for (TObjectIterator<UClass> It; It; ++It)
+        {
+            UClass* C = *It;
+            if (C->IsChildOf(ActorClass) && C->HasAnyClassFlags(CLASS_ReplicationDataIsSetUp))
+            {
+                C->ClassFlags &= ~CLASS_ReplicationDataIsSetUp;
+                ++Cleared;
+            }
+        }
+        for (TObjectIterator<UClass> It; It; ++It)
+        {
+            UClass* C = *It;
+            if (C->IsChildOf(ActorClass) && !C->HasAnyClassFlags(CLASS_ReplicationDataIsSetUp))
+            {
+                ForceSetUpReplicationData(C);
+                ++Built;
+            }
+        }
+
+        // Headless wire-width verification: log each struct member's on-wire
+        // bit width so we can confirm State packs to 2 bits (matching the
+        // client's EPoolableActorServerState) WITHOUT a full live test.
+        for (TFieldIterator<FProperty> It(StateStruct); It; ++It)
+        {
+            FProperty* M = *It;
+            if (FEnumProperty* EP = CastField<FEnumProperty>(M))
+            {
+                UE_LOG(LogLokiStub, Display,
+                       TEXT("InjectServerState: struct member '%s' FEnumProperty NetSerializeBits=%llu (expect 2)"),
+                       *M->GetName(), (unsigned long long)EP->GetMaxNetSerializeBits());
+            }
+            else
+            {
+                UE_LOG(LogLokiStub, Display,
+                       TEXT("InjectServerState: struct member '%s' type=%s ElementSize=%d"),
+                       *M->GetName(), *M->GetClass()->GetName(), M->ElementSize);
+            }
+        }
+
+        UE_LOG(LogLokiStub, Display,
+               TEXT("InjectServerState: added CPF_Net FStructProperty ServerState "
+                    "(struct=%s ElementSize=%d offset=%d) to AActor; rebuilt rep data "
+                    "for %d actor class(es) (cleared %d pre-existing) via validation-"
+                    "free ForceSetUpReplicationData."),
+               *StateStruct->GetName(), Prop->ElementSize, Prop->GetOffset_ForGC(), Built, Cleared);
+    }
+
+    // Validation-free mirror of UClass::SetUpRuntimeReplicationData (Class.cpp
+    // 4920-5015) MINUS the two GValidateReplicatedProperties blocks
+    // (ValidateGeneratedRepEnums + ValidateRuntimeReplicationData). Needed
+    // because we inject ServerState onto AActor, which shifts every AActor
+    // subclass's inherited RepIndices; the engine's ValidateGeneratedRepEnums
+    // would then hard-assert (UHT compile-time enum indices != runtime). We
+    // build ClassReps + NetFields identically to the engine and set the
+    // CLASS_ReplicationDataIsSetUp flag so the engine's version early-returns.
+    // Recurses super-first so inheritance is correct.
+    static void ForceSetUpReplicationData(UClass* C)
+    {
+        if (!C || C->HasAnyClassFlags(CLASS_ReplicationDataIsSetUp))
+        {
+            return;
+        }
+
+        UClass* Super = C->GetSuperClass();
+        if (Super)
+        {
+            ForceSetUpReplicationData(Super);
+            C->ClassReps = Super->ClassReps;
+            C->FirstOwnedClassRep = C->ClassReps.Num();
+        }
+        else
+        {
+            C->ClassReps.Empty();
+            C->FirstOwnedClassRep = 0;
+        }
+
+        C->NetFields.Empty();
+
+        // This class's own replicated properties (field-iterator order).
+        TArray<FProperty*> NetProperties;
+        for (TFieldIterator<FField> It(C, EFieldIteratorFlags::ExcludeSuper); It; ++It)
+        {
+            if (FProperty* P = CastField<FProperty>(*It))
+            {
+                if ((P->PropertyFlags & CPF_Net) && P->GetOwner<UObject>() == C)
+                {
+                    NetProperties.Add(P);
+                }
+            }
+        }
+
+        // This class's own net functions (RPCs).
+        for (TFieldIterator<UField> It(C, EFieldIteratorFlags::ExcludeSuper); It; ++It)
+        {
+            if (UFunction* Func = Cast<UFunction>(*It))
+            {
+                if ((Func->FunctionFlags & FUNC_Net) && !Func->GetSuperFunction())
+                {
+                    C->NetFields.Add(Func);
+                }
+            }
+        }
+
+        // Blueprint classes sort net props by memory offset; native classes
+        // preserve declaration order. All classes we touch here are native.
+        if (!C->HasAnyClassFlags(CLASS_Native))
+        {
+            NetProperties.Sort([](const FProperty& A, const FProperty& B)
+            {
+                return A.GetOffset_ForGC() < B.GetOffset_ForGC();
+            });
+        }
+
+        C->ClassReps.Reserve(C->ClassReps.Num() + NetProperties.Num());
+        for (int32 i = 0; i < NetProperties.Num(); ++i)
+        {
+            NetProperties[i]->RepIndex = (uint16)C->ClassReps.Num();
+            for (int32 j = 0; j < NetProperties[i]->ArrayDim; ++j)
+            {
+                C->ClassReps.Emplace(NetProperties[i], j);
+            }
+        }
+
+        C->NetFields.Shrink();
+        Algo::SortBy(C->NetFields, &UField::GetFName, FNameLexicalLess());
+
+        C->ClassFlags |= CLASS_ReplicationDataIsSetUp;
+    }
+
+    // Session 41 Path B-lite (read-only diagnostic). Reproduces the exact
+    // net-index assignment of FClassNetCacheMgr::GetClassNetCache
+    // (Engine CoreNet.cpp) so we can print the index each replicated field /
+    // RPC gets on OUR stub side. When the step-5 probe runs with PC
+    // un-suppressed, the client logs "ReceivedBunch: Invalid replicated field N
+    // in PlayerController ..." (DataReplication.cpp:1182, N =
+    // FieldCache->FieldNetIndex). Because our stub is pure stock UE 5.4, this
+    // table IS the stock reference — cross-referencing N against it shows
+    // whether N lands in the property range or the RPC range, and which stock
+    // field sits there. That pinpoints where SUPERVIVE's client-patched
+    // APlayerController diverges (its extra CPF_Net props shift every later
+    // index), which scopes the step-2 property injection.
+    //
+    // Index rules (must match GetClassNetCache):
+    //   - Recurse to super first; a class's FieldsBase = Super->GetMaxIndex().
+    //   - Per class level: owned ClassReps (properties, ArrayDim-expanded but
+    //     one index each) FIRST, then NetFields (RPC UFunctions), indices
+    //     running cumulatively from the root.
+    // Returns this class level's GetMaxIndex() (the next class's FieldsBase).
+    static int32 DumpClassNetCacheLayout(UClass* Cls, int32 Base = 0)
+    {
+        if (!Cls)
+        {
+            return Base;
+        }
+
+        int32 Index = Base;
+        if (UClass* Super = Cls->GetSuperClass())
+        {
+            Index = DumpClassNetCacheLayout(Super, Base);
+        }
+
+        // Idempotent (flag-gated by CLASS_ReplicationDataIsSetUp); this is what
+        // GetClassNetCache itself calls. Populates ClassReps / NetFields.
+        Cls->SetUpRuntimeReplicationData();
+
+        UE_LOG(LogLokiStub, Display,
+               TEXT("NetCacheDump: --- %s  FirstOwnedClassRep=%d ClassReps=%d NetFields=%d  (level base index=%d) ---"),
+               *Cls->GetName(), Cls->FirstOwnedClassRep, Cls->ClassReps.Num(),
+               Cls->NetFields.Num(), Index);
+
+        // Owned replicated properties for this class level.
+        for (int32 i = Cls->FirstOwnedClassRep; i < Cls->ClassReps.Num(); ++i)
+        {
+            FProperty* Prop = Cls->ClassReps[i].Property;
+            if (!Prop)
+            {
+                continue;
+            }
+            const TCHAR* Kind = CastField<FStructProperty>(Prop)
+                                    ? TEXT("PROPERTY(struct: read via NetDelta loop)")
+                                    : TEXT("PROPERTY(scalar: read via RepLayout)");
+            UE_LOG(LogLokiStub, Display,
+                   TEXT("NetCacheDump:  [%3d] %-30s %-24s RepIndex=%d ArrayDim=%d  %s"),
+                   Index, *Prop->GetName(), *Prop->GetClass()->GetName(),
+                   (int32)Prop->RepIndex, Prop->ArrayDim, Kind);
+            ++Index;
+            i += (Prop->ArrayDim - 1); // skip static-array extras, as GetClassNetCache does
+        }
+
+        // RPC functions for this class level (name-sorted by SetUpRuntimeReplicationData).
+        for (int32 f = 0; f < Cls->NetFields.Num(); ++f)
+        {
+            UField* Field = Cls->NetFields[f];
+            UE_LOG(LogLokiStub, Display,
+                   TEXT("NetCacheDump:  [%3d] %-30s %-24s  FUNCTION/RPC"),
+                   Index, Field ? *Field->GetName() : TEXT("<null>"), TEXT("UFunction"));
+            ++Index;
+        }
+
+        return Index; // == GetMaxIndex() for this level
     }
 };
 

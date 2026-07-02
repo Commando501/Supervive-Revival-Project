@@ -119,6 +119,85 @@ resurfacing — capture it; it would mean stock PC replication itself is unsafe
 on this setup and step 2 must construct a full valid ClassReps block, not
 lean on the stock one.
 
+ADDENDUM (same session) — NetCache dump diagnostic + reference tables
+---------------------------------------------------------------------
+Added a READ-ONLY diagnostic to unreal-stub/Source/Loki/Loki.cpp:
+  FLokiModule::DumpClassNetCacheLayout(UClass*, int32 Base=0)
+Called at the end of InjectServerVerifyViewTargetFStringParam (OnPostEngineInit),
+so the stub log now prints APlayerController's full hierarchical net-index ->
+field table. It does NOT change replication behavior (pure logging + an
+idempotent SetUpRuntimeReplicationData call that GetClassNetCache makes anyway),
+so it does not perturb the step-5 single-variable experiment. Build-verified:
+Loki.cpp recompiled, UnrealEditor-Loki.dll relinked, no errors.
+
+RUNTIME-VERIFIED (this session, no client needed): launched the stub server
+headless (UnrealEditor-Cmd -server -nullrhi -- needs NO Steam/client/injector/
+UAC) and confirmed the dump runs at OnPostEngineInit and prints the full
+98-field table cleanly. The captured stock reference table is committed at
+docs/session-41-netcache-stock-table.txt (deterministic for stock UE 5.4 — no
+need to re-run it). Stub startup was clean (only benign LogPhysics cook
+warnings on the Entry placeholder map). Session 27-32's ServerVerifyViewTarget
+injection is unaffected (SelfReplay END FinalPos=2298 Leftover=0). So when the
+live step-5 probe runs, we already hold the reference table to interpret N.
+
+Look for "NetCacheDump:" lines in stub-s41.log. Each line is
+  [ index ] FieldName  Type  ... KIND
+where KIND is PROPERTY(scalar), PROPERTY(struct), or FUNCTION/RPC and `index`
+is exactly the FieldNetIndex space that N lives in.
+
+EXACT MECHANISM OF THE ERROR (nailed down this session):
+  DataReplication.cpp:1182 logs "ReceivedBunch: Invalid replicated field N"
+  with N = FieldCache->FieldNetIndex. It fires in the post-RepLayout field
+  loop, whose branches are:
+    - FStructProperty  -> handled as a custom-delta property   (line 1095)
+    - UFunction        -> handled as an RPC                     (line 1156)
+    - anything else    -> "Invalid replicated field N"         (line 1180)
+  IMPORTANT CONSEQUENCE: ordinary SCALAR replicated properties (bHidden,
+  Role, TargetViewRotation, etc.) are consumed earlier by the RepLayout and
+  do NOT appear in this loop. So N almost certainly resolves to either
+  (a) a custom-delta STRUCT property, or (b) an RPC — OR the field-header
+  section is being read at the wrong bit offset because our RepLayout property
+  block is a different SIZE than the client expects (SUPERVIVE has extra
+  CPF_Net props), which desyncs everything after it. The dump + real N
+  disambiguates which.
+
+STOCK UE 5.4 replicated-property inventory for the PC hierarchy (SET, from
+headers; authoritative ORDER comes from the runtime dump — native classes use
+field-iterator order, not offset sort, so don't assume header order):
+  AActor (10): bReplicateMovement, bHidden, bTearOff, bCanBeDamaged,
+               RemoteRole, AttachmentReplication, ReplicatedMovement, Owner,
+               Role, Instigator
+  AController (2): PlayerState, Pawn
+  APlayerController (3): TargetViewRotation,
+               AsyncPhysicsDataComponent_DEPRECATED (deprecated but CPF_Net),
+               SpawnLocation
+  => 15 replicated properties total across the chain, PLUS the per-level RPC
+     UFunctions (many Server*/Client* on APlayerController), which take the
+     higher indices at each level.
+
+CLIENT-SIDE DIVERGENCE SOURCE (SUPERVIVE's AActor Loki additions, from
+docs/session-22-schema-actor-loki-mods.txt; CPF_Net not dumped there so
+replication is inferred by naming/type):
+  - ServerState : StructProperty(PoolableActorServerState)  <-- PRIME SUSPECT.
+      A struct named "ServerState" on AActor is almost certainly a replicated
+      (likely custom-delta) struct. Stock AActor has no such field, so the
+      client's NetCache carries an extra struct field our stub doesn't, which
+      is exactly the kind of divergence that lands in the error loop above and
+      shifts every later index. This is the first thing to inject in step 2.
+  - LokiReplicationStrategy : StructProperty(LokiReplicationStrategy, 5 props:
+      CustomReplicationStrategy enum, bOwningPlayer, bDistanceBased, bVision,
+      bTeamBased) — a replication CONFIG struct; may or may not itself be
+      CPF_Net. Second candidate.
+  - Assorted bools/ints (bEnablePooling, bCanPrimeOnServer, MaxPoolSize, ...)
+      — pooling config; less likely replicated, but the dump+N will tell.
+
+So the leading hypothesis going into step 5: N will point at (or just past)
+the position where SUPERVIVE's AActor.ServerState struct sits in the client's
+NetCache, and step 2 = inject a matching replicated ServerState struct onto
+AActor (NOT just APlayerController — this is an AActor-level addition, so it
+shifts PC's indices via the FieldsBase chain). Confirm with the real N before
+committing to that; do not inject speculatively (single-variable discipline).
+
 PRE-STAGED STEP 2 DESIGN (implement AFTER we have N)
 ----------------------------------------------------
 Not implemented this session on purpose: without N we'd be guessing which

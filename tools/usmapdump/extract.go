@@ -33,8 +33,16 @@ const (
 	offFFieldClass        = 0x08
 	offFFieldNext         = 0x18
 	offFFieldName         = 0x20 // FName ComparisonIndex first (we lookup DisplayIndex too)
+	offFFieldPropFlags    = 0x38 // FField::PropertyFlags (uint64, CPF_* bitfield)
 	offFFieldInner        = 0x70
 	offFFieldClassName    = 0x00 // FName at FFieldClass+0 (ComparisonIndex)
+)
+
+// CPF_* flags we care about for replication schema RE (UE 5.4 ObjectMacros.h).
+const (
+	cpfNet        = 0x0000000000000020 // CPF_Net — property is replicated (in ClassReps)
+	cpfRepNotify  = 0x0000000100000000 // CPF_RepNotify — has an OnRep_ handler
+	cpfRepSkip    = 0x0000000000200000 // CPF_RepSkip — conditionally skipped by DOREPLIFETIME_CONDITION
 )
 
 // propInfo is what we'll emit per FProperty.
@@ -55,6 +63,7 @@ type propInfo struct {
 	innerName string
 	innerProp *propInfo // for Array/Set/Optional/Enum (single inner)
 	valueProp *propInfo // for Map (the value FProperty; innerProp is the key)
+	propFlags uint64    // FField::PropertyFlags @+0x38 (CPF_* bitfield)
 }
 
 // structInfo is what we'll emit per UClass / UScriptStruct.
@@ -127,7 +136,8 @@ var knownPropTypes = map[string]bool{
 // and not random memory past the FProperty.
 func extractFField(r *reader, p *pool, x *addrIndex, f uintptr, depth int, ownerHint uintptr) propInfo {
 	pi := propInfo{
-		name: decodeName(r, p, f+offFFieldName),
+		name:      decodeName(r, p, f+offFFieldName),
+		propFlags: uint64(r.ptr(f + offFFieldPropFlags)),
 	}
 	if fc := r.ptr(f + offFFieldClass); fc != 0 {
 		pi.typeName = decodeName(r, p, fc+offFFieldClassName)
@@ -271,9 +281,27 @@ func emitSchema(structs []structInfo, enums []enumInfo, w *os.File, sample int) 
 			fmt.Fprintf(w, "  ... (%d more)\n", len(structs)-sample)
 			break
 		}
-		fmt.Fprintf(w, "  %s : %s  (%d props)\n", s.name, s.superName, len(s.properties))
+		// Count replicated props so a class's ClassReps size is visible at a glance.
+		nNet := 0
 		for _, pr := range s.properties {
-			fmt.Fprintf(w, "      %-32s %s%s\n", pr.name, pr.typeName, renderTail(pr))
+			if pr.propFlags&cpfNet != 0 {
+				nNet++
+			}
+		}
+		fmt.Fprintf(w, "  %s : %s  (%d props, %d replicated)\n", s.name, s.superName, len(s.properties), nNet)
+		for _, pr := range s.properties {
+			netTag := ""
+			if pr.propFlags&cpfNet != 0 {
+				netTag = "  <<NET"
+				if pr.propFlags&cpfRepNotify != 0 {
+					netTag += ",RepNotify"
+				}
+				if pr.propFlags&cpfRepSkip != 0 {
+					netTag += ",RepSkip"
+				}
+				netTag += fmt.Sprintf(" flags=0x%X>>", pr.propFlags)
+			}
+			fmt.Fprintf(w, "      %-32s %s%s%s\n", pr.name, pr.typeName, renderTail(pr), netTag)
 		}
 	}
 	fmt.Fprintf(w, "\n=== %d UEnums ===\n", len(enums))
