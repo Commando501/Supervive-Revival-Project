@@ -53,9 +53,11 @@ Dumped their bytecode. The shared hero-list source is the function library **BPF
     loop over OutPrimaryAssetIdList:
       [10] Array_Get -> id
       [11] GetHeroAssetFromPrimaryAssetId(__WorldContext, id, out OutputExecs)  // native resolve
-      [12] K2Node_SwitchEnum_CmpSuccess = NotEqual_ByteByte(OutputExecs, 0)
-      [13] EX_JumpIfNot -> if OutputExecs == 0, SKIP this hero (do not add to the map)
-      ... else lowercase the hero display name, Map_Add(name -> id)
+      [12] CmpSuccess = NotEqual_ByteByte(OutputExecs, 0)
+      [13] EX_JumpIfNot(CmpSuccess): OutputExecs==0 -> jump to the Map_Add block (KEEP the hero);
+           OutputExecs!=0 -> fall through to PopExecutionFlow -> loop increment (SKIP the hero).
+           (verified by control flow: [9] pushes 1039=increment; [13] target 1113=[37] Map_Add.)
+      ... KEEP path: lowercase the hero display name, Map_Add(name -> id)
     [16] Map_Keys ; [17] SortStringArrayDirectly ; second loop Map_Find -> Array_Add -> SortedIds
     -> returns the sorted, RESOLVED-ONLY hero ids.
 
@@ -83,7 +85,9 @@ rdx=out TArray<FPrimaryAssetId>, r8b=AssetListKind (the byte "mode"):
 
 =========================== THE ACTUAL DROP (synthesis) =======================
 The hunter UIs use the SORTED function. Its extra per-hero gate is:
-   GetHeroAssetFromPrimaryAssetId(id) -> OutputExecs ; if OutputExecs == 0 -> DROP the hero.
+   GetHeroAssetFromPrimaryAssetId(id) -> OutputExecs ; KEEP iff OutputExecs == 0 (the success/valid
+   exec pin), otherwise SKIP. The grid is empty => every enumerated hero returns a NON-zero (reject)
+   exec, i.e. GetHeroAssetFromPrimaryAssetId is failing to resolve/validate all 25 ids.
 GetHeroAssetFromPrimaryAssetId RESOLVES a hero PrimaryAssetId to its LokiHeroAsset object. This is
 exactly the step S45 measured failing on the live client: GetPrimaryAssetObject(Hero)=0,
 RequestAsyncLoad "null assets" x8, ChangeBundleState "failed to find NameData" x2. The CatalogManager
