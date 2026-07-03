@@ -751,8 +751,15 @@ provider.Initialize();
 provider.SubmitKey(new FGuid(), new FAesKey(new byte[32]));
 // Lazy serialization: LoadPackage reads the summary + name map + import/export
 // maps but does NOT serialize export property bodies. That lets `names` mode read
-// the FName vocabulary without a usmap (export bodies would need one).
-provider.UseLazyPackageSerialization = true;
+// the FName vocabulary without a usmap (export bodies would need one). BUT bpdump/dump
+// NEED the export bodies (Kismet ScriptBytecode + property values), which lazy mode
+// leaves unserialized (ScriptBytecode comes back as 0 entries) — so force full
+// serialization for those two modes (we have a usmap loaded, so it's safe).
+provider.UseLazyPackageSerialization = !(cmd == "bpdump" || cmd == "dump");
+// CUE4Parse SKIPS UStruct/UFunction Kismet bytecode by default (ScriptBytecode comes
+// back empty) — it only deserializes the bytecode when ReadScriptData is enabled. bpdump
+// is the whole reason to read it, so turn it on for that mode.
+if (cmd == "bpdump") provider.ReadScriptData = true;
 
 // .usmap mappings — REQUIRED to read any property value in this unversioned shipping
 // build. Search a few sensible spots, any filename ending in .usmap (UE4SS emits
@@ -1253,6 +1260,38 @@ if (args.Length >= 3 && args[0] == "bpdump")
             return idx.ToString() ?? "<?>";
         }
 
+        // Resolve an FKismetPropertyPointer to a readable variable/property name. The
+        // "new" form carries a Path (FName[] / FFieldPath[]) whose last element is the
+        // property name; the "old" form is an FPackageIndex. Read fields OR properties.
+        object? MemberVal(object o, string name)
+        {
+            var t2 = o.GetType();
+            return t2.GetField(name, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)?.GetValue(o)
+                ?? t2.GetProperty(name, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)?.GetValue(o);
+        }
+        string ResolveKismetPtr(object ptr)
+        {
+            try
+            {
+                var neu = MemberVal(ptr, "New");
+                if (neu != null)
+                {
+                    var path = MemberVal(neu, "Path");
+                    if (path is System.Collections.IEnumerable en)
+                    {
+                        var parts = en.Cast<object?>().Select(x => x?.ToString()).Where(s => !string.IsNullOrEmpty(s)).ToList();
+                        if (parts.Count > 0) return string.Join(".", parts);
+                    }
+                    var ro = MemberVal(neu, "ResolvedOwner");
+                    if (ro != null) { var r = ResolveIdx(ro); if (r != "<null>") return r; }
+                }
+                var old = MemberVal(ptr, "Old");
+                if (old != null) return ResolveIdx(old);
+            }
+            catch { /* fall through */ }
+            return "<var>";
+        }
+
         // Recursive expression printer. Skip the "Token" property (printed in the header)
         // and recurse into nested KismetExpression / KismetExpression[] fields. Resolve
         // FPackageIndex via the package's import/export map.
@@ -1264,21 +1303,34 @@ if (args.Length >= 3 && args[0] == "bpdump")
             string idxStr = idx.HasValue ? $"[{idx,3}] " : "";
             w.WriteLine($"{indent}{idxStr}{tokenName}");
 
+            // CUE4Parse's KismetExpression subclasses expose their operands as public
+            // FIELDS (StackNode, Parameters, Variable, AssignmentExpression, Expression,
+            // FunctionName, ...), NOT properties — walking only GetProperties() yields bare
+            // opcode names with no operands. Collect BOTH fields and properties.
+            var members = new List<(string Name, object? Value)>();
+            foreach (var f in t.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                if (f.Name == "Token") continue;
+                try { members.Add((f.Name, f.GetValue(expr))); } catch { }
+            }
             foreach (var p in t.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
             {
-                if (p.Name == "Token") continue; // implied by subclass name
-                object? v;
-                try { v = p.GetValue(expr); } catch { continue; }
+                if (p.Name == "Token" || p.GetIndexParameters().Length > 0) continue;
+                try { members.Add((p.Name, p.GetValue(expr))); } catch { }
+            }
+
+            foreach (var (mName, v) in members)
+            {
                 if (v == null) continue;
 
                 if (v is CUE4Parse.UE4.Kismet.KismetExpression nested)
                 {
-                    w.WriteLine($"{indent}  {p.Name}:");
+                    w.WriteLine($"{indent}  {mName}:");
                     DumpExpr(nested, depth + 2, null, w);
                 }
                 else if (v is CUE4Parse.UE4.Kismet.KismetExpression[] arr)
                 {
-                    w.WriteLine($"{indent}  {p.Name}: [{arr.Length}]");
+                    w.WriteLine($"{indent}  {mName}: [{arr.Length}]");
                     int j = 0;
                     foreach (var sub in arr)
                     {
@@ -1288,20 +1340,15 @@ if (args.Length >= 3 && args[0] == "bpdump")
                 }
                 else if (v.GetType().Name == "FPackageIndex")
                 {
-                    w.WriteLine($"{indent}  {p.Name}: {ResolveIdx(v)}");
+                    w.WriteLine($"{indent}  {mName}: {ResolveIdx(v)}");
                 }
                 else if (v.GetType().Name == "FKismetPropertyPointer")
                 {
-                    // FKismetPropertyPointer wraps either an FPackageIndex (old) or
-                    // a path through FField (new). Pull whatever's most readable.
-                    var ptrField = v.GetType().GetProperty("Old", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-                                 ?? v.GetType().GetProperty("Path", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                    var ptrVal = ptrField?.GetValue(v);
-                    w.WriteLine($"{indent}  {p.Name}: {(ptrVal != null ? ResolveIdx(ptrVal) : v.ToString())}");
+                    w.WriteLine($"{indent}  {mName}: {ResolveKismetPtr(v)}");
                 }
                 else if (v is Array a && a.Length > 0)
                 {
-                    w.Write($"{indent}  {p.Name}: [");
+                    w.Write($"{indent}  {mName}: [");
                     for (int j = 0; j < a.Length && j < 16; j++)
                     {
                         if (j > 0) w.Write(", ");
@@ -1313,7 +1360,7 @@ if (args.Length >= 3 && args[0] == "bpdump")
                 else if (v is string || v.GetType().IsPrimitive || v.GetType().IsEnum
                          || v.GetType().Name.StartsWith("F"))
                 {
-                    w.WriteLine($"{indent}  {p.Name}: {v}");
+                    w.WriteLine($"{indent}  {mName}: {v}");
                 }
             }
         }
