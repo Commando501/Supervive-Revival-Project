@@ -1,0 +1,154 @@
+SESSION 46 — the ALL HUNTERS grid filter, READ FROM BLUEPRINT BYTECODE.
+The empty grid is NOT a display flag: the hunter UIs get their hero list from
+BPFL_LokiAssets, and the SORTED path drops every hero whose per-id asset RESOLUTION
+(GetHeroAssetFromPrimaryAssetId) fails. This re-unifies with S45's "client-side asset
+resolution fails" evidence and pinpoints the exact BP predicate + native resolver.
+==============================================================================
+Date: 2026-07-03  (branch dedicated-server-stub; continuous with session 45)
+
+Read after: docs/session-45-crash-capture-tooling-and-gate.txt (the CatalogManager reframe).
+S45 proved the 25 heroes are PRESENT + correctly keyed in the CatalogManager and called the
+empty grid "UI display logic." S46 read the actual UI logic (Blueprint bytecode) and found the
+precise drop — it is a per-hero ASSET-RESOLUTION filter in Blueprint, not a display flag.
+
+=========================== LIVE STATE AT SESSION START =======================
+- Game PID 72216 running, parked at main menu, logged in ("Unlockable heroes fetched: 25",
+  wallet 2004 vp). Backend ags-s45c (PID 74024) up. Steam up.
+- This launch WAS injected with the scan (docs/scan-on-enum-marker.txt: modBase=0x7FF682A80000,
+  vtable=0x7FF68B30CB78, "HERO added=25", GetPrimaryAssetIdList(Hero) Num=25). probe_r14 also ran
+  (docs/probe-r14-marker.txt @17:13). => hero-path code is packer-DECRYPTED this run; live disasm OK.
+- Module base 0x7FF682A80000 CONSTANT again (usmapdump info) — RVAs map to absolute directly.
+
+=========================== THE BIG TOOLING WIN: a Blueprint bytecode disassembler ===
+Fixed `bpdump` in tools/extractor/extractor/Program.cs (3 bugs) so it now prints readable Kismet:
+  1. provider.ReadScriptData = true (for cmd=="bpdump") — CUE4Parse SKIPS UStruct/UFunction
+     script bytecode by default; without this every function came back "ScriptBytecode: 0 entries".
+  2. UseLazyPackageSerialization now OFF for bpdump/dump (was globally ON for `names`) — export
+     bodies (incl. bytecode) must be serialized.
+  3. DumpExpr walked only GetProperties(); CUE4Parse KismetExpression operands are public FIELDS
+     (StackNode/Parameters/Variable/AssignmentExpression/...). Now walks fields+properties, and
+     resolves FKismetPropertyPointer -> readable variable names via New.Path (FName chain) / Old.
+Result: `dotnet run -c Release -- bpdump <asset-substr> <fn|*|@props>` dumps any packaged BP/widget
+function's logic OFFLINE (no live process, no editor). This is a general new RE capability for the
+whole project (menus, store, missions, cosmetics — all Blueprint).
+
+=========================== HOW THE GRID GETS ITS HEROES (the call chain) ======
+Found the widgets by searching the LIVE FNamePool (usmapdump nameid) + peeking the BP name tables
+(usmapdump peek of the "outside main module" heap where the decrypted BP name arrays live):
+  - bEnableAllHunters, AllHunters, AllHunters_Value, AllHuntersOwnedContainer, HunterShopItem...
+  - the owning widgets: WBP_UI_ComboBox_Heroes (a SHARED hero dropdown, path
+    /Game/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/HeroComboBox/), WBP_PartyHeroSelect_Screen
+    (/Monetization/Inventory/), WBP_UI_PartyHeroSelect (/Party/, 44 UFunctions, the detail panel).
+
+Dumped their bytecode. The shared hero-list source is the function library **BPFL_LokiAssets**
+(/Game/Loki/Core/Library/BPFL_LokiAssets.uasset). Its two hero-list functions:
+
+  Get All Heroes Asset List   (5 statements)
+    -> EX_CallMath GetHeroCharacterList(WorldContext, OutList, AssetListKind=ByteConst 0)
+    -> returns OutList directly. NO per-hero filter. (mode 0)
+
+  Get Heroes Asset List Sorted  (47 statements)  [FUNC_BlueprintPure]
+    params: (EnumProperty AssetListKind, Bool, Object WorldContext, out Array SortedIds, ...)
+    [ 2] GetHeroCharacterList(__WorldContext, OutPrimaryAssetIdList, AssetListKind)     // enum in
+    loop over OutPrimaryAssetIdList:
+      [10] Array_Get -> id
+      [11] GetHeroAssetFromPrimaryAssetId(__WorldContext, id, out OutputExecs)  // native resolve
+      [12] K2Node_SwitchEnum_CmpSuccess = NotEqual_ByteByte(OutputExecs, 0)
+      [13] EX_JumpIfNot -> if OutputExecs == 0, SKIP this hero (do not add to the map)
+      ... else lowercase the hero display name, Map_Add(name -> id)
+    [16] Map_Keys ; [17] SortStringArrayDirectly ; second loop Map_Find -> Array_Add -> SortedIds
+    -> returns the sorted, RESOLVED-ONLY hero ids.
+
+  WBP_UI_ComboBox_Heroes ubergraph calls: Get Heroes Asset List Sorted(AssetListKind=1, False,
+  Self, out) then AddOption(Conv_PrimaryAssetIdToString(id)) per surviving id. Its bEnableAllHunters
+  bool only gates whether an extra AddOption("hero:all") entry is added — it does NOT gate the grid.
+
+=========================== NATIVE GetHeroCharacterList — READ FROM CODE =======
+GetHeroCharacterList is native (EX_CallMath). Its body = S45's "caller-1" function; disassembled the
+LIVE decrypted code (usmapdump disasm). Function entry +0x562EB7B; args: rcx=WorldContext/this,
+rdx=out TArray<FPrimaryAssetId>, r8b=AssetListKind (the byte "mode"):
+   +0x562EB8D  movzx edi, r8b                 ; dil = AssetListKind
+   +0x562EB97  mov [rdx+8], 0                 ; OutList.Num = 0  (clear)
+   ... resolve this->[vtbl+0x188]() (slot 49) -> holder ; get AssetManager (+0x562EBCC) ...
+   +0x562EBDA  cmp dil, 3 ; jnb return        ; AssetListKind >= 3 => bail (empty)
+   +0x562EBEA  mov rdx, [Hero FName global]
+   +0x562EBF7  call [r10+0x370]               ; GetPrimaryAssetIdList(AssetMgr, Hero, OutList, 0)
+   +0x562EBFE  test dil, dil ; jz return      ; *** AssetListKind == 0  => RETURN ALL, NO FILTER ***
+   +0x562EC26  sub ecx,1; jz .. ; cmp ecx,1;  ; AssetListKind 1 vs 2 dispatch -> the flag-gate loop
+   (loop, per S45: CatalogManager(r14+0x60) lookup HITS; then drop by [entry+0xd2]!=0 (mode1) or
+    [entry+0xd0]==0 (mode2))
+=> AssetListKind 0 returns all 25 enumerated ids WITHOUT touching the CatalogManager or any flag.
+   AssetListKind 1/2 apply the S45 CatalogManager flag filter. The enumeration itself (with the
+   scan) yields 25, so GetHeroCharacterList is NOT where the heroes vanish for mode 0.
+
+=========================== THE ACTUAL DROP (synthesis) =======================
+The hunter UIs use the SORTED function. Its extra per-hero gate is:
+   GetHeroAssetFromPrimaryAssetId(id) -> OutputExecs ; if OutputExecs == 0 -> DROP the hero.
+GetHeroAssetFromPrimaryAssetId RESOLVES a hero PrimaryAssetId to its LokiHeroAsset object. This is
+exactly the step S45 measured failing on the live client: GetPrimaryAssetObject(Hero)=0,
+RequestAsyncLoad "null assets" x8, ChangeBundleState "failed to find NameData" x2. The CatalogManager
+holding 25 CatalogEntry objects (S45) is NOT the same as the 25 LokiHeroAsset objects being loaded/
+resolvable — the entries exist but the assets don't resolve, so GetHeroAssetFromPrimaryAssetId
+returns the failure exec (OutputExecs==0) for every hero and the sorted list comes back EMPTY ->
+empty grid, empty combobox, empty store carousel (all share BPFL_LokiAssets + the sorted path).
+
+This RE-UNIFIES the two S45 diagnoses that seemed to conflict:
+  - "heroes present + correctly keyed in CatalogManager"  (TRUE — the CatalogEntry map is full)
+  - "client-side asset resolution fails"                  (TRUE — GetHeroAssetFromPrimaryAssetId /
+     GetPrimaryAssetObject can't turn those ids into loaded LokiHeroAsset objects)
+S45's very last reframe ("just a display flag; poke CatalogEntry+0xd0") was the incomplete part:
+poking +0xd0 did nothing because (a) the sorted path never reaches the +0xd0/+0xd2 flag gate — it
+drops heroes earlier, at GetHeroAssetFromPrimaryAssetId — and (b) +0xd0/+0xd2 only apply to
+GetHeroCharacterList modes 1/2, which is upstream of the resolution gate anyway.
+
+=========================== WHY THE DETAIL PANEL WORKS BUT THE GRID DOESN'T =====
+S42's screenshot: the RIGHT detail panel showed a real hero ("Frontline Pyromaniac") by DIRECT id,
+while the grid was empty. Consistent with the above: a single, directly-referenced hero can be
+force-resolved/loaded (detail panel), but the bulk enumerate-then-resolve-each path
+(GetHeroAssetFromPrimaryAssetId over all 25) fails to resolve them as primary assets, so the tile
+list is empty. The blocker is bulk primary-asset RESOLUTION, not per-asset badness.
+
+=========================== NEXT SESSION — CONCRETE TARGETS ====================
+1. Pin native GetHeroAssetFromPrimaryAssetId and read WHY OutputExecs==0 for the enumerated ids
+   (does it call UAssetManager::GetPrimaryAssetObject and get null because the LokiHeroAsset isn't
+   in a loaded bundle? that == S45's GetPrimaryAssetObject=0). Its address: it's the EX_CallMath
+   StackNode "GetHeroAssetFromPrimaryAssetId" — find via the AssetManager resolve path or by
+   disassembling near GetHeroCharacterList's siblings. Likely returns the failure exec when
+   ChangeBundleStateForPrimaryAssets/GetPrimaryAssetObject yields null.
+2. The fix is almost certainly: make the 25 hero PrimaryAssetIds RESOLVE to loaded objects
+   (ChangeBundleStateForPrimaryAssets succeed / RequestAsyncLoad non-null). That is a bundle-state /
+   async-load problem, NOT a display flag and NOT a backend response. Candidate: after the scan,
+   also drive a ChangeBundleStateForPrimaryAssets to load the Hero bundle so GetPrimaryAssetObject
+   returns non-null; then GetHeroAssetFromPrimaryAssetId succeeds and the sorted list populates.
+3. Cheap experiment to CONFIRM the theory live: the base "Get All Heroes Asset List" (mode 0) does
+   NOT run the resolution gate — it returns the 25 ids raw. If any UI path can be pointed at the
+   unsorted list, tiles keyed by id (even unresolved-asset) would appear. Alternatively, hook/patch
+   the BP switch at sorted-[13] to not drop (harder — BP VM). The load-the-bundle route (2) is cleaner.
+
+=========================== OFFSETS / FILES (this build) ======================
+  Native hero-list fn (GetHeroCharacterList body = S45 caller-1): entry +0x562EB7B ;
+    GetPrimaryAssetIdList call +0x562EBF7 ; AssetListKind==0 early-return test +0x562EBFE ;
+    mode 1/2 dispatch +0x562EC26 ; per-hero CatalogManager lookup +0x57AB3C0 ; catalog map r14+0x60.
+  BP assets (packaged, read with the FIXED bpdump):
+    /Game/Loki/Core/Library/BPFL_LokiAssets  (Get All Heroes Asset List / Get Heroes Asset List
+      Sorted ; also FindHeroAssetByInternalName, FindRandomHeroAsset)
+    /Game/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/HeroComboBox/WBP_UI_ComboBox_Heroes
+    /Game/Loki/UI/Widgets/FrontEnd/MainMenu/Party/WBP_UI_PartyHeroSelect  (44 fns; HeroPicker
+      turntable, GetVisibleHeroAssets = the CENTER preview "?" logic, not the grid)
+    /Game/Loki/UI/Widgets/FrontEnd/MainMenu/Monetization/Inventory/WBP_PartyHeroSelect_Screen
+      (wrapper: SetPreviewHero + ContentPreview scene; holds AllHuntersOwnedContainer / HunterSelectContainer)
+  Tool: tools/extractor/extractor/Program.cs  (bpdump now reads Kismet — ReadScriptData + full
+    serialize + field-walking + FKismetPropertyPointer name resolution). Outputs in tools/extractor/out
+    (gitignored): bpdump_*.txt.
+
+=========================== WHAT NOT TO DO (unchanged + refined) ==============
+- Don't re-chase backend routes: manifest (3 shapes), core-game, AND ownership/inventory are ALL
+  dead. handleInventory's own comment records probe #3 (2026-06-28): 50 owned entries (25 heroes +
+  25 cosmetic bundles) -> grid still empty. The grid does not read backend ownership.
+- Don't re-poke CatalogEntry+0xd0/+0xd2 for the grid — the sorted path drops heroes at
+  GetHeroAssetFromPrimaryAssetId, BEFORE/beside those flags.
+- Don't treat this as "display logic / a widget filter to flip" — it is bulk primary-asset
+  RESOLUTION (GetHeroAssetFromPrimaryAssetId -> null). Target the load/bundle-state, per S45's
+  RequestAsyncLoad-null / NameData-fail evidence.
+- Base 0x7FF682A80000 constant across runs; heap addrs (CatalogManager, AssetManager, BP name
+  arrays) are per-run — re-derive each launch.
