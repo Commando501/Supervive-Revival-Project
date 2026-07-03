@@ -98,9 +98,21 @@ func (s *Service) Register(mux *http.ServeMux) {
 // build), NOT through manifest registrations. Backend route closed; see
 // docs/hero-roster-attempts.md for the full attempt log.
 func handleContentManifest(w http.ResponseWriter, r *http.Request) {
+	// The client ALWAYS requests this with ?nonEnabledOnly=true — i.e. "which content
+	// is NOT enabled/released?". Anything we return here is therefore treated by the
+	// client as NON-enabled and HIDDEN. Prior sessions populated Heroes here, which
+	// (we now understand) marked all 25 heroes non-enabled — so the ALL HUNTERS grid
+	// filtered them out even once the AssetManager enumeration was populated
+	// (scan_on_enum: GetPrimaryAssetIdList(Hero) returns 25). Session 44: return an
+	// EMPTY heroes map for the nonEnabledOnly query so every hero stays ENABLED and the
+	// grid can render the enumerated roster. (Only the full-manifest form, which the
+	// client does not request, lists heroes.)
+	nonEnabledOnly := r.URL.Query().Get("nonEnabledOnly") == "true"
 	heroes := map[string]any{}
-	for _, h := range heroCodenames {
-		heroes[h] = map[string]any{"PrimaryAssetName": h}
+	if !nonEnabledOnly {
+		for _, h := range heroCodenames {
+			heroes[h] = map[string]any{"PrimaryAssetName": h}
+		}
 	}
 	writeJSON(w, map[string]any{
 		"CurrentPatchVersion":  r.PathValue("version"),
