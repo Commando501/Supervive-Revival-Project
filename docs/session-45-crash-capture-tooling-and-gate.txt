@@ -295,3 +295,40 @@ per-hero TMap @ r14+0x60.
    list is non-empty) and UN-PATCH after capture (integrity check). Then r14's vtable / M's
    vtable -> findptr -> class name; and the map contents show EMPTY (populate it) vs WRONG-KEY
    (re-key). That capture DLL is the next build.
+
+=========================== r14 = CatalogManager — DATA IS ALL PRESENT & CORRECT =====
+Built tools/sigbypass-mod/probe_r14.cpp: scans + JIT-patches caller-1's `call +0x57AB3C0`
+site to a log-stub that captures r14 + dumps the +0x60 map. CAPTURE (docs/probe-r14-marker.txt
++ scratchpad Python RPM readers):
+  r14 = a UObject, ->Name = "CatalogManager", ->Class = "CatalogManager" (vtable RVA +0x8831758).
+  Its +0x60 = a TMap<FPrimaryAssetId, CatalogEntry*> — the master content catalog, Num~905:
+    536 SlotCosmetics, 331 Emote, 25 HERO, 4 LobbyPlatform, 3 StoreOffer, 3 StoreOfferEntitlement,
+    1 GameFeature, 1 Core (BP_LokiHeroSelectPreview_UnknownHero = the "?" placeholder).
+  => ALL 25 HEROES ARE IN THE CATALOG (as CatalogEntry objects). The grid consults THIS map.
+  Locate CatalogManager: findptr its vtable (base+0x8831758); r14 = Singleton(+0x565E1C0)->
+  [0x1f0]->[0x190]; per-hero entry.value @ mapentry+0x10; CatalogEntry has the hero FName @ +0xc8,
+  bytes @ +0xd0/+0xd1/+0xd2 = 00/02/00 (same for heroes AND the cosmetics that render).
+
+KEYS MATCH (no data/format problem): read the AssetManager (0x18BA835EE90, AssetTypeMap Num=30)
+Hero AssetMap (td+0x178, 25 keys) and compared (FName index + Number) to the catalog Hero keys:
+ALL 25 match byte-for-byte (same=(idx,num) 25/25, diff=0). So the grid enumerates exactly the keys
+the catalog is keyed under. NO key mismatch, NO case problem, NO missing data. (Mixed display
+casing SHIELDBOT/assault/Alchemist is just first-registration canonical strings; the comparison
+indices are identical.)
+
+=========================== THE REFRAME (end of session 45) ==================
+The 25 heroes are PRESENT and CORRECTLY KEYED in the CatalogManager catalog, matching the grid's
+enumeration exactly. So the empty ALL HUNTERS grid is NOT a data/backend/manifest/key/crash problem
+(all of which this project chased across ~11 sessions) — it is a UI DISPLAY-LOGIC problem: the grid
+widget drops the (present, correct) heroes via a filter. caller-1 (+0x562EBF7) filters per hero:
+lookup CatalogManager (HITS — keys match) -> then flag checks: (mode-1) drop if [entry+0xd2]!=0
+(heroes=0, pass); (mode-2) drop if [entry+0xd0]==0 (heroes=0 -> DROP). We poked all 25 hero
+[entry+0xd0]=1 in the live process; the visible grid stayed EMPTY even after navigating away/back.
+=> Either caller-1 is NOT the visible grid's populate path (the visible tiles may be built by
+   caller-2's CALLER, which consumes caller-2's fetched list and was not traced), or the grid caches
+   its built list, or the display mode differs. The exact widget/path + filter that renders the
+   VISIBLE grid is the last mile — a focused UI-RE task, NOT a data task.
+NEXT: find the UMG widget that renders the visible ALL HUNTERS grid (WBP_*Hunters*/*Roster*) and its
+tile-build filter; the data it needs is already 100% present in CatalogManager. Offsets: CatalogManager
+vtable RVA +0x8831758; catalog map @ r14+0x60 (stride 0x20, key FPrimaryAssetId@+0, value@+0x10);
+CatalogEntry hero-name@+0xc8, flags@+0xd0/+0xd2. Tools: probe_r14.cpp, scratchpad/*.py (RPM+FNamePool).
