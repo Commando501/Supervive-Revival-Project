@@ -120,3 +120,61 @@ From the repo root; Steam must be running (it is); hosts + cacert already in pla
   hero-content-load one — don't confuse them.
 - Don't send -LogCmds expecting Verbose logs (shipping build; Verbose UE_LOG compiled out).
 - Don't run launch-redirect.ps1 (regenerates certs + rewrites hosts). Steam must be up.
+
+=========================== CAPTURE RESULTS (user authorized "capture now") ====
+*** THE CRASH DID NOT REPRODUCE. The client is STABLE with the roster enumeration
+    injected. This overturns the S44 "empty grid + D3D12 crash are ONE wall,
+    reproducible on command" framing. ***
+
+Setup that worked (3rd launch attempt):
+- Backend: restarted HEAD ags (ran server\ags-s45.exe directly, NON-elevated — Go binds
+  :443 via a raw socket, so no elevation needed on Windows; the urlacl entries are http.sys
+  only). Verified GET /content-service/manifest/x?nonEnabledOnly=true -> "Heroes":{} (all 25
+  enabled). New ags reused server\certs, cacert chain intact.
+- Injection bug fixed: Start-Process -ArgumentList with an ARRAY does not quote elements, so
+  the space-containing DLL path ("...\Supervive Revival Project\...") split into multiple
+  args -> inject saw len(os.Args)!=6 -> printed usage and exited. BOTH first attempts failed
+  this way (NOT a DLL problem). Fix: pass a single arg STRING with the DLL path in embedded
+  quotes: `watch SUPERVIVE-Win64-Shipping.exe "<dllpath>" 0x3EC57D0 4055...`.
+- Early injection is REQUIRED: injecting 44s into boot installed the hook but the roster
+  enumeration had ALREADY run (GetPrimaryAssetIdList is called during initial asset load, NOT
+  at the "Unlockable heroes fetched" menu-load moment) so the hook never fired. Start the
+  injector BEFORE launching the game (it catches the process, waits ~6s for the Browse
+  prologue to unpack, then mmaps). Then the hook fires: scan ran, 30 types, HERO added=25,
+  GetPrimaryAssetIdList(Hero) returned Num=25, un-hooked cleanly. == the S44 data-path state.
+
+What happened after the heroes resolved+loaded:
+- veh-crash-marker.txt: EMPTY. The VEH (catches AV/fastfail/heap/etc.) caught NOTHING.
+- The client stayed STABLE at the main menu for >8 min (Fatal=0), still looping normally.
+- The EXACT S44 "crash sequence" DID occur (Loki.log ~15:00:39): hero GameplayCues load
+  (Flash.OffCD, Hook.Impact.HookGuy HellKnight chromas, HookGuy.ChargeBlast.Fire) ->
+  LogLokiGameplayCueManager "Clearing all cached gameplay cue BPs" -> LogSlate
+  InvalidateAllWidgets (x32) -> LogAudio "Audio Device unregistered from world 'None'" ->
+  LogUObjectHash "Compacting FUObjectHashTables" -> and the game CONTINUED PAST IT.
+  => That sequence is NON-FATAL hero-content-load/teardown, not a crash. S44 either
+     misattributed normal loading teardown to "the crash," or the crash is INTERMITTENT and
+     this clean run avoided it.
+
+CAVEATS (honest):
+- N=1. The crash MAY be intermittent; this run avoided it. Claim only: "did not reproduce in
+  a clean run; the sequence S44 called the crash is non-fatal." Not "never crashes."
+- The grid data path is NOT fully solved. RequestAsyncLoad "empty/null assets"=8 and
+  LogAssetManager "ChangeBundleStateForPrimaryAssets failed to find NameData"=2 PERSISTED this
+  run (baseline counts). S44 claimed both -> 0 with the fixes; NOT reproduced. So populating
+  the Hero AssetMap (enum=25) is necessary but the downstream ChangeBundleState/NameData step
+  still FAILS. S44's "grid data path SOLVED" is over-stated: enumeration works, ChangeBundleState
+  does not.
+- VISUAL: main menu renders fine and is STABLE (first stable look at the injected state), but
+  the center still shows the "?" hero-preview placeholder (preview not populated). Could NOT
+  drive menu navigation to HUNTERS via synthetic computer-use input (session appears LOCKED —
+  lockapp.exe resident, no hover highlight, clicks don't reach the game UI). Game LEFT RUNNING
+  so the user can click HUNTERS with real input to see whether the grid has tiles.
+
+NET / re-framing for next session:
+- The remaining blocker is NOT a crash / D3D12 render wall (it did not reproduce). It is a
+  DATA-PATH completeness gap: ChangeBundleState's "NameData" lookup still fails and the hero
+  preview/grid still shows "?"/empty even with enum=25. Next work targets the NameData /
+  ChangeBundleStateForPrimaryAssets path (what NameData is and why the scan doesn't fill it),
+  NOT a crash. Re-verify whether the crash is truly gone or intermittent across a few runs.
+- Environment left running: injected game (vtable UN-hooked after the one-shot scan -> no
+  code-integrity risk; VEH is a harmless read-only logger) + ags-s45.exe (HEAD) on :8080/:443.
