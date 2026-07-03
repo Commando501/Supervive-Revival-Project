@@ -178,3 +178,56 @@ NET / re-framing for next session:
   NOT a crash. Re-verify whether the crash is truly gone or intermittent across a few runs.
 - Environment left running: injected game (vtable UN-hooked after the one-shot scan -> no
   code-integrity risk; VEH is a harmless read-only logger) + ags-s45.exe (HEAD) on :8080/:443.
+
+=========================== SERVER-TRIGGER HYPOTHESIS — FALSIFIED ============
+User hypothesis (sessions of collaborative debugging): the empty HUNTERS grid is gated on
+a SERVER trigger with a downstream effect (server declares/enables content -> client shows).
+Tested its two most concrete levers on the LIVE client. BOTH negative:
+
+1. /core-game/players/{id} (the ~17/s poller carrying ContentServiceContentManifest +
+   ContentServicePrimaryAsset). Added the manifest VERSION ref to the no-active-match
+   response. RESULT: null. The client already knows the version (capture.log: it requests
+   manifest/release2.4.live-156430-shipping) and does not re-register from this field.
+2. /content-service/manifest hero-entry SHAPE. Server-side capture.log proves the client
+   fetches the manifest ONLY with ?nonEnabledOnly=true (3222x, a tight retry loop) and
+   NEVER the full manifest. Found the real entry model (schema_ContentServicePrimaryAsset):
+      ContentServicePrimaryAsset { Str PrimaryAssetType; Str PrimaryAssetName; Str AssetPath;
+                                   Str Status; Bool IsDefault }
+   We were sending only {PrimaryAssetName}. Declared all 25 heroes with the FULL shape incl.
+   AssetPath = /Game/Loki/Characters/Heroes/<PascalCase>/BP_HeroAsset_<PascalCase> and
+   Status="Enabled", relaunched with the scan (enum=25). RESULT (mechanical + VISUAL): null.
+   RequestAsyncLoad null-loads stayed 8, "failed to find NameData" stayed 2, GetPrimaryAsset
+   Object still 0, ZERO BP_HeroAsset loads, and the user confirmed the HUNTERS grid is STILL
+   EMPTY. This RE-CONFIRMS menu.go probe #2 (2026-06-28: full-shape incl. AssetPath ->
+   "ZERO observable effect") — now airtight.
+
+The manifest hero content has now been tried EMPTY (S44), populated-wrong-shape (pre-S44),
+and populated-correct-shape-with-AssetPath (this session) — all byte-identical loader
+behaviour. => The content-service manifest is NOT the grid lever. The backend route is
+CLOSED (as menu.go's own comment concluded), triply confirmed.
+
+=========================== CONVERGED DIAGNOSIS (end of session 45) ==========
+The grid needs (1) ENUMERATION and (2) RESOLVE+LOAD each id into a tile.
+  (1) Enumeration = CLIENT-side (scan_on_enum -> GetPrimaryAssetIdList(Hero)=25). WORKS.
+  (2) Resolve/load = FAILS, CLIENT-side, and is INDIFFERENT to every server response we
+      control: GetPrimaryAssetObject(Hero) is called 0x (S44 trace), RequestAsyncLoad gets
+      null assets (8x), ChangeBundleState "failed to find NameData" (2x). The AssetManager
+      enumerates the 25 hero PrimaryAssetIds but cannot RESOLVE them to loadable BP_HeroAsset
+      objects. No manifest/core-game/storefront response changes this.
+=> The blocker is client-side ASSET RESOLUTION (the AssetManager can enumerate the hero ids
+   but the per-asset NameData/path doesn't resolve to a loadable object), downstream of both
+   the enumeration scan AND anything the server sends. NOT a crash, NOT ownership, NOT a
+   server trigger. This session eliminated all three.
+
+ONLY non-circular path left = INSTRUMENT THE GRID WIDGET: hook the widget's per-id path
+between GetPrimaryAssetIdList (returns 25) and tile-build, and read DIRECTLY what it does
+with each id / why it never calls GetPrimaryAssetObject (the filter/resolve it fails). Every
+proxy (crash, NameData, hero-token, SKU, manifest) has misfired; reading the widget's actual
+logic is the only thing that stops the gu-and-check loop. Alternatively, refine the client-
+side registration to populate resolvable NameData (not just enumeration keys), or the IoStore
+mod-pak overlay (CLAUDE.md's remaining client-side route) so the primary assets resolve
+natively.
+
+WHAT NOT TO RE-TRY (now triply/quadruply confirmed dead): the content-manifest hero shape,
+the core-game content ref, hero ownership/purchase (grid is EMPTY not greyed), the hero-token,
+and "the crash is the wall". The blocker is client-side asset resolution.
