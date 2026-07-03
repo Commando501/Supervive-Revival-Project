@@ -281,3 +281,17 @@ Offsets (this build, base 0x7FF682A80000 constant across runs — effectively no
   FPrimaryAssetId key) ; secondary per-hero flags @ +0xd0 / +0xd2.
 Tooling: tools/sigbypass-mod/trace_caller.cpp (caller-capturing vtable tracer). usmapdump disasm
 reads live decrypted code (RUN WITH SCAN so the hero-loop body + lookup fn are decrypted).
+
+--- object chain to r14 (traced by disasm; class ID still needs a runtime capture) ---
+grid-widget populate fn (caller 1, +0x562EB7B..) has `this` in rcx (mov rbx,rcx). It calls
+`this->[vtable+0x188]()` (slot 49) -> sub-object; getter +0x565E1C0 reads a WEAK OBJECT PTR at
+[subobj+0x2d0], validates it (inner call +0x5340280 = generic weak-ptr/GUObjectArray machinery,
+reads global +0xA020438 — NOT a named manager), returns manager M. r14 = M->[0x1f0]->[0x190];
+per-hero TMap @ r14+0x60.
+=> M is a WEAK-PTR-held subsystem/manager; its class name is NOT in the static disasm. To name
+   it + see the map, capture a runtime pointer: patch caller-1's `call +0x57AB3C0` site
+   (+0x562EC85, an E8 rel32) to a log-stub that records rcx(=r14) + [r14+0x60] TMap header/keys
+   then tail-jumps 0x7ff68822b3c0; fold this into the scan DLL (the lookup only runs when the
+   list is non-empty) and UN-PATCH after capture (integrity check). Then r14's vtable / M's
+   vtable -> findptr -> class name; and the map contents show EMPTY (populate it) vs WRONG-KEY
+   (re-key). That capture DLL is the next build.
