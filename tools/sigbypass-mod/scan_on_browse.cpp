@@ -310,17 +310,20 @@ extern "C" void scan_browse_pre(uintptr_t rcx, uintptr_t /*rdx*/,
     int32_t  mapNum  = *(int32_t*)(r8 + kFurlMapOff + 8);
     if (!mapData || mapNum <= 0 || mapNum > 1024 || !SafeReadable(mapData, (size_t)mapNum * 2))
         return;
-    if (!WideContainsAscii(mapData, mapNum, "Lobby")) return;   // wait for the menu map
-
-    RingLog("[pre] LobbyV2 Browse detected -> finding manager via GEngine (rcx)\r\n");
-    // rcx = GEngine (UEngine*). Fast, freeze-free find. Fall back to the full scan only
-    // if the GEngine lookup misses (should not happen).
+    // Scan on the EARLIEST Browse where the manager is ready (populated typemap) —
+    // typically the Login browse — BEFORE the menu widgets enumerate their hero catalog.
+    // Populating at the Lobby browse was too late: the RPM dump proved the catalog itself
+    // populates correctly (25 heroes under PascalCase PrimaryAssetNames — Alchemist,
+    // Wukong, ...), yet the grid stays empty, i.e. the grid's ONE-SHOT enumeration had
+    // already cached an empty list. rcx = GEngine (UEngine*); the find is instant and
+    // freeze-free. If the manager isn't ready yet at this Browse, retry on the next one
+    // (do NOT fall back to the full-memory scan — that froze the game thread).
     void* mgr = FindManagerViaEngine(rcx);
-    if (!mgr) {
-        RingLog("[pre] GEngine find missed -> full-memory scan fallback (may hitch)\r\n");
-        mgr = ScanForManager(g_modBase);
-    }
-    if (!mgr) { RingLog("[pre] FAIL: no populated LokiAssetManager singleton\r\n"); return; }
+    if (!mgr) { RingLog("[pre] manager not ready at this Browse; will retry next\r\n"); return; }
+    char mb[80]; int mc = 0;
+    for (int i = 0; i < mapNum && mc < 79; i++) { char c = (char)(mapData[i] & 0x7F); mb[mc++] = (c >= 32 && c < 127) ? c : '.'; }
+    mb[mc] = 0;
+    RingLogf("[pre] scanning at earliest ready Browse (map=%s)\r\n", mb);
     g_manager = mgr;
     g_scan    = (PFN_ScanPaths)(g_modBase + kScanPathsRva);
     RunScanForAllTypes();
