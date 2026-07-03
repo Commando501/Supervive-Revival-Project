@@ -112,13 +112,28 @@ force-resolved/loaded (detail panel), but the bulk enumerate-then-resolve-each p
 (GetHeroAssetFromPrimaryAssetId over all 25) fails to resolve them as primary assets, so the tile
 list is empty. The blocker is bulk primary-asset RESOLUTION, not per-asset badness.
 
+=========================== NATIVE GetHeroAssetFromPrimaryAssetId — READ FROM CODE (confirmed) ===
+Located it in the live process: findptr on its FName id 0x005863F0 returned the native-function
+table entry {FName 0x5863F0, execptr 0x7FF687D2A550 (RVA +0x52AA550)} AND the impl pointer
+0x7FF6880AEA00 (RVA +0x562EA00) — the impl sits IMMEDIATELY BEFORE GetHeroCharacterList (+0x562EB7B),
+a sibling in LokiAssetBlueprintLibrary. Disassembled the impl (entry +0x562E9F6; args rcx=out
+ReturnValue FPrimaryAssetId, rdx=in FPrimaryAssetId id, r8=out byte OutputExecs):
+   +0x562E9F6  push r13 ; sub rsp,0x30 ; movups [rcx+0x20],xmm0   ; zero the out ReturnValue
+   +0x562EA11  mov byte [r8], 0x1                                  ; *** OutputExecs = 1 (REJECT) by default
+   +0x562EA18  cmp [id.Type], [rip global] ; jz .. else reject     ; only Hero-type ids proceed
+   ... resolve id -> object (TMap find + object fetch); at +0x562EB22 check obj flags
+       ([obj+0xc]>>0x1e); ONLY on a valid resolved object:
+   +0x562EB2E  mov byte [r15], 0                                   ; OutputExecs = 0 (KEEP)
+   (failure path +0x562EB34 -> call +0x562EB49 = the "Invalid Primary Asset Type/Id" warning S45 saw)
+=> CONFIRMED: OutputExecs defaults to 1 (reject); it becomes 0 (keep) ONLY when the hero id resolves
+   to a valid loaded object. Heroes don't resolve (S45: GetPrimaryAssetObject=0, RequestAsyncLoad null)
+   -> OutputExecs stays 1 -> the sorted BP loop drops all 25 -> empty grid. The whole chain (BP filter
+   + native resolver) is now read end-to-end from code. THE FIX = make the 25 hero ids resolve to
+   loaded objects (load the Hero bundle) so this returns OutputExecs==0.
+
 =========================== NEXT SESSION — CONCRETE TARGETS ====================
-1. Pin native GetHeroAssetFromPrimaryAssetId and read WHY OutputExecs==0 for the enumerated ids
-   (does it call UAssetManager::GetPrimaryAssetObject and get null because the LokiHeroAsset isn't
-   in a loaded bundle? that == S45's GetPrimaryAssetObject=0). Its address: it's the EX_CallMath
-   StackNode "GetHeroAssetFromPrimaryAssetId" — find via the AssetManager resolve path or by
-   disassembling near GetHeroCharacterList's siblings. Likely returns the failure exec when
-   ChangeBundleStateForPrimaryAssets/GetPrimaryAssetObject yields null.
+1. DONE this session (above): GetHeroAssetFromPrimaryAssetId (+0x562E9F6) rejects (OutputExecs=1)
+   because the hero object doesn't resolve. The remaining verification is empirical (see #3).
 2. The fix is almost certainly: make the 25 hero PrimaryAssetIds RESOLVE to loaded objects
    (ChangeBundleStateForPrimaryAssets succeed / RequestAsyncLoad non-null). That is a bundle-state /
    async-load problem, NOT a display flag and NOT a backend response. Candidate: after the scan,
@@ -130,9 +145,13 @@ list is empty. The blocker is bulk primary-asset RESOLUTION, not per-asset badne
    the BP switch at sorted-[13] to not drop (harder — BP VM). The load-the-bundle route (2) is cleaner.
 
 =========================== OFFSETS / FILES (this build) ======================
-  Native hero-list fn (GetHeroCharacterList body = S45 caller-1): entry +0x562EB7B ;
-    GetPrimaryAssetIdList call +0x562EBF7 ; AssetListKind==0 early-return test +0x562EBFE ;
-    mode 1/2 dispatch +0x562EC26 ; per-hero CatalogManager lookup +0x57AB3C0 ; catalog map r14+0x60.
+  Native GetHeroCharacterList: entry +0x562EB7B ; GetPrimaryAssetIdList call +0x562EBF7 ;
+    AssetListKind==0 early-return test +0x562EBFE ; mode 1/2 dispatch +0x562EC26 ; per-hero
+    CatalogManager lookup +0x57AB3C0 ; catalog map r14+0x60.
+  Native GetHeroAssetFromPrimaryAssetId: impl entry +0x562E9F6 (registration ptr +0x562EA00);
+    exec thunk +0x52AA550 ; FName id 0x005863F0 ; OutputExecs default=1 @+0x562EA11, set 0 (keep)
+    @+0x562EB2E only on valid resolve ; found via findptr 0x5863F0 (5 hits: exec-table entry +
+    impl ptr). GetHeroCharacterList FName id 0x00587ADC.
   BP assets (packaged, read with the FIXED bpdump):
     /Game/Loki/Core/Library/BPFL_LokiAssets  (Get All Heroes Asset List / Get Heroes Asset List
       Sorted ; also FindHeroAssetByInternalName, FindRandomHeroAsset)
