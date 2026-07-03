@@ -1,0 +1,122 @@
+SESSION 45 — Path-1 crash-capture tool built (scan_on_enum_veh.dll); the live capture
+is GATED on the user because it requires killing an actively-running client.
+==============================================================================
+Date: 2026-07-03  (branch dedicated-server-stub; continuous with session 44)
+
+Read after: docs/session-44-grid-datapath-SOLVED-crash-is-the-wall.txt (the key doc).
+The grid DATA PATH is solved; the remaining wall is the hero-content-load crash. This
+session built the tool to capture that crash's callstack and characterized the live
+state, but did NOT run the capture — see "WHY THE CAPTURE IS GATED" below.
+
+=========================== STATE FOUND AT SESSION START ======================
+- A recon client is ALREADY RUNNING (PID 71152), parked at the menu, STOCK config:
+  NO injector, empty grid, NOT crashed. Its Loki.log advances in real time — the
+  Messenger heartbeat drops every ~60s, reconnects, and re-fetches "Unlockable heroes
+  fetched: 25 heroes" + wallet each cycle. No user-activity signature (no map loads /
+  navigation), i.e. the user is away with the client parked, but the process is LIVE.
+  => This confirms the crash is NOT caused by the backend returning 25 heroes: with 25
+     storefront heroes fetched but WITHOUT the AssetManager enumeration scan, the client
+     is stable. The crash needs the heroes RESOLVED+LOADED as primary assets, which
+     requires scan_on_enum injected EARLY (before menu-load). The already-running process
+     can't be retrofitted (enumeration already ran empty at menu-load), so a repro needs
+     a FRESH early-injected launch.
+- ags (PID 26512) is running, started as bare "server\ags.exe" (no args -> defaults,
+  reuses server\certs; cacert.pem already has that root). BUT it is a STALE binary:
+  GET /content-service/manifest/x?nonEnabledOnly=true returns a POPULATED SUBSET of
+  heroes (missing alchemist/assault/beebo), not the empty {} the committed source
+  (server/internal/menu/menu.go handleContentManifest) produces. Likely a leftover from
+  S44's inconclusive "enable only a few heroes" crash-isolation test. A faithful 25-hero
+  repro needs ags rebuilt from HEAD (staged this session as server\ags-s45.exe; HEAD
+  compiles clean).
+- NO minidump exists for the hero-content-load crash. The newest UECC dump on disk is
+  2026-07-02 09:17 (the already-analyzed S41 lobby D3D12 dump). Every UECC dump in
+  Saved\Crashes is from the dedicated-server-stub D3D12/RHI path (S40/41). The S44
+  hero-content-load crash writes NONE — it routes only through Sentry crashpad
+  ("LogSentrySdk: flushing ... before crashpad handler"). So the two crashes take
+  DIFFERENT crash-handling paths.
+
+=========================== THE DISCRIMINATOR (evidence, not yet proof) =======
+Is the hero-content-load crash the SAME D3D12/RHI wall as S40/41, or something else
+(a throttleable streaming/asset/GC failure)? Two honest signals:
+  (1) UECC-dump asymmetry: S40/41's D3D12 RHI-thread AVs RELIABLY produced UECC
+      minidumps (UE's structured-exception handler -> CrashReportClient -> UEMinidump.dmp,
+      13-14 MB each, one per crash). The hero-content-load crash produces NONE, only
+      Sentry crashpad. If it were the identical RHI-thread AV, the same UE handler should
+      fire and write a UECC dump. Its absence LEANS AGAINST "identical to S40/41" (it
+      could be a UE Fatal/check() during content processing, or a handler-race
+      difference — unconfirmed).
+  (2) Log fingerprint is a WORLD TEARDOWN: hero GameplayCue load -> LogSlate
+      InvalidateAllWidgets -> LogAudio "Audio Device unregistered from world 'None'" ->
+      LogUObjectHash "Compacting FUObjectHashTables" -> Sentry. That is UE destroying the
+      current world, consistent with a fatal DURING content load, not specifically the
+      D3D12 command-list/residency AV that S40/41 pinned (FRDGBuilder::Execute /
+      FD3D12CommandList::Close, SUPERVIVE +0x296xxxx band, D3D12Core interleave).
+NEITHER is conclusive. The faulting RIP is the only decisive discriminator. If it lands
+in the SUPERVIVE +0x29xxxxx band or inside D3D12Core.dll -> same wall (render, likely
+unsolvable client-side; anti-cheat walls the renderer CVars). If it's elsewhere (asset
+streaming / GC / OOM) -> Path 2 (throttle/stage the load) is live and worth pursuing.
+The evidence hint in (1) is a reason to GET the RIP, not to assume it's a dead end.
+
+=========================== TOOL BUILT THIS SESSION ===========================
+tools/sigbypass-mod/scan_on_enum_veh.cpp  ->  scan_on_enum_veh.dll  (gitignored; rebuild)
+  Build: clang++ -shared -O2 scan_on_enum_veh.cpp -o scan_on_enum_veh.dll -lkernel32
+  = a byte-for-byte copy of the proven scan_on_enum fix (the scan/hook/un-hook logic is
+    UNCHANGED) PLUS a read-only VEH crash logger. It both TRIGGERS the roster resolve+load
+    and CAPTURES the resulting crash before Sentry kills the process:
+    - AddVectoredExceptionHandler(1, ...) installed first-chance; logs only fatal codes
+      (AV 0xC0000005, fastfail 0xC0000409, illegal-instr, bp, heap/stack, FP), caps at 64
+      entries. The LAST entry before the process dies is the crash.
+    - Per crash it writes docs/veh-crash-marker.txt: code, RIP, SUPERVIVE_RVA (the decisive
+      D3D12-band datum), identified module + module_RVA, AV op/addr, GP registers, and a
+      stack-band scan (return-addr-looking values inside the SUPERVIVE image -> which code
+      band). Returns EXCEPTION_CONTINUE_SEARCH so UE/Sentry still handle it (this is a
+      read-only observer, NOT a C++-EH payload — the packer's VEH only eats EH payloads).
+    - Loader-lock-safe: the module table is snapshotted on the worker thread
+      (CreateToolhelp32Snapshot at startup + every 5s heartbeat, so D3D12Core.dll is
+      captured once it loads post-menu); the VEH only READS that table — no loader API in
+      the handler.
+configs/launch-recon.ps1  = the recon-client launch (recreated from launch-redirect.ps1;
+  the -ini AccelByte/Loki overrides + -log, no stub, no elevation). Preconditions in-file.
+server/ags-s45.exe        = HEAD ags, staged (compile-checked). Swap over server/ags.exe
+                            to make the content-manifest fix live.
+
+=========================== WHY THE CAPTURE IS GATED ==========================
+Reproducing the crash requires killing the running client (PID 71152) — two game
+instances conflict, and the fresh launch must be early-injected. CLAUDE.md explicitly:
+"Don't kill the SUPERVIVE-Win64-Shipping process without warning — the user may be
+mid-test." The process is actively logging (not frozen), and the user is away and cannot
+course-correct if the fresh launch misbehaves (session-0/desktop attach, SteamAPI init).
+So this session built + committed everything and left the capture as ONE authorized step
+rather than killing an active client blind. Nothing about the grid data path changed.
+
+=========================== THE READY-TO-RUN CAPTURE (when authorized) ========
+From the repo root; Steam must be running (it is); hosts + cacert already in place.
+  0. Kill the parked client + any injectors (leave Steam):
+       Get-Process 'SUPERVIVE-Win64-Shipping',inject,crashpad_handler -EA SilentlyContinue |
+         Stop-Process -Force
+  1. Make the manifest fix live (safe restart — no cert regen, reuses server\certs):
+       Get-Process ags -EA SilentlyContinue | Stop-Process -Force
+       Copy-Item server\ags-s45.exe server\ags.exe -Force
+       Start-Process server\ags.exe -WorkingDirectory server        # bare, defaults
+       # verify: curl "http://localhost:8080/content-service/manifest/x?nonEnabledOnly=true"
+       #         -> "Heroes":{}  (empty => all 25 stay ENABLED)
+  2. Clear the crash marker, start the gated early injector:
+       Clear-Content docs\veh-crash-marker.txt -EA SilentlyContinue
+       tools\inject\inject.exe watch SUPERVIVE-Win64-Shipping.exe `
+         tools\sigbypass-mod\scan_on_enum_veh.dll 0x3EC57D0 40555356574154415541564157
+  3. Launch the recon client, wait ~60-90s for menu-load + the hero-content-load crash:
+       powershell -ExecutionPolicy Bypass -File configs\launch-recon.ps1
+  4. Read docs\veh-crash-marker.txt — the LAST "=== VEH fatal exception ===" block is the
+     crash. Decide: SUPERVIVE_RVA in +0x29xxxxx band / module=D3D12Core.dll => the S40/41
+     render wall (see docs/session-40-D3D12-CONFIRMED.txt). Else => a different, possibly
+     throttleable failure (Path 2). If a UECC-*/UEMinidump.dmp also appears in
+     Saved\Crashes, parse it with scratchpad/parse-any-dump.py for a fuller stack.
+
+=========================== WHAT NOT TO DO (unchanged) ========================
+- Don't re-grind the AssetManager registration/enumeration route — solved (returns 25).
+- Don't trust scan_on_browse.dll as the fix — use scan_on_enum(_veh).dll.
+- Don't leave a vtable-slot/code patch installed long (code-integrity crash ~3-5 min in);
+  scan_on_enum un-hooks after the one-shot scan. That is a SEPARATE crash from the
+  hero-content-load one — don't confuse them.
+- Don't send -LogCmds expecting Verbose logs (shipping build; Verbose UE_LOG compiled out).
+- Don't run launch-redirect.ps1 (regenerates certs + rewrites hosts). Steam must be up.
