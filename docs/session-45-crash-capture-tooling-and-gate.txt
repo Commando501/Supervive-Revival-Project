@@ -231,3 +231,53 @@ natively.
 WHAT NOT TO RE-TRY (now triply/quadruply confirmed dead): the content-manifest hero shape,
 the core-game content ref, hero ownership/purchase (grid is EMPTY not greyed), the hero-token,
 and "the crash is the wall". The blocker is client-side asset resolution.
+
+=========================== GRID WIDGET INSTRUMENTATION — THE FILTER, READ FROM CODE ===
+Built tools/sigbypass-mod/trace_caller.cpp (+.dll) = trace_hooks + a stub that captures the
+CALLER return address of the AssetManager query virtuals. Injected (no scan; the widget calls
+GetPrimaryAssetIdList(Hero) at menu-load regardless of result count). RESULT
+(docs/trace-caller-marker.txt): GetPrimaryAssetIdList(Hero) has TWO distinct call sites —
+  caller RVA +0x562EBFE   and   caller RVA +0x3965BFC
+and GetPrimaryAssetObject(Hero)=0, ChangeBundleState(Hero)=0. So the grid enumerates then drops
+all 25 WITHOUT ever asking the AssetManager to resolve them. The drop is in the WIDGET.
+
+Disassembled caller 1 (live RPM, usmapdump disasm). The GetPrimaryAssetIdList call is
+`call [r10+0x370]` (slot 110) at +0x562EBF7. AFTER it returns, the populate loop (over the
+returned TArray<FPrimaryAssetId> at rsi):
+  for each id:
+    lea rdx,[id]; mov rcx,r14; call +0x57AB3C0      ; PER-HERO LOOKUP into r14
+    test rax,rax; jz SKIP                            ; <-- lookup null => DROP the hero
+    (if r15b) cmp byte[rax+0xd2],0; jnz SKIP         ; secondary flag gate (display-mode)
+    (if r12b) cmp byte[rax+0xd0],0; jz  SKIP         ; secondary flag gate (display-mode)
+    ...add survivor to the tile array...
+  (r12b/r15b derive from a byte arg 'dil' in {1,2} = a display/filter mode.)
+
+The lookup fn +0x57AB3C0 (abs 0x7ff68822b3c0; decrypt it by running WITH the scan so the loop
+executes it): hashes the FPrimaryAssetId (call +0x...d6a210), then does a TMap FIND into a map
+at **r14+0x60** (call +0x...c99090 -> element index or -1; 32-byte entries; value @entry+0x10).
+Found -> returns the per-hero value. index==-1 (NOT in the map) -> fallback path that tries to
+NewObject from the id and returns null for our heroes -> hero dropped.
+
+r14 = Singleton(+0x565E1C0)->[+0x1f0]->[+0x190]  (a NESTED member of a game singleton; NOT the
+AssetManager, NOT the content manifest, NOT any server response). Its per-hero TMap @ r14+0x60
+is keyed by hashed FPrimaryAssetId.
+
+=========================== THE ACTUAL ROOT CAUSE (finally, from code) ========
+The ALL HUNTERS grid builds tiles by looking each enumerated hero id up in a WIDGET/SINGLETON-
+side per-hero TMap at r14+0x60 (r14 = *(*(Singleton_565E1C0 +0x1f0) +0x190)). None of the 25
+enumerated heroes are keyed into that map -> every lookup returns null -> every hero dropped ->
+empty grid. This is why NOTHING we tried worked: the scan populates the AssetManager's
+enumeration (a DIFFERENT structure), and the server populates the manifest/storefront (DIFFERENT
+structures). The grid consults r14+0x60, which none of them fill.
+=> FIX TARGET: get the 25 heroes into the r14+0x60 map (or make the +0x57AB3C0 fallback resolve
+   them). NEXT: identify the singleton at +0x565E1C0 and its +0x1f0/+0x190 chain (usmapdump
+   findptr / vtable / the getter's callees) to learn what class owns r14 and what normally
+   populates its +0x60 map (storefront hero fetch? a hero-catalog asset load? a subsystem init
+   we stub away?). Then populate it (native shim into that map, or drive the real populate path).
+Offsets (this build, base 0x7FF682A80000 constant across runs — effectively no ASLR rebase):
+  grid populate caller (GetIdList site) = +0x562EBF7 (ret +0x562EBFE); 2nd site ret +0x3965BFC
+  per-hero lookup fn = +0x57AB3C0 ; r14-producer = +0x57AB6C0 ; r14 singleton getter = +0x565E1C0
+  r14 = getter()->[0x1f0]->[0x190] ; per-hero TMap @ r14+0x60 (stride 0x20, value@+0x10, hashed
+  FPrimaryAssetId key) ; secondary per-hero flags @ +0xd0 / +0xd2.
+Tooling: tools/sigbypass-mod/trace_caller.cpp (caller-capturing vtable tracer). usmapdump disasm
+reads live decrypted code (RUN WITH SCAN so the hero-loop body + lookup fn are decrypted).
