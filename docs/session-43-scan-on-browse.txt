@@ -1,3 +1,16 @@
+>>> CORRECTED BY SESSION 44 — READ docs/session-44-grid-datapath-SOLVED-crash-is-the-wall.txt FIRST. <<<
+    Two claims below are WRONG:
+    (1) "the game is stable / FIX COMPLETE" — the grid was NEVER populated; the un-hooked
+        build was "stable" only in the sense of not crashing, WITH AN EMPTY GRID. The
+        "populate -> crash" correlation was real but the mechanism was misread.
+    (2) "crash-time scales with assets populated / the crash is the persistent Browse patch"
+        — the un-hook did stop the patch-integrity crash, but scan_on_browse alone does NOT
+        populate the grid. The grid enumerates via GetPrimaryAssetIdList(Hero); the working
+        fix is scan_on_enum.dll (demand-driven) + the content-manifest nonEnabledOnly flag.
+        With those, heroes RESOLVE + LOAD and the real crash is the hero-content-load wall.
+    scan_on_browse.cpp is kept as prior art (the Browse-hook + GEngine-find + un-hook
+    machinery is reused), but is NOT the fix. Session 44 is the accurate account.
+==============================================================================
 SESSION 43 — the hero grid TIMING problem is SOLVED: a Browse-hook scan populates the
 AssetManager BEFORE the menu-load catalog build. But POPULATING the grid crashes the
 game (crash-time scales with how many assets are populated) — the empty grid was
