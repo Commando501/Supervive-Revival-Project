@@ -192,6 +192,33 @@ call, initial asset load, before menu-load builds the grid).
      (drive the CatalogManager's own load path, or populate the CatalogEntry's object ptr), not the
      AssetManager. Tools built: scan_and_load.cpp (loader + live FName resolver, reusable).
 
+=========================== FIX ATTEMPT #2 (in progress): the CatalogManager resolution ====
+Traced GetHeroAssetFromPrimaryAssetId's resolution from the live decrypted code (entry +0x562E9F6):
+  +0x562EA40  call +0x565E1C0            ; GetCatalogManagerSingleton (vtable slot 49 [rax+0x188] +
+                                          ;  weak-ptr at +0x2d0 — matches S45's chain)
+  +0x562EA45  test rax; jz REJECT
+  +0x562EA51  call +0x149D770 (rcx=singleton) ; -> rsi = a CatalogManager SUB-OBJECT (a UObject that
+  +0x562EA56  mov rsi, rax                    ;   owns an embedded TMap)
+  +0x562EA59  test rsi; jz REJECT
+  +0x562EA62  mov ecx,[rsi+0xc]; shr 0x1e; not cl; test cl,1; jz REJECT   ; reject if [rsi+0xc] bit30 set
+  +0x562EA7D  cmp id.Type, [global]; jnz REJECT                           ; must be Hero type
+  +0x562EA8B  hash the id (call +0x12EA210)
+  +0x562EA90..  search rsi's embedded TMap (fields at rsi+0x30/+0x38/+0x64/+0x68/+0x70/+0x78) for the id
+     - MISS  -> +0x562EAE1 -> (if global>=2) cookie-resolver +0x12F4230, checks [rax+8]; else REJECT
+     - HIT   -> rdi = *(entry+0x10) = the CatalogEntry ; if [rdi+0xc] bit30 set -> REJECT ;
+                else +0x562EB2E mov byte[r15],0 = KEEP (OutputExecs=0)
+=> The reject is one of: (a) the hero id is NOT in rsi's TMap (a DIFFERENT map than S45's confirmed
+   r14+0x60 catalog — rsi = CatalogManager->[+0x149D770], TMap at ~rsi+0x30), or (b) the hero's
+   CatalogEntry has [+0xc] bit30 set (a UObject-level "garbage/invalid" flag; NOTE this is +0xc, NOT
+   the +0xd0 S45 poked). Fix attempt #1's AssetManager load can't touch either.
+   NEXT DIAGNOSTIC: a game-thread probe (reuse scan_and_load's h_idl_post-at-Hero, which fires at
+   menu-load when the CatalogManager IS built) that walks the same getter chain (+0x565E1C0 ->
+   +0x149D770 -> rsi), dumps rsi's TMap, and for each of the 25 hero ids logs {in-map? , CatalogEntry
+   ptr, [entry+0xc]}. That pins reason (a) vs (b). Then the fix is either populate rsi's map or clear/
+   set the entry's +0xc flag (or drive the CatalogManager's own load that both the map AND the flag
+   depend on). Offsets: getter +0x565E1C0 ; sub-object getter +0x149D770 ; resolver entry +0x562E9F6 ;
+   cookie-resolver +0x12F4230 ; keep-set +0x562EB2E.
+
 =========================== NEXT SESSION — CONCRETE TARGETS ====================
 1. DONE this session (above): GetHeroAssetFromPrimaryAssetId (+0x562E9F6) rejects (OutputExecs=1)
    because the hero object doesn't resolve. The remaining verification is empirical (see #3).
