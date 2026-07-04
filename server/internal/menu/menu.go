@@ -164,11 +164,30 @@ var heroCodenames = []string{
 // of shape `{"AssetId": "Hero:<lower>"}` + `{"AssetId": "HeroCosmeticsBundle:<Pascal>Default"}`.
 // Result: parser accepted the payload (no deserialization error, `LogPlatformInventory:
 // Refreshed player inventory` succeeded), but UI was identical — grid empty, "?" preview,
-// zero new ChangeBundleState activity. Combined with probe #2 (manifest cosmetics-bundle
-// population), confirms the menu doesn't enumerate from either source. Reverted. See
-// docs/hero-roster-attempts.md.
+// zero new ChangeBundleState activity. That probe had TWO now-known problems: (a) it ran
+// BEFORE the IsCatalogDataReady gate was fixed (session 47 — the whole catalog UI was gated
+// off from building, so nothing could reflect ownership); (b) the entries carried NO
+// `IsOwned:true` — the real ownership signal per the recovered model.
+//
+// MODEL (usmap schema.txt): LokiPlatformInventory { AssetEntries: []LokiPlatformInventoryAssetEntry,
+// Version int64 }; LokiPlatformInventoryAssetEntry { AssetId PrimaryAssetId, IsFree bool, IsOwned
+// bool, IsDefault bool, IsPremiumBenefit bool, EntitlementIDs [], AdditionalDetails {} }. The
+// "Hero:<name>" string form parses into the AssetId PrimaryAssetId (custom text import); FName
+// match is case-insensitive so the lowercase codenames link to the mixed-case catalog names.
+//
+// Session 47 (post-gate-fix): own all 25 heroes with IsOwned=true so the ALL HUNTERS tiles unlock
+// (drop the "Hunter not owned" lock) and the menu can surface a default hunter instead of the "?"
+// empty-inventory placeholder. IsDefault marks a starting hunter.
 func handleInventory(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, map[string]any{"AssetEntries": []any{}})
+	entries := make([]any, 0, len(heroCodenames))
+	for i, h := range heroCodenames {
+		entries = append(entries, map[string]any{
+			"AssetId":   "Hero:" + h,
+			"IsOwned":   true,
+			"IsDefault": i == 0, // one starting hunter (alchemist) as the default
+		})
+	}
+	writeJSON(w, map[string]any{"AssetEntries": entries, "Version": 1})
 }
 
 // handleFreeInventory returns the free-rotation inventory — valid empty wrapper.
