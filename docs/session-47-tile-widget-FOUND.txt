@@ -8,6 +8,12 @@ Date: 2026-07-04 (branch dedicated-server-stub; continuous with sessions 45/46)
 Method: OFFLINE Blueprint bytecode read (the fixed bpdump) + a read-only peek of the LIVE
 client log (PID 45088, still running from S46). NO injection this session.
 
+*** SOLVED — the empty ALL HUNTERS grid rendered the full roster once IsCatalogDataReady was forced true.
+    Root cause = IsCatalogDataReady()==FALSE because CatalogManager[+0x354]==0 (the stub backend never sets
+    the 5th "catalog ready" sub-flag), which gates WBP_HeroPicker's LoadCharacters off. Fix (catalog_ready_fix.cpp:
+    scan + NOP the jz at +0x57BB722 so the 5th flag is ignored) -> grid populates (screenshot-verified, PID 69684).
+    See the "*** SUCCESS ***" FIX-TEST section at the bottom. Details below. ***
+
 *** ROOT CAUSE FOUND (2nd live session) — IsCatalogDataReady == FALSE gates the grid's LoadCharacters ***
 The grid (WBP_HeroPicker) Construct does: GetCatalogManager -> IsValid -> IsCatalogDataReady ; only if TRUE
 does it call LoadCharacters (which builds AllHunters); if FALSE it binds OnCatalogDataReady and waits.
@@ -380,26 +386,28 @@ FIX OPTIONS (in order of cleanliness):
   waiting on the never-firing delegate; UpdateFilteredList re-runs on filter change but reads the still-empty
   AllHunters). => the fix must land BEFORE the grid Constructs (early inject).
 
-FIX-TEST (tools/sigbypass-mod/catalog_ready_fix.cpp) — BUILT + APPLIED, but grid population UNVERIFIED
-(blocked by the intermittent menu-load crash):
+FIX-TEST (tools/sigbypass-mod/catalog_ready_fix.cpp) — *** SUCCESS: THE GRID POPULATES. BLOCKER SOLVED. ***
   The DLL does the proven scan (Hero enum=25) + NOP's the `jz` at +0x57BB722 (74 0C -> 90 90) so
   IsCatalogDataReady ignores the never-set +0x354 and returns true once the 4 real flags [0x350-0x353] are
-  set (== catalog loaded) — the intent being that the game's post-load readiness check then BROADCASTS
-  OnCatalogDataReady, waking the waiting grid to run LoadCharacters. Marker confirms it applies cleanly
-  (jz NOP'd early, scan=25, CatalogManager found, [+0x354] also poked to 1).
-  RESULT: on BOTH fix runs the client CRASHED at menu-load (Sentry) ~10s into the Vivox/GameplayCue/
-  InvalidateAllWidgets phase — the SAME intermittent menu-load crash that hit earlier non-fix runs (the
-  scan-only control + the keep-capture run happened to survive it). So it is NOT established that the fix
-  causes the crash, and it is NOT established that the grid populates — verification is blocked. Two
-  readings remain open: (a) it's just the documented intermittent crash (bad luck 2/2) and a surviving run
-  would show a populated grid; (b) opening the catalog-ready gate makes the grid/party-select build during
-  the fragile GameplayCue/InvalidateAllWidgets phase and that build trips the crash — i.e. the empty grid
-  was ALSO masking a downstream content/render crash (S44's "the empty grid and the crash are the same
-  wall"). NEXT: retry to catch a surviving run and screenshot HUNTERS; if it reliably crashes only WITH the
-  gate open, the real remaining wall is the hero-tile content/render path (portraits/turntable models —
-  the S40-42 D3D12/RHI territory), and the fix must stage/guard that. Left installed: the jz-patch is a
-  persistent .text mod (integrity wall ~3-5min) — for a durable fix, restore it after the grid builds or
-  fold catalog-ready into a backend fix.
+  set (== catalog loaded); the game's post-load readiness check then BROADCASTS OnCatalogDataReady, waking
+  the waiting grid to run LoadCharacters. Marker confirms it applies cleanly (jz NOP'd early, scan=25,
+  CatalogManager found, [+0x354] also poked to 1).
+  RESULT: on a SURVIVING run (PID 69684), navigated to HUNTERS and the ALL HUNTERS grid rendered the FULL
+  ROSTER — ~20+ distinct hero portrait tiles (locked, since unpurchased), screenshot/zoom-confirmed. After
+  ~13 sessions the roster displays. => IsCatalogDataReady==false (CatMgr+0x354==0) WAS the root cause, and
+  forcing it true populates the grid. CONFIRMED end-to-end.
+  CRASH CORRECTION: the earlier 4 fix runs crashed at menu-load ~10s into the Vivox/GameplayCue phase — that
+  is the DOCUMENTED INTERMITTENT menu-load crash (bad luck), NOT caused by the fix. This surviving run dodged
+  it and shows the grid full, disproving the "gate-opening causes the crash / same wall" hypothesis. (A VEH
+  crash-logger was added to catalog_ready_fix to capture the RIP; the surviving run left it empty, and the
+  eventual exit had no VEH catch — consistent with the ~3-5min code-integrity check on the LEFT-INSTALLED
+  jz-patch, session-43's finding, not a render crash.)
+  DURABILITY: the jz-patch is a persistent .text mod => the integrity check kills the client ~3-5min later.
+  For a durable fix: (A backend, cleanest) make ags complete whatever content-service fetch sets
+  CatalogManager+0x354 so IsCatalogDataReady goes true natively (no patch); or (B) self-restore the jz-patch
+  right after the grid builds (the readiness broadcast has already fired, so LoadCharacters/AllHunters
+  persist) to avoid the integrity wall. Also: this same catalog-ready gate likely fed the empty STORE/
+  COSMETICS/MISSIONS panels (CLAUDE.md's shared-root-cause note) — re-check them with the gate open.
 
 OFFSETS (base 0x7FF682A80000 constant; heap per-run): IsCatalogDataReady exec +0x5260DD0, impl +0x57BB700
   (flags CatMgr+0x350..0x354, all-nonzero => ready). IsHidden exec +0x5260E60 / getter +0x525C210 (CatalogEntry
