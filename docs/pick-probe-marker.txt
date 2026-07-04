@@ -1,0 +1,17 @@
+[0] pick_probe worker started
+[0] modBase=0x7FF682A80000
+[2] CP1 patched +0x584680D -> stub 00007FF68D480000. CLICK OWNED HEROES NOW.
+[hb] patched=1 hits=0 dumped=0
+[hb] patched=1 hits=0 dumped=0
+[hb] patched=1 hits=0 dumped=0
+[hb] patched=1 hits=0 dumped=0
+[hb] patched=1 hits=0 dumped=0
+[hb] patched=1 hits=0 dumped=0
+[hb] patched=1 hits=0 dumped=0
+[hb] patched=1 hits=0 dumped=0
+[dump] hits=0 (settled=0 timeout=1)
+[RESULT] TryPickMyHeroAndCosmetics hits (owned-hero clicks) = 0
+[RESULT] membersCount==0 => empty client party-members at pick time (the bail); >0 => members exist, drop is deeper.
+[unpatch] CP1 restored (no persistent .text mod)
+[hb] patched=1 hits=0 dumped=1
+[done] pick_probe worker exit
