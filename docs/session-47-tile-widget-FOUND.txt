@@ -8,6 +8,14 @@ Date: 2026-07-04 (branch dedicated-server-stub; continuous with sessions 45/46)
 Method: OFFLINE Blueprint bytecode read (the fixed bpdump) + a read-only peek of the LIVE
 client log (PID 45088, still running from S46). NO injection this session.
 
+*** LIVE-CAPTURE CORRECTION (added after the offline analysis below) ***
+The offline sections below conclude the fix target is "make the hero objects load (NameData)". A LIVE
+instrumented run (hero_resolve_probe v2, keep-set capture) REFUTED that: GetHeroAssetFromPrimaryAssetId
+RESOLVES all 25 heroes to VALID, LOADED, correctly-classed BP_HeroAsset_<Hero>_C objects (5226 keep-set
+hits = ~209 full 25-hero cycles), and the grid was STILL EMPTY on that same run (screenshot-verified).
+=> The empty grid is NOT resolution/object-load/cast failure. It is a UI-POPULATION problem DOWNSTREAM of
+successful resolution. See the "*** LIVE CAPTURE — RESOLUTION PROVEN TO SUCCEED ***" section at the bottom.
+
 =========================== TL;DR ===========================================
 S46 concluded "the resolver GetHeroAssetFromPrimaryAssetId succeeds (25/25) yet the grid is
 empty, so the visible tile grid must use a DIFFERENT path we never pinned." S47 pinned that
@@ -220,3 +228,65 @@ Fix directions (once A/B/C localize it):
   OWN ChangeBundleState (NameData) must succeed, and the grid list is cached (post-hoc load won't help).
 - Don't hardcode FName ids (drift). Don't patch +0x562Exxx before menu-load (packer page encrypted).
 - Base 0x7FF682A80000 constant; heap addrs per-run — re-derive each launch.
+
+=========================== *** LIVE CAPTURE — RESOLUTION PROVEN TO SUCCEED (this overturns the object-load hypothesis above) *** ===
+Built tools/sigbypass-mod/hero_resolve_probe.cpp and ran it on a fresh instrumented relaunch.
+WHAT IT DOES: hook GetPrimaryAssetIdList slot 110 (scan all 30 types on the game thread, Hero enum=25),
+then at menu-load patch the resolver's KEEP-set at +0x562EB2E with a NearAlloc'd `jmp keepStub` (a
+probe_r14-style INTRA-FUNCTION jmp, NOT a call — see the crash note). keepStub replicates `mov byte[r15],0`
+(OutputExecs=0=KEEP), records {id.Type, id.Name, rdi=the returned object}, and `jmp +0x562EB5D` (epilogue).
+The worker resolves each kept object's UClass name via [obj+0x18]->[cls+0x20] + FNamePool, then un-patches.
+
+CRASH NOTE (v1 -> v2): v1 was an ENTRY-DETOUR WRAPPER (patch the resolver entry with jmp to a stub that
+CALLs the whole resolver via a trampoline and reads RAX after). It CRASHED the game at menu-load 2/2, while
+the identical scan-only control (scan_on_enum) SURVIVED to the menu. => the resolver's frame is non-standard
+and cannot be black-box-wrapped+returned. v2 (keep-set intra-jmp, no return interception) ran with ZERO
+crashes and captured cleanly. The control experiment also independently proved the resolver IS called at
+menu-load (the wrapper got exercised -> crashed).
+
+RESULT (docs/hero-resolve-probe-marker.txt, run @2026-07-04 03.18, PID 44276):
+  [scan] DONE: 30 types scanned (Hero added=25)
+  [patch] keep-set +0x562EB2E patched
+  [RESULT] keep-set hits (heroes the resolver KEEPS w/ OutputExecs=0) = 5226
+  [0] id=Hero:Alchemist  obj=0x1578ABCB640 class=BP_HeroAsset_Alchemist_C
+  [2] id=Hero:assault    obj=0x1578ABCB000 class=BP_HeroAsset_Assault_C
+  [1] id=Hero:Wukong     obj=0x156A2D90740 class=BP_HeroAsset_Wukong_C
+  ... ALL 25 heroes, each resolving to its OWN distinct, valid BP_HeroAsset_<Hero>_C object, cycling ~209x
+  (5226/25 = 209.04 ; matches S44's "209 GetPrimaryAssetIdList(Hero) calls at menu-load").
+=> GetHeroAssetFromPrimaryAssetId SUCCEEDS for all 25: OutputExecs=0 (KEEP) + returns a NON-NULL object
+   whose UClass is BP_HeroAsset_<Hero>_C. Since BP_HeroAsset_<Hero>_C.Super = BP_LokiHeroAsset_C (verified),
+   the grid's DynamicCast<BP_LokiHeroAsset_C>(ReturnValue) WOULD SUCCEED for every hero, and the objects
+   are LOADED (valid ptrs, real classes) — repeatedly (209x). The heroes are fully resolvable AND loaded.
+
+VISUAL CONFIRMATION (same run, computer-use): navigated the probed client (PID 44276) to HUNTERS -> the
+ALL HUNTERS grid is EMPTY (role-filter strip renders, zero tiles), "?" centre, working direct-id detail
+panel (Frontline Pyromaniac). So on the very run where resolution provably succeeds 5226x, the grid is empty.
+
+*** THE REFRAME (decisive, inverts ~13 sessions) ***
+The empty grid is NOT resolution failure, NOT object-load failure, NOT cast failure. The 25 hero PrimaryAssetIds
+resolve to loaded, correctly-classed, cast-compatible BP_HeroAsset objects — the exact input the grid's
+LoadCharacters needs. So S44/S45/S46 AND the offline part of THIS doc were all wrong to target asset
+resolution/NameData: that step works. (The live-log "RequestAsyncLoad null / ChangeBundleState NameData fail"
+is a DIFFERENT subsystem — loading hero CONTENT bundles/models — not the BP_HeroAsset object resolution the
+grid consumes; the grid's objects are present.) The blocker is PURELY UI POPULATION downstream of a
+successful resolve. This finally vindicates S45's first instinct ("the data is all present; it's UI logic")
+and pins it at the object level, not just the CatalogEntry flag map.
+
+NEXT (S48) — the remaining candidates, all downstream of the (working) resolver, in the WBP_HeroPicker path:
+  (a) AllHunters never gets POPULATED despite the resolves: OnLoaded gated by the count check
+      (len(LoadedHeroAssets)==len(ids)) or by IsCatalogDataReady, OR the resolves counted here are from
+      OTHER widgets (combobox/preview/party-select) and the grid's own LoadCharacters is gated off. Read the
+      live WBP_HeroPicker instance's AllHunters.Num + LoadedHeroAssets.Num via RPM (0 => not populated;
+      25 => populated but filtered/not-rendered).
+  (b) UpdateFilteredList FILTERS everything out: item.HeroPickSelectable.ShouldHideHero() returns true for
+      all (a per-hero UI/ownership/availability predicate), OR the role filter/GetActiveFilter rejects all.
+      Dump ShouldHideHero + GetActiveFilter bytecode (bpdump, offline) on HeroPickerSelectable_CatalogEntryWithPreview
+      / WBP_UI_FilterControl; and/or capture ShouldHideHero's return live.
+  (c) TileView_Hunters.BP_SetListItems is called with a full array but the UTileView doesn't build entry
+      widgets (entry-widget class / EntryWidgetClass unset or failing).
+  Cheapest decisive next read: AllHunters.Num (splits (a) from (b)/(c)). If 25 => it's a filter/render
+  problem (ShouldHideHero the leading suspect); if 0 => it's the OnLoaded count/catalog-ready gate.
+
+TOOLS: tools/sigbypass-mod/hero_resolve_probe.cpp (v2 keep-set capture; SAFE, reusable to capture rdi/regs
+at any decrypted intra-function site via NearAlloc'd jmp-stub). Resolver keep-set +0x562EB2E, jmp-back
++0x562EB5D, id ptr in r14, object in rdi, OutputExecs ptr in r15. Base 0x7FF682A80000 constant.
