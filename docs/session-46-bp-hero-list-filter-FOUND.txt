@@ -131,6 +131,33 @@ ReturnValue FPrimaryAssetId, rdx=in FPrimaryAssetId id, r8=out byte OutputExecs)
    + native resolver) is now read end-to-end from code. THE FIX = make the 25 hero ids resolve to
    loaded objects (load the Hero bundle) so this returns OutputExecs==0.
 
+=========================== LIVE VERIFICATION + TIMING DE-RISK (computer-use session) ===
+With computer access (user granted), navigated the SCANNED client (PID 72216, -ini localhost
+redirects + scan injected, enum=25 per scan-on-enum-marker) to the HUNTERS screen:
+  - VISUAL CONFIRMATION: the ALL HUNTERS grid is EMPTY (only the role-filter icon strip renders,
+    zero hero tiles), the centre shows the "?" BP_LokiHeroSelectPreview_UnknownHero, and the RIGHT
+    detail panel resolves a hero ("Frontline Pyromaniac", Purchase 20,000) by DIRECT id. This is
+    the MEANINGFUL case: enumeration IS populated (25) yet the grid is still empty => resolution
+    failure, exactly as S46 predicted (not a missing-enumeration case).
+    (A gotcha: open_application("Supervive-win64-shipping") launched a SECOND, bare, arg-less,
+    unscanned instance (PID 63816) instead of focusing 72216 — its empty grid would be the trivial
+    enum=0 case, so it was killed and 72216 focused via SetForegroundWindow before verifying.)
+  - TIMING DE-RISK (count_idl.dll — vtable-swap hook on GetPrimaryAssetIdList slot 110, logs every
+    Hero call): after installing the hook while ON the HUNTERS screen, heroCount stayed **0** for
+    several minutes across multiple reconnect-driven InvalidateAllWidgets cycles => the hero list is
+    NOT re-queried on refresh/invalidation. Strongly indicates the list is built ONCE (menu-load /
+    first entry) and CACHED (consistent with the S42 finding). => the fix must load the hero objects
+    EARLY (before the list builds), i.e. early injection + relaunch; a post-hoc load into a running
+    client will NOT populate the already-built (empty) cached list. CAVEAT: could not complete a
+    clean leave-and-re-enter of HUNTERS (menu input was flaky due to focus loss) before the client
+    crashed, so "fully cached at menu-load" vs "re-queried only on a fresh entry" isn't 100% split;
+    but no refresh re-queried over minutes.
+  - The client crashed ~3-5 min after the hook install: count_idl was left INSTALLED (no self-unhook)
+    and tripped this build's periodic code-integrity check (session-43 finding). FIXED count_idl to
+    self-unhook after 90s. Lesson: never leave any .text/vtable hook installed long here.
+=> NET: fix = an EARLY-injecting hero-loader (load the 25 hero primary-asset objects on the game
+   thread BEFORE menu-load builds the list), then relaunch to test. Post-hoc loading is ruled out.
+
 =========================== NEXT SESSION — CONCRETE TARGETS ====================
 1. DONE this session (above): GetHeroAssetFromPrimaryAssetId (+0x562E9F6) rejects (OutputExecs=1)
    because the hero object doesn't resolve. The remaining verification is empirical (see #3).
