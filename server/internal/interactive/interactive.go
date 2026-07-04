@@ -76,6 +76,26 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// partyId ("party-<playerId>") we minted, falling back to the JWT.
 	mux.HandleFunc("GET /party/parties/{partyId}", s.handleGetPartyDetail)
 
+	// ---- Party: set my member (hero/cosmetics selection — the selected-hunter flow) ----
+	// Picking an owned hunter in the ALL HUNTERS roster calls TryPickMyHeroAndCosmetics on
+	// the native PartyManager (traced from WBP_UI_PartyHeroSelect bytecode: OnHeroSelected ->
+	// TryPick -> PartyManager.TryPickMyHeroAndCosmetics(HeroAssetId, CosmeticsAssetId)). That
+	// sets the local PartyMemberModel.HeroAssetID (firing OnHeroAssetIDChanged -> the center
+	// preview re-renders) AND writes the member to the /party service. The member op hangs off
+	// /party/parties/{partyId}/ (the one captured party write was POST .../{partyId}/setIsOpen/True),
+	// so the hero set is the /members/ operation seen in the exe's party endpoint table
+	// (model SetPartyMemberRequest{ID, HeroAssetID, CosmeticsAssetID, ...}). We persist the
+	// posted HeroAssetID so the subsequent GET /party/parties poll echoes it back (otherwise
+	// the ~1s poll would reset the member to the default and the pick would visibly revert).
+	//
+	// PROBE: the exact verb+path for the member write was never captured (heroes only became
+	// selectable this session), so we register the best-guess POST/PUT on the members subpath.
+	// If the real path differs, this simply never fires (the write falls through to {} as
+	// before — no regression); the seed default still renders a hunter. Confirm/trim the path
+	// from a live capture of a hero click, then narrow this.
+	mux.HandleFunc("POST /party/parties/{partyId}/members/{memberId}", s.handleSetPartyMember)
+	mux.HandleFunc("PUT /party/parties/{partyId}/members/{memberId}", s.handleSetPartyMember)
+
 	// ---- Core-game (match lifecycle / region ping) ----
 	// GET /core-game/players/{id} is the "do I have an active match to rejoin?" heartbeat
 	// (polled ~800x/session); a "no active match" shape keeps it quiet and is the slot we
@@ -435,7 +455,23 @@ func (s *Service) handleMailboxConfigVersion(w http.ResponseWriter, r *http.Requ
 func (s *Service) handleGetParty(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id)))
+}
+
+// defaultHeroAssetId is the hunter the party slot renders before the player has
+// picked one — the same default (owned) hero the inventory marks IsDefault
+// ("alchemist"). Seeding it means the center shows a real hunter instead of the
+// "?" placeholder on first login; a subsequent pick overrides it (persisted).
+const defaultHeroAssetId = "Hero:alchemist"
+
+// selectedHero returns the player's persisted selected hunter PrimaryAssetId,
+// falling back to the default owned hero so the party-slot preview always has a
+// valid, owned id to render (never the UnknownHero "?").
+func (s *Service) selectedHero(id string) string {
+	if h := s.store.get(id).SelectedHeroAssetId; h != "" {
+		return h
+	}
+	return defaultHeroAssetId
 }
 
 // handleGetPartyDetail answers GET /party/parties/{partyId} — the full party object the
@@ -451,7 +487,99 @@ func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id)))
+}
+
+// handleSetPartyMember persists the hunter the player picked and echoes the updated
+// solo party. Body is a SetPartyMemberRequest{ID, HeroAssetID, CosmeticsAssetID, ...};
+// we only need HeroAssetID (the selected hunter). The player id is recovered from the
+// minted partyId ("party-<playerId>"), falling back to the memberId path value / JWT sub.
+func (s *Service) handleSetPartyMember(w http.ResponseWriter, r *http.Request) {
+	// Resolve the player id (partyId is "party-<id>" for our solo party).
+	id := strings.TrimPrefix(r.PathValue("partyId"), "party-")
+	if id == r.PathValue("partyId") { // not our prefix
+		if m := r.PathValue("memberId"); m != "" {
+			id = m
+		} else if sub := subjectFromBearer(r.Header.Get("Authorization")); sub != "" {
+			id = sub
+		}
+	}
+
+	body, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if hero := heroAssetIDFromBody(body); hero != "" {
+		s.store.update(id, func(st *playerState) { st.SelectedHeroAssetId = hero })
+	}
+
+	// Echo the updated party so the client's optimistic pick is confirmed by the server
+	// state (and matches what the next GET /party/parties poll will return).
+	display := displayNameFromBearer(r.Header.Get("Authorization"))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id)))
+}
+
+// heroAssetIDFromBody extracts the selected hero as a "Hero:<name>" PrimaryAssetId string
+// from a SetPartyMemberRequest body, tolerating both the string form ("Hero:xxx") and the
+// UE struct-object form the client may serialize a PrimaryAssetId as
+// ({"PrimaryAssetType":{"Name":"Hero"},"PrimaryAssetName":"xxx"} or {"type":"Hero","name":"xxx"}).
+// Returns "" if no usable hero id is present (so a body without one is a no-op, not a wipe).
+func heroAssetIDFromBody(body []byte) string {
+	if len(body) == 0 {
+		return ""
+	}
+	// Probe the field under either spelling; capture as raw so we can accept string|object.
+	var req struct {
+		HeroAssetID  json.RawMessage `json:"heroAssetId"`
+		HeroAssetID2 json.RawMessage `json:"HeroAssetID"`
+	}
+	if json.Unmarshal(body, &req) != nil {
+		return ""
+	}
+	for _, raw := range []json.RawMessage{req.HeroAssetID, req.HeroAssetID2} {
+		if id := primaryAssetIDString(raw); id != "" {
+			return id
+		}
+	}
+	return ""
+}
+
+// primaryAssetIDString normalizes a JSON PrimaryAssetId (string "Type:Name" or an object
+// with type/name fields) to the "Type:Name" string form. Returns "" when the value carries
+// no name (an empty PrimaryAssetId, which must NOT overwrite a real selection).
+func primaryAssetIDString(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	// String form: "Hero:alchemist".
+	var str string
+	if json.Unmarshal(raw, &str) == nil {
+		if str = strings.TrimSpace(str); strings.Contains(str, ":") {
+			return str
+		}
+		return ""
+	}
+	// Object form: tolerate the common UE PrimaryAssetId serializations.
+	var obj struct {
+		Type             string `json:"type"`
+		Name             string `json:"name"`
+		PrimaryAssetName string `json:"PrimaryAssetName"`
+		PrimaryAssetType struct {
+			Name string `json:"Name"`
+		} `json:"PrimaryAssetType"`
+	}
+	if json.Unmarshal(raw, &obj) != nil {
+		return ""
+	}
+	typ := obj.Type
+	if typ == "" {
+		typ = obj.PrimaryAssetType.Name
+	}
+	name := obj.Name
+	if name == "" {
+		name = obj.PrimaryAssetName
+	}
+	if typ == "" || name == "" {
+		return ""
+	}
+	return typ + ":" + name
 }
 
 // buildSoloParty constructs the CUSTOM Theorycraft party model (NOT AccelByte V2). Probes
@@ -462,7 +590,14 @@ func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 // JSON fields (FName pool, camelCase): partyId, leader, members, invitees, invitationToken;
 // member fields: userId/memberId/id, displayName, inQueue, ready, region. This validated
 // live: with it, "player not in party" dropped 1002->2 and the PARTY panel renders.
-func buildSoloParty(id, display string) map[string]any {
+//
+// heroAssetId is the member's SELECTED hunter (a "Hero:<codename>" PrimaryAssetId). The
+// client deserializes the member into a PartyMemberModel whose HeroAssetID drives the
+// main-menu party-slot / center preview actor: an empty/invalid id shows the "?" placeholder
+// (BP_LokiHeroSelectPreview_UnknownHero), a valid owned id renders that hunter. Field name is
+// camelCase heroAssetId (UStruct field HeroAssetID; UE matches JSON keys case-insensitively);
+// PrimaryAssetId accepts the "Type:Name" string form (proven by the owned-inventory AssetIds).
+func buildSoloParty(id, display, heroAssetId string) map[string]any {
 	now := time.Now().UTC().Format(time.RFC3339)
 	member := map[string]any{
 		"id":          id,
@@ -475,6 +610,11 @@ func buildSoloParty(id, display string) map[string]any {
 		"region":      "",
 		"leader":      true,
 		"isLeader":    true,
+		// The selected hunter. Both key spellings are supplied as a superset probe
+		// (UE ignores unmatched keys, matches matched ones case-insensitively) so the
+		// member's HeroAssetID populates regardless of which the client reads.
+		"heroAssetId": heroAssetId,
+		"heroAssetID": heroAssetId,
 	}
 	return map[string]any{
 		"partyId":         "party-" + id,

@@ -31,6 +31,14 @@ type playerState struct {
 	// LobbyPlatformAssetId is the menu backdrop the player equipped via
 	// PUT /personalization/players/{id}/lobbyplatforms.
 	LobbyPlatformAssetId string `json:"lobbyPlatformAssetId,omitempty"`
+	// SelectedHeroAssetId is the player's active/selected hunter as a PrimaryAssetId
+	// string ("Hero:<codename>"). It drives the main-menu party-slot / center preview:
+	// the client builds a PartyMemberModel from the /party member entry, and the
+	// party-slot preview actor renders that member's HeroAssetID (an empty/invalid id
+	// shows BP_LokiHeroSelectPreview_UnknownHero — the "?"). Persisted so the picked
+	// hunter survives relaunch. Written by the party member-update endpoint
+	// (TryPickMyHeroAndCosmetics on the native PartyManager); seeded into buildSoloParty.
+	SelectedHeroAssetId string `json:"selectedHeroAssetId,omitempty"`
 }
 
 // store is an in-memory player-state map with best-effort JSON-file persistence
