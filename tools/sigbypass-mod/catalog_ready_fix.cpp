@@ -17,6 +17,7 @@
 // Marker: docs/catalog-ready-fix-marker.txt
 
 #include <windows.h>
+#include <tlhelp32.h>
 #include <cstdint>
 #include <cstdio>
 #include <cstdarg>
@@ -24,6 +25,8 @@
 
 static const char* kMarkerPath =
     "G:\\git\\Supervive Revival Project\\docs\\catalog-ready-fix-marker.txt";
+static const char* kCrashPath =
+    "G:\\git\\Supervive Revival Project\\docs\\catalog-ready-fix-crash.txt";
 
 constexpr uintptr_t kVtRva        = 0x888CB78;   // LokiAssetManager vtable
 constexpr uintptr_t kScanRva      = 0x34CF9F0;   // ScanPathsForPrimaryAssets
@@ -59,6 +62,48 @@ static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnp
 
 static bool SafeReadable(const void* a,size_t sz){MEMORY_BASIC_INFORMATION m{};if(!VirtualQuery(a,&m,sizeof(m)))return false;if(!(m.State&MEM_COMMIT))return false;if(m.Protect&(PAGE_NOACCESS|PAGE_GUARD))return false;return (uintptr_t)a+sz<=(uintptr_t)m.BaseAddress+m.RegionSize;}
 static bool LooksLikePtr(uintptr_t v){return v>=0x10000 && v<0x0001000000000000ULL && (v&0x7)==0;}
+
+// ─────────── read-only VEH crash logger (adapted from scan_on_enum_veh) ───────────
+// Capture the faulting RIP / SUPERVIVE RVA / module / registers / stack band into
+// docs/catalog-ready-fix-crash.txt before Sentry kills the process, to pin WHERE opening the
+// catalog-ready gate crashes (D3D12/RHI render wall vs a content-load path). CONTINUE_SEARCH only.
+struct ModRange { uint64_t base, end; char name[64]; };
+static ModRange g_mods[192];
+static volatile long g_modCount = 0;
+static volatile long g_crashSeq = 0;
+static void SnapshotModules(){
+    HANDLE snap=CreateToolhelp32Snapshot(TH32CS_SNAPMODULE|TH32CS_SNAPMODULE32,GetCurrentProcessId());
+    if(snap==INVALID_HANDLE_VALUE)return; MODULEENTRY32 me; me.dwSize=sizeof(me); int n=0;
+    if(Module32First(snap,&me)){ do{ if(n>=192)break; ModRange&r=g_mods[n];
+        r.base=(uint64_t)me.modBaseAddr; r.end=r.base+me.modBaseSize;
+        int i=0; for(;i<63&&me.szModule[i];i++)r.name[i]=(char)me.szModule[i]; r.name[i]=0; n++;
+    }while(Module32Next(snap,&me)); }
+    CloseHandle(snap); InterlockedExchange(&g_modCount,n);
+}
+static void HxU64(char* o,uint64_t v){const char* d="0123456789ABCDEF";for(int i=15;i>=0;i--){o[i]=d[(int)(v&0xF)];v>>=4;}}
+static void CWrite(HANDLE h,const char* s,DWORD n){DWORD w=0;WriteFile(h,s,n,&w,0);}
+static void CKV(HANDLE h,const char* k,uint64_t v){char b[96];int p=0;while(k[p]&&p<40){b[p]=k[p];p++;}b[p++]='=';b[p++]='0';b[p++]='x';HxU64(b+p,v);p+=16;b[p++]='\r';b[p++]='\n';CWrite(h,b,(DWORD)p);}
+static LONG CALLBACK CrashVEH(EXCEPTION_POINTERS* ep){
+    DWORD code=ep->ExceptionRecord->ExceptionCode;
+    bool fatal=code==0xC0000005||code==0xC0000409||code==0xC000001D||code==0x80000003||code==0xC0000374||code==0xC00000FD||code==0xC0000094||code==0xC0000095||code==0xC0000096;
+    if(!fatal)return EXCEPTION_CONTINUE_SEARCH;
+    long seq=InterlockedIncrement(&g_crashSeq); if(seq>64)return EXCEPTION_CONTINUE_SEARCH;
+    HANDLE h=CreateFileA(kCrashPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);
+    if(h==INVALID_HANDLE_VALUE)return EXCEPTION_CONTINUE_SEARCH;
+    CWrite(h,"=== VEH fatal exception ===\r\n",29);
+    CKV(h,"seq",(uint64_t)seq); CKV(h,"code",code);
+    CONTEXT* c=ep->ContextRecord; uint64_t rip=c->Rip; CKV(h,"RIP",rip);
+    if(g_modBase && rip>g_modBase && rip<g_modBase+0xC000000) CKV(h,"SUPERVIVE_RVA",rip-g_modBase);
+    long mc=g_modCount; bool named=false;
+    for(long i=0;i<mc;i++){ if(rip>=g_mods[i].base && rip<g_mods[i].end){ CWrite(h,"module=",7); CWrite(h,g_mods[i].name,(DWORD)strlen(g_mods[i].name)); CWrite(h,"\r\n",2); CKV(h,"module_RVA",rip-g_mods[i].base); named=true; break; } }
+    if(!named)CWrite(h,"module=UNKNOWN\r\n",16);
+    if(code==0xC0000005 && ep->ExceptionRecord->NumberParameters>=2){ CKV(h,"av_op",ep->ExceptionRecord->ExceptionInformation[0]); CKV(h,"av_addr",ep->ExceptionRecord->ExceptionInformation[1]); }
+    CKV(h,"Rax",c->Rax);CKV(h,"Rbx",c->Rbx);CKV(h,"Rcx",c->Rcx);CKV(h,"Rdx",c->Rdx);CKV(h,"Rsi",c->Rsi);CKV(h,"Rdi",c->Rdi);CKV(h,"R8",c->R8);CKV(h,"R9",c->R9);CKV(h,"R10",c->R10);CKV(h,"R11",c->R11);CKV(h,"Rsp",c->Rsp);CKV(h,"Rbp",c->Rbp);
+    uint64_t base=g_modBase, top=g_modBase+0xC000000; uint64_t* sp=(uint64_t*)c->Rsp; int found=0;
+    for(int i=0;i<800 && found<40;i++){ if(!SafeReadable(sp+i,8))break; uint64_t v=sp[i]; if(base && v>base && v<top){ CKV(h,"stkRVA",v-base); found++; } }
+    CWrite(h,"=== end ===\r\n\r\n",15); FlushFileBuffers(h); CloseHandle(h);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
 
 static void RunScanForAllTypes(void* manager){
     const uint8_t* mgr=(const uint8_t*)manager;
@@ -154,6 +199,10 @@ static DWORD WINAPI Worker(LPVOID){
     if(!hExe){Marker("[0] FAIL GetModuleHandle\r\n");return 1;}
     g_modBase=(uintptr_t)hExe;
     Markerf("[0] modBase=0x%llX\r\n",(unsigned long long)g_modBase);
+    { HANDLE ch=CreateFileA(kCrashPath,GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr); if(ch!=INVALID_HANDLE_VALUE)CloseHandle(ch); }
+    SnapshotModules();
+    AddVectoredExceptionHandler(1,CrashVEH);
+    Marker("[0] crash-VEH installed\r\n");
     if(!WaitTid(g_modBase,60000)){Marker("[1] FAIL GGameThreadId\r\n");return 2;}
     uintptr_t* pslot=(uintptr_t*)(g_modBase+kVtRva+(uintptr_t)SLOT_IDL*8);
     DWORD dl=GetTickCount()+30000; bool ready=false;
