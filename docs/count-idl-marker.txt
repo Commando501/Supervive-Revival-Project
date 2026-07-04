@@ -1,0 +1,25 @@
+[0] count_idl worker started
+[0] modBase=0x7FF682A80000 vtable=0x7FF68B30CB78
+[3] GetPrimaryAssetIdList hooked (orig=0x7FF685F3F320 stub=0000018C9F1C0000) — NAVIGATE HUNTERS now
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
+[hb] heroCount=0
