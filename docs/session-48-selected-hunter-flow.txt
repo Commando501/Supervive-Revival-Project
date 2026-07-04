@@ -102,6 +102,49 @@ center still shows "?" with a valid member.HeroAssetID, the remaining wall is He
 than the BP_HeroAsset objects). S47 showed the preview model DID stream (Beebo rendered), so this is
 unlikely, but the party-slot full-load path is not yet live-verified with an owned hero.
 
+=========================== *** LIVE VALIDATION RESULT (2026-07-04, this session) *** ==========
+Validated live WITHOUT computer-use (the OS approval dialog timed out unclicked twice), entirely from
+the ags + client logs — which is stronger than a screenshot here because the client LOGS the exact
+actor class it loads for the party slot.
+
+1. BACKEND SERVES THE SEED (curl replay of the client's own token against the running ags):
+     GET /party/parties/party-<id> -> members[0].heroAssetId = "Hero:alchemist" (+ heroAssetID). CONFIRMED.
+   Server-only ags restart was cert-safe (EnsureCert reuses certs/, so the running client's TLS trust
+   held; it reconnected and resumed polling with 200s). The ALREADY-RUNNING client did NOT re-render
+   from the late REST poll (its party slot was built at menu-load with the empty hero; it fetched the
+   seeded party 3x but the hero-change from a REST poll doesn't retrigger the slot — expected: live
+   hero changes come from local TryPick, and the /party member hero is applied at MENU-LOAD).
+
+2. FRESH MENU-LOAD RENDERS THE HERO (the faithful test — relaunched the client with catalog_ready_fix +
+   the new ags). Loki.log, slot 0 (= you), at menu-load:
+     MENUSPAWNER BP_MainMenuSpawner_MainMenu_PartySlot_C_0: Entering SetHero ... (HeroCosmeticsBundle:AlchemistDefault - true)
+     ...: SetHero is setting target cosmetic HeroCosmeticsBundle:AlchemistDefault
+     ...: Changing TargetAssetID from  to HeroCosmeticsBundle:AlchemistDefault
+     ...: Beginning async load of HeroCosmeticsBundle:AlchemistDefault...
+     ...: Completed async load of HeroCosmeticsBundle:AlchemistDefault...
+     ...: UpdateActor switching Actor from None to **BP_LokiHeroSelectPreview_Alchemist_Default_C**
+   => the center now loads the REAL hero actor (Alchemist default skin), NOT BP_LokiHeroSelectPreview_
+      UnknownHero. The "?" is GONE. This EXACTLY matches the bytecode chain: the empty HeroAssetID was
+      the whole cause, and a valid HeroAssetID with EMPTY cosmetic resolves the hero's DefaultCosmetics
+      Bundle (HeroCosmeticsBundle:AlchemistDefault) via Resolve Cosmetics Bundle For Hero — no cosmetic
+      id needed, as predicted. Client STABLE (survived 2+ min past menu-load, no Fatal/crash; the
+      earlier-launch "SetHero clearing TargetAssetId because incoming id was not valid -> UnknownHero"
+      lines are the BEFORE state and no longer occur for slot 0). NO content-streaming 2nd-step wall —
+      the party-slot full-load succeeded (async load Completed).
+
+3. WRITE-BACK PERSISTENCE (server-side round-trip against the running ags):
+     POST /party/parties/party-<id>/members/<id>  body {"id":...,"heroAssetId":"Hero:wukong"} ->
+       response member.heroAssetId = "Hero:wukong"; subsequent GET = "Hero:wukong";
+       server/state/interactive.json gains "selectedHeroAssetId":"Hero:wukong".
+   => handleSetPartyMember persists + echoes correctly, and the seed reads it back on next menu-load
+      (so a pick survives relaunch). Reset to Hero:alchemist afterward (the Wukong was just a test).
+
+STILL UNCONFIRMED (needs a live hero CLICK, which needs computer-use — dialog was not approved): the
+exact client route/verb/body TryPickMyHeroAndCosmetics emits. handleSetPartyMember is proven correct
+for the guessed route (POST .../members/<id> with heroAssetId); if the client uses a different path it
+no-ops (falls through to {} -> no regression; the seed still renders). To finish: at the menu, click an
+owned hunter and grep the ags log for the request that fires (path + body), then narrow the route.
+
 =========================== LIVE VALIDATION RECIPE ==========================
 The client + an OLD ags were running this session and were NOT disrupted. To validate:
   1. Rebuild ags from HEAD (includes the seed):
