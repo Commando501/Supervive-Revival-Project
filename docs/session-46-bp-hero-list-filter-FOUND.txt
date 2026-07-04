@@ -218,6 +218,74 @@ Traced GetHeroAssetFromPrimaryAssetId's resolution from the live decrypted code 
    set the entry's +0xc flag (or drive the CatalogManager's own load that both the map AND the flag
    depend on). Offsets: getter +0x565E1C0 ; sub-object getter +0x149D770 ; resolver entry +0x562E9F6 ;
    cookie-resolver +0x12F4230 ; keep-set +0x562EB2E.
+--- attempt #2 progress (further RE) ---
+  +0x149D770 disassembled = `mov rax,[rcx+0x210]; ret` => rsi = *(Singleton+0x210). Singleton is
+    +0x565E1C0's return (S45: r14 CatalogManager = Singleton->[0x1f0]->[0x190]). So rsi is a DIFFERENT
+    sub-object than the CatalogManager (one hop vs two) — the map the resolver searches (rsi+0x30, Num
+    at rsi+0x38) is NOT the 905-entry catalog (r14+0x60) S45 confirmed holds the heroes.
+  Live CatalogManager PINNED this run: findptr the CatalogManager vtable (abs 0x7FF68B2B1758) -> 2
+    instances; the LIVE one = 0x20B8795D600 (catalog @+0x60 = {Data,Num=0x389=905,Max=0x500}); the
+    other (0x20AF10870B0) is the empty CDO. (heap addrs per-run; re-findptr each launch.)
+  BLOCKERS to reading rsi's map: (1) walking UP from r14 to the Singleton is AMBIGUOUS — findptr r14
+    returns 16+ holders, so the +0x190 back-ref can't be uniquely picked. (2) can't inline-hook
+    GetHeroAssetFromPrimaryAssetId to capture rsi live: the packer decrypts each fn ON FIRST EXECUTION,
+    so a patch placed before the grid-build call is overwritten by the decrypt, and after is too late.
+  CLEANEST NEXT PATH: a game-thread probe (h_idl_post at menu-load, code already decrypted + CM built)
+    that REPLICATES the getter to get the Singleton then reads rsi=*(Singleton+0x210) and dumps rsi's
+    map Num + entries. The one missing datum is rcx for +0x565E1C0 (the object whose vtable-slot-49
+    returns the Singleton — likely GEngine/GameInstance/UWorld); disasm the GetHeroAssetFromPrimaryAssetId
+    entry region that sets rcx before +0x562EA40, OR capture it once via probe_r14-style JIT-patch of the
+    +0x562EA40 call site (like S45 did for caller-1). Then rsi's map Num answers map-miss vs entry-flag.
+
+--- attempt #2, the probe: BUILT (tools/sigbypass-mod/catalog_probe.cpp) but the JIT-capture CRASHES ---
+Built catalog_probe: scan (enum=25) via the GetPrimaryAssetIdList vtable hook, then at MENU-LOAD (in
+h_idl_post on the Hero call, when GetHeroCharacterList is running on the +0x562E page so it's packer-
+decrypted, BEFORE the per-hero resolver calls) JIT-patch the resolver's `call +0x149D770` at +0x562EA51
+to a capture stub that calls the real +0x149D770, records rax(=rsi) once, returns it. Worker then dumps
+rsi + its map (Num@rsi+0x38, entries stride 0x20: key.Name@+8, value@+0x10, [value+0xc]).
+KEY LEARNINGS:
+  - Patching +0x562EA51 at SCAN time fails ("+0x562EA51 not an E8") — this build decrypts each fn's
+    page ON FIRST EXECUTION, and the +0x562E page only runs at the menu-load grid build. Patching in
+    h_idl_post on the menu-load Hero call DOES succeed (page decrypted by GetHeroCharacterList).
+  - BUT: every run where the resolver patch fires, the client CRASHES within ~seconds (3/3), before rsi
+    is captured (rsi stayed 0x0), during the menu-load hero-processing (InvalidateAllWidgets storm).
+    scan_and_load (same era, NO resolver patch) reached the menu STABLY 4x — so the resolver patch/
+    capStub is the trigger, NOT the documented intermittent crash. (probe_r14 patched the same +0x562E
+    region fine, but its stub only READ a register + tail-JMP'd; our capStub CALLs +0x149D770 then RETs
+    — the extra call/frame or an integrity check on the executing hero region is the likely culprit.)
+  => The JIT-capture-at-this-callsite approach is a dead end. NEXT (crash-free): read rsi WITHOUT a
+     .text patch — walk to the Singleton via findptr (r14 CatalogManager -> holder at +0x190 = X ->
+     holder at +0x1f0 = Singleton; disambiguate the many r14 holders by checking [H-0x190] is a valid
+     vtable), then rsi=*(Singleton+0x210), then read *(rsi+0x38)=Num (empty => map-miss reject; ~populated
+     => check entries' [value+0xc] flag). OR capture rsi with a probe_r14-style TAIL-JMP stub (read-only,
+     no CALL/RET frame) hooked at +0x562EA51 that jmps to +0x149D770 after recording — mirror exactly
+     what probe_r14 did (which didn't crash). r14 live this session = 0x20B8795D600 (per-run; re-findptr).
+
+=========================== *** PROBE SUCCEEDED — AND OVERTURNS THE RESOLUTION-FAILURE THEORY *** ===
+The crash was a BUG IN OUR PROBE, not the game: BuildCaptureStub used plain VirtualAlloc (stub landed
+~29GB away at 0x16F...), so the patched `call rel32` from +0x562EA51 (0x7FF6...) wrapped to garbage ->
+crash (3/3). FIX = NearAlloc: allocate the stub WITHIN +-2GB of the call site (mirrors probe_r14's
+"near-allocated" stub). With that, the probe ran clean (stub @0x7FF68D470000) and DUMPED rsi's map:
+   rsi=0x210731ED980  [rsi+0xc]flags=0x0  map{Data=..., Num=25}
+   all 25 entries: key.Type=0x1A568 (Hero), valid CatalogEntry value, [value+0xc]=0x280031
+   => bit30 of 0x280031 is 0, so the resolver's flag gate (shr30;not;test1;jz REJECT) is NOT taken = KEEP.
+*** So GetHeroAssetFromPrimaryAssetId RESOLVES all 25 heroes SUCCESSFULLY (they ARE in its map, entries
+    valid, flag passes -> OutputExecs=0=KEEP). The heroes are NOT rejected by the resolver. ***
+YET the ALL HUNTERS grid on that very run is STILL EMPTY (verified visually, scanned client PID 45088).
+=> HUGE REFRAME: the empty grid is NOT a resolution failure. Attempts #1 (load objects) and #2 (fix the
+   resolver) both targeted a resolution that actually SUCCEEDS. The real cause is elsewhere:
+   (A) the grid's tile-build widget does NOT consume GetHeroAssetFromPrimaryAssetId's result — i.e. the
+       "ALL HUNTERS" tile grid is built by a DIFFERENT path than the BPFL_LokiAssets sorted function we
+       traced (that function feeds the shared hero COMBOBOX; the tile grid widget was never definitively
+       pinned — see the unresolved "which widget renders the visible grid" note); OR
+   (B) a caching/timing effect: the grid's list is built ONCE at menu-load (de-risk: cached) and if the
+       CatalogManager map is populated slightly later, the cached-empty grid never re-queries. (Less
+       likely given the map was already Num=25 when the resolver first ran.)
+   NEXT: stop chasing GetHeroAssetFromPrimaryAssetId (proven to work). Find the ACTUAL tile-build widget
+   for the visible ALL HUNTERS grid and what IT iterates. Re-dump the party/hunters widget BPs with the
+   fixed bpdump and find the function that CreateWidget/AddChild's per-hero tiles (not the combobox path).
+   The heroes are resolvable; the tile builder isn't using them. Tool: catalog_probe.cpp (works now;
+   NearAlloc'd JIT-capture of any call site — reusable for reading live game structures).
 
 =========================== NEXT SESSION — CONCRETE TARGETS ====================
 1. DONE this session (above): GetHeroAssetFromPrimaryAssetId (+0x562E9F6) rejects (OutputExecs=1)
