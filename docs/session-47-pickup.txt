@@ -1,0 +1,166 @@
+SESSION 47 PICKUP — the empty ALL HUNTERS grid is NOT a resolution failure.
+The 25 heroes are PRESENT and RESOLVABLE at every layer we've checked; the visible tile-grid
+widget simply isn't using them. NEXT = find the actual tile-build path.
+Copy this whole file into a fresh Claude session's first message.
+Repo: G:\git\Supervive Revival Project — branch dedicated-server-stub.
+==============================================================================
+
+=========================== TL;DR (read twice) ==============================
+Session 46 built the tooling to READ the live hero-resolution path end-to-end and, in doing so,
+OVERTURNED the ~13-session "resolution-failure" theory. Direct evidence (catalog_probe.dll, a
+NearAlloc'd JIT-capture): the CatalogManager map that the resolver GetHeroAssetFromPrimaryAssetId
+searches contains ALL 25 heroes, with valid CatalogEntry values and flags that PASS its gate —
+i.e. the resolver KEEPS all 25. Yet the grid is STILL EMPTY on that same run (verified visually).
+
+=> The empty grid is NOT: a crash, ownership, a server trigger, missing enumeration, missing
+   catalog data, a key/case mismatch, unloaded assets, OR a failing resolver. The heroes resolve
+   fine. The VISIBLE "ALL HUNTERS" tile-grid widget does not consume the resolver we traced.
+NEXT (S47): find the widget that actually builds the visible hero TILES and what IT iterates.
+
+DO NOT re-grind: backend routes (manifest/core-game/inventory — all falsified), the crash,
+AssetManager enumeration/scan, GetPrimaryAssetObject-style loading (attempt #1, ruled out), or the
+GetHeroAssetFromPrimaryAssetId resolver (attempt #2 — PROVEN to succeed).
+
+=========================== WHAT S46 PROVED (the reframe) ====================
+1. The hero list source we traced: the shared hero COMBOBOX (WBP_UI_ComboBox_Heroes) and the
+   BP function library **BPFL_LokiAssets** (/Game/Loki/Core/Library/): `Get All Heroes Asset List`
+   -> native GetHeroCharacterList (mode 0 = all 25 ids); `Get Heroes Asset List Sorted` -> per id
+   `GetHeroAssetFromPrimaryAssetId` -> keep iff OutputExecs==0.
+2. native GetHeroCharacterList (impl +0x562EB7B): GetPrimaryAssetIdList(Hero)=25 (with the scan),
+   AssetListKind==0 returns all unfiltered; modes 1/2 apply a CatalogManager flag loop. Enumeration OK.
+3. native GetHeroAssetFromPrimaryAssetId (impl +0x562E9F6) resolves an id via rsi = *(Singleton+0x210)
+   (Singleton = getter +0x565E1C0; +0x149D770 = `mov rax,[rcx+0x210]; ret`), searches rsi's embedded
+   TMap (Data@rsi+0x30, Num@rsi+0x38, stride 0x20: key FPrimaryAssetId@0, value CatalogEntry*@+0x10),
+   sets OutputExecs=1 (reject) by default and 0 (keep) only if the entry's [value+0xc] bit30 is clear.
+4. *** catalog_probe DUMPED rsi's map live: Num=25, ALL key.Type=Hero(0x1A568), valid CatalogEntry
+   values, [value+0xc]=0x280031 (bit30 CLEAR) => resolver KEEPS all 25. Heroes ARE resolvable. ***
+   Yet the ALL HUNTERS grid on that run is EMPTY (scanned client PID 45088, verified with computer-use).
+5. Attempt #1 (scan_and_load.cpp): scan + ChangeBundleStateForPrimaryAssets({ClientGlobal,Game}) —
+   the hero content genuinely STREAMED (handle non-null, mem 5->7GB) but grid stayed empty. Ruled out
+   (S44: the grid makes 0 GetPrimaryAssetObject calls; loading is orthogonal).
+
+=========================== THE ACTUAL NEXT TARGET (S47) =====================
+Find the widget that builds the VISIBLE "ALL HUNTERS" tile grid and what it iterates — it is NOT the
+BPFL_LokiAssets sorted path (that feeds the combobox, which resolves fine yet is also empty; whatever
+consumes it is the miss). Concretely:
+- Re-dump the party/hunters widget BPs with the (now-fixed) bpdump and hunt for the function that
+  CreateWidget/AddChild's per-hero tiles, OR a UListView/UTileView SetListItems / SetListItemObjects
+  call, and read what array it's fed. Widget candidates already found (assets):
+    /Game/Loki/UI/Widgets/FrontEnd/MainMenu/Monetization/Inventory/WBP_PartyHeroSelect_Screen
+       (owns AllHuntersOwnedContainer + HunterSelectContainer — the grid CONTAINERS; the screen's own
+        BP is just a wrapper (SetPreviewHero + scene) — the tiles are a child widget placed in a container)
+    /Game/Loki/UI/Widgets/FrontEnd/MainMenu/Party/WBP_UI_PartyHeroSelect (44 fns; HeroPicker turntable;
+        GetVisibleHeroAssets = the CENTER "?" preview logic, NOT the tile grid)
+    /Game/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/HeroComboBox/WBP_UI_ComboBox_Heroes (the dropdown)
+  The tile widget itself was NEVER pinned. Find it: search FNamePool / the extractor allfiles for
+  WBP names near "AllHunters"/"HunterSelect"/"HeroTile"/"HeroCard"/"HunterGrid"/"HeroButton"/a ListView
+  entry widget; find which widget is placed in AllHuntersOwnedContainer / HunterSelectContainer (dump the
+  screen's WidgetTree via `bpdump <asset> @props`); then dump that widget's Construct/OnActivated/Refresh
+  and read what it iterates to build tiles.
+- If it uses GetVisibleHeroAssets-style single-hero logic, or an "owned" container that's empty, or a
+  ListView bound to an empty items array — THAT is the miss. The heroes are resolvable; feed them in.
+- Cross-check with catalog_probe: it can JIT-capture ANY call site's registers/return live (NearAlloc'd,
+  no crash) — use it to read whatever array/items the tile builder actually reads.
+
+=========================== READ FIRST, IN ORDER ============================
+1. CLAUDE.md — project rules, launch gotchas, DO-NOT list.
+2. docs/session-46-bp-hero-list-filter-FOUND.txt — THE key doc: full call chain, every attempt, the
+   ChangeBundleState convention, the FName-drift + packer-decryption + NearAlloc gotchas, and the
+   *** PROBE SUCCEEDED *** reframe section.
+3. memory/supervive-hero-roster-blocker.md — top entry (the S46 reframe).
+
+=========================== TOOLS BUILT (this build; DLLs gitignored — rebuild) ====
+clang++: C:\Users\eastr\AppData\Local\Programs\Swift\Toolchains\6.3.2+Asserts\usr\bin\clang++.exe
+  Build a DLL: clang++ -shared -O2 <f>.cpp -o <f>.dll -lkernel32
+- **bpdump** (tools/extractor/extractor/Program.cs) — dumps Kismet bytecode of ANY packaged BP/widget
+  function OFFLINE (no game). `& "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release -- bpdump
+  <asset-path-substr> <fnName | * (list all) | @props (dump export properties/WidgetTree)>` from
+  tools/extractor/extractor. FIXED this session: provider.ReadScriptData=true (bpdump), full
+  serialization, walk KismetExpression FIELDS not just properties, resolve FKismetPropertyPointer->
+  variable names. Outputs to tools/extractor/out/ (gitignored). THIS is how you read the tile widget.
+- **catalog_probe.cpp** — THE key live-RE tool: scan (enum=25) via the GetPrimaryAssetIdList vtable
+  hook, then JIT-patch a chosen call site (default the resolver's +0x562EA51) with a NearAlloc'd capture
+  stub that records a register/return + dumps a live structure. Reusable to read any live game struct.
+  Gotchas baked in: patch at menu-load (h_idl_post on Hero call, page decrypted then), NearAlloc within
+  +-2GB, self-unpatch/unhook.
+- scan_and_load.cpp — scan + ChangeBundleStateForPrimaryAssets loader + live FNamePool resolver (FindFName).
+- count_idl.cpp — vtable-hook call counter (self-unhooks @90s). Used to prove the grid list is cached.
+- tools/usmapdump/usmapdump.exe — read-only live RPM: disasm/peek/findptr/nameid/vtdump/xrefstr/callxref/
+  poke(WPM). Non-elevated. Proc name = "SUPERVIVE-Win64-Shipping.exe" (NOT a bare PID).
+
+=========================== GROUND-TRUTH OFFSETS (base 0x7FF682A80000, CONSTANT across runs) ===
+Heap ptrs (Singleton, CatalogManager, rsi, CatalogEntry vals, AssetManager) are PER-RUN — re-derive.
+  Resolver GetHeroAssetFromPrimaryAssetId: impl entry +0x562E9F6 ; call-to-+0x149D770 site +0x562EA51 ;
+    rsi = *(Singleton+0x210) ; rsi flag gate +0x562EA62 ; TMap Num@rsi+0x38 ; entry flag gate +0x562EB22
+    ([value+0xc] bit30) ; keep-set +0x562EB2E ; FName id "GetHeroAssetFromPrimaryAssetId"=0x005863F0.
+  Singleton getter +0x565E1C0 (vtable slot 49 [obj+0x188] + weak-ptr @+0x2d0) ; sub-getter +0x149D770 =
+    `mov rax,[rcx+0x210]; ret`.
+  GetHeroCharacterList entry +0x562EB7B ; GetPrimaryAssetIdList(Hero) call +0x562EBF7 ; AssetListKind==0
+    early-return test +0x562EBFE ; FName id "GetHeroCharacterList"=0x00587ADC.
+  CatalogManager vtable RVA +0x8831758 (catalog map @inst+0x60, stride 0x20, key FPrimaryAssetId@0,
+    value CatalogEntry*@+0x10 ; CatalogEntry: hero name FName@+0xc8, bytes@+0xd0/+0xd1/+0xd2=00/02/00).
+  LokiAssetManager vtable +0x888CB78 ; ScanPathsForPrimaryAssets +0x34CF9F0 (slot 88) ; GetPrimaryAssetIdList
+    slot 110 +0x34BF320 ; ChangeBundleStateForPrimaryAssets +0x34AF2A0 (slot 119; convention rcx=this,
+    rdx=&TSharedPtr ret, r8=&ids(TArray<FPrimaryAssetId> 16B elems), r9=&addBundles(TArray<FName>),
+    stack:&rem,bool bRemoveAll,&deleg(FStreamableDelegate 16B),i32 prio) ; AssetTypeMap @mgr+0x478 ;
+    Hero AssetMap @td+0x178. GGameThreadId +0x9D49158 ; &FNamePool.Blocks[0] +0x9D81450 (Len10: hdr
+    bit0=wide, bits6-15=len ; id=(block<<16)|(off>>1)). Hero FName type id 0x1A568. Browse RVA 0x3EC57D0.
+
+=========================== GOTCHAS LEARNED (this session) ===================
+- FName ids DRIFT run-to-run despite the constant base — NEVER hardcode a name id; resolve LIVE
+  (usmapdump nameid, or FindFName in-DLL). (ClientGlobal was 0x4CA778/0x4C9E51/0x4CBAC9/0x4CBAB0.)
+- The packer decrypts each function's page ON FIRST EXECUTION. You CANNOT patch +0x562Exxx code at
+  scan time (page still encrypted -> the byte isn't the expected opcode). Patch at MENU-LOAD inside
+  h_idl_post on the Hero call — GetHeroCharacterList has run/decrypted the page by then, and it fires
+  BEFORE the per-hero resolver calls. (catalog_probe does this.)
+- JIT-capture/detour stubs MUST be NearAlloc'd within +-2GB of the patched call site (a `call rel32`
+  can't reach a plain VirtualAlloc'd low address ~29GB away — it wraps -> crash). This caused 3 false
+  "crashes" before the fix. Mirror probe_r14's "near-allocated" stub.
+- open_application("Supervive-win64-shipping") LAUNCHES A NEW BARE instance (no -ini redirects, no scan)
+  instead of focusing the running one — muddies verification. To focus the REAL scanned client, use
+  PowerShell SetForegroundWindow on (Get-Process -Id <pid>).MainWindowHandle. Tell instances apart by
+  cmdline: the real recon client has -ini:...ProdPostAuthURL=http://localhost:8080 ; a bare launch has none.
+- Computer-use: grant the process by name "supervive-win64-shipping.exe" (the Steam app-id grant does
+  NOT match the direct-launched process; the game gets masked). Menu input is laggy — SetForegroundWindow
+  first, click twice, wait. HUNTERS is at ~(291,224) on the main menu; back-arrow ~(279,131) on HUNTERS.
+- There IS a separate intermittent menu-load crash (hero GameplayCue load -> InvalidateAllWidgets storm
+  -> Sentry, no UECC dump). scan_and_load survived it 4x; a retry usually boots. Don't confuse it with a
+  probe bug.
+
+=========================== LIVE TEST CYCLE (memorize) =======================
+Steam must be running first (else Auth Failure 14005). Hosts + certs already in place. ags-s45c backend
+is/was up (or rebuild: `& "$env:ProgramFiles\Go\bin\go.exe" build -C server -o ags.exe ./cmd/ags`, run
+server\ags.exe from server\). Base + all RVAs stable across runs.
+```
+# 0. kill prior game + injectors (leave Steam + ags)
+powershell -Command "Get-Process 'SUPERVIVE-Win64-Shipping','inject','crashpad_handler' -EA SilentlyContinue | Stop-Process -Force"
+# 1. injector FIRST, in the background, DLL path quoted as ONE arg:
+$dll="G:\git\Supervive Revival Project\tools\sigbypass-mod\<dll>"
+tools\inject\inject.exe watch SUPERVIVE-Win64-Shipping.exe "$dll" 0x3EC57D0 40555356574154415541564157   # run bg
+# 2. launch the recon client (ABSOLUTE path — $PWD can drift):
+powershell -ExecutionPolicy Bypass -File "G:\git\Supervive Revival Project\configs\launch-recon.ps1"     # bg
+# 3. watch docs\<dll>-marker.txt ; client log C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log
+```
+INJECT BEFORE launching (GetPrimaryAssetIdList fires during initial asset load; a late inject misses the
+scan). For a menu-load code patch, hook slot 110 and patch in h_idl_post on the Hero call (see above).
+
+=========================== BACKEND / CLEANUP STATE =========================
+- Committed source (server/internal/menu/menu.go, interactive.go) is CLEAN. ags-s45c was the running
+  backend. For a clean run rebuild ags from HEAD.
+- Left running at S46 end: the injected scanned recon client (catalog_probe, self-cleaned) PID ~45088 +
+  ags-s45c. Kill the game for a fresh cycle.
+
+=========================== WHAT NOT TO DO ==================================
+- Don't re-target the resolver GetHeroAssetFromPrimaryAssetId — PROVEN to keep all 25 (catalog_probe dump).
+- Don't re-try AssetManager loading (attempt #1 ruled out; 0 GetPrimaryAssetObject calls).
+- Don't re-chase backend (manifest/core-game/inventory all falsified) or the crash.
+- Don't hardcode FName ids (they drift). Don't patch +0x562Exxx code before menu-load (page encrypted).
+- Don't place a JIT stub via plain VirtualAlloc for a `call rel32` patch (NearAlloc within +-2GB).
+- Don't open_application the game (spawns a bare unscanned instance); focus via SetForegroundWindow.
+- Don't leave a .text/vtable patch installed long (integrity crash ~3-5min); self-unhook.
+
+=========================== WRAP-UP EXPECTATIONS ============================
+Write a docs/session-47-*.txt evidence log. Update memory/supervive-hero-roster-blocker.md (top entry)
++ the MEMORY.md index line. Commit small single-purpose commits. If S47 pins the tile-build widget and
+what it iterates (and ideally makes ONE hero tile render), that closes the ~13-session blocker — the
+heroes are 100% resolvable; only the last-mile tile builder is missing them.
