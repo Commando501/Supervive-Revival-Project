@@ -380,6 +380,27 @@ FIX OPTIONS (in order of cleanliness):
   waiting on the never-firing delegate; UpdateFilteredList re-runs on filter change but reads the still-empty
   AllHunters). => the fix must land BEFORE the grid Constructs (early inject).
 
+FIX-TEST (tools/sigbypass-mod/catalog_ready_fix.cpp) — BUILT + APPLIED, but grid population UNVERIFIED
+(blocked by the intermittent menu-load crash):
+  The DLL does the proven scan (Hero enum=25) + NOP's the `jz` at +0x57BB722 (74 0C -> 90 90) so
+  IsCatalogDataReady ignores the never-set +0x354 and returns true once the 4 real flags [0x350-0x353] are
+  set (== catalog loaded) — the intent being that the game's post-load readiness check then BROADCASTS
+  OnCatalogDataReady, waking the waiting grid to run LoadCharacters. Marker confirms it applies cleanly
+  (jz NOP'd early, scan=25, CatalogManager found, [+0x354] also poked to 1).
+  RESULT: on BOTH fix runs the client CRASHED at menu-load (Sentry) ~10s into the Vivox/GameplayCue/
+  InvalidateAllWidgets phase — the SAME intermittent menu-load crash that hit earlier non-fix runs (the
+  scan-only control + the keep-capture run happened to survive it). So it is NOT established that the fix
+  causes the crash, and it is NOT established that the grid populates — verification is blocked. Two
+  readings remain open: (a) it's just the documented intermittent crash (bad luck 2/2) and a surviving run
+  would show a populated grid; (b) opening the catalog-ready gate makes the grid/party-select build during
+  the fragile GameplayCue/InvalidateAllWidgets phase and that build trips the crash — i.e. the empty grid
+  was ALSO masking a downstream content/render crash (S44's "the empty grid and the crash are the same
+  wall"). NEXT: retry to catch a surviving run and screenshot HUNTERS; if it reliably crashes only WITH the
+  gate open, the real remaining wall is the hero-tile content/render path (portraits/turntable models —
+  the S40-42 D3D12/RHI territory), and the fix must stage/guard that. Left installed: the jz-patch is a
+  persistent .text mod (integrity wall ~3-5min) — for a durable fix, restore it after the grid builds or
+  fold catalog-ready into a backend fix.
+
 OFFSETS (base 0x7FF682A80000 constant; heap per-run): IsCatalogDataReady exec +0x5260DD0, impl +0x57BB700
   (flags CatMgr+0x350..0x354, all-nonzero => ready). IsHidden exec +0x5260E60 / getter +0x525C210 (CatalogEntry
   +0xd3). CatalogManager vtable RVA +0x8831758 (map @+0x60: key FPrimaryAssetId@0 / value CatalogEntry*@+0x10,
