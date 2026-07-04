@@ -290,3 +290,29 @@ NEXT (S48) — the remaining candidates, all downstream of the (working) resolve
 TOOLS: tools/sigbypass-mod/hero_resolve_probe.cpp (v2 keep-set capture; SAFE, reusable to capture rdi/regs
 at any decrypted intra-function site via NearAlloc'd jmp-stub). Resolver keep-set +0x562EB2E, jmp-back
 +0x562EB5D, id ptr in r14, object in rdi, OutputExecs ptr in r15. Base 0x7FF682A80000 constant.
+
+=========================== *** THE FILTER, TRACED OFFLINE: ShouldHideHero -> CatalogEntry.IsHidden() *** ==
+With resolution proven to work, the remaining drop is UpdateFilteredList's per-hero filter. Dumped the
+relevant widgets (bpdump) and traced it end-to-end:
+  UpdateFilteredList (WBP_HeroPicker) keeps a hero iff (role-filter match) AND NOT
+    item.HeroPickSelectable.ShouldHideHero().  item.HeroPickSelectable = a HeroPickerSelectable_CatalogEntryWithPreview.
+  HeroPickerSelectable_CatalogEntryWithPreview::ShouldHideHero (bytecode):
+    if (!IsValid(Entry)) Hide = TRUE ; else Hide = Entry.IsHidden().
+  HeroPickerSelectable_CatalogEntryWithPreview::SetAssetID -> ubergraph@884 sets `Entry`:
+    IsValidPrimaryAssetId(AssetID) ; GetCatalogManager ; **Entry = CatalogManager.GetCatalogEntry(AssetID)** ;
+    (then binds OnHiddenUpdated/OnDisabledUpdated/UsableUpdated delegates to Entry).
+=> `Entry` = the hero's CatalogEntry from the SAME CatalogManager S45 confirmed holds all 25 heroes, so Entry
+   is VALID. Therefore ShouldHideHero == Entry.IsHidden(). => **LEADING S48 HYPOTHESIS: the heroes' CatalogEntry
+   .IsHidden() returns TRUE, so UpdateFilteredList hides all 25 and TileView_Hunters gets an empty list.**
+   (Consistent with S44's "nonEnabledOnly manifest marked heroes non-enabled -> grid hid them"; S44's manifest
+   tweak evidently did NOT clear whatever IsHidden reads. Also consistent with S45 poking CatalogEntry+0xd0=1
+   having NO effect — IsHidden reads a DIFFERENT field than +0xd0.)
+DECISIVE S48 EXPERIMENT: live-capture CatalogEntry::IsHidden()'s return for the 25 hero entries at menu-load
+  (native fn; find it via the CatalogEntry vtable or the BP EX_FinalFunction 'IsHidden' registration; then a
+  hero_resolve_probe-style intra-jmp/return capture). If IsHidden==true for all 25 => THAT is the drop; the fix
+  is to make the hero CatalogEntries report not-hidden (find what sets the hidden flag: catalog/content-service
+  data, or a CatalogEntry byte — candidates +0xc/+0xd0/+0xd1/+0xd2 from S45; poke it false and re-open HUNTERS).
+  This ALSO confirms AllHunters is populated (IsHidden is only called if UpdateFilteredList iterates a non-empty
+  AllHunters), splitting it from the OnLoaded-count/IsCatalogDataReady gate in one shot.
+Widgets dumped (tools/extractor/out/): bpdump_HeroPickerSelectable_CatalogEntryWithPreview_ALL.txt,
+  bpdump_ShouldHideHero.txt, bpdump_SetAssetID.txt, bpdump_ExecuteUbergraph_HeroPickerSelectable_CatalogEntryWithPreview.txt.
