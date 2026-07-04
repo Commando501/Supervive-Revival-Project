@@ -8,6 +8,22 @@ Date: 2026-07-04 (branch dedicated-server-stub; continuous with sessions 45/46)
 Method: OFFLINE Blueprint bytecode read (the fixed bpdump) + a read-only peek of the LIVE
 client log (PID 45088, still running from S46). NO injection this session.
 
+*** ROOT CAUSE FOUND (2nd live session) — IsCatalogDataReady == FALSE gates the grid's LoadCharacters ***
+The grid (WBP_HeroPicker) Construct does: GetCatalogManager -> IsValid -> IsCatalogDataReady ; only if TRUE
+does it call LoadCharacters (which builds AllHunters); if FALSE it binds OnCatalogDataReady and waits.
+IsCatalogDataReady impl (+0x57BB700, called via exec thunk +0x5260DD0) returns TRUE only if ALL FIVE bytes
+[CatalogManager+0x350], +0x351, +0x352, +0x353, +0x354 are nonzero. LIVE READ of the CatalogManager
+(inst 0x1578AA4DD00, found via findptr on vtable abs 0x7FF68B2B1758; the other hit is the empty CDO):
+  [+0x350..0x354] = 01 01 01 01 **00**  => the 5th flag (+0x354) is ZERO => IsCatalogDataReady = FALSE.
+=> The grid NEVER runs LoadCharacters -> AllHunters is never populated -> TileView_Hunters is empty. The 5226
+   hero resolves captured earlier are from the OTHER widgets (combobox/preview/party-select) that do NOT gate
+   on catalog-ready. The ShouldHideHero/IsHidden lead was REFUTED by direct read: all 25 hero CatalogEntries
+   have [+0xd3]=0 (IsHidden=false), so the filter does NOT hide them — the grid is empty purely because it was
+   never built. Poked [+0x354]=1 live (IsCatalogDataReady now true); the clean fix-test is to set it BEFORE the
+   grid Constructs (early inject) so LoadCharacters runs. FIX = make IsCatalogDataReady true at grid-Construct
+   (force [+0x354]=1 early, OR patch the impl to return 1, OR find what content-service data sets +0x354 and
+   provide it on the stub backend). See "*** ROOT CAUSE: IsCatalogDataReady ***" section at the bottom.
+
 *** LIVE-CAPTURE CORRECTION (added after the offline analysis below) ***
 The offline sections below conclude the fix target is "make the hero objects load (NameData)". A LIVE
 instrumented run (hero_resolve_probe v2, keep-set capture) REFUTED that: GetHeroAssetFromPrimaryAssetId
@@ -316,3 +332,56 @@ DECISIVE S48 EXPERIMENT: live-capture CatalogEntry::IsHidden()'s return for the 
   AllHunters), splitting it from the OnLoaded-count/IsCatalogDataReady gate in one shot.
 Widgets dumped (tools/extractor/out/): bpdump_HeroPickerSelectable_CatalogEntryWithPreview_ALL.txt,
   bpdump_ShouldHideHero.txt, bpdump_SetAssetID.txt, bpdump_ExecuteUbergraph_HeroPickerSelectable_CatalogEntryWithPreview.txt.
+
+=========================== *** ROOT CAUSE: IsCatalogDataReady == FALSE (the ~13-session blocker, found) *** ==
+After proving (live) that heroes RESOLVE fine, the drop had to be either the UpdateFilteredList filter or that
+AllHunters is never built. Both were checked LIVE (read-only RPM on the running probed client PID 44276):
+
+1. FILTER RULED OUT. ShouldHideHero = if !IsValid(Entry) hide else Entry.IsHidden(); Entry =
+   CatalogManager.GetCatalogEntry(AssetID). Found IsHidden's impl by FName (0x584C90 -> exec thunk +0x5260E60
+   / raw getter +0x525C210): both are `movzx eax, byte [rcx+0xd3]` — IsHidden returns the CatalogEntry byte at
+   +0xd3. Walked the live CatalogManager +0x60 map (Data=0x15806260600, Num=905) via ctypes RPM
+   (tools/re/catalog_hidden.py), found all 25 hero CatalogEntries, and read +0xd3 = 0 for ALL 25
+   (also +0xd0/d1/d2 = 00/02/00 per S45, +0xc = 0). => IsHidden=false for every hero; ShouldHideHero does NOT
+   hide them. The filter is NOT the cause.
+
+2. ROOT CAUSE = IsCatalogDataReady. The grid Construct (ubergraph) gates LoadCharacters on
+   GetCatalogManager -> IsCatalogDataReady. Found IsCatalogDataReady by FName (0x584CF8 -> exec thunk +0x5260DD0
+   -> `call +0x57BB700` = the impl, rcx=CatalogManager). Impl (+0x57BB700) disasm:
+     cmp byte[rcx+0x350],0; jz false ; cmp [rcx+0x351]; jz false ; cmp [rcx+0x353]; jz false ;
+     cmp [rcx+0x354]; jz false ; cmp [rcx+0x352]; jz false ; mov al,1; ret ;  false: xor al,al; ret
+   => returns TRUE only if ALL of [+0x350,+0x351,+0x352,+0x353,+0x354] are nonzero.
+   LIVE read of the CatalogManager (inst 0x1578AA4DD00, found via findptr on vtable abs 0x7FF68B2B1758; the
+   2nd hit 0x156DD0170B0 is the empty CDO with +0x60 map Num=0):
+     [CatalogManager+0x350..0x354] = 01 01 01 01 **00**
+   => +0x354 == 0 => IsCatalogDataReady == FALSE.
+=> DECISIVE: the grid's WBP_HeroPicker never runs LoadCharacters (it binds OnCatalogDataReady and waits, and
+   that delegate never fires because +0x354 never gets set on our stub backend) -> AllHunters stays empty ->
+   TileView_Hunters empty. Heroes resolve + aren't hidden; the grid-builder is simply gated off by one un-set
+   "catalog ready" sub-flag. This is THE root cause of the empty ALL HUNTERS grid (and, by the shared catalog-
+   ready gate, plausibly the STORE/COSMETICS/MISSIONS panels too — verify each).
+
+WHAT SETS +0x354: the 4 set flags (0x350-0x353) plus the unset 0x354 look like 5 "catalog category loaded"
+booleans; 4 categories complete, the 5th never does on the dead/stub backend. Candidates to identify it: RE the
+writers of [CatMgr+0x354] (usmapdump: find the store that writes +0x354 in the catalog-load code), or diff which
+content-service / platform fetch is missing vs a real server (capture.log). The 5th category is NOT the heroes
+(heroes resolve), so forcing +0x354=1 is safe for the hero grid.
+
+FIX OPTIONS (in order of cleanliness):
+  (A) Backend: make ags complete whatever content-service response drives the 5th catalog flag (proper fix; find
+      the writer of +0x354).
+  (B) Native, early: before the grid Constructs, force IsCatalogDataReady true — either poke [CatMgr+0x354]=1
+      (must be set at grid-Construct time; CatMgr found by scanning for vtable abs base+0x8831758, the instance
+      whose +0x60 map Num>0), OR patch the impl +0x57BB700 prologue to `B0 01 C3` (mov al,1; ret) so it always
+      returns true. Then LoadCharacters runs -> AllHunters fills -> grid renders. (Timing: must be in place
+      before/at the grid's Construct; if the grid already Constructed-and-waited, also need the OnCatalogDataReady
+      broadcast, so early/held is required.)
+  In-place poke of [+0x354]=1 on the already-Constructed grid does NOT repopulate (the grid is past its check and
+  waiting on the never-firing delegate; UpdateFilteredList re-runs on filter change but reads the still-empty
+  AllHunters). => the fix must land BEFORE the grid Constructs (early inject).
+
+OFFSETS (base 0x7FF682A80000 constant; heap per-run): IsCatalogDataReady exec +0x5260DD0, impl +0x57BB700
+  (flags CatMgr+0x350..0x354, all-nonzero => ready). IsHidden exec +0x5260E60 / getter +0x525C210 (CatalogEntry
+  +0xd3). CatalogManager vtable RVA +0x8831758 (map @+0x60: key FPrimaryAssetId@0 / value CatalogEntry*@+0x10,
+  stride 0x20; CatalogEntry hero-name FName @+0xc8, flags @+0xc, hidden @+0xd3). Tool: tools/re/catalog_hidden.py
+  (ctypes RPM: walk the catalog map, read/poke hero entry flags).
