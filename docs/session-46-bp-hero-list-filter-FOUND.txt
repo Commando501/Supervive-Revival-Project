@@ -158,6 +158,40 @@ redirects + scan injected, enum=25 per scan-on-enum-marker) to the HUNTERS scree
 => NET: fix = an EARLY-injecting hero-loader (load the 25 hero primary-asset objects on the game
    thread BEFORE menu-load builds the list), then relaunch to test. Post-hoc loading is ruled out.
 
+=========================== FIX ATTEMPT #1: AssetManager bundle-load — RULED OUT ============
+Built tools/sigbypass-mod/scan_and_load.cpp: extends scan_on_enum (hook GetPrimaryAssetIdList slot
+110, scan all 30 types on the game thread) to ALSO, right after the scan, call the original
+GetPrimaryAssetIdList(Hero) into its own TArray and pass the 25 ids to
+UAssetManager::ChangeBundleStateForPrimaryAssets to LOAD the hero objects, early (first GetIdList
+call, initial asset load, before menu-load builds the grid).
+  - ChangeBundleStateForPrimaryAssets convention VERIFIED by disasm of +0x34AF2A0: rcx=this,
+    rdx=&TSharedPtr<FStreamableHandle> retval (zeroed at entry), r8=&AssetsToChange (TArray of 16B
+    FPrimaryAssetId), r9=&AddBundles (TArray<FName>), stack: &RemoveBundles, bRemoveAllBundles,
+    &DelegateToCall (FStreamableDelegate 16B), Priority(i32). A plain free-function typedef lands
+    each arg correctly (no hand stub). Called cleanly across 4 relaunches — NO crashes.
+  - GOTCHA (solved): FName ids DRIFT between runs (ClientGlobal was 0x4CA778 / 0x4C9E51 / 0x4CBAC9 /
+    0x4CBAB0 across 4 runs) even though the module base is constant — so hardcoding a bundle FName is
+    wrong; scan_and_load now RESOLVES bundle names LIVE by searching the FNamePool (FindFName, Len10:
+    hdr bit0=wide, bits6-15=len; Blocks[] @ base+0x9D81450). Hero bundles (from the AssetRegistry) =
+    {ClientGlobal, Game}.
+  - RESULT: with add={ClientGlobal} the handle came back 0x0 (no-op/already resident). With
+    add={ClientGlobal, Game} the handle was NON-NULL (streaming started) and memory grew ~5GB->7GB
+    (the hero Game content genuinely loaded). *** YET THE ALL HUNTERS GRID STAYED EMPTY *** (verified
+    visually on the scanned+loaded client; also empty after navigating away and back).
+  => The AssetManager bundle-load approach is RULED OUT. Loading the hero primary-asset OBJECTS does
+     NOT populate the grid, because the grid's resolver GetHeroAssetFromPrimaryAssetId does NOT use
+     UAssetManager::GetPrimaryAssetObject (S44 trace: 0 calls) — it resolves each hero through the
+     CatalogManager (r14+0x60) + the cookie-resolver +0x12F4230 and checks the CatalogEntry's asset.
+     That path is INDEPENDENT of the AssetManager's loaded-object state, so loading the object doesn't
+     satisfy it. (Caveat: the Game bundle may also still have been mid-stream at grid-build, and the
+     grid is cached (de-risk) so it wouldn't pick it up on re-open anyway — but the 0-GetPrimaryAssetObject
+     fact is the decisive reason.)
+  => NEXT TARGET (fix attempt #2): the CATALOGMANAGER resolution. Read what GetHeroAssetFromPrimaryAssetId's
+     resolver (+0x12F4230, the cookie-protected fn; and the CatalogEntry object it checks) actually
+     requires — the CatalogEntry likely holds a soft/hard asset ptr that is null; make THAT resolve
+     (drive the CatalogManager's own load path, or populate the CatalogEntry's object ptr), not the
+     AssetManager. Tools built: scan_and_load.cpp (loader + live FName resolver, reusable).
+
 =========================== NEXT SESSION — CONCRETE TARGETS ====================
 1. DONE this session (above): GetHeroAssetFromPrimaryAssetId (+0x562E9F6) rejects (OutputExecs=1)
    because the hero object doesn't resolve. The remaining verification is empirical (see #3).
