@@ -161,13 +161,16 @@ static uint8_t* BuildStub(void* pre, void* post, uintptr_t orig){
 }
 static DWORD WaitTid(uintptr_t mb,DWORD to){uint32_t*s=(uint32_t*)(mb+kGGameTidRva);DWORD dl=GetTickCount()+to;while(GetTickCount()<dl){if(SafeReadable(s,4)){uint32_t v=0;memcpy(&v,s,4);if(v)return v;}Sleep(20);}return 0;}
 
-// Scan committed RW memory for a CatalogManager instance (vtable==target) whose +0x60 catalog map is
-// populated (Num in a plausible range). Returns the instance address or 0.
-static uintptr_t FindCatalogManager(uintptr_t vtabAbs){
+// Scan committed private memory for ALL CatalogManager instances (vtable==target) — including the CDO
+// and the live subsystem instance BEFORE its catalog map fills. We want them EARLY (before the catalog
+// finishes loading) so we can pre-set the 5th ready-flag [+0x354]=1; then when the game finishes the 4
+// real categories and checks readiness, all 5 are set and it BROADCASTS OnCatalogDataReady naturally
+// (no .text patch => no code-integrity crash). Fills `out[]` (cap N), returns count.
+static int FindCatalogManagers(uintptr_t vtabAbs, uintptr_t* out, int cap){
     SYSTEM_INFO si; GetSystemInfo(&si);
     uintptr_t addr=(uintptr_t)si.lpMinimumApplicationAddress;
-    uintptr_t maxA=(uintptr_t)si.lpMaximumApplicationAddress;
-    while(addr<maxA){
+    uintptr_t maxA=(uintptr_t)si.lpMaximumApplicationAddress; int n=0;
+    while(addr<maxA && n<cap){
         MEMORY_BASIC_INFORMATION m{};
         if(!VirtualQuery((void*)addr,&m,sizeof(m))) break;
         uintptr_t next=(uintptr_t)m.BaseAddress+m.RegionSize;
@@ -175,14 +178,33 @@ static uintptr_t FindCatalogManager(uintptr_t vtabAbs){
                   (m.Protect&(PAGE_READWRITE|PAGE_EXECUTE_READWRITE|PAGE_WRITECOPY|PAGE_EXECUTE_WRITECOPY));
         if(ok && m.Type==MEM_PRIVATE){
             uintptr_t base=(uintptr_t)m.BaseAddress; uintptr_t end=base+m.RegionSize;
+            for(uintptr_t p=base; p+8<=end && n<cap; p+=8){
+                if(*(uintptr_t*)p==vtabAbs && SafeReadable((void*)(p+kReadyOff),8)){
+                    bool dup=false; for(int i=0;i<n;i++) if(out[i]==p){dup=true;break;}
+                    if(!dup) out[n++]=p;
+                }
+            }
+        }
+        if(next<=addr) break; addr=next;
+    }
+    return n;
+}
+
+// Find the ONE live CatalogManager (vtable match whose +0x60 catalog map is populated). Returns 0 until
+// the catalog has loaded. Used only to detect "catalog loaded" for restore timing (find-once, then stop).
+static uintptr_t FindCatalogManagers_first(uintptr_t vtabAbs){
+    SYSTEM_INFO si; GetSystemInfo(&si);
+    uintptr_t addr=(uintptr_t)si.lpMinimumApplicationAddress, maxA=(uintptr_t)si.lpMaximumApplicationAddress;
+    while(addr<maxA){
+        MEMORY_BASIC_INFORMATION m{}; if(!VirtualQuery((void*)addr,&m,sizeof(m))) break;
+        uintptr_t next=(uintptr_t)m.BaseAddress+m.RegionSize;
+        bool ok=(m.State&MEM_COMMIT)&&!(m.Protect&(PAGE_NOACCESS|PAGE_GUARD))&&(m.Protect&(PAGE_READWRITE|PAGE_EXECUTE_READWRITE|PAGE_WRITECOPY|PAGE_EXECUTE_WRITECOPY));
+        if(ok && m.Type==MEM_PRIVATE){
+            uintptr_t base=(uintptr_t)m.BaseAddress, end=base+m.RegionSize;
             for(uintptr_t p=base; p+8<=end; p+=8){
-                if(*(uintptr_t*)p==vtabAbs){
-                    // candidate instance at p; check +0x60 map Num
-                    if(SafeReadable((void*)(p+kMapOff),16)){
-                        uintptr_t mdata=*(uintptr_t*)(p+kMapOff);
-                        int32_t mnum=*(int32_t*)(p+kMapOff+8);
-                        if(LooksLikePtr(mdata) && mnum>=50 && mnum<=5000) return p;
-                    }
+                if(*(uintptr_t*)p==vtabAbs && SafeReadable((void*)(p+kMapOff),16)){
+                    uintptr_t md=*(uintptr_t*)(p+kMapOff); int32_t mn=*(int32_t*)(p+kMapOff+8);
+                    if(LooksLikePtr(md)&&mn>=50&&mn<=5000) return p;
                 }
             }
         }
@@ -214,38 +236,42 @@ static DWORD WINAPI Worker(LPVOID){
     Marker("[3] GetPrimaryAssetIdList hooked (scan armed)\r\n");
 
     uintptr_t vtabAbs=g_modBase+kCatMgrVtRva;
-    DWORD start=GetTickCount(); DWORD lastScan=0; DWORD lastHb=0; uint64_t pokes=0; bool jzPatched=false;
-    while(GetTickCount()-start < 180000){
-        // NOP the `jz false` after the [+0x354] check as soon as the impl page decrypts (74 0C -> 90 90),
-        // so IsCatalogDataReady ignores the never-set 5th flag and returns true once the 4 real flags are set.
+    DWORD start=GetTickCount(); DWORD lastScan=0; DWORD lastHb=0; uint64_t pokes=0;
+    bool jzPatched=false; uint8_t origJz[2]={0}; bool jzRestored=false; DWORD catLoadedAt=0;
+    // PROVEN jz-patch (grid builds) + SELF-RESTORE: NOP the `jz` after the [+0x354] check so IsCatalogDataReady
+    // ignores the never-set 5th flag and returns true once the 4 real flags set -> the game broadcasts
+    // OnCatalogDataReady -> the grid builds. Then, shortly after the catalog has loaded + broadcast fired,
+    // RESTORE the jz (74 0C) so the persistent .text mod is gone before the ~3-5min code-integrity check.
+    while(GetTickCount()-start < 240000){
         if(!jzPatched){
             uint8_t* jz=(uint8_t*)(g_modBase+kJzRva);
             if(SafeReadable(jz,2) && jz[0]==0x74 && jz[1]==0x0C){
-                DWORD o=0; if(VirtualProtect(jz,2,PAGE_EXECUTE_READWRITE,&o)){ jz[0]=0x90; jz[1]=0x90; DWORD dd=0; VirtualProtect(jz,2,o,&dd); jzPatched=true; Marker("[patch] IsCatalogDataReady jz NOP'd (ignores +0x354)\r\n"); }
+                DWORD o=0; if(VirtualProtect(jz,2,PAGE_EXECUTE_READWRITE,&o)){ origJz[0]=jz[0]; origJz[1]=jz[1]; jz[0]=0x90; jz[1]=0x90; DWORD dd=0; VirtualProtect(jz,2,o,&dd); jzPatched=true; Marker("[patch] jz NOP'd (IsCatalogDataReady ignores +0x354)\r\n"); }
             }
         }
-        // find the CatalogManager (once) as soon as its catalog map is populated
-        if(!g_catMgr && GetTickCount()-lastScan>=300){
+        // find the live CatalogManager once (map populated = catalog loaded => broadcast has fired w/ the patch)
+        if(!g_catMgr && GetTickCount()-lastScan>=400){
             lastScan=GetTickCount();
-            uintptr_t cm=FindCatalogManager(vtabAbs);
-            if(cm){ g_catMgr=cm; int32_t mnum=*(int32_t*)(cm+kMapOff+8);
-                Markerf("[cm] CatalogManager @0x%llX (map Num=%d)\r\n",(unsigned long long)cm,mnum); }
+            uintptr_t cm=FindCatalogManagers_first(vtabAbs);
+            if(cm){ g_catMgr=cm; catLoadedAt=GetTickCount(); int32_t mnum=*(int32_t*)(cm+kMapOff+8);
+                Markerf("[cm] live CatalogManager @0x%llX (map Num=%d) — catalog loaded\r\n",(unsigned long long)cm,mnum); }
         }
-        // hold IsCatalogDataReady flags set so the grid Construct sees ready==true
+        // belt-and-suspenders data poke of [+0x354]=1 on the live instance (harmless; helps if the game re-checks)
         if(g_catMgr && SafeReadable((void*)(g_catMgr+kReadyOff),8)){
-            uint8_t* f=(uint8_t*)(g_catMgr+kReadyOff);
-            for(int i=0;i<5;i++) if(f[i]==0){ f[i]=1; pokes++; }
+            uint8_t* f=(uint8_t*)(g_catMgr+kReadyOff); if(f[4]==0){ f[4]=1; pokes++; } }
+        // ~6s after the catalog loaded (grid has built), RESTORE the jz so no persistent .text mod remains.
+        if(jzPatched && !jzRestored && catLoadedAt && GetTickCount()-catLoadedAt>=6000){
+            uint8_t* jz=(uint8_t*)(g_modBase+kJzRva); DWORD o=0;
+            if(VirtualProtect(jz,2,PAGE_EXECUTE_READWRITE,&o)){ jz[0]=origJz[0]; jz[1]=origJz[1]; DWORD dd=0; VirtualProtect(jz,2,o,&dd); jzRestored=true; Marker("[restore] jz restored (no persistent .text mod)\r\n"); }
         }
-        // un-hook slot 110 once the scan has run (keep it long enough to catch the menu-load enum)
         if(!g_unhooked && g_scanState==2 && GetTickCount()-start>=8000){
             DWORD o=0;if(VirtualProtect(pslot,8,PAGE_READWRITE,&o)){*pslot=g_origIdl;DWORD dd=0;VirtualProtect(pslot,8,o,&dd);}g_unhooked=true;Marker("[unhook] slot 110 restored\r\n");
         }
-        if(GetTickCount()-lastHb>=5000){Markerf("[hb] scanState=%ld catMgr=0x%llX pokes=%llu unhook=%d\r\n",g_scanState,(unsigned long long)g_catMgr,(unsigned long long)pokes,g_unhooked?1:0);lastHb=GetTickCount();}
+        if(GetTickCount()-lastHb>=5000){Markerf("[hb] scanState=%ld catMgr=0x%llX pokes=%llu jz=%d/%d unhook=%d\r\n",g_scanState,(unsigned long long)g_catMgr,(unsigned long long)pokes,jzPatched?1:0,jzRestored?1:0,g_unhooked?1:0);lastHb=GetTickCount();}
         Sleep(15);
     }
-    // final: leave flags set; ensure slot restored
     if(!g_unhooked){DWORD o=0;if(VirtualProtect(pslot,8,PAGE_READWRITE,&o)){*pslot=g_origIdl;DWORD dd=0;VirtualProtect(pslot,8,o,&dd);}}
-    Markerf("[done] catMgr=0x%llX total pokes=%llu\r\n",(unsigned long long)g_catMgr,(unsigned long long)pokes);
+    Markerf("[done] catMgr=0x%llX pokes=%llu jzRestored=%d\r\n",(unsigned long long)g_catMgr,(unsigned long long)pokes,jzRestored?1:0);
     return 0;
 }
 BOOL APIENTRY DllMain(HMODULE h,DWORD r,LPVOID){if(r==DLL_PROCESS_ATTACH){DisableThreadLibraryCalls(h);HANDLE t=CreateThread(nullptr,0,Worker,nullptr,0,nullptr);if(t)CloseHandle(t);}return TRUE;}

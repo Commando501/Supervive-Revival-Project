@@ -409,6 +409,38 @@ FIX-TEST (tools/sigbypass-mod/catalog_ready_fix.cpp) — *** SUCCESS: THE GRID P
   persist) to avoid the integrity wall. Also: this same catalog-ready gate likely fed the empty STORE/
   COSMETICS/MISSIONS panels (CLAUDE.md's shared-root-cause note) — re-check them with the gate open.
 
+=========================== *** LOOSE ENDS RESOLVED (durability + the other panels) *** ==================
+DURABILITY — SOLVED with a SELF-RESTORING jz-patch (catalog_ready_fix.cpp, current). The worker:
+  (1) NOPs the jz at +0x57BB722 early (IsCatalogDataReady ignores +0x354);
+  (2) finds the live CatalogManager once (its +0x60 map Num>=50 => catalog loaded => the readiness broadcast
+      has fired w/ the patch, so the grid's LoadCharacters ran and AllHunters is built + cached);
+  (3) ~6s later RESTORES the jz (74 0C) — so NO persistent .text mod remains.
+  RESULT: grid populated AND the client survived **7m34s+ with NO crash** (marker: jzRestored=1, VEH empty),
+  vs the leave-installed run that died at ~3-5min to the code-integrity check (session-43). => the self-restore
+  beats the integrity wall; the grid stays populated because it built (broadcast fired) BEFORE the restore.
+  This is a working durable-per-launch fix (still requires early injection each launch). The TRULY durable,
+  injection-free fix remains option (A): find/serve whatever content-service data sets CatalogManager+0x354 in
+  ags (the 5 flags [0x350..0x354] look like 5 "catalog category loaded" booleans; 4 complete on our stub, the
+  5th never does). NOTE the failed poke-only attempt: a data-only hold of [+0x354]=1 needs the live instance
+  set BEFORE the readiness check, which required a continuous full-memory scan that aggravated the fragile
+  menu-load phase (crashed early) — the find-once + jz-patch + restore is the stable approach.
+
+THE OTHER PANELS — the catalog-ready gate was blocking ALL of them from BUILDING (confirmed live, gate open):
+  - HUNTERS: FULLY FIXED — grid renders the full roster AND the centre hero PREVIEW MODEL now loads (selected
+    Beebo rendered in 3D with real abilities; the "?" placeholder is gone). The hero content/model streams fine
+    once the grid builds — so there is NO separate hero-content/render wall (the earlier "same wall" worry is
+    dead).
+  - STORE: the panel now BUILDS (tabs FEATURED/BUNDLES/SKINS/ACCESSORIES/SUPPORTER PACKS/REDEEM render); content
+    is EMPTY because store offers come from /storefront/offers (ags returns empty) — a separate backend dep.
+  - CUSTOMIZATION: BUILDS (tabs OVERVIEW/SKIN/GLIDER/WISP/EMOTES/SPRAY/PEDESTAL + preview + upgrade panels);
+    content is a placeholder (no owned cosmetics; inventory is empty) — separate backend dep.
+  - MISSIONS: the modal now OPENS (was broken/empty); no mission rows (missions come from /progression — empty).
+  => The shared catalog-ready gate is what kept STORE/COSMETICS/MISSIONS from building (CLAUDE.md's shared-root-
+     cause note CONFIRMED). Opening it makes them all render; their remaining emptiness is per-panel backend
+     data (storefront offers, owned inventory, progression missions), NOT the catalog-ready gate.
+LIVE-VERIFIED this session on PID 53020 (self-restoring fix): HUNTERS full + Beebo model; STORE/CUSTOMIZATION/
+MISSIONS build; survived 7m34s+ with the jz restored. Screenshots in-conversation.
+
 OFFSETS (base 0x7FF682A80000 constant; heap per-run): IsCatalogDataReady exec +0x5260DD0, impl +0x57BB700
   (flags CatMgr+0x350..0x354, all-nonzero => ready). IsHidden exec +0x5260E60 / getter +0x525C210 (CatalogEntry
   +0xd3). CatalogManager vtable RVA +0x8831758 (map @+0x60: key FPrimaryAssetId@0 / value CatalogEntry*@+0x10,
