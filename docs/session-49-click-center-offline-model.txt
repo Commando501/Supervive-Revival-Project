@@ -1,0 +1,201 @@
+SESSION 49 — SELECTED-HUNTER CLICK→CENTER: the definitive offline model + the one live experiment left
+=======================================================================================================
+Date: 2026-07-04 (branch dedicated-server-stub; continuous with sessions 47/48).
+Method: OFFLINE Blueprint bytecode read (bpdump) completed to the leaf + live read-only RPM (usmapdump,
+        no injection) + live ags capture-log inspection. NO injection, NO relaunch — the running client
+        (PID 62212) + ags (PID 47676) were NOT disrupted (per CLAUDE.md).
+
+*** RESULT: the owned-vs-unowned click divergence is now fully resolved FROM BYTECODE, and two new live
+    static-RE findings reframe the fix:
+      (1) The Theorycraft party surface has NO hero-pick REST route — the hero is sent only as `&hero=` on
+          /startSoloMode when queuing. So implementing a member-write route in ags (the handoff's R1) is a
+          DEAD END. The pick is a LOCAL native state mutation, which is why no HTTP is ever seen on a click.
+      (2) The native PartyManager::TryPickMyHeroAndCosmetics loops party members and only writes the hero
+          into members whose byte at struct offset +0x40 is non-zero. If our synthesized solo-party member
+          lacks that flag, the pick skips it and never sets the local HeroAssetID -> center stays inert.
+    The center update for an OWNED hunter depends on that LOCAL pick writing member.HeroAssetID ->
+    OnHeroAssetIDChanged -> RefreshContentPreview. Every leaf-predicate route (Route B: IsPreviewable /
+    IsPreviewSelection) remains a confirmed dead end. The remaining work is ONE live experiment (needs a
+    real owned-hero click = the user's mouse): confirm whether the pick is even reached on a TileView click,
+    then either satisfy the member+0x40 gate (backend JSON, low-risk) or instrument the CommonUI selection
+    path. See the decision tree at the bottom. ***
+
+=========================== THE DEFINITIVE CLICK→CENTER CHAIN (read to the leaf) =====================
+Tile-click routing (all from bytecode, offline):
+  1. Grid = WBP_HeroPicker / TileView_Hunters. Each tile's data item is a BP_HunterPicker_ListObject_C
+     whose OnClicked delegate is bound to WBP_HeroPicker::OnPortraitClicked (ubergraph stmt [23-24]).
+  2. OnPortraitClicked(HeroAssetID)  [bpdump_OnPortraitClicked.txt]:
+        sets CustomEvent HeroAssetID_1 = HeroAssetID; calls ExecuteUbergraph_WBP_HeroPicker(offset 5768).
+     => offset 5768 is HandlePortraitClicked's entry.
+  3. HandlePortraitClicked(HeroAssetID)  [bpdump_HandlePortraitClicked.txt]:
+        if NOT (ClearSelectionOnReselect AND already-selected):  Update Hero Selection(HeroAssetID, TRUE)
+        else: Update Hero Selection(<None>, TRUE)          (bNotify is ALWAYS TRUE here)
+  4. Update Hero Selection(hero, bNotify)  [bpdump_Update Hero Selection.txt]:
+        [1]      SelectedHeroAsset = hero
+        [2..21]  loop AllHunters: per-tile Selected/Previewed flags + OnStateUpdated  <-- THE PURPLE HIGHLIGHT
+        [28]     if NOT bNotify: RETURN   (bNotify is TRUE from the click, so continue)
+        [31]     IsPreview_1 = IsPreviewSelection()
+        [33]     broadcast OnHeroSelected(SelectedHeroAsset, <bShowRandom&...>, IsPreview_1)
+     => The purple tile highlight happens in step [2..21], BEFORE the OnHeroSelected broadcast, so it
+        ALWAYS occurs regardless of ownership. That is exactly the user's symptom for owned tiles:
+        "purple highlight, but the center doesn't change."
+
+IsPreviewSelection()  [bpdump_IsPreviewSelection.txt] — the ownership switch, now read to the leaf:
+        entry = AllHunters[SelectedHeroAsset].HeroPickSelectable
+        IsPreview = (NOT entry.IsUseable()) AND entry.IsPreviewable()
+   with (from bpdump_IsUseable.txt / bpdump_IsPreviewable.txt):
+        IsUseable    = IsValid(Entry) AND  Entry.CanUse()                       (TRUE  when OWNED)
+        IsPreviewable= IsValid(Entry) AND NOT CanUse() AND NOT IsDisabled()     (TRUE  only UNOWNED)
+   => IsPreviewSelection == IsPreviewable == (IsValid AND NOT CanUse AND NOT IsDisabled).
+      OWNED hero  -> CanUse=TRUE  -> IsPreviewSelection = FALSE.
+      UNOWNED     -> CanUse=FALSE -> IsPreviewSelection = TRUE.
+
+The receiver — WBP_UI_PartyHeroSelect, bound to HeroPicker.OnHeroSelected
+[bpdump_ExecuteUbergraph_WBP_UI_PartyHeroSelect.txt, stmts 56-64 + 133-137 + 161-165]:
+   OnHeroSelected(HeroAssetSelected, _, IsPreview):
+     [56/57] if IsPreview == TRUE  (UNOWNED):
+                -> PREVIEW branch (OnHeroPreviewed / ContentPreview_GotoScene) -> CENTER UPDATES.  << works
+     else (IsPreview == FALSE, OWNED):
+                if HeroAssetSelected != GetSelf().HeroAssetID:
+                   cos = GetDefaultOrFirstEnabledCosmeticId(HeroAssetSelected)
+                   TryPick(HeroAssetSelected, cos)                              << virtual -> custom event
+   TryPick custom event (stmt 161-165):
+                BindDelegate(OnTryPickComplete)
+                PartyManager::TryPickMyHeroAndCosmetics(hero, cos, OnTryPickComplete)   << NATIVE, ASYNC
+   Separately (stmt 133-137, bound at construct):
+                GetSelf().OnHeroAssetIDChanged  ->  "OnHeroSelected Changed"  ->  RefreshContentPreview
+                                                                              (+ CheckCanUseSelection)
+   => For an OWNED hero the ONLY path that moves the center is:
+        native TryPickMyHeroAndCosmetics succeeds -> it sets local member.HeroAssetID
+          -> fires OnHeroAssetIDChanged -> RefreshContentPreview -> center re-renders.
+      The native pick is ASYNC (it takes an OnTryPickComplete callback). If it never completes success
+      (server write not accepted / not even sent), member.HeroAssetID never changes and the center is inert.
+
+=========================== WHY ROUTE B (S49 first half) WAS INERT — now fully explained =============
+Route B tried to force owned tiles "previewable" by Func-swapping IsPreviewable/IsPreviewSelection to
+true. Given the chain above, that premise was SOUND (true IsPreviewSelection would route owned clicks to
+the working PREVIEW branch). It was inert because:
+  (a) The Func-swap mechanism was never verified to actually redirect (the S49 handoff flagged this) — the
+      counter stayed 0 even where IsPreviewSelection MUST be called (Update Hero Selection stmt 31/33 calls
+      it on every notified click). Offline bytecode PROVES IsPreviewSelection is on the click path, so a
+      0-count means the instrumentation did not fire, not that the code path is dead.
+  (b) CommonUI TileView pools entry widgets; IsPreviewable is computed at first build and the pooled entry
+      is reused, so a late heap patch of the predicate is not re-evaluated on click/refilter.
+CONCLUSION: leaf-predicate patching is the wrong lever. Do not re-grind it.
+
+=========================== LIVE EVIDENCE GATHERED THIS SESSION (no disruption) =====================
+* ags capture log for the CURRENT live session (ags-s48b.log, the running ags PID 47676):
+  ZERO POST/PUT to /party this session — no setIsOpen, no /members, no startSoloMode/joinQueue/reconcile,
+  no hero/cosmetic/pick write. (Only party GET polling + a POST /postauth/reconcileRoles.) CONSISTENT
+  with the native pick emitting no HTTP (see the route-table + impl findings below). Inconclusive on its
+  own (unknown whether the user clicked a hunter this session), but the static RE now explains it.
+
+*** THE PARTY SURFACE HAS NO HERO-PICK REST ROUTE (usmapdump wstrings, live RPM, read-only) ***
+  The full Theorycraft party route-template table (UTF-16 FStrings, clustered at heap ~0x26B88B4Cxxx) is:
+    /party/                         /join?joinSecret=            /members/            /joinQueue
+    /setIsOpen/                     /setFillTeam/                /refreshRanks        /refreshRankedEligibility
+    /refreshLevel                   /refreshMastery              /refreshXPBoosts     /setTargetQueues
+    /setExcludedRegions             /latencies                   /referral            /leaveQueue
+    /startSoloMode?mode=  (+ appended query: &soloModeStartPosition=  &hero=)
+    /owner    /reconcile    /setDiscordUserID/    /voiceToken    /custom/voiceToken
+    /party/matchmaking/info    /party/matchmaking/customGameModes
+    /sendInvite/   /declineRequest/   /requestInvite   /declineInvite   /custom?cu...
+  There is NO /setHero, /pickHero, /setMyHeroAndCosmetics, or per-member hero-write verb. The selected
+  hero is transmitted ONLY as a QUERY PARAM `&hero=<id>` appended to
+    POST /party/parties/{partyId}/startSoloMode?mode=<mode>&soloModeStartPosition=<pos>&hero=<heroId>
+  i.e. the hero is sent to the server when you START A MODE/QUEUE, never on the tile click itself.
+  (Nearby model strings: field "InitialHero"; validation msgs "Disabled heroes list exceeds maximum
+  length of %d", "Cannot modify disabled assets while game is in progress"; keys tooManyHeroesDisabled/
+  tooManyItemsDisabled/tooManyPerksDisabled.)
+
+*** THE NATIVE PICK IS LOCAL-ONLY, GATED ON A PER-MEMBER BOOL (disasm of impl +0x58467E0) ***
+  TryPickMyHeroAndCosmetics(this=PartyManager, &HeroAssetId, ...):
+    rcx = [this+0xF8]                    ; members container
+    call +0x5840730                      ; members getter -> data @[rsp+0x40], count @[rsp+0x48]
+    for each member m in [data..data+8*count):
+        rax = m
+        if  byte [m+0x40] == 0 : continue    ; <-- ONLY members with the +0x40 bool set are processed
+        rdi = &m[+0x110]                      ; per-member string/array field
+        ... build the hero id (from r15) into the member ...   ; sets local member state, NO HTTP call
+  So the pick does NOT emit HTTP; it mutates LOCAL member state, and only members whose byte at struct
+  offset +0x40 is non-zero are touched. member+0x110 is where the picked hero is written. member+0x40:
+  PartyMemberModel (UClass:Object) starts UPROPERTYs at ~+0x30 (UObject header ends Outer@+0x28); by rough
+  declared-order layout +0x40 aligns with DisplayName (FString), so `cmp byte [m+0x40],0` is likely a
+  DisplayName.Data null/empty check, NOT a bool — the struct's only bools (bIsReady, bIsOwner,
+  bIsRankedEligible) sit at much higher offsets. buildSoloParty DOES send displayName (from the JWT); if
+  the JWT display name is empty for this player, the gate would skip our member. RESOLVE LIVE: findptr the
+  local PartyMemberModel and `peek +0x40` / `peek +0x110` to read actual values rather than trusting
+  offset math. PartyMemberModel prop order (usmap): ID, DisplayName, Tag, DiscordUserID, PlayerModel,
+  HeroAssetID, CosmeticsAssetID, bIsReady, bIsOwner, ..., bIsRankedEligible (34 props total).
+
+=========================== THE FIX — REVISED ranking (R1 backend-route is OUT) =====================
+!! CORRECTION vs the S49 handoff: there is NO member-write REST route for the pick, so "implement the
+   captured hero-pick route in ags" is a DEAD END. The pick is a LOCAL native state mutation. Do not add
+   speculative /setHero-style routes.
+
+R1' (BACKEND-adjacent, low-risk, try FIRST) — make the LOCAL native pick actually run against our
+   synthesized party by satisfying the member+0x40 gate. buildSoloParty currently sets id/userId/memberId/
+   leader/isLeader/ready/isReady/inQueue/region + heroAssetId. If member+0x40 maps to a PartyMemberModel
+   bool we are NOT populating (or populating with the wrong value), the pick's loop skips our member and
+   never writes the hero -> center inert. ACTION: resolve member+0x40's field from the PartyMemberModel
+   usmap layout, then set it in buildSoloParty. Harmless if wrong (UE ignores unmatched keys); if right,
+   the pick runs locally on click and the center updates. STILL needs a live click to confirm the pick is
+   even reached (see experiment).
+
+R2 (native, force preview branch) — patch IsPreviewSelection to return TRUE so owned clicks take the
+   working PREVIEW branch. Needs a VERIFIED heap patch mechanism (UFunction Func-swap or Script-bytecode
+   patch — heap data, no integrity wall) AND a forced TileView rebuild so pooled entries re-evaluate.
+   Downside: the preview branch may present purchase/preview affordances meant for unowned heroes.
+
+R3 (native, hijack the pick) — patch the OWNED branch / TryPick (or member+0x40 at runtime) so the local
+   pick writes member.HeroAssetID, firing OnHeroAssetIDChanged. Most robust client-side guarantee of a
+   center update on click; persist separately via the S48 write-back. Needs the heap patch mechanism
+   verified + the right function/flag located.
+
+=========================== *** THE ONE LIVE EXPERIMENT (needs a real owned-hero click) *** ==========
+Precondition (S49 handoff, unchanged): a REAL owned tile activation needs the USER's physical mouse
+(synthetic input only hovers; computer-use needs the game genuinely foreground + approval). Instrument
+first, then have the USER click, then read.
+
+Step 0 — VERIFY the instrumentation mechanism on a KNOWN-HOT function before trusting any 0-count
+         (this was the fatal ambiguity of Route B). Counter-instrument something that fires on hover/every
+         frame; confirm the counter moves. Only then are 0-counts meaningful.
+
+Step 1 — Inject a probe on TryPickMyHeroAndCosmetics IMPL entry (+0x58467E0) that logs: hit count, the
+         HeroAssetId arg (r15=&HeroAssetId per prior RE), and whether execution reaches the request-body
+         serialize (+0x5846BE0). (Intra-jmp capture pattern, unpatch ~45s to dodge the .text integrity
+         wall — see pick_probe.cpp / hero_resolve_probe.cpp.)  Inject into the RUNNING client via
+         `inject mmap <PID>` (no relaunch; the pick page is decrypted once HUNTERS has been opened).
+
+Step 2 — USER clicks an OWNED hunter (different from the current center hero) while ags capture + Loki.log
+         + the probe log are being tailed.
+
+Step 3 — DECISION TREE (note: NO new ags request is expected — the pick is local-only. Do NOT wait for
+         an HTTP capture; watch the PROBE + Loki.log instead):
+   (A) probe HIT and it reaches the member loop / writes member+0x110 -> the pick runs; if the center
+       still doesn't update, the write target or OnHeroAssetIDChanged fire is the issue -> inspect whether
+       member+0x40 was set for our member (R1'). If member+0x40 was 0 for all members, the loop skipped
+       everything -> set that field in buildSoloParty (R1') and re-test.
+   (B) probe HIT but the loop finds NO member with +0x40 set (skips all) -> CONFIRMS R1': our synthesized
+       party member lacks the +0x40 bool. Resolve its field name from the PartyMemberModel usmap and set
+       it in buildSoloParty; the local pick then writes the hero -> center updates. DURABLE-ish (backend
+       JSON only; still needs catalog_ready_fix per launch for the grid).
+   (C) probe does NOT hit -> the CommonUI TileView click does NOT reach OnHeroSelected/TryPick for owned
+       tiles (OnPortraitClicked is the legacy portrait path, not the live TileView selection). Instrument
+       the CommonUI selection path: UTileView OnItemSelectionChanged / the entry widget's
+       NativeOnItemSelectionChanged, and find where owned vs unowned diverge there. Then R2/R3.
+   Cross-check: pick_probe.cpp (intra-jmp .text capture — the RELIABLE mechanism, same class as
+   catalog_ready_fix) already reported hits=0 on click in the handoff. If Step 0 re-confirms that probe
+   class fires on a hot fn, (C) is the most likely branch and the CommonUI selection path is the target.
+
+=========================== FILES / OFFSETS ========================================================
+Bytecode (tools/extractor/out/, gitignored): bpdump_OnPortraitClicked.txt, bpdump_HandlePortraitClicked.txt,
+  "bpdump_Update Hero Selection.txt", bpdump_IsPreviewSelection.txt, bpdump_IsPreviewable.txt,
+  bpdump_IsUseable.txt, bpdump_ExecuteUbergraph_WBP_UI_PartyHeroSelect.txt (TryPick native @ stmt 163,
+  RefreshContentPreview @ 134, OnHeroAssetIDChanged bind @ 133), bpdump_ExecuteUbergraph_WBP_HeroPicker.txt.
+Offsets (base 0x7FF682A80000 constant): TryPickMyHeroAndCosmetics FName id 0x005904F7; exec +0x54B5380,
+  impl +0x58467E0, request-serialize action +0x5846BE0, members-getter +0x5840730. IsPreviewSelection id
+  0x0079339D (Outer WBP_HeroPicker_C). IsPreviewable id 0x00777E46. Browse gate 0x3EC57D0.
+Backend: server/internal/interactive/interactive.go (handleSetPartyMember + buildSoloParty seed).
+Prior: docs/session-48-selected-hunter-flow.txt (seed + center chain), docs/session-47-tile-widget-FOUND.txt
+  (grid fix), docs/session-49-pickup-selected-hunter-click-routing.txt (the handoff this continues).
