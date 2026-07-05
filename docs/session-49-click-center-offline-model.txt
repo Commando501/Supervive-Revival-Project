@@ -268,6 +268,49 @@ RECOMMENDATION: P1 (Script-patch, keep owned) is the reliable technique that pre
 de-risk it by first verifying the Script-patch technique on ShouldHideHero (patch its Script->return-true on
 the LIVE client; if the grid empties on a filter, the technique works) before building the early-inject mod.
 
+=========================== *** LIVE SESSION 3 (2026-07-04 late) — SCRIPT-PATCH WORKS; PREVIEW FIX LIVE-CONFIRMED *** ==
+BREAKTHROUGH: the SCRIPT-BYTECODE patch technique is reliable (Func-swap is dead). Proof: patched
+ShouldHideHero's Script (jump Script[0]->the existing Hide=TRUE branch @off109) on the live client -> the
+USER filtered and the roster VISIBLY EMPTIED (all hunters hidden). Restored -> roster returned. So writing
+the UFunction's Script bytecode (heap, no .text integrity wall) DOES redirect behavior (the VM runs Script
+directly). Tool: tools/re/script_patch.py (locate Script TArray @UFunc+0x68, dump, jump0<off>, pokebyte,
+restore). NOTE the Script Data ptr is per-run (re-locate via the tool).
+THE PREVIEW FIX (live-confirmed by the user + screenshot): patch the tile class
+(HeroPickerSelectable_CatalogEntryWithPreview_C) so
+  IsPreviewable @0x26D001D6F00 -> always TRUE  (pokebyte off257 28->27 [EX_False->EX_True] + jump0 247)
+  IsUseable     @0x26D001D6E00 -> always FALSE (jump0 109 -> the existing Selectable=EX_False branch)
+Then re-navigate to HUNTERS (fresh grid build) and CLICK an owned hunter -> the CENTER PREVIEW UPDATES to the
+clicked hunter (Bishop shown). Roster still looks OWNED (zoomed: full-color portraits, NO locks/prices). So
+making the tile previewable+not-useable routes the owned click into the WORKING preview path.
+  *** LIMITATION (why this is not the full fix): the preview path is VISUAL-ONLY. It updates the HUNTERS-screen
+  center but does NOT set the local PartyMemberModel.HeroAssetID (that was the native pick's job). So backing
+  out to the main menu REVERTS the center to the seed (Mercury/alchemist) — user-confirmed — and it is not the
+  hero PLAY would queue. Also IsUseable=false may affect the PLAY/queue path (untested). Good for BROWSING,
+  not for SELECTING. ***
+
+=========================== *** THE SELECTION-WATCHER SHIM (P2) — the complete fix, DESIGN + anchors *** ==
+GOAL: clicking a hunter sets it as the PERSISTED selected hero (center everywhere + sticks + keeps owned look).
+The reliable way = a native DLL (intra-jmp/RPM class, like catalog_ready_fix) that:
+  1. locate GUObjectArray; find the live WBP_HeroPicker_C instance (UClass=0x26CFB2644F0 this run — re-derive:
+     it's the Outer of the IsPreviewSelection UFunction @0x26CFB237400, Name id 0x0079339D) and the local
+     PartyMemberModel instance.  (usmapdump `objects` is too heavy/histogram — iterate GUObjectArray in the DLL.)
+  2. READ the selected hero from WBP_HeroPicker.SelectedHeroAsset (offset TBD — a PrimaryAssetId in the widget
+     instance; find by reading the instance after a click and matching the clicked hero's id).
+  3. On change, WRITE it to PartyMemberModel.HeroAssetID (PrimaryAssetId; member field order per usmap:
+     ID,DisplayName,Tag,DiscordUserID,PlayerModel,HeroAssetID,... so HeroAssetID ~6th prop; find live by
+     matching the current Hero:alchemist value) and TRIGGER THE REFRESH.
+  FIRST DE-RISK (do this in the DLL before building the delegate path): after writing member.HeroAssetID, does
+  the main-menu center update on nav-back? If YES -> the shim is just poll+write (trivial). If NO -> also fire
+  member.OnHeroAssetIDChanged (a MulticastInlineDelegate) — read its invocation list, ProcessEvent each bound
+  fn on the GAME THREAD (hook a per-frame game-thread fn to do the write/broadcast safely). OR call the native
+  TryPickMyHeroAndCosmetics (+0x58467E0) on the game thread (it does member-set + refresh + &hero= memory
+  correctly) — but needs the PartyManager `this` + game-thread context.
+  PERSIST ACROSS RELAUNCH: the client sends the hero only as &hero= on /startSoloMode (queue time) — the shim's
+  live member-write does NOT persist server-side. To survive relaunch, also POST the pick to ags
+  (handleSetPartyMember) from the shim (WinHTTP + token) OR accept that the seed resets to alchemist on relaunch.
+NOTE: current live patches (IsPreviewable/IsUseable) LEFT INSTALLED at user's request — they revert on relaunch
+(heap patches, not persistent). If building the shim, RESTORE them first (they conflict: they force preview mode).
+
 =========================== FILES / OFFSETS ========================================================
 Bytecode (tools/extractor/out/, gitignored): bpdump_OnPortraitClicked.txt, bpdump_HandlePortraitClicked.txt,
   "bpdump_Update Hero Selection.txt", bpdump_IsPreviewSelection.txt, bpdump_IsPreviewable.txt,
