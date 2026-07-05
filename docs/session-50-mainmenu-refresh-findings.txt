@@ -104,3 +104,38 @@ Diagnostics (read-only RPM, tools/re + scratch): obj_iter.py, resolve_delegate.p
   scan_delegates.py; harvest hero FName ids by scanning committed memory for the Hero-type dword 68 A5 01 00.
 Loki.log: C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log. Codenames != display (alchemist=Mercury,
   Ronin=Brall, BountyHunter=Carbine, BurstCaster=Crysta).
+
+=========================== ADDENDUM (same session) — full chain VERIFIED, runtime gap isolated ============
+Deep-dived why subject.Refresh() runs but drives no SetHero. Verified the ENTIRE chain is structurally correct:
+  * Refresh Script = EX_LocalFinalFunction ExecuteUbergraph(EntryPoint=440). (live-read UFunc 0x..2300: Func@+0xE0
+    ==ProcessInternal; Script@+0x68.)
+  * Ubergraph @440 (live-read Script @ ubergraph UFunc 0x..2700 +0x68): opcode 0x45 EX_LocalVirtualFunction
+    = **DetermineCosmeticToShow**; @472 = 0x63 EX_CallMulticastDelegate (OnCosmeticUpdated broadcast); @546 return.
+  * DetermineCosmeticToShow (bpdump, 35 entries): at the MENU (CoreGameMatchModel.bIsValid==FALSE) -> [16] "Determine
+    Slot Party Model" -> if valid, Resolve Cosmetics Bundle For Hero(obj.HeroAssetID, obj.CosmeticsAssetID) -> out;
+    ShowUnknownForEmpty=TRUE. (If DSPM invalid -> ShowUnknown=FALSE, empty.)
+  * "Determine Slot Party Model" (bpdump, 48 entries): for **Slot==0 it returns PartyModel.GetSelf()** (statements
+    8-14). GetSelf == the single real PartyMemberModel == g_member (mirrored to BountyHunter). So the DATA the center
+    reads is CORRECT. (For slot!=0 it loops Get Members on Team to find member[slot]; empty in our stub.)
+  * OnCosmeticUpdated @subject+0xD8 IS bound (Num=1) to the slot spawner's BndEvt (live-verified on 8636).
+  * Spawner BndEvt__...OnCosmeticUpdated (bpdump, 5): sets the 2 param vars then EX_LocalFinalFunction
+    ExecuteUbergraph(EntryPoint=2384) -> spawner ubergraph [86] = **EX_LocalVirtualFunction SetHero** (no gate at
+    the 2384 entry; SetHero is the first statement). UpdateIfReady = ExecuteUbergraph(3307).
+RUNTIME EVIDENCE (after a REAL Carbine=BountyHunter click that ran the refresh, refreshes=1, hitsGT=18437, no crash):
+  * slot-0 spawner = 0x22E00F4A300, **TargetAssetID @ +0x3F8 = HeroCosmeticsBundle:AlchemistDefault — UNCHANGED**.
+  * ZERO new LogBlueprintUserMessages / MENUSPAWNER lines. SetHero logs "Entering SetHero" unconditionally at load,
+    so its absence => SetHero was NEVER ENTERED during the refresh.
+=> The full static chain is perfect and Refresh demonstrably executes a large BP cascade, yet SetHero is not reached.
+   The break is between "broadcast OnCosmeticUpdated" and "spawner SetHero" AT RUNTIME — not visible in the bytecode.
+   Candidates: (a) EX_CallMulticastDelegate from an injected-ProcessEvent context doesn't dispatch to the
+   native-BndEvt handler; (b) the 4 subjects' Slot values / which subject drives slot-0 differ from assumption;
+   (c) the handler runs but the spawner ubergraph@2384 PopExecutionFlow/flow-stack state (we ENTER mid-graph with an
+   empty flow stack) diverts before SetHero. NEEDS A LIVE ISOLATION EXPERIMENT, not more static reading.
+
+NEXT EXPERIMENT (next session): use the WORKING game-thread call to invoke the SPAWNER directly, bypassing the
+  subject broadcast: call **spawner.OnPartyUpdated** (BP event, no params) and/or ExecuteUbergraph(2384) on
+  0x22E00F4A300, and watch Loki.log for MENUSPAWNER SetHero + read spawner+0x3F8 before/after. If OnPartyUpdated
+  drives SetHero -> switch the shim's trigger from subject.Refresh to spawner.OnPartyUpdated. If direct
+  ExecuteUbergraph(2384) drives SetHero but the broadcast doesn't -> the break is delegate-dispatch from injected
+  context (probe UTileView/native path). Offsets: slot-0 spawner 0x22E00F4A300 (TargetAssetID@+0x3F8), its subject
+  0x22E00E44900 (OnCosmeticUpdated@+0xD8). Hero FName ids per-run (harvest); this run BountyHunter/Carbine.
