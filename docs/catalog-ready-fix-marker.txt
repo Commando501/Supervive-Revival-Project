@@ -3,55 +3,55 @@
 [0] crash-VEH installed
 [3] GetPrimaryAssetIdList hooked (scan armed)
 [patch] jz NOP'd (IsCatalogDataReady ignores +0x354)
-[enum] first GetPrimaryAssetIdList -> scan (mgr=0x26BDB22E8C0)
+[enum] first GetPrimaryAssetIdList -> scan (mgr=0x1CBEAE8A8D0)
 [scan] DONE: 30 types scanned (Hero added=25)
-[cm] live CatalogManager @0x26C86685100 (map Num=904) — catalog loaded
+[cm] live CatalogManager @0x1CC7CC3E080 (map Num=904) — catalog loaded
 [unhook] slot 110 restored
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/0 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/0 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/0 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/0 unhook=1
 [restore] jz restored (no persistent .text mod)
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[hb] scanState=2 catMgr=0x26C86685100 pokes=1 jz=1/1 unhook=1
-[done] catMgr=0x26C86685100 pokes=1 jzRestored=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[hb] scanState=2 catMgr=0x1CC7CC3E080 pokes=1 jz=1/1 unhook=1
+[done] catMgr=0x1CC7CC3E080 pokes=1 jzRestored=1

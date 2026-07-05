@@ -1,0 +1,257 @@
+[0] mainmenu_refresh_pi4 (subject.Refresh + UFunction-trace of the cascade) started
+[1] gameTid=49068
+[2] resolved subjects=4 refreshFn=00000127DCE6A800 spawners=4 member=0x1276109E080
+   [init] spawner[0]=0x128004FAEA0 TargetAssetID=AlchemistDefault
+   [init] spawner[1]=0x128004FA8D0 TargetAssetID=<none>
+   [init] spawner[2]=0x128004FA300 TargetAssetID=<none>
+   [init] spawner[3]=0x128004F9D30 TargetAssetID=<none>
+[3] hook built. Open HUNTERS + click a hunter.
+[PICK] Hero:Alchemist
+[hb] member=Hero:Alchemist desired=3291349 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3291349 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3291349 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3291349 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3291349 calls=0 hitsGT=0 hooked=0
+[PICK] Hero:rocketjumper
+[MIRROR] member <- Hero:rocketjumper
+   [before] spawner[0]=0x128004FAEA0 TargetAssetID=AlchemistDefault
+   [before] spawner[1]=0x128004FA8D0 TargetAssetID=<none>
+   [before] spawner[2]=0x128004FA300 TargetAssetID=<none>
+   [before] spawner[3]=0x128004F9D30 TargetAssetID=<none>
+[armed] calling subject.Refresh on next game-thread BP...
+[CALLED] subject.Refresh x4 ran on game thread (#1). Spawner TargetAssetID AFTER:
+   [after] spawner[0]=0x128004FAEA0 TargetAssetID=AlchemistDefault
+   [after] spawner[1]=0x128004FA8D0 TargetAssetID=<none>
+   [after] spawner[2]=0x128004FA300 TargetAssetID=<none>
+   [after] spawner[3]=0x128004F9D30 TargetAssetID=<none>
+[TRACE] 0 distinct UFunctions executed during the Refresh cascade:
+[PICK] Hero:BurstCaster
+[MIRROR] member <- Hero:BurstCaster
+   [before] spawner[0]=0x128004FAEA0 TargetAssetID=AlchemistDefault
+   [before] spawner[1]=0x128004FA8D0 TargetAssetID=<none>
+   [before] spawner[2]=0x128004FA300 TargetAssetID=<none>
+   [before] spawner[3]=0x128004F9D30 TargetAssetID=<none>
+[armed] calling subject.Refresh on next game-thread BP...
+[CALLED] subject.Refresh x4 ran on game thread (#2). Spawner TargetAssetID AFTER:
+   [after] spawner[0]=0x128004FAEA0 TargetAssetID=AlchemistDefault
+   [after] spawner[1]=0x128004FA8D0 TargetAssetID=<none>
+   [after] spawner[2]=0x128004FA300 TargetAssetID=<none>
+   [after] spawner[3]=0x128004F9D30 TargetAssetID=<none>
+[TRACE] 0 distinct UFunctions executed during the Refresh cascade:
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:BurstCaster desired=4648269 calls=2 hitsGT=2 hooked=0
