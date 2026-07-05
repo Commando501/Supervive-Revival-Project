@@ -311,6 +311,58 @@ The reliable way = a native DLL (intra-jmp/RPM class, like catalog_ready_fix) th
 NOTE: current live patches (IsPreviewable/IsUseable) LEFT INSTALLED at user's request — they revert on relaunch
 (heap patches, not persistent). If building the shim, RESTORE them first (they conflict: they force preview mode).
 
+=========================== *** LIVE SESSION 4 (2026-07-04 very late) — SHIM RE COMPLETE *** =========
+All read-only RPM on the live client (PID 62212). Every offset the selection-watcher shim needs is now
+reverse-engineered + validated. Tools: find_guobjectarray.py, obj_iter.py (iterate GUObjectArray by class),
+find_pa.py (find PrimaryAssetId fields).
+COMPLETE OFFSET MAP (base 0x7FF682A80000 constant; heap addrs per-run):
+  UObject layout THIS build: vtable@+0, ObjectFlags@+0x08, **InternalIndex@+0x10**, Class@+0x18,
+    Name(FName)@+0x20, Outer@+0x28.  (Non-standard: shifted +0x8 vs stock UE5.)
+  GUObjectArray.ObjObjects (FChunkedFixedUObjectArray) @ **base+0x9E38930**: Objects(FUObjectItem**)@+0x00,
+    NumElements(int32)@+0x14. PerChunk=65536, FUObjectItem stride=0x18 (Object ptr @ item+0). Iterate:
+    chunk=Objects[i/65536]; obj=*(chunk + (i%65536)*0x18). Resolve class name via *(obj+0x18)+0x20 (FName)
+    -> FNamePool @ base+0x9D81450. VALIDATED (found HeroPicker InternalIndex 86931 -> located the array).
+  PartyMemberModel (class name "PartyMemberModel"; live instance = the non-CDO): props start +0x30
+    (ID FString@+0x30, DisplayName@+0x40, Tag@+0x50, DiscordUserID@+0x60, PlayerModel@+0x70),
+    **HeroAssetID (PrimaryAssetId, 16B) @ +0x78** (type FName@+0x78 = "Hero" 0x1A568, name FName@+0x80),
+    **OnHeroAssetIDChanged (MulticastInlineDelegate) @ +0x88** (invocation list Data@+0x88, Num@+0x90 = 3
+    bound handlers), CosmeticsAssetID follows.
+  WBP_HeroPicker_C: **SelectedHeroAsset (PrimaryAssetId) @ +0x10D8** (type@+0x10D8, name@+0x10E0). LIVE-
+    CONFIRMED it tracks the click: user clicked Beebo on HUNTERS -> the active picker (@0x26CFE1EDD20) read
+    SelectedHeroAsset = Hero:Beebo. NOTE: 7 WBP_HeroPicker instances exist (main-menu / hunter-select / swap
+    / etc.); the ACTIVE one is the instance whose SelectedHeroAsset is a valid (non-None) hero != member.
+  Hero FName type id = 0x1A568 (constant). Hero name FNames are stable this session (alchemist=0x32397C,
+    Beebo=0xA1DC2) but derive live (nameid) to be safe.
+*** DE-RISK RESULT (decisive): writing member.HeroAssetID (+0x78/+0x80) directly does NOT update the center.
+  Wrote member = Hero:Beebo, navigated to the main menu -> STILL showed Mercury/alchemist (user-confirmed).
+  => a plain memory write is NOT enough; the shim MUST FIRE A REFRESH. The main-menu party slot binds
+  OnPartyUpdated/OnCosmeticUpdated (S48), the HUNTERS preview binds member.OnHeroAssetIDChanged — so writing
+  the member must be followed by BROADCASTING the change delegate(s), which is a NATIVE call that must run on
+  the GAME THREAD. (Confirms S48: the slot is applied at menu-load / on a broadcast, not on a bare member diff.)
+
+=========================== *** SHIM — FINAL DESIGN (the remaining build) *** ========================
+The shim is a DLL (inject `mmap <PID>` into the running client, or `watch` at launch). ALL reads/writes use
+the offset map above. Core loop (on a WORKER thread, memory ops only): iterate GUObjectArray -> find the live
+PartyMemberModel + the ACTIVE WBP_HeroPicker (SelectedHeroAsset valid & != member.HeroAssetID); when the
+picker's SelectedHeroAsset changes, WRITE it into member.HeroAssetID (+0x78/+0x80).
+THE HARD PART (needs the GAME THREAD): after the write, FIRE the refresh so the UI updates. Options (ranked):
+  (A) Call native **TryPickMyHeroAndCosmetics** (+0x58467E0) with the picked hero — it does member-set +
+      broadcast + &hero= memory CORRECTLY (the game's own path). Needs the UPartyManager `this` (find via
+      GUObjectArray class "PartyManager", or member.Outer chain) + game-thread context + args (heroId,
+      cosmeticId, completion delegate). This is the CLEANEST (no manual broadcast) if callable safely.
+  (B) Manually BROADCAST member.OnHeroAssetIDChanged (+0x88) AND the PartyModel's OnPartyUpdated: for each
+      FScriptDelegate {TWeakObjectPtr Object(8B: ObjectIndex+Serial), FName Fn} in the invocation list,
+      resolve Object via GUObjectArray and ProcessEvent(FindFunction(Fn)). Needs ProcessEvent addr + game thread.
+  GAME-THREAD SAFETY: do NOT call native fns from the worker thread (past off-thread calls crashed — see
+  CLAUDE.md). Instead HOOK a per-frame game-thread native fn (intra-jmp, the PROVEN class) and, when a
+  "pending pick" flag is set by the worker, do the TryPick/broadcast FROM the hook (on the game thread).
+PERSIST across relaunch: the client sends the hero only as &hero= on /startSoloMode at queue time; the shim's
+  live write doesn't persist server-side. To survive relaunch, POST the pick to ags handleSetPartyMember from
+  the shim (WinHTTP + the client's bearer token) OR accept the seed resets to alchemist on relaunch.
+STILL OPEN (build+validate): the game-thread hook point; ProcessEvent addr / the TryPick call ABI + PartyManager
+  `this`; whether firing OnHeroAssetIDChanged alone updates the HUNTERS center while OnPartyUpdated updates the
+  main-menu slot. Restore the IsPreviewable/IsUseable patches before building (they force preview mode).
+
 =========================== FILES / OFFSETS ========================================================
 Bytecode (tools/extractor/out/, gitignored): bpdump_OnPortraitClicked.txt, bpdump_HandlePortraitClicked.txt,
   "bpdump_Update Hero Selection.txt", bpdump_IsPreviewSelection.txt, bpdump_IsPreviewable.txt,
