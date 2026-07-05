@@ -363,6 +363,46 @@ STILL OPEN (build+validate): the game-thread hook point; ProcessEvent addr / the
   `this`; whether firing OnHeroAssetIDChanged alone updates the HUNTERS center while OnPartyUpdated updates the
   main-menu slot. Restore the IsPreviewable/IsUseable patches before building (they force preview mode).
 
+=========================== *** LIVE SESSION 5 (2026-07-05) — SHIM PHASE 1/2 WORKING + ProcessEvent FOUND *** ==
+PHASE 1/2 SHIM (tools/sigbypass-mod/shim_watch.cpp -> shim_mirror.dll) WORKS + validated live:
+  - Iterates GUObjectArray in-process to find the live PartyMemberModel + the 8 WBP_HeroPicker instances.
+  - Active picker = the one whose SelectedHeroAsset (+0x10D8) is a valid (non-None) hero.
+  - Input signal CONFIRMED reliable: click Crysta -> Hero:BurstCaster, Beebo->Beebo, Brall->Ronin (codenames).
+  - MIRROR: continuously writes member.HeroAssetID (+0x78) = the active picker's SelectedHeroAsset, holding
+    the pick against resets. LIVE RESULT: HUNTERS center shows the pick AND it PERSISTS on HUNTERS re-entry
+    (user-confirmed). The party member now tracks the pick, so PLAY/&hero= use it.
+  - GAP: the MAIN-MENU party-slot portrait does NOT refresh from the member write (it binds OnPartyUpdated,
+    applied at menu-load; a bare write / REST poll doesn't retrigger it — S48). Needs a game-thread broadcast.
+*** ProcessEvent FOUND: UObject::ProcessEvent @ **0x7FF683D45A10** (RVA +0x12C5A10, UObject vtable SLOT 56). ***
+  Identified by cross-referencing the picker (UUserWidget) vtable 0x7FF68B2F7020 and member (PartyMemberModel)
+  vtable 0x7FF68B544698 for SHARED slots (UObject base virtuals), then disasm: slot 56 reads gs:[0x58]
+  (FUObjectThreadContext TLS) + manages the script-callstack recursion guard, r14=Function, rdi=this — the
+  canonical ProcessEvent. (Rejected: slot 41=AddReferencedObjects, slot 47=4-arg fn, slot 25=GC collector.)
+  So to invoke a UFunction from the shim: obj->[vtable+56*8](obj, UFunction*, Params) — call via the object's
+  OWN vtable slot 56 (works for any UObject type). MUST run on the GAME THREAD (thread-local script stack).
+
+=========================== *** SHIM PHASE 3 — the final build (game-thread refresh) *** ================
+GOAL: on a pick, replicate the original game exactly -> the MAIN-MENU slot updates live too. Options:
+  (A, cleanest = original behavior) call native **TryPickMyHeroAndCosmetics** via ProcessEvent: find the
+     UPartyManager instance (GUObjectArray class "PartyManager") + the TryPick UFunction (FName 0x005904F7,
+     Outer=PartyManager class) + build the 48-byte param struct {FPrimaryAssetId Hero(16), FPrimaryAssetId
+     Cosmetic(16), FScriptDelegate OnComplete(16)}; ProcessEvent(partyManager, tryPickUFunc, &params). This
+     does member-set + OnHeroAssetIDChanged + OnPartyUpdated + &hero= — everything the original does.
+  (B) manual broadcast: ProcessEvent each handler of member.OnHeroAssetIDChanged (+0x88, 3 handlers) AND the
+     PartyModel's OnPartyUpdated. Needs each delegate-signature UFunction + params. More pieces than (A).
+GAME-THREAD EXECUTION (required): hook ProcessEvent itself (intra-jmp at 0x7FF683D45A10 — it runs on the game
+  thread constantly). Worker detects a pick -> sets g_pending + installs the hook briefly. The hook (game
+  thread), guarded by g_inHook (reentrancy: the refresh's own ProcessEvent calls must not re-trigger), does
+  the TryPick/broadcast, clears g_pending, worker uninstalls the hook (keep the .text patch < the ~3min
+  integrity wall — it fires within ~1 BP event since ProcessEvent is called every frame).
+RISK: this is the crash-prone finale — wrong param layout / off-thread call / bad PartyManager corrupts the
+  script stack. Build incrementally (verify each object find read-only first) and test with the client
+  recoverable. Restore the IsPreviewable/IsUseable Script patches + stop the mirror before/when this lands
+  (TryPick replaces both: it sets the member AND, being the real pick, drives the preview).
+Anchors this run (per-run heap; re-derive): member 0x26C72BCE400, active picker 0x26CFE1EDD20; GUObjectArray
+  ObjObjects base+0x9E38930; ProcessEvent 0x7FF683D45A10; member HeroAssetID+0x78 / OnHeroAssetIDChanged+0x88;
+  picker SelectedHeroAsset+0x10D8; TryPick impl +0x58467E0 / exec +0x54B5380 / FName 0x005904F7.
+
 =========================== FILES / OFFSETS ========================================================
 Bytecode (tools/extractor/out/, gitignored): bpdump_OnPortraitClicked.txt, bpdump_HandlePortraitClicked.txt,
   "bpdump_Update Hero Selection.txt", bpdump_IsPreviewSelection.txt, bpdump_IsPreviewable.txt,
