@@ -1,0 +1,106 @@
+SESSION 50 — MAIN-MENU LIVE-REFRESH: ProcessEvent DEAD, ProcessInternal WORKS, Refresh runs but center stays stale
+Repo: G:\git\Supervive Revival Project — branch dedicated-server-stub. Continues docs/session-50-pickup-mainmenu-refresh.txt.
+Date: 2026-07-05. Method: live read-only RPM + injected shims (VEH-guarded), on fresh recon client (PID 8636) after the
+8h-idle prior client (62212) was found degraded. NO unrecoverable crashes this session.
+==============================================================================================================
+
+=========================== TL;DR ============================================================================
+GOAL (unchanged): clicking an owned hunter must live-refresh the MAIN-MENU center portrait, like the original.
+
+WHAT LANDED (new, reusable):
+  1. *** GAME-THREAD BP-CALL CAPABILITY WORKS *** — hook ProcessInternal, call ProcessEvent to run any UFunction
+     on the game thread, NO CRASH. This is the big unlock the whole pickup was building toward.
+  2. The MIRROR is fully validated with REAL clicks: every hunter click -> [PICK] -> member.HeroAssetID updated,
+     persists (re-enter HUNTERS shows the pick). Confirmed for BountyHunter/BurstCaster/assault/Beebo/gunner/Carbine.
+
+WHAT WAS OVERTURNED:
+  * ProcessEvent @ 0x7FF683D45A10 (vtable slot 56) is NOT this build's BP dispatch path. Hooked it, installed the
+    patch (verified E9 live), counted EVERY entry: **0 hits** across 60s AND across heavy real clicking. The pickup's
+    core assumption ("ProcessEvent runs on the game thread every frame") is FALSE for this build. BP dispatch goes
+    through ProcessInternal, not the vtable ProcessEvent entry.
+
+THE REMAINING GAP (narrowed, offline-RE-shaped, NOT more live poking):
+  * Calling Comp_MainMenu_PartySlotSubject::Refresh() on the game thread RUNS (18437 nested ProcessInternal calls,
+    no crash) but produces NO SetHero / NO LogBlueprintUserMessages -> the center stays on the default. Verified:
+    Refresh = ExecuteUbergraph(EntryPoint=0x1B8=440) = the DetermineCosmeticToShow -> broadcast OnCosmeticUpdated
+    block (correct entry); member=BountyHunter (correct, only 1 real PartyMemberModel); member.CosmeticsAssetID
+    EMPTY (no override); all 4 subjects' OnCosmeticUpdated@+0xD8 bound to their spawner; NO "Accessed None".
+    LEADING HYPOTHESIS: DetermineCosmeticToShow reads its slot's member via "Determine Slot Party Model -> Get
+    Members on Team" = the PartyModel's TEAM member array, which in our stub is EMPTY (g_member is the standalone
+    GetSelf model, NOT in the team array), so the slot resolves to no-member and the broadcast/SetHero is skipped
+    (silently, no log, no error). => the fix is a DATA fix (put the member into the PartyModel team array) or a
+    different trigger (spawner.OnPartyUpdated / spawner.UpdateIfReady), NOT the Refresh path.
+
+=========================== THE GAME-THREAD BP-CALL TECHNIQUE (the reusable win) =============================
+Problem: to run BP logic (Refresh) you must be on the game thread with the script stack; you can't just call the
+impl. The pickup's plan was to hook ProcessEvent and ride an organic call — but ProcessEvent never fires here.
+Solution that WORKS:
+  * HOOK **ProcessInternal @ base+0x13454A0** (0x7FF683DC54A0) — prologue `48 89 5C 24 08` (mov [rsp+8],rbx), a
+    clean 5-byte relocatable first instruction. This is "the shared BP VM entry every BP UFunction runs through"
+    (confirmed: every BP UFunction's Func@+0xE0 == ProcessInternal; e.g. Refresh UFunc@+0xE0 = 0x7FF683DC54A0).
+    It IS hot on the game thread whenever BP executes (18437 hits during one refresh cascade).
+  * From the hook (game thread, guarded by g_inHook + GetCurrentThreadId()==GGameThreadId), CALL the real
+    **ProcessEvent @ base+0x12C5A10** directly: processEvent(targetObj, UFunction*, params). ProcessEvent still
+    works when called explicitly even though the game doesn't call it organically.
+  * Inline 5-byte E9 hook + callable trampoline (stolen 5 bytes + jmp fn+5) + a HookStub that saves rcx/rdx/r8/r9,
+    calls OnBP (C), restores, tail-jmps the trampoline. Alignment: entry rsp%16==8; push*4 -> %16==8; sub 0x28 ->
+    %16==0 at the call; restored before tail jmp. Install per-trigger, uninstall on g_done (or 6s timeout) so the
+    .text patch lives << the ~3-5min integrity wall. VEH crash logger captures any fault RVA. PROVEN no-crash.
+  Tools/DLL: tools/sigbypass-mod/mainmenu_refresh_pi.cpp (the working PI variant). mainmenu_refresh.cpp is the
+  same but hooks ProcessEvent (DEAD — kept for the record). mainmenu_refresh_test.cpp = single-shot ProcessEvent
+  test (also 0 hits). Build: clang++ -shared -O2 <x>.cpp -o <x>.dll -lkernel32 from tools/sigbypass-mod.
+
+=========================== GROUND-TRUTH OFFSETS (base 0x7FF682A80000 CONSTANT across launches) ===============
+ProcessInternal:  base+0x13454A0  (0x7FF683DC54A0) — HOOK here for game-thread rendezvous. prologue 48 89 5C 24 08.
+ProcessEvent:     base+0x12C5A10  (0x7FF683D45A10) — CALL here to invoke a UFunction. prologue 48 89 5C 24 18.
+                  (NOT on the BP hot path in this build — hooking it is useless; only useful to CALL.)
+UFunction layout: Func (native exec) @ +0xE0 (== ProcessInternal for BP funcs); Script TArray @ +0x68
+                  (Data ptr, Num int32 @+0x70 low). Refresh Script = 46 <ExecuteUbergraph UFunc ptr> 1D <int32
+                  EntryPoint> 16 04 0B  => EX_FinalFunction ExecuteUbergraph(EntryPoint). Refresh EntryPoint=440.
+Comp_MainMenu_PartySlotSubject_C: Refresh (Outer==subjClass) -> ExecuteUbergraph@440 (DetermineCosmeticToShow +
+                  broadcast OnCosmeticUpdated). OnCosmeticUpdated MulticastInlineDelegate @ +0xD8 (Data@+0xD8,
+                  Num@+0xE0) -> handler = the slot spawner's BndEvt__...OnCosmeticUpdated. 4 live instances named
+                  "Comp_MainMenu_PartySubject" (+ Default__ + GEN_VARIABLE templates to exclude).
+PartyMemberModel: HeroAssetID PrimaryAssetId @ +0x78 (type FName@+0x78=Hero 0x1A568, name FName@+0x80);
+                  OnHeroAssetIDChanged MulticastInlineDelegate @ +0x88 (Data@+0x88, Num@+0x90); CosmeticsAssetID
+                  PrimaryAssetId @ ~+0x98 (EMPTY in our stub). Only ONE real instance (the GetSelf model).
+WBP_HeroPicker_C: SelectedHeroAsset PrimaryAssetId @ +0x10D8. Real hunter clicks DO update it (input signal
+                  reliable even WITHOUT the IsPreviewable/IsUseable script patches, for the locked/unowned roster).
+GUObjectArray.ObjObjects @ base+0x9E38930; FNamePool @ base+0x9D81450 (Len10); GGameThreadId @ base+0x9D49158.
+UObject: Class@+0x18, Name(FName)@+0x20, Outer@+0x28 (non-standard +0x8 shift).
+Hero FName ids are PER-LAUNCH (harvest at runtime; e.g. this run alchemist=3290764, RONIN=2427852, Beebo=661294,
+  BountyHunter=3892506/"BountyHunter"). Hero TYPE id 0x1A568 is CONSTANT.
+
+=========================== WHAT WAS RULED OUT / PROVEN (do NOT re-grind) =====================================
+* ProcessEvent-as-hook = DEAD (0 hits, verified patch-installed). Use it only as a CALL target.
+* The 8h-idle background client parks its game thread (Wait/ExecutionDelay) and fires no BP events; AppActivate
+  from a script can't steal foreground. For live validation use a FRESH FOREGROUND client + real clicks.
+* The mirror (picker SelectedHeroAsset -> member HeroAssetID) is correct and sufficient to TRACK/PERSIST picks.
+* Refresh() is the correct function at the correct entry (ExecuteUbergraph@440) and DOES execute — the drop is
+  downstream in DetermineCosmeticToShow's stub-state member/team resolution, not the call mechanism.
+* Simulating a pick by writing the picker's SelectedHeroAsset in memory does NOT generate the BP events the hook
+  needs — only a REAL click does (the click's BP cascade is what the ProcessInternal hook rides).
+
+=========================== NEXT (offline-first, then one live check) =========================================
+1. OFFLINE bpdump: read DetermineCosmeticToShow (35 entries) + "Determine Slot Party Model" (48) + "Get Members on
+   Team" (17) fully. Find the gate that skips the broadcast when the slot's team member list is empty. Confirm the
+   member source is the PartyModel TEAM array (not GetSelf).
+2. Likely FIX A (data): locate the PartyModel's per-team member TArray and insert g_member so "Get Members on Team"
+   returns it for slot 0. Then Refresh() should broadcast -> SetHero -> center. (Read PartyModel layout live.)
+   Likely FIX B (different trigger): call the SPAWNER's OnPartyUpdated or UpdateIfReady (BP events, 3 entries each)
+   via the SAME ProcessInternal->ProcessEvent capability — they may re-drive SetHero from the member directly.
+3. Fold the winner into mainmenu_refresh_pi.cpp (mirror + on-pick game-thread refresh). Validate with a real click
+   on a fresh foreground client; confirm the center actor swaps (Loki.log: MENUSPAWNER ... SetHero / UpdateActor).
+
+=========================== HOW TO REPRODUCE THE LIVE STATE ===================================================
+Steam running. From repo root (ags 47676 already serving on :443/:8080; keep it -> no cert churn):
+  1. Roster fix watcher (bg): tools\inject\inject.exe watch SUPERVIVE-Win64-Shipping.exe
+       tools\sigbypass-mod\catalog_ready_fix.dll 0x3EC57D0 40555356574154415541564157
+  2. Launch (bg, no elevation): powershell -ExecutionPolicy Bypass -File configs\launch-recon.ps1
+  3. Wait for menu (LobbyV2 + PlayButton VFX in Loki.log) + roster. catalog-ready-fix-marker shows scan Hero=25.
+  4. inject.exe mmap <PID> tools\sigbypass-mod\mainmenu_refresh_pi.dll  -> marker docs\mainmenu-refresh-pi-marker.txt.
+  5. Real click a hunter -> [PICK]/[MIRROR]/[armed]/[REFRESH DONE] + hitsAny/hitsGT climb (PI hot).
+Diagnostics (read-only RPM, tools/re + scratch): obj_iter.py, resolve_delegate.py, find_refresh.py,
+  scan_delegates.py; harvest hero FName ids by scanning committed memory for the Hero-type dword 68 A5 01 00.
+Loki.log: C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log. Codenames != display (alchemist=Mercury,
+  Ronin=Brall, BountyHunter=Carbine, BurstCaster=Crysta).
