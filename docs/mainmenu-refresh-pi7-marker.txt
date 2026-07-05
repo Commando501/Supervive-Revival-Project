@@ -1,0 +1,305 @@
+[0] mainmenu_refresh_pi7 (OPTION B: Refresh via ProcessInternal+FFrame) started
+[1] gameTid=27608
+[2] resolved subjects=4 refreshFn=00000206BACDB100 spawners=4 member=0x207E60F5100
+   [init] spawner[0]=0x2080180E8C0 TargetAssetID=AlchemistDefault
+   [init] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [init] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [init] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[3] hook built. Open HUNTERS + click a hunter.
+[PICK] Hero:Alchemist
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Alchemist desired=3290498 calls=0 hitsGT=0 hooked=0
+[PICK] Hero:Beebo
+[MIRROR] member <- Hero:Beebo
+   [before] spawner[0]=0x2080180E8C0 TargetAssetID=AlchemistDefault
+   [before] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [before] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [before] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[armed] calling Refresh via ProcessInternal+FFrame on next game-thread BP...
+[CALLED] Refresh x4 ran on game thread (#1). Spawner TargetAssetID AFTER (should change to the pick):
+   [after] spawner[0]=0x2080180E8C0 TargetAssetID=BeeboDefault
+   [after] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [after] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [after] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[hb] member=Hero:Beebo desired=661255 calls=1 hitsGT=1 hooked=0
+[PICK] Hero:RONIN
+[MIRROR] member <- Hero:RONIN
+   [before] spawner[0]=0x2080180E8C0 TargetAssetID=BeeboDefault
+   [before] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [before] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [before] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[armed] calling Refresh via ProcessInternal+FFrame on next game-thread BP...
+[hb] member=Hero:RONIN desired=2427465 calls=1 hitsGT=2 hooked=1
+[PICK] Hero:rocketjumper
+[MIRROR] member <- Hero:rocketjumper
+   [before] spawner[0]=0x2080180E8C0 TargetAssetID=RoninDefault
+   [before] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [before] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [before] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[CALLED] Refresh x4 ran on game thread (#2). Spawner TargetAssetID AFTER (should change to the pick):
+   [after] spawner[0]=0x2080180E8C0 TargetAssetID=RoninDefault
+   [after] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [after] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [after] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[hb] member=Hero:rocketjumper desired=3809173 calls=2 hitsGT=2 hooked=0
+[PICK] Hero:reshealer
+[MIRROR] member <- Hero:reshealer
+   [before] spawner[0]=0x2080180E8C0 TargetAssetID=RoninDefault
+   [before] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [before] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [before] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[armed] calling Refresh via ProcessInternal+FFrame on next game-thread BP...
+[CALLED] Refresh x4 ran on game thread (#3). Spawner TargetAssetID AFTER (should change to the pick):
+   [after] spawner[0]=0x2080180E8C0 TargetAssetID=ResHealerDefault
+   [after] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [after] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [after] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[hb] member=Hero:reshealer desired=403451 calls=3 hitsGT=3 hooked=0
+[PICK] Hero:BountyHunter
+[MIRROR] member <- Hero:BountyHunter
+   [before] spawner[0]=0x2080180E8C0 TargetAssetID=ResHealerDefault
+   [before] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [before] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [before] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[armed] calling Refresh via ProcessInternal+FFrame on next game-thread BP...
+[CALLED] Refresh x4 ran on game thread (#4). Spawner TargetAssetID AFTER (should change to the pick):
+   [after] spawner[0]=0x2080180E8C0 TargetAssetID=BountyHunterDefault
+   [after] spawner[1]=0x2080180E2F0 TargetAssetID=<none>
+   [after] spawner[2]=0x2080180DD20 TargetAssetID=<none>
+   [after] spawner[3]=0x2080180D750 TargetAssetID=<none>
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:BountyHunter desired=3892653 calls=4 hitsGT=4 hooked=0
