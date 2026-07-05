@@ -294,7 +294,7 @@ func handleHeroes(w http.ResponseWriter, r *http.Request) {
 func handlePlayerStore(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"Region":             "us-east",
-		"ItemOffers":         storeItemOffers(virtualStoreSKUs, "Bundles"),
+		"ItemOffers":         storeItemOffers(virtualStoreSKUs, "Bundles", "StoreOffer"),
 		"FeaturedItemOffers": storeFeaturedOffers(featuredStoreSKUs),
 	})
 }
@@ -351,7 +351,7 @@ func storeFeaturedOffers(skus []string) []map[string]any {
 func handleRealMoneyStore(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"Region":     "us-east",
-		"ItemOffers": storeItemOffers(realMoneyStoreSKUs, "Currency"),
+		"ItemOffers": storeItemOffers(realMoneyStoreSKUs, "Currency", ""),
 	})
 }
 
@@ -376,14 +376,23 @@ var realMoneyStoreSKUs = []string{
 }
 
 // storeItemOffers builds a []LokiStorefrontPlayerItemOffer for the given SKUs. All
-// fields are type-safe per schema.txt (Str/Bool/Int/Array<Str>). Costs empty on probe
-// #1 (client resolves price from the packed offer asset); Category is a best-guess
-// routing hint (a wrong value only mis-tabs the offer, it doesn't reject the doc).
-func storeItemOffers(skus []string, category string) []map[string]any {
+// fields are type-safe per schema.txt (Str/Bool/Int/Array<Str>). Costs empty (client
+// resolves price from the packed offer asset); Category is a best-guess routing hint.
+//
+// skuType: when non-empty, the SKU is emitted as the full PrimaryAssetId string
+// "<skuType>:<name>". The BUNDLES tab's native GetStoreOfferBundleListForStore resolves
+// the offer SKU the same way the FEATURED carousel does (PrimaryAssetIDFromString), so a
+// bare SKU produces an invalid id and the tab shows "No Results" — hence "StoreOffer".
+// (Currency/real-money store passes "" for the bare form.)
+func storeItemOffers(skus []string, category, skuType string) []map[string]any {
 	offers := make([]map[string]any, 0, len(skus))
 	for _, sku := range skus {
+		id := sku
+		if skuType != "" {
+			id = skuType + ":" + sku
+		}
 		offers = append(offers, map[string]any{
-			"SKU":         sku,
+			"SKU":         id,
 			"Category":    category,
 			"NameSpace":   "",
 			"Purchasable": true,
