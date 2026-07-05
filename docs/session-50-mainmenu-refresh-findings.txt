@@ -139,3 +139,43 @@ NEXT EXPERIMENT (next session): use the WORKING game-thread call to invoke the S
   ExecuteUbergraph(2384) drives SetHero but the broadcast doesn't -> the break is delegate-dispatch from injected
   context (probe UTileView/native path). Offsets: slot-0 spawner 0x22E00F4A300 (TargetAssetID@+0x3F8), its subject
   0x22E00E44900 (OnCosmeticUpdated@+0xD8). Hero FName ids per-run (harvest); this run BountyHunter/Carbine.
+
+=========================== *** SOLVED — LIVE MAIN-MENU REFRESH WORKS (no crashes) *** =======================
+Continuation (same repo, later): cracked it. The pickup's core premise ("hook the game thread, call ProcessEvent
+to run the BP function") is WRONG for this build. Proven root cause + the working fix:
+
+ROOT CAUSE (disasm + positive control): ProcessEvent @base+0x12C5A10 called from inside the ProcessInternal hook
+  is a UNIFORM NO-OP — it bails before invoking ANY function (re-entrant/mid-script guard). Positive control
+  (pi5/mainmenu_refresh_pi5.cpp): ProcessEvent(subject, UpdateSlot, {Slot=0}) left the subject's Slot@+0xE8 at a
+  99 sentinel (function never ran). Trace (pi4): 0 BP UFunctions executed during the ProcessEvent(Refresh) call
+  (FFrame.Node@+0x10 confirmed by disassembling ProcessInternal: `mov r14,[rdx+0x10]`). This build dispatches BP
+  via ProcessInternal directly (ProcessEvent gets 0 hits even under heavy clicking) and virtualizes the invoke
+  through vtable slots — there is no reachable ProcessEvent path for injected calls.
+
+THE FIX — OPTION B (mainmenu_refresh_pi7.cpp; PROVEN, stable, no crashes): invoke a BP UFunction on the game
+  thread by calling **ProcessInternal directly with a hand-built FFrame**, bypassing ProcessEvent's guard:
+    1. Hook ProcessInternal @base+0x13454A0 (proven game-thread rendezvous). On a pick, arm.
+    2. In OnBP (game thread), CAPTURE the live FFrame (rdx) as a template — all fields valid.
+    3. memcpy the template, then repoint: Node@+0x10 = target UFunction; Object@+0x18 = target UObject;
+       Code@+0x20 = UFunction Script.Data (@UFunc+0x68); Locals@+0x28 = a zeroed buffer (params go here, e.g.
+       an int param at Locals[0]); zero MostRecentProperty@+0x30 / +0x38.
+    4. Call the ORIGINAL ProcessInternal via the trampoline: g_tramp(Object, &myframe, &result)  ==
+       ProcessInternal(Context, FFrame&, RESULT_DECL). It runs the UFunction's bytecode.
+  Positive control (pi6): UpdateSlot(subject0,{0}) via this path set Slot@+0xE8 from 99 -> 0 (function REALLY ran).
+  Deliverable (pi7): call subject.Refresh on all 4 Comp_MainMenu_PartySubject via this path ->
+    DetermineCosmeticToShow(member) -> broadcast OnCosmeticUpdated -> spawner BndEvt -> SetHero -> UpdateActor.
+  LIVE-VALIDATED: pick Bishop -> main-menu center shows Bishop (user-confirmed). Marker self-check: slot-0 spawner
+  TargetAssetID@+0x3F8 went AlchemistDefault -> RocketJumperDefault on a rocketjumper pick. NO CRASH.
+
+The whole selected-hunter flow is now end-to-end like the original: roster renders (catalog_ready_fix), pick is
+  mirrored to the party member (holds + PLAY uses &hero=), and the MAIN-MENU PORTRAIT refreshes LIVE on the pick.
+
+GROUND-TRUTH (add to the offset table above):
+  ProcessInternal(Context=rcx, FFrame&=rdx, Result=r8). FFrame: Node@+0x10, Object@+0x18, Code@+0x20,
+    Locals@+0x28, MostRecentProperty@+0x30, MostRecentPropertyAddress@+0x38. UFunction Script(Data ptr)@+0x68.
+  Comp_MainMenu_PartySlotSubject_C: Slot (int) instance var @ +0xE8 (4 subjects hold 0/1/2/3); UpdateSlot & Refresh
+    UFuncs have Outer==subjClass. Spawner BP_MainMenuSpawner_MainMenu_PartySlot_C: TargetAssetID PA @ +0x3F8.
+  Shims: mainmenu_refresh_pi7.cpp = the WORKING deliverable (mirror + Refresh via ProcessInternal+FFrame). Safe
+    hook install (SafeWrite: suspend threads, verify no RIP in the 5 patched bytes, write, FlushInstructionCache)
+    from pi2 onward. pi4=UFunction tracer, pi5=ProcessEvent positive control (no-op), pi6=ProcessInternal+FFrame
+    positive control (works). NOTE: OnPartyUpdated via ProcessEvent CRASHED (dead end); Refresh via option B is safe.
