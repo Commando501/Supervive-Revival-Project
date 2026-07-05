@@ -335,7 +335,7 @@ func storeFeaturedOffers(skus []string) []map[string]any {
 	for _, sku := range skus {
 		offers = append(offers, map[string]any{
 			"SKU":       "StoreOffer:" + sku,
-			"Costs":     []string{},
+			"Costs":     storeCosts(), // price probe — see storeCosts()
 			"AssetType": "StoreOffer",
 			"SlotName":  "",
 		})
@@ -406,11 +406,25 @@ func storeItemOffers(skus []string, category, skuType string) []map[string]any {
 			"NameSpace":   "",
 			"Purchasable": true,
 			"PID":         sku,
-			"Costs":       []string{},
+			"Costs":       storeCosts(),
 			"SteamItemID": 0,
 		})
 	}
 	return offers
+}
+
+// storeCosts — the offer price/discount. Returns EMPTY: the displayed price is read by
+// WBP_UI_Storefront_Item_Price from CatalogEntry.GetOffers() -> LokiStorefrontOfferingCost
+// {Price, DiscountedPrice, currency} (bpdump), NOT from this backend Costs field. PROBE
+// (2026-07-05, LIVE): sending each Cost as a JSON LokiStorefrontOfferingCost had ZERO
+// effect — the FEATURED banner still showed "(PercentOff)% OFF" and "UNAVAILABLE". The
+// cost is also NOT in the packed StoreOffer asset (no price field, r2-findings). So the
+// CatalogEntry offering cost comes from a source our stub doesn't populate (real
+// Theorycraft store pricing, gone), and we don't have the real prices anyway. Populating
+// price is a separate effort: RE how the CatalogManager fills a CatalogEntry's Offers
+// (native), then either inject via that path or a game-thread poke. Parked.
+func storeCosts() []string {
+	return []string{}
 }
 
 func handleProgressionTracks(w http.ResponseWriter, r *http.Request) {
