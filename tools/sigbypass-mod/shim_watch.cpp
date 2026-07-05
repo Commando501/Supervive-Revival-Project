@@ -20,7 +20,7 @@
 #include <cstdarg>
 #include <cstring>
 
-static const char* kMarkerPath = "G:\\git\\Supervive Revival Project\\docs\\shim-watch-marker.txt";
+static const char* kMarkerPath = "G:\\git\\Supervive Revival Project\\docs\\shim-mirror-marker.txt";
 
 constexpr uintptr_t kObjObjectsRva = 0x9E38930;   // FChunkedFixedUObjectArray
 constexpr uintptr_t kNamePoolRva   = 0x9D81450;
@@ -104,46 +104,55 @@ static DWORD WINAPI Worker(LPVOID){
     // sanity: resolve a known FName (Hero) to confirm the pool layout in-process
     { char nm[64]; if(GetFNameStr(HERO_TYPE,nm,sizeof(nm))) Markerf("[0] FName(0x1A568)=\"%s\"\r\n",nm); else Marker("[0] FName resolve FAILED\r\n"); }
 
-    uintptr_t pickers[16]; uintptr_t members[8];
-    uint32_t lastSel[16]={0}; bool init=false;
-    DWORD lastFind=0, lastHb=0, start=GetTickCount();
-    while(GetTickCount()-start < 600000){   // run 10 min
-        // (re)discover objects every 2s (widgets get rebuilt on nav -> instances change)
-        if(GetTickCount()-lastFind>=2000 || !init){
+    // Phase 2: MIRROR. Continuously enforce member.HeroAssetID = the last user pick (the active picker's
+    // SelectedHeroAsset), so the selection PERSISTS (HUNTERS re-entry, &hero= at queue, next menu-load). This
+    // is a safe heap write only — NO refresh broadcast yet (the live main-menu slot needs that; Phase 3).
+    uintptr_t pickers[16]; int np=0; uintptr_t liveMember=0;
+    uint32_t lastSel[16]={0}; bool haveSel=false;
+    uint32_t desiredType=HERO_TYPE, desiredName=0; bool hasDesired=false;   // last valid user pick
+    DWORD lastFind=0, lastHb=0, start=GetTickCount(); uint64_t writes=0;
+    while(GetTickCount()-start < 28800000u){   // run up to 8h (effectively for the session)
+        // (re)discover objects every 2s (widgets rebuilt on nav -> instances change)
+        if(GetTickCount()-lastFind>=2000 || np==0 || !liveMember){
             lastFind=GetTickCount();
-            int np=FindByClass("WBP_HeroPicker_C",pickers,16);
-            int nm=FindByClass("PartyMemberModel",members,8);
-            // member: pick the non-CDO (Name != "Default__...") — log its hero
-            uintptr_t liveMember=0; for(int i=0;i<nm;i++){ char b[96]; ObjName(members[i],b,sizeof(b)); if(strncmp(b,"Default__",9)!=0){ liveMember=members[i]; } }
-            uint32_t memHero = liveMember? ReadHeroPA(liveMember,MEMBER_HEROID):0;
-            char mh[64]="<none>"; if(memHero) GetFNameStr(memHero,mh,sizeof(mh));
-            if(!init){
-                Markerf("[find] pickers=%d members=%d liveMember=0x%llX HeroAssetID=Hero:%s\r\n",np,nm,(unsigned long long)liveMember,mh);
-                for(int i=0;i<np && i<16;i++){
-                    char nmb[96]; ObjName(pickers[i],nmb,sizeof(nmb));
-                    uint32_t s=ReadHeroPA(pickers[i],PICKER_SELHERO); char sb[64]="None"; if(s)GetFNameStr(s,sb,sizeof(sb));
-                    Markerf("   picker[%d]=0x%llX Name=%s SelectedHeroAsset=Hero:%s\r\n",i,(unsigned long long)pickers[i],nmb,sb);
-                    lastSel[i]=s;
-                }
-                init=true;
-            } else {
-                // detect SelectedHeroAsset changes on any picker
-                for(int i=0;i<np && i<16;i++){
-                    uint32_t s=ReadHeroPA(pickers[i],PICKER_SELHERO);
-                    if(s!=lastSel[i]){
-                        char sb[64]="None"; if(s)GetFNameStr(s,sb,sizeof(sb));
-                        char nmb[96]; ObjName(pickers[i],nmb,sizeof(nmb));
-                        Markerf("[CHANGE] picker[%d]=0x%llX %s SelectedHeroAsset -> Hero:%s  (member=Hero:%s)\r\n",
-                            i,(unsigned long long)pickers[i],nmb,sb,mh);
-                        lastSel[i]=s;
-                    }
+            np=FindByClass("WBP_HeroPicker_C",pickers,16);
+            uintptr_t members[8]; int nm=FindByClass("PartyMemberModel",members,8);
+            liveMember=0; for(int i=0;i<nm;i++){ char b[96]; ObjName(members[i],b,sizeof(b)); if(strncmp(b,"Default__",9)!=0) liveMember=members[i]; }
+            if(!haveSel){ // first time: snapshot + log
+                uint32_t memHero=liveMember?ReadHeroPA(liveMember,MEMBER_HEROID):0; char mh[64]="<none>"; if(memHero)GetFNameStr(memHero,mh,sizeof(mh));
+                Markerf("[find] pickers=%d liveMember=0x%llX HeroAssetID=Hero:%s\r\n",np,(unsigned long long)liveMember,mh);
+                for(int i=0;i<np&&i<16;i++){ lastSel[i]=ReadHeroPA(pickers[i],PICKER_SELHERO); }
+                haveSel=true;
+            }
+        }
+        // poll each picker's SelectedHeroAsset; a change to a VALID hero = a user pick -> becomes the desired hero
+        for(int i=0;i<np&&i<16;i++){
+            uint32_t s=ReadHeroPA(pickers[i],PICKER_SELHERO);
+            if(s!=lastSel[i]){
+                lastSel[i]=s;
+                if(s!=0){ // valid hero (name != None)
+                    char sb[64]; GetFNameStr(s,sb,sizeof(sb));
+                    Markerf("[PICK] picker[%d]=0x%llX SelectedHeroAsset -> Hero:%s (now desired)\r\n",i,(unsigned long long)pickers[i],sb);
+                    desiredName=s; hasDesired=true;
                 }
             }
         }
-        if(GetTickCount()-lastHb>=10000){Marker("[hb] watching...\r\n");lastHb=GetTickCount();}
-        Sleep(120);
+        // ENFORCE: hold member.HeroAssetID = desired (re-write if the game reset it)
+        if(hasDesired && liveMember && SafeReadable((void*)(liveMember+MEMBER_HEROID),16)){
+            uint32_t curName=*(uint32_t*)(liveMember+MEMBER_HEROID+8);
+            uint32_t curType=*(uint32_t*)(liveMember+MEMBER_HEROID);
+            if(curName!=desiredName || curType!=desiredType){
+                *(uint32_t*)(liveMember+MEMBER_HEROID)   = desiredType;
+                *(uint32_t*)(liveMember+MEMBER_HEROID+4) = 0;
+                *(uint32_t*)(liveMember+MEMBER_HEROID+8) = desiredName;
+                *(uint32_t*)(liveMember+MEMBER_HEROID+12)= 0;
+                if((++writes)<=3 || (writes%50)==0){ char db[64]; GetFNameStr(desiredName,db,sizeof(db)); Markerf("[MIRROR] member.HeroAssetID <- Hero:%s (write #%llu)\r\n",db,(unsigned long long)writes); }
+            }
+        }
+        if(GetTickCount()-lastHb>=10000){Markerf("[hb] np=%d member=0x%llX writes=%llu desired=%d\r\n",np,(unsigned long long)liveMember,(unsigned long long)writes,hasDesired?1:0);lastHb=GetTickCount();}
+        Sleep(100);
     }
-    Marker("[done] shim_watch exit\r\n");
+    Marker("[done] shim exit\r\n");
     return 0;
 }
 BOOL APIENTRY DllMain(HMODULE h,DWORD r,LPVOID){if(r==DLL_PROCESS_ATTACH){DisableThreadLibraryCalls(h);HANDLE t=CreateThread(nullptr,0,Worker,nullptr,0,nullptr);if(t)CloseHandle(t);}return TRUE;}
