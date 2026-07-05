@@ -179,3 +179,20 @@ GROUND-TRUTH (add to the offset table above):
     hook install (SafeWrite: suspend threads, verify no RIP in the 5 patched bytes, write, FlushInstructionCache)
     from pi2 onward. pi4=UFunction tracer, pi5=ProcessEvent positive control (no-op), pi6=ProcessInternal+FFrame
     positive control (works). NOTE: OnPartyUpdated via ProcessEvent CRASHED (dead end); Refresh via option B is safe.
+
+=========================== FULL-TEST TANDEM PASS + pi8 (HUNTERS preview live) ==============================
+Full clean-relaunch tandem test (ags + catalog_ready_fix + shim) PASSED, no crashes:
+  roster renders, pick tracked+persisted, MAIN-MENU center updates live, PLAY uses &hero=.
+ONE gap found in tandem: the HUNTERS-panel preview (WBP_UI_PartyHeroSelect) did NOT update live on click —
+  only on re-open. It refreshes off member.OnHeroAssetIDChanged, which the mirror writes but never broadcasts.
+FIX = mainmenu_refresh_pi8.cpp (the NEW complete deliverable, supersedes pi7): after the mirror + subject.Refresh,
+  ALSO BROADCAST member.OnHeroAssetIDChanged (@member+0x88, Data@+0x88/Num@+0x90) by invoking each live handler
+  via the SAME option-B primitive (all 3 handlers are PARAMETERLESS — OnPartyHeroUpdated has 0 ChildProperties,
+  so the delegate signature is parameterless; empty Locals). Handlers (resolve_delegate): WBP_UI_PartyHeroSelect.
+  OnPartyHeroUpdated (HUNTERS preview) / WBP_UI_Collection.SetSelectedHero (collection) / ProgressionTracker_
+  HunterMasteryV2.HeroIDChanged (mastery). Implementation: pre-cache the 3 handler UFuncs by name+Outer (stable
+  per-run) in Resolve(); at broadcast read the delegate's live invocation list, ObjAt(ObjIndex) for each handler
+  object, match {Fn==nameid, Outer==ClassOf(obj)} to the cached UFunc, InvokeBP(obj, ufunc). LIVE-VALIDATED: pick
+  Brall -> HUNTERS preview updates to Brall + main-menu center = Brall; spawner TargetAssetID Alchemist->Ronin.
+  NO CRASH. ~1-2s latency = 60ms picker poll + the game's own async hero-model load (SetHero async load, same as
+  the original). This is the complete "everything like the original" selected-hunter flow.
