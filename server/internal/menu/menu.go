@@ -355,24 +355,33 @@ func handleRealMoneyStore(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// virtualStoreSKUs — cosmetic bundle/skin offers (bought with virtual currency),
-// recovered from the packed BP_StoreOffer_* name maps (storeoffers_summary.json).
+// virtualStoreSKUs — cosmetic bundle/skin offers (bought with virtual currency).
+//
+// *** THESE ARE THE REAL PrimaryAssetNames, read LIVE from the game's own
+// LokiAssetLoader.StoreOfferAssets map (RPM of the running client, tools/re/probe). ***
+// The storeoffers_summary.json "id" field is NOT the catalog key — it's a display/config
+// name, and for many offers it DIFFERS from the actual PrimaryAssetName the loader keys
+// by (StarterPack→starter2024, SupporterPack→supporter2024, CollectorPack→collector2024,
+// EarlyBirdBundle→earlybirdob, EmotePack→t1emotepack, FreezeBrideOfSwordsPack→
+// BrideOfSwordsFreezePack, JTW_EpicsBundle→JTWEpicsPack, SpaceMarineAssaultPack→
+// SpaceMarineGhostPack; currency tiers → tp####/vp##). Using the summary "id" made
+// LokiAssetLoader::LoadStoreOfferAsset MISS on the map lookup ("Failed to load store
+// offer asset with ID StoreOffer:StarterPack") so the BUNDLES tab rendered blank even
+// though the map holds all 56 offers. These are the exact 56 keys (token variants omitted).
 var virtualStoreSKUs = []string{
-	"BackToSchoolPack", "ChinchillaPack", "CollectorPack", "CyberpunkWukongPack",
-	"CybertigerStalkerPack", "DarkOrderSniperPack", "DemonessFlexPack", "EarlyBirdBundle",
-	"EmotePack", "FreezeBrideOfSwordsPack", "GAResHealerPack", "GodOfTimeVoidPack",
-	"HuntressGodQueenPack", "JTW_EpicsBundle", "MidAutumnPack", "NecroGhostPack",
-	"OniHookguyPack", "RatPack", "S1Special", "S2Special", "SanctuarySentinelShieldBotPack",
-	"SpaceMarineAssaultPack", "StarterPack", "SupporterPack", "Winter2025Pack",
+	"BackToSchoolPack", "BrideOfSwordsFreezePack", "ChinchillaPack", "CyberpunkWukongPack",
+	"CybertigerStalkerPack", "DarkOrderSniperPack", "DemonessFlexPack", "GAResHealerPack",
+	"GodOfTimeVoidPack", "HuntressGodQueenPack", "JTWEpicsPack", "MidAutumnPack",
+	"NecroGhostPack", "OniHookguyPack", "RatPack", "S1Special", "S2Special",
+	"SanctuarySentinelShieldBotPack", "SpaceMarineGhostPack", "Winter2025Pack",
+	"collector2024", "earlybirdob", "starter2024", "supporter2024", "t1emotepack",
 }
 
-// realMoneyStoreSKUs — currency top-up packs (bought with real money).
+// realMoneyStoreSKUs — currency top-up packs (real PrimaryAssetNames from the live map).
 var realMoneyStoreSKUs = []string{
-	"475TheorycraftCoins", "600TheorycraftCoins", "1000TheorycraftCoins",
-	"2000TheorycraftCoins", "3650TheorycraftCoins", "5350TheorycraftCoins",
-	"11000TheorycraftCoins", "10VivePoints", "20VivePoints", "30VivePoints",
-	"40VivePoints", "50VivePoints", "90VivePoints", "100VivePoints", "120VivePoints",
-	"150VivePoints", "240VivePoints", "270VivePoints", "480VivePoints",
+	"tp475", "tp600", "tp1000", "tp2000", "tp3650", "tp5350", "tp11000",
+	"vp10", "vp20", "vp30", "vp40", "vp50", "vp90", "vp100", "vp120",
+	"vp150", "vp240", "vp270", "vp480",
 }
 
 // storeItemOffers builds a []LokiStorefrontPlayerItemOffer for the given SKUs. All
