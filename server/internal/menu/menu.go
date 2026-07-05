@@ -54,10 +54,10 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /inventory/free", handleFreeInventory)
 
 	// Real-money store (UStorefrontManager::GetRealMoneyStorefront) — drives the
-	// STORE tab. Valid-empty PlayerStore-shaped wrapper so the FEATURED carousel
-	// settles instead of spinning on the {} catch-all. (Populating real offers
-	// needs packed-config item SKUs.)
-	mux.HandleFunc("GET /storefront/real/offers/{id}", handlePlayerStore)
+	// currency top-up packs. Same FLokiStorefrontPlayerStore shape as the virtual
+	// store; now populated with the real Theorycraft Coin / Vive Point pack SKUs
+	// (storeoffers_summary.json). See handleRealMoneyStore.
+	mux.HandleFunc("GET /storefront/real/offers/{id}", handleRealMoneyStore)
 
 	// AccelByte per-player progression tracks (distinct from the storefront
 	// battlepass tracks). Model FAccelByteModelsListUserProgressionInfoPagingSliced
@@ -260,17 +260,139 @@ func handleHeroes(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"heroes": heroes})
 }
 
-// handlePlayerStore returns FLokiStorefrontPlayerStore (the /storefront/offers/{id}
-// response): RotatingOffers, FeaturedItemOffers, TypeOffers (arrays) + NextRotation
-// (omitted — it's almost certainly an FDateTime and a bad string would reject the
-// doc; an absent field safely defaults). Empty arrays = valid container, empty shop
-// — no regression, and the correct shape to grow item offers into later.
+// handlePlayerStore returns FLokiStorefrontPlayerStore, the /storefront/offers/{id}
+// response (the virtual-currency store: cosmetic bundles/skins bought with vp/coins).
+//
+// SCHEMA CORRECTION (2026-07-05, schema.txt): the earlier stub sent empty
+// RotatingOffers/FeaturedItemOffers/TypeOffers and NEVER sent the field that actually
+// carries purchasable items. Per schema.txt LokiStorefrontPlayerStore has SIX fields:
+//
+//	Region             StrProperty
+//	ItemOffers         Array<LokiStorefrontPlayerItemOffer>   <- the real offer list
+//	RotatingOffers     Array<DateTime>   (rotation timestamps, NOT offers)
+//	NextRotation       DateTime
+//	FeaturedItemOffers Array<LokiStorefrontTypeOffer>  (AssetType+SlotName structs)
+//	TypeOffers         Array<Str>
+//
+// So the store has never actually been handed an offer array. PROBE #1: populate
+// ItemOffers with the real SKUs recovered by IoStore extraction
+// (tools/extractor/out/catalog/storeoffers_summary.json — 56 offers from the packed
+// BP_StoreOffer_* assets). This is only viable now that the catalog is loaded
+// client-side (catalog_ready_fix opens the IsCatalogDataReady gate → the 904-entry
+// CatalogManager map holds every one of these SKUs), so an advertised SKU can resolve
+// to its packed presentation (icon/name/price via LokiStorefrontOfferingCost baked in
+// the offer asset). RotatingOffers/NextRotation are omitted (Array<DateTime>/DateTime —
+// an absent field safely defaults; a bad datetime string would reject the whole doc).
+//
+// Validity: every LokiStorefrontPlayerItemOffer field is Str/Bool/Int/Array<Str>, so
+// nothing here can wrong-type-reject the doc. Costs is left empty on probe #1 (the
+// packed offer asset carries the real cost); NameSpace empty (a guessed namespace could
+// silently filter). If the relaunch shows offers parsed but priceless/hidden, the next
+// single variables in order are: Costs format, then Category routing, then NameSpace.
+// Readback: LogPlatformStorefront (the "…fetched" channel) should report the offer
+// count, and the STORE tab shows whether an advertised SKU resolves to a tile.
 func handlePlayerStore(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
-		"RotatingOffers":     []any{},
-		"FeaturedItemOffers": []any{},
-		"TypeOffers":         []any{},
+		"Region":             "us-east",
+		"ItemOffers":         storeItemOffers(virtualStoreSKUs, "Bundles"),
+		"FeaturedItemOffers": storeFeaturedOffers(featuredStoreSKUs),
 	})
+}
+
+// featuredStoreSKUs — offers highlighted in the FEATURED carousel. Bare offer names;
+// storeFeaturedOffers prefixes each into "StoreOffer:<name>" (the PrimaryAssetId string
+// the carousel's `Get Carousel Offers` filter requires).
+//
+// TWO conditions must BOTH hold for the carousel to render (learned live 2026-07-05):
+//  (1) SKU = "StoreOffer:<name>" so GetCatalogEntry(PrimaryAssetIDFromString(SKU)) is
+//      valid — else the offer is filtered out. (StoreOffer: prefix fixes this.)
+//  (2) the offer's asset must have a non-null WideSplashArt to async-load — else the
+//      carousel logs "RequestAsyncLoad() called with empty or only null assets!" and
+//      spins. The supporter packs (Starter/Superviver/Patron) resolved fine (1) but have
+//      NULL WideSplashArt (3x that warning at store-open) => spin. The cosmetic SKIN
+//      packs are authored WITH WideSplashArt for featuring, so switch to those.
+var featuredStoreSKUs = []string{
+	"CyberpunkWukongPack", "HuntressGodQueenPack", "GodOfTimeVoidPack",
+	"OniHookguyPack", "DemonessFlexPack",
+}
+
+// storeFeaturedOffers builds []LokiStorefrontTypeOffer for the FEATURED carousel.
+//
+// ROOT CAUSE (bpdump of WBP_UI_Storefront_Featured::"Get Carousel Offers"): the carousel
+// filters FeaturedItemOffers by
+//     id    = PrimaryAssetIDFromString(offer.SKU)     // parses "Type:Name", IGNORES AssetType
+//     entry = GetCatalogManager().GetCatalogEntry(id)
+//     keep iff IsValid(entry) && !IsHidden() && !IsDisabled()
+// So the SKU field must be the FULL PrimaryAssetId STRING "StoreOffer:<name>" (same
+// "Type:Name" form as the hero catalog key "Hero:assault"). Probes #1/#2 sent a BARE SKU
+// ("StarterPack") — FPrimaryAssetId::FromString finds no ':' => invalid id =>
+// GetCatalogEntry null => every offer filtered out => empty carousel => it SPINS forever
+// (and AssetType JSON shape was a red herring — the carousel never reads AssetType).
+// Probe #4 (this): prefix SKU with "StoreOffer:". AssetType is still sent as the
+// canonical string for any OTHER consumer, but the carousel filter uses SKU only.
+func storeFeaturedOffers(skus []string) []map[string]any {
+	offers := make([]map[string]any, 0, len(skus))
+	for _, sku := range skus {
+		offers = append(offers, map[string]any{
+			"SKU":       "StoreOffer:" + sku,
+			"Costs":     []string{},
+			"AssetType": "StoreOffer",
+			"SlotName":  "",
+		})
+	}
+	return offers
+}
+
+// handleRealMoneyStore returns the /storefront/real/offers/{id} response
+// (UStorefrontManager::GetRealMoneyStorefront — the currency top-up packs bought with
+// real money). Same FLokiStorefrontPlayerStore shape as the virtual store; ItemOffers
+// carries the Theorycraft Coin / Vive Point packs. See handlePlayerStore for the
+// schema-correction and probe rationale.
+func handleRealMoneyStore(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]any{
+		"Region":     "us-east",
+		"ItemOffers": storeItemOffers(realMoneyStoreSKUs, "Currency"),
+	})
+}
+
+// virtualStoreSKUs — cosmetic bundle/skin offers (bought with virtual currency),
+// recovered from the packed BP_StoreOffer_* name maps (storeoffers_summary.json).
+var virtualStoreSKUs = []string{
+	"BackToSchoolPack", "ChinchillaPack", "CollectorPack", "CyberpunkWukongPack",
+	"CybertigerStalkerPack", "DarkOrderSniperPack", "DemonessFlexPack", "EarlyBirdBundle",
+	"EmotePack", "FreezeBrideOfSwordsPack", "GAResHealerPack", "GodOfTimeVoidPack",
+	"HuntressGodQueenPack", "JTW_EpicsBundle", "MidAutumnPack", "NecroGhostPack",
+	"OniHookguyPack", "RatPack", "S1Special", "S2Special", "SanctuarySentinelShieldBotPack",
+	"SpaceMarineAssaultPack", "StarterPack", "SupporterPack", "Winter2025Pack",
+}
+
+// realMoneyStoreSKUs — currency top-up packs (bought with real money).
+var realMoneyStoreSKUs = []string{
+	"475TheorycraftCoins", "600TheorycraftCoins", "1000TheorycraftCoins",
+	"2000TheorycraftCoins", "3650TheorycraftCoins", "5350TheorycraftCoins",
+	"11000TheorycraftCoins", "10VivePoints", "20VivePoints", "30VivePoints",
+	"40VivePoints", "50VivePoints", "90VivePoints", "100VivePoints", "120VivePoints",
+	"150VivePoints", "240VivePoints", "270VivePoints", "480VivePoints",
+}
+
+// storeItemOffers builds a []LokiStorefrontPlayerItemOffer for the given SKUs. All
+// fields are type-safe per schema.txt (Str/Bool/Int/Array<Str>). Costs empty on probe
+// #1 (client resolves price from the packed offer asset); Category is a best-guess
+// routing hint (a wrong value only mis-tabs the offer, it doesn't reject the doc).
+func storeItemOffers(skus []string, category string) []map[string]any {
+	offers := make([]map[string]any, 0, len(skus))
+	for _, sku := range skus {
+		offers = append(offers, map[string]any{
+			"SKU":         sku,
+			"Category":    category,
+			"NameSpace":   "",
+			"Purchasable": true,
+			"PID":         sku,
+			"Costs":       []string{},
+			"SteamItemID": 0,
+		})
+	}
+	return offers
 }
 
 func handleProgressionTracks(w http.ResponseWriter, r *http.Request) {
