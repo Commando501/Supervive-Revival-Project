@@ -188,6 +188,86 @@ Step 3 — DECISION TREE (note: NO new ags request is expected — the pick is l
    catalog_ready_fix) already reported hits=0 on click in the handoff. If Step 0 re-confirms that probe
    class fires on a hot fn, (C) is the most likely branch and the CommonUI selection path is the target.
 
+=========================== *** LIVE CONFIRMATION (2026-07-04, user drove real clicks) *** ===========
+Injected pick_probe.dll into the RUNNING client (PID 62212) via `inject mmap` (no relaunch). It armed
+cleanly (verified the exact bytes 48 8B 5C 24 40 at +0x584680D, patched, self-restored at 45s — the
+proven intra-jmp class, same as catalog_ready_fix). The USER clicked OWNED hunters during the armed
+window and reported the center did NOT change.
+  RESULT: TryPickMyHeroAndCosmetics hits = 0.  => an OWNED-tile click does NOT call the native pick.
+  This is BRANCH (C), now CONFIRMED with a real click (not the earlier synthetic/uncertain input): the
+  visible TileView click never reaches TryPick. So EVERY fix hanging off that BP chain is dead — the
+  native pick (R1'/R3) AND the BP leaf-predicate Route B — because that chain doesn't run on the click.
+
+WHERE THE SELECTION LOGIC ACTUALLY LIVES (offline, this session): dumped BOTH picker-tile BP classes:
+  - HeroPickerSelectable_CatalogEntryWithPreview_C (derived, the TileView entry): only IsPremiumBenefit/
+    IsPreviewable/IsUseable/OnCanUseUpdated/OnDisabled/OnHidden/SetAssetID/ShouldHideHero + a small
+    ubergraph that just BINDS delegates. No click/selection handler.
+  - HeroPickerSelectable_C (base): only IsPremiumBenefit/IsPreviewable/IsUseable/ShouldHideHero/SetAssetID
+    + delegate signatures. NO ubergraph at all. No click handler.
+  Also re-confirmed WBP_HeroPicker has NO TileView OnItemSelectionChanged/OnItemClicked binding anywhere
+  in its graph. => the tile-click/selection handler is 100% NATIVE C++ (the widgets' native base — a
+  CommonUI selectable-button class). That native handler decides preview-vs-select by CALLING the BP
+  predicates IsPreviewable()/IsUseable() on the entry (they exist precisely to be queried from native).
+
+REVISED LEADING FIX (supersedes the earlier R1'/R2/R3 ranking): **Route B's premise is correct** — make
+owned heroes report IsPreviewable=true so the native handler routes an owned click into the WORKING
+preview path (center updates, exactly like unowned). Route B was inert only because: (a) its UFunction
+Func-swap mechanism was NEVER verified to redirect, and (b) CommonUI TileView likely CACHES the
+preview/select role at entry-build time (pooling), so a post-build predicate patch isn't re-read on click.
+THE ONE EXPERIMENT LEFT (needs the user's click; tooling: a VERIFIED passthrough Func-swap counter =
+count + `jmp ProcessInternal (base+0x13454A0)` so the patched fn still runs): instrument IsPreviewable +
+IsUseable on the entry class, then (1) navigate to HUNTERS FRESH and confirm the counters move at BUILD
+(this VERIFIES the swap mechanism — they MUST be queried when the grid builds), and (2) click owned/unowned
+heroes and see if they move again at CLICK. If they move on click => the predicate is queried per-click =>
+patching IsPreviewable->true routes owned clicks to preview (the FIX). If they move only on build => the
+role is cached => the fix must patch the per-entry cached flag OR the native branch, and/or force a real
+TileView rebuild. Cheaper alternative that sidesteps native RE entirely: make ONE hero UNOWNED in the
+backend inventory (menu.go handleInventory, CanUse=false), relaunch, and have the user click it — if its
+click now previews into the center, the preview-path-is-the-fix hypothesis is confirmed end-to-end via a
+pure backend change (then decide owned-appearance tradeoff).
+
+=========================== *** LIVE SESSION 2 (2026-07-04 eve, user drove clicks) — FUNC-SWAP IS DEAD *** ==
+Ran the passthrough-Func-swap experiment on the live client (PID 62212, read-only+heap patches, restored
+clean after). Located the tile-class UFunctions live (same process route-B used, objects still valid):
+  IsPreviewable @0x26D001D6F00 (slot +0xE0 =0x26D001D6FE0), IsUseable @0x26D001D6E00 (0x26D001D6EE0),
+  ShouldHideHero @0x26D001D6900 (0x26D001D69E0)  — Outer=HeroPickerSelectable_CatalogEntryWithPreview_C.
+  Tools: tools/re/scan_ufunc_local.py (cluster-scan by FName id), tools/re/patch_passthrough.py
+  (count + jmp ProcessInternal, so the fn still runs).
+EXPERIMENT: patched ShouldHideHero (the MECHANISM CONTROL — it is called for every hero by UpdateFilteredList
+on any role-filter change) across ALL 6 selectable variants (_CatalogEntryWithPreview_C, _CatalogEntry_C,
+_CatalogEntryAll_C, _HeroUnlock_C, _WithCustomGameFilter_C, _C base). USER filtered repeatedly; the roster
+VISIBLY narrowed by role (so UpdateFilteredList + ShouldHideHero DEFINITELY ran). RESULT: **every counter = 0.**
+CONCLUSION: patching UFunction+0xE0 (Func) does NOT redirect these calls. STRUCTURAL REASON: for a BP->BP
+call (EX_CallMath/EX_FinalFunction/EX_LocalVirtualFunction) this build's VM executes the callee's **Script
+bytecode directly** inside ProcessInternal; it only dispatches through Func when NATIVE code calls a BP fn via
+ProcessEvent. So Route B's "counter stayed 0" was NEVER a valid negative — the Func-swap just has no effect on
+BP->BP calls. **Do not use the Func-swap technique again for BP-invoked functions.**
+  NOTE: the native selection handler's OWN calls to IsPreviewable/IsUseable (native->BP, at grid BUILD) would
+  go through Func — but the grid was already built (client up for hours), so no build happened in the test
+  window; a Func-swap applied EARLY (before first build) MIGHT still catch build-time native->BP calls. Untested
+  (needs a relaunch). The Script-bytecode patch works for BOTH paths and is the robust choice.
+
+=========================== *** RELIABLE FIX PATHS (all need a relaunch to VALIDATE) *** =============
+The preview-path fix mechanism is ALREADY PROVEN (unowned heroes' clicks update the center). The whole fix =
+make OWNED heroes previewable AT BUILD TIME (or otherwise drive the center on an owned click). Reliable ways:
+  P1 (keep owned, reliable) — patch IsPreviewable's SCRIPT BYTECODE to return true (heap data, no integrity
+     wall; the VM executes Script directly so this ALWAYS takes effect, unlike Func-swap). Inject EARLY like
+     catalog_ready_fix so the grid builds all tiles as previewable -> owned click -> preview path -> center
+     updates. Craft: Script[0..] = LetBool(Previewable=EX_True); Return. Needs UFunction Script TArray offset
+     (near +0x68 Data/+0x70 Num) + the out-param FField ptr from the live bytecode. Validate on relaunch.
+  P2 (keep owned, most correct) — a native SELECTION-WATCHER shim (intra-jmp/RPM, the PROVEN-reliable class):
+     poll TileView_Hunters' selected item (selection works — the purple highlight proves it), and on change
+     write the selected hero into the local PartyMemberModel.HeroAssetID + fire OnHeroAssetIDChanged so
+     RefreshContentPreview updates the center. Most work (find TileView selection + party member + delegate
+     broadcast) but actually reflects the pick and keeps heroes owned.
+  P3 (quick, backend, DURABLE) — mark heroes not-owned (menu.go handleInventory CanUse=false) so IsPreviewable
+     is true at build -> owned click previews. NO injection, survives relaunch. DOWNSIDE: roster shows heroes
+     as unlockable/purchasable (reverts S48's owned look) — assess whether that appearance is acceptable
+     (unknown; there are currently no unowned heroes to look at — would need a relaunch to see one).
+RECOMMENDATION: P1 (Script-patch, keep owned) is the reliable technique that preserves the owned roster;
+de-risk it by first verifying the Script-patch technique on ShouldHideHero (patch its Script->return-true on
+the LIVE client; if the grid empties on a filter, the technique works) before building the early-inject mod.
+
 =========================== FILES / OFFSETS ========================================================
 Bytecode (tools/extractor/out/, gitignored): bpdump_OnPortraitClicked.txt, bpdump_HandlePortraitClicked.txt,
   "bpdump_Update Hero Selection.txt", bpdump_IsPreviewSelection.txt, bpdump_IsPreviewable.txt,
