@@ -179,7 +179,16 @@ var heroCodenames = []string{
 // (drop the "Hunter not owned" lock) and the menu can surface a default hunter instead of the "?"
 // empty-inventory placeholder. IsDefault marks a starting hunter.
 func handleInventory(w http.ResponseWriter, r *http.Request) {
-	entries := make([]any, 0, len(heroCodenames))
+	// Heroes: 25 codenames, alchemist is the default. Cosmetics: mark all of them owned
+	// so the client CatalogManager sets CatalogEntry.IsOwned=1 → CanUse=1 → the browse-tab
+	// tiles in the STORE render (BUNDLES/SKINS/ACCESSORIES). A live RPM inspection of the
+	// CatalogEntries in the running client (2026-07-05) confirmed that Hero entries have
+	// CanUse=1/IsOwned=1 (grid renders), while store/cosmetic entries had CanUse=0/
+	// CannotUseReason=2/IsOwned=0 (blank tiles). The client re-derives CanUse from IsOwned
+	// each processing pass — a native shim that only poked CanUse=1 was reverted to 0
+	// within one game tick, while IsPurchasable=1 stuck; so the durable path is to make the
+	// server say we own them, not to fight the derivation.
+	entries := make([]any, 0, 1000)
 	for i, h := range heroCodenames {
 		entries = append(entries, map[string]any{
 			"AssetId":   "Hero:" + h,
@@ -187,6 +196,14 @@ func handleInventory(w http.ResponseWriter, r *http.Request) {
 			"IsDefault": i == 0, // one starting hunter (alchemist) as the default
 		})
 	}
+	appendOwned := func(list []map[string]any) {
+		for _, e := range list {
+			entries = append(entries, e)
+		}
+	}
+	appendOwned(ownedAssetEntries(virtualStoreSKUs, "StoreOffer"))
+	appendOwned(ownedAssetEntries(lines(skinsData), "HeroCosmeticsBundle"))
+	appendOwned(ownedAssetEntries(lines(slotsData), "SlotCosmetics"))
 	writeJSON(w, map[string]any{"AssetEntries": entries, "Version": 1})
 }
 

@@ -53,3 +53,19 @@ func cosmeticOffers(names []string, assetType, category string) []map[string]any
 	}
 	return offers
 }
+
+// ownedAssetEntries builds inventory AssetEntries marking every asset of the given type as
+// IsOwned=true. Marking cosmetics owned drives the client CatalogManager to set
+// CatalogEntry.IsOwned=1 → CanUse=1 → the browse-tab tiles render (heroes work this way in
+// handleInventory today; cosmetics need the same treatment).
+func ownedAssetEntries(names []string, assetType string) []map[string]any {
+	entries := make([]map[string]any, 0, len(names))
+	for _, n := range names {
+		entries = append(entries, map[string]any{
+			"AssetId":   assetType + ":" + n,
+			"IsOwned":   true,
+			"IsDefault": false,
+		})
+	}
+	return entries
+}
