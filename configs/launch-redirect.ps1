@@ -101,7 +101,9 @@ if (-not $NoHook -and -not $Revert -and -not $NoLaunch -and -not $Hook) {
   $defaultHook = Join-Path $repoRoot "tools\sigbypass-mod\catalog_store_fix.dll"
   if (Test-Path $defaultHook) {
     $Hook = $defaultHook
-    Write-Host "Auto-hook: injecting store/roster fix (catalog_store_fix.dll). Use -NoHook to skip." -ForegroundColor Cyan
+    $InjectSecondaries = $true   # after the primary settles, also inject the pick shims
+                                 # (catalog_pick_fix + mainmenu_refresh_pi8) via inject-secondaries.ps1
+    Write-Host "Auto-hook: injecting store/roster fix (catalog_store_fix.dll) + pick/refresh shims. Use -NoHook to skip." -ForegroundColor Cyan
   } else {
     Write-Host "Auto-hook: catalog_store_fix.dll not found at $defaultHook" -ForegroundColor Yellow
     Write-Host "  -> launching WITHOUT the store/roster hook (STORE + HUNTERS will be empty)." -ForegroundColor Yellow
@@ -109,15 +111,20 @@ if (-not $NoHook -and -not $Revert -and -not $NoLaunch -and -not $Hook) {
 }
 
 function Remove-HostsEntries {
-  $lines = Get-Content $hostsFile | Where-Object { $_ -notmatch [regex]::Escape($Marker) }
-  # Defender / SmartScreen occasionally holds an exclusive scan handle on
-  # hosts for ~100-500ms. Retry briefly instead of aborting the whole launch.
+  # Read + write via .NET File APIs (deterministic handle close). A
+  # `Get-Content $hostsFile | Set-Content $hostsFile` pipeline left the read
+  # handle open long enough to collide with the write ("Stream was not
+  # readable", an ArgumentException the old IOException-only catch let escape).
+  # Defender / SmartScreen also occasionally hold a scan handle on hosts for
+  # ~100-500ms, so retry on ANY transient failure.
   $maxTries = 20
   for ($i=0; $i -lt $maxTries; $i++) {
     try {
-      Set-Content -Path $hostsFile -Value $lines -Encoding ascii -ErrorAction Stop
+      $kept = [System.IO.File]::ReadAllLines($hostsFile) |
+        Where-Object { $_ -notmatch [regex]::Escape($Marker) }
+      [System.IO.File]::WriteAllLines($hostsFile, [string[]]$kept, [System.Text.Encoding]::ASCII)
       return
-    } catch [System.IO.IOException] {
+    } catch {
       if ($i -eq $maxTries - 1) { throw }
       Start-Sleep -Milliseconds 250
     }
@@ -188,10 +195,26 @@ Write-Host "Appending Root CA to game cacert.pem..." -ForegroundColor Cyan
 Add-Content -Path $caBundle -Value "`n# SUPERVIVE Revival Root CA" -Encoding ascii
 Add-Content -Path $caBundle -Value (Get-Content $certPath -Raw) -Encoding ascii
 
-# ---- hosts file redirect (idempotent, marked) ----
-Remove-HostsEntries
+# ---- hosts file redirect (idempotent, marked) — SINGLE atomic write ----
+# Remove any stale marker lines AND append the fresh redirect in ONE write, with
+# retry. A separate Remove-HostsEntries + Add-Content raced Defender's scan-lock on
+# the file we'd just written ("hosts is being used by another process"): the remove
+# write triggers a real-time scan that briefly holds hosts, then the immediate
+# append fails. One read-filter-append-write with retry avoids the intermediate
+# state and rides out the transient lock.
 $add = $HostsToRedirect | ForEach-Object { "127.0.0.1`t$_`t$Marker" }
-Add-Content -Path $hostsFile -Value $add -Encoding ascii
+$maxTries = 30
+for ($i=0; $i -lt $maxTries; $i++) {
+  try {
+    $kept = [System.IO.File]::ReadAllLines($hostsFile) |
+      Where-Object { $_ -notmatch [regex]::Escape($Marker) }
+    [System.IO.File]::WriteAllLines($hostsFile, [string[]]($kept + $add), [System.Text.Encoding]::ASCII)
+    break
+  } catch {
+    if ($i -eq $maxTries - 1) { throw }
+    Start-Sleep -Milliseconds 250
+  }
+}
 Write-Host "Hosts entries added:" -ForegroundColor Cyan
 $HostsToRedirect | ForEach-Object { Write-Host "  127.0.0.1  $_" }
 ipconfig /flushdns | Out-Null
@@ -280,10 +303,31 @@ if ($Hook) {
   # mmap completes" is on the order of 1-2 seconds; the polling loop wins.
   Write-Host "Spawning inject watch-now to catch the game on launch..." -ForegroundColor Cyan
   Write-Host "  DLL: $Hook" -ForegroundColor DarkGray
-  $watchProc = Start-Process -FilePath $injectExe `
-      -ArgumentList @("watch-now", "SUPERVIVE-Win64-Shipping.exe", $Hook) `
-      -WindowStyle Minimized -PassThru
+  # NOTE: $Hook contains spaces (the repo path). Start-Process does NOT quote
+  # individual -ArgumentList ARRAY elements, so the array form splits the DLL path
+  # at the spaces and inject silently fails (no marker). Pass ONE quoted argument
+  # STRING instead — the same fix the ags Start-Process above uses. Capture inject's
+  # stdout/stderr so a failed mmap is visible in docs/inject-watch.out.log.
+  $watchOut = Join-Path $repoRoot "docs\inject-watch.out.log"
+  $injArgs  = "watch-now SUPERVIVE-Win64-Shipping.exe `"$Hook`""
+  $watchProc = Start-Process -FilePath $injectExe -ArgumentList $injArgs `
+      -WindowStyle Minimized -PassThru `
+      -RedirectStandardOutput $watchOut -RedirectStandardError "$watchOut.err"
   Start-Sleep -Milliseconds 200   # let watch-now's poll loop spin up
+  # Secondary shims (pick + refresh) — injected by a DETACHED helper that waits for the
+  # primary catalog_store_fix to install + self-unhook first (so two thread-suspending hook
+  # installs never race). Detached so it outlives this launcher (the game exe detaches and
+  # this script exits). Only on the auto-hook path; an explicit -Hook injects just that DLL.
+  if ($InjectSecondaries) {
+    $secInj = Join-Path $repoRoot "configs\inject-secondaries.ps1"
+    if (Test-Path $secInj) {
+      Write-Host "  Secondary shims (catalog_pick_fix + pi8) will inject once the store/roster hook settles." -ForegroundColor DarkGray
+      Start-Process powershell -WindowStyle Hidden -ArgumentList @(
+        "-NoProfile","-ExecutionPolicy","Bypass","-File",$secInj,"-Repo",$repoRoot) | Out-Null
+    } else {
+      Write-Host "  (inject-secondaries.ps1 not found — pick shims will NOT auto-inject)" -ForegroundColor Yellow
+    }
+  }
   Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
   & $exe @iniArgs
   # When the game exits, the watch-now process is harmless (loop ends when
