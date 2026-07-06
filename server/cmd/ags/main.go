@@ -38,7 +38,12 @@ func main() {
 	httpsAddr := flag.String("https", ":443", "HTTPS listen address (Theorycraft hosts)")
 	logPath := flag.String("log", filepath.Join("docs", "capture.log"), "capture log path")
 	certDir := flag.String("certs", "certs", "directory for the generated TLS cert/key")
+	menuConfig := flag.String("config", "", "optional JSON config for menu/store content (see configs/store.example.json); empty uses built-in defaults")
 	flag.Parse()
+
+	// Load the operator config (heroes/store SKUs/prices) over the built-in defaults.
+	// Empty path or a missing/invalid file leaves the defaults in place (logged).
+	menu.Load(*menuConfig)
 
 	if err := os.MkdirAll(filepath.Dir(*logPath), 0o755); err != nil {
 		log.Fatalf("log dir: %v", err)
