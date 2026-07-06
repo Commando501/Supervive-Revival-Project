@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Redirect the SUPERVIVE client's dead backends to our local community server and
   launch the game.
@@ -322,8 +322,10 @@ if ($Hook) {
     $secInj = Join-Path $repoRoot "configs\inject-secondaries.ps1"
     if (Test-Path $secInj) {
       Write-Host "  Secondary shims (catalog_pick_fix + pi8) will inject once the store/roster hook settles." -ForegroundColor DarkGray
-      Start-Process powershell -WindowStyle Hidden -ArgumentList @(
-        "-NoProfile","-ExecutionPolicy","Bypass","-File",$secInj,"-Repo",$repoRoot) | Out-Null
+      # Quote the spaced paths in ONE argument string (Start-Process does not quote
+      # -ArgumentList array elements, so the repo path splits and powershell can't find the script).
+      $secArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$secInj`" -Repo `"$repoRoot`""
+      Start-Process powershell -WindowStyle Hidden -ArgumentList $secArgs | Out-Null
     } else {
       Write-Host "  (inject-secondaries.ps1 not found — pick shims will NOT auto-inject)" -ForegroundColor Yellow
     }
