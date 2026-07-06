@@ -420,3 +420,4 @@
 [hb] member=Hero:rocketjumper desired=3812053 calls=5 hitsGT=5 hooked=0
 [hb] member=Hero:rocketjumper desired=3812053 calls=5 hitsGT=5 hooked=0
 [hb] member=Hero:rocketjumper desired=3812053 calls=5 hitsGT=5 hooked=0
+[hb] member=Hero:rocketjumper desired=3812053 calls=5 hitsGT=5 hooked=0
