@@ -1,0 +1,1196 @@
+[0] catalog_pick_fix started; modBase=0x7FF682A80000 NumElements=333264
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  PATCH IsPreviewable @0x1A22E2C6E00 Script=0x1A22E5600A0 Num=261 : poke[257]28->27 ok=1 + jump0 247 ok=1
+  PATCH IsUseable @0x1A22E2C6D00 Script=0x1A2A10F0500 Num=123 : jump0 109 ok=1
+[done] patched 1 tile pair(s) — owned clicks now route to the preview path
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
