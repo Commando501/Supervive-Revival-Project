@@ -292,9 +292,15 @@ func handleHeroes(w http.ResponseWriter, r *http.Request) {
 // Readback: LogPlatformStorefront (the "…fetched" channel) should report the offer
 // count, and the STORE tab shows whether an advertised SKU resolves to a tile.
 func handlePlayerStore(w http.ResponseWriter, r *http.Request) {
+	// One ItemOffers array feeds every tab; each tab filters it by the offer's resolved
+	// PrimaryAssetType. StoreOffer packs -> BUNDLES/SUPPORTER PACKS; HeroCosmeticsBundle ->
+	// SKINS; SlotCosmetics -> ACCESSORIES. See cosmetics.go.
+	items := storeItemOffers(virtualStoreSKUs, "Bundles", "StoreOffer")
+	items = append(items, cosmeticOffers(lines(skinsData), "HeroCosmeticsBundle", "Skins")...)
+	items = append(items, cosmeticOffers(lines(slotsData), "SlotCosmetics", "Accessories")...)
 	writeJSON(w, map[string]any{
 		"Region":             "us-east",
-		"ItemOffers":         storeItemOffers(virtualStoreSKUs, "Bundles", "StoreOffer"),
+		"ItemOffers":         items,
 		"FeaturedItemOffers": storeFeaturedOffers(featuredStoreSKUs),
 	})
 }
