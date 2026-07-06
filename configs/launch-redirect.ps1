@@ -47,12 +47,18 @@ param(
   [switch]$Revert,
   [switch]$NoLaunch,
   [string]$Open = "",
-  [string]$Hook = ""    # path to a manual-map shim DLL (browse_hook.dll, etc.)
+  [string]$Hook = "",   # path to a shim DLL to inject on launch (manual-map via inject.exe).
+                         # For a working STORE + HUNTERS roster, use:
+                         #   tools\sigbypass-mod\catalog_store_fix.dll
+                         # (AssetManager scan + self-restoring IsCatalogDataReady jz-NOP that
+                         #  dodges the 3-5min code-integrity check + CatalogEntry purchasable
+                         #  poke). This is the single combined store/roster hook.
                          # Uses inject.exe launch (CREATE_SUSPENDED+mmap+Resume)
                          # so the DLL is loaded BEFORE the game's first
                          # UEngine::Browse call at startup. Required to catch
                          # the natural LVL_Login + LVL_LobbyV2 startup
                          # browses for testing the hook end-to-end.
+  [switch]$NoHook        # skip the default catalog_store_fix.dll auto-injection (clean RE run)
 )
 
 $ErrorActionPreference = "Stop"
@@ -78,8 +84,28 @@ if (-not $isAdmin) {
   if ($NoLaunch) { $argList += "-NoLaunch" }
   if ($Open)     { $argList += @("-Open",$Open) }
   if ($Hook)     { $argList += @("-Hook",$Hook) }
+  if ($NoHook)   { $argList += "-NoHook" }
   Start-Process powershell -Verb RunAs -ArgumentList $argList
   return
+}
+
+# ---- default store/roster hook: auto-inject catalog_store_fix.dll unless -NoHook ----
+# The native IsCatalogDataReady gate (CatMgr+0x354) is client state the dead backend
+# can't set, so the STORE tabs + HUNTERS roster stay empty without a per-launch shim.
+# catalog_store_fix.dll opens that gate (self-restoring jz-NOP that dodges the ~3-5min
+# code-integrity check) and pokes CatalogEntry purchasable flags. Defaulting it here
+# removes the manual -Hook step; pass -NoHook for a clean RE run, or -Hook <path> for a
+# different shim. Only the elevated launch path reaches this (non-admin returned above;
+# Revert/NoLaunch don't inject).
+if (-not $NoHook -and -not $Revert -and -not $NoLaunch -and -not $Hook) {
+  $defaultHook = Join-Path $repoRoot "tools\sigbypass-mod\catalog_store_fix.dll"
+  if (Test-Path $defaultHook) {
+    $Hook = $defaultHook
+    Write-Host "Auto-hook: injecting store/roster fix (catalog_store_fix.dll). Use -NoHook to skip." -ForegroundColor Cyan
+  } else {
+    Write-Host "Auto-hook: catalog_store_fix.dll not found at $defaultHook" -ForegroundColor Yellow
+    Write-Host "  -> launching WITHOUT the store/roster hook (STORE + HUNTERS will be empty)." -ForegroundColor Yellow
+  }
 }
 
 function Remove-HostsEntries {

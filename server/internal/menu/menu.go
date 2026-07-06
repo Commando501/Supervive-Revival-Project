@@ -189,7 +189,7 @@ func handleInventory(w http.ResponseWriter, r *http.Request) {
 	// within one game tick, while IsPurchasable=1 stuck; so the durable path is to make the
 	// server say we own them, not to fight the derivation.
 	entries := make([]any, 0, 1000)
-	for i, h := range heroCodenames {
+	for i, h := range cfg.Heroes {
 		entries = append(entries, map[string]any{
 			"AssetId":   "Hero:" + h,
 			"IsOwned":   true,
@@ -201,9 +201,9 @@ func handleInventory(w http.ResponseWriter, r *http.Request) {
 			entries = append(entries, e)
 		}
 	}
-	appendOwned(ownedAssetEntries(virtualStoreSKUs, "StoreOffer"))
-	appendOwned(ownedAssetEntries(lines(skinsData), "HeroCosmeticsBundle"))
-	appendOwned(ownedAssetEntries(lines(slotsData), "SlotCosmetics"))
+	appendOwned(ownedAssetEntries(cfg.Store.Bundles, "StoreOffer"))
+	appendOwned(ownedAssetEntries(cfg.Store.Skins, "HeroCosmeticsBundle"))
+	appendOwned(ownedAssetEntries(cfg.Store.Accessories, "SlotCosmetics"))
 	writeJSON(w, map[string]any{"AssetEntries": entries, "Version": 1})
 }
 
@@ -235,15 +235,16 @@ func handleWallet(w http.ResponseWriter, r *http.Request) {
 	// Theorycraft Coins — the real-money premium currency; a fresh account has 0,
 	// so 0 is AUTHENTIC (and is why all 91 wallet-key candidates failed: premium
 	// balance isn't a virtual-wallet entry). Probe retired; real balances below.
-	writeJSON(w, map[string]any{
-		"Balances": map[string]any{
-			"vp": 2004, // Vive Points (purple counter) — the one wallet currency the
-			// menu surfaces. Gold counter = Theorycraft Coins = real-money premium,
-			// authentically 0. (Confirmed a "heroToken" wallet balance does NOT feed
-			// UBattlepassHeroUnlocker — the hero-token count comes from the battlepass
-			// reward-track claim state, which needs packed reward SKUs.)
-		},
-	})
+	// Balances come from cfg.Wallet (default {"vp":2004}). "vp" => Vive Points (purple
+	// counter). The gold counter = Theorycraft Coins = real-money premium, authentically
+	// 0 on a fresh account (not a virtual-wallet entry, which is why 91 key candidates
+	// failed). A "heroToken" balance does NOT feed UBattlepassHeroUnlocker — the hero-token
+	// count comes from the battlepass reward-track claim state (needs packed reward SKUs).
+	balances := make(map[string]any, len(cfg.Wallet))
+	for code, amount := range cfg.Wallet {
+		balances[code] = amount
+	}
+	writeJSON(w, map[string]any{"Balances": balances})
 }
 
 // handleHeroes returns FLokiStorefrontHeroes. CONFIRMED last relaunch: the array
@@ -267,14 +268,7 @@ func handleHeroes(w http.ResponseWriter, r *http.Request) {
 	// sent (which rendered nothing). Sending all 25 lowercase codenames as the confirmed
 	// FLokiStorefrontHeroes { heroes: TArray<FString> } shape. Relaunch + LogPlatform
 	// Storefront ("Unlockable heroes fetched: %d") / the HUNTERS grid confirm the format.
-	heroes := []string{
-		"alchemist", "assault", "backlinehealer", "beebo", "bountyhunter",
-		"burstcaster", "earthtank", "farshot", "firefox", "flex",
-		"freeze", "gunner", "hookguy", "huntress", "reaper",
-		"reshealer", "rocketjumper", "ronin", "shieldbot", "sniper",
-		"stalker", "storm", "succubus", "void", "wukong",
-	}
-	writeJSON(w, map[string]any{"heroes": heroes})
+	writeJSON(w, map[string]any{"heroes": cfg.Heroes})
 }
 
 // handlePlayerStore returns FLokiStorefrontPlayerStore, the /storefront/offers/{id}
@@ -312,13 +306,13 @@ func handlePlayerStore(w http.ResponseWriter, r *http.Request) {
 	// One ItemOffers array feeds every tab; each tab filters it by the offer's resolved
 	// PrimaryAssetType. StoreOffer packs -> BUNDLES/SUPPORTER PACKS; HeroCosmeticsBundle ->
 	// SKINS; SlotCosmetics -> ACCESSORIES. See cosmetics.go.
-	items := storeItemOffers(virtualStoreSKUs, "Bundles", "StoreOffer")
-	items = append(items, cosmeticOffers(lines(skinsData), "HeroCosmeticsBundle", "Skins")...)
-	items = append(items, cosmeticOffers(lines(slotsData), "SlotCosmetics", "Accessories")...)
+	items := storeItemOffers(cfg.Store.Bundles, "Bundles", "StoreOffer")
+	items = append(items, cosmeticOffers(cfg.Store.Skins, "HeroCosmeticsBundle", "Skins")...)
+	items = append(items, cosmeticOffers(cfg.Store.Accessories, "SlotCosmetics", "Accessories")...)
 	writeJSON(w, map[string]any{
-		"Region":             "us-east",
+		"Region":             cfg.Region,
 		"ItemOffers":         items,
-		"FeaturedItemOffers": storeFeaturedOffers(featuredStoreSKUs),
+		"FeaturedItemOffers": storeFeaturedOffers(cfg.Store.Featured),
 	})
 }
 
@@ -373,8 +367,8 @@ func storeFeaturedOffers(skus []string) []map[string]any {
 // schema-correction and probe rationale.
 func handleRealMoneyStore(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
-		"Region":     "us-east",
-		"ItemOffers": storeItemOffers(realMoneyStoreSKUs, "Currency", ""),
+		"Region":     cfg.Region,
+		"ItemOffers": storeItemOffers(cfg.Store.Currency, "Currency", ""),
 	})
 }
 
@@ -390,7 +384,9 @@ func handleRealMoneyStore(w http.ResponseWriter, r *http.Request) {
 // SpaceMarineGhostPack; currency tiers → tp####/vp##). Using the summary "id" made
 // LokiAssetLoader::LoadStoreOfferAsset MISS on the map lookup ("Failed to load store
 // offer asset with ID StoreOffer:StarterPack") so the BUNDLES tab rendered blank even
-// though the map holds all 56 offers. These are the exact 56 keys (token variants omitted).
+// though the map holds all 56 offers. The 25 below are the cosmetic/bundle subset we
+// advertise on the virtual store (currency tiers live in realMoneyStoreSKUs; token
+// variants omitted) — 25 virtual + 19 real-money = 44 of the loader map's 56 keys.
 var virtualStoreSKUs = []string{
 	"BackToSchoolPack", "BrideOfSwordsFreezePack", "ChinchillaPack", "CyberpunkWukongPack",
 	"CybertigerStalkerPack", "DarkOrderSniperPack", "DemonessFlexPack", "GAResHealerPack",
