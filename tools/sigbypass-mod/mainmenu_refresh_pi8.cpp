@@ -154,7 +154,7 @@ extern "C" void OnBP(void* /*ctx*/, void* frame, void*){
     g_inHook=1;
     memcpy(g_template, frame, sizeof(g_template));
     // 1) MAIN-MENU center: Refresh on all party-slot subjects.
-    for(int i=0;i<g_nsubj;i++){ if(g_subjects[i]&&g_refreshFn) InvokeBP(g_subjects[i], g_refreshFn); }
+    for(int i=0;i<g_nsubj;i++){ uintptr_t su=(uintptr_t)g_subjects[i]; if(su&&g_refreshFn&&SafeReadable((void*)su,0x30)&&ClassOf(su)==g_subjClass) InvokeBP((void*)su, g_refreshFn); }
     // 2) HUNTERS preview / collection / mastery: broadcast member.OnHeroAssetIDChanged (invoke each live handler).
     if(g_member && SafeReadable((void*)(g_member+MEMBER_ONCHANGED),16)){
         uintptr_t data=*(uintptr_t*)(g_member+MEMBER_ONCHANGED); uint32_t num=*(uint32_t*)(g_member+MEMBER_ONCHANGED+8);
@@ -248,6 +248,19 @@ static uint32_t FindActivePickerHero(){
 static void WriteMemberHero(uint32_t nameId){ if(!g_member||!SafeReadable((void*)(g_member+MEMBER_HEROID),16))return; *(uint32_t*)(g_member+MEMBER_HEROID)=HERO_TYPE; *(uint32_t*)(g_member+MEMBER_HEROID+4)=0; *(uint32_t*)(g_member+MEMBER_HEROID+8)=nameId; *(uint32_t*)(g_member+MEMBER_HEROID+12)=0; }
 static uint32_t ReadMemberHero(){ return g_member?ReadHeroPA(g_member,MEMBER_HEROID):0; }
 static void LogSpawners(const char* tag){ for(int i=0;i<g_nspawn;i++){ uint32_t c=SpawnerCosmetic((uintptr_t)g_spawners[i]); char s[64]="<none>"; if(c)GetFNameStr(c,s,sizeof(s)); Markerf("   [%s] spawner[%d]=0x%llX TargetAssetID=%s\r\n",tag,i,(unsigned long long)g_spawners[i],s); } }
+// ── TASK B (return-to-menu re-sync) helpers — kill the 3-5s main-menu center lag ──
+// SubjStale: our cached subject[0] is no longer a live g_subjClass object => the menu rebuilt
+// the party slot on nav and we must re-Resolve to find the fresh subjects/spawners.
+static bool SubjStale(){ if(g_nsubj==0)return true; uintptr_t s0=(uintptr_t)g_subjects[0]; return !SafeReadable((void*)s0,0x30)||ClassOf(s0)!=g_subjClass; }
+// CenterHasHero: does any main-menu spawner's TargetAssetID cosmetic name BEGIN with the hero's
+// name (case-insensitive; the default cosmetic is "<Hero>Default")? => the center already shows the
+// pick, so no re-arm is needed (zero hook churn in steady state).
+static bool CenterHasHero(uint32_t hero){
+    if(!hero||g_nspawn==0)return false; char h[64]; if(!GetFNameStr(hero,h,sizeof(h)))return false; int hl=(int)strlen(h);
+    for(int i=0;i<g_nspawn;i++){ uintptr_t sp=(uintptr_t)g_spawners[i]; if(!SafeReadable((void*)(sp+SPAWNER_TARGET),16))continue; uint32_t cos=SpawnerCosmetic(sp); if(!cos)continue; char c[64]; if(!GetFNameStr(cos,c,sizeof(c)))continue;
+        if((int)strlen(c)>=hl){ bool m=true; for(int k=0;k<hl;k++){ char a=c[k],b=h[k]; if(a>='A'&&a<='Z')a+=32; if(b>='A'&&b<='Z')b+=32; if(a!=b){m=false;break;} } if(m)return true; } }
+    return false;
+}
 
 static DWORD WINAPI Worker(LPVOID){
     HANDLE h=CreateFileA(kMarkerPath,GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr); if(h!=INVALID_HANDLE_VALUE)CloseHandle(h);
@@ -266,13 +279,24 @@ static DWORD WINAPI Worker(LPVOID){
     memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 5;}
     Marker("[3] hook built. Open HUNTERS + click a hunter.\r\n");
 
-    uint32_t desired=0; bool hooked=false; DWORD hookedAt=0,lastResolve=GetTickCount(),lastHb=0,start=GetTickCount(); uint32_t lastLogged=0;
+    uint32_t desired=0; bool hooked=false; DWORD hookedAt=0,lastResolve=GetTickCount(),lastHb=0,lastSync=0,resyncUntil=0,start=GetTickCount(); uint32_t lastLogged=0,prevPick=0;
     while(GetTickCount()-start<28800000u){
-        if(GetTickCount()-lastResolve>=1500){ lastResolve=GetTickCount(); if(g_nspawn==0||!g_member||g_nhfn==0)Resolve(); }
+        if(GetTickCount()-lastResolve>=1500){ lastResolve=GetTickCount(); if(g_nspawn==0||!g_member||g_nhfn==0||SubjStale())Resolve(); }
         uint32_t pick=FindActivePickerHero();
         if(pick&&pick!=desired){ desired=pick; char s[64]="?"; GetFNameStr(pick,s,sizeof(s)); Markerf("[PICK] Hero:%s\r\n",s); }
+        // Detect LEAVING the HUNTERS page (active picker disappears): open a short window so we kick the
+        // main-menu actor render exactly as the menu re-appears (that transition is where the lag lives).
+        if(prevPick!=0 && pick==0 && desired){ resyncUntil=GetTickCount()+1600; Marker("[resync] left HUNTERS -> kick main-menu render (1.6s window)\r\n"); }
+        prevPick=pick;
         if(desired){ uint32_t cur=ReadMemberHero(); if(cur!=desired){ WriteMemberHero(desired); if(desired!=lastLogged){ char s[64]="?"; GetFNameStr(desired,s,sizeof(s)); Markerf("[MIRROR] member <- Hero:%s\r\n",s); LogSpawners("before"); lastLogged=desired; }
             if(!hooked){ g_pending=1; g_done=0; if(InstallHook()){ hooked=true; hookedAt=GetTickCount(); Marker("[armed] Refresh (main-menu) + broadcast OnHeroAssetIDChanged (HUNTERS/collection/mastery) on next game-thread BP...\r\n"); } } } }
+        // TASK B (bounded) — the DATA (TargetAssetID) is already correct; the ~1-2s lag is the game
+        // re-rendering the main-menu hero actor when the menu re-appears. During the post-leave window,
+        // re-fire subject.Refresh every ~250ms so the actor re-renders immediately instead of on the slow
+        // native cadence. Bounded to the window => NO steady-state hook churn. SubjStale (above) re-Resolves
+        // if the menu recreated the slot; OnBP guards each InvokeBP with a class-check.
+        if(desired && !hooked && GetTickCount()<resyncUntil && GetTickCount()-lastSync>=250){ lastSync=GetTickCount();
+            if(g_nsubj>0 && g_refreshFn){ g_pending=1; g_done=0; if(InstallHook()){ hooked=true; hookedAt=GetTickCount(); } } }
         if(hooked){ if(g_done){ UninstallHook(); hooked=false; Markerf("[CALLED] Refresh x%d + delegate broadcast ran on game thread (#%ld). Spawner TargetAssetID AFTER:\r\n",g_nsubj,(long)g_calls); LogSpawners("after"); }
             else if(GetTickCount()-hookedAt>=6000){ UninstallHook(); hooked=false; g_pending=0; Markerf("[timeout] no game-thread PI in 6s (hitsGT=%ld)\r\n",(long)g_hitsGT); } }
         if(GetTickCount()-lastHb>=10000){ char mh[64]="<none>"; GetFNameStr(ReadMemberHero(),mh,sizeof(mh)); Markerf("[hb] member=Hero:%s desired=%u calls=%ld hitsGT=%ld hooked=%d\r\n",mh,desired,(long)g_calls,(long)g_hitsGT,hooked?1:0); lastHb=GetTickCount(); }

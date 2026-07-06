@@ -1200,3 +1200,6 @@
 [tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
   IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
   IsUseable @0x1A22E2C6D00 already patched
+[tile] IsPreviewable @0x1A22E2C6E00 outer=0x1A2304D3F10
+  IsPreviewable @0x1A22E2C6E00 already patched (Script[0]=06)
+  IsUseable @0x1A22E2C6D00 already patched
