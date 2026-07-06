@@ -1,0 +1,135 @@
+SESSION 52 — MISSIONS PAGE FULLY DECOMPILED (BindToMissions bytecode recovered)
+================================================================================
+(2026-07-06; offline extraction only. Game was live at menu — NOT disturbed.)
+
+WHY THIS SESSION MATTERS
+------------------------
+The 2026-06-29 sessions (docs/dedicated-server-stub.md, lokiassetmanager-vtable-dump.md)
+could NOT decompile the Blueprint bytecode — CUE4Parse 1.2.2 returned NULL ScriptBytecode
+for this IoStore build, so they inferred the missions data path from disasm + heap RE and
+concluded "needs UE network replication → build a dedicated server." That conclusion was
+built on an INCOMPLETE read of the widget logic.
+
+This session the bpdump Kismet disassembler WORKS on all mission widgets (provider.ReadScriptData
++ the S46 disassembler). Full BP logic is now recovered. Files in tools/extractor/out/:
+  bpdump_BindToMissions.txt                              (43 statements — THE key one)
+  bpdump_ExecuteUbergraph_WBP_UI_MissionModalCategory.txt (24 — dispatch table)
+  bpdump_ExecuteUbergraph_WBP_UI_MissionContainer.txt    (137 — per-mission build+filter)
+  bpdump_Create Widget for Mission.txt                   (17 — leaf widget creation)
+  bpdump_OnUpdated.txt / bpdump_OnMissionsModelUpdated.txt (trampolines)
+
+THE ACTUAL DATA PATH (authoritative, from bytecode)
+---------------------------------------------------
+WBP_UI_MissionModal (the modal), on open, hosts 6 HARDCODED category widgets:
+  Dailies, Weekly, Seasonal, Onboarding, PCBang, ArmoryTest(hidden).
+
+Each WBP_UI_MissionModalCategory has instance var PoolAsset = TArray<TSubclassOf<
+LokiDataAsset_MissionPool>> baked into the widget (per-category pool set — see table below).
+On Construct → CreateAssetsForPools (spawns one WBP_UI_MissionContainer per pool into
+MissionsContainer_v2) → BindToMissions.
+
+BindToMissions (decompiled):
+  1. GetAllChildren(MissionsContainer_v2) → cast each to WBP_UI_MissionContainer_C →
+     bind their OnChildrenChanged → OnChildrenCountChanged.
+  2. For each class in PoolAsset[]: GetPrimaryAssetIdFromClass(pool) → Set_Add into
+     instance var PoolIds.
+  3. mm = GetProgressionManager().GetMissionsModel()   ← LIVE ProgressionManager at menu
+     AddMulticastDelegate(mm.OnUpdated, self.OnUpdated); then call OnUpdated() once.
+
+category.OnUpdated → ExecuteUbergraph(29) → UpdateMissionPoolTimer + UpdateMetaMission
+  (just the countdown + meta-mission bar; the per-mission tiles are built by the CONTAINERS).
+
+WBP_UI_MissionContainer.On Missions Updated / ExecuteUbergraph (the tile builder):
+  - reads its MissionModel (per-container) .GetMissions() → array of mission ids
+  - per mission: skip if MissionAsset.Hide; if MissionAsset.Hero is a valid PrimaryAssetId,
+    show ONLY if Hero == GetPartyManager().GetPartyModel().GetSelf().HeroAssetID
+    (this is the per-hunter mission filter — explains why HunterMissions are hidden unless
+    the matching hunter is selected).
+  - GetMissionModel(id) → if valid → Create Widget for Mission → add to ChildContainer.
+  - Create Widget for Mission: casts MissionAsset.LobbyWidgetClass to
+    WBP_UI_MissionProgressBase_C (or a default ChildWidgetClass) and creates it.
+
+=> EVERYTHING hangs off ProgressionManager.GetMissionsModel() returning a UMissionsModel
+   whose Missions / Pools TMaps are POPULATED. The ProgressionManager instance is LIVE at
+   menu (unlike LokiPlayerState_Missions, which is CDO-only at menu). The widgets are pure
+   consumers — no replication is required by the BP layer itself; it reads a client model.
+
+UMissionsModel layout (usmap schema.txt:32047):
+  Missions          Map   (keyed by PrimaryAssetId — the per-pool aggregate? or per-mission)
+  Pools             Map
+  CompletionCounts  Map
+  OnUpdated         MulticastDelegate   ← categories subscribe here
+  OnAllMissionsLoaded MulticastDelegate
+  OnClaimableRewardsUpdated MulticastDelegate
+  bAllMissionLoaded Bool
+  MissionsActor     Object (LokiPlayerState_Missions)
+
+MissionModel layout (usmap:31969) — the per-mission model the container reads:
+  ID(Str), MissionAssetId(PAId), PoolId(PAId), XPReward(int), Objectives(Map),
+  Completed(bool), bHasClaimableReward(bool), MissionAsset(obj LokiDataAsset_Mission),
+  GrantedAt(DateTime), BaseMission(obj), AssetHandle(obj) + 4 delegates.
+
+CATALOG RECOVERED THIS SESSION (tools/extractor/out/catalog/missions_catalog.json)
+----------------------------------------------------------------------------------
+Dumped all 346 DA_Mission* + 16 DA_MissionPool* CDOs (dump subcommand). Key facts:
+  - 346 missions total: 300 HunterMissions, 17 Armory, 7 NewOnboarding, 4 Tournament,
+    2 Daily, + the 16 pools.
+  - 107 missions carry a localized Description; the rest are hunter-mastery tiers.
+  - Mission CDOs DO NOT carry their Pool ref (Pool field empty) and pools DO NOT carry a
+    mission list — so pool→mission assignment is SERVER-GRANTED at rotation time, not static.
+    (Consistent with the "missions are granted" model; a menu display can synthesize a
+    plausible granted set per pool.)
+
+Per-category PoolAsset wiring (from the modal .uasset, unchanged from S46):
+  Dailies   : DA_MissionPoolDailyEasy, DailyChallenge, DailyEasy_Planbee, DailyChallenge_Planbee
+  Weekly    : DA_MissionPoolWeekly, WeeklyChallenge, Weekly_Planbee, WeeklyChallenge_Planbee
+  Seasonal  : DA_MissionPool_Tournament
+  Onboarding: DA_MissionPoolOnboardingPlanbee, DA_MissionPoolOnboarding
+  PCBang    : DA_MissionPoolDailyPCB, DA_MissionPoolDailyPCB_Armory
+  ArmoryTest: DA_MissionPoolArmoryOnboarding (hidden category)
+
+THE STRATEGIC FORK (for planning)
+---------------------------------
+The blocker is unchanged in LOCATION (UMissionsModel maps empty) but the decompile removes
+the assumption that replication is the ONLY way to fill them. Three routes:
+
+ROUTE A — MODEL-POPULATION SHIM (recommended; mirrors catalog_store_fix + pi8):
+  Find the live ProgressionManager → its MissionsModel, populate the Missions/Pools TMaps
+  with synthesized MissionModel objects (using the recovered catalog), then broadcast
+  MissionsModel.OnUpdated via the S50 pi8 ProcessInternal→InvokeBP game-thread primitive.
+  This is the SAME shortcut that made the roster render (catalog_ready_fix forced a gate;
+  here we fill a model + fire its delegate). Reuses: obj_iter.py, the mirror-poll pattern,
+  InvokeBP. Risk: constructing valid UMissionModel UObjects + TMap insertion is fiddly;
+  the S45 "poke built grid = dead delegate" gotcha means we must fire OnUpdated, not just
+  poke — which pi8 can do.
+
+ROUTE B — HTTP FEED PROBE (cheap first test, do BEFORE committing to A or C):
+  ProgressionManager : PlatformManager, same family as the managers that ARE HTTP-fed. The
+  client already calls GET /progression/players/{id} (174x) + PUT .../mission (21x). The
+  2026-06-29 note says enriching the PUT *response* did NOT create UMissionModels — but that
+  tested the wrong endpoint/shape (PUT is fire-and-forget; GET returns a paging list). No one
+  has shaped GET /progression/players/{id} as a MissionData/MissionDataResponse feed and
+  watched the MissionsModel. One single-variable backend probe (per CLAUDE.md revert rule)
+  could confirm/kill the HTTP path for pennies before spending days on A or C.
+
+ROUTE C — DEDICATED SERVER (docs/dedicated-server-stub.md; the pre-decompile plan):
+  Build a UE5.4 dedicated server that replicates LokiPlayerState_Missions. Largest lift;
+  only strictly necessary if BOTH A and B fail. Branch name reflects this intent, but NO
+  dedicated-server code is committed yet — nothing is lost by trying A/B first.
+
+RECOMMENDATION: B (one probe) → A (shim) if B fails. C only as last resort. This matches the
+project's proven pattern (native gate/model shim + backend data) that already brought the
+roster, store, cosmetics, and main-menu refresh online — all of which were once thought to
+need replication/deep RE.
+
+NEXT CONCRETE MOVES
+-------------------
+1. (Route B) Add a GET /progression/players/{id} mission-feed probe in menu/interactive,
+   single-variable, revert-on-fail. Watch Loki.log + read live [ProgressionManager→
+   MissionsModel] maps after a menu open. (Needs elevated relaunch OR live swap; game is
+   currently up — coordinate with user before disrupting.)
+2. (Route A prep) Build a find-ProgressionManager tool (scan GUObjectArray for the live
+   ProgressionManager instance, walk +offset to MissionsModel, read Missions.Num). Reuse
+   tools/re/obj_iter.py + find_guobjectarray.py.
+3. Persist missions_catalog.json → a backend index (like index_catalog.go) so whichever
+   route wins has the mission text/icons/XP ready to serve.
