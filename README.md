@@ -106,7 +106,9 @@ cd "G:\git\Supervive Revival Project"
 ```
 
 Watch live log at `C:\Users\<you>\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log`.
-HTTP traffic is captured to `docs/capture.log`. The server's catch-all returns
+HTTP traffic is captured to `docs/capture.log`. The log starts fresh on every
+server launch and is capped at 256 MB (`-log-max-mb`); in both cases the prior
+contents rotate to `docs/capture.log.prev`. The server's catch-all returns
 `{}` so the client keeps progressing and reveals its next call.
 
 ## Key gotchas (learned the hard way)

@@ -1,0 +1,6 @@
+[0] missions_call_probe (call GetMissions via ProcessEvent on game thread) started
+[1] gameTid=38288 PE=0x7FF683D45A10
+[2] MissionsModel=0x1A587FEBF80 GetMissions=000001A4DA404F40
+[3] hook built; arming one GetMissions call...
+[4] CALLED ok. GetMissions -> TArray{Data=0x0 Num=0 Max=0} (hitsGT=1)
+[4] => ProcessEvent CAN call native MissionsModel methods on the game thread. Phase-2 primitive UNLOCKED.

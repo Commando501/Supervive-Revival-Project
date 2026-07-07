@@ -306,10 +306,48 @@ reload) is the recommended next pursuit. Full details + per-needle hit counts
 in `docs/trackb-assetregistry-route.md` "Option 3 ... CLOSED" section and
 the `supervive-milestone3-trackb-status` memory file.
 
+## Customization equip persistence (2026-07-06) — IMPLEMENTED + deployed
+
+The customization page's selections reverted on re-entry because every equip
+write fell through to the `{}` catch-all and nothing was echoed on readback. The
+whole PersonalizationLoadout surface was recovered in one session and wired in
+`server/internal/interactive/loadout.go`:
+
+- **Route surface** (exe route-fragment table, `usmapdump wstrings/peek` @ live
+  mod-RVA `0x8B4C7C8`, adjacent to `ULoadoutReconciler::ReconcileLoadout`):
+  `/personalization/players/{id}/` + `slotcosmetics`, `emotes`, `titles`,
+  `cosmeticsbundle/`, `luxechromas/`, `lobbyplatforms`, `clientprofile`,
+  `privacy`.
+- **Live capture** (`docs/capture.log`, 15:07): glider equip =
+  `POST .../slotcosmetics  {"slot":"Glider","asset":"SlotCosmetics:GLIDER_AngelicForce"}`.
+- **usmap schemas** (extractor `schema`, after a KeyValuePair printer fix):
+  `PersonalizationLoadoutPlatform{ID,Version:Int64,EmoteIds,TitleIds:Array<Name>,`
+  `SlotCosmeticsEntries:Array<SlotCosmeticsEntry>,IsAnonymous,Token}` +
+  `PersonalizationLoadout{HeroCosmeticsBundlePreferences,LuxeSkinChromaPreferences,`
+  `LobbyPlatformPreference:PrimaryAssetId}`;
+  `SlotCosmeticsEntry{Slot:Name,Asset:PrimaryAssetId}` (matches the captured body);
+  `SetEmotesRequest{Emotes:Array<Str>}`, `SetTitlesRequest{Titles:Array}`,
+  `SetLuxeSkinChromaPreferenceRequest{LuxeAssetID,ChromaAssetID}`. No request
+  struct for `/cosmeticsbundle/` (hero id rides in the path — parsed tolerantly).
+
+**Key model insight:** the readback is `GET /personalization/players/{id}` (the
+personalization root — the one GET on the surface that tolerated `{}`); the
+client rebuilds its loadout via `ULoadoutReconciler`, which only re-applies the
+doc when its `Version` advances past `LastLoadoutVersion`. So **every write bumps
+`loadoutVersion`** or the echo is ignored and the page still won't repopulate.
+`lobbyplatforms` now bumps the version too (the backdrop is a loadout field).
+
+Status: built, unit-tested (`loadout_test.go`), hot-swapped under the running
+game (no relaunch; certs reused). HTTP round-trip confirmed live
+(`slotcosmetics` persists + echoes, version increments). The `slotcosmetics`
+wire shape is capture-confirmed; `emotes/titles/cosmeticsbundle/luxechromas` are
+best-guess request shapes (they no-op safely if wrong, and log the raw request
+to `capture.log` to pin the real shape). **Still needs one in-game pass**: equip
+a cosmetic, leave + re-enter CUSTOMIZATION (confirms readback), then relaunch
+(confirms disk persistence). See `docs/session-53-customization-persistence.md`.
+
 ## Deferred (need Track A catalog SKUs)
 
-Cosmetic/skin EQUIP (loadout, `HeroCosmeticsBundlePreference`,
-`SetLuxeSkinChromaPreferenceRequest` chroma), store orders
-(`/storefront/orders`, `/storefront/steam/player/`, `/storefront/entitlements`),
-`LokiPlatformCurrencyExchangeRequest` (token exchange) — revisit once the
-content-service manifest lands resolvable SKUs.
+Store orders (`/storefront/orders`, `/storefront/steam/player/`,
+`/storefront/entitlements`), `LokiPlatformCurrencyExchangeRequest` (token
+exchange) — revisit once the content-service manifest lands resolvable SKUs.

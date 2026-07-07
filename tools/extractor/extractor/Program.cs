@@ -963,8 +963,11 @@ if (args.Length >= 2 && args[0] == "schema")
             foreach (var prop in propEnum)
             {
                 // Properties may be stored as a dict (int->PropertyInfo); unwrap values.
+                // A generic Dictionary enumerates boxed KeyValuePair<,> (NOT DictionaryEntry),
+                // so unwrap that shape too or every Name/MappingType lookup misses.
                 var pi = prop;
                 if (prop is System.Collections.DictionaryEntry de) pi = de.Value;
+                else if (pi != null && pi.GetType().IsGenericType && pi.GetType().Name.StartsWith("KeyValuePair")) pi = Member(pi, "Value");
                 var pname = Member(pi, "Name", "name")?.ToString() ?? "?";
                 var mtype = Member(pi, "MappingType", "mappingType");
                 var arrayDim = Member(pi, "ArrayDim", "arrayDim");

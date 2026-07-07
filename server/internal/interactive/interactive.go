@@ -40,13 +40,17 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// Fired many times as the player browses backdrops. Persist + echo the ack.
 	mux.HandleFunc("PUT /personalization/players/{id}/lobbyplatforms", s.handleSetLobbyPlatform)
 
-	// ---- Personalization: player root ----
-	// GET /personalization/players/{id} did NOT error on {} (no strict validity
-	// predicate), so this is a probe to discover where the equipped lobby platform
-	// is read back: we surface the stored lobbyPlatformAssetId here. Unmatched keys
-	// are ignored by UE, so a wrong guess is harmless; the relaunch tells us if the
-	// backdrop persists from this path.
+	// ---- Personalization: player root = the PersonalizationLoadout readback ----
+	// 2026-07-06: no longer a blind probe. The exe's route-fragment table +
+	// usmap schemas (see loadout.go) identify this GET as the loadout fetch the
+	// customization page repopulates from (ULoadoutReconciler). We answer with
+	// the full loadout doc built from persisted equips; the original probe keys
+	// are kept alongside (unmatched keys are ignored — zero regression).
 	mux.HandleFunc("GET /personalization/players/{id}", s.handleGetPersonalizationPlayer)
+
+	// ---- Personalization: customization equips (slot cosmetics, emotes, titles,
+	// hero skin bundles, luxe chromas) — see loadout.go for the recovered models.
+	s.registerLoadout(mux)
 
 	// ---- Progression ----
 	// GET /progression/players/{id} logged "Invalid response received" on {} — it
@@ -179,19 +183,28 @@ func (s *Service) handleSetLobbyPlatform(w http.ResponseWriter, r *http.Request)
 	if req.LobbyPlatformAssetId != "" {
 		s.store.update(r.PathValue("id"), func(st *playerState) {
 			st.LobbyPlatformAssetId = req.LobbyPlatformAssetId
+			// The backdrop is part of the PersonalizationLoadout
+			// (lobbyPlatformPreference), so this write must advance the loadout
+			// version too or the reconciler ignores the change (see loadout.go).
+			st.LoadoutVersion++
 		})
 	}
-	// Echo the accepted preference back as a typed ack.
-	writeJSON(w, map[string]any{"lobbyPlatformAssetId": req.LobbyPlatformAssetId})
+	// Echo the accepted preference back as a typed ack, plus the full updated
+	// loadout doc fields (set-then-return superset; unmatched keys are ignored).
+	resp := s.loadoutDoc(r.PathValue("id"))
+	resp["lobbyPlatformAssetId"] = req.LobbyPlatformAssetId
+	writeJSON(w, resp)
 }
 
+// handleGetPersonalizationPlayer answers the personalization root GET with the
+// full PersonalizationLoadout doc (see loadout.go — this is the readback the
+// customization page rebuilds from). The pre-2026-07-06 probe keys for the
+// backdrop are kept alongside; they were never observed to hurt and removing
+// them would change two variables at once.
 func (s *Service) handleGetPersonalizationPlayer(w http.ResponseWriter, r *http.Request) {
-	st := s.store.get(r.PathValue("id"))
-	resp := map[string]any{}
-	if st.LobbyPlatformAssetId != "" {
-		// Probe both likely key spellings for where the menu reads the equipped
-		// backdrop. Both are plain strings, so an unmatched/extra key is ignored
-		// and a matched string key deserializes cleanly.
+	id := r.PathValue("id")
+	resp := s.loadoutDoc(id)
+	if st := s.store.get(id); st.LobbyPlatformAssetId != "" {
 		resp["lobbyPlatformAssetId"] = st.LobbyPlatformAssetId
 		resp["equippedLobbyPlatform"] = st.LobbyPlatformAssetId
 	}

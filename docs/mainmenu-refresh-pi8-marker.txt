@@ -1,116 +1,372 @@
 [0] mainmenu_refresh_pi8 (Refresh + broadcast member.OnHeroAssetIDChanged via ProcessInternal+FFrame) started
-[1] gameTid=42136
-[2] resolved subjects=4 refreshFn=0000026B77FFA300 spawners=4 member=0x26A79973C00 handlerFns=3
-   [init] spawner[0]=0x26B80404600 TargetAssetID=RocketJumperDefault
-   [init] spawner[1]=0x26B80404030 TargetAssetID=<none>
-   [init] spawner[2]=0x26B80403A60 TargetAssetID=<none>
-   [init] spawner[3]=0x26B80403490 TargetAssetID=<none>
+[1] gameTid=55688
+[2] resolved subjects=4 refreshFn=000001C308166000 spawners=4 member=0x1C465004A00 handlerFns=3
+   [init] spawner[0]=0x1C4824585F0 TargetAssetID=ResHealerDefault
+   [init] spawner[1]=0x1C482458020 TargetAssetID=<none>
+   [init] spawner[2]=0x1C482457A50 TargetAssetID=<none>
+   [init] spawner[3]=0x1C482457480 TargetAssetID=<none>
 [3] hook built. Open HUNTERS + click a hunter.
-[PICK] Hero:rocketjumper
-[hb] member=Hero:rocketjumper desired=3812342 calls=0 hitsGT=0 hooked=0
-[hb] member=Hero:rocketjumper desired=3812342 calls=0 hitsGT=0 hooked=0
-[hb] member=Hero:rocketjumper desired=3812342 calls=0 hitsGT=0 hooked=0
-[PICK] Hero:RONIN
-[MIRROR] member <- Hero:RONIN
-   [before] spawner[0]=0x26B80404600 TargetAssetID=RocketJumperDefault
-   [before] spawner[1]=0x26B80404030 TargetAssetID=<none>
-   [before] spawner[2]=0x26B80403A60 TargetAssetID=<none>
-   [before] spawner[3]=0x26B80403490 TargetAssetID=<none>
-[armed] Refresh (main-menu) + broadcast OnHeroAssetIDChanged (HUNTERS/collection/mastery) on next game-thread BP...
-[CALLED] Refresh x4 + delegate broadcast ran on game thread (#1). Spawner TargetAssetID AFTER:
-   [after] spawner[0]=0x26B80404600 TargetAssetID=RoninDefault
-   [after] spawner[1]=0x26B80404030 TargetAssetID=<none>
-   [after] spawner[2]=0x26B80403A60 TargetAssetID=<none>
-   [after] spawner[3]=0x26B80403490 TargetAssetID=<none>
-[hb] member=Hero:RONIN desired=2430462 calls=1 hitsGT=1 hooked=0
-[PICK] Hero:BurstCaster
-[MIRROR] member <- Hero:BurstCaster
-   [before] spawner[0]=0x26B80404600 TargetAssetID=RoninDefault
-   [before] spawner[1]=0x26B80404030 TargetAssetID=<none>
-   [before] spawner[2]=0x26B80403A60 TargetAssetID=<none>
-   [before] spawner[3]=0x26B80403490 TargetAssetID=<none>
-[armed] Refresh (main-menu) + broadcast OnHeroAssetIDChanged (HUNTERS/collection/mastery) on next game-thread BP...
-[CALLED] Refresh x4 + delegate broadcast ran on game thread (#2). Spawner TargetAssetID AFTER:
-   [after] spawner[0]=0x26B80404600 TargetAssetID=BurstCasterDefault
-   [after] spawner[1]=0x26B80404030 TargetAssetID=<none>
-   [after] spawner[2]=0x26B80403A60 TargetAssetID=<none>
-   [after] spawner[3]=0x26B80403490 TargetAssetID=<none>
-[PICK] Hero:Succubus
-[MIRROR] member <- Hero:Succubus
-   [before] spawner[0]=0x26B80404600 TargetAssetID=BurstCasterDefault
-   [before] spawner[1]=0x26B80404030 TargetAssetID=<none>
-   [before] spawner[2]=0x26B80403A60 TargetAssetID=<none>
-   [before] spawner[3]=0x26B80403490 TargetAssetID=<none>
-[armed] Refresh (main-menu) + broadcast OnHeroAssetIDChanged (HUNTERS/collection/mastery) on next game-thread BP...
-[hb] member=Hero:Succubus desired=2307728 calls=2 hitsGT=3 hooked=1
-[CALLED] Refresh x4 + delegate broadcast ran on game thread (#3). Spawner TargetAssetID AFTER:
-   [after] spawner[0]=0x26B80404600 TargetAssetID=SuccubusDefault
-   [after] spawner[1]=0x26B80404030 TargetAssetID=<none>
-   [after] spawner[2]=0x26B80403A60 TargetAssetID=<none>
-   [after] spawner[3]=0x26B80403490 TargetAssetID=<none>
-[hb] member=Hero:Succubus desired=2307728 calls=3 hitsGT=3 hooked=0
-[hb] member=Hero:Succubus desired=2307728 calls=3 hitsGT=3 hooked=0
-[hb] member=Hero:Succubus desired=2307728 calls=3 hitsGT=3 hooked=0
-[hb] member=Hero:Succubus desired=2307728 calls=3 hitsGT=3 hooked=0
 [PICK] Hero:reshealer
-[MIRROR] member <- Hero:reshealer
-   [before] spawner[0]=0x26B80404600 TargetAssetID=SuccubusDefault
-   [before] spawner[1]=0x26B80404030 TargetAssetID=<none>
-   [before] spawner[2]=0x26B80403A60 TargetAssetID=<none>
-   [before] spawner[3]=0x26B80403490 TargetAssetID=<none>
-[armed] Refresh (main-menu) + broadcast OnHeroAssetIDChanged (HUNTERS/collection/mastery) on next game-thread BP...
-[CALLED] Refresh x4 + delegate broadcast ran on game thread (#4). Spawner TargetAssetID AFTER:
-   [after] spawner[0]=0x26B80404600 TargetAssetID=ResHealerDefault
-   [after] spawner[1]=0x26B80404030 TargetAssetID=<none>
-   [after] spawner[2]=0x26B80403A60 TargetAssetID=<none>
-   [after] spawner[3]=0x26B80403490 TargetAssetID=<none>
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
-[hb] member=Hero:reshealer desired=405081 calls=4 hitsGT=4 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:reshealer desired=403917 calls=0 hitsGT=0 hooked=0
