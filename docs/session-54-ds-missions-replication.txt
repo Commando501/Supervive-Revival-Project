@@ -410,3 +410,26 @@ OBJOBJECTS=base+0x9E38930). UObject: InternalIndex@+0x10 Class@+0x18 Name@+0x20 
 UStruct/UClass ChildProperties@+0x58. FField: FFieldClass@+0x08 Next@+0x18 Name@+0x20 Flags@+0x38.
 FStructProperty.Struct@+0x70, FArrayProperty.Inner@+0x78. UScriptStruct.StructFlags@+0xB8(low u32).
 Lesson: TRUST the live client's reflection over the usmap for inner/nested types.
+
+*** OPTION C — STEP 2 RESULT (2026-07-07, live func-enum): NO BP-callable ingestion entry. CLOSED. ***
+Enumerated every UFunction on the missions classes on a live standalone client (new tool
+tools/re/func_enum.py: walks UClass.Children @+0x50 / UField.Next @+0x30, flags BP via Script.Num @+0x70
+> 0 vs native = 0; validated on PC_MainMenu_C which shows all 16 BP funcs with bytecode). RESULT — the
+ENTIRE missions system is NATIVE (Script.Num=0), no BP entry the pi8 primitive could call:
+  - UMissionsModel: OnPSMissionsUpdated, CreateMissionsModel, CreateMissionModelFromFinalProgress,
+    GetMissions, GetMissionModel, GetActiveMissionModel, CountCompleteMissionsFromPools, ... ALL native.
+  - UProgressionManager: GetMissionsModel, AddProgressToMission, GetClaimableMissionRewards,
+    ClaimAllProgressionTrackRewards, GetCurrentPlayerProgression, ... ALL native.
+  - LokiPlayerState_Missions: ServerAddMissionProgress, SetMissionProgress, GetMissionProgress,
+    GetMission, OnRep_MissionsUpdated, OnRep_FinalMissionProgress, OnMissionDone, ... ALL native.
+=> Option 2 (BP-callable ingestion via pi8) is CLOSED — confirms session-52. The BP layer only READS the
+   model (widgets); every function that POPULATES/ingests is native.
+CONSEQUENCE: a client-side missions shim REQUIRES a game-thread NATIVE-call primitive (Option 1). The
+ingestion TARGETS are now precise — cleanest are LokiPlayerState_Missions.ServerAddMissionProgress /
+SetMissionProgress and UProgressionManager.AddProgressToMission (these ADD a mission's progress = populate),
+or UMissionsModel.CreateMissionsModel(PSMissions). If Option 1 yields a working native call, calling one of
+these on the standalone client (working menu) populates the model -> the modal renders. So the WHOLE
+client-side path reduces to ONE unlock: a reliable game-thread native-UFunction-call primitive.
+(Session-52 found ProcessEvent-from-hook returned a no-op-looking result for a native func; direct-thunk
+call w/ hand-built FFrame is untried-but-__report_gsfailure-risky. It is the single unlock for the entire
+shim / "activation-server" strategy, so a careful fresh attempt is warranted.)
