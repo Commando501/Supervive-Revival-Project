@@ -23,7 +23,31 @@ static FMissionProgress MakeMissionProgress(
 	P.PoolId = FPrimaryAssetId(FPrimaryAssetType(FName(TEXT("MissionPool"))), FName(PoolName));
 	P.Complete = false;
 	P.Failed = false;
-	P.ObjectiveProgress.Add(0);          // 1 objective, 0 progress
+	// One objective at 0/1 progress. FMissionObjectiveProgress is the live-RE'd
+	// element type (session 54). SESSION 54 localization test: with the objective
+	// seeded, the 22-cmd structure matches the client (verified) but the client STILL
+	// rejects the bunch ("Invalid replicated field 0") — a residual LEAF-serialization
+	// bit mismatch. bSeedObjective=false leaves ObjectiveProgress EMPTY (count 0, no
+	// element serialized) to isolate: if the bunch is ACCEPTED with 0 objectives, the
+	// desync is a leaf INSIDE MissionObjectiveProgress; if it still fails, the desync
+	// is in the OUTER FMissionProgress leaves (ID/AssetId/PoolId FNames, DateTimes).
+	// Localization test DONE (2026-07-07): empty ObjectiveProgress STILL desyncs =>
+	// the residual bit mismatch is in the OUTER FMissionProgress leaves (ID/AssetId/
+	// PoolId/DateTimes), NOT the MissionObjectiveProgress element. FDateTime ruled out
+	// (its NetSerialize is a plain `Ar << Ticks`); FName is self-describing too — so the
+	// remaining suspect is a class-level Missions HANDLE misalignment or a SUPERVIVE
+	// engine-level serialization diff, resolvable only with a bit-level wire capture.
+	// Toggle back to true (seed a real objective) — the desync is independent of it.
+	const bool bSeedObjective = true;
+	if (bSeedObjective)
+	{
+		FMissionObjectiveProgress Obj;
+		Obj.ObjectiveName = FName(*(FString(Id) + TEXT("_Obj")));
+		Obj.Progress = 0.f;
+		Obj.MaxProgress = 1.f;
+		Obj.StartingProgress = 0.f;
+		P.ObjectiveProgress.Add(Obj);
+	}
 	// Real timestamps so the client's pool-timer doesn't log "DateTime in bad
 	// format (year 0)" and the countdown shows a sane value.
 	const FDateTime Now = FDateTime::UtcNow();

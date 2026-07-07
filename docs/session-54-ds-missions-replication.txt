@@ -209,3 +209,62 @@ tools/re/parse_minidump.py.
 NEXT-SESSION PRIORITY: Blocker 1 (FMissionProgress NetSerialize). It is the gate to a
 rendered modal AND the likeliest cure for Blocker 2. Everything structural (class
 binding, replication, RepIndex alignment, spawn/seed) is DONE and proven live.
+
+==================================================================================
+BLOCKER 1 ROOT-CAUSED + FIXED (2026-07-07, live RE) — usmap was WRONG about a field
+==================================================================================
+The "custom NetSerialize" theory was FALSE. Live RE of the running client (read-only RPM;
+new tools tools/re/struct_probe.py, field_walk.py, rep_expand.py) proved FMissionProgress
+is a plain member-wise struct (StructFlags=0x1001, no STRUCT_NetSerializeNative). So is the
+client — meaning our member-wise mirror SHOULD have matched. The decisive step was expanding
+BOTH sides' FMissionProgress the exact way FRepLayout does (recurse structs lacking
+STRUCT_NetSerializeNative(0x400); arrays emit a cmd then recurse Inner) and comparing:
+  - STUB (our mirror):   12 leaf cmds  — ObjectiveProgress = TArray<int64> -> [array]+[int64].
+  - CLIENT (live truth): 22 leaf cmds  — ObjectiveProgress = TArray<FMissionObjectiveProgress>!
+=> THE USMAP + session-52 doc were WRONG: they list ObjectiveProgress as ArrayProperty<Int64Property>,
+   but the LIVE client's reflection shows the inner is the struct FMissionObjectiveProgress (8 fields:
+   ObjectiveName(FName), Progress(float), MaxProgress(float), Context(TArray<FString>),
+   InitialArmoryContext(TArray<FPrimaryAssetId>), StartingProgress(float), Complete(bool), Failed(bool)).
+   Our int64 inner made the array element 10 cmds too short -> the client's read cursor desynced right
+   after ObjectiveProgress -> the leftover bits parsed as a bogus field header -> "Invalid replicated
+   field 0". EVERYTHING ELSE in FMissionProgress already matched (incl. the surprise that FDateTime HAS
+   STRUCT_NetSerializeNative(0x400) so Expiry/GrantedAt are single NetSerialize cmds on both sides).
+
+FIX (necessary, NOT yet sufficient): added FMissionObjectiveProgress mirror
+(LokiPlayerState_Missions.h) and changed ObjectiveProgress to
+TArray<FMissionObjectiveProgress>. The stub's boot RepLayout dumper (Loki.cpp
+DumpMissionProgressRepCmds) now reports FMissionProgress = 22 leaf cmds, CMD-FOR-CMD
+identical to the client (incl. the nested Context + InitialArmoryContext arrays;
+MillisUntilExpiry=[19], Expiry=[20], GrantedAt=[21] on both).
+
+BUT THE LIVE DS RETEST STILL FAILS: "Invalid replicated field 0" persists even with the
+22-cmd structure matched. So there is a RESIDUAL bit-level desync beyond the cmd structure.
+Localization test (seed 0 objectives => ObjectiveProgress empty, element never serialized):
+STILL fails => the residual is in the OUTER FMissionProgress leaves (ID FString, AssetId/
+PoolId FNames, MillisUntilExpiry int64, Expiry/GrantedAt), not the MissionObjectiveProgress
+element. Ruled out so far (all engine-standard + self-describing, identical both sides):
+  - FDateTime: NetSerialize is just `Ar << Ticks` (Core/Private/Misc/DateTime.cpp:201) — 64 bits.
+  - FName: UPackageMap::StaticSerializeName is self-describing (1 bit hardcoded-flag, then a
+    packed EName index OR FString+int32 Number) — portable across name tables.
+  - FString/bool/int64/float: standard self-describing NetSerializeItem.
+Since structure matches AND every leaf is self-describing, a pure content/structure desync
+should be IMPOSSIBLE — which points to one of:
+  (A) CLASS-LEVEL handle misalignment: Missions sits at a RepLayout handle = (AActor rep cmd
+      count)+1. If SUPERVIVE's AActor expands to a different cmd count than our stock+injected-
+      ServerState AActor, Missions' handle is off. The empty-actor test did NOT expose this
+      (Missions not sent when empty; ServerState==CDO also not sent), so it only bites when
+      Missions data flows. This is the leading hypothesis.
+  (B) A SUPERVIVE engine-level serialization mod (e.g. a modified RepLayout/array-count/FName
+      path) not visible in stock UE 5.4 source.
+NEXT STEP to resolve: a BIT-LEVEL wire capture — dump the exact bunch bytes/bit-count the stub
+writes for LokiPlayerState_Missions, and/or dump the CLIENT's actual FRepLayout Cmds (handles)
+for its LokiPlayerState_Missions (needs the client live + RepLayout walk). Compare the Missions
+handle + per-cmd bit widths. A stub self-round-trip (serialize then deserialize its own
+RepLayout in-process) would also cleanly split stub-bug vs stub-vs-client-diff.
+
+RE METHOD (reusable): the client's RVAs are constant per exe build; only the module base changes
+(ASLR). Get base from the process module list, pass to tools/re/*.py (NAMEPOOL=base+0x9D81450,
+OBJOBJECTS=base+0x9E38930). UObject: InternalIndex@+0x10 Class@+0x18 Name@+0x20 Outer@+0x28.
+UStruct/UClass ChildProperties@+0x58. FField: FFieldClass@+0x08 Next@+0x18 Name@+0x20 Flags@+0x38.
+FStructProperty.Struct@+0x70, FArrayProperty.Inner@+0x78. UScriptStruct.StructFlags@+0xB8(low u32).
+Lesson: TRUST the live client's reflection over the usmap for inner/nested types.

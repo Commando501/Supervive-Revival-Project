@@ -348,6 +348,16 @@ private:
         // check that needs no live client.
         DumpClassNetCacheLayout(ALokiPlayerState_Missions::StaticClass());
 
+        // Session 54 Blocker-1: dump the exact RepLayout cmd expansion the stub
+        // generates for FMissionProgress. The client rejects our seeded Missions
+        // bunch ("Invalid replicated field 0"), a cursor desync AFTER the property
+        // block => our element cmd stream differs in bit-length from the client's
+        // (whose FMissionProgress is member-wise, 9 fields, no RepSkip, no custom
+        // NetSerialize — RE'd live). This logs OUR expansion so we can see where it
+        // diverges (e.g. a field collapsing to a NetSerialize cmd, a dropped field,
+        // or an unexpected extra cmd).
+        DumpMissionProgressRepCmds();
+
         // Session 37 Option A / A' / A'' exhaustively tested and ALL FAILED:
         //   A  (strip CPF_Net at runtime)     - crashed stub on client connect
         //                                       ("Array index out of bounds")
@@ -771,6 +781,62 @@ private:
                     "for %d actor class(es) (cleared %d pre-existing) via validation-"
                     "free ForceSetUpReplicationData."),
                *StateStruct->GetName(), Prop->ElementSize, Prop->GetOffset_ForGC(), Built, Cleared);
+    }
+
+    // Session 54 Blocker-1 diagnostic: expand a property the way FRepLayout does
+    // (recurse struct members unless the struct has STRUCT_NetSerializeNative;
+    // dynamic arrays emit an array cmd then recurse the Inner) and log each leaf
+    // cmd with a running count. Reveals the exact cmd stream we put on the wire.
+    static void ExpandRepProp(FProperty* P, int32 Depth, int32& CmdCount)
+    {
+        FString Indent = FString::ChrN(Depth * 2, ' ');
+        if (FArrayProperty* Arr = CastField<FArrayProperty>(P))
+        {
+            UE_LOG(LogLokiStub, Display, TEXT("RepCmd: %s[%d] DYNARRAY  %s"),
+                   *Indent, CmdCount++, *P->GetName());
+            ExpandRepProp(Arr->Inner, Depth + 1, CmdCount);
+            return;
+        }
+        if (FStructProperty* Sp = CastField<FStructProperty>(P))
+        {
+            const bool bNetSer = Sp->Struct && (Sp->Struct->StructFlags & STRUCT_NetSerializeNative);
+            if (!bNetSer)
+            {
+                UE_LOG(LogLokiStub, Display, TEXT("RepCmd: %s(recurse struct %s, StructFlags=0x%08X)"),
+                       *Indent, *Sp->Struct->GetName(), (uint32)Sp->Struct->StructFlags);
+                for (TFieldIterator<FProperty> It(Sp->Struct); It; ++It)
+                {
+                    if (It->PropertyFlags & CPF_RepSkip) continue;
+                    ExpandRepProp(*It, Depth + 1, CmdCount);
+                }
+                return;
+            }
+            UE_LOG(LogLokiStub, Display, TEXT("RepCmd: %s[%d] NETSERIALIZE-STRUCT  %s (%s, flags=0x%08X)"),
+                   *Indent, CmdCount++, *P->GetName(), *Sp->Struct->GetName(), (uint32)Sp->Struct->StructFlags);
+            return;
+        }
+        UE_LOG(LogLokiStub, Display, TEXT("RepCmd: %s[%d] LEAF  %s (%s)"),
+               *Indent, CmdCount++, *P->GetName(), *P->GetClass()->GetName());
+    }
+
+    static void DumpMissionProgressRepCmds()
+    {
+        UScriptStruct* S = FMissionProgress::StaticStruct();
+        if (!S)
+        {
+            UE_LOG(LogLokiStub, Warning, TEXT("DumpMissionProgressRepCmds: FMissionProgress struct null"));
+            return;
+        }
+        UE_LOG(LogLokiStub, Display,
+               TEXT("=== FMissionProgress StructFlags=0x%08X (STRUCT_NetSerializeNative=0x400 set? %d) — cmd expansion: ==="),
+               (uint32)S->StructFlags, (S->StructFlags & STRUCT_NetSerializeNative) ? 1 : 0);
+        int32 CmdCount = 0;
+        for (TFieldIterator<FProperty> It(S); It; ++It)
+        {
+            if (It->PropertyFlags & CPF_RepSkip) continue;
+            ExpandRepProp(*It, 0, CmdCount);
+        }
+        UE_LOG(LogLokiStub, Display, TEXT("=== FMissionProgress total leaf cmds = %d ==="), CmdCount);
     }
 
     // Validation-free mirror of UClass::SetUpRuntimeReplicationData (Class.cpp

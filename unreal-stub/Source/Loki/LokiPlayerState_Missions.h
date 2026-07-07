@@ -57,9 +57,53 @@
 #include "GameFramework/Actor.h"
 #include "LokiPlayerState_Missions.generated.h"
 
-// Mirror of SUPERVIVE's FMissionProgress (usmap schema.txt:32018, "9 props").
-// Size 0x60 in the client; we don't need the exact C++ offsets (replication is
-// by RepLayout cmd, not raw memory), only the field order + reflected types.
+// Mirror of SUPERVIVE's FMissionObjectiveProgress — the element type of
+// FMissionProgress.ObjectiveProgress. SESSION 54 LIVE RE (2026-07-07): the
+// usmap/session-52 layout said ObjectiveProgress was TArray<int64>, but the LIVE
+// client's reflection (tools/re/rep_expand.py) proved it is
+// TArray<FMissionObjectiveProgress>. That wrong inner type made our stub emit 12
+// RepLayout leaf cmds for FMissionProgress where the client expects 22 — the
+// bit-length mismatch desynced the client's read cursor and produced
+// "ReceivedBunch: Invalid replicated field 0". Field order + types below are from
+// the live UScriptStruct (field_walk.py); all 8 are replicated (none RepSkip), so
+// RepLayout serializes every one. Plain member-wise struct (no custom serializer).
+USTRUCT()
+struct FMissionObjectiveProgress
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FName ObjectiveName;
+
+	UPROPERTY()
+	float Progress = 0.f;
+
+	UPROPERTY()
+	float MaxProgress = 0.f;
+
+	// Inner is StrProperty (live-confirmed).
+	UPROPERTY()
+	TArray<FString> Context;
+
+	// Inner is FPrimaryAssetId (live-confirmed) — engine type so it expands to 2
+	// FName cmds identically on both ends.
+	UPROPERTY()
+	TArray<FPrimaryAssetId> InitialArmoryContext;
+
+	UPROPERTY()
+	float StartingProgress = 0.f;
+
+	UPROPERTY()
+	bool Complete = false;
+
+	UPROPERTY()
+	bool Failed = false;
+};
+
+// Mirror of SUPERVIVE's FMissionProgress (9 fields). We don't need the exact C++
+// offsets (replication is by RepLayout cmd, not raw memory), only the field order
+// + reflected types. NOTE: ObjectiveProgress's inner type came from LIVE RE, not
+// the usmap (see FMissionObjectiveProgress above).
 USTRUCT()
 struct FMissionProgress
 {
@@ -87,9 +131,11 @@ struct FMissionProgress
 	UPROPERTY()
 	bool Failed = false;
 
-	// [6] per-objective progress counters.
+	// [6] per-objective progress. LIVE-CONFIRMED inner type is FMissionObjectiveProgress
+	// (NOT int64 as the usmap claimed) — this was the RepLayout desync in the first
+	// live test. See FMissionObjectiveProgress above.
 	UPROPERTY()
-	TArray<int64> ObjectiveProgress;
+	TArray<FMissionObjectiveProgress> ObjectiveProgress;
 
 	// [7] ms until this mission's rotation expires (drives the countdown).
 	UPROPERTY()
