@@ -340,6 +340,44 @@ gate that creates the HUD — figure out what standalone provides that the stub 
 standalone for the menu; a side channel delivers mission data). This reachability wall is arguably the
 real DS-route blocker for a VISIBLE modal — bigger than the missions data path.
 
+*** WHY THE HUD DOESN'T LOAD — ROOT-CAUSED (2026-07-07, live RE) ***
+The main menu is GameMode-driven. On the standalone client the lobby (LVL_LobbyV2_Persistent) runs
+GameMode **BP_MainMenuGameMode_C** (log: "Game class is 'BP_MainMenuGameMode_C'" immediately before
+"HUD BeginPlay - BP_MainMenuHUD_C"). Its CDO (read live, /Game/Loki/UI/MainMenu/BP_MainMenuGameMode)
+specifies the FULL menu class set:
+    HUDClass                = BP_MainMenuHUD_C          (/Game/Loki/UI/MainMenu/BP_MainMenuHUD)
+    PlayerControllerClass   = PC_MainMenu_C
+    GameStateClass          = BP_MainMenuGameState_C
+    DefaultPawnClass        = BP_MainMenuPawn_C
+    (PlayerStateClass=APlayerState, SpectatorClass=ASpectatorPawn — native)
+The HUD + widgets are built client-side by these BP classes (HUD BeginPlay creates WBP_UI_MainMenu_*).
+On the DS-connected client the client is a NETWORKED client — it does NOT run a local GameMode; the
+SERVER (stub) does, and the travel URL forces `?game=/Script/Loki.LokiStubGameMode`. LokiStubGameMode
+: AGameModeBase uses STOCK/DEFAULT classes: HUDClass=AHUD (empty), PlayerControllerClass=APlayerController
+(stock), GameStateClass=AGameStateBase, DefaultPawnClass=ADefaultPawn. So the client gets an empty HUD
+and a stock PC — none of the BP menu-building logic runs => bare lobby.
+
+FIX FEASIBILITY (why this is a HARD wall, not a quick fix):
+  1. All four menu classes are /Game client Blueprints the stub can't load — each would need the
+     NetGUID-by-path trick (fake a class at the exact path so the client resolves it to its own BP).
+  2. *** The PlayerController is the killer. *** The menu is driven by PC_MainMenu_C, but session 41
+     established the stub MUST use STOCK APlayerController — it cannot match SUPERVIVE's modified PC RPC
+     signatures (ServerVerifyViewTarget / ClientSetViewTarget), and using the real menu PC breaks the
+     connection. In a networked game the client's LOCAL PC == the server's PlayerControllerClass (same
+     class, replicated), so we CAN'T give the client PC_MainMenu_C without the stub being it — which the
+     RPC-signature constraint forbids. Direct conflict.
+  3. Even a HUDClass-only attempt (stub HUDClass -> BP_MainMenuHUD_C via NetGUID-path, cheapest to try)
+     may fail: BP_MainMenuHUD_C's BeginPlay likely casts the PC to PC_MainMenu_C / reads
+     BP_MainMenuGameState_C, and would get null/stock substitutes.
+NET ASSESSMENT: the DS route can CONNECT the client + REPLICATE mission data (both proven), but making
+SUPERVIVE's STANDALONE-designed main menu render as a NETWORKED client collides with the client's
+architecture AND the session-41 stock-PC constraint. Paths, roughly: (A) HUDClass-only NetGUID-path test
+(cheap, likely insufficient); (B) full menu-class emulation incl. PC_MainMenu_C (blocked by RPC sigs);
+(C) client-side shim that force-spawns BP_MainMenuHUD_C + builds the menu, decoupled from the networked
+GameMode (bypasses the PC constraint but is a client hack); (D) hybrid — keep the client STANDALONE for
+the menu and deliver missions another way (but session-52 closed the client-side data channels, which is
+what motivated the DS route). This is the crux decision for the DS route's viability.
+
 RE METHOD (reusable): the client's RVAs are constant per exe build; only the module base changes
 (ASLR). Get base from the process module list, pass to tools/re/*.py (NAMEPOOL=base+0x9D81450,
 OBJOBJECTS=base+0x9E38930). UObject: InternalIndex@+0x10 Class@+0x18 Name@+0x20 Outer@+0x28.
