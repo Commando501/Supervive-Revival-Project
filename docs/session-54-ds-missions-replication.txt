@@ -433,3 +433,28 @@ client-side path reduces to ONE unlock: a reliable game-thread native-UFunction-
 (Session-52 found ProcessEvent-from-hook returned a no-op-looking result for a native func; direct-thunk
 call w/ hand-built FFrame is untried-but-__report_gsfailure-risky. It is the single unlock for the entire
 shim / "activation-server" strategy, so a careful fresh attempt is warranted.)
+
+*** OPTION 1 — STEP 1 RESULT (2026-07-07): ProcessEvent-from-hook DEFINITIVELY no-ops for native. ***
+Built two probes (tools/sigbypass-mod/missions_nativecall_probe{,2}.cpp) reusing the pi8 ProcessInternal
+game-thread hook. Test: call ProgressionManager.GetMissionsModel() (native, Script.Num=0) via
+ProcessEvent(base+0x12C5A10) from the hook.
+  probe1: result==0x0 vs known MissionsModel (ProgMgr+0x3B8, RPM-verified as class MissionsModel).
+          Ambiguous (no-op OR GetMissionsModel returns a different field OR wrong return offset).
+  probe2 (DEFINITIVE): run-through-hooked GetMissionsModel's native thunk (UFunction.Func @+0xE0 =
+          exe RVA +0x54D8190), counting entries ONLY during our ProcessEvent call. Result: **thunkHits=0**
+          — ProcessEvent did NOT enter the native thunk.
+Validated the ProcessEvent address (base+0x12C5A10) by disasm: prologue is unmistakably UObject::ProcessEvent
+(saves rbx/rbp/rsi/rdi/r12-r15, sub rsp,0xA0, gs:[0x58] TLS for FUObjectThreadContext, mov r14,rdx=Function).
+So the address is RIGHT and the result is real: ProcessEvent-from-the-ProcessInternal-hook does NOT execute
+native UFunctions. Tracing ProcessEvent's body shows heavy FUObjectThreadContext (thread call-stack) access
+— consistent with a re-entrancy guard: the pi8 BP-call primitive works re-entrantly (BP funcs re-enter
+ProcessInternal fine, per mainmenu_refresh_pi8), but ProcessEvent no-ops for native when called from inside
+script execution. CONFIRMS session-52 (not a false positive).
+CONSEQUENCE — remaining avenues for the native-call primitive (both un-done):
+  (A) DIRECT NATIVE-THUNK CALL: build a minimal FFrame and call the thunk (UFunction.Func) directly,
+      bypassing ProcessEvent. We HAVE the thunk address (+0xE0). Risk: FFrame layout + prior scan-shim
+      attempts hit __report_gsfailure; the thunk prologue reads FFrame+0x20 so the frame must be valid.
+  (B) NON-RE-ENTRANT ProcessEvent: call PE from a game-thread hook that is NOT inside ProcessInternal
+      (a per-frame native tick / main-loop hook), in case the no-op is re-entrancy-specific. Needs a
+      good non-PI game-thread hook point.
+New tools: tools/sigbypass-mod/missions_nativecall_probe{,2}.cpp, tools/re/func_enum.py.
