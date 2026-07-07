@@ -6,6 +6,12 @@ stable working menu 7+ min connected to the stub). Goal this session: add the
 replicated LokiPlayerState_Missions actor that carries mission data to the client so
 the Missions modal can populate.
 
+*** LIVE TEST RESULTS (2026-07-07, computer-use granted) — appended after the build writeup below ***
+See "LIVE TEST" section at the bottom. TL;DR: the class BINDS by path + replicates (the big
+unknown is SOLVED), but two blockers remain: (1) the FMissionProgress element wire format desyncs
+(client rejects the bunch); (2) even an empty missions actor re-triggers the session-53 garbage-
+thread crash ~100s in. Both are next-session work.
+
 WHAT WAS BUILT (server side, complete + compiled + boot-verified)
 -----------------------------------------------------------------
 New files in the stub Loki module:
@@ -125,3 +131,81 @@ FILES
   unreal-stub/Source/Loki/LokiStubGameMode.cpp               spawn+seed in PostLogin
   unreal-stub/Source/Loki/Loki.cpp                           boot RepIndex dump
   docs/ds-server-s54-boot.log                                headless boot proof
+
+
+==================================================================================
+LIVE TEST (2026-07-07, computer-use granted; stub + real client)
+==================================================================================
+Ran the full recipe: stub headless on 7777, client via launch-redirect.ps1 -Hook
+browse_hook.dll (NO catalog_store_fix). Steam up, ags up, elevated. Three launches.
+
+WHAT WORKS (the session's core hypothesis is CONFIRMED)
+------------------------------------------------------
+* The client RECOGNIZES the class by path. On the DS travel it logged:
+    LogRep: Error: ... in LokiPlayerState_Missions /Game/Loki/Maps/LobbyV2/
+      LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.LokiPlayerState_Missions_2147480905
+  i.e. the NetGUID for /Script/Loki.LokiPlayerState_Missions resolved to the
+  client's OWN class and the actor channel opened + a bunch arrived. The "name a
+  same-path UCLASS in the Loki module" approach is VALIDATED — no IoStore overlay.
+* Stub confirmed the spawn each connect: "PostLogin: spawned ALokiPlayerState_Missions
+  LokiPlayerState_Missions_N (owner=PlayerController_N, 2 missions, bAlwaysRelevant=1
+  bReplicates=1)" + "Join succeeded".
+* RepIndex alignment held (boot dump Missions=[11]/FinalMissionProgress=[12]).
+
+BLOCKER 1 — FMissionProgress ELEMENT WIRE FORMAT DESYNC (the modal can't render yet)
+-----------------------------------------------------------------------------------
+With 2 missions seeded, the client rejects the property bunch:
+    LogRep: Error: ReceivedBunch: Invalid replicated field 0 in LokiPlayerState_Missions ...
+    LogNet: Error: UActorChannel::ProcessBunch: Replicator.ReceivedBunch failed.
+            Closing connection. RepObj: LokiPlayerState_Missions ..., Channel: 4
+then a ~1s connect/fail/reconnect loop (the churn eventually crashed the client too).
+ISOLATION TEST — seed 0 missions (both arrays == CDO empty => NOT in the changelist
+=> zero element bytes on the wire): the field-0 error VANISHED (grep count = 0), the
+connection was STABLE (single Join, PC set, 6 channels, ~103s uptime vs ~1s in the loop).
+=> DECISIVE: the desync is the FMissionProgress ELEMENT serialization, NOT the class
+   rep layout (RepIndex 11/12 is correct). Our member-wise mirror (using engine
+   FPrimaryAssetId/FDateTime) does NOT match the client's FMissionProgress wire format.
+   All 9 field TYPES match the usmap, and the engine sub-structs expand identically on
+   both ends, so the remaining explanation is that the client's FMissionProgress has a
+   CUSTOM NetSerialize (collapses the element to ONE RepLayout cmd) — our member-wise
+   struct writes ~11 cmds' worth of bits, the client reads 1 NetSerialize's worth, and
+   the cursor desyncs -> the post-property field header reads garbage -> "field 0".
+FIX (next session): RE the client's FMissionProgress::NetSerialize byte layout from the
+   exe and mirror it as a WithNetSerializer USTRUCT (pattern: FPoolableActorServerState
+   in LokiReplicatedStructs.h + Loki.cpp). Confirm the "custom NetSerializer" theory
+   first by checking STRUCT_NetSerializeNative in the client's FMissionProgress
+   UScriptStruct->StructFlags (live RPM via usmapdump-style walk), or by empirical bit-
+   count comparison (instrument the stub to log the bytes it writes for the element).
+
+BLOCKER 2 — THE SESSION-53 GARBAGE-THREAD CRASH RECURS WITH THE MISSIONS ACTOR PRESENT
+-------------------------------------------------------------------------------------
+Even the EMPTY missions actor run crashed at ~103s post-Join with the SAME signature
+session 53 documented (parse_minidump on the fresh Sentry dump):
+    ExceptionCode=0xC0000005  param[0]=8 (EXECUTE)  RIP=fault=0x7FF8F0400001 (unmapped,
+    just above ntdll — the anti-tamper neighborhood). A worker thread spun up with a
+    garbage start routine — identical to the pre-session-53 crash.
+Session 53 claimed un-suppressing PlayerState CURED this (it survived 428s once, with NO
+missions actor). This session, WITH an (empty) LokiPlayerState_Missions replica bound,
+it recurs at ~100s. So merely BINDING the missions replica re-introduces it: the client
+half-initializes its missions subsystem off the replica (ProgressionManager sets
+MissionsModel.MissionsActor + subscribes OnMissionsUpdated), then a stale/garbage
+callback gets threaded. (The FIRST launch also crashed pre-Join at ~2s with a DIFFERENT
+signature — read-AV at RVA +0xFA4A53 deref 0x300000b33 — that one is the documented
+intermittent menu-load crash, unrelated: it happened before Join so the missions code
+never ran.)
+HYPOTHESIS: fully hydrating the actor with VALID mission data (Blocker-1 fix) may also
+resolve Blocker 2 — a correctly-populated object wouldn't leave the client's missions
+subsystem half-initialized. If it doesn't, options: keep the actor un-spawned until its
+data path is complete; suppress the client's association delegate; or dig into which
+object's callback is threaded (session-53 tried and was blocked by the anti-tamper owning
+NtCreateThreadEx). Note session 53's "cured" claim rests on ONE 428s run — the crash may
+be periodic/timing-based and only loosely tied to the actor; a with/without-actor
+survival-time comparison would settle it.
+
+ARTIFACTS: docs/ds-server-s54-empty.log (stub, empty-array stable run),
+docs/ds-server-s54-live.log (stub, seeded run + reconnect loop), Sentry dump parsed via
+tools/re/parse_minidump.py.
+
+NEXT-SESSION PRIORITY: Blocker 1 (FMissionProgress NetSerialize). It is the gate to a
+rendered modal AND the likeliest cure for Blocker 2. Everything structural (class
+binding, replication, RepIndex alignment, spawn/seed) is DONE and proven live.
