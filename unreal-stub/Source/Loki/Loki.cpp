@@ -15,6 +15,7 @@
 
 #include "Loki.h"
 #include "LokiReplicatedStructs.h"
+#include "LokiPlayerState_Missions.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/NetworkVersion.h"
 #include "Engine/World.h"
@@ -337,6 +338,15 @@ private:
         // error "ReceivedBunch: Invalid replicated field N" can be mapped to a
         // concrete field on our (stock) side. See DumpClassNetCacheLayout.
         DumpClassNetCacheLayout(PCClass);
+
+        // Session 54: verify the missions actor's replicated layout at BOOT
+        // (before any client connects). We expect ServerState injected on AActor
+        // to give 11 inherited reps (0..10), then LokiPlayerState_Missions' own
+        // Missions=[11] and FinalMissionProgress=[12] — matching the client's
+        // LokiPlayerState_Missions (usmap:27753). If this dump shows different
+        // indices, the client-side RepLayout won't line up. Cheapest alignment
+        // check that needs no live client.
+        DumpClassNetCacheLayout(ALokiPlayerState_Missions::StaticClass());
 
         // Session 37 Option A / A' / A'' exhaustively tested and ALL FAILED:
         //   A  (strip CPF_Net at runtime)     - crashed stub on client connect
