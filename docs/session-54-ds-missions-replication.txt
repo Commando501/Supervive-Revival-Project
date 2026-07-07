@@ -1,0 +1,127 @@
+SESSION 54 — DEDICATED-SERVER MISSIONS: LokiPlayerState_Missions REPLICATION BUILT
+==================================================================================
+Date: 2026-07-07. Branch: dedicated-server-stub. Builds on session 53's breakthrough
+(un-suppressing PlayerState fixed the DS menu-load crash; the client now sits at a
+stable working menu 7+ min connected to the stub). Goal this session: add the
+replicated LokiPlayerState_Missions actor that carries mission data to the client so
+the Missions modal can populate.
+
+WHAT WAS BUILT (server side, complete + compiled + boot-verified)
+-----------------------------------------------------------------
+New files in the stub Loki module:
+  unreal-stub/Source/Loki/LokiPlayerState_Missions.h
+  unreal-stub/Source/Loki/LokiPlayerState_Missions.cpp
+Wired into:
+  LokiStubGameMode.cpp  (PostLogin spawns + seeds the actor)
+  Loki.cpp              (boot-time RepIndex verification dump)
+
+1. FMissionProgress USTRUCT — member-wise mirror of SUPERVIVE's FMissionProgress
+   (usmap schema.txt:32018, 9 fields, in exact order):
+     ID(FString) AssetId(FPrimaryAssetId) PoolId(FPrimaryAssetId) Complete(bool)
+     Failed(bool) ObjectiveProgress(TArray<int64>) MillisUntilExpiry(int64)
+     Expiry(FDateTime) GrantedAt(FDateTime).
+   Uses the ENGINE FPrimaryAssetId / FDateTime types (CoreUObject/Core), so the
+   RepLayout cmd expansion is byte-identical to the client's (FPrimaryAssetId -> 2
+   FName cmds; FDateTime -> 1 int64 Ticks cmd). Only FMissionProgress itself is
+   mirrored; the sub-structs are shared engine types.
+
+2. ALokiPlayerState_Missions : AActor — named exactly LokiPlayerState_Missions so
+   its path is /Script/Loki.LokiPlayerState_Missions. Because the SUPERVIVE game
+   module is ALSO named "Loki", this path MATCHES the client's real class; when the
+   stub exports the actor's class NetGUID by path, the client resolves it to ITS
+   OWN class (same mechanism that already gets stock engine classes recognized —
+   no IoStore/mod-pak overlay). Replicated props (DOREPLIFETIME, RepNotify):
+     Missions              (TArray<FMissionProgress>)   -> RepIndex 11
+     FinalMissionProgress  (TArray<FMissionProgress>)   -> RepIndex 12
+   bReplicates=true, bAlwaysRelevant=true (menu has no gameplay-relevant position,
+   so distance relevancy would never send it). OwningPlayerState is a NON-replicated
+   plain UPROPERTY (matches usmap — the client's is a plain ObjectProperty).
+
+3. PostLogin spawn+seed — for each connecting PC, spawn ALokiPlayerState_Missions
+   owned by that PC and seed Missions with 2 Armory dailies (PlayAGame, GetKnocks)
+   in pool "Daily", with real UtcNow GrantedAt / +24h Expiry timestamps (so the
+   client's pool-timer doesn't log "DateTime in bad format (year 0)").
+
+REP-INDEX ALIGNMENT — CONFIRMED AT BOOT (no client needed)
+----------------------------------------------------------
+AActor has ServerState injected at RepIndex 10 (Loki.cpp
+InjectServerStateReplicatedProperty, session 41), and the client's AActor is
+likewise patched, so both sides' LokiPlayerState_Missions have 11 inherited AActor
+reps (0..10) then the two mission arrays. Added a boot-time DumpClassNetCacheLayout
+call for our class; the headless stub boot log (docs/ds-server-s54-boot.log) shows:
+  NetCacheDump: --- LokiPlayerState_Missions  FirstOwnedClassRep=11 ClassReps=13 NetFields=0
+  NetCacheDump:  [ 10] ServerState            StructProperty   RepIndex=10   (inherited from AActor)
+  NetCacheDump:  [ 11] Missions               ArrayProperty    RepIndex=11
+  NetCacheDump:  [ 12] FinalMissionProgress   ArrayProperty    RepIndex=12
+This is the strongest pre-client evidence that our RepLayout matches the client's.
+The stub boots clean (Engine initialized 11.65s, "IpNetDriver listening on port
+7777", GameStateBase still suppressed as expected, no crash).
+
+BUILD/RUN facts
+---------------
+- Build: `Build.bat LokiEditor Win64 Development -Project=...\Loki.uproject -WaitMutex`
+  (~60-220s). NOTE: NetUpdateFrequency is a PUBLIC MEMBER in UE 5.4 — the
+  SetNetUpdateFrequency() accessor is 5.5+ (first compile error, fixed).
+- If Link fails LNK1104 "cannot open UnrealEditor-Loki.dll", a stub server still
+  holds the DLL — Stop-Process the UnrealEditor-Cmd PID first, then rebuild.
+- Run headless (space-free abslog path avoids Start-Process arg mangling):
+    UnrealEditor-Cmd.exe "<proj>" /Engine/Maps/Entry?listen -game -server -Port=7777
+      -nullrhi -NoSplash -Unattended -abslog="<no-space-path>.log"
+
+THE OPEN QUESTION (for the live test): CLIENT-SIDE MODEL ASSOCIATION
+-------------------------------------------------------------------
+The remaining unknown is HOW the client associates the replicated
+LokiPlayerState_Missions with the local UMissionsModel (which has a MissionsActor
+field, session-52). The usmap shows OwningPlayerState is NOT replicated, so the
+client can't use it directly. Candidate association mechanisms, in order of
+likelihood, to check against the live client:
+  (a) AActor::Owner (which IS replicated) — we spawn owned by the PC, so the client
+      receives Owner as a NetGUID. The client's ProgressionManager may bind the
+      missions actor whose Owner resolves to the local PC/PlayerState.
+  (b) The client scans for any LokiPlayerState_Missions actor and binds the first/
+      local one regardless of owner.
+  (c) It expects the missions actor as a SUBOBJECT/child of the LokiPlayerState
+      (then approach: spawn it attached to / as a component of the now-replicating
+      PlayerState instead of a standalone actor).
+If (a)/(b) work, the current build renders. If neither fires, next step is to RE the
+client's ProgressionManager/UMissionsModel binding (find who sets MissionsModel.
+MissionsActor and what it keys on) — session-52 doc has the MissionsModel API and
+the CreateMissionsModel(PSMissions) entry point.
+
+LIVE TEST RECIPE (needs elevated PowerShell + Steam running + computer-use)
+---------------------------------------------------------------------------
+1. Build stub if source changed (above). 2. Run stub headless (above); wait for
+   "IpNetDriver listening on port 7777". 3. Launch client:
+     configs\launch-redirect.ps1 -Hook "...\tools\sigbypass-mod\browse_hook.dll"
+   (browse_hook rewrites the travel Host to 127.0.0.1. DO NOT add catalog_store_fix
+   — it crashes itself in the DS-connected catalog state, session 53.)
+   Client Loki.log: C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log
+SUCCESS SIGNALS:
+  - Stub log: "Join succeeded"; then a NEW line from LokiStubGameMode PostLogin:
+    "spawned ALokiPlayerState_Missions ... N missions ... replicating to the client".
+  - Client survives (session-53 baseline: stable 7+ min, TryUIReady SUCCESS, no
+    crashpad). If it now CRASHES where session 53 was stable, the FMissionProgress
+    cmd stream desynced the client's read cursor => FMissionProgress likely has a
+    custom NetSerializer on the client; make the mirror WithNetSerializer (mirror
+    the exact bits) rather than member-wise. That crash-vs-stable delta is the
+    discriminator, same single-variable style as session 53.
+  - Open the Missions modal (computer-use): Dailies tab should render the seeded
+    tile(s). If the model populates but no tile shows, tune the AssetId/PoolId
+    PrimaryAssetId Name strings (MakeMissionProgress args in LokiStubGameMode.cpp)
+    — the container filters by PoolId == the pool's PrimaryAssetId. The pool/mission
+    Name portions ("Mission"/"MissionPool" + short name) are the current best guess
+    from session 52 and may need the real PrimaryAssetId (inspect the DA's
+    GetPrimaryAssetId live, or read it off the client's PoolIds set after BindToMissions).
+
+TUNING KNOBS (in LokiStubGameMode.cpp MakeMissionProgress / PostLogin)
+----------------------------------------------------------------------
+- Mission/pool PrimaryAssetId type+name strings (first suspects if tiles don't filter in).
+- Number/spread of seeded missions (currently 2 dailies; scale to all 6 categories
+  from tools/extractor/out/catalog/missions_catalog.json once one tile renders).
+
+FILES
+-----
+  unreal-stub/Source/Loki/LokiPlayerState_Missions.{h,cpp}   NEW
+  unreal-stub/Source/Loki/LokiStubGameMode.cpp               spawn+seed in PostLogin
+  unreal-stub/Source/Loki/Loki.cpp                           boot RepIndex dump
+  docs/ds-server-s54-boot.log                                headless boot proof
