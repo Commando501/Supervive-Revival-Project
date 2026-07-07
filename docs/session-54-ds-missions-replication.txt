@@ -310,6 +310,36 @@ Current DS-connected menu is stable but BARE (lobby sky only — no catalog_stor
 so roster/store are empty); confirm the missions modal can be reached/populated in that state.
 New tool: tools/re/rep_expand_class.py, objprop_probe.py.
 
+==================================================================================
+*** MODAL-REACHABILITY CHECKED (2026-07-07) — BLOCKED: the main-menu HUD never loads on the DS client ***
+==================================================================================
+Before investing in ABaseMission replication, checked whether the Missions modal is even reachable
+in the DS-connected state. IT IS NOT. Log comparison (client Loki.log), both traveling to the SAME
+map /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent:
+  - NORMAL (standalone) client:  "HUD BeginPlay - BP_MainMenuHUD_C" + WBP_UI_MainMenu_MenuRootV2 +
+    MENUSPAWNER party slots + hero previews => the full main menu renders.
+  - DS-connected client:  BP_LoginHUD is torn down at travel, then NO main-menu HUD spawns at all
+    (zero "MainMenu" mentions). The client sits at a bare lobby (sky only). => no nav bar, no
+    MISSIONS button, no modal to open. THE MODAL IS UNREACHABLE.
+ROOT CAUSE (hypothesis): BP_MainMenuHUD is spawned by the LOBBY GameMode's HUDClass. In standalone
+the client uses the REAL lobby GameMode (HUDClass=BP_MainMenuHUD). When DS-connected, the travel URL
+forces `?game=/Script/Loki.LokiStubGameMode` (LokiGameInstance::ModifyClientTravelLevelURL), and the
+stub's GameMode does NOT set HUDClass, so AGameModeBase::InitializeHUDForPlayer never tells the client
+to spawn the main-menu HUD. More broadly: SUPERVIVE's main menu is a STANDALONE-lobby experience;
+forcing the client to be a NETWORKED client of the stub changes the mode and the standalone menu-build
+flow doesn't run.
+ALSO NOTED: the ~103s garbage-thread crash is INTERMITTENT, not eliminated — one objfix run was stable
+150s+, another crashed at ~37s. So Blocker 2 is reduced but still fires sometimes.
+IMPLICATION — PRIORITY CHANGE: replicating ABaseMission actors into Missions is PREMATURE. Even with
+the data, there is no menu UI to display it. The prerequisite is getting BP_MainMenuHUD to LOAD in the
+DS-connected state. Candidate approaches (need RE): (a) stub GameMode sets HUDClass=BP_MainMenuHUD by
+path so ClientSetHUD makes the client spawn it (hard: BP_MainMenuHUD is a client-only /Game BP the stub
+can't load — would need the NetGUID-by-path trick for a BP class); (b) the client-side lobby PC/GameState
+gate that creates the HUD — figure out what standalone provides that the stub doesn't, and provide it;
+(c) reconsider whether the DS route can drive the STANDALONE menu at all, vs. a hybrid (client stays
+standalone for the menu; a side channel delivers mission data). This reachability wall is arguably the
+real DS-route blocker for a VISIBLE modal — bigger than the missions data path.
+
 RE METHOD (reusable): the client's RVAs are constant per exe build; only the module base changes
 (ASLR). Get base from the process module list, pass to tools/re/*.py (NAMEPOOL=base+0x9D81450,
 OBJOBJECTS=base+0x9E38930). UObject: InternalIndex@+0x10 Class@+0x18 Name@+0x20 Outer@+0x28.
