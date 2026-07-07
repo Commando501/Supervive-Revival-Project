@@ -1,10 +1,12 @@
 # Go build output
 *.exe
+*.exe~
 /server/ags
 /server/ags.exe
 
 # Capture logs (regenerated at runtime)
 /docs/capture.log
+/docs/capture.log.prev
 /docs/server.out.log
 /server/docs/
 

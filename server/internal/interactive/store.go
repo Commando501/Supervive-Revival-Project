@@ -39,6 +39,25 @@ type playerState struct {
 	// hunter survives relaunch. Written by the party member-update endpoint
 	// (TryPickMyHeroAndCosmetics on the native PartyManager); seeded into buildSoloParty.
 	SelectedHeroAssetId string `json:"selectedHeroAssetId,omitempty"`
+
+	// --- PersonalizationLoadout (customization equips) — see loadout.go ---
+	// LoadoutVersion is bumped on EVERY loadout-affecting write (slot cosmetics,
+	// emotes, titles, hero bundles, luxe chromas, lobby platform). The client's
+	// ULoadoutReconciler only re-applies a loadout doc whose version advanced
+	// past its LastLoadoutVersion, so a non-bumping write looks like a no-op.
+	LoadoutVersion int64 `json:"loadoutVersion,omitempty"`
+	// SlotCosmetics maps slot name -> equipped asset id, e.g.
+	// "Glider" -> "SlotCosmetics:GLIDER_AngelicForce" (SlotCosmeticsEntry pairs).
+	SlotCosmetics map[string]string `json:"slotCosmetics,omitempty"`
+	// HeroCosmeticsBundles maps "Hero:<name>" -> "HeroCosmeticsBundle:<name>"
+	// (the per-hero skin preference).
+	HeroCosmeticsBundles map[string]string `json:"heroCosmeticsBundles,omitempty"`
+	// LuxeChromas maps luxe asset id -> chroma asset id.
+	LuxeChromas map[string]string `json:"luxeChromas,omitempty"`
+	// EmoteIds / TitleIds are the client's arrays stored verbatim (raw JSON) so
+	// the element types never need modeling; echoed as loadout emoteIds/titleIds.
+	EmoteIds json.RawMessage `json:"emoteIds,omitempty"`
+	TitleIds json.RawMessage `json:"titleIds,omitempty"`
 }
 
 // store is an in-memory player-state map with best-effort JSON-file persistence

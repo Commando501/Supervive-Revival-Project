@@ -1,0 +1,11 @@
+watch-now: waiting for "SUPERVIVE-Win64-Shipping.exe", then mmap-injecting G:/git/Supervive Revival Project/tools/sigbypass-mod/createthread_probe.dll
+watch-now: process appeared after 861 poll(s); PID=67560
+watch-now: PROCESS_ALL_ACCESS handle obtained after 0 poll(s)
+Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\createthread_probe.dll into PID 67560
+  remote image base: 0x22B659B0000 (size 0x27000)
+  relocations applied (delta 0x229E59B0000)
+  import: KERNEL32.dll
+  exception table: 0x15F entries at 0x22B659D4000 (will RtlAddFunctionTable)
+  DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+  verify: MZ at 0x22B659B0000 ✓
+OK: manual-map complete (DllMain returned).

@@ -1,0 +1,6 @@
+[0] missions_assettest (GetLokiDataAsset for a mission) started
+[2] mgr=0x1A52053AEA0 GetLokiDataAsset=000001A4DA313500 ctlName(Alchemist)=0x0
+[3] armed GetLokiDataAsset calls (mission + hero control)...
+[4] MISSION  GetLokiDataAsset(Mission:ArmoryDaily_PlayAGame) = 0x0 class=<null>
+[4] CONTROL  GetLokiDataAsset(Hero:Alchemist)               = 0x0 class=<null>
+[4] => mission asset does NOT resolve (control shows if the call works). Resolution is the blocker.

@@ -122,6 +122,288 @@ project's proven pattern (native gate/model shim + backend data) that already br
 roster, store, cosmetics, and main-menu refresh online — all of which were once thought to
 need replication/deep RE.
 
+=================================================================================
+ROUTE B RESULT — CLOSED (2026-07-06, evidence-based, no relaunch needed)
+=================================================================================
+Investigated B via the 13GB live capture.log + the live Loki.log (client was up at menu;
+the user had opened the Missions modal at 20:00:33 today). Conclusive negatives:
+
+1. NO mission HTTP endpoint EXISTS in the entire capture. rg over docs/capture.log (13.5GB):
+   zero hits for /mission, /checkin, /check-in, /season, /quest. The ONLY progression traffic
+   is  GET /progression/players/{id}  and  GET /progression/players/{id}/tracks. (The
+   PUT .../mission seen in 2026-06-26 sessions is GONE from this build's traffic.)
+2. The client emits ZERO mission-fetch activity at menu. Live Loki.log around the modal open
+   shows: 6x "DateTime in bad format (year 0...)" (the empty pool-timers reading all-zero
+   NewMissionTime/GrantedAt) immediately before WBP_UI_MissionModal opens — i.e. the category
+   widgets DID run OnUpdated, but against an EMPTY MissionsModel. No checkin query, no
+   OnPSMissionsUpdated, no "checked for new missions".
+3. GET /progression/players/{id} is AccelByte-standard progression
+   (FAccelByteModelsListUserProgressionInfoPagingSliced = stats/tracks), NOT a mission carrier.
+   Its consumer is the progression-tracks system, not MissionsModel.
+
+=> There is no HTTP hook to populate MissionsModel in this build. Re-running a live backend
+   probe would only re-confirm this at the cost of disrupting the session. B is CLOSED by
+   evidence, consistent with (but stronger than) the 2026-06-29 "needs replication" read.
+   The reframe still holds: the BP layer reads a CLIENT-SIDE model; Route A fills it directly
+   and bypasses the (nonexistent) delivery path entirely — exactly like catalog_ready_fix.
+
+ASSET-RESOLUTION CAVEAT for Route A (from the same Loki.log): at menu load there are 8x
+"RequestAsyncLoad() called with empty or only null assets!" + 1 "Invalid Primary Asset Type:
+ChangeBundleStateForPrimaryAssets failed to find NameData" — the SHARED LokiAssetManager gate
+(same as hero/store), NOT mission-specific. Implication: each MissionModel we synthesize needs
+its MissionAsset (LokiDataAsset_Mission) to be a LOADED object so the container can read
+Hide/Hero/LobbyWidgetClass. The mission DA assets ARE cooked/packaged (we dumped 346 via
+CUE4Parse), so they can be loaded by direct object path even without primary-asset
+registration — but this must be validated live during the A build (load one DA_Mission by
+path, confirm the object resolves, before wiring 300+).
+
+=================================================================================
+ROUTE A PLAN (the path forward)
+=================================================================================
+Primitives all exist: tools/re/obj_iter.py + find_guobjectarray.py (GUObjectArray walk),
+resolve_delegate.py (delegate broadcast targets), tools/sigbypass-mod/mainmenu_refresh_pi8.cpp
+(the S50 ProcessInternal→InvokeBP game-thread BP-call primitive — reusable to broadcast
+MissionsModel.OnUpdated and to call BP factory functions on the game thread).
+
+Step A1 (read-only, non-disruptive) — LOCATE + VALIDATE TARGET:  *** DONE 2026-07-06 ***
+  Ran tools/re/obj_iter.py + tools/re/missions_probe.py against the live client (PID 57832,
+  module base 0x7FF682A80000 — obj_iter's hardcoded base happened to match this launch).
+  VALIDATED (all read-only RPM, client not disturbed):
+    - Live ProgressionManager instance (NOT the CDO): 0x26A25C07A20.
+    - ProgressionManager+0x3B8 -> MissionsModel 0x26B135FEF80 (Outer == the ProgressionManager,
+      so this IS the menu model the widgets read). The other live MissionsModel 0x26B09558800
+      is owned by EndOfGameModel (ignore).
+    - MissionsModel 0x26B135FEF80 layout: UObject hdr (Class@+0x18, Name@+0x20 FName idx
+      0x00590044, Outer@+0x28). Three TMap/TSet blocks at +0x30 / +0x80 / +0xD0 (0x50 stride,
+      = Missions / Pools / CompletionCounts). ALL EMPTY — null Data ptr, FScriptSet empty
+      signature (0x80 hashsize + FirstFreeIndex=-1 at +0x5C/+0x60, +0xAC/+0xB0, +0xFC/+0x100).
+  => Blocker CONFIRMED empirically: the menu MissionsModel exists, the BP layer subscribes to
+     it, and its maps are simply empty. Populate these 3 maps + broadcast OnUpdated = the fix.
+  A1 asset-load check (obj_iter, live): the 16 DA_MissionPool CDOs ARE loaded objects
+  (Default__DA_MissionPool*_C present), so pool CLASSES resolve. Individual mission DAs are
+  NOT loaded at menu (DA_Mission_ArmoryDaily_PlayAGame -> 0 objects) — they are async-loaded
+  on demand. MissionModel has AssetHandle + OnAssetLoaded, so the native factory
+  (CreateMissionModelFromFinalProgress) triggers the load of MissionAssetId. Caveat: that load
+  goes through the AssetManager (shared "failed to find NameData" gate); may need load-by-path
+  instead of primary-asset-id. Resolve during the shim build. (NOTE: all heap addrs are
+  per-launch; re-locate via obj_iter each session — this launch base=0x7FF682A80000.)
+
+CONSUMPTION WIRING (fully mapped — CreateAssetsForPools + InitWithModel bytecode):
+  Category.CreateAssetsForPools (on Construct): ClearChildren, then per pool class in
+  PoolAsset[]: Create WBP_UI_MissionContainer -> set ChildWidgetClass=
+  WBP_UI_MissionModal_MissionEntry_C + ObjectiveWidgetClass=WBP_UI_MissionObjectiveProgress_C
+  -> mm = GetProgressionManager().GetMissionsModel() -> container.InitWithModel(mm, poolClass)
+  -> AddChildToVerticalBox.
+  InitWithModel(model, poolClass): sets container.MissionModel = mm (THE SHARED UMissionsModel,
+  NOT a per-pool object) and container.PoolAsset = poolClass, then runs its ubergraph.
+  => EVERY container points at the same MissionsModel (0x...FEF80) and reads it via native
+     GetMissions() / GetMissionModel(id), filtering by its own PoolAsset. So there is exactly
+     ONE object to populate.
+
+NATIVE MISSION FUNCTIONS (usmapdump nameid on the live exe; all in NamePool block 89, one
+class's method cluster) — the shim calls THESE instead of hand-rolling FScriptMap insertion:
+    CreateMissionModelFromFinalProgress  id=0x0059005C   (FACTORY: builds a UMissionModel)
+    GetActiveMissionModel                id=0x0059007A
+    GetMissionModel                      id=0x005900A1
+    GetMissionModelsForAssetID           id=0x005900AA
+    GetMissions                          id=0x005900B8   (reader; proven BP-callable)
+    OnPSMissionsUpdated                  id=0x005900CA   (INGEST handler: replicated data ->
+                                                          populate maps -> broadcast OnUpdated)
+  GetMissions/GetMissionModel/GetActiveMissionModel are called as StackNodes from BP bytecode,
+  so they are UFunctions (callable via the pi8 InvokeBP game-thread primitive). Factory + ingest
+  need their UFunction/signature confirmed at build time (findptr the name id -> UFunction obj).
+
+SHIM DESIGN (missions_populate, built on tools/sigbypass-mod/mainmenu_refresh_pi8.cpp):
+  Phase 1 (READ-ONLY, zero write risk): hook ProcessInternal (pi8), locate the live
+    ProgressionManager (obj_iter logic in C++) -> MissionsModel@+0x3B8, InvokeBP GetMissions()
+    on the game thread, log the returned count. Proves the harness + confirms empty. NO writes.
+  Phase 2 (POPULATE, smoke test): for 1 pool (DA_MissionPoolDailyEasy) + its ~2 dailies, call
+    CreateMissionModelFromFinalProgress to build UMissionModels (game does the alloc + async
+    asset load), get them into MissionsModel.Missions (via the factory's own insert, or the
+    ingest path), then InvokeBP the MissionsModel OnUpdated broadcast. Verify Dailies tab
+    renders the tile(s) (computer-use screenshot).
+  Phase 3 (SCALE): all 6 categories from missions_catalog.json; per-hunter Hero filter; make
+    durable (re-broadcast on modal-open hook or shim_watch poll).
+  CRASH RISK: Phase 2 is the first live-write; approach incrementally, one call at a time,
+    SafeWrite hook install (pi8), and watch Loki.log. Coordinate reln with the user (their
+    client is live).
+
+PHASE 1 BUILT + INJECTED + VALIDATED (2026-07-06, live PID 57832, read-only, no crash):
+  tools/sigbypass-mod/missions_populate.cpp (clang++ -> .dll, manual-mapped via inject mmap).
+  Marker docs/missions-populate-marker.txt confirmed IN-PROCESS:
+    - ProgressionManager 0x26A25C07A20 ; 19 MissionPool CDOs loaded.
+    - MissionsModel 0x26B135FEF80 (Outer==ProgMgr). Maps: Missions=0 Pools=0 CompletionCounts=0.
+    - ALL 5 mission UFunctions resolved, ALL with Outer=MissionsModel (so callable via pi8
+      InvokeBP on the game thread):
+        CreateMissionModelFromFinalProgress @0x26A2A3448B0   <- FACTORY (Phase 2 entry point)
+        GetActiveMissionModel               @0x26A2A344A90
+        GetMissionModel                     @0x26A2A344D60
+        GetMissions                         @0x26A2A344F40   <- reader (verify after populate)
+        OnPSMissionsUpdated                 @0x26A2A345210   <- ingest handler
+      (these addrs are per-launch UFunction OBJECT ptrs; the shim resolves them live by
+      name+Outer each run — do NOT hardcode.)
+  => Harness has everything Phase 2 needs.
+
+FULL MissionsModel API (walked live via tools/re/ufunc_sig.py — UFunction.ChildProperties@+0x58,
+FField: FFieldClass@+0x08 Next@+0x18 Name@+0x20 ElemSize@+0x34 Flags@+0x38; all 12 methods,
+Outer=MissionsModel UClass @0x26A306E1F00; UClass.Children(UField*)@+0x50, UField.Next@+0x30):
+    OnPSMissionsUpdated()                              (no params — native replication orchestrator)
+    OnMissionAssetLoaded(Object MissionModel)
+    HasClaimableMission(Struct MissionID) -> Bool
+    GetMissions() -> Array                             <- container reads this (mission id list)
+    GetMissionModelsForAssetID(out Struct MissionID) -> Array
+    GetMissionModel(Str ID) -> Object                 <- container reads this (id -> UMissionModel)
+    GetCurrentAndTotalProgress(Object MissionAsset, out int Cur, out int Total) -> Bool
+    GetClaimableMissionModel(Struct MissionID) -> Object
+    GetActiveMissionModel(out Struct MissionID) -> Object   <- category reads this
+    CreateMissionsModel(Object PSMissions) -> Object  <- top-level build from a LokiPlayerState_Missions
+    CreateMissionModelFromFinalProgress(ref Array<MissionProgress>) -> Object  <- per-mission FACTORY
+    CountCompleteMissionsFromPools(out Array PoolIDs, out int Completed, out int Total)
+  KEY consequences:
+    - Missions TMap is keyed by FString (GetMissionModel takes Str ID); value = UMissionModel*.
+      Manual insert therefore needs FString GetTypeHash (case-insensitive FCrc) — fiddly.
+    - No AddMission/SetMissions — insertion is internal to OnPSMissionsUpdated / CreateMissionsModel,
+      both of which need a LokiPlayerState_Missions (PSMissions) source object (none at menu).
+    - CreateMissionModelFromFinalProgress BUILDS a UMissionModel from a MissionProgress[] but does
+      NOT insert it. MissionProgress struct (usmap:32018): ID(Str) AssetId(FPrimaryAssetId)
+      PoolId(FPrimaryAssetId) Complete(bool) Failed(bool) ObjectiveProgress(Array<int64>)
+      MillisUntilExpiry(int64) Expiry(DateTime) GrantedAt(DateTime).
+  Phase-2 approaches (ranked): (A) build a fake LokiPlayerState_Missions with Missions/
+    FinalMissionProgress arrays -> CreateMissionsModel(it) -> swap result into ProgMgr+0x3B8 ->
+    broadcast; (B) per mission: CreateMissionModelFromFinalProgress(progArr) -> UMissionModel* ->
+    manual FString-keyed TMap insert into MissionsModel.Missions -> broadcast OnUpdated.
+    Both need the game-thread native-call-with-params+return primitive (pi8 InvokeBP is
+    parameterless-only) — building + validating THAT (safe read call first) is the next increment.
+
+*** PHASE 2 PRIMITIVE UNLOCKED + VERIFIED LIVE (2026-07-06, clean relaunch PID 27412, NO CRASH) ***
+tools/sigbypass-mod/missions_call_probe.cpp: hook ProcessInternal (get on game thread) -> call the
+game's ProcessEvent(base+0x12C5A10)(MissionsModel, GetMissions_UFunc, &resultTArray). Marker
+docs/missions-call-probe-marker.txt: "GetMissions -> TArray{Num=0} ... ProcessEvent CAN call native
+MissionsModel methods on the game thread. Phase-2 primitive UNLOCKED." So pi8's "ProcessEvent no-ops"
+finding was BP-func-specific (re-entrancy); for a NATIVE UFunction ProcessEvent dispatches straight to
+the thunk and WORKS from the PI hook. => we can now call ANY MissionsModel native (factory/readers/
+ingest) with params+return on the game thread. This is the core Route-A enabler.
+
+RELAUNCH RECIPE for missions work (pi8 must be OUT — it also hooks ProcessInternal; ONE PI hook only):
+  kill game; launch-redirect.ps1 -Hook "...\catalog_store_fix.dll"  (explicit -Hook => NO secondaries,
+  i.e. no pi8; catalog_store_fix does NOT hook PI so roster/store still work). Then inject the missions
+  shim via inject.exe mmap <PID>. (Menu-ready signal in Loki.log: "BP_MainMenuHUD_C ... BeginPlay".)
+
+CONCRETE DATA staged for the population build:
+  - MissionProgress struct layout (usmap + live; size 0x60): ID(FString)@0x00, AssetId(FPrimaryAssetId)
+    @0x10, PoolId(FPrimaryAssetId)@0x20, Complete(bool)@0x30, Failed@0x31, ObjectiveProgress(TArray)
+    @0x38, MillisUntilExpiry(int64)@0x48, Expiry(FDateTime)@0x50, GrantedAt@0x58.
+    FPrimaryAssetId = {FPrimaryAssetType{FName Type}(8), FName Name(8)} = 16 bytes.
+  - FName ids (this exe): MissionPool=0x16F06, DA_MissionPoolDailyEasy=0x29EC0A,
+    DA_Mission_ArmoryDaily_PlayAGame=0x24028C, DA_Mission_ArmoryDaily_GetKnocks=0x19D57F.
+    (Mission type FName for AssetId — resolve a bare "Mission" in the shim.)
+  - MissionsModel maps: Missions(FString->UMissionModel*)@+0x30, Pools@+0x80, CompletionCounts@+0xD0.
+
+POPULATION PLAN (Phase 2b, empirical — CAUTION each is a live write, crash-prone):
+  Uncertainty: CreateMissionModelFromFinalProgress = likely END-OF-GAME (FinalMissionProgress), maybe
+  NOT the menu list. Menu Missions map is fed by OnPSMissionsUpdated / CreateMissionsModel from a
+  LokiPlayerState_Missions. So EXPERIMENT (log-only first, via the working primitive):
+    (1) call CreateMissionModelFromFinalProgress(1x MissionProgress) then GetMissions().Num — did it
+        insert? inspect the returned UMissionModel. If Num>0, factory inserts -> just broadcast.
+    (2) if not, the map insert must be done manually (FString-keyed FScriptMap add w/ FCrc strihash)
+        OR construct a LokiPlayerState_Missions, fill its Missions array, and call CreateMissionsModel
+        (which likely populates `this` and returns it) — cleanest if it works.
+    (3) broadcast MissionsModel.OnUpdated (or the 3 delegates at +0x?? — resolve) so categories rebuild;
+        open the Missions modal, screenshot the Dailies tab (computer-use) to confirm tiles.
+CLIENT STATE after this session: fresh PID 27412 running catalog_store_fix (roster/store OK) + NO pi8
+  (so pick->center refresh is OFF this launch) + the idle read-only probes. Ready for the population shim.
+
+*** PHASE 2b EXPERIMENT RESULT — factory-population DOES NOT WORK (2026-07-06, live, NO crash) ***
+tools/sigbypass-mod/missions_populate2.cpp: built one MissionProgress (ID="ArmoryDaily_PlayAGame",
+AssetId=Mission:ArmoryDaily_PlayAGame, PoolId=MissionPool:*, valid FDateTimes), called the factory via
+the verified ProcessEvent primitive, checked GetMissions().Num before/after. Marker
+docs/missions-populate2-marker.txt:
+    factory returned model=0x0 (NULL)
+    GetMissions().Num before=0 after=0  => factory does NOT insert into the map
+The factory ran cleanly (no crash) but REJECTED the synthetic input and returned null. Disasm of its
+native impl (Func@+0xE0, rva 0x54A58B0) shows the standard exec-thunk FFrame stepping; the
+MissionProgress param is flagged **out** (CPF_OutParm), i.e. CreateMissionModelFromFinalProgress most
+likely computes the player's REAL final progress internally and IGNORES the passed array — returning
+null because there is NO real mission/player state at the menu.
+
+CONCLUSION — missions is HARDER than roster/store; the model-poke shortcut does NOT translate:
+  * roster/store were fixed by forcing a client GATE flag over data the client already had (heroes in
+    the CatalogManager; cosmetics owned via inventory). MISSIONS have NO such latent data — the
+    UMissionsModel maps are empty AND the game's own factory won't synthesize entries from fake input.
+  * Manual UMissionModel construction + FString-map insert would still fail to RENDER: the container
+    reads MissionModel.MissionAsset (a LokiDataAsset_Mission) for Hide/Hero/LobbyWidgetClass, and
+    mission DAs are NOT loaded/registered as primary assets (the shared LokiAssetManager gate — the
+    ORIGINAL documented missions blocker). So a populated model with null MissionAsset won't tile.
+  => The missions page genuinely needs REAL mission data: (a) mission DA assets resolvable (AssetManager
+     registration of the "Mission" primary asset type — the hard blocker the manifest can't carry), and
+     (b) a real per-pool granted-mission set (server/replication: LokiPlayerState_Missions ->
+     OnPSMissionsUpdated -> CreateMissionsModel). This re-converges on the docs/dedicated-server-stub.md
+     route (Path C) PLUS asset registration — NOT a quick native poke.
+
+WHAT WAS GAINED (durable): the game-thread native-call primitive (ProcessEvent from a ProcessInternal
+  hook works for native UFunctions) is a REUSABLE capability for any future "call a native method on the
+  game thread" need. The full missions API + data path is mapped. The negative result narrows the route.
+
+NEXT OPTIONS (for a future session, pick one):
+  1. ASSET-FIRST: make the "Mission" primary asset type registerable so mission DAs resolve — then the
+     factory/model path may work. Needs deeper LokiAssetManager RE (register a new primary asset type at
+     runtime via the native-call primitive, e.g. drive ScanPathsForPrimaryAssets/AddDynamicAsset with a
+     real MissionPool path). NOTE: prior scan-shim attempts crashed in __report_gsfailure (CLAUDE.md) —
+     but the game-thread ProcessEvent primitive is a NEW, safer calling avenue not tried before.
+  2. PLAYERSTATE/DS route: the dedicated-server-stub plan (replicate LokiPlayerState_Missions). Largest.
+  3. Accept missions as blocked-for-now and move to the next menu surface; revisit with the DS work.
+
+*** CORRECTION (2026-07-06, later) — the Phase-2a "primitive UNLOCKED" claim was a FALSE POSITIVE ***
+Pursuing the untried avenue (call LokiAssetManager natives to test/force mission asset resolution)
+revealed that ProcessEvent-called-from-the-ProcessInternal-hook is a UNIFORM NO-OP — exactly pi8's
+original finding, which I wrongly thought was BP-only.
+  - LokiAssetManager exposes NO registration UFunction (Scan/AddDynamic are native-only, not
+    reflected) — only PrimaryAssetIDFromString, GetLokiDataAsset, AsyncLoadPrimaryAssets, path getters.
+  - missions_assettest2.cpp chained PrimaryAssetIDFromString("Hero:Alchemist") -> GetLokiDataAsset for
+    a GUARANTEED-resolvable hero CONTROL + the mission. RESULT: BOTH returned null AND the parsed ids
+    were {0,0}. PrimaryAssetIDFromString is NATIVE (Script.Num=0) and its param offsets are verified
+    (AssetIDString@0, ReturnValue@16 — matched my buffer exactly), so a WORKING call on "Hero:Alchemist"
+    would return a non-zero id. It returned {0,0} => the call DID NOT EXECUTE => ProcessEvent-from-hook
+    no-ops for NATIVE funcs too.
+  - Therefore missions_call_probe's GetMissions "-> Num=0, no crash" was NOT proof the call ran: Num=0
+    is what BOTH a real empty-map read AND a no-op leave behind. The "primitive" never worked.
+  CONSEQUENCE: there is NO available safe primitive to call NATIVE UFunctions with params on the game
+  thread. pi8's ProcessInternal+FFrame works ONLY for BP funcs (it interprets Script bytecode; native
+  funcs have Script.Num=0 => nothing runs). So the entire client-side missions-population direction
+  (call the factory / readers / AssetManager natives) is NOT reachable without a DIRECT native-call-by-
+  address primitive (rcx=this,... hand-rolled convention) — the crash-prone path prior sessions hit
+  __report_gsfailure on, and NOT attempted here.
+
+FINAL, HONEST STATUS OF THE MISSIONS PAGE (session 52):
+  Missions is blocked at TWO independent layers, neither crackable with the current safe toolset:
+   (1) DATA: the UMissionsModel maps are empty and the game's own factory won't synthesize entries from
+       fake input (it derives from real player/final progress that doesn't exist at menu).
+   (2) ASSETS: mission DAs are not registered/resolvable as primary assets (the original manifest-can't-
+       carry-missions blocker); registration is native-only + unreachable via reflected UFunctions.
+   (3) PRIMITIVE: no way to call the needed native funcs on the game thread (ProcessEvent-from-hook no-ops;
+       ProcessInternal+FFrame is BP-only).
+  => Unlike roster/store (force a gate over latent data), missions has NO client-side shortcut. The real
+     path remains docs/dedicated-server-stub.md (replicate LokiPlayerState_Missions from a stub server) —
+     that delivers BOTH real mission data AND, via the engine's own load, resolvable assets.
+  DURABLE VALUE from this session regardless: the full missions BP data path + API is decompiled and
+  mapped; the 346-mission/16-pool catalog is dumped; and the negative results precisely bound the route
+  (client-side native-call shortcuts are OUT; DS/replication is the way).
+Step A2 — POPULATE: build MissionModel/MissionPoolModel UObjects (NewObject via a BP/native
+  factory on the game thread through the pi8 primitive, OR construct + fill fields by RPM),
+  insert into MissionsModel.Missions/Pools TMaps keyed by pool PrimaryAssetId, using the
+  recovered catalog (missions_catalog.json) for text/XP/icons. Seed a minimal smoke-test
+  first: 1 pool (DA_MissionPoolDailyEasy) + its ~2 daily missions.
+Step A3 — BROADCAST: fire MissionsModel.OnUpdated via pi8 InvokeBP so the subscribed
+  category widgets rebuild their containers (do NOT just poke — S45 "dead delegate" gotcha).
+  Verify: the Dailies tab renders the seeded mission tile(s) (computer-use screenshot).
+Step A4 — SCALE: once the smoke test renders, fill all 6 categories' pools from the catalog,
+  handle the per-hunter Hero filter (container hides Hero-tagged missions unless
+  GetSelf().HeroAssetID matches), and make it durable (either re-broadcast on modal-open via
+  a hook, or a periodic mirror like shim_watch).
+Backend: persist missions_catalog.json → an index_catalog.go-style backend index so the data
+  layer is ready; the model-fill values come from there even though the SHIM (not HTTP) is
+  what delivers them to the client.
+
 NEXT CONCRETE MOVES
 -------------------
 1. (Route B) Add a GET /progression/players/{id} mission-feed probe in menu/interactive,

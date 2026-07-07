@@ -216,8 +216,20 @@ static bool IsClassNetCacheDivergent(AActor* Actor)
 	//
 	// To restore full suppression, re-add `Actor->IsA<APlayerController>() ||`
 	// as the first term below.
+	// SESSION 53 incremental un-suppress probe (single variable): APlayerState is
+	// DELIBERATELY removed from the suppression set to test whether the DS-connected
+	// menu-load crash (session-53: a worker thread spun up with a garbage start
+	// address 0x7FF8F0400001) is caused by the client operating on an UNDER-HYDRATED
+	// PlayerState replica. If un-suppressing PlayerState CHANGES the crash (different
+	// failure / connection dies earlier at the PlayerState bunch / crash clears), our
+	// suppression of PlayerState is implicated => B-lite schema-inject PlayerState. If
+	// the SAME garbage-thread crash still fires, PlayerState is NOT the culprit (points
+	// at anti-tamper / browse_hook instead — see session-53 doc). NetworkChecksumMode
+	// is None, so the client won't fingerprint-reject; it will attempt deserialize and
+	// likely hit a field-index error on the stock-schema PlayerState bunch (session-38
+	// iter 2 result) — that error vs. the garbage-thread crash is the discriminator.
+	// To restore: re-add `Actor->IsA<APlayerState>() ||` below.
 	if (Actor->IsA<AGameStateBase>()
-	 || Actor->IsA<APlayerState>()
 	 || Actor->IsA<AHUD>()
 	 || Actor->IsA<ADefaultPawn>()
 	 || Actor->IsA<ASpectatorPawn>()

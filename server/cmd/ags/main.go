@@ -36,7 +36,8 @@ import (
 func main() {
 	httpAddr := flag.String("http", ":8080", "plain HTTP listen address (AccelByte)")
 	httpsAddr := flag.String("https", ":443", "HTTPS listen address (Theorycraft hosts)")
-	logPath := flag.String("log", filepath.Join("docs", "capture.log"), "capture log path")
+	logPath := flag.String("log", filepath.Join("docs", "capture.log"), "capture log path (starts fresh each launch; previous run kept as .prev)")
+	logMaxMB := flag.Int64("log-max-mb", 256, "capture log size cap in MB; at the cap it rotates to .prev and continues fresh (0 = unlimited)")
 	certDir := flag.String("certs", "certs", "directory for the generated TLS cert/key")
 	menuConfig := flag.String("config", "", "optional JSON config for menu/store content (see configs/store.example.json); empty uses built-in defaults")
 	flag.Parse()
@@ -54,7 +55,7 @@ func main() {
 		log.Fatalf("signer: %v", err)
 	}
 
-	logger, err := capture.NewLogger(*logPath)
+	logger, err := capture.NewLogger(*logPath, *logMaxMB<<20)
 	if err != nil {
 		log.Fatalf("capture log: %v", err)
 	}
