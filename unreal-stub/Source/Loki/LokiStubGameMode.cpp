@@ -113,57 +113,38 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 
 	MissionsActor->OwningPlayerState = NewPlayer->PlayerState;
 
-	// Smoke-test seed: 2 Armory dailies in the DailyEasy pool. Names per
-	// missions_catalog.json / session-52 doc. Scale to all 6 categories once the
-	// first tile renders. (DA_Mission_ArmoryDaily_* live at
-	// /Game/Loki/Core/Missions/Armory/ArmoryDailies/, pool DA_MissionPoolDailyEasy
-	// at /Game/Loki/Core/Missions/Pools/.)
+	// SESSION 54 (2026-07-07) — three live-RE findings, in order of discovery:
+	//  1. The client BINDS /Script/Loki.LokiPlayerState_Missions by path + replicates,
+	//     but rejected the seeded bunch ("Invalid replicated field 0").
+	//  2. The usmap's FMissionProgress.ObjectiveProgress was wrong (int64 vs the real
+	//     struct FMissionObjectiveProgress) — fixed the mirror; cmds matched 22:22 but
+	//     it STILL desynced.
+	//  3. ROOT CAUSE: Missions is NOT a struct array at all — its inner is an
+	//     ObjectProperty (UClass "BaseMission" : AActor), i.e. TArray<ABaseMission*>.
+	//     ONLY FinalMissionProgress is TArray<FMissionProgress>. So we now (a) correct
+	//     Missions to an object array (aligns the whole class RepLayout) and (b) seed
+	//     the CORRECTLY-TYPED FinalMissionProgress to validate the FMissionProgress
+	//     wire path. Missions stays empty (populating it needs replicated ABaseMission
+	//     actors — a larger, deferred lift). Also un-blocks the s53 garbage-thread
+	//     crash question (Finding: even an empty actor re-triggered it ~100s in).
 	//
-	// SESSION 54 LIVE RESULTS (2026-07-07) — two findings, both reproduced live:
-	//
-	// FINDING 1 (schema): with these 2 seeded, the client BINDS the class by path
-	// (NetGUID resolves /Script/Loki.LokiPlayerState_Missions -> its own class) and
-	// the actor REPLICATES, but the client rejects the property bunch:
-	//   "ReceivedBunch: Invalid replicated field 0 in LokiPlayerState_Missions" ->
-	//   "Replicator.ReceivedBunch failed. Closing connection. Channel: 4" -> the
-	//   client drops into a ~1s connect/fail/reconnect loop.
-	// ISOLATION TEST (bSeedMissions=false, empty arrays == CDO => no element bytes
-	// on the wire) => ZERO field-0 errors, connection STABLE. CONFIRMED: the desync
-	// is the FMissionProgress ELEMENT serialization, NOT the class rep layout (the
-	// RepIndex 11/12 alignment is correct — verified at boot). Our member-wise
-	// mirror does not match the client's FMissionProgress wire format. NEXT: the
-	// client's FMissionProgress almost certainly has a custom NetSerialize (single
-	// RepLayout cmd) — RE that function's exact byte layout and mirror it as a
-	// WithNetSerializer struct (like FPoolableActorServerState in LokiReplicatedStructs.h).
-	//
-	// FINDING 2 (crash): even the EMPTY missions actor eventually triggers the
-	// session-53 garbage-thread execute-AV (RIP=0x7FF8F0400001) ~100s after Join —
-	// the same crash un-suppressing PlayerState was thought to have cured. So merely
-	// binding a LokiPlayerState_Missions replica (client half-inits its missions
-	// subsystem off it, then fires a stale/garbage callback) re-introduces it.
-	// HYPOTHESIS: fully hydrating the actor with VALID mission data (Finding 1 fix)
-	// may also resolve Finding 2 (no half-initialized object). If not, the missions
-	// actor may need to stay un-spawned until its data path is complete, or the
-	// association delegate suppressed. Both are next-session work.
-	//
-	// Toggle: seed real data (true) to iterate the NetSerialize fix; false gives the
-	// stable empty-actor baseline (useful for isolating the Finding-2 crash).
-	const bool bSeedMissions = true;
-	if (bSeedMissions)
+	// Toggle: false = stable empty-actor baseline.
+	const bool bSeedFinalProgress = true;
+	if (bSeedFinalProgress)
 	{
-		MissionsActor->Missions.Add(
+		MissionsActor->FinalMissionProgress.Add(
 			MakeMissionProgress(TEXT("ArmoryDaily_PlayAGame"),
 			                    TEXT("ArmoryDaily_PlayAGame"), TEXT("Daily")));
-		MissionsActor->Missions.Add(
+		MissionsActor->FinalMissionProgress.Add(
 			MakeMissionProgress(TEXT("ArmoryDaily_GetKnocks"),
 			                    TEXT("ArmoryDaily_GetKnocks"), TEXT("Daily")));
 	}
 
 	UE_LOG(LogLokiStubGM, Display,
-	       TEXT("PostLogin: spawned ALokiPlayerState_Missions %s (owner=%s, %d missions, "
-	            "bAlwaysRelevant=%d bReplicates=%d) — replicating to the client."),
+	       TEXT("PostLogin: spawned ALokiPlayerState_Missions %s (owner=%s, Missions=%d "
+	            "FinalMissionProgress=%d, bAlwaysRelevant=%d bReplicates=%d) — replicating."),
 	       *MissionsActor->GetName(), *NewPlayer->GetName(),
-	       MissionsActor->Missions.Num(),
+	       MissionsActor->Missions.Num(), MissionsActor->FinalMissionProgress.Num(),
 	       MissionsActor->bAlwaysRelevant ? 1 : 0,
 	       MissionsActor->GetIsReplicated() ? 1 : 0);
 }
