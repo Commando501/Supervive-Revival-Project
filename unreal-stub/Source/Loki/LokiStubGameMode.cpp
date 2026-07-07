@@ -94,12 +94,46 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 	// first tile renders. (DA_Mission_ArmoryDaily_* live at
 	// /Game/Loki/Core/Missions/Armory/ArmoryDailies/, pool DA_MissionPoolDailyEasy
 	// at /Game/Loki/Core/Missions/Pools/.)
-	MissionsActor->Missions.Add(
-		MakeMissionProgress(TEXT("ArmoryDaily_PlayAGame"),
-		                    TEXT("ArmoryDaily_PlayAGame"), TEXT("Daily")));
-	MissionsActor->Missions.Add(
-		MakeMissionProgress(TEXT("ArmoryDaily_GetKnocks"),
-		                    TEXT("ArmoryDaily_GetKnocks"), TEXT("Daily")));
+	//
+	// SESSION 54 LIVE RESULTS (2026-07-07) — two findings, both reproduced live:
+	//
+	// FINDING 1 (schema): with these 2 seeded, the client BINDS the class by path
+	// (NetGUID resolves /Script/Loki.LokiPlayerState_Missions -> its own class) and
+	// the actor REPLICATES, but the client rejects the property bunch:
+	//   "ReceivedBunch: Invalid replicated field 0 in LokiPlayerState_Missions" ->
+	//   "Replicator.ReceivedBunch failed. Closing connection. Channel: 4" -> the
+	//   client drops into a ~1s connect/fail/reconnect loop.
+	// ISOLATION TEST (bSeedMissions=false, empty arrays == CDO => no element bytes
+	// on the wire) => ZERO field-0 errors, connection STABLE. CONFIRMED: the desync
+	// is the FMissionProgress ELEMENT serialization, NOT the class rep layout (the
+	// RepIndex 11/12 alignment is correct — verified at boot). Our member-wise
+	// mirror does not match the client's FMissionProgress wire format. NEXT: the
+	// client's FMissionProgress almost certainly has a custom NetSerialize (single
+	// RepLayout cmd) — RE that function's exact byte layout and mirror it as a
+	// WithNetSerializer struct (like FPoolableActorServerState in LokiReplicatedStructs.h).
+	//
+	// FINDING 2 (crash): even the EMPTY missions actor eventually triggers the
+	// session-53 garbage-thread execute-AV (RIP=0x7FF8F0400001) ~100s after Join —
+	// the same crash un-suppressing PlayerState was thought to have cured. So merely
+	// binding a LokiPlayerState_Missions replica (client half-inits its missions
+	// subsystem off it, then fires a stale/garbage callback) re-introduces it.
+	// HYPOTHESIS: fully hydrating the actor with VALID mission data (Finding 1 fix)
+	// may also resolve Finding 2 (no half-initialized object). If not, the missions
+	// actor may need to stay un-spawned until its data path is complete, or the
+	// association delegate suppressed. Both are next-session work.
+	//
+	// Toggle: seed real data (true) to iterate the NetSerialize fix; false gives the
+	// stable empty-actor baseline (useful for isolating the Finding-2 crash).
+	const bool bSeedMissions = true;
+	if (bSeedMissions)
+	{
+		MissionsActor->Missions.Add(
+			MakeMissionProgress(TEXT("ArmoryDaily_PlayAGame"),
+			                    TEXT("ArmoryDaily_PlayAGame"), TEXT("Daily")));
+		MissionsActor->Missions.Add(
+			MakeMissionProgress(TEXT("ArmoryDaily_GetKnocks"),
+			                    TEXT("ArmoryDaily_GetKnocks"), TEXT("Daily")));
+	}
 
 	UE_LOG(LogLokiStubGM, Display,
 	       TEXT("PostLogin: spawned ALokiPlayerState_Missions %s (owner=%s, %d missions, "

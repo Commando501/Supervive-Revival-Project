@@ -22,8 +22,44 @@ thread at `0x7FF8F0400001` → execute-AV). **Un-suppressing PlayerState** (sing
 schema — no schema-injection needed (`NetworkChecksumMode=None` makes the client tolerate the field
 divergence). Full writeup: **docs/session-53-ds-missions-gating-retest.txt**.
 
-**NEXT (your job): add `LokiPlayerState_Missions` replication to the stub + populate with mission data
-→ the client's `OnPSMissionsUpdated` fires → `MissionsModel` populates → the Missions modal renders.**
+**UPDATE — Session 54 ALREADY BUILT the replication (committed + boot-verified).**
+`unreal-stub/Source/Loki/LokiPlayerState_Missions.{h,cpp}`: a member-wise `FMissionProgress` USTRUCT
+(engine `FPrimaryAssetId`/`FDateTime` so the RepLayout cmd stream is byte-identical) +
+`ALokiPlayerState_Missions : AActor` named exactly `LokiPlayerState_Missions` so its path
+`/Script/Loki.LokiPlayerState_Missions` binds to the client's class (both modules are "Loki").
+Replicated `Missions`+`FinalMissionProgress`; `bAlwaysRelevant=true`. `LokiStubGameMode::PostLogin`
+spawns it owned by the PC + seeds 2 Armory dailies. A boot-time `DumpClassNetCacheLayout` CONFIRMED
+RepIndex `Missions=[11] FinalMissionProgress=[12]` (after AActor's 11 reps incl. injected
+ServerState@10) — client-aligned. Stub boots clean + listening. See
+`docs/session-54-ds-missions-replication.txt` + `docs/ds-server-s54-boot.log`.
+
+**UPDATE 2 — Session 54 ALSO RAN THE LIVE TEST (computer-use). The core hypothesis is CONFIRMED; two
+blockers remain and are precisely characterized.** Full detail: `docs/session-54-ds-missions-replication.txt`
+(LIVE TEST section).
+- WORKS: the client resolves `/Script/Loki.LokiPlayerState_Missions` by path to its own class (log:
+  `... LokiPlayerState_Missions_2147480905` on the DS travel) and the actor replicates. The
+  same-path-UCLASS trick is VALIDATED — no IoStore overlay. RepIndex 11/12 held.
+- **BLOCKER 1 (schema) — THE NEXT-SESSION PRIORITY:** with missions seeded the client rejects the bunch
+  (`ReceivedBunch: Invalid replicated field 0 in LokiPlayerState_Missions` → `ReceivedBunch failed.
+  Closing connection` → ~1s reconnect loop). Empty-array isolation test (seed 0 → arrays==CDO → no
+  element bytes) → error GONE, connection stable ~103s. ⇒ the desync is the **FMissionProgress ELEMENT
+  wire format**, not the class layout. All 9 field types match usmap + engine sub-structs expand
+  identically, so the client's FMissionProgress almost certainly has a **custom NetSerialize** (1 cmd)
+  vs our member-wise ~11 cmds. FIX = RE that NetSerialize's byte layout + mirror it as a
+  `WithNetSerializer` USTRUCT (pattern: `FPoolableActorServerState` in `LokiReplicatedStructs.h` +
+  `Loki.cpp`). Confirm the theory first via `STRUCT_NetSerializeNative` in the client's FMissionProgress
+  `UScriptStruct->StructFlags` (live RPM), or stub-side bit-count instrumentation.
+- **BLOCKER 2 (crash):** even the EMPTY missions actor re-triggers the session-53 garbage-thread
+  execute-AV (RIP=0x7FF8F0400001) ~103s post-Join — binding the replica makes the client half-init its
+  missions subsystem then thread a stale callback. HYPOTHESIS: fully hydrating the actor (Blocker-1 fix)
+  may also cure this. (A 3rd crash seen once — pre-Join read-AV at exe+0xFA4A53 — is the documented
+  intermittent menu-load crash, unrelated; relaunch.)
+- STILL-OPEN Q: client model association (how the client binds the replica to its local `UMissionsModel`;
+  `OwningPlayerState` is NOT replicated — candidates: replicated `AActor::Owner`, a class scan, or a
+  PlayerState subobject). And tune the `FPrimaryAssetId` name strings (`MakeMissionProgress` args) once
+  data flows and the model populates but tiles don't filter into a category.
+- `bSeedMissions` toggle in `LokiStubGameMode.cpp`: `true` = seed (iterate the NetSerialize fix),
+  `false` = stable empty-actor baseline (isolate Blocker 2).
 
 ## The change already in the working tree (uncommitted — consider committing first)
 
@@ -54,35 +90,34 @@ divergence). Full writeup: **docs/session-53-ds-missions-gating-retest.txt**.
 - Success signals (client): `TravelCompleted`, `Unlockable heroes fetched: 25 heroes` (repeats),
   `[UIREADY] ... TryUIReady SUCCESS`, no `crashpad`. Stub: `Join succeeded`.
 
-## NEXT STEPS (the actual missions work)
+## NEXT STEPS (LIVE TEST of the already-built replication)
 
-1. (Optional) If any residual instability, un-suppress `AGameStateBase` / `ADefaultPawn` one at a time
-   in `IsClassNetCacheDivergent()` (same single-variable pattern). The client is stable with only
-   PlayerState un-suppressed, so likely not needed for the menu.
-2. **Add a replicated `LokiPlayerState_Missions` actor to the stub.** THE HARD PART = the client must
-   recognize the class so NetGUIDs resolve. Approaches to evaluate:
-   - Name a stub `AActor` subclass `LokiPlayerState_Missions` (the stub already uses stock engine
-     classes the client knows; a same-named class may bind by path/name).
-   - OR replicate missions as a component/subobject on the (now-working) PlayerState.
-   - Schema (usmap `tools/usmapdump/schema.txt:27753`): `LokiPlayerState_Missions : Actor`, 2 replicated:
-     `Missions` (TArray<FMissionProgress>, RepNotify `OnMissionsUpdated`), `FinalMissionProgress`
-     (TArray<FMissionProgress>, RepNotify). **FMissionProgress layout** (session-52 doc, size 0x60):
-     ID(FString), AssetId(FPrimaryAssetId), PoolId(FPrimaryAssetId), Complete(bool), Failed(bool),
-     ObjectiveProgress(TArray<int64>), MillisUntilExpiry(int64), Expiry(FDateTime), GrantedAt(FDateTime).
-   - Client chain: OnRep(Missions) → `OnMissionsUpdated` → native `OnPSMissionsUpdated` on the
-     `UMissionsModel` → populates `MissionsModel.Missions` → `WBP_UI_MissionModalCategory` /
-     `WBP_UI_MissionContainer` render tiles (fully decompiled in session-52 doc).
-   - Precedent for schema-matching a replicated struct: `LokiReplicatedStructs.h` +
-     `Loki.cpp` `InjectServerStateReplicatedProperty` / `ForceSetUpReplicationData` (session 41).
-     If stock FMissionProgress schema diverges and the client rejects the bunch, use that injection
-     pattern (but PlayerState survived with stock schema, so try stock first).
-3. **Populate** `Missions` with a few `FMissionProgress` entries from
-   `tools/extractor/out/catalog/missions_catalog.json` (346 missions + 16 pools). Smoke-test 1-2
-   Dailies first (pool `MissionPool:Daily` = DA_MissionPoolDailyEasy; mission
-   `Mission:ArmoryDaily_PlayAGame`). FName ids in session-52/53 docs if needed.
-4. **Reconnect + verify**: open the Missions modal (computer-use — request access; the client is a
-   full-tier native app). Confirm the Dailies tab renders tiles. (The modal opened empty in every
-   prior session; now it should populate.)
+The replication code is DONE + committed + boot-verified (see UPDATE above). What remains is running it
+against a real client:
+
+1. Run stub + client (recipe below). Watch for: does the client stay STABLE at the menu (like the
+   session-53 PlayerState fix), or does it now CRASH? A new crash where s53 was stable ⇒ the
+   `FMissionProgress` cmd stream desynced the RepLayout handle space (member-wise USTRUCT emits multiple
+   cmds where the client expects fewer) ⇒ give `FMissionProgress` a custom `NetSerialize` +
+   `WithNetSerializer=true` so it's ONE cmd — the exact fix `FPoolableActorServerState` uses in
+   `LokiReplicatedStructs.h` (session 41). Check the stub log for the actor replicating + the client
+   Loki.log for any `ReceivedBunch`/`Invalid replicated field`/`corrupted serialization` on
+   `LokiPlayerState_Missions`.
+2. If stable: open the Missions modal (computer-use — request access; the client is a full-tier native
+   app) and check whether tiles render. Watch client Loki.log for `OnPSMissionsUpdated` /
+   `OnMissionsUpdated` firing.
+3. **If the actor replicates but the modal stays empty = the OPEN QUESTION (client model association):**
+   the client must connect the replicated `ALokiPlayerState_Missions` to its local `UMissionsModel`, but
+   `OwningPlayerState` is NOT replicated. Investigate how the client finds it — likely via replicated
+   `AActor::Owner` (the stub sets Owner=PC), a class scan, or as a PlayerState subobject. If unclear, RE
+   the client's `ProgressionManager` / `UMissionsModel` binding (session-52 doc has the BP + native API).
+4. If the model populates but tiles don't appear in a category: the per-mission `FPrimaryAssetId` name
+   strings are off — tune the `MakeMissionProgress(...)` args in `LokiPlayerState_Missions.cpp` (pool
+   `MissionPool:Daily` = DA_MissionPoolDailyEasy, mission `Mission:ArmoryDaily_PlayAGame`; the container
+   filters by PoolId + `Hero==self`). Full catalog: `tools/extractor/out/catalog/missions_catalog.json`.
+
+Gotcha found session 54: UE 5.4 `NetUpdateFrequency` is a PUBLIC member (assign directly);
+`SetNetUpdateFrequency()` is 5.5+ and won't compile.
 
 ## Key files
 - `unreal-stub/Source/Loki/LokiNetDriver.cpp` — suppression (`IsClassNetCacheDivergent`,
