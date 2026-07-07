@@ -164,12 +164,27 @@ class ALokiPlayerState_Missions : public AActor
 public:
 	ALokiPlayerState_Missions(const FObjectInitializer& ObjectInitializer);
 
-	// [RepIndex 11] the granted mission set the client renders as tiles.
+	// [RepIndex 11] Missions. SESSION 54 LIVE RE (2026-07-07): the usmap + session-52
+	// were WRONG — Missions is NOT TArray<FMissionProgress>. The live client's
+	// reflection shows its inner is an ObjectProperty whose PropertyClass is the UClass
+	// "BaseMission" (: AActor). So Missions is an array of REPLICATED ACTOR REFERENCES
+	// (one ABaseMission actor per live mission), serialized as NetGUIDs — a completely
+	// different wire format from a struct array. Mirroring it as a struct array
+	// misaligned the WHOLE class RepLayout (and shifted FinalMissionProgress's handle),
+	// causing the persistent "Invalid replicated field 0". We use TObjectPtr<UObject>:
+	// the RepLayout cmd for any ObjectProperty is PropertyObject (one NetGUID), so this
+	// aligns the wire regardless of the exact PropertyClass. Populating it for real
+	// would require spawning + replicating ABaseMission actors (each carrying a
+	// mission's data) and referencing them here — a larger lift, deferred; kept EMPTY
+	// for now so it isn't sent (CDO) while we validate the struct path via
+	// FinalMissionProgress below.
 	UPROPERTY(ReplicatedUsing = OnRep_Missions)
-	TArray<FMissionProgress> Missions;
+	TArray<TObjectPtr<UObject>> Missions;
 
-	// [RepIndex 12] end-of-game final progress (unused at menu; declared to keep
-	// the net-prop field order faithful to the client so RepIndices line up).
+	// [RepIndex 12] FinalMissionProgress — the ACTUAL TArray<FMissionProgress> (this is
+	// the array whose inner really is the struct, live-confirmed). We populate THIS to
+	// validate the FMissionProgress wire format end-to-end now that Missions' type is
+	// corrected. Client RepNotify = OnMissionsDone.
 	UPROPERTY(ReplicatedUsing = OnRep_FinalMissionProgress)
 	TArray<FMissionProgress> FinalMissionProgress;
 

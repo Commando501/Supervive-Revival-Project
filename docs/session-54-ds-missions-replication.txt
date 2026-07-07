@@ -262,6 +262,54 @@ for its LokiPlayerState_Missions (needs the client live + RepLayout walk). Compa
 handle + per-cmd bit widths. A stub self-round-trip (serialize then deserialize its own
 RepLayout in-process) would also cleanly split stub-bug vs stub-vs-client-diff.
 
+==================================================================================
+*** BLOCKER 1 SOLVED (2026-07-07) — the usmap was DOUBLY wrong; both blockers fall ***
+==================================================================================
+Expanded the client's LokiPlayerState_Missions via its ACTUAL property path (class ->
+Missions ArrayProperty -> Inner, tools/re/rep_expand_class.py) instead of the standalone
+FMissionProgress struct. THE TWO REPLICATED ARRAYS HAVE DIFFERENT INNER TYPES:
+  - Missions             -> Inner is an ObjectProperty (PropertyClass = UClass "BaseMission"
+                            : AActor). So Missions is TArray<ABaseMission*> — an array of
+                            REPLICATED ACTOR REFERENCES (NetGUIDs), NOT structs.
+  - FinalMissionProgress -> Inner IS the FMissionProgress struct (TArray<FMissionProgress>).
+The usmap showed BOTH as the same misparsed "ArrayProperty<MulticastInlineDelegateProperty>",
+and session-52 assumed both were FMissionProgress. WRONG. Mirroring Missions as a struct array
+gave its element 22 cmds where the client expects 1 (an object ref), which desynced the whole
+class RepLayout AND shifted FinalMissionProgress's handle -> the persistent "Invalid replicated
+field 0".
+
+FIX (LokiPlayerState_Missions.h + LokiStubGameMode.cpp):
+  - Missions -> TArray<TObjectPtr<UObject>> (any ObjectProperty = one PropertyObject cmd, so the
+    class RepLayout aligns regardless of the exact PropertyClass). Kept EMPTY (populating it needs
+    replicated ABaseMission actors — the next phase).
+  - Populate FinalMissionProgress (the correctly-typed TArray<FMissionProgress>) with the 2 dailies.
+
+LIVE RESULT — *** WORKS ***: the client ACCEPTS the bunch (grep "Invalid replicated field" = 0),
+"Join succeeded", FinalMissionProgress=2 replicated, and the client is STABLE for 140s+ (past the
+~103s point where every prior DS run crashed). => FMissionProgress wire format is CORRECT, and
+BLOCKER 2 (the session-53 garbage-thread execute-AV) is ALSO GONE — correct typing means the
+client's missions subsystem isn't half-initialized, so no stale callback gets threaded. Both
+blockers fixed by one schema correction. Stub log: docs/ds-server-s54-objfix.log.
+
+STILL TO DO — RENDER THE MODAL (task): FinalMissionProgress drives OnMissionsDone (end-of-game);
+the MENU is driven by Missions (OnMissionsUpdated -> OnPSMissionsUpdated -> MissionsModel). So the
+modal stays empty until Missions (the object array) holds replicated ABaseMission actors. RE'd for
+the next phase:
+  - BaseMission is a NATIVE class at /Script/Loki.BaseMission : AActor (mirrorable by path, same
+    NetGUID trick as LokiPlayerState_Missions). 6 replicated props (field order): ID(FString),
+    AssetId(FPrimaryAssetId), Objectives(TArray<FLokiMissionObjective>), bCompleted(bool),
+    bFailed(bool), PoolId(FPrimaryAssetId).
+  - FLokiMissionObjective (Objectives' inner) is a 16-field struct (UniqueName FName,
+    CurrentProgress/MaxProgress/InitialProgress float, Completed/Failed bool, ObjectiveData struct,
+    Context/InitialArmoryContext arrays, OrderPriority int, ...). Its CPF_Net subset must be
+    mirrored cmd-for-cmd so Objectives' element cmd count keeps bCompleted/bFailed/PoolId handles
+    aligned (same handle-shift lesson as Missions).
+  - Plan: define ABaseMission in the stub, spawn one per mission (populate ID/AssetId/PoolId,
+    Objectives can start empty), reference them in Missions[], replicate; then open the modal.
+Current DS-connected menu is stable but BARE (lobby sky only — no catalog_store_fix in DS context,
+so roster/store are empty); confirm the missions modal can be reached/populated in that state.
+New tool: tools/re/rep_expand_class.py, objprop_probe.py.
+
 RE METHOD (reusable): the client's RVAs are constant per exe build; only the module base changes
 (ASLR). Get base from the process module list, pass to tools/re/*.py (NAMEPOOL=base+0x9D81450,
 OBJOBJECTS=base+0x9E38930). UObject: InternalIndex@+0x10 Class@+0x18 Name@+0x20 Outer@+0x28.
