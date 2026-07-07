@@ -378,6 +378,32 @@ GameMode (bypasses the PC constraint but is a client hack); (D) hybrid — keep 
 the menu and deliver missions another way (but session-52 closed the client-side data channels, which is
 what motivated the DS route). This is the crux decision for the DS route's viability.
 
+*** OPTION C INVESTIGATION (2026-07-07, offline bpdump) — menu is component-heavy => target STANDALONE ***
+Decompiled the menu classes to judge whether a shim can force-build the menu on the DS client:
+  - BP_MainMenuHUD: THIN — only a BlueprintPure getter GetMainMenuRoot + a DefaultSceneRoot. NO BP
+    BeginPlay. The HUD does not build the menu itself.
+  - PC_MainMenu_C: ReceiveBeginPlay is thin (3 bytecode entries); the menu is built by a WEB of ~20
+    ActorComponents on the controller (Comp_MainMenu_UIState / IntroSequence / LevelStreaming / Camera /
+    QueueController / Ceremony_Coordinator / Onboarding / ...) + a 119-entry ExecuteUbergraph. Not a
+    single callable "build menu" entry point.
+=> Force-building the menu on the DS-connected client (stock PC, no components) is impractical — it would
+   mean spawning PC_MainMenu_C + all ~20 components + driving their setup. The menu realistically only
+   exists on a STANDALONE client. CONSEQUENCE: Option C should target the STANDALONE client, where the
+   full menu AND the Missions modal already work (modal opens EMPTY, per session 52) — NO menu/HUD problem
+   there. Option C then reduces to ONE thing: a client-side shim that POPULATES missions on the standalone
+   client. Remaining blocker = session-52's open one: the missions ingestion (OnPSMissionsUpdated / the
+   MissionsModel-population natives) is NATIVE, and there is no proven game-thread NATIVE-call primitive
+   (ProcessEvent-from-hook no-ops for native; pi8 ProcessInternal+FFrame is BP-only). The roster/store
+   shims worked by FLAG-FLIPS over LATENT client data + pi8 BP-calls; missions has no latent data and
+   needs a native trigger. NEW leverage from the DS work: the game's OWN replication path
+   (Missions=TArray<ABaseMission*> -> OnPSMissionsUpdated) correctly builds the model from ABaseMission
+   actors — so a viable shim sets up ABaseMission actors + a LokiPlayerState_Missions and triggers the
+   game's ingestion, rather than hand-poking the model (session-52 Route A, which failed). CRUX for
+   Option C = get a game-thread native-call primitive (untried: direct thunk call with a hand-built FFrame
+   — prior sessions hit __report_gsfailure; risky) OR find a BP-callable ingestion entry point (re-check
+   ProgressionManager / PC_MainMenu_C components). Everything else for standalone missions is solved.
+   bpdumps: tools/extractor/out/bpdump_{BP_MainMenuHUD,PC_MainMenu}_ALL.txt.
+
 RE METHOD (reusable): the client's RVAs are constant per exe build; only the module base changes
 (ASLR). Get base from the process module list, pass to tools/re/*.py (NAMEPOOL=base+0x9D81450,
 OBJOBJECTS=base+0x9E38930). UObject: InternalIndex@+0x10 Class@+0x18 Name@+0x20 Outer@+0x28.
