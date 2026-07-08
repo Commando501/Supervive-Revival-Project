@@ -58,3 +58,45 @@ func TestMissionProgressRoundTrip(t *testing.T) {
 		t.Fatalf("GET did not reflect accumulated progress: %v", o)
 	}
 }
+
+// TestMatchResultMapping covers Option 2c: a match summary advances the right objectives by the
+// right amounts (mapped rules + explicit passthrough), and a second match accumulates.
+func TestMatchResultMapping(t *testing.T) {
+	_, mux := newTestService()
+
+	// A tournament win: 8 knocks, 2 assists, 1st place, 3 chests, 40 minions.
+	got := objectivesOf(t, doJSON(t, mux, "POST", "/revival/missions/match-result",
+		`{"win":true,"placement":1,"knocks":8,"assists":2,"chestsOpened":3,"minionKills":40,"gameMode":"tournament"}`))
+	checks := map[string]float64{
+		"PlayAGame":         1,  // any game
+		"a2winarenagames":   1,  // win (tournament)
+		"BR_WinABR":         1,  // win (weekly)
+		"BR_3Top4":          1,  // top 3
+		"BR_Knocks_Assists": 10, // knocks+assists
+		"BR_Knocks":         8,  // knocks (daily)
+		"BR_Boxes":          3,  // chests
+		"BR_Minions":        40, // minions
+		"TopXWithFullArmory": 1, // top 6
+	}
+	for k, want := range checks {
+		if got[k] != want {
+			t.Fatalf("match-result objective %q = %v, want %v (full: %v)", k, got[k], want, got)
+		}
+	}
+	// An unrelated objective must NOT be touched by a zero-stat rule.
+	if _, ok := got["BR_Sunrises"]; ok {
+		t.Fatalf("BR_Sunrises should be absent (no sunrises in the match): %v", got)
+	}
+	// A trios coop match with an explicit passthrough delta accumulates on top.
+	got2 := objectivesOf(t, doJSON(t, mux, "POST", "/revival/missions/match-result",
+		`{"gameMode":"trios","objectives":{"BR_Sunrises":2}}`))
+	if got2["PlayAGame"] != 2 {
+		t.Fatalf("second match did not accumulate PlayAGame: %v", got2["PlayAGame"])
+	}
+	if got2["Onboarding_PlayTriosMatch"] != 1 {
+		t.Fatalf("trios game did not advance Onboarding_PlayTriosMatch: %v", got2)
+	}
+	if got2["BR_Sunrises"] != 2 {
+		t.Fatalf("explicit passthrough delta not applied: %v", got2["BR_Sunrises"])
+	}
+}

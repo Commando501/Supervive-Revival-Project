@@ -109,10 +109,24 @@ PHASE 2b — client fetch + apply (DONE, structurally verified; visual pending a
   per-mission granularity is needed later, key ags progress by "<missionInternalName>/<objectiveName>" and have
   the shim look up with that composite (the shim already knows the mission's InternalName from the DA).
 
-PHASE 2c — increment from match results (NOT DONE). /revival/missions/progress/add is the hook. Real increments
-  need (a) matches to actually launch (currently gated on the Track A content path) and (b) parsing whatever the
-  client reports to ags at match-end (see docs/endpoints.md / capture.log — /match-history, /core-game). Until
-  matches run, progress can be advanced manually (POST .../add) — which is enough to demo persistence.
+PHASE 2c — increment from match results (ENGINE BUILT + unit-tested; auto-drive from LIVE matches still blocked).
+  HARD CONSTRAINT: every match/mission endpoint the client hits is a GET (docs/endpoints.md: /match-history,
+  /core-game, /progression — all reads). In the real game the DEDICATED SERVER reports match results to the
+  backend; the client never POSTs them, and matches are gated in the revival. So fully-automatic tracking from
+  live play is out of reach here. What IS achievable + built: the match-result -> objective-increment ENGINE.
+  server/internal/interactive/missions.go: POST /revival/missions/match-result takes a match stat summary
+  (win, placement, knocks, assists, teamWipes, minionKills, bossKills, chestsOpened, vaultsOpened,
+  bonfiresCaptured, sunrises, purchases, uniqueHeroes, gameMode, + explicit `objectives` passthrough) and maps
+  it to per-objective deltas via objectiveRules, keyed by the REAL objective unique-names read live from the
+  DAs (Tournament: a2winarenagames/BR_3Top4/PlayAGame/BR_Knocks_Assists; Dailies: BR_Knocks/BR_Sunrises/
+  ArmoryOnboarding_PurchaseEquipment; Weeklies: BR_WinABR/BR_KillBosses/BR_Boxes/BR_Vaults/BR_Capture Bonfires/
+  BR_Minions/BR_WipeTeams/Armory_PlayUniqueHunters/TopXWithFullArmory; Onboarding: Onboarding_PlayTriosMatch).
+  Applies to the store; the shim's poll picks it up -> bars fill. Unit-tested (missions_test.go
+  TestMatchResultMapping). Drive it with a simulated match now; wire to real match data when matches launch
+  (the mapping is ready). All 91 distinct objective unique-names were dumped live (330 missions) — extend
+  objectiveRules from that list as more semantics are confirmed.
+  Example:  curl -X POST http://127.0.0.1:8080/revival/missions/match-result \
+              -d '{"win":true,"placement":1,"knocks":8,"assists":2,"chestsOpened":3,"minionKills":40,"gameMode":"tournament"}'
 
 PHASE 2d — durable packaging (DONE, live-verified). tools/sigbypass-mod/missions_fix.cpp = probe18 packaged
   as an auto-run launch shim: waits for ProgMgr/MissionsModel + funcs to resolve, fetches ags progress, builds
