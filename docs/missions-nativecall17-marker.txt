@@ -1,0 +1,16 @@
+[0] missions_nativecall_probe17 (Option 1: bars 0/real-max via GetUniqueObjectiveName-keyed model) started
+[2] lam=1BF4201AEA0 mm=1C085993A00 guon-thunk=7FF6BA7A3720 all funcs resolved gameTid=28688
+[3] hook built; load DAs -> per-objective GetUniqueObjectiveName keys (Progress=0) -> factory -> swap...
+[4] missions registered=330, pools=16. Built 330-mission model=0x1BFC1E1C280 GetMissions().Num=330
+[4] mission[0]='Tournament_WinGame' DA loaded? GetLokiDataAsset=0x1C0CAEBA900 class='DA_Mission_Tournament_WinGame_C'
+[4] --- per-objective keys (first 8 missions): key must be a REAL objective name, NOT 'None' ---
+[4]   m0 'Tournament_WinGame': objN=1 key0='a2winarenagames' total0=1.0
+[4]   m1 'Tournament_Top3': objN=1 key0='BR_3Top4' total0=3.0
+[4]   m2 'Tournament_PlayAGame': objN=1 key0='PlayAGame' total0=5.0
+[4]   m3 'Tournament_KnocksAssists': objN=1 key0='BR_Knocks_Assists' total0=50.0
+[4]   m4 'PlayTriosMatch': objN=1 key0='Onboarding_PlayTriosMatch' total0=1.0
+[4]   m5 'CompleteCoopVAi': objN=1 key0='Onboarding_PlayTriosMatch' total0=1.0
+[4]   m6 'CompleteTraversalChallenge': objN=1 key0='NewOnboarding_CompleteTraversalChallenge' total0=1.0
+[4]   m7 'CompleteSpikingChallenge': objN=1 key0='NewOnboarding_CompleteSpikingChallenges' total0=2.0
+[4] SWAP ProgMgr.MissionsModel -> new model: DONE
+[4] *** keyed model swapped. CLOSE+REOPEN the Missions modal -> bars should read 0/<real max>. ***
