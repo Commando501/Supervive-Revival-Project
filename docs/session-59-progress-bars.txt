@@ -1,0 +1,91 @@
+SESSION 59 — MISSIONS PROGRESS BARS: OPTION 1 SOLVED (bars show real "0 / <max>", not the "10/20" placeholder)
+=============================================================================================================
+Date: 2026-07-08. Branch: dedicated-server-stub. Builds on s55-s58 (native-call primitive + full missions page).
+RESULT: *** COMPUTER-USE + USER-SCREENSHOT VERIFIED — every mission bar now renders its true "not started" state
+(0 / real-max) with correct per-mission maxes, across all four tabs. The design-time placeholder is gone. ***
+
+WHAT THE PROGRESS BAR ACTUALLY READS (RE'd from BP bytecode this session)
+------------------------------------------------------------------------
+The per-objective bar widget = WBP_UI_MissionObjectiveProgress(Base). Container chain:
+  WBP_UI_MissionContainer -> "Create Widget for Mission" -> WBP_UI_MissionProgress(Base) [the per-MISSION tile;
+  DA.LobbyWidgetClass is null so the default WBP_UI_MissionProgress_C is used].
+The tile's AddMissingObjectives (ubergraph entry 2951) iterates **Mission.MissionAsset.Objectives** (the DA's
+TArray<LokiMissionObjectiveData>, @DA+0x88), and for each objective whose ObjectiveClass IsValidClass:
+  - Create(WBP_UI_MissionObjectiveProgress)
+  - SetStructurePropertyByName(widget,"Objective", objData)   <- widget.Objective = the DA struct (has TotalProgress)
+  - SetObjectPropertyByName(widget,"MissionModel", Mission)
+  - AddNewObjective(widget)
+The bar's UpdateProgress ubergraph then draws:
+  current = GetCurrentProgress()   // = ObjectiveModel.CurrentProgress if IsValid(ObjectiveModel), else 0
+  total   = widget.Objective.TotalProgress
+  ProgressTextv2.SetText( Format("{current}/{total}") )
+  ProgressBarv2.SetPercent( current / total )
+The bar's Construct subscribes OnMissionUpdated to MissionModel.OnUpdated AND calls OnMissionUpdated, which:
+  name = LokiAssetStatics::GetUniqueObjectiveName(widget.Objective)   // FName, NATIVE fn
+  ObjectiveModel = MissionModel.Objectives.Find(name)                 // FName-keyed TMap<FName, MissionObjectiveModel*>
+  if found -> OnObjectiveModelSet -> UpdateProgress
+
+ROOT CAUSE OF THE "10/20"
+-------------------------
+It's the DESIGN-TIME placeholder of ProgressTextv2 ("10/20") + ProgressBarv2 (Percent 0.5), left visible because
+UpdateProgress never runs with real data. Live ground-truth (tools/re/live_bars.py, modal open): all 23 bars had
+ObjectiveModel = NULL, total = the REAL per-mission max (already correctly bound from widget.Objective!), and
+Percent = 0.500. The bind failed because our factory model (probe15/16) keyed MissionModel.Objectives by
+ObjectiveProgress[i].ObjectiveName = None, so Map_Find(GetUniqueObjectiveName(...)) never matched -> ObjectiveModel
+stayed null -> UpdateProgress didn't fire -> placeholder stayed.
+(MissionObjectiveModel fields, dumped: Name(FName)@0x30, CurrentProgress(float)@0x38, Completed@0x60,
+StartingProgress@0x64, Objective(->LokiMissionObjective)@0x78. The MAX is NOT here — it's widget.Objective.
+TotalProgress from the DA struct. LokiMissionObjectiveData(48B): Prompt(Text)@0, TotalProgress(float)@0x10,
+HideInMenus@0x14, ObjectiveClass(Class)@0x18. LokiDataAsset_Mission: Objectives(TArray)@0x88, XPReward@0x98,
+InternalName@0x40. Class chain: DA_Mission_*_C -> LokiDataAsset_Mission -> LokiDataAsset_Base -> PrimaryDataAsset.
+SuperStruct @+0x48.)
+
+THE FIX (probe17, durable, native-only) — key the model's Objectives map by the REAL objective name
+--------------------------------------------------------------------------------------------------
+Extend the probe15 pipeline: after loading each mission DA, read DA.Objectives (@+0x88); for each
+LokiMissionObjectiveData objective:
+  key   = LokiAssetStatics::GetUniqueObjectiveName(objData)   // native, via the s55 primitive
+  total = objData.TotalProgress (@+0x10)                      // informational; the bar reads the DA anyway
+  build one FMissionObjectiveProgress { ObjectiveName=key, Progress=0, MaxProgress=total, StartingProgress=0 }
+Put those in FMissionProgress.ObjectiveProgress (@+0x38) per mission, then
+CreateMissionModelFromFinalProgress -> swap into ProgMgr.MissionsModel (@+0x3B8) as before.
+Now the factory builds MissionModel.Objectives keyed by the real FName, with a MissionObjectiveModel whose
+CurrentProgress=0. On (re)open, the widget's GetUniqueObjectiveName(same DA struct) matches the map key ->
+Map_Find succeeds -> ObjectiveModel binds (CurrentProgress=0) -> UpdateProgress -> text "0 / TotalProgress",
+Percent 0. Durable because the game's own BP does the binding every time the modal opens.
+
+GetUniqueObjectiveName (LokiAssetStatics, NATIVE, thunk rva 0x52B3720): params [0] Objective(LokiMissionObjectiveData,
+48B, CPF_OutParm|CPF_ConstParm @off0), [1] ReturnValue(FName @off48, Return). Call it with the s58 OUT-param recipe
+(FOutParmRec for the Objective struct -> Locals+0); return FName in r8. Sample keys computed live: Tournament_WinGame
+-> 'a2winarenagames' total=1; Tournament_Top3 -> 'BR_3Top4' total=3; Tournament_PlayAGame -> 'PlayAGame' total=5;
+Tournament_KnocksAssists -> 'BR_Knocks_Assists' total=50.
+
+VERIFICATION (this session)
+---------------------------
+- Structural (RPM): after swap, MissionModel[0].Objectives is keyed FName 'a2winarenagames' (not None); the value
+  MissionObjectiveModel has Name='a2winarenagames', CurrentProgress=0.000, Completed=false.
+- Visual (computer-use reopen + user screenshots): ONBOARDING = 0/1,0/1,0/1; SEASONAL (Tournament) = 0/50, 0/5,
+  0/3, 0/1; WEEKLIES = 0/15,0/3,0/45,0/20,0/500,0/5,0/30; DAILIES = 0/3(Complete All),0/6,0/5,0/5,0/1. Bars empty,
+  real varied maxes, XP rewards render. *** THE "10/20" PLACEHOLDER IS GONE. Option 1 COMPLETE. ***
+
+FILES
+-----
+- tools/sigbypass-mod/missions_nativecall_probe17.cpp  (the Option-1 shim; copy of probe15 + GetUniqueObjectiveName
+  keying + Progress=0). Build: clang++ -shared -O2 ... -lkernel32. Inject: tools/inject/inject.exe mmap <PID> ...
+  Marker: docs/missions-nativecall17-marker.txt.
+- tools/re/mission_obj_dump.py   (dump a live MissionModel.Objectives TMap: keys + value MissionObjectiveModel)
+- tools/re/objmodel_dump.py      (MissionObjectiveModel class + live instances; find current/max fields)
+- tools/re/da_dump.py            (follow MissionModel.MissionAsset/BaseMission, walk DA class chain incl. supers)
+- tools/re/live_bars.py          (GROUND TRUTH without a screenshot: read live bar widgets' Percent + total + current)
+- BP dumps: tools/extractor/out/bpdump_{UpdateProgress,GetCurrentProgress,Create Widget for Mission,
+  ExecuteUbergraph_WBP_UI_MissionProgressBase,ExecuteUbergraph_WBP_UI_MissionObjectiveProgress*}.txt
+
+NEXT — OPTION 2 (real tracking, backend): store per-account mission-objective progress in ags, have the menu shim
+fetch it and set FMissionProgress.ObjectiveProgress[i].Progress (matched ObjectiveName, same machinery as probe17),
+increment from match-end results, persist. Package probe17's swap as a durable menu-load shim (like catalog_store_fix)
+so it runs on launch instead of manual injection. Handoff detail: this file + docs/session-57-da-resolution.txt.
+
+RE FACTS THIS BUILD (unchanged): base 0x7FF6B54F0000 (re-read each launch); ProcessInternal @base+0x13454A0;
+GUObjectArray @base+0x9E38930; FNamePool @base+0x9D81450; GGameThreadId @base+0x9D49158. FName indices PER-PROCESS.
+UProgressBar.Percent @+0x410. Leaf bar widget offsets: Objective(struct)@0x2F0 (TotalProgress@0x300),
+ObjectiveModel@0x320, MissionModel@0x328, ProgressBarv2@0x368, ProgressTextv2@0x370.
