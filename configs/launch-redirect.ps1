@@ -58,7 +58,12 @@ param(
                          # UEngine::Browse call at startup. Required to catch
                          # the natural LVL_Login + LVL_LobbyV2 startup
                          # browses for testing the hook end-to-end.
-  [switch]$NoHook        # skip the default catalog_store_fix.dll auto-injection (clean RE run)
+  [switch]$NoHook,       # skip the default catalog_store_fix.dll auto-injection (clean RE run)
+  [switch]$Missions      # durable Missions mode: primary catalog_store_fix + missions_fix.dll (Option 2, 2d),
+                         # injected via inject-missions.ps1. Skips the pick/refresh secondary (mainmenu_refresh_pi8)
+                         # because it also hooks ProcessInternal and two PI-hookers cannot coexist. The bars then
+                         # reflect ags per-objective progress on launch + poll for changes. Requires ags built
+                         # with /revival/missions/progress (server/internal/interactive/missions.go).
 )
 
 $ErrorActionPreference = "Stop"
@@ -101,9 +106,17 @@ if (-not $NoHook -and -not $Revert -and -not $NoLaunch -and -not $Hook) {
   $defaultHook = Join-Path $repoRoot "tools\sigbypass-mod\catalog_store_fix.dll"
   if (Test-Path $defaultHook) {
     $Hook = $defaultHook
-    $InjectSecondaries = $true   # after the primary settles, also inject the pick shims
-                                 # (catalog_pick_fix + mainmenu_refresh_pi8) via inject-secondaries.ps1
-    Write-Host "Auto-hook: injecting store/roster fix (catalog_store_fix.dll) + pick/refresh shims. Use -NoHook to skip." -ForegroundColor Cyan
+    if ($Missions) {
+      # Durable Missions mode: primary catalog_store_fix + missions_fix.dll (the SOLE PI-hooker;
+      # pick/refresh pi8 is skipped since two ProcessInternal hooks race). missions_fix fetches
+      # per-objective progress from ags and swaps the mission model on menu load + on change.
+      $InjectMissions = $true
+      Write-Host "Auto-hook (-Missions): store/roster fix + durable Missions shim (missions_fix.dll). Pick/refresh (pi8) is skipped in this mode." -ForegroundColor Cyan
+    } else {
+      $InjectSecondaries = $true   # after the primary settles, also inject the pick shims
+                                   # (catalog_pick_fix + mainmenu_refresh_pi8) via inject-secondaries.ps1
+      Write-Host "Auto-hook: injecting store/roster fix (catalog_store_fix.dll) + pick/refresh shims. Use -NoHook to skip, -Missions for the Missions shim." -ForegroundColor Cyan
+    }
   } else {
     Write-Host "Auto-hook: catalog_store_fix.dll not found at $defaultHook" -ForegroundColor Yellow
     Write-Host "  -> launching WITHOUT the store/roster hook (STORE + HUNTERS will be empty)." -ForegroundColor Yellow
@@ -328,6 +341,16 @@ if ($Hook) {
       Start-Process powershell -WindowStyle Hidden -ArgumentList $secArgs | Out-Null
     } else {
       Write-Host "  (inject-secondaries.ps1 not found — pick shims will NOT auto-inject)" -ForegroundColor Yellow
+    }
+  }
+  if ($InjectMissions) {
+    $misInj = Join-Path $repoRoot "configs\inject-missions.ps1"
+    if (Test-Path $misInj) {
+      Write-Host "  Missions shim (missions_fix.dll) will inject once the store/roster hook settles." -ForegroundColor DarkGray
+      $misArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$misInj`" -Repo `"$repoRoot`""
+      Start-Process powershell -WindowStyle Hidden -ArgumentList $misArgs | Out-Null
+    } else {
+      Write-Host "  (inject-missions.ps1 not found — Missions shim will NOT auto-inject)" -ForegroundColor Yellow
     }
   }
   Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan

@@ -114,9 +114,26 @@ PHASE 2c — increment from match results (NOT DONE). /revival/missions/progress
   client reports to ags at match-end (see docs/endpoints.md / capture.log — /match-history, /core-game). Until
   matches run, progress can be advanced manually (POST .../add) — which is enough to demo persistence.
 
-PHASE 2d — durable packaging (NOT DONE). Fold probe18's swap into an auto-run menu-load shim (like
-  catalog_store_fix.dll: hook on launch, fetch+build+swap once the ProgMgr/MissionsModel resolve, re-run on
-  modal open). Then it "just works" on launch with no manual inject, and the model swap survives relaunch.
+PHASE 2d — durable packaging (DONE, live-verified). tools/sigbypass-mod/missions_fix.cpp = probe18 packaged
+  as an auto-run launch shim: waits for ProgMgr/MissionsModel + funcs to resolve, fetches ags progress, builds
+  the keyed model w/ progress, swaps — then POLLS ags every 30s and re-applies ONLY when the fetched progress
+  CHANGES (idle = cheap HTTP polls, no thread-suspends), so a match's POST /revival/missions/progress/add fills
+  the bars without a relaunch (reopen the modal to see it). Marker docs/missions-fix-marker.txt.
+  Wiring: `launch-redirect.ps1 -Missions` sets primary catalog_store_fix + $InjectMissions, which spawns
+  configs/inject-missions.ps1 (mirror of inject-secondaries) to inject missions_fix.dll AFTER the primary
+  self-unhooks. IT IS THE SOLE ProcessInternal-hooker in this mode: the pick/refresh secondary
+  mainmenu_refresh_pi8 ALSO hooks ProcessInternal, and two PI-hookers race on the thread-suspend install, so
+  -Missions SKIPS the secondaries (pick-commit + main-menu refresh are unavailable in this mode; store/roster
+  still work via the primary). Combining missions + pick/refresh in one launch = a future task (fold both into
+  a single PI-hooking shim). Build: clang++ -shared -O2 missions_fix.cpp -o missions_fix.dll -lkernel32 -lwininet.
+  LIVE-VERIFIED (manual inject into the running game): apply#1 swapped w/ seeded 17/2/3; POST /add
+  (BR_Knocks_Assists 17->27) -> [poll] apply#2 auto-re-swapped -> model CurrentProgress=27 (RPM-confirmed).
+  Full launch-path auto-inject not yet exercised via an actual `-Missions` relaunch (component-verified only).
+
+RUN IT (durable):  from an ELEVATED PowerShell:  .\configs\launch-redirect.ps1 -Missions
+  (Steam running first.) Seed/advance progress any time:
+    curl -X POST http://127.0.0.1:8080/revival/missions/progress -d '{"objectives":{"BR_Knocks_Assists":17}}'
+    curl -X POST http://127.0.0.1:8080/revival/missions/progress/add -d '{"objectives":{"PlayAGame":1}}'
 
 Detail continues in this file. Prior handoff: docs/session-57-da-resolution.txt.
 
