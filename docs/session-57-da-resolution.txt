@@ -156,3 +156,36 @@ ProgMgr+0x3B8 = the new model (roots it via the UPROPERTY), then open the modal 
 Construct (no broadcast needed for a fresh open). (3) tab filtering: WBP_UI_MissionContainer filters missions
 by PoolId == the tab's baked pool id — spread missions across several real pool ids to land in a visible tab.
 probe12 in tools/sigbypass-mod/.
+
+==================================================================================
+*** ★★★ S58 — THE MISSIONS MODAL RENDERS (2026-07-08, computer-use verified) ★★★ ***
+==================================================================================
+probe14 closed the loop end-to-end. It (1) AsyncLoadPrimaryAssets'd the 8 target mission DAs (registered !=
+loaded), polled GetLokiDataAsset until they resolved (mission[0] -> DA_Mission_Tournament_WinGame_C, LOADED),
+(2) built a MissionsModel with 8 DISTINCT-ID FMissionProgress (empty-ID collision fixed — the Missions map is
+FString-ID-keyed; all "" deduped to 1 in probe13) across real pools, (3) SWAPPED it into
+ProgMgr.MissionsModel@+0x3B8 (roots via the UPROPERTY). Marker:
+    missions registered=330, pools=16. Built 8-mission model GetMissions().Num=8
+    mission[0] DA loaded? GetLokiDataAsset=0x1C0CAEBA900 class='DA_Mission_Tournament_WinGame_C'
+    SWAP ProgMgr.MissionsModel -> new model: DONE
+Reopening the modal (the open widgets read GetMissionsModel() on Construct) -> the SEASONAL tab renders 4 real
+Tournament mission tiles ("Get Knocks or Assists in Tournament", "Play Games of Tournament", "Place Top 3...",
+"Win a Game of Tournament") with progress bars + 10000 XP rewards. *** THE PREVIOUSLY-EMPTY MISSIONS MODAL IS
+POPULATED, FULLY CLIENT-SIDE. ***
+
+THE COMPLETE CLIENT-SIDE MISSIONS PIPELINE (all reusable, all live-verified):
+  1. Avenue A native-call primitive (s55): hook ProcessInternal, captured FFrame, call the UFunction thunk
+     @+0xE0 directly (Code=NULL for no-param).
+  2. Parameters (s56): Locals-by-offset (@FProperty+0x44), PropertyChainForCompiledIn@+0x88, return->r8;
+     AND OUT params (s58): build the FOutParmRec list + set FFrame.OutParms@+0x80 (this was the real cause of
+     the "anti-tamper" crashes — a bug in my setup, not the game).
+  3. GetPrimaryAssetIdList -> missions ARE registered (330). GetLokiDataAsset null = not LOADED.
+  4. AsyncLoadPrimaryAssets(WorldContext=ProgMgr, TArray<FPrimaryAssetId>, empty delegate) LOADS the DAs;
+     poll GetLokiDataAsset until non-null.
+  5. CreateMissionModelFromFinalProgress(TArray<FMissionProgress> w/ real registered ids + DISTINCT FString
+     IDs + real PoolIds) -> a populated MissionsModel (s52's "factory rejects synthetic data" was the OUT-param
+     crash; it works).
+  6. RPM-write ProgMgr.MissionsModel@+0x3B8 = the new model -> GetMissionsModel() returns it -> reopen modal.
+DURABLE-FIX PATH (for a shim, like catalog_store_fix): do steps 4-6 from the ProcessInternal hook on menu load;
+pick a real per-pool granted set from the 330 registered missions; distinct IDs; broadcast MissionsModel.OnUpdated
+if refreshing an already-open modal instead of reopen. probe14 in tools/sigbypass-mod/.
