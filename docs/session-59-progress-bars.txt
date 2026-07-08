@@ -127,6 +127,12 @@ PHASE 2c — increment from match results (ENGINE BUILT + unit-tested; auto-driv
   objectiveRules from that list as more semantics are confirmed.
   Example:  curl -X POST http://127.0.0.1:8080/revival/missions/match-result \
               -d '{"win":true,"placement":1,"knocks":8,"assists":2,"chestsOpened":3,"minionKills":40,"gameMode":"tournament"}'
+  LIVE-VERIFIED (computer-use, on the -Missions relaunch): a simulated tournament win POST returned applied
+  deltas {a2winarenagames:1, BR_WinABR:1, BR_3Top4:1, BR_Knocks_Assists:10, BR_Knocks:8, PlayAGame:1, BR_Boxes:5,
+  BR_Minions:30, TopXWithFullArmory:1}; the shim's poll auto-re-applied; reopening the modal showed SEASONAL
+  = Get Knocks/Assists 37/50, Play Games 4/5, Place Top 3 3/3 (COMPLETE), Win a Game 1/1 (COMPLETE), and DAILIES
+  = Get Knocks 5/5 (COMPLETE, clamped from 8), Play a Game 1/1 (COMPLETE) — with untouched objectives (See
+  Sunrises 0/6, Purchase 0/5) correctly empty. *** THE WHOLE OPTION-2 LOOP WORKS ON A FRESH LAUNCH. ***
 
 PHASE 2d — durable packaging (DONE, live-verified). tools/sigbypass-mod/missions_fix.cpp = probe18 packaged
   as an auto-run launch shim: waits for ProgMgr/MissionsModel + funcs to resolve, fetches ags progress, builds
@@ -140,9 +146,11 @@ PHASE 2d — durable packaging (DONE, live-verified). tools/sigbypass-mod/missio
   -Missions SKIPS the secondaries (pick-commit + main-menu refresh are unavailable in this mode; store/roster
   still work via the primary). Combining missions + pick/refresh in one launch = a future task (fold both into
   a single PI-hooking shim). Build: clang++ -shared -O2 missions_fix.cpp -o missions_fix.dll -lkernel32 -lwininet.
-  LIVE-VERIFIED (manual inject into the running game): apply#1 swapped w/ seeded 17/2/3; POST /add
-  (BR_Knocks_Assists 17->27) -> [poll] apply#2 auto-re-swapped -> model CurrentProgress=27 (RPM-confirmed).
-  Full launch-path auto-inject not yet exercised via an actual `-Missions` relaunch (component-verified only).
+  LIVE-VERIFIED end-to-end via an actual `.\configs\launch-redirect.ps1 -Missions` RELAUNCH: catalog_store_fix
+  auto-injected + settled ([cm]/[unhook]/[patch]); inject-missions.ps1 then auto-injected missions_fix, which on
+  menu load fetched the PERSISTED progress (BR_Knocks_Assists=27 survived the full game+ags restart) and swapped
+  the model (apply#1). (Note: the game hit the documented intermittent boot crash on 2 tries before booting on
+  the 3rd — unrelated to missions_fix, which never loads until the menu.)
 
 RUN IT (durable):  from an ELEVATED PowerShell:  .\configs\launch-redirect.ps1 -Missions
   (Steam running first.) Seed/advance progress any time:
