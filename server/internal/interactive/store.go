@@ -58,6 +58,18 @@ type playerState struct {
 	// the element types never need modeling; echoed as loadout emoteIds/titleIds.
 	EmoteIds json.RawMessage `json:"emoteIds,omitempty"`
 	TitleIds json.RawMessage `json:"titleIds,omitempty"`
+
+	// --- Missions (Option 2: real progress tracking) — see missions.go ---
+	// MissionObjectives maps an objective's UNIQUE name (as returned by the native
+	// LokiAssetStatics::GetUniqueObjectiveName — e.g. "PlayAGame", "BR_Knocks_Assists",
+	// "Onboarding_PlayTriosMatch") to the player's current progress toward it. The
+	// client-side missions menu-load shim fetches this (GET /revival/missions/progress)
+	// and writes each value into the mission model's FMissionProgress.ObjectiveProgress
+	// (matched by ObjectiveName) so the modal's bars reflect real progress; match-end
+	// hooks increment it (POST .../add). Single-account revival: stored under the fixed
+	// "local" key (the in-process shim has no JWT). Objective names are globally unique,
+	// so a flat map is sufficient.
+	MissionObjectives map[string]float64 `json:"missionObjectives,omitempty"`
 }
 
 // store is an in-memory player-state map with best-effort JSON-file persistence

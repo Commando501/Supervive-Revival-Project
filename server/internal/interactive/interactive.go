@@ -61,6 +61,13 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /progression/players/{id}", s.handleGetProgression)
 	mux.HandleFunc("PUT /progression/players/{id}/mission", s.handlePutMission)
 
+	// ---- Missions (Option 2: real progress tracking) — see missions.go ----
+	// Revival-only endpoints (NOT an impersonated client route): the client-side
+	// missions shim fetches per-objective progress here on menu load and applies it
+	// to the modal's bars; match-end hooks increment it. Persisted per objective
+	// unique-name (GetUniqueObjectiveName) in the shared store.
+	s.registerMissions(mux)
+
 	// ---- Party (solo auto-party — the tutorial/match launch gate) ----
 	// The client polls GET /party/players/{id}?defaultQueue=tutorialNew to fetch (and
 	// lazily create) its party. With the {} stub the client's PartyManager believes
