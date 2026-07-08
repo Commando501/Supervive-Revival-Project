@@ -114,3 +114,45 @@ USEFUL RE FOR THE RAW-SCAN PATH (S59):
 STATE: probe10 in tools/sigbypass-mod/. New tool tools/re/find_func.py (scan Function objects by name substr).
 The core s55-s57 capabilities (primitive, param-passing, DA-resolution root-cause) stand. The registration
 step is a defined but finicky/crash-prone sub-investigation best done with the vtable-slot RE above in hand.
+
+==================================================================================
+*** S58 BREAKTHROUGH (2026-07-08): OUT-param crashes ROOT-CAUSED + FIXED; missions ARE registered ***
+==================================================================================
+The probe6/8/10 __fastfail crashes were NOT anti-tamper/re-entrancy — they were a BUG in my param setup:
+OUT params. Disasm of StepExplicitProperty (@rva 0x1345FE0) shows: for a CPF_OutParm param (bt flags,0x8)
+it reads **FFrame.OutParms @ +0x80** and walks an FOutParmRec list {Property@+0, PropAddr@+8, NextOutParm@+16}
+matching by Property ptr (it does NOT use Locals+Offset for OUT params). My FFrame's +0x80 was garbage (from
+the captured template) => the walk dereferenced garbage => __fastfail. Every crashing call (factory probe6/8,
+query probe10) had an OUT param; every clean call (probe4/5/7/9) had only IN params + return.
+FIX (probe11, VERIFIED): for each CPF_OutParm (non-return) param, build an FOutParmRec {Property=the FField,
+PropAddr=Locals+Offset(+0x44), Next=chain} and set FFrame+0x80 = &head. probe11 then called
+KismetSystemLibrary::GetPrimaryAssetIdList(type, OUT TArray) with NO crash:
+    types: Hero='Hero'(0x1A568) Mission='Mission'(0x162B8)
+    GetPrimaryAssetIdList Num: Hero=25   Mission=330
+=> *** MISSIONS ARE REGISTERED (330 ids, ~ the 346 DA_Mission* catalog). *** GetLokiDataAsset(mission)=null
+   was because they're registered-but-NOT-LOADED, not unregistered. NO raw ScanPathsForPrimaryAssets needed.
+   The fix is to LOAD them (AsyncLoadPrimaryAssets — reflected, all IN params) so GetLokiDataAsset resolves.
+CONSEQUENCE: the whole OUT-param native toolkit is now open (factory, query, SetMissionProgress, model
+population). The s52 "factory rejects synthetic data" was ALSO an OUT-param crash (its param is CPF_OutParm)
+— must be re-tested with the OutParms fix. FName type indices are PER-PROCESS — resolve live via
+PrimaryAssetIDFromString each run (probe11 does this). New: FFrame.OutParms@+0x80; FOutParmRec{+0,+8,+16}.
+probe11 in tools/sigbypass-mod/.
+
+==================================================================================
+*** S58 BREAKTHROUGH #2 (2026-07-08): the FACTORY WORKS — builds a populated model from synthetic data ***
+==================================================================================
+With the OUT-param fix, re-ran CreateMissionModelFromFinalProgress (probe12) — the call s52 believed
+"rejects synthetic data" but had only ever run through the OUT-param crash / a no-op. Fed it a REAL registered
+mission id (from GetPrimaryAssetIdList("Mission")[0]) inside 1 synthetic FMissionProgress:
+    missionIds=330 (id0={Type=Mission 0x162B8, Name 0x200302937}) poolIds=16 (id0={MissionPool 0x16F06, 0x3F4AAA})
+    factory ret model=0x1BFFC503880 class='MissionsModel' ; model.GetMissions().Num=1
+=> *** THE FACTORY BUILT A NON-EMPTY MissionsModel (Num=1) FROM SYNTHETIC FMissionProgress. *** s52's negative
+   was purely the OUT-param crash. This is the client-side model-population path.
+OPEN QUESTIONS for render: (1) does the built MissionModel have a LOADED MissionAsset (missions are registered
+but NOT loaded — GetLokiDataAsset=null)? If null, the widget may skip/blank the tile -> may need
+AsyncLoadPrimaryAssets first. (2) wiring: the factory returns a SEPARATE model; the menu widgets read
+ProgressionManager.GetMissionsModel() (knownMM @ ProgMgr+0x3B8). Plan: build the model, RPM-write
+ProgMgr+0x3B8 = the new model (roots it via the UPROPERTY), then open the modal FRESH so the widgets read it on
+Construct (no broadcast needed for a fresh open). (3) tab filtering: WBP_UI_MissionContainer filters missions
+by PoolId == the tab's baked pool id — spread missions across several real pool ids to land in a visible tab.
+probe12 in tools/sigbypass-mod/.
