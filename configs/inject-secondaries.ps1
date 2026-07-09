@@ -28,7 +28,12 @@ $log     = Join-Path $Repo "docs\inject-secondaries.log"
 # heap-only tile patcher.
 $dlls = @(
   "tools\sigbypass-mod\mainmenu_refresh_pi8.dll",
-  "tools\sigbypass-mod\catalog_pick_fix.dll"
+  "tools\sigbypass-mod\catalog_pick_fix.dll",
+  # loadout_fix: replays saved customization equips (skins/gliders/wisps/sprays/chromas) by calling the
+  # game's native setters on the game thread. Hooks ProcessInternal like pi8, so it shares the
+  # Local\SuperviveMissionsPIHook mutex (one-shot: install -> apply -> uninstall). Injected last, after
+  # pi8 is resident, so the two never SafeWrite the PI prologue at once. Reads GET /revival/loadout.
+  "tools\sigbypass-mod\loadout_fix.dll"
 )
 
 function Log($m){ "$([DateTime]::Now.ToString('HH:mm:ss'))  $m" | Out-File -FilePath $log -Append -Encoding ascii }

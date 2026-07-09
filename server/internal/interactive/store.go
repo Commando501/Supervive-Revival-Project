@@ -40,6 +40,15 @@ type playerState struct {
 	// (TryPickMyHeroAndCosmetics on the native PartyManager); seeded into buildSoloParty.
 	SelectedHeroAssetId string `json:"selectedHeroAssetId,omitempty"`
 
+	// SelectedQueueID is the matchmaking queue/activity the player has selected in the
+	// ActivityPicker (e.g. "tutorialNew","default","practice"). The client's
+	// Comp_MainMenu_QueueController enforces a "you must always have one activity
+	// selected" invariant: the party's TargetQueueID must be non-empty or every modify
+	// fails with "Unable to modify activity". Seeded from the client's own
+	// GET /party/players/{id}?defaultQueue=<q> param, then updated when the player
+	// switches activities; echoed back as the party's targetQueueId(s) each poll.
+	SelectedQueueID string `json:"selectedQueueId,omitempty"`
+
 	// --- PersonalizationLoadout (customization equips) — see loadout.go ---
 	// LoadoutVersion is bumped on EVERY loadout-affecting write (slot cosmetics,
 	// emotes, titles, hero bundles, luxe chromas, lobby platform). The client's
@@ -129,6 +138,70 @@ func (s *store) get(id string) *playerState {
 		s.players[id] = st
 	}
 	return st
+}
+
+// primaryLoadout returns a snapshot of the single real player's persisted equips
+// (slot cosmetics, hero skin bundles, luxe chromas) for the revival loadout feed
+// the client-side shim reads. The shim carries no JWT, and the revival is
+// single-account, so we pick the player entry that actually holds loadout data —
+// skipping the "local" missions bucket and any empty entry. Maps are copied so
+// callers never touch the live state under the lock. Returns empty maps if none.
+func (s *store) primaryLoadout() (slots, bundles, chromas map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	slots, bundles, chromas = map[string]string{}, map[string]string{}, map[string]string{}
+	var best *playerState
+	bestScore := -1
+	for id, st := range s.players {
+		if id == missionsLocalKey || st == nil {
+			continue
+		}
+		score := len(st.SlotCosmetics) + len(st.HeroCosmeticsBundles) + len(st.LuxeChromas)
+		if st.SelectedHeroAssetId != "" {
+			score++
+		}
+		if score > bestScore {
+			bestScore, best = score, st
+		}
+	}
+	if best != nil {
+		for k, v := range best.SlotCosmetics {
+			slots[k] = v
+		}
+		for k, v := range best.HeroCosmeticsBundles {
+			bundles[k] = v
+		}
+		for k, v := range best.LuxeChromas {
+			chromas[k] = v
+		}
+	}
+	return slots, bundles, chromas
+}
+
+// primarySelectedHero returns the persisted selected hunter ("Hero:<name>") of the
+// same best player primaryLoadout picks, or "" if none. The loadout_fix shim reads it
+// to know which hero to re-pick (TryPick) so the 3D render refreshes to the saved skin.
+func (s *store) primarySelectedHero() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var best *playerState
+	bestScore := -1
+	for id, st := range s.players {
+		if id == missionsLocalKey || st == nil {
+			continue
+		}
+		score := len(st.SlotCosmetics) + len(st.HeroCosmeticsBundles) + len(st.LuxeChromas)
+		if st.SelectedHeroAssetId != "" {
+			score++
+		}
+		if score > bestScore {
+			bestScore, best = score, st
+		}
+	}
+	if best != nil {
+		return best.SelectedHeroAssetId
+	}
+	return ""
 }
 
 // update mutates a player's state under lock and persists the result.

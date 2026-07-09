@@ -1,0 +1,5 @@
+[0] missions_nativecall_probe7 (Avenue A + PARAMS: GetMissionModel(FString) — safe param-mechanism validation) started
+[2] MissionsModel=0x21E3D78A000 func=0000021D5A0B4D60 thunk=0x7FF6BA996070(rva 0x54A6070) childProps=0x21D9C827500 gameTid=80652
+[3] hook built; calling GetMissionModel("Daily") via direct thunk + compiled-in params...
+[4] CALLED (no crash). GetMissionModel("Daily") ret=0x0 class='' hitsGT=1
+[4] *** reached here = the FString param was marshalled + the thunk ran to completion WITHOUT crashing => PARAM-PASSING MECHANISM WORKS. (ret null is expected: model is empty.) ***

@@ -1,0 +1,5 @@
+[0] missions_nativecall_probe11 (OUT-param FIX via FFrame.OutParms@+0x80 + GetPrimaryAssetIdList Hero/Mission) started
+[2] LAM=0x1BF4201AEA0 pafsThunk=0x7FF6BA79B760 gpailThunk=0x7FF6B8E55B20 gameTid=28688
+[3] hook built; PAFS(Hero/Mission) + GetPrimaryAssetIdList WITH OutParms...
+[4] types: Hero='Hero'(0x1A568) Mission='Mission'(0x162B8). GetPrimaryAssetIdList Num: Hero=25 Mission=330
+[4] *** OUT-PARAM FIX WORKS + Mission IDs ARE registered => just NOT LOADED => AsyncLoadPrimaryAssets. ***

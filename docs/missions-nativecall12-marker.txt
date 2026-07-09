@@ -1,0 +1,6 @@
+[0] missions_nativecall_probe12 (factory re-test w/ OUT-param fix + real registered mission id) started
+[2] lam=1BF4201AEA0 mm=1C013A80580 all funcs resolved gameTid=28688
+[3] hook built; get real mission/pool ids -> factory -> GetMissions...
+[4] missionIds=330 (id0={0x162B8,0x200302937}) poolIds=16 (id0={0x16F06,0x3F4AAA})
+[4] factory ret model=0x1BFFC503880 class='MissionsModel' ; model.GetMissions().Num=1
+[4] *** FACTORY BUILDS A NON-EMPTY MODEL from synthetic FMissionProgress! => wire to knownMM + broadcast + render. ***

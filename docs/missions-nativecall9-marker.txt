@@ -1,0 +1,6 @@
+[0] missions_nativecall_probe9 (mission-DA resolution re-test: PrimaryAssetIDFromString + GetLokiDataAsset) started
+[2] LokiAssetManager=0x14575BAA8D0 pafsThunk=0x7FF6BA79B760 gldaThunk=0x7FF6BA79A850 gameTid=12884
+[3] hook built; chaining PrimaryAssetIDFromString + GetLokiDataAsset (Hero control + Mission test)...
+[4] CONTROL Hero: id={Type=Hero Name=Alchemist} raw={0x1A568,0x326FA7} DA=0x14612A71640 class='BP_HeroAsset_Alchemist_C'
+[4] TEST   Mission: id={Type=Mission Name=ArmoryDaily_PlayAGame} raw={0x162B8,0x3FE76D} DA=0x0 class=''
+[4] => CONTROL resolves but MISSION does NOT => missions genuinely need registration/scan. (primitive+asset path proven by the control.)

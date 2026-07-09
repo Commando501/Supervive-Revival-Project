@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SUPERVIVE Revival — Admin</title>
+<style>
+  :root {
+    --bg: #0d1017; --bg2: #141926; --bg3: #1b2233; --line: #2a3350;
+    --fg: #dbe2f4; --dim: #8b94ad; --accent: #7c5cff; --accent2: #35d0ba;
+    --warn: #e8b339; --danger: #e05a6d; --ok: #4fca7c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 14px/1.45 "Segoe UI", system-ui, sans-serif; }
+  a { color: var(--accent2); }
+
+  header { display: flex; align-items: baseline; gap: 14px; padding: 14px 22px;
+           background: var(--bg2); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 17px; margin: 0; letter-spacing: .06em; }
+  header h1 b { color: var(--accent); }
+  header .sub { color: var(--dim); font-size: 12px; }
+
+  .layout { display: flex; min-height: calc(100vh - 55px); }
+  nav { width: 190px; flex: none; background: var(--bg2); border-right: 1px solid var(--line);
+        padding: 12px 0; }
+  nav button { display: block; width: 100%; text-align: left; padding: 10px 20px;
+               background: none; border: none; color: var(--dim); font: inherit;
+               cursor: pointer; border-left: 3px solid transparent; }
+  nav button:hover { color: var(--fg); }
+  nav button.on { color: var(--fg); background: var(--bg3); border-left-color: var(--accent); }
+  main { flex: 1; padding: 20px 26px 80px; max-width: 1100px; }
+
+  h2 { font-size: 16px; margin: 4px 0 12px; }
+  h3 { font-size: 13.5px; margin: 18px 0 8px; color: var(--accent2); text-transform: uppercase;
+       letter-spacing: .08em; }
+  .note { background: var(--bg3); border: 1px solid var(--line); border-left: 3px solid var(--accent2);
+          padding: 8px 12px; border-radius: 4px; color: var(--dim); font-size: 12.5px; margin: 10px 0; }
+  .note.warn { border-left-color: var(--warn); }
+  .note b { color: var(--fg); }
+
+  .card { background: var(--bg2); border: 1px solid var(--line); border-radius: 6px;
+          padding: 14px 16px; margin: 12px 0; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; }
+
+  input[type=text], input[type=number], select, textarea {
+    background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+    border-radius: 4px; padding: 6px 9px; font: inherit; }
+  input[type=number] { width: 90px; }
+  textarea { width: 100%; min-height: 180px; font: 12px/1.5 Consolas, monospace; }
+  input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); }
+  label.chk { display: flex; gap: 7px; align-items: center; padding: 3px 6px; border-radius: 3px;
+              cursor: pointer; }
+  label.chk:hover { background: var(--bg3); }
+  label.chk.off span { color: var(--dim); }
+
+  button.btn { background: var(--bg3); border: 1px solid var(--line); color: var(--fg);
+               border-radius: 4px; padding: 6px 14px; font: inherit; cursor: pointer; }
+  button.btn:hover { border-color: var(--accent); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.btn.danger { border-color: var(--danger); color: var(--danger); }
+  button.btn.mini { padding: 2px 8px; font-size: 12px; }
+
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--dim); font-weight: 600; font-size: 12px; text-transform: uppercase;
+       letter-spacing: .05em; }
+  tr:hover td { background: var(--bg3); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 2px; }
+  .listbox { max-height: 420px; overflow-y: auto; border: 1px solid var(--line);
+             border-radius: 4px; padding: 6px; background: var(--bg); }
+  .counts { color: var(--dim); font-size: 12px; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11.5px;
+          background: var(--bg3); border: 1px solid var(--line); color: var(--dim); }
+  .pill.ok { color: var(--ok); border-color: var(--ok); }
+  .pill.warn { color: var(--warn); border-color: var(--warn); }
+
+  #savebar { position: fixed; bottom: 0; left: 190px; right: 0; padding: 10px 26px;
+             background: var(--bg2); border-top: 1px solid var(--line); display: none;
+             align-items: center; gap: 14px; z-index: 5; }
+  #savebar.show { display: flex; }
+  #savebar .dirty { color: var(--warn); font-size: 12.5px; }
+
+  #toast { position: fixed; top: 14px; right: 16px; z-index: 10; display: flex;
+           flex-direction: column; gap: 8px; }
+  .toastmsg { background: var(--bg3); border: 1px solid var(--ok); color: var(--fg);
+              border-radius: 5px; padding: 9px 14px; font-size: 13px; max-width: 420px;
+              box-shadow: 0 4px 18px rgba(0,0,0,.45); }
+  .toastmsg.err { border-color: var(--danger); }
+  .mono { font-family: Consolas, monospace; font-size: 12.5px; }
+  .kv-row { display: flex; gap: 8px; margin: 4px 0; align-items: center; }
+  .kv-row input[type=text] { width: 320px; }
+  details { margin: 10px 0; }
+  summary { cursor: pointer; color: var(--dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1>SUPERVIVE <b>REVIVAL</b> — backend admin</h1>
+  <span class="sub" id="cfgpath"></span>
+</header>
+
+<div class="layout">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<div id="savebar">
+  <span class="dirty">Unsaved config changes</span>
+  <button class="btn primary" onclick="saveConfig()">Save &amp; apply config</button>
+  <button class="btn" onclick="revertConfig()">Discard changes</button>
+  <span class="counts">Applies live in the backend; the client picks it up on its next menu re-entry / relaunch.</span>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ------------------------------------------------------------------ state -- */
+let DATA = { config: null, defaults: null, path: "" };  // /api/config
+let CFG = null;          // working copy the checklists mutate
+let dirty = false;
+let MISSIONS = { manifest: [], objectives: {} };
+let PLAYERS = [];
+let curTab = "overview";
+let curPlayer = null;    // {id, state} being edited
+
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, err) {
+  const d = document.createElement("div");
+  d.className = "toastmsg" + (err ? " err" : "");
+  d.textContent = msg;
+  $("#toast").appendChild(d);
+  setTimeout(() => d.remove(), err ? 8000 : 3500);
+}
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.error || (r.status + " " + r.statusText));
+  return body;
+}
+
+function setDirty(v) {
+  dirty = v;
+  $("#savebar").classList.toggle("show", v);
+}
+
+/* ---------------------------------------------------------------- loaders -- */
+async function loadConfig() {
+  DATA = await api("/api/config");
+  CFG = JSON.parse(JSON.stringify(DATA.config));
+  $("#cfgpath").textContent = DATA.path ? ("config: " + DATA.path) : "config persistence disabled (-config \"\")";
+  setDirty(false);
+}
+async function loadMissions() { MISSIONS = await api("/api/missions"); }
+async function loadPlayers()  { PLAYERS = (await api("/api/players")).players; }
+
+async function saveConfig() {
+  try {
+    const res = await api("/api/config", { method: "PUT",
+      headers: {"Content-Type": "application/json"}, body: JSON.stringify(CFG) });
+    if (res.saveError) toast("Applied live, but NOT persisted: " + res.saveError, true);
+    else toast("Config saved & applied");
+    DATA.config = res.config;
+    CFG = JSON.parse(JSON.stringify(res.config));
+    setDirty(false);
+    render();
+  } catch (e) { toast("Save failed: " + e.message, true); }
+}
+function revertConfig() {
+  CFG = JSON.parse(JSON.stringify(DATA.config));
+  setDirty(false);
+  render();
+}
+
+/* ------------------------------------------------------------------- tabs -- */
+const TABS = [
+  ["overview", "Overview"],
+  ["hunters",  "Hunters"],
+  ["store",    "Store"],
+  ["economy",  "Wallet & Prices"],
+  ["missions", "Missions"],
+  ["players",  "Players"],
+];
+function renderNav() {
+  $("#nav").innerHTML = TABS.map(([id, label]) =>
+    `<button class="${curTab===id?'on':''}" onclick="go('${id}')">${label}</button>`).join("");
+}
+function go(tab) { curTab = tab; curPlayer = null; render(); }
+
+function render() {
+  renderNav();
+  const m = $("#main");
+  if (!CFG) { m.innerHTML = "<p>Loading…</p>"; return; }
+  ({overview: renderOverview, hunters: renderHunters, store: renderStore,
+    economy: renderEconomy, missions: renderMissions, players: renderPlayers}[curTab])(m);
+}
+
+/* --------------------------------------------------------------- overview -- */
+function renderOverview(m) {
+  const c = CFG, d = DATA.defaults;
+  const missionKeys = Object.keys(MISSIONS.objectives || {}).length;
+  m.innerHTML = `
+    <h2>Overview</h2>
+    <div class="card">
+      <table>
+        <tr><td>Hunters unlocked</td><td><b>${c.heroes.length}</b> / ${d.heroes.length}</td></tr>
+        <tr><td>Store bundles advertised</td><td><b>${c.store.bundles.length}</b> / ${d.store.bundles.length}</td></tr>
+        <tr><td>Featured carousel</td><td><b>${c.store.featured.length}</b></td></tr>
+        <tr><td>Skins owned/advertised</td><td><b>${c.store.skins.length}</b> / ${d.store.skins.length}</td></tr>
+        <tr><td>Accessories owned/advertised</td><td><b>${c.store.accessories.length}</b> / ${d.store.accessories.length}</td></tr>
+        <tr><td>Wallet</td><td class="mono">${esc(JSON.stringify(c.wallet))}</td></tr>
+        <tr><td>Mission objectives tracked</td><td><b>${missionKeys}</b> (manifest: ${(MISSIONS.manifest||[]).length} entries)</td></tr>
+        <tr><td>Player accounts with state</td><td><b>${PLAYERS.length}</b></td></tr>
+      </table>
+    </div>
+    <div class="note"><b>How changes reach the game:</b> the client refetches inventory, storefront and
+      wallet when it re-enters the menu (or on relaunch) — config edits are not pushed mid-screen.
+      Mission progress is fetched by the client-side missions shim on menu load and re-polled, so those
+      edits appear on the next modal open.</div>
+    <div class="note warn"><b>Known-inert knobs:</b> per-SKU <b>prices</b> are stored but the client currently
+      renders prices from packed catalog data (see Wallet &amp; Prices tab). Mission <b>requirements</b>
+      (objective names, maxes, descriptions) live in client-side data assets — only <b>progress</b> is
+      server-controlled.</div>`;
+}
+
+/* ---------------------------------------------------------------- hunters -- */
+function renderHunters(m) {
+  const owned = new Set(CFG.heroes);
+  const defHero = CFG.heroes[0] || "";
+  m.innerHTML = `
+    <h2>Hunters — unlock / lock</h2>
+    <div class="note">Checked hunters are marked <b>IsOwned</b> in the inventory feed → unlocked in the
+      ALL HUNTERS roster. Unchecked hunters show the not-owned lock. The <b>default</b> hunter is the
+      IsDefault starting entry (first in the list sent to the client).</div>
+    <div class="card">
+      <div class="row" style="margin-bottom:8px">
+        <button class="btn mini" onclick="huntersAll(true)">Unlock all</button>
+        <button class="btn mini" onclick="huntersAll(false)">Lock all</button>
+        <span class="counts">${owned.size} / ${DATA.defaults.heroes.length} unlocked</span>
+      </div>
+      <div class="grid">
+        ${DATA.defaults.heroes.map(h => `
+          <label class="chk ${owned.has(h)?'':'off'}">
+            <input type="checkbox" ${owned.has(h)?'checked':''} onchange="toggleHero('${h}', this.checked)">
+            <span>${esc(h)}</span>
+            <input type="radio" name="defhero" title="default hunter" ${h===defHero?'checked':''}
+                   onchange="setDefaultHero('${h}')">
+          </label>`).join("")}
+      </div>
+      <div class="counts" style="margin-top:6px">checkbox = unlocked &nbsp;·&nbsp; radio = default (IsDefault) hunter</div>
+    </div>`;
+}
+function toggleHero(h, on) {
+  const s = new Set(CFG.heroes);
+  on ? s.add(h) : s.delete(h);
+  const def = CFG.heroes[0];
+  CFG.heroes = DATA.defaults.heroes.filter(x => s.has(x));
+  if (def && s.has(def)) setDefaultHero(def, true);
+  setDirty(true); render();
+}
+function setDefaultHero(h, skipRender) {
+  const rest = CFG.heroes.filter(x => x !== h);
+  if (!CFG.heroes.includes(h)) rest.unshift(h); // picking a locked hero as default unlocks it
+  CFG.heroes = [h, ...rest.filter(x => x !== h)];
+  setDirty(true);
+  if (!skipRender) render();
+}
+function huntersAll(on) {
+  CFG.heroes = on ? [...DATA.defaults.heroes] : [];
+  setDirty(true); render();
+}
+
+/* ------------------------------------------------------------------ store -- */
+const STORE_LISTS = [
+  ["bundles",     "Bundles (StoreOffer packs — BUNDLES / SUPPORTER PACKS tabs)"],
+  ["featured",    "Featured carousel (StoreOffer names; needs WideSplashArt to render — see note)"],
+  ["currency",    "Currency top-ups (real-money store)"],
+  ["skins",       "Skins (HeroCosmeticsBundle — SKINS tab + COSMETICS ownership)"],
+  ["accessories", "Accessories (SlotCosmetics — ACCESSORIES tab + COSMETICS ownership)"],
+];
+let storeFilter = {};
+function renderStore(m) {
+  m.innerHTML = `
+    <h2>Store — advertised &amp; owned SKUs</h2>
+    <div class="note"><b>These lists drive two things at once:</b> what the storefront advertises AND what
+      the account owns (the inventory feed marks every listed asset IsOwned). Unchecking a skin locks it in
+      the COSMETICS browser too. Prices shown in-game come from packed data, not from here.</div>
+    <div class="note warn">Featured carousel gotcha: only offers whose packed asset has non-null
+      <b>WideSplashArt</b> render (the skin packs do; Starter/Superviver/Patron supporter packs spin).</div>
+    ${STORE_LISTS.map(([key, label]) => storeSection(key, label)).join("")}`;
+}
+function storeSection(key, label) {
+  const all = [...new Set([...DATA.defaults.store[key], ...CFG.store[key]])];
+  const cur = new Set(CFG.store[key]);
+  const f = (storeFilter[key] || "").toLowerCase();
+  const shown = f ? all.filter(x => x.toLowerCase().includes(f)) : all;
+  return `
+    <div class="card">
+      <h3 style="margin-top:0">${label}</h3>
+      <div class="row" style="margin-bottom:6px">
+        <input type="text" placeholder="filter…" value="${esc(storeFilter[key]||"")}"
+               oninput="storeFilter['${key}']=this.value; render()">
+        <button class="btn mini" onclick="storeAll('${key}', true)">Check shown</button>
+        <button class="btn mini" onclick="storeAll('${key}', false)">Uncheck shown</button>
+        <span class="counts">${cur.size} / ${all.length} enabled${f ? " · showing "+shown.length : ""}</span>
+      </div>
+      <div class="listbox grid">
+        ${shown.map(sku => `
+          <label class="chk ${cur.has(sku)?'':'off'}">
+            <input type="checkbox" ${cur.has(sku)?'checked':''}
+                   onchange="toggleSku('${key}', '${esc(sku)}', this.checked)">
+            <span>${esc(sku)}</span>
+          </label>`).join("") || '<span class="counts">no matches</span>'}
+      </div>
+      <div class="row" style="margin-top:6px">
+        <input type="text" id="add-${key}" placeholder="add custom SKU name…">
+        <button class="btn mini" onclick="addSku('${key}')">Add</button>
+      </div>
+    </div>`;
+}
+function toggleSku(key, sku, on) {
+  const s = new Set(CFG.store[key]);
+  on ? s.add(sku) : s.delete(sku);
+  const all = [...new Set([...DATA.defaults.store[key], ...CFG.store[key], sku])];
+  CFG.store[key] = all.filter(x => s.has(x));
+  setDirty(true); render();
+}
+function storeAll(key, on) {
+  const f = (storeFilter[key] || "").toLowerCase();
+  const all = [...new Set([...DATA.defaults.store[key], ...CFG.store[key]])];
+  const s = new Set(CFG.store[key]);
+  for (const sku of all) if (!f || sku.toLowerCase().includes(f)) on ? s.add(sku) : s.delete(sku);
+  CFG.store[key] = all.filter(x => s.has(x));
+  setDirty(true); render();
+}
+function addSku(key) {
+  const v = $("#add-" + key).value.trim();
+  if (!v) return;
+  if (!CFG.store[key].includes(v)) CFG.store[key] = [...CFG.store[key], v];
+  setDirty(true); render();
+}
+
+/* ---------------------------------------------------------------- economy -- */
+function renderEconomy(m) {
+  const wallet = Object.entries(CFG.wallet);
+  const prices = Object.entries(CFG.prices);
+  m.innerHTML = `
+    <h2>Wallet &amp; Prices</h2>
+    <h3>Wallet balances</h3>
+    <div class="note">Confirmed: <b>vp</b> = Vive Points (the purple counter). The gold counter
+      (Theorycraft Coins, premium) is NOT wallet-driven — it comes from battlepass claim state, so no
+      wallet key can set it.</div>
+    <div class="card" id="walletcard">
+      ${wallet.map(([k, v], i) => `
+        <div class="kv-row">
+          <input type="text" value="${esc(k)}" onchange="walletKey(${i}, this.value)">
+          <input type="number" value="${v}" onchange="walletVal(${i}, this.value)">
+          <button class="btn mini danger" onclick="walletDel(${i})">✕</button>
+        </div>`).join("")}
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="wk" placeholder="currency code (e.g. vp)">
+        <input type="number" id="wv" placeholder="amount" value="0">
+        <button class="btn mini" onclick="walletAdd()">Add balance</button>
+      </div>
+    </div>
+    <h3>Per-SKU prices</h3>
+    <div class="note warn"><b>Currently INERT in the client.</b> The game renders a tile's price from the
+      packed CatalogEntry offers (native), and probes proved the backend Costs field is ignored. Values set
+      here are stored/persisted so they're ready if/when the price bridge (native cost injection) lands.</div>
+    <div class="card">
+      <table>
+        <tr><th>SKU (PrimaryAssetName)</th><th>Price</th><th>Discounted</th><th>Currency</th><th></th></tr>
+        ${prices.map(([sku, p], i) => `
+          <tr>
+            <td class="mono">${esc(sku)}</td>
+            <td><input type="number" value="${p.price}" onchange="priceEdit('${esc(sku)}','price',this.value)"></td>
+            <td><input type="number" value="${p.discountedPrice}" onchange="priceEdit('${esc(sku)}','discountedPrice',this.value)"></td>
+            <td><input type="text" style="width:70px" value="${esc(p.currency)}" onchange="priceEdit('${esc(sku)}','currency',this.value)"></td>
+            <td><button class="btn mini danger" onclick="priceDel('${esc(sku)}')">✕</button></td>
+          </tr>`).join("")}
+      </table>
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="psku" placeholder="SKU name">
+        <input type="number" id="pval" placeholder="price" value="0">
+        <input type="text" id="pcur" placeholder="currency" value="vp" style="width:70px">
+        <button class="btn mini" onclick="priceAdd()">Add price</button>
+      </div>
+    </div>`;
+}
+function walletKey(i, k) { const e = Object.entries(CFG.wallet); e[i][0] = k.trim(); CFG.wallet = Object.fromEntries(e); setDirty(true); }
+function walletVal(i, v) { const e = Object.entries(CFG.wallet); e[i][1] = +v || 0; CFG.wallet = Object.fromEntries(e); setDirty(true); }
+function walletDel(i)    { const e = Object.entries(CFG.wallet); e.splice(i, 1); CFG.wallet = Object.fromEntries(e); setDirty(true); render(); }
+function walletAdd() {
+  const k = $("#wk").value.trim(); if (!k) return;
+  CFG.wallet[k] = +$("#wv").value || 0; setDirty(true); render();
+}
+function priceEdit(sku, field, v) {
+  const p = CFG.prices[sku]; if (!p) return;
+  p[field] = (field === "currency") ? v.trim() : (+v || 0);
+  setDirty(true);
+}
+function priceDel(sku) { delete CFG.prices[sku]; setDirty(true); render(); }
+function priceAdd() {
+  const sku = $("#psku").value.trim(); if (!sku) return;
+  CFG.prices[sku] = { price: +$("#pval").value || 0, discountedPrice: 0, currency: $("#pcur").value.trim() || "vp" };
+  setDirty(true); render();
+}
+
+/* --------------------------------------------------------------- missions -- */
+let missionFilter = "";
+let missionEdits = {};   // composite key -> pending absolute value
+function renderMissions(m) {
+  const man = MISSIONS.manifest || [];
+  const obj = MISSIONS.objectives || {};
+  const rows = man.map(e => {
+    const key = e.mission + "/" + e.objective;
+    return { key, mission: e.mission, objective: e.objective, max: e.max,
+             cur: obj[key] !== undefined ? obj[key] : 0 };
+  });
+  const extraKeys = Object.keys(obj).filter(k => !rows.some(r => r.key === k));
+  const f = missionFilter.toLowerCase();
+  const shown = f ? rows.filter(r => r.key.toLowerCase().includes(f)) : rows;
+  m.innerHTML = `
+    <h2>Missions — progress control</h2>
+    <div class="note">Progress keys are <span class="mono">&lt;mission&gt;/&lt;objective&gt;</span>. The
+      client-side missions shim fetches these on menu load and writes them into the modal's bars.
+      <b>Requirements</b> (objective names / maxes / text) come from the game's data assets — server
+      controls progress only. The manifest below is registered by the shim; if it's empty, launch the game
+      to the menu once with <span class="mono">-Missions</span> and it will populate.</div>
+    <div class="card">
+      <div class="row" style="margin-bottom:8px">
+        <input type="text" class="grow" placeholder="filter missions…" value="${esc(missionFilter)}"
+               oninput="missionFilter=this.value; render()">
+        <button class="btn mini" onclick="missionsCompleteAll()">Complete all</button>
+        <button class="btn mini danger" onclick="missionsResetAll()">Reset all to 0</button>
+        <span class="counts">${man.length} manifest entries · ${Object.keys(obj).length} tracked keys</span>
+      </div>
+      ${man.length === 0 ? '<div class="note warn">No manifest registered yet — mission rows appear after one menu load with the missions shim active.</div>' : `
+      <div class="listbox" style="max-height:520px">
+        <table>
+          <tr><th>Mission</th><th>Objective</th><th>Progress</th><th>Max</th><th></th></tr>
+          ${shown.map(r => `
+            <tr>
+              <td>${esc(r.mission)}</td>
+              <td>${esc(r.objective)}</td>
+              <td><input type="number" step="any" value="${missionEdits[r.key] !== undefined ? missionEdits[r.key] : r.cur}"
+                         onchange="missionEdits['${esc(r.key)}'] = +this.value"></td>
+              <td>${r.max}</td>
+              <td>
+                <button class="btn mini" onclick="missionSet('${esc(r.key)}', 0)">0</button>
+                <button class="btn mini" onclick="missionSet('${esc(r.key)}', ${r.max})">max</button>
+              </td>
+            </tr>`).join("")}
+        </table>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" onclick="missionsApplyEdits()">Apply edited values</button>
+        <span class="counts">${Object.keys(missionEdits).length} pending edit(s)</span>
+      </div>`}
+      ${extraKeys.length ? `<h3>Tracked keys not in manifest</h3>
+        <div class="mono counts">${extraKeys.map(k => esc(k) + " = " + obj[k]).join("<br>")}</div>` : ""}
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="mkey" class="grow" placeholder="custom key: <mission>/<objective>">
+        <input type="number" id="mval" value="0" step="any">
+        <button class="btn mini" onclick="missionCustom()">Set</button>
+      </div>
+    </div>
+    <h3>Simulate a match result</h3>
+    <div class="note">Runs the same stat→objective engine as
+      <span class="mono">POST /revival/missions/match-result</span>: deltas fan out to every mission
+      sharing the objective.</div>
+    <div class="card" id="matchform">
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="m_win"><span>Win</span></label>
+        ${["placement","knocks","assists","teamWipes","minionKills","bossKills","chestsOpened",
+           "vaultsOpened","bonfiresCaptured","sunrises","purchases","uniqueHeroes"].map(f => `
+          <label class="chk"><span>${f}</span><input type="number" id="m_${f}" value="0" style="width:70px"></label>`).join("")}
+        <label class="chk"><span>gameMode</span>
+          <select id="m_gameMode">
+            <option value="tournament">tournament</option><option value="br">br</option>
+            <option value="trios">trios</option><option value="coop">coop</option>
+          </select></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" onclick="simMatch()">Record match</button>
+        <span class="counts mono" id="matchout"></span>
+      </div>
+    </div>`;
+}
+async function missionSet(key, val) {
+  try {
+    MISSIONS.objectives = (await api("/api/missions/progress", { method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ objectives: { [key]: val } }) })).objectives;
+    delete missionEdits[key];
+    toast(key + " → " + val); render();
+  } catch (e) { toast(e.message, true); }
+}
+async function missionsApplyEdits() {
+  if (!Object.keys(missionEdits).length) { toast("No edits pending"); return; }
+  try {
+    MISSIONS.objectives = (await api("/api/missions/progress", { method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ objectives: missionEdits }) })).objectives;
+    toast(Object.keys(missionEdits).length + " objective value(s) applied");
+    missionEdits = {}; render();
+  } catch (e) { toast(e.message, true); }
+}
+async function missionsResetAll() {
+  if (!confirm("Zero ALL mission progress?")) return;
+  try {
+    MISSIONS.objectives = (await api("/api/missions/progress", { method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ objectives: {}, replace: true }) })).objectives;
+    missionEdits = {}; toast("All mission progress reset"); render();
+  } catch (e) { toast(e.message, true); }
+}
+async function missionsCompleteAll() {
+  const vals = {};
+  for (const e of MISSIONS.manifest || []) vals[e.mission + "/" + e.objective] = e.max;
+  if (!Object.keys(vals).length) { toast("No manifest to complete", true); return; }
+  try {
+    MISSIONS.objectives = (await api("/api/missions/progress", { method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ objectives: vals }) })).objectives;
+    missionEdits = {}; toast("All manifest objectives set to max"); render();
+  } catch (e) { toast(e.message, true); }
+}
+async function missionCustom() {
+  const k = $("#mkey").value.trim(); if (!k) return;
+  await missionSet(k, +$("#mval").value || 0);
+}
+async function simMatch() {
+  const body = { win: $("#m_win").checked, gameMode: $("#m_gameMode").value };
+  for (const f of ["placement","knocks","assists","teamWipes","minionKills","bossKills",
+                   "chestsOpened","vaultsOpened","bonfiresCaptured","sunrises","purchases","uniqueHeroes"])
+    body[f] = +$("#m_" + f).value || 0;
+  try {
+    const res = await api("/api/missions/match-result", { method: "POST",
+      headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+    MISSIONS.objectives = res.objectives;
+    const n = Object.keys(res.applied || {}).length;
+    $("#matchout").textContent = n + " objective key(s) advanced";
+    toast("Match recorded — " + n + " objective(s) advanced");
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ---------------------------------------------------------------- players -- */
+function renderPlayers(m) {
+  if (curPlayer) return renderPlayerEditor(m);
+  m.innerHTML = `
+    <h2>Players — per-account state</h2>
+    <div class="note">Everything persisted in <span class="mono">state/interactive.json</span>: selected
+      hunter, menu backdrop, cosmetic equips, saved client profile. Loadout edits auto-bump the loadout
+      version so the client reconciler adopts them on its next fetch.</div>
+    <div class="card">
+      ${PLAYERS.length === 0 ? '<span class="counts">No player state yet — log in with the client once.</span>' : `
+      <table>
+        <tr><th>Player ID</th><th>Selected hunter</th><th>Backdrop</th><th>Loadout ver</th><th></th></tr>
+        ${PLAYERS.map(p => {
+          const st = p.state || {};
+          return `<tr>
+            <td class="mono">${esc(p.id)}</td>
+            <td>${esc(st.selectedHeroAssetId || "(default)")}</td>
+            <td>${esc(st.lobbyPlatformAssetId || "—")}</td>
+            <td>${st.loadoutVersion || 0}</td>
+            <td>
+              <button class="btn mini" onclick="editPlayer('${esc(p.id)}')">Edit</button>
+              <button class="btn mini danger" onclick="deletePlayer('${esc(p.id)}')">Reset</button>
+            </td>
+          </tr>`; }).join("")}
+      </table>`}
+    </div>`;
+}
+function editPlayer(id) {
+  const p = PLAYERS.find(x => x.id === id);
+  if (!p) return;
+  curPlayer = { id, state: JSON.parse(JSON.stringify(p.state || {})) };
+  render();
+}
+function renderPlayerEditor(m) {
+  const st = curPlayer.state;
+  const heroOpts = DATA.defaults.heroes.map(h => "Hero:" + h);
+  const kvSection = (title, field, hint) => {
+    const entries = Object.entries(st[field] || {});
+    return `
+      <h3>${title}</h3>
+      ${hint ? `<div class="counts" style="margin-bottom:4px">${hint}</div>` : ""}
+      ${entries.map(([k, v]) => `
+        <div class="kv-row">
+          <input type="text" value="${esc(k)}" onchange="pKvKey('${field}','${esc(k)}',this.value)">
+          <input type="text" value="${esc(v)}" onchange="pKvVal('${field}','${esc(k)}',this.value)">
+          <button class="btn mini danger" onclick="pKvDel('${field}','${esc(k)}')">✕</button>
+        </div>`).join("") || '<span class="counts">none</span>'}
+      <div class="kv-row">
+        <input type="text" id="nk-${field}" placeholder="key">
+        <input type="text" id="nv-${field}" placeholder="value">
+        <button class="btn mini" onclick="pKvAdd('${field}')">Add</button>
+      </div>`;
+  };
+  m.innerHTML = `
+    <h2>Player <span class="mono">${esc(curPlayer.id)}</span></h2>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn" onclick="curPlayer=null; render()">← back</button>
+      <button class="btn primary" onclick="savePlayer()">Save player</button>
+      <span class="pill">loadout version auto-bumps on save</span>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Selected hunter (party / menu preview)</h3>
+      <select onchange="st_set('selectedHeroAssetId', this.value)">
+        <option value="">(server default)</option>
+        ${heroOpts.map(h => `<option ${st.selectedHeroAssetId===h?'selected':''}>${esc(h)}</option>`).join("")}
+      </select>
+      <h3>Menu backdrop (lobby platform)</h3>
+      <input type="text" style="width:420px" value="${esc(st.lobbyPlatformAssetId || "")}"
+             placeholder="LobbyPlatform:Base" onchange="st_set('lobbyPlatformAssetId', this.value)">
+      ${kvSection("Equipped skins per hunter", "heroCosmeticsBundles",
+        'key = <span class="mono">Hero:&lt;name&gt;</span>, value = <span class="mono">HeroCosmeticsBundle:&lt;name&gt;</span>')}
+      ${kvSection("Slot cosmetics (glider / emotes-slot / wisp / spray / avatar)", "slotCosmetics",
+        'key = slot name, value = <span class="mono">SlotCosmetics:&lt;name&gt;</span>')}
+      ${kvSection("Luxe chromas", "luxeChromas", "")}
+      <details>
+        <summary>Raw state JSON (advanced — full document)</summary>
+        <textarea id="rawstate">${esc(JSON.stringify(st, null, 2))}</textarea>
+        <button class="btn mini" style="margin-top:6px" onclick="applyRawState()">Load raw JSON into editor</button>
+      </details>
+    </div>`;
+}
+function st_set(field, v) {
+  if (v) curPlayer.state[field] = v; else delete curPlayer.state[field];
+}
+function pKvKey(field, oldK, newK) {
+  const m = curPlayer.state[field] || {};
+  if (newK && newK !== oldK) { m[newK.trim()] = m[oldK]; delete m[oldK]; curPlayer.state[field] = m; render(); }
+}
+function pKvVal(field, k, v) { (curPlayer.state[field] = curPlayer.state[field] || {})[k] = v.trim(); }
+function pKvDel(field, k) { delete (curPlayer.state[field] || {})[k]; render(); }
+function pKvAdd(field) {
+  const k = $("#nk-" + field).value.trim(), v = $("#nv-" + field).value.trim();
+  if (!k) return;
+  (curPlayer.state[field] = curPlayer.state[field] || {})[k] = v;
+  render();
+}
+function applyRawState() {
+  try { curPlayer.state = JSON.parse($("#rawstate").value); toast("Raw JSON loaded — press Save player to persist"); render(); }
+  catch (e) { toast("Bad JSON: " + e.message, true); }
+}
+async function savePlayer() {
+  try {
+    await api("/api/players/" + encodeURIComponent(curPlayer.id), { method: "PUT",
+      headers: {"Content-Type":"application/json"}, body: JSON.stringify(curPlayer.state) });
+    toast("Player saved (loadout version bumped)");
+    await loadPlayers();
+    curPlayer = null; render();
+  } catch (e) { toast("Save failed: " + e.message, true); }
+}
+async function deletePlayer(id) {
+  if (!confirm("Reset ALL state for " + id + "? (equips, profile, selected hunter)")) return;
+  try {
+    await api("/api/players/" + encodeURIComponent(id), { method: "DELETE" });
+    toast("Player state reset");
+    await loadPlayers(); render();
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ------------------------------------------------------------------- boot -- */
+(async function boot() {
+  try {
+    await Promise.all([loadConfig(), loadMissions(), loadPlayers()]);
+  } catch (e) { toast("Load failed: " + e.message, true); }
+  render();
+})();
+</script>
+</body>
+</html>

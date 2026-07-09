@@ -1,0 +1,3 @@
+[0] missions_nativecall_probe10 (GetPrimaryAssetIdList Hero vs Mission — registered? or unloaded?) started
+[2] ctx=0x14575BAA8D0 gpailThunk=0x7FF6B8E55B20 gameTid=12884
+[3] hook built; querying GetPrimaryAssetIdList for Hero + Mission...

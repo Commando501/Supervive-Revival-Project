@@ -205,15 +205,22 @@ func mappedNameDeltas(m matchResult) map[string]float64 {
 	return d
 }
 
-// handleMatchResult records a match: maps its stats to per-objective-name deltas, FANS them out to every
-// mission that has the objective (via the registered manifest) so each mission's composite key advances
-// independently, then applies the explicit per-composite `objectives` passthrough on top. Echoes
+// handleMatchResult records a match via applyMatchResult. Echoes
 // {"applied": <composite deltas>, "objectives": <full updated map>}.
 func (s *Service) handleMatchResult(w http.ResponseWriter, r *http.Request) {
 	var m matchResult
 	raw, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	_ = json.Unmarshal(raw, &m)
+	applied := s.applyMatchResult(m)
+	writeJSON(w, map[string]any{"applied": applied, "objectives": s.missionObjectives()})
+}
 
+// applyMatchResult maps a match's stats to per-objective-name deltas, FANS them out to every
+// mission that has the objective (via the registered manifest) so each mission's composite key
+// advances independently, then applies the explicit per-composite `objectives` passthrough on
+// top. Shared by the game-facing POST handler and the admin panel's match simulator
+// (ApplyMatchResultJSON). Returns the composite deltas that were applied.
+func (s *Service) applyMatchResult(m matchResult) map[string]float64 {
 	nameDeltas := mappedNameDeltas(m)
 	st0 := s.store.get(missionsLocalKey)
 
@@ -245,5 +252,5 @@ func (s *Service) handleMatchResult(w http.ResponseWriter, r *http.Request) {
 			st.MissionObjectives[k] += v
 		}
 	})
-	writeJSON(w, map[string]any{"applied": applied, "objectives": s.missionObjectives()})
+	return applied
 }

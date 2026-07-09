@@ -1,0 +1,6 @@
+[0] missions_nativecall_probe (GetMissionsModel via ProcessEvent, unambiguous) started
+[1] gameTid=36060 PE=0x7FF6B67B5A10 base=0x7FF6B54F0000
+[2] ProgMgr=0x1B159277A20 GetMissionsModel=000001B15D964990 knownMM(RPM ProgMgr+0x3B8)=0x1B247EB2800
+[3] hook built; arming one GetMissionsModel call...
+[4] CALLED. GetMissionsModel returned 0x0 ; knownMM=0x1B247EB2800 (hitsGT=1)
+[4] => returned NULL: either a no-op OR GetMissionsModel returned null. INCONCLUSIVE-lean-noop.
