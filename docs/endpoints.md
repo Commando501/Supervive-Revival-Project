@@ -59,6 +59,20 @@ returns `{}` and every request is logged to `docs/capture.log`.
 | GET | `/inventory/players/{id}` , `/inventory/free` | 🟡 | `LokiPlatformInventory { AssetEntries: [...] }`; `LogPlatformInventory: Refreshed player inventory` on valid-empty. Owned heroes/cosmetics live here keyed by **packed-config SKUs** (not exe strings) → can't populate without IoStore catalog extraction. Returning valid-empty wrappers |
 | GET | `/storefront/real/offers/{id}` | 🟡 | real-money store (drives STORE tab). Valid-empty `FLokiStorefrontPlayerStore`-shaped wrapper; real offers need packed item SKUs |
 | GET | `/progression/players/{id}/tracks` | 🟡 | `FAccelByteModelsListUserProgressionInfoPagingSlicedResult` → valid-empty `{data:[],paging:{}}` |
+| PUT | `/progression/players/{id}/mission` | ✅ | **empty body** — a *"reconcile mission progress"* fire-and-forget trigger (exe `ServerAddMissionProgress`/`SetMissionProgress`), NOT a data-carrying claim. Response = `MissionData` (`Completions`/`TrackIDToClaimableRewards` TMaps). In the real game the DS added progress server-side and this just told the client to refresh → treat as a **"refresh now" hook**, not a data source (see `missions-progression-hookup.md`) |
+
+### Missions (revival-only HTTP surface — NOT client routes)
+
+The client has **no missions-list/progress endpoint** (missions are built client-side; see `session-59-progress-bars.txt`). These `/revival/missions/*` routes are consumed only by the in-process missions shim (`missions_fix.dll`), served from `server/internal/interactive/missions.go`:
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/revival/missions/progress` | per-mission objective progress the shim applies to the bars (keyed `"<mission>/<objective>"`) |
+| POST | `/revival/missions/progress` / `.../add` | set / increment composite keys |
+| POST | `/revival/missions/manifest` | shim registers the mission→objective structure (for per-mission fan-out) |
+| POST | `/revival/missions/match-result` | **the increment engine** — maps a match stat summary → objective deltas, fans out per-mission |
+
+**Wiring real match progress when matches launch:** see **`docs/missions-progression-hookup.md`** (candidate match-end signals, the backend-driven vs native-driven strategies, the unmapped 309 hero objectives, and the reward-claim/rotation gaps).
 
 ### Session-end status — backend-reachable ceiling
 
