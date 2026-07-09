@@ -1,14 +1,15 @@
 [0] missions_fix (Option 2 durable: ags-fetched progress on launch + poll-on-change) started
-[2] lam=28425C6A8D0 mm=284BE237180 guon-thunk=7FF6BA7A3720 all funcs resolved gameTid=32340
-[3] fetched ags progress: ok=1 entries=3 (http://127.0.0.1:8080/revival/missions/progress) -> build keyed model w/ progress -> swap...
-[4] apply#1: missions=330 pools=16 model=0x28582DE9E80 Num=330 fetchOk=1 entries=3 appliedNonZero=4
+[2] lam=2464032A8D0 mm=24691FB4900 guon-thunk=7FF6BA7A3720 all funcs resolved gameTid=41032
+[3] fetched ags progress: ok=1 entries=0 (http://127.0.0.1:8080/revival/missions/progress) -> build keyed model w/ progress -> swap...
+[4] apply#1: missions=330 pools=16 model=0x2478FC9D900 Num=330 fetchOk=1 entries=0 appliedNonZero=0
+[4] manifest: 330 entries POSTed=1 (per-mission composite keys)
 [4]   m0 'Tournament_WinGame': key0='a2winarenagames' prog0=0.0 total0=1.0
-[4]   m1 'Tournament_Top3': key0='BR_3Top4' prog0=2.0 total0=3.0
-[4]   m2 'Tournament_PlayAGame': key0='PlayAGame' prog0=3.0 total0=5.0
-[4]   m3 'Tournament_KnocksAssists': key0='BR_Knocks_Assists' prog0=27.0 total0=50.0
+[4]   m1 'Tournament_Top3': key0='BR_3Top4' prog0=0.0 total0=3.0
+[4]   m2 'Tournament_PlayAGame': key0='PlayAGame' prog0=0.0 total0=5.0
+[4]   m3 'Tournament_KnocksAssists': key0='BR_Knocks_Assists' prog0=0.0 total0=50.0
 [4]   m4 'PlayTriosMatch': key0='Onboarding_PlayTriosMatch' prog0=0.0 total0=1.0
 [4]   m5 'CompleteCoopVAi': key0='Onboarding_PlayTriosMatch' prog0=0.0 total0=1.0
 [4]   m6 'CompleteTraversalChallenge': key0='NewOnboarding_CompleteTraversalChallenge' prog0=0.0 total0=1.0
 [4]   m7 'CompleteSpikingChallenge': key0='NewOnboarding_CompleteSpikingChallenges' prog0=0.0 total0=2.0
 [4] *** swapped w/ fetched progress. Reopen the Missions modal to see it. Now polling ags for changes... ***
-[poll] apply#2: progress changed -> re-swapped (entries=9 appliedNonZero=10). Reopen modal to refresh.
+[poll] apply#2: progress changed -> re-swapped (entries=8 appliedNonZero=8). Reopen modal to refresh.
