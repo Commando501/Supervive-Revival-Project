@@ -357,11 +357,19 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
         FireLoad();
         g_t0=GetTickCount(); g_state=1;
     } else if(g_state==1){
-        uint64_t da=GLDA(g_missionIds[0][0],g_missionIds[0][1]);
-        g_loadedCheck = LooksLikePtr((uintptr_t)da)?1:0;
-        if(g_loadedCheck || GetTickCount()-g_t0>20000){
+        // Wait until MOST DAs have loaded (registered != loaded), not just mission[0], so we never swap a
+        // DEGRADED model (missions with no objectives). Sample a spread of missions; proceed at >=90% loaded,
+        // or after 35s if we at least got a majority. If loading badly stalled (<50% at timeout), SKIP the
+        // swap entirely (leave the game's own empty model) rather than push a malformed one.
+        int sample = g_missNum<60?g_missNum:60; int loaded=0;
+        for(int k=0;k<sample;k++){ int mi=(g_missNum>0)?(k*g_missNum/sample):0; if(LooksLikePtr((uintptr_t)GLDA(g_missionIds[mi][0],g_missionIds[mi][1]))) loaded++; }
+        g_loadedCheck=loaded;
+        bool enough = (sample>0 && loaded>=sample*9/10);
+        bool timeout = GetTickCount()-g_t0>35000;
+        if(enough || timeout){
+            uint64_t da=GLDA(g_missionIds[0][0],g_missionIds[0][1]);
             g_glLoaded=da; if(LooksLikePtr(g_glLoaded)) ClassNameOf(g_glLoaded,g_glCls,sizeof(g_glCls));
-            BuildAndSwap();
+            if(enough || (timeout && sample>0 && loaded>=sample/2)) BuildAndSwap();   // only swap a well-formed model
             g_state=2; g_done=1;
         }
     }

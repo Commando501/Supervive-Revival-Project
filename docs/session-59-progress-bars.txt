@@ -157,6 +157,39 @@ RUN IT (durable):  from an ELEVATED PowerShell:  .\configs\launch-redirect.ps1 -
     curl -X POST http://127.0.0.1:8080/revival/missions/progress -d '{"objectives":{"BR_Knocks_Assists":17}}'
     curl -X POST http://127.0.0.1:8080/revival/missions/progress/add -d '{"objectives":{"PlayAGame":1}}'
 
+=============================================================================================================
+PER-MISSION GRANULARITY + MISSIONS/PICK-REFRESH COEXISTENCE (follow-ups) — DONE, relaunch-verified.
+=============================================================================================================
+PER-MISSION GRANULARITY: progress is now keyed "<missionInternalName>/<objectiveUniqueName>" (composite),
+not the bare objective name, so two missions sharing an objective name track INDEPENDENTLY. Shim reads each
+DA's InternalName (@DA+0x40), builds the composite key for lookup, and POSTs a mission->objective manifest
+(POST /revival/missions/manifest) on menu load. ags's match-result engine fans an objective-name delta out
+to EVERY mission that has it (via the manifest). Verified live (fresh -Missions launch, one tournament match):
+the model shows Tournament_PlayAGame/PlayAGame=1 AND ArmoryDaily_PlayAGame/PlayAGame=1 (independent),
+ArmoryDaily_GetKnocks/BR_Knocks=5 (clamped to its max) vs Tournament_KnocksAssists/BR_Knocks_Assists=10.
+Files: server/internal/interactive/{store.go,missions.go} (composite storage + manifest + fan-out,
+unit-tested TestMatchResultManifestFanout); missions_fix.cpp (InternalName read + composite key + manifest POST).
+
+COEXISTENCE: missions_fix and mainmenu_refresh_pi8 both hook ProcessInternal; they now serialize their
+(one-time g_stolen capture + every install/use/uninstall) on a shared named mutex
+"Local\SuperviveMissionsPIHook", so the two PI-hookers never race the thread-suspending SafeWrite. Under the
+lock the prologue is always the ORIGINAL (each installs only while holding the lock). inject-missions.ps1 now
+injects mainmenu_refresh_pi8 + catalog_pick_fix alongside missions_fix, so -Missions also gets pick-mirror/
+main-menu-refresh + pick-commit. Verified: pi8 resolved (subjects=4, spawners=4, member) and armed alongside
+missions_fix; game stable.
+
+LOAD-WAIT HARDENING (missions_fix): the load-poll now waits until ~90% of a mission sample has its DA loaded
+(GetLokiDataAsset non-null) before CreateMissionModelFromFinalProgress, and SKIPS the swap entirely if loading
+badly stalls (<50% at a 35s timeout) — so it never pushes a DEGRADED model (missions with no objectives) into
+the UI. This fixed a menu crash seen when BuildAndSwap ran ~3s after inject (only mission[0] loaded => 22/330
+objectives); with the fix the manifest is the full 330 and the menu is stable.
+
+GOTCHA (relaunch): this game build BOOT-CRASHES intermittently (~half the launches this session, before the
+menu/shims engage — unrelated to any shim). Just re-run `.\configs\launch-redirect.ps1 -Missions` until it
+reaches the menu. Also: computer-use `open_application` on the game LAUNCHES A DUPLICATE instance (the game was
+started via the exe, not Steam, so Steam doesn't see it running) — verify per-mission progress via RPM
+(tools/re) or have the user open the modal, rather than open_application.
+
 Detail continues in this file. Prior handoff: docs/session-57-da-resolution.txt.
 
 RE FACTS THIS BUILD (unchanged): base 0x7FF6B54F0000 (re-read each launch); ProcessInternal @base+0x13454A0;
