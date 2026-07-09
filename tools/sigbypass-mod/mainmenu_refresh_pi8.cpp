@@ -262,12 +262,20 @@ static bool CenterHasHero(uint32_t hero){
     return false;
 }
 
+// Shared ProcessInternal-hook lock (see missions_fix.cpp): serialize the PI-prologue install/use/uninstall
+// (and the one-time g_stolen capture) with missions_fix.dll so the two PI-hookers never race on the
+// thread-suspending SafeWrite. No-op if missions_fix isn't present (single owner => uncontended).
+static HANDLE g_hookMutex=nullptr;
+static void HookLock(){ if(g_hookMutex) WaitForSingleObject(g_hookMutex,30000); }
+static void HookUnlock(){ if(g_hookMutex) ReleaseMutex(g_hookMutex); }
+
 static DWORD WINAPI Worker(LPVOID){
     HANDLE h=CreateFileA(kMarkerPath,GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr); if(h!=INVALID_HANDLE_VALUE)CloseHandle(h);
     { HANDLE ch=CreateFileA(kCrashPath,GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr); if(ch!=INVALID_HANDLE_VALUE)CloseHandle(ch); }
     Marker("[0] mainmenu_refresh_pi8 (Refresh + broadcast member.OnHeroAssetIDChanged via ProcessInternal+FFrame) started\r\n");
     HMODULE hExe=GetModuleHandleA("SUPERVIVE-Win64-Shipping.exe"); if(!hExe){Marker("[0] FAIL module\r\n");return 1;}
     g_modBase=(uintptr_t)hExe; g_processEvent=(PFN_PE)(g_modBase+kPeRva);
+    g_hookMutex=CreateMutexA(nullptr,FALSE,"Local\\SuperviveMissionsPIHook");   // shared with missions_fix
     SnapshotModules(); AddVectoredExceptionHandler(1,CrashVEH);
     g_gameTid=WaitTid(120000); if(!g_gameTid){Marker("[1] FAIL gameTid\r\n");return 2;} Markerf("[1] gameTid=%lu\r\n",g_gameTid);
     DWORD dl=GetTickCount()+120000; while(GetTickCount()<dl){ Resolve(); if(g_nsubj>0&&g_refreshFn&&g_nspawn>0&&g_member)break; Sleep(500);}
@@ -275,8 +283,11 @@ static DWORD WINAPI Worker(LPVOID){
     Markerf("[2] resolved subjects=%d refreshFn=%p spawners=%d member=0x%llX handlerFns=%d\r\n",g_nsubj,g_refreshFn,g_nspawn,(unsigned long long)g_member,g_nhfn);
     LogSpawners("init");
     g_pi=(uint8_t*)(g_modBase+kPiRva);
-    if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Markerf("[2] FAIL PI prologue\r\n");return 4;}
-    memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 5;}
+    HookLock();   // capture the ORIGINAL prologue + build the trampoline while missions_fix is guaranteed unhooked
+    if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){HookUnlock();Markerf("[2] FAIL PI prologue\r\n");return 4;}
+    memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen);
+    HookUnlock();
+    if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 5;}
     Marker("[3] hook built. Open HUNTERS + click a hunter.\r\n");
 
     uint32_t desired=0; bool hooked=false; DWORD hookedAt=0,lastResolve=GetTickCount(),lastHb=0,lastSync=0,resyncUntil=0,start=GetTickCount(); uint32_t lastLogged=0,prevPick=0;
@@ -289,20 +300,20 @@ static DWORD WINAPI Worker(LPVOID){
         if(prevPick!=0 && pick==0 && desired){ resyncUntil=GetTickCount()+1600; Marker("[resync] left HUNTERS -> kick main-menu render (1.6s window)\r\n"); }
         prevPick=pick;
         if(desired){ uint32_t cur=ReadMemberHero(); if(cur!=desired){ WriteMemberHero(desired); if(desired!=lastLogged){ char s[64]="?"; GetFNameStr(desired,s,sizeof(s)); Markerf("[MIRROR] member <- Hero:%s\r\n",s); LogSpawners("before"); lastLogged=desired; }
-            if(!hooked){ g_pending=1; g_done=0; if(InstallHook()){ hooked=true; hookedAt=GetTickCount(); Marker("[armed] Refresh (main-menu) + broadcast OnHeroAssetIDChanged (HUNTERS/collection/mastery) on next game-thread BP...\r\n"); } } } }
+            if(!hooked){ g_pending=1; g_done=0; HookLock(); if(InstallHook()){ hooked=true; hookedAt=GetTickCount(); Marker("[armed] Refresh (main-menu) + broadcast OnHeroAssetIDChanged (HUNTERS/collection/mastery) on next game-thread BP...\r\n"); } else HookUnlock(); } } }
         // TASK B (bounded) — the DATA (TargetAssetID) is already correct; the ~1-2s lag is the game
         // re-rendering the main-menu hero actor when the menu re-appears. During the post-leave window,
         // re-fire subject.Refresh every ~250ms so the actor re-renders immediately instead of on the slow
         // native cadence. Bounded to the window => NO steady-state hook churn. SubjStale (above) re-Resolves
         // if the menu recreated the slot; OnBP guards each InvokeBP with a class-check.
         if(desired && !hooked && GetTickCount()<resyncUntil && GetTickCount()-lastSync>=250){ lastSync=GetTickCount();
-            if(g_nsubj>0 && g_refreshFn){ g_pending=1; g_done=0; if(InstallHook()){ hooked=true; hookedAt=GetTickCount(); } } }
-        if(hooked){ if(g_done){ UninstallHook(); hooked=false; Markerf("[CALLED] Refresh x%d + delegate broadcast ran on game thread (#%ld). Spawner TargetAssetID AFTER:\r\n",g_nsubj,(long)g_calls); LogSpawners("after"); }
-            else if(GetTickCount()-hookedAt>=6000){ UninstallHook(); hooked=false; g_pending=0; Markerf("[timeout] no game-thread PI in 6s (hitsGT=%ld)\r\n",(long)g_hitsGT); } }
+            if(g_nsubj>0 && g_refreshFn){ g_pending=1; g_done=0; HookLock(); if(InstallHook()){ hooked=true; hookedAt=GetTickCount(); } else HookUnlock(); } }
+        if(hooked){ if(g_done){ UninstallHook(); HookUnlock(); hooked=false; Markerf("[CALLED] Refresh x%d + delegate broadcast ran on game thread (#%ld). Spawner TargetAssetID AFTER:\r\n",g_nsubj,(long)g_calls); LogSpawners("after"); }
+            else if(GetTickCount()-hookedAt>=6000){ UninstallHook(); HookUnlock(); hooked=false; g_pending=0; Markerf("[timeout] no game-thread PI in 6s (hitsGT=%ld)\r\n",(long)g_hitsGT); } }
         if(GetTickCount()-lastHb>=10000){ char mh[64]="<none>"; GetFNameStr(ReadMemberHero(),mh,sizeof(mh)); Markerf("[hb] member=Hero:%s desired=%u calls=%ld hitsGT=%ld hooked=%d\r\n",mh,desired,(long)g_calls,(long)g_hitsGT,hooked?1:0); lastHb=GetTickCount(); }
         Sleep(60);
     }
-    if(hooked)UninstallHook(); Marker("[done] worker exit\r\n"); return 0;
+    if(hooked){UninstallHook(); HookUnlock();} Marker("[done] worker exit\r\n"); return 0;
 }
 BOOL APIENTRY DllMain(HMODULE h,DWORD r,LPVOID){if(r==DLL_PROCESS_ATTACH){DisableThreadLibraryCalls(h);HANDLE t=CreateThread(nullptr,0,Worker,nullptr,0,nullptr);if(t)CloseHandle(t);}return TRUE;}
 extern "C" __declspec(dllexport) void* start_mod(){return new int(0);}

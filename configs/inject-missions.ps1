@@ -23,7 +23,15 @@ $name    = "SUPERVIVE-Win64-Shipping.exe"
 $inject  = Join-Path $Repo "tools\inject\inject.exe"
 $primaryMarker = Join-Path $Repo "docs\catalog-store-fix-marker.txt"
 $log     = Join-Path $Repo "docs\inject-missions.log"
-$dll     = "tools\sigbypass-mod\missions_fix.dll"
+# missions_fix + the pick/refresh + pick-commit secondaries. missions_fix and mainmenu_refresh_pi8 BOTH hook
+# ProcessInternal but coordinate via a shared named mutex ("Local\SuperviveMissionsPIHook"), so they coexist.
+# catalog_pick_fix only does Script patches (no PI hook), so it's independent. Inject pi8 first so it captures
+# the original prologue before missions_fix does its first apply.
+$dlls = @(
+  "tools\sigbypass-mod\mainmenu_refresh_pi8.dll",
+  "tools\sigbypass-mod\catalog_pick_fix.dll",
+  "tools\sigbypass-mod\missions_fix.dll"
+)
 
 function Log($m){ "$([DateTime]::Now.ToString('HH:mm:ss'))  $m" | Out-File -FilePath $log -Append -Encoding ascii }
 "" | Out-File -FilePath $log -Encoding ascii   # truncate for this launch
@@ -48,11 +56,14 @@ while ((Get-Date) -lt $deadline) {
 if ($ready) { Log "primary catalog_store_fix installed+unhooked - safe to inject missions_fix" }
 else { Log "WARNING: primary [unhook] not seen in ${MaxWaitUnhookSec}s - injecting missions_fix anyway" }
 
-# 3) inject the missions shim
-if (-not (Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue)) { Log "game exited - stopping"; return }
-$path = Join-Path $Repo $dll
-if (-not (Test-Path $path)) { Log "MISSING: $path - build it (clang++ -shared -O2 missions_fix.cpp -o missions_fix.dll -lkernel32 -lwininet)"; return }
-Log "injecting $dll ..."
-$out = & $inject mmap $name $path 2>&1
-Log ($out -join " | ")
-Log "missions injection complete (shim now polls ags for progress changes)"
+# 3) inject each shim sequentially (gap between to avoid overlapping hook installs; the mutex also guards)
+foreach ($d in $dlls) {
+  if (-not (Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue)) { Log "game exited - stopping"; return }
+  $path = Join-Path $Repo $d
+  if (-not (Test-Path $path)) { Log "MISSING: $path - skipping"; continue }
+  Log "injecting $d ..."
+  $out = & $inject mmap $name $path 2>&1
+  Log ($out -join " | ")
+  Start-Sleep -Seconds 3
+}
+Log "injection complete (missions_fix polls ags; pi8 pick/refresh + catalog_pick_fix active)"

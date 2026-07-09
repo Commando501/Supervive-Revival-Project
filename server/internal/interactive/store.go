@@ -60,16 +60,19 @@ type playerState struct {
 	TitleIds json.RawMessage `json:"titleIds,omitempty"`
 
 	// --- Missions (Option 2: real progress tracking) — see missions.go ---
-	// MissionObjectives maps an objective's UNIQUE name (as returned by the native
-	// LokiAssetStatics::GetUniqueObjectiveName — e.g. "PlayAGame", "BR_Knocks_Assists",
-	// "Onboarding_PlayTriosMatch") to the player's current progress toward it. The
-	// client-side missions menu-load shim fetches this (GET /revival/missions/progress)
-	// and writes each value into the mission model's FMissionProgress.ObjectiveProgress
-	// (matched by ObjectiveName) so the modal's bars reflect real progress; match-end
-	// hooks increment it (POST .../add). Single-account revival: stored under the fixed
-	// "local" key (the in-process shim has no JWT). Objective names are globally unique,
-	// so a flat map is sufficient.
+	// MissionObjectives maps a PER-MISSION objective key "<missionInternalName>/<objectiveUniqueName>"
+	// (e.g. "Tournament_PlayAGame/PlayAGame", "ArmoryDaily_PlayAGame/PlayAGame") to the player's current
+	// progress toward it. Keying by mission+objective (not just the objective's GetUniqueObjectiveName)
+	// gives PER-MISSION granularity: two missions that share an objective name (e.g. "PlayAGame" on the
+	// Tournament and a Daily) track independently. The client-side menu-load shim fetches this
+	// (GET /revival/missions/progress) and writes each value into that mission's
+	// FMissionProgress.ObjectiveProgress; the match-result engine fans a match's stat deltas out to every
+	// mission that has the objective (via MissionManifest). Single-account revival: stored under "local".
 	MissionObjectives map[string]float64 `json:"missionObjectives,omitempty"`
+	// MissionManifest is the mission->objective structure the shim registers on menu load
+	// (POST /revival/missions/manifest), so POST /revival/missions/match-result can fan an objective's
+	// delta out to each mission's composite key. Persisted so match results work across ags restarts.
+	MissionManifest []ManifestEntry `json:"missionManifest,omitempty"`
 }
 
 // store is an in-memory player-state map with best-effort JSON-file persistence
