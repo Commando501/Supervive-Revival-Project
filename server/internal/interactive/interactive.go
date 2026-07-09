@@ -107,6 +107,26 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /party/parties/{partyId}/members/{memberId}", s.handleSetPartyMember)
 	mux.HandleFunc("PUT /party/parties/{partyId}/members/{memberId}", s.handleSetPartyMember)
 
+	// ---- Party: matchmaking (available queues — unlocks the ActivityPicker tiles) ----
+	// The play menu is WBP_ActivityPickerScreen; its InitializeQueues builds each activity
+	// tile ONLY if the tile's queue id is present in PartyModel.GetQueues() (traced from
+	// bytecode: GetPartyManager->GetPartyModel->GetQueues, then per-tile FindQueueByID +
+	// Set_Contains). A tile whose queue isn't in that set renders "locked" — it shows a hover
+	// highlight but a CLICK can't latch a selection (the selected state is derived from the
+	// party's TargetQueueID, and the queue must resolve first), so FIND MATCH stays a no-op.
+	// That set is populated from GET /party/matchmaking/info, which deserializes into QueueInfo
+	// (usmap QueueInfo: Queues []string, ETag string, LastUpdated DateTime). With the {} stub
+	// the list is empty -> every tile locked -> the exact silent no-op the user hit.
+	// We advertise the full known queue-id set — the string constants InitializeQueues checks:
+	//   default deathmatch practice dropin customgame bots tutorialNew training
+	//   armorydeathmath tournament   ("armorydeathmath" is the game's own misspelling, verbatim).
+	// customGameModes is the sibling list for the custom-game screen -> CustomGameModeInfo
+	// (Modes []string, ETag, LastUpdated); a typed empty stops the {} stub from tripping a
+	// deserialize error. STAGED: unlocking the tile is step 1; making a click PERSIST the
+	// selection (party TargetQueueID) + FIND MATCH launch are the follow-ups.
+	mux.HandleFunc("GET /party/matchmaking/info", s.handleMatchmakingInfo)
+	mux.HandleFunc("GET /party/matchmaking/customGameModes", s.handleMatchmakingCustomGameModes)
+
 	// ---- Core-game (match lifecycle / region ping) ----
 	// GET /core-game/players/{id} is the "do I have an active match to rejoin?" heartbeat
 	// (polled ~800x/session); a "no active match" shape keeps it quiet and is the slot we
@@ -197,8 +217,9 @@ func (s *Service) handleSetLobbyPlatform(w http.ResponseWriter, r *http.Request)
 		})
 	}
 	// Echo the accepted preference back as a typed ack, plus the full updated
-	// loadout doc fields (set-then-return superset; unmatched keys are ignored).
-	resp := s.loadoutDoc(r.PathValue("id"))
+	// loadout in every envelope the reconciler might parse (set-then-return; the
+	// client merges this write response — see loadoutResponse).
+	resp := s.loadoutResponse(r.PathValue("id"))
 	resp["lobbyPlatformAssetId"] = req.LobbyPlatformAssetId
 	writeJSON(w, resp)
 }
@@ -210,7 +231,7 @@ func (s *Service) handleSetLobbyPlatform(w http.ResponseWriter, r *http.Request)
 // them would change two variables at once.
 func (s *Service) handleGetPersonalizationPlayer(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	resp := s.loadoutDoc(id)
+	resp := s.loadoutResponse(id)
 	if st := s.store.get(id); st.LobbyPlatformAssetId != "" {
 		resp["lobbyPlatformAssetId"] = st.LobbyPlatformAssetId
 		resp["equippedLobbyPlatform"] = st.LobbyPlatformAssetId
@@ -475,7 +496,23 @@ func (s *Service) handleMailboxConfigVersion(w http.ResponseWriter, r *http.Requ
 func (s *Service) handleGetParty(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id)))
+	// Seed the selected activity from the client's own ?defaultQueue=<q> hint (only if the
+	// player hasn't picked one yet) so the party always carries a target queue — the
+	// "must always have one activity selected" invariant. Falls back to "default" below.
+	if dq := r.URL.Query().Get("defaultQueue"); dq != "" && s.store.get(id).SelectedQueueID == "" {
+		s.store.update(id, func(st *playerState) { st.SelectedQueueID = dq })
+	}
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id)))
+}
+
+// selectedQueue returns the player's persisted selected matchmaking activity/queue id,
+// falling back to "default" so the party always carries a non-empty TargetQueueID (the
+// client's Comp_MainMenu_QueueController refuses to modify activity when none is selected).
+func (s *Service) selectedQueue(id string) string {
+	if q := s.store.get(id).SelectedQueueID; q != "" {
+		return q
+	}
+	return "default"
 }
 
 // defaultHeroAssetId is the hunter the party slot renders before the player has
@@ -494,6 +531,19 @@ func (s *Service) selectedHero(id string) string {
 	return defaultHeroAssetId
 }
 
+// selectedCosmetic returns the saved skin bundle ("HeroCosmeticsBundle:<name>") for the
+// player's currently-selected hero, or "" if none. It is NO LONGER served on the party
+// member (proven inert 2026-07-09 — see handleSetPartyMember): the client ignores the
+// echoed member cosmetic. Retained only so buildSoloParty's signature is unchanged and a
+// future client-side shim can reuse the resolution; buildSoloParty discards the value.
+func (s *Service) selectedCosmetic(id string) string {
+	st := s.store.get(id)
+	if st.HeroCosmeticsBundles == nil {
+		return ""
+	}
+	return st.HeroCosmeticsBundles[s.selectedHero(id)]
+}
+
 // handleGetPartyDetail answers GET /party/parties/{partyId} — the full party object the
 // client polls (380×/session) after learning its partyId. Hitting the {} stub leaves the
 // PARTY panel slots empty. We rebuild the same solo party; the player id is recovered from
@@ -507,13 +557,118 @@ func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id)))
+}
+
+// queueIDs is the set of matchmaking queue ids we advertise to the client. The full known
+// set (from WBP_ActivityPickerScreen.InitializeQueues' string constants) is:
+//   default deathmatch practice dropin customgame bots tutorialNew training
+//   armorydeathmath tournament
+// DIAGNOSTIC TRIM (S60): Comp_MainMenu_QueueController.CanControlQueue loops over the current
+// queues calling GetLevelGameFeatureUnlocked; with the served account level = 0, any level-gated
+// queue (tournament/deathmatch/ranked) fails that loop -> CanControlQueue false -> every activity
+// click errors "Unable to modify activity". Trim to the new-player / level-0 set (tutorials +
+// practice + co-op) to test whether removing gated queues clears the modify block. If it does,
+// the real fix is serving a high account level (unlocks all features) so the full set can return.
+var queueIDs = []string{
+	"tutorialNew", "training", "practice", "bots",
+}
+
+// matchmakingLastUpdated is a fixed, valid ISO8601 timestamp for the QueueInfo
+// LastUpdated (FDateTime) field. Fixed (not time.Now) so the body is byte-stable across
+// the ~1/s poll and the ETag honestly represents the content; a real date avoids the
+// client's "DateTime in bad format (year 0)" parse warning.
+const matchmakingLastUpdated = "2026-07-08T00:00:00Z"
+const matchmakingETag = "revival-queues-v1"
+
+// buildQueueDetails returns the QueueInfo.Queues array as QueueDetails structs.
+//
+// GROUND TRUTH CORRECTS THE USMAP: usmap QueueInfo lists Queues as ArrayProperty<StrProperty>,
+// but the LIVE client rejected a string array with:
+//   ImportText (Queues): Missing opening parenthesis: default
+//   JsonValueToUProperty - Unable to import JSON string into QueueDetails property Queues
+//   -> Deserialization failure on GET /party/matchmaking/info
+// i.e. Queues is really ArrayProperty<StructProperty QueueDetails>. Each element is a
+// QueueDetails{ID, IsRanked, IsSpecial, Config:QueueConfig} (usmap struct defs). Config
+// carries the party-size limits the client validates the (solo) party against — MaxPartySize
+// must be >=1 or the tile re-locks after resolving. Field names/types per usmap QueueDetails
+// + QueueConfig; RankedSchedule (Map) / RankedRestrictionsSchedule (struct) are omitted and
+// left at UE defaults (unmatched keys are ignored). Uniform config across queues is enough to
+// unlock/select; per-queue tuning (ranked flags, real sizes) can follow if a mode needs it.
+func buildQueueDetails() []map[string]any {
+	out := make([]map[string]any, 0, len(queueIDs))
+	for _, id := range queueIDs {
+		out = append(out, map[string]any{
+			"ID":        id,
+			"IsRanked":  false,
+			"IsSpecial": false,
+			"Config": map[string]any{
+				"MaxTeamSize":       3,
+				"MaxPartySize":      3,
+				"MaxHeroDuplicates": 1,
+				"FillParties":       false,
+				"RegionOverride":    "",
+				"Priority":          0,
+				"AllowNoFill":       true,
+			},
+		})
+	}
+	return out
+}
+
+// handleMatchmakingInfo answers GET /party/matchmaking/info with the QueueInfo model
+// (Queues []QueueDetails, ETag string, LastUpdated DateTime). This list is what
+// PartyModel.GetQueues() is built from; without it the ActivityPicker tiles stay locked
+// and clicking a tutorial/mode is a silent no-op. See the route comment for the full trace.
+func (s *Service) handleMatchmakingInfo(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]any{
+		"Queues":      buildQueueDetails(),
+		"ETag":        matchmakingETag,
+		"LastUpdated": matchmakingLastUpdated,
+	})
+}
+
+// handleMatchmakingCustomGameModes answers GET /party/matchmaking/customGameModes with the
+// CustomGameModeInfo model (usmap: Modes []string, ETag, LastUpdated) — the custom-game
+// sibling of QueueInfo. Empty Modes is fine (no custom modes advertised); the typed shape
+// just keeps the {} stub from tripping a deserialize error.
+func (s *Service) handleMatchmakingCustomGameModes(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]any{
+		"Modes":       []string{},
+		"ETag":        matchmakingETag,
+		"LastUpdated": matchmakingLastUpdated,
+	})
 }
 
 // handleSetPartyMember persists the hunter the player picked and echoes the updated
-// solo party. Body is a SetPartyMemberRequest{ID, HeroAssetID, CosmeticsAssetID, ...};
-// we only need HeroAssetID (the selected hunter). The player id is recovered from the
-// minted partyId ("party-<playerId>"), falling back to the memberId path value / JWT sub.
+// solo party. Body is a SetPartyMemberRequest{ID, HeroAssetID, CosmeticsAssetID,
+// LuxeSkinChroma, ...}. The player id is recovered from the minted partyId
+// ("party-<playerId>"), falling back to the memberId path value / JWT sub.
+//
+// CAPTURE-CONFIRMED 2026-07-09 (this was a best-guess route since s48): clicking a skin
+// in CUSTOMIZATION→SKIN fires
+//   PUT /party/parties/party-<id>/members/<id>
+//   {"iD":"<id>","heroAssetId":"Hero:Alchemist",
+//    "cosmeticsAssetId":"HeroCosmeticsBundle:AlchemistDefault_MAS","luxeSkinChroma":"",
+//    "ownedCosmeticsFeatures":[],"isReady":true,"customGameTeamId":0,"isPremiumSession":false}
+// followed ~5s later by PUT /personalization/players/<id>/cosmeticsbundle/Hero:<name>
+// (the debounced per-hero preference write, loadout.go).
+//
+// SKIN PERSISTENCE — BACKEND ROUTE CONCLUSIVELY CLOSED (2026-07-09). We tried persisting
+// + serving the picked cosmeticsAssetId back on the party member. It is INERT: the client
+// rebuilds the party member from the /party GET every poll and reads only heroAssetId,
+// never the cosmetic. Direct proof in Loki.log — after equipping Mastery (member PUT
+// carried AlchemistDefault_MAS, server echoed it), the party slot STILL loaded
+// "HeroCosmeticsBundle:AlchemistDefault_STR": the GetDefaultCosmeticsBundleIdForHeroId
+// fallback that both the party slot and the SKIN tab use whenever the member cosmetic is
+// empty. That STR default is exactly why the SKIN tab always reverts to "Strawberry Bomb".
+// Hunters persist because heroAssetId IS read back; skins cannot be driven from here. The
+// working path is client-side: loadout_fix redirects GetDefaultCosmeticsBundleIdForHeroId (the
+// shared fallback) to the saved skin (SOLVED 2026-07-09, docs/session-53-customization-persistence.md).
+// So below we persist heroAssetId, and we ALSO record the body's cosmeticsAssetId into the per-hero
+// preference map — NOT to echo it on the party member (inert), but to feed GET /revival/loadout
+// immediately so the shim can flip its redirect to a freshly-picked skin without waiting on the
+// ~5s-debounced cosmeticsbundle PUT.
 func (s *Service) handleSetPartyMember(w http.ResponseWriter, r *http.Request) {
 	// Resolve the player id (partyId is "party-<id>" for our solo party).
 	id := strings.TrimPrefix(r.PathValue("partyId"), "party-")
@@ -526,14 +681,36 @@ func (s *Service) handleSetPartyMember(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
-	if hero := heroAssetIDFromBody(body); hero != "" {
-		s.store.update(id, func(st *playerState) { st.SelectedHeroAssetId = hero })
+	hero := heroAssetIDFromBody(body)
+	cosmetic := cosmeticAssetIDFromBody(body)
+	if hero != "" || cosmetic != "" {
+		s.store.update(id, func(st *playerState) {
+			if hero != "" {
+				st.SelectedHeroAssetId = hero
+			}
+			// Record the picked skin into the per-hero preference map (feeds
+			// GET /revival/loadout, which the client-side loadout_fix shim polls to keep its
+			// GetDefaultCosmeticsBundleIdForHeroId redirect in sync). This is NOT served back
+			// on the party member (that echo is inert — the client ignores it, 2026-07-09);
+			// it exists ONLY so a skin pick reaches /revival/loadout in ms (this member PUT
+			// fires on every click) rather than waiting on the ~5s-debounced cosmeticsbundle
+			// PUT, so the shim can flip its redirect to the new skin before the pick reverts.
+			if hero != "" && cosmetic != "" {
+				if st.HeroCosmeticsBundles == nil {
+					st.HeroCosmeticsBundles = map[string]string{}
+				}
+				if st.HeroCosmeticsBundles[hero] != cosmetic {
+					st.HeroCosmeticsBundles[hero] = cosmetic
+					st.LoadoutVersion++
+				}
+			}
+		})
 	}
 
 	// Echo the updated party so the client's optimistic pick is confirmed by the server
 	// state (and matches what the next GET /party/parties poll will return).
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id)))
 }
 
 // heroAssetIDFromBody extracts the selected hero as a "Hero:<name>" PrimaryAssetId string
@@ -554,6 +731,30 @@ func heroAssetIDFromBody(body []byte) string {
 		return ""
 	}
 	for _, raw := range []json.RawMessage{req.HeroAssetID, req.HeroAssetID2} {
+		if id := primaryAssetIDString(raw); id != "" {
+			return id
+		}
+	}
+	return ""
+}
+
+// cosmeticAssetIDFromBody extracts the picked skin bundle as a "HeroCosmeticsBundle:<name>"
+// PrimaryAssetId string from a SetPartyMemberRequest body (wire key cosmeticsAssetId,
+// capture-confirmed 2026-07-09), tolerating the same string|object forms as the hero.
+// Used to feed the /revival/loadout redirect (see handleSetPartyMember) — NOT to echo the
+// cosmetic on the party member. Returns "" when absent/empty.
+func cosmeticAssetIDFromBody(body []byte) string {
+	if len(body) == 0 {
+		return ""
+	}
+	var req struct {
+		CosmeticsAssetID  json.RawMessage `json:"cosmeticsAssetId"`
+		CosmeticsAssetID2 json.RawMessage `json:"CosmeticsAssetID"`
+	}
+	if json.Unmarshal(body, &req) != nil {
+		return ""
+	}
+	for _, raw := range []json.RawMessage{req.CosmeticsAssetID, req.CosmeticsAssetID2} {
 		if id := primaryAssetIDString(raw); id != "" {
 			return id
 		}
@@ -617,7 +818,7 @@ func primaryAssetIDString(raw json.RawMessage) string {
 // (BP_LokiHeroSelectPreview_UnknownHero), a valid owned id renders that hunter. Field name is
 // camelCase heroAssetId (UStruct field HeroAssetID; UE matches JSON keys case-insensitively);
 // PrimaryAssetId accepts the "Type:Name" string form (proven by the owned-inventory AssetIds).
-func buildSoloParty(id, display, heroAssetId string) map[string]any {
+func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue string) map[string]any {
 	now := time.Now().UTC().Format(time.RFC3339)
 	member := map[string]any{
 		"id":          id,
@@ -636,13 +837,27 @@ func buildSoloParty(id, display, heroAssetId string) map[string]any {
 		"heroAssetId": heroAssetId,
 		"heroAssetID": heroAssetId,
 	}
+	// The member's CosmeticsAssetID is intentionally NOT served. CONCLUSIVELY INERT
+	// 2026-07-09 (see handleSetPartyMember): the client rebuilds the member from this GET
+	// each poll and never reads the cosmetic back, so Loki.log shows the party slot loading
+	// the GetDefaultCosmeticsBundleIdForHeroId fallback (AlchemistDefault_STR = "Strawberry
+	// Bomb") regardless of what we echo. Serving it can't help the skin display and only
+	// risks the 2026-07-08 lock, so we drop it. Skin persistence needs a client-side shim.
+	_ = cosmeticsAssetId
 	return map[string]any{
 		"partyId":         "party-" + id,
 		"id":              "party-" + id,
 		"leader":          id,
 		"leaderId":        id,
 		"ownerId":         id,
-		"members":         []any{member},
+		// The selected matchmaking activity. The client's Comp_MainMenu_QueueController
+		// requires the party to always carry a non-empty target queue (usmap Party.TargetQueueID
+		// / .TargetQueueIDs) — otherwise IsPartyOwner/CanControlQueue-gated modifies fail with
+		// "Unable to modify activity. You must always have one activity selected." Seeded from
+		// the client's own GET /party/players/{id}?defaultQueue=<q> and updated on switch.
+		"targetQueueId":  targetQueue,
+		"targetQueueIds": []any{targetQueue},
+		"members":        []any{member},
 		"invitees":        []any{},
 		"invitationToken": "",
 		"joinSecret":      "",

@@ -88,6 +88,29 @@ func (s *Service) registerLoadout(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /personalization/players/{id}/luxechromas", s.handleSetLuxeChroma)
 	mux.HandleFunc("POST /personalization/players/{id}/luxechromas/{rest...}", s.handleSetLuxeChroma)
 	mux.HandleFunc("PUT /personalization/players/{id}/luxechromas/{rest...}", s.handleSetLuxeChroma)
+
+	// ---- Revival-only loadout feed (read by the client-side loadout shim) ----
+	// The HTTP GET readback (GET /personalization/players/{id}) is received but the
+	// client's RefreshCurrentLoadoutOperation doesn't populate the in-memory loadout
+	// from it (shape unknown; no capture of the dead server's real response). So the
+	// persistence is applied CLIENT-SIDE instead: tools/sigbypass-mod/loadout_fix.cpp
+	// reads this flat feed on menu load and replays each equip by calling the game's
+	// own native setters (SetHeroCosmeticsBundlePreference / SetSlotCosmetic /
+	// SetLuxeSkinChromaPreference) on the game thread via the s55 native-call
+	// primitive. Namespaced under /revival/ (never an impersonated client route).
+	mux.HandleFunc("GET /revival/loadout", s.handleGetRevivalLoadout)
+}
+
+// handleGetRevivalLoadout serves the persisted equips as a flat map the loadout
+// shim replays (see registerLoadout). Not an impersonated client route.
+func (s *Service) handleGetRevivalLoadout(w http.ResponseWriter, r *http.Request) {
+	slots, bundles, chromas := s.store.primaryLoadout()
+	writeJSON(w, map[string]any{
+		"heroCosmeticsBundles": bundles,                          // "Hero:<name>" -> "HeroCosmeticsBundle:<name>"
+		"slotCosmetics":        slots,                            // "<Slot>"      -> "SlotCosmetics:<name>"
+		"luxeChromas":          chromas,                          // "<luxe id>"   -> "<chroma id>"
+		"selectedHero":         s.store.primarySelectedHero(),    // "Hero:<name>" — which hero the shim re-picks to refresh the render
+	})
 }
 
 // handleSetSlotCosmetic persists one slot's equipped cosmetic. Body is a
@@ -117,7 +140,7 @@ func (s *Service) handleSetSlotCosmetic(w http.ResponseWriter, r *http.Request) 
 			st.LoadoutVersion++
 		})
 	}
-	writeJSON(w, s.loadoutDoc(id))
+	writeJSON(w, s.loadoutResponse(id))
 }
 
 // handleSetEmotes persists the emote-wheel selection. Request model is
@@ -135,7 +158,7 @@ func (s *Service) handleSetEmotes(w http.ResponseWriter, r *http.Request) {
 			st.LoadoutVersion++
 		})
 	}
-	writeJSON(w, s.loadoutDoc(id))
+	writeJSON(w, s.loadoutResponse(id))
 }
 
 // handleSetTitles persists the equipped player title(s). Request model is
@@ -153,7 +176,7 @@ func (s *Service) handleSetTitles(w http.ResponseWriter, r *http.Request) {
 			st.LoadoutVersion++
 		})
 	}
-	writeJSON(w, s.loadoutDoc(id))
+	writeJSON(w, s.loadoutResponse(id))
 }
 
 // handleSetCosmeticsBundle persists a per-hero skin-bundle preference. The exe
@@ -190,7 +213,7 @@ func (s *Service) handleSetCosmeticsBundle(w http.ResponseWriter, r *http.Reques
 			st.LoadoutVersion++
 		})
 	}
-	writeJSON(w, s.loadoutDoc(id))
+	writeJSON(w, s.loadoutResponse(id))
 }
 
 // handleSetLuxeChroma persists a luxe-skin chroma preference. Request model is
@@ -220,7 +243,7 @@ func (s *Service) handleSetLuxeChroma(w http.ResponseWriter, r *http.Request) {
 			st.LoadoutVersion++
 		})
 	}
-	writeJSON(w, s.loadoutDoc(id))
+	writeJSON(w, s.loadoutResponse(id))
 }
 
 // loadoutDoc builds the PersonalizationLoadout JSON doc — the readback the
@@ -281,6 +304,38 @@ func (s *Service) loadoutDoc(id string) map[string]any {
 		doc["lobbyPlatformPreference"] = st.LobbyPlatformAssetId
 	}
 	return doc
+}
+
+// loadoutResponse wraps loadoutDoc so it deserializes regardless of which
+// envelope the client's ULoadoutReconciler expects. This is the fix for the
+// 2026-07-08 finding: the equip WRITES persist and apply live (the equipped
+// mesh loads), but on page re-entry / relaunch the customization page reverts to
+// the DEFAULT cosmetic (Loki.log: party slot renders "HeroCosmeticsBundle:
+// SuccubusDefault", not the equipped SuccubusSISTE). Root cause: the client's
+// loadout MODEL is never populated from our reply. The client reads the loadout
+// exactly once, at login, via GET /personalization/players/{id}, and it never
+// re-GETs on navigation — so within-session persistence depends on the client
+// MERGING the equip WRITE's response, and cross-relaunch persistence on the
+// login GET. Both must carry the loadout in a shape the reconciler parses.
+//
+// The bare doc was NOT parsing. The sibling endpoint on this same service —
+// /personalization/players/{id}/clientprofile — is confirmed-working with a
+// {"data":{...}} envelope (the "NEW" badges stop reappearing), so the platform
+// query layer almost certainly expects {"data":...} here too. We send all three
+// shapes at once: the bare fields (if the top-level struct IS the loadout), a
+// "data" envelope (the clientprofile convention), and a "loadout" nesting. Per
+// the validity model (menu.go) UE ignores unmatched top-level keys and we never
+// emit a wrong-typed matched key, so carrying all three is strictly safe and
+// maximizes the chance the reconciler's baseline/merge populates.
+func (s *Service) loadoutResponse(id string) map[string]any {
+	doc := s.loadoutDoc(id)
+	resp := make(map[string]any, len(doc)+2)
+	for k, v := range doc {
+		resp[k] = v // bare: the top-level object IS the PersonalizationLoadout
+	}
+	resp["data"] = doc    // {"data": <loadout>} — the clientprofile convention
+	resp["loadout"] = doc // {"loadout": <loadout>} — nested fallback
+	return resp
 }
 
 // assetIDCandidates harvests every PrimaryAssetId-looking string ("Type:Name")

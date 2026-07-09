@@ -25,7 +25,15 @@ func New() *Service { return &Service{} }
 
 func (s *Service) Register(mux *http.ServeMux) {
 	// Master client-config: service registry + display-name limits.
+	// Two surfaces return the same ClientConfiguration: /configuration/public (fetched
+	// once, pre-auth) and /configuration/client (polled ~1/s by ClientConfigManager,
+	// post-auth). The {} catch-all left /configuration/client empty, so ClientVersions
+	// was empty and Comp_MainMenu_QueueController.IsClientVersionValid returned false —
+	// which fails CanControlQueue and blocks activity selection with
+	// "Unable to modify activity". Serving the same config (with ClientVersions) here
+	// lets the version check pass.
 	mux.HandleFunc("GET /configuration/public", s.handleClientConfig)
+	mux.HandleFunc("GET /configuration/client", s.handleClientConfig)
 
 	// PostAuth service (resolved from ServiceHostnames["postauth"]). The game
 	// calls {base}/postauth/... — e.g. reconcileRoles after login.

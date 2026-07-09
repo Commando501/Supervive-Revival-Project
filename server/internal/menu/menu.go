@@ -188,6 +188,7 @@ func handleInventory(w http.ResponseWriter, r *http.Request) {
 	// each processing pass — a native shim that only poked CanUse=1 was reverted to 0
 	// within one game tick, while IsPurchasable=1 stuck; so the durable path is to make the
 	// server say we own them, not to fight the derivation.
+	cfg := current()
 	entries := make([]any, 0, 1000)
 	for i, h := range cfg.Heroes {
 		entries = append(entries, map[string]any{
@@ -240,6 +241,7 @@ func handleWallet(w http.ResponseWriter, r *http.Request) {
 	// 0 on a fresh account (not a virtual-wallet entry, which is why 91 key candidates
 	// failed). A "heroToken" balance does NOT feed UBattlepassHeroUnlocker — the hero-token
 	// count comes from the battlepass reward-track claim state (needs packed reward SKUs).
+	cfg := current()
 	balances := make(map[string]any, len(cfg.Wallet))
 	for code, amount := range cfg.Wallet {
 		balances[code] = amount
@@ -268,7 +270,7 @@ func handleHeroes(w http.ResponseWriter, r *http.Request) {
 	// sent (which rendered nothing). Sending all 25 lowercase codenames as the confirmed
 	// FLokiStorefrontHeroes { heroes: TArray<FString> } shape. Relaunch + LogPlatform
 	// Storefront ("Unlockable heroes fetched: %d") / the HUNTERS grid confirm the format.
-	writeJSON(w, map[string]any{"heroes": cfg.Heroes})
+	writeJSON(w, map[string]any{"heroes": current().Heroes})
 }
 
 // handlePlayerStore returns FLokiStorefrontPlayerStore, the /storefront/offers/{id}
@@ -306,6 +308,7 @@ func handlePlayerStore(w http.ResponseWriter, r *http.Request) {
 	// One ItemOffers array feeds every tab; each tab filters it by the offer's resolved
 	// PrimaryAssetType. StoreOffer packs -> BUNDLES/SUPPORTER PACKS; HeroCosmeticsBundle ->
 	// SKINS; SlotCosmetics -> ACCESSORIES. See cosmetics.go.
+	cfg := current()
 	items := storeItemOffers(cfg.Store.Bundles, "Bundles", "StoreOffer")
 	items = append(items, cosmeticOffers(cfg.Store.Skins, "HeroCosmeticsBundle", "Skins")...)
 	items = append(items, cosmeticOffers(cfg.Store.Accessories, "SlotCosmetics", "Accessories")...)
@@ -366,6 +369,7 @@ func storeFeaturedOffers(skus []string) []map[string]any {
 // carries the Theorycraft Coin / Vive Point packs. See handlePlayerStore for the
 // schema-correction and probe rationale.
 func handleRealMoneyStore(w http.ResponseWriter, r *http.Request) {
+	cfg := current()
 	writeJSON(w, map[string]any{
 		"Region":     cfg.Region,
 		"ItemOffers": storeItemOffers(cfg.Store.Currency, "Currency", ""),

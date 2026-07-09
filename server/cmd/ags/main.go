@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"supervive-revival/server/internal/admin"
 	"supervive-revival/server/internal/capture"
 	"supervive-revival/server/internal/iam"
 	"supervive-revival/server/internal/interactive"
@@ -39,11 +40,19 @@ func main() {
 	logPath := flag.String("log", filepath.Join("docs", "capture.log"), "capture log path (starts fresh each launch; previous run kept as .prev)")
 	logMaxMB := flag.Int64("log-max-mb", 256, "capture log size cap in MB; at the cap it rotates to .prev and continues fresh (0 = unlimited)")
 	certDir := flag.String("certs", "certs", "directory for the generated TLS cert/key")
-	menuConfig := flag.String("config", "", "optional JSON config for menu/store content (see configs/store.example.json); empty uses built-in defaults")
+	menuConfig := flag.String("config", "", "optional JSON config for menu/store content (see configs/store.example.json); empty defaults to state/menu-config.json (the admin panel's save target)")
+	adminAddr := flag.String("admin", "127.0.0.1:9210", "admin panel listen address (loopback-only guard applies); empty disables")
 	flag.Parse()
 
 	// Load the operator config (heroes/store SKUs/prices) over the built-in defaults.
-	// Empty path or a missing/invalid file leaves the defaults in place (logged).
+	// A missing/invalid file leaves the defaults in place (logged). With no -config
+	// we default to state/menu-config.json — the file the admin panel persists to —
+	// so panel edits survive the launch script's rebuild+restart (the script passes
+	// no -config and runs ags with cwd=server/, same place state/interactive.json
+	// already lives). 2026-07-08.
+	if *menuConfig == "" {
+		*menuConfig = filepath.Join("state", "menu-config.json")
+	}
 	menu.Load(*menuConfig)
 
 	if err := os.MkdirAll(filepath.Dir(*logPath), 0o755); err != nil {
@@ -64,7 +73,8 @@ func main() {
 	iam.New(signer).Register(mux)
 	loki.New().Register(mux)
 	menu.New().Register(mux)
-	interactive.New().Register(mux)
+	interSvc := interactive.New()
+	interSvc.Register(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
 
 	// Catch-all: WebSocket upgrades (lobby/messaging) get a real handshake +
@@ -84,6 +94,22 @@ func main() {
 
 	log.Printf("SUPERVIVE Revival AGS backend")
 	log.Printf("  capture log: %s", *logPath)
+
+	// Admin control panel (2026-07-08): its OWN mux + listener so nothing can
+	// collide with an impersonated client route, loopback-bound by default and
+	// double-guarded (admin.Guard rejects non-loopback peers even if -admin is
+	// rebound wide). Runs outside the capture middleware so panel traffic never
+	// pollutes docs/capture.log.
+	if *adminAddr != "" {
+		adminMux := http.NewServeMux()
+		admin.New(interSvc).Register(adminMux)
+		go func(addr string) {
+			log.Printf("  ADMIN  panel on http://%s/", addr)
+			if err := http.ListenAndServe(addr, admin.Guard(adminMux)); err != nil {
+				log.Printf("admin: %v (panel disabled)", err)
+			}
+		}(*adminAddr)
+	}
 
 	// HTTPS listener for the hijacked Theorycraft hostnames.
 	cert, crtPath, err := tlscert.EnsureCert(*certDir)

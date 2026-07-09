@@ -1,8 +1,7 @@
 [0] catalog_store_fix worker started (ready-gate + purchasable poke)
-[0] modBase=0x7FF682A80000
+[0] modBase=0x7FF6B54F0000
 [0] crash-VEH installed
 [3] GetPrimaryAssetIdList hooked (scan armed)
 [hb] catMgr=0x0 jz=0/0 unhook=0 purchIters=0 lastPurch=0
 [hb] catMgr=0x0 jz=0/0 unhook=0 purchIters=0 lastPurch=0
-[enum] first GetPrimaryAssetIdList -> scan (mgr=0x253FA10A8D0)
-[scan] DONE: 30 types scanned (Hero added=25)
+[enum] first GetPrimaryAssetIdList -> scan (mgr=0x204F2F0AEA0)

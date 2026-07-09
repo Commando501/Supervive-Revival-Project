@@ -1,0 +1,8 @@
+[0] missions_nativecall_probe13 (populate model w/ N real missions + SWAP into ProgMgr.MissionsModel) started
+[2] lam=1BF4201AEA0 mm=1C013A80580 all funcs resolved gameTid=28688
+[3] hook built; get real ids -> build N-mission model -> swap into ProgMgr.MissionsModel...
+[4] missions registered=330, pools=16. Built 8-mission model=0x1C0C105CD00 class='MissionsModel' GetMissions().Num=1
+[4] pools used: ArmoryOnboarding,Tournament,DailyChallenge,WeeklyChallenges_Planbee,DailyChallenge_Planbee,WeeklyChallenges,Daily,Weekly_Planbee
+[4] mission[0] DA loaded? GetLokiDataAsset=0x0 class=''
+[4] SWAP ProgMgr.MissionsModel -> new model: DONE (old knownMM=0x1C013A80580 new=0x1C0C105CD00)
+[4] *** model populated + swapped, but mission DA NOT loaded (GetLokiDataAsset null) => tiles may be blank; need AsyncLoadPrimaryAssets first. Open modal to confirm. ***

@@ -59,7 +59,7 @@ func TestSelectedHeroSeedAndPersist(t *testing.T) {
 // the key(s) the client reads (member.HeroAssetID), as a PrimaryAssetId string, and that the
 // player appears as the sole leader (so PartyModel.GetSelf resolves "me").
 func TestBuildSoloPartyCarriesHero(t *testing.T) {
-	party := buildSoloParty("p1", "Player One", "Hero:beebo")
+	party := buildSoloParty("p1", "Player One", "Hero:beebo", "HeroCosmeticsBundle:BeeboCyber", "default")
 	members, ok := party["members"].([]any)
 	if !ok || len(members) != 1 {
 		t.Fatalf("expected exactly one member, got %v", party["members"])
@@ -73,6 +73,12 @@ func TestBuildSoloPartyCarriesHero(t *testing.T) {
 	}
 	if m["heroAssetId"] != "Hero:beebo" {
 		t.Fatalf("member heroAssetId = %v, want Hero:beebo", m["heroAssetId"])
+	}
+	// The member cosmetic is intentionally NOT served (proven inert 2026-07-09: the client
+	// ignores the echoed member cosmetic and the party slot renders the default). It must
+	// be absent regardless of the cosmetic argument.
+	if _, present := m["cosmeticsAssetId"]; present {
+		t.Fatalf("member cosmeticsAssetId should be absent (client ignores it; serving risks the s53 lock)")
 	}
 	// Round-trip through JSON as the client sees it (string PrimaryAssetId form).
 	b, _ := json.Marshal(party)
