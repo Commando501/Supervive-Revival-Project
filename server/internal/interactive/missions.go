@@ -10,16 +10,15 @@ package interactive
 // per-objective progress it should write into the mission model.
 //
 // Flow:
-//   - The shim, on menu load, GETs /revival/missions/progress and, for each
-//     FMissionObjectiveProgress it builds, sets Progress = objectives[ObjectiveName]
-//     (matched by the GetUniqueObjectiveName key). Missing/zero => a "not started"
-//     0/max bar (the Option-1 baseline).
-//   - Match-end hooks (or manual testing) POST /revival/missions/progress/add to
-//     increment objectives; the store persists to state/interactive.json.
+//   - On menu load the shim POSTs /revival/missions/manifest (the full mission->objective list) and, for
+//     each FMissionObjectiveProgress it builds, GETs /revival/missions/progress and sets Progress =
+//     objectives["<missionInternalName>/<objectiveName>"]. Missing/zero => a "not started" 0/max bar.
+//   - Match results POST /revival/missions/match-result; the engine maps stats to objective-name deltas
+//     and FANS them out to each mission's composite key (via the manifest), so missions that share an
+//     objective name track independently. The store persists to state/interactive.json.
 //
-// Objective keys are the UNIQUE names from LokiAssetStatics::GetUniqueObjectiveName
-// (globally unique per objective, e.g. "PlayAGame", "BR_Knocks_Assists"), so a flat
-// map suffices. Single-account revival => everything is stored under one fixed key.
+// Progress keys are PER-MISSION composites "<missionInternalName>/<objectiveUniqueName>" (per-mission
+// granularity). Single-account revival => everything is stored under one fixed key.
 
 import (
 	"encoding/json"
@@ -40,8 +39,34 @@ func (s *Service) registerMissions(mux *http.ServeMux) {
 	mux.HandleFunc("GET /revival/missions/progress", s.handleGetMissionProgress)
 	mux.HandleFunc("POST /revival/missions/progress", s.handleSetMissionProgress)
 	mux.HandleFunc("POST /revival/missions/progress/add", s.handleAddMissionProgress)
+	// The shim registers the mission->objective structure on menu load so match results can
+	// fan out to per-mission composite keys (per-mission granularity).
+	mux.HandleFunc("POST /revival/missions/manifest", s.handleSetManifest)
 	// Option 2c: record a match result -> map its stats to per-objective increments.
 	mux.HandleFunc("POST /revival/missions/match-result", s.handleMatchResult)
+}
+
+// ManifestEntry is one (mission, objective, max) triple the shim knows from the mission DAs. The
+// composite progress key is compositeKey(Mission, Objective) = "<mission>/<objective>".
+type ManifestEntry struct {
+	Mission   string  `json:"mission"`
+	Objective string  `json:"objective"`
+	Max       float64 `json:"max"`
+}
+
+// compositeKey is the per-mission progress key: "<missionInternalName>/<objectiveUniqueName>".
+func compositeKey(mission, objective string) string { return mission + "/" + objective }
+
+// handleSetManifest replaces the stored mission->objective manifest (the shim POSTs the full list on
+// menu load). Echoes the count.
+func (s *Service) handleSetManifest(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Entries []ManifestEntry `json:"entries"`
+	}
+	raw, _ := io.ReadAll(io.LimitReader(r.Body, 1<<22))
+	_ = json.Unmarshal(raw, &body)
+	s.store.update(missionsLocalKey, func(st *playerState) { st.MissionManifest = body.Entries })
+	writeJSON(w, map[string]any{"entries": len(body.Entries)})
 }
 
 // missionProgressBody is the shared request/response payload: a map of objective
@@ -167,37 +192,58 @@ var objectiveRules = []struct {
 	{"Onboarding_PlayTriosMatch", func(m matchResult) float64 { return b2f(containsFold(m.GameMode, "trios") || containsFold(m.GameMode, "coop")) }},
 }
 
-// computeMatchDeltas turns a match result into per-objective increments (mapped rules + explicit
-// passthrough). Zero deltas are dropped so an unrelated objective is never touched.
-func computeMatchDeltas(m matchResult) map[string]float64 {
+// mappedNameDeltas turns a match result into per-objective-NAME increments via objectiveRules. Zero
+// deltas are dropped so an unrelated objective is never touched. These names are then fanned out to
+// per-mission composite keys via the manifest.
+func mappedNameDeltas(m matchResult) map[string]float64 {
 	d := map[string]float64{}
 	for _, r := range objectiveRules {
 		if v := r.Delta(m); v != 0 {
 			d[r.Name] += v
 		}
 	}
-	for k, v := range m.Objectives {
-		if v != 0 {
-			d[k] += v
-		}
-	}
 	return d
 }
 
-// handleMatchResult records a match: maps its stats to per-objective increments and applies them.
-// Echoes {"applied": <deltas>, "objectives": <full updated map>}.
+// handleMatchResult records a match: maps its stats to per-objective-name deltas, FANS them out to every
+// mission that has the objective (via the registered manifest) so each mission's composite key advances
+// independently, then applies the explicit per-composite `objectives` passthrough on top. Echoes
+// {"applied": <composite deltas>, "objectives": <full updated map>}.
 func (s *Service) handleMatchResult(w http.ResponseWriter, r *http.Request) {
 	var m matchResult
 	raw, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	_ = json.Unmarshal(raw, &m)
-	deltas := computeMatchDeltas(m)
+
+	nameDeltas := mappedNameDeltas(m)
+	st0 := s.store.get(missionsLocalKey)
+
+	// Fan each objective-name delta out to per-mission composite keys.
+	applied := map[string]float64{}
+	for _, e := range st0.MissionManifest {
+		if d, ok := nameDeltas[e.Objective]; ok && d != 0 {
+			applied[compositeKey(e.Mission, e.Objective)] += d
+		}
+	}
+	// If no manifest was registered yet, fall back to the bare objective names so a match still records.
+	if len(st0.MissionManifest) == 0 {
+		for k, v := range nameDeltas {
+			applied[k] += v
+		}
+	}
+	// Explicit passthrough deltas are treated as composite keys and applied verbatim.
+	for k, v := range m.Objectives {
+		if v != 0 {
+			applied[k] += v
+		}
+	}
+
 	s.store.update(missionsLocalKey, func(st *playerState) {
 		if st.MissionObjectives == nil {
 			st.MissionObjectives = map[string]float64{}
 		}
-		for k, v := range deltas {
+		for k, v := range applied {
 			st.MissionObjectives[k] += v
 		}
 	})
-	writeJSON(w, map[string]any{"applied": deltas, "objectives": s.missionObjectives()})
+	writeJSON(w, map[string]any{"applied": applied, "objectives": s.missionObjectives()})
 }

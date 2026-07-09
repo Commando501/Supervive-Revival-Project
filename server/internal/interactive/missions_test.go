@@ -100,3 +100,36 @@ func TestMatchResultMapping(t *testing.T) {
 		t.Fatalf("explicit passthrough delta not applied: %v", got2["BR_Sunrises"])
 	}
 }
+
+// TestMatchResultManifestFanout covers per-mission granularity: with a manifest registered, a match's
+// objective-name delta fans out to EACH mission that has the objective, keyed by "<mission>/<objective>",
+// so missions sharing an objective name (PlayAGame on Tournament + a Daily) track independently.
+func TestMatchResultManifestFanout(t *testing.T) {
+	_, mux := newTestService()
+	doJSON(t, mux, "POST", "/revival/missions/manifest", `{"entries":[
+		{"mission":"Tournament_PlayAGame","objective":"PlayAGame","max":5},
+		{"mission":"ArmoryDaily_PlayAGame","objective":"PlayAGame","max":1},
+		{"mission":"Tournament_KnocksAssists","objective":"BR_Knocks_Assists","max":50}
+	]}`)
+
+	got := objectivesOf(t, doJSON(t, mux, "POST", "/revival/missions/match-result",
+		`{"win":true,"placement":1,"knocks":8,"assists":2,"gameMode":"tournament"}`))
+	if got["Tournament_PlayAGame/PlayAGame"] != 1 {
+		t.Fatalf("tournament play composite: %v", got)
+	}
+	if got["ArmoryDaily_PlayAGame/PlayAGame"] != 1 {
+		t.Fatalf("daily play composite (independent): %v", got)
+	}
+	if got["Tournament_KnocksAssists/BR_Knocks_Assists"] != 10 {
+		t.Fatalf("knocks+assists composite: %v", got)
+	}
+	// With a manifest registered, the bare objective name must NOT be a key (composite only).
+	if _, ok := got["PlayAGame"]; ok {
+		t.Fatalf("bare objective name leaked into composite store: %v", got)
+	}
+	// A second tournament game accumulates each composite independently.
+	got2 := objectivesOf(t, doJSON(t, mux, "POST", "/revival/missions/match-result", `{"gameMode":"tournament"}`))
+	if got2["Tournament_PlayAGame/PlayAGame"] != 2 || got2["ArmoryDaily_PlayAGame/PlayAGame"] != 2 {
+		t.Fatalf("second game did not accumulate composites independently: %v", got2)
+	}
+}

@@ -51,6 +51,7 @@ constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, 
 constexpr uintptr_t FLD_NEXT=0x18, FLD_FLAGS=0x38, FLD_OFFSET=0x44;
 constexpr uint64_t CPF_OutParm=0x100, CPF_ReturnParm=0x400;
 constexpr uintptr_t DA_OBJECTIVES=0x88;   // LokiDataAsset_Mission.Objectives (TArray<LokiMissionObjectiveData>)
+constexpr uintptr_t DA_INTERNALNAME=0x40; // LokiDataAsset_Base.InternalName (FName) — the mission's unique name
 constexpr uintptr_t LMOD_SIZE=0x30;       // sizeof LokiMissionObjectiveData
 constexpr uintptr_t LMOD_TOTAL=0x10;      // LokiMissionObjectiveData.TotalProgress (float)
 constexpr int MAXOBJ=6;                   // max objectives per mission we mirror
@@ -84,11 +85,22 @@ static char g_vKeyName[8][64]={{0}}; static float g_vTotal[8]={0}; static int g_
 static float g_vProg[8]={0};   // applied progress for the first few (Option 2 verification)
 // fetched per-objective progress (from ags GET /revival/missions/progress)
 constexpr int PROGMAX=512;
-static char g_progName[PROGMAX][64]={{0}}; static float g_progVal[PROGMAX]={0}; static int g_progNum=0;
+constexpr int KEYW=128;   // key width — composite keys are "<mission>/<objective>"
+static char g_progName[PROGMAX][KEYW]={{0}}; static float g_progVal[PROGMAX]={0}; static int g_progNum=0;
 static int g_fetchOk=0; static int g_appliedNonZero=0;
 // snapshot of the last-APPLIED progress, for order-independent change detection between polls.
-static char g_lastName[PROGMAX][64]={{0}}; static float g_lastVal[PROGMAX]={0}; static int g_lastNum=-1;
+static char g_lastName[PROGMAX][KEYW]={{0}}; static float g_lastVal[PROGMAX]={0}; static int g_lastNum=-1;
 static volatile long g_applyCount=0;
+// mission->objective manifest JSON, built in BuildAndSwap (game thread), POSTed from Worker (off thread)
+// so match results can fan out to per-mission composite keys. Registered once per session.
+static char g_manifest[262144]={0}; static volatile long g_manifestLen=0; static int g_manifestPosted=0; static int g_manifestEntries=0;
+// Shared ProcessInternal-hook lock: mainmenu_refresh_pi8.dll ALSO hooks ProcessInternal, and two hooks race
+// on the thread-suspending SafeWrite. Both shims serialize their (one-time g_stolen capture + every
+// install->use->uninstall) span on this named mutex so only one owns the PI prologue at a time. Under the
+// lock the prologue is always the ORIGINAL (the other shim installs only while it holds the lock).
+static HANDLE g_hookMutex=nullptr;
+static void HookLock(){ if(g_hookMutex) WaitForSingleObject(g_hookMutex,30000); }
+static void HookUnlock(){ if(g_hookMutex) ReleaseMutex(g_hookMutex); }
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
@@ -207,7 +219,7 @@ static void ParseProgress(const char* json){
     while(*p && g_progNum<PROGMAX){
         while(*p && *p!='"' && *p!='}') p++;
         if(*p=='}'||!*p) break;
-        p++; const char* ks=p; while(*p && *p!='"') p++; if(!*p) break; int kl=(int)(p-ks); if(kl>63)kl=63;
+        p++; const char* ks=p; while(*p && *p!='"') p++; if(!*p) break; int kl=(int)(p-ks); if(kl>KEYW-1)kl=KEYW-1;
         memcpy(g_progName[g_progNum],ks,kl); g_progName[g_progNum][kl]=0; p++;
         while(*p && *p!=':') p++; if(!*p) break; p++; while(*p==' ') p++;
         g_progVal[g_progNum]=(float)atof(p);
@@ -223,6 +235,24 @@ static void FetchProgress(){
         while(total<sizeof(buf)-1 && InternetReadFile(hu,buf+total,(DWORD)(sizeof(buf)-1-total),&got) && got){ total+=got; }
         buf[total]=0; if(total>0){ ParseProgress(buf); g_fetchOk=1; }
         InternetCloseHandle(hu);
+    }
+    InternetCloseHandle(hi);
+}
+// POST the mission->objective manifest (built game-side in BuildAndSwap) so ags can fan match-result
+// deltas out to per-mission composite keys. Off the game thread; once per session.
+static void PostManifest(){
+    if(g_manifestPosted || g_manifestLen<=0) return;
+    HINTERNET hi=InternetOpenA("supervive-missions-shim",INTERNET_OPEN_TYPE_DIRECT,nullptr,nullptr,0); if(!hi) return;
+    HINTERNET hc=InternetConnectA(hi,"127.0.0.1",8080,nullptr,nullptr,INTERNET_SERVICE_HTTP,0,0);
+    if(hc){
+        const char* accept[]={"application/json",nullptr};
+        HINTERNET hr=HttpOpenRequestA(hc,"POST","/revival/missions/manifest",nullptr,nullptr,accept,INTERNET_FLAG_RELOAD|INTERNET_FLAG_NO_CACHE_WRITE,0);
+        if(hr){
+            const char* hdr="Content-Type: application/json\r\n";
+            if(HttpSendRequestA(hr,hdr,(DWORD)strlen(hdr),(void*)g_manifest,(DWORD)g_manifestLen)) g_manifestPosted=1;
+            InternetCloseHandle(hr);
+        }
+        InternetCloseHandle(hc);
     }
     InternetCloseHandle(hi);
 }
@@ -242,12 +272,23 @@ static bool ProgressChanged(){
 }
 static void SnapshotProgress(){
     g_lastNum=g_progNum;
-    for(int i=0;i<g_progNum;i++){ memcpy(g_lastName[i],g_progName[i],64); g_lastVal[i]=g_progVal[i]; }
+    for(int i=0;i<g_progNum;i++){ memcpy(g_lastName[i],g_progName[i],KEYW); g_lastVal[i]=g_progVal[i]; }
 }
-// Build ObjectiveProgress[] for mission i from its loaded DA; returns objective count.
+// AppendManifest adds one {"mission","objective","max"} entry to g_manifest (built game-side, POSTed off
+// thread). mission/objective are plain identifiers (no JSON escaping needed).
+static void AppendManifest(const char* mission, const char* obj, float mx){
+    long len=g_manifestLen; if(len > (long)sizeof(g_manifest)-256) return;
+    char tmp[256]; int n=_snprintf_s(tmp,sizeof(tmp),_TRUNCATE,"%s{\"mission\":\"%s\",\"objective\":\"%s\",\"max\":%d}",
+        g_manifestEntries?",":"", mission, obj, (int)mx);
+    if(n>0){ memcpy(g_manifest+len, tmp, n); g_manifestLen=len+n; g_manifestEntries++; }
+}
+// Build ObjectiveProgress[] for mission i from its loaded DA; returns objective count. Also records the
+// per-mission composite manifest entries and looks up fetched progress by the composite key.
 static int BuildObjectivesForMission(int i){
     uint64_t da=GLDA(g_missionIds[i][0],g_missionIds[i][1]);
     if(!LooksLikePtr((uintptr_t)da)) return 0;
+    char internal[64]={0}; if(SafeReadable((void*)(da+DA_INTERNALNAME),4)) GetFNameStr(*(uint32_t*)(da+DA_INTERNALNAME),internal,64);
+    if(!internal[0]) return 0;                            // no mission name -> can't form a composite key
     if(!SafeReadable((void*)(da+DA_OBJECTIVES),16)) return 0;
     uint64_t odata=*(uint64_t*)(da+DA_OBJECTIVES); int32_t onum=*(int32_t*)(da+DA_OBJECTIVES+8);
     if(onum<=0 || !LooksLikePtr((uintptr_t)odata)) return 0;
@@ -259,13 +300,15 @@ static int BuildObjectivesForMission(int i){
         memcpy(g_daStruct, (void*)objAddr, LMOD_SIZE);
         uint64_t key=GetUniqueObjName(g_daStruct);
         float total=*(float*)(g_daStruct+LMOD_TOTAL);
-        char keyName[64]={0}; GetFNameStr((uint32_t)(key&0xFFFFFFFF),keyName,64);
-        float prog=LookupProgress(keyName);              // Option 2: real progress from ags (else 0)
+        char objName[64]={0}; GetFNameStr((uint32_t)(key&0xFFFFFFFF),objName,64);
+        char composite[KEYW]={0}; _snprintf_s(composite,sizeof(composite),_TRUNCATE,"%s/%s",internal,objName);  // "<mission>/<objective>"
+        AppendManifest(internal, objName, total);
+        float prog=LookupProgress(composite);            // per-mission progress from ags (else 0)
         if(prog>total) prog=total;                       // clamp so the bar never overfills
         if(prog>0.0f) InterlockedIncrement((volatile long*)&g_appliedNonZero);
         uint8_t* op=g_objprog + (i*MAXOBJ+made)*0x38; memset(op,0,0x38);
         *(uint64_t*)(op+0x00)=key;      // ObjectiveName (FName, 8B)
-        *(float*)(op+0x08)=prog;        // Progress (fetched)
+        *(float*)(op+0x08)=prog;        // Progress (fetched, per-mission)
         *(float*)(op+0x0C)=total;       // MaxProgress (informational; bar reads DA anyway)
         *(float*)(op+0x30)=0.0f;        // StartingProgress
         if(i<8 && made==0) g_vProg[i]=prog;
@@ -275,6 +318,8 @@ static int BuildObjectivesForMission(int i){
 }
 static void BuildAndSwap(){
     memset(g_elems,0,sizeof(g_elems)); memset(g_objprog,0,sizeof(g_objprog));
+    // (re)build the manifest JSON header; entries are appended per objective in BuildObjectivesForMission.
+    { const char* head="{\"entries\":["; long hl=(long)strlen(head); memcpy(g_manifest,head,hl); g_manifestLen=hl; g_manifestEntries=0; }
     for(int i=0;i<g_missNum;i++){
         int on=BuildObjectivesForMission(i); g_objCount[i]=on;
         _snwprintf_s(g_idbufs[i],8,_TRUNCATE,L"m%d",i); int n=(int)wcslen(g_idbufs[i])+1;
@@ -289,6 +334,7 @@ static void BuildAndSwap(){
             if(on>0){ uint8_t* op=g_objprog+i*MAXOBJ*0x38; uint32_t kid=*(uint32_t*)op; GetFNameStr(kid,g_vKeyName[i],64); g_vTotal[i]=*(float*)(op+0x0C); }
         }
     }
+    { long l=g_manifestLen; if(l < (long)sizeof(g_manifest)-4){ g_manifest[l++]=']'; g_manifest[l++]='}'; g_manifest[l]=0; g_manifestLen=l; } }  // close entries array
     g_nBuilt=g_missNum;
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
     ((uint64_t*)g_pbuf)[0]=(uint64_t)g_elems; ((uint32_t*)g_pbuf)[2]=(uint32_t)g_missNum; ((uint32_t*)g_pbuf)[3]=(uint32_t)g_missNum;
@@ -383,9 +429,11 @@ static void Resolve(){
 // resolved and g_stub built. Returns whether the swap landed.
 static bool ApplyOnce(DWORD budgetMs){
     g_state=0; g_done=0; g_appliedNonZero=0; g_swapped=false; g_t0=0;
-    if(!InstallHook()) return false;
+    HookLock();                                          // serialize vs pi8's PI hook
+    if(!InstallHook()){ HookUnlock(); return false; }
     DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<budgetMs) Sleep(20);
     UninstallHook();
+    HookUnlock();
     return g_swapped;
 }
 
@@ -394,20 +442,27 @@ static DWORD WINAPI Worker(LPVOID){
     Marker("[0] missions_fix (Option 2 durable: ags-fetched progress on launch + poll-on-change) started\r\n");
     HMODULE hExe=GetModuleHandleA("SUPERVIVE-Win64-Shipping.exe"); if(!hExe){Marker("[0] FAIL module\r\n");return 1;}
     g_modBase=(uintptr_t)hExe; AddVectoredExceptionHandler(1,CrashVEH);
+    g_hookMutex=CreateMutexA(nullptr,FALSE,"Local\\SuperviveMissionsPIHook");   // shared with mainmenu_refresh_pi8
     g_gameTid=WaitTid(120000); if(!g_gameTid){Marker("[1] FAIL gameTid\r\n");return 2;}
     DWORD dl=GetTickCount()+120000; while(GetTickCount()<dl){ Resolve(); if(g_lam&&g_mm&&g_pm&&g_pafs.thunk&&g_gpail.thunk&&g_factory.thunk&&g_getMissions.thunk&&g_glda.thunk&&g_load.thunk&&g_guon.thunk)break; Sleep(500);}
     if(!g_lam||!g_mm||!g_pm||!g_pafs.thunk||!g_gpail.thunk||!g_factory.thunk||!g_getMissions.thunk||!g_glda.thunk||!g_load.thunk||!g_guon.thunk){Markerf("[2] FAIL resolve lam=%llX mm=%llX pm=%llX pafs=%llX gpail=%llX fac=%llX gm=%llX glda=%llX load=%llX guon=%llX\r\n",(unsigned long long)g_lam,(unsigned long long)g_mm,(unsigned long long)g_pm,(unsigned long long)g_pafs.thunk,(unsigned long long)g_gpail.thunk,(unsigned long long)g_factory.thunk,(unsigned long long)g_getMissions.thunk,(unsigned long long)g_glda.thunk,(unsigned long long)g_load.thunk,(unsigned long long)g_guon.thunk);return 3;}
     Markerf("[2] lam=%llX mm=%llX guon-thunk=%llX all funcs resolved gameTid=%lu\r\n",(unsigned long long)g_lam,(unsigned long long)g_mm,(unsigned long long)g_guon.thunk,g_gameTid);
-    g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[2] FAIL PI prologue\r\n");return 4;}
-    memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 5;}
+    g_pi=(uint8_t*)(g_modBase+kPiRva);
+    HookLock();   // capture the ORIGINAL prologue + build the trampoline while pi8 is guaranteed unhooked
+    if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){HookUnlock();Marker("[2] FAIL PI prologue\r\n");return 4;}
+    memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen);
+    HookUnlock();
+    if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 5;}
     // ---- initial apply on menu load ----
     FetchProgress();
     Markerf("[3] fetched ags progress: ok=%d entries=%d (%s) -> build keyed model w/ progress -> swap...\r\n",g_fetchOk,g_progNum,kProgressUrl);
     bool ok=ApplyOnce(40000);
     if(ok){
         SnapshotProgress(); InterlockedIncrement(&g_applyCount);
+        PostManifest();   // register mission->objective structure so match results fan out per-mission
         Markerf("[4] apply#%ld: missions=%d pools=%d model=0x%llX Num=%d fetchOk=%d entries=%d appliedNonZero=%d\r\n",
             (long)g_applyCount,g_missNum,g_poolNum,(unsigned long long)g_retModel,g_modelNum,g_fetchOk,g_progNum,g_appliedNonZero);
+        Markerf("[4] manifest: %d entries POSTed=%d (per-mission composite keys)\r\n",g_manifestEntries,g_manifestPosted);
         for(int i=0;i<8 && i<g_missNum;i++) Markerf("[4]   m%d '%s': key0='%s' prog0=%.1f total0=%.1f\r\n",i,g_vMiss[i],g_vKeyName[i],g_vProg[i],g_vTotal[i]);
         Marker("[4] *** swapped w/ fetched progress. Reopen the Missions modal to see it. Now polling ags for changes... ***\r\n");
     } else { Markerf("[4] initial apply FAILED (hitsGT=%ld state=%ld) — will keep polling\r\n",(long)g_hitsGT,(long)g_state); }
