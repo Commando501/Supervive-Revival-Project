@@ -523,3 +523,256 @@ Func-swap (checkmark persists) + poller (changeability plumbing) + off-thread CD
 selectedHero to /revival/loadout + records member-PUT cosmetic. NEXT: RE `GetHeroAssetFromPrimaryAssetId` to find the true render
 object; OR abandon the fallback-patch route and make the party-member cosmetic itself stick (raw write + a real re-render fire),
 which unifies all surfaces but needs the member offsets + a delegate-fire primitive.
+
+## UPDATE 2026-07-10 (part 6) — ★★★ MAIN-MENU 3D RENDER SOLVED (Loki-confirmed + user-visual-confirmed) ★★★
+
+Part 5's two "compounding blockers" were re-tested and one was WRONG; the real fix was a missing re-render.
+
+**Diagnostic 1 — the CDO *is* the right object (part 5's "different object" theory FALSIFIED).** `GetHeroAssetFromPrimaryAssetId`
+is NATIVE (its ANSI name is in the exe .rdata, sibling of `GetPrimaryAssetIdFromHeroAsset`/`GetMissionPoolFromPrimaryAssetId` —
+the LokiAssetManager family). Added a call of it via the primitive (loadout_fix `CallGetHeroAsset`/`PatchRenderHeroAssets`): it
+RESOLVED (thunk RVA 0x52AA550) but **returns NULL** for every hero when called from the PI hook (asset-not-loaded-from-that-path /
+context — moot). Crucially, the data-scan finds **exactly 4** objects with a `HeroCosmeticsBundle:<Codename>Default*` PAID at
++0x68 AND a "HeroAsset" class name — the 4 CDOs `Default__BP_HeroAsset_<Hero>_C`. **There is no hidden loaded instance.** So the
+render DOES read the CDO; patching it is correct.
+
+**Diagnostic 2 — the real blocker was GAP 1 (re-render), not the object.** Loki.log proof: the main-menu party slot
+(`BP_MainMenuSpawner_MainMenu_PartySlot_C_0`) renders `SetHero ... RocketJumperDefault` ONCE at menu load (frame ~155), ~22s
+BEFORE loadout_fix applies, then CACHES and never re-renders — the ~1s poll does NOT re-run `DetermineCosmeticToShow`. TryPick
+did **not** trigger a re-render (zero post-patch `SetHero`). So the CDO patch lands but the cached slot never re-reads it.
+
+**THE FIX — fire `Comp_MainMenu_PartySlotSubject.Refresh()` after the CDO patch.** Reused pi8's Option-B BP-call primitive
+(`InvokeBP`: build an FFrame from the captured template with Node=UFunc, Object=this, Code=UFunc.Script.Data@+0x68, Locals=buf,
+call the ORIGINAL ProcessInternal via the trampoline). loadout_fix now: (1) resolves the `Comp_MainMenu_PartySlotSubject_C` class
++ its live instances (named `Comp_MainMenu_PartySubject`) + the `Refresh` UFunction (name "Refresh", Outer==subjClass); (2) after
+the off-thread CDO patch (`g_cdoDone`), the OnPI state machine fires `RefreshSubjects()` ~5× over ~1s (tick-gated). Refresh
+re-runs `DetermineCosmeticToShow` → reads the patched fallback CDO → **fresh `SetHero`**. TryPick REMOVED (ineffective + risked
+setting the member cosmetic to a default, which would take the `if valid` branch and render the wrong thing).
+
+**RESULT — VERIFIED (2026-07-10):**
+- Loki.log: after Refresh fires, `PartySlot_C_0: SetHero is setting target cosmetic HeroCosmeticsBundle:RocketJumperKnockOut`
+  (the saved skin) and the ONLY skeletal mesh loaded is `SK_RocketJumper_KnockOut` (×2–4), **`SK_RocketJumper_Default` = 0 loads**.
+- USER SCREENSHOT: the main-menu center hunter (RocketJumper, selectedHero) visibly wears the **KnockOut** skin (KO bomb-glove,
+  KO shirt logo, red boosters). ✅ **DoD item #1 (main-menu center) DONE.**
+- Stable, no crash/VEH; reproduced across two clean relaunches. Heap-only writes (CDO field + UFunction.Func) → no .text
+  integrity trip.
+
+**pi8 coexistence + multi-hunter/nav for free:** pi8 (already injected) fires the SAME `Refresh` on HERO switches + on leaving the
+HUNTERS page, and its Refresh reads the same patched CDO — so switching hunters on the main menu, and returning from HUNTERS,
+re-render each hero's saved skin automatically. loadout_fix's Refresh is a one-shot under the shared `Local\SuperviveMissionsPIHook`
+mutex (install→apply→CDO-patch→refresh→uninstall), so it never clobbers pi8.
+
+**Long-session artifact NOTE:** after ~23h idle uptime the game trimmed its working set (5.5GB→0.77GB) and the CUSTOMIZATION→SKIN
+tab went empty ("MISSING STRING TABLE ENTRY" / "ITEM NAME" placeholders / empty pedestal) — a catalog/asset-UNLOAD artifact of
+the marathon session (catalog_store_fix domain), NOT the render fix (the main-menu center still rendered KnockOut from its cached
+mesh). A clean relaunch restores it. Always test on a fresh launch.
+
+**REMAINING to reach "perfect":** (a) confirm the SKIN-tab pedestal/preview + equipped checkmark on a FRESH instance (part-4 had
+the pedestal working; re-verify post-Refresh); (b) live changeability of the main-menu center on a same-hero skin CHANGE without
+nav (pi8 covers hero-switch/HUNTERS-nav, but not an in-place skin swap) — add a RefreshThread re-arm of the one-shot Refresh when
+the CDO is re-patched; (c) multi-hunter visual pass (Ronin→BeastSlayer, Succubus→SISTE, Alchemist→_MAS). New shim code:
+`CallGetHeroAsset`/`PatchRenderHeroAssets` (diagnostic, currently NULL/no-op), `InvokeBP`/`ResolveSubjects`/`RefreshSubjects`,
+OnPI Refresh state machine. Markers: `[2b] subjects/refreshFn`, `[renderR] Refresh fired`, `[4] ... Refresh call(s)`.
+
+## UPDATE 2026-07-10 (part 7) — CHANGEABILITY: the CDO patch FIGHTS new picks -> pivot to the member-cosmetic write (lever #B)
+
+**User test of the part-6 build revealed the changeability gap.** All FOUR render surfaces show the saved skin
+on load (user screenshots: RocketJumper KnockOut on the main-menu center, the customization pedestal, the SKIN-tab
+preview, and the equipped checkmark — every surface ✅). BUT clicking a *different* variant (Maverick) showed it
+briefly then **snapped back** to the hard-set skin on the next nav/refresh, and other hunters stayed default. Root
+cause: the CDO patch is a FIXED value — `DetermineCosmeticToShow` falls back to it every time the ~1s poll wipes the
+member cosmetic, so it OVERRIDES the new pick. The user's own workaround (hover other cosmetics to force preview
+refreshes) eventually loaded the right skin, confirming the render is refresh-gated + the shim's forced value fights.
+
+**capture.log proved the data flow:** a skin click fires `PUT /party/.../members/<id>` with the new
+`cosmeticsAssetId` in MILLISECONDS (handleSetPartyMember records it into HeroCosmeticsBundles immediately), then a
+debounced `PUT /personalization/.../cosmeticsbundle/Hero:<h>` ~5s later. So the live selection is available fast.
+
+**THE FIX (lever #B) — keep `member.CosmeticsAssetID` = the selection.** The render checks the member cosmetic
+FIRST (the `if IsValidPrimaryAssetId` branch) BEFORE the CDO fallback. So if the member always holds the saved/
+selected skin, every surface follows it — no CDO fight. New shim `MemberWriterThread` (120ms): reads the current
+hero from `member.HeroAssetID@0x78`, finds its saved bundle, and BACKFILLS `member.CosmeticsAssetID` ONLY when the
+field isn't a valid HeroCosmeticsBundle PAID (i.e. empty/None after the poll wipe). While the client holds a live
+pick (non-empty) we leave it, so new picks show; after the poll wipes it we restore the latest saved skin.
+
+**member.CosmeticsAssetID offset RE'd from LIVE REFLECTION (usmap-independent):** loadout_fix resolves the
+`PartyMemberModel` instance (like pi8) + walks its class ChildProperties (`FindPropOffset`) + dumps the full layout
+to the marker. RESULT (`[member]` lines): **CosmeticsAssetID @ 0x98** (FPrimaryAssetId 16B), HeroAssetID @ 0x78,
+**OnCosmeticsAssetIDChanged @ 0xA8** (the delegate — a clean future re-render trigger), PersonalizationLoadout @
+0x190. Writer wired ON (`[9]` marker). Keeps the CDO patch + Func-swap as belt-and-suspenders backup.
+
+**VERIFIED (log-level):** on relaunch, `member.CosmeticsAssetID` holds `RocketJumperSpeedDemon` (the user's last
+pick from the prior session — persisted across relaunch), the party slot renders SpeedDemon consistently
+(`Entering SetHero ... (RocketJumperSpeedDemon - true)` / `Skipping ... match`), no default reversion, no VEH/crash,
+game stable. Also added a re-arm (`ReArmRefresh` in `RefreshThread`, gated on `g_centerDirty`) that re-fires the
+main-menu Refresh when a skin changes + the subjects are live. Markers: `[member]` prop dump, `[2b] member/cosmeticOff`,
+`[9] writer ON`. PENDING user visual: does a NEW pick now STICK (not snap back), and does Change-Hunter→Ronin render
+Beast Slayer. NOTE: the ~1s poll fires OnCosmeticsAssetIDChanged on wipe; the 120ms backfill wins the race in the log
+(no empty SetHero), but if a visible flicker appears, tighten the writer interval or suppress the poll wipe via the
++0xA8 delegate. Two intermittent D3D12 menu-load crashes this session (documented, pure d3d12 — just relaunch).
+
+## UPDATE 2026-07-10 (part 8) — member write was fixed-value (still fought picks) + cross-hero bug -> CACHE-AND-RESTORE
+
+**User test of the part-7 (fixed-value backfill) build found 2 problems:** (2) a skin CHANGE still didn't lock in
+(the SKIN tab showed it selected but OVERVIEW reverted) — because the writer backfilled the LOAD-TIME saved skin
+(g_gdcbBundle), which lags the new pick, so it still fought changes (same flaw as the CDO, just relocated); and (3)
+a NEW BUG — selecting a DIFFERENT hunter (Brall, no saved skin) rendered the RocketJumper MODEL in the preview. Root
+cause: a HeroCosmeticsBundle PAID encodes BOTH hero + skin, and my writer left a stale RocketJumper bundle on the
+member when the member hero switched to Brall (Brall has no saved skin -> writer did nothing -> stale value lingered
+-> the preview resolved RocketJumperSpeedDemon -> RocketJumper model).
+
+**FIX = CACHE-AND-RESTORE (loadout_fix MemberWriterThread rewrite).** Instead of writing a fixed value, we track the
+client's ACTUAL live pick: every 100ms read member.CosmeticsAssetID@0x98 —
+  * if it's a valid HeroCosmeticsBundle whose name PREFIX-matches the current member hero (HeroAssetID name @0x80),
+    CACHE those exact 16 bytes per-hero (g_mc[]) — the client's real pick, no conversion, no lag;
+  * if it's a bundle that does NOT match the current hero (stale cross-hero), CLEAR it (write empty) so a previewed
+    hunter shows ITS OWN default, never another's skin (fixes the Brall bug);
+  * if it's empty (the ~1s poll wiped it), RESTORE this hero's cached pick so the render follows the selection.
+Seeded from /revival/loadout on load (`SeedMemberCache` from g_gdcbCode+g_gdcbBundle) so the saved skin shows on
+load. This makes changeability track the client's own pick (sticks) and is hero-consistent by construction.
+
+**VERIFIED (log-level, 2026-07-10):** `[9b] member cache seeded with 5 hero(es)`, writer ON, game stable, main-menu
+center renders the saved skin (RocketJumperKnockOut). PENDING user interactive re-test: (a) selecting Brall now shows
+Brall (not RocketJumper), (b) a RocketJumper skin change now STICKS. New shim: `struct McCache`/`g_mc`/`McFind`/
+`SeedMemberCache`, MemberWriterThread cache-restore. Markers `[9]/[9b]`. NOTE: the OVERVIEW summary THUMBNAIL (a 2D
+tile, not a render surface) reads the game's own equipped-skin state and may still differ — separate from the 3D
+render DoD. Kept CDO patch + Func-swap + Refresh + ReArm as backups; the member cache is now the primary lever.
+
+## UPDATE 2026-07-10 (part 9) — CHANGEABILITY is gated by client OWNERSHIP (not the render shim); member writer DISABLED
+
+**User test of the cache-restore build surfaced the real changeability blocker.** (1) A within-hunter skin change
+still didn't stick, and (2) all hunters showed LOCKED. Traced end-to-end:
+- The RENDER + MULTI-HUNTER is SOLVED: Loki.log loaded `SK_Ronin_BeastSlayer`, `SK_RocketJumper_KnockOut`,
+  `SK_Succubus_SISTE` and rendered each on hunter-switch. NOT the problem.
+- capture.log: a RONIN skin change PREVIEWED (mesh loaded) but the member PUT fired ONLY for BeastSlayer —
+  StreetInferno/Default NEVER committed (no member PUT, no cosmeticsbundle PUT). ⇒ the equip was SKIPPED by the
+  OWNERSHIP gate (`GetCatalogEntry(skin).CanUse()==false`). A pick that can't commit can't stick — and the same
+  CanUse=false is why hunters show locked. **Both symptoms are one root cause: client-side CanUse/ownership.**
+- **The BACKEND is CORRECT**: `GET /inventory/players/{id}` serves **977 AssetEntries ALL IsOwned=true** (incl.
+  `Ronin_StreetInferno`) + **25 Hero: entries all IsOwned=true**. So ownership is granted; the client CatalogManager
+  just isn't deriving CanUse from it this session. This is the catalog_store_fix / roster domain
+  (docs/hero-roster-attempts.md), a SEPARATE (previously-solved) system — NOT the loadout_fix render work.
+- **Environmental flakiness this session:** ~5 D3D12 menu-load crashes + an injection RACE — on a fast startup the
+  detached inject-secondaries fired ~4s post-launch into a process without ntdll loaded, so
+  `catalog_pick_fix.dll` FAILED (`resolve RtlAddFunctionTable: ntdll.dll not loaded in target`). catalog_pick_fix
+  is the shim that makes owned clicks COMMIT — its failure directly breaks equip. The many rapid crash-relaunches
+  degraded the catalog activation. (Infra fix worth doing: inject-secondaries should wait for ntdll / a minimum
+  process age before injecting.)
+
+**DECISION — reverted the deployed shim to the PROVEN-GOOD render-only build (member writer DISABLED by default,
+`#define MEMBER_WRITER_ENABLED 0`).** The hunter-lock first appeared with the part-8 cache-restore build; not proven
+to be the aggressive 100ms member writer/clear vs. the catalog flakiness, but un-isolatable tonight (D3D12 crashes),
+so default OFF to guarantee the known-good state: Refresh + CDO + Func-swap = saved skin renders on ALL surfaces +
+multi-hunter + persist + hunters NOT locked. Backup `loadout_fix_renderonly.dll`. The cache-restore code + the RE'd
+offsets (member.CosmeticsAssetID@0x98, HeroAssetID@0x78, OnCosmeticsAssetIDChanged@0x98… @0xA8) are preserved for
+re-test.
+
+**NEXT SESSION (to finish changeability, on a STABLE launch — Steam up, ONE clean launch, no rapid relaunch):**
+1. First confirm hunters UNLOCK on a clean launch (catalog ownership applies) — if not, it's a catalog_store_fix/
+   roster regression to chase in that domain, and changeability is blocked until it's fixed (unowned skins can't
+   commit). Verify hunters unlock BEFORE loadout_fix applies (~20s) vs after, to isolate whether the member writer
+   is implicated.
+2. With ownership working, re-enable MEMBER_WRITER_ENABLED=1 and test: a new pick should commit (member PUT fires)
+   → the client sets member.CosmeticsAssetID → the cache-restore observes+caches it → sticks. If the member writer
+   locks hunters, use OnCosmeticsAssetIDChanged@0xA8 to suppress only the poll wipe instead of a 100ms poller.
+3. Fix the inject-secondaries ntdll race (min process-age / ntdll-loaded check) so catalog_pick_fix stops failing.
+
+## UPDATE 2026-07-10 (part 10) — MEMBER-WRITER was the hunter-lock; CHANGEABILITY works after a CDO-repatch matcher fix
+
+Two decisive findings on a CLEAN launch (render-only build, member writer OFF):
+
+**1. The member writer WAS the hunter-lock (isolation confirmed).** With `MEMBER_WRITER_ENABLED 0`, the user's
+screenshot shows the ALL HUNTERS grid FULLY UNLOCKED + Brall renders as Brall (no cross-hero). So the aggressive
+100ms member writer/clear was what locked the roster (mechanism unclear — likely the constant clear/write churned the
+catalog/party eval). **Do NOT re-enable the raw member writer.** The render works fine without it (CDO + Func-swap +
+Refresh). Ownership/commit also work on a clean launch (catalog_pick_fix injected OK; skin picks COMMIT — member PUT
+fires; /revival/loadout updates).
+
+**2. Live changeability was broken by a CDO-repatch matcher bug — FIXED.** After a live skin change the backend
+committed (RONIN→RoninONI) and `[8]`/`[8b]` fired, but the main-menu center did NOT re-render. Root cause:
+`PatchHeroDefaultBundles` matched a hero CDO by the FIELD VALUE prefix (`<Codename>Default*`), but after the first
+patch the field is already a skin (`RoninBeastSlayer`), so the repatch couldn't FIND the CDO to UPDATE it to the new
+pick. FIX: match by the hero-asset's STABLE OBJECT NAME (`Default__BP_HeroAsset_<Codename>_C` contains the codename,
+via new `StrIContains`) instead of the mutable value. Now the CDO updates on every change → the ReArmRefresh
+re-render shows the new skin.
+
+**RESULT — USER-VERIFIED (2026-07-10):** load render shows the saved skin (`SK_Ronin_ONI` loaded, SetHero RoninONI);
+a live skin change (ONI→BeastSlayer) now UPDATES the **main-menu center** (SetHero follows) AND the **SKIN-tab
+preview** (instant), STICKS + persists, hunters stay unlocked. ONE minor gap remains: the CUSTOMIZATION **OVERVIEW
+pedestal** is a SEPARATE preview actor from the main-menu `Comp_MainMenu_PartySlotSubject` subjects, so it doesn't
+re-render the instant you pick — it updates on ANY interaction (nav to main-menu+back, or hover-cosmetic-then-back)
+which makes it re-read the now-updated CDO. To make it instant: find the customization/OVERVIEW preview subject +
+fire its Refresh from RefreshThread on a skin change (same InvokeBP mechanism, different actor). Deployed shim =
+render-only + CDO-repatch-by-object-name (`loadout_fix.dll`; backup `loadout_fix_renderonly.dll` is the pre-matcher-
+fix version). New: `StrIContains`; PatchHeroDefaultBundles matches by object name.
+
+## UPDATE 2026-07-10 (part 11) — OVERVIEW-pedestal instant-refresh: actor found, but its mesh-reload path resists
+
+Chased the one remaining nicety (the CUSTOMIZATION OVERVIEW pedestal not re-rendering the INSTANT you pick — it
+updates on nav/hover). Added a diagnostic (`DumpSubjectClasses`) that logs every `*Subject/*Preview/*Loadout/*Style`
+class + its refresh-like function names as the user navigates. Identified the customization screen actor:
+**`WBP_UI_Loadout_CustomizationScreen_C`** with **`PreviewCurrentSkin`** (+ `PreviewAsset`,
+`SelectTabFromContentPreviewType`); the SKIN tab is `WBP_UI_Loadout_StyleScreen_C` (`Show Preview`,
+`Refresh Preview Indicators`, `Clear Previewed Cosmetics`); the 2D tiles are `WBP_UI_Asset_Preview_*_C`
+(`RefreshVisuals`); the 3D preview base is `BP_LokiHeroSelectPreview_C` + `BPFL_MainMenu_ContentPreview_C`
+(`Content Preview Set Scene Tag`).
+
+Wired `PreviewCurrentSkin()` to fire on a skin change (loadout_fix `ResolveCustomization`/`RefreshCustomization`;
+ReArmRefresh now fires when EITHER the main-menu subjects OR the customization screen is live; OnPI calls both
+RefreshSubjects + RefreshCustomization). LIVE RESULT: `[custR] PreviewCurrentSkin fired on 2 customization
+screen(s)` (5×) + CDO repatched to the new skin + main-menu center updates — but the **OVERVIEW pedestal still
+shows the OLD skin**. So `PreviewCurrentSkin` runs but does NOT reload the pedestal mesh: it reads a "current skin"
+source that isn't the new pick, whereas the working hover ("hover another customization slot, then back to the
+skin") drives a per-SLOT hover-preview that reads the tile's value + forces a mesh reload. The pedestal appears to
+RESET to the customization-entry skin on tab switch and only mesh-reloads via that per-slot preview path.
+
+**STATE:** everything else is user-verified PERFECT (all render surfaces show the saved skin; a skin change updates
+the main-menu center + SKIN-tab preview instantly + sticks + persists; hunters unlocked; multi-hunter; cross-hero
+fixed). The OVERVIEW pedestal updates on ANY interaction (nav / hover-then-back), just not the instant of the pick.
+**NEXT for a focused session (diminishing returns tonight):** RE the per-slot hover-preview the OVERVIEW uses —
+likely `WBP_UI_LoadoutOverviewButton_C` OnHovered -> `WBP_UI_Loadout_CustomizationScreen_C.PreviewAsset(<assetId>)`
+(pass the skin bundle PAID) OR a "clear-then-preview" sequence (`WBP_UI_Loadout_StyleScreen_C.Clear Previewed
+Cosmetics` then `Show Preview`), OR fire the ContentPreview scene-tag rebuild. `PreviewCurrentSkin` alone is
+insufficient. Diagnostic `DumpSubjectClasses` retired from the RefreshThread loop but kept in source.
+
+## UPDATE 2026-07-10 (part 12) — OVERVIEW-pedestal instant-refresh SOLVED via PreviewAsset + latency/stability tuning
+
+Finished the last nicety (the CUSTOMIZATION OVERVIEW pedestal not re-rendering on a skin change). User-accepted final
+state: single switches snappy (<1s) + correct; the OVERVIEW pedestal updates on its own; rapid clicking is stable
+(catches up to the final pick); everything from parts 6–10 intact (all render surfaces, persist, multi-hunter,
+hunters unlocked).
+
+**THE MECHANISM.** `PreviewCurrentSkin()` fired but read `GetCurrentHeroAssets.CurrentCosmeticAsset` (empty) → no
+mesh reload. The working per-slot hover-preview is **`WBP_UI_Loadout_CustomizationScreen_C.PreviewAsset(FPrimaryAssetId
+Asset @0x0, bool 2D @0x10)`** — param shape RE'd via a one-time `[param]` dump (walk the UFunction ChildProperties:
+FField.Name@+0x20, Offset_Internal@+0x44, Flags@+0x38 [CPF_Parm=0x80], FFieldClass@+0x8→Name@0 = type). loadout_fix
+now calls it with the skin bundle PAID explicitly + `2D=false` via a new **`InvokeBPLocals`** (same Option-B
+ProcessInternal-trampoline BP call, but with a caller-provided Locals buffer holding the input params). `RefreshCustomization`
+converts the current /revival/loadout skin fresh (PAIDFromString, game thread), fast-repatches the CDO, then fires
+PreviewAsset on each live `WBP_UI_Loadout_CustomizationScreen_C` instance.
+
+**LATENCY (was 3-12s → <1s).** Per-phase timing (`[8b] latency=…[resolve/lockwait/install/refreshwait]`) exposed
+two bottlenecks, both eliminated: (1) the object-array **re-scans ran every refresh** (2-4s) → gated on staleness
+(`CustStale`/`SubjStale` — skip the scan while the user stays in customization; also skip the main-menu subject scan
+while in customization); (2) a **redundant full-scan CDO repatch** (`PatchHeroDefaultBundles` via g_gdcbRepatch, 2-4s)
+ran between detect and refresh → removed (the instant `FastRepatchCDO` — a cached per-hero CDO-field write with a
+strict object-name guard — handles it). Also: OnPI fires RefreshCustomization BEFORE RefreshSubjects (so the main-menu
+Refresh reads the just-repatched CDO), poll 300ms, refresh tick 60ms, wait cap 1.5s.
+
+**STABILITY.** Three real regressions surfaced + fixed: (a) firing BP calls into a surface mid-rebuild during
+navigation raced the hunter-pick ("ISSUE SELECTING HUNTER") → **only refresh a LIVE+SETTLED surface** (RefreshCustomization
+only when a customization screen is open; RefreshSubjects only when `!SubjStale()`). (b) PreviewAsset previewing an
+intermediate skin during rapid switching overrode the newest pick ("reverts to previous") → **250ms debounce** (only
+refresh once the selection settles). (c) **rapid re-arming of the ProcessInternal hook crashed the game** (thread-
+suspending install/uninstall churn) → **1200ms cooldown** on ReArmRefresh (rapid clicking just catches up to the final
+pick once/1.2s instead of churning the hook). A nav-skip attempt to kill the last occasional double-refresh caused a
+single-switch revert regression + a 4s nav delay → REVERTED (the occasional double-refresh on OVERVIEW-nav is accepted).
+
+**NEW shim code (loadout_fix.cpp):** `InvokeBPLocals`, `ResolveCustomization`/`RefreshCustomization` (PreviewAsset),
+`CustStale`, `FastRepatchCDO` + `g_cdoCache`, OnPI live-surface gating, RefreshThread debounce+cooldown, `[8b]`
+per-phase timing + `[param]`/`[custR]` diagnostics. Offsets/names: `WBP_UI_Loadout_CustomizationScreen_C.PreviewAsset`
+(Asset FPrimaryAssetId @locals+0x0, 2D bool @locals+0x10), `PreviewCurrentSkin` (parameterless, reads
+GetCurrentHeroAssets — insufficient). Deployed `loadout_fix.dll` = this build. **KNOWN small residuals (accepted):**
+occasional slight delay switching from the previous skin; occasional double-refresh on OVERVIEW-nav; the very first
+skin change per session pays a one-time ~5s class-find scan (then cached). D3D12 menu-load crashes + occasional
+catalog_store_fix `catMgr=0x0` / catalog_pick_fix ntdll-race remain environmental launch flakiness (just relaunch).

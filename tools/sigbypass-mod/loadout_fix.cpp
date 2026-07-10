@@ -51,7 +51,7 @@ constexpr uintptr_t kPiRva=0x13454A0, kObjObjectsRva=0x9E38930, kNamePoolRva=0x9
 // redirects every call with zero .text modification (invisible to a code checksum).
 constexpr uintptr_t kGdcbThunkRva=0x52B3400;
 constexpr int PERCHUNK=65536, ITEMSTRIDE=0x18;
-constexpr uintptr_t CLASS_OFF=0x18, NAME_OFF=0x20, UFUNC_FUNC=0xE0, UFUNC_CHILDPROPS=0x58, USTRUCT_CHILDREN=0x50;
+constexpr uintptr_t CLASS_OFF=0x18, NAME_OFF=0x20, OUTER_OFF=0x28, UFUNC_FUNC=0xE0, UFUNC_CHILDPROPS=0x58, USTRUCT_CHILDREN=0x50, UFUNC_SCRIPT=0x68;
 constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, FF_MRP=0x30, FF_MRPA=0x38, FF_MRPC=0x40, FF_OUTPARMS=0x80, FF_PROPCHAIN=0x88;
 constexpr uintptr_t FLD_NEXT=0x18, FLD_FLAGS=0x38, FLD_OFFSET=0x44, FIELD_NEXT=0x30;
 constexpr uint64_t CPF_OutParm=0x100, CPF_ReturnParm=0x400;
@@ -65,6 +65,31 @@ static volatile PFN_PE g_tramp=nullptr;
 static uintptr_t g_lam=0, g_pm=0, g_party=0;       // LokiAssetManager, PersonalizationManager, PartyManager instances
 static Fn g_pafs{}, g_setBundle{}, g_setSlot{}, g_setChroma{}, g_getBundle{}, g_tryPick{};
 static Fn g_getHeroAsset{};                        // native GetHeroAssetFromPrimaryAssetId(PAID) -> ULokiHeroAsset*
+// GAP 1 re-render: Comp_MainMenu_PartySlotSubject.Refresh() (BP fn) re-runs DetermineCosmeticToShow so the
+// main-menu center hunter re-reads the patched fallback cosmetic. Resolved + invoked via pi8's InvokeBP.
+static uintptr_t g_subjClass=0; static void* g_subjects[8]={0}; static int g_nsubj=0; static void* g_refreshFn=nullptr;
+static uint64_t g_bplocals[24]={0}; static volatile long g_refreshDone=0, g_refreshCalls=0;
+static volatile long g_centerDirty=0;   // set when a skin changed at runtime -> re-arm a live main-menu Refresh
+static volatile long g_dirtyTick=0;     // GetTickCount() when the change was detected (latency instrumentation)
+// CUSTOMIZATION OVERVIEW pedestal re-render: WBP_UI_Loadout_CustomizationScreen_C.PreviewCurrentSkin() (BP fn)
+// re-previews the current skin on the customization pedestal (separate actor from the main-menu subject).
+static uintptr_t g_custClass=0; static void* g_custScreens[8]={0}; static int g_nCust=0; static void* g_previewSkinFn=nullptr;
+static void* g_previewAssetFn=nullptr; static int g_custParamsDumped=0;   // PreviewAsset(<asset>) — the per-slot hover-preview
+static volatile long g_custResolvedTick=0;   // when the customization screens were (re)found = a NAV just happened
+// LEVER #B (2026-07-10 part 7): the render checks member.CosmeticsAssetID FIRST (before the CDO fallback).
+// Keeping it = the current hero's saved/selected skin makes EVERY surface follow the selection instead of
+// fighting it (the CDO patch is a fixed value that reverts new picks). We only BACKFILL when the field is
+// empty (the ~1s /party poll wipes it) — while the client holds a live pick we leave it, so the pick shows.
+static uintptr_t g_member=0, g_memberClass=0, g_memberCosmeticOff=0;   // PartyMemberModel + CosmeticsAssetID offset
+static volatile long g_memberWrites=0, g_memberClears=0; static int g_memberDumped=0;
+constexpr uintptr_t MEMBER_HEROID=0x78;   // member.HeroAssetID FPrimaryAssetId (pi8-confirmed): type@+0x78 name@+0x80
+// Per-hero cache of the last valid HeroCosmeticsBundle PAID observed on the member (= the client's live pick).
+// Seeded from /revival/loadout on load; updated live from the client's picks. Restored after the ~1s poll wipe
+// so the render FOLLOWS picks (changeability) and NEVER shows a cross-hero bundle (Brall previewed while a
+// RocketJumper bundle lingered). Cross-hero mismatches are actively CLEARED.
+struct McCache { char code[64]; uint64_t paid[2]; };
+static McCache g_mc[128]; static int g_mcN=0;   // 128 == LMAX (defined later); per-hero pick cache
+static int McFind(const char* code){ for(int i=0;i<g_mcN;i++) if(_stricmp(g_mc[i].code,code)==0) return i; return -1; }
 static uint8_t* g_pi=nullptr; static uint8_t g_stolen[5]={0}; static uint8_t* g_stub=nullptr;
 static volatile long g_inHook=0,g_done=0,g_hitsGT=0; static DWORD g_gameTid=0;
 static volatile long g_applyDone=0,g_cdoDone=0,g_trypicked=0;   // PI-hook state machine: apply -> (off-thread CDO patch) -> TryPick
@@ -99,6 +124,11 @@ static volatile long g_gdcbInstalled=0, g_gdcbHits=0, g_gdcbDirty=0, g_gdcbConve
 static uintptr_t g_dcbOff=0;            // DefaultCosmeticsBundle field offset in LokiHeroAsset (found once)
 static int g_dcbPatched=0;
 static volatile long g_gdcbRepatch=0;  // request the bg thread to (re)patch hero DefaultCosmeticsBundle
+// Cache of the per-hero DefaultCosmeticsBundle CDO field addresses (from the off-thread scan) so a live
+// skin change can repatch the CDO INSTANTLY (single 16B write, any thread) instead of waiting for the slow
+// ~500k-object rescan — this is what makes the MAIN-MENU center update snappily on a change.
+struct CdoEntry { char code[64]; uintptr_t obj; uintptr_t off; };
+static CdoEntry g_cdoCache[16]; static int g_cdoCacheN=0;
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
@@ -115,8 +145,10 @@ static bool GetFNameStr(uint32_t id,char* out,int cap){
 static uint32_t NameId(uintptr_t obj){ if(!SafeReadable((void*)(obj+NAME_OFF),4))return 0; return *(uint32_t*)(obj+NAME_OFF); }
 static bool NameIs(uintptr_t obj,const char* w){ char b[160]; if(!GetFNameStr(NameId(obj),b,sizeof(b)))return false; return strcmp(b,w)==0; }
 static uintptr_t ClassOf(uintptr_t obj){ if(!SafeReadable((void*)(obj+CLASS_OFF),8))return 0; return *(uintptr_t*)(obj+CLASS_OFF); }
+static uintptr_t OuterOf(uintptr_t obj){ if(!SafeReadable((void*)(obj+OUTER_OFF),8))return 0; return *(uintptr_t*)(obj+OUTER_OFF); }
 static bool ClassNameIs(uintptr_t obj,const char* w){ uintptr_t c=ClassOf(obj); if(!c)return false; char b[128]; if(!GetFNameStr(NameId(c),b,sizeof(b)))return false; return strcmp(b,w)==0; }
 static bool ClassNameHas(uintptr_t obj,const char* sub){ uintptr_t c=ClassOf(obj); if(!c)return false; char b[128]; if(!GetFNameStr(NameId(c),b,sizeof(b)))return false; return strstr(b,sub)!=nullptr; }
+static bool StrIContains(const char* hay,const char* needle){ size_t nl=strlen(needle); if(!nl)return false; for(const char* p=hay;*p;p++){ if(_strnicmp(p,needle,nl)==0) return true; } return false; }
 
 static volatile long g_crashSeq=0;
 static LONG CALLBACK CrashVEH(EXCEPTION_POINTERS* ep){
@@ -256,11 +288,18 @@ static void PatchHeroDefaultBundles(){
             // that merely holds a HeroCosmeticsBundle PAID at this offset (e.g. "OverlaySlot") is never touched.
             uintptr_t cls=ClassOf(obj); if(!cls) continue;
             char cn[128]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)) || strstr(cn,"HeroAsset")==nullptr) continue;
+            // Match by the hero-asset's STABLE object name ("Default__BP_HeroAsset_<Codename>_C") containing the
+            // saved hero codename — NOT the field VALUE (which changes to a skin after the first patch, so the old
+            // "<Codename>Default*" value-prefix match couldn't find an already-patched CDO to UPDATE for a live
+            // skin change). vn (current value) is still logged for the before->after.
+            char oName[96]="?"; GetFNameStr(NameId(obj),oName,96);
             for(int i=0;i<g_gdcbN;i++){ size_t cl=strlen(g_gdcbCode[i]);
-                if(cl>0 && (g_gdcbBundle[i][0]&0xFFFFFFFF) && _strnicmp(vn,g_gdcbCode[i],cl)==0 && (vn[cl]=='D'||vn[cl]=='d')){
+                if(cl>0 && (g_gdcbBundle[i][0]&0xFFFFFFFF) && StrIContains(oName,g_gdcbCode[i])){
                     matched++;
+                    // Cache this hero-asset CDO field addr for instant live repatch (dedup by obj).
+                    { bool have=false; for(int c=0;c<g_cdoCacheN;c++) if(g_cdoCache[c].obj==obj){have=true;break;}
+                      if(!have && g_cdoCacheN<16){ strncpy_s(g_cdoCache[g_cdoCacheN].code,64,g_gdcbCode[i],_TRUNCATE); g_cdoCache[g_cdoCacheN].obj=obj; g_cdoCache[g_cdoCacheN].off=g_dcbOff; g_cdoCacheN++; } }
                     if(*(uint64_t*)fld!=g_gdcbBundle[i][0] || *(uint64_t*)(fld+8)!=g_gdcbBundle[i][1]){
-                        char oName[96]="?"; GetFNameStr(NameId(obj),oName,96);
                         DWORD op=0; if(VirtualProtect((void*)fld,16,PAGE_READWRITE,&op)){ *(uint64_t*)fld=g_gdcbBundle[i][0]; *(uint64_t*)(fld+8)=g_gdcbBundle[i][1]; DWORD d=0; VirtualProtect((void*)fld,16,op,&d);
                             g_dcbPatched++; char nb[96]="?"; GetFNameStr((uint32_t)(g_gdcbBundle[i][1]&0xFFFFFFFF),nb,96); Markerf("[render] patched '%s' DefaultCosmeticsBundle: %s -> %s\r\n",oName,vn,nb); }
                     }
@@ -269,6 +308,22 @@ static void PatchHeroDefaultBundles(){
             }
         } }
     Markerf("[render] data-scan matched %d hero-asset field(s)\r\n",matched);
+}
+// Instantly repatch the cached CDO for one hero (single 16B write, no rescan). Validates the field is still
+// a HeroCosmeticsBundle PAID before writing (guards against an unloaded/reused CDO). Any thread.
+static bool FastRepatchCDO(const char* code, const uint64_t paid[2]){
+    for(int c=0;c<g_cdoCacheN;c++){ if(_stricmp(g_cdoCache[c].code,code)!=0) continue;
+        uintptr_t obj=g_cdoCache[c].obj; if(!SafeReadable((void*)obj,0x30)) return false;
+        // STRICT stale-pointer guard: the cached object must STILL be this hero's CDO (its object name
+        // "Default__BP_HeroAsset_<Codename>_C" contains the codename). Prevents ever writing into a
+        // reused/unloaded object that coincidentally has a HeroCosmeticsBundle field at this offset.
+        char on[96]; if(!GetFNameStr(NameId(obj),on,sizeof(on)) || !StrIContains(on,code)) return false;
+        uintptr_t fld=obj+g_cdoCache[c].off; if(!SafeReadable((void*)fld,16)) return false;
+        uint32_t t=*(uint32_t*)fld; char tn[96]; if(!t||!GetFNameStr(t,tn,sizeof(tn))||strcmp(tn,"HeroCosmeticsBundle")!=0) return false;
+        DWORD op=0; if(!VirtualProtect((void*)fld,16,PAGE_READWRITE,&op)) return false;
+        *(uint64_t*)fld=paid[0]; *(uint64_t*)(fld+8)=paid[1]; DWORD d=0; VirtualProtect((void*)fld,16,op,&d); return true;
+    }
+    return false;
 }
 
 // LEVER #A (2026-07-09 part 6): patch the EXACT hero-asset object the RENDER reads, not just the CDO.
@@ -312,6 +367,146 @@ static void PatchRenderHeroAssets(){
             g_renderAPatched++; char nb[96]="?"; GetFNameStr((uint32_t)(bun[1]&0xFFFFFFFF),nb,96); Markerf("[renderA]   patched -> %s\r\n",nb); }
     }
     Markerf("[renderA] render-object patch: %d field(s) set (obj from GetHeroAssetFromPrimaryAssetId)\r\n",g_renderAPatched);
+}
+
+// ---- GAP 1: main-menu center re-render via Comp_MainMenu_PartySlotSubject.Refresh() (BP fn) ----
+// pi8's proven Option-B primitive: invoke a parameterless BP UFunction on the game thread by building an
+// FFrame from the captured template (Node=UFunc, Object=this, Code=UFunc.Script.Data@+0x68, Locals=buf)
+// and calling the ORIGINAL ProcessInternal via the trampoline (bypasses ProcessEvent's re-entrancy guard).
+static void InvokeBP(void* obj, void* ufunc){
+    if(!obj||!ufunc||!g_tramp) return;
+    memset(g_bplocals,0,sizeof(g_bplocals)); uint64_t res[4]={0};
+    uint8_t frame[0x180]; memcpy(frame, g_template, sizeof(frame));
+    *(void**)(frame+FF_NODE)=ufunc;                                    // Node
+    *(void**)(frame+FF_OBJECT)=obj;                                    // Object (this)
+    *(uint64_t*)(frame+FF_CODE)=*(uint64_t*)((uint8_t*)ufunc+UFUNC_SCRIPT);  // Code = Script.Data (BP bytecode)
+    *(void**)(frame+FF_LOCALS)=(void*)g_bplocals;                      // Locals
+    *(uint64_t*)(frame+FF_MRP)=0; *(uint64_t*)(frame+FF_MRPA)=0;
+    ((PFN_PE)g_tramp)(obj, frame, res);
+}
+// Same as InvokeBP but with a CALLER-PROVIDED Locals buffer (for BP fns that take input params — the params
+// occupy the first bytes of Locals at their FProperty Offset_Internal). `locals` must be sized for ALL the
+// function's locals (params + temporaries) since the BP VM writes temporaries into it during execution.
+static void InvokeBPLocals(void* obj, void* ufunc, void* locals){
+    if(!obj||!ufunc||!g_tramp) return;
+    uint64_t res[4]={0};
+    uint8_t frame[0x180]; memcpy(frame, g_template, sizeof(frame));
+    *(void**)(frame+FF_NODE)=ufunc; *(void**)(frame+FF_OBJECT)=obj;
+    *(uint64_t*)(frame+FF_CODE)=*(uint64_t*)((uint8_t*)ufunc+UFUNC_SCRIPT);
+    *(void**)(frame+FF_LOCALS)=locals;
+    *(uint64_t*)(frame+FF_MRP)=0; *(uint64_t*)(frame+FF_MRPA)=0;
+    ((PFN_PE)g_tramp)(obj, frame, res);
+}
+// Two-pass scan (like pi8): find the Comp_MainMenu_PartySlotSubject_C class, its live instances, and the
+// Refresh UFunction (name "Refresh", Outer==class). Called from the Worker (off game thread — reads only).
+static void ResolveSubjects(){
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return; uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    if(!g_subjClass){ for(int ci=0;ci<numChunks && !g_subjClass;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            if(NameIs(obj,"Comp_MainMenu_PartySlotSubject_C")){ uintptr_t cls=ClassOf(obj); char cn[96]; if(cls&&GetFNameStr(NameId(cls),cn,sizeof(cn))&&strstr(cn,"Class")){ g_subjClass=obj; break; } } } } }
+    if(!g_subjClass)return; g_nsubj=0; g_refreshFn=nullptr;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            if(ClassOf(obj)==g_subjClass && g_nsubj<8 && NameIs(obj,"Comp_MainMenu_PartySubject")) g_subjects[g_nsubj++]=(void*)obj;
+            else if(!g_refreshFn && NameIs(obj,"Refresh") && OuterOf(obj)==g_subjClass) g_refreshFn=(void*)obj; } }
+}
+// Fire Refresh on every live party-slot subject (game thread). Re-runs DetermineCosmeticToShow so the
+// main-menu center hunter re-reads the patched fallback cosmetic -> SetHero -> renders the saved skin.
+static void RefreshSubjects(){
+    if(!g_refreshFn) return; int fired=0;
+    for(int i=0;i<g_nsubj;i++){ uintptr_t su=(uintptr_t)g_subjects[i]; if(su && SafeReadable((void*)su,0x30) && ClassOf(su)==g_subjClass){ InvokeBP((void*)su,g_refreshFn); fired++; } }
+    if(fired) Markerf("[renderR] Refresh fired on %d subject(s) (call #%ld) -> main-menu center re-render\r\n",fired,(long)g_refreshCalls);
+}
+// Our cached subject[0] is no longer a live subject-class object => the menu rebuilt the party slot on nav
+// (e.g. returning from customization) and we must re-Resolve to find the fresh subjects.
+static bool SubjStale(){ if(g_nsubj==0)return true; uintptr_t s0=(uintptr_t)g_subjects[0]; return !SafeReadable((void*)s0,0x30)||ClassOf(s0)!=g_subjClass; }
+// Same staleness check for the cached customization screens — lets us SKIP the (slow, 2-4s) full object-array
+// re-scan while the user stays in customization clicking skins (the screens don't change), so a refresh is fast.
+static bool CustStale(){ if(g_nCust==0||!g_custClass)return true; uintptr_t s0=(uintptr_t)g_custScreens[0]; return !SafeReadable((void*)s0,0x30)||ClassOf(s0)!=g_custClass; }
+
+static void ResolveFn(uintptr_t cls,const char* fname,Fn* F);   // fwd
+// Resolve the live WBP_UI_Loadout_CustomizationScreen_C instance(s) + PreviewCurrentSkin fn. These exist only
+// while the CUSTOMIZATION screen is open, so re-resolve each time (cheap-ish). Off the game thread (reads).
+static void ResolveCustomization(){
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return; uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    if(!g_custClass){ for(int ci=0;ci<numChunks && !g_custClass;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            if(NameIs(obj,"WBP_UI_Loadout_CustomizationScreen_C")){ uintptr_t cls=ClassOf(obj); char cn[96]; if(cls&&GetFNameStr(NameId(cls),cn,sizeof(cn))&&strstr(cn,"Class")){ g_custClass=obj; break; } } } } }
+    if(!g_custClass) return; g_nCust=0;
+    // Resolve the functions by walking the class's own function list (reliable; the object-array name-scan
+    // missed PreviewAsset). ResolveFn sets F.fn = the UFunction + F.child = its ChildProperties (params).
+    Fn skinF{}, assetF{}; ResolveFn(g_custClass,"PreviewCurrentSkin",&skinF); ResolveFn(g_custClass,"PreviewAsset",&assetF);
+    g_previewSkinFn=skinF.fn; g_previewAssetFn=assetF.fn;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            if(ClassOf(obj)==g_custClass && g_nCust<8){ char nm[96]; if(GetFNameStr(NameId(obj),nm,sizeof(nm))&&strncmp(nm,"Default__",9)!=0) g_custScreens[g_nCust++]=(void*)obj; } } }
+    if(g_nCust>0) g_custResolvedTick=GetTickCount();   // freshly (re)found = a NAV just happened -> the game's own nav-refresh will fire, so RefreshCustomization skips its PreviewAsset briefly (avoids the double-refresh)
+    // One-time: dump the parameter shapes so the call can be built precisely (always log a summary line).
+    if(!g_custParamsDumped){ g_custParamsDumped=1;
+        Markerf("[param] resolved skinFn=%p assetFn=%p childSkin=0x%llX childAsset=0x%llX\r\n",g_previewSkinFn,g_previewAssetFn,(unsigned long long)skinF.child,(unsigned long long)assetF.child);
+        uintptr_t children[2]={assetF.child,skinF.child}; const char* lbl[2]={"PreviewAsset","PreviewCurrentSkin"};
+        for(int k=0;k<2;k++){ uintptr_t f=children[k];
+            int pi=0; while(LooksLikePtr(f)&&pi<16){ char pn[96]="?"; GetFNameStr(NameId(f),pn,96);
+                int32_t off=SafeReadable((void*)(f+FLD_OFFSET),4)?*(int32_t*)(f+FLD_OFFSET):-1; uint64_t flags=SafeReadable((void*)(f+FLD_FLAGS),8)?*(uint64_t*)(f+FLD_FLAGS):0;
+                char tc[96]="?"; uintptr_t fcls=0; if(SafeReadable((void*)(f+0x8),8)) fcls=*(uintptr_t*)(f+0x8); if(fcls&&SafeReadable((void*)fcls,4)){ GetFNameStr(*(uint32_t*)fcls,tc,96); }
+                Markerf("[param] %s: '%s' off=0x%X flags=0x%llX type=%s\r\n",lbl[k],pn,off,(unsigned long long)flags,tc);
+                uintptr_t nx=0; if(SafeReadable((void*)(f+FLD_NEXT),8))nx=*(uintptr_t*)(f+FLD_NEXT); f=nx; pi++; } }
+    }
+}
+// Re-preview the current hero's skin on the CUSTOMIZATION/OVERVIEW pedestal by calling
+// PreviewAsset(FPrimaryAssetId Asset @0x0, bool 2D @0x10) — the per-slot preview the hover uses, passing the
+// skin bundle EXPLICITLY (PreviewCurrentSkin read GetCurrentHeroAssets.CurrentCosmeticAsset, which is empty).
+// Game thread only (InvokeBPLocals + PAIDFromString). No-op if the customization screen isn't open.
+static void RefreshCustomization(){
+    if(g_nCust==0 || !g_previewAssetFn || !g_selectedHero[0]) return;
+    char sh[160]; WideCharToMultiByte(CP_UTF8,0,g_selectedHero,-1,sh,160,nullptr,nullptr); const char* code=strchr(sh,':'); code=code?code+1:sh;
+    int idx=-1; for(int i=0;i<g_gdcbN;i++){ if(_stricmp(g_gdcbCode[i],code)==0){ idx=i; break; } }
+    if(idx<0) return;
+    // Convert the CURRENT desired skin string fresh (game thread) so it tracks the latest pick even if the
+    // GDCB re-convert chain hasn't run; fall back to the cached PAID.
+    uint64_t skinPAID[2]={0,0};
+    if(g_gdcbWantV[idx][0] && PAIDFromString(g_gdcbWantV[idx],skinPAID) && (skinPAID[0]&0xFFFFFFFF)){}
+    else { skinPAID[0]=g_gdcbBundle[idx][0]; skinPAID[1]=g_gdcbBundle[idx][1]; }
+    if(!(skinPAID[0]&0xFFFFFFFF)) return;
+    // Keep the Func-swap (checkmark) cache + the render CDO in sync INSTANTLY so the main-menu center Refresh
+    // (which runs right after, reading the CDO) shows the new skin without waiting for the slow GDCB rescan.
+    g_gdcbBundle[idx][0]=skinPAID[0]; g_gdcbBundle[idx][1]=skinPAID[1]; wcscpy_s(g_gdcbHaveV[idx],96,g_gdcbWantV[idx]);
+    FastRepatchCDO(code, skinPAID);
+    int fired=0;
+    for(int i=0;i<g_nCust;i++){ uintptr_t s=(uintptr_t)g_custScreens[i]; if(!(s && SafeReadable((void*)s,0x30) && ClassOf(s)==g_custClass)) continue;
+        uint8_t locals[0x100]; memset(locals,0,sizeof(locals));
+        *(uint64_t*)(locals+0x0)=skinPAID[0]; *(uint64_t*)(locals+0x8)=skinPAID[1]; locals[0x10]=0;   // Asset=skin PAID, 2D=false
+        InvokeBPLocals((void*)s,g_previewAssetFn,locals); fired++;
+    }
+    if(fired){ char nb[96]="?"; GetFNameStr((uint32_t)(skinPAID[1]&0xFFFFFFFF),nb,96); Markerf("[custR] PreviewAsset(%s) fired on %d customization screen(s)\r\n",nb,fired); }
+}
+
+// DIAGNOSTIC: log each distinct "*Subject*/*Preview*/*Pedestal*"-class actor (once) + whether its class has a
+// Refresh fn, so the CUSTOMIZATION/OVERVIEW preview actor (separate from the main-menu subject) can be
+// identified while the user navigates. Deduped by class -> new classes are logged as they load.
+static void ResolveFn(uintptr_t cls,const char* fname,Fn* F);   // fwd (defined in the Resolve section)
+static uintptr_t g_dumpSeen[256]; static int g_dumpSeenN=0;
+static void DumpSubjectClasses(){
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return; uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls) continue;
+            char cn[128]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn))) continue;
+            if(!(strstr(cn,"Subject")||strstr(cn,"Preview")||strstr(cn,"Pedestal")||strstr(cn,"Loadout")||strstr(cn,"Style")||strstr(cn,"Customiz")||strstr(cn,"Pod")||strstr(cn,"Diorama"))) continue;
+            if(strstr(cn,"Niagara")||strstr(cn,"UVLayout")||strstr(cn,"PolyEdit")||strstr(cn,"MeshOp")||strstr(cn,"Groom")||strstr(cn,"MovieGraph")) continue;   // editor noise
+            bool dup=false; for(int i=0;i<g_dumpSeenN;i++) if(g_dumpSeen[i]==cls){dup=true;break;} if(dup) continue;
+            if(g_dumpSeenN<256) g_dumpSeen[g_dumpSeenN++]=cls;
+            // Walk the class's own functions, collect ones whose name hints at a re-render (refresh/update/
+            // sethero/preview/cosmetic) — the customization pedestal's update method to call on a skin change.
+            char fns[360]=""; int fc=0;
+            uintptr_t f=0; if(SafeReadable((void*)(cls+USTRUCT_CHILDREN),8)) f=*(uintptr_t*)(cls+USTRUCT_CHILDREN);
+            for(int gi=0; LooksLikePtr(f)&&gi<400; gi++){ char fn[96]; if(GetFNameStr(NameId(f),fn,sizeof(fn))){ if((strstr(fn,"efresh")||strstr(fn,"pdate")||strstr(fn,"etHero")||strstr(fn,"review")||strstr(fn,"osmetic")||strstr(fn,"ebuild")) && fc<7){ strncat(fns,fn,70); strncat(fns," ",2); fc++; } } uintptr_t nx=0; if(SafeReadable((void*)(f+FIELD_NEXT),8))nx=*(uintptr_t*)(f+FIELD_NEXT); f=nx; }
+            char on[96]="?"; GetFNameStr(NameId(obj),on,96);
+            Markerf("[subj] '%s' fns=[%s]\r\n",cn,fns);
+        } }
 }
 
 // Re-pick the current hero with its saved skin via the native TryPickMyHeroAndCosmetics. This is the
@@ -400,6 +595,7 @@ static void ApplyLoadout(){
 // signal the Worker to run the off-thread CDO patch. Later fires: once the CDO patch is done, call
 // TryPick to fire the re-render (member now valid -> main-menu/pedestal show the saved skin; the patched
 // CDO holds it after the ~1s poll wipe). Ordering the CDO patch BEFORE TryPick avoids the poll-wipe race.
+static DWORD g_lastRefreshTick=0;
 extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     if(g_done || g_inHook) return;
     if(GetCurrentThreadId()!=g_gameTid) return;
@@ -407,7 +603,24 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     InterlockedIncrement(&g_hitsGT); g_inHook=1;
     memcpy(g_template, frame, sizeof(g_template));
     if(!g_applyDone){ ApplyLoadout(); g_applyDone=1; }
-    else if(g_cdoDone && !g_trypicked){ g_trypicked=1; TryPickSavedSkin(); g_done=1; }
+    else if(g_cdoDone){
+        // GAP 1: after the fallback CDO is patched, re-render the main-menu center by firing
+        // Comp_MainMenu_PartySlotSubject.Refresh() a few times over ~1s (tick-gated so we don't
+        // spam every PI call). Refresh re-runs DetermineCosmeticToShow -> reads the patched cosmetic
+        // -> SetHero -> the 3D model swaps to the saved skin. (TryPick was ineffective + risked setting
+        // the member cosmetic to a default, so it's replaced by the proven pi8 Refresh mechanism.)
+        DWORD now=GetTickCount();
+        if(now-g_lastRefreshTick>=60){ g_lastRefreshTick=now;
+            // Only refresh a surface that is LIVE + SETTLED — never fire BP calls into a surface that is
+            // mid-rebuild during navigation (that's what raced the hunter-pick / stalled). RefreshCustomization
+            // (CDO repatch + PreviewAsset) only when a customization screen is open + only ONCE; RefreshSubjects
+            // (main-menu) only when the main-menu subjects are live.
+            if(g_refreshCalls==0 && g_nCust>0) RefreshCustomization();
+            if(!SubjStale()) RefreshSubjects();
+            InterlockedIncrement(&g_refreshCalls);
+        }
+        if(g_refreshCalls>=2){ g_trypicked=1; g_done=1; }
+    }
     g_inHook=0;
 }
 
@@ -525,6 +738,8 @@ static void Resolve(){
             // member's hero+cosmetic — the source the customization/preview cosmetic display reads
             // (sessions 48/50). Class name is "*PartyManager"; require TryPick to resolve to confirm.
             if(!g_party && ClassNameHas(obj,"PartyManager")){ char nm[96]; if(GetFNameStr(NameId(obj),nm,sizeof(nm))&&strncmp(nm,"Default__",9)!=0){ Fn t{}; ResolveFnChain(ClassOf(obj),"TryPickMyHeroAndCosmetics",&t); if(t.thunk){ g_party=obj; g_tryPick=t; } } }
+            // PartyMemberModel (GetSelf) — the render's PRIMARY cosmetic source (member.CosmeticsAssetID).
+            if(!g_member && ClassNameIs(obj,"PartyMemberModel")){ char nm[96]; if(GetFNameStr(NameId(obj),nm,sizeof(nm))&&strncmp(nm,"Default__",9)!=0){ g_member=obj; g_memberClass=ClassOf(obj); } }
             // The GetDefaultCosmeticsBundleIdForHeroId UFunction: the unique object whose Func @+0xE0
             // equals the known exec thunk (base+kGdcbThunkRva). Matching by Func ptr avoids a name walk.
             if(!g_gdcbFunc && SafeReadable((void*)(obj+UFUNC_FUNC),8) && *(uintptr_t*)(obj+UFUNC_FUNC)==g_modBase+kGdcbThunkRva && NameIs(obj,"GetDefaultCosmeticsBundleIdForHeroId")) g_gdcbFunc=obj;
@@ -538,6 +753,19 @@ static void Resolve(){
     uintptr_t lamCls=ClassOf(lam), pmCls=ClassOf(pm);
     if(lamCls){ ResolveFnChain(lamCls,"PrimaryAssetIDFromString",&g_pafs); if(!g_getHeroAsset.thunk) ResolveFnChain(lamCls,"GetHeroAssetFromPrimaryAssetId",&g_getHeroAsset); }
     if(pmCls){ ResolveFnChain(pmCls,"SetHeroCosmeticsBundlePreference",&g_setBundle); ResolveFnChain(pmCls,"SetSlotCosmetic",&g_setSlot); ResolveFnChain(pmCls,"SetLuxeSkinChromaPreference",&g_setChroma); ResolveFnChain(pmCls,"GetHeroCosmeticsBundlePreference",&g_getBundle); }
+    // Resolve member.CosmeticsAssetID offset from reflection (usmap-independent). Dump the member class
+    // property layout ONCE so the exact field name/offset is verifiable in the marker.
+    if(g_memberClass && !g_memberCosmeticOff){
+        const char* cands[]={"CosmeticsAssetID","CosmeticsAssetId","CosmeticsBundleId","CosmeticsBundleID","CosmeticId"};
+        for(int i=0;i<5;i++){ uintptr_t o=FindPropOffset(g_memberClass,cands[i]); if(o){ g_memberCosmeticOff=o; break; } }
+        if(!g_memberDumped){ g_memberDumped=1;
+            Markerf("[member] class=0x%llX cosmeticOff=0x%llX heroOff=0x%llX — props:\r\n",(unsigned long long)g_memberClass,(unsigned long long)g_memberCosmeticOff,(unsigned long long)MEMBER_HEROID);
+            uintptr_t cls=g_memberClass; for(int d=0; d<6 && cls; d++){ uintptr_t f=0; if(SafeReadable((void*)(cls+UFUNC_CHILDPROPS),8)) f=*(uintptr_t*)(cls+UFUNC_CHILDPROPS); int i=0;
+                while(LooksLikePtr(f) && i<200){ char pn[96]="?"; GetFNameStr(NameId(f),pn,96); int32_t off=SafeReadable((void*)(f+FLD_OFFSET),4)?*(int32_t*)(f+FLD_OFFSET):-1; Markerf("[member]   +0x%X %s\r\n",off,pn);
+                    uintptr_t nx=0; if(SafeReadable((void*)(f+FLD_NEXT),8)) nx=*(uintptr_t*)(f+FLD_NEXT); f=nx; i++; }
+                uintptr_t sup=0; if(SafeReadable((void*)(cls+0x40),8)) sup=*(uintptr_t*)(cls+0x40); cls=sup; }
+        }
+    }
 }
 
 // ---- /revival/loadout fetch + parse (off the game thread) ----
@@ -598,10 +826,87 @@ static void RefreshGdcb(){
         if(slot<0 && g_gdcbN<LMAX){ slot=g_gdcbN++; strncpy_s(g_gdcbCode[slot],128,code,_TRUNCATE); g_gdcbHaveV[slot][0]=0; g_gdcbBundle[slot][0]=g_gdcbBundle[slot][1]=0; }
         if(slot>=0 && wcscmp(g_gdcbWantV[slot],pairs[i].v)!=0){ wcsncpy_s(g_gdcbWantV[slot],96,pairs[i].v,_TRUNCATE); changed=true; }
     }
-    if(changed) g_gdcbDirty=1;
+    if(changed){ g_gdcbDirty=1; g_centerDirty=1; g_dirtyTick=GetTickCount(); }   // g_gdcbDirty -> MyGdcbThunk re-convert (CDO); g_centerDirty -> ReArmRefresh (OVERVIEW PreviewAsset converts fresh, not gated on the GDCB call)
 }
-static DWORD WINAPI RefreshThread(LPVOID){ for(;;){ Sleep(1000); RefreshGdcb();
-    if(InterlockedCompareExchange(&g_gdcbRepatch,0,1)==1){ PatchHeroDefaultBundles(); Markerf("[8] skin changed -> re-patched hero DefaultCosmeticsBundle (total %d) (navigate/re-pick to refresh the 3D model).\r\n",g_dcbPatched); }
+// Live changeability of the MAIN-MENU CENTER on an in-place skin change: re-arm the one-shot PI hook so
+// OnPI fires RefreshSubjects again (re-runs DetermineCosmeticToShow -> reads the freshly re-patched CDO ->
+// SetHero). Only fires when the main-menu subjects are live (i.e. the user is back on the main menu — the
+// customization nav rebuilds the slot). Under the shared PI-hook mutex so it never clobbers pi8. Retries
+// via g_centerDirty until the subjects are live. (pi8 already covers hero-switch + leaving-HUNTERS.)
+static void ReArmRefresh(){
+    DWORD t0=GetTickCount();
+    // Re-scan a surface ONLY when its cache is stale (i.e. on navigation) — NOT on every skin click. This
+    // was the 2-4s cost. Also skip the main-menu subject scan while in customization (subjects don't exist
+    // there, so SubjStale would force a fruitless full scan every time).
+    if(CustStale()) ResolveCustomization();
+    if(g_nCust==0 && SubjStale()) ResolveSubjects();
+    DWORD tResolve=GetTickCount();
+    bool mmLive   = g_refreshFn && g_nsubj>0 && !SubjStale();
+    bool custLive = g_previewSkinFn && g_nCust>0;
+    if(!mmLive && !custLive) return;   // neither surface live yet -> keep g_centerDirty set, retry next tick
+    g_refreshCalls=0; g_lastRefreshTick=0; g_done=0;        // g_applyDone/g_cdoDone stay 1 -> OnPI goes straight to Refresh
+    HookLock();
+    DWORD tLock=GetTickCount();
+    bool ok=InstallHook();
+    DWORD tInstall=GetTickCount();
+    if(ok){ DWORD t=GetTickCount(); while(!g_done && GetTickCount()-t<1500) Sleep(10); UninstallHook(); }
+    DWORD tDone=GetTickCount();
+    HookUnlock();
+    Markerf("[8b] latency=%lums [resolve=%lu lockwait=%lu install=%lu refreshwait=%lu] mm=%d cust=%d calls=%ld\r\n",
+            (unsigned long)(g_dirtyTick?tDone-g_dirtyTick:0),(unsigned long)(tResolve-t0),(unsigned long)(tLock-tResolve),(unsigned long)(tInstall-tLock),(unsigned long)(tDone-tInstall),mmLive,custLive,(long)g_refreshCalls);
+    g_centerDirty=0;
+}
+// LEVER #B (cache-and-restore): the render reads member.CosmeticsAssetID FIRST (before the CDO fallback).
+// A HeroCosmeticsBundle PAID encodes BOTH hero + skin, so it MUST match the member's current hero or the
+// render shows the wrong hunter (the Brall-shows-RocketJumper bug). So we:
+//   * observe the member cosmetic; if it's a valid bundle whose name matches the current hero, CACHE those
+//     exact 16 bytes (the client's live pick) — no conversion, no lag;
+//   * if it's a bundle that does NOT match the current hero (stale cross-hero), CLEAR it (empty -> the game
+//     renders that hero's default) so a previewed hunter never wears another's skin;
+//   * if it's empty (the ~1s poll wiped it), RESTORE this hero's cached pick so the render follows the
+//     selection instead of reverting.
+// Seeded from /revival/loadout on load (SeedMemberCache) so the saved skin shows on load. Any-thread 16B
+// write (pi8 writes the adjacent HeroAssetID from its worker — established safe). 100ms to beat the poll.
+static DWORD WINAPI MemberWriterThread(LPVOID){
+    for(;;){ Sleep(100);
+        if(!g_member || !g_memberCosmeticOff) continue;
+        if(!SafeReadable((void*)g_member,0x30)) continue;
+        uintptr_t hf=g_member+MEMBER_HEROID; if(!SafeReadable((void*)hf,16)) continue;
+        uint32_t hname=*(uint32_t*)(hf+8); if(!hname) continue;
+        char hcode[96]; if(!GetFNameStr(hname,hcode,sizeof(hcode))) continue;
+        size_t hl=strlen(hcode); if(hl==0) continue;
+        uintptr_t cf=g_member+g_memberCosmeticOff; if(!SafeReadable((void*)cf,16)) continue;
+        uint32_t ctype=*(uint32_t*)cf, cname=*(uint32_t*)(cf+8); char tn[96]="", bn[96]="";
+        bool valid = ctype && GetFNameStr(ctype,tn,sizeof(tn)) && strcmp(tn,"HeroCosmeticsBundle")==0 && cname && GetFNameStr(cname,bn,sizeof(bn));
+        if(valid){
+            bool heroMatch = _strnicmp(bn,hcode,hl)==0;   // bundle "RocketJumperKnockOut" starts with hero "RocketJumper"
+            if(heroMatch){ int i=McFind(hcode); if(i<0 && g_mcN<LMAX){ i=g_mcN++; strncpy_s(g_mc[i].code,64,hcode,_TRUNCATE); } if(i>=0){ g_mc[i].paid[0]=*(uint64_t*)cf; g_mc[i].paid[1]=*(uint64_t*)(cf+8); } }
+            else { *(uint64_t*)cf=0; *(uint64_t*)(cf+8)=0; InterlockedIncrement(&g_memberClears); }   // stale cross-hero -> clear
+        } else {
+            int i=McFind(hcode);
+            if(i>=0 && (g_mc[i].paid[0]&0xFFFFFFFF)){ *(uint64_t*)cf=g_mc[i].paid[0]; *(uint64_t*)(cf+8)=g_mc[i].paid[1]; InterlockedIncrement(&g_memberWrites); }
+            // else: no cached pick for this hero -> leave empty -> the game renders the hero's default.
+        }
+    }
+    return 0;
+}
+// Seed the per-hero cache from the saved bundles converted during ApplyLoadout (g_gdcbCode + g_gdcbBundle),
+// so the saved skin shows on load before the user picks anything.
+static void SeedMemberCache(){
+    for(int i=0;i<g_gdcbN && g_mcN<LMAX;i++){ if(!(g_gdcbBundle[i][0]&0xFFFFFFFF)) continue; if(McFind(g_gdcbCode[i])>=0) continue;
+        int j=g_mcN++; strncpy_s(g_mc[j].code,64,g_gdcbCode[i],_TRUNCATE); g_mc[j].paid[0]=g_gdcbBundle[i][0]; g_mc[j].paid[1]=g_gdcbBundle[i][1]; }
+    Markerf("[9b] member cache seeded with %d hero(es) from saved loadout.\r\n",g_mcN);
+}
+static DWORD WINAPI RefreshThread(LPVOID){ int tick=0; for(;;){ Sleep(300); RefreshGdcb();
+    // CDO repatch is now INSTANT via FastRepatchCDO (in RefreshCustomization, game thread) — the old per-change
+    // full ~500k rescan here was the 2-4s bottleneck, so it's removed (the initial load scan populated the cache).
+    if(InterlockedCompareExchange(&g_gdcbRepatch,0,1)==1) g_centerDirty=1;
+    // DEBOUNCE (settle ~250ms) + COOLDOWN (>=1200ms since the last re-arm). Re-arming the ProcessInternal
+    // hook (thread-suspending install/uninstall) too often crashes the game, so we throttle it: rapid clicking
+    // just makes the render catch up to the FINAL pick at most once/1.2s instead of churning the hook per click.
+    static DWORD s_lastRearm=0;
+    if(g_centerDirty && (GetTickCount()-(DWORD)g_dirtyTick)>=250 && (GetTickCount()-s_lastRearm)>=1200){ s_lastRearm=GetTickCount(); ReArmRefresh(); }
+    (void)tick;
 } return 0; }
 
 static DWORD WINAPI Worker(LPVOID){
@@ -629,6 +934,10 @@ static DWORD WINAPI Worker(LPVOID){
     HookUnlock();
     if(!okProlog){Marker("[2] FAIL PI prologue (another PI-hooker installed?)\r\n");return 4;}
     if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 5;}
+    // Resolve the main-menu party-slot subjects + Refresh UFunction (GAP 1 re-render). Retry briefly —
+    // the subjects are created at menu load, which may be after core resolve. Off the game thread (reads only).
+    for(int r=0; r<20 && !((g_nsubj>0 && g_refreshFn) && (g_member && g_memberCosmeticOff)); r++){ ResolveSubjects(); Resolve(); if((g_nsubj>0 && g_refreshFn) && (g_member && g_memberCosmeticOff)) break; Sleep(250); }
+    Markerf("[2b] subjects=%d refreshFn=%p subjClass=0x%llX member=0x%llX cosmeticOff=0x%llX\r\n",g_nsubj,g_refreshFn,(unsigned long long)g_subjClass,(unsigned long long)g_member,(unsigned long long)g_memberCosmeticOff);
     FetchLoadout();
     Markerf("[3] fetched loadout: ok=%d bundles=%d slots=%d chromas=%d (%s)\r\n",g_fetchOk,g_nBundles,g_nSlots,g_nChromas,kLoadoutUrl);
     for(int i=0;i<g_nBundles;i++) Markerf("[3]   bundle: %ls -> %ls\r\n",g_bundles[i].k,g_bundles[i].v);
@@ -644,15 +953,15 @@ static DWORD WINAPI Worker(LPVOID){
     if(!InstallHook()){HookUnlock();Marker("[3] FAIL InstallHook\r\n");return 6;}
     DWORD t0=GetTickCount(); while(!g_applyDone && GetTickCount()-t0<40000) Sleep(20);
     if(g_applyDone){
-        PatchHeroDefaultBundles();   // off-thread CDO patch (render fallback) BEFORE TryPick
+        PatchHeroDefaultBundles();   // off-thread CDO patch (render fallback) BEFORE the Refresh re-render
         Markerf("[7] render patch: %d hero DefaultCosmeticsBundle field(s) set.\r\n",g_dcbPatched);
-        g_cdoDone=1;                 // lets the next OnPI fire the TryPick re-render trigger
+        g_cdoDone=1;                 // lets subsequent OnPI fires run RefreshSubjects (main-menu re-render)
         t0=GetTickCount(); while(!g_done && GetTickCount()-t0<15000) Sleep(20);
     }
     UninstallHook();
     HookUnlock();
-    if(g_done) Markerf("[4] *** applied %d equip(s) + render re-pick fired. Skins render on the hunter. ***\r\n",g_applied);
-    else       Markerf("[4] partial (applyDone=%ld cdoDone=%ld trypicked=%ld hitsGT=%ld).\r\n",(long)g_applyDone,(long)g_cdoDone,(long)g_trypicked,(long)g_hitsGT);
+    if(g_done) Markerf("[4] *** applied %d equip(s) + %ld main-menu Refresh call(s) fired. Skins render on the hunter. ***\r\n",g_applied,(long)g_refreshCalls);
+    else       Markerf("[4] partial (applyDone=%ld cdoDone=%ld refreshCalls=%ld hitsGT=%ld).\r\n",(long)g_applyDone,(long)g_cdoDone,(long)g_refreshCalls,(long)g_hitsGT);
     // ---- Persistent SKIN fix: swap the GetDefaultCosmeticsBundleIdForHeroId UFunction.Func ----
     // Populated in ApplyLoadout (game thread). This is a HEAP pointer write (no .text patch), so it
     // dodges the ~3-5min .text integrity check that crashed the earlier inline detour. Left installed:
@@ -665,7 +974,19 @@ static DWORD WINAPI Worker(LPVOID){
         if(gi){ Markerf("[5] *** GDCB skin-redirect INSTALLED (Func-swap, heap) for %d hero(es): UFunc=0x%llX thunk 0x%llX->MyThunk. ***\r\n",g_gdcbN,(unsigned long long)g_gdcbFunc,(unsigned long long)(uintptr_t)g_origExecThunk);
                 for(int i=0;i<g_gdcbN;i++) Markerf("[5]   redirect: %s -> nameFName=0x%llX\r\n",g_gdcbCode[i],(unsigned long long)g_gdcbBundle[i][1]);
                 // Start the ~1s poller so SKIN picks are CHANGEABLE (not locked to the install-time skin).
-                HANDLE rt=CreateThread(nullptr,0,RefreshThread,nullptr,0,nullptr); if(rt){ CloseHandle(rt); Marker("[6] redirect refresh poller started (1s) — SKIN picks now changeable.\r\n"); } }
+                HANDLE rt=CreateThread(nullptr,0,RefreshThread,nullptr,0,nullptr); if(rt){ CloseHandle(rt); Marker("[6] redirect refresh poller started (1s) — SKIN picks now changeable.\r\n"); }
+                // LEVER #B (cache-and-restore): keep member.CosmeticsAssetID = this hero's cached pick so the
+                // render follows picks (no CDO fight) and never shows a cross-hero bundle.
+                // *** DISABLED BY DEFAULT (2026-07-10 part 9) *** — deployed with the aggressive 100ms member
+                // writer/clear, the user saw hunters show LOCKED + skin picks not committing. Root cause is the
+                // client-side CanUse/ownership catalog activation being flaky this session (backend serves all
+                // 977+25 owned; catalog_pick_fix hit an ntdll injection race on rapid relaunch), NOT proven to be
+                // this writer — but until it can be isolated on a STABLE launch, default OFF so the shim is the
+                // proven render-only build (Refresh + CDO + Func-swap = saved skin renders on all surfaces,
+                // multi-hunter, persist, hunters NOT locked). Set MEMBER_WRITER_ENABLED=1 to re-test lever #B.
+                #define MEMBER_WRITER_ENABLED 0
+                Markerf("[9] member cosmetic write: g_member=0x%llX cosmeticOff=0x%llX %s\r\n",(unsigned long long)g_member,(unsigned long long)g_memberCosmeticOff,(MEMBER_WRITER_ENABLED && g_member&&g_memberCosmeticOff)?"-> writer ON":"-> DISABLED (default off; see part 9)");
+                if(MEMBER_WRITER_ENABLED && g_member && g_memberCosmeticOff){ SeedMemberCache(); HANDLE mw=CreateThread(nullptr,0,MemberWriterThread,nullptr,0,nullptr); if(mw) CloseHandle(mw); } }
         else    Markerf("[5] GDCB skin-redirect FAILED (gdcbN=%d func=0x%llX).\r\n",g_gdcbN,(unsigned long long)g_gdcbFunc);
     } else {
         Marker("[5] no saved hero skins -> GDCB redirect skipped.\r\n");
