@@ -1,5 +1,5 @@
 [0] loadout_fix (replay saved equips via native setters) started
-[member] class=0x1872C689E80 cosmeticOff=0x98 heroOff=0x78 — props:
+[member] class=0x1FD617B9E80 cosmeticOff=0x98 heroOff=0x78 — props:
 [member]   +0x30 ID
 [member]   +0x40 DisplayName
 [member]   +0x50 Tag
@@ -34,16 +34,16 @@
 [member]   +0x318 OnEmoteSent
 [member]   +0x328 bIsRankedEligible
 [member]   +0x330 OnIsRankedEligibleChanged
-[2] lam=1875DC0E8C0 pm=187F586D600 pafs=7FF6BA79B760 setBundle=7FF6BA9B6130 setSlot=7FF6BA9B6600 setChroma=7FF6BA9B64A0 party=0x187FE2AC880 tryPick=7FF6BA9A5380 getHeroAsset=7FF6BA79A550 gameTid=35488
-[2b] subjects=4 refreshFn=0000018874C18200 subjClass=0x18801EA07F0 member=0x187EE36D600 cosmeticOff=0x98
+[2] lam=1FD9FE82320 pm=1FE0D0BEB00 pafs=7FF6BA79B760 setBundle=7FF6BA9B6130 setSlot=7FF6BA9B6600 setChroma=7FF6BA9B64A0 party=0x1FE0F0A9B80 tryPick=7FF6BA9A5380 getHeroAsset=7FF6BA79A550 gameTid=13180
+[2b] subjects=4 refreshFn=000001FD26DB5400 subjClass=0x1FD1D8AC8E0 member=0x1FD5624E780 cosmeticOff=0x98
 [3] fetched loadout: ok=1 bundles=5 slots=0 chromas=0 (http://127.0.0.1:8080/revival/loadout)
 [3]   bundle: Hero:Alchemist -> HeroCosmeticsBundle:AlchemistDefault_MAS
-[3]   bundle: Hero:RONIN -> HeroCosmeticsBundle:RoninDefault_DRA
+[3]   bundle: Hero:RONIN -> HeroCosmeticsBundle:RoninONI_DAR
 [3]   bundle: Hero:Succubus -> HeroCosmeticsBundle:SuccubusSISTE
 [3]   bundle: Hero:reshealer -> HeroCosmeticsBundle:ResHealerDefault
 [3]   bundle: Hero:rocketjumper -> HeroCosmeticsBundle:RocketJumperSpeedDemon
 [apply] bundle Alchemist -> AlchemistDefault_MAS
-[apply] bundle RONIN -> RoninDefault_DRA
+[apply] bundle RONIN -> RoninONI_DAR
 [apply] bundle Succubus -> SuccubusSISTE
 [apply] bundle reshealer -> ResHealerDefault
 [apply] bundle rocketjumper -> RocketJumperSpeedDemon
@@ -55,158 +55,20 @@
 [renderA] GetHeroAsset(Hero:rocketjumper) -> NULL/bad 0x0
 [renderA] render-object patch: 0 field(s) set (obj from GetHeroAssetFromPrimaryAssetId)
 [render] LokiHeroAsset class FOUND (candidates=1) dcbOff=0x68
-[render] patched 'Default__BP_HeroAsset_Alchemist_C' DefaultCosmeticsBundle: AlchemistDefault -> AlchemistDefault_MAS
 [render] patched 'Default__BP_HeroAsset_RocketJumper_C' DefaultCosmeticsBundle: RocketJumperDefault -> RocketJumperSpeedDemon
-[render] patched 'Default__BP_HeroAsset_Ronin_C' DefaultCosmeticsBundle: RoninDefault -> RoninDefault_DRA
+[render] patched 'Default__BP_HeroAsset_Ronin_C' DefaultCosmeticsBundle: RoninDefault -> RoninONI_DAR
+[render] patched 'Default__BP_HeroAsset_Alchemist_C' DefaultCosmeticsBundle: AlchemistDefault -> AlchemistDefault_MAS
 [render] patched 'Default__BP_HeroAsset_Succubus_C' DefaultCosmeticsBundle: SuccubusDefault -> SuccubusSISTE
 [render] data-scan matched 5 hero-asset field(s)
 [7] render patch: 4 hero DefaultCosmeticsBundle field(s) set.
 [renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
 [renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
 [4] *** applied 5 equip(s) + 2 main-menu Refresh call(s) fired. Skins render on the hunter. ***
-[5] *** GDCB skin-redirect INSTALLED (Func-swap, heap) for 5 hero(es): UFunc=0x187261E3AA0 thunk 0x7FF6BA7A3400->MyThunk. ***
-[5]   redirect: Alchemist -> nameFName=0x3133B5
-[5]   redirect: RONIN -> nameFName=0x3E562B
-[5]   redirect: Succubus -> nameFName=0x17A257
-[5]   redirect: reshealer -> nameFName=0x2D95CA
-[5]   redirect: rocketjumper -> nameFName=0x24B399
+[5] *** GDCB skin-redirect INSTALLED (Func-swap, heap) for 5 hero(es): UFunc=0x1FD5B443AA0 thunk 0x7FF6BA7A3400->MyThunk. ***
+[5]   redirect: Alchemist -> nameFName=0x313A00
+[5]   redirect: RONIN -> nameFName=0x43F87E
+[5]   redirect: Succubus -> nameFName=0x17A856
+[5]   redirect: reshealer -> nameFName=0x2D9C1C
+[5]   redirect: rocketjumper -> nameFName=0x24BBEA
 [6] redirect refresh poller started (1s) — SKIN picks now changeable.
-[9] member cosmetic write: g_member=0x187EE36D600 cosmeticOff=0x98 -> DISABLED (default off; see part 9)
-[param] resolved skinFn=000001887A939B00 assetFn=000001887A939C00 childSkin=0x1887B4A1780 childAsset=0x1887B4A1E00
-[param] PreviewAsset: 'Asset' off=0x0 flags=0x8001000000294 type=StructProperty
-[param] PreviewAsset: '2D' off=0x10 flags=0x8001040000294 type=BoolProperty
-[param] PreviewAsset: 'Temp_byte_Variable' off=0x11 flags=0x8001040000200 type=EnumProperty
-[param] PreviewAsset: 'Temp_byte_Variable' off=0x12 flags=0x8001040000200 type=EnumProperty
-[param] PreviewAsset: 'Temp_bool_Variable' off=0x13 flags=0x8001040000200 type=BoolProperty
-[param] PreviewAsset: 'Temp_struct_Variable' off=0x14 flags=0x8001000000200 type=StructProperty
-[param] PreviewAsset: 'CallFunc_GetDisplayName_ReturnValue' off=0x28 flags=0x8000000000200 type=StrProperty
-[param] PreviewAsset: 'K2Node_Select_Default' off=0x38 flags=0x8001000000200 type=StructProperty
-[param] PreviewAsset: 'Temp_bool_Variable' off=0x48 flags=0x8001040000200 type=BoolProperty
-[param] PreviewAsset: 'K2Node_Select_Default' off=0x49 flags=0x8001040000200 type=EnumProperty
-[param] PreviewCurrentSkin: 'Temp_bool_Variable' off=0x0 flags=0x8001040000200 type=BoolProperty
-[param] PreviewCurrentSkin: 'CallFunc_GetCurrentHeroAssets_CurrentHeroAsset' off=0x4 flags=0x8001000000200 type=StructProperty
-[param] PreviewCurrentSkin: 'CallFunc_GetCurrentHeroAssets_CurrentCosmeticAsset' off=0x14 flags=0x8001000000200 type=StructProperty
-[param] PreviewCurrentSkin: 'CallFunc_IsValidPrimaryAssetId_ReturnValue' off=0x24 flags=0x8001040000200 type=BoolProperty
-[param] PreviewCurrentSkin: 'CallFunc_IsValidPrimaryAssetId_ReturnValue' off=0x25 flags=0x8001040000200 type=BoolProperty
-[param] PreviewCurrentSkin: 'CallFunc_BooleanOR_ReturnValue' off=0x26 flags=0x8001040000200 type=BoolProperty
-[param] PreviewCurrentSkin: 'K2Node_Select_Default' off=0x28 flags=0x8001000000200 type=StructProperty
-[custR] PreviewAsset(Ronin_StreetInferno) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=5375ms [resolve=4703 lockwait=0 install=94 refreshwait=234] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninBeastSlayer) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1078ms [resolve=0 lockwait=0 install=328 refreshwait=375] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninBeastSlayer_DRA) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=843ms [resolve=0 lockwait=0 install=235 refreshwait=218] mm=1 cust=1 calls=2
-[custR] PreviewAsset(Ronin_StreetInferno) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1140ms [resolve=0 lockwait=0 install=328 refreshwait=468] mm=1 cust=1 calls=2
-[custR] PreviewAsset(Ronin_StreetInferno_AZU) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1000ms [resolve=0 lockwait=0 install=297 refreshwait=312] mm=1 cust=1 calls=2
-[custR] PreviewAsset(Ronin_StreetInferno) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=672ms [resolve=0 lockwait=0 install=141 refreshwait=188] mm=1 cust=1 calls=2
-[custR] PreviewAsset(Ronin_StreetInferno) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=3281ms [resolve=0 lockwait=0 install=265 refreshwait=266] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninONI) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1000ms [resolve=0 lockwait=0 install=312 refreshwait=359] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_DRA) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=703ms [resolve=0 lockwait=0 install=141 refreshwait=203] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninONI) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1563ms [resolve=0 lockwait=0 install=422 refreshwait=469] mm=1 cust=1 calls=2
-[custR] PreviewAsset(Ronin_StreetInferno) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=828ms [resolve=0 lockwait=0 install=187 refreshwait=250] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninONI) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=937ms [resolve=0 lockwait=0 install=281 refreshwait=297] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_VOL) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=766ms [resolve=0 lockwait=0 install=141 refreshwait=250] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_DRA) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1157ms [resolve=0 lockwait=0 install=391 refreshwait=422] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninBeastSlayer) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=828ms [resolve=0 lockwait=0 install=250 refreshwait=234] mm=1 cust=1 calls=2
-[custR] PreviewAsset(Ronin_StreetInferno) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=828ms [resolve=0 lockwait=0 install=140 refreshwait=344] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninBeastSlayer) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=828ms [resolve=0 lockwait=0 install=218 refreshwait=235] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninBeastSlayer) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=750ms [resolve=0 lockwait=0 install=125 refreshwait=203] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninONI) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=781ms [resolve=0 lockwait=0 install=172 refreshwait=250] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_VOL) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1016ms [resolve=0 lockwait=0 install=281 refreshwait=313] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_VOL) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=7328ms [resolve=0 lockwait=0 install=266 refreshwait=265] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_DRA) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=922ms [resolve=0 lockwait=0 install=266 refreshwait=297] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_VOL) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=703ms [resolve=0 lockwait=0 install=172 refreshwait=203] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_DRA) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1234ms [resolve=0 lockwait=0 install=234 refreshwait=266] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_VOL) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=891ms [resolve=0 lockwait=0 install=110 refreshwait=406] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninDefault_DRA) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1125ms [resolve=0 lockwait=0 install=344 refreshwait=360] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninONI) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=813ms [resolve=0 lockwait=0 install=157 refreshwait=281] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninONI_LIG) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=1047ms [resolve=0 lockwait=0 install=344 refreshwait=359] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninONI_DAR) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=657ms [resolve=0 lockwait=0 install=109 refreshwait=188] mm=1 cust=1 calls=2
-[custR] PreviewAsset(RoninONI_DAR) fired on 2 customization screen(s)
-[renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
-[renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[8b] latency=382485ms [resolve=0 lockwait=0 install=313 refreshwait=344] mm=1 cust=1 calls=2
+[9] member cosmetic write: g_member=0x1FD5624E780 cosmeticOff=0x98 -> DISABLED (default off; see part 9)
