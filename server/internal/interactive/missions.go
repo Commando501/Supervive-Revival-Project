@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 )
 
@@ -42,16 +43,31 @@ func (s *Service) registerMissions(mux *http.ServeMux) {
 	// The shim registers the mission->objective structure on menu load so match results can
 	// fan out to per-mission composite keys (per-mission granularity).
 	mux.HandleFunc("POST /revival/missions/manifest", s.handleSetManifest)
+	mux.HandleFunc("GET /revival/missions/manifest", s.handleGetManifest)
+	// Server-computed completion/XP from the manifest maxes + stored progress (ags is authoritative
+	// for what's "done", not just raw progress) and daily/weekly rotation (reset a pool's composites).
+	mux.HandleFunc("GET /revival/missions/status", s.handleGetMissionStatus)
+	mux.HandleFunc("POST /revival/missions/rotate", s.handleRotateMissions)
+	// Which registered missions will actually advance from a match result (objectiveRules coverage).
+	mux.HandleFunc("GET /revival/missions/coverage", s.handleGetMissionCoverage)
 	// Option 2c: record a match result -> map its stats to per-objective increments.
 	mux.HandleFunc("POST /revival/missions/match-result", s.handleMatchResult)
 }
 
 // ManifestEntry is one (mission, objective, max) triple the shim knows from the mission DAs. The
 // composite progress key is compositeKey(Mission, Objective) = "<mission>/<objective>".
+//
+// Pool and XP are OPTIONAL enrichment (omitempty; a shim that doesn't send them still parses — UE's
+// and Go's unmarshalers both ignore absent keys). When present they let ags compute completion,
+// XP-earned, and daily/weekly rotation server-side (see missionStatuses / handleRotateMissions),
+// moving those decisions off the client. Pool = the mission's pool id (e.g. "Dailies","Weeklies",
+// "Seasonal","HunterMissions"); XP = the mission's total XP reward (MissionModel.XPReward@+0x60).
 type ManifestEntry struct {
 	Mission   string  `json:"mission"`
 	Objective string  `json:"objective"`
 	Max       float64 `json:"max"`
+	Pool      string  `json:"pool,omitempty"`
+	XP        float64 `json:"xp,omitempty"`
 }
 
 // compositeKey is the per-mission progress key: "<missionInternalName>/<objectiveUniqueName>".
@@ -67,6 +83,17 @@ func (s *Service) handleSetManifest(w http.ResponseWriter, r *http.Request) {
 	_ = json.Unmarshal(raw, &body)
 	s.store.update(missionsLocalKey, func(st *playerState) { st.MissionManifest = body.Entries })
 	writeJSON(w, map[string]any{"entries": len(body.Entries)})
+}
+
+// handleGetManifest returns the stored mission->objective manifest (the structure the shim last
+// registered). The manifest used to be write-only; exposing it lets the admin panel, tests, and a
+// future thinner shim READ the structure the server knows instead of re-deriving it from the DAs.
+func (s *Service) handleGetManifest(w http.ResponseWriter, r *http.Request) {
+	entries := s.store.get(missionsLocalKey).MissionManifest
+	if entries == nil {
+		entries = []ManifestEntry{}
+	}
+	writeJSON(w, map[string]any{"entries": entries})
 }
 
 // missionProgressBody is the shared request/response payload: a map of objective
@@ -86,6 +113,286 @@ func (s *Service) missionObjectives() map[string]float64 {
 // handleGetMissionProgress returns the stored per-objective progress the shim applies.
 func (s *Service) handleGetMissionProgress(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"objectives": s.missionObjectives()})
+}
+
+// ---- Server-computed completion / XP -------------------------------------------------------------
+//
+// The client render derives a bar's fill from CurrentProgress/TotalProgress and implicitly flips a
+// mission "done" at progress==max, but ags never knew completion — only raw per-objective progress.
+// missionStatuses moves that decision server-side: from the registered manifest (objective maxes) +
+// the stored composite progress it computes, per mission, which objectives are done and whether the
+// whole mission is complete. That's the authoritative basis for XP-earned, reward-claim, and rotation.
+
+// ObjectiveStatus is one objective's computed progress vs its manifest max.
+type ObjectiveStatus struct {
+	Objective string  `json:"objective"`
+	Progress  float64 `json:"progress"`
+	Max       float64 `json:"max"`
+	Done      bool    `json:"done"`
+}
+
+// MissionStatus is one mission's server-computed completion state.
+type MissionStatus struct {
+	Mission    string            `json:"mission"`
+	Pool       string            `json:"pool,omitempty"`
+	XP         float64           `json:"xp,omitempty"`
+	Complete   bool              `json:"complete"`
+	Objectives []ObjectiveStatus `json:"objectives"`
+}
+
+// missionStatuses groups the manifest by mission and computes completion from stored progress. A
+// mission is complete when every one of its objectives has progress >= a positive max (an objective
+// with an unknown/zero max can't complete, so neither can its mission). Order follows first-seen
+// manifest order for stable output. Missions with no manifest entry are unknown and omitted.
+func (s *Service) missionStatuses() []MissionStatus {
+	st := s.store.get(missionsLocalKey)
+	prog := st.MissionObjectives
+	order := []string{}
+	byMission := map[string]*MissionStatus{}
+	for _, e := range st.MissionManifest {
+		ms := byMission[e.Mission]
+		if ms == nil {
+			ms = &MissionStatus{Mission: e.Mission, Pool: e.Pool, XP: e.XP, Complete: true}
+			byMission[e.Mission] = ms
+			order = append(order, e.Mission)
+		}
+		if ms.Pool == "" {
+			ms.Pool = e.Pool
+		}
+		if ms.XP == 0 {
+			ms.XP = e.XP
+		}
+		p := prog[compositeKey(e.Mission, e.Objective)]
+		done := e.Max > 0 && p >= e.Max
+		if !done {
+			ms.Complete = false
+		}
+		ms.Objectives = append(ms.Objectives, ObjectiveStatus{Objective: e.Objective, Progress: p, Max: e.Max, Done: done})
+	}
+	out := make([]MissionStatus, 0, len(order))
+	for _, m := range order {
+		out = append(out, *byMission[m])
+	}
+	return out
+}
+
+// StatusSummary rolls up completion across all registered missions. XP earned sums only completed
+// missions and is only meaningful once the manifest carries per-mission XP.
+type StatusSummary struct {
+	Total    int     `json:"total"`
+	Complete int     `json:"complete"`
+	XPEarned float64 `json:"xpEarned"`
+}
+
+// StatusReport is per-mission completion plus the summary — the single shape served by BOTH the
+// /revival status endpoint and the admin panel (so a consumer never has to special-case which one).
+type StatusReport struct {
+	Missions []MissionStatus `json:"missions"`
+	Summary  StatusSummary   `json:"summary"`
+}
+
+// missionStatusReport computes per-mission completion + the roll-up summary.
+func (s *Service) missionStatusReport() StatusReport {
+	ms := s.missionStatuses()
+	sum := StatusSummary{Total: len(ms)}
+	for _, m := range ms {
+		if m.Complete {
+			sum.Complete++
+			sum.XPEarned += m.XP
+		}
+	}
+	return StatusReport{Missions: ms, Summary: sum}
+}
+
+// MissionStatusReport is the exported accessor (admin panel / other packages).
+func (s *Service) MissionStatusReport() StatusReport { return s.missionStatusReport() }
+
+// handleGetMissionStatus returns per-mission completion plus a summary.
+func (s *Service) handleGetMissionStatus(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, s.missionStatusReport())
+}
+
+// ---- Daily / weekly rotation ---------------------------------------------------------------------
+
+// handleRotateMissions clears the stored progress for a pool's missions (and/or an explicit mission
+// list) — the daily/weekly reset the accumulate-forever store otherwise lacks. Scope is chosen from
+// the registered manifest: any entry whose Pool matches body.pool, or whose Mission is in body.missions.
+// Returns the composite keys that were cleared. (Real rotation cadence/expiry can drive this on a
+// timer or from the client's own daily-reset signal; this is the mechanism.)
+func (s *Service) handleRotateMissions(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Pool     string   `json:"pool"`
+		Missions []string `json:"missions"`
+	}
+	raw, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	_ = json.Unmarshal(raw, &body)
+	target := map[string]bool{}
+	for _, m := range body.Missions {
+		target[m] = true
+	}
+	cleared := []string{}
+	s.store.update(missionsLocalKey, func(st *playerState) {
+		if st.MissionObjectives == nil {
+			return
+		}
+		inScope := map[string]bool{}
+		for _, e := range st.MissionManifest {
+			if (body.Pool != "" && e.Pool == body.Pool) || target[e.Mission] {
+				inScope[e.Mission] = true
+			}
+		}
+		for _, e := range st.MissionManifest {
+			if !inScope[e.Mission] {
+				continue
+			}
+			k := compositeKey(e.Mission, e.Objective)
+			if _, ok := st.MissionObjectives[k]; ok {
+				delete(st.MissionObjectives, k)
+				cleared = append(cleared, k)
+			}
+		}
+	})
+	writeJSON(w, map[string]any{"cleared": cleared, "pool": body.Pool})
+}
+
+// ---- Match-result coverage -----------------------------------------------------------------------
+//
+// A registered mission only advances from a generic match result if one of its objectives' unique-names
+// has a matching rule in objectiveRules (an explicit per-composite passthrough can still advance anything,
+// but that's caller-supplied). objectiveRules maps ~18 names; the manifest can carry 91 distinct objective
+// names across 330 missions (the 309 hero missions are unmapped), so most missions won't move from a plain
+// match. This report makes the gaps explicit — per-mission coverage plus, crucially, the two lists you act
+// on: objectives with NO rule (add a rule), and rules matching NO manifest objective (usually a name typo,
+// e.g. a stray space, or missions not registered yet).
+
+// mappedObjectiveNames is the set of objective unique-names objectiveRules can advance.
+func mappedObjectiveNames() map[string]bool {
+	m := make(map[string]bool, len(objectiveRules))
+	for _, r := range objectiveRules {
+		m[r.Name] = true
+	}
+	return m
+}
+
+// ObjectiveCoverage is one objective and whether a rule can advance it.
+type ObjectiveCoverage struct {
+	Objective string `json:"objective"`
+	Mapped    bool   `json:"mapped"`
+}
+
+// MissionCoverage is one mission's match-result trackability: "full" (all objectives mapped), "partial"
+// (some), or "none" (won't advance from a generic match).
+type MissionCoverage struct {
+	Mission    string              `json:"mission"`
+	Pool       string              `json:"pool,omitempty"`
+	Coverage   string              `json:"coverage"`
+	Objectives []ObjectiveCoverage `json:"objectives"`
+}
+
+// CoverageSummary is the roll-up over all registered missions.
+type CoverageSummary struct {
+	MissionsTotal          int `json:"missionsTotal"`
+	MissionsFullyTrackable int `json:"missionsFullyTrackable"`
+	MissionsPartial        int `json:"missionsPartial"`
+	MissionsUntrackable    int `json:"missionsUntrackable"`
+	ObjectivesTotal        int `json:"objectivesTotal"`
+	ObjectivesMapped       int `json:"objectivesMapped"`
+	ObjectivesUnmapped     int `json:"objectivesUnmapped"`
+	RulesTotal             int `json:"rulesTotal"`
+	RulesUnused            int `json:"rulesUnused"`
+}
+
+// CoverageReport is the full coverage response.
+type CoverageReport struct {
+	Summary            CoverageSummary   `json:"summary"`
+	UnmappedObjectives []string          `json:"unmappedObjectives"`
+	UnusedRules        []string          `json:"unusedRules"`
+	Missions           []MissionCoverage `json:"missions"`
+}
+
+// missionCoverage cross-references the registered manifest against objectiveRules. Missions keep
+// first-seen order; the two gap lists are sorted for stable output.
+func (s *Service) missionCoverage() CoverageReport {
+	mapped := mappedObjectiveNames()
+	st := s.store.get(missionsLocalKey)
+
+	order := []string{}
+	byMission := map[string]*MissionCoverage{}
+	distinctObj := map[string]bool{} // objective name -> is it mapped
+	usedRule := map[string]bool{}    // rule name -> matched at least one manifest objective
+	for _, e := range st.MissionManifest {
+		mc := byMission[e.Mission]
+		if mc == nil {
+			mc = &MissionCoverage{Mission: e.Mission, Pool: e.Pool}
+			byMission[e.Mission] = mc
+			order = append(order, e.Mission)
+		}
+		if mc.Pool == "" {
+			mc.Pool = e.Pool
+		}
+		isMapped := mapped[e.Objective]
+		mc.Objectives = append(mc.Objectives, ObjectiveCoverage{Objective: e.Objective, Mapped: isMapped})
+		distinctObj[e.Objective] = isMapped
+		if isMapped {
+			usedRule[e.Objective] = true
+		}
+	}
+
+	missions := make([]MissionCoverage, 0, len(order))
+	sum := CoverageSummary{RulesTotal: len(mapped)}
+	for _, m := range order {
+		mc := byMission[m]
+		mappedCount := 0
+		for _, o := range mc.Objectives {
+			if o.Mapped {
+				mappedCount++
+			}
+		}
+		switch {
+		case mappedCount == 0:
+			mc.Coverage = "none"
+			sum.MissionsUntrackable++
+		case mappedCount == len(mc.Objectives):
+			mc.Coverage = "full"
+			sum.MissionsFullyTrackable++
+		default:
+			mc.Coverage = "partial"
+			sum.MissionsPartial++
+		}
+		missions = append(missions, *mc)
+	}
+	sum.MissionsTotal = len(missions)
+
+	unmapped := []string{}
+	for o, isMapped := range distinctObj {
+		if isMapped {
+			sum.ObjectivesMapped++
+		} else {
+			unmapped = append(unmapped, o)
+		}
+	}
+	sum.ObjectivesTotal = len(distinctObj)
+	sum.ObjectivesUnmapped = len(unmapped)
+	sort.Strings(unmapped)
+
+	unused := []string{}
+	for name := range mapped {
+		if !usedRule[name] {
+			unused = append(unused, name)
+		}
+	}
+	sum.RulesUnused = len(unused)
+	sort.Strings(unused)
+
+	return CoverageReport{Summary: sum, UnmappedObjectives: unmapped, UnusedRules: unused, Missions: missions}
+}
+
+// MissionCoverageReport is the exported accessor (admin panel / other packages).
+func (s *Service) MissionCoverageReport() CoverageReport { return s.missionCoverage() }
+
+// handleGetMissionCoverage reports which registered missions will advance from a match result.
+func (s *Service) handleGetMissionCoverage(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, s.missionCoverage())
 }
 
 // handleSetMissionProgress merge-SETS each posted objective to an absolute value

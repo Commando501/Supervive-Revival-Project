@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -103,12 +104,23 @@ func main() {
 	if *adminAddr != "" {
 		adminMux := http.NewServeMux()
 		admin.New(interSvc).Register(adminMux)
-		go func(addr string) {
-			log.Printf("  ADMIN  panel on http://%s/", addr)
-			if err := http.ListenAndServe(addr, admin.Guard(adminMux)); err != nil {
-				log.Printf("admin: %v (panel disabled)", err)
-			}
-		}(*adminAddr)
+		handler := admin.Guard(adminMux)
+		// Bind BOTH loopback stacks when the host is loopback/localhost. Browsers
+		// resolve `localhost` to IPv6 ::1 first on Windows, but a single
+		// 127.0.0.1 listener only answers IPv4 — so `http://localhost:9210`
+		// connection-refuses every fetch and the panel shows "Can't reach the ags
+		// backend" while curl (which falls back to IPv4) works. Listening on 127.0.0.1
+		// AND [::1] makes localhost/127.0.0.1/::1 all work (2026-07-10 fix). A
+		// non-loopback -admin (operator opted into wider binding) uses the single
+		// addr as given; the Guard still rejects non-loopback peers.
+		for _, addr := range adminListenAddrs(*adminAddr) {
+			go func(addr string) {
+				log.Printf("  ADMIN  panel on http://%s/", addr)
+				if err := http.ListenAndServe(addr, handler); err != nil {
+					log.Printf("admin %s: %v (this listener disabled)", addr, err)
+				}
+			}(addr)
+		}
 	}
 
 	// HTTPS listener for the hijacked Theorycraft hostnames.
@@ -133,5 +145,29 @@ func main() {
 	log.Printf("  HTTP   listening on %s", *httpAddr)
 	if err := http.ListenAndServe(*httpAddr, handler); err != nil {
 		log.Fatal(err)
+	}
+}
+
+// adminListenAddrs expands a loopback/localhost admin address into one bind per
+// loopback stack (127.0.0.1 + [::1]) so the panel answers on IPv4 and IPv6 —
+// `localhost` prefers ::1 on Windows, so a lone 127.0.0.1 listener leaves the
+// browser's fetches connection-refused. A non-loopback host (operator chose a
+// wider bind) is returned unchanged as a single addr. An unparseable addr also
+// passes through untouched so the caller surfaces the bind error.
+func adminListenAddrs(addr string) []string {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return []string{addr}
+	}
+	isLoopback := host == "localhost"
+	if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
+		isLoopback = true
+	}
+	if !isLoopback {
+		return []string{addr}
+	}
+	return []string{
+		net.JoinHostPort("127.0.0.1", port),
+		net.JoinHostPort("::1", port),
 	}
 }

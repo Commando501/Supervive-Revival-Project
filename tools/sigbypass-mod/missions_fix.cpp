@@ -7,9 +7,11 @@
 //   3. Then POLL ags every ~30s; only when the fetched progress CHANGES (e.g. a match posted /add) does
 //      it re-hook + rebuild + re-swap, so progress "fills as you play" without a relaunch (reopen the
 //      modal to see it). Idle = cheap HTTP polls, no thread-suspends.
-// DEPLOY: injected by configs/inject-missions.ps1 (spawned by launch-redirect.ps1 -Missions), AFTER the
-// primary catalog_store_fix settles, as the SOLE ProcessInternal-hooking shim (pi8 is skipped in this mode
-// to avoid two PI-hookers racing on the thread-suspend install). Build:
+// DEPLOY: injected by configs/inject-secondaries.ps1 (spawned by launch-redirect.ps1; part of the DEFAULT
+// secondary set), AFTER the primary catalog_store_fix settles. Coexists with the other ProcessInternal
+// hookers (pi8, loadout_fix) via the shared "Local\SuperviveMissionsPIHook" mutex — each installs its
+// 5-byte PI jmp only TRANSIENTLY (install -> apply -> uninstall) under the lock, so they never race on the
+// thread-suspend install. (The old inject-missions.ps1 "-Missions" mode that skipped pi8 is retired.) Build:
 //   clang++ -shared -O2 missions_fix.cpp -o missions_fix.dll -lkernel32 -lwininet
 // Marker: docs/missions-fix-marker.txt.
 // (Original probe17/18 header follows.)
@@ -94,6 +96,12 @@ static volatile long g_applyCount=0;
 // mission->objective manifest JSON, built in BuildAndSwap (game thread), POSTed from Worker (off thread)
 // so match results can fan out to per-mission composite keys. Registered once per session.
 static char g_manifest[262144]={0}; static volatile long g_manifestLen=0; static int g_manifestPosted=0; static int g_manifestEntries=0;
+#ifdef MISSIONS_XP_DRAFT
+// XP-draft state: the DA internal name per mission (so the manifest can be re-serialized after the factory)
+// and the per-mission XP reward read from the OUTPUT model. Gated: the default build doesn't compile these.
+static char g_missInternal[NMAX][64]={{0}};
+static float g_missXP[NMAX]={0};
+#endif
 // Shared ProcessInternal-hook lock: mainmenu_refresh_pi8.dll ALSO hooks ProcessInternal, and two hooks race
 // on the thread-suspending SafeWrite. Both shims serialize their (one-time g_stolen capture + every
 // install->use->uninstall) span on this named mutex so only one owns the PI prologue at a time. Under the
@@ -274,12 +282,26 @@ static void SnapshotProgress(){
     g_lastNum=g_progNum;
     for(int i=0;i<g_progNum;i++){ memcpy(g_lastName[i],g_progName[i],KEYW); g_lastVal[i]=g_progVal[i]; }
 }
-// AppendManifest adds one {"mission","objective","max"} entry to g_manifest (built game-side, POSTed off
-// thread). mission/objective are plain identifiers (no JSON escaping needed).
-static void AppendManifest(const char* mission, const char* obj, float mx){
-    long len=g_manifestLen; if(len > (long)sizeof(g_manifest)-256) return;
-    char tmp[256]; int n=_snprintf_s(tmp,sizeof(tmp),_TRUNCATE,"%s{\"mission\":\"%s\",\"objective\":\"%s\",\"max\":%d}",
-        g_manifestEntries?",":"", mission, obj, (int)mx);
+// AppendManifest adds one {"mission","objective","max"[,"pool"]} entry to g_manifest (built game-side,
+// POSTed off thread). mission/objective/pool are plain asset identifiers (no JSON escaping needed).
+//
+// pool (2026-07-10): the mission's pool NAME, so ags can group/rotate by pool server-side
+// (POST /revival/missions/rotate {"pool":...}, GET /revival/missions/{status,coverage}). Optional — the
+// server's ManifestEntry.Pool is omitempty, so an empty pool is simply absent.
+// xp: the mission's total XP reward. Optional (omitted when <=0); server's ManifestEntry.XP is omitempty and
+// feeds GET /revival/missions/status "xpEarned". Only the MISSIONS_XP_DRAFT build fills it (post-factory read,
+// see RebuildManifestWithXP); the DEFAULT build always passes 0.0f, so pool-only output is unchanged. The
+// value comes from MissionModel.XPReward@+0x60 on the OUTPUT model (an RE'd offset — NOT a guess), correlated
+// to each input mission by MissionAssetId; see FillXPFromModel. Gated because rebuilding the manifest is a
+// change to the working pool path that can't be runtime-validated headless.
+static void AppendManifest(const char* mission, const char* obj, float mx, const char* pool, float xp){
+    long len=g_manifestLen; if(len > (long)sizeof(g_manifest)-448) return;
+    char poolField[80]={0};
+    if(pool && pool[0]) _snprintf_s(poolField,sizeof(poolField),_TRUNCATE,",\"pool\":\"%s\"",pool);
+    char xpField[48]={0};
+    if(xp>0.0f) _snprintf_s(xpField,sizeof(xpField),_TRUNCATE,",\"xp\":%d",(int)xp);
+    char tmp[448]; int n=_snprintf_s(tmp,sizeof(tmp),_TRUNCATE,"%s{\"mission\":\"%s\",\"objective\":\"%s\",\"max\":%d%s%s}",
+        g_manifestEntries?",":"", mission, obj, (int)mx, poolField, xpField);
     if(n>0){ memcpy(g_manifest+len, tmp, n); g_manifestLen=len+n; g_manifestEntries++; }
 }
 // Build ObjectiveProgress[] for mission i from its loaded DA; returns objective count. Also records the
@@ -289,6 +311,12 @@ static int BuildObjectivesForMission(int i){
     if(!LooksLikePtr((uintptr_t)da)) return 0;
     char internal[64]={0}; if(SafeReadable((void*)(da+DA_INTERNALNAME),4)) GetFNameStr(*(uint32_t*)(da+DA_INTERNALNAME),internal,64);
     if(!internal[0]) return 0;                            // no mission name -> can't form a composite key
+    // Pool name for this mission (from the pool PrimaryAssetId assigned in EnumerateAndMap) -> manifest,
+    // so ags can group/rotate by pool. Empty if unresolved (AppendManifest then omits the field).
+    char poolName[48]={0}; GetFNameStr((uint32_t)(g_missPool[i][1]&0xFFFFFFFF),poolName,48);
+#ifdef MISSIONS_XP_DRAFT
+    if(i>=0 && i<NMAX) strncpy_s(g_missInternal[i],sizeof(g_missInternal[i]),internal,_TRUNCATE);  // for RebuildManifestWithXP
+#endif
     if(!SafeReadable((void*)(da+DA_OBJECTIVES),16)) return 0;
     uint64_t odata=*(uint64_t*)(da+DA_OBJECTIVES); int32_t onum=*(int32_t*)(da+DA_OBJECTIVES+8);
     if(onum<=0 || !LooksLikePtr((uintptr_t)odata)) return 0;
@@ -302,7 +330,7 @@ static int BuildObjectivesForMission(int i){
         float total=*(float*)(g_daStruct+LMOD_TOTAL);
         char objName[64]={0}; GetFNameStr((uint32_t)(key&0xFFFFFFFF),objName,64);
         char composite[KEYW]={0}; _snprintf_s(composite,sizeof(composite),_TRUNCATE,"%s/%s",internal,objName);  // "<mission>/<objective>"
-        AppendManifest(internal, objName, total);
+        AppendManifest(internal, objName, total, poolName, 0.0f);   // xp=0 (default build); MISSIONS_XP_DRAFT rebuilds w/ xp post-factory
         float prog=LookupProgress(composite);            // per-mission progress from ags (else 0)
         if(prog>total) prog=total;                       // clamp so the bar never overfills
         if(prog>0.0f) InterlockedIncrement((volatile long*)&g_appliedNonZero);
@@ -316,6 +344,48 @@ static int BuildObjectivesForMission(int i){
     }
     return made;
 }
+#ifdef MISSIONS_XP_DRAFT
+// FillXPFromModel reads XPReward off each OUTPUT MissionModel (from the array GetMissions() returned) and
+// correlates it back to an input mission by MissionAssetId (a unique key), filling g_missXP[i]. Fully
+// SafeReadable-guarded: any bad read leaves that mission's XP at 0 (the field is then omitted server-side),
+// so a wrong offset degrades to "no xp", never a crash or a misassigned value.
+//   MissionModel.MissionAssetId @ +0x40 (FPrimaryAssetId, 16B); MissionModel.XPReward @ +0x60 (float)  [RE'd s58/s59]
+static void FillXPFromModel(uint64_t arrData, int num){
+    for(int i=0;i<g_missNum && i<NMAX;i++) g_missXP[i]=0.0f;
+    if(!LooksLikePtr((uintptr_t)arrData) || num<=0) return;
+    for(int k=0;k<num;k++){
+        if(!SafeReadable((void*)(arrData+(uint64_t)k*8),8)) continue;
+        uint64_t mm=*(uint64_t*)(arrData+(uint64_t)k*8);            // TArray<UMissionModel*> element
+        if(!LooksLikePtr((uintptr_t)mm)) continue;
+        if(!SafeReadable((void*)(mm+0x40),16) || !SafeReadable((void*)(mm+0x60),4)) continue;
+        uint64_t a0=*(uint64_t*)(mm+0x40), a1=*(uint64_t*)(mm+0x48); // MissionAssetId (FPrimaryAssetId)
+        float xp=*(float*)(mm+0x60);                                // XPReward
+        if(xp<=0.0f) continue;
+        for(int i=0;i<g_missNum && i<NMAX;i++){
+            if(g_missionIds[i][0]==a0 && g_missionIds[i][1]==a1){ g_missXP[i]=xp; break; }  // match by AssetId -> input i
+        }
+    }
+}
+// RebuildManifestWithXP re-serializes g_manifest from stored per-mission data, now including xp. Mirrors the
+// inline build in BuildObjectivesForMission (same objective names + maxes + pool) but adds each mission's XP.
+// Objective names/maxes come from the already-built FMissionObjectiveProgress rows (g_objprog[i][j]: FName key
+// @0x00, MaxProgress @0x0C), so no DA is re-read.
+static void RebuildManifestWithXP(){
+    const char* head="{\"entries\":["; long hl=(long)strlen(head); memcpy(g_manifest,head,hl); g_manifestLen=hl; g_manifestEntries=0;
+    for(int i=0;i<g_missNum && i<NMAX;i++){
+        if(!g_missInternal[i][0]) continue;
+        char poolName[48]={0}; GetFNameStr((uint32_t)(g_missPool[i][1]&0xFFFFFFFF),poolName,48);
+        for(int j=0;j<g_objCount[i] && j<MAXOBJ;j++){
+            uint8_t* op=g_objprog+(i*MAXOBJ+j)*0x38;
+            uint32_t kid=*(uint32_t*)op; float total=*(float*)(op+0x0C);
+            char objName[64]={0}; GetFNameStr(kid,objName,64);
+            if(!objName[0]) continue;
+            AppendManifest(g_missInternal[i], objName, total, poolName, g_missXP[i]);
+        }
+    }
+    long l=g_manifestLen; if(l < (long)sizeof(g_manifest)-4){ g_manifest[l++]=']'; g_manifest[l++]='}'; g_manifest[l]=0; g_manifestLen=l; }
+}
+#endif
 static void BuildAndSwap(){
     memset(g_elems,0,sizeof(g_elems)); memset(g_objprog,0,sizeof(g_objprog));
     // (re)build the manifest JSON header; entries are appended per objective in BuildObjectivesForMission.
@@ -344,6 +414,11 @@ static void BuildAndSwap(){
         memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
         Call(g_getMissions,(void*)g_retModel,g_pbuf,g_rbuf); g_modelNum=(int32_t)(g_rbuf[1]&0xFFFFFFFF);
         if(g_pm && g_modelNum>0){ *(uint64_t*)(g_pm+PM_MM)=g_retModel; g_swapped=true; }
+#ifdef MISSIONS_XP_DRAFT
+        // Enrich the manifest with per-mission XP before Worker POSTs it. g_rbuf[0] is still the GetMissions()
+        // array data (untouched since the call above). Defensive: FillXPFromModel no-ops on any bad read.
+        if(g_swapped){ FillXPFromModel(g_rbuf[0], g_modelNum); RebuildManifestWithXP(); }
+#endif
     }
 }
 extern "C" void OnPI(void* /*ctx*/, void* frame, void*){

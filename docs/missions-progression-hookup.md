@@ -76,8 +76,8 @@ The current architecture. When a match ends, get its stats into `ags` and POST t
    dumpable live from the model's Objectives-map keys (this session's `tools/re` scripts read
    `MissionModel.MissionAsset.InternalName` + the objective names; see session-59). Map each to a stat.
 4. **Drive it from the real handler.** Instead of a manual `curl … /match-result`, have the ags match-end handler
-   (new, on whatever endpoint carries the report) call `computeMatchDeltas` + apply. The shim's 30s poll (or a
-   `PUT …/mission`-triggered refresh, signal #1) then updates the bars.
+   (new, on whatever endpoint carries the report) call `applyMatchResult` (in `missions.go`). The shim's 30s poll
+   (or a `PUT …/mission`-triggered refresh, signal #1) then updates the bars.
 
 ### (B) Native-driven — faithful, heavier (the DS-replication path)
 Call the game's own `ServerAddMissionProgress(MissionID, ObjectiveName, Progress)` on a **live**
@@ -88,16 +88,65 @@ match and you want the game to own progression natively.
 
 ---
 
+## Now server-side (2026-07-10) — mechanism built, needs the shim to send the extra fields
+
+The server no longer knows only raw progress; it now computes COMPLETION and can rotate. See
+`missions.go` (`missionStatuses`, `handleGetMissionStatus`, `handleRotateMissions`) + `missions_test.go`.
+
+- **Per-mission completion + XP earned** — `GET /revival/missions/status` returns each mission's
+  `{complete, objectives:[{objective,progress,max,done}]}` plus a summary `{total,complete,xpEarned}`,
+  computed from the manifest maxes + stored progress. Completion needs NO new data (max is already in the
+  manifest). **XP-earned needs the shim to send per-mission `xp`** in the manifest (see below).
+- **Daily/weekly rotation** — `POST /revival/missions/rotate {"pool":"Dailies"}` (or `{"missions":[...]}`)
+  clears that scope's composite progress — the reset the accumulate-forever store lacked. **Needs the shim
+  to send each entry's `pool`** so a pool can be targeted (mission-name lists work without it).
+- **Manifest read-back** — `GET /revival/missions/manifest` (was write-only) for the admin panel / a
+  future thinner shim.
+- **Coverage report** — `GET /revival/missions/coverage` cross-references the registered manifest against
+  `objectiveRules`: per-mission `full/partial/none`, plus the two lists that drive step 3 below —
+  `unmappedObjectives` (objectives with no rule → the 309 hero missions surface here) and `unusedRules`
+  (rule names matching no manifest objective → usually a name typo like the space in `"BR_Capture Bonfires"`).
+  Run it after a launch (once the shim has POSTed the manifest) to see exactly which rules to add/fix.
+- **Admin panel** — `GET /api/missions` now also returns the computed `status` + `coverage` blocks.
+
+**SHIM ENRICHMENT — `pool` DONE + deployed; `xp` DRAFTED (gated) (2026-07-10, both pending a validation launch).**
+`ManifestEntry` accepts optional `pool` + `xp` (backward compatible). `missions_fix.cpp`'s `AppendManifest`
+now sends **`pool`**: `BuildObjectivesForMission` derives the pool name via
+`GetFNameStr(g_missPool[i][1] & 0xFFFFFFFF)` — the same proven op that builds `g_poolNames` — and passes it
+in; empty pool ⇒ the field is omitted. Compiled (clang, exit 0), manifest JSON format verified well-formed,
+deployed `missions_fix.dll` rebuilt. **Validate on the next launch:** open the menu once with the missions
+shim (default set), then `GET /revival/missions/coverage` — each mission should now carry a `pool`, and
+`POST /revival/missions/rotate {"pool":"<name>"}` should clear that pool. Low-risk / graceful: pool only
+affects the server-side manifest POST; the missions-page RENDER is unaffected (pool is written to the model
+element independently), and `-NoMissions` isolates it.
+**`xp` — DRAFTED behind `#ifdef MISSIONS_XP_DRAFT` (NOT in the default deployed DLL).** `MissionModel.XPReward`
+is at `+0x60` on the OUTPUT model (post-factory), not on the input `FMissionProgress` the manifest is built from,
+so the draft reads it from the array `GetMissions()` already returned (no extra native call), correlates each
+output mission to an input one by `MissionAssetId@+0x40` (a unique key — both offsets are RE'd s58/s59, not
+guessed), then re-serializes the manifest with `xp` (`FillXPFromModel` + `RebuildManifestWithXP` in
+`missions_fix.cpp`). Fully `SafeReadable`-guarded: any bad read leaves that mission's XP at 0 → the field is
+omitted, never a crash or a misassigned value.
+- **Why gated, not deployed:** the default build is byte-identical to the pool-only version (XP compiled out),
+  so the deployed DLL carries ZERO regression risk to the working manifest path; the rebuild-with-xp only runs
+  under the flag. Both builds compiled clean (clang, exit 0); the `xp` JSON format is verified well-formed
+  (present when >0, omitted otherwise, independent of `pool`).
+- **To validate on a launch:** build with the flag —
+  `clang++ -DMISSIONS_XP_DRAFT -shared -O2 missions_fix.cpp -o missions_fix.dll -lkernel32 -lwininet` — then
+  open the menu with the missions shim and `GET /revival/missions/status`: `summary.xpEarned` should sum the
+  completed missions' rewards, and each mission's `xp` should appear in `/coverage`/`/manifest`. If it reads 0
+  everywhere, the `+0x60`/`+0x40` offsets or the `GetMissions()` array shape need re-confirming live (RPM), and
+  the default (pool-only) DLL is unaffected in the meantime.
+
 ## Still not implemented (do these too, when wiring real progress)
 
-- **Reward claim flow.** When a mission completes, claiming its reward is a separate, untouched path:
-  `MissionModel.Completed`@+0xB8, `bHasClaimableReward`@+0xB9, `MissionModel.ClaimReward` (BP), and the
-  `PUT /progression/players/{id}/mission` reconcile/claim trigger whose `MissionData` response carries
-  `Completions` / `TrackIDToClaimableRewards` TMaps (see `interactive.go:handlePutMission`). The shim sets
-  `Completed`/reward flags implicitly via progress==max, but the XP/entitlement grant + claim UI aren't wired.
-- **Daily/weekly rotation + expiry.** The store accumulates forever; real dailies reset. `FMissionProgress` has
-  `Expiry`/`MillisUntilExpiry`/`GrantedAt` (the shim sets placeholders). A rotation/reset policy in `ags` (clear a
-  pool's composites on rotation) is needed for authentic daily/weekly behavior.
+- **Reward CLAIM flow (XP/entitlement grant).** Completion is now computed server-side, but *claiming* is
+  still untouched: `MissionModel.Completed`@+0xB8, `bHasClaimableReward`@+0xB9, `MissionModel.ClaimReward`
+  (BP), and the `PUT /progression/players/{id}/mission` reconcile/claim trigger whose `MissionData` response
+  carries `Completions` / `TrackIDToClaimableRewards` TMaps (see `interactive.go:handlePutMission`). Granting
+  the account-level XP + wiring the claim UI is the remaining piece.
+- **Rotation cadence/expiry.** The rotate MECHANISM exists; a *policy* (a timer, or the client's own
+  daily-reset signal, driving `/rotate`) + real `FMissionProgress` `Expiry`/`GrantedAt` values (shim sets
+  placeholders today) are still needed for authentic timed dailies/weeklies.
 - **Multi-account.** Everything is under the fixed `"local"` key; key by the JWT `sub` for real per-account.
 
 ---
@@ -105,7 +154,8 @@ match and you want the game to own progression natively.
 ## Quick reference
 
 - Engine + schema + rules: `server/internal/interactive/missions.go` (`matchResult`, `objectiveRules`,
-  `computeMatchDeltas`, `handleMatchResult`, `handleSetManifest`). Composite key = `"<mission>/<objective>"`.
+  `mappedNameDeltas`, `applyMatchResult`, `handleMatchResult`, `handleSetManifest`/`handleGetManifest`,
+  `missionStatuses`/`handleGetMissionStatus`, `handleRotateMissions`). Composite key = `"<mission>/<objective>"`.
 - Store: `server/internal/interactive/store.go` (`MissionObjectives`, `MissionManifest`), `state/interactive.json`.
 - Shim: `tools/sigbypass-mod/missions_fix.cpp` (fetch/build/swap + manifest POST + poll). Offsets:
   `DA.InternalName`@+0x40, `DA.Objectives`@+0x88 (`LokiMissionObjectiveData`[0x30], `TotalProgress`@+0x10),

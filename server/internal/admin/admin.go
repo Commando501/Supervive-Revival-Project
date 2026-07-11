@@ -79,6 +79,10 @@ func (s *Service) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "embedded UI missing", http.StatusInternalServerError)
 		return
 	}
+	// no-store: the UI is embedded in the binary and versions with it. A
+	// heuristically-cached page surviving an ags rebuild is exactly the
+	// stale-page-vs-new-API skew that stuck the panel on "Loading…" (2026-07-10).
+	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(b)
 }
@@ -160,11 +164,14 @@ func (s *Service) handleDeletePlayer(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleGetMissions returns the shim-registered manifest joined with the stored
-// per-objective progress. The GUI derives each row's max from the manifest.
+// per-objective progress, plus the server-computed per-mission completion status
+// (so the GUI can show what's done / XP earned, not just raw numbers).
 func (s *Service) handleGetMissions(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"manifest":   s.Interactive.MissionManifest(),
 		"objectives": s.Interactive.MissionObjectives(),
+		"status":     s.Interactive.MissionStatusReport(),
+		"coverage":   s.Interactive.MissionCoverageReport(),
 	})
 }
 
@@ -198,6 +205,7 @@ func (s *Service) handleMatchResult(w http.ResponseWriter, r *http.Request) {
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
+	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(v)
 }

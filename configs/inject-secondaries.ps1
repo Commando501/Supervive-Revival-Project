@@ -1,21 +1,35 @@
-﻿<#
+<#
 .SYNOPSIS
-  Detached secondary-shim injector for the SUPERVIVE revival launch.
+  Detached secondary-shim injector for the SUPERVIVE revival launch — the SINGLE injector for the full
+  durable shim set (this superseded the old inject-missions.ps1, whose only extra was missions_fix).
 
-  launch-redirect.ps1 injects the PRIMARY hook (catalog_store_fix.dll) at launch via
-  inject watch-now — it must beat the grid Construct to open the IsCatalogDataReady gate.
-  This helper injects the SECONDARY shims AFTER the primary has finished and self-unhooked,
-  so two thread-suspending hook installs never race:
-    - mainmenu_refresh_pi8.dll  (pick mirror + main-menu/HUNTERS refresh; hooks ProcessInternal)
-    - catalog_pick_fix.dll      (IsPreviewable/IsUseable Script patches so owned clicks commit)
+  launch-redirect.ps1 injects the PRIMARY hook (catalog_store_fix.dll) at launch via inject watch-now —
+  it must beat the grid Construct to open the IsCatalogDataReady gate. This helper injects ALL the
+  SECONDARY shims AFTER the primary has finished and self-unhooked, so two thread-suspending hook
+  installs never race:
+    - mainmenu_refresh_pi8.dll  (pick mirror + main-menu/HUNTERS refresh;     hooks ProcessInternal)
+    - catalog_pick_fix.dll      (IsPreviewable/IsUseable Script patches;       NO PI hook — independent)
+    - loadout_fix.dll           (customization / skin persistence replay;      hooks ProcessInternal)
+    - missions_fix.dll          (durable missions page, ags-fed progress bars; hooks ProcessInternal)
 
-  Spawned detached+hidden by launch-redirect.ps1 so it outlives that script (the game exe
-  detaches and the launcher exits). Both secondaries self-defer their own work until their
-  target objects exist, so exact timing is not critical — we only gate on the primary's
-  hook being installed+removed to avoid a concurrent SafeWrite.
+  COEXISTENCE: the three ProcessInternal-hooking shims (pi8, loadout_fix, missions_fix) share the named
+  mutex "Local\SuperviveMissionsPIHook". Each captures the ORIGINAL 5-byte PI prologue and installs its
+  jmp only TRANSIENTLY (install -> piggyback one game-thread call -> uninstall) under that lock, so only
+  one has the hook installed at any instant — they never race on the thread-suspending SafeWrite.
+  catalog_pick_fix does only Script (bytecode) patches, so it is independent. (Historically pi8 and
+  missions were mutually-exclusive launch MODES because two PERMANENT PI hooks race; the shared mutex +
+  transient-install design — S59 — retired that split, so this one script now injects the whole set.)
+
+  -NoMissions / -NoLoadout drop those shims from the set (to isolate one surface while debugging).
+
+  Spawned detached+hidden by launch-redirect.ps1 so it outlives that script (the game exe detaches and
+  the launcher exits). Every shim self-defers its own work until its target objects exist, so exact
+  timing is not critical — we only gate on the primary's hook being installed+removed.
 #>
 param(
   [string]$Repo = (Split-Path -Parent $PSScriptRoot),
+  [switch]$NoMissions,
+  [switch]$NoLoadout,
   [int]$MaxWaitProcSec = 150,
   [int]$MaxWaitUnhookSec = 120
 )
@@ -24,47 +38,49 @@ $name    = "SUPERVIVE-Win64-Shipping.exe"
 $inject  = Join-Path $Repo "tools\inject\inject.exe"
 $primaryMarker = Join-Path $Repo "docs\catalog-store-fix-marker.txt"
 $log     = Join-Path $Repo "docs\inject-secondaries.log"
-# Injected AFTER the primary: pi8 first (installs its ProcessInternal hook), then the
-# heap-only tile patcher.
-$dlls = @(
-  "tools\sigbypass-mod\mainmenu_refresh_pi8.dll",
-  "tools\sigbypass-mod\catalog_pick_fix.dll",
-  # loadout_fix: replays saved customization equips (skins/gliders/wisps/sprays/chromas) by calling the
-  # game's native setters on the game thread. Hooks ProcessInternal like pi8, so it shares the
-  # Local\SuperviveMissionsPIHook mutex (one-shot: install -> apply -> uninstall). Injected last, after
-  # pi8 is resident, so the two never SafeWrite the PI prologue at once. Reads GET /revival/loadout.
-  "tools\sigbypass-mod\loadout_fix.dll"
-)
+# Order: pi8 first (installs its PI hook + captures the pristine prologue), then the Script-only tile
+# patcher, then the other two PI-hookers. Capture is race-free regardless of order (each grabs the mutex
+# and re-verifies the pristine 5-byte prologue before stealing it), but this preserves parity with the
+# historically-validated pi8-first sequence.
+#   loadout_fix: replays saved customization equips (skins/gliders/wisps/sprays/chromas) by calling the
+#     game's native setters on the game thread. Reads GET /revival/loadout. (-NoLoadout to skip.)
+#   missions_fix: fetches per-objective progress from ags and swaps the mission model on menu load + on
+#     change. Reads GET /revival/missions/progress + POSTs /revival/missions/manifest. (-NoMissions to skip.)
+$dlls = @("tools\sigbypass-mod\mainmenu_refresh_pi8.dll",
+          "tools\sigbypass-mod\catalog_pick_fix.dll")
+if (-not $NoLoadout)  { $dlls += "tools\sigbypass-mod\loadout_fix.dll" }
+if (-not $NoMissions) { $dlls += "tools\sigbypass-mod\missions_fix.dll" }
 
 function Log($m){ "$([DateTime]::Now.ToString('HH:mm:ss'))  $m" | Out-File -FilePath $log -Append -Encoding ascii }
 "" | Out-File -FilePath $log -Encoding ascii   # truncate for this launch
-Log "secondary injector started (repo=$Repo)"
+Log "secondary injector started (repo=$Repo) NoMissions=$NoMissions NoLoadout=$NoLoadout"
+Log ("set: " + ($dlls -join ", "))
 
-if (-not (Test-Path $inject)) { Log "inject.exe not found at $inject — aborting"; return }
+if (-not (Test-Path $inject)) { Log "inject.exe not found at $inject - aborting"; return }
 
 # 1) wait for the game process
 $deadline = (Get-Date).AddSeconds($MaxWaitProcSec); $up = $false
 while ((Get-Date) -lt $deadline) { if (Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue) { $up = $true; break }; Start-Sleep -Seconds 1 }
-if (-not $up) { Log "game process never appeared within ${MaxWaitProcSec}s — aborting"; return }
+if (-not $up) { Log "game process never appeared within ${MaxWaitProcSec}s - aborting"; return }
 Log "game process is up"
 
-# 2) wait for the primary hook to install AND self-unhook (marker "[unhook]") so its
-#    thread-suspending SafeWrite is finished before pi8 installs its own hook. Fallback:
-#    proceed after the timeout with a warning.
+# 2) wait for the primary hook to install AND self-unhook (marker "[unhook]") so its thread-suspending
+#    SafeWrite is finished before any PI-hooker installs its own hook. Fallback: proceed after timeout.
 $deadline = (Get-Date).AddSeconds($MaxWaitUnhookSec); $ready = $false
 while ((Get-Date) -lt $deadline) {
   if (Test-Path $primaryMarker) { $c = Get-Content $primaryMarker -Raw -ErrorAction SilentlyContinue; if ($c -and $c -match '\[unhook\]') { $ready = $true; break } }
-  if (-not (Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue)) { Log "game exited while waiting for primary unhook — aborting"; return }
+  if (-not (Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue)) { Log "game exited while waiting for primary unhook - aborting"; return }
   Start-Sleep -Milliseconds 500
 }
-if ($ready) { Log "primary catalog_store_fix installed+unhooked — safe to inject secondaries" }
-else { Log "WARNING: primary [unhook] not seen in ${MaxWaitUnhookSec}s — injecting secondaries anyway" }
+if ($ready) { Log "primary catalog_store_fix installed+unhooked - safe to inject secondaries" }
+else { Log "WARNING: primary [unhook] not seen in ${MaxWaitUnhookSec}s - injecting secondaries anyway" }
 
-# 3) inject each secondary sequentially (gap between to avoid overlapping hook installs)
+# 3) inject each secondary sequentially (gap between to avoid overlapping hook installs; the shared
+#    mutex also guards the PI-hookers at runtime)
 foreach ($d in $dlls) {
-  if (-not (Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue)) { Log "game exited — stopping"; return }
+  if (-not (Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue)) { Log "game exited - stopping"; return }
   $path = Join-Path $Repo $d
-  if (-not (Test-Path $path)) { Log "MISSING: $path — skipping"; continue }
+  if (-not (Test-Path $path)) { Log "MISSING: $path - skipping"; continue }
   Log "injecting $d ..."
   $out = & $inject mmap $name $path 2>&1
   Log ($out -join " | ")
