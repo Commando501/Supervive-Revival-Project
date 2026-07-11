@@ -46,7 +46,8 @@ returns `{}` and every request is logged to `docs/capture.log`.
 | GET | `/player-stats/players/{id}` | 🟡 | |
 | POST | `/game-telemetry/v1/protected/events` | 🟡 | telemetry (safe to stub) |
 | GET | `/party/players/{id}?defaultQueue=tutorialNew` | ❓ | **active poller** (~17/s lockstep). Response model `PartyPlayer` (fields seen: `Invites`, `ExcludedRegions`; `EPartyState`: Default/Matchmaking/CustomGame/Unknown). Solo = "player not in party" (`LogPartyManager`). Needs idle-solo shape to slow the loop |
-| GET | `/core-game/players/{id}` | ❓ | **active poller** (~17/s lockstep). "Is there an active match to rejoin?" Response model `CoreGamePlayer` (fields: `MatchParticipant`, `CanDisassociate`, `ContentServicePrimaryAsset`, `ContentServiceContentManifest`; `ECoreGameMatchState`: PreHeroSelect/HeroSelect/Preallocate/Allocating/AwaitingReady/InProgress/Deallocating/Closing/Unknown). Needs "no active match" shape |
+| GET | `/core-game/players/{id}` | ✅ | **active poller** (~17/s). "Do I have a match to rejoin?" **usmap ground truth `CoreGamePlayer` (4 props): `ID`(str), `MatchID`(str), `Version`(int64), `CanDisassociate`(bool)** — NOT MatchParticipant/MatchInfo (the old binary-scan model was wrong; those are separate structs). Client waits for a non-empty `MatchID`, then fetches the match. Idle = empty MatchID; S62 sets a real MatchID when `SoloMode` is armed |
+| GET | `/core-game/matches/{matchId}` | ❓ | S62 PROBE: match-details fetch after a MatchID appears. Returns usmap `MatchInfo` (19 props: `GameConfig`{`MapName`,`GameMode`,`SoloModeStartLocation`}, `State`/`StateEnum` `ECoreGameMatchState`, `ConnectionDetails`=`CoreGameServerInfo`{`address`…}, `PlayerInfo`=`MatchParticipant`, `QueueID`,`Region`,`OwnerID`). Local tutorial = EMPTY `address`. Route path is a best guess — confirm from capture.log |
 
 ### Cascade revealed by populating progressiontracks (all new this session, `{}` catch-all, one-shot — not looping)
 

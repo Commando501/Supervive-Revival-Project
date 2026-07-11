@@ -129,7 +129,10 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 	//     crash question (Finding: even an empty actor re-triggered it ~100s in).
 	//
 	// Toggle: false = stable empty-actor baseline.
-	const bool bSeedFinalProgress = true;
+	// S62 TUTORIAL-CONNECT: false — the tutorial-match connect (menu route) has nothing
+	// to do with missions; seeding only adds bunch-rejection churn. Keep the empty-actor
+	// stable baseline while we validate the menu-route client connects + completes Join.
+	const bool bSeedFinalProgress = false;
 	if (bSeedFinalProgress)
 	{
 		MissionsActor->FinalMissionProgress.Add(

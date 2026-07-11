@@ -49,6 +49,21 @@ type playerState struct {
 	// switches activities; echoed back as the party's targetQueueId(s) each poll.
 	SelectedQueueID string `json:"selectedQueueId,omitempty"`
 
+	// SoloMode is the mode of an in-progress solo-start (S61): set when the client POSTs
+	// /party/parties/{id}/startSoloMode?mode=<q> (e.g. "tutorialNew"). Non-empty means the
+	// player has launched a solo tutorial/practice and is awaiting the match/travel; ""
+	// means idle. Drives whether /core-game/players reports the (local) tutorial match.
+	//
+	// TRANSIENT (json:"-", S62): deliberately NOT persisted. /core-game/players is the
+	// "do I have a match to REJOIN?" heartbeat; now that the response carries a real
+	// (usmap-correct) MatchID that actually drives the client to escalate/travel,
+	// persisting SoloMode would make a FRESH boot immediately report a phantom match at
+	// the login/menu and risk an unwanted auto-rejoin/travel loop (the tutorial travel
+	// still hits the S61 session gate). Keeping it in-memory means a clean idle menu on
+	// boot; the match is armed only by the live POST /startSoloMode. (Also auto-clears the
+	// stale S61 "soloMode":"tutorialNew" left in state/interactive.json on next save.)
+	SoloMode string `json:"-"`
+
 	// --- PersonalizationLoadout (customization equips) — see loadout.go ---
 	// LoadoutVersion is bumped on EVERY loadout-affecting write (slot cosmetics,
 	// emotes, titles, hero bundles, luxe chromas, lobby platform). The client's

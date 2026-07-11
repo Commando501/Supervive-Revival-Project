@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -107,6 +108,14 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /party/parties/{partyId}/members/{memberId}", s.handleSetPartyMember)
 	mux.HandleFunc("PUT /party/parties/{partyId}/members/{memberId}", s.handleSetPartyMember)
 
+	// POST /party/parties/{partyId}/startSoloMode?mode=&hero=&soloModeStartPosition= is the REAL
+	// tutorial/practice launch call (S61: reached after cracking the native login gate [GameMode
+	// vtable slot 285] + the native TryStartSoloMode party-state gate [PartyModel+0x558+0x18 mode
+	// string == "default"/"Matchmaking"]). Previously fell through to the {} catch-all (200, silently
+	// accepted -> bSuccess=true, no travel). We record the solo-start so /core-game/players can report
+	// the (local) tutorial match, and echo the party as a clean success body.
+	mux.HandleFunc("POST /party/parties/{partyId}/startSoloMode", s.handleStartSoloMode)
+
 	// ---- Party: matchmaking (available queues — unlocks the ActivityPicker tiles) ----
 	// The play menu is WBP_ActivityPickerScreen; its InitializeQueues builds each activity
 	// tile ONLY if the tile's queue id is present in PartyModel.GetQueues() (traced from
@@ -129,17 +138,26 @@ func (s *Service) Register(mux *http.ServeMux) {
 
 	// ---- Core-game (match lifecycle / region ping) ----
 	// GET /core-game/players/{id} is the "do I have an active match to rejoin?" heartbeat
-	// (polled ~800x/session); a "no active match" shape keeps it quiet and is the slot we
-	// populate when a match starts. GET /core-game/regions feeds the region latency ping
-	// (the menu's "??? - ms" + the missing ST_ServerLocations) and is required before
-	// matchmaking can pick a region. Both are STAGED probes: the tutorial/FIND MATCH path
-	// is currently hard-gated upstream on hero asset resolution (Track A content manifest -
-	// every hunter renders as UnknownHero), so these can only be validated once a hunter is
-	// selectable. Models are PascalCase UPROPERTY (CoreGameMatchModel: MatchInfo/Player/
-	// RegionName/RouteName; region: RegionName/RouteName) - exact JSON unconfirmed (no
-	// usmap / no captured response body), hence superset/best-effort field names.
+	// (rapid-polled while a solo-start allocates — ~17/s in S61). GROUND TRUTH (usmap
+	// CoreGamePlayer, 4 props): { ID, MatchID, Version, CanDisassociate }. The client
+	// watches for a non-empty MatchID, then fetches the full match (MatchInfo) from the
+	// match route below and travels. GET /core-game/regions feeds the region latency ping
+	// (the menu's "??? - ms" + the missing ST_ServerLocations). The upstream hero-asset gate
+	// that used to block this (every hunter UnknownHero) is now solved (roster fix), and the
+	// native solo-start walls are down (S61: login vtable slot 285 + TryStartSoloMode party-
+	// state gate), so this is the live travel channel — see handleCoreGamePlayer.
 	mux.HandleFunc("GET /core-game/players/{id}", s.handleCoreGamePlayer)
 	mux.HandleFunc("GET /core-game/regions", s.handleCoreGameRegions)
+
+	// GET /core-game/matches/{matchId} — the match-details fetch (S62 PROBE). Once
+	// /core-game/players reports a non-empty MatchID (real CoreGamePlayer model), the
+	// client's CoreGameManager fetches the full match to populate CoreGameMatchModel
+	// (MatchInfo/MatchState) and fire OnMatchStarted -> travel. The exact route was never
+	// captured (MatchID had always been empty until now), so this is the best-guess path;
+	// if the client actually uses a different route it falls through to the {} catch-all
+	// and shows up in docs/capture.log (which reveals the true path for the follow-up).
+	// Returns a tutorial MatchInfo (usmap model) — see buildTutorialMatchInfo.
+	mux.HandleFunc("GET /core-game/matches/{matchId}", s.handleCoreGameMatch)
 
 	// ---- Mailbox ----
 	// GET /mailbox/config/version logged "Invalid response received" on {}. Field
@@ -325,114 +343,177 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// phantomMatchState drives the dedicated-server-stub chapter's probes of the
-// /core-game/players/{id} endpoint. Empty string disables the probe (the
-// historical "no active match" reply). Non-empty sets the ECoreGameMatchState
-// value returned in the phantom MatchInfo, letting us walk the state machine
-// one constant flip at a time:
+// tutorialMatchState is the ECoreGameMatchState reported in the served MatchInfo
+// (MatchInfo.State / .StateEnum). This is the PRIMARY sweep knob for S62: if
+// "InProgress" doesn't make the client travel to the local tutorial, flip to
+// another state and rebuild ags — the client is already rapid-polling, so it
+// picks up the new match/state on its next poll (no re-click needed as long as
+// the same solo-start session is live).
 //
-//	""             — disabled, menu-idle (revert target if anything breaks)
-//	"Allocating"   — probe #1 (2026-06-29): wrong field shape, silently absorbed
-//	"AwaitingReady"— probe #2 (2026-06-29): wrong field shape, silently absorbed
-//	"AwaitingReady"— probe #4 (current): CORRECT model shape — CoreGamePlayer
-//	                with MatchParticipant containing MatchInfo + ContentService*
-//	"InProgress"   — fallback if AwaitingReady doesn't trigger connect
+// Valid values (usmap ECoreGameMatchState, ground truth):
 //
-// Other valid enum values from ECoreGameMatchState: PreHeroSelect, HeroSelect,
-// Preallocate, Deallocating, Closing, Unknown.
+//	PreHeroSelect HeroSelect Preallocate Allocating AwaitingReady InProgress
+//	Deallocating Closing Unknown
 //
-// PROBE #4 SHAPE NOTE (2026-06-29 late):
-// Probes #1-2 returned {hasActiveMatch, matchInfo, player} — these are NOT
-// fields of the actual CoreGamePlayer model. UTF-16 binary scan confirmed
-// `hasActiveMatch`/`HasActiveMatch` are ABSENT from the exe; UE silently
-// ignored them as unmatched keys, so those probes effectively returned empty
-// payloads. The real model (binary-confirmed) is:
-//   CoreGamePlayer {
-//     MatchParticipant         (struct)
-//     ContentServicePrimaryAsset (FString or FPrimaryAssetId)
-//     ContentServiceContentManifest (FString)
-//     ...
-//   }
-// MatchInfo lives nested inside MatchParticipant. The client decides
-// "has active match" by checking whether MatchParticipant is populated
-// (not via a separate boolean field).
-const phantomMatchState = ""
+// For a solo/local tutorial the plausible "travel now" states are HeroSelect,
+// AwaitingReady, or InProgress. S53 walked Allocating/AwaitingReady with the
+// (then-wrong) CoreGamePlayer shape and saw nothing; with the corrected shape
+// this becomes a live variable again.
+const tutorialMatchState = "InProgress"
 
-// handleCoreGamePlayer is the "is there an active match to rejoin?" heartbeat
-// (polled hundreds of times per session). When phantomMatchState is non-empty,
-// claims an active match at 127.0.0.1:7777 in that lifecycle state via the
-// CORRECT CoreGamePlayer model shape (probe #4): MatchParticipant containing
-// a MatchInfo struct with Address/Port/State/MatchId, plus the ContentService*
-// fields the client needs to know what map to preload.
+// forceTutorialMatch, when true, reports the phantom tutorial match on
+// /core-game/players even without a live solo-start. Normally FALSE — the match
+// is armed by the client's own POST /startSoloMode (sets playerState.SoloMode).
+// Flip to true only to probe the endpoint out of the solo-start flow (S53 showed
+// that's inert out of flow), OR to keep an already-entered match reported across
+// an ags hot-swap (SoloMode is transient and clears on restart). S62 ADDRESS
+// PROBE: was true to keep the client pinned in the pre-game lobby across hot-swaps,
+// but the client fires its travel/connect attempt ONCE at match ENTRY (using the
+// address present then) and never re-fires from a polled update — so a fresh entry
+// with the address already served is required. Back to FALSE: with SoloMode also
+// transient (cleared on restart), this releases the client from the dead empty-
+// address match back to the menu, ready for a clean START -> fresh entry that
+// gets address 127.0.0.1:7777 on its very first match fetch.
+const forceTutorialMatch = false
+
+// tutorialMatchID derives the (stable, greppable) match id for a player's phantom
+// tutorial match. The match-details route recovers the player id back off it.
+func tutorialMatchID(id string) string { return "match-" + id }
+
+// matchStateVersion is the Version reported for the phantom match (CoreGamePlayer.Version
+// and MatchInfo.Version). Computed once per ags process start, so EVERY hot-swap yields a
+// higher value than the client last cached -> the client treats the match as "updated" and
+// re-evaluates it (re-fetches + re-attempts travel with the CURRENT ConnectionDetails.address).
+// S62: a constant Version:1 made the client latch the match once (with the then-empty address)
+// and never re-travel when we later served a real address; a per-start bump fixes that without
+// thrashing within a run (stable across the ~1/min polls of a single ags instance).
+var matchStateVersion = time.Now().Unix()
+
+// handleCoreGamePlayer answers GET /core-game/players/{id} — the "do I have an
+// active match to rejoin?" heartbeat (rapid-polled while the client waits for a
+// solo-start to allocate). GROUND TRUTH (usmap CoreGamePlayer, 4 props):
 //
-// SUPERSET probe — PascalCase UPROPERTY convention. UE matches case-
-// insensitively and silently ignores unmatched keys, while matched-but-wrong-
-// typed fields trip "Deserialization failure" in Loki.log (LogJson warning
-// names the offending field). Legacy hasActiveMatch/matchInfo keys are kept
-// alongside the new shape — they were always ignored, so leaving them is
-// harmless and preserves the regression-free baseline.
+//	CoreGamePlayer { ID StrProperty; MatchID StrProperty; Version Int64Property;
+//	                 CanDisassociate BoolProperty }
+//
+// There is NO nested MatchParticipant/MatchInfo/State/Address here (the S53
+// "binary scan" model was wrong — those are separate structs). The client watches
+// this endpoint for a NON-EMPTY MatchID; on transition it fetches the full match
+// (MatchInfo) from the match route and travels. So the whole job here is: report
+// an empty MatchID when idle, and a real MatchID (+ bumped Version) once a match
+// is armed (POST /startSoloMode set SoloMode). This corrects the pre-S62 handler,
+// which returned an invented blob where only CanDisassociate matched -> the client
+// always parsed MatchID="" -> "no match" -> never escalated (the missing travel).
 func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
-	if phantomMatchState == "" {
-		writeJSON(w, map[string]any{
-			"hasActiveMatch": false,
-			"matchInfo":      nil,
-			"player":         nil,
-		})
-		return
+	id := r.PathValue("id")
+	st := s.store.get(id)
+	active := forceTutorialMatch || (st != nil && st.SoloMode != "")
+
+	resp := map[string]any{
+		"ID":      id,
+		"MatchID": "",
+		"Version": 0,
+		// CanDisassociate gates whether the client is ALLOWED to leave/abandon the
+		// match. S62: returning false made the in-match "back to lobby" no-op (the
+		// client believed it couldn't disassociate), pinning it on the pre-game screen.
+		// true lets the player leave a match back to the menu.
+		"CanDisassociate": true,
 	}
-
-	// MatchInfo — the inner connection-info struct. Fixed IDs so log lines stay
-	// greppable across restarts. Address/Port/HostName cover the likely DS-
-	// endpoint field names. PrimaryAssetId points at a real Tutorial map asset
-	// so ContentServicePrimaryAsset can resolve (Tutorial maps are packaged
-	// locally per trackb-notes.md, so no AssetManager gate to clear).
-	matchInfo := map[string]any{
-		"MatchId":        "phantom-match-0001",
-		"SessionId":      "phantom-session-0001",
-		"SessionToken":   "phantom-token-0001",
-		"State":          phantomMatchState,
-		"Status":         phantomMatchState,
-		"Region":         "na",
-		"Address":        "127.0.0.1",
-		"Port":           7777,
-		"HostName":       "127.0.0.1",
-		"ServerUrl":      "127.0.0.1:7777",
-		"Url":            "127.0.0.1:7777",
-		"GameMode":       "tutorialNew",
-		"GameMap":        "DA_Tutorial_Basics",
-		"PrimaryAssetId": "Map:DA_Tutorial_Basics",
+	if active {
+		// Non-empty MatchID + a non-zero Version signals "you have a match" so the
+		// client escalates to fetch the match details (see handleCoreGameMatch). The
+		// Version bumps each ags start so a hot-swap re-triggers the client's re-eval.
+		resp["MatchID"] = tutorialMatchID(id)
+		resp["Version"] = matchStateVersion
 	}
+	writeJSON(w, resp)
+}
 
-	// MatchParticipant — wraps the player's role in the match plus the
-	// MatchInfo. The client's CoreGamePlayer model expects this struct to be
-	// populated when there's an active match.
-	matchParticipant := map[string]any{
-		"MatchInfo":      matchInfo,
-		"MatchId":        "phantom-match-0001",
-		"SessionId":      "phantom-session-0001",
-		"State":          phantomMatchState,
-		"Status":         phantomMatchState,
-		"PrimaryAssetId": "Hero:firefox",
+// handleCoreGameMatch answers GET /core-game/matches/{matchId} — the S62 PROBE for
+// the match-details fetch the client makes once /core-game/players reports a
+// MatchID. Returns the usmap MatchInfo model for a LOCAL solo tutorial. Route is a
+// best guess (see the Register comment); if wrong it never fires and capture.log
+// shows the real route.
+func (s *Service) handleCoreGameMatch(w http.ResponseWriter, r *http.Request) {
+	matchID := r.PathValue("matchId")
+	id := strings.TrimPrefix(matchID, "match-")
+	if id == matchID { // not our prefix — fall back to the JWT subject
+		if sub := subjectFromBearer(r.Header.Get("Authorization")); sub != "" {
+			id = sub
+		}
 	}
+	display := displayNameFromBearer(r.Header.Get("Authorization"))
+	writeJSON(w, buildTutorialMatchInfo(matchID, id, display, s.selectedHero(id)))
+}
 
-	writeJSON(w, map[string]any{
-		// CORRECT CoreGamePlayer fields (probe #4):
-		"MatchParticipant":              matchParticipant,
-		"MatchInfo":                     matchInfo, // top-level too, in case the model has both
-		"ContentServicePrimaryAsset":    "Map:DA_Tutorial_Basics",
-		"ContentServiceContentManifest": "release2.4.live-156430-shipping",
-		"State":                         phantomMatchState,
-		"Status":                        phantomMatchState,
-		"CanDisassociate":               false,
-		"Region":                        "na",
+// tutorialMapName is the map the client should load for the tutorial. The
+// force-open route used the full package path; matchmaking configs may use a
+// short name instead — if the client travels to the wrong/no map, this is the
+// first field to adjust (watch Loki.log "Browse"/"LoadMap").
+const tutorialMapName = "/Game/Loki/Maps/Tutorial/LVL_Tutorial"
 
-		// Legacy keys kept for regression-free baseline (UE ignores these as
-		// unmatched, so they're harmless; removing them changes more than one
-		// variable per probe):
-		"hasActiveMatch": true,
-		"matchInfo":      matchInfo,
-		"player":         nil,
-	})
+// buildTutorialMatchInfo builds the usmap MatchInfo (19 props) for a LOCAL solo
+// tutorial match. KEY for local (non-DS) travel: ConnectionDetails.address is
+// EMPTY — there is no dedicated server for the tutorial, so an empty address
+// should signal a local map load rather than a NetConnection (the client made
+// ZERO NetConnection attempts in S61, favoring local travel). GameConfig carries
+// the map/mode/solo-start-position; StateEnum/State carry the lifecycle state
+// (tutorialMatchState). Field names/types per usmap MatchInfo + CoreGameMatchGameConfig
+// + CoreGameServerInfo; unmatched keys are ignored, a wrong-typed matched key trips
+// "Deserialization failure" (LogJson names it) — kept minimal to reduce that surface.
+func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string]any {
+	now := time.Now().UTC().Format(time.RFC3339)
+	gameConfig := map[string]any{
+		"MapName":               tutorialMapName,
+		"GameMode":              "tutorialNew",
+		"ServerCulture":         "en",
+		"CanAlwaysDisassociate": true,
+		"MaxHeroDuplicates":     1,
+		"RequiresDropLeader":    false,
+		"MaxTeamSize":           1,
+		"SoloModeStartLocation": 0,
+	}
+	// MatchParticipant (usmap, 17 props) — the local player's entry (PlayerInfo).
+	playerInfo := map[string]any{
+		"ID":           id,
+		"TeamID":       0,
+		"PartyId":      "party-" + id,
+		"PickOrder":    0,
+		"DisplayName":  display,
+		"HeroAssetID":  heroAssetId,
+		"LockedIn":     true,
+		"IsDropLeader": true,
+		"IsRanked":     false,
+		"AccountLevel": 1,
+	}
+	// CoreGameServerInfo (usmap, 6 props). S62 ADDRESS PROBE: empty address parked
+	// the client in the pre-game lobby ("Attempting to travel to Match: Address:''")
+	// — the menu route travels by CONNECTING to a server, not a local map load. So
+	// serve a loopback DS address and watch whether the client fires a real
+	// NetConnection to it (LogNet/StatelessConnect). Nothing is listening on 7777
+	// yet — the connect ATTEMPT is the diagnostic; a working DS is the follow-up.
+	connectionDetails := map[string]any{
+		"address":      "127.0.0.1:7777",
+		"ServerID":     "revival-tutorial-ds-0001",
+		"MachineID":    "revival-local",
+		"RegionID":     "na",
+		"FleetID":      "revival-fleet-0001",
+		"RoutingToken": "",
+	}
+	return map[string]any{
+		"ID":                matchID,
+		"Version":           matchStateVersion,
+		"Created":           now,
+		"GameConfig":        gameConfig,
+		"State":             tutorialMatchState,
+		"StateEnum":         tutorialMatchState,
+		"GameVersion":       "release2.4.live-156430-shipping",
+		"PlayerInfo":        playerInfo,
+		"QueueID":           "tutorialNew",
+		"Region":            "na",
+		"ConnectionDetails": connectionDetails,
+		"OwnerID":           id,
+	}
 }
 
 // handleCoreGameRegions returns the region list the latency manager pings (fixes the menu's
@@ -442,8 +523,10 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 // case-insensitively).
 //
 // 2026-06-29 — PROBE #2: object-envelope. Live readback (Loki.log):
-//   LogJson: Warning: JsonObjectStringToUStruct - Unable to parse json=[[{"Address":...}]]
-//   LogLokiPlatformQuery: Error: Deserialization failure on Query: GET .../core-game/regions
+//
+//	LogJson: Warning: JsonObjectStringToUStruct - Unable to parse json=[[{"Address":...}]]
+//	LogLokiPlatformQuery: Error: Deserialization failure on Query: GET .../core-game/regions
+//
 // UE's warning format is literally `json=[%s]` (outer brackets are part of the log format,
 // not the body) so the body the server emitted was the single-wrapped bare array
 // `[{...}]\n`. Per the validity model documented at the top of menu.go ("a bare [] hits
@@ -560,10 +643,44 @@ func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id)))
 }
 
+// handleStartSoloMode answers POST /party/parties/{partyId}/startSoloMode?mode=&hero=&soloModeStartPosition=.
+// S61: this is the actual tutorial launch call, reached only after the client-side native walls are down
+// (login GameMode-vtable slot 285, and the TryStartSoloMode party-state gate). The client's
+// Comp_MainMenu_QueueController.OnStartSoloModeComplete(bSuccess, MessageID, QueryContext) fires on this
+// response: an empty {} is ACCEPTED (bSuccess=true, no deserialize error) but the TRAVEL is downstream
+// (OnJoinQueueSuccess -> match-connect), so a clean 200 alone doesn't travel. We record SoloMode=<mode> on
+// the player (so /core-game/players can report the local tutorial match to drive the travel — the next probe)
+// and echo the party as the success body.
+//
+// NOTE (durable follow-ups): (1) the gate that gets us here needs PartyModel+0x558+0x18 == "default"/
+// "Matchmaking"; currently satisfied by a live memory poke — the durable fix is populating that party JSON
+// field (key not yet mapped). (2) The travel mechanism after solo-start is now via /core-game/players: it
+// reports the real usmap CoreGamePlayer with a non-empty MatchID (S62), which should make the client fetch
+// the match (handleCoreGameMatch) and travel locally. S61 saw no travel because that endpoint served an
+// invented shape (empty MatchID); the corrected shape is the current single-variable probe.
+func (s *Service) handleStartSoloMode(w http.ResponseWriter, r *http.Request) {
+	partyID := r.PathValue("partyId")
+	id := strings.TrimPrefix(partyID, "party-")
+	if id == partyID { // not our prefix — fall back to the JWT subject
+		if sub := subjectFromBearer(r.Header.Get("Authorization")); sub != "" {
+			id = sub
+		}
+	}
+	mode := r.URL.Query().Get("mode")
+	hero := r.URL.Query().Get("hero")
+	pos := r.URL.Query().Get("soloModeStartPosition")
+	log.Printf("interactive: startSoloMode player=%s mode=%q hero=%q pos=%q", id, mode, hero, pos)
+	s.store.update(id, func(st *playerState) { st.SoloMode = mode })
+	display := displayNameFromBearer(r.Header.Get("Authorization"))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id)))
+}
+
 // queueIDs is the set of matchmaking queue ids we advertise to the client. The full known
 // set (from WBP_ActivityPickerScreen.InitializeQueues' string constants) is:
-//   default deathmatch practice dropin customgame bots tutorialNew training
-//   armorydeathmath tournament
+//
+//	default deathmatch practice dropin customgame bots tutorialNew training
+//	armorydeathmath tournament
+//
 // DIAGNOSTIC TRIM (S60): Comp_MainMenu_QueueController.CanControlQueue loops over the current
 // queues calling GetLevelGameFeatureUnlocked; with the served account level = 0, any level-gated
 // queue (tournament/deathmatch/ranked) fails that loop -> CanControlQueue false -> every activity
@@ -585,9 +702,11 @@ const matchmakingETag = "revival-queues-v1"
 //
 // GROUND TRUTH CORRECTS THE USMAP: usmap QueueInfo lists Queues as ArrayProperty<StrProperty>,
 // but the LIVE client rejected a string array with:
-//   ImportText (Queues): Missing opening parenthesis: default
-//   JsonValueToUProperty - Unable to import JSON string into QueueDetails property Queues
-//   -> Deserialization failure on GET /party/matchmaking/info
+//
+//	ImportText (Queues): Missing opening parenthesis: default
+//	JsonValueToUProperty - Unable to import JSON string into QueueDetails property Queues
+//	-> Deserialization failure on GET /party/matchmaking/info
+//
 // i.e. Queues is really ArrayProperty<StructProperty QueueDetails>. Each element is a
 // QueueDetails{ID, IsRanked, IsSpecial, Config:QueueConfig} (usmap struct defs). Config
 // carries the party-size limits the client validates the (solo) party against — MaxPartySize
@@ -647,10 +766,12 @@ func (s *Service) handleMatchmakingCustomGameModes(w http.ResponseWriter, r *htt
 //
 // CAPTURE-CONFIRMED 2026-07-09 (this was a best-guess route since s48): clicking a skin
 // in CUSTOMIZATION→SKIN fires
-//   PUT /party/parties/party-<id>/members/<id>
-//   {"iD":"<id>","heroAssetId":"Hero:Alchemist",
-//    "cosmeticsAssetId":"HeroCosmeticsBundle:AlchemistDefault_MAS","luxeSkinChroma":"",
-//    "ownedCosmeticsFeatures":[],"isReady":true,"customGameTeamId":0,"isPremiumSession":false}
+//
+//	PUT /party/parties/party-<id>/members/<id>
+//	{"iD":"<id>","heroAssetId":"Hero:Alchemist",
+//	 "cosmeticsAssetId":"HeroCosmeticsBundle:AlchemistDefault_MAS","luxeSkinChroma":"",
+//	 "ownedCosmeticsFeatures":[],"isReady":true,"customGameTeamId":0,"isPremiumSession":false}
+//
 // followed ~5s later by PUT /personalization/players/<id>/cosmeticsbundle/Hero:<name>
 // (the debounced per-hero preference write, loadout.go).
 //
@@ -845,19 +966,19 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 	// risks the 2026-07-08 lock, so we drop it. Skin persistence needs a client-side shim.
 	_ = cosmeticsAssetId
 	return map[string]any{
-		"partyId":         "party-" + id,
-		"id":              "party-" + id,
-		"leader":          id,
-		"leaderId":        id,
-		"ownerId":         id,
+		"partyId":  "party-" + id,
+		"id":       "party-" + id,
+		"leader":   id,
+		"leaderId": id,
+		"ownerId":  id,
 		// The selected matchmaking activity. The client's Comp_MainMenu_QueueController
 		// requires the party to always carry a non-empty target queue (usmap Party.TargetQueueID
 		// / .TargetQueueIDs) — otherwise IsPartyOwner/CanControlQueue-gated modifies fail with
 		// "Unable to modify activity. You must always have one activity selected." Seeded from
 		// the client's own GET /party/players/{id}?defaultQueue=<q> and updated on switch.
-		"targetQueueId":  targetQueue,
-		"targetQueueIds": []any{targetQueue},
-		"members":        []any{member},
+		"targetQueueId":   targetQueue,
+		"targetQueueIds":  []any{targetQueue},
+		"members":         []any{member},
 		"invitees":        []any{},
 		"invitationToken": "",
 		"joinSecret":      "",
