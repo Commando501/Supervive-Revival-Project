@@ -122,7 +122,8 @@
 let DATA = { config: null, defaults: null, path: "" };  // /api/config
 let CFG = null;          // working copy the checklists mutate
 let dirty = false;
-let MISSIONS = { manifest: [], objectives: {} };
+let MISSIONS = { manifest: [], objectives: {}, status: { summary: {}, missions: [] },
+                 coverage: { summary: {}, unmappedObjectives: [], unusedRules: [] } };
 let PLAYERS = [];
 let curTab = "overview";
 let curPlayer = null;    // {id, state} being edited
@@ -157,7 +158,19 @@ async function loadConfig() {
   $("#cfgpath").textContent = DATA.path ? ("config: " + DATA.path) : "config persistence disabled (-config \"\")";
   setDirty(false);
 }
-async function loadMissions() { MISSIONS = await api("/api/missions"); }
+async function loadMissions() {
+  // Merge defensively instead of wholesale-replacing: if the page is newer than
+  // the running ags build (browser kept a tab open across a rebuild), absent
+  // keys must not crash the renderers — that's how the panel got stuck on a
+  // permanent "Loading…" (2026-07-10).
+  const d = await api("/api/missions");
+  MISSIONS = {
+    manifest:   d.manifest   || [],
+    objectives: d.objectives || {},
+    status:     d.status     || { summary: {}, missions: [] },
+    coverage:   d.coverage   || { summary: {}, unmappedObjectives: [], unusedRules: [] },
+  };
+}
 async function loadPlayers()  { PLAYERS = (await api("/api/players")).players; }
 
 async function saveConfig() {
@@ -196,9 +209,23 @@ function go(tab) { curTab = tab; curPlayer = null; render(); }
 function render() {
   renderNav();
   const m = $("#main");
-  if (!CFG) { m.innerHTML = "<p>Loading…</p>"; return; }
-  ({overview: renderOverview, hunters: renderHunters, store: renderStore,
-    economy: renderEconomy, missions: renderMissions, players: renderPlayers}[curTab])(m);
+  if (!CFG) {
+    // Boot hasn't succeeded yet. Show WHY (dead/restarting backend) instead of a
+    // bare "Loading…" — and boot() auto-retries until ags answers.
+    m.innerHTML = bootError ? `
+      <div class="note warn"><b>Can't reach the ags backend:</b> ${esc(bootError)}<br>
+        Retrying every 3s — is ags running? (panel = same process, port from the -admin flag)</div>
+      <button class="btn" onclick="boot()">Retry now</button>` : "<p>Loading…</p>";
+    return;
+  }
+  try {
+    ({overview: renderOverview, hunters: renderHunters, store: renderStore,
+      economy: renderEconomy, missions: renderMissions, players: renderPlayers}[curTab])(m);
+  } catch (e) {
+    // A renderer must never leave stale content behind (looked like a hang).
+    m.innerHTML = `<div class="note warn"><b>Render error on this tab:</b> ${esc(e.message)}<br>
+      If ags was just rebuilt, hard-refresh (Ctrl+F5) so the page matches the backend.</div>`;
+  }
 }
 
 /* --------------------------------------------------------------- overview -- */
@@ -418,6 +445,10 @@ let missionEdits = {};   // composite key -> pending absolute value
 function renderMissions(m) {
   const man = MISSIONS.manifest || [];
   const obj = MISSIONS.objectives || {};
+  // Server-computed views (ags derives these): completion status + match-result coverage.
+  const st  = MISSIONS.status   || { summary: {} };
+  const cov = MISSIONS.coverage || { summary: {}, unmappedObjectives: [], unusedRules: [] };
+  const ss = st.summary || {}, cs = cov.summary || {};
   const rows = man.map(e => {
     const key = e.mission + "/" + e.objective;
     return { key, mission: e.mission, objective: e.objective, max: e.max,
@@ -432,7 +463,21 @@ function renderMissions(m) {
       client-side missions shim fetches these on menu load and writes them into the modal's bars.
       <b>Requirements</b> (objective names / maxes / text) come from the game's data assets — server
       controls progress only. The manifest below is registered by the shim; if it's empty, launch the game
-      to the menu once with <span class="mono">-Missions</span> and it will populate.</div>
+      to the menu once (the missions shim injects by default) and it will populate.</div>
+    ${man.length ? `
+    <div class="card">
+      <h3 style="margin-top:0">Server-computed status <span class="counts">(ags derives these — not just raw progress)</span></h3>
+      <div class="row">
+        <span class="counts"><b>${ss.complete||0}</b> / ${ss.total||0} missions complete</span>
+        <span class="counts">· <b>${ss.xpEarned||0}</b> XP earned</span>
+        <span class="counts">· coverage: ${cs.missionsFullyTrackable||0} full / ${cs.missionsPartial||0} partial / <b>${cs.missionsUntrackable||0}</b> untrackable</span>
+        <span class="counts">· ${cs.objectivesMapped||0}/${cs.objectivesTotal||0} objectives mapped</span>
+      </div>
+      ${(cov.unmappedObjectives||[]).length ? `<h3>Unmapped objectives <span class="counts">(no rule in objectiveRules → won't advance from a match)</span></h3>
+        <div class="listbox mono counts" style="max-height:160px">${cov.unmappedObjectives.map(esc).join("<br>")}</div>` : ""}
+      ${(cov.unusedRules||[]).length ? `<h3>Unused rules <span class="counts">(match no registered objective — usually a name typo)</span></h3>
+        <div class="listbox mono counts" style="max-height:120px">${cov.unusedRules.map(esc).join("<br>")}</div>` : ""}
+    </div>` : ""}
     <div class="card">
       <div class="row" style="margin-bottom:8px">
         <input type="text" class="grow" placeholder="filter missions…" value="${esc(missionFilter)}"
@@ -670,12 +715,23 @@ async function deletePlayer(id) {
 }
 
 /* ------------------------------------------------------------------- boot -- */
-(async function boot() {
+let bootError = null;
+let bootTimer = null;
+async function boot() {
+  clearTimeout(bootTimer);
   try {
     await Promise.all([loadConfig(), loadMissions(), loadPlayers()]);
-  } catch (e) { toast("Load failed: " + e.message, true); }
+    bootError = null;
+  } catch (e) {
+    // Page can load while ags is mid-restart (rebuild loop) — keep retrying so
+    // the panel comes alive as soon as the backend does, instead of sitting on
+    // "Loading…" until a manual refresh.
+    bootError = e.message;
+    bootTimer = setTimeout(boot, 3000);
+  }
   render();
-})();
+}
+boot();
 </script>
 </body>
 </html>

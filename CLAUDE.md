@@ -59,26 +59,50 @@ are all RE'd on top of it. Read `docs/session-55-native-call-primitive.txt` (+ s
 s57/s58/s59) and the `missions_nativecall_probe*.cpp` / `tools/re/*.py` families
 before building a new shim. Memory: `supervive-missions-page-status`.
 
-Two `ProcessInternal` hooks can NOT coexist (they race) — that's why the pick→center
-refresh shim (`mainmenu_refresh_pi8`) and the missions shim are mutually exclusive
-launch modes.
+Two `ProcessInternal` hooks that stay PERMANENTLY installed race (they clobber each
+other's prologue). The fix (S59): every PI-hooking shim (`mainmenu_refresh_pi8`,
+`missions_fix`, `loadout_fix`) installs its 5-byte jmp only TRANSIENTLY — install →
+piggyback one game-thread call → uninstall — serialized through a shared named mutex
+`Local\SuperviveMissionsPIHook`, so only one has the hook installed at any instant.
+That retired the old "mutually exclusive launch modes" split: all three now coexist and
+inject together as the default set (see the launch procedure below).
 
 ## Launch / run procedure
 
 From an **ELEVATED PowerShell**:
 ```powershell
 cd "G:\git\Supervive Revival Project"
-.\configs\launch-redirect.ps1            # redirect + server + game; auto-injects catalog_store_fix.dll
-.\configs\launch-redirect.ps1 -Missions  # also inject missions_fix.dll (swaps out the pick/refresh shim)
-.\configs\launch-redirect.ps1 -NoHook    # clean RE run, no shim injection
+.\configs\launch-redirect.ps1              # redirect + server + game; injects the FULL shim set
+.\configs\launch-redirect.ps1 -NoMissions  # everything EXCEPT missions_fix (isolate non-missions surfaces)
+.\configs\launch-redirect.ps1 -NoLoadout   # everything EXCEPT loadout_fix (isolate non-customization surfaces)
+.\configs\launch-redirect.ps1 -NoHook      # clean RE run, no shim injection
 ```
 
-By default the launcher injects `catalog_store_fix.dll` (roster + store + cosmetics)
-plus the pick→center refresh shim. `-Missions` swaps the refresh shim for
-`missions_fix.dll` (both hook `ProcessInternal`, so only one at a time).
+By default the launcher injects the primary `catalog_store_fix.dll` (roster + store +
+cosmetics) at launch, then `configs/inject-secondaries.ps1` injects the full secondary
+set once it settles: `mainmenu_refresh_pi8` (pick→center refresh), `catalog_pick_fix`
+(pick-commit), `loadout_fix` (customization/skin persistence), and `missions_fix`
+(durable missions page). One launch = every durable fix, together. `-NoMissions` /
+`-NoLoadout` trim individual shims; `-Hook <path>` injects exactly one DLL and no
+secondaries. `-Missions` is kept as a deprecated no-op alias (missions are now default).
+
+**VALIDATION PENDING (as of 2026-07-10):** the default set now runs THREE PI-hookers in
+one launch (`pi8` + `loadout_fix` + `missions_fix`). Each pair has been validated live
+(pi8+missions in S59; pi8+loadout in the skins session), but the full triple has not yet
+had a confirmation launch. The shared-mutex + transient-install design is N-way safe by
+construction and contention is low, but do one validation pass when the game is free. If
+the triple ever misbehaves, `-NoMissions` / `-NoLoadout` isolate it. See
+`supervive-missions-page-status` memory.
 
 **Steam must be running first**, or login dies with `Auth Failure 14005` (SteamAPI
 init fails). Easy to miss; surface this gotcha if you see Steam not running.
+
+**Shim readiness:** the launcher fires the injectors detached then blocks on the game,
+so for a consolidated "did every shim activate?" view run `.\configs\shim-status.ps1`
+(or `-Watch`) in a SECOND terminal. It's read-only — reads each shim's `docs/*-marker.txt`
+and classifies READY / running / FAILED / leftover (anchored to the game's start time so a
+shim that finished and went quiet still reads READY, and a marker from a prior launch reads
+`leftover`). Safe to run anytime, including while another session has the game open.
 
 The script blocks until the game exits. Read live `Loki.log` at
 `C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log` (NOT `docs/` — that's
@@ -148,8 +172,11 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
 - Don't leave a permanent `.text` patch in place — the ~3–5 min code-integrity
   check catches it and kills the process. Any raw `jz`-NOP must be self-restoring
   (patch → let the builder run → restore), the way `catalog_store_fix.dll` does.
-- Don't inject two `ProcessInternal`-hooking shims at once — they race. The pick/
-  refresh shim and the missions shim are separate launch modes for this reason.
+- Don't leave a `ProcessInternal` hook PERMANENTLY installed if another PI-hooking shim
+  is present — they race on the prologue. Coexisting PI-hookers must install the jmp only
+  TRANSIENTLY and serialize via the shared `Local\SuperviveMissionsPIHook` mutex (the way
+  `mainmenu_refresh_pi8` / `missions_fix` / `loadout_fix` do). That's what lets all three
+  inject together in the default set — any NEW PI-hooking shim must follow the same pattern.
 - Don't trust the extracted usmap for replicated container types — it has been
   wrong repeatedly (DS missions work cost several passes). Verify struct/array
   shapes against live RPM.

@@ -69,7 +69,11 @@ The client has **no missions-list/progress endpoint** (missions are built client
 |---|---|---|
 | GET | `/revival/missions/progress` | per-mission objective progress the shim applies to the bars (keyed `"<mission>/<objective>"`) |
 | POST | `/revival/missions/progress` / `.../add` | set / increment composite keys |
-| POST | `/revival/missions/manifest` | shim registers the mission→objective structure (for per-mission fan-out) |
+| POST | `/revival/missions/manifest` | shim registers the mission→objective structure (`{mission,objective,max}`, +optional `pool`,`xp`) for per-mission fan-out |
+| GET | `/revival/missions/manifest` | read back the registered manifest (admin / a thinner shim) |
+| GET | `/revival/missions/status` | **server-computed completion** — per-mission `{complete,objectives[…]}` + summary `{total,complete,xpEarned}` from manifest maxes vs stored progress |
+| POST | `/revival/missions/rotate` | daily/weekly reset — clears a pool's (`{"pool":…}`) or listed (`{"missions":[…]}`) composite progress |
+| GET | `/revival/missions/coverage` | **which missions will actually advance** from a match — cross-refs the manifest objectives against `objectiveRules`; lists per-mission `full/partial/none`, unmapped objectives (need a rule), and unused rules (likely name typos) |
 | POST | `/revival/missions/match-result` | **the increment engine** — maps a match stat summary → objective deltas, fans out per-mission |
 
 **Wiring real match progress when matches launch:** see **`docs/missions-progression-hookup.md`** (candidate match-end signals, the backend-driven vs native-driven strategies, the unmapped 309 hero objectives, and the reward-claim/rotation gaps).

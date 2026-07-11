@@ -58,13 +58,20 @@ param(
                          # UEngine::Browse call at startup. Required to catch
                          # the natural LVL_Login + LVL_LobbyV2 startup
                          # browses for testing the hook end-to-end.
-  [switch]$NoHook,       # skip the default catalog_store_fix.dll auto-injection (clean RE run)
-  [switch]$Missions      # durable Missions mode: primary catalog_store_fix + missions_fix.dll (Option 2, 2d),
-                         # injected via inject-missions.ps1. Skips the pick/refresh secondary (mainmenu_refresh_pi8)
-                         # because it also hooks ProcessInternal and two PI-hookers cannot coexist. The bars then
-                         # reflect ags per-objective progress on launch + poll for changes. Requires ags built
-                         # with /revival/missions/progress (server/internal/interactive/missions.go).
+  [switch]$NoHook,       # skip ALL shim auto-injection (clean RE run)
+  [switch]$Missions,     # DEPRECATED no-op alias: missions are now in the DEFAULT set. Kept so old
+                         # invocations / docs still work. (Was: "durable Missions mode".)
+  [switch]$NoMissions,   # drop missions_fix.dll from the default set (isolate non-missions surfaces)
+  [switch]$NoLoadout     # drop loadout_fix.dll from the default set (isolate non-customization surfaces)
 )
+# DEFAULT (no flags): primary catalog_store_fix.dll (store + HUNTERS roster) is injected at launch, then
+# configs/inject-secondaries.ps1 injects the full secondary set once it settles — pick/refresh (pi8),
+# pick-commit (catalog_pick_fix), customization (loadout_fix), and missions (missions_fix). The three
+# ProcessInternal-hooking shims (pi8, loadout_fix, missions_fix) coexist via the shared
+# Local\SuperviveMissionsPIHook mutex (each installs its PI jmp only transiently). This one launch now
+# gives EVERY durable fix at once. -NoMissions / -NoLoadout trim the set; -NoHook skips all shims;
+# -Hook <path> injects exactly one DLL and no secondaries. Requires ags built with /revival/missions/*
+# and /revival/loadout (server/internal/interactive/{missions,loadout}.go).
 
 $ErrorActionPreference = "Stop"
 $repoRoot  = Split-Path -Parent $PSScriptRoot
@@ -85,11 +92,14 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 if (-not $isAdmin) {
   Write-Host "Elevation required (hosts file + port 443). Relaunching as admin..." -ForegroundColor Yellow
   $argList = @("-NoExit","-ExecutionPolicy","Bypass","-File",$PSCommandPath,"-GameRoot",$GameRoot)
-  if ($Revert)   { $argList += "-Revert" }
-  if ($NoLaunch) { $argList += "-NoLaunch" }
-  if ($Open)     { $argList += @("-Open",$Open) }
-  if ($Hook)     { $argList += @("-Hook",$Hook) }
-  if ($NoHook)   { $argList += "-NoHook" }
+  if ($Revert)     { $argList += "-Revert" }
+  if ($NoLaunch)   { $argList += "-NoLaunch" }
+  if ($Open)       { $argList += @("-Open",$Open) }
+  if ($Hook)       { $argList += @("-Hook",$Hook) }
+  if ($NoHook)     { $argList += "-NoHook" }
+  if ($Missions)   { $argList += "-Missions" }    # accepted (no-op alias) — forwarded so it isn't silently dropped
+  if ($NoMissions) { $argList += "-NoMissions" }
+  if ($NoLoadout)  { $argList += "-NoLoadout" }
   Start-Process powershell -Verb RunAs -ArgumentList $argList
   return
 }
@@ -106,17 +116,17 @@ if (-not $NoHook -and -not $Revert -and -not $NoLaunch -and -not $Hook) {
   $defaultHook = Join-Path $repoRoot "tools\sigbypass-mod\catalog_store_fix.dll"
   if (Test-Path $defaultHook) {
     $Hook = $defaultHook
-    if ($Missions) {
-      # Durable Missions mode: primary catalog_store_fix + missions_fix.dll (the SOLE PI-hooker;
-      # pick/refresh pi8 is skipped since two ProcessInternal hooks race). missions_fix fetches
-      # per-objective progress from ags and swaps the mission model on menu load + on change.
-      $InjectMissions = $true
-      Write-Host "Auto-hook (-Missions): store/roster fix + durable Missions shim (missions_fix.dll). Pick/refresh (pi8) is skipped in this mode." -ForegroundColor Cyan
-    } else {
-      $InjectSecondaries = $true   # after the primary settles, also inject the pick shims
-                                   # (catalog_pick_fix + mainmenu_refresh_pi8) via inject-secondaries.ps1
-      Write-Host "Auto-hook: injecting store/roster fix (catalog_store_fix.dll) + pick/refresh shims. Use -NoHook to skip, -Missions for the Missions shim." -ForegroundColor Cyan
-    }
+    # After the primary catalog_store_fix settles, inject-secondaries.ps1 injects the FULL secondary set:
+    # pick/refresh (pi8) + pick-commit (catalog_pick_fix) + customization (loadout_fix) + missions
+    # (missions_fix). The three PI-hookers coexist via the shared Local\SuperviveMissionsPIHook mutex.
+    $InjectSecondaries = $true
+    $secExtra = @()
+    if ($NoMissions) { $secExtra += "-NoMissions" }
+    if ($NoLoadout)  { $secExtra += "-NoLoadout" }
+    $parts = @("pick/refresh","pick-commit")
+    if (-not $NoLoadout)  { $parts += "customization" }
+    if (-not $NoMissions) { $parts += "missions" }
+    Write-Host "Auto-hook: store/roster (catalog_store_fix) + $($parts -join ' + '). Use -NoHook (clean RE), -NoMissions / -NoLoadout to trim." -ForegroundColor Cyan
   } else {
     Write-Host "Auto-hook: catalog_store_fix.dll not found at $defaultHook" -ForegroundColor Yellow
     Write-Host "  -> launching WITHOUT the store/roster hook (STORE + HUNTERS will be empty)." -ForegroundColor Yellow
@@ -198,6 +208,28 @@ if (-not (Test-Path $certPath)) {
 }
 Write-Host "Server up; cert chain generated." -ForegroundColor Green
 Start-Sleep -Seconds 2
+
+# ---- verify the HTTP mux is actually SERVING (not just that TLS certs were written) ----
+# The cert-chain wait proves ags started + cleared TLS init, but not that the request mux answers. A
+# quick GET of a lightweight, side-effect-free revival endpoint confirms the backend will actually
+# respond to the game's login/menu calls — catching a half-up server (panicked handler, port bind race)
+# BEFORE we launch the game and stare at a mystery hang. Best-effort: retry ~5s, WARN (don't abort) on
+# failure, since a probe false-negative shouldn't block a launch when ags is otherwise up.
+# -UseBasicParsing avoids the IE engine; 127.0.0.1 bypasses the proxy.
+$healthUrl = "http://127.0.0.1:8080/revival/missions/progress"
+$served = $false
+for ($i=0; $i -lt 10 -and -not $served; $i++) {
+  try {
+    $resp = Invoke-WebRequest -Uri $healthUrl -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+    if ($resp.StatusCode -eq 200) { $served = $true }
+  } catch { Start-Sleep -Milliseconds 500 }
+}
+if ($served) {
+  Write-Host "Backend serving HTTP (probe $healthUrl -> 200)." -ForegroundColor Green
+} else {
+  Write-Warning "Backend cert chain is up but $healthUrl did not answer in ~5s."
+  Write-Warning "  The game may still work, but if login/menu hangs, check $srvOut for a handler panic or bind error."
+}
 
 # ---- append our ROOT CA to the game's libcurl CA bundle (from clean backup) ----
 if (-not (Test-Path $caBundle)) { throw "CA bundle not found: $caBundle" }
@@ -334,23 +366,18 @@ if ($Hook) {
   if ($InjectSecondaries) {
     $secInj = Join-Path $repoRoot "configs\inject-secondaries.ps1"
     if (Test-Path $secInj) {
-      Write-Host "  Secondary shims (catalog_pick_fix + pi8) will inject once the store/roster hook settles." -ForegroundColor DarkGray
-      # Quote the spaced paths in ONE argument string (Start-Process does not quote
-      # -ArgumentList array elements, so the repo path splits and powershell can't find the script).
+      $setDesc = @("pi8","catalog_pick_fix")
+      if (-not $NoLoadout)  { $setDesc += "loadout_fix" }
+      if (-not $NoMissions) { $setDesc += "missions_fix" }
+      Write-Host "  Secondary shims ($($setDesc -join ' + ')) will inject once the store/roster hook settles." -ForegroundColor DarkGray
+      # Quote the spaced paths in ONE argument string (Start-Process does not quote -ArgumentList array
+      # elements, so the repo path would split and powershell couldn't find the script). Append the
+      # -NoMissions / -NoLoadout toggles the injector honours.
       $secArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$secInj`" -Repo `"$repoRoot`""
+      foreach ($e in $secExtra) { $secArgs += " $e" }
       Start-Process powershell -WindowStyle Hidden -ArgumentList $secArgs | Out-Null
     } else {
-      Write-Host "  (inject-secondaries.ps1 not found — pick shims will NOT auto-inject)" -ForegroundColor Yellow
-    }
-  }
-  if ($InjectMissions) {
-    $misInj = Join-Path $repoRoot "configs\inject-missions.ps1"
-    if (Test-Path $misInj) {
-      Write-Host "  Missions shim (missions_fix.dll) will inject once the store/roster hook settles." -ForegroundColor DarkGray
-      $misArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$misInj`" -Repo `"$repoRoot`""
-      Start-Process powershell -WindowStyle Hidden -ArgumentList $misArgs | Out-Null
-    } else {
-      Write-Host "  (inject-missions.ps1 not found — Missions shim will NOT auto-inject)" -ForegroundColor Yellow
+      Write-Host "  (inject-secondaries.ps1 not found — secondary shims will NOT auto-inject)" -ForegroundColor Yellow
     }
   }
   Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
