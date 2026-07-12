@@ -114,6 +114,96 @@ into "boot SUPERVIVE's own binary as a server against faked Agones + AccelByte-s
 in-domain HTTP/SDK faking, with an off-the-shelf Agones local option." The whole bet hinges on the R1
 launch test. Recommend running Phase 0 as the next hands-on (elevated + Steam) step before any build work.
 
+---
+
+## ★ PHASE 0 RESULT (2026-07-12, RAN LIVE) — naive `-server` is a NO-GO; `IsRunningDedicatedServer()` is gated off.
+
+Launched the real exe directly (elevated shell, Steam up, 7777 free — S73 stack had already exited):
+`SUPERVIVE-Win64-Shipping.exe /Game/Loki/Maps/Tutorial/LVL_Tutorial?game=.../BP_LokiGameMode_Tutorial_C
+-server -port=7777 -log -unattended -nosplash`. (Log defaulted to `Binaries\Win64\Loki.log` — the
+`-abslog` path had spaces and `Start-Process` doesn't quote array elements; the *rest* of the cmdline,
+including `-server`, parsed correctly per `LogInit: Command Line:`.)
+
+**It ran as a CLIENT, ignoring `-server`:**
+- `LogLokiGameInstance: Warning: initializing game instance for **client**`
+- Initialized **D3D12 RHI** + **CEF browser** (a real dedicated server uses the NULL RHI — proof it is
+  NOT in dedicated mode; `-server` on a dedicated-capable build would skip D3D12).
+- **Ignored the positional `LVL_Tutorial?game=...` URL** and did the normal startup
+  `UEngine::Browse "/Game/Loki/Maps/LVL_Login?Name=Player"` → client login flow (libcurl connects to the
+  dead `accounts.projectloki` / `client-config` hosts — ags/redirect weren't up, irrelevant to the verdict).
+- NO `IpNetDriver`/`InitListen`/`listening`, NO `LokiServerPlatformInstance` construction — no server path
+  ever engaged. (The **Agones PROJECT plugin DID mount** — server *code* is present, just never entered.)
+
+**Root cause (fundamental UE, not a fluke):** `IsRunningDedicatedServer()` /
+`FPlatformProperties::IsServerOnly()` is a COMPILE-TIME property of the build TARGET. A cooked shipping
+Client/Game monolithic build is game-only → `IsRunningDedicatedServer()` returns FALSE regardless of the
+`-server` switch. Dedicated mode requires the separate `<Game>Server-Win64-Shipping.exe` (Server target),
+which **does not ship** (S73). So the `-server` switch cannot turn this binary into a dedicated server.
+
+**Also closes the listen-server sub-variant at startup:** the client startup force-browses `LVL_Login`
+and ignores a positional `?listen` URL; and the force-open route already tried runtime `open …?listen`
+(S64) → "failed to Listen". So neither dedicated nor listen engages from this binary the easy way.
+
+### Refined verdict + remaining lever
+- **Naive B1 (2nd exe as a dedicated server via `-server`): DEAD** — confirmed, fundamental gating.
+- **B1′ (the only remaining B1 form): patch the mode gate at runtime** — shim
+  `IsRunningDedicatedServer()` / `FPlatformProperties::IsServerOnly()` (and/or the LokiGameInstance
+  client/server branch that logs "initializing game instance for client") to force the DEDICATED path,
+  the same class of native patch the force-open route used. VIABILITY signal: server classes
+  (LokiServerPlatformInstance/ServerAuthManager/…) are in the reflection AND the Agones *project plugin*
+  mounts → server code appears COMPILED IN (likely a Game target, WITH_SERVER_CODE=1), so forcing the
+  flag *might* light up the dedicated path. RISK: hostile packer (static RE dead; the ~3–5 min integrity
+  check kills persistent .text patches — must be transient/self-restoring), the flag is read VERY early
+  (before/at engine init — must patch pre-init, harder than the mid-run vtable patches force-open did),
+  and if it's actually a strict Client target the server paths may be only partially linked. Uncertain,
+  deep, multi-session.
+- Fallbacks unchanged: **B2** (force-open past EGP_BeginInit — stalled S66–S68) or **bank** S70/S73.
+
+Recommendation: this is a decision point. Naive B1 is closed; B1′ is a genuine but deep/uncertain
+native-patch effort (turn the client into a dedicated server by flipping the compile-time-ish mode gate).
+Worth it only if committing to that RE; otherwise bank S70/S73.
+
+---
+
+## ★ B1′ SCOPING (2026-07-12, read-only, from STOCK UE 5.4 SOURCE) — B1′ is ALSO a NO-GO. The mode gate is a compile-time constant, not a runtime flag.
+
+Read the authoritative, packer-independent source (H:\Unreal Engine\UE_5.4):
+
+`Core/Public/Misc/CoreMisc.h` — `IsRunningDedicatedServer()` is `FORCEINLINE`:
+```cpp
+if (FPlatformProperties::IsServerOnly()) return true;     // compile-time
+if (FPlatformProperties::IsGameOnly())   return false;    // compile-time
+#if UE_EDITOR  ...-server parse...  #else  return false;  #endif   // shipping non-editor: HARD false
+```
+`Core/Public/Windows/WindowsPlatformProperties.h` — `FWindowsPlatformProperties<HAS_EDITOR_DATA,
+IS_DEDICATED_SERVER, IS_CLIENT_ONLY>`, all `static FORCEINLINE` returning compile-time literals:
+`IsServerOnly() => IS_DEDICATED_SERVER`, `IsGameOnly() => UE_GAME`, `IsClientOnly() => IS_CLIENT_ONLY`.
+
+For this shipping build (WindowsClient paks → Client target: `IS_DEDICATED_SERVER=false`, `UE_GAME=1`):
+`IsRunningDedicatedServer()` = `false ? … : (true ? false : …)` = **compile-time `false`**, and being
+`FORCEINLINE` it is FOLDED into a literal `false` at EVERY call site (hundreds, scattered, packer-protected).
+
+**⇒ There is no runtime flag to patch.** "Force dedicated mode" is not flipping one boolean; it's rewriting
+every folded branch across the binary — not feasible. SUPERVIVE's `LogLokiGameInstance: initializing game
+instance for client` IS that folded branch resolving to the client side (evaluated at GameInstance init).
+
+### Does the LISTEN-server sub-path survive? No — already empirically closed.
+Listen server (world NetMode `NM_ListenServer`) is runtime and does NOT need `IsRunningDedicatedServer()`.
+But: (1) force-open's runtime `open …?listen` already **"failed to Listen"** (S64); and (2) DECISIVE —
+force-open DID run the real `BP_LokiGameMode_Tutorial` as authority in the client process (S63-S65) and
+STILL logged **"failed to get ULokiServerPlatformInstance"**, proving `ULokiServerPlatformInstance` creation
+is gated on the compile-time-`false` dedicated check, NOT on world authority/net-mode. So even a working
+listen server would not create the server platform instance → same EGP_BeginInit round-start wall.
+
+### Verdict: the entire "real exe as the server" family (B1 + B1′) is CLOSED, on fundamental UE grounds.
+Dedicated-server is a compile-time BUILD-TARGET property. Only the CLIENT target shipped; the mode is baked
+to `false` and folded, so no patch turns the client binary into a server, and the listen-server alternative
+neither binds nor creates the ServerPlatformInstance (force-open proved both). A playable tutorial needs
+SUPERVIVE's **Server-target binary** (or source), which we do not have. All four routes now converge on the
+same conclusion. **The reasonable-effort AND current-artifacts ceiling is the S70/S73 spectator milestone.**
+IF the Server-target `…Server-Win64-Shipping.exe` is ever obtained, the entire S70-S73 net stack + the S62
+client-delivery flow become immediately useful (that binary + faked Agones/AccelByte-server = B1 as intended).
+
 ## Ground-truth references (this scoping)
 - ULokiGameInstance / platform instances: schema.txt L25145-25158.
 - ULokiServerPlatformInstance 5 members: schema.txt L27781-27786.
