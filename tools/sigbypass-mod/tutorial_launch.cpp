@@ -85,8 +85,8 @@ static uint8_t g_template[0x180]={0}, g_myframe[0x180]={0};
 static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
 
 // ---- S68 spawn+possess mode (LEAD B / OPTION 2) ----
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1 };
-static const int kRunMode = RM_SPAWNPOSSESS;   // RM_FORCEOPEN = force-open tutorial; RM_SPAWNPOSSESS = spawn+possess in the running tutorial
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2 };
+static const int kRunMode = RM_GOTOPHASE;   // RM_FORCEOPEN = force-open tutorial; RM_SPAWNPOSSESS = spawn+possess; RM_GOTOPHASE = advance round past EGP_BeginInit (S74 B2)
 static uintptr_t g_gm2=0, g_pc2=0, g_startSpot=0, g_spawnedPawn=0, g_heroClass=0;
 constexpr uint32_t GM_DEFPAWN_OFF=0x3F0;   // AGameModeBase::DefaultPawnClass
 // S68 GameplayStatics deferred-spawn (bypass GetDefaultPawnClass): explicit hero-class spawn + possess.
@@ -103,6 +103,12 @@ static void* g_possessFn=nullptr; static uintptr_t g_possessThunk=0, g_possessCh
 static uint32_t g_offSpawnNP=0, g_offSpawnSS=8, g_offSpawnRet=0x10, g_offInPawn=0;
 static volatile long g_spStep=0;   // progress: 1=spawn called, 2=pawn got, 3=possess called
 static void DoSpawnPossess();
+// ---- S74 B2: GoToPhase (force the round past EGP_BeginInit) ----
+static uintptr_t g_gmPhase=0; static void* g_gpFn=nullptr; static uintptr_t g_gpThunk=0, g_gpChild=0; static uint32_t g_offNextPhase=0;
+static int g_phaseTarget=2;          // round is at EGP_BeginInit(1); step EGP_Pre(2) -> EGP_Combat(7)
+static const int kPhaseStop=7;       // EGP_Combat
+static DWORD g_lastPhaseMs=0;
+static void DoGoToPhase();
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
@@ -176,6 +182,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     if(!LooksLikePtr((uintptr_t)frame)) return;
     InterlockedIncrement(&g_hitsGT); g_inHook=1;
     memcpy(g_template, frame, sizeof(g_template));
+    if(kRunMode==RM_GOTOPHASE){ DoGoToPhase(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoGoToPhase when phases exhausted
     if(kRunMode==RM_SPAWNPOSSESS){ DoSpawnPossess(); InterlockedIncrement(&g_called); g_done=1; g_inHook=0; return; }
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
     uint8_t* pb=(uint8_t*)g_pbuf;
@@ -291,6 +298,28 @@ static void ResolveFuncNative(uintptr_t cls,const char* name,void** fn,uintptr_t
         char cn[128]; if(GetFNameStr(NameId(cls),cn,sizeof(cn)) && strncmp(cn,"BP_",3)!=0){ ResolveFuncOnClass(cls,name,fn,thunk,child); if(*fn)return; }
         cls=SafeReadable((void*)(cls+0x48),8)?*(uintptr_t*)(cls+0x48):0;
     }
+}
+// ---- S74 B2: resolve + call GoToPhase to advance the round ----
+static bool ResolveGoToPhase(){
+    g_gmPhase=FindInstByClass("GameMode_Tutorial",nullptr);
+    if(!g_gmPhase){ Marker("[GP] no live GameMode_Tutorial instance (force-open first)\r\n"); return false; }
+    ResolveFuncNative(ClassOf(g_gmPhase),"GoToPhase",&g_gpFn,&g_gpThunk,&g_gpChild);   // native LokiRoundGameMode thunk
+    if(g_gpChild){ uint32_t o=ParamOffset(g_gpChild,"NextPhase"); if(o!=0xFFFFFFFF)g_offNextPhase=o; }
+    Markerf("[GP] gm=0x%llX goToPhaseThunk=0x%llX child=0x%llX NextPhase@0x%X\r\n",
+        (unsigned long long)g_gmPhase,(unsigned long long)g_gpThunk,(unsigned long long)g_gpChild,g_offNextPhase);
+    return g_gpThunk!=0;
+}
+// Runs on the GAME THREAD (from OnPI). Advances the round ONE phase per ~450ms so each phase processes
+// (spawn-select/deploy/drop) on the game thread between calls. Steps EGP_Pre(2) -> EGP_Combat(7).
+static void DoGoToPhase(){
+    DWORD now=GetTickCount();
+    if(g_lastPhaseMs && now-g_lastPhaseMs<450) return;
+    g_lastPhaseMs=now;
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    ((uint8_t*)g_pbuf)[g_offNextPhase]=(uint8_t)g_phaseTarget;   // NextPhase (ERoundPhase, 1 byte)
+    CallNative(g_gpFn,g_gpThunk,g_gpChild,(void*)g_gmPhase,g_pbuf,g_rbuf);
+    Markerf("[GP] called GoToPhase(%d)\r\n",g_phaseTarget);
+    if(++g_phaseTarget>kPhaseStop) g_done=1;
 }
 static bool ResolveSpawnPossess(){
     g_gm2=FindInstByClass("GameMode_Tutorial",nullptr);
@@ -904,6 +933,17 @@ static DWORD WINAPI Worker(LPVOID){
         Marker("[INV] investigate-only: dumping CoreGameManager/CoreGameMatchModel state + functions at the menu\r\n");
         DumpTutorialState(0); DumpPawns(0); DumpStartSpots(0);
         Marker("[INV] done; NOT force-opening (game stays at menu)\r\n"); return 0;
+    }
+    if(kRunMode==RM_GOTOPHASE){
+        Marker("[GP] go-to-phase mode: advance the round EGP_BeginInit -> Combat in the RUNNING tutorial\r\n");
+        if(!ResolveGoToPhase()){ Marker("[GP] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[GP] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[GP] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[GP] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<15000) Sleep(20);   // ~7 phases x 450ms + processing
+        UninstallHook();
+        Markerf("[GP] done (lastTarget=%d called=%ld hitsGT=%ld)\r\n",g_phaseTarget-1,(long)g_called,(long)g_hitsGT);
+        return 0;
     }
     if(kRunMode==RM_SPAWNPOSSESS){
         Marker("[SP] spawn+possess mode (inject into the RUNNING tutorial)\r\n");
