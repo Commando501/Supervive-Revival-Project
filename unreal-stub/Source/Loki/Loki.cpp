@@ -16,6 +16,10 @@
 #include "Loki.h"
 #include "LokiReplicatedStructs.h"
 #include "LokiPlayerState_Missions.h"
+#include "LokiGameStateStub.h"
+#include "LokiPlayerControllerStub.h"
+#include "LokiPlayerStateStub.h"
+#include "LokiCharacterStub.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/NetworkVersion.h"
 #include "Engine/World.h"
@@ -327,6 +331,28 @@ private:
         // whether any overflow fires.
         SelfReplayCapturedRPC(Func);
 
+        // Session 70: SUPERVIVE's AGameStateBase does NOT replicate the deprecated float
+        // ReplicatedWorldTimeSeconds — only ReplicatedWorldTimeSecondsDouble (S69 live capture: 4 net
+        // props). Stock UE5.4 replicates BOTH, which gave our GameStateBase 5 reps vs the client's 4
+        // (S70 boot dump: float at RepIndex 14) and shifted EVERY LokiGameState RepIndex by 1 → a
+        // guaranteed client read-cursor desync. Strip CPF_Net from the float BEFORE the rep-data
+        // rebuild below so GameStateBase yields 4 reps and LokiGameState's 43 align at the client's
+        // indices. Must run before InjectServerStateReplicatedProperty (which rebuilds all ClassReps).
+        StripReplicatedFlag(AGameStateBase::StaticClass(), TEXT("ReplicatedWorldTimeSeconds"));
+
+        // Session 73 Phase 1: align the stub's stock ACharacter net-cache to SUPERVIVE's modified ACharacter
+        // (live capture: client Character = 10 reps + 7 net funcs; stub stock = 11 reps + 17). Strip the extra
+        // rep (RepRootMotion) + the 10 legacy movement RPCs so LokiCharacter's field indices match the client.
+        StripReplicatedFlag(ACharacter::StaticClass(), TEXT("RepRootMotion"));
+        for (const TCHAR* Fn : {
+                TEXT("ClientAckGoodMove"), TEXT("ClientAdjustRootMotionPosition"),
+                TEXT("ClientAdjustRootMotionSourcePosition"), TEXT("ClientVeryShortAdjustPosition"),
+                TEXT("ServerMove"), TEXT("ServerMoveDual"), TEXT("ServerMoveDualHybridRootMotion"),
+                TEXT("ServerMoveDualNoBase"), TEXT("ServerMoveNoBase"), TEXT("ServerMoveOld") })
+        {
+            StripNetFunction(ACharacter::StaticClass(), Fn);
+        }
+
         // Session 41 Path B-lite step 2: inject SUPERVIVE's AActor.ServerState
         // replicated property so our RepLayout matches the client's. Must run
         // BEFORE DumpClassNetCacheLayout so the dump reflects the injected
@@ -347,6 +373,31 @@ private:
         // indices, the client-side RepLayout won't line up. Cheapest alignment
         // check that needs no live client.
         DumpClassNetCacheLayout(ALokiPlayerState_Missions::StaticClass());
+
+        // Session 70: dump the ALokiGameState mirror's rep layout at boot. Expect the stock
+        // GameStateBase reps (incl. AActor's injected ServerState@10) then LokiGameState's 43 own
+        // reps in field order — matching the client's LokiGameState. If the indices/count differ,
+        // the client-side RepLayout won't line up (the loading-screen fix depends on it).
+        DumpClassNetCacheLayout(ALokiGameState::StaticClass());
+
+        // Session 73: dump the Loki-PC mirror's net-cache layout at BOOT (headless alignment check —
+        // no live client needed). ALokiPlayerController is now PlayerControllerClass; this shows the
+        // stub-side ClassNetCache (inherited stock PC reps + injected AActor.ServerState + this class's
+        // own reps/RPCs). The baseline build adds ZERO own reps, so the dump should show the stub PC's
+        // rep set ending at ServerState with NO Loki-specific props — the divergence the client's live
+        // "Invalid replicated field N" will pin down. Dump both hierarchy levels so the index
+        // accumulation across LokiBaseController -> LokiPlayerController is visible.
+        DumpClassNetCacheLayout(ALokiBaseController::StaticClass());
+        DumpClassNetCacheLayout(ALokiPlayerController::StaticClass());
+
+        // Session 73: dump the LokiPlayerState mirror's net-cache (1 rep HeroClass + 7 RPCs over stock
+        // APlayerState). Verify the client's LokiPlayerState indices line up before the live test.
+        DumpClassNetCacheLayout(ALokiPlayerState::StaticClass());
+
+        // Session 73 Phase 1: dump the LokiCharacter (hero) mirror net-cache. Expect stock ACharacter's reps +
+        // net funcs, then LokiCharacter's 2 own reps (OutOfBoundsBufferTimeRemaining, CustomAnimationState) +
+        // 14 own RPCs — must match the client's LokiCharacter for the possess bunch to align.
+        DumpClassNetCacheLayout(ALokiCharacter::StaticClass());
 
         // Session 54 Blocker-1: dump the exact RepLayout cmd expansion the stub
         // generates for FMissionProgress. The client rejects our seeded Missions
@@ -636,6 +687,69 @@ private:
             FProperty* Prop = *It;
             if (!(Prop->PropertyFlags & CPF_Parm)) break;
             Prop->DestroyValue_InContainer(Parms);
+        }
+    }
+
+    // Session 73 Phase 1: clear FUNC_Net on a named net function so ForceSetUpReplicationData excludes it
+    // from NetFields — SUPERVIVE's custom-engine ACharacter has a REDUCED movement-RPC set (7) vs stock
+    // UE5.4 (17): it kept only the modern packed path (ServerMovePacked/ClientMoveResponsePacked/
+    // ClientAdjustPosition/ClientCheat*/RootMotionDebug) and dropped the legacy ServerMove variants +
+    // ClientAckGoodMove/ClientAdjustRootMotion*/ClientVeryShortAdjustPosition. Stripping the extra 10 from
+    // the stub's ACharacter aligns the Character-level NetFields so LokiCharacter's indices match the client.
+    static void StripNetFunction(UClass* Cls, const TCHAR* FuncName)
+    {
+        if (!Cls) return;
+        if (UFunction* F = Cls->FindFunctionByName(FName(FuncName), EIncludeSuperFlag::ExcludeSuper))
+        {
+            if (F->FunctionFlags & FUNC_Net)
+            {
+                F->FunctionFlags &= ~FUNC_Net;
+                UE_LOG(LogLokiStub, Display, TEXT("StripNetFunction: cleared FUNC_Net on %s::%s."),
+                       *Cls->GetName(), FuncName);
+            }
+        }
+        else
+        {
+            UE_LOG(LogLokiStub, Warning, TEXT("StripNetFunction: %s::%s not found."), *Cls->GetName(), FuncName);
+        }
+    }
+
+    // Session 70: clear CPF_Net on a named inherited property so the stub's ForceSetUpReplicationData
+    // excludes it from ClassReps — used to drop stock UE5.4 replicated props the SUPERVIVE client
+    // doesn't replicate (e.g. AGameStateBase::ReplicatedWorldTimeSeconds), which would otherwise shift
+    // every later RepIndex and desync the client. Runs before the rep-data rebuild.
+    static void StripReplicatedFlag(UClass* Cls, const TCHAR* PropName)
+    {
+        if (!Cls)
+        {
+            return;
+        }
+        if (FProperty* P = FindFProperty<FProperty>(Cls, PropName))
+        {
+            if (P->PropertyFlags & CPF_Net)
+            {
+                P->PropertyFlags &= ~CPF_Net;
+                // ForceSetUpReplicationData won't reassign this prop's RepIndex now that it's not
+                // CPF_Net, so it keeps its stale value and collides with whatever prop took its old slot
+                // when GetLifetimeReplicatedProps (of the base class) still registers it (bIsPushBased
+                // assert, CoreNet.h:331). Park it off the ClassReps range; the mirror's
+                // GetLifetimeReplicatedProps drops the sentinel entry.
+                P->RepIndex = LOKI_STRIPPED_REPINDEX_SENTINEL;
+                UE_LOG(LogLokiStub, Display,
+                       TEXT("StripReplicatedFlag: cleared CPF_Net on %s::%s + parked RepIndex at 0x%04X "
+                            "(SUPERVIVE client doesn't replicate it)."),
+                       *Cls->GetName(), PropName, LOKI_STRIPPED_REPINDEX_SENTINEL);
+            }
+            else
+            {
+                UE_LOG(LogLokiStub, Display,
+                       TEXT("StripReplicatedFlag: %s::%s already non-replicated."), *Cls->GetName(), PropName);
+            }
+        }
+        else
+        {
+            UE_LOG(LogLokiStub, Warning,
+                   TEXT("StripReplicatedFlag: property %s not found on %s."), PropName, *Cls->GetName());
         }
     }
 

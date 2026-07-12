@@ -54,7 +54,7 @@ def expand(f, depth):
             print(f"{ind}[{cmd[0]}] NETSER-STRUCT {nm} ({stn}@0x{st:X} flags=0x{sf:X})"); cmd[0]+=1; return
         print(f"{ind}(recurse {stn}@0x{st:X} flags=0x{sf:X})")
         c=p(st+0x58); i=0
-        while looksptr(c) and i<40:
+        while looksptr(c) and i<256:
             if not (fldflags(c)&CPF_RepSkip): expand(c,depth+1)
             c=p(c+0x18); i+=1
         return

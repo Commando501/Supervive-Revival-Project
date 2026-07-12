@@ -1,10 +1,16 @@
 #include "LokiStubGameMode.h"
 #include "LokiStubPlayerController.h"
+#include "LokiPlayerControllerStub.h"
+#include "LokiPlayerStateStub.h"
+#include "LokiCharacterStub.h"
 #include "LokiPlayerState_Missions.h"
+#include "LokiGameStateStub.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "GameFramework/DefaultPawn.h"
 #include "Engine/NetConnection.h"
 #include "Engine/World.h"
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiStubGM, Log, All);
 
@@ -61,15 +67,80 @@ static FMissionProgress MakeMissionProgress(
 ALokiStubGameMode::ALokiStubGameMode(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	// Session 26 REVERT: kept stock APlayerController as PlayerControllerClass
-	// since we can't override its ServerVerifyViewTarget UFUNCTION with
-	// different parameters via UHT-checked subclass. Session 27 will attempt
-	// runtime UClass function-table manipulation to add a modified
-	// ServerVerifyViewTarget UFunction to the stock APlayerController class.
-	PlayerControllerClass = APlayerController::StaticClass();
+	// Session 73: use the native LokiPlayerController mirror (path /Script/Loki.LokiPlayerController)
+	// so the client resolves it to ITS OWN native LokiPlayerController and makes the LOCAL networked
+	// PC a Loki-typed controller — the prerequisite for TryGetLocalLokiController to stop returning
+	// null (the S71/S72 hero-control wall). This is the SINGLE VARIABLE under test in the S73 spike.
+	// The mirror adds ZERO own replicated props for the first live test (see LokiPlayerControllerStub.h):
+	// a clean accept proves the by-path bind + initial-bunch alignment; an "Invalid replicated field N"
+	// scopes the prop reconstruction. To revert to the S41 stock-PC baseline (roster/menu-safe):
+	//   PlayerControllerClass = APlayerController::StaticClass();
+	PlayerControllerClass = ALokiPlayerController::StaticClass();
+
+	// Session 73: use the native LokiPlayerState mirror (path /Script/Loki.LokiPlayerState) so the client
+	// resolves it to ITS OWN native LokiPlayerState and GetLocalLokiPlayerState succeeds (was stock
+	// APlayerState — the "GetLocalLokiPlayerState failed" gate after the PC mirror). PlayerState is already
+	// un-suppressed in LokiNetDriver (S53). One rep (HeroClass) + 7 RPCs align the net-cache (S73 live capture).
+	PlayerStateClass = ALokiPlayerState::StaticClass();
+
+	// Session 70: use the native LokiGameState mirror (path /Script/Loki.LokiGameState) so the client
+	// resolves it to ITS OWN LokiGameState and hydrates a real GameState replica — the prerequisite for
+	// leaving the tutorial loading screen on the DS route. Was stock AGameStateBase (which the client
+	// couldn't cast to LokiGameState). Must pair with un-suppressing GameState in LokiNetDriver.
+	GameStateClass = ALokiGameState::StaticClass();
+
 	UE_LOG(LogLokiStubGM, Display,
-	       TEXT("LokiStubGameMode constructed with PlayerControllerClass=APlayerController "
-	            "(session 26 revert — UHT rejected override)"));
+	       TEXT("LokiStubGameMode constructed with PlayerControllerClass=ALokiPlayerController "
+	            "(s73 Loki-PC mirror, path /Script/Loki.LokiPlayerController), GameStateClass=ALokiGameState (s70)."));
+}
+
+void ALokiStubGameMode::InitGameState()
+{
+	Super::InitGameState();
+
+	// Seed the replicated GameState into a PLAYING state so the client's native match-ready check
+	// (ERoundPhase CurrentPhase) passes and the loading screen clears. S65/S66 established the round
+	// was stuck at EGP_BeginInit(1); a real round reaches EGP_SpawnSelect(4)/EGP_Combat(7). Start at
+	// EGP_SpawnSelect (drop-in select) — if the client still waits, bisect toward EGP_Combat.
+	// NOTE (single-variable option): for the FIRST test of whether the bunch even ALIGNS, comment out
+	// the seed and ship a default GameState — a clean accept (no "Invalid replicated field N") proves
+	// the 43-prop RepLayout matches; THEN re-enable the seed to clear the loading screen.
+	ALokiGameState* GS = Cast<ALokiGameState>(GameState);
+	if (!GS)
+	{
+		UE_LOG(LogLokiStubGM, Warning,
+		       TEXT("InitGameState: GameState is not ALokiGameState (got %s) — seed skipped."),
+		       GameState ? *GameState->GetClass()->GetName() : TEXT("<null>"));
+		return;
+	}
+
+	const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+	// S73 probe: was EGP_SpawnSelect(4). The client stays on the "DROP IN" LOADING screen; test whether the
+	// loading dismiss is gated on a LATER round phase (round live) vs the actual drop-in. EGP_Combat(7) =
+	// round in active combat. If the loading screen dismisses at this phase -> phase-gated (win); if it stays
+	// -> the dismiss needs the server-authoritative drop-in itself (the round-machinery wall).
+	GS->CurrentPhase        = ELokiRoundPhase::EGP_Combat;
+	GS->DayNightState       = ELokiDayNightStateMirror::LDNS_Day;
+	GS->RoundStartTime      = Now;
+	GS->GameStartWorldTime  = Now;
+	GS->SpawnSelectEndTime  = Now + 30.f;
+	GS->NumTeams            = 1;
+	GS->MaxPlayersPerTeam   = 1;
+	GS->ReplicatedNumRemainingPlayers = 1;
+	GS->MatchStartDetails.MatchID = TEXT("revival-tutorial-0001");
+
+	// S71: AGameModeBase::InitGameState (Super, above) set GS->GameModeClass = LokiStubGameMode. That
+	// class does NOT exist in the client, so replicating it makes the client spam
+	// "GetObjectFromNetGUID: Forced blocking load ... LokiStubGameMode" — a SYNCHRONOUS blocking load in
+	// the netdriver receive path (starves other actor channels, e.g. our possessed DefaultPawn never
+	// arrives). Null it so the client never tries to resolve the stub's gamemode. (SpectatorClass stays
+	// ASpectatorPawn — a stock class the client resolves fine.)
+	GS->GameModeClass = nullptr;
+
+	UE_LOG(LogLokiStubGM, Display,
+	       TEXT("InitGameState: seeded ALokiGameState %s -> CurrentPhase=EGP_SpawnSelect(4), "
+	            "RoundStartTime=%.1f, NumTeams=1, GameModeClass=null (playing state)."),
+	       *GS->GetName(), Now);
 }
 
 void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
@@ -150,4 +221,54 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 	       MissionsActor->Missions.Num(), MissionsActor->FinalMissionProgress.Num(),
 	       MissionsActor->bAlwaysRelevant ? 1 : 0,
 	       MissionsActor->GetIsReplicated() ? 1 : 0);
+
+	// S73 PHASE 1 (hero go/no-go): spawn + possess a LOKI-TYPED hero (ALokiCharacter, /Script/Loki.LokiCharacter)
+	// instead of the stock DefaultPawn. The DefaultPawn possession was refused (SUPERVIVE gates possession on its
+	// drop-in/hero flow); the make-or-break test is whether the client takes HERO CONTROL of a Loki-typed
+	// character the stub spawned. ALokiCharacter mirrors the client's LokiCharacter net-cache (2 reps + 14 RPCs
+	// over stock ACharacter; movement RPCs stock-inherited). Tutorial has NO PlayerStart (drop-in via DropPlane),
+	// so spawn explicitly above origin. (Was: stock ADefaultPawn, S71 — client replicated it but never possessed.)
+	const FVector SpawnLoc(0.f, 0.f, 500.f);
+	FActorSpawnParameters PawnParams;
+	PawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ALokiCharacter* Pawn = World->SpawnActor<ALokiCharacter>(
+		ALokiCharacter::StaticClass(), SpawnLoc, FRotator::ZeroRotator, PawnParams);
+	if (Pawn)
+	{
+		// Possess() sets the PC's view target via the ClientSetViewTarget RPC which the stub SUPPRESSES
+		// (SUPERVIVE-modified sig); bAlwaysRelevant (set in the ctor) guarantees the send regardless.
+		NewPlayer->Possess(Pawn);
+		UE_LOG(LogLokiStubGM, Display,
+		       TEXT("PostLogin: spawned + possessed ALokiCharacter %s at %s for %s — PC->GetPawn()=%s "
+		            "(pawn Role=%d bAlwaysRelevant=%d bReplicates=%d, PC hasConnection=%d)."),
+		       *Pawn->GetName(), *SpawnLoc.ToString(), *NewPlayer->GetName(),
+		       *GetNameSafe(NewPlayer->GetPawn()), (int32)Pawn->GetLocalRole(),
+		       Pawn->bAlwaysRelevant ? 1 : 0, Pawn->GetIsReplicated() ? 1 : 0,
+		       NewPlayer->GetNetConnection() ? 1 : 0);
+
+		// S71: the pawn ACTOR replicates to the client (verified: DefaultPawn instances exist on the
+		// client), but the client doesn't POSSESS it — the ClientRestart RPC fired at possess time
+		// (in PostLogin) races the client PC channel setup. Re-send ClientRestart on a short timer so it
+		// lands after the client is ready; the client then possesses + sends ServerAcknowledgePossession.
+		if (UWorld* W = GetWorld())
+		{
+			TWeakObjectPtr<APlayerController> WeakPC(NewPlayer);
+			TWeakObjectPtr<APawn> WeakPawn(Pawn);
+			FTimerHandle TH;
+			W->GetTimerManager().SetTimer(TH, [WeakPC, WeakPawn]()
+			{
+				if (WeakPC.IsValid() && WeakPawn.IsValid())
+				{
+					WeakPC->ClientRestart(WeakPawn.Get());
+					UE_LOG(LogLokiStubGM, Display,
+					       TEXT("Deferred ClientRestart re-sent for %s -> %s."),
+					       *WeakPC->GetName(), *WeakPawn->GetName());
+				}
+			}, 3.0f, false);
+		}
+	}
+	else
+	{
+		UE_LOG(LogLokiStubGM, Warning, TEXT("PostLogin: failed to spawn ADefaultPawn."));
+	}
 }

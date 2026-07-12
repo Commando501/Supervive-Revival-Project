@@ -374,7 +374,12 @@ const tutorialMatchState = "InProgress"
 // transient (cleared on restart), this releases the client from the dead empty-
 // address match back to the menu, ready for a clean START -> fresh entry that
 // gets address 127.0.0.1:7777 on its very first match fetch.
-const forceTutorialMatch = false
+// S65 PATH-1 HYBRID: TRUE so the idle client (which polls /core-game/players ~1/min) auto-fetches the match
+// and its OWN parser builds a complete, self-consistent CoreGameMatchModel (bIsValid + MatchInfo) — far more
+// robust than hand-writing the 1496-byte embedded MatchInfo struct. Paired with an EMPTY ConnectionDetails.address
+// (below) so the client parks LOCALLY in the pre-game lobby (no DS connect/timeout), keeping the model valid;
+// then the force-open shim opens LVL_Tutorial with the model already populated. (Revert to false for normal runs.)
+const forceTutorialMatch = true
 
 // tutorialMatchID derives the (stable, greppable) match id for a player's phantom
 // tutorial match. The match-details route recovers the player id back off it.
@@ -493,6 +498,10 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 	// NetConnection to it (LogNet/StatelessConnect). Nothing is listening on 7777
 	// yet — the connect ATTEMPT is the diagnostic; a working DS is the follow-up.
 	connectionDetails := map[string]any{
+		// S65 PATH-1 HYBRID used EMPTY address (client builds the model but parks locally — no DS connect).
+		// S69 (2026-07-11) DS ROUTE: back to the loopback stub. The client's TravelManager connects to
+		// 127.0.0.1:7777 (S62 live-verified: handshake -> LoadMap LVL_Tutorial -> Join succeeded). The stub
+		// MUST be listening BEFORE the client arms the match, or the 20s connect timeout bounces it to login.
 		"address":      "127.0.0.1:7777",
 		"ServerID":     "revival-tutorial-ds-0001",
 		"MachineID":    "revival-local",
