@@ -108,7 +108,7 @@ static void DoSpawnPossess();
 static uintptr_t g_gmPhase=0; static void* g_gpFn=nullptr; static uintptr_t g_gpThunk=0, g_gpChild=0; static uint32_t g_offNextPhase=0;
 // S74 B2 exp2: skip SpawnSelect(4)+SpawnReveal(5) — they null-deref on the missing deploy state — and jump
 // straight to Lineup(6) then Combat(7). Change this list to sweep phase paths. (exp1 was {2,3,4,5,6,7}.)
-static const int kPhaseList[]={2,3,6,7};
+static const int kPhaseList[]={2,3,4};   // Step0: stop at SpawnSelect(4) to capture the deploy null-deref via CrashVEH
 static int g_phaseIdx=0;
 static DWORD g_lastPhaseMs=0;
 static void DoGoToPhase();
@@ -158,11 +158,51 @@ static uintptr_t ClassOf(uintptr_t obj){ if(!SafeReadable((void*)(obj+CLASS_OFF)
 static bool ClassNameIs(uintptr_t obj,const char* w){ uintptr_t c=ClassOf(obj); if(!c)return false; char b[128]; if(!GetFNameStr(NameId(c),b,sizeof(b)))return false; return strcmp(b,w)==0; }
 
 static volatile long g_crashSeq=0;
+static void CallNative(void* func, uintptr_t thunk, uintptr_t childProps, void* context, void* paramsBuf, void* resultBuf);   // fwd (defined below)
+// If v is a UObject, write its CLASS name (else "-"); used to NAME the null-deref context registers.
+static void ObjClassName(uint64_t v,char* out,int cap){
+    out[0]='-'; out[1]=0;
+    if(!LooksLikePtr(v))return;
+    uintptr_t cls=ClassOf((uintptr_t)v);
+    if(LooksLikePtr(cls)){ char cn[96]; if(GetFNameStr(NameId(cls),cn,sizeof(cn))){ int n=(int)strlen(cn); if(n>0&&n<cap){ memcpy(out,cn,n+1); return; } } }
+    // maybe v is itself a UClass/UObject with a name
+    char on[96]; if(GetFNameStr(NameId((uintptr_t)v),on,sizeof(on))){ int n=(int)strlen(on); if(n>0&&n<cap-1){ out[0]='?'; memcpy(out+1,on,n+1); } }
+}
+// S74 Path A Step 0: on the null-deref, dump RIP+rva, the faulting/accessed address, all GP regs, the
+// class name of each pointer-register (names the object whose member is null), and the instruction bytes
+// at RIP and RIP-24 (to see WHERE the null pointer was loaded from = base object + member offset).
+static void DumpCrashCtx(EXCEPTION_POINTERS* ep){
+    DWORD code=ep->ExceptionRecord->ExceptionCode;
+    CONTEXT* c=ep->ContextRecord; uint64_t rip=c->Rip;
+    uint64_t rva=(rip>g_modBase&&rip<g_modBase+0xC000000)?rip-g_modBase:0;
+    uint64_t accType=ep->ExceptionRecord->NumberParameters>=2?ep->ExceptionRecord->ExceptionInformation[0]:0;
+    uint64_t accAddr=ep->ExceptionRecord->NumberParameters>=2?ep->ExceptionRecord->ExceptionInformation[1]:0;
+    Markerf("[NULL] fatal 0x%lX RIP=0x%llX rva=0x%llX access=%s addr=0x%llX inHook=%ld\r\n",
+        code,(unsigned long long)rip,(unsigned long long)rva, accType==1?"WRITE":(accType==8?"EXEC":"READ"),(unsigned long long)accAddr,(long)g_inHook);
+    Markerf("[NULL] RAX=%llX RBX=%llX RCX=%llX RDX=%llX RSI=%llX RDI=%llX RBP=%llX RSP=%llX\r\n",
+        (unsigned long long)c->Rax,(unsigned long long)c->Rbx,(unsigned long long)c->Rcx,(unsigned long long)c->Rdx,(unsigned long long)c->Rsi,(unsigned long long)c->Rdi,(unsigned long long)c->Rbp,(unsigned long long)c->Rsp);
+    Markerf("[NULL] R8=%llX R9=%llX R10=%llX R11=%llX R12=%llX R13=%llX R14=%llX R15=%llX\r\n",
+        (unsigned long long)c->R8,(unsigned long long)c->R9,(unsigned long long)c->R10,(unsigned long long)c->R11,(unsigned long long)c->R12,(unsigned long long)c->R13,(unsigned long long)c->R14,(unsigned long long)c->R15);
+    char ca[96],cb[96],cc[96],cd[96],csi[96],cdi[96],c8[96],c9[96];
+    ObjClassName(c->Rax,ca,sizeof(ca)); ObjClassName(c->Rbx,cb,sizeof(cb)); ObjClassName(c->Rcx,cc,sizeof(cc)); ObjClassName(c->Rdx,cd,sizeof(cd));
+    ObjClassName(c->Rsi,csi,sizeof(csi)); ObjClassName(c->Rdi,cdi,sizeof(cdi)); ObjClassName(c->R8,c8,sizeof(c8)); ObjClassName(c->R9,c9,sizeof(c9));
+    Markerf("[NULL] cls RAX=%s RBX=%s RCX=%s RDX=%s RSI=%s RDI=%s R8=%s R9=%s\r\n",ca,cb,cc,cd,csi,cdi,c8,c9);
+    if(SafeReadable((void*)rip,24)){ uint8_t* p=(uint8_t*)rip; char hx[80]; int o=0; for(int i=0;i<24&&o<74;i++)o+=_snprintf_s(hx+o,sizeof(hx)-o,_TRUNCATE,"%02X ",p[i]); Markerf("[NULL] code@RIP:    %s\r\n",hx); }
+    if(SafeReadable((void*)(rip-24),24)){ uint8_t* p=(uint8_t*)(rip-24); char hx[80]; int o=0; for(int i=0;i<24&&o<74;i++)o+=_snprintf_s(hx+o,sizeof(hx)-o,_TRUNCATE,"%02X ",p[i]); Markerf("[NULL] code@RIP-24: %s\r\n",hx); }
+}
 static LONG CALLBACK CrashVEH(EXCEPTION_POINTERS* ep){
     DWORD code=ep->ExceptionRecord->ExceptionCode; bool fatal=code==0xC0000005||code==0xC0000409||code==0xC000001D||code==0xC0000374;
-    if(!fatal)return EXCEPTION_CONTINUE_SEARCH; long s=InterlockedIncrement(&g_crashSeq); if(s>8)return EXCEPTION_CONTINUE_SEARCH;
-    uint64_t rip=ep->ContextRecord->Rip; Markerf("[VEH] fatal 0x%lX RIP=0x%llX rva=0x%llX inHook=%ld\r\n",code,(unsigned long long)rip,(unsigned long long)(rip>g_modBase&&rip<g_modBase+0xC000000?rip-g_modBase:0),(long)g_inHook);
+    if(!fatal)return EXCEPTION_CONTINUE_SEARCH; long s=InterlockedIncrement(&g_crashSeq); if(s>4)return EXCEPTION_CONTINUE_SEARCH;
+    Markerf("[NULL] (via VEH)\r\n"); DumpCrashCtx(ep);
     return EXCEPTION_CONTINUE_SEARCH;
+}
+// SEH filter: reliably catches the AV at the exact CallNative site (VEH ordering is unreliable under the packer).
+// EXCEPTION_EXECUTE_HANDLER = handle it (game thread corrupt after, but we have the null data).
+static int SehDump(EXCEPTION_POINTERS* ep){ long s=InterlockedIncrement(&g_crashSeq); if(s<=4){ Markerf("[NULL] (via SEH)\r\n"); DumpCrashCtx(ep); } return EXCEPTION_EXECUTE_HANDLER; }
+// Call a native UFunction under SEH so an AV inside it is captured (not just crashed). Returns true if it faulted.
+static bool CallNativeGuarded(void* func, uintptr_t thunk, uintptr_t childProps, void* context, void* paramsBuf, void* resultBuf){
+    __try { CallNative(func,thunk,childProps,context,paramsBuf,resultBuf); return false; }
+    __except(SehDump(GetExceptionInformation())){ return true; }
 }
 
 // Call a native UFunction with a prepared params buffer. Result -> resultBuf.
@@ -328,8 +368,10 @@ static void DoGoToPhase(){
     int ph=kPhaseList[g_phaseIdx++];
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
     ((uint8_t*)g_pbuf)[g_offNextPhase]=(uint8_t)ph;   // NextPhase (ERoundPhase, 1 byte)
-    CallNative(g_gpFn,g_gpThunk,g_gpChild,(void*)g_gmPhase,g_pbuf,g_rbuf);
-    Markerf("[GP] called GoToPhase(%d)\r\n",ph);
+    Markerf("[GP] calling GoToPhase(%d)...\r\n",ph);   // BEFORE the call, so a crash marker localizes it
+    bool faulted=CallNativeGuarded(g_gpFn,g_gpThunk,g_gpChild,(void*)g_gmPhase,g_pbuf,g_rbuf);
+    Markerf("[GP] GoToPhase(%d) returned%s\r\n",ph,faulted?" [FAULTED — null captured, halting sweep]":"");
+    if(faulted){ g_done=1; return; }
 }
 // Walk cls + super chain, each class's ChildProperties(@+0x58 via FField.Next@+0x18), for a named property's Offset_Internal(@+0x44).
 static uint32_t PropOffsetSuper(uintptr_t cls,const char* name){
@@ -366,7 +408,8 @@ static void DoSpawnPlayer(){
     if(g_oSpwPS!=0xFFFFFFFF) *(uint64_t*)(pb+g_oSpwPS)=(uint64_t)g_localPS;
     if(g_oSpwSS!=0xFFFFFFFF) *(uint64_t*)(pb+g_oSpwSS)=(uint64_t)g_startSpot;
     if(g_oSpwEnsure!=0xFFFFFFFF) pb[g_oSpwEnsure]=1;
-    CallNative(g_spwFn,g_spwThunk,g_spwChild,(void*)g_gm2,g_spbuf,g_rbuf);
+    Marker("[SPW] calling SpawnPlayer...\r\n");
+    if(CallNativeGuarded(g_spwFn,g_spwThunk,g_spwChild,(void*)g_gm2,g_spbuf,g_rbuf)){ Marker("[SPW] SpawnPlayer FAULTED (null captured)\r\n"); g_done=1; return; }
     uintptr_t hero=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(hero)&&g_oSpwRet!=0xFFFFFFFF) hero=*(uint64_t*)(pb+g_oSpwRet);
     char hcn[96]="-"; if(LooksLikePtr(hero)&&ClassOf(hero)) GetFNameStr(NameId(ClassOf(hero)),hcn,sizeof(hcn));
     Markerf("[SPW] SpawnPlayer -> hero=0x%llX cls=%s\r\n",(unsigned long long)hero,hcn);
