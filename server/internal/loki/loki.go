@@ -103,6 +103,20 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 	// parsed config is dropped and ServiceHostnames stays empty.
 	// ClientVersions is the supported-version list; if the client's build isn't
 	// in it the game shows "UPDATE REQUIRED". Build is release2.4.live-156430.
+	// S73 probe: serve featureToggles. ClientConfiguration.FeatureToggles is TMap<FString, FFeatureToggle>
+	// where FFeatureToggle{ Config: TMap<FString,FString> } (RE'd live). The DS client spams
+	// "ULokiGameFeatureToggles::Get <X> called when feature toggles were not ready" and stays on the tutorial
+	// LOADING screen. TEST: does populating the GLOBAL config toggle set flip readiness (config-gated), or is
+	// readiness set only at server round-start (round-gated)? Serve the observed gameplay toggles enabled.
+	// (Malformed = whole config dropped silently per the validity model, so this is safe to iterate.)
+	ftEnabled := map[string]any{"config": map[string]string{"default": "true"}}
+	featureToggles := map[string]any{
+		"CursorCharacterAim":        ftEnabled,
+		"AttachAudioListenerToHero": ftEnabled,
+		"DeadSpectatorCameraLock":   ftEnabled,
+		"WinterEvent":               map[string]any{"config": map[string]string{"default": "false"}},
+		"BonfireUAVs":               map[string]any{"config": map[string]string{"default": "false"}},
+	}
 	writeJSON(w, map[string]any{
 		"serviceHostnames": hostnames,
 		"clientVersions": []string{
@@ -111,8 +125,9 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 			"release2.4.live",
 			"156430",
 		},
-		"eTag":        "supervive-revival-1",
-		"lastUpdated": nowISO(),
+		"featureToggles": featureToggles,
+		"eTag":           "supervive-revival-2",
+		"lastUpdated":    nowISO(),
 	})
 }
 

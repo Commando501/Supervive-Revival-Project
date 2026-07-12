@@ -229,9 +229,22 @@ static bool IsClassNetCacheDivergent(AActor* Actor)
 	// likely hit a field-index error on the stock-schema PlayerState bunch (session-38
 	// iter 2 result) — that error vs. the garbage-thread crash is the discriminator.
 	// To restore: re-add `Actor->IsA<APlayerState>() ||` below.
-	if (Actor->IsA<AGameStateBase>()
-	 || Actor->IsA<AHUD>()
-	 || Actor->IsA<ADefaultPawn>()
+	// SESSION 70 un-suppress GameState: AGameStateBase is DELIBERATELY removed from the suppression set.
+	// The DS-route client Joins LVL_Tutorial but stalls on the loading screen because it has NO
+	// replicated GameState (S69). The stub's GameStateClass is now the ALokiGameState mirror
+	// (LokiGameStateStub.h, path /Script/Loki.LokiGameState) whose RepLayout matches the client's 43
+	// replicated LokiGameState props cmd-for-cmd (session-69 live capture), so replicating it should
+	// HYDRATE the client's GameState and clear the loading screen — instead of desyncing. If the client
+	// rejects the bunch ("ReceivedBunch: Invalid replicated field N in GameState"), N scopes a RepLayout
+	// mismatch (first suspects: the two enum widths, the nested MatchStartDetails element format). To
+	// restore full suppression, re-add `Actor->IsA<AGameStateBase>() ||` below.
+	// SESSION 71 un-suppress DefaultPawn: live RE of the running client (tools/re/rep_expand_full.py) showed
+	// its APawn = 3 STOCK net props (RemoteViewPitch, PlayerState, Controller) and ADefaultPawn = 0 — i.e.
+	// NO schema divergence from stock UE5.4 (the S38 DefaultPawn suppression was a blanket precaution, not a
+	// real divergence). So a stock ADefaultPawn the server spawns + possesses replicates cleanly and the
+	// client can POSSESS + control it (first controllable-pawn milestone over the DS route). LokiStubGameMode
+	// spawns + possesses one in PostLogin. To restore: re-add `Actor->IsA<ADefaultPawn>() ||`.
+	if (Actor->IsA<AHUD>()
 	 || Actor->IsA<ASpectatorPawn>()
 	 || Actor->IsA<AWorldSettings>())
 	{

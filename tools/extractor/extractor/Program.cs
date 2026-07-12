@@ -1088,7 +1088,10 @@ if (args.Length >= 3 && args[0] == "bpdump")
         catch (Exception e) { Console.WriteLine($"  LOAD FAIL {assetPath}: {e.Message}"); continue; }
         var exports = pkg.GetExports().ToList();
         var ufuncs = exports.OfType<CUE4Parse.UE4.Objects.UObject.UFunction>().ToList();
-        if (ufuncs.Count == 0) continue;
+        // @imports needs the package's class/import shape, NOT a UFunction — handle it
+        // before the ufuncs gate (a BP class asset may have 0 UFunction exports of its own).
+        bool wantImports = fnNeedle == "@imports";
+        if (ufuncs.Count == 0 && !wantImports) continue;
         Console.WriteLine($"  {assetPath}: {ufuncs.Count} UFunction export(s)");
         // Special needle '@props' = dump every UObject export's serialized property
         // values to a text file. Per-instance overrides (e.g. which mission pool a
@@ -1179,6 +1182,125 @@ if (args.Length >= 3 && args[0] == "bpdump")
                 if (s.Length <= max) return s;
                 return s.Substring(0, max) + "...(+" + (s.Length - max) + ")";
             }
+        }
+
+        // Special needle '@imports' = dump the package's parent (SuperStruct) chain +
+        // its import table, resolving each entry to a full object path. The whole point
+        // (S74 overlay spike) is to answer: does the cooked BP_HERO / BP_GameMode declare
+        // its parent as a NATIVE /Script/Loki class import (i.e. content-on-top-of-native,
+        // which the DS stub's Loki module does NOT provide) or is the parent self-contained
+        // content? Reads the REAL shipped bytes via CUE4Parse.
+        if (fnNeedle == "@imports")
+        {
+            // Reflection helper: full path of a CUE4Parse ResolvedObject (walk Outer chain).
+            static string FullPath(object? resolved)
+            {
+                if (resolved == null) return "<null>";
+                try
+                {
+                    var parts = new List<string>();
+                    var cur = resolved;
+                    int guard = 0;
+                    while (cur != null && guard++ < 16)
+                    {
+                        var nm = cur.GetType().GetProperty("Name")?.GetValue(cur)?.ToString();
+                        if (string.IsNullOrEmpty(nm)) break;
+                        parts.Insert(0, nm!);
+                        cur = cur.GetType().GetProperty("Outer")?.GetValue(cur);
+                    }
+                    return parts.Count > 0 ? string.Join(".", parts) : (resolved.ToString() ?? "<?>");
+                }
+                catch { return resolved.ToString() ?? "<?>"; }
+            }
+            // Resolve any parent-ish value: FPackageIndex (has ResolvedObject), or a
+            // ResolvedObject directly (has Name/Outer), or something with GetPathName/GetFullName.
+            static (string Name, string Path) ResolveAny(object? v)
+            {
+                if (v == null) return ("<null>", "<null>");
+                try
+                {
+                    var vt = v.GetType();
+                    // FPackageIndex -> ResolvedObject
+                    var ro = vt.GetProperty("ResolvedObject")?.GetValue(v);
+                    if (ro != null)
+                    {
+                        var nm = ro.GetType().GetProperty("Name")?.GetValue(ro)?.ToString() ?? "?";
+                        return (nm, FullPath(ro));
+                    }
+                    // Already a ResolvedObject (has Name + Outer)
+                    if (vt.GetProperty("Name") != null && vt.GetProperty("Outer") != null)
+                    {
+                        var nm = vt.GetProperty("Name")?.GetValue(v)?.ToString() ?? "?";
+                        return (nm, FullPath(v));
+                    }
+                    // Fallback: GetPathName / GetFullName / ToString
+                    var m = vt.GetMethod("GetPathName", Type.EmptyTypes) ?? vt.GetMethod("GetFullName", Type.EmptyTypes);
+                    if (m != null) { var s = m.Invoke(v, null)?.ToString(); if (!string.IsNullOrEmpty(s)) return (s!, s!); }
+                }
+                catch { }
+                return (v.ToString() ?? "<?>", v.ToString() ?? "<?>");
+            }
+
+            Console.WriteLine($"\n==== @imports for {assetPath} ====");
+            Console.WriteLine($"# package type: {pkg.GetType().FullName}");
+            Console.WriteLine($"# {exports.Count} export(s)");
+            // Per-export parent (SuperStruct) resolution — reflect BOTH fields and properties,
+            // trying several member names CUE4Parse may use across versions.
+            string[] superNames = { "SuperStruct", "Super", "SuperStructIndex" };
+            foreach (var e in exports)
+            {
+                if (e == null) continue;
+                var et = e.GetType();
+                object? sv = null; string usedMember = "";
+                foreach (var sn in superNames)
+                {
+                    var p = et.GetProperty(sn, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    if (p != null) { try { sv = p.GetValue(e); } catch { } usedMember = sn; if (sv != null) break; }
+                    var f = et.GetField(sn, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    if (f != null) { try { sv = f.GetValue(e); } catch { } usedMember = sn; if (sv != null) break; }
+                }
+                // Only print exports that are class/struct-like (have a super member at all).
+                if (string.IsNullOrEmpty(usedMember)) continue;
+                if (sv == null) { Console.WriteLine($"  [{et.Name}] {e.Name}  {usedMember}=<none>"); continue; }
+                var (sName, sPath) = ResolveAny(sv);
+                Console.WriteLine($"  [{et.Name}] {e.Name}");
+                Console.WriteLine($"       {usedMember} -> name='{sName}'  path='{sPath}'");
+            }
+            // Import table: try several accessor names across CUE4Parse package types.
+            Console.WriteLine("# --- ImportMap ---");
+            System.Collections.IEnumerable? importMap = null;
+            foreach (var mn in new[] { "ImportMap", "ImportedPackages", "Imports" })
+            {
+                var mp = pkg.GetType().GetProperty(mn, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (mp != null) { importMap = mp.GetValue(pkg) as System.Collections.IEnumerable; if (importMap != null) { Console.WriteLine($"# (via {mn})"); break; } }
+                var mf = pkg.GetType().GetField(mn, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (mf != null) { importMap = mf.GetValue(pkg) as System.Collections.IEnumerable; if (importMap != null) { Console.WriteLine($"# (via {mn} field)"); break; } }
+            }
+            if (importMap == null) Console.WriteLine("  (no import accessor found on this package type)");
+            else
+            {
+                int ii = 0;
+                foreach (var imp in importMap)
+                {
+                    string desc;
+                    var objNameP = imp?.GetType().GetProperty("ObjectName");
+                    if (objNameP != null)
+                    {
+                        var on = objNameP.GetValue(imp)?.ToString();
+                        var cn = imp?.GetType().GetProperty("ClassName")?.GetValue(imp)?.ToString();
+                        var cp = imp?.GetType().GetProperty("ClassPackage")?.GetValue(imp)?.ToString();
+                        desc = $"ObjectName='{on}' Class='{cn}' ClassPackage='{cp}'";
+                    }
+                    else
+                    {
+                        var (n, p) = ResolveAny(imp);
+                        desc = $"{n}  ({p})";
+                    }
+                    Console.WriteLine($"  import[{ii++}] {desc}");
+                    if (ii > 250) { Console.WriteLine("  ... (truncated at 250)"); break; }
+                }
+            }
+            return;
         }
 
         // Special needle '*' or '' = dump ALL functions in this asset to a summary file.

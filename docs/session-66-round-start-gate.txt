@@ -1,0 +1,79 @@
+SESSION 66 — feature-toggle spam is a SYMPTOM; the real gate = the round never leaves EGP_BeginInit (no drop-in)
+================================================================================================================
+Date: 2026-07-11. Continues S65 (PATH-1 hybrid got BP_LokiGameMode_Tutorial to fully initialize -> "Finished";
+then the round sat at EGP_BeginInit and every frame logged "ULokiGameFeatureToggles::Get <X> ... not ready").
+Goal: make the toggles ready so the round advances to drop-in. Live/autonomous (in-shim runtime probes).
+
+★ FEATURE TOGGLES ARE A RED HERRING (a symptom, not the gate) — three findings ★
+--------------------------------------------------------------------------------
+1. The distinct "not ready" toggles are DOMINATED by hero/spectator-camera queries, per-frame:
+     DeadSpectatorCameraLock  115,328   <-- the decisive clue: the player is a DEAD SPECTATOR (no hero)
+     AttachAudioListenerToHero 57,666
+     CursorCharacterAim        57,664
+     (ForceAnonymizeNonTeamParty/BonfireUAVs/WinterEvent: 2 each — one-shot)
+   => the spam is the spectator/hero code polling toggles because the player has NO hero, NOT the cause.
+2. The UE Game Features PLUGIN system loads fine at startup: "Initializing game features subsystem",
+   "Loading 178 builtins", "Game feature 'LokiWinter' loaded successfully. Ending state: [Registered, Active]".
+   So game-feature plugins are NOT the problem.
+3. ULokiGameFeatureToggles is NOT a UObject — an in-shim GUObjectArray walk for a class containing
+   "FeatureToggles" (plural) found NOTHING (only the unrelated singular "LokiGameFeatureDynamicActivationMethod_
+   GameFeatureToggle"). So the toggle store is a static/global C++ thing (no reflection to poke). Not the lever.
+
+A VALID HERO IS SERVED (not a missing-hero problem)
+---------------------------------------------------
+ags selectedHero(id) returns SelectedHeroAssetId or `defaultHeroAssetId` (Ronin default); buildTutorialMatchInfo
+puts it in PlayerInfo.HeroAssetID. The pre-game-lobby hero preview even loaded "HeroCosmeticsBundle:RoninDefault".
+So the match has a hero — the player just never gets one SPAWNED.
+
+★★★ THE REAL GATE: LokiRoundGameMode is STUCK at EGP_BeginInit -> no player drop-in -> dead spectator ★★★
+--------------------------------------------------------------------------------------------------------
+Across every force-open run the ONLY round-phase log is:
+  "LogLokiRoundGameMode: Setting Phase to 1 (BeginInit)" + "EGP_ServerStartup -> EGP_BeginInit".
+It NEVER advances to a later phase (confirmed stuck for minutes). The GameModeInitializer reaches "Finished"
+(match SETUP done, S65) but the ROUND does not START. The tutorial DOES spawn AI bots (SpawnBots), but the LOCAL
+player's drop-in / RestartPlayer never fires -> no possessed hero -> the game runs as a dead spectator (hence the
+DeadSpectatorCameraLock spam). This is the server-authoritative ROUND-START layer — the phase advance from
+BeginInit is native/packer-hidden and normally driven by the match orchestration the force-open bypasses.
+
+GAMEMODE FUNCTION INVENTORY (BP_LokiGameMode_Tutorial_C, via in-shim DumpGameModeFuncs — reusable for S67)
+---------------------------------------------------------------------------------------------------------
+  ModeSupportsDropPlane, SpawnBots, SpawnMonster, "Spawn AI Hero Bot", GetTeamIndexForPIEPlayer,
+  SpawnDefaultPawnAtTransform, SpawnDefaultPawnFor, ChoosePlayerStart, K2_OnRestartPlayer, ClearDelaySpawn,
+  ReceiveBeginPlay, SetPlayerStartName, BP_OnRoundRestart, BP_OnNewPhase, OnPlayerSpawned_BP, GrantStarterItems.
+(These are the BP-defined funcs; native AGameModeBase RestartPlayer/HandleStartingNewPlayer are not in the list.)
+
+NEXT (S67) — two concrete leads to get the player a controllable hero:
+-------------------------------------------------------------------------
+LEAD A (advance the round): find what gates EGP_BeginInit -> next phase and satisfy/force it. It's native/
+  packer-hidden and server-authoritative. Angles: (i) find a native "SetPhase"/"AdvancePhase" on ALokiRoundGameMode
+  and call it via the PI primitive to push the round to the deploy/drop phase; (ii) check whether a feature toggle
+  actually gates the advance (unconfirmed — the toggle store isn't pokeable, but the *advance* might read one);
+  (iii) whether the phase waits on a countdown / min-players / a "match start" signal we can supply.
+LEAD B (force-spawn the hero directly, bypassing the round): call the gamemode's spawn path via the PI primitive
+  (proven for GetMissionsModel/AsyncLoadPrimaryAssets etc.) to spawn + possess a hero for the local PC:
+  RestartPlayer(PC) (native; spawns default pawn + possesses) OR SpawnDefaultPawnFor(PC, start) /
+  SpawnDefaultPawnAtTransform(PC, xform) then Possess. ChoosePlayerStart fails ("NO PLAYERSTART" by design), so
+  SpawnDefaultPawnAtTransform with a hand-picked map transform is the most direct — then Possess + verify control.
+  This is the missions-style native-call build (param-building for a Controller/Transform arg + possession).
+RECOMMENDED: try LEAD B first (bypasses the packer-hidden round logic; the primitive + these functions are known).
+
+GATE LADDER
+-----------
+  [DONE] travel+load; Login; PlayerState; WaitingForClientsReady; post-ready revert (S65 hybrid); initializer
+         FINISHED; real gamemode/gamestate/PC; AI bots spawn.
+  [NEXT] LokiRoundGameMode stuck at EGP_BeginInit -> no local-player drop-in -> dead spectator.
+  [LATER] possess a controllable hero = PLAYABLE.
+
+CONFIG / STATE AT END
+---------------------
+- ags: HYBRID still on (forceTutorialMatch=true + empty address) — required to build the valid model. Restart
+  reuses certs. (ags pid changes per restart.)
+- tutorial_launch.dll = durable force-open build (kFixMode=FIX_TARGETED_INITPS, kInvestigateOnly=false,
+  kPokeMatchModel=false). New probes: DumpFeatureToggles, DumpGameModeFuncs, DumpPawns (+ S65's DumpCoreGameState/
+  FindCoreGameManager/DumpClassFuncs). kInvestigateOnly=true = read-only census (menu OR running tutorial).
+- GOTCHA (cost me time): launch-redirect.ps1 does NOT kill a prior SUPERVIVE process (only ags/go) — so a second
+  launch leaves TWO games running + a polluted Loki.log. ALWAYS `Stop-Process -Name SUPERVIVE-Win64-Shipping -Force`
+  before relaunching.
+- Static xref stays dead (packer). Game left alive (spectator, round at BeginInit). Preserved: scratchpad
+  marker-s66-gamemode-funcs.txt.
+- Handoff: docs/next-session-prompt-s67.md.

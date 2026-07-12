@@ -1,0 +1,107 @@
+SESSION 74 — Content-overlay spike: the hero/gamemode parent chain crosses an ANGELSCRIPT layer
+================================================================================================
+Date: 2026-07-12 (autonomous). User chose "run the overlay spike" (eyes-open) from the S74
+bank-vs-overlay decision. Goal (from docs/next-session-prompt-s74.md): the cheap empirical test —
+"can the stub UnrealEditor-Cmd MOUNT the shipping .utoc/.pak + StaticLoadObject a BP_HERO class,
+and does its native /Script/Loki parent resolve? If the native parents don't resolve, the overlay
+is blocked."
+
+METHOD (why not the literal in-engine mount)
+--------------------------------------------
+The literal spike (rebuild the stub with pak-mount + StaticLoadObject code, run headless, read the
+failure) has a FIXED outcome by construction: mounting CONTENT paks never creates native C++ UClasses,
+so a StaticLoadObject of a BP whose parent is a native class the stub's module lacks can only fail. It
+would also cost a ~240s rebuild + disrupt the still-running S73 stack (stub/ags/client) to produce a
+log confirming a foregone conclusion. So instead I read the REAL SHIPPED BYTES with the existing
+CUE4Parse extractor and traced the actual parent chain of the cooked BP_HERO / BP_GameMode — a
+stronger, cheaper, non-disruptive empirical answer to the SAME question ("what does the cooked hero
+declare as its parent, and is it something the stub can provide?").
+
+TOOL ADDED (reusable): tools/extractor/extractor/Program.cs `bpdump <path-substr> @imports`
+  Loads the package via the CUE4Parse provider and prints, per export, its SuperStruct (parent)
+  resolved to name + full object path, plus a best-effort import-table dump. Handles BP class assets
+  that have 0 UFunction exports of their own (moved the @imports handling ahead of the ufuncs gate).
+  Reflection-based (CUE4Parse IoPackage exposes no legacy ImportMap; imports are FPackageObjectIndex
+  hashes — /Game package imports resolve to readable paths, /Script script-imports may stay hashed).
+
+THE FINDING — the content→native boundary passes THROUGH ANGELSCRIPT
+-------------------------------------------------------------------
+Traced live off the shipping paks (G:\git\GAME BACKUPS...\SUPERVIVE\Loki\Content\Paks):
+
+  BP_HERO_Assault_C                                   (BP, /Game .../Heroes/Assault/BP_HERO_Assault)
+    -> SuperStruct = BP_LokiHeroCharacter_C           (BP, /Game/Loki/Core/Characters/BP_LokiHeroCharacter)
+       -> SuperStruct = BP_LokiHeroCharacter_Code_C   (BP, /Game/Loki/Core/Characters/BP_LokiHeroCharacter_Code)
+          -> SuperStruct = /Script/Angelscript.LokiHeroCharacter_AS   <-- ANGELSCRIPT class
+             (its UFunctions override /Script/Loki.LokiHeroCharacter.* — e.g. BeginReviving, BeginStomping —
+              so the AS class extends the NATIVE /Script/Loki.LokiHeroCharacter underneath.)
+
+  BP_LokiGameMode_Tutorial_C  (BP, /Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial)
+    -> SuperStruct = <unresolved script-import hash 0x05000000> — same shape (BP whose parent is a
+       /Script script/native import CUE4Parse can't name without the global script store; by analogy
+       to the hero it routes through the Angelscript gamemode layer to native LokiRoundGameMode/GameMode).
+
+So the earlier S72/S73 framing ("paks hold BP content; the native /Script/Loki C++ parents live only in
+the shipping exe") was TRUE but INCOMPLETE: between the BP content and the native C++ there is an entire
+ANGELSCRIPT SCRIPT-VM layer.
+
+CORROBORATING EVIDENCE (SUPERVIVE is built on UnrealEngine-Angelscript, the Hazelight fork)
+-----------------------------------------------------------------------------------------
+1. schema.txt (usmap reflection of the running game) contains the /Script/Angelscript module:
+   AngelscriptActorLibrary, AngelscriptComponentLibrary, AngelscriptMathLibrary, AngelscriptSettings
+   (30 props), AngelscriptWorldLibrary, ... (~20 Angelscript* library classes) — the AS runtime is
+   compiled INTO the game.
+2. The install ships PRECOMPILED Angelscript, not .as source:
+   G:\git\GAME BACKUPS...\SUPERVIVE\Loki\Script\
+     PrecompiledScript.Cache      (1.18 MB)  = compiled AS bytecode blob loaded at runtime
+     Binds.Cache / Binds.Cache.Headers (5.76 MB / 2.05 MB) = the C++<->AS binding cache
+   No *.as files anywhere; no Angelscript project plugin (the AS module is an ENGINE-FORK module, in
+   the shipping exe/engine binaries, not under Loki/Plugins which only has DiscordPartnerSDK/Tox/Vivox).
+3. The DS stub's engine H:\Unreal Engine\UE_5.4 is STOCK UE — grep of Engine/Plugins + Engine/Source
+   for "angelscript" = ZERO hits. The stub literally has no /Script/Angelscript module, so it cannot
+   instantiate LokiHeroCharacter_AS (or any *_AS script class) at all.
+
+VERDICT — the overlay is BLOCKED, and more deeply than S73 assessed
+------------------------------------------------------------------
+To spawn a real controllable hero server-side, the stub would need, in order:
+  (a) be rebuilt on the SAME UnrealEngine-Angelscript fork + version SUPERVIVE ships (AS is an engine
+      fork with deep integration, not a drop-in plugin), then
+  (b) load the game's PrecompiledScript.Cache so /Script/Angelscript.LokiHeroCharacter_AS (and the AS
+      gamemode/round classes) register — bytecode that is only valid against the exact binds hash the
+      game built with, AND
+  (c) STILL supply the native /Script/Loki C++ classes (LokiHeroCharacter/LokiGameMode/RoundGameMode/
+      TutorialGameMode) that the AS classes extend — which exist ONLY inside the packed shipping CLIENT
+      exe (no dedicated-server binary ships; S73), not in any pak.
+Any one of (a)/(b)/(c) is a large research effort; together they are not a reasonable-effort route. The
+by-path NetGUID mirror technique (which cleanly delivered the concrete native framework classes —
+GameState/PC/PlayerState in S70/S73) fundamentally cannot deliver an Angelscript-or-BP concrete class.
+
+This CONFIRMS the S73 recommendation with a sharper root cause: a playable tutorial requires SUPERVIVE's
+own server-side runtime (native /Script/Loki C++ + the Angelscript layer + the precompiled script), none
+of which is reconstructable from the shipped client + content paks with the current toolchain.
+
+SILVER LINING (mental-model correction, not a route)
+----------------------------------------------------
+A large fraction of SUPERVIVE's GAME LOGIC (hero behavior, gamemode/round flow) lives in ANGELSCRIPT
+(PrecompiledScript.Cache), i.e. script BYTECODE — in principle far more inspectable/decompilable than
+native C++. The earlier "native C++ round machinery we can't reconstruct" picture is partly wrong: much
+of it is AS script. This does NOT make a playable tutorial reachable in reasonable effort (you still need
+the AS-fork engine + native /Script/Loki parents + the exact binds), but it reframes the object of study
+if the project ever revisits deep game-logic RE.
+
+RECOMMENDATION (unchanged, now better-grounded)
+-----------------------------------------------
+BANK the S70/S73 milestone: the DS route delivers the client into the LIVE tutorial match with the full
+mirrored Loki networking stack (Loki PC + PlayerState + GameState + WP level-visibility), stable spectator.
+That is the honest reasonable-effort ceiling. A controllable hero is blocked by the Angelscript + native
+server runtime, not by anything the stub/mirror technique can reach.
+
+STATE
+-----
+- No processes killed. The S73 stack was still up at session start (stub UnrealEditor-Cmd PID 72524,
+  ags PID 101360, SUPERVIVE-Win64-Shipping PID 102860) and was NOT disturbed (the spike was byte-level,
+  read-only against the paks). If cleaning up: kill those three; PlayerControllerClass=ALokiPlayerController
+  etc. baselines remain in the stub (one-line reverts documented in the S73 docs).
+- Code change: tools/extractor/extractor/Program.cs gained the `@imports` bpdump needle (reusable).
+  No stub/server/engine changes. Uncommitted S73 work on branch dedicated-server-stub is untouched.
+- Captured outputs: %TEMP%\claude\bp_assault_imports.txt, bp_lokihero_imports.txt,
+  bp_lokihero_code_imports.txt, bp_tutgm_imports.txt (parent-chain traces).

@@ -25,4 +25,9 @@ public:
 	// crashes the client with "Invalid replicated field 0" (see
 	// docs/session-36-close-diagnosis.md).
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	// Session 70: after the GameState is spawned, seed our ALokiGameState mirror into a PLAYING
+	// state (CurrentPhase + a minimal MatchStartDetails) so the DS-route client leaves the tutorial
+	// loading screen. See LokiGameStateStub.h.
+	virtual void InitGameState() override;
 };
