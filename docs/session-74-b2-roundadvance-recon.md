@@ -61,3 +61,30 @@ Build: extend tutorial_launch.cpp's native-call primitive (already calls Execute
 DoSpawnPossess on the game thread via the ProcessInternal hook @base+0x13454A0, thunk@UFunc+0xE0,
 params via FFrame) to call GoToPhase (trivial 1-byte param) then SpawnPlayer. New tool this session:
 tools/re/class_funcs.py.
+
+## ★ EXPERIMENT 1 RESULT (RAN LIVE) — GoToPhase WORKS; advances BeginInit→SpawnSelect, then crashes in the native deploy setup.
+Built tutorial_launch_phase.dll (RM_GOTOPHASE: steps GoToPhase(2..7), one per ~450ms). Sequence:
+launch (ags hybrid empty-address) → auto-arm → inject tutorial_launch_fo.dll (force-open; **1st attempt
+crashed at login, 2nd stuck** — still intermittent) → round at EGP_BeginInit, "Client is ready to play",
+ALIVE → inject tutorial_launch_phase.dll. Marker: resolved gm=0x17079D48960 GoToPhase thunk=0x7FF6BA947200
+NextPhase@0x0; `called GoToPhase(2)`, `called GoToPhase(3)`. Loki.log CONFIRMS the round ADVANCED:
+`Setting Phase to 2 (Pre)` → `Setting Phase to 3 (FinishInit)` → `Setting Phase to 4 (SpawnSelect)` +
+`Transitioning ... to phase (ERoundPhase::EGP_SpawnSelect)`. **THEN CRASH** on entering SpawnSelect:
+`Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0x0` — callstack top frames rva ~0x560F8AE/
+0x560F210/0x560F27C reached via the GoToPhase thunk (0x7FF6BA947270, +0x70 into the resolved thunk) from the
+shim (0x1709BA111A4 = phase.dll). So the CRASH IS INSIDE the native SpawnSelect-transition logic — it derefs a
+NULL (the drop-plane / spawn-select manager / player-deploy state the force-open CLIENT-AUTHORITY round never
+set up; the feature-toggle "CursorCharacterAim/AttachAudioListenerToHero not ready" spam right before confirms
+the dead-spectator/no-hero state). ★ NET: the phase machinery ADVANCES fine via GoToPhase (BeginInit→Pre→
+FinishInit→SpawnSelect all register) — the wall is the DEPLOY setup at SpawnSelect, exactly the
+server-authoritative drop-in the DS/force-open routes both identified. GoToPhase is a real, working lever up to
+the deploy phase.
+
+## REMAINING LEAD-A EXPERIMENTS (to fully exhaust B2)
+2. **Skip the crashing SpawnSelect deploy:** GoToPhase 2→3 then jump 6 (Lineup) / 7 (Combat), skipping
+   SpawnSelect(4)+SpawnReveal(5). If a later phase doesn't deref the missing deploy state, the round may reach
+   Combat "playing" — then a hero may be spawnable/possessable. (Quick: change the phase sequence + rebuild.)
+3. **Bypass deploy via SpawnPlayer:** advance to FinishInit(3) (works), then call
+   SpawnPlayer(localPC->PlayerState, &xform, StartSpot, true)->LokiCharacter, then Controller::Possess.
+   The real hero-spawn (untried by S68). If it returns a hero + possession engages control → PLAYABLE; if it
+   also null-derefs on missing round/deploy state → that + the SpawnSelect crash = LEAD A exhausted, B2 done.
