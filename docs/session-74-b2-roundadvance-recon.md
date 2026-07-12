@@ -88,3 +88,36 @@ the deploy phase.
    SpawnPlayer(localPC->PlayerState, &xform, StartSpot, true)->LokiCharacter, then Controller::Possess.
    The real hero-spawn (untried by S68). If it returns a hero + possession engages control → PLAYABLE; if it
    also null-derefs on missing round/deploy state → that + the SpawnSelect crash = LEAD A exhausted, B2 done.
+
+## ★ EXPERIMENT 2 RESULT (RAN LIVE) — skipping the deploy phases reaches Combat, STABLE, but dead-spectator.
+Phase list {2,3,6,7} (skip SpawnSelect(4)+SpawnReveal(5)). Force-open → inject phase.dll: the round advanced
+`Setting Phase to 2 (Pre)` → `3 (FinishInit)` → `6 (Lineup)` → `7 (Combat)`, ALL clean, **NO CRASH, game alive
+in EGP_Combat**. So the deploy-phase crash (exp1) is specific to SpawnSelect/SpawnReveal (the drop-plane/
+spawn-select setup); Lineup+Combat transition fine. BUT the player is still a DEAD SPECTATOR in Combat: the
+"ULokiGameFeatureToggles::Get DeadSpectatorCameraLock/CursorCharacterAim/AttachAudioListenerToHero not ready"
+spam CONTINUES (199/200 lines), no hero, no drop-in — because we skipped the deploy that spawns+deploys the hero.
+=> reaching Combat by skipping deploy does NOT produce a hero.
+
+## ★ EXPERIMENT 3 RESULT (RAN LIVE) — SpawnPlayer (the real hero-spawn) CRASHES on missing state, like every other spawn path.
+Injected RM_SPAWNPLAYER into the live Combat session (no re-force-open). Resolve was PERFECT: gm/pc found,
+localPS=BP_LokiPlayerState_C (PC->PlayerState @0x3C0), startSpot found, SpawnPlayer thunk=0x7FF6BA83C070,
+Possess thunk=0x7FF6B8BF2740, param offsets PS@0x0 Xf@0x10 SS@0x70 Ensure@0x78 Ret@0x80 InPawn@0x0. **But the
+CallNative(SpawnPlayer) CRASHED** — EXCEPTION_ACCESS_VIOLATION reading 0x0, callstack deep in native code
+(rva ~0x36A1xxx, a DIFFERENT spot than the SpawnSelect crash) → SpawnPlayer null-derefs on the missing
+round/deploy/hero-setup state a client-authority force-open never has. (Tested: Combat phase, bEnsure=true,
+with startSpot.)
+
+## ★★★ CONCLUSION — B2 IS FULLY EXHAUSTED. ★★★
+The round-phase MACHINERY is drivable (GoToPhase advances phases cleanly, incl. to Combat), but **actually
+DEPLOYING/SPAWNING A HERO is impossible on the client-only force-open** — it null-derefs on server-authoritative
+state every way we try it. Across ~7 spawn/deploy attempts now (S68: BP-SpawnDefaultPawnFor crash, native-
+SpawnDefaultPawnFor null, poke-DefaultPawnClass null, GameplayStatics-BeginDeferred crash; S74: SpawnSelect
+deploy-transition null-deref, SpawnPlayer null-deref) the root cause is IDENTICAL: the hero drop-in requires the
+drop-plane / spawn-select / deploy context the real SERVER builds, which a client-authority round lacks. This is
+the SAME server-authoritative round-start/drop-in wall all routes converge on (DS: needs the BP+Angelscript
+gamemode/hero; content-overlay: Angelscript+native parents absent; real-exe-as-server: compile-time gated). ★
+The honest ceiling stands: DS route = client stable in the LIVE tutorial world w/ full mirrored Loki net stack
+(S70/S73 spectator); force-open route = the real tutorial gamemode fully initializes + the round advances via
+GoToPhase, but the deploy/hero is unreachable client-side. A playable tutorial needs SUPERVIVE's dedicated-server
+binary/source. NEW reusable: tools/re/class_funcs.py; tutorial_launch.cpp RM_GOTOPHASE (GoToPhase driver) +
+RM_SPAWNPLAYER (SpawnPlayer+Possess) + PropOffsetSuper.

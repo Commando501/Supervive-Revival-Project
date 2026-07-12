@@ -83,10 +83,11 @@ static uint8_t* g_pi=nullptr; static uint8_t g_stolen[5]={0}; static uint8_t* g_
 static volatile long g_inHook=0,g_done=0,g_hitsGT=0,g_called=0; static DWORD g_gameTid=0;
 static uint8_t g_template[0x180]={0}, g_myframe[0x180]={0};
 static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
+static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for SpawnPlayer (96-byte FTransform OUT)
 
 // ---- S68 spawn+possess mode (LEAD B / OPTION 2) ----
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2 };
-static const int kRunMode = RM_GOTOPHASE;   // RM_FORCEOPEN = force-open tutorial; RM_SPAWNPOSSESS = spawn+possess; RM_GOTOPHASE = advance round past EGP_BeginInit (S74 B2)
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3 };
+static const int kRunMode = RM_SPAWNPLAYER;   // RM_FORCEOPEN=force-open; RM_SPAWNPOSSESS=spawn+possess; RM_GOTOPHASE=advance round (S74 B2 exp1/2); RM_SPAWNPLAYER=real hero spawn+possess (exp3)
 static uintptr_t g_gm2=0, g_pc2=0, g_startSpot=0, g_spawnedPawn=0, g_heroClass=0;
 constexpr uint32_t GM_DEFPAWN_OFF=0x3F0;   // AGameModeBase::DefaultPawnClass
 // S68 GameplayStatics deferred-spawn (bypass GetDefaultPawnClass): explicit hero-class spawn + possess.
@@ -105,10 +106,17 @@ static volatile long g_spStep=0;   // progress: 1=spawn called, 2=pawn got, 3=po
 static void DoSpawnPossess();
 // ---- S74 B2: GoToPhase (force the round past EGP_BeginInit) ----
 static uintptr_t g_gmPhase=0; static void* g_gpFn=nullptr; static uintptr_t g_gpThunk=0, g_gpChild=0; static uint32_t g_offNextPhase=0;
-static int g_phaseTarget=2;          // round is at EGP_BeginInit(1); step EGP_Pre(2) -> EGP_Combat(7)
-static const int kPhaseStop=7;       // EGP_Combat
+// S74 B2 exp2: skip SpawnSelect(4)+SpawnReveal(5) — they null-deref on the missing deploy state — and jump
+// straight to Lineup(6) then Combat(7). Change this list to sweep phase paths. (exp1 was {2,3,4,5,6,7}.)
+static const int kPhaseList[]={2,3,6,7};
+static int g_phaseIdx=0;
 static DWORD g_lastPhaseMs=0;
 static void DoGoToPhase();
+// ---- S74 B2 exp3: SpawnPlayer (real hero-spawn) + Possess ----
+static void* g_spwFn=nullptr; static uintptr_t g_spwThunk=0, g_spwChild=0;
+static uint32_t g_oSpwPS=0xFFFFFFFF,g_oSpwXf=0xFFFFFFFF,g_oSpwSS=0xFFFFFFFF,g_oSpwEnsure=0xFFFFFFFF,g_oSpwRet=0xFFFFFFFF;
+static uintptr_t g_localPS=0;
+static void DoSpawnPlayer();
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
@@ -183,6 +191,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     InterlockedIncrement(&g_hitsGT); g_inHook=1;
     memcpy(g_template, frame, sizeof(g_template));
     if(kRunMode==RM_GOTOPHASE){ DoGoToPhase(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoGoToPhase when phases exhausted
+    if(kRunMode==RM_SPAWNPLAYER){ DoSpawnPlayer(); InterlockedIncrement(&g_called); g_done=1; g_inHook=0; return; }
     if(kRunMode==RM_SPAWNPOSSESS){ DoSpawnPossess(); InterlockedIncrement(&g_called); g_done=1; g_inHook=0; return; }
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
     uint8_t* pb=(uint8_t*)g_pbuf;
@@ -315,11 +324,60 @@ static void DoGoToPhase(){
     DWORD now=GetTickCount();
     if(g_lastPhaseMs && now-g_lastPhaseMs<450) return;
     g_lastPhaseMs=now;
+    if(g_phaseIdx>=(int)(sizeof(kPhaseList)/sizeof(kPhaseList[0]))){ g_done=1; return; }
+    int ph=kPhaseList[g_phaseIdx++];
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
-    ((uint8_t*)g_pbuf)[g_offNextPhase]=(uint8_t)g_phaseTarget;   // NextPhase (ERoundPhase, 1 byte)
+    ((uint8_t*)g_pbuf)[g_offNextPhase]=(uint8_t)ph;   // NextPhase (ERoundPhase, 1 byte)
     CallNative(g_gpFn,g_gpThunk,g_gpChild,(void*)g_gmPhase,g_pbuf,g_rbuf);
-    Markerf("[GP] called GoToPhase(%d)\r\n",g_phaseTarget);
-    if(++g_phaseTarget>kPhaseStop) g_done=1;
+    Markerf("[GP] called GoToPhase(%d)\r\n",ph);
+}
+// Walk cls + super chain, each class's ChildProperties(@+0x58 via FField.Next@+0x18), for a named property's Offset_Internal(@+0x44).
+static uint32_t PropOffsetSuper(uintptr_t cls,const char* name){
+    int g=0; while(LooksLikePtr(cls)&&g++<12){
+        uintptr_t f=SafeReadable((void*)(cls+0x58),8)?*(uintptr_t*)(cls+0x58):0; int i=0;
+        while(LooksLikePtr(f)&&i<300){ if(NameIs(f,name)){ if(SafeReadable((void*)(f+FPROP_OFFSET),4)) return *(uint32_t*)(f+FPROP_OFFSET); } uintptr_t nx=SafeReadable((void*)(f+FIELD_NEXT),8)?*(uintptr_t*)(f+FIELD_NEXT):0; f=nx; i++; }
+        cls=SafeReadable((void*)(cls+0x48),8)?*(uintptr_t*)(cls+0x48):0;
+    }
+    return 0xFFFFFFFF;
+}
+// S74 B2 exp3: resolve the REAL hero spawn — LokiGameMode::SpawnPlayer(PlayerState, Transform& OUT, StartSpot, bEnsure) -> LokiCharacter*.
+static bool ResolveSpawnPlayer(){
+    g_gm2=FindInstByClass("GameMode_Tutorial",nullptr);
+    g_pc2=FindInstByClass("LokiPlayerController_Dev",nullptr);
+    g_startSpot=FindInstByClass("LokiPlayerStart","UAID");
+    if(!g_startSpot) g_startSpot=FindInstByClass("CapturePoint_Tutorial","UAID");
+    if(!g_startSpot) g_startSpot=FindInstByClass("LokiRespawnBeacon_Tutorial","UAID");
+    if(!g_gm2||!g_pc2){ Marker("[SPW] missing gm/pc -> abort\r\n"); return false; }
+    uint32_t psOff=PropOffsetSuper(ClassOf(g_pc2),"PlayerState");
+    if(psOff!=0xFFFFFFFF && SafeReadable((void*)(g_pc2+psOff),8)) g_localPS=*(uintptr_t*)(g_pc2+psOff);
+    char psn[96]="-"; if(LooksLikePtr(g_localPS)&&ClassOf(g_localPS)) GetFNameStr(NameId(ClassOf(g_localPS)),psn,sizeof(psn));
+    ResolveFuncNative(ClassOf(g_gm2),"SpawnPlayer",&g_spwFn,&g_spwThunk,&g_spwChild);
+    if(g_spwChild){ g_oSpwPS=ParamOffset(g_spwChild,"PlayerState"); g_oSpwXf=ParamOffset(g_spwChild,"SpawnTransform"); g_oSpwSS=ParamOffset(g_spwChild,"StartSpot"); g_oSpwEnsure=ParamOffset(g_spwChild,"bEnsurePositionIsValid"); g_oSpwRet=ParamOffset(g_spwChild,"ReturnValue"); }
+    ResolveFuncNative(ClassOf(g_pc2),"Possess",&g_possessFn,&g_possessThunk,&g_possessChild);
+    if(g_possessChild){ uint32_t o=ParamOffset(g_possessChild,"InPawn"); if(o!=0xFFFFFFFF)g_offInPawn=o; }
+    Markerf("[SPW] gm=0x%llX pc=0x%llX localPS=0x%llX(%s,psOff@0x%X) startSpot=0x%llX spawnThunk=0x%llX possessThunk=0x%llX\r\n",
+        (unsigned long long)g_gm2,(unsigned long long)g_pc2,(unsigned long long)g_localPS,psn,psOff,(unsigned long long)g_startSpot,(unsigned long long)g_spwThunk,(unsigned long long)g_possessThunk);
+    Markerf("[SPW] offs PS@0x%X Xf@0x%X SS@0x%X Ensure@0x%X Ret@0x%X InPawn@0x%X\r\n",g_oSpwPS,g_oSpwXf,g_oSpwSS,g_oSpwEnsure,g_oSpwRet,g_offInPawn);
+    return g_spwThunk!=0 && LooksLikePtr(g_localPS);
+}
+// Runs on the GAME THREAD (from OnPI): SpawnPlayer(localPS, xform_out, startSpot, bEnsure=true) -> hero, then Possess.
+static void DoSpawnPlayer(){
+    uint8_t* pb=(uint8_t*)g_spbuf; memset(g_spbuf,0,sizeof(g_spbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    if(g_oSpwPS!=0xFFFFFFFF) *(uint64_t*)(pb+g_oSpwPS)=(uint64_t)g_localPS;
+    if(g_oSpwSS!=0xFFFFFFFF) *(uint64_t*)(pb+g_oSpwSS)=(uint64_t)g_startSpot;
+    if(g_oSpwEnsure!=0xFFFFFFFF) pb[g_oSpwEnsure]=1;
+    CallNative(g_spwFn,g_spwThunk,g_spwChild,(void*)g_gm2,g_spbuf,g_rbuf);
+    uintptr_t hero=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(hero)&&g_oSpwRet!=0xFFFFFFFF) hero=*(uint64_t*)(pb+g_oSpwRet);
+    char hcn[96]="-"; if(LooksLikePtr(hero)&&ClassOf(hero)) GetFNameStr(NameId(ClassOf(hero)),hcn,sizeof(hcn));
+    Markerf("[SPW] SpawnPlayer -> hero=0x%llX cls=%s\r\n",(unsigned long long)hero,hcn);
+    g_spawnedPawn=hero;
+    if(LooksLikePtr(hero) && g_possessThunk){
+        uint8_t* qb=(uint8_t*)g_pbuf; memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(g_offInPawn!=0xFFFFFFFF) *(uint64_t*)(qb+g_offInPawn)=(uint64_t)hero;
+        CallNative(g_possessFn,g_possessThunk,g_possessChild,(void*)g_pc2,g_pbuf,g_rbuf);
+        Marker("[SPW] Possess(PC,hero) called\r\n");
+    }
+    g_done=1;
 }
 static bool ResolveSpawnPossess(){
     g_gm2=FindInstByClass("GameMode_Tutorial",nullptr);
@@ -934,6 +992,18 @@ static DWORD WINAPI Worker(LPVOID){
         DumpTutorialState(0); DumpPawns(0); DumpStartSpots(0);
         Marker("[INV] done; NOT force-opening (game stays at menu)\r\n"); return 0;
     }
+    if(kRunMode==RM_SPAWNPLAYER){
+        Marker("[SPW] spawn-player mode: SpawnPlayer(localPS)->hero + Possess in the RUNNING tutorial\r\n");
+        if(!ResolveSpawnPlayer()){ Marker("[SPW] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[SPW] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[SPW] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[SPW] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<8000) Sleep(20);
+        UninstallHook();
+        char pcn[96]="-"; if(LooksLikePtr(g_spawnedPawn)&&ClassOf(g_spawnedPawn)) GetFNameStr(NameId(ClassOf(g_spawnedPawn)),pcn,sizeof(pcn));
+        Markerf("[SPW] done hero=0x%llX cls=%s (called=%ld hitsGT=%ld)\r\n",(unsigned long long)g_spawnedPawn,pcn,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
     if(kRunMode==RM_GOTOPHASE){
         Marker("[GP] go-to-phase mode: advance the round EGP_BeginInit -> Combat in the RUNNING tutorial\r\n");
         if(!ResolveGoToPhase()){ Marker("[GP] resolve failed -> abort\r\n"); return 0; }
@@ -942,7 +1012,7 @@ static DWORD WINAPI Worker(LPVOID){
         if(!InstallHook()){Marker("[GP] FAIL InstallHook\r\n");return 6;}
         DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<15000) Sleep(20);   // ~7 phases x 450ms + processing
         UninstallHook();
-        Markerf("[GP] done (lastTarget=%d called=%ld hitsGT=%ld)\r\n",g_phaseTarget-1,(long)g_called,(long)g_hitsGT);
+        Markerf("[GP] done (phasesCalled=%d called=%ld hitsGT=%ld)\r\n",g_phaseIdx,(long)g_called,(long)g_hitsGT);
         return 0;
     }
     if(kRunMode==RM_SPAWNPOSSESS){
