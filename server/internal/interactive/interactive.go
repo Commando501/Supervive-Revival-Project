@@ -499,10 +499,10 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 	// yet — the connect ATTEMPT is the diagnostic; a working DS is the follow-up.
 	connectionDetails := map[string]any{
 		// S65 PATH-1 HYBRID used EMPTY address (client builds the model but parks locally — no DS connect).
-		// S69 (2026-07-11) DS ROUTE: back to the loopback stub. The client's TravelManager connects to
-		// 127.0.0.1:7777 (S62 live-verified: handshake -> LoadMap LVL_Tutorial -> Join succeeded). The stub
-		// MUST be listening BEFORE the client arms the match, or the 20s connect timeout bounces it to login.
-		"address":      "127.0.0.1:7777",
+		// S74 B2: back to the HYBRID empty address for the force-open route (client builds a valid
+		// CoreGameMatchModel + parks locally in the pre-game lobby; force-open then travels to LVL_Tutorial
+		// with that valid model in place → no revert, gamemode fully inits). Set to "127.0.0.1:7777" for the DS route.
+		"address":      "",
 		"ServerID":     "revival-tutorial-ds-0001",
 		"MachineID":    "revival-local",
 		"RegionID":     "na",
