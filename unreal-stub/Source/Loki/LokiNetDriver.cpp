@@ -244,9 +244,16 @@ static bool IsClassNetCacheDivergent(AActor* Actor)
 	// real divergence). So a stock ADefaultPawn the server spawns + possesses replicates cleanly and the
 	// client can POSSESS + control it (first controllable-pawn milestone over the DS route). LokiStubGameMode
 	// spawns + possesses one in PostLogin. To restore: re-add `Actor->IsA<ADefaultPawn>() ||`.
+	// SESSION 76 un-suppress WorldSettings: the DS session's recurring ~2-min crash was pinned via the crash
+	// minidump (parse_minidump.py) to the S53/S54 garbage-thread execute-AV (RIP=0x7FF8F0400001) — a
+	// half-hydrated replicated actor spinning a stale callback into a thread, NOT the feature-toggle wall
+	// (that "not ready" spam is a red herring; findptr for the value = 0 hits, so it's transient). The stub
+	// log confirmed WorldInfo_1 (WorldSettings) is the one stock replicated actor still suppressed here, so its
+	// client replica spawns but never receives a property bunch — S53's exact signature. Un-suppress it so it
+	// hydrates. AWorldSettings is a stock UE5.4 class (NetworkChecksumMode=None tolerates any residual schema
+	// diff), like the S71 ADefaultPawn un-suppress. To restore: re-add `Actor->IsA<AWorldSettings>() ||`.
 	if (Actor->IsA<AHUD>()
-	 || Actor->IsA<ASpectatorPawn>()
-	 || Actor->IsA<AWorldSettings>())
+	 || Actor->IsA<ASpectatorPawn>())
 	{
 		return true;
 	}
