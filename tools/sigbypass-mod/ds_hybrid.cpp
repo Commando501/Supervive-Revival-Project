@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <cstring>
+#include <math.h>
 
 static const char* kMarkerPath = "G:\\git\\Supervive Revival Project\\docs\\ds-hybrid-marker.txt";
 constexpr uintptr_t kPiRva=0x13454A0, kObjObjectsRva=0x9E38930, kNamePoolRva=0x9D81450, kGGameTidRva=0x9D49158;
@@ -34,8 +35,8 @@ typedef void (*PFN_THUNK)(void* Context, void* Frame, void* Result);
 // MODE_CENSUS: read-only census. MODE_POSSESS_DP: ClientRestart(PC, DefaultPawn). MODE_SPAWN_HERO (Phase 3, the
 // decisive test): spawn a BP_HERO pawn client-side via GameplayStatics deferred-spawn (WorldContext=ProgressionManager,
 // hardcoded transform) + possess with the stock PC — does a hero even INITIALIZE + become controllable in the DS session?
-enum Mode { MODE_CENSUS=0, MODE_POSSESS_DP=1, MODE_SPAWN_HERO=2 };
-static const int kMode = MODE_SPAWN_HERO;
+enum Mode { MODE_CENSUS=0, MODE_POSSESS_DP=1, MODE_SPAWN_HERO=2, MODE_SPECTATOR_CAM=3, MODE_DEBUGCAM=4, MODE_FREECAM=5 };
+static const int kMode = MODE_FREECAM;
 
 static uintptr_t g_modBase=0;
 static volatile PFN_PE g_tramp=nullptr;
@@ -306,13 +307,203 @@ static void DoSpawnHero(){
     }
 }
 
+// ---- Route D (MODE_SPECTATOR_CAM): reveal the live tutorial world for the spectator ----
+// The DS client Joins the real LVL_Tutorial with a live LokiGameState (S70) but sits behind the
+// "DROP IN... LOADING" overlay as a dead spectator. This mode censuses every UMG UUserWidget, then
+// holds any loading-ish widget SetVisibility(Collapsed) on the game thread for ~40s so we can SEE what
+// the world/camera actually shows. Read-mostly: the only calls are UWidget::SetVisibility (guarded).
+static bool CallGuarded(void* fn, uintptr_t th, uintptr_t ch, void* ctx, void* pb, void* rb){
+    __try { CallNative(fn,th,ch,ctx,pb,rb); return false; } __except(EXCEPTION_EXECUTE_HANDLER){ return true; }
+}
+static void* g_svFn=0; static uintptr_t g_svThunk=0, g_svChild=0; static uint32_t g_svVisOff=0xFFFFFFFF;
+static uintptr_t g_loadWidgets[48]={0}; static int g_nLoadW=0; static volatile long g_scHits=0;
+// Fly-cam puppet: move the dead-spectator pawn directly (input pipeline is dead in the un-deployed state).
+// S76: RootComponent + RelativeLocation offsets are RESOLVED BY REFLECTION (both are UPROPERTYs) — a
+// hardcoded 0x1B0 guess crashed the client (it resolved into read-only module memory and a keypress wrote
+// there). All writes are HEAP-GUARDED. WASD = move (yaw steered by arrows), Space/Ctrl = up/down.
+static uintptr_t g_specPawn=0, g_specRoot=0; static HWND g_hwnd=0; static double g_yaw=0.0;
+static uint32_t g_specLocOff=0xFFFFFFFF;
+static uintptr_t g_moveComp=0; static uint32_t g_velOff=0xFFFFFFFF;
+static bool IsHeapObj(uintptr_t v){ return v>=0x10000000000ull && v<0x00007F0000000000ull && (v&7)==0; }
+static uint32_t PropOffsetOnClass(uintptr_t cls,const char* name){
+    int g=0; while(LooksLikePtr(cls)&&g++<14){
+        uintptr_t f=SafeReadable((void*)(cls+UFUNC_CHILDPROPS),8)?*(uintptr_t*)(cls+UFUNC_CHILDPROPS):0; int i=0;
+        while(LooksLikePtr(f)&&i++<1200){ if(NameIs(f,name)){ return SafeReadable((void*)(f+FPROP_OFFSET),4)?*(uint32_t*)(f+FPROP_OFFSET):0xFFFFFFFF; } f=SafeReadable((void*)(f+FIELD_NEXT),8)?*(uintptr_t*)(f+FIELD_NEXT):0; }
+        cls=SafeReadable((void*)(cls+UST_SUPER),8)?*(uintptr_t*)(cls+UST_SUPER):0;
+    }
+    return 0xFFFFFFFF;
+}
+static void ResolveSpectatorCam(){
+    static const char* kKeys[]={"Loading","LoadScreen","DropIn","Deploy","MatchLoad","Splash","Intro","Startup","Transition","BlackScreen","Loadout"};
+    uintptr_t widgetCls=0; int total=0;
+    ForEachObject([&](uintptr_t o)->bool{
+        uintptr_t c=ClassOf(o); if(!LooksLikePtr(c))return false;
+        if(!SuperChainHas(c,"UserWidget"))return false;
+        char on[160]="?",cn[160]="?"; ObjName(o,on,sizeof(on)); if(strncmp(on,"Default__",9)==0)return false;
+        GetFNameStr(NameId(c),cn,sizeof(cn)); total++;
+        Markerf("[WGT] 0x%llX %s (cls %s)\r\n",(unsigned long long)o,on,cn);
+        if(!widgetCls) widgetCls=c;
+        for(int k=0;k<(int)(sizeof(kKeys)/sizeof(kKeys[0]));k++){ if(strstr(cn,kKeys[k])||strstr(on,kKeys[k])){ if(g_nLoadW<48) g_loadWidgets[g_nLoadW++]=o; break; } }
+        return false;
+    });
+    if(widgetCls){ ResolveFunc(widgetCls,"SetVisibility",&g_svFn,&g_svThunk,&g_svChild); if(g_svChild) g_svVisOff=ParamOffset(g_svChild,"InVisibility"); }
+    uintptr_t cam=FindInstClassSub("CameraManager");
+    uintptr_t pc=FindInstClassSub("LokiPlayerController");
+    // Drive the dead-spectator's SpectatorPawnMovement Velocity (S75 velocity-puppet pattern): the integrator
+    // moves the pawn + updates the cached world transform (a raw RelativeLocation poke wouldn't propagate).
+    uintptr_t mc=FindInstClassSub("SpectatorPawnMovement"); if(!mc) mc=FindInstClassSub("PawnMovement");
+    g_moveComp=mc; char mcn[128]="?";
+    if(IsHeapObj(mc)){ ClassName(mc,mcn,sizeof(mcn)); g_velOff=PropOffsetOnClass(ClassOf(mc),"Velocity"); }
+    uintptr_t updComp=0; uint32_t ucOff=(IsHeapObj(mc))?PropOffsetOnClass(ClassOf(mc),"UpdatedComponent"):0xFFFFFFFF;
+    if(ucOff!=0xFFFFFFFF && IsHeapObj(mc) && SafeReadable((void*)(mc+ucOff),8)) updComp=*(uintptr_t*)(mc+ucOff);
+    g_hwnd=FindWindowA(nullptr,"SUPERVIVE");
+    double vx=0,vy=0,vz=0; if(IsHeapObj(mc)&&g_velOff!=0xFFFFFFFF&&SafeReadable((void*)(mc+g_velOff),24)){ double* V=(double*)(mc+g_velOff); vx=V[0];vy=V[1];vz=V[2]; }
+    Markerf("[SPEC] totalWidgets=%d loadCandidates=%d svThunk=0x%llX(InVisibility@0x%X) cam=0x%llX pc=0x%llX\r\n",
+        total,g_nLoadW,(unsigned long long)g_svThunk,g_svVisOff,(unsigned long long)cam,(unsigned long long)pc);
+    Markerf("[SPEC] moveComp=0x%llX class=%s velOff=0x%X vel=(%.0f,%.0f,%.0f) updComp=0x%llX hwnd=0x%llX — fly: WASD move, arrows steer, Space/Ctrl up/down\r\n",
+        (unsigned long long)mc,mcn,g_velOff,vx,vy,vz,(unsigned long long)updComp,(unsigned long long)(uintptr_t)g_hwnd);
+}
+static void DoSpectatorCam(){
+    long h=InterlockedIncrement(&g_scHits); int hidden=0;
+    // 1. keep the "DROP IN... LOADING" (WBP_UI_MatchTransition) overlay hidden
+    if(g_svThunk && g_svVisOff!=0xFFFFFFFF){
+        for(int i=0;i<g_nLoadW;i++){ uintptr_t w=g_loadWidgets[i]; if(!SafeReadable((void*)w,0x30))continue; uintptr_t wc=ClassOf(w); if(!LooksLikePtr(wc)||!SuperChainHas(wc,"UserWidget"))continue;
+            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint8_t*)(g_pbuf+g_svVisOff)=1; /* ESlateVisibility::Collapsed */
+            if(!CallGuarded(g_svFn,g_svThunk,g_svChild,(void*)w,g_pbuf,g_rbuf)) hidden++;
+        }
+    } else if(h==1) Marker("[SPEC] SetVisibility unresolved -> overlay not hidden\r\n");
+    // 2. fly-cam puppet: poke the spectator root WORLD location each tick from WASD/arrows (the un-deployed
+    //    input path is dead, so drive position directly — like the S75 hero velocity puppet). Arrows steer the
+    //    movement heading (g_yaw); WASD move in that frame; Space/Ctrl = up/down. View DIRECTION stays fixed for
+    //    now (rotating the camera POV needs an offset we RE next) — this gives translate-through-the-world.
+    if(IsHeapObj(g_moveComp) && g_velOff!=0xFFFFFFFF && SafeReadable((void*)(g_moveComp+g_velOff),24)){
+        bool focused = (!g_hwnd) || (GetForegroundWindow()==g_hwnd);
+        double* V=(double*)(g_moveComp+g_velOff); double dx=0,dy=0,dz=0;
+        if(focused){
+            if(GetAsyncKeyState(VK_LEFT)&0x8000)  g_yaw-=2.5;
+            if(GetAsyncKeyState(VK_RIGHT)&0x8000) g_yaw+=2.5;
+            double yr=g_yaw*3.14159265358979/180.0, c=cos(yr), s=sin(yr), sp=1600.0;
+            if(GetAsyncKeyState('W')&0x8000){ dx+=c;  dy+=s;  }
+            if(GetAsyncKeyState('S')&0x8000){ dx-=c;  dy-=s;  }
+            if(GetAsyncKeyState('D')&0x8000){ dx-=s;  dy+=c;  }
+            if(GetAsyncKeyState('A')&0x8000){ dx+=s;  dy-=c;  }
+            if(GetAsyncKeyState(VK_SPACE)&0x8000)   dz+=1;
+            if(GetAsyncKeyState(VK_CONTROL)&0x8000) dz-=1;
+            V[0]=dx*sp; V[1]=dy*sp; V[2]=dz*sp;   // set velocity; the integrator moves the pawn + updates its transform
+        }
+    }
+    if(h==1||h%100==0) Markerf("[SPEC] hit %ld: overlay hidden %d/%d; puppet moveComp=0x%llX yaw=%.0f\r\n",h,hidden,g_nLoadW,(unsigned long long)g_moveComp,g_yaw);
+}
+
+// ---- Route D (MODE_DEBUGCAM): UE's built-in free-fly debug camera ----
+// UCheatManager::EnableDebugCamera spawns an ADebugCameraController that DETACHES from the PlayerController and
+// takes over the view with its OWN native free-fly input (WASD/mouse) — bypassing the deploy-gated PC camera +
+// the dormant spectator movement. The open question is whether a UCheatManager exists in this shipping build.
+static uintptr_t g_dbgCM=0, g_dbgPC=0; static void* g_edcFn=0; static uintptr_t g_edcThunk=0, g_edcChild=0;
+static void ResolveDebugCam(){
+    uintptr_t pc=FindInstClassSub("LokiPlayerController"); g_dbgPC=pc;
+    uintptr_t cm=0; const char* src="none"; uint32_t ccOff=0xFFFFFFFF;
+    if(pc){ ccOff=PropOffsetOnClass(ClassOf(pc),"CheatManager"); if(ccOff!=0xFFFFFFFF && SafeReadable((void*)(pc+ccOff),8)){ uintptr_t v=*(uintptr_t*)(pc+ccOff); if(IsHeapObj(v)){ cm=v; src="PC->CheatManager"; } } }
+    if(!cm){ ForEachObject([&](uintptr_t o)->bool{ char cn[96]; if(!ClassName(o,cn,sizeof(cn)))return false; if(strcmp(cn,"CheatManager")!=0)return false; char on[96]; on[0]=0; ObjName(o,on,sizeof(on)); if(strncmp(on,"Default__",9)==0)return false; if(!IsHeapObj(o))return false; cm=o; return true; }); if(cm) src="live UCheatManager instance"; }
+    g_dbgCM=cm;
+    uintptr_t cmCls = cm?ClassOf(cm):0; if(!cmCls){ uintptr_t cdo=FindObjExact("Default__CheatManager"); if(cdo) cmCls=ClassOf(cdo); }
+    if(cmCls) ResolveFunc(cmCls,"EnableDebugCamera",&g_edcFn,&g_edcThunk,&g_edcChild);
+    Markerf("[DBG] pc=0x%llX cheatMgrOff=0x%X cheatMgr=0x%llX (%s) enableDbgThunk=0x%llX\r\n",
+        (unsigned long long)pc,ccOff,(unsigned long long)cm,src,(unsigned long long)g_edcThunk);
+}
+static void DoDebugCam(){
+    long h=InterlockedIncrement(&g_scHits);
+    // keep the "DROP IN... LOADING" overlay hidden so the debug-camera view is visible (widgets from ResolveSpectatorCam)
+    if(g_svThunk && g_svVisOff!=0xFFFFFFFF){
+        for(int i=0;i<g_nLoadW;i++){ uintptr_t w=g_loadWidgets[i]; if(!SafeReadable((void*)w,0x30))continue; uintptr_t wc=ClassOf(w); if(!LooksLikePtr(wc)||!SuperChainHas(wc,"UserWidget"))continue;
+            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint8_t*)(g_pbuf+g_svVisOff)=1; CallGuarded(g_svFn,g_svThunk,g_svChild,(void*)w,g_pbuf,g_rbuf); }
+    }
+    static bool called=false;
+    if(!called){ called=true;
+        if(!IsHeapObj(g_dbgCM) || !g_edcThunk){ Marker("[DBG] no usable UCheatManager -> cannot EnableDebugCamera (shipping likely nulls it). Pivot to spawn+SetViewTarget.\r\n"); return; }
+        Marker("[DBG] >>> EnableDebugCamera(cheatMgr)\r\n");
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        bool f=CallGuarded(g_edcFn,g_edcThunk,g_edcChild,(void*)g_dbgCM,g_pbuf,g_rbuf);
+        Markerf("[DBG] <<< EnableDebugCamera returned%s — check screen for the free-fly debug camera (native WASD/mouse look).\r\n",f?" [FAULTED]":"");
+    }
+}
+
+// ---- Route D (MODE_FREECAM): spawn a plain ACameraActor + retarget the PC's view to it, then puppet its
+// position. Owns all its pieces (my camera, BP-callable SetViewTargetWithBlend + K2_SetActorLocation) — bypasses
+// the CheatManager, the deploy-gated PC camera, and the dormant spectator movement. Open Q: does re-targeting the
+// view to a NON-hero camera dodge the AttachAudioListenerToHero move-crash? Reuses the DoSpawnHero spawn globals.
+static uintptr_t g_fcPC=0, g_fcCamCls=0, g_fcCam=0;
+static void* g_svtbFn=0; static uintptr_t g_svtbThunk=0, g_svtbChild=0; static uint32_t g_oSvtbTgt=0, g_oSvtbBlend=8;
+static void* g_slaFn=0; static uintptr_t g_slaThunk=0, g_slaChild=0; static uint32_t g_oSlaLoc=0, g_oSlaTele=0x19;
+static double g_fcX=55, g_fcY=79, g_fcZ=500, g_fcYaw=0; static bool g_fcSpawned=false;
+static void ResolveFreeCam(){
+    ResolveSpectatorCam();   // populate overlay-hide widgets (+ harmless spectator census)
+    g_fcPC=FindInstClassSub("LokiPlayerController");
+    g_worldCtx=FindInstClassSub("ProgressionManager"); if(!g_worldCtx) g_worldCtx=FindInstExactClass("LokiGameState");
+    g_gsCDO=FindObjExact("Default__GameplayStatics");
+    uintptr_t camCDO=FindObjExact("Default__CameraActor"); g_fcCamCls=camCDO?ClassOf(camCDO):0;
+    if(g_gsCDO){ uintptr_t gc=ClassOf(g_gsCDO);
+        ResolveFunc(gc,"BeginDeferredActorSpawnFromClass",&g_beginFn,&g_beginThunk,&g_beginChild);
+        ResolveFunc(gc,"FinishSpawningActor",&g_finishFn,&g_finishThunk,&g_finishChild);
+        if(g_beginChild){ g_oBWorld=g_offParam(g_beginChild,"WorldContextObject",0); g_oBClass=g_offParam(g_beginChild,"ActorClass",8); g_oBXform=g_offParam(g_beginChild,"SpawnTransform",0x10); g_oBColl=g_offParam(g_beginChild,"CollisionHandlingOverride",0x70); g_oBRet=g_offParam(g_beginChild,"ReturnValue",0x88); }
+        if(g_finishChild){ g_oFActor=g_offParam(g_finishChild,"Actor",0); g_oFXform=g_offParam(g_finishChild,"SpawnTransform",0x10); g_oFRet=g_offParam(g_finishChild,"ReturnValue",0x70); }
+    }
+    { uintptr_t pcCls=g_fcPC?ClassOf(g_fcPC):0;
+      if(pcCls) ResolveFunc(pcCls,"SetViewTargetWithBlend",&g_svtbFn,&g_svtbThunk,&g_svtbChild);
+      if(!g_svtbThunk){ uintptr_t pccdo=FindObjExact("Default__PlayerController"); if(pccdo) ResolveFunc(ClassOf(pccdo),"SetViewTargetWithBlend",&g_svtbFn,&g_svtbThunk,&g_svtbChild); }   // confirmed to live on PlayerController
+      if(g_svtbChild){ g_oSvtbTgt=g_offParam(g_svtbChild,"NewViewTarget",0); g_oSvtbBlend=g_offParam(g_svtbChild,"BlendTime",8); } }
+    if(g_fcCamCls){ ResolveFunc(g_fcCamCls,"K2_SetActorLocation",&g_slaFn,&g_slaThunk,&g_slaChild);
+        if(g_slaChild){ g_oSlaLoc=g_offParam(g_slaChild,"NewLocation",0); g_oSlaTele=g_offParam(g_slaChild,"bTeleport",0x19); } }
+    g_hwnd=FindWindowA(nullptr,"SUPERVIVE");
+    Markerf("[FC] pc=0x%llX camCls=0x%llX world=0x%llX gsCDO=0x%llX beginThunk=0x%llX finishThunk=0x%llX svtbThunk=0x%llX(tgt@0x%X) slaThunk=0x%llX(loc@0x%X)\r\n",
+        (unsigned long long)g_fcPC,(unsigned long long)g_fcCamCls,(unsigned long long)g_worldCtx,(unsigned long long)g_gsCDO,(unsigned long long)g_beginThunk,(unsigned long long)g_finishThunk,(unsigned long long)g_svtbThunk,g_oSvtbTgt,(unsigned long long)g_slaThunk,g_oSlaLoc);
+}
+static void DoFreeCam(){
+    long h=InterlockedIncrement(&g_scHits);
+    if(g_svThunk && g_svVisOff!=0xFFFFFFFF){ for(int i=0;i<g_nLoadW;i++){ uintptr_t w=g_loadWidgets[i]; if(!SafeReadable((void*)w,0x30))continue; uintptr_t wc=ClassOf(w); if(!LooksLikePtr(wc)||!SuperChainHas(wc,"UserWidget"))continue; memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint8_t*)(g_pbuf+g_svVisOff)=1; CallGuarded(g_svFn,g_svThunk,g_svChild,(void*)w,g_pbuf,g_rbuf); } }
+    if(!g_fcSpawned){ g_fcSpawned=true;
+        if(!g_beginThunk||!g_finishThunk||!IsHeapObj(g_fcCamCls)||!IsHeapObj(g_worldCtx)||!IsHeapObj(g_gsCDO)){ Markerf("[FC] resolve incomplete begin=0x%llX finish=0x%llX camCls=0x%llX world=0x%llX gsCDO=0x%llX -> abort\r\n",(unsigned long long)g_beginThunk,(unsigned long long)g_finishThunk,(unsigned long long)g_fcCamCls,(unsigned long long)g_worldCtx,(unsigned long long)g_gsCDO); return; }
+        static uint8_t xf[0x60]={0}; *(double*)(xf+0x18)=1.0; *(double*)(xf+0x20)=g_fcX; *(double*)(xf+0x28)=g_fcY; *(double*)(xf+0x30)=g_fcZ; *(double*)(xf+0x38)=1.0; *(double*)(xf+0x40)=1.0; *(double*)(xf+0x48)=1.0;
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        *(uint64_t*)(g_pbuf+g_oBWorld)=(uint64_t)g_worldCtx; *(uint64_t*)(g_pbuf+g_oBClass)=(uint64_t)g_fcCamCls; memcpy(g_pbuf+g_oBXform,xf,0x50); g_pbuf[g_oBColl]=2;
+        Marker("[FC] >>> spawn CameraActor\r\n");
+        if(CallGuarded(g_beginFn,g_beginThunk,g_beginChild,(void*)g_gsCDO,g_pbuf,g_rbuf)){ Marker("[FC] BeginDeferred FAULTED\r\n"); return; }
+        uintptr_t deferred=(uintptr_t)*(uint64_t*)g_rbuf; if(!IsHeapObj(deferred)) deferred=*(uint64_t*)(g_pbuf+g_oBRet);
+        if(!IsHeapObj(deferred)){ Marker("[FC] spawn returned null\r\n"); return; }
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint64_t*)(g_pbuf+g_oFActor)=(uint64_t)deferred; memcpy(g_pbuf+g_oFXform,xf,0x50);
+        if(CallGuarded(g_finishFn,g_finishThunk,g_finishChild,(void*)g_gsCDO,g_pbuf,g_rbuf)){ Marker("[FC] FinishSpawning FAULTED\r\n"); return; }
+        uintptr_t cam=(uintptr_t)*(uint64_t*)g_rbuf; if(!IsHeapObj(cam)) cam=*(uint64_t*)(g_pbuf+g_oFRet); if(!IsHeapObj(cam)) cam=deferred; g_fcCam=cam;
+        Markerf("[FC] camera spawned 0x%llX -> SetViewTargetWithBlend\r\n",(unsigned long long)cam);
+        if(g_svtbThunk && IsHeapObj(g_fcPC)){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint64_t*)(g_pbuf+g_oSvtbTgt)=(uint64_t)cam; *(float*)(g_pbuf+g_oSvtbBlend)=0.0f; bool f=CallGuarded(g_svtbFn,g_svtbThunk,g_svtbChild,(void*)g_fcPC,g_pbuf,g_rbuf); Markerf("[FC] SetViewTargetWithBlend returned%s — view should render from the spawned camera now.\r\n",f?" [FAULTED]":""); }
+        return;
+    }
+    if(IsHeapObj(g_fcCam) && g_slaThunk){
+        bool focused=(!g_hwnd)||(GetForegroundWindow()==g_hwnd);
+        if(focused){
+            if(GetAsyncKeyState(VK_LEFT)&0x8000) g_fcYaw-=2.5; if(GetAsyncKeyState(VK_RIGHT)&0x8000) g_fcYaw+=2.5;
+            double yr=g_fcYaw*3.14159265358979/180.0, c=cos(yr), s=sin(yr), sp=45.0, dx=0,dy=0,dz=0;
+            if(GetAsyncKeyState('W')&0x8000){ dx+=c; dy+=s; } if(GetAsyncKeyState('S')&0x8000){ dx-=c; dy-=s; }
+            if(GetAsyncKeyState('D')&0x8000){ dx-=s; dy+=c; } if(GetAsyncKeyState('A')&0x8000){ dx+=s; dy-=c; }
+            if(GetAsyncKeyState(VK_SPACE)&0x8000) dz+=1; if(GetAsyncKeyState(VK_CONTROL)&0x8000) dz-=1;
+            if(dx||dy||dz){ g_fcX+=dx*sp; g_fcY+=dy*sp; g_fcZ+=dz*sp;
+                memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); double* L=(double*)(g_pbuf+g_oSlaLoc); L[0]=g_fcX;L[1]=g_fcY;L[2]=g_fcZ; g_pbuf[g_oSlaTele]=1;
+                CallGuarded(g_slaFn,g_slaThunk,g_slaChild,(void*)g_fcCam,g_pbuf,g_rbuf); }
+        }
+    }
+    if(h==1||h%100==0) Markerf("[FC] hit %ld cam=0x%llX pos=(%.0f,%.0f,%.0f)\r\n",h,(unsigned long long)g_fcCam,g_fcX,g_fcY,g_fcZ);
+}
+
 extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(g_done || g_inHook) return;
     if(GetCurrentThreadId()!=g_gameTid) return;
     if(!LooksLikePtr((uintptr_t)frame)) return;
-    InterlockedIncrement(&g_hitsGT); g_inHook=1;
+    g_inHook=1;
     memcpy(g_template, frame, sizeof(g_template));   // capture a live FFrame template (primitive prerequisite)
-    Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",(long)g_hitsGT);
+    long h=InterlockedIncrement(&g_hitsGT);
+    if(kMode==MODE_SPECTATOR_CAM){ if(h==1) Marker("[HOOK] fired (spectator-cam) — holding loading overlay hidden ~40s\r\n"); DoSpectatorCam(); g_inHook=0; return; }
+    if(kMode==MODE_DEBUGCAM){ if(h==1) Marker("[HOOK] fired (debug-cam) — hiding overlay + enabling debug camera\r\n"); DoDebugCam(); g_inHook=0; return; }
+    if(kMode==MODE_FREECAM){ if(h==1) Marker("[HOOK] fired (free-cam) — spawn camera + retarget view + puppet\r\n"); DoFreeCam(); g_inHook=0; return; }
+    Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
     else Census();
@@ -330,11 +521,15 @@ static DWORD WINAPI Worker(LPVOID){
     // Resolve targets OFF the game thread (read-only object walk) so the hook does minimal game-thread work.
     if(kMode==MODE_POSSESS_DP){ if(!ResolvePossessDP()){ Marker("[1] possess resolve failed — aborting\r\n"); return 7; } }
     if(kMode==MODE_SPAWN_HERO){ if(!ResolveSpawnHero()){ Marker("[1] spawn-hero resolve failed — aborting\r\n"); return 8; } }
+    if(kMode==MODE_SPECTATOR_CAM){ ResolveSpectatorCam(); }
+    if(kMode==MODE_DEBUGCAM){ ResolveSpectatorCam(); ResolveDebugCam(); }   // spectator resolve populates the overlay-hide widgets
+    if(kMode==MODE_FREECAM){ ResolveFreeCam(); }
     g_pi=(uint8_t*)(g_modBase+kPiRva);
     memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 3;}
     if(!InstallHook()){Marker("[2] FAIL InstallHook\r\n");return 4;}
     Marker("[2] hook installed — waiting for a game-thread ProcessInternal...\r\n");
-    for(int i=0;i<600 && !g_done;i++) Sleep(20);   // up to ~12s for the hook to fire
+    int waitIters=(kMode==MODE_SPECTATOR_CAM||kMode==MODE_DEBUGCAM||kMode==MODE_FREECAM)?18000:600;   // spectator/debug/free-cam: ~6min window; others ~12s
+    for(int i=0;i<waitIters && !g_done;i++) Sleep(20);
     UninstallHook();
     Markerf("[3] done (hitsGT=%ld done=%ld) — hook uninstalled.\r\n",(long)g_hitsGT,(long)g_done);
     return 0;

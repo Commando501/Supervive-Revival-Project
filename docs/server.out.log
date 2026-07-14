@@ -1,8 +1,8 @@
-2026/07/14 14:08:54 menu: config "state\\menu-config.json" not read (open state\menu-config.json: The system cannot find the file specified.) — using built-in defaults
-2026/07/14 14:08:54 SUPERVIVE Revival AGS backend
-2026/07/14 14:08:54   capture log: G:\git\Supervive Revival Project\docs\capture.log
-2026/07/14 14:08:54   ADMIN  panel on http://127.0.0.1:9210/
-2026/07/14 14:08:54   ADMIN  panel on http://[::1]:9210/
-2026/07/14 14:08:55   TLS cert (append to game cacert.pem): G:\git\Supervive Revival Project\certs\root.crt
-2026/07/14 14:08:55   HTTP   listening on :8080
-2026/07/14 14:08:55   HTTPS  listening on :443
+2026/07/14 16:37:52 menu: config "state\\menu-config.json" not read (open state\menu-config.json: The system cannot find the file specified.) — using built-in defaults
+2026/07/14 16:37:52 SUPERVIVE Revival AGS backend
+2026/07/14 16:37:52   capture log: G:\git\Supervive Revival Project\docs\capture.log
+2026/07/14 16:37:52   ADMIN  panel on http://127.0.0.1:9210/
+2026/07/14 16:37:52   ADMIN  panel on http://[::1]:9210/
+2026/07/14 16:37:52   TLS cert (append to game cacert.pem): G:\git\Supervive Revival Project\certs\root.crt
+2026/07/14 16:37:52   HTTP   listening on :8080
+2026/07/14 16:37:52   HTTPS  listening on :443

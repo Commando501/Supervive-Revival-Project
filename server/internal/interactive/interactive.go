@@ -504,7 +504,8 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 		// with that valid model in place → no revert, gamemode fully inits). Set to "127.0.0.1:7777" for the DS route.
 		// S76: reverted to the menu/force-open baseline (empty) after the DS cheat-lever experiment
 		// concluded (docs/session-76-ds-cheat-lever.md). Set to "127.0.0.1:7777" to re-run the DS route.
-		"address":      "",
+		// S76 Route D (spectator free-cam of the live tutorial world) — working-tree experiment config.
+		"address":      "127.0.0.1:7777",
 		"ServerID":     "revival-tutorial-ds-0001",
 		"MachineID":    "revival-local",
 		"RegionID":     "na",
