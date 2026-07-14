@@ -23,8 +23,9 @@ static const char* kMarkerPath = "G:\\git\\Supervive Revival Project\\docs\\tuto
 constexpr uintptr_t kPiRva=0x13454A0, kObjObjectsRva=0x9E38930, kNamePoolRva=0x9D81450, kGGameTidRva=0x9D49158;
 constexpr int PERCHUNK=65536, ITEMSTRIDE=0x18;
 constexpr uintptr_t CLASS_OFF=0x18, NAME_OFF=0x20, UFUNC_FUNC=0xE0, UFUNC_CHILDPROPS=0x58;
-constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, FF_MRP=0x30, FF_MRPA=0x38, FF_MRPC=0x40, FF_PROPCHAIN=0x88;
-constexpr uintptr_t FIELD_NEXT=0x18, FPROP_OFFSET=0x44;   // FField.Next, FProperty.Offset_Internal
+constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, FF_MRP=0x30, FF_MRPA=0x38, FF_MRPC=0x40, FF_OUTPARMS=0x80, FF_PROPCHAIN=0x88;
+constexpr uintptr_t FIELD_NEXT=0x18, FPROP_OFFSET=0x44, FPROP_FLAGS=0x38;   // FField.Next, FProperty.Offset_Internal, FProperty.FlagsPrivate
+constexpr uint64_t CPF_OutParm=0x100, CPF_ReturnParm=0x400;
 static const uint8_t kPiProlog[5]={0x48,0x89,0x5C,0x24,0x08};
 typedef void (*PFN_PE)(void* obj, void* func, void* parms);
 typedef void (*PFN_THUNK)(void* Context, void* Frame, void* Result);
@@ -86,8 +87,11 @@ static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
 static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for SpawnPlayer (96-byte FTransform OUT)
 
 // ---- S68 spawn+possess mode (LEAD B / OPTION 2) ----
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3 };
-static const int kRunMode = RM_SPAWNPLAYER;   // RM_FORCEOPEN=force-open; RM_SPAWNPOSSESS=spawn+possess; RM_GOTOPHASE=advance round (S74 B2 exp1/2); RM_SPAWNPLAYER=real hero spawn+possess (exp3)
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7 };
+#ifndef KRUNMODE
+#define KRUNMODE RM_CHEATSPAWN
+#endif
+static const int kRunMode = KRUNMODE;   // override at build with -DKRUNMODE=RM_FORCEOPEN etc. RM_FORCEOPEN=force-open; RM_SPAWNPOSSESS=spawn+possess; RM_GOTOPHASE=advance round; RM_SPAWNPLAYER=real hero spawn+possess; RM_CHEATSPAWN=call the game's own LokiPlayerCheats spawn RPC (S74 Path B)
 static uintptr_t g_gm2=0, g_pc2=0, g_startSpot=0, g_spawnedPawn=0, g_heroClass=0;
 constexpr uint32_t GM_DEFPAWN_OFF=0x3F0;   // AGameModeBase::DefaultPawnClass
 // S68 GameplayStatics deferred-spawn (bypass GetDefaultPawnClass): explicit hero-class spawn + possess.
@@ -102,6 +106,23 @@ static uint8_t g_xform[0x60]={0}; static uint8_t g_gsbuf[0x100]={0};
 static void* g_spawnFn=nullptr; static uintptr_t g_spawnThunk=0, g_spawnChild=0;
 static void* g_possessFn=nullptr; static uintptr_t g_possessThunk=0, g_possessChild=0;
 static uint32_t g_offSpawnNP=0, g_offSpawnSS=8, g_offSpawnRet=0x10, g_offInPawn=0;
+// K2_SetActorLocation(NewLocation, bSweep, FHitResult& OUT, bTeleport) — SWEEP the spawned hero DOWN onto the ground
+// (collision-continuous, never tunnels; snaps to the terrain surface regardless of spawn height).
+static void* g_slFn=nullptr; static uintptr_t g_slThunk=0, g_slChild=0; static uint32_t g_oSlLoc=0xFFFFFFFF,g_oSlSweep=0xFFFFFFFF,g_oSlTele=0xFFFFFFFF;
+static uint8_t g_slbuf[0x140]={0};
+// GetPlayerViewPoint(OUT Location, OUT Rotation) — the camera's actual view point. Spawn HERE (not the arbitrary start
+// spot): where the camera looks is definitionally STREAMED (rendering) so it has real landscape collision to land on.
+static void* g_vpFn=nullptr; static uintptr_t g_vpThunk=0, g_vpChild=0; static uint32_t g_oVpLoc=0xFFFFFFFF,g_oVpRot=0xFFFFFFFF;
+// COSMETICS: the hero's visual SkeletalMesh is attached by the cosmetics system (needs a CosmeticsAssetID + a refresh).
+static void* g_ccFn=nullptr; static uintptr_t g_ccThunk=0, g_ccChild=0;   // GetCosmeticsController
+static void* g_gcaFn=nullptr; static uintptr_t g_gcaThunk=0, g_gcaChild=0; // GetCosmeticsAssetID -> FPrimaryAssetId
+static void* g_rcFn=nullptr; static uintptr_t g_rcThunk=0, g_rcChild=0;   // RefreshCosmetics
+static void* g_drlFn=nullptr; static uintptr_t g_drlThunk=0, g_drlChild=0; // GetDefaultRecommendedLoadoutFromClass
+static void* g_oncFn=nullptr; static uintptr_t g_oncThunk=0, g_oncChild=0; // OnRep_CosmeticsAssetID (drives BP_PostSetupCosmetics)
+static void* g_svtFn=nullptr; static uintptr_t g_svtThunk=0, g_svtChild=0; static uint32_t g_oSvtTarget=0xFFFFFFFF; // SetViewTargetWithBlend(NewViewTarget,...) -> point the camera at the hero (off the Z=0 under-map spectator view)
+// CosmeticsAssetId = FPrimaryAssetId{ FPrimaryAssetType(FName), FName Name }. FName = {ComparisonIndex, Number=0}.
+// FNameEntryIds from usmapdump nameid: HeroCosmeticsBundle=0x1A572, RoninDefault=0xA12AB (the default Ronin skin bundle).
+constexpr uint32_t kFN_HeroCosmeticsBundle=0x1A572, kFN_RoninDefault=0xA12AB;
 static volatile long g_spStep=0;   // progress: 1=spawn called, 2=pawn got, 3=possess called
 static void DoSpawnPossess();
 // ---- S74 B2: GoToPhase (force the round past EGP_BeginInit) ----
@@ -115,8 +136,87 @@ static void DoGoToPhase();
 // ---- S74 B2 exp3: SpawnPlayer (real hero-spawn) + Possess ----
 static void* g_spwFn=nullptr; static uintptr_t g_spwThunk=0, g_spwChild=0;
 static uint32_t g_oSpwPS=0xFFFFFFFF,g_oSpwXf=0xFFFFFFFF,g_oSpwSS=0xFFFFFFFF,g_oSpwEnsure=0xFFFFFFFF,g_oSpwRet=0xFFFFFFFF;
-static uintptr_t g_localPS=0;
+static uintptr_t g_localPS=0; static uint32_t g_psHeroOff=0xFFFFFFFF;   // PlayerState.HeroClass offset — SpawnPlayer reads which hero to spawn from here
 static void DoSpawnPlayer();
+// ---- S74 Path B: CHEAT-OBJECT spawn — call the game's OWN LokiPlayerCheats RPC directly ----
+// The shipping build keeps its whole cheat surface intact (only the console-ENABLE knobs were stripped, S3).
+// LokiPlayerCheats has purpose-built spawn RPCs: ServerCheatChangeHero(Class), ServerCheatSpawnActor(Class,Vector),
+// CheatChangeHero(FString). Calling a Server* function's native thunk DIRECTLY (the S55 primitive) runs its
+// _Implementation body in-process — the exec thunk calls _Implementation, NOT the RPC-routing stub — so with the
+// force-open tutorial's local authority it executes the real server-side hero-spawn. A game-native path that S68's
+// 4 hand-rolled spawn methods never tried. Enumerated live S74: docs/session-74-cheat-enum-dump.txt.
+// Like RM_SPAWNPLAYER/POSSESS this assumes the force-open tutorial is ALREADY running (the cheat obj + PC exist
+// only in the live match); inject this build INTO the running tutorial.
+enum CheatTarget { CT_SERVERCHANGEHERO=0, CT_CHANGEHERONAME=1, CT_AUTHCHANGECHAR=2, CT_SPAWNACTOR=3, CT_SWITCHPLAYING=4 };
+#ifndef KCHEATTARGET
+#define KCHEATTARGET CT_SPAWNACTOR
+#endif
+static const int kCheatTarget = KCHEATTARGET;            // -DKCHEATTARGET=... CT_SERVERCHANGEHERO/CT_CHANGEHERONAME need the LokiPlayerCheats obj (absent in force-open, GetLocal returns null); CT_AUTHCHANGECHAR=AuthCheatChangeCharacter(Class) on the PC (fires clean but no-ops on the round gate); CT_SPAWNACTOR=spawn the LokiPlayerCheats obj ourselves (GameplayStatics), wire it to the PC, then ServerCheatSpawnActor(HeroClass,loc) on it
+#ifndef KCHEATRESOLVEONLY
+#define KCHEATRESOLVEONLY true
+#endif
+static const bool kCheatResolveOnly = KCHEATRESOLVEONLY;  // -DKCHEATRESOLVEONLY=false to actually fire. true = resolve+log then STOP (safe at menu; no game-thread call).
+static const char* kCheatHeroClassName = "BP_HERO_Ronin_C";  // hero UClass fed to ServerCheatChangeHero (matches RM_SPAWNPOSSESS)
+static const wchar_t* kCheatHeroName = L"Ronin";              // hero name string fed to CheatChangeHero
+static uintptr_t g_cheatObj=0, g_cheatCDO=0, g_cheatHeroClass=0, g_csWorldCtx=0;
+static void* g_glcFn=nullptr; static uintptr_t g_glcThunk=0, g_glcChild=0; static uint32_t g_oGlcWCO=0xFFFFFFFF, g_oGlcRet=0xFFFFFFFF;  // GetLocalLokiPlayerCheatsBP(WorldContext)->obj
+static void* g_schFn=nullptr; static uintptr_t g_schThunk=0, g_schChild=0; static uint32_t g_oSchClass=0xFFFFFFFF;   // ServerCheatChangeHero(HeroClass)
+static void* g_cchFn=nullptr; static uintptr_t g_cchThunk=0, g_cchChild=0; static uint32_t g_oCchName=0xFFFFFFFF;    // CheatChangeHero(HeroName)
+static void* g_accFn=nullptr; static uintptr_t g_accThunk=0, g_accChild=0; static uint32_t g_oAccClass=0xFFFFFFFF; static uintptr_t g_cheatPC=0;  // AuthCheatChangeCharacter(Class) on the live PC — no cheat obj needed
+// CT_SPAWNACTOR: spawn a LokiPlayerCheats actor ourselves (reuses the g_gm2/g_startSpot/g_gsCDO/g_begin*/g_finish*/g_xf* GameplayStatics globals), wire to PC, then call ServerCheatSpawnActor on it.
+static void* g_scsaFn=nullptr; static uintptr_t g_scsaThunk=0, g_scsaChild=0; static uint32_t g_oScsaClass=0xFFFFFFFF, g_oScsaLoc=0xFFFFFFFF;  // ServerCheatSpawnActor(ClassToSpawn, Location)
+static uintptr_t g_cheatObjClass=0; static uint32_t g_pcCheatOff=0xFFFFFFFF;  // cheat-obj class to spawn; PC's LokiPlayerCheats member offset
+static void* g_locFn=nullptr; static uintptr_t g_locThunk=0, g_locChild=0;   // K2_GetActorLocation(startSpot) -> FVector (real spawn loc; origin is the void)
+// CT_SWITCHPLAYING (S74 RE): SwitchToPlayingState() transitions the PC state machine spectator->playing (state idx 0x140,
+// UNGATED — vs SwitchToSpectatorState which gates on PC+0x160==3). FinishDropPhaseHiding sets PC+0xF28=1 (drop reveal).
+static void* g_spsFn=nullptr; static uintptr_t g_spsThunk=0, g_spsChild=0;    // SwitchToPlayingState()
+static void* g_fdphFn=nullptr; static uintptr_t g_fdphThunk=0, g_fdphChild=0; // FinishDropPhaseHiding()
+static void* g_isSpecFn=nullptr; static uintptr_t g_isSpecThunk=0, g_isSpecChild=0; // IsSpectating() -> bool (authoritative spectator check: [PC+0x3F0]==spectatingState)
+constexpr uint32_t PC_STATEBYTE_OFF=0x160, PC_DROPFLAG_OFF=0xF28, PC_STATEOBJ_OFF=0x3F0;
+static void* g_ehcFn=nullptr; static uintptr_t g_ehcThunk=0, g_ehcChild=0; static uint32_t g_oEhcEnabled=0xFFFFFFFF;  // EnableHotkeyCheats(double Enabled) — ServerCheatSpawnActor may gate on this
+static void* g_ahceFn=nullptr; static uintptr_t g_ahceThunk=0, g_ahceChild=0;  // AreHotkeyCheatsEnabled() -> bool (verify the flag took)
+static void ResolveCheatSpawn(); static void DoCheatSpawn();
+// ---- S75: RM_WAKEMOVE — try to WAKE the frozen movement sim on the possessed hero. Diagnosis (S75): the CMC
+// never ticks (Velocity=0, gravity has no effect) round-wide, so no client flag moves it. This mode reuses the
+// primitive to call SetActive(true)+SetComponentTickEnabled(true)+SetActorTickEnabled(true)+SetMovementMode(Falling)
+// on PC->Pawn's CMC (plus GravityScale=1.0), then SAMPLES Velocity/MovementMode for ~3s. If the hero starts
+// falling (|Vel| ramps up), the sim woke -> WASD would then work; if it stays 0, PerformMovement is deploy-gated
+// and the kick doesn't reach it. Autonomously verifiable via the marker (no WASD keypress needed).
+static uintptr_t g_wmPC=0, g_wmHero=0, g_wmCMC=0;
+static uint32_t g_wmGravOff=0xFFFFFFFF, g_wmVelOff=0xFFFFFFFF, g_wmModeOff=0xFFFFFFFF;
+static void* g_saFn=nullptr; static uintptr_t g_saThunk=0, g_saChild=0; static uint32_t g_oSaActive=0xFFFFFFFF,g_oSaReset=0xFFFFFFFF;   // SetActive(bNewActive,bReset)
+static void* g_scteFn=nullptr; static uintptr_t g_scteThunk=0, g_scteChild=0; static uint32_t g_oScteEn=0xFFFFFFFF;   // SetComponentTickEnabled(bEnabled)
+static void* g_smmFn=nullptr; static uintptr_t g_smmThunk=0, g_smmChild=0; static uint32_t g_oSmmMode=0xFFFFFFFF,g_oSmmCustom=0xFFFFFFFF;   // SetMovementMode(NewMovementMode,NewCustomMode)
+static void* g_satFn=nullptr; static uintptr_t g_satThunk=0, g_satChild=0; static uint32_t g_oSatEn=0xFFFFFFFF;   // SetActorTickEnabled(bEnabled) on the hero
+static void* g_rimFn=nullptr; static uintptr_t g_rimThunk=0, g_rimChild=0;   // ResetIgnoreMoveInput() on the PC — clears the IgnoreMoveInput counter so AddMovementInput stops no-op'ing (WASD input reaches the pawn)
+static void* g_amiFn=nullptr; static uintptr_t g_amiThunk=0, g_amiChild=0; static uint32_t g_oAmiDir=0xFFFFFFFF,g_oAmiScale=0xFFFFFFFF,g_oAmiForce=0xFFFFFFFF;   // AddMovementInput(WorldDirection,ScaleValue,bForce) — FORCE-MOVE test
+static int g_wmSample=0; static DWORD g_wmLastMs=0;
+static uintptr_t g_wmRoot=0;   // hero root capsule (=CMC.UpdatedComponent@+0xD0); RelativeLocation@+0x158 = world pos
+#ifndef KWAKEZ
+#define KWAKEZ 500.0
+#endif
+#ifndef KWAKEX
+#define KWAKEX (-999999.0)
+#endif
+#ifndef KWAKEY
+#define KWAKEY (-999999.0)
+#endif
+static const double kWakeZ = KWAKEZ;   // absolute Z to teleport the hero to before waking; build -DKWAKEZ=<n> to iterate
+static const double kWakeX = KWAKEX, kWakeY = KWAKEY;   // -999999 sentinel = keep the hero's current X/Y; else teleport to this XY (e.g. a spawn point)
+// ---- S75 RM_PUPPET: WASD movement puppet. The stock input->acceleration path is dead in the un-deployed force-open
+// (forced AddMovementInput produced ZERO accel/velocity), but poking the CMC velocity moves the hero WITH collision.
+// So each game-thread hit we read WASD key state and write CMC.Velocity.XY (+0xE8) = keydir * speed. Camera-relative
+// mapping is a compile-time yaw offset (calibrate with -DKPUPYAW=<deg>). Runs until the hook window expires.
+#ifndef KPUPSPEED
+#define KPUPSPEED 600.0
+#endif
+#ifndef KPUPYAW
+#define KPUPYAW 0.0
+#endif
+static const double kPupSpeed = KPUPSPEED, kPupYawDeg = KPUPYAW;
+static bool g_puppetInit=false; static HWND g_gameHwnd=nullptr;
+static void DoPuppet();
+static bool ResolveWakeMove(); static void DoWakeMove();
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
@@ -205,6 +305,27 @@ static bool CallNativeGuarded(void* func, uintptr_t thunk, uintptr_t childProps,
     __except(SehDump(GetExceptionInformation())){ return true; }
 }
 
+// S58 OUT/ref-param marshalling (ported from missions_fix.cpp): for each param flagged CPF_OutParm (and not the
+// return value), build an FOutParmRec{Property@+0, PropAddr@+8, NextOutParm@+0x10} whose PropAddr points into the
+// Locals(params) buffer, chain them, and set FFrame.OutParms@+0x80 to the head. The exec thunk walks this chain for
+// by-ref/out params (e.g. const FTransform& SpawnTransform in BeginDeferredActorSpawnFromClass) — without it the
+// walk derefs a null/stale OutParms and crashes at ProcessInternal+0xB58.
+static uint8_t g_outparms[8*24]={0};
+static void BuildOutParms(uintptr_t childProps, uint8_t* locals){
+    memset(g_outparms,0,sizeof(g_outparms)); *(uint64_t*)(g_myframe+FF_OUTPARMS)=0;
+    uintptr_t f=childProps; int n=0; uint8_t* prev=nullptr; uint8_t* head=nullptr;
+    while(LooksLikePtr(f) && n<8){
+        uint64_t flags=0; if(SafeReadable((void*)(f+FPROP_FLAGS),8)) flags=*(uint64_t*)(f+FPROP_FLAGS);
+        if((flags&CPF_OutParm) && !(flags&CPF_ReturnParm)){
+            int32_t off=0; if(SafeReadable((void*)(f+FPROP_OFFSET),4)) off=*(int32_t*)(f+FPROP_OFFSET);
+            uint8_t* rec=g_outparms+n*24; *(uintptr_t*)(rec+0)=f; *(uintptr_t*)(rec+8)=(uintptr_t)(locals+off); *(uintptr_t*)(rec+16)=0;
+            if(prev) *(uintptr_t*)(prev+16)=(uintptr_t)rec; else head=rec;
+            prev=rec; n++;
+        }
+        uintptr_t nx=0; if(SafeReadable((void*)(f+FIELD_NEXT),8)) nx=*(uintptr_t*)(f+FIELD_NEXT); f=nx;
+    }
+    *(uint64_t*)(g_myframe+FF_OUTPARMS)=(uint64_t)head;
+}
 // Call a native UFunction with a prepared params buffer. Result -> resultBuf.
 static void CallNative(void* func, uintptr_t thunk, uintptr_t childProps, void* context, void* paramsBuf, void* resultBuf){
     memcpy(g_myframe, g_template, sizeof(g_myframe));
@@ -214,6 +335,7 @@ static void CallNative(void* func, uintptr_t thunk, uintptr_t childProps, void* 
     *(void**)(g_myframe+FF_LOCALS)=paramsBuf;
     *(uint64_t*)(g_myframe+FF_MRP)=0; *(uint64_t*)(g_myframe+FF_MRPA)=0; *(uint64_t*)(g_myframe+FF_MRPC)=0;
     *(uint64_t*)(g_myframe+FF_PROPCHAIN)=(uint64_t)childProps;
+    BuildOutParms(childProps,(uint8_t*)paramsBuf);   // S58: FFrame.OutParms chain for by-ref/out params
     ((PFN_THUNK)thunk)(context, g_myframe, resultBuf);
 }
 // Set an FString {Data,Num,Max} at pbuf+byteOff (Num includes null terminator).
@@ -231,8 +353,11 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     InterlockedIncrement(&g_hitsGT); g_inHook=1;
     memcpy(g_template, frame, sizeof(g_template));
     if(kRunMode==RM_GOTOPHASE){ DoGoToPhase(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoGoToPhase when phases exhausted
+    if(kRunMode==RM_WAKEMOVE){ DoWakeMove(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoWakeMove after sampling
+    if(kRunMode==RM_PUPPET){ DoPuppet(); InterlockedIncrement(&g_called); g_inHook=0; return; }             // runs every hit; g_done set by the Worker timeout
     if(kRunMode==RM_SPAWNPLAYER){ DoSpawnPlayer(); InterlockedIncrement(&g_called); g_done=1; g_inHook=0; return; }
     if(kRunMode==RM_SPAWNPOSSESS){ DoSpawnPossess(); InterlockedIncrement(&g_called); g_done=1; g_inHook=0; return; }
+    if(kRunMode==RM_CHEATSPAWN){ DoCheatSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoCheatSpawn
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
     uint8_t* pb=(uint8_t*)g_pbuf;
     if(g_offWCO!=0xFFFFFFFF) *(uint64_t*)(pb+g_offWCO)=(uint64_t)g_worldCtx;   // WorldContextObject
@@ -268,6 +393,38 @@ static bool SafeWrite(uint8_t* dst,const uint8_t* src,size_t len){
 }
 static bool InstallHook(){ if(!g_pi||!g_stub)return false; int32_t rel=(int32_t)((intptr_t)g_stub-((intptr_t)g_pi+5)); uint8_t p[5]={0xE9,(uint8_t)rel,(uint8_t)(rel>>8),(uint8_t)(rel>>16),(uint8_t)(rel>>24)}; return SafeWrite(g_pi,p,5); }
 static void UninstallHook(){ if(g_pi)SafeWrite(g_pi,g_stolen,5); }
+// ---- S75 RM_TOGGLEREADY: detour ULokiGameFeatureToggles::Get (checked variant that logs "not ready") and set the
+// per-object readiness bit byte[D+0xB3] bit6 (0x40) so Get takes the ready path. D = [ [obj->vfn188()->0x7FF6BAB80AC0]
+// +0x5A0 ]. Data-only write (persists after unhook, no .text patch left => dodges the code-integrity check).
+static uint8_t* g_getStub=nullptr; static uint8_t g_getStolen[7]={0}; static uintptr_t g_getAddr=0;
+static volatile long g_inOnGet=0, g_getHits=0, g_dSeenN=0, g_getWork=0; static uintptr_t g_dSeen[64]={0};
+constexpr uintptr_t kGetRva=0x55DB6DE, kStoreGetterRva=0x5690AC0;   // checked Get 0x7FF6BAACB6DE, storeGetter 0x7FF6BAB80AC0
+// Runs on whatever thread calls Get (rcx=the queried object). RECORD-ONLY diagnostic: no game-function calls (those
+// hard-crash under the packer if any object faults) — just dedupe-record the object pointers. Resolve D + set bit6
+// OFFLINE (after unhook) where SEH actually works. Tests whether the hook MECHANICS are safe.
+extern "C" void OnGet(void* obj){
+    InterlockedIncrement(&g_getHits);
+    if(!LooksLikePtr((uintptr_t)obj)) return;
+    long n=g_dSeenN; if(n>=64) return;
+    for(long i=0;i<n;i++) if(g_dSeen[i]==(uintptr_t)obj) return;   // dedupe
+    if(InterlockedCompareExchange(&g_dSeenN,n+1,n)==n) g_dSeen[n]=(uintptr_t)obj;
+}
+// Same trampoline shape as BuildHook but 7 stolen bytes + calls OnGet(rcx).
+static uint8_t* BuildGetHook(uintptr_t fn,const uint8_t stolen[7]){
+    uint8_t* blk=NearAlloc(fn,0x200); if(!blk)return nullptr;
+    Emit t{blk}; for(int i=0;i<7;i++)EB(t,stolen[i]); EB(t,0xE9); int32_t rel=(int32_t)((intptr_t)(fn+7)-((intptr_t)t.w+4)); EU32(t,(uint32_t)rel);
+    uint8_t* stub=blk+0x20; Emit e{stub};
+    // Get is entered via indirect tail-jump (0 direct callers, prologue writes [rsp+8]) => entry rsp alignment is
+    // UNKNOWN. Force-align to 16 before the call using rbp (nonvolatile, preserved across OnGet). rcx (=object) is
+    // untouched through the saves so it is still the arg at the call.
+    EB(e,0x51);EB(e,0x52);EB(e,0x41);EB(e,0x50);EB(e,0x41);EB(e,0x51);EB(e,0x55);            // push rcx,rdx,r8,r9,rbp
+    EB(e,0x48);EB(e,0x89);EB(e,0xE5); EB(e,0x48);EB(e,0x83);EB(e,0xE4);EB(e,0xF0); EB(e,0x48);EB(e,0x83);EB(e,0xEC);EB(e,0x20);  // mov rbp,rsp; and rsp,-16; sub rsp,0x20
+    EB(e,0x48);EB(e,0xB8);EU64(e,(uint64_t)&OnGet); EB(e,0xFF);EB(e,0xD0);                    // mov rax,OnGet; call rax
+    EB(e,0x48);EB(e,0x89);EB(e,0xEC); EB(e,0x5D);                                             // mov rsp,rbp; pop rbp
+    EB(e,0x41);EB(e,0x59);EB(e,0x41);EB(e,0x58);EB(e,0x5A);EB(e,0x59);                        // pop r9,r8,rdx,rcx
+    EB(e,0x48);EB(e,0xB8);EU64(e,(uint64_t)blk); EB(e,0xFF);EB(e,0xE0);                       // mov rax,blk; jmp rax
+    return stub;
+}
 static DWORD WaitTid(DWORD to){uint32_t*s=(uint32_t*)(g_modBase+kGGameTidRva);DWORD dl=GetTickCount()+to;while(GetTickCount()<dl){if(SafeReadable(s,4)){uint32_t v=0;memcpy(&v,s,4);if(v)return v;}Sleep(20);}return 0;}
 
 // Resolve g_cmd: read the first non-comment/non-blank line of kCmdFilePath; fall back to kDefaultCommand.
@@ -336,6 +493,17 @@ static uintptr_t FindObjExact(const char* want){
             if(NameIs(obj,want))return obj; } }
     return 0;
 }
+// Like FindObjExact but only returns an object that IS a class (own class name contains "Class", e.g.
+// BlueprintGeneratedClass) — disambiguates the UClass "BP_HERO_Ronin_C" from spawned hero INSTANCES named the same.
+static uintptr_t FindClassExact(const char* want){
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return 0; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            if(NameIs(obj,want)){ uintptr_t c=ClassOf(obj); if(LooksLikePtr(c)){ char cn[96]; if(GetFNameStr(NameId(c),cn,sizeof(cn)) && strstr(cn,"Class")) return obj; } } } }
+    return 0;
+}
 // Resolve a UFunction by name walking cls + its SuperStruct chain (@+0x48).
 static void ResolveFuncSuper(uintptr_t cls,const char* name,void** fn,uintptr_t* thunk,uintptr_t* child){
     int g=0; while(LooksLikePtr(cls)&&g++<12){ ResolveFuncOnClass(cls,name,fn,thunk,child); if(*fn)return; cls=SafeReadable((void*)(cls+0x48),8)?*(uintptr_t*)(cls+0x48):0; }
@@ -382,6 +550,120 @@ static uint32_t PropOffsetSuper(uintptr_t cls,const char* name){
     }
     return 0xFFFFFFFF;
 }
+// S75: resolve the possessed hero's CMC + the wake-kick UFunctions.
+static bool ResolveWakeMove(){
+    g_wmPC=FindInstByClass("LokiPlayerController_Dev",nullptr);
+    if(!g_wmPC){ Marker("[WM] no live LokiPlayerController_Dev -> abort (force-open+possess first)\r\n"); return false; }
+    uint32_t pawnOff=PropOffsetSuper(ClassOf(g_wmPC),"Pawn"); if(pawnOff==0xFFFFFFFF) pawnOff=0x3F8;
+    if(SafeReadable((void*)(g_wmPC+pawnOff),8)) g_wmHero=*(uintptr_t*)(g_wmPC+pawnOff);
+    if(!LooksLikePtr(g_wmHero)){ Markerf("[WM] PC->Pawn null (pawnOff@0x%X) -> abort (no possessed hero)\r\n",pawnOff); return false; }
+    uint32_t cmcOff=PropOffsetSuper(ClassOf(g_wmHero),"CharacterMovement"); if(cmcOff==0xFFFFFFFF) cmcOff=0x458;
+    if(SafeReadable((void*)(g_wmHero+cmcOff),8)) g_wmCMC=*(uintptr_t*)(g_wmHero+cmcOff);
+    if(!LooksLikePtr(g_wmCMC)){ Markerf("[WM] hero->CharacterMovement null (cmcOff@0x%X) -> abort\r\n",cmcOff); return false; }
+    uintptr_t cmcCls=ClassOf(g_wmCMC), heroCls=ClassOf(g_wmHero);
+    g_wmGravOff=PropOffsetSuper(cmcCls,"GravityScale");
+    g_wmVelOff=PropOffsetSuper(cmcCls,"Velocity");
+    g_wmModeOff=PropOffsetSuper(cmcCls,"MovementMode");
+    ResolveFuncSuper(cmcCls,"SetActive",&g_saFn,&g_saThunk,&g_saChild);
+    if(g_saChild){ g_oSaActive=ParamOffset(g_saChild,"bNewActive"); g_oSaReset=ParamOffset(g_saChild,"bReset"); }
+    ResolveFuncSuper(cmcCls,"SetComponentTickEnabled",&g_scteFn,&g_scteThunk,&g_scteChild);
+    if(g_scteChild){ g_oScteEn=ParamOffset(g_scteChild,"bEnabled"); }
+    ResolveFuncSuper(cmcCls,"SetMovementMode",&g_smmFn,&g_smmThunk,&g_smmChild);
+    if(g_smmChild){ g_oSmmMode=ParamOffset(g_smmChild,"NewMovementMode"); g_oSmmCustom=ParamOffset(g_smmChild,"NewCustomMode"); }
+    ResolveFuncSuper(heroCls,"SetActorTickEnabled",&g_satFn,&g_satThunk,&g_satChild);
+    if(g_satChild){ g_oSatEn=ParamOffset(g_satChild,"bEnabled"); }
+    ResolveFuncSuper(heroCls,"K2_SetActorLocation",&g_slFn,&g_slThunk,&g_slChild);   // teleport the hero above ground before waking
+    if(g_slChild){ g_oSlLoc=ParamOffset(g_slChild,"NewLocation"); g_oSlSweep=ParamOffset(g_slChild,"bSweep"); g_oSlTele=ParamOffset(g_slChild,"bTeleport"); }
+    ResolveFuncSuper(ClassOf(g_wmPC),"ResetIgnoreMoveInput",&g_rimFn,&g_rimThunk,&g_rimChild);   // clear the PC's IgnoreMoveInput counter
+    ResolveFuncSuper(heroCls,"AddMovementInput",&g_amiFn,&g_amiThunk,&g_amiChild);   // force-move test
+    if(g_amiChild){ g_oAmiDir=ParamOffset(g_amiChild,"WorldDirection"); g_oAmiScale=ParamOffset(g_amiChild,"ScaleValue"); g_oAmiForce=ParamOffset(g_amiChild,"bForce"); }
+    if(SafeReadable((void*)(g_wmCMC+0xD0),8)) g_wmRoot=*(uintptr_t*)(g_wmCMC+0xD0);   // UpdatedComponent = root capsule
+    char hcn[96]="-"; if(ClassOf(g_wmHero)) GetFNameStr(NameId(ClassOf(g_wmHero)),hcn,sizeof(hcn));
+    Markerf("[WM] PC=0x%llX hero=0x%llX(%s) CMC=0x%llX grav@0x%X vel@0x%X mode@0x%X\r\n",
+        (unsigned long long)g_wmPC,(unsigned long long)g_wmHero,hcn,(unsigned long long)g_wmCMC,g_wmGravOff,g_wmVelOff,g_wmModeOff);
+    Markerf("[WM] thunks SetActive=0x%llX(act@0x%X rst@0x%X) SetTickEn=0x%llX(en@0x%X) SetMoveMode=0x%llX(mode@0x%X cust@0x%X) SetActorTick=0x%llX(en@0x%X)\r\n",
+        (unsigned long long)g_saThunk,g_oSaActive,g_oSaReset,(unsigned long long)g_scteThunk,g_oScteEn,(unsigned long long)g_smmThunk,g_oSmmMode,g_oSmmCustom,(unsigned long long)g_satThunk,g_oSatEn);
+    Markerf("[WM] root=0x%llX SetActorLocation=0x%llX(loc@0x%X sweep@0x%X tele@0x%X) wakeZ=%.0f\r\n",
+        (unsigned long long)g_wmRoot,(unsigned long long)g_slThunk,g_oSlLoc,g_oSlSweep,g_oSlTele,kWakeZ);
+    return LooksLikePtr(g_wmCMC);
+}
+static void WmSampleLine(const char* tag){
+    double vx=0,vy=0,vz=0; uint32_t mode=0xFF; float grav=-1;
+    if(g_wmVelOff!=0xFFFFFFFF&&SafeReadable((void*)(g_wmCMC+g_wmVelOff),24)){ vx=*(double*)(g_wmCMC+g_wmVelOff); vy=*(double*)(g_wmCMC+g_wmVelOff+8); vz=*(double*)(g_wmCMC+g_wmVelOff+16); }
+    if(g_wmModeOff!=0xFFFFFFFF&&SafeReadable((void*)(g_wmCMC+g_wmModeOff),1)) mode=*(uint8_t*)(g_wmCMC+g_wmModeOff);
+    if(g_wmGravOff!=0xFFFFFFFF&&SafeReadable((void*)(g_wmCMC+g_wmGravOff),4)) grav=*(float*)(g_wmCMC+g_wmGravOff);
+    double px=0,py=0,pz=0;
+    if(LooksLikePtr(g_wmRoot)&&SafeReadable((void*)(g_wmRoot+0x158),24)){ px=*(double*)(g_wmRoot+0x158); py=*(double*)(g_wmRoot+0x158+8); pz=*(double*)(g_wmRoot+0x158+16); }
+    double v2=vx*vx+vy*vy+vz*vz, mag=(v2>0)?__builtin_sqrt(v2):0.0;
+    Markerf("[WM] %s: pos=(%.0f,%.0f,%.1f) mode=%u grav=%.2f vel=(%.1f,%.1f,%.1f) |v|=%.1f\r\n",tag,px,py,pz,mode,grav,vx,vy,vz,mag);
+}
+// Runs on the GAME THREAD (from OnPI). First hit = do the kick; subsequent hits (every ~400ms) sample Velocity/mode.
+static void DoWakeMove(){
+    DWORD now=GetTickCount();
+    if(g_wmSample==0){
+        WmSampleLine("BEFORE");
+        // TELEPORT above ground FIRST: the hero was UNDER the map (Z~0.5, ground~18), so movement/collision is stuck in
+        // geometry. Place it at kWakeZ (well above) via K2_SetActorLocation (teleport, no sweep), keeping X/Y.
+        if(g_slThunk && LooksLikePtr(g_wmRoot) && SafeReadable((void*)(g_wmRoot+0x158),24)){
+            double px=*(double*)(g_wmRoot+0x158), py=*(double*)(g_wmRoot+0x158+8);
+            double tx=(kWakeX>-999998.0)?kWakeX:px, ty=(kWakeY>-999998.0)?kWakeY:py;   // keep X/Y unless overridden
+            memset(g_slbuf,0,sizeof(g_slbuf));
+            if(g_oSlLoc!=0xFFFFFFFF){ double* NL=(double*)(g_slbuf+g_oSlLoc); NL[0]=tx; NL[1]=ty; NL[2]=kWakeZ; }
+            if(g_oSlSweep!=0xFFFFFFFF) g_slbuf[g_oSlSweep]=0; if(g_oSlTele!=0xFFFFFFFF) g_slbuf[g_oSlTele]=1;
+            bool f=CallNativeGuarded(g_slFn,g_slThunk,g_slChild,(void*)g_wmHero,g_slbuf,g_rbuf);
+            Markerf("[WM] teleport -> (%.0f,%.0f,%.0f)%s\r\n",tx,ty,kWakeZ,f?" FAULTED":"");
+        }
+        if(g_wmGravOff!=0xFFFFFFFF&&SafeReadable((void*)(g_wmCMC+g_wmGravOff),4)){ *(float*)(g_wmCMC+g_wmGravOff)=1.0f; Marker("[WM] GravityScale=1.0 set\r\n"); }
+        uint8_t* pb=(uint8_t*)g_pbuf;
+        if(g_saThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(g_oSaActive!=0xFFFFFFFF)pb[g_oSaActive]=1; if(g_oSaReset!=0xFFFFFFFF)pb[g_oSaReset]=0; bool f=CallNativeGuarded(g_saFn,g_saThunk,g_saChild,(void*)g_wmCMC,g_pbuf,g_rbuf); Markerf("[WM] SetActive(true)%s\r\n",f?" FAULTED":""); }
+        if(g_scteThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(g_oScteEn!=0xFFFFFFFF)pb[g_oScteEn]=1; bool f=CallNativeGuarded(g_scteFn,g_scteThunk,g_scteChild,(void*)g_wmCMC,g_pbuf,g_rbuf); Markerf("[WM] SetComponentTickEnabled(true)%s\r\n",f?" FAULTED":""); }
+        if(g_satThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(g_oSatEn!=0xFFFFFFFF)pb[g_oSatEn]=1; bool f=CallNativeGuarded(g_satFn,g_satThunk,g_satChild,(void*)g_wmHero,g_pbuf,g_rbuf); Markerf("[WM] SetActorTickEnabled(true)%s\r\n",f?" FAULTED":""); }
+        if(g_smmThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(g_oSmmMode!=0xFFFFFFFF)pb[g_oSmmMode]=3; if(g_oSmmCustom!=0xFFFFFFFF)pb[g_oSmmCustom]=0; bool f=CallNativeGuarded(g_smmFn,g_smmThunk,g_smmChild,(void*)g_wmCMC,g_pbuf,g_rbuf); Markerf("[WM] SetMovementMode(Falling=3)%s\r\n",f?" FAULTED":""); }
+        // Clear the PC's IgnoreMoveInput counter: AddMovementInput no-ops (ControlInputVector stays 0) while it's >0.
+        // input_watch proved WASD produces ZERO ControlInputVector while jump works => movement input is being ignored.
+        if(g_rimThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); bool f=CallNativeGuarded(g_rimFn,g_rimThunk,g_rimChild,(void*)g_wmPC,g_pbuf,g_rbuf); Markerf("[WM] ResetIgnoreMoveInput(PC)%s\r\n",f?" FAULTED":""); }
+        g_wmLastMs=now; g_wmSample=1; return;
+    }
+    // FORCE-MOVE TEST: every game-thread hit, (a) AddMovementInput(+X,bForce) AND (b) directly poke the CMC's
+    // Acceleration(+0x328) and Velocity(+0xE8) to +X. If the hero's X drifts, the CMC integrates horizontal motion
+    // => a WASD puppet (write velocity per frame from key state) is viable; if X stays put, movement is gated deeper.
+    if(g_amiThunk){
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); uint8_t* pb=(uint8_t*)g_pbuf;
+        if(g_oAmiDir!=0xFFFFFFFF){ double* D=(double*)(pb+g_oAmiDir); D[0]=1.0; D[1]=0.0; D[2]=0.0; }
+        if(g_oAmiScale!=0xFFFFFFFF) *(float*)(pb+g_oAmiScale)=1.0f;
+        if(g_oAmiForce!=0xFFFFFFFF) pb[g_oAmiForce]=1;
+        CallNativeGuarded(g_amiFn,g_amiThunk,g_amiChild,(void*)g_wmHero,g_pbuf,g_rbuf);
+    }
+    if(SafeReadable((void*)(g_wmCMC+0x328),24)){ double* A=(double*)(g_wmCMC+0x328); A[0]=2000.0; A[1]=0.0; A[2]=0.0; }   // Acceleration = +X
+    if(SafeReadable((void*)(g_wmCMC+0xE8),24)){ double* V=(double*)(g_wmCMC+0xE8); V[0]=600.0; V[1]=0.0; }                 // Velocity.XY = +X (keep Z)
+    if(now-g_wmLastMs<400) return;
+    g_wmLastMs=now;
+    char tag[24]; _snprintf_s(tag,sizeof(tag),_TRUNCATE,"sample %d",g_wmSample);
+    WmSampleLine(tag);
+    g_wmSample++;
+    if(g_wmSample>12){ g_done=1; }
+}
+// S75 RM_PUPPET: runs on the GAME THREAD every hit. Reads WASD, writes CMC.Velocity.XY (keeps Z for gravity/jump).
+static void DoPuppet(){
+    if(!g_puppetInit){
+        if(g_wmGravOff!=0xFFFFFFFF&&SafeReadable((void*)(g_wmCMC+g_wmGravOff),4)) *(float*)(g_wmCMC+g_wmGravOff)=1.0f;
+        if(g_rimThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallNativeGuarded(g_rimFn,g_rimThunk,g_rimChild,(void*)g_wmPC,g_pbuf,g_rbuf); }
+        g_puppetInit=true; Markerf("[PUP] puppet ACTIVE: WASD -> CMC velocity (speed=%.0f yaw=%.0f) hero=0x%llX CMC=0x%llX\r\n",kPupSpeed,kPupYawDeg,(unsigned long long)g_wmHero,(unsigned long long)g_wmCMC);
+    }
+    if(!SafeReadable((void*)(g_wmCMC+0xE8),16)) return;
+    double* V=(double*)(g_wmCMC+0xE8);
+    // Only drive while the game window is focused (avoids moving when typing elsewhere); if HWND unknown, always drive.
+    if(g_gameHwnd && GetForegroundWindow()!=g_gameHwnd){ V[0]=0.0; V[1]=0.0; return; }
+    bool w=(GetAsyncKeyState('W')&0x8000)!=0, a=(GetAsyncKeyState('A')&0x8000)!=0, s=(GetAsyncKeyState('S')&0x8000)!=0, d=(GetAsyncKeyState('D')&0x8000)!=0;
+    double ax=(w?1.0:0.0)-(s?1.0:0.0);   // forward/back axis (W/S)
+    double ay=(d?1.0:0.0)-(a?1.0:0.0);   // right/left axis (D/A)
+    double yaw=kPupYawDeg*3.14159265358979/180.0, c=__builtin_cos(yaw), sn=__builtin_sin(yaw);
+    double dx=ax*c - ay*sn, dy=ax*sn + ay*c;   // rotate the WASD frame by the (camera) yaw offset
+    double m=__builtin_sqrt(dx*dx+dy*dy), vx=0.0, vy=0.0;
+    if(m>0.0001){ vx=dx/m*kPupSpeed; vy=dy/m*kPupSpeed; }
+    V[0]=vx; V[1]=vy;   // keep V[2] (Z) so gravity + jump still work
+    if(SafeReadable((void*)(g_wmCMC+0x328),24)){ double* A=(double*)(g_wmCMC+0x328); A[0]=vx*4.0; A[1]=vy*4.0; A[2]=0.0; }   // Acceleration -> facing/anim
+}
 // S74 B2 exp3: resolve the REAL hero spawn — LokiGameMode::SpawnPlayer(PlayerState, Transform& OUT, StartSpot, bEnsure) -> LokiCharacter*.
 static bool ResolveSpawnPlayer(){
     g_gm2=FindInstByClass("GameMode_Tutorial",nullptr);
@@ -393,13 +675,15 @@ static bool ResolveSpawnPlayer(){
     uint32_t psOff=PropOffsetSuper(ClassOf(g_pc2),"PlayerState");
     if(psOff!=0xFFFFFFFF && SafeReadable((void*)(g_pc2+psOff),8)) g_localPS=*(uintptr_t*)(g_pc2+psOff);
     char psn[96]="-"; if(LooksLikePtr(g_localPS)&&ClassOf(g_localPS)) GetFNameStr(NameId(ClassOf(g_localPS)),psn,sizeof(psn));
+    g_heroClass=FindObjExact("BP_HERO_Ronin_C");   // the hero to spawn; SpawnPlayer reads PlayerState.HeroClass
+    if(LooksLikePtr(g_localPS)) g_psHeroOff=PropOffsetSuper(ClassOf(g_localPS),"HeroClass");
     ResolveFuncNative(ClassOf(g_gm2),"SpawnPlayer",&g_spwFn,&g_spwThunk,&g_spwChild);
     if(g_spwChild){ g_oSpwPS=ParamOffset(g_spwChild,"PlayerState"); g_oSpwXf=ParamOffset(g_spwChild,"SpawnTransform"); g_oSpwSS=ParamOffset(g_spwChild,"StartSpot"); g_oSpwEnsure=ParamOffset(g_spwChild,"bEnsurePositionIsValid"); g_oSpwRet=ParamOffset(g_spwChild,"ReturnValue"); }
     ResolveFuncNative(ClassOf(g_pc2),"Possess",&g_possessFn,&g_possessThunk,&g_possessChild);
     if(g_possessChild){ uint32_t o=ParamOffset(g_possessChild,"InPawn"); if(o!=0xFFFFFFFF)g_offInPawn=o; }
     Markerf("[SPW] gm=0x%llX pc=0x%llX localPS=0x%llX(%s,psOff@0x%X) startSpot=0x%llX spawnThunk=0x%llX possessThunk=0x%llX\r\n",
         (unsigned long long)g_gm2,(unsigned long long)g_pc2,(unsigned long long)g_localPS,psn,psOff,(unsigned long long)g_startSpot,(unsigned long long)g_spwThunk,(unsigned long long)g_possessThunk);
-    Markerf("[SPW] offs PS@0x%X Xf@0x%X SS@0x%X Ensure@0x%X Ret@0x%X InPawn@0x%X\r\n",g_oSpwPS,g_oSpwXf,g_oSpwSS,g_oSpwEnsure,g_oSpwRet,g_offInPawn);
+    Markerf("[SPW] offs PS@0x%X Xf@0x%X SS@0x%X Ensure@0x%X Ret@0x%X InPawn@0x%X | heroClass=0x%llX psHeroOff@0x%X\r\n",g_oSpwPS,g_oSpwXf,g_oSpwSS,g_oSpwEnsure,g_oSpwRet,g_offInPawn,(unsigned long long)g_heroClass,g_psHeroOff);
     return g_spwThunk!=0 && LooksLikePtr(g_localPS);
 }
 // Runs on the GAME THREAD (from OnPI): SpawnPlayer(localPS, xform_out, startSpot, bEnsure=true) -> hero, then Possess.
@@ -408,6 +692,13 @@ static void DoSpawnPlayer(){
     if(g_oSpwPS!=0xFFFFFFFF) *(uint64_t*)(pb+g_oSpwPS)=(uint64_t)g_localPS;
     if(g_oSpwSS!=0xFFFFFFFF) *(uint64_t*)(pb+g_oSpwSS)=(uint64_t)g_startSpot;
     if(g_oSpwEnsure!=0xFFFFFFFF) pb[g_oSpwEnsure]=1;
+    // Seed the hero selection: SpawnPlayer reads PlayerState.HeroClass to know which hero to spawn (round never
+    // reached hero-select, so it's null -> SpawnPlayer returns null). Force it to Ronin.
+    if(g_psHeroOff!=0xFFFFFFFF && LooksLikePtr(g_heroClass) && LooksLikePtr(g_localPS) && SafeReadable((void*)(g_localPS+g_psHeroOff),8)){
+        uintptr_t old=*(uintptr_t*)(g_localPS+g_psHeroOff); char ocn[96]="-"; if(LooksLikePtr(old)) GetFNameStr(NameId(old),ocn,sizeof(ocn));
+        *(uintptr_t*)(g_localPS+g_psHeroOff)=g_heroClass;
+        Markerf("[SPW] set PlayerState.HeroClass@0x%X: %s -> BP_HERO_Ronin_C\r\n",g_psHeroOff,ocn);
+    }
     Marker("[SPW] calling SpawnPlayer...\r\n");
     if(CallNativeGuarded(g_spwFn,g_spwThunk,g_spwChild,(void*)g_gm2,g_spbuf,g_rbuf)){ Marker("[SPW] SpawnPlayer FAULTED (null captured)\r\n"); g_done=1; return; }
     uintptr_t hero=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(hero)&&g_oSpwRet!=0xFFFFFFFF) hero=*(uint64_t*)(pb+g_oSpwRet);
@@ -428,7 +719,7 @@ static bool ResolveSpawnPossess(){
     g_startSpot=FindInstByClass("LokiPlayerStart","UAID");
     if(!g_startSpot) g_startSpot=FindInstByClass("CapturePoint_Tutorial","UAID");
     if(!g_startSpot) g_startSpot=FindInstByClass("LokiRespawnBeacon_Tutorial","UAID");
-    g_heroClass=FindObjExact("BP_HERO_Ronin_C");   // the hero UClass to force as DefaultPawnClass
+    g_heroClass=FindClassExact("BP_HERO_Ronin_C");   // the hero UCLASS (not a spawned instance of the same name)
     Markerf("[SP] gm=0x%llX pc=0x%llX startSpot=0x%llX heroClass=0x%llX\r\n",(unsigned long long)g_gm2,(unsigned long long)g_pc2,(unsigned long long)g_startSpot,(unsigned long long)g_heroClass);
     if(!g_gm2||!g_pc2||!g_startSpot)return false;
     ResolveFuncNative(ClassOf(g_gm2),"SpawnDefaultPawnFor",&g_spawnFn,&g_spawnThunk,&g_spawnChild);   // NATIVE thunk, not the BP override
@@ -446,6 +737,18 @@ static bool ResolveSpawnPossess(){
         }
         ResolveFuncSuper(ClassOf(g_startSpot),"GetActorTransform",&g_xfFn,&g_xfThunk,&g_xfChild);
         if(g_xfChild){ uint32_t o=ParamOffset(g_xfChild,"ReturnValue"); if(o!=0xFFFFFFFF)g_oXfRet=o; }
+        ResolveFuncSuper(ClassOf(g_startSpot),"K2_GetActorLocation",&g_locFn,&g_locThunk,&g_locChild);   // real spawn loc (GetActorTransform often unresolved -> origin/void)
+        if(LooksLikePtr(g_heroClass)){ ResolveFuncSuper(g_heroClass,"K2_SetActorLocation",&g_slFn,&g_slThunk,&g_slChild);   // sweep-to-ground (on the hero, inherits AActor)
+            if(g_slChild){ g_oSlLoc=ParamOffset(g_slChild,"NewLocation"); g_oSlSweep=ParamOffset(g_slChild,"bSweep"); g_oSlTele=ParamOffset(g_slChild,"bTeleport"); } }
+        if(LooksLikePtr(g_pc2)){ ResolveFuncSuper(ClassOf(g_pc2),"GetPlayerViewPoint",&g_vpFn,&g_vpThunk,&g_vpChild);   // camera view point = streamed ground
+            if(g_vpChild){ g_oVpLoc=ParamOffset(g_vpChild,"Location"); g_oVpRot=ParamOffset(g_vpChild,"Rotation"); }
+            ResolveFuncSuper(ClassOf(g_pc2),"SetViewTargetWithBlend",&g_svtFn,&g_svtThunk,&g_svtChild); if(g_svtChild) g_oSvtTarget=ParamOffset(g_svtChild,"NewViewTarget"); }
+        if(LooksLikePtr(g_heroClass)){ ResolveFuncNative(g_heroClass,"GetCosmeticsController",&g_ccFn,&g_ccThunk,&g_ccChild);
+            ResolveFuncNative(g_heroClass,"GetCosmeticsAssetID",&g_gcaFn,&g_gcaThunk,&g_gcaChild);
+            ResolveFuncNative(g_heroClass,"RefreshCosmetics",&g_rcFn,&g_rcThunk,&g_rcChild);
+            ResolveFuncNative(g_heroClass,"OnRep_CosmeticsAssetID",&g_oncFn,&g_oncThunk,&g_oncChild);
+            ResolveFuncNative(g_heroClass,"GetDefaultRecommendedLoadoutFromClass",&g_drlFn,&g_drlThunk,&g_drlChild);
+            Markerf("[COS] resolve: getController=0x%llX getAssetID=0x%llX refresh=0x%llX defLoadout=0x%llX\r\n",(unsigned long long)g_ccThunk,(unsigned long long)g_gcaThunk,(unsigned long long)g_rcThunk,(unsigned long long)g_drlThunk); }
         Markerf("[GS] gsCDO=0x%llX beginThunk=0x%llX finishThunk=0x%llX xfThunk=0x%llX\r\n",(unsigned long long)g_gsCDO,(unsigned long long)g_beginThunk,(unsigned long long)g_finishThunk,(unsigned long long)g_xfThunk);
         Markerf("[GS] B[world@%X class@%X xform@%X coll@%X owner@%X ret@%X] F[actor@%X xform@%X ret@%X] xfRet@%X\r\n",g_oBWorld,g_oBClass,g_oBXform,g_oBColl,g_oBOwner,g_oBRet,g_oFActor,g_oFXform,g_oFRet,g_oXfRet);
     }
@@ -464,6 +767,26 @@ static void DoSpawnPossess(){
         if(g_xfThunk){ CallNative(g_xfFn,g_xfThunk,g_xfChild,(void*)g_startSpot,g_gsbuf,g_xform);
             bool zero=true; for(uint32_t i=0;i<0x38;i++) if(g_xform[i]){zero=false;break;}
             if(zero && g_oXfRet!=0xFFFFFFFF && g_oXfRet+xfsz<=sizeof(g_gsbuf)) memcpy(g_xform,g_gsbuf+g_oXfRet,xfsz); }
+        // LOCATION FIX (S74): the start spot's landscape COLLISION isn't streamed (spectator isn't a streaming source
+        // there) -> the hero falls through the visible grass onto a lower base collision UNDER the map. Spawn where the
+        // CAMERA is actually looking instead (that area IS streamed/rendering -> has real collision). Then sweep down.
+        bool haveLoc=false;
+        if(g_vpThunk && LooksLikePtr(g_pc2) && g_oVpLoc!=0xFFFFFFFF){
+            memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            CallNative(g_vpFn,g_vpThunk,g_vpChild,(void*)g_pc2,g_gsbuf,g_rbuf);
+            double* V=(double*)(g_gsbuf+g_oVpLoc);
+            if(V[0]||V[1]||V[2]){ *(double*)(g_xform+0x20)=V[0]; *(double*)(g_xform+0x28)=V[1]; *(double*)(g_xform+0x30)=V[2]+200.0; *(double*)(g_xform+0x18)=1.0; haveLoc=true;
+                Markerf("[GS] camera viewpoint=(%.0f,%.0f,%.0f) -> spawn there + sweep down (streamed ground)\r\n",V[0],V[1],V[2]); }
+        }
+        if(!haveLoc && g_locThunk && LooksLikePtr(g_startSpot)){   // fallback: start spot (+5000, sweep down)
+            memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            CallNative(g_locFn,g_locThunk,g_locChild,(void*)g_startSpot,g_gsbuf,g_rbuf);
+            double* L=(double*)g_rbuf;
+            if(L[0]||L[1]||L[2]){
+                *(double*)(g_xform+0x20)=L[0]; *(double*)(g_xform+0x28)=L[1]; *(double*)(g_xform+0x30)=L[2]+5000.0;
+                if(!*(double*)(g_xform+0x00)&&!*(double*)(g_xform+0x08)&&!*(double*)(g_xform+0x10)&&!*(double*)(g_xform+0x18)) *(double*)(g_xform+0x18)=1.0;
+            }
+        }
         double* t=(double*)(g_xform+0x20); Markerf("[GS] xform T=(%.1f,%.1f,%.1f)\r\n",t[0],t[1],t[2]);
         // 2. BeginDeferredActorSpawnFromClass(gm, heroClass, xform, AdjustButAlwaysSpawn) -> deferred actor
         memset(g_gsbuf,0,sizeof(g_gsbuf));
@@ -487,11 +810,86 @@ static void DoSpawnPossess(){
         g_spawnedPawn=actor; g_spStep=3;
         char acn[96]="-"; if(LooksLikePtr(actor)&&ClassOf(actor))GetFNameStr(NameId(ClassOf(actor)),acn,sizeof(acn));
         Markerf("[GS] spawned actor=0x%llX cls=%s\r\n",(unsigned long long)actor,acn);
+        // MESH DIAGNOSTIC (user: ring visible but NO character model): is the hero's SkeletalMesh assigned + visible?
+        if(LooksLikePtr(actor)){
+            uint32_t meshOff=PropOffsetSuper(ClassOf(actor),"Mesh");
+            if(meshOff!=0xFFFFFFFF && SafeReadable((void*)(actor+meshOff),8)){
+                uintptr_t mc=*(uintptr_t*)(actor+meshOff); char mcn[96]="-"; if(LooksLikePtr(mc)&&ClassOf(mc))GetFNameStr(NameId(ClassOf(mc)),mcn,sizeof(mcn));
+                uintptr_t skm=0; uint32_t skmOff=0xFFFFFFFF;
+                if(LooksLikePtr(mc)){ skmOff=PropOffsetSuper(ClassOf(mc),"SkeletalMeshAsset"); if(skmOff==0xFFFFFFFF)skmOff=PropOffsetSuper(ClassOf(mc),"SkeletalMesh");
+                    if(skmOff!=0xFFFFFFFF&&SafeReadable((void*)(mc+skmOff),8))skm=*(uintptr_t*)(mc+skmOff); }
+                char skn[96]="-"; if(LooksLikePtr(skm))GetFNameStr(NameId(skm),skn,sizeof(skn));
+                Markerf("[MESH] Mesh@0x%X comp=0x%llX(%s) SkeletalMesh@0x%X=0x%llX(%s)\r\n",meshOff,(unsigned long long)mc,mcn,skmOff,(unsigned long long)skm,skn);
+            } else Markerf("[MESH] no 'Mesh' property found on hero (meshOff=0x%X)\r\n",meshOff);
+        }
+        // SWEEP DOWN onto the ground: K2_SetActorLocation((X,Y, spawnZ-8000), bSweep=1, bTeleport=1). A swept move is
+        // collision-continuous so it stops ON the terrain surface instead of falling/tunneling through it.
+        if(g_slThunk && LooksLikePtr(actor) && g_oSlLoc!=0xFFFFFFFF){
+            double* xt=(double*)(g_xform+0x20);   // spawn XYZ
+            memset(g_slbuf,0,sizeof(g_slbuf)); memset(g_gsbuf,0,sizeof(g_gsbuf));
+            double* NL=(double*)(g_slbuf+g_oSlLoc); NL[0]=xt[0]; NL[1]=xt[1]; NL[2]=xt[2]-8000.0;   // sweep straight down
+            if(g_oSlSweep!=0xFFFFFFFF) g_slbuf[g_oSlSweep]=1;   // bSweep=true
+            if(g_oSlTele!=0xFFFFFFFF) g_slbuf[g_oSlTele]=1;     // bTeleport=true
+            CallNative(g_slFn,g_slThunk,g_slChild,(void*)actor,g_slbuf,g_gsbuf);
+            // DIAGNOSTIC: read the hero's ACTUAL location after the sweep. If Z ~= the sweep target (-8000 below),
+            // NOTHING stopped it => no collision streamed here (World Partition) or over a void. If Z is sensible,
+            // it landed (start spot just below surface). bBlockingHit is the return bool (g_gsbuf[0]).
+            uint8_t hitG=g_gsbuf[0]&1;
+            if(g_locThunk){ memset(g_slbuf,0,sizeof(g_slbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallNative(g_locFn,g_locThunk,g_locChild,(void*)actor,g_slbuf,g_rbuf);
+                double* HL=(double*)g_rbuf; Markerf("[GS] swept: bBlockingHit=%d hero NOW at (%.0f,%.0f,%.0f) [spawned Z=%.0f, sweep target Z=%.0f]\r\n",hitG,HL[0],HL[1],HL[2],xt[2],xt[2]-8000.0); }
+        }
         // 4. Possess(pc, actor)
         if(kDoPossess && LooksLikePtr(actor) && g_possessThunk){
             memset(g_gsbuf,0,sizeof(g_gsbuf)); *(uint64_t*)(g_gsbuf+g_offInPawn)=(uint64_t)actor; memset(g_rbuf,0,sizeof(g_rbuf));
             CallNative(g_possessFn,g_possessThunk,g_possessChild,(void*)g_pc2,g_gsbuf,g_rbuf);
             g_spStep=4; Marker("[GS] possess called\r\n");
+        }
+        // COSMETICS: the hero's visual mesh is attached by the cosmetics system. Investigate state + try to trigger it.
+        if(LooksLikePtr(actor)){
+            // 1. GetCosmeticsController -> the component that manages the visual mesh
+            uintptr_t cc=0; if(g_ccThunk){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallNativeGuarded(g_ccFn,g_ccThunk,g_ccChild,(void*)actor,g_gsbuf,g_rbuf)) cc=(uintptr_t)g_rbuf[0]; }
+            char ccn[96]="-"; if(LooksLikePtr(cc)&&ClassOf(cc))GetFNameStr(NameId(ClassOf(cc)),ccn,sizeof(ccn));
+            // 2. GetCosmeticsAssetID -> FPrimaryAssetId{Type FName, Name FName} (is a cosmetic set?)
+            uint64_t caid[2]={0,0}; if(g_gcaThunk){ memset(g_gsbuf,0,sizeof(g_gsbuf)); uint8_t rb[32]={0}; if(!CallNativeGuarded(g_gcaFn,g_gcaThunk,g_gcaChild,(void*)actor,g_gsbuf,rb)){ caid[0]=*(uint64_t*)rb; caid[1]=*(uint64_t*)(rb+8); } }
+            char ctype[96]="-",cname[96]="-"; GetFNameStr((uint32_t)caid[0],ctype,sizeof(ctype)); GetFNameStr((uint32_t)caid[1],cname,sizeof(cname));
+            Markerf("[COS] controller=0x%llX(%s) CosmeticsAssetID Type=%s Name=%s (raw %llX,%llX)\r\n",(unsigned long long)cc,ccn,ctype,cname,(unsigned long long)caid[0],(unsigned long long)caid[1]);
+            // 3. ★ INJECT: write CosmeticsAssetID = {HeroCosmeticsBundle, RoninDefault} onto the hero's replicated member,
+            //    then fire OnRep_CosmeticsAssetID -> BP_PostSetupCosmetics builds the controller + async-loads/attaches the mesh.
+            uint32_t caOff=PropOffsetSuper(ClassOf(actor),"CosmeticsAssetID");
+            if(caOff!=0xFFFFFFFF && SafeReadable((void*)(actor+caOff),16)){
+                uint32_t* pai=(uint32_t*)(actor+caOff);
+                pai[0]=kFN_HeroCosmeticsBundle; pai[1]=0; pai[2]=kFN_RoninDefault; pai[3]=0;   // {Type FName, Name FName}
+                Markerf("[COS] SET CosmeticsAssetID@0x%X = HeroCosmeticsBundle:RoninDefault\r\n",caOff);
+                if(g_oncThunk){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); bool f=CallNativeGuarded(g_oncFn,g_oncThunk,g_oncChild,(void*)actor,g_gsbuf,g_rbuf); Markerf("[COS] OnRep_CosmeticsAssetID called%s\r\n",f?" [FAULTED]":""); }
+            } else Markerf("[COS] no CosmeticsAssetID property (off=0x%X) -> can't set\r\n",caOff);
+            // 4. RefreshCosmetics + re-read the state (controller/mesh attach may be ASYNC — the model appears over frames)
+            if(g_rcThunk){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); bool f=CallNativeGuarded(g_rcFn,g_rcThunk,g_rcChild,(void*)actor,g_gsbuf,g_rbuf); Markerf("[COS] RefreshCosmetics called%s\r\n",f?" [FAULTED]":""); }
+            uintptr_t cc2=0; if(g_ccThunk){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallNativeGuarded(g_ccFn,g_ccThunk,g_ccChild,(void*)actor,g_gsbuf,g_rbuf)) cc2=(uintptr_t)g_rbuf[0]; }
+            uint32_t mo=PropOffsetSuper(ClassOf(actor),"Mesh"); uintptr_t mc=(mo!=0xFFFFFFFF&&SafeReadable((void*)(actor+mo),8))?*(uintptr_t*)(actor+mo):0;
+            Markerf("[COS] after inject: controller=0x%llX base Mesh=0x%llX\r\n",(unsigned long long)cc2,(unsigned long long)mc);
+        }
+        // CAMERA: point the PC's camera at the hero (off the Z=0 under-map spectator view) so we can actually SEE it.
+        if(g_svtThunk && LooksLikePtr(g_pc2) && LooksLikePtr(actor) && g_oSvtTarget!=0xFFFFFFFF){
+            memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            *(uint64_t*)(g_gsbuf+g_oSvtTarget)=(uint64_t)actor;   // NewViewTarget = hero; BlendTime=0 (rest of params zero)
+            bool f=CallNativeGuarded(g_svtFn,g_svtThunk,g_svtChild,(void*)g_pc2,g_gsbuf,g_rbuf);
+            Markerf("[CAM] SetViewTargetWithBlend(hero) called%s\r\n",f?" [FAULTED]":"");
+        }
+        // LIFT-TO-SEE: the camera follows the hero vertically (jump reveals the map), but sits below the surface. Kill
+        // the hero's gravity + teleport it WAY up so the camera rises above the terrain and the model becomes visible.
+        if(LooksLikePtr(actor)){
+            uint32_t cmOff=PropOffsetSuper(ClassOf(actor),"CharacterMovement");
+            if(cmOff!=0xFFFFFFFF && SafeReadable((void*)(actor+cmOff),8)){ uintptr_t cmc=*(uintptr_t*)(actor+cmOff);
+                if(LooksLikePtr(cmc)){ uint32_t gsOff=PropOffsetSuper(ClassOf(cmc),"GravityScale"); if(gsOff!=0xFFFFFFFF&&SafeReadable((void*)(cmc+gsOff),4)){ *(float*)(cmc+gsOff)=0.0f; Markerf("[LIFT] gravity OFF (CMC=0x%llX GravityScale@0x%X)\r\n",(unsigned long long)cmc,gsOff); } } }
+            uint64_t hl[4]={0}; if(g_locThunk){ memset(g_gsbuf,0,sizeof(g_gsbuf)); CallNative(g_locFn,g_locThunk,g_locChild,(void*)actor,g_gsbuf,hl); }
+            double* HL=(double*)hl;
+            if((HL[0]||HL[1]||HL[2]) && g_slThunk && g_oSlLoc!=0xFFFFFFFF){
+                memset(g_slbuf,0,sizeof(g_slbuf)); memset(g_gsbuf,0,sizeof(g_gsbuf));
+                double* NL=(double*)(g_slbuf+g_oSlLoc); NL[0]=HL[0]; NL[1]=HL[1]; NL[2]=HL[2]+1800.0;   // lift 1800 up
+                if(g_oSlSweep!=0xFFFFFFFF) g_slbuf[g_oSlSweep]=0; if(g_oSlTele!=0xFFFFFFFF) g_slbuf[g_oSlTele]=1;   // teleport, no sweep
+                CallNativeGuarded(g_slFn,g_slThunk,g_slChild,(void*)actor,g_slbuf,g_gsbuf);
+                Markerf("[LIFT] hero lifted (%.0f,%.0f,%.0f) -> Z+1800=%.0f\r\n",HL[0],HL[1],HL[2],HL[2]+1800.0);
+            }
         }
         return;
     }
@@ -519,6 +917,169 @@ static void DoSpawnPossess(){
         CallNative(g_possessFn,g_possessThunk,g_possessChild,(void*)g_pc2,g_pbuf,g_rbuf);
         g_spStep=3; Marker("[SP] <<< Possess returned\r\n");
     }
+}
+
+// ---- S74 Path B: resolve the cheat object accessor + target RPC thunks (off-thread, before hooking) ----
+// Thunks are CLASS-level: resolve them off the native LokiPlayerCheats CDO's class (works even though the live
+// object is a BP subclass Comp_PlayerController_Cheats_C). The live `this` comes from GetLocalLokiPlayerCheatsBP
+// at call time — more robust than a class-name instance scan (the BP subclass name doesn't contain "LokiPlayerCheats").
+static void ResolveCheatSpawn(){
+    g_cheatCDO=FindObjExact("Default__LokiPlayerCheats");
+    uintptr_t cheatCls = g_cheatCDO ? ClassOf(g_cheatCDO) : 0;
+    if(!LooksLikePtr(cheatCls)){ Marker("[CS] no Default__LokiPlayerCheats CDO/class (is the tutorial running?) -> abort\r\n"); return; }
+    // GetLocalLokiPlayerCheatsBP (Static): context=CDO, param WorldContextObject -> ReturnValue (the local cheat obj).
+    ResolveFuncNative(cheatCls,"GetLocalLokiPlayerCheatsBP",&g_glcFn,&g_glcThunk,&g_glcChild);
+    if(g_glcChild){ g_oGlcWCO=ParamOffset(g_glcChild,"WorldContextObject"); g_oGlcRet=ParamOffset(g_glcChild,"ReturnValue"); }
+    // ServerCheatChangeHero(Class HeroClass) — the purpose-built hero spawn/swap RPC.
+    ResolveFuncNative(cheatCls,"ServerCheatChangeHero",&g_schFn,&g_schThunk,&g_schChild);
+    if(g_schChild){ g_oSchClass=ParamOffset(g_schChild,"HeroClass"); }
+    // CheatChangeHero(FString HeroName) — Exec alt target (name-based).
+    ResolveFuncNative(cheatCls,"CheatChangeHero",&g_cchFn,&g_cchThunk,&g_cchChild);
+    if(g_cchChild){ g_oCchName=ParamOffset(g_cchChild,"HeroName"); }
+    g_cheatHeroClass=FindObjExact(kCheatHeroClassName);
+    // WorldContext for the static accessor: prefer the live local PC (valid GetWorld + owning player), else progMgr.
+    uintptr_t pc=FindInstByClass("LokiPlayerController_Dev",nullptr); if(!pc)pc=FindInstByClass("LokiPlayerController",nullptr);
+    g_csWorldCtx = pc ? pc : g_worldCtx; g_cheatPC = pc;
+    // AuthCheatChangeCharacter(Class CharacterClass) — a cheat method ON the PC (no LokiPlayerCheats obj needed).
+    if(pc){ ResolveFuncNative(ClassOf(pc),"AuthCheatChangeCharacter",&g_accFn,&g_accThunk,&g_accChild); if(g_accChild) g_oAccClass=ParamOffset(g_accChild,"CharacterClass"); }
+    if(pc){ ResolveFuncNative(ClassOf(pc),"SwitchToPlayingState",&g_spsFn,&g_spsThunk,&g_spsChild); ResolveFuncNative(ClassOf(pc),"FinishDropPhaseHiding",&g_fdphFn,&g_fdphThunk,&g_fdphChild); ResolveFuncNative(ClassOf(pc),"IsSpectating",&g_isSpecFn,&g_isSpecThunk,&g_isSpecChild);
+        Markerf("[CS] switchPlayingThunk=0x%llX finishDropThunk=0x%llX pcStateByte@0x%X=%d\r\n",(unsigned long long)g_spsThunk,(unsigned long long)g_fdphThunk,PC_STATEBYTE_OFF, (pc&&SafeReadable((void*)(pc+PC_STATEBYTE_OFF),1))?*(uint8_t*)(pc+PC_STATEBYTE_OFF):-1); }
+    if(kCheatTarget==CT_SPAWNACTOR){
+        ResolveFuncNative(cheatCls,"ServerCheatSpawnActor",&g_scsaFn,&g_scsaThunk,&g_scsaChild);
+        if(g_scsaChild){ g_oScsaClass=ParamOffset(g_scsaChild,"ClassToSpawn"); g_oScsaLoc=ParamOffset(g_scsaChild,"Location"); }
+        g_gm2=FindInstByClass("GameMode_Tutorial",nullptr);
+        g_startSpot=FindInstByClass("LokiPlayerStart","UAID"); if(!g_startSpot)g_startSpot=FindInstByClass("CapturePoint_Tutorial","UAID"); if(!g_startSpot)g_startSpot=FindInstByClass("LokiRespawnBeacon_Tutorial","UAID");
+        g_cheatObjClass=cheatCls;  // native LokiPlayerCheats (an Actor) — Comp_PlayerController_Cheats_C is a COMPONENT, not spawnable via SpawnActor
+        g_gsCDO=FindObjExact("Default__GameplayStatics");
+        if(g_gsCDO){ uintptr_t gc=ClassOf(g_gsCDO);
+            ResolveFuncOnClass(gc,"BeginDeferredActorSpawnFromClass",&g_beginFn,&g_beginThunk,&g_beginChild);
+            ResolveFuncOnClass(gc,"FinishSpawningActor",&g_finishFn,&g_finishThunk,&g_finishChild);
+            uint32_t o;
+            if(g_beginChild){ o=ParamOffset(g_beginChild,"WorldContextObject");if(o!=0xFFFFFFFF)g_oBWorld=o; o=ParamOffset(g_beginChild,"ActorClass");if(o!=0xFFFFFFFF)g_oBClass=o; o=ParamOffset(g_beginChild,"SpawnTransform");if(o!=0xFFFFFFFF)g_oBXform=o; o=ParamOffset(g_beginChild,"CollisionHandlingOverride");if(o!=0xFFFFFFFF)g_oBColl=o; o=ParamOffset(g_beginChild,"Owner");if(o!=0xFFFFFFFF)g_oBOwner=o; o=ParamOffset(g_beginChild,"ReturnValue");if(o!=0xFFFFFFFF)g_oBRet=o; }
+            if(g_finishChild){ o=ParamOffset(g_finishChild,"Actor");if(o!=0xFFFFFFFF)g_oFActor=o; o=ParamOffset(g_finishChild,"SpawnTransform");if(o!=0xFFFFFFFF)g_oFXform=o; o=ParamOffset(g_finishChild,"ReturnValue");if(o!=0xFFFFFFFF)g_oFRet=o; }
+        }
+        if(g_startSpot){ ResolveFuncSuper(ClassOf(g_startSpot),"K2_GetActorLocation",&g_locFn,&g_locThunk,&g_locChild); }
+        ResolveFuncNative(cheatCls,"EnableHotkeyCheats",&g_ehcFn,&g_ehcThunk,&g_ehcChild); if(g_ehcChild) g_oEhcEnabled=ParamOffset(g_ehcChild,"Enabled");
+        ResolveFuncNative(cheatCls,"AreHotkeyCheatsEnabled",&g_ahceFn,&g_ahceThunk,&g_ahceChild);
+        if(pc) g_pcCheatOff=PropOffsetSuper(ClassOf(pc),"LokiPlayerCheats");
+        Markerf("[CS] SPAWNACTOR: scsaThunk=0x%llX(class@0x%X loc@0x%X) cheatObjClass=0x%llX gm=0x%llX startSpot=0x%llX beginThunk=0x%llX finishThunk=0x%llX locThunk=0x%llX pcCheatOff=0x%X\r\n",
+            (unsigned long long)g_scsaThunk,g_oScsaClass,g_oScsaLoc,(unsigned long long)g_cheatObjClass,(unsigned long long)g_gm2,(unsigned long long)g_startSpot,(unsigned long long)g_beginThunk,(unsigned long long)g_finishThunk,(unsigned long long)g_locThunk,g_pcCheatOff);
+    }
+    Markerf("[CS] cheatCDO=0x%llX cls=0x%llX getLocalThunk=0x%llX(WCO@0x%X ret@0x%X) schThunk=0x%llX(HeroClass@0x%X) cchThunk=0x%llX(HeroName@0x%X)\r\n",
+        (unsigned long long)g_cheatCDO,(unsigned long long)cheatCls,(unsigned long long)g_glcThunk,g_oGlcWCO,g_oGlcRet,(unsigned long long)g_schThunk,g_oSchClass,(unsigned long long)g_cchThunk,g_oCchName);
+    Markerf("[CS] heroClass(%s)=0x%llX worldCtx=0x%llX (pc=0x%llX) authChangeCharThunk=0x%llX(CharacterClass@0x%X)\r\n",kCheatHeroClassName,(unsigned long long)g_cheatHeroClass,(unsigned long long)g_csWorldCtx,(unsigned long long)pc,(unsigned long long)g_accThunk,g_oAccClass);
+}
+// Runs on the GAME THREAD (from OnPI): get the local cheat obj via GetLocalLokiPlayerCheatsBP, then fire the target cheat.
+static void DoCheatSpawn(){
+    // CT_AUTHCHANGECHAR: call AuthCheatChangeCharacter(HeroClass) directly on the live PC — no cheat obj needed.
+    if(kCheatTarget==CT_AUTHCHANGECHAR){
+        if(!g_accThunk||!LooksLikePtr(g_cheatPC)||!LooksLikePtr(g_cheatHeroClass)){ Markerf("[CS] AuthChangeChar missing accThunk=0x%llX pc=0x%llX heroClass=0x%llX -> abort\r\n",(unsigned long long)g_accThunk,(unsigned long long)g_cheatPC,(unsigned long long)g_cheatHeroClass); g_done=1; return; }
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(g_oAccClass!=0xFFFFFFFF) *(uint64_t*)((uint8_t*)g_pbuf+g_oAccClass)=(uint64_t)g_cheatHeroClass;
+        Markerf("[CS] calling AuthCheatChangeCharacter(%s) on PC 0x%llX...\r\n",kCheatHeroClassName,(unsigned long long)g_cheatPC);
+        bool f=CallNativeGuarded(g_accFn,g_accThunk,g_accChild,(void*)g_cheatPC,g_pbuf,g_rbuf);
+        Markerf("[CS] AuthCheatChangeCharacter returned%s\r\n",f?" [FAULTED — null captured]":"");
+        g_done=1; return;
+    }
+    // CT_SWITCHPLAYING (S74 RE): drive the PC state machine spectator->playing via SwitchToPlayingState() + set the
+    // drop-reveal flag. The decisive test: does forcing the playing state engage hero control (or need a hero pawn first)?
+    if(kCheatTarget==CT_SWITCHPLAYING){
+        if(!g_spsThunk||!LooksLikePtr(g_cheatPC)){ Markerf("[CS] SWITCHPLAYING missing spsThunk=0x%llX pc=0x%llX -> abort\r\n",(unsigned long long)g_spsThunk,(unsigned long long)g_cheatPC); g_done=1; return; }
+        auto readSpec=[&]()->int{ if(!g_isSpecThunk)return -1; memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallNativeGuarded(g_isSpecFn,g_isSpecThunk,g_isSpecChild,(void*)g_cheatPC,g_pbuf,g_rbuf))return -2; return (int)(g_rbuf[0]&0xFF); };
+        uint64_t so0=SafeReadable((void*)(g_cheatPC+PC_STATEOBJ_OFF),8)?*(uint64_t*)(g_cheatPC+PC_STATEOBJ_OFF):0;
+        Markerf("[CS] BEFORE: IsSpectating=%d stateByte@0x160=%d stateObj@0x3F0=0x%llX; calling SwitchToPlayingState()...\r\n",readSpec(),SafeReadable((void*)(g_cheatPC+PC_STATEBYTE_OFF),1)?*(uint8_t*)(g_cheatPC+PC_STATEBYTE_OFF):-1,(unsigned long long)so0);
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        bool f=CallNativeGuarded(g_spsFn,g_spsThunk,g_spsChild,(void*)g_cheatPC,g_pbuf,g_rbuf);
+        uint64_t so1=SafeReadable((void*)(g_cheatPC+PC_STATEOBJ_OFF),8)?*(uint64_t*)(g_cheatPC+PC_STATEOBJ_OFF):0;
+        Markerf("[CS] SwitchToPlayingState returned%s; AFTER: IsSpectating=%d stateByte@0x160=%d stateObj@0x3F0=0x%llX\r\n",f?" [FAULTED]":"",readSpec(),SafeReadable((void*)(g_cheatPC+PC_STATEBYTE_OFF),1)?*(uint8_t*)(g_cheatPC+PC_STATEBYTE_OFF):-1,(unsigned long long)so1);
+        // set the drop-reveal flag (FinishDropPhaseHiding = PC+0xF28=1) so the drop-hide doesn't keep the view hidden
+        if(g_fdphThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallNativeGuarded(g_fdphFn,g_fdphThunk,g_fdphChild,(void*)g_cheatPC,g_pbuf,g_rbuf); Markerf("[CS] FinishDropPhaseHiding called; PC+0xF28=%d\r\n",SafeReadable((void*)(g_cheatPC+PC_DROPFLAG_OFF),1)?*(uint8_t*)(g_cheatPC+PC_DROPFLAG_OFF):-1); }
+        g_done=1; return;
+    }
+    // CT_SPAWNACTOR: spawn a LokiPlayerCheats actor ourselves, wire it to the PC, then ServerCheatSpawnActor on it.
+    if(kCheatTarget==CT_SPAWNACTOR){
+        if(!g_beginThunk||!g_finishThunk||!LooksLikePtr(g_cheatObjClass)||!g_scsaThunk){ Markerf("[CS] SPAWNACTOR missing beginThunk=0x%llX finishThunk=0x%llX cheatObjClass=0x%llX scsaThunk=0x%llX -> abort\r\n",(unsigned long long)g_beginThunk,(unsigned long long)g_finishThunk,(unsigned long long)g_cheatObjClass,(unsigned long long)g_scsaThunk); g_done=1; return; }
+        uintptr_t wctx = LooksLikePtr(g_gm2) ? g_gm2 : g_cheatPC;
+        uint32_t xfsz=(g_oBColl>g_oBXform)?(g_oBColl-g_oBXform):0x60; if(xfsz>sizeof(g_xform))xfsz=sizeof(g_xform);
+        // 1. spawn transform: identity rotation (quat W=1 @ +0x18) + real translation from K2_GetActorLocation(startSpot).
+        //    Origin (0,0,0) is the void -> hero spawn gets rejected/falls out; use the start spot's world location.
+        memset(g_xform,0,sizeof(g_xform)); *(double*)(g_xform+0x18)=1.0;
+        if(g_locThunk && LooksLikePtr(g_startSpot)){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallNative(g_locFn,g_locThunk,g_locChild,(void*)g_startSpot,g_pbuf,g_rbuf);
+            double* L=(double*)g_rbuf; *(double*)(g_xform+0x20)=L[0]; *(double*)(g_xform+0x28)=L[1]; *(double*)(g_xform+0x30)=L[2]; }
+        double* t=(double*)(g_xform+0x20); Markerf("[CS] spawnLoc=(%.0f,%.0f,%.0f)\r\n",t[0],t[1],t[2]);
+        // 2. BeginDeferredActorSpawnFromClass(wctx, cheatObjClass, xform, AlwaysSpawn, Owner=PC) -> deferred cheat obj
+        memset(g_gsbuf,0,sizeof(g_gsbuf));
+        *(uint64_t*)(g_gsbuf+g_oBWorld)=(uint64_t)wctx;
+        *(uint64_t*)(g_gsbuf+g_oBClass)=(uint64_t)g_cheatObjClass;
+        memcpy(g_gsbuf+g_oBXform,g_xform,xfsz);
+        g_gsbuf[g_oBColl]=2;   // AdjustIfPossibleButAlwaysSpawn
+        if(g_oBOwner!=0xFFFFFFFF && LooksLikePtr(g_cheatPC)) *(uint64_t*)(g_gsbuf+g_oBOwner)=(uint64_t)g_cheatPC;
+        memset(g_rbuf,0,sizeof(g_rbuf));
+        Marker("[CS] spawning cheat object (BeginDeferred)...\r\n");
+        if(CallNativeGuarded(g_beginFn,g_beginThunk,g_beginChild,(void*)g_gsCDO,g_gsbuf,g_rbuf)){ Marker("[CS] BeginDeferred FAULTED\r\n"); g_done=1; return; }
+        uintptr_t deferred=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(deferred)) deferred=*(uint64_t*)(g_gsbuf+g_oBRet);
+        char dcn[96]="-"; if(LooksLikePtr(deferred)&&ClassOf(deferred))GetFNameStr(NameId(ClassOf(deferred)),dcn,sizeof(dcn));
+        Markerf("[CS] deferred cheatObj=0x%llX cls=%s\r\n",(unsigned long long)deferred,dcn);
+        if(!LooksLikePtr(deferred)){ g_done=1; return; }
+        // 3. FinishSpawningActor(deferred, xform) -> cheat obj (runs BeginPlay/init)
+        memset(g_gsbuf,0,sizeof(g_gsbuf)); *(uint64_t*)(g_gsbuf+g_oFActor)=(uint64_t)deferred; memcpy(g_gsbuf+g_oFXform,g_xform,xfsz); memset(g_rbuf,0,sizeof(g_rbuf));
+        Marker("[CS] FinishSpawningActor(cheatObj)...\r\n");
+        if(CallNativeGuarded(g_finishFn,g_finishThunk,g_finishChild,(void*)g_gsCDO,g_gsbuf,g_rbuf)){ Marker("[CS] FinishSpawning FAULTED\r\n"); g_done=1; return; }
+        uintptr_t cheatObj=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(cheatObj)) cheatObj=*(uint64_t*)(g_gsbuf+g_oFRet); if(!LooksLikePtr(cheatObj)) cheatObj=deferred;
+        g_cheatObj=cheatObj; Markerf("[CS] spawned cheatObj=0x%llX\r\n",(unsigned long long)cheatObj);
+        // 4. wire the spawned obj into the PC's LokiPlayerCheats member (so GetPlayerCheats resolves it)
+        if(g_pcCheatOff!=0xFFFFFFFF && LooksLikePtr(g_cheatPC) && SafeReadable((void*)(g_cheatPC+g_pcCheatOff),8)){ *(uint64_t*)(g_cheatPC+g_pcCheatOff)=(uint64_t)cheatObj; Markerf("[CS] wired PC(0x%llX)->LokiPlayerCheats@0x%X = cheatObj\r\n",(unsigned long long)g_cheatPC,g_pcCheatOff); }
+        // 4b. EnableHotkeyCheats(1) on the object — ServerCheatSpawnActor likely gates on a cheat-enabled flag.
+        if(g_ehcThunk){
+            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            if(g_oEhcEnabled!=0xFFFFFFFF) *(double*)((uint8_t*)g_pbuf+g_oEhcEnabled)=1.0;
+            Marker("[CS] EnableHotkeyCheats(1)...\r\n");
+            bool ef=CallNativeGuarded(g_ehcFn,g_ehcThunk,g_ehcChild,(void*)cheatObj,g_pbuf,g_rbuf);
+            Markerf("[CS] EnableHotkeyCheats returned%s\r\n",ef?" [FAULTED]":"");
+        }
+        if(g_ahceThunk){
+            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            CallNativeGuarded(g_ahceFn,g_ahceThunk,g_ahceChild,(void*)cheatObj,g_pbuf,g_rbuf);
+            Markerf("[CS] AreHotkeyCheatsEnabled -> %llu\r\n",(unsigned long long)(g_rbuf[0]&0xFF));
+        }
+        // 5. ServerCheatSpawnActor(cheatObj, {HeroClass, location})
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(g_oScsaClass!=0xFFFFFFFF) *(uint64_t*)((uint8_t*)g_pbuf+g_oScsaClass)=(uint64_t)g_cheatHeroClass;
+        if(g_oScsaLoc!=0xFFFFFFFF){ double* L=(double*)((uint8_t*)g_pbuf+g_oScsaLoc); L[0]=t[0]; L[1]=t[1]; L[2]=t[2]; }
+        Markerf("[CS] calling ServerCheatSpawnActor(%s, loc=(%.0f,%.0f,%.0f)) on cheatObj 0x%llX...\r\n",kCheatHeroClassName,t[0],t[1],t[2],(unsigned long long)cheatObj);
+        bool f=CallNativeGuarded(g_scsaFn,g_scsaThunk,g_scsaChild,(void*)cheatObj,g_pbuf,g_rbuf);
+        Markerf("[CS] ServerCheatSpawnActor returned%s\r\n",f?" [FAULTED — null captured]":"");
+        g_done=1; return;
+    }
+    // 1. Resolve the live cheat object (this-pointer for the RPC).
+    if(!LooksLikePtr(g_cheatObj) && g_glcThunk){
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(g_oGlcWCO!=0xFFFFFFFF) *(uint64_t*)((uint8_t*)g_pbuf+g_oGlcWCO)=(uint64_t)g_csWorldCtx;
+        Marker("[CS] calling GetLocalLokiPlayerCheatsBP...\r\n");
+        if(CallNativeGuarded(g_glcFn,g_glcThunk,g_glcChild,(void*)g_cheatCDO,g_pbuf,g_rbuf)){ Marker("[CS] GetLocal FAULTED (null captured)\r\n"); g_done=1; return; }
+        uintptr_t obj=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(obj)&&g_oGlcRet!=0xFFFFFFFF) obj=*(uint64_t*)((uint8_t*)g_pbuf+g_oGlcRet);
+        g_cheatObj=obj;
+        char cn[96]="-"; if(LooksLikePtr(g_cheatObj)&&ClassOf(g_cheatObj)) GetFNameStr(NameId(ClassOf(g_cheatObj)),cn,sizeof(cn));
+        Markerf("[CS] GetLocal -> cheatObj=0x%llX cls=%s\r\n",(unsigned long long)g_cheatObj,cn);
+    }
+    if(!LooksLikePtr(g_cheatObj)){ Marker("[CS] no cheat object -> abort\r\n"); g_done=1; return; }
+    // 2. Fire the selected cheat on the cheat object.
+    if(kCheatTarget==CT_SERVERCHANGEHERO){
+        if(!g_schThunk||!LooksLikePtr(g_cheatHeroClass)){ Markerf("[CS] missing schThunk=0x%llX heroClass=0x%llX -> abort\r\n",(unsigned long long)g_schThunk,(unsigned long long)g_cheatHeroClass); g_done=1; return; }
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(g_oSchClass!=0xFFFFFFFF) *(uint64_t*)((uint8_t*)g_pbuf+g_oSchClass)=(uint64_t)g_cheatHeroClass;
+        Markerf("[CS] calling ServerCheatChangeHero(%s)...\r\n",kCheatHeroClassName);
+        bool f=CallNativeGuarded(g_schFn,g_schThunk,g_schChild,(void*)g_cheatObj,g_pbuf,g_rbuf);
+        Markerf("[CS] ServerCheatChangeHero returned%s\r\n",f?" [FAULTED — null captured]":"");
+    } else if(kCheatTarget==CT_CHANGEHERONAME){
+        if(!g_cchThunk){ Marker("[CS] missing CheatChangeHero thunk -> abort\r\n"); g_done=1; return; }
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(g_oCchName!=0xFFFFFFFF) SetFStringAt((uint8_t*)g_pbuf,g_oCchName,kCheatHeroName);
+        Markerf("[CS] calling CheatChangeHero('%ls')...\r\n",kCheatHeroName);
+        bool f=CallNativeGuarded(g_cchFn,g_cchThunk,g_cchChild,(void*)g_cheatObj,g_pbuf,g_rbuf);
+        Markerf("[CS] CheatChangeHero returned%s\r\n",f?" [FAULTED — null captured]":"");
+    }
+    g_done=1;
 }
 
 static void Resolve(){
@@ -1047,6 +1608,22 @@ static DWORD WINAPI Worker(LPVOID){
         Markerf("[SPW] done hero=0x%llX cls=%s (called=%ld hitsGT=%ld)\r\n",(unsigned long long)g_spawnedPawn,pcn,(long)g_called,(long)g_hitsGT);
         return 0;
     }
+    if(kRunMode==RM_CHEATSPAWN){
+        Marker("[CS] cheat-spawn mode: call the game's own LokiPlayerCheats RPC directly (in-process, local authority)\r\n");
+        Resolve();   // populate g_worldCtx (a live ProgressionManager) as WorldContext fallback for GetLocal
+        ResolveCheatSpawn();
+        if(kCheatResolveOnly){ Markerf("[CS] resolve-only: schThunk=0x%llX cchThunk=0x%llX accThunk=0x%llX scsaThunk=0x%llX glcThunk=0x%llX heroClass=0x%llX — NOT firing (set kCheatResolveOnly=false + inject into a running tutorial)\r\n",(unsigned long long)g_schThunk,(unsigned long long)g_cchThunk,(unsigned long long)g_accThunk,(unsigned long long)g_scsaThunk,(unsigned long long)g_glcThunk,(unsigned long long)g_cheatHeroClass); return 0; }
+        if(!g_schThunk && !g_cchThunk && !g_accThunk && !g_scsaThunk && !g_spsThunk){ Marker("[CS] resolve failed (no target thunk) -> abort\r\n"); return 0; }
+        if(!g_glcThunk){ Marker("[CS] WARN: GetLocalLokiPlayerCheatsBP unresolved; DoCheatSpawn will abort unless g_cheatObj is preset\r\n"); }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[CS] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[CS] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[CS] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<8000) Sleep(20);
+        UninstallHook();
+        char cn[96]="-"; if(LooksLikePtr(g_cheatObj)&&ClassOf(g_cheatObj)) GetFNameStr(NameId(ClassOf(g_cheatObj)),cn,sizeof(cn));
+        Markerf("[CS] done cheatObj=0x%llX cls=%s (called=%ld hitsGT=%ld)\r\n",(unsigned long long)g_cheatObj,cn,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
     if(kRunMode==RM_GOTOPHASE){
         Marker("[GP] go-to-phase mode: advance the round EGP_BeginInit -> Combat in the RUNNING tutorial\r\n");
         if(!ResolveGoToPhase()){ Marker("[GP] resolve failed -> abort\r\n"); return 0; }
@@ -1056,6 +1633,49 @@ static DWORD WINAPI Worker(LPVOID){
         DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<15000) Sleep(20);   // ~7 phases x 450ms + processing
         UninstallHook();
         Markerf("[GP] done (phasesCalled=%d called=%ld hitsGT=%ld)\r\n",g_phaseIdx,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_WAKEMOVE){
+        Marker("[WM] wake-move mode: kick the possessed hero's frozen CMC (activate+tick+mode+gravity) then sample velocity\r\n");
+        if(!ResolveWakeMove()){ Marker("[WM] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[WM] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[WM] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[WM] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<12000) Sleep(20);   // teleport + 1 kick + ~12 samples x 400ms
+        UninstallHook();
+        Markerf("[WM] done (samples=%d called=%ld hitsGT=%ld)\r\n",g_wmSample,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_PUPPET){
+        Marker("[PUP] puppet mode: read WASD each game-thread hit -> write the possessed hero's CMC velocity\r\n");
+        g_gameHwnd=FindWindowA(nullptr,"SUPERVIVE");
+        Markerf("[PUP] gameHwnd=0x%llX (0 => focus check disabled, always drives)\r\n",(unsigned long long)(uintptr_t)g_gameHwnd);
+        if(!ResolveWakeMove()){ Marker("[PUP] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[PUP] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[PUP] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[PUP] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<600000) Sleep(20);   // ~10 min of play, then release
+        UninstallHook();
+        if(SafeReadable((void*)(g_wmCMC+0xE8),16)){ double* V=(double*)(g_wmCMC+0xE8); V[0]=0.0; V[1]=0.0; }   // stop on exit
+        Markerf("[PUP] done (called=%ld hitsGT=%ld)\r\n",(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_TOGGLEREADY){
+        Marker("[TR] toggle-ready mode: hook ULokiGameFeatureToggles::Get, set readiness bit6 on each queried object's D\r\n");
+        g_getAddr=g_modBase+kGetRva;
+        static const uint8_t kGetProlog[7]={0x41,0x54,0x48,0x89,0x5C,0x24,0x08};   // push r12; mov [rsp+8],rbx
+        if(!SafeReadable((void*)g_getAddr,7)||memcmp((void*)g_getAddr,kGetProlog,7)!=0){ Markerf("[TR] FAIL Get prologue mismatch @0x%llX\r\n",(unsigned long long)g_getAddr); return 4; }
+        memcpy(g_getStolen,(void*)g_getAddr,7);
+        g_getStub=BuildGetHook(g_getAddr,g_getStolen);
+        if(!g_getStub){ Marker("[TR] FAIL BuildGetHook\r\n"); return 5; }
+        int32_t rel=(int32_t)((intptr_t)g_getStub-((intptr_t)g_getAddr+5));
+        uint8_t patch[7]={0xE9,(uint8_t)rel,(uint8_t)(rel>>8),(uint8_t)(rel>>16),(uint8_t)(rel>>24),0x90,0x90};
+        if(!SafeWrite((uint8_t*)g_getAddr,patch,7)){ Marker("[TR] FAIL install\r\n"); return 6; }
+        Markerf("[TR] hook installed Get=0x%llX stub=0x%llX storeGetter=0x%llX; collecting ~3s...\r\n",(unsigned long long)g_getAddr,(unsigned long long)(uintptr_t)g_getStub,(unsigned long long)(g_modBase+kStoreGetterRva));
+        Sleep(3000);
+        SafeWrite((uint8_t*)g_getAddr,g_getStolen,7);   // uninstall (bit6 stays set — data)
+        Markerf("[TR] hook removed. getHits=%ld uniqueD-set=%ld\r\n",(long)g_getHits,(long)g_dSeenN);
+        for(long i=0;i<g_dSeenN && i<64;i++) Markerf("[TR]   D[%ld]=0x%llX (bit6 set)\r\n",i,(unsigned long long)g_dSeen[i]);
         return 0;
     }
     if(kRunMode==RM_SPAWNPOSSESS){

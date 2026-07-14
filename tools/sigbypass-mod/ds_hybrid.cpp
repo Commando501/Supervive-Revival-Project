@@ -25,8 +25,9 @@ static const char* kMarkerPath = "G:\\git\\Supervive Revival Project\\docs\\ds-h
 constexpr uintptr_t kPiRva=0x13454A0, kObjObjectsRva=0x9E38930, kNamePoolRva=0x9D81450, kGGameTidRva=0x9D49158;
 constexpr int PERCHUNK=65536, ITEMSTRIDE=0x18;
 constexpr uintptr_t CLASS_OFF=0x18, NAME_OFF=0x20, OUTER_OFF=0x28, UFUNC_FUNC=0xE0, UFUNC_CHILDPROPS=0x58;
-constexpr uintptr_t UST_CHILDREN=0x50, UST_SUPER=0x48, FIELD_NEXT_UF=0x30, FIELD_NEXT=0x18, FPROP_OFFSET=0x44;
-constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, FF_MRP=0x30, FF_MRPA=0x38, FF_MRPC=0x40, FF_PROPCHAIN=0x88;
+constexpr uintptr_t UST_CHILDREN=0x50, UST_SUPER=0x48, FIELD_NEXT_UF=0x30, FIELD_NEXT=0x18, FPROP_OFFSET=0x44, FPROP_FLAGS=0x38;
+constexpr uint64_t CPF_OutParm=0x100, CPF_ReturnParm=0x400;
+constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, FF_MRP=0x30, FF_MRPA=0x38, FF_MRPC=0x40, FF_OUTPARMS=0x80, FF_PROPCHAIN=0x88;
 typedef void (*PFN_PE)(void* obj, void* func, void* parms);
 typedef void (*PFN_THUNK)(void* Context, void* Frame, void* Result);
 
@@ -111,6 +112,26 @@ static uint32_t ParamOffset(uintptr_t childHead,const char* name){
 }
 // The S55 game-thread native-call primitive: call a UFunction thunk with a prepared params buffer.
 static uint8_t g_pbuf[256]={0}, g_rbuf[64]={0};
+// S58/S74 OUT/ref-param marshalling (ported from tutorial_launch): build an FOutParmRec chain for every CPF_OutParm
+// param (PropAddr into the Locals buffer) and set FFrame.OutParms@+0x80. Without this the exec thunk walks a null/stale
+// OutParms for by-ref/out params (e.g. const FTransform& in BeginDeferredActorSpawnFromClass) and crashes — the exact
+// S72 wall #1 that killed the client-side hero spawn.
+static uint8_t g_outparms[8*24]={0};
+static void BuildOutParms(uintptr_t childProps, uint8_t* locals){
+    memset(g_outparms,0,sizeof(g_outparms)); *(uint64_t*)(g_myframe+FF_OUTPARMS)=0;
+    uintptr_t f=childProps; int n=0; uint8_t* prev=nullptr; uint8_t* head=nullptr;
+    while(LooksLikePtr(f) && n<8){
+        uint64_t flags=0; if(SafeReadable((void*)(f+FPROP_FLAGS),8)) flags=*(uint64_t*)(f+FPROP_FLAGS);
+        if((flags&CPF_OutParm) && !(flags&CPF_ReturnParm)){
+            int32_t off=0; if(SafeReadable((void*)(f+FPROP_OFFSET),4)) off=*(int32_t*)(f+FPROP_OFFSET);
+            uint8_t* rec=g_outparms+n*24; *(uintptr_t*)(rec+0)=f; *(uintptr_t*)(rec+8)=(uintptr_t)(locals+off); *(uintptr_t*)(rec+16)=0;
+            if(prev) *(uintptr_t*)(prev+16)=(uintptr_t)rec; else head=rec;
+            prev=rec; n++;
+        }
+        uintptr_t nx=0; if(SafeReadable((void*)(f+FIELD_NEXT),8)) nx=*(uintptr_t*)(f+FIELD_NEXT); f=nx;
+    }
+    *(uint64_t*)(g_myframe+FF_OUTPARMS)=(uint64_t)head;
+}
 static void CallNative(void* func, uintptr_t thunk, uintptr_t childProps, void* context, void* paramsBuf, void* resultBuf){
     memcpy(g_myframe, g_template, sizeof(g_myframe));
     *(void**)(g_myframe+FF_NODE)=func;
@@ -119,6 +140,7 @@ static void CallNative(void* func, uintptr_t thunk, uintptr_t childProps, void* 
     *(void**)(g_myframe+FF_LOCALS)=paramsBuf;
     *(uint64_t*)(g_myframe+FF_MRP)=0; *(uint64_t*)(g_myframe+FF_MRPA)=0; *(uint64_t*)(g_myframe+FF_MRPC)=0;
     *(uint64_t*)(g_myframe+FF_PROPCHAIN)=(uint64_t)childProps;
+    BuildOutParms(childProps,(uint8_t*)paramsBuf);   // S74: FFrame.OutParms chain for by-ref/out params (fixes the S72 spawn crash)
     ((PFN_THUNK)thunk)(context, g_myframe, resultBuf);
 }
 

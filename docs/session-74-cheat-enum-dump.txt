@@ -1,0 +1,683 @@
+PID=55928 BASE=0x7FF6B54F0000 GUObjectArray=0x25A2E159520 NumElements=194050 filter='cheat'
+
+########## UClass CheatManager @0x25A32185100 ##########
+
+  === [0] CheatManager  (57 UFunction) ===
+    BugIt                              [Exec,Native                 ] thunk=0x7FF6B8AB6A70
+        (FString ScreenShotDescription) -> void
+    BugItGo                            [Exec,Native                 ] thunk=0x7FF6B8AB6B10
+        (float X, float Y, float Z, float pitch, float Yaw, float Roll) -> void
+    BugItStringCreator                 [Exec,Native,HasOutParms     ] thunk=0x7FF6B8AB6D00
+        (Struct(Vector) ViewLocation, Struct(Rotator) ViewRotation) out[FString GoString, FString LocString] -> void
+    ChangeSize                         [Exec,Native,BPCallable      ] thunk=0x7FF6B8AB6ED0
+        (float F) -> void
+    CheatScript                        [Exec,Native                 ] thunk=0x7FF6B8AB6F60
+        (FString ScriptName) -> void
+    DamageTarget                       [Exec,Native,BPCallable      ] thunk=0x7FF6B8AB7110
+        (float DamageAmount) -> void
+    DebugCapsuleSweep                  [Exec,Native                 ] thunk=0x7FF6B8AB71A0
+        () -> void
+    DebugCapsuleSweepCapture           [Exec,Native                 ] thunk=0x7FF6B8AB71C0
+        () -> void
+    DebugCapsuleSweepChannel           [Exec,Native                 ] thunk=0x7FF6B8AB71E0
+        (byte Channel) -> void
+    DebugCapsuleSweepClear             [Exec,Native                 ] thunk=0x7FF6B8AB7260
+        () -> void
+    DebugCapsuleSweepComplex           [Exec,Native                 ] thunk=0x7FF6B8AB7280
+        (bool bTraceComplex) -> void
+    DebugCapsuleSweepPawn              [Exec,Native                 ] thunk=0x7FF6B8AB7310
+        () -> void
+    DebugCapsuleSweepSize              [Exec,Native                 ] thunk=0x7FF6B8AB7330
+        (float HalfHeight, float Radius) -> void
+    DestroyAll                         [Exec,Native                 ] thunk=0x7FF6B8AB7400
+        (Class(Class) aClass) -> void
+    DestroyAllPawnsExceptTarget        [Exec,Native                 ] thunk=0x7FF6B8AB74B0
+        () -> void
+    DestroyPawns                       [Exec,Native                 ] thunk=0x7FF6B8AB74D0
+        (Class(Class) aClass) -> void
+    DestroyServerStatReplicator        [Exec,Native                 ] thunk=0x7FF6B8AB7580
+        () -> void
+    DestroyTarget                      [Exec,Native,BPCallable      ] thunk=0x7FF6B8AB75A0
+        () -> void
+    DisableDebugCamera                 [Native,BPCallable           ] thunk=0x7FF6B8AB75C0
+        () -> void
+    DumpChatState                      [Exec,Native                 ] thunk=0x7FF6B8AB75E0
+        () -> void
+    DumpOnlineSessionState             [Exec,Native                 ] thunk=0x7FF6B8AB7600
+        () -> void
+    DumpPartyState                     [Exec,Native                 ] thunk=0x7FF6B8AB7620
+        () -> void
+    DumpVoiceMutingState               [Exec,Native                 ] thunk=0x7FF6B8AB7640
+        () -> void
+    EnableDebugCamera                  [Native,BPCallable           ] thunk=0x7FF6B8AB7660
+        () -> void
+    FlushLog                           [Exec,Native                 ] thunk=0x7FF6B8AB7900
+        () -> void
+    Fly                                [Exec,Native,BPCallable      ] thunk=0x7FF6B8AB7920
+        () -> void
+    FreezeFrame                        [Exec,Native,BPCallable      ] thunk=0x7FF6B8AB7940
+        (float Delay) -> void
+    GetPlayerController                [Native,BPCallable           ] thunk=0x7FF6B8AB7F60
+        () -> Object(PlayerController)
+    Ghost                              [Exec,Native,BPCallable      ] thunk=0x7FF6B889C270
+        () -> void
+    God                                [Exec,Native,BPCallable      ] thunk=0x7FF6B8AB7FD0
+        () -> void
+    InvertMouse                        [Exec,Native                 ] thunk=0x7FF6B8AB8090
+        () -> void
+    LogLoc                             [Exec,Native                 ] thunk=0x7FF6B8AB8210
+        () -> void
+    OnlyLoadLevel                      [Exec,Native                 ] thunk=0x7FF6B8AB8300
+        (FName PackageName) -> void
+    OnPlayerEndPlayed                  [Native                      ] thunk=0x7FF6B8AB8230
+        (Object(Actor) Player, byte EndPlayReason) -> void
+    PlayersOnly                        [Exec,Native,BPCallable      ] thunk=0x7FF6B8AB8770
+        () -> void
+    ReceiveEndPlay                     [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    ReceiveInitCheatManager            [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    ServerToggleAILogging              [Net,NetServer,NetReliable,Native,NetValidate] thunk=0x7FF6B8AB88B0
+        () -> void
+    SetMouseSensitivityToDefault       [Exec,Native                 ] thunk=0x7FF6B8AB9830
+        () -> void
+    SetWorldOrigin                     [Exec,Native                 ] thunk=0x7FF6B8ABA260
+        () -> void
+    Slomo                              [Exec,Native,BPCallable      ] thunk=0x7FF6B8ABA280
+        (float NewTimeDilation) -> void
+    SpawnServerStatReplicator          [Exec,Native                 ] thunk=0x7FF6B8ABA310
+        () -> void
+    StreamLevelIn                      [Exec,Native                 ] thunk=0x7FF6B8ABA3F0
+        (FName PackageName) -> void
+    StreamLevelOut                     [Exec,Native                 ] thunk=0x7FF6B8ABA480
+        (FName PackageName) -> void
+    Summon                             [Exec,Native                 ] thunk=0x7FF6B8ABA510
+        (FString ClassName) -> void
+    Teleport                           [Exec,Native,BPCallable      ] thunk=0x7FF6B756BDE0
+        () -> void
+    TestCollisionDistance              [Exec,Native                 ] thunk=0x7FF6B8ABA5B0
+        () -> void
+    ToggleAILogging                    [Exec,Native                 ] thunk=0x7FF6B889AC90
+        () -> void
+    ToggleDebugCamera                  [Exec,Native                 ] thunk=0x7FF6B8ABA5D0
+        () -> void
+    ToggleServerStatReplicatorClientOverwrite [Exec,Native                 ] thunk=0x7FF6B8ABA5F0
+        () -> void
+    ToggleServerStatReplicatorUpdateStatNet [Exec,Native                 ] thunk=0x7FF6B8ABA670
+        () -> void
+    UpdateSafeArea                     [Exec,Native                 ] thunk=0x7FF6B8ABA6F0
+        () -> void
+    ViewActor                          [Exec,Native                 ] thunk=0x7FF6B8ABA710
+        (FName ActorName) -> void
+    ViewClass                          [Exec,Native                 ] thunk=0x7FF6B8ABA7A0
+        (Class(Class) DesiredClass) -> void
+    ViewPlayer                         [Exec,Native                 ] thunk=0x7FF6B8ABA850
+        (FString S) -> void
+    ViewSelf                           [Exec,Native                 ] thunk=0x7FF6B8ABA8F0
+        () -> void
+    Walk                               [Exec,Native,BPCallable      ] thunk=0x7FF6B756BE00
+        () -> void
+
+  === [1] Object  (1 UFunction) ===
+    ExecuteUbergraph                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        (int32 EntryPoint) -> void
+
+########## UClass CheatManagerExtension @0x25A3155F880 ##########
+
+  === [0] CheatManagerExtension  (3 UFunction) ===
+    AddedToCheatManager                [Native,BPEvent              ] thunk=0x7FF6B875D280
+        () -> void
+    GetPlayerController                [Native,BPCallable           ] thunk=0x7FF6B8AB7F90
+        () -> Object(PlayerController)
+    RemovedFromCheatManager            [Native,BPEvent              ] thunk=0x7FF6B875D2A0
+        () -> void
+
+  === [1] Object  (1 UFunction) ===
+    ExecuteUbergraph                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        (int32 EntryPoint) -> void
+
+########## UClass GameFeatureAction_AddCheats @0x25A355D0880 ##########
+
+  === [0] GameFeatureAction_AddCheats  (0 UFunction) ===
+
+  === [2] Object  (1 UFunction) ===
+    ExecuteUbergraph                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        (int32 EntryPoint) -> void
+
+########## UClass LokiCharacterCheatDetectionComponent @0x25A35621000 ##########
+
+  === [0] LokiCharacterCheatDetectionComponent  (1 UFunction) ===
+    UpdateIsEnabled                    [Native                      ] thunk=0x7FF6BA7F9260
+        () -> void
+
+  === [1] ActorComponent  (29 UFunction) ===
+    Activate                           [Native,BPCallable           ] thunk=0x7FF6B8620790
+        (bool bReset) -> void
+    AddTickPrerequisiteActor           [Native,BPCallable           ] thunk=0x7FF6B8AB6650
+        (Object(Actor) PrerequisiteActor) -> void
+    AddTickPrerequisiteComponent       [Native,BPCallable           ] thunk=0x7FF6B8AB66E0
+        (Object(ActorComponent) PrerequisiteComponent) -> void
+    BP_LokiBeginPlay                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    BP_LokiEndPlay                     [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    ComponentHasTag                    [Native,BPCallable           ] thunk=0x7FF6B8AB7050
+        (FName Tag) -> bool
+    Deactivate                         [Native,BPCallable           ] thunk=0x7FF6B756C030
+        () -> void
+    GetComponentTickInterval           [Native,BPCallable           ] thunk=0x7FF6B8AB79D0
+        () -> float
+    GetOwner                           [Native,BPCallable           ] thunk=0x7FF6B8AB7E90
+        () -> Object(Actor)
+    IsActive                           [Native,BPCallable           ] thunk=0x7FF6B8AB80B0
+        () -> bool
+    IsBeingDestroyed                   [Native,BPCallable           ] thunk=0x7FF6B8AB80E0
+        () -> bool
+    IsComponentTickEnabled             [Native,BPCallable           ] thunk=0x7FF6B8A3F1F0
+        () -> bool
+    K2_DestroyComponent                [Native,BPCallable           ] thunk=0x7FF6B8AB8180
+        (Object(Object) Object) -> void
+    OnRep_IsActive                     [Native                      ] thunk=0x7FF6B875D280
+        () -> void
+    ReceiveAsyncPhysicsTick            [BPEvent                     ] thunk=0x7FF6B68354A0
+        (float DeltaSeconds, float SimSeconds) -> void
+    ReceiveBeginPlay                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    ReceiveEndPlay                     [BPEvent                     ] thunk=0x7FF6B68354A0
+        (byte EndPlayReason) -> void
+    ReceiveTick                        [BPEvent                     ] thunk=0x7FF6B68354A0
+        (float DeltaSeconds) -> void
+    RemoveTickPrerequisiteActor        [Native,BPCallable           ] thunk=0x7FF6B8AB8790
+        (Object(Actor) PrerequisiteActor) -> void
+    RemoveTickPrerequisiteComponent    [Native,BPCallable           ] thunk=0x7FF6B8AB8820
+        (Object(ActorComponent) PrerequisiteComponent) -> void
+    SetActive                          [Native,BPCallable           ] thunk=0x7FF6B8AB8900
+        (bool bNewActive, bool bReset) -> void
+    SetAutoActivate                    [Native,BPCallable           ] thunk=0x7FF6B8AB8F70
+        (bool bNewAutoActivate) -> void
+    SetComponentTickEnabled            [Native,BPCallable           ] thunk=0x7FF6B8AB90E0
+        (bool bEnabled) -> void
+    SetComponentTickInterval           [Native,BPCallable           ] thunk=0x7FF6B8AB9170
+        (float TickInterval) -> void
+    SetComponentTickIntervalAndCooldown [Native,BPCallable           ] thunk=0x7FF6B8AB91F0
+        (float TickInterval) -> void
+    SetIsReplicated                    [Native,BPCallable           ] thunk=0x7FF6B8AB9410
+        (bool ShouldReplicate) -> void
+    SetTickableWhenPaused              [Native,BPCallable           ] thunk=0x7FF6B8AB9F50
+        (bool bTickableWhenPaused) -> void
+    SetTickGroup                       [Native,BPCallable           ] thunk=0x7FF6B8AB9ED0
+        (byte NewTickGroup) -> void
+    ToggleActive                       [Native,BPCallable           ] thunk=0x7FF6B861C130
+        () -> void
+
+  === [2] Object  (1 UFunction) ===
+    ExecuteUbergraph                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        (int32 EntryPoint) -> void
+
+########## UClass LokiClientPlayerCheats @0x25A35628300 ##########
+
+  === [0] LokiClientPlayerCheats  (5 UFunction) ===
+    CheatFakeLobbyRewardFlow           [Exec,Native                 ] thunk=0x7FF6BA806250
+        () -> void
+    CheatLobbyAddBadge                 [Exec,Native                 ] thunk=0x7FF6BA806270
+        (FName AssetType, FName AssetId) -> void
+    CheatResetClientProfile            [Exec,Native                 ] thunk=0x7FF6BA806340
+        () -> void
+    TestDeeplink                       [Exec,Native                 ] thunk=0x7FF6BA807CC0
+        (FString DeeplinkPath) -> void
+    TestErrorMessage                   [Exec,Native                 ] thunk=0x7FF6BA807DB0
+        (FString TestMessage) -> void
+
+  === [1] Object  (1 UFunction) ===
+    ExecuteUbergraph                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        (int32 EntryPoint) -> void
+
+########## UClass LokiPlayerCheats @0x25A36119E80 ##########
+
+  === [0] LokiPlayerCheats  (65 UFunction) ===
+    AddLevelingPassive                 [BPCallable,BPEvent          ] thunk=0x7FF6B68354A0
+        (Class(Class) PassiveEffect) -> void
+    AdminOnly                          [Native,BPCallable,HasOutParms] thunk=0x7FF6BA911A70
+        () out[Enum(EAdminOnlyExecPins) OutputExecs] -> void
+    AreHotkeyCheatsEnabled             [Native,BPCallable           ] thunk=0x7FF6BA7ED980
+        () -> bool
+    CheatAddMissionProgress            [Exec,Native,BPCallable      ] thunk=0x7FF6BA911D60
+        (FString MissionID, FString ObjectiveName, float Progress) -> void
+    CheatAutoStrafe                    [Exec,Native,BPCallable      ] thunk=0x7FF6BA911EA0
+        (double Period, double Speed) -> void
+    CheatAutoStrafeToggleDirection     [Exec,Native,BPCallable      ] thunk=0x7FF6BA911F80
+        () -> void
+    CheatChangeHero                    [Exec,Native                 ] thunk=0x7FF6BA83BE80
+        (FString HeroName) -> void
+    CheatGetAllClientActorsByClassName [Exec,Native                 ] thunk=0x7FF6BA911FA0
+        (FString ClassName) -> int32
+    CheatMeasureCursor                 [Exec,Native                 ] thunk=0x7FF6BA912050
+        () -> void
+    CheatMuteAudio                     [Exec,Native                 ] thunk=0x7FF6BA912070
+        (int32 mute) -> void
+    CheatNoCooldowns                   [Exec,Native                 ] thunk=0x7FF6BA912100
+        (double Enabled) -> void
+    CheatSetEmote                      [Exec,Native                 ] thunk=0x7FF6BA912180
+        (byte EmoteIndex, FName EmoteName) -> void
+    CheatSetRankedPoints               [Exec,Native,BPCallable      ] thunk=0x7FF6BA7ED8F0
+        (int32 Amount) -> void
+    CheatSetTeamEliminated             [Native,BPCallable           ] thunk=0x7FF6BA912250
+        (Object(Object) WorldContextObject, int32 TeamIndex, bool bEliminated) -> void
+    CheatSetXP                         [Exec,Native,BPCallable      ] thunk=0x7FF6BA7ED8F0
+        (int32 XPAmount) -> void
+    CheatTeleportCursor                [Native,BPCallable           ] thunk=0x7FF6B811CE30
+        (Object(Actor) ActorToTeleport) -> void
+    CheatTeleportLocation              [Exec,Native,BPCallable      ] thunk=0x7FF6BA912360
+        (double X, double Y, double Z) -> void
+    CheatTravelToMainMenu              [Exec,Native                 ] thunk=0x7FF6BA744180
+        () -> void
+    ClientHypeUpdated                  [Net,NetClient,NetReliable,Native] thunk=0x7FF6BA913220
+        (int32 Hype) -> void
+    EnableForceDisplayCharacterName    [Exec,Native                 ] thunk=0x7FF6BA9145F0
+        (double Enabled) -> void
+    EnableHotkeyCheats                 [Exec,Native                 ] thunk=0x7FF6BA914670
+        (double Enabled) -> void
+    GetAbilitySystemComponent          [Native,BPCallable           ] thunk=0x7FF6BA8F71C0
+        () -> Object(LokiAbilitySystemComponent)
+    GetActorsByName                    [Native,BPCallable           ] thunk=0x7FF6BA914730
+        (FString Name, FString NamePrefix, bool bAllowExtraCharacters) -> Array(<ClassProperty>)
+    GetClientCursorLocation            [Native,BPCallable           ] thunk=0x7FF6BA914970
+        () -> Struct(Vector)
+    GetGameplayEffectsByName           [Native,BPCallable           ] thunk=0x7FF6BA914B40
+        (FString Name, FString NamePrefix, bool bAllowExtraCharacters) -> Array(<ClassProperty>)
+    GetHeroCharacter                   [Native,BPCallable           ] thunk=0x7FF6BA8F71C0
+        () -> Object(LokiHeroCharacter)
+    GetLocalLokiPlayerCheatsBP         [Native,Static,BPCallable    ] thunk=0x7FF6BA914F70
+        (Object(Object) WorldContextObject) -> Object(LokiPlayerCheats)
+    GetObjectsByName                   [Native,BPCallable           ] thunk=0x7FF6BA915030
+        (FString Name, FString NamePrefix, bool bAllowExtraCharacters) -> Array(<ClassProperty>)
+    GetPlayerController                [Native,BPCallable           ] thunk=0x7FF6BA8F71C0
+        () -> Object(LokiPlayerController)
+    GetPlayerState                     [Native,BPCallable           ] thunk=0x7FF6BA8F71C0
+        () -> Object(LokiPlayerState)
+    GetUnusedTeamIndex                 [Native,BPCallable           ] thunk=0x7FF6BA9152D0
+        (Object(Object) WorldContextObject) -> int32
+    HeightMapVisualize                 [Exec,Native                 ] thunk=0x7FF6BA915450
+        (int32 Enabled) -> void
+    HeightMapVisualizeHideAbyss        [Exec,Native                 ] thunk=0x7FF6BA9154E0
+        (int32 Enabled) -> void
+    HeightMapVisualizeRadius           [Exec,Native                 ] thunk=0x7FF6BA915570
+        (double Radius) -> void
+    HotkeyCheatsEnabledOnly            [Native,BPCallable,HasOutParms] thunk=0x7FF6BA911A70
+        () out[Enum(EHotKeyCheatsEnabledOnlyExecPins) OutputExecs] -> void
+    IsForceDisplayCharacterNameEnabled [Native,BPCallable           ] thunk=0x7FF6BA7ED980
+        () -> bool
+    LogActorsAtWorldOrigin             [Exec,Native,BPCallable      ] thunk=0x7FF6BA744180
+        () -> void
+    LogActorsInRadiusNear              [Exec,Native,BPCallable,HasOutParms] thunk=0x7FF6BA915800
+        (double Radius) out[Struct(Vector) position] -> void
+    Note                               [Exec,Native                 ] thunk=0x7FF6BA915B70
+        (FString Comment) -> void
+    ReceiveBoostPlayer                 [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    ReceiveInitializeAfterController   [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    RequestGameplayTag                 [Native,BPCallable,HasOutParms] thunk=0x7FF6BA9161D0
+        (FString TagString) out[Struct(GameplayTag) OutTag] -> bool
+    RequestStatusDump                  [Exec,Native                 ] thunk=0x7FF6BA916340
+        () -> void
+    RequestStatusDumpCursor            [Exec,Native                 ] thunk=0x7FF6BA916360
+        () -> void
+    ServerBoostPlayer                  [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6B8BF2560
+        () -> void
+    ServerChangeHero                   [Net,NetServer,NetReliable,Native] thunk=0x7FF6BA916630
+        (FString HeroName) -> void
+    ServerCheatChangeGliderCosmetic    [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA9166D0
+        (Struct(PrimaryAssetId) CosmeticAsset) -> void
+    ServerCheatChangeHero              [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA916760
+        (Class(Class) HeroClass) -> void
+    ServerCheatChangeHeroCosmetic      [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA916810
+        (Struct(PrimaryAssetId) CosmeticAsset) -> void
+    ServerCheatChangeSpikeVFXCosmetic  [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA9168A0
+        (Struct(PrimaryAssetId) CosmeticAsset) -> void
+    ServerCheatChangeWispCosmetic      [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA916930
+        (Struct(PrimaryAssetId) CosmeticAsset) -> void
+    ServerCheatNoCooldowns             [Net,NetServer,NetReliable,Native] thunk=0x7FF6BA9169C0
+        (bool bEnabled) -> void
+    ServerCheatSpawnActor              [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA916A50
+        (Class(Class) ClassToSpawn, Struct(Vector) Location) -> void
+    ServerCheatSpawnItem               [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA916B40
+        (Class(Class) ClassToSpawn, int32 StarCount, int32 TierNumber, Struct(Vector) Location) -> void
+    ServerNextHero                     [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA9172C0
+        () -> void
+    ServerNote                         [Net,NetServer,NetReliable,Native] thunk=0x7FF6B9B9CCD0
+        (FString Comment) -> void
+    ServerPreviousHero                 [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6B99076D0
+        () -> void
+    ServerRequestStatusDump            [Net,NetServer,NetReliable,Native] thunk=0x7FF6BA917650
+        (Object(LokiCharacter) Character) -> void
+    ServerSpawnAndReplaceItem          [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA917B10
+        (Class(Class) ItemClass, FName SlotName, int32 SlotIndex) -> void
+    ServerTeleportLocation             [Net,NetServer,NetReliable,Native] thunk=0x7FF6BA917D00
+        (Struct(Vector) Location, Object(Actor) ActorToTeleport, Enum(ETeleportClampToGround) TeleportClampToGround) -> void
+    ServerToggleGameplayEffect         [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6BA917EB0
+        (Class(Class) EffectClass) -> void
+    ServerUpdateHype                   [Net,NetServer,NetReliable,Native,BPCallable] thunk=0x7FF6B8D9BD50
+        () -> void
+    SetGamepadAimSettings              [Exec,Native                 ] thunk=0x7FF6BA918180
+        (float Sensitivity, float DeadZone, float InputRange, float ScreenPercent, bool bTwinStick) -> void
+    TestErrorMessage                   [Exec,Native                 ] thunk=0x7FF6BA807DB0
+        (FString TestMessage) -> void
+    TryInitializeAfterController       [Native                      ] thunk=0x7FF6BA744180
+        () -> void
+
+  === [1] Actor  (153 UFunction) ===
+    ActorHasTag                        [Native,BPCallable           ] thunk=0x7FF6B8895AB0
+        (FName Tag) -> bool
+    AddComponent                       [Native,BPCallable,HasOutParms] thunk=0x7FF6B8895B70
+        (FName TemplateName, bool bManualAttachment, Object(Object) ComponentTemplateContext, bool bDeferredFinish) out[Struct(Transform) RelativeTransform] -> Object(ActorComponent)
+    AddComponentByClass                [Native,BPCallable,HasOutParms] thunk=0x7FF6B8895D80
+        (Class(Class) Class, bool bManualAttachment, bool bDeferredFinish) out[Struct(Transform) RelativeTransform] -> Object(ActorComponent)
+    AddForce                           [Native,BPCallable           ] thunk=0x7FF6B8896260
+        (Struct(Vector) Force, Object(Actor) ForceInstigator) -> void
+    AddImpulse                         [Native,BPCallable           ] thunk=0x7FF6B8896350
+        (Struct(Vector) Impulse, bool bIgnoreMass, bool bRequiresGravityOn, bool bXYOverride, bool bZOverride, Object(Actor) ImpulseInstigator, bool bSuppressGlobalGameplayCue) -> void
+    AddTickPrerequisiteActor           [Native,BPCallable           ] thunk=0x7FF6B88965B0
+        (Object(Actor) PrerequisiteActor) -> void
+    AddTickPrerequisiteComponent       [Native,BPCallable           ] thunk=0x7FF6B8896640
+        (Object(ActorComponent) PrerequisiteComponent) -> void
+    BP_LokiBeginPlay                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    BP_LokiEndPlay                     [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    BP_PooledActorTornOff              [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    BP_TornOff                         [Native,BPEvent              ] thunk=0x7FF6B875D280
+        () -> void
+    CanTriggerResimulation             [Native,BPCallable           ] thunk=0x7FF6B88967B0
+        () -> bool
+    CreateInputComponent               [Native,BPCallable           ] thunk=0x7FF6B88967E0
+        (Class(Class) InputComponentToCreate) -> void
+    DetachRootComponentFromParent      [Native,BPCallable           ] thunk=0x7FF6B8896890
+        (bool bMaintainWorldPosition) -> void
+    DisableInput                       [Native,BPCallable           ] thunk=0x7FF6B8896920
+        (Object(PlayerController) PlayerController) -> void
+    EnableInput                        [Native,BPCallable           ] thunk=0x7FF6B88969B0
+        (Object(PlayerController) PlayerController) -> void
+    FindComponentByTag                 [Native,BPCallable           ] thunk=0x7FF6B8896C00
+        (Class(Class) ComponentClass, FName Tag) -> Object(ActorComponent)
+    FinishAddComponent                 [Native,BPCallable,HasOutParms] thunk=0x7FF6B8896CF0
+        (Object(ActorComponent) Component, bool bManualAttachment) out[Struct(Transform) RelativeTransform] -> void
+    FlushNetDormancy                   [Native,BPCallable           ] thunk=0x7FF6B8896F60
+        () -> void
+    FlushNetDormancyOwnerOnly          [Native,BPCallable           ] thunk=0x7FF6B8896F80
+        () -> void
+    ForceNetUpdate                     [Native,BPCallable           ] thunk=0x7FF6B8896FA0
+        () -> void
+    GetActorBounds                     [Native,BPCallable,HasOutParms] thunk=0x7FF6B8896FC0
+        (bool bOnlyCollidingComponents, bool bIncludeFromChildActors) out[Struct(Vector) Origin, Struct(Vector) BoxExtent] -> void
+    GetActorEnableCollision            [Native,BPCallable           ] thunk=0x7FF6B8897160
+        () -> bool
+    GetActorEyesViewPoint              [Native,BPCallable,HasOutParms] thunk=0x7FF6B8897190
+        () out[Struct(Vector) OutLocation, Struct(Rotator) OutRotation] -> void
+    GetActorForwardVector              [Native,BPCallable           ] thunk=0x7FF6B8897280
+        () -> Struct(Vector)
+    GetActorRelativeScale3D            [Native,BPCallable           ] thunk=0x7FF6B88972F0
+        () -> Struct(Vector)
+    GetActorRightVector                [Native,BPCallable           ] thunk=0x7FF6B8897360
+        () -> Struct(Vector)
+    GetActorScale3D                    [Native,BPCallable           ] thunk=0x7FF6B88973D0
+        () -> Struct(Vector)
+    GetActorTickInterval               [Native,BPCallable           ] thunk=0x7FF6B8897440
+        () -> float
+    GetActorTimeDilation               [Native,BPCallable           ] thunk=0x7FF6B8897460
+        () -> float
+    GetActorUpVector                   [Native,BPCallable           ] thunk=0x7FF6B88974D0
+        () -> Struct(Vector)
+    GetAllChildActors                  [Native,BPCallable,HasOutParms] thunk=0x7FF6B8897540
+        (bool bIncludeDescendants) out[Array(<ObjectProperty>) ChildActors] -> void
+    GetAttachedActors                  [Native,BPCallable,HasOutParms] thunk=0x7FF6B88976C0
+        (bool bResetArray, bool bRecursivelyIncludeAttachedActors) out[Array(<ObjectProperty>) OutActors] -> void
+    GetAttachParentActor               [Native,BPCallable           ] thunk=0x7FF6B8897640
+        () -> Object(Actor)
+    GetAttachParentSocketName          [Native,BPCallable           ] thunk=0x7FF6B8897680
+        () -> FName
+    GetComponentByClass                [Native,BPCallable           ] thunk=0x7FF6B8897930
+        (Class(Class) ComponentClass) -> Object(ActorComponent)
+    GetComponentsByInterface           [Native,BPCallable           ] thunk=0x7FF6B8897A00
+        (Class(Class) Interface) -> Array(<ObjectProperty>)
+    GetComponentsByTag                 [Native,BPCallable           ] thunk=0x7FF6B8897E00
+        (Class(Class) ComponentClass, FName Tag) -> Array(<ObjectProperty>)
+    GetDistanceTo                      [Native,BPCallable           ] thunk=0x7FF6B8897F30
+        (Object(Actor) OtherActor) -> float
+    GetDotProductTo                    [Native,BPCallable           ] thunk=0x7FF6B88980B0
+        (Object(Actor) OtherActor) -> float
+    GetGameTimeSinceCreation           [Native,BPCallable           ] thunk=0x7FF6B8898310
+        () -> float
+    GetHorizontalDistanceTo            [Native,BPCallable           ] thunk=0x7FF6B8898380
+        (Object(Actor) OtherActor) -> float
+    GetHorizontalDotProductTo          [Native,BPCallable           ] thunk=0x7FF6B88984E0
+        (Object(Actor) OtherActor) -> float
+    GetInputAxisKeyValue               [Native,BPCallable           ] thunk=0x7FF6B8898730
+        (Struct(Key) InputAxisKey) -> float
+    GetInputAxisValue                  [Native,BPCallable           ] thunk=0x7FF6B8898890
+        (FName InputAxisName) -> float
+    GetInputVectorAxisValue            [Native,BPCallable           ] thunk=0x7FF6B8898940
+        (Struct(Key) InputAxisKey) -> Struct(Vector)
+    GetInstigator                      [Native,BPCallable           ] thunk=0x7FF6B8898AC0
+        () -> Object(Pawn)
+    GetInstigatorController            [Native,BPCallable           ] thunk=0x7FF6B8898AE0
+        () -> Object(Controller)
+    GetLevelTransform                  [Native,BPCallable           ] thunk=0x7FF6B8898B50
+        () -> Struct(Transform)
+    GetLifeSpan                        [Native,BPCallable           ] thunk=0x7FF6B8898BC0
+        () -> float
+    GetLocalRole                       [Native,BPCallable           ] thunk=0x7FF6B8898C00
+        () -> byte
+    GetOverlappingActors               [Native,BPCallable,HasOutParms] thunk=0x7FF6B8898CA0
+        (Class(Class) ClassFilter) out[Array(<ObjectProperty>) OverlappingActors] -> void
+    GetOverlappingComponents           [Native,BPCallable,HasOutParms] thunk=0x7FF6B8898DB0
+        () out[Array(<ObjectProperty>) OverlappingComponents] -> void
+    GetOwner                           [Native,BPCallable           ] thunk=0x7FF6B8898E60
+        () -> Object(Actor)
+    GetParentActor                     [Native,BPCallable           ] thunk=0x7FF6B8898E80
+        () -> Object(Actor)
+    GetParentComponent                 [Native,BPCallable           ] thunk=0x7FF6B8898ED0
+        () -> Object(ChildActorComponent)
+    GetPhysicsReplicationMode          [Native,BPCallable           ] thunk=0x7FF6B8898F10
+        () -> Enum(EPhysicsReplicationMode)
+    GetRayTracingGroupId               [Native,BPCallable           ] thunk=0x7FF6B8898F30
+        () -> int32
+    GetRemoteRole                      [Native,BPCallable           ] thunk=0x7FF6B8898F60
+        () -> byte
+    GetResimulationThreshold           [Native,BPCallable           ] thunk=0x7FF6B8898F80
+        () -> float
+    GetSquaredDistanceTo               [Native,BPCallable           ] thunk=0x7FF6B8898FE0
+        (Object(Actor) OtherActor) -> float
+    GetSquaredHorizontalDistanceTo     [Native,BPCallable           ] thunk=0x7FF6B8899160
+        (Object(Actor) OtherActor) -> float
+    GetTickableWhenPaused              [Native,BPCallable           ] thunk=0x7FF6B88992C0
+        () -> bool
+    GetTransform                       [Native,BPCallable           ] thunk=0x7FF6B88992E0
+        () -> Struct(Transform)
+    GetVelocity                        [Native,BPCallable           ] thunk=0x7FF6B8899350
+        () -> Struct(Vector)
+    GetVerticalDistanceTo              [Native,BPCallable           ] thunk=0x7FF6B88993A0
+        (Object(Actor) OtherActor) -> float
+    HasAuthority                       [Native,BPCallable           ] thunk=0x7FF6B8899500
+        () -> bool
+    IsActorBeingDestroyed              [Native,BPCallable           ] thunk=0x7FF6B8899530
+        () -> bool
+    IsActorTickEnabled                 [Native,BPCallable           ] thunk=0x7FF6B8899560
+        () -> bool
+    IsChildActor                       [Native,BPCallable           ] thunk=0x7FF6B8899580
+        () -> bool
+    IsEditorLockLocation               [Native,BPCallable           ] thunk=0x7FF6B88995C0
+        () -> bool
+    IsOverlappingActor                 [Native,BPCallable           ] thunk=0x7FF6B88995F0
+        (Object(Actor) Other) -> bool
+    K2_AddActorLocalOffset             [Native,BPCallable,HasOutParms] thunk=0x7FF6B8899690
+        (Struct(Vector) DeltaLocation, bool bSweep, bool bTeleport) out[Struct(HitResult) SweepHitResult] -> void
+    K2_AddActorLocalRotation           [Native,BPCallable,HasOutParms] thunk=0x7FF6B8899880
+        (Struct(Rotator) DeltaRotation, bool bSweep, bool bTeleport) out[Struct(HitResult) SweepHitResult] -> void
+    K2_AddActorLocalTransform          [Native,BPCallable,HasOutParms] thunk=0x7FF6B8899A70
+        (bool bSweep, bool bTeleport) out[Struct(Transform) NewTransform, Struct(HitResult) SweepHitResult] -> void
+    K2_AddActorWorldOffset             [Native,BPCallable,HasOutParms] thunk=0x7FF6B8899CD0
+        (Struct(Vector) DeltaLocation, bool bSweep, bool bTeleport) out[Struct(HitResult) SweepHitResult] -> void
+    K2_AddActorWorldRotation           [Native,BPCallable,HasOutParms] thunk=0x7FF6B8899EC0
+        (Struct(Rotator) DeltaRotation, bool bSweep, bool bTeleport) out[Struct(HitResult) SweepHitResult] -> void
+    K2_AddActorWorldTransform          [Native,BPCallable,HasOutParms] thunk=0x7FF6B889A0B0
+        (bool bSweep, bool bTeleport) out[Struct(Transform) DeltaTransform, Struct(HitResult) SweepHitResult] -> void
+    K2_AddActorWorldTransformKeepScale [Native,BPCallable,HasOutParms] thunk=0x7FF6B889A310
+        (bool bSweep, bool bTeleport) out[Struct(Transform) DeltaTransform, Struct(HitResult) SweepHitResult] -> void
+    K2_AttachRootComponentTo           [Native,BPCallable           ] thunk=0x7FF6B889A570
+        (Object(SceneComponent) InParent, FName InSocketName, byte AttachLocationType, bool bWeldSimulatedBodies) -> void
+    K2_AttachRootComponentToActor      [Native,BPCallable           ] thunk=0x7FF6B889A6D0
+        (Object(Actor) InParentActor, FName InSocketName, byte AttachLocationType, bool bWeldSimulatedBodies) -> void
+    K2_AttachToActor                   [Native,BPCallable           ] thunk=0x7FF6B889A850
+        (Object(Actor) ParentActor, FName SocketName, Enum(EAttachmentRule) LocationRule, Enum(EAttachmentRule) RotationRule, Enum(EAttachmentRule) ScaleRule, bool bWeldSimulatedBodies) -> bool
+    K2_AttachToComponent               [Native,BPCallable           ] thunk=0x7FF6B889AA80
+        (Object(SceneComponent) Parent, FName SocketName, Enum(EAttachmentRule) LocationRule, Enum(EAttachmentRule) RotationRule, Enum(EAttachmentRule) ScaleRule, bool bWeldSimulatedBodies) -> bool
+    K2_DestroyActor                    [Native,BPCallable           ] thunk=0x7FF6B889AC90
+        () -> void
+    K2_DetachFromActor                 [Native,BPCallable           ] thunk=0x7FF6B889ACB0
+        (Enum(EDetachmentRule) LocationRule, Enum(EDetachmentRule) RotationRule, Enum(EDetachmentRule) ScaleRule) -> void
+    K2_GetActorLocation                [Native,BPCallable           ] thunk=0x7FF6B889AE10
+        () -> Struct(Vector)
+    K2_GetActorRotation                [Native,BPCallable           ] thunk=0x7FF6B889AE90
+        () -> Struct(Rotator)
+    K2_GetComponentsByClass            [Native,BPCallable           ] thunk=0x7FF6B889AFB0
+        (Class(Class) ComponentClass) -> Array(<ObjectProperty>)
+    K2_GetRootComponent                [Native,BPCallable           ] thunk=0x7FF6B889B0A0
+        () -> Object(SceneComponent)
+    K2_OnBecomeViewTarget              [BPEvent                     ] thunk=0x7FF6B68354A0
+        (Object(PlayerController) PC) -> void
+    K2_OnEndViewTarget                 [BPEvent                     ] thunk=0x7FF6B68354A0
+        (Object(PlayerController) PC) -> void
+    K2_OnReset                         [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    K2_SetActorLocation                [Native,BPCallable,HasOutParms] thunk=0x7FF6B889B0C0
+        (Struct(Vector) NewLocation, bool bSweep, bool bTeleport) out[Struct(HitResult) SweepHitResult] -> bool
+    K2_SetActorLocationAndRotation     [Native,BPCallable,HasOutParms] thunk=0x7FF6B889B2C0
+        (Struct(Vector) NewLocation, Struct(Rotator) NewRotation, bool bSweep, bool bTeleport) out[Struct(HitResult) SweepHitResult] -> bool
+    K2_SetActorRelativeLocation        [Native,BPCallable,HasOutParms] thunk=0x7FF6B889B520
+        (Struct(Vector) NewRelativeLocation, bool bSweep, bool bTeleport) out[Struct(HitResult) SweepHitResult] -> void
+    K2_SetActorRelativeRotation        [Native,BPCallable,HasOutParms] thunk=0x7FF6B889B710
+        (Struct(Rotator) NewRelativeRotation, bool bSweep, bool bTeleport) out[Struct(HitResult) SweepHitResult] -> void
+    K2_SetActorRelativeTransform       [Native,BPCallable,HasOutParms] thunk=0x7FF6B889B900
+        (bool bSweep, bool bTeleport) out[Struct(Transform) NewRelativeTransform, Struct(HitResult) SweepHitResult] -> void
+    K2_SetActorRotation                [Native,BPCallable           ] thunk=0x7FF6B889BB60
+        (Struct(Rotator) NewRotation, bool bTeleportPhysics) -> bool
+    K2_SetActorTransform               [Native,BPCallable,HasOutParms] thunk=0x7FF6B889BC90
+        (bool bSweep, bool bTeleport) out[Struct(Transform) NewTransform, Struct(HitResult) SweepHitResult] -> bool
+    K2_TeleportTo                      [Native,BPCallable           ] thunk=0x7FF6B889BEF0
+        (Struct(Vector) DestLocation, Struct(Rotator) DestRotation) -> bool
+    LogMapCheckError                   [Native,BPCallable           ] thunk=0x7FF6B889C000
+        (FString Message) -> void
+    LogMapCheckWarning                 [Native,BPCallable           ] thunk=0x7FF6B889C000
+        (FString Message) -> void
+    MakeNoise                          [Native,BPCallable           ] thunk=0x7FF6B889C080
+        (float Loudness, Object(Pawn) NoiseInstigator, Struct(Vector) NoiseLocation, float MaxRange, FName Tag) -> void
+    OnMapCheck                         [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    OnRep_AttachmentReplication        [Native                      ] thunk=0x7FF6B889C230
+        () -> void
+    OnRep_Instigator                   [Native                      ] thunk=0x7FF6B889C250
+        () -> void
+    OnRep_Owner                        [Native                      ] thunk=0x7FF6B889C270
+        () -> void
+    OnRep_ReplicatedMovement           [Native                      ] thunk=0x7FF6B889C290
+        () -> void
+    OnRep_ReplicateMovement            [Native                      ] thunk=0x7FF6B875D2A0
+        () -> void
+    OnRep_ServerState                  [Native,HasOutParms          ] thunk=0x7FF6B889C2B0
+        () out[Struct(PoolableActorServerState) LastState] -> void
+    OnSimulatedTearOffComplete         [Native                      ] thunk=0x7FF6B889C3A0
+        () -> void
+    PrestreamTextures                  [Native,BPCallable           ] thunk=0x7FF6B889C450
+        (float Seconds, bool bEnableStreaming, int32 CinematicTextureGroups) -> void
+    ReceiveActorBeginCursorOver        [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    ReceiveActorBeginOverlap           [BPEvent                     ] thunk=0x7FF6B68354A0
+        (Object(Actor) OtherActor) -> void
+    ReceiveActorEndCursorOver          [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    ReceiveActorEndOverlap             [BPEvent                     ] thunk=0x7FF6B68354A0
+        (Object(Actor) OtherActor) -> void
+    ReceiveActorOnClicked              [BPEvent                     ] thunk=0x7FF6B68354A0
+        (Struct(Key) ButtonPressed) -> void
+    ReceiveActorOnInputTouchBegin      [BPEvent                     ] thunk=0x7FF6B68354A0
+        (byte FingerIndex) -> void
+    ReceiveActorOnInputTouchEnd        [BPEvent                     ] thunk=0x7FF6B68354A0
+        (byte FingerIndex) -> void
+    ReceiveActorOnInputTouchEnter      [BPEvent                     ] thunk=0x7FF6B68354A0
+        (byte FingerIndex) -> void
+    ReceiveActorOnInputTouchLeave      [BPEvent                     ] thunk=0x7FF6B68354A0
+        (byte FingerIndex) -> void
+    ReceiveActorOnReleased             [BPEvent                     ] thunk=0x7FF6B68354A0
+        (Struct(Key) ButtonReleased) -> void
+    ReceiveAnyDamage                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        (float Damage, Object(DamageType) DamageType, Object(Controller) InstigatedBy, Object(Actor) DamageCauser) -> void
+    ReceiveAsyncPhysicsTick            [BPEvent                     ] thunk=0x7FF6B68354A0
+        (float DeltaSeconds, float SimSeconds) -> void
+    ReceiveBeginPlay                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    ReceiveDestroyed                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    ReceiveEndPlay                     [BPEvent                     ] thunk=0x7FF6B68354A0
+        (byte EndPlayReason) -> void
+    ReceiveHit                         [BPEvent,HasOutParms         ] thunk=0x7FF6B68354A0
+        (Object(PrimitiveComponent) MyComp, Object(Actor) Other, Object(PrimitiveComponent) OtherComp, bool bSelfMoved, Struct(Vector) HitLocation, Struct(Vector) HitNormal, Struct(Vector) NormalImpulse) out[Struct(HitResult) hit] -> void
+    ReceivePointDamage                 [BPEvent,HasOutParms         ] thunk=0x7FF6B68354A0
+        (float Damage, Object(DamageType) DamageType, Struct(Vector) HitLocation, Struct(Vector) HitNormal, Object(PrimitiveComponent) HitComponent, FName BoneName, Struct(Vector) ShotFromDirection, Object(Controller) InstigatedBy, Object(Actor) DamageCauser) out[Struct(HitResult) HitInfo] -> void
+    ReceiveRadialDamage                [BPEvent,HasOutParms         ] thunk=0x7FF6B68354A0
+        (float DamageReceived, Object(DamageType) DamageType, Struct(Vector) Origin, Object(Controller) InstigatedBy, Object(Actor) DamageCauser) out[Struct(HitResult) HitInfo] -> void
+    ReceiveTick                        [BPEvent                     ] thunk=0x7FF6B68354A0
+        (float DeltaSeconds) -> void
+    RemoveTickPrerequisiteActor        [Native,BPCallable           ] thunk=0x7FF6B889C700
+        (Object(Actor) PrerequisiteActor) -> void
+    RemoveTickPrerequisiteComponent    [Native,BPCallable           ] thunk=0x7FF6B889C790
+        (Object(ActorComponent) PrerequisiteComponent) -> void
+    SetActorEnableCollision            [Native,BPCallable           ] thunk=0x7FF6B889C820
+        (bool bNewActorEnableCollision) -> void
+    SetActorHiddenInGame               [Native,BPCallable           ] thunk=0x7FF6B889C8B0
+        (bool bNewHidden) -> void
+    SetActorRelativeScale3D            [Native,BPCallable           ] thunk=0x7FF6B889C940
+        (Struct(Vector) NewRelativeScale) -> void
+    SetActorScale3D                    [Native,BPCallable           ] thunk=0x7FF6B889C9D0
+        (Struct(Vector) NewScale3D) -> void
+    SetActorTickEnabled                [Native,BPCallable           ] thunk=0x7FF6B889CA70
+        (bool bEnabled) -> void
+    SetActorTickInterval               [Native,BPCallable           ] thunk=0x7FF6B889CB00
+        (float TickInterval) -> void
+    SetAutoDestroyWhenFinished         [Native,BPCallable           ] thunk=0x7FF6B889CB80
+        (bool bVal) -> void
+    SetEditorLockLocation              [Native,BPCallable           ] thunk=0x7FF6B80E0150
+        (bool bInLockLocation) -> void
+    SetLifeSpan                        [Native,BPCallable           ] thunk=0x7FF6B889CC70
+        (float InLifespan) -> void
+    SetNetDormancy                     [Native,BPCallable           ] thunk=0x7FF6B889CD00
+        (byte NewDormancy) -> void
+    SetOwner                           [Native,BPCallable           ] thunk=0x7FF6B889CD80
+        (Object(Actor) NewOwner) -> void
+    SetPhysicsReplicationMode          [Native,BPCallable           ] thunk=0x7FF6B889CE10
+        (Enum(EPhysicsReplicationMode) ReplicationMode) -> void
+    SetRayTracingGroupId               [Native,BPCallable           ] thunk=0x7FF6B889CE90
+        (int32 InRaytracingGroupId) -> void
+    SetReplicateMovement               [Native,BPCallable           ] thunk=0x7FF6B889CF20
+        (bool bInReplicateMovement) -> void
+    SetReplicates                      [Native,BPCallable           ] thunk=0x7FF6B889CFB0
+        (bool bInReplicates) -> void
+    SetTickableWhenPaused              [Native,BPCallable           ] thunk=0x7FF6B889D0C0
+        (bool bTickableWhenPaused) -> void
+    SetTickGroup                       [Native,BPCallable           ] thunk=0x7FF6B889D040
+        (byte NewTickGroup) -> void
+    TearOff                            [Native,BPCallable           ] thunk=0x7FF6B756C030
+        () -> void
+    UserConstructionScript             [BPEvent                     ] thunk=0x7FF6B68354A0
+        () -> void
+    WasRecentlyRendered                [Native,BPCallable           ] thunk=0x7FF6B889D180
+        (float Tolerance) -> bool
+
+  === [2] Object  (1 UFunction) ===
+    ExecuteUbergraph                   [BPEvent                     ] thunk=0x7FF6B68354A0
+        (int32 EntryPoint) -> void
+
+########## LIVE (non-CDO) instances of 'cheat'-named classes — native-call targets ##########
+  obj=0x25BDE007000  Class=Comp_PlayerController_Cheats_C  Name=Comp_PlayerController_Cheats_GEN_VARIABLE
+exit=0
