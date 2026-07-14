@@ -502,7 +502,8 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 		// S74 B2: back to the HYBRID empty address for the force-open route (client builds a valid
 		// CoreGameMatchModel + parks locally in the pre-game lobby; force-open then travels to LVL_Tutorial
 		// with that valid model in place → no revert, gamemode fully inits). Set to "127.0.0.1:7777" for the DS route.
-		"address":      "",
+		// S76: DS route — the client fires a real NetConnection to the stub on 7777 (cheat/deploy experiment).
+		"address":      "127.0.0.1:7777",
 		"ServerID":     "revival-tutorial-ds-0001",
 		"MachineID":    "revival-local",
 		"RegionID":     "na",

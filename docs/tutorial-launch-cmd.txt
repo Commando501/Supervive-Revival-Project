@@ -43,9 +43,13 @@
 # PatchLoginVtables de-overrides it (kOverrideSlots={285}) to bypass the login reject. Full-mode force-open then
 # reaches "PlayerState is null" (the match-setup/session layer — see docs/session-61-tutorial-match-setup.txt).
 # To resume: set the active line to the full tutorial mode below + inject.
-# ---- ACTIVE LINE (S62): FULL tutorial mode — login bypassed via slot-285 de-override; runs the real
-#      BP_LokiGameMode_Tutorial (drop-in/objectives/bots). Reaches the "PlayerState is null" gate, which
-#      the S62 shim work targets (synthesize + assign a PlayerState). ----
+# ---- ACTIVE LINE (S63): FULL tutorial mode. Login bypassed (slot-285 de-override) AND "PlayerState is
+#      null" SOLVED — the shim (FIX_TARGETED_INITPS) de-overrides the Loki PC's InitPlayerState (vtable
+#      slots 260+273) so BP_LokiPlayerController_Dev_C creates its BP_LokiPlayerState locally; login is
+#      APPROVED with the REAL Loki PC. The tutorial then runs + fires "Client is ready to play", then
+#      REVERTS to the lobby ("failed to get ULokiServerPlatformInstance" — the server-side match-
+#      orchestration gate; NOT backend-driven). Next frontier: make it STAY. See
+#      docs/session-63-playerstate-fix.txt + docs/next-session-prompt-s64.md. ----
 open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C
 # safe BasicTraining render (stock stub: loads island, spectator, never crashes):
 # open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_GameMode_BasicTraining.BP_GameMode_BasicTraining_C

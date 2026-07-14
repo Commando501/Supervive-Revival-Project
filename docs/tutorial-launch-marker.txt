@@ -1,7 +1,10 @@
 [0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
 [0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
-[2] worldCtx=0x2DF36E27A20 kslCDO=0x2DF3B63D050 eccThunk=0x7FF6B8E4D790(rva 0x395D790) child=0x2DF7BC99480 offWCO=0x0 offCmd=0x8 offSP=0x18 gameTid=95424 cmd='open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
-[3] hook built; issuing ExecuteConsoleCommand('open LVL_Tutorial') on the game thread...
-[VT] custom-login INSTALL: 5 vtables slot285, stockLogin=0x7FF6B8CD0C50 tramp=0x2DFCBFD2460
-[4] CALLED (called=1 hitsGT=1) — de-override held; sampling tutorial state across travel...
-[LOGIN1] gm=BP_LokiGameMode_Tutorial_C PCClass=BP_LokiPlayerController_Dev_C pc=0x0(?) PSClass=BP_LokiPlayerState_C PS(off=0xFFFFFFFF)=0x0(NULL) err='PlayerState is null'
+[CS] cheat-spawn mode: call the game's own LokiPlayerCheats RPC directly (in-process, local authority)
+[CS] switchPlayingThunk=0x0 finishDropThunk=0x0 pcStateByte@0x160=0
+[CS] cheatCDO=0x1F2127DB460 cls=0x1F217BD9E80 getLocalThunk=0x7FF6BA914F70(WCO@0x0 ret@0x8) schThunk=0x7FF6BA916760(HeroClass@0x0) cchThunk=0x7FF6BA83BE80(HeroName@0x0)
+[CS] heroClass(BP_HERO_Ronin_C)=0x0 worldCtx=0x1F2128E1470 (pc=0x1F2128E1470) authChangeCharThunk=0x0(CharacterClass@0xFFFFFFFF)
+[CS] calling GetLocalLokiPlayerCheatsBP...
+[CS] GetLocal -> cheatObj=0x0 cls=-
+[CS] no cheat object -> abort
+[CS] done cheatObj=0x0 cls=- (called=1 hitsGT=1)
