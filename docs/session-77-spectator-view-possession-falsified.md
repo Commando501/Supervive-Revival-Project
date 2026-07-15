@@ -149,13 +149,22 @@ The crash is a DELIBERATE anti-tamper integrity-check crash, and it is DODGEABLE
   dodges the anti-tamper.** Durable, stable, rotatable spectator view of the live tutorial world = achieved
   cleanly + permanently.
 
-## Phase 2 — movement (next)
-Movement needs CONTINUOUS game-thread exec (poll input + `K2_SetActorLocation`), which the one-shot pattern
-doesn't give. Plan: (a) transient PI hook that installs ONLY while a key is held (brief `.text` patches, like the
-surviving pi8/missions shims) or a data/vtable hook (no `.text`); (b) a clean SINGLE-MOVE test to answer the
-still-open question — does the `K2_SetActorLocation` teleport itself trip a SEPARATE anti-cheat movement/teleport
-validator (every prior move test was confounded by the standing `.text` hook)? Pawn resolution is solved:
-`PC->SpectatorPawn` → a real `SpectatorPawn`; `K2_SetActorLocation` resolves (loc@0x0, tele@0x118).
+## ★ PHASE 2 RESULT — NO separate movement validator. Injected movement is allowed.
+Ran the clean single-move test (ds_hybrid MODE_SPECTATOR_CAM: overlay-hide ~20s → uninstall → confirm stable
+~25s with NO hook → TRANSIENTLY re-arm the hook for exactly ONE `K2_SetActorLocation` teleport of the
+`SpectatorPawn` to (4000,0,1000) → uninstall → observe). RESULT: the teleport executed (`[move] <<< returned`,
+no fault) and the process SURVIVED **2.5+ min after the move, zero crash**. So the `K2_SetActorLocation` move
+does NOT trip a separate anti-cheat teleport/movement validator — the ONLY wall was the standing `.text` hook
+(dodged). Pawn resolution solved: `PC->SpectatorPawn` → a real `SpectatorPawn`; `K2_SetActorLocation` resolves
+(loc@0x0, tele@0x118). Also learned: the overlay-hide is TIMING-sensitive — resolve AFTER the widgets spawn
+(inject at ~up=20s+, not ~10s; a too-early census got only 87 widgets and hid 0/3, so the overlay stayed up and
+the move fired behind it). BOTH walls are now down; a moving spectator is a bounded engineering build.
+
+## Phase 3 — continuous movement (the finish)
+Both walls down ⇒ build a controllable fly-around: reliable overlay-hide (resolve after widgets) + continuous
+movement. Standing `.text` hook is unreliable (variable integrity-check timing, sometimes seconds); the durable
+answer for truly-continuous is a data/vtable hook (per-frame exec via a heap vtable-pointer swap, no `.text`) —
+but a bounded standing-hook window (kEnableTranslation=true, ~30s) delivers a moving-spectator demo + tests it.
 
 ## (superseded) Route A plan — live thread-dispatch diagnostic shim
 The plan below was the pre-dump-analysis intent; the dump analysis above made it moot (no replica to name; the

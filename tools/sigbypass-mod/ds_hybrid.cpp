@@ -349,6 +349,7 @@ static uint32_t PropOffsetOnClass(uintptr_t cls,const char* name){
 static uintptr_t g_spPawn=0, g_spRoot=0;
 static void* g_spSlaFn=0; static uintptr_t g_spSlaThunk=0, g_spSlaChild=0; static uint32_t g_spSlaLoc=0xFFFFFFFF, g_spSlaTele=0xFFFFFFFF;
 static uint32_t g_spRelLocOff=0xFFFFFFFF; static double g_spX=0,g_spY=0,g_spZ=0,g_spYaw2=0; static bool g_spSeeded=false;
+static volatile long g_moveArmed=0, g_moveDone=0;   // S77 phase-2 single-move test
 static bool IsGameFocused(){ HWND fg=GetForegroundWindow(); DWORD pid=0; if(fg) GetWindowThreadProcessId(fg,&pid); return pid==GetCurrentProcessId(); }
 static void ResolveSpectatorCam(){
     static const char* kKeys[]={"Loading","LoadScreen","DropIn","Deploy","MatchLoad","Splash","Intro","Startup","Transition","BlackScreen","Loadout"};
@@ -435,6 +436,22 @@ static void DoSpectatorCam(){
         }
     }
     if(h==1||h%100==0||moved) Markerf("[SPEC] hit %ld: overlay hidden %d/%d; spPawn=0x%llX pos=(%.0f,%.0f,%.0f) yaw=%.0f moved=%d\r\n",h,hidden,g_nLoadW,(unsigned long long)g_spPawn,g_spX,g_spY,g_spZ,g_spYaw2,moved?1:0);
+}
+
+// S77 phase-2 SINGLE-MOVE test: one K2_SetActorLocation teleport of the spectator pawn, fired via a TRANSIENT
+// hook (no standing .text mod). Isolates whether the MOVE ITSELF trips a separate anti-cheat teleport validator
+// (every prior move test was confounded by the standing .text hook, now proven to be the integrity trigger).
+static void DoSingleMove(){
+    g_done=1;   // stop further OnPI work after this single fire
+    if(!IsHeapObj(g_spPawn)||!g_spSlaThunk||g_spSlaLoc==0xFFFFFFFF){ Marker("[move] pawn/K2_SetActorLocation unresolved\r\n"); g_moveDone=1; return; }
+    double nx=g_spX+4000.0, ny=g_spY, nz=g_spZ+1000.0;   // a large, clearly-visible teleport
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    double* L=(double*)(g_pbuf+g_spSlaLoc); L[0]=nx;L[1]=ny;L[2]=nz;
+    if(g_spSlaTele!=0xFFFFFFFF) g_pbuf[g_spSlaTele]=1;
+    Markerf("[move] >>> K2_SetActorLocation(SpectatorPawn 0x%llX, %.0f,%.0f,%.0f)\r\n",(unsigned long long)g_spPawn,nx,ny,nz);
+    bool f=CallGuarded(g_spSlaFn,g_spSlaThunk,g_spSlaChild,(void*)g_spPawn,g_pbuf,g_rbuf);
+    Markerf("[move] <<< returned%s (no immediate crash)\r\n",f?" [FAULTED]":"");
+    g_spX=nx;g_spY=ny;g_spZ=nz; g_moveDone=1;
 }
 
 // ---- Route D (MODE_DEBUGCAM): UE's built-in free-fly debug camera ----
@@ -542,7 +559,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     g_inHook=1;
     memcpy(g_template, frame, sizeof(g_template));   // capture a live FFrame template (primitive prerequisite)
     long h=InterlockedIncrement(&g_hitsGT);
-    if(kMode==MODE_SPECTATOR_CAM){ if(h==1) Marker("[HOOK] fired (spectator-cam) — holding loading overlay hidden ~40s\r\n"); DoSpectatorCam(); g_inHook=0; return; }
+    if(kMode==MODE_SPECTATOR_CAM){ if(g_moveArmed && !g_moveDone){ DoSingleMove(); g_inHook=0; return; } if(h==1) Marker("[HOOK] fired (spectator-cam) — holding loading overlay hidden\r\n"); DoSpectatorCam(); g_inHook=0; return; }
     if(kMode==MODE_DEBUGCAM){ if(h==1) Marker("[HOOK] fired (debug-cam) — hiding overlay + enabling debug camera\r\n"); DoDebugCam(); g_inHook=0; return; }
     if(kMode==MODE_FREECAM){ if(h==1) Marker("[HOOK] fired (free-cam) — spawn camera + retarget view + puppet\r\n"); DoFreeCam(); g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
@@ -576,10 +593,20 @@ static DWORD WINAPI Worker(LPVOID){
     for(int i=0;i<waitIters && !g_done;i++) Sleep(20);
     UninstallHook();
     Markerf("[3] hook UNINSTALLED after ~%ums (hitsGT=%ld) — no persistent .text mod now; observing survival.\r\n",kSpectatorHookMs,(long)g_hitsGT);
-    // Keep the worker thread alive + quiet so we can observe whether the process survives WITHOUT the .text hook
-    // (pure survival test; no further code/.text writes — only heartbeat marker lines).
-    if(kMode==MODE_SPECTATOR_CAM){ DWORD t0=GetTickCount(); while(GetTickCount()-t0 < 600000){ Sleep(5000);
-        Markerf("[survive] +%us since uninstall — process alive (no persistent .text hook)\r\n",(GetTickCount()-t0)/1000); } }
+    // S77 phase-2: the one-shot overlay-hide (dodge) is proven; now test whether a MOVE trips a SEPARATE validator.
+    if(kMode==MODE_SPECTATOR_CAM){
+        // Phase B: re-confirm stable with NO hook for ~25s before the move.
+        for(int i=0;i<5;i++){ Sleep(5000); Markerf("[survive-B] +%ds since uninstall — stable, no hook\r\n",(i+1)*5); }
+        // Phase C: TRANSIENTLY re-arm the hook for exactly ONE K2_SetActorLocation teleport, then uninstall.
+        g_moveDone=0; g_moveArmed=1; g_done=0; g_inHook=0;
+        if(InstallHook()){ Marker("[C] hook re-armed (transient) for ONE move\r\n");
+            DWORD md=GetTickCount()+10000; while(!g_moveDone && GetTickCount()<md) Sleep(20);
+            UninstallHook(); Markerf("[C] single-move hook UNINSTALLED (moveDone=%ld) — no standing hook again\r\n",(long)g_moveDone); }
+        else Marker("[C] re-InstallHook failed\r\n");
+        // Phase D: observe survival AFTER the move. A crash HERE (no standing hook) = a SEPARATE move/teleport validator.
+        DWORD t0=GetTickCount(); while(GetTickCount()-t0 < 600000){ Sleep(5000);
+            Markerf("[survive-D] +%us since single-move — process alive\r\n",(GetTickCount()-t0)/1000); }
+    }
     Markerf("[3b] done (hitsGT=%ld done=%ld).\r\n",(long)g_hitsGT,(long)g_done);
     return 0;
 }
