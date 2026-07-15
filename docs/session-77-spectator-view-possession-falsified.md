@@ -120,6 +120,43 @@ spectator via an injected shim is **capped at ~2 min** by the integrity check. M
 translation, which also needs the shim) requires DEFEATING the code-integrity check — deep, packer-hostile
 (CLAUDE.md: permanent patches get caught; the packer's VEH kills the process). That is the honest ceiling.
 
+## ★★★ ANTI-TAMPER IDENTIFIED + DODGED — durable stable spectator view achieved. ★★★
+The crash is a DELIBERATE anti-tamper integrity-check crash, and it is DODGEABLE with the project's own
+`catalog_store_fix` one-shot pattern. Chain of findings:
+- **No commercial anti-cheat.** Dumped the crash minidump's full module list (scratch `dump_modules.py`): NO
+  EAC/BattlEye/Denuvo. The ONLY anti-tamper module is **`preloader.dll`** (on disk at
+  `…\SUPERVIVE\Loki\Binaries\Win64\preloader.dll`, 26 KB, **UNPACKED** — `.text` entropy 5.46 — statically
+  analyzable) + the packed main exe's protection.
+- **preloader.dll RE** (scratch `analyze_preloader.py`/`disasm_preloader.py`): a signed (DigiCert/Santa Monica =
+  Theorycraft) protection LOADER — imports `ZwCreateThreadEx`, `NtProtectVirtualMemory`, `NtCreateSection`/
+  `NtMapViewOfSection` (maps a payload), `MD5Init` (integrity hashing), `NtTerminateProcess`; USER32
+  `SetWindowLongPtrW`/`CallNextHookEx` (a window/message hook) + `RtlPcToFileHeader` (caller validation). Its
+  own kill is CLEAN (`MessageBoxW`+`NtTerminateProcess`). The crash constants (`R11=0x95654773B3BC`,
+  `Rbp=0x537AC9E1`, CONSTANT across launches/ASLR bases — deterministic anti-tamper) are NOT in preloader.dll ⇒
+  the MESSY poison-jump crash is the PACKED MAIN-EXE protection's code-integrity check.
+- **★ THE TRIGGER: a PERSISTENT `.text` hook.** `ds_hybrid` installed the `ProcessInternal` hook (`base+kPiRva`,
+  5-byte jmp) ONCE and left it installed for ~6 min — a standing `.text` modification the integrity check catches
+  (variable timing = when the periodic scan runs; cheat-like activity can accelerate it). `catalog_store_fix`
+  survives long-term because it leaves NO persistent `.text`/`.rdata` mod: its `jz`-NOP self-restores in ~6 s, its
+  vtable hook unhooks in ~8 s, and its persistent work is PURE HEAP POKES (comment: "no .text patch => no
+  code-integrity crash").
+- **★ THE DODGE (works, live-verified):** ported the one-shot pattern to `ds_hybrid` `MODE_SPECTATOR_CAM`
+  (`kSpectatorHookMs=20000`, `kEnableTranslation=false`): hide the `WBP_UI_MatchTransition` overlay via the PI
+  hook for ~20 s, then **UNINSTALL the hook** and run clean. RESULT: overlay-hide is ONE-SHOT — it STICKS
+  (world stays visible, camera rotatable) with NO re-hiding; and the process SURVIVED **6.6 min past the
+  uninstall (7.6 min total), zero crash, zero dump** — far past the seconds-to-2-min every standing-hook run
+  lasted, and past the ~3–5 min integrity window. **The persistent `.text` hook WAS the trigger; removing it
+  dodges the anti-tamper.** Durable, stable, rotatable spectator view of the live tutorial world = achieved
+  cleanly + permanently.
+
+## Phase 2 — movement (next)
+Movement needs CONTINUOUS game-thread exec (poll input + `K2_SetActorLocation`), which the one-shot pattern
+doesn't give. Plan: (a) transient PI hook that installs ONLY while a key is held (brief `.text` patches, like the
+surviving pi8/missions shims) or a data/vtable hook (no `.text`); (b) a clean SINGLE-MOVE test to answer the
+still-open question — does the `K2_SetActorLocation` teleport itself trip a SEPARATE anti-cheat movement/teleport
+validator (every prior move test was confounded by the standing `.text` hook)? Pawn resolution is solved:
+`PC->SpectatorPawn` → a real `SpectatorPawn`; `K2_SetActorLocation` resolves (loc@0x0, tele@0x118).
+
 ## (superseded) Route A plan — live thread-dispatch diagnostic shim
 The plan below was the pre-dump-analysis intent; the dump analysis above made it moot (no replica to name; the
 crash is anti-tamper). Kept for reference / if the anti-tamper hypothesis is ever revisited.
