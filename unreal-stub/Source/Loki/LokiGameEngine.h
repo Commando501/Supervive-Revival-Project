@@ -34,4 +34,9 @@ public:
 	// UPendingNetGame overload (used during travel) — avoids a -WarningsAsErrors hidden-overload error.
 	using UGameEngine::NetworkRemapPath;
 	virtual bool NetworkRemapPath(UNetConnection* Connection, FString& Str, bool bReading = true) override;
+
+	// Session 76: after each map loads, swap the world's stock AWorldSettings (serialized in the .umap, so
+	// GEngine->WorldSettingsClass can't do it) for the non-push ALokiWorldSettings mirror — so replicating the
+	// un-suppressed WorldSettings to the client doesn't trip the CoreNet.h:331 bIsPushBased assert.
+	virtual bool LoadMap(FWorldContext& WorldContext, FURL URL, class UPendingNetGame* Pending, FString& Error) override;
 };
