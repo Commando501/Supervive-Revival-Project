@@ -43,8 +43,14 @@ static const int kMode = MODE_SPECTATOR_CAM;
 // and let the process run clean. kSpectatorHookMs = how long to hold the hook (overlay-hide) before uninstalling.
 // kEnableTranslation gates the movement block (input-poll + K2_SetActorLocation) OFF for a clean pure-overlay-hide
 // survival test — movement needs continuous game-thread exec (a data/vtable hook, not a .text hook) = phase 2.
+// S77 DEFAULT = the durable stable-view dodge (proven): one-shot overlay-hide ~20s then uninstall (survives
+// long-term). kEnableTranslation=true adds WASD movement DURING the hook window, but that requires holding the
+// .text hook the whole time — and a standing hook is UNRELIABLE (survived 20s overlay-only, but a 30s
+// movement window crashed on the integrity check mid-window). Continuous movement needs a NON-.text continuous
+// mechanism (data/vtable hook, or transient-per-step) — see the doc's phase-3 note. Leave translation OFF for
+// the durable-view default; the pawn+K2_SetActorLocation resolution + DoSpectatorCam movement path are kept.
 static const bool     kEnableTranslation = false;
-static const unsigned kSpectatorHookMs   = 20000;   // hold overlay-hide ~20s, then uninstall (no persistent .text mod)
+static const unsigned kSpectatorHookMs   = 20000;   // ~20s overlay-hide window (proven to survive + stick), then uninstall
 
 static uintptr_t g_modBase=0;
 static volatile PFN_PE g_tramp=nullptr;
@@ -577,6 +583,9 @@ static DWORD WINAPI Worker(LPVOID){
     Markerf("[0] ds_hybrid attached. base=0x%llX mode=%d\r\n",(unsigned long long)g_modBase,kMode);
     g_gameTid=WaitTid(120000); if(!g_gameTid){Marker("[1] FAIL gameTid\r\n");return 2;}
     Markerf("[1] gameTid=%lu\r\n",g_gameTid);
+    // S77: wait for the UMG widgets (incl. the WBP_UI_MatchTransition overlay) to fully spawn before censusing —
+    // a too-early census gets few widgets and misses the overlay (hid 0/3). ~12s covers a cached fast boot.
+    if(kMode==MODE_SPECTATOR_CAM||kMode==MODE_DEBUGCAM||kMode==MODE_FREECAM){ Marker("[1b] waiting 12s for UMG widgets to spawn...\r\n"); Sleep(12000); }
     // Resolve targets OFF the game thread (read-only object walk) so the hook does minimal game-thread work.
     if(kMode==MODE_POSSESS_DP){ if(!ResolvePossessDP()){ Marker("[1] possess resolve failed — aborting\r\n"); return 7; } }
     if(kMode==MODE_SPAWN_HERO){ if(!ResolveSpawnHero()){ Marker("[1] spawn-hero resolve failed — aborting\r\n"); return 8; } }
@@ -593,20 +602,10 @@ static DWORD WINAPI Worker(LPVOID){
     for(int i=0;i<waitIters && !g_done;i++) Sleep(20);
     UninstallHook();
     Markerf("[3] hook UNINSTALLED after ~%ums (hitsGT=%ld) — no persistent .text mod now; observing survival.\r\n",kSpectatorHookMs,(long)g_hitsGT);
-    // S77 phase-2: the one-shot overlay-hide (dodge) is proven; now test whether a MOVE trips a SEPARATE validator.
-    if(kMode==MODE_SPECTATOR_CAM){
-        // Phase B: re-confirm stable with NO hook for ~25s before the move.
-        for(int i=0;i<5;i++){ Sleep(5000); Markerf("[survive-B] +%ds since uninstall — stable, no hook\r\n",(i+1)*5); }
-        // Phase C: TRANSIENTLY re-arm the hook for exactly ONE K2_SetActorLocation teleport, then uninstall.
-        g_moveDone=0; g_moveArmed=1; g_done=0; g_inHook=0;
-        if(InstallHook()){ Marker("[C] hook re-armed (transient) for ONE move\r\n");
-            DWORD md=GetTickCount()+10000; while(!g_moveDone && GetTickCount()<md) Sleep(20);
-            UninstallHook(); Markerf("[C] single-move hook UNINSTALLED (moveDone=%ld) — no standing hook again\r\n",(long)g_moveDone); }
-        else Marker("[C] re-InstallHook failed\r\n");
-        // Phase D: observe survival AFTER the move. A crash HERE (no standing hook) = a SEPARATE move/teleport validator.
-        DWORD t0=GetTickCount(); while(GetTickCount()-t0 < 600000){ Sleep(5000);
-            Markerf("[survive-D] +%us since single-move — process alive\r\n",(GetTickCount()-t0)/1000); }
-    }
+    // S77 phase-3: WASD movement ran per-frame during the hook window (kEnableTranslation). Now the hook is gone;
+    // the revealed world + the pawn's last position stay. Observe survival (the dodge) after the movement window.
+    if(kMode==MODE_SPECTATOR_CAM){ DWORD t0=GetTickCount(); while(GetTickCount()-t0 < 600000){ Sleep(5000);
+        Markerf("[survive] +%us since uninstall — process alive (moved during the window; view stays)\r\n",(GetTickCount()-t0)/1000); } }
     Markerf("[3b] done (hitsGT=%ld done=%ld).\r\n",(long)g_hitsGT,(long)g_done);
     return 0;
 }
