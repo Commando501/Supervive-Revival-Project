@@ -160,11 +160,22 @@ does NOT trip a separate anti-cheat teleport/movement validator — the ONLY wal
 (inject at ~up=20s+, not ~10s; a too-early census got only 87 widgets and hid 0/3, so the overlay stayed up and
 the move fired behind it). BOTH walls are now down; a moving spectator is a bounded engineering build.
 
-## Phase 3 — continuous movement (the finish)
-Both walls down ⇒ build a controllable fly-around: reliable overlay-hide (resolve after widgets) + continuous
-movement. Standing `.text` hook is unreliable (variable integrity-check timing, sometimes seconds); the durable
-answer for truly-continuous is a data/vtable hook (per-frame exec via a heap vtable-pointer swap, no `.text`) —
-but a bounded standing-hook window (kEnableTranslation=true, ~30s) delivers a moving-spectator demo + tests it.
+## Phase 3 — continuous movement: standing-hook window CRASHES; needs a NON-.text mechanism
+Fixed the overlay-hide reliability (12s widget-spawn delay before the census → totalWidgets=3438, overlay hidden
+4/4, world revealed — vs 87 widgets / hid 0/3 when injected too early). Then tried continuous movement via a
+BOUNDED standing-hook window (kEnableTranslation=true, kSpectatorHookMs=30000): the process CRASHED MID-WINDOW on
+the same anti-tamper signature (0x7FF90E000001) BEFORE the uninstall — no `[survive]` markers. ⇒ a standing
+`.text` hook is inherently UNRELIABLE (it survived the 20s overlay-only window in phase 1 but died inside a 30s
+window here — variable integrity-check timing), so continuous movement CANNOT ride a standing hook. Reverted the
+default to kEnableTranslation=false (the durable stable-view dodge).
+**Remaining = the continuous-execution mechanism (bounded build, no new walls):** per-frame game-thread exec
+WITHOUT a standing `.text` patch — either (a) a data/VTABLE hook (swap a per-frame-ticked object's vtable POINTER
+[heap field @+0] to a heap vtable copy whose Tick slot is our stub → continuous exec, pure heap mod; needs the
+per-frame slot index RE'd), or (b) transient-per-step (worker polls input off-thread → per step: transient
+install → one K2_SetActorLocation via OnPI → uninstall; PROVEN to survive at the unit level in phase 2, but the
+SafeWrite thread-suspend per step is hitchy). Both avoid the standing hook that the integrity check catches.
+NET S77: both walls DOWN (anti-tamper dodged + movement not gated); durable stable rotatable spectator view of
+the live tutorial world SHIPPED; continuous controllable movement = one bounded mechanism away.
 
 ## (superseded) Route A plan — live thread-dispatch diagnostic shim
 The plan below was the pre-dump-analysis intent; the dump analysis above made it moot (no replica to name; the
