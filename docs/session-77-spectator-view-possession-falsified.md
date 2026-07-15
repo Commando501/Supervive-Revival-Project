@@ -177,6 +177,20 @@ SafeWrite thread-suspend per step is hitchy). Both avoid the standing hook that 
 NET S77: both walls DOWN (anti-tamper dodged + movement not gated); durable stable rotatable spectator view of
 the live tutorial world SHIPPED; continuous controllable movement = one bounded mechanism away.
 
+## ★ PHASE 3 CONTINUOUS MOVEMENT WORKS (transient-per-step) — but the view follows a SEPARATE camera rig
+Built the transient-per-step movement loop (ds_hybrid worker, after the one-shot overlay-hide): poll WASD
+OFF-THREAD (no focus gate — `IsGameFocused` returns 0 for SUPERVIVE's CEF window, GetAsyncKeyState reads global
+hardware state) → per step: transient InstallHook → OnPI `DoStepMove` does ONE `K2_SetActorLocation` to the
+worker-updated pos → UninstallHook. LIVE RESULT: **it works + dodges the anti-tamper through sustained movement**
+— keysSeen climbed, steps=60, the `SpectatorPawn` TRANSLATED (5600,0,400)→(8400,400,2800) [X,Y,Z all moving], and
+the process SURVIVED with ZERO crash (the .text patch exists only ~µs/step, so the integrity check never sees it).
+★ REMAINING (the only gap): **the CAMERA does not follow the SpectatorPawn** — moving the pawn moves nothing
+on-screen (the native dead-spectator camera follows a SEPARATE rig, which is why it only rotates in place). So the
+finish is: identify the actual view driver (PlayerCameraManager ViewTarget.Target / a drop-select camera rig / the
+PC's real view target) and drive THAT instead of `PC->SpectatorPawn` — same proven transient-per-step move, just
+pointed at the right actor (or override the camera POV location per step). No crash risk; a bounded camera-RE step.
+Reusable: ds_hybrid transient-per-step movement loop (InstallHook→one move→UninstallHook, ~15/sec, survives).
+
 ## (superseded) Route A plan — live thread-dispatch diagnostic shim
 The plan below was the pre-dump-analysis intent; the dump analysis above made it moot (no replica to name; the
 crash is anti-tamper). Kept for reference / if the anti-tamper hypothesis is ever revisited.
