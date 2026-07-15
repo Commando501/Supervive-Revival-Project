@@ -444,20 +444,17 @@ static void DoSpectatorCam(){
     if(h==1||h%100==0||moved) Markerf("[SPEC] hit %ld: overlay hidden %d/%d; spPawn=0x%llX pos=(%.0f,%.0f,%.0f) yaw=%.0f moved=%d\r\n",h,hidden,g_nLoadW,(unsigned long long)g_spPawn,g_spX,g_spY,g_spZ,g_spYaw2,moved?1:0);
 }
 
-// S77 phase-2 SINGLE-MOVE test: one K2_SetActorLocation teleport of the spectator pawn, fired via a TRANSIENT
-// hook (no standing .text mod). Isolates whether the MOVE ITSELF trips a separate anti-cheat teleport validator
-// (every prior move test was confounded by the standing .text hook, now proven to be the integrity trigger).
-static void DoSingleMove(){
-    g_done=1;   // stop further OnPI work after this single fire
-    if(!IsHeapObj(g_spPawn)||!g_spSlaThunk||g_spSlaLoc==0xFFFFFFFF){ Marker("[move] pawn/K2_SetActorLocation unresolved\r\n"); g_moveDone=1; return; }
-    double nx=g_spX+4000.0, ny=g_spY, nz=g_spZ+1000.0;   // a large, clearly-visible teleport
+// S77 phase-3 CONTINUOUS movement: one K2_SetActorLocation step to the worker-updated position (g_spX/Y/Z),
+// fired via a TRANSIENT hook (install -> one fire -> uninstall) so NO standing .text mod ever exists (the dodge).
+// Called ~15x/sec from the worker's off-thread WASD loop; kept minimal (no logging) since it runs hot.
+static void DoStepMove(){
+    g_done=1;   // exactly one fire per transient window
+    if(!IsHeapObj(g_spPawn)||!g_spSlaThunk||g_spSlaLoc==0xFFFFFFFF){ g_moveDone=1; return; }
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
-    double* L=(double*)(g_pbuf+g_spSlaLoc); L[0]=nx;L[1]=ny;L[2]=nz;
+    double* L=(double*)(g_pbuf+g_spSlaLoc); L[0]=g_spX;L[1]=g_spY;L[2]=g_spZ;
     if(g_spSlaTele!=0xFFFFFFFF) g_pbuf[g_spSlaTele]=1;
-    Markerf("[move] >>> K2_SetActorLocation(SpectatorPawn 0x%llX, %.0f,%.0f,%.0f)\r\n",(unsigned long long)g_spPawn,nx,ny,nz);
-    bool f=CallGuarded(g_spSlaFn,g_spSlaThunk,g_spSlaChild,(void*)g_spPawn,g_pbuf,g_rbuf);
-    Markerf("[move] <<< returned%s (no immediate crash)\r\n",f?" [FAULTED]":"");
-    g_spX=nx;g_spY=ny;g_spZ=nz; g_moveDone=1;
+    CallGuarded(g_spSlaFn,g_spSlaThunk,g_spSlaChild,(void*)g_spPawn,g_pbuf,g_rbuf);
+    g_moveDone=1;
 }
 
 // ---- Route D (MODE_DEBUGCAM): UE's built-in free-fly debug camera ----
@@ -565,7 +562,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     g_inHook=1;
     memcpy(g_template, frame, sizeof(g_template));   // capture a live FFrame template (primitive prerequisite)
     long h=InterlockedIncrement(&g_hitsGT);
-    if(kMode==MODE_SPECTATOR_CAM){ if(g_moveArmed && !g_moveDone){ DoSingleMove(); g_inHook=0; return; } if(h==1) Marker("[HOOK] fired (spectator-cam) — holding loading overlay hidden\r\n"); DoSpectatorCam(); g_inHook=0; return; }
+    if(kMode==MODE_SPECTATOR_CAM){ if(g_moveArmed && !g_moveDone){ DoStepMove(); g_inHook=0; return; } if(h==1) Marker("[HOOK] fired (spectator-cam) — holding loading overlay hidden\r\n"); DoSpectatorCam(); g_inHook=0; return; }
     if(kMode==MODE_DEBUGCAM){ if(h==1) Marker("[HOOK] fired (debug-cam) — hiding overlay + enabling debug camera\r\n"); DoDebugCam(); g_inHook=0; return; }
     if(kMode==MODE_FREECAM){ if(h==1) Marker("[HOOK] fired (free-cam) — spawn camera + retarget view + puppet\r\n"); DoFreeCam(); g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
@@ -602,10 +599,35 @@ static DWORD WINAPI Worker(LPVOID){
     for(int i=0;i<waitIters && !g_done;i++) Sleep(20);
     UninstallHook();
     Markerf("[3] hook UNINSTALLED after ~%ums (hitsGT=%ld) — no persistent .text mod now; observing survival.\r\n",kSpectatorHookMs,(long)g_hitsGT);
-    // S77 phase-3: WASD movement ran per-frame during the hook window (kEnableTranslation). Now the hook is gone;
-    // the revealed world + the pawn's last position stay. Observe survival (the dodge) after the movement window.
-    if(kMode==MODE_SPECTATOR_CAM){ DWORD t0=GetTickCount(); while(GetTickCount()-t0 < 600000){ Sleep(5000);
-        Markerf("[survive] +%us since uninstall — process alive (moved during the window; view stays)\r\n",(GetTickCount()-t0)/1000); } }
+    // S77 phase-3: CONTINUOUS movement via TRANSIENT-PER-STEP (no standing .text hook — the proven dodge). Poll
+    // WASD OFF-THREAD; per step, install the hook -> OnPI does ONE K2_SetActorLocation to the updated pos ->
+    // uninstall. The .text patch exists only ~microseconds per step, so the integrity check almost never sees it.
+    if(kMode==MODE_SPECTATOR_CAM){
+        g_hwnd=FindWindowA(nullptr,"SUPERVIVE");
+        Marker("[move] transient-per-step movement loop LIVE (WASD fly; arrows steer; Space/Ctrl up/down)\r\n");
+        DWORD t0=GetTickCount(); DWORD lastHb=0; long steps=0; int anyKey=0;
+        while(GetTickCount()-t0 < 900000){
+            double dx=0,dy=0,dz=0;
+            // No focus gate: GetAsyncKeyState reads global hardware key state (works regardless of foreground).
+            if(GetAsyncKeyState(VK_LEFT)&0x8000)  g_spYaw2-=3.0;
+            if(GetAsyncKeyState(VK_RIGHT)&0x8000) g_spYaw2+=3.0;
+            double yr=g_spYaw2*3.14159265358979/180.0, c=cos(yr), s=sin(yr);
+            if(GetAsyncKeyState('W')&0x8000){ dx+=c; dy+=s; }
+            if(GetAsyncKeyState('S')&0x8000){ dx-=c; dy-=s; }
+            if(GetAsyncKeyState('D')&0x8000){ dx-=s; dy+=c; }
+            if(GetAsyncKeyState('A')&0x8000){ dx+=s; dy-=c; }
+            if(GetAsyncKeyState(VK_SPACE)&0x8000)   dz+=1;
+            if(GetAsyncKeyState(VK_CONTROL)&0x8000) dz-=1;
+            if(dx||dy||dz){
+                anyKey++;
+                const double sp=400.0; g_spX+=dx*sp; g_spY+=dy*sp; g_spZ+=dz*sp;
+                g_moveDone=0; g_moveArmed=1; g_done=0; g_inHook=0;
+                if(InstallHook()){ DWORD md=GetTickCount()+400; while(!g_moveDone && GetTickCount()<md) Sleep(1); UninstallHook(); steps++; }
+                Sleep(12);
+            } else Sleep(20);
+            if(GetTickCount()-lastHb>=5000){ Markerf("[move] alive steps=%ld keysSeen=%d pos=(%.0f,%.0f,%.0f) yaw=%.0f foc=%d\r\n",steps,anyKey,g_spX,g_spY,g_spZ,g_spYaw2,IsGameFocused()?1:0); anyKey=0; lastHb=GetTickCount(); }
+        }
+    }
     Markerf("[3b] done (hitsGT=%ld done=%ld).\r\n",(long)g_hitsGT,(long)g_done);
     return 0;
 }
