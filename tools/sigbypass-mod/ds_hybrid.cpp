@@ -186,6 +186,23 @@ static bool SafeWrite(uint8_t* dst,const uint8_t* src,size_t len){
 }
 static bool InstallHook(){ if(!g_pi||!g_stub)return false; int32_t rel=(int32_t)((intptr_t)g_stub-((intptr_t)g_pi+5)); uint8_t p[5]={0xE9,(uint8_t)rel,(uint8_t)(rel>>8),(uint8_t)(rel>>16),(uint8_t)(rel>>24)}; return SafeWrite(g_pi,p,5); }
 static void UninstallHook(){ if(g_pi)SafeWrite(g_pi,g_stolen,5); }
+// S77 phase-3 smoothness: FAST hook toggle — only suspend/check the GAME THREAD (ProcessInternal is
+// game-thread-dominant), not all ~135 threads. The all-threads SafeWrite took ~seconds/call (400 retries x
+// suspend-all), making the per-step transient movement jump every 3-5s. This makes install/uninstall ~us so
+// movement is smooth. Small residual risk: an off-thread ProcessInternal in the 5-byte prologue during the write
+// (rare) — acceptable for a spectator fly-cam. Used only by the movement loop, not the one-shot overlay-hide.
+static HANDLE g_gtHandle=0;
+static bool SafeWriteFast(uint8_t* dst,const uint8_t* src,size_t len){
+    if(!g_gtHandle) g_gtHandle=OpenThread(THREAD_SUSPEND_RESUME|THREAD_GET_CONTEXT,FALSE,g_gameTid);
+    HANDLE gt=g_gtHandle; uintptr_t lo=(uintptr_t)dst,hi=(uintptr_t)dst+len;
+    for(int a=0;a<200;a++){ if(gt)SuspendThread(gt); bool unsafe=false; CONTEXT c; c.ContextFlags=CONTEXT_CONTROL;
+        if(gt&&GetThreadContext(gt,&c)&&c.Rip>=lo&&c.Rip<hi) unsafe=true;
+        if(!unsafe){ DWORD op=0; if(VirtualProtect(dst,len,PAGE_EXECUTE_READWRITE,&op)){ memcpy(dst,src,len); DWORD d=0; VirtualProtect(dst,len,op,&d); FlushInstructionCache(GetCurrentProcess(),dst,len); if(gt)ResumeThread(gt); return true; } }
+        if(gt)ResumeThread(gt); Sleep(0); }
+    return false;
+}
+static bool InstallHookFast(){ if(!g_pi||!g_stub)return false; int32_t rel=(int32_t)((intptr_t)g_stub-((intptr_t)g_pi+5)); uint8_t p[5]={0xE9,(uint8_t)rel,(uint8_t)(rel>>8),(uint8_t)(rel>>16),(uint8_t)(rel>>24)}; return SafeWriteFast(g_pi,p,5); }
+static void UninstallHookFast(){ if(g_pi)SafeWriteFast(g_pi,g_stolen,5); }
 static DWORD WaitTid(DWORD to){uint32_t*s=(uint32_t*)(g_modBase+kGGameTidRva);DWORD dl=GetTickCount()+to;while(GetTickCount()<dl){if(SafeReadable(s,4)){uint32_t v=0;memcpy(&v,s,4);if(v)return v;}Sleep(20);}return 0;}
 
 // ---- PHASE 1: census ----
@@ -652,10 +669,10 @@ static DWORD WINAPI Worker(LPVOID){
             if(GetAsyncKeyState(VK_CONTROL)&0x8000) dz-=1;
             if(dx||dy||dz){
                 anyKey++;
-                const double sp=400.0; g_spX+=dx*sp; g_spY+=dy*sp; g_spZ+=dz*sp;
+                const double sp=90.0, spV=55.0; g_spX+=dx*sp; g_spY+=dy*sp; g_spZ+=dz*spV;   // slower + gentler vertical
                 g_moveDone=0; g_moveArmed=1; g_done=0; g_inHook=0;
-                if(InstallHook()){ DWORD md=GetTickCount()+400; while(!g_moveDone && GetTickCount()<md) Sleep(1); UninstallHook(); steps++; }
-                Sleep(12);
+                if(InstallHookFast()){ DWORD md=GetTickCount()+50; while(!g_moveDone && GetTickCount()<md) Sleep(0); UninstallHookFast(); steps++; }
+                Sleep(8);
             } else Sleep(20);
             if(GetTickCount()-lastHb>=5000){ Markerf("[move] alive steps=%ld keysSeen=%d pos=(%.0f,%.0f,%.0f) yaw=%.0f foc=%d\r\n",steps,anyKey,g_spX,g_spY,g_spZ,g_spYaw2,IsGameFocused()?1:0); anyKey=0; lastHb=GetTickCount(); }
         }
