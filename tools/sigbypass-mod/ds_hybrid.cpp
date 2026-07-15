@@ -394,6 +394,16 @@ static void ResolveSpectatorCam(){
     }
     char g_spCn[96]="?"; if(IsHeapObj(g_spPawn)) ClassName(g_spPawn,g_spCn,sizeof(g_spCn));
     Markerf("[SPEC] spPawn resolve: pc=0x%llX spPawn=0x%llX class=%s\r\n",(unsigned long long)pc,(unsigned long long)g_spPawn,g_spCn);
+    // S77 phase-3 finish: the CAMERA's view target is the DefaultPawn (probe: PlayerCameraManager+0x420), NOT the
+    // SpectatorPawn — so moving the SpectatorPawn didn't move the view. RETARGET the move to the view-target pawn.
+    { uintptr_t vt=0;
+      if(IsHeapObj(cam)&&SafeReadable((void*)(cam+0x420),8)){ uintptr_t t=*(uintptr_t*)(cam+0x420); if(IsHeapObj(t)&&LooksLikePtr(ClassOf(t))&&SuperChainHas(ClassOf(t),"Pawn")) vt=t; }
+      if(!IsHeapObj(vt)) vt=FindInstClassSub("DefaultPawn");
+      if(IsHeapObj(vt)){ g_spPawn=vt; char vn[96]="?"; ClassName(vt,vn,sizeof(vn));
+        // re-seed pos from the new pawn's root RelativeLocation
+        uintptr_t rc=0; uint32_t rcOff=PropOffsetOnClass(ClassOf(vt),"RootComponent"); if(rcOff!=0xFFFFFFFF&&SafeReadable((void*)(vt+rcOff),8)) rc=*(uintptr_t*)(vt+rcOff);
+        if(IsHeapObj(rc)){ uint32_t ro=PropOffsetOnClass(ClassOf(rc),"RelativeLocation"); if(ro!=0xFFFFFFFF&&SafeReadable((void*)(rc+ro),24)){ double* P=(double*)(rc+ro); g_spX=P[0];g_spY=P[1];g_spZ=P[2]; } }
+        Markerf("[SPEC] RETARGET move -> camera view-target 0x%llX (%s) seed=(%.0f,%.0f,%.0f)\r\n",(unsigned long long)vt,vn,g_spX,g_spY,g_spZ); } }
     if(IsHeapObj(g_spPawn)){ ResolveFunc(ClassOf(g_spPawn),"K2_SetActorLocation",&g_spSlaFn,&g_spSlaThunk,&g_spSlaChild);
         if(g_spSlaChild){ g_spSlaLoc=ParamOffset(g_spSlaChild,"NewLocation"); g_spSlaTele=ParamOffset(g_spSlaChild,"bTeleport"); } }
     if(IsHeapObj(g_spRoot)){ g_spRelLocOff=PropOffsetOnClass(ClassOf(g_spRoot),"RelativeLocation");
@@ -455,6 +465,28 @@ static void DoStepMove(){
     if(g_spSlaTele!=0xFFFFFFFF) g_pbuf[g_spSlaTele]=1;
     CallGuarded(g_spSlaFn,g_spSlaThunk,g_spSlaChild,(void*)g_spPawn,g_pbuf,g_rbuf);
     g_moveDone=1;
+}
+
+// S77 phase-3 finish: probe what DRIVES THE VIEW (the camera does NOT follow PC->SpectatorPawn). Logs PC
+// pawn-related props + every actor pointer inside the PlayerCameraManager (ViewTarget.Target etc.) with the 3
+// doubles after each (candidate POV Location if it's the view-target slot). Pure off-thread reads. From the dump
+// we pick the actor to move (or the cam POV-location offset to override) instead of the SpectatorPawn.
+static bool IsUObj(uintptr_t v){ if(!IsHeapObj(v)||!SafeReadable((void*)v,8))return false; uintptr_t vt=*(uintptr_t*)v; return vt>=g_modBase && vt<g_modBase+0xC000000; }
+static void ProbeCamera(){
+    uintptr_t cam=FindInstClassSub("CameraManager"); uintptr_t pc=FindInstClassSub("LokiPlayerController");
+    char scn[96]="?"; if(IsHeapObj(g_spPawn)) ClassName(g_spPawn,scn,sizeof(scn));
+    Markerf("[probe] cam=0x%llX pc=0x%llX spPawn=0x%llX(%s)\r\n",(unsigned long long)cam,(unsigned long long)pc,(unsigned long long)g_spPawn,scn);
+    if(IsHeapObj(pc)){ uintptr_t pcCls=ClassOf(pc);
+        const char* props[]={"Pawn","AcknowledgedPawn","SpectatorPawn","PlayerCameraManager"};
+        for(int i=0;i<4;i++){ uint32_t o=PropOffsetOnClass(pcCls,props[i]); if(o==0xFFFFFFFF||!SafeReadable((void*)(pc+o),8))continue;
+            uintptr_t v=*(uintptr_t*)(pc+o); char cn[96]="?"; if(IsUObj(v))ClassName(v,cn,sizeof(cn));
+            Markerf("[probe] PC->%s @0x%X = 0x%llX (%s)\r\n",props[i],o,(unsigned long long)v,cn); } }
+    if(IsHeapObj(cam)){ char ccn[96]="?"; ClassName(cam,ccn,sizeof(ccn)); Markerf("[probe] cameraMgr class=%s\r\n",ccn);
+        for(uint32_t off=0x28; off<0x800; off+=8){ if(!SafeReadable((void*)(cam+off),8))continue; uintptr_t v=*(uintptr_t*)(cam+off);
+            if(!IsUObj(v))continue; uintptr_t c=ClassOf(v); if(!SuperChainHas(c,"Actor"))continue;
+            char cn[96]="?"; ClassName(v,cn,sizeof(cn)); char on[96]="?"; ObjName(v,on,sizeof(on));
+            double d0=0,d1=0,d2=0; if(SafeReadable((void*)(cam+off+8),24)){ d0=*(double*)(cam+off+8);d1=*(double*)(cam+off+16);d2=*(double*)(cam+off+24); }
+            Markerf("[probe] cam+0x%X -> actor 0x%llX %s (%s) next3d=(%.0f,%.0f,%.0f)\r\n",off,(unsigned long long)v,on,cn,d0,d1,d2); } }
 }
 
 // ---- Route D (MODE_DEBUGCAM): UE's built-in free-fly debug camera ----
@@ -586,7 +618,7 @@ static DWORD WINAPI Worker(LPVOID){
     // Resolve targets OFF the game thread (read-only object walk) so the hook does minimal game-thread work.
     if(kMode==MODE_POSSESS_DP){ if(!ResolvePossessDP()){ Marker("[1] possess resolve failed — aborting\r\n"); return 7; } }
     if(kMode==MODE_SPAWN_HERO){ if(!ResolveSpawnHero()){ Marker("[1] spawn-hero resolve failed — aborting\r\n"); return 8; } }
-    if(kMode==MODE_SPECTATOR_CAM){ ResolveSpectatorCam(); }
+    if(kMode==MODE_SPECTATOR_CAM){ ResolveSpectatorCam(); ProbeCamera(); }
     if(kMode==MODE_DEBUGCAM){ ResolveSpectatorCam(); ResolveDebugCam(); }   // spectator resolve populates the overlay-hide widgets
     if(kMode==MODE_FREECAM){ ResolveFreeCam(); }
     g_pi=(uint8_t*)(g_modBase+kPiRva);
