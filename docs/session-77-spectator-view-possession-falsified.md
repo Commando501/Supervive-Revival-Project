@@ -191,6 +191,57 @@ PC's real view target) and drive THAT instead of `PC->SpectatorPawn` — same pr
 pointed at the right actor (or override the camera POV location per step). No crash risk; a bounded camera-RE step.
 Reusable: ds_hybrid transient-per-step movement loop (InstallHook→one move→UninstallHook, ~15/sec, survives).
 
+## ★★★ THE MOVING SPECTATOR CAMERA — ACHIEVED. The S77 goal is met. ★★★
+- **View driver found:** the camera follows the **DefaultPawn** (the stub's server-possessed pawn), NOT
+  `PC->SpectatorPawn`. Found via `ProbeCamera` (logs the `PlayerCameraManager`'s view-target actor pointers;
+  DefaultPawn @ `cam+0x420`; the PC is at cam+0x150/0x390). Retargeted the transient-per-step move to the
+  DefaultPawn + re-seed from its RootComponent RelativeLocation → **the VIEW FLIES**: live-verified translating
+  over the live tutorial world (Z 500→7600, X/Y across the map), ZERO crash (anti-tamper dodged throughout).
+- **Smoothness:** the all-threads `SafeWrite` (suspend ~135 threads × up to 400 retries) took ~seconds/call, so
+  movement jumped every 3-5s. `SafeWriteFast`/`InstallHookFast`/`UninstallHookFast` suspend + check ONLY the game
+  thread (ProcessInternal is game-thread-dominant) → ~10x smoother (fluid ~30 steps/sec), still survives.
+  Speed tuned down (sp=90 horiz, 55 vert) for control.
+- **The DS route now delivers a controllable moving spectator camera over the live SUPERVIVE tutorial world.**
+
+## Refinements remaining (all polish — NO new walls; next-session TODO)
+1. **Mouse-relative steering (biggest UX gap).** Movement is world-axis, steered by the ARROW keys (they rotate
+   `g_spYaw2`), NOT the mouse view. Fix: read the camera/PC view YAW (a native FRotator — `AController::ControlRotation`
+   or the `PlayerCameraManager` POV.Rotation; both native, not UPROPERTYs → RE the offset, e.g. via a ProbeCamera
+   pass that logs candidate FRotators that change as the user rotates) and set `g_spYaw2 = viewYaw` each step.
+2. **Jaggedness when far from the map.** `SafeWriteFast` degrades far/high (whole map visible → ProcessInternal
+   hotter → the game-thread "unsafe" check hits more, toggle slows). Durable fix = a DATA/VTABLE hook (swap a
+   per-frame-ticked object's vtable POINTER@+0 to a heap vtable copy whose Tick slot is our stub → continuous
+   per-frame exec, NO .text, NO thread-suspend). Needs the per-frame vtable slot index RE'd. This also removes the
+   transient-per-step entirely (smoother + faster).
+3. **Start height / speed feel.** Camera sits above the DefaultPawn (elevated drop-select start); tune the seed /
+   speed / add a soft Z clamp so the user doesn't rocket into the skybox (which triggers refinement #2).
+4. **Overlay-hide robustness / inject timing.** Resolve needs widgets spawned (12s delay + inject at up≥35s); a
+   too-early inject gets 0-87 widgets and hides 0/N. Consider polling the widget count instead of a fixed delay.
+5. **Optional:** re-point the move to whatever gives a nicer view (SpectatorPawn vs DefaultPawn vs override the
+   camera POV Location directly each step); investigate whether the DefaultPawn move ever gets replication-corrected
+   over long sessions (so far it sticks — the static server pawn doesn't re-replicate its position).
+
+## Reusable assets (all work)
+- Anti-tamper RE: `tools/re/dump_modules.py` (find AC modules in a dump), `analyze_preloader.py` +
+  `disasm_preloader.py` (RE preloader.dll), `dump_threads.py` (all-threads crash walker).
+- ds_hybrid: the one-shot overlay-hide dodge (`kSpectatorHookMs`+uninstall), transient-per-step movement +
+  `SafeWriteFast` (game-thread-only toggle), `ProbeCamera` (find the camera view-target), the 12s widget delay.
+- `parse_minidump.py` (0x8+unmapped-execute crash triage; RSP print-bug fixed).
+
+## Full recipe to reproduce the moving spectator (elevated PS, Steam up)
+1. ags `interactive.go` `ConnectionDetails.address="127.0.0.1:7777"`, `forceTutorialMatch=true` (already on disk).
+2. Build stub (kill UnrealEditor-Cmd first): `Build.bat LokiEditor Win64 Development -Project=…\Loki.uproject`;
+   start: `UnrealEditor-Cmd.exe …\Loki.uproject /Engine/Maps/Entry?listen -game -server -Port=7777 -nullrhi
+   -NoSplash -Unattended -abslog=<log>` → wait "listening on port 7777" + "swapped WorldSettings → ALokiWorldSettings".
+3. Client: `configs\launch-redirect.ps1 -NoHook` (returns early via Steam relaunch; find live pid via Get-Process).
+4. Wait until the live client is up ≥35s (widgets+camera spawned), then inject the DEFAULT ds_hybrid.dll:
+   `tools\inject\inject.exe mmap <pid> tools\sigbypass-mod\ds_hybrid.dll`. (If Defender blocks inject.exe: add a
+   folder exclusion for tools\inject\ + rebuild `go build -o inject.exe .`.)
+5. Shim self-waits 12s for widgets → reveals world (overlay-hide one-shot) → after ~20s uninstalls the hook →
+   transient-per-step movement loop LIVE. Focus the game, WASD to fly (arrows steer, Space/Ctrl up/down).
+   ds_hybrid.cpp `kMode=MODE_SPECTATOR_CAM`, `kEnableTranslation=false` (the per-tick standing-hook movement stays
+   OFF; the worker transient-per-step loop is the mover).
+
 ## (superseded) Route A plan — live thread-dispatch diagnostic shim
 The plan below was the pre-dump-analysis intent; the dump analysis above made it moot (no replica to name; the
 crash is anti-tamper). Kept for reference / if the anti-tamper hypothesis is ever revisited.
