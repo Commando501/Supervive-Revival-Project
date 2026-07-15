@@ -62,8 +62,10 @@ if 4 in streams:  # ModuleListStream
         # CONTEXT_AMD64: Rsp @ +0x98, Rip @ +0xF8
         rsp = struct.unpack_from('<Q', d, ctx_rva + 0x98)[0]
         rip = struct.unpack_from('<Q', d, ctx_rva + 0xF8)[0]
-        print("\nfaulting thread: RIP=0x%X RSP=0x%X" % (rip, rip and rip or 0))
-        print("  RIP=0x%X RSP=0x%X" % (rip, rsp))
+        print("\nfaulting thread: RIP=0x%X RSP=0x%X" % (rip, rsp))
+        # NB: RIP may be a poisoned/unmapped addr while RSP is a VALID stack (S77: anti-tamper
+        # deliberate-crash jumps to a poisoned addr but leaves a real stack). For the CALL CHAIN
+        # across ALL threads (the faulting frame is often wiped), use tools/re/dump_threads.py.
         # locate stack memory: try ThreadList (3), MemoryList (5), Memory64List (9)
         stackbytes = stackbase = None
         # --- ThreadList type 3: MINIDUMP_THREAD is 48 bytes; Stack.StartOfMemoryRange@+16, Stack.Memory(loc)@+24
