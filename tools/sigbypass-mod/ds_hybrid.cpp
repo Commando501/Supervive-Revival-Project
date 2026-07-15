@@ -37,6 +37,14 @@ typedef void (*PFN_THUNK)(void* Context, void* Frame, void* Result);
 // hardcoded transform) + possess with the stock PC — does a hero even INITIALIZE + become controllable in the DS session?
 enum Mode { MODE_CENSUS=0, MODE_POSSESS_DP=1, MODE_SPAWN_HERO=2, MODE_SPECTATOR_CAM=3, MODE_DEBUGCAM=4, MODE_FREECAM=5 };
 static const int kMode = MODE_SPECTATOR_CAM;
+// S77 anti-tamper DODGE test (catalog_store_fix pattern): the permanent ProcessInternal .text hook is what the
+// code-integrity check catches. catalog_store_fix survives long-term because it leaves NO persistent .text mod
+// (self-restores in ~6s + heap pokes only). PORT: run the overlay-hide for a SHORT window then UNINSTALL the hook
+// and let the process run clean. kSpectatorHookMs = how long to hold the hook (overlay-hide) before uninstalling.
+// kEnableTranslation gates the movement block (input-poll + K2_SetActorLocation) OFF for a clean pure-overlay-hide
+// survival test — movement needs continuous game-thread exec (a data/vtable hook, not a .text hook) = phase 2.
+static const bool     kEnableTranslation = false;
+static const unsigned kSpectatorHookMs   = 20000;   // hold overlay-hide ~20s, then uninstall (no persistent .text mod)
 
 static uintptr_t g_modBase=0;
 static volatile PFN_PE g_tramp=nullptr;
@@ -333,6 +341,15 @@ static uint32_t PropOffsetOnClass(uintptr_t cls,const char* name){
     }
     return 0xFFFFFFFF;
 }
+// S77 translation: move the SPECTATOR PAWN itself via K2_SetActorLocation (engine setter -> propagates the
+// transform; the native dead-spectator camera targets the pawn, so moving the pawn moves the view). The S77
+// velocity puppet went inert (the un-deployed SpectatorPawnMovement integrator doesn't tick), so drive position
+// directly. Seed the tracked position from the pawn root's RelativeLocation (reading is fine; only WRITING a raw
+// RelativeLocation wouldn't propagate).
+static uintptr_t g_spPawn=0, g_spRoot=0;
+static void* g_spSlaFn=0; static uintptr_t g_spSlaThunk=0, g_spSlaChild=0; static uint32_t g_spSlaLoc=0xFFFFFFFF, g_spSlaTele=0xFFFFFFFF;
+static uint32_t g_spRelLocOff=0xFFFFFFFF; static double g_spX=0,g_spY=0,g_spZ=0,g_spYaw2=0; static bool g_spSeeded=false;
+static bool IsGameFocused(){ HWND fg=GetForegroundWindow(); DWORD pid=0; if(fg) GetWindowThreadProcessId(fg,&pid); return pid==GetCurrentProcessId(); }
 static void ResolveSpectatorCam(){
     static const char* kKeys[]={"Loading","LoadScreen","DropIn","Deploy","MatchLoad","Splash","Intro","Startup","Transition","BlackScreen","Loadout"};
     uintptr_t widgetCls=0; int total=0;
@@ -356,6 +373,26 @@ static void ResolveSpectatorCam(){
     if(IsHeapObj(mc)){ ClassName(mc,mcn,sizeof(mcn)); g_velOff=PropOffsetOnClass(ClassOf(mc),"Velocity"); }
     uintptr_t updComp=0; uint32_t ucOff=(IsHeapObj(mc))?PropOffsetOnClass(ClassOf(mc),"UpdatedComponent"):0xFFFFFFFF;
     if(ucOff!=0xFFFFFFFF && IsHeapObj(mc) && SafeReadable((void*)(mc+ucOff),8)) updComp=*(uintptr_t*)(mc+ucOff);
+    // S77 translation: resolve the spectator pawn actor + K2_SetActorLocation on it, seed pos from the root's RelativeLocation.
+    // Find the spectator pawn ACTOR (its class name is NOT "Spectator" — only the SpectatorPawnMovement component
+    // is). Primary: PC->SpectatorPawn. Fallback: the actor whose RootComponent == the movement comp's
+    // UpdatedComponent (g_spRoot).
+    g_spPawn=0; g_spRoot=updComp;
+    if(IsHeapObj(pc)){ uint32_t spOff=PropOffsetOnClass(ClassOf(pc),"SpectatorPawn");
+        if(spOff!=0xFFFFFFFF && SafeReadable((void*)(pc+spOff),8)){ uintptr_t sp=*(uintptr_t*)(pc+spOff); if(IsHeapObj(sp)) g_spPawn=sp; } }
+    if(!IsHeapObj(g_spPawn) && IsHeapObj(g_spRoot)){
+        ForEachObject([&](uintptr_t o)->bool{ uintptr_t c=ClassOf(o); if(!LooksLikePtr(c)||!SuperChainHas(c,"Pawn"))return false;
+            uint32_t rcOff=PropOffsetOnClass(c,"RootComponent"); if(rcOff==0xFFFFFFFF)return false;
+            if(SafeReadable((void*)(o+rcOff),8) && *(uintptr_t*)(o+rcOff)==(uintptr_t)g_spRoot){ g_spPawn=o; return true; } return false; });
+    }
+    char g_spCn[96]="?"; if(IsHeapObj(g_spPawn)) ClassName(g_spPawn,g_spCn,sizeof(g_spCn));
+    Markerf("[SPEC] spPawn resolve: pc=0x%llX spPawn=0x%llX class=%s\r\n",(unsigned long long)pc,(unsigned long long)g_spPawn,g_spCn);
+    if(IsHeapObj(g_spPawn)){ ResolveFunc(ClassOf(g_spPawn),"K2_SetActorLocation",&g_spSlaFn,&g_spSlaThunk,&g_spSlaChild);
+        if(g_spSlaChild){ g_spSlaLoc=ParamOffset(g_spSlaChild,"NewLocation"); g_spSlaTele=ParamOffset(g_spSlaChild,"bTeleport"); } }
+    if(IsHeapObj(g_spRoot)){ g_spRelLocOff=PropOffsetOnClass(ClassOf(g_spRoot),"RelativeLocation");
+        if(g_spRelLocOff!=0xFFFFFFFF && SafeReadable((void*)(g_spRoot+g_spRelLocOff),24)){ double* P=(double*)(g_spRoot+g_spRelLocOff); g_spX=P[0];g_spY=P[1];g_spZ=P[2]; g_spSeeded=true; } }
+    Markerf("[SPEC] transl: spPawn=0x%llX root=0x%llX slaThunk=0x%llX(loc@0x%X tele@0x%X) relLocOff=0x%X seed=(%.0f,%.0f,%.0f) seeded=%d\r\n",
+        (unsigned long long)g_spPawn,(unsigned long long)g_spRoot,(unsigned long long)g_spSlaThunk,g_spSlaLoc,g_spSlaTele,g_spRelLocOff,g_spX,g_spY,g_spZ,g_spSeeded?1:0);
     g_hwnd=FindWindowA(nullptr,"SUPERVIVE");
     double vx=0,vy=0,vz=0; if(IsHeapObj(mc)&&g_velOff!=0xFFFFFFFF&&SafeReadable((void*)(mc+g_velOff),24)){ double* V=(double*)(mc+g_velOff); vx=V[0];vy=V[1];vz=V[2]; }
     Markerf("[SPEC] totalWidgets=%d loadCandidates=%d svThunk=0x%llX(InVisibility@0x%X) cam=0x%llX pc=0x%llX\r\n",
@@ -376,23 +413,28 @@ static void DoSpectatorCam(){
     //    input path is dead, so drive position directly — like the S75 hero velocity puppet). Arrows steer the
     //    movement heading (g_yaw); WASD move in that frame; Space/Ctrl = up/down. View DIRECTION stays fixed for
     //    now (rotating the camera POV needs an offset we RE next) — this gives translate-through-the-world.
-    if(IsHeapObj(g_moveComp) && g_velOff!=0xFFFFFFFF && SafeReadable((void*)(g_moveComp+g_velOff),24)){
-        bool focused = (!g_hwnd) || (GetForegroundWindow()==g_hwnd);
-        double* V=(double*)(g_moveComp+g_velOff); double dx=0,dy=0,dz=0;
-        if(focused){
-            if(GetAsyncKeyState(VK_LEFT)&0x8000)  g_yaw-=2.5;
-            if(GetAsyncKeyState(VK_RIGHT)&0x8000) g_yaw+=2.5;
-            double yr=g_yaw*3.14159265358979/180.0, c=cos(yr), s=sin(yr), sp=1600.0;
-            if(GetAsyncKeyState('W')&0x8000){ dx+=c;  dy+=s;  }
-            if(GetAsyncKeyState('S')&0x8000){ dx-=c;  dy-=s;  }
-            if(GetAsyncKeyState('D')&0x8000){ dx-=s;  dy+=c;  }
-            if(GetAsyncKeyState('A')&0x8000){ dx+=s;  dy-=c;  }
+    // 2. TRANSLATION (S77): move the spectator pawn via K2_SetActorLocation (WASD, arrows steer, Space/Ctrl up/down).
+    //    The native dead-spectator camera targets this pawn, so moving it moves the view. Absolute setter -> track pos.
+    bool moved=false;
+    if(kEnableTranslation && IsHeapObj(g_spPawn) && g_spSlaThunk && g_spSlaLoc!=0xFFFFFFFF){
+        if(IsGameFocused()){
+            if(GetAsyncKeyState(VK_LEFT)&0x8000)  g_spYaw2-=2.5;
+            if(GetAsyncKeyState(VK_RIGHT)&0x8000) g_spYaw2+=2.5;
+            double yr=g_spYaw2*3.14159265358979/180.0, c=cos(yr), s=sin(yr), sp=300.0, dx=0,dy=0,dz=0;
+            if(GetAsyncKeyState('W')&0x8000){ dx+=c; dy+=s; }
+            if(GetAsyncKeyState('S')&0x8000){ dx-=c; dy-=s; }
+            if(GetAsyncKeyState('D')&0x8000){ dx-=s; dy+=c; }
+            if(GetAsyncKeyState('A')&0x8000){ dx+=s; dy-=c; }
             if(GetAsyncKeyState(VK_SPACE)&0x8000)   dz+=1;
             if(GetAsyncKeyState(VK_CONTROL)&0x8000) dz-=1;
-            V[0]=dx*sp; V[1]=dy*sp; V[2]=dz*sp;   // set velocity; the integrator moves the pawn + updates its transform
+            if(dx||dy||dz){ g_spX+=dx*sp; g_spY+=dy*sp; g_spZ+=dz*sp; moved=true;
+                memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                double* L=(double*)(g_pbuf+g_spSlaLoc); L[0]=g_spX;L[1]=g_spY;L[2]=g_spZ;
+                if(g_spSlaTele!=0xFFFFFFFF) g_pbuf[g_spSlaTele]=1;
+                CallGuarded(g_spSlaFn,g_spSlaThunk,g_spSlaChild,(void*)g_spPawn,g_pbuf,g_rbuf); }
         }
     }
-    if(h==1||h%100==0) Markerf("[SPEC] hit %ld: overlay hidden %d/%d; puppet moveComp=0x%llX yaw=%.0f\r\n",h,hidden,g_nLoadW,(unsigned long long)g_moveComp,g_yaw);
+    if(h==1||h%100==0||moved) Markerf("[SPEC] hit %ld: overlay hidden %d/%d; spPawn=0x%llX pos=(%.0f,%.0f,%.0f) yaw=%.0f moved=%d\r\n",h,hidden,g_nLoadW,(unsigned long long)g_spPawn,g_spX,g_spY,g_spZ,g_spYaw2,moved?1:0);
 }
 
 // ---- Route D (MODE_DEBUGCAM): UE's built-in free-fly debug camera ----
@@ -528,10 +570,17 @@ static DWORD WINAPI Worker(LPVOID){
     memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 3;}
     if(!InstallHook()){Marker("[2] FAIL InstallHook\r\n");return 4;}
     Marker("[2] hook installed — waiting for a game-thread ProcessInternal...\r\n");
-    int waitIters=(kMode==MODE_SPECTATOR_CAM||kMode==MODE_DEBUGCAM||kMode==MODE_FREECAM)?18000:600;   // spectator/debug/free-cam: ~6min window; others ~12s
+    // S77 dodge: SPECTATOR_CAM holds the hook only ~kSpectatorHookMs (overlay-hide window) then UNINSTALLS it, so
+    // no persistent .text mod remains for the code-integrity check to catch (the catalog_store_fix one-shot pattern).
+    int waitIters=(kMode==MODE_SPECTATOR_CAM)?(int)(kSpectatorHookMs/20):((kMode==MODE_DEBUGCAM||kMode==MODE_FREECAM)?18000:600);
     for(int i=0;i<waitIters && !g_done;i++) Sleep(20);
     UninstallHook();
-    Markerf("[3] done (hitsGT=%ld done=%ld) — hook uninstalled.\r\n",(long)g_hitsGT,(long)g_done);
+    Markerf("[3] hook UNINSTALLED after ~%ums (hitsGT=%ld) — no persistent .text mod now; observing survival.\r\n",kSpectatorHookMs,(long)g_hitsGT);
+    // Keep the worker thread alive + quiet so we can observe whether the process survives WITHOUT the .text hook
+    // (pure survival test; no further code/.text writes — only heartbeat marker lines).
+    if(kMode==MODE_SPECTATOR_CAM){ DWORD t0=GetTickCount(); while(GetTickCount()-t0 < 600000){ Sleep(5000);
+        Markerf("[survive] +%us since uninstall — process alive (no persistent .text hook)\r\n",(GetTickCount()-t0)/1000); } }
+    Markerf("[3b] done (hitsGT=%ld done=%ld).\r\n",(long)g_hitsGT,(long)g_done);
     return 0;
 }
 BOOL APIENTRY DllMain(HMODULE h,DWORD r,LPVOID){if(r==DLL_PROCESS_ATTACH){DisableThreadLibraryCalls(h);HANDLE t=CreateThread(nullptr,0,Worker,nullptr,0,nullptr);if(t)CloseHandle(t);}return TRUE;}
