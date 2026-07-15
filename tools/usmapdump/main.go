@@ -320,6 +320,32 @@ func main() {
 		cmdExtract(os.Args[2])
 		return
 	}
+	// dumpimage: <proc> [outDir] — snapshot the unpacked module image + private exec
+	// regions to disk (as-complete-as-possible cold dump for offline RE).
+	if (len(os.Args) == 3 || len(os.Args) == 4) && os.Args[1] == "dumpimage" {
+		outDir := "."
+		if len(os.Args) == 4 {
+			outDir = os.Args[3]
+		}
+		cmdDumpImage(os.Args[2], outDir)
+		return
+	}
+	// mergedumps: <outFile> <in...|dir> — union several dumpimage snapshots into one
+	// maximally-covered image (fill each dump's .text gaps from the others).
+	if len(os.Args) >= 4 && os.Args[1] == "mergedumps" {
+		cmdMergeDumps(os.Args[2], os.Args[3:])
+		return
+	}
+	// reconstructiat: <dumpFile> [outFile] — resolve the dump's IAT slots to module!export
+	// using the .exports.txt sidecar dumpimage captured, and rebuild a usable import table.
+	if (len(os.Args) == 3 || len(os.Args) == 4) && os.Args[1] == "reconstructiat" {
+		out := ""
+		if len(os.Args) == 4 {
+			out = os.Args[3]
+		}
+		cmdReconstructIAT(os.Args[2], out)
+		return
+	}
 	// strings/wstrings: <proc> <needle> [maxhits]
 	if (len(os.Args) == 4 || len(os.Args) == 5) && (os.Args[1] == "strings" || os.Args[1] == "wstrings") {
 		mh := parseMaxHits(os.Args, 4, 20)
@@ -422,6 +448,9 @@ func main() {
 	fmt.Println("       usmapdump names    <proc-name-or-pid>                  (locate GNames)")
 	fmt.Println("       usmapdump objects  <proc-name-or-pid>                  (locate GUObjectArray)")
 	fmt.Println("       usmapdump extract  <proc-name-or-pid>                  (extract full schema)")
+	fmt.Println("       usmapdump dumpimage <proc-name-or-pid> [outDir]        (snapshot unpacked image + exec regions to disk)")
+	fmt.Println("       usmapdump mergedumps <outFile> <in.dump.exe...|dir>    (union dumpimage snapshots -> max .text coverage)")
+	fmt.Println("       usmapdump reconstructiat <dumpFile> [outFile]         (rebuild import table from .exports.txt -> named API calls)")
 	fmt.Println("       usmapdump strings  <proc-name-or-pid> <needle> [N]     (ANSI byte search)")
 	fmt.Println("       usmapdump wstrings <proc-name-or-pid> <needle> [N]     (UTF-16 LE search)")
 	fmt.Println("       usmapdump xrefstr  <proc-name-or-pid> 0xADDR    [N]    (rip-rel LEA xref)")

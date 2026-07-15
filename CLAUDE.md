@@ -143,6 +143,35 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   produces `mappings.usmap`. Needed when game updates.
 - **usmapdump RE commands:** `strings`, `wstrings`, `xref`, `disasm`, `peek`,
   `threads`, `findgametid`, `assetmgr` — read-only RPM, no injection.
+- **usmapdump dumpimage:** `usmapdump.exe dumpimage <proc> [outDir]` — snapshots the
+  live UNPACKED image to a cold PE for offline Ghidra/IDA (file-offset==RVA, ImageBase
+  set to the live base, so project `base+0x…` addresses map 1:1). Also dumps private
+  exec regions outside the module + a coverage manifest. Pure RPM (safe). CAVEAT: the
+  build demand-decrypts `.text` pages on execution, so a single dump only captures pages
+  the game has RUN — ~50% of `.text` at a fresh menu. Coverage rises the more code the
+  game exercises; re-dump from a richer state (in-game) for more. Also writes
+  `<stem>.exports.txt` (addr→module!export map, captured live) so `reconstructiat` can
+  rebuild imports OFFLINE later. Dumps land in `/dumps/` (git-ignored).
+- **usmapdump mergedumps:** `usmapdump.exe mergedumps <outFile> <in.dump.exe…|dir>` —
+  unions several `dumpimage` snapshots into one maximally-covered image (fills each dump's
+  demand-decrypt `.text` gaps from the others). A directory arg recurses for `*.dump.exe`.
+  This is the path to near-complete `.text`: dump from DIFFERENT game states (login, hero
+  grid, store, missions, and especially IN A MATCH — gameplay code never runs at menu),
+  each to its own `dumps/<state>/`, then `mergedumps dumps/merged.dump.exe dumps`. Gain per
+  dump = how much NEW code that state ran (two idle-menu dumps barely differ). CONSTRAINT:
+  all inputs must share the same module base (ImageBase); a different-ASLR-base dump is
+  rejected (its relocated `.text` bytes are incompatible). `.text` union is exact; the
+  reported %, being non-zero-based, slightly undercounts (readable-zero bytes read as gaps).
+- **usmapdump reconstructiat:** `usmapdump.exe reconstructiat <dumpFile> [outFile]` —
+  rebuilds a real import table on a dump so Ghidra/IDA name API calls instead of showing
+  raw IAT thunks. The dumped IAT holds resolved system-DLL addresses (verified — NOT
+  packer-redirected), so it maps each slot to `module!export` via the `<stem>.exports.txt`
+  sidecar `dumpimage` wrote, then appends an `.idata2` section (descriptors + INT + names)
+  and repoints the Import data-dir. Fully OFFLINE (needs the sidecar, not the running game).
+  Writes `*.iat.exe`; load THAT in Ghidra. Validated end-to-end on explorer (1066/1066 slots
+  resolved; output parses in `debug/pe`). NOTE: old dumps made before the sidecar existed
+  can't be reconstructed — re-dump. Import redirection would show as unresolved slots (it
+  doesn't here).
 - **Manual mapper / DLL injector:** `tools/inject/` — for no-throw payloads only
   (C++ exception unwinding gets eaten by the packer's vectored exception filter).
 - **Native shims:** `tools/sigbypass-mod/` — `catalog_store_fix` (roster/store/
