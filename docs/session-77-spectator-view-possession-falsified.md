@@ -86,7 +86,43 @@ is incidental (S70 loaded the same map/content and still cleared). NOT seedable 
 client-side lever than the blind overlay-hide would be: register a `GameEventRouterComponent` on the local PC +
 re-fire `SpectatorStateChanged` — untested; deferred behind the AV.
 
-## Route A plan (NEXT — thread-dispatch diagnostic shim)
+## ★★★ ROUTE A RAN (dump analysis) — the crash is the ANTI-TAMPER, NOT a nameable replica. Reframes ~15 sessions. ★★★
+Instead of a live thread-hook shim, analyzed the EXISTING dump's ALL-thread contexts + the faulting thread's
+EXCEPTION context (scratch tools `dump_threads.py` / `dump_faultstack.py`; the dump has 135 threads w/ stacks +
+709 memory regions). NOTE: `parse_minidump.py` line 65 has a print bug (`RSP=%X % (rip and rip or 0)` prints RIP
+twice); the REAL exception context is **RIP=0x7FF90E000001, RSP=0x586233FC68** (a valid stack — not garbage).
+Four signals reframe the crash:
+1. **Fixed crash address across boots (decisive).** `0x7FF8F0400001` = S53/S54 (2026-07-07); `0x7FF90E000001`
+   = S76 + S77 (2026-07-14/15). IDENTICAL across launches with DIFFERENT ASLR bases (this launch's SUPERVIVE
+   base = 0x7FF6AF000000). A half-hydrated GAME replica's stale callback would be an ASLR'd game `.text` address
+   (different every launch). A fixed value in the SYSTEM-DLL GAP is per-boot-stable ⇒ an anti-tamper sentinel,
+   not a game pointer. (Two distinct values = two boot sessions a week apart.)
+2. **Register state = obfuscated dispatch, not a C++ callback.** EXC regs: RIP=poisoned; RSP==RDI==0x586233FC68;
+   RCX=RAX=RSI=R12-15=0 (no valid `this`); high-entropy garbage RDX=0x536023A80BBAEC1F, RBX=R10=0x63F8A7E45EE28AAB
+   (EQUAL), R8=0xD8CE70962CCE8F64, R9=0x7B7EDAE45A8CB4F0 — a crypto/integrity routine computing a target then
+   jumping to poison. A stale vtable call leaves a structured object ptr in RCX + an intact caller frame.
+3. **Caller chain wiped.** The faulting thread's EXC-RSP stack has ZERO game-code return addresses (dispatch
+   destroyed the return chain). The `+0x7059xxx` game addrs on its DUMP-TIME stack are sentry's own crash-handler
+   frames (sentry-native is linked into SUPERVIVE.exe), NOT the culprit. ⇒ route A's "walk the stack → name the
+   culprit replica" is a DEAD END — there is no replica to name.
+4. **Crash only WITH injection.** Bare client = stable on the loading screen indefinitely (15+ min observed); the
+   crash fires ~2 min AFTER injecting a shim (ds_hybrid S76/S77; browse_hook S53/S54) — the documented ~3-5 min
+   code-integrity check reacting to the tamper. Variable timing (S54 noted 37s-150s) = triggered when a
+   tampered/checked code path runs, not a fixed clock.
+
+**CONCLUSION:** the "movement garbage-thread AV" that drove ~15 sessions of "hydrate the next replica"
+whack-a-mole is very likely a MISDIAGNOSIS. The crashes are an **in-match anti-tamper / obfuscated-dispatch
+deliberate crash** reacting to the injected shim, not a hydratable half-hydrated replica — which is exactly why
+the whack-a-mole never converged (each "next replica" fix only shifted the timing until the integrity check fired
+again; S53's "cure" rested on one lucky 428s run). The genuine REPLICATION work (S70-S73 GameState/PC/PlayerState
+mirrors) stands — it got the client stable in the live world with a full Loki net stack — but the VISIBLE moving
+spectator via an injected shim is **capped at ~2 min** by the integrity check. Making it persistent (or adding
+translation, which also needs the shim) requires DEFEATING the code-integrity check — deep, packer-hostile
+(CLAUDE.md: permanent patches get caught; the packer's VEH kills the process). That is the honest ceiling.
+
+## (superseded) Route A plan — live thread-dispatch diagnostic shim
+The plan below was the pre-dump-analysis intent; the dump analysis above made it moot (no replica to name; the
+crash is anti-tamper). Kept for reference / if the anti-tamper hypothesis is ever revisited.
 Identify the culprit half-hydrated replica by catching the SPAWN of the garbage thread:
 - New `ds_hybrid` mode (e.g. `MODE_THREADWATCH`): inline-hook **`kernel32!CreateThread`** (and CreateRemoteThreadEx)
   — NOT `ntdll!NtCreateThreadEx` (the preloader anti-tamper hooks that; naive re-hook may conflict — S53). Log
