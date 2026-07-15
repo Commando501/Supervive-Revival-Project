@@ -331,6 +331,29 @@ private:
         // whether any overflow fires.
         SelfReplayCapturedRPC(Func);
 
+        // Session 76: DISABLE push-model globally on the stub (in code, early). Un-suppressing AWorldSettings
+        // (S76) makes the stub replicate stock AWorldSettings, whose GetLifetimeReplicatedProps registers some
+        // props push-based — but our validation-free ForceSetUpReplicationData rebuild leaves ClassReps non-push,
+        // so the engine's RepLayout build hits "Assertion failed: bIsPushBased == Other.bIsPushBased"
+        // (CoreNet.h:331) and the stub crashes on client connect (S70 hit the identical assert on GameState,
+        // fixed there with a non-push mirror). With push-model OFF, DOREPLIFETIME* registers bIsPushBased=false
+        // for EVERY class → consistent with the rebuild → no assert, and no per-class mirror needed. The stub
+        // hand-drives replication (never sends push-dirty deltas), so this costs nothing. S70 set this via ini
+        // [ConsoleVariables] and it "did not take"; set it here in code, before any RepLayout init, so it applies.
+        if (IConsoleVariable* PushCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("net.IsPushModelEnabled")))
+        {
+            const int32 WasPush = PushCVar->GetInt();
+            PushCVar->Set(0, ECVF_SetByCode);
+            UE_LOG(LogLokiStub, Display,
+                   TEXT("S76: net.IsPushModelEnabled %d -> %d (disabled to avoid the WorldSettings push/non-push RepLayout assert, CoreNet.h:331)."),
+                   WasPush, PushCVar->GetInt());
+        }
+        else
+        {
+            UE_LOG(LogLokiStub, Warning,
+                   TEXT("S76: net.IsPushModelEnabled CVar not found — the WorldSettings push-model assert may persist."));
+        }
+
         // Session 70: SUPERVIVE's AGameStateBase does NOT replicate the deprecated float
         // ReplicatedWorldTimeSeconds — only ReplicatedWorldTimeSecondsDouble (S69 live capture: 4 net
         // props). Stock UE5.4 replicates BOTH, which gave our GameStateBase 5 reps vs the client's 4

@@ -53,3 +53,28 @@ injection, not a replica. Discriminator: does a **bare client (no injection)** r
 - Crash triage: `parse_minidump.py <newest .dmp>` → `0x8`+unmapped-execute addr = the garbage-thread AV;
   `usmapdump findptr` to test if the pointer is stored (it's transient here).
 - Anti-tamper note: external ctypes RPM works pre-match but is **blocked in-match** — drive via in-process shims.
+
+## ★ CORRECTION (same session, later) — the "clean fix" claim above was CONFOUNDED; here's the accurate picture
+The WorldSettings un-suppress does NOT cleanly fix the client crash. It **reliably crashes the STUB** on the
+push-model assert (`bIsPushBased == Other.bIsPushBased`, CoreNet.h:331) while building the client's replication —
+stock `AWorldSettings::GetLifetimeReplicatedProps` registers derived props push-based, clashing with the stub's
+non-push `ForceSetUpReplicationData` rebuild. The "stable session / 187k-frame fly-cam / pre-drop" observations
+were artifacts of the stub crashing (dropping the connection before the client's dead-spectator garbage callback
+fired) + the free-cam rendering the already-received world locally. `net.IsPushModelEnabled=0` (ini or code CVar)
+does NOT fix it (the log shows "PushModel HandleCreation is now enabled" regardless — same as S70).
+
+**DURABLE STUB FIX (works):** `ALokiWorldSettings` — a non-push mirror of `AWorldSettings`
+(`LokiWorldSettingsStub.{h,cpp}`, S70 pattern: call `AActor::GetLifetimeReplicatedProps`, then register derived
+props NON-PUSH), swapped in as the world's WorldSettings at map-load in `ULokiGameEngine::LoadMap` (the WS is a
+serialized level actor, so `GEngine->WorldSettingsClass` can't do it — runtime `SetWorldSettings` swap instead).
+**Result: the stub SURVIVES the client connection (no assert) — durable win.**
+
+**BUT two things the mirror revealed:** (1) `LokiWorldSettings`'s actor channel FAILS on the client (it has no
+`/Script/Loki.LokiWorldSettings` class → graceful drop), so WorldSettings never actually hydrates the client;
+(2) the client STILL has its ~2-min issue with the stub alive → **WorldSettings is NOT the client-crash culprit**
+(it's a level actor, not the S53 spawned-un-hydrated-replica pattern anyway). So the client's garbage-thread AV is
+a DIFFERENT half-hydrated replica, still un-identified (and in-match anti-tamper blocks external RPM inspection).
+
+NET: banked = the **stub-stability fix** (mirror lets the stub replicate an un-suppressed stock class without the
+push assert — reusable for any future un-suppress). Still open = the client's ~2-min garbage AV (wrong hypothesis
+corrected; needs a different replica identified). The over-optimistic framing at the top of this doc is retracted.
