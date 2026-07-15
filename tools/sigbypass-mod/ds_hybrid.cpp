@@ -36,7 +36,7 @@ typedef void (*PFN_THUNK)(void* Context, void* Frame, void* Result);
 // decisive test): spawn a BP_HERO pawn client-side via GameplayStatics deferred-spawn (WorldContext=ProgressionManager,
 // hardcoded transform) + possess with the stock PC — does a hero even INITIALIZE + become controllable in the DS session?
 enum Mode { MODE_CENSUS=0, MODE_POSSESS_DP=1, MODE_SPAWN_HERO=2, MODE_SPECTATOR_CAM=3, MODE_DEBUGCAM=4, MODE_FREECAM=5 };
-static const int kMode = MODE_FREECAM;
+static const int kMode = MODE_SPECTATOR_CAM;
 
 static uintptr_t g_modBase=0;
 static volatile PFN_PE g_tramp=nullptr;

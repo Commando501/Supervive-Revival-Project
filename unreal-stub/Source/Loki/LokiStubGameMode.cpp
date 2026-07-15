@@ -115,11 +115,15 @@ void ALokiStubGameMode::InitGameState()
 	}
 
 	const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
-	// S73 probe: was EGP_SpawnSelect(4). The client stays on the "DROP IN" LOADING screen; test whether the
-	// loading dismiss is gated on a LATER round phase (round live) vs the actual drop-in. EGP_Combat(7) =
-	// round in active combat. If the loading screen dismisses at this phase -> phase-gated (win); if it stays
-	// -> the dismiss needs the server-authoritative drop-in itself (the round-machinery wall).
-	GS->CurrentPhase        = ELokiRoundPhase::EGP_Combat;
+	// S77: reverted to EGP_SpawnSelect(4) — the S70-PROVEN loading-screen-clear phase (S70 result:
+	// "the client LEAVES the loading screen into the live tutorial world"). The S73 lever-2 probe had
+	// changed this to EGP_Combat(7) to test whether a later phase dismisses the overlay; the answer was
+	// NO — the client RECEIVED EGP_Combat ("Entering combat phase on client") but the loading screen
+	// STAYED (live-reconfirmed S77: stable ~90s idle-looping behind the overlay). SpawnSelect is the
+	// drop-select spectator phase where the world is visible + the spectator/drop camera is movable —
+	// i.e. the state in which the S77 movement-AV test is actually reachable. (Loading-screen dismiss is
+	// phase-gated to SpawnSelect, NOT to the server-authoritative drop-in — a real S70/S77 win.)
+	GS->CurrentPhase        = ELokiRoundPhase::EGP_SpawnSelect;
 	GS->DayNightState       = ELokiDayNightStateMirror::LDNS_Day;
 	GS->RoundStartTime      = Now;
 	GS->GameStartWorldTime  = Now;
@@ -222,24 +226,38 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 	       MissionsActor->bAlwaysRelevant ? 1 : 0,
 	       MissionsActor->GetIsReplicated() ? 1 : 0);
 
-	// S73 PHASE 1 (hero go/no-go): spawn + possess a LOKI-TYPED hero (ALokiCharacter, /Script/Loki.LokiCharacter)
-	// instead of the stock DefaultPawn. The DefaultPawn possession was refused (SUPERVIVE gates possession on its
-	// drop-in/hero flow); the make-or-break test is whether the client takes HERO CONTROL of a Loki-typed
-	// character the stub spawned. ALokiCharacter mirrors the client's LokiCharacter net-cache (2 reps + 14 RPCs
-	// over stock ACharacter; movement RPCs stock-inherited). Tutorial has NO PlayerStart (drop-in via DropPlane),
-	// so spawn explicitly above origin. (Was: stock ADefaultPawn, S71 — client replicated it but never possessed.)
+	// S77 MOVEMENT-AV CULPRIT TEST (single-variable): possess a stock ADefaultPawn, NOT the
+	// abstract ALokiCharacter. HYPOTHESIS: the movement garbage-thread execute-AV (0x8, unmapped
+	// address; docs/session-76-worldsettings-breakthrough.md) is the S53/S54 half-hydrated-replica
+	// bug engaged by movement, and the half-hydrated replica is the POSSESSED PAWN itself:
+	// S73 proved the client's /Script/Loki.LokiCharacter is CLASS_Abstract ("SpawnActor failed
+	// because class LokiCharacter is abstract"), so when the stub possesses ALokiCharacter the
+	// client CANNOT instantiate its local pawn replica -> PC->Pawn resolves to a null/half-formed
+	// actor -> the moment movement input drives the possession/movement machinery it dereferences
+	// that garbage -> the execute-AV. ADefaultPawn is concrete on BOTH sides (S71 verified it
+	// replicates cleanly to the client as real DefaultPawn instances), so the client CAN spawn its
+	// local replica -> if the abstract-possessed-pawn is the culprit, the movement AV vanishes.
+	// SINGLE VARIABLE: only the possessed class changes; the spawn/possess/deferred-ClientRestart
+	// flow is otherwise identical to S73. REVERT: swap ADefaultPawn back to ALokiCharacter (both
+	// spawn calls). If the AV persists, the culprit is a DIFFERENT replica -> escalate to the
+	// route-A diagnostic shim (name the culprit via the async/thread dispatch caller stack).
+	// Tutorial has NO PlayerStart (drop-in via DropPlane), so spawn explicitly above origin.
 	const FVector SpawnLoc(0.f, 0.f, 500.f);
 	FActorSpawnParameters PawnParams;
 	PawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	ALokiCharacter* Pawn = World->SpawnActor<ALokiCharacter>(
-		ALokiCharacter::StaticClass(), SpawnLoc, FRotator::ZeroRotator, PawnParams);
+	ADefaultPawn* Pawn = World->SpawnActor<ADefaultPawn>(
+		ADefaultPawn::StaticClass(), SpawnLoc, FRotator::ZeroRotator, PawnParams);
 	if (Pawn)
 	{
+		// S77: stock ADefaultPawn does NOT set bAlwaysRelevant in its ctor (ALokiCharacter did), so set it
+		// explicitly here — S71's proven-replicating DefaultPawn config set it, guaranteeing the pawn's
+		// initial actor bunch reaches the client regardless of owner-relevancy timing.
+		Pawn->bAlwaysRelevant = true;
 		// Possess() sets the PC's view target via the ClientSetViewTarget RPC which the stub SUPPRESSES
-		// (SUPERVIVE-modified sig); bAlwaysRelevant (set in the ctor) guarantees the send regardless.
+		// (SUPERVIVE-modified sig); bAlwaysRelevant guarantees the send regardless.
 		NewPlayer->Possess(Pawn);
 		UE_LOG(LogLokiStubGM, Display,
-		       TEXT("PostLogin: spawned + possessed ALokiCharacter %s at %s for %s — PC->GetPawn()=%s "
+		       TEXT("PostLogin: spawned + possessed ADefaultPawn (S77 movement-AV test) %s at %s for %s — PC->GetPawn()=%s "
 		            "(pawn Role=%d bAlwaysRelevant=%d bReplicates=%d, PC hasConnection=%d)."),
 		       *Pawn->GetName(), *SpawnLoc.ToString(), *NewPlayer->GetName(),
 		       *GetNameSafe(NewPlayer->GetPawn()), (int32)Pawn->GetLocalRole(),
