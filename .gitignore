@@ -13,6 +13,9 @@
 # Interactive (Track B) runtime player state
 /server/state/
 
+# Live-process image dumps (usmapdump dumpimage) — hundreds of MB, regenerable
+/dumps/
+
 # Editor / OS
 .DS_Store
 Thumbs.db
