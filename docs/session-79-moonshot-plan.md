@@ -347,6 +347,27 @@ asset chain (`HeroCosmeticsBundle:AssaultDefault`, fields @+0x1FF0/+0x2000), Pla
 +0x2860), and the ProcessEvent capability — everything a future server-target-binary or different-technique attempt needs.
 Modes added: CONTEXT, DEPLOYEVT.
 
+**★★★ WALL REOPENED (2026-07-16) — the "BP deploy faults = context wall" was likely a FALSE WALL: ProcessEvent BP calls
+themselves fault. QUESTION-THE-TOOL win.** New validation modes VTDUMP / BPTEST / BPTEST2:
+- **ProcessEvent RVA is CORRECT** (`MODE_VTDUMP`): vtable **slot 56** = `base+0x12C5A10` on hero, PC, AND GameState (all
+  match) — so the address is right.
+- **BUT a BP call THROUGH ProcessEvent faults** (`MODE_BPTEST`): `GetBaseCosmeticsController` (BP) via ProcessEvent →
+  fault, ret=0; while the native `GetCosmeticsController` (direct-thunk primitive) returns the controller `0x…C4173C0`
+  fine on the SAME object. So native-thunk calls work; ProcessEvent calls fault.
+- **NOT PI-hook re-entrancy** (`MODE_BPTEST2`): raw-removed the ProcessInternal hook, THEN called ProcessEvent → STILL
+  faults. So it isn't the hook.
+⇒ **The earlier conclusion that the BP DEPLOY functions "fault out-of-context" was almost certainly wrong** — it was the
+ProcessEvent *call mechanism* faulting, masquerading as a context wall. This REOPENS the deploy reconstruction: if we can
+call BP functions correctly, `ClientInitialComponentSetup` / `BP_PostSetupCosmetics` / the orchestrators may run fine and
+build the mesh. **NEXT (fresh session):** (1) isolate hero-specific vs ProcessEvent-general — call a BP function via
+ProcessEvent on a KNOWN-GOOD game-initialized BP object (a WBP_ HUD widget, `Comp_PlayerController_Cheats_C`, or a fresh
+un-mangled BP_HERO_Assault_C spawned + tested immediately); (2) our current hero (`0x28577E6D560`) is heavily hand-mangled
++ drifted over the void — spawn a FRESH one for clean tests; (3) try calling ProcessEvent from the S78 VTABLE-HOOK tick
+(game thread, NOT inside a ProcessInternal call) rather than the PI hook; (4) check ProcessEvent's exact fault (is the
+`Parms` buffer sized wrong? does it need `FFrame`/FMemStack state our context lacks? is the UFunction ptr from ResolveFunc
+correct for ProcessEvent's class check?); (5) consider that BP calls may need the object's BP VM fully initialized. New
+modes: VTDUMP, BPTEST, BPTEST2 (+ reusable `CallGuardedBPP(obj,ufunc,params)` + `RawUnhook()`). This is the live frontier.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
