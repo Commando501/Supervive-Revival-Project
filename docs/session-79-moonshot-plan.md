@@ -329,6 +329,24 @@ BPDEPLOY. Honest status: piecemeal client-side deploy reconstruction has reached
 controllable hero from here needs the match-init context (large) — the reasonable-effort ceiling remains the S79 landmark
 (possessed, camera-followed hero in the live world).
 
+**★★★ CONTEXT RECONSTRUCTION PUSHED → DEFINITIVE WALL (2026-07-16, `MODE_CONTEXT`/`MODE_DEPLOYEVT`).** Pushed into the
+match-init context per the plan. (1) **Gave the hero a real PlayerState:** the native PC has a valid replicated
+`LokiPlayerState` (`0x…AAC040 @ PC+0x3C0`); set it on the hero (`PlayerState @+0x3D8` + `LocalPlayerState @+0x2860`) +
+`OnRep_PlayerState` (clean). **`ClientInitialComponentSetup`/`BP_PostSetupCosmetics` STILL FAULT** → PlayerState is not the
+(only) missing piece. (2) **Tried the game's own deploy ORCHESTRATOR events** (higher-level entries that run the init in
+order): `ReceiveRestarted`, `OnLocalPlayer_CharacterSpawned`, `RefreshLocalControl`, `TryLocalControlSetup` — **ALL FOUR
+FAULT** via ProcessEvent, PlayerState set or not; skeletal mesh stayed 0; controller unchanged. ⇒ **DEFINITIVE:** EVERY BP
+deploy function faults when driven out-of-context via ProcessEvent — individual setup steps AND the orchestrators. The
+client deploy init is entangled with the game's ordered lifecycle + native context in a way a piecemeal injected driver
+cannot satisfy; providing single context pieces (PlayerState) doesn't unblock it. Reconstructing it fully = replaying the
+entire ordered client match-entry with all native prerequisites ≈ reimplementing the client's deploy, a large research
+effort, not a probe. **HONEST CEILING (now empirically demonstrated, not just predicted): the S79 landmark — a possessed,
+camera-followed hero in the live tutorial world; the character MESH/input/HUD are deploy-gated and the deploy cannot be
+driven client-side out-of-context.** Fully banked + reusable: the deploy control-surface map, LivingState drive, cosmetics
+asset chain (`HeroCosmeticsBundle:AssaultDefault`, fields @+0x1FF0/+0x2000), PlayerState offsets (PC+0x3C0, hero+0x3D8/
++0x2860), and the ProcessEvent capability — everything a future server-target-binary or different-technique attempt needs.
+Modes added: CONTEXT, DEPLOYEVT.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
