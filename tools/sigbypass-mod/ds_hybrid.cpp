@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <cstring>
+#include <cwchar>
 #include <math.h>
 
 static const char* kMarkerPath = "G:\\git\\Supervive Revival Project\\docs\\ds-hybrid-marker.txt";
@@ -35,8 +36,53 @@ typedef void (*PFN_THUNK)(void* Context, void* Frame, void* Result);
 // MODE_CENSUS: read-only census. MODE_POSSESS_DP: ClientRestart(PC, DefaultPawn). MODE_SPAWN_HERO (Phase 3, the
 // decisive test): spawn a BP_HERO pawn client-side via GameplayStatics deferred-spawn (WorldContext=ProgressionManager,
 // hardcoded transform) + possess with the stock PC — does a hero even INITIALIZE + become controllable in the DS session?
-enum Mode { MODE_CENSUS=0, MODE_POSSESS_DP=1, MODE_SPAWN_HERO=2, MODE_SPECTATOR_CAM=3, MODE_DEBUGCAM=4, MODE_FREECAM=5 };
-static const int kMode = MODE_SPECTATOR_CAM;
+// MODE_SPAWN_P2 (S79 moonshot Phase 2): spawn a LOCAL BP_LokiPlayerController_Dev_C + a BP_HERO_Assault_C (both
+// classes proven RESIDENT by the Phase-1 load census) via the proven deferred-spawn path, then census the BP_Dev PC's
+// drop-in machinery (DropPlaneComponentSetup/UpdateIsInDropPod/FinishDropPhaseHiding). NO swap/possess (Phase 3/4).
+// Build:  clang++ -shared -O2 -D_CRT_SECURE_NO_WARNINGS -DKMODE=MODE_SPAWN_P2 ds_hybrid.cpp -o ds_hybrid_spawnp2.dll -lkernel32 -luser32
+// MODE_SWAP_CENSUS (S79 moonshot Phase 3a): PURE READ-ONLY discovery of the controller-swap surface — the two engine
+// offsets Phase 3 needs (ULocalPlayer->PlayerController + APlayerController->Player, neither a reflected UPROPERTY),
+// found by pointer-equality scan against the live LocalPlayer + native PC. No hook, no spawn, no write => fully anti-
+// tamper-safe.  Build: clang++ -shared -O2 -D_CRT_SECURE_NO_WARNINGS -DKMODE=MODE_SWAP_CENSUS ds_hybrid.cpp -o ds_hybrid_swapcensus.dll -lkernel32 -luser32
+// MODE_SWAP (S79 moonshot Phase 3, MINIMAL): spawn a fresh BP_Dev PC (Phase-2-proven), then on the game thread repoint
+// the local player's controller to it (L->PlayerController@+0x38 = devPC ; devPC->Player@+0x458 = L ; old PC->Player = 0),
+// then MONITOR off-thread whether the game keeps the swap (control relinquished) or reverts/crashes (the fighting-session
+// wall). Build: clang++ -shared -O2 -D_CRT_SECURE_NO_WARNINGS -DKMODE=MODE_SWAP ds_hybrid.cpp -o ds_hybrid_swap.dll -lkernel32 -luser32
+// MODE_POSSESS (S79 moonshot Phase 4): on the ALREADY-swapped-in BP_Dev PC (L->PlayerController from Phase 3), spawn a
+// BP_HERO_Assault_C, Possess it (C++ Possess via the exec thunk — locally-spawned actors have local authority), then
+// drive the drop-in flags (FinishDropPhaseHiding -> PC+0xF28=1, UpdateIsInDropPod(false), DropPlaneComponentSetup) to
+// try to flip spectator -> control. Requires the Phase-3 swap to be in place (persisted in the process).
+// Build: clang++ -shared -O2 -D_CRT_SECURE_NO_WARNINGS -DKMODE=MODE_POSSESS ds_hybrid.cpp -o ds_hybrid_possess.dll -lkernel32 -luser32
+// MODE_DEPLOY (S79 moonshot Phase 4b): on the possessed hero (L->PC->Pawn), try to make it VISIBLE + CONTROLLABLE —
+// log hero+camera locations, SetActorHiddenInGame(false), EnableInput(PC), and RECON the hero's deploy/visibility
+// UFunctions for the next step. Benign engine setters (low crash risk).
+// Build: clang++ -shared -O2 -D_CRT_SECURE_NO_WARNINGS -DKMODE=MODE_DEPLOY ds_hybrid.cpp -o ds_hybrid_deploy.dll -lkernel32 -luser32
+// MODE_UNHIDE (S79 moonshot Phase 4c): reveal the possessed hero — SetPredropHidden(false) (the SUPERVIVE pre-drop mesh
+// gate found by Phase-4b recon) + SetViewTargetWithBlend(hero) so the camera follows it. Monitor the view target.
+// Build: clang++ -shared -O2 -D_CRT_SECURE_NO_WARNINGS -DKMODE=MODE_UNHIDE ds_hybrid.cpp -o ds_hybrid_unhide.dll -lkernel32 -luser32
+// MODE_NPOSSESS (S79 moonshot Phase 4d): the render/input pipeline follows the NATIVE PC (S73 LokiPlayerController), not
+// our swapped-in BP_Dev PC. So: restore L->PlayerController = native PC, hand the native PC the hero (Possess, with a raw
+// pawn<->controller wire fallback since the networked proxy PC may be authority-gated), SetPredropHidden(false), and point
+// the native PC's camera at the hero. If the pipeline follows the native PC, we SEE + control the hero.
+// Build: clang++ -shared -O2 -D_CRT_SECURE_NO_WARNINGS -DKMODE=MODE_NPOSSESS ds_hybrid.cpp -o ds_hybrid_npossess.dll -lkernel32 -luser32
+// MODE_CAMFIX (S79 moonshot Phase 4e): the camera follows the hero but clips at its root (no framing). Census the hero's
+// actual components (spring-arm / camera component that drive its top-down view) and pull the camera back (TargetArmLength).
+// Pure off-thread read + one benign float write (no hook). Build: -DKMODE=MODE_CAMFIX -o ds_hybrid_camfix.dll
+// MODE_DEPLOYRECON (S79 Phase 4f): the camera/input/HUD are deploy-gated custom systems. Read-only list of the deploy
+// entry-point UFunctions on the hero + native PC classes (Deploy/Land/Restart/SetupPlayerInput/...). -DKMODE=MODE_DEPLOYRECON
+// MODE_CRESTART (S79 Phase 4g): we raw-wired PC->Pawn = hero, bypassing the client-side possession setup. Run the setup we
+// skipped — OnRep_Pawn (C++ pawn-change handler: camera+input for the new pawn) + ClientRestart(hero) + ClientSetHUD — to
+// wire camera framing + input + HUD. -DKMODE=MODE_CRESTART
+// MODE_CAMFRAME (S79 Phase 4h, visual capstone): offset the hero's CameraComponent up+back via
+// K2_SetRelativeLocationAndRotation, re-applied repeatedly to hold vs a per-frame reset, so the camera stops clipping at
+// the hero's root and frames the hunter top-down. -DKMODE=MODE_CAMFRAME
+enum Mode { MODE_CENSUS=0, MODE_POSSESS_DP=1, MODE_SPAWN_HERO=2, MODE_SPECTATOR_CAM=3, MODE_DEBUGCAM=4, MODE_FREECAM=5, MODE_LOAD_CENSUS=6, MODE_SPAWN_P2=7, MODE_SWAP_CENSUS=8, MODE_SWAP=9, MODE_POSSESS=10, MODE_DEPLOY=11, MODE_UNHIDE=12, MODE_NPOSSESS=13, MODE_CAMFIX=14, MODE_DEPLOYRECON=15, MODE_CRESTART=16, MODE_CAMFRAME=17 };
+// S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
+// spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
+#ifndef KMODE
+#define KMODE MODE_SPECTATOR_CAM
+#endif
+static const int kMode = KMODE;
 // S77 anti-tamper DODGE test (catalog_store_fix pattern): the permanent ProcessInternal .text hook is what the
 // code-integrity check catches. catalog_store_fix survives long-term because it leaves NO persistent .text mod
 // (self-restores in ~6s + heap pokes only). PORT: run the overlay-hide for a SHORT window then UNINSTALL the hook
@@ -348,6 +394,459 @@ static void DoSpawnHero(){
         CallNative(g_possFn,g_possThunk,g_possChild,(void*)g_pcSpawn,g_pbuf,g_rbuf);
         Marker("[SPAWN] <<< Possess returned (no crash).\r\n");
     }
+}
+
+// Forward decls (both are defined later in the Route D / spectator section).
+static bool CallGuarded(void* fn, uintptr_t th, uintptr_t ch, void* ctx, void* pb, void* rb);
+static uint32_t PropOffsetOnClass(uintptr_t cls,const char* name);
+
+// ---- PHASE 2 (S79 moonshot): spawn a local BP_Dev PC + a hero, census the drop-in machinery (NO swap) ----
+// The DS client's local networked PC is the NATIVE LokiPlayerController (S73 by-path mirror). It LACKS the
+// BP_LokiPlayerController_Dev_C drop-in fns (DropPlaneComponentSetup / UpdateIsInDropPod / FinishDropPhaseHiding@PC+0xF28,
+// S74) and the GameEventRouterComponent that clears the loading overlay (S77). Phase 1 (S79) proved BOTH the BP_Dev PC
+// class AND BP_HERO_Assault_C are RESIDENT in this session's memory. Phase 2 spawns a LOCAL instance of each via the
+// proven deferred-spawn path (BuildOutParms fixed the const-FTransform& struct-param ABI, S78 spawned an ACameraActor
+// clean) and confirms the spawned BP_Dev PC exposes the drop-in fns — the gate for Phase 3 (swap-in) + Phase 4 (possess).
+// KILL-CRITERIA: if the BP_Dev PC (or hero) can't be constructed client-side (BP/GAS/component construction crash, à la
+// the S72 hero spawn), Phase 2's gate FAILS -> bank. NO swap/possess is performed here.
+static uintptr_t g_p2World=0, g_p2DevCls=0, g_p2HeroCls=0, g_p2NativePc=0, g_p2Dp=0;
+static void* g_p2GlaFn=0; static uintptr_t g_p2GlaThunk=0, g_p2GlaChild=0;
+static double g_p2X=0.0, g_p2Y=0.0, g_p2Z=1000.0;
+static bool ResolveSpawnP2(){
+    g_p2DevCls  = FindObjExact("BP_LokiPlayerController_Dev_C"); if(!g_p2DevCls)  g_p2DevCls = FindObjNamePreSuf("BP_LokiPlayerController_Dev","_C");
+    g_p2HeroCls = FindObjExact("BP_HERO_Assault_C");            if(!g_p2HeroCls) g_p2HeroCls= FindHeroPawnClass();
+    g_p2World   = FindInstClassSub("ProgressionManager");        if(!g_p2World)   g_p2World  = FindInstClassSub("LokiGameState");
+    g_p2NativePc= FindInstExactClass("LokiPlayerController");    if(!g_p2NativePc)g_p2NativePc=FindInstClassSub("LokiPlayerController");
+    g_gsCDO     = FindObjExact("Default__GameplayStatics");
+    if(!g_p2DevCls||!g_p2HeroCls||!g_p2World||!g_gsCDO){
+        Markerf("[P2] resolve FAIL devCls=0x%llX heroCls=0x%llX world=0x%llX gsCDO=0x%llX\r\n",
+                (unsigned long long)g_p2DevCls,(unsigned long long)g_p2HeroCls,(unsigned long long)g_p2World,(unsigned long long)g_gsCDO);
+        return false;
+    }
+    uintptr_t gc=ClassOf(g_gsCDO);
+    ResolveFunc(gc,"BeginDeferredActorSpawnFromClass",&g_beginFn,&g_beginThunk,&g_beginChild);
+    ResolveFunc(gc,"FinishSpawningActor",&g_finishFn,&g_finishThunk,&g_finishChild);
+    if(g_beginChild){ g_oBWorld=g_offParam(g_beginChild,"WorldContextObject",0); g_oBClass=g_offParam(g_beginChild,"ActorClass",8); g_oBXform=g_offParam(g_beginChild,"SpawnTransform",0x10); g_oBColl=g_offParam(g_beginChild,"CollisionHandlingOverride",0x70); g_oBOwner=g_offParam(g_beginChild,"Owner",0x78); g_oBRet=g_offParam(g_beginChild,"ReturnValue",0x88); }
+    if(g_finishChild){ g_oFActor=g_offParam(g_finishChild,"Actor",0); g_oFXform=g_offParam(g_finishChild,"SpawnTransform",0x10); g_oFRet=g_offParam(g_finishChild,"ReturnValue",0x70); }
+    // read a valid in-world spawn location from the DefaultPawn (K2_GetActorLocation on the Actor chain).
+    if(g_p2NativePc){ uint32_t pawnOff=PropOffsetOnClass(ClassOf(g_p2NativePc),"Pawn");
+        uintptr_t dp=(pawnOff!=0xFFFFFFFF && SafeReadable((void*)(g_p2NativePc+pawnOff),8))?*(uintptr_t*)(g_p2NativePc+pawnOff):0;
+        if(LooksLikePtr(dp)){ g_p2Dp=dp; ResolveFunc(ClassOf(dp),"K2_GetActorLocation",&g_p2GlaFn,&g_p2GlaThunk,&g_p2GlaChild); } }
+    char dn[160]="?",hn[160]="?"; ObjName(g_p2DevCls,dn,sizeof(dn)); ObjName(g_p2HeroCls,hn,sizeof(hn));
+    Markerf("[P2] resolved devPc=%s(0x%llX) hero=%s(0x%llX) world=0x%llX gsCDO=0x%llX beginThunk=0x%llX finishThunk=0x%llX glaThunk=0x%llX dp=0x%llX\r\n",
+            dn,(unsigned long long)g_p2DevCls,hn,(unsigned long long)g_p2HeroCls,(unsigned long long)g_p2World,(unsigned long long)g_gsCDO,
+            (unsigned long long)g_beginThunk,(unsigned long long)g_finishThunk,(unsigned long long)g_p2GlaThunk,(unsigned long long)g_p2Dp);
+    return g_beginThunk && g_finishThunk;
+}
+// Generic deferred spawn of `cls` at (x,y,z). Returns the constructed actor (or 0 on null/catchable fault). Both calls
+// are CallGuarded so a catchable exception is caught + logged (the VEH logs an uncatchable __fastfail RIP separately).
+static uintptr_t P2SpawnActor(uintptr_t cls, double x, double y, double z){
+    static uint8_t xf[0x60]; memset(xf,0,sizeof(xf));
+    *(double*)(xf+0x18)=1.0;                                                       // quat W=1 (identity rot)
+    *(double*)(xf+0x20)=x; *(double*)(xf+0x28)=y; *(double*)(xf+0x30)=z;           // translation
+    *(double*)(xf+0x38)=1.0; *(double*)(xf+0x40)=1.0; *(double*)(xf+0x48)=1.0;     // scale (1,1,1)
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(uint64_t*)(g_pbuf+g_oBWorld)=(uint64_t)g_p2World;
+    *(uint64_t*)(g_pbuf+g_oBClass)=(uint64_t)cls;
+    memcpy(g_pbuf+g_oBXform,xf,0x50);
+    g_pbuf[g_oBColl]=2;                                                            // AdjustIfPossibleButAlwaysSpawn
+    if(CallGuarded(g_beginFn,g_beginThunk,g_beginChild,(void*)g_gsCDO,g_pbuf,g_rbuf)){ Marker("[P2] BeginDeferredActorSpawnFromClass FAULTED\r\n"); return 0; }
+    uintptr_t deferred=(uintptr_t)*(uint64_t*)g_rbuf; if(!LooksLikePtr(deferred)) deferred=*(uint64_t*)(g_pbuf+g_oBRet);
+    if(!LooksLikePtr(deferred)){ Marker("[P2] BeginDeferred returned null\r\n"); return 0; }
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(uint64_t*)(g_pbuf+g_oFActor)=(uint64_t)deferred; memcpy(g_pbuf+g_oFXform,xf,0x50);
+    if(CallGuarded(g_finishFn,g_finishThunk,g_finishChild,(void*)g_gsCDO,g_pbuf,g_rbuf)){ Marker("[P2] FinishSpawningActor FAULTED\r\n"); return deferred; }
+    uintptr_t actor=(uintptr_t)*(uint64_t*)g_rbuf; if(!LooksLikePtr(actor)) actor=*(uint64_t*)(g_pbuf+g_oFRet); if(!LooksLikePtr(actor)) actor=deferred;
+    return actor;
+}
+static void DoSpawnP2(){
+    Marker("[P2] === Phase 2: spawn BP_Dev PC + hero (NO swap/possess) ===\r\n");
+    // Prefer a real in-world spawn point (the DefaultPawn's location) over the void origin.
+    if(g_p2GlaThunk && g_p2Dp){
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(!CallGuarded(g_p2GlaFn,g_p2GlaThunk,g_p2GlaChild,(void*)g_p2Dp,g_pbuf,g_rbuf)){
+            double x=*(double*)(g_rbuf+0), y=*(double*)(g_rbuf+8), z=*(double*)(g_rbuf+16);
+            if(x!=0.0||y!=0.0||z!=0.0){ g_p2X=x; g_p2Y=y; g_p2Z=z; }
+        }
+    }
+    Markerf("[P2] spawn location = (%.0f,%.0f,%.0f)\r\n",g_p2X,g_p2Y,g_p2Z);
+    // 1. Spawn the BP_Dev PC first (wall #2 class; the crash-gate). Marker is flushed per line, so even an uncatchable
+    //    hero-spawn crash below still leaves this PC result on disk.
+    char n[160]="?"; ObjName(g_p2DevCls,n,sizeof(n));
+    Markerf("[P2] >>> spawning BP_Dev PC class '%s'\r\n",n);
+    uintptr_t devPc=P2SpawnActor(g_p2DevCls, g_p2X, g_p2Y, g_p2Z);
+    if(!LooksLikePtr(devPc)){ Marker("[P2] BP_Dev PC spawn FAILED (null/fault) — Phase-2 gate FAILED; bank.\r\n"); Marker("[P2] === Phase 2 done (gate failed). ===\r\n"); return; }
+    { char cn[128]="-"; ClassName(devPc,cn,sizeof(cn)); Markerf("[P2] <<< BP_Dev PC SPAWNED obj=0x%llX cls=%s — construction SURVIVED!\r\n",(unsigned long long)devPc,cn);
+      uintptr_t dc=ClassOf(devPc);
+      Marker("[P2] BP_Dev PC drop-in / control fns (present => Phase 3/4 have a real target):\r\n");
+      ReportFunc(dc,"DropPlaneComponentSetup"); ReportFunc(dc,"UpdateIsInDropPod"); ReportFunc(dc,"FinishDropPhaseHiding");
+      ReportFunc(dc,"TryGetLocalLokiController"); ReportFunc(dc,"ClientRestart"); ReportFunc(dc,"Possess"); }
+    // 2. Spawn the hero (only after the PC survived). Nudge Z up so it doesn't co-locate with the PC.
+    ObjName(g_p2HeroCls,n,sizeof(n)); Markerf("[P2] >>> spawning hero class '%s'\r\n",n);
+    uintptr_t hero=P2SpawnActor(g_p2HeroCls, g_p2X, g_p2Y, g_p2Z+120.0);
+    if(LooksLikePtr(hero)){ char cn[128]="-"; ClassName(hero,cn,sizeof(cn)); Markerf("[P2] <<< HERO SPAWNED obj=0x%llX cls=%s — hero construction SURVIVED!\r\n",(unsigned long long)hero,cn);
+        uintptr_t hc=ClassOf(hero); ReportFunc(hc,"GetAbilitySystemComponent"); ReportFunc(hc,"BeginPlay"); }
+    else Marker("[P2] hero spawn FAILED (null/fault).\r\n");
+    Marker("[P2] === Phase 2 done. NO swap/possess performed (that is Phase 3/4). ===\r\n");
+}
+
+// ---- PHASE 3a (S79 moonshot): read-only census of the controller-SWAP surface (no hook, no spawn, no write) ----
+// Phase 3 makes a spawned BP_Dev PC the LOCAL active controller. That needs two engine offsets that are NOT reflected
+// UPROPERTYs (PropOffsetOnClass can't find them): ULocalPlayer->PlayerController and APlayerController->Player. Find
+// them by POINTER-EQUALITY scan against the CURRENT local player + native PC (robust, no disasm needed). Everything
+// here is off-thread read-only RPM — no .text hook is ever installed, so the anti-tamper has nothing to catch.
+static void ScanForPtr(uintptr_t obj, uintptr_t want, uint32_t span, const char* tag){
+    int hits=0;
+    for(uint32_t o=0;o<span && hits<8;o+=8){ if(!SafeReadable((void*)(obj+o),8)) continue; if(*(uintptr_t*)(obj+o)==want){ Markerf("[SWAP]   %s @ +0x%X\r\n",tag,o); hits++; } }
+    if(!hits) Markerf("[SWAP]   %s NOT FOUND in [0,0x%X)\r\n",tag,span);
+}
+static void DoSwapCensus(){
+    Marker("[SWAP] === Phase 3a: controller-swap surface census (read-only) ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+    uintptr_t P=FindInstExactClass("LokiPlayerController"); if(!P) P=FindInstClassSub("LokiPlayerController");
+    uintptr_t GI=FindInstClassSub("GameInstance");
+    char lcn[128]="-",pcn[128]="-",gcn[128]="-",lon[160]="-",pon[160]="-";
+    if(L){ClassName(L,lcn,sizeof(lcn));ObjName(L,lon,sizeof(lon));} if(P){ClassName(P,pcn,sizeof(pcn));ObjName(P,pon,sizeof(pon));} if(GI)ClassName(GI,gcn,sizeof(gcn));
+    Markerf("[SWAP] LocalPlayer=0x%llX(%s '%s') localPC=0x%llX(%s '%s') GameInstance=0x%llX(%s)\r\n",
+            (unsigned long long)L,lcn,lon,(unsigned long long)P,pcn,pon,(unsigned long long)GI,gcn);
+    if(!L||!P){ Marker("[SWAP] missing LocalPlayer or PC — cannot census swap surface. ===\r\n"); return; }
+    Marker("[SWAP] ULocalPlayer->PlayerController (scan LocalPlayer for a qword == localPC):\r\n");
+    ScanForPtr(L,P,0x800,"LocalPlayer->PlayerController");
+    Marker("[SWAP] APlayerController->Player (scan localPC for a qword == LocalPlayer):\r\n");
+    ScanForPtr(P,L,0x1000,"PC->Player");
+    if(GI){ Marker("[SWAP] GameInstance refs to localPC (informational — LocalPlayers array / cached PC):\r\n"); ScanForPtr(GI,P,0x600,"GameInstance->? localPC"); ScanForPtr(GI,L,0x600,"GameInstance->? LocalPlayer"); }
+    Marker("[SWAP] === Phase 3a done. (Phase 3 WRITE = point those offsets at the spawned BP_Dev PC + refire SpectatorStateChanged.) ===\r\n");
+}
+
+// ---- PHASE 3 (S79 moonshot, MINIMAL): controller swap + revert/crash monitor ----
+// Reuses the Phase-2 spawn machinery (ResolveSpawnP2 + P2SpawnActor) to spawn a fresh BP_Dev PC, then repoints the
+// local player's controller to it. The two-pointer swap is done ON THE GAME THREAD inside the PI hook (a BP-call
+// boundary — the safest point to repoint a live controller). Offsets are RE-VERIFIED by pointer equality this launch
+// (Phase-3a found L->PC@+0x38, PC->Player@+0x458) before trusting them. The monitor is read-only off-thread.
+static uintptr_t g_swL=0, g_swOldPc=0, g_swDevPc=0; static uint32_t g_swLpcOff=0x38, g_swPcPlayerOff=0x458;
+static bool ResolveSwap(){
+    if(!ResolveSpawnP2()) return false;                 // resolves devCls/heroCls/world/spawn-thunks/dp + K2_GetActorLocation
+    g_swL = FindInstExactClass("LocalPlayer"); if(!g_swL) g_swL=FindInstClassSub("LocalPlayer");
+    g_swOldPc = g_p2NativePc ? g_p2NativePc : FindInstClassSub("LokiPlayerController");
+    if(!g_swL||!g_swOldPc){ Markerf("[SW] resolve FAIL L=0x%llX oldPc=0x%llX\r\n",(unsigned long long)g_swL,(unsigned long long)g_swOldPc); return false; }
+    // Verify/re-scan the two swap offsets by pointer equality (don't blindly trust the hardcoded 0x38/0x458).
+    if(!(SafeReadable((void*)(g_swL+g_swLpcOff),8) && *(uintptr_t*)(g_swL+g_swLpcOff)==g_swOldPc)){
+        g_swLpcOff=0xFFFFFFFF; for(uint32_t o=0;o<0x800;o+=8){ if(SafeReadable((void*)(g_swL+o),8) && *(uintptr_t*)(g_swL+o)==g_swOldPc){ g_swLpcOff=o; break; } } }
+    if(!(SafeReadable((void*)(g_swOldPc+g_swPcPlayerOff),8) && *(uintptr_t*)(g_swOldPc+g_swPcPlayerOff)==g_swL)){
+        g_swPcPlayerOff=0xFFFFFFFF; for(uint32_t o=0;o<0x1000;o+=8){ if(SafeReadable((void*)(g_swOldPc+o),8) && *(uintptr_t*)(g_swOldPc+o)==g_swL){ g_swPcPlayerOff=o; break; } } }
+    Markerf("[SW] resolved L=0x%llX oldPc=0x%llX devCls=0x%llX lpcOff=0x%X pcPlayerOff=0x%X\r\n",
+            (unsigned long long)g_swL,(unsigned long long)g_swOldPc,(unsigned long long)g_p2DevCls,g_swLpcOff,g_swPcPlayerOff);
+    return g_swLpcOff!=0xFFFFFFFF && g_swPcPlayerOff!=0xFFFFFFFF && g_beginThunk && g_finishThunk;
+}
+static void DoSwap(){
+    Marker("[SW] === Phase 3: minimal controller swap ===\r\n");
+    // spawn point from the DefaultPawn (reuse the Phase-2 K2_GetActorLocation resolution)
+    if(g_p2GlaThunk && g_p2Dp){
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(!CallGuarded(g_p2GlaFn,g_p2GlaThunk,g_p2GlaChild,(void*)g_p2Dp,g_pbuf,g_rbuf)){
+            double x=*(double*)(g_rbuf+0),y=*(double*)(g_rbuf+8),z=*(double*)(g_rbuf+16); if(x||y||z){ g_p2X=x; g_p2Y=y; g_p2Z=z; } } }
+    Markerf("[SW] spawn loc=(%.0f,%.0f,%.0f)\r\n",g_p2X,g_p2Y,g_p2Z);
+    uintptr_t devPc=P2SpawnActor(g_p2DevCls, g_p2X, g_p2Y, g_p2Z);
+    if(!LooksLikePtr(devPc)){ Marker("[SW] BP_Dev PC spawn FAILED — aborting swap (no write).\r\n"); g_swDevPc=0; return; }
+    { char cn[128]="-"; ClassName(devPc,cn,sizeof(cn)); Markerf("[SW] BP_Dev PC spawned=0x%llX(%s)\r\n",(unsigned long long)devPc,cn); }
+    g_swDevPc=devPc;
+    // THE SWAP (game thread, at the PI boundary):
+    uintptr_t beforeLpc = SafeReadable((void*)(g_swL+g_swLpcOff),8)?*(uintptr_t*)(g_swL+g_swLpcOff):0;
+    *(uintptr_t*)(g_swL+g_swLpcOff)=(uintptr_t)devPc;                    // LocalPlayer->PlayerController = devPC
+    *(uintptr_t*)(devPc+g_swPcPlayerOff)=(uintptr_t)g_swL;               // devPC->Player = LocalPlayer
+    if(SafeReadable((void*)(g_swOldPc+g_swPcPlayerOff),8)) *(uintptr_t*)(g_swOldPc+g_swPcPlayerOff)=0;  // old PC->Player = null
+    Markerf("[SW] SWAPPED: L+0x%X: 0x%llX -> 0x%llX ; devPC+0x%X = L ; oldPC+0x%X = 0\r\n",
+            g_swLpcOff,(unsigned long long)beforeLpc,(unsigned long long)devPc,g_swPcPlayerOff,g_swPcPlayerOff);
+    Marker("[SW] swap applied on game thread — worker monitors for revert/crash.\r\n");
+}
+
+// ---- PHASE 4 (S79 moonshot): possess a hero on the swapped-in BP_Dev PC + drive drop-in ----
+static uintptr_t g_poPc=0, g_poHero=0; static uint32_t g_poPawnOff=0x3F8;
+static void* g_poPossFn=0; static uintptr_t g_poPossThunk=0,g_poPossChild=0; static uint32_t g_poInPawn=0;
+static void* g_poFdphFn=0; static uintptr_t g_poFdphThunk=0,g_poFdphChild=0;
+static void* g_poUidpFn=0; static uintptr_t g_poUidpThunk=0,g_poUidpChild=0; static uint32_t g_poUidpArg=0;
+static void* g_poDpcsFn=0; static uintptr_t g_poDpcsThunk=0,g_poDpcsChild=0;
+static bool ResolvePossess(){
+    if(!ResolveSpawnP2()) return false;                 // heroCls / world / spawn-thunks / dp / K2_GetActorLocation
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+    if(!L){ Marker("[PO] no LocalPlayer\r\n"); return false; }
+    g_poPc = SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0;   // the swapped-in PC (Phase 3 persisted)
+    if(!LooksLikePtr(g_poPc)){ Marker("[PO] L->PlayerController null\r\n"); return false; }
+    char pcn[128]="-"; ClassName(g_poPc,pcn,sizeof(pcn));
+    bool isDev = strstr(pcn,"Dev")!=nullptr;
+    Markerf("[PO] local PC = 0x%llX (%s) %s\r\n",(unsigned long long)g_poPc,pcn, isDev?"[swapped-in BP_Dev]":"[NOT BP_Dev — run the swap first?]");
+    uintptr_t pcCls=ClassOf(g_poPc);
+    ResolveFunc(pcCls,"Possess",&g_poPossFn,&g_poPossThunk,&g_poPossChild); if(g_poPossChild) g_poInPawn=g_offParam(g_poPossChild,"InPawn",0);
+    ResolveFunc(pcCls,"FinishDropPhaseHiding",&g_poFdphFn,&g_poFdphThunk,&g_poFdphChild);
+    ResolveFunc(pcCls,"UpdateIsInDropPod",&g_poUidpFn,&g_poUidpThunk,&g_poUidpChild); g_poUidpArg=0;
+    ResolveFunc(pcCls,"DropPlaneComponentSetup",&g_poDpcsFn,&g_poDpcsThunk,&g_poDpcsChild);
+    uint32_t po=PropOffsetOnClass(pcCls,"Pawn"); if(po!=0xFFFFFFFF) g_poPawnOff=po;
+    Markerf("[PO] resolved possThunk=0x%llX fdph=0x%llX uidp=0x%llX dpcs=0x%llX pawnOff=0x%X heroCls=0x%llX\r\n",
+            (unsigned long long)g_poPossThunk,(unsigned long long)g_poFdphThunk,(unsigned long long)g_poUidpThunk,(unsigned long long)g_poDpcsThunk,g_poPawnOff,(unsigned long long)g_p2HeroCls);
+    return g_poPossThunk && g_p2HeroCls;
+}
+static void DoPossess(){
+    Marker("[PO] === Phase 4: possess hero on swapped-in PC + drive drop-in ===\r\n");
+    uintptr_t curPawn=SafeReadable((void*)(g_poPc+g_poPawnOff),8)?*(uintptr_t*)(g_poPc+g_poPawnOff):0;
+    char cpn[96]="-"; if(LooksLikePtr(curPawn))ClassName(curPawn,cpn,sizeof(cpn));
+    Markerf("[PO] PC->Pawn before = 0x%llX(%s)\r\n",(unsigned long long)curPawn,cpn);
+    if(g_p2GlaThunk && g_p2Dp){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(!CallGuarded(g_p2GlaFn,g_p2GlaThunk,g_p2GlaChild,(void*)g_p2Dp,g_pbuf,g_rbuf)){ double x=*(double*)(g_rbuf+0),y=*(double*)(g_rbuf+8),z=*(double*)(g_rbuf+16); if(x||y||z){g_p2X=x;g_p2Y=y;g_p2Z=z;} } }
+    Markerf("[PO] spawning hero at (%.0f,%.0f,%.0f)...\r\n",g_p2X,g_p2Y,g_p2Z);
+    uintptr_t hero=P2SpawnActor(g_p2HeroCls,g_p2X,g_p2Y,g_p2Z);
+    if(!LooksLikePtr(hero)){ Marker("[PO] hero spawn FAILED — abort.\r\n"); return; }
+    g_poHero=hero; { char hcn[96]="-"; ClassName(hero,hcn,sizeof(hcn)); Markerf("[PO] hero spawned=0x%llX(%s)\r\n",(unsigned long long)hero,hcn); }
+    // Possess (C++ Possess via the exec thunk; locally-spawned PC+hero have local authority so OnPossess runs).
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint64_t*)(g_pbuf+g_poInPawn)=(uint64_t)hero;
+    Marker("[PO] >>> Possess(PC, hero)\r\n");
+    if(CallGuarded(g_poPossFn,g_poPossThunk,g_poPossChild,(void*)g_poPc,g_pbuf,g_rbuf)) Marker("[PO] Possess FAULTED\r\n"); else Marker("[PO] <<< Possess returned\r\n");
+    // Drive the drop-in flags (S74: FinishDropPhaseHiding sets PC+0xF28=1, no server check).
+    if(g_poFdphThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_poFdphFn,g_poFdphThunk,g_poFdphChild,(void*)g_poPc,g_pbuf,g_rbuf)) Marker("[PO] FinishDropPhaseHiding FAULTED\r\n"); else Marker("[PO] FinishDropPhaseHiding done (PC+0xF28=1)\r\n"); }
+    if(g_poUidpThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); g_pbuf[g_poUidpArg]=0; if(CallGuarded(g_poUidpFn,g_poUidpThunk,g_poUidpChild,(void*)g_poPc,g_pbuf,g_rbuf)) Marker("[PO] UpdateIsInDropPod FAULTED\r\n"); else Marker("[PO] UpdateIsInDropPod(false) done\r\n"); }
+    if(g_poDpcsThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_poDpcsFn,g_poDpcsThunk,g_poDpcsChild,(void*)g_poPc,g_pbuf,g_rbuf)) Marker("[PO] DropPlaneComponentSetup FAULTED\r\n"); else Marker("[PO] DropPlaneComponentSetup done\r\n"); }
+    uintptr_t nowPawn=SafeReadable((void*)(g_poPc+g_poPawnOff),8)?*(uintptr_t*)(g_poPc+g_poPawnOff):0;
+    char npn[96]="-"; if(LooksLikePtr(nowPawn))ClassName(nowPawn,npn,sizeof(npn));
+    Markerf("[PO] PC->Pawn after = 0x%llX(%s) %s\r\n",(unsigned long long)nowPawn,npn, nowPawn==hero?"<< HERO POSSESSED":"(not the hero)");
+    Marker("[PO] === Phase 4 done. ===\r\n");
+}
+
+// ---- PHASE 4b (S79 moonshot): make the possessed hero visible + controllable (+ deploy-func recon) ----
+static uintptr_t g_depHero=0, g_depPc=0, g_depCam=0;
+static void* g_depHideFn=0; static uintptr_t g_depHideThunk=0,g_depHideChild=0; static uint32_t g_depHideArg=0;
+static void* g_depEIFn=0;   static uintptr_t g_depEIThunk=0,  g_depEIChild=0;   static uint32_t g_depEIArg=0;
+// Log every UFunction on cls's chain whose name contains any keyword — recon for the deploy pipeline.
+static void ListFuncsMatching(uintptr_t cls, const char* const* keys, int nkeys){
+    int g=0; while(LooksLikePtr(cls)&&g++<10){
+        char ccn[96]="?"; GetFNameStr(NameId(cls),ccn,sizeof(ccn));
+        uintptr_t f=SafeReadable((void*)(cls+UST_CHILDREN),8)?*(uintptr_t*)(cls+UST_CHILDREN):0; int i=0;
+        while(LooksLikePtr(f)&&i++<1200){ char fn[128];
+            if(GetFNameStr(NameId(f),fn,sizeof(fn))){ for(int k=0;k<nkeys;k++){ if(strstr(fn,keys[k])){ uintptr_t th=SafeReadable((void*)(f+UFUNC_FUNC),8)?*(uintptr_t*)(f+UFUNC_FUNC):0; Markerf("[DEP]   %s::%s thunk=0x%llX\r\n",ccn,fn,(unsigned long long)th); break; } } }
+            f=SafeReadable((void*)(f+FIELD_NEXT_UF),8)?*(uintptr_t*)(f+FIELD_NEXT_UF):0; }
+        cls=SafeReadable((void*)(cls+UST_SUPER),8)?*(uintptr_t*)(cls+UST_SUPER):0;
+    }
+}
+static bool ResolveDeploy(){
+    if(!ResolveSpawnP2()) return false;                 // for g_p2Gla (K2_GetActorLocation)
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+    if(!L){ Marker("[DEP] no LocalPlayer\r\n"); return false; }
+    g_depPc = SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0;
+    if(!LooksLikePtr(g_depPc)){ Marker("[DEP] L->PlayerController null\r\n"); return false; }
+    uint32_t po=PropOffsetOnClass(ClassOf(g_depPc),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    g_depHero = SafeReadable((void*)(g_depPc+pawnOff),8)?*(uintptr_t*)(g_depPc+pawnOff):0;
+    if(!LooksLikePtr(g_depHero)){ Marker("[DEP] PC->Pawn null — run possess first.\r\n"); return false; }
+    char hcn[96]="-"; ClassName(g_depHero,hcn,sizeof(hcn));
+    Markerf("[DEP] hero=0x%llX(%s) pc=0x%llX pawnOff=0x%X\r\n",(unsigned long long)g_depHero,hcn,(unsigned long long)g_depPc,pawnOff);
+    uintptr_t hc=ClassOf(g_depHero);
+    ResolveFunc(hc,"SetActorHiddenInGame",&g_depHideFn,&g_depHideThunk,&g_depHideChild); if(g_depHideChild) g_depHideArg=g_offParam(g_depHideChild,"bNewHidden",0);
+    ResolveFunc(hc,"EnableInput",&g_depEIFn,&g_depEIThunk,&g_depEIChild);                 if(g_depEIChild)   g_depEIArg=g_offParam(g_depEIChild,"PlayerController",0);
+    g_depCam=FindInstClassSub("PlayerCameraManager");
+    Marker("[DEP] hero deploy/visibility/drop-ish UFunctions (recon):\r\n");
+    static const char* keys[]={"Deploy","DropPod","DropPlane","Reveal","Hidden","Visib","Reset","Respawn","Landed","Land"};
+    ListFuncsMatching(hc,keys,10);
+    Markerf("[DEP] resolved hideThunk=0x%llX eiThunk=0x%llX camMgr=0x%llX\r\n",(unsigned long long)g_depHideThunk,(unsigned long long)g_depEIThunk,(unsigned long long)g_depCam);
+    return true;
+}
+static void DoDeploy(){
+    Marker("[DEP] === Phase 4b: make hero visible + bind input ===\r\n");
+    if(g_p2GlaThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(!CallGuarded(g_p2GlaFn,g_p2GlaThunk,g_p2GlaChild,(void*)g_depHero,g_pbuf,g_rbuf)) Markerf("[DEP] hero loc=(%.0f,%.0f,%.0f)\r\n",*(double*)(g_rbuf),*(double*)(g_rbuf+8),*(double*)(g_rbuf+16)); }
+    if(g_p2GlaThunk && LooksLikePtr(g_depCam)){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(!CallGuarded(g_p2GlaFn,g_p2GlaThunk,g_p2GlaChild,(void*)g_depCam,g_pbuf,g_rbuf)) Markerf("[DEP] camMgr loc=(%.0f,%.0f,%.0f)\r\n",*(double*)(g_rbuf),*(double*)(g_rbuf+8),*(double*)(g_rbuf+16)); }
+    if(g_depHideThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); g_pbuf[g_depHideArg]=0;
+        if(CallGuarded(g_depHideFn,g_depHideThunk,g_depHideChild,(void*)g_depHero,g_pbuf,g_rbuf)) Marker("[DEP] SetActorHiddenInGame FAULTED\r\n"); else Marker("[DEP] SetActorHiddenInGame(false) done\r\n"); }
+    if(g_depEIThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint64_t*)(g_pbuf+g_depEIArg)=(uint64_t)g_depPc;
+        if(CallGuarded(g_depEIFn,g_depEIThunk,g_depEIChild,(void*)g_depHero,g_pbuf,g_rbuf)) Marker("[DEP] EnableInput FAULTED\r\n"); else Marker("[DEP] EnableInput(PC) done\r\n"); }
+    Marker("[DEP] === Phase 4b done. ===\r\n");
+}
+
+// ---- PHASE 4c (S79 moonshot): reveal the possessed hero (SetPredropHidden) + point the camera at it ----
+static uintptr_t g_uhHero=0, g_uhPc=0, g_uhCam=0;
+static void* g_uhSphFn=0; static uintptr_t g_uhSphThunk=0,g_uhSphChild=0; static uint32_t g_uhSphArg=0;
+static void* g_uhVtFn=0;  static uintptr_t g_uhVtThunk=0, g_uhVtChild=0;  static uint32_t g_uhVtTgt=0;
+static bool ResolveUnhide(){
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer"); if(!L){ Marker("[UH] no LocalPlayer\r\n"); return false; }
+    g_uhPc=SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0; if(!LooksLikePtr(g_uhPc)){ Marker("[UH] L->PC null\r\n"); return false; }
+    uint32_t po=PropOffsetOnClass(ClassOf(g_uhPc),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    g_uhHero=SafeReadable((void*)(g_uhPc+pawnOff),8)?*(uintptr_t*)(g_uhPc+pawnOff):0; if(!LooksLikePtr(g_uhHero)){ Marker("[UH] PC->Pawn null\r\n"); return false; }
+    char hcn[96]="-"; ClassName(g_uhHero,hcn,sizeof(hcn)); Markerf("[UH] hero=0x%llX(%s) pc=0x%llX\r\n",(unsigned long long)g_uhHero,hcn,(unsigned long long)g_uhPc);
+    ResolveFunc(ClassOf(g_uhHero),"SetPredropHidden",&g_uhSphFn,&g_uhSphThunk,&g_uhSphChild); g_uhSphArg=0;   // first param (bool bHidden)
+    ResolveFunc(ClassOf(g_uhPc),"SetViewTargetWithBlend",&g_uhVtFn,&g_uhVtThunk,&g_uhVtChild); if(g_uhVtChild) g_uhVtTgt=g_offParam(g_uhVtChild,"NewViewTarget",0);
+    g_uhCam=FindInstClassSub("CameraManager");
+    Markerf("[UH] sphThunk=0x%llX vtThunk=0x%llX vtTgtOff=0x%X camMgr=0x%llX\r\n",(unsigned long long)g_uhSphThunk,(unsigned long long)g_uhVtThunk,g_uhVtTgt,(unsigned long long)g_uhCam);
+    return g_uhSphThunk!=0 || g_uhVtThunk!=0;
+}
+static void DoUnhide(){
+    Marker("[UH] === Phase 4c: reveal hero + point camera ===\r\n");
+    if(g_uhSphThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); g_pbuf[g_uhSphArg]=0;   // false = not pre-drop-hidden
+        if(CallGuarded(g_uhSphFn,g_uhSphThunk,g_uhSphChild,(void*)g_uhHero,g_pbuf,g_rbuf)) Marker("[UH] SetPredropHidden FAULTED\r\n"); else Marker("[UH] SetPredropHidden(false) done\r\n"); }
+    if(g_uhVtThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint64_t*)(g_pbuf+g_uhVtTgt)=(uint64_t)g_uhHero;   // BlendTime etc = 0
+        if(CallGuarded(g_uhVtFn,g_uhVtThunk,g_uhVtChild,(void*)g_uhPc,g_pbuf,g_rbuf)) Marker("[UH] SetViewTargetWithBlend FAULTED\r\n"); else Marker("[UH] SetViewTargetWithBlend(hero) done\r\n"); }
+    Marker("[UH] === Phase 4c done. ===\r\n");
+}
+
+// ---- PHASE 4d (S79 moonshot): make the NATIVE PC (the render/input-following one) own the hero ----
+static uintptr_t g_npNative=0, g_npDev=0, g_npL=0, g_npHero=0, g_npCam=0; static uint32_t g_npPawnOff=0x3F8, g_npCtrlOff=0xFFFFFFFF;
+static void* g_npPossFn=0; static uintptr_t g_npPossThunk=0,g_npPossChild=0; static uint32_t g_npInPawn=0;
+static void* g_npVtFn=0;   static uintptr_t g_npVtThunk=0,  g_npVtChild=0;   static uint32_t g_npVtTgt=0;
+static void* g_npSphFn=0;  static uintptr_t g_npSphThunk=0, g_npSphChild=0;
+static bool ResolveNPossess(){
+    if(!ResolveSpawnP2()) return false;                       // spawn machinery + K2_GetActorLocation (fallback hero)
+    g_npL=FindInstExactClass("LocalPlayer"); if(!g_npL) g_npL=FindInstClassSub("LocalPlayer");
+    g_npNative=FindInstExactClass("LokiPlayerController");     // native networked PC (exact class, NOT the BP_Dev subclass)
+    g_npDev=FindInstClassSub("BP_LokiPlayerController_Dev");   // our swapped-in BP_Dev PC instance (holds the hero)
+    if(!g_npL||!g_npNative){ Markerf("[NP] resolve FAIL L=0x%llX native=0x%llX\r\n",(unsigned long long)g_npL,(unsigned long long)g_npNative); return false; }
+    g_npPawnOff=PropOffsetOnClass(ClassOf(g_npNative),"Pawn"); if(g_npPawnOff==0xFFFFFFFF) g_npPawnOff=0x3F8;
+    if(g_npDev){ g_npHero=SafeReadable((void*)(g_npDev+g_npPawnOff),8)?*(uintptr_t*)(g_npDev+g_npPawnOff):0; }
+    ResolveFunc(ClassOf(g_npNative),"Possess",&g_npPossFn,&g_npPossThunk,&g_npPossChild); if(g_npPossChild) g_npInPawn=g_offParam(g_npPossChild,"InPawn",0);
+    ResolveFunc(ClassOf(g_npNative),"SetViewTargetWithBlend",&g_npVtFn,&g_npVtThunk,&g_npVtChild); if(g_npVtChild) g_npVtTgt=g_offParam(g_npVtChild,"NewViewTarget",0);
+    if(LooksLikePtr(g_npHero)){ ResolveFunc(ClassOf(g_npHero),"SetPredropHidden",&g_npSphFn,&g_npSphThunk,&g_npSphChild); g_npCtrlOff=PropOffsetOnClass(ClassOf(g_npHero),"Controller"); }
+    g_npCam=FindInstClassSub("CameraManager");
+    Markerf("[NP] native=0x%llX dev=0x%llX hero=0x%llX pawnOff=0x%X ctrlOff=0x%X possThunk=0x%llX vtThunk=0x%llX camMgr=0x%llX\r\n",
+            (unsigned long long)g_npNative,(unsigned long long)g_npDev,(unsigned long long)g_npHero,g_npPawnOff,g_npCtrlOff,(unsigned long long)g_npPossThunk,(unsigned long long)g_npVtThunk,(unsigned long long)g_npCam);
+    return g_npNative && (LooksLikePtr(g_npHero) || g_beginThunk);
+}
+static void DoNPossess(){
+    Marker("[NP] === Phase 4d: native-PC possess the hero ===\r\n");
+    uintptr_t hero=g_npHero;
+    if(!LooksLikePtr(hero) && g_beginThunk){                   // fallback: spawn a fresh hero if BP_Dev PC had none
+        if(g_p2GlaThunk && g_p2Dp){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallGuarded(g_p2GlaFn,g_p2GlaThunk,g_p2GlaChild,(void*)g_p2Dp,g_pbuf,g_rbuf)){ double x=*(double*)(g_rbuf),y=*(double*)(g_rbuf+8),z=*(double*)(g_rbuf+16); if(x||y||z){g_p2X=x;g_p2Y=y;g_p2Z=z;} } }
+        hero=P2SpawnActor(g_p2HeroCls,g_p2X,g_p2Y,g_p2Z);
+        if(LooksLikePtr(hero)){ ResolveFunc(ClassOf(hero),"SetPredropHidden",&g_npSphFn,&g_npSphThunk,&g_npSphChild); g_npCtrlOff=PropOffsetOnClass(ClassOf(hero),"Controller"); }
+    }
+    if(!LooksLikePtr(hero)){ Marker("[NP] no hero — abort.\r\n"); return; }
+    g_npHero=hero; { char hcn[96]="-"; ClassName(hero,hcn,sizeof(hcn)); Markerf("[NP] hero=0x%llX(%s)\r\n",(unsigned long long)hero,hcn); }
+    // 1. Restore the local-player association to the NATIVE PC (undo the Phase-3 swap).
+    if(SafeReadable((void*)(g_npL+0x38),8))     *(uintptr_t*)(g_npL+0x38)=(uintptr_t)g_npNative;
+    if(SafeReadable((void*)(g_npNative+0x458),8))*(uintptr_t*)(g_npNative+0x458)=(uintptr_t)g_npL;
+    Marker("[NP] restored L->PlayerController = native PC\r\n");
+    // 2. Possess the hero on the native PC (may no-op on the networked proxy — checked next).
+    if(g_npPossThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint64_t*)(g_pbuf+g_npInPawn)=(uint64_t)hero;
+        if(CallGuarded(g_npPossFn,g_npPossThunk,g_npPossChild,(void*)g_npNative,g_pbuf,g_rbuf)) Marker("[NP] Possess FAULTED\r\n"); else Marker("[NP] Possess(native,hero) returned\r\n"); }
+    // 3. If Possess didn't set the pawn (authority-gated), raw-wire pawn<->controller + clear the BP_Dev PC's pawn.
+    uintptr_t nowPawn=SafeReadable((void*)(g_npNative+g_npPawnOff),8)?*(uintptr_t*)(g_npNative+g_npPawnOff):0;
+    if(nowPawn!=hero){ Marker("[NP] Possess left Pawn unchanged — raw-wiring pawn<->controller\r\n");
+        if(SafeReadable((void*)(g_npNative+g_npPawnOff),8)) *(uintptr_t*)(g_npNative+g_npPawnOff)=(uintptr_t)hero;
+        if(g_npCtrlOff!=0xFFFFFFFF && SafeReadable((void*)(hero+g_npCtrlOff),8)) *(uintptr_t*)(hero+g_npCtrlOff)=(uintptr_t)g_npNative;
+        if(g_npDev){ uint32_t dp=PropOffsetOnClass(ClassOf(g_npDev),"Pawn"); if(dp!=0xFFFFFFFF && SafeReadable((void*)(g_npDev+dp),8)) *(uintptr_t*)(g_npDev+dp)=0; }
+    }
+    // 4. Un-hide the hero mesh.
+    if(g_npSphThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); g_pbuf[0]=0;
+        if(CallGuarded(g_npSphFn,g_npSphThunk,g_npSphChild,(void*)hero,g_pbuf,g_rbuf)) Marker("[NP] SetPredropHidden FAULTED\r\n"); else Marker("[NP] SetPredropHidden(false) done\r\n"); }
+    // 5. Point the native PC's camera at the hero.
+    if(g_npVtThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint64_t*)(g_pbuf+g_npVtTgt)=(uint64_t)hero;
+        if(CallGuarded(g_npVtFn,g_npVtThunk,g_npVtChild,(void*)g_npNative,g_pbuf,g_rbuf)) Marker("[NP] SetViewTargetWithBlend FAULTED\r\n"); else Marker("[NP] SetViewTargetWithBlend(hero) done\r\n"); }
+    uintptr_t fp=SafeReadable((void*)(g_npNative+g_npPawnOff),8)?*(uintptr_t*)(g_npNative+g_npPawnOff):0; char fpn[96]="-"; if(LooksLikePtr(fp))ClassName(fp,fpn,sizeof(fpn));
+    Markerf("[NP] native PC->Pawn now = 0x%llX(%s) %s\r\n",(unsigned long long)fp,fpn, fp==hero?"<< HERO":"(not hero)");
+    Marker("[NP] === Phase 4d done. ===\r\n");
+}
+
+// ---- PHASE 4e (S79 moonshot): camera-rig recon + pull-back (pure off-thread, no hook) ----
+static void DoCamFix(){
+    Marker("[CF] === Phase 4e: camera-rig recon + pull-back ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer"); if(!L){ Marker("[CF] no LocalPlayer ===\r\n"); return; }
+    uintptr_t pc=SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0; if(!LooksLikePtr(pc)){ Marker("[CF] L->PC null ===\r\n"); return; }
+    uint32_t po=PropOffsetOnClass(ClassOf(pc),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero=SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0; if(!LooksLikePtr(hero)){ Marker("[CF] PC->Pawn null ===\r\n"); return; }
+    char hcn[96]="-",pcn[96]="-"; ClassName(hero,hcn,sizeof(hcn)); ClassName(pc,pcn,sizeof(pcn));
+    uintptr_t cam=FindInstClassSub("CameraManager"); char ccn[96]="-"; if(cam) ClassName(cam,ccn,sizeof(ccn));
+    Markerf("[CF] hero=0x%llX(%s) pc=0x%llX(%s) camMgr=0x%llX(%s)\r\n",(unsigned long long)hero,hcn,(unsigned long long)pc,pcn,(unsigned long long)cam,ccn);
+    Marker("[CF] hero direct components (Outer==hero):\r\n");
+    uintptr_t spring=0, camComp=0; int n=0;
+    ForEachObject([&](uintptr_t o)->bool{
+        uintptr_t outer=SafeReadable((void*)(o+OUTER_OFF),8)?*(uintptr_t*)(o+OUTER_OFF):0; if(outer!=hero) return false;
+        char cn[96]="?",on[96]="?"; ClassName(o,cn,sizeof(cn)); ObjName(o,on,sizeof(on));
+        Markerf("[CF]   0x%llX cls=%s name=%s\r\n",(unsigned long long)o,cn,on);
+        if(!spring && (strstr(cn,"SpringArm")||strstr(cn,"Boom"))) spring=o;
+        if(!camComp && strstr(cn,"CameraComponent")) camComp=o;
+        return (++n>=48);
+    });
+    Markerf("[CF] spring=0x%llX camComp=0x%llX (found %d direct comps)\r\n",(unsigned long long)spring,(unsigned long long)camComp,n);
+    if(spring){ uint32_t armOff=PropOffsetOnClass(ClassOf(spring),"TargetArmLength");
+        if(armOff!=0xFFFFFFFF && SafeReadable((void*)(spring+armOff),4)){ float cur=*(float*)(spring+armOff);
+            Markerf("[CF] spring TargetArmLength @+0x%X = %.1f -> setting 2500\r\n",armOff,cur);
+            *(float*)(spring+armOff)=2500.0f; }
+        else Marker("[CF] TargetArmLength offset not resolved on spring-arm\r\n");
+    } else Marker("[CF] no spring-arm found on hero — camera likely driven by a custom LokiPlayerCameraManager (needs a different lever)\r\n");
+    Marker("[CF] === Phase 4e done — check the screen (view pulls back only if the spring-arm drives it). ===\r\n");
+}
+
+// ---- PHASE 4f (S79 moonshot): recon the deploy entry-point functions (read-only, no hook) ----
+static void DoDeployRecon(){
+    Marker("[DR] === Phase 4f: deploy entry-point recon (hero + PC) ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc = LooksLikePtr(L)? (SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0) : 0;
+    if(!LooksLikePtr(pc)) pc=FindInstExactClass("LokiPlayerController");
+    uint32_t po = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"Pawn"):0xFFFFFFFF; uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero = LooksLikePtr(pc)? (SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0) : 0;
+    static const char* keys[]={"Deploy","DropPlane","DropPod","Landed","OnLand","Restart","SetupPlayerInput","InitInput",
+        "InitializeInput","BindInput","MappingContext","ExitPod","FinishDrop","BeginDeploy","StartDeploy","OnRep_Pawn",
+        "PawnClientRestart","ClientSetHUD","AddHUD","CreateHUD","SetInputMode"};
+    const int NK=21;
+    if(LooksLikePtr(hero)){ char hcn[96]="-"; ClassName(hero,hcn,sizeof(hcn)); Markerf("[DR] --- HERO (%s) matching fns ---\r\n",hcn); ListFuncsMatching(ClassOf(hero),keys,NK); }
+    else Marker("[DR] no hero\r\n");
+    if(LooksLikePtr(pc)){ char pcn[96]="-"; ClassName(pc,pcn,sizeof(pcn)); Markerf("[DR] --- PC (%s) matching fns ---\r\n",pcn); ListFuncsMatching(ClassOf(pc),keys,NK); }
+    else Marker("[DR] no PC\r\n");
+    Marker("[DR] === Phase 4f done ===\r\n");
+}
+
+// ---- PHASE 4g (S79 moonshot): run the client-side possession setup we bypassed (OnRep_Pawn + ClientRestart) ----
+static uintptr_t g_crPc=0, g_crHero=0, g_crCam=0;
+static void* g_crOrpFn=0; static uintptr_t g_crOrpThunk=0,g_crOrpChild=0;
+static void* g_crCrFn=0;  static uintptr_t g_crCrThunk=0, g_crCrChild=0; static uint32_t g_crNewPawn=0;
+static bool ResolveCRestart(){
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer"); if(!L){ Marker("[CR] no LocalPlayer\r\n"); return false; }
+    g_crPc=SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0; if(!LooksLikePtr(g_crPc)){ Marker("[CR] L->PC null\r\n"); return false; }
+    uint32_t po=PropOffsetOnClass(ClassOf(g_crPc),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    g_crHero=SafeReadable((void*)(g_crPc+pawnOff),8)?*(uintptr_t*)(g_crPc+pawnOff):0; if(!LooksLikePtr(g_crHero)){ Marker("[CR] PC->Pawn null\r\n"); return false; }
+    ResolveFunc(ClassOf(g_crPc),"OnRep_Pawn",&g_crOrpFn,&g_crOrpThunk,&g_crOrpChild);
+    ResolveFunc(ClassOf(g_crPc),"ClientRestart",&g_crCrFn,&g_crCrThunk,&g_crCrChild); if(g_crCrChild) g_crNewPawn=g_offParam(g_crCrChild,"NewPawn",0);
+    g_crCam=FindInstClassSub("CameraManager");
+    char pcn[96]="-",hcn[96]="-"; ClassName(g_crPc,pcn,sizeof(pcn)); ClassName(g_crHero,hcn,sizeof(hcn));
+    Markerf("[CR] pc=0x%llX(%s) hero=0x%llX(%s) orpThunk=0x%llX crThunk=0x%llX newPawnOff=0x%X camMgr=0x%llX\r\n",
+            (unsigned long long)g_crPc,pcn,(unsigned long long)g_crHero,hcn,(unsigned long long)g_crOrpThunk,(unsigned long long)g_crCrThunk,g_crNewPawn,(unsigned long long)g_crCam);
+    return g_crOrpThunk || g_crCrThunk;
+}
+static void DoCRestart(){
+    Marker("[CR] === Phase 4g: client-side possession setup (OnRep_Pawn + ClientRestart) ===\r\n");
+    if(g_crOrpThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(CallGuarded(g_crOrpFn,g_crOrpThunk,g_crOrpChild,(void*)g_crPc,g_pbuf,g_rbuf)) Marker("[CR] OnRep_Pawn FAULTED\r\n"); else Marker("[CR] OnRep_Pawn done\r\n"); }
+    if(g_crCrThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint64_t*)(g_pbuf+g_crNewPawn)=(uint64_t)g_crHero;
+        if(CallGuarded(g_crCrFn,g_crCrThunk,g_crCrChild,(void*)g_crPc,g_pbuf,g_rbuf)) Marker("[CR] ClientRestart FAULTED\r\n"); else Marker("[CR] ClientRestart(hero) done\r\n"); }
+    Marker("[CR] === Phase 4g done. ===\r\n");
+}
+
+// ---- PHASE 4h (S79 moonshot, visual capstone): pull the hero's CameraComponent up+back so the hunter is framed ----
+static uintptr_t g_cfrHero=0, g_cfrComp=0;
+static void* g_cfrFn=0; static uintptr_t g_cfrThunk=0,g_cfrChild=0;                 // K2_SetWorldLocationAndRotation (camera component)
+static void* g_cfrGlaFn=0; static uintptr_t g_cfrGlaThunk=0,g_cfrGlaChild=0;        // K2_GetActorLocation (hero)
+static uint32_t g_cfrLoc=0, g_cfrRot=0x18, g_cfrTele=0xFFFFFFFF; static volatile long g_cfrReps=0;
+static bool ResolveCamFrame(){
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer"); if(!L){ Marker("[FR] no LocalPlayer\r\n"); return false; }
+    uintptr_t pc=SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0; if(!LooksLikePtr(pc)){ Marker("[FR] L->PC null\r\n"); return false; }
+    uint32_t po=PropOffsetOnClass(ClassOf(pc),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    g_cfrHero=SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0; if(!LooksLikePtr(g_cfrHero)){ Marker("[FR] PC->Pawn null\r\n"); return false; }
+    ForEachObject([&](uintptr_t o)->bool{ uintptr_t outer=SafeReadable((void*)(o+OUTER_OFF),8)?*(uintptr_t*)(o+OUTER_OFF):0; if(outer!=g_cfrHero)return false; char cn[96]; if(ClassName(o,cn,sizeof(cn))&&strstr(cn,"CameraComponent")){ g_cfrComp=o; return true; } return false; });
+    if(!g_cfrComp){ Marker("[FR] no CameraComponent on hero\r\n"); return false; }
+    ResolveFunc(ClassOf(g_cfrComp),"K2_SetWorldLocationAndRotation",&g_cfrFn,&g_cfrThunk,&g_cfrChild);
+    if(g_cfrChild){ g_cfrLoc=g_offParam(g_cfrChild,"NewLocation",0); g_cfrRot=g_offParam(g_cfrChild,"NewRotation",0x18); g_cfrTele=g_offParam(g_cfrChild,"bTeleport",0xFFFFFFFF); }
+    ResolveFunc(ClassOf(g_cfrHero),"K2_GetActorLocation",&g_cfrGlaFn,&g_cfrGlaThunk,&g_cfrGlaChild);
+    Markerf("[FR] hero=0x%llX camComp=0x%llX swlrThunk=0x%llX glaThunk=0x%llX loc@0x%X rot@0x%X tele@0x%X\r\n",
+            (unsigned long long)g_cfrHero,(unsigned long long)g_cfrComp,(unsigned long long)g_cfrThunk,(unsigned long long)g_cfrGlaThunk,g_cfrLoc,g_cfrRot,g_cfrTele);
+    return g_cfrThunk!=0 && g_cfrGlaThunk!=0;
+}
+static void DoCamFrame(){
+    static uint8_t frbuf[0x240];
+    // read the hero's WORLD location
+    memset(frbuf,0,sizeof(frbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    double hx=0,hy=0,hz=0;
+    if(!CallGuarded(g_cfrGlaFn,g_cfrGlaThunk,g_cfrGlaChild,(void*)g_cfrHero,frbuf,g_rbuf)){ hx=*(double*)(g_rbuf+0); hy=*(double*)(g_rbuf+8); hz=*(double*)(g_rbuf+16); }
+    // put the camera in WORLD space directly above the hero, looking straight down.
+    memset(frbuf,0,sizeof(frbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(double*)(frbuf+g_cfrLoc+0)=hx-60.0; *(double*)(frbuf+g_cfrLoc+8)=hy; *(double*)(frbuf+g_cfrLoc+16)=hz+3500.0;    // ~3500 above (authentic SUPERVIVE range), ~centered
+    *(double*)(frbuf+g_cfrRot+0)=-89.0;   *(double*)(frbuf+g_cfrRot+8)=0.0; *(double*)(frbuf+g_cfrRot+16)=0.0;          // world pitch -89 (straight down)
+    if(g_cfrTele!=0xFFFFFFFF && g_cfrTele<0x240) frbuf[g_cfrTele]=1;                                                    // bTeleport=true
+    bool fault=CallGuarded(g_cfrFn,g_cfrThunk,g_cfrChild,(void*)g_cfrComp,frbuf,g_rbuf);
+    if(InterlockedIncrement(&g_cfrReps)==1) Markerf(fault?"[FR] SetWorldLocationAndRotation FAULTED\r\n":"[FR] camera -> world (%.0f,%.0f,%.0f) pitch -89 (hero at %.0f,%.0f,%.0f); re-applying to hold\r\n",hx-60.0,hy,hz+3500.0,hx,hy,hz);
 }
 
 // ---- Route D (MODE_SPECTATOR_CAM): reveal the live tutorial world for the spectator ----
@@ -1066,6 +1565,126 @@ static void DoFreeCam(){
     if(h==1||h%100==0) Markerf("[FC] hit %ld cam=0x%llX pos=(%.0f,%.0f,%.0f)\r\n",h,(unsigned long long)g_fcCam,g_fcX,g_fcY,g_fcZ);
 }
 
+// ---- PHASE 1 (S79 MOONSHOT): force-load hero assets, then re-census ----
+// The decisive first gate: does the client's asset system work in the DS spectator process? S76 found
+// BP_HERO_*_C = 0x0 (unloaded) — but the CLIENT (unlike the stub) has every hero cooked into its OWN paks
+// (it's the exe that plays real matches). If a hero primary asset can be pulled into memory IN-PROCESS, the
+// client-side spawn path is unlocked; if not, the whole moonshot dies cheaply (bank the S70/S78 spectator).
+// Reuses the PROVEN missions load primitive: PrimaryAssetIDFromString -> GetPrimaryAssetIdList ->
+// AsyncLoadPrimaryAssets on the LokiAssetManager (missions_fix.cpp). The hero PrimaryAssetType is DISCOVERED
+// (try a candidate list, keep whichever returns ids) — no blind single-string guess, and the log records every
+// candidate tried so the next iteration can extend the list. All native calls are SEH-guarded (CallGuarded).
+static uintptr_t g_lam=0, g_ksl=0, g_lcWorld=0;
+static void* g_pafsFn=0;   static uintptr_t g_pafsThunk=0,  g_pafsChild=0;
+static void* g_gpailFn=0;  static uintptr_t g_gpailThunk=0, g_gpailChild=0;
+static void* g_lcLoadFn=0; static uintptr_t g_lcLoadThunk=0,g_lcLoadChild=0;
+static const int LC_NMAX=64;
+static uint64_t g_lcIds[LC_NMAX][2]; static int g_lcNum=0; static uint64_t g_lcHandle=0;
+static char g_lcHeroType[48]="?"; static volatile long g_lcFired=0;
+
+static bool ResolveLoadCensus(){
+    g_lam = FindInstClassSub("LokiAssetManager");
+    uintptr_t kslCDO = FindObjExact("Default__KismetSystemLibrary"); g_ksl = kslCDO?ClassOf(kslCDO):0;
+    g_lcWorld = FindInstClassSub("ProgressionManager"); if(!g_lcWorld) g_lcWorld = FindInstClassSub("LokiGameState");
+    if(!g_lam || !g_ksl || !g_lcWorld){ Markerf("[LOAD] resolve FAIL lam=0x%llX ksl=0x%llX world=0x%llX\r\n",(unsigned long long)g_lam,(unsigned long long)g_ksl,(unsigned long long)g_lcWorld); return false; }
+    uintptr_t lamCls=ClassOf(g_lam);
+    ResolveFunc(lamCls,"PrimaryAssetIDFromString",&g_pafsFn,&g_pafsThunk,&g_pafsChild);
+    ResolveFunc(lamCls,"AsyncLoadPrimaryAssets",&g_lcLoadFn,&g_lcLoadThunk,&g_lcLoadChild);
+    ResolveFunc(g_ksl,"GetPrimaryAssetIdList",&g_gpailFn,&g_gpailThunk,&g_gpailChild);
+    Markerf("[LOAD] resolved lam=0x%llX world=0x%llX pafsThunk=0x%llX gpailThunk=0x%llX loadThunk=0x%llX\r\n",
+            (unsigned long long)g_lam,(unsigned long long)g_lcWorld,(unsigned long long)g_pafsThunk,(unsigned long long)g_gpailThunk,(unsigned long long)g_lcLoadThunk);
+    return g_pafsThunk && g_gpailThunk && g_lcLoadThunk;
+}
+// FString param: {ptr(8), num(4), max(4)} = 16B at pbuf.
+static void LcSetFStr(void* pbuf, const wchar_t* s){ int n=(int)wcslen(s)+1; ((uint64_t*)pbuf)[0]=(uint64_t)s; ((uint32_t*)pbuf)[2]=(uint32_t)n; ((uint32_t*)pbuf)[3]=(uint32_t)n; }
+// PrimaryAssetIDFromString("<Type>:x") -> FPrimaryAssetId in rbuf; low32 = the type FName id (0 = parse produced no type).
+static uint32_t LcTypeId(const wchar_t* idstr){
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); LcSetFStr(g_pbuf,idstr);
+    if(CallGuarded(g_pafsFn,g_pafsThunk,g_pafsChild,(void*)g_lam,g_pbuf,g_rbuf)) return 0;
+    return (uint32_t)(*(uint64_t*)g_rbuf & 0xFFFFFFFF);
+}
+// GetPrimaryAssetIdList(FPrimaryAssetType{typeId,0}) -> TArray<FPrimaryAssetId> (written back into the params buffer:
+// data ptr @+8, num @+16 — the missions QueryIdsK layout). Returns count, fills ids.
+static int LcQueryIds(uint32_t typeId, uint64_t ids[][2], int K){
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    ((uint32_t*)g_pbuf)[0]=typeId; ((uint32_t*)g_pbuf)[1]=0;
+    if(CallGuarded(g_gpailFn,g_gpailThunk,g_gpailChild,(void*)g_lam,g_pbuf,g_rbuf)) return -1;
+    int num=*(int32_t*)((uint8_t*)g_pbuf+16); uint64_t data=((uint64_t*)g_pbuf)[1];
+    for(int i=0;i<K;i++){ ids[i][0]=0; ids[i][1]=0; }
+    if(num>0 && LooksLikePtr((uintptr_t)data)){ int lim=num<K?num:K; for(int i=0;i<lim;i++){ if(SafeReadable((void*)(data+i*16),16)){ ids[i][0]=*(uint64_t*)(data+i*16); ids[i][1]=*(uint64_t*)(data+i*16+8); } } }
+    return num;
+}
+static void LcFireLoad(){
+    static uint8_t loadBuf[LC_NMAX*16];
+    for(int i=0;i<g_lcNum;i++){ *(uint64_t*)(loadBuf+i*16)=g_lcIds[i][0]; *(uint64_t*)(loadBuf+i*16+8)=g_lcIds[i][1]; }
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(uint64_t*)((uint8_t*)g_pbuf+0)=(uint64_t)g_lcWorld;   // WorldContextObject
+    *(uint64_t*)((uint8_t*)g_pbuf+8)=(uint64_t)loadBuf;     // AssetsToLoad.Data
+    *(uint32_t*)((uint8_t*)g_pbuf+16)=(uint32_t)g_lcNum;    // .Num
+    *(uint32_t*)((uint8_t*)g_pbuf+20)=(uint32_t)g_lcNum;    // .Max
+    if(CallGuarded(g_lcLoadFn,g_lcLoadThunk,g_lcLoadChild,(void*)g_lam,g_pbuf,g_rbuf)){ Marker("[LOAD] AsyncLoadPrimaryAssets FAULTED\r\n"); return; }
+    g_lcHandle=*(uint64_t*)g_rbuf;
+}
+// Game-thread visit (ONE): discover the hero PrimaryAssetType, enumerate its ids, fire the async load.
+static void DoLoadCensus(){
+    static const wchar_t* kCand[] = { L"LokiHeroData:x", L"LokiHero:x", L"HeroData:x", L"Hero:x",
+        L"LokiCharacterData:x", L"LokiCharacter:x", L"Character:x", L"LokiHeroDefinition:x",
+        L"HeroDefinition:x", L"PlayableHero:x", L"Hunter:x", L"LokiHunter:x", L"HeroLoadout:x" };
+    for(unsigned c=0;c<sizeof(kCand)/sizeof(kCand[0]);c++){
+        uint32_t tid=LcTypeId(kCand[c]);
+        static uint64_t tmp[LC_NMAX][2]; int num = tid ? LcQueryIds(tid,tmp,LC_NMAX) : 0;
+        Markerf("[LOAD] type '%ls' -> tid=0x%X ids=%d\r\n",kCand[c],tid,num);
+        if(num>0){ g_lcNum = num<LC_NMAX?num:LC_NMAX; for(int i=0;i<g_lcNum;i++){ g_lcIds[i][0]=tmp[i][0]; g_lcIds[i][1]=tmp[i][1]; }
+            int k=0; for(const wchar_t* p=kCand[c]; *p && k<47; ++p) g_lcHeroType[k++]=(char)*p; g_lcHeroType[k]=0; break; }
+    }
+    if(g_lcNum<=0){ Marker("[LOAD] NO hero PrimaryAssetType matched any candidate — extend kCand (the log lists what was tried).\r\n"); g_lcFired=1; return; }
+    Markerf("[LOAD] hero type '%s' has %d assets — firing AsyncLoadPrimaryAssets on the first %d...\r\n",g_lcHeroType,g_lcNum,g_lcNum);
+    LcFireLoad();
+    Markerf("[LOAD] AsyncLoadPrimaryAssets fired (handle=0x%llX). Async — worker re-censuses after settle.\r\n",(unsigned long long)g_lcHandle);
+    g_lcFired=1;
+}
+// Read-only class census (off-thread): what hero / Loki-PC classes are resolvable now.
+static void LcCensusClasses(const char* tag){
+    uintptr_t hp =FindHeroPawnClass();               char n1[160]="-"; if(hp)ObjName(hp,n1,sizeof(n1));
+    uintptr_t bh =FindObjNamePreSuf("BP_HERO_","_C"); char n2[160]="-"; if(bh)ObjName(bh,n2,sizeof(n2));
+    uintptr_t lhc=FindInstClassSub("LokiHeroCharacter");
+    uintptr_t lc =FindInstClassSub("LokiCharacter");
+    uintptr_t devPc =FindObjNamePreSuf("BP_LokiPlayerController_Dev","_C");
+    uintptr_t devPc2=FindObjExact("BP_LokiPlayerController_Dev_C");
+    Markerf("[LOAD] --- class census (%s) ---\r\n",tag);
+    Markerf("[LOAD]   heroPawnClass=0x%llX(%s) BP_HERO_*_C=0x%llX(%s)\r\n",(unsigned long long)hp,n1,(unsigned long long)bh,n2);
+    Markerf("[LOAD]   LokiHeroCharacter inst=0x%llX  LokiCharacter inst=0x%llX\r\n",(unsigned long long)lhc,(unsigned long long)lc);
+    Markerf("[LOAD]   BP_LokiPlayerController_Dev*_C=0x%llX  exact=0x%llX\r\n",(unsigned long long)devPc,(unsigned long long)devPc2);
+}
+// Phase-2 scoping (read-only): what LokiCharacter-ancestry actors are live (heroes vs pool templates), what the local
+// networked PC is + whether it possesses a pawn, and whether a BP_Dev PC instance exists. Decides "possess existing"
+// vs "spawn new" for Phase 2.
+static void LcCensusDeep(){
+    Marker("[DEEP] --- live LokiCharacter-ancestry instances (cap 24) ---\r\n");
+    int n=0;
+    ForEachObject([&](uintptr_t o)->bool{
+        char on[160]; on[0]=0; ObjName(o,on,sizeof(on)); if(strncmp(on,"Default__",9)==0) return false;
+        uintptr_t cls=ClassOf(o); if(!cls) return false;
+        if(!SuperChainHas(cls,"LokiCharacter")) return false;
+        char cn[128]="?"; ClassName(o,cn,sizeof(cn));
+        Markerf("[DEEP]   obj=0x%llX cls=%s name=%s\r\n",(unsigned long long)o,cn,on);
+        return (++n>=24);
+    });
+    Markerf("[DEEP]   (%d LokiCharacter-ancestry instances logged)\r\n",n);
+    uintptr_t pc=FindInstExactClass("LokiPlayerController"); if(!pc) pc=FindInstClassSub("LokiPlayerController");
+    if(pc){
+        char cn[128]="?"; ClassName(pc,cn,sizeof(cn));
+        uint32_t pawnOff=PropOffsetOnClass(ClassOf(pc),"Pawn");
+        uintptr_t pawn=(pawnOff!=0xFFFFFFFF && SafeReadable((void*)(pc+pawnOff),8))?*(uintptr_t*)(pc+pawnOff):0;
+        char pcn[128]="-",pon[160]="-"; if(LooksLikePtr(pawn)){ ClassName(pawn,pcn,sizeof(pcn)); ObjName(pawn,pon,sizeof(pon)); }
+        Markerf("[DEEP] local PC=0x%llX cls=%s pawnOff=0x%X pawn=0x%llX (cls=%s name=%s)\r\n",
+            (unsigned long long)pc,cn,pawnOff,(unsigned long long)pawn,pcn,pon);
+    } else Marker("[DEEP] no LokiPlayerController instance\r\n");
+    uintptr_t devInst=FindInstClassSub("BP_LokiPlayerController_Dev");
+    char dcn[128]="-",don[160]="-"; if(devInst){ ClassName(devInst,dcn,sizeof(dcn)); ObjName(devInst,don,sizeof(don)); }
+    Markerf("[DEEP] BP_Dev PC live instance=0x%llX (cls=%s name=%s)\r\n",(unsigned long long)devInst,dcn,don);
+}
+
 extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(g_done || g_inHook) return;
     if(GetCurrentThreadId()!=g_gameTid) return;
@@ -1076,9 +1695,18 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_SPECTATOR_CAM){ if(g_moveArmed && !g_moveDone){ DoStepMove(); g_inHook=0; return; } if(h==1) Marker("[HOOK] fired (spectator-cam) — transient overlay-hide\r\n"); DoSpectatorCam(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_DEBUGCAM){ if(h==1) Marker("[HOOK] fired (debug-cam) — hiding overlay + enabling debug camera\r\n"); DoDebugCam(); g_inHook=0; return; }
     if(kMode==MODE_FREECAM){ if(h==1) Marker("[HOOK] fired (free-cam) — spawn camera + retarget view + puppet\r\n"); DoFreeCam(); g_inHook=0; return; }
+    if(kMode==MODE_LOAD_CENSUS){ if(!g_lcFired){ if(h==1) Marker("[HOOK] fired (load-census) — firing hero asset load on the game thread.\r\n"); DoLoadCensus(); } g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_CAMFRAME){ DoCamFrame(); g_done=1; g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
+    else if(kMode==MODE_SPAWN_P2) DoSpawnP2();
+    else if(kMode==MODE_SWAP) DoSwap();
+    else if(kMode==MODE_POSSESS) DoPossess();
+    else if(kMode==MODE_DEPLOY) DoDeploy();
+    else if(kMode==MODE_UNHIDE) DoUnhide();
+    else if(kMode==MODE_NPOSSESS) DoNPossess();
+    else if(kMode==MODE_CRESTART) DoCRestart();
     else Census();
     g_done=1; g_inHook=0;
 }
@@ -1092,6 +1720,9 @@ static DWORD WINAPI Worker(LPVOID){
     { HANDLE rt=CreateThread(nullptr,0,RawInputThread,nullptr,0,nullptr); if(rt)CloseHandle(rt); }   // S78c: raw mouse capture
     g_gameTid=WaitTid(120000); if(!g_gameTid){Marker("[1] FAIL gameTid\r\n");return 2;}
     Markerf("[1] gameTid=%lu\r\n",g_gameTid);
+    if(kMode==MODE_SWAP_CENSUS){ DoSwapCensus(); Marker("[3b] swap-census done (read-only, no hook held).\r\n"); return 0; }
+    if(kMode==MODE_CAMFIX){ DoCamFix(); Marker("[3b] camfix done (off-thread, no hook held).\r\n"); return 0; }
+    if(kMode==MODE_DEPLOYRECON){ DoDeployRecon(); Marker("[3b] deploy-recon done (read-only, no hook held).\r\n"); return 0; }
     // S78 #4: wait for the UMG widgets (incl. the WBP_UI_MatchTransition overlay) to spawn before censusing — a
     // too-early census gets few widgets and misses the overlay (hid 0/3). Poll the count until high/stable
     // (min 6s floor, cap 30s) instead of the old fixed 12s sleep, so inject timing is self-correcting.
@@ -1099,9 +1730,18 @@ static DWORD WINAPI Worker(LPVOID){
     // Resolve targets OFF the game thread (read-only object walk) so the hook does minimal game-thread work.
     if(kMode==MODE_POSSESS_DP){ if(!ResolvePossessDP()){ Marker("[1] possess resolve failed — aborting\r\n"); return 7; } }
     if(kMode==MODE_SPAWN_HERO){ if(!ResolveSpawnHero()){ Marker("[1] spawn-hero resolve failed — aborting\r\n"); return 8; } }
+    if(kMode==MODE_SPAWN_P2){ if(!ResolveSpawnP2()){ Marker("[1] spawn-P2 resolve failed — aborting\r\n"); return 10; } }
+    if(kMode==MODE_SWAP){ if(!ResolveSwap()){ Marker("[1] swap resolve failed — aborting\r\n"); return 11; } }
+    if(kMode==MODE_POSSESS){ if(!ResolvePossess()){ Marker("[1] possess resolve failed — aborting\r\n"); return 12; } }
+    if(kMode==MODE_DEPLOY){ if(!ResolveDeploy()){ Marker("[1] deploy resolve failed — aborting\r\n"); return 13; } }
+    if(kMode==MODE_UNHIDE){ if(!ResolveUnhide()){ Marker("[1] unhide resolve failed — aborting\r\n"); return 14; } }
+    if(kMode==MODE_NPOSSESS){ if(!ResolveNPossess()){ Marker("[1] npossess resolve failed — aborting\r\n"); return 15; } }
+    if(kMode==MODE_CRESTART){ if(!ResolveCRestart()){ Marker("[1] crestart resolve failed — aborting\r\n"); return 16; } }
+    if(kMode==MODE_CAMFRAME){ if(!ResolveCamFrame()){ Marker("[1] camframe resolve failed — aborting\r\n"); return 17; } }
     if(kMode==MODE_SPECTATOR_CAM){ ResolveSpectatorCam(); ProbeCamera(); ProbeViewYaw(); ProbeSensitivity(); if(kTakeoverCam) ResolveTakeover(); }
     if(kMode==MODE_DEBUGCAM){ ResolveSpectatorCam(); ResolveDebugCam(); }   // spectator resolve populates the overlay-hide widgets
     if(kMode==MODE_FREECAM){ ResolveFreeCam(); }
+    if(kMode==MODE_LOAD_CENSUS){ if(!ResolveLoadCensus()){ Marker("[1] load-census resolve failed — aborting\r\n"); return 9; } LcCensusClasses("PRE-load"); }
     g_pi=(uint8_t*)(g_modBase+kPiRva);
     memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 3;}
     if(kMode==MODE_SPECTATOR_CAM){
@@ -1116,6 +1756,139 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(25);
         }
         Markerf("[3] overlay-hide done (transient, hitsGT=%ld) — no standing .text hook was ever held.\r\n",(long)g_hitsGT);
+    } else if(kMode==MODE_LOAD_CENSUS){
+        // S77 dodge: fire the load via a TRANSIENT-per-fire hook (never a standing .text hook the anti-tamper
+        // catches). Install -> OnPI fires the load once -> uninstall; then wait off-thread for the async load and
+        // re-census. The census walks are read-only RPM (no hook needed).
+        Marker("[2] load-census: transient hook to fire the hero asset load...\r\n");
+        DWORD lcT0=GetTickCount();
+        while(!g_done && GetTickCount()-lcT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+50; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] load fired=%ld (hitsGT=%ld). Waiting 8s for the async load to settle...\r\n",(long)g_lcFired,(long)g_hitsGT);
+        Sleep(8000);
+        LcCensusClasses("POST-load");
+        LcCensusDeep();
+        Marker("[3b] load-census done.\r\n");
+        return 0;
+    } else if(kMode==MODE_SPAWN_P2){
+        // S77 dodge: fire the spawn via a TRANSIENT-per-fire hook (never a standing .text hook the anti-tamper
+        // catches). Install -> OnPI runs DoSpawnP2 ONCE on the game thread -> uninstall. One-shot; g_done gates it.
+        Marker("[2] spawn-P2: transient hook to fire the spawn on the game thread...\r\n");
+        DWORD spT0=GetTickCount();
+        while(!g_done && GetTickCount()-spT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+150; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] spawn-P2 fired (hitsGT=%ld done=%ld) — hook never held standing.\r\n",(long)g_hitsGT,(long)g_done);
+        return 0;
+    } else if(kMode==MODE_SWAP){
+        // Transient-per-fire hook (anti-tamper dodge): OnPI spawns the BP_Dev PC + applies the swap ONCE on the game
+        // thread, then uninstall. Then monitor off-thread whether the game keeps the swap or reverts/crashes.
+        Marker("[2] swap: transient hook to spawn+swap on the game thread...\r\n");
+        DWORD swT0=GetTickCount();
+        while(!g_done && GetTickCount()-swT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+200; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] swap fired (done=%ld devPc=0x%llX) — hook never held standing. Monitoring...\r\n",(long)g_done,(unsigned long long)g_swDevPc);
+        if(g_swDevPc){
+            for(int i=0;i<20;i++){ Sleep(500);
+                uintptr_t cur = SafeReadable((void*)(g_swL+g_swLpcOff),8)?*(uintptr_t*)(g_swL+g_swLpcOff):0;
+                char ccn[96]="-"; if(LooksLikePtr(cur))ClassName(cur,ccn,sizeof(ccn));
+                Markerf("[SW] t+%.1fs L->PC=0x%llX(%s) %s\r\n",(i+1)*0.5,(unsigned long long)cur,ccn,
+                        cur==g_swDevPc?"<< STILL OURS (swap holding)":(cur==g_swOldPc?"(REVERTED to native PC)":"(changed to other)"));
+                if(cur==g_swOldPc){ Marker("[SW] REVERTED — the game reasserted the native PC. Phase-3 gate: it won't relinquish local control.\r\n"); break; }
+            }
+        }
+        Marker("[3b] swap-monitor done.\r\n");
+        return 0;
+    } else if(kMode==MODE_POSSESS){
+        // Transient-per-fire hook (anti-tamper dodge): OnPI spawns the hero + possesses + drives drop-in ONCE, then
+        // uninstall. Then monitor PC->Pawn off-thread for stability / whether the hero possession sticks.
+        Marker("[2] possess: transient hook to spawn+possess+drop-in on the game thread...\r\n");
+        DWORD poT0=GetTickCount();
+        while(!g_done && GetTickCount()-poT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+300; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] possess fired (done=%ld hero=0x%llX) — hook never held standing. Monitoring...\r\n",(long)g_done,(unsigned long long)g_poHero);
+        if(g_poHero && g_poPc){
+            for(int i=0;i<20;i++){ Sleep(500);
+                uintptr_t pw = SafeReadable((void*)(g_poPc+g_poPawnOff),8)?*(uintptr_t*)(g_poPc+g_poPawnOff):0;
+                char pn[96]="-"; if(LooksLikePtr(pw))ClassName(pw,pn,sizeof(pn));
+                Markerf("[PO] t+%.1fs PC->Pawn=0x%llX(%s) %s\r\n",(i+1)*0.5,(unsigned long long)pw,pn,
+                        pw==g_poHero?"<< HERO (possession holding)":(pw?"(other pawn)":"(null)"));
+            }
+        }
+        Marker("[3b] possess-monitor done.\r\n");
+        return 0;
+    } else if(kMode==MODE_DEPLOY){
+        Marker("[2] deploy: transient hook to un-hide + bind input on the game thread...\r\n");
+        DWORD dpT0=GetTickCount();
+        while(!g_done && GetTickCount()-dpT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+200; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] deploy fired (done=%ld). alive-monitoring 5s...\r\n",(long)g_done);
+        for(int i=0;i<10;i++) Sleep(500);
+        Marker("[3b] deploy done.\r\n");
+        return 0;
+    } else if(kMode==MODE_UNHIDE){
+        Marker("[2] unhide: transient hook to reveal hero + set view target...\r\n");
+        DWORD uhT0=GetTickCount();
+        while(!g_done && GetTickCount()-uhT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+200; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] unhide fired (done=%ld). Monitoring view target 8s...\r\n",(long)g_done);
+        for(int i=0;i<16;i++){ Sleep(500);
+            if(LooksLikePtr(g_uhCam) && SafeReadable((void*)(g_uhCam+0x420),8)){ uintptr_t vt=*(uintptr_t*)(g_uhCam+0x420); char vcn[64]="-"; if(LooksLikePtr(vt))ClassName(vt,vcn,sizeof(vcn));
+                Markerf("[UH] t+%.1fs camViewTarget@+0x420=0x%llX(%s) %s\r\n",(i+1)*0.5,(unsigned long long)vt,vcn, vt==g_uhHero?"<< HERO":"(other)"); } }
+        Marker("[3b] unhide done.\r\n");
+        return 0;
+    } else if(kMode==MODE_NPOSSESS){
+        Marker("[2] npossess: transient hook to restore+possess+reveal on the game thread...\r\n");
+        DWORD npT0=GetTickCount();
+        while(!g_done && GetTickCount()-npT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+250; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] npossess fired (done=%ld). Monitoring pawn + view target 12s...\r\n",(long)g_done);
+        for(int i=0;i<24;i++){ Sleep(500);
+            uintptr_t pw = SafeReadable((void*)(g_npNative+g_npPawnOff),8)?*(uintptr_t*)(g_npNative+g_npPawnOff):0; char pn[80]="-"; if(LooksLikePtr(pw))ClassName(pw,pn,sizeof(pn));
+            uintptr_t vt = (LooksLikePtr(g_npCam)&&SafeReadable((void*)(g_npCam+0x420),8))?*(uintptr_t*)(g_npCam+0x420):0; char vn[80]="-"; if(LooksLikePtr(vt))ClassName(vt,vn,sizeof(vn));
+            Markerf("[NP] t+%.1fs PC->Pawn=0x%llX(%s)%s camTgt=0x%llX(%s)%s\r\n",(i+1)*0.5,
+                    (unsigned long long)pw,pn,(pw==g_npHero?" HERO":""),(unsigned long long)vt,vn,(vt==g_npHero?" <<HERO":"")); }
+        Marker("[3b] npossess done.\r\n");
+        return 0;
+    } else if(kMode==MODE_CRESTART){
+        Marker("[2] crestart: transient hook to run client-side possession setup...\r\n");
+        DWORD crT0=GetTickCount();
+        while(!g_done && GetTickCount()-crT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+250; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] crestart fired (done=%ld). Monitoring pawn + view target 10s...\r\n",(long)g_done);
+        for(int i=0;i<20;i++){ Sleep(500);
+            uintptr_t pw = SafeReadable((void*)(g_crPc+0x3F8),8)?*(uintptr_t*)(g_crPc+0x3F8):0; char pn[64]="-"; if(LooksLikePtr(pw))ClassName(pw,pn,sizeof(pn));
+            uintptr_t vt = (LooksLikePtr(g_crCam)&&SafeReadable((void*)(g_crCam+0x420),8))?*(uintptr_t*)(g_crCam+0x420):0; char vn[64]="-"; if(LooksLikePtr(vt))ClassName(vt,vn,sizeof(vn));
+            Markerf("[CR] t+%.1fs PC->Pawn=0x%llX(%s)%s camTgt=0x%llX(%s)%s\r\n",(i+1)*0.5,
+                    (unsigned long long)pw,pn,(pw==g_crHero?" HERO":""),(unsigned long long)vt,vn,(vt==g_crHero?" <<HERO":"")); }
+        Marker("[3b] crestart done.\r\n");
+        return 0;
+    } else if(kMode==MODE_CAMFRAME){
+        // Re-apply the camera-component offset repeatedly (transient hook per apply) to hold it vs any per-frame reset.
+        Marker("[2] camframe: applying camera offset repeatedly (~8s)...\r\n");
+        DWORD frT0=GetTickCount();
+        while(GetTickCount()-frT0 < 8000){
+            g_done=0; g_inHook=0;
+            if(InstallHookFast()){ DWORD md=GetTickCount()+120; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(180);
+        }
+        Markerf("[3b] camframe done (%ld applications).\r\n",(long)g_cfrReps);
+        return 0;
     } else {
         if(!InstallHook()){Marker("[2] FAIL InstallHook\r\n");return 4;}
         Marker("[2] hook installed — waiting for a game-thread ProcessInternal...\r\n");
