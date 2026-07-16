@@ -105,6 +105,12 @@ constexpr int MODE_SETCOSMETIC=24;
 #ifndef KSKIN
 #define KSKIN L"HeroCosmeticsBundle:AssaultDefault"
 #endif
+// MODE_BPDEPLOY (deploy step 7): use ProcessEvent to call the BP deploy-setup fns (ClientInitialComponentSetup /
+// BP_PostSetupCosmetics) that create the cosmetics CONTROLLER, then RefreshCosmetics builds the mesh. -DKMODE=MODE_BPDEPLOY
+constexpr int MODE_BPDEPLOY=25;
+// ProcessEvent (base+0x12C5A10, S54-validated) runs a BP UFunction's bytecode. The direct-thunk primitive can't call
+// BP-folded fns (their Func == ProcessInternal); ProcessEvent is the correct path. Runs on the game thread (in OnPI).
+constexpr uintptr_t kProcEventRva=0x12C5A10;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -1865,6 +1871,52 @@ static void DoSetCosmetic(){
     if(g_cmVisThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmVisFn,g_cmVisThunk,g_cmVisChild,(void*)g_cmHero,g_pbuf,g_rbuf); }
     if(rep==1||rep==8||rep==16) Markerf("[SC] rep %ld: skeletal meshes under hero = %d\r\n",rep,CountHeroSkeletals());
 }
+// Call a BLUEPRINT UFunction via ProcessEvent (guarded). ufunc = the UFunction* (ResolveFunc's *fn), NOT the thunk.
+static bool CallGuardedBP(uintptr_t obj, void* ufunc){
+    if(!ufunc || !LooksLikePtr(obj)) return true;
+    static uint8_t peb[512];
+    __try { memset(peb,0,sizeof(peb)); ((PFN_PE)(g_modBase+kProcEventRva))((void*)obj, ufunc, peb); return false; }
+    __except(EXCEPTION_EXECUTE_HANDLER){ return true; }
+}
+// Deploy step 7: create the cosmetics controller via BP setup (ProcessEvent) so RefreshCosmetics builds the mesh.
+static void* g_bdCicsFn=0; static void* g_bdPscFn=0; static void* g_bdTlcsFn=0;      // BP UFunction*s
+static void* g_bdGccFn=0;  static uintptr_t g_bdGccThunk=0,g_bdGccCh=0;             // GetCosmeticsController (native)
+static volatile long g_bdReps=0; static uint8_t g_bdPaid[16]={0};
+static bool ResolveBPDeploy(){
+    if(!ResolveCosmetics()) return false;      // g_cmHero + RefreshCosmetics/vis
+    ResolveLoadCensus();                        // pafs/load/lam/world (best-effort)
+    uintptr_t hc=ClassOf(g_cmHero), th=0, ch=0;
+    ResolveFunc(hc,"ClientInitialComponentSetup",&g_bdCicsFn,&th,&ch);
+    ResolveFunc(hc,"BP_PostSetupCosmetics",&g_bdPscFn,&th,&ch);
+    ResolveFunc(hc,"TryLocalControlSetup",&g_bdTlcsFn,&th,&ch);
+    ResolveFunc(hc,"GetCosmeticsController",&g_bdGccFn,&g_bdGccThunk,&g_bdGccCh);
+    Markerf("[BD] hero=0x%llX cicsFn=0x%llX pscFn=0x%llX tlcsFn=0x%llX gccThunk=0x%llX peRva=0x%llX\r\n",
+            (unsigned long long)g_cmHero,(unsigned long long)(uintptr_t)g_bdCicsFn,(unsigned long long)(uintptr_t)g_bdPscFn,
+            (unsigned long long)(uintptr_t)g_bdTlcsFn,(unsigned long long)g_bdGccThunk,(unsigned long long)(g_modBase+kProcEventRva));
+    return g_cmHero!=0;
+}
+static uintptr_t BdGetController(){ if(!g_bdGccThunk)return 0; memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_bdGccFn,g_bdGccThunk,g_bdGccCh,(void*)g_cmHero,g_pbuf,g_rbuf))return 0; return *(uintptr_t*)g_rbuf; }
+static void DoBPDeploy(){
+    long rep=InterlockedIncrement(&g_bdReps);
+    if(rep==1){
+        Marker("[BD] === BP deploy setup via ProcessEvent ===\r\n");
+        Markerf("[BD] controller BEFORE=0x%llX skeletal BEFORE=%d\r\n",(unsigned long long)BdGetController(),CountHeroSkeletals());
+        // (re)assign the CosmeticsAssetID + async-load the skin
+        if(g_pafsThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); LcSetFStr(g_pbuf,KSKIN); if(!CallGuarded(g_pafsFn,g_pafsThunk,g_pafsChild,(void*)g_lam,g_pbuf,g_rbuf)) memcpy(g_bdPaid,g_rbuf,16); }
+        uint32_t caOff=PropOffsetOnClass(ClassOf(g_cmHero),"CosmeticsAssetID"); uint32_t ovOff=PropOffsetOnClass(ClassOf(g_cmHero),"OverrideCosmeticsAssetID");
+        if(*(uint64_t*)g_bdPaid){ if(caOff!=0xFFFFFFFF&&SafeReadable((void*)(g_cmHero+caOff),16))memcpy((void*)(g_cmHero+caOff),g_bdPaid,16); if(ovOff!=0xFFFFFFFF&&SafeReadable((void*)(g_cmHero+ovOff),16))memcpy((void*)(g_cmHero+ovOff),g_bdPaid,16);
+            if(g_lcLoadThunk){ static uint8_t lb[16]; memcpy(lb,g_bdPaid,16); memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); *(uint64_t*)(g_pbuf+0)=(uint64_t)g_lcWorld; *(uint64_t*)(g_pbuf+8)=(uint64_t)lb; *(uint32_t*)(g_pbuf+16)=1; *(uint32_t*)(g_pbuf+20)=1; CallGuarded(g_lcLoadFn,g_lcLoadThunk,g_lcLoadChild,(void*)g_lam,g_pbuf,g_rbuf); } }
+        // ★ BP setup via ProcessEvent — creates components + cosmetics controller
+        Marker(CallGuardedBP(g_cmHero,g_bdCicsFn)?"[BD] ClientInitialComponentSetup FAULTED\r\n":"[BD] ClientInitialComponentSetup called\r\n");
+        Marker(CallGuardedBP(g_cmHero,g_bdPscFn) ?"[BD] BP_PostSetupCosmetics FAULTED\r\n"     :"[BD] BP_PostSetupCosmetics called\r\n");
+    }
+    // every rep: RefreshCosmetics (native) + keep Alive/visible; rebuild once the controller + async asset are ready
+    if(g_cmRefThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmRefFn,g_cmRefThunk,g_cmRefChild,(void*)g_cmHero,g_pbuf,g_rbuf); }
+    if(SafeReadable((void*)(g_cmHero+0x1090),1)) *(uint8_t*)(g_cmHero+0x1090)=1;
+    if(SafeReadable((void*)(g_cmHero+0x1BE8),1)) *(uint8_t*)(g_cmHero+0x1BE8)=0;
+    if(g_cmVisThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmVisFn,g_cmVisThunk,g_cmVisChild,(void*)g_cmHero,g_pbuf,g_rbuf); }
+    if(rep==1||rep==8||rep==16) Markerf("[BD] rep %ld: controller=0x%llX skeletal=%d\r\n",rep,(unsigned long long)BdGetController(),CountHeroSkeletals());
+}
 // Game-thread visit (ONE): discover the hero PrimaryAssetType, enumerate its ids, fire the async load.
 static void DoLoadCensus(){
     static const wchar_t* kCand[] = { L"LokiHeroData:x", L"LokiHero:x", L"HeroData:x", L"Hero:x",
@@ -1939,6 +1991,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_CAMFRAME){ DoCamFrame(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_COSMENUM){ DoCosmEnum(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_SETCOSMETIC){ DoSetCosmetic(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_BPDEPLOY){ DoBPDeploy(); g_done=1; g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -1989,6 +2042,7 @@ static DWORD WINAPI Worker(LPVOID){
     if(kMode==MODE_COSMETICS){ if(!ResolveCosmetics()){ Marker("[1] cosmetics resolve failed — aborting\r\n"); return 19; } }
     if(kMode==MODE_COSMENUM){ if(!ResolveLoadCensus()){ Marker("[1] cosmenum resolve failed — aborting\r\n"); return 20; } }
     if(kMode==MODE_SETCOSMETIC){ if(!ResolveLoadCensus()||!ResolveCosmetics()){ Marker("[1] setcosmetic resolve failed — aborting\r\n"); return 21; } }
+    if(kMode==MODE_BPDEPLOY){ if(!ResolveBPDeploy()){ Marker("[1] bpdeploy resolve failed — aborting\r\n"); return 22; } }
     if(kMode==MODE_SPECTATOR_CAM){ ResolveSpectatorCam(); ProbeCamera(); ProbeViewYaw(); ProbeSensitivity(); if(kTakeoverCam) ResolveTakeover(); }
     if(kMode==MODE_DEBUGCAM){ ResolveSpectatorCam(); ResolveDebugCam(); }   // spectator resolve populates the overlay-hide widgets
     if(kMode==MODE_FREECAM){ ResolveFreeCam(); }
@@ -2173,6 +2227,18 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(600);
         }
         Markerf("[3b] setcosmetic done (%ld reps).\r\n",(long)g_scReps);
+        return 0;
+    } else if(kMode==MODE_BPDEPLOY){
+        // Re-fire over ~14s: rep 1 runs the BP setup (creates the controller); later reps RefreshCosmetics as the
+        // async skin lands + the controller builds the mesh.
+        Marker("[2] bpdeploy: BP setup via ProcessEvent + re-refresh over ~14s...\r\n");
+        DWORD bdT0=GetTickCount();
+        while(GetTickCount()-bdT0 < 14000){
+            g_done=0; g_inHook=0;
+            if(InstallHookFast()){ DWORD md=GetTickCount()+400; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(700);
+        }
+        Markerf("[3b] bpdeploy done (%ld reps).\r\n",(long)g_bdReps);
         return 0;
     } else if(kMode==MODE_CAMFRAME){
         // Re-apply the camera-component offset repeatedly (transient hook per apply) to hold it vs any per-frame reset.

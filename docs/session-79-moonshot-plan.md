@@ -311,6 +311,24 @@ NEXT: add a **ProcessEvent capability** (`base+0x12C5A10`, S54-validated) to cal
 out-of-context — guard + expect iteration), which should create the controller so `RefreshCosmetics` (with the ID now set)
 builds the mesh. Modes added: COSMENUM, SETCOSMETIC.
 
+**★ ProcessEvent CAPABILITY ADDED + the BP deploy setup FAULTS out-of-context (2026-07-16, `MODE_BPDEPLOY`).** Added
+`CallGuardedBP(obj, ufunc)` = guarded `ProcessEvent(base+0x12C5A10)(obj, UFunction*, params)` — the correct path for
+BP-folded fns (their Func == ProcessInternal, un-callable by the direct-thunk primitive). Reusable. Findings driving it:
+- ★ The cosmetics **CONTROLLER ALREADY EXISTS** (`GetCosmeticsController` → `0x…C4173C0`, non-null) — overturns the prior
+  "controller missing" hypothesis. So the mesh block is NOT a missing controller.
+- ★ **`ClientInitialComponentSetup` and `BP_PostSetupCosmetics` both FAULT via ProcessEvent** (guard-caught, no process
+  crash) — they deref deploy context (PlayerState / match-init state / controller relationships) a hand-assembled hero
+  lacks. Skeletal-mesh count stayed 0. So the character BODY mesh component (which `ClientInitialComponentSetup` creates
+  and `RefreshCosmetics` assigns the skeletal mesh to) never gets built.
+⇒ **THE DEEP WALL (now demonstrated, not just predicted):** the remaining deploy setup is a chain of BP functions that
+expect the FULL server-driven match-init context; called piecemeal out-of-context they fault. Advancing further needs
+reconstructing that CONTEXT (a valid PlayerState + match/deploy state the BP setup reads), which cascades — the
+characteristic shape of why a client-side deploy reconstruction is a large, uncertain effort. What IS banked: the entire
+deploy control-surface map + LivingState drive + the cosmetics-asset chain + a reusable ProcessEvent capability. Mode added:
+BPDEPLOY. Honest status: piecemeal client-side deploy reconstruction has reached the context-dependency wall; a visible/
+controllable hero from here needs the match-init context (large) — the reasonable-effort ceiling remains the S79 landmark
+(possessed, camera-followed hero in the live world).
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
