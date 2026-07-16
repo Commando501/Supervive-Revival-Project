@@ -368,6 +368,22 @@ un-mangled BP_HERO_Assault_C spawned + tested immediately); (2) our current hero
 correct for ProcessEvent's class check?); (5) consider that BP calls may need the object's BP VM fully initialized. New
 modes: VTDUMP, BPTEST, BPTEST2 (+ reusable `CallGuardedBPP(obj,ufunc,params)` + `RawUnhook()`). This is the live frontier.
 
+**★★★ RESOLVED (2026-07-16, `MODE_BPTEST3`) — ProcessEvent is NEUTERED; the "deploy context wall" NEVER EXISTED.** Called a
+NATIVE member (`GetCosmeticsController`) via ProcessEvent AND via the direct-thunk primitive on the same hero:
+direct-thunk = `0x…C4173C0` (correct); ProcessEvent = **fault / ret 0**. So ProcessEvent fails to dispatch EVEN A NATIVE
+function — it's a broken/neutered path in this build (RECONFIRMS the S54 finding: ProcessEvent no-ops/doesn't execute, which
+is the whole reason the direct-thunk native-call primitive was built). ⇒ **EVERY `[BD]/[CX]/[DE] … FAULTED` line earlier
+was ProcessEvent failing to dispatch, NOT the BP deploy logic hitting a context wall.** The BP deploy functions
+(`ClientInitialComponentSetup`/`BP_PostSetupCosmetics`/`ReceiveRestarted`/…) were NEVER ACTUALLY CALLED. The "deploy needs
+match-init context" conclusion is UNPROVEN — we never ran the code. ★ REAL PATH FORWARD: call BP-folded functions by
+**building a correct `FFrame` and calling `ProcessInternal` (`base+0x13454A0`) directly** (ProcessEvent's core, minus the
+neutering) — set `FFrame.Node=UFunction`, `Object=ctx`, `Code=UFunction->Script.GetData()`, `Locals=alloca(UStruct->
+PropertiesSize)` zeroed + params copied, call ProcessInternal **with the PI hook raw-removed** (RawUnhook) so it doesn't
+re-enter our hook. Need two offsets (find via a UFunction field walk): `UFunction::Script` (TArray<uint8>) and
+`UStruct::PropertiesSize` (int32). Once BP calls actually EXECUTE, retry the deploy setup — the mesh/input/HUD may just work,
+or the REAL context gaps (if any) finally show. This is the live frontier; the earlier "definitive wall" is retracted.
+New mode: BPTEST3.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from

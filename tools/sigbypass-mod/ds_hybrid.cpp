@@ -126,6 +126,9 @@ constexpr int MODE_BPTEST=29;
 // MODE_BPTEST2 (tool validation 3): raw-remove the PI hook, THEN call the BP getter via ProcessEvent — if it now returns
 // the controller, the earlier faults were PI-hook re-entrancy, not the functions → the deploy path REOPENS. -DKMODE=MODE_BPTEST2
 constexpr int MODE_BPTEST2=30;
+// MODE_BPTEST3 (tool validation 4): call a NATIVE member fn (GetCosmeticsController) via ProcessEvent + compare to its
+// direct-thunk return — isolates a ProcessEvent MECHANISM bug from BP-bytecode/context faults. -DKMODE=MODE_BPTEST3
+constexpr int MODE_BPTEST3=31;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -1976,6 +1979,26 @@ static void DoBPTest2(){
             fault,(unsigned long long)ret,(unsigned long long)ctrlNative,(ret==ctrlNative&&ret?"  <<< WORKS! ProcessEvent was the false wall":""));
     Marker("[B2] === done ===\r\n");
 }
+static void DoBPTest3(){
+    Marker("[B3] === ProcessEvent on a NATIVE member fn (GetCosmeticsController) ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc = LooksLikePtr(L)?(SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0):0;
+    uint32_t po = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"Pawn"):0xFFFFFFFF; uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero = LooksLikePtr(pc)?(SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0):0;
+    if(!LooksLikePtr(hero)){ Marker("[B3] no hero\r\n"); return; }
+    uintptr_t hc=ClassOf(hero);
+    void* nfn=0; uintptr_t nth=0,nch=0; ResolveFunc(hc,"GetCosmeticsController",&nfn,&nth,&nch);
+    if(!nth){ Marker("[B3] GetCosmeticsController not resolved\r\n"); return; }
+    uintptr_t viaThunk=0; { memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallGuarded(nfn,nth,nch,(void*)hero,g_pbuf,g_rbuf)) viaThunk=*(uintptr_t*)g_rbuf; }
+    uint32_t retOff = nch? ParamOffset(nch,"ReturnValue"):0xFFFFFFFF; if(retOff==0xFFFFFFFF) retOff=0;
+    static uint8_t pb[256]; memset(pb,0,sizeof(pb));
+    bool fault = CallGuardedBPP(hero, nfn, pb);
+    uintptr_t viaPE = *(uintptr_t*)(pb+(retOff<248?retOff:0));
+    Markerf("[B3] direct-thunk=0x%llX | ProcessEvent fault=%d ret=0x%llX  %s\r\n",
+            (unsigned long long)viaThunk,fault,(unsigned long long)viaPE,
+            (viaPE==viaThunk&&viaPE)?"<<< ProcessEvent WORKS on native (BP faults are bytecode/context)":"<<< ProcessEvent BROKEN even on native (mechanism bug)");
+    Marker("[B3] === done ===\r\n");
+}
 // Deploy step 7: create the cosmetics controller via BP setup (ProcessEvent) so RefreshCosmetics builds the mesh.
 static void* g_bdCicsFn=0; static void* g_bdPscFn=0; static void* g_bdTlcsFn=0;      // BP UFunction*s
 static void* g_bdGccFn=0;  static uintptr_t g_bdGccThunk=0,g_bdGccCh=0;             // GetCosmeticsController (native)
@@ -2171,6 +2194,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_DEPLOYEVT){ DoDeployEvt(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_BPTEST){ DoBPTest(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_BPTEST2){ DoBPTest2(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_BPTEST3){ DoBPTest3(); g_done=1; g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -2459,6 +2483,15 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(25);
         }
         Markerf("[3b] bptest2 done (done=%ld).\r\n",(long)g_done);
+        return 0;
+    } else if(kMode==MODE_BPTEST3){
+        Marker("[2] bptest3: transient hook; test ProcessEvent on a native member...\r\n");
+        DWORD b3T0=GetTickCount();
+        while(!g_done && GetTickCount()-b3T0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+250; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3b] bptest3 done (done=%ld).\r\n",(long)g_done);
         return 0;
     } else if(kMode==MODE_CAMFRAME){
         // Re-apply the camera-component offset repeatedly (transient hook per apply) to hold it vs any per-frame reset.
