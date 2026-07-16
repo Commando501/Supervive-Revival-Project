@@ -76,7 +76,25 @@ typedef void (*PFN_THUNK)(void* Context, void* Frame, void* Result);
 // MODE_CAMFRAME (S79 Phase 4h, visual capstone): offset the hero's CameraComponent up+back via
 // K2_SetRelativeLocationAndRotation, re-applied repeatedly to hold vs a per-frame reset, so the camera stops clipping at
 // the hero's root and frames the hunter top-down. -DKMODE=MODE_CAMFRAME
-enum Mode { MODE_CENSUS=0, MODE_POSSESS_DP=1, MODE_SPAWN_HERO=2, MODE_SPECTATOR_CAM=3, MODE_DEBUGCAM=4, MODE_FREECAM=5, MODE_LOAD_CENSUS=6, MODE_SPAWN_P2=7, MODE_SWAP_CENSUS=8, MODE_SWAP=9, MODE_POSSESS=10, MODE_DEPLOY=11, MODE_UNHIDE=12, MODE_NPOSSESS=13, MODE_CAMFIX=14, MODE_DEPLOYRECON=15, MODE_CRESTART=16, MODE_CAMFRAME=17 };
+// MODE_STATERECON (S79→S80 deploy reconstruction): read-only enumeration of the hero's living-state / deploy control
+// surface — native functions + properties gating mesh visibility (UpdateComponentVisibilityForLivingState reads a living
+// state; a raw hero has none so its mesh stays hidden). Find the state field + setter. -DKMODE=MODE_STATERECON
+// MODE_LIVINGSTATE (deploy reconstruction step 1): read the hero's LivingState, set it Alive + clear pre-drop, and fire
+// the native visibility handlers (OnRep_LivingState / OnNewLivingState / OnCharacterVisibilityUpdated) to reveal the mesh.
+// kAliveVal is the ELokiLivingState value for Alive (guess 1; iterate from the logged current value). -DKMODE=MODE_LIVINGSTATE
+enum Mode { MODE_CENSUS=0, MODE_POSSESS_DP=1, MODE_SPAWN_HERO=2, MODE_SPECTATOR_CAM=3, MODE_DEBUGCAM=4, MODE_FREECAM=5, MODE_LOAD_CENSUS=6, MODE_SPAWN_P2=7, MODE_SWAP_CENSUS=8, MODE_SWAP=9, MODE_POSSESS=10, MODE_DEPLOY=11, MODE_UNHIDE=12, MODE_NPOSSESS=13, MODE_CAMFIX=14, MODE_DEPLOYRECON=15, MODE_CRESTART=16, MODE_CAMFRAME=17, MODE_STATERECON=18, MODE_LIVINGSTATE=19 };
+#ifndef KALIVEVAL
+#define KALIVEVAL 1
+#endif
+// MODE_MESHDIAG (deploy reconstruction step 2): read-only — find the hero's skeletal mesh component(s) and report whether
+// a mesh asset is assigned + visibility, to tell "hidden but present" from "no mesh (cosmetics not loaded)". -DKMODE=MODE_MESHDIAG
+constexpr int MODE_MESHDIAG=20;
+// MODE_MESHMGRRECON (deploy step 3): read-only — dump LokiMeshManagerComponent's functions (+ hero cosmetics/setup fns),
+// marked [N]ative/[BP], to find a native mesh-create before resorting to crash-prone BP ProcessEvent. -DKMODE=MODE_MESHMGRRECON
+constexpr int MODE_MESHMGRRECON=21;
+// MODE_COSMETICS (deploy step 4): call the native LokiHeroCharacter::RefreshCosmetics (+OnRep_CosmeticsAssetID) to BUILD
+// the character mesh a raw hero never created, re-assert Alive+visibility, then re-count skeletal meshes. -DKMODE=MODE_COSMETICS
+constexpr int MODE_COSMETICS=22;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -847,6 +865,173 @@ static void DoCamFrame(){
     if(g_cfrTele!=0xFFFFFFFF && g_cfrTele<0x240) frbuf[g_cfrTele]=1;                                                    // bTeleport=true
     bool fault=CallGuarded(g_cfrFn,g_cfrThunk,g_cfrChild,(void*)g_cfrComp,frbuf,g_rbuf);
     if(InterlockedIncrement(&g_cfrReps)==1) Markerf(fault?"[FR] SetWorldLocationAndRotation FAULTED\r\n":"[FR] camera -> world (%.0f,%.0f,%.0f) pitch -89 (hero at %.0f,%.0f,%.0f); re-applying to hold\r\n",hx-60.0,hy,hz+3500.0,hx,hy,hz);
+}
+
+// ---- DEPLOY RECONSTRUCTION (S79→S80): find the hero living-state control (read-only, no hook) ----
+// List every property on cls's chain whose name contains any keyword (name @ Offset_Internal +0x44).
+static void ListPropsMatching(uintptr_t cls, const char* const* keys, int nkeys){
+    int g=0; while(LooksLikePtr(cls)&&g++<12){
+        char ccn[96]="?"; GetFNameStr(NameId(cls),ccn,sizeof(ccn));
+        uintptr_t f=SafeReadable((void*)(cls+UFUNC_CHILDPROPS),8)?*(uintptr_t*)(cls+UFUNC_CHILDPROPS):0; int i=0;
+        while(LooksLikePtr(f)&&i++<1500){ char pn[128];
+            if(GetFNameStr(NameId(f),pn,sizeof(pn))){ for(int k=0;k<nkeys;k++){ if(strstr(pn,keys[k])){ uint32_t off=SafeReadable((void*)(f+FPROP_OFFSET),4)?*(uint32_t*)(f+FPROP_OFFSET):0xFFFFFFFF; Markerf("[SR]   prop %s::%s @+0x%X\r\n",ccn,pn,off); break; } } }
+            f=SafeReadable((void*)(f+FIELD_NEXT),8)?*(uintptr_t*)(f+FIELD_NEXT):0; }
+        cls=SafeReadable((void*)(cls+UST_SUPER),8)?*(uintptr_t*)(cls+UST_SUPER):0;
+    }
+}
+static void DoStateRecon(){
+    Marker("[SR] === deploy/living-state recon on the hero ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc = LooksLikePtr(L)? (SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0) : 0;
+    uint32_t po = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"Pawn"):0xFFFFFFFF; uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero = LooksLikePtr(pc)? (SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0) : 0;
+    if(!LooksLikePtr(hero)){ Marker("[SR] no hero — abort\r\n"); return; }
+    char hcn[96]="-"; ClassName(hero,hcn,sizeof(hcn));
+    Markerf("[SR] hero=0x%llX(%s)  [BP-folded thunk = 0x%llX; anything else = natively callable]\r\n",
+            (unsigned long long)hero,hcn,(unsigned long long)(g_modBase+kPiRva));
+    static const char* fkeys[]={"LivingState","LifeState","Living","Alive","Dead","Deploy","Landed","Drop","Pod","Revive",
+        "Respawn","Reveal","SetState","OnRep_","Visib","MeshVis","Hidden","Predrop","Ragdoll","Init","Setup"};
+    Marker("[SR] --- matching functions (name / thunk) ---\r\n"); ListFuncsMatching(ClassOf(hero),fkeys,21);
+    static const char* pkeys[]={"State","Living","Alive","Dead","Hidden","Predrop","Drop","Deploy","Life","Revive","bIs"};
+    Marker("[SR] --- matching properties (name @ offset) ---\r\n"); ListPropsMatching(ClassOf(hero),pkeys,11);
+    Marker("[SR] === done ===\r\n");
+}
+
+// ---- DEPLOY RECONSTRUCTION step 1 (MODE_LIVINGSTATE): set LivingState=Alive + fire visibility handlers ----
+static uintptr_t g_lsHero=0;
+static void* g_lsGetFn=0;   static uintptr_t g_lsGetThunk=0,g_lsGetChild=0;      // GetLivingState -> byte
+static void* g_lsOrpFn=0;   static uintptr_t g_lsOrpThunk=0,g_lsOrpChild=0;      // OnRep_LivingState
+static void* g_lsNewFn=0;   static uintptr_t g_lsNewThunk=0,g_lsNewChild=0;      // OnNewLivingState
+static void* g_lsVisFn=0;   static uintptr_t g_lsVisThunk=0,g_lsVisChild=0;      // OnCharacterVisibilityUpdated
+constexpr uintptr_t LS_LIVINGSTATE=0x1090, LS_PREDROP=0x1BE8, LS_ONGROUND=0x1B20, LS_MIDAIR=0x1B21, LS_VISSTATE=0xD38;
+static bool ResolveLivingState(){
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer"); if(!L){ Marker("[LS] no LocalPlayer\r\n"); return false; }
+    uintptr_t pc=SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0; if(!LooksLikePtr(pc)){ Marker("[LS] L->PC null\r\n"); return false; }
+    uint32_t po=PropOffsetOnClass(ClassOf(pc),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    g_lsHero=SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0; if(!LooksLikePtr(g_lsHero)){ Marker("[LS] PC->Pawn null\r\n"); return false; }
+    uintptr_t hc=ClassOf(g_lsHero);
+    ResolveFunc(hc,"GetLivingState",&g_lsGetFn,&g_lsGetThunk,&g_lsGetChild);
+    ResolveFunc(hc,"OnRep_LivingState",&g_lsOrpFn,&g_lsOrpThunk,&g_lsOrpChild);
+    ResolveFunc(hc,"OnNewLivingState",&g_lsNewFn,&g_lsNewThunk,&g_lsNewChild);
+    ResolveFunc(hc,"OnCharacterVisibilityUpdated",&g_lsVisFn,&g_lsVisThunk,&g_lsVisChild);
+    char hcn[96]="-"; ClassName(g_lsHero,hcn,sizeof(hcn));
+    Markerf("[LS] hero=0x%llX(%s) getThunk=0x%llX orpThunk=0x%llX newThunk=0x%llX visThunk=0x%llX aliveVal=%d\r\n",
+            (unsigned long long)g_lsHero,hcn,(unsigned long long)g_lsGetThunk,(unsigned long long)g_lsOrpThunk,(unsigned long long)g_lsNewThunk,(unsigned long long)g_lsVisThunk,(int)KALIVEVAL);
+    return true;
+}
+static uint8_t LsRead(uintptr_t off){ return SafeReadable((void*)(g_lsHero+off),1)?*(uint8_t*)(g_lsHero+off):0xFF; }
+static void DoLivingState(){
+    Marker("[LS] === deploy step 1: LivingState -> Alive + reveal ===\r\n");
+    // READ current
+    uint8_t getVal=0xFF; if(g_lsGetThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallGuarded(g_lsGetFn,g_lsGetThunk,g_lsGetChild,(void*)g_lsHero,g_pbuf,g_rbuf)) getVal=g_rbuf[0]; }
+    Markerf("[LS] BEFORE: GetLivingState=%d rawLivingState@0x1090=%d predrop@0x1BE8=%d onGround@0x1B20=%d visState@0xD38=%d\r\n",
+            getVal,LsRead(LS_LIVINGSTATE),LsRead(LS_PREDROP),LsRead(LS_ONGROUND),LsRead(LS_VISSTATE));
+    // WRITE: Alive, not pre-drop-hidden, on ground
+    if(SafeReadable((void*)(g_lsHero+LS_LIVINGSTATE),1)) *(uint8_t*)(g_lsHero+LS_LIVINGSTATE)=(uint8_t)KALIVEVAL;
+    if(SafeReadable((void*)(g_lsHero+LS_PREDROP),1))     *(uint8_t*)(g_lsHero+LS_PREDROP)=0;
+    if(SafeReadable((void*)(g_lsHero+LS_ONGROUND),1))    *(uint8_t*)(g_lsHero+LS_ONGROUND)=1;
+    if(SafeReadable((void*)(g_lsHero+LS_MIDAIR),1))      *(uint8_t*)(g_lsHero+LS_MIDAIR)=0;
+    Marker("[LS] wrote LivingState=Alive, predrop=0, onGround=1\r\n");
+    // FIRE the client-side apply handlers (native)
+    if(g_lsOrpThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_lsOrpFn,g_lsOrpThunk,g_lsOrpChild,(void*)g_lsHero,g_pbuf,g_rbuf)) Marker("[LS] OnRep_LivingState FAULTED\r\n"); else Marker("[LS] OnRep_LivingState done\r\n"); }
+    if(g_lsNewThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_lsNewFn,g_lsNewThunk,g_lsNewChild,(void*)g_lsHero,g_pbuf,g_rbuf)) Marker("[LS] OnNewLivingState FAULTED\r\n"); else Marker("[LS] OnNewLivingState done\r\n"); }
+    if(g_lsVisThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_lsVisFn,g_lsVisThunk,g_lsVisChild,(void*)g_lsHero,g_pbuf,g_rbuf)) Marker("[LS] OnCharacterVisibilityUpdated FAULTED\r\n"); else Marker("[LS] OnCharacterVisibilityUpdated done\r\n"); }
+    uint8_t getVal2=0xFF; if(g_lsGetThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallGuarded(g_lsGetFn,g_lsGetThunk,g_lsGetChild,(void*)g_lsHero,g_pbuf,g_rbuf)) getVal2=g_rbuf[0]; }
+    Markerf("[LS] AFTER: GetLivingState=%d rawLivingState@0x1090=%d predrop@0x1BE8=%d\r\n",getVal2,LsRead(LS_LIVINGSTATE),LsRead(LS_PREDROP));
+    Marker("[LS] === done — check the screen for a visible hero. ===\r\n");
+}
+
+// ---- DEPLOY RECONSTRUCTION step 2 (MODE_MESHDIAG): is the hero's skeletal mesh present-but-hidden, or unassigned? ----
+static bool OuterChainReaches(uintptr_t o, uintptr_t target){ int g=0; while(LooksLikePtr(o)&&g++<6){ uintptr_t outer=SafeReadable((void*)(o+OUTER_OFF),8)?*(uintptr_t*)(o+OUTER_OFF):0; if(outer==target)return true; o=outer; } return false; }
+static void DoMeshDiag(){
+    Marker("[MD] === mesh diagnostic on the hero ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc = LooksLikePtr(L)? (SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0) : 0;
+    uint32_t po = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"Pawn"):0xFFFFFFFF; uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero = LooksLikePtr(pc)? (SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0) : 0;
+    if(!LooksLikePtr(hero)){ Marker("[MD] no hero — abort\r\n"); return; }
+    char hcn[96]="-"; ClassName(hero,hcn,sizeof(hcn)); Markerf("[MD] hero=0x%llX(%s)\r\n",(unsigned long long)hero,hcn);
+    int n=0;
+    ForEachObject([&](uintptr_t o)->bool{
+        char cn[96]; if(!ClassName(o,cn,sizeof(cn))) return false;
+        if(!strstr(cn,"SkeletalMeshComponent") && !strstr(cn,"SkinnedMeshComponent") && !strstr(cn,"StaticMeshComponent")) return false;
+        if(!OuterChainReaches(o,hero)) return false;
+        char on[96]="?"; ObjName(o,on,sizeof(on));
+        uint32_t visOff=PropOffsetOnClass(ClassOf(o),"bVisible"); uint32_t hidOff=PropOffsetOnClass(ClassOf(o),"bHiddenInGame");
+        uint32_t smOff=PropOffsetOnClass(ClassOf(o),"SkeletalMeshAsset"); if(smOff==0xFFFFFFFF) smOff=PropOffsetOnClass(ClassOf(o),"SkeletalMesh"); if(smOff==0xFFFFFFFF) smOff=PropOffsetOnClass(ClassOf(o),"StaticMesh");
+        uint8_t vis=(visOff!=0xFFFFFFFF&&SafeReadable((void*)(o+visOff),1))?*(uint8_t*)(o+visOff):0xFF;
+        uint8_t hid=(hidOff!=0xFFFFFFFF&&SafeReadable((void*)(o+hidOff),1))?*(uint8_t*)(o+hidOff):0xFF;
+        uintptr_t sm=(smOff!=0xFFFFFFFF&&SafeReadable((void*)(o+smOff),8))?*(uintptr_t*)(o+smOff):0;
+        char smn[96]="<none>"; if(LooksLikePtr(sm)) ObjName(sm,smn,sizeof(smn));
+        Markerf("[MD]   %s '%s' bVisible=%d bHiddenInGame=%d meshOff@0x%X mesh=%s\r\n",cn,on,vis,hid,smOff,smn);
+        return (++n>=16);
+    });
+    Markerf("[MD] (%d mesh comps under the hero)\r\n",n);
+    ForEachObject([&](uintptr_t o)->bool{ uintptr_t outer=SafeReadable((void*)(o+OUTER_OFF),8)?*(uintptr_t*)(o+OUTER_OFF):0; if(outer!=hero)return false; char cn[96]; if(ClassName(o,cn,sizeof(cn))&&strstr(cn,"MeshManager")){ Markerf("[MD] LokiMeshManagerComponent=0x%llX\r\n",(unsigned long long)o); return true;} return false;});
+    Marker("[MD] === done ===\r\n");
+}
+
+// ---- DEPLOY RECONSTRUCTION step 3 (MODE_MESHMGRRECON): find a native mesh-create on LokiMeshManagerComponent ----
+static void ListAllFuncs(uintptr_t cls, int maxDepth){
+    uintptr_t piThunk=g_modBase+kPiRva; int g=0;
+    while(LooksLikePtr(cls)&&g++<maxDepth){
+        char ccn[96]="?"; GetFNameStr(NameId(cls),ccn,sizeof(ccn));
+        uintptr_t f=SafeReadable((void*)(cls+UST_CHILDREN),8)?*(uintptr_t*)(cls+UST_CHILDREN):0; int i=0;
+        while(LooksLikePtr(f)&&i++<400){ char fn[128];
+            if(GetFNameStr(NameId(f),fn,sizeof(fn))){ uintptr_t th=SafeReadable((void*)(f+UFUNC_FUNC),8)?*(uintptr_t*)(f+UFUNC_FUNC):0; Markerf("[MM]   %s::%s [%s] thunk=0x%llX\r\n",ccn,fn,(th==piThunk?"BP":"N"),(unsigned long long)th); }
+            f=SafeReadable((void*)(f+FIELD_NEXT_UF),8)?*(uintptr_t*)(f+FIELD_NEXT_UF):0; }
+        cls=SafeReadable((void*)(cls+UST_SUPER),8)?*(uintptr_t*)(cls+UST_SUPER):0;
+    }
+}
+static void DoMeshMgrRecon(){
+    Marker("[MM] === mesh-manager recon ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc = LooksLikePtr(L)? (SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0) : 0;
+    uint32_t po = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"Pawn"):0xFFFFFFFF; uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero = LooksLikePtr(pc)? (SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0) : 0;
+    if(!LooksLikePtr(hero)){ Marker("[MM] no hero — abort\r\n"); return; }
+    uintptr_t mm=0; ForEachObject([&](uintptr_t o)->bool{ if((SafeReadable((void*)(o+OUTER_OFF),8)?*(uintptr_t*)(o+OUTER_OFF):0)!=hero)return false; char cn[96]; if(ClassName(o,cn,sizeof(cn))&&strstr(cn,"MeshManager")){mm=o;return true;} return false;});
+    if(mm){ Markerf("[MM] LokiMeshManagerComponent=0x%llX  [BP thunk=0x%llX]  its functions:\r\n",(unsigned long long)mm,(unsigned long long)(g_modBase+kPiRva)); ListAllFuncs(ClassOf(mm),2); }
+    else Marker("[MM] no mesh manager found\r\n");
+    Marker("[MM] --- hero cosmetics/mesh/setup fns ---\r\n");
+    static const char* keys[]={"Cosmetic","Mesh","Skin","Character","Setup","Refresh","Rebuild","Attach","Create","Body","Skeletal","Skel"};
+    ListFuncsMatching(ClassOf(hero),keys,12);
+    Marker("[MM] === done ===\r\n");
+}
+
+// ---- DEPLOY RECONSTRUCTION step 4 (MODE_COSMETICS): build the character mesh via native RefreshCosmetics ----
+static uintptr_t g_cmHero=0;
+static void* g_cmRefFn=0; static uintptr_t g_cmRefThunk=0,g_cmRefChild=0;    // RefreshCosmetics
+static void* g_cmOrpFn=0; static uintptr_t g_cmOrpThunk=0,g_cmOrpChild=0;    // OnRep_CosmeticsAssetID
+static void* g_cmGetFn=0; static uintptr_t g_cmGetThunk=0,g_cmGetChild=0;    // GetCosmeticsAssetID
+static void* g_cmVisFn=0; static uintptr_t g_cmVisThunk=0,g_cmVisChild=0;    // OnCharacterVisibilityUpdated
+static bool ResolveCosmetics(){
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer"); if(!L){ Marker("[CM] no LocalPlayer\r\n"); return false; }
+    uintptr_t pc=SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0; if(!LooksLikePtr(pc)){ Marker("[CM] L->PC null\r\n"); return false; }
+    uint32_t po=PropOffsetOnClass(ClassOf(pc),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    g_cmHero=SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0; if(!LooksLikePtr(g_cmHero)){ Marker("[CM] PC->Pawn null\r\n"); return false; }
+    uintptr_t hc=ClassOf(g_cmHero);
+    ResolveFunc(hc,"RefreshCosmetics",&g_cmRefFn,&g_cmRefThunk,&g_cmRefChild);
+    ResolveFunc(hc,"OnRep_CosmeticsAssetID",&g_cmOrpFn,&g_cmOrpThunk,&g_cmOrpChild);
+    ResolveFunc(hc,"GetCosmeticsAssetID",&g_cmGetFn,&g_cmGetThunk,&g_cmGetChild);
+    ResolveFunc(hc,"OnCharacterVisibilityUpdated",&g_cmVisFn,&g_cmVisThunk,&g_cmVisChild);
+    Markerf("[CM] hero=0x%llX refreshThunk=0x%llX orpThunk=0x%llX getThunk=0x%llX visThunk=0x%llX\r\n",
+            (unsigned long long)g_cmHero,(unsigned long long)g_cmRefThunk,(unsigned long long)g_cmOrpThunk,(unsigned long long)g_cmGetThunk,(unsigned long long)g_cmVisThunk);
+    return g_cmRefThunk!=0;
+}
+static int CountHeroSkeletals(){ int n=0; ForEachObject([&](uintptr_t o)->bool{ char cn[96]; if(!ClassName(o,cn,sizeof(cn)))return false; if(!strstr(cn,"SkeletalMeshComponent")&&!strstr(cn,"SkinnedMeshComponent"))return false; if(!OuterChainReaches(o,g_cmHero))return false; char on[96]="?"; ObjName(o,on,sizeof(on)); Markerf("[CM]   skeletal: %s '%s'\r\n",cn,on); return (++n>=12); }); return n; }
+static void DoCosmetics(){
+    Marker("[CM] === deploy step 4: RefreshCosmetics (build character mesh) ===\r\n");
+    Markerf("[CM] skeletal meshes BEFORE: %d\r\n",CountHeroSkeletals());
+    if(g_cmGetThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallGuarded(g_cmGetFn,g_cmGetThunk,g_cmGetChild,(void*)g_cmHero,g_pbuf,g_rbuf)) Markerf("[CM] CosmeticsAssetID = 0x%llX 0x%llX\r\n",(unsigned long long)*(uint64_t*)(g_rbuf),(unsigned long long)*(uint64_t*)(g_rbuf+8)); }
+    if(g_cmRefThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_cmRefFn,g_cmRefThunk,g_cmRefChild,(void*)g_cmHero,g_pbuf,g_rbuf)) Marker("[CM] RefreshCosmetics FAULTED\r\n"); else Marker("[CM] RefreshCosmetics done\r\n"); }
+    if(g_cmOrpThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_cmOrpFn,g_cmOrpThunk,g_cmOrpChild,(void*)g_cmHero,g_pbuf,g_rbuf)) Marker("[CM] OnRep_CosmeticsAssetID FAULTED\r\n"); else Marker("[CM] OnRep_CosmeticsAssetID done\r\n"); }
+    // re-assert Alive + visibility
+    if(SafeReadable((void*)(g_cmHero+0x1090),1)) *(uint8_t*)(g_cmHero+0x1090)=1;
+    if(SafeReadable((void*)(g_cmHero+0x1BE8),1)) *(uint8_t*)(g_cmHero+0x1BE8)=0;
+    if(g_cmVisThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_cmVisFn,g_cmVisThunk,g_cmVisChild,(void*)g_cmHero,g_pbuf,g_rbuf)) Marker("[CM] OnCharacterVisibilityUpdated FAULTED\r\n"); else Marker("[CM] OnCharacterVisibilityUpdated done\r\n"); }
+    Markerf("[CM] skeletal meshes AFTER: %d\r\n",CountHeroSkeletals());
+    Marker("[CM] === done — check the screen. ===\r\n");
 }
 
 // ---- Route D (MODE_SPECTATOR_CAM): reveal the live tutorial world for the spectator ----
@@ -1707,6 +1892,8 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     else if(kMode==MODE_UNHIDE) DoUnhide();
     else if(kMode==MODE_NPOSSESS) DoNPossess();
     else if(kMode==MODE_CRESTART) DoCRestart();
+    else if(kMode==MODE_LIVINGSTATE) DoLivingState();
+    else if(kMode==MODE_COSMETICS) DoCosmetics();
     else Census();
     g_done=1; g_inHook=0;
 }
@@ -1723,6 +1910,9 @@ static DWORD WINAPI Worker(LPVOID){
     if(kMode==MODE_SWAP_CENSUS){ DoSwapCensus(); Marker("[3b] swap-census done (read-only, no hook held).\r\n"); return 0; }
     if(kMode==MODE_CAMFIX){ DoCamFix(); Marker("[3b] camfix done (off-thread, no hook held).\r\n"); return 0; }
     if(kMode==MODE_DEPLOYRECON){ DoDeployRecon(); Marker("[3b] deploy-recon done (read-only, no hook held).\r\n"); return 0; }
+    if(kMode==MODE_STATERECON){ DoStateRecon(); Marker("[3b] state-recon done (read-only, no hook held).\r\n"); return 0; }
+    if(kMode==MODE_MESHDIAG){ DoMeshDiag(); Marker("[3b] mesh-diag done (read-only, no hook held).\r\n"); return 0; }
+    if(kMode==MODE_MESHMGRRECON){ DoMeshMgrRecon(); Marker("[3b] mesh-mgr-recon done (read-only, no hook held).\r\n"); return 0; }
     // S78 #4: wait for the UMG widgets (incl. the WBP_UI_MatchTransition overlay) to spawn before censusing — a
     // too-early census gets few widgets and misses the overlay (hid 0/3). Poll the count until high/stable
     // (min 6s floor, cap 30s) instead of the old fixed 12s sleep, so inject timing is self-correcting.
@@ -1738,6 +1928,8 @@ static DWORD WINAPI Worker(LPVOID){
     if(kMode==MODE_NPOSSESS){ if(!ResolveNPossess()){ Marker("[1] npossess resolve failed — aborting\r\n"); return 15; } }
     if(kMode==MODE_CRESTART){ if(!ResolveCRestart()){ Marker("[1] crestart resolve failed — aborting\r\n"); return 16; } }
     if(kMode==MODE_CAMFRAME){ if(!ResolveCamFrame()){ Marker("[1] camframe resolve failed — aborting\r\n"); return 17; } }
+    if(kMode==MODE_LIVINGSTATE){ if(!ResolveLivingState()){ Marker("[1] livingstate resolve failed — aborting\r\n"); return 18; } }
+    if(kMode==MODE_COSMETICS){ if(!ResolveCosmetics()){ Marker("[1] cosmetics resolve failed — aborting\r\n"); return 19; } }
     if(kMode==MODE_SPECTATOR_CAM){ ResolveSpectatorCam(); ProbeCamera(); ProbeViewYaw(); ProbeSensitivity(); if(kTakeoverCam) ResolveTakeover(); }
     if(kMode==MODE_DEBUGCAM){ ResolveSpectatorCam(); ResolveDebugCam(); }   // spectator resolve populates the overlay-hide widgets
     if(kMode==MODE_FREECAM){ ResolveFreeCam(); }
@@ -1877,6 +2069,31 @@ static DWORD WINAPI Worker(LPVOID){
             Markerf("[CR] t+%.1fs PC->Pawn=0x%llX(%s)%s camTgt=0x%llX(%s)%s\r\n",(i+1)*0.5,
                     (unsigned long long)pw,pn,(pw==g_crHero?" HERO":""),(unsigned long long)vt,vn,(vt==g_crHero?" <<HERO":"")); }
         Marker("[3b] crestart done.\r\n");
+        return 0;
+    } else if(kMode==MODE_LIVINGSTATE){
+        Marker("[2] livingstate: transient hook to set Alive + fire visibility handlers...\r\n");
+        DWORD lsT0=GetTickCount();
+        while(!g_done && GetTickCount()-lsT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+250; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] livingstate fired (done=%ld). Monitoring raw LivingState@0x1090 8s...\r\n",(long)g_done);
+        for(int i=0;i<16;i++){ Sleep(500);
+            uint8_t v = (LooksLikePtr(g_lsHero)&&SafeReadable((void*)(g_lsHero+LS_LIVINGSTATE),1))?*(uint8_t*)(g_lsHero+LS_LIVINGSTATE):0xFF;
+            uint8_t pd= (LooksLikePtr(g_lsHero)&&SafeReadable((void*)(g_lsHero+LS_PREDROP),1))?*(uint8_t*)(g_lsHero+LS_PREDROP):0xFF;
+            Markerf("[LS] t+%.1fs LivingState=%d predrop=%d %s\r\n",(i+1)*0.5,v,pd,(v==(uint8_t)KALIVEVAL?"(held Alive)":"(reset)")); }
+        Marker("[3b] livingstate done.\r\n");
+        return 0;
+    } else if(kMode==MODE_COSMETICS){
+        Marker("[2] cosmetics: transient hook to call RefreshCosmetics...\r\n");
+        DWORD cmT0=GetTickCount();
+        while(!g_done && GetTickCount()-cmT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+300; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3] cosmetics fired (done=%ld).\r\n",(long)g_done);
+        for(int i=0;i<6;i++) Sleep(500);
+        Marker("[3b] cosmetics done.\r\n");
         return 0;
     } else if(kMode==MODE_CAMFRAME){
         // Re-apply the camera-component offset repeatedly (transient hook per apply) to hold it vs any per-frame reset.
