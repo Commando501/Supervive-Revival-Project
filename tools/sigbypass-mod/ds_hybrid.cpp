@@ -95,6 +95,16 @@ constexpr int MODE_MESHMGRRECON=21;
 // MODE_COSMETICS (deploy step 4): call the native LokiHeroCharacter::RefreshCosmetics (+OnRep_CosmeticsAssetID) to BUILD
 // the character mesh a raw hero never created, re-assert Alive+visibility, then re-count skeletal meshes. -DKMODE=MODE_COSMETICS
 constexpr int MODE_COSMETICS=22;
+// MODE_COSMENUM (deploy step 5): enumerate cosmetics PrimaryAssetTypes via GetPrimaryAssetIdList (Phase-1 primitive) and
+// log the IDs + resolved names, flagging Assault/Default — to find the character CosmeticsAssetID to assign. -DKMODE=MODE_COSMENUM
+constexpr int MODE_COSMENUM=23;
+// MODE_SETCOSMETIC (deploy step 6): build FPrimaryAssetId "HeroCosmeticsBundle:AssaultDefault", async-load it, write it to
+// the hero's CosmeticsAssetID field, and call RefreshCosmetics (re-fired as the async load lands) to build the character
+// mesh. kSkin overridable. -DKMODE=MODE_SETCOSMETIC  [-DKSKIN='L"HeroCosmeticsBundle:AssaultDefault"']
+constexpr int MODE_SETCOSMETIC=24;
+#ifndef KSKIN
+#define KSKIN L"HeroCosmeticsBundle:AssaultDefault"
+#endif
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -1810,6 +1820,51 @@ static void LcFireLoad(){
     if(CallGuarded(g_lcLoadFn,g_lcLoadThunk,g_lcLoadChild,(void*)g_lam,g_pbuf,g_rbuf)){ Marker("[LOAD] AsyncLoadPrimaryAssets FAULTED\r\n"); return; }
     g_lcHandle=*(uint64_t*)g_rbuf;
 }
+// Deploy step 5: enumerate cosmetics PrimaryAssetTypes + log ids with resolved names (find the Assault character cosmetic).
+static void DoCosmEnum(){
+    static const wchar_t* kCand[] = { L"Cosmetic:x", L"HeroCosmetic:x", L"CharacterCosmetic:x", L"LokiHeroCosmetic:x",
+        L"LokiCosmetic:x", L"Skin:x", L"HeroSkin:x", L"CharacterSkin:x", L"BaseCosmetic:x", L"CosmeticSet:x",
+        L"LokiCharacterCosmetic:x", L"HeroBody:x", L"Body:x", L"Character:x", L"CharacterBody:x" };
+    static uint64_t ids[LC_NMAX][2];
+    for(unsigned c=0;c<sizeof(kCand)/sizeof(kCand[0]);c++){
+        uint32_t tid=LcTypeId(kCand[c]);
+        int num = tid ? LcQueryIds(tid,ids,LC_NMAX) : 0;
+        Markerf("[CE] type '%ls' -> tid=0x%X ids=%d\r\n",kCand[c],tid,num);
+        if(num>0){ int lim=num<24?num:24;
+            for(int i=0;i<lim;i++){ uint32_t nameId=(uint32_t)(ids[i][1]&0xFFFFFFFF); char nm[128]="?"; GetFNameStr(nameId,nm,sizeof(nm));
+                Markerf("[CE]     id[%d] type=0x%llX name=0x%llX '%s'%s\r\n",i,(unsigned long long)ids[i][0],(unsigned long long)ids[i][1],nm,
+                        (strstr(nm,"Assault")?" <<ASSAULT":(strstr(nm,"Default")?" <<DEFAULT":""))); }
+        }
+    }
+    Marker("[CE] === cosmetics enum done ===\r\n");
+}
+// Deploy step 6: assign a real CosmeticsAssetID + RefreshCosmetics to build the character mesh (uses g_cm* from ResolveCosmetics).
+static volatile long g_scReps=0; static uint8_t g_scPaid[16]={0};
+static void DoSetCosmetic(){
+    long rep=InterlockedIncrement(&g_scReps);
+    if(rep==1){
+        Marker("[SC] === set CosmeticsAssetID + RefreshCosmetics (build character mesh) ===\r\n");
+        if(g_pafsThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); LcSetFStr(g_pbuf,KSKIN);
+            if(!CallGuarded(g_pafsFn,g_pafsThunk,g_pafsChild,(void*)g_lam,g_pbuf,g_rbuf)) memcpy(g_scPaid,g_rbuf,16); }
+        Markerf("[SC] skin PrimaryAssetId = 0x%llX 0x%llX\r\n",(unsigned long long)*(uint64_t*)g_scPaid,(unsigned long long)*(uint64_t*)(g_scPaid+8));
+        if(*(uint64_t*)g_scPaid==0){ Marker("[SC] PrimaryAssetIDFromString gave 0 — skin type not resolvable; abort\r\n"); return; }
+        if(g_lcLoadThunk){ static uint8_t lb[16]; memcpy(lb,g_scPaid,16); memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            *(uint64_t*)(g_pbuf+0)=(uint64_t)g_lcWorld; *(uint64_t*)(g_pbuf+8)=(uint64_t)lb; *(uint32_t*)(g_pbuf+16)=1; *(uint32_t*)(g_pbuf+20)=1;
+            CallGuarded(g_lcLoadFn,g_lcLoadThunk,g_lcLoadChild,(void*)g_lam,g_pbuf,g_rbuf); Marker("[SC] AsyncLoadPrimaryAssets(skin) fired\r\n"); }
+        uint32_t caOff=PropOffsetOnClass(ClassOf(g_cmHero),"CosmeticsAssetID");
+        uint32_t ovOff=PropOffsetOnClass(ClassOf(g_cmHero),"OverrideCosmeticsAssetID");
+        if(caOff!=0xFFFFFFFF && SafeReadable((void*)(g_cmHero+caOff),16)){ memcpy((void*)(g_cmHero+caOff),g_scPaid,16); Markerf("[SC] wrote CosmeticsAssetID @+0x%X\r\n",caOff); } else Marker("[SC] CosmeticsAssetID offset NOT FOUND\r\n");
+        if(ovOff!=0xFFFFFFFF && SafeReadable((void*)(g_cmHero+ovOff),16)){ memcpy((void*)(g_cmHero+ovOff),g_scPaid,16); Markerf("[SC] wrote OverrideCosmeticsAssetID @+0x%X\r\n",ovOff); }
+    }
+    if(*(uint64_t*)g_scPaid==0) return;
+    // every rep: rebuild + keep Alive/visible (RefreshCosmetics rebuilds once the async asset is resident)
+    if(g_cmRefThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(CallGuarded(g_cmRefFn,g_cmRefThunk,g_cmRefChild,(void*)g_cmHero,g_pbuf,g_rbuf)){ if(rep==1)Marker("[SC] RefreshCosmetics FAULTED\r\n"); } else if(rep==1) Marker("[SC] RefreshCosmetics done\r\n"); }
+    if(g_cmOrpThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmOrpFn,g_cmOrpThunk,g_cmOrpChild,(void*)g_cmHero,g_pbuf,g_rbuf); }
+    if(SafeReadable((void*)(g_cmHero+0x1090),1)) *(uint8_t*)(g_cmHero+0x1090)=1;
+    if(SafeReadable((void*)(g_cmHero+0x1BE8),1)) *(uint8_t*)(g_cmHero+0x1BE8)=0;
+    if(g_cmVisThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmVisFn,g_cmVisThunk,g_cmVisChild,(void*)g_cmHero,g_pbuf,g_rbuf); }
+    if(rep==1||rep==8||rep==16) Markerf("[SC] rep %ld: skeletal meshes under hero = %d\r\n",rep,CountHeroSkeletals());
+}
 // Game-thread visit (ONE): discover the hero PrimaryAssetType, enumerate its ids, fire the async load.
 static void DoLoadCensus(){
     static const wchar_t* kCand[] = { L"LokiHeroData:x", L"LokiHero:x", L"HeroData:x", L"Hero:x",
@@ -1882,6 +1937,8 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_FREECAM){ if(h==1) Marker("[HOOK] fired (free-cam) — spawn camera + retarget view + puppet\r\n"); DoFreeCam(); g_inHook=0; return; }
     if(kMode==MODE_LOAD_CENSUS){ if(!g_lcFired){ if(h==1) Marker("[HOOK] fired (load-census) — firing hero asset load on the game thread.\r\n"); DoLoadCensus(); } g_done=1; g_inHook=0; return; }
     if(kMode==MODE_CAMFRAME){ DoCamFrame(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_COSMENUM){ DoCosmEnum(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_SETCOSMETIC){ DoSetCosmetic(); g_done=1; g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -1930,6 +1987,8 @@ static DWORD WINAPI Worker(LPVOID){
     if(kMode==MODE_CAMFRAME){ if(!ResolveCamFrame()){ Marker("[1] camframe resolve failed — aborting\r\n"); return 17; } }
     if(kMode==MODE_LIVINGSTATE){ if(!ResolveLivingState()){ Marker("[1] livingstate resolve failed — aborting\r\n"); return 18; } }
     if(kMode==MODE_COSMETICS){ if(!ResolveCosmetics()){ Marker("[1] cosmetics resolve failed — aborting\r\n"); return 19; } }
+    if(kMode==MODE_COSMENUM){ if(!ResolveLoadCensus()){ Marker("[1] cosmenum resolve failed — aborting\r\n"); return 20; } }
+    if(kMode==MODE_SETCOSMETIC){ if(!ResolveLoadCensus()||!ResolveCosmetics()){ Marker("[1] setcosmetic resolve failed — aborting\r\n"); return 21; } }
     if(kMode==MODE_SPECTATOR_CAM){ ResolveSpectatorCam(); ProbeCamera(); ProbeViewYaw(); ProbeSensitivity(); if(kTakeoverCam) ResolveTakeover(); }
     if(kMode==MODE_DEBUGCAM){ ResolveSpectatorCam(); ResolveDebugCam(); }   // spectator resolve populates the overlay-hide widgets
     if(kMode==MODE_FREECAM){ ResolveFreeCam(); }
@@ -2094,6 +2153,26 @@ static DWORD WINAPI Worker(LPVOID){
         Markerf("[3] cosmetics fired (done=%ld).\r\n",(long)g_done);
         for(int i=0;i<6;i++) Sleep(500);
         Marker("[3b] cosmetics done.\r\n");
+        return 0;
+    } else if(kMode==MODE_COSMENUM){
+        Marker("[2] cosmenum: transient hook to query cosmetics types...\r\n");
+        DWORD ceT0=GetTickCount();
+        while(!g_done && GetTickCount()-ceT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+400; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3b] cosmenum done (done=%ld).\r\n",(long)g_done);
+        return 0;
+    } else if(kMode==MODE_SETCOSMETIC){
+        // Re-fire over ~12s so RefreshCosmetics rebuilds once the async skin asset lands.
+        Marker("[2] setcosmetic: assigning skin + re-refreshing over ~12s...\r\n");
+        DWORD scT0=GetTickCount();
+        while(GetTickCount()-scT0 < 12000){
+            g_done=0; g_inHook=0;
+            if(InstallHookFast()){ DWORD md=GetTickCount()+300; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(600);
+        }
+        Markerf("[3b] setcosmetic done (%ld reps).\r\n",(long)g_scReps);
         return 0;
     } else if(kMode==MODE_CAMFRAME){
         // Re-apply the camera-component offset repeatedly (transient hook per apply) to hold it vs any per-frame reset.
