@@ -261,6 +261,42 @@ systems; reconstructing the deploy sequence is a genuine multi-session effort, n
 NEXT (if resumed): RE + drive the deploy sequence — the mesh-visibility enforcer + the Enhanced-Input mapping-context add
 + the HUD-create — likely a single "deploy/landed" entry point on `LokiHeroCharacter`/the gamemode that fires all three.
 
+### ★ DEPLOY-SEQUENCE RECONSTRUCTION — started (2026-07-16, post-S79). New ds_hybrid modes: STATERECON/LIVINGSTATE/MESHDIAG
+The deploy control surface is now fully mapped (live, read-only `MODE_STATERECON`) and the mesh gate is precisely
+diagnosed. Findings:
+- **LivingState IS the visibility gate + it's drivable.** `LokiCharacter::LivingState @+0x1090` (uint8 enum); a raw
+  hand-spawned hero has `LivingState = 0` (None/undeployed) → that's why the mesh is hidden. `MODE_LIVINGSTATE` set it to
+  `1` (Alive) and it HELD (8s), firing `OnRep_LivingState`+`OnCharacterVisibilityUpdated` (native; `OnNewLivingState`
+  faulted — likely wants the prev-state param). Enum: {0=None, 1=Alive, …; `LivingStateAlive/Dead/Knocked` effects
+  confirm Alive/Knocked/Dead}. Native handles: `GetLivingState`(0x…300620), `OnRep_LivingState`(0x…302780),
+  `OnNewLivingState`(0x…3025A0), `OnCharacterVisibilityUpdated`(0x…39E070). Other fields: `HeroPredropHidden @+0x1BE8`,
+  `bIsOnGround @+0x1B20`/`bIsMidAir @+0x1B21`, `VisibilityState @+0xD38`, `LivingStateMachine @+0xD40`.
+- **★ BUT LivingState=Alive did NOT reveal a mesh — because the character mesh DOESN'T EXIST yet** (`MODE_MESHDIAG`): the
+  only mesh component under the hero is a `WispDirectionalIndicator` StaticMesh (UI plane). There is NO character
+  SkeletalMeshComponent — it's created/attached by `LokiMeshManagerComponent` (`0x286A3034000` this launch) during the
+  **cosmetics/deploy setup**, which never ran on a raw GameplayStatics-spawned hero. So the mesh gate is "not created,"
+  not "hidden."
+⇒ REMAINING deploy steps (each a BP-driven setup that needs a ProcessEvent capability + proper context, crash-prone
+out-of-context): (1) MESH — run the cosmetics/mesh-manager setup (`BP_PostSetupCosmetics` / `ClientInitialComponentSetup`
+[BP] or a native `LokiMeshManagerComponent` setup fn — recon that next) so `LokiMeshManagerComponent` builds the
+character mesh; (2) INPUT — `TryLocalControlSetup` [BP] (Enhanced-Input mapping context); (3) HUD — widget creation.
+NEXT: add ProcessEvent (`base+0x12C5A10`, S54-validated) to call the BP deploy fns, OR recon `LokiMeshManagerComponent`
+for a native mesh-create. This is a multi-session effort; the control-surface map above is the hard part banked.
+
+**★ MESH ROOT CAUSE FOUND (2026-07-16, `MODE_MESHMGRRECON` + `MODE_COSMETICS`).** `LokiMeshManagerComponent` only handles
+the WISP mesh (StartAttachingWispMeshToActor…), NOT the character body. The native character-mesh builder is
+**`LokiHeroCharacter::RefreshCosmetics`** (`0x…39E420`, directly callable) — but calling it built NOTHING because ★★
+**the hero's `CosmeticsAssetID` is `0x0` (unset)**: a raw GameplayStatics-spawned hero has no cosmetics/character asset
+(normally set from the player's loadout/PlayerState at deploy). `RefreshCosmetics` with a null asset → no skeletal mesh
+(skeletal-mesh count 0 → 0, no crash). So the MESH dependency chain is: **character mesh ← `RefreshCosmetics` ← a valid
+`CosmeticsAssetID` (null now) ← loadout / PlayerState**. Native cosmetics handles: `RefreshCosmetics`(0x…39E420),
+`GetCosmeticsAssetID`(0x…39C770), `OnRep_CosmeticsAssetID`(0x…39E220), `GetCosmeticsController`(0x…39C7A0),
+`GetOverrideCosmeticsAssetID`(0x…39D460). NEXT: find a valid Assault character `CosmeticsAssetID` (enumerate the cosmetics
+PrimaryAssetType via the S79-Phase-1 `GetPrimaryAssetIdList` primitive, or read one off a real loadout/PlayerState), write
+it to the hero's CosmeticsAssetID field + call `RefreshCosmetics` → the character mesh should build. THEN input
+(`TryLocalControlSetup`, BP) + HUD. New reusable `ds_hybrid.cpp` modes: STATERECON, LIVINGSTATE, MESHDIAG, MESHMGRRECON,
+COSMETICS (all `-DKMODE=`).
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
