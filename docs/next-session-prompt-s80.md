@@ -49,6 +49,21 @@ ourselves (the neutering is only in the ProcessEvent wrapper, not ProcessInterna
 Gotcha: the current hero (`0x28577E6D560`) is heavily hand-mangled + drifted over the void — spawn a FRESH
 `BP_HERO_Assault_C` for clean tests (SPAWN_P2 → NPOSSESS to re-establish a possessed hero, or just spawn + test).
 
+### ★ UFunction layout found (`MODE_UFUNCDUMP` on `ReceiveRestarted` @0x28504D23000) + a WRINKLE
+Confirmed offsets (this build, relative to the UFunction/UStruct base): `Func @+0xE0` (== ProcessInternal for BP-folded),
+`FunctionFlags @+0xB8`. UStruct tail: **`PropertiesSize` (int32) @+0x60**, `MinAlignment` (int32) @+0x64, then the
+**`Script` TArray @+0x68** (ptr @0x68 / num @0x70 / max @0x74). `+0xF0` = a `.text` ptr (EventGraph/native entry?), `+0xF8`
+hi = 0x41.
+★ **WRINKLE:** `ReceiveRestarted` has `PropertiesSize=0` and an **EMPTY Script** — because BP *events* don't carry their own
+bytecode; they dispatch into `ExecuteUbergraph_BP_*(EntryPoint)`. So a naive "Code=Script.GetData()" invoker won't run a BP
+event. Options: (a) dump a function that HAS real Script (`ExecuteUbergraph_BP_LokiHeroCharacter` — a BP fn WITH params +
+bytecode) to confirm the Script fields are non-zero there, then call the setup via `ExecuteUbergraph(hero, <EntryPoint>)`
+with the entry point of the deploy node (find the EntryPoint by inspecting the event's tiny stub, or brute-force small ints);
+OR (b) find NATIVE deploy functions that do the same work (native calls already work via the direct-thunk primitive — prefer
+these where they exist); OR (c) fully replicate `UObject::ProcessEvent` (it allocates locals, inits the frame incl. the
+event→ubergraph jump, calls ProcessInternal) minus whatever neuters the shipped one — the cleanest general fix. Validate any
+invoker on `GetCosmeticsController` (native, expect `0x…C4173C0`) BEFORE trusting it on deploy fns. New mode: UFUNCDUMP.
+
 ## Everything banked (facts/offsets — re-resolve VAs by NAME each launch; base is ASLR'd)
 - Local-player wiring: `LocalPlayer->PlayerController @+0x38`; `PC->Pawn @+0x3F8`; `Pawn->Controller @+0x400`;
   `AController::PlayerState @+0x3C0`; `Pawn::PlayerState @+0x3D8`; camMgr view target `@+0x420`.
