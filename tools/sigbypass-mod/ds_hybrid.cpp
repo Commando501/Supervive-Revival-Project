@@ -129,6 +129,9 @@ constexpr int MODE_BPTEST2=30;
 // MODE_BPTEST3 (tool validation 4): call a NATIVE member fn (GetCosmeticsController) via ProcessEvent + compare to its
 // direct-thunk return — isolates a ProcessEvent MECHANISM bug from BP-bytecode/context faults. -DKMODE=MODE_BPTEST3
 constexpr int MODE_BPTEST3=31;
+// MODE_UFUNCDUMP (BP-invoker prep): dump a BP UFunction's fields to find UStruct::PropertiesSize + UFunction::Script offsets
+// (needed to build a proper FFrame for a direct ProcessInternal call). -DKMODE=MODE_UFUNCDUMP
+constexpr int MODE_UFUNCDUMP=32;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -1999,6 +2002,23 @@ static void DoBPTest3(){
             (viaPE==viaThunk&&viaPE)?"<<< ProcessEvent WORKS on native (BP faults are bytecode/context)":"<<< ProcessEvent BROKEN even on native (mechanism bug)");
     Marker("[B3] === done ===\r\n");
 }
+static void DoUFuncDump(){
+    Marker("[UF] === UFunction field dump (find Script + PropertiesSize) ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc = LooksLikePtr(L)?(SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0):0;
+    uint32_t po = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"Pawn"):0xFFFFFFFF; uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero = LooksLikePtr(pc)?(SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0):0;
+    if(!LooksLikePtr(hero)){ Marker("[UF] no hero\r\n"); return; }
+    void* fn=0; uintptr_t th=0,ch=0; ResolveFunc(ClassOf(hero),"ReceiveRestarted",&fn,&th,&ch);
+    if(!fn) ResolveFunc(ClassOf(hero),"BP_PostSetupCosmetics",&fn,&th,&ch);
+    if(!fn){ Marker("[UF] no BP fn resolved\r\n"); return; }
+    uintptr_t f=(uintptr_t)fn; char nm[128]="?"; GetFNameStr(NameId(f),nm,sizeof(nm));
+    Markerf("[UF] UFunction '%s' @0x%llX (Func@+0xE0=0x%llX == ProcessInternal base+0x13454A0=0x%llX?)\r\n",
+            nm,(unsigned long long)f,(unsigned long long)(SafeReadable((void*)(f+0xE0),8)?*(uintptr_t*)(f+0xE0):0),(unsigned long long)(g_modBase+kPiRva));
+    for(uint32_t o=0x40;o<0x100;o+=8){ if(!SafeReadable((void*)(f+o),8))break; uint64_t q=*(uint64_t*)(f+o); int lo=(int)(uint32_t)q,hi=(int)(uint32_t)(q>>32);
+        Markerf("[UF]   +0x%X: 0x%016llX  i32(lo=%d hi=%d)%s\r\n",o,(unsigned long long)q,lo,hi, LooksLikePtr(q)?" [ptr]":""); }
+    Marker("[UF] (look for: PropertiesSize=small int32; Script=TArray {heap-ptr, num>0, max}) ===\r\n");
+}
 // Deploy step 7: create the cosmetics controller via BP setup (ProcessEvent) so RefreshCosmetics builds the mesh.
 static void* g_bdCicsFn=0; static void* g_bdPscFn=0; static void* g_bdTlcsFn=0;      // BP UFunction*s
 static void* g_bdGccFn=0;  static uintptr_t g_bdGccThunk=0,g_bdGccCh=0;             // GetCosmeticsController (native)
@@ -2227,6 +2247,7 @@ static DWORD WINAPI Worker(LPVOID){
     if(kMode==MODE_MESHDIAG){ DoMeshDiag(); Marker("[3b] mesh-diag done (read-only, no hook held).\r\n"); return 0; }
     if(kMode==MODE_MESHMGRRECON){ DoMeshMgrRecon(); Marker("[3b] mesh-mgr-recon done (read-only, no hook held).\r\n"); return 0; }
     if(kMode==MODE_VTDUMP){ DoVtDump(); Marker("[3b] vtdump done (read-only, no hook held).\r\n"); return 0; }
+    if(kMode==MODE_UFUNCDUMP){ DoUFuncDump(); Marker("[3b] ufuncdump done (read-only, no hook held).\r\n"); return 0; }
     // S78 #4: wait for the UMG widgets (incl. the WBP_UI_MatchTransition overlay) to spawn before censusing — a
     // too-early census gets few widgets and misses the overlay (hid 0/3). Poll the count until high/stable
     // (min 6s floor, cap 30s) instead of the old fixed 12s sleep, so inject timing is self-correcting.
