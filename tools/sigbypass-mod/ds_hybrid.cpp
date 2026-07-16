@@ -111,6 +111,12 @@ constexpr int MODE_BPDEPLOY=25;
 // ProcessEvent (base+0x12C5A10, S54-validated) runs a BP UFunction's bytecode. The direct-thunk primitive can't call
 // BP-folded fns (their Func == ProcessInternal); ProcessEvent is the correct path. Runs on the game thread (in OnPI).
 constexpr uintptr_t kProcEventRva=0x12C5A10;
+// MODE_CONTEXT (deploy step 8): the BP deploy fns fault because the hero has no PlayerState. Give it the native PC's
+// replicated PlayerState (+ LocalPlayerState), wire it (OnRep_PlayerState), then retry the BP setup. -DKMODE=MODE_CONTEXT
+constexpr int MODE_CONTEXT=26;
+// MODE_DEPLOYEVT (deploy step 9): with PlayerState set, call the game's own deploy ORCHESTRATOR BP events (ReceiveRestarted /
+// OnLocalPlayer_CharacterSpawned / RefreshLocalControl / TryLocalControlSetup) that run the init in order. -DKMODE=MODE_DEPLOYEVT
+constexpr int MODE_DEPLOYEVT=27;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -1917,6 +1923,83 @@ static void DoBPDeploy(){
     if(g_cmVisThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmVisFn,g_cmVisThunk,g_cmVisChild,(void*)g_cmHero,g_pbuf,g_rbuf); }
     if(rep==1||rep==8||rep==16) Markerf("[BD] rep %ld: controller=0x%llX skeletal=%d\r\n",rep,(unsigned long long)BdGetController(),CountHeroSkeletals());
 }
+// Deploy step 8: give the hero the PC's PlayerState (the deploy-context the BP setup reads), then retry the BP setup.
+static void* g_cxPsOrpFn=0; static uintptr_t g_cxPsOrpThunk=0,g_cxPsOrpCh=0;   // OnRep_PlayerState (native)
+static volatile long g_cxReps=0; static uint8_t g_cxPaid[16]={0};
+static bool ResolveContext(){
+    if(!ResolveBPDeploy()) return false;   // g_cmHero + BP fns (g_bdCicsFn/g_bdPscFn) + RefreshCosmetics + pafs/load
+    ResolveFunc(ClassOf(g_cmHero),"OnRep_PlayerState",&g_cxPsOrpFn,&g_cxPsOrpThunk,&g_cxPsOrpCh);
+    Markerf("[CX] OnRep_PlayerState thunk=0x%llX (BP fns from BPDeploy)\r\n",(unsigned long long)g_cxPsOrpThunk);
+    return true;
+}
+static void DoContext(){
+    long rep=InterlockedIncrement(&g_cxReps); uintptr_t hero=g_cmHero;
+    if(rep==1){
+        Marker("[CX] === context reconstruction: give the hero a PlayerState + retry BP setup ===\r\n");
+        uintptr_t Lp=FindInstExactClass("LocalPlayer"); if(!Lp)Lp=FindInstClassSub("LocalPlayer");
+        uintptr_t pc = LooksLikePtr(Lp)?(SafeReadable((void*)(Lp+0x38),8)?*(uintptr_t*)(Lp+0x38):0):0;
+        uint32_t pcPsOff = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"PlayerState"):0xFFFFFFFF;
+        uintptr_t ps = (LooksLikePtr(pc)&&pcPsOff!=0xFFFFFFFF&&SafeReadable((void*)(pc+pcPsOff),8))?*(uintptr_t*)(pc+pcPsOff):0;
+        char psn[96]="<none>"; if(LooksLikePtr(ps))ClassName(ps,psn,sizeof(psn));
+        Markerf("[CX] PC=0x%llX PlayerState@+0x%X = 0x%llX (%s)\r\n",(unsigned long long)pc,pcPsOff,(unsigned long long)ps,psn);
+        uint32_t hPsOff=PropOffsetOnClass(ClassOf(hero),"PlayerState"); if(hPsOff==0xFFFFFFFF)hPsOff=0x3D8;
+        uint32_t hLpsOff=PropOffsetOnClass(ClassOf(hero),"LocalPlayerState");
+        if(LooksLikePtr(ps)){ if(SafeReadable((void*)(hero+hPsOff),8))*(uintptr_t*)(hero+hPsOff)=ps; if(hLpsOff!=0xFFFFFFFF&&SafeReadable((void*)(hero+hLpsOff),8))*(uintptr_t*)(hero+hLpsOff)=ps;
+            Markerf("[CX] set hero PlayerState@+0x%X + LocalPlayerState@+0x%X = 0x%llX\r\n",hPsOff,hLpsOff,(unsigned long long)ps); }
+        else Marker("[CX] PC has NO PlayerState — that itself may be the gap\r\n");
+        if(g_cxPsOrpThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); Marker(CallGuarded(g_cxPsOrpFn,g_cxPsOrpThunk,g_cxPsOrpCh,(void*)hero,g_pbuf,g_rbuf)?"[CX] OnRep_PlayerState FAULTED\r\n":"[CX] OnRep_PlayerState done\r\n"); }
+        // set the CosmeticsAssetID too
+        if(g_pafsThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); LcSetFStr(g_pbuf,KSKIN); if(!CallGuarded(g_pafsFn,g_pafsThunk,g_pafsChild,(void*)g_lam,g_pbuf,g_rbuf))memcpy(g_cxPaid,g_rbuf,16); }
+        uint32_t caOff=PropOffsetOnClass(ClassOf(hero),"CosmeticsAssetID"); if(*(uint64_t*)g_cxPaid&&caOff!=0xFFFFFFFF&&SafeReadable((void*)(hero+caOff),16))memcpy((void*)(hero+caOff),g_cxPaid,16);
+        // ★ retry the BP deploy setup now that PlayerState is present
+        Marker(CallGuardedBP(hero,g_bdCicsFn)?"[CX] ClientInitialComponentSetup FAULTED (still)\r\n":"[CX] ★ ClientInitialComponentSetup OK\r\n");
+        Marker(CallGuardedBP(hero,g_bdPscFn) ?"[CX] BP_PostSetupCosmetics FAULTED (still)\r\n"     :"[CX] ★ BP_PostSetupCosmetics OK\r\n");
+    }
+    if(g_cmRefThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmRefFn,g_cmRefThunk,g_cmRefChild,(void*)hero,g_pbuf,g_rbuf); }
+    if(SafeReadable((void*)(hero+0x1090),1))*(uint8_t*)(hero+0x1090)=1;
+    if(SafeReadable((void*)(hero+0x1BE8),1))*(uint8_t*)(hero+0x1BE8)=0;
+    if(g_cmVisThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmVisFn,g_cmVisThunk,g_cmVisChild,(void*)hero,g_pbuf,g_rbuf); }
+    if(rep==1||rep==8||rep==16) Markerf("[CX] rep %ld: controller=0x%llX skeletal=%d\r\n",rep,(unsigned long long)BdGetController(),CountHeroSkeletals());
+}
+// Deploy step 9: call the game's own deploy ORCHESTRATOR BP events (they run the init sequence in order internally).
+static void* g_deRestartFn=0; static void* g_deSpawnedFn=0; static void* g_deRlcFn=0; static void* g_deTlcsFn=0;
+static volatile long g_deReps=0;
+static bool ResolveDeployEvt(){
+    if(!ResolveContext()) return false;   // hero + BP fns + OnRep_PlayerState (via ResolveBPDeploy chain)
+    uintptr_t hc=ClassOf(g_cmHero), th=0, ch=0;
+    ResolveFunc(hc,"ReceiveRestarted",&g_deRestartFn,&th,&ch);
+    ResolveFunc(hc,"OnLocalPlayer_CharacterSpawned",&g_deSpawnedFn,&th,&ch);
+    ResolveFunc(hc,"RefreshLocalControl",&g_deRlcFn,&th,&ch);
+    ResolveFunc(hc,"TryLocalControlSetup",&g_deTlcsFn,&th,&ch);
+    Markerf("[DE] restartFn=0x%llX spawnedFn=0x%llX rlcFn=0x%llX tlcsFn=0x%llX\r\n",
+            (unsigned long long)(uintptr_t)g_deRestartFn,(unsigned long long)(uintptr_t)g_deSpawnedFn,(unsigned long long)(uintptr_t)g_deRlcFn,(unsigned long long)(uintptr_t)g_deTlcsFn);
+    return true;
+}
+static void DoDeployEvt(){
+    long rep=InterlockedIncrement(&g_deReps); uintptr_t hero=g_cmHero;
+    if(rep==1){
+        Marker("[DE] === deploy orchestrator events (PlayerState set first) ===\r\n");
+        // give the hero the PC's PlayerState (same as MODE_CONTEXT) + CosmeticsAssetID
+        uintptr_t Lp=FindInstExactClass("LocalPlayer"); if(!Lp)Lp=FindInstClassSub("LocalPlayer");
+        uintptr_t pc = LooksLikePtr(Lp)?(SafeReadable((void*)(Lp+0x38),8)?*(uintptr_t*)(Lp+0x38):0):0;
+        uint32_t pcPsOff = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"PlayerState"):0xFFFFFFFF;
+        uintptr_t ps = (LooksLikePtr(pc)&&pcPsOff!=0xFFFFFFFF&&SafeReadable((void*)(pc+pcPsOff),8))?*(uintptr_t*)(pc+pcPsOff):0;
+        uint32_t hPsOff=PropOffsetOnClass(ClassOf(hero),"PlayerState"); if(hPsOff==0xFFFFFFFF)hPsOff=0x3D8;
+        uint32_t hLpsOff=PropOffsetOnClass(ClassOf(hero),"LocalPlayerState");
+        if(LooksLikePtr(ps)){ if(SafeReadable((void*)(hero+hPsOff),8))*(uintptr_t*)(hero+hPsOff)=ps; if(hLpsOff!=0xFFFFFFFF&&SafeReadable((void*)(hero+hLpsOff),8))*(uintptr_t*)(hero+hLpsOff)=ps; Markerf("[DE] PlayerState set = 0x%llX\r\n",(unsigned long long)ps); }
+        if(g_pafsThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); LcSetFStr(g_pbuf,KSKIN); uint8_t paid[16]={0}; if(!CallGuarded(g_pafsFn,g_pafsThunk,g_pafsChild,(void*)g_lam,g_pbuf,g_rbuf))memcpy(paid,g_rbuf,16); uint32_t caOff=PropOffsetOnClass(ClassOf(hero),"CosmeticsAssetID"); if(*(uint64_t*)paid&&caOff!=0xFFFFFFFF&&SafeReadable((void*)(hero+caOff),16))memcpy((void*)(hero+caOff),paid,16); }
+        // ★ the game's own deploy orchestrators (ordered init)
+        Marker(CallGuardedBP(hero,g_deRestartFn)?"[DE] ReceiveRestarted FAULTED\r\n":"[DE] ★ ReceiveRestarted OK\r\n");
+        Marker(CallGuardedBP(hero,g_deSpawnedFn)?"[DE] OnLocalPlayer_CharacterSpawned FAULTED\r\n":"[DE] ★ OnLocalPlayer_CharacterSpawned OK\r\n");
+        Marker(CallGuardedBP(hero,g_deRlcFn)   ?"[DE] RefreshLocalControl FAULTED\r\n":"[DE] ★ RefreshLocalControl OK\r\n");
+        Marker(CallGuardedBP(hero,g_deTlcsFn)  ?"[DE] TryLocalControlSetup FAULTED\r\n":"[DE] ★ TryLocalControlSetup OK\r\n");
+    }
+    if(g_cmRefThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmRefFn,g_cmRefThunk,g_cmRefChild,(void*)hero,g_pbuf,g_rbuf); }
+    if(SafeReadable((void*)(hero+0x1090),1))*(uint8_t*)(hero+0x1090)=1;
+    if(SafeReadable((void*)(hero+0x1BE8),1))*(uint8_t*)(hero+0x1BE8)=0;
+    if(g_cmVisThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallGuarded(g_cmVisFn,g_cmVisThunk,g_cmVisChild,(void*)hero,g_pbuf,g_rbuf); }
+    if(rep==1||rep==8||rep==16) Markerf("[DE] rep %ld: controller=0x%llX skeletal=%d\r\n",rep,(unsigned long long)BdGetController(),CountHeroSkeletals());
+}
 // Game-thread visit (ONE): discover the hero PrimaryAssetType, enumerate its ids, fire the async load.
 static void DoLoadCensus(){
     static const wchar_t* kCand[] = { L"LokiHeroData:x", L"LokiHero:x", L"HeroData:x", L"Hero:x",
@@ -1992,6 +2075,8 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_COSMENUM){ DoCosmEnum(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_SETCOSMETIC){ DoSetCosmetic(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_BPDEPLOY){ DoBPDeploy(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_CONTEXT){ DoContext(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_DEPLOYEVT){ DoDeployEvt(); g_done=1; g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -2043,6 +2128,8 @@ static DWORD WINAPI Worker(LPVOID){
     if(kMode==MODE_COSMENUM){ if(!ResolveLoadCensus()){ Marker("[1] cosmenum resolve failed — aborting\r\n"); return 20; } }
     if(kMode==MODE_SETCOSMETIC){ if(!ResolveLoadCensus()||!ResolveCosmetics()){ Marker("[1] setcosmetic resolve failed — aborting\r\n"); return 21; } }
     if(kMode==MODE_BPDEPLOY){ if(!ResolveBPDeploy()){ Marker("[1] bpdeploy resolve failed — aborting\r\n"); return 22; } }
+    if(kMode==MODE_CONTEXT){ if(!ResolveContext()){ Marker("[1] context resolve failed — aborting\r\n"); return 23; } }
+    if(kMode==MODE_DEPLOYEVT){ if(!ResolveDeployEvt()){ Marker("[1] deployevt resolve failed — aborting\r\n"); return 24; } }
     if(kMode==MODE_SPECTATOR_CAM){ ResolveSpectatorCam(); ProbeCamera(); ProbeViewYaw(); ProbeSensitivity(); if(kTakeoverCam) ResolveTakeover(); }
     if(kMode==MODE_DEBUGCAM){ ResolveSpectatorCam(); ResolveDebugCam(); }   // spectator resolve populates the overlay-hide widgets
     if(kMode==MODE_FREECAM){ ResolveFreeCam(); }
@@ -2239,6 +2326,26 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(700);
         }
         Markerf("[3b] bpdeploy done (%ld reps).\r\n",(long)g_bdReps);
+        return 0;
+    } else if(kMode==MODE_CONTEXT){
+        Marker("[2] context: set PlayerState + retry BP setup + re-refresh over ~14s...\r\n");
+        DWORD cxT0=GetTickCount();
+        while(GetTickCount()-cxT0 < 14000){
+            g_done=0; g_inHook=0;
+            if(InstallHookFast()){ DWORD md=GetTickCount()+400; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(700);
+        }
+        Markerf("[3b] context done (%ld reps).\r\n",(long)g_cxReps);
+        return 0;
+    } else if(kMode==MODE_DEPLOYEVT){
+        Marker("[2] deployevt: deploy orchestrator events + re-refresh over ~14s...\r\n");
+        DWORD deT0=GetTickCount();
+        while(GetTickCount()-deT0 < 14000){
+            g_done=0; g_inHook=0;
+            if(InstallHookFast()){ DWORD md=GetTickCount()+400; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(700);
+        }
+        Markerf("[3b] deployevt done (%ld reps).\r\n",(long)g_deReps);
         return 0;
     } else if(kMode==MODE_CAMFRAME){
         // Re-apply the camera-component offset repeatedly (transient hook per apply) to hold it vs any per-frame reset.
