@@ -297,6 +297,20 @@ it to the hero's CosmeticsAssetID field + call `RefreshCosmetics` → the charac
 (`TryLocalControlSetup`, BP) + HUD. New reusable `ds_hybrid.cpp` modes: STATERECON, LIVINGSTATE, MESHDIAG, MESHMGRRECON,
 COSMETICS (all `-DKMODE=`).
 
+**★ CosmeticsAssetID CHASED (2026-07-16, `MODE_COSMENUM`/`MODE_SETCOSMETIC`) — set a valid skin, mesh STILL not built →
+next gate = the cosmetics CONTROLLER (BP deploy setup).** The character-skin `PrimaryAssetType` = **`HeroCosmeticsBundle`**
+(391 assets; source `server/internal/menu/cosmetics.go` + `data/skins.txt`; `SlotCosmetics` = accessories). Default Assault
+skin = **`AssaultDefault`**. `PrimaryAssetIDFromString("HeroCosmeticsBundle:AssaultDefault")` = {type 0x1A572, name 0x38FE89}.
+Found the hero fields **`CosmeticsAssetID @+0x1FF0`** + **`OverrideCosmeticsAssetID @+0x2000`**, wrote the valid ID to both,
+async-loaded the skin, called `RefreshCosmetics` (re-fired 13× over 12s). ★ BUT skeletal-mesh count stayed 0 → a valid ID
+is NECESSARY BUT NOT SUFFICIENT: `RefreshCosmetics` builds the mesh THROUGH the cosmetics controller
+(`GetCosmeticsController`, 0x…39C7A0), which a raw GameplayStatics-spawned hero lacks — it's created by the BP deploy
+setup (`ClientInitialComponentSetup` / `BP_PostSetupCosmetics`) that never ran. ⇒ REVISED MESH chain: `mesh ←
+RefreshCosmetics ← cosmetics CONTROLLER (missing) ← BP deploy setup (ClientInitialComponentSetup/BP_PostSetupCosmetics)`.
+NEXT: add a **ProcessEvent capability** (`base+0x12C5A10`, S54-validated) to call those BP setup fns (crash-prone
+out-of-context — guard + expect iteration), which should create the controller so `RefreshCosmetics` (with the ID now set)
+builds the mesh. Modes added: COSMENUM, SETCOSMETIC.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
