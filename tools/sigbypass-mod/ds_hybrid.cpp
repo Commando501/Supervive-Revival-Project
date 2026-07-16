@@ -117,6 +117,15 @@ constexpr int MODE_CONTEXT=26;
 // MODE_DEPLOYEVT (deploy step 9): with PlayerState set, call the game's own deploy ORCHESTRATOR BP events (ReceiveRestarted /
 // OnLocalPlayer_CharacterSpawned / RefreshLocalControl / TryLocalControlSetup) that run the init in order. -DKMODE=MODE_DEPLOYEVT
 constexpr int MODE_DEPLOYEVT=27;
+// MODE_VTDUMP (tool validation): dump the hero/PC/GameState vtables + find the slot matching my ProcessEvent RVA
+// (base+0x12C5A10) to confirm it's actually ProcessEvent — a wrong RVA would make every BP call fault. -DKMODE=MODE_VTDUMP
+constexpr int MODE_VTDUMP=28;
+// MODE_BPTEST (tool validation 2): call a BP getter (GetBaseCosmeticsController) via ProcessEvent + read its return; if it
+// == the known controller, ProcessEvent BP-calls WORK (so the deploy faults are real context). -DKMODE=MODE_BPTEST
+constexpr int MODE_BPTEST=29;
+// MODE_BPTEST2 (tool validation 3): raw-remove the PI hook, THEN call the BP getter via ProcessEvent — if it now returns
+// the controller, the earlier faults were PI-hook re-entrancy, not the functions → the deploy path REOPENS. -DKMODE=MODE_BPTEST2
+constexpr int MODE_BPTEST2=30;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -1056,6 +1065,32 @@ static void DoCosmetics(){
     Marker("[CM] === done — check the screen. ===\r\n");
 }
 
+// ---- TOOL VALIDATION (MODE_VTDUMP): confirm the ProcessEvent RVA against the live vtable (read-only) ----
+static void VtDumpOne(const char* nm, uintptr_t o, uintptr_t targetRva){
+    if(!LooksLikePtr(o)) { Markerf("[VT] %s: null\r\n",nm); return; }
+    uintptr_t vt=SafeReadable((void*)o,8)?*(uintptr_t*)o:0; if(!LooksLikePtr(vt)){ Markerf("[VT] %s: bad vtable\r\n",nm); return; }
+    Markerf("[VT] %s obj=0x%llX vtable rva=0x%llX\r\n",nm,(unsigned long long)o,(unsigned long long)(vt-g_modBase));
+    int found=-1;
+    for(int i=0;i<160;i++){ if(!SafeReadable((void*)(vt+i*8),8))break; uintptr_t f=*(uintptr_t*)(vt+i*8); if(f<=g_modBase||f>=g_modBase+0xC000000)continue; if((f-g_modBase)==targetRva){ found=i; Markerf("[VT]   %s slot %d = ProcessEvent RVA 0x%llX  <<< MATCH\r\n",nm,i,(unsigned long long)targetRva); } }
+    if(found<0) Markerf("[VT]   %s: ProcessEvent RVA 0x%llX NOT in first 160 vtable slots (RVA may be WRONG)\r\n",nm,(unsigned long long)targetRva);
+}
+static void DoVtDump(){
+    Marker("[VT] === ProcessEvent RVA validation ===\r\n");
+    uintptr_t targetRva=kProcEventRva;
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc = LooksLikePtr(L)?(SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0):0;
+    uint32_t po = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"Pawn"):0xFFFFFFFF; uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero = LooksLikePtr(pc)?(SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0):0;
+    uintptr_t gs=FindInstClassSub("LokiGameState");
+    VtDumpOne("hero",hero,targetRva);
+    VtDumpOne("PC",pc,targetRva);
+    VtDumpOne("GameState",gs,targetRva);
+    // Also: dump hero vtable slots 60-75 (ProcessEvent is ~slot 66-68 in UE5.4) as RVAs so I can eyeball the real one.
+    if(LooksLikePtr(hero)){ uintptr_t vt=*(uintptr_t*)hero; Marker("[VT] hero vtable slots 60..75:\r\n");
+        for(int i=60;i<76;i++){ if(!SafeReadable((void*)(vt+i*8),8))break; uintptr_t f=*(uintptr_t*)(vt+i*8); uintptr_t rva=(f>g_modBase&&f<g_modBase+0xC000000)?f-g_modBase:0; Markerf("[VT]   slot %d rva=0x%llX\r\n",i,(unsigned long long)rva); } }
+    Marker("[VT] === done ===\r\n");
+}
+
 // ---- Route D (MODE_SPECTATOR_CAM): reveal the live tutorial world for the spectator ----
 // The DS client Joins the real LVL_Tutorial with a live LokiGameState (S70) but sits behind the
 // "DROP IN... LOADING" overlay as a dead spectator. This mode censuses every UMG UUserWidget, then
@@ -1884,6 +1919,63 @@ static bool CallGuardedBP(uintptr_t obj, void* ufunc){
     __try { memset(peb,0,sizeof(peb)); ((PFN_PE)(g_modBase+kProcEventRva))((void*)obj, ufunc, peb); return false; }
     __except(EXCEPTION_EXECUTE_HANDLER){ return true; }
 }
+// Variant taking a caller-owned params buffer (so the return value can be read back).
+static bool CallGuardedBPP(uintptr_t obj, void* ufunc, void* params){
+    if(!ufunc || !LooksLikePtr(obj)) return true;
+    __try { ((PFN_PE)(g_modBase+kProcEventRva))((void*)obj, ufunc, params); return false; }
+    __except(EXCEPTION_EXECUTE_HANDLER){ return true; }
+}
+static void DoBPTest(){
+    Marker("[BT] === ProcessEvent BP-call validation (getter returns) ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc = LooksLikePtr(L)?(SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0):0;
+    uint32_t po = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"Pawn"):0xFFFFFFFF; uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero = LooksLikePtr(pc)?(SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0):0;
+    if(!LooksLikePtr(hero)){ Marker("[BT] no hero\r\n"); return; }
+    uintptr_t hc=ClassOf(hero);
+    // known-good: native GetCosmeticsController
+    void* nfn=0; uintptr_t nth=0,nch=0; ResolveFunc(hc,"GetCosmeticsController",&nfn,&nth,&nch);
+    uintptr_t ctrlNative=0; if(nth){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallGuarded(nfn,nth,nch,(void*)hero,g_pbuf,g_rbuf)) ctrlNative=*(uintptr_t*)g_rbuf; }
+    Markerf("[BT] native GetCosmeticsController = 0x%llX\r\n",(unsigned long long)ctrlNative);
+    // TEST: BP GetBaseCosmeticsController via ProcessEvent, read the return
+    const char* cands[]={"GetBaseCosmeticsController","GetHeroCharacter","GetLocalLokiCharacterBP"};
+    for(int c=0;c<3;c++){
+        void* fn=0; uintptr_t th=0,ch=0; ResolveFunc(hc,cands[c],&fn,&th,&ch);
+        if(!fn){ Markerf("[BT] %s NOT FOUND\r\n",cands[c]); continue; }
+        uint32_t retOff = ch? ParamOffset(ch,"ReturnValue"):0xFFFFFFFF; if(retOff==0xFFFFFFFF) retOff=0;
+        bool isBP = (th==g_modBase+kPiRva);
+        static uint8_t pb[256]; memset(pb,0,sizeof(pb));
+        bool fault = CallGuardedBPP(hero, fn, pb);
+        uintptr_t ret = *(uintptr_t*)(pb+ (retOff<248?retOff:0));
+        Markerf("[BT] %s [%s] fault=%d retOff=0x%X ret=0x%llX%s\r\n",cands[c],isBP?"BP":"N",fault,retOff,(unsigned long long)ret,(ret==ctrlNative&&ret?"  == controller (WORKS!)":""));
+    }
+    Marker("[BT] === done ===\r\n");
+}
+// Raw-restore ProcessInternal's stolen bytes WITHOUT the thread-suspend dance (safe from inside OnPI: we're already past
+// the 5-byte prologue, and the stub's trampoline has its own copy to complete the in-flight call).
+static void RawUnhook(){ if(!g_pi)return; DWORD op=0; if(VirtualProtect(g_pi,5,PAGE_EXECUTE_READWRITE,&op)){ memcpy(g_pi,g_stolen,5); DWORD d=0; VirtualProtect(g_pi,5,op,&d); FlushInstructionCache(GetCurrentProcess(),g_pi,5); } }
+static void DoBPTest2(){
+    Marker("[B2] === ProcessEvent BP test with the PI hook REMOVED (re-entrancy test) ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc = LooksLikePtr(L)?(SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0):0;
+    uint32_t po = LooksLikePtr(pc)?PropOffsetOnClass(ClassOf(pc),"Pawn"):0xFFFFFFFF; uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+    uintptr_t hero = LooksLikePtr(pc)?(SafeReadable((void*)(pc+pawnOff),8)?*(uintptr_t*)(pc+pawnOff):0):0;
+    if(!LooksLikePtr(hero)){ Marker("[B2] no hero\r\n"); return; }
+    uintptr_t hc=ClassOf(hero);
+    // known-good controller via direct-thunk native (uses the captured template; no hook needed)
+    void* nfn=0; uintptr_t nth=0,nch=0; ResolveFunc(hc,"GetCosmeticsController",&nfn,&nth,&nch);
+    uintptr_t ctrlNative=0; if(nth){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallGuarded(nfn,nth,nch,(void*)hero,g_pbuf,g_rbuf)) ctrlNative=*(uintptr_t*)g_rbuf; }
+    // ★ remove the PI hook so ProcessEvent -> ProcessInternal doesn't re-enter it
+    RawUnhook(); Marker("[B2] PI hook raw-removed; calling ProcessEvent now\r\n");
+    void* fn=0; uintptr_t th=0,ch=0; ResolveFunc(hc,"GetBaseCosmeticsController",&fn,&th,&ch);
+    uint32_t retOff = ch? ParamOffset(ch,"ReturnValue"):0xFFFFFFFF; if(retOff==0xFFFFFFFF) retOff=0;
+    static uint8_t pb[256]; memset(pb,0,sizeof(pb));
+    bool fault = CallGuardedBPP(hero, fn, pb);
+    uintptr_t ret = *(uintptr_t*)(pb+(retOff<248?retOff:0));
+    Markerf("[B2] GetBaseCosmeticsController(BP, hook-removed) fault=%d ret=0x%llX (native ctrl=0x%llX)%s\r\n",
+            fault,(unsigned long long)ret,(unsigned long long)ctrlNative,(ret==ctrlNative&&ret?"  <<< WORKS! ProcessEvent was the false wall":""));
+    Marker("[B2] === done ===\r\n");
+}
 // Deploy step 7: create the cosmetics controller via BP setup (ProcessEvent) so RefreshCosmetics builds the mesh.
 static void* g_bdCicsFn=0; static void* g_bdPscFn=0; static void* g_bdTlcsFn=0;      // BP UFunction*s
 static void* g_bdGccFn=0;  static uintptr_t g_bdGccThunk=0,g_bdGccCh=0;             // GetCosmeticsController (native)
@@ -2077,6 +2169,8 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_BPDEPLOY){ DoBPDeploy(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_CONTEXT){ DoContext(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_DEPLOYEVT){ DoDeployEvt(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_BPTEST){ DoBPTest(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_BPTEST2){ DoBPTest2(); g_done=1; g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -2108,6 +2202,7 @@ static DWORD WINAPI Worker(LPVOID){
     if(kMode==MODE_STATERECON){ DoStateRecon(); Marker("[3b] state-recon done (read-only, no hook held).\r\n"); return 0; }
     if(kMode==MODE_MESHDIAG){ DoMeshDiag(); Marker("[3b] mesh-diag done (read-only, no hook held).\r\n"); return 0; }
     if(kMode==MODE_MESHMGRRECON){ DoMeshMgrRecon(); Marker("[3b] mesh-mgr-recon done (read-only, no hook held).\r\n"); return 0; }
+    if(kMode==MODE_VTDUMP){ DoVtDump(); Marker("[3b] vtdump done (read-only, no hook held).\r\n"); return 0; }
     // S78 #4: wait for the UMG widgets (incl. the WBP_UI_MatchTransition overlay) to spawn before censusing — a
     // too-early census gets few widgets and misses the overlay (hid 0/3). Poll the count until high/stable
     // (min 6s floor, cap 30s) instead of the old fixed 12s sleep, so inject timing is self-correcting.
@@ -2346,6 +2441,24 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(700);
         }
         Markerf("[3b] deployevt done (%ld reps).\r\n",(long)g_deReps);
+        return 0;
+    } else if(kMode==MODE_BPTEST){
+        Marker("[2] bptest: transient hook to test a BP getter via ProcessEvent...\r\n");
+        DWORD btT0=GetTickCount();
+        while(!g_done && GetTickCount()-btT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+250; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3b] bptest done (done=%ld).\r\n",(long)g_done);
+        return 0;
+    } else if(kMode==MODE_BPTEST2){
+        Marker("[2] bptest2: transient hook; OnPI raw-unhooks then tests ProcessEvent...\r\n");
+        DWORD b2T0=GetTickCount();
+        while(!g_done && GetTickCount()-b2T0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+250; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3b] bptest2 done (done=%ld).\r\n",(long)g_done);
         return 0;
     } else if(kMode==MODE_CAMFRAME){
         // Re-apply the camera-component offset repeatedly (transient hook per apply) to hold it vs any per-frame reset.
