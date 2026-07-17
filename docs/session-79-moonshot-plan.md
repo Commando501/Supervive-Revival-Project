@@ -766,6 +766,42 @@ BLOCKED BY DEMAND-DECRYPT, not by logic.**
   ASSET side (regenerate a complete AssetRegistry.bin; `candidates Mission` is the canary), or simply TRY calling
   `AddMappingContext` once an IMC is loaded.**
 
+**S80l -- "REGENERATE THE AR" IS IMPOSSIBLE AND WAS A FALSE PREMISE (mine, S80i/j/k). The Mission canary FAILS, and the
+diagnosis is the extractor's AR PARSER (or cooked-AR class stripping) -- NOT a missing/partial file.**
+- ★ **`extractor wherefile AssetRegistry` -> there is EXACTLY ONE `AssetRegistry.bin` in the whole game:**
+  `Loki/AssetRegistry.bin`, **36,505,474 bytes**, in `pakchunk0-WindowsClient.pak` (unencrypted). That is byte-for-byte
+  the file already at `out/AssetRegistry.bin`. ⇒ **It cannot be "regenerated more completely" -- it IS the game's own
+  registry, extracted verbatim.** My S80i/j/k "regenerate a complete AssetRegistry.bin" plan was based on a false
+  premise; DO NOT retry it. (The only other hit is an unrelated editor .uplugin descriptor.) My "GameFeature plugins
+  ship their own ARs" hypothesis is also WRONG for this build -- there are no per-plugin ARs in the paks (even though
+  `LokiGameFeatureData` assets exist).
+- **`assetregistry classes` -> only 98 unique AssetClass values across 103,841 FAssetData.** They are almost entirely
+  ENGINE asset types (Texture2D/StaticMesh/SkeletalMesh/SoundWave/Blueprint/Material/World/WidgetBlueprint/Anim*/Niagara/
+  Ak*...) plus just **7 custom**: `LokiGameFeatureData`, `LokiMapIconDataAsset`, `LokiPhysicalMaterial`,
+  `LokiSpellBlueprint`, `LokiSpellBlueprintGeneratedClass`, `BP_BiomeLighting_Data_C`, `BP_PaginatedModalData_C`.
+  **There is NO generic `DataAsset`/`PrimaryDataAsset` family, NO `LokiDataAsset_Mission`, NO `InputMappingContext`.**
+- ★★★ **THE CANARY FAILS, CONFIRMED:** `LokiDataAsset_Mission` is absent from the 98 -- yet missions demonstrably WORK in
+  this project (`docs/missions-progression-hookup.md`, the whole missions page renders from those assets). So the AR (as
+  our extractor reads it) is provably missing an asset family we KNOW ships. **⇒ Any `candidates InputMappingContext` /
+  `candidates Input` = 0 from this AR is UNINFORMATIVE. The AR route for finding the IMC is CLOSED until the parser is
+  fixed.** Corroborating parser smell: it reports **"103,841 FAssetData / 0 DependsNode / 0 PackageData"** -- it does not
+  read the DependsNode/PackageData sections at all, so its coverage of the FAssetData class field is also suspect.
+  Likely causes to investigate (in `tools/extractor/extractor/Program.cs`, the `assetregistry` reader): (a) the cooked AR
+  stores DataAsset entries in a section/format the reader skips; (b) UE5.4 AR version handling; (c) cooked-AR class
+  stripping (Epic strips FAssetData for classes not in the AR write allowlist -- if so the data is genuinely NOT in the
+  file and NO parser fix helps).
+**⇒ ROUTE RE-RANK for finding the IMC (the AR route is out):**
+1. ★ **`extractor namesall InputMappingContext`** -- harvests the combined unique NameMap vocabulary across assets; finds
+   a TYPE even where path- and class-searches fail. Cheapest untried option.
+2. ★ **The LIVE game's in-memory AssetRegistry / AssetManager** -- the client HAS the real registry loaded. Walk it via
+   RPM (the `LokiAssetManager` work + `GetPrimaryAssetIdList` primitive already exist, S79 Phase 1 / missions), and ask
+   IT for Input-ish primary assets. Bypasses the broken offline parser entirely.
+3. Fix the extractor's AR parser (only worth it if (c) above is false).
+4. Pragmatic: an IMC may not be a PRIMARY asset at all -- it may be a hard reference inside `BP_LokiPlayerController_Dev_C`
+   or a settings/config object. `ubergraph_dump.py` the BP_Dev PC's graph (we have TWO live instances we spawned:
+   0x2868B5ED8A0 / 0x28690832770) and look for `InputMappingContext` operands -- the S80g global BP scan only proved
+   nobody CALLS AddMappingContext, NOT that nobody REFERENCES an IMC asset.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
