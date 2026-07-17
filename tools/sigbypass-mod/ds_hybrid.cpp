@@ -186,7 +186,8 @@ constexpr int MODE_DEVSWAP=34;
 //                  and the diagnostics below (MovementMode, bIsOnGround, velocity, Controller/Pawn wiring) say which.
 // Read-mostly: the only writes are the MoveForward/MoveRight calls themselves (the game's own movement entry points).
 constexpr int MODE_MOVETEST=35;
-static const unsigned kMoveMode = 5;   // EMovementMode for MODE_MOVETEST: 1=MOVE_Walking 3=MOVE_Falling 5=MOVE_Flying
+static const unsigned kMoveMode = 1;   // 1=MOVE_Walking (real ground movement) 3=Falling 5=Flying
+static const float    kAttrMoveSpeed = 500.0f;  // MoveSpeed attribute value to inject (all live sets read 0)
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -2319,13 +2320,18 @@ static void DoMoveTest(){
         // The PLAIN LokiPlayerState the stub replicates has NO ASC at all (censused: 6 object props, none ability-ish).
         // So: spawn a HeroAffiliated actor client-side (the GameplayStatics deferred-spawn already proved out on the
         // BP_Dev PC + the hero) and wire its ASC/AttributeSets into the hero's storages.
-        if(ResolveSpawnP2()){
-            uintptr_t haCls=FindObjExact("LokiPlayerState_HeroAffiliated");
-            Markerf("[MT] HeroAffiliated UClass = 0x%llX\r\n",(unsigned long long)haCls);
-            if(LooksLikePtr(haCls)){
-                uintptr_t ha=P2SpawnActor(haCls, g_mtX0?g_mtX0:510.0, g_mtY0?g_mtY0:678.0, 600.0);
-                char hcn[96]="-"; if(LooksLikePtr(ha)) ClassName(ha,hcn,sizeof(hcn));
-                Markerf("[MT] ★ spawned LokiPlayerState_HeroAffiliated = 0x%llX [%s]\r\n",(unsigned long long)ha,hcn);
+        // ⚠ DO NOT SPAWN LokiPlayerState_HeroAffiliated — S80 live-proven to CRASH the client instantly (its
+        // ASC/attribute construction derefs server-side context; PID 48788 died, no [VEH], Sentry caught it).
+        // Instead use the CDO's DEFAULT SUBOBJECTS: they are real, fully-constructed ASC/AttributeSet objects that
+        // already exist, so there is nothing to construct and nothing to crash.
+        // Then WRITE the attribute value: all 467 live LokiAttributeSets have MoveSpeed=0 (the values are
+        // server-authoritative and our stub never replicates them), so borrowing any of them changes nothing —
+        // the number itself has to be supplied. LokiAttributeSet::MoveSpeed@+0xF0 / MaxMoveSpeed@+0x100 are
+        // FGameplayAttributeData { float BaseValue@+0x8; float CurrentValue@+0xC }.
+        {
+            uintptr_t ha=FindObjExact("Default__LokiPlayerState_HeroAffiliated");
+            Markerf("[MT] HeroAffiliated CDO = 0x%llX (using its default subobjects — NOT spawning: that crashes)\r\n",(unsigned long long)ha);
+            {
                 if(LooksLikePtr(ha)){
                     uint32_t a1=PropOffsetOnClass(ClassOf(ha),"AbilitySystemComponent");
                     uint32_t a2=PropOffsetOnClass(ClassOf(ha),"AttributeSet");
@@ -2342,6 +2348,31 @@ static void DoMoveTest(){
                     if(LooksLikePtr(ats)&&s2!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+s2),8)) *(uintptr_t*)(g_mtHero+s2)=ats;
                     if(LooksLikePtr(ath)&&s3!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+s3),8)) *(uintptr_t*)(g_mtHero+s3)=ath;
                     Markerf("[MT] ★★★ wired hero storages: ASC@+0x%X AttrSet@+0x%X AttrHealth@+0x%X\r\n",s1,s2,s3);
+                    // ★ Supply the missing NUMBER: MoveSpeed/MaxMoveSpeed are 0 on every live attribute set
+                    // (server-authoritative, never replicated by our stub). GetMaxSpeed() reads these.
+                    // ★★★ Write the WHOLE movement attribute block. Wiring AttributeSetStorage makes the Loki CMC read
+                    // EVERY movement value from attributes instead of its base UPROPERTYs — so a set with only MoveSpeed
+                    // filled in gives MaxAcceleration=0 => Acceleration = 0*input = 0 => still no movement (observed).
+                    // The correct values are exactly the CMC's own base props (read live): MaxAcceleration=50000,
+                    // GroundFriction=8, BrakingDecelerationWalking=2048, Mass=100.
+                    if(LooksLikePtr(ats)){
+                        struct { const char* n; float v; } attrs[] = {
+                            {"MoveSpeed",                  kAttrMoveSpeed},
+                            {"MaxMoveSpeed",               kAttrMoveSpeed},
+                            {"MaxAcceleration",            50000.0f},
+                            {"GroundFriction",             8.0f},
+                            {"BrakingDecelerationWalking",  2048.0f},
+                            {"Mass",                       100.0f},
+                        };
+                        for(int ai=0; ai<6; ai++){
+                            uint32_t ao=PropOffsetOnClass(ClassOf(ats),attrs[ai].n);
+                            if(ao!=0xFFFFFFFF && SafeReadable((void*)(ats+ao+0x8),8)){
+                                *(float*)(ats+ao+0x8)=attrs[ai].v;   // FGameplayAttributeData::BaseValue
+                                *(float*)(ats+ao+0xC)=attrs[ai].v;   // FGameplayAttributeData::CurrentValue <- what the getters read
+                                Markerf("[MT] ★★★ attr %-28s @+0x%-4X = %g\r\n",attrs[ai].n,ao,(double)attrs[ai].v);
+                            } else Markerf("[MT] attr %-28s NOT FOUND\r\n",attrs[ai].n);
+                        }
+                    }
                 }
             }
         }
@@ -2481,7 +2512,7 @@ static void DoMoveTest(){
             Markerf("[MT] FINAL loc=(%.1f, %.1f, %.1f)  delta=(%.1f, %.1f, %.1f)\r\n",x,y,z,dx,dy,dz);
             bool moved=(dx*dx+dy*dy)>25.0;
             Markerf("[MT] ★ VERDICT: %s\r\n", moved
-                ? "HERO MOVED via native MoveForward => the movement path WORKS; the only gap is key->axis binding"
+                ? "HERO MOVED via AddMovementInput => the movement path WORKS end-to-end; the only gap is key->input binding"
                 : "HERO DID NOT MOVE => movement is gated deeper (see CMC MovementMode / Velocity above)");
         }
         Marker("[MT] === done ===\r\n"); g_done=1;
