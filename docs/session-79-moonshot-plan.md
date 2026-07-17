@@ -461,6 +461,40 @@ injection, and cost seconds.
     `0x7FF6B439E420`) to see its early-outs; that's the one fn we KNOW is the native cosmetics entry.
 (4) The cosmetics bundle may not be RESIDENT (ID set != loaded).
 
+**★★★★★ S80c — THE MESH WALL NEVER EXISTED EITHER: the hero HAS a mesh, it is VISIBLE, and it is RENDERING.
+`CountHeroSkeletals()` is a BROKEN MEASUREMENT — the 4th tool bug this session, and the one that invented the problem.**
+Dumping the ubergraph (new tool `tools/re/ubergraph_dump.py`, operand-aware, read-only) at BP_PostSetupCosmetics'
+EntryPoint showed `CreateProxyObjectForPlayMontage(**InstanceVariable Mesh**, ...)` — i.e. the BP itself references a
+`Mesh` var. That's stock `ACharacter::Mesh`, created in C++ in the constructor. So a spawned hero ALWAYS had one. Live RPM:
+```
+hero->Mesh @+0x450 = 0x286E0753B20   name='CharacterMesh0'  class=BP_Assault_DefaultSKMeshComponent_C
+   SkeletalMesh/SkinnedAsset @+0x728/+0x730 -> SK_Assault_Default_LOD1  [SkeletalMesh]   (ASSIGNED)
+   bVisible=True  bHiddenInGame=False  bOwnerNoSee=False  bOnlyOwnerSee=False  bRenderInMainPass=True
+   ★ bRecentlyRendered=TRUE  (the renderer DREW it)
+hero: bHidden=False  HeroPredropHidden=False  LivingState=1 (Alive)
+```
+★ **THE BUG:** `CountHeroSkeletals()` filters `strstr(cn,"SkeletalMeshComponent")||strstr(cn,"SkinnedMeshComponent")`, but
+the component's class is `BP_Assault_Default`**`SKMesh`**`Component_C` — **"SKMeshComponent" never matches "SkeletalMeshComponent"**.
+It has been reporting 0 for a component that exists, has a real skeletal asset, and is on screen.
+⇒ **EVERYTHING built on `skeletal==0` COLLAPSES:** S79's MESHDIAG "there is NO character SkeletalMeshComponent"; the whole
+cosmetics chase (MESHMGRRECON/COSMETICS/COSMENUM/SETCOSMETIC); "RefreshCosmetics built nothing"; "mesh <- RefreshCosmetics
+<- CosmeticsAssetID <- loadout/PlayerState"; "the cosmetics CONTROLLER is missing"; "the BP deploy setup must create the
+mesh"; and the S79 "DEFINITIVE deploy-context WALL". None of it was ever measured — it was one broken substring.
+★ **The record even CONTRADICTED itself and it was missed:** the Phase-4d SCREEN CHECK has the USER SEEING THE HERO —
+"dark angular mesh shapes lower-left = the hero's model with the camera clipping into it at its root". The mesh was
+rendering at 4d. 4h's "the hero renders as an INVISIBLE point" came from the counter, not from the screen. **When a live
+observation contradicts a tool, believe the observation.**
+⇒ **WHAT IS ACTUALLY LEFT for a playable hero** (much smaller than the record claims — mesh/cosmetics/deploy-context are
+all OFF the list): (1) **POSITION** — the physics-enabled hero DRIFTED OFF the island over the void (S79 4h); teleport it
+back onto LVL_Tutorial ground (`K2_SetActorLocation`, native, already proven). (2) **INPUT** — the one genuinely
+unaddressed gap: Enhanced-Input `PawnInputComponent0` needs its mapping context applied (mouse-look already reaches the
+camera; WASD doesn't reach movement). `TryLocalControlSetup` now RUNS (S80) — dump ITS ubergraph entry to see what local
+control actually requires. (3) **HUD** — widget components. (4) Camera rig = already solved + drivable (S79 4h).
+**METHOD (the whole lesson of S80): before believing ANY "X is missing/broken" claim, verify the MEASUREMENT. Four walls
+this session — BP calls fault / ProcessEvent neutered / deploy needs match-init context / the hero has no mesh — were ALL
+tool bugs. Read-only tools that cost seconds and need no injection: `ufunc_survey.py` (is it runnable?), `script_dump.py`
+(what does it DO?), `ubergraph_dump.py` (what does the BP graph DO?), `disasm_live.py` (what does the native fn DO?).**
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
