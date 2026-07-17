@@ -2310,6 +2310,85 @@ static void DoMoveTest(){
                         kMoveMode,sf,mo,co3,mm, mm==kMoveMode?"<<< MODE SET":"<<< mode did NOT stick");
             }
         }
+        // ★★★★★★ THE REAL FIX (S80): SUPERVIVE keeps the ASC on a SEPARATE PER-HERO ACTOR —
+        // `LokiPlayerState_HeroAffiliated` (name lies: its chain is LokiPlayerState_HeroAffiliated <- Actor <- Object,
+        // it is NOT a PlayerState). Its CDO holds AbilitySystemComponent@+0x3E8, AttributeSet@+0x3F0,
+        // AttributeSetHealth@+0x3F8 — mapping 1:1 onto the hero's NULL AbilitySystemComponentStorage@+0xF00 /
+        // AttributeSetStorage@+0xF08 / AttributeSetHealthStorage@+0xF10. Only the CDO is live: our DS stub never
+        // spawns one, which is WHY the hero has no attributes => GetMaxSpeed()==0 => Velocity clamped to 0.
+        // The PLAIN LokiPlayerState the stub replicates has NO ASC at all (censused: 6 object props, none ability-ish).
+        // So: spawn a HeroAffiliated actor client-side (the GameplayStatics deferred-spawn already proved out on the
+        // BP_Dev PC + the hero) and wire its ASC/AttributeSets into the hero's storages.
+        if(ResolveSpawnP2()){
+            uintptr_t haCls=FindObjExact("LokiPlayerState_HeroAffiliated");
+            Markerf("[MT] HeroAffiliated UClass = 0x%llX\r\n",(unsigned long long)haCls);
+            if(LooksLikePtr(haCls)){
+                uintptr_t ha=P2SpawnActor(haCls, g_mtX0?g_mtX0:510.0, g_mtY0?g_mtY0:678.0, 600.0);
+                char hcn[96]="-"; if(LooksLikePtr(ha)) ClassName(ha,hcn,sizeof(hcn));
+                Markerf("[MT] ★ spawned LokiPlayerState_HeroAffiliated = 0x%llX [%s]\r\n",(unsigned long long)ha,hcn);
+                if(LooksLikePtr(ha)){
+                    uint32_t a1=PropOffsetOnClass(ClassOf(ha),"AbilitySystemComponent");
+                    uint32_t a2=PropOffsetOnClass(ClassOf(ha),"AttributeSet");
+                    uint32_t a3=PropOffsetOnClass(ClassOf(ha),"AttributeSetHealth");
+                    uintptr_t asc=(a1!=0xFFFFFFFF&&SafeReadable((void*)(ha+a1),8))?*(uintptr_t*)(ha+a1):0;
+                    uintptr_t ats=(a2!=0xFFFFFFFF&&SafeReadable((void*)(ha+a2),8))?*(uintptr_t*)(ha+a2):0;
+                    uintptr_t ath=(a3!=0xFFFFFFFF&&SafeReadable((void*)(ha+a3),8))?*(uintptr_t*)(ha+a3):0;
+                    Markerf("[MT] its ASC=0x%llX AttributeSet=0x%llX AttributeSetHealth=0x%llX\r\n",
+                            (unsigned long long)asc,(unsigned long long)ats,(unsigned long long)ath);
+                    uint32_t s1=PropOffsetOnClass(ClassOf(g_mtHero),"AbilitySystemComponentStorage");
+                    uint32_t s2=PropOffsetOnClass(ClassOf(g_mtHero),"AttributeSetStorage");
+                    uint32_t s3=PropOffsetOnClass(ClassOf(g_mtHero),"AttributeSetHealthStorage");
+                    if(LooksLikePtr(asc)&&s1!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+s1),8)) *(uintptr_t*)(g_mtHero+s1)=asc;
+                    if(LooksLikePtr(ats)&&s2!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+s2),8)) *(uintptr_t*)(g_mtHero+s2)=ats;
+                    if(LooksLikePtr(ath)&&s3!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+s3),8)) *(uintptr_t*)(g_mtHero+s3)=ath;
+                    Markerf("[MT] ★★★ wired hero storages: ASC@+0x%X AttrSet@+0x%X AttrHealth@+0x%X\r\n",s1,s2,s3);
+                }
+            }
+        }
+        // ★★★★★ (prior attempt, kept for the record) the PlayerState route: the ROOT CAUSE is hero->AttributeSetStorage @+0xF08 == NULL =>
+        // base-speed getter (base+0x55AC9F0) returns 0 => hero::GetMaxSpeed (vt[384]) returns 0 =>
+        // LokiCMC::GetMaxSpeed (vt[153]) returns 0 => CalcVelocity clamps Velocity to 0. It is the GAS
+        // AttributeSet, NOT input and NOT a deploy block (bCharacterMovementEnabled@+0xB59 == 1).
+        // SUPERVIVE owns the ASC on the PLAYERSTATE (standard MOBA). The ubergraph's BP_OnRep_PlayerState
+        // (@31020) does exactly: GetAbilitySystemComponent(PlayerState) -> OnLocalPlayerState_ASCInitialized().
+        // So: hand the hero the native PC's REPLICATED LokiPlayerState (S79 MODE_CONTEXT offsets), then drive
+        // OnRep_PlayerState (native) + BP_OnRep_PlayerState (BP, via CallBP) and see if the storages populate.
+        {
+            uint32_t pso=PropOffsetOnClass(ClassOf(g_mtPC),"PlayerState");
+            uintptr_t ps=(pso!=0xFFFFFFFF&&SafeReadable((void*)(g_mtPC+pso),8))?*(uintptr_t*)(g_mtPC+pso):0;
+            char psn[96]="-"; if(LooksLikePtr(ps)) ClassName(ps,psn,sizeof(psn));
+            Markerf("[MT] native PC->PlayerState @+0x%X = 0x%llX [%s]\r\n",pso,(unsigned long long)ps,psn);
+            uint32_t hpso=PropOffsetOnClass(ClassOf(g_mtHero),"PlayerState");
+            uint32_t asco=PropOffsetOnClass(ClassOf(g_mtHero),"AbilitySystemComponentStorage");
+            uint32_t atso=PropOffsetOnClass(ClassOf(g_mtHero),"AttributeSetStorage");
+            Markerf("[MT] BEFORE: hero PlayerState@+0x%X=0x%llX | ASCStorage@+0x%X=0x%llX | AttributeSetStorage@+0x%X=0x%llX\r\n",
+                    hpso,(unsigned long long)((hpso!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+hpso),8))?*(uintptr_t*)(g_mtHero+hpso):0),
+                    asco,(unsigned long long)((asco!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+asco),8))?*(uintptr_t*)(g_mtHero+asco):0),
+                    atso,(unsigned long long)((atso!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+atso),8))?*(uintptr_t*)(g_mtHero+atso):0));
+            if(LooksLikePtr(ps) && hpso!=0xFFFFFFFF){
+                if(SafeReadable((void*)(g_mtHero+hpso),8)) *(uintptr_t*)(g_mtHero+hpso)=ps;      // Pawn::PlayerState
+                if(SafeReadable((void*)(g_mtHero+0x2860),8)) *(uintptr_t*)(g_mtHero+0x2860)=ps;  // LokiCharacter::LocalPlayerState (S79)
+                Marker("[MT] wired hero->PlayerState + LocalPlayerState = the PC's replicated LokiPlayerState\r\n");
+                void* orFn=0; uintptr_t orTh=0,orCh=0;
+                ResolveFunc(ClassOf(g_mtHero),"OnRep_PlayerState",&orFn,&orTh,&orCh);
+                if(orTh){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                    bool of=CallGuarded(orFn,orTh,orCh,(void*)g_mtHero,g_pbuf,g_rbuf);
+                    Markerf("[MT] OnRep_PlayerState (native) fault=%d\r\n",of); }
+                // the BP half — the one that actually calls GetAbilitySystemComponent + OnLocalPlayerState_ASCInitialized
+                void* bpFn=0; uintptr_t bpTh=0,bpCh=0;
+                ResolveFunc(ClassOf(g_mtHero),"BP_OnRep_PlayerState",&bpFn,&bpTh,&bpCh);
+                if(bpFn){
+                    uint32_t sn=SafeReadable((void*)((uintptr_t)bpFn+UFUNC_SCRIPTNUM),4)?*(uint32_t*)((uintptr_t)bpFn+UFUNC_SCRIPTNUM):0;
+                    RawUnhook();                                  // CallBP invokes ProcessInternal — must not re-enter OnPI
+                    bool bf=CallBP(g_mtHero,bpFn,nullptr,0);
+                    Markerf("[MT] ★ BP_OnRep_PlayerState (script=%u) fault=%d %s\r\n",sn,bf,(!bf&&sn)?"RAN":"");
+                } else Marker("[MT] BP_OnRep_PlayerState NOT FOUND\r\n");
+                Markerf("[MT] ★★★ AFTER: ASCStorage=0x%llX | AttributeSetStorage=0x%llX  %s\r\n",
+                        (unsigned long long)((asco!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+asco),8))?*(uintptr_t*)(g_mtHero+asco):0),
+                        (unsigned long long)((atso!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+atso),8))?*(uintptr_t*)(g_mtHero+atso):0),
+                        ((atso!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+atso),8)&&*(uintptr_t*)(g_mtHero+atso))?"<<<<<< ATTRIBUTE SET POPULATED":"(still null)"));
+            }
+        }
         // ★★★ THE SUSPECT: CalcVelocity does `Velocity += Acceleration*dt; Velocity.GetClampedToMaxSize(GetMaxSpeed())`.
         // Accel is a full (50000,0,0) yet Velocity stays 0 => the clamp is the only thing that can be zeroing it.
         // GetMaxSpeed() is VIRTUAL and LokiCharacterMovementComponent likely overrides it to return a GAS
