@@ -175,6 +175,17 @@ constexpr int MODE_BPCALL=33;
 // GameplayStatics-spawned PC — that's what SetPlayer's SpawnPlayerCameraManager would have done), so read BOTH.
 // Swap offsets are S79-3a proven + S80s re-confirmed: LocalPlayer->PlayerController @+0x38, PC->Player @+0x458.
 constexpr int MODE_DEVSWAP=34;
+// MODE_MOVETEST (S80): THE decisive split. S80's devswap gave camera + a PC owning the 45 InpActEvt_* ACTION events, but
+// the user's screen check says NO WASD. My error: those 137 `inputaction` hits are all DISCRETE ACTIONS (Sprint/Ping/
+// Use/ToggleMap) — none is movement. In UE legacy input WASD is an AXIS. The real movement surface (find_func needles
+// inpaxisevt/moveforward/moveright) is only 4 fns: **LokiPlayerController::MoveForward / ::MoveRight (NATIVE)** and
+// DefaultPawn's pair. Native UFunctions ⇒ the direct-thunk primitive calls them with NO key binding / input system /
+// SetPlayer needed. This calls MoveForward(pc, 1.0) on the live L->PlayerController and watches the hero's location.
+//   hero MOVES  => the movement path is intact; the ONLY gap is key -> axis binding.
+//   hero STILL  => movement is gated deeper (CharacterMovementComponent state / authority / deploy machinery),
+//                  and the diagnostics below (MovementMode, bIsOnGround, velocity, Controller/Pawn wiring) say which.
+// Read-mostly: the only writes are the MoveForward/MoveRight calls themselves (the game's own movement entry points).
+constexpr int MODE_MOVETEST=35;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -2199,6 +2210,91 @@ static void DoDevSwap(){
         (unsigned long long)vt, vt==g_dsHero?"== HERO":"");
     if(rep>=20){ Marker("[DS] === done ===\r\n"); g_done=1; }
 }
+// ===== S80 MODE_MOVETEST: call the game's own native movement entry points and watch the hero =====
+static volatile long g_mtReps=0;
+static uintptr_t g_mtPC=0,g_mtHero=0,g_mtCMC=0;
+static void* g_mtFwdFn=0; static uintptr_t g_mtFwdThunk=0,g_mtFwdCh=0;
+static void* g_mtRgtFn=0; static uintptr_t g_mtRgtThunk=0,g_mtRgtCh=0;
+static void* g_mtLocFn=0; static uintptr_t g_mtLocThunk=0,g_mtLocCh=0;
+static double g_mtX0=0,g_mtY0=0,g_mtZ0=0;
+static bool MtLoc(double* x,double* y,double* z){
+    if(!g_mtLocThunk) return false;
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    if(CallGuarded(g_mtLocFn,g_mtLocThunk,g_mtLocCh,(void*)g_mtHero,g_pbuf,g_rbuf)) return false;
+    *x=*(double*)(g_rbuf+0); *y=*(double*)(g_rbuf+8); *z=*(double*)(g_rbuf+16); return true;
+}
+static void DoMoveTest(){
+    long rep=InterlockedIncrement(&g_mtReps);
+    if(rep==1){
+        Marker("[MT] === S80 movetest: call NATIVE MoveForward/MoveRight, watch the hero ===\r\n");
+        uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+        if(!LooksLikePtr(L)){ Marker("[MT] no LocalPlayer\r\n"); g_done=1; return; }
+        g_mtPC=SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0;
+        if(!LooksLikePtr(g_mtPC)){ Marker("[MT] L->PC null\r\n"); g_done=1; return; }
+        uint32_t po=PropOffsetOnClass(ClassOf(g_mtPC),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+        g_mtHero=SafeReadable((void*)(g_mtPC+pawnOff),8)?*(uintptr_t*)(g_mtPC+pawnOff):0;
+        char pc[96]="?",hc[96]="?"; ClassName(g_mtPC,pc,sizeof(pc)); if(LooksLikePtr(g_mtHero))ClassName(g_mtHero,hc,sizeof(hc));
+        Markerf("[MT] PC=0x%llX [%s]  hero=0x%llX [%s]\r\n",(unsigned long long)g_mtPC,pc,(unsigned long long)g_mtHero,hc);
+        if(!LooksLikePtr(g_mtHero)){ Marker("[MT] PC->Pawn null — nothing to move\r\n"); g_done=1; return; }
+        ResolveFunc(ClassOf(g_mtPC),"MoveForward",&g_mtFwdFn,&g_mtFwdThunk,&g_mtFwdCh);
+        ResolveFunc(ClassOf(g_mtPC),"MoveRight",  &g_mtRgtFn,&g_mtRgtThunk,&g_mtRgtCh);
+        ResolveFunc(ClassOf(g_mtHero),"K2_GetActorLocation",&g_mtLocFn,&g_mtLocThunk,&g_mtLocCh);
+        Markerf("[MT] MoveForward thunk=0x%llX child=0x%llX | MoveRight thunk=0x%llX | GetLoc thunk=0x%llX\r\n",
+                (unsigned long long)g_mtFwdThunk,(unsigned long long)g_mtFwdCh,(unsigned long long)g_mtRgtThunk,(unsigned long long)g_mtLocThunk);
+        if(g_mtFwdCh){ uint32_t vo=ParamOffset(g_mtFwdCh,"Val"); Markerf("[MT] MoveForward param 'Val' offset=0x%X\r\n",vo); }
+        // --- diagnostics: the wiring + movement state that decide the outcome's meaning ---
+        uint32_t co=PropOffsetOnClass(ClassOf(g_mtHero),"Controller");
+        uintptr_t ctl=(co!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+co),8))?*(uintptr_t*)(g_mtHero+co):0;
+        uint32_t cmo=PropOffsetOnClass(ClassOf(g_mtHero),"CharacterMovement");
+        g_mtCMC=(cmo!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+cmo),8))?*(uintptr_t*)(g_mtHero+cmo):0;
+        char cmn[96]="-"; if(LooksLikePtr(g_mtCMC)) ClassName(g_mtCMC,cmn,sizeof(cmn));
+        Markerf("[MT] hero->Controller=0x%llX (%s the live PC) | CharacterMovement=0x%llX [%s]\r\n",
+                (unsigned long long)ctl, ctl==g_mtPC?"==":"!=", (unsigned long long)g_mtCMC,cmn);
+        if(LooksLikePtr(g_mtCMC)){
+            uint32_t mmo=PropOffsetOnClass(ClassOf(g_mtCMC),"MovementMode");
+            uint32_t vo2=PropOffsetOnClass(ClassOf(g_mtCMC),"Velocity");
+            uint8_t mm=(mmo!=0xFFFFFFFF&&SafeReadable((void*)(g_mtCMC+mmo),1))?*(uint8_t*)(g_mtCMC+mmo):255;
+            double vx=0,vy=0,vz=0;
+            if(vo2!=0xFFFFFFFF&&SafeReadable((void*)(g_mtCMC+vo2),24)){ vx=*(double*)(g_mtCMC+vo2); vy=*(double*)(g_mtCMC+vo2+8); vz=*(double*)(g_mtCMC+vo2+16); }
+            Markerf("[MT] CMC MovementMode@+0x%X = %u (0=None 1=Walking 2=NavWalking 3=Falling 4=Swimming 5=Flying 6=Custom) | Velocity=(%.1f,%.1f,%.1f)\r\n",mmo,mm,vx,vy,vz);
+        }
+        uint8_t ls=SafeReadable((void*)(g_mtHero+0x1090),1)?*(uint8_t*)(g_mtHero+0x1090):255;
+        Markerf("[MT] hero LivingState=%u (1=Alive)\r\n",ls);
+        if(MtLoc(&g_mtX0,&g_mtY0,&g_mtZ0)) Markerf("[MT] hero loc BEFORE = (%.1f, %.1f, %.1f)\r\n",g_mtX0,g_mtY0,g_mtZ0);
+        else Marker("[MT] K2_GetActorLocation FAULTED\r\n");
+        if(!g_mtFwdThunk){ Marker("[MT] MoveForward NOT RESOLVED on this PC — abort\r\n"); g_done=1; return; }
+        return;
+    }
+    // each tick: drive the game's own movement input, then measure
+    bool f1=true,f2=true;
+    if(g_mtFwdThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        *(float*)g_pbuf=1.0f;                                  // Val = +1.0 (full forward)
+        f1=CallGuarded(g_mtFwdFn,g_mtFwdThunk,g_mtFwdCh,(void*)g_mtPC,g_pbuf,g_rbuf); }
+    if(g_mtRgtThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        *(float*)g_pbuf=1.0f;
+        f2=CallGuarded(g_mtRgtFn,g_mtRgtThunk,g_mtRgtCh,(void*)g_mtPC,g_pbuf,g_rbuf); }
+    if(rep==2) Markerf("[MT] MoveForward fault=%d MoveRight fault=%d (calling every tick with Val=1.0)\r\n",f1,f2);
+    if(rep%8==0){
+        double x,y,z;
+        if(MtLoc(&x,&y,&z)){
+            double d=(x-g_mtX0)*(x-g_mtX0)+(y-g_mtY0)*(y-g_mtY0);
+            Markerf("[MT] t+%ld loc=(%.1f, %.1f, %.1f)  dXY=%.1f  %s\r\n",rep,x,y,z,
+                    d>1.0? (d>100.0?9999.0:d) : 0.0, d>4.0?"<<<<<< THE HERO IS MOVING":"(no XY change)");
+        }
+    }
+    if(rep>=80){
+        double x,y,z;
+        if(MtLoc(&x,&y,&z)){
+            double dx=x-g_mtX0, dy=y-g_mtY0, dz=z-g_mtZ0;
+            Markerf("[MT] FINAL loc=(%.1f, %.1f, %.1f)  delta=(%.1f, %.1f, %.1f)\r\n",x,y,z,dx,dy,dz);
+            bool moved=(dx*dx+dy*dy)>25.0;
+            Markerf("[MT] ★ VERDICT: %s\r\n", moved
+                ? "HERO MOVED via native MoveForward => the movement path WORKS; the only gap is key->axis binding"
+                : "HERO DID NOT MOVE => movement is gated deeper (see CMC MovementMode / Velocity above)");
+        }
+        Marker("[MT] === done ===\r\n"); g_done=1;
+    }
+}
 static void DoUFuncDump(){
     Marker("[UF] === UFunction field dump (find Script + PropertiesSize) ===\r\n");
     uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
@@ -2414,6 +2510,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_BPTEST3){ DoBPTest3(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_BPCALL){ DoBPCall(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_DEVSWAP){ DoDevSwap(); g_inHook=0; return; }
+    if(kMode==MODE_MOVETEST){ DoMoveTest(); g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -2712,6 +2809,17 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(25);
         }
         Markerf("[3b] bptest3 done (done=%ld).\r\n",(long)g_done);
+        return 0;
+    } else if(kMode==MODE_MOVETEST){
+        // Movement input must be fed EVERY frame (AddMovementInput is consumed per-tick), so hook in tight bursts.
+        Marker("[2] movetest: driving native MoveForward/MoveRight ~12s...\r\n");
+        DWORD t0=GetTickCount();
+        while(!g_done && GetTickCount()-t0 < 20000){
+            g_inHook=0;
+            if(InstallHookFast()){ DWORD md=GetTickCount()+120; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(60);
+        }
+        Markerf("[3b] movetest done (done=%ld).\r\n",(long)g_done);
         return 0;
     } else if(kMode==MODE_DEVSWAP){
         Marker("[2] devswap: swap to the BP_Dev PC + ClientRestart there; monitoring ~10s...\r\n");
