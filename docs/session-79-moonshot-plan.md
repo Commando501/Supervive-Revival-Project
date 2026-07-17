@@ -607,6 +607,46 @@ a broken substring filter; (5) `CallBP`'s stale FlowStack (mine -- caught by dum
 **METHOD: read state by REFLECTION (`comp_census.py`), read behaviour by DISASSEMBLY (`ubergraph_dump.py`/`script_dump.py`
 /`disasm_live.py`), check runnability first (`ufunc_survey.py`). All read-only, no injection, seconds each.**
 
+**S80g -- THE FIRST *REAL* GAP OF THE SESSION: no Enhanced Input MAPPING CONTEXT is applied, and SUPERVIVE adds them
+from NATIVE code, not Blueprint.** Every prior "wall" this session dissolved into a tool bug; this one survived
+re-verification, so treat it as real (but keep verifying).
+```
+LocalPlayer 0x28541940E00 -> PlayerController 0x285752F50B0 (LokiPlayerController)
+PC->PlayerInput @+0x530 = 0x285F0307720   class=EnhancedPlayerInput
+PlayerInput->AppliedInputContexts @+0x560 [MapProperty]  ->  Data=0x0 Num=0 Max=0   *** EMPTY ***
+EnhancedInputLocalPlayerSubsystem  = 0x285C4460200   (EXISTS)
+EnhancedInputSubsystemInterface::AddMappingContext = 0x28504E423A0  (NATIVE UFunction, Script=0)
+```
+Findings, each re-verified rather than assumed:
+- **`AppliedInputContexts` is EMPTY** (TMap Data/Num/Max all 0) -> **no mapping context applied**. That is why WASD does
+  not reach movement, while mouse-look (which is not IMC-gated) does.
+- **ZERO `InputMappingContext` ASSETS are loaded** -- and this was re-checked with a SUBSTRING scan over all 175,914
+  live objects (not the exact-match that faked walls 4 and 6): only CDOs (`Default__InputMappingContext`) exist. The
+  `InputMappingContext` UClass IS loaded (0x2857FB7DA80), so the type is present; the assets are not.
+- **No IMC-typed property** on the hero's or the PC's class chain.
+- ★★★ **GLOBAL BYTECODE SCAN: of 14,921 loaded BP functions WITH bytecode, NOT ONE calls `AddMappingContext`.** So
+  SUPERVIVE does **not** add mapping contexts from Blueprint at all -- it must do so from **native C++** (a
+  `LokiPlayerController::SetupInputComponent` / custom keybind-settings path). That also independently re-confirms the
+  S80d/e result that no hero BP fn (`TryLocalControlSetup`/`RefreshLocalControl`/etc.) binds input.
+- Consistent with the whole DS session: it never deployed into a match, so the native path that loads + adds the IMCs
+  never ran.
+**⇒ NEXT (concrete, and the pieces are already in hand):** `AddMappingContext` is a **NATIVE** UFunction, so the existing
+direct-thunk primitive (`CallNative`) can call it, and the subsystem object already exists (0x285C4460200). The ONLY
+missing piece is an actual **IMC asset**. To find one:
+  1. **The asset catalog: `docs/game-map.md` is only 8.7 KB -- it is a 42-CATEGORY INDEX, NOT the 68,228-asset list.**
+     A grep over it returning 0 proves NOTHING about whether IMC assets exist (this nearly became fake wall #7). Get the
+     real list from the extractor: `tools/extractor/` -> `enumerate` / `names` / `namesall`, then grep for
+     `InputMappingContext` / `IMC_`.
+  2. Then load it (the PROVEN missions/S79-Phase-1 load primitive: `PrimaryAssetIDFromString` ->
+     `GetPrimaryAssetIdList` -> `AsyncLoadPrimaryAssets`, or a direct object/class path load), and call
+     `AddMappingContext(subsystem, imc, priority, options)` via `CallNative`. NB the 3rd param is a
+     `FModifyContextOptions` STRUCT -> use `BuildOutParms` (the S72/S74 struct-param ABI fix).
+  3. Cross-check the native side for the real load+add site: `usmapdump disasm` / `callxref` around
+     `LokiPlayerController::SetupInputComponent`, or `tools/re/disasm_live.py` on `AddMappingContext`'s exec thunk.
+  4. Alternative worth a look: the 3 live `EnhancedPlayerInput` objects (0x285F0307720 / 0x28684C21BE0 / 0x2868F09E4A0)
+     -- check whether ANY of them has a non-empty `AppliedInputContexts` (one may belong to a differently-initialised
+     player), which would name the exact IMC asset the game uses.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
