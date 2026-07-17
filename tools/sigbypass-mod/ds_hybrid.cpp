@@ -28,6 +28,11 @@ constexpr uintptr_t kPiRva=0x13454A0, kObjObjectsRva=0x9E38930, kNamePoolRva=0x9
 constexpr int PERCHUNK=65536, ITEMSTRIDE=0x18;
 constexpr uintptr_t CLASS_OFF=0x18, NAME_OFF=0x20, OUTER_OFF=0x28, UFUNC_FUNC=0xE0, UFUNC_CHILDPROPS=0x58;
 constexpr uintptr_t UST_CHILDREN=0x50, UST_SUPER=0x48, FIELD_NEXT_UF=0x30, FIELD_NEXT=0x18, FPROP_OFFSET=0x44, FPROP_FLAGS=0x38;
+// UStruct tail + UFunction bytecode (S80, live-verified on the UFUNCDUMP of BP_LokiHeroCharacter_C fns):
+// PropertiesSize(int32)@+0x60, MinAlignment(int32)@+0x64, Script TArray@+0x68 {Data@+0x68, Num@+0x70, Max@+0x74}.
+// Matches stock UE5.4 UStruct given SuperStruct@+0x48/Children@+0x50/ChildProperties@+0x58, and tools/re/find_func.py's
+// long-standing "Script.Num@+0x70" convention. Needed to run BP bytecode (see MODE_BPCALL).
+constexpr uintptr_t UST_PROPSIZE=0x60, UFUNC_SCRIPT=0x68, UFUNC_SCRIPTNUM=0x70;
 constexpr uint64_t CPF_OutParm=0x100, CPF_ReturnParm=0x400;
 constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, FF_MRP=0x30, FF_MRPA=0x38, FF_MRPC=0x40, FF_OUTPARMS=0x80, FF_PROPCHAIN=0x88;
 typedef void (*PFN_PE)(void* obj, void* func, void* parms);
@@ -132,6 +137,24 @@ constexpr int MODE_BPTEST3=31;
 // MODE_UFUNCDUMP (BP-invoker prep): dump a BP UFunction's fields to find UStruct::PropertiesSize + UFunction::Script offsets
 // (needed to build a proper FFrame for a direct ProcessInternal call). -DKMODE=MODE_UFUNCDUMP
 constexpr int MODE_UFUNCDUMP=32;
+// MODE_BPCALL (S80): call BP-folded UFunctions CORRECTLY. TWO independent tool bugs faked the "deploy context wall"
+// that S79 called definitive — neither is a wall, and the BP deploy fns were NEVER ACTUALLY EXECUTED:
+//  (1) ★ CallNative sets FFrame.Code=0. Harmless for a native thunk (it ignores Code), but a BP fn's Func IS
+//      ProcessInternal, which executes bytecode from *Stack.Code => Code=0 is a NULL DEREF. Every "BP fn faulted"
+//      result was this. FIX (one line): Code = UFunction->Script.GetData() @+0x68, Locals = a zeroed
+//      PropertiesSize(@+0x60) buffer. Func is ALREADY ProcessInternal, so no new call target is needed.
+//  (2) kProcEventRva (base+0x12C5A10) is NOT ProcessEvent — S80 live disasm: its prologue saves only rcx->rdi and
+//      rdx->r14 and NEVER touches r8, so it's a 2-arg fn that ignores the Parms buffer entirely (it guards recursion
+//      on `this` via a TLS list and tail-calls vtable slot 58). The S54 "slot 56 = ProcessEvent" id is wrong, which
+//      is why routing BP calls through it faulted even for a NATIVE member (MODE_BPTEST3) and looked "neutered".
+// Corollary from the live UFunction survey: `ReceiveRestarted` (Pawn) is an EMPTY BlueprintImplementableEvent stub
+// (Script=0, PropertiesSize=0) that BP_LokiHeroCharacter_C never overrides — calling it is a no-op BY DESIGN, not a
+// context fault. The real deploy fns DO carry bytecode on BP_LokiHeroCharacter_C: ClientInitialComponentSetup
+// (Script=88), GetBaseCosmeticsController (121), BP_PostSetupCosmetics / TryLocalControlSetup / RefreshLocalControl (18).
+// Validation is self-checking: GetBaseCosmeticsController's bytecode calls the NATIVE GetCosmeticsController and stores
+// it in local CallFunc_GetCosmeticsController_ReturnValue @+0x8, so locals[0x8] MUST equal the direct-thunk controller.
+// The deploy chain only runs if that gate passes (a deploy result on a broken invoker would be meaningless). -DKMODE=MODE_BPCALL
+constexpr int MODE_BPCALL=33;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -2002,6 +2025,79 @@ static void DoBPTest3(){
             (viaPE==viaThunk&&viaPE)?"<<< ProcessEvent WORKS on native (BP faults are bytecode/context)":"<<< ProcessEvent BROKEN even on native (mechanism bug)");
     Marker("[B3] === done ===\r\n");
 }
+// ===== S80: the BP-call primitive (see the MODE_BPCALL note for the two bugs this retires) =====
+// Runs a BP-folded UFunction's bytecode by handing ProcessInternal the FFrame it actually needs. The ONLY material
+// difference from CallNative is FF_CODE: native thunks ignore it, the BP VM dereferences it.
+// argsIn is copied to the head of the locals (a UFunction's params occupy [0, ParmsSize) of its frame).
+// CALLER MUST RawUnhook() first — thunk == ProcessInternal == our hooked address, so an installed hook re-enters OnPI.
+static uint8_t g_bplocals[1024];
+static bool CallBP(uintptr_t obj, void* ufunc, const void* argsIn, int argsLen){
+    if(!ufunc || !LooksLikePtr(obj)) return true;
+    uintptr_t f=(uintptr_t)ufunc;
+    uintptr_t script=SafeReadable((void*)(f+UFUNC_SCRIPT),8)?*(uintptr_t*)(f+UFUNC_SCRIPT):0;
+    uint32_t  snum  =SafeReadable((void*)(f+UFUNC_SCRIPTNUM),4)?*(uint32_t*)(f+UFUNC_SCRIPTNUM):0;
+    uint32_t  psz   =SafeReadable((void*)(f+UST_PROPSIZE),4)?*(uint32_t*)(f+UST_PROPSIZE):0;
+    uintptr_t thunk =SafeReadable((void*)(f+UFUNC_FUNC),8)?*(uintptr_t*)(f+UFUNC_FUNC):0;
+    uintptr_t child =SafeReadable((void*)(f+UFUNC_CHILDPROPS),8)?*(uintptr_t*)(f+UFUNC_CHILDPROPS):0;
+    if(!LooksLikePtr(script)||!snum||!LooksLikePtr(thunk)) return true;  // empty stub (e.g. Pawn::ReceiveRestarted)
+    if(psz>sizeof(g_bplocals)) return true;
+    memset(g_bplocals,0,sizeof(g_bplocals));
+    if(argsIn && argsLen>0 && argsLen<=(int)sizeof(g_bplocals)) memcpy(g_bplocals,argsIn,argsLen);
+    memcpy(g_myframe,g_template,sizeof(g_myframe));
+    *(void**)(g_myframe+FF_NODE)=ufunc;
+    *(void**)(g_myframe+FF_OBJECT)=(void*)obj;
+    *(uint64_t*)(g_myframe+FF_CODE)=(uint64_t)script;      // ★ THE FIX — CallNative hardcodes 0 here
+    *(void**)(g_myframe+FF_LOCALS)=g_bplocals;
+    *(uint64_t*)(g_myframe+FF_MRP)=0; *(uint64_t*)(g_myframe+FF_MRPA)=0; *(uint64_t*)(g_myframe+FF_MRPC)=0;
+    *(uint64_t*)(g_myframe+FF_PROPCHAIN)=(uint64_t)child;
+    BuildOutParms(child,g_bplocals);
+    static uint8_t rb[64];
+    __try { memset(rb,0,sizeof(rb)); ((PFN_THUNK)thunk)((void*)obj,g_myframe,rb); return false; }
+    __except(EXCEPTION_EXECUTE_HANDLER){ return true; }
+}
+static void DoBPCall(){
+    Marker("[BC] === S80 BP invoker (FFrame.Code=Script.GetData) — validate, then deploy ===\r\n");
+    if(!ResolveCosmetics()){ Marker("[BC] resolve failed\r\n"); return; }
+    uintptr_t hero=g_cmHero, hc=ClassOf(hero); char cn[96]="?"; ClassName(hero,cn,sizeof(cn));
+    Markerf("[BC] hero=0x%llX class=%s\r\n",(unsigned long long)hero,cn);
+    // Ground truth for the gate: the NATIVE GetCosmeticsController via the (working) direct-thunk primitive.
+    void* nfn=0; uintptr_t nth=0,nch=0; ResolveFunc(hc,"GetCosmeticsController",&nfn,&nth,&nch);
+    uintptr_t ctrl=0;
+    if(nth){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+             if(!CallGuarded(nfn,nth,nch,(void*)hero,g_pbuf,g_rbuf)) ctrl=*(uintptr_t*)g_rbuf; }
+    Markerf("[BC] ground truth: native GetCosmeticsController = 0x%llX\r\n",(unsigned long long)ctrl);
+    RawUnhook(); Marker("[BC] PI hook raw-removed (ProcessInternal must not re-enter OnPI)\r\n");
+    // ---- GATE: a BP fn whose own bytecode calls that same native getter into locals@+0x8 ----
+    bool ok=false;
+    { void* vfn=0; uintptr_t vth=0,vch=0; ResolveFunc(hc,"GetBaseCosmeticsController",&vfn,&vth,&vch);
+      if(!vfn) Marker("[BC] GetBaseCosmeticsController NOT FOUND\r\n");
+      else { bool fault=CallBP(hero,vfn,nullptr,0);
+             uintptr_t outp=*(uintptr_t*)(g_bplocals+0x0), cf=*(uintptr_t*)(g_bplocals+0x8);
+             ok = (!fault && ctrl && cf==ctrl);
+             Markerf("[BC] GetBaseCosmeticsController: fault=%d out@+0x0=0x%llX CallFunc@+0x8=0x%llX  %s\r\n",
+                     fault,(unsigned long long)outp,(unsigned long long)cf,
+                     ok?"<<<<<< BP BYTECODE EXECUTED — INVOKER WORKS":"<<<<<< still not executing"); } }
+    if(!ok){ Marker("[BC] GATE FAILED — skipping deploy (a deploy result on a broken invoker proves nothing)\r\n"); return; }
+    // ---- THE DEPLOY SETUP — first time these BP fns have ever actually RUN ----
+    Markerf("[BC] skeletal meshes BEFORE = %d\r\n",CountHeroSkeletals());
+    const char* chain[]={"ClientInitialComponentSetup","BP_PostSetupCosmetics","TryLocalControlSetup","RefreshLocalControl"};
+    for(int i=0;i<4;i++){
+        void* fn=0; uintptr_t th=0,ch=0; ResolveFunc(hc,chain[i],&fn,&th,&ch);
+        if(!fn){ Markerf("[BC] %-28s NOT FOUND\r\n",chain[i]); continue; }
+        uint32_t sn=SafeReadable((void*)((uintptr_t)fn+UFUNC_SCRIPTNUM),4)?*(uint32_t*)((uintptr_t)fn+UFUNC_SCRIPTNUM):0;
+        bool fault=CallBP(hero,fn,nullptr,0);
+        Markerf("[BC] %-28s script=%-4u fault=%d  %s\r\n",chain[i],sn,fault,(!fault&&sn)?"RAN":(sn?"FAULTED":"empty stub - skipped"));
+    }
+    // Re-assert Alive + clear pre-drop, then let the native builder rebuild the body with the CosmeticsAssetID
+    // MODE_SETCOSMETIC already wrote (@+0x1FF0/+0x2000).
+    if(SafeReadable((void*)(hero+0x1090),1)) *(uint8_t*)(hero+0x1090)=1;
+    if(SafeReadable((void*)(hero+0x1BE8),1)) *(uint8_t*)(hero+0x1BE8)=0;
+    if(g_cmRefThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                      bool rf=CallGuarded(g_cmRefFn,g_cmRefThunk,g_cmRefChild,(void*)hero,g_pbuf,g_rbuf);
+                      Markerf("[BC] RefreshCosmetics fault=%d\r\n",rf); }
+    Markerf("[BC] skeletal meshes AFTER = %d  (>0 = THE CHARACTER MESH BUILT)\r\n",CountHeroSkeletals());
+    Marker("[BC] === done ===\r\n");
+}
 static void DoUFuncDump(){
     Marker("[UF] === UFunction field dump (find Script + PropertiesSize) ===\r\n");
     uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
@@ -2215,6 +2311,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_BPTEST){ DoBPTest(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_BPTEST2){ DoBPTest2(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_BPTEST3){ DoBPTest3(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_BPCALL){ DoBPCall(); g_done=1; g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -2513,6 +2610,17 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(25);
         }
         Markerf("[3b] bptest3 done (done=%ld).\r\n",(long)g_done);
+        return 0;
+    } else if(kMode==MODE_BPCALL){
+        // Transient hook only to reach the game thread + capture the FFrame template; DoBPCall RawUnhook()s itself
+        // before running any BP bytecode, so no .text hook is held across the deploy calls (anti-tamper dodge).
+        Marker("[2] bpcall: transient hook; validate the BP invoker then run the deploy setup...\r\n");
+        DWORD bcT0=GetTickCount();
+        while(!g_done && GetTickCount()-bcT0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+250; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3b] bpcall done (done=%ld).\r\n",(long)g_done);
         return 0;
     } else if(kMode==MODE_CAMFRAME){
         // Re-apply the camera-component offset repeatedly (transient hook per apply) to hold it vs any per-frame reset.

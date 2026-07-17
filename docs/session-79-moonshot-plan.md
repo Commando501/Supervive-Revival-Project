@@ -384,6 +384,52 @@ re-enter our hook. Need two offsets (find via a UFunction field walk): `UFunctio
 or the REAL context gaps (if any) finally show. This is the live frontier; the earlier "definitive wall" is retracted.
 New mode: BPTEST3.
 
+**★★★★★ S80 — THE WALL NEVER EXISTED. BP invoker BUILT + LIVE-VALIDATED; the deploy fns RAN for the first time
+(`MODE_BPCALL`, 2026-07-16, client PID 48788, no crash).** Two INDEPENDENT tool bugs — not one context wall — produced
+every "FAULTED" line in the BPDEPLOY/CONTEXT/DEPLOYEVT runs. Both are now fixed and the S79 "definitive wall" is
+formally RETRACTED (as is the S80-prep "ProcessEvent is neutered" claim, which was also wrong):
+- **BUG 1 (the real one): `CallNative` hardcodes `FFrame.Code=0`.** Harmless for a native thunk (it ignores Code) — but a
+  BP-folded fn's `Func` **IS** `ProcessInternal`, which executes bytecode from `*Stack.Code`. So `Code=0` = a NULL DEREF
+  on every BP call. The primitive was already calling the right function; it just handed it a null instruction pointer.
+  **FIX = one line:** `Code = UFunction->Script.GetData()@+0x68`, `Locals =` a zeroed `PropertiesSize@+0x60` buffer.
+  No new call target needed. New `CallBP(obj,ufunc,args,len)` in ds_hybrid.cpp (RawUnhook() first — the thunk IS our
+  hooked address). `CallNative` left untouched (single-variable change; ~30 modes depend on the native path).
+- **BUG 2: `base+0x12C5A10` is NOT ProcessEvent** (live capstone disasm, `tools/re/` pattern → scratch `disasm_live.py`).
+  Its prologue saves only `rcx→rdi` and `rdx→r14` and **never touches `r8`**, then clobbers r8 at its first `call` ⇒ it's
+  a **2-arg fn that ignores the Parms buffer entirely** (it guards recursion on `this` via a TLS list at `TLS+0xa20`,
+  lazy-inits a TLS thread-context at `TLS+0xf60`, and tail-calls vtable **slot 58** `[rax+0x1d0]`). The S54 "slot 56 =
+  ProcessEvent" identification is WRONG — that's why routing calls through it faulted even for a NATIVE member
+  (MODE_BPTEST3) and looked "neutered". ⇒ **The real ProcessEvent is still unidentified — but is NOT NEEDED**, since
+  BP fns' Func is already ProcessInternal. Don't rebuild a ProcessEvent path; use `CallBP`.
+- **BUG 3 (why the "orchestrators" all faulted):** `Pawn::ReceiveRestarted` is an **EMPTY** BlueprintImplementableEvent
+  stub (Script=0, PropertiesSize=0, EventGraphFunction=0) that `BP_LokiHeroCharacter_C` never overrides — calling it is a
+  no-op BY DESIGN, not a context fault. The S80-prep "ubergraph wrinkle" worry is moot: the REAL deploy fns carry their
+  own bytecode (a Script=18 fn is exactly an `EX_LocalFinalFunction ExecuteUbergraph(EntryPoint)` thunk — the ubergraph
+  jump is IN the bytecode, so a correct FFrame runs it; `EventGraphFunction`/`CallOffset` fast-path is unused here).
+- ★ **Live UFunction survey (read-only RPM, no injection — scratch `ufunc_survey.py`, worth re-creating):** dumps every
+  UFunction on a class chain with `Func` (native-vs-ProcessInternal), `Script.Num`, `PropertiesSize`, `ParmsSize`,
+  `ReturnValueOffset`, `EventGraphFunction`, flags. On `BP_LokiHeroCharacter_C`: `ClientInitialComponentSetup`
+  (Script=88, PropSz=2), `GetBaseCosmeticsController` (121/25), `BP_PostSetupCosmetics` / `TryLocalControlSetup` /
+  `RefreshLocalControl` (18/0), `OnLocalPlayer_CharacterSpawned` (36/8, takes a param). **Always check Script.Num>0
+  before concluding a call "faulted" — an empty stub is a no-op, not a wall.**
+- **★ LIVE RESULT (the gate is self-checking):** `GetBaseCosmeticsController`'s own bytecode calls the NATIVE
+  `GetCosmeticsController` into local `CallFunc_..._ReturnValue@+0x8`, so that local MUST equal the direct-thunk value.
+  It did: `fault=0 out@+0x0=0x2868C4173C0 CallFunc@+0x8=0x2868C4173C0` == ground truth `0x2868C4173C0`. **BP bytecode
+  executes.** Then, gated on that pass, all four deploy fns **RAN clean (fault=0)** — the first time they have ever
+  actually executed: `ClientInitialComponentSetup`, `BP_PostSetupCosmetics`, `TryLocalControlSetup`, `RefreshLocalControl`.
+- **★ HONEST REMAINING GAP: `skeletal meshes AFTER = 0` — the mesh STILL did not build.** The deploy fns ran cleanly and
+  produced no character mesh, and `RefreshCosmetics` (native, fault=0) still built nothing. This is now a REAL finding
+  (code executed) rather than an artifact. It does NOT re-establish the S79 wall — nothing here says "needs match-init
+  context"; the fns ran without complaint. Most likely: they internally early-out on a predicate a hand-assembled hero
+  fails (e.g. `IsLocallyControlled`/authority/`HasAuthority`, a null PlayerState-derived loadout, or the async
+  `HeroCosmeticsBundle:AssaultDefault` load not being RESIDENT when RefreshCosmetics ran).
+  **NEXT (highest value, in order):** (1) ★ the tool now exists to see INSIDE — read `ClientInitialComponentSetup`'s 88
+  bytes of bytecode (`Script.Data` via RPM, disassemble the UE VM opcodes) and `BP_PostSetupCosmetics`' 18 → find which
+  ubergraph entry/predicate they hit and what they need; (2) call `OnLocalPlayer_CharacterSpawned` (Script=36) — it takes
+  an 8-byte param (the local player?) and is the "character spawned" entry the game itself uses; (3) verify the cosmetics
+  bundle is actually LOADED (not just ID-set) before `RefreshCosmetics`; (4) re-run on a FRESH hero (the current
+  `0x28577E6D560` is hand-mangled + drifted over the void). New mode: BPCALL. `CallBP` is reusable for ALL future BP work.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
