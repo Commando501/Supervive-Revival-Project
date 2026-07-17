@@ -1279,7 +1279,13 @@ static void ResolveSpectatorCam(){
         if(!SuperChainHas(c,"UserWidget"))return false;
         char on[160]="?",cn[160]="?"; ObjName(o,on,sizeof(on)); if(strncmp(on,"Default__",9)==0)return false;
         GetFNameStr(NameId(c),cn,sizeof(cn)); total++;
-        Markerf("[WGT] 0x%llX %s (cls %s)\r\n",(unsigned long long)o,on,cn);
+        // ★★★ S80 CRITICAL: do NOT log every widget when we're mid-match. Markerf is
+        // CreateFile+WriteFile+CloseHandle PER LINE, and this census hits ~1,244 live widgets — on the GAME
+        // THREAD. That stalled the thread ~20s, which the netdriver saw as
+        // "UNetConnection::Tick: Connection TIMED OUT ... Elapsed: 0.00, Real: 19.99" and dropped us back to
+        // the lobby. (This is also the likely cause of the earlier "12-minute" timeout.) The spectator-cam
+        // mode can afford the dump (it runs pre-match); MODE_PLAYABLE cannot.
+        if(kMode!=MODE_PLAYABLE) Markerf("[WGT] 0x%llX %s (cls %s)\r\n",(unsigned long long)o,on,cn);
         if(!widgetCls) widgetCls=c;
         for(int k=0;k<(int)(sizeof(kKeys)/sizeof(kKeys[0]));k++){ if(strstr(cn,kKeys[k])||strstr(on,kKeys[k])){ if(g_nLoadW<48) g_loadWidgets[g_nLoadW++]=o; break; } }
         return false;
@@ -2654,8 +2660,11 @@ static void DoPlayableSetup(){
 static void PlayableTick(){
     if(!g_plReady || !g_plAmiThunk || !LooksLikePtr(g_plHero)) return;
     long f=InterlockedIncrement(&g_plFrames);
-    // Re-assert the loading-overlay hide every ~30 frames (the game re-shows it; one-shot doesn't stick).
-    if(g_svThunk && g_svVisOff!=0xFFFFFFFF && (f%30)==1){
+    // Re-assert the loading-overlay hide, but ONLY for the first ~10 seconds and rarely (every 120 frames).
+    // Everything in here runs on the GAME THREAD inside the netdriver's timeout budget: stalling it drops the
+    // connection (S80: a 20s stall => "Connection TIMED OUT ... Elapsed: 0.00, Real: 19.99" => back to lobby).
+    // Once the phase progression reaches EGP_Combat the overlay is gone anyway, so this is belt-and-braces.
+    if(g_svThunk && g_svVisOff!=0xFFFFFFFF && f<600 && (f%120)==1){
         int hid=0;
         for(int i=0;i<g_nLoadW;i++){
             uintptr_t w=g_loadWidgets[i]; if(!SafeReadable((void*)w,0x30)) continue;
