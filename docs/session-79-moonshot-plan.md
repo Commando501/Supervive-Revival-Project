@@ -647,6 +647,28 @@ missing piece is an actual **IMC asset**. To find one:
      -- check whether ANY of them has a non-empty `AppliedInputContexts` (one may belong to a differently-initialised
      player), which would name the exact IMC asset the game uses.
 
+**S80h -- the cheap shortcut is DEAD (useful negative): ALL THREE live `EnhancedPlayerInput` objects have an EMPTY
+`AppliedInputContexts`.** Substring-scanned every live `*PlayerInput*` object (not exact-match):
+```
+0x285F0307720  outer=LokiPlayerController           (the native/ACTIVE PC)      AppliedInputContexts@+0x560 Num=0  EMPTY
+0x28684C21BE0  outer=BP_LokiPlayerController_Dev_C  (OUR S79 Phase-2/3 spawn)   AppliedInputContexts@+0x560 Num=0  EMPTY
+0x2868F09E4A0  outer=BP_LokiPlayerController_Dev_C  (OUR S79 Phase-2/3 spawn)   AppliedInputContexts@+0x560 Num=0  EMPTY
+```
+The two non-active ones are the `BP_LokiPlayerController_Dev_C` instances **we spawned ourselves** (S79 Phase 2 =
+0x2868B5ED8A0, Phase 3 = 0x28690832770) -- never initialised by the game, so their emptiness is expected and tells us
+nothing new about the game's IMC. ⇒ No live object NAMES an IMC asset; the shortcut is closed.
+★ **But it CORROBORATES S80g from a 4th independent angle:** NOT ONE `PlayerInput` in the entire process has EVER had a
+mapping context applied. Combined with (a) zero IMC assets loaded, (b) zero of 14,921 BP fns calling AddMappingContext,
+and (c) no IMC-typed property on hero/PC -- the native load+add path never ran ANYWHERE in this session. Exactly what you
+expect from a client that never deployed into a match. **The S80g gap is real and now quadruply confirmed.**
+⇒ **The catalog route is the ONLY route left** (and the pieces are in hand: `AddMappingContext` @0x28504E423A0 is NATIVE
+so `CallNative` can call it; subsystem 0x285C4460200 exists). Get the IMC asset path from **`tools/extractor`**
+(`enumerate`/`names`/`namesall`) -- NOT from `docs/game-map.md` (8.7 KB, a 42-category INDEX, not the 68,228-asset list;
+grepping it returns 0 and proves nothing). Then load + `AddMappingContext(subsystem, imc, priority, options)` with
+`BuildOutParms` for the `FModifyContextOptions` struct param. Secondary: `tools/re/disasm_live.py` on
+`AddMappingContext`'s exec thunk + `usmapdump callxref` to find the NATIVE add-site (which would also reveal how the game
+picks the IMC).
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
