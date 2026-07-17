@@ -702,6 +702,41 @@ them. 0 of 14,921 loaded BP fns call `AddMappingContext` ⇒ the load+add is **N
 4. Once an IMC is in hand: it is loadable + `AddMappingContext` @0x28504E423A0 is NATIVE ⇒ `CallNative(subsystem=
    0x285C4460200, imc, priority, options)`, with `BuildOutParms` for the `FModifyContextOptions` struct param.
 
+**S80j -- native add-site hunt: PARTIAL. The KEY structural fact is found (the call is VIRTUAL, so callxref cannot work
+as planned), but the add-site is NOT yet located. Nothing here is a wall.**
+- **`execAddMappingContext` = `base+0x4BFA590`** (= `AddMappingContext` UFunction 0x28504E423A0, `Func@+0xE0`;
+  ParmsSize=13 = IMC ptr(8) + Priority int32(4) + packed options(1)). Its body is the standard FFrame param-unpack
+  (`base+0x1345FB0`/`0x1345FE0` = FFrame::Step helpers), then:
+```
++0x4BFA667  mov rax,[rbx+0x38]      ; rbx = FFrame
++0x4BFA66B  lea r9,[rsp+0x40]       ; &Options (FModifyContextOptions)
++0x4BFA670  mov r8d,[rsp+0x48]      ; Priority (int32)
++0x4BFA678  mov rdx,[rsp+0x58]      ; the InputMappingContext*
++0x4BFA67D  mov rcx,rsi             ; this (interface-adjusted Context)
++0x4BFA696  mov rax,[rsi]           ; vtable
++0x4BFA699  call qword ptr [rax+0x98]   ; <<<< VIRTUAL, slot 19 (0x98/8)
+```
+- ★★★ **`AddMappingContext` is a VIRTUAL interface call (`IEnhancedInputSubsystemInterface`, vtable slot 19).** ⇒ **the
+  planned `usmapdump callxref <AddMappingContext>` CANNOT find the add-site** -- native callers dispatch through the
+  vtable, not a fixed address. This retires that plan; it is a fact about the target, not a wall.
+- **Candidate concrete impl: `base+0xB9E1F0`** = slot 19 of the vtable at `subsystem+0x00` (subsystem 0x285C4460200).
+  ★ **UNVERIFIED -- DO NOT TRUST IT YET.** `UEnhancedInputLocalPlayerSubsystem : ULocalPlayerSubsystem,
+  IEnhancedInputSubsystemInterface` is MULTIPLE INHERITANCE, so the INTERFACE vptr is at some obj+N, NOT necessarily
+  +0x00. Slot 19 of the *UObject* vtable is a completely different function. **This is exactly the shape of the S54
+  "slot 56 = ProcessEvent" error that faked wall #2 -- verify before building on it.** To verify: scan obj+0x00..+0x60
+  for all vptrs, and confirm which vtable's slot 19 disassembles as an AddMappingContext impl (it should touch
+  `AppliedInputContexts`/rebuild `EnhancedActionMappings`), or find the interface vptr by matching against
+  `Default__EnhancedInputLocalPlayerSubsystem`.
+- **String hunt for the IMC asset: negative but WEAK.** `usmapdump strings IMC_` -> **0 hits**. `usmapdump wstrings
+  MappingContext` -> 12 hits, but ALL are heap FName/reflection metadata (`"InputMappingContext"` as a type name,
+  outside the main module), NOT asset paths. Neither rules out IMC assets: a `FSoftObjectPath` may be stored in a
+  cooked asset/config rather than as an exe literal, and the assets need not be named `IMC_*`.
+**NEXT:** (1) verify the interface vptr offset + slot-19 impl (above), THEN `usmapdump callxref <verified impl>` for the
+native add-site -- it will NAME the IMC. (2) In parallel, regenerate a COMPLETE `AssetRegistry.bin` (the current one is
+partial: 0 DependsNode / 0 PackageData) and re-run `assetregistry candidates InputMappingContext`, **using
+`candidates Mission` as the canary -- until Mission returns hits, an Input 0 means nothing.** (3) `extractor namesall
+InputMappingContext` harvests NameMap vocabulary across assets and can find the type where path/class searches fail.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
