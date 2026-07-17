@@ -147,9 +147,56 @@ void ALokiStubGameMode::InitGameState()
 	       *GS->GetName(), Now);
 }
 
+// S80: walk the round phase SpawnSelect(4) -> SpawnReveal(5) -> Lineup(6) -> Combat(7), one step every
+// kPhaseStepSecs, starting once a client has joined. See the header note for why a STATIC seed can't work:
+// 4 alone leaves the client in the pre-drop hold; a cold 7 leaves the loading screen up (S73/S77). The real
+// server progresses through the states and the client's own phase machine follows that progression — this
+// mirrors the "pre-drop view for a while, then it transitions to the world" behaviour of the retail game.
+void ALokiStubGameMode::AdvanceRoundPhase()
+{
+	ALokiGameState* GS = Cast<ALokiGameState>(GameState);
+	if (!GS) { return; }
+
+	static const ELokiRoundPhase kSeq[] = {
+		ELokiRoundPhase::EGP_SpawnReveal,   // 5
+		ELokiRoundPhase::EGP_Lineup,        // 6
+		ELokiRoundPhase::EGP_Combat,        // 7 — the playing phase
+	};
+	const int32 kNum = UE_ARRAY_COUNT(kSeq);
+	if (PhaseStep >= kNum)
+	{
+		if (UWorld* W = GetWorld()) { W->GetTimerManager().ClearTimer(PhaseTimer); }
+		UE_LOG(LogLokiStubGM, Display, TEXT("AdvanceRoundPhase: sequence complete, holding at EGP_Combat(7)."));
+		return;
+	}
+
+	const ELokiRoundPhase Next = kSeq[PhaseStep++];
+	GS->CurrentPhase = Next;
+	GS->ForceNetUpdate();   // push it now; don't wait for the next natural rep window
+	UE_LOG(LogLokiStubGM, Display,
+	       TEXT("AdvanceRoundPhase: step %d -> CurrentPhase=%d  (4=SpawnSelect 5=SpawnReveal 6=Lineup 7=Combat)"),
+	       PhaseStep, (int32)Next);
+}
+
 void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
+
+	// S80: kick off the round-phase progression now that a client is actually here. Delay the first step
+	// so the client finishes hydrating its GameState replica + clears the loading screen at SpawnSelect(4)
+	// before we start stepping toward Combat(7).
+	if (UWorld* W = GetWorld())
+	{
+		const float kPhaseFirstDelay = 12.f;   // pre-drop hold, mirroring retail's "wait for players to load"
+		const float kPhaseStepSecs   = 4.f;    // then one step every few seconds
+		PhaseStep = 0;
+		W->GetTimerManager().ClearTimer(PhaseTimer);
+		W->GetTimerManager().SetTimer(PhaseTimer, this, &ALokiStubGameMode::AdvanceRoundPhase,
+		                              kPhaseStepSecs, /*bLoop=*/true, /*FirstDelay=*/kPhaseFirstDelay);
+		UE_LOG(LogLokiStubGM, Display,
+		       TEXT("PostLogin: round-phase progression armed (first step in %.0fs, then every %.0fs -> EGP_Combat)."),
+		       kPhaseFirstDelay, kPhaseStepSecs);
+	}
 
 	// Session 37 experimented with NetDormancy here as Option A' — result
 	// was negative (see docs/session-37-option-a-negative.md). Kept the
