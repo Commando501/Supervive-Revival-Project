@@ -533,6 +533,37 @@ honest in-process mesh report confirms the RPM finding:
 `CountHeroSkeletals()` is now loudly documented as BROKEN in-source (filter widened to "MeshComponent") — do not use it
 to conclude "no mesh"; read `ACharacter::Mesh` by reflection instead.
 
+**★ S80e — `RefreshLocalControl`'s ubergraph: it's TINY and it is NOT input either.** (18 B) ->
+`ExecuteUbergraph_BP_LokiHeroCharacter(31477)`; 31477 = `ClientOnly` gate + `JumpIfNot -> 30964` (again: FOLLOW THE
+JUMP — 31543+ is an unrelated chunk, and 31634 is TryLocalControlSetup's entry). Real body @30964:
+```
+30964  LocalVirtualFunction 'RefreshViewFinder' ()
+30978  Context: Default__AkGameplayStatics -> SetState('BeingExecuted-False')
+31019  PopExecutionFlow                                  // end of chunk -- that's the WHOLE function
+```
+⇒ `RefreshLocalControl` = a view-finder refresh + one audio state. **No Enhanced-Input mapping-context anywhere.**
+⇒ **NEITHER `TryLocalControlSetup` NOR `RefreshLocalControl` binds input** — three name-based assumptions have now been
+falsified by dumping (the S79 mesh chain, TryLocalControlSetup, RefreshLocalControl). **Stop picking promising-sounding
+function names.**
+★ **BONUS (a genuinely useful chunk found next door, @31020 — `BP_OnRep_PlayerState`):** `ClientOnly` gate ->
+`CallMulticastDelegate OnClientPlayerStateUpdated` -> `TrySetEmoteAudioActor()` -> `BP_AimingVisComponentV2 ->
+InitOnLocalASC()` -> `LetObj LocalPlayerState = <event param>` -> `PopExecutionFlowIfNot IsValid(PlayerState)` ->
+`AbilitySystemBlueprintLibrary::GetAbilitySystemComponent(PlayerState)` -> `OnLocalPlayerState_ASCInitialized()`.
+**That's the ASC/GAS local-init path** — the thing abilities/input actually hang off, and it's driven by
+`BP_OnRep_PlayerState` (a `LocalFinalFunction` on `LokiHeroCharacter`, i.e. directly callable via `CallBP`). S79's
+MODE_CONTEXT already set the hero's `PlayerState @+0x3D8` + `LocalPlayerState @+0x2860` from the native PC's replicated
+`LokiPlayerState`, so this path is plausibly runnable NOW.
+★ **NEXT (find input by SEARCHING, not naming):** scan the whole 42271-byte `ExecuteUbergraph_BP_LokiHeroCharacter`
+Script (and the native PC's class chain) for operand pointers whose names contain `MappingContext` / `EnhancedInput` /
+`InputAction` — `ubergraph_dump.py`'s `ofull()` already resolves every operand, so a scan is trivial. Also check the
+NATIVE side: UE binds Enhanced Input in `APawn::SetupPlayerInputComponent` / `PawnClientRestart` and
+`UEnhancedInputLocalPlayerSubsystem::AddMappingContext` (usually from the PC). NB S79 4d RAW-WIRED `nativePC->Pawn`/
+`hero->Controller`, which BYPASSED `AController::Possess`/`PossessedBy` -> `PawnClientRestart` -> input setup; 4g called
+`ClientRestart` and it "fired clean", but that was never verified to have bound anything.
+★ Also worth a look: @31553 the graph references `InstanceVariable SpringArmComponent` (`CameraLagSpeed` @0x41900000=18.0,
+`CameraLagMaxDistance` @0x437A0000=250.0) — S79 4e's census concluded "the hero has NO USpringArmComponent". Given the
+CountHeroSkeletals precedent, **that census deserves the same re-verification** (read the property by reflection).
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
