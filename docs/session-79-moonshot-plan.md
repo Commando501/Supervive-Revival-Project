@@ -939,6 +939,52 @@ S72-S79 record + S80g authored by me), plus S80n (a false POSITIVE, retracted in
 3. Only then decide what to call. Remember S80n: **a byte pattern is not a field, and a plausible name is not a
    mechanism.** Confirm by resolved class name or a disassembled offset.
 
+**S80q -- ★★★★★ THE INPUT MECHANISM, FOR REAL THIS TIME (measured, not inferred): SUPERVIVE uses LEGACY FName-based
+InputAction events, and they live ONLY on the BP PlayerController classes -- the DS client's ACTIVE PC (native
+`LokiPlayerController`) has ZERO of them. This is S79's wall #2, confirmed from the input side, and it precisely
+characterizes the Phase-3/4 tension.**
+- **First: S80p was WRONG and is CORRECTED.** `ListenForInputAction`/`SetInputActionPriority`/`SetInputActionBlocking`/
+  `StopListeningForInputAction` are **stock engine `UUserWidget` UMG functions** (legacy FName input), NOT a bespoke
+  Loki API -- `find_func.py` shows them owned by `UserWidget`. I saw them in the same `nameid` block as the Loki names
+  and misattributed them. (`LokiInputActionIdentifier` / `LokiUniqueInputActionRule` ARE real, but they are merely
+  `ScriptStruct`s in `/Script/Loki` -- data types, not an entry point.)
+- ★★★ **MEASURED (`find_func.py 48788 <base> inputaction` -> 137 matches). Owner tally:**
+```
+  39  BP_LokiPlayerController_C        <- InpActEvt_*_K2Node_InputActionEvent
+  25  BP_LokiSpectator_C
+  24  Comp_PlayerController_Emotes_C
+  13  CommonButtonBase                 (UI)
+   8  EnhancedInputLibrary             (engine lib -- reflection only)
+   6  UserWidget                       (engine UMG)
+   6  BP_LokiPlayerController_Code_C
+   3  CommonActionWidget               (UI)
+  --  LokiPlayerController (NATIVE)    <- ***ABSENT ENTIRELY: ZERO input events***
+```
+  The events are `InpActEvt_<Name>_K2Node_InputActionEvent`: Sprint, Ping, Recall, Use, ZoomCameraIn/Out, Toggle Map,
+  ToggleScoreboard, ToggleHUD, ToggleAbilityOverlay, SmartZoom, OptionalAbility, PlaceSpray, OpenGlobalShop,
+  LookAtCapturePoint, ShowCheats, ShowVOPlayer, UseUtilitySlot1/2, UpgradeSpell_{Main,Secondary,Ultimate,Dash,DodgeRoll},
+  UpgradeEquipment{1,2,4,5,Boots}, ...
+- ★★★ **`K2Node_InputActionEvent` is the LEGACY UE input node** -- FName-based `InputAction` events bound via
+  `UInputComponent::BindAction(FName, ...)`, keys mapped from config. **NOT Enhanced Input. NOT IMCs.** ⇒ **This is WHY
+  there are no IMC assets: the game never needed any.** The `EnhancedInputComponent`/`EnhancedPlayerInput` classes are
+  present because UE5.4 defaults to them, but SUPERVIVE drives gameplay input through the legacy action path.
+  **S80g is now conclusively dead** (fake wall #7, mine) -- and so is the entire S80h-S80o IMC hunt.
+- ★★★★★ **THE STRUCTURAL RESULT (this is REAL -- not an artifact):**
+  * **RENDER/CAMERA follows the NATIVE PC** (S79 4d: the view target only held once `nativePC->Pawn == hero`).
+  * **INPUT EVENTS exist ONLY on the BP PC** (`BP_LokiPlayerController_C` 39 + `_Code_C` 6 + Emotes comp 24).
+  * S79 4d picked the native PC ⇒ **got the camera, lost input.** S79 Phase 3/4 used `BP_LokiPlayerController_Dev_C`
+    (inherits the 39 events) ⇒ **would have input, but no camera.**
+  ⇒ **The two halves of a playable hero currently live on DIFFERENT PlayerController objects.** That is not a wall; it is
+  a coherent trade-off with an untried resolution -- **S79's own candidate lever (c): run the BP_Dev PC's local-player
+  init (`SpawnPlayerCameraManager` / `InitInputSystem`) so the swap carries the RENDER state too**, then swap
+  `LocalPlayer->PlayerController` to the BP_Dev PC (the S79 Phase-3 swap ALREADY HELD for 10s with no revert) and
+  hand it the hero.
+**NEXT:** (1) verify the PC class chain (`LokiPlayerController` -> `BP_LokiPlayerController_Code_C` ->
+`BP_LokiPlayerController_C` -> `BP_LokiPlayerController_Dev_C`?) with `comp_census.py`/`ufunc_survey.py` -- confirm
+`BP_Dev` really inherits the 39 events. (2) On the S79-spawned BP_Dev PC (0x28690832770), find + call the local-player
+init natives (`SpawnPlayerCameraManager`, `InitInputSystem`, `SetupInputComponent`) via `CallNative`/`CallBP`. (3) Re-do
+the Phase-3 swap and check BOTH camera AND WASD. **The pieces are all built; this is an assembly problem now.**
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
