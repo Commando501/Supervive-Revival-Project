@@ -495,6 +495,44 @@ this session — BP calls fault / ProcessEvent neutered / deploy needs match-ini
 tool bugs. Read-only tools that cost seconds and need no injection: `ufunc_survey.py` (is it runnable?), `script_dump.py`
 (what does it DO?), `ubergraph_dump.py` (what does the BP graph DO?), `disasm_live.py` (what does the native fn DO?).**
 
+**★★★★★ S80d — `TryLocalControlSetup`'s ubergraph DECODED + a 5th tool bug caught BEFORE it faked a wall (FFrame::FlowStack).**
+`TryLocalControlSetup` (18 B) -> `ExecuteUbergraph_BP_LokiHeroCharacter(31634)`; entry 31634 is just `Jump -> 29873`
+(everything printed linearly after 31639 is UNRELATED graph that merely follows in memory — always FOLLOW THE JUMP).
+Real body @29873:
+```
+29873  CallMath ClientOnly [LokiBlueprintLibrary] (Self) -> OutputExecs
+29924  JumpIfNot -> 29939 ; 29938 PopExecutionFlow          // bail if OutputExecs != 0 (not a client)
+29939  LocalVirtualFunction 'RefreshLocalControl' ()
+29953  LetBool CallFunc_IsLocallyControlled_ReturnValue = VirtualFunction 'IsLocallyControlled' ()
+29977  ★ PopExecutionFlowIfNot IsLocallyControlled          // <<<< THE GATE
+29987  PushExecutionFlow -> 30032
+30058  AkGameplayStatics::SetState('InEOGScreen-False'), SetState('CelebrationScreen-None')
+30140  BindDelegate 'Brush Tracker Entered' / 'Brush Tracker Exited' (Self)
+30186  SetArray [BP_Brush_C, BP_Brush_Prop_C, BP_BrushTall_C] ; 30374 Let Ally ...
+```
+★ **`TryLocalControlSetup` is NOT the Enhanced-Input mapping-context setup** — it does audio states, brush-tracker
+delegates, MPC scalar params and Ally setup. That was ANOTHER name-based assumption, wrong again. The input binding is
+elsewhere; find it by DUMPING, not by naming.
+★ **THE GATE = `APawn::IsLocallyControlled()` = `Controller && Controller->IsLocalController()`. LIVE-VERIFIED IT SHOULD
+PASS:** `hero->Controller @+0x400 = 0x285752F50B0` (native `LokiPlayerController`, still wired from S79 4d),
+`controller->Pawn == hero`, controller `Role=AutonomousProxy(2)` (on a client an AutonomousProxy PC IS the local
+controller), hero `Role=Authority(3)`. So both gates pass.
+★★★ **BUG 5 (MINE, caught by dumping rather than by a failure): `CallBP` inherited a STALE `FFrame::FlowStack`.**
+Ubergraphs are full of `EX_PushExecutionFlow`/`EX_PopExecutionFlow`, which operate on `FFrame::FlowStack`. `CallBP`
+copied the captured template frame and never reset it, so the graph's bail paths (`PopExecutionFlow` @29938, 29977)
+popped a GARBAGE offset from whatever call we piggybacked and jumped into arbitrary bytecode — while still reporting
+`fault=0`. **A BP call MUST start with an EMPTY FlowStack** ("empty == return" is what the bail paths rely on).
+**FIXED:** `memset(frame+0x48,0,0x30); Max=8; PreviousFrame=0; CurrentNativeFunction=0`.
+**Layout (confirmed by ARITHMETIC, not guessed):** UE5 FFrame `MostRecentPropertyContainer@0x40`, **`FlowStack@0x48`**
+(`TArray<CodeSkipSizeType,TInlineAllocator<8>>` = Inline[32]@+0x00, Secondary@+0x20, Num@+0x28, Max@+0x2C = 0x30 bytes),
+`PreviousFrame@0x78`, `OutParms@0x80`, `PropChain@0x88`, `CurrentNativeFunction@0x90` — and `0x48+0x30 = 0x78/0x80/0x88`
+matches this project's long-established `FF_OUTPARMS=0x80`/`FF_PROPCHAIN=0x88` EXACTLY.
+★ Re-ran with the fix (live, PID 48788, no crash): all four deploy fns RAN clean on a proper empty flow stack, and the
+honest in-process mesh report confirms the RPM finding:
+`hero->Mesh @+0x450 = 0x286E0753B20 [BP_Assault_DefaultSKMeshComponent_C] SkeletalMesh='SK_Assault_Default_LOD1'`.
+`CountHeroSkeletals()` is now loudly documented as BROKEN in-source (filter widened to "MeshComponent") — do not use it
+to conclude "no mesh"; read `ACharacter::Mesh` by reflection instead.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
