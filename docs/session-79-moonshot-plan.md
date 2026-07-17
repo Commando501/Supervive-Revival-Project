@@ -1063,6 +1063,34 @@ different register form my filter missed (e.g. a 32-bit or `lea`+`mov [rbx],`).
    and were both wrong -- the pattern match is necessary but NOT sufficient.**
 **Status: nothing was called; the live session is untouched by this step.**
 
+**S80t -- `SwitchController` -> `SetPlayer` slot: NOT FOUND YET (honest negative). Nothing called. But the SEARCH IS
+NARROWED to a precise, mechanical filter -- this is a 15-minute job next session, not research.**
+- **LocalPlayer vtable = base+0x8117130** (live LocalPlayer **0x28541940E00**). Discarding slots shared with a plain
+  UObject (used `EnhancedPlayerInput` 0x285F0307720) leaves ~11 Player-specific slots that touch `[reg+0x38]`
+  (`UPlayer::PlayerController`, S79 3a) AND make a virtual call:
+  slots **89, 93, 95, 96, 102, 106, 108, 109, 110, 112** (+ slot 0). Their virtual-call offsets seen so far:
+  `[rax+0x60]`, `[rax+0x2d8]`, `[rax+0x370]`, `[rax+0x338]`, `[rax+0x330]`, `[rax+0x188]`, `[rax+0x340]`, `[rax+0x368]`,
+  `[rax+0x28]`.
+- **Slot 95 (base+0x39E90E0) REFUTED by disasm:** takes THREE args (`rcx`,`rdx`,`r8d`), writes `[rsi+0x80]=rdi`, and its
+  virtual call `[rax+0x338]` is on **`rsi` (== `this`)**, NOT on arg2. **My filter was too loose -- it matched a virtual
+  call on ANYTHING, including `this`.**
+- ★★★ **THE CORRECT, TIGHT FILTER (use this next time):** `UPlayer::SwitchController(APlayerController* PC)` is
+  ```
+  if (this->PlayerController) this->PlayerController->Player = NULL;   // read [rcx+0x38], write [old+0x458]=0
+  PC->SetPlayer(this);                                                 // *** mov rcx,rdx ; mov rax,[rdx] ; call [rax+N]
+  ```
+  ⇒ match a slot that (1) is SMALL, (2) reads `[rcx+0x38]`, (3) writes 0 to `[reg+0x458]`, and **(4) loads its vtable
+  from ARG2 (`mov rax,[rdx]` with `mov rcx,rdx`) and calls `[rax+N]`** -- the call target must be reached via **rdx**,
+  not rcx/rsi/this. **That `N/8` IS `SetPlayer`'s slot** on `APlayerController`. Then VERIFY the slot by disasm on the
+  PC vtable (base+0x8A1AEE0): SetPlayer must take rdx=InPlayer, WRITE it (not zero) to `+0x458`, and call several fns.
+- **Prior refutations (do not revisit):** PC vtable **slot 183** (base+0x3C33230) = reads Player only; PC vtable
+  **slot 153** (base+0x3C421D0) = a TEARDOWN that writes ZERO to `Player@+0x458` and `oldPlayer->PlayerController@+0x38`
+  (it did independently RE-CONFIRM both S79 3a offsets, which is worth having).
+- **Alternative if the filter still misses:** `SetPlayer` may not be virtual/inlined here -- then find it via
+  `ULocalPlayer::SpawnPlayActor`, or skip `SetPlayer` entirely and call its CONSTITUENTS directly
+  (`SpawnPlayerCameraManager` + `InitInputSystem` are the only two that matter for camera+input).
+**Session status: 3 candidate addresses examined, 3 refuted, NOTHING called. The live session is untouched.**
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
