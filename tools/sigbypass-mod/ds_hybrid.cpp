@@ -187,7 +187,17 @@ constexpr int MODE_DEVSWAP=34;
 // Read-mostly: the only writes are the MoveForward/MoveRight calls themselves (the game's own movement entry points).
 constexpr int MODE_MOVETEST=35;
 static const unsigned kMoveMode = 1;   // 1=MOVE_Walking (real ground movement) 3=Falling 5=Flying
+static const int      kPlayableSecs = 180;   // how long MODE_PLAYABLE holds WASD open
 static const float    kAttrMoveSpeed = 500.0f;  // MoveSpeed attribute value to inject (all live sets read 0)
+// MODE_PLAYABLE (S80): the payoff. Everything the hero needs, then REAL WASD.
+// Setup (once, on the game thread): find/adopt a BP_HERO_Assault_C -> wire it to the NATIVE PC (Pawn@+0x3F8 /
+// Controller@+0x400; NEVER touch the PC's Player@+0x458 — that kills the NetConnection, S80) -> LivingState=Alive ->
+// borrow the Default__LokiPlayerState_HeroAffiliated CDO's ASC/AttributeSet/AttributeSetHealth into the hero's three
+// storages (@+0xF00/+0xF08/+0xF10) -> write the movement attribute block -> SetMovementMode(MOVE_Walking).
+// Then per-frame (S78 vtable hook on the CameraManager — the CMC consumes+clears ControlInputVector every tick, so
+// input MUST be fed per-frame; the sparse ProcessInternal hook only produced crawling motion):
+//   poll WASD -> build a world-space direction from the camera yaw -> APawn::AddMovementInput(dir,1.0,bForce=true).
+constexpr int MODE_PLAYABLE=36;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -1258,7 +1268,11 @@ static volatile long g_inFwd=0,g_inBack=0,g_inLeft=0,g_inRight=0,g_inUp=0,g_inDn
 static double    g_stepSp=26.0, g_stepSpV=18.0;
 static bool IsGameFocused(){ HWND fg=GetForegroundWindow(); DWORD pid=0; if(fg) GetWindowThreadProcessId(fg,&pid); return pid==GetCurrentProcessId(); }
 static void ResolveSpectatorCam(){
-    static const char* kKeys[]={"Loading","LoadScreen","DropIn","Deploy","MatchLoad","Splash","Intro","Startup","Transition","BlackScreen","Loadout"};
+    // S80: added the PREDROP family. The DS stub seeds EGP_SpawnSelect, so after the MatchTransition screens are
+    // collapsed the client sits on the full-screen drop-leader UI (`WBP_UI_PredropScreen` — the "BRALL / DROP LEADER"
+    // art), which hides the world entirely. "DropIn" does NOT match "Predrop"/"DropPhase", so those never got hidden.
+    static const char* kKeys[]={"Loading","LoadScreen","DropIn","Deploy","MatchLoad","Splash","Intro","Startup","Transition","BlackScreen","Loadout",
+                                "Predrop","DropPhase","DropLeader","DropPod","DropPlane"};
     uintptr_t widgetCls=0; int total=0;
     ForEachObject([&](uintptr_t o)->bool{
         uintptr_t c=ClassOf(o); if(!LooksLikePtr(c))return false;
@@ -1444,10 +1458,16 @@ static bool SpawnMyCamera(){
 //   1. seed the fly position from the pawn's WORLD location on the first tick (no origin teleport),
 //   2. refresh the real view yaw from the getter (throttled) so the worker's heading is correct,
 //   3. apply the move ONLY when the worker marked it dirty (i.e. the user is flying) — not 720x/sec to a stale pos.
+// ===== S80 MODE_PLAYABLE: per-frame WASD -> AddMovementInput on the hero (declared here; defined after the primitives) =====
+static void PlayableTick();
 extern "C" void OnVtableTick(){
     if(GetCurrentThreadId()!=g_gameTid) return;
     if(g_vtBusy) return; g_vtBusy=1;
     long t=InterlockedIncrement(&g_vtTicks);
+    // ★ S80: MODE_PLAYABLE drives the HERO from real keyboard state every frame. Movement input must be fed
+    // per-frame (the CMC consumes + clears ControlInputVector each tick), which is exactly what this vtable
+    // hook provides and what the sparse ProcessInternal hook could not.
+    if(kMode==MODE_PLAYABLE){ PlayableTick(); g_vtBusy=0; return; }
     // 1. seed from world location once
     if(!g_spSeededVt){
         if(g_glaThunk && IsHeapObj(g_spPawn)){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
@@ -2518,6 +2538,158 @@ static void DoMoveTest(){
         Marker("[MT] === done ===\r\n"); g_done=1;
     }
 }
+// ===== S80 MODE_PLAYABLE — setup + per-frame WASD (see the MODE_PLAYABLE note) =====
+static uintptr_t g_plHero=0, g_plPC=0, g_plCMC=0;
+static void* g_plAmiFn=0;  static uintptr_t g_plAmiThunk=0, g_plAmiCh=0;
+static void* g_plVtFn=0;   static uintptr_t g_plVtThunk=0, g_plVtCh=0; static uint32_t g_plVtTgt=0, g_plVtBlend=8;  // SetViewTargetWithBlend
+static uint32_t g_plVecOff=0, g_plScaleOff=0x18, g_plForceOff=0x1C;
+static volatile long g_plReady=0, g_plFrames=0, g_plMoves=0;
+static double g_plYaw=0.0;
+// One-shot setup, runs on the game thread from the PI hook.
+static void DoPlayableSetup(){
+    if(g_plReady) return;
+    Marker("[PL] === S80 MODE_PLAYABLE: assembling a movable hero, then WASD ===\r\n");
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+    if(!LooksLikePtr(L)){ Marker("[PL] no LocalPlayer\r\n"); return; }
+    g_plPC=SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0;
+    if(!LooksLikePtr(g_plPC)){ Marker("[PL] L->PC null\r\n"); return; }
+    g_plHero=FindInstExactClass("BP_HERO_Assault_C");
+    // ★ S80: spawn the hero OURSELVES if none is live. The game GCs a hand-spawned hero when it advances a phase
+    // (LOADING -> MatchTransition -> Predrop), and MODE_SPAWN_P2 can't help: it hard-requires
+    // BP_LokiPlayerController_Dev_C, whose CLASS gets UNLOADED by that same phase change (resolve FAIL devCls=0x0).
+    // MODE_PLAYABLE never needs the BP_Dev PC — it drives the NATIVE PC — so only the hero class matters here.
+    if(!LooksLikePtr(g_plHero)){
+        Marker("[PL] no live hero — spawning one (SPAWN_P2 can't: it requires the now-unloaded BP_Dev PC class)\r\n");
+        uintptr_t heroCls=FindObjExact("BP_HERO_Assault_C"); if(!heroCls) heroCls=FindHeroPawnClass();
+        g_p2World=FindInstClassSub("ProgressionManager"); if(!g_p2World) g_p2World=FindInstClassSub("LokiGameState");
+        g_gsCDO=FindObjExact("Default__GameplayStatics");
+        if(!heroCls||!g_p2World||!g_gsCDO){
+            Markerf("[PL] cannot spawn: heroCls=0x%llX world=0x%llX gsCDO=0x%llX\r\n",
+                    (unsigned long long)heroCls,(unsigned long long)g_p2World,(unsigned long long)g_gsCDO); return; }
+        uintptr_t gc=ClassOf(g_gsCDO);
+        ResolveFunc(gc,"BeginDeferredActorSpawnFromClass",&g_beginFn,&g_beginThunk,&g_beginChild);
+        ResolveFunc(gc,"FinishSpawningActor",&g_finishFn,&g_finishThunk,&g_finishChild);
+        if(g_beginChild){ g_oBWorld=g_offParam(g_beginChild,"WorldContextObject",0); g_oBClass=g_offParam(g_beginChild,"ActorClass",8); g_oBXform=g_offParam(g_beginChild,"SpawnTransform",0x10); g_oBColl=g_offParam(g_beginChild,"CollisionHandlingOverride",0x70); g_oBOwner=g_offParam(g_beginChild,"Owner",0x78); g_oBRet=g_offParam(g_beginChild,"ReturnValue",0x88); }
+        if(g_finishChild){ g_oFActor=g_offParam(g_finishChild,"Actor",0); g_oFXform=g_offParam(g_finishChild,"SpawnTransform",0x10); g_oFRet=g_offParam(g_finishChild,"ReturnValue",0x70); }
+        // spawn near the PC's current pawn if it has one, else the origin-ish default
+        double sx=0.0, sy=0.0, sz=600.0;
+        uint32_t po2=PropOffsetOnClass(ClassOf(g_plPC),"Pawn"); uintptr_t cp=(po2!=0xFFFFFFFF)?*(uintptr_t*)(g_plPC+po2):0;
+        if(LooksLikePtr(cp)){ void* gf=0; uintptr_t gt=0,gch=0; ResolveFunc(ClassOf(cp),"K2_GetActorLocation",&gf,&gt,&gch);
+            if(gt){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                if(!CallGuarded(gf,gt,gch,(void*)cp,g_pbuf,g_rbuf)){ double*R=(double*)g_rbuf; if(R[0]||R[1]||R[2]){ sx=R[0]; sy=R[1]; sz=R[2]+150.0; } } } }
+        g_plHero=P2SpawnActor(heroCls,sx,sy,sz);
+        Markerf("[PL] spawned hero=0x%llX at (%.0f,%.0f,%.0f)\r\n",(unsigned long long)g_plHero,sx,sy,sz);
+    }
+    if(!LooksLikePtr(g_plHero)){ Marker("[PL] hero spawn FAILED — aborting\r\n"); return; }
+    uint32_t pawnOff=PropOffsetOnClass(ClassOf(g_plPC),"Pawn");   if(pawnOff==0xFFFFFFFF) pawnOff=0x3F8;
+    uint32_t ctlOff =PropOffsetOnClass(ClassOf(g_plHero),"Controller"); if(ctlOff==0xFFFFFFFF) ctlOff=0x400;
+    if(SafeReadable((void*)(g_plPC+pawnOff),8)) *(uintptr_t*)(g_plPC+pawnOff)=g_plHero;   // native PC drives the hero
+    if(SafeReadable((void*)(g_plHero+ctlOff),8)) *(uintptr_t*)(g_plHero+ctlOff)=g_plPC;   // (Player@+0x458 untouched!)
+    if(SafeReadable((void*)(g_plHero+0x1090),1)) *(uint8_t*)(g_plHero+0x1090)=1;          // LivingState = Alive
+    if(SafeReadable((void*)(g_plHero+0x1BE8),1)) *(uint8_t*)(g_plHero+0x1BE8)=0;          // clear pre-drop hide
+    Markerf("[PL] PC=0x%llX hero=0x%llX wired (Pawn@+0x%X, Controller@+0x%X)\r\n",
+            (unsigned long long)g_plPC,(unsigned long long)g_plHero,pawnOff,ctlOff);
+    // --- the GAS fix: borrow the CDO's subobjects + supply the movement attribute block ---
+    uintptr_t ha=FindObjExact("Default__LokiPlayerState_HeroAffiliated");
+    if(LooksLikePtr(ha)){
+        uint32_t a1=PropOffsetOnClass(ClassOf(ha),"AbilitySystemComponent");
+        uint32_t a2=PropOffsetOnClass(ClassOf(ha),"AttributeSet");
+        uint32_t a3=PropOffsetOnClass(ClassOf(ha),"AttributeSetHealth");
+        uintptr_t asc=(a1!=0xFFFFFFFF)?*(uintptr_t*)(ha+a1):0, ats=(a2!=0xFFFFFFFF)?*(uintptr_t*)(ha+a2):0, ath=(a3!=0xFFFFFFFF)?*(uintptr_t*)(ha+a3):0;
+        uint32_t s1=PropOffsetOnClass(ClassOf(g_plHero),"AbilitySystemComponentStorage");
+        uint32_t s2=PropOffsetOnClass(ClassOf(g_plHero),"AttributeSetStorage");
+        uint32_t s3=PropOffsetOnClass(ClassOf(g_plHero),"AttributeSetHealthStorage");
+        if(LooksLikePtr(asc)&&s1!=0xFFFFFFFF) *(uintptr_t*)(g_plHero+s1)=asc;
+        if(LooksLikePtr(ats)&&s2!=0xFFFFFFFF) *(uintptr_t*)(g_plHero+s2)=ats;
+        if(LooksLikePtr(ath)&&s3!=0xFFFFFFFF) *(uintptr_t*)(g_plHero+s3)=ath;
+        if(LooksLikePtr(ats)){
+            struct { const char* n; float v; } A[] = {{"MoveSpeed",kAttrMoveSpeed},{"MaxMoveSpeed",kAttrMoveSpeed},
+                {"MaxAcceleration",50000.0f},{"GroundFriction",8.0f},{"BrakingDecelerationWalking",2048.0f},{"Mass",100.0f}};
+            for(int i=0;i<6;i++){ uint32_t o=PropOffsetOnClass(ClassOf(ats),A[i].n);
+                if(o!=0xFFFFFFFF&&SafeReadable((void*)(ats+o+0x8),8)){ *(float*)(ats+o+0x8)=A[i].v; *(float*)(ats+o+0xC)=A[i].v; } }
+        }
+        Markerf("[PL] GAS wired: ASC=0x%llX AttrSet=0x%llX (+movement attributes written)\r\n",
+                (unsigned long long)asc,(unsigned long long)ats);
+    } else Marker("[PL] HeroAffiliated CDO NOT FOUND — hero will not move\r\n");
+    // --- movement mode + the AddMovementInput handle ---
+    uint32_t cmo=PropOffsetOnClass(ClassOf(g_plHero),"CharacterMovement");
+    g_plCMC=(cmo!=0xFFFFFFFF&&SafeReadable((void*)(g_plHero+cmo),8))?*(uintptr_t*)(g_plHero+cmo):0;
+    if(LooksLikePtr(g_plCMC)){
+        void* sf=0; uintptr_t st=0,sc=0; ResolveFunc(ClassOf(g_plCMC),"SetMovementMode",&sf,&st,&sc);
+        if(st){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); g_pbuf[0]=1; g_pbuf[1]=0;   // MOVE_Walking
+                CallGuarded(sf,st,sc,(void*)g_plCMC,g_pbuf,g_rbuf); }
+        void* gf=0; uintptr_t gt=0,gc=0; ResolveFunc(ClassOf(g_plCMC),"GetMaxSpeed",&gf,&gt,&gc);
+        if(gt){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                CallGuarded(gf,gt,gc,(void*)g_plCMC,g_pbuf,g_rbuf);
+                Markerf("[PL] GetMaxSpeed() = %g  %s\r\n",*(float*)g_rbuf,(*(float*)g_rbuf>0.f)?"<<< MOVEMENT ENABLED":"<<< STILL ZERO"); }
+    }
+    // ★★★ Point the CAMERA at our hero. The "BRALL / DROP LEADER" screen is NOT a widget overlay — collapsing 48/48
+    // widgets left it up, because it is the pre-drop hero PREVIEW: a real 3D model the camera is aimed at (only the
+    // DROP LEADER / Reviver / EMOTE WHEEL text is UI). So the view target must be moved to our world hero.
+    // S79 4d proved this holds once nativePC->Pawn IS the hero (the camera's auto-managed target follows the pawn).
+    ResolveFunc(ClassOf(g_plPC),"SetViewTargetWithBlend",&g_plVtFn,&g_plVtThunk,&g_plVtCh);
+    if(g_plVtCh){ g_plVtTgt=ParamOffset(g_plVtCh,"NewViewTarget"); if(g_plVtTgt==0xFFFFFFFF||g_plVtTgt>200) g_plVtTgt=0;
+                  g_plVtBlend=ParamOffset(g_plVtCh,"BlendTime");  if(g_plVtBlend==0xFFFFFFFF||g_plVtBlend>200) g_plVtBlend=8; }
+    if(g_plVtThunk){
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        *(uint64_t*)(g_pbuf+g_plVtTgt)=(uint64_t)g_plHero; *(float*)(g_pbuf+g_plVtBlend)=0.0f;
+        bool vf=CallGuarded(g_plVtFn,g_plVtThunk,g_plVtCh,(void*)g_plPC,g_pbuf,g_rbuf);
+        Markerf("[PL] SetViewTargetWithBlend(hero) fault=%d (tgt@0x%X blend@0x%X)\r\n",vf,g_plVtTgt,g_plVtBlend);
+    } else Marker("[PL] SetViewTargetWithBlend NOT RESOLVED — camera will stay on the predrop preview\r\n");
+    ResolveFunc(ClassOf(g_plHero),"AddMovementInput",&g_plAmiFn,&g_plAmiThunk,&g_plAmiCh);
+    if(g_plAmiCh){ uint32_t v=ParamOffset(g_plAmiCh,"WorldDirection"), s=ParamOffset(g_plAmiCh,"ScaleValue"), f=ParamOffset(g_plAmiCh,"bForce");
+        if(v!=0xFFFFFFFF&&v<200) g_plVecOff=v; if(s!=0xFFFFFFFF&&s<200) g_plScaleOff=s; if(f!=0xFFFFFFFF&&f<200) g_plForceOff=f; }
+    Markerf("[PL] AddMovementInput thunk=0x%llX (vec@0x%X scale@0x%X force@0x%X)\r\n",
+            (unsigned long long)g_plAmiThunk,g_plVecOff,g_plScaleOff,g_plForceOff);
+    // --- hide the "DROP IN... LOADING" overlay, or the user sees nothing but the loading art (S77 route, proven).
+    // ResolveSpectatorCam() censuses every live UUserWidget and collects the loading-ish ones + resolves
+    // UWidget::SetVisibility; PlayableTick() then re-asserts Collapsed periodically (the game re-shows it).
+    ResolveSpectatorCam();
+    Markerf("[PL] overlay: %d loading-ish widgets found, SetVisibility thunk=0x%llX visOff=0x%X\r\n",
+            g_nLoadW,(unsigned long long)g_svThunk,g_svVisOff);
+    g_plReady=1;
+    Marker("[PL] ★★★ READY — hold W/A/S/D in the game window to move the hero (arrows steer)\r\n");
+}
+// Per-frame, on the game thread (S78 vtable hook). Poll WASD -> AddMovementInput.
+static void PlayableTick(){
+    if(!g_plReady || !g_plAmiThunk || !LooksLikePtr(g_plHero)) return;
+    long f=InterlockedIncrement(&g_plFrames);
+    // Re-assert the loading-overlay hide every ~30 frames (the game re-shows it; one-shot doesn't stick).
+    if(g_svThunk && g_svVisOff!=0xFFFFFFFF && (f%30)==1){
+        int hid=0;
+        for(int i=0;i<g_nLoadW;i++){
+            uintptr_t w=g_loadWidgets[i]; if(!SafeReadable((void*)w,0x30)) continue;
+            uintptr_t wc=ClassOf(w); if(!LooksLikePtr(wc)||!SuperChainHas(wc,"UserWidget")) continue;
+            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            *(uint8_t*)(g_pbuf+g_svVisOff)=1;                       // ESlateVisibility::Collapsed
+            if(!CallGuarded(g_svFn,g_svThunk,g_svChild,(void*)w,g_pbuf,g_rbuf)) hid++;
+        }
+        if(f<40) Markerf("[PL] overlay hide: %d/%d widgets collapsed\r\n",hid,g_nLoadW);
+    }
+    if(GetAsyncKeyState(VK_LEFT)&0x8000)  g_plYaw-=2.0;
+    if(GetAsyncKeyState(VK_RIGHT)&0x8000) g_plYaw+=2.0;
+    double r=g_plYaw*3.14159265358979/180.0, c=cos(r), s=sin(r);
+    double dx=0,dy=0;
+    if(GetAsyncKeyState('W')&0x8000){ dx+=c; dy+=s; }
+    if(GetAsyncKeyState('S')&0x8000){ dx-=c; dy-=s; }
+    if(GetAsyncKeyState('D')&0x8000){ dx-=s; dy+=c; }
+    if(GetAsyncKeyState('A')&0x8000){ dx+=s; dy-=c; }
+    // Re-assert the view target periodically: the predrop phase re-pins the camera to its hero preview.
+    if(g_plVtThunk && (f%40)==5){
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        *(uint64_t*)(g_pbuf+g_plVtTgt)=(uint64_t)g_plHero; *(float*)(g_pbuf+g_plVtBlend)=0.0f;
+        CallGuarded(g_plVtFn,g_plVtThunk,g_plVtCh,(void*)g_plPC,g_pbuf,g_rbuf);
+    }
+    if(dx==0.0 && dy==0.0) return;                       // no key held -> feed nothing
+    double m=sqrt(dx*dx+dy*dy); if(m>0.0001){ dx/=m; dy/=m; }
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(double*)(g_pbuf+g_plVecOff+0)=dx; *(double*)(g_pbuf+g_plVecOff+8)=dy; *(double*)(g_pbuf+g_plVecOff+16)=0.0;
+    *(float*)(g_pbuf+g_plScaleOff)=1.0f;
+    g_pbuf[g_plForceOff]=1;
+    CallGuarded(g_plAmiFn,g_plAmiThunk,g_plAmiCh,(void*)g_plHero,g_pbuf,g_rbuf);
+    long mv=InterlockedIncrement(&g_plMoves);
+    if(mv==1 || (mv%240)==0) Markerf("[PL] WASD driving: frames=%ld moves=%ld dir=(%.2f,%.2f) yaw=%.0f\r\n",f,mv,dx,dy,g_plYaw);
+}
 static void DoUFuncDump(){
     Marker("[UF] === UFunction field dump (find Script + PropertiesSize) ===\r\n");
     uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
@@ -2734,6 +2906,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_BPCALL){ DoBPCall(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_DEVSWAP){ DoDevSwap(); g_inHook=0; return; }
     if(kMode==MODE_MOVETEST){ DoMoveTest(); g_inHook=0; return; }
+    if(kMode==MODE_PLAYABLE){ DoPlayableSetup(); g_done=1; g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -3032,6 +3205,29 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(25);
         }
         Markerf("[3b] bptest3 done (done=%ld).\r\n",(long)g_done);
+        return 0;
+    } else if(kMode==MODE_PLAYABLE){
+        // 1) one transient PI-hook fire to run the setup on the game thread, 2) install the S78 per-frame vtable
+        // hook on the CameraManager so WASD is sampled every frame, 3) hold it open so the user can actually play.
+        Marker("[2] playable: setup, then per-frame WASD via the vtable hook...\r\n");
+        DWORD t0=GetTickCount();
+        while(!g_done && GetTickCount()-t0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+200; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(40);
+        }
+        if(!g_plReady){ Marker("[3b] playable: setup FAILED (no hero?) - aborting.\r\n"); return 0; }
+        uintptr_t vtCam=FindInstClassSub("CameraManager");
+        bool vt=false;
+        if(IsHeapObj(vtCam)){ int slot=FindPerFrameSlot(vtCam); if(slot>=0) vt=InstallVtableMove(vtCam,slot); }
+        Markerf("[2] per-frame hook: %s - WASD LIVE for %d seconds\r\n", vt?"VTABLE (installed)":"FAILED", kPlayableSecs);
+        if(!vt){ Marker("[2] no per-frame hook -> falling back to transient PI bursts (movement will be choppy)\r\n"); }
+        DWORD p0=GetTickCount();
+        while(GetTickCount()-p0 < (DWORD)kPlayableSecs*1000){
+            if(!vt){ g_done=0; g_inHook=0; if(InstallHookFast()){ DWORD md=GetTickCount()+60; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); } }
+            Sleep(vt?250:20);
+        }
+        if(vt) RestoreVtable();
+        Markerf("[3b] playable done (frames=%ld moves=%ld).\r\n",(long)g_plFrames,(long)g_plMoves);
         return 0;
     } else if(kMode==MODE_MOVETEST){
         // Movement input must be fed EVERY frame (AddMovementInput is consumed per-tick), so hook in tight bursts.
