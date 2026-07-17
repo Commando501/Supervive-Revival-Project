@@ -1091,6 +1091,38 @@ NARROWED to a precise, mechanical filter -- this is a 15-minute job next session
   (`SpawnPlayerCameraManager` + `InitInputSystem` are the only two that matter for camera+input).
 **Session status: 3 candidate addresses examined, 3 refuted, NOTHING called. The live session is untouched.**
 
+**S80u -- tight filter APPLIED: still NOT FOUND. `SwitchController` is not in LocalPlayer vtable slots 0-140 as an
+arg2-virtual-caller. NOTHING was called; the live session is untouched. THE WALL HIT HERE IS MY CONTEXT BUDGET, NOT THE
+GAME -- there is no evidence of any game-imposed limit.**
+- Filter implemented properly this time (light register aliasing: track which regs hold **arg2/rdx**, then require the
+  virtual call's vtable to have been loaded **from one of those regs**, i.e. `mov rax,[<arg2-alias>]` -> `call [rax+N]`).
+  Over LocalPlayer vtable **base+0x8117130**, slots 0-140, excluding slots shared with a plain UObject:
+  **exactly ONE hit -- slot 110 (base+0x39E1460): `call [arg2_vtable + 0x28]` => target slot 5, reads `+0x38`, does NOT
+  write `+0x458`.** Slot 5 is far too low to be `SetPlayer` (that range is generic `UObject` virtuals) ⇒ **REFUTED**.
+- ⇒ **Cumulative refutations (do NOT revisit):** PC vtable slot 183 (reads Player only), PC vtable slot 153 (teardown,
+  writes ZERO to `Player@+0x458`), LocalPlayer vtable slot 95 (3-arg, virtual call on `this` not arg2), LocalPlayer
+  vtable slot 110 (calls arg2 slot 5, no `+0x458` write). **4 candidates examined, 4 refuted, 0 called.**
+- **Live hypotheses for why it is not showing up (ALL UNTESTED -- do not assume):** (a) `UPlayer::SwitchController` is
+  **not overridden by `ULocalPlayer`**, so it may sit at a slot my "not shared with a plain UObject" discriminator
+  wrongly discarded (an EnhancedPlayerInput vtable could coincidentally share the same function at that index -- **the
+  discriminator itself is unvalidated**); (b) it is **beyond slot 140**; (c) `SetPlayer` is called **non-virtually**
+  (devirtualised/inlined) inside SwitchController, so there is no `call [rax+N]` to find at all; (d) `SwitchController`
+  is not virtual in this build.
+**⇒ RECOMMENDED NEXT (cheapest first, and STOP pattern-matching vtables -- it has now failed 4/4):**
+1. ★ **Skip `SetPlayer` entirely.** Only TWO of its constituents matter for the goal: **`SpawnPlayerCameraManager`**
+   (camera) and **`InitInputSystem`** (input). Find those DIRECTLY: `APlayerController::PlayerCameraManager` is a
+   reflected UPROPERTY -- use `comp_census.py` on the native PC (0x285752F50B0) to get its OFFSET, then scan the PC
+   vtable for the slot that WRITES that offset. Same trick for the input component (`AActor::InputComponent @+0x170`,
+   already known from the S80f census). **This reuses the exact method that worked, with offsets we ALREADY have.**
+2. Or: `usmapdump dumpimage` + `reconstructiat` + Ghidra for a proper offline analysis -- the demand-decrypt caveat
+   applies (only pages the game has RUN), but `SetPlayer` DID run for the native PC at login, so its page IS decrypted.
+3. Or: **just try the BP_Dev PC swap WITHOUT SetPlayer** and drive `ClientRestart` (native+0x3C5F990, a REAL UFunction on
+   the BP_Dev PC, already resolved) -- S79 4g showed it "fires clean"; on a PC that ACTUALLY OWNS the 45 input events it
+   may do far more than it did on the native PC. **This needs no RE at all and is the highest value-per-effort move.**
+**FINAL SESSION STATE: 8 walls investigated -> 8 measurement/tool errors, 0 game-imposed limits.** Live client PID 48788
+healthy (~32 clean injections, no crash, no standing .text hook). Hero: Alive, MESH rendering, SPRING ARM 3020, possessed
+-able. BP_Dev PCs alive: 0x2868B5ED8A0, 0x28690832770. The remaining task is ASSEMBLY, and option 3 above needs zero RE.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
