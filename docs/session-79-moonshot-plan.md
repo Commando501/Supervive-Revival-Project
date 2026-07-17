@@ -838,6 +838,45 @@ confidence; do NOT build on it.
 3. Only after the mechanism is IDENTIFIED, decide what to drive. **The real question was never "which IMC" -- it is
    "how does this game turn a keypress into a hero action". Answer THAT first.**
 
+**S80n -- ★ INPUT BINDINGS EXIST on the hero's EnhancedInputComponent (while AppliedInputContexts is EMPTY). The
+mechanism question is now SHARP and one read from an answer.**
+NB **reflection CANNOT see these**: `UInputComponent::ActionBindings` and `UEnhancedInputComponent::
+EnhancedActionEventBindings` are **plain C++ TArrays, NOT UPROPERTYs** -- a reflection census returns NOTHING and that
+silence must NOT be read as "no bindings" (that is the exact shape of fake walls #4 and #6). Method used instead: read
+the UClass's `PropertiesSize@+0x60` (= 400/0x190 for `EnhancedInputComponent`) and scan the object's raw bytes for
+TArray-shaped fields `{Data*, int32 Num, int32 Max}` with plausible values:
+```
+HERO PawnInputComponent0  0x28600E813C0  class=EnhancedInputComponent  PropertiesSize=400 (0x190)
+  +0x130  TArray{Data=0x286A3F021C0 Num=1  Max=4 }
+  +0x140  TArray{Data=0x28537065F00 Num=2  Max=4 }
+a PC_InputComponent0      0x28601743340  same class
+  +0xF0   TArray{Data=0x286802A8BC0 Num=8  Max=26}
+  +0x130  TArray{Data=0x2868ACB1780 Num=10 Max=24}
+  +0x140  TArray{Data=0x28603A34A00 Num=1  Max=4 }
+```
+`UEnhancedInputComponent`'s tail is `EnhancedActionEventBindings` / `EnhancedActionValueBindings` / `DebugKeyBindings`
+⇒ **+0x130/+0x140 are the binding arrays and they are POPULATED.** So `SetupPlayerInputComponent` DID run and DID bind
+actions on the hero -- more evidence that S79 4g's `ClientRestart` did real work.
+★★★ **THE MECHANISM IS STILL UNRESOLVED -- DO NOT GUESS. Two readings BOTH survive this evidence:**
+- **(a) Custom key source:** SUPERVIVE binds actions directly and maps keys via a bespoke Loki system; no IMC is ever
+  used ⇒ **"AppliedInputContexts EMPTY" is NORMAL and S80g IS fake wall #7 (mine).**
+- **(b) Stock Enhanced Input:** bindings without an applied IMC never FIRE (nothing maps key -> action) ⇒ the IMC really
+  is missing and S80g stands.
+**⇒ THE DECIDING READ (do this FIRST next session -- it is cheap, read-only, and settles S80g either way):**
+dereference the `+0x130` / `+0x140` entries on the hero's IC (`0x28600E813C0`).
+`FEnhancedInputActionValueBinding` / `FEnhancedInputActionEventBinding` each hold a `const UInputAction* Action`
+(the event array is `TArray<TUniquePtr<...>>` so entries are POINTERS to heap bindings -- deref once more).
+Read each entry's `UInputAction*` and take its **class name**:
+- class == `InputAction` (or a Loki subclass of it) ⇒ stock Enhanced Input ⇒ reading (b) ⇒ hunt the key source
+  (an IMC, or whatever Loki uses to feed `EnhancedPlayerInput::InputKey`).
+- class == some Loki-custom type / not an InputAction ⇒ reading (a) ⇒ **S80g retracted; input is NOT IMC-gated** and the
+  real question becomes what feeds those bindings.
+Also cheap + decisive in the same pass: `usmapdump nameid SUPERVIVE-Win64-Shipping.exe InputAction` -- if `UInputAction`
+ASSETS exist in the FNamePool, reading (b) gains a lot; if there are none at all, (a) does.
+**Ground truth for the whole input thread: `AppliedInputContexts` EMPTY on all 3 EnhancedPlayerInputs; 0 IMC assets
+anywhere; 0/14,921 BP fns call AddMappingContext; DefaultMappingContexts EMPTY; AddMappingContext's impl page never
+demand-decrypted (never executed); BUT the hero's EnhancedInputComponent HAS bindings.**
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
