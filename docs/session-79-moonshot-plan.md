@@ -877,6 +877,38 @@ ASSETS exist in the FNamePool, reading (b) gains a lot; if there are none at all
 anywhere; 0/14,921 BP fns call AddMappingContext; DefaultMappingContexts EMPTY; AddMappingContext's impl page never
 demand-decrypted (never executed); BUT the hero's EnhancedInputComponent HAS bindings.**
 
+**S80o -- ★ RETRACTION OF S80n (my own false positive, caught one turn later). "The hero's EnhancedInputComponent HAS
+bindings" is NOT ESTABLISHED. The deref found NO `UInputAction`.**
+- Dereferenced the hero IC (`0x28600E813C0`) arrays `+0x130` (Data=0x286A3F021C0, Num=1) and `+0x140`
+  (Data=0x28537065F00, Num=2), plus one level of indirection, scanning for anything resolving to a UObject
+  (in-module vtable + a class ptr @+0x18 whose FName resolves): **NOTHING resolved. No `UInputAction`. No UObject at
+  all.** The only hit anywhere was on the PC IC (`+0x28 -> ByteProperty, class=None`) which is an **FField false
+  positive** (FFields also have a vtable and a ptr at +0x18), not a binding.
+- ★★★ **WHY S80n WAS WRONG (the method failure, worth remembering): I found byte patterns shaped like
+  `{ptr, int32 Num, int32 Max}` and INFERRED from UE layout knowledge that `+0x130`/`+0x140` were
+  `EnhancedActionEventBindings`/`EnhancedActionValueBindings`. ANY struct with a pointer followed by two ints matches
+  that shape.** The "TArray-shaped scan" identifies a SHAPE, never a FIELD. I reported the inference as fact. ⇒ **The
+  offsets are unverified; the arrays may not be binding arrays at all.** This is the same error class as the six tool
+  bugs this session -- only this time it produced a false POSITIVE ("bindings exist") instead of a false wall.
+- **Honest status of the whole input thread: UNRESOLVED, and BOTH S80g (the "real gap") and S80n ("bindings exist") are
+  now UNVERIFIED.** What still stands on solid, multiply-confirmed measurement: `AppliedInputContexts` EMPTY on all 3
+  `EnhancedPlayerInput`s; `EnhancedActionMappings` EMPTY; 0 IMC assets anywhere (loaded, AR, FNamePool);
+  0/14,921 BP fns call `AddMappingContext`; `DefaultMappingContexts` EMPTY; `AddMappingContext`'s impl page NEVER
+  demand-decrypted (never executed). Everything BEYOND that -- what the game uses instead, and whether anything is
+  actually missing -- is **unknown**.
+**⇒ NEXT, and do it PROPERLY this time (no layout guessing):**
+1. ★ **Get the REAL `UEnhancedInputComponent` layout instead of guessing offsets.** Options: (a) `usmapdump extract` /
+   the `mappings.usmap` -- but NB it only carries UPROPERTY-reflected fields and these bindings are PLAIN C++ members,
+   so it will NOT have them; (b) **disassemble `UEnhancedInputComponent::BindAction`/`GetActionValue` (find via
+   `usmapdump nameid`/vtable) and read the offsets IT uses** -- that is ground truth and immune to layout guessing;
+   (c) find a KNOWN-GOOD reference: bind something and diff, or inspect a stock UE 5.4 build's layout.
+2. ★ Independently: `usmapdump nameid SUPERVIVE-Win64-Shipping.exe InputAction` / `IA_` -- **if there are no
+   `UInputAction` assets ANYWHERE, then Enhanced Input actions are not used at all**, which settles the mechanism
+   question from the asset side without needing any component layout.
+3. Only once the mechanism is IDENTIFIED (not inferred), decide what to drive. **The question remains "how does this
+   game turn a keypress into a hero action" -- and after S80g/S80n, the answer must come from a MEASUREMENT (a
+   disassembled offset, a resolved class name), never from a plausible-looking byte pattern.**
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
