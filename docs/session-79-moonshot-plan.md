@@ -737,6 +737,35 @@ partial: 0 DependsNode / 0 PackageData) and re-run `assetregistry candidates Inp
 `candidates Mission` as the canary -- until Mission returns hits, an Input 0 means nothing.** (3) `extractor namesall
 InputMappingContext` harvests NameMap vocabulary across assets and can find the type where path/class searches fail.
 
+**S80k -- interface vptr VERIFIED; the S80j candidate was REFUTED (it would have been fake wall #8). Impl disasm is
+BLOCKED BY DEMAND-DECRYPT, not by logic.**
+- ★★★ **`base+0xB9E1F0` (the S80j slot-19 candidate) is DEFINITIVELY NOT AddMappingContext.** Discriminator: slot 19 of
+  the *primary* vtable is identical on the hero (`BP_HERO_Assault_C`), the `LocalPlayer`, AND the `PlayerInput` --
+  `base+0xB9E1F0` on all three ⇒ it is a **generic UObject virtual shared by every UObject**. Trusting it would have
+  repeated the S54 "slot 56 = ProcessEvent" error EXACTLY (that error faked wall #2 and cost ~3 sessions). **The
+  refusal to build on an unverified vtable slot was correct; ALWAYS discriminate a candidate slot against unrelated
+  objects' vtables before believing it.**
+- ★ **VERIFIED: the `IEnhancedInputSubsystemInterface` vptr is at `subsystem+0x38`** (multiple inheritance:
+  `UEnhancedInputLocalPlayerSubsystem : ULocalPlayerSubsystem, IEnhancedInputSubsystemInterface`). Only two vptrs exist
+  in `[0,0x100)`: `obj+0x00` -> vtable base+0x865C950 (primary/UObject; slot19 = the generic base+0xB9E1F0) and
+  **`obj+0x38` -> vtable base+0x865CC30, slot19 = `base+0x4BDC3C0` (UNIQUE)**. Consistent with the exec thunk calling
+  `[vtable+0x98]` on the interface-adjusted `this`. ⇒ **`AddMappingContext` impl = `base+0x4BDC3C0`** (strong, by
+  construction + uniqueness), subsystem = `0x285C4460200`, interface ptr = `subsystem+0x38`.
+- ⚠ **Disasm confirmation of `base+0x4BDC3C0` is BLOCKED: the page is NOT demand-decrypted (RPM/peek both fail).** This
+  is NOT a tool artifact -- controls read fine on the SAME process: `execAddMappingContext` (base+0x4BFA590) and
+  `ProcessInternal` (base+0x13454A0) both peek cleanly. Per the known anti-tamper behaviour (`.text` demand-decrypts on
+  EXECUTION), an unreadable code page = **that code has never run this session** ⇒ a **5th independent corroboration of
+  S80g** (the native add-site never executed). Chicken-and-egg: the page only decrypts once the code runs, which is the
+  thing we are trying to cause. So the impl address stands on the vtable evidence, unconfirmed by disassembly -- **do not
+  upgrade it to "verified by disasm" without a re-peek from a state where input HAS been set up.**
+- ★★★ **PRACTICAL: the impl address is NOT NEEDED to CALL AddMappingContext.** The direct-thunk primitive calls
+  `UFunction.Func` = the **exec thunk** `base+0x4BFA590`, which IS readable and is the normal path. The impl was only
+  wanted for `callxref` (finding the add-site) -- and since the call is VIRTUAL (S80j), callxref cannot find
+  vtable-dispatched callers anyway, AND the callers' own pages are likely still encrypted too. **⇒ Drop the callxref
+  route. To find the IMC, use `usmapdump findptr <base+0x4BDC3C0>` (locate the vtables) or -- better -- go back to the
+  ASSET side (regenerate a complete AssetRegistry.bin; `candidates Mission` is the canary), or simply TRY calling
+  `AddMappingContext` once an IMC is loaded.**
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
