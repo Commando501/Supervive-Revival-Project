@@ -164,6 +164,17 @@ constexpr int MODE_UFUNCDUMP=32;
 // it in local CallFunc_GetCosmeticsController_ReturnValue @+0x8, so locals[0x8] MUST equal the direct-thunk controller.
 // The deploy chain only runs if that gate passes (a deploy result on a broken invoker would be meaningless). -DKMODE=MODE_BPCALL
 constexpr int MODE_BPCALL=33;
+// MODE_DEVSWAP (S80): the ONE untested variable. S79 4g drove ClientRestart on the NATIVE `LokiPlayerController` — which
+// S80q proved owns **ZERO** input events (all 45 `InpActEvt_*_K2Node_InputActionEvent` live on
+// BP_LokiPlayerController_C(39) + _Code_C(6), which `BP_LokiPlayerController_Dev_C` INHERITS). So 4g's "fires clean, no
+// effect" was ClientRestart on a PC with nothing to restart. This swaps the LocalPlayer to the EXISTING S79-spawned
+// BP_Dev PC and drives ClientRestart THERE. `ClientRestart` is a real reflected UFunction (native+0x3C5F990, ParmsSize=8,
+// APawn* NewPawn) => the direct-thunk primitive calls it; no `SetPlayer` RE needed (4 vtable candidates refuted, S80s/u).
+// APlayerController::ClientRestart_Implementation -> AcknowledgePossession -> SetPawn -> Pawn->PawnClientRestart() ->
+// SetupPlayerInputComponent + EnableInput, i.e. the input half. Camera may still be absent (no PlayerCameraManager on a
+// GameplayStatics-spawned PC — that's what SetPlayer's SpawnPlayerCameraManager would have done), so read BOTH.
+// Swap offsets are S79-3a proven + S80s re-confirmed: LocalPlayer->PlayerController @+0x38, PC->Player @+0x458.
+constexpr int MODE_DEVSWAP=34;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -2130,6 +2141,64 @@ static void DoBPCall(){
       Markerf("[BC] hero->Mesh @+0x%X = 0x%llX [%s] SkeletalMesh='%s'\r\n",mo,(unsigned long long)mesh,mcn,skn); }
     Marker("[BC] === done ===\r\n");
 }
+// ===== S80 MODE_DEVSWAP: swap to the BP_Dev PC (which OWNS the input events) + ClientRestart there =====
+static volatile long g_dsReps=0; static uintptr_t g_dsL=0,g_dsDev=0,g_dsOld=0,g_dsHero=0,g_dsCamMgr=0;
+static void* g_dsCrFn=0; static uintptr_t g_dsCrThunk=0,g_dsCrCh=0;
+static void DoDevSwap(){
+    long rep=InterlockedIncrement(&g_dsReps);
+    if(rep==1){
+        Marker("[DS] === S80 devswap: LocalPlayer -> BP_Dev PC (owns the 45 input events) + ClientRestart ===\r\n");
+        g_dsL=FindInstExactClass("LocalPlayer"); if(!g_dsL) g_dsL=FindInstClassSub("LocalPlayer");
+        if(!LooksLikePtr(g_dsL)){ Marker("[DS] no LocalPlayer — abort\r\n"); g_done=1; return; }
+        g_dsOld=SafeReadable((void*)(g_dsL+0x38),8)?*(uintptr_t*)(g_dsL+0x38):0;
+        g_dsDev=FindInstExactClass("BP_LokiPlayerController_Dev_C");
+        if(!LooksLikePtr(g_dsDev)){ Marker("[DS] no live BP_Dev PC — abort\r\n"); g_done=1; return; }
+        // hero = the pawn the native PC currently drives (S79 4d raw-wired it)
+        uint32_t po=PropOffsetOnClass(ClassOf(g_dsOld),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
+        g_dsHero=SafeReadable((void*)(g_dsOld+pawnOff),8)?*(uintptr_t*)(g_dsOld+pawnOff):0;
+        char oc[96]="?",dc[96]="?",hc2[96]="?";
+        ClassName(g_dsOld,oc,sizeof(oc)); ClassName(g_dsDev,dc,sizeof(dc)); if(LooksLikePtr(g_dsHero))ClassName(g_dsHero,hc2,sizeof(hc2));
+        Markerf("[DS] L=0x%llX oldPC=0x%llX [%s]  devPC=0x%llX [%s]  hero=0x%llX [%s]\r\n",
+                (unsigned long long)g_dsL,(unsigned long long)g_dsOld,oc,(unsigned long long)g_dsDev,dc,(unsigned long long)g_dsHero,hc2);
+        // ClientRestart on the DEV PC's class (native UFunction, ParmsSize=8 -> APawn* NewPawn)
+        ResolveFunc(ClassOf(g_dsDev),"ClientRestart",&g_dsCrFn,&g_dsCrThunk,&g_dsCrCh);
+        Markerf("[DS] ClientRestart on devPC class: fn=0x%llX thunk=0x%llX child=0x%llX\r\n",
+                (unsigned long long)(uintptr_t)g_dsCrFn,(unsigned long long)g_dsCrThunk,(unsigned long long)g_dsCrCh);
+        g_dsCamMgr=FindInstClassSub("PlayerCameraManager");
+        // ---- THE SWAP (S79 Phase-3 proven: held 10s, no revert) ----
+        if(SafeReadable((void*)(g_dsL+0x38),8))    *(uintptr_t*)(g_dsL+0x38)=g_dsDev;
+        if(SafeReadable((void*)(g_dsDev+0x458),8)) *(uintptr_t*)(g_dsDev+0x458)=g_dsL;
+        if(SafeReadable((void*)(g_dsOld+0x458),8)) *(uintptr_t*)(g_dsOld+0x458)=0;
+        Marker("[DS] swapped L->PlayerController = devPC\r\n");
+        // ---- give the dev PC the hero, then ClientRestart THERE (the untested variable) ----
+        if(LooksLikePtr(g_dsHero)){
+            uint32_t dpo=PropOffsetOnClass(ClassOf(g_dsDev),"Pawn"); uint32_t dPawnOff=(dpo!=0xFFFFFFFF)?dpo:0x3F8;
+            if(SafeReadable((void*)(g_dsDev+dPawnOff),8)) *(uintptr_t*)(g_dsDev+dPawnOff)=g_dsHero;
+            uint32_t co=PropOffsetOnClass(ClassOf(g_dsHero),"Controller"); uint32_t ctlOff=(co!=0xFFFFFFFF)?co:0x400;
+            if(SafeReadable((void*)(g_dsHero+ctlOff),8)) *(uintptr_t*)(g_dsHero+ctlOff)=g_dsDev;
+            Markerf("[DS] wired devPC->Pawn=hero (@+0x%X) and hero->Controller=devPC (@+0x%X)\r\n",dPawnOff,ctlOff);
+            if(g_dsCrThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                *(uintptr_t*)g_pbuf=g_dsHero;                     // APawn* NewPawn
+                bool f=CallGuarded(g_dsCrFn,g_dsCrThunk,g_dsCrCh,(void*)g_dsDev,g_pbuf,g_rbuf);
+                Markerf("[DS] ★ ClientRestart(devPC, hero) fault=%d %s\r\n",f,f?"":"<<< RAN on a PC that OWNS the input events"); }
+        }
+        // did the dev PC get a PlayerCameraManager? (SetPlayer would normally spawn one)
+        uint32_t cmo=PropOffsetOnClass(ClassOf(g_dsDev),"PlayerCameraManager");
+        uintptr_t devCam=(cmo!=0xFFFFFFFF&&SafeReadable((void*)(g_dsDev+cmo),8))?*(uintptr_t*)(g_dsDev+cmo):0;
+        uint32_t ico=PropOffsetOnClass(ClassOf(g_dsDev),"InputComponent");
+        uintptr_t devIC=(ico!=0xFFFFFFFF&&SafeReadable((void*)(g_dsDev+ico),8))?*(uintptr_t*)(g_dsDev+ico):0;
+        Markerf("[DS] devPC->PlayerCameraManager @+0x%X = 0x%llX | devPC->InputComponent @+0x%X = 0x%llX\r\n",
+                cmo,(unsigned long long)devCam,ico,(unsigned long long)devIC);
+        return;
+    }
+    // monitor: does the swap hold, and does the RENDERING camera follow?
+    uintptr_t cur=SafeReadable((void*)(g_dsL+0x38),8)?*(uintptr_t*)(g_dsL+0x38):0;
+    uintptr_t vt=(LooksLikePtr(g_dsCamMgr)&&SafeReadable((void*)(g_dsCamMgr+0x420),8))?*(uintptr_t*)(g_dsCamMgr+0x420):0;
+    if(rep%4==0) Markerf("[DS] t+%ld: L->PC=%s  camMgr viewTarget=0x%llX %s\r\n",rep,
+        cur==g_dsDev?"devPC (HOLDING)":(cur==g_dsOld?"REVERTED to native":"other"),
+        (unsigned long long)vt, vt==g_dsHero?"== HERO":"");
+    if(rep>=20){ Marker("[DS] === done ===\r\n"); g_done=1; }
+}
 static void DoUFuncDump(){
     Marker("[UF] === UFunction field dump (find Script + PropertiesSize) ===\r\n");
     uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
@@ -2344,6 +2413,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_BPTEST2){ DoBPTest2(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_BPTEST3){ DoBPTest3(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_BPCALL){ DoBPCall(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_DEVSWAP){ DoDevSwap(); g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -2642,6 +2712,16 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(25);
         }
         Markerf("[3b] bptest3 done (done=%ld).\r\n",(long)g_done);
+        return 0;
+    } else if(kMode==MODE_DEVSWAP){
+        Marker("[2] devswap: swap to the BP_Dev PC + ClientRestart there; monitoring ~10s...\r\n");
+        DWORD t0=GetTickCount();
+        while(!g_done && GetTickCount()-t0 < 22000){
+            g_inHook=0;
+            if(InstallHookFast()){ DWORD md=GetTickCount()+140; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(400);
+        }
+        Markerf("[3b] devswap done (done=%ld).\r\n",(long)g_done);
         return 0;
     } else if(kMode==MODE_BPCALL){
         // Transient hook only to reach the game thread + capture the FFrame template; DoBPCall RawUnhook()s itself
