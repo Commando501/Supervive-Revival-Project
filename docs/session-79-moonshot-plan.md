@@ -564,6 +564,49 @@ NATIVE side: UE binds Enhanced Input in `APawn::SetupPlayerInputComponent` / `Pa
 `CameraLagMaxDistance` @0x437A0000=250.0) — S79 4e's census concluded "the hero has NO USpringArmComponent". Given the
 CountHeroSkeletals precedent, **that census deserves the same re-verification** (read the property by reflection).
 
+**S80f -- 6th TOOL BUG: the S79 4e census "the hero has NO USpringArmComponent" is WRONG. The hero has a FULLY
+CONFIGURED camera rig, and S79 Phase 4h spent the session FIGHTING IT.** Re-verified by REFLECTION (new tool
+`tools/re/comp_census.py`, read-only -- walks the class chain's ChildProperties and reads each ObjectProperty; EXACT,
+cannot cap out or miss on a name filter, unlike the GUObjectArray + substring + outer-chain scans that produced this bug
+AND the CountHeroSkeletals one):
+```
+SpringArmComponent  @+0x1990 = 0x28615E8C870  class=LokiCharacterSpringArmComponent
+   ancestry: LokiCharacterSpringArmComponent <- SpringArmComponent <- SceneComponent <- ActorComponent <- Object
+   TargetArmLength=3020   bEnableCameraLag=True   CameraLagSpeed=18   CameraLagMaxDistance=250  bDoCollisionTest=False
+Camera              @+0x22D8 = 0x28679DE4B60  class=CameraComponent
+InputComponent      @+0x170  = 0x28600E813C0  class=EnhancedInputComponent   [declared on Actor]
+Mesh                @+0x450  = 0x286E0753B20  class=BP_Assault_DefaultSKMeshComponent_C
+```
+- **`TargetArmLength` was ALREADY 3020** -- the authentic SUPERVIVE top-down distance. S79 4h hand-tuned "authentic
+  top-down ~= 3000-4000 up" and was REDISCOVERING a value the component already held. 4e's "my TargetArmLength write was
+  a no-op" was a write to the WRONG ADDRESS, not an absent component.
+- `CameraLagSpeed=18` / `CameraLagMaxDistance=250` are EXACTLY the constants the ubergraph writes at 31543
+  (`0x41900000`=18.0, `0x437A0000`=250.0) -- independent confirmation this is the real, live rig.
+- **THIS REFRAMES ALL THE S79 CAMERA WORK.** 4h drove the hero's `CameraComponent` world transform and re-applied it
+  **~40x/run "to hold vs per-frame reset"** -- that per-frame reset WAS THE SPRING ARM DOING ITS JOB. The
+  "camera-rig control = solved + drivable" result is a hack fighting a correctly-configured rig that already framed the
+  hero at 3020. **Don't drive the CameraComponent -- let the spring arm drive it** (that is what the game does). If
+  framing is wrong, fix it through the spring arm's own properties / the `OverrideSpringArmCurve` TimelineComponent
+  @+0x22F8.
+- **`AActor::InputComponent @+0x170` is a live `EnhancedInputComponent`** -- created by `APawn::PawnClientRestart` ->
+  `SetupPlayerInputComponent`, so input setup DID run at some point (S79 4g's `ClientRestart` plausibly did it). So
+  "input is unbound" is ALSO not established. The remaining input question is narrower: **is a mapping context added?**
+  That is `UEnhancedInputLocalPlayerSubsystem::AddMappingContext` -- a LOCAL PLAYER subsystem, NOT on the hero. Look
+  there, not on the pawn.
+- Other notables from the 41-component reflection census: `CharacterMovement` (`LokiCharacterMovementComponent` @+0x458),
+  `RootComponent`/`CapsuleComponent` @+0x1B0/+0x460, `VisibilityState` @+0xD38, `TeamComponent` @+0xD28,
+  `BP_AimingVisComponentV2` @+0x2220 (the `InitOnLocalASC` target), `CastRangeDecal`/`CastRangeToggleDecal`
+  @+0x2258/+0x2250 (what `ClientInitialComponentSetup` actually toggles), `MapView`/`MapIconHero`, `LokiHeroUsable`,
+  `LazyMovementRoot` @+0x1998, and 8 TimelineComponents.
+
+**RUNNING TALLY OF FAKE WALLS THIS SESSION: 6.** (1) BP calls "fault" = `FFrame.Code=0`; (2) ProcessEvent "neutered" =
+a misidentified 2-arg fn at slot 56; (3) deploy "needs match-init context" = the fns never ran; (4) hero "has no mesh" =
+a broken substring filter; (5) `CallBP`'s stale FlowStack (mine -- caught by dumping, before it faked anything); (6) hero
+"has no spring arm" = a broken census. **EVERY ONE was a tool or measurement bug. NOT ONE was the game.** The record's
+"honest ceiling", "definitive wall" and "reasonable-effort ceiling" language across S72-S79 was measuring the tools.
+**METHOD: read state by REFLECTION (`comp_census.py`), read behaviour by DISASSEMBLY (`ubergraph_dump.py`/`script_dump.py`
+/`disasm_live.py`), check runnability first (`ufunc_survey.py`). All read-only, no injection, seconds each.**
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
