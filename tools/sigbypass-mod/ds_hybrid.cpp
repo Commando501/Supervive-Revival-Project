@@ -35,6 +35,15 @@ constexpr uintptr_t UST_CHILDREN=0x50, UST_SUPER=0x48, FIELD_NEXT_UF=0x30, FIELD
 constexpr uintptr_t UST_PROPSIZE=0x60, UFUNC_SCRIPT=0x68, UFUNC_SCRIPTNUM=0x70;
 constexpr uint64_t CPF_OutParm=0x100, CPF_ReturnParm=0x400;
 constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, FF_MRP=0x30, FF_MRPA=0x38, FF_MRPC=0x40, FF_OUTPARMS=0x80, FF_PROPCHAIN=0x88;
+// S80: FFrame::FlowStack — REQUIRED for BP bytecode (ubergraphs are full of EX_PushExecutionFlow/EX_PopExecutionFlow).
+// UE5 FFrame: ... MostRecentPropertyContainer@0x40, FlowStack@0x48, PreviousFrame@0x78, OutParms@0x80, PropChain@0x88,
+// CurrentNativeFunction@0x90. FlowStack = TArray<CodeSkipSizeType, TInlineAllocator<8>> = {Inline[8*4=32]@+0x00,
+// Secondary@+0x20, Num@+0x28, Max@+0x2C} = 0x30 bytes. Cross-check: 0x48+0x30 = 0x78/0x80/0x88 EXACTLY matches this
+// project's long-established FF_OUTPARMS/FF_PROPCHAIN — the layout is confirmed by arithmetic, not guessed.
+// A BP call MUST start with an EMPTY FlowStack: the graph's bail paths (EX_PopExecutionFlow) rely on "empty == return".
+// Inheriting the captured template's stale stack makes them pop a GARBAGE offset and execute random bytecode.
+constexpr uintptr_t FF_FLOWSTACK=0x48, FF_FLOW_SECONDARY=0x68, FF_FLOW_NUM=0x70, FF_FLOW_MAX=0x74,
+                    FF_PREVFRAME=0x78, FF_CURNATIVEFN=0x90;
 typedef void (*PFN_PE)(void* obj, void* func, void* parms);
 typedef void (*PFN_THUNK)(void* Context, void* Frame, void* Result);
 
@@ -1079,7 +1088,17 @@ static bool ResolveCosmetics(){
             (unsigned long long)g_cmHero,(unsigned long long)g_cmRefThunk,(unsigned long long)g_cmOrpThunk,(unsigned long long)g_cmGetThunk,(unsigned long long)g_cmVisThunk);
     return g_cmRefThunk!=0;
 }
-static int CountHeroSkeletals(){ int n=0; ForEachObject([&](uintptr_t o)->bool{ char cn[96]; if(!ClassName(o,cn,sizeof(cn)))return false; if(!strstr(cn,"SkeletalMeshComponent")&&!strstr(cn,"SkinnedMeshComponent"))return false; if(!OuterChainReaches(o,g_cmHero))return false; char on[96]="?"; ObjName(o,on,sizeof(on)); Markerf("[CM]   skeletal: %s '%s'\r\n",cn,on); return (++n>=12); }); return n; }
+// ★★★ S80c WARNING — THIS COUNTER IS BROKEN AND ITS 0 INVENTED AN ENTIRE FAKE WALL. DO NOT TRUST IT; DO NOT USE IT
+// TO CONCLUDE "no mesh". It greps class names for "SkeletalMeshComponent"/"SkinnedMeshComponent", but this build's hero
+// mesh component class is `BP_Assault_DefaultSKMeshComponent_C` — "SKMeshComponent" does NOT contain "SkeletalMesh
+// Component", so the filter MISSES it and returns 0 for a component that exists, has SK_Assault_Default_LOD1 assigned,
+// has bVisible=true/bHiddenInGame=false/bRecentlyRendered=true, and is ON SCREEN (the user saw it at S79 Phase 4d).
+// Its bogus 0 is the sole basis of S79's "MESHDIAG: no character SkeletalMeshComponent", the whole cosmetics chase
+// (MESHMGRRECON/COSMETICS/COSMENUM/SETCOSMETIC), "RefreshCosmetics built nothing", "the cosmetics controller is
+// missing", and the S79 "DEFINITIVE deploy-context wall". All of it collapsed when the mesh was read DIRECTLY.
+// ⇒ To check the character mesh, read `ACharacter::Mesh` by reflection (PropOffsetOnClass(hc,"Mesh"), @+0x450 this
+// build) and its SkeletalMesh — the way DoBPCall now does. Kept only so the older modes still compile.
+static int CountHeroSkeletals(){ int n=0; ForEachObject([&](uintptr_t o)->bool{ char cn[96]; if(!ClassName(o,cn,sizeof(cn)))return false; if(!strstr(cn,"SkeletalMeshComponent")&&!strstr(cn,"SkinnedMeshComponent")&&!strstr(cn,"MeshComponent"))return false; if(!OuterChainReaches(o,g_cmHero))return false; char on[96]="?"; ObjName(o,on,sizeof(on)); Markerf("[CM]   mesh comp: %s '%s'\r\n",cn,on); return (++n>=12); }); return n; }
 static void DoCosmetics(){
     Marker("[CM] === deploy step 4: RefreshCosmetics (build character mesh) ===\r\n");
     Markerf("[CM] skeletal meshes BEFORE: %d\r\n",CountHeroSkeletals());
@@ -2050,6 +2069,13 @@ static bool CallBP(uintptr_t obj, void* ufunc, const void* argsIn, int argsLen){
     *(void**)(g_myframe+FF_LOCALS)=g_bplocals;
     *(uint64_t*)(g_myframe+FF_MRP)=0; *(uint64_t*)(g_myframe+FF_MRPA)=0; *(uint64_t*)(g_myframe+FF_MRPC)=0;
     *(uint64_t*)(g_myframe+FF_PROPCHAIN)=(uint64_t)child;
+    // ★ Reset the inherited FlowStack to EMPTY-inline. Without this the ubergraph's bail paths (EX_PopExecutionFlow)
+    // pop a stale offset from the captured template's frame and jump into arbitrary bytecode. Num=0 + Max=8 (inline
+    // capacity) + Secondary=null is a clean empty TArray<uint32,TInlineAllocator<8>>.
+    memset(g_myframe+FF_FLOWSTACK,0,0x30);
+    *(uint32_t*)(g_myframe+FF_FLOW_MAX)=8;
+    *(uint64_t*)(g_myframe+FF_PREVFRAME)=0;      // we are a root call, not nested under the captured frame
+    *(uint64_t*)(g_myframe+FF_CURNATIVEFN)=0;
     BuildOutParms(child,g_bplocals);
     static uint8_t rb[64];
     __try { memset(rb,0,sizeof(rb)); ((PFN_THUNK)thunk)((void*)obj,g_myframe,rb); return false; }
@@ -2079,7 +2105,10 @@ static void DoBPCall(){
                      ok?"<<<<<< BP BYTECODE EXECUTED — INVOKER WORKS":"<<<<<< still not executing"); } }
     if(!ok){ Marker("[BC] GATE FAILED — skipping deploy (a deploy result on a broken invoker proves nothing)\r\n"); return; }
     // ---- THE DEPLOY SETUP — first time these BP fns have ever actually RUN ----
-    Markerf("[BC] skeletal meshes BEFORE = %d\r\n",CountHeroSkeletals());
+    Markerf("[BC] hero LivingState=%u HeroPredropHidden=%u | gate note: TryLocalControlSetup's ubergraph bails on\r\n"
+            "[BC]   PopExecutionFlowIfNot IsLocallyControlled() -- hero->Controller must be the local PC\r\n",
+            SafeReadable((void*)(hero+0x1090),1)?*(uint8_t*)(hero+0x1090):0,
+            SafeReadable((void*)(hero+0x1BE8),1)?*(uint8_t*)(hero+0x1BE8):0);
     const char* chain[]={"ClientInitialComponentSetup","BP_PostSetupCosmetics","TryLocalControlSetup","RefreshLocalControl"};
     for(int i=0;i<4;i++){
         void* fn=0; uintptr_t th=0,ch=0; ResolveFunc(hc,chain[i],&fn,&th,&ch);
@@ -2088,14 +2117,17 @@ static void DoBPCall(){
         bool fault=CallBP(hero,fn,nullptr,0);
         Markerf("[BC] %-28s script=%-4u fault=%d  %s\r\n",chain[i],sn,fault,(!fault&&sn)?"RAN":(sn?"FAULTED":"empty stub - skipped"));
     }
-    // Re-assert Alive + clear pre-drop, then let the native builder rebuild the body with the CosmeticsAssetID
-    // MODE_SETCOSMETIC already wrote (@+0x1FF0/+0x2000).
-    if(SafeReadable((void*)(hero+0x1090),1)) *(uint8_t*)(hero+0x1090)=1;
-    if(SafeReadable((void*)(hero+0x1BE8),1)) *(uint8_t*)(hero+0x1BE8)=0;
-    if(g_cmRefThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
-                      bool rf=CallGuarded(g_cmRefFn,g_cmRefThunk,g_cmRefChild,(void*)hero,g_pbuf,g_rbuf);
-                      Markerf("[BC] RefreshCosmetics fault=%d\r\n",rf); }
-    Markerf("[BC] skeletal meshes AFTER = %d  (>0 = THE CHARACTER MESH BUILT)\r\n",CountHeroSkeletals());
+    // ★ S80c: report the mesh HONESTLY via ACharacter::Mesh, not CountHeroSkeletals(). That counter greps class names
+    // for "SkeletalMeshComponent" and MISSES this build's `BP_Assault_DefaultSKMeshComponent_C` ("SKMesh" != "Skeletal
+    // Mesh") — it reported 0 for a component that exists, has SK_Assault_Default_LOD1 assigned, and is on screen. Its
+    // bogus 0 is what invented the entire S79 "mesh wall" + cosmetics chase.
+    { uint32_t mo=PropOffsetOnClass(hc,"Mesh");
+      uintptr_t mesh=(mo!=0xFFFFFFFF && SafeReadable((void*)(hero+mo),8))?*(uintptr_t*)(hero+mo):0;
+      char mcn[96]="?"; if(LooksLikePtr(mesh)) ClassName(mesh,mcn,sizeof(mcn));
+      uintptr_t skm=0; if(LooksLikePtr(mesh)){ uint32_t so=PropOffsetOnClass(ClassOf(mesh),"SkeletalMesh");
+          if(so!=0xFFFFFFFF && SafeReadable((void*)(mesh+so),8)) skm=*(uintptr_t*)(mesh+so); }
+      char skn[96]="<none>"; if(LooksLikePtr(skm)) ObjName(skm,skn,sizeof(skn));
+      Markerf("[BC] hero->Mesh @+0x%X = 0x%llX [%s] SkeletalMesh='%s'\r\n",mo,(unsigned long long)mesh,mcn,skn); }
     Marker("[BC] === done ===\r\n");
 }
 static void DoUFuncDump(){
