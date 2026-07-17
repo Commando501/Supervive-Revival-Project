@@ -802,6 +802,42 @@ diagnosis is the extractor's AR PARSER (or cooked-AR class stripping) -- NOT a m
    0x2868B5ED8A0 / 0x28690832770) and look for `InputMappingContext` operands -- the S80g global BP scan only proved
    nobody CALLS AddMappingContext, NOT that nobody REFERENCES an IMC asset.
 
+**S80m -- ★★★ S80g IS NOW DOUBTFUL AND MAY BE FAKE WALL #7 (MINE). Evidence now points to SUPERVIVE NOT USING MAPPING
+CONTEXTS AT ALL -- in which case "AppliedInputContexts is EMPTY" is the NORMAL state, not a gap.** Retract S80g's
+confidence; do NOT build on it.
+- **Live FNamePool query** (`usmapdump nameid`, read-only -- the pool holds every FName the process ever made, incl. AR
+  vocabulary): `MappingContext` -> 20 hits, **ALL of them ENGINE/EnhancedInput reflection identifiers**
+  (`/Script/InputMappingContext`, `MappingContexts`, `RegisteredMappingContexts`, `DefaultMappingContexts`,
+  `bEnableDefaultMappingContexts`, `DefaultWorldSubsystemMappingContexts`, `MappingContextRedirects`,
+  `MappingContextRegisteredWithSettings__DelegateSignature`) -- **not one SUPERVIVE/Loki asset name**. (`nameid IMC` ->
+  20 hits, ALL false positives: case-insensitive substring inside `NiagaraS-imC-ache`/`NDIMemoryBuffer...`. Ignore.)
+- ★ **`UEnhancedInputDeveloperSettings` (the engine's auto-apply route) is EMPTY:** the sole instance is the CDO
+  `Default__EnhancedInputDeveloperSettings` (0x28505198BE0): `DefaultMappingContexts @+0x40 Num=0`,
+  `DefaultWorldSubsystemMappingContexts @+0x50 Num=0`, `bEnableDefaultMappingContexts @+0xE8 = True` (enabled, but with
+  NOTHING to apply), `bEnableUserSettings=False`, `bEnableWorldSubsystem=False`. ⇒ the engine's default-IMC add-site
+  never had anything to add.
+- ★★★ **THE CONVERGING READ: SUPERVIVE probably does not use IMCs AT ALL.** Every independent probe says the same:
+  0 IMC assets loaded; 0 IMC assets found by ANY search; 0 of 14,921 BP fns call `AddMappingContext`;
+  `DefaultMappingContexts` empty; no IMC-typed property on hero/PC; and `AddMappingContext`'s impl page has NEVER been
+  demand-decrypted (S80k) i.e. **that code has never executed in this process**. A game with a custom keybind UI
+  plausibly uses `UEnhancedInputComponent` ONLY as the component class and drives input through a bespoke Loki system
+  (direct `BindAction` with `UInputAction`s, or a fully custom key->ability map).
+  **⇒ If so, "AppliedInputContexts EMPTY" is the NORMAL state for this game and is NOT why WASD fails. S80g would be
+  FAKE WALL #7 -- authored by me -- and the S80h/i/j/k/l chase after an IMC asset was chasing a thing that does not
+  exist.** I am flagging this rather than leaving S80g standing as "the one real gap".
+- ⚠ **UNRESOLVED / DO NOT GUESS:** what DOES drive SUPERVIVE input is now genuinely UNKNOWN. Counter-evidence to the
+  "custom system" read: `EnhancedActionMappings @+0x5B0` (the flattened list `UEnhancedPlayerInput` rebuilds FROM
+  applied IMCs) is ALSO empty -- consistent with either story.
+**NEXT (identify the mechanism -- do NOT assume IMC):**
+1. ★ `usmapdump nameid SUPERVIVE-Win64-Shipping.exe InputAction` / `IA_` / `InputConfig` / `Keybind` / `LokiInput` --
+   if `UInputAction` assets exist, they use Enhanced Input actions (bound WITHOUT contexts); if none, it is fully custom.
+2. ★ Census the LIVE `EnhancedInputComponent` on the hero (`0x28600E813C0`) / the PC's (`PC_InputComponent0`): read
+   `UInputComponent`'s binding arrays (`ActionBindings`/`AxisBindings`) and `UEnhancedInputComponent`'s
+   `EnhancedActionEventBindings` -- **if bindings EXIST but no IMC, the mechanism is BindAction-direct and the missing
+   piece is a key->action source, not a context.** Use `tools/re/comp_census.py`-style reflection. Cheap, read-only.
+3. Only after the mechanism is IDENTIFIED, decide what to drive. **The real question was never "which IMC" -- it is
+   "how does this game turn a keypress into a hero action". Answer THAT first.**
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
