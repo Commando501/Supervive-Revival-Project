@@ -669,6 +669,39 @@ grepping it returns 0 and proves nothing). Then load + `AddMappingContext(subsys
 `AddMappingContext`'s exec thunk + `usmapdump callxref` to find the NATIVE add-site (which would also reveal how the game
 picks the IMC).
 
+**S80i -- IMC asset hunt: INCONCLUSIVE (and I nearly published fake wall #7 TWICE doing it). Do NOT conclude "SUPERVIVE
+has no IMC assets" from what follows -- the searches are not trustworthy for this question yet.**
+What was tried, and why each negative is WEAK:
+1. `extractor wherefile IMC_ InputMappingContext MappingContext` -> **0 hits. MEANINGLESS.** `wherefile` searches
+   virtual PATHS, and a path contains the asset's NAME, not its CLASS. An IMC named `Loki_Input_Default` would never
+   match "InputMappingContext". **Never search for a TYPE in a PATH.**
+2. `extractor assetregistry candidates InputMappingContext` -> 0 of 103,841 FAssetData. Search is CLASS-based and the
+   tool provably WORKS (`candidates Blueprint` -> 36,625; `candidates SkeletalMesh` -> 351). **BUT `candidates Mission`
+   -> 0 as well**, and (a) the extractor's OWN usage text gives `Mission`/`LokiDataAsset_Mission` as its worked example,
+   and (b) this project has a fully working missions page built on exactly those assets. **A search that resolves engine
+   classes but returns 0 for a class we KNOW ships means this AR.bin's class coverage does NOT extend to custom/plugin
+   classes.** (Also note it loads "103,841 FAssetData / **0 DependsNode / 0 PackageData**" -- partial.) So its 0 for
+   InputMappingContext (an EnhancedInput *plugin* class) proves nothing.
+**What IS solid from the live process (all re-verified, S80g/h):** `AppliedInputContexts` EMPTY on all 3
+`EnhancedPlayerInput` objects; `EnhancedActionMappings` (the flattened list UEnhancedPlayerInput REBUILDS from applied
+IMCs) EMPTY @+0x5B0; `DebugExecBindings` @+0x1A8 Num=16 NON-empty (proves the property walk reaches UPlayerInput, so the
+empties are real); **legacy `UPlayerInput::ActionMappings`/`AxisMappings` are ABSENT from the class entirely** (UE5 moved
+them behind WITH_EDITORONLY_DATA -> stripped from shipping). ⇒ **there is no legacy input path, so SUPERVIVE MUST drive
+Enhanced Input from IMCs** -- which means the IMC assets DO exist somewhere and the searches above simply failed to find
+them. 0 of 14,921 loaded BP fns call `AddMappingContext` ⇒ the load+add is **NATIVE**.
+**NEXT (in confidence order):**
+1. ★ **Find the NATIVE add-site instead of hunting the asset** -- it will NAME the asset for us.
+   `tools/re/disasm_live.py` on `AddMappingContext`'s exec thunk (UFunction 0x28504E423A0, read `Func@+0xE0` for the
+   thunk), then `usmapdump callxref <native AddMappingContext impl>` to find `LokiPlayerController::SetupInputComponent`
+   / the keybind-settings path that calls it. Follow its operands to the IMC (a SoftObjectPath / DataAsset / config).
+2. Re-run the class search against a BETTER asset registry: the live game's in-memory AR, or regenerate
+   `out/AssetRegistry.bin` (the current one is partial: 0 DependsNode / 0 PackageData). Cross-check by first confirming
+   `candidates Mission` returns hits -- **that is the canary; until Mission works, an Input 0 means nothing.**
+3. Cheap: `extractor namesall InputMappingContext` (harvests NameMap vocabulary across assets -- finds the type even when
+   no path/class search does), and `usmapdump wstrings/strings SUPERVIVE-Win64-Shipping.exe MappingContext`.
+4. Once an IMC is in hand: it is loadable + `AddMappingContext` @0x28504E423A0 is NATIVE ⇒ `CallNative(subsystem=
+   0x285C4460200, imc, priority, options)`, with `BuildOutParms` for the `FModifyContextOptions` struct param.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
