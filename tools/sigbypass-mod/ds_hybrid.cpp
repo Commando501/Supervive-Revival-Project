@@ -198,6 +198,20 @@ static const float    kAttrMoveSpeed = 500.0f;  // MoveSpeed attribute value to 
 // input MUST be fed per-frame; the sparse ProcessInternal hook only produced crawling motion):
 //   poll WASD -> build a world-space direction from the camera yaw -> APawn::AddMovementInput(dir,1.0,bForce=true).
 constexpr int MODE_PLAYABLE=36;
+// MODE_WGTCENSUS (S80): dump EVERY live UUserWidget + its VISIBILITY, one-shot, to find the real pre-drop
+// screen widget. Guessing kKeys substrings has failed twice (48/48 "collapsed" and the BRALL screen stayed),
+// so read the actual class names instead.
+// ★ CRITICAL DESIGN: buffer into ONE string and do ONE file write at the end. The old census did a Markerf
+// PER WIDGET = ~1,244 CreateFile+WriteFile+CloseHandle on the GAME THREAD, which stalled it ~20s and got us
+// dropped ("UNetConnection::Tick: Connection TIMED OUT ... Elapsed: 0.00, Real: 19.99"). One-shot, no hook
+// held, no per-frame work => safe to run while the user sits on the pre-drop screen.
+constexpr int MODE_WGTCENSUS=37;
+// MODE_HIDEPREDROP (S80): collapse the pre-drop screen BY EXACT NAME and see what is behind it.
+// ★ WHY THE OLD PATH FAILED: ResolveSpectatorCam collects into a 48-slot array (`if(g_nLoadW<48)`) using BROAD
+// key substrings (Loading/Transition/Splash/Loadout/...). The live client has ~5,293 UUserWidgets, so the array
+// FILLS with the first 48 matches and `WBP_UI_PredropScreen` never makes the list. "48/48 collapsed" was the CAP
+// being full, not the job being done — which is exactly why the BRALL screen never moved. Target it by name.
+constexpr int MODE_HIDEPREDROP=38;
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -2705,6 +2719,84 @@ static void PlayableTick(){
     long mv=InterlockedIncrement(&g_plMoves);
     if(mv==1 || (mv%240)==0) Markerf("[PL] WASD driving: frames=%ld moves=%ld dir=(%.2f,%.2f) yaw=%.0f\r\n",f,mv,dx,dy,g_plYaw);
 }
+// ===== S80 MODE_WGTCENSUS: one-shot, buffered dump of every live UUserWidget + its visibility =====
+// Reports only VISIBLE-ish widgets first (the ones actually on screen), then the rest — so the pre-drop
+// screen is easy to spot. UUserWidget::Visibility is a reflected UPROPERTY (ESlateVisibility uint8):
+//   0=Visible 1=Collapsed 2=Hidden 3=HitTestInvisible 4=SelfHitTestInvisible
+static char g_wcBuf[600*1024];
+static int  g_wcLen=0;
+static void WcAdd(const char* fmt,...){
+    if(g_wcLen > (int)sizeof(g_wcBuf)-800) return;
+    va_list a; va_start(a,fmt);
+    int n=_vsnprintf_s(g_wcBuf+g_wcLen,sizeof(g_wcBuf)-g_wcLen,_TRUNCATE,fmt,a);
+    va_end(a); if(n>0) g_wcLen+=n;
+}
+static void DoWgtCensus(){
+    static const char* kVis[]={"VISIBLE","Collapsed","Hidden","HitTestInvis","SelfHitTestInvis","?"};
+    g_wcLen=0;
+    WcAdd("[WC] === S80 widget census (one-shot, buffered: ONE file write, no game-thread stall) ===\r\n");
+    uint32_t visOff=0xFFFFFFFF; int total=0, shown=0;
+    // pass 1: the widgets that are actually ON SCREEN right now
+    WcAdd("[WC] ---- VISIBLE / on-screen widgets (the pre-drop screen is in here) ----\r\n");
+    for(int pass=0; pass<2; pass++){
+        if(pass==1) WcAdd("[WC] ---- everything else (collapsed/hidden) ----\r\n");
+        ForEachObject([&](uintptr_t o)->bool{
+            uintptr_t c=ClassOf(o); if(!LooksLikePtr(c)) return false;
+            if(!SuperChainHas(c,"UserWidget")) return false;
+            char on[160]="?",cn[160]="?"; ObjName(o,on,sizeof(on));
+            if(strncmp(on,"Default__",9)==0) return false;
+            GetFNameStr(NameId(c),cn,sizeof(cn));
+            if(visOff==0xFFFFFFFF) visOff=PropOffsetOnClass(c,"Visibility");
+            uint8_t v=5;
+            if(visOff!=0xFFFFFFFF && SafeReadable((void*)(o+visOff),1)) v=*(uint8_t*)(o+visOff);
+            const bool onScreen = (v==0 || v==3 || v==4);
+            if(pass==0){ if(!onScreen) return false; shown++; } else { if(onScreen) return false; }
+            if(pass==0) total++;
+            WcAdd("[WC] %-16s 0x%llX %-44s cls=%s\r\n", kVis[v<5?v:5], (unsigned long long)o, on, cn);
+            return false;
+        });
+    }
+    WcAdd("[WC] === done: %d on-screen widget(s); Visibility@+0x%X ===\r\n", shown, visOff);
+    Marker(g_wcBuf);   // ★ ONE write
+}
+// ===== S80 MODE_HIDEPREDROP: collapse the pre-drop UI by EXACT class name (no 48-slot cap, no broad keys) =====
+static volatile long g_hpReps=0;
+static void DoHidePredrop(){
+    long rep=InterlockedIncrement(&g_hpReps);
+    // The pre-drop screen family, by CLASS name (from the S80 census of the live pre-drop state).
+    static const char* kCls[] = {
+        "WBP_UI_PredropScreen_C",              // ★ the "BRALL / DROP LEADER" full-screen UI
+        "WBP_PredropScreen_Champion_TeamEntry_C",
+        "WBP_DropPhase_DropLeaderBanner_C",
+        "WBP_UI_PredropScreen_PlayerPortrait_C",
+        "WBP_Predrop_Emote_Parent_C",
+    };
+    void* svFn=0; uintptr_t svTh=0,svCh=0; uint32_t visOff=0xFFFFFFFF;
+    int hid=0, seen=0;
+    ForEachObject([&](uintptr_t o)->bool{
+        uintptr_t c=ClassOf(o); if(!LooksLikePtr(c)) return false;
+        char cn[160]; if(!GetFNameStr(NameId(c),cn,sizeof(cn))) return false;
+        bool match=false;
+        for(int i=0;i<(int)(sizeof(kCls)/sizeof(kCls[0]));i++) if(strcmp(cn,kCls[i])==0){ match=true; break; }
+        if(!match) return false;
+        char on[160]="?"; ObjName(o,on,sizeof(on)); if(strncmp(on,"Default__",9)==0) return false;
+        seen++;
+        if(!svTh){ ResolveFunc(c,"SetVisibility",&svFn,&svTh,&svCh); if(svCh) visOff=ParamOffset(svCh,"InVisibility"); }
+        if(svTh && visOff!=0xFFFFFFFF){
+            uint32_t vo=PropOffsetOnClass(c,"Visibility");
+            uint8_t before=(vo!=0xFFFFFFFF&&SafeReadable((void*)(o+vo),1))?*(uint8_t*)(o+vo):255;
+            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            *(uint8_t*)(g_pbuf+visOff)=1;                       // ESlateVisibility::Collapsed
+            bool f=CallGuarded(svFn,svTh,svCh,(void*)o,g_pbuf,g_rbuf);
+            uint8_t after=(vo!=0xFFFFFFFF&&SafeReadable((void*)(o+vo),1))?*(uint8_t*)(o+vo):255;
+            if(rep==1) Markerf("[HP] %-42s 0x%llX vis %u -> %u fault=%d\r\n",cn,(unsigned long long)o,before,after,f);
+            if(!f) hid++;
+        }
+        return false;
+    });
+    if(rep==1) Markerf("[HP] collapsed %d/%d pre-drop widget(s); re-asserting for ~20s (the game re-shows them)\r\n",hid,seen);
+    if(rep>=40){ Markerf("[HP] === done (last pass: %d/%d) ===\r\n",hid,seen); g_done=1; }
+}
 static void DoUFuncDump(){
     Marker("[UF] === UFunction field dump (find Script + PropertiesSize) ===\r\n");
     uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L)L=FindInstClassSub("LocalPlayer");
@@ -2922,6 +3014,8 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_DEVSWAP){ DoDevSwap(); g_inHook=0; return; }
     if(kMode==MODE_MOVETEST){ DoMoveTest(); g_inHook=0; return; }
     if(kMode==MODE_PLAYABLE){ DoPlayableSetup(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_WGTCENSUS){ DoWgtCensus(); g_done=1; g_inHook=0; return; }
+    if(kMode==MODE_HIDEPREDROP){ DoHidePredrop(); g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
@@ -3220,6 +3314,25 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(25);
         }
         Markerf("[3b] bptest3 done (done=%ld).\r\n",(long)g_done);
+        return 0;
+    } else if(kMode==MODE_HIDEPREDROP){
+        Marker("[2] hidepredrop: collapsing the pre-drop UI by exact class name...\r\n");
+        DWORD t0=GetTickCount();
+        while(!g_done && GetTickCount()-t0 < 30000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+200; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(400);
+        }
+        Markerf("[3b] hidepredrop done (done=%ld).\r\n",(long)g_done);
+        return 0;
+    } else if(kMode==MODE_WGTCENSUS){
+        // one transient PI-hook fire, dump, done. No hook held, no per-frame work => no lag, no stall.
+        Marker("[2] wgtcensus: one-shot buffered widget dump...\r\n");
+        DWORD t0=GetTickCount();
+        while(!g_done && GetTickCount()-t0 < 25000){
+            if(InstallHookFast()){ DWORD md=GetTickCount()+250; while(!g_done && GetTickCount()<md) Sleep(0); UninstallHookFast(); }
+            Sleep(25);
+        }
+        Markerf("[3b] wgtcensus done (done=%ld).\r\n",(long)g_done);
         return 0;
     } else if(kMode==MODE_PLAYABLE){
         // 1) one transient PI-hook fire to run the setup on the game thread, 2) install the S78 per-frame vtable
