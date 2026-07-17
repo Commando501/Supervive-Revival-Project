@@ -430,6 +430,37 @@ formally RETRACTED (as is the S80-prep "ProcessEvent is neutered" claim, which w
   bundle is actually LOADED (not just ID-set) before `RefreshCosmetics`; (4) re-run on a FRESH hero (the current
   `0x28577E6D560` is hand-mangled + drifted over the void). New mode: BPCALL. `CallBP` is reusable for ALL future BP work.
 
+**★★★★★ S80b — READ THE BYTECODE: `ClientInitialComponentSetup` DOESN'T BUILD THE MESH. The whole S79 mesh chain was
+a GUESS about what that fn does, and the guess was wrong.** With `CallBP` working we could finally look INSIDE. New tool
+`tools/re/script_dump.py` (read-only RPM) dumps a BP UFunction's `Script` bytecode and resolves embedded UObject*/FName
+operands to names. `ClientInitialComponentSetup` (88 bytes) decodes EXACTLY (every jump offset lands on an opcode
+boundary, total 88 ✓):
+```
++0   CallMath  LokiBlueprintLibrary::ClientOnly(Self) -> CallFunc_ClientOnly_OutputExecs
++20  LetBool   bool_local = KismetMathLibrary::NotEqual_ByteByte(OutputExecs, ByteConst 0)
++51  JumpIfNot(70) bool_local        // OutputExecs == 0  -> goto 70
++65  Jump(85)                        // OutputExecs != 0  -> return, do nothing
++70  LocalVirtualFunction 'SetCastRangeVisibility'(False)
++85  Return / Nothing / EndOfScript
+```
+⇒ **its ENTIRE body is `if (ClientOnly()) SetCastRangeVisibility(false)`** — a cast-range DECAL toggle. It never touches
+the character mesh, never creates a component, never calls cosmetics. **The S79 chain "mesh <- RefreshCosmetics <-
+cosmetics CONTROLLER <- ClientInitialComponentSetup / BP_PostSetupCosmetics" was never verified — it was inferred from
+function NAMES.** (The controller was ALSO already non-null, which should have been the tell.) So `skeletal AFTER = 0` is
+fully explained: none of the four fns we ran builds a mesh. Nothing here is a context wall.
+**METHOD LESSON (this session's theme, twice over): verify what a function DOES before theorizing about why it "fails."
+Read the bytecode (`script_dump.py`) / check `Script.Num>0` (`ufunc_survey.py`) FIRST.** Both are read-only, need no
+injection, and cost seconds.
+**NEXT — find the REAL character-mesh builder (the hypothesis space is now open, so re-derive, don't guess):**
+(1) `BP_PostSetupCosmetics` (18 B) is an `ExecuteUbergraph_BP_LokiHeroCharacter(EntryPoint)` thunk — dump the UBERGRAPH
+    bytecode at that EntryPoint (that's where real BP work lives; `script_dump.py` + the fn ptr/int operands give it).
+(2) A hero with a working mesh EXISTS in-game normally — find the builder empirically: on a REAL hero, what creates the
+    SkeletalMeshComponent? Look for native `USkeletalMeshComponent` creation on `LokiHeroCharacter` /
+    `LokiCosmeticsController` (`0x2868C4173C0`, class already known) — `ufunc_survey.py` that controller's class chain.
+(3) `RefreshCosmetics` (native, fault=0, built nothing) — disassemble it (`tools/re/disasm_live.py` on its thunk
+    `0x7FF6B439E420`) to see its early-outs; that's the one fn we KNOW is the native cosmetics entry.
+(4) The cosmetics bundle may not be RESIDENT (ID set != loaded).
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
