@@ -1026,6 +1026,43 @@ BP_LokiPlayerController_Dev_C            <- the class S79 Phase 2/3 SPAWNED and 
 uses LEGACY FName input, so IMCs never existed. The correct question was "which class owns the input events", answerable
 in ONE `find_func.py` call. Fake wall #7 was mine.
 
+**S80s -- `SetPlayer` vtable slot: NOT RESOLVED (honest negative). Two candidates found and BOTH REFUTED by disasm.
+NOTHING was called. Do not build on either address.**
+Method (reusable): `APlayerController::Player @ +0x458` is known (S79 3a), so `SetPlayer` MUST write it -> scan the
+native PC's vtable (`PC 0x285752F50B0` -> vtable **base+0x8A1AEE0**; hero/Actor vtable base+0x89A6DA0 used to discard
+slots SHARED with a plain Actor), disassemble each PC-specific slot and look for a WRITE to `[reg+0x458]`.
+- **Slot 183 (base+0x3C33230)** -- `lea rbx,[rcx+0x458]` then `cmp [rbx],0`: only READS Player, takes no `rdx`/InPlayer,
+  and operates on `[rbx+0x13c8]`/`[rbx+0x140]`. **REFUTED** -- the `lea` was just taking the address to test it.
+- **Slot 153 (base+0x3C421D0)** -- the ONLY slot in 280 that WRITES `qword ptr [reg+0x458]`. **REFUTED by reading it:**
+```
+  mov rdi,rdx                 ; rdi = InPlayer
+  mov [rip+0x635d44c],rdi     ; stash InPlayer in a GLOBAL
+  xor edi,edi                 ; *** rdi = 0 ***
+  mov rax,[rbx+0x458]         ; old Player
+    mov rcx,[rax+0x38]        ; oldPlayer->PlayerController (matches S79 3a's +0x38)
+    cmp rcx,rbx / sete cl
+    mov [rax+0x38],rdi        ; oldPlayer->PlayerController = 0
+  mov [rbx+0x458],rdi         ; *** this->Player = 0  -- writes ZERO, not InPlayer ***
+  mov [rbx+0x640],rdi         ; another field = 0
+```
+  ⇒ a **TEARDOWN** path (`OnNetCleanup`/`Destroyed`-shaped), NOT `SetPlayer`. It only matched the filter because `rdi`
+  was zeroed before the write. **(Useful bycatch: this CONFIRMS `Player@+0x458` and `ULocalPlayer->PlayerController@+0x38`
+  from a second, independent direction -- the S79 3a offsets are solid.)**
+⇒ **CONCLUSION: `SetPlayer` is NOT among the first 280 vtable slots as a direct `[reg+0x458]` writer.** Possible reasons
+(untested, do NOT assume): (a) the `TObjectPtr<UPlayer>` assignment goes through a helper CALL rather than an inline
+`mov`; (b) `SetPlayer` is beyond slot 280; (c) it is not virtual / got inlined in this build; (d) it writes via a
+different register form my filter missed (e.g. a 32-bit or `lea`+`mov [rbx],`).
+**NEXT (better approach -- find it by its CALLER, not by pattern-matching the vtable):**
+1. ★ `ULocalPlayer::SwitchController(APlayerController*)` and `ULocalPlayer::SpawnPlayActor(...)` both call
+   `PC->SetPlayer(this)`. Locate either (`usmapdump nameid`/`strings` for `SwitchController`, or find `ULocalPlayer`'s
+   vtable via the live LocalPlayer **0x28541940E00**), disassemble it, and **read the virtual call it makes on the PC**
+   -- that gives SetPlayer's slot directly and unambiguously.
+2. Or widen the slot scan past 280 AND accept indirect writes (match any `call` after `lea reg,[rcx+0x458]`).
+3. **Then VERIFY by disasm before calling** (SetPlayer must: take rdx=InPlayer, write it to +0x458, and call several
+   things incl. a `SpawnPlayerCameraManager`-ish and an `InitInputSystem`-ish). **Two candidates already looked right
+   and were both wrong -- the pattern match is necessary but NOT sufficient.**
+**Status: nothing was called; the live session is untouched by this step.**
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
