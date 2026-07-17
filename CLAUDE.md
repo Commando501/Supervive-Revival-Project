@@ -163,15 +163,23 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   rejected (its relocated `.text` bytes are incompatible). `.text` union is exact; the
   reported %, being non-zero-based, slightly undercounts (readable-zero bytes read as gaps).
 - **usmapdump reconstructiat:** `usmapdump.exe reconstructiat <dumpFile> [outFile]` —
-  rebuilds a real import table on a dump so Ghidra/IDA name API calls instead of showing
-  raw IAT thunks. The dumped IAT holds resolved system-DLL addresses (verified — NOT
-  packer-redirected), so it maps each slot to `module!export` via the `<stem>.exports.txt`
-  sidecar `dumpimage` wrote, then appends an `.idata2` section (descriptors + INT + names)
-  and repoints the Import data-dir. Fully OFFLINE (needs the sidecar, not the running game).
-  Writes `*.iat.exe`; load THAT in Ghidra. Validated end-to-end on explorer (1066/1066 slots
-  resolved; output parses in `debug/pe`). NOTE: old dumps made before the sidecar existed
-  can't be reconstructed — re-dump. Import redirection would show as unresolved slots (it
-  doesn't here).
+  rebuilds a real import table so Ghidra/IDA name API calls instead of raw IAT thunks, when
+  the dumped IAT holds DIRECT resolved export addresses (unprotected binaries, e.g.
+  explorer). Maps each slot to `module!export` via the `<stem>.exports.txt` sidecar, appends
+  an `.idata2` section (descriptors + INT + names), repoints the Import data-dir. Fully
+  OFFLINE. Validated on explorer (1066/1066). For SUPERVIVE use `deobfimports` instead — its
+  IAT is import-PROTECTED (see below), so reconstructiat resolves ~0 of its slots.
+- **usmapdump deobfimports:** `usmapdump.exe deobfimports <proc> <dumpFile> [outFile]` — the
+  SUPERVIVE path. Its imports are VMProtect/Themida-PROTECTED: each IAT slot points to an
+  obfuscated trampoline in a packer-hidden region (NOT any registered module), computing the
+  real API as `real = C2 ^ ROL64(C1 + M, 0x33)` (per-stub C1/C2 imm64; M = a per-launch data
+  qword) then `jmp`-ing to it. deobfimports EMULATES each stub (x86asm decoder + tiny integer
+  interpreter) against the LIVE process to recover the real target, VERIFIES it against the
+  exports sidecar (exact match — a mis-emulation can only yield "unresolved", never a wrong
+  name), then rebuilds the table like reconstructiat. Needs the SOURCE process ALIVE (stub
+  code + M are read live; M encodes the ASLR-relocated target). Validated: **1107/1107 slots,
+  0 undecodable, 0 off-target**; output parses in `debug/pe` (all 1107 named). `capture-dumps.ps1
+  -Finalize` calls this automatically while the game runs.
 - **Manual mapper / DLL injector:** `tools/inject/` — for no-throw payloads only
   (C++ exception unwinding gets eaten by the packer's vectored exception filter).
 - **Native shims:** `tools/sigbypass-mod/` — `catalog_store_fix` (roster/store/

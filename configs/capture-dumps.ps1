@@ -9,7 +9,9 @@
   different code - opening the STORE, browsing the HUNTERS roster, MISSIONS, loadout each
   decrypt their shim's native-call code. This helper snapshots the live game at each state
   you name into dumps/<state>/, then unions them (mergedumps) and rebuilds the import table
-  (reconstructiat) into dumps/merged.dump.iat.exe.
+  (deobfimports - SUPERVIVE's imports are VMProtect-protected trampolines) into
+  dumps/merged.dump.iat.exe. Finalize while the game is still running (deobf emulates the
+  live stubs).
 
   HARD CONSTRAINT: every state must come from ONE game process lifetime - mergedumps rejects
   inputs with a different ImageBase, and each launch gets a new ASLR base. So capture all
@@ -171,9 +173,21 @@ function Invoke-Finalize {
   & $usmap mergedumps $mergedOut $DumpsDir
   if ($LASTEXITCODE -ne 0) { Write-Host "mergedumps FAILED (exit $LASTEXITCODE)" -ForegroundColor Red; return }
 
-  Write-Host "-- reconstructiat --" -ForegroundColor DarkGray
-  & $usmap reconstructiat $mergedOut
-  if ($LASTEXITCODE -ne 0) { Write-Host "reconstructiat FAILED (exit $LASTEXITCODE)" -ForegroundColor Red; return }
+  # SUPERVIVE's imports are VMProtect/Themida-protected (IAT points to obfuscated
+  # trampolines), so use `deobfimports` which emulates each stub against the LIVE process.
+  # Falls back to `reconstructiat` (direct) only for unprotected targets.
+  $alive = Get-Process -Name $procName -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($alive) {
+    Write-Host "-- deobfimports (live emulate, PID $($alive.Id)) --" -ForegroundColor DarkGray
+    & $usmap deobfimports $Proc $mergedOut
+    if ($LASTEXITCODE -ne 0) { Write-Host "deobfimports FAILED (exit $LASTEXITCODE)" -ForegroundColor Red; return }
+  } else {
+    Write-Host "Game not running - import stubs need the LIVE process to deobfuscate." -ForegroundColor Yellow
+    Write-Host "Merged dump is written WITHOUT named imports. To name them: relaunch the game," -ForegroundColor Yellow
+    Write-Host "reach any state, then run  .\capture-dumps.ps1 -Finalize  again." -ForegroundColor Yellow
+    Write-Host "(Trying reconstructiat for any unprotected slots...)" -ForegroundColor DarkGray
+    & $usmap reconstructiat $mergedOut
+  }
 
   # mergedOut "merged.dump.exe" -> reconstructiat writes "merged.dump.iat.exe"
   $iat = ($mergedOut -replace '\.exe$', '') + ".iat.exe"
