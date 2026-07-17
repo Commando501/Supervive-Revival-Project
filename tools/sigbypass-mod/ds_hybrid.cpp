@@ -2660,11 +2660,17 @@ static void DoPlayableSetup(){
 static void PlayableTick(){
     if(!g_plReady || !g_plAmiThunk || !LooksLikePtr(g_plHero)) return;
     long f=InterlockedIncrement(&g_plFrames);
-    // Re-assert the loading-overlay hide, but ONLY for the first ~10 seconds and rarely (every 120 frames).
-    // Everything in here runs on the GAME THREAD inside the netdriver's timeout budget: stalling it drops the
-    // connection (S80: a 20s stall => "Connection TIMED OUT ... Elapsed: 0.00, Real: 19.99" => back to lobby).
-    // Once the phase progression reaches EGP_Combat the overlay is gone anyway, so this is belt-and-braces.
-    if(g_svThunk && g_svVisOff!=0xFFFFFFFF && f<600 && (f%120)==1){
+    // ★★★ S80: RE-CENSUS periodically. The one-shot census at setup runs while the client is still on the
+    // LOADING screen, so `WBP_UI_PredropScreen` (the "BRALL / DROP LEADER" pre-drop UI) DOES NOT EXIST YET and
+    // is never collected — which is why the pre-drop screen stays up even though the world is live behind it.
+    // The object walk itself is cheap (in-process pointer chasing, ~ms); what stalled the game thread before
+    // was the Markerf-per-widget FILE I/O, which is now suppressed for MODE_PLAYABLE. Re-scan every ~5s.
+    if(g_svThunk && (f%300)==7){
+        g_nLoadW=0;
+        ResolveSpectatorCam();            // re-collect: now includes Predrop/DropPhase/DropLeader widgets
+    }
+    // Re-assert the hide on whatever is currently collected (the game re-shows these).
+    if(g_svThunk && g_svVisOff!=0xFFFFFFFF && (f%60)==1){
         int hid=0;
         for(int i=0;i<g_nLoadW;i++){
             uintptr_t w=g_loadWidgets[i]; if(!SafeReadable((void*)w,0x30)) continue;

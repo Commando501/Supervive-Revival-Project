@@ -182,21 +182,21 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	// S80: kick off the round-phase progression now that a client is actually here. Delay the first step
-	// so the client finishes hydrating its GameState replica + clears the loading screen at SpawnSelect(4)
-	// before we start stepping toward Combat(7).
-	if (UWorld* W = GetWorld())
-	{
-		const float kPhaseFirstDelay = 12.f;   // pre-drop hold, mirroring retail's "wait for players to load"
-		const float kPhaseStepSecs   = 4.f;    // then one step every few seconds
-		PhaseStep = 0;
-		W->GetTimerManager().ClearTimer(PhaseTimer);
-		W->GetTimerManager().SetTimer(PhaseTimer, this, &ALokiStubGameMode::AdvanceRoundPhase,
-		                              kPhaseStepSecs, /*bLoop=*/true, /*FirstDelay=*/kPhaseFirstDelay);
-		UE_LOG(LogLokiStubGM, Display,
-		       TEXT("PostLogin: round-phase progression armed (first step in %.0fs, then every %.0fs -> EGP_Combat)."),
-		       kPhaseFirstDelay, kPhaseStepSecs);
-	}
+	// ★★★ S80 REVERTED — DO NOT RE-ARM THE PHASE PROGRESSION. It is a REGRESSION, live-proven:
+	// walking SpawnSelect(4) -> 5 -> 6 -> Combat(7) made the client NEVER LEAVE THE LOADING SCREEN (verified
+	// with NO shim injected at all, so this is the game's own behaviour, not our injection). That exactly
+	// reconfirms the S73/S77 finding recorded in InitGameState: "the client RECEIVED EGP_Combat but the
+	// loading screen STAYED". The loading-screen dismiss is PHASE-GATED TO SpawnSelect(4) specifically — it
+	// is not a "later phase is better" ladder, and 4 is not merely a waypoint on the way to 7.
+	// The correct, PROVEN state is STATIC SpawnSelect(4): loading clears and the client shows the real
+	// PRE-DROP view (the "BRALL / DROP LEADER" screen) with the live tutorial world behind it — that is the
+	// S70/S77/S79 milestone and the state in which the hero work is reachable.
+	// The pre-drop -> world transition is therefore NOT a CurrentPhase write; the retail flow runs the DROP
+	// (drop plane -> drop pod -> land), which is a separate mechanism. Chase THAT, not the phase enum.
+	// AdvanceRoundPhase() is retained (unused) only so the experiment is documented and never repeated.
+	UE_LOG(LogLokiStubGM, Display,
+	       TEXT("PostLogin: holding CurrentPhase at EGP_SpawnSelect(4) — the phase progression to Combat(7) "
+	            "was a REGRESSION (loading screen never cleared); see the comment above."));
 
 	// Session 37 experimented with NetDormancy here as Option A' — result
 	// was negative (see docs/session-37-option-a-negative.md). Kept the
