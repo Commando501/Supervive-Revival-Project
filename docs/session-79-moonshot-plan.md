@@ -909,6 +909,36 @@ bindings" is NOT ESTABLISHED. The deref found NO `UInputAction`.**
    game turn a keypress into a hero action" -- and after S80g/S80n, the answer must come from a MEASUREMENT (a
    disassembled offset, a resolved class name), never from a plausible-looking byte pattern.**
 
+**S80p -- ★★★ MECHANISM FOUND (directionally): SUPERVIVE HAS A CUSTOM LOKI INPUT SYSTEM. S80g ("no mapping context" =
+the one real gap) is almost certainly FAKE WALL #7 -- MINE -- and is hereby RETRACTED.**
+`usmapdump nameid SUPERVIVE-Win64-Shipping.exe InputAction` (live FNamePool, read-only) -> 40 hits in 3 clean groups:
+- ★★★ **LOKI-CUSTOM (the finding):** `LokiInputActionIdentifier`, `LokiUniqueInputActionRule`, **`ListenForInputAction`,
+  `StopListeningForInputAction`, `IsListeningForInputAction`, `StopListeningForAllInputActions`,
+  `SetInputActionPriority`, `SetInputActionBlocking`** -- a bespoke **listener / priority / blocking API**. This is NOT
+  Enhanced Input's `BindAction` model.
+- **CommonUI (menus):** `CommonInputActionDataBase`, `UIInputAction`, `CommonInputActionDomain`,
+  `CommonInputActionDomainTable`, and the ONLY real asset path in the whole pool:
+  **`/Game/Loki/UI/Input/DT_InputActionData_Menus`** (a **DataTable**, CommonUI-style input action data -- note: MENUS,
+  so a gameplay equivalent likely exists elsewhere).
+- **Engine EnhancedInput:** only reflection vocabulary (`InputAction`, `EnhancedInputActionValueBinding`,
+  `Conv_InputActionValueTo*`, `MakeInputActionValue`, ...) -- the TYPE NAMES existing, nothing more.
+- **NO `IA_*` assets. NO IMC assets.** (Consistent with every other probe.)
+⇒ **CONCLUSION: input is driven by a Loki-custom system (identifiers + DataTables + a Listen/Priority/Blocking API), NOT
+by IMC/BindAction. Therefore `AppliedInputContexts` EMPTY is the NORMAL, EXPECTED state for this game and is NOT why
+WASD fails.** S80g's "first real gap" was me mis-reading a normal state as a missing step, then spending S80h-S80o
+chasing an IMC asset **that does not exist**. **RETRACTED. Do not resume the IMC hunt.**
+⇒ **REVISED TALLY: 7 investigated "walls" -> 7 measurement/tool errors, 0 game-imposed limits** (6 inherited from the
+S72-S79 record + S80g authored by me), plus S80n (a false POSITIVE, retracted in S80o).
+**NEXT (a real, concrete lead at last -- and MEASURE, do not infer):**
+1. ★ **Find the class that owns `ListenForInputAction` / `SetInputActionPriority`** -- that is the entry point to
+   SUPERVIVE's actual input system. Use `tools/re/find_func.py` (scans GUObjectArray for UFunctions by substring, prints
+   the owning class + BP/native) or `tools/re/ufunc_survey.py` on the hero/PC class chains with needle `InputAction`.
+   Cheap, read-only, no injection. **That class is the thing to drive -- not `AddMappingContext`.**
+2. Then `ubergraph_dump.py` / `disasm_live.py` whatever registers the gameplay listeners, and find the gameplay
+   counterpart of `DT_InputActionData_Menus` (try `nameid DT_InputAction` / `nameid InputActionData`).
+3. Only then decide what to call. Remember S80n: **a byte pattern is not a field, and a plausible name is not a
+   mechanism.** Confirm by resolved class name or a disassembled offset.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
