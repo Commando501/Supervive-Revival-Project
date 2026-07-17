@@ -346,6 +346,17 @@ func main() {
 		cmdReconstructIAT(os.Args[2], out)
 		return
 	}
+	// deobfimports: <proc> <dumpFile> [outFile] — for import-PROTECTED dumps (VMProtect/
+	// Themida trampolines): emulate each stub against the live process to recover the real
+	// API, then rebuild the import table. Needs the source process alive + the sidecar.
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "deobfimports" {
+		out := ""
+		if len(os.Args) == 5 {
+			out = os.Args[4]
+		}
+		cmdDeobfImports(os.Args[2], os.Args[3], out)
+		return
+	}
 	// strings/wstrings: <proc> <needle> [maxhits]
 	if (len(os.Args) == 4 || len(os.Args) == 5) && (os.Args[1] == "strings" || os.Args[1] == "wstrings") {
 		mh := parseMaxHits(os.Args, 4, 20)
@@ -451,6 +462,7 @@ func main() {
 	fmt.Println("       usmapdump dumpimage <proc-name-or-pid> [outDir]        (snapshot unpacked image + exec regions to disk)")
 	fmt.Println("       usmapdump mergedumps <outFile> <in.dump.exe...|dir>    (union dumpimage snapshots -> max .text coverage)")
 	fmt.Println("       usmapdump reconstructiat <dumpFile> [outFile]         (rebuild import table from .exports.txt -> named API calls)")
+	fmt.Println("       usmapdump deobfimports <proc> <dumpFile> [outFile]    (import-protected: emulate IAT stubs -> named API calls)")
 	fmt.Println("       usmapdump strings  <proc-name-or-pid> <needle> [N]     (ANSI byte search)")
 	fmt.Println("       usmapdump wstrings <proc-name-or-pid> <needle> [N]     (UTF-16 LE search)")
 	fmt.Println("       usmapdump xrefstr  <proc-name-or-pid> 0xADDR    [N]    (rip-rel LEA xref)")

@@ -251,6 +251,10 @@ type iatDescr struct {
 	entries       []imp
 }
 
+// cmdReconstructIAT: offline path — the dump's IAT holds resolved export addresses
+// directly (unprotected imports, e.g. explorer). Each slot resolves straight against the
+// exports sidecar captured at dump time. For VMProtect/Themida-style IMPORT-PROTECTED
+// dumps (IAT points to obfuscated trampolines, e.g. SUPERVIVE) use `deobfimports` instead.
 func cmdReconstructIAT(dumpPath, outPath string) {
 	expPath := findExportsSidecar(dumpPath)
 	if expPath == "" {
@@ -264,7 +268,17 @@ func cmdReconstructIAT(dumpPath, outPath string) {
 		os.Exit(1)
 	}
 	fmt.Printf("exports: %s (%d entries)\n", filepath.Base(expPath), len(resolve))
+	writeReconstructed(dumpPath, outPath, func(val uintptr) (imp, bool) {
+		im, ok := resolve[val]
+		return im, ok
+	})
+}
 
+// writeReconstructed walks the dump's IAT, maps each slot to an import via resolveSlot,
+// groups contiguous same-module slots into descriptors, and appends a real import section
+// (INT + hint/name + descriptors) so Ghidra/IDA name the calls. resolveSlot abstracts the
+// resolution strategy (direct sidecar lookup, or stub-emulation for protected imports).
+func writeReconstructed(dumpPath, outPath string, resolveSlot func(uintptr) (imp, bool)) {
 	img, err := os.ReadFile(dumpPath)
 	if err != nil {
 		fmt.Println("ERROR: reading dump:", err)
@@ -305,7 +319,7 @@ func cmdReconstructIAT(dumpPath, outPath string) {
 			curIdx = -1
 			continue
 		}
-		im, ok := resolve[val]
+		im, ok := resolveSlot(val)
 		if !ok {
 			unresolved++
 			curIdx = -1
@@ -323,8 +337,8 @@ func cmdReconstructIAT(dumpPath, outPath string) {
 		descrs[curIdx].entries = append(descrs[curIdx].entries, im)
 	}
 	if resolved == 0 {
-		fmt.Println("ERROR: resolved 0 IAT slots — the exports sidecar doesn't match this dump")
-		fmt.Println("  (a different boot session? use the .exports.txt captured alongside THIS dump).")
+		fmt.Println("ERROR: resolved 0 IAT slots — the exports sidecar doesn't match this dump,")
+		fmt.Println("  or the IAT is import-protected (obfuscated stubs) and needs `deobfimports`.")
 		os.Exit(1)
 	}
 
@@ -475,7 +489,7 @@ func cmdReconstructIAT(dumpPath, outPath string) {
 		for _, a := range unresolvedSample {
 			fmt.Printf("0x%X ", a)
 		}
-		fmt.Println("\n    (unresolved = value not in any current module; expected for a stale dump/process pair)")
+		fmt.Println("\n    (unresolved = slot could not be mapped to a known export)")
 	}
 	fmt.Printf("  wrote %s (+%d bytes import section)\n", outPath, secLen)
 	fmt.Println("  Load THIS file in Ghidra/IDA — API calls through the IAT now resolve to module!Name.")
