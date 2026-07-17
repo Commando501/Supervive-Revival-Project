@@ -186,6 +186,7 @@ constexpr int MODE_DEVSWAP=34;
 //                  and the diagnostics below (MovementMode, bIsOnGround, velocity, Controller/Pawn wiring) say which.
 // Read-mostly: the only writes are the MoveForward/MoveRight calls themselves (the game's own movement entry points).
 constexpr int MODE_MOVETEST=35;
+static const unsigned kMoveMode = 5;   // EMovementMode for MODE_MOVETEST: 1=MOVE_Walking 3=MOVE_Falling 5=MOVE_Flying
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -2179,8 +2180,16 @@ static void DoDevSwap(){
         // ---- THE SWAP (S79 Phase-3 proven: held 10s, no revert) ----
         if(SafeReadable((void*)(g_dsL+0x38),8))    *(uintptr_t*)(g_dsL+0x38)=g_dsDev;
         if(SafeReadable((void*)(g_dsDev+0x458),8)) *(uintptr_t*)(g_dsDev+0x458)=g_dsL;
-        if(SafeReadable((void*)(g_dsOld+0x458),8)) *(uintptr_t*)(g_dsOld+0x458)=0;
-        Marker("[DS] swapped L->PlayerController = devPC\r\n");
+        // ★★★ DO **NOT** null the native PC's Player (+0x458). LIVE-PROVEN FATAL (S80, Loki.log):
+        // the NATIVE PC owns the NetConnection and UE resolves an RPC's owning connection THROUGH the
+        // PC<->Player link. Zeroing it made the next `ServerEcho` heartbeat fail with
+        // "UNetDriver::ProcessRemoteFunction: No owning connection for actor LokiPlayerController_..."
+        // -> GameNetDriver shut down -> "LogTravelManager: starting client travel ... LVL_Login" -> the
+        // whole 23-hour DS session (hero + BP_Dev PCs + swap) was destroyed. S79 Phase 3 got away with it
+        // only because 4d reverted within 10s, before the heartbeat tripped.
+        // Leave oldPC->Player pointing at the LocalPlayer: both PCs referencing it is inconsistent but
+        // SURVIVABLE, and it is what keeps the net connection alive.
+        Marker("[DS] swapped L->PlayerController = devPC (oldPC->Player deliberately LEFT INTACT — nulling it kills the NetConnection)\r\n");
         // ---- give the dev PC the hero, then ClientRestart THERE (the untested variable) ----
         if(LooksLikePtr(g_dsHero)){
             uint32_t dpo=PropOffsetOnClass(ClassOf(g_dsDev),"Pawn"); uint32_t dPawnOff=(dpo!=0xFFFFFFFF)?dpo:0x3F8;
@@ -2216,6 +2225,8 @@ static uintptr_t g_mtPC=0,g_mtHero=0,g_mtCMC=0;
 static void* g_mtFwdFn=0; static uintptr_t g_mtFwdThunk=0,g_mtFwdCh=0;
 static void* g_mtRgtFn=0; static uintptr_t g_mtRgtThunk=0,g_mtRgtCh=0;
 static void* g_mtLocFn=0; static uintptr_t g_mtLocThunk=0,g_mtLocCh=0;
+static void* g_mtAmiFn=0; static uintptr_t g_mtAmiThunk=0,g_mtAmiCh=0;   // APawn::AddMovementInput — the REAL entry
+static void* g_mtSmFn=0; static uintptr_t g_mtSmThunk=0,g_mtSmCh=0;      // CMC::SetMovementMode (re-asserted per tick)
 static double g_mtX0=0,g_mtY0=0,g_mtZ0=0;
 static bool MtLoc(double* x,double* y,double* z){
     if(!g_mtLocThunk) return false;
@@ -2234,11 +2245,28 @@ static void DoMoveTest(){
         uint32_t po=PropOffsetOnClass(ClassOf(g_mtPC),"Pawn"); uint32_t pawnOff=(po!=0xFFFFFFFF)?po:0x3F8;
         g_mtHero=SafeReadable((void*)(g_mtPC+pawnOff),8)?*(uintptr_t*)(g_mtPC+pawnOff):0;
         char pc[96]="?",hc[96]="?"; ClassName(g_mtPC,pc,sizeof(pc)); if(LooksLikePtr(g_mtHero))ClassName(g_mtHero,hc,sizeof(hc));
-        Markerf("[MT] PC=0x%llX [%s]  hero=0x%llX [%s]\r\n",(unsigned long long)g_mtPC,pc,(unsigned long long)g_mtHero,hc);
-        if(!LooksLikePtr(g_mtHero)){ Marker("[MT] PC->Pawn null — nothing to move\r\n"); g_done=1; return; }
+        Markerf("[MT] L->PC=0x%llX [%s]  current Pawn=0x%llX [%s]\r\n",(unsigned long long)g_mtPC,pc,(unsigned long long)g_mtHero,hc);
+        // ★ If the PC is driving a DefaultPawn (the dead-spectator state), hand it a REAL hero instead.
+        // NB we wire the hero onto the NATIVE PC and NEVER touch oldPC->Player — nulling Player killed the
+        // NetConnection and re-travelled the client (S80, see the MODE_DEVSWAP comment). No swap => no disconnect.
+        if(!LooksLikePtr(g_mtHero) || strstr(hc,"DefaultPawn")){
+            uintptr_t real=FindInstExactClass("BP_HERO_Assault_C");
+            if(!LooksLikePtr(real)){ Marker("[MT] no live BP_HERO_Assault_C to test with — run MODE_SPAWN_P2 first\r\n"); g_done=1; return; }
+            uint32_t co2=PropOffsetOnClass(ClassOf(real),"Controller"); uint32_t ctlOff=(co2!=0xFFFFFFFF)?co2:0x400;
+            if(SafeReadable((void*)(g_mtPC+pawnOff),8)) *(uintptr_t*)(g_mtPC+pawnOff)=real;   // nativePC->Pawn = hero
+            if(SafeReadable((void*)(real+ctlOff),8))    *(uintptr_t*)(real+ctlOff)=g_mtPC;    // hero->Controller = nativePC
+            if(SafeReadable((void*)(real+0x1090),1))    *(uint8_t*)(real+0x1090)=1;           // LivingState = Alive
+            if(SafeReadable((void*)(real+0x1BE8),1))    *(uint8_t*)(real+0x1BE8)=0;           // clear pre-drop hide
+            g_mtHero=real;
+            Markerf("[MT] ★ wired NATIVE PC -> hero 0x%llX (Pawn@+0x%X, Controller@+0x%X), LivingState=Alive; Player link untouched\r\n",
+                    (unsigned long long)real,pawnOff,ctlOff);
+        }
+        if(!LooksLikePtr(g_mtHero)){ Marker("[MT] no pawn — nothing to move\r\n"); g_done=1; return; }
         ResolveFunc(ClassOf(g_mtPC),"MoveForward",&g_mtFwdFn,&g_mtFwdThunk,&g_mtFwdCh);
         ResolveFunc(ClassOf(g_mtPC),"MoveRight",  &g_mtRgtFn,&g_mtRgtThunk,&g_mtRgtCh);
         ResolveFunc(ClassOf(g_mtHero),"K2_GetActorLocation",&g_mtLocFn,&g_mtLocThunk,&g_mtLocCh);
+        ResolveFunc(ClassOf(g_mtHero),"AddMovementInput",&g_mtAmiFn,&g_mtAmiThunk,&g_mtAmiCh);
+        Markerf("[MT] AddMovementInput thunk=0x%llX child=0x%llX\r\n",(unsigned long long)g_mtAmiThunk,(unsigned long long)g_mtAmiCh);
         Markerf("[MT] MoveForward thunk=0x%llX child=0x%llX | MoveRight thunk=0x%llX | GetLoc thunk=0x%llX\r\n",
                 (unsigned long long)g_mtFwdThunk,(unsigned long long)g_mtFwdCh,(unsigned long long)g_mtRgtThunk,(unsigned long long)g_mtLocThunk);
         if(g_mtFwdCh){ uint32_t vo=ParamOffset(g_mtFwdCh,"Val"); Markerf("[MT] MoveForward param 'Val' offset=0x%X\r\n",vo); }
@@ -2260,26 +2288,111 @@ static void DoMoveTest(){
         }
         uint8_t ls=SafeReadable((void*)(g_mtHero+0x1090),1)?*(uint8_t*)(g_mtHero+0x1090):255;
         Markerf("[MT] hero LivingState=%u (1=Alive)\r\n",ls);
+        // ★★★ THE GATE (S80, live-proven): a GameplayStatics-spawned hero has CMC MovementMode = 0 (MOVE_None) =>
+        // AddMovementInput is DISCARDED, Velocity stays 0, and MoveForward runs clean but moves nothing. Drive the
+        // CMC's own native UFUNCTION SetMovementMode(EMovementMode NewMovementMode, uint8 NewCustomMode) to
+        // MOVE_Walking(1) first. (kMoveMode overridable: 1=Walking 3=Falling 5=Flying.)
+        if(LooksLikePtr(g_mtCMC)){
+            void* smFn=0; uintptr_t smTh=0,smCh=0;
+            ResolveFunc(ClassOf(g_mtCMC),"SetMovementMode",&smFn,&smTh,&smCh);
+            g_mtSmFn=smFn; g_mtSmThunk=smTh; g_mtSmCh=smCh;   // persist: the tick re-asserts the mode
+            Markerf("[MT] SetMovementMode thunk=0x%llX child=0x%llX\r\n",(unsigned long long)smTh,(unsigned long long)smCh);
+            if(smTh){
+                uint32_t mo=smCh?ParamOffset(smCh,"NewMovementMode"):0xFFFFFFFF;
+                uint32_t co3=smCh?ParamOffset(smCh,"NewCustomMode"):0xFFFFFFFF;
+                memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                g_pbuf[(mo!=0xFFFFFFFF&&mo<200)?mo:0]=(uint8_t)kMoveMode;      // EMovementMode: 1 = MOVE_Walking
+                if(co3!=0xFFFFFFFF&&co3<200) g_pbuf[co3]=0;
+                bool sf=CallGuarded(smFn,smTh,smCh,(void*)g_mtCMC,g_pbuf,g_rbuf);
+                uint32_t mmo=PropOffsetOnClass(ClassOf(g_mtCMC),"MovementMode");
+                uint8_t mm=(mmo!=0xFFFFFFFF&&SafeReadable((void*)(g_mtCMC+mmo),1))?*(uint8_t*)(g_mtCMC+mmo):255;
+                Markerf("[MT] ★ SetMovementMode(%u) fault=%d (params: mode@0x%X custom@0x%X) -> MovementMode is now %u %s\r\n",
+                        kMoveMode,sf,mo,co3,mm, mm==kMoveMode?"<<< MODE SET":"<<< mode did NOT stick");
+            }
+        }
+        // ★★★ THE SUSPECT: CalcVelocity does `Velocity += Acceleration*dt; Velocity.GetClampedToMaxSize(GetMaxSpeed())`.
+        // Accel is a full (50000,0,0) yet Velocity stays 0 => the clamp is the only thing that can be zeroing it.
+        // GetMaxSpeed() is VIRTUAL and LokiCharacterMovementComponent likely overrides it to return a GAS
+        // attribute-driven speed — a hero with an uninitialised ASC would get 0 (base MaxWalkSpeed=180/MaxFlySpeed=600
+        // are non-zero, so the base props are NOT the zero). Call it and read the real value.
+        if(LooksLikePtr(g_mtCMC)){
+            void* gsFn=0; uintptr_t gsTh=0,gsCh=0;
+            ResolveFunc(ClassOf(g_mtCMC),"GetMaxSpeed",&gsFn,&gsTh,&gsCh);
+            if(gsTh){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                bool gf=CallGuarded(gsFn,gsTh,gsCh,(void*)g_mtCMC,g_pbuf,g_rbuf);
+                float ms=*(float*)g_rbuf;
+                Markerf("[MT] ★★★ GetMaxSpeed() fault=%d -> %g   %s\r\n",gf,ms,
+                        (ms<0.001f)?"<<<<<< ZERO — CalcVelocity clamps Velocity to 0. THIS IS THE GATE.":"(non-zero — the clamp is NOT the gate)"); }
+            void* gaFn=0; uintptr_t gaTh=0,gaCh=0;
+            ResolveFunc(ClassOf(g_mtCMC),"GetMaxAcceleration",&gaFn,&gaTh,&gaCh);
+            if(gaTh){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                CallGuarded(gaFn,gaTh,gaCh,(void*)g_mtCMC,g_pbuf,g_rbuf);
+                Markerf("[MT] GetMaxAcceleration() -> %g\r\n",*(float*)g_rbuf); }
+        }
         if(MtLoc(&g_mtX0,&g_mtY0,&g_mtZ0)) Markerf("[MT] hero loc BEFORE = (%.1f, %.1f, %.1f)\r\n",g_mtX0,g_mtY0,g_mtZ0);
         else Marker("[MT] K2_GetActorLocation FAULTED\r\n");
         if(!g_mtFwdThunk){ Marker("[MT] MoveForward NOT RESOLVED on this PC — abort\r\n"); g_done=1; return; }
         return;
     }
-    // each tick: drive the game's own movement input, then measure
-    bool f1=true,f2=true;
-    if(g_mtFwdThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
-        *(float*)g_pbuf=1.0f;                                  // Val = +1.0 (full forward)
-        f1=CallGuarded(g_mtFwdFn,g_mtFwdThunk,g_mtFwdCh,(void*)g_mtPC,g_pbuf,g_rbuf); }
-    if(g_mtRgtThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
-        *(float*)g_pbuf=1.0f;
-        f2=CallGuarded(g_mtRgtFn,g_mtRgtThunk,g_mtRgtCh,(void*)g_mtPC,g_pbuf,g_rbuf); }
-    if(rep==2) Markerf("[MT] MoveForward fault=%d MoveRight fault=%d (calling every tick with Val=1.0)\r\n",f1,f2);
+    // ★★★ Each tick: drive APawn::AddMovementInput ON THE HERO — the REAL movement entry.
+    // NOT PlayerController::MoveForward: S80 disasm proved LokiPlayerController::MoveForward is the
+    // SPECTATOR/free-cam path — at base+0x569A1B1 it does `cmp [this+0x3F8],0 / jne <epilogue>`, i.e. it
+    // RETURNS IMMEDIATELY when the PC HAS a pawn (a possessed pawn is expected to move itself), and its
+    // movement branch drives the PlayerCameraManager at [this+0x470]. That is also why the earlier
+    // "HERO MOVED" was a false positive: it was moving the DefaultPawn spectator via the camera path.
+    // AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce) — ParmsSize=29:
+    // vec(24 doubles) + float@0x18 + bool@0x1C. bForce=true bypasses the input-allowed gate.
+    // ★ Re-assert the movement mode EVERY tick. The one-shot SetMovementMode(Walking) flipped straight to 3
+    // (MOVE_Falling) and STUCK there even after the hero settled at a stable Z — and in MOVE_Falling horizontal
+    // input is scaled by AirControl (~0 in a MOBA), which exactly explains vel.X==vel.Y==0 while gravity works.
+    // kMoveMode=5 (MOVE_Flying) has no gravity and full directional control, so it ISOLATES "is AddMovementInput
+    // reaching the CMC at all?" from "is the walking/floor state broken?".
+    if(g_mtSmThunk && LooksLikePtr(g_mtCMC)){
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        g_pbuf[0]=(uint8_t)kMoveMode; g_pbuf[1]=0;
+        CallGuarded(g_mtSmFn,g_mtSmThunk,g_mtSmCh,(void*)g_mtCMC,g_pbuf,g_rbuf);
+    }
+    bool f1=true;
+    if(g_mtAmiThunk){
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        uint32_t vo=g_mtAmiCh?ParamOffset(g_mtAmiCh,"WorldDirection"):0xFFFFFFFF;
+        uint32_t so=g_mtAmiCh?ParamOffset(g_mtAmiCh,"ScaleValue"):0xFFFFFFFF;
+        uint32_t bo=g_mtAmiCh?ParamOffset(g_mtAmiCh,"bForce"):0xFFFFFFFF;
+        if(vo==0xFFFFFFFF||vo>200) vo=0; if(so==0xFFFFFFFF||so>200) so=0x18; if(bo==0xFFFFFFFF||bo>200) bo=0x1C;
+        *(double*)(g_pbuf+vo+0)=1.0; *(double*)(g_pbuf+vo+8)=0.0; *(double*)(g_pbuf+vo+16)=0.0;  // +X world dir
+        *(float*)(g_pbuf+so)=1.0f;                                                                // ScaleValue
+        g_pbuf[bo]=1;                                                                             // bForce = true
+        f1=CallGuarded(g_mtAmiFn,g_mtAmiThunk,g_mtAmiCh,(void*)g_mtHero,g_pbuf,g_rbuf);
+        if(rep==2) Markerf("[MT] AddMovementInput(hero, (1,0,0), 1.0, bForce=true) fault=%d (vec@0x%X scale@0x%X force@0x%X)\r\n",f1,vo,so,bo);
+    } else if(rep==2) Marker("[MT] AddMovementInput NOT RESOLVED\r\n");
     if(rep%8==0){
         double x,y,z;
         if(MtLoc(&x,&y,&z)){
             double d=(x-g_mtX0)*(x-g_mtX0)+(y-g_mtY0)*(y-g_mtY0);
-            Markerf("[MT] t+%ld loc=(%.1f, %.1f, %.1f)  dXY=%.1f  %s\r\n",rep,x,y,z,
-                    d>1.0? (d>100.0?9999.0:d) : 0.0, d>4.0?"<<<<<< THE HERO IS MOVING":"(no XY change)");
+            // Is the input REACHING the CMC? Velocity + ControlInputVector split "input not delivered"
+            // from "input delivered but movement suppressed".
+            double vx=0,vy=0,vz=0; uint8_t mm=255;
+            if(LooksLikePtr(g_mtCMC)){
+                uint32_t vo2=PropOffsetOnClass(ClassOf(g_mtCMC),"Velocity");
+                if(vo2!=0xFFFFFFFF&&SafeReadable((void*)(g_mtCMC+vo2),24)){ vx=*(double*)(g_mtCMC+vo2); vy=*(double*)(g_mtCMC+vo2+8); vz=*(double*)(g_mtCMC+vo2+16); }
+                uint32_t mmo=PropOffsetOnClass(ClassOf(g_mtCMC),"MovementMode");
+                if(mmo!=0xFFFFFFFF&&SafeReadable((void*)(g_mtCMC+mmo),1)) mm=*(uint8_t*)(g_mtCMC+mmo);
+            }
+            // ★ THE DECISIVE SPLIT: APawn::ControlInputVector is what AddMovementInput accumulates into, and
+            // LastControlInputVector is what the CMC actually CONSUMED last tick (both UPROPERTY(Transient)).
+            //   ControlInput != 0            => AddMovementInput WORKS; the CMC is ignoring/zeroing it.
+            //   ControlInput == 0 but Last!=0 => it IS being consumed, but produces no acceleration.
+            //   both == 0                     => AddMovementInput never accumulated (wrong pawn/movement comp).
+            double cx=0,cy=0,cz=0, lx=0,ly=0,lz=0, ax=0,ay=0,az=0;
+            uint32_t cio=PropOffsetOnClass(ClassOf(g_mtHero),"ControlInputVector");
+            if(cio!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+cio),24)){ cx=*(double*)(g_mtHero+cio); cy=*(double*)(g_mtHero+cio+8); cz=*(double*)(g_mtHero+cio+16); }
+            uint32_t lio=PropOffsetOnClass(ClassOf(g_mtHero),"LastControlInputVector");
+            if(lio!=0xFFFFFFFF&&SafeReadable((void*)(g_mtHero+lio),24)){ lx=*(double*)(g_mtHero+lio); ly=*(double*)(g_mtHero+lio+8); lz=*(double*)(g_mtHero+lio+16); }
+            uint32_t aco=LooksLikePtr(g_mtCMC)?PropOffsetOnClass(ClassOf(g_mtCMC),"Acceleration"):0xFFFFFFFF;
+            if(aco!=0xFFFFFFFF&&SafeReadable((void*)(g_mtCMC+aco),24)){ ax=*(double*)(g_mtCMC+aco); ay=*(double*)(g_mtCMC+aco+8); az=*(double*)(g_mtCMC+aco+16); }
+            Markerf("[MT] t+%ld loc=(%.1f,%.1f,%.1f) vel=(%.1f,%.1f,%.1f) mode=%u | ControlInput=(%.2f,%.2f,%.2f)@0x%X LastCtrl=(%.2f,%.2f,%.2f) Accel=(%.1f,%.1f,%.1f)@0x%X %s\r\n",
+                    rep,x,y,z,vx,vy,vz,mm,cx,cy,cz,cio,lx,ly,lz,ax,ay,az,aco,
+                    d>4.0?"<<<<<< THE HERO IS MOVING":"(no XY change)");
         }
     }
     if(rep>=80){
