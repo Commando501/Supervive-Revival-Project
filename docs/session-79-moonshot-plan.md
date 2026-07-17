@@ -985,6 +985,47 @@ characterizes the Phase-3/4 tension.**
 init natives (`SpawnPlayerCameraManager`, `InitInputSystem`, `SetupInputComponent`) via `CallNative`/`CallBP`. (3) Re-do
 the Phase-3 swap and check BOTH camera AND WASD. **The pieces are all built; this is an assembly problem now.**
 
+**S80r -- ★★★★★ THE WHOLE THREAD RESOLVES: `APlayerController::SetPlayer()` is the ONE lever, and S79 Phase 3 BYPASSED
+it. The BP_Dev PC inherits all 45 input events; the active native PC inherits ZERO. This is an assembly problem now.**
+- ★ **CLASS CHAIN VERIFIED (live):**
+```
+BP_LokiPlayerController_Dev_C            <- the class S79 Phase 2/3 SPAWNED and SWAPPED IN
+  <- BP_LokiPlayerController_C           <- ***39 InpActEvt_*_K2Node_InputActionEvent***
+  <- BP_LokiPlayerController_Code_C      <- ***6 more***
+  <- LokiPlayerController_AS             (NB "_AS" => likely Unreal ANGELSCRIPT -- worth knowing, parked)
+  <- LokiPlayerController                <- ***THE ACTIVE DS-CLIENT PC: ZERO input events***
+  <- LokiBaseController <- PlayerController <- Controller <- LokiActor <- Actor <- Object
+```
+  ⇒ **`BP_LokiPlayerController_Dev_C` INHERITS all 45 input events. The active native PC sits 4 levels BELOW them and
+  inherits none.** Both S79-spawned BP_Dev PCs are STILL ALIVE this session: **0x2868B5ED8A0** (Phase 2) and
+  **0x28690832770** (Phase 3). Native PC = 0x285752F50B0.
+- ★★★ **THE LEVER — `APlayerController::SetPlayer(UPlayer*)`** runs the ENTIRE local-player init in one call:
+  `InitPlayerState()` -> **`SpawnPlayerCameraManager()`** -> `ResetCameraMode()` -> **`InitInputSystem()`** ->
+  `UpdateStateInputs()` -> `ReceivedPlayer()`. **S79 Phase 3 raw-wired `L+0x38 = devPC` + `devPC+0x458 = L` and thereby
+  BYPASSED `SetPlayer()` COMPLETELY.** ⇒ **That is EXACTLY why S79 4b/4c observed "the pointer swap held but the
+  render/input pipeline did not follow"**: the swapped-in PC never got a `PlayerCameraManager` (no camera) and never had
+  `InitInputSystem()` run (no input). The S79 doc even guessed this ("our BP_Dev PC likely has no PlayerCameraManager
+  ... never ran normal PC init" -- candidate lever (c)); it is now CONFIRMED as the mechanism, not a guess.
+- ⚠ **`SetPlayer`/`InitInputSystem`/`SpawnPlayerCameraManager`/`SetupInputComponent` are PLAIN C++ VIRTUALS, NOT
+  UFUNCTIONs** -- `ufunc_survey.py` on the BP_Dev PC finds ONLY `ClientRestart` (native+0x3C5F990) and
+  `ClientRetryClientRestart` (native+0x3C5FA20). **Their absence from reflection does NOT mean they don't exist** (the
+  walls-#4/#6 trap). ⇒ They need NATIVE addresses: get them from `APlayerController`'s vtable (discriminate the slot
+  against unrelated objects -- the S80k lesson), or by disassembling `ULocalPlayer::SpawnPlayActor` /
+  `ULocalPlayer::SwitchController` which call `SetPlayer`.
+**⇒ THE PLAN (all pieces already exist; this is ASSEMBLY, not research):**
+1. Resolve `APlayerController::SetPlayer` natively (vtable slot on the PC, verified by discrimination + disasm --
+   `disasm_live.py`; NB pages may be encrypted until executed, per S80k).
+2. Call `SetPlayer(devPC, LocalPlayer)` on the S79 BP_Dev PC (0x28690832770) via the direct-thunk primitive / a raw
+   native call. Expect it to spawn a PlayerCameraManager + run InitInputSystem on a PC that ALREADY has the 45 events.
+3. Redo the Phase-3 swap (`L->PlayerController = devPC`) -- **it ALREADY HELD 10s with no revert** (S79 Phase 3) -- and
+   hand it the hero (S79 Phase 4 `Possess` worked on the BP_Dev PC: `PC->Pawn` held 10s).
+4. Check BOTH camera AND WASD. The hero already: exists, is possessed-able, is Alive, has a MESH
+   (`SK_Assault_Default_LOD1`, rendering), and has a fully-configured SPRING ARM (`TargetArmLength=3020`).
+5. Reposition it first -- it drifted off the island over the void (S79 4h).
+**HONEST NOTE ON THE INPUT DETOUR:** S80g->S80o (the "no mapping context" gap + the IMC hunt) was ALL WRONG -- SUPERVIVE
+uses LEGACY FName input, so IMCs never existed. The correct question was "which class owns the input events", answerable
+in ONE `find_func.py` call. Fake wall #7 was mine.
+
 ### Phase 5 — the mission objective trigger chain
 Only reachable with a controllable hero in the simulated world. RE how the FIRST tutorial mission drives its
 objectives (state machine + trigger order). Determine whether objectives are (a) gameplay-event-driven (fire from
