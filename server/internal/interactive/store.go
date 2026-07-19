@@ -97,6 +97,20 @@ type playerState struct {
 	// (POST /revival/missions/manifest), so POST /revival/missions/match-result can fan an objective's
 	// delta out to each mission's composite key. Persisted so match results work across ags restarts.
 	MissionManifest []ManifestEntry `json:"missionManifest,omitempty"`
+
+	// --- PASSES: Hunter's Journey account-pass progress (S83) — see handleGetProgression ---
+	// These are served as FPlayerProgression.AccountPass { Level, XP, Cleared } on
+	// GET /progression/players/{id}, which the client's native ingester (game RVA 0x585A570)
+	// copy-constructs into ProgressionManager+0x90 and then broadcasts — so an admin edit shows up
+	// on the PASSES tier ladder within the client's ~61s poll, no relaunch and no shim involved.
+	// LIVE-VERIFIED: Level/XP land at PM+0x17C/+0x180 and the ladder renders the XP counter.
+	// Zero values are the honest default for a fresh account (tier 0, no XP); the client treats
+	// Level as a tier INDEX, and only Level >= 0 passes its tier predicate (game RVA 0x584B920).
+	AccountPassLevel int `json:"accountPassLevel,omitempty"`
+	AccountPassXP    int `json:"accountPassXP,omitempty"`
+	// AccountPassCleared marks the whole track finished. No omitempty: false is a meaningful,
+	// explicitly-set value here and the admin GUI round-trips the doc.
+	AccountPassCleared bool `json:"accountPassCleared"`
 }
 
 // store is an in-memory player-state map with best-effort JSON-file persistence
@@ -217,6 +231,54 @@ func (s *store) primarySelectedHero() string {
 		return best.SelectedHeroAssetId
 	}
 	return ""
+}
+
+// snapshotLoadout returns a value copy of the player's state with all mutable maps
+// DEEP-COPIED under the lock. loadoutDoc marshals these maps (heroCosmeticsBundles,
+// slotCosmetics, luxeChromas) into its JSON echo; without a snapshot, that marshal
+// iterates the LIVE map while a concurrent update() writes it — Go's fatal
+// "concurrent map read and map write" that crashed ags in handleSetCosmeticsBundle.
+// Scalars and the immutable RawMessage/[]byte fields (EmoteIds/TitleIds — replaced,
+// never mutated in place) are safe via the shallow struct copy. Returns a zero value
+// (all nil maps) if the player has no state yet.
+func (s *store) snapshotLoadout(id string) playerState {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	st := s.players[id]
+	if st == nil {
+		return playerState{}
+	}
+	cp := *st // shallow: scalars + slice/map headers
+	cp.SlotCosmetics = copyStrMap(st.SlotCosmetics)
+	cp.HeroCosmeticsBundles = copyStrMap(st.HeroCosmeticsBundles)
+	cp.LuxeChromas = copyStrMap(st.LuxeChromas)
+	return cp
+}
+
+// heroCosmetic returns id's saved bundle for hero, looked up UNDER THE LOCK. A live
+// map read (even a single-key lookup) concurrent with update()'s write is Go's fatal
+// "concurrent map read and map write" — the same class of crash snapshotLoadout fixes,
+// reachable here on every party poll via selectedCosmetic.
+func (s *store) heroCosmetic(id, hero string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	st := s.players[id]
+	if st == nil {
+		return ""
+	}
+	return st.HeroCosmeticsBundles[hero]
+}
+
+// copyStrMap returns a shallow copy of m (nil stays nil).
+func copyStrMap(m map[string]string) map[string]string {
+	if m == nil {
+		return nil
+	}
+	c := make(map[string]string, len(m))
+	for k, v := range m {
+		c[k] = v
+	}
+	return c
 }
 
 // update mutates a player's state under lock and persists the result.

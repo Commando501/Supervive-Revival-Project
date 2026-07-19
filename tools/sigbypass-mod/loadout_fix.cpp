@@ -124,11 +124,21 @@ static volatile long g_gdcbInstalled=0, g_gdcbHits=0, g_gdcbDirty=0, g_gdcbConve
 static uintptr_t g_dcbOff=0;            // DefaultCosmeticsBundle field offset in LokiHeroAsset (found once)
 static int g_dcbPatched=0;
 static volatile long g_gdcbRepatch=0;  // request the bg thread to (re)patch hero DefaultCosmeticsBundle
+static volatile long g_cdoRescanNeeded=0; // a hero customized POST-install (not in the one-shot install scan)
+// has no cached CDO -> FastRepatchCDO can't patch it -> its main-menu/roster/nav-back render shows the BASIC
+// skin. This flag asks the bg thread to run PatchHeroDefaultBundles ONCE to scan+cache+patch that hero.
 // Cache of the per-hero DefaultCosmeticsBundle CDO field addresses (from the off-thread scan) so a live
 // skin change can repatch the CDO INSTANTLY (single 16B write, any thread) instead of waiting for the slow
 // ~500k-object rescan — this is what makes the MAIN-MENU center update snappily on a change.
 struct CdoEntry { char code[64]; uintptr_t obj; uintptr_t off; };
-static CdoEntry g_cdoCache[16]; static int g_cdoCacheN=0;
+static CdoEntry g_cdoCache[LMAX]; static int g_cdoCacheN=0;   // LMAX (not 16): must hold the WHOLE roster, else
+// a hero past the cap can never be cached -> FastRepatchCDO always misses it -> its post-install skin change
+// re-triggers the full 2-4s scan (+ a crash-risky PI re-arm) on EVERY pick — a self-sustaining churn loop.
+static char g_cdoRescanCode[64]={0};             // hero codename that triggered the pending post-install rescan
+static char g_cdoTried[LMAX][64]; static int g_cdoTriedN=0;   // heroes rescanned but STILL uncacheable (CDO not
+// found by the scan) — recorded so we never re-run the 2-4s scan for them (defense vs the churn loop above).
+static bool CdoInCache(const char* code){ for(int c=0;c<g_cdoCacheN;c++) if(_stricmp(g_cdoCache[c].code,code)==0) return true; return false; }
+static bool CdoTried(const char* code){ for(int i=0;i<g_cdoTriedN;i++) if(_stricmp(g_cdoTried[i],code)==0) return true; return false; }
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
@@ -298,7 +308,7 @@ static void PatchHeroDefaultBundles(){
                     matched++;
                     // Cache this hero-asset CDO field addr for instant live repatch (dedup by obj).
                     { bool have=false; for(int c=0;c<g_cdoCacheN;c++) if(g_cdoCache[c].obj==obj){have=true;break;}
-                      if(!have && g_cdoCacheN<16){ strncpy_s(g_cdoCache[g_cdoCacheN].code,64,g_gdcbCode[i],_TRUNCATE); g_cdoCache[g_cdoCacheN].obj=obj; g_cdoCache[g_cdoCacheN].off=g_dcbOff; g_cdoCacheN++; } }
+                      if(!have && g_cdoCacheN<LMAX){ strncpy_s(g_cdoCache[g_cdoCacheN].code,64,g_gdcbCode[i],_TRUNCATE); g_cdoCache[g_cdoCacheN].obj=obj; g_cdoCache[g_cdoCacheN].off=g_dcbOff; g_cdoCacheN++; } }
                     if(*(uint64_t*)fld!=g_gdcbBundle[i][0] || *(uint64_t*)(fld+8)!=g_gdcbBundle[i][1]){
                         DWORD op=0; if(VirtualProtect((void*)fld,16,PAGE_READWRITE,&op)){ *(uint64_t*)fld=g_gdcbBundle[i][0]; *(uint64_t*)(fld+8)=g_gdcbBundle[i][1]; DWORD d=0; VirtualProtect((void*)fld,16,op,&d);
                             g_dcbPatched++; char nb[96]="?"; GetFNameStr((uint32_t)(g_gdcbBundle[i][1]&0xFFFFFFFF),nb,96); Markerf("[render] patched '%s' DefaultCosmeticsBundle: %s -> %s\r\n",oName,vn,nb); }
@@ -473,7 +483,14 @@ static void RefreshCustomization(){
     // Keep the Func-swap (checkmark) cache + the render CDO in sync INSTANTLY so the main-menu center Refresh
     // (which runs right after, reading the CDO) shows the new skin without waiting for the slow GDCB rescan.
     g_gdcbBundle[idx][0]=skinPAID[0]; g_gdcbBundle[idx][1]=skinPAID[1]; wcscpy_s(g_gdcbHaveV[idx],96,g_gdcbWantV[idx]);
-    FastRepatchCDO(code, skinPAID);
+    // If this hero's CDO isn't in the cache, it was customized AFTER the one-shot install scan (e.g. a hunter
+    // not in the saved loadout at launch). FastRepatchCDO returns false -> only the pedestal PreviewAsset
+    // (below) updates, transiently; the main-menu center + roster + nav-back pedestal read the UNPATCHED CDO
+    // = basic skin. Ask the bg thread to run PatchHeroDefaultBundles once (its CDO is loaded now, and
+    // g_gdcbBundle[idx] was just converted above), which caches+patches it so all render surfaces follow.
+    // Guard with CdoTried: don't re-request for a hero the scan already ran-and-failed to cache (avoids a
+    // 2-4s-scan-per-pick churn loop for a hero whose CDO the scan can't find).
+    if(!FastRepatchCDO(code, skinPAID) && !CdoTried(code)){ strncpy_s(g_cdoRescanCode,64,code,_TRUNCATE); InterlockedExchange(&g_cdoRescanNeeded,1); }
     int fired=0;
     for(int i=0;i<g_nCust;i++){ uintptr_t s=(uintptr_t)g_custScreens[i]; if(!(s && SafeReadable((void*)s,0x30) && ClassOf(s)==g_custClass)) continue;
         uint8_t locals[0x100]; memset(locals,0,sizeof(locals));
@@ -819,6 +836,20 @@ static void RefreshGdcb(){
     static char buf[65536]; if(HttpGetLoadout(buf,sizeof(buf))<=0) return;
     Pair pairs[LMAX]; int n=ParseMap(buf,"heroCosmeticsBundles",pairs,LMAX);
     bool changed=false;
+    // 2026-07-17: ALSO re-parse selectedHero every poll. It was read ONCE (FetchLoadout, install time), so
+    // RefreshCustomization kept firing the install-time hero's bundle at the pedestal forever — clicking a
+    // skin on ANY hunter got clobbered back to the stale hero's saved skin (the "reverts to Brall Oni
+    // Occult Edge" bug: a bundle PAID encodes hero+skin, so a stale hero swaps the pedestal MODEL, not just
+    // the skin). The backend updates selectedHero on the member PUT that fires with every skin click
+    // (handleSetPartyMember), so tracking it live makes the re-assert follow the hunter being customized.
+    // 2026-07-18: update it SILENTLY — do NOT set changed here. A pure hunter switch (selectedHero changes,
+    // no bundle change) must not trigger ReArmRefresh: on the roster/overview page no customization screen is
+    // open, so CustStale() is true and the re-arm would burn a full ~5.5s ResolveCustomization scan looking
+    // for screens that aren't there (the 4-5s "every switch is slow" regression). A real skin pick ALSO
+    // changes that hero's bundle below (changed=true there), and this block runs FIRST so g_selectedHero is
+    // already current when the bundle-triggered re-arm fires RefreshCustomization. Pure hero switches are
+    // rendered by the game's own nav-refresh + pi8, so we owe them no re-arm.
+    { wchar_t sel[96]; if(ParseStr(buf,"selectedHero",sel,96) && sel[0] && wcscmp(sel,g_selectedHero)!=0) wcscpy_s(g_selectedHero,96,sel); }
     for(int i=0;i<n;i++){
         char kb[160]; WideCharToMultiByte(CP_UTF8,0,pairs[i].k,-1,kb,160,nullptr,nullptr);
         const char* code=strchr(kb,':'); code=code?code+1:kb;
@@ -897,15 +928,32 @@ static void SeedMemberCache(){
         int j=g_mcN++; strncpy_s(g_mc[j].code,64,g_gdcbCode[i],_TRUNCATE); g_mc[j].paid[0]=g_gdcbBundle[i][0]; g_mc[j].paid[1]=g_gdcbBundle[i][1]; }
     Markerf("[9b] member cache seeded with %d hero(es) from saved loadout.\r\n",g_mcN);
 }
-static DWORD WINAPI RefreshThread(LPVOID){ int tick=0; for(;;){ Sleep(300); RefreshGdcb();
+static DWORD WINAPI RefreshThread(LPVOID){ int tick=0; for(;;){ Sleep(150); RefreshGdcb();   // 2026-07-18: 300->150ms poll — halves change-detection latency (local HTTP, cheap). Render-lag tuning.
     // CDO repatch is now INSTANT via FastRepatchCDO (in RefreshCustomization, game thread) — the old per-change
     // full ~500k rescan here was the 2-4s bottleneck, so it's removed (the initial load scan populated the cache).
     if(InterlockedCompareExchange(&g_gdcbRepatch,0,1)==1) g_centerDirty=1;
-    // DEBOUNCE (settle ~250ms) + COOLDOWN (>=1200ms since the last re-arm). Re-arming the ProcessInternal
-    // hook (thread-suspending install/uninstall) too often crashes the game, so we throttle it: rapid clicking
-    // just makes the render catch up to the FINAL pick at most once/1.2s instead of churning the hook per click.
+    // A hero customized AFTER install has no cached CDO (the one-shot install scan predated it), so its
+    // render surfaces show the basic skin. Run the full scan ONCE here (off the game thread — same context
+    // the install scan uses, safe) to cache+patch that hero's CDO, then re-render. Flag is consume-once, so
+    // no churn: once the hero is cached, FastRepatchCDO handles it and the flag is never re-set for it.
+    if(InterlockedCompareExchange(&g_cdoRescanNeeded,0,1)==1){
+        char code[64]; strncpy_s(code,64,g_cdoRescanCode,_TRUNCATE);
+        int before=g_cdoCacheN; PatchHeroDefaultBundles();
+        // If the scan STILL couldn't cache this hero (CDO not found / name mismatch), record it so the next
+        // pick doesn't re-run the 2-4s scan (+ PI re-arm) — the self-sustaining-loop guard the review flagged.
+        bool cached=CdoInCache(code);
+        if(code[0] && !cached && g_cdoTriedN<LMAX){ strncpy_s(g_cdoTried[g_cdoTriedN],64,code,_TRUNCATE); g_cdoTriedN++; }
+        Markerf("[7b] post-install CDO rescan (%s): cache %d->%d hero(es), %d patched%s.\r\n",code[0]?code:"?",before,g_cdoCacheN,g_dcbPatched,cached?"":" (still uncached -> won't retry)");
+        g_centerDirty=1; g_dirtyTick=GetTickCount();
+    }
+    // DEBOUNCE (settle) + COOLDOWN (min gap between re-arms). Re-arming the ProcessInternal hook
+    // (thread-suspending install/uninstall) too often crashes the game, so we throttle it: rapid clicking
+    // just makes the render catch up to the FINAL pick at most once/cooldown instead of churning per click.
+    // 2026-07-18: debounce 250->120, cooldown 1200->800 to trim the render tail toward the ~0.5-0.9s
+    // mechanism floor (install+refreshwait). The cooldown is the CRASH guard (churn) — 800 keeps re-arms
+    // <=~1.25/s even under sustained distinct picks, well under the churn rate that crashed at no-cooldown.
     static DWORD s_lastRearm=0;
-    if(g_centerDirty && (GetTickCount()-(DWORD)g_dirtyTick)>=250 && (GetTickCount()-s_lastRearm)>=1200){ s_lastRearm=GetTickCount(); ReArmRefresh(); }
+    if(g_centerDirty && (GetTickCount()-(DWORD)g_dirtyTick)>=120 && (GetTickCount()-s_lastRearm)>=800){ s_lastRearm=GetTickCount(); ReArmRefresh(); }
     (void)tick;
 } return 0; }
 

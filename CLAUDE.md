@@ -7,14 +7,15 @@ backend RE, IoStore extraction, native shim injection, and asset-registry patchi
 Lots of dead ends. Honor the prior-work docs.
 
 The whole front-end menu is now ONLINE: login, the ALL HUNTERS roster (+ click-to-
-refresh), the STORE, COSMETICS, and the full MISSIONS page (with working progress
-bars) all render live. That was achieved with the backend feed **plus** a set of
+refresh), the STORE, COSMETICS, the full MISSIONS page (with working progress
+bars), and the PASSES / Hunter's Journey account pass (full 85-tier ladder) all
+render live. That was achieved with the backend feed **plus** a set of
 client-side native shims built on a reusable game-thread native-call primitive (see
 below). Current frontier = the match-setup layer (launching into a playable map).
 
 ## Before doing anything else
 
-### If the user mentions hero/roster/grid/hunters/store/cosmetics/missions modal
+### If the user mentions hero/roster/grid/hunters/store/cosmetics/missions modal/passes/battlepass
 **These are SOLVED — they render live.** Do NOT re-open the closed hypotheses.
 - **Roster / store / cosmetics** — root cause was one un-set client-side
   catalog-ready sub-flag (`CatMgr+0x354`), NOT the backend, NOT enumeration, NOT
@@ -30,6 +31,26 @@ below). Current frontier = the match-setup layer (launching into a playable map)
   (`launch-redirect.ps1 -Missions`). Per-account progress served by the backend.
   Read `docs/session-59-progress-bars.txt` + `docs/missions-progression-hookup.md`;
   memory `supervive-missions-page-status`.
+- **PASSES / Hunter's Journey (ACCOUNT pass)** — the page renders live with its full
+  85-tier ladder (S83). Two client-side root causes, NOT the backend (that route was
+  exhausted over ~9 probes): (1) `CheckAccountPassChanges` (`0x5794480`, the populate's
+  real caller) bailed on its tier gate `dword[PM+0x90+0xEC] == -1`; (2) the keystone —
+  a **VM map-key mismatch**: it finds the view model by `P->GetPrimaryAssetId()`
+  (vtbl+0x1D0) → `ToString` (`0x12F4230`) → `FindVM` (`0x57AB180`), i.e.
+  **`ProgressionTrack:HuntersJourney`**, while our track keyed it bare `HuntersJourney`.
+  Fix = `tools/sigbypass-mod/battlepass_adopt_fix.dll` resolves that key at runtime and
+  adopts with it (BUMP its `Version` on every re-inject). Two traps: `VM.Levels`(+0xC8)
+  is `TArray<UObject*>` (NOT PrimaryAssetId) and the populate `0x57DF4B0` CONSTRUCTS
+  objects — **never force-call it** (that was the S82 crash); and the old note
+  "P = S[+0x238]" is WRONG (S *is* `HuntersJourney_C`).
+  Read `docs/session-83-passes-tier-grid-solved.txt`; memory
+  `supervive-passes-battlepass-status` (its POST-SESSION CORRECTIONS block is
+  load-bearing — a later 21-agent RE pass showed the grid is built by the VM
+  builder's Init `0x57BB560` ahead of both gates, so the map key is the SOLE
+  verified cause, and it FALSIFIED "the backend route is exhausted": the native
+  ingester `0x585A570` does exist). Still open: real PROGRESS (tiers draw but
+  nothing is claimed — gated on `byte[PM+0x388]`) and the SEASONAL pass (same
+  byte, plus no packed `LokiDataAsset_Season`).
 
 Before RE-touching any of these, READ the relevant doc above first — the value is
 the trial-and-error history, and the corrected root causes are easy to regress on.
@@ -81,9 +102,10 @@ cd "G:\git\Supervive Revival Project"
 By default the launcher injects the primary `catalog_store_fix.dll` (roster + store +
 cosmetics) at launch, then `configs/inject-secondaries.ps1` injects the full secondary
 set once it settles: `mainmenu_refresh_pi8` (pick→center refresh), `catalog_pick_fix`
-(pick-commit), `loadout_fix` (customization/skin persistence), and `missions_fix`
-(durable missions page). One launch = every durable fix, together. `-NoMissions` /
-`-NoLoadout` trim individual shims; `-Hook <path>` injects exactly one DLL and no
+(pick-commit), `loadout_fix` (customization/skin persistence), `missions_fix`
+(durable missions page), and `battlepass_adopt_fix` (PASSES / Hunter's Journey — S83).
+One launch = every durable fix, together. `-NoMissions` / `-NoLoadout` / `-NoPasses`
+trim individual shims; `-Hook <path>` injects exactly one DLL and no
 secondaries. `-Missions` is kept as a deprecated no-op alias (missions are now default).
 
 **VALIDATION PENDING (as of 2026-07-10):** the default set now runs THREE PI-hookers in

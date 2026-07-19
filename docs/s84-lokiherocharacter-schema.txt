@@ -1,0 +1,10 @@
+﻿=== LokiHeroCharacter (0x296087D4C00) live capture 2026-07-19 00:36 ===
+=== CLIENT class @0x296087D4C00 CPF_Net props, expanded via REAL path ===
+--- net prop AllowUpdatesToVisionGranters (flags=0x18001140000220) ---
+[0] LEAF AllowUpdatesToVisionGranters (BoolProperty)
+=== total leaf cmds across net props = 1 ===
+=== class LokiHeroCharacter @0x296087D4C00 � OWN net functions (FUNC_Net, non-override) ===
+  own net functions (in NetFields, name-sorted): 3
+   [  0] ClientPulseBloom                             flags=0x01040C41  [Client,Native]
+   [  1] ClientSetYawClamp                            flags=0x01020CC0  [Client,Reliable,Native]
+   [  2] ClientShowHeroShadowPose                     flags=0x00024CC0  [Multicast,Reliable,Native]

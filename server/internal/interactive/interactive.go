@@ -3,10 +3,12 @@ package interactive
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -257,12 +259,155 @@ func (s *Service) handleGetPersonalizationPlayer(w http.ResponseWriter, r *http.
 	writeJSON(w, resp)
 }
 
+// progressionVersion backs the FPlayerProgression.Version field served by
+// handleGetProgression. The client-side ingester (game RVA 0x585A570) adopts a response only
+// when its Version is STRICTLY greater than the adopted value at ProgressionManager+0xA0
+// (+585A594 cmp / +585A597 jle bail). Starts at 3 (live PM+0xA0 = -1, so the first served
+// value just has to be >= 0) and bumps on EVERY request, because the client re-polls this
+// route every ~61s and a constant would be adopted once and then permanently ignored.
+// CONFIRMED LIVE 2026-07-18 (S83): serving this made the ingester adopt — PM+0xA0 went -1 -> 4,
+// PM+0x17C (Level) 0 -> 12, PM+0x180 (XP) 0 -> 1500, PM+0x388 -> 1, and Loki.log's Progress Notif
+// went {currentTierIndex:0,currentXP:0,requiredXP:2000} -> {12, 1500, requiredXP:22000} (the client
+// RECOMPUTED requiredXP for tier 12 from the packed CDO ladder, i.e. it is really consuming this).
+//
+// Version bumps ONLY when the served content changes. The gate is strict (>), so an unchanged
+// Version is simply not re-adopted — which is what we want: bumping every request re-Broadcast the
+// PM+0x48 delegate (CheckAccountPassChanges/CheckMastery/CheckLoginReward/CheckEventProgression)
+// on the client's ~61s poll forever, i.e. a permanent fan-out for no new data.
+// progressionState tracks the served FPlayerProgression.Version PER PLAYER. It must be
+// per-player, not a single counter: the version is compared against the CLIENT's adopted
+// value, so two accounts with different progress sharing one counter would each bump the
+// other's version and re-broadcast on every poll.
+var progressionState struct {
+	mu sync.Mutex
+	by map[string]*progressionVer
+}
+
+type progressionVer struct {
+	ver  int64
+	last string
+}
+
+// progressionVersionFor returns the version to serve to one player for the given AccountPass
+// content, incrementing only when that content differs from what was last served to them.
+func progressionVersionFor(id, content string) int64 {
+	progressionState.mu.Lock()
+	defer progressionState.mu.Unlock()
+	if progressionState.by == nil {
+		progressionState.by = map[string]*progressionVer{}
+	}
+	pv := progressionState.by[id]
+	if pv == nil {
+		// Seed from wall-clock seconds, NOT from a small constant. The client's adopted value
+		// (ProgressionManager+0xA0) SURVIVES an ags restart, but a process-local counter does not:
+		// restarting ags would then serve a version <= the adopted one, and the strict `jle` gate
+		// would silently drop every subsequent change (indistinguishable from "the route broke").
+		// Wall-clock is monotonic across restarts and comfortably fits the DWORD the gate compares.
+		pv = &progressionVer{ver: time.Now().Unix()}
+		progressionState.by[id] = pv
+	}
+	if content != pv.last {
+		pv.last = content
+		pv.ver++
+	}
+	return pv.ver
+}
+
 func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 	// "Invalid response received" on {} => wants the data/paging wrapper. Empty
 	// (no per-player progression yet) is valid and quiets the retry.
+	//
+	// 2026-07-18 (S82) — LEVER A for the PASSES account pass ("Hunter's Journey").
+	// RE of BattlepassViewManager::CheckAccountPassChanges (offline disasm, adversarially
+	// verified) showed the account pass is gated by the ProgressionManager, NOT the
+	// battlepass storefront progressiontracks: GetAccountTrack (game RVA 0x5840700) returns
+	// false unless a flag at ProgressionManager+0x208 is set + the account-track struct at
+	// +0x90 is populated, and the track's CurrentTierIndex (@track+0xEC) must be != -1
+	// (predicate 0x584B920). Those are populated by the deserialized /progression response.
+	// The HuntersJourney correlation itself is client-side (the published-pass class's
+	// FPrimaryAssetId string is the VM lookup key); the account VM is FOUND (not built) here,
+	// so lever A alone may only pass the GATE (setting +0x208/+0x90) without rendering the
+	// tab if the VM isn't pre-built — but it also DEMAND-DECRYPTS the account-VM builder
+	// branch so it can be RE'd. Model = FAccelByteModelsListUserProgressionInfoPagingSlicedResult
+	// { Data:[FAccelByteModelsListUserProgressionInfo], Paging, Total }. Each entry's fields
+	// are Str/Int/Bool/enum-Str/nested-struct — none can wrong-type-reject the doc (DateTime
+	// fields OMITTED to avoid any format risk; absent is safe per the validity model).
+	// ProgressionType enum = EAccelByteProgressionTrackType (PROGRESSION_TRACK=2, the
+	// NON-season type — distinct from the SEASON_PASS storefront track). Not "-ranked".
+	// See memory supervive-passes-battlepass-status (S82 part 3).
+	id := r.PathValue("id")
+	track := map[string]any{
+		"ID":              "supervive-hunters-journey",
+		"NameSpace":       "supervive",
+		"Name":            "HuntersJourney",
+		"ProgressionType": "PROGRESSION_TRACK",
+		"Status":          "PUBLISHED",
+		"Active":          true,
+	}
+	entry := map[string]any{
+		"ID":               "hunters-journey-" + id,
+		"NameSpace":        "supervive",
+		"UserId":           id,
+		"ProgressionId":    "HuntersJourney",
+		"CurrentTierIndex": 3, // distinctive vs /tracks(=5) & default(-1): fresh-login probe of PM+0x17C tells which endpoint drives the tier
+		"LastTierIndex":    3,
+		"RequiredExp":      1000,
+		"CurrentExp":       150,
+		"Cleared":          false,
+		"ProgressionTrack": track,
+		"Active":           true,
+	}
+	// 2026-07-18 (S83) — ROUTE A: the ACCOUNT-PASS PROGRESS lever. Strict SUPERSET of the
+	// response above: every existing key is untouched, we only ADD three top-level keys.
+	// Unknown keys are ignored, so if the wire model is still the AccelByte envelope this is
+	// byte-equivalent to before and CANNOT regress.
+	//
+	// WHY THIS ROUTE: offline RE (byte-verified, 3 independent reviewers) traced this endpoint's
+	// OnSuccess delegate to the ONLY writer of the account track:
+	//   +58618B2 call 0x58454A0 (dispatcher) -> +58454D2 lea rdx -> 0x8B4D0D0 L"/progression/players/"
+	//   OnSuccess 0x585C460 -> +585C48C jmp 0x585A570  (the ingester)
+	// 0x585A570 copy-constructs FPlayerProgression into PM+0x90 via 0x58061A0 (writes
+	// track+0xEC @+5806363), sets PM+0x208 and PM+0x388, then Broadcasts PM+0x48 — to which
+	// CheckAccountPassChanges & friends are AddDynamic-bound. So one accepted response does the
+	// whole refresh natively; we never fabricate a struct or force-call anything.
+	//
+	// THE MODEL (recovered, NOT invented): the ingester takes FPlayerProgression (size 0x178;
+	// live UStruct reflection walk + the mappings.usmap name table) = { ID, Version(int),
+	// AccountPass: FProgressionTrackLevel (size 0x60) { Level, XP, Cleared, UnclaimedRewards } }.
+	// Only the scalar leaves are served here: a MATCHED key with a wrong CONTAINER type rejects
+	// the WHOLE document (and would look identical to "no effect"), so Matches/MissionInfo/
+	// HeroMastery/LoginReward/EventProgression/UnclaimedRewards are deliberately OMITTED —
+	// absent is safe. Name matching is case-insensitive (the camelCase in Loki.log is
+	// FJsonObjectConverter's OUTPUT convention, not an input requirement).
+	//
+	// VERSION MUST BE MONOTONIC PER REQUEST. The ingester's gate is
+	//   +585A594 cmp dword[src+0x10], dword[PM+0xA0] ; +585A597 jle bail
+	// i.e. STRICT >. Live PM+0xA0 = -1 (signed), so any Version >= 0 passes the first time — but
+	// a CONSTANT would then be <= the adopted value and re-deadlock on the client's ~61s poll.
+	// That is exactly the "worked once then stopped" signature, so bump every request.
+	//
+	// DISCRIMINATOR (tools/re/battlepass_pm_probe.py): dword[PM+0xA0] moves off -1 to the served
+	// Version, and dword[PM+0x17C] (AccountPass.Level) becomes the served Level. byte[PM+0x388]
+	// flipping to 1 here is a LEGITIMATE side effect (the ingester archives PM+0x90 -> PM+0x210
+	// first) — categorically different from poking that byte by hand, which arms a wild free.
+	// NB the sibling route /progression/players/{id}/tracks is a PROVEN dead end for this
+	// (see menu.go handlePlayerProgressionTracks) — it feeds a different manager entirely.
+	//
+	// The values come from PERSISTED PER-PLAYER STATE, editable live from the admin panel
+	// (PUT /api/progression/{id}); a fresh account reads the zero value = tier 0 / no XP.
+	ap := s.AccountPass(id)
 	writeJSON(w, map[string]any{
-		"data":   []any{},
+		"data":   []any{entry},
 		"paging": map[string]any{"previous": "", "next": ""},
+		"total":  1,
+
+		"ID":      id,
+		"Version": progressionVersionFor(id, fmt.Sprintf("%d/%d/%t", ap.Level, ap.XP, ap.Cleared)),
+		"AccountPass": map[string]any{
+			"Level":   ap.Level,
+			"XP":      ap.XP,
+			"Cleared": ap.Cleared,
+		},
 	})
 }
 
@@ -379,7 +524,7 @@ const tutorialMatchState = "InProgress"
 // robust than hand-writing the 1496-byte embedded MatchInfo struct. Paired with an EMPTY ConnectionDetails.address
 // (below) so the client parks LOCALLY in the pre-game lobby (no DS connect/timeout), keeping the model valid;
 // then the force-open shim opens LVL_Tutorial with the model already populated. (Revert to false for normal runs.)
-const forceTutorialMatch = true
+const forceTutorialMatch = false // S84 (2026-07-19): back to FALSE after the DS minion-possession test, so a normal launch sits at the FULLY FUNCTIONAL MAIN MENU instead of auto-arming a phantom tutorial match and travelling to the stub. Flip to true (and start the stub on 7777) only for DS/tutorial-route work.
 
 // tutorialMatchID derives the (stable, greppable) match id for a player's phantom
 // tutorial match. The match-details route recovers the player id back off it.
@@ -632,11 +777,9 @@ func (s *Service) selectedHero(id string) string {
 // echoed member cosmetic. Retained only so buildSoloParty's signature is unchanged and a
 // future client-side shim can reuse the resolution; buildSoloParty discards the value.
 func (s *Service) selectedCosmetic(id string) string {
-	st := s.store.get(id)
-	if st.HeroCosmeticsBundles == nil {
-		return ""
-	}
-	return st.HeroCosmeticsBundles[s.selectedHero(id)]
+	// heroCosmetic looks up the map UNDER THE LOCK — a live read here raced update()
+	// (concurrent map read/write, the crash class that took down ags in loadoutDoc).
+	return s.store.heroCosmetic(id, s.selectedHero(id))
 }
 
 // handleGetPartyDetail answers GET /party/parties/{partyId} — the full party object the

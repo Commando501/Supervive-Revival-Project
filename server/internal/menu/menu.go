@@ -23,6 +23,7 @@ package menu
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 type Service struct{}
@@ -62,7 +63,11 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// AccelByte per-player progression tracks (distinct from the storefront
 	// battlepass tracks). Model FAccelByteModelsListUserProgressionInfoPagingSliced
 	// Result — standard data/paging wrapper.
-	mux.HandleFunc("GET /progression/players/{id}/tracks", handleEmptyDataPaging)
+	mux.HandleFunc("GET /progression/players/{id}/tracks", handlePlayerProgressionTracks)
+	// S82: the ViewManager's OnUpdatedCurrentPublishedProgressionTracks handler (fired once the
+	// battlepass_adopt_fix shim forces adoption) issues GET .../tracks/rewards; its completion builds
+	// the pass view-models. Minimal empty wrapper for the first shim test — populate if the VM needs reward rows.
+	mux.HandleFunc("GET /progression/players/{id}/tracks/rewards", handleEmptyDataPaging)
 
 	// Content-service master manifest — the catalog of what EXISTS (heroes,
 	// cosmetics, offers, …). This is the lever for the HUNTERS grid / STORE /
@@ -138,6 +143,76 @@ func handleEmptyDataPaging(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"data":   []any{},
 		"paging": map[string]any{"previous": "", "next": ""},
+	})
+}
+
+// handlePlayerProgressionTracks (GET /progression/players/{id}/tracks) — S82 lever A
+// part 2. This endpoint feeds the ProgressionManager's tracks TArray (@+0x5C8). The
+// account-track skeleton at PM+0x90 got its presence flag (PM+0x208) set by
+// /progression/players/{id} (handleGetProgression) but its CurrentTierIndex (track+0xEC)
+// stayed -1, so the account-pass predicate (game RVA 0x584B920) fails. Hypothesis: the
+// per-player tier/progress derives from THIS list (matched to the account track by
+// ProgressionId). Serve the HuntersJourney enrollment with a DISTINCTIVE CurrentTierIndex
+// (5) so a live PM+0x90.+0xEC readback tells us whether /tracks drives it. Same model as
+// handleGetProgression (FAccelByteModelsListUserProgressionInfoPagingSlicedResult). All
+// fields Str/Int/Bool/enum-Str/nested — can't wrong-type-reject. Not "-ranked".
+//
+// S82 RESULT: values did NOT land (track+0xEC stayed -1 across a fresh login), which the
+// project then read as "the backend route is exhausted". S83 shows that conclusion was too
+// strong: a native ingester DOES exist (0x585A570 -> 0x58061A0 writes track+0xEC @+5806363,
+// sets PM+0x208 AND PM+0x388, then Broadcasts PM+0x48). So the question is the SHAPE/keys,
+// not whether a route exists.
+//
+// S83 PROBE — ID FORM (single variable): ProgressionId "HuntersJourney" ->
+// "ProgressionTrack:HuntersJourney". Rationale: same class of bug as the S83 keystone — the
+// account view model only built once keyed by P->GetPrimaryAssetId().ToString() =
+// "ProgressionTrack:HuntersJourney" rather than the bare name, and the adopted published track's
+// ProgressionTrackID is now that form too, so an ID-string correlation would never have matched
+// the bare name. S82 tested this field while the adopted track was ALSO keyed bare, so the
+// mismatch would have been invisible then — i.e. the S82 negative did not actually rule this out.
+//
+// *** RESULT: NEGATIVE, and cleanly controlled — REVERTED (2026-07-18). ***
+// Hot-swapped ags; the client re-polled this route 4x (22:48:02, 22:49:03, 22:50:04, 22:51:05 —
+// it polls every ~61s) and received the new form. Across all 4 cycles, watching live:
+//   track+0xEC (PM+0x17C) stayed 0   (would have gone -> 5, the distinctive value below)
+//   byte[PM+0x388] (Gate C)  stayed 0
+//   tracks TArray count (PM+0x5D0) stayed 0
+// AND Loki.log shows NO "Deserialization failure" / "Invalid response received" => the response is
+// ACCEPTED and then simply NOT USED. Note especially that +0x5C8/+0x5D0 never populates, which is
+// independent of any ID matching: nothing from this endpoint reaches the ProgressionManager.
+// ⇒ CONCLUSION: GET /progression/players/{id}/tracks is NOT wired to the account-track ingest in
+// this build, for ANY ID form. Do not re-probe ID/name variants on THIS route — the route itself
+// is the dead end, not the field values. The real writer of track+0xEC is the native ingester
+// 0x585A570 -> 0x58061A0 (@+5806363); the open question is which of its four call sites
+// (0x5838DDD / 0x583CC24 / 0x5854B6C / 0x585C48C) is fed by HTTP, and by WHICH endpoint —
+// possibly none (progress may be client-generated, cf. RefreshTracks 0x57D0630 for mastery).
+func handlePlayerProgressionTracks(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	track := map[string]any{
+		"ID":              "supervive-hunters-journey",
+		"NameSpace":       "supervive",
+		"Name":            "HuntersJourney",
+		"ProgressionType": "PROGRESSION_TRACK",
+		"Status":          "PUBLISHED",
+		"Active":          true,
+	}
+	entry := map[string]any{
+		"ID":               "hunters-journey-" + id,
+		"NameSpace":        "supervive",
+		"UserId":           id,
+		"ProgressionId":    "HuntersJourney", // reverted: the Type:Name form changed nothing (see above)
+		"CurrentTierIndex": 5,
+		"LastTierIndex":    5,
+		"RequiredExp":      1000,
+		"CurrentExp":       450,
+		"Cleared":          false,
+		"ProgressionTrack": track,
+		"Active":           true,
+	}
+	writeJSON(w, map[string]any{
+		"data":   []any{entry},
+		"paging": map[string]any{"previous": "", "next": ""},
+		"total":  1,
 	})
 }
 
@@ -476,16 +551,72 @@ func handleProgressionTracks(w http.ResponseWriter, r *http.Request) {
 	// If a relaunch shows the loop persists or a new "Invalid response"/
 	// "Deserialization failure" appears, the log names the next field to add or
 	// the wrong-typed one to drop.
+	//
+	// 2026-07-18 (S82): the one-published-track fix above did NOT stop the loop —
+	// the live client still tight-loops this endpoint at ~15 req/s. Ground truth
+	// from usmap schema.txt: the element struct is AccelByteModelsListProgressionTrackInfo
+	// (13 props) — ID/NameSpace/Name/ProgressionType/Start/End/DefaultLanguage/
+	// RewardTrackCodes/Status/PublishedAt/CreatedAt/UpdatedAt/**Active(bool)**. The
+	// prior response set Status=PUBLISHED but omitted Active (defaults false) and the
+	// Start/End DateTime window (defaults year-0), so BattlepassInfoManager's
+	// "current published" filter rejects it and re-queries. Enum serializations are
+	// verified against the live process:
+	//   EAccelByteProgressionTrackType::SEASON_PASS = 1 ("SEASON_PASS")
+	//   EAccelByteProgressionTrackStatus::PUBLISHED = 2 ("PUBLISHED")
+	// DateTime uses RFC3339 (proven-good elsewhere: the mission model's GrantedAt/
+	// Expiry are FDateTime StructProperties parsed cleanly by the client). Start is
+	// backdated, End is far future, so any now-in-[Start,End] window check passes.
+	now := time.Now().UTC()
+	start := now.Add(-24 * time.Hour).Format(time.RFC3339)
+	end := now.Add(180 * 24 * time.Hour).Format(time.RFC3339)
+	// 2026-07-18 (S82 part 6) — CONDITION B lever for the account pass. RE of RefreshTracks
+	// (game RVA 0x57D0630) + the WS finding (progress notifs are CLIENT-generated by the
+	// BattlepassProgressManager, not WS-pushed) showed the account track's tier stays -1
+	// because HuntersJourney isn't RECOGNIZED as a published progression track. The
+	// BattlepassInfoManager's OnUpdatedCurrentPublishedProgressionTracks feeds off THIS
+	// endpoint. So publish a SECOND track of ProgressionType=PROGRESSION_TRACK (the
+	// non-season/account type, enum value 2) named "HuntersJourney" — to correlate to the
+	// packed HuntersJourney_C asset (InternalName FName "HuntersJourney") so the ViewManager
+	// designates it as the published account pass (S[+0x238]) and builds/refreshes
+	// AccountPassViewModel. Same struct as the season entry; all fields Str/enum-Str/Bool/
+	// DateTime-RFC3339 — can't wrong-type-reject.
+	// S82: two published tracks (SEASON_PASS + PROGRESSION_TRACK/HuntersJourney). NOTE — none of the
+	// backend variants make the client's SDK converter adopt these (oracle BPIM+0x48 stays 0): tried
+	// Active/window/enum, PrimaryAssetId-form ID, dropping RewardTrackCodes, and millisecond-ISO dates.
+	// The reject is in obfuscated SDK converter code. Adoption requires the force-gate SHIM (call
+	// OnSuccess 0x57C8130 with a LokiPublishedProgressionTracks{Version:1}); see memory S82 part 8.
+	seasonTrack := map[string]any{
+		"ID":               "supervive-season-1",
+		"NameSpace":        "supervive",
+		"Name":             "SUPERVIVE Season 1",
+		"ProgressionType":  "SEASON_PASS",
+		"Start":            start,
+		"End":              end,
+		"DefaultLanguage":  "en",
+		"RewardTrackCodes": []string{"supervive-season-1-track"},
+		"Status":           "PUBLISHED",
+		"PublishedAt":      start,
+		"CreatedAt":        start,
+		"UpdatedAt":        start,
+		"Active":           true,
+	}
+	accountTrack := map[string]any{
+		"ID":               "HuntersJourney",
+		"NameSpace":        "supervive",
+		"Name":             "HuntersJourney",
+		"ProgressionType":  "PROGRESSION_TRACK",
+		"Start":            start,
+		"End":              end,
+		"DefaultLanguage":  "en",
+		"RewardTrackCodes": []string{"HuntersJourney"},
+		"Status":           "PUBLISHED",
+		"PublishedAt":      start,
+		"CreatedAt":        start,
+		"UpdatedAt":        start,
+		"Active":           true,
+	}
 	writeJSON(w, map[string]any{
-		"data": []any{
-			map[string]any{
-				"Id":               "supervive-season-1",
-				"Code":             "supervive-season-1",
-				"ProgressionType":  "SEASON_PASS",
-				"Status":           "PUBLISHED",
-				"RewardTrackCodes": []string{"supervive-season-1-track"},
-			},
-		},
+		"data":   []any{seasonTrack, accountTrack},
 		"paging": map[string]any{"previous": "", "next": ""},
 	})
 }

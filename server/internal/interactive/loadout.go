@@ -255,7 +255,9 @@ func (s *Service) handleSetLuxeChroma(w http.ResponseWriter, r *http.Request) {
 // ULoadoutReconciler only re-applies the doc when it advances past
 // LastLoadoutVersion.
 func (s *Service) loadoutDoc(id string) map[string]any {
-	st := s.store.get(id)
+	// snapshotLoadout (NOT get) so the maps below are lock-protected COPIES — marshaling
+	// the live maps here raced update() and fatal-crashed ags (concurrent map read/write).
+	st := s.store.snapshotLoadout(id)
 
 	// Slot entries, sorted by slot for a stable doc (diff-friendly captures).
 	slots := make([]string, 0, len(st.SlotCosmetics))

@@ -519,9 +519,17 @@ function renderMissions(m) {
     <h3>Simulate a match result</h3>
     <div class="note">Runs the same stat→objective engine as
       <span class="mono">POST /revival/missions/match-result</span>: deltas fan out to every mission
-      sharing the objective.</div>
+      sharing the objective. It also grants <b>Hunter's Journey pass XP</b> to the player picked
+      below. The real in-game POST credits whoever is authenticated (from the Bearer token), so it
+      never guesses; "(infer)" here only works when exactly ONE account has state — with several on
+      file the grant is skipped rather than credited to the wrong one.</div>
     <div class="card" id="matchform">
       <div class="row">
+        <label class="chk"><span>pass XP to</span>
+          <select id="m_playerId">
+            <option value="">(infer)</option>
+            ${PLAYERS.map(p => `<option value="${esc(p.id)}">${esc(p.id)}</option>`).join("")}
+          </select></label>
         <label class="chk"><input type="checkbox" id="m_win"><span>Win</span></label>
         ${["placement","knocks","assists","teamWipes","minionKills","bossKills","chestsOpened",
            "vaultsOpened","bonfiresCaptured","sunrises","purchases","uniqueHeroes"].map(f => `
@@ -586,13 +594,27 @@ async function simMatch() {
   for (const f of ["placement","knocks","assists","teamWipes","minionKills","bossKills",
                    "chestsOpened","vaultsOpened","bonfiresCaptured","sunrises","purchases","uniqueHeroes"])
     body[f] = +$("#m_" + f).value || 0;
+  const who = $("#m_playerId") ? $("#m_playerId").value : "";
+  if (who) body.playerId = who;
   try {
     const res = await api("/api/missions/match-result", { method: "POST",
       headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
     MISSIONS.objectives = res.objectives;
     const n = Object.keys(res.applied || {}).length;
-    $("#matchout").textContent = n + " objective key(s) advanced";
-    toast("Match recorded — " + n + " objective(s) advanced");
+    // Report the pass grant too, including the "nobody credited" case — otherwise a skipped
+    // grant looks identical to a successful one and the operator has no idea why the pass
+    // did not move.
+    const p = res.pass || {};
+    let passMsg;
+    if (!p.playerId) {
+      passMsg = "no pass XP (no player resolved — pick one above)";
+    } else {
+      passMsg = `+${p.xpGained||0} pass XP → ${p.playerId}, tier ${p.after ? p.after.level : "?"}`
+              + (p.tiersUp ? ` (+${p.tiersUp} tier${p.tiersUp>1?"s":""})` : "");
+    }
+    $("#matchout").textContent = `${n} objective key(s) advanced · ${passMsg}`;
+    toast(`Match recorded — ${n} objective(s), ${passMsg}`);
+    await loadPlayers(); // keep the players tab's Hunter's Journey column honest
   } catch (e) { toast(e.message, true); }
 }
 
@@ -607,13 +629,14 @@ function renderPlayers(m) {
     <div class="card">
       ${PLAYERS.length === 0 ? '<span class="counts">No player state yet — log in with the client once.</span>' : `
       <table>
-        <tr><th>Player ID</th><th>Selected hunter</th><th>Backdrop</th><th>Loadout ver</th><th></th></tr>
+        <tr><th>Player ID</th><th>Selected hunter</th><th>Backdrop</th><th>Hunter's Journey</th><th>Loadout ver</th><th></th></tr>
         ${PLAYERS.map(p => {
           const st = p.state || {};
           return `<tr>
             <td class="mono">${esc(p.id)}</td>
             <td>${esc(st.selectedHeroAssetId || "(default)")}</td>
             <td>${esc(st.lobbyPlatformAssetId || "—")}</td>
+            <td>tier ${st.accountPassLevel || 0}${(st.accountPassXP ? ` · ${st.accountPassXP} XP` : "")}${st.accountPassCleared ? " · cleared" : ""}</td>
             <td>${st.loadoutVersion || 0}</td>
             <td>
               <button class="btn mini" onclick="editPlayer('${esc(p.id)}')">Edit</button>
@@ -662,6 +685,24 @@ function renderPlayerEditor(m) {
         <option value="">(server default)</option>
         ${heroOpts.map(h => `<option ${st.selectedHeroAssetId===h?'selected':''}>${esc(h)}</option>`).join("")}
       </select>
+      <h3>Hunter's Journey — account pass (PASSES)</h3>
+      <div class="counts" style="margin-bottom:4px">Real effect, no relaunch: served on
+        <span class="mono">/progression/players/{id}</span>, whose handler feeds the client's native
+        progression ingester — the PASSES tier ladder updates on its next poll (~61s).
+        <b>Level</b> is a 0-based tier INDEX (the ladder lights up to it and auto-scrolls there).
+        <b>XP</b> is progress toward the NEXT tier; the client computes that tier's requirement itself
+        from the packed ladder, so an XP above it just fills the bar — raise Level to advance.</div>
+      <div class="kv-row">
+        <input type="number" min="0" value="${st.accountPassLevel || 0}"
+               onchange="st_setNum('accountPassLevel', this.value)" placeholder="Level (tier index)">
+        <input type="number" min="0" value="${st.accountPassXP || 0}"
+               onchange="st_setNum('accountPassXP', this.value)" placeholder="XP toward next tier">
+        <label class="counts" style="white-space:nowrap">
+          <input type="checkbox" ${st.accountPassCleared ? "checked" : ""}
+                 onchange="st_setBool('accountPassCleared', this.checked)"> cleared
+        </label>
+      </div>
+
       <h3>Menu backdrop (lobby platform)</h3>
       <input type="text" style="width:420px" value="${esc(st.lobbyPlatformAssetId || "")}"
              placeholder="LobbyPlatform:Base" onchange="st_set('lobbyPlatformAssetId', this.value)">
@@ -680,6 +721,14 @@ function renderPlayerEditor(m) {
 function st_set(field, v) {
   if (v) curPlayer.state[field] = v; else delete curPlayer.state[field];
 }
+/* Typed setters. st_set stores STRINGS and drops falsy values, which is wrong for the
+   account-pass fields: the server decodes the player doc with DisallowUnknownFields into
+   typed Go fields, so a "12" string or a "" bool fails the whole save. */
+function st_setNum(field, v) {
+  const n = parseInt(v, 10);
+  if (Number.isFinite(n) && n > 0) curPlayer.state[field] = n; else delete curPlayer.state[field]; // absent == 0
+}
+function st_setBool(field, v) { curPlayer.state[field] = !!v; }
 function pKvKey(field, oldK, newK) {
   const m = curPlayer.state[field] || {};
   if (newK && newK !== oldK) { m[newK.trim()] = m[oldK]; delete m[oldK]; curPlayer.state[field] = m; render(); }

@@ -289,22 +289,41 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 	// spawn calls). If the AV persists, the culprit is a DIFFERENT replica -> escalate to the
 	// route-A diagnostic shim (name the culprit via the async/thread dispatch caller stack).
 	// Tutorial has NO PlayerStart (drop-in via DropPlane), so spawn explicitly above origin.
+	// ★ S84 POSSESSION TEST — possess ALokiMinionCharacter instead of the stock ADefaultPawn.
+	// REVERT: swap ALokiMinionCharacter back to ADefaultPawn in the two places below (type + StaticClass)
+	// to restore the S77/S81 spectator baseline.
+	//
+	// WHY THIS CLASS. S77 reverted to ADefaultPawn because possessing ALokiCharacter produced a movement
+	// AV: the client's /Script/Loki.LokiCharacter is CLASS_Abstract, so the client cannot instantiate the
+	// replica -> PC->Pawn null/half-formed -> garbage deref. S84 pinned UClass::ClassFlags for this build
+	// (+0xDC, cross-validated against engine ground truth AND against that same S77 log line) and read the
+	// abstract bit on every Loki character class:
+	//     LokiCharacter       0x30D008A5  ABSTRACT
+	//     LokiHeroCharacter   0x30D008A5  ABSTRACT   (byte-identical — so the "mirror the hero base" plan is dead)
+	//     LokiMinionCharacter 0x30D000A4  CONCRETE   <-- the only one the client can spawn
+	// A minion is not a hero (no kit/abilities), but possession + movement is the SAME mechanism, and this
+	// is the cheapest decisive answer to the real open question: does SERVER-AUTHORITATIVE possession +
+	// replicated movement work at all here? Every previous movement attempt was a CLIENT-side hack that
+	// froze the CMC for ~20s and dropped the connection (S81); a properly replicated server pawn should
+	// take the normal engine path instead.
+	// WATCH FOR: "SpawnActor failed because class ... is abstract" (the abstract read was wrong) and
+	// "Invalid replicated field N in LokiMinionCharacter" (schema desync — iterate as in S54/S70).
+	// CAVEAT (unmeasured): GAS attributes are not replicated server-side (S80: GetMaxSpeed 0), so the pawn
+	// may possess correctly yet still not MOVE. Possession succeeding is the primary result either way.
 	const FVector SpawnLoc(0.f, 0.f, 500.f);
 	FActorSpawnParameters PawnParams;
 	PawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	ADefaultPawn* Pawn = World->SpawnActor<ADefaultPawn>(
-		ADefaultPawn::StaticClass(), SpawnLoc, FRotator::ZeroRotator, PawnParams);
+	ALokiMinionCharacter* Pawn = World->SpawnActor<ALokiMinionCharacter>(
+		ALokiMinionCharacter::StaticClass(), SpawnLoc, FRotator::ZeroRotator, PawnParams);
 	if (Pawn)
 	{
-		// S77: stock ADefaultPawn does NOT set bAlwaysRelevant in its ctor (ALokiCharacter did), so set it
-		// explicitly here — S71's proven-replicating DefaultPawn config set it, guaranteeing the pawn's
-		// initial actor bunch reaches the client regardless of owner-relevancy timing.
+		// ALokiCharacter's ctor already sets this; restated for parity with the S77 DefaultPawn path.
 		Pawn->bAlwaysRelevant = true;
 		// Possess() sets the PC's view target via the ClientSetViewTarget RPC which the stub SUPPRESSES
 		// (SUPERVIVE-modified sig); bAlwaysRelevant guarantees the send regardless.
 		NewPlayer->Possess(Pawn);
 		UE_LOG(LogLokiStubGM, Display,
-		       TEXT("PostLogin: spawned + possessed ADefaultPawn (S77 movement-AV test) %s at %s for %s — PC->GetPawn()=%s "
+		       TEXT("PostLogin: spawned + possessed ALokiMinionCharacter (S84 possession test) %s at %s for %s — PC->GetPawn()=%s "
 		            "(pawn Role=%d bAlwaysRelevant=%d bReplicates=%d, PC hasConnection=%d)."),
 		       *Pawn->GetName(), *SpawnLoc.ToString(), *NewPlayer->GetName(),
 		       *GetNameSafe(NewPlayer->GetPawn()), (int32)Pawn->GetLocalRole(),
@@ -334,6 +353,7 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 	}
 	else
 	{
-		UE_LOG(LogLokiStubGM, Warning, TEXT("PostLogin: failed to spawn ADefaultPawn."));
+		// If this fires with "class ... is abstract", the S84 ClassFlags read was wrong — revert to ADefaultPawn.
+		UE_LOG(LogLokiStubGM, Warning, TEXT("PostLogin: failed to spawn ALokiMinionCharacter."));
 	}
 }
