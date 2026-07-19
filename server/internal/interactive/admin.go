@@ -113,13 +113,50 @@ func (s *Service) SetMissionObjectives(vals map[string]float64, replace bool) ma
 	return s.MissionObjectives()
 }
 
+// AccountPassProgress is the Hunter's Journey account-pass progress for one player, as
+// served to the client under FPlayerProgression.AccountPass.
+type AccountPassProgress struct {
+	Level   int  `json:"level"`
+	XP      int  `json:"xp"`
+	Cleared bool `json:"cleared"`
+}
+
+// AccountPass returns a player's stored account-pass progress. A player with nothing
+// stored reads as the zero value (tier 0 / no XP), which is the correct fresh-account state.
+func (s *Service) AccountPass(id string) AccountPassProgress {
+	st := s.store.get(id)
+	return AccountPassProgress{Level: st.AccountPassLevel, XP: st.AccountPassXP, Cleared: st.AccountPassCleared}
+}
+
+// SetAccountPass writes a player's account-pass progress and returns the stored result.
+// The client picks it up from GET /progression/players/{id} on its next ~61s poll: the
+// served FPlayerProgression.Version advances whenever this content changes, and the
+// native ingester only adopts a STRICTLY greater version (game RVA +585A594 cmp / jle).
+// Negative Level is clamped to 0 — the client's tier predicate (0x584B920) treats -1 as
+// "no account track" and would drop the pass out of the UI entirely.
+func (s *Service) SetAccountPass(id string, p AccountPassProgress) AccountPassProgress {
+	if p.Level < 0 {
+		p.Level = 0
+	}
+	if p.XP < 0 {
+		p.XP = 0
+	}
+	s.store.update(id, func(st *playerState) {
+		st.AccountPassLevel = p.Level
+		st.AccountPassXP = p.XP
+		st.AccountPassCleared = p.Cleared
+	})
+	return s.AccountPass(id)
+}
+
 // ApplyMatchResultJSON runs the match-result -> objective-increment engine on a
 // raw matchResult doc (the same body POST /revival/missions/match-result takes).
-func (s *Service) ApplyMatchResultJSON(raw []byte) (applied, objectives map[string]float64, err error) {
+// Also returns what the match granted the Hunter's Journey account pass.
+func (s *Service) ApplyMatchResultJSON(raw []byte) (applied, objectives map[string]float64, pass PassAward, err error) {
 	var m matchResult
 	if e := json.Unmarshal(raw, &m); e != nil {
-		return nil, nil, fmt.Errorf("match result parse: %w", e)
+		return nil, nil, PassAward{}, fmt.Errorf("match result parse: %w", e)
 	}
-	applied = s.applyMatchResult(m)
-	return applied, s.MissionObjectives(), nil
+	applied, pass = s.applyMatchResult(m)
+	return applied, s.MissionObjectives(), pass, nil
 }

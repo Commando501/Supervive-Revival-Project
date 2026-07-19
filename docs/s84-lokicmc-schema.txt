@@ -1,0 +1,3 @@
+﻿=== LokiCharacterMovementComponent (UClass 0x2960876A100) — live capture 2026-07-19 00:30 PID 72108 ===
+=== CLIENT class @0x2960876A100 CPF_Net props, expanded via REAL path ===
+=== total leaf cmds across net props = 0 ===

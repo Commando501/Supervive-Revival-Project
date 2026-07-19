@@ -57,6 +57,9 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/missions", s.handleGetMissions)
 	mux.HandleFunc("PUT /api/missions/progress", s.handlePutMissionProgress)
 	mux.HandleFunc("POST /api/missions/match-result", s.handleMatchResult)
+
+	mux.HandleFunc("GET /api/progression/{id}", s.handleGetAccountPass)
+	mux.HandleFunc("PUT /api/progression/{id}", s.handlePutAccountPass)
 }
 
 // Guard wraps the admin handler with a loopback-only check. The listener is
@@ -192,16 +195,43 @@ func (s *Service) handlePutMissionProgress(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+// handleGetAccountPass returns one player's Hunter's Journey (account pass) progress.
+func (s *Service) handleGetAccountPass(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, s.Interactive.AccountPass(r.PathValue("id")))
+}
+
+// handlePutAccountPass sets a player's Hunter's Journey progress. REAL EFFECT, no relaunch:
+// the values are served on GET /progression/players/{id}, whose OnSuccess is the client's
+// native progression ingester, so the PASSES tier ladder updates within the client's ~61s
+// poll (the served Version advances because the content changed, which is what the client's
+// strictly-greater adoption gate requires).
+//
+// Level is a tier INDEX, so it is 0-based: Level 12 lights tiers up to 12 and the ladder
+// auto-scrolls there. XP is progress toward the NEXT tier; the client recomputes the
+// requirement itself from the packed asset's ladder, so an XP above that requirement just
+// shows a full bar rather than advancing a tier — move Level for that.
+func (s *Service) handlePutAccountPass(w http.ResponseWriter, r *http.Request) {
+	raw, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	var body interactive.AccountPassProgress
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		httpError(w, http.StatusBadRequest, "account pass parse: "+err.Error())
+		return
+	}
+	writeJSON(w, s.Interactive.SetAccountPass(r.PathValue("id"), body))
+}
+
 // handleMatchResult runs the same match-result -> objective-increment engine as
 // the game-facing POST /revival/missions/match-result.
 func (s *Service) handleMatchResult(w http.ResponseWriter, r *http.Request) {
 	raw, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
-	applied, objectives, err := s.Interactive.ApplyMatchResultJSON(raw)
+	applied, objectives, pass, err := s.Interactive.ApplyMatchResultJSON(raw)
 	if err != nil {
 		httpError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{"applied": applied, "objectives": objectives})
+	writeJSON(w, map[string]any{"applied": applied, "objectives": objectives, "pass": pass})
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

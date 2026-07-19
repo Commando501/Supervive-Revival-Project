@@ -462,6 +462,13 @@ type matchResult struct {
 	// Objectives are explicit per-objective deltas applied ON TOP of the mapped ones, so callers can
 	// advance objectives the table doesn't cover yet without editing the server.
 	Objectives map[string]float64 `json:"objectives"`
+	// PlayerID names the account to credit with Hunter's Journey pass XP (see passxp.go). Optional:
+	// with exactly one player on file (the single-account revival) it is inferred, so the client's
+	// fire-and-forget POST needs no change.
+	PlayerID string `json:"playerId"`
+	// PassXP is an explicit pass-XP grant applied ON TOP of the rule table — the pass analogue of
+	// Objectives, for granting XP the stat rules don't model.
+	PassXP int `json:"passXp"`
 }
 
 func b2f(b bool) float64 { if b { return 1 }; return 0 }
@@ -513,21 +520,31 @@ func mappedNameDeltas(m matchResult) map[string]float64 {
 }
 
 // handleMatchResult records a match via applyMatchResult. Echoes
-// {"applied": <composite deltas>, "objectives": <full updated map>}.
+// {"applied": <composite deltas>, "objectives": <full updated map>, "pass": <account-pass award>}.
 func (s *Service) handleMatchResult(w http.ResponseWriter, r *http.Request) {
 	var m matchResult
 	raw, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	_ = json.Unmarshal(raw, &m)
-	applied := s.applyMatchResult(m)
-	writeJSON(w, map[string]any{"applied": applied, "objectives": s.missionObjectives()})
+	// Credit the pass to the AUTHENTICATED caller. This request carries the player's Bearer token,
+	// so on the real gameplay path we know exactly who played and never have to infer — which
+	// matters as soon as more than one account has state on file (a stale second account is enough
+	// to make the sole-player fallback ambiguous, and guessing would silently credit the wrong one).
+	// An explicit playerId in the body still wins, for the admin simulator.
+	if m.PlayerID == "" {
+		m.PlayerID = subjectFromBearer(r.Header.Get("Authorization"))
+	}
+	applied, pass := s.applyMatchResult(m)
+	writeJSON(w, map[string]any{"applied": applied, "objectives": s.missionObjectives(), "pass": pass})
 }
 
 // applyMatchResult maps a match's stats to per-objective-name deltas, FANS them out to every
 // mission that has the objective (via the registered manifest) so each mission's composite key
 // advances independently, then applies the explicit per-composite `objectives` passthrough on
 // top. Shared by the game-facing POST handler and the admin panel's match simulator
-// (ApplyMatchResultJSON). Returns the composite deltas that were applied.
-func (s *Service) applyMatchResult(m matchResult) map[string]float64 {
+// (ApplyMatchResultJSON). Returns the composite deltas that were applied, plus what the same
+// match granted the Hunter's Journey account pass (see passxp.go — a zero award means no player
+// was resolved, which never blocks the mission side).
+func (s *Service) applyMatchResult(m matchResult) (map[string]float64, PassAward) {
 	nameDeltas := mappedNameDeltas(m)
 	st0 := s.store.get(missionsLocalKey)
 
@@ -559,5 +576,7 @@ func (s *Service) applyMatchResult(m matchResult) map[string]float64 {
 			st.MissionObjectives[k] += v
 		}
 	})
-	return applied
+	// The same match also advances the account pass. Done after the mission write (and outside
+	// that update closure — SetAccountPass takes the same store lock, so nesting would deadlock).
+	return applied, s.applyPassXP(m)
 }

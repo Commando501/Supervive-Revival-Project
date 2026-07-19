@@ -1,5 +1,5 @@
 [0] loadout_fix (replay saved equips via native setters) started
-[member] class=0x1FD617B9E80 cosmeticOff=0x98 heroOff=0x78 — props:
+[member] class=0x29608849E80 cosmeticOff=0x98 heroOff=0x78 — props:
 [member]   +0x30 ID
 [member]   +0x40 DisplayName
 [member]   +0x50 Tag
@@ -34,41 +34,69 @@
 [member]   +0x318 OnEmoteSent
 [member]   +0x328 bIsRankedEligible
 [member]   +0x330 OnIsRankedEligibleChanged
-[2] lam=1FD9FE82320 pm=1FE0D0BEB00 pafs=7FF6BA79B760 setBundle=7FF6BA9B6130 setSlot=7FF6BA9B6600 setChroma=7FF6BA9B64A0 party=0x1FE0F0A9B80 tryPick=7FF6BA9A5380 getHeroAsset=7FF6BA79A550 gameTid=13180
-[2b] subjects=4 refreshFn=000001FD26DB5400 subjClass=0x1FD1D8AC8E0 member=0x1FD5624E780 cosmeticOff=0x98
-[3] fetched loadout: ok=1 bundles=5 slots=0 chromas=0 (http://127.0.0.1:8080/revival/loadout)
+[2] lam=2964A5EE8C0 pm=29703BC0780 pafs=7FF6B42AB760 setBundle=7FF6B44C6130 setSlot=7FF6B44C6600 setChroma=7FF6B44C64A0 party=0x296D215E680 tryPick=7FF6B44B5380 getHeroAsset=7FF6B42AA550 gameTid=15632
+[2b] subjects=4 refreshFn=00000297794BB600 subjClass=0x296E4EAC100 member=0x29768430E80 cosmeticOff=0x98
+[3] fetched loadout: ok=1 bundles=9 slots=4 chromas=0 (http://127.0.0.1:8080/revival/loadout)
 [3]   bundle: Hero:Alchemist -> HeroCosmeticsBundle:AlchemistDefault_MAS
+[3]   bundle: Hero:BacklineHealer -> HeroCosmeticsBundle:BacklineHealerJTW
+[3]   bundle: Hero:Beebo -> HeroCosmeticsBundle:BeeboAUTUM_PAN
+[3]   bundle: Hero:BurstCaster -> HeroCosmeticsBundle:BurstCasterSCIFI
 [3]   bundle: Hero:RONIN -> HeroCosmeticsBundle:RoninONI_DAR
 [3]   bundle: Hero:Succubus -> HeroCosmeticsBundle:SuccubusSISTE
+[3]   bundle: Hero:firefox -> HeroCosmeticsBundle:FireFoxStarLaser
 [3]   bundle: Hero:reshealer -> HeroCosmeticsBundle:ResHealerDefault
 [3]   bundle: Hero:rocketjumper -> HeroCosmeticsBundle:RocketJumperSpeedDemon
+[3]   slot:   Avatar -> SlotCosmetics:AVATAR_GuardianAngel
+[3]   slot:   Glider -> SlotCosmetics:GLIDER_BrideOfSwords
+[3]   slot:   Spray -> SlotCosmetics:SPRAY_TeamAegis
+[3]   slot:   Wisp -> SlotCosmetics:WISP_DuckBeaver
 [apply] bundle Alchemist -> AlchemistDefault_MAS
+[apply] bundle BacklineHealer -> BacklineHealerJTW
+[apply] bundle Beebo -> BeeboAUTUM_PAN
+[apply] bundle BurstCaster -> BurstCasterSCIFI
 [apply] bundle RONIN -> RoninONI_DAR
 [apply] bundle Succubus -> SuccubusSISTE
+[apply] bundle firefox -> FireFoxStarLaser
 [apply] bundle reshealer -> ResHealerDefault
 [apply] bundle rocketjumper -> RocketJumperSpeedDemon
+[apply] slot Avatar -> AVATAR_GuardianAngel
+[apply] slot Glider -> GLIDER_BrideOfSwords
+[apply] slot Spray -> SPRAY_TeamAegis
+[apply] slot Wisp -> WISP_DuckBeaver
 [probe] GetHeroCosmeticsBundlePreference(Hero:Alchemist) out='AlchemistDefault_MAS' ret='<none>' (nparams=2 off0=0 off1=16)
 [renderA] GetHeroAsset(Hero:Alchemist) -> NULL/bad 0x0
+[renderA] GetHeroAsset(Hero:BacklineHealer) -> NULL/bad 0x0
+[renderA] GetHeroAsset(Hero:Beebo) -> NULL/bad 0x0
+[renderA] GetHeroAsset(Hero:BurstCaster) -> NULL/bad 0x0
 [renderA] GetHeroAsset(Hero:RONIN) -> NULL/bad 0x0
 [renderA] GetHeroAsset(Hero:Succubus) -> NULL/bad 0x0
+[renderA] GetHeroAsset(Hero:firefox) -> NULL/bad 0x0
 [renderA] GetHeroAsset(Hero:reshealer) -> NULL/bad 0x0
 [renderA] GetHeroAsset(Hero:rocketjumper) -> NULL/bad 0x0
 [renderA] render-object patch: 0 field(s) set (obj from GetHeroAssetFromPrimaryAssetId)
 [render] LokiHeroAsset class FOUND (candidates=1) dcbOff=0x68
+[render] patched 'Default__BP_HeroAsset_Alchemist_C' DefaultCosmeticsBundle: AlchemistDefault -> AlchemistDefault_MAS
+[render] patched 'Default__BP_HeroAsset_FireFox_C' DefaultCosmeticsBundle: FireFoxDefault -> FireFoxStarLaser
+[render] patched 'Default__BP_HeroAsset_BurstCaster_C' DefaultCosmeticsBundle: BurstCasterDefault -> BurstCasterSCIFI
+[render] patched 'Default__BP_HeroAsset_Beebo_C' DefaultCosmeticsBundle: BeeboDefault -> BeeboAUTUM_PAN
 [render] patched 'Default__BP_HeroAsset_RocketJumper_C' DefaultCosmeticsBundle: RocketJumperDefault -> RocketJumperSpeedDemon
 [render] patched 'Default__BP_HeroAsset_Ronin_C' DefaultCosmeticsBundle: RoninDefault -> RoninONI_DAR
-[render] patched 'Default__BP_HeroAsset_Alchemist_C' DefaultCosmeticsBundle: AlchemistDefault -> AlchemistDefault_MAS
+[render] patched 'Default__BP_HeroAsset_BacklineHealer_C' DefaultCosmeticsBundle: BacklineHealer -> BacklineHealerJTW
 [render] patched 'Default__BP_HeroAsset_Succubus_C' DefaultCosmeticsBundle: SuccubusDefault -> SuccubusSISTE
-[render] data-scan matched 5 hero-asset field(s)
-[7] render patch: 4 hero DefaultCosmeticsBundle field(s) set.
+[render] data-scan matched 9 hero-asset field(s)
+[7] render patch: 8 hero DefaultCosmeticsBundle field(s) set.
 [renderR] Refresh fired on 4 subject(s) (call #0) -> main-menu center re-render
 [renderR] Refresh fired on 4 subject(s) (call #1) -> main-menu center re-render
-[4] *** applied 5 equip(s) + 2 main-menu Refresh call(s) fired. Skins render on the hunter. ***
-[5] *** GDCB skin-redirect INSTALLED (Func-swap, heap) for 5 hero(es): UFunc=0x1FD5B443AA0 thunk 0x7FF6BA7A3400->MyThunk. ***
-[5]   redirect: Alchemist -> nameFName=0x313A00
-[5]   redirect: RONIN -> nameFName=0x43F87E
-[5]   redirect: Succubus -> nameFName=0x17A856
-[5]   redirect: reshealer -> nameFName=0x2D9C1C
-[5]   redirect: rocketjumper -> nameFName=0x24BBEA
+[4] *** applied 13 equip(s) + 2 main-menu Refresh call(s) fired. Skins render on the hunter. ***
+[5] *** GDCB skin-redirect INSTALLED (Func-swap, heap) for 9 hero(es): UFunc=0x29604DA3AA0 thunk 0x7FF6B42B3400->MyThunk. ***
+[5]   redirect: Alchemist -> nameFName=0x3199F4
+[5]   redirect: BacklineHealer -> nameFName=0x3B2975
+[5]   redirect: Beebo -> nameFName=0x4FB6A9
+[5]   redirect: BurstCaster -> nameFName=0x378CA7
+[5]   redirect: RONIN -> nameFName=0x445690
+[5]   redirect: Succubus -> nameFName=0x17FF9D
+[5]   redirect: firefox -> nameFName=0x8CAEB
+[5]   redirect: reshealer -> nameFName=0x2DFAC1
+[5]   redirect: rocketjumper -> nameFName=0x25155D
 [6] redirect refresh poller started (1s) — SKIN picks now changeable.
-[9] member cosmetic write: g_member=0x1FD5624E780 cosmeticOff=0x98 -> DISABLED (default off; see part 9)
+[9] member cosmetic write: g_member=0x29768430E80 cosmeticOff=0x98 -> DISABLED (default off; see part 9)

@@ -62,3 +62,32 @@ void ALokiCharacter::ServerCheatTeleportNear_Implementation() {}
 void ALokiCharacter::ServerGetDebugStatString_Implementation() {}
 void ALokiCharacter::ServerSetCharacterDebugMode_Implementation() {}
 void ALokiCharacter::ServerSuicide_Implementation() {}
+
+// ===================================================================================================
+// ALokiMinionCharacter (S84) — the ONLY CONCRETE Loki-typed character on the client, hence the only
+// one the client can instantiate as a replica, hence the only one we can possess. See the header for
+// why ALokiCharacter / LokiHeroCharacter (both CLASS_Abstract) cannot be used.
+// ===================================================================================================
+ALokiMinionCharacter::ALokiMinionCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	// Base ctor already sets bReplicates / SetReplicateMovement(true) / bAlwaysRelevant.
+	UE_LOG(LogLokiCharStub, Display,
+	       TEXT("ALokiMinionCharacter constructed (/Script/Loki.LokiMinionCharacter mirror; 3 own reps + 1 RPC "
+	            "over ALokiCharacter — S84 possession test; this is the CONCRETE class the client can spawn)."));
+}
+
+void ALokiMinionCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	// Super = ALokiCharacter, which already does the APawn tier + ACharacter's 8 by-name conditional reps
+	// (skipping the stripped RepRootMotion) + its own 2. Safe to chain — it is all non-push.
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// Our 3 own props, COND_SimulatedOnly (never sent to the autonomous owner; slots kept for alignment).
+	DOREPLIFETIME_CONDITION(ALokiMinionCharacter, AggroRange, COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiMinionCharacter, bIsCowering, COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiMinionCharacter, LootMajorReward, COND_SimulatedOnly);
+}
+
+// Empty stub — present only so the class carries the FUNC_Net UFunction for NetFields index alignment.
+void ALokiMinionCharacter::LostLastAggroTarget_Implementation() {}

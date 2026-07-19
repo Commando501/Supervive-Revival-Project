@@ -1,8 +1,8 @@
 [0] missions_fix (Option 2 durable: ags-fetched progress on launch + poll-on-change) started
-[2] lam=236C1DFAEA0 mm=23713A3C280 guon-thunk=7FF6BA7A3720 all funcs resolved gameTid=100484
+[2] lam=2964A5EE8C0 mm=296D2159E80 guon-thunk=7FF6B42B3720 all funcs resolved gameTid=15632
 [3] fetched ags progress: ok=1 entries=0 (http://127.0.0.1:8080/revival/missions/progress) -> build keyed model w/ progress -> swap...
-[4] apply#1: missions=330 pools=16 model=0x236F6A43D00 Num=330 fetchOk=1 entries=0 appliedNonZero=0
-[4] manifest: 330 entries POSTed=1 (per-mission composite keys)
+[4] apply#1: missions=330 pools=16 model=0x296393A0D00 Num=330 fetchOk=1 entries=0 appliedNonZero=0
+[4] manifest: 298 entries POSTed=1 (per-mission composite keys)
 [4]   m0 'Tournament_WinGame': key0='a2winarenagames' prog0=0.0 total0=1.0
 [4]   m1 'Tournament_Top3': key0='BR_3Top4' prog0=0.0 total0=3.0
 [4]   m2 'Tournament_PlayAGame': key0='PlayAGame' prog0=0.0 total0=5.0
@@ -12,3 +12,6 @@
 [4]   m6 'CompleteTraversalChallenge': key0='NewOnboarding_CompleteTraversalChallenge' prog0=0.0 total0=1.0
 [4]   m7 'CompleteSpikingChallenge': key0='NewOnboarding_CompleteSpikingChallenges' prog0=0.0 total0=2.0
 [4] *** swapped w/ fetched progress. Reopen the Missions modal to see it. Now polling ags for changes... ***
+[poll] apply#2: progress changed -> re-swapped (entries=9 appliedNonZero=9). Reopen modal to refresh.
+[poll] apply#3: progress changed -> re-swapped (entries=9 appliedNonZero=9). Reopen modal to refresh.
+[poll] apply#4: progress changed -> re-swapped (entries=9 appliedNonZero=9). Reopen modal to refresh.

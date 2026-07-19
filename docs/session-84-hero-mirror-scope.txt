@@ -1,0 +1,389 @@
+================================================================================
+S84 — THE SERVER-SIDE HERO MIRROR IS SMALL. S81's "LARGE multi-session" ESTIMATE
+       WAS AN OVER-COUNT (total props, not the CPF_Net subset).
+================================================================================
+Date: 2026-07-19.  Branch: dedicated-server-stub.  Live read-only capture, no game disturbed.
+Predecessor: docs/session-81-disconnect-characterized.txt. Memory: supervive-dedicated-server-status.
+
+--------------------------------------------------------------------------------
+0. WHY THIS MATTERS
+--------------------------------------------------------------------------------
+S81 concluded: "ONLY viable route to live combat = SERVER-SIDE: make the STUB spawn+possess+
+REPLICATE a real hero (LokiCharacter ~182 props + LokiCharacterMovementComponent ~218 props
+custom-NetSerialize + GAS/abilities) — a LARGE multi-session reconstruction (bigger than the S70
+GameState mirror)." That sizing was wrong, and it was wrong in the way this project has been wrong
+8 times before (S80's tally: "8 investigated walls -> 8 measurement/tool bugs, 0 game limits"):
+**182/218 are TOTAL property counts. The mirror only needs the CPF_Net (replicated) subset.**
+
+--------------------------------------------------------------------------------
+1. MEASURED LIVE (client PID 72108, base 0x7FF6AF000000, read-only RPM at the MENU)
+--------------------------------------------------------------------------------
+Tools: tools/re/find_uclass.py -> rep_expand_class.py (props) + netfields_dump.py (RPCs).
+Both UClasses are loaded at the MENU, so this needed NO DS session and NO relaunch.
+
+  LokiCharacter                    UClass 0x29608761A00
+      replicated props : 2 leaf cmds
+          [0] OutOfBoundsBufferTimeRemaining   FloatProperty   flags=0x18001140002234
+          [1] CustomAnimationState             EnumProperty    flags=0x48001040000220
+      own net functions: 14  (name-sorted NetFields order)
+          [ 0] ClientDebugMessage           [Client,Reliable,Native]
+          [ 1] ClientDisengageYawLock       [Client,Native]
+          [ 2] ClientEngageYawLock          [Client,Native]
+          [ 3] ClientPlayHitReact           [Client,Multicast,Native]
+          [ 4] ClientPlayJumpCue            [Client,Multicast,Native]
+          [ 5] ClientSetJumpZ               [Client,Multicast,Reliable,Native]
+          [ 6] ClientUpdateDebugString      [Client,Reliable,Native]
+          [ 7] ServerCheatExperience        [Server,Reliable,Native]
+          [ 8] ServerCheatInfinite          [Server,Reliable,Native]
+          [ 9] ServerCheatResetCooldowns    [Server,Reliable,Native]
+          [10] ServerCheatTeleportNear      [Server,Reliable,Native]
+          [11] ServerGetDebugStatString     [Server,Reliable,Native]
+          [12] ServerSetCharacterDebugMode  [Server,Reliable,Native]
+          [13] ServerSuicide                [Server,Reliable,Native]
+
+  LokiCharacterMovementComponent   UClass 0x2960876A100
+      replicated props : 0
+      own net functions: 0
+
+Full captures: docs/s84-lokicharacter-schema.txt, s84-lokicmc-schema.txt, s84-lokicharacter-netfuncs.txt.
+
+--------------------------------------------------------------------------------
+2. WHAT THAT MEANS
+--------------------------------------------------------------------------------
+* The CMC — the half that made this look impossible ("218 props, custom movement NetSerialize") —
+  has NO replicated state and NO RPCs. SUPERVIVE does not replicate movement through the Loki CMC
+  subclass; character movement rides ACharacter's STOCK engine path (ServerMove/ClientAdjustPosition
+  etc.), which the stub inherits for free from UE 5.4. Nothing to mirror.
+* Not one of LokiCharacter's 14 RPCs is core movement or combat — they are 7 cheat/debug Server RPCs
+  and 7 cosmetic Client RPCs (hit react, jump cue, yaw lock, debug strings).
+* So the divergence surface is: 2 replicated props + 14 same-named net functions. That is SMALLER
+  than the S70 ALokiGameState mirror (43 props / 67 leaf cmds), which took one session.
+
+--------------------------------------------------------------------------------
+3. THE PROPOSED NEXT STEP (not yet built or tested)
+--------------------------------------------------------------------------------
+Mirror the pattern that already worked TWICE (S70 GameState, S73 PlayerController):
+  1. unreal-stub/Source/Loki/LokiCharacterStub.{h,cpp}:
+       ALokiCharacter : ACharacter, UCLASS named so its path is /Script/Loki.LokiCharacter
+       (by-path NetGUID bind -> the client resolves it to ITS OWN native LokiCharacter).
+       Declare the 2 replicated props IN ORDER + all 14 net functions with the SAME NAMES
+       (empty bodies) so the name-sorted NetFields index space aligns — the S73 mitigation that
+       fixed the PC's shifted RPC indices.
+       ★ Follow the S70 rule: do NOT call the engine base's GetLifetimeReplicatedProps —
+       register base props BY NAME, NON-PUSH (AddGSBaseLifetimeProp pattern), or the
+       bIsPushBased assert fires.
+  2. LokiStubGameMode: spawn+possess ALokiCharacter instead of ADefaultPawn (S71 already proved
+     server-side spawn+possess+replicate works for a pawn, and S73 made the client's PC a real
+     LokiPlayerController so possession is valid).
+  3. Un-suppress it in LokiNetDriver::IsClassNetCacheDivergent if suppressed; boot
+     DumpClassNetCacheLayout(ALokiCharacter) to verify 2 reps + 14 net funcs before going live.
+  4. Live test. SUCCESS = client possesses a server-owned LokiCharacter and WASD produces
+     server-authoritative replicated movement — i.e. real movement with NO client-side hacks and
+     NO CMC freeze (the S81 20s stall was caused by driving a LOCALLY-spawned hero; a properly
+     replicated server pawn takes the normal path). Desync -> "Invalid replicated field N" names
+     the exact next thing, same loop as S54/S70.
+
+HONEST CAVEATS (do not oversell this):
+  * A bare native ALokiCharacter is NOT a hero. Real heroes are BP_HERO_<name>_C Blueprints deriving
+    from LokiCharacter; the stub cannot load BP content (S73 content-overlay analysis). Expect a
+    controllable but featureless character — no abilities, likely no mesh — not a playable hero.
+  * GAS/attributes remain unsolved server-side: S80 found hero AttributeSetStorage@+0xF08 null =>
+    GetMaxSpeed 0, and "all 467 live AttributeSets read MoveSpeed=0 — the stub replicates NO
+    attributes". If GetMaxSpeed is 0 on the replicated character too, movement clamps to 0 and the
+    mirror alone won't move. That is the next thing to measure, not assume. (ACharacter's stock
+    movement may use CharacterMovement->MaxWalkSpeed rather than the Loki GAS path — worth checking
+    which GetMaxSpeed the server-possessed pawn actually runs.)
+  * This unlocks MOVEMENT/possession, not the match round. Drop-in/combat remain server-authoritative
+    and gated on the real gamemode (S73: native code we do not have).
+So: the realistic prize here is "controllable character in the live tutorial world, stable, no
+hacks" — a real milestone beyond S81's spectator view, and much cheaper than S81 assumed. Full
+playable hero combat remains out of reach.
+================================================================================
+
+--------------------------------------------------------------------------------
+4. ★★★ S84 CORRECTION + THE ACTUAL GAP (read this before acting on §3)
+--------------------------------------------------------------------------------
+§3 above proposed "build the ALokiCharacter mirror". THAT MIRROR ALREADY EXISTS — S73 built it:
+unreal-stub/Source/Loki/LokiCharacterStub.{h,cpp} declares ALokiCharacter : ACharacter with EXACTLY
+the 2 props + 14 RPCs captured here. So this session's capture RE-DISCOVERED S73's own numbers; what
+it legitimately establishes is only that S81's restatement ("~182 props + ~218 CMC props, LARGE
+multi-session") was STALE — the memory contradicted itself and the small figure was right.
+READ THE STUB TREE BEFORE SIZING STUB WORK.
+
+WHY THE EXISTING MIRROR IS NOT IN USE (S77, quoted from a live log):
+  "SpawnActor failed because class LokiCharacter is abstract"
+The client's /Script/Loki.LokiCharacter is CLASS_Abstract, so the CLIENT CANNOT INSTANTIATE a local
+replica when the stub possesses one -> PC->Pawn is null/half-formed -> movement dereferences garbage
+-> execute-AV. LokiStubGameMode was reverted to possessing a stock ADefaultPawn, which is where it
+stands today.
+
+★ THE GAP — WE MIRRORED THE WRONG CLASS. Live enumeration of every UClass descending from
+LokiCharacter (scratchpad/loki_char_subclasses.py, 5324 UClasses scanned) finds exactly TWO, and both
+are NATIVE (no _C suffix => /Script/Loki, so the by-path NetGUID trick applies):
+    LokiHeroCharacter      <-- the hero base; the class BP_HERO_*_C derive from
+    LokiMinionCharacter
+LokiCharacter being abstract does NOT block the route; it means the possessed class must be a
+CONCRETE descendant. Captured LokiHeroCharacter live (UClass 0x296087D4C00):
+    replicated props : 1   (AllowUpdatesToVisionGranters, flags=0x18001140000220)
+    own net functions: 3
+Full capture: docs/s84-lokiherocharacter-schema.txt.
+
+⇒ THE WHOLE REMAINING MIRROR IS 1 PROP + 3 RPCs ON TOP OF WHAT S73 ALREADY WROTE.
+
+NEXT STEP (concrete, small):
+  1. Add ALokiHeroCharacter : ALokiCharacter to LokiCharacterStub.{h,cpp}, UCLASS named so its path is
+     /Script/Loki.LokiHeroCharacter; declare AllowUpdatesToVisionGranters + the 3 net funcs (empty
+     bodies, same names, for NetFields index alignment — the S73 mitigation). Call Super for lifetime
+     props (ALokiCharacter's tier is already non-push-safe).
+  2. VERIFY IT IS CONCRETE before wiring it: the ClassFlags offset for this build was NOT pinned this
+     session (the +0xB8..+0xE8 window read as pointers, not flags). Pin it by differencing a
+     known-abstract class (LokiCharacter) against a known-concrete one (e.g. ADefaultPawn), then check
+     CLASS_Abstract(0x1). If LokiHeroCharacter is ALSO abstract, go one level further —
+     the concrete leaves are the BP_HERO_*_C blueprints, which the stub cannot name by /Script path
+     (that would need naming a /Game asset path on the wire; the client HAS the content and DOES
+     blocking-load unknown NetGUID paths, cf. S71's /Script/Loki.LokiStubGameMode load — so it is
+     worth a probe, but it is a different technique).
+  3. LokiStubGameMode PostLogin: spawn+possess ALokiHeroCharacter instead of ADefaultPawn (keep the
+     one-line revert). Boot DumpClassNetCacheLayout to verify reps/RPCs before the live test.
+  4. Live test. Watch for "SpawnActor failed because class ... is abstract" (step-2 was wrong) and
+     "Invalid replicated field N" (schema desync — iterate as in S54/S70).
+STILL TRUE from §3: GAS attributes are unreplicated server-side (S80: GetMaxSpeed 0), so a possessed
+hero may still not MOVE. Measure which GetMaxSpeed the server-possessed pawn runs before assuming.
+
+--------------------------------------------------------------------------------
+5. ClassFlags PINNED + THE §4 PLAN IS FALSIFIED (LokiHeroCharacter is ABSTRACT)
+--------------------------------------------------------------------------------
+UClass::ClassFlags for THIS build = **+0xDC** (uint32). Pinned differentially, not guessed
+(scratchpad/class_abstract.py): scan every dword offset for one with CLASS_Abstract(0x1) SET on a
+known-abstract class and CLEAR on known-concrete ones. Two offsets survived that filter (+0xDC, +0xFC);
+engine ground truth then killed +0xFC — it claims Controller and Info are CONCRETE, but both are
+UCLASS(abstract) in UE5 (its values are small counts, not flags). +0xDC reproduces EVERY ground truth:
+  Controller 0x30C80AA5 ABSTRACT | Info 0x30C808A5 ABSTRACT | Pawn 0x30C808A4 concrete
+  Actor 0x30C808A4 | Character 0x30D008A4 | DefaultPawn 0x30C800A4 | PlayerController 0x30C80AA4
+  GameModeBase 0x30C80AAC | SpectatorPawn 0x30C802A4  (all concrete)
+and independently reproduces LokiCharacter = ABSTRACT, which we already knew from the S77 live log
+"SpawnActor failed because class LokiCharacter is abstract" — so the offset is cross-validated.
+
+RESULT:
+  LokiCharacter        0x30D008A5  ABSTRACT
+  LokiHeroCharacter    0x30D008A5  ABSTRACT   <-- byte-identical flags to LokiCharacter
+  LokiMinionCharacter  0x30D000A4  CONCRETE   <-- the ONLY concrete native descendant
+(cf. Character 0x30D008A4 — differs from LokiCharacter ONLY in bit0.)
+
+⇒ **§4's plan is DEAD as written.** Possessing ALokiHeroCharacter would hit the identical S77 failure
+(client cannot instantiate an abstract replica -> null/half-formed PC->Pawn -> movement AV). Do NOT
+build ALokiHeroCharacter as the possessed class. The §4 "verify it is concrete FIRST" step did its job.
+
+WHERE THAT LEAVES THE ROUTE (two options, neither yet tried):
+ (A) POSSESS A MINION — LokiMinionCharacter is CONCRETE and NATIVE (/Script/Loki), so it IS mirrorable
+     by path and the client CAN spawn the replica. Not a hero (no abilities/hero kit), but it directly
+     answers the real open question: does SERVER-AUTHORITATIVE possession + replicated movement work at
+     all in this session? That is the cheapest decisive experiment left, and it reuses the whole S73
+     mirror machinery. Capture its schema first (find_uclass -> rep_expand_class + netfields_dump).
+ (B) NAME A CONCRETE BP HERO ON THE WIRE — the real heroes are BP_HERO_*_C (concrete, but /Game assets,
+     not /Script). The stub cannot compile them, but it may not need to: the client HAS the content and
+     DOES blocking-load unknown NetGUID paths (S71 watched it force-load /Script/Loki.LokiStubGameMode,
+     a class it lacked). So a stub actor whose replicated class path names a BP hero the client owns
+     might resolve client-side. This is a DIFFERENT technique from the /Script by-path mirror and is
+     unproven here — treat as a probe, not a plan.
+NOTE (A) and (B) are independent; (A) is the cheap yes/no on possession+movement, (B) is the only route
+to an actual hero. Still unmeasured either way: GAS attributes are unreplicated server-side (S80
+GetMaxSpeed 0), so a possessed pawn may still not move.
+
+--------------------------------------------------------------------------------
+6. S84 MINION POSSESSION TEST — BUILT + COMPILING, AWAITING THE LIVE RUN
+--------------------------------------------------------------------------------
+BUILT (Build.bat LokiEditor Win64 Development, exit 0, -WarningsAsErrors, 450s; UHT generated
+LokiCharacterStub.gen.cpp so the new UCLASS reflection exists):
+  * LokiCharacterStub.{h,cpp}: NEW `ALokiMinionCharacter : ALokiCharacter`, UCLASS path
+    /Script/Loki.LokiMinionCharacter (by-path NetGUID bind). 3 own CPF_Net props in field order
+    (AggroRange float, bIsCowering bool, LootMajorReward TSubclassOf<AActor> — a ClassProperty is 1
+    PropertyObject cmd regardless of pointee, the S54 lesson) + 1 net func LostLastAggroTarget
+    (NetMulticast Reliable, empty stub for NetFields index alignment). Props COND_SimulatedOnly:
+    this pawn is the owning client's AUTONOMOUS proxy, so they are never sent to it — the slots hold
+    ClassReps positions for alignment but cannot desync the owner. GetLifetimeReplicatedProps chains
+    Super (ALokiCharacter already does the APawn tier + ACharacter's 8 by-name conditional reps,
+    skipping the stripped RepRootMotion) — all non-push, so no bIsPushBased assert.
+  * LokiStubGameMode::PostLogin now spawns+possesses ALokiMinionCharacter instead of ADefaultPawn.
+    Both log strings corrected (they still said "ADefaultPawn" — this project diagnoses from logs).
+    ONE-LINE REVERT: swap the type + StaticClass back to ADefaultPawn for the S77/S81 baseline.
+
+LIVE RUN (needs an elevated client launch — launch-redirect.ps1 self-elevates, so it cannot be
+started from a non-interactive session):
+  1. Stub FIRST: UnrealEditor-Cmd.exe "<repo>\unreal-stub\Loki.uproject" /Engine/Maps/Entry?listen
+     -game -server -Port=7777 -nullrhi -NoSplash -Unattended -abslog=<repo>\docs\ds-server-s84.log
+     (wait for "IpNetDriver listening on port 7777"; the stub must NOT be running during a rebuild — LNK1104)
+  2. ags up with forceTutorialMatch + ConnectionDetails.address 127.0.0.1:7777 (current config).
+  3. Elevated: .\configs\launch-redirect.ps1 -NoHook     (Steam must be running). Tutorial auto-arms ~1min.
+READ THE RESULT, in priority order:
+  (a) stub log "failed to spawn ALokiMinionCharacter" / client "SpawnActor failed because class ... is
+      abstract"  => the S84 ClassFlags@+0xDC read was WRONG. Revert to ADefaultPawn; re-derive.
+  (b) client "Invalid replicated field N in LokiMinionCharacter" => schema desync; N scopes it. Compare
+      the stub's boot DumpClassNetCacheLayout against rep_expand_class.py on the client (S54/S70 loop).
+  (c) CLEAN => check possession: stub logs PC->GetPawn()=LokiMinionCharacter_*; client-side confirm with
+      tools/re/obj_by_class.py <pid> <base> LokiMinionCharacter. THEN drive WASD and watch two things:
+      does it MOVE, and does the connection HOLD (TIMED OUT = 0)? Every prior movement attempt was a
+      CLIENT-side hacked spawn that pinned the game thread ~20s in the CMC and dropped (S81); a properly
+      replicated SERVER pawn should take the normal engine path. Connection holding while moving is the
+      real prize — it is the thing no route has achieved.
+  (d) Possesses but does NOT move => the EXPECTED separate problem, not a failure of this test: GAS
+      attributes are unreplicated server-side (S80 GetMaxSpeed 0). Next step then = measure which
+      GetMaxSpeed the server-possessed pawn runs (stock CharacterMovement->MaxWalkSpeed vs the Loki GAS
+      path) before building anything.
+
+--------------------------------------------------------------------------------
+7. S84 LIVE RUN #1 — INCONCLUSIVE (ConnectionLost ~200ms after world entry; NO
+   stub-side logging, so the server half was never observed). NOT a clean negative.
+--------------------------------------------------------------------------------
+RAN IT (this session was already ELEVATED — the memory note "launch-redirect self-elevates so it
+cannot be driven from a session" did NOT apply; check, do not assume). Stack: stub PID 42596 bound
+UDP 7777 (verified via Get-NetUDPEndpoint — check the PORT, not the log), ags PID 22108 with
+forceTutorialMatch flipped TRUE + address 127.0.0.1:7777, client PID 65380 launched -NoHook.
+
+CLIENT TIMELINE (Loki.log):
+  06:46:38.568  LoadMap complete /Game/Loki/Maps/Tutorial/LVL_Tutorial
+  06:46:38.725  LogLokiGameState: Entering game state LokiGameState_2147480959   <- S70 milestone HELD
+  06:46:38.919  LogNet: Error: BroadcastNetworkFailure: FailureType = ConnectionLost,
+                "Your connection to the host has been lost."
+  06:46:39.479  BeginTearingDown LVL_Tutorial -> CleanupWorld bSessionEnded=true
+  06:46:39.665  Entering game state BP_LoginGameState_C   (back to login/menu)
+So it reached the live tutorial world with a REAL LokiGameState and lost the connection ~200ms later
+— FAR too fast for the 15s netdriver timeout, so this is NOT the S81 movement freeze.
+
+WHAT IS *NOT* IN THE CLIENT LOG (important — do not over-read this run):
+  * NO "Invalid replicated field N"  => the client did not reject a bunch.
+  * NO "class ... is abstract"       => nothing client-side says the spawn class was rejected.
+  ⇒ The ClassFlags@+0xDC read is NOT falsified by this run. It is simply UNTESTED.
+
+WHY IT IS INCONCLUSIVE — THE REAL BLOCKER IS TOOLING, NOT THE GAME:
+  The stub survived (PID 42596 still alive, still bound to 7777) yet unreal-stub/Saved/Logs/Loki.log
+  is STALE (last write 2026-06-30). The -abslog= argument was passed through Start-Process with a
+  SPACED path and did not take, so the running stub logs NOWHERE we can find. We therefore have ZERO
+  server-side visibility: whether PostLogin spawned ALokiMinionCharacter, whether Possess succeeded,
+  whether the stub closed the channel, and the boot DumpClassNetCacheLayout are ALL unobserved.
+  A ConnectionLost with a live server and no client-side rejection is exactly the shape of a
+  server-side channel close / send failure — but that is a HYPOTHESIS, not a finding.
+
+NEXT RUN (fix the instrumentation FIRST — do not iterate on the code until the stub logs):
+  1. Kill the stub. Relaunch it with the log path QUOTED so -abslog actually takes, e.g. build the
+     argument list as a single quoted token, or cd into a space-free working dir, or use
+     -abslog=DsS84.log (relative) and read unreal-stub/Saved/Logs/DsS84.log. VERIFY the file is
+     being written (LastWriteTime advancing) BEFORE launching the client.
+  2. Confirm the boot dump lines exist: "NetCacheDump: --- LokiMinionCharacter" (expect 3 reps + 1
+     net func) and that PostLogin logs "spawned + possessed ALokiMinionCharacter ... PC->GetPawn()=".
+  3. THEN launch the client -NoHook and re-read. Only after the stub log is visible does a negative
+     mean anything.
+  4. If the stub log shows the spawn/possess succeeded and the client still drops instantly, the next
+     suspect is the minion's ClassReps/NetFields alignment on the SEND path (the stub-side analogue of
+     "Invalid replicated field") — compare the boot dump against rep_expand_class.py on the client.
+  REVERT TO BASELINE anytime: swap ALokiMinionCharacter -> ADefaultPawn in LokiStubGameMode (type +
+  StaticClass) to get the S77/S81 stable spectator back.
+LEFT RUNNING at handoff: stub 42596, ags 22108 (forceTutorialMatch=TRUE — set false for a normal idle
+menu), client 65380 back at the login/menu.
+
+8. STUB LOGGING — DIAGNOSED. -abslog needs an ABSOLUTE, SPACE-FREE path.
+Three attempts, all leaving the stub alive+bound on 7777 but writing NO findable log:
+  (a) -abslog=G:\git\Supervive Revival Project\docs\ds-server-s84.log  -> spaces mangled through
+      Start-Process ArgumentList; ignored.
+  (b) -abslog=DsS84.log (relative)                                     -> ignored; the switch is
+      ABSlog, a relative name is not honoured.
+  (c) unreal-stub/Saved/Logs/Loki.log stays STALE (2026-06-30) in every case, so the default log
+      is not used either when -abslog is present-but-invalid.
+FIX (untested, but it is the only remaining combination): pass an ABSOLUTE path containing NO
+spaces, e.g. -abslog=C:\Temp\DsS84.log  (create C:\Temp first). Verify LastWriteTime ADVANCES
+before launching the client — that check is the whole point; run #1 was inconclusive precisely
+because it was skipped.
+GOTCHA hit while doing this: combining Stop-Process with a quoted engine path in one PowerShell
+line trips the environment path-guard (it parsed the quoted exe as a delete target). Issue the
+kill and the relaunch as SEPARATE commands.
+STATE AT HANDOFF: stub PID 65308 alive + bound UDP 7777 but UNOBSERVABLE; ags 22108
+(forceTutorialMatch=TRUE); client 65380 at the menu. Minion mirror BUILT (exit 0) and wired.
+
+
+9. ★ S84 RUN #2 — POSSESSION WORKS; now a SCHEMA DESYNC (field 32). Logging FIXED.
+LOGGING FIX (confirmed): -abslog needs an ABSOLUTE, SPACE-FREE path. -abslog=C:\Temp\DsS84.log
+  works; the spaced absolute path and the relative name were both silently ignored.
+BOOT DUMP CONFIRMS THE MIRROR: 'ALokiMinionCharacter constructed (/Script/Loki.LokiMinionCharacter
+  mirror; 3 own reps + 1 RPC)' and 'NetCacheDump: --- LokiCharacter FirstOwnedClassRep=24
+  ClassReps=26 NetFields=14' => 2 own reps + 14 net funcs, matching the client capture exactly.
+LIVE RESULT (stub C:\Temp\DsS84.log):
+  06:58:43.085 PostLogin: spawned + possessed ALokiMinionCharacter LokiMinionCharacter_0
+  06:58:43.085 Join succeeded
+  06:58:43.448 LogRep: Error: ReceivedBunch: Invalid replicated field 32 in LokiMinionCharacter
+  06:58:43.448 UActorChannel::ProcessBunch: Replicator.ReceivedBunch failed. Closing connection.
+               Result=ObjectReplicatorReceivedBunchFail
+★★ TWO RESULTS:
+  (1) SPAWN + POSSESS SUCCEEDED => LokiMinionCharacter IS concrete and instantiable. The
+      ClassFlags@+0xDC abstract read is CONFIRMED CORRECT (LokiCharacter/LokiHeroCharacter
+      abstract, LokiMinionCharacter concrete). The 'possess a Loki-typed character' route is OPEN.
+  (2) The remaining failure is a SCHEMA DESYNC, not a wall — the same 'Invalid replicated field N'
+      class that S54 and S70 both resolved by iteration. It also EXPLAINS RUN #1: the client's
+      ConnectionLost was the downstream symptom of the STUB closing the channel here; the client
+      rejected nothing.
+NEXT: the error is raised STUB-SIDE reading the CLIENT's bunch, index 32 in the shared
+  FClassNetCache space. Diff the boot DumpClassNetCacheLayout for LokiMinionCharacter (stub)
+  against rep_expand_class.py / netfields_dump.py on the client and find what occupies index 32
+  on each side. Suspects, in order: (a) the 3 own props' ORDER/types (AggroRange float,
+  bIsCowering bool, LootMajorReward ClassProperty) — a ClassProperty may not be 1 cmd here;
+  (b) the inherited ACharacter tier (we strip RepRootMotion — verify the stub's 26 ClassReps
+  still line up under the MINION subclass); (c) the 1 net func LostLastAggroTarget's position in
+  the name-sorted NetFields.
+STATE: stub PID alive on 7777 logging to C:\Temp\DsS84.log; ags 22108 (forceTutorialMatch=TRUE);
+  client bounced back to the main menu after the close. Revert anytime: ALokiMinionCharacter ->
+  ADefaultPawn in LokiStubGameMode.
+
+
+10. ★ FIELD 32 DIFF — IT IS CustomAnimationState (EnumProperty bit-width).
+Computed from the stub boot dump (indices run cumulatively from the root: a level's own ClassReps
+first, then its NetFields):
+  Actor          FirstOwned=0  ClassReps=11 NetFields=0  base=0   -> idx 0..10
+  Pawn           FirstOwned=11 ClassReps=14 NetFields=0  base=11  -> idx 11..13
+  Character      FirstOwned=14 ClassReps=24 NetFields=7  base=14  -> props 14..23, RPCs 24..30
+  LokiCharacter  FirstOwned=24 ClassReps=26 NetFields=14 base=31  -> props 31..32, RPCs 33..46
+LokiCharacter owns 2 props, so ClassReps[24]=idx31=OutOfBoundsBufferTimeRemaining and
+ClassReps[25]=**idx32=CustomAnimationState**. The class INDEX SPACE therefore lines up; what
+disagrees is the WIRE WIDTH of that one field.
+ROOT CAUSE: our mirror enum ELokiCustomAnimationStateMirror has ONE value (LCAS_None=0). UE
+serialises an FEnumProperty with a bit-width derived from the enum's value count
+(CeilLogTwo(NumValues)), so ours is NARROWER than the client's real CustomAnimationState enum ->
+the reader desyncs at field 32. The LokiCharacterStub.h comment that the range was 'irrelevant
+for Phase 1 because COND_SimulatedOnly means it is never sent to the owner' is WRONG on this
+path: the failure is on the stub's RECEIVE side, so the owner-send condition does not protect it.
+FIX (small, one enum): give ELokiCustomAnimationStateMirror the SAME NUMBER OF VALUES as the
+client's enum so CeilLogTwo matches. GET THE COUNT LIVE — the client's LokiCharacter
+CustomAnimationState FEnumProperty -> its UEnum -> NumEnums (the same reflection walk
+rep_expand_class.py already does; S70 did exactly this for ERoundPhase/ELokiDayNightState and
+noted 'matching value ranges keeps CeilLogTwo aligned'). Add that many dummy enumerators, rebuild,
+rerun. If field 32 clears and a NEW index errors, iterate the same way (S54/S70 loop).
+PRECEDENT: S70 hit and solved this exact class of bug on the GameState mirror's two enums.
+
+
+11. ⚠ ENUM FIX DID NOT WORK — field 32 PERSISTS. My diff was HALF-DONE; read this before retrying.
+RERUN (stub rebuilt with the 3-value ECharacterCustomAnimationState mirror, exit 0):
+  07:06:00.983 PostLogin: spawned + possessed ALokiMinionCharacter  +  Join succeeded
+  07:06:01.381 ReceivedBunch: Invalid replicated field 32 in LokiMinionCharacter  -> channel closed
+IDENTICAL to run #2. So the enum bit-width was NOT the cause. The enum mirror is still CORRECT to
+keep (3 values genuinely match the client; S70's CeilLogTwo rule is real) but it was not this bug.
+ALSO RULED OUT this run: the client's LokiActor tier (LokiCharacter : Character : Pawn : LokiActor :
+Actor) which the mirror skips by deriving from stock ACharacter — captured live: LokiActor has
+**0 replicated props and 0 net functions**, so it shifts no indices. Not the cause.
+★ MY ERROR — THE DIFF WAS NEVER ACTUALLY A DIFF. I computed what index 32 is on the STUB (from the
+boot DumpClassNetCacheLayout arithmetic) and then ASSUMED the client's layout matched structurally.
+I never computed the CLIENT side. 'Invalid replicated field 32' means the two index spaces DISAGREE,
+so naming the stub's field 32 alone cannot identify the mismatch — by definition the client's 32 is
+something else. DO THE OTHER HALF FIRST.
+HOW TO DO IT PROPERLY (client is live; all read-only):
+  Build the CLIENT's cumulative net-cache index space for LokiMinionCharacter the same way the stub
+  dump does — walk the chain Actor -> Pawn -> Character -> LokiCharacter -> LokiMinionCharacter and,
+  per level, count OWN ClassReps then OWN NetFields (name-sorted), accumulating. rep_expand_class.py
+  + netfields_dump.py already give per-level counts; the missing piece is the INHERITED tiers
+  (client Actor / Pawn / Character), which were never captured. Compare against the stub's:
+     stub: Actor 11 reps/0 funcs | Pawn 3/0 | Character 10/7 | LokiCharacter 2/14 (base 31)
+  The FIRST level whose (reps,funcs) pair differs is the real bug. Prime suspect given the stub
+  numbers: the CHARACTER tier (stub reports 10 reps + 7 net funcs after we strip RepRootMotion) and
+  the ACTOR tier (stub reports NetFields=0 — verify the client's AActor really has 0 net funcs).
+REVERT to the stable S77/S81 spectator baseline anytime: ALokiMinionCharacter -> ADefaultPawn in
+LokiStubGameMode (type + StaticClass).
+STILL TRUE + VALUABLE: spawn+possess of a Loki-typed character SUCCEEDS server-side (twice now), and
+LokiMinionCharacter is confirmed concrete. Only the replication schema is unresolved.
+

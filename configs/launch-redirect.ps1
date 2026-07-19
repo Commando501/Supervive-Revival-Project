@@ -1,4 +1,4 @@
-ï»¿<#
+<#
 .SYNOPSIS
   Redirect the SUPERVIVE client's dead backends to our local community server and
   launch the game.
@@ -33,7 +33,7 @@
                       be spoofed from a fresh menu). Format "ip:port", e.g.
                       "127.0.0.1:7777". The Loki.log LogNet* / LogPlatformFile
                       / Failed-to-connect activity that follows is the
-                      protocol-shape signal â€” even with nothing listening on
+                      protocol-shape signal — even with nothing listening on
                       the port, the client-side handshake attempt names the
                       driver, the StatelessConnect handler, and the first
                       control-channel message it tries to send.
@@ -62,10 +62,11 @@ param(
   [switch]$Missions,     # DEPRECATED no-op alias: missions are now in the DEFAULT set. Kept so old
                          # invocations / docs still work. (Was: "durable Missions mode".)
   [switch]$NoMissions,   # drop missions_fix.dll from the default set (isolate non-missions surfaces)
-  [switch]$NoLoadout     # drop loadout_fix.dll from the default set (isolate non-customization surfaces)
+  [switch]$NoLoadout,   # drop loadout_fix.dll from the default set (isolate non-customization surfaces)
+  [switch]$NoPasses     # drop battlepass_adopt_fix.dll (PASSES / Hunter's Journey) from the default set
 )
 # DEFAULT (no flags): primary catalog_store_fix.dll (store + HUNTERS roster) is injected at launch, then
-# configs/inject-secondaries.ps1 injects the full secondary set once it settles â€” pick/refresh (pi8),
+# configs/inject-secondaries.ps1 injects the full secondary set once it settles — pick/refresh (pi8),
 # pick-commit (catalog_pick_fix), customization (loadout_fix), and missions (missions_fix). The three
 # ProcessInternal-hooking shims (pi8, loadout_fix, missions_fix) coexist via the shared
 # Local\SuperviveMissionsPIHook mutex (each installs its PI jmp only transiently). This one launch now
@@ -97,7 +98,7 @@ if (-not $isAdmin) {
   if ($Open)       { $argList += @("-Open",$Open) }
   if ($Hook)       { $argList += @("-Hook",$Hook) }
   if ($NoHook)     { $argList += "-NoHook" }
-  if ($Missions)   { $argList += "-Missions" }    # accepted (no-op alias) â€” forwarded so it isn't silently dropped
+  if ($Missions)   { $argList += "-Missions" }    # accepted (no-op alias) — forwarded so it isn't silently dropped
   if ($NoMissions) { $argList += "-NoMissions" }
   if ($NoLoadout)  { $argList += "-NoLoadout" }
   Start-Process powershell -Verb RunAs -ArgumentList $argList
@@ -123,6 +124,7 @@ if (-not $NoHook -and -not $Revert -and -not $NoLaunch -and -not $Hook) {
     $secExtra = @()
     if ($NoMissions) { $secExtra += "-NoMissions" }
     if ($NoLoadout)  { $secExtra += "-NoLoadout" }
+    if ($NoPasses)   { $secExtra += "-NoPasses" }
     $parts = @("pick/refresh","pick-commit")
     if (-not $NoLoadout)  { $parts += "customization" }
     if (-not $NoMissions) { $parts += "missions" }
@@ -212,7 +214,7 @@ Start-Sleep -Seconds 2
 # ---- verify the HTTP mux is actually SERVING (not just that TLS certs were written) ----
 # The cert-chain wait proves ags started + cleared TLS init, but not that the request mux answers. A
 # quick GET of a lightweight, side-effect-free revival endpoint confirms the backend will actually
-# respond to the game's login/menu calls â€” catching a half-up server (panicked handler, port bind race)
+# respond to the game's login/menu calls — catching a half-up server (panicked handler, port bind race)
 # BEFORE we launch the game and stare at a mystery hang. Best-effort: retry ~5s, WARN (don't abort) on
 # failure, since a probe false-negative shouldn't block a launch when ags is otherwise up.
 # -UseBasicParsing avoids the IE engine; 127.0.0.1 bypasses the proxy.
@@ -240,7 +242,7 @@ Write-Host "Appending Root CA to game cacert.pem..." -ForegroundColor Cyan
 Add-Content -Path $caBundle -Value "`n# SUPERVIVE Revival Root CA" -Encoding ascii
 Add-Content -Path $caBundle -Value (Get-Content $certPath -Raw) -Encoding ascii
 
-# ---- hosts file redirect (idempotent, marked) â€” SINGLE atomic write ----
+# ---- hosts file redirect (idempotent, marked) — SINGLE atomic write ----
 # Remove any stale marker lines AND append the fresh redirect in ONE write, with
 # retry. A separate Remove-HostsEntries + Add-Content raced Defender's scan-lock on
 # the file we'd just written ("hosts is being used by another process"): the remove
@@ -351,7 +353,7 @@ if ($Hook) {
   # NOTE: $Hook contains spaces (the repo path). Start-Process does NOT quote
   # individual -ArgumentList ARRAY elements, so the array form splits the DLL path
   # at the spaces and inject silently fails (no marker). Pass ONE quoted argument
-  # STRING instead â€” the same fix the ags Start-Process above uses. Capture inject's
+  # STRING instead — the same fix the ags Start-Process above uses. Capture inject's
   # stdout/stderr so a failed mmap is visible in docs/inject-watch.out.log.
   $watchOut = Join-Path $repoRoot "docs\inject-watch.out.log"
   $injArgs  = "watch-now SUPERVIVE-Win64-Shipping.exe `"$Hook`""
@@ -359,7 +361,7 @@ if ($Hook) {
       -WindowStyle Minimized -PassThru `
       -RedirectStandardOutput $watchOut -RedirectStandardError "$watchOut.err"
   Start-Sleep -Milliseconds 200   # let watch-now's poll loop spin up
-  # Secondary shims (pick + refresh) â€” injected by a DETACHED helper that waits for the
+  # Secondary shims (pick + refresh) — injected by a DETACHED helper that waits for the
   # primary catalog_store_fix to install + self-unhook first (so two thread-suspending hook
   # installs never race). Detached so it outlives this launcher (the game exe detaches and
   # this script exits). Only on the auto-hook path; an explicit -Hook injects just that DLL.
@@ -377,7 +379,7 @@ if ($Hook) {
       foreach ($e in $secExtra) { $secArgs += " $e" }
       Start-Process powershell -WindowStyle Hidden -ArgumentList $secArgs | Out-Null
     } else {
-      Write-Host "  (inject-secondaries.ps1 not found â€” secondary shims will NOT auto-inject)" -ForegroundColor Yellow
+      Write-Host "  (inject-secondaries.ps1 not found — secondary shims will NOT auto-inject)" -ForegroundColor Yellow
     }
   }
   Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
@@ -388,3 +390,4 @@ if ($Hook) {
   Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
   & $exe @iniArgs
 }
+

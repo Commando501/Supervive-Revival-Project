@@ -30,6 +30,7 @@ param(
   [string]$Repo = (Split-Path -Parent $PSScriptRoot),
   [switch]$NoMissions,
   [switch]$NoLoadout,
+  [switch]$NoPasses,   # S83: skip battlepass_adopt_fix (PASSES / Hunter's Journey)
   [int]$MaxWaitProcSec = 150,
   [int]$MaxWaitUnhookSec = 120
 )
@@ -50,6 +51,16 @@ $dlls = @("tools\sigbypass-mod\mainmenu_refresh_pi8.dll",
           "tools\sigbypass-mod\catalog_pick_fix.dll")
 if (-not $NoLoadout)  { $dlls += "tools\sigbypass-mod\loadout_fix.dll" }
 if (-not $NoMissions) { $dlls += "tools\sigbypass-mod\missions_fix.dll" }
+# S83: PASSES / Hunter's Journey. Without this the PASSES section is empty and
+# /storefront/battlepass/progressiontracks tight-loops at ~15/s. The shim force-calls the real
+# adoption sink (OnSuccess 0x57C8130) with a track keyed 'ProgressionTrack:HuntersJourney' — that
+# key is the keystone; the game then builds the account VM and populates the 85-tier ladder itself.
+# Progress (tier/XP) comes from the backend (GET /progression/players/{id}), no shim needed.
+# NB it does NOT hook ProcessInternal, so it does not join the PI-hook mutex dance.
+# ★ Its aggregate Version must EXCEED the client's adopted value or OnSuccess skips the adopt. A
+# fresh process starts at 0, so the built-in 104 is fine on a clean launch; only RE-injecting into
+# an already-adopted process needs a bump (see the Version comment in battlepass_adopt_fix.cpp).
+if (-not $NoPasses)   { $dlls += "tools\sigbypass-mod\battlepass_adopt_fix.dll" }
 
 function Log($m){ "$([DateTime]::Now.ToString('HH:mm:ss'))  $m" | Out-File -FilePath $log -Append -Encoding ascii }
 "" | Out-File -FilePath $log -Encoding ascii   # truncate for this launch

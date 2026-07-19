@@ -186,7 +186,7 @@ constexpr int MODE_DEVSWAP=34;
 //                  and the diagnostics below (MovementMode, bIsOnGround, velocity, Controller/Pawn wiring) say which.
 // Read-mostly: the only writes are the MoveForward/MoveRight calls themselves (the game's own movement entry points).
 constexpr int MODE_MOVETEST=35;
-static const unsigned kMoveMode = 1;   // 1=MOVE_Walking (real ground movement) 3=Falling 5=Flying
+static const unsigned kMoveMode = 5;   // 1=MOVE_Walking (real ground movement) 3=Falling 5=Flying [S81: 5=Flying test — skip FindFloor ground sweep that parks the CMC tick in a 20s kernel wait -> drop]
 static const int      kPlayableSecs = 180;   // how long MODE_PLAYABLE holds WASD open
 static const float    kAttrMoveSpeed = 500.0f;  // MoveSpeed attribute value to inject (all live sets read 0)
 // MODE_PLAYABLE (S80): the payoff. Everything the hero needs, then REAL WASD.
@@ -212,6 +212,21 @@ constexpr int MODE_WGTCENSUS=37;
 // FILLS with the first 48 matches and `WBP_UI_PredropScreen` never makes the list. "48/48 collapsed" was the CAP
 // being full, not the job being done — which is exactly why the BRALL screen never moved. Target it by name.
 constexpr int MODE_HIDEPREDROP=38;
+// MODE_DROPIN (S81): fire the client-side drop-in on the local Loki PC to get PAST the pre-drop/BRALL preview
+// into the live tutorial world — the INTENDED progression, no hacked Character (so no CMC-movement freeze).
+// The local networked PC is a real LokiPlayerController (S73 by-path mirror), which owns two native drop fns
+// (found via tools/re/{find_func,ufunc_survey}.py): FinishDropPhaseHiding() [0 params, BPCallable] ends the
+// drop-phase hiding (reveals the world) and UpdateIsInDropPod(bool) transitions out of the pod. Call both.
+constexpr int MODE_DROPIN=39;
+// MODE_CHEATHERO (S81): use the game's OWN dev cheat to get a properly-set-up playable hero, instead of a
+// hacked GameplayStatics spawn (which freezes/crashes — the CMC wait / BP-construct fault). LokiPlayerCheats
+// ships CheatChangeHero(FString HeroName) [Exec,Native] + the static entry GetLocalLokiPlayerCheatsBP(WorldCtx).
+// Calling the native thunks directly = local-authority hero via the game's real creation path (physics/GAS set
+// up correctly). Hero codename overridable via -DKHERO (default "Assault"; also Ronin/Earthtank/Freeze/…).
+constexpr int MODE_CHEATHERO=40;
+#ifndef KHERO
+#define KHERO L"Assault"
+#endif
 // S79 moonshot Phase 1 (force-load hero assets + re-census) builds with `-DKMODE=MODE_LOAD_CENSUS`; the shipped
 // spectator-cam build stays MODE_SPECTATOR_CAM. Compile-time override so neither build clobbers the other.
 #ifndef KMODE
@@ -2561,6 +2576,7 @@ static void DoMoveTest(){
 // ===== S80 MODE_PLAYABLE — setup + per-frame WASD (see the MODE_PLAYABLE note) =====
 static uintptr_t g_plHero=0, g_plPC=0, g_plCMC=0;
 static void* g_plAmiFn=0;  static uintptr_t g_plAmiThunk=0, g_plAmiCh=0;
+static void* g_plSmFn=0;   static uintptr_t g_plSmThunk=0, g_plSmCh=0;   // SetMovementMode — re-asserted per tick (a one-shot set flips to Falling; S81)
 static void* g_plVtFn=0;   static uintptr_t g_plVtThunk=0, g_plVtCh=0; static uint32_t g_plVtTgt=0, g_plVtBlend=8;  // SetViewTargetWithBlend
 static uint32_t g_plVecOff=0, g_plScaleOff=0x18, g_plForceOff=0x1C;
 static volatile long g_plReady=0, g_plFrames=0, g_plMoves=0;
@@ -2635,9 +2651,12 @@ static void DoPlayableSetup(){
     uint32_t cmo=PropOffsetOnClass(ClassOf(g_plHero),"CharacterMovement");
     g_plCMC=(cmo!=0xFFFFFFFF&&SafeReadable((void*)(g_plHero+cmo),8))?*(uintptr_t*)(g_plHero+cmo):0;
     if(LooksLikePtr(g_plCMC)){
-        void* sf=0; uintptr_t st=0,sc=0; ResolveFunc(ClassOf(g_plCMC),"SetMovementMode",&sf,&st,&sc);
-        if(st){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); g_pbuf[0]=1; g_pbuf[1]=0;   // MOVE_Walking
-                CallGuarded(sf,st,sc,(void*)g_plCMC,g_pbuf,g_rbuf); }
+        ResolveFunc(ClassOf(g_plCMC),"SetMovementMode",&g_plSmFn,&g_plSmThunk,&g_plSmCh);
+        if(g_plSmThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); g_pbuf[0]=(uint8_t)kMoveMode; g_pbuf[1]=0;  // S81: kMoveMode (5=Flying skips the FindFloor/falling ground sweep that parks the CMC tick in a ~20s kernel wait -> drop)
+                CallGuarded(g_plSmFn,g_plSmThunk,g_plSmCh,(void*)g_plCMC,g_pbuf,g_rbuf); }
+        { uint32_t mmo=PropOffsetOnClass(ClassOf(g_plCMC),"MovementMode");
+          uint8_t mmv=(mmo!=0xFFFFFFFF&&SafeReadable((void*)(g_plCMC+mmo),1))?*(uint8_t*)(g_plCMC+mmo):255;
+          Markerf("[PL] SetMovementMode(%u) -> MovementMode now %u @+0x%X %s\r\n",kMoveMode,mmv,mmo,mmv==kMoveMode?"<<< MODE SET":"<<< did NOT stick"); }
         void* gf=0; uintptr_t gt=0,gc=0; ResolveFunc(ClassOf(g_plCMC),"GetMaxSpeed",&gf,&gt,&gc);
         if(gt){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
                 CallGuarded(gf,gt,gc,(void*)g_plCMC,g_pbuf,g_rbuf);
@@ -2674,6 +2693,9 @@ static void DoPlayableSetup(){
 static void PlayableTick(){
     if(!g_plReady || !g_plAmiThunk || !LooksLikePtr(g_plHero)) return;
     long f=InterlockedIncrement(&g_plFrames);
+    // S81: movement mode is set ONCE in setup (kMoveMode). Flying(5) has no auto-transition (unlike Walking->Falling),
+    // so it sticks without a per-frame re-assert. (A per-frame SetMovementMode re-assert was tested and made the
+    // freeze WORSE — every call fires OnMovementModeChanged -> a physics wait; session-81.)
     // ★★★ S80: RE-CENSUS periodically. The one-shot census at setup runs while the client is still on the
     // LOADING screen, so `WBP_UI_PredropScreen` (the "BRALL / DROP LEADER" pre-drop UI) DOES NOT EXIST YET and
     // is never collected — which is why the pre-drop screen stays up even though the world is live behind it.
@@ -2761,6 +2783,88 @@ static void DoWgtCensus(){
 }
 // ===== S80 MODE_HIDEPREDROP: collapse the pre-drop UI by EXACT class name (no 48-slot cap, no broad keys) =====
 static volatile long g_hpReps=0;
+// S81 MODE_CHEATHERO: game-native hero via LokiPlayerCheats (proper creation path; avoids the hacked-spawn freeze).
+static bool g_chDone=false;
+static void DoCheatHero(){
+    if(g_chDone) return; g_chDone=true;
+    Markerf("[CH] === S81 MODE_CHEATHERO: GetLocalLokiPlayerCheatsBP -> CheatChangeHero(\"%ls\") ===\r\n",(const wchar_t*)KHERO);
+    uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+    uintptr_t pc=(LooksLikePtr(L)&&SafeReadable((void*)(L+0x38),8))?*(uintptr_t*)(L+0x38):0;
+    if(!LooksLikePtr(pc)){ Marker("[CH] no PC\r\n"); return; }
+    { char n[160]="?"; GetFNameStr(NameId(ClassOf(pc)),n,sizeof(n)); Markerf("[CH] PC=0x%llX class=%s\r\n",(unsigned long long)pc,n); }
+    // 0) The shipping build never created the CheatManager, so the getter returns null. Create it:
+    //    PC->EnableCheats() + PC->AddLokiPlayerCheats() (both native, 0 params).
+    { void* f=0; uintptr_t t=0,c=0; ResolveFunc(ClassOf(pc),"EnableCheats",&f,&t,&c);
+      if(t){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); bool flt=CallGuarded(f,t,c,(void*)pc,g_pbuf,g_rbuf); Markerf("[CH] EnableCheats() fault=%d\r\n",flt); }
+      else Marker("[CH] EnableCheats NOT RESOLVED\r\n"); }
+    { void* f=0; uintptr_t t=0,c=0; ResolveFunc(ClassOf(pc),"AddLokiPlayerCheats",&f,&t,&c);
+      if(t){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); bool flt=CallGuarded(f,t,c,(void*)pc,g_pbuf,g_rbuf); Markerf("[CH] AddLokiPlayerCheats() fault=%d\r\n",flt); }
+      else Marker("[CH] AddLokiPlayerCheats NOT RESOLVED\r\n"); }
+    // Direct hero via the PC's OWN authoritative primitive: AuthCheatChangeCharacter(Class CharacterClass).
+    // [Native,BPCallable,NetServer] — calling the _Implementation locally = local-authority spawn+possess via
+    // the game's real character-change path (no cheats-object needed; the getter returns null in shipping).
+    uintptr_t heroCls=FindObjExact("BP_HERO_Assault_C"); if(!heroCls) heroCls=FindHeroPawnClass();
+    Markerf("[CH] heroCls(BP_HERO_Assault_C)=0x%llX\r\n",(unsigned long long)heroCls);
+    if(LooksLikePtr(heroCls)){
+        void* f=0; uintptr_t t=0,c=0; ResolveFunc(ClassOf(pc),"AuthCheatChangeCharacter",&f,&t,&c);
+        if(t){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+               uint32_t co=c?ParamOffset(c,"CharacterClass"):0; if(co==0xFFFFFFFF||co>200) co=0;
+               *(uintptr_t*)(g_pbuf+co)=heroCls;
+               bool flt=CallGuarded(f,t,c,(void*)pc,g_pbuf,g_rbuf);
+               Markerf("[CH] AuthCheatChangeCharacter(hero) fault=%d (classOff=%u)\r\n",flt,co); }
+        else Marker("[CH] AuthCheatChangeCharacter NOT RESOLVED\r\n");
+    } else Marker("[CH] hero class not found\r\n");
+    // 3) verify: did a hero pawn get possessed?
+    uint32_t po=PropOffsetOnClass(ClassOf(pc),"Pawn"); uintptr_t pawn=(po!=0xFFFFFFFF&&SafeReadable((void*)(pc+po),8))?*(uintptr_t*)(pc+po):0;
+    char pcn[160]="(null)"; if(LooksLikePtr(pawn)) GetFNameStr(NameId(ClassOf(pawn)),pcn,sizeof(pcn));
+    Markerf("[CH] after: PC->Pawn=0x%llX class=%s\r\n",(unsigned long long)pawn,pcn);
+    Marker("[CH] done\r\n");
+}
+// S81 MODE_DROPIN: call the local Loki PC's native drop-in functions to leave the pre-drop preview.
+static uintptr_t g_diPC=0; static long g_diFires=0;
+static void DoDropIn(){
+    long n=InterlockedIncrement(&g_diFires);
+    if(n==1){
+        Marker("[DI] === S81 MODE_DROPIN: fire the client-side drop-in on the local Loki PC ===\r\n");
+        uintptr_t L=FindInstExactClass("LocalPlayer"); if(!L) L=FindInstClassSub("LocalPlayer");
+        if(!LooksLikePtr(L)){ Marker("[DI] no LocalPlayer\r\n"); return; }
+        g_diPC=SafeReadable((void*)(L+0x38),8)?*(uintptr_t*)(L+0x38):0;
+        if(!LooksLikePtr(g_diPC)){ Marker("[DI] L->PC null\r\n"); g_diPC=0; return; }
+        char cn[160]="?"; GetFNameStr(NameId(ClassOf(g_diPC)),cn,sizeof(cn));
+        Markerf("[DI] local PC=0x%llX class=%s\r\n",(unsigned long long)g_diPC,cn);
+    }
+    if(!LooksLikePtr(g_diPC)) return;
+    // 1) UpdateIsInDropPod(false) — 1-byte param — transition the player OUT of the drop pod.
+    { void* f=0; uintptr_t t=0,c=0; ResolveFunc(ClassOf(g_diPC),"UpdateIsInDropPod",&f,&t,&c);
+      if(t){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); g_pbuf[0]=0; /* NewIsInDropPod=false */
+             bool flt=CallGuarded(f,t,c,(void*)g_diPC,g_pbuf,g_rbuf);
+             if(n<=3) Markerf("[DI] UpdateIsInDropPod(false) fault=%d\r\n",flt); }
+      else if(n==1) Marker("[DI] UpdateIsInDropPod NOT RESOLVED\r\n"); }
+    // 2) FinishDropPhaseHiding() — 0 params, native BPCallable — ends the drop-phase hiding (reveal).
+    { void* f=0; uintptr_t t=0,c=0; ResolveFunc(ClassOf(g_diPC),"FinishDropPhaseHiding",&f,&t,&c);
+      if(t){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+             bool flt=CallGuarded(f,t,c,(void*)g_diPC,g_pbuf,g_rbuf);
+             if(n<=3) Markerf("[DI] FinishDropPhaseHiding() fault=%d\r\n",flt); }
+      else if(n==1) Marker("[DI] FinishDropPhaseHiding NOT RESOLVED\r\n"); }
+    // 3) Collapse the "ENTERING THE BREACH" match-transition loading screen (WBP_UI_MatchTransition_*) to
+    //    reveal the live LVL_Tutorial world behind it. Sweep every ~20 fires (the game re-shows it).
+    if(n==1 || (n%20)==0){
+        int hid=0, seen=0;
+        ForEachObject([&](uintptr_t o)->bool{
+            uintptr_t c=ClassOf(o); if(!LooksLikePtr(c)) return false;
+            char cn[160]="?"; GetFNameStr(NameId(c),cn,sizeof(cn));
+            if(!strstr(cn,"MatchTransition")) return false;
+            seen++;
+            void* svf=0; uintptr_t svt=0,svc=0; ResolveFunc(c,"SetVisibility",&svf,&svt,&svc);
+            if(svt){ uint32_t vo=svc?ParamOffset(svc,"InVisibility"):0; if(vo==0xFFFFFFFF||vo>200) vo=0;
+                     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); g_pbuf[vo]=1; /*ESlateVisibility::Collapsed*/
+                     if(!CallGuarded(svf,svt,svc,(void*)o,g_pbuf,g_rbuf)) hid++; }
+            return false;
+        });
+        if(n==1) Markerf("[DI] MatchTransition widgets: found=%d collapsed=%d\r\n",seen,hid);
+    }
+    if(n==1) Marker("[DI] fired — re-asserting each hook tick (the game may re-hide)\r\n");
+}
 static void DoHidePredrop(){
     long rep=InterlockedIncrement(&g_hpReps);
     // The pre-drop screen family, by CLASS name (from the S80 census of the live pre-drop state).
@@ -3016,6 +3120,8 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void* /*res*/){
     if(kMode==MODE_PLAYABLE){ DoPlayableSetup(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_WGTCENSUS){ DoWgtCensus(); g_done=1; g_inHook=0; return; }
     if(kMode==MODE_HIDEPREDROP){ DoHidePredrop(); g_inHook=0; return; }
+    if(kMode==MODE_DROPIN){ DoDropIn(); g_inHook=0; return; }
+    if(kMode==MODE_CHEATHERO){ DoCheatHero(); g_done=1; g_inHook=0; return; }
     Markerf("[HOOK] fired on game thread (hitsGT=%ld) — primitive template captured.\r\n",h);
     if(kMode==MODE_POSSESS_DP) DoPossessDP();
     else if(kMode==MODE_SPAWN_HERO) DoSpawnHero();
