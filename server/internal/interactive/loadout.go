@@ -99,6 +99,106 @@ func (s *Service) registerLoadout(mux *http.ServeMux) {
 	// SetLuxeSkinChromaPreference) on the game thread via the s55 native-call
 	// primitive. Namespaced under /revival/ (never an impersonated client route).
 	mux.HandleFunc("GET /revival/loadout", s.handleGetRevivalLoadout)
+
+	// Companion WRITE for the feed above: the loadout_fix shim's CommitWidgetSelection
+	// POSTs the ACTIVE StyleScreen's picked {hero, cosmetic} here so a skin change is
+	// DURABLY persisted for ANY hero — not just the first one customized per session.
+	// (The client's own PUT /personalization/.../cosmeticsbundle only fires for the
+	// first-customized hero; the StyleScreen bytecode gates the later ones, so RONIN /
+	// reshealer never commit through the client path — see the handler.) Same /revival/
+	// namespace + primary-player resolution as the GET; POST+PUT superset like the other
+	// loadout writes.
+	mux.HandleFunc("POST /revival/loadout/cosmetic", s.handleSetRevivalCosmetic)
+	mux.HandleFunc("PUT /revival/loadout/cosmetic", s.handleSetRevivalCosmetic)
+}
+
+// handleSetRevivalCosmetic persists a per-hero skin-bundle pick pushed by the
+// loadout_fix shim (CommitWidgetSelection). It is the guaranteed-persistence
+// backstop for the client's own /personalization/.../cosmeticsbundle PUT, which the
+// WBP_UI_Loadout_StyleScreen bytecode only fires for the FIRST hero customized per
+// session (TryPickMyHeroAndCosmetics is gated there); later heroes update local
+// widget state only, so e.g. RONIN (Brall) / reshealer (Eluna) never commit and
+// revert on leave. The shim reads the active StyleScreen's CurrentSelectedCosmetic
+// {hero, cosmetic} and POSTs it here for EVERY pick, bypassing that bytecode gate.
+//
+// Revival-only (NEVER an impersonated client route): the shim carries no JWT and the
+// revival is single-account, so — exactly like GET /revival/loadout — we resolve the
+// SAME primary player (highest loadout score, skipping the "local" missions bucket)
+// rather than trusting a path id, and write via store.updatePrimary so the resolve +
+// write are one locked step. Body:
+//
+//	{"hero":"Hero:RONIN","bundle":"HeroCosmeticsBundle:RoninBeastSlayer_..."}
+//
+// hero/bundle each tolerate the "Type:Name" string form OR a UE PrimaryAssetId object
+// (primaryAssetIDString), under a couple of key spellings so the shim can reuse the
+// party-member vocabulary. An empty/absent bundle for a NAMED hero is an UNEQUIP
+// (entry removed); a body without a hero is a no-op (never a wipe). The write bumps
+// LoadoutVersion (the loadout invariant — see store.go) and echoes the full loadout
+// doc, same convention as handleSetCosmeticsBundle.
+func (s *Service) handleSetRevivalCosmetic(w http.ResponseWriter, r *http.Request) {
+	body, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	var req struct {
+		Hero    json.RawMessage `json:"hero"`
+		HeroAlt json.RawMessage `json:"heroAssetId"`
+		Bundle  json.RawMessage `json:"bundle"`
+		BundleA json.RawMessage `json:"cosmeticsAssetId"`
+		BundleB json.RawMessage `json:"bundleAssetId"`
+	}
+	_ = json.Unmarshal(body, &req)
+	hero := firstAssetID(req.Hero, req.HeroAlt)
+	bundle := firstAssetID(req.Bundle, req.BundleA, req.BundleB)
+
+	// Type-prefix validation, mirroring handleSetCosmeticsBundle: the durable feed must
+	// never be poisoned with a wrong-typed PAID (a mistyped bundle would break the shim's
+	// GDCB redirect / ApplyLoadout ingest on the next launch). A hero without "Hero:" is
+	// unusable as a key; a non-empty bundle without "HeroCosmeticsBundle:" is rejected
+	// (an EMPTY bundle stays valid — it is the unequip signal).
+	if !strings.HasPrefix(hero, "Hero:") {
+		writeJSON(w, s.loadoutResponse(s.store.primaryID()))
+		return
+	}
+	if bundle != "" && !strings.HasPrefix(bundle, "HeroCosmeticsBundle:") {
+		writeJSON(w, s.loadoutResponse(s.store.primaryID()))
+		return
+	}
+
+	// updatePrimary resolves the primary player and applies the write under one lock.
+	// id == "" means no player has state yet (nothing to persist to) — defensive:
+	// the shim only pushes picks from a live customization screen, which implies a
+	// logged-in player that already has state.
+	//
+	// Bump LoadoutVersion ONLY on a real change. The shim POSTs the current pick on every
+	// hero ENTRY (the entry value is usually the already-equipped skin), so an
+	// unconditional bump would churn the version — and the churn re-kicks the shim's
+	// 150 ms re-render loop — merely from browsing hunters. Gate on "value actually moved".
+	id := s.store.updatePrimary(func(st *playerState) {
+		if st.HeroCosmeticsBundles == nil {
+			st.HeroCosmeticsBundles = map[string]string{}
+		}
+		prev, had := st.HeroCosmeticsBundles[hero]
+		if bundle == "" {
+			if had { // hero named, no bundle => unequip (only a change if it existed)
+				delete(st.HeroCosmeticsBundles, hero)
+				st.LoadoutVersion++
+			}
+		} else if prev != bundle {
+			st.HeroCosmeticsBundles[hero] = bundle
+			st.LoadoutVersion++
+		}
+	})
+	writeJSON(w, s.loadoutResponse(id))
+}
+
+// firstAssetID returns the first raw value that resolves to a non-empty "Type:Name"
+// PrimaryAssetId (string or UE object form), so a handler can accept one logical
+// field under several key spellings. Returns "" when none carry a usable id.
+func firstAssetID(raws ...json.RawMessage) string {
+	for _, raw := range raws {
+		if id := primaryAssetIDString(raw); id != "" {
+			return id
+		}
+	}
+	return ""
 }
 
 // handleGetRevivalLoadout serves the persisted equips as a flat map the loadout

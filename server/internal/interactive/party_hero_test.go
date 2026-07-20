@@ -59,7 +59,7 @@ func TestSelectedHeroSeedAndPersist(t *testing.T) {
 // the key(s) the client reads (member.HeroAssetID), as a PrimaryAssetId string, and that the
 // player appears as the sole leader (so PartyModel.GetSelf resolves "me").
 func TestBuildSoloPartyCarriesHero(t *testing.T) {
-	party := buildSoloParty("p1", "Player One", "Hero:beebo", "HeroCosmeticsBundle:BeeboCyber", "default")
+	party := buildSoloParty("p1", "Player One", "Hero:beebo", "HeroCosmeticsBundle:BeeboCyber", "default", nil)
 	members, ok := party["members"].([]any)
 	if !ok || len(members) != 1 {
 		t.Fatalf("expected exactly one member, got %v", party["members"])
@@ -89,5 +89,74 @@ func TestBuildSoloPartyCarriesHero(t *testing.T) {
 	}
 	if json.Unmarshal(b, &back) != nil || len(back.Members) != 1 || back.Members[0].HeroAssetId != "Hero:beebo" {
 		t.Fatalf("json round-trip lost heroAssetId: %s", b)
+	}
+}
+
+// TestBuildSoloPartyCarriesPersonalizationLoadout covers the AVATAR RENDER fix (2026-07-19).
+//
+// The client's avatar widgets never read the PersonalizationManager: BPFL_Social_C::
+// DetermineSocialInfoForPlatformPlayer resolves the avatar from
+// PartyMember.PersonalizationLoadout.SlotCosmeticsEntries via FindSlotCosmeticEntry(Avatar slot).
+// We never served that field, so the live PartyMemberModel had it all-zero (Version = -1,
+// SlotCosmeticsEntries Num=0) and the widget painted TX_Transparent by design.
+//
+// The load-bearing assertion is the CONTAINER TYPE: slotCosmeticsEntries must marshal as a JSON
+// ARRAY of {slot, asset} objects. Per the validity model (internal/menu/menu.go) UE ignores an
+// unmatched key but rejects the WHOLE doc when a matched key has the wrong container type — so
+// emitting this as a map would take out the entire party panel, not merely the avatar.
+func TestBuildSoloPartyCarriesPersonalizationLoadout(t *testing.T) {
+	loadout := map[string]any{
+		"id":      "p1",
+		"version": int64(940),
+		"slotCosmeticsEntries": []any{
+			map[string]any{"slot": "Avatar", "asset": "SlotCosmetics:AVATAR_AboveItAll"},
+			map[string]any{"slot": "Glider", "asset": "SlotCosmetics:GLIDER_AngelicForce"},
+		},
+		"titleIds": json.RawMessage(`["PlayerTitle:APlus"]`),
+	}
+	party := buildSoloParty("p1", "Player One", "Hero:beebo", "", "default", loadout)
+	m := party["members"].([]any)[0].(map[string]any)
+	if _, ok := m["personalizationLoadout"]; !ok {
+		t.Fatal("member is missing personalizationLoadout (the field the avatar widget reads)")
+	}
+
+	// Round-trip exactly as the client parses it, decoding into the live struct shape
+	// (ScriptStruct PersonalizationLoadout @0x145E5806A60, confirmed via RPM).
+	b, _ := json.Marshal(party)
+	var back struct {
+		Members []struct {
+			PersonalizationLoadout struct {
+				Version              int64 `json:"version"`
+				SlotCosmeticsEntries []struct {
+					Slot  string `json:"slot"`
+					Asset string `json:"asset"`
+				} `json:"slotCosmeticsEntries"`
+			} `json:"personalizationLoadout"`
+		} `json:"members"`
+	}
+	if err := json.Unmarshal(b, &back); err != nil {
+		t.Fatalf("party doc does not deserialize into the live loadout shape: %v\n%s", err, b)
+	}
+	pl := back.Members[0].PersonalizationLoadout
+	if len(pl.SlotCosmeticsEntries) != 2 {
+		t.Fatalf("slotCosmeticsEntries = %d entries, want 2 (must be an ARRAY, not a map): %s", len(pl.SlotCosmeticsEntries), b)
+	}
+	var avatar string
+	for _, e := range pl.SlotCosmeticsEntries {
+		if e.Slot == "Avatar" {
+			avatar = e.Asset
+		}
+	}
+	if avatar != "SlotCosmetics:AVATAR_AboveItAll" {
+		t.Fatalf("Avatar slot asset = %q, want SlotCosmetics:AVATAR_AboveItAll (FindSlotCosmeticEntry matches on the slot name)", avatar)
+	}
+	// Version must advance past the model's initial -1 or the client keeps its stale loadout.
+	if pl.Version <= 0 {
+		t.Fatalf("personalizationLoadout.version = %d, must be > 0 (live model initialises to -1)", pl.Version)
+	}
+
+	// nil loadout omits the key entirely (never emit a degenerate/empty struct).
+	if _, present := buildSoloParty("p1", "n", "Hero:beebo", "", "default", nil)["members"].([]any)[0].(map[string]any)["personalizationLoadout"]; present {
+		t.Fatal("nil loadout must omit personalizationLoadout rather than emit an empty struct")
 	}
 }

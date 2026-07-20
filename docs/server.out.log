@@ -1,12 +1,8 @@
-2026/07/19 02:05:33 menu: config "state\\menu-config.json" not read (open state\menu-config.json: The system cannot find the file specified.) — using built-in defaults
-2026/07/19 02:05:33 SUPERVIVE Revival AGS backend
-2026/07/19 02:05:33   capture log: G:\git\Supervive Revival Project\docs\capture.log
-2026/07/19 02:05:33   ADMIN  panel on http://127.0.0.1:9210/
-2026/07/19 02:05:33   ADMIN  panel on http://[::1]:9210/
-2026/07/19 02:05:33   TLS cert (append to game cacert.pem): G:\git\Supervive Revival Project\certs\root.crt
-2026/07/19 02:05:33   HTTP   listening on :8080
-2026/07/19 02:05:33   HTTPS  listening on :443
-2026/07/19 02:05:34 http: TLS handshake error from 127.0.0.1:64210: local error: tls: bad record MAC
-2026/07/19 02:05:36 http: TLS handshake error from 127.0.0.1:64215: local error: tls: bad record MAC
-2026/07/19 02:05:39 http: TLS handshake error from 127.0.0.1:64220: local error: tls: bad record MAC
-2026/07/19 02:05:42 http: TLS handshake error from 127.0.0.1:64224: local error: tls: bad record MAC
+2026/07/19 21:37:24 menu: config "state\\menu-config.json" not read (open state\menu-config.json: The system cannot find the file specified.) — using built-in defaults
+2026/07/19 21:37:24 SUPERVIVE Revival AGS backend
+2026/07/19 21:37:24   capture log: G:\git\Supervive Revival Project\docs\capture.log
+2026/07/19 21:37:24   ADMIN  panel on http://127.0.0.1:9210/
+2026/07/19 21:37:24   ADMIN  panel on http://[::1]:9210/
+2026/07/19 21:37:24   TLS cert (append to game cacert.pem): G:\git\Supervive Revival Project\certs\root.crt
+2026/07/19 21:37:24   HTTP   listening on :8080
+2026/07/19 21:37:24   HTTPS  listening on :443

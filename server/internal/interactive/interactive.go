@@ -742,7 +742,7 @@ func (s *Service) handleGetParty(w http.ResponseWriter, r *http.Request) {
 	if dq := r.URL.Query().Get("defaultQueue"); dq != "" && s.store.get(id).SelectedQueueID == "" {
 		s.store.update(id, func(st *playerState) { st.SelectedQueueID = dq })
 	}
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id)))
 }
 
 // selectedQueue returns the player's persisted selected matchmaking activity/queue id,
@@ -795,7 +795,7 @@ func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id)))
 }
 
 // handleStartSoloMode answers POST /party/parties/{partyId}/startSoloMode?mode=&hero=&soloModeStartPosition=.
@@ -827,7 +827,7 @@ func (s *Service) handleStartSoloMode(w http.ResponseWriter, r *http.Request) {
 	log.Printf("interactive: startSoloMode player=%s mode=%q hero=%q pos=%q", id, mode, hero, pos)
 	s.store.update(id, func(st *playerState) { st.SoloMode = mode })
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id)))
 }
 
 // queueIDs is the set of matchmaking queue ids we advertise to the client. The full known
@@ -964,18 +964,23 @@ func (s *Service) handleSetPartyMember(w http.ResponseWriter, r *http.Request) {
 			if hero != "" {
 				st.SelectedHeroAssetId = hero
 			}
-			// Record the picked skin into the per-hero preference map (feeds
-			// GET /revival/loadout, which the client-side loadout_fix shim polls to keep its
-			// GetDefaultCosmeticsBundleIdForHeroId redirect in sync). This is NOT served back
-			// on the party member (that echo is inert — the client ignores it, 2026-07-09);
-			// it exists ONLY so a skin pick reaches /revival/loadout in ms (this member PUT
-			// fires on every click) rather than waiting on the ~5s-debounced cosmeticsbundle
-			// PUT, so the shim can flip its redirect to the new skin before the pick reverts.
+			// Seed the per-hero skin preference (feeds GET /revival/loadout, which the loadout_fix
+			// shim polls to keep its GetDefaultCosmeticsBundleIdForHeroId redirect in sync).
+			//
+			// SEED-ONLY (2026-07-19): never OVERWRITE an established per-hero skin from this member
+			// sync. The member body carries the client's *equipped* cosmetic, which is STALE for any
+			// hunter whose client-side equip is broken — precisely the hunters the shim exists to fix
+			// (Brall/Eluna). This PUT fires on every click, ~0.2s AFTER the shim's authoritative
+			// POST /revival/loadout/cosmetic; when it overwrote, it reverted the just-picked skin back
+			// to the old one, so "skins wouldn't switch / didn't carry over" for the stuck hunters.
+			// The authoritative writers are the shim POST (the user's real widget selection) and the
+			// client's explicit cosmeticsbundle PUT; the member sync may only seed a hero that has no
+			// preference yet (so a fresh account still shows a skin before the first real pick).
 			if hero != "" && cosmetic != "" {
 				if st.HeroCosmeticsBundles == nil {
 					st.HeroCosmeticsBundles = map[string]string{}
 				}
-				if st.HeroCosmeticsBundles[hero] != cosmetic {
+				if _, set := st.HeroCosmeticsBundles[hero]; !set {
 					st.HeroCosmeticsBundles[hero] = cosmetic
 					st.LoadoutVersion++
 				}
@@ -986,7 +991,7 @@ func (s *Service) handleSetPartyMember(w http.ResponseWriter, r *http.Request) {
 	// Echo the updated party so the client's optimistic pick is confirmed by the server
 	// state (and matches what the next GET /party/parties poll will return).
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id)))
 }
 
 // heroAssetIDFromBody extracts the selected hero as a "Hero:<name>" PrimaryAssetId string
@@ -1094,7 +1099,9 @@ func primaryAssetIDString(raw json.RawMessage) string {
 // (BP_LokiHeroSelectPreview_UnknownHero), a valid owned id renders that hunter. Field name is
 // camelCase heroAssetId (UStruct field HeroAssetID; UE matches JSON keys case-insensitively);
 // PrimaryAssetId accepts the "Type:Name" string form (proven by the owned-inventory AssetIds).
-func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue string) map[string]any {
+// loadout is the member's PersonalizationLoadout (the loadoutDoc from loadout.go). See the
+// AVATAR RENDER block below for why it is served here; pass nil to omit it.
+func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue string, loadout map[string]any) map[string]any {
 	now := time.Now().UTC().Format(time.RFC3339)
 	member := map[string]any{
 		"id":          id,
@@ -1120,6 +1127,43 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 	// Bomb") regardless of what we echo. Serving it can't help the skin display and only
 	// risks the 2026-07-08 lock, so we drop it. Skin persistence needs a client-side shim.
 	_ = cosmeticsAssetId
+
+	// ---- AVATAR RENDER (2026-07-19) ----
+	// The equipped AVATAR selects fine but its image never draws on any player-card surface
+	// (party row, top-right card, the picker's preview card). Selection was proven healthy
+	// first, so this is purely a render gap:
+	//   - the click fires POST /personalization/players/{id}/slotcosmetics {"slot":"Avatar",...}
+	//   - the store persists it, and the CLIENT'S OWN presence blob carries
+	//     "avId":"SlotCosmetics:AVATAR_AboveItAll" and tracks clicks live (docs/capture.log
+	//     ~02:22:29-02:22:36). So the id is correct in the PersonalizationManager.
+	//
+	// Root cause (RE'd 2026-07-19, live read-only RPM against the running client):
+	// the avatar widgets never read the PersonalizationManager. WBP_UI_Social_PlayerAvatarIconV2_C
+	// gates on IsValidSoftClassReference(TargetAvatarAsset) and, when it fails, deliberately calls
+	// Image_Avatar.SetBrushResourceObject(TX_Transparent) — the blank we see is painted on purpose.
+	// TargetAvatarAsset is filled by BPFL_Social_C::DetermineSocialInfoForPlatformPlayer, which for
+	// a valid+online party member reads
+	//     PartyMember.PersonalizationLoadout.SlotCosmeticsEntries
+	//   -> PersonalizationManager::FindSlotCosmeticEntry(entries, GetAvatarSlotName())
+	// i.e. the card sources the avatar from the PARTY MEMBER's loadout, not the personalization
+	// manager. We never served that field, so it was zeroed. Confirmed live on both
+	// PartyMemberModel instances: PersonalizationLoadout (+0x0190) all-zero, Version = -1,
+	// SlotCosmeticsEntries Num=0.
+	//
+	// NOT a re-run of the closed skin experiment above: that one was scoped to the member's
+	// CosmeticsAssetID (hero skins). PersonalizationLoadout is a DIFFERENT field and had never
+	// been served. Reuses loadoutDoc() so the wire shape stays in one place; its layout was
+	// independently confirmed against live RPM (ScriptStruct PersonalizationLoadout @0x145E5806A60:
+	// ID@0x00, Version@0x10, EmoteIds@0x18, TitleIds@0x28, SlotCosmeticsEntries@0x38, ...) — one of
+	// the rare cases where the extracted usmap matched.
+	//
+	// TYPE SAFETY: SlotCosmeticsEntries is an ARRAY of {slot, asset} structs. Per the validity model
+	// (internal/menu/menu.go) an unmatched key is ignored but a MATCHED key with the wrong container
+	// type rejects the whole doc — which here would break the party panel, not just the avatar. The
+	// shape below comes from loadoutDoc(), which already emits the array form.
+	if loadout != nil {
+		member["personalizationLoadout"] = loadout
+	}
 	return map[string]any{
 		"partyId":  "party-" + id,
 		"id":       "party-" + id,

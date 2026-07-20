@@ -169,17 +169,17 @@ func (s *store) get(id string) *playerState {
 	return st
 }
 
-// primaryLoadout returns a snapshot of the single real player's persisted equips
-// (slot cosmetics, hero skin bundles, luxe chromas) for the revival loadout feed
-// the client-side shim reads. The shim carries no JWT, and the revival is
-// single-account, so we pick the player entry that actually holds loadout data —
-// skipping the "local" missions bucket and any empty entry. Maps are copied so
-// callers never touch the live state under the lock. Returns empty maps if none.
-func (s *store) primaryLoadout() (slots, bundles, chromas map[string]string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	slots, bundles, chromas = map[string]string{}, map[string]string{}, map[string]string{}
+// primaryLocked returns the single real player's id and live state — the highest
+// loadout-score entry, skipping the "local" missions bucket and any nil entry. The
+// revival is single-account and the client-side shim carries no JWT, so this is how
+// every revival-scoped read/write agrees on "the player": pick the entry that
+// actually holds loadout data. Caller MUST hold s.mu (the returned *playerState is
+// the LIVE pointer, only safe to touch under the lock). Returns "", nil when no such
+// player exists yet. Centralizing the rule here keeps primaryLoadout /
+// primarySelectedHero / primaryID / updatePrimary from drifting out of agreement.
+func (s *store) primaryLocked() (string, *playerState) {
 	var best *playerState
+	bestID := ""
 	bestScore := -1
 	for id, st := range s.players {
 		if id == missionsLocalKey || st == nil {
@@ -190,10 +190,21 @@ func (s *store) primaryLoadout() (slots, bundles, chromas map[string]string) {
 			score++
 		}
 		if score > bestScore {
-			bestScore, best = score, st
+			bestScore, best, bestID = score, st, id
 		}
 	}
-	if best != nil {
+	return bestID, best
+}
+
+// primaryLoadout returns a snapshot of the single real player's persisted equips
+// (slot cosmetics, hero skin bundles, luxe chromas) for the revival loadout feed
+// the client-side shim reads. Maps are copied so callers never touch the live state
+// under the lock. Returns empty maps if none.
+func (s *store) primaryLoadout() (slots, bundles, chromas map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	slots, bundles, chromas = map[string]string{}, map[string]string{}, map[string]string{}
+	if _, best := s.primaryLocked(); best != nil {
 		for k, v := range best.SlotCosmetics {
 			slots[k] = v
 		}
@@ -213,24 +224,37 @@ func (s *store) primaryLoadout() (slots, bundles, chromas map[string]string) {
 func (s *store) primarySelectedHero() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var best *playerState
-	bestScore := -1
-	for id, st := range s.players {
-		if id == missionsLocalKey || st == nil {
-			continue
-		}
-		score := len(st.SlotCosmetics) + len(st.HeroCosmeticsBundles) + len(st.LuxeChromas)
-		if st.SelectedHeroAssetId != "" {
-			score++
-		}
-		if score > bestScore {
-			bestScore, best = score, st
-		}
-	}
-	if best != nil {
+	if _, best := s.primaryLocked(); best != nil {
 		return best.SelectedHeroAssetId
 	}
 	return ""
+}
+
+// primaryID returns just the id of the primary player (primaryLocked's pick), or ""
+// if none exists yet. Used to key the loadout echo for revival-scoped writes.
+func (s *store) primaryID() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	id, _ := s.primaryLocked()
+	return id
+}
+
+// updatePrimary resolves the primary player and mutates it, then persists — all
+// under ONE lock acquisition, so the resolve and the write cannot be interleaved by
+// a concurrent update()/updatePrimary(). Returns the resolved id ("" = no player
+// exists yet, in which case fn is NOT run). This is the write counterpart of
+// primaryLoadout: both agree on the player via primaryLocked, so a revival write
+// lands on exactly the entry the revival GET reads back.
+func (s *store) updatePrimary(fn func(*playerState)) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	id, best := s.primaryLocked()
+	if best == nil {
+		return ""
+	}
+	fn(best)
+	s.saveLocked()
+	return id
 }
 
 // snapshotLoadout returns a value copy of the player's state with all mutable maps

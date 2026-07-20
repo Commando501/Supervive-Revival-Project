@@ -1,12 +1,12 @@
 [0] battlepass_adopt_fix (force OnSuccess adoption of HuntersJourney account pass) started
-[2b] vmgr=0x2960967DE00 asset(HuntersJourney_C)=0x296E795B140
-[2] BPIM=0x29705CE8A80  pre: Num=1 adopted=103 target=1  OnSuccess=0x7FF6B47C8130
+[2b] vmgr=0x1B2B118DA00 asset(HuntersJourney_C)=0x1B39701B140
+[2] BPIM=0x1B3831520E0  pre: Num=0 adopted=0 target=1  OnSuccess=0x7FF6B47C8130
 [3] hook built; installing to catch the game thread and force adoption...
-[4] called=1  pre(Num=1 adopted=103 target=1) -> post(Num=2 adopted=104)
-[4] account VM=0x297F4EBC7C0  ProgressionTrackAsset +0xE8: before=0x296E795B140 -> after=0x296E795B140 (bound=YES to HuntersJourney_C 0x296E795B140)
-[5] gates: PM=0x296024B7A20 flagA(+0x208)=1  tier(+0x90+0xEC): before=12 -> after=12  LevelsToDisplay(+0x70)=85  calledCheckAccountPassChanges=1
-[5] published-pass chain: X(assetloader)=0x296E9EBEE80  P(pass class)=0x29704BAB920 name='HuntersJourney_C'
+[4] called=1  pre(Num=0 adopted=0 target=1) -> post(Num=1 adopted=104)
+[4] account VM=0x1B2B2601840  ProgressionTrackAsset +0xE8: before=0x1B39701B140 -> after=0x1B39701B140 (bound=YES to HuntersJourney_C 0x1B39701B140)
+[5] gates: PM=0x1B2A52E7A20 flagA(+0x208)=1  tier(+0x90+0xEC): before=35 -> after=35  LevelsToDisplay(+0x70)=85  calledCheckAccountPassChanges=1
+[5] published-pass chain: X(assetloader)=0x1B38D58E400  P(pass class)=0x1B37B834300 name='HuntersJourney_C'
 [5] VM lookup key K = P->GetPrimaryAssetId().ToString() = 'ProgressionTrack:HuntersJourney'   (track ProgressionTrackID set to this)
 [5] Levels via CheckAccountPassChanges: before=86 -> after=86 *** TIER GRID BUILT ***
-[6] SEASONAL (kArmSeasonal=1): SeasonalPassViewModel@+0x1A8 before=0x0 -> after=0x297B2D1BEC0  Levels=0 LevelsToDisplay=0  *** SEASONAL VM BUILT (empty ladder is EXPECTED — copier zeroes Levels) ***
+[6] SEASONAL (kArmSeasonal=0): SeasonalPassViewModel@+0x1A8 before=0x0 -> after=0x0  Levels=-1 LevelsToDisplay=-1  (unchanged)
 [4] *** ADOPTED + account VM + asset bound + Levels tier grid POPULATED. Passes account tab is data-ready. ***
