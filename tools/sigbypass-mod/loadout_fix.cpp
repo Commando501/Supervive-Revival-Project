@@ -140,6 +140,62 @@ static char g_cdoTried[LMAX][64]; static int g_cdoTriedN=0;   // heroes rescanne
 static bool CdoInCache(const char* code){ for(int c=0;c<g_cdoCacheN;c++) if(_stricmp(g_cdoCache[c].code,code)==0) return true; return false; }
 static bool CdoTried(const char* code){ for(int i=0;i<g_cdoTriedN;i++) if(_stricmp(g_cdoTried[i],code)==0) return true; return false; }
 
+// 2026-07-19 DIRECT SKIN COMMIT — the real fix for the stuck hunters. The StyleScreen equip commit
+// (TryPickMyHeroAndCosmetics) is gated on IsCosmeticsSelectionEqual(CurrentEquipped, CurrentSelectedCosmetic):
+// if they're equal it skips. For a hunter WITH a saved skin, OUR GDCB redirect makes both the widget's
+// "CurrentEquipped" (Get Current Party Assets -> empty member cosmetic -> GetDefaultCosmeticsBundleIdForHeroId,
+// which we hijack) AND the re-seeded CurrentSelectedCosmetic resolve to the SAME saved-bundle value, so the
+// gate always reads "no change" -> the click never commits. (Bytecode-verified; Beebo etc. have no redirect
+// entry so their operands stay distinct and they commit fine.) FIX: read the user's live selection out of the
+// widget (WBP_UI_Loadout_StyleScreen_C.CurrentSelectedCosmetic @+0x4F0 = FHeroCosmeticsSelection{HeroAssetId
+// FPrimaryAssetId @+0x0, CosmeticAssetId FPrimaryAssetId @+0x10}) and fire TryPickMyHeroAndCosmetics OURSELVES
+// with those exact PAIDs (byte-for-byte the call the widget would make), bypassing the poisoned gate. Idempotent
+// (re-picking the same skin is a server no-op). The GDCB redirect stays for render/persistence.
+static uintptr_t g_styleClass=0;                    // WBP_UI_Loadout_StyleScreen_C class object
+static void* g_styleScreens[8]={0}; static int g_nStyle=0;   // ALL live pooled StyleScreen instances (1-2; the
+// widget is POOLED, so >1 exist but only the visible one carries a populated CurrentSelectedCosmetic. The old
+// single g_styleScreen took the FIRST in object-array order = the EMPTY pooled shell (0x24A8C3D2EC0), so the
+// commit always bailed on an empty selection and NO later-hero equip ever fired. We now enumerate ALL and pick
+// the ACTIVE one at commit time (non-empty selection, hero-matched to the party member).
+static DWORD g_lastStyleScan=0;
+static volatile long g_commitPending=0;             // RefreshThread -> OnPI (game thread) hand-off
+static uint64_t g_commitHero[2]={0,0}, g_commitCosmetic[2]={0,0};   // FPrimaryAssetIds to TryPick
+// PER-HERO commit dedup: last committed cosmetic FName id keyed by hero FName id. A single global
+// "last cosmetic" would re-fire on every Bishop->Brall->Bishop switch (Bishop's unchanged skin != the
+// last-seen Brall skin); per-hero means each hunter fires only when ITS own skin actually changes.
+static uint32_t g_pickHero[48]={0}; static uint32_t g_pickCos[48]={0}; static int g_nPick=0;
+static bool PickSeen(uint32_t heroName,uint32_t cosName){   // true if (hero->cos) already recorded; else record + false
+    for(int i=0;i<g_nPick;i++) if(g_pickHero[i]==heroName){ if(g_pickCos[i]==cosName) return true; g_pickCos[i]=cosName; return false; }
+    if(g_nPick<48){ g_pickHero[g_nPick]=heroName; g_pickCos[g_nPick]=cosName; g_nPick++; }
+    return false;
+}
+// SHARED ProcessInternal-install clock: CommitWidgetSelection (native TryPick) and the ReArmRefresh call
+// site both read+write this, so a commit's transient PI hook and a re-arm's can NEVER stack two
+// thread-suspending installs inside ~800ms — the documented churn window that crashes the game.
+static DWORD g_lastPiOp=0;
+// Last time the selected hunter changed (nav signal). Drives the StyleScreen bootstrap: we only attempt the
+// (potentially ~1s) object-array walk to find the pooled StyleScreen instances while the user is actively
+// navigating a loadout context — NOT when idle at the menu — and stop entirely once they're found.
+static DWORD g_lastSelChange=0;
+// TILE-BADGE fix (2026-07-19): native TryPick equips + persists but does NOT move the StyleScreen's "equipped"
+// checkmark — that badge is set by WBP_UI_Loadout_StyleScreen_C::SetEquipped (a BP event that runs
+// VariantPicker.SetEquippedCosmetic), which the widget calls at bytecode [163] right after its own [162]
+// TryPick. TryPick alone leaves the badge to the laggy async party-update path (the user's "tile lags"). So we
+// reproduce [163] ourselves: call SetEquipped(NewEquipped=FHeroCosmeticsSelection{hero,cosmetic}) on the ACTIVE
+// instance via the SAME proven game-thread primitive PreviewAsset uses (InvokeBPLocals from OnPI). kSetEquipped
+// is the master switch (flip to false + rebuild if it ever misbehaves — the equip/persist path is independent).
+static const bool kSetEquipped=true;
+static void* g_setEquippedFn=nullptr;      // resolved WBP_UI_Loadout_StyleScreen_C::SetEquipped UFunction
+static uint32_t g_setEqOff=0;              // NewEquipped param offset within SetEquipped's locals frame
+static bool g_setEqTried=false;            // resolve-once guard
+static uintptr_t g_commitStyleScreen=0;    // the ACTIVE instance CommitWidgetSelection chose -> OnPI SetEquippeds it
+static void* g_refreshPreviewFn=nullptr;   // WBP_UI_Loadout_StyleScreen_C::"Refresh Preview Indicators" (parameterless)
+// ^ the widget runs "Refresh Preview Indicators" [165] right after SetEquipped [163]; without it the purple "eye"
+// PREVIEW indicator on the skin tiles stays on the OLD tile (render follows the pick, the tile badge doesn't).
+static const uintptr_t SS_CURSEL_OFF   = 0x4F0;     // CurrentSelectedCosmetic (FHeroCosmeticsSelection, 32B)
+static const uintptr_t SS_SEL_HERO_OFF = 0x4F0;     //   .HeroAssetId  FPrimaryAssetId (16B)
+static const uintptr_t SS_SEL_COS_OFF  = 0x500;     //   .CosmeticAssetId FPrimaryAssetId (16B)
+
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
 static bool SafeReadable(const void* a,size_t sz){MEMORY_BASIC_INFORMATION m{};if(!VirtualQuery(a,&m,sizeof(m)))return false;if(!(m.State&MEM_COMMIT))return false;if(m.Protect&(PAGE_NOACCESS|PAGE_GUARD))return false;return (uintptr_t)a+sz<=(uintptr_t)m.BaseAddress+m.RegionSize;}
@@ -620,6 +676,29 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     InterlockedIncrement(&g_hitsGT); g_inHook=1;
     memcpy(g_template, frame, sizeof(g_template));
     if(!g_applyDone){ ApplyLoadout(); g_applyDone=1; }
+    else if(g_commitPending){
+        // DIRECT SKIN COMMIT (game thread): fire the equip the poisoned StyleScreen gate refuses to. This is
+        // the exact native call the widget makes at its statement [162] — TryPickMyHeroAndCosmetics(hero,
+        // cosmetic) on the PartyManager — with the user's LIVE-selected hero+cosmetic read from the widget.
+        if(g_tryPick.thunk && g_party){ CallSet2PAID(g_tryPick,(void*)g_party,g_commitHero,g_commitCosmetic); }
+        // [163] tile-badge: reproduce SetEquipped(NewEquipped) on the active StyleScreen so the "equipped"
+        // checkmark moves NOW (VariantPicker.SetEquippedCosmetic) instead of waiting on the async party update.
+        // Same game-thread trampoline primitive as PreviewAsset; null/readability-guarded; skipped if unresolved.
+        if(kSetEquipped && g_setEquippedFn && g_commitStyleScreen && g_setEqOff<0x60
+           && SafeReadable((void*)g_commitStyleScreen,0x30) && (!g_styleClass||ClassOf(g_commitStyleScreen)==g_styleClass)){
+            uint8_t locals[0x100]; memset(locals,0,sizeof(locals));
+            *(uint64_t*)(locals+g_setEqOff)=g_commitHero[0];      *(uint64_t*)(locals+g_setEqOff+8)=g_commitHero[1];
+            *(uint64_t*)(locals+g_setEqOff+16)=g_commitCosmetic[0]; *(uint64_t*)(locals+g_setEqOff+24)=g_commitCosmetic[1];
+            InvokeBPLocals((void*)g_commitStyleScreen, g_setEquippedFn, locals);
+            // NOTE (2026-07-19): do NOT also call "Refresh Preview Indicators" [165] here — live test showed it puts
+            // the widget into PREVIEW mode and flips CurrentSelectedCosmetic to the previously-equipped skin, which
+            // CommitWidgetSelection then re-commits => an oscillation (BeastSlayer<->ONI) + a stuck "PREVIEW" model.
+            // SetEquipped alone correctly moves the equipped checkmark; the purple "eye" preview indicator lagging on
+            // the old tile is an accepted minor cosmetic glitch (fixing it needs the preview-state cleared, not a
+            // refresh — a separate, careful follow-up). g_refreshPreviewFn stays resolved for diagnostics only.
+        }
+        g_commitPending=0; g_done=1;
+    }
     else if(g_cdoDone){
         // GAP 1: after the fallback CDO is patched, re-render the main-menu center by firing
         // Comp_MainMenu_PartySlotSubject.Refresh() a few times over ~1s (tick-gated so we don't
@@ -849,7 +928,7 @@ static void RefreshGdcb(){
     // changes that hero's bundle below (changed=true there), and this block runs FIRST so g_selectedHero is
     // already current when the bundle-triggered re-arm fires RefreshCustomization. Pure hero switches are
     // rendered by the game's own nav-refresh + pi8, so we owe them no re-arm.
-    { wchar_t sel[96]; if(ParseStr(buf,"selectedHero",sel,96) && sel[0] && wcscmp(sel,g_selectedHero)!=0) wcscpy_s(g_selectedHero,96,sel); }
+    { wchar_t sel[96]; if(ParseStr(buf,"selectedHero",sel,96) && sel[0] && wcscmp(sel,g_selectedHero)!=0){ wcscpy_s(g_selectedHero,96,sel); g_lastSelChange=GetTickCount(); } }
     for(int i=0;i<n;i++){
         char kb[160]; WideCharToMultiByte(CP_UTF8,0,pairs[i].k,-1,kb,160,nullptr,nullptr);
         const char* code=strchr(kb,':'); code=code?code+1:kb;
@@ -886,6 +965,142 @@ static void ReArmRefresh(){
     Markerf("[8b] latency=%lums [resolve=%lu lockwait=%lu install=%lu refreshwait=%lu] mm=%d cust=%d calls=%ld\r\n",
             (unsigned long)(g_dirtyTick?tDone-g_dirtyTick:0),(unsigned long)(tResolve-t0),(unsigned long)(tLock-tResolve),(unsigned long)(tInstall-tLock),(unsigned long)(tDone-tInstall),mmLive,custLive,(long)g_refreshCalls);
     g_centerDirty=0;
+}
+// Locate the live WBP_UI_Loadout_StyleScreen_C instance (the SKIN customization widget). Object-array walk
+// (read-only), gated + throttled by the caller so it only runs while a customization screen is open and we
+// don't already have a valid instance. Caches the class once (pointer compare thereafter, like the others).
+static void FindStyleScreen(){
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return; uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    if(!g_styleClass){ for(int ci=0;ci<numChunks && !g_styleClass;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            if(NameIs(obj,"WBP_UI_Loadout_StyleScreen_C")){ uintptr_t cls=ClassOf(obj); char cn[96]; if(cls&&GetFNameStr(NameId(cls),cn,sizeof(cn))&&strstr(cn,"Class")){ g_styleClass=obj; break; } } } } }
+    if(!g_styleClass) return; g_nStyle=0;
+    // Collect EVERY non-Default__ instance (do NOT return on the first — that was the empty-shell bug).
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            if(ClassOf(obj)==g_styleClass && g_nStyle<8){ char nm[96]; if(GetFNameStr(NameId(obj),nm,sizeof(nm))&&strncmp(nm,"Default__",9)!=0) g_styleScreens[g_nStyle++]=(void*)obj; } } }
+}
+// Read a StyleScreen instance's CurrentSelectedCosmetic. Returns true only if the ACTIVE/visible instance —
+// BOTH the hero PAID (@+0x4F0) AND the cosmetic PAID (@+0x500) have a non-zero Type FName. The empty pooled
+// shell reads all-zero here, so this is the discriminator the old first-in-array pick lacked.
+static bool ReadStyleSel(uintptr_t ss, uint64_t hero[2], uint64_t cos[2]){
+    if(!ss || !SafeReadable((void*)ss,0x30) || (g_styleClass && ClassOf(ss)!=g_styleClass)) return false;
+    if(!SafeReadable((void*)(ss+SS_SEL_HERO_OFF),16) || !SafeReadable((void*)(ss+SS_SEL_COS_OFF),16)) return false;
+    hero[0]=*(uint64_t*)(ss+SS_SEL_HERO_OFF); hero[1]=*(uint64_t*)(ss+SS_SEL_HERO_OFF+8);
+    cos[0] =*(uint64_t*)(ss+SS_SEL_COS_OFF);  cos[1] =*(uint64_t*)(ss+SS_SEL_COS_OFF+8);
+    return (cos[0]&0xFFFFFFFF)!=0 && (hero[0]&0xFFFFFFFF)!=0;
+}
+// The party member's CURRENT hero name FName id (member.HeroAssetID.Name @ member+0x78+8), or 0 if unknown.
+// The authoritative "which hunter is focused" — TryPick compares against exactly this. Used to pick the
+// right StyleScreen when >1 is populated, and to REJECT a stale cross-hero selection during a hero switch.
+static uint32_t MemberHeroNameId(){
+    if(!g_member) return 0; uintptr_t hf=g_member+MEMBER_HEROID; if(!SafeReadable((void*)(hf+8),4)) return 0;
+    return *(uint32_t*)(hf+8);
+}
+// Build "<Type>:<Name>" from a 16-byte FPrimaryAssetId ({type FName @+0, name FName @+8}) for the backend POST.
+static bool PAIDToStr(const uint64_t paid[2], char* out, int cap){
+    char t[96], n[96];
+    if(!GetFNameStr((uint32_t)(paid[0]&0xFFFFFFFF),t,sizeof(t))) return false;
+    if(!GetFNameStr((uint32_t)(paid[1]&0xFFFFFFFF),n,sizeof(n))) return false;
+    _snprintf_s(out,cap,_TRUNCATE,"%s:%s",t,n); return true;
+}
+// POST {"hero":"Hero:x","bundle":"HeroCosmeticsBundle:y"} to ags (handleSetRevivalCosmetic) so the pick
+// persists for ANY hero regardless of the client's own gated PUT, and so the next RefreshGdcb GET re-asserts
+// the render. Fire-and-forget on the RefreshThread (wininet MUST NOT run on the game thread); failure is
+// non-fatal (the direct TryPick + GDCB redirect already cover the live session).
+static bool HttpPostCosmetic(const char* heroStr, const char* bundleStr){
+    char body[256]; int bl=_snprintf_s(body,sizeof(body),_TRUNCATE,"{\"hero\":\"%s\",\"bundle\":\"%s\"}",heroStr,bundleStr);
+    if(bl<=0) return false;
+    HINTERNET hi=InternetOpenA("supervive-loadout-shim",INTERNET_OPEN_TYPE_DIRECT,nullptr,nullptr,0); if(!hi) return false;
+    bool ok=false;
+    HINTERNET hc=InternetConnectA(hi,"127.0.0.1",8080,nullptr,nullptr,INTERNET_SERVICE_HTTP,0,0);
+    if(hc){
+        HINTERNET hr=HttpOpenRequestA(hc,"POST","/revival/loadout/cosmetic",nullptr,nullptr,nullptr,
+                                      INTERNET_FLAG_RELOAD|INTERNET_FLAG_NO_CACHE_WRITE|INTERNET_FLAG_PRAGMA_NOCACHE,0);
+        if(hr){
+            static const char* hdr="Content-Type: application/json\r\n";
+            if(HttpSendRequestA(hr,hdr,(DWORD)strlen(hdr),body,(DWORD)bl)) ok=true;
+            InternetCloseHandle(hr);
+        }
+        InternetCloseHandle(hc);
+    }
+    InternetCloseHandle(hi); return ok;
+}
+// Watch the StyleScreen's CurrentSelectedCosmetic; when the user picks a NEW skin, fire the commit
+// (TryPickMyHeroAndCosmetics) ourselves with the widget's exact hero+cosmetic PAIDs, on the game thread via a
+// transient PI-hook. This is the fix for the poisoned equip gate (see the g_styleScreen comment above). Called
+// from the RefreshThread poll; only acts while a customization screen is open (g_nCust>0).
+static void CommitWidgetSelection(){
+    // Gate: need the native call resolved, and EITHER a live customization screen (g_nCust, the bootstrap that
+    // triggers the first FindStyleScreen walk) OR already-cached pooled StyleScreens (g_nStyle) — once found they
+    // persist for the session, so we keep monitoring them cheaply (idle = empty selection = early-out, no walk)
+    // even after g_nCust resets on a nav. Prevents the "left & re-entered customization" dead spot.
+    if(!g_tryPick.thunk || !g_party || (g_nCust==0 && g_nStyle==0)) return;
+    // (Re)enumerate the pooled instances only when our cache holds no live one (they're stable while the
+    // customization screen stays open — a full object-array walk every 150ms poll would be wasteful).
+    bool haveLive=false; for(int i=0;i<g_nStyle;i++){ uintptr_t s=(uintptr_t)g_styleScreens[i]; if(s&&SafeReadable((void*)s,0x30)&&(!g_styleClass||ClassOf(s)==g_styleClass)){ haveLive=true; break; } }
+    if(!haveLive && GetTickCount()-g_lastStyleScan>=1200){ g_lastStyleScan=GetTickCount(); FindStyleScreen(); }
+    // Pick the ACTIVE instance = a live StyleScreen whose CurrentSelectedCosmetic is non-empty. If >1 is
+    // populated (or one is a stale cross-hero shell mid-switch), PREFER the one whose selected hero matches
+    // the party member's current hero (MemberHeroNameId) — that is the hunter TryPick will actually commit
+    // for. Else fall back to the first non-empty (its hero+cosmetic come from the same struct, self-consistent).
+    uint32_t memHero=MemberHeroNameId();
+    uintptr_t best=0; uint64_t bhero[2]={0,0}, bcos[2]={0,0};
+    for(int i=0;i<g_nStyle;i++){ uintptr_t s=(uintptr_t)g_styleScreens[i]; uint64_t h[2],c[2];
+        if(!ReadStyleSel(s,h,c)) continue;
+        if(!best){ best=s; bhero[0]=h[0];bhero[1]=h[1]; bcos[0]=c[0];bcos[1]=c[1]; }
+        if(memHero && (uint32_t)(h[1]&0xFFFFFFFF)==memHero){ best=s; bhero[0]=h[0];bhero[1]=h[1]; bcos[0]=c[0];bcos[1]=c[1]; break; } }
+    if(!best) return;   // no instance has an active selection -> nothing to commit
+    // Anti-hover debounce: only act on a cosmetic that is STABLE across two consecutive polls (~300ms), so
+    // scrubbing the tile row (which moves CurrentSelectedCosmetic) doesn't fire a commit per tile crossed.
+    static uint64_t s_pendCos[2]={0,0}; static int s_stable=0;
+    if(bcos[0]==s_pendCos[0] && bcos[1]==s_pendCos[1]){ if(s_stable<2) s_stable++; }
+    else { s_pendCos[0]=bcos[0]; s_pendCos[1]=bcos[1]; s_stable=1; return; }
+    if(s_stable<2) return;
+    uint32_t hName=(uint32_t)(bhero[1]&0xFFFFFFFF), cName=(uint32_t)(bcos[1]&0xFFFFFFFF);
+    // Per-hero dedup: fire once per (hero -> cosmetic). Entering a hero settles on its already-equipped skin
+    // first; that fires ONCE (a backend no-op now that the version bump is change-gated) and primes the dedup,
+    // so the user's NEXT real pick fires and nothing churns while merely browsing.
+    if(PickSeen(hName,cName)) return;
+    char nb[96]="?"; GetFNameStr(cName,nb,96);
+    char hb[96]="?"; GetFNameStr(hName,hb,96);
+    // (B) PERSIST FIRST — ALWAYS, independent of the member gate below. bhero+bcos come from ONE
+    // self-consistent FHeroCosmeticsSelection struct, so this writes the correct hero->skin even during the
+    // ~1s member-catchup lag right after a hero switch. This is the durable fix: on the next RefreshGdcb GET
+    // the loadoutVersion bump re-asserts the render (GDCB redirect + FastRepatchCDO) for ANY hero — the path
+    // that makes Brall/Eluna (and every non-first-customized hunter) persist + redraw. Never gated on TryPick.
+    char heroStr[160]="?", bunStr[160]="?";
+    bool haveStr = PAIDToStr(bhero,heroStr,sizeof(heroStr)) && PAIDToStr(bcos,bunStr,sizeof(bunStr));
+    bool posted  = haveStr && HttpPostCosmetic(heroStr,bunStr);
+    // (A) IN-CLIENT render + equipped TILE via native TryPickMyHeroAndCosmetics (the exact call the widget
+    // makes at bytecode [162], bypassing the CurrentEquipped==CurrentSelectedCosmetic gate). Fire it ONLY when
+    // the party member confirms this is the focused hunter: the member tracks the customization focus, and
+    // TryPick sets hero+cosmetic, so firing for a not-yet-focused hero would force-switch the pick early. The
+    // PI-install cooldown is SHARED with ReArmRefresh (g_lastPiOp) so the two never stack thread-suspending
+    // installs within ~800ms (churn/crash guard). If skipped, the POST-driven re-render still covers all
+    // surfaces; only the in-widget equipped badge may lag until the async party update / next re-arm.
+    // Resolve SetEquipped once (BP event on the StyleScreen class) + its NewEquipped param offset, so OnPI can
+    // move the equipped tile badge after TryPick. Resolve-once, null-safe; if it can't be found we simply skip.
+    if(kSetEquipped && !g_setEqTried && g_styleClass){ g_setEqTried=true;
+        Fn F{}; ResolveFn(g_styleClass,"SetEquipped",&F); g_setEquippedFn=F.fn;
+        if(F.child){ uintptr_t f=F.child; for(int i=0;LooksLikePtr(f)&&i<32;i++){ if(NameIs(f,"NewEquipped")){ if(SafeReadable((void*)(f+FLD_OFFSET),4)) g_setEqOff=(uint32_t)*(int32_t*)(f+FLD_OFFSET); break; } uintptr_t nx=0; if(SafeReadable((void*)(f+FLD_NEXT),8))nx=*(uintptr_t*)(f+FLD_NEXT); f=nx; } }
+        Fn R{}; ResolveFn(g_styleClass,"Refresh Preview Indicators",&R); g_refreshPreviewFn=R.fn;
+        Markerf("[seteq] SetEquipped fn=%p NewEquipped@0x%X | RefreshPreviewIndicators fn=%p (%s)\r\n",g_setEquippedFn,g_setEqOff,g_refreshPreviewFn,(g_setEquippedFn&&g_refreshPreviewFn)?"armed":"partial/NOT FOUND");
+    }
+    bool fired=false;
+    if(memHero && hName==memHero && (GetTickCount()-g_lastPiOp)>=800){
+        g_lastPiOp=GetTickCount();
+        g_commitHero[0]=bhero[0]; g_commitHero[1]=bhero[1]; g_commitCosmetic[0]=bcos[0]; g_commitCosmetic[1]=bcos[1];
+        g_commitStyleScreen=best;   // the ACTIVE instance -> OnPI calls SetEquipped on it to move the tile badge
+        g_commitPending=1; g_done=0;
+        HookLock();
+        if(InstallHook()){ DWORD t=GetTickCount(); while(!g_done && GetTickCount()-t<1500) Sleep(10); UninstallHook(); }
+        HookUnlock();
+        g_commitPending=0;   // clear even if OnPI didn't fire (widget closed mid-cycle etc.)
+        fired=true;
+    }
+    Markerf("[commit] %s -> %s (post=%d trypick=%d memMatch=%d)\r\n",hb,nb,posted?1:0,fired?1:0,(memHero&&hName==memHero)?1:0);
 }
 // LEVER #B (cache-and-restore): the render reads member.CosmeticsAssetID FIRST (before the CDO fallback).
 // A HeroCosmeticsBundle PAID encodes BOTH hero + skin, so it MUST match the member's current hero or the
@@ -929,6 +1144,23 @@ static void SeedMemberCache(){
     Markerf("[9b] member cache seeded with %d hero(es) from saved loadout.\r\n",g_mcN);
 }
 static DWORD WINAPI RefreshThread(LPVOID){ int tick=0; for(;;){ Sleep(150); RefreshGdcb();   // 2026-07-18: 300->150ms poll — halves change-detection latency (local HTTP, cheap). Render-lag tuning.
+    // 2026-07-19 (HOLE-3 fix): bootstrap the pooled StyleScreen instances INDEPENDENT of any commit. They were
+    // only ever discovered after a hero's widget-commit set g_centerDirty -> ResolveCustomization -> g_nCust>0,
+    // which never happens for the STUCK hunters (their commit is exactly what fails) — so in a session where no
+    // hero self-commits, CommitWidgetSelection stayed gated out and NOTHING switched (observed live 2026-07-19).
+    // The instances are created on first customization-open and persist, so: walk to find them ONLY while unfound
+    // (g_nStyle==0), only within 30s of a hunter nav (active loadout use, never idle-menu cost), throttled to 3s,
+    // and stop forever once found. Timing is logged so the walk cost is visible.
+    if(g_nStyle==0 && (GetTickCount()-g_lastSelChange)<30000){
+        static DWORD s_lastStyleBoot=0;
+        if(GetTickCount()-s_lastStyleBoot>=3000){ s_lastStyleBoot=GetTickCount();
+            DWORD tb=GetTickCount(); FindStyleScreen();
+            Markerf("[styleboot] FindStyleScreen -> %d instance(s), styleClass=%llX, %lums\r\n",g_nStyle,(unsigned long long)g_styleClass,(unsigned long)(GetTickCount()-tb)); }
+    }
+    // 2026-07-19: fire the equip the poisoned StyleScreen gate refuses. When the user picks a new skin, read it
+    // live from the widget and TryPickMyHeroAndCosmetics ourselves (game thread) — the actual fix for the stuck
+    // hunters. No-op unless a StyleScreen is live (g_nStyle) or a customization screen is open (g_nCust).
+    CommitWidgetSelection();
     // CDO repatch is now INSTANT via FastRepatchCDO (in RefreshCustomization, game thread) — the old per-change
     // full ~500k rescan here was the 2-4s bottleneck, so it's removed (the initial load scan populated the cache).
     if(InterlockedCompareExchange(&g_gdcbRepatch,0,1)==1) g_centerDirty=1;
@@ -952,8 +1184,9 @@ static DWORD WINAPI RefreshThread(LPVOID){ int tick=0; for(;;){ Sleep(150); Refr
     // 2026-07-18: debounce 250->120, cooldown 1200->800 to trim the render tail toward the ~0.5-0.9s
     // mechanism floor (install+refreshwait). The cooldown is the CRASH guard (churn) — 800 keeps re-arms
     // <=~1.25/s even under sustained distinct picks, well under the churn rate that crashed at no-cooldown.
-    static DWORD s_lastRearm=0;
-    if(g_centerDirty && (GetTickCount()-(DWORD)g_dirtyTick)>=120 && (GetTickCount()-s_lastRearm)>=800){ s_lastRearm=GetTickCount(); ReArmRefresh(); }
+    // g_lastPiOp (SHARED with CommitWidgetSelection's native TryPick) is the min-gap clock between ANY two
+    // ProcessInternal installs — so a just-fired skin commit defers this re-arm past the ~800ms churn window.
+    if(g_centerDirty && (GetTickCount()-(DWORD)g_dirtyTick)>=120 && (GetTickCount()-g_lastPiOp)>=800){ g_lastPiOp=GetTickCount(); ReArmRefresh(); }
     (void)tick;
 } return 0; }
 
@@ -1032,6 +1265,19 @@ static DWORD WINAPI Worker(LPVOID){
                 // this writer — but until it can be isolated on a STABLE launch, default OFF so the shim is the
                 // proven render-only build (Refresh + CDO + Func-swap = saved skin renders on all surfaces,
                 // multi-hunter, persist, hunters NOT locked). Set MEMBER_WRITER_ENABLED=1 to re-test lever #B.
+                // 2026-07-19: RE-ENABLED. StyleScreen bytecode RE showed the skin-equip commit (TryPick) is
+                // gated on the CURRENT cosmetic being a valid, distinct value (GetBaseBundle/IsCosmeticsSelectionValid
+                // compares current vs clicked). Hunters whose member.CosmeticsAssetID is EMPTY (saved from a prior
+                // session, never re-picked this run: RocketJumper/Ronin/ResHealer) fail that gate -> click previews
+                // but never commits. This cache-restore writer fills the empty member cosmetic with the saved
+                // (hero-consistent) skin so "current" is valid -> the gate passes -> the switch commits. Hero-match
+                // guard + cross-hero clear keep it from the old fixed-value regressions; catalog CanUse=1 verified
+                // this session so the part-10 hunter-lock (a catalog-derivation issue) shouldn't recur. Watch for it.
+                // 2026-07-19 RESULT: REVERTED to 0. Live test — enabling this did NOT fix skin-switching for the
+                // 3 stuck hunters (RocketJumper/Ronin/ResHealer), which RULES OUT "empty member cosmetic" as the
+                // skin-equip blocker. It also regressed hunter render (Eluna/ResHealer showed the WRONG hunter on
+                // the main menu — the cross-hero cache race resurfacing). Net negative. The skin-equip gate is
+                // elsewhere; next step is a LIVE read of the StyleScreen's CurrentSelectedCosmetic at click time.
                 #define MEMBER_WRITER_ENABLED 0
                 Markerf("[9] member cosmetic write: g_member=0x%llX cosmeticOff=0x%llX %s\r\n",(unsigned long long)g_member,(unsigned long long)g_memberCosmeticOff,(MEMBER_WRITER_ENABLED && g_member&&g_memberCosmeticOff)?"-> writer ON":"-> DISABLED (default off; see part 9)");
                 if(MEMBER_WRITER_ENABLED && g_member && g_memberCosmeticOff){ SeedMemberCache(); HANDLE mw=CreateThread(nullptr,0,MemberWriterThread,nullptr,0,nullptr); if(mw) CloseHandle(mw); } }
