@@ -239,6 +239,7 @@ func (s *Service) handleSetSlotCosmetic(w http.ResponseWriter, r *http.Request) 
 			}
 			st.LoadoutVersion++
 		})
+		s.markLoadoutDirty(id) // force a prompt party re-apply (avatar/slot switch latency fix)
 	}
 	writeJSON(w, s.loadoutResponse(id))
 }
@@ -257,6 +258,7 @@ func (s *Service) handleSetEmotes(w http.ResponseWriter, r *http.Request) {
 			st.EmoteIds = req.Emotes
 			st.LoadoutVersion++
 		})
+		s.markLoadoutDirty(id)
 	}
 	writeJSON(w, s.loadoutResponse(id))
 }
@@ -275,6 +277,7 @@ func (s *Service) handleSetTitles(w http.ResponseWriter, r *http.Request) {
 			st.TitleIds = req.Titles
 			st.LoadoutVersion++
 		})
+		s.markLoadoutDirty(id)
 	}
 	writeJSON(w, s.loadoutResponse(id))
 }
@@ -312,6 +315,7 @@ func (s *Service) handleSetCosmeticsBundle(w http.ResponseWriter, r *http.Reques
 			}
 			st.LoadoutVersion++
 		})
+		s.markLoadoutDirty(id)
 	}
 	writeJSON(w, s.loadoutResponse(id))
 }
@@ -342,6 +346,7 @@ func (s *Service) handleSetLuxeChroma(w http.ResponseWriter, r *http.Request) {
 			}
 			st.LoadoutVersion++
 		})
+		s.markLoadoutDirty(id)
 	}
 	writeJSON(w, s.loadoutResponse(id))
 }

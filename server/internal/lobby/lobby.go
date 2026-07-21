@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"supervive-revival/server/internal/ws"
@@ -64,6 +65,29 @@ const phantomMmDoneDelay = 2 * time.Second
 // reply window.
 const messengerHeartbeatInterval = 30 * time.Second
 
+// ---- messenger-drop lever (S85 avatar-switch latency fix, 2026-07-21) ----
+//
+// The client APPLIES the party model (its avatar-card data source: the party
+// member's PersonalizationLoadout) ONLY during the state-resync it runs on each
+// LokiPlatformMessenger (/notifications) RECONNECT — not on the ~3.2s HTTP party
+// polls, and not on any version bump. RE'd live (S85 ws-push workflow): a switch
+// flipped 417ms after a reconnect resync fetch while ~9 intervening polls carried
+// the identical fresh loadout and did NOT apply it. So the ~30s latency is just the
+// time to the next reconnect in the ~63s heartbeat-watchdog cycle.
+//
+// Lever: when the loadout changes, DROP the player's messenger socket. The client
+// reconnects in ~0.5-1.5s and its resync re-fetches GET /party/parties (which already
+// carries personalizationLoadout via buildSoloParty) and re-applies it — collapsing
+// ~30s to ~1-3s. Backend-only, no shim.
+const enableMessengerDrop = true
+
+// messengerDropDebounce coalesces rapid loadout writes (clicking through avatars) into
+// at most one drop per window, so we never cause a reconnect storm. The reconnect's
+// resync fetches CURRENT server state, so a coalesced burst still lands on the latest
+// avatar. Must exceed the reconnect+resync time (~1.5s) so a drop can't interrupt the
+// reconnect it just caused.
+const messengerDropDebounce = 2 * time.Second
+
 // EventLogger records frame activity to the capture log.
 type EventLogger interface {
 	Event(format string, args ...any)
@@ -71,9 +95,116 @@ type EventLogger interface {
 
 type Service struct {
 	log EventLogger
+
+	// mu guards the messenger registry + debounce clock.
+	mu sync.Mutex
+	// messengers maps a player id to that player's live /notifications messenger
+	// conn, so MarkDirty can drop it on a loadout change. One entry per connected
+	// player (single-account revival ⇒ realistically one).
+	messengers map[string]*ws.Conn
+	// lastDrop debounces MarkDirty per player.
+	lastDrop map[string]time.Time
+	// dropPending marks that a trailing drop is already scheduled for this player.
+	dropPending map[string]bool
 }
 
-func New(log EventLogger) *Service { return &Service{log: log} }
+func New(log EventLogger) *Service {
+	return &Service{
+		log:         log,
+		messengers:  map[string]*ws.Conn{},
+		lastDrop:    map[string]time.Time{},
+		dropPending: map[string]bool{},
+	}
+}
+
+// registerMessenger records a player's live messenger conn (called on upgrade).
+func (s *Service) registerMessenger(id string, c *ws.Conn) {
+	if id == "" {
+		return
+	}
+	s.mu.Lock()
+	s.messengers[id] = c
+	s.mu.Unlock()
+}
+
+// unregisterMessenger drops the registry entry ONLY if it still points at this
+// conn (a newer reconnect may have replaced it). Called from Handle's defer.
+func (s *Service) unregisterMessenger(id string, c *ws.Conn) {
+	if id == "" {
+		return
+	}
+	s.mu.Lock()
+	if s.messengers[id] == c {
+		delete(s.messengers, id)
+	}
+	s.mu.Unlock()
+}
+
+// MarkDirty forces player id's client to re-apply its party promptly by dropping its
+// messenger socket (see enableMessengerDrop). Safe to call from any goroutine (the
+// interactive package calls it after a loadout write) and nil-safe on a nil *Service so
+// callers need no lobby dependency in tests.
+//
+// Debounce is LEADING + TRAILING: the first change in an idle window drops immediately
+// (fast single switch), and further changes within the window schedule ONE trailing drop
+// at the window's end. The trailing drop matters because the reconnect's resync fetches
+// CURRENT server state — so coalescing a rapid click-through of avatars into (at most) a
+// leading drop + a trailing drop still lands the FINAL selection, without a reconnect
+// storm. The window must exceed the reconnect time so a drop never interrupts the
+// reconnect it just caused.
+func (s *Service) MarkDirty(id string) {
+	if s == nil || !enableMessengerDrop || id == "" {
+		return
+	}
+	s.mu.Lock()
+	elapsed := time.Since(s.lastDrop[id])
+	if elapsed >= messengerDropDebounce {
+		// Leading edge: drop now.
+		s.lastDrop[id] = time.Now()
+		c := s.messengers[id]
+		s.mu.Unlock()
+		s.dropMessenger(id, c)
+		return
+	}
+	// Inside the window: ensure exactly one trailing drop is scheduled for its end.
+	if !s.dropPending[id] {
+		s.dropPending[id] = true
+		delay := messengerDropDebounce - elapsed
+		time.AfterFunc(delay, func() {
+			s.mu.Lock()
+			s.dropPending[id] = false
+			s.lastDrop[id] = time.Now()
+			c := s.messengers[id]
+			s.mu.Unlock()
+			s.dropMessenger(id, c)
+		})
+	}
+	s.mu.Unlock()
+}
+
+// dropMessenger ungracefully closes c (if non-nil), forcing a reconnect+resync.
+func (s *Service) dropMessenger(id string, c *ws.Conn) {
+	if c == nil {
+		return
+	}
+	if s.log != nil {
+		s.log.Event("messenger DROP for %s (loadout changed -> force reconnect+resync)", id)
+	}
+	_ = c.Drop() // ungraceful: unblocks the read loop, which returns + cleans up
+}
+
+// messengerPlayerID extracts the player id from a /notifications/players/{id} path.
+func messengerPlayerID(path string) string {
+	const p = "/notifications/players/"
+	if !strings.HasPrefix(path, p) {
+		return ""
+	}
+	rest := strings.TrimPrefix(path, p)
+	if i := strings.IndexByte(rest, '/'); i >= 0 {
+		rest = rest[:i]
+	}
+	return rest
+}
 
 // Handle upgrades a WebSocket request and serves the read loop. The caller
 // should route here when ws.IsUpgrade(r) is true.
@@ -105,6 +236,13 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	isMessenger := strings.HasPrefix(r.URL.Path, "/notifications/players/")
+	if isMessenger {
+		// Register this messenger conn so MarkDirty can drop it on a loadout change
+		// (see the messenger-drop lever above). Unregister on exit.
+		id := messengerPlayerID(r.URL.Path)
+		s.registerMessenger(id, conn)
+		defer s.unregisterMessenger(id, conn)
+	}
 
 	// Dedicated-server-stub probes #3 and #5: unsolicited server-pushed
 	// notifications. Runs on a separate goroutine — writes are serialized

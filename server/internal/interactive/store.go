@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 // playerState is everything we persist per player id. Fields are stored as raw
@@ -120,12 +121,62 @@ type store struct {
 	mu      sync.Mutex
 	path    string
 	players map[string]*playerState
+
+	// partyVer backs the party doc's "version" field. See partyVersion() — it is
+	// LOAD-BEARING: the client discards the whole party document unless this
+	// strictly advances.
+	partyVer int64
 }
 
 func newStore(path string) *store {
 	s := &store{path: path, players: map[string]*playerState{}}
+	// Seed from wall-clock ms, NOT 0. UPartyModel::SetParty's gate compares against
+	// the version the CLIENT already cached, and the client outlives an ags restart
+	// (we restart the backend under a running game constantly). A process-local
+	// counter restarting at 0 would sit BELOW the client's cached value and wedge the
+	// party permanently. UnixMilli advances ~1000/sec while this counter advances at
+	// most a few times/sec, so a restart always lands far above whatever we last
+	// served. Same reasoning as the battlepass Version seed (memory:
+	// supervive-passes-battlepass-status).
+	s.partyVer = time.Now().UnixMilli()
 	s.load()
 	return s
+}
+
+// partyVersion returns the current party-document version.
+//
+// ★ LOAD-BEARING (2026-07-19, S85). UPartyModel::SetParty (base+0x587BE90) gates the
+// ENTIRE party document on a strict monotonic version:
+//
+//	+0x587BEFF  mov rax,[r14+0x10]        ; incoming FParty.Version
+//	+0x587BF03  cmp [r12+0x568],rax       ; cached PartyModel.Party.Version
+//	+0x587BF0B  jge <epilogue>            ; cached >= incoming -> BAIL (does nothing)
+//
+// We previously pinned "version": 1, so the document applied exactly ONCE (0->1 at
+// launch) and every later poll was discarded wholesale — nothing downstream ever
+// refreshed: not the avatar/personalization loadout, not displayName, nothing. That
+// is why equipping a different avatar only took effect after a relaunch.
+//
+// Incrementing once on every store write (see update/updatePrimary) means any real
+// change re-opens the gate: the client applies the new party doc the next time it runs
+// its party-apply cycle. An idle party keeps a CONSTANT version and is correctly a
+// no-op, so we never force a pointless re-apply.
+//
+// It does NOT control switch LATENCY. The client runs SetParty on a fixed internal
+// cadence (~30-40s at an idle menu), independent of how fast the version rises —
+// live-measured: a one-shot bump, an 8s climbing window, and an every-poll climb all
+// propagated in ~30-44s. So a higher version only needs to be PRESENT when that cycle
+// fires; making it climb faster does nothing. Beating the ~30s floor needs an external
+// trigger (a lobby-WS party/personalization notif that forces an immediate re-apply),
+// not a version change — tracked separately.
+//
+// NOTE the member's PersonalizationLoadout has its OWN second gate at +0x587C676
+// (incoming Loadout.Version > existing, else skip). loadoutDoc's "version" already
+// satisfies it — but it is only ever REACHED when this outer gate passes.
+func (s *store) partyVersion() int64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.partyVer
 }
 
 func (s *store) load() {
@@ -253,6 +304,7 @@ func (s *store) updatePrimary(fn func(*playerState)) string {
 		return ""
 	}
 	fn(best)
+	s.partyVer++ // re-open the SetParty version gate on change (see partyVersion)
 	s.saveLocked()
 	return id
 }
@@ -315,6 +367,7 @@ func (s *store) update(id string, fn func(*playerState)) *playerState {
 		s.players[id] = st
 	}
 	fn(st)
+	s.partyVer++ // re-open the SetParty version gate on change (see partyVersion)
 	s.saveLocked()
 	return st
 }
