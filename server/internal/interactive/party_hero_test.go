@@ -59,7 +59,7 @@ func TestSelectedHeroSeedAndPersist(t *testing.T) {
 // the key(s) the client reads (member.HeroAssetID), as a PrimaryAssetId string, and that the
 // player appears as the sole leader (so PartyModel.GetSelf resolves "me").
 func TestBuildSoloPartyCarriesHero(t *testing.T) {
-	party := buildSoloParty("p1", "Player One", "Hero:beebo", "HeroCosmeticsBundle:BeeboCyber", "default", nil)
+	party := buildSoloParty("p1", "Player One", "Hero:beebo", "HeroCosmeticsBundle:BeeboCyber", "default", nil, 42)
 	members, ok := party["members"].([]any)
 	if !ok || len(members) != 1 {
 		t.Fatalf("expected exactly one member, got %v", party["members"])
@@ -114,7 +114,7 @@ func TestBuildSoloPartyCarriesPersonalizationLoadout(t *testing.T) {
 		},
 		"titleIds": json.RawMessage(`["PlayerTitle:APlus"]`),
 	}
-	party := buildSoloParty("p1", "Player One", "Hero:beebo", "", "default", loadout)
+	party := buildSoloParty("p1", "Player One", "Hero:beebo", "", "default", loadout, 42)
 	m := party["members"].([]any)[0].(map[string]any)
 	if _, ok := m["personalizationLoadout"]; !ok {
 		t.Fatal("member is missing personalizationLoadout (the field the avatar widget reads)")
@@ -156,7 +156,61 @@ func TestBuildSoloPartyCarriesPersonalizationLoadout(t *testing.T) {
 	}
 
 	// nil loadout omits the key entirely (never emit a degenerate/empty struct).
-	if _, present := buildSoloParty("p1", "n", "Hero:beebo", "", "default", nil)["members"].([]any)[0].(map[string]any)["personalizationLoadout"]; present {
+	if _, present := buildSoloParty("p1", "n", "Hero:beebo", "", "default", nil, 42)["members"].([]any)[0].(map[string]any)["personalizationLoadout"]; present {
 		t.Fatal("nil loadout must omit personalizationLoadout rather than emit an empty struct")
+	}
+}
+
+// TestPartyVersionAdvancesOnWrite guards the S85 avatar-switch fix.
+//
+// UPartyModel::SetParty (base+0x587BE90) gates the ENTIRE party document on a strict
+// monotonic version:
+//
+//	+0x587BF03  cmp [r12+0x568], rax   ; cached FParty.Version vs incoming
+//	+0x587BF0B  jge <epilogue>         ; cached >= incoming -> BAIL, apply nothing
+//
+// We pinned "version": 1 until 2026-07-19, so the document applied exactly once at
+// launch and every later poll was silently discarded — equipping a different avatar
+// (or anything else) only took effect after a relaunch. Two properties must hold:
+//
+//  1. a write ADVANCES the version (else the gate stays shut and nothing refreshes);
+//  2. the seed is wall-clock-derived, NOT 0 — the client outlives an ags restart, so a
+//     counter restarting at 0 would sit below the client's cached value and wedge the
+//     party permanently;
+//  3. an idle read does NOT advance it (constant version = correct no-op; the client
+//     applies on its own ~30s cadence, so we must not force a re-apply every poll).
+//
+// Note the version does NOT govern switch LATENCY (live-measured ~30-40s regardless of
+// how fast it climbs — the client's SetParty cadence is fixed); it only has to be
+// higher than the client's cached value when that cadence next fires.
+func TestPartyVersionAdvancesOnWrite(t *testing.T) {
+	s := &Service{store: newStore("")} // empty path = no persistence side effects
+
+	// (2) Seed must be far above zero, and plausibly wall-clock ms.
+	seed := s.store.partyVersion()
+	if seed < 1_600_000_000_000 {
+		t.Fatalf("partyVersion seed = %d, want a UnixMilli-scale value; a low/zero seed "+
+			"sits below the client's cached version across an ags restart and wedges the party", seed)
+	}
+
+	// (3) An idle read must NOT advance it.
+	if idle := s.store.partyVersion(); idle != seed {
+		t.Fatalf("idle partyVersion advanced without a write: %d -> %d", seed, idle)
+	}
+
+	// (1) Every mutation must advance it.
+	s.store.update("p1", func(st *playerState) { st.SlotCosmetics = map[string]string{"Avatar": "SlotCosmetics:AVATAR_X"} })
+	afterWrite := s.store.partyVersion()
+	if afterWrite <= seed {
+		t.Fatalf("partyVersion did not advance on write: %d -> %d (SetParty's jge gate would discard the doc)", seed, afterWrite)
+	}
+	if idle := s.store.partyVersion(); idle != afterWrite {
+		t.Fatalf("partyVersion advanced without a further write: %d -> %d", afterWrite, idle)
+	}
+
+	// And it must reach the wire.
+	party := buildSoloParty("p1", "P", "Hero:beebo", "", "default", nil, afterWrite)
+	if got, ok := party["version"].(int64); !ok || got != afterWrite {
+		t.Fatalf("party doc version = %v (%T), want int64 %d", party["version"], party["version"], afterWrite)
 	}
 }

@@ -15,12 +15,29 @@ import (
 // Service holds the interactive (write-back) state for menu actions.
 type Service struct {
 	store *store
+	// partyDirty, if set, is called with a player id after a loadout-affecting write
+	// so the lobby service can drop that player's messenger socket and force a prompt
+	// party re-apply (the S85 avatar-switch latency fix — see lobby.MarkDirty). nil in
+	// tests / when no lobby service is wired.
+	partyDirty func(id string)
 }
 
 // New constructs the service, loading any persisted player state from
 // state/interactive.json (relative to the server's working dir).
 func New() *Service {
 	return &Service{store: newStore("state/interactive.json")}
+}
+
+// SetPartyDirtyNotifier wires the callback invoked after a loadout write (typically
+// lobby.Service.MarkDirty). Called once at startup from cmd/ags.
+func (s *Service) SetPartyDirtyNotifier(fn func(id string)) { s.partyDirty = fn }
+
+// markLoadoutDirty signals that id's loadout changed, so the client can be nudged to
+// re-apply its party promptly. No-op if no notifier is wired.
+func (s *Service) markLoadoutDirty(id string) {
+	if s.partyDirty != nil {
+		s.partyDirty(id)
+	}
 }
 
 // Register wires the interactive routes. These all previously fell through to the
@@ -742,7 +759,7 @@ func (s *Service) handleGetParty(w http.ResponseWriter, r *http.Request) {
 	if dq := r.URL.Query().Get("defaultQueue"); dq != "" && s.store.get(id).SelectedQueueID == "" {
 		s.store.update(id, func(st *playerState) { st.SelectedQueueID = dq })
 	}
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
 }
 
 // selectedQueue returns the player's persisted selected matchmaking activity/queue id,
@@ -795,7 +812,7 @@ func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
 }
 
 // handleStartSoloMode answers POST /party/parties/{partyId}/startSoloMode?mode=&hero=&soloModeStartPosition=.
@@ -827,7 +844,7 @@ func (s *Service) handleStartSoloMode(w http.ResponseWriter, r *http.Request) {
 	log.Printf("interactive: startSoloMode player=%s mode=%q hero=%q pos=%q", id, mode, hero, pos)
 	s.store.update(id, func(st *playerState) { st.SoloMode = mode })
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
 }
 
 // queueIDs is the set of matchmaking queue ids we advertise to the client. The full known
@@ -991,7 +1008,7 @@ func (s *Service) handleSetPartyMember(w http.ResponseWriter, r *http.Request) {
 	// Echo the updated party so the client's optimistic pick is confirmed by the server
 	// state (and matches what the next GET /party/parties poll will return).
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id)))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
 }
 
 // heroAssetIDFromBody extracts the selected hero as a "Hero:<name>" PrimaryAssetId string
@@ -1101,7 +1118,7 @@ func primaryAssetIDString(raw json.RawMessage) string {
 // PrimaryAssetId accepts the "Type:Name" string form (proven by the owned-inventory AssetIds).
 // loadout is the member's PersonalizationLoadout (the loadoutDoc from loadout.go). See the
 // AVATAR RENDER block below for why it is served here; pass nil to omit it.
-func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue string, loadout map[string]any) map[string]any {
+func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue string, loadout map[string]any, partyVersion int64) map[string]any {
 	now := time.Now().UTC().Format(time.RFC3339)
 	member := map[string]any{
 		"id":          id,
@@ -1164,6 +1181,7 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 	if loadout != nil {
 		member["personalizationLoadout"] = loadout
 	}
+
 	return map[string]any{
 		"partyId":  "party-" + id,
 		"id":       "party-" + id,
@@ -1185,7 +1203,13 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 		"isOpen":          false,
 		"fillTeam":        false,
 		"createdAt":       now,
-		"version":         1,
+		// ★ LOAD-BEARING — must strictly advance or the client discards the WHOLE
+		// document. UPartyModel::SetParty (base+0x587BE90) bails on
+		// `jge` against its cached FParty.Version. This was pinned to 1 until
+		// 2026-07-19, which meant the party applied exactly once at launch and no
+		// later poll ever landed — avatars, displayName and everything else only
+		// refreshed on relaunch. See store.partyVersion() for the full disassembly.
+		"version": partyVersion,
 	}
 }
 

@@ -8,10 +8,11 @@ Lots of dead ends. Honor the prior-work docs.
 
 The whole front-end menu is now ONLINE: login, the ALL HUNTERS roster (+ click-to-
 refresh), the STORE, COSMETICS, the full MISSIONS page (with working progress
-bars), and the PASSES / Hunter's Journey account pass (full 85-tier ladder) all
-render live. That was achieved with the backend feed **plus** a set of
-client-side native shims built on a reusable game-thread native-call primitive (see
-below). Current frontier = the match-setup layer (launching into a playable map).
+bars), the PASSES / Hunter's Journey account pass (full 85-tier ladder), and the
+AVATAR / CALLSIGN customization (render + live switching) all render live. That was
+achieved with the backend feed **plus** a set of client-side native shims built on a
+reusable game-thread native-call primitive (see below). Current frontier = the
+match-setup layer (launching into a playable map).
 
 ## Before doing anything else
 
@@ -51,6 +52,25 @@ below). Current frontier = the match-setup layer (launching into a playable map)
   ingester `0x585A570` does exist). Still open: real PROGRESS (tiers draw but
   nothing is claimed — gated on `byte[PM+0x388]`) and the SEASONAL pass (same
   byte, plus no packed `LokiDataAsset_Season`).
+
+- **AVATAR / CALLSIGN (player-card customization)** — SOLVED end-to-end, BACKEND-ONLY,
+  no shim (S85, 2026-07-21). Three causes, none the render/enum: (1) the avatar CARD
+  reads `PartyMember.PersonalizationLoadout` which we never served — fix = `buildSoloParty`
+  serves `personalizationLoadout` on the party member; (2) switches wrote to the WRONG
+  ACCOUNT — the client's `/oauth/token` grant fell to an ad-hoc `"player"` key
+  (`b70b628c…`) while the Steam login + party used `platform:steam` (`9b9d…`); fix =
+  `token.LocalPlayerKey`/`LocalPlayerID` canonicalizes every unidentified-user auth path;
+  (3) `UPartyModel::SetParty` (`base+0x587BE90`) gates the whole party doc on a strict
+  monotonic `FParty.Version` (`cmp [PartyModel+0x568]; jge bail`) — we pinned `1`; fix =
+  `store.partyVersion()` bumps on each loadout write. LATENCY (~30-57s → ~1.5s): the client
+  applies the party ONLY on its `/notifications` messenger-RECONNECT resync, so we DROP that
+  socket on a loadout write (`ws.Conn.Drop()` + `lobby.MarkDirty`, wired via
+  `interactive.SetPartyDirtyNotifier`). The ~1s floor is the client's own reconnect backoff
+  (not backend-controllable); a native shim (write member loadout + broadcast
+  `OnPersonalizationLoadoutChanged` `base+0x587C699`) would reach ~0.2s but adds a PI-hooker —
+  parked. ⚠ `PartyModel` exposes NO reflected `Version` UProperty (absence of a UProperty ≠
+  absence of the field). ⚠ the `avId:""` presence trap: sample presence AFTER an equip.
+  Read `docs/session-85-avatar-render.md`; memory `supervive-avatar-render-status`.
 
 Before RE-touching any of these, READ the relevant doc above first — the value is
 the trial-and-error history, and the corrected root causes are easy to regress on.

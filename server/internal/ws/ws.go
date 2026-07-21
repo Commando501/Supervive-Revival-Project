@@ -186,6 +186,14 @@ func (c *Conn) Close() error {
 	return c.c.Close()
 }
 
+// Drop closes the underlying connection WITHOUT sending a WS close frame — an
+// abrupt disconnect the client treats like a dropped socket, exactly like its own
+// heartbeat-watchdog teardown. The lobby service uses this to force a fast
+// messenger reconnect (which drives the client's party state-resync + apply, the
+// S85 avatar-switch latency fix). Safe to call from another goroutine while
+// ReadFrame is blocked: net.Conn.Close unblocks the pending read.
+func (c *Conn) Drop() error { return c.c.Close() }
+
 // SetReadDeadline forwards to the underlying net.Conn. Used by the lobby
 // service to wake a blocked ReadFrame on a timer so it can push a proactive
 // server-initiated heartbeat (the Theorycraft messenger socket's watchdog

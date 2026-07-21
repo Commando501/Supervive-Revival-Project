@@ -83,6 +83,10 @@ func main() {
 	// (rather than a fixed /lobby path) also captures the messenger's ws path,
 	// whatever it turns out to be.
 	lobbySvc := lobby.New(logger)
+	// On a loadout change, drop the player's messenger socket so the client reconnects
+	// and re-applies its party promptly (the S85 avatar-switch latency fix — the client
+	// applies the party only on a messenger-reconnect resync, not on HTTP polls).
+	interSvc.SetPartyDirtyNotifier(lobbySvc.MarkDirty)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if ws.IsUpgrade(r) {
 			lobbySvc.Handle(w, r)

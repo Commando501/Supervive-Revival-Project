@@ -164,7 +164,7 @@ func (s *Service) handleUpdateMe(w http.ResponseWriter, r *http.Request) {
 	claims := bearerClaims(r)
 	uid, _ := claims["sub"].(string)
 	if uid == "" {
-		uid = token.UserIDFor("player")
+		uid = token.LocalPlayerID()
 	}
 
 	var body map[string]any
@@ -239,12 +239,17 @@ func (s *Service) handleToken(w http.ResponseWriter, r *http.Request) {
 		})
 	default:
 		// password / authorization_code / refresh_token -> a player session.
+		//
+		// Key ONLY on a real username. We must NOT key on `code`: it is an opaque,
+		// per-login authorization code, so keying on it mints a fresh user id on
+		// every login. And the fallback is the CANONICAL local-player key, not an
+		// ad-hoc "player" — otherwise this grant (which the client uses without a
+		// username) diverges from the Steam platform login and the same player ends
+		// up with two ids. That divergence was the S85 avatar-switch bug; see
+		// token.LocalPlayerKey.
 		key := r.FormValue("username")
 		if key == "" {
-			key = r.FormValue("code")
-		}
-		if key == "" {
-			key = "player"
+			key = token.LocalPlayerKey
 		}
 		uid := token.UserIDFor(key)
 		s.writeToken(w, tokenParams{
@@ -298,7 +303,7 @@ func (s *Service) handleUsersMe(w http.ResponseWriter, r *http.Request) {
 	claims := bearerClaims(r)
 	uid, _ := claims["sub"].(string)
 	if uid == "" {
-		uid = token.UserIDFor("player")
+		uid = token.LocalPlayerID()
 	}
 	name, _ := claims["display_name"].(string)
 	if name == "" || name == "platform" {
