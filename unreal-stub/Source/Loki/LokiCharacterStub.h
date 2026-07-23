@@ -63,9 +63,31 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	// --- LokiCharacter own CPF_Net props (S73 live), in field order. COND_SimulatedOnly (see header). ---
+	// --- LokiCharacter own CPF_Net props, in client field order. COND_SimulatedOnly (see header). ---
+	// ★ S85 CORRECTION: the client's LokiCharacter has 13 own CPF_Net props, NOT 2. S73/S84's "2" was a
+	// rep_expand_class.py i<40 child-walk CAP BUG (the other 11 sit at ChildProperties positions 49..158;
+	// tools/re/netcache_chain.py full-walk found all 13; docs/session-85-netcache-chain-diff.md). The
+	// stub-at-2 left LokiCharacter's field-cache 11 indices short, which would desync the NEXT bunch after
+	// the Character-tier field-32 fix. All 13 are COND_SimulatedOnly => never sent to the autonomous owner,
+	// so they hold ClassReps slots purely to align the index space; their wire format cannot desync the owner.
+	// The 4 client StructProperty fields (RepMovement{FollowActor,Glide,Grind} + ServerRotation) are declared
+	// here as scalar placeholders: each is still ONE ClassReps entry (index alignment is by property count,
+	// not leaf-cmd count) and, being COND_SimulatedOnly, is never serialized — so exact struct wire format is
+	// a later hydration concern, not needed to clear the index desync. Real struct types (for future
+	// simulated-proxy work): LokiRepCharacterMovement_FollowActor / _Glide / _Grind (member-wise) + Rotator.
 	UPROPERTY(Replicated) float OutOfBoundsBufferTimeRemaining = 0.f;
 	UPROPERTY(Replicated) ELokiCustomAnimationStateMirror CustomAnimationState = ELokiCustomAnimationStateMirror::LCAS_None;
+	UPROPERTY(Replicated) bool    bIdle = false;
+	UPROPERTY(Replicated) bool    bCharacterMovementEnabled = false;
+	UPROPERTY(Replicated) int32   MaxLevel = 0;
+	UPROPERTY(Replicated) int32   Experience = 0;
+	UPROPERTY(Replicated) int32   RepMovementFollowActor = 0;      // placeholder for LokiRepCharacterMovement_FollowActor
+	UPROPERTY(Replicated) int32   RepMovementGlide = 0;            // placeholder for LokiRepCharacterMovement_Glide
+	UPROPERTY(Replicated) int32   RepMovementGrind = 0;            // placeholder for LokiRepCharacterMovement_Grind
+	UPROPERTY(Replicated) int32   RepMovementServerRotation = 0;   // placeholder for Rotator (NetSerialize)
+	UPROPERTY(Replicated) uint8   LivingState = 0;
+	UPROPERTY(Replicated) int32   DebugModes = 0;                  // client UInt32Property
+	UPROPERTY(Replicated) bool    bWallJumped = false;
 
 	// --- 14 own net functions (S73 live netfields_dump; engine name-sorts NetFields). Empty stubs. ---
 	UFUNCTION(Client, Reliable)       void ClientDebugMessage();

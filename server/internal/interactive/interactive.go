@@ -541,7 +541,7 @@ const tutorialMatchState = "InProgress"
 // robust than hand-writing the 1496-byte embedded MatchInfo struct. Paired with an EMPTY ConnectionDetails.address
 // (below) so the client parks LOCALLY in the pre-game lobby (no DS connect/timeout), keeping the model valid;
 // then the force-open shim opens LVL_Tutorial with the model already populated. (Revert to false for normal runs.)
-const forceTutorialMatch = false // S84 (2026-07-19): back to FALSE after the DS minion-possession test, so a normal launch sits at the FULLY FUNCTIONAL MAIN MENU instead of auto-arming a phantom tutorial match and travelling to the stub. Flip to true (and start the stub on 7777) only for DS/tutorial-route work.
+const forceTutorialMatch = false // S86 (2026-07-23): back to FALSE (clean committed default) — a normal launch sits at the FULLY FUNCTIONAL MAIN MENU. Flip to true (and start the stub on 7777) for DS/tutorial-route work (S85/S86 char field-32 + PlayerState fixes; toggle carrier parked, see docs/session-85 §14).
 
 // tutorialMatchID derives the (stable, greppable) match id for a player's phantom
 // tutorial match. The match-details route recovers the player id back off it.

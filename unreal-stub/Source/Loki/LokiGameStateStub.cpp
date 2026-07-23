@@ -1,4 +1,5 @@
 #include "LokiGameStateStub.h"
+#include "LokiServerAuthConfigStub.h"
 #include "Net/UnrealNetwork.h"
 #include "UObject/UnrealType.h"
 
@@ -32,9 +33,42 @@ ALokiGameState::ALokiGameState(const FObjectInitializer& ObjectInitializer)
 	bReplicates = true;
 	bAlwaysRelevant = true;
 
+	// S85: create the "ServerAuthConfig" default subobject (a replicated ULokiServerAuthConfig) — MATCH the
+	// client's LokiGameState.ServerAuthConfig subobject NAME so the actor-subobject replication associates
+	// the stub's component with the client's local one. The array is left EMPTY here (so it differs from the
+	// CDO and thus replicates when we seed it server-side in BeginPlay — see SeedAllToggles).
+	// GUARDED (kEnableServerAuthConfig, default false): the subobject content-block framing currently desyncs
+	// the client; keep it OFF so the S85c spectator baseline connection holds. See the header.
+	if (kEnableServerAuthConfig)
+	{
+		ServerAuthConfig = CreateDefaultSubobject<ULokiServerAuthConfig>(TEXT("ServerAuthConfig"));
+	}
+
 	UE_LOG(LogLokiGameStateStub, Display,
 	       TEXT("ALokiGameState constructed (/Script/Loki.LokiGameState mirror; 43 replicated props "
-	            "over stock GameStateBase's 4 — session-69 schema)."));
+	            "over stock GameStateBase's 4 — session-69 schema; +ServerAuthConfig subobject S85)."));
+}
+
+void ALokiGameState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// S85: populate the game-feature toggles SERVER-SIDE so the array differs from the (empty) CDO and
+	// replicates to the client -> client OnRep_GameFeatureToggles -> toggles ready. Authority only.
+	if (HasAuthority() && ServerAuthConfig)
+	{
+		ServerAuthConfig->SeedAllToggles(/*bValue=*/true, LOKI_GAME_FEATURE_TOGGLE_COUNT);
+		// S86 DIAGNOSTIC: IsNameStableForNetworking() decides the content-block branch (DataChannel.cpp:4460).
+		// SetNetAddressable() in the ctor should make this TRUE; if the stub logs FALSE here, bNetAddressable
+		// was reset during spawn/instancing (the S86 contradiction) — the smoking gun for the next attempt.
+		UE_LOG(LogLokiGameStateStub, Display,
+		       TEXT("ALokiGameState::BeginPlay: seeded %d game-feature toggles on ServerAuthConfig (%s) — "
+		            "bReplicates=%d IsActive=%d IsNameStableForNetworking=%d IsSupportedForNetworking=%d."),
+		       LOKI_GAME_FEATURE_TOGGLE_COUNT, *ServerAuthConfig->GetName(),
+		       (int32)ServerAuthConfig->GetIsReplicated(), (int32)ServerAuthConfig->IsActive(),
+		       (int32)ServerAuthConfig->IsNameStableForNetworking(),
+		       (int32)ServerAuthConfig->IsSupportedForNetworking());
+	}
 }
 
 void ALokiGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
