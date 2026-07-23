@@ -20,6 +20,7 @@
 #include "LokiPlayerControllerStub.h"
 #include "LokiPlayerStateStub.h"
 #include "LokiCharacterStub.h"
+#include "LokiServerAuthConfigStub.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/NetworkVersion.h"
 #include "Engine/World.h"
@@ -376,6 +377,11 @@ private:
             StripNetFunction(ACharacter::StaticClass(), Fn);
         }
 
+        // S85: add the two SUPERVIVE-only Character reps (ReplicatedCharacterMovement + ReplicatedGravityScale)
+        // so the stub's Character tier is 12 reps like the client — fixes "Invalid replicated field 32".
+        // Runs before InjectServerState (whose rebuild rebuilds every actor class's ClassReps).
+        InjectCharacterExtraReps();
+
         // Session 41 Path B-lite step 2: inject SUPERVIVE's AActor.ServerState
         // replicated property so our RepLayout matches the client's. Must run
         // BEFORE DumpClassNetCacheLayout so the dump reflects the injected
@@ -417,10 +423,20 @@ private:
         // APlayerState). Verify the client's LokiPlayerState indices line up before the live test.
         DumpClassNetCacheLayout(ALokiPlayerState::StaticClass());
 
-        // Session 73 Phase 1: dump the LokiCharacter (hero) mirror net-cache. Expect stock ACharacter's reps +
-        // net funcs, then LokiCharacter's 2 own reps (OutOfBoundsBufferTimeRemaining, CustomAnimationState) +
-        // 14 own RPCs — must match the client's LokiCharacter for the possess bunch to align.
+        // Session 73 Phase 1 / S85: dump the LokiCharacter (hero) mirror net-cache + the possessed
+        // ALokiMinionCharacter. After the S85 fix expect: Character = 12 reps + 7 funcs (funcs 26..32,
+        // ServerMovePacked at cumulative index 32), LokiCharacter = 13 reps + 14 funcs (base 33),
+        // LokiMinionCharacter = 3 reps + 1 func (base 60) — matching the client
+        // (tools/re/netcache_chain.py; docs/session-85-netcache-chain-diff.md). VERIFY THIS BOOT DUMP
+        // BEFORE the live test: 'NetCacheDump: --- Character ... ClassReps=26 NetFields=7' (26 = 14 base
+        // + 12 own) and field [32] == ServerMovePacked.
         DumpClassNetCacheLayout(ALokiCharacter::StaticClass());
+        DumpClassNetCacheLayout(ALokiMinionCharacter::StaticClass());
+
+        // S85: the ServerAuthConfig component mirror (game-feature toggles). Expect ActorComponent 2 reps
+        // (bReplicates, bIsActive) + LokiServerAuthConfig 1 rep (GameFeatureToggles) + 1 net func
+        // (MulticastSetGameFeatureToggle) — client-matched (docs/session-85 §11).
+        DumpClassNetCacheLayout(ULokiServerAuthConfig::StaticClass());
 
         // Session 54 Blocker-1: dump the exact RepLayout cmd expansion the stub
         // generates for FMissionProgress. The client rejects our seeded Missions
@@ -774,6 +790,89 @@ private:
             UE_LOG(LogLokiStub, Warning,
                    TEXT("StripReplicatedFlag: property %s not found on %s."), PropName, *Cls->GetName());
         }
+    }
+
+    // S85 (2026-07-21): align the stub's Character tier to SUPERVIVE's ACharacter, which replicates
+    // 12 CPF_Net props (not the stock-10 the S73 capture reported — that capture used rep_expand_class.py
+    // whose i<40 child-walk cap missed the two props at ChildProperties positions 42/43; the S85 full walk
+    // via tools/re/netcache_chain.py found all 12; docs/session-85-netcache-chain-diff.md). Stock UE5.4
+    // ACharacter (minus the stripped RepRootMotion) = 10; SUPERVIVE ADDED two: ReplicatedCharacterMovement
+    // (a NetSerialize struct) + ReplicatedGravityScale (float). Missing them left the stub's Character tier
+    // at 10 reps, so LokiCharacter's field-cache base was 31 not the client's 33 => the client's Character
+    // net func ServerMovePacked (cumulative index 32 on both sides once aligned) landed where the stub
+    // expected LokiCharacter's 2nd property (CustomAnimationState) => "ReceivedBunch: Invalid replicated
+    // field 32 in LokiMinionCharacter" the instant the autonomous-proxy client fired its movement RPC.
+    //
+    // We inject the two missing props as 1-cmd CPF_Net properties onto ACharacter (same mechanism as
+    // ServerState on AActor). They are registered COND_SimulatedOnly by name in
+    // ALokiCharacter::GetLifetimeReplicatedProps, so they are NEVER sent to the autonomous owner (our
+    // possessing client) — they hold their ClassReps slots purely to align the field-cache index space;
+    // their wire format cannot desync the owner. Must run BEFORE InjectServerStateReplicatedProperty (whose
+    // rebuild rebuilds every actor class's ClassReps, picking these up too).
+    static void InjectCharacterExtraReps()
+    {
+        UClass* CharClass = ACharacter::StaticClass();
+        if (!CharClass)
+        {
+            UE_LOG(LogLokiStub, Warning, TEXT("InjectCharacterExtraReps: ACharacter class not found"));
+            return;
+        }
+
+        // Idempotency: skip if we already injected (check the first name).
+        for (FField* F = CharClass->ChildProperties; F; F = F->Next)
+        {
+            if (F->GetFName() == FName(TEXT("ReplicatedCharacterMovement")))
+            {
+                UE_LOG(LogLokiStub, Display,
+                       TEXT("InjectCharacterExtraReps: already present on ACharacter; skipping."));
+                return;
+            }
+        }
+
+        UScriptStruct* OneCmdStruct = FPoolableActorServerState::StaticStruct(); // NetSerialize => 1 RepLayout cmd
+        if (!OneCmdStruct)
+        {
+            UE_LOG(LogLokiStub, Warning, TEXT("InjectCharacterExtraReps: 1-cmd struct null"));
+            return;
+        }
+
+        // Offset must be NON-DECREASING in ClassReps order (RepLayout.cpp:6118 assert). The two props are
+        // appended to the ChildProperties tail (=> last in field order => last two Character reps), so give
+        // them the MAX offset among ACharacter's existing replicated props. Reading those bytes is in-bounds
+        // and harmless — the props are COND_SimulatedOnly (never serialized to the owner), so the value is
+        // never even read on the wire.
+        int32 MaxRepOffset = 0;
+        for (FField* F = CharClass->ChildProperties; F; F = F->Next)
+        {
+            if (FProperty* P = CastField<FProperty>(F))
+            {
+                if (P->PropertyFlags & CPF_Net)
+                {
+                    MaxRepOffset = FMath::Max(MaxRepOffset, P->GetOffset_ForGC());
+                }
+            }
+        }
+
+        const TCHAR* Names[] = { TEXT("ReplicatedCharacterMovement"), TEXT("ReplicatedGravityScale") };
+        for (const TCHAR* Name : Names)
+        {
+            FLokiStructPropertyWithOffset* Prop = new FLokiStructPropertyWithOffset(
+                CharClass, FName(Name), RF_Public | RF_Transient);
+            Prop->Struct = OneCmdStruct;
+            Prop->PropertyFlags = CPF_Net;
+            Prop->ArrayDim = 1;
+            Prop->ElementSize = OneCmdStruct->GetStructureSize();
+            Prop->SetRepOffset(MaxRepOffset);
+
+            FField** Tail = &CharClass->ChildProperties;
+            while (*Tail) { Tail = &(*Tail)->Next; }
+            *Tail = Prop;
+        }
+        UE_LOG(LogLokiStub, Display,
+               TEXT("InjectCharacterExtraReps: appended CPF_Net ReplicatedCharacterMovement + "
+                    "ReplicatedGravityScale to ACharacter (offset=%d) => Character tier now 12 reps "
+                    "(client-matched). Registered COND_SimulatedOnly in ALokiCharacter::GLRP."),
+               MaxRepOffset);
     }
 
     // Session 41 Path B-lite step 2: inject SUPERVIVE's AActor.ServerState

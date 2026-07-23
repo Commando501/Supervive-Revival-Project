@@ -27,8 +27,8 @@ ALokiPlayerState::ALokiPlayerState(const FObjectInitializer& ObjectInitializer)
 {
 	bReplicates = true;
 	UE_LOG(LogLokiPSStub, Display,
-	       TEXT("ALokiPlayerState constructed (/Script/Loki.LokiPlayerState mirror; 1 rep HeroClass + 7 RPCs "
-	            "over stock APlayerState — S73 schema)."));
+	       TEXT("ALokiPlayerState constructed (/Script/Loki.LokiPlayerState mirror; S85: 9 own reps + 7 RPCs "
+	            "over stock APlayerState — client-matched, ServerSetReadyToPlay at field 36)."));
 }
 
 void ALokiPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -46,7 +46,18 @@ void ALokiPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	{
 		AddPSBaseLifetimeProp(OutLifetimeProps, N);
 	}
+	// S85: all 9 own LokiPlayerState reps (was 1). COND_None (non-push via DOREPLIFETIME), in field order.
+	// Never written by the stub => equal the CDO => not sent; slots exist only to align the index space so
+	// ServerSetReadyToPlay is field 36 (client-matched) and the "OutField: RemoteRole" desync clears.
 	DOREPLIFETIME(ALokiPlayerState, HeroClass);
+	DOREPLIFETIME(ALokiPlayerState, PlatformPlayerID);
+	DOREPLIFETIME(ALokiPlayerState, SpectateTeamIndex);
+	DOREPLIFETIME(ALokiPlayerState, ParticipantMatchStartDetails);
+	DOREPLIFETIME(ALokiPlayerState, WalletStorage);
+	DOREPLIFETIME(ALokiPlayerState, GoldSpentValue);
+	DOREPLIFETIME(ALokiPlayerState, ReplicatedTeamIndex);
+	DOREPLIFETIME(ALokiPlayerState, IsAnonymousBot);
+	DOREPLIFETIME(ALokiPlayerState, BattleRoyalePlayerPhase);
 }
 
 // --- S73: empty _Implementation bodies for the 7 mirrored net RPCs (NetFields index alignment only;

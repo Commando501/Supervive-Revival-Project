@@ -44,6 +44,37 @@
 #include "UObject/PrimaryAssetId.h"
 #include "LokiGameStateStub.generated.h"
 
+class ULokiServerAuthConfig;
+
+// S85: master switch for the game-feature-toggle carrier (ServerAuthConfig subobject). The mirror is built +
+// boot-verified + the subobject ASSOCIATES on the client (it found LokiGameState.ServerAuthConfig), BUT the
+// seeded TArray<bool> replication currently DESYNCS the client's ReceiveProperties (log: "ReadContentBlockHeader:
+// Unable to read sub-object class" -> "Invalid property terminator handle" -> ConnectionLost) — the UE5.4
+// component-subobject content-block framing, a wire iteration (docs/session-85 §12). Default FALSE keeps the
+// S85c spectator baseline (connection holds 3+ min). Flip TRUE to resume the subobject-replication iteration.
+// S86: SetNetAddressable() did NOT fix it — the client STILL hit "Unable to read sub-object class"
+// (DataChannel.cpp:4777), i.e. the server STILL wrote the non-stable content-block branch (:4460) even
+// though the component ctor calls SetNetAddressable() (stub log confirms the ctor ran, and line 2204 says
+// bNetAddressable=true => IsNameStableForNetworking()=true). Unresolved contradiction => bNetAddressable is
+// likely reset during the RUNTIME GameState's spawn/instancing, OR a different subobject fails first. NEXT:
+// live-RPM the SERVER's ServerAuthConfig component to read bNetAddressable at replication time (settle it),
+// or deliver the toggles via the MulticastSetGameFeatureToggle RPC / a separate always-relevant actor.
+// ★ S86 RESULT — SetNetAddressable() is NECESSARY BUT NOT SUFFICIENT. The stub boot log CONFIRMED
+// ServerAuthConfig IsNameStableForNetworking=1 (SetNetAddressable took), yet the client STILL drops with
+// "Unable to read sub-object class" -> "ReceiveProperties FAILED: LokiServerAuthConfig" -> ConnectionLost, and
+// the UE5.4 registered-subobject-list default is FALSE (GDefaultUseSubObjectReplicationList, ActorComponent.cpp
+// :98) so the stub uses the LEGACY path whose WriteContentBlockHeader DOES honor that stable bit
+// (DataChannel.cpp:4460). Reconciliation: the desync is in `Bunch << Obj` — the SUBOBJECT-NetGUID serialization
+// at DataChannel.cpp:4454, BEFORE the stable-bit read — so the client reads the stable bit from a wrong offset.
+// Root cause = the package-map NetGUID EXPORT of a dynamic-outer'd subobject (its outer is the runtime-spawned
+// GameState), likely interacting with the stub's class-net-cache suppression / by-path class GUID. NEXT
+// ITERATION (needs instrumentation, not guesses): (a) log which subobject "Unable to read" is for + the
+// NetGUID types (static vs dynamic) both sides; (b) the H-B fallback = add ULokiServerAuthConfig to the stub's
+// ForceSetUpReplicationData rebuild (Loki.cpp, after the Actor loop) for the property RepLayout; (c) deliver the
+// toggles via a STABLY-NAMED separate always-relevant actor (avoid the dynamic-outer subobject entirely) or the
+// MulticastSetGameFeatureToggle RPC. Back to FALSE to hold the S85c spectator baseline; all fix code stays.
+static constexpr bool kEnableServerAuthConfig = false;  // baseline held; toggle carrier parked (see §13/§14).
+
 // S70: RepIndex parked on inherited replicated props we strip from ClassReps (Loki.cpp StripReplicatedFlag)
 // so their lingering GetLifetimeReplicatedProps registration can't collide with a real RepIndex (the
 // bIsPushBased assert). Off the ClassReps range; ALokiGameState::GetLifetimeReplicatedProps drops entries
@@ -165,6 +196,13 @@ public:
 	ALokiGameState(const FObjectInitializer& ObjectInitializer);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void BeginPlay() override;
+
+	// S85: the game-feature-toggle carrier. A replicated default subobject named "ServerAuthConfig"
+	// (matching the client's LokiGameState.ServerAuthConfig subobject) whose GameFeatureToggles array, once
+	// replicated, fires the client's OnRep_GameFeatureToggles -> toggles ready. NON-replicated ObjectProperty
+	// (the client's ServerAuthConfig ref is non-replicated; the SUBOBJECT replicates itself, not this ptr).
+	UPROPERTY() TObjectPtr<ULokiServerAuthConfig> ServerAuthConfig = nullptr;
 
 	// --- LokiGameState own replicated props, EXACT field order (session-69 dump) ---
 	UPROPERTY(Replicated) bool  bGetPreventWeaponFire = false;                 // [0]

@@ -11,8 +11,8 @@ ALokiCharacter::ALokiCharacter(const FObjectInitializer& ObjectInitializer)
 	bAlwaysRelevant = true; // guarantee the send to the one connection (Possess drives view target via the
 	                        // ClientSetViewTarget RPC the stub suppresses; alwaysRelevant is belt-and-suspenders)
 	UE_LOG(LogLokiCharStub, Display,
-	       TEXT("ALokiCharacter constructed (/Script/Loki.LokiCharacter mirror; 2 own reps + 14 RPCs over stock "
-	            "ACharacter — S73 Phase 1 hero go/no-go)."));
+	       TEXT("ALokiCharacter constructed (/Script/Loki.LokiCharacter mirror; S85: 13 own reps + 14 RPCs over "
+	            "a 12-rep Character tier — client-matched net-cache)."));
 }
 
 // Register an ACharacter inherited replicated prop BY NAME with its stock condition, non-push. We do NOT call
@@ -42,9 +42,28 @@ void ALokiCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	AddCharRep(OutLifetimeProps, TEXT("AnimRootMotionTranslationScale"),             COND_SimulatedOnly);
 	AddCharRep(OutLifetimeProps, TEXT("ReplicatedGravityDirection"),                 COND_SimulatedOnly);
 	AddCharRep(OutLifetimeProps, TEXT("ReplayLastTransformUpdateTimeStamp"),         COND_ReplayOnly);
-	// Our 2 own props: COND_SimulatedOnly (never sent to the autonomous owner → enum bit-width can't desync).
+	// S85: the two SUPERVIVE-only Character reps injected onto ACharacter by Loki.cpp InjectCharacterExtraReps
+	// (ReplicatedCharacterMovement + ReplicatedGravityScale). Register COND_SimulatedOnly by name so they are
+	// NEVER sent to the autonomous owner — they exist only to make the Character tier 12 reps (client-matched)
+	// so ServerMovePacked lands at field-cache index 32 on both sides. Without these two the stub errors
+	// "Invalid replicated field 32 in LokiMinionCharacter" (docs/session-85-netcache-chain-diff.md).
+	AddCharRep(OutLifetimeProps, TEXT("ReplicatedCharacterMovement"),                COND_SimulatedOnly);
+	AddCharRep(OutLifetimeProps, TEXT("ReplicatedGravityScale"),                     COND_SimulatedOnly);
+	// Our 13 own props (S85: was 2; the client has 13 — see LokiCharacterStub.h). ALL COND_SimulatedOnly
+	// (never sent to the autonomous owner → wire format / enum bit-width can't desync; slots align the index).
 	DOREPLIFETIME_CONDITION(ALokiCharacter, OutOfBoundsBufferTimeRemaining, COND_SimulatedOnly);
-	DOREPLIFETIME_CONDITION(ALokiCharacter, CustomAnimationState, COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, CustomAnimationState,           COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, bIdle,                          COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, bCharacterMovementEnabled,      COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, MaxLevel,                       COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, Experience,                     COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, RepMovementFollowActor,         COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, RepMovementGlide,               COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, RepMovementGrind,               COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, RepMovementServerRotation,      COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, LivingState,                    COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, DebugModes,                     COND_SimulatedOnly);
+	DOREPLIFETIME_CONDITION(ALokiCharacter, bWallJumped,                    COND_SimulatedOnly);
 }
 
 // --- S73: empty _Implementation bodies for the 14 mirrored net RPCs (NetFields index alignment only). ---

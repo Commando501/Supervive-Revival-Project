@@ -109,6 +109,18 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 	// LOADING screen. TEST: does populating the GLOBAL config toggle set flip readiness (config-gated), or is
 	// readiness set only at server round-start (round-gated)? Serve the observed gameplay toggles enabled.
 	// (Malformed = whole config dropped silently per the validity model, so this is safe to iterate.)
+	//
+	// ★ S85 (2026-07-21) ANSWERED: NOT config-payload-gated. Readiness is PER-PlayerController — the delegates
+	// OnClientGameFeatureTogglesReady / OnAnyClientGameFeatureToggleChanged / ...ReadyOrChanged live on
+	// LokiPlayerController (schema.txt:26932). Ruled out by measurement (docs/session-85 §"feature toggles"):
+	// the toggles are NOT delivered by any PC replicated prop (only LokiPlayerCheats+bIsAdmin), any PC Client
+	// RPC (none toggle-related), any GameState replicated prop (none of the 43 is config/toggle/auth), or any
+	// separate HTTP endpoint (client hits ONLY /configuration/{public,client} + /mailbox/config/version — this
+	// featureToggles payload IS received, since ServiceHostnames from the same doc works). Errors appear 0x at
+	// the menu and only ~2s AFTER DS travel => readiness is set by the per-match game-feature resolution the
+	// real server drives during round-start (round-gated), which the stub doesn't run. Static string-xref RE of
+	// ULokiGameFeatureToggles::Get is packer-blocked (format string uncommitted, same S61 login wall). Next to
+	// crack it = dumpimage the now-committed .text + offline disasm, OR a client-side ready-bool shim (force).
 	ftEnabled := map[string]any{"config": map[string]string{"default": "true"}}
 	featureToggles := map[string]any{
 		"CursorCharacterAim":        ftEnabled,
