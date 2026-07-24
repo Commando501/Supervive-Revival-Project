@@ -52,3 +52,7 @@
 [gft-ready] instances=11, readiness bit set (newly=10) — GetFeatureTogglesReady now TRUE
 [gft-ready] injected; base=0x7FF6E7D30000 — polling for LokiServerAuthConfig (readiness = bit6 of +0xB3)
 [gft-ready] instances=11, readiness bit set (newly=10) — GetFeatureTogglesReady now TRUE
+[gft-ready] injected; base=0x7FF6E7D30000 — polling for LokiServerAuthConfig (readiness = bit6 of +0xB3)
+[gft-ready] instances=11, readiness bit set (newly=10) — GetFeatureTogglesReady now TRUE
+[gft-ready] injected; base=0x7FF6E7D30000 — polling for LokiServerAuthConfig (readiness = bit6 of +0xB3)
+[gft-ready] instances=11, readiness bit set (newly=10) — GetFeatureTogglesReady now TRUE

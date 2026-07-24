@@ -219,3 +219,46 @@ check its proxy with `proxy_census.py`:
 `tools/re/prim_diff.py` (byte-diff two objects; flags qwords that are pointers in one and null in the other),
 `tools/re/proxy_census.py` (SceneProxy census over every component of an actor), `tools/re/find_owner.py`,
 `tools/re/scan_strings.py`. Shim flags: `KSMACTOR`, `KSTATICTEST`, `KTESTACTOR`, `KFOWKILL`, `KFOWATTR`.
+
+---
+
+# ⚠⚠ S96 CORRECTIONS — read before trusting the S95 block above
+
+**Two S95 claims did not survive further testing. Correcting them here so they don't mislead.**
+
+1. **"+0x2B0 == SceneProxy" is UNVERIFIED (probably wrong).** It came from ONE reference — the DefaultPawn's
+   StaticMeshComponent had a non-null qword there. But diffing our spawned `StaticMeshActor`'s root SMC against a
+   **level** `StaticMeshActor`'s root SMC yielded **0 pointer-candidates**, i.e. the level component reads **NULL at
+   +0x2B0 as well**. A rendering primitive must have a scene proxy, so either +0x2B0 is a different field, or that
+   auto-picked "reference" was not actually rendering (`prim_diff.py` auto-pick takes the first StaticMeshComponent
+   under a StaticMeshActor and does **not** verify visibility).
+   **⇒ Re-derive the offset against a primitive that is provably on screen (e.g. the drop-pod's components) and confirm
+   a known-rendering component reads NON-null, before reusing `proxy_census.py` conclusions.**
+2. **"FinishSpawningActor silently fails" is FALSIFIED.** Logged live: `FinishSpawning -> res=0x2557…` (non-null) for
+   both the StaticMeshActor and the camera actor — our spawn path completes and the `act=def` fallback never fires.
+   The `proxy(root)=null` on that line is meaningless: it is read *before* `SetStaticMesh`, and an empty
+   StaticMeshComponent legitimately has no proxy.
+
+## Also closed this session
+
+- **Cheat-spawn route is DEAD in force-open:** there is **no live `LokiPlayerCheats` instance**
+  (`GetLocalLokiPlayerCheatsBP` → 0; `find_owner.py` shows only the classes, no instances), so
+  `ServerCheatSpawnActor` / `ServerCheatChangeHero` cannot be called at all.
+- **No registration UFunction exists** in this build — no `RegisterComponent`, `RegisterAllComponents`, or
+  `MarkRenderStateDirty`; only `PrimitiveComponent::SetRenderCustomDepth`.
+
+## What is still solid
+
+Our created components **and** our spawned actors never render — under every condition tested: mesh loaded and healthy
+(Skeleton + 8 materials + LODInfo), correct world transform, visibility set, cloth/anim/tick variations, hero owner or
+standalone owner, on the ground or at Z=2200 in open air, fog of war on or off, bare component or the game's own
+`BP_Ronin_DefaultSKMeshComponent_C`. The one real contrast: the **DefaultPawn** — spawned by the *game* during Login —
+did read non-null at +0x2B0.
+
+## S97 order of work
+
+1. Re-derive the true SceneProxy offset against a provably-visible primitive; re-run `proxy_census.py` only after that.
+   The entire "nothing we spawn is render-registered" framing depends on that number being correct.
+2. If confirmed, locate native `UActorComponent::RegisterComponent` / `CreateRenderState_Concurrent` in
+   `dumps/merged.dump.exe` and call it directly (they are not UFunctions).
+3. Alternative framing worth one test: does the force-open world's renderer accept **any** runtime-added primitive?
