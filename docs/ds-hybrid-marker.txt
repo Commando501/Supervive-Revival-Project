@@ -1,14 +1,16 @@
-[0] ds_hybrid attached. base=0x7FF6AF000000 mode=40
-[1] gameTid=39236
+[0] ds_hybrid attached. base=0x7FF6E7D30000 mode=39
+[1] gameTid=13460
 [raw] raw mouse input registered (INPUTSINK)
 [2] hook installed — waiting for a game-thread ProcessInternal...
-[CH] === S81 MODE_CHEATHERO: GetLocalLokiPlayerCheatsBP -> CheatChangeHero("Assault") ===
-[CH] PC=0x2550A5C30D0 class=LokiPlayerController
-[CH] EnableCheats() fault=0
-[CH] AddLokiPlayerCheats() fault=0
-[CH] heroCls(BP_HERO_Assault_C)=0x25580580400
-[CH] AuthCheatChangeCharacter(hero) fault=0 (classOff=0)
-[CH] after: PC->Pawn=0x254E4290E30 class=DefaultPawn
-[CH] done
-[3] hook UNINSTALLED (hitsGT=1).
-[3b] done (hitsGT=1 done=1).
+[DI] === S81 MODE_DROPIN: fire the client-side drop-in on the local Loki PC ===
+[DI] local PC=0x194956C0010 class=BP_LokiPlayerController_Dev_C
+[DI] UpdateIsInDropPod(false) fault=0
+[DI] FinishDropPhaseHiding() fault=0
+[DI] MatchTransition widgets: found=5 collapsed=5
+[DI] fired — re-asserting each hook tick (the game may re-hide)
+[DI] UpdateIsInDropPod(false) fault=0
+[DI] FinishDropPhaseHiding() fault=0
+[DI] UpdateIsInDropPod(false) fault=0
+[DI] FinishDropPhaseHiding() fault=0
+[3] hook UNINSTALLED (hitsGT=60).
+[3b] done (hitsGT=60 done=0).

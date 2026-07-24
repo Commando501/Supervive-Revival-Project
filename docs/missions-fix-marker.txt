@@ -1,14 +1,1 @@
 [0] missions_fix (Option 2 durable: ags-fetched progress on launch + poll-on-change) started
-[2] lam=1B2EBB228F0 mm=1B3834ACB80 guon-thunk=7FF6B42B3720 all funcs resolved gameTid=52768
-[3] fetched ags progress: ok=1 entries=9 (http://127.0.0.1:8080/revival/missions/progress) -> build keyed model w/ progress -> swap...
-[4] apply#1: missions=330 pools=16 model=0x1B435ED0B80 Num=330 fetchOk=1 entries=9 appliedNonZero=9
-[4] manifest: 302 entries POSTed=1 (per-mission composite keys)
-[4]   m0 'Tournament_WinGame': key0='a2winarenagames' prog0=1.0 total0=1.0
-[4]   m1 'Tournament_Top3': key0='BR_3Top4' prog0=2.0 total0=3.0
-[4]   m2 'Tournament_PlayAGame': key0='PlayAGame' prog0=3.0 total0=5.0
-[4]   m3 'Tournament_KnocksAssists': key0='BR_Knocks_Assists' prog0=20.0 total0=50.0
-[4]   m4 'PlayTriosMatch': key0='Onboarding_PlayTriosMatch' prog0=0.0 total0=1.0
-[4]   m5 'CompleteCoopVAi': key0='Onboarding_PlayTriosMatch' prog0=0.0 total0=1.0
-[4]   m6 'CompleteTraversalChallenge': key0='NewOnboarding_CompleteTraversalChallenge' prog0=0.0 total0=1.0
-[4]   m7 'CompleteSpikingChallenge': key0='NewOnboarding_CompleteSpikingChallenges' prog0=0.0 total0=2.0
-[4] *** swapped w/ fetched progress. Reopen the Missions modal to see it. Now polling ags for changes... ***

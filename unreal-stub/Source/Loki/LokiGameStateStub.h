@@ -73,7 +73,7 @@ class ULokiServerAuthConfig;
 // ForceSetUpReplicationData rebuild (Loki.cpp, after the Actor loop) for the property RepLayout; (c) deliver the
 // toggles via a STABLY-NAMED separate always-relevant actor (avoid the dynamic-outer subobject entirely) or the
 // MulticastSetGameFeatureToggle RPC. Back to FALSE to hold the S85c spectator baseline; all fix code stays.
-static constexpr bool kEnableServerAuthConfig = false;  // baseline held; toggle carrier parked (see §13/§14).
+static constexpr bool kEnableServerAuthConfig = false;  // BASELINE (S90 revert). S90 A/B PROVED the carrier is ORTHOGONAL to the loading overlay: ON (B1/B2) and OFF (A/A') both stay stuck on "…LOADING…" — the carrier only changes the toggle-getter SPAM (ON silences it; S88 proved the property array is a WALL, read as GameState field-cache entries), it never lifts the overlay (gated on the OnClientGameFeatureTogglesReady EVENT). Set ON to test the MulticastSetGameFeatureToggle RPC route: pair with forceTutorialMatch=true + stub -toggleseed=0 (empty array HOLDS) + -rpccount=N. See docs/session-90-ab-loadingscreen.md + docs/session-88.
 
 // S70: RepIndex parked on inherited replicated props we strip from ClassReps (Loki.cpp StripReplicatedFlag)
 // so their lingering GetLifetimeReplicatedProps registration can't collide with a real RepIndex (the
@@ -198,11 +198,33 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
+	// S87 DIAGNOSTIC: override AActor::ReplicateSubobjects so we can log the ServerAuthConfig subobject's
+	// name-stability + NetGUID (static vs dynamic) at REAL replication time (not BeginPlay). Distinguishes:
+	//  (A) IsNameStableForNetworking()==0 here => the server takes the NON-stable content-block branch =>
+	//      the class GUID is written + the client must spawn (the observed "Unable to read sub-object class").
+	//  (B) IsNameStableForNetworking()==1 here (server wrote the STABLE branch) yet the client still hits the
+	//      non-stable branch => a client-side (modified-engine) framing divergence, NOT a stub name-stability bug.
+	// Also logs the ULokiServerAuthConfig CLASS GUID (static?) — if the class is a valid static GUID but the
+	// client reports NOT_IN_CACHE, the by-path class resolution is failing for this class specifically.
+	// Body just logs once then calls Super (== AActor::ReplicateSubobjects, which replicates the component).
+	// Guarded by kEnableServerAuthConfig; a no-op-plus-Super otherwise.
+	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch,
+	                                 struct FReplicationFlags* RepFlags) override;
+
 	// S85: the game-feature-toggle carrier. A replicated default subobject named "ServerAuthConfig"
 	// (matching the client's LokiGameState.ServerAuthConfig subobject) whose GameFeatureToggles array, once
 	// replicated, fires the client's OnRep_GameFeatureToggles -> toggles ready. NON-replicated ObjectProperty
 	// (the client's ServerAuthConfig ref is non-replicated; the SUBOBJECT replicates itself, not this ptr).
 	UPROPERTY() TObjectPtr<ULokiServerAuthConfig> ServerAuthConfig = nullptr;
+
+	// S89 RPC route: the PostLogin timer sets these; ReplicateSubobjects then emits the hand-rolled,
+	// header-spliced (11-bit) MulticastSetGameFeatureToggle content block(s) — one per toggle [0,ToggleRPCCount)
+	// — on each of the next PendingToggleRPCUpdates replications (a small window for reliable delivery). The
+	// engine's own RPC write (ProcessRemoteFunction) can't be spliced (PrepareForRemoteFunction is non-virtual),
+	// so we rebuild the RPC content block via WriteFieldHeaderAndPayload + WriteContentBlockPayload into a scratch
+	// bunch and reuse the S87 header splice. NOT UPROPERTY (server-only transient control state).
+	int32 PendingToggleRPCUpdates = 0;
+	int32 ToggleRPCCount = 0;
 
 	// --- LokiGameState own replicated props, EXACT field order (session-69 dump) ---
 	UPROPERTY(Replicated) bool  bGetPreventWeaponFire = false;                 // [0]

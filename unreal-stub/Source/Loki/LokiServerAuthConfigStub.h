@@ -41,12 +41,28 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	// S87 NOTE: forcing a STATIC component NetGUID (overriding IsFullNameStableForNetworking()->true, so
+	// FNetGUIDCache::IsDynamicObject is false) was TESTED and did NOT fix the desync — the client read the
+	// IDENTICAL phantom class GUID 134524993 and dropped. Both guid 12 (dynamic) and 25 (static) pack to 8
+	// bits, so the content-block framing is identical, PROVING the client's ~10-11 extra subobject-read bits
+	// are INTRINSIC to its subobject content-block protocol, not guid-static/dynamic-dependent. Override
+	// removed. The real fix must MATCH the client's subobject framing (RE its ReadContentBlockHeader). See §S87.
+
 	// [2] client rep — one bool per ELokiGameFeatureToggle. Populated server-side by the GameState so the
 	// client's OnRep_GameFeatureToggles fires and toggles become ready. TArray<bool> wire = trivial.
 	UPROPERTY(Replicated) TArray<bool> GameFeatureToggles;
 
-	// [3] client own net func — empty stub, present only to align the component's NetFields index space.
-	UFUNCTION(NetMulticast, Reliable) void MulticastSetGameFeatureToggle();
+	// [3] client own net func — S89: real RE'd signature (was empty). Live RPM reflection (ufunc_params.py)
+	// recovered `void MulticastSetGameFeatureToggle(TEnumAsByte<ELokiGameFeatureToggle> Toggle, bool bValue)`
+	// on the client's LokiServerAuthConfig (NetMulticast, Reliable, Native; 2-byte frame). We mirror the params
+	// as (uint8 Toggle → ByteProperty, bool bValue) so the sent wire matches; the client deserializes per its
+	// OWN reflection (TEnumAsByte<ELokiGameFeatureToggle>). This is the RPC-DELIVERY route (S89): the RepLayout
+	// property array desyncs the client (S88 — read as GameState field-cache entries), but an RPC uses a
+	// different client read path (ReceivedRPC), so it may be accepted where the array isn't.
+	UFUNCTION(NetMulticast, Reliable) void MulticastSetGameFeatureToggle(uint8 Toggle, bool bValue);
+
+	// S89: fire MulticastSetGameFeatureToggle for toggles [0,Count) (server → clients). Server-authority only.
+	void BroadcastAllToggles(int32 Count);
 
 	// Fill GameFeatureToggles with `Count` entries all set to bValue (server-side). Marks the array so it
 	// differs from the CDO (empty) and thus replicates in the initial bunch.
