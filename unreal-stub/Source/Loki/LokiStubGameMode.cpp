@@ -5,6 +5,9 @@
 #include "LokiCharacterStub.h"
 #include "LokiPlayerState_Missions.h"
 #include "LokiGameStateStub.h"
+#include "LokiServerAuthConfigStub.h"
+#include "Misc/Parse.h"
+#include "Misc/CommandLine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/DefaultPawn.h"
@@ -216,6 +219,40 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
+	// ★ S89 RPC-DELIVERY ROUTE — after the client joins + the ServerAuthConfig subobject replicates (empty at
+	// toggleseed=0, which HOLDS — S88), fire the MulticastSetGameFeatureToggle RPC for [0,rpccount) toggles. The
+	// RepLayout property array desyncs the client (S88, read as GameState field-cache entries); an RPC uses a
+	// different client read path (ReceivedRPC), so it may be accepted where the array isn't. count/delay are
+	// cmdline-driven (-rpccount / -rpcdelay) for rebuild-free sweeping. Guarded by kEnableServerAuthConfig.
+	if (kEnableServerAuthConfig)
+	{
+		int32 RpcCount = LOKI_GAME_FEATURE_TOGGLE_COUNT;
+		FParse::Value(FCommandLine::Get(), TEXT("rpccount="), RpcCount);
+		float RpcDelay = 6.f;
+		FParse::Value(FCommandLine::Get(), TEXT("rpcdelay="), RpcDelay);
+		TWeakObjectPtr<ALokiGameState> WeakGS(Cast<ALokiGameState>(GameState));
+		FTimerHandle RpcTH;
+		World->GetTimerManager().SetTimer(RpcTH, [WeakGS, RpcCount]()
+		{
+			if (WeakGS.IsValid())
+			{
+				// Arm the hand-rolled + header-spliced RPC blocks (emitted in ALokiGameState::ReplicateSubobjects)
+				// over the next few replications for reliable delivery. NOT the engine RPC (its content block
+				// can't be spliced — PrepareForRemoteFunction is non-virtual).
+				WeakGS->ToggleRPCCount = RpcCount;
+				WeakGS->PendingToggleRPCUpdates = 5;
+				WeakGS->FlushNetDormancy();   // wake it in case it went dormant after the initial rep
+				WeakGS->ForceNetUpdate();     // force ReplicateActor → ReplicateSubobjects on the next pass
+				UE_LOG(LogLokiStubGM, Display,
+				       TEXT("S89 RPC timer: armed %d spliced toggle-RPC blocks over the next 5 updates."), RpcCount);
+			}
+			else { UE_LOG(LogLokiStubGM, Warning, TEXT("S89 RPC timer: GameState invalid — no arm.")); }
+		}, RpcDelay, false);
+		UE_LOG(LogLokiStubGM, Display,
+		       TEXT("PostLogin: scheduled MulticastSetGameFeatureToggle broadcast (rpccount=%d) in %.1fs (S89 RPC route)."),
+		       RpcCount, RpcDelay);
+	}
+
 	FActorSpawnParameters SpawnParams;
 	// Owned by the connecting PC so the actor is net-owned by that connection
 	// (relevancy + correct outbound channel). bAlwaysRelevant on the class is the
@@ -313,6 +350,10 @@ void ALokiStubGameMode::PostLogin(APlayerController* NewPlayer)
 	const FVector SpawnLoc(0.f, 0.f, 500.f);
 	FActorSpawnParameters PawnParams;
 	PawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	// S90 A/B RESULT: possessed-pawn TYPE is ORTHOGONAL to the loading overlay — config A' possessed a stock
+	// ADefaultPawn (carrier off) and STILL stuck on "…LOADING…" with continuous toggle-readiness spam, identical
+	// to config A's ALokiMinionCharacter. So the S84 minion-possession did NOT regress the S70/S77 spectator clear.
+	// (Restored to ALokiMinionCharacter — the pre-S90 baseline.)
 	ALokiMinionCharacter* Pawn = World->SpawnActor<ALokiMinionCharacter>(
 		ALokiMinionCharacter::StaticClass(), SpawnLoc, FRotator::ZeroRotator, PawnParams);
 	if (Pawn)

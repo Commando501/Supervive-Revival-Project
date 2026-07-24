@@ -1,6 +1,7 @@
 #include "LokiServerAuthConfigStub.h"
 #include "Net/UnrealNetwork.h"
 #include "UObject/UnrealType.h"
+#include "GameFramework/Actor.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLokiAuthCfgStub, Log, All);
 
@@ -52,8 +53,30 @@ void ULokiServerAuthConfig::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(ULokiServerAuthConfig, GameFeatureToggles);
 }
 
-// Empty stub — present only so the class carries the FUNC_Net UFunction for NetFields index alignment.
-void ULokiServerAuthConfig::MulticastSetGameFeatureToggle_Implementation() {}
+// S89 RPC route. Server-authority INVOKE runs this locally (no-op) AND replicates to clients, where the CLIENT
+// runs ITS OWN _Implementation (sets GameFeatureToggles[Toggle]=bValue + marks toggles ready). Log the endpoints
+// so the stub confirms it fired the multicast.
+void ULokiServerAuthConfig::MulticastSetGameFeatureToggle_Implementation(uint8 Toggle, bool bValue)
+{
+	if (Toggle == 0 || Toggle == (uint8)(LOKI_GAME_FEATURE_TOGGLE_COUNT - 1))
+	{
+		UE_LOG(LogLokiAuthCfgStub, Display,
+		       TEXT("MulticastSetGameFeatureToggle(%d,%d) invoked (server local; replicates to clients)."),
+		       (int32)Toggle, (int32)bValue);
+	}
+}
+
+void ULokiServerAuthConfig::BroadcastAllToggles(int32 Count)
+{
+	if (!GetOwner() || !GetOwner()->HasAuthority()) { return; }
+	const int32 N = FMath::Clamp(Count, 0, 255);
+	for (int32 i = 0; i < N; ++i)
+	{
+		MulticastSetGameFeatureToggle((uint8)i, true);   // NetMulticast: sends to all connected clients
+	}
+	UE_LOG(LogLokiAuthCfgStub, Display,
+	       TEXT("BroadcastAllToggles: fired MulticastSetGameFeatureToggle for %d toggles (S89 RPC route)."), N);
+}
 
 void ULokiServerAuthConfig::SeedAllToggles(bool bValue, int32 Count)
 {

@@ -25,6 +25,9 @@ constexpr int PERCHUNK=65536, ITEMSTRIDE=0x18;
 constexpr uintptr_t CLASS_OFF=0x18, NAME_OFF=0x20, UFUNC_FUNC=0xE0, UFUNC_CHILDPROPS=0x58;
 constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, FF_MRP=0x30, FF_MRPA=0x38, FF_MRPC=0x40, FF_OUTPARMS=0x80, FF_PROPCHAIN=0x88;
 constexpr uintptr_t FIELD_NEXT=0x18, FPROP_OFFSET=0x44, FPROP_FLAGS=0x38;   // FField.Next, FProperty.Offset_Internal, FProperty.FlagsPrivate
+// S91 BP-CALL: UStruct tail in this build (stock UE5 order, shifted +0x18 like SuperStruct@0x48/Children@0x50/
+// ChildProperties@0x58): PropertiesSize(int32)@0x60, MinAlignment@0x64, Script TArray{Data@0x68,Num@0x70}.
+constexpr uintptr_t USTRUCT_PROPSIZE=0x60, USTRUCT_SCRIPT=0x68, USTRUCT_SCRIPTNUM=0x70;
 constexpr uint64_t CPF_OutParm=0x100, CPF_ReturnParm=0x400;
 static const uint8_t kPiProlog[5]={0x48,0x89,0x5C,0x24,0x08};
 typedef void (*PFN_PE)(void* obj, void* func, void* parms);
@@ -87,7 +90,7 @@ static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
 static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for SpawnPlayer (96-byte FTransform OUT)
 
 // ---- S68 spawn+possess mode (LEAD B / OPTION 2) ----
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7 };
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22 };
 #ifndef KRUNMODE
 #define KRUNMODE RM_CHEATSPAWN
 #endif
@@ -217,6 +220,21 @@ static const double kPupSpeed = KPUPSPEED, kPupYawDeg = KPUPYAW;
 static bool g_puppetInit=false; static HWND g_gameHwnd=nullptr;
 static void DoPuppet();
 static bool ResolveWakeMove(); static void DoWakeMove();
+static bool ResolveTraining(); static void DoTraining();
+static bool ResolveSpawnSeq(); static void DoSpawnSeq();   // S90 RM_SPAWNSEQ: spawn the tutorial quest sequencer   // S90 RM_TRAINING: start the tutorial lessons + commit the drop
+static bool ResolveSpawnQuest(); static void DoSpawnQuest();   // S91 RM_SPAWNQUEST: spawn the TrainingQuest_Basics_* quest ACTORS
+static bool ResolveQuestPlay(); static void DoQuestPlay();     // S91 RM_QUESTPLAY: teleport the hero into the quest's own trigger
+static bool ResolveBPCall(); static void DoBPCall();           // S91 RM_BPCALL: BP-function-call primitive + arm the lesson
+static bool ResolveObjDrive(); static void DoObjDrive();       // S92 RM_OBJDRIVE: advance the active objective (physical/overlap/ProgressObjective)
+static bool ResolveObjComplete(); static void DoObjComplete(); // S93 RM_OBJCOMPLETE: force count->target + fire OnRep/EndTraining
+static bool ResolveFireOverlap(); static void DoFireOverlap();  // S93 RM_FIREOVERLAP: fire the overlap beat + ungated completion closer
+static bool ResolveDriveChain(); static void DoDriveChain();    // S93 RM_DRIVECHAIN: walk the lesson chain (activate->start->complete per lesson)
+static bool ResolveCamera(); static void DoCamera();            // S93 RM_CAMERA: fix the over-zoomed possess camera (enable spring-arm tick)
+static bool ResolveTopDownCam(); static void DoTopDownCam();    // S93 RM_TOPDOWNCAM: spawn a top-down CameraActor + re-assert view target
+static bool ResolveMeshCam(); static void DoMeshCam();          // S93 RM_MESHCAM: build the hero mesh (ClientInitialComponentSetup) + top-down cam
+static bool ResolveDropIn(); static void DoDropIn();            // S93 RM_DROPIN: drive the DropPlane drop-in descent (SpawnPlane->AddPlayerToDropPlane)
+static bool ResolveMakeMesh(); static void DoMakeMesh();        // S93 RM_MAKEMESH: recreate a visible hero body from scratch (AddComponentByClass+SetSkeletalMeshAsset)
+static bool ResolvePlay(); static void DoPlay();               // S94 RM_PLAY: the VISIBLE + MOVABLE hero (ground-teleport + Ronin mesh + top-down cam + WASD puppet, one shim)
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
@@ -338,6 +356,48 @@ static void CallNative(void* func, uintptr_t thunk, uintptr_t childProps, void* 
     BuildOutParms(childProps,(uint8_t*)paramsBuf);   // S58: FFrame.OutParms chain for by-ref/out params
     ((PFN_THUNK)thunk)(context, g_myframe, resultBuf);
 }
+// ★★★ S91 — THE BLUEPRINT-FUNCTION CALL PRIMITIVE (the missing half of the S55 native-call primitive).
+// The S55 primitive calls a UFunction's `Func` thunk (@+0xE0) with FFrame.Code = NULL. That is correct for a NATIVE
+// thunk, and fatal for a BLUEPRINT function — a BP UFunction's `Func` IS `ProcessInternal`, so Code=NULL makes the
+// VM start executing at address 0. Every function on the tutorial-quest chain is bytecode, which is exactly why the
+// quests spawn but nothing can start them.
+// FIX: do what `UObject::ProcessEvent` itself does — set FFrame.Code to the function's OWN bytecode
+// (`UStruct.Script.Data` @+0x68) and FFrame.Locals to a zeroed blob of `UStruct.PropertiesSize` (@+0x60) bytes, then
+// call the same `Func` thunk. No new address to guess: this sidesteps the ProcessEvent-RVA question that S80
+// falsified. Params are written into the locals blob at each FProperty's Offset_Internal, exactly as for natives.
+static uint8_t g_bplocals[0x800]={0};
+static bool CallBPGuarded(uintptr_t func, void* context, void* resultBuf){
+    if(!LooksLikePtr(func)||!SafeReadable((void*)(func+USTRUCT_SCRIPT),8)) return true;
+    uintptr_t script=*(uintptr_t*)(func+USTRUCT_SCRIPT);
+    uint32_t  snum  =SafeReadable((void*)(func+USTRUCT_SCRIPTNUM),4)?*(uint32_t*)(func+USTRUCT_SCRIPTNUM):0;
+    uint32_t  psize =SafeReadable((void*)(func+USTRUCT_PROPSIZE),4)?*(uint32_t*)(func+USTRUCT_PROPSIZE):0;
+    uintptr_t thunk =SafeReadable((void*)(func+UFUNC_FUNC),8)?*(uintptr_t*)(func+UFUNC_FUNC):0;
+    uintptr_t child =SafeReadable((void*)(func+UFUNC_CHILDPROPS),8)?*(uintptr_t*)(func+UFUNC_CHILDPROPS):0;
+    if(!LooksLikePtr(script)||!snum||!LooksLikePtr(thunk)||psize>sizeof(g_bplocals)){
+        Markerf("[BPC] refuse: script=0x%llX num=%u propsSize=%u thunk=0x%llX\r\n",
+            (unsigned long long)script,snum,psize,(unsigned long long)thunk); return true; }
+    __try{
+        memcpy(g_myframe,g_template,sizeof(g_myframe));
+        *(void**)(g_myframe+FF_NODE)=(void*)func;
+        *(void**)(g_myframe+FF_OBJECT)=context;
+        *(uint64_t*)(g_myframe+FF_CODE)=(uint64_t)script;      // ← the whole point: run the function's OWN bytecode
+        *(void**)(g_myframe+FF_LOCALS)=g_bplocals;
+        *(uint64_t*)(g_myframe+FF_MRP)=0; *(uint64_t*)(g_myframe+FF_MRPA)=0; *(uint64_t*)(g_myframe+FF_MRPC)=0;
+        *(uint64_t*)(g_myframe+FF_PROPCHAIN)=(uint64_t)child;
+        BuildOutParms(child,g_bplocals);
+        ((PFN_THUNK)thunk)(context,g_myframe,resultBuf);
+        return false;
+    } __except(SehDump(GetExceptionInformation())){ return true; }
+}
+// Resolve a BP UFunction by name over the class + super chain (BP overrides included — the opposite of
+// ResolveFuncNative, which deliberately skips BP_* classes).
+static void ResolveFuncSuper(uintptr_t cls,const char* name,void** fn,uintptr_t* thunk,uintptr_t* child);   // fwd
+static uintptr_t FindBPFunc(uintptr_t cls,const char* name,uintptr_t* childOut){
+    void* fn=nullptr; uintptr_t th=0,ch=0;
+    ResolveFuncSuper(cls,name,&fn,&th,&ch);
+    if(childOut)*childOut=ch;
+    return (uintptr_t)fn;
+}
 // Set an FString {Data,Num,Max} at pbuf+byteOff (Num includes null terminator).
 static void SetFStringAt(uint8_t* pbuf, uint32_t byteOff, const wchar_t* s){
     int n=(int)wcslen(s)+1;
@@ -358,6 +418,21 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     if(kRunMode==RM_SPAWNPLAYER){ DoSpawnPlayer(); InterlockedIncrement(&g_called); g_done=1; g_inHook=0; return; }
     if(kRunMode==RM_SPAWNPOSSESS){ DoSpawnPossess(); InterlockedIncrement(&g_called); g_done=1; g_inHook=0; return; }
     if(kRunMode==RM_CHEATSPAWN){ DoCheatSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoCheatSpawn
+    if(kRunMode==RM_SPAWNSEQ){ DoSpawnSeq(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoSpawnSeq
+    if(kRunMode==RM_SPAWNQUEST){ DoSpawnQuest(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoSpawnQuest
+    if(kRunMode==RM_QUESTPLAY){ DoQuestPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }     // g_done set inside DoQuestPlay
+    if(kRunMode==RM_BPCALL){ DoBPCall(); InterlockedIncrement(&g_called); g_inHook=0; return; }         // g_done set inside DoBPCall
+    if(kRunMode==RM_OBJDRIVE){ DoObjDrive(); InterlockedIncrement(&g_called); g_inHook=0; return; }     // g_done set inside DoObjDrive
+    if(kRunMode==RM_OBJCOMPLETE){ DoObjComplete(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoObjComplete
+    if(kRunMode==RM_FIREOVERLAP){ DoFireOverlap(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoFireOverlap
+    if(kRunMode==RM_DRIVECHAIN){ DoDriveChain(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoDriveChain
+    if(kRunMode==RM_CAMERA){ DoCamera(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoCamera
+    if(kRunMode==RM_TOPDOWNCAM){ DoTopDownCam(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done)
+    if(kRunMode==RM_MESHCAM){ DoMeshCam(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done)
+    if(kRunMode==RM_DROPIN){ DoDropIn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoDropIn
+    if(kRunMode==RM_MAKEMESH){ DoMakeMesh(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoMakeMesh
+    if(kRunMode==RM_PLAY){ DoPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done) — camera + WASD each hit
+    if(kRunMode==RM_TRAINING){ DoTraining(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoTraining (one step per hit)
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
     uint8_t* pb=(uint8_t*)g_pbuf;
     if(g_offWCO!=0xFFFFFFFF) *(uint64_t*)(pb+g_offWCO)=(uint64_t)g_worldCtx;   // WorldContextObject
@@ -664,6 +739,1952 @@ static void DoPuppet(){
     V[0]=vx; V[1]=vy;   // keep V[2] (Z) so gravity + jump still work
     if(SafeReadable((void*)(g_wmCMC+0x328),24)){ double* A=(double*)(g_wmCMC+0x328); A[0]=vx*4.0; A[1]=vy*4.0; A[2]=0.0; }   // Acceleration -> facing/anim
 }
+// ============ S90 RM_TRAINING — START the tutorial's own lesson system + COMMIT the drop ============
+// WHY: S90 proved the FORCE-OPEN route instantiates the WHOLE tutorial machinery (BP_TrainingManager_C, four
+// BP_TrainingSkill_* lessons, Comp_GameState_TrainingBase, Comp_PlayerController_BasicTrainingText, the
+// TrainingVolume + ResetVolume, and Comp_PlayerController_TutorialObjectives added at runtime by the gamemode BP)
+// — but NOTHING ever STARTS a lesson: the only LogLokiTraining line in a whole session is one
+// ULokiTrainingManager::ResetAll. A live ufunc_survey of the manager gave us the API; this mode calls it.
+// It also commits the DROP: the round parks at EGP_SpawnSelect(4) with the drop UI armed, and S90 proved
+// UpdateIsInDropPod/FinishDropPhaseHiding are NOT the descent path (they fire fault-free and change nothing) —
+// the DropPlane component is.
+//   LokiTrainingManager (native):  SetActive [Static, Parms9 => (Object* Skill, bool)], StartTimers(), ResetAll(),
+//                                  IsActiveSkill(q), HasTrainingPrompt(q), GetTrainingPrompt(q)
+//   LokiGameModeDropPlaneComponent: AddPlayerToDropPlane(Parms8), SetDropPlane(Parms8) + BP SpawnPlane/GetAutoDropLocation
+// Staged ONE step per game-thread hit so a fault localizes to a single native call.
+static uintptr_t g_tmMgr=0, g_tmDrop=0, g_tmPC=0;
+static uintptr_t g_tmSkills[8]={0}; static int g_tmNSkills=0;
+static void*     g_tmSaFn=nullptr;  static uintptr_t g_tmSaThunk=0,  g_tmSaChild=0;   // SetActive
+static void*     g_tmStFn=nullptr;  static uintptr_t g_tmStThunk=0,  g_tmStChild=0;   // StartTimers
+static void*     g_tmIsFn=nullptr;  static uintptr_t g_tmIsThunk=0,  g_tmIsChild=0;   // IsActiveSkill
+static void*     g_tmSpFn=nullptr;  static uintptr_t g_tmSpThunk=0,  g_tmSpChild=0;   // SpawnPlane
+static void*     g_tmApFn=nullptr;  static uintptr_t g_tmApThunk=0,  g_tmApChild=0;   // AddPlayerToDropPlane
+static void*     g_tmAaFn=nullptr;  static uintptr_t g_tmAaThunk=0,  g_tmAaChild=0;   // AddActiveTrainingAugment
+static void*     g_tmCpFn=nullptr;  static uintptr_t g_tmCpThunk=0,  g_tmCpChild=0;   // ChangeSkillPrompt
+static void*     g_tmGaFn=nullptr;  static uintptr_t g_tmGaThunk=0,  g_tmGaChild=0;   // GetAutoDropLocation
+static void*     g_tmCaFn=nullptr;  static uintptr_t g_tmCaThunk=0,  g_tmCaChild=0;   // ContainsActiveTrainingAugment
+static uint32_t  g_oSaWorld=0xFFFFFFFF, g_oSaFlag=0xFFFFFFFF, g_oApPS=0xFFFFFFFF;
+static uint32_t  g_oIsSkill=0xFFFFFFFF, g_oIsRet=0xFFFFFFFF, g_oAaArg=0xFFFFFFFF, g_oCaArg=0xFFFFFFFF, g_oCaRet=0xFFFFFFFF;
+static uintptr_t g_tmPS=0;          // PC->PlayerState (AddPlayerToDropPlane wants THIS, not the PC)
+static int g_tmStep=0;
+// ★ S90 iter3 — the REAL lesson lifecycle lives on the SKILL object (native LokiTrainingSkill), not the manager.
+// iter2 proved manager-level SetActive/AddActiveTrainingAugment are the wrong level (all fault-free, zero effect;
+// "augment" is a different type from "skill"). These are all ZERO-INPUT (Parms1/RetOff0 => a single byte RETURN),
+// so the context object IS the skill and the result byte lands at params[0].
+static void* g_skTtFn=nullptr;  static uintptr_t g_skTtThunk=0,  g_skTtChild=0;    // TryTestSkill      <- START
+static void* g_skPrFn=nullptr;  static uintptr_t g_skPrThunk=0,  g_skPrChild=0;    // TryShowPrompt
+static void* g_skMcFn=nullptr;  static uintptr_t g_skMcThunk=0,  g_skMcChild=0;    // MarkTestCompleted <- COMPLETE
+static void* g_skCanFn=nullptr; static uintptr_t g_skCanThunk=0, g_skCanChild=0;   // CanTestSkill
+static void* g_skShFn=nullptr;  static uintptr_t g_skShThunk=0,  g_skShChild=0;    // ShouldTestSkill
+static void* g_skGsFn=nullptr;  static uintptr_t g_skGsThunk=0,  g_skGsChild=0;    // GetSkillState
+static const bool kTrainMarkComplete = true;   // also close the loop with MarkTestCompleted
+// ★ S90 iter4 — TELEPORT THE HERO INTO THE TRAINING VOLUME.
+// iter3 ruled out hero-presence and round-phase as the gate (Can/Should stayed 0 with a possessed hero at Phase 4).
+// The four live skills are contextual HINT prompts; the main lesson chain's trigger is the level-placed
+// BP_TrainingVolume_Move_V2 (class BP_TrainingVolume_Basics_C) and ZERO basics-quest objects exist yet — consistent
+// with the chain being spawned ON PLAYER ENTRY into that volume. So put the hero physically inside it.
+static uintptr_t g_tmVol=0, g_tmHero=0;
+static void*     g_tmSlFn=nullptr; static uintptr_t g_tmSlThunk=0, g_tmSlChild=0;   // K2_SetActorLocation (on the hero)
+static uint32_t  g_oTmSlLoc=0xFFFFFFFF, g_oTmSlSweep=0xFFFFFFFF, g_oTmSlTele=0xFFFFFFFF;
+static double    g_volX=0,g_volY=0,g_volZ=0;
+static const double kVolZLift = 150.0;   // drop the hero slightly ABOVE the volume centre so it isn't inside geometry
+static DWORD g_tmTeleMs=0;               // wall-clock of the teleport (the hook fires many times per frame, so the
+                                         // post-teleport check must gate on REAL time, not on step count)
+// Read an actor's world location via RootComponent->RelativeLocation (the RM_WAKEMOVE pattern).
+static bool ActorLoc(uintptr_t actor,double* out){
+    if(!LooksLikePtr(actor)) return false;
+    uint32_t rc=PropOffsetSuper(ClassOf(actor),"RootComponent");
+    if(rc==0xFFFFFFFF||!SafeReadable((void*)(actor+rc),8)) return false;
+    uintptr_t r=*(uintptr_t*)(actor+rc); if(!LooksLikePtr(r)) return false;
+    uint32_t lo=PropOffsetSuper(ClassOf(r),"RelativeLocation"); if(lo==0xFFFFFFFF) lo=0x158;
+    if(!SafeReadable((void*)(r+lo),24)) return false;
+    double* P=(double*)(r+lo); out[0]=P[0]; out[1]=P[1]; out[2]=P[2]; return true;
+}
+// Call a zero-input skill fn, return its byte result (0xFF on fault / unresolved).
+static uint8_t SkillCall(void* fn,uintptr_t thunk,uintptr_t child,uintptr_t skill){
+    if(!thunk) return 0xFE;
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    if(CallNativeGuarded(fn,thunk,child,(void*)skill,g_pbuf,g_rbuf)) return 0xFF;
+    return *(uint8_t*)g_pbuf;
+}
+
+// Print a UFunction's parameter chain (one line per param) so we LEARN the real names instead of guessing them.
+static void DumpParams(uintptr_t child,const char* tag){
+    uintptr_t f=child; int i=0;
+    if(!LooksLikePtr(f)){ Markerf("[TRN] params %s: <none>\r\n",tag); return; }
+    while(LooksLikePtr(f)&&i<16){
+        char n[96]="?"; GetFNameStr(NameId(f),n,sizeof(n));
+        uint32_t off=SafeReadable((void*)(f+FPROP_OFFSET),4)?*(uint32_t*)(f+FPROP_OFFSET):0xFFFFFFFF;
+        uint64_t fl=SafeReadable((void*)(f+FPROP_FLAGS),8)?*(uint64_t*)(f+FPROP_FLAGS):0;
+        Markerf("[TRN] params %s[%d] %s @0x%X flags=0x%llX\r\n",tag,i,n,off,(unsigned long long)fl);
+        uintptr_t nx=0; if(SafeReadable((void*)(f+FIELD_NEXT),8))nx=*(uintptr_t*)(f+FIELD_NEXT); f=nx; i++;
+    }
+}
+// Collect every live BP_TrainingSkill_* instance (the lessons).
+static void CollectSkills(){
+    g_tmNSkills=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt && g_tmNSkills<8;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue; char cn[128]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+            if(!strstr(cn,"TrainingSkill"))continue; char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            if(strncmp(on,"Default__",9)==0)continue;
+            g_tmSkills[g_tmNSkills++]=obj; Markerf("[TRN] skill[%d]=0x%llX %s\r\n",g_tmNSkills-1,(unsigned long long)obj,cn); } }
+}
+static bool ResolveTraining(){
+    g_tmMgr =FindInstByClass("TrainingManager",nullptr);
+    g_tmDrop=FindInstByClass("DropPlane_Tutorial",nullptr);
+    g_tmPC  =FindInstByClass("LokiPlayerController_Dev",nullptr);
+    char mcn[96]="-",dcn[96]="-";
+    if(g_tmMgr&&ClassOf(g_tmMgr))GetFNameStr(NameId(ClassOf(g_tmMgr)),mcn,sizeof(mcn));
+    if(g_tmDrop&&ClassOf(g_tmDrop))GetFNameStr(NameId(ClassOf(g_tmDrop)),dcn,sizeof(dcn));
+    Markerf("[TRN] mgr=0x%llX(%s) drop=0x%llX(%s) pc=0x%llX\r\n",(unsigned long long)g_tmMgr,mcn,(unsigned long long)g_tmDrop,dcn,(unsigned long long)g_tmPC);
+    CollectSkills();
+    if(g_tmMgr){ uintptr_t mc=ClassOf(g_tmMgr);
+        ResolveFuncSuper(mc,"SetActive",&g_tmSaFn,&g_tmSaThunk,&g_tmSaChild);
+        ResolveFuncSuper(mc,"StartTimers",&g_tmStFn,&g_tmStThunk,&g_tmStChild);
+        ResolveFuncSuper(mc,"IsActiveSkill",&g_tmIsFn,&g_tmIsThunk,&g_tmIsChild);
+        // S90 iter2: the probe recovered the REAL names — SetActive takes a WORLD CONTEXT, not a skill.
+        ResolveFuncSuper(mc,"AddActiveTrainingAugment",&g_tmAaFn,&g_tmAaThunk,&g_tmAaChild);
+        ResolveFuncSuper(mc,"ContainsActiveTrainingAugment",&g_tmCaFn,&g_tmCaThunk,&g_tmCaChild);
+        ResolveFuncSuper(mc,"ChangeSkillPrompt",&g_tmCpFn,&g_tmCpThunk,&g_tmCpChild);
+        if(g_tmSaChild){ DumpParams(g_tmSaChild,"SetActive");
+            g_oSaWorld=ParamOffset(g_tmSaChild,"WorldContextObject"); if(g_oSaWorld==0xFFFFFFFF)g_oSaWorld=0;
+            g_oSaFlag =ParamOffset(g_tmSaChild,"bActive");            if(g_oSaFlag ==0xFFFFFFFF)g_oSaFlag =8; }
+        if(g_tmIsChild){ DumpParams(g_tmIsChild,"IsActiveSkill");
+            g_oIsSkill=ParamOffset(g_tmIsChild,"TargetSkill"); if(g_oIsSkill==0xFFFFFFFF)g_oIsSkill=0;
+            g_oIsRet  =ParamOffset(g_tmIsChild,"ReturnValue");  if(g_oIsRet==0xFFFFFFFF)g_oIsRet=8; }
+        if(g_tmAaChild){ DumpParams(g_tmAaChild,"AddActiveTrainingAugment"); g_oAaArg=0; }   // single Parms8 arg
+        if(g_tmCaChild){ DumpParams(g_tmCaChild,"ContainsActiveTrainingAugment"); g_oCaArg=0; g_oCaRet=8; }
+        if(g_tmCpChild)  DumpParams(g_tmCpChild,"ChangeSkillPrompt");
+    }
+    if(g_tmDrop){ uintptr_t dc=ClassOf(g_tmDrop);
+        ResolveFuncSuper(dc,"SpawnPlane",&g_tmSpFn,&g_tmSpThunk,&g_tmSpChild);
+        ResolveFuncSuper(dc,"AddPlayerToDropPlane",&g_tmApFn,&g_tmApThunk,&g_tmApChild);
+        ResolveFuncSuper(dc,"GetAutoDropLocation",&g_tmGaFn,&g_tmGaThunk,&g_tmGaChild);
+        if(g_tmGaChild) DumpParams(g_tmGaChild,"GetAutoDropLocation");
+        if(g_tmApChild){ DumpParams(g_tmApChild,"AddPlayerToDropPlane");
+            g_oApPS=ParamOffset(g_tmApChild,"PlayerState"); if(g_oApPS==0xFFFFFFFF)g_oApPS=0; }
+    }
+    // iter4: the training VOLUME + the hero, and K2_SetActorLocation to put one inside the other.
+    g_tmVol =FindInstByClass("TrainingVolume",nullptr);
+    g_tmHero=FindInstByClass("BP_HERO_",nullptr);
+    { double v[3]={0,0,0}; if(ActorLoc(g_tmVol,v)){ g_volX=v[0]; g_volY=v[1]; g_volZ=v[2]; }
+      double h[3]={0,0,0}; ActorLoc(g_tmHero,h);
+      char vn[128]="-"; if(g_tmVol) GetFNameStr(NameId(g_tmVol),vn,sizeof(vn));
+      Markerf("[TRN] vol=0x%llX %s loc=(%.0f,%.0f,%.0f) | hero=0x%llX loc=(%.0f,%.0f,%.0f)\r\n",
+        (unsigned long long)g_tmVol,vn,g_volX,g_volY,g_volZ,(unsigned long long)g_tmHero,h[0],h[1],h[2]); }
+    if(g_tmHero){ ResolveFuncSuper(ClassOf(g_tmHero),"K2_SetActorLocation",&g_tmSlFn,&g_tmSlThunk,&g_tmSlChild);
+        if(g_tmSlChild){ g_oTmSlLoc  =ParamOffset(g_tmSlChild,"NewLocation");
+                         g_oTmSlSweep=ParamOffset(g_tmSlChild,"bSweep");
+                         g_oTmSlTele =ParamOffset(g_tmSlChild,"bTeleport"); }
+        Markerf("[TRN] heroSetLoc thunk=0x%llX (loc@0x%X sweep@0x%X tele@0x%X)\r\n",
+            (unsigned long long)g_tmSlThunk,g_oTmSlLoc,g_oTmSlSweep,g_oTmSlTele); }
+    // iter3: resolve the per-skill lifecycle on the skill's class (ResolveFuncSuper walks up to LokiTrainingSkill).
+    if(g_tmNSkills>0){ uintptr_t sc=ClassOf(g_tmSkills[0]);
+        ResolveFuncSuper(sc,"TryTestSkill",      &g_skTtFn, &g_skTtThunk, &g_skTtChild);
+        ResolveFuncSuper(sc,"TryShowPrompt",     &g_skPrFn, &g_skPrThunk, &g_skPrChild);
+        ResolveFuncSuper(sc,"MarkTestCompleted", &g_skMcFn, &g_skMcThunk, &g_skMcChild);
+        ResolveFuncSuper(sc,"CanTestSkill",      &g_skCanFn,&g_skCanThunk,&g_skCanChild);
+        ResolveFuncSuper(sc,"ShouldTestSkill",   &g_skShFn, &g_skShThunk, &g_skShChild);
+        ResolveFuncSuper(sc,"GetSkillState",     &g_skGsFn, &g_skGsThunk, &g_skGsChild);
+        Markerf("[TRN] skill-fns TryTest=0x%llX ShowPrompt=0x%llX MarkDone=0x%llX Can=0x%llX Should=0x%llX State=0x%llX\r\n",
+            (unsigned long long)g_skTtThunk,(unsigned long long)g_skPrThunk,(unsigned long long)g_skMcThunk,
+            (unsigned long long)g_skCanThunk,(unsigned long long)g_skShThunk,(unsigned long long)g_skGsThunk);
+    }
+    // AddPlayerToDropPlane wants a PLAYERSTATE (probe-confirmed). Fetch PC->PlayerState.
+    if(g_tmPC){ uint32_t o=PropOffsetSuper(ClassOf(g_tmPC),"PlayerState");
+        if(o!=0xFFFFFFFF && SafeReadable((void*)(g_tmPC+o),8)) g_tmPS=*(uintptr_t*)(g_tmPC+o);
+        char psn[96]="-"; if(LooksLikePtr(g_tmPS)&&ClassOf(g_tmPS)) GetFNameStr(NameId(ClassOf(g_tmPS)),psn,sizeof(psn));
+        Markerf("[TRN] PC->PlayerState@0x%X = 0x%llX (%s)\r\n",o,(unsigned long long)g_tmPS,psn); }
+    Markerf("[TRN] thunks SetActive=0x%llX StartTimers=0x%llX IsActiveSkill=0x%llX SpawnPlane=0x%llX AddPlayer=0x%llX skills=%d\r\n",
+        (unsigned long long)g_tmSaThunk,(unsigned long long)g_tmStThunk,(unsigned long long)g_tmIsThunk,
+        (unsigned long long)g_tmSpThunk,(unsigned long long)g_tmApThunk,g_tmNSkills);
+    return g_tmMgr!=0 && (g_tmSaThunk!=0 || g_tmStThunk!=0);
+}
+// ★★★ S90 iter7 GATE TRACE — MEASURE, don't infer. Each CanTestSkill gate is a PLAIN NATIVE function (not a
+// UFunction), so we can call it DIRECTLY through a raw function pointer and log every intermediate value. Chain:
+//   0x338C990(skill) -> world/outer     |  0x56BDF10(that)  -> PlayerState (type-checked vs LokiPlayerState)
+//   0x58E3D10(skill) -> bool "disabled" |  0x56BAA00(PS)    -> level (returns 99 when dword[PS+0xE88]==-1)
+//   0x58CE1B0(skill) -> CanTestSkill's own implementation
+// Every call is SEH-guarded (a '!' suffix in the log marks a fault) so a bad one is captured, not fatal.
+typedef uintptr_t (*PFN_1)(uintptr_t);
+static bool RawCall1(uintptr_t rva,uintptr_t a,uintptr_t* out){
+    PFN_1 f=(PFN_1)(g_modBase+rva);
+    __try { *out=f(a); return false; }
+    __except(SehDump(GetExceptionInformation())){ *out=0; return true; }
+}
+static void GateTrace(const char* tag){
+    for(int i=0;i<g_tmNSkills;i++){
+        uintptr_t sk=g_tmSkills[i], r1=0,r2=0,r3=0,r4=0,r5=0;
+        bool f1=false,f2=false,f3=false,f4=false,f5=false;
+        f1=RawCall1(0x338C990,sk,&r1);
+        if(r1) f2=RawCall1(0x56BDF10,r1,&r2);
+        f3=RawCall1(0x58E3D10,sk,&r3);
+        if(r2) f4=RawCall1(0x56BAA00,r2,&r4);
+        f5=RawCall1(0x58CE1B0,sk,&r5);
+        char psn[96]="-"; if(r2&&ClassOf(r2)) GetFNameStr(NameId(ClassOf(r2)),psn,sizeof(psn));
+        uint8_t b390=0,b391=0,b393=0,b3F0=0; float v3A8=0.f; int32_t lvlFld=0;
+        if(SafeReadable((void*)(sk+0x390),1)) b390=*(uint8_t*)(sk+0x390);
+        if(SafeReadable((void*)(sk+0x391),1)) b391=*(uint8_t*)(sk+0x391);
+        if(SafeReadable((void*)(sk+0x393),1)) b393=*(uint8_t*)(sk+0x393);
+        if(SafeReadable((void*)(sk+0x3F0),1)) b3F0=*(uint8_t*)(sk+0x3F0);
+        if(SafeReadable((void*)(sk+0x3A8),4)) v3A8=*(float*)(sk+0x3A8);
+        if(r2 && SafeReadable((void*)(r2+0xE88),4)) lvlFld=*(int32_t*)(r2+0xE88);
+        Markerf("[GATE:%s] skill[%d] world=0x%llX%s PS=0x%llX(%s)%s disabled=%u%s level=%d%s PS+0xE88=%d CanTest=%u%s"
+                " | b390=%u b391=%u b393=%u b3F0=%u f3A8=%.3f\r\n",
+            tag,i,(unsigned long long)r1,f1?"!":"",(unsigned long long)r2,psn,f2?"!":"",
+            (unsigned)(r3&0xFF),f3?"!":"",(int)(uint32_t)r4,f4?"!":"",lvlFld,(unsigned)(r5&0xFF),f5?"!":"",
+            b390,b391,b393,b3F0,v3A8);
+    }
+}
+// GAME THREAD: one step per hit. kTrainDoDrop gates the drop half so the lesson half can be tested alone.
+static const bool kTrainDoDrop = true;
+static void DoTraining(){
+    uint8_t* pb=(uint8_t*)g_pbuf;
+    switch(g_tmStep){
+    case 0:   // ★ GATE TRACE first (measures which gate fails), then BEFORE state, then teleport
+        GateTrace("pre");
+        for(int i=0;i<g_tmNSkills;i++)
+            Markerf("[TRN] BEFORE skill[%d] State=%u Can=%u Should=%u\r\n",i,
+                SkillCall(g_skGsFn,g_skGsThunk,g_skGsChild,g_tmSkills[i]),
+                SkillCall(g_skCanFn,g_skCanThunk,g_skCanChild,g_tmSkills[i]),
+                SkillCall(g_skShFn,g_skShThunk,g_skShChild,g_tmSkills[i]));
+        if(g_tmSlThunk && LooksLikePtr(g_tmHero) && (g_volX||g_volY||g_volZ)){
+            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            if(g_oTmSlLoc!=0xFFFFFFFF){ double* L=(double*)(pb+g_oTmSlLoc); L[0]=g_volX; L[1]=g_volY; L[2]=g_volZ+kVolZLift; }
+            if(g_oTmSlSweep!=0xFFFFFFFF) pb[g_oTmSlSweep]=0;
+            if(g_oTmSlTele !=0xFFFFFFFF) pb[g_oTmSlTele ]=1;   // teleport, no sweep
+            bool f=CallNativeGuarded(g_tmSlFn,g_tmSlThunk,g_tmSlChild,(void*)g_tmHero,g_pbuf,g_rbuf);
+            Markerf("[TRN] *** TELEPORT hero -> volume (%.0f,%.0f,%.0f)%s ***\r\n",g_volX,g_volY,g_volZ+kVolZLift,f?" FAULTED":"");
+        } else Markerf("[TRN] TELEPORT SKIPPED (slThunk=0x%llX hero=0x%llX vol=(%.0f,%.0f,%.0f))\r\n",
+            (unsigned long long)g_tmSlThunk,(unsigned long long)g_tmHero,g_volX,g_volY,g_volZ);
+        g_tmTeleMs=GetTickCount();
+        break;
+    case 1:   // SETTLE on REAL time (the hook fires many times per frame) so overlap/BeginOverlap + quest spawn can run
+        if(GetTickCount()-g_tmTeleMs < 5000) return;   // hold this step; do NOT advance yet
+        { double h[3]={0,0,0}; ActorLoc(g_tmHero,h);
+          Markerf("[TRN] post-teleport hero loc=(%.0f,%.0f,%.0f)\r\n",h[0],h[1],h[2]); }
+        for(int i=0;i<g_tmNSkills;i++)
+            Markerf("[TRN] POST-TP skill[%d] State=%u Can=%u Should=%u\r\n",i,
+                SkillCall(g_skGsFn,g_skGsThunk,g_skGsChild,g_tmSkills[i]),
+                SkillCall(g_skCanFn,g_skCanThunk,g_skCanChild,g_tmSkills[i]),
+                SkillCall(g_skShFn,g_skShThunk,g_skShChild,g_tmSkills[i]));
+        break;
+    case 2:   // now try the lifecycle again, with the hero standing in the volume
+        if(g_tmSaThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            *(uint64_t*)(pb+g_oSaWorld)=(uint64_t)(g_tmPC?g_tmPC:g_tmMgr); pb[g_oSaFlag]=1;
+            CallNativeGuarded(g_tmSaFn,g_tmSaThunk,g_tmSaChild,(void*)g_tmMgr,g_pbuf,g_rbuf); }
+        for(int i=0;i<g_tmNSkills;i++)
+            Markerf("[TRN] TryShowPrompt(skill[%d]) -> %u\r\n",i,SkillCall(g_skPrFn,g_skPrThunk,g_skPrChild,g_tmSkills[i]));
+        for(int i=0;i<g_tmNSkills;i++)
+            Markerf("[TRN] *** TryTestSkill(skill[%d]) -> %u ***\r\n",i,SkillCall(g_skTtFn,g_skTtThunk,g_skTtChild,g_tmSkills[i]));
+        break;
+    case 3:
+        if(g_tmStThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            bool f=CallNativeGuarded(g_tmStFn,g_tmStThunk,g_tmStChild,(void*)g_tmMgr,g_pbuf,g_rbuf);
+            Markerf("[TRN] StartTimers()%s\r\n",f?" FAULTED":""); }
+        break;
+    case 4:   // MID: did TryTestSkill change the state? (a few game-thread ticks have passed since step 2)
+        for(int i=0;i<g_tmNSkills;i++)
+            Markerf("[TRN] MID skill[%d] State=%u Can=%u Should=%u\r\n",i,
+                SkillCall(g_skGsFn,g_skGsThunk,g_skGsChild,g_tmSkills[i]),
+                SkillCall(g_skCanFn,g_skCanThunk,g_skCanChild,g_tmSkills[i]),
+                SkillCall(g_skShFn,g_skShThunk,g_skShChild,g_tmSkills[i]));
+        break;
+    case 5:   // close the loop: mark the test completed (the "objective complete" path)
+        if(kTrainMarkComplete) for(int i=0;i<g_tmNSkills;i++)
+            Markerf("[TRN] MarkTestCompleted(skill[%d]) -> %u\r\n",i,SkillCall(g_skMcFn,g_skMcThunk,g_skMcChild,g_tmSkills[i]));
+        break;
+    default:
+        for(int i=0;i<g_tmNSkills;i++){
+            uint8_t act=0xFF;
+            if(g_tmIsThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                *(uint64_t*)(pb+g_oIsSkill)=(uint64_t)g_tmSkills[i];
+                if(!CallNativeGuarded(g_tmIsFn,g_tmIsThunk,g_tmIsChild,(void*)g_tmMgr,g_pbuf,g_rbuf)) act=pb[g_oIsRet]; }
+            Markerf("[TRN] FINAL skill[%d] State=%u IsActiveSkill=%u\r\n",i,
+                SkillCall(g_skGsFn,g_skGsThunk,g_skGsChild,g_tmSkills[i]),act);
+        }
+        GateTrace("post");
+        Marker("[TRN] sequence complete\r\n"); g_done=1; break;
+    }
+    g_tmStep++;
+}
+
+// ★★★ S90 iter11 RM_SPAWNSEQ — SPAWN `BP_TutorialTrainingQuestSequencer_C` DIRECTLY.
+// WHY: iter9/iter10 established the tutorial's lesson chain is `TrainingQuest_Basics_*` driven by
+// `BP_TutorialTrainingQuestSequencer_C` (its ubergraph casts collection items to Training_Quest_Basics_Base and
+// reads their AssociatedTrainingVolume). That actor has ZERO live instances — it is level-placed and its
+// WorldPartition cell / data-layer never activates on the force-open travel — while its trigger volume
+// `BP_TrainingVolume_Move_V2` IS live. Spawning it should run `BP_LokiBeginPlay` -> `ReadyToFire` and populate the
+// chain. (The 4 TrainingSkill objects are a PRACTICE-mode system — ValidStates excludes the tutorial — dead end.)
+// Uses the S74-proven GameplayStatics deferred-spawn path (Begin -> Finish), the same one that spawns heroes.
+static uintptr_t g_seqClass=0, g_seqActor=0; static int g_seqStep=0; static DWORD g_seqMs=0;
+static int CountByClassSub(const char* sub,char* firstOut,int cap){
+    int n=0; if(firstOut&&cap) firstOut[0]=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return 0; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue; char cn[128]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+            if(!strstr(cn,sub))continue; char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            if(strncmp(on,"Default__",9)==0)continue;
+            if(n==0&&firstOut&&cap) _snprintf_s(firstOut,cap,_TRUNCATE,"%s",cn);
+            n++; } }
+    return n;
+}
+static bool ResolveSpawnSeq(){
+    g_seqClass=FindClassExact("BP_TutorialTrainingQuestSequencer_C");
+    g_gm2  =FindInstByClass("GameMode_Tutorial",nullptr);
+    g_gsCDO=FindObjExact("Default__GameplayStatics");
+    uintptr_t vol=FindInstByClass("TrainingVolume",nullptr);
+    double v[3]={0,0,0}; bool haveV=ActorLoc(vol,v);
+    if(g_gsCDO){ uintptr_t gc=ClassOf(g_gsCDO); uint32_t o;
+        ResolveFuncOnClass(gc,"BeginDeferredActorSpawnFromClass",&g_beginFn,&g_beginThunk,&g_beginChild);
+        ResolveFuncOnClass(gc,"FinishSpawningActor",&g_finishFn,&g_finishThunk,&g_finishChild);
+        if(g_beginChild){ o=ParamOffset(g_beginChild,"WorldContextObject");if(o!=0xFFFFFFFF)g_oBWorld=o;
+                          o=ParamOffset(g_beginChild,"ActorClass");if(o!=0xFFFFFFFF)g_oBClass=o;
+                          o=ParamOffset(g_beginChild,"SpawnTransform");if(o!=0xFFFFFFFF)g_oBXform=o;
+                          o=ParamOffset(g_beginChild,"CollisionHandlingOverride");if(o!=0xFFFFFFFF)g_oBColl=o;
+                          o=ParamOffset(g_beginChild,"Owner");if(o!=0xFFFFFFFF)g_oBOwner=o;
+                          o=ParamOffset(g_beginChild,"ReturnValue");if(o!=0xFFFFFFFF)g_oBRet=o; }
+        if(g_finishChild){ o=ParamOffset(g_finishChild,"Actor");if(o!=0xFFFFFFFF)g_oFActor=o;
+                           o=ParamOffset(g_finishChild,"SpawnTransform");if(o!=0xFFFFFFFF)g_oFXform=o;
+                           o=ParamOffset(g_finishChild,"ReturnValue");if(o!=0xFFFFFFFF)g_oFRet=o; }
+    }
+    // FTransform (LWC doubles): Rotation quat @0x00 (W@0x18), Translation @0x20, Scale3D @0x38.
+    memset(g_xform,0,sizeof(g_xform));
+    *(double*)(g_xform+0x18)=1.0;                                   // identity quat
+    if(haveV){ *(double*)(g_xform+0x20)=v[0]; *(double*)(g_xform+0x28)=v[1]; *(double*)(g_xform+0x30)=v[2]; }
+    *(double*)(g_xform+0x38)=1.0; *(double*)(g_xform+0x40)=1.0; *(double*)(g_xform+0x48)=1.0;   // scale 1 (NOT 0)
+    Markerf("[SEQ] seqClass=0x%llX gm=0x%llX gsCDO=0x%llX begin=0x%llX finish=0x%llX vol=(%.0f,%.0f,%.0f)\r\n",
+        (unsigned long long)g_seqClass,(unsigned long long)g_gm2,(unsigned long long)g_gsCDO,
+        (unsigned long long)g_beginThunk,(unsigned long long)g_finishThunk,v[0],v[1],v[2]);
+    { char f1[128],f2[128];
+      Markerf("[SEQ] BEFORE: TrainingQuest=%d  Sequencer=%d\r\n",
+        CountByClassSub("TrainingQuest",f1,sizeof(f1)),CountByClassSub("QuestSequencer",f2,sizeof(f2))); }
+    return g_seqClass && g_beginThunk && g_finishThunk && g_gm2 && g_gsCDO;
+}
+static void DoSpawnSeq(){
+    if(g_seqStep==0){
+        const uint32_t xfsz=0x50;
+        memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        *(uint64_t*)(g_gsbuf+g_oBWorld)=(uint64_t)g_gm2;
+        *(uint64_t*)(g_gsbuf+g_oBClass)=(uint64_t)g_seqClass;
+        memcpy(g_gsbuf+g_oBXform,g_xform,xfsz);
+        g_gsbuf[g_oBColl]=2;   // AdjustIfPossibleButAlwaysSpawn
+        if(CallNativeGuarded(g_beginFn,g_beginThunk,g_beginChild,(void*)g_gsCDO,g_gsbuf,g_rbuf)){
+            Marker("[SEQ] BeginDeferredActorSpawnFromClass FAULTED\r\n"); g_done=1; return; }
+        uintptr_t def=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(def)) def=*(uint64_t*)(g_gsbuf+g_oBRet);
+        char dn[96]="-"; if(LooksLikePtr(def)&&ClassOf(def)) GetFNameStr(NameId(ClassOf(def)),dn,sizeof(dn));
+        Markerf("[SEQ] deferred=0x%llX cls=%s\r\n",(unsigned long long)def,dn);
+        if(!LooksLikePtr(def)){ Marker("[SEQ] Begin returned NULL -> abort\r\n"); g_done=1; return; }
+        memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        *(uint64_t*)(g_gsbuf+g_oFActor)=(uint64_t)def;
+        memcpy(g_gsbuf+g_oFXform,g_xform,xfsz);
+        if(CallNativeGuarded(g_finishFn,g_finishThunk,g_finishChild,(void*)g_gsCDO,g_gsbuf,g_rbuf)){
+            Marker("[SEQ] FinishSpawningActor FAULTED\r\n"); g_done=1; return; }
+        uintptr_t act=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(act)) act=*(uint64_t*)(g_gsbuf+g_oFRet);
+        if(!LooksLikePtr(act)) act=def;
+        g_seqActor=act;
+        char an[96]="-"; if(ClassOf(act)) GetFNameStr(NameId(ClassOf(act)),an,sizeof(an));
+        Markerf("[SEQ] *** SPAWNED sequencer=0x%llX cls=%s (BeginPlay should now run ReadyToFire) ***\r\n",
+            (unsigned long long)act,an);
+        g_seqMs=GetTickCount(); g_seqStep++; return;
+    }
+    if(GetTickCount()-g_seqMs < 8000) return;   // let BeginPlay / ReadyToFire run for 8s of REAL time
+    char f1[128],f2[128],f3[128];
+    int nq=CountByClassSub("TrainingQuest",f1,sizeof(f1));
+    int ns=CountByClassSub("QuestSequencer",f2,sizeof(f2));
+    int nv=CountByClassSub("TrainingVolume",f3,sizeof(f3));
+    Markerf("[SEQ] AFTER: TrainingQuest=%d (%s)  Sequencer=%d (%s)  TrainingVolume=%d (%s)\r\n",
+        nq,nq?f1:"-",ns,ns?f2:"-",nv,nv?f3:"-");
+    Marker("[SEQ] done\r\n"); g_done=1;
+}
+
+// ★★★ S91 RM_SPAWNQUEST — SPAWN THE `TrainingQuest_Basics_*` ACTORS DIRECTLY.
+// WHY (S90 handoff): the tutorial's lesson chain is `TrainingQuest_Basics_*` (Actors, 33 assets under
+// .../GameModes/Objectives/Tutorial/Basics/) coordinated by `BP_TutorialTrainingQuestSequencer_C`. S90 proved
+// (a) the GameplayStatics deferred-spawn path works for arbitrary level actors — it spawned the sequencer — and
+// (b) spawning the SEQUENCER ALONE populates nothing, because its `ReadyToFire` takes a quest CLASS param (it is
+// FED, not a spawner) and its ubergraph iterates its own `TrainingQuests` SET (level-populated, empty for us),
+// casting each item to `TrainingQuest_Basics_Base_C` and reading that item's `AssociatedTrainingVolume`.
+// ⇒ the missing half is the quest ACTORS themselves. `TrainingQuest_Basics_Base_C` IS an Actor (DefaultSceneRoot +
+// SCS node), so the same proven path applies.
+// DESIGN NOTES:
+//  - Classes are DISCOVERED at runtime by substring, not hard-coded: only a LOADED UClass can be spawned, and the
+//    bytecode uses both spellings (`TrainingQuest_Basics_Base_C` / a local named `..._AsTraining_Quest_Basics_Base`).
+//    Discovery also tells us — for free, in the marker — exactly which quest classes the process has resident.
+//  - Bases (`_Base_C`, `_Level_Base_C`, `_UseAbility_Base_C`), CDOs (`Default__`) and SKEL_ stubs are excluded.
+//  - Spawn ORDER is the lesson order (WASD -> Jump -> LMB -> ...), one per game-thread hit with a real-time gap so
+//    each BeginPlay runs before the next; then the SEQUENCER last (if none is live) so its BeginPlay can collect
+//    quests that already exist.
+//  - Then: census, dump `AssociatedTrainingVolume` per quest, and — clearly labelled as a SECOND experiment —
+//    poke any null one to the live `BP_TrainingVolume_Move_V2` and re-observe. Data write only, no .text patch.
+#ifndef KQUESTMAX
+#define KQUESTMAX 4          // how many quests to spawn this run (build with -DKQUESTMAX=N; 0 = discovery census only)
+#endif
+#ifndef KQUESTSEQ
+#define KQUESTSEQ 1          // also spawn the sequencer AFTER the quests (0 = quests only)
+#endif
+#ifndef KQUESTPOKEVOL
+#define KQUESTPOKEVOL 1      // phase 2: poke a null AssociatedTrainingVolume to the live volume, then re-observe
+#endif
+static const int  kQuestMax     = KQUESTMAX;
+static const bool kQuestSeq     = KQUESTSEQ!=0;
+static const bool kQuestPokeVol = KQUESTPOKEVOL!=0;
+// Lesson order (first match wins); anything discovered but unlisted sorts after these, in discovery order.
+static const char* kQuestOrder[]={"_WASD","_Jump","_LMB","_Glide","_RMB_Use","_Q_Use","_Dash_Use","_CapturePoint",
+                                  "_Ult_Level","_DefeatSingleBot","_DefeatBots","_Ping","_Recall"};
+#define QCAP 48
+static uintptr_t g_qCls[QCAP]={0}; static char g_qName[QCAP][96]; static int g_qN=0;
+static uintptr_t g_qAct[QCAP]={0}; static int g_qStep=0, g_qToSpawn=0, g_qOk=0; static DWORD g_qMs=0;
+static uintptr_t g_qVol=0; static uint32_t g_qVolOff=0xFFFFFFFF; static int g_qPoked=0;
+
+// Enumerate LOADED UCLASSES whose own FName contains `sub` (a UClass = its own class name contains "Class",
+// the FindClassExact discriminator). Fills g_qCls/g_qName.
+static void DiscoverQuestClasses(const char* sub){
+    g_qN=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt && g_qN<QCAP;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            char on[128]; if(!GetFNameStr(NameId(obj),on,sizeof(on)))continue;
+            if(!strstr(on,sub))continue;
+            if(strncmp(on,"Default__",9)==0||strncmp(on,"SKEL_",5)==0||strstr(on,"Sequencer"))continue;
+            uintptr_t c=ClassOf(obj); if(!LooksLikePtr(c))continue;
+            char cn[96]; if(!GetFNameStr(NameId(c),cn,sizeof(cn))||!strstr(cn,"Class"))continue;   // it IS a UClass
+            bool dup=false; for(int k=0;k<g_qN;k++) if(g_qCls[k]==obj){dup=true;break;} if(dup)continue;
+            g_qCls[g_qN]=obj; _snprintf_s(g_qName[g_qN],sizeof(g_qName[0]),_TRUNCATE,"%s",on); g_qN++; } }
+    // Order: kQuestOrder matches first (in list order), everything else after in discovery order. Bases sort LAST
+    // and are never spawned (they are abstract-ish parents; spawning one would add a no-op actor).
+    int w=0; const int nOrd=(int)(sizeof(kQuestOrder)/sizeof(kQuestOrder[0]));
+    for(int o=0;o<nOrd;o++){ for(int i=w;i<g_qN;i++){ if(strstr(g_qName[i],kQuestOrder[o])){
+            uintptr_t tc=g_qCls[i]; char tn[96]; memcpy(tn,g_qName[i],sizeof(tn));
+            for(int k=i;k>w;k--){ g_qCls[k]=g_qCls[k-1]; memcpy(g_qName[k],g_qName[k-1],sizeof(tn)); }
+            g_qCls[w]=tc; memcpy(g_qName[w],tn,sizeof(tn)); w++; break; } } }
+}
+static bool IsQuestBase(const char* n){ return strstr(n,"_Base_C")!=nullptr; }
+
+// Factored from DoSpawnSeq: the S74-proven deferred spawn. Returns the actor (0 on failure).
+static uintptr_t SpawnActorCls(uintptr_t cls,const char* tag){
+    const uint32_t xfsz=0x50;
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(uint64_t*)(g_gsbuf+g_oBWorld)=(uint64_t)g_gm2;
+    *(uint64_t*)(g_gsbuf+g_oBClass)=(uint64_t)cls;
+    memcpy(g_gsbuf+g_oBXform,g_xform,xfsz);
+    g_gsbuf[g_oBColl]=2;   // AdjustIfPossibleButAlwaysSpawn
+    if(CallNativeGuarded(g_beginFn,g_beginThunk,g_beginChild,(void*)g_gsCDO,g_gsbuf,g_rbuf)){
+        Markerf("[QST] %s BeginDeferred FAULTED\r\n",tag); return 0; }
+    uintptr_t def=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(def)) def=*(uint64_t*)(g_gsbuf+g_oBRet);
+    if(!LooksLikePtr(def)){ Markerf("[QST] %s BeginDeferred -> NULL\r\n",tag); return 0; }
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(uint64_t*)(g_gsbuf+g_oFActor)=(uint64_t)def;
+    memcpy(g_gsbuf+g_oFXform,g_xform,xfsz);
+    if(CallNativeGuarded(g_finishFn,g_finishThunk,g_finishChild,(void*)g_gsCDO,g_gsbuf,g_rbuf)){
+        Markerf("[QST] %s FinishSpawning FAULTED (deferred actor 0x%llX left half-built)\r\n",tag,(unsigned long long)def); return def; }
+    uintptr_t act=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(act)) act=*(uint64_t*)(g_gsbuf+g_oFRet); if(!LooksLikePtr(act)) act=def;
+    return act;
+}
+// Dump an object's reflected properties (name @offset = qword, + the class name if it points at a UObject).
+static void DumpObjProps(uintptr_t obj,const char* tag,int maxN){
+    uintptr_t cls=ClassOf(obj); int g=0,n=0;
+    while(LooksLikePtr(cls)&&g++<4&&n<maxN){
+        char cn[96]="?"; GetFNameStr(NameId(cls),cn,sizeof(cn));
+        uintptr_t f=SafeReadable((void*)(cls+0x58),8)?*(uintptr_t*)(cls+0x58):0; int i=0;
+        while(LooksLikePtr(f)&&i<200&&n<maxN){
+            char pn[96]="?"; GetFNameStr(NameId(f),pn,sizeof(pn));
+            uint32_t off=SafeReadable((void*)(f+FPROP_OFFSET),4)?*(uint32_t*)(f+FPROP_OFFSET):0xFFFFFFFF;
+            uint64_t v=0; if(off!=0xFFFFFFFF&&SafeReadable((void*)(obj+off),8)) v=*(uint64_t*)(obj+off);
+            char vc[96]="-"; ObjClassName(v,vc,sizeof(vc));
+            Markerf("[QST] %s prop %s::%s @0x%X = 0x%llX (%s)\r\n",tag,cn,pn,off,(unsigned long long)v,vc);
+            n++; f=SafeReadable((void*)(f+FIELD_NEXT),8)?*(uintptr_t*)(f+FIELD_NEXT):0; i++;
+        }
+        cls=SafeReadable((void*)(cls+0x48),8)?*(uintptr_t*)(cls+0x48):0;
+    }
+}
+static void QuestCensus(const char* when){
+    char f1[128],f2[128],f3[128];
+    int nq=CountByClassSub("Quest_Basics",f1,sizeof(f1));     // ⚠ NOT "TrainingQuest" — that also matches the Sequencer
+    int ns=CountByClassSub("QuestSequencer",f2,sizeof(f2));
+    int nv=CountByClassSub("TrainingVolume",f3,sizeof(f3));
+    Markerf("[QST] CENSUS %s: Quest_Basics=%d (%s)  Sequencer=%d (%s)  TrainingVolume=%d (%s)\r\n",
+        when,nq,nq?f1:"-",ns,ns?f2:"-",nv,nv?f3:"-");
+}
+static bool ResolveSpawnQuest(){
+    // Reuse the SEQ resolver for GameMode + GameplayStatics Begin/Finish + the spawn FTransform (already
+    // Scale3D=1.0 and placed at the live training volume). Its bool also demands the sequencer class, which we
+    // do NOT require, so check our own pieces instead of its return.
+    ResolveSpawnSeq();
+    g_qVol=FindInstByClass("TrainingVolume",nullptr);
+    DiscoverQuestClasses("Quest_Basics");
+    Markerf("[QST] discovered %d loaded quest CLASSES (spawn order; bases excluded from spawning):\r\n",g_qN);
+    for(int i=0;i<g_qN;i++) Markerf("[QST]   [%02d] %s @0x%llX%s\r\n",i,g_qName[i],(unsigned long long)g_qCls[i],IsQuestBase(g_qName[i])?"   <base, skipped>":"");
+    // Pick the spawn set: the first kQuestMax non-base classes, compacted to the front.
+    int w=0; for(int i=0;i<g_qN && w<kQuestMax;i++){ if(IsQuestBase(g_qName[i]))continue;
+        if(w!=i){ g_qCls[w]=g_qCls[i]; memcpy(g_qName[w],g_qName[i],sizeof(g_qName[0])); } w++; }
+    g_qToSpawn=w;
+    QuestCensus("BEFORE");
+    Markerf("[QST] gm=0x%llX gsCDO=0x%llX begin=0x%llX finish=0x%llX vol=0x%llX toSpawn=%d seqAfter=%d pokeVol=%d\r\n",
+        (unsigned long long)g_gm2,(unsigned long long)g_gsCDO,(unsigned long long)g_beginThunk,
+        (unsigned long long)g_finishThunk,(unsigned long long)g_qVol,g_qToSpawn,(int)kQuestSeq,(int)kQuestPokeVol);
+    if(g_qN==0) Marker("[QST] *** NO TrainingQuest_Basics_* UCLASS IS LOADED — the assets are not resident, so no\r\n"
+                       "[QST]     spawn is possible from here. Next step would be an async class load, not a spawn.\r\n");
+    return g_beginThunk && g_finishThunk && g_gm2 && g_gsCDO && g_qToSpawn>0;
+}
+// Staged ONE action per game-thread hit (with a real-time gap) so a fault localizes to a single spawn.
+//   steps [0 .. N-1] : spawn quest i          step N : spawn the sequencer (if none live)
+//   step N+1         : settle 8s -> census + per-quest AssociatedTrainingVolume
+//   step N+2         : (phase 2) poke null volumes -> settle 5s -> census again -> done
+static void DoSpawnQuest(){
+    if(g_qMs && GetTickCount()-g_qMs < 400) return;   // let each BeginPlay run for real time between actions
+    if(g_qStep < g_qToSpawn){
+        int i=g_qStep;
+        uintptr_t a=SpawnActorCls(g_qCls[i],g_qName[i]); g_qAct[i]=a;
+        char an[96]="-"; if(LooksLikePtr(a)&&ClassOf(a)) GetFNameStr(NameId(ClassOf(a)),an,sizeof(an));
+        Markerf("[QST] [%d/%d] spawn %s -> 0x%llX cls=%s\r\n",i+1,g_qToSpawn,g_qName[i],(unsigned long long)a,an);
+        if(LooksLikePtr(a)) g_qOk++;
+        g_qMs=GetTickCount(); g_qStep++; return;
+    }
+    if(g_qStep == g_qToSpawn){
+        g_qStep++; g_qMs=GetTickCount();
+        if(kQuestSeq){
+            int ns=CountByClassSub("QuestSequencer",nullptr,0);
+            if(ns>0){ Markerf("[QST] sequencer already live (%d) -> not spawning another\r\n",ns); }
+            else if(g_seqClass){
+                uintptr_t s=SpawnActorCls(g_seqClass,"BP_TutorialTrainingQuestSequencer_C");
+                Markerf("[QST] sequencer spawned AFTER the quests -> 0x%llX (its BeginPlay can now see them)\r\n",(unsigned long long)s);
+            } else Marker("[QST] sequencer class not loaded -> skipped\r\n");
+        }
+        return;
+    }
+    if(g_qStep == g_qToSpawn+1){
+        if(GetTickCount()-g_qMs < 8000) return;   // 8s of real time for BeginPlay / ReadyToFire / any binding
+        QuestCensus("AFTER");
+        for(int i=0;i<g_qToSpawn;i++){
+            if(!LooksLikePtr(g_qAct[i]))continue;
+            uint32_t vo=PropOffsetSuper(ClassOf(g_qAct[i]),"AssociatedTrainingVolume");
+            uint64_t v=0; if(vo!=0xFFFFFFFF&&SafeReadable((void*)(g_qAct[i]+vo),8)) v=*(uint64_t*)(g_qAct[i]+vo);
+            char vc[96]="-"; ObjClassName(v,vc,sizeof(vc));
+            Markerf("[QST] quest[%d] %s @0x%llX AssociatedTrainingVolume@0x%X = 0x%llX (%s)\r\n",
+                i,g_qName[i],(unsigned long long)g_qAct[i],vo,(unsigned long long)v,vc);
+            if(i==0){ g_qVolOff=vo; DumpObjProps(g_qAct[i],"q0",48); }   // full property picture for the first quest
+        }
+        g_qStep++; g_qMs=GetTickCount();
+        if(!kQuestPokeVol){ Marker("[QST] done (no volume poke)\r\n"); g_done=1; }
+        return;
+    }
+    if(g_qStep == g_qToSpawn+2){
+        // ── PHASE 2 (separate, clearly-labelled experiment): if the spawn did NOT bind the quest to a volume,
+        //    wire it by hand to the live BP_TrainingVolume_Move_V2 and see whether anything starts.
+        for(int i=0;i<g_qToSpawn;i++){
+            if(!LooksLikePtr(g_qAct[i])||g_qVolOff==0xFFFFFFFF||!LooksLikePtr(g_qVol))continue;
+            if(!SafeReadable((void*)(g_qAct[i]+g_qVolOff),8))continue;
+            if(*(uint64_t*)(g_qAct[i]+g_qVolOff))continue;                 // already bound — leave it alone
+            *(uint64_t*)(g_qAct[i]+g_qVolOff)=(uint64_t)g_qVol; g_qPoked++;
+        }
+        Markerf("[QST] PHASE2 poked AssociatedTrainingVolume=0x%llX on %d quest(s); settling 5s...\r\n",(unsigned long long)g_qVol,g_qPoked);
+        g_qStep++; g_qMs=GetTickCount(); return;
+    }
+    if(GetTickCount()-g_qMs < 5000) return;
+    QuestCensus("AFTER-POKE");
+    Marker("[QST] done\r\n"); g_done=1;
+}
+
+// ★★★ S91 RM_QUESTPLAY — PLAY the first lesson: put the possessed hero inside the quest's own trigger.
+// WHY: RM_SPAWNQUEST proved the quest actors spawn, survive, and SELF-WIRE — a freshly spawned
+// `TrainingQuest_Basics_WASD_C` came up with `TargetTriggerBox` pointing at a LIVE `TriggerBox` and `OBJARROW` at a
+// live `BP_GameplayEffectCapsule_Tutorial_OBJ_LOC_C`, i.e. its BeginPlay ran and resolved level actors. It also
+// revealed the real inheritance: quest -> `TrainingQuest_Basics_Base_C` -> `BP_TeamAugment_Training_C` ->
+// `BP_TeamAugment_C` -> native `TeamAugment`. The WASD lesson's own graph is `OnWASDTriggerOverlap` bound to that
+// TriggerBox, so the INTENDED gameplay trigger is a physical overlap — no BP-call hack needed (and the BP path is
+// closed anyway: every function on the chain is bytecode, so the direct-thunk primitive cannot dispatch it, and
+// S80 falsified our ProcessEvent RVA).
+// ⇒ teleport the possessed hero into `TargetTriggerBox` and let the game's own overlap start the lesson.
+// Also (build flag) re-spawn a WASD quest FIRST, so this one's BeginPlay runs with a hero already present.
+#ifndef KQPSPAWN
+#define KQPSPAWN 1        // spawn a fresh WASD quest before playing (its BeginPlay then sees the possessed hero)
+#endif
+static const bool kQpSpawn = KQPSPAWN!=0;
+static uintptr_t g_qpHero=0, g_qpQuest=0, g_qpBox=0, g_qpVol=0;
+static void*     g_qpSlFn=nullptr; static uintptr_t g_qpSlThunk=0, g_qpSlChild=0;
+static uint32_t  g_oQpLoc=0xFFFFFFFF, g_oQpSweep=0xFFFFFFFF, g_oQpTele=0xFFFFFFFF;
+static double    g_qpDst[3]={0,0,0}; static int g_qpStep=0; static DWORD g_qpMs=0; static int g_qpTry=0;
+// Sample the augment/quest progress fields (native TeamAugment OnRep_* names give us the property names).
+static void QuestState(uintptr_t q,const char* tag){
+    if(!LooksLikePtr(q))return;
+    static const char* kF[]={"CurrentObjectiveCount","HasMetObjective","HasMetPlacement","IsRemoved",
+                             "CurrentMark","TargetActor","AssociatedTrainingVolume","NextQuestPrereqsMet"};
+    char line[512]; int o=_snprintf_s(line,sizeof(line),_TRUNCATE,"[QP] %s state:",tag);
+    for(int i=0;i<(int)(sizeof(kF)/sizeof(kF[0]));i++){
+        uint32_t off=PropOffsetSuper(ClassOf(q),kF[i]); uint64_t v=0;
+        if(off!=0xFFFFFFFF&&SafeReadable((void*)(q+off),8)) v=*(uint64_t*)(q+off);
+        o+=_snprintf_s(line+o,sizeof(line)-o,_TRUNCATE," %s=%llX",kF[i],(unsigned long long)v);
+    }
+    Markerf("%s\r\n",line);
+}
+static bool ResolveQuestPlay(){
+    ResolveSpawnSeq();                                   // gm + GameplayStatics + spawn transform
+    g_qpHero=FindInstByClass("BP_HERO_",nullptr);
+    g_qpVol =FindInstByClass("TrainingVolume",nullptr);
+    g_qpQuest=FindInstByClass("Quest_Basics_WASD",nullptr);
+    if(!g_qpQuest) g_qpQuest=FindInstByClass("Quest_Basics",nullptr);
+    if(g_qpHero){ ResolveFuncSuper(ClassOf(g_qpHero),"K2_SetActorLocation",&g_qpSlFn,&g_qpSlThunk,&g_qpSlChild);
+        if(g_qpSlChild){ g_oQpLoc=ParamOffset(g_qpSlChild,"NewLocation");
+                         g_oQpSweep=ParamOffset(g_qpSlChild,"bSweep");
+                         g_oQpTele=ParamOffset(g_qpSlChild,"bTeleport"); } }
+    double h[3]={0,0,0}; ActorLoc(g_qpHero,h);
+    char qn[96]="-"; if(g_qpQuest&&ClassOf(g_qpQuest)) GetFNameStr(NameId(ClassOf(g_qpQuest)),qn,sizeof(qn));
+    Markerf("[QP] hero=0x%llX loc=(%.0f,%.0f,%.0f) quest=0x%llX(%s) vol=0x%llX setLoc=0x%llX(Loc@0x%X Sweep@0x%X Tele@0x%X)\r\n",
+        (unsigned long long)g_qpHero,h[0],h[1],h[2],(unsigned long long)g_qpQuest,qn,
+        (unsigned long long)g_qpVol,(unsigned long long)g_qpSlThunk,g_oQpLoc,g_oQpSweep,g_oQpTele);
+    if(!g_qpHero) Marker("[QP] *** NO LIVE BP_HERO_* — inject tutorial_launch_sp.dll first ***\r\n");
+    return g_qpHero && g_qpSlThunk;
+}
+// Read the quest's trigger target: TargetTriggerBox's world location, else the TargetLocation FVector, else the volume.
+static bool QuestTarget(uintptr_t q,double* out,const char** src){
+    if(LooksLikePtr(q)){
+        uint32_t bo=PropOffsetSuper(ClassOf(q),"TargetTriggerBox");
+        if(bo!=0xFFFFFFFF&&SafeReadable((void*)(q+bo),8)){
+            uintptr_t b=*(uintptr_t*)(q+bo);
+            if(LooksLikePtr(b)&&ActorLoc(b,out)&&(out[0]||out[1]||out[2])){ g_qpBox=b; *src="TargetTriggerBox"; return true; } }
+        uint32_t to=PropOffsetSuper(ClassOf(q),"TargetLocation");
+        if(to!=0xFFFFFFFF&&SafeReadable((void*)(q+to),24)){
+            double* P=(double*)(q+to);
+            if(P[0]||P[1]||P[2]){ out[0]=P[0];out[1]=P[1];out[2]=P[2]; *src="TargetLocation"; return true; } }
+    }
+    if(LooksLikePtr(g_qpVol)&&ActorLoc(g_qpVol,out)){ *src="TrainingVolume"; return true; }
+    return false;
+}
+static void DoQuestPlay(){
+    if(g_qpMs && GetTickCount()-g_qpMs < 400) return;
+    switch(g_qpStep){
+    case 0:
+        if(kQpSpawn && g_beginThunk && g_gm2){
+            uintptr_t wc=FindClassExact("TrainingQuest_Basics_WASD_C");
+            if(wc){ uintptr_t a=SpawnActorCls(wc,"TrainingQuest_Basics_WASD_C(with hero)");
+                    Markerf("[QP] respawned WASD quest WITH the hero present -> 0x%llX\r\n",(unsigned long long)a);
+                    if(LooksLikePtr(a)) g_qpQuest=a; }
+            else Marker("[QP] WASD class not loaded -> using the existing quest\r\n");
+        }
+        g_qpStep++; g_qpMs=GetTickCount(); return;
+    case 1: {
+        if(GetTickCount()-g_qpMs < 3000) return;         // let that BeginPlay resolve its level actors
+        const char* src="?";
+        if(!QuestTarget(g_qpQuest,g_qpDst,&src)){ Marker("[QP] no target location resolvable -> abort\r\n"); g_done=1; return; }
+        char bn[96]="-"; if(LooksLikePtr(g_qpBox)&&ClassOf(g_qpBox)) GetFNameStr(NameId(ClassOf(g_qpBox)),bn,sizeof(bn));
+        Markerf("[QP] target from %s (%s) = (%.0f,%.0f,%.0f)\r\n",src,bn,g_qpDst[0],g_qpDst[1],g_qpDst[2]);
+        QuestState(g_qpQuest,"PRE");
+        g_qpStep++; g_qpMs=GetTickCount(); return; }
+    case 2: {
+        uint8_t* pb=(uint8_t*)g_pbuf; memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        if(g_oQpLoc!=0xFFFFFFFF){ double* L=(double*)(pb+g_oQpLoc); L[0]=g_qpDst[0]; L[1]=g_qpDst[1]; L[2]=g_qpDst[2]+120.0; }
+        if(g_oQpSweep!=0xFFFFFFFF) pb[g_oQpSweep]=0;
+        if(g_oQpTele !=0xFFFFFFFF) pb[g_oQpTele ]=1;
+        bool f=CallNativeGuarded(g_qpSlFn,g_qpSlThunk,g_qpSlChild,(void*)g_qpHero,g_pbuf,g_rbuf);
+        Markerf("[QP] *** TELEPORT hero -> (%.0f,%.0f,%.0f) [try %d]%s ***\r\n",g_qpDst[0],g_qpDst[1],g_qpDst[2]+120.0,g_qpTry,f?" FAULTED":"");
+        g_qpStep++; g_qpMs=GetTickCount(); return; }
+    case 3: {
+        if(GetTickCount()-g_qpMs < 7000) return;         // real time for BeginOverlap + the quest graph
+        double h[3]={0,0,0}; ActorLoc(g_qpHero,h);
+        Markerf("[QP] post-teleport hero=(%.0f,%.0f,%.0f)\r\n",h[0],h[1],h[2]);
+        QuestState(g_qpQuest,"POST");
+        // Second attempt: nudge the hero to the TRAINING VOLUME (the other documented trigger) before giving up.
+        if(g_qpTry==0 && LooksLikePtr(g_qpVol) && ActorLoc(g_qpVol,g_qpDst)){
+            g_qpTry++; Marker("[QP] retry: teleporting to the BP_TrainingVolume instead\r\n");
+            g_qpStep=2; g_qpMs=GetTickCount()-400; return; }
+        Marker("[QP] done\r\n"); g_done=1; return; }
+    }
+}
+
+// ★★★ S91 RM_BPCALL — exercise the new BP-call primitive on the tutorial quest, then use it to arm the lesson.
+// Staged one call per game-thread hit. Step 1 is deliberately SELF-VERIFYING: `UpdateAssociatedTrainingVolume(vol)`
+// writes a field we can read back, so a changed value proves the bytecode really ran (not just "didn't crash").
+static uintptr_t g_bcQuest=0, g_bcVol=0, g_bcHero=0; static int g_bcStep=0; static DWORD g_bcMs=0;
+static void BCLog(const char* fn,bool faulted,uint64_t r0){
+    Markerf("[BPC] %-32s %s ret=0x%llX\r\n",fn,faulted?"FAULTED":"ok     ",(unsigned long long)r0);
+}
+static uint64_t ReadProp(uintptr_t o,const char* n){
+    uint32_t off=PropOffsetSuper(ClassOf(o),n);
+    if(off==0xFFFFFFFF||!SafeReadable((void*)(o+off),8))return 0xDEADBEEF;
+    return *(uint64_t*)(o+off);
+}
+static bool ResolveBPCall(){
+    ResolveSpawnSeq();
+    g_bcQuest=FindInstByClass("Quest_Basics_WASD",nullptr);
+    if(!g_bcQuest) g_bcQuest=FindInstByClass("Quest_Basics",nullptr);
+    g_bcVol =FindInstByClass("TrainingVolume",nullptr);
+    g_bcHero=FindInstByClass("BP_HERO_",nullptr);
+    char qn[96]="-"; if(g_bcQuest&&ClassOf(g_bcQuest)) GetFNameStr(NameId(ClassOf(g_bcQuest)),qn,sizeof(qn));
+    Markerf("[BPC] quest=0x%llX(%s) vol=0x%llX hero=0x%llX\r\n",
+        (unsigned long long)g_bcQuest,qn,(unsigned long long)g_bcVol,(unsigned long long)g_bcHero);
+    if(!g_bcQuest){ Marker("[BPC] no live quest — inject tutorial_launch_quest.dll first\r\n"); return false; }
+    // Show the primitive's inputs for the first target so a refusal is diagnosable offline.
+    uintptr_t ch=0, f=FindBPFunc(ClassOf(g_bcQuest),"UpdateAssociatedTrainingVolume",&ch);
+    if(f) Markerf("[BPC] UpdateAssociatedTrainingVolume fn=0x%llX script=0x%llX num=%u propsSize=%u func=0x%llX\r\n",
+        (unsigned long long)f,(unsigned long long)*(uintptr_t*)(f+USTRUCT_SCRIPT),
+        *(uint32_t*)(f+USTRUCT_SCRIPTNUM),*(uint32_t*)(f+USTRUCT_PROPSIZE),
+        (unsigned long long)*(uintptr_t*)(f+UFUNC_FUNC));
+    return true;
+}
+static void DoBPCall(){
+    if(g_bcMs && GetTickCount()-g_bcMs < 600) return;
+    g_bcMs=GetTickCount();
+    uintptr_t cls=ClassOf(g_bcQuest), ch=0, f=0; uint64_t res[4]={0,0,0,0};
+    switch(g_bcStep++){
+    case 0:   // VALIDATION: a tiny, side-effect-free predicate (14 bytecode entries).
+        f=FindBPFunc(cls,"CanPing",&ch);
+        if(!f){ Marker("[BPC] CanPing not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals)); memset(res,0,sizeof(res));
+        BCLog("CanPing",CallBPGuarded(f,(void*)g_bcQuest,res),res[0]);
+        break;
+    case 1: { // SELF-VERIFYING: writes AssociatedTrainingVolume — read it back to prove the bytecode executed.
+        uint64_t before=ReadProp(g_bcQuest,"AssociatedTrainingVolume");
+        f=FindBPFunc(cls,"UpdateAssociatedTrainingVolume",&ch);
+        if(!f){ Marker("[BPC] UpdateAssociatedTrainingVolume not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals)); memset(res,0,sizeof(res));
+        if(LooksLikePtr(ch)){ uint32_t o=0xFFFFFFFF; uintptr_t p=ch;   // its single param = the volume
+            if(SafeReadable((void*)(p+FPROP_OFFSET),4)) o=*(uint32_t*)(p+FPROP_OFFSET);
+            char pn[96]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
+            if(o!=0xFFFFFFFF&&o+8<=sizeof(g_bplocals)) *(uint64_t*)(g_bplocals+o)=(uint64_t)g_bcVol;
+            Markerf("[BPC] param '%s' @0x%X <- vol 0x%llX\r\n",pn,o,(unsigned long long)g_bcVol); }
+        bool fl=CallBPGuarded(f,(void*)g_bcQuest,res);
+        uint64_t after=ReadProp(g_bcQuest,"AssociatedTrainingVolume");
+        Markerf("[BPC] UpdateAssociatedTrainingVolume %s  AssociatedTrainingVolume 0x%llX -> 0x%llX  %s\r\n",
+            fl?"FAULTED":"ok",(unsigned long long)before,(unsigned long long)after,
+            (after==(uint64_t)g_bcVol&&g_bcVol)?"*** BP CALL PRIMITIVE WORKS ***":"(unchanged — bytecode did not take effect)");
+        break; }
+    case 2:   // THE TRIGGER: the quest base's documented entry point; its one FObjectProperty param = the volume.
+        f=FindBPFunc(cls,"OnTrainingVolume",&ch);
+        if(!f){ Marker("[BPC] OnTrainingVolume not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals)); memset(res,0,sizeof(res));
+        if(LooksLikePtr(ch)){ uint32_t o=SafeReadable((void*)(ch+FPROP_OFFSET),4)?*(uint32_t*)(ch+FPROP_OFFSET):0xFFFFFFFF;
+            char pn[96]="?"; GetFNameStr(NameId(ch),pn,sizeof(pn));
+            if(o!=0xFFFFFFFF&&o+8<=sizeof(g_bplocals)) *(uint64_t*)(g_bplocals+o)=(uint64_t)g_bcVol;
+            Markerf("[BPC] OnTrainingVolume param '%s' @0x%X <- vol 0x%llX\r\n",pn,o,(unsigned long long)g_bcVol); }
+        BCLog("OnTrainingVolume",CallBPGuarded(f,(void*)g_bcQuest,res),res[0]);
+        break;
+    case 3:
+        QuestState(g_bcQuest,"POST-OnTrainingVolume");
+        QuestCensus("BPC");
+        break;
+    case 4: {  // ★ THE ARMING CALL: sequencer.ReadyToFire(<quest CLASS>) — the documented "arm the next quest" entry.
+               // Never callable before (it is bytecode); the S91 BP primitive makes it reachable.
+        uintptr_t seq=FindInstByClass("QuestSequencer",nullptr);
+        if(!seq){ Marker("[BPC] no live sequencer\r\n"); break; }
+        f=FindBPFunc(ClassOf(seq),"ReadyToFire",&ch);
+        if(!f){ Marker("[BPC] ReadyToFire not found\r\n"); break; }
+        uintptr_t wc=FindClassExact("TrainingQuest_Basics_WASD_C");
+        memset(g_bplocals,0,sizeof(g_bplocals)); memset(res,0,sizeof(res));
+        int filled=0;
+        for(uintptr_t p=ch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+            char pn[96]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
+            uint32_t o =SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+            uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0;
+            char tn[96]="?"; if(ClassOf(p)) GetFNameStr(NameId(ClassOf(p)),tn,sizeof(tn));
+            Markerf("[BPC] ReadyToFire param '%s' type=%s @0x%X flags=0x%llX\r\n",pn,tn,o,(unsigned long long)fl);
+            if(!filled && strstr(tn,"ClassProperty") && o!=0xFFFFFFFF && o+8<=sizeof(g_bplocals) && wc){
+                *(uint64_t*)(g_bplocals+o)=(uint64_t)wc; filled=1;
+                Markerf("[BPC]   -> set to TrainingQuest_Basics_WASD_C 0x%llX\r\n",(unsigned long long)wc); }
+        }
+        bool fl2=CallBPGuarded(f,(void*)seq,res);
+        Markerf("[BPC] ReadyToFire on seq 0x%llX %s ret=0x%llX (classParamFilled=%d)\r\n",
+            (unsigned long long)seq,fl2?"FAULTED":"ok",(unsigned long long)res[0],filled);
+        for(uintptr_t p=ch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+            char pn[96]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
+            uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+            if(o!=0xFFFFFFFF&&o+8<=sizeof(g_bplocals)) Markerf("[BPC]   out '%s' = 0x%llX\r\n",pn,(unsigned long long)*(uint64_t*)(g_bplocals+o));
+        }
+        break; }
+    case 5:
+        QuestState(g_bcQuest,"POST-ReadyToFire");
+        QuestCensus("BPC2");
+        break;
+    case 6: {  // ★★★ THE REAL LESSON-START: Comp_GameState_TrainingBase.GameStateTryStartTraining(NewVolume=vol).
+               // Offline bpdump: it sets CurrentTrainingVolume=NewVolume and reads NewVolume.VolumeTag. This is the
+               // tutorial's own "start training at this volume" entry (FUNC_BlueprintCallable) — now reachable.
+        uintptr_t tb=FindInstByClass("GameState_TrainingBase",nullptr);
+        if(!tb){ Marker("[BPC] no live Comp_GameState_TrainingBase\r\n"); break; }
+        uint64_t curBefore=ReadProp(tb,"CurrentTrainingVolume"), actBefore=ReadProp(tb,"TrainingActive");
+        f=FindBPFunc(ClassOf(tb),"GameStateTryStartTraining",&ch);
+        if(!f){ Marker("[BPC] GameStateTryStartTraining not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals)); memset(res,0,sizeof(res));
+        // first FObjectProperty param = NewVolume (the training volume). Set it; leave the bools/int at 0.
+        for(uintptr_t p=ch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+            char pn[96]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
+            uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+            uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0;
+            Markerf("[BPC] StartTraining param '%s' @0x%X flags=0x%llX\r\n",pn,o,(unsigned long long)fl);
+            if(strstr(pn,"Volume")&&o!=0xFFFFFFFF&&o+8<=sizeof(g_bplocals)){ *(uint64_t*)(g_bplocals+o)=(uint64_t)g_bcVol;
+                Markerf("[BPC]   -> NewVolume = 0x%llX\r\n",(unsigned long long)g_bcVol); }
+        }
+        bool fl=CallBPGuarded(f,(void*)tb,res);
+        uint64_t curAfter=ReadProp(tb,"CurrentTrainingVolume"), actAfter=ReadProp(tb,"TrainingActive");
+        Markerf("[BPC] GameStateTryStartTraining %s  CurrentTrainingVolume 0x%llX->0x%llX  TrainingActive 0x%llX->0x%llX\r\n",
+            fl?"FAULTED":"ok",(unsigned long long)curBefore,(unsigned long long)curAfter,
+            (unsigned long long)actBefore,(unsigned long long)actAfter);
+        g_bcMs=GetTickCount()+3400; break; }   // widen the gap before the next step so training can spin up (>600ms floor)
+    case 7:
+        QuestCensus("BPC-STARTTRAIN");
+        { uintptr_t tb=FindInstByClass("GameState_TrainingBase",nullptr);
+          if(tb) Markerf("[BPC] TrainingBase now: CurrentTrainingVolume=0x%llX TrainingActive=0x%llX CurrentObjectiveCount=0x%llX\r\n",
+              (unsigned long long)ReadProp(tb,"CurrentTrainingVolume"),(unsigned long long)ReadProp(tb,"TrainingActive"),
+              (unsigned long long)ReadProp(tb,"CurrentObjectiveCount")); }
+        break;
+    default:
+        Marker("[BPC] done\r\n"); g_done=1; return;
+    }
+}
+
+// ★★★ S92 RM_OBJDRIVE — advance the ACTIVE WASD objective three ways, watching CurrentObjectiveCount.
+// Training is already ACTIVE (S91: GameStateTryStartTraining spawned the on-map arrows). This mode:
+//   step0: census — TrainingBase{TrainingActive,CurrentObjectiveCount,CurrentTrainingVolume} + each WASD quest's
+//          {CurrentMark(+loc), TargetTriggerBox(+loc), TargetLocation, CurrentObjectiveCount}; pick the active quest.
+//   step1: PHYSICAL — teleport the possessed hero onto the active quest's TargetTriggerBox and settle (fire overlap).
+//   step2: OVERLAP  — call quest.OnWASDTriggerOverlap(box, hero) via the BP primitive.
+//   step3: DIRECT   — call TrainingBase.ProgressObjective(1) via the BP primitive (x3), watching the count.
+static uintptr_t g_odTB=0, g_odHero=0, g_odQuest=0, g_odBox=0, g_odVol=0; static int g_odStep=0; static DWORD g_odMs=0;
+static void*     g_odSlFn=nullptr; static uintptr_t g_odSlThunk=0, g_odSlChild=0; static uint32_t g_oOdLoc=0xFFFFFFFF,g_oOdSweep=0xFFFFFFFF,g_oOdTele=0xFFFFFFFF;
+static uint64_t OdObjCount(){ return g_odTB?ReadProp(g_odTB,"CurrentObjectiveCount"):0; }
+static void OdLogState(const char* tag){
+    Markerf("[OD] %s TrainingBase: Active=0x%llX ObjCount=0x%llX CurVol=0x%llX\r\n",tag,
+        (unsigned long long)ReadProp(g_odTB,"TrainingActive"),(unsigned long long)ReadProp(g_odTB,"CurrentObjectiveCount"),
+        (unsigned long long)ReadProp(g_odTB,"CurrentTrainingVolume"));
+    if(LooksLikePtr(g_odQuest)){
+        uint32_t mo=PropOffsetSuper(ClassOf(g_odQuest),"CurrentMark"), bo=PropOffsetSuper(ClassOf(g_odQuest),"TargetTriggerBox");
+        uint64_t mk=(mo!=0xFFFFFFFF&&SafeReadable((void*)(g_odQuest+mo),8))?*(uint64_t*)(g_odQuest+mo):0;
+        uint64_t bx=(bo!=0xFFFFFFFF&&SafeReadable((void*)(g_odQuest+bo),8))?*(uint64_t*)(g_odQuest+bo):0;
+        double ml[3]={0,0,0},bl[3]={0,0,0}; ActorLoc((uintptr_t)mk,ml); ActorLoc((uintptr_t)bx,bl);
+        Markerf("[OD] %s quest 0x%llX: ObjCount=0x%llX CurrentMark=0x%llX(%.0f,%.0f,%.0f) TargetTriggerBox=0x%llX(%.0f,%.0f,%.0f)\r\n",
+            tag,(unsigned long long)g_odQuest,(unsigned long long)ReadProp(g_odQuest,"CurrentObjectiveCount"),
+            (unsigned long long)mk,ml[0],ml[1],ml[2],(unsigned long long)bx,bl[0],bl[1],bl[2]);
+    }
+}
+static bool ResolveObjDrive(){
+    g_odTB  =FindInstByClass("GameState_TrainingBase",nullptr);
+    g_odHero=FindInstByClass("BP_HERO_",nullptr);
+    g_odVol =FindInstByClass("TrainingVolume",nullptr);
+    // pick the WASD quest that has a live CurrentMark or TargetTriggerBox (the active one).
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(SafeReadable((void*)oo,0x18)){
+        uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+        if(LooksLikePtr(objectsPtr)&&numEl>0&&numEl<8000000){ int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+            for(int ci=0;ci<numChunks&&!g_odQuest;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+                for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+                    uintptr_t cls=ClassOf(obj); if(!cls)continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+                    if(!strstr(cn,"Quest_Basics_WASD"))continue; char on[96]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on)); if(strncmp(on,"Default__",9)==0)continue;
+                    uint32_t bo=PropOffsetSuper(cls,"TargetTriggerBox"); uint64_t bx=(bo!=0xFFFFFFFF&&SafeReadable((void*)(obj+bo),8))?*(uint64_t*)(obj+bo):0;
+                    if(LooksLikePtr(bx)){ g_odQuest=obj; g_odBox=bx; break; }
+                    if(!g_odQuest) g_odQuest=obj; } } } }
+    if(g_odHero){ ResolveFuncSuper(ClassOf(g_odHero),"K2_SetActorLocation",&g_odSlFn,&g_odSlThunk,&g_odSlChild);
+        if(g_odSlChild){ g_oOdLoc=ParamOffset(g_odSlChild,"NewLocation"); g_oOdSweep=ParamOffset(g_odSlChild,"bSweep"); g_oOdTele=ParamOffset(g_odSlChild,"bTeleport"); } }
+    Markerf("[OD] TB=0x%llX hero=0x%llX quest=0x%llX box=0x%llX vol=0x%llX setLoc=0x%llX\r\n",
+        (unsigned long long)g_odTB,(unsigned long long)g_odHero,(unsigned long long)g_odQuest,
+        (unsigned long long)g_odBox,(unsigned long long)g_odVol,(unsigned long long)g_odSlThunk);
+    return g_odTB && g_odQuest;
+}
+static void DoObjDrive(){
+    if(g_odMs && GetTickCount()-g_odMs < 600) return; g_odMs=GetTickCount();
+    uintptr_t ch=0,f=0; uint64_t res[4]={0,0,0,0};
+    switch(g_odStep++){
+    case 0: OdLogState("INITIAL"); break;
+    case 1: { // PHYSICAL: teleport hero onto the trigger box (or the active mark), then let overlap run.
+        double dst[3]={0,0,0}; const char* src="none";
+        if(LooksLikePtr(g_odBox)&&ActorLoc(g_odBox,dst)&&(dst[0]||dst[1]||dst[2])) src="box";
+        else if(LooksLikePtr(g_odVol)&&ActorLoc(g_odVol,dst)) src="vol";
+        if(g_odSlThunk&&LooksLikePtr(g_odHero)&&src[0]!='n'){
+            uint8_t* pb=(uint8_t*)g_pbuf; memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            if(g_oOdLoc!=0xFFFFFFFF){ double* L=(double*)(pb+g_oOdLoc); L[0]=dst[0];L[1]=dst[1];L[2]=dst[2]+90.0; }
+            if(g_oOdTele!=0xFFFFFFFF) pb[g_oOdTele]=1;
+            bool fl=CallNativeGuarded(g_odSlFn,g_odSlThunk,g_odSlChild,(void*)g_odHero,g_pbuf,g_rbuf);
+            Markerf("[OD] PHYSICAL teleport hero -> %s (%.0f,%.0f,%.0f)%s\r\n",src,dst[0],dst[1],dst[2]+90.0,fl?" FAULTED":"");
+        } else Marker("[OD] PHYSICAL skipped (no box/hero/setLoc)\r\n");
+        g_odMs=GetTickCount()+2600; break; }   // widen gap so overlap can fire
+    case 2: OdLogState("POST-PHYSICAL"); break;
+    case 3: { // OVERLAP: call quest.OnWASDTriggerOverlap(OverlappedActor=box, OtherActor=hero) via the BP primitive.
+        f=FindBPFunc(ClassOf(g_odQuest),"OnWASDTriggerOverlap",&ch);
+        if(!f){ Marker("[OD] OnWASDTriggerOverlap not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals));
+        int k=0; for(uintptr_t p=ch;LooksLikePtr(p)&&k<2;p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+            uint64_t fp=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0; if(!(fp&0x80))continue;   // CPF_Parm
+            uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+            char pn[64]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
+            uint64_t v=(k==0)?(uint64_t)(g_odBox?g_odBox:g_odVol):(uint64_t)g_odHero;
+            if(o!=0xFFFFFFFF&&o+8<=sizeof(g_bplocals)) *(uint64_t*)(g_bplocals+o)=v;
+            Markerf("[OD] OnWASDTriggerOverlap param[%d] '%s'@0x%X <- 0x%llX\r\n",k,pn,o,(unsigned long long)v); k++; }
+        bool fl=CallBPGuarded(f,(void*)g_odQuest,res);
+        Markerf("[OD] OnWASDTriggerOverlap %s\r\n",fl?"FAULTED":"ok"); g_odMs=GetTickCount()+1600; break; }
+    case 4: OdLogState("POST-OVERLAP"); break;
+    case 5: case 6: case 7: { // DIRECT: ProgressObjective(1) on the TrainingBase component.
+        f=FindBPFunc(ClassOf(g_odTB),"ProgressObjective",&ch);
+        if(!f){ Marker("[OD] ProgressObjective not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals));
+        uint32_t o=LooksLikePtr(ch)&&SafeReadable((void*)(ch+FPROP_OFFSET),4)?*(uint32_t*)(ch+FPROP_OFFSET):0;
+        if(o+4<=sizeof(g_bplocals)) *(int32_t*)(g_bplocals+o)=1;   // ProgressAmount = 1
+        uint64_t before=OdObjCount();
+        bool fl=CallBPGuarded(f,(void*)g_odTB,res);
+        Markerf("[OD] ProgressObjective(1) %s  ObjCount 0x%llX -> 0x%llX\r\n",fl?"FAULTED":"ok",
+            (unsigned long long)before,(unsigned long long)OdObjCount());
+        g_odMs=GetTickCount()+900; break; }
+    case 8: OdLogState("POST-PROGRESS"); break;
+    case 9: {  // NATIVE augment path on the active quest: IncrementObjectiveCount (TeamAugment native thunk).
+        void* nf=nullptr; uintptr_t nth=0,nch=0;
+        ResolveFuncNative(ClassOf(g_odQuest),"IncrementObjectiveCount",&nf,&nth,&nch);
+        if(nth){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            uint64_t before=ReadProp(g_odQuest,"CurrentObjectiveCount");
+            bool fl=CallNativeGuarded(nf,nth,nch,(void*)g_odQuest,g_pbuf,g_rbuf);
+            Markerf("[OD] native IncrementObjectiveCount %s  quest.ObjCount 0x%llX->0x%llX  TB.ObjCount->0x%llX\r\n",
+                fl?"FAULTED":"ok",(unsigned long long)before,(unsigned long long)ReadProp(g_odQuest,"CurrentObjectiveCount"),
+                (unsigned long long)OdObjCount());
+        } else Marker("[OD] IncrementObjectiveCount thunk not found\r\n");
+        g_odMs=GetTickCount()+800; break; }
+    case 10: {  // THE COMPLETION EVENT: quest.OnObjectiveComplete (BP, FUNC_BlueprintAuthorityOnly; force-open IS authority).
+        f=FindBPFunc(ClassOf(g_odQuest),"OnObjectiveComplete",&ch);
+        if(!f){ Marker("[OD] OnObjectiveComplete not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals));
+        bool fl=CallBPGuarded(f,(void*)g_odQuest,res);
+        Markerf("[OD] quest.OnObjectiveComplete %s (authority completion path)\r\n",fl?"FAULTED":"ok");
+        g_odMs=GetTickCount()+2600; break; }
+    case 11: OdLogState("POST-COMPLETE"); QuestCensus("OBJDRIVE"); break;
+    default: Marker("[OD] done\r\n"); g_done=1; return;
+    }
+}
+
+// ★★★ S93 RM_OBJCOMPLETE — force the training component's objective to its target + fire the completion OnRep.
+// The bytecode chain (read this session): Comp.ProgressObjective -> ExecuteUbergraph(768) -> [ServerOnly gate] ->
+// CurrentObjectiveCount += ProgressAmount -> OnRep_CurrentObjectiveCount -> [ServerOnly gate] ->
+// if CurrentObjectiveCount >= ObjectiveTarget -> EndTraining(). This mode bypasses the increment (pokes the count to
+// the target directly) then invokes OnRep so the completion runs — testing (a) whether my BP primitive runs gated
+// functions, (b) whether ServerOnly passes on force-open (authority), (c) whether EndTraining visibly completes the lesson.
+static uintptr_t g_ocTB=0; static int g_ocStep=0; static DWORD g_ocMs=0;
+static void OcLog(const char* tag){
+    uint32_t fvo=PropOffsetSuper(ClassOf(g_ocTB),"FinishedVolumes"); uint32_t fvn=0;
+    if(fvo!=0xFFFFFFFF&&SafeReadable((void*)(g_ocTB+fvo+8),4)) fvn=*(uint32_t*)(g_ocTB+fvo+8);
+    Markerf("[OC] %s TrainingActive=0x%llX CurObjCount=0x%llX ObjectiveTarget=0x%llX TrainingSuccessful=0x%llX AllTrainingCompleted=0x%llX FinishedVolumes.Num=%u\r\n",
+        tag,(unsigned long long)ReadProp(g_ocTB,"TrainingActive"),(unsigned long long)ReadProp(g_ocTB,"CurrentObjectiveCount"),
+        (unsigned long long)ReadProp(g_ocTB,"ObjectiveTarget"),(unsigned long long)ReadProp(g_ocTB,"TrainingSuccessful"),
+        (unsigned long long)ReadProp(g_ocTB,"AllTrainingCompleted"),fvn);
+}
+static bool ResolveObjComplete(){
+    // pick the LIVE active TrainingBase (TrainingActive==1), not a GEN_VARIABLE archetype.
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(SafeReadable((void*)oo,0x18)){
+        uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+        if(LooksLikePtr(objectsPtr)&&numEl>0&&numEl<8000000){ int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+            for(int ci=0;ci<numChunks&&!g_ocTB;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+                for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+                    uintptr_t cls=ClassOf(obj); if(!cls)continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+                    if(strcmp(cn,"Comp_GameState_TrainingBase_C")!=0)continue;
+                    uint32_t o=PropOffsetSuper(cls,"TrainingActive"); if(o!=0xFFFFFFFF&&SafeReadable((void*)(obj+o),1)&&*(uint8_t*)(obj+o)==1){ g_ocTB=obj; break; } } } } }
+    if(!g_ocTB) g_ocTB=FindInstByClass("GameState_TrainingBase",nullptr);
+    Markerf("[OC] TrainingBase=0x%llX\r\n",(unsigned long long)g_ocTB);
+    return g_ocTB!=0;
+}
+static void DoObjComplete(){
+    if(g_ocMs && GetTickCount()-g_ocMs < 700) return; g_ocMs=GetTickCount();
+    uintptr_t ch=0,f=0; uint64_t res[4]={0,0,0,0};
+    switch(g_ocStep++){
+    case 0: OcLog("INITIAL"); break;
+    case 1: {  // POKE CurrentObjectiveCount = ObjectiveTarget (direct RPM write; bypass the increment gate).
+        uint32_t co=PropOffsetSuper(ClassOf(g_ocTB),"CurrentObjectiveCount");
+        uint32_t to=PropOffsetSuper(ClassOf(g_ocTB),"ObjectiveTarget");
+        if(co!=0xFFFFFFFF&&to!=0xFFFFFFFF&&SafeReadable((void*)(g_ocTB+to),4)){
+            int32_t tgt=*(int32_t*)(g_ocTB+to); if(tgt<1)tgt=1;
+            SafeWrite((uint8_t*)(g_ocTB+co),(uint8_t*)&tgt,4);
+            Markerf("[OC] poked CurrentObjectiveCount@0x%X = %d (=ObjectiveTarget)\r\n",co,tgt);
+        } else Marker("[OC] could not resolve count/target offsets\r\n");
+        OcLog("POST-POKE"); break; }
+    case 2: {  // fire OnRep_CurrentObjectiveCount -> should hit GreaterEqual(count,target) -> EndTraining().
+        f=FindBPFunc(ClassOf(g_ocTB),"OnRep_CurrentObjectiveCount",&ch);
+        if(!f){ Marker("[OC] OnRep_CurrentObjectiveCount not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals));
+        bool fl=CallBPGuarded(f,(void*)g_ocTB,res);
+        Markerf("[OC] OnRep_CurrentObjectiveCount %s\r\n",fl?"FAULTED":"ok");
+        g_ocMs=GetTickCount()+2600; break; }
+    case 3: OcLog("POST-ONREP"); break;
+    case 4: {  // fallback: call EndTraining() directly.
+        f=FindBPFunc(ClassOf(g_ocTB),"EndTraining",&ch);
+        if(!f){ Marker("[OC] EndTraining not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals));
+        bool fl=CallBPGuarded(f,(void*)g_ocTB,res);
+        Markerf("[OC] EndTraining %s (direct)\r\n",fl?"FAULTED":"ok");
+        g_ocMs=GetTickCount()+2600; break; }
+    case 5: OcLog("FINAL"); QuestCensus("OBJCOMPLETE");
+        Markerf("[OC] TrainingBase now marks the volume finished? FinishedVolumes checked above; OnTrainingFinish should have fired if EndTraining ran\r\n");
+        break;
+    default: Marker("[OC] done\r\n"); g_done=1; return;
+    }
+}
+
+// ★★★ S93 RM_FIREOVERLAP — the "through gameplay" completion, then a guaranteed ungated closer.
+// From the verification workflow + live reads: the WASD overlap bind is EMPTY (box.OnActorBeginOverlap Num=0 — the
+// quest's authority ClientServerSplit bind branch never ran for our force-open quest), the TargetTriggerBox is huge
+// (extent ~5190x2898x768) and the hero is ALREADY inside it, so a physical begin-overlap can't fire. So:
+//   (A) fire the quest's OWN OnWASDTriggerOverlap(box, hero) on the ACTIVE quest (OBJARROW!=0) via the BP primitive —
+//       the "objective reached" gameplay beat (class filter passes for the LokiHeroCharacter -> IncrementObjectiveCount
+//       -> OnObjectiveComplete -> GameEvent_Tutorial_QuestComplete).
+//   (B) GUARANTEED CLOSER (authority-independent, param-free, all UNGATED per the EndTraining/OnRep_TrainingActive
+//       bytecode): RPM-set the component's TrainingSuccessful=1, TrainingActive=0, CurrentObjectiveCount=1, then
+//       BP-call the param-free OnRep_TrainingActive() -> CallTrainingCompletions -> broadcasts OnTrainingFinish
+//       (BOUND -> chain-advance) + LokiGameState.OnTrainingComplete, and FinishedVolumes.AddUnique(volume tag).
+static uintptr_t g_foQuest=0, g_foBox=0, g_foHero=0, g_foTB=0, g_foVolFO=0; static int g_foStep=0; static DWORD g_foMs=0;
+static void FoLogTB(const char* tag){
+    if(!g_foTB)return;
+    Markerf("[FO] %s TB: TrainingActive=0x%llX CurObjCount=0x%llX ObjectiveTarget=0x%llX TrainingSuccessful=0x%llX\r\n",tag,
+        (unsigned long long)ReadProp(g_foTB,"TrainingActive"),(unsigned long long)ReadProp(g_foTB,"CurrentObjectiveCount"),
+        (unsigned long long)ReadProp(g_foTB,"ObjectiveTarget"),(unsigned long long)ReadProp(g_foTB,"TrainingSuccessful"));
+    if(g_foQuest) Markerf("[FO] %s quest.CurrentObjectiveCount=0x%llX AugmentObjectiveCount=0x%llX\r\n",tag,
+        (unsigned long long)ReadProp(g_foQuest,"CurrentObjectiveCount"),(unsigned long long)ReadProp(g_foQuest,"AugmentObjectiveCount"));
+}
+static bool ResolveFireOverlap(){
+    // active WASD quest = the one whose OBJARROW is set (the on-screen marker) — the tutorial's live objective.
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(SafeReadable((void*)oo,0x18)){
+        uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+        if(LooksLikePtr(objectsPtr)&&numEl>0&&numEl<8000000){ int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+            for(int ci=0;ci<numChunks&&!g_foQuest;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+                for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+                    uintptr_t cls=ClassOf(obj); if(!cls)continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+                    if(strcmp(cn,"TrainingQuest_Basics_WASD_C")!=0)continue;
+                    uint32_t ao=PropOffsetSuper(cls,"OBJARROW"); if(ao!=0xFFFFFFFF&&SafeReadable((void*)(obj+ao),8)&&*(uint64_t*)(obj+ao)){ g_foQuest=obj; break; } } } } }
+    if(!g_foQuest) g_foQuest=FindInstByClass("Quest_Basics_WASD",nullptr);
+    if(g_foQuest){ uint32_t bo=PropOffsetSuper(ClassOf(g_foQuest),"TargetTriggerBox"); if(bo!=0xFFFFFFFF&&SafeReadable((void*)(g_foQuest+bo),8)) g_foBox=*(uint64_t*)(g_foQuest+bo); }
+    g_foHero=FindInstByClass("BP_HERO_",nullptr);
+    // the LIVE training component = the one whose CurrentTrainingVolume is set (survives an EndTraining); prefer
+    // TrainingActive==1 but accept CurrentTrainingVolume!=0 so we can re-start it if a prior EndTraining cleared active.
+    uintptr_t fallback=0;
+    { uintptr_t oo2=g_modBase+kObjObjectsRva; uintptr_t objectsPtr=*(uintptr_t*)oo2; int32_t numEl=*(int32_t*)(oo2+0x14); int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+      for(int ci=0;ci<numChunks&&!g_foTB;ci++){ uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue; uintptr_t cls=ClassOf(obj); if(!cls)continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue; if(strcmp(cn,"Comp_GameState_TrainingBase_C")!=0)continue;
+            char on[96]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on)); if(strstr(on,"GEN_VARIABLE")||strstr(on,"Race"))continue;
+            uint32_t ta=PropOffsetSuper(cls,"TrainingActive"); uint32_t cv=PropOffsetSuper(cls,"CurrentTrainingVolume");
+            uint8_t active=(ta!=0xFFFFFFFF&&SafeReadable((void*)(obj+ta),1))?*(uint8_t*)(obj+ta):0;
+            uint64_t vol=(cv!=0xFFFFFFFF&&SafeReadable((void*)(obj+cv),8))?*(uint64_t*)(obj+cv):0;
+            if(active==1){ g_foTB=obj; break; } if(vol&&!fallback) fallback=obj; } } }
+    if(!g_foTB) g_foTB=fallback;
+    if(g_foTB && !g_foBox){ uint32_t cv=PropOffsetSuper(ClassOf(g_foTB),"CurrentTrainingVolume"); if(cv!=0xFFFFFFFF&&SafeReadable((void*)(g_foTB+cv),8)) g_foVolFO=*(uint64_t*)(g_foTB+cv); }
+    if(g_foTB){ uint32_t cv=PropOffsetSuper(ClassOf(g_foTB),"CurrentTrainingVolume"); if(cv!=0xFFFFFFFF&&SafeReadable((void*)(g_foTB+cv),8)) g_foVolFO=*(uint64_t*)(g_foTB+cv); }
+    Markerf("[FO] quest=0x%llX box=0x%llX hero=0x%llX TB=0x%llX vol=0x%llX\r\n",(unsigned long long)g_foQuest,(unsigned long long)g_foBox,(unsigned long long)g_foHero,(unsigned long long)g_foTB,(unsigned long long)g_foVolFO);
+    return g_foQuest && g_foTB;
+}
+static void DoFireOverlap(){
+    if(g_foMs && GetTickCount()-g_foMs < 700) return; g_foMs=GetTickCount();
+    uintptr_t ch=0,f=0; uint64_t res[4]={0,0,0,0};
+    switch(g_foStep++){
+    case 0: {  // RE-ARM: if a prior EndTraining cleared TrainingActive, restart the WASD lesson so the arrows respawn.
+        FoLogTB("INITIAL");
+        if(ReadProp(g_foTB,"TrainingActive")==0 && LooksLikePtr(g_foVolFO)){
+            f=FindBPFunc(ClassOf(g_foTB),"GameStateTryStartTraining",&ch);
+            if(f){ memset(g_bplocals,0,sizeof(g_bplocals));
+                for(uintptr_t p=ch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+                    char pn[64]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
+                    uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+                    if(strstr(pn,"Volume")&&o!=0xFFFFFFFF&&o+8<=sizeof(g_bplocals)){ *(uint64_t*)(g_bplocals+o)=(uint64_t)g_foVolFO; break; } }
+                bool fl=CallBPGuarded(f,(void*)g_foTB,res);
+                Markerf("[FO] re-armed via GameStateTryStartTraining(vol) %s\r\n",fl?"FAULTED":"ok");
+            } else Marker("[FO] GameStateTryStartTraining not found (skip re-arm)\r\n");
+        }
+        g_foMs=GetTickCount()+2600; break; }
+    case 1: FoLogTB("POST-REARM"); break;
+    case 2: {  // (A) GAMEPLAY BEAT: fire the ACTIVE quest's OnWASDTriggerOverlap(OverlappedActor=box, OtherActor=hero).
+        f=FindBPFunc(ClassOf(g_foQuest),"OnWASDTriggerOverlap",&ch);
+        if(!f){ Marker("[FO] OnWASDTriggerOverlap not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals)); int k=0;
+        for(uintptr_t p=ch;LooksLikePtr(p)&&k<2;p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+            uint64_t fp=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0; if(!(fp&0x80))continue;
+            uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+            uint64_t v=(k==0)?(uint64_t)g_foBox:(uint64_t)g_foHero;
+            if(o!=0xFFFFFFFF&&o+8<=sizeof(g_bplocals)) *(uint64_t*)(g_bplocals+o)=v; k++; }
+        bool fl=CallBPGuarded(f,(void*)g_foQuest,res);
+        Markerf("[FO] OnWASDTriggerOverlap(box,hero) on active quest %s\r\n",fl?"FAULTED":"ok");
+        g_foMs=GetTickCount()+2600; break; }
+    case 3: FoLogTB("POST-OVERLAP-BEAT"); break;
+    case 4: {  // (B) GUARANTEED CLOSER — RPM-set the component fields (ungated tail), then param-free OnRep_TrainingActive.
+        uint32_t co=PropOffsetSuper(ClassOf(g_foTB),"CurrentObjectiveCount");
+        uint32_t ta=PropOffsetSuper(ClassOf(g_foTB),"TrainingActive");
+        uint32_t ts=PropOffsetSuper(ClassOf(g_foTB),"TrainingSuccessful");
+        int32_t one=1; uint8_t t1=1,t0=0;
+        if(ts!=0xFFFFFFFF) SafeWrite((uint8_t*)(g_foTB+ts),&t1,1);   // TrainingSuccessful = true  (so FinishedVolumes.AddUnique runs)
+        if(co!=0xFFFFFFFF) SafeWrite((uint8_t*)(g_foTB+co),(uint8_t*)&one,4); // CurrentObjectiveCount = 1 (UI)
+        if(ta!=0xFFFFFFFF) SafeWrite((uint8_t*)(g_foTB+ta),&t0,1);   // TrainingActive = false (OnRep jumps to the ended block)
+        Markerf("[FO] pre-set TrainingSuccessful@0x%X=1 CurObjCount@0x%X=1 TrainingActive@0x%X=0\r\n",ts,co,ta);
+        f=FindBPFunc(ClassOf(g_foTB),"OnRep_TrainingActive",&ch);
+        if(!f){ Marker("[FO] OnRep_TrainingActive not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals));
+        bool fl=CallBPGuarded(f,(void*)g_foTB,res);
+        Markerf("[FO] OnRep_TrainingActive() (ungated closer) %s\r\n",fl?"FAULTED":"ok");
+        g_foMs=GetTickCount()+2600; break; }
+    case 5: {
+        FoLogTB("FINAL");
+        uint32_t fvo=PropOffsetSuper(ClassOf(g_foTB),"FinishedVolumes"); uint32_t fvn=0;
+        if(fvo!=0xFFFFFFFF&&SafeReadable((void*)(g_foTB+fvo+8),4)) fvn=*(uint32_t*)(g_foTB+fvo+8);
+        Markerf("[FO] FinishedVolumes.Num=%u (>=1 => the WASD volume is marked finished; OnTrainingFinish should have advanced the chain)\r\n",fvn);
+        QuestCensus("FIREOVERLAP");
+        break; }
+    default: Marker("[FO] done\r\n"); g_done=1; return;
+    }
+}
+
+// ★★★ S93 RM_DRIVECHAIN — walk the tutorial lesson CHAIN: for each quest (following NextQuestInChain), activate it,
+// GameStateTryStartTraining(volume), then complete via the ungated closer. On force-open there is ONE loaded volume
+// (Move_V2), so each "next volume" reuses it; the lesson identity is carried by the active quest (OnTrainingVolume
+// sets its OBJARROW marker). Completing a volume adds its tag to FinishedVolumes (which would block a re-start), so we
+// clear FinishedVolumes before each GameStateTryStartTraining. Staged; heavily fault-guarded (the game is precious).
+#ifndef KCHAINMAX
+#define KCHAINMAX 3
+#endif
+static const int kChainMax=KCHAINMAX;
+static uintptr_t g_dcTB=0, g_dcVol=0, g_dcQuest=0, g_dcHero=0; static int g_dcPhase=0, g_dcLesson=0; static DWORD g_dcMs=0;
+static uintptr_t NextQuestClass(uintptr_t q){
+    uint32_t no=PropOffsetSuper(ClassOf(q),"NextQuestInChain"); if(no==0xFFFFFFFF)return 0;
+    if(!SafeReadable((void*)(q+no),16))return 0; uintptr_t data=*(uint64_t*)(q+no); uint32_t num=*(uint32_t*)(q+no+8);
+    if(num==0||!LooksLikePtr(data)||!SafeReadable((void*)data,8))return 0;
+    uintptr_t elem=*(uint64_t*)data; return LooksLikePtr(elem)?elem:0;   // element is the next quest UCLASS
+}
+static uintptr_t LiveInstOfClass(uintptr_t cls,uintptr_t exclude){
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14); if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return 0; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj)||obj==exclude)continue;
+            if(ClassOf(obj)!=cls)continue; char on[96]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on)); if(strncmp(on,"Default__",9)==0)continue; return obj; } }
+    return 0;
+}
+static void DcClearFinished(){ uint32_t fvo=PropOffsetSuper(ClassOf(g_dcTB),"FinishedVolumes"); if(fvo!=0xFFFFFFFF){ uint32_t z=0; SafeWrite((uint8_t*)(g_dcTB+fvo+8),(uint8_t*)&z,4); } }
+static void DcCallOneObjParam(uintptr_t obj,const char* fn,uintptr_t param){
+    uintptr_t ch=0; uint64_t res[4]={0,0,0,0}; void* pf=nullptr; uintptr_t th=0,c2=0; ResolveFuncSuper(ClassOf(obj),fn,&pf,&th,&c2);
+    if(!pf){ Markerf("[DC] %s not found\r\n",fn); return; }
+    memset(g_bplocals,0,sizeof(g_bplocals));
+    for(uintptr_t p=c2;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+        uint64_t fp=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0; if(!(fp&0x80))continue;
+        uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+        if(o!=0xFFFFFFFF&&o+8<=sizeof(g_bplocals)) *(uint64_t*)(g_bplocals+o)=(uint64_t)param; break; }
+    bool fl=CallBPGuarded((uintptr_t)pf,(void*)obj,res); Markerf("[DC] %s %s\r\n",fn,fl?"FAULTED":"ok");
+}
+static void DcComplete(){
+    uintptr_t ch=0; uint64_t res[4]={0,0,0,0};
+    uint32_t co=PropOffsetSuper(ClassOf(g_dcTB),"CurrentObjectiveCount"), ta=PropOffsetSuper(ClassOf(g_dcTB),"TrainingActive"), ts=PropOffsetSuper(ClassOf(g_dcTB),"TrainingSuccessful");
+    int32_t one=1; uint8_t t1=1,t0=0;
+    if(ts!=0xFFFFFFFF) SafeWrite((uint8_t*)(g_dcTB+ts),&t1,1);
+    if(co!=0xFFFFFFFF) SafeWrite((uint8_t*)(g_dcTB+co),(uint8_t*)&one,4);
+    if(ta!=0xFFFFFFFF) SafeWrite((uint8_t*)(g_dcTB+ta),&t0,1);
+    uintptr_t f=FindBPFunc(ClassOf(g_dcTB),"OnRep_TrainingActive",&ch);
+    if(f){ memset(g_bplocals,0,sizeof(g_bplocals)); bool fl=CallBPGuarded(f,(void*)g_dcTB,res); Markerf("[DC] closer OnRep_TrainingActive %s\r\n",fl?"FAULTED":"ok"); }
+}
+static bool ResolveDriveChain(){
+    ResolveSpawnSeq();   // set up g_gm2 / g_gsCDO / g_begin*/g_finish* + spawn xform so SpawnActorCls works in the chain-advance
+    // component (live, by CurrentTrainingVolume!=0), its volume, hero, and the FIRST quest of the chain (WASD).
+    uintptr_t oo=g_modBase+kObjObjectsRva; uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14); int numChunks=(numEl+PERCHUNK-1)/PERCHUNK; uintptr_t fb=0;
+    for(int ci=0;ci<numChunks&&!g_dcTB;ci++){ uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue; uintptr_t cls=ClassOf(obj); if(!cls)continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue; if(strcmp(cn,"Comp_GameState_TrainingBase_C")!=0)continue; char on[96]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on)); if(strstr(on,"GEN_VARIABLE")||strstr(on,"Race"))continue; uint32_t cv=PropOffsetSuper(cls,"CurrentTrainingVolume"); uint64_t v=(cv!=0xFFFFFFFF&&SafeReadable((void*)(obj+cv),8))?*(uint64_t*)(obj+cv):0; if(v){ g_dcTB=obj; g_dcVol=v; break; } if(!fb)fb=obj; } }
+    if(!g_dcTB)g_dcTB=fb;
+    if(g_dcTB&&!g_dcVol){ uint32_t cv=PropOffsetSuper(ClassOf(g_dcTB),"CurrentTrainingVolume"); if(cv!=0xFFFFFFFF&&SafeReadable((void*)(g_dcTB+cv),8)) g_dcVol=*(uint64_t*)(g_dcTB+cv); }
+    if(!g_dcVol) g_dcVol=FindInstByClass("TrainingVolume",nullptr);
+    g_dcHero=FindInstByClass("BP_HERO_",nullptr);
+    // start the chain at the NEXT quest after WASD (the user asked for the NEXT volume): follow WASD.NextQuestInChain.
+    uintptr_t wasd=FindInstByClass("Quest_Basics_WASD",nullptr);
+    uintptr_t nextcls = wasd?NextQuestClass(wasd):0;
+    if(nextcls){ g_dcQuest=LiveInstOfClass(nextcls,wasd); if(!g_dcQuest){ g_gm2=FindInstByClass("GameMode_Tutorial",nullptr); g_gsCDO=FindObjExact("Default__GameplayStatics"); if(!g_seqClass){} ResolveSpawnSeq(); g_dcQuest=SpawnActorCls(nextcls,"next-quest"); } }
+    if(!g_dcQuest) g_dcQuest=wasd;   // fall back to re-driving WASD
+    char qn[96]="-"; if(g_dcQuest&&ClassOf(g_dcQuest))GetFNameStr(NameId(ClassOf(g_dcQuest)),qn,sizeof(qn));
+    Markerf("[DC] TB=0x%llX vol=0x%llX hero=0x%llX firstNextQuest=0x%llX(%s) chainMax=%d\r\n",(unsigned long long)g_dcTB,(unsigned long long)g_dcVol,(unsigned long long)g_dcHero,(unsigned long long)g_dcQuest,qn,kChainMax);
+    return g_dcTB && g_dcVol && g_dcQuest;
+}
+static void DoDriveChain(){
+    if(g_dcMs && GetTickCount()-g_dcMs < 700) return; g_dcMs=GetTickCount();
+    switch(g_dcPhase){
+    case 0: {  // activate the lesson quest (OnTrainingVolume sets its marker) + clear FinishedVolumes.
+        char qn[96]="-"; if(ClassOf(g_dcQuest))GetFNameStr(NameId(ClassOf(g_dcQuest)),qn,sizeof(qn));
+        Markerf("[DC] ===== LESSON %d/%d: quest=0x%llX %s =====\r\n",g_dcLesson+1,kChainMax,(unsigned long long)g_dcQuest,qn);
+        DcClearFinished();
+        DcCallOneObjParam(g_dcQuest,"OnTrainingVolume",g_dcVol);
+        Markerf("[DC] activated: OBJARROW=0x%llX AssociatedVol=0x%llX\r\n",(unsigned long long)ReadProp(g_dcQuest,"OBJARROW"),(unsigned long long)ReadProp(g_dcQuest,"AssociatedTrainingVolume"));
+        g_dcPhase=1; g_dcMs=GetTickCount()+2200; break; }
+    case 1: {  // GameStateTryStartTraining(vol) — start the lesson (arrows/objective come up).
+        DcCallOneObjParam(g_dcTB,"GameStateTryStartTraining",g_dcVol);
+        Markerf("[DC] started: TrainingActive=0x%llX CurObjCount=0x%llX\r\n",(unsigned long long)ReadProp(g_dcTB,"TrainingActive"),(unsigned long long)ReadProp(g_dcTB,"CurrentObjectiveCount"));
+        g_dcPhase=2; g_dcMs=GetTickCount()+2600; break; }
+    case 2: {  // complete via the ungated closer.
+        DcComplete();
+        uint32_t fvo=PropOffsetSuper(ClassOf(g_dcTB),"FinishedVolumes"); uint32_t fvn=0; if(fvo!=0xFFFFFFFF&&SafeReadable((void*)(g_dcTB+fvo+8),4)) fvn=*(uint32_t*)(g_dcTB+fvo+8);
+        Markerf("[DC] completed: TrainingSuccessful=0x%llX TrainingActive=0x%llX FinishedVolumes.Num=%u\r\n",(unsigned long long)ReadProp(g_dcTB,"TrainingSuccessful"),(unsigned long long)ReadProp(g_dcTB,"TrainingActive"),fvn);
+        g_dcPhase=3; g_dcMs=GetTickCount()+1500; break; }
+    case 3: {  // advance to the next quest in the chain.
+        g_dcLesson++;
+        if(g_dcLesson>=kChainMax){ Markerf("[DC] reached chainMax=%d -> done\r\n",kChainMax); g_done=1; return; }
+        uintptr_t nextcls=NextQuestClass(g_dcQuest);
+        if(!nextcls){ Marker("[DC] no NextQuestInChain -> chain end\r\n"); g_done=1; return; }
+        char ncn[96]="-"; GetFNameStr(NameId(nextcls),ncn,sizeof(ncn));
+        uintptr_t inst=LiveInstOfClass(nextcls,g_dcQuest);
+        if(!inst && g_beginThunk && g_gm2 && g_gsCDO){ Markerf("[DC] no live %s -> spawning\r\n",ncn); inst=SpawnActorCls(nextcls,"chain-next"); }
+        if(!LooksLikePtr(inst)){ Markerf("[DC] no instance for next quest %s (spawn globals begin=0x%llX) -> stop\r\n",ncn,(unsigned long long)g_beginThunk); g_done=1; return; }
+        g_dcQuest=inst; g_dcPhase=0; g_dcMs=GetTickCount()+1200; break; }
+    }
+}
+
+// ★★★ S93 RM_CAMERA — fix the over-zoomed possess camera. The live camera POV.Location == the hero's location exactly
+// (camera sits AT the hero, pitch ~-66°) while the hero's LokiCharacterSpringArmComponent wants TargetArmLength=3020 —
+// i.e. the spring arm is NOT pulling the camera back, almost certainly because the possessed hero's camera/spring-arm
+// components aren't TICKING (the same deploy-gate that froze the CMC in S75). This enables their ticks + re-activates
+// them, then re-samples the camera POV to see whether it pulls back to a top-down distance.
+static uintptr_t g_cmPC=0, g_cmHero=0, g_cmComp=0, g_cmArm=0; static int g_cmStep=0; static DWORD g_cmMs=0;
+static void CamPOV(const char* tag){
+    uint32_t pmo=PropOffsetSuper(ClassOf(g_cmPC),"PlayerCameraManager");
+    uintptr_t pm=(pmo!=0xFFFFFFFF&&SafeReadable((void*)(g_cmPC+pmo),8))?*(uint64_t*)(g_cmPC+pmo):0;
+    if(!LooksLikePtr(pm)){ Markerf("[CM] %s no cam manager\r\n",tag); return; }
+    uint32_t cco=PropOffsetSuper(ClassOf(pm),"CameraCachePrivate");
+    if(cco==0xFFFFFFFF||!SafeReadable((void*)(pm+cco+0x10),48)){ Markerf("[CM] %s no POV (cco=0x%X)\r\n",tag,cco); return; }
+    double* L=(double*)(pm+cco+0x10); double* R=(double*)(pm+cco+0x28);
+    double hl[3]={0,0,0}; ActorLoc(g_cmHero,hl);
+    double dx=L[0]-hl[0],dy=L[1]-hl[1],dz=L[2]-hl[2];
+    Markerf("[CM] %s POV.Loc=(%.0f,%.0f,%.0f) rot(P,Y)=(%.0f,%.0f) hero=(%.0f,%.0f,%.0f) camDistFromHero=%.0f\r\n",
+        tag,L[0],L[1],L[2],R[0],R[1],hl[0],hl[1],hl[2],(double)__builtin_sqrt(dx*dx+dy*dy+dz*dz));
+}
+static void CamCallBools(uintptr_t obj,const char* fn,uint8_t b0,uint8_t b1){
+    if(!LooksLikePtr(obj))return; void* pf=nullptr; uintptr_t th=0,ch=0; ResolveFuncNative(ClassOf(obj),fn,&pf,&th,&ch);
+    if(!th){ Markerf("[CM] %s not found\r\n",fn); return; }
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    int i=0; for(uintptr_t p=ch;LooksLikePtr(p)&&i<2;p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+        uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0; if(!(fl&0x80))continue;
+        uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+        if(o!=0xFFFFFFFF) ((uint8_t*)g_pbuf)[o]=(i==0)?b0:b1; i++; }
+    bool f=CallNativeGuarded(pf,th,ch,(void*)obj,g_pbuf,g_rbuf); Markerf("[CM] %s(%d,%d) %s\r\n",fn,b0,b1,f?"FAULTED":"ok");
+}
+static bool ResolveCamera(){
+    g_cmPC=FindInstByClass("LokiPlayerController_Dev",nullptr);
+    g_cmHero=FindInstByClass("BP_HERO_",nullptr);
+    if(g_cmHero){ uint32_t co=PropOffsetSuper(ClassOf(g_cmHero),"Camera"); if(co!=0xFFFFFFFF&&SafeReadable((void*)(g_cmHero+co),8)) g_cmComp=*(uint64_t*)(g_cmHero+co);
+        if(g_cmComp){ uint32_t ao=PropOffsetSuper(ClassOf(g_cmComp),"AttachParent"); if(ao!=0xFFFFFFFF&&SafeReadable((void*)(g_cmComp+ao),8)) g_cmArm=*(uint64_t*)(g_cmComp+ao); } }
+    char an[96]="-"; if(g_cmArm&&ClassOf(g_cmArm))GetFNameStr(NameId(ClassOf(g_cmArm)),an,sizeof(an));
+    Markerf("[CM] pc=0x%llX hero=0x%llX camComp=0x%llX arm=0x%llX(%s)\r\n",(unsigned long long)g_cmPC,(unsigned long long)g_cmHero,(unsigned long long)g_cmComp,(unsigned long long)g_cmArm,an);
+    return g_cmPC&&g_cmHero&&g_cmArm;
+}
+static void DoCamera(){
+    if(g_cmMs && GetTickCount()-g_cmMs < 700) return; g_cmMs=GetTickCount();
+    switch(g_cmStep++){
+    case 0: CamPOV("BEFORE"); break;
+    case 1:
+        CamCallBools(g_cmArm,"SetComponentTickEnabled",1,0);
+        CamCallBools(g_cmArm,"Activate",1,0);
+        CamCallBools(g_cmComp,"SetComponentTickEnabled",1,0);
+        CamCallBools(g_cmComp,"Activate",1,0);
+        CamCallBools(g_cmHero,"SetActorTickEnabled",1,0);
+        g_cmMs=GetTickCount()+2500; break;
+    case 2: CamPOV("AFTER-TICKENABLE"); break;
+    default: Marker("[CM] done\r\n"); g_done=1; return;
+    }
+}
+
+// ★★★ S93 RM_TOPDOWNCAM — the camera TAKEOVER. Tick-enable didn't help (the camera manager computes POV = hero loc
+// directly, ignoring the spring arm), so spawn our OWN CameraActor, position it above/behind the hero at SUPERVIVE's
+// own framing (pitch -66°, ~3020 back = offset (0,+1229,+2760)) and RE-ASSERT it as the PC view target every few hits
+// (the manager reverts a one-time SetViewTargetWithBlend each frame — proven in ds_hybrid S78). Holds ~120s so the
+// top-down view can be seen/screenshotted; the possess camera reverts when the shim releases.
+static uintptr_t g_tcPC=0,g_tcHero=0,g_tcCam=0,g_tcCamCls=0; static bool g_tcSpawned=false; static volatile long g_tcHit=0;
+static void* g_tcSlFn=nullptr; static uintptr_t g_tcSlThunk=0,g_tcSlChild=0; static uint32_t g_tcSlLoc=0xFFFFFFFF,g_tcSlTele=0xFFFFFFFF;
+static void* g_tcSrFn=nullptr; static uintptr_t g_tcSrThunk=0,g_tcSrChild=0; static uint32_t g_tcSrRot=0xFFFFFFFF,g_tcSrTele=0xFFFFFFFF;
+static void* g_tcSvtFn=nullptr; static uintptr_t g_tcSvtThunk=0,g_tcSvtChild=0; static uint32_t g_tcSvtTgt=0xFFFFFFFF;
+#ifndef KCAMUP
+#define KCAMUP 2760.0
+#endif
+#ifndef KCAMBACK
+#define KCAMBACK 1229.0
+#endif
+#ifndef KCAMPITCH
+#define KCAMPITCH -66.0
+#endif
+static bool ResolveTopDownCam(){
+    ResolveSpawnSeq();   // g_gm2/g_gsCDO/g_begin*/g_finish* + spawn xform
+    g_tcPC=FindInstByClass("LokiPlayerController_Dev",nullptr);
+    g_tcHero=FindInstByClass("BP_HERO_",nullptr);
+    g_tcCamCls=FindClassExact("CameraActor");
+    if(g_tcPC){ ResolveFuncNative(ClassOf(g_tcPC),"SetViewTargetWithBlend",&g_tcSvtFn,&g_tcSvtThunk,&g_tcSvtChild);
+        if(g_tcSvtChild){ uint32_t o=ParamOffset(g_tcSvtChild,"NewViewTarget"); if(o!=0xFFFFFFFF)g_tcSvtTgt=o; } }
+    Markerf("[TC] pc=0x%llX hero=0x%llX camCls=0x%llX svtThunk=0x%llX(tgt@0x%X) gm=0x%llX begin=0x%llX\r\n",
+        (unsigned long long)g_tcPC,(unsigned long long)g_tcHero,(unsigned long long)g_tcCamCls,(unsigned long long)g_tcSvtThunk,g_tcSvtTgt,(unsigned long long)g_gm2,(unsigned long long)g_beginThunk);
+    return g_tcPC&&g_tcHero&&g_tcCamCls&&g_tcSvtThunk&&g_beginThunk&&g_gm2&&g_gsCDO;
+}
+static void DoTopDownCam(){
+    long t=InterlockedIncrement(&g_tcHit);
+    double hl[3]={0,0,0}; if(!ActorLoc(g_tcHero,hl)) return;
+    if(!g_tcSpawned){
+        memset(g_xform,0,sizeof(g_xform)); *(double*)(g_xform+0x18)=1.0;
+        *(double*)(g_xform+0x20)=hl[0]; *(double*)(g_xform+0x28)=hl[1]+KCAMBACK; *(double*)(g_xform+0x30)=hl[2]+KCAMUP;
+        *(double*)(g_xform+0x38)=1.0;*(double*)(g_xform+0x40)=1.0;*(double*)(g_xform+0x48)=1.0;
+        g_tcCam=SpawnActorCls(g_tcCamCls,"topdown-cam");
+        if(!LooksLikePtr(g_tcCam)){ Marker("[TC] camera spawn FAILED -> abort\r\n"); g_done=1; return; }
+        ResolveFuncSuper(ClassOf(g_tcCam),"K2_SetActorLocation",&g_tcSlFn,&g_tcSlThunk,&g_tcSlChild);
+        if(g_tcSlChild){ uint32_t o=ParamOffset(g_tcSlChild,"NewLocation"); if(o!=0xFFFFFFFF)g_tcSlLoc=o; o=ParamOffset(g_tcSlChild,"bTeleport"); if(o!=0xFFFFFFFF)g_tcSlTele=o; }
+        ResolveFuncSuper(ClassOf(g_tcCam),"K2_SetActorRotation",&g_tcSrFn,&g_tcSrThunk,&g_tcSrChild);
+        if(g_tcSrChild){ uint32_t o=ParamOffset(g_tcSrChild,"NewRotation"); if(o!=0xFFFFFFFF)g_tcSrRot=o; o=ParamOffset(g_tcSrChild,"bTeleportPhysics"); if(o!=0xFFFFFFFF)g_tcSrTele=o; }
+        Markerf("[TC] *** spawned CameraActor=0x%llX at (%.0f,%.0f,%.0f) setLoc@0x%X setRot@0x%X ***\r\n",(unsigned long long)g_tcCam,hl[0],hl[1]+KCAMBACK,hl[2]+KCAMUP,g_tcSlLoc,g_tcSrRot);
+        g_tcSpawned=true;
+    }
+    // follow: reposition + orient the camera top-down over the hero each hit.
+    if(g_tcSlThunk && g_tcSlLoc!=0xFFFFFFFF){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        double* L=(double*)((uint8_t*)g_pbuf+g_tcSlLoc); L[0]=hl[0]; L[1]=hl[1]+KCAMBACK; L[2]=hl[2]+KCAMUP;
+        if(g_tcSlTele!=0xFFFFFFFF) ((uint8_t*)g_pbuf)[g_tcSlTele]=1;
+        CallNativeGuarded(g_tcSlFn,g_tcSlThunk,g_tcSlChild,(void*)g_tcCam,g_pbuf,g_rbuf); }
+    if(g_tcSrThunk && g_tcSrRot!=0xFFFFFFFF){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        double* R=(double*)((uint8_t*)g_pbuf+g_tcSrRot); R[0]=KCAMPITCH; R[1]=-90.0; R[2]=0.0;   // Pitch,Yaw,Roll
+        if(g_tcSrTele!=0xFFFFFFFF) ((uint8_t*)g_pbuf)[g_tcSrTele]=1;
+        CallNativeGuarded(g_tcSrFn,g_tcSrThunk,g_tcSrChild,(void*)g_tcCam,g_pbuf,g_rbuf); }
+    // re-assert the view target (the manager reverts it each frame); every 3rd hit is enough.
+    if((t%3)==0 && g_tcSvtThunk && g_tcSvtTgt!=0xFFFFFFFF){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        *(uint64_t*)((uint8_t*)g_pbuf+g_tcSvtTgt)=(uint64_t)g_tcCam;
+        CallNativeGuarded(g_tcSvtFn,g_tcSvtThunk,g_tcSvtChild,(void*)g_tcPC,g_pbuf,g_rbuf); }
+}
+
+// ★★★ S93 RM_MESHCAM — build the possessed hero's VISUAL MESH (which force-open skipped) then hold the top-down cam.
+// The hero has Mesh=0 + CosmeticsController=0: SUPERVIVE builds the whole hero body via its cosmetics controller,
+// created in `ClientInitialComponentSetup` (a BP fn the force-open client-join skipped). The ORIGINAL spawn shim used
+// native calls (RefreshCosmetics/OnRep) and got controller=0 — but it could NOT call the BP-bytecode setup fns. The
+// S91 BP-call primitive can, so drive the real client setup, then hold the top-down camera so the result is visible.
+static bool g_mcMeshTried=false;
+static void McBuildMesh(){
+    uintptr_t hero=g_tcHero, ch=0, f=0; uint64_t res[4]={0,0,0,0};
+    Markerf("[MC] BEFORE Mesh=0x%llX CosmeticsController=0x%llX\r\n",(unsigned long long)ReadProp(hero,"Mesh"),(unsigned long long)ReadProp(hero,"CosmeticsController"));
+    // 1. ClientInitialComponentSetup (BP) — the client-side component/cosmetics setup force-open never ran.
+    f=FindBPFunc(ClassOf(hero),"ClientInitialComponentSetup",&ch);
+    if(f){ memset(g_bplocals,0,sizeof(g_bplocals)); bool fl=CallBPGuarded(f,(void*)hero,res); Markerf("[MC] ClientInitialComponentSetup %s\r\n",fl?"FAULTED":"ok"); }
+    else Marker("[MC] ClientInitialComponentSetup not found\r\n");
+    // 2. GetBaseCosmeticsController (BP) — creates/returns the controller that builds the mesh.
+    f=FindBPFunc(ClassOf(hero),"GetBaseCosmeticsController",&ch);
+    if(f){ memset(g_bplocals,0,sizeof(g_bplocals)); memset(res,0,sizeof(res)); bool fl=CallBPGuarded(f,(void*)hero,res); Markerf("[MC] GetBaseCosmeticsController %s ret=0x%llX\r\n",fl?"FAULTED":"ok",(unsigned long long)res[0]); }
+    // 3. RefreshCosmetics (native).
+    { void* nf=nullptr; uintptr_t th=0,nc=0; ResolveFuncNative(ClassOf(hero),"RefreshCosmetics",&nf,&th,&nc); if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); bool fl=CallNativeGuarded(nf,th,nc,(void*)hero,g_pbuf,g_rbuf); Markerf("[MC] RefreshCosmetics(native) %s\r\n",fl?"FAULTED":"ok"); } }
+    // 4. BP_PostSetupCosmetics (BP).
+    f=FindBPFunc(ClassOf(hero),"BP_PostSetupCosmetics",&ch);
+    if(f){ memset(g_bplocals,0,sizeof(g_bplocals)); memset(res,0,sizeof(res)); bool fl=CallBPGuarded(f,(void*)hero,res); Markerf("[MC] BP_PostSetupCosmetics %s\r\n",fl?"FAULTED":"ok"); }
+    Markerf("[MC] AFTER Mesh=0x%llX CosmeticsController=0x%llX (cosmetics load is async — the model may appear over a few seconds)\r\n",(unsigned long long)ReadProp(hero,"Mesh"),(unsigned long long)ReadProp(hero,"CosmeticsController"));
+}
+// ★★★ S93 RM_DROPIN — drive the REAL drop-in descent so the game's own OnLanded deploy cascade activates the hero
+// (cosmetics mesh + movement). The S79 piecemeal deploy fns "changed nothing"; the untried lever is the DropPlane
+// orchestration: Comp_GameMode_DropPlane_Tutorial.SpawnPlane (BP event — reads level-tagged path markers) ->
+// AddPlayerToDropPlane (native) -> the tutorial auto-drops (GetAutoDropLocation) -> descent -> OnLanded. Empirical.
+static uintptr_t g_diComp=0, g_diPC=0, g_diHero=0; static int g_diStep=0; static DWORD g_diMs=0;
+static int CountByClassSubDI(const char* sub){ char f[8]; return CountByClassSub(sub,f,0); }
+static bool ResolveDropIn(){
+    // the live DropPlane component (non-archetype)
+    uintptr_t oo=g_modBase+kObjObjectsRva; uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14); int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks&&!g_diComp;ci++){ uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue; uintptr_t cls=ClassOf(obj); if(!cls)continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue; if(strcmp(cn,"Comp_GameMode_DropPlane_Tutorial_C")!=0)continue; char on[96]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on)); if(strstr(on,"GEN_VARIABLE"))continue; g_diComp=obj; break; } }
+    g_diPC=FindInstByClass("LokiPlayerController_Dev",nullptr);
+    g_diHero=FindInstByClass("BP_HERO_",nullptr);
+    char cn[96]="-"; if(g_diComp&&ClassOf(g_diComp))GetFNameStr(NameId(ClassOf(g_diComp)),cn,sizeof(cn));
+    Markerf("[DI] dropPlaneComp=0x%llX(%s) pc=0x%llX hero=0x%llX\r\n",(unsigned long long)g_diComp,cn,(unsigned long long)g_diPC,(unsigned long long)g_diHero);
+    return g_diComp!=0;
+}
+static void DoDropIn(){
+    if(g_diMs && GetTickCount()-g_diMs < 800) return; g_diMs=GetTickCount();
+    uintptr_t ch=0,f=0; uint64_t res[4]={0,0,0,0};
+    switch(g_diStep++){
+    case 0:
+        Markerf("[DI] BEFORE: BP_DropPlane actors=%d hero.Mesh=0x%llX hero.CosmeticsController=0x%llX IsHeroPredropHidden=0x%llX\r\n",
+            CountByClassSubDI("DropPlane_C"),(unsigned long long)ReadProp(g_diHero,"Mesh"),(unsigned long long)ReadProp(g_diHero,"CosmeticsController"),(unsigned long long)ReadProp(g_diHero,"IsHeroPredropHidden"));
+        break;
+    case 1: {  // SpawnPlane (BP event) on the DropPlane component.
+        f=FindBPFunc(ClassOf(g_diComp),"SpawnPlane",&ch);
+        if(!f){ Marker("[DI] SpawnPlane not found\r\n"); break; }
+        memset(g_bplocals,0,sizeof(g_bplocals));
+        bool fl=CallBPGuarded(f,(void*)g_diComp,res);
+        Markerf("[DI] SpawnPlane %s\r\n",fl?"FAULTED":"ok");
+        g_diMs=GetTickCount()+3000; break; }
+    case 2:
+        Markerf("[DI] AFTER SpawnPlane: BP_DropPlane actors=%d  Plane*=%d\r\n",CountByClassSubDI("DropPlane_C"),CountByClassSubDI("BP_DropPlane"));
+        break;
+    case 3: {  // AddPlayerToDropPlane (native) — put the PC on the plane.
+        void* nf=nullptr; uintptr_t th=0,nc=0; ResolveFuncNative(ClassOf(g_diComp),"AddPlayerToDropPlane",&nf,&th,&nc);
+        if(!th){ Marker("[DI] AddPlayerToDropPlane not found\r\n"); break; }
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        // its first object param = the player (PC or PlayerState); try the PC.
+        if(LooksLikePtr(nc)){ uint32_t o=SafeReadable((void*)(nc+FPROP_OFFSET),4)?*(uint32_t*)(nc+FPROP_OFFSET):0xFFFFFFFF; if(o!=0xFFFFFFFF) *(uint64_t*)((uint8_t*)g_pbuf+o)=(uint64_t)g_diPC; }
+        bool fl=CallNativeGuarded(nf,th,nc,(void*)g_diComp,g_pbuf,g_rbuf);
+        Markerf("[DI] AddPlayerToDropPlane(PC) %s\r\n",fl?"FAULTED":"ok");
+        g_diMs=GetTickCount()+3000; break; }
+    case 4: {  // GetAutoDropLocation (BP) — the tutorial auto-picks the drop spot.
+        f=FindBPFunc(ClassOf(g_diComp),"GetAutoDropLocation",&ch);
+        if(f){ memset(g_bplocals,0,sizeof(g_bplocals)); bool fl=CallBPGuarded(f,(void*)g_diComp,res); Markerf("[DI] GetAutoDropLocation %s\r\n",fl?"FAULTED":"ok"); }
+        else Marker("[DI] GetAutoDropLocation not found\r\n");
+        g_diMs=GetTickCount()+4000; break; }
+    case 5:
+        Markerf("[DI] AFTER: BP_DropPlane=%d hero.Mesh=0x%llX hero.CosmeticsController=0x%llX IsHeroPredropHidden=0x%llX skeletals=%d\r\n",
+            CountByClassSubDI("DropPlane_C"),(unsigned long long)ReadProp(g_diHero,"Mesh"),(unsigned long long)ReadProp(g_diHero,"CosmeticsController"),(unsigned long long)ReadProp(g_diHero,"IsHeroPredropHidden"),CountByClassSubDI("SkeletalMeshComponent"));
+        break;
+    default: Marker("[DI] done\r\n"); g_done=1; return;
+    }
+}
+// ★★★ S93 RM_MAKEMESH — recreate a VISIBLE hero body FROM SCRATCH (not the game's cosmetics controller).
+// The game's cosmetics system won't build the mesh outside the real deploy — but we don't need it: create our OWN
+// SkeletalMeshComponent on the hero (AddComponentByClass, BPCallable) + assign a loaded hero skeletal mesh
+// (SetSkeletalMeshAsset). First test uses an already-loaded body mesh (SK_KaijuCaster_Default) to prove visibility;
+// refine to Ronin's own mesh (async-load) once the approach shows a body.
+static uintptr_t g_mkHero=0, g_mkSkelCls=0, g_mkMesh=0, g_mkComp=0; static int g_mkStep=0; static DWORD g_mkMs=0;
+static int CountHeroSkelComps(uintptr_t hero){
+    int n=0; uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14); if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return 0; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t outer=SafeReadable((void*)(obj+0x28),8)?*(uintptr_t*)(obj+0x28):0; if(outer!=hero)continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+            if(strstr(cn,"SkeletalMesh"))n++; } }
+    return n;
+}
+static bool ResolveMakeMesh(){
+    g_mkHero=FindInstByClass("BP_HERO_",nullptr);
+    g_mkSkelCls=FindClassExact("SkeletalMeshComponent");
+    g_mkMesh=FindObjExact("SK_KaijuCaster_Default"); if(!g_mkMesh) g_mkMesh=FindObjExact("SK_Base_Wisp"); if(!g_mkMesh) g_mkMesh=FindObjExact("SK_HeroPlatform_Default");
+    char mn[96]="-"; if(g_mkMesh) GetFNameStr(NameId(g_mkMesh),mn,sizeof(mn));
+    Markerf("[MK] hero=0x%llX skelCls=0x%llX mesh=0x%llX(%s)\r\n",(unsigned long long)g_mkHero,(unsigned long long)g_mkSkelCls,(unsigned long long)g_mkMesh,mn);
+    return g_mkHero && g_mkSkelCls && g_mkMesh;
+}
+static void DoMakeMesh(){
+    if(g_mkMs && GetTickCount()-g_mkMs < 800) return; g_mkMs=GetTickCount();
+    uintptr_t ch=0,f=0; uint64_t res[4]={0,0,0,0};
+    switch(g_mkStep++){
+    case 0: Markerf("[MK] BEFORE: hero SkeletalMeshComponents(direct)=%d\r\n",CountHeroSkelComps(g_mkHero)); break;
+    case 1: {  // AddComponentByClass (NATIVE — S55 direct-thunk primitive): SkeletalMeshComponent, bManualAttachment=false, identity xform, bDeferredFinish=false.
+        void* acfn=nullptr; uintptr_t acth=0,acch=0; ResolveFuncSuper(ClassOf(g_mkHero),"AddComponentByClass",&acfn,&acth,&acch);
+        if(!acth){ Marker("[MK] AddComponentByClass thunk not found\r\n"); break; }
+        memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); uint32_t retOff=0xFFFFFFFF;
+        for(uintptr_t p=acch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+            char pn[64]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
+            uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF; if(o==0xFFFFFFFF||o+0x50>sizeof(g_gsbuf))continue;
+            uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0;
+            if(strcmp(pn,"Class")==0) *(uint64_t*)(g_gsbuf+o)=(uint64_t)g_mkSkelCls;
+            else if(strcmp(pn,"RelativeTransform")==0){ double* T=(double*)(g_gsbuf+o); T[3]=1.0; T[7]=1.0; T[8]=1.0; T[9]=1.0; }   // quatW@0x18, Scale3D@0x38/0x40/0x48
+            else if(fl&0x400) retOff=o;   // CPF_ReturnParm
+        }
+        bool flt=CallNativeGuarded(acfn,acth,acch,(void*)g_mkHero,g_gsbuf,g_rbuf);
+        g_mkComp=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(g_mkComp)&&retOff!=0xFFFFFFFF) g_mkComp=*(uint64_t*)(g_gsbuf+retOff);
+        char ccn[96]="-"; if(LooksLikePtr(g_mkComp)&&ClassOf(g_mkComp)) GetFNameStr(NameId(ClassOf(g_mkComp)),ccn,sizeof(ccn));
+        Markerf("[MK] AddComponentByClass %s -> comp=0x%llX(%s)\r\n",flt?"FAULTED":"ok",(unsigned long long)g_mkComp,ccn);
+        g_mkMs=GetTickCount()+1800; break; }
+    case 2: {  // SetSkeletalMeshAsset(NewMesh) on the created component (NATIVE).
+        if(!LooksLikePtr(g_mkComp)){ Marker("[MK] no component -> abort\r\n"); g_done=1; return; }
+        void* smfn=nullptr; uintptr_t smth=0,smch=0; ResolveFuncSuper(ClassOf(g_mkComp),"SetSkeletalMeshAsset",&smfn,&smth,&smch);
+        if(!smth){ Marker("[MK] SetSkeletalMeshAsset thunk not found\r\n"); break; }
+        memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        for(uintptr_t p=smch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+            uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0; if(!(fl&0x80))continue;
+            uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+            if(o!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+o)=(uint64_t)g_mkMesh; break; }
+        bool flt=CallNativeGuarded(smfn,smth,smch,(void*)g_mkComp,g_gsbuf,g_rbuf);
+        Markerf("[MK] SetSkeletalMeshAsset(mesh) %s\r\n",flt?"FAULTED":"ok");
+        // ANIM-SAFE: stop the component ticking + pause anims so it renders a STATIC reference pose (no anim-thread
+        // eval against a mismatched skeleton -> avoids the S93 anim crash). A body that doesn't animate is fine for
+        // the first visible test.
+        { void* tf=nullptr; uintptr_t tt=0,tc=0; ResolveFuncSuper(ClassOf(g_mkComp),"SetComponentTickEnabled",&tf,&tt,&tc);
+          if(tt){ memset(g_pbuf,0,sizeof(g_pbuf)); ((uint8_t*)g_pbuf)[0]=0; CallNativeGuarded(tf,tt,tc,(void*)g_mkComp,g_pbuf,g_rbuf); Marker("[MK] SetComponentTickEnabled(false)\r\n"); } }
+        { void* pf=nullptr; uintptr_t pt=0,pc=0; ResolveFuncSuper(ClassOf(g_mkComp),"PauseAnims",&pf,&pt,&pc);
+          if(pt){ memset(g_pbuf,0,sizeof(g_pbuf)); ((uint8_t*)g_pbuf)[0]=1; CallNativeGuarded(pf,pt,pc,(void*)g_mkComp,g_pbuf,g_rbuf); Marker("[MK] PauseAnims(true)\r\n"); } }
+        // visibility on
+        { void* vf=nullptr; uintptr_t vt=0,vc=0; ResolveFuncSuper(ClassOf(g_mkComp),"SetVisibility",&vf,&vt,&vc);
+          if(vt){ memset(g_pbuf,0,sizeof(g_pbuf)); ((uint8_t*)g_pbuf)[0]=1; CallNativeGuarded(vf,vt,vc,(void*)g_mkComp,g_pbuf,g_rbuf); Marker("[MK] SetVisibility(true)\r\n"); } }
+        g_mkMs=GetTickCount()+2500; break; }
+    case 3: {
+        uint32_t so=PropOffsetSuper(ClassOf(g_mkComp),"SkeletalMeshAsset"); uint64_t sm=(so!=0xFFFFFFFF&&SafeReadable((void*)(g_mkComp+so),8))?*(uint64_t*)(g_mkComp+so):0;
+        Markerf("[MK] AFTER: hero SkeletalMeshComponents=%d comp=0x%llX comp.SkeletalMeshAsset@0x%X=0x%llX\r\n",CountHeroSkelComps(g_mkHero),(unsigned long long)g_mkComp,so,(unsigned long long)sm);
+        Marker("[MK] *** if a body appeared at the hero, the from-scratch mesh works (T-pose expected — no AnimBP) ***\r\n");
+        break; }
+    default: Marker("[MK] done\r\n"); g_done=1; return;
+    }
+}
+static bool ResolveMeshCam(){ return ResolveTopDownCam(); }   // same resolve (hero/PC/camera + spawn infra)
+static void DoMeshCam(){
+    if(!g_mcMeshTried){ g_mcMeshTried=true; McBuildMesh(); }
+    DoTopDownCam();   // spawn + hold the top-down camera so the (hopefully now-visible) hero can be seen
+}
+
+// ★★★ S94 RM_PLAY — the VISIBLE + MOVABLE hero, in ONE PI-hooking shim (so no PI-hook contention with a separate
+// camera/puppet shim). On the possessed force-open hero it: (1) teleports to walkable ground (no [SP] sky-lift),
+// (2) builds a from-scratch SkeletalMeshComponent assigned RONIN's own body mesh (anim/tick OFF = static reference
+// pose, no anim-thread crash), (3) holds a top-down CameraActor following the hero (reuses DoTopDownCam), (4) drives
+// WASD -> CMC velocity every hit (reuses DoPuppet's velocity path). Inject gft_ready_fix FIRST (quiets the
+// mantle/FudgeMantling toggle spam that crashed S75 movement). Holds until the worker timeout (playable + screenshottable).
+static bool g_plInit=false; static uintptr_t g_plMesh=0, g_plComp=0, g_plSkelCls=0; static char g_plMeshName[96]="-";
+// S94 iter4: async-load Ronin's REAL mesh. The resident placeholder meshes (KaijuCaster etc.) are header-only (no
+// GPU/skeleton render data) so they never render (and ticking them crashes). AsyncLoadPrimaryAssets(Ronin bundle)
+// streams SK_Ronin_Default WITH render data; poll for it, then build the body with it.
+static uintptr_t g_plLam=0, g_plWorld=0; static bool g_plBodyDone=false; static int g_plPoll=0; static bool g_plLoadFired=false; static uintptr_t g_plBpCls=0;
+static void* g_plPafsFn=nullptr; static uintptr_t g_plPafsThunk=0, g_plPafsChild=0;
+static void* g_plAlpaFn=nullptr; static uintptr_t g_plAlpaThunk=0, g_plAlpaChild=0;
+// S94 iter5 (route 1): blocking load of Ronin's ACTUAL mesh by soft path (SK_Ronin_Default_LOD1 in Modeling/Default,
+// a HARD ref inside BP_Ronin_DefaultSKMeshComponent_C — the bundle load never pulled it). KismetSystemLibrary.
+// MakeSoftObjectPath(FString) -> FSoftObjectPath, then LoadAsset_Blocking(TSoftObjectPtr) -> UObject* (synchronous,
+// loads render data). No async poll needed.
+static uintptr_t g_plKsl=0;
+static void* g_plMspFn=nullptr; static uintptr_t g_plMspThunk=0, g_plMspChild=0; static uint32_t g_oMspPath=0xFFFFFFFF, g_oMspRet=0xFFFFFFFF;
+static void* g_plLabFn=nullptr; static uintptr_t g_plLabThunk=0, g_plLabChild=0; static uint32_t g_oLabAsset=0xFFFFFFFF, g_oLabRet=0xFFFFFFFF;
+#ifndef KMESHPATH
+#define KMESHPATH L"/Game/Loki/Characters/Heroes/Ronin/Modeling/Default/SK_Ronin_Default_LOD1.SK_Ronin_Default_LOD1"
+#endif
+// S94 route 2: build the GAME'S OWN configured mesh-component BP (mesh+materials+registration wired the game way, which
+// the bare SkeletalMeshComponent lacked -> no render). Load its class + AddComponentByClass(that class), DEFERRED so we
+// can switch off its AnimBP (SingleNode) + cloth before it registers (those crashed the bare path).
+#ifndef KUSEBPCOMP
+#define KUSEBPCOMP 1         // 1 = route 2 (BP component); 0 = route 1 (bare SkeletalMeshComponent + SetSkeletalMeshAsset).
+#endif
+#ifndef KTESTACTOR
+#define KTESTACTOR 1         // also build the body on a STANDALONE actor beside the hero (hero-hidden vs mesh discriminator).
+#endif
+#ifndef KFOWRADIUS
+#define KFOWRADIUS 20000     // hero's FogOfWarRadius (vision source) — wide so the FOW mask reveals the area.
+#endif
+#ifndef KFOWKILL
+#define KFOWKILL 1           // route B: 0=off, 1=untick+hide the FOW actors, 2=also K2_DestroyActor them.
+#endif
+#ifndef KFOWATTR
+#define KFOWATTR 0           // route A (GAS vision attrs) — proven dead (hero has no attribute set); off = one less full object scan.
+#endif
+#ifndef KTESTDX
+#define KTESTDX 500          // X offset of that test actor from the hero.
+#endif
+#ifndef KBPCOMPPATH
+#define KBPCOMPPATH L"/Game/Loki/Characters/Heroes/Ronin/Cosmetics/Default/BP_Ronin_DefaultSKMeshComponent.BP_Ronin_DefaultSKMeshComponent_C"
+#endif
+static void* g_plFacFn=nullptr; static uintptr_t g_plFacThunk=0, g_plFacChild=0; static uint32_t g_oFacComp=0xFFFFFFFF, g_oFacManual=0xFFFFFFFF, g_oFacXform=0xFFFFFFFF;
+// ★★★ S94 iter11 — THE FOG-OF-WAR REGISTRATION. SUPERVIVE renders character primitives through its LokiFogOfWar
+// system (plugin /Script/FogOfWar): a primitive that was never registered is culled from the FOW scene view, so it
+// NEVER draws — which is exactly what we saw (ground-decal ring + world render; hero AND standalone bodies do not,
+// with a healthy 8-material mesh at the right place, visible, registered). Signatures via ufunc_params.py (both
+// Native|Static|BlueprintCallable on LokiFogOfWarStatics; call with its CDO as context):
+//   Bool RegisterFogOfWarPrimitive(PrimitiveComponent Component@0x0) -> Bool@0x8
+//   Bool IsFogOfWarVisibleToLocal(Actor Target@0x0)                  -> Bool@0x8
+static uintptr_t g_plFowCDO=0;
+static void* g_plFowRegFn=nullptr; static uintptr_t g_plFowRegThunk=0, g_plFowRegChild=0; static uint32_t g_oFowComp=0xFFFFFFFF, g_oFowRet=0xFFFFFFFF;
+static void* g_plFowVisFn=nullptr; static uintptr_t g_plFowVisThunk=0, g_plFowVisChild=0; static uint32_t g_oFowTgt=0xFFFFFFFF, g_oFowVisRet=0xFFFFFFFF;
+// Resolve a UFunction by GLOBAL name (the FOW statics do NOT live on LokiFogOfWarStatics — a class-scoped lookup
+// returns thunk=0). Finds the UFunction object, takes its thunk (Func@+0xE0) + params (ChildProperties@+0x58), and
+// derives a call context from its OWNING class's CDO (Outer@+0x28 -> "Default__<ClassName>").
+static bool ResolveFuncGlobal(const char* name, void** fn, uintptr_t* thunk, uintptr_t* child, uintptr_t* ctxCDO){
+    *fn=nullptr; *thunk=0; *child=0;
+    uintptr_t f=FindObjExact(name); if(!LooksLikePtr(f)) return false;
+    char kcn[64]="?"; if(ClassOf(f)) GetFNameStr(NameId(ClassOf(f)),kcn,sizeof(kcn));
+    if(!strstr(kcn,"Function")){ Markerf("[FOW] '%s' found but class=%s (not a Function)\r\n",name,kcn); return false; }
+    *fn=(void*)f;
+    *thunk = SafeReadable((void*)(f+0xE0),8)?*(uintptr_t*)(f+0xE0):0;
+    *child = SafeReadable((void*)(f+0x58),8)?*(uintptr_t*)(f+0x58):0;
+    uintptr_t owner = SafeReadable((void*)(f+0x28),8)?*(uintptr_t*)(f+0x28):0;   // Outer = the owning UClass
+    char on[96]="?"; if(LooksLikePtr(owner)) GetFNameStr(NameId(owner),on,sizeof(on));
+    if(ctxCDO && LooksLikePtr(owner)){ char dn[128]; _snprintf_s(dn,sizeof(dn),_TRUNCATE,"Default__%s",on); uintptr_t c=FindObjExact(dn); if(LooksLikePtr(c)) *ctxCDO=c; }
+    Markerf("[FOW] resolved '%s' fn=0x%llX thunk=0x%llX owner=%s cdo=0x%llX\r\n",name,(unsigned long long)f,(unsigned long long)*thunk,on,(unsigned long long)(ctxCDO?*ctxCDO:0));
+    return *thunk!=0;
+}
+// Call a param-free UFunction on obj, auto-picking the NATIVE (Script.Num==0 -> direct thunk) vs BLUEPRINT
+// (FFrame.Code = Script.Data) primitive — using the wrong one FAULTS.
+static void CallNoArgAuto(uintptr_t obj,const char* fname,const char* tag){
+    if(!LooksLikePtr(obj)) return;
+    void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(obj),fname,&f,&th,&ch);
+    if(!th){ Markerf("[FOW] %s: %s NOT FOUND\r\n",tag,fname); return; }
+    uint32_t sn = SafeReadable((void*)((uintptr_t)f+0x70),4) ? *(uint32_t*)((uintptr_t)f+0x70) : 0;   // UStruct Script.Num
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    bool flt = (sn==0) ? CallNativeGuarded(f,th,ch,(void*)obj,g_pbuf,g_rbuf)
+                       : CallBPGuarded((uintptr_t)f,(void*)obj,g_rbuf);
+    Markerf("[FOW] %s: %s (%s) %s\r\n",tag,fname,(sn==0)?"native":"BP",flt?"FAULTED":"ok");
+}
+// ★ ROUTE B/A HYBRID — make the hero its own FOG-OF-WAR VISION SOURCE. IsFogOfWarVisibleToLocal(hero)==FALSE is the
+// render gate; force-open has no team/vision so the FOW mask stays dark and character primitives are culled. The
+// replicated FogOfWarRadius/FogOfWarAngle properties (with OnRep_ handlers) ARE the vision source — set them wide and
+// fire the OnReps so the FOW system reveals around the hero.
+// FogOfWarRadius/Angle are NOT plain floats on the hero — usmap schema.txt shows they are **GAS attributes on
+// LokiAttributeSet** (UClass:AttributeSet, 125 props), i.e. FGameplayAttributeData { vtable@0x0, float BaseValue@0x8,
+// float CurrentValue@0xC }. Find the attribute set owned by the hero (GAS parents it to the owner actor / its ASC).
+static uintptr_t g_plAttrSet=0;
+static uintptr_t FindAttrSetFor(uintptr_t hero){
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return 0;
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+            if(!strstr(cn,"AttributeSet"))continue;
+            uintptr_t o=SafeReadable((void*)(obj+0x28),8)?*(uintptr_t*)(obj+0x28):0; int d=0;   // Outer chain -> hero?
+            while(LooksLikePtr(o)&&d<3){ if(o==hero) return obj; o=SafeReadable((void*)(o+0x28),8)?*(uintptr_t*)(o+0x28):0; d++; }
+        }
+    }
+    return 0;
+}
+static void FowPokeAttr(uintptr_t as,const char* name,float v){
+    uint32_t off=PropOffsetSuper(ClassOf(as),name);
+    if(off==0xFFFFFFFF||!SafeReadable((void*)(as+off),0x10)){ Markerf("[FOW] attr %s NOT FOUND (off=0x%X)\r\n",name,off); return; }
+    float ob=*(float*)(as+off+0x8), oc=*(float*)(as+off+0xC);   // FGameplayAttributeData Base@0x8 Current@0xC
+    *(float*)(as+off+0x8)=v; *(float*)(as+off+0xC)=v;
+    Markerf("[FOW] attr %s@0x%X base %.1f->%.0f cur %.1f->%.0f\r\n",name,off,ob,v,oc,v);
+}
+// ★ ROUTE B — DISABLE FOG OF WAR. The FOW mask is rendered by the live `FogOfWarSceneView` actor (one instance in
+// the tutorial's PersistentLevel) and primitives are gathered by `FogOfWarPrimitiveCollector`. With no vision source
+// the mask stays dark and every character primitive is culled. Neutralise the renderer: stop its tick, hide it, and
+// (KFOWKILL=2) destroy it outright — if the FOW pass stops masking, characters should draw unmasked.
+static void FowDisable(){
+    const char* names[2]={"FogOfWarSceneView","FogOfWarPrimitiveCollector"};
+    for(int i=0;i<2;i++){
+        uintptr_t a=FindInstByClass(names[i],nullptr);
+        if(!LooksLikePtr(a)){ Markerf("[FOW] disable: %s instance NOT FOUND\r\n",names[i]); continue; }
+        Markerf("[FOW] disable: %s inst=0x%llX\r\n",names[i],(unsigned long long)a);
+        { void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(a),"SetActorTickEnabled",&f,&th,&ch);
+          if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); uint32_t o=ParamOffset(ch,"bEnabled"); if(o!=0xFFFFFFFF)((uint8_t*)g_pbuf)[o]=0; memset(g_rbuf,0,sizeof(g_rbuf));
+            bool fl=CallNativeGuarded(f,th,ch,(void*)a,g_pbuf,g_rbuf); Markerf("[FOW]   SetActorTickEnabled(false)%s\r\n",fl?" FAULTED":""); } }
+        { void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(a),"SetActorHiddenInGame",&f,&th,&ch);
+          if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); uint32_t o=ParamOffset(ch,"bNewHidden"); if(o!=0xFFFFFFFF)((uint8_t*)g_pbuf)[o]=1; memset(g_rbuf,0,sizeof(g_rbuf));
+            bool fl=CallNativeGuarded(f,th,ch,(void*)a,g_pbuf,g_rbuf); Markerf("[FOW]   SetActorHiddenInGame(true)%s\r\n",fl?" FAULTED":""); } }
+        if(KFOWKILL>=2){ void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(a),"K2_DestroyActor",&f,&th,&ch);
+          if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            bool fl=CallNativeGuarded(f,th,ch,(void*)a,g_pbuf,g_rbuf); Markerf("[FOW]   K2_DestroyActor%s\r\n",fl?" FAULTED":""); } }
+    }
+}
+static void FowMakeVisionSource(uintptr_t hero){
+    if(!LooksLikePtr(g_plAttrSet)){
+        g_plAttrSet=FindAttrSetFor(hero);
+        char cn[96]="-"; if(LooksLikePtr(g_plAttrSet)&&ClassOf(g_plAttrSet)) GetFNameStr(NameId(ClassOf(g_plAttrSet)),cn,sizeof(cn));
+        Markerf("[FOW] hero attributeSet=0x%llX (%s)\r\n",(unsigned long long)g_plAttrSet,cn);
+    }
+    if(!LooksLikePtr(g_plAttrSet)) return;
+    FowPokeAttr(g_plAttrSet,"FogOfWarRadius",(float)KFOWRADIUS);
+    FowPokeAttr(g_plAttrSet,"FogOfWarAngle",360.0f);
+}
+static void FowRegister(uintptr_t comp,const char* tag){
+    if(!g_plFowRegThunk||!LooksLikePtr(g_plFowCDO)||!LooksLikePtr(comp)){
+        Markerf("[FOW] %s register SKIPPED (thunk=0x%llX cdo=0x%llX comp=0x%llX)\r\n",tag,(unsigned long long)g_plFowRegThunk,(unsigned long long)g_plFowCDO,(unsigned long long)comp); return; }
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    if(g_oFowComp!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oFowComp)=(uint64_t)comp;
+    bool f=CallNativeGuarded(g_plFowRegFn,g_plFowRegThunk,g_plFowRegChild,(void*)g_plFowCDO,g_gsbuf,g_rbuf);
+    uint8_t r=(g_oFowRet!=0xFFFFFFFF)?g_gsbuf[g_oFowRet]:((uint8_t*)g_rbuf)[0];
+    Markerf("[FOW] RegisterFogOfWarPrimitive(%s) %s -> ret=%d\r\n",tag,f?"FAULTED":"ok",(int)r);
+}
+#ifndef KLOADRONIN
+#define KLOADRONIN 1         // 1 = async-load Ronin's real mesh; 0 = only use a resident placeholder (won't render).
+#endif
+#ifndef KLOADWAITMS
+#define KLOADWAITMS 15000    // how long to poll for the streamed mesh before falling back to a resident placeholder.
+#endif
+#ifndef KFIREBUNDLE
+#define KFIREBUNDLE 0        // also fire the async cosmetics-bundle load (redundant with the blocking mesh load; off = stabler render).
+#endif
+#ifndef KGROUNDX
+#define KGROUNDX (-65.0)     // S75 CapturePoint (-65,-1770,353) is confirmed-solid tutorial ground
+#endif
+#ifndef KGROUNDY
+#define KGROUNDY (-1770.0)
+#endif
+#ifndef KGROUNDZ
+#define KGROUNDZ (393.0)     // +40 above the surface so gravity settles the hero onto it
+#endif
+#ifndef KNOMESH
+#define KNOMESH 0            // -DKNOMESH=1 -> skip the body build (isolate camera+movement)
+#endif
+#ifndef KNOMOVE
+#define KNOMOVE 0            // -DKNOMOVE=1 -> skip the WASD puppet (isolate the visible standing body)
+#endif
+#ifndef KNOTELE
+#define KNOTELE 0            // -DKNOTELE=1 -> skip the ground teleport (keep the hero where [SP] left it)
+#endif
+#ifndef KBODYZ
+#define KBODYZ 0.0           // RelativeLocation Z of the body component (tune ~-88 to drop feet to the capsule base)
+#endif
+#ifndef KMESHTICK
+#define KMESHTICK 1          // tick the body component ON (needed to update pose/render state); with SingleNode anim it's crash-safe. 0 = tick off.
+#endif
+#ifndef KANIMMODE
+#define KANIMMODE 1          // SetAnimationMode: 1=AnimationSingleNode (ref pose, NO hero AnimBP -> no S93 crash), 0=AnimBlueprint (crashes), -1=don't set.
+#endif
+#ifndef KFLYMODE
+#define KFLYMODE 5           // MOVE_Flying(5): bypasses the Walking-mode ground-mantle chain that spams "FudgeMantling
+                             // toggles not ready" + crashed movement on cell-streaming (S75/S81). Hero hovers at the
+                             // teleport Z; velocity XY still drives it. -DKFLYMODE=1 = Walking (mantle spam), 0 = leave as-is.
+#endif
+// Build a visible body on `hero` from scratch: AddComponentByClass(SkeletalMeshComponent, auto-attach) +
+// SetSkeletalMeshAsset(mesh); tick+anim OFF (static ref pose), visibility ON. Returns the component (0 on fail).
+// AddComponentByClass + SetSkeletalMeshAsset are NATIVE -> CallNativeGuarded (the BP-call primitive FAULTS on them).
+static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh, bool deferred){
+    void* acfn=nullptr; uintptr_t acth=0,acch=0; ResolveFuncSuper(ClassOf(hero),"AddComponentByClass",&acfn,&acth,&acch);
+    if(!acth){ Marker("[PL] AddComponentByClass thunk not found\r\n"); return 0; }
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); uint32_t retOff=0xFFFFFFFF; uint8_t savedXform[0x50]={0}; uint32_t xoff=0xFFFFFFFF;
+    for(uintptr_t p=acch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+        char pn[64]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
+        uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF; if(o==0xFFFFFFFF||o+0x50>sizeof(g_gsbuf))continue;
+        uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0;
+        if(strcmp(pn,"Class")==0) *(uint64_t*)(g_gsbuf+o)=(uint64_t)skelCls;
+        else if(strcmp(pn,"RelativeTransform")==0){ double* T=(double*)(g_gsbuf+o); T[3]=1.0; T[6]=KBODYZ; T[7]=1.0; T[8]=1.0; T[9]=1.0; xoff=o; }   // quatW@0x18, Trans.Z@0x30, Scale3D@0x38/0x40/0x48
+        else if(strcmp(pn,"bDeferredFinish")==0){ *(uint8_t*)(g_gsbuf+o)=deferred?1:0; }
+        else if(fl&0x400) retOff=o;   // CPF_ReturnParm
+    }
+    if(xoff!=0xFFFFFFFF) memcpy(savedXform, g_gsbuf+xoff, 0x50);   // keep the identity xform for FinishAddComponent
+    bool flt=CallNativeGuarded(acfn,acth,acch,(void*)hero,g_gsbuf,g_rbuf);
+    uintptr_t comp=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(comp)&&retOff!=0xFFFFFFFF) comp=*(uint64_t*)(g_gsbuf+retOff);
+    char ccn[96]="-"; if(LooksLikePtr(comp)&&ClassOf(comp)) GetFNameStr(NameId(ClassOf(comp)),ccn,sizeof(ccn));
+    Markerf("[PL] AddComponentByClass %s -> comp=0x%llX(%s)\r\n",flt?"FAULTED":"ok",(unsigned long long)comp,ccn);
+    if(!LooksLikePtr(comp)) return 0;
+    if(mesh){ void* smfn=nullptr; uintptr_t smth=0,smch=0; ResolveFuncSuper(ClassOf(comp),"SetSkeletalMeshAsset",&smfn,&smth,&smch);
+      if(smth){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        for(uintptr_t p=smch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+            uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0; if(!(fl&0x80))continue;   // CPF_Parm
+            uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+            if(o!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+o)=(uint64_t)mesh; break; }
+        bool f=CallNativeGuarded(smfn,smth,smch,(void*)comp,g_gsbuf,g_rbuf); Markerf("[PL] SetSkeletalMeshAsset %s\r\n",f?"FAULTED":"ok"); }
+      else Marker("[PL] SetSkeletalMeshAsset thunk not found\r\n"); }
+    // Disable CLOTH: Ronin's mesh carries ClothingSimulationFactoryNv; cloth sim in the force-open context (no proper
+    // physics/deploy world) is a prime render-crash suspect. Null the factory + OR the bDisableClothSimulation bit.
+    { uint32_t cf=PropOffsetSuper(ClassOf(comp),"ClothingSimulationFactory"); if(cf!=0xFFFFFFFF&&SafeReadable((void*)(comp+cf),8)){ *(uint64_t*)(comp+cf)=0; Markerf("[PL] ClothingSimulationFactory@0x%X=null\r\n",cf); } }
+    // ⚠ S94 iter10 BUG (fixed): bDisableClothSimulation / bOwnerNoSee / bOnlyOwnerSee are BITFIELD bools — several
+    // share ONE byte (all three resolved to bytes holding other flags, e.g. bOwnerNoSee@0x2A4 read 152). Writing the
+    // whole byte (=0, or |=1) CLOBBERS the neighbouring render flags. Don't poke them raw; nulling the cloth factory
+    // (a real pointer field) is enough, and the game's own BP component already has sane visibility flags.
+    // RENDER the ref pose without an AnimBP: S93 rendered NOTHING with tick OFF (the component never updates its
+    // pose/render state). Fix = SetAnimationMode(AnimationSingleNode=1) so NO hero AnimBP is instantiated (that
+    // mismatched-skeleton AnimBP eval is what crashed S93), THEN enable tick so the component evaluates the empty
+    // single-node = ref pose and submits render state each frame. Visible last.
+    if(KANIMMODE>=0){ void* af=nullptr; uintptr_t at=0,ac=0; ResolveFuncSuper(ClassOf(comp),"SetAnimationMode",&af,&at,&ac);
+      if(at){ memset(g_pbuf,0,sizeof(g_pbuf)); ((uint8_t*)g_pbuf)[0]=(uint8_t)KANIMMODE; CallNativeGuarded(af,at,ac,(void*)comp,g_pbuf,g_rbuf); Markerf("[PL] SetAnimationMode(%d)\r\n",(int)KANIMMODE); }
+      else Marker("[PL] SetAnimationMode thunk not found\r\n"); }
+    { void* vf=nullptr; uintptr_t vt=0,vc=0; ResolveFuncSuper(ClassOf(comp),"SetVisibility",&vf,&vt,&vc);
+      if(vt){ memset(g_pbuf,0,sizeof(g_pbuf)); ((uint8_t*)g_pbuf)[0]=1; CallNativeGuarded(vf,vt,vc,(void*)comp,g_pbuf,g_rbuf); } }
+    { void* tf=nullptr; uintptr_t tt=0,tc=0; ResolveFuncSuper(ClassOf(comp),"SetComponentTickEnabled",&tf,&tt,&tc);
+      if(tt){ memset(g_pbuf,0,sizeof(g_pbuf)); ((uint8_t*)g_pbuf)[0]=(uint8_t)(KMESHTICK?1:0); CallNativeGuarded(tf,tt,tc,(void*)comp,g_pbuf,g_rbuf); } }
+    // DEFERRED finish (route 2): now that AnimBP is off (SingleNode) + cloth off, register the component so it renders.
+    if(deferred){
+        if(g_plFacThunk && g_oFacComp!=0xFFFFFFFF){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            *(uint64_t*)(g_gsbuf+g_oFacComp)=(uint64_t)comp;
+            if(g_oFacManual!=0xFFFFFFFF) g_gsbuf[g_oFacManual]=0;
+            if(g_oFacXform!=0xFFFFFFFF && g_oFacXform+0x50<=sizeof(g_gsbuf)) memcpy(g_gsbuf+g_oFacXform, savedXform, 0x50);
+            bool ff=CallNativeGuarded(g_plFacFn,g_plFacThunk,g_plFacChild,(void*)hero,g_gsbuf,g_rbuf);
+            Markerf("[PL] FinishAddComponent %s\r\n",ff?"FAULTED":"ok"); }
+        else Markerf("[PL] FinishAddComponent thunk MISSING (comp left unregistered) fac=0x%llX comp@0x%X\r\n",(unsigned long long)g_plFacThunk,g_oFacComp);
+    }
+    // ★ REGISTER WITH FOG OF WAR — the render gate: unregistered character primitives are culled from the FOW scene
+    //   view and never draw (S94 iter11 root cause). Must happen AFTER the component is registered/finished.
+    FowRegister(comp,"body");
+    Markerf("[PL] body built (animMode=%d tick=%d visible deferred=%d)\r\n",(int)KANIMMODE,(int)KMESHTICK,(int)deferred);
+    return comp;
+}
+// Fire AsyncLoadPrimaryAssets for candidate Ronin primary assets so SK_Ronin_Default streams in WITH render data.
+// Param layout (LokiAssetManager.AsyncLoadPrimaryAssets, per missions_fix/ds_hybrid): WorldContextObject@0,
+// AssetsToLoad{Data@8,Num@16,Max@20}. The param chain is DumpParams'd in ResolvePlay so we can correct it if wrong.
+static void FireRoninLoad(){
+    if(!g_plLam || !g_plPafsThunk || !g_plAlpaThunk){ Marker("[PL] async-load infra missing -> skip (fallback to resident placeholder)\r\n"); return; }
+    static const wchar_t* kCand[]={ L"HeroCosmeticsBundle:RoninDefault", L"Hero:Ronin", L"LokiHero:Ronin",
+        L"Character:Ronin", L"HeroCosmetic:RoninDefault", L"CharacterCosmetic:RoninDefault", L"Cosmetic:RoninDefault" };
+    static uint8_t ids[8*16]={0}; int n=0;
+    for(unsigned c=0;c<sizeof(kCand)/sizeof(kCand[0]) && n<8;c++){
+        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); SetFStringAt((uint8_t*)g_pbuf,0,kCand[c]);
+        if(CallNativeGuarded(g_plPafsFn,g_plPafsThunk,g_plPafsChild,(void*)g_plLam,g_pbuf,g_rbuf)){ Markerf("[PL] paid '%ls' FAULTED\r\n",kCand[c]); continue; }
+        uint64_t t=*(uint64_t*)g_rbuf, nm=*(uint64_t*)((uint8_t*)g_rbuf+8);
+        if((uint32_t)t==0){ Markerf("[PL] paid '%ls' -> type 0 (unresolved)\r\n",kCand[c]); continue; }
+        memcpy(ids+n*16, g_rbuf, 16); n++;
+        Markerf("[PL] paid '%ls' -> {0x%llX,0x%llX}\r\n",kCand[c],(unsigned long long)t,(unsigned long long)nm);
+    }
+    if(n==0){ Marker("[PL] NO Ronin primary-asset id resolved -> async-load skipped\r\n"); return; }
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(uint64_t*)((uint8_t*)g_pbuf+0)=(uint64_t)g_plWorld;   // WorldContextObject
+    *(uint64_t*)((uint8_t*)g_pbuf+8)=(uint64_t)ids;         // AssetsToLoad.Data
+    *(uint32_t*)((uint8_t*)g_pbuf+16)=(uint32_t)n;          // .Num
+    *(uint32_t*)((uint8_t*)g_pbuf+20)=(uint32_t)n;          // .Max
+    bool f=CallNativeGuarded(g_plAlpaFn,g_plAlpaThunk,g_plAlpaChild,(void*)g_plLam,g_pbuf,g_rbuf);
+    Markerf("[PL] AsyncLoadPrimaryAssets(%d Ronin ids) %s handle=0x%llX\r\n",n,f?"FAULTED":"fired",(unsigned long long)*(uint64_t*)g_rbuf);
+    g_plLoadFired=true;
+}
+// Blocking load of a UObject by soft path: MakeSoftObjectPath(path) -> FSoftObjectPath, then LoadAsset_Blocking it.
+// Returns the loaded object (0 on fail). Synchronous — loads render data before returning.
+static uintptr_t LoadMeshByPath(const wchar_t* path){
+    if(!g_plKsl || !g_plMspThunk || !g_plLabThunk){ Markerf("[PL] load-by-path infra missing (ksl=0x%llX msp=0x%llX lab=0x%llX)\r\n",(unsigned long long)g_plKsl,(unsigned long long)g_plMspThunk,(unsigned long long)g_plLabThunk); return 0; }
+    uint8_t soft[0x40]={0}, res[0x40]={0};
+    // 1. MakeSoftObjectPath(path) -> FSoftObjectPath. Native struct returns land in the RESULT buffer (soft), not the
+    //    params ReturnValue offset (that was the S94-iter5 bug: read g_gsbuf+0x10 -> empty).
+    memset(g_gsbuf,0,sizeof(g_gsbuf));
+    if(g_oMspPath!=0xFFFFFFFF) SetFStringAt((uint8_t*)g_gsbuf,g_oMspPath,path);
+    bool f1=CallNativeGuarded(g_plMspFn,g_plMspThunk,g_plMspChild,(void*)g_plKsl,g_gsbuf,soft);
+    // if the result buffer stayed empty, fall back to the params ReturnValue offset.
+    if(*(uint64_t*)soft==0 && g_oMspRet!=0xFFFFFFFF && g_oMspRet+0x20<=sizeof(g_gsbuf)) memcpy(soft, g_gsbuf+g_oMspRet, 0x20);
+    Markerf("[PL] MakeSoftObjectPath %s (pkgFName=0x%llX assetFName=0x%llX)\r\n",f1?"FAULTED":"ok",(unsigned long long)*(uint64_t*)soft,(unsigned long long)*(uint64_t*)(soft+8));
+    // 2. LoadAsset_Blocking(softptr) -> UObject*. TSoftObjectPtr (0x28) = FWeakObjectPtr WeakPtr@0x0 (8, MUST be zero
+    //    so LoadSynchronous resolves from the path, not a stale cache) + FSoftObjectPath ObjectID@0x8 (0x20). The
+    //    S94-iter6 bug: wrote the path at +0x0, clobbering WeakPtr -> "cached null" -> LoadAsset returned null.
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(res,0,sizeof(res));
+    if(g_oLabAsset!=0xFFFFFFFF && g_oLabAsset+0x28<=sizeof(g_gsbuf)) memcpy(g_gsbuf+g_oLabAsset+0x8, soft, 0x20);
+    bool f2=CallNativeGuarded(g_plLabFn,g_plLabThunk,g_plLabChild,(void*)g_plKsl,g_gsbuf,res);
+    uintptr_t obj=(uintptr_t)*(uint64_t*)res; if(!LooksLikePtr(obj)&&g_oLabRet!=0xFFFFFFFF) obj=*(uint64_t*)(g_gsbuf+g_oLabRet);
+    char cn[96]="-"; if(LooksLikePtr(obj)&&ClassOf(obj)) GetFNameStr(NameId(ClassOf(obj)),cn,sizeof(cn));
+    Markerf("[PL] LoadAsset_Blocking %s -> 0x%llX (%s)\r\n",f2?"FAULTED":"ok",(unsigned long long)obj,cn);
+    return LooksLikePtr(obj)?obj:0;
+}
+static bool ResolvePlay(){
+    g_gameHwnd=FindWindowA(nullptr,"SUPERVIVE");
+    Markerf("[PL] gameHwnd=0x%llX (0 => focus check disabled)\r\n",(unsigned long long)(uintptr_t)g_gameHwnd);
+    if(!ResolveWakeMove()){ Marker("[PL] ResolveWakeMove failed (no possessed hero — spawn+possess first) -> abort\r\n"); return false; }
+    // Mesh: prefer Ronin's own body (SK_Ronin_Default); report residency of every candidate. Skins bind to Ronin's
+    // skeleton; the SK_KaijuCaster/Base fallbacks are wrong-skeleton (still render a static pose but not Ronin's).
+    // SPEED: each FindObjExact is a FULL ~188k-object scan on the game thread. The 7-candidate placeholder sweep cost
+    // ~7 scans and is dead weight now that LoadMeshByPath loads the real mesh — only do it if that route is disabled.
+    // (Time-to-body was ~215s, and force-open sessions die ~230-260s, leaving no window to see/screenshot the body.)
+    if(!KLOADRONIN){
+        const char* cand[]={"SK_KaijuCaster_Default","SK_Base_Wisp","SK_HeroPlatform_Default"};
+        for(int i=0;i<3;i++){ uintptr_t m=FindObjExact(cand[i]); bool use=(m&&!g_plMesh);
+            Markerf("[PL] mesh cand %s = 0x%llX%s\r\n",cand[i],(unsigned long long)m,use?"  <== USING":"");
+            if(use){ g_plMesh=m; _snprintf_s(g_plMeshName,sizeof(g_plMeshName),_TRUNCATE,"%s",cand[i]); } }
+    }
+    g_plSkelCls=FindClassExact("SkeletalMeshComponent");
+    ResolveTopDownCam();       // g_gm2/g_gsCDO/g_begin*/g_finish* (SpawnActorCls infra) + g_tcCamCls/g_tcSvtThunk
+    g_tcHero=g_wmHero;         // the camera follows the POSSESSED pawn (authoritative), not a name scan
+    // async-load infra (stream Ronin's real mesh with render data): LokiAssetManager.PrimaryAssetIDFromString + AsyncLoadPrimaryAssets.
+    g_plLam=FindInstByClass("LokiAssetManager",nullptr);
+    g_plWorld=FindInstByClass("ProgressionManager",nullptr); if(!g_plWorld) g_plWorld=FindInstByClass("LokiGameState",nullptr); if(!g_plWorld) g_plWorld=g_wmPC;
+    if(g_plLam){ ResolveFuncNative(ClassOf(g_plLam),"PrimaryAssetIDFromString",&g_plPafsFn,&g_plPafsThunk,&g_plPafsChild);
+        ResolveFuncNative(ClassOf(g_plLam),"AsyncLoadPrimaryAssets",&g_plAlpaFn,&g_plAlpaThunk,&g_plAlpaChild);
+        if(g_plAlpaChild) DumpParams(g_plAlpaChild,"AsyncLoadPrimaryAssets"); }
+    Markerf("[PL] loadInfra lam=0x%llX world=0x%llX pafs=0x%llX alpa=0x%llX\r\n",(unsigned long long)g_plLam,(unsigned long long)g_plWorld,(unsigned long long)g_plPafsThunk,(unsigned long long)g_plAlpaThunk);
+    // route 1: KismetSystemLibrary.MakeSoftObjectPath + LoadAsset_Blocking (blocking load of the real Ronin mesh).
+    { uintptr_t kslCDO=FindObjExact("Default__KismetSystemLibrary"); g_plKsl = kslCDO?ClassOf(kslCDO):0;
+      if(g_plKsl){ ResolveFuncNative(g_plKsl,"MakeSoftObjectPath",&g_plMspFn,&g_plMspThunk,&g_plMspChild);
+        if(g_plMspChild){ g_oMspPath=ParamOffset(g_plMspChild,"PathString"); g_oMspRet=ParamOffset(g_plMspChild,"ReturnValue"); DumpParams(g_plMspChild,"MakeSoftObjectPath"); }
+        ResolveFuncNative(g_plKsl,"LoadAsset_Blocking",&g_plLabFn,&g_plLabThunk,&g_plLabChild);
+        if(!g_plLabThunk) ResolveFuncNative(g_plKsl,"LoadAssetBlocking",&g_plLabFn,&g_plLabThunk,&g_plLabChild);
+        if(g_plLabChild){ g_oLabAsset=ParamOffset(g_plLabChild,"Asset"); g_oLabRet=ParamOffset(g_plLabChild,"ReturnValue"); DumpParams(g_plLabChild,"LoadAsset_Blocking"); } }
+      Markerf("[PL] route1 ksl=0x%llX msp=0x%llX(path@0x%X ret@0x%X) lab=0x%llX(asset@0x%X ret@0x%X)\r\n",
+        (unsigned long long)g_plKsl,(unsigned long long)g_plMspThunk,g_oMspPath,g_oMspRet,(unsigned long long)g_plLabThunk,g_oLabAsset,g_oLabRet); }
+    // ★ FOG-OF-WAR statics (the render gate for character primitives in this game).
+    { g_plFowCDO=FindObjExact("Default__LokiFogOfWarStatics");   // fallback context (statics usually ignore `this`)
+      uintptr_t regCdo=0, visCdo=0;
+      ResolveFuncGlobal("RegisterFogOfWarPrimitive",&g_plFowRegFn,&g_plFowRegThunk,&g_plFowRegChild,&regCdo);
+      if(g_plFowRegChild){ g_oFowComp=ParamOffset(g_plFowRegChild,"Component"); g_oFowRet=ParamOffset(g_plFowRegChild,"ReturnValue"); }
+      ResolveFuncGlobal("IsFogOfWarVisibleToLocal",&g_plFowVisFn,&g_plFowVisThunk,&g_plFowVisChild,&visCdo);
+      if(g_plFowVisChild){ g_oFowTgt=ParamOffset(g_plFowVisChild,"Target"); g_oFowVisRet=ParamOffset(g_plFowVisChild,"ReturnValue"); }
+      if(LooksLikePtr(regCdo)) g_plFowCDO=regCdo; else if(LooksLikePtr(visCdo)) g_plFowCDO=visCdo;
+      if(!LooksLikePtr(g_plFowCDO)) g_plFowCDO=g_wmPC;   // last resort: any live UObject as context for a static
+      Markerf("[FOW] cdo=0x%llX reg=0x%llX(comp@0x%X ret@0x%X) vis=0x%llX(tgt@0x%X ret@0x%X)\r\n",
+        (unsigned long long)g_plFowCDO,(unsigned long long)g_plFowRegThunk,g_oFowComp,g_oFowRet,(unsigned long long)g_plFowVisThunk,g_oFowTgt,g_oFowVisRet); }
+    // route 2: FinishAddComponent (register a DEFERRED component) on the hero (AActor).
+    ResolveFuncSuper(ClassOf(g_wmHero),"FinishAddComponent",&g_plFacFn,&g_plFacThunk,&g_plFacChild);
+    if(g_plFacChild){ g_oFacComp=ParamOffset(g_plFacChild,"Component"); g_oFacManual=ParamOffset(g_plFacChild,"bManualAttachment"); g_oFacXform=ParamOffset(g_plFacChild,"RelativeTransform"); DumpParams(g_plFacChild,"FinishAddComponent"); }
+    Markerf("[PL] route2 finishAddComp=0x%llX(comp@0x%X manual@0x%X xform@0x%X)\r\n",(unsigned long long)g_plFacThunk,g_oFacComp,g_oFacManual,g_oFacXform);
+    Markerf("[PL] hero=0x%llX CMC=0x%llX mesh=0x%llX(%s) skelCls=0x%llX camCls=0x%llX pc=0x%llX gm=0x%llX gsCDO=0x%llX begin=0x%llX\r\n",
+        (unsigned long long)g_wmHero,(unsigned long long)g_wmCMC,(unsigned long long)g_plMesh,g_plMeshName,(unsigned long long)g_plSkelCls,
+        (unsigned long long)g_tcCamCls,(unsigned long long)g_tcPC,(unsigned long long)g_gm2,(unsigned long long)g_gsCDO,(unsigned long long)g_beginThunk);
+    bool camOk = g_tcCamCls && g_tcSvtThunk && g_gm2 && g_gsCDO && g_beginThunk;
+    if(!camOk) Marker("[PL] WARN: camera infra incomplete — will still teleport/build/move, but no camera takeover\r\n");
+    return LooksLikePtr(g_wmHero) && LooksLikePtr(g_wmCMC);
+}
+static void DoPlay(){
+    if(!g_plInit){
+        g_plInit=true;
+        // 1. ground: teleport to a known-walkable spot (no [SP] sky-lift), gravity ON so it settles onto the surface.
+        if(!KNOTELE && g_slThunk && g_oSlLoc!=0xFFFFFFFF){
+            memset(g_slbuf,0,sizeof(g_slbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            double* NL=(double*)(g_slbuf+g_oSlLoc); NL[0]=KGROUNDX; NL[1]=KGROUNDY; NL[2]=KGROUNDZ;
+            if(g_oSlSweep!=0xFFFFFFFF) g_slbuf[g_oSlSweep]=0; if(g_oSlTele!=0xFFFFFFFF) g_slbuf[g_oSlTele]=1;
+            bool f=CallNativeGuarded(g_slFn,g_slThunk,g_slChild,(void*)g_wmHero,g_slbuf,g_rbuf);
+            Markerf("[PL] teleport hero -> ground (%.0f,%.0f,%.0f)%s\r\n",(double)KGROUNDX,(double)KGROUNDY,(double)KGROUNDZ,f?" FAULTED":"");
+        }
+        if(g_wmGravOff!=0xFFFFFFFF&&SafeReadable((void*)(g_wmCMC+g_wmGravOff),4)) *(float*)(g_wmCMC+g_wmGravOff)=1.0f;
+        if(g_rimThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); CallNativeGuarded(g_rimFn,g_rimThunk,g_rimChild,(void*)g_wmPC,g_pbuf,g_rbuf); }
+        // MOVE_Flying (S81): bypass the ground-mantle chain that crashed movement on cell-streaming. Set on the CMC.
+        if(KFLYMODE && g_smmThunk && g_oSmmMode!=0xFFFFFFFF){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            ((uint8_t*)g_pbuf)[g_oSmmMode]=(uint8_t)KFLYMODE; if(g_oSmmCustom!=0xFFFFFFFF)((uint8_t*)g_pbuf)[g_oSmmCustom]=0;
+            bool f=CallNativeGuarded(g_smmFn,g_smmThunk,g_smmChild,(void*)g_wmCMC,g_pbuf,g_rbuf); Markerf("[PL] SetMovementMode(%d)%s\r\n",(int)KFLYMODE,f?" FAULTED":""); }
+        g_puppetInit=true;   // suppress DoPuppet's own init (gravity+rim already done here)
+        // ★ UNHIDE the hero: SUPERVIVE spawns heroes HIDDEN until deploy; a hidden ACTOR hides ALL its child
+        //   components (incl. our from-scratch mesh) -> nothing renders no matter how the component is set up.
+        { void* hf=nullptr; uintptr_t ht=0,hc=0; ResolveFuncSuper(ClassOf(g_wmHero),"SetActorHiddenInGame",&hf,&ht,&hc);
+          if(ht){ uint32_t o=ParamOffset(hc,"bNewHidden"); memset(g_pbuf,0,sizeof(g_pbuf)); if(o!=0xFFFFFFFF)((uint8_t*)g_pbuf)[o]=0; memset(g_rbuf,0,sizeof(g_rbuf));
+            bool f=CallNativeGuarded(hf,ht,hc,(void*)g_wmHero,g_pbuf,g_rbuf); Markerf("[PL] SetActorHiddenInGame(hero,false)%s\r\n",f?" FAULTED":""); }
+          else Marker("[PL] SetActorHiddenInGame thunk not found\r\n"); }
+        // ★ FOG OF WAR — the render gate (S94 iter12 root cause): IsFogOfWarVisibleToLocal(hero)==FALSE, so every
+        //   character primitive is culled. Make the hero a vision source BEFORE building the body.
+        if(KFOWATTR) FowMakeVisionSource(g_wmHero);   // route A: DEAD (hero has no GAS attribute set) + costs a full object scan
+        if(KFOWKILL) FowDisable();   // route B: neutralise the FOW renderer so nothing is mask-culled
+        // 2. build the body with Ronin's REAL mesh. FireRoninLoad first (bundle deps/materials), then the BLOCKING
+        //    load-by-path of SK_Ronin_Default_LOD1 (synchronous -> render data ready), then build. Fallback = placeholder.
+        if(!KNOMESH){
+            if(KFIREBUNDLE) FireRoninLoad();   // async bundle load — redundant once the blocking load works.
+            if(KUSEBPCOMP){   // route 2: the game's own configured BP mesh-component (mesh+materials+registration wired the game way).
+                uintptr_t bpCls = LoadMeshByPath(KBPCOMPPATH); g_plBpCls = bpCls;   // keep the CLASS (FindObjExact by that
+                // name later returns the hero's component INSTANCE — it's named after its class — which broke the test actor).
+                char bcn[96]="-"; if(LooksLikePtr(bpCls)&&ClassOf(bpCls)) GetFNameStr(NameId(ClassOf(bpCls)),bcn,sizeof(bcn));
+                Markerf("[PL] route2 BP-comp class = 0x%llX (%s)\r\n",(unsigned long long)bpCls,bcn);
+                if(LooksLikePtr(bpCls)) g_plComp = BuildHeroBody(g_wmHero, bpCls, 0, true);   // deferred; BP CDO provides the mesh
+                else Marker("[PL] route2 class load FAILED -> route 1 fallback\r\n");
+            }
+            if(!LooksLikePtr(g_plComp)){   // route 1: bare SkeletalMeshComponent + the real mesh loaded by path.
+                uintptr_t m = KLOADRONIN ? LoadMeshByPath(KMESHPATH) : 0;
+                if(!m){ m = FindObjExact("SK_Ronin_Default_LOD1"); if(m) Marker("[PL] SK_Ronin_Default_LOD1 already resident\r\n"); }
+                if(!m && g_plMesh){ m = g_plMesh; Markerf("[PL] falling back to resident placeholder %s (may not render)\r\n",g_plMeshName); }
+                if(m && g_plSkelCls) g_plComp = BuildHeroBody(g_wmHero, g_plSkelCls, m, false);
+                else Markerf("[PL] no mesh -> body skipped (skelCls=0x%llX)\r\n",(unsigned long long)g_plSkelCls);
+            }
+        }
+        // ★ DISCRIMINATOR (KTESTACTOR): put the SAME Ronin body on a STANDALONE actor beside the hero. The hero is at
+        //   the right place with the mesh assigned and still doesn't draw, so either the HERO ACTOR is hidden
+        //   (SUPERVIVE hides heroes until deploy) or the MESH itself can't draw. A CameraActor (known-good spawn, has
+        //   a root) carries the body ~500 units away: body appears there but not on the hero => the HERO is the
+        //   blocker; neither appears => the MESH/materials are.
+        if(KTESTACTOR && g_tcCamCls && g_gm2 && g_gsCDO && g_beginThunk){
+            double hl[3]={0,0,0}; ActorLoc(g_wmHero,hl);
+            memset(g_xform,0,sizeof(g_xform)); *(double*)(g_xform+0x18)=1.0;
+            *(double*)(g_xform+0x20)=hl[0]+KTESTDX; *(double*)(g_xform+0x28)=hl[1]; *(double*)(g_xform+0x30)=hl[2];
+            *(double*)(g_xform+0x38)=1.0; *(double*)(g_xform+0x40)=1.0; *(double*)(g_xform+0x48)=1.0;
+            uintptr_t ta=SpawnActorCls(g_tcCamCls,"test-body-actor");
+            Markerf("[PL] TEST actor=0x%llX at (%.0f,%.0f,%.0f)\r\n",(unsigned long long)ta,hl[0]+(double)KTESTDX,hl[1],hl[2]);
+            if(LooksLikePtr(ta)){
+                uintptr_t tcls = KUSEBPCOMP ? g_plBpCls : 0;   // the loaded CLASS (not FindObjExact — that returns the instance)
+                uintptr_t tmesh = 0; if(!tcls){ tcls=g_plSkelCls; tmesh=FindObjExact("SK_Ronin_Default_LOD1"); }
+                uintptr_t tc = (tcls) ? BuildHeroBody(ta, tcls, tmesh, KUSEBPCOMP?true:false) : 0;
+                Markerf("[PL] TEST body comp=0x%llX (cls=0x%llX mesh=0x%llX)\r\n",(unsigned long long)tc,(unsigned long long)tcls,(unsigned long long)tmesh);
+            }
+        }
+        g_plBodyDone=true;
+        Markerf("[PL] *** init complete: body=%s; camera + WASD active ***\r\n", g_plComp?"BUILT":"none");
+    }
+    // ★ S94 iter10 — RE-ASSERT visibility EVERY hit + log the decisive coordinates.
+    // WHY re-assert: SUPERVIVE hides heroes until deploy, and this build re-applies such state every frame (the same
+    // pattern that makes the camera manager revert SetViewTargetWithBlend — proven S78/S93). A ONE-TIME unhide at init
+    // would be silently undone, so the body would never render no matter how the component is built. Cheap per hit.
+    if(g_plBodyDone && LooksLikePtr(g_wmHero)){
+        static void* uhF=nullptr; static uintptr_t uhT=0,uhC=0; static uint32_t uhO=0xFFFFFFFF; static bool uhR=false;
+        if(!uhR){ uhR=true; ResolveFuncSuper(ClassOf(g_wmHero),"SetActorHiddenInGame",&uhF,&uhT,&uhC); if(uhC) uhO=ParamOffset(uhC,"bNewHidden"); }
+        if(uhT){ memset(g_pbuf,0,sizeof(g_pbuf)); if(uhO!=0xFFFFFFFF)((uint8_t*)g_pbuf)[uhO]=0; memset(g_rbuf,0,sizeof(g_rbuf)); CallNativeGuarded(uhF,uhT,uhC,(void*)g_wmHero,g_pbuf,g_rbuf); }
+        if(LooksLikePtr(g_plComp)){
+            static void* vF=nullptr; static uintptr_t vT=0,vC=0; static bool vR=false;
+            if(!vR){ vR=true; ResolveFuncSuper(ClassOf(g_plComp),"SetVisibility",&vF,&vT,&vC); }
+            if(vT){ memset(g_pbuf,0,sizeof(g_pbuf)); ((uint8_t*)g_pbuf)[0]=1; memset(g_rbuf,0,sizeof(g_rbuf)); CallNativeGuarded(vF,vT,vC,(void*)g_plComp,g_pbuf,g_rbuf); }
+        }
+        // DIAGNOSTIC every ~3s — the measurement that distinguishes occluded / mis-placed / off-camera / re-hidden:
+        // hero world loc + its live bHidden byte, the component's WORLD loc (K2_GetComponentLocation) + its assigned
+        // mesh ptr, and the camera's world loc. All read AFTER the game has had frames to revert things.
+        static DWORD dlast=0; DWORD dnow=GetTickCount();
+        if(dnow-dlast>=3000){ dlast=dnow;
+            double hl[3]={0,0,0}; ActorLoc(g_wmHero,hl);
+            double cl[3]={0,0,0}; if(LooksLikePtr(g_tcCam)) ActorLoc(g_tcCam,cl);
+            uint32_t hb=PropOffsetSuper(ClassOf(g_wmHero),"bHidden"); int hbv=(hb!=0xFFFFFFFF&&SafeReadable((void*)(g_wmHero+hb),1))?*(uint8_t*)(g_wmHero+hb):-1;
+            double wl[3]={0,0,0}; uint64_t skm=0; int cvis=-1;
+            if(LooksLikePtr(g_plComp)){
+                static void* gF=nullptr; static uintptr_t gT=0,gC=0; static bool gR=false;
+                if(!gR){ gR=true; ResolveFuncSuper(ClassOf(g_plComp),"K2_GetComponentLocation",&gF,&gT,&gC); }
+                if(gT){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(!CallNativeGuarded(gF,gT,gC,(void*)g_plComp,g_pbuf,g_rbuf)){ double* R=(double*)g_rbuf; wl[0]=R[0]; wl[1]=R[1]; wl[2]=R[2]; } }
+                uint32_t so=PropOffsetSuper(ClassOf(g_plComp),"SkeletalMeshAsset"); if(so==0xFFFFFFFF) so=PropOffsetSuper(ClassOf(g_plComp),"SkeletalMesh");
+                if(so!=0xFFFFFFFF&&SafeReadable((void*)(g_plComp+so),8)) skm=*(uint64_t*)(g_plComp+so);
+                uint32_t vo=PropOffsetSuper(ClassOf(g_plComp),"bVisible"); if(vo!=0xFFFFFFFF&&SafeReadable((void*)(g_plComp+vo),1)) cvis=*(uint8_t*)(g_plComp+vo);
+            }
+            int fowVis=-1;   // is the hero considered visible by the fog-of-war system? (the render gate)
+            if(g_plFowVisThunk && LooksLikePtr(g_plFowCDO)){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                if(g_oFowTgt!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oFowTgt)=(uint64_t)g_wmHero;
+                if(!CallNativeGuarded(g_plFowVisFn,g_plFowVisThunk,g_plFowVisChild,(void*)g_plFowCDO,g_gsbuf,g_rbuf))
+                    fowVis=(g_oFowVisRet!=0xFFFFFFFF)?g_gsbuf[g_oFowVisRet]:((uint8_t*)g_rbuf)[0]; }
+            Markerf("[DIAG] hero=(%.0f,%.0f,%.0f) bHidden=%d fowVisible=%d | comp=0x%llX world=(%.0f,%.0f,%.0f) mesh=0x%llX bVisible=%d | cam=(%.0f,%.0f,%.0f)\r\n",
+                hl[0],hl[1],hl[2],hbv,fowVis,(unsigned long long)g_plComp,wl[0],wl[1],wl[2],(unsigned long long)skm,cvis,cl[0],cl[1],cl[2]);
+            FowRegister(g_plComp,"re-assert");   // re-register in case the FOW collector drops unowned primitives
+            if(KFOWATTR && fowVis==0) FowMakeVisionSource(g_wmHero);   // (route A dead; off by default)
+        }
+    }
+    DoTopDownCam();                  // spawn (once) + follow the top-down camera over the hero each hit
+    if(!KNOMOVE) DoPuppet();         // WASD -> CMC velocity (g_puppetInit preset so it only drives, doesn't re-init)
+}
+
 // S74 B2 exp3: resolve the REAL hero spawn — LokiGameMode::SpawnPlayer(PlayerState, Transform& OUT, StartSpot, bEnsure) -> LokiCharacter*.
 static bool ResolveSpawnPlayer(){
     g_gm2=FindInstByClass("GameMode_Tutorial",nullptr);
@@ -675,7 +2696,10 @@ static bool ResolveSpawnPlayer(){
     uint32_t psOff=PropOffsetSuper(ClassOf(g_pc2),"PlayerState");
     if(psOff!=0xFFFFFFFF && SafeReadable((void*)(g_pc2+psOff),8)) g_localPS=*(uintptr_t*)(g_pc2+psOff);
     char psn[96]="-"; if(LooksLikePtr(g_localPS)&&ClassOf(g_localPS)) GetFNameStr(NameId(ClassOf(g_localPS)),psn,sizeof(psn));
-    g_heroClass=FindObjExact("BP_HERO_Ronin_C");   // the hero to spawn; SpawnPlayer reads PlayerState.HeroClass
+    // S90 FIX: was FindObjExact — but a SPAWNED hero instance is ALSO named "BP_HERO_Ronin_C", so in any session
+    // where a hero already exists this grabbed the ACTOR and wrote it into PlayerState.HeroClass (a UClass* field).
+    // FindClassExact is what ResolveSpawnPossess already uses for exactly this reason.
+    g_heroClass=FindClassExact("BP_HERO_Ronin_C");   // the hero UCLASS; SpawnPlayer reads PlayerState.HeroClass
     if(LooksLikePtr(g_localPS)) g_psHeroOff=PropOffsetSuper(ClassOf(g_localPS),"HeroClass");
     ResolveFuncNative(ClassOf(g_gm2),"SpawnPlayer",&g_spwFn,&g_spwThunk,&g_spwChild);
     if(g_spwChild){ g_oSpwPS=ParamOffset(g_spwChild,"PlayerState"); g_oSpwXf=ParamOffset(g_spwChild,"SpawnTransform"); g_oSpwSS=ParamOffset(g_spwChild,"StartSpot"); g_oSpwEnsure=ParamOffset(g_spwChild,"bEnsurePositionIsValid"); g_oSpwRet=ParamOffset(g_spwChild,"ReturnValue"); }
@@ -1658,6 +3682,173 @@ static DWORD WINAPI Worker(LPVOID){
         UninstallHook();
         if(SafeReadable((void*)(g_wmCMC+0xE8),16)){ double* V=(double*)(g_wmCMC+0xE8); V[0]=0.0; V[1]=0.0; }   // stop on exit
         Markerf("[PUP] done (called=%ld hitsGT=%ld)\r\n",(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_SPAWNSEQ){
+        Marker("[SEQ] spawn-sequencer mode: spawn BP_TutorialTrainingQuestSequencer_C so BeginPlay/ReadyToFire populates the quest chain\r\n");
+        if(!ResolveSpawnSeq()){ Marker("[SEQ] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[SEQ] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[SEQ] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[SEQ] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<25000) Sleep(20);
+        UninstallHook();
+        Markerf("[SEQ] done (step=%d called=%ld hitsGT=%ld)\r\n",g_seqStep,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_SPAWNQUEST){
+        Marker("[QST] spawn-quest mode: spawn the TrainingQuest_Basics_* ACTORS directly (S91) so the lesson chain exists\r\n");
+        if(!ResolveSpawnQuest()){ Marker("[QST] resolve failed -> abort (see the discovery list above)\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[QST] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[QST] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[QST] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<45000) Sleep(20);   // N spawns x 400ms + 8s + 5s settles
+        UninstallHook();
+        Markerf("[QST] done (step=%d spawned=%d/%d poked=%d called=%ld hitsGT=%ld)\r\n",
+            g_qStep,g_qOk,g_qToSpawn,g_qPoked,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_QUESTPLAY){
+        Marker("[QP] quest-play mode: teleport the possessed hero into the WASD quest's own TargetTriggerBox (S91)\r\n");
+        if(!ResolveQuestPlay()){ Marker("[QP] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[QP] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[QP] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[QP] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<45000) Sleep(20);
+        UninstallHook();
+        Markerf("[QP] done (step=%d try=%d called=%ld hitsGT=%ld)\r\n",g_qpStep,g_qpTry,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_BPCALL){
+        Marker("[BPC] bp-call mode: run BLUEPRINT bytecode via FFrame.Code = UFunction.Script (S91 primitive)\r\n");
+        if(!ResolveBPCall()){ Marker("[BPC] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[BPC] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[BPC] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[BPC] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<30000) Sleep(20);
+        UninstallHook();
+        Markerf("[BPC] done (step=%d called=%ld hitsGT=%ld)\r\n",g_bcStep,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_OBJDRIVE){
+        Marker("[OD] obj-drive mode: advance the active WASD objective (physical teleport / OnWASDTriggerOverlap / ProgressObjective) (S92)\r\n");
+        if(!ResolveObjDrive()){ Marker("[OD] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[OD] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[OD] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[OD] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<30000) Sleep(20);
+        UninstallHook();
+        Markerf("[OD] done (step=%d called=%ld hitsGT=%ld)\r\n",g_odStep,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_OBJCOMPLETE){
+        Marker("[OC] obj-complete mode: force CurrentObjectiveCount->ObjectiveTarget + fire OnRep_CurrentObjectiveCount / EndTraining (S93)\r\n");
+        if(!ResolveObjComplete()){ Marker("[OC] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[OC] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[OC] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[OC] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<30000) Sleep(20);
+        UninstallHook();
+        Markerf("[OC] done (step=%d called=%ld hitsGT=%ld)\r\n",g_ocStep,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_FIREOVERLAP){
+        Marker("[FO] fire-overlap mode: gameplay OnWASDTriggerOverlap beat + ungated OnRep_TrainingActive completion closer (S93)\r\n");
+        if(!ResolveFireOverlap()){ Marker("[FO] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[FO] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[FO] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[FO] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<30000) Sleep(20);
+        UninstallHook();
+        Markerf("[FO] done (step=%d called=%ld hitsGT=%ld)\r\n",g_foStep,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_DRIVECHAIN){
+        Marker("[DC] drive-chain mode: walk the lesson chain (per lesson: activate quest -> GameStateTryStartTraining -> ungated closer) (S93)\r\n");
+        if(!ResolveDriveChain()){ Marker("[DC] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[DC] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[DC] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[DC] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<60000) Sleep(20);
+        UninstallHook();
+        Markerf("[DC] done (lesson=%d phase=%d called=%ld hitsGT=%ld)\r\n",g_dcLesson,g_dcPhase,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_CAMERA){
+        Marker("[CM] camera mode: enable the possessed hero's spring-arm/camera/actor ticks so the camera pulls back to top-down (S93)\r\n");
+        if(!ResolveCamera()){ Marker("[CM] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[CM] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[CM] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[CM] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<20000) Sleep(20);
+        UninstallHook();
+        Markerf("[CM] done (step=%d called=%ld hitsGT=%ld)\r\n",g_cmStep,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_TOPDOWNCAM){
+        Marker("[TC] top-down-cam mode: spawn a CameraActor + re-assert it as the view target (holds ~120s to view/screenshot) (S93)\r\n");
+        if(!ResolveTopDownCam()){ Marker("[TC] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[TC] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[TC] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[TC] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<120000) Sleep(20);   // hold the cam ~120s
+        UninstallHook();
+        Markerf("[TC] done (spawned=%d hits=%ld called=%ld hitsGT=%ld)\r\n",(int)g_tcSpawned,(long)g_tcHit,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_MESHCAM){
+        Marker("[MC] mesh+cam mode: build the hero's cosmetics mesh (ClientInitialComponentSetup via BP primitive) + hold top-down cam (S93)\r\n");
+        if(!ResolveMeshCam()){ Marker("[MC] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[MC] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[MC] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[MC] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<120000) Sleep(20);
+        UninstallHook();
+        Markerf("[MC] done (meshTried=%d camSpawned=%d hits=%ld)\r\n",(int)g_mcMeshTried,(int)g_tcSpawned,(long)g_tcHit);
+        return 0;
+    }
+    if(kRunMode==RM_DROPIN){
+        Marker("[DI] drop-in mode: drive the DropPlane descent (SpawnPlane -> AddPlayerToDropPlane -> GetAutoDropLocation) so OnLanded activates the hero (S93)\r\n");
+        if(!ResolveDropIn()){ Marker("[DI] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[DI] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[DI] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[DI] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<40000) Sleep(20);
+        UninstallHook();
+        Markerf("[DI] done (step=%d called=%ld hitsGT=%ld)\r\n",g_diStep,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_MAKEMESH){
+        Marker("[MK] make-mesh mode: create a SkeletalMeshComponent on the hero + assign a body mesh (recreate visible hero from scratch) (S93)\r\n");
+        if(!ResolveMakeMesh()){ Marker("[MK] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[MK] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[MK] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[MK] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<30000) Sleep(20);
+        UninstallHook();
+        Markerf("[MK] done (step=%d comp=0x%llX called=%ld)\r\n",g_mkStep,(unsigned long long)g_mkComp,(long)g_called);
+        return 0;
+    }
+    if(kRunMode==RM_PLAY){
+        Marker("[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)\r\n");
+        if(!ResolvePlay()){ Marker("[PL] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[PL] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[PL] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[PL] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<600000) Sleep(20);   // ~10 min of playable hold, then release
+        UninstallHook();
+        if(SafeReadable((void*)(g_wmCMC+0xE8),16)){ double* V=(double*)(g_wmCMC+0xE8); V[0]=0.0; V[1]=0.0; }   // stop on exit
+        Markerf("[PL] done (init=%d comp=0x%llX camSpawned=%d hits=%ld called=%ld hitsGT=%ld)\r\n",(int)g_plInit,(unsigned long long)g_plComp,(int)g_tcSpawned,(long)g_tcHit,(long)g_called,(long)g_hitsGT);
+        return 0;
+    }
+    if(kRunMode==RM_TRAINING){
+        Marker("[TRN] training mode: SetActive each BP_TrainingSkill_* on the LokiTrainingManager + StartTimers, then SpawnPlane + AddPlayerToDropPlane\r\n");
+        if(!ResolveTraining()){ Marker("[TRN] resolve failed -> abort\r\n"); return 0; }
+        g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[TRN] FAIL PI prologue\r\n");return 4;}
+        memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[TRN] FAIL BuildHook\r\n");return 5;}
+        if(!InstallHook()){Marker("[TRN] FAIL InstallHook\r\n");return 6;}
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<20000) Sleep(20);   // 6 staged steps, one per game-thread hit
+        UninstallHook();
+        Markerf("[TRN] done (steps=%d called=%ld hitsGT=%ld)\r\n",g_tmStep,(long)g_called,(long)g_hitsGT);
         return 0;
     }
     if(kRunMode==RM_TOGGLEREADY){

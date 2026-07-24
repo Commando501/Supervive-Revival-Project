@@ -541,7 +541,7 @@ const tutorialMatchState = "InProgress"
 // robust than hand-writing the 1496-byte embedded MatchInfo struct. Paired with an EMPTY ConnectionDetails.address
 // (below) so the client parks LOCALLY in the pre-game lobby (no DS connect/timeout), keeping the model valid;
 // then the force-open shim opens LVL_Tutorial with the model already populated. (Revert to false for normal runs.)
-const forceTutorialMatch = false // S86 (2026-07-23): back to FALSE (clean committed default) — a normal launch sits at the FULLY FUNCTIONAL MAIN MENU. Flip to true (and start the stub on 7777) for DS/tutorial-route work (S85/S86 char field-32 + PlayerState fixes; toggle carrier parked, see docs/session-85 §14).
+const forceTutorialMatch = false // BASELINE (fully functional main menu, no DS connect). Set TRUE + EMPTY ConnectionDetails.address below for the FORCE-OPEN tutorial route (S91-S93 deploy/objective work). "127.0.0.1:7777" = DS route. S91 used the FORCE-OPEN tutorial route: set TRUE and pair with an EMPTY ConnectionDetails.address below (client parks locally; tutorial_launch_fo.dll opens LVL_Tutorial with the real gamemode). "127.0.0.1:7777" (baseline) = the DS/stub route. S91 spawned the TrainingQuest_Basics_* actors + built the BP-call primitive + started training via GameStateTryStartTraining; see docs/session-91-quest-spawn-bpcall.md + docs/tutorial-playability-plan.md.
 
 // tutorialMatchID derives the (stable, greppable) match id for a player's phantom
 // tutorial match. The match-details route recovers the player id back off it.
@@ -667,7 +667,12 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 		// S76: reverted to the menu/force-open baseline (empty) after the DS cheat-lever experiment
 		// concluded (docs/session-76-ds-cheat-lever.md). Set to "127.0.0.1:7777" to re-run the DS route.
 		// S76 Route D (spectator free-cam of the live tutorial world) — working-tree experiment config.
-		"address":      "127.0.0.1:7777",
+		// S90: EMPTY for the FORCE-OPEN route (the only route that can complete tutorial objectives —
+		// TrainingQuest_Basics_Base.OnObjectiveComplete is FUNC_BlueprintAuthorityOnly, so the client must be
+		// the authority; see docs/tutorial-playability-plan.md). Client builds a valid CoreGameMatchModel and
+		// parks locally; tutorial_launch_fo.dll then opens LVL_Tutorial with the real gamemode.
+		// Set back to "127.0.0.1:7777" for the DS/stub route.
+		"address":      "127.0.0.1:7777", // BASELINE / DS route. Set to "" for the FORCE-OPEN tutorial route (pair with forceTutorialMatch=true above).
 		"ServerID":     "revival-tutorial-ds-0001",
 		"MachineID":    "revival-local",
 		"RegionID":     "na",

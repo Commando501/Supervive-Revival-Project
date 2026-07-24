@@ -1,10 +1,152 @@
 [0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
 [0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
-[CS] cheat-spawn mode: call the game's own LokiPlayerCheats RPC directly (in-process, local authority)
-[CS] switchPlayingThunk=0x0 finishDropThunk=0x0 pcStateByte@0x160=0
-[CS] cheatCDO=0x1F2127DB460 cls=0x1F217BD9E80 getLocalThunk=0x7FF6BA914F70(WCO@0x0 ret@0x8) schThunk=0x7FF6BA916760(HeroClass@0x0) cchThunk=0x7FF6BA83BE80(HeroName@0x0)
-[CS] heroClass(BP_HERO_Ronin_C)=0x0 worldCtx=0x1F2128E1470 (pc=0x1F2128E1470) authChangeCharThunk=0x0(CharacterClass@0xFFFFFFFF)
-[CS] calling GetLocalLokiPlayerCheatsBP...
-[CS] GetLocal -> cheatObj=0x0 cls=-
-[CS] no cheat object -> abort
-[CS] done cheatObj=0x0 cls=- (called=1 hitsGT=1)
+[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)
+[PL] gameHwnd=0x0 (0 => focus check disabled)
+[WM] PC=0x25C7F6E3B20 hero=0x25D3AB08020(BP_HERO_Ronin_C) CMC=0x25B40061C80 grav@0x1A0 vel@0xE8 mode@0x231
+[WM] thunks SetActive=0x7FF6EB2F8900(act@0x0 rst@0x1) SetTickEn=0x7FF6EB2F90E0(en@0x0) SetMoveMode=0x7FF6EB339180(mode@0x0 cust@0x1) SetActorTick=0x7FF6EB0DCA70(en@0x0)
+[WM] root=0x25C7BD4A8B0 SetActorLocation=0x7FF6EB0DB0C0(loc@0x0 sweep@0x18 tele@0x118) wakeZ=500
+[SEQ] seqClass=0x25C7B6E4300 gm=0x25B40E4A4C0 gsCDO=0x25B07D6A140 begin=0x7FF6EB52EEC0 finish=0x7FF6EB532CC0 vol=(283,277,-250)
+[SEQ] BEFORE: TrainingQuest=0  Sequencer=0
+[TC] pc=0x25C7F6E3B20 hero=0x25D3AB08020 camCls=0x25B09358800 svtThunk=0x7FF6EB999A60(tgt@0x0) gm=0x25B40E4A4C0 begin=0x7FF6EB52EEC0
+[TRN] params AsyncLoadPrimaryAssets[0] WorldContextObject @0x0 flags=0x18001000400280
+[TRN] params AsyncLoadPrimaryAssets[1] Assets @0x8 flags=0x10000000000280
+[TRN] params AsyncLoadPrimaryAssets[2] OnLoadComplete @0x18 flags=0x18001000000280
+[TRN] params AsyncLoadPrimaryAssets[3] ReturnValue @0x28 flags=0x18001000000780
+[PL] loadInfra lam=0x25B4ECD6310 world=0x25B03537A20 pafs=0x7FF6ECFDB760 alpa=0x7FF6ECFD9440
+[TRN] params MakeSoftObjectPath[0] PathString @0x0 flags=0x3018000000000280
+[TRN] params MakeSoftObjectPath[1] ReturnValue @0x10 flags=0x18000000000780
+[TRN] params LoadAsset_Blocking[0] Asset @0x0 flags=0x1C000000000080
+[TRN] params LoadAsset_Blocking[1] ReturnValue @0x28 flags=0x18001000000780
+[PL] route1 ksl=0x25B0C71B780 msp=0x7FF6EB6A80D0(path@0x0 ret@0x10) lab=0x7FF6EB6A4E40(asset@0x0 ret@0x28)
+[FOW] resolved 'RegisterFogOfWarPrimitive' fn=0x25B07B50180 thunk=0x7FF6ECFAB9F0 owner=FogOfWarPrimitiveCollector cdo=0x25B07E9BC50
+[FOW] resolved 'IsFogOfWarVisibleToLocal' fn=0x25B07B85E20 thunk=0x7FF6ED0167A0 owner=LokiBlueprintLibrary cdo=0x25B07EB1AD0
+[FOW] cdo=0x25B07E9BC50 reg=0x7FF6ECFAB9F0(comp@0x0 ret@0x8) vis=0x7FF6ED0167A0(tgt@0x0 ret@0x8)
+[TRN] params FinishAddComponent[0] Component @0x0 flags=0x18001000080280
+[TRN] params FinishAddComponent[1] bManualAttachment @0x8 flags=0x18001040000280
+[TRN] params FinishAddComponent[2] RelativeTransform @0x10 flags=0x3018001048000182
+[PL] route2 finishAddComp=0x7FF6EB0D6CF0(comp@0x0 manual@0x8 xform@0x10)
+[PL] hero=0x25D3AB08020 CMC=0x25B40061C80 mesh=0x0(-) skelCls=0x25B09301000 camCls=0x25B09358800 pc=0x25C7F6E3B20 gm=0x25B40E4A4C0 gsCDO=0x25B07D6A140 begin=0x7FF6EB52EEC0
+[PL] teleport hero -> ground (-65,-1770,2200)
+[PL] SetMovementMode(5)
+[PL] SetActorHiddenInGame(hero,false)
+[FOW] disable: FogOfWarSceneView inst=0x25C7BD33340
+[FOW]   SetActorTickEnabled(false)
+[FOW]   SetActorHiddenInGame(true)
+[FOW] disable: FogOfWarPrimitiveCollector inst=0x25C7BD3DC90
+[FOW]   SetActorTickEnabled(false)
+[FOW]   SetActorHiddenInGame(true)
+[PL] MakeSoftObjectPath ok (pkgFName=0x48E548 assetFName=0xF1D6E)
+[PL] LoadAsset_Blocking ok -> 0x25BF62B85F0 (BlueprintGeneratedClass)
+[PL] route2 BP-comp class = 0x25BF62B85F0 (BlueprintGeneratedClass)
+[PL] AddComponentByClass ok -> comp=0x25D00602770(BP_Ronin_DefaultSKMeshComponent_C)
+[PL] ClothingSimulationFactory@0xC78=null
+[PL] SetAnimationMode(1)
+[PL] FinishAddComponent ok
+[FOW] RegisterFogOfWarPrimitive(body) ok -> ret=0
+[PL] body built (animMode=1 tick=1 visible deferred=1)
+[PL] TEST actor=0x25B40542740 at (1435,-1770,2200)
+[PL] AddComponentByClass ok -> comp=0x25D0060D8A0(BP_Ronin_DefaultSKMeshComponent_C)
+[PL] ClothingSimulationFactory@0xC78=null
+[PL] SetAnimationMode(1)
+[PL] FinishAddComponent ok
+[FOW] RegisterFogOfWarPrimitive(body) ok -> ret=0
+[PL] body built (animMode=1 tick=1 visible deferred=1)
+[PL] TEST body comp=0x25D0060D8A0 (cls=0x25BF62B85F0 mesh=0x0)
+[PL] *** init complete: body=BUILT; camera + WASD active ***
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(0,0,0)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[TC] *** spawned CameraActor=0x25B40546700 at (-65,-1170,3400) setLoc@0x0 setRot@0x0 ***
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-65,-1770,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-65,-1770,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-65,-1170,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-192,-1636,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-192,-1636,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-192,-1036,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-341,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-341,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-341,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero=(-280,-1361,2200) bHidden=112 fowVisible=0 | comp=0x25D00602770 world=(-280,-1361,2200) mesh=0x25CFE535770 bVisible=99 | cam=(-280,-761,3400)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
