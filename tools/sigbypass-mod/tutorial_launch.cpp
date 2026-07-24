@@ -2237,6 +2237,15 @@ static void* g_plLabFn=nullptr; static uintptr_t g_plLabThunk=0, g_plLabChild=0;
 #ifndef KFOWATTR
 #define KFOWATTR 0           // route A (GAS vision attrs) — proven dead (hero has no attribute set); off = one less full object scan.
 #endif
+#ifndef KSMACTOR
+#define KSMACTOR 1           // spawn a real StaticMeshActor + set the mesh on its ENGINE-built root (spawn-vs-component test).
+#endif
+#ifndef KSTATICTEST
+#define KSTATICTEST 1        // ★ THE DISCRIMINATOR: also build a plain StaticMeshComponent using a mesh taken from a
+                             // level StaticMeshComponent that IS visibly rendering. If OUR copy of a known-rendering
+                             // mesh still doesn't draw, the failure is our component-creation path (not skeletal/mesh
+                             // specific) -> the render proxy is never created. If it DOES draw, it's skeletal-only.
+#endif
 #ifndef KTESTDX
 #define KTESTDX 500          // X offset of that test actor from the hero.
 #endif
@@ -2623,6 +2632,31 @@ static void DoPlay(){
         //   (SUPERVIVE hides heroes until deploy) or the MESH itself can't draw. A CameraActor (known-good spawn, has
         //   a root) carries the body ~500 units away: body appears there but not on the hero => the HERO is the
         //   blocker; neither appears => the MESH/materials are.
+        // ★ S95 SPAWN-vs-COMPONENT discriminator: spawn a real **StaticMeshActor** (NOT a CameraActor — those are
+        //   hidden in game by default, which invalidated the earlier "standalone" control) and set the mesh on the
+        //   component the ENGINE built as part of that actor. Renders => our spawn path is fine and the HERO actor is
+        //   the thing that isn't render-registered. Doesn't render => nothing we spawn can ever render.
+        if(KSMACTOR && g_gm2 && g_gsCDO && g_beginThunk){
+            uintptr_t smaCls=FindClassExact("StaticMeshActor");
+            uintptr_t lvlSMC=FindInstByClass("StaticMeshComponent","UAID"); if(!LooksLikePtr(lvlSMC)) lvlSMC=FindInstByClass("StaticMeshComponent",nullptr);
+            uintptr_t sm=0; if(LooksLikePtr(lvlSMC)){ uint32_t o=PropOffsetSuper(ClassOf(lvlSMC),"StaticMesh"); if(o!=0xFFFFFFFF&&SafeReadable((void*)(lvlSMC+o),8)) sm=*(uint64_t*)(lvlSMC+o); }
+            double hl[3]={0,0,0}; ActorLoc(g_wmHero,hl);
+            memset(g_xform,0,sizeof(g_xform)); *(double*)(g_xform+0x18)=1.0;
+            *(double*)(g_xform+0x20)=hl[0]+400.0; *(double*)(g_xform+0x28)=hl[1]; *(double*)(g_xform+0x30)=hl[2];
+            *(double*)(g_xform+0x38)=3.0; *(double*)(g_xform+0x40)=3.0; *(double*)(g_xform+0x48)=3.0;   // 3x scale = unmissable
+            uintptr_t sma = LooksLikePtr(smaCls) ? SpawnActorCls(smaCls,"sma-test") : 0;
+            uintptr_t root=0; if(LooksLikePtr(sma)){ uint32_t ro=PropOffsetSuper(ClassOf(sma),"RootComponent"); if(ro!=0xFFFFFFFF&&SafeReadable((void*)(sma+ro),8)) root=*(uint64_t*)(sma+ro); }
+            char rn[96]="-"; if(LooksLikePtr(root)&&ClassOf(root)) GetFNameStr(NameId(ClassOf(root)),rn,sizeof(rn));
+            Markerf("[SMA] cls=0x%llX actor=0x%llX root=0x%llX(%s) mesh=0x%llX\r\n",(unsigned long long)smaCls,(unsigned long long)sma,(unsigned long long)root,rn,(unsigned long long)sm);
+            if(LooksLikePtr(root)&&LooksLikePtr(sm)){
+                void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(root),"SetStaticMesh",&f,&th,&ch);
+                if(th){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                    uint32_t o=ParamOffset(ch,"NewMesh"); if(o==0xFFFFFFFF)o=0; *(uint64_t*)(g_gsbuf+o)=(uint64_t)sm;
+                    bool fl=CallNativeGuarded(f,th,ch,(void*)root,g_gsbuf,g_rbuf);
+                    Markerf("[SMA] SetStaticMesh on the ENGINE-built root %s  (look for a big sphere beside the hero)\r\n",fl?"FAULTED":"ok"); }
+                else Marker("[SMA] SetStaticMesh thunk not found\r\n");
+            }
+        }
         if(KTESTACTOR && g_tcCamCls && g_gm2 && g_gsCDO && g_beginThunk){
             double hl[3]={0,0,0}; ActorLoc(g_wmHero,hl);
             memset(g_xform,0,sizeof(g_xform)); *(double*)(g_xform+0x18)=1.0;
@@ -2636,6 +2670,32 @@ static void DoPlay(){
                 uintptr_t tc = (tcls) ? BuildHeroBody(ta, tcls, tmesh, KUSEBPCOMP?true:false) : 0;
                 Markerf("[PL] TEST body comp=0x%llX (cls=0x%llX mesh=0x%llX)\r\n",(unsigned long long)tc,(unsigned long long)tcls,(unsigned long long)tmesh);
             }
+        }
+        // ★ STATIC-MESH DISCRIMINATOR — borrow a mesh from a level StaticMeshComponent that is VISIBLY rendering right
+        //   now, and put it on a StaticMeshComponent WE create (on the hero, so it's centre-frame). Same asset, same
+        //   world, same frame: if the level's copy draws and ours doesn't, the fault is our component-creation path
+        //   (no render proxy), not the mesh/skeletal pipeline.
+        if(KSTATICTEST){
+            uintptr_t lvlSMC=FindInstByClass("StaticMeshComponent","UAID");   // a level static-mesh component
+            if(!LooksLikePtr(lvlSMC)) lvlSMC=FindInstByClass("StaticMeshComponent",nullptr);
+            uintptr_t sm=0; uint32_t smo=0xFFFFFFFF;
+            if(LooksLikePtr(lvlSMC)){ smo=PropOffsetSuper(ClassOf(lvlSMC),"StaticMesh");
+                if(smo!=0xFFFFFFFF&&SafeReadable((void*)(lvlSMC+smo),8)) sm=*(uint64_t*)(lvlSMC+smo); }
+            char smn[96]="-"; if(LooksLikePtr(sm)) GetFNameStr(NameId(sm),smn,sizeof(smn));
+            Markerf("[SMT] level SMC=0x%llX StaticMesh@0x%X=0x%llX(%s)\r\n",(unsigned long long)lvlSMC,smo,(unsigned long long)sm,smn);
+            uintptr_t smCls=FindClassExact("StaticMeshComponent");
+            if(LooksLikePtr(sm)&&LooksLikePtr(smCls)){
+                uintptr_t c=BuildHeroBody(g_wmHero,smCls,0,false);   // bare StaticMeshComponent on the hero
+                if(LooksLikePtr(c)){
+                    void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(c),"SetStaticMesh",&f,&th,&ch);
+                    if(th){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                        uint32_t o=ParamOffset(ch,"NewMesh"); if(o==0xFFFFFFFF)o=0;
+                        *(uint64_t*)(g_gsbuf+o)=(uint64_t)sm;
+                        bool fl=CallNativeGuarded(f,th,ch,(void*)c,g_gsbuf,g_rbuf);
+                        Markerf("[SMT] our StaticMeshComponent=0x%llX SetStaticMesh(%s) %s\r\n",(unsigned long long)c,smn,fl?"FAULTED":"ok");
+                    } else Marker("[SMT] SetStaticMesh thunk not found\r\n");
+                }
+            } else Markerf("[SMT] SKIPPED (sm=0x%llX cls=0x%llX)\r\n",(unsigned long long)sm,(unsigned long long)smCls);
         }
         g_plBodyDone=true;
         Markerf("[PL] *** init complete: body=%s; camera + WASD active ***\r\n", g_plComp?"BUILT":"none");
