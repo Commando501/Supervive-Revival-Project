@@ -262,3 +262,53 @@ did read non-null at +0x2B0.
 2. If confirmed, locate native `UActorComponent::RegisterComponent` / `CreateRenderState_Concurrent` in
    `dumps/merged.dump.exe` and call it directly (they are not UFunctions).
 3. Alternative framing worth one test: does the force-open world's renderer accept **any** runtime-added primitive?
+
+---
+
+# ★ S97 DECISIVE RENDER TEST — the "not render-registered" theory is DEAD
+
+`tools/re/proxy_stats.py` derives the proxy offset **statistically** instead of trusting one hand-picked reference:
+sample 400 live LEVEL `StaticMeshComponent`s and score every qword offset 0x100–0x700 by how often it holds a pointer.
+
+**Result:** twelve offsets are non-null on **400/400 (100%)** — `+0x6F8 +0x6F0 +0x618 +0x5C8 +0x590 +0x578 +0x570
++0x520 +0x518 +0x440 +0x438 +0x408` — **and both components we created have every one of them SET**, same as the
+game-spawned DefaultPawn's component.
+
+⇒ **No structural differentiator exists between what we create and what the game creates.** Our primitives are not
+missing registration or a scene proxy.
+
+**This RETRACTS the S95 headline** ("everything we spawn is invisible to the renderer"). That was built on a single
+reference (the DefaultPawn's non-null `+0x2B0`) and does not survive a proper sample. **`+0x2B0` is not SceneProxy.**
+
+⚠ Caveat: the 400-component sample was not verified to be *currently rendering* (World Partition keeps unloaded actors
+in GUObjectArray), and only pointer-like qwords in 0x100–0x700 were scored. A bitfield-only or out-of-range
+differentiator could still exist.
+
+## Where the visible body actually stands
+
+Every externally-testable hypothesis is eliminated:
+
+| Hypothesis | Status |
+|---|---|
+| Mesh / render data | ✅ loaded + healthy (Skeleton, 8 materials, LODInfo, bounds) |
+| Component construction | ✅ bare component AND the game's own `BP_Ronin_DefaultSKMeshComponent_C` |
+| Component registration | ✅ `FinishAddComponent` ok; no structural difference vs level components |
+| Actor spawn | ✅ `FinishSpawningActor` returns a valid actor |
+| Owner hidden | ✅ standalone actors fail identically |
+| Placement / occlusion | ✅ nothing at Z=2200 in open air (the "ring" is a ground decal) |
+| Fog of war | ✅ both FOW actors disabled → no change |
+| GAS vision attrs | ✅ hero has no attribute set at all |
+| Cheat spawn | ✅ no `LokiPlayerCheats` instance exists |
+
+**There is no identified remaining lever for a visible hero on the client-side force-open route.**
+
+## Do NOT switch to the DS / blueprint-stub route for this goal
+
+`TrainingQuest_Basics_Base.OnObjectiveComplete` is `FUNC_BlueprintAuthorityOnly` — a networked client can never be
+authority, so that route is **structurally incapable of completing objectives** (settled S90; see
+`docs/tutorial-playability-plan.md`). It would trade a working tutorial for a visible body.
+
+## What works and should be treated as the deliverable
+
+Completable objectives + walkable lesson chain (WASD→LMB→Dash→Jump) + **movable hero** (WASD, camera-aligned) +
+**stable movement** (`MOVE_Flying`) + **top-down camera**. The hero is invisible; everything else plays.
