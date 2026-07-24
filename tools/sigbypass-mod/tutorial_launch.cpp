@@ -1187,7 +1187,18 @@ static uintptr_t SpawnActorCls(uintptr_t cls,const char* tag){
     memcpy(g_gsbuf+g_oFXform,g_xform,xfsz);
     if(CallNativeGuarded(g_finishFn,g_finishThunk,g_finishChild,(void*)g_gsCDO,g_gsbuf,g_rbuf)){
         Markerf("[QST] %s FinishSpawning FAULTED (deferred actor 0x%llX left half-built)\r\n",tag,(unsigned long long)def); return def; }
-    uintptr_t act=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(act)) act=*(uint64_t*)(g_gsbuf+g_oFRet); if(!LooksLikePtr(act)) act=def;
+    // ★ S96: report EXACTLY what FinishSpawningActor returned. If it yields null we silently fall back to the
+    //   UNFINISHED deferred actor -> PostActorConstruction/RegisterAllComponents never run -> its primitives never get
+    //   a SceneProxy -> nothing it owns can EVER render. That is the leading explanation for the invisible hero.
+    uintptr_t retRes=(uintptr_t)g_rbuf[0];
+    uintptr_t retPar=(g_oFRet!=0xFFFFFFFF)?*(uint64_t*)(g_gsbuf+g_oFRet):0;
+    uintptr_t act=retRes; if(!LooksLikePtr(act)) act=retPar; bool fell=false; if(!LooksLikePtr(act)){ act=def; fell=true; }
+    Markerf("[QST] %s FinishSpawning -> res=0x%llX par=0x%llX%s | proxy(root)=%s\r\n",tag,
+        (unsigned long long)retRes,(unsigned long long)retPar, fell?"  *** BOTH NULL -> using UNFINISHED deferred actor ***":"",
+        [&]{ static char b[24]; uint32_t ro=LooksLikePtr(act)?PropOffsetSuper(ClassOf(act),"RootComponent"):0xFFFFFFFF;
+             uintptr_t rc=(ro!=0xFFFFFFFF&&SafeReadable((void*)(act+ro),8))?*(uint64_t*)(act+ro):0;
+             uint64_t px=(LooksLikePtr(rc)&&SafeReadable((void*)(rc+0x2B0),8))?*(uint64_t*)(rc+0x2B0):0;
+             _snprintf_s(b,sizeof(b),_TRUNCATE,"%s",px?"SET":"null"); return b; }());
     return act;
 }
 // Dump an object's reflected properties (name @offset = qword, + the class name if it points at a UObject).
@@ -2207,6 +2218,54 @@ static bool g_plInit=false; static uintptr_t g_plMesh=0, g_plComp=0, g_plSkelCls
 // GPU/skeleton render data) so they never render (and ticking them crashes). AsyncLoadPrimaryAssets(Ronin bundle)
 // streams SK_Ronin_Default WITH render data; poll for it, then build the body with it.
 static uintptr_t g_plLam=0, g_plWorld=0; static bool g_plBodyDone=false; static int g_plPoll=0; static bool g_plLoadFired=false; static uintptr_t g_plBpCls=0;
+static bool g_plCheatDone=false;
+// Find a live instance whose class name contains `sub`, SKIPPING `except` — used to locate the cheat-spawned hero
+// as distinct from the one we spawned ourselves.
+static uintptr_t FindInstByClassExcept(const char* sub, uintptr_t except){
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return 0;
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t o=*(uintptr_t*)item; if(!LooksLikePtr(o)||o==except)continue;
+            uintptr_t cls=ClassOf(o); if(!cls)continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+            if(!strstr(cn,sub))continue;
+            char on[96]; if(GetFNameStr(NameId(o),on,sizeof(on)) && strncmp(on,"Default__",9)==0) continue;   // skip CDOs
+            return o;
+        }
+    }
+    return 0;
+}
+#define PRIM_SCENEPROXY_OFF 0x2B0   // S95: UPrimitiveComponent::SceneProxy for this build (found by prim_diff.py)
+static uint64_t ProxyOf(uintptr_t comp){ return (LooksLikePtr(comp)&&SafeReadable((void*)(comp+PRIM_SCENEPROXY_OFF),8))?*(uint64_t*)(comp+PRIM_SCENEPROXY_OFF):0; }
+// Report the SceneProxy of every primitive component on `actor` — the one number that says whether it can render.
+static void ProxyReport(uintptr_t actor,const char* tag){
+    if(!LooksLikePtr(actor)){ Markerf("[PROXY] %s: actor null\r\n",tag); return; }
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return;
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK; int n=0,live=0;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t o=*(uintptr_t*)item; if(!LooksLikePtr(o))continue;
+            if((SafeReadable((void*)(o+0x28),8)?*(uintptr_t*)(o+0x28):0)!=actor) continue;
+            uintptr_t cls=ClassOf(o); if(!cls)continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+            if(!strstr(cn,"Mesh")&&!strstr(cn,"Decal")&&!strstr(cn,"Capsule")) continue;   // primitives only
+            uint64_t px=ProxyOf(o); n++; if(px)live++;
+            Markerf("[PROXY] %s  %-44s proxy=%s\r\n",tag,cn,px?"SET":"null");
+        }
+    }
+    Markerf("[PROXY] %s: %d primitives, %d WITH a proxy %s\r\n",tag,n,live,live?"*** RENDERABLE ***":"(none renderable)");
+}
 static void* g_plPafsFn=nullptr; static uintptr_t g_plPafsThunk=0, g_plPafsChild=0;
 static void* g_plAlpaFn=nullptr; static uintptr_t g_plAlpaThunk=0, g_plAlpaChild=0;
 // S94 iter5 (route 1): blocking load of Ronin's ACTUAL mesh by soft path (SK_Ronin_Default_LOD1 in Modeling/Default,
@@ -2236,6 +2295,12 @@ static void* g_plLabFn=nullptr; static uintptr_t g_plLabThunk=0, g_plLabChild=0;
 #endif
 #ifndef KFOWATTR
 #define KFOWATTR 0           // route A (GAS vision attrs) — proven dead (hero has no attribute set); off = one less full object scan.
+#endif
+#ifndef KCHEATSPAWN
+#define KCHEATSPAWN 1        // ★ S96: spawn through the GAME'S OWN path (LokiPlayerCheats). Our GameplayStatics deferred
+                             // spawn yields actors whose components never get a SceneProxy (never render-registered);
+                             // the game's own RPC should produce a properly registered, RENDERABLE actor.
+                             // 1 = ServerCheatSpawnActor(hero class) beside the hero, 2 = also ServerCheatChangeHero.
 #endif
 #ifndef KSMACTOR
 #define KSMACTOR 1           // spawn a real StaticMeshActor + set the mesh on its ENGINE-built root (spawn-vs-component test).
@@ -2568,6 +2633,23 @@ static bool ResolvePlay(){
       if(!LooksLikePtr(g_plFowCDO)) g_plFowCDO=g_wmPC;   // last resort: any live UObject as context for a static
       Markerf("[FOW] cdo=0x%llX reg=0x%llX(comp@0x%X ret@0x%X) vis=0x%llX(tgt@0x%X ret@0x%X)\r\n",
         (unsigned long long)g_plFowCDO,(unsigned long long)g_plFowRegThunk,g_oFowComp,g_oFowRet,(unsigned long long)g_plFowVisThunk,g_oFowTgt,g_oFowVisRet); }
+    // ★ S96 — the GAME'S OWN spawn path. Everything WE spawn has SceneProxy==NULL (never render-registered), while
+    //   game-spawned actors render fine. LokiPlayerCheats is the game's own spawn machinery (S74 cheat enum).
+    if(KCHEATSPAWN){
+        g_cheatCDO=FindObjExact("Default__LokiPlayerCheats");
+        uintptr_t cc = LooksLikePtr(g_cheatCDO) ? ClassOf(g_cheatCDO) : 0;
+        if(cc){
+            ResolveFuncNative(cc,"GetLocalLokiPlayerCheatsBP",&g_glcFn,&g_glcThunk,&g_glcChild);
+            if(g_glcChild){ g_oGlcWCO=ParamOffset(g_glcChild,"WorldContextObject"); g_oGlcRet=ParamOffset(g_glcChild,"ReturnValue"); }
+            ResolveFuncNative(cc,"ServerCheatSpawnActor",&g_scsaFn,&g_scsaThunk,&g_scsaChild);
+            if(g_scsaChild){ g_oScsaClass=ParamOffset(g_scsaChild,"ClassToSpawn"); g_oScsaLoc=ParamOffset(g_scsaChild,"Location"); DumpParams(g_scsaChild,"ServerCheatSpawnActor"); }
+            ResolveFuncNative(cc,"ServerCheatChangeHero",&g_schFn,&g_schThunk,&g_schChild);
+            if(g_schChild){ g_oSchClass=ParamOffset(g_schChild,"HeroClass"); DumpParams(g_schChild,"ServerCheatChangeHero"); }
+        }
+        Markerf("[CHEAT] cdo=0x%llX cls=0x%llX getLocal=0x%llX(wco@0x%X ret@0x%X) spawnActor=0x%llX(cls@0x%X loc@0x%X) changeHero=0x%llX(cls@0x%X)\r\n",
+            (unsigned long long)g_cheatCDO,(unsigned long long)cc,(unsigned long long)g_glcThunk,g_oGlcWCO,g_oGlcRet,
+            (unsigned long long)g_scsaThunk,g_oScsaClass,g_oScsaLoc,(unsigned long long)g_schThunk,g_oSchClass);
+    }
     // route 2: FinishAddComponent (register a DEFERRED component) on the hero (AActor).
     ResolveFuncSuper(ClassOf(g_wmHero),"FinishAddComponent",&g_plFacFn,&g_plFacThunk,&g_plFacChild);
     if(g_plFacChild){ g_oFacComp=ParamOffset(g_plFacChild,"Component"); g_oFacManual=ParamOffset(g_plFacChild,"bManualAttachment"); g_oFacXform=ParamOffset(g_plFacChild,"RelativeTransform"); DumpParams(g_plFacChild,"FinishAddComponent"); }
@@ -2632,6 +2714,38 @@ static void DoPlay(){
         //   (SUPERVIVE hides heroes until deploy) or the MESH itself can't draw. A CameraActor (known-good spawn, has
         //   a root) carries the body ~500 units away: body appears there but not on the hero => the HERO is the
         //   blocker; neither appears => the MESH/materials are.
+        // ★★★ S96 — SPAWN VIA THE GAME'S OWN CHEAT RPC and immediately report the new actor's SceneProxy. A non-null
+        //     proxy here is THE fix: it means game-spawned actors register with the render scene while ours don't.
+        if(KCHEATSPAWN && g_glcThunk && LooksLikePtr(g_cheatCDO)){
+            uintptr_t cheatObj=0;
+            memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            if(g_oGlcWCO!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oGlcWCO)=(uint64_t)g_wmPC;
+            if(!CallNativeGuarded(g_glcFn,g_glcThunk,g_glcChild,(void*)g_cheatCDO,g_gsbuf,g_rbuf)){
+                cheatObj=(uintptr_t)g_rbuf[0];
+                if(!LooksLikePtr(cheatObj)&&g_oGlcRet!=0xFFFFFFFF) cheatObj=*(uint64_t*)(g_gsbuf+g_oGlcRet);
+            }
+            char con[96]="-"; if(LooksLikePtr(cheatObj)&&ClassOf(cheatObj)) GetFNameStr(NameId(ClassOf(cheatObj)),con,sizeof(con));
+            Markerf("[CHEAT] localCheatObj=0x%llX(%s)\r\n",(unsigned long long)cheatObj,con);
+            if(LooksLikePtr(cheatObj) && g_scsaThunk){
+                uintptr_t spawnCls=FindClassExact("BP_HERO_Ronin_C");   // a class whose CDO already carries a body
+                double hl[3]={0,0,0}; ActorLoc(g_wmHero,hl);
+                char cbuf[8]; int before=CountByClassSub("BP_HERO_",cbuf,0);
+                memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                if(g_oScsaClass!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oScsaClass)=(uint64_t)spawnCls;
+                if(g_oScsaLoc!=0xFFFFFFFF){ double* L=(double*)(g_gsbuf+g_oScsaLoc); L[0]=hl[0]-400.0; L[1]=hl[1]; L[2]=hl[2]; }
+                bool f=CallNativeGuarded(g_scsaFn,g_scsaThunk,g_scsaChild,(void*)cheatObj,g_gsbuf,g_rbuf);
+                Markerf("[CHEAT] ServerCheatSpawnActor(BP_HERO_Ronin_C @ %.0f,%.0f,%.0f) %s  [BP_HERO_ count before=%d]\r\n",
+                    hl[0]-400.0,hl[1],hl[2],f?"FAULTED":"ok",before);
+                g_plCheatDone=true;
+            }
+            if(KCHEATSPAWN>=2 && LooksLikePtr(cheatObj) && g_schThunk){
+                uintptr_t hc=FindClassExact("BP_HERO_Ronin_C");
+                memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                if(g_oSchClass!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oSchClass)=(uint64_t)hc;
+                bool f=CallNativeGuarded(g_schFn,g_schThunk,g_schChild,(void*)cheatObj,g_gsbuf,g_rbuf);
+                Markerf("[CHEAT] ServerCheatChangeHero(BP_HERO_Ronin_C) %s\r\n",f?"FAULTED":"ok");
+            }
+        }
         // ★ S95 SPAWN-vs-COMPONENT discriminator: spawn a real **StaticMeshActor** (NOT a CameraActor — those are
         //   hidden in game by default, which invalidated the earlier "standalone" control) and set the mesh on the
         //   component the ENGINE built as part of that actor. Renders => our spawn path is fine and the HERO actor is
@@ -2739,6 +2853,15 @@ static void DoPlay(){
                 hl[0],hl[1],hl[2],hbv,fowVis,(unsigned long long)g_plComp,wl[0],wl[1],wl[2],(unsigned long long)skm,cvis,cl[0],cl[1],cl[2]);
             FowRegister(g_plComp,"re-assert");   // re-register in case the FOW collector drops unowned primitives
             if(KFOWATTR && fowVis==0) FowMakeVisionSource(g_wmHero);   // (route A dead; off by default)
+            // ★ S96 verdict: once (a few seconds after the cheat spawn) report proxies for OUR hero vs any OTHER
+            //   BP_HERO_ in the world (the cheat-spawned one). "SET" on the cheat one = the game's spawn path is the fix.
+            if(g_plCheatDone){ static int rep=0;
+                if(rep<2){ rep++;
+                    ProxyReport(g_wmHero,"our-hero");
+                    uintptr_t other=FindInstByClassExcept("BP_HERO_",g_wmHero);
+                    if(LooksLikePtr(other)) ProxyReport(other,"cheat-hero");
+                    else Marker("[PROXY] cheat-hero: no second BP_HERO_ found (spawn produced nothing)\r\n");
+                } }
         }
     }
     DoTopDownCam();                  // spawn (once) + follow the top-down camera over the hero each hit
