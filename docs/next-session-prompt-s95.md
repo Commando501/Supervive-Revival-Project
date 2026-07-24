@@ -167,3 +167,55 @@ alt-tab.
 -DKRUNMODE=RM_PLAY -DKMESHTICK=1 -DKANIMMODE=1 -DKPUPYAW=-90 -DKCAMUP=1200 -DKCAMBACK=600 -DKCAMPITCH=-50
 -DKFOWKILL=1 -DKFOWATTR=0 [-DKGROUNDZ=2200 -DKTESTDX=1500 for the open-air test]
 ```
+
+---
+
+# ★★★★★ S95 RESULT — ROOT CAUSE FOUND: EVERYTHING WE SPAWN IS INVISIBLE TO THE RENDERER
+
+This supersedes the whole "FINAL STATE" table above. The visible-body problem was never about meshes, components,
+the hero, fog of war, or occlusion.
+
+## The proof (3 live eliminations, read-only RPM)
+
+1. **`proxy_census.py` on the hero** — every primitive component has `SceneProxy == NULL`, **including the game's own**
+   (its CapsuleComponents, 3 DecalComponents, its own StaticMeshComponent, `BP_FogOfWarProceduralMeshComponent_C`,
+   `LokiMeshManagerComponent`). The hero actor itself was never render-registered.
+   ⚠ only trust rows marked `<-- primitive`; +0x2B0 on other classes is an unrelated field.
+2. **Static-mesh discriminator (`KSTATICTEST`)** — took the `Sphere` mesh off a level SMC that IS rendering, put it on a
+   plain StaticMeshComponent we created → invisible, proxy NULL. Not skeletal-specific.
+3. **Spawn-vs-component discriminator (`KSMACTOR`)** — spawned a real **`StaticMeshActor`** and set that Sphere on the
+   root component the **engine** built (3x scale, beside the hero) → invisible, proxy NULL.
+   ⚠ the earlier "standalone actor" control was a **CameraActor**, which is hidden in game by default — that test was
+   invalid and is why this took so long to isolate.
+
+**⇒ Actors spawned by the GAME render; actors spawned by OUR shim never do.** The hero is one of ours (S74
+GameplayStatics deferred spawn), which explains every observation this session.
+
+## Key offsets / diff (this build)
+
+- `UPrimitiveComponent`: SceneProxy triplet at **+0x2B0 / +0x2B8 / +0x2C0**.
+- Our spawned `StaticMeshActor` vs a real level `StaticMeshActor_UAID_…`: **essentially identical**, only **+0x162**
+  (ours 0x02 / ref 0x01) and **+0x169** (ours 0x0A / ref 0x00) differ — the AActor bitfield region
+  (bActorInitialized / bHasFinishedSpawning / EActorBeginPlayState). The actor initialises fine; **component
+  registration with the render scene is what never happens.**
+- Prime suspect: `SpawnActorCls`'s `BeginDeferredActorSpawnFromClass` + **`FinishSpawningActor`** — if FinishSpawning
+  returns null the code silently falls back to the UNFINISHED deferred actor (`act = def`), so PostActorConstruction →
+  RegisterAllComponents never runs. **Log its actual return first — that confirms or kills this in one launch.**
+- ⚠ No reflection fix available: this build exposes **no** `RegisterComponent` / `RegisterAllComponents` /
+  `MarkRenderStateDirty` UFunction (only `PrimitiveComponent::SetRenderCustomDepth`).
+
+## S96 — best lead: use the GAME'S OWN spawn path
+
+`LokiPlayerCheats::ServerCheatSpawnActor(ClassToSpawn, Location)` and `ServerCheatChangeHero(HeroClass)` are already
+RE'd (S74 cheat enum; memory `supervive-cheat-surface-inventory`) and already wired in **`RM_CHEATSPAWN`**
+(`g_scsaThunk` / `g_schThunk`, via `GetLocalLokiPlayerCheatsBP`). Spawn a `StaticMeshActor` through the cheat RPC and
+check its proxy with `proxy_census.py`:
+- **proxy non-null** → that IS the fix; spawn/possess the hero via the cheat path and the body should simply appear.
+- **proxy null too** → the render scene itself is rejecting runtime primitives; fall back to locating native
+  `UActorComponent::RegisterComponent` and calling it directly (it is not a UFunction).
+
+## Tools added
+
+`tools/re/prim_diff.py` (byte-diff two objects; flags qwords that are pointers in one and null in the other),
+`tools/re/proxy_census.py` (SceneProxy census over every component of an actor), `tools/re/find_owner.py`,
+`tools/re/scan_strings.py`. Shim flags: `KSMACTOR`, `KSTATICTEST`, `KTESTACTOR`, `KFOWKILL`, `KFOWATTR`.
