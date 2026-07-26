@@ -161,3 +161,66 @@ name-matched objects), `tools/re/scan_strings.py` (ASCII+UTF-16 pattern scan of 
 found). Shim: `LoadMeshByPath`, `ResolveFuncGlobal`, `FowRegister`/`FowDisable`/`FowMakeVisionSource`,
 `FindAttrSetFor`, `CallNoArgAuto`, `BuildHeroBody(..., deferred)`; flags `KUSEBPCOMP/KTESTACTOR/KTESTDX/KFOWKILL/
 KFOWATTR/KMESHPATH/KLOADRONIN/KFIREBUNDLE`.
+
+---
+
+# ★★★★★ S98 — SOLVED: THE HERO IS VISIBLE (user-confirmed screenshot)
+
+Ronin's body renders on screen in the force-open tutorial, standing on the drop pod, with working WASD movement and
+the top-down camera.
+
+## Root cause: ZERO / FLATTENED Scale3D — two instances of one offset bug
+
+Nothing was ever wrong with the mesh, materials, component, registration, render proxy, fog of war, occlusion, or
+deploy. The actor and the component were **scaled to nothing**, which renders as invisible from every angle and
+perfectly mimicked "the renderer rejects what we create".
+
+1. **The hero actor** — `DoSpawnPossess` memsets `g_xform`, then writes ONLY Translation (`@0x20/28/30`) and quat W
+   (`@0x18`). Scale3D was never written: the `GetActorTransform` fill is skipped live (`xfThunk` resolves to 0) and its
+   zero-check only scans bytes `0..0x38` anyway. The hero spawned at Scale3D **(0,0,0)**.
+2. **The body component** — the same wrong-offset write left it at **(1,1,0)**: flat, zero height, invisible.
+
+## ★ The offset fact that made this hard
+
+`FTransform` in this build is the **16-byte-ALIGNED 0x60 layout**:
+
+| field | offset |
+|---|---|
+| Rotation (FQuat4d) | `0x00` (0x20 bytes) |
+| Translation | `0x20` (0x18 used + **8 pad**) |
+| **Scale3D** | **`0x40 / 0x48 / 0x50`** (+8 pad) |
+
+Proof: `xfsz = g_oBColl - g_oBXform = 0x70 - 0x10 = 0x60`.
+
+The long-standing project idiom `g_xform+0x38/0x40/0x48` (at L1062 *"scale 1 (NOT 0)"*, L2024, L2778, and
+`BuildHeroBody`'s `T[7],T[8],T[9]`) actually writes **translation-pad, Scale.X, Scale.Y — leaving Scale.Z ZERO**, so
+every actor it "fixed" was flattened. Live proof of the intermediate state: after fixing only `0x38/0x40/0x48`, the
+hero root read `RelativeScale3D = (1.000, 1.000, 0.000)`.
+
+## The fixes (both in `tools/sigbypass-mod/tutorial_launch.cpp`)
+
+- `DoSpawnPossess` sets Scale3D at **`0x40/0x48/0x50`** before the deferred spawn.
+  Marker: `[GS] Scale3D@0x40 was (0.000,0.000,0.000) -> now (1.0,1.0,1.0) *** ZERO-SCALE BUG FIXED ***`
+- `BuildHeroBody` writes the component's **`RelativeScale3D` property directly after creation** (offset-exact, no
+  FTransform-param guesswork), then calls `SetWorldScale3D(1,1,1)` to propagate.
+- ⚠ **Do not pass Scale3D via the RelativeTransform param** — that is what kept silently missing.
+
+## New tools
+
+- `tools/re/read_scale.py` — read a SceneComponent's RelativeLocation / Rotation / Scale3D.
+- `tools/re/poke_scale.py` — write `RelativeScale3D` live (`+0x188`). This fixed a **running** session with no
+  relaunch, which is how the result was confirmed.
+
+## Remaining polish (cosmetic only)
+
+- **T-pose** — the bind pose, expected with `SetAnimationMode(SingleNode)`; no AnimBP drives the skeleton. Ronin's
+  `ABP_LokiHero_GenericRoot_EventDriven_C` could be reintroduced carefully (an AnimBP on a mismatched skeleton is what
+  crashed S93).
+- **Weapon protrudes through the torso** — the weapon is a separate cosmetic mesh that the cosmetics controller
+  normally socket-attaches; ours sits at the component origin. Attach it to the hand socket.
+
+## Lesson for this project
+
+A long chain of confident root-cause claims (fog of war, "no SceneProxy", cheat-spawn) were all **wrong**. The real
+cause was a mundane offset/scale bug that a direct read of the object's transform would have exposed in minutes.
+**Prefer reading the actual state of the object over theorising about subsystems.**

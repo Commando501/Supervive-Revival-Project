@@ -2486,7 +2486,10 @@ static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh
         uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF; if(o==0xFFFFFFFF||o+0x50>sizeof(g_gsbuf))continue;
         uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0;
         if(strcmp(pn,"Class")==0) *(uint64_t*)(g_gsbuf+o)=(uint64_t)skelCls;
-        else if(strcmp(pn,"RelativeTransform")==0){ double* T=(double*)(g_gsbuf+o); T[3]=1.0; T[6]=KBODYZ; T[7]=1.0; T[8]=1.0; T[9]=1.0; xoff=o; }   // quatW@0x18, Trans.Z@0x30, Scale3D@0x38/0x40/0x48
+        // FTransform (0x60, 16-byte aligned): quatW@0x18=T[3]; Translation@0x20/28/30=T[4..6] (+pad T[7]);
+        // ⚠ Scale3D@0x40/0x48/0x50 = T[8],T[9],T[10] — NOT T[7..9]. The old T[7..9] wrote translation-pad, Scale.X,
+        // Scale.Y and left Scale.Z = 0, flattening the component to zero height (invisible). Proven live.
+        else if(strcmp(pn,"RelativeTransform")==0){ double* T=(double*)(g_gsbuf+o); T[3]=1.0; T[6]=KBODYZ; T[8]=1.0; T[9]=1.0; T[10]=1.0; xoff=o; }
         else if(strcmp(pn,"bDeferredFinish")==0){ *(uint8_t*)(g_gsbuf+o)=deferred?1:0; }
         else if(fl&0x400) retOff=o;   // CPF_ReturnParm
     }
@@ -2496,6 +2499,25 @@ static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh
     char ccn[96]="-"; if(LooksLikePtr(comp)&&ClassOf(comp)) GetFNameStr(NameId(ClassOf(comp)),ccn,sizeof(ccn));
     Markerf("[PL] AddComponentByClass %s -> comp=0x%llX(%s)\r\n",flt?"FAULTED":"ok",(unsigned long long)comp,ccn);
     if(!LooksLikePtr(comp)) return 0;
+    // ★★★ S98 — FORCE THE COMPONENT'S SCALE TO 1 AFTER CREATION. Passing Scale3D inside the RelativeTransform param
+    // is fragile (FTransform here is the ALIGNED 0x60 layout: Rotation@0x00, Translation@0x20+pad, Scale3D@0x40+pad,
+    // so Scale.Z sits at 0x50 and kept landing outside what the call actually consumed). Live proof: the component
+    // read RelativeScale3D = (1.000,1.000,0.000) — FLAT, i.e. invisible from every angle — while the game's own hero
+    // capsule read (1,1,1). Writing the field directly (and via SetWorldScale3D when available) is offset-exact.
+    { uint32_t so=PropOffsetSuper(ClassOf(comp),"RelativeScale3D");
+      if(so!=0xFFFFFFFF && SafeReadable((void*)(comp+so),24)){
+          double* S=(double*)(comp+so); double h0=S[0],h1=S[1],h2=S[2];
+          S[0]=1.0; S[1]=1.0; S[2]=1.0;
+          Markerf("[PL] comp RelativeScale3D@0x%X was (%.3f,%.3f,%.3f) -> (1,1,1)%s\r\n",so,h0,h1,h2,
+                  (h0==0.0||h1==0.0||h2==0.0)?"  *** FLAT/ZERO SCALE FIXED ***":"");
+      } else Marker("[PL] RelativeScale3D prop NOT FOUND on component\r\n"); }
+    // push it through the engine so the transform actually propagates to the render/physics state
+    { void* sf=nullptr; uintptr_t st=0,sc=0; ResolveFuncSuper(ClassOf(comp),"SetWorldScale3D",&sf,&st,&sc);
+      if(st){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+          uint32_t o=ParamOffset(sc,"NewScale"); if(o==0xFFFFFFFF)o=0;
+          double* S=(double*)(g_gsbuf+o); S[0]=1.0; S[1]=1.0; S[2]=1.0;
+          bool f=CallNativeGuarded(sf,st,sc,(void*)comp,g_gsbuf,g_rbuf);
+          Markerf("[PL] SetWorldScale3D(1,1,1) %s\r\n",f?"FAULTED":"ok"); } }
     if(mesh){ void* smfn=nullptr; uintptr_t smth=0,smch=0; ResolveFuncSuper(ClassOf(comp),"SetSkeletalMeshAsset",&smfn,&smth,&smch);
       if(smth){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
         for(uintptr_t p=smch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
@@ -2849,6 +2871,13 @@ static void DoPlay(){
                 if(g_oFowTgt!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oFowTgt)=(uint64_t)g_wmHero;
                 if(!CallNativeGuarded(g_plFowVisFn,g_plFowVisThunk,g_plFowVisChild,(void*)g_plFowCDO,g_gsbuf,g_rbuf))
                     fowVis=(g_oFowVisRet!=0xFFFFFFFF)?g_gsbuf[g_oFowVisRet]:((uint8_t*)g_rbuf)[0]; }
+            // ★ S98: the hero's LIVE root scale — the zero-scale bug's fingerprint. (0,0,0) here = invisible by geometry.
+            { uint32_t rc=PropOffsetSuper(ClassOf(g_wmHero),"RootComponent");
+              uintptr_t root=(rc!=0xFFFFFFFF&&SafeReadable((void*)(g_wmHero+rc),8))?*(uint64_t*)(g_wmHero+rc):0;
+              uint32_t so=LooksLikePtr(root)?PropOffsetSuper(ClassOf(root),"RelativeScale3D"):0xFFFFFFFF;
+              if(so!=0xFFFFFFFF&&SafeReadable((void*)(root+so),24)){ double* S=(double*)(root+so);
+                  Markerf("[DIAG] hero root RelativeScale3D=(%.3f,%.3f,%.3f)%s\r\n",S[0],S[1],S[2],
+                          (S[0]==0.0||S[1]==0.0||S[2]==0.0)?"  *** ZERO SCALE = INVISIBLE ***":"  (ok)"); } }
             Markerf("[DIAG] hero=(%.0f,%.0f,%.0f) bHidden=%d fowVisible=%d | comp=0x%llX world=(%.0f,%.0f,%.0f) mesh=0x%llX bVisible=%d | cam=(%.0f,%.0f,%.0f)\r\n",
                 hl[0],hl[1],hl[2],hbv,fowVis,(unsigned long long)g_plComp,wl[0],wl[1],wl[2],(unsigned long long)skm,cvis,cl[0],cl[1],cl[2]);
             FowRegister(g_plComp,"re-assert");   // re-register in case the FOW collector drops unowned primitives
@@ -2994,6 +3023,24 @@ static void DoSpawnPossess(){
                 if(!*(double*)(g_xform+0x00)&&!*(double*)(g_xform+0x08)&&!*(double*)(g_xform+0x10)&&!*(double*)(g_xform+0x18)) *(double*)(g_xform+0x18)=1.0;
             }
         }
+        // ★★★ S98 THE BUG — SCALE3D WAS NEVER SET, SO THE HERO SPAWNED AT SCALE (0,0,0).
+        // g_xform is memset to 0; the GetActorTransform fill is skipped live (xfThunk resolves to 0) and its zero-check
+        // only scans bytes 0..0x38 anyway; both location fixes below write ONLY Translation(@0x20/28/30) and quat
+        // W(@0x18). Scale3D(@0x38/0x40/0x48) therefore stayed 0 => a ZERO-SCALE actor: correct world position, working
+        // possession, working CMC velocity puppet, camera follows it, bHiddenInGame=0, every render pointer populated —
+        // and NOTHING DRAWN, at ground level or at Z=2200, with any mesh, because it is scaled to a point. That is the
+        // entire "invisible hero" mystery. Every sibling spawn path already does this (L1062 "scale 1 (NOT 0)", L2024,
+        // L2778); DoSpawnPossess — the path that spawns the hero we possess — never got the back-port.
+        // ⚠ SCALE3D IS AT 0x40/0x48/0x50, **NOT** 0x38/0x40/0x48. FTransform in this build is the 16-byte-ALIGNED
+        // 0x60 layout — Rotation@0x00 (0x20), Translation@0x20 (0x18 used + 8 PAD), Scale3D@0x40 (0x18 used + 8 pad).
+        // Proof: xfsz = g_oBColl-g_oBXform = 0x70-0x10 = 0x60, and a first fix writing 0x38/0x40/0x48 produced a LIVE
+        // root RelativeScale3D of (1.000,1.000,0.000) — i.e. it hit translation-pad, Scale.X, Scale.Y and left
+        // Scale.Z ZERO. A mesh flattened to zero height is invisible from every angle.
+        // ⚠ The same wrong offsets are used by the other spawn paths (L1062/L2024/L2778) and by BuildHeroBody.
+        { double* S=(double*)(g_xform+0x40); double h0=S[0],h1=S[1],h2=S[2];
+          if(S[0]==0.0) S[0]=1.0; if(S[1]==0.0) S[1]=1.0; if(S[2]==0.0) S[2]=1.0;
+          Markerf("[GS] Scale3D@0x40 was (%.3f,%.3f,%.3f) -> now (%.1f,%.1f,%.1f) %s\r\n",h0,h1,h2,S[0],S[1],S[2],
+                  (h0==0.0||h1==0.0||h2==0.0)?"*** ZERO-SCALE BUG FIXED ***":"(already non-zero)"); }
         double* t=(double*)(g_xform+0x20); Markerf("[GS] xform T=(%.1f,%.1f,%.1f)\r\n",t[0],t[1],t[2]);
         // 2. BeginDeferredActorSpawnFromClass(gm, heroClass, xform, AdjustButAlwaysSpawn) -> deferred actor
         memset(g_gsbuf,0,sizeof(g_gsbuf));
