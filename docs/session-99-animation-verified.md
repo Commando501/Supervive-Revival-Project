@@ -440,3 +440,86 @@ committed now that it has run) and see whether it is a real body or a dispatch s
 - `Role` and `RemoteRole` are reflected `ByteProperty (UEnum:ENetRole)` on `Actor`; `ROLE_Authority = 3`.
 - Reused helpers: `CallNoArgAuto` (auto native-vs-BP dispatch) logs under a `[FOW]` prefix — grep for `GAS step`,
   not `\[GAS\]`, or the step-2/3 lines are invisible. That cost one round of confusion.
+
+---
+
+# ★★★★ S102 — the thunk is NOT a stub, and the real gate is located: `PlayerState+0x4F8 == NULL`
+
+## 1. The S101 "RPC dispatch stub" lead is DEAD
+
+`TryUpdateAbilitySystem`'s `Func@+0xE0` thunk (rva **0x5438C20**) decodes as a textbook UE exec-thunk for a
+zero-parameter native UFunction — it advances `FFrame.Code` and **tail-jumps straight to the real body**:
+
+```asm
+mov   rax, [rdx+0x20]     ; FFrame.Code
+xor   r8d, r8d
+test  rax, rax
+setne r8b
+add   r8, rax
+mov   [rdx+0x20], r8      ; Code += (Code != 0)
+jmp   0x56CE5F0           ; <- the IMPLEMENTATION
+```
+
+`OnRep_HeroClass` (rva 0x5438450) has the byte-identical prologue. So our `CallNativeGuarded` **does** reach the
+real implementation; there is no dispatcher swallowing the call. (Also note `ServerSetHeroClass`'s flags are
+`[Native, BPCallable]` with **FUNC_Net NOT set** — despite the name it is not a network RPC at all, which already
+undermined the S101 theory.)
+
+★ Both thunks were decoded **offline from `dumps/merged.dump.exe`** (file-offset == RVA). Their *implementations*
+read all-zero there — packer demand-decrypt gaps — so the impl needed a live process that had executed it.
+
+## 2. The implementation, and its first gate
+
+`usmapdump disasm SUPERVIVE-Win64-Shipping.exe +0x56CE5F0` (live, after the sp shim had called it):
+
+```asm
+mov  rbp, rcx                  ; rbp = the LokiPlayerState
+add  rcx, 0x470                ; an EMBEDDED interface subobject (secondary vtable — MI layout)
+mov  rax, [rcx]                ; its vptr  (= 0x7FF6F075E020 live)
+call [rax+0x10]                ; virtual slot 2
+test rax, rax
+jz   bail                      ; <=== GATE 1
+...  call <predicate>; jz bail ; GATE 2
+mov  eax,[rdi+0xc]; shr 0x1e   ; GATE 3 — bit30 of the returned object's flags (pending-kill style check)
+mov  rsi,[rdi+0xb8]; jz bail   ; GATE 4
+call <predicate>; jz bail      ; GATE 5
+test byte [rsi+0x6e], 0x20     ; GATE 6
+```
+
+That virtual (rva **0x56BA9E0**) is five instructions:
+
+```asm
+mov  rax, [rcx+0x88]     ; rcx = PlayerState+0x470  =>  reads PlayerState+0x4F8
+test rax, rax
+jz   ret_null
+mov  rax, [rax+0x3e8]
+ret
+```
+
+## ★ 3. The measurement
+
+```
+PlayerState = 0x2B67F3AAAB0
+PlayerState+0x470 = 0x7FF6F075E020   (module range -> a secondary vtable, as predicted)
+PlayerState+0x4F8 = 0x0              <=== NULL
+```
+
+**`TryUpdateAbilitySystem` returns immediately at GATE 1** because `PlayerState[0x4F8]` is null, so the accessor
+returns null before it can even look at `[+0x3E8]`. Every call we made was real, reached real code, and hit a
+first-instruction bail.
+
+This is consistent with everything else measured: authority ✅, hero asset ✅, HeroClass ✅ — all irrelevant,
+because the function never gets past its opening virtual call.
+
+## Next
+
+1. **Identify `PlayerState+0x4F8`.** It is a member of the embedded interface at +0x470 (offset +0x88 within it),
+   and the accessor returns `that->[0x3E8]`. Walk the reflected property list of `BP_LokiPlayerState_C` for a
+   property at 0x4F8, and check whether 0x4F8 is instead a NON-UPROPERTY back-pointer (in which case find who
+   writes it — likely the same code that spawns the `LokiPlayerState_HeroAffiliated` carrier).
+2. If it is a back-pointer to an owner (controller/pawn/carrier) we may be able to set it directly and re-run the
+   keystone — the cheapest possible test, and `IsAbilitySystemInitialized()` still reports the answer in one bit.
+3. Reference: the ScavBay trees have working ASCs, so a diff of *their* init path remains the fallback template.
+
+⚠ Tool note: `usmapdump disasm|peek` take a **process NAME, not a PID** (`disasm SUPERVIVE-Win64-Shipping.exe
++0xRVA N`), and `peek`'s third arg is a decimal count — a hex `0x10` is rejected with "bad maxhits".
