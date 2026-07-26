@@ -523,3 +523,59 @@ because the function never gets past its opening virtual call.
 
 ⚠ Tool note: `usmapdump disasm|peek` take a **process NAME, not a PID** (`disasm SUPERVIVE-Win64-Shipping.exe
 +0xRVA N`), and `peek`'s third arg is a decimal count — a hex `0x10` is rejected with "bad maxhits".
+
+## ★★★★★ S102b — `0x4F8` IS a reflected property: `HeroAffiliatedObject`. The gate decodes completely.
+
+Read live at the **plain menu** (`tools/re/class_props.py`, native class, no force-open):
+
+```
+LokiPlayerState:
+   +0x04F8 ObjectProperty  HeroAffiliatedObject     <=== the NULL field
+   +0x0500 ObjectProperty  StatsObject
+
+LokiPlayerState_HeroAffiliated:
+   +0x03E8 ObjectProperty  AbilitySystemComponent   <=== exactly what the accessor returns
+   +0x03F0 ObjectProperty  AttributeSet
+   +0x03F8 ObjectProperty  AttributeSetHealth
+   +0x0408 ObjectProperty  PlayerInventory
+```
+
+So the five-instruction virtual at rva `0x56BA9E0` is simply **`IAbilitySystemInterface::GetAbilitySystemComponent()`**,
+and the interface embedded at `PlayerState+0x470` is `IAbilitySystemInterface`:
+
+```cpp
+UAbilitySystemComponent* GetAbilitySystemComponent() const {
+    auto* carrier = this->HeroAffiliatedObject;   // PlayerState +0x4F8
+    if (!carrier) return nullptr;
+    return carrier->AbilitySystemComponent;       // carrier +0x3E8
+}
+```
+
+### The whole picture, now closed
+
+`HeroAffiliatedObject == NULL` → `GetAbilitySystemComponent()` returns null → **`TryUpdateAbilitySystem` bails ~8
+instructions in**. That is the single reason the chain no-ops, and it is fully consistent with S100's sweep finding
+**no `LokiPlayerState_*` companion actors of any kind** in the force-open world.
+
+⇒ **`TryUpdateAbilitySystem` really is update-not-create** (the S101 second hypothesis was right). It wires an
+*existing* carrier+ASC to the character; it does not build one. Nothing we call on the PlayerState will ever
+bootstrap GAS, because the thing being updated does not exist.
+
+### The concrete remaining work
+
+1. **Spawn a `LokiPlayerState_HeroAffiliated`** — `SpawnActorCls` (`BeginDeferredActorSpawnFromClass` +
+   `FinishSpawningActor`), already proven on this route.
+2. **Give it an ASC + the two attribute sets** — `AddComponentByClass`, already proven; and the ScavBay trees are
+   344 live working examples of a `LokiAbilitySystemComponent` being constructed and `InitAbilityActorInfo`'d in
+   this exact world with no server.
+3. **Assign it**: `PlayerState.HeroAffiliatedObject = carrier`. It is a **reflected ObjectProperty**, so
+   `PropOffsetSuper` + a direct write is enough — no RE needed.
+4. **Then** `TryUpdateAbilitySystem()`, which now has something to update, and read
+   `IsAbilitySystemInitialized()`.
+
+Every primitive required already exists and is proven. The open questions are whether the carrier's own
+constructor creates the ASC (as the trees' actors do) or whether we must add it, and whether steps 2–4 need the
+attribute-init DataTable (`K2_InitStats(Class, DataTable*)`) before the bit flips.
+
+⚠ Grep note: `class_props.py` prints offsets **zero-padded** (`+0x04F8`), so a `grep 0x4F8` misses it. That cost a
+round — search for the decimal-ish padded form or just dump and eyeball.
