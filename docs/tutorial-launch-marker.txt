@@ -2,96 +2,86 @@
 [0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
 [PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)
 [PL] gameHwnd=0x0 (0 => focus check disabled)
-[WM] PC=0x1260EC113C0 hero=0x1282C7AD560(BP_HERO_Ronin_C) CMC=0x12706F75560 grav@0x1A0 vel@0xE8 mode@0x231
+[WM] PC=0x254846C2770 hero=0x254E4E95580(BP_HERO_Ronin_C) CMC=0x2540F31C720 grav@0x1A0 vel@0xE8 mode@0x231
 [WM] thunks SetActive=0x7FF6EB2F8900(act@0x0 rst@0x1) SetTickEn=0x7FF6EB2F90E0(en@0x0) SetMoveMode=0x7FF6EB339180(mode@0x0 cust@0x1) SetActorTick=0x7FF6EB0DCA70(en@0x0)
-[WM] root=0x127AD8A0200 SetActorLocation=0x7FF6EB0DB0C0(loc@0x0 sweep@0x18 tele@0x118) wakeZ=500
-[SEQ] seqClass=0x127154E3F10 gm=0x1277F4112C0 gsCDO=0x1263C6BA140 begin=0x7FF6EB52EEC0 finish=0x7FF6EB532CC0 vol=(283,277,-250)
+[WM] root=0x25499DD21C0 SetActorLocation=0x7FF6EB0DB0C0(loc@0x0 sweep@0x18 tele@0x118) wakeZ=500
+[SEQ] seqClass=0x2546002F430 gm=0x2547FB1E4A0 gsCDO=0x2533B5FA140 begin=0x7FF6EB52EEC0 finish=0x7FF6EB532CC0 vol=(283,277,-250)
 [SEQ] BEFORE: TrainingQuest=0  Sequencer=0
-[TC] pc=0x1260EC113C0 hero=0x1282C7AD560 camCls=0x1263DB98800 svtThunk=0x7FF6EB999A60(tgt@0x0) gm=0x1277F4112C0 begin=0x7FF6EB52EEC0
+[TC] pc=0x254846C2770 hero=0x254E4E95580 camCls=0x2533CB08800 svtThunk=0x7FF6EB999A60(tgt@0x0) gm=0x2547FB1E4A0 begin=0x7FF6EB52EEC0
 [TRN] params AsyncLoadPrimaryAssets[0] WorldContextObject @0x0 flags=0x18001000400280
 [TRN] params AsyncLoadPrimaryAssets[1] Assets @0x8 flags=0x10000000000280
 [TRN] params AsyncLoadPrimaryAssets[2] OnLoadComplete @0x18 flags=0x18001000000280
 [TRN] params AsyncLoadPrimaryAssets[3] ReturnValue @0x28 flags=0x18001000000780
-[PL] loadInfra lam=0x1267DC468E0 world=0x12638587A20 pafs=0x7FF6ECFDB760 alpa=0x7FF6ECFD9440
+[PL] loadInfra lam=0x2537F9228F0 world=0x25337127A20 pafs=0x7FF6ECFDB760 alpa=0x7FF6ECFD9440
 [TRN] params MakeSoftObjectPath[0] PathString @0x0 flags=0x3018000000000280
 [TRN] params MakeSoftObjectPath[1] ReturnValue @0x10 flags=0x18000000000780
 [TRN] params LoadAsset_Blocking[0] Asset @0x0 flags=0x1C000000000080
 [TRN] params LoadAsset_Blocking[1] ReturnValue @0x28 flags=0x18001000000780
-[PL] route1 ksl=0x1263E90B780 msp=0x7FF6EB6A80D0(path@0x0 ret@0x10) lab=0x7FF6EB6A4E40(asset@0x0 ret@0x28)
-[FOW] resolved 'RegisterFogOfWarPrimitive' fn=0x1263C4A0180 thunk=0x7FF6ECFAB9F0 owner=FogOfWarPrimitiveCollector cdo=0x1263C7EBC50
-[FOW] resolved 'IsFogOfWarVisibleToLocal' fn=0x1263C4D5E20 thunk=0x7FF6ED0167A0 owner=LokiBlueprintLibrary cdo=0x1263C801AD0
-[FOW] cdo=0x1263C7EBC50 reg=0x7FF6ECFAB9F0(comp@0x0 ret@0x8) vis=0x7FF6ED0167A0(tgt@0x0 ret@0x8)
+[PL] route1 ksl=0x2533FEBB780 msp=0x7FF6EB6A80D0(path@0x0 ret@0x10) lab=0x7FF6EB6A4E40(asset@0x0 ret@0x28)
+[FOW] resolved 'RegisterFogOfWarPrimitive' fn=0x2533B3E0180 thunk=0x7FF6ECFAB9F0 owner=FogOfWarPrimitiveCollector cdo=0x2533B72BC50
+[FOW] resolved 'IsFogOfWarVisibleToLocal' fn=0x2533B415E20 thunk=0x7FF6ED0167A0 owner=LokiBlueprintLibrary cdo=0x2533B741AD0
+[FOW] cdo=0x2533B72BC50 reg=0x7FF6ECFAB9F0(comp@0x0 ret@0x8) vis=0x7FF6ED0167A0(tgt@0x0 ret@0x8)
 [TRN] params FinishAddComponent[0] Component @0x0 flags=0x18001000080280
 [TRN] params FinishAddComponent[1] bManualAttachment @0x8 flags=0x18001040000280
 [TRN] params FinishAddComponent[2] RelativeTransform @0x10 flags=0x3018001048000182
 [PL] route2 finishAddComp=0x7FF6EB0D6CF0(comp@0x0 manual@0x8 xform@0x10)
-[PL] hero=0x1282C7AD560 CMC=0x12706F75560 mesh=0x0(-) skelCls=0x1263DB41000 camCls=0x1263DB98800 pc=0x1260EC113C0 gm=0x1277F4112C0 gsCDO=0x1263C6BA140 begin=0x7FF6EB52EEC0
-[PL] teleport hero -> ground (-65,-1770,393)
+[PL] hero=0x254E4E95580 CMC=0x2540F31C720 mesh=0x0(-) skelCls=0x2533CAA1000 camCls=0x2533CB08800 pc=0x254846C2770 gm=0x2547FB1E4A0 gsCDO=0x2533B5FA140 begin=0x7FF6EB52EEC0
+[PL] teleport hero -> ground (-65,-2600,393)
 [PL] SetMovementMode(5)
 [PL] SetActorHiddenInGame(hero,false)
-[PL] MakeSoftObjectPath ok (pkgFName=0x48F1A8 assetFName=0xF229D)
-[PL] LoadAsset_Blocking ok -> 0x127E437A570 (BlueprintGeneratedClass)
-[PL] route2 BP-comp class = 0x127E437A570 (BlueprintGeneratedClass)
-[PL] AddComponentByClass ok -> comp=0x12807142770(BP_Ronin_DefaultSKMeshComponent_C)
+[PL] MakeSoftObjectPath ok (pkgFName=0x48E2D7 assetFName=0xF1970)
+[PL] LoadAsset_Blocking ok -> 0x2553FCEF430 (BlueprintGeneratedClass)
+[PL] route2 BP-comp class = 0x2553FCEF430 (BlueprintGeneratedClass)
+[PL] AddComponentByClass ok -> comp=0x2537453C4F0(BP_Ronin_DefaultSKMeshComponent_C)
 [PL] comp RelativeScale3D@0x188 was (1.000,1.000,1.000) -> (1,1,1)
 [PL] SetWorldScale3D(1,1,1) ok
 [PL] ClothingSimulationFactory@0xC78=null
 [PL] SetAnimationMode(1)
 [PL] FinishAddComponent ok
-[PL] MakeSoftObjectPath ok (pkgFName=0x59A89 assetFName=0x22F906)
-[PL] LoadAsset_Blocking ok -> 0x126CE786600 (AnimSequence)
-[PL] anim asset=0x126CE786600 (AnimSequence)
-[PL] PlayAnimation(A_Ronin_Cosmetic_HeroSelect_Breathe, loop) ok  <- fixes T-pose AND sword placement
+[PL] MakeSoftObjectPath ok (pkgFName=0x58E39 assetFName=0x22E6BD)
+[PL] LoadAsset_Blocking ok -> 0x25489DE2A00 (AnimSequence)
+[PL] anim asset=0x25489DE2A00 (AnimSequence)
+[ANIM] PlayAnimation(A_Ronin_Cosmetic_HeroSelect_Breathe, loop) ok
 [FOW] RegisterFogOfWarPrimitive(body) ok -> ret=0
 [PL] body built (animMode=1 tick=1 visible deferred=1)
+[PL] MakeSoftObjectPath ok (pkgFName=0x257563 assetFName=0x1F92F1)
+[PL] LoadAsset_Blocking ok -> 0x2549A49C800 (AnimSequence)
+[ANIM] run anim A_Ronin_Movement_OutOfCombat_N = 0x2549A49C800 (AnimSequence)
 [PL] *** init complete: body=BUILT; camera + WASD active ***
 [DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(0,0,0)
+[DIAG] hero=(-65,-2600,393) bHidden=112 fowVisible=0 | comp=0x2537453C4F0 world=(-65,-2600,393) mesh=0x254F36DCBB0 bVisible=99 | cam=(0,0,0)
 [FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[QST] topdown-cam FinishSpawning -> res=0x126743B2740 par=0x0 | proxy(root)=SET
-[TC] *** spawned CameraActor=0x126743B2740 at (-65,-1220,1393) setLoc@0x0 setRot@0x0 ***
+[QST] topdown-cam FinishSpawning -> res=0x253734A8080 par=0x0 | proxy(root)=null
+[TC] *** spawned CameraActor=0x253734A8080 at (-65,-1950,1593) setLoc@0x0 setRot@0x0 ***
+[SHOT] idle1 @3.0s hero=(-65,-2600,393) cam=(-65,-1950,1593) anim=idle
+[FOW] resolved 'ExecuteConsoleCommand' fn=0x2533AFED8B0 thunk=0x7FF6EB68D790 owner=KismetSystemLibrary cdo=0x2533B5FD050
+[SHOT] idle1: console 'HighResShot 1' ok
 [DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
+[DIAG] hero=(-65,-2600,393) bHidden=112 fowVisible=0 | comp=0x2537453C4F0 world=(-65,-2600,393) mesh=0x254F36DCBB0 bVisible=99 | cam=(-65,-1950,1593)
 [FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
 [DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
+[DIAG] hero=(-65,-2600,393) bHidden=112 fowVisible=0 | comp=0x2537453C4F0 world=(-65,-2600,393) mesh=0x254F36DCBB0 bVisible=99 | cam=(-65,-1950,1593)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[SHOT] idle2 @8.0s hero=(-65,-2600,393) cam=(-65,-1950,1593) anim=idle
+[SHOT] idle2: console 'HighResShot 1' ok
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(-65,-2600,393) bHidden=112 fowVisible=0 | comp=0x2537453C4F0 world=(-65,-2600,393) mesh=0x254F36DCBB0 bVisible=99 | cam=(-65,-1950,1593)
 [FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
 [DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
+[DIAG] hero=(-65,-2600,393) bHidden=112 fowVisible=0 | comp=0x2537453C4F0 world=(-65,-2600,393) mesh=0x254F36DCBB0 bVisible=99 | cam=(-65,-1950,1593)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[SHOT] idle3 @14.0s hero=(-65,-2600,393) cam=(-65,-1950,1593) anim=idle
+[SHOT] idle3: console 'HighResShot 1' ok
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(-65,-2600,393) bHidden=112 fowVisible=0 | comp=0x2537453C4F0 world=(-65,-2600,393) mesh=0x254F36DCBB0 bVisible=99 | cam=(-65,-1950,1593)
 [FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
 [DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
+[DIAG] hero=(-65,-2600,393) bHidden=112 fowVisible=0 | comp=0x2537453C4F0 world=(-65,-2600,393) mesh=0x254F36DCBB0 bVisible=99 | cam=(-65,-1950,1593)
 [FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
-[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
-[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x12807142770 world=(-65,-1770,393) mesh=0x126CF818BC0 bVisible=99 | cam=(-65,-1220,1393)
-[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[ANIM] self-driven walk START (so the run anim can be captured with no human at the keyboard)
+[NULL] (via SEH)
+[NULL] fatal 0xC0000005 RIP=0x0 rva=0x0 access=EXEC addr=0x0 inHook=1
+[NULL] RAX=2537453C400 RBX=2537453CF90 RCX=2549A49C800 RDX=2549BE0CC00 RSI=2549A49C800 RDI=25338A1A180 RBP=2537453C4F0 RSP=F83C9DE5B8
+[NULL] R8=1 R9=7FFAC2DCDC14 R10=7FFAC2DB0000 R11=F83C9DE588 R12=0 R13=25492B30140 R14=253F62A52A0 R15=25338A1A4F8
+[NULL] cls RAX=- RBX=?ByteProperty RCX=AnimSequence RDX=- RSI=AnimSequence RDI=AnimSingleNodeInstance R8=- R9=-
+[ANIM] PlayAnimation(run, loop) FAULTED -> anim swapping DISABLED for the rest of the session
