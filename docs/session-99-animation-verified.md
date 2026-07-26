@@ -579,3 +579,73 @@ attribute-init DataTable (`K2_InitStats(Class, DataTable*)`) before the bit flip
 
 ⚠ Grep note: `class_props.py` prints offsets **zero-padded** (`+0x04F8`), so a `grep 0x4F8` misses it. That cost a
 round — search for the decimal-ish padded form or just dump and eyeball.
+
+---
+
+# ★★★★ S103 — the carrier is BUILT and INSTALLED. GATE 1 is cleared; the bit still does not flip.
+
+Implemented `EnsureHeroAffiliatedCarrier()` (flag `KGASCARRIER`) in the `sp` shim, ahead of the S101 chain.
+
+## What now works
+
+```
+[GAS] HeroAffiliatedObject@0x4F8 = 0x0
+[GAS] carrier class = 0x…
+[GAS] carrier=0x20076AF12C0 AbilitySystemComponent@0x3E8 = 0x1FEAA34E680 (constructor built it)
+[GAS] K2_InitStats(LokiAttributeSet, null) ok
+[GAS] carrier.AttributeSet@0x3F0       = 0x1FF9DF3C940
+[GAS] K2_InitStats(LokiAttributeSetHealth, null) ok
+[GAS] carrier.AttributeSetHealth@0x3F8 = 0x200A394B140
+[GAS] *** PlayerState.HeroAffiliatedObject@0x4F8 = 0x20076AF12C0 (carrier installed) ***
+```
+
+Four things confirmed, all first-time:
+
+1. **`LokiPlayerState_HeroAffiliated` spawns cleanly** via the existing `SpawnActorCls` path.
+2. **Its own constructor builds the ASC** — exactly as the ScavBay level actors do. We did not have to add one.
+3. **`K2_InitStats(<AttributeSet class>, null)` really does create and register the attribute subobjects.** Both
+   `AttributeSet` and `AttributeSetHealth` went from null to live objects. (This is why `UAttributeSet` being a
+   `UObject` rather than a component was not a problem — `InitStats` is the game's own create-and-register API.)
+4. The carrier installs on the PlayerState via a plain reflected-property write.
+
+⇒ **GATE 1 is cleared**: `IAbilitySystemInterface::GetAbilitySystemComponent()` would now return a real ASC.
+
+## What still fails
+
+```
+[FOW] GAS step3: TryUpdateAbilitySystem (native) ok
+[GAS] AFTER  AbilitySystemComponentStorage @0xF00 = NULL   (…Storage / …HealthStorage likewise)
+[GAS] AFTER  IsAbilitySystemInitialized -> 0
+[GAS] GetLokiAbilitySystem_BP -> NULL
+```
+
+The hero's three `…Storage` caches are still null, so `TryUpdateAbilitySystem` is now bailing at one of the
+**later** gates from the S102 disasm (rdi = the ASC throughout):
+
+```asm
+call <predicate>(rcx=ASC); test al,al; jz bail     ; GATE 2
+mov  eax,[rdi+0xc]; shr eax,0x1e; …    ; jz bail   ; GATE 3  (bit30 of the ASC's flags)
+mov  rsi,[rdi+0xb8]; test rsi,rsi; jz  0x…E64E     ; GATE 4
+call <predicate>(rcx=rsi); test al,al; jz 0x…E64E  ; GATE 5
+test byte [rsi+0x6e], 0x20                          ; GATE 6
+```
+
+Note GATES 4/5 branch to `E64E`, a *different* target from GATES 1–3's `E64B` — so those two are probably not the
+same "bail" and the tail needs decoding properly rather than assumed.
+
+## Best next steps
+
+1. **Re-disasm from `+0x56CE5F0` with a longer window** and decode both exit paths (`E64B` vs `E64E`) plus what the
+   success path actually writes. The page decrypts as soon as the shim calls it, so this is one live run.
+2. **Read the new ASC's `OwnerActor` / `AvatarActor`** right after the carrier build (both reflected). If they are
+   null, `InitAbilityActorInfo` has not run for our ASC — and note it is **plain C++, not a UFunction**, so it is
+   not directly callable by reflection. The 344 ScavBay ASCs have it populated, so the question becomes what
+   invokes it for them.
+3. `GATE 2` and `GATE 5` predicates (`0x7ff6ed228f40`, `0x7ff6ed31cf60`) are small; disassemble them.
+
+## Honest status
+
+The structurally-missing object now exists, is fully populated, and is installed — that was the whole S100–S102b
+finding and it is done. `IsAbilitySystemInitialized` has not flipped, so abilities are **not** unlocked; what is
+established is that the remaining distance is a short chain of decodable gates inside one function, not a
+subsystem rebuild.
