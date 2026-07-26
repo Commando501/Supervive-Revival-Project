@@ -2483,6 +2483,14 @@ static void FowRegister(uintptr_t comp,const char* tag){
 // nothing in force-open (S99, user-confirmed: body VANISHES). So swap whole AnimSequences off the CMC's velocity
 // instead: |V| over KRUNSPEED -> the run loop, at rest -> the idle loop. Crude vs a BlendSpace, but it animates
 // movement without ever instantiating ABP_LokiHero_GenericRoot_EventDriven_C.
+// ★★★★ S101 — drive LokiPlayerState's own ability-system wiring chain (ServerSetHeroClass -> OnRep_HeroClass ->
+// TryUpdateAbilitySystem) and report LokiCharacter::IsAbilitySystemInitialized before/after. See WireAbilitySystem.
+#ifndef KGASROLE
+#define KGASROLE 1           // S101 iter2: if the PlayerState is not ROLE_Authority, force it and retry the keystone
+#endif
+#ifndef KWIREGAS
+#define KWIREGAS 1
+#endif
 #ifndef KRUNANIM
 #define KRUNANIM 1
 #endif
@@ -2579,6 +2587,134 @@ static void RunConsole(const wchar_t* cmd, const char* tag){
     if(g_oCcSP!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oCcSP)=0;
     bool f=CallNativeGuarded(g_plCcFn,g_plCcThunk,g_plCcChild,(void*)g_plCcCDO,g_gsbuf,g_rbuf);
     Markerf("[SHOT] %s: console '%ls' %s\r\n",tag,cmd,f?"FAULTED":"ok");
+}
+
+// ★★★★ S101 — DRIVE THE GAME'S OWN ABILITY-SYSTEM WIRING CHAIN.
+//
+// S100 measured that the force-open hero has NO ability system: AbilitySystemComponentStorage /
+// AttributeSetStorage / AttributeSetHealthStorage are all NULL, and no LokiPlayerState_HeroAffiliated carrier
+// exists. S100b then found we do NOT have to build any of that by hand — `LokiPlayerState` owns the lifecycle and
+// exposes it natively:
+//     void TryUpdateAbilitySystem()            [Native, PARAMETERLESS]
+//     void ServerSetHeroClass(Class NewClass)  [Native, BPCallable]
+//     void OnRep_HeroClass()                   [Native, Event, parameterless]
+// and `LokiCharacter::IsAbilitySystemInitialized() -> Bool` reports success in one bit.
+//
+// Staged one call per step with a read of the witness bit before and after, so a fault or a no-op localises to a
+// single call instead of "the chain didn't work".
+static bool ReadAbilityInitBit(uintptr_t hero, const char* when){
+    void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(hero),"IsAbilitySystemInitialized",&f,&th,&ch);
+    if(!th){ Markerf("[GAS] %s: IsAbilitySystemInitialized NOT FOUND\r\n",when); return false; }
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    uint32_t ro=ParamOffset(ch,"ReturnValue");
+    bool flt=CallNativeGuarded(f,th,ch,(void*)hero,g_pbuf,g_rbuf);
+    // A native bool return can land either in the params frame at ReturnValue or in the result buffer; read both.
+    int viaParm = (ro!=0xFFFFFFFF) ? ((uint8_t*)g_pbuf)[ro] : -1;
+    int viaRes  = ((uint8_t*)g_rbuf)[0];
+    Markerf("[GAS] %s IsAbilitySystemInitialized -> parm@0x%X=%d res=%d%s\r\n",when,ro,viaParm,viaRes,flt?" FAULTED":"");
+    return (viaParm==1)||(viaRes==1);
+}
+static void ReportGasState(uintptr_t hero, const char* when){
+    static const char* kFields[3]={"AbilitySystemComponentStorage","AttributeSetStorage","AttributeSetHealthStorage"};
+    for(int i=0;i<3;i++){
+        uint32_t o=PropOffsetSuper(ClassOf(hero),kFields[i]);
+        uintptr_t v=(o!=0xFFFFFFFF&&SafeReadable((void*)(hero+o),8))?*(uintptr_t*)(hero+o):0;
+        char cn[96]="-"; if(LooksLikePtr(v)&&ClassOf(v)) GetFNameStr(NameId(ClassOf(v)),cn,sizeof(cn));
+        Markerf("[GAS] %s %-30s @0x%X = 0x%llX (%s)\r\n",when,kFields[i],o,(unsigned long long)v,LooksLikePtr(v)?cn:"NULL");
+    }
+}
+static void WireAbilitySystem(uintptr_t hero, uintptr_t pc){
+    Marker("[GAS] ===== S101: driving LokiPlayerState's own ability-system wiring chain =====\r\n");
+    uint32_t psOff=PropOffsetSuper(ClassOf(pc),"PlayerState");
+    uintptr_t ps=(psOff!=0xFFFFFFFF&&SafeReadable((void*)(pc+psOff),8))?*(uintptr_t*)(pc+psOff):0;
+    char psn[96]="-"; if(LooksLikePtr(ps)&&ClassOf(ps)) GetFNameStr(NameId(ClassOf(ps)),psn,sizeof(psn));
+    Markerf("[GAS] PlayerState @0x%X = 0x%llX (%s)\r\n",psOff,(unsigned long long)ps,psn);
+    if(!LooksLikePtr(ps)){ Marker("[GAS] no PlayerState -> abort (the carrier is owned BY the PlayerState)\r\n"); return; }
+
+    ReportGasState(hero,"BEFORE");
+    bool before=ReadAbilityInitBit(hero,"BEFORE");
+
+    // STEP 1 — HeroClass. Prefer the native setter; fall back to writing the property, which is what the S90
+    // spawn path already does (PlayerState.HeroClass is a UClass* field the spawn reads).
+    uintptr_t heroCls=FindClassExact(kCheatHeroClassName);
+    Markerf("[GAS] step1 heroClass(%s)=0x%llX\r\n",kCheatHeroClassName,(unsigned long long)heroCls);
+    if(LooksLikePtr(heroCls)){
+        void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(ps),"ServerSetHeroClass",&f,&th,&ch);
+        if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            uint32_t o=ParamOffset(ch,"NewClass"); if(o==0xFFFFFFFF)o=0;
+            *(uint64_t*)((uint8_t*)g_pbuf+o)=(uint64_t)heroCls;
+            bool flt=CallNativeGuarded(f,th,ch,(void*)ps,g_pbuf,g_rbuf);
+            Markerf("[GAS] step1 ServerSetHeroClass(NewClass@0x%X) %s\r\n",o,flt?"FAULTED":"ok");
+        } else Marker("[GAS] step1 ServerSetHeroClass NOT FOUND\r\n");
+        uint32_t hco=PropOffsetSuper(ClassOf(ps),"HeroClass");
+        if(hco!=0xFFFFFFFF&&SafeReadable((void*)(ps+hco),8)){
+            uintptr_t cur=*(uintptr_t*)(ps+hco);
+            if(!LooksLikePtr(cur)){ *(uintptr_t*)(ps+hco)=heroCls; Markerf("[GAS] step1 HeroClass@0x%X was NULL -> poked\r\n",hco); }
+            else Markerf("[GAS] step1 HeroClass@0x%X = 0x%llX (already set)\r\n",hco,(unsigned long long)cur);
+        }
+    }
+    // ★ S101 iter2 — NET ROLE. iter1's decisive clue: ServerSetHeroClass returned "ok" yet HeroClass stayed NULL
+    //   (we had to poke it). That is what a Server RPC does when the actor is NOT authority — it routes the call
+    //   instead of running the body. TryUpdateAbilitySystem is the server's job, so an authority check is the
+    //   prime suspect for why it ran fault-free and did nothing. Report both roles, then (KGASROLE) force
+    //   ROLE_Authority=3 and retry the keystone.
+    uint32_t roOff=PropOffsetSuper(ClassOf(ps),"Role"), rrOff=PropOffsetSuper(ClassOf(ps),"RemoteRole");
+    int roVal=(roOff!=0xFFFFFFFF&&SafeReadable((void*)(ps+roOff),1))?*(uint8_t*)(ps+roOff):-1;
+    int rrVal=(rrOff!=0xFFFFFFFF&&SafeReadable((void*)(ps+rrOff),1))?*(uint8_t*)(ps+rrOff):-1;
+    Markerf("[GAS] PlayerState Role@0x%X=%d RemoteRole@0x%X=%d  (3=ROLE_Authority)%s\r\n",
+            roOff,roVal,rrOff,rrVal, (roVal==3)?"":"   <== NOT AUTHORITY");
+    { uint32_t hro=PropOffsetSuper(ClassOf(hero),"Role");
+      int hrv=(hro!=0xFFFFFFFF&&SafeReadable((void*)(hero+hro),1))?*(uint8_t*)(hero+hro):-1;
+      Markerf("[GAS] hero Role@0x%X=%d\r\n",hro,hrv); }
+    // Does the PlayerState resolve a HeroAsset? The carrier build may need the ASSET (a primary data asset), not
+    // just the class — HeroClass and HeroAsset are different things on this PlayerState.
+    { void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(ps),"GetHeroAsset",&f,&th,&ch);
+      if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        uint32_t ro=ParamOffset(ch,"ReturnValue");
+        bool flt=CallNativeGuarded(f,th,ch,(void*)ps,g_pbuf,g_rbuf);
+        uintptr_t ha=(uintptr_t)g_rbuf[0];
+        if(!LooksLikePtr(ha)&&ro!=0xFFFFFFFF) ha=*(uint64_t*)((uint8_t*)g_pbuf+ro);
+        char hn[96]="-"; if(LooksLikePtr(ha)&&ClassOf(ha)) GetFNameStr(NameId(ClassOf(ha)),hn,sizeof(hn));
+        Markerf("[GAS] GetHeroAsset -> 0x%llX (%s)%s\r\n",(unsigned long long)ha,LooksLikePtr(ha)?hn:"NULL",flt?" FAULTED":"");
+      } else Marker("[GAS] GetHeroAsset NOT FOUND\r\n"); }
+
+    // STEP 2 — OnRep_HeroClass (parameterless native event; normally fired by replication).
+    CallNoArgAuto(ps,"OnRep_HeroClass","GAS step2");
+    // STEP 3 — the keystone: build/refresh the ability system + its HeroAffiliated carrier.
+    CallNoArgAuto(ps,"TryUpdateAbilitySystem","GAS step3");
+    // STEP 3b — if the PlayerState was not authority, make it so and retry. Single variable: only the role byte
+    //   changes between the two TryUpdateAbilitySystem calls, so a difference is attributable to it alone.
+    if(KGASROLE && roVal!=3 && roOff!=0xFFFFFFFF && SafeReadable((void*)(ps+roOff),1)){
+        *(uint8_t*)(ps+roOff)=3;
+        Markerf("[GAS] step3b Role %d -> 3 (ROLE_Authority); re-running SetHeroClass + the keystone\r\n",roVal);
+        // With authority in place the Server RPC should execute its body rather than route — which is also a
+        // second, independent test of the "not authority" diagnosis: HeroClass sticking on its own confirms it.
+        if(LooksLikePtr(heroCls)){
+            void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(ps),"ServerSetHeroClass",&f,&th,&ch);
+            if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                uint32_t o=ParamOffset(ch,"NewClass"); if(o==0xFFFFFFFF)o=0;
+                *(uint64_t*)((uint8_t*)g_pbuf+o)=(uint64_t)heroCls;
+                bool flt=CallNativeGuarded(f,th,ch,(void*)ps,g_pbuf,g_rbuf);
+                Markerf("[GAS] step3b ServerSetHeroClass %s\r\n",flt?"FAULTED":"ok"); }
+        }
+        CallNoArgAuto(ps,"OnRep_HeroClass","GAS step3b-onrep");
+        CallNoArgAuto(ps,"TryUpdateAbilitySystem","GAS step3b");
+    }
+
+    ReportGasState(hero,"AFTER ");
+    bool after=ReadAbilityInitBit(hero,"AFTER ");
+    // The accessor is the second witness: a non-null ASC means the carrier really was created and cached.
+    { void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(hero),"GetLokiAbilitySystem_BP",&f,&th,&ch);
+      if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        uint32_t ro=ParamOffset(ch,"ReturnValue");
+        bool flt=CallNativeGuarded(f,th,ch,(void*)hero,g_pbuf,g_rbuf);
+        uintptr_t asc=(uintptr_t)g_rbuf[0];
+        if(!LooksLikePtr(asc)&&ro!=0xFFFFFFFF) asc=*(uint64_t*)((uint8_t*)g_pbuf+ro);
+        char an[96]="-"; if(LooksLikePtr(asc)&&ClassOf(asc)) GetFNameStr(NameId(ClassOf(asc)),an,sizeof(an));
+        Markerf("[GAS] GetLokiAbilitySystem_BP -> 0x%llX (%s)%s\r\n",(unsigned long long)asc,LooksLikePtr(asc)?an:"NULL",flt?" FAULTED":"");
+      } else Marker("[GAS] GetLokiAbilitySystem_BP NOT FOUND\r\n"); }
+    Markerf("[GAS] ===== RESULT: initialised %d -> %d  %s =====\r\n",(int)before,(int)after,
+            (after&&!before)?"*** THE CHAIN WORKED ***":(after?"(was already set)":"*** STILL NOT INITIALISED ***"));
 }
 
 static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh, bool deferred){
@@ -2807,6 +2943,10 @@ static bool ResolvePlay(){
 static void DoPlay(){
     if(!g_plInit){
         g_plInit=true;
+        // ★★★★ S101 — run the ability-system wiring FIRST. It is three cheap native calls, whereas the body build
+        //   below does blocking asset loads and object scans; these sessions die unpredictably, so the measurement
+        //   we came for must not sit behind the slow part.
+        if(KWIREGAS) WireAbilitySystem(g_wmHero,g_wmPC);
         // 1. ground: teleport to a known-walkable spot (no [SP] sky-lift), gravity ON so it settles onto the surface.
         if(!KNOTELE && g_slThunk && g_oSlLoc!=0xFFFFFFFF){
             memset(g_slbuf,0,sizeof(g_slbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
@@ -3340,6 +3480,13 @@ static void DoSpawnPossess(){
                 Markerf("[LIFT] hero lifted (%.0f,%.0f,%.0f) -> Z+1800=%.0f\r\n",HL[0],HL[1],HL[2],HL[2]+1800.0);
             }
         }
+        // ★★★ S101 iter3 — run the ability-system wiring HERE, in the sp shim, rather than in play.
+        //   Three consecutive iter2 attempts died inside play's ResolvePlay (its many full 188k-object scans are
+        //   the most crash-prone part of the whole route) BEFORE reaching DoPlay, so the measurement never ran —
+        //   while sp reported "[SP] done" cleanly every single time. sp already holds the possessed hero and the
+        //   PC, which is everything WireAbilitySystem needs, so putting it here removes the flakiest dependency
+        //   from the experiment.
+        if(KWIREGAS && LooksLikePtr(g_spawnedPawn) && LooksLikePtr(g_pc2)) WireAbilitySystem(g_spawnedPawn,g_pc2);
         return;
     }
     // Force the gamemode's DefaultPawnClass to the hero, so GetDefaultPawnClassForController (which returned null
