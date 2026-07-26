@@ -95,6 +95,10 @@ iterating on.** `sp` and `play` come from the same `tutorial_launch.cpp`.
 
 ## ★ Goal (c): what "playable" can mean — the GAS gate is SMALLER than S99 claimed
 
+> ⚠️ **READ THE S100 SECTION AT THE END OF THIS FILE BEFORE ACTING ON THIS ONE.** The conclusion below that the
+> character "owns its ASC and both attribute sets" was reasoning from property names and is **WRONG** — measured
+> live, all three are NULL. S100 has the corrected picture and the real owner.
+
 S99 recorded "the force-open hero has **no AttributeSet at all**… GAS initialises during the server-authoritative
 deploy this route cannot run… a large, uncertain effort comparable to the whole deploy problem."
 
@@ -183,3 +187,106 @@ relaunches; 4 of 7 attempts this session died there.
 
 Config **reverted to baseline** (`forceTutorialMatch=false`, address `127.0.0.1:7777`); `ags` rebuilt clean.
 Game and `ags` stopped. Shim DLLs on disk = the builds described above.
+
+---
+
+# ★★★ S100 (2026-07-26) — the GAS question, MEASURED. The hero owns no ability system; the CARRIER is missing.
+
+Follow-up to the goal-(c) scoping above. Two independent live runs (different hero addresses, identical results)
+with `tools/re/gas_recon.py`.
+
+## The result — and it INVERTS the S99b lean
+
+S99b guessed the hero's ability system was constructor-owned and merely uninitialised. **It is not.**
+
+```
+--- A. OWNERSHIP ---
+   AbilitySystemComponentStorage    @0x0F00  NULL
+   AttributeSetStorage              @0x0F08  NULL
+   AttributeSetHealthStorage        @0x0F10  NULL
+```
+
+So the earlier "…Storage naming implies the constructor builds them" reasoning was wrong. `schema.txt` says why:
+the real owner is **`LokiPlayerState_HeroAffiliated`** — a companion **Actor** (same pattern as
+`LokiPlayerState_Missions` / `LokiPlayerState_Stats`) carrying:
+
+```
+AbilitySystemComponent   AttributeSet   AttributeSetHealth   PlayerInventory
+```
+
+`LokiCharacter`'s three `…Storage` fields are **caches** pointing at that actor's objects. And:
+
+```
+--- G. THE PLAYER'S GAS CARRIER ---
+   NO LokiPlayerState_* companion actors exist at all
+```
+
+Not just `HeroAffiliated` — **none of the `LokiPlayerState_*` family exists** in the force-open session. The
+carrier was never created, so there is nothing for the hero to cache.
+
+⇒ This single fact explains several things previously logged as separate mysteries: S94's "hero has no
+AttributeSet", the dead FOW vision route (`FogOfWarRadius`/`FogOfWarAngle` are attributes on `LokiAttributeSet`),
+and the null `…Storage` caches. They are all one absence.
+
+## ★ The genuinely GOOD news: GAS init is NOT deploy-gated
+
+```
+--- F. WORLD SWEEP ---
+   live non-CDO AbilitySystemComponents : 424
+   ...with OwnerActor or AvatarActor set: 344
+      0x…(LokiAbilitySystemComponent)  Owner=…(BP_PineTree_ScavBay_C)  Avatar=…(BP_PineTree_ScavBay_C)
+```
+
+**344 fully-initialised ability systems are running in this exact world, with no deploy and no server.** They
+belong to level actors (the ScavBay pine trees), which build and initialise their own ASCs during BeginPlay.
+`OwnerActor`/`AvatarActor` are what `InitAbilityActorInfo(owner, avatar)` populates, so this is direct proof that
+`LokiAbilitySystemComponent` construction **and** actor-info init both work in force-open.
+
+⇒ **"GAS cannot be initialised outside deploy" is dead.** The blocker is a missing *carrier object*, not a
+missing capability.
+
+## ⚠ …but the template only covers HALF the job
+
+```
+--- H. TEMPLATE: a healthy, initialised ASC ---
+        SpawnedAttributes          Num=1  -> [0] LokiAttributeSetHealth
+        DefaultStartingData        Num=0
+        ActiveStartupEffects       Num=0
+        ActivatableAbilities       no populated inner TArray
+```
+
+The healthy ASCs carry **one attribute set and ZERO granted abilities**. So they are a working reference for
+*construct + init*, and **no reference at all for granting/activating abilities** — nothing in this world has an
+ability granted. Attribute defaults do not come from `DefaultStartingData` either (Num=0), so they arrive via a
+curve table / GameplayEffect applied at runtime.
+
+## Where that leaves the decision
+
+| layer | status |
+|---|---|
+| the hero's 27 BP components (camera, capsules, decals, aim-vis, hit-confirm, LOS, team colour, stat auras, …) | ✅ **free** — instantiated by the real class at spawn (asset `_GEN_VARIABLE` templates + S95's live census) |
+| the GAS carrier (`LokiPlayerState_HeroAffiliated` + ASC + 2 attribute sets) | ❌ **absent** — nothing creates it |
+| ASC construction + `InitAbilityActorInfo` | ✅ **proven to work here** — 344 live examples |
+| attribute *values* (init effect / curve table) | ❓ no in-world example |
+| ability **granting / activation** | ❓ **no in-world example** — new ground |
+
+So: **not "recreate everything"**, and **not "call one init function"** either. It is one well-named missing
+object plus a wiring chain, where the first half has 344 working templates and the second half has none.
+
+Every primitive needed for the first half already exists in this project: actor spawn
+(`BeginDeferredActorSpawnFromClass`/`FinishSpawningActor`), `AddComponentByClass`, and the ProcessInternal
+native-call primitive. **Force-open is also the authority**, which is why objectives can complete here and cannot
+on the DS route — the same reason ability *granting* should be permitted.
+
+## Next measurements (cheap, and they de-risk the whole path)
+
+1. **Enumerate the UFunctions on `LokiCharacter` / `LokiPlayerState_HeroAffiliated` / `LokiAbilitySystemComponent`
+   for a native "wire it up" entry point** — names like `SetupAbilitySystem`, `InitAbilitySystem`,
+   `OnAbilitySystemInitialized`. `BP_HERO_Ronin_C` already has a UFunction literally called
+   `AbilitySystemInitialized`, i.e. the hero is *waiting to be told*. If the game has its own native wiring
+   function, calling it beats hand-building the carrier.
+   ⚠ `gas_recon.py` section E produced **nothing** on both runs because it keyed off the hero's ASC *instance*,
+   which is null — exactly the case where the API list matters most. **Fixed**: it now resolves the UClass by name.
+   Re-run to get this list.
+2. **Read a healthy tree's ASC field-by-field** against a fresh one to see precisely what init touched.
+3. Only then decide between building the carrier and accepting movement-only.
