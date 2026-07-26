@@ -2463,6 +2463,16 @@ static void FowRegister(uintptr_t comp,const char* tag){
 #ifndef KBODYZ
 #define KBODYZ 0.0           // RelativeLocation Z of the body component (tune ~-88 to drop feet to the capsule base)
 #endif
+#ifndef KPLAYANIM
+#define KPLAYANIM 1          // play a looping AnimSequence on the body (SingleNode). Fixes T-pose + sword-through-torso.
+#endif
+#ifndef KANIMNAME
+#define KANIMNAME "A_Ronin_Cosmetic_HeroSelect_Breathe"
+#endif
+#ifndef KANIMPATH
+// Ronin's hero-select idle/breathe loop — a self-contained standing idle that needs no gameplay state.
+#define KANIMPATH L"/Game/Loki/Characters/Heroes/Ronin/Animation/Cosmetics/A_Ronin_Cosmetic_HeroSelect_Breathe.A_Ronin_Cosmetic_HeroSelect_Breathe"
+#endif
 #ifndef KMESHTICK
 #define KMESHTICK 1          // tick the body component ON (needed to update pose/render state); with SingleNode anim it's crash-safe. 0 = tick off.
 #endif
@@ -2477,6 +2487,7 @@ static void FowRegister(uintptr_t comp,const char* tag){
 // Build a visible body on `hero` from scratch: AddComponentByClass(SkeletalMeshComponent, auto-attach) +
 // SetSkeletalMeshAsset(mesh); tick+anim OFF (static ref pose), visibility ON. Returns the component (0 on fail).
 // AddComponentByClass + SetSkeletalMeshAsset are NATIVE -> CallNativeGuarded (the BP-call primitive FAULTS on them).
+static uintptr_t LoadMeshByPath(const wchar_t* path);   // fwd (defined below) — BuildHeroBody uses it for the anim asset
 static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh, bool deferred){
     void* acfn=nullptr; uintptr_t acth=0,acch=0; ResolveFuncSuper(ClassOf(hero),"AddComponentByClass",&acfn,&acth,&acch);
     if(!acth){ Marker("[PL] AddComponentByClass thunk not found\r\n"); return 0; }
@@ -2553,6 +2564,29 @@ static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh
             bool ff=CallNativeGuarded(g_plFacFn,g_plFacThunk,g_plFacChild,(void*)hero,g_gsbuf,g_rbuf);
             Markerf("[PL] FinishAddComponent %s\r\n",ff?"FAULTED":"ok"); }
         else Markerf("[PL] FinishAddComponent thunk MISSING (comp left unregistered) fac=0x%llX comp@0x%X\r\n",(unsigned long long)g_plFacThunk,g_oFacComp);
+    }
+    // ★★★ S99 — PLAY A REAL ANIMATION (fixes BOTH the T-pose AND the sword-through-the-torso).
+    // The sword is NOT a separate component: SK_Ronin_Default_LOD1's own skeleton carries sword_01..04_m_jnt /
+    // hand_weapon01_l|r_jnt / spine03_weaponAttach01_m_jnt (see SK_Ronin_Default_LOD1.uasset.names.txt). In BIND pose
+    // those bones sit at rest = the blade passes through the body. Any real pose puts the sword in the hand, so there
+    // is nothing to socket-attach. Enabling the component's own AnimBP (ABP_LokiHero_GenericRoot_EventDriven_C) makes
+    // the body VANISH — it is "EventDriven" and, with no GAS/character state in force-open, evaluates to a degenerate
+    // pose. So: stay in SingleNode and drive an AnimSequence ourselves. PlayAnimation(anim, loop) sets SingleNode mode,
+    // assigns the asset and plays, all in one native call.
+    if(KPLAYANIM){
+        uintptr_t anim=LoadMeshByPath(KANIMPATH);
+        char an[96]="-"; if(LooksLikePtr(anim)&&ClassOf(anim)) GetFNameStr(NameId(ClassOf(anim)),an,sizeof(an));
+        Markerf("[PL] anim asset=0x%llX (%s)\r\n",(unsigned long long)anim,an);
+        if(LooksLikePtr(anim)){
+            void* pf=nullptr; uintptr_t pt=0,pc=0; ResolveFuncSuper(ClassOf(comp),"PlayAnimation",&pf,&pt,&pc);
+            if(pt){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                uint32_t oa=ParamOffset(pc,"NewAnimToPlay"); if(oa==0xFFFFFFFF)oa=0;
+                uint32_t ol=ParamOffset(pc,"bLooping");      if(ol==0xFFFFFFFF)ol=8;
+                *(uint64_t*)(g_gsbuf+oa)=(uint64_t)anim; g_gsbuf[ol]=1;
+                bool f=CallNativeGuarded(pf,pt,pc,(void*)comp,g_gsbuf,g_rbuf);
+                Markerf("[PL] PlayAnimation(%s, loop) %s  <- fixes T-pose AND sword placement\r\n",KANIMNAME,f?"FAULTED":"ok");
+            } else Marker("[PL] PlayAnimation thunk not found\r\n");
+        } else Marker("[PL] anim load FAILED -> body stays in T-pose\r\n");
     }
     // ★ REGISTER WITH FOG OF WAR — the render gate: unregistered character primitives are culled from the FOW scene
     //   view and never draw (S94 iter11 root cause). Must happen AFTER the component is registered/finished.
