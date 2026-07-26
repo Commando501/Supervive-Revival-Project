@@ -290,3 +290,86 @@ on the DS route — the same reason ability *granting* should be permitted.
    Re-run to get this list.
 2. **Read a healthy tree's ASC field-by-field** against a fresh one to see precisely what init touched.
 3. Only then decide between building the carrier and accepting movement-only.
+
+---
+
+# ★★★★ S100b — THE NATIVE WIRING ENTRY POINT EXISTS. We do NOT hand-build the ability system.
+
+The S100 section closed with "find a native wire-it-up function before hand-building the carrier". **Found it.**
+
+★ Done at the **plain baseline menu, no force-open, no crash risk** — these are all *native* classes registered at
+module load, so their UFunction tables are readable without the tutorial world. Tool: the existing
+`tools/re/class_funcs.py` + `tools/re/ufunc_params.py`. Full dump: `docs/session-100-gas-api-dump.txt`.
+**Remember this**: class-level questions never need a force-open session.
+
+## The chain
+
+`LokiPlayerState` owns the ability-system lifecycle — not the character, and not us:
+
+| function | class | signature | flags |
+|---|---|---|---|
+| **`TryUpdateAbilitySystem`** | `LokiPlayerState` | `void TryUpdateAbilitySystem()` | Native |
+| `ServerSetHeroClass` | `LokiPlayerState` | `void ServerSetHeroClass(Class NewClass)` | Native, BPCallable |
+| `OnRep_HeroClass` | `LokiPlayerState` | `void OnRep_HeroClass()` | Native, Event |
+| `HeroAffiliatedEndPlay` | `LokiPlayerState` | — | Native, Event |
+
+`HeroAffiliatedEndPlay` confirms the PlayerState is what owns/tears down the `LokiPlayerState_HeroAffiliated`
+carrier, and `TryUpdateAbilitySystem` is **parameterless and native** — i.e. directly callable through the S55
+primitive with the shim's existing `CallNoArgAuto`. Nothing to hand-assemble.
+
+Verification side, on `LokiCharacter`:
+
+```
+Bool   IsAbilitySystemInitialized()                 [Native, BPCallable]   <- the pass/fail check
+Object GetLokiAbilitySystem_BP() -> LokiAbilitySystemComponent*  [Native, BPCallable]
+void   RemoveFromAbilitySystem()                    [Native, BPCallable]
+void   AuthInitializeExperience()                   [Native, BPCallable]
+```
+
+`LokiHeroCharacter` also has `BP_OnRep_PlayerState`, and `BP_HERO_Ronin_C` has `AbilitySystemInitialized` — so the
+hero reacts to the PlayerState hand-off. The whole design is: **set the hero class on the PlayerState → the
+PlayerState builds the carrier → the character caches it and fires its event.**
+
+## And the ability API itself is fully native + BlueprintCallable
+
+`LokiAbilitySystemComponent` exposes 69 UFunctions of its own. The load-bearing ones:
+
+```
+Struct BP_AuthGiveAbilityWithInputID(Class AbilityClass, Int AbilityLevel,
+                                     Enum LokiAbilityInputID, Object SourceObject,
+                                     Int InputIDPriority) -> FGameplayAbilitySpecHandle
+Bool   TryActivateAbilityByInputID(Enum AbilityID)
+Bool   TryEndAbilityByInputID / TryEndAllAbilities
+void   K2_InitStats(Class Attributes, DataTable* DataTable)      <- attribute defaults
+void   ServerSetAbilityToLevel / LevelUpAbilityByInputID
+void   AdjustHealth / AdjustMaxHealth / AdjustMana / AdjustStamina / AdjustArmor
+Object GetLocalLokiAbilitySystemComponentBP / GetLokiAbilitySystemComponentFromActor
+```
+
+★ The grant functions are `Auth*` / **`FUNC_BlueprintAuthorityOnly`** — which is exactly the class of function
+**force-open CAN call and the DS route CANNOT** (the same property that lets `OnObjectiveComplete` work here and
+not there). The route we are on is the *only* one where ability granting is even permitted.
+
+`K2_InitStats(Class Attributes, DataTable*)` also answers the S100 open question about where attribute defaults
+come from: a DataTable, not `DefaultStartingData` (which read Num=0 on every healthy ASC).
+
+## Revised answer to "do we have to recreate everything?"
+
+**No — and we do not even hand-build the carrier.** Concretely:
+
+1. `PlayerState.ServerSetHeroClass(BP_HERO_Ronin_C)` — or write `HeroClass` directly, which the shim already
+   does (`g_psHeroOff`, S90).
+2. `PlayerState.OnRep_HeroClass()`
+3. **`PlayerState.TryUpdateAbilitySystem()`**
+4. verify with `hero.IsAbilitySystemInitialized()` and `hero.GetLokiAbilitySystem_BP()`
+5. then `K2_InitStats` for attribute values, and `BP_AuthGiveAbilityWithInputID` per ability.
+
+Steps 1–4 use only primitives this project already has (native-call, param passing, OUT params). Every function is
+native with a live thunk.
+
+⚠ Remaining honest risk: `TryUpdateAbilitySystem` is native and **not** BlueprintCallable, so its internals are
+unread — it may early-out on state we do not have (a valid `HeroAsset`, a team, a replicated PlayerState role).
+`ServerSetHeroClass` is a Server RPC by name, so on a standalone authority it should execute locally, but that is
+untested here. The measured facts are: the entry point exists, it is parameterless, it is native, and force-open is
+the authority. Whether it *succeeds* is one live call away — and `IsAbilitySystemInitialized()` reports the answer
+in one bit.
