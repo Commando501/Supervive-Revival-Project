@@ -373,3 +373,70 @@ unread — it may early-out on state we do not have (a valid `HeroAsset`, a team
 untested here. The measured facts are: the entry point exists, it is parameterless, it is native, and force-open is
 the authority. Whether it *succeeds* is one live call away — and `IsAbilitySystemInitialized()` reports the answer
 in one bit.
+
+---
+
+# ★★★ S101 — the wiring chain RUNS CLEANLY and the bit does NOT flip. Two hypotheses falsified.
+
+Implemented `WireAbilitySystem()` in `tools/sigbypass-mod/tutorial_launch.cpp` (flag `KWIREGAS`) and drove the
+S100b chain live, staged one call at a time with the witness bit read before and after.
+
+## Result
+
+```
+[GAS] PlayerState @0x3C0 = 0x… (BP_LokiPlayerState_C)
+[GAS] BEFORE AbilitySystemComponentStorage @0xF00 = NULL   (…Storage / …HealthStorage likewise)
+[GAS] BEFORE IsAbilitySystemInitialized -> 0
+[GAS] step1 ServerSetHeroClass ok
+[GAS] step1 HeroClass@0x620 was NULL -> poked
+[GAS] PlayerState Role@0x160=3 RemoteRole@0x72=1  (3=ROLE_Authority)
+[GAS] hero Role@0x160=3
+[GAS] GetHeroAsset -> 0x… (BP_HeroAsset_Ronin_C)
+[FOW] GAS step2: OnRep_HeroClass (native) ok
+[FOW] GAS step3: TryUpdateAbilitySystem (native) ok
+[GAS] AFTER  …Storage = NULL (all three)
+[GAS] AFTER  IsAbilitySystemInitialized -> 0
+[GAS] GetLokiAbilitySystem_BP -> NULL
+[GAS] ===== RESULT: initialised 0 -> 0  *** STILL NOT INITIALISED *** =====
+```
+
+**Every call succeeded. Nothing changed.** No faults, no exceptions — the keystone simply does nothing.
+
+## What this rules OUT (both were my stated suspicions — both wrong)
+
+1. **"The PlayerState is not authority."** ❌ `Role = 3 = ROLE_Authority` on **both** the PlayerState and the
+   hero. The prime suspect from iter1 is dead.
+2. **"There is no HeroAsset."** ❌ `GetHeroAsset()` returns a valid **`BP_HeroAsset_Ronin_C`**. The hero data the
+   carrier build would need is present and resolvable.
+
+So: authority ✅, hero asset ✅, `HeroClass` set ✅, `OnRep_HeroClass` fired ✅, `TryUpdateAbilitySystem` called ✅
+→ and still no carrier. The gate is *inside* `TryUpdateAbilitySystem`, upstream of everything tested.
+
+⚠ One unexplained sub-result worth chasing: **`ServerSetHeroClass` returned "ok" but did not set `HeroClass`**
+(it had to be poked) — *even with `Role == ROLE_Authority`*. A Server RPC on an authority actor should execute its
+body. That suggests the thunk being called is the RPC dispatch stub and the real work lives in a separate
+`_Implementation`, with dispatch dropping the call when there is no NetDriver. If so, **the same trap may apply to
+`TryUpdateAbilitySystem`** — we might be calling a dispatcher that no-ops rather than the implementation.
+**That is the single best lead**, and it is checkable: disassemble the `TryUpdateAbilitySystem` thunk (its page is
+committed now that it has run) and see whether it is a real body or a dispatch stub.
+
+## Best next hypotheses, in order
+
+1. **We are calling a dispatch stub, not the implementation** — see above. Disasm the thunk; if it is a stub, find
+   and call `…_Implementation` directly (the project has done exactly this kind of thing before).
+2. **`TryUpdate` means update-not-create.** The name, plus `HeroAffiliatedEndPlay` being an EndPlay *handler*,
+   suggests `LokiPlayerState_HeroAffiliated` is a **separately spawned actor** whose lifetime the PlayerState
+   manages but does not originate. Find who spawns it (GameMode? `LokiPlayerState::BeginPlay`?) — if so we spawn
+   the carrier ourselves and *then* `TryUpdateAbilitySystem` has something to populate.
+3. A GameState / match-phase gate, like several other systems on this route.
+
+## Engineering notes from this iteration
+
+- **The wiring now lives in the `sp` shim, not `play`** (`play` is built with `-DKWIREGAS=0`). Three consecutive
+  attempts died inside `play`'s `ResolvePlay` — its many full 188k-object scans make it the most crash-prone part
+  of the route — **before** `DoPlay` ever ran, so the measurement never happened. `sp` reported `[SP] done`
+  cleanly in every one of those same runs. Putting an experiment behind the flakiest stage wastes launches; `sp`
+  already holds the possessed hero and the PC, which is all `WireAbilitySystem` needs.
+- `Role` and `RemoteRole` are reflected `ByteProperty (UEnum:ENetRole)` on `Actor`; `ROLE_Authority = 3`.
+- Reused helpers: `CallNoArgAuto` (auto native-vs-BP dispatch) logs under a `[FOW]` prefix — grep for `GAS step`,
+  not `\[GAS\]`, or the step-2/3 lines are invisible. That cost one round of confusion.
