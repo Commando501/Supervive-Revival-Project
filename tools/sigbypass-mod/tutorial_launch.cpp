@@ -2218,6 +2218,9 @@ static bool g_plInit=false; static uintptr_t g_plMesh=0, g_plComp=0, g_plSkelCls
 // GPU/skeleton render data) so they never render (and ticking them crashes). AsyncLoadPrimaryAssets(Ronin bundle)
 // streams SK_Ronin_Default WITH render data; poll for it, then build the body with it.
 static uintptr_t g_plLam=0, g_plWorld=0; static bool g_plBodyDone=false; static int g_plPoll=0; static bool g_plLoadFired=false; static uintptr_t g_plBpCls=0;
+// S99b: body-build timestamp (drives the screenshot + self-walk schedule), which screenshot pair has fired, and a
+// one-shot log latch for the walk.
+static DWORD g_plBodyTick=0; static int g_plShot=0; static bool g_plAwLogged=false; static bool g_plLostPawn=false;
 static bool g_plCheatDone=false;
 // Find a live instance whose class name contains `sub`, SKIPPING `except` — used to locate the cheat-spawned hero
 // as distinct from the one we spawned ourselves.
@@ -2476,6 +2479,42 @@ static void FowRegister(uintptr_t comp,const char* tag){
 #ifndef KMESHTICK
 #define KMESHTICK 1          // tick the body component ON (needed to update pose/render state); with SingleNode anim it's crash-safe. 0 = tick off.
 #endif
+// ★★★ S99b — RUN ANIMATION. Real locomotion blending lives in the AnimBP, and the AnimBP collapses the pose to
+// nothing in force-open (S99, user-confirmed: body VANISHES). So swap whole AnimSequences off the CMC's velocity
+// instead: |V| over KRUNSPEED -> the run loop, at rest -> the idle loop. Crude vs a BlendSpace, but it animates
+// movement without ever instantiating ABP_LokiHero_GenericRoot_EventDriven_C.
+#ifndef KRUNANIM
+#define KRUNANIM 1
+#endif
+#ifndef KRUNANIMNAME
+#define KRUNANIMNAME "A_Ronin_Movement_OutOfCombat_N"
+#endif
+#ifndef KRUNANIMPATH
+#define KRUNANIMPATH L"/Game/Loki/Characters/Heroes/Ronin/Animation/Movement/A_Ronin_Movement_OutOfCombat_N.A_Ronin_Movement_OutOfCombat_N"
+#endif
+#ifndef KRUNSPEED
+#define KRUNSPEED 40.0       // |CMC velocity XY| above this = moving -> run loop; below = idle loop.
+#endif
+// ★★★ S99b — SELF-SCREENSHOT. S99's animation fix went UNVERIFIED because the session died before anyone could
+// look at the screen, and this route has no way to grab the desktop. Fix: make the GAME write its own screenshot
+// via its console (the same ExecuteConsoleCommand primitive that force-opens the map), so every run leaves a
+// verifiable PNG in Saved/Screenshots/WindowsClient/ with no human at the machine.
+#ifndef KSHOT
+#define KSHOT 1
+#endif
+#ifndef KSHOTMS
+// Deliberately SHORT. These sessions die unpredictably (S99b lost one ~1s after the body was built), so the
+// picture has to be taken almost immediately rather than after a comfortable settling delay.
+#define KSHOTMS 3000         // ms after the body is built -> screenshot #1 (the IDLE pose)
+#endif
+// The shim cannot press W, so it drives the velocity itself for a window to exercise the run animation and
+// capture it. 0 disables (leaves movement entirely to the player).
+#ifndef KAUTOWALKATMS
+#define KAUTOWALKATMS 20000  // ms after body build when the self-driven walk starts (AFTER the three idle shots)
+#endif
+#ifndef KAUTOWALKMS
+#define KAUTOWALKMS 5000     // how long the self-driven walk lasts
+#endif
 #ifndef KANIMMODE
 #define KANIMMODE 1          // SetAnimationMode: 1=AnimationSingleNode (ref pose, NO hero AnimBP -> no S93 crash), 0=AnimBlueprint (crashes), -1=don't set.
 #endif
@@ -2488,6 +2527,60 @@ static void FowRegister(uintptr_t comp,const char* tag){
 // SetSkeletalMeshAsset(mesh); tick+anim OFF (static ref pose), visibility ON. Returns the component (0 on fail).
 // AddComponentByClass + SetSkeletalMeshAsset are NATIVE -> CallNativeGuarded (the BP-call primitive FAULTS on them).
 static uintptr_t LoadMeshByPath(const wchar_t* path);   // fwd (defined below) — BuildHeroBody uses it for the anim asset
+
+// ★ S99b — the two per-hit primitives the animation work needs, each resolved ONCE and cached. Everything in
+// DoPlay's per-hit path runs on the game thread inside the PI hook, so a full re-resolve per frame (which does
+// 188k-object scans) is not affordable; these keep the hot path to a single native call.
+static uintptr_t g_plIdleAnim=0, g_plRunAnim=0, g_plCurAnim=0;   // the two AnimSequences + which one is playing
+static void*     g_plPaFn=nullptr; static uintptr_t g_plPaThunk=0, g_plPaChild=0; static bool g_plPaRes=false;
+static uint32_t  g_oPaAnim=0, g_oPaLoop=8;
+static bool      g_plAnimDead=false;      // latched after the first PlayAnimation fault — see PlayAnimOn
+static DWORD     g_plLastSwap=0;          // rate limiter for the idle<->run swap
+// PlayAnimation(anim, bLooping=true) — sets SingleNode mode, assigns the asset and plays, in one native call.
+static bool PlayAnimOn(uintptr_t comp, uintptr_t anim, const char* tag){
+    if(!LooksLikePtr(comp)||!LooksLikePtr(anim)) return false;
+    if(!g_plPaRes){ g_plPaRes=true;
+        ResolveFuncSuper(ClassOf(comp),"PlayAnimation",&g_plPaFn,&g_plPaThunk,&g_plPaChild);
+        if(g_plPaChild){ uint32_t a=ParamOffset(g_plPaChild,"NewAnimToPlay"); if(a!=0xFFFFFFFF) g_oPaAnim=a;
+                         uint32_t l=ParamOffset(g_plPaChild,"bLooping");      if(l!=0xFFFFFFFF) g_oPaLoop=l; }
+        if(!g_plPaThunk) Marker("[ANIM] PlayAnimation thunk not found\r\n"); }
+    if(!g_plPaThunk || g_plAnimDead) return false;
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(uint64_t*)(g_gsbuf+g_oPaAnim)=(uint64_t)anim; g_gsbuf[g_oPaLoop]=1;
+    bool f=CallNativeGuarded(g_plPaFn,g_plPaThunk,g_plPaChild,(void*)comp,g_gsbuf,g_rbuf);
+    // ★ S99b — ALWAYS record the request, success or not, and LATCH OFF on the first fault.
+    // Without this the swap retries the same failing call every single frame: S99b watched PlayAnimation(idle)
+    // fault four times in a row with `RIP=0x0 access=EXEC addr=0x0` (a call through a null function pointer,
+    // RDI=AnimSingleNodeInstance) until one escaped the SEH guard and killed the process. Re-driving the
+    // single-node instance from inside the PI hook is not safe once the component is being torn down or is
+    // mid parallel-evaluation, so one fault = stop swapping for good and keep whatever pose is on the skeleton.
+    g_plCurAnim=anim;
+    if(f){ g_plAnimDead=true;
+        Markerf("[ANIM] PlayAnimation(%s, loop) FAULTED -> anim swapping DISABLED for the rest of the session\r\n",tag); }
+    else Markerf("[ANIM] PlayAnimation(%s, loop) ok\r\n",tag);
+    return !f;
+}
+// Run a console command on the game thread (KismetSystemLibrary::ExecuteConsoleCommand — the same primitive that
+// force-opens the map). Used for the self-screenshot; the WorldContextObject is the live PlayerController.
+static void*     g_plCcFn=nullptr; static uintptr_t g_plCcThunk=0, g_plCcChild=0, g_plCcCDO=0; static bool g_plCcRes=false;
+static uint32_t  g_oCcWCO=0xFFFFFFFF, g_oCcCmd=0xFFFFFFFF, g_oCcSP=0xFFFFFFFF;
+static void RunConsole(const wchar_t* cmd, const char* tag){
+    if(!g_plCcRes){ g_plCcRes=true;
+        ResolveFuncGlobal("ExecuteConsoleCommand",&g_plCcFn,&g_plCcThunk,&g_plCcChild,&g_plCcCDO);
+        if(g_plCcChild){ g_oCcWCO=ParamOffset(g_plCcChild,"WorldContextObject");
+                         g_oCcCmd=ParamOffset(g_plCcChild,"Command");
+                         g_oCcSP =ParamOffset(g_plCcChild,"SpecificPlayer"); } }
+    if(!g_plCcThunk||!LooksLikePtr(g_plCcCDO)||g_oCcCmd==0xFFFFFFFF){
+        Markerf("[SHOT] %s: ExecuteConsoleCommand unresolved (thunk=0x%llX cdo=0x%llX cmd@0x%X)\r\n",
+                tag,(unsigned long long)g_plCcThunk,(unsigned long long)g_plCcCDO,g_oCcCmd); return; }
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    if(g_oCcWCO!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oCcWCO)=(uint64_t)(g_wmPC?g_wmPC:g_worldCtx);
+    SetFStringAt((uint8_t*)g_gsbuf,g_oCcCmd,cmd);   // the literal is static storage, so the FString view stays valid
+    if(g_oCcSP!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oCcSP)=0;
+    bool f=CallNativeGuarded(g_plCcFn,g_plCcThunk,g_plCcChild,(void*)g_plCcCDO,g_gsbuf,g_rbuf);
+    Markerf("[SHOT] %s: console '%ls' %s\r\n",tag,cmd,f?"FAULTED":"ok");
+}
+
 static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh, bool deferred){
     void* acfn=nullptr; uintptr_t acth=0,acch=0; ResolveFuncSuper(ClassOf(hero),"AddComponentByClass",&acfn,&acth,&acch);
     if(!acth){ Marker("[PL] AddComponentByClass thunk not found\r\n"); return 0; }
@@ -2578,14 +2671,8 @@ static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh
         char an[96]="-"; if(LooksLikePtr(anim)&&ClassOf(anim)) GetFNameStr(NameId(ClassOf(anim)),an,sizeof(an));
         Markerf("[PL] anim asset=0x%llX (%s)\r\n",(unsigned long long)anim,an);
         if(LooksLikePtr(anim)){
-            void* pf=nullptr; uintptr_t pt=0,pc=0; ResolveFuncSuper(ClassOf(comp),"PlayAnimation",&pf,&pt,&pc);
-            if(pt){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
-                uint32_t oa=ParamOffset(pc,"NewAnimToPlay"); if(oa==0xFFFFFFFF)oa=0;
-                uint32_t ol=ParamOffset(pc,"bLooping");      if(ol==0xFFFFFFFF)ol=8;
-                *(uint64_t*)(g_gsbuf+oa)=(uint64_t)anim; g_gsbuf[ol]=1;
-                bool f=CallNativeGuarded(pf,pt,pc,(void*)comp,g_gsbuf,g_rbuf);
-                Markerf("[PL] PlayAnimation(%s, loop) %s  <- fixes T-pose AND sword placement\r\n",KANIMNAME,f?"FAULTED":"ok");
-            } else Marker("[PL] PlayAnimation thunk not found\r\n");
+            g_plIdleAnim=anim;                     // S99b: remembered so the run<->idle swap can come back to it
+            PlayAnimOn(comp,anim,KANIMNAME);       // <- fixes T-pose AND sword placement (same bug: bind pose)
         } else Marker("[PL] anim load FAILED -> body stays in T-pose\r\n");
     }
     // ★ REGISTER WITH FOG OF WAR — the render gate: unregistered character primitives are culled from the FOW scene
@@ -2867,9 +2954,36 @@ static void DoPlay(){
                 }
             } else Markerf("[SMT] SKIPPED (sm=0x%llX cls=0x%llX)\r\n",(unsigned long long)sm,(unsigned long long)smCls);
         }
-        g_plBodyDone=true;
+        // ★ S99b — load the RUN loop now (blocking, same LoadMeshByPath path as the idle) so the per-hit swap
+        //   never has to touch the loader on the game thread.
+        if(KRUNANIM && LooksLikePtr(g_plComp)){
+            g_plRunAnim=LoadMeshByPath(KRUNANIMPATH);
+            char rn[96]="-"; if(LooksLikePtr(g_plRunAnim)&&ClassOf(g_plRunAnim)) GetFNameStr(NameId(ClassOf(g_plRunAnim)),rn,sizeof(rn));
+            Markerf("[ANIM] run anim %s = 0x%llX (%s)%s\r\n",KRUNANIMNAME,(unsigned long long)g_plRunAnim,rn,
+                    LooksLikePtr(g_plRunAnim)?"":"  <- LOAD FAILED, idle only");
+        }
+        g_plBodyDone=true; g_plBodyTick=GetTickCount();
         Markerf("[PL] *** init complete: body=%s; camera + WASD active ***\r\n", g_plComp?"BUILT":"none");
     }
+    // ★★★ S99b — POSSESSION GUARD. The tutorial's own logic can UnPossess (and then destroy) the hero mid-hold.
+    // Every per-hit call below takes g_wmHero / g_plComp as a raw pointer, so once that happens they are calling
+    // natives on freed memory: S99b saw exactly that — a repeating 0xC0000005 reading 0xFFFF'FFFF'FFFF'FFFF with
+    // `UnPossess` live in the fault context, one hit after the camera spawned, and eventually one fault escaped
+    // the SEH guard and killed the process. LooksLikePtr cannot detect a freed object, but PC->Pawn can: if the
+    // controller no longer possesses our hero, stand down permanently instead of poking a corpse.
+    if(g_plBodyDone && LooksLikePtr(g_wmPC)){
+        static uint32_t pawnOff=0xFFFFFFFF;
+        if(pawnOff==0xFFFFFFFF){ pawnOff=PropOffsetSuper(ClassOf(g_wmPC),"Pawn"); if(pawnOff==0xFFFFFFFF) pawnOff=0x3F8; }
+        uintptr_t cur=SafeReadable((void*)(g_wmPC+pawnOff),8)?*(uintptr_t*)(g_wmPC+pawnOff):0;
+        if(cur!=g_wmHero){
+            if(!g_plLostPawn){ g_plLostPawn=true;
+                Markerf("[PL] *** UNPOSSESSED (PC->Pawn 0x%llX != hero 0x%llX) — standing down: no further native calls on the dead hero ***\r\n",
+                        (unsigned long long)cur,(unsigned long long)g_wmHero); }
+            return;
+        }
+    }
+    if(g_plLostPawn) return;
+
     // ★ S94 iter10 — RE-ASSERT visibility EVERY hit + log the decisive coordinates.
     // WHY re-assert: SUPERVIVE hides heroes until deploy, and this build re-applies such state every frame (the same
     // pattern that makes the camera manager revert SetViewTargetWithBlend — proven S78/S93). A ONE-TIME unhide at init
@@ -2929,6 +3043,53 @@ static void DoPlay(){
     }
     DoTopDownCam();                  // spawn (once) + follow the top-down camera over the hero each hit
     if(!KNOMOVE) DoPuppet();         // WASD -> CMC velocity (g_puppetInit preset so it only drives, doesn't re-init)
+
+    // ★★★ S99b — RUN ANIMATION + SELF-SCREENSHOT. Deliberately AFTER DoPuppet: DoPuppet zeroes velocity XY when no
+    // key is held, so the self-driven walk must be written after it or it is erased on the same hit, and the
+    // idle/run decision must read the FINAL velocity for this frame.
+    if(g_plBodyDone && LooksLikePtr(g_plComp) && LooksLikePtr(g_wmCMC)){
+        DWORD el = GetTickCount() - g_plBodyTick;
+        // (1) SELF-DRIVEN WALK. The shim cannot press W, so to exercise (and photograph) the run animation with
+        //     nobody at the keyboard it drives the velocity itself for one window. Outside that window the player
+        //     is in full control via DoPuppet.
+        if(KAUTOWALKMS>0 && el>=(DWORD)KAUTOWALKATMS && el<(DWORD)(KAUTOWALKATMS+KAUTOWALKMS)
+           && SafeReadable((void*)(g_wmCMC+0xE8),16)){
+            double yaw=kPupYawDeg*3.14159265358979/180.0;
+            double* V=(double*)(g_wmCMC+0xE8);
+            V[0]=__builtin_cos(yaw)*kPupSpeed; V[1]=__builtin_sin(yaw)*kPupSpeed;   // "W" in the camera's frame
+            if(SafeReadable((void*)(g_wmCMC+0x328),24)){ double* A=(double*)(g_wmCMC+0x328); A[0]=V[0]*4.0; A[1]=V[1]*4.0; A[2]=0.0; }
+            if(!g_plAwLogged){ g_plAwLogged=true; Marker("[ANIM] self-driven walk START (so the run anim can be captured with no human at the keyboard)\r\n"); }
+        }
+        // (2) IDLE <-> RUN swap off the live velocity. One native call, and only when the state actually flips.
+        if(KRUNANIM && !g_plAnimDead && LooksLikePtr(g_plRunAnim) && LooksLikePtr(g_plIdleAnim)
+           && SafeReadable((void*)(g_wmCMC+0xE8),16)){
+            double* V=(double*)(g_wmCMC+0xE8);
+            double sp=__builtin_sqrt(V[0]*V[0]+V[1]*V[1]);
+            uintptr_t want=(sp>(double)KRUNSPEED)?g_plRunAnim:g_plIdleAnim;
+            DWORD now=GetTickCount();
+            if(want!=g_plCurAnim && now-g_plLastSwap>=400){   // rate-limited: never re-drive the instance every frame
+                g_plLastSwap=now; PlayAnimOn(g_plComp,want,(want==g_plRunAnim)?"run":"idle"); }
+        }
+        // (3) THE GAME PHOTOGRAPHS ITSELF -> Saved/Screenshots/WindowsClient/. This is what makes the work
+        //     verifiable without access to the desktop. Several shots on a schedule, because the top-down camera
+        //     needs a few seconds to become the view target (the +3s shot in S99b caught the pre-blend view).
+        //     ★ Each shot logs the hero AND camera world positions, so a hero missing from the picture can be
+        //       told apart as "outside the frame" vs "in frame but not drawn" — S99b could not distinguish them.
+        if(KSHOT){
+            static const DWORD kAt[4]={ (DWORD)KSHOTMS, (DWORD)KSHOTMS+5000, (DWORD)KSHOTMS+11000,
+                                        (DWORD)KAUTOWALKATMS+(DWORD)KAUTOWALKMS/2 };
+            static const char* kTag[4]={ "idle1","idle2","idle3","run" };
+            if(g_plShot<4 && el>=kAt[g_plShot]){
+                int i=g_plShot++;
+                double hl[3]={0,0,0}, cl[3]={0,0,0};
+                ActorLoc(g_wmHero,hl); if(LooksLikePtr(g_tcCam)) ActorLoc(g_tcCam,cl);
+                Markerf("[SHOT] %s @%.1fs hero=(%.0f,%.0f,%.0f) cam=(%.0f,%.0f,%.0f) anim=%s\r\n",
+                        kTag[i],el/1000.0,hl[0],hl[1],hl[2],cl[0],cl[1],cl[2],
+                        (g_plCurAnim==g_plRunAnim)?"run":"idle");
+                RunConsole(L"HighResShot 1",kTag[i]);
+            }
+        }
+    }
 }
 
 // S74 B2 exp3: resolve the REAL hero spawn — LokiGameMode::SpawnPlayer(PlayerState, Transform& OUT, StartSpot, bEnsure) -> LokiCharacter*.
