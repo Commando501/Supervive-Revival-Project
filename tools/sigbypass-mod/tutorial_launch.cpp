@@ -2485,6 +2485,9 @@ static void FowRegister(uintptr_t comp,const char* tag){
 // movement without ever instantiating ABP_LokiHero_GenericRoot_EventDriven_C.
 // ★★★★ S101 — drive LokiPlayerState's own ability-system wiring chain (ServerSetHeroClass -> OnRep_HeroClass ->
 // TryUpdateAbilitySystem) and report LokiCharacter::IsAbilitySystemInitialized before/after. See WireAbilitySystem.
+#ifndef KGASCARRIER
+#define KGASCARRIER 1        // S103: spawn LokiPlayerState_HeroAffiliated + ASC + attribute sets, then install it on the PlayerState
+#endif
 #ifndef KGASROLE
 #define KGASROLE 1           // S101 iter2: if the PlayerState is not ROLE_Authority, force it and retry the keystone
 #endif
@@ -2623,6 +2626,92 @@ static void ReportGasState(uintptr_t hero, const char* when){
         Markerf("[GAS] %s %-30s @0x%X = 0x%llX (%s)\r\n",when,kFields[i],o,(unsigned long long)v,LooksLikePtr(v)?cn:"NULL");
     }
 }
+// Generic AddComponentByClass(actor, cls) -> component. Non-deferred, identity transform.
+static uintptr_t AddCompByClass(uintptr_t actor, uintptr_t cls, const char* tag){
+    void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(actor),"AddComponentByClass",&f,&th,&ch);
+    if(!th){ Markerf("[GAS] %s: AddComponentByClass NOT FOUND\r\n",tag); return 0; }
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    uint32_t retOff=0xFFFFFFFF;
+    for(uintptr_t p=ch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
+        char pn[64]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
+        uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF;
+        if(o==0xFFFFFFFF||o+0x50>sizeof(g_gsbuf)) continue;
+        uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0;
+        if(strcmp(pn,"Class")==0) *(uint64_t*)(g_gsbuf+o)=(uint64_t)cls;
+        else if(strcmp(pn,"RelativeTransform")==0){ double* T=(double*)(g_gsbuf+o); T[3]=1.0; T[8]=1.0; T[9]=1.0; T[10]=1.0; }  // Scale3D@0x40/48/50 (S98)
+        else if(strcmp(pn,"bDeferredFinish")==0) *(uint8_t*)(g_gsbuf+o)=0;
+        else if(fl&0x400) retOff=o;
+    }
+    bool flt=CallNativeGuarded(f,th,ch,(void*)actor,g_gsbuf,g_rbuf);
+    uintptr_t comp=(uintptr_t)g_rbuf[0];
+    if(!LooksLikePtr(comp)&&retOff!=0xFFFFFFFF) comp=*(uint64_t*)(g_gsbuf+retOff);
+    char cn[96]="-"; if(LooksLikePtr(comp)&&ClassOf(comp)) GetFNameStr(NameId(ClassOf(comp)),cn,sizeof(cn));
+    Markerf("[GAS] %s AddComponentByClass %s -> 0x%llX (%s)\r\n",tag,flt?"FAULTED":"ok",(unsigned long long)comp,LooksLikePtr(comp)?cn:"NULL");
+    return comp;
+}
+// ★★★★ S103 — BUILD THE MISSING CARRIER.
+// S102b decoded the gate completely: IAbilitySystemInterface::GetAbilitySystemComponent() reads
+// PlayerState->HeroAffiliatedObject (+0x4F8) and returns carrier->AbilitySystemComponent (+0x3E8);
+// HeroAffiliatedObject is NULL in force-open, so TryUpdateAbilitySystem bails ~8 instructions in.
+// TryUpdate is update-not-create, so nothing on the PlayerState will ever bootstrap GAS — the carrier has to
+// exist first. This builds it with primitives already proven on this route:
+//   spawn LokiPlayerState_HeroAffiliated -> AddComponentByClass(LokiAbilitySystemComponent)
+//   -> K2_InitStats(<AttributeSet class>, null) x2  (UAttributeSet is a UObject, NOT a component, so it cannot be
+//      added with AddComponentByClass; InitStats is the game's own "create + register the attribute subobject" API)
+//   -> write PlayerState.HeroAffiliatedObject (a REFLECTED ObjectProperty, so a direct write is legitimate)
+static uintptr_t EnsureHeroAffiliatedCarrier(uintptr_t ps){
+    uint32_t hoOff=PropOffsetSuper(ClassOf(ps),"HeroAffiliatedObject");
+    uintptr_t cur=(hoOff!=0xFFFFFFFF&&SafeReadable((void*)(ps+hoOff),8))?*(uintptr_t*)(ps+hoOff):0;
+    Markerf("[GAS] HeroAffiliatedObject@0x%X = 0x%llX\r\n",hoOff,(unsigned long long)cur);
+    if(LooksLikePtr(cur)) return cur;
+    if(hoOff==0xFFFFFFFF){ Marker("[GAS] HeroAffiliatedObject property NOT FOUND -> abort carrier build\r\n"); return 0; }
+
+    uintptr_t cls=FindClassExact("LokiPlayerState_HeroAffiliated");
+    Markerf("[GAS] carrier class = 0x%llX\r\n",(unsigned long long)cls);
+    if(!LooksLikePtr(cls)) return 0;
+    // identity transform with Scale3D=1 at 0x40/0x48/0x50 (S98 offset fact)
+    memset(g_xform,0,sizeof(g_xform));
+    *(double*)(g_xform+0x18)=1.0;                                   // quat W
+    *(double*)(g_xform+0x40)=1.0; *(double*)(g_xform+0x48)=1.0; *(double*)(g_xform+0x50)=1.0;
+    uintptr_t carrier=SpawnActorCls(cls,"LokiPlayerState_HeroAffiliated");
+    if(!LooksLikePtr(carrier)){ Marker("[GAS] carrier spawn FAILED\r\n"); return 0; }
+
+    // Did the carrier's own constructor create the ASC (the way the level actors' do)?
+    uint32_t ascOff=PropOffsetSuper(ClassOf(carrier),"AbilitySystemComponent");
+    uintptr_t asc=(ascOff!=0xFFFFFFFF&&SafeReadable((void*)(carrier+ascOff),8))?*(uintptr_t*)(carrier+ascOff):0;
+    Markerf("[GAS] carrier=0x%llX AbilitySystemComponent@0x%X = 0x%llX (%s)\r\n",
+            (unsigned long long)carrier,ascOff,(unsigned long long)asc,LooksLikePtr(asc)?"constructor built it":"NULL -> we add one");
+    if(!LooksLikePtr(asc)){
+        uintptr_t ascCls=FindClassExact("LokiAbilitySystemComponent");
+        if(LooksLikePtr(ascCls)) asc=AddCompByClass(carrier,ascCls,"ASC");
+        if(LooksLikePtr(asc)&&ascOff!=0xFFFFFFFF&&SafeReadable((void*)(carrier+ascOff),8)){
+            *(uintptr_t*)(carrier+ascOff)=asc; Marker("[GAS] wrote carrier.AbilitySystemComponent\r\n"); }
+    }
+    // Attribute sets: InitStats(<AttributeSet class>, DataTable=null) creates + registers the subobject.
+    if(LooksLikePtr(asc)){
+        static const char* kSets[2]={"LokiAttributeSet","LokiAttributeSetHealth"};
+        static const char* kProp[2]={"AttributeSet","AttributeSetHealth"};
+        void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(asc),"K2_InitStats",&f,&th,&ch);
+        if(th){ for(int i=0;i<2;i++){
+                uintptr_t sc=FindClassExact(kSets[i]); if(!LooksLikePtr(sc)){ Markerf("[GAS] %s class not found\r\n",kSets[i]); continue; }
+                memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                uint32_t oa=ParamOffset(ch,"Attributes"); if(oa==0xFFFFFFFF)oa=0;
+                uint32_t od=ParamOffset(ch,"DataTable");  if(od==0xFFFFFFFF)od=8;
+                *(uint64_t*)(g_gsbuf+oa)=(uint64_t)sc; *(uint64_t*)(g_gsbuf+od)=0;
+                bool flt=CallNativeGuarded(f,th,ch,(void*)asc,g_gsbuf,g_rbuf);
+                Markerf("[GAS] K2_InitStats(%s, null) %s\r\n",kSets[i],flt?"FAULTED":"ok");
+                // mirror onto the carrier's own property if InitStats left it unset
+                uint32_t po=PropOffsetSuper(ClassOf(carrier),kProp[i]);
+                uintptr_t pv=(po!=0xFFFFFFFF&&SafeReadable((void*)(carrier+po),8))?*(uintptr_t*)(carrier+po):0;
+                Markerf("[GAS] carrier.%s@0x%X = 0x%llX\r\n",kProp[i],po,(unsigned long long)pv);
+            } }
+        else Marker("[GAS] K2_InitStats NOT FOUND on the ASC\r\n");
+    }
+    *(uintptr_t*)(ps+hoOff)=carrier;
+    Markerf("[GAS] *** PlayerState.HeroAffiliatedObject@0x%X = 0x%llX (carrier installed) ***\r\n",hoOff,(unsigned long long)carrier);
+    return carrier;
+}
+
 static void WireAbilitySystem(uintptr_t hero, uintptr_t pc){
     Marker("[GAS] ===== S101: driving LokiPlayerState's own ability-system wiring chain =====\r\n");
     uint32_t psOff=PropOffsetSuper(ClassOf(pc),"PlayerState");
@@ -2633,6 +2722,8 @@ static void WireAbilitySystem(uintptr_t hero, uintptr_t pc){
 
     ReportGasState(hero,"BEFORE");
     bool before=ReadAbilityInitBit(hero,"BEFORE");
+    // ★ S103 — the carrier must exist BEFORE the chain; TryUpdateAbilitySystem only updates, never creates.
+    if(KGASCARRIER) EnsureHeroAffiliatedCarrier(ps);
 
     // STEP 1 — HeroClass. Prefer the native setter; fall back to writing the property, which is what the S90
     // spawn path already does (PlayerState.HeroClass is a UClass* field the spawn reads).
