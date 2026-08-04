@@ -12,7 +12,7 @@ that isn't true?"*
 > |---|---|---|
 > | FK-1, FK-2, FK-3, FK-4, FK-5, FK-6 | S104–S105 | ✅ SETTLED (each with its own `fk*-settled.md`) |
 > | **FK-7** — tutorial crash | **S108** | **OPEN.** Belief closed-false; the FIX is unverified. S108's verification sitting was **VOID** (quiet control). |
-> | **FK-9** — Sentry vs UECC dumps | **S108** | ⚠ **PARTLY REHABILITATED** — the refutation over-corrected; crashpad writes a dump *and deletes it*. |
+> | **FK-9** — Sentry vs UECC dumps | **S109** | ✅ **CAPTURE SOLVED** — cleared by the *next launch*, not a timer; the "~3 min window" is retracted. Archiver shipped. |
 > | **FK-24** — the `ViewTarget` writer | **S108** | **OPEN.** ★ The probe was killing the game, and its own VOID verdict was an artifact. |
 > | **FK-25** — the marker file | **S108** | ⚠ **STILL UNFIXED**; cost evidence again. Cheapest unspent item in this document. |
 > | **FK-26** — leftover S9x shim diagnostics | **S108** | ✅ **NEW + SETTLED.** `KSTATICTEST` was killing the hero's walk/run animation every session. |
@@ -491,6 +491,45 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 ### FK-9 — "SUPERVIVE routes crashes through Sentry; no UECC minidump is written"
 **Severity: HIGH (same consequence as FK-8: it suppressed all crash forensics).**
 
+> ## ✅ CAPTURE SOLVED — 2026-08-04 (S109). **The "~3 minute" retention window is RETRACTED.**
+> Full write-up: `docs/s109-fk9-capture-durable.md`.
+>
+> The S108 banner below is right that crashpad writes a dump and that the census is blind to it.
+> Its *timescale* is wrong, and the wrongness mattered: it made the problem look like a race and
+> pointed at a filesystem watcher. **MEASURED from crashpad's own bookkeeping** (`settings.dat`
+> `Settings::Data` + the `metadata` report record — 56-byte layout, pinned independently by
+> `id_index = 41` == the first string's byte length): crashpad made **exactly one** upload attempt at
+> **crash + 2 s**, `upload_attempts = 1`, and the report then sat **untouched for 65+ minutes**.
+> Nothing can touch it in between — `crashpad_handler.exe` is a child of the game and dies with it
+> (MEASURED: 0 handler processes while `ags` was still alive).
+>
+> ⚠ **Two hedges added after adversarial review (S109 skeptic, T5):** `state = 2 ⇒ Pending` is
+> **UNVERIFIED for this build** — `Completed` is at least as likely, so do not build on the enum; and
+> **"the next launch clears it" is INFERRED, not proven.** It is consistent 5-for-5 across the day's
+> sessions (the only surviving report is the only one with no relaunch after it), but a delayed
+> successful upload explains the four cleared reports equally well, because **the clearing event has
+> never been observed in the act**. The shipped fix does not depend on the answer: the archiver is
+> `Copy-Item`-only, so a wrong rule costs *yield*, never an original and never a launch.
+>
+> **The "~3 minutes" was the gap between the skeptic's two `ls` calls, and a relaunch (02:19:58) fell
+> inside it.** The observation interval was recorded as the phenomenon's timescale — a ninth instance
+> of the instrument-artifact pattern, in a new shape: the artifact was a *number*, not an absence.
+>
+> **Fix (shipped):** `configs/archive-crashdumps.ps1`, called by `launch-redirect.ps1` **before** the
+> launch (the launch being the destroyer) and **after** the game exits. SHA-256-verified, never
+> deletes the source. There is no race to win, so there is no watcher. Positive controls 7/7.
+>
+> ⚠ **Residual blind spot, declared:** this depends on the upload *failing*. Uploads are enabled
+> (`options` bit 0 = 1) and `o566896.ingest.sentry.io` is reachable (TCP 443 → 34.160.81.0); why the
+> attempt fails is **not established**. If one ever succeeds the report dies ~2 s after the crash and
+> **no sweep or watcher can catch it**. The archiver therefore warns loudly when `Loki.log` shows a
+> crashpad handoff but no report exists, and names the fix (hosts-block the DSN host).
+>
+> ⚠ **Two grep traps**, each of which silently corrupts a census: the key
+> `handing control over to crashpad` is **NOT the last line** (two `LogTemp` lines follow it in the
+> one death that has a preserved dump), so never classify with `tail`; and bare `crashpad` matches
+> two **startup** lines present in every session including clean exits.
+>
 > ## ⚠ PARTLY REHABILITATED — 2026-08-04 (S108). **The refutation below over-corrected.**
 > The original belief was refuted with *"86 UECC directories exist"* — true, and the refutation
 > stands for the crashes that produce them. But S108 measured the other half, and the belief had a
