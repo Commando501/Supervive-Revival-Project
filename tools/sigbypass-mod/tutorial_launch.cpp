@@ -106,6 +106,86 @@ static void* g_xfFn=nullptr; static uintptr_t g_xfThunk=0, g_xfChild=0;
 static uint32_t g_oBWorld=0,g_oBClass=8,g_oBXform=0x10,g_oBColl=0x70,g_oBOwner=0x78,g_oBRet=0x88;
 static uint32_t g_oFActor=0,g_oFXform=0x10,g_oFRet=0x70; static uint32_t g_oXfRet=0;
 static uint8_t g_xform[0x60]={0}; static uint8_t g_gsbuf[0x100]={0};
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★ S106d (2026-07-29) — KXFORMFIX: THE SPAWN FTransform WAS **TRUNCATED** *AND* **MIS-OFFSET**.
+//   THIS IS A CAUSE-SHAPED FIX, NOT A SYMPTOM GUARD.  It is deliberately its own flag so it can be
+//   A/B'd against KVTGUARD (which repairs a symptom) -- see BUILD.md's artifact matrix.
+//
+// TWO INDEPENDENT DEFECTS, BOTH MEASURED IN THE SOURCE, BOTH DROPPING Scale3D.Z:
+//
+//   D1  TRUNCATION.  `const uint32_t xfsz=0x50;` in DoSpawnSeq and in SpawnActorCls copied only 0x50
+//       bytes of the 0x60-byte FTransform into the spawn params.  Scale3D.Z lives at **0x50**, so the
+//       copy stopped EXACTLY at it: every actor SpawnActorCls has ever produced spawned with
+//       Scale3D = (x, y, **0**).  The truncation is independent of the caller -- the GAS carrier at
+//       L3072 writes Scale3D at the CORRECT 0x40/0x48/0x50 and was truncated anyway.
+//       Same defect a third time inside BuildHeroBody: `savedXform[0x50]` + `memcpy(...,0x50)`, so the
+//       DEFERRED **FinishAddComponent** -- i.e. component REGISTRATION, which is when the cloth /
+//       physics body is built -- re-applied a transform with Scale.Z = 0 and thereby UNDID the S98
+//       post-creation `RelativeScale3D = (1,1,1)` fix ~40 lines earlier.  That answers the standing
+//       order-of-operations question: yes, the degenerate body is built AFTER the scale fix lands,
+//       because registration overwrote it.
+//
+//   D2  WRONG OFFSETS.  Four call sites still wrote Scale3D at the pre-S98 **0x38/0x40/0x48**:
+//       L1442 (DoSpawnSeq), L2411 (**DoTopDownCam -- the VIEW-TARGET CAMERA ITSELF**), L3570 (KSMACTOR),
+//       L3588 (KTESTACTOR).  In this build FTransform is the 16-byte-aligned 0x60 layout
+//       (Rotation@0x00, Translation@0x20 + 8 pad, **Scale3D@0x40/0x48/0x50** + 8 pad), so those writes
+//       put 1.0 into translation PADDING at 0x38, then Scale.X and Scale.Y, and left Scale.Z ZERO.
+//       Proof (MEASURED, S98 L3907-3911): xfsz = g_oBColl-g_oBXform = 0x70-0x10 = 0x60, and a first fix
+//       writing 0x38/0x40/0x48 produced a LIVE root RelativeScale3D of (1.000,1.000,0.000).
+//       The defaults at L106/L107 independently corroborate 0x60 spacing.
+//
+// CONSEQUENCE (MEASURED by composition): the top-down CameraActor spawned at Scale3D=(1,1,**0**), the
+// KTESTACTOR CameraActor at (1,1,0) and the KSMACTOR StaticMeshActor at (3,3,0).  A component attached
+// to a root whose scale is (1,1,0) has a NON-UNIFORM world scale whatever its own relative scale is --
+// which is exactly what the single `LogChaosCloth` "has a non uniform scale, and has a cloth simulation
+// attached" line in 4-of-4 crashing sessions reports (INFERRED: the shipping log does NOT name the
+// object, so the line cannot itself identify which body).
+//
+// WHY THIS IS THE FK-7 SUSPECT AND NOT JUST A RENDER BUG.  The camera crash is a ONE-BYTE store of the
+// literal 0x01 at PCM+0x420 (ViewTarget.Target), at a CONSTANT displacement across 4 launches, with
+// ZERO collateral corruption, already present at the TOP of DoUpdateCamera in 4/4 -- so the writer is
+// NOT in the camera chain, and it computes its address rather than stumbling into it.  Candidate (b),
+// "a one-byte heap OVERRUN out of the degenerate cloth/physics bodies", is now FALSIFIED on structural
+// grounds: 0x420 is 0x420 bytes INSIDE the PCM's own live allocation (PCM+0x00 holds the
+// APlayerCameraManager vtable, PendingViewTarget.Target is a further 0x820 higher at PCM+0xC40), and
+// heap blocks do not overlap, so nothing can end at PCM+0x420 and overrun into it.  ⇒ we no longer
+// claim the degenerate body writes the byte.  What IS still true, and is why this fix ships anyway:
+//   * these are REAL defects that corrupt every actor the shim spawns, including the view target;
+//   * the degenerate scale is the only measured antecedent that separates 4/4 crashes from 0/68 others;
+//   * a NaN/degenerate scale is the classic source of a WILD indexed write, which is the one overrun
+//     variant the structural argument does not kill;
+//   * it is a single-variable change and it is free to test.
+//   RETRACTED with it: the old note above KVTGUARD that "a repeat [VTG] delta of exactly +0x3F
+//   implicates a writer that targets this field; a wandering delta implicates the heap overrun".
+//   delta = (live & 0xFF) - 0x01, and the live object's low byte was 0x40 in 3 of 3 observations
+//   (including a CLEAN control dump), so +0x3F is ALLOCATOR-FORCED and discriminates nothing.  The line
+//   is kept -- it still confirms "same bug, not a new one" -- but not as writer attribution.
+//
+// -DKXFORMFIX=0 restores the exact pre-S106d behaviour (0x50 copies, Scale3D at 0x38) for the A/B.
+#ifndef KXFORMFIX
+#define KXFORMFIX 1
+#endif
+// Byte offset of Scale3D inside this build's FTransform. 0x40 = MEASURED; 0x38 = the historical bug.
+static const uint32_t kXfScaleOff = KXFORMFIX ? 0x40 : 0x38;
+// Full FTransform size to copy into a spawn param block. MEASURED 0x60 (= g_oBColl - g_oBXform).
+static const uint32_t kXfSize     = KXFORMFIX ? 0x60 : 0x50;
+// Set g_xform's Scale3D. One helper so a future layout change is ONE edit, not five.
+static void XfScale(double x,double y,double z){
+    *(double*)(g_xform+kXfScaleOff)      = x;
+    *(double*)(g_xform+kXfScaleOff+0x08) = y;
+    *(double*)(g_xform+kXfScaleOff+0x10) = z;   // ⚠ 0x50 with the fix on -- the byte D1 used to truncate
+}
+// The size actually copied. Prefer the RUNTIME-MEASURED param spacing (g_oBColl-g_oBXform, live
+// reflection) over any constant; kXfSize is only the fallback when reflection has not filled them in.
+// Clamped to sizeof(g_xform) so a surprising layout can never read past the buffer.
+static uint32_t XfSize(){
+    uint32_t n = (g_oBColl>g_oBXform) ? (g_oBColl-g_oBXform) : kXfSize;
+    if(!KXFORMFIX && n>kXfSize) n=kXfSize;          // -DKXFORMFIX=0 must reproduce the OLD truncation
+    if(n>sizeof(g_xform)) n=(uint32_t)sizeof(g_xform);
+    return n;
+}
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
 static void* g_spawnFn=nullptr; static uintptr_t g_spawnThunk=0, g_spawnChild=0;
 static void* g_possessFn=nullptr; static uintptr_t g_possessThunk=0, g_possessChild=0;
 static uint32_t g_offSpawnNP=0, g_offSpawnSS=8, g_offSpawnRet=0x10, g_offInPawn=0;
@@ -308,8 +388,435 @@ static void DumpCrashCtx(EXCEPTION_POINTERS* ep){
     if(SafeReadable((void*)rip,24)){ uint8_t* p=(uint8_t*)rip; char hx[80]; int o=0; for(int i=0;i<24&&o<74;i++)o+=_snprintf_s(hx+o,sizeof(hx)-o,_TRUNCATE,"%02X ",p[i]); Markerf("[NULL] code@RIP:    %s\r\n",hx); }
     if(SafeReadable((void*)(rip-24),24)){ uint8_t* p=(uint8_t*)(rip-24); char hx[80]; int o=0; for(int i=0;i<24&&o<74;i++)o+=_snprintf_s(hx+o,sizeof(hx)-o,_TRUNCATE,"%02X ",p[i]); Markerf("[NULL] code@RIP-24: %s\r\n",hx); }
 }
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★ S107 (2026-08-03) — FK-24 WATCHPOINT PROBE.  ONE QUESTION: **WHO STORES THE 0x01 BYTE?**
+//
+// MEASURED (docs/fk7-crash-settled.md §0, four camera dumps):  APlayerCameraManager->ViewTarget.Target
+// sits at PCM+0x420.  Its LOW BYTE is replaced by the literal 0x01 while bytes 1..7 stay byte-identical
+// to the live object  =>  a ONE-BYTE store of an immediate 1, at a fixed displacement from a LIVE PCM,
+// ~0.15 s after the body build, ALREADY WRONG AT THE TOP OF DoUpdateCamera in 4/4  =>  the writer runs
+// OUTSIDE the camera chain.  290 of 290 non-pointer PCM offsets are byte-identical across the four
+// dumps => surgical, not collateral.  The heap-overrun candidate is dead on structural grounds (0x420
+// is 0x420 bytes INSIDE the PCM's own live allocation and heap blocks do not overlap).  A `mov byte
+// [reg+0x420],1` instruction scan found 8 sites, none in camera code -- but .text is only 52.29%
+// decrypted, so that is NOT a negative result.  Rate: ~1-in-2 to 1-in-3 launches.  A SINGLE QUIET RUN
+// PROVES NOTHING.
+//
+// ⚠⚠ THE RETRACTED TRAP THIS PROBE MUST NOT RE-INTRODUCE.  The previous instrumentation logged
+// `delta = live - corrupt` and read `+0x3F` as "a writer aimed at this field".  delta = (live&0xFF)-1,
+// and the live low byte is allocator-forced to 0x40 (3/3, incl. a clean control), so +0x3F is
+// ARITHMETIC, not evidence -- an instrument artifact built into the instrument meant to settle the
+// question.  ⇒ EVERY attribution this probe emits is an **IDENTITY**: thread id, RIP, module+RVA, the
+// instruction bytes at RIP-64, the return-address chain, and WHICH REGISTER HELD THE PCM.  The value
+// at &Target is used for exactly ONE purpose -- to say WHICH trap was the corrupting one -- and the
+// log line labels it as such.  Nothing here reports a property of the written value as attribution.
+//
+// ───────────────────────────────────────────────────────────────────────────────────────────────────
+// TWO MECHANISMS, ONE AT A TIME (they are mutually exclusive on purpose: BOTH surface as
+// STATUS_SINGLE_STEP, and running two instruments at once doubles the ways the instrument can be
+// wrong -- the exact failure shape this project has hit seven times).
+//
+//   KWPROBE=1  PRIMARY  -- DR0/DR1 hardware 1-byte WRITE watchpoints, armed on EVERY thread and
+//              re-swept every KWPSWEEPMS so threads created later are covered.  Exactly 1 byte of
+//              granularity, zero cost when it does not fire, and it does NOT perturb the timing of the
+//              race being measured.  ★ Its known risk -- the packer clearing DR7 -- is SELF-ANNOUNCING:
+//              every arm reads Dr7 BACK and every sweep re-reads it, so a defeated watchpoint prints
+//              VOID instead of a false negative.
+//              ★ DR1 at &Target+1 is the HARDWARE DISCRIMINATOR that replaces the retracted +0x3F: a
+//              ONE-byte store at offset 0 fires DR0 ONLY; an 8-byte pointer store whose low byte merely
+//              happens to be 0x01 fires DR0 **and** DR1.  That is a property of the *instruction*.
+//
+//   KWPROBE=2  FALLBACK -- PAGE_READONLY write trap on the 4 KB page holding &Target.  Process-wide
+//              (VAD-level), so it needs NO per-thread work and covers threads that do not exist yet --
+//              strictly better on the thread-coverage problem.  Cost: the page is SHARED (the PCM is
+//              not page-aligned, offsets 0x040..0xAE0 measured across 5 dumps) and ViewTarget.POV is on
+//              the same page in 5/5 and is written every frame, so this traps on writes that are not
+//              ours.  Bounded by the KWPMAXTRAPS / KWPMAXTPS panic valve.
+//
+//   PAGE_GUARD is REJECTED outright, not merely deprioritised.  SafeReadable (L321) returns false for
+//   PAGE_GUARD, so arming it would SILENTLY DISABLE VtGuard -- the instrument would destroy the very
+//   correlation evidence it exists to produce.  PAGE_READONLY is accepted by SafeReadable, and
+//   SafeWritable is given an explicit exemption for the probe's own page (see its definition) so
+//   VtGuard's repair store still lands.  (It traps first, which is correct: it is logged origin=SELF
+//   and doubles as a positive control aimed at the exact address in question.)
+//
+//   NOT DONE, and named so nobody re-proposes it: attaching a real debugger from a second process
+//   (DebugActiveProcess + CREATE_THREAD_DEBUG_EVENT) is the textbook fix for thread coverage, but this
+//   binary is VMProtect/Themida-packed -- PEB.BeingDebugged / NtGlobalFlag / ProcessDebugPort are all
+//   trivially checked and attaching changes exception dispatch, i.e. it changes the experiment.
+//
+// ───────────────────────────────────────────────────────────────────────────────────────────────────
+// WHY DR ARMING CAN ONLY EVER BE A POLL (structural, not a preference): DllMain calls
+// DisableThreadLibraryCalls (L5227) AND this DLL is MANUAL-MAPPED (tools/inject mmap), so it is not in
+// the loader's module list and DLL_THREAD_ATTACH could never fire even without that call.  There is no
+// thread-creation notification available to this shim.  Hence the sweep, and hence `newSinceLast` is
+// REPORTED per sweep: if the sweep immediately before the corruption found new threads, coverage was
+// not established and the result is VOID, not negative.
+//
+// PRECEDENT (MEASURED, L538 SafeWrite): CreateToolhelp32Snapshot -> OpenThread -> mass SuspendThread ->
+// GetThreadContext -> ResumeThread already runs in THIS process under THIS packer on every launch.  So
+// enumeration + suspend + GetThreadContext are proven; only CONTEXT_DEBUG_REGISTERS/SetThreadContext
+// is unproven -- which is exactly what the Dr7 readback measures.
+//
+// HANDLER DISCIPLINE: the VEH does NO CreateFile and NO VirtualQuery.  It fills a lock-free ring
+// (plain stores + one InterlockedIncrement) and, for the ONE interesting event, a static full record.
+// Logging is done by WpThread.  The single exception is WpLogf, which writes through a marker-file
+// handle OPENED AT ARM TIME -- WriteFile on an already-open handle takes no loader/heap lock, so the
+// decisive line survives a death that follows it without the CreateFileA deadlock risk.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+#ifndef KWPROBE
+#define KWPROBE 0        // ★ 0 = OFF (default) -> the `play` artifact is byte-unchanged.  1 = DR.  2 = page.
+#endif
+#if KWPROBE
+#ifndef KWPARMAT
+#define KWPARMAT 0       // 0 = arm the instant VtResolve() first succeeds (&Target exists; EARLIEST -- and a
+                         //     watchpoint costs nothing when it does not fire, so early arming has no price)
+                         // 1 = arm at the TOP of DoPlay's one-shot !g_plInit block (before WireAbilitySystem)
+                         // 2 = arm at g_plBodyDone (FK-24's original wording).  NOT recommended: L3830 is the
+                         //     EXIT of the block whose interior the writer's window sits inside.
+#endif
+#ifndef KWPHOLDMS
+#define KWPHOLDMS 0      // 0 = stay armed for the whole mode hold; >0 = auto-disarm + verdict after N ms
+#endif
+#ifndef KWPSWEEPMS
+#define KWPSWEEPMS 250   // DR only: re-sweep period (arm new tids, RE-READ Dr7 on already-armed ones)
+#endif
+#ifndef KWPPOLLMS
+#define KWPPOLLMS 2      // independent low-byte poller: the V5 void test + it bounds the write to 2 ms. 0=off
+#endif
+#ifndef KWPSELFTEST
+#define KWPSELFTEST 1    // in-session POSITIVE CONTROL: two idempotent stores to &Target from the game thread
+#endif
+#ifndef KWPMAXLOG
+#define KWPMAXLOG 48     // full log lines for the first N &Target traps; after that, novel RIPs only
+#endif
+#ifndef KWPMAXTRAPS
+#define KWPMAXTRAPS 4000000
+#endif
+#ifndef KWPMAXTPS
+#define KWPMAXTPS 200000
+#endif
+#ifndef KWPSYNCLOG
+#define KWPSYNCLOG 1     // write the corrupting event SYNCHRONOUSLY from the handler (pre-opened handle)
+#endif
+#ifndef KWPRETSCAN
+#define KWPRETSCAN 1     // heuristic return-address scan for the full record (call-shaped predecessor filter)
+#endif
+
+#define WP_SINGLE_STEP ((DWORD)0x80000004L)
+#define WP_GUARD_PAGE  ((DWORD)0x80000001L)
+#define WP_AV          ((DWORD)0xC0000005L)
+
+enum {  // trap-record flags
+    WPF_TARGET  = 0x0001,   // the faulting/watched address is inside [&Target, &Target+8)
+    WPF_SELF    = 0x0002,   // RIP is inside THIS DLL's mapped image  (tests "our own shim writes it")
+    WPF_INMOD   = 0x0004,   // RIP is inside SUPERVIVE-Win64-Shipping.exe
+    WPF_CORRUPT = 0x0008,   // post-store value at &Target is the measured corrupt shape (WHICH trap, not WHO)
+    WPF_B0      = 0x0010,   // the byte-0 watchpoint fired
+    WPF_B1      = 0x0020,   // the byte-1 watchpoint fired => the store was WIDER THAN ONE BYTE
+    WPF_DR6ZERO = 0x0040,   // Dr6 read back 0 in the VEH ContextRecord (instrument caveat, see W-notes)
+    WPF_PAGEOFF = 0x0080,   // page-mode trap elsewhere on the page (POV etc.) -- census only
+    WPF_GAMETID = 0x0100,
+    WPF_SELFTEST= 0x0200,   // D9: this trap was raised by a LABELLED selftest store (ground truth)
+    WPF_SELFT1B = 0x0400    // ... and it was the 1-BYTE one (expect B0 only); else the 8-byte one (B0|B1)
+};
+
+#define WPRING 1024
+struct WpRec { uint64_t seq, qpc, rip, addr, before, after; DWORD tid, flags, code, dr6; int full; };
+static WpRec  g_wpRing[WPRING];
+static volatile LONG g_wpSeq=0;          // total produced (producers)
+static long   g_wpCursor=0;              // consumed (WpThread only)
+
+struct WpFull {                          // the ONE record that carries identity, filled synchronously
+    uint64_t qpc, rip, addr, before, after;
+    uint64_t regs[16];                   // RAX..R15 -- "which register held the PCM" is half the attribution
+    uint64_t ret[8]; int nret;
+    uint8_t  pre[64], at[16];
+    uint64_t dr0, dr1, dr2, dr3, dr6, dr7; DWORD ctxFlags;
+    DWORD    tid, flags, code, tick;
+    volatile LONG state;                 // 0=empty 1=filling 2=ready 3=drained
+};
+static WpFull g_wpFull[4];
+static volatile LONG g_wpFullN=0;
+
+static uintptr_t g_wpAddr=0, g_wpPage=0, g_wpPCM=0, g_wpPendTgt=0;
+static uint32_t  g_wpPageSz=0x1000, g_wpVtOff=0xFFFFFFFF;
+static volatile LONG g_wpArmed=0;        // 0 = not armed; 1 = armed (the ONLY gate on the VEH fast path)
+static volatile LONG g_wpStorm=0, g_wpStop=0, g_wpArmReq=0, g_wpDisarmReq=0;
+static DWORD g_wpOldProt=0;
+static volatile LONG g_wpTraps=0, g_wpTrapsTgt=0, g_wpForeign=0, g_wpDr6Zero=0, g_wpDropped=0, g_wpTrapsSelf=0;
+static volatile LONG g_wpCorruptTraps=0, g_wpPendSlotFull=0;
+// ── S107 review fixes ──────────────────────────────────────────────────────────────────────────────
+// D3: WpDisarm used to clear g_wpArmed BEFORE walking ~140 threads to clear their DR7 (~3-5 ms). A DR
+//     hit inside that window was declined by WpHandle and propagated as an UNHANDLED single-step, which
+//     kills the process. Reachable mid-session via the `retarget` path (VtGuard's PCM-teardown stand-down
+//     is a documented real event, S106c). The disarm now clears the HARDWARE first, and this grace tick
+//     lets the handler keep swallowing steps that PROVABLY name our slots for a short window afterwards.
+static volatile LONG g_wpGraceUntil=0;    // (LONG)GetTickCount() deadline; 0 = no grace
+static volatile LONG g_wpGraceSwallow=0;  // steps swallowed during a grace window (not counted as traps)
+// D4: if the VEH ContextRecord does not carry CONTEXT_DEBUG_REGISTERS we cannot read Dr6, so we cannot
+//     tell our DR trap from somebody else's single-step. Claiming everything for the whole hold would
+//     swallow the packer's own anti-debug stepping. TF is an architectural discriminator that survives
+//     the missing Dr6: a DR *data* breakpoint does not set TF, so EFlags.TF set => it is a single-step
+//     and NOT our data watchpoint. Both branches are counted and both are reported in the verdict.
+static volatile LONG g_wpDr6ZeroClaimed=0, g_wpTfDeclined=0, g_wpDr6ZeroLogged=0;
+// D9: WPF_SELFTEST was defined and never set, so a selftest trap was indistinguishable from VtGuard's own
+//     repair store. This latch is raised immediately BEFORE each selftest store and consumed by the
+//     handler, which labels the trap with GROUND TRUTH -- that is what makes the B0/B1 width discriminator
+//     (the replacement for the retracted +0x3F) verifiable in-session instead of merely asserted.
+static volatile LONG g_wpSelfStore=0;   // 0 = none, 1 = the 8-byte store, 2 = the 1-byte store
+static uintptr_t g_wpSelfLo=0, g_wpSelfHi=0, g_wpModLo=0, g_wpModHi=0;
+static HANDLE g_wpLogH=INVALID_HANDLE_VALUE;
+static uint64_t g_wpDrBit0=0x1, g_wpDrBit1=0x2, g_wpDr7Val=0x00110005ULL;   // slot pair 0/1 by default
+static int  g_wpDrPair=0;                                                    // 0 = DR0/DR1, 1 = DR2/DR3
+static uint64_t g_wpPollLast=0;          // last 8 bytes the poller saw at &Target (the handler's "before" source)
+static DWORD g_wpBodyTick=0;             // mirror of g_plBodyTick (declared ~2000 lines below); set at the body build
+// page mode: every trap must OWN its TF, or the single-step it caused propagates unhandled and kills the
+// process.  So a slot is claimed for EVERY page trap, not only the ones on &Target.  32 slots = 32 threads
+// faulting at the same instant; the overflow path degrades safely (no TF, page left open for ~1 drain tick).
+struct WpPend { volatile LONG tid; uint64_t rip, addr, before; int isTgt, selfTest; };
+#define WPPEND 32
+static WpPend g_wpPend[WPPEND];
+static volatile LONG g_wpInRead=0;       // depth guard: a fault inside our OWN guarded probe read
+static volatile LONG g_wpUnprot=0;       // page left unprotected by the overflow path -> WpThread re-arms
+
+static uint64_t WpQpc(){ LARGE_INTEGER li; li.QuadPart=0; QueryPerformanceCounter(&li); return (uint64_t)li.QuadPart; }
+// Write through the handle opened at ARM time. No CreateFileA, no allocation -> legal from the VEH.
+static void WpLogf(const char* f,...){
+    char b[1024]; va_list a; va_start(a,f); int n=_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a); va_end(a);
+    if(n<0) n=(int)strlen(b);
+    if(g_wpLogH!=INVALID_HANDLE_VALUE){ DWORD w=0; WriteFile(g_wpLogH,b,(DWORD)n,&w,nullptr); }
+    else Marker(b);
+}
+// Reads that must never fault the game: no VirtualQuery (illegal on the trap path), just SEH.
+static bool WpRead(const void* p,void* out,size_t n){
+    InterlockedIncrement(&g_wpInRead);
+    bool ok; __try{ memcpy(out,p,n); ok=true; } __except(EXCEPTION_EXECUTE_HANDLER){ ok=false; }
+    InterlockedDecrement(&g_wpInRead); return ok;
+}
+static uint64_t WpRead8(uintptr_t p){ uint64_t v=0; return WpRead((void*)p,&v,8)?v:0; }
+// The corrupt SHAPE, used ONLY to say which trap was the corrupting one (never as attribution):
+// low byte == 0x01 AND the pointer is no longer 8-aligned.  Both are consequences of the measured
+// one-byte store; neither is offered as evidence about the writer.
+static bool WpCorruptShape(uint64_t v){ return (v&0xFF)==0x01 && (v&7)!=0; }
+
+static void WpPush(uint64_t rip,uint64_t addr,uint64_t before,uint64_t after,DWORD tid,DWORD flags,DWORD code,DWORD dr6,int full){
+    LONG s=InterlockedIncrement(&g_wpSeq);
+    WpRec* r=&g_wpRing[(s-1)&(WPRING-1)];
+    r->qpc=WpQpc(); r->rip=rip; r->addr=addr; r->before=before; r->after=after;
+    r->tid=tid; r->flags=flags; r->code=code; r->dr6=dr6; r->full=full;
+    r->seq=(uint64_t)s;                 // written LAST -> the consumer detects a torn / lapped slot
+}
+// RIP -> origin.  ★ Classifying against OUR OWN mapped image tests "the shim writes it" for free, and
+// nobody has ever tested that.  A RIP in neither range is a packer-hidden private region -- exactly the
+// shape strxref cannot reach (.text is 52.29% decrypted), and the reason the full record carries bytes.
+static DWORD WpOriginFlags(uint64_t rip){
+    DWORD f=0;
+    if(g_wpSelfLo && rip>=g_wpSelfLo && rip<g_wpSelfHi) f|=WPF_SELF;
+    if(g_wpModLo  && rip>=g_wpModLo  && rip<g_wpModHi ) f|=WPF_INMOD;
+    return f;
+}
+#if KWPRETSCAN
+// A filtered SCAN, not an unwind (no DbgHelp: heavy, needs symbols, unsafe in a VEH under this packer).
+// Stack bounds come from the trapping thread's own TEB, which is valid because a VEH runs ON that thread.
+// A qword is kept only if it points into the game module AND its predecessor bytes look like a call.
+static int WpRetScan(uint64_t rsp,uint64_t* out,int cap){
+    uint64_t base=__readgsqword(0x08), limit=__readgsqword(0x10);
+    if(rsp<limit||rsp>=base) return 0;
+    int n=0;
+    for(uint64_t p=rsp; p+8<=base && p<rsp+512*8 && n<cap; p+=8){
+        uint64_t v=0; if(!WpRead((void*)p,&v,8)) break;
+        if(v<g_wpModLo||v>=g_wpModHi) continue;
+        uint8_t pb[8]; if(!WpRead((void*)(v-8),pb,8)) continue;
+        bool call = (pb[3]==0xE8);                                   // E8 rel32 (5 B): the call ENDS at v
+        for(int k=1;k<7&&!call;k++){                                 // FF /2 (2..7 B): indirect call
+            if(pb[7-k]!=0xFF) continue;
+            uint8_t modrm=pb[8-k]; if(((modrm>>3)&7)==2) call=true; }
+        if(call) out[n++]=v;
+    }
+    return n;
+}
+#endif
+// Fill the ONE record that carries writer IDENTITY. Called only for &Target traps, budgeted.
+static int WpCaptureFull(EXCEPTION_POINTERS* ep,uint64_t addr,uint64_t before,uint64_t after,DWORD flags,DWORD tick){
+    LONG i=InterlockedIncrement(&g_wpFullN)-1;
+    if(i<0||i>=(LONG)(sizeof(g_wpFull)/sizeof(g_wpFull[0]))) return -1;
+    WpFull* F=&g_wpFull[i]; CONTEXT* c=ep->ContextRecord;
+    F->state=1;
+    F->qpc=WpQpc(); F->rip=c->Rip; F->addr=addr; F->before=before; F->after=after;
+    F->regs[0]=c->Rax; F->regs[1]=c->Rcx; F->regs[2]=c->Rdx; F->regs[3]=c->Rbx;
+    F->regs[4]=c->Rsp; F->regs[5]=c->Rbp; F->regs[6]=c->Rsi; F->regs[7]=c->Rdi;
+    F->regs[8]=c->R8;  F->regs[9]=c->R9;  F->regs[10]=c->R10; F->regs[11]=c->R11;
+    F->regs[12]=c->R12;F->regs[13]=c->R13;F->regs[14]=c->R14; F->regs[15]=c->R15;
+    F->dr0=c->Dr0; F->dr1=c->Dr1; F->dr2=c->Dr2; F->dr3=c->Dr3; F->dr6=c->Dr6; F->dr7=c->Dr7;
+    F->ctxFlags=c->ContextFlags; F->tid=GetCurrentThreadId(); F->flags=flags;
+    F->code=ep->ExceptionRecord->ExceptionCode; F->tick=tick;
+    memset(F->pre,0,sizeof(F->pre)); memset(F->at,0,sizeof(F->at));
+    WpRead((void*)(c->Rip-64),F->pre,64);   // >=48 B of prefix is what makes the backward decode converge
+    WpRead((void*)c->Rip,F->at,16);
+    F->nret=0;
+#if KWPRETSCAN
+    F->nret=WpRetScan(c->Rsp,F->ret,8);
+#endif
+    F->state=2;
+    return (int)i;
+}
+static void WpPanicDisarm();   // fwd (defined with the arm code)
+
+// ★ THE VEH FRONT HALF.  Called FIRST from CrashVEH -- ahead of the fatal-crash path, which is left
+// EXACTLY as it was.  Returns true (with *out) only when this exception is provably OURS.
+static bool WpHandle(EXCEPTION_POINTERS* ep,DWORD code,LONG* out){
+    bool armed = InterlockedCompareExchange(&g_wpArmed,0,0)!=0;
+    if(!armed){
+        // ★ D3 GRACE WINDOW.  WpDisarm now clears the HARDWARE first and the flag last, but a trap can
+        // already be in flight when the flag goes down.  Declining it would return an unhandled
+        // STATUS_SINGLE_STEP to the OS and kill the process.  Inside the grace window we still swallow
+        // traps that PROVABLY name our slots -- but we do NOT record them, because coverage is over.
+        LONG gu=InterlockedCompareExchange(&g_wpGraceUntil,0,0);
+        if(!gu || (LONG)(GetTickCount()-(DWORD)gu)>=0) return false;
+    }
+    CONTEXT* c=ep->ContextRecord; DWORD tid=GetCurrentThreadId();
+#if KWPROBE==1
+    // ---- DR data breakpoints are TRAPS: the store HAS retired and Rip is the NEXT instruction. -----
+    if(code!=WP_SINGLE_STEP) return false;
+    // *** Only trust / write Dr* if the kernel actually SUPPLIED them. OR-ing CONTEXT_DEBUG_REGISTERS
+    //     into ContextFlags when it is absent makes NtContinue write this CONTEXT's GARBAGE Dr fields
+    //     back to the thread -- the instrument would silently DISARM ITSELF and look exactly like
+    //     "the packer cleared DR". That is a false-known of precisely the shape this project keeps
+    //     hitting, so it is handled explicitly rather than assumed.
+    bool dbgOk=((c->ContextFlags&CONTEXT_DEBUG_REGISTERS)==CONTEXT_DEBUG_REGISTERS);
+    uint64_t dr6=dbgOk?c->Dr6:0, mine=g_wpDrBit0|g_wpDrBit1;
+    if(dr6 && !(dr6&mine)){ InterlockedIncrement(&g_wpForeign); return false; }   // BS-only / another slot: NOT ours
+    if(!dr6){
+        // ★ D4 -- Dr6 IS UNREADABLE, so "is this trap ours?" has no direct answer.  Claiming EVERY
+        // single-step for the whole hold would swallow the packer's own anti-debug stepping.  Bound it
+        // with the one discriminator that survives a missing Dr6: a DR *data* breakpoint is a trap and
+        // does NOT set EFlags.TF, so TF set here means this is somebody else's single-step -- hand it
+        // straight back.  The residue is counted and the verdict reports the run as instrument-suspect.
+        // (No I/O here: the loud one-time line is emitted by WpThread off the counter.)
+        if(c->EFlags&0x100u){ InterlockedIncrement(&g_wpTfDeclined); InterlockedIncrement(&g_wpForeign); return false; }
+        InterlockedIncrement(&g_wpDr6ZeroClaimed);
+    }
+    if(!armed){                                  // D3: in-flight hit after the hardware was cleared
+        if(dbgOk) c->Dr6=0; InterlockedIncrement(&g_wpGraceSwallow);
+        *out=EXCEPTION_CONTINUE_EXECUTION; return true;
+    }
+    DWORD flags=WPF_TARGET|WpOriginFlags(c->Rip);
+    if(!dr6){ InterlockedIncrement(&g_wpDr6Zero); flags|=WPF_DR6ZERO; }           // instrument caveat, reported
+    { LONG ss=InterlockedExchange(&g_wpSelfStore,0);                              // D9: ground-truth label
+      if(ss){ flags|=WPF_SELFTEST; if(ss==2) flags|=WPF_SELFT1B; } }
+    if(dr6&g_wpDrBit0) flags|=WPF_B0;
+    if(dr6&g_wpDrBit1) flags|=WPF_B1;                 // DR0 alone = 1-BYTE store; DR0|DR1 = wider store
+    if(tid==g_gameTid) flags|=WPF_GAMETID;
+    uint64_t after=WpRead8(g_wpAddr), before=g_wpPollLast;
+    if(WpCorruptShape(after)&&!WpCorruptShape(before)){ flags|=WPF_CORRUPT; InterlockedIncrement(&g_wpCorruptTraps); }
+    InterlockedIncrement(&g_wpTraps); InterlockedIncrement(&g_wpTrapsTgt);
+    if(flags&WPF_SELF) InterlockedIncrement(&g_wpTrapsSelf);
+    int fi=-1;
+    if((flags&WPF_CORRUPT)||InterlockedCompareExchange(&g_wpFullN,0,0)<2)
+        fi=WpCaptureFull(ep,g_wpAddr,before,after,flags,GetTickCount());
+    WpPush(c->Rip,g_wpAddr,before,after,tid,flags,code,(DWORD)dr6,fi);
+#if KWPSYNCLOG
+    if(flags&WPF_CORRUPT)
+        WpLogf("[WP] *** CORRUPTING STORE (sync) tid=%lu rip=0x%llX rva=0x%llX dr6=0x%llX %s before=0x%llX after=0x%llX full#%d ***\r\n",
+               (unsigned long)tid,(unsigned long long)c->Rip,
+               (unsigned long long)((c->Rip>=g_wpModLo&&c->Rip<g_wpModHi)?c->Rip-g_wpModLo:0),
+               (unsigned long long)dr6,(flags&WPF_B1)?"B0+B1(WIDE store)":"B0-only(ONE-BYTE store)",
+               (unsigned long long)before,(unsigned long long)after,fi);
+#endif
+    if(dbgOk) c->Dr6=0;                         // ack. NEVER OR the flag in when it was absent (see above)
+    *out=EXCEPTION_CONTINUE_EXECUTION; return true;
+#elif KWPROBE==2
+    // ---- PAGE_READONLY faults are FAULTS: the store has NOT executed and Rip IS the storing insn. ---
+    if(code==WP_AV){
+        if(ep->ExceptionRecord->NumberParameters<2) return false;
+        uint64_t acc=ep->ExceptionRecord->ExceptionInformation[0];
+        uint64_t fa =ep->ExceptionRecord->ExceptionInformation[1];
+        if(acc!=1) return false;                                              // reads do not fault under READONLY
+        if((fa&~(uint64_t)(g_wpPageSz-1))!=(uint64_t)g_wpPage) return false;  // not our page -> REAL crash path
+        if(!armed){   // D3 grace: disarm already restored the page; just let this in-flight store retire
+            DWORD tmp=0; VirtualProtect((void*)g_wpPage,g_wpPageSz,g_wpOldProt?g_wpOldProt:PAGE_READWRITE,&tmp);
+            InterlockedIncrement(&g_wpGraceSwallow);
+            *out=EXCEPTION_CONTINUE_EXECUTION; return true;
+        }
+        LONG n=InterlockedIncrement(&g_wpTraps);
+        bool tgt=(fa>=g_wpAddr&&fa<g_wpAddr+8);
+        DWORD flags=WpOriginFlags(c->Rip)|(tgt?WPF_TARGET:WPF_PAGEOFF)|((tid==g_gameTid)?WPF_GAMETID:0);
+        if(tgt){ InterlockedIncrement(&g_wpTrapsTgt); if(flags&WPF_SELF) InterlockedIncrement(&g_wpTrapsSelf); }
+        // ★ Claim a TF slot for EVERY trap, target or not. TF must be OWNED: an unowned single-step is
+        //   returned to the packer and kills the process. (This was a real defect in the first draft.)
+        int slot=-1;
+        for(int i=0;i<WPPEND;i++) if(InterlockedCompareExchange(&g_wpPend[i].tid,(LONG)tid,0)==0){ slot=i; break; }
+        DWORD tmp=0; VirtualProtect((void*)g_wpPage,g_wpPageSz,PAGE_READWRITE,&tmp);   // let the store retire
+        if(slot<0){
+            // Overflow: degrade SAFELY -- no TF, page left open until WpThread re-arms it (~5 ms). We lose
+            // the post-store value for this one trap; we never hang and never hand back a stray step.
+            InterlockedIncrement(&g_wpPendSlotFull); InterlockedExchange(&g_wpUnprot,1);
+            if(n>KWPMAXTRAPS) WpPanicDisarm();
+            *out=EXCEPTION_CONTINUE_EXECUTION; return true;
+        }
+        g_wpPend[slot].rip=c->Rip; g_wpPend[slot].addr=fa; g_wpPend[slot].isTgt=tgt?1:0;
+        // D9: in page mode the fault happens AT the store, so the selftest latch is live right now --
+        // consume it here and carry the label through to the TF step that emits the record.
+        g_wpPend[slot].selfTest=(int)InterlockedExchange(&g_wpSelfStore,0);
+        g_wpPend[slot].before=tgt?WpRead8(g_wpAddr):0;
+        c->EFlags|=0x100;                                                              // TF: trap after it
+        if(n>KWPMAXTRAPS) WpPanicDisarm();
+        *out=EXCEPTION_CONTINUE_EXECUTION; return true;
+    }
+    if(code==WP_SINGLE_STEP){
+        int slot=-1; for(int i=0;i<WPPEND;i++) if(InterlockedCompareExchange(&g_wpPend[i].tid,0,0)==(LONG)tid){ slot=i; break; }
+        if(slot<0){ InterlockedIncrement(&g_wpForeign); return false; }   // NOT ours: never touch TF/protection
+        c->EFlags&=~0x100u;
+        if(!armed){   // D3 grace: we set this TF, so we must clear it -- but never RE-ARM after a disarm
+            InterlockedExchange(&g_wpPend[slot].tid,0); InterlockedIncrement(&g_wpGraceSwallow);
+            *out=EXCEPTION_CONTINUE_EXECUTION; return true;
+        }
+        DWORD tmp=0; VirtualProtect((void*)g_wpPage,g_wpPageSz,PAGE_READONLY,&tmp);    // re-arm
+        if(g_wpPend[slot].isTgt){
+            uint64_t after=WpRead8(g_wpAddr), before=g_wpPend[slot].before;
+            DWORD flags=WPF_TARGET|WpOriginFlags(g_wpPend[slot].rip)|((tid==g_gameTid)?WPF_GAMETID:0);
+            if(g_wpPend[slot].selfTest){ flags|=WPF_SELFTEST; if(g_wpPend[slot].selfTest==2) flags|=WPF_SELFT1B; }
+            if(WpCorruptShape(after)&&!WpCorruptShape(before)){ flags|=WPF_CORRUPT; InterlockedIncrement(&g_wpCorruptTraps); }
+            int fi=-1;
+            if((flags&WPF_CORRUPT)||InterlockedCompareExchange(&g_wpFullN,0,0)<2){
+                uint64_t saveRip=c->Rip; c->Rip=g_wpPend[slot].rip;     // capture bytes AT THE STORE, not after
+                fi=WpCaptureFull(ep,g_wpAddr,before,after,flags,GetTickCount()); c->Rip=saveRip; }
+            WpPush(g_wpPend[slot].rip,g_wpAddr,before,after,tid,flags,code,0,fi);
+#if KWPSYNCLOG
+            if(flags&WPF_CORRUPT)
+                WpLogf("[WP] *** CORRUPTING STORE (sync) tid=%lu rip=0x%llX rva=0x%llX before=0x%llX after=0x%llX full#%d ***\r\n",
+                       (unsigned long)tid,(unsigned long long)g_wpPend[slot].rip,
+                       (unsigned long long)((g_wpPend[slot].rip>=g_wpModLo&&g_wpPend[slot].rip<g_wpModHi)?g_wpPend[slot].rip-g_wpModLo:0),
+                       (unsigned long long)before,(unsigned long long)after,fi);
+#endif
+            InterlockedExchange(&g_wpPend[slot].tid,0);
+            *out=EXCEPTION_CONTINUE_EXECUTION; return true;
+        }
+        // TF step with no pending of ours: we still had to clear TF/re-arm above (we set it), but if this
+        // is somebody ELSE's single-step we must not swallow it.
+        InterlockedIncrement(&g_wpForeign);
+        return false;
+    }
+    return false;
+#else
+    (void)c; (void)tid; (void)code; (void)out; return false;
+#endif
+}
+#endif  // KWPROBE
+// ═══════════════════════════ end FK-24 watchpoint probe (front half) ════════════════════════════════
 static LONG CALLBACK CrashVEH(EXCEPTION_POINTERS* ep){
-    DWORD code=ep->ExceptionRecord->ExceptionCode; bool fatal=code==0xC0000005||code==0xC0000409||code==0xC000001D||code==0xC0000374;
+    DWORD code=ep->ExceptionRecord->ExceptionCode;
+#if KWPROBE
+    // Probe traps are claimed FIRST and returned with CONTINUE_EXECUTION. Everything the probe does not
+    // claim falls through to the fatal path below, which is UNCHANGED.
+    { LONG r=EXCEPTION_CONTINUE_SEARCH; if(WpHandle(ep,code,&r)) return r; }
+    // A fault inside one of the probe's OWN SEH-guarded reads (WpRead) is caught by its __except; it must
+    // not burn the 4-entry g_crashSeq budget or print a misleading [NULL]. Placed AFTER WpHandle so a real
+    // page trap is never suppressed by it.
+    if(code==0xC0000005 && InterlockedCompareExchange(&g_wpInRead,0,0)) return EXCEPTION_CONTINUE_SEARCH;
+#endif
+    bool fatal=code==0xC0000005||code==0xC0000409||code==0xC000001D||code==0xC0000374;
     if(!fatal)return EXCEPTION_CONTINUE_SEARCH; long s=InterlockedIncrement(&g_crashSeq); if(s>4)return EXCEPTION_CONTINUE_SEARCH;
     Markerf("[NULL] (via VEH)\r\n"); DumpCrashCtx(ep);
     return EXCEPTION_CONTINUE_SEARCH;
@@ -466,8 +973,39 @@ static bool SafeWrite(uint8_t* dst,const uint8_t* src,size_t len){
         if(!ok){for(int i=0;i<nh;i++)ResumeThread(hs[i]);Sleep(1);} }
     for(int i=0;i<nh;i++){ResumeThread(hs[i]);CloseHandle(hs[i]);} return ok;
 }
-static bool InstallHook(){ if(!g_pi||!g_stub)return false; int32_t rel=(int32_t)((intptr_t)g_stub-((intptr_t)g_pi+5)); uint8_t p[5]={0xE9,(uint8_t)rel,(uint8_t)(rel>>8),(uint8_t)(rel>>16),(uint8_t)(rel>>24)}; return SafeWrite(g_pi,p,5); }
-static void UninstallHook(){ if(g_pi)SafeWrite(g_pi,g_stolen,5); }
+// ★ S106 — PI-HOOK MUTEX. CLAUDE.md's rule is that every ProcessInternal-hooking shim must serialise its
+// 5-byte prologue jmp through the shared named mutex "Local\SuperviveMissionsPIHook" (mainmenu_refresh_pi8,
+// missions_fix and loadout_fix all do). tutorial_launch NEVER TOOK IT — measured 2026-07-27: zero
+// CreateMutex/SuperviveMissionsPIHook references in this file. If any of those three is injected while a
+// tutorial mode holds the hook, the two shims clobber each other's stolen prologue. Every mode goes through
+// InstallHook/UninstallHook, so taking it here covers all ~23 of them with one change.
+// NOTE the deliberate asymmetry with the menu shims: they hold the lock for ONE game-thread call; tutorial
+// modes hold the hook for 20 s..10 min, so this WILL block a menu shim for that long. That is the correct
+// behaviour (blocking beats clobbering), but it is why the wait is bounded: if the lock cannot be taken in
+// KPIMUTEXMS we log loudly and proceed unlocked, i.e. exactly today's behaviour, never a new hard failure.
+#ifndef KPIMUTEX
+#define KPIMUTEX 1            // -DKPIMUTEX=0 -> A/B: restore the pre-S106 unsynchronised behaviour
+#endif
+#ifndef KPIMUTEXMS
+#define KPIMUTEXMS 30000
+#endif
+static HANDLE g_hookMutex=nullptr; static bool g_hookLocked=false;
+static void HookLock(){
+#if KPIMUTEX
+    if(!g_hookMutex) g_hookMutex=CreateMutexA(nullptr,FALSE,"Local\\SuperviveMissionsPIHook");
+    if(!g_hookMutex){ Markerf("[PIM] CreateMutex failed (%lu) -> proceeding UNLOCKED\r\n",GetLastError()); return; }
+    DWORD w=WaitForSingleObject(g_hookMutex,KPIMUTEXMS);
+    if(w==WAIT_OBJECT_0||w==WAIT_ABANDONED){ g_hookLocked=true; Markerf("[PIM] PI hook mutex acquired (%s)\r\n",w==WAIT_ABANDONED?"abandoned":"clean"); }
+    else Markerf("[PIM] *** PI hook mutex TIMEOUT after %d ms -> installing UNLOCKED (another PI-hooking shim may clobber us) ***\r\n",(int)KPIMUTEXMS);
+#endif
+}
+static void HookUnlock(){
+#if KPIMUTEX
+    if(g_hookLocked&&g_hookMutex){ ReleaseMutex(g_hookMutex); g_hookLocked=false; Marker("[PIM] PI hook mutex released\r\n"); }
+#endif
+}
+static bool InstallHook(){ if(!g_pi||!g_stub)return false; HookLock(); int32_t rel=(int32_t)((intptr_t)g_stub-((intptr_t)g_pi+5)); uint8_t p[5]={0xE9,(uint8_t)rel,(uint8_t)(rel>>8),(uint8_t)(rel>>16),(uint8_t)(rel>>24)}; bool ok=SafeWrite(g_pi,p,5); if(!ok) HookUnlock(); return ok; }
+static void UninstallHook(){ if(g_pi)SafeWrite(g_pi,g_stolen,5); HookUnlock(); }
 // ---- S75 RM_TOGGLEREADY: detour ULokiGameFeatureToggles::Get (checked variant that logs "not ready") and set the
 // per-object readiness bit byte[D+0xB3] bit6 (0x40) so Get takes the ready path. D = [ [obj->vfn188()->0x7FF6BAB80AC0]
 // +0x5A0 ]. Data-only write (persists after unhook, no .text patch left => dodges the code-integrity check).
@@ -579,6 +1117,191 @@ static uintptr_t FindClassExact(const char* want){
             if(NameIs(obj,want)){ uintptr_t c=ClassOf(obj); if(LooksLikePtr(c)){ char cn[96]; if(GetFNameStr(NameId(c),cn,sizeof(cn)) && strstr(cn,"Class")) return obj; } } } }
     return 0;
 }
+// ================= S106 — GC ROOT GUARD (the FK-7 worker-thread crash) ==========================
+// MEASURED (2026-07-27, from the 86-dump crash corpus under %LOCALAPPDATA%\SUPERVIVE\Saved\Crashes).
+// Reproduce every number below with tools/re/crash_corpus.py (survey | cluster | ctx <GUID> | mem):
+//
+//   Five 2026-07-26 crashes on task-graph worker threads ("Foreground/Background Worker #N") all fault
+//   at the SAME instruction, RVA 0x349596D:
+//       0x3495960  mov rbx,[r15+rsi*8]      ; FAnimSync::UngroupedActivePlayerArrays[WriteIdx].Data
+//       0x3495964  add rbx,r14              ; + i*0x70   (sizeof FAnimTickRecord == 0x70, from `add r14,0x70`)
+//       0x3495967  mov rcx,[rbx]            ; FAnimTickRecord.SourceAsset  (UAnimationAsset*)
+//       0x349596A  mov rax,[rcx]            ; its VTABLE
+//       0x349596D  call [rax+0x2F8]         ; <-- FAULT
+//   The containing function 0x3494B40 is UE's FAnimSync::TickAssetPlayerInstances (identified by the
+//   literals it touches: "Ticking Group [%s] GroupLeader [%d]", "Invalid position from Leader %d.
+//   Trying next leader", "[PreviousMarker %s, NextMarker %s] : %0.2f").
+//
+//   In every one of the five dumps the SourceAsset object is DESTRUCTED AND FREED:
+//     * [obj+0x00] (the vtable) holds a HEAP pointer that chains to further same-size blocks -> the
+//       allocator free-list link that FMalloc writes over a freed block's first qword;
+//     * [obj+0x20] (NamePrivate) == 0 -> UObjectBase::~UObjectBase() ran (it does LowLevelRename(NAME_None));
+//     * [obj+0x18] (ClassPrivate) is still intact and IDENTICAL across independent launches;
+//     * [obj+0x30] and [obj+0x38] are two module .rdata vtables (RVA 0x7CA73C0 / 0x7F2F208) — the
+//       IInterface_AssetUserData / IInterface_PreviewMeshProvider mixin vtables that sit right after the
+//       UObject subobject of a UAnimationAsset.
+//   The tick record itself is intact and reads PlayRate=1.0, BlendWeight=1.0, bLooping=1 — i.e. exactly
+//   what PlayAnimOn's PlayAnimation(anim, bLooping=true) installs, and there is exactly ONE ungrouped
+//   record (Num=1), i.e. the single-node instance.
+//   Faulting addresses: EXECUTE at a heap address (0x2549be0ce00 / 0x245775fb200 / 0x1cbe83cd400),
+//   EXECUTE at 0, or a read fault — all three are the same event with different free-list residue.
+//
+//   TIMING (measured from each crash's own Loki.log): the tutorial map finishes loading at T+121..128 s,
+//   the game sets gc.TimeBetweenPurgingPendingKillObjects = 61.1, and EVERY crash lands at T+173..201 s
+//   — the first garbage collection after the shim builds the hero. Nothing the shim loads is visible to
+//   UE's GC: LoadMeshByPath goes through UKismetSystemLibrary::LoadAsset_Blocking, which returns a raw
+//   UObject* and holds no reference, and the result lives only in this DLL's plain C globals.
+//
+// FIX: put every UObject this shim loads (and, optionally, the component + anim instance it drives) into
+// UE's GC root set, the same thing UObject::AddToRoot() does — it sets EInternalObjectFlags::RootSet in
+// the object's FUObjectItem, which lives in GUObjectArray, NOT in the UObject.
+//
+// The RootSet bit value is NOT hardcoded blind: GcResolveBit() MEASURES it live (see below) and REFUSES
+// to poke anything unless the measurement corroborates the compile-time constant. A wrong bit could set
+// Unreachable/Garbage and make things worse, so "refuse and log" is the failure mode, never "guess".
+#ifndef KGCROOT
+#define KGCROOT 1            // -DKGCROOT=0 -> A/B: build with the guard OFF (reproduces the S106 crash)
+#endif
+#ifndef KGCROOTCOMP
+#define KGCROOTCOMP 1        // also root the body SkeletalMeshComponent + its UAnimSingleNodeInstance
+#endif
+#ifndef KGCROOTBIT
+#define KGCROOTBIT 0x40000000   // EInternalObjectFlags::RootSet == 1<<30 (stable UE4/UE5). Corroborated live.
+#endif
+static int32_t g_gcBit=0; static bool g_gcRes=false; static int g_gcRooted=0, g_gcFailed=0;
+static bool SafeWritable(const void* a,size_t sz){
+#if KWPROBE==2
+    // ★ S107 FK-24 PROBE EXEMPTION -- LOAD-BEARING, do not delete when reading this function.
+    // KWPROBE=2 flips the PCM's page to PAGE_READONLY, which this predicate would otherwise reject.
+    // The one caller that matters is VtGuard's repair store (see its "[VTG] slot not writable" branch):
+    // without this exemption the probe would SILENTLY DISABLE THE GUARD for its whole armed window --
+    // an instrument changing the thing it measures, and the exact reason PAGE_GUARD was rejected.
+    // The write is genuinely safe: it faults, WpHandle unprotects, single-steps it, re-protects; the
+    // store lands, and it is logged origin=SELF (and doubles as a positive control on &Target).
+    if(InterlockedCompareExchange(&g_wpArmed,0,0) && g_wpPage &&
+       (uintptr_t)a>=g_wpPage && (uintptr_t)a+sz<=g_wpPage+g_wpPageSz) return true;
+#endif
+    MEMORY_BASIC_INFORMATION m{}; if(!VirtualQuery(a,&m,sizeof(m)))return false;
+    if(!(m.State&MEM_COMMIT))return false; if(m.Protect&(PAGE_NOACCESS|PAGE_GUARD))return false;
+    const DWORD wr=PAGE_READWRITE|PAGE_WRITECOPY|PAGE_EXECUTE_READWRITE|PAGE_EXECUTE_WRITECOPY;
+    if(!(m.Protect&wr))return false;
+    return (uintptr_t)a+sz<=(uintptr_t)m.BaseAddress+m.RegionSize;
+}
+// obj -> &FUObjectItem (Object@0x00, Flags@0x08, ClusterRootIndex@0x0C, SerialNumber@0x10; stride 0x18).
+static uintptr_t GcFindItem(uintptr_t obj){
+    if(!LooksLikePtr(obj))return 0;
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return 0; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break; uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue; int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,0x10))continue;
+            if(*(uintptr_t*)item==obj) return item; } }
+    return 0;
+}
+static bool GcItemFlags(uintptr_t obj,int32_t* out){
+    uintptr_t it=GcFindItem(obj); if(!it)return false; *out=*(int32_t*)(it+8); return true;
+}
+// Derive the RootSet bit from the LIVE array instead of trusting a constant.
+//  * ROOTED reference set  = native UClasses. UE allocates every native class with RF_MarkAsRootSet, which
+//    StaticAllocateObject converts into EInternalObjectFlags::RootSet, so the bit must be set on all of them.
+//  * UNROOTED reference set = ordinary live objects (not a UClass, not a "Default__" CDO), which must not
+//    have it. Sampled widely across the array so one odd object cannot poison the result.
+//  candidate = AND(rooted) & ~OR(unrooted), restricted to the high flag byte.
+// EInternalObjectFlags::Native (1<<25) also survives that filter (it is likewise set on classes only), which
+// is why the result is not used blind: we only poke if the candidate set CONTAINS KGCROOTBIT.
+static bool GcResolveBit(){
+    if(g_gcRes) return g_gcBit!=0;
+    g_gcRes=true;
+    static const char* kRooted[]={"Object","Actor","AnimSequence","SkeletalMeshComponent","Package"};
+    int32_t andR=(int32_t)0xFFFFFFFF; int nR=0;
+    for(int i=0;i<(int)(sizeof(kRooted)/sizeof(kRooted[0]));i++){
+        uintptr_t c=FindClassExact(kRooted[i]); if(!c)continue; int32_t f=0; if(!GcItemFlags(c,&f))continue;
+        andR&=f; nR++; }
+    int32_t orU=0; int nU=0;
+    { uintptr_t oo=g_modBase+kObjObjectsRva;
+      if(SafeReadable((void*)oo,0x18)){
+        uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+        if(LooksLikePtr(objectsPtr)&&numEl>0&&numEl<8000000){ int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+          for(int ci=0;ci<numChunks&&nU<64;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+            uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+            int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+            for(int j=0;j<cnt&&nU<64;j+=997){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE;
+              if(!SafeReadable((void*)item,0x10))continue; uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+              uintptr_t cls=ClassOf(obj); if(!LooksLikePtr(cls))continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+              if(strstr(cn,"Class")||strstr(cn,"Package")||strstr(cn,"Function")||strstr(cn,"Enum")||strstr(cn,"ScriptStruct"))continue;
+              char on[96]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on)); if(strncmp(on,"Default__",9)==0)continue;
+              orU|=*(int32_t*)(item+8); nU++; } } } } }
+    int32_t cand = andR & ~orU & (int32_t)0xFF000000;
+    if(nR>=2 && nU>=8 && (cand & (int32_t)KGCROOTBIT)) g_gcBit=(int32_t)KGCROOTBIT;
+    else g_gcBit=0;
+    Markerf("[GC] rootbit: nRooted=%d and=%08X nUnrooted=%d or=%08X cand=%08X expect=%08X -> %s\r\n",
+            nR,(unsigned)andR,nU,(unsigned)orU,(unsigned)cand,(unsigned)KGCROOTBIT,
+            g_gcBit?"CORROBORATED (rooting enabled)":"NOT corroborated -> REFUSING to poke flags");
+    return g_gcBit!=0;
+}
+// AddToRoot(obj). Returns true only when the bit reads back set.
+static bool GcRoot(uintptr_t obj,const char* tag){
+#if !KGCROOT
+    (void)obj; (void)tag; return false;
+#else
+    if(!LooksLikePtr(obj)) return false;
+    if(!GcResolveBit()){ Markerf("[GC] %s 0x%llX NOT rooted (bit unresolved)\r\n",tag,(unsigned long long)obj); g_gcFailed++; return false; }
+    uintptr_t item=GcFindItem(obj);
+    if(!item){ Markerf("[GC] %s 0x%llX has no FUObjectItem -> NOT rooted\r\n",tag,(unsigned long long)obj); g_gcFailed++; return false; }
+    char cn[96]="-"; if(LooksLikePtr(ClassOf(obj))) GetFNameStr(NameId(ClassOf(obj)),cn,sizeof(cn));
+    int32_t before=*(int32_t*)(item+8);
+    if(before & g_gcBit){ Markerf("[GC] %s 0x%llX (%s) already rooted flags=%08X\r\n",tag,(unsigned long long)obj,cn,(unsigned)before); return true; }
+    if(!SafeWritable((void*)(item+8),4)){ Markerf("[GC] %s 0x%llX FUObjectItem not writable -> NOT rooted\r\n",tag,(unsigned long long)obj); g_gcFailed++; return false; }
+    // Interlocked, not a read-modify-write store: GC's own reachability pass writes Unreachable into this
+    // same dword from its worker threads, and a plain RMW here could drop that write. The OR is a single
+    // locked instruction, so we can only ever ADD RootSet, never clobber a concurrent flag change.
+    InterlockedOr((volatile LONG*)(item+8),(LONG)g_gcBit);
+    int32_t after=*(int32_t*)(item+8);
+    bool ok=(after & g_gcBit)!=0; if(ok) g_gcRooted++; else g_gcFailed++;
+    Markerf("[GC] ROOT %s 0x%llX (%s) item=0x%llX flags %08X -> %08X %s\r\n",
+            tag,(unsigned long long)obj,cn,(unsigned long long)item,(unsigned)before,(unsigned)after,ok?"OK":"FAILED");
+    return ok;
+#endif
+}
+// Root every live (non-CDO) instance whose class name contains `sub`. Used for the UAnimSingleNodeInstance
+// that USkeletalMeshComponent::PlayAnimation creates for us — the shim never holds it, so nothing else can.
+static int GcRootAllOfClass(const char* sub,int maxN,const char* tag){
+    int n=0;
+#if KGCROOT
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return 0; int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks&&n<maxN;ci++){ if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt&&n<maxN;j++){ uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,0x10))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!LooksLikePtr(cls))continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+            if(!strstr(cn,sub))continue; char on[96]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            if(strncmp(on,"Default__",9)==0)continue;
+            if(GcRoot(obj,tag)) n++; } }
+#else
+    (void)sub; (void)maxN; (void)tag;
+#endif
+    return n;
+}
+// Liveness probe for a UObject, derived from the S106 dump analysis. Two independent measured signatures
+// of a destructed+freed UObject in this build:
+//   (1) [obj+0x00] stops being a module .rdata vtable (the allocator writes its free-list link there);
+//   (2) [obj+NAME_OFF] (NamePrivate) becomes 0, because UObjectBase::~UObjectBase does LowLevelRename(NAME_None).
+// Both held in 5/5 crash dumps. This does NOT stop the game's own parallel anim tick from touching a dead
+// asset — only rooting does that — but it stops the SHIM from calling into one (the S99b "PlayAnimation(idle)
+// faulted with RIP=0x0 access=EXEC addr=0x0, RDI=AnimSingleNodeInstance" failure, which is the same event).
+static bool GcAlive(uintptr_t obj){
+    if(!LooksLikePtr(obj)) return false;
+    if(!SafeReadable((void*)obj,NAME_OFF+4)) return false;
+    uintptr_t vt=*(uintptr_t*)obj;
+    if(vt<g_modBase || (vt-g_modBase)>0x0B000000ULL) return false;   // vtable must live inside the image
+    if(*(uint32_t*)(obj+NAME_OFF)==0) return false;                  // NamePrivate == NAME_None -> destructed
+    return true;
+}
+// ================= end S106 GC ROOT GUARD =====================================================
+
 // Resolve a UFunction by name walking cls + its SuperStruct chain (@+0x48).
 static void ResolveFuncSuper(uintptr_t cls,const char* name,void** fn,uintptr_t* thunk,uintptr_t* child){
     int g=0; while(LooksLikePtr(cls)&&g++<12){ ResolveFuncOnClass(cls,name,fn,thunk,child); if(*fn)return; cls=SafeReadable((void*)(cls+0x48),8)?*(uintptr_t*)(cls+0x48):0; }
@@ -625,6 +1348,838 @@ static uint32_t PropOffsetSuper(uintptr_t cls,const char* name){
     }
     return 0xFFFFFFFF;
 }
+
+// ================= S106b (FK-7, GAME-THREAD ARM) — THE VIEW-TARGET GUARD ========================
+//
+// WHAT CRASHES.  Four of the 86 crash minidumps under %LOCALAPPDATA%\SUPERVIVE\Saved\Crashes are one
+// deterministic GameThread fault, byte-identical across independent launches:
+//
+//   FEngineLoop::Tick -> UGameEngine::Tick (vt slot 96, base+0x37F8820)
+//     -> UWorld::Tick(LEVELTICK_All=2, Delta)            base+0x39C6E70   (E8-called, edx=2)
+//       -> APlayerController::UpdateCameraManager        PC  vt +0xF38    (tail-call, leaves no frame)
+//         -> APlayerCameraManager::UpdateCamera          PCM vt +0x820 -> base+0x3C59650
+//           -> ...DoUpdateCamera                         PCM vt +0x8C0 -> base+0x3C349A0
+//             -> ...UpdateViewTarget(ViewTarget@PCM+0x420, Delta)  PCM vt +0x8F0 -> base+0x3C5CFC0
+//               -> ...UpdateViewTargetInternal           PCM vt +0x9C0 -> base+0x3C5DBC0
+//                 -> OutVT.Target->CalcCamera(Delta, OutVT.POV)   vt +0x700 = AActor::CalcCamera
+//                    base+0x3C5DC52: mov rcx,[rbx] / lea r8,[rbx+0x10] / mov rax,[rcx] / call [rax+0x700]
+//                    -> ACCESS_VIOLATION reading 0x700, i.e. rax (the target's vptr) == 0.
+//
+// Every frame above is MEASURED, not inferred: all four camera frames are slots of the very vtable
+// (rdata 0x07EC5B88) that the live PCM carries at [rdi], and rbx-rdi == 0x420 in the dumps.
+//
+// WHAT IS ACTUALLY WRONG — and it is NOT what the record said.  The record called this a
+// use-after-free on a garbage-collected CameraActor.  It is not.  In both dumps whose memory window
+// covers the target:
+//
+//   * ViewTarget.Target reads 0x…D01 / 0x…F301 — bit 0 set, so NOT an 8-aligned UObject pointer.
+//   * A fully-formed, LIVE UObject sits at exactly Target+0x3F in BOTH dumps, with the SAME vtable
+//     (rdata 0x07F96428) and the SAME FName (179548).  That vtable is ACameraActor's: following
+//     ACameraActor::GetPrivateStaticClass (base+0x35324A0, it references L"ACameraActor") to
+//     InternalConstructor<ACameraActor> (base+0x350F080) gives `lea rax,[rip -> 0x07F96428]`.
+//     So the object is the shim's OWN top-down CameraActor (DoTopDownCam), and it is intact.
+//   * That object is present in GUObjectArray with FUObjectItem::Flags == 2, which in UE 5.4 is
+//     ReachabilityFlag1 — i.e. the GC marked it REACHABLE on its most recent pass.  It was never
+//     collected.  (The clean pointer appears in exactly one 8-aligned slot in the dump: that
+//     FUObjectItem.  The value Target&~0xFF appears in NO slot, which kills "bit 0 got set".)
+//
+//   => the ACTOR is alive; the POINTER stored in PCM->ViewTarget.Target has had its LOW BYTE
+//      replaced by 0x01 (0x…40 -> 0x…01).  Bytes 1..7 are intact, so the write was ONE byte, not a
+//      32/64-bit store.  The rest of the crash follows mechanically and consistently: Cast<ACameraActor>
+//      reads [Target+0x18] out of the zero padding, gets null, and fails without faulting, so
+//      UpdateViewTarget falls through to UpdateViewTargetInternal; its `if (OutVT.Target)` passes
+//      (garbage is non-null); BlueprintUpdateCamera never dereferences the target and returns false;
+//      then CalcCamera dispatches through a vptr read out of that same zero padding.
+//
+// WHO WRITES THE BYTE IS STILL OPEN -- but the search space is now much smaller.  ★ S106d CORRECTIONS
+// to the paragraph that used to sit here (two false-knowns; do not re-derive either):
+//
+//   ⚠ RETRACTED: candidate (b), "a one-byte heap OVERRUN out of the degenerate cloth/physics bodies",
+//     is FALSIFIED on structural grounds.  MEASURED in 4/4 camera dumps: 0x420 is 0x420 bytes INSIDE
+//     the PlayerCameraManager's OWN live allocation (PCM+0x00 holds the APlayerCameraManager vtable at
+//     .rdata RVA 0x7EC5B88; PendingViewTarget.Target is a further 0x820 higher at PCM+0xC40 -- both
+//     FTViewTargets located independently via the FMinimalViewInfo default signature FOV 90 / DesiredFOV
+//     90 / OrthoWidth 512 at PCM+0x460 and PCM+0xC80).  A one-byte overrun writes one byte past the END
+//     of its own block and heap blocks do not overlap, so no allocation can end at PCM+0x420.  The only
+//     surviving overrun variant is a WILD indexed write (Buf[i]=1 with a bogus/NaN-derived i) -- and a
+//     wild write cannot hit the same byte of the same object in 4 of 4 launches whose heap bases differ
+//     (0x23A…, 0x1E6…, 0x2639…, 0x1A56…).
+//
+//   ⚠ RETRACTED: "a repeat [VTG] delta of exactly +0x3F implicates a writer that targets this field; a
+//     wandering delta implicates the heap overrun."  That is a NON-discriminator, and it is the same
+//     instrument-artifact shape this project's ★★★ method rule warns about, embedded in this guard's own
+//     instrumentation.  delta = (live & 0xFF) - 0x01 whenever byte 0 is replaced by 0x01, and the live
+//     object's low byte was 0x40 in 3 of 3 observations (including the CLEAN control dump FF9CF623), so
+//     +0x3F is ALLOCATOR-FORCED.  Both candidate writers produce literally the same 8 bytes.  The line
+//     is KEPT because it still confirms "this is the same bug, not a new one" -- never as attribution.
+//
+// WHAT IS NOW MEASURED ABOUT THE WRITE (all 4 camera dumps): the low byte of PCM+0x420 is 0x01, 0x01,
+// 0x01, 0x01 while the two neighbouring heap pointers' low bytes vary (PCM+0x390 = 0x70/0x40/0x20/0xC0;
+// PCM+0x398 = 0x00/0x00/0x80/0x80).  A cross-dump diff of PCM[0x300..0x480) finds 290 offsets identical
+// in 4/4; the ONLY differing bytes are heap-pointer bytes and the POV region.  ⇒ a DETERMINISTIC
+// single-byte store of the literal 1 at a FIXED object offset, with zero collateral corruption.  Rules
+// out a memset/struct-assign and any 32/64-bit store.  Only candidate (a) survives: a field-aimed 1-byte
+// store from code in the undecrypted half of .text (the instruction-shape scan is now exhaustive over
+// what IS readable -- 34 byte-width stores at disp32 0x420, 8 with imm8 == 1, none in camera/physics/
+// cloth/anim code -- so more offline effort on that encoding is wasted; and the writer may not even use
+// disp 0x420, since only the ADDRESS is fixed, not the encoded displacement).
+//
+// ⚠ ALSO MEASURED: the write is CONDITIONAL, not an inevitable consequence of the body build.  Dump
+// FF9CF623 (ANIM family, SecondsSinceStart 195) captures a PCM with a CLEAN ViewTarget.Target
+// (0x1CB9A088D40, 8-aligned) whose *(void**)Target resolves to the SAME vtable and SAME FName as the
+// object the corrupt pointers resolve to at Target+0x3F -- a third, independent confirmation of the
+// view target's identity, and proof that a mesh-build session can reach 195 s uncorrupted.  ⇒ a quiet
+// run proves LESS than "the guard worked": it may simply be a run where the writer never fired.
+//
+// ⚠ The PendingViewTarget arm below is DEAD CODE for this signature: PCM+0xC40 reads 0x0 in all four
+// camera dumps.  If only that arm ever fires, that is a NEW phenomenon, not a repair of FK-7.
+//
+// Reproduce the measurement (all offline, read-only, no game):
+//   python tools/crashtri/harvest.py                       # census + family classification, 86 dumps
+//   python tools/crashtri/mdctx.py   <dump>                # exception record + full CONTEXT_AMD64
+//   python tools/crashtri/deadobj.py <dump> [<dump> ...]   # the target, and UObject headers near it
+//   python tools/crashtri/ptrhunt.py <dump> 0x<ptr>        # every 8-aligned slot holding a value
+//   python tools/strxref/vtables.py slotof 0x3C5DBC0       # -> slot 312 of APlayerCameraManager
+//
+// WHY REPAIRING IS LEGITIMATE, NOT A HACK.  UE itself maintains this invariant:
+// FTViewTarget::CheckViewTarget(PCOwner) resets Target to the owning PlayerController whenever it is
+// not usable.  We do the same thing one frame earlier, from the game thread, with a single aligned
+// 8-byte store of a pointer the engine would have accepted anyway.  No .text patch, no new hook.
+//
+// TIMING (measured, and it is NOT a GC period).  `FlushAsyncLoading(2523)` immediately followed by a
+// skeletal-mesh init warning is the last log event in 4 of 4 camera crashes and in 0 of the other 68
+// crashes in the corpus.  That is DoPlay's blocking LoadMeshByPath -> body build.  The 173/175/185/194 s
+// clock times are just when that step ran; they fit no multiple of any GC period.
+//   ★ S106d CORRECTION: the warning is `LogChaosCloth` ONLY.  The other half of that pairing --
+//   LogPhysics "Scale3D is (nearly) zero" -- occurs in **0 of 14** log files, as does `LogPhysics` at
+//   all; the string exists in the image (.rdata 0x0817DAF0, "Initialising Body : Scale3D is (nearly)
+//   zero: %s") but is never emitted.  So there is no evidence of a degenerate PHYSICS body, only cloth,
+//   and the count is exactly ONE cloth warning per crashing session (1x in 4/4 crash logs, 0x in 5/5
+//   non-crash logs).  Emitter = the 768-byte function at RVA 0x6936E20, warning at +0xDA.  The line's
+//   object name is EMPTY in shipping, so it can never tell you WHICH body -- use KTESTACTOR to bisect.
+//   ★ Also: the "9 tutorial sessions, only 4 crashed" flakiness was a DENOMINATOR ERROR, not a second
+//   failure mode.  All 4 crash logs have FlushAsyncLoading=5 + LogChaosCloth=1 (RM_PLAY); all 5
+//   dumpless logs have FlushAsyncLoading=4 + LogChaosCloth=0 and ran a NON-mesh mode (3 recovered from
+//   git as RM_SPAWNPOSSESS, terminated by the user 3-9 s before he committed that session's marker; 2
+//   died before the T+173 s body build).  The RM_PLAY rate is 4 launches / 4 crashes = 100%.
+#ifndef KVTGUARD
+#define KVTGUARD 1              // -DKVTGUARD=0 -> A/B: reproduce the un-guarded GameThread crash
+#endif
+#ifndef KVTOFFFALLBACK
+#define KVTOFFFALLBACK 0x420    // MEASURED offset of FTViewTarget ViewTarget on APlayerCameraManager
+#endif                          // (rbx-rdi in both 2026-07-26 camera dumps). Reflection wins if it resolves.
+static uintptr_t g_vtPCM=0, g_vtGood=0;
+static uint32_t  g_vtOff=0xFFFFFFFF, g_vtPendOff=0xFFFFFFFF;
+static bool      g_vtRes=false;
+static int       g_vtRepairs=0;
+static DWORD     g_vtLastOk=0;
+// ★ S106d (2026-07-29) — BUG FIX: this counter was a FUNCTION-SCOPED `static int s_tries` inside
+// VtResolve. Function-scoped statics live for the process, but the "PlayerCameraManager destroyed ->
+// stand down and re-resolve" path in VtGuard resets every OTHER piece of resolve state (g_vtRes,
+// g_vtPCM, g_vtOff, ...) and could not reach s_tries. So the 200-hit give-up budget was CUMULATIVE
+// across teardowns, not per-resolve: after enough level changes / PC teardowns the running total
+// crossed 200 and VtResolve latched `g_vtRes = true` with `g_vtPCM = 0`, which makes
+// `VtResolve() -> false` forever. The guard would then be PERMANENTLY DISABLED for the rest of the
+// session while still printing nothing -- i.e. an A/B could silently run the "guard on" arm with no
+// guard. Promoted to file scope so the stand-down path can zero it, which is the actual fix; the
+// bounded budget is still enforced, just per-resolve-attempt as intended.
+static int       g_vtTries=0;
+
+#if KWPROBE
+// ---- FK-24 probe hooks that live on the GAME THREAD. All three are a handful of stores; none of them
+//      arms anything (the arm sweep suspends threads and must never run here -- S81's rule). ---------
+static volatile LONG g_wpSelfReq=0, g_wpSelfPhase=0, g_wpSelfDoneTick=0;
+static volatile LONG g_wpCorruptSeen=0; static DWORD g_wpCorruptTick=0; static uint64_t g_wpCorruptVal=0;
+static void WpArmRequest(int at){ if(KWPARMAT==at) InterlockedExchange(&g_wpArmReq,1); }
+// Called by VtGuard the instant it sees the measured corruption. This is the CORRELATION gate: every
+// verdict below is keyed on whether a trap was recorded near this moment, never on the value's shape.
+static void WpNoteCorruption(uint64_t cur){
+    g_wpCorruptVal=cur; g_wpCorruptTick=GetTickCount(); InterlockedIncrement(&g_wpCorruptSeen);
+}
+#endif
+
+// PC -> PlayerCameraManager, and the byte offset of its ViewTarget / PendingViewTarget. Reflection
+// first; the measured constant is a logged fallback so a layout change is visible, not silent.
+static bool VtResolve(uintptr_t pc){
+    if(g_vtRes) return LooksLikePtr(g_vtPCM) && g_vtOff!=0xFFFFFFFF;
+    // Do NOT latch on failure: on the first hits the PC / its camera manager may not exist yet.
+    // Retry a bounded number of times, then give up loudly rather than scanning forever.
+    // g_vtTries is FILE-SCOPE (see its declaration) so the stand-down path in VtGuard can reset it.
+    // A function-scoped static here latched the guard off permanently after ~200 cumulative misses
+    // across teardowns.
+    if(!LooksLikePtr(pc)){ if(++g_vtTries>=200){ g_vtRes=true; Marker("[VTG] no PlayerController after 200 hits -> guard inactive\r\n"); } return false; }
+    uint32_t o=PropOffsetSuper(ClassOf(pc),"PlayerCameraManager");
+    if(o!=0xFFFFFFFF && SafeReadable((void*)(pc+o),8)) g_vtPCM=*(uintptr_t*)(pc+o);
+    if(!LooksLikePtr(g_vtPCM)){ if(++g_vtTries>=200){ g_vtRes=true; Markerf("[VTG] PC->PlayerCameraManager still null after 200 hits (off@0x%X) -> guard inactive\r\n",o); } return false; }
+    g_vtRes=true; g_vtTries=0;   // resolved -> the budget for the NEXT resolve starts clean
+    uint32_t v=PropOffsetSuper(ClassOf(g_vtPCM),"ViewTarget");
+    bool refl=(v!=0xFFFFFFFF); if(!refl) v=KVTOFFFALLBACK;
+    g_vtOff=v;
+    g_vtPendOff=PropOffsetSuper(ClassOf(g_vtPCM),"PendingViewTarget");
+    Markerf("[VTG] pcm=0x%llX ViewTarget@0x%X (%s) PendingViewTarget@0x%X  [crash-dump measurement: 0x420]\r\n",
+            (unsigned long long)g_vtPCM,g_vtOff,refl?"reflection":"FALLBACK CONSTANT",g_vtPendOff);
+    // S106c: seed the last-good clock at RESOLVE time, not at first-valid-read. It is only ever used for the
+    // "after %lu ms good" field of the repair line, and that field is part of the evidence that separates the
+    // two candidate writers -- left at 0 it would print ~GetTickCount() (tens of millions of ms) on a repair
+    // that happened before any target ever validated, which reads as a plausible number and is not one.
+    g_vtLastOk=GetTickCount();
+#if KWPROBE
+    // KWPARMAT=0 (default): &PCM->ViewTarget.Target now EXISTS, which is the earliest moment the probe
+    // can point at it. Only a request flag is set here; WpThread does the arming.
+    WpArmRequest(0);
+#endif
+    return true;
+}
+// A view target must be an 8-aligned live UObject. The measured corruption (low byte -> 0x01) makes
+// it unaligned, so LooksLikePtr alone already rejects it; GcAlive additionally rejects a vtable
+// outside the image and a NAME_None (destructed) object, so a genuine UAF is caught too.
+static bool VtValid(uintptr_t t){ return LooksLikePtr(t) && GcAlive(t); }
+
+#if KWPROBE
+// ★★ THE IN-SESSION POSITIVE CONTROL (KWPSELFTEST).  A watchpoint that never fires is exactly the
+// project's dominant error mode -- an instrument's blind spot recorded as a property of the game.  This
+// converts "no trap fired" from ambiguous into decisive, in every launch, ~one frame after arming.
+//
+// TWO idempotent stores through the SAME slot, from the GAME THREAD, in this order:
+//   phase 1: an 8-BYTE store of the value already there   -> must fire B0 **and** B1
+//   phase 2: a 1-BYTE store of the byte already there     -> must fire B0 **only**
+// Phase 2 is not decoration: it validates the DR0/DR1 discriminator that replaces the retracted +0x3F
+// against GROUND TRUTH, in-session, on the exact address in question.  Both stores write back the value
+// they just read, so neither can perturb the game.  volatile => the compiler cannot elide them.
+// LIMITATION, stated so it is not over-read: this proves liveness ON THE GAME THREAD ONLY. For every
+// other thread the Dr7 readback is the only evidence, and it is weaker.
+static void WpSelfTestTick(uintptr_t* slot){
+#if KWPSELFTEST
+    if(!InterlockedCompareExchange(&g_wpSelfReq,0,0)) return;
+    if(!slot || !InterlockedCompareExchange(&g_wpArmed,0,0)) return;
+    LONG ph=InterlockedCompareExchange(&g_wpSelfPhase,0,0);
+    if(ph==0){
+        uintptr_t v=*(volatile uintptr_t*)slot;
+        if(!VtValid(v)) return;                      // never write through a slot that is already bad
+        InterlockedExchange(&g_wpSelfStore,1);       // D9: label the trap this store is about to raise
+        *(volatile uintptr_t*)slot = v;              // 8-byte idempotent store -> expect B0|B1
+        InterlockedExchange(&g_wpSelfStore,0);       // (the #DB is delivered BEFORE this line retires)
+        InterlockedExchange(&g_wpSelfPhase,1);
+    } else if(ph==1){
+        uintptr_t v=*(volatile uintptr_t*)slot;
+        if(!VtValid(v)) return;
+        volatile uint8_t* b=(volatile uint8_t*)slot;
+        InterlockedExchange(&g_wpSelfStore,2);
+        *b = *b;                                     // 1-byte idempotent store -> expect B0 only
+        InterlockedExchange(&g_wpSelfStore,0);
+        InterlockedExchange(&g_wpSelfPhase,2);
+        InterlockedExchange(&g_wpSelfDoneTick,(LONG)GetTickCount());
+        InterlockedExchange(&g_wpSelfReq,0);
+    }
+#else
+    (void)slot;
+#endif
+}
+#endif
+
+// Runs on the GAME THREAD, once per hook hit, ahead of the camera tick. 3 reads in the common case.
+// `preferred` = the actor this mode wants the camera on (the spawned CameraActor); it is only used
+// if it is itself valid.
+static void VtGuard(uintptr_t pc,uintptr_t preferred){
+#if KVTGUARD
+    if(!VtResolve(pc)) return;
+    // ★ S106c (2026-07-27) — DO NOT REPAIR THROUGH A DEAD CAMERA MANAGER.
+    // Gap found while auditing the S106b guard: g_vtPCM is cached once and then written to every hit. If
+    // the PlayerCameraManager itself is destroyed (level change, PC teardown, the same UnPossess the S99b
+    // possession guard already had to defend against), its heap block can stay COMMITTED while being freed
+    // — so SafeReadable/SafeWritable both still pass and the guard would happily store 8 bytes into freed
+    // memory. That is strictly worse than the bug being fixed: the original crash is a deterministic AV we
+    // can see, whereas a stray write into a recycled allocation is silent corruption.
+    // GcAlive is the same two measured death signatures used for the anim assets (vtable must be in-image,
+    // NamePrivate != NAME_None). Throttled to 4 Hz because this runs on the game thread on EVERY
+    // ProcessInternal hit and GcAlive costs a VirtualQuery; the ViewTarget check itself stays per-hit
+    // (see the note below on why it is deliberately NOT throttled).
+    { static DWORD s_pcmLast=0; DWORD nw=GetTickCount();
+      if(nw-s_pcmLast>=250){ s_pcmLast=nw;
+        if(!GcAlive(g_vtPCM)){
+            Markerf("[VTG] PlayerCameraManager 0x%llX is no longer a live UObject -> standing down and"
+                    " re-resolving (NO write; a repair here would land in freed memory)\r\n",
+                    (unsigned long long)g_vtPCM);
+            // ★ S106d — g_vtTries MUST be reset here too. Without it the 200-hit give-up budget was
+            // cumulative across teardowns and eventually latched the guard off for good (see the
+            // g_vtTries declaration). This line is the actual fix; the file-scope promotion enables it.
+            g_vtPCM=0; g_vtOff=0xFFFFFFFF; g_vtPendOff=0xFFFFFFFF; g_vtGood=0; g_vtRes=false; g_vtTries=0;
+            return; } } }
+    // The ViewTarget read+validate below is deliberately EVERY hit, not throttled. The corruption is a
+    // single-byte store from an unknown writer, so it can land on any frame, and the whole value of the
+    // guard is repairing it before the next APlayerCameraManager tick dispatches through it. Measured
+    // cost is ~3 VirtualQuery per hit against the 2-4 full UFunction invocations DoPlay/DoTopDownCam
+    // already make per hit — a few percent, which does not buy weakening the one thing this exists to do.
+    uintptr_t* slot=(uintptr_t*)(g_vtPCM+g_vtOff);
+    if(!SafeReadable(slot,8)) return;
+#if KWPROBE
+    WpSelfTestTick(slot);   // FK-24 positive control: two idempotent stores, once, right after arming
+#endif
+    uintptr_t cur=*slot;
+    if(VtValid(cur)){ g_vtGood=cur; g_vtLastOk=GetTickCount(); }
+    else {
+#if KWPROBE
+        WpNoteCorruption((uint64_t)cur);   // correlation gate -- see the [WP] correlate: line
+#endif
+        uintptr_t want = VtValid(preferred)?preferred : (VtValid(g_vtGood)?g_vtGood : (VtValid(pc)?pc:0));
+        // Log BEFORE repairing. ★ S106d — READ THIS AS A **SIGNATURE MATCH ONLY, NOT ATTRIBUTION**:
+        // `lowbyte=0x01 delta=+0x3F` confirms "this is the SAME bug as the 2026-07-26 dumps", and any
+        // other shape (0, a whole-pointer change, a dead-but-aligned pointer) is a DIFFERENT bug that
+        // must not be filed under this one. It does NOT identify the writer: delta = (live & 0xFF) - 1,
+        // and the live object's low byte is allocator-forced to 0x40 (3 of 3 observations, including a
+        // clean control), so +0x3F is arithmetic, not evidence. Both candidate writers print it.
+        Markerf("[VTG] *** ViewTarget.Target INVALID: 0x%llX (align=%u lowbyte=0x%02X alive=%d) after %lu ms good"
+                " -> repair to 0x%llX (delta=%+lld) [#%d] ***\r\n",
+                (unsigned long long)cur,(unsigned)(cur&7),(unsigned)(cur&0xFF),(int)GcAlive(cur),
+                (unsigned long)(GetTickCount()-g_vtLastOk),(unsigned long long)want,
+                (long long)(want?(long long)want-(long long)cur:0),g_vtRepairs+1);
+        if(!want) Marker("[VTG] no valid replacement -> NOT writing (a write would not help)\r\n");
+        else if(!SafeWritable(slot,8)) Marker("[VTG] ViewTarget slot not writable -> skipped\r\n");
+        else { *slot=want; g_vtRepairs++; g_vtGood=want; g_vtLastOk=GetTickCount(); }
+    }
+    // PendingViewTarget is walked by the same per-frame chain during a blend. Its SAFE state is NULL
+    // (that is exactly what APlayerCameraManager::SetViewTarget writes for an instant cut), so a
+    // corrupt pending target is cleared rather than replaced -- strictly the engine's own no-blend state.
+    if(g_vtPendOff!=0xFFFFFFFF){
+        uintptr_t* p=(uintptr_t*)(g_vtPCM+g_vtPendOff);
+        if(SafeReadable(p,8)){ uintptr_t pv=*p;
+            if(pv && !VtValid(pv) && SafeWritable(p,8)){
+                Markerf("[VTG] *** PendingViewTarget.Target INVALID: 0x%llX (lowbyte=0x%02X) -> cleared to NULL ***\r\n",
+                        (unsigned long long)pv,(unsigned)(pv&0xFF));
+                *p=0; g_vtRepairs++; } }
+    }
+#endif
+}
+// ================= end S106b VIEW-TARGET GUARD =================================================
+
+#if KWPROBE
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+// FK-24 WATCHPOINT PROBE — BACK HALF: arm / sweep / drain / verdict.  Everything here runs on WpThread
+// (a dedicated background thread).  The GAME THREAD is never blocked and never sweeps: a sweep suspends
+// threads, and S81's rule (a 20 s game-thread block dropped the netdriver) stands.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+static DWORD g_wpTids[2048]; static int g_wpNTids=0;          // armed set (WpThread only)
+static int   g_wpSweepN=0, g_wpLogged=0;
+static uint64_t g_wpSeenRva[64]; static int g_wpNSeenRva=0;   // novelty filter for the rate limiter
+static DWORD g_wpArmTick=0, g_wpLastCensus=0, g_wpTpsTick=0; static LONG g_wpTpsBase=0;
+static bool  g_wpVerdictDone=false, g_wpArmLogged=false;
+static int   g_wpVoidThreads=0, g_wpPreexisting=0, g_wpLastNew=0, g_wpNewAtCorrupt=-1;
+static bool  g_wpSelfB0B1=false, g_wpSelfB0only=false, g_wpAnySelfTrap=false, g_wpSelfTestTrapped=false;
+static DWORD g_wpPollHitTick=0; static uint64_t g_wpPollHitVal=0; static bool g_wpPollHit=false;
+static LONG  g_wpPolls=0;   // poll COUNT -> the summary reports the MEASURED period, not the nominal one
+static DWORD g_wpLastTrapTick=0; static uint64_t g_wpLastCorruptRva=0; static DWORD g_wpCorruptTrapTick=0;
+static int   g_wpCorrelated=0, g_wpFullShown=0;
+static const char* kWpRegName[16]={"RAX","RCX","RDX","RBX","RSP","RBP","RSI","RDI",
+                                   "R8 ","R9 ","R10","R11","R12","R13","R14","R15"};
+
+static void WpImageRange(uintptr_t base,uintptr_t* lo,uintptr_t* hi){
+    *lo=base; *hi=base+0x1000;
+    if(!SafeReadable((void*)base,0x40)) return;
+    IMAGE_DOS_HEADER* d=(IMAGE_DOS_HEADER*)base;
+    if(d->e_magic!=IMAGE_DOS_SIGNATURE) return;
+    IMAGE_NT_HEADERS64* nt=(IMAGE_NT_HEADERS64*)(base+(uintptr_t)d->e_lfanew);
+    if(!SafeReadable(nt,sizeof(IMAGE_NT_HEADERS64))||nt->Signature!=IMAGE_NT_SIGNATURE) return;
+    if(nt->OptionalHeader.SizeOfImage) *hi=base+nt->OptionalHeader.SizeOfImage;   // tight bound, not the 0xC000000 slop
+}
+static void WpResolveRanges(){
+    WpImageRange(g_modBase,&g_wpModLo,&g_wpModHi);
+    MEMORY_BASIC_INFORMATION m{};
+    if(VirtualQuery((void*)&WpResolveRanges,&m,sizeof(m)) && m.AllocationBase){
+        uintptr_t b=(uintptr_t)m.AllocationBase; WpImageRange(b,&g_wpSelfLo,&g_wpSelfHi);
+        if(g_wpSelfHi<=g_wpSelfLo+0x1000) g_wpSelfHi=(uintptr_t)m.BaseAddress+m.RegionSize;   // manual-mapped, no headers
+    }
+}
+// Callable FROM THE HANDLER (page mode only). Same D3 discipline: grace open, hardware down, flag last.
+static void WpPanicDisarm(){
+    InterlockedExchange(&g_wpGraceUntil,(LONG)(GetTickCount()+2000));
+#if KWPROBE==2
+    DWORD tmp=0; if(g_wpPage) VirtualProtect((void*)g_wpPage,g_wpPageSz,g_wpOldProt?g_wpOldProt:PAGE_READWRITE,&tmp);
+#endif
+    InterlockedExchange(&g_wpArmed,0); InterlockedExchange(&g_wpStorm,1);
+}
+
+// ---------------------------------------------------------------------------------------------------
+// DR path: one thread at a time.  SUSPEND DISCIPLINE (non-negotiable): between SuspendThread and
+// ResumeThread the ONLY calls are Get/SetThreadContext -- kernel calls that take no user-mode lock in
+// this process.  No Marker*, no allocation, no VirtualQuery.  Suspending a thread that holds the heap
+// or loader lock and then allocating is the classic self-deadlock.
+// ---------------------------------------------------------------------------------------------------
+#if KWPROBE==1
+struct WpArmRes { int ok, failOpen, failGet, failSet, readbackZero, preexist, busySkipped; };
+static void WpArmOne(DWORD tid,WpArmRes* R,uint64_t* preOut){
+    HANDLE h=OpenThread(THREAD_SUSPEND_RESUME|THREAD_GET_CONTEXT|THREAD_SET_CONTEXT|THREAD_QUERY_INFORMATION,FALSE,tid);
+    if(!h){ R->failOpen++; return; }
+    if(SuspendThread(h)==(DWORD)-1){ CloseHandle(h); R->failOpen++; return; }
+    alignas(16) CONTEXT ctx; alignas(16) CONTEXT rb;   // an unaligned CONTEXT makes GetThreadContext fail (ERROR_NOACCESS)
+    memset(&ctx,0,sizeof(ctx)); memset(&rb,0,sizeof(rb));
+    ctx.ContextFlags=CONTEXT_DEBUG_REGISTERS;
+    BOOL g=GetThreadContext(h,&ctx), s=FALSE, r=FALSE; bool busy=false;
+    uint64_t pre=g?ctx.Dr7:0;
+    if(g){
+        // ★ D6 -- the slot PAIR is chosen once, from the GAME thread's pre-existing Dr7. Another thread may
+        // independently be using that pair. OR-ing our L bits in and overwriting its Dr0/Dr1 would clobber
+        // its watchpoints AND merge its R/W+LEN bits with ours into nonsense. Detect it and STEP ASIDE:
+        // the resulting coverage hole is real, so it is counted and reported rather than papered over.
+        uint64_t curAddr = (g_wpDrPair==0)?ctx.Dr0:ctx.Dr2;
+        if((pre&g_wpDr7Val&0xFFULL) && curAddr!=(uint64_t)g_wpAddr) busy=true;
+        if(!busy){
+            if(g_wpDrPair==0){ ctx.Dr0=g_wpAddr; ctx.Dr1=g_wpAddr+1; }
+            else             { ctx.Dr2=g_wpAddr; ctx.Dr3=g_wpAddr+1; }
+            ctx.Dr6=0; ctx.Dr7=(DWORD64)(pre|g_wpDr7Val);      // OR: never clobber a pre-existing user's slots
+            ctx.ContextFlags=CONTEXT_DEBUG_REGISTERS;          // re-set: Get may have widened it
+            s=SetThreadContext(h,&ctx);
+        }
+    }
+    if(!busy){ rb.ContextFlags=CONTEXT_DEBUG_REGISTERS;
+        r=GetThreadContext(h,&rb); }                           // ★ READ BACK WHILE STILL SUSPENDED
+    uint64_t got0 = (g_wpDrPair==0)?rb.Dr0:rb.Dr2, got7=rb.Dr7;
+    ResumeThread(h); CloseHandle(h);
+    // ---- only NOW is bookkeeping legal ----
+    if(preOut) *preOut=pre;
+    if(!g)                                        R->failGet++;
+    else if(busy)                                 R->busySkipped++;
+    else if(!s)                                   R->failSet++;
+    else if(!r||got7==0||got0!=(uint64_t)g_wpAddr) R->readbackZero++;
+    else                                          R->ok++;
+    if(pre&0xFFULL)                               R->preexist++;
+}
+static bool WpKnownTid(DWORD t){ for(int i=0;i<g_wpNTids;i++) if(g_wpTids[i]==t) return true; return false; }
+static void WpDisarmOne(DWORD tid){
+    HANDLE h=OpenThread(THREAD_SUSPEND_RESUME|THREAD_GET_CONTEXT|THREAD_SET_CONTEXT,FALSE,tid); if(!h) return;
+    if(SuspendThread(h)==(DWORD)-1){ CloseHandle(h); return; }
+    alignas(16) CONTEXT ctx; memset(&ctx,0,sizeof(ctx)); ctx.ContextFlags=CONTEXT_DEBUG_REGISTERS;
+    if(GetThreadContext(h,&ctx)){ ctx.Dr7&=~(DWORD64)g_wpDr7Val; ctx.Dr6=0;
+        ctx.ContextFlags=CONTEXT_DEBUG_REGISTERS; SetThreadContext(h,&ctx); }
+    ResumeThread(h); CloseHandle(h);
+}
+static void WpSweep(bool first){
+    DWORD myPid=GetCurrentProcessId(), myTid=GetCurrentThreadId();
+    HANDLE snap=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD,0);
+    if(snap==INVALID_HANDLE_VALUE){ Markerf("[WP] sweep#%d *** CreateToolhelp32Snapshot FAILED (%lu) -- coverage UNKNOWN ***\r\n",g_wpSweepN,GetLastError()); return; }
+    static DWORD tids[2048]; int n=0; THREADENTRY32 te; te.dwSize=sizeof(te);
+    if(Thread32First(snap,&te)) do{
+        if(te.dwSize>=FIELD_OFFSET(THREADENTRY32,th32OwnerProcessID)+sizeof(DWORD) &&
+           te.th32OwnerProcessID==myPid && te.th32ThreadID!=myTid && n<2048) tids[n++]=te.th32ThreadID;
+    } while(Thread32Next(snap,&te));
+    CloseHandle(snap);
+    WpArmRes R{}; int nNew=0, nRe=0, nCleared=0;
+    for(int i=0;i<n;i++){
+        bool known=WpKnownTid(tids[i]);
+        uint64_t pre=0; WpArmOne(tids[i],&R,&pre);
+        if(!known) nNew++;
+        else { nRe++; if((pre&g_wpDr7Val)!=g_wpDr7Val) nCleared++; }   // it WAS armed and is not any more
+    }
+    // ★ D8 -- REBUILD the armed set from THIS snapshot instead of only appending to it. The old code never
+    // evicted dead tids, so over a long session it could saturate the 2048 cap; once saturated every live
+    // thread would read as "new" forever, permanently poisoning the newly-armed / W5 coverage signal.
+    // Rebuilding is free (we already enumerate every thread each sweep) and dead tids evict themselves.
+    { int keep=(n<2048)?n:2048; for(int i=0;i<keep;i++) g_wpTids[i]=tids[i]; g_wpNTids=keep;
+      if(n>2048) Markerf("[WP] *** sweep saw %d threads, tracking cap is 2048 -- coverage of the remainder is UNKNOWN ***\r\n",n); }
+    g_wpSweepN++; g_wpLastNew=nNew; g_wpVoidThreads=R.readbackZero; g_wpPreexisting=R.preexist;
+    if(first||nNew||nCleared||R.readbackZero||R.failGet||R.failSet||R.failOpen||R.busySkipped)
+        Markerf("[WP] arm sweep#%d threads=%d armedOK=%d newly-armed=%d re-verified=%d dr7ReadbackZero=%d"
+                " failGet=%d failSet=%d openFail=%d preexistingDR=%d busySkipped=%d clearedSinceLast=%d\r\n",
+                g_wpSweepN,n,R.ok,nNew,nRe,R.readbackZero,R.failGet,R.failSet,R.failOpen,R.preexist,R.busySkipped,nCleared);
+    if(R.busySkipped>0)
+        Markerf("[WP] *** %d thread(s) were ALREADY using our DR slot pair for something else -> NOT armed"
+                " (we never clobber). Those threads are UNWATCHED: a quiet result is VOID for them. ***\r\n",R.busySkipped);
+    if(R.readbackZero>0 && first)
+        Markerf("[WP] *** W1 VOID: %d/%d threads read Dr7 back as ZERO -- the DR write did NOT stick on them."
+                " A zero readback is VOID, NOT a negative. Escalate to -DKWPROBE=2. ***\r\n",R.readbackZero,n);
+    if(nCleared>0)
+        Markerf("[WP] *** W2: %d thread(s) had our Dr7 bits CLEARED BY SOMETHING ELSE since the last sweep"
+                " (the packer polls DR). Coverage for that window is VOID, not negative. ***\r\n",nCleared);
+}
+#endif  // KWPROBE==1
+
+// ---------------------------------------------------------------------------------------------------
+static bool WpArm(){
+    if(!LooksLikePtr(g_vtPCM)||g_vtOff==0xFFFFFFFF) return false;
+    SYSTEM_INFO si; GetSystemInfo(&si); if(si.dwPageSize) g_wpPageSz=si.dwPageSize;
+    WpResolveRanges();
+    g_wpPCM=g_vtPCM; g_wpVtOff=g_vtOff;
+    g_wpAddr=g_vtPCM+g_vtOff;                                     // ★ reflection-resolved. NOT hardcoded 0x420.
+    g_wpPendTgt=(g_vtPendOff!=0xFFFFFFFF)?(g_vtPCM+g_vtPendOff):0;
+    g_wpPage=g_wpAddr&~(uintptr_t)(g_wpPageSz-1);
+    g_wpPollLast=WpRead8(g_wpAddr);
+    if(g_wpLogH==INVALID_HANDLE_VALUE)                            // pre-open: the handler must never CreateFile
+        g_wpLogH=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);
+    MEMORY_BASIC_INFORMATION mb{}; VirtualQuery((void*)g_wpPage,&mb,sizeof(mb));
+    Markerf("[WP] cfg mode=%s armAt=%d selftest=%d sweep=%dms poll=%dms hold=%dms synclog=%d\r\n",
+            (KWPROBE==1)?"DR0/DR1-hardware":"PAGE_READONLY",(int)KWPARMAT,(int)KWPSELFTEST,
+            (int)KWPSWEEPMS,(int)KWPPOLLMS,(int)KWPHOLDMS,(int)KWPSYNCLOG);
+    Markerf("[WP] target &VT.Target=0x%llX (pcm=0x%llX +0x%X %s)  &PVT.Target=0x%llX  page=0x%llX"
+            " pageOffTarget=0x%03X pageSz=0x%X regionBase=0x%llX regionSz=0x%llX prot=0x%X\r\n",
+            (unsigned long long)g_wpAddr,(unsigned long long)g_wpPCM,g_wpVtOff,
+            (g_wpVtOff==(uint32_t)KVTOFFFALLBACK)?"FALLBACK-CONSTANT-or-reflection-agrees":"reflection",
+            (unsigned long long)g_wpPendTgt,(unsigned long long)g_wpPage,
+            (unsigned)(g_wpAddr-g_wpPage),g_wpPageSz,
+            (unsigned long long)(uintptr_t)mb.BaseAddress,(unsigned long long)mb.RegionSize,(unsigned)mb.Protect);
+    Markerf("[WP] modbase=0x%llX..0x%llX  self(this DLL)=0x%llX..0x%llX  gameTid=%lu wpTid=%lu  initialTarget=0x%llX\r\n",
+            (unsigned long long)g_wpModLo,(unsigned long long)g_wpModHi,
+            (unsigned long long)g_wpSelfLo,(unsigned long long)g_wpSelfHi,
+            (unsigned long)g_gameTid,(unsigned long)GetCurrentThreadId(),(unsigned long long)g_wpPollLast);
+#if KWPROBE==1
+    // Pick the DR slot pair ONCE, from the game thread's pre-existing Dr7. Non-zero there means the game
+    // or the packer is already using debug registers -- log it and step aside rather than clobbering.
+    {   uint64_t pre=0;
+        if(g_gameTid){ HANDLE h=OpenThread(THREAD_SUSPEND_RESUME|THREAD_GET_CONTEXT,FALSE,g_gameTid);
+            if(h){ if(SuspendThread(h)!=(DWORD)-1){ alignas(16) CONTEXT c0; memset(&c0,0,sizeof(c0));
+                    c0.ContextFlags=CONTEXT_DEBUG_REGISTERS; if(GetThreadContext(h,&c0)) pre=c0.Dr7; ResumeThread(h);} CloseHandle(h);} }
+        if(pre&0x5ULL){ g_wpDrPair=1; g_wpDr7Val=0x11000050ULL; g_wpDrBit0=0x4; g_wpDrBit1=0x8;
+            Markerf("[WP] *** PRE-EXISTING DEBUG REGS on the game thread (Dr7=0x%llX) -> using DR2/DR3 instead of DR0/DR1 ***\r\n",(unsigned long long)pre); }
+        else Markerf("[WP] game-thread Dr7 before arming = 0x%llX -> using DR0/DR1 (dr7=0x%llX, R/W=write, LEN=1 byte)\r\n",
+                     (unsigned long long)pre,(unsigned long long)g_wpDr7Val);
+    }
+    InterlockedExchange(&g_wpArmed,1);
+    g_wpNTids=0; WpSweep(true);
+#elif KWPROBE==2
+    // ★ D1 FIX -- ORDER IS LOAD-BEARING.  The pend table and g_wpArmed must be live BEFORE the page goes
+    // read-only.  Previously VirtualProtect ran, then a Markerf (CreateFileA+WriteFile+CloseHandle,
+    // ~100-200 us), and only then g_wpArmed=1.  WpHandle's first line is `if(!armed) return false`, so any
+    // write landing in that window fell through to the fatal path as an unhandled AV.  ViewTarget.POV
+    // shares this page in 5/5 dumps and is written every frame, so that window was very likely fatal.
+    // Arming the flag early costs nothing: the handler's four-condition page filter rejects everything
+    // that is not a WRITE to our page, and the grace/armed logic covers the rest.
+    for(int i=0;i<WPPEND;i++){ g_wpPend[i].tid=0; g_wpPend[i].isTgt=0; g_wpPend[i].selfTest=0; }
+    InterlockedExchange(&g_wpArmed,1);
+    BOOL ok=VirtualProtect((void*)g_wpPage,g_wpPageSz,PAGE_READONLY,&g_wpOldProt);
+    MEMORY_BASIC_INFORMATION rb{}; VirtualQuery((void*)g_wpPage,&rb,sizeof(rb));      // ★ MANDATORY READBACK
+    // The readback must test COVERAGE, not exact identity.  If the neighbouring page is already
+    // PAGE_READONLY the regions coalesce and rb.BaseAddress is BELOW g_wpPage -- the arm is still correct.
+    // The old `rb.BaseAddress==g_wpPage` test called that a VOID (and, with the old ordering, left the page
+    // read-only with the handler off => a guaranteed crash next frame, misreadable as FK-7).
+    bool covered = rb.Protect==PAGE_READONLY &&
+                   (uintptr_t)rb.BaseAddress<=g_wpPage &&
+                   (uintptr_t)rb.BaseAddress+(uintptr_t)rb.RegionSize>=g_wpPage+g_wpPageSz;
+    bool armed = ok && covered;
+    if(!armed){
+        // ★ D2 FIX -- FAIL SAFE, NOT FAIL DEADLY.  If VirtualProtect succeeded but the readback disagrees,
+        // put the protection back before giving up.  Leaving a read-only page behind with the handler
+        // disarmed is the single worst thing this probe could do.
+        DWORD tmp=0; if(ok) VirtualProtect((void*)g_wpPage,g_wpPageSz,g_wpOldProt?g_wpOldProt:PAGE_READWRITE,&tmp);
+        InterlockedExchange(&g_wpArmed,0);
+    }
+    Markerf("[WP] arm PAGE_READONLY %s: VirtualProtect=%d wasProt=0x%X readback prot=0x%X base=0x%llX size=0x%llX"
+            " covered=%d coalesced=%d%s\r\n",
+            armed?"OK":"*** V1 VOID -- NEVER ARMED (protection restored) ***",(int)ok,(unsigned)g_wpOldProt,
+            (unsigned)rb.Protect,(unsigned long long)(uintptr_t)rb.BaseAddress,(unsigned long long)rb.RegionSize,
+            (int)covered,(int)((uintptr_t)rb.BaseAddress!=g_wpPage),
+            armed?"":"  <- V1 is TERMINAL for this launch: the page path never ran, so nothing below is a negative");
+    if(!armed){ g_wpArmLogged=true; return false; }   // latch: V1 is terminal, retrying would flood the log
+#endif
+    g_wpArmTick=GetTickCount(); g_wpTpsTick=g_wpArmTick; g_wpTpsBase=0; g_wpArmLogged=true;
+#if KWPSELFTEST
+    InterlockedExchange(&g_wpSelfPhase,0); InterlockedExchange(&g_wpSelfReq,1);
+    Marker("[WP] selftest ARMED: VtGuard will issue an 8-byte then a 1-byte idempotent store to &Target\r\n");
+#endif
+    return true;
+}
+// ★ D3 FIX -- HARDWARE FIRST, FLAG LAST, PLUS A GRACE WINDOW.
+// The old order cleared g_wpArmed and only then walked ~140 threads clearing their DR7 (3-5 ms).  A DR hit
+// inside that window was DECLINED by WpHandle and propagated as an unhandled STATUS_SINGLE_STEP, which
+// kills the process.  This is not theoretical: the `retarget` path calls WpDisarm mid-session whenever
+// VtGuard stands down on PlayerCameraManager teardown (a documented real event, S106c).
+// Now: open a grace window -> clear the hardware -> clear the flag.  During the grace the handler still
+// swallows traps that provably name our slots, but does not record them (coverage is over).
+static void WpDisarm(const char* why){
+    if(!InterlockedCompareExchange(&g_wpArmed,0,0)) return;
+    InterlockedExchange(&g_wpGraceUntil,(LONG)(GetTickCount()+2000));
+#if KWPROBE==1
+    for(int i=0;i<g_wpNTids;i++) WpDisarmOne(g_wpTids[i]);
+    InterlockedExchange(&g_wpArmed,0);
+    g_wpNTids=0;
+#elif KWPROBE==2
+    DWORD tmp=0; BOOL ok=VirtualProtect((void*)g_wpPage,g_wpPageSz,g_wpOldProt?g_wpOldProt:PAGE_READWRITE,&tmp);
+    InterlockedExchange(&g_wpArmed,0);
+    MEMORY_BASIC_INFORMATION rb{}; VirtualQuery((void*)g_wpPage,&rb,sizeof(rb));
+    if(!ok||rb.Protect==PAGE_READONLY)
+        Markerf("[WP] *** V4: page protection at DISARM reads 0x%X (restore ok=%d) -- coverage for part of the window is UNKNOWN ***\r\n",(unsigned)rb.Protect,(int)ok);
+#else
+    InterlockedExchange(&g_wpArmed,0);
+#endif
+    Markerf("[WP] DISARMED (%s) after %lu ms (grace 2000 ms: in-flight traps are swallowed, not recorded)\r\n",
+            why,(unsigned long)(GetTickCount()-g_wpArmTick));
+}
+
+// ---- drain: ALL formatting happens here, on WpThread, never in the handler ------------------------
+// ★ D7 -- SATURATION.  The old version returned true (=> "log this one in full") for every RVA once the
+// 64-slot table filled, because it could no longer record what it had already seen.  That turns the rate
+// limiter off exactly when it is most needed.  Full => nothing is novel any more, and say so once.
+static bool WpNovelRva(uint64_t rva){
+    for(int i=0;i<g_wpNSeenRva;i++) if(g_wpSeenRva[i]==rva) return false;
+    if(g_wpNSeenRva>=64){
+        static bool warned=false;
+        if(!warned){ warned=true;
+            Markerf("[WP] *** distinct-RVA table FULL (64) -- novelty logging is off from here; the census"
+                    " counters stay exact. A CORRUPTING store is still logged in full regardless. ***\r\n"); }
+        return false;
+    }
+    g_wpSeenRva[g_wpNSeenRva++]=rva; return true;
+}
+static void WpHex(const uint8_t* p,int n,char* out,int cap){
+    int o=0; out[0]=0; for(int i=0;i<n&&o+3<cap;i++) o+=_snprintf_s(out+o,cap-o,_TRUNCATE,"%02X ",p[i]);
+}
+static void WpEmitFull(int idx,uint64_t seq){
+    WpFull* F=&g_wpFull[idx];
+    uint64_t rva=(F->rip>=g_wpModLo&&F->rip<g_wpModHi)?F->rip-g_wpModLo:0;
+    const char* origin=(F->flags&WPF_SELF)?"SELF(this shim)":((F->flags&WPF_INMOD)?"GAME":"OUT-OF-MODULE(packer-hidden or another DLL)");
+    // ★ conv= is printed literally because getting it backwards misnames the writer by one instruction.
+    const char* conv=(KWPROBE==1)?"RIP-IS-AFTER (DR trap: the store ENDS at rip)":"RIP-IS-AT (page fault: the store STARTS at rip)";
+    Markerf("[WP] *** TRAP #%llu tid=%lu%s code=0x%lX dr6=0x%llX %s%s%s conv=%s\r\n",
+            (unsigned long long)seq,(unsigned long)F->tid,(F->flags&WPF_GAMETID)?"(GAMETHREAD)":"(WORKER)",
+            (unsigned long)F->code,(unsigned long long)F->dr6,
+            (F->flags&WPF_B0)?"B0 ":"",(F->flags&WPF_B1)?"B1 ":"",
+            (F->flags&WPF_DR6ZERO)?"[dr6=0 UNAVAILABLE-instrument-caveat] ":"",conv);
+    Markerf("[WP]   rip=0x%llX rva=0x%llX origin=%s ctxFlags=0x%lX dr7=0x%llX\r\n",
+            (unsigned long long)F->rip,(unsigned long long)rva,origin,(unsigned long)F->ctxFlags,(unsigned long long)F->dr7);
+    // width discriminator -- a property of the INSTRUCTION, which is what replaces the retracted +0x3F.
+    if(KWPROBE==1)
+        Markerf("[WP]   width: %s\r\n",((F->flags&WPF_B0)&&(F->flags&WPF_B1))?"B0+B1 => the store was WIDER THAN ONE BYTE (a whole-pointer store)":
+                ((F->flags&WPF_B0)?"B0 ONLY => a ONE-BYTE store at offset 0 -- the measured FK-7 shape":"neither byte flagged (see dr6)"));
+    Markerf("[WP]   target-before=0x%llX target-now=0x%llX lowbyte=0x%02X aligned=%s%s   pending-now=0x%llX  dt=%lums-after-bodybuild\r\n",
+            (unsigned long long)F->before,(unsigned long long)F->after,(unsigned)(F->after&0xFF),
+            (F->after&7)?"NO":"yes",(F->flags&WPF_CORRUPT)?"  *** THIS IS THE CORRUPTING STORE (value used ONLY to pick the trap, never as attribution) ***":"",
+            (unsigned long long)(g_wpPendTgt?WpRead8(g_wpPendTgt):0),
+            (unsigned long)(g_wpBodyTick?(F->tick-g_wpBodyTick):0));
+    Markerf("[WP]   RAX=%llX RCX=%llX RDX=%llX RBX=%llX RSP=%llX RBP=%llX RSI=%llX RDI=%llX\r\n",
+            (unsigned long long)F->regs[0],(unsigned long long)F->regs[1],(unsigned long long)F->regs[2],(unsigned long long)F->regs[3],
+            (unsigned long long)F->regs[4],(unsigned long long)F->regs[5],(unsigned long long)F->regs[6],(unsigned long long)F->regs[7]);
+    Markerf("[WP]   R8=%llX R9=%llX R10=%llX R11=%llX R12=%llX R13=%llX R14=%llX R15=%llX\r\n",
+            (unsigned long long)F->regs[8],(unsigned long long)F->regs[9],(unsigned long long)F->regs[10],(unsigned long long)F->regs[11],
+            (unsigned long long)F->regs[12],(unsigned long long)F->regs[13],(unsigned long long)F->regs[14],(unsigned long long)F->regs[15]);
+    // ★ THE OTHER HALF OF ATTRIBUTION: which OBJECT the store was aimed at. delta==0 on some register
+    // means the writer HELD A PCM* and wrote a byte into what it believed was its own field; a small
+    // negative delta means it was aimed at a DIFFERENT object whose layout puts a byte at PCM+0x420
+    // (type confusion), and then the encoded displacement is NOT 0x420. Not recoverable offline.
+    { char bm[400]; int o=0; bm[0]=0; int hits=0;
+      for(int i=0;i<16;i++){ int64_t d=(int64_t)F->regs[i]-(int64_t)g_wpPCM;
+          if(d>-0x40000&&d<0x40000&&o<360){ o+=_snprintf_s(bm+o,sizeof(bm)-o,_TRUNCATE,"%s=pcm%+lld ",kWpRegName[i],(long long)d); hits++; } }
+      Markerf("[WP]   base-match(pcm=0x%llX): %s%s\r\n",(unsigned long long)g_wpPCM,hits?bm:"none",
+              hits?"  (delta 0 => the store WAS AIMED AT THIS OBJECT)":"  (address was computed/indexed -- reconstruct the index from the reg set)"); }
+    { char hx[240]; WpHex(F->pre,64,hx,sizeof(hx)); Markerf("[WP]   bytes@rip-64: %s\r\n",hx); }
+    { char hx[64];  WpHex(F->at,16,hx,sizeof(hx));  Markerf("[WP]   bytes@rip:    %s\r\n",hx); }
+    if(F->nret){ char rs[220]; int o=0; rs[0]=0;
+        for(int i=0;i<F->nret&&o<200;i++) o+=_snprintf_s(rs+o,sizeof(rs)-o,_TRUNCATE,"0x%llX ",(unsigned long long)(F->ret[i]-g_wpModLo));
+        Markerf("[WP]   ret-scan(HEURISTIC, call-shaped filter, NOT an unwind): %s\r\n",rs); }
+    { char hx[240]; WpHex(F->pre,64,hx,sizeof(hx));
+      Markerf("[WP]   -> python tools\\crashtri\\wpattrib.py 0x%llX --conv %s --bytes-at 0x%llX --bytes \"%s\"\r\n",
+              (unsigned long long)rva,(KWPROBE==1)?"after":"at",(unsigned long long)(rva?rva-64:0),hx); }
+    if(F->flags&WPF_CORRUPT){ g_wpLastCorruptRva=rva; g_wpCorruptTrapTick=F->tick; }
+    F->state=3;
+}
+static void WpDrain(){
+    LONG produced=InterlockedCompareExchange(&g_wpSeq,0,0);
+    while(g_wpCursor<produced){
+        long i=++g_wpCursor; WpRec* r=&g_wpRing[(i-1)&(WPRING-1)];
+        if(r->seq!=(uint64_t)i){ InterlockedIncrement(&g_wpDropped); continue; }   // lapped by a storm
+        g_wpLastTrapTick=GetTickCount();
+        // Liveness proof = ANY trap whose RIP is in this DLL on the game thread (the selftest stores AND
+        // VtGuard's own repair store both qualify -- either one proves the watchpoint is live there).
+        if(r->flags&WPF_SELF) g_wpAnySelfTrap=true;
+        // D9: the WIDTH discriminator is validated only against LABELLED selftest stores -- ground truth.
+        if(r->flags&WPF_SELFTEST){ g_wpSelfTestTrapped=true;
+            if(r->flags&WPF_SELFT1B) g_wpSelfB0only=((r->flags&WPF_B0)&&!(r->flags&WPF_B1));
+            else                     g_wpSelfB0B1  =((r->flags&WPF_B0)&& (r->flags&WPF_B1)); }
+        if(r->flags&WPF_PAGEOFF) continue;                                          // census only
+        uint64_t rva=(r->rip>=g_wpModLo&&r->rip<g_wpModHi)?r->rip-g_wpModLo:0;
+        bool novel=WpNovelRva(rva);
+        if((r->flags&WPF_CORRUPT)||g_wpLogged<KWPMAXLOG||novel){
+            g_wpLogged++;
+            // the full record is bound BY INDEX (recorded by the handler), never matched heuristically
+            int fi=r->full;
+            if(fi>=0 && fi<(int)(sizeof(g_wpFull)/sizeof(g_wpFull[0])) && g_wpFull[fi].state==2){ WpEmitFull(fi,(uint64_t)i); g_wpFullShown++; }
+            else Markerf("[WP] TRAP #%ld tid=%lu%s rip=0x%llX rva=0x%llX %s%s%s before=0x%llX after=0x%llX%s\r\n",
+                    i,(unsigned long)r->tid,(r->flags&WPF_GAMETID)?"(GAMETHREAD)":"(WORKER)",
+                    (unsigned long long)r->rip,(unsigned long long)rva,
+                    (r->flags&WPF_SELF)?"origin=SELF ":((r->flags&WPF_INMOD)?"origin=GAME ":"origin=OUT-OF-MODULE "),
+                    (r->flags&WPF_B0)?"B0 ":"",(r->flags&WPF_B1)?"B1 ":"",
+                    (unsigned long long)r->before,(unsigned long long)r->after,
+                    (r->flags&WPF_CORRUPT)?"  *** CORRUPTING STORE ***":"");
+        }
+    }
+}
+// ---- ONE-LINE VERDICT. Rows follow the design's outcome table; every "nothing happened" row says
+//      explicitly whether it is a VOID (the instrument did not run) or a MEASUREMENT. ---------------
+static void WpVerdict(const char* phase){
+    if(g_wpVerdictDone) return; g_wpVerdictDone=true;
+    WpDrain();
+    bool selftest = (KWPSELFTEST==0) ? true : g_wpAnySelfTrap;
+    bool corrupt  = InterlockedCompareExchange(&g_wpCorruptSeen,0,0)>0 || g_wpPollHit;
+    LONG traps    = InterlockedCompareExchange(&g_wpTraps,0,0);
+    LONG tgt      = InterlockedCompareExchange(&g_wpTrapsTgt,0,0);
+    LONG corrTrap = InterlockedCompareExchange(&g_wpCorruptTraps,0,0);
+    LONG self     = InterlockedCompareExchange(&g_wpTrapsSelf,0,0);
+    LONG nonSelfTgt = tgt-self; if(nonSelfTgt<0) nonSelfTgt=0;   // writes to &Target that were NOT ours
+    Markerf("[WP] SUMMARY(%s) traps=%ld trapsAtTarget=%ld self=%ld nonSelfAtTarget=%ld corruptingTraps=%ld"
+            " distinctRVAs=%d dropped=%ld foreignExc=%ld dr6zero=%ld dr6zeroClaimed=%ld tfDeclined=%ld"
+            " graceSwallowed=%ld sweeps=%d armedTids=%d voidTids=%d newAtLastSweep=%d"
+            " selftest=%s(labelled=%d 8B->B0|B1=%d 1B->B0only=%d) pollSaw01=%d vtgInvalid=%ld storm=%ld\r\n",
+            phase,(long)traps,(long)tgt,(long)self,(long)nonSelfTgt,(long)corrTrap,g_wpNSeenRva,
+            (long)InterlockedCompareExchange(&g_wpDropped,0,0),(long)InterlockedCompareExchange(&g_wpForeign,0,0),
+            (long)InterlockedCompareExchange(&g_wpDr6Zero,0,0),(long)InterlockedCompareExchange(&g_wpDr6ZeroClaimed,0,0),
+            (long)InterlockedCompareExchange(&g_wpTfDeclined,0,0),(long)InterlockedCompareExchange(&g_wpGraceSwallow,0,0),
+            g_wpSweepN,g_wpNTids,g_wpVoidThreads,g_wpLastNew,
+            selftest?"PASS":"FAIL",(int)g_wpSelfTestTrapped,(int)g_wpSelfB0B1,(int)g_wpSelfB0only,(int)g_wpPollHit,
+            (long)InterlockedCompareExchange(&g_wpCorruptSeen,0,0),(long)InterlockedCompareExchange(&g_wpStorm,0,0));
+    // The width discriminator that replaces the retracted +0x3F is only trustworthy if it was checked
+    // against ground truth THIS run. Say so either way rather than letting it be assumed.
+    if(KWPROBE==1 && g_wpSelfTestTrapped)     // page mode has no B0/B1 by construction -- do not judge it
+        Markerf("[WP] width-discriminator: %s (8-byte store -> B0|B1 seen=%d, 1-byte store -> B0-only seen=%d)\r\n",
+                (g_wpSelfB0B1&&g_wpSelfB0only)?"VALIDATED against ground truth in-session"
+                :"*** NOT VALIDATED -- do NOT read B0/B1 width attribution as measured this run ***",
+                (int)g_wpSelfB0B1,(int)g_wpSelfB0only);
+    if(InterlockedCompareExchange(&g_wpDr6ZeroClaimed,0,0)>0)
+        Markerf("[WP] *** INSTRUMENT SUSPECT: %ld trap(s) arrived with CONTEXT_DEBUG_REGISTERS ABSENT, so Dr6"
+                " was unreadable and they were claimed on the EFlags.TF discriminator alone. Width (B0/B1)"
+                " attribution is UNAVAILABLE for those. %ld single-step(s) were declined as not ours. ***\r\n",
+                (long)InterlockedCompareExchange(&g_wpDr6ZeroClaimed,0,0),(long)InterlockedCompareExchange(&g_wpTfDeclined,0,0));
+    if(g_wpPollHit)
+        Markerf("[WP] POLL: low byte first read 0x01 at t=+%lums after arm (%lums after body build), value=0x%llX"
+                "  -- an INDEPENDENT detector on a different mechanism. It bounds the write to a window"
+                " of %lu ms -- that is the MEASURED mean poll period (%ld polls / %lu ms), NOT the nominal"
+                " KWPPOLLMS=%d: Sleep granularity is 1..15.6 ms depending on the process timer resolution.\r\n",
+                (unsigned long)(g_wpPollHitTick-g_wpArmTick),(unsigned long)(g_wpBodyTick?g_wpPollHitTick-g_wpBodyTick:0),
+                (unsigned long long)g_wpPollHitVal,
+                (unsigned long)(g_wpPolls?((GetTickCount()-g_wpArmTick)/(DWORD)g_wpPolls):0),
+                (long)g_wpPolls,(unsigned long)(GetTickCount()-g_wpArmTick),(int)KWPPOLLMS);
+    const char* v; const char* nxt;
+    if(!selftest){
+        v="ROW6 VOID-INSTRUMENT: the selftest store fired NO trap => the watchpoint was never live on the game thread. This run says NOTHING about the writer.";
+        nxt=(KWPROBE==1)?"read the per-thread dr7ReadbackZero counts; if non-zero the packer defeats DR -> rebuild with -DKWPROBE=2":
+                         "check [WP] arm PAGE_READONLY / V1, and that CrashVEH is still registered first";
+    } else if(corrTrap>0){
+        v="ROW1 ANSWER: a CORRUPTING store was trapped. The writer is named by rip/rva + the instruction bytes + which register held the PCM.";
+        nxt="run wpattrib.py on the printed rva (the command line is in the trap record), then re-run once to confirm the RVA REPEATS -- a one-shot RVA is a lead, not a cause";
+    // ★ D5 -- THE ROWS ARE GATED ON nonSelfAtTarget, NOT ON `traps`.
+    // The old chain gated ROW5 on `traps==0` and ROW7 on `!corrupt && traps==0`. Both were DEAD CODE
+    // whenever KWPSELFTEST=1 (the default): the selftest store writes &Target, so a live instrument
+    // ALWAYS has traps>0, and `selftest==PASS` implies `traps>0` by construction. The design's ROW2
+    // ("only our own store trapped") and ROW5 ("no trap fired") are in fact the SAME observable once
+    // the selftest and VtGuard's repair store are both writing that address -- so they are merged
+    // here, and the merged row carries ROW5's meaning and ROW5's escalation, not ROW2's weaker one.
+    } else if(corrupt && nonSelfTgt==0){
+        v="ROW5 VOID-MISSED (subsumes ROW2 SELF-ONLY): the instrument is PROVEN LIVE (selftest passed) yet the corruption happened and NOT ONE non-self store to &Target was trapped. This is a VOID, NOT a negative.";
+        nxt=(KWPROBE==1)?"1) if voidTids>0 / busySkipped>0 / a W2 line is present, the DR path is partially defeated -> rebuild with -DKWPROBE=2. 2) else drop -DKWPSWEEPMS to 50 and re-run once. 3) if it repeats with full coverage, the write was not a user-mode CPU store from an armed thread -- read the [WP] POLL line for the 2 ms window it landed in":
+                         "the page arm may have been lifted (check V1/V4/V6 above) or the write was not user-mode; the [WP] POLL line still bounds when it happened";
+    } else if(corrupt){
+        v="ROW4 TRAPS-BUT-UNCORRELATED: non-self stores to &Target WERE trapped, but none carried the 0x40->0x01 transition. The corrupting store itself was missed.";
+        nxt="re-read each trap's target-before/target-now; the corrupting one is the trap where target-now's low byte becomes 0x01. If none shows the transition, treat this exactly as ROW5 and escalate the same way.";
+    } else if(nonSelfTgt>0){
+        v="ROW8 CLEAN-BASELINE: the watchpoint works and &Target was written only by legitimate non-self writers. This launch did NOT reproduce FK-7.";
+        nxt="record the legitimate RVAs above as the CONTROL SET (they are what makes a future RVA 'novel'), then RE-LAUNCH. MEASURED base rate 1-in-3..1-in-2 => P(all quiet | 6 launches) ~ 9%. Run >= 6.";
+    } else {
+        v="ROW7 NO-REPRO: no corruption, and no non-self store to &Target was trapped either. NOT evidence about the writer, the fix, or the probe.";
+        nxt="RE-LAUNCH (>=6 launches). Also run the 'novtguard' control once per sitting to establish that THIS build vintage reproduces FK-7 at all -- the four camera dumps predate KXFORMFIX, so that is not yet known.";
+    }
+    Markerf("[WP] VERDICT: %s\r\n",v);
+    Markerf("[WP] NEXT: %s\r\n",nxt);
+    if(g_wpNewAtCorrupt>0)
+        Markerf("[WP] *** W5 CAVEAT: the sweep immediately before the corruption armed %d NEW thread(s) -- coverage was not"
+                " established at that instant, so a quiet result is VOID, not negative. ***\r\n",g_wpNewAtCorrupt);
+    if(g_wpLogH!=INVALID_HANDLE_VALUE){ HANDLE h=g_wpLogH; g_wpLogH=INVALID_HANDLE_VALUE; CloseHandle(h); }
+}
+static void WpShutdown(){ WpDisarm("shutdown"); WpVerdict("final"); InterlockedExchange(&g_wpStop,1); }
+
+static DWORD WINAPI WpThread(LPVOID){
+    DWORD lastSweep=0, lastPoll=0;
+    for(;;){
+        if(InterlockedCompareExchange(&g_wpStop,0,0)) break;
+        DWORD now=GetTickCount();
+        if(!InterlockedCompareExchange(&g_wpArmed,0,0) && InterlockedCompareExchange(&g_wpArmReq,0,0) && !g_wpArmLogged){
+            if(WpArm()){ lastSweep=GetTickCount(); g_wpLastCensus=lastSweep; }
+        }
+        if(InterlockedCompareExchange(&g_wpArmed,0,0)){
+            // ---- retarget: VtGuard's stand-down path zeroes g_vtPCM; on re-resolve the address moves ----
+            if(LooksLikePtr(g_vtPCM)&&g_vtOff!=0xFFFFFFFF&&(g_vtPCM+g_vtOff)!=g_wpAddr){
+                Markerf("[WP] retarget: &Target moved 0x%llX -> 0x%llX (PCM re-resolved) -- disarming and re-arming\r\n",
+                        (unsigned long long)g_wpAddr,(unsigned long long)(g_vtPCM+g_vtOff));
+                WpDisarm("retarget"); g_wpArmLogged=false; InterlockedExchange(&g_wpArmReq,1);
+            }
+#if KWPROBE==1
+            else if(now-lastSweep>=(DWORD)KWPSWEEPMS){ lastSweep=now; WpSweep(false); }
+#endif
+#if KWPROBE==2
+            // Re-arm the page if the pending-slot overflow path left it open, or if something else
+            // re-protected it. One VirtualQuery per tick; also the V4 detector while still armed.
+            if(InterlockedCompareExchange(&g_wpUnprot,0,0)){
+                MEMORY_BASIC_INFORMATION q{};
+                if(VirtualQuery((void*)g_wpPage,&q,sizeof(q)) && q.Protect!=PAGE_READONLY){
+                    DWORD tmp=0; VirtualProtect((void*)g_wpPage,g_wpPageSz,PAGE_READONLY,&tmp); }
+                InterlockedExchange(&g_wpUnprot,0);
+            }
+            // trap-storm panic valve (per-second arm). The total-count arm lives in the handler.
+            if(now-g_wpTpsTick>=1000){ LONG t=InterlockedCompareExchange(&g_wpTraps,0,0);
+                LONG tps=t-g_wpTpsBase; g_wpTpsBase=t; g_wpTpsTick=now;
+                if(tps>KWPMAXTPS){ WpPanicDisarm();
+                    Markerf("[WP] *** TRAP STORM %ld/s > %d -> DISARMED (V6: the write window may not have been covered) ***\r\n",(long)tps,(int)KWPMAXTPS); } }
+#endif
+            if(InterlockedCompareExchange(&g_wpStorm,0,0) && InterlockedCompareExchange(&g_wpArmed,0,0)==0 && !g_wpVerdictDone)
+                Marker("[WP] *** V6: disarmed by the panic valve; the remainder of the window is UNCOVERED ***\r\n");
+            // ---- the poller: an INDEPENDENT detector on a different mechanism (the V5 void test) ----
+#if KWPPOLLMS
+            if(now-lastPoll>=(DWORD)KWPPOLLMS){ lastPoll=now; g_wpPolls++;
+                uint64_t v=WpRead8(g_wpAddr);
+                if(!g_wpPollHit&&WpCorruptShape(v)){ g_wpPollHit=true; g_wpPollHitTick=now; g_wpPollHitVal=v;
+                    g_wpNewAtCorrupt=g_wpLastNew;
+                    Markerf("[WP] *** POLL saw the corrupt shape at &Target: 0x%llX (t=+%lums after arm, %lums after body build) ***\r\n",
+                            (unsigned long long)v,(unsigned long)(now-g_wpArmTick),(unsigned long)(g_wpBodyTick?now-g_wpBodyTick:0)); }
+                if(!WpCorruptShape(v)&&v) g_wpPollLast=v;   // the "before" value the handler reports
+            }
+#endif
+            WpDrain();
+            // ---- D4: the loud one-time Dr6-unavailable notice. Emitted HERE, not in the handler, so the
+            //      handler stays I/O-free. It is a behavioural warning, not a result. ----
+            if(InterlockedCompareExchange(&g_wpDr6ZeroClaimed,0,0)>0 && InterlockedExchange(&g_wpDr6ZeroLogged,1)==0)
+                Marker("[WP] *** INSTRUMENT CAVEAT: a trap arrived WITHOUT CONTEXT_DEBUG_REGISTERS, so Dr6 is"
+                       " unreadable and 'is this ours?' has no direct answer. Such traps are claimed only when"
+                       " EFlags.TF is CLEAR (a DR data breakpoint does not set TF), and single-steps with TF set"
+                       " are handed back untouched. Width (B0/B1) attribution is UNAVAILABLE for these. ***\r\n");
+            // ---- correlation: emitted the moment VtGuard reports the corruption ----
+            { LONG cs=InterlockedCompareExchange(&g_wpCorruptSeen,0,0);
+              if(cs>g_wpCorrelated){ g_wpCorrelated=cs;
+                if(g_wpCorruptTrapTick && (DWORD)(g_wpCorruptTick-g_wpCorruptTrapTick)<2000)
+                    Markerf("[WP]   correlate: last CORRUPTING trap rva=0x%llX was %lu ms before this [VTG] INVALID  => ATTRIBUTED\r\n",
+                            (unsigned long long)g_wpLastCorruptRva,(unsigned long)(g_wpCorruptTick-g_wpCorruptTrapTick));
+                else
+                    Markerf("[WP]   correlate: *** NO CORRUPTING TRAP recorded before this [VTG] INVALID (val=0x%llX)"
+                            " -- THE PROBE MISSED THE WRITER (VOID, not a negative) ***\r\n",(unsigned long long)g_wpCorruptVal);
+                if(g_wpNewAtCorrupt<0) g_wpNewAtCorrupt=g_wpLastNew; } }
+            if(now-g_wpLastCensus>=30000){ g_wpLastCensus=now;
+                Markerf("[WP] census t=+%lus traps=%ld tgt=%ld self=%ld corrupting=%ld distinctRVAs=%d armedTids=%d voidTids=%d selftest=%s\r\n",
+                        (unsigned long)((now-g_wpArmTick)/1000),
+                        (long)InterlockedCompareExchange(&g_wpTraps,0,0),(long)InterlockedCompareExchange(&g_wpTrapsTgt,0,0),
+                        (long)InterlockedCompareExchange(&g_wpTrapsSelf,0,0),(long)InterlockedCompareExchange(&g_wpCorruptTraps,0,0),
+                        g_wpNSeenRva,g_wpNTids,g_wpVoidThreads,g_wpAnySelfTrap?"PASS":"NOT-YET"); }
+#if KWPHOLDMS
+            if(now-g_wpArmTick>=(DWORD)KWPHOLDMS){ WpDisarm("hold expired"); WpVerdict("hold-expired"); }
+#endif
+        }
+        Sleep(KWPPOLLMS?((KWPPOLLMS<5)?(DWORD)KWPPOLLMS:5):5);
+    }
+    return 0;
+}
+// SELFTEST verdict is emitted once, as soon as it is decidable, so a sitting is never spent on a void.
+static DWORD WINAPI WpSelfWatch(LPVOID){
+    for(;;){
+        if(InterlockedCompareExchange(&g_wpStop,0,0)) return 0;
+        if(InterlockedCompareExchange(&g_wpArmed,0,0)&&g_wpArmTick){
+            if(g_wpAnySelfTrap){
+                Markerf("[WP] selftest *** PASS: the idempotent store(s) trapped (8B->B0|B1 seen=%d, 1B->B0-only seen=%d)"
+                        " -- THE WATCHPOINT IS LIVE ON THE GAME THREAD ***\r\n",(int)g_wpSelfB0B1,(int)g_wpSelfB0only);
+                return 0; }
+            if(GetTickCount()-g_wpArmTick>8000){
+                Markerf("[WP] selftest *** FAIL: no trap 8000 ms after arming (selfPhase=%ld) -- the watchpoint is VOID"
+                        " on the game thread. READ NOTHING ELSE IN THIS RUN AS A NEGATIVE. ***\r\n",
+                        (long)InterlockedCompareExchange(&g_wpSelfPhase,0,0));
+                return 0; }
+        }
+        Sleep(100);
+    }
+}
+// ═══════════════════════ end FK-24 watchpoint probe (back half) ═════════════════════════════════════
+#endif  // KWPROBE
+
 // S75: resolve the possessed hero's CMC + the wake-kick UFunctions.
 static bool ResolveWakeMove(){
     g_wmPC=FindInstByClass("LokiPlayerController_Dev",nullptr);
@@ -1059,7 +2614,7 @@ static bool ResolveSpawnSeq(){
     memset(g_xform,0,sizeof(g_xform));
     *(double*)(g_xform+0x18)=1.0;                                   // identity quat
     if(haveV){ *(double*)(g_xform+0x20)=v[0]; *(double*)(g_xform+0x28)=v[1]; *(double*)(g_xform+0x30)=v[2]; }
-    *(double*)(g_xform+0x38)=1.0; *(double*)(g_xform+0x40)=1.0; *(double*)(g_xform+0x48)=1.0;   // scale 1 (NOT 0)
+    XfScale(1.0,1.0,1.0);   // S106d: was 0x38/0x40/0x48 -> Scale.Z stayed 0. See KXFORMFIX (L109).
     Markerf("[SEQ] seqClass=0x%llX gm=0x%llX gsCDO=0x%llX begin=0x%llX finish=0x%llX vol=(%.0f,%.0f,%.0f)\r\n",
         (unsigned long long)g_seqClass,(unsigned long long)g_gm2,(unsigned long long)g_gsCDO,
         (unsigned long long)g_beginThunk,(unsigned long long)g_finishThunk,v[0],v[1],v[2]);
@@ -1070,7 +2625,7 @@ static bool ResolveSpawnSeq(){
 }
 static void DoSpawnSeq(){
     if(g_seqStep==0){
-        const uint32_t xfsz=0x50;
+        const uint32_t xfsz=XfSize();   // S106d: was a hard 0x50, which truncated exactly AT Scale3D.Z.
         memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
         *(uint64_t*)(g_gsbuf+g_oBWorld)=(uint64_t)g_gm2;
         *(uint64_t*)(g_gsbuf+g_oBClass)=(uint64_t)g_seqClass;
@@ -1172,7 +2727,14 @@ static bool IsQuestBase(const char* n){ return strstr(n,"_Base_C")!=nullptr; }
 
 // Factored from DoSpawnSeq: the S74-proven deferred spawn. Returns the actor (0 on failure).
 static uintptr_t SpawnActorCls(uintptr_t cls,const char* tag){
-    const uint32_t xfsz=0x50;
+    // ★ S106d — was a hard `0x50`, i.e. EVERY actor this function has ever spawned got Scale3D.Z = 0
+    // (the copy stopped exactly at the Scale.Z qword @0x50). That includes the top-down CameraActor
+    // that becomes PCM->ViewTarget.Target, the KTESTACTOR test body and the KSMACTOR mesh actor.
+    const uint32_t xfsz=XfSize();
+    { static bool s_once=false; if(!s_once){ s_once=true;
+        Markerf("[XF] KXFORMFIX=%d  Scale3D@0x%X  copy=0x%X bytes  (B.xform@0x%X coll@0x%X)  scale=(%.2f,%.2f,%.2f)\r\n",
+                (int)KXFORMFIX,kXfScaleOff,xfsz,g_oBXform,g_oBColl,
+                *(double*)(g_xform+kXfScaleOff),*(double*)(g_xform+kXfScaleOff+8),*(double*)(g_xform+kXfScaleOff+0x10)); } }
     memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
     *(uint64_t*)(g_gsbuf+g_oBWorld)=(uint64_t)g_gm2;
     *(uint64_t*)(g_gsbuf+g_oBClass)=(uint64_t)cls;
@@ -2017,11 +3579,20 @@ static bool ResolveTopDownCam(){
 }
 static void DoTopDownCam(){
     long t=InterlockedIncrement(&g_tcHit);
+    // ★ S106b FK-7 (game-thread arm). FIRST thing every hit, and BEFORE the early-out below: the
+    // deterministic 173-201 s GameThread crash is APlayerCameraManager ticking a corrupt
+    // ViewTarget.Target (low byte overwritten with 0x01 -- see the VtGuard block for the full
+    // measurement). Placed ahead of the ActorLoc early-out on purpose: if the hero read fails we
+    // still must not leave a corrupt pointer for UWorld::Tick to dispatch through.
+    // RM_PLAY and RM_MESHCAM both funnel through here, so this one call covers all three camera modes.
+    VtGuard(g_tcPC?g_tcPC:g_wmPC,g_tcCam);
     double hl[3]={0,0,0}; if(!ActorLoc(g_tcHero,hl)) return;
     if(!g_tcSpawned){
         memset(g_xform,0,sizeof(g_xform)); *(double*)(g_xform+0x18)=1.0;
         *(double*)(g_xform+0x20)=hl[0]; *(double*)(g_xform+0x28)=hl[1]+KCAMBACK; *(double*)(g_xform+0x30)=hl[2]+KCAMUP;
-        *(double*)(g_xform+0x38)=1.0;*(double*)(g_xform+0x40)=1.0;*(double*)(g_xform+0x48)=1.0;
+        // ★★ S106d — THIS IS THE VIEW-TARGET CAMERA. The old 0x38/0x40/0x48 write left Scale3D.Z = 0, so
+        // the actor whose pointer FK-7 corrupts was itself spawned degenerate (1,1,0). See KXFORMFIX (L109).
+        XfScale(1.0,1.0,1.0);
         g_tcCam=SpawnActorCls(g_tcCamCls,"topdown-cam");
         if(!LooksLikePtr(g_tcCam)){ Marker("[TC] camera spawn FAILED -> abort\r\n"); g_done=1; return; }
         ResolveFuncSuper(ClassOf(g_tcCam),"K2_SetActorLocation",&g_tcSlFn,&g_tcSlThunk,&g_tcSlChild);
@@ -2287,8 +3858,38 @@ static void* g_plLabFn=nullptr; static uintptr_t g_plLabThunk=0, g_plLabChild=0;
 #ifndef KUSEBPCOMP
 #define KUSEBPCOMP 1         // 1 = route 2 (BP component); 0 = route 1 (bare SkeletalMeshComponent + SetSkeletalMeshAsset).
 #endif
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★ S106d (2026-07-29) — **DEFAULT FLIPPED 1 -> 0.  READ THIS BEFORE TURNING IT BACK ON.**
+//
+// KTESTACTOR is a LEFTOVER S94 DIAGNOSTIC ("hero-hidden vs mesh discriminator") that has been ON by
+// default ever since, and it builds a **SECOND SKELETAL-MESH BODY** on a standalone CameraActor beside
+// the hero -- inside the SAME single post-build game-thread hook hit as everything else, in the
+// +0.15 s window where FK-7's one-byte write lands.  It is a prime FK-7 antecedent, on three counts:
+//
+//   1. MEASURED: its actor is spawned by SpawnActorCls, which until S106d truncated the FTransform at
+//      0x50 and dropped Scale3D.Z -- and its own scale write used the pre-S98 0x38/0x40/0x48 offsets.
+//      So the test actor's ROOT scale was (1,1,**0**).
+//   2. STRONG_INFERENCE: a component attached to a root whose scale is (1,1,0) has a NON-UNIFORM world
+//      scale whatever its own relative scale is (and UE's GetSafeScaleReciprocal maps 0 -> 0, so
+//      SetWorldScale3D(1,1,1) cannot recover Z through such a parent).  That is exactly the condition
+//      `LogChaosCloth` reports.
+//   3. MEASURED: there is exactly **ONE** LogChaosCloth non-uniform-scale line per crashing session
+//      (1x in each of 4 crash logs, 0x in each of 5 non-crash logs) -- i.e. ONE non-uniform body.  The
+//      hero's own body cannot be it: the hero is the GAME's pawn (root scale (1,1,1)) and BuildHeroBody
+//      forces its component's RelativeScale3D to (1,1,1).  ⇒ the one body is this actor's.
+//      ⚠ INFERRED, not proven: the shipping log line has an EMPTY object name, so it cannot name the
+//      body itself.  The one-bit live test is `grep -c LogChaosCloth Loki.log` with KTESTACTOR=0.
+//
+// ⚠ RETRACTED antecedent, do not re-derive it: `LogPhysics "Scale3D is (nearly) zero"` appears in
+//    **0 of 14** log files (the string exists at .rdata 0x0817DAF0 but is never emitted).  Only CLOTH
+//    is ever reported.  The old "LogChaosCloth **/ LogPhysics Scale3D**" pairing was half false-known.
+//
+// This is a DIAGNOSTIC, not a fix: nothing in the playable-tutorial route needs it, and its question
+// ("is the hero hidden, or is the mesh unable to draw?") was answered in S94/S95/S96.  Turning it off
+// removes a whole extra skeletal body from the crash window at zero cost to the route.
+// Build `-DKTESTACTOR=1` to restore it (variant `play-testactor`) -- that is the A/B partner.
 #ifndef KTESTACTOR
-#define KTESTACTOR 1         // also build the body on a STANDALONE actor beside the hero (hero-hidden vs mesh discriminator).
+#define KTESTACTOR 0         // S106d: WAS 1. Leftover S94 diagnostic; builds a 2nd, degenerate skeletal body.
 #endif
 #ifndef KFOWRADIUS
 #define KFOWRADIUS 20000     // hero's FogOfWarRadius (vision source) — wide so the FOW mask reveals the area.
@@ -2556,6 +4157,16 @@ static bool PlayAnimOn(uintptr_t comp, uintptr_t anim, const char* tag){
                          uint32_t l=ParamOffset(g_plPaChild,"bLooping");      if(l!=0xFFFFFFFF) g_oPaLoop=l; }
         if(!g_plPaThunk) Marker("[ANIM] PlayAnimation thunk not found\r\n"); }
     if(!g_plPaThunk || g_plAnimDead) return false;
+    // ★ S106 (FK-7) — refuse to drive a destructed component/asset. MEASURED signature of the S99b
+    // "PlayAnimation(idle) FAULTED, RIP=0x0 access=EXEC addr=0x0, RDI=AnimSingleNodeInstance" event and of
+    // the five worker-thread crashes: NamePrivate cleared to 0 + vtable replaced by an allocator free-list
+    // link. Latch off rather than call a virtual through a dead object.
+    if(!GcAlive(comp) || !GcAlive(anim)){
+        g_plAnimDead=true;
+        Markerf("[GCW] %s: DEAD UObject before PlayAnimation (comp=0x%llX alive=%d anim=0x%llX alive=%d)"
+                " -> anim swapping DISABLED. The asset was garbage-collected: check the [GC] lines above.\r\n",
+                tag,(unsigned long long)comp,(int)GcAlive(comp),(unsigned long long)anim,(int)GcAlive(anim));
+        return false; }
     memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
     *(uint64_t*)(g_gsbuf+g_oPaAnim)=(uint64_t)anim; g_gsbuf[g_oPaLoop]=1;
     bool f=CallNativeGuarded(g_plPaFn,g_plPaThunk,g_plPaChild,(void*)comp,g_gsbuf,g_rbuf);
@@ -2811,10 +4422,18 @@ static void WireAbilitySystem(uintptr_t hero, uintptr_t pc){
 static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh, bool deferred){
     void* acfn=nullptr; uintptr_t acth=0,acch=0; ResolveFuncSuper(ClassOf(hero),"AddComponentByClass",&acfn,&acth,&acch);
     if(!acth){ Marker("[PL] AddComponentByClass thunk not found\r\n"); return 0; }
-    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); uint32_t retOff=0xFFFFFFFF; uint8_t savedXform[0x50]={0}; uint32_t xoff=0xFFFFFFFF;
+    // ★ S106d — savedXform WAS `[0x50]`, i.e. the third instance of the D1 truncation (see KXFORMFIX,
+    // L109). RelativeTransform is 0x60 and Scale3D.Z sits at 0x50, so the save/restore pair dropped it
+    // and the DEFERRED FinishAddComponent below re-applied Scale.Z = 0 at REGISTRATION -- undoing the
+    // S98 `RelativeScale3D = (1,1,1)` fix ~55 lines down, at exactly the moment the cloth/physics body
+    // is built. kXfSavedSz is 0x60 with the fix on, 0x50 with -DKXFORMFIX=0 (reproduces the old bug).
+    static const uint32_t kXfSavedSz = KXFORMFIX ? 0x60 : 0x50;
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); uint32_t retOff=0xFFFFFFFF; uint8_t savedXform[0x60]={0}; uint32_t xoff=0xFFFFFFFF;
     for(uintptr_t p=acch;LooksLikePtr(p);p=SafeReadable((void*)(p+FIELD_NEXT),8)?*(uintptr_t*)(p+FIELD_NEXT):0){
         char pn[64]="?"; GetFNameStr(NameId(p),pn,sizeof(pn));
-        uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF; if(o==0xFFFFFFFF||o+0x50>sizeof(g_gsbuf))continue;
+        // S106d: bound is kXfSavedSz (0x60), matching the memcpy below -- at 0x50 a high-offset
+        // RelativeTransform would have passed the check and then overrun g_gsbuf by up to 0x10 bytes.
+        uint32_t o=SafeReadable((void*)(p+FPROP_OFFSET),4)?*(uint32_t*)(p+FPROP_OFFSET):0xFFFFFFFF; if(o==0xFFFFFFFF||o+kXfSavedSz>sizeof(g_gsbuf))continue;
         uint64_t fl=SafeReadable((void*)(p+FPROP_FLAGS),8)?*(uint64_t*)(p+FPROP_FLAGS):0;
         if(strcmp(pn,"Class")==0) *(uint64_t*)(g_gsbuf+o)=(uint64_t)skelCls;
         // FTransform (0x60, 16-byte aligned): quatW@0x18=T[3]; Translation@0x20/28/30=T[4..6] (+pad T[7]);
@@ -2824,7 +4443,7 @@ static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh
         else if(strcmp(pn,"bDeferredFinish")==0){ *(uint8_t*)(g_gsbuf+o)=deferred?1:0; }
         else if(fl&0x400) retOff=o;   // CPF_ReturnParm
     }
-    if(xoff!=0xFFFFFFFF) memcpy(savedXform, g_gsbuf+xoff, 0x50);   // keep the identity xform for FinishAddComponent
+    if(xoff!=0xFFFFFFFF) memcpy(savedXform, g_gsbuf+xoff, kXfSavedSz);   // keep the identity xform for FinishAddComponent
     bool flt=CallNativeGuarded(acfn,acth,acch,(void*)hero,g_gsbuf,g_rbuf);
     uintptr_t comp=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(comp)&&retOff!=0xFFFFFFFF) comp=*(uint64_t*)(g_gsbuf+retOff);
     char ccn[96]="-"; if(LooksLikePtr(comp)&&ClassOf(comp)) GetFNameStr(NameId(ClassOf(comp)),ccn,sizeof(ccn));
@@ -2880,7 +4499,15 @@ static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh
         if(g_plFacThunk && g_oFacComp!=0xFFFFFFFF){ memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
             *(uint64_t*)(g_gsbuf+g_oFacComp)=(uint64_t)comp;
             if(g_oFacManual!=0xFFFFFFFF) g_gsbuf[g_oFacManual]=0;
-            if(g_oFacXform!=0xFFFFFFFF && g_oFacXform+0x50<=sizeof(g_gsbuf)) memcpy(g_gsbuf+g_oFacXform, savedXform, 0x50);
+            // ★ S106d — 0x60, not 0x50: at 0x50 this call re-applied Scale.Z = 0 AT REGISTRATION and
+            // silently undid the S98 RelativeScale3D fix above. Log the scale actually being sent so a
+            // marker file proves which value registration saw.
+            if(g_oFacXform!=0xFFFFFFFF && g_oFacXform+kXfSavedSz<=sizeof(g_gsbuf)){
+                memcpy(g_gsbuf+g_oFacXform, savedXform, kXfSavedSz);
+                double* FS=(double*)(savedXform+kXfScaleOff);
+                Markerf("[XF] FinishAddComponent RelativeTransform@0x%X copy=0x%X Scale3D=(%.3f,%.3f,%.3f)%s\r\n",
+                        g_oFacXform,kXfSavedSz,FS[0],FS[1],FS[2],
+                        (FS[0]==0.0||FS[1]==0.0||FS[2]==0.0)?"  *** DEGENERATE (would build a non-uniform body) ***":""); }
             bool ff=CallNativeGuarded(g_plFacFn,g_plFacThunk,g_plFacChild,(void*)hero,g_gsbuf,g_rbuf);
             Markerf("[PL] FinishAddComponent %s\r\n",ff?"FAULTED":"ok"); }
         else Markerf("[PL] FinishAddComponent thunk MISSING (comp left unregistered) fac=0x%llX comp@0x%X\r\n",(unsigned long long)g_plFacThunk,g_oFacComp);
@@ -2900,6 +4527,14 @@ static uintptr_t BuildHeroBody(uintptr_t hero, uintptr_t skelCls, uintptr_t mesh
         if(LooksLikePtr(anim)){
             g_plIdleAnim=anim;                     // S99b: remembered so the run<->idle swap can come back to it
             PlayAnimOn(comp,anim,KANIMNAME);       // <- fixes T-pose AND sword placement (same bug: bind pose)
+            // ★ S106 (FK-7) — PlayAnimation creates a UAnimSingleNodeInstance we never hold, and the body
+            // component is likewise only referenced from this DLL's globals. Rooting the component keeps its
+            // whole Outer/owner chain reachable too, which is the point: the measured crash is the FIRST GC
+            // after this code runs. Costs a permanent leak of a handful of objects for the session.
+            if(KGCROOTCOMP){
+                GcRoot(comp,"body-component");
+                int nInst=GcRootAllOfClass("AnimSingleNodeInstance",4,"anim-instance");
+                Markerf("[GC] anim-instance rooted x%d (rooted=%d failed=%d)\r\n",nInst,g_gcRooted,g_gcFailed); }
         } else Marker("[PL] anim load FAILED -> body stays in T-pose\r\n");
     }
     // ★ REGISTER WITH FOG OF WAR — the render gate: unregistered character primitives are culled from the FOW scene
@@ -2956,6 +4591,11 @@ static uintptr_t LoadMeshByPath(const wchar_t* path){
     uintptr_t obj=(uintptr_t)*(uint64_t*)res; if(!LooksLikePtr(obj)&&g_oLabRet!=0xFFFFFFFF) obj=*(uint64_t*)(g_gsbuf+g_oLabRet);
     char cn[96]="-"; if(LooksLikePtr(obj)&&ClassOf(obj)) GetFNameStr(NameId(ClassOf(obj)),cn,sizeof(cn));
     Markerf("[PL] LoadAsset_Blocking %s -> 0x%llX (%s)\r\n",f2?"FAULTED":"ok",(unsigned long long)obj,cn);
+    // ★ S106 (FK-7) — LoadAsset_Blocking returns a RAW UObject* and holds no reference; the result lives
+    // only in this DLL's C globals, which UE's GC cannot see. Measured consequence: the asset is collected
+    // at the first purge after the tutorial map loads (~T+180 s) and the parallel animation tick then
+    // dereferences it on a worker thread. Root it here, at the single choke point every load goes through.
+    if(LooksLikePtr(obj)) GcRoot(obj,"loaded-asset");
     return LooksLikePtr(obj)?obj:0;
 }
 static bool ResolvePlay(){
@@ -3032,8 +4672,40 @@ static bool ResolvePlay(){
     return LooksLikePtr(g_wmHero) && LooksLikePtr(g_wmCMC);
 }
 static void DoPlay(){
+    // ★★ S106c (2026-07-27) — FK-7 GAME-THREAD ARM: the view-target guard must run BEFORE every one of
+    // DoPlay's early-outs, so it is called here rather than relying on the DoTopDownCam call site alone.
+    //
+    // MEASURED GAP in the S106b placement (found by reading the control flow, not by a live run): the only
+    // VtGuard call site was the top of DoTopDownCam, which DoPlay reaches at its very BOTTOM (the
+    // `DoTopDownCam()` line below the visibility/diagnostic block). But ~60 lines ABOVE that, the S99b
+    // possession guard latches `g_plLostPawn` and `return`s — and `if(g_plLostPawn) return;` on the next
+    // line makes that stand-down PERMANENT for the rest of the session. So the moment the tutorial
+    // unpossessed the hero, the guard silently stopped running for every subsequent hit while the shim
+    // still held the PI hook for the remainder of its 600 s hold.
+    //
+    // That is precisely the wrong time to disarm it: an unpossess is an actor teardown, i.e. the state
+    // where PCM->ViewTarget.Target is most likely to be left pointing at something that is going away.
+    // The S99b log ("UNPOSSESSED ... standing down") and the 173-201 s camera crash band overlap, so the
+    // two could co-occur in a single session and the guard would not have been armed for it.
+    //
+    // Standing down from CALLING NATIVES on a dead hero (what S99b fixed) and standing down from
+    // VALIDATING A POINTER THE ENGINE IS ABOUT TO DEREFERENCE are different decisions: the first protects
+    // the game from the shim, the second protects the game from itself, and only the first should be
+    // gated on possession. VtGuard makes no native calls — it is reads plus one aligned 8-byte store — so
+    // it is safe on the stand-down path. g_wmPC is the authoritative controller here (ResolvePlay requires
+    // it via ResolveWakeMove); g_tcPC is the same object resolved by name and is kept as the fallback.
+    // The DoTopDownCam call site is intentionally LEFT IN PLACE: it is what covers RM_TOPDOWNCAM and
+    // RM_MESHCAM, which never enter DoPlay. Double-calling within one RM_PLAY hit is harmless (the second
+    // call sees an already-valid pointer and returns after its reads).
+    VtGuard(g_wmPC?g_wmPC:g_tcPC, g_tcCam);
     if(!g_plInit){
         g_plInit=true;
+#if KWPROBE
+        // FK-24 arm site KWPARMAT=1: the TOP of the one-shot block. MEASURED: this whole block runs inside
+        // ONE ProcessInternal hit and ends at g_plBodyDone; the writer's window is its INTERIOR (the blocking
+        // FlushAsyncLoading + body build), so arming at its exit (KWPARMAT=2) arms too late.
+        WpArmRequest(1);
+#endif
         // ★★★★ S101 — run the ability-system wiring FIRST. It is three cheap native calls, whereas the body build
         //   below does blocking asset loads and object scans; these sessions die unpredictably, so the measurement
         //   we came for must not sit behind the slow part.
@@ -3131,7 +4803,7 @@ static void DoPlay(){
             double hl[3]={0,0,0}; ActorLoc(g_wmHero,hl);
             memset(g_xform,0,sizeof(g_xform)); *(double*)(g_xform+0x18)=1.0;
             *(double*)(g_xform+0x20)=hl[0]+400.0; *(double*)(g_xform+0x28)=hl[1]; *(double*)(g_xform+0x30)=hl[2];
-            *(double*)(g_xform+0x38)=3.0; *(double*)(g_xform+0x40)=3.0; *(double*)(g_xform+0x48)=3.0;   // 3x scale = unmissable
+            XfScale(3.0,3.0,3.0);   // 3x = unmissable. S106d: was 0x38/0x40/0x48 -> spawned (3,3,0), i.e. FLAT.
             uintptr_t sma = LooksLikePtr(smaCls) ? SpawnActorCls(smaCls,"sma-test") : 0;
             uintptr_t root=0; if(LooksLikePtr(sma)){ uint32_t ro=PropOffsetSuper(ClassOf(sma),"RootComponent"); if(ro!=0xFFFFFFFF&&SafeReadable((void*)(sma+ro),8)) root=*(uint64_t*)(sma+ro); }
             char rn[96]="-"; if(LooksLikePtr(root)&&ClassOf(root)) GetFNameStr(NameId(ClassOf(root)),rn,sizeof(rn));
@@ -3149,7 +4821,7 @@ static void DoPlay(){
             double hl[3]={0,0,0}; ActorLoc(g_wmHero,hl);
             memset(g_xform,0,sizeof(g_xform)); *(double*)(g_xform+0x18)=1.0;
             *(double*)(g_xform+0x20)=hl[0]+KTESTDX; *(double*)(g_xform+0x28)=hl[1]; *(double*)(g_xform+0x30)=hl[2];
-            *(double*)(g_xform+0x38)=1.0; *(double*)(g_xform+0x40)=1.0; *(double*)(g_xform+0x48)=1.0;
+            XfScale(1.0,1.0,1.0);   // S106d: was 0x38/0x40/0x48 -> this test actor spawned at (1,1,0).
             uintptr_t ta=SpawnActorCls(g_tcCamCls,"test-body-actor");
             Markerf("[PL] TEST actor=0x%llX at (%.0f,%.0f,%.0f)\r\n",(unsigned long long)ta,hl[0]+(double)KTESTDX,hl[1],hl[2]);
             if(LooksLikePtr(ta)){
@@ -3194,6 +4866,10 @@ static void DoPlay(){
                     LooksLikePtr(g_plRunAnim)?"":"  <- LOAD FAILED, idle only");
         }
         g_plBodyDone=true; g_plBodyTick=GetTickCount();
+#if KWPROBE
+        g_wpBodyTick=g_plBodyTick;   // probe-owned mirror (the probe code is compiled ~2000 lines above this)
+        WpArmRequest(2);             // FK-24 arm site KWPARMAT=2 (the sketch's original; NOT the default)
+#endif
         Markerf("[PL] *** init complete: body=%s; camera + WASD active ***\r\n", g_plComp?"BUILT":"none");
     }
     // ★★★ S99b — POSSESSION GUARD. The tutorial's own logic can UnPossess (and then destroy) the hero mid-hold.
@@ -3291,6 +4967,17 @@ static void DoPlay(){
             if(SafeReadable((void*)(g_wmCMC+0x328),24)){ double* A=(double*)(g_wmCMC+0x328); A[0]=V[0]*4.0; A[1]=V[1]*4.0; A[2]=0.0; }
             if(!g_plAwLogged){ g_plAwLogged=true; Marker("[ANIM] self-driven walk START (so the run anim can be captured with no human at the keyboard)\r\n"); }
         }
+        // ★ S106 (FK-7) GC WATCHDOG — poll the two anim assets + the component once a second and SAY SO the
+        // instant one dies. This is the instrument that turns "the session died at ~T+180 s, nobody knows why"
+        // into a dated marker line naming the object. It cannot save the process (the game's own parallel anim
+        // tick dereferences the dead asset every frame, on a worker thread this shim does not control) — the
+        // rooting above is what prevents the death. Keep both: rooting is the fix, this is the proof.
+        if(KGCROOT){
+            static DWORD s_gcwLast=0; DWORD nw=GetTickCount();
+            if(nw-s_gcwLast>=1000){ s_gcwLast=nw;
+                if(LooksLikePtr(g_plIdleAnim)&&!GcAlive(g_plIdleAnim)){ Markerf("[GCW] *** IDLE ANIM 0x%llX WAS GARBAGE-COLLECTED (t=%lums after body build) ***\r\n",(unsigned long long)g_plIdleAnim,(unsigned long)(nw-g_plBodyTick)); g_plIdleAnim=0; g_plAnimDead=true; }
+                if(LooksLikePtr(g_plRunAnim) &&!GcAlive(g_plRunAnim)){  Markerf("[GCW] *** RUN ANIM 0x%llX WAS GARBAGE-COLLECTED (t=%lums after body build) ***\r\n",(unsigned long long)g_plRunAnim,(unsigned long)(nw-g_plBodyTick)); g_plRunAnim=0;  g_plAnimDead=true; }
+                if(LooksLikePtr(g_plComp)    &&!GcAlive(g_plComp)){     Markerf("[GCW] *** BODY COMPONENT 0x%llX WAS GARBAGE-COLLECTED (t=%lums after body build) ***\r\n",(unsigned long long)g_plComp,(unsigned long)(nw-g_plBodyTick)); g_plAnimDead=true; } } }
         // (2) IDLE <-> RUN swap off the live velocity. One native call, and only when the state actually flips.
         if(KRUNANIM && !g_plAnimDead && LooksLikePtr(g_plRunAnim) && LooksLikePtr(g_plIdleAnim)
            && SafeReadable((void*)(g_wmCMC+0xE8),16)){
@@ -3423,7 +5110,7 @@ static const bool kDoPossess = true;   // S68: spawn (native) + possess; step ma
 // Markers flush per call so a crash pinpoints which native call died.
 static void DoSpawnPossess(){
     if(kUseGameplayStatics && g_beginThunk && g_finishThunk){
-        uint32_t xfsz=(g_oBColl>g_oBXform)?(g_oBColl-g_oBXform):0x50; if(xfsz>sizeof(g_xform))xfsz=sizeof(g_xform);
+        uint32_t xfsz=XfSize();   // S106d: was an inline copy with a WRONG 0x50 fallback (see KXFORMFIX, L109)
         // 1. GetActorTransform(startSpot) -> g_xform (struct return via RESULT; fall back to the params ReturnValue)
         memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_xform,0,sizeof(g_xform));
         if(g_xfThunk){ CallNative(g_xfFn,g_xfThunk,g_xfChild,(void*)g_startSpot,g_gsbuf,g_xform);
@@ -4277,6 +5964,14 @@ static DWORD WINAPI Worker(LPVOID){
     Markerf("[0] command %s: '%ls'\r\n", fromFile?"from tutorial-launch-cmd.txt":"(default fallback)", g_cmd);
     HMODULE hExe=GetModuleHandleA("SUPERVIVE-Win64-Shipping.exe"); if(!hExe){Marker("[0] FAIL module\r\n");return 1;}
     g_modBase=(uintptr_t)hExe; AddVectoredExceptionHandler(1,CrashVEH);
+#if KWPROBE
+    // FK-24 probe threads. They only POLL until an arm request arrives (see KWPARMAT), so starting them
+    // here is free; they must exist before VtResolve can fire the request. Neither ever runs on the game
+    // thread, and the sweep's SuspendThread work is confined to WpThread.
+    Markerf("[WP] FK-24 watchpoint probe COMPILED IN (KWPROBE=%d) -- see the [WP] cfg line for the full config\r\n",(int)KWPROBE);
+    { HANDLE t1=CreateThread(nullptr,0,WpThread,nullptr,0,nullptr); if(t1)CloseHandle(t1);
+      HANDLE t2=CreateThread(nullptr,0,WpSelfWatch,nullptr,0,nullptr); if(t2)CloseHandle(t2); }
+#endif
     g_gameTid=WaitTid(120000); if(!g_gameTid){Marker("[1] FAIL gameTid\r\n");return 2;}
     if(kInvestigateOnly){
         Marker("[INV] investigate-only: dumping CoreGameManager/CoreGameMatchModel state + functions at the menu\r\n");
@@ -4499,6 +6194,9 @@ static DWORD WINAPI Worker(LPVOID){
         if(!InstallHook()){Marker("[PL] FAIL InstallHook\r\n");return 6;}
         DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<600000) Sleep(20);   // ~10 min of playable hold, then release
         UninstallHook();
+#if KWPROBE
+        WpShutdown();   // disarm every thread / restore the page, drain the ring, print the one-line VERDICT
+#endif
         if(SafeReadable((void*)(g_wmCMC+0xE8),16)){ double* V=(double*)(g_wmCMC+0xE8); V[0]=0.0; V[1]=0.0; }   // stop on exit
         Markerf("[PL] done (init=%d comp=0x%llX camSpawned=%d hits=%ld called=%ld hitsGT=%ld)\r\n",(int)g_plInit,(unsigned long long)g_plComp,(int)g_tcSpawned,(long)g_tcHit,(long)g_called,(long)g_hitsGT);
         return 0;

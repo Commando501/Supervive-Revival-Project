@@ -23,3 +23,10 @@ Thumbs.db
 .vscode/
 
 /ghidra/
+
+# Python bytecode caches
+__pycache__/
+*.pyc
+
+# MSYS/Git-Bash crash droppings
+*.stackdump
