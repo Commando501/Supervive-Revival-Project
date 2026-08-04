@@ -19,7 +19,7 @@ using Newtonsoft.Json;
 // /content-service/manifest?" Reading asset *property values* (DataTable rows)
 // comes later and may need a .usmap.
 
-var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema" || args[0] == "assetregistry" || args[0] == "wherefile" || args[0] == "mkpak" || args[0] == "peekpak" || args[0] == "bpdump") ? args[0] : null;
+var cmd = args.Length > 0 && (args[0] == "dump" || args[0] == "names" || args[0] == "namesall" || args[0] == "schema" || args[0] == "assetregistry" || args[0] == "wherefile" || args[0] == "mkpak" || args[0] == "peekpak" || args[0] == "bpdump" || args[0] == "rawfile") ? args[0] : null;
 var dumpMode = cmd == "dump";
 var pakDir = (cmd == null && args.Length > 0)
     ? args[0]
@@ -788,6 +788,49 @@ else
 // whether AssetRegistry.bin sources from a legacy .pak or an IoStore .ucas before we
 // pick which writer format to implement for the mod-pak deployment route.
 //   usage: wherefile <virtualPathSubstring>...
+// rawfile mode: copy NON-UASSET files straight out of the pak, bytes unchanged.
+//
+// Added 2026-07-26 (S101, the FK-2 input investigation). The pak carries 64 .ini files
+// — including Loki/Config/DefaultInput.ini, which registers the input class and the
+// default Action/Axis mappings — plus manifests, .txt and .json. Every existing
+// subcommand goes through the UAsset/usmap path, so none of these were reachable and
+// they had all gone unread. `dump` is for .uasset; this is for everything else.
+//
+// Matching is substring, case-insensitive, so `rawfile Loki/Config/` grabs the set.
+// Output mirrors the pak-relative path under <out>/raw/ so re-runs are idempotent.
+if (cmd == "rawfile")
+{
+    var needles = args.Skip(1).ToArray();
+    if (needles.Length == 0) { Console.WriteLine("usage: rawfile <pathNeedle>...   (substring, case-insensitive)"); return; }
+    var rawRoot = Path.Combine(outDir, "raw");
+    int saved = 0, failed = 0;
+    foreach (var n in needles)
+    {
+        var hits = provider.Files.Where(kv => kv.Key.Contains(n, StringComparison.OrdinalIgnoreCase)).ToList();
+        Console.WriteLine($"  '{n}': {hits.Count} hits");
+        foreach (var h in hits)
+        {
+            try
+            {
+                var bytes = h.Value.Read();
+                var dest = Path.Combine(rawRoot, h.Key.Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                File.WriteAllBytes(dest, bytes);
+                Console.WriteLine($"    {bytes.Length,10}  {h.Key}");
+                saved++;
+            }
+            catch (Exception e)
+            {
+                // Loudly, not silently: a file we cannot read is a finding, not a no-op.
+                Console.WriteLine($"    !! FAILED  {h.Key}: {e.GetType().Name}: {e.Message}");
+                failed++;
+            }
+        }
+    }
+    Console.WriteLine($"rawfile: {saved} saved, {failed} failed -> {rawRoot}");
+    return;
+}
+
 if (cmd == "wherefile")
 {
     var needles = args.Skip(1).Where(a => !Directory.Exists(a)).ToArray();
