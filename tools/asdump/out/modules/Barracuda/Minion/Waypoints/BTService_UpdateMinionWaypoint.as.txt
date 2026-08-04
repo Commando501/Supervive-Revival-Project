@@ -1,0 +1,156 @@
+// ============================================================================
+//  MODULE   Barracuda.Minion.Waypoints.BTService_UpdateMinionWaypoint
+//  SOURCE   Barracuda/Minion/Waypoints/BTService_UpdateMinionWaypoint.as
+//  CONTENT  1 class(es), 6 function(s), 0 enum(s), 1 global(s), 352 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBTService_BarracudaUpdateMinionWaypoint;
+
+UBTService_BarracudaUpdateMinionWaypoint@ UBTService_BarracudaUpdateMinionWaypoint()   // traits=0x20
+{
+    UBTService_BarracudaUpdateMinionWaypoint v2;
+
+    v2 = UBTService_BarracudaUpdateMinionWaypoint();
+    return v2;
+}
+/* ---- UBTService_BarracudaUpdateMinionWaypoint: 7 dwords / 4 instructions (cache offset 0x2f113) ----
+    0000  PSF           v2
+    0004  ALLOC         84320 UBTService_BarracudaUpdateMinionWaypoint  ; new UBTService_BarracudaUpdateMinionWaypoint  ctor=void UBTService_BarracudaUpdateMinionWaypoint::UBTService_BarracudaUpdateMinionWaypoint()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ UBTService_BarracudaUpdateMinionWaypoint::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBTService_BarracudaUpdateMinionWaypoint);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x2f1e8) ----
+    0000  PshGPtr       __StaticType_UBTService_BarracudaUpdateMinionWaypoint
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBTService_BarracudaUpdateMinionWaypoint : UBTService_BlueprintBase
+// unreal base : /Script/AIModule.BTService_BlueprintBase
+// C++ header  : ../../../Engine/Source/Runtime/AIModule/Classes/BehaviorTree/Services/BTService_BlueprintBase.h
+// static class global: __StaticType_UBTService_BarracudaUpdateMinionWaypoint
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FBlackboardKeySelector WaypointLocationKey;
+
+    UBTService_BarracudaUpdateMinionWaypoint()   // traits=0x21
+    {
+        this.WaypointLocationKey = FBlackboardKeySelector();
+        return;
+    }
+    /* ---- UBTService_BarracudaUpdateMinionWaypoint: 11 dwords / 6 instructions (cache offset 0x2f756) ----
+        0000  PshVPtr       this
+        0004  ADDSi         160 134230799                                 ; .WaypointLocationKey
+        000C  CALLSYS       FBlackboardKeySelector::$beh0                 ; void FBlackboardKeySelector::$beh0()
+        0018  PshVPtr       this
+        001C  FinConstruct  UBTService_BarracudaUpdateMinionWaypoint
+        0028  RET           2
+    */
+
+    UFUNCTION(UnrealName=TickAI, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void TickAI_Implementation(AAIController@ OwnerController, APawn@ ControlledPawn, const float64 DeltaSeconds)   // traits=0x20
+    {
+        UBarracudaMinionWaypointFollowerComponent v4;
+        UBlackboardComponent v10;
+        FVector v16;
+
+        v4 = UBarracudaMinionWaypointFollowerComponent::Get(ControlledPawn, NAME_None);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v10 = AIHelper::GetBlackboard(ControlledPawn);
+            if (v10 == nullptr) {
+                return;
+            } else {
+                if (v4.HasCurrentWaypoint()) {
+                    v16 = v4.GetTargetLocationForCurrentWaypoint();
+                    v10.SetValueAsVector(this.WaypointLocationKey.SelectedKeyName, v16);
+                }
+            }
+        }
+        return;
+    }
+    /* ---- TickAI_Implementation: 42 dwords / 26 instructions (cache offset 0x2f437) ----
+        0000  PshGPtr       NAME_None
+        000C  PshVPtr       ControlledPawn
+        0010  CALL          84316                                         ; UBarracudaMinionWaypointFollowerComponent@ UBarracudaMinionWaypointFollowerComponent::Get(const AActor@, const FName&)
+        0018  STOREOBJ      v4
+        001C  CmpPtrNull    v4
+        0020  JNZ           2                                             -> L0030
+        0028  JMP           29                                            -> L00A4
+      L0030:
+        0030  PshVPtr       ControlledPawn
+        0034  CALLSYS       GetBlackboard                                 ; UBlackboardComponent@ AIHelper::GetBlackboard(AActor@)
+        0040  STOREOBJ      v10
+        0044  CmpPtrNull    v10
+        0048  JNZ           2                                             -> L0058
+        0050  JMP           19                                            -> L00A4
+      L0058:
+        0058  PshVPtr       v4
+        005C  CALLINTF      84306                                         ; bool UBarracudaMinionWaypointFollowerComponent::HasCurrentWaypoint()
+        0064  JLowZ         14                                            -> L00A4
+        006C  PSF           v16
+        0070  PshVPtr       v4
+        0074  CALLINTF      84307                                         ; FVector UBarracudaMinionWaypointFollowerComponent::GetTargetLocationForCurrentWaypoint()
+        007C  PSF           v16
+        0080  PshVPtr       this
+        0084  ADDSi         160 134230799                                 ; .WaypointLocationKey
+        008C  ADDSi         16 67117756                                   ; .SelectedKeyName
+        0094  PshVPtr       v10
+        0098  CALLSYS       UBlackboardComponent::SetValueAsVector        ; void UBlackboardComponent::SetValueAsVector(const FName&, FVector)
+      L00A4:
+        00A4  RET           8
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = 0.009999999776482582;
+        this.Interval = v1;
+        v1 = 0;
+        this.RandomDeviation = v1;
+        return;
+    }
+    /* ---- __InitDefaults: 11 dwords / 7 instructions (cache offset 0x2f669) ----
+        0000  SetV4         v1 1008981770
+        0008  LoadThisR     104 67111443                                  ; this.Interval
+        0010  WRTV4         v1
+        0014  SetV4         v1 0
+        001C  LoadThisR     108 67111443                                  ; this.RandomDeviation
+        0024  WRTV4         v1
+        0028  RET           2
+    */
+
+    void ~UBTService_BarracudaUpdateMinionWaypoint()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~UBTService_BarracudaUpdateMinionWaypoint: 7 dwords / 4 instructions (cache offset 0x2f870) ----
+        0000  PshVPtr       this
+        0004  ADDSi         160 134230799                                 ; .WaypointLocationKey
+        000C  CALLSYS       FBlackboardKeySelector::$beh2                 ; void FBlackboardKeySelector::$beh2()
+        0018  RET           2
+    */
+
+}
+

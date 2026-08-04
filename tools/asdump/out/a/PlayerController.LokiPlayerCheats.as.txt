@@ -1,0 +1,1777 @@
+==============================================================================
+MODULE   PlayerController.LokiPlayerCheats
+SOURCE   PlayerController/LokiPlayerCheats.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ALokiPlayerCheats_AS;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiPlayerCheats_AS@ ALokiPlayerCheats_AS()
+// 4 instr, 28 B bytecode, id=0xAAC7C64D, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiPlayerCheats_AS v2;
+
+    v2 = ALokiPlayerCheats_AS();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85304 q:0x26e6ed78800; new ALokiPlayerCheats_AS   ctor=ALokiPlayerCheats_AS::ALokiPlayerCheats_AS
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x430FEF93, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiPlayerCheats_AS);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057ced8         ; __StaticType_ALokiPlayerCheats_AS
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiPlayerCheats_AS@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x5B027740, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiPlayerCheats_AS v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiPlayerCheats_AS.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiPlayerCheats_AS>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6057ced8         ; __StaticType_ALokiPlayerCheats_AS
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972723            ; ALokiPlayerCheats_AS@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ALokiPlayerCheats_AS : ALokiPlayerCheats
+// base /Script/Loki.LokiPlayerCheats  ->  ../../../Loki/Source/Loki/Cheats/LokiPlayerCheats.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) TSubclassOf<UGameplayEffect@> CheatDisableHealthRegenEffectClass;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient) FActiveGameplayEffectHandle CheatDisableHealthRegenEffectHandle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) TSubclassOf<UGameplayEffect@> CheatDisableManaRegenEffectClass;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient) FActiveGameplayEffectHandle CheatDisableManaRegenEffectHandle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 AutoJumpStartTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 AutoJumpPeriod;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 AutoJumpLastTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool AutoJumpPressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TSubclassOf<AAIController@> WispControllerClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TSubclassOf<ALokiHeroCharacter@> WispHeroClass;
+
+}
+
+------------------------------------------------------------------------------
+ALokiPlayerCheats_AS() const
+// 21 instr, 164 B bytecode, id=0xA8528212, varspace=0
+------------------------------------------------------------------------------
+{
+    this.CheatDisableHealthRegenEffectClass = TSubclassOf<UGameplayEffect@>();
+    this.CheatDisableHealthRegenEffectHandle = FActiveGameplayEffectHandle();
+    this.CheatDisableManaRegenEffectClass = TSubclassOf<UGameplayEffect@>();
+    this.CheatDisableManaRegenEffectHandle = FActiveGameplayEffectHandle();
+    this.WispControllerClass = TSubclassOf<AAIController@>();
+    this.WispHeroClass = TSubclassOf<ALokiHeroCharacter@>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1000 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableHealthRegenEffectClass  (+1000)
+    //     3  CALLSYS        q:0x26e6ee82700         ; void TSubclassOf<UGameplayEffect@>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:1008 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableHealthRegenEffectHandle  (+1008)
+    //     9  CALLSYS        q:0x26e78f7eb00         ; void FActiveGameplayEffectHandle::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:1016 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableManaRegenEffectClass  (+1016)
+    //    15  CALLSYS        q:0x26e6ee82700         ; void TSubclassOf<UGameplayEffect@>::$beh0()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:1024 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableManaRegenEffectHandle  (+1024)
+    //    21  CALLSYS        q:0x26e78f7eb00         ; void FActiveGameplayEffectHandle::$beh0()
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:1064 d:134230899     ; ALokiPlayerCheats_AS::WispControllerClass  (+1064)
+    //    27  CALLSYS        q:0x26e6ef57940         ; void TSubclassOf<AAIController@>::$beh0()
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:1072 d:134230899     ; ALokiPlayerCheats_AS::WispHeroClass  (+1072)
+    //    33  CALLSYS        q:0x26e6ef2dd00         ; void TSubclassOf<ALokiHeroCharacter@>::$beh0()
+    //    36  PshVPtr        rW0:0
+    //    37  FinConstruct   q:0x26e6ed78800         ; ALokiPlayerCheats_AS
+    //    40  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 3 instr, 16 B bytecode, id=0x2E749780, varspace=0
+------------------------------------------------------------------------------
+{
+    this.TickAutoJump();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85301                 ; void ALokiPlayerCheats_AS::TickAutoJump()
+    //     3  RET            W0:4
+
+------------------------------------------------------------------------------
+void RunCommand(const FString&inout Command, const bool bAlsoServerExec = false)
+// 27 instr, 200 B bytecode, id=0xA5559396, varspace=10
+------------------------------------------------------------------------------
+{
+    ALokiPlayerController v4;
+    FString v10;
+
+    v4 = this.GetPlayerController();
+    if (v4 != null) {
+        System::ExecuteConsoleCommand(__WorldContext, Command, v4);
+        if (bAlsoServerExec) {
+            v10 = FString();
+            System::ExecuteConsoleCommand(__WorldContext, v10.Append("ServerExec ").Append(Command), v4);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a324140         ; ALokiPlayerController@ ALokiPlayerCheats::GetPlayerController() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JNZ            ->10
+    //     8  JMP            ->49
+    //    10  PshVPtr        rW0:4
+    //    11  PshVPtr        rW0:-2
+    //    12  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    15  CALLSYS        q:0x26e79b12a80         ; void System::ExecuteConsoleCommand(const UObject@, const FString&, APlayerController@)
+    //    18  CpyVtoR1       rW0:-4
+    //    19  JLowZ          ->49
+    //    21  PshVPtr        rW0:4
+    //    22  PshVPtr        rW0:-2
+    //    23  PGA            q:0x26e6f1134e0         ; "ServerExec "
+    //    26  PSF            rW0:10
+    //    27  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //    30  PSF            rW0:10
+    //    31  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //    34  PshRPtr
+    //    35  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //    38  PshRPtr
+    //    39  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    42  CALLSYS        q:0x26e79b12a80         ; void System::ExecuteConsoleCommand(const UObject@, const FString&, APlayerController@)
+    //    45  PSF            rW0:10
+    //    46  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //    49  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatToggleHealthRegen()
+// 3 instr, 16 B bytecode, id=0xD4AA1C1C, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatToggleHealthRegen();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85261                 ; void ALokiPlayerCheats_AS::AuthCheatToggleHealthRegen()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCheatToggleHealthRegen()
+// 6 instr, 44 B bytecode, id=0x1D2A0A9C, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(187));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:187
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatToggleHealthRegen
+void AuthCheatToggleHealthRegen_Implementation()
+// 52 instr, 352 B bytecode, id=0xF43024C2, varspace=32
+------------------------------------------------------------------------------
+{
+    ULokiAbilitySystemComponent v4;
+    auto v5;
+    auto v6;
+    FGameplayEffectContextHandle v20;
+    FGameplayEffectSpecHandle v30;
+    FActiveGameplayEffectHandle v32;
+
+    v4 = this.GetAbilitySystemComponent();
+    if (v4 != null) {
+        v6 = this.CheatDisableHealthRegenEffectClass.IsValid();
+        v5 = v6;
+    } else {
+        v5 = 0;
+    }
+    if (v5) {
+        v6 = v4.HasActiveGameplayEffect(this.CheatDisableHealthRegenEffectHandle);
+        if (!v6) {
+            v20 = v4.MakeEffectContext();
+            v30 = v4.MakeOutgoingSpec(this.CheatDisableHealthRegenEffectClass, 0, v20);
+            v32 = v4.ApplyGameplayEffectSpecToSelf(v30);
+            this.CheatDisableHealthRegenEffectHandle = v32;
+        } else {
+            v4.RemoveActiveGameplayEffect(this.CheatDisableHealthRegenEffectHandle, -1);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a324d80         ; ULokiAbilitySystemComponent@ ALokiPlayerCheats::GetAbilitySystemComponent() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JNZ            ->12
+    //     8  SetV4          wW0:5 d:0
+    //    10  JMP            ->21
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:1000 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableHealthRegenEffectClass  (+1000)
+    //    15  CALLSYS        q:0x26e6ef57b00         ; bool TSubclassOf<UGameplayEffect@>::IsValid() const
+    //    18  CpyRtoV4       wW0:6
+    //    19  CpyVtoV4       wW0:5 rW1:6
+    //    21  CpyVtoR1       rW0:5
+    //    22  JLowZ          ->87
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:1008 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableHealthRegenEffectHandle  (+1008)
+    //    27  PshVPtr        rW0:4
+    //    28  CALLSYS        q:0x26e79e7ac00         ; bool UAbilitySystemComponent::HasActiveGameplayEffect(FActiveGameplayEffectHandle) const
+    //    31  CpyRtoV4       wW0:6
+    //    32  CpyVtoR1       rW0:6
+    //    33  JLowZ          ->46
+    //    35  PshC4          d:-1
+    //    37  PshVPtr        rW0:0
+    //    38  ADDSi          W0:1008 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableHealthRegenEffectHandle  (+1008)
+    //    40  PshVPtr        rW0:4
+    //    41  CALLSYS        q:0x26e79e79540         ; bool UAbilitySystemComponent::RemoveActiveGameplayEffect(FActiveGameplayEffectHandle, int)
+    //    44  JMP            ->87
+    //    46  PSF            rW0:20
+    //    47  PshVPtr        rW0:4
+    //    48  CALLSYS        q:0x26e79e79fc0         ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+    //    51  PSF            rW0:20
+    //    52  PshC4          d:0
+    //    54  PshVPtr        rW0:0
+    //    55  ADDSi          W0:1000 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableHealthRegenEffectClass  (+1000)
+    //    57  PSF            rW0:30
+    //    58  PshVPtr        rW0:4
+    //    59  CALLSYS        q:0x26e79e79e00         ; FGameplayEffectSpecHandle UAbilitySystemComponent::MakeOutgoingSpec(TSubclassOf<UGameplayEffect@>, float, FGameplayEffectContextHandle) const
+    //    62  PSF            rW0:30
+    //    63  PSF            rW0:32
+    //    64  PshVPtr        rW0:4
+    //    65  CALLSYS        q:0x26e79e728c0         ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf(const FGameplayEffectSpecHandle&)   [UFunction BP_ApplyGameplayEffectSpecToSelf]
+    //    68  PSF            rW0:32
+    //    69  PshVPtr        rW0:0
+    //    70  ADDSi          W0:1008 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableHealthRegenEffectHandle  (+1008)
+    //    72  CALLSYS        q:0x26e78f93880         ; FActiveGameplayEffectHandle& FActiveGameplayEffectHandle::opAssign(const FActiveGameplayEffectHandle&)
+    //    75  PSF            rW0:32
+    //    76  CALLSYS        q:0x26e78f7e940         ; void FActiveGameplayEffectHandle::$beh2()
+    //    79  PSF            rW0:30
+    //    80  CALLSYS        q:0x26e78f93500         ; void FGameplayEffectSpecHandle::$beh2()
+    //    83  PSF            rW0:20
+    //    84  CALLSYS        q:0x26e78f7c2c0         ; void FGameplayEffectContextHandle::$beh2()
+    //    87  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatToggleManaRegen()
+// 3 instr, 16 B bytecode, id=0x591ECACD, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatToggleManaRegen();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85264                 ; void ALokiPlayerCheats_AS::AuthCheatToggleManaRegen()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCheatToggleManaRegen()
+// 6 instr, 44 B bytecode, id=0x8C57500D, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(188));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:188
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatToggleManaRegen
+void AuthCheatToggleManaRegen_Implementation()
+// 52 instr, 352 B bytecode, id=0xDCA7EFDA, varspace=32
+------------------------------------------------------------------------------
+{
+    ULokiAbilitySystemComponent v4;
+    auto v5;
+    auto v6;
+    FGameplayEffectContextHandle v20;
+    FGameplayEffectSpecHandle v30;
+    FActiveGameplayEffectHandle v32;
+
+    v4 = this.GetAbilitySystemComponent();
+    if (v4 != null) {
+        v6 = this.CheatDisableManaRegenEffectClass.IsValid();
+        v5 = v6;
+    } else {
+        v5 = 0;
+    }
+    if (v5) {
+        v6 = v4.HasActiveGameplayEffect(this.CheatDisableManaRegenEffectHandle);
+        if (!v6) {
+            v20 = v4.MakeEffectContext();
+            v30 = v4.MakeOutgoingSpec(this.CheatDisableManaRegenEffectClass, 0, v20);
+            v32 = v4.ApplyGameplayEffectSpecToSelf(v30);
+            this.CheatDisableManaRegenEffectHandle = v32;
+        } else {
+            v4.RemoveActiveGameplayEffect(this.CheatDisableManaRegenEffectHandle, -1);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a324d80         ; ULokiAbilitySystemComponent@ ALokiPlayerCheats::GetAbilitySystemComponent() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JNZ            ->12
+    //     8  SetV4          wW0:5 d:0
+    //    10  JMP            ->21
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:1016 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableManaRegenEffectClass  (+1016)
+    //    15  CALLSYS        q:0x26e6ef57b00         ; bool TSubclassOf<UGameplayEffect@>::IsValid() const
+    //    18  CpyRtoV4       wW0:6
+    //    19  CpyVtoV4       wW0:5 rW1:6
+    //    21  CpyVtoR1       rW0:5
+    //    22  JLowZ          ->87
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:1024 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableManaRegenEffectHandle  (+1024)
+    //    27  PshVPtr        rW0:4
+    //    28  CALLSYS        q:0x26e79e7ac00         ; bool UAbilitySystemComponent::HasActiveGameplayEffect(FActiveGameplayEffectHandle) const
+    //    31  CpyRtoV4       wW0:6
+    //    32  CpyVtoR1       rW0:6
+    //    33  JLowZ          ->46
+    //    35  PshC4          d:-1
+    //    37  PshVPtr        rW0:0
+    //    38  ADDSi          W0:1024 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableManaRegenEffectHandle  (+1024)
+    //    40  PshVPtr        rW0:4
+    //    41  CALLSYS        q:0x26e79e79540         ; bool UAbilitySystemComponent::RemoveActiveGameplayEffect(FActiveGameplayEffectHandle, int)
+    //    44  JMP            ->87
+    //    46  PSF            rW0:20
+    //    47  PshVPtr        rW0:4
+    //    48  CALLSYS        q:0x26e79e79fc0         ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+    //    51  PSF            rW0:20
+    //    52  PshC4          d:0
+    //    54  PshVPtr        rW0:0
+    //    55  ADDSi          W0:1016 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableManaRegenEffectClass  (+1016)
+    //    57  PSF            rW0:30
+    //    58  PshVPtr        rW0:4
+    //    59  CALLSYS        q:0x26e79e79e00         ; FGameplayEffectSpecHandle UAbilitySystemComponent::MakeOutgoingSpec(TSubclassOf<UGameplayEffect@>, float, FGameplayEffectContextHandle) const
+    //    62  PSF            rW0:30
+    //    63  PSF            rW0:32
+    //    64  PshVPtr        rW0:4
+    //    65  CALLSYS        q:0x26e79e728c0         ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf(const FGameplayEffectSpecHandle&)   [UFunction BP_ApplyGameplayEffectSpecToSelf]
+    //    68  PSF            rW0:32
+    //    69  PshVPtr        rW0:0
+    //    70  ADDSi          W0:1024 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableManaRegenEffectHandle  (+1024)
+    //    72  CALLSYS        q:0x26e78f93880         ; FActiveGameplayEffectHandle& FActiveGameplayEffectHandle::opAssign(const FActiveGameplayEffectHandle&)
+    //    75  PSF            rW0:32
+    //    76  CALLSYS        q:0x26e78f7e940         ; void FActiveGameplayEffectHandle::$beh2()
+    //    79  PSF            rW0:30
+    //    80  CALLSYS        q:0x26e78f93500         ; void FGameplayEffectSpecHandle::$beh2()
+    //    83  PSF            rW0:20
+    //    84  CALLSYS        q:0x26e78f7c2c0         ; void FGameplayEffectContextHandle::$beh2()
+    //    87  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatGrantGold(const int Amount)
+// 4 instr, 20 B bytecode, id=0x15FB4EB5, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatGrantGold(Amount);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV4          rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:85267                 ; void ALokiPlayerCheats_AS::AuthCheatGrantGold(const int)
+    //     4  RET            W0:3
+
+------------------------------------------------------------------------------
+void AuthCheatGrantGold(const int Amount)
+// 8 instr, 60 B bytecode, id=0xD78154D3, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__int32(Amount);
+    __Evt_Execute(this, __STATIC_NAME(189));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //     4  PshC4          d:189
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatGrantGold
+void AuthCheatGrantGold_Implementation(const int Amount)
+// 10 instr, 68 B bytecode, id=0xC94C94CA, varspace=5
+------------------------------------------------------------------------------
+{
+    ALokiPlayerState v4;
+
+    v4 = this.GetPlayerState();
+    v4.GrantWalletCurrency("Gold", Amount, false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a323f80         ; ALokiPlayerState@ ALokiPlayerCheats::GetPlayerState() const
+    //     4  STOREOBJ       wW0:4
+    //     5  SetV1          wW0:5 d:0
+    //     7  PshV4          rW0:5
+    //     8  PshV4          rW0:-2
+    //     9  PGA            q:0x26e6f1134a0         ; "Gold"
+    //    12  PshVPtr        rW0:4
+    //    13  CALLSYS        q:0x26e7a395800         ; void ALokiPlayerState::GrantWalletCurrency(const FString&, int, ECurrencyGrantReason)
+    //    16  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatGrantGems(const int Amount)
+// 4 instr, 20 B bytecode, id=0xB9AC5BC2, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatGrantGems(Amount);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV4          rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:85270                 ; void ALokiPlayerCheats_AS::AuthCheatGrantGems(const int)
+    //     4  RET            W0:3
+
+------------------------------------------------------------------------------
+void AuthCheatGrantGems(const int Amount)
+// 8 instr, 60 B bytecode, id=0xB7D46792, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__int32(Amount);
+    __Evt_Execute(this, __STATIC_NAME(190));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //     4  PshC4          d:190
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatGrantGems
+void AuthCheatGrantGems_Implementation(const int Amount)
+// 10 instr, 68 B bytecode, id=0x477F14F4, varspace=5
+------------------------------------------------------------------------------
+{
+    ALokiPlayerState v4;
+
+    v4 = this.GetPlayerState();
+    v4.GrantWalletCurrency("Gems", Amount, false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a323f80         ; ALokiPlayerState@ ALokiPlayerCheats::GetPlayerState() const
+    //     4  STOREOBJ       wW0:4
+    //     5  SetV1          wW0:5 d:0
+    //     7  PshV4          rW0:5
+    //     8  PshV4          rW0:-2
+    //     9  PGA            q:0x26e6f1133c0         ; "Gems"
+    //    12  PshVPtr        rW0:4
+    //    13  CALLSYS        q:0x26e7a395800         ; void ALokiPlayerState::GrantWalletCurrency(const FString&, int, ECurrencyGrantReason)
+    //    16  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatUnlockFullArmory()
+// 3 instr, 16 B bytecode, id=0x6B5DB9D1, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatUnlockFullArmory();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85273                 ; void ALokiPlayerCheats_AS::AuthCheatUnlockFullArmory()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCheatUnlockFullArmory()
+// 6 instr, 44 B bytecode, id=0xB80B47C9, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(191));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:191
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatUnlockFullArmory
+void AuthCheatUnlockFullArmory_Implementation()
+// 10 instr, 72 B bytecode, id=0x96DF9F23, varspace=5
+------------------------------------------------------------------------------
+{
+    ALokiGameState v2;
+
+    v2 = Loki::GetLokiGameState(__WorldContext);
+    if (v2 != null) {
+        v2.SetArmoryFullyUnlocked(true);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     6  STOREOBJ       wW0:2
+    //     7  CmpPtrNull     rW0:2
+    //     8  JZ             ->17
+    //    10  SetV1          wW0:5 d:1
+    //    12  PshV4          rW0:5
+    //    13  PshVPtr        rW0:2
+    //    14  CALLSYS        q:0x26e7a275480         ; void ALokiGameState::SetArmoryFullyUnlocked(bool)
+    //    17  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatExecuteUAV()
+// 33 instr, 224 B bytecode, id=0x2154F63D, varspace=31
+------------------------------------------------------------------------------
+{
+    ALokiPlayerState v2;
+    APawn v6;
+    FVector v22;
+    FVector v28;
+    int v31;
+
+    v2 = this.GetPlayerState();
+    v6 = v2.GetPawn();
+    v28 = FVector();
+    if (v6 == null) {
+        v28 = FVector::ZeroVector;
+    } else {
+        v22 = v6.GetActorLocation();
+        v28 = v22;
+    }
+    if (v2 == null) {
+        v31 = -1;
+    } else {
+        v31 = v2.GetTeamIndex_BP();
+    }
+    this.AuthCheatExecuteUAV(v28, v31);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a323f80         ; ALokiPlayerState@ ALokiPlayerCheats::GetPlayerState() const
+    //     4  STOREOBJ       wW0:2
+    //     5  PshVPtr        rW0:2
+    //     6  CALLSYS        q:0x26e79b50940         ; APawn@ APlayerState::GetPawn() const
+    //     9  STOREOBJ       wW0:6
+    //    10  PSF            rW0:28
+    //    11  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    14  CmpPtrNull     rW0:6
+    //    15  JZ             ->29
+    //    17  PSF            rW0:22
+    //    18  PshVPtr        rW0:6
+    //    19  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    22  PSF            rW0:22
+    //    23  PSF            rW0:28
+    //    24  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    27  JMP            ->36
+    //    29  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    32  PSF            rW0:28
+    //    33  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    36  CmpPtrNull     rW0:2
+    //    37  JZ             ->48
+    //    39  PshVPtr        rW0:2
+    //    40  CALLSYS        q:0x26e7a396ec0         ; int ALokiPlayerState::GetTeamIndex_BP() const
+    //    43  CpyRtoV4       wW0:30
+    //    44  CpyVtoV4       wW0:31 rW1:30
+    //    46  JMP            ->50
+    //    48  SetV4          wW0:31 d:-1
+    //    50  PshV4          rW0:31
+    //    51  PSF            rW0:28
+    //    52  PshVPtr        rW0:0
+    //    53  CALLINTF       d:85276                 ; void ALokiPlayerCheats_AS::AuthCheatExecuteUAV(const FVector&, const int)
+    //    55  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCheatExecuteUAV(const FVector&inout SourceLocation, const int TeamIndex = - 1)
+// 10 instr, 76 B bytecode, id=0xEB916901, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__FVector(SourceLocation);
+    __Evt_PushArgument__int(TeamIndex);
+    __Evt_Execute(this, __STATIC_NAME(192));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e77fcb140         ; void __Evt_PushArgument__FVector(const FVector&)
+    //     4  PSF            rW0:-4
+    //     5  CALLSYS        q:0x26e77fc8ac0         ; void __Evt_PushArgument__int(const int&)
+    //     8  PshC4          d:192
+    //    10  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    13  PshRPtr
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    18  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatExecuteUAV
+void AuthCheatExecuteUAV_Implementation(const FVector&inout SourceLocation, const int TeamIndex = - 1)
+// 32 instr, 192 B bytecode, id=0x18D8989F, varspace=80
+------------------------------------------------------------------------------
+{
+    ALokiGameState_AS v2;
+    ALokiGameState v4;
+    ALokiGameState_AS v6;
+    ULokiGameStateUAVComponent v10;
+    FLokiUAVConfig v46;
+    FActiveUAV v80;
+
+    v4 = Loki::GetLokiGameState(__WorldContext);
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiGameState_AS>(v4);
+    }
+    v2 = v6;
+    if (v6 != null) {
+        v10 = v2.UAVComponent;
+        if (v10 != null) {
+            v46.FLokiUAVConfig();
+            v80 = v10.ExecuteUAV(v46, SourceLocation, TeamIndex);
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JZ             ->19
+    //    10  TYPEID         d:1207972706            ; ALokiGameState_AS@
+    //    12  PSF            rW0:6
+    //    13  PshVPtr        rW0:4
+    //    14  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    17  JMP            ->20
+    //    19  ClrVPtr        wW0:6
+    //    20  PshVPtr        rW0:6
+    //    21  RefCpyV        wW0:2
+    //    22  CmpPtrNull     rW0:2
+    //    23  JNZ            ->27
+    //    25  JMP            ->47
+    //    27  PshVPtr        rW0:2
+    //    28  ADDSi          W0:2848 d:134230882     ; ALokiGameState_AS::UAVComponent  (+2848)
+    //    30  RDSPtr
+    //    31  RefCpyV        wW0:10
+    //    32  CmpPtrNull     rW0:10
+    //    33  JNZ            ->37
+    //    35  JMP            ->47
+    //    37  PSF            rW0:46
+    //    38  CALL           d:85409                 ; void FLokiUAVConfig::FLokiUAVConfig()
+    //    40  PshV4          rW0:-4
+    //    41  PshVPtr        rW0:-2
+    //    42  PSF            rW0:46
+    //    43  PSF            rW0:80
+    //    44  PshVPtr        rW0:10
+    //    45  CALLINTF       d:85351                 ; FActiveUAV ULokiGameStateUAVComponent::ExecuteUAV(const FLokiUAVConfig&, const FVector&, const int)
+    //    47  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatExecuteUAVGlobal()
+// 25 instr, 172 B bytecode, id=0x24CD2085, varspace=29
+------------------------------------------------------------------------------
+{
+    APawn v6;
+    FVector v22;
+    FVector v28;
+
+    v6 = this.GetPlayerState().GetPawn();
+    v28 = FVector();
+    if (v6 == null) {
+        v28 = FVector::ZeroVector;
+    } else {
+        v22 = v6.GetActorLocation();
+        v28 = v22;
+    }
+    this.AuthCheatExecuteUAV(v28, -1);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a323f80         ; ALokiPlayerState@ ALokiPlayerCheats::GetPlayerState() const
+    //     4  STOREOBJ       wW0:2
+    //     5  PshVPtr        rW0:2
+    //     6  CALLSYS        q:0x26e79b50940         ; APawn@ APlayerState::GetPawn() const
+    //     9  STOREOBJ       wW0:6
+    //    10  PSF            rW0:28
+    //    11  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    14  CmpPtrNull     rW0:6
+    //    15  JZ             ->29
+    //    17  PSF            rW0:22
+    //    18  PshVPtr        rW0:6
+    //    19  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    22  PSF            rW0:22
+    //    23  PSF            rW0:28
+    //    24  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    27  JMP            ->36
+    //    29  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    32  PSF            rW0:28
+    //    33  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    36  PshC4          d:-1
+    //    38  PSF            rW0:28
+    //    39  PshVPtr        rW0:0
+    //    40  CALLINTF       d:85276                 ; void ALokiPlayerCheats_AS::AuthCheatExecuteUAV(const FVector&, const int)
+    //    42  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatBarracudaNextPhase()
+// 3 instr, 16 B bytecode, id=0x11003F47, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatBarracudaNextPhase();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85280                 ; void ALokiPlayerCheats_AS::AuthCheatBarracudaNextPhase()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCheatBarracudaNextPhase()
+// 6 instr, 44 B bytecode, id=0x37C78A58, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(193));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:193
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatBarracudaNextPhase
+void AuthCheatBarracudaNextPhase_Implementation()
+// 7 instr, 40 B bytecode, id=0x80364023, varspace=5
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 != null) {
+        v4.AuthMoveToNextBarracudaPhase();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //     2  STOREOBJ       wW0:4
+    //     3  CmpPtrNull     rW0:4
+    //     4  JZ             ->9
+    //     6  PshVPtr        rW0:4
+    //     7  CALLINTF       d:84224                 ; void UBarracudaGameStateComponent::AuthMoveToNextBarracudaPhase()
+    //     9  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCheatBarracudaToggleSpawnerType(const FGameplayTag&inout SpawnerType)
+// 8 instr, 60 B bytecode, id=0x2BE15D8B, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__FGameplayTag(SpawnerType);
+    __Evt_Execute(this, __STATIC_NAME(194));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7805b140         ; void __Evt_PushArgument__FGameplayTag(const FGameplayTag&)
+    //     4  PshC4          d:194
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatBarracudaToggleSpawnerType
+void AuthCheatBarracudaToggleSpawnerType_Implementation(const FGameplayTag&inout SpawnerType)
+// 19 instr, 128 B bytecode, id=0x56093114, varspace=5
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 != null) {
+        if (!v4.DisabledSpawnerTypes.HasTagExact(SpawnerType)) {
+            v4.DisabledSpawnerTypes.AddTag(SpawnerType);
+        } else {
+            v4.DisabledSpawnerTypes.RemoveTag(SpawnerType);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //     2  STOREOBJ       wW0:4
+    //     3  CmpPtrNull     rW0:4
+    //     4  JZ             ->31
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:4
+    //     8  ADDSi          W0:400 d:134230778      ; UBarracudaGameStateComponent::DisabledSpawnerTypes  (+400)
+    //    10  CALLSYS        q:0x26e79f82700         ; bool FGameplayTagContainer::HasTagExact(const FGameplayTag&) const
+    //    13  JLowZ          ->24
+    //    15  PshVPtr        rW0:-2
+    //    16  PshVPtr        rW0:4
+    //    17  ADDSi          W0:400 d:134230778      ; UBarracudaGameStateComponent::DisabledSpawnerTypes  (+400)
+    //    19  CALLSYS        q:0x26e79f81c80         ; bool FGameplayTagContainer::RemoveTag(const FGameplayTag&)
+    //    22  JMP            ->31
+    //    24  PshVPtr        rW0:-2
+    //    25  PshVPtr        rW0:4
+    //    26  ADDSi          W0:400 d:134230778      ; UBarracudaGameStateComponent::DisabledSpawnerTypes  (+400)
+    //    28  CALLSYS        q:0x26e79f6e780         ; void FGameplayTagContainer::AddTag(const FGameplayTag&)
+    //    31  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatBarracudaToggleJungleSpawners()
+// 4 instr, 28 B bytecode, id=0xDA1E3412, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatBarracudaToggleSpawnerType(GameplayTags::Static_Barracuda_Spawner_Neutral);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e705c1dc8         ; GameplayTags::Static_Barracuda_Spawner_Neutral
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:85282                 ; void ALokiPlayerCheats_AS::AuthCheatBarracudaToggleSpawnerType(const FGameplayTag&)
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatBarracudaToggleLaneSpawners()
+// 4 instr, 28 B bytecode, id=0x9794BC54, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatBarracudaToggleSpawnerType(GameplayTags::Static_Barracuda_Spawner_Creep);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e705c1e48         ; GameplayTags::Static_Barracuda_Spawner_Creep
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:85282                 ; void ALokiPlayerCheats_AS::AuthCheatBarracudaToggleSpawnerType(const FGameplayTag&)
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatBarracudaToggleDayNightCycle()
+// 3 instr, 16 B bytecode, id=0xF091F2C1, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatBarracudaToggleDayNightCycle();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85287                 ; void ALokiPlayerCheats_AS::AuthCheatBarracudaToggleDayNightCycle()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCheatBarracudaToggleDayNightCycle()
+// 6 instr, 44 B bytecode, id=0xE1AA9174, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(195));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:195
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatBarracudaToggleDayNightCycle
+void AuthCheatBarracudaToggleDayNightCycle_Implementation()
+// 10 instr, 64 B bytecode, id=0x5577C16E, varspace=5
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+    auto v5;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 != null) {
+        v5 = v4.bDayNightTransitionEnabled;
+        v5 = !v5;
+        v4.bDayNightTransitionEnabled = v5;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //     2  STOREOBJ       wW0:4
+    //     3  CmpPtrNull     rW0:4
+    //     4  JZ             ->15
+    //     6  LoadRObjR      rW0:4 W1:216 DW2:134230778; UBarracudaGameStateComponent::bDayNightTransitionEnabled  (+216)
+    //     9  RDR1           wW0:5
+    //    10  NOT            rW0:5
+    //    11  LoadRObjR      rW0:4 W1:216 DW2:134230778; UBarracudaGameStateComponent::bDayNightTransitionEnabled  (+216)
+    //    14  WRTV1          rW0:5
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatBarracudaAdvanceDayNightCycle()
+// 3 instr, 16 B bytecode, id=0xCAB66E35, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheatBarracudaAdvanceDayNightCycle();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85290                 ; void ALokiPlayerCheats_AS::AuthCheatBarracudaAdvanceDayNightCycle()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCheatBarracudaAdvanceDayNightCycle()
+// 6 instr, 44 B bytecode, id=0x99614435, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(196));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:196
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthCheatBarracudaAdvanceDayNightCycle
+void AuthCheatBarracudaAdvanceDayNightCycle_Implementation()
+// 20 instr, 120 B bytecode, id=0xAC8581D5, varspace=12
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+    ABarracudaGameMode v8;
+    auto v9;
+
+    v4 = GetBarracudaGameStateComponent();
+    v8 = GetBarracudaGameMode();
+    if (v4 != null) {
+        v9 = v8 != null;
+    } else {
+        v9 = 0;
+    }
+    if (v9) {
+        v4.NextDayNightSwapTime = v8.GetMatchTime();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //     2  STOREOBJ       wW0:4
+    //     3  CALL           d:84193                 ; ABarracudaGameMode@ GetBarracudaGameMode()
+    //     5  STOREOBJ       wW0:8
+    //     6  CmpPtrNull     rW0:4
+    //     7  JNZ            ->13
+    //     9  SetV4          wW0:9 d:0
+    //    11  JMP            ->18
+    //    13  CmpPtrNull     rW0:8
+    //    14  TNZ
+    //    15  CpyRtoV4       wW0:10
+    //    16  CpyVtoV4       wW0:9 rW1:10
+    //    18  CpyVtoR1       rW0:9
+    //    19  JLowZ          ->29
+    //    21  PshVPtr        rW0:8
+    //    22  CALLINTF       d:84172                 ; float64 ABarracudaGameMode::GetMatchTime()
+    //    24  CpyRtoV8       wW0:12
+    //    25  LoadRObjR      rW0:4 W1:208 DW2:134230778; UBarracudaGameStateComponent::NextDayNightSwapTime  (+208)
+    //    28  WRTV8          rW0:12
+    //    29  RET            W0:2
+
+------------------------------------------------------------------------------
+FVector GetMyLocation()
+// 24 instr, 160 B bytecode, id=0x9055C2C4, varspace=22
+------------------------------------------------------------------------------
+{
+    FVector v6;
+    ALokiPlayerController v10;
+    APawn v16;
+    FVector v22;
+
+    v6 = FVector(FVector::ZeroVector);
+    v10 = this.GetPlayerController();
+    if (v10 != null) {
+        v16 = v10.GetControlledPawn();
+        if (v16 != null) {
+            v22 = v16.GetActorLocation();
+            v6 = v22;
+        }
+    }
+    __return = FVector(v6);
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //     3  PSF            rW0:6
+    //     4  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //     7  PshVPtr        rW0:0
+    //     8  CALLSYS        q:0x26e7a324140         ; ALokiPlayerController@ ALokiPlayerCheats::GetPlayerController() const
+    //    11  STOREOBJ       wW0:10
+    //    12  CmpPtrNull     rW0:10
+    //    13  JZ             ->34
+    //    15  PshVPtr        rW0:10
+    //    16  CALLSYS        q:0x26e797a2000         ; APawn@ AController::GetControlledPawn() const   [UFunction K2_GetPawn]
+    //    19  STOREOBJ       wW0:16
+    //    20  CmpPtrNull     rW0:16
+    //    21  JZ             ->33
+    //    23  PSF            rW0:22
+    //    24  PshVPtr        rW0:16
+    //    25  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    28  PSF            rW0:22
+    //    29  PSF            rW0:6
+    //    30  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    33  FreeNullV8     wW0:16
+    //    34  PSF            rW0:6
+    //    35  PshVPtr        rW0:-2
+    //    36  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    39  RET            W0:4
+
+------------------------------------------------------------------------------
+void ServerSpawnWispAS(const int TeamIndex, const FVector&inout Location = FVector::ZeroVector)
+// 10 instr, 76 B bytecode, id=0xB74A1C75, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__int32(TeamIndex);
+    __Evt_PushArgument__FVector(Location);
+    __Evt_Execute(this, __STATIC_NAME(197));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //     4  PshVPtr        rW0:-3
+    //     5  CALLSYS        q:0x26e77fcb140         ; void __Evt_PushArgument__FVector(const FVector&)
+    //     8  PshC4          d:197
+    //    10  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    13  PshRPtr
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    18  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer, meta=(DisplayName=Server Spawn Wisp (AngelScript)))
+// UFunction name: ServerSpawnWispAS
+void ServerSpawnWispAS_Implementation(const int TeamIndex, const FVector&inout Location = FVector::ZeroVector)
+// 81 instr, 552 B bytecode, id=0xBBEDBFCB, varspace=40
+------------------------------------------------------------------------------
+{
+    auto v1;
+    AAIController v6;
+    APlayerState v8;
+    ALokiPlayerState v10;
+    ALokiPlayerState v12;
+    ALokiHeroCharacter v16;
+    ALokiGameState v20;
+    TArray<ALokiPlayerState@> v28;
+    FGameplayEffectContextHandle v40;
+
+    v1 = false;
+    v6 = SpawnActor(this.WispControllerClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, false, null);
+    v8 = v6.PlayerState;
+    if (v8 == null) {
+        v10 = null;
+    } else {
+        v10 = cast<ALokiPlayerState>(v8);
+    }
+    v12 = v10;
+    v1 = true;
+    v16 = SpawnActor(this.WispHeroClass, Location, FRotator::ZeroRotator, NAME_None, true, null);
+    v16.SetOwner(v10);
+    FinishSpawningActor(v16);
+    v6.Possess(v16);
+    v20 = Loki::GetLokiGameState(__WorldContext);
+    LokiTeam::SetTeamForActor(v16, TeamIndex);
+    if (v20 != null) {
+        v28 = v20.GetOrCreateTeamState(TeamIndex).GetLivingPlayers();
+        if (v28.Num() < 2) {
+            v1 = true;
+            this.CheatSetTeamEliminated(this, TeamIndex, true);
+        }
+    }
+    v40 = FGameplayEffectContextHandle();
+    v16.LivingStateMachine.RequestMoveTowardDeath(v40);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshNull
+    //     1  SetV1          wW0:1 d:0
+    //     3  PshV4          rW0:1
+    //     4  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //     7  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //    10  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:1064 d:134230899     ; ALokiPlayerCheats_AS::WispControllerClass  (+1064)
+    //    16  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    19  STOREOBJ       wW0:6
+    //    20  PshVPtr        rW0:6
+    //    21  ADDSi          W0:960 d:67111411       ; AController::PlayerState  (+960)
+    //    23  RDSPtr
+    //    24  RefCpyV        wW0:8
+    //    25  CmpPtrNull     rW0:8
+    //    26  JZ             ->37
+    //    28  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    30  PSF            rW0:10
+    //    31  PshVPtr        rW0:8
+    //    32  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    35  JMP            ->38
+    //    37  ClrVPtr        wW0:10
+    //    38  PshVPtr        rW0:10
+    //    39  RefCpyV        wW0:12
+    //    40  PshNull
+    //    41  SetV1          wW0:1 d:1
+    //    43  PshV4          rW0:1
+    //    44  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    47  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //    50  PshVPtr        rW0:-3
+    //    51  PshVPtr        rW0:0
+    //    52  ADDSi          W0:1072 d:134230899     ; ALokiPlayerCheats_AS::WispHeroClass  (+1072)
+    //    54  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    57  STOREOBJ       wW0:16
+    //    58  PshVPtr        rW0:12
+    //    59  PshVPtr        rW0:16
+    //    60  CALLSYS        q:0x26e79714680         ; void AActor::SetOwner(AActor@)
+    //    63  PshVPtr        rW0:16
+    //    64  CALLSYS        q:0x26e7b1a21c0         ; void FinishSpawningActor(AActor@)
+    //    67  PshVPtr        rW0:16
+    //    68  PshVPtr        rW0:6
+    //    69  CALLSYS        q:0x26e797a1c80         ; void AController::Possess(APawn@)
+    //    72  PshV4          rW0:-2
+    //    73  PshVPtr        rW0:16
+    //    74  CALLSYS        q:0x26e7a410240         ; bool LokiTeam::SetTeamForActor(AActor@, const int)
+    //    77  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    80  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    83  STOREOBJ       wW0:20
+    //    84  CmpPtrNull     rW0:20
+    //    85  JZ             ->121
+    //    87  PshV4          rW0:-2
+    //    88  PshVPtr        rW0:20
+    //    89  CALLSYS        q:0x26e7a272a80         ; ALokiTeamState@ ALokiGameState::GetOrCreateTeamState(int)
+    //    92  STOREOBJ       wW0:24
+    //    93  PSF            rW0:28
+    //    94  PshVPtr        rW0:24
+    //    95  CALLSYS        q:0x26e7a3df040         ; TArray<ALokiPlayerState@> ALokiTeamState::GetLivingPlayers() const
+    //    98  PSF            rW0:28
+    //    99  CALLSYS        q:0x26e6ee8d280         ; int TArray<ALokiPlayerState@>::Num() const
+    //   102  CpyRtoV4       wW0:33
+    //   103  CMPIi          rW0:33 d:2
+    //   105  JNS            ->116
+    //   107  SetV1          wW0:1 d:1
+    //   109  PshV4          rW0:1
+    //   110  PshV4          rW0:-2
+    //   111  PshVPtr        rW0:0
+    //   112  PshVPtr        rW0:0
+    //   113  CALLSYS        q:0x26e7a325640         ; void ALokiPlayerCheats::CheatSetTeamEliminated(const UObject@, int, bool)
+    //   116  PSF            rW0:28
+    //   117  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   120  FreeNullV8     wW0:24
+    //   121  PSF            rW0:40
+    //   122  CALLSYS        q:0x26e78f7c480         ; void FGameplayEffectContextHandle::$beh0()
+    //   125  PSF            rW0:40
+    //   126  PshVPtr        rW0:16
+    //   127  ADDSi          W0:3392 d:67114993      ; ALokiCharacter::LivingStateMachine  (+3392)
+    //   129  RDSPtr
+    //   130  CALLSYS        q:0x26e7a2d5d40         ; void ULivingStateMachine::RequestMoveTowardDeath(FGameplayEffectContextHandle)
+    //   133  PSF            rW0:40
+    //   134  CALLSYS        q:0x26e78f7c2c0         ; void FGameplayEffectContextHandle::$beh2()
+    //   137  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SpawnEnemyWispAtMyLocation()
+// 12 instr, 64 B bytecode, id=0x4B221B49, varspace=8
+------------------------------------------------------------------------------
+{
+    int v2;
+    FVector v8;
+
+    v2 = this.GetUnusedTeamIndex(this);
+    v8 = this.GetMyLocation();
+    this.ServerSpawnWispAS(v2, v8);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  PshVPtr        rW0:0
+    //     2  CALLSYS        q:0x26e7a323dc0         ; int ALokiPlayerCheats::GetUnusedTeamIndex(const UObject@)
+    //     5  CpyRtoV4       wW0:2
+    //     6  PSF            rW0:8
+    //     7  PshVPtr        rW0:0
+    //     8  CALLINTF       d:85292                 ; FVector ALokiPlayerCheats_AS::GetMyLocation()
+    //    10  PSF            rW0:8
+    //    11  PshV4          rW0:2
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:85293                 ; void ALokiPlayerCheats_AS::ServerSpawnWispAS(const int, const FVector&)
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SpawnAllyWispAtMyLocation()
+// 14 instr, 80 B bytecode, id=0x4D5E205A, varspace=12
+------------------------------------------------------------------------------
+{
+    int v5;
+    FVector v12;
+
+    v5 = LokiTeam::GetTeamFromActor(this.GetPlayerState());
+    v12 = this.GetMyLocation();
+    this.ServerSpawnWispAS(v5, v12);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a323f80         ; ALokiPlayerState@ ALokiPlayerCheats::GetPlayerState() const
+    //     4  STOREOBJ       wW0:4
+    //     5  PshVPtr        rW0:4
+    //     6  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //     9  CpyRtoV4       wW0:5
+    //    10  PSF            rW0:12
+    //    11  PshVPtr        rW0:0
+    //    12  CALLINTF       d:85292                 ; FVector ALokiPlayerCheats_AS::GetMyLocation()
+    //    14  PSF            rW0:12
+    //    15  PshV4          rW0:5
+    //    16  PshVPtr        rW0:0
+    //    17  CALLINTF       d:85293                 ; void ALokiPlayerCheats_AS::ServerSpawnWispAS(const int, const FVector&)
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatSpawnEnemyWisp()
+// 21 instr, 144 B bytecode, id=0xE5B58650, varspace=26
+------------------------------------------------------------------------------
+{
+    FVector v6;
+    FVector v12;
+
+    v12 = this.GetClientCursorLocation();
+    v6 = FVector(0, 0, 500);
+    v12 += v6;
+    this.ServerSpawnWispAS(this.GetUnusedTeamIndex(this), v12);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:12
+    //     1  PshVPtr        rW0:0
+    //     2  CALLSYS        q:0x26e7a324a00         ; FVector ALokiPlayerCheats::GetClientCursorLocation() const
+    //     5  PshC8          q:0x407f400000000000
+    //     8  PshC8          q:0x0
+    //    11  PshC8          q:0x0
+    //    14  PSF            rW0:6
+    //    15  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //    18  PSF            rW0:6
+    //    19  PSF            rW0:24
+    //    20  PSF            rW0:12
+    //    21  CALLSYS        q:0x26e69d06ec0         ; FVector FVector::opAddAssign(const FVector&)
+    //    24  PshVPtr        rW0:0
+    //    25  PshVPtr        rW0:0
+    //    26  CALLSYS        q:0x26e7a323dc0         ; int ALokiPlayerCheats::GetUnusedTeamIndex(const UObject@)
+    //    29  CpyRtoV4       wW0:26
+    //    30  PSF            rW0:12
+    //    31  PshV4          rW0:26
+    //    32  PshVPtr        rW0:0
+    //    33  CALLINTF       d:85293                 ; void ALokiPlayerCheats_AS::ServerSpawnWispAS(const int, const FVector&)
+    //    35  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatSpawnAllyWisp()
+// 23 instr, 160 B bytecode, id=0xC9C531D2, varspace=29
+------------------------------------------------------------------------------
+{
+    FVector v6;
+    FVector v12;
+
+    v12 = this.GetClientCursorLocation();
+    v6 = FVector(0, 0, 500);
+    v12 += v6;
+    this.ServerSpawnWispAS(LokiTeam::GetTeamFromActor(this.GetPlayerState()), v12);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:12
+    //     1  PshVPtr        rW0:0
+    //     2  CALLSYS        q:0x26e7a324a00         ; FVector ALokiPlayerCheats::GetClientCursorLocation() const
+    //     5  PshC8          q:0x407f400000000000
+    //     8  PshC8          q:0x0
+    //    11  PshC8          q:0x0
+    //    14  PSF            rW0:6
+    //    15  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //    18  PSF            rW0:6
+    //    19  PSF            rW0:24
+    //    20  PSF            rW0:12
+    //    21  CALLSYS        q:0x26e69d06ec0         ; FVector FVector::opAddAssign(const FVector&)
+    //    24  PshVPtr        rW0:0
+    //    25  CALLSYS        q:0x26e7a323f80         ; ALokiPlayerState@ ALokiPlayerCheats::GetPlayerState() const
+    //    28  STOREOBJ       wW0:28
+    //    29  PshVPtr        rW0:28
+    //    30  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //    33  CpyRtoV4       wW0:29
+    //    34  PSF            rW0:12
+    //    35  PshV4          rW0:29
+    //    36  PshVPtr        rW0:0
+    //    37  CALLINTF       d:85293                 ; void ALokiPlayerCheats_AS::ServerSpawnWispAS(const int, const FVector&)
+    //    39  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandEnableStuckAbilityLogs()
+// 41 instr, 292 B bytecode, id=0x4CB63887, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.RunCommand("RequestAdmin", false);
+    v1 = true;
+    this.RunCommand("Log LogAbilitySystem Verbose", true);
+    v1 = true;
+    this.RunCommand("Log LogLokiAbilitySystemComponent Verbose", true);
+    v1 = true;
+    this.RunCommand("Log LogLokiGameplaySpell Verbose", true);
+    v1 = true;
+    this.RunCommand("DebugLogSpellBuffering 1", true);
+    v1 = false;
+    this.RunCommand("ShowDebug AbilitySystem", false);
+    v1 = false;
+    this.RunCommand("AbilitySystem.Debug.NextCategory", false);
+    v1 = false;
+    this.RunCommand("AbilitySystem.Debug.NextCategory", false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PGA            q:0x26e6f1140c0         ; "RequestAdmin"
+    //     6  PshVPtr        rW0:0
+    //     7  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //     9  SetV1          wW0:1 d:1
+    //    11  PshV4          rW0:1
+    //    12  PGA            q:0x26e6f114070         ; "Log LogAbilitySystem Verbose"
+    //    15  PshVPtr        rW0:0
+    //    16  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    18  SetV1          wW0:1 d:1
+    //    20  PshV4          rW0:1
+    //    21  PGA            q:0x26e6f114050         ; "Log LogLokiAbilitySystemComponent Verbose"
+    //    24  PshVPtr        rW0:0
+    //    25  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    27  SetV1          wW0:1 d:1
+    //    29  PshV4          rW0:1
+    //    30  PGA            q:0x26e6f114060         ; "Log LogLokiGameplaySpell Verbose"
+    //    33  PshVPtr        rW0:0
+    //    34  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    36  SetV1          wW0:1 d:1
+    //    38  PshV4          rW0:1
+    //    39  PGA            q:0x26e6f114080         ; "DebugLogSpellBuffering 1"
+    //    42  PshVPtr        rW0:0
+    //    43  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    45  SetV1          wW0:1 d:0
+    //    47  PshV4          rW0:1
+    //    48  PGA            q:0x26e6f114830         ; "ShowDebug AbilitySystem"
+    //    51  PshVPtr        rW0:0
+    //    52  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    54  SetV1          wW0:1 d:0
+    //    56  PshV4          rW0:1
+    //    57  PGA            q:0x26e6f114470         ; "AbilitySystem.Debug.NextCategory"
+    //    60  PshVPtr        rW0:0
+    //    61  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    63  SetV1          wW0:1 d:0
+    //    65  PshV4          rW0:1
+    //    66  PGA            q:0x26e6f114420         ; "AbilitySystem.Debug.NextCategory"
+    //    69  PshVPtr        rW0:0
+    //    70  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    72  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandCheatAutoJump(const float64 Period)
+// 16 instr, 124 B bytecode, id=0xB2640703, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = 0;
+    if (Period <= 0) {
+        v2 = 0;
+        this.AutoJumpStartTime = 0;
+    } else {
+        v2 = float64(Gameplay::GetServerTime(__WorldContext));
+        this.AutoJumpStartTime = v2;
+        this.AutoJumpPeriod = Period;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  CMPd           rW0:-2 rW1:2
+    //     5  JNP            ->24
+    //     7  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    10  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    13  CpyRtoV4       wW0:4
+    //    14  fTOd           wW0:2 rW1:4
+    //    16  LoadThisR      W0:1032 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpStartTime  (+1032)
+    //    18  WRTV8          rW0:2
+    //    19  LoadThisR      W0:1040 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpPeriod  (+1040)
+    //    21  WRTV8          rW0:-2
+    //    22  JMP            ->30
+    //    24  SetV8          wW0:2 q:0x0
+    //    27  LoadThisR      W0:1032 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpStartTime  (+1032)
+    //    29  WRTV8          rW0:2
+    //    30  RET            W0:4
+
+------------------------------------------------------------------------------
+void TickAutoJump()
+// 42 instr, 300 B bytecode, id=0xE6D95F49, varspace=16
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v4;
+    auto v5;
+    ALokiHeroCharacter v10;
+    auto v12;
+
+    v2 = this.AutoJumpStartTime;
+    v4 = 0;
+    if (v2 > 0) {
+        v10 = this.GetHeroCharacter();
+        if (v10 != null) {
+            v5 = this.AutoJumpPressed;
+            if (!v5) {
+                v2 = float64(Gameplay::GetServerTime(__WorldContext));
+                v12 = v2;
+                v4 = this.AutoJumpLastTime;
+                v2 = v2 - v4;
+                v4 = this.AutoJumpPeriod;
+                if (v2 > v4) {
+                    this.AutoJumpLastTime = v12;
+                    v10.JumpActionStart();
+                    v5 = true;
+                    this.AutoJumpPressed = true;
+                }
+            } else {
+                v5 = false;
+                this.AutoJumpPressed = false;
+                v10.JumpActionStop();
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1032 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpStartTime  (+1032)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0x0
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  JP             ->12
+    //    10  JMP            ->74
+    //    12  PshVPtr        rW0:0
+    //    13  CALLSYS        q:0x26e7a324680         ; ALokiHeroCharacter@ ALokiPlayerCheats::GetHeroCharacter() const
+    //    16  STOREOBJ       wW0:10
+    //    17  CmpPtrNull     rW0:10
+    //    18  JNZ            ->22
+    //    20  JMP            ->74
+    //    22  LoadThisR      W0:1056 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpPressed  (+1056)
+    //    24  RDR1           wW0:5
+    //    25  CpyVtoR1       rW0:5
+    //    26  JLowZ          ->39
+    //    28  SetV1          wW0:5 d:0
+    //    30  LoadThisR      W0:1056 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpPressed  (+1056)
+    //    32  WRTV1          rW0:5
+    //    33  PshVPtr        rW0:10
+    //    34  CALLSYS        q:0x26e7a18fc80         ; void ALokiCharacter::JumpActionStop()
+    //    37  JMP            ->74
+    //    39  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    42  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    45  CpyRtoV4       wW0:13
+    //    46  fTOd           wW0:2 rW1:13
+    //    48  CpyVtoV8       wW0:12 rW1:2
+    //    50  LoadThisR      W0:1048 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpLastTime  (+1048)
+    //    52  RDR8           wW0:4
+    //    53  SUBd           wW0:2 rW1:12 rW2:4
+    //    55  LoadThisR      W0:1040 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpPeriod  (+1040)
+    //    57  RDR8           wW0:4
+    //    58  CMPd           rW0:2 rW1:4
+    //    60  JNP            ->74
+    //    62  LoadThisR      W0:1048 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpLastTime  (+1048)
+    //    64  WRTV8          rW0:12
+    //    65  PshVPtr        rW0:10
+    //    66  CALLSYS        q:0x26e7a18fe40         ; void ALokiCharacter::JumpActionStart()
+    //    69  SetV1          wW0:5 d:1
+    //    71  LoadThisR      W0:1056 d:134230899     ; ALokiPlayerCheats_AS::AutoJumpPressed  (+1056)
+    //    73  WRTV1          rW0:5
+    //    74  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandEnableMovementDebug()
+// 32 instr, 224 B bytecode, id=0xEE1B3EBA, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v5;
+
+    if (this.GetPlayerController() != null) {
+        v5 = false;
+        this.RunCommand("GodMode", false);
+        v5 = true;
+        this.RunCommand("Log LogCharacterMovement Verbose", true);
+        v5 = false;
+        this.RunCommand("p.NetShowCorrections 1", false);
+        v5 = true;
+        this.RunCommand("p.DebugLogAllMoves 1", true);
+        v5 = true;
+        this.RunCommand("p.DebugLogAllMoves1D 1", true);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a324140         ; ALokiPlayerController@ ALokiPlayerCheats::GetPlayerController() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JNZ            ->10
+    //     8  JMP            ->55
+    //    10  SetV1          wW0:5 d:0
+    //    12  PshV4          rW0:5
+    //    13  PGA            q:0x26e6f113a80         ; "GodMode"
+    //    16  PshVPtr        rW0:0
+    //    17  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    19  SetV1          wW0:5 d:1
+    //    21  PshV4          rW0:5
+    //    22  PGA            q:0x26e6f114430         ; "Log LogCharacterMovement Verbose"
+    //    25  PshVPtr        rW0:0
+    //    26  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    28  SetV1          wW0:5 d:0
+    //    30  PshV4          rW0:5
+    //    31  PGA            q:0x26e6f114810         ; "p.NetShowCorrections 1"
+    //    34  PshVPtr        rW0:0
+    //    35  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    37  SetV1          wW0:5 d:1
+    //    39  PshV4          rW0:5
+    //    40  PGA            q:0x26e6f1147f0         ; "p.DebugLogAllMoves 1"
+    //    43  PshVPtr        rW0:0
+    //    44  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    46  SetV1          wW0:5 d:1
+    //    48  PshV4          rW0:5
+    //    49  PGA            q:0x26e6f1147b0         ; "p.DebugLogAllMoves1D 1"
+    //    52  PshVPtr        rW0:0
+    //    53  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    55  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ConsoleCommandDisableMovementDebug()
+// 12 instr, 80 B bytecode, id=0x6F5D8D19, varspace=5
+------------------------------------------------------------------------------
+{
+    if (this.GetPlayerController() != null) {
+        this.RunCommand("p.DebugLogAllMoves 0", true);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a324140         ; ALokiPlayerController@ ALokiPlayerCheats::GetPlayerController() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JNZ            ->10
+    //     8  JMP            ->19
+    //    10  SetV1          wW0:5 d:1
+    //    12  PshV4          rW0:5
+    //    13  PGA            q:0x26e6f114110         ; "p.DebugLogAllMoves 0"
+    //    16  PshVPtr        rW0:0
+    //    17  CALLINTF       d:85259                 ; void ALokiPlayerCheats_AS::RunCommand(const FString&, const bool)
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+~ALokiPlayerCheats_AS()
+// 7 instr, 52 B bytecode, id=0x64B34E48, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1008 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableHealthRegenEffectHandle  (+1008)
+    //     3  CALLSYS        q:0x26e78f7e940         ; void FActiveGameplayEffectHandle::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:1024 d:134230899     ; ALokiPlayerCheats_AS::CheatDisableManaRegenEffectHandle  (+1024)
+    //     9  CALLSYS        q:0x26e78f7e940         ; void FActiveGameplayEffectHandle::$beh2()
+    //    12  RET            W0:2
+

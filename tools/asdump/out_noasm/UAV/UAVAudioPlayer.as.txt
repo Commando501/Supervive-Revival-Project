@@ -1,0 +1,98 @@
+// ============================================================================
+//  MODULE   UAV.UAVAudioPlayer
+//  SOURCE   UAV/UAVAudioPlayer.as
+//  CONTENT  1 class(es), 7 function(s), 0 enum(s), 1 global(s), 468 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AUAVAudioPlayer;
+
+AUAVAudioPlayer@ AUAVAudioPlayer()   // traits=0x20
+{
+    AUAVAudioPlayer v2;
+
+    v2 = AUAVAudioPlayer();
+    return v2;
+}
+
+UClass@ AUAVAudioPlayer::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_AUAVAudioPlayer);
+    return v2;
+}
+
+AUAVAudioPlayer@ AUAVAudioPlayer::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AUAVAudioPlayer v8;
+
+    v2 = __StaticType_AUAVAudioPlayer.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AUAVAudioPlayer@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class AUAVAudioPlayer : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_AUAVAudioPlayer
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_ActiveUAVCopy)
+    FActiveUAV ActiveUAVCopy;
+
+    AUAVAudioPlayer()   // traits=0x21
+    {
+        this.ActiveUAVCopy.FActiveUAV();
+        return;
+    }
+
+    void OnRep_ActiveUAVCopy()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnRep_ActiveUAVCopy");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnRep_ActiveUAVCopy, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnRep_ActiveUAVCopy_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        ENetDormancy v3;
+
+        v1 = false;
+        this.PrimaryActorTick.SetbStartWithTickEnabled(v1);
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = true;
+        this.SetbAlwaysRelevant(v1);
+        v2 = true;
+        this.LokiReplicationStrategy.CustomReplicationStrategy = v2;
+        v3 = ENetDormancy::DORM_Initial;
+        this.SetNetDormancy(v3);
+        return;
+    }
+
+}
+

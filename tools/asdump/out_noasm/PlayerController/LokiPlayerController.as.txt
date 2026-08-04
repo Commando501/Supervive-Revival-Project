@@ -1,0 +1,384 @@
+// ============================================================================
+//  MODULE   PlayerController.LokiPlayerController
+//  SOURCE   PlayerController/LokiPlayerController.as
+//  CONTENT  4 class(es), 44 function(s), 0 enum(s), 1 global(s), 1840 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+event FOnSneakPressedDelegate;
+event FOnSneakReleasedDelegate;
+event FOnPracticeRespawnPressedDelegate;
+
+const TSubclassOf<UObject@> __StaticType_ALokiPlayerController_AS;
+
+ALokiPlayerController_AS@ ALokiPlayerController_AS()   // traits=0x20
+{
+    ALokiPlayerController_AS v2;
+
+    v2 = ALokiPlayerController_AS();
+    return v2;
+}
+
+UClass@ ALokiPlayerController_AS::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiPlayerController_AS);
+    return v2;
+}
+
+ALokiPlayerController_AS@ ALokiPlayerController_AS::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiPlayerController_AS v8;
+
+    v2 = __StaticType_ALokiPlayerController_AS.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiPlayerController_AS@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ALokiPlayerController_AS : ALokiPlayerController
+// unreal base : /Script/Loki.LokiPlayerController
+// C++ header  : ../../../Loki/Source/Loki/LokiPlayerController.h
+// static class global: __StaticType_ALokiPlayerController_AS
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    ULokiPlayerControllerUAVComponent@ UAVComponent;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnSneakPressedDelegate OnSneakPressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnSneakReleasedDelegate OnSneakReleased;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnPracticeRespawnPressedDelegate OnPracticeRespawnPressed;
+
+    ALokiPlayerController_AS()   // traits=0x21
+    {
+        this.OnSneakPressed.FOnSneakPressedDelegate();
+        this.OnSneakReleased.FOnSneakReleasedDelegate();
+        this.OnPracticeRespawnPressed.FOnPracticeRespawnPressedDelegate();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ClientGliderActivated()   // traits=0x20
+    {
+        this.BP_OnClientGliderActivated();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ClientGliderDeactivated()   // traits=0x20
+    {
+        this.BP_OnClientGliderDectivated();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SpectatorMapMove()   // traits=0x20
+    {
+        this.BP_OnSpectatorMapMove();
+        return;
+    }
+
+    protected void BP_OnClientGliderActivated()   // traits=0x30
+    {
+        __Evt_Execute(this, n"BP_OnClientGliderActivated");
+        return;
+    }
+
+    UFUNCTION(UnrealName=BP_OnClientGliderActivated, BlueprintEvent, CanOverrideEvent, NoOp, meta.DisplayName=On Client Glider Activated)
+    protected void BP_OnClientGliderActivated_Implementation()   // traits=0x30
+    {
+        return;
+    }
+
+    protected void BP_OnClientGliderDectivated()   // traits=0x30
+    {
+        __Evt_Execute(this, n"BP_OnClientGliderDectivated");
+        return;
+    }
+
+    UFUNCTION(UnrealName=BP_OnClientGliderDectivated, BlueprintEvent, CanOverrideEvent, NoOp, meta.DisplayName=On Client Glider Deactivated)
+    protected void BP_OnClientGliderDectivated_Implementation()   // traits=0x30
+    {
+        return;
+    }
+
+    protected void BP_OnSpectatorMapMove()   // traits=0x30
+    {
+        __Evt_Execute(this, n"BP_OnSpectatorMapMove");
+        return;
+    }
+
+    UFUNCTION(UnrealName=BP_OnSpectatorMapMove, BlueprintEvent, CanOverrideEvent, NoOp, meta.DisplayName=On Spectator Map Move)
+    protected void BP_OnSpectatorMapMove_Implementation()   // traits=0x30
+    {
+        return;
+    }
+
+    void ~ALokiPlayerController_AS()   // traits=0x22
+    {
+        this.OnSneakPressed.~FOnSneakPressedDelegate();
+        this.OnSneakReleased.~FOnSneakReleasedDelegate();
+        this.OnPracticeRespawnPressed.~FOnPracticeRespawnPressedDelegate();
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnSneakPressedDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnSneakPressedDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FOnSneakPressedDelegate(const FOnSneakPressedDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FOnSneakPressedDelegate& opAssign(const FOnSneakPressedDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnSneakPressedDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FOnSneakPressedDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnSneakReleasedDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnSneakReleasedDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FOnSneakReleasedDelegate(const FOnSneakReleasedDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FOnSneakReleasedDelegate& opAssign(const FOnSneakReleasedDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnSneakReleasedDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FOnSneakReleasedDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnPracticeRespawnPressedDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnPracticeRespawnPressedDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FOnPracticeRespawnPressedDelegate(const FOnPracticeRespawnPressedDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FOnPracticeRespawnPressedDelegate& opAssign(const FOnPracticeRespawnPressedDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnPracticeRespawnPressedDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FOnPracticeRespawnPressedDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

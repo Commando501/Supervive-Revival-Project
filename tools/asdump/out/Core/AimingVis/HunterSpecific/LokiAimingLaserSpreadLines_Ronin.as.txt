@@ -1,0 +1,265 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_Ronin
+//  SOURCE   Core/AimingVis/HunterSpecific/LokiAimingLaserSpreadLines_Ronin.as
+//  CONTENT  1 class(es), 7 function(s), 0 enum(s), 1 global(s), 784 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaserSpreadLines_Ronin;
+
+ALokiAimingLaserSpreadLines_Ronin@ ALokiAimingLaserSpreadLines_Ronin()   // traits=0x20
+{
+    ALokiAimingLaserSpreadLines_Ronin v2;
+
+    v2 = ALokiAimingLaserSpreadLines_Ronin();
+    return v2;
+}
+/* ---- ALokiAimingLaserSpreadLines_Ronin: 7 dwords / 4 instructions (cache offset 0x669f4) ----
+    0000  PSF           v2
+    0004  ALLOC         84739 ALokiAimingLaserSpreadLines_Ronin       ; new ALokiAimingLaserSpreadLines_Ronin  ctor=void ALokiAimingLaserSpreadLines_Ronin::ALokiAimingLaserSpreadLines_Ronin()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ALokiAimingLaserSpreadLines_Ronin::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiAimingLaserSpreadLines_Ronin);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x66ac2) ----
+    0000  PshGPtr       __StaticType_ALokiAimingLaserSpreadLines_Ronin
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ALokiAimingLaserSpreadLines_Ronin@ ALokiAimingLaserSpreadLines_Ronin::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaserSpreadLines_Ronin v8;
+
+    v2 = __StaticType_ALokiAimingLaserSpreadLines_Ronin.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiAimingLaserSpreadLines_Ronin@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x66cf8) ----
+    0000  PshVPtr       Level
+    0004  PshV4         bDeferredSpawn
+    0008  PshVPtr       Name
+    000C  PshVPtr       Rotation
+    0010  PshVPtr       Location
+    0014  PshGPtr       __StaticType_ALokiAimingLaserSpreadLines_Ronin
+    0020  CHKREF
+    0024  CALLSYS       TSubclassOf::Get                              ; UClass@ TSubclassOf<UObject@>::Get() const
+    0030  STOREOBJ      v2
+    0034  PshVPtr       v2
+    0038  PSF           v4
+    003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    0048  PSF           v4
+    004C  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    0058  STOREOBJ      v6
+    005C  CmpPtrNull    v6
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972671                                    ; ALokiAimingLaserSpreadLines_Ronin@
+    0070  PSF           v8
+    0074  PshVPtr       v6
+    0078  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8
+  L0090:
+    0090  LOADOBJ       v8
+    0094  RET           9
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class ALokiAimingLaserSpreadLines_Ronin : ALokiAimingLaserSpreadLines
+// static class global: __StaticType_ALokiAimingLaserSpreadLines_Ronin
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 PostAttackVisDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 PostAttackVisFadeout;
+    float64 VisTimeRemaining;
+
+    ALokiAimingLaserSpreadLines_Ronin()   // traits=0x21
+    {
+        auto v2;
+
+        this.ALokiAimingLaserSpreadLines();
+        v2 = 1.0;
+        this.PostAttackVisDuration = v2;
+        v2 = 0.5;
+        this.PostAttackVisFadeout = v2;
+        v2 = 0;
+        this.VisTimeRemaining = v2;
+        return;
+    }
+    /* ---- ALokiAimingLaserSpreadLines_Ronin: 26 dwords / 14 instructions (cache offset 0x67591) ----
+        0000  PshVPtr       this
+        0004  CALL          84637                                         ; void ALokiAimingLaserSpreadLines::ALokiAimingLaserSpreadLines()
+        000C  SetV8         v2 0x3ff0000000000000
+        0018  LoadThisR     1224 134230847                                ; this.PostAttackVisDuration
+        0020  WRTV8         v2
+        0024  SetV8         v2 0x3fe0000000000000
+        0030  LoadThisR     1232 134230847                                ; this.PostAttackVisFadeout
+        0038  WRTV8         v2
+        003C  SetV8         v2 0x0
+        0048  LoadThisR     1240 134230847                                ; this.VisTimeRemaining
+        0050  WRTV8         v2
+        0054  PshVPtr       this
+        0058  FinConstruct  ALokiAimingLaserSpreadLines_Ronin
+        0064  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v2;
+        float64 v4;
+        auto v6;
+        FVector2D v12;
+        FVector2D v16;
+        float64 v18;
+        float32 v20;
+
+        this.Tick_Implementation(DeltaSeconds);
+        v2 = 0;
+        v4 = this.VisTimeRemaining;
+        v6 = 0;
+        if (v4 > v6) {
+            v4 = this.VisTimeRemaining;
+            v6 = this.PostAttackVisFadeout;
+            if (v4 > v6) {
+                v2 = 1.0;
+            } else {
+                v18 = this.VisTimeRemaining;
+                v4 = this.PostAttackVisFadeout;
+                v12 = FVector2D(0, v4);
+                v16 = FVector2D(0, 1.0);
+                v4 = Math::GetMappedRangeValueClamped(v16, v12, v18);
+                v2 = v4;
+            }
+            v6 = this.VisTimeRemaining;
+            v4 = v6 - DeltaSeconds;
+            this.VisTimeRemaining = v4;
+        }
+        v20 = float32(v2);
+        this.LaserSpread1.SetScalarParameterValueOnMaterials(n"Final Opacity", v20);
+        v20 = float32(v2);
+        this.LaserSpread2.SetScalarParameterValueOnMaterials(n"Final Opacity", v20);
+        return;
+    }
+    /* ---- Tick_Implementation: 104 dwords / 58 instructions (cache offset 0x67043) ----
+        0000  PshV8         DeltaSeconds
+        0004  PshVPtr       this
+        0008  CALL          84634                                         ; void ALokiAimingLaserSpreadLines::Tick_Implementation(const float64)
+        0010  SetV8         v2 0x0
+        001C  LoadThisR     1240 134230847                                ; this.VisTimeRemaining
+        0024  RDR8          v4
+        0028  SetV8         v6 0x0
+        0034  CMPd          v4 v6
+        003C  JNP           54                                            -> L011C
+        0044  LoadThisR     1240 134230847                                ; this.VisTimeRemaining
+        004C  RDR8          v4
+        0050  LoadThisR     1232 134230847                                ; this.PostAttackVisFadeout
+        0058  RDR8          v6
+        005C  CMPd          v4 v6
+        0064  JNP           5                                             -> L0080
+        006C  SetV8         v2 0x3ff0000000000000
+        0078  JMP           33                                            -> L0104
+      L0080:
+        0080  LoadThisR     1240 134230847                                ; this.VisTimeRemaining
+        0088  RDR8          v18
+        008C  PshV8         v18
+        0090  LoadThisR     1232 134230847                                ; this.PostAttackVisFadeout
+        0098  RDR8          v4
+        009C  PshV8         v4
+        00A0  PshC8         0x0
+        00AC  PSF           v12
+        00B0  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        00BC  PSF           v12
+        00C0  PshC8         0x3ff0000000000000
+        00CC  PshC8         0x0
+        00D8  PSF           v16
+        00DC  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        00E8  PSF           v16
+        00EC  CALLSYS       GetMappedRangeValueClamped                    ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+        00F8  CpyRtoV8      v4
+        00FC  CpyVtoV8      v2 v4
+      L0104:
+        0104  LoadThisR     1240 134230847                                ; this.VisTimeRemaining
+        010C  RDR8          v6
+        0110  SUBd          v4 v6 DeltaSeconds
+        0118  WRTV8         v4
+      L011C:
+        011C  dTOf          v20 v2
+        0124  PshV4         v20
+        0128  PshC4         35
+        0130  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        013C  PshRPtr
+        0140  PshVPtr       this
+        0144  ADDSi         1152 134230844                                ; .LaserSpread1
+        014C  RDSPtr
+        0150  CALLSYS       UMeshComponent::SetScalarParameterValueOnMaterials  ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float32)
+        015C  dTOf          v20 v2
+        0164  PshV4         v20
+        0168  PshC4         35
+        0170  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        017C  PshRPtr
+        0180  PshVPtr       this
+        0184  ADDSi         1160 134230844                                ; .LaserSpread2
+        018C  RDSPtr
+        0190  CALLSYS       UMeshComponent::SetScalarParameterValueOnMaterials  ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float32)
+        019C  RET           4
+    */
+
+    UFUNCTION(UnrealName=CustomEvent0, BlueprintOverride, BlueprintEvent, CanOverrideEvent, meta.NoSuperCall)
+    void CustomEvent0_Implementation(const float64 Value)   // traits=0x20
+    {
+        auto v2;
+
+        v2 = this.PostAttackVisDuration;
+        this.VisTimeRemaining = v2;
+        return;
+    }
+    /* ---- CustomEvent0_Implementation: 7 dwords / 5 instructions (cache offset 0x67396) ----
+        0000  LoadThisR     1224 134230847                                ; this.PostAttackVisDuration
+        0008  RDR8          v2
+        000C  LoadThisR     1240 134230847                                ; this.VisTimeRemaining
+        0014  WRTV8         v2
+        0018  RET           4
+    */
+
+    void ~ALokiAimingLaserSpreadLines_Ronin()   // traits=0x22
+    {
+        this.~ALokiAimingLaserSpreadLines();
+        return;
+    }
+    /* ---- ~ALokiAimingLaserSpreadLines_Ronin: 4 dwords / 3 instructions (cache offset 0x676e0) ----
+        0000  PshVPtr       this
+        0004  CALL          85482                                         ; void ALokiAimingLaserSpreadLines::~ALokiAimingLaserSpreadLines()
+        000C  RET           2
+    */
+
+}
+

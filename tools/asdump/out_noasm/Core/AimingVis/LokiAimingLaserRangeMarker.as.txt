@@ -1,0 +1,213 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.LokiAimingLaserRangeMarker
+//  SOURCE   Core/AimingVis/LokiAimingLaserRangeMarker.as
+//  CONTENT  1 class(es), 11 function(s), 0 enum(s), 1 global(s), 1588 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaserRangeMarker;
+
+ALokiAimingLaserRangeMarker@ ALokiAimingLaserRangeMarker()   // traits=0x20
+{
+    ALokiAimingLaserRangeMarker v2;
+
+    v2 = ALokiAimingLaserRangeMarker();
+    return v2;
+}
+
+UClass@ ALokiAimingLaserRangeMarker::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiAimingLaserRangeMarker);
+    return v2;
+}
+
+ALokiAimingLaserRangeMarker@ ALokiAimingLaserRangeMarker::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaserRangeMarker v8;
+
+    v2 = __StaticType_ALokiAimingLaserRangeMarker.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiAimingLaserRangeMarker@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class ALokiAimingLaserRangeMarker : ALokiAimingLaser
+// static class global: __StaticType_ALokiAimingLaserRangeMarker
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.Category=Laser)
+    UStaticMeshComponent@ RangeMarker;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Laser)
+    bool bShowRangeMarkerOnSpawn;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser)
+    bool bShowRangeMarker;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser)
+    float64 MarkerDistance;
+    protected bool bOverrideRangeMarkerDesaturationAndOpacity;
+
+    ALokiAimingLaserRangeMarker()   // traits=0x21
+    {
+        auto v1;
+
+        this.ALokiAimingLaser();
+        v1 = true;
+        this.bShowRangeMarkerOnSpawn = v1;
+        v1 = false;
+        this.bOverrideRangeMarkerDesaturationAndOpacity = v1;
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v2;
+        float64 v4;
+        float32 v5;
+        float32 v6;
+        bool v7;
+        bool v8;
+        FVector v14;
+        UMaterialInstanceDynamic v20;
+        auto v22;
+        auto v24;
+
+        this.Tick_Implementation(DeltaSeconds);
+        v4 = this.MarkerDistance;
+        v5 = float32(v4);
+        v6 = this.LaserProjectilePath.GetTimeForXDistance(v5);
+        v4 = float64(v6);
+        v2 = v4;
+        v4 = this.CurrentEndPathTime;
+        if (v4 < v2) {
+            v7 = false;
+            v8 = true;
+            this.RangeMarker.SetHiddenInGame(v8, v7);
+            return;
+        } else {
+            v8 = false;
+            v7 = this.bShowRangeMarker;
+            v7 = !v7;
+            this.RangeMarker.SetHiddenInGame(v7, v8);
+            v6 = float32(v2);
+            v14 = this.LaserProjectilePath.GetPositionForTime(v6);
+            this.RangeMarker.SetWorldLocation(v14)  /* UFunction K2_SetWorldLocation */;
+            v7 = this.bOverrideRangeMarkerDesaturationAndOpacity;
+            v7 = !v7;
+            if (v7) {
+                v8 = this.GetLimitLaserToCursor();
+                v8 = !v8;
+                if (!v8) {
+                    v8 = 0;
+                } else {
+                    v4 = this.CurrentCursorPathTime;
+                    v7 = v4 <= v2;
+                    v8 = v7;
+                }
+                if (v8) {
+                    v20 = this.LaserProjectilePath.GetMaterial(0);
+                    v5 = v20.GetScalarParameterValue(n"Range Desat Mult")  /* UFunction K2_GetScalarParameterValue */;
+                    v4 = float64(v5);
+                    v22 = v4;
+                    v6 = float32(v22);
+                    this.RangeMarker.SetScalarParameterValueOnMaterials(n"Script Desaturation", v6);
+                    v6 = v20.GetScalarParameterValue(n"Range Opacity Floor")  /* UFunction K2_GetScalarParameterValue */;
+                    v4 = float64(v6);
+                    v24 = v4;
+                    v6 = float32(v24);
+                    this.RangeMarker.SetScalarParameterValueOnMaterials(n"Final Opacity", v6);
+                    return;
+                } else {
+                    this.RangeMarker.SetScalarParameterValueOnMaterials(n"Script Desaturation", 0);
+                    this.RangeMarker.SetScalarParameterValueOnMaterials(n"Final Opacity", 1.0);
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnLaserSpawned, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnLaserSpawned_Implementation()
+    {
+        bool v1;
+        bool v2;
+
+        this.OnLaserSpawned_Implementation();
+        v2 = false;
+        v1 = this.bShowRangeMarkerOnSpawn;
+        v1 = !v1;
+        this.RangeMarker.SetHiddenInGame(v1, v2);
+        return;
+    }
+
+    void __InitDefaults()
+    {
+        bool v1;
+
+        v1 = false;
+        this.RangeMarker.SetCastShadow(v1);
+        v1 = false;
+        this.RangeMarker.SetGenerateOverlapEvents(v1);
+        v1 = true;
+        this.RangeMarker.SetCollisionProfileName(n"NoCollision", v1);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetShowRangeMarker(const bool bNewShowRangeMarker)   // traits=0x20
+    {
+        bool v1;
+        bool v2;
+
+        if (this.ValidateOwner()) {
+            this.bShowRangeMarker = bNewShowRangeMarker;
+            v2 = false;
+            v1 = bNewShowRangeMarker;
+            v1 = !v1;
+            this.RangeMarker.SetHiddenInGame(v1, v2);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetRangeMarkerDistance(const float64 NewDistance)   // traits=0x20
+    {
+        if (this.ValidateOwner()) {
+            this.MarkerDistance = NewDistance;
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetRangeMarkerMaterial(UMaterialInterface@&inout NewMaterial)   // traits=0x20
+    {
+        if (this.ValidateOwner()) {
+            this.RangeMarker.SetMaterial(0, NewMaterial);
+        }
+        return;
+    }
+
+    void ~ALokiAimingLaserRangeMarker()   // traits=0x22
+    {
+        this.~ALokiAimingLaser();
+        return;
+    }
+
+}
+

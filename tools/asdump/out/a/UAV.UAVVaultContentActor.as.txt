@@ -1,0 +1,396 @@
+==============================================================================
+MODULE   UAV.UAVVaultContentActor
+SOURCE   UAV/UAVVaultContentActor.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_AUAVVaultContentActor;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+AUAVVaultContentActor@ AUAVVaultContentActor()
+// 4 instr, 28 B bytecode, id=0xEC0155BA, varspace=2
+------------------------------------------------------------------------------
+{
+    AUAVVaultContentActor v2;
+
+    v2 = AUAVVaultContentActor();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85431 q:0x26e6ed76400; new AUAVVaultContentActor   ctor=AUAVVaultContentActor::AUAVVaultContentActor
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xAFD64A2A, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_AUAVVaultContentActor);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7b0433d8         ; __StaticType_AUAVVaultContentActor
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+AUAVVaultContentActor@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x8F64627F, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AUAVVaultContentActor v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_AUAVVaultContentActor.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<AUAVVaultContentActor>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e7b0433d8         ; __StaticType_AUAVVaultContentActor
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972745            ; AUAVVaultContentActor@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS(Abstract, meta=(IsBlueprintBase=true, Blueprintable=true))
+class AUAVVaultContentActor : AActor
+// base /Script/Engine.Actor  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta=(ExposeOnSpawn, Category=UAV)) FLokiTeamVaultDataItem VaultDataItem;
+
+}
+
+------------------------------------------------------------------------------
+AUAVVaultContentActor() const
+// 6 instr, 44 B bytecode, id=0xF0363366, varspace=0
+------------------------------------------------------------------------------
+{
+    this.VaultDataItem = FLokiTeamVaultDataItem();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:912 d:134230921      ; AUAVVaultContentActor::VaultDataItem  (+912)
+    //     3  CALLSYS        q:0x26e793ca180         ; void FLokiTeamVaultDataItem::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  FinConstruct   q:0x26e6ed76400         ; AUAVVaultContentActor
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+void VaultDataItemUpdated()
+// 6 instr, 44 B bytecode, id=0x914D21E2, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(205));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:205
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: VaultDataItemUpdated
+void VaultDataItemUpdated_Implementation()
+// 1 instr, 4 B bytecode, id=0x1CC3B756, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 63 instr, 440 B bytecode, id=0x157AD4A0, varspace=62
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    UGameEventRouterComponent v6;
+    FGameEvent_TeamVaultData_Update v28;
+    auto v29;
+    FGameEventListenerHandle v42;
+    FGameEvent_TeamVaultData_Remove v62;
+
+    v2 = true;
+    v1 = true;
+    if (this.VaultDataItem.ID < 0) {
+        v2 = false;
+        v1 = false;
+    }
+    v6 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+    if (v6 == null) {
+        v2 = false;
+        v1 = false;
+    } else {
+        v29 = false;
+        v28 = FGameEvent_TeamVaultData_Update();
+        v42 = v6.RegisterForEvent(this, v28, null, __STATIC_NAME(90), false);
+        v29 = false;
+        v62 = FGameEvent_TeamVaultData_Remove();
+        v42 = v6.RegisterForEvent(this, v62, null, __STATIC_NAME(91), false);
+    }
+    if (!v1) {
+        this.DestroyActor();
+    } else {
+        this.VaultDataItemUpdated();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:2 d:1
+    //     2  CpyVtoV4       wW0:1 rW1:2
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:912 d:134230921      ; AUAVVaultContentActor::VaultDataItem  (+912)
+    //     7  ADDSi          W0:28 d:67120959        ; FLokiTeamVaultDataItem::ID  (+28)
+    //     9  PopRPtr
+    //    10  RDR4           wW0:3
+    //    11  CMPIi          rW0:3 d:0
+    //    13  JNS            ->19
+    //    15  SetV1          wW0:2 d:0
+    //    17  CpyVtoV4       wW0:1 rW1:2
+    //    19  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    22  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //    25  STOREOBJ       wW0:6
+    //    26  CmpPtrNull     rW0:6
+    //    27  JZ             ->93
+    //    29  SetV1          wW0:29 d:0
+    //    31  PshV4          rW0:29
+    //    32  PshC4          d:90
+    //    34  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    37  PshRPtr
+    //    38  PshNull
+    //    39  TYPEID         d:67120961              ; FGameEvent_TeamVaultData_Update
+    //    41  PSF            rW0:28
+    //    42  CALLSYS        q:0x26e793c9000         ; void FGameEvent_TeamVaultData_Update::$beh0()
+    //    45  PSF            rW0:28
+    //    46  PshVPtr        rW0:0
+    //    47  PSF            rW0:42
+    //    48  PshVPtr        rW0:6
+    //    49  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    52  PSF            rW0:28
+    //    53  CALLSYS        q:0x26e793c8e40         ; void FGameEvent_TeamVaultData_Update::$beh2()
+    //    56  PSF            rW0:42
+    //    57  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    60  SetV1          wW0:29 d:0
+    //    62  PshV4          rW0:29
+    //    63  PshC4          d:91
+    //    65  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    68  PshRPtr
+    //    69  PshNull
+    //    70  TYPEID         d:67120962              ; FGameEvent_TeamVaultData_Remove
+    //    72  PSF            rW0:62
+    //    73  CALLSYS        q:0x26e793c8900         ; void FGameEvent_TeamVaultData_Remove::$beh0()
+    //    76  PSF            rW0:62
+    //    77  PshVPtr        rW0:0
+    //    78  PSF            rW0:42
+    //    79  PshVPtr        rW0:6
+    //    80  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    83  PSF            rW0:62
+    //    84  CALLSYS        q:0x26e793c8740         ; void FGameEvent_TeamVaultData_Remove::$beh2()
+    //    87  PSF            rW0:42
+    //    88  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    91  JMP            ->97
+    //    93  SetV1          wW0:2 d:0
+    //    95  CpyVtoV4       wW0:1 rW1:2
+    //    97  CpyVtoR1       rW0:1
+    //    98  JLowZ          ->105
+    //   100  PshVPtr        rW0:0
+    //   101  CALLINTF       d:85426                 ; void AUAVVaultContentActor::VaultDataItemUpdated()
+    //   103  JMP            ->109
+    //   105  PshVPtr        rW0:0
+    //   106  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //   109  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnUpdate(const FGameEvent_TeamVaultData_Update&inout Event, const AActor@&inout Context)
+// 30 instr, 208 B bytecode, id=0xFFF3D330, varspace=21
+------------------------------------------------------------------------------
+{
+    FLokiTeamVaultDataItem v18;
+    auto v19;
+
+    v18 = FLokiTeamVaultDataItem(Event.VaultDataItem);
+    v19 = v18.ID;
+    if (v19 == this.VaultDataItem.ID) {
+        this.VaultDataItem = v18;
+        this.SetActorLocation(this.VaultDataItem.Location);
+        this.VaultDataItemUpdated();
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:67120961         ; FGameEvent_TeamVaultData_Update::VaultDataItem  (+8)
+    //     3  PSF            rW0:18
+    //     4  CALLSYS        q:0x26e793c9e00         ; void FLokiTeamVaultDataItem::$beh0(const FLokiTeamVaultDataItem&)
+    //     7  LoadVObjR      rW0:18 W1:28 DW2:67120959; FLokiTeamVaultDataItem::ID  (+28)
+    //    10  RDR4           wW0:19
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:912 d:134230921      ; AUAVVaultContentActor::VaultDataItem  (+912)
+    //    14  ADDSi          W0:28 d:67120959        ; FLokiTeamVaultDataItem::ID  (+28)
+    //    16  PopRPtr
+    //    17  RDR4           wW0:20
+    //    18  CMPi           rW0:19 rW1:20
+    //    20  JZ             ->28
+    //    22  PSF            rW0:18
+    //    23  CALLSYS        q:0x26e793c9fc0         ; void FLokiTeamVaultDataItem::$beh2()
+    //    26  JMP            ->51
+    //    28  PSF            rW0:18
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:912 d:134230921      ; AUAVVaultContentActor::VaultDataItem  (+912)
+    //    32  CALLSYS        q:0x26e793c9c40         ; FLokiTeamVaultDataItem& FLokiTeamVaultDataItem::opAssign(const FLokiTeamVaultDataItem&)
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:912 d:134230921      ; AUAVVaultContentActor::VaultDataItem  (+912)
+    //    38  ADDSi          W0:32 d:67120959        ; FLokiTeamVaultDataItem::Location  (+32)
+    //    40  PshVPtr        rW0:0
+    //    41  CALLSYS        q:0x26e79f5fc80         ; void AActor::SetActorLocation(const FVector&)   [UFunction K2_SetActorLocation]
+    //    44  PshVPtr        rW0:0
+    //    45  CALLINTF       d:85426                 ; void AUAVVaultContentActor::VaultDataItemUpdated()
+    //    47  PSF            rW0:18
+    //    48  CALLSYS        q:0x26e793c9fc0         ; void FLokiTeamVaultDataItem::$beh2()
+    //    51  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRemove(const FGameEvent_TeamVaultData_Remove&inout Event, const AActor@&inout Context)
+// 21 instr, 148 B bytecode, id=0x846211DA, varspace=21
+------------------------------------------------------------------------------
+{
+    FLokiTeamVaultDataItem v18;
+    auto v19;
+
+    v18 = FLokiTeamVaultDataItem(Event.VaultDataItem);
+    v19 = v18.ID;
+    if (v19 == this.VaultDataItem.ID) {
+        this.DestroyActor();
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:67120962         ; FGameEvent_TeamVaultData_Remove::VaultDataItem  (+8)
+    //     3  PSF            rW0:18
+    //     4  CALLSYS        q:0x26e793c9e00         ; void FLokiTeamVaultDataItem::$beh0(const FLokiTeamVaultDataItem&)
+    //     7  LoadVObjR      rW0:18 W1:28 DW2:67120959; FLokiTeamVaultDataItem::ID  (+28)
+    //    10  RDR4           wW0:19
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:912 d:134230921      ; AUAVVaultContentActor::VaultDataItem  (+912)
+    //    14  ADDSi          W0:28 d:67120959        ; FLokiTeamVaultDataItem::ID  (+28)
+    //    16  PopRPtr
+    //    17  RDR4           wW0:20
+    //    18  CMPi           rW0:19 rW1:20
+    //    20  JZ             ->28
+    //    22  PSF            rW0:18
+    //    23  CALLSYS        q:0x26e793c9fc0         ; void FLokiTeamVaultDataItem::$beh2()
+    //    26  JMP            ->36
+    //    28  PshVPtr        rW0:0
+    //    29  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //    32  PSF            rW0:18
+    //    33  CALLSYS        q:0x26e793c9fc0         ; void FLokiTeamVaultDataItem::$beh2()
+    //    36  RET            W0:6
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 10 instr, 68 B bytecode, id=0x5EE4B23D, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.SetbReplicates(false);
+    v1 = false;
+    this.PrimaryActorTick.SetbStartWithTickEnabled(false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a6291c0         ; void AActor::SetbReplicates(bool)
+    //     7  SetV1          wW0:1 d:0
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:56 d:67111343        ; AActor::PrimaryActorTick  (+56)
+    //    13  CALLSYS        q:0x26e788b4680         ; void FActorTickFunction::SetbStartWithTickEnabled(bool)
+    //    16  RET            W0:2
+
+------------------------------------------------------------------------------
+~AUAVVaultContentActor()
+// 4 instr, 28 B bytecode, id=0xA29ED26B, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:912 d:134230921      ; AUAVVaultContentActor::VaultDataItem  (+912)
+    //     3  CALLSYS        q:0x26e793c9fc0         ; void FLokiTeamVaultDataItem::$beh2()
+    //     6  RET            W0:2
+

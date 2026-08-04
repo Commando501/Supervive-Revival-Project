@@ -1,0 +1,103 @@
+// ============================================================================
+//  MODULE   Vault.VaultItemSpawner
+//  SOURCE   Vault/VaultItemSpawner.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 524 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AVaultItemSpawner;
+
+AVaultItemSpawner@ AVaultItemSpawner()   // traits=0x20
+{
+    AVaultItemSpawner v2;
+
+    v2 = AVaultItemSpawner();
+    return v2;
+}
+
+UClass@ AVaultItemSpawner::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_AVaultItemSpawner);
+    return v2;
+}
+
+AVaultItemSpawner@ AVaultItemSpawner::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AVaultItemSpawner v8;
+
+    v2 = __StaticType_AVaultItemSpawner.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AVaultItemSpawner@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class AVaultItemSpawner : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_AVaultItemSpawner
+{
+    AVaultItemSpawner()   // traits=0x21
+    {
+        return;
+    }
+
+    TArray<TSubclassOf<ALokiBaseItem@>> GetItemsForUAV()   // traits=0x20
+    {
+        TArray<TSubclassOf<ALokiBaseItem@>> v4;
+
+        v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+        __Evt_PushArgumentRef(v4, typeid(TArray));
+        __Evt_Execute(this, n"GetItemsForUAV");
+        __ret = TArray<TSubclassOf<ALokiBaseItem@>>();
+        __ret = v4;
+        return;
+    }
+
+    UFUNCTION(UnrealName=GetItemsForUAV, BlueprintEvent, CanOverrideEvent)
+    TArray<TSubclassOf<ALokiBaseItem@>> GetItemsForUAV_Implementation()   // traits=0x20
+    {
+        TArray<TSubclassOf<ALokiBaseItem@>> v4;
+
+        __ret = TArray<TSubclassOf<ALokiBaseItem@>>();
+        v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+        __ret = v4;
+        return;
+    }
+
+    ALokiDestructible@ GetDoor()   // traits=0x20
+    {
+        ALokiDestructible v2;
+
+        __Evt_PushArgumentRef__ALokiDestructible(v2);
+        __Evt_Execute(this, n"GetDoor");
+        return v2;
+    }
+
+    UFUNCTION(UnrealName=GetDoor, BlueprintEvent, CanOverrideEvent)
+    ALokiDestructible@ GetDoor_Implementation()   // traits=0x20
+    {
+        ALokiDestructible v2;
+
+        return v2;
+    }
+
+}
+

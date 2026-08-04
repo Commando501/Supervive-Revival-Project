@@ -1,0 +1,297 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarracudaShopItemTreeNodeWidget
+//  SOURCE   Barracuda/Shop/BarracudaShopItemTreeNodeWidget.as
+//  CONTENT  1 class(es), 12 function(s), 0 enum(s), 1 global(s), 2088 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemTreeNodeWidget;
+
+UBarracudaShopItemTreeNodeWidget@ UBarracudaShopItemTreeNodeWidget()   // traits=0x20
+{
+    UBarracudaShopItemTreeNodeWidget v2;
+
+    v2 = UBarracudaShopItemTreeNodeWidget();
+    return v2;
+}
+
+UClass@ UBarracudaShopItemTreeNodeWidget::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaShopItemTreeNodeWidget);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaShopItemTreeNodeWidget : UUserWidget
+// unreal base : /Script/UMG.UserWidget
+// C++ header  : ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+// static class global: __StaticType_UBarracudaShopItemTreeNodeWidget
+{
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UPanelWidget@ ChildContainer;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UTextBlock@ ItemName;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UOverlay@ OwnedIndicator;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UBarracudaShopItemWidget@ ShopItemWidget;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.ExposeOnSpawn)
+    int DesignTimePrviewInputCount;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.ExposeOnSpawn)
+    int DesignTimePreviewDepthCount;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bDesignTimePreviewOwned;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient, meta.ExposeOnSpawn)
+    TSubclassOf<ALokiBaseItem@> ItemClass;
+    UPROPERTY(BlueprintReadable, Transient, meta.ExposeOnSpawn)
+    UBarracudaShopItemTreeWidget@ Tree;
+
+    UBarracudaShopItemTreeNodeWidget()   // traits=0x21
+    {
+        auto v1;
+        auto v2;
+
+        this.ItemClass = TSubclassOf<ALokiBaseItem@>();
+        v1 = 2;
+        this.DesignTimePrviewInputCount = v1;
+        v1 = 2;
+        this.DesignTimePreviewDepthCount = v1;
+        v2 = false;
+        this.bDesignTimePreviewOwned = v2;
+        return;
+    }
+
+    UBarracudaShopItemTreeNodeWidget@ CreateInputItemWidget(const TSubclassOf<ALokiBaseItem@>& InItemClass, const int InDesignTimePreviewInputCount, const int InDesignTimePreviewDepthCount)   // traits=0x20
+    {
+        UBarracudaShopItemTreeNodeWidget v2;
+
+        __Evt_PushArgument(InItemClass, typeid(TSubclassOf));
+        __Evt_PushArgument__int32(InDesignTimePreviewInputCount);
+        __Evt_PushArgument__int32(InDesignTimePreviewDepthCount);
+        __Evt_PushArgumentRef(v2, typeid(UBarracudaShopItemTreeNodeWidget@));
+        __Evt_Execute(this, n"CreateInputItemWidget");
+        return v2;
+    }
+
+    UFUNCTION(UnrealName=CreateInputItemWidget, BlueprintEvent, CanOverrideEvent)
+    UBarracudaShopItemTreeNodeWidget@ CreateInputItemWidget_Implementation(const TSubclassOf<ALokiBaseItem@>& InItemClass, const int InDesignTimePreviewInputCount, const int InDesignTimePreviewDepthCount)   // traits=0x20
+    {
+        UBarracudaShopItemTreeNodeWidget v2;
+
+        return v2;
+    }
+
+    UFUNCTION(UnrealName=PreConstruct, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void PreConstruct_Implementation(const bool IsDesignTime)   // traits=0x20
+    {
+        if (IsDesignTime) {
+            this.UpdateVisuals(IsDesignTime);
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Construct, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Construct_Implementation()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.UpdateVisuals(v1);
+        return;
+    }
+
+    void UpdateVisuals(const bool bDesignTime = false)   // traits=0x20
+    {
+        auto v1;
+        ALokiBaseItem v6;
+        ESlateVisibility v8;
+        auto v9;
+
+        v1 = bDesignTime;
+        v1 = !v1;
+        if (v1) {
+            v6 = this.ItemClass.GetDefaultObject();
+            if (v6 != nullptr) {
+                this.ShopItemWidget.SetRepresentedItem(v6);
+            }
+            if (v6 != nullptr) {
+                v9 = false;
+                v8 = v9;
+            } else {
+                v9 = 2;
+                v8 = v9;
+            }
+            this.ShopItemWidget.SetVisibility(v8);
+        }
+        this.UpdateName(bDesignTime);
+        this.UpdateRootNode(bDesignTime);
+        this.UpdateOwnership(bDesignTime);
+        return;
+    }
+
+    void UpdateName(const bool bDesignTime)   // traits=0x20
+    {
+        FText v4;
+        FText v8;
+        auto v9;
+        auto v10;
+        ALokiBaseItem v14;
+
+        v8 = FText();
+        v10 = false;
+        v9 = v10;
+        if (bDesignTime) {
+            v4 = FText::FromString("LOREM IPSUM");
+            v8 = v4;
+        } else {
+            if (this.ItemClass.IsValid()) {
+                v14 = this.ItemClass.GetDefaultObject();
+                if (v14 != nullptr) {
+                    v4 = v14.GetPlayerFacingName();
+                    v8 = v4;
+                }
+            }
+        }
+        this.ItemName.SetText(v8);
+        return;
+    }
+
+    void UpdateRootNode(const bool bDesignTime)   // traits=0x20
+    {
+        TArray<TSubclassOf<ALokiBaseItem@>> v4;
+        int v5;
+        int v6;
+        auto v7;
+        auto v8;
+        auto v9;
+        TSubclassOf<ALokiBaseItem@> v12;
+        ALokiBaseItem v16;
+        TArrayIterator<TSubclassOf<ALokiBaseItem@>> v22;
+        TSubclassOf<ALokiBaseItem@> v30;
+        UBarracudaShopItemTreeNodeWidget v34;
+
+        this.ChildContainer.ClearChildren();
+        v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+        if (!bDesignTime) {
+            v8 = 0;
+        } else {
+            v5 = this.DesignTimePreviewDepthCount;
+            v7 = v5 > 0;
+            v8 = v7;
+        }
+        if (v8) {
+            v9 = 0;
+            while (true) {
+                v6 = this.DesignTimePrviewInputCount;
+                if (v9 >= v6) break;
+                v12 = TSubclassOf<ALokiBaseItem@>(nullptr);
+                v4.Add(v12);
+                v9++;
+            }
+        } else {
+            v8 = bDesignTime;
+            v8 = !v8;
+            if (!v8) {
+                v8 = 0;
+            } else {
+                v7 = this.ItemClass.IsValid();
+                v8 = v7;
+            }
+            if (v8) {
+                v16 = this.ItemClass.GetDefaultObject();
+                if (v16 != nullptr) {
+                    v4 = v16.ShopRecipe.ComponentItems;
+                }
+            }
+        }
+        v5 = this.DesignTimePreviewDepthCount;
+        v5 = v5 - 1;
+        v22 = v4.Iterator();
+        while (true) {
+            v7 = v22.CanProceed;
+            if (!v7) break;
+            v30 = v22.Proceed();
+            v6 = this.DesignTimePrviewInputCount;
+            v34 = this.CreateInputItemWidget(v30, v6, v5);
+            this.ChildContainer.AddChild(v34);
+        }
+        return;
+    }
+
+    void UpdateOwnership(const bool bDesignTime)   // traits=0x20
+    {
+        ESlateVisibility v1;
+        auto v2;
+        ESlateVisibility v3;
+        ESlateVisibility v4;
+        ALokiBaseItem v6;
+        TSetIterator<ALokiBaseItem@> v14;
+        ALokiBaseItem v24;
+        UClass v26;
+
+        if (bDesignTime) {
+            v2 = this.bDesignTimePreviewOwned;
+            if (v2) {
+                v4 = 4;
+                v3 = v4;
+            } else {
+                v4 = true;
+                v3 = v4;
+            }
+            this.OwnedIndicator.SetVisibility(v3);
+            return;
+        } else {
+            v2 = this.ItemClass.IsValid();
+            v2 = !v2;
+            if (v2) {
+                v4 = ESlateVisibility::Collapsed;
+                this.OwnedIndicator.SetVisibility(v4);
+                return;
+            } else {
+                v14 = this.Tree.ItemsToPotentiallyMarkAsOwned.Iterator();
+                while (true) {
+                    v2 = v14.CanProceed;
+                    if (!v2) break;
+                    v24 = v14.Proceed();
+                    v14.Proceed();
+                    v26 = UClass@(this.ItemClass);
+                    if (v24.IsA(v26)) {
+                        v6 = v24;
+                        break;
+                    }
+                }
+                if (v6 != nullptr) {
+                    v1 = ESlateVisibility::SelfHitTestInvisible;
+                    this.Tree.ItemsToPotentiallyMarkAsOwned.Remove(v6);
+                    this.OwnedIndicator.SetVisibility(v1);
+                    return;
+                } else {
+                    v4 = ESlateVisibility::Collapsed;
+                    this.OwnedIndicator.SetVisibility(v4);
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetItem(const TSubclassOf<ALokiBaseItem@>& InItemClass)   // traits=0x20
+    {
+        bool v1;
+
+        this.ItemClass = InItemClass;
+        v1 = false;
+        this.UpdateVisuals(v1);
+        return;
+    }
+
+}
+

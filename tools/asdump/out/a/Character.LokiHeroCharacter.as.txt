@@ -1,0 +1,429 @@
+==============================================================================
+MODULE   Character.LokiHeroCharacter
+SOURCE   Character/LokiHeroCharacter.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+event FBiomeTouchUnlockedDelegate;
+
+const TSubclassOf<UObject@> __StaticType_ALokiHeroCharacter_AS;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiHeroCharacter_AS@ ALokiHeroCharacter_AS()
+// 4 instr, 28 B bytecode, id=0xCED3E1D2, varspace=4
+------------------------------------------------------------------------------
+{
+    ALokiHeroCharacter_AS v4;
+
+    v4 = ALokiHeroCharacter_AS();
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  ALLOC          DW3:84470 q:0x26e7aeec700; new ALokiHeroCharacter_AS   ctor=ALokiHeroCharacter_AS::ALokiHeroCharacter_AS
+    //     5  LOADOBJ        rW0:4
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x4F55B136, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiHeroCharacter_AS);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b2e58         ; __StaticType_ALokiHeroCharacter_AS
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiHeroCharacter_AS@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xF916CCD1, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiHeroCharacter_AS v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiHeroCharacter_AS.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiHeroCharacter_AS>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b2e58         ; __StaticType_ALokiHeroCharacter_AS
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972652            ; ALokiHeroCharacter_AS@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS(Abstract)
+class ALokiHeroCharacter_AS : ALokiHeroCharacter
+// base /Script/Loki.LokiHeroCharacter  ->  ../../../Loki/Source/Loki/Character/Hero/LokiHeroCharacter.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FBiomeTouchUnlockedDelegate OnBiomeTouchUnlocked;
+
+}
+
+------------------------------------------------------------------------------
+ALokiHeroCharacter_AS() const
+// 6 instr, 40 B bytecode, id=0x67712810, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnBiomeTouchUnlocked.FBiomeTouchUnlockedDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:8288 d:134230828     ; ALokiHeroCharacter_AS::OnBiomeTouchUnlocked  (+8288)
+    //     3  CALL           d:84473                 ; void FBiomeTouchUnlockedDelegate::FBiomeTouchUnlockedDelegate()
+    //     5  PshVPtr        rW0:0
+    //     6  FinConstruct   q:0x26e7aeec700         ; ALokiHeroCharacter_AS
+    //     9  RET            W0:2
+
+------------------------------------------------------------------------------
+void ClientBiomeSoulAcquired(AActor@ AcquiredBy)
+// 8 instr, 60 B bytecode, id=0x03BF1F76, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__AActor(AcquiredBy);
+    __Evt_Execute(this, __STATIC_NAME(114));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e7762b300         ; void __Evt_PushArgument__AActor(const AActor@&)
+    //     4  PshC4          d:114
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetClient, Unreliable)
+// UFunction name: ClientBiomeSoulAcquired
+void ClientBiomeSoulAcquired_Implementation(AActor@ AcquiredBy)
+// 4 instr, 20 B bytecode, id=0x0C560A76, varspace=0
+------------------------------------------------------------------------------
+{
+    this.BP_OnClientBiomeSoulAcquired(AcquiredBy);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:84468                 ; void ALokiHeroCharacter_AS::BP_OnClientBiomeSoulAcquired(AActor@)
+    //     4  RET            W0:4
+
+------------------------------------------------------------------------------
+void BP_OnClientBiomeSoulAcquired(AActor@ AcquiredBy)
+// 8 instr, 60 B bytecode, id=0x212E252E, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__AActor(AcquiredBy);
+    __Evt_Execute(this, __STATIC_NAME(115));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e7762b300         ; void __Evt_PushArgument__AActor(const AActor@&)
+    //     4  PshC4          d:115
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp, meta=(BlueprintProtected, DisplayName=BP OnClientBiomeSoulAcquired))
+// UFunction name: BP_OnClientBiomeSoulAcquired
+void BP_OnClientBiomeSoulAcquired_Implementation(AActor@ AcquiredBy)
+// 1 instr, 4 B bytecode, id=0xEE4926B4, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 5 instr, 32 B bytecode, id=0xEC98948C, varspace=1
+------------------------------------------------------------------------------
+{
+    this.SetbReplicates(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a6291c0         ; void AActor::SetbReplicates(bool)
+    //     7  RET            W0:2
+
+------------------------------------------------------------------------------
+~ALokiHeroCharacter_AS()
+// 4 instr, 24 B bytecode, id=0xD95223D6, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnBiomeTouchUnlocked.~FBiomeTouchUnlockedDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:8288 d:134230828     ; ALokiHeroCharacter_AS::OnBiomeTouchUnlocked  (+8288)
+    //     3  CALL           d:85477                 ; void FBiomeTouchUnlockedDelegate::~FBiomeTouchUnlockedDelegate()
+    //     5  RET            W0:2
+
+==============================================================================
+class FBiomeTouchUnlockedDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FBiomeTouchUnlockedDelegate() const
+// 4 instr, 28 B bytecode, id=0x77F81FEA, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FBiomeTouchUnlockedDelegate(const FBiomeTouchUnlockedDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0xCF42BF42, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:84475                 ; FBiomeTouchUnlockedDelegate& FBiomeTouchUnlockedDelegate::opAssign(const FBiomeTouchUnlockedDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FBiomeTouchUnlockedDelegate& opAssign(const FBiomeTouchUnlockedDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0xA0362C8F, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast(ALokiBaseItem@ Item, const FText&inout UnlockName)
+// 16 instr, 112 B bytecode, id=0xE758C728, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_PushArgument__ALokiBaseItem(Item);
+        __Evt_PushArgument__FText(UnlockName);
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->27
+    //    13  PSF            rW0:-2
+    //    14  CALLSYS        q:0x26e77b94840         ; void __Evt_PushArgument__ALokiBaseItem(const ALokiBaseItem@&)
+    //    17  PshVPtr        rW0:-4
+    //    18  CALLSYS        q:0x26e77fcf580         ; void __Evt_PushArgument__FText(const FText&)
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //    24  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    27  RET            W0:6
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0xCA8F3D62, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230829             ; FBiomeTouchUnlockedDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x721EF98C, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x9686ED68, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0x4FC16862, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0x2F888CB7, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FBiomeTouchUnlockedDelegate()
+// 4 instr, 28 B bytecode, id=0xCE739255, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230829        ; FBiomeTouchUnlockedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+

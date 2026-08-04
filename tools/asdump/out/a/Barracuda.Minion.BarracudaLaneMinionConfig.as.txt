@@ -1,0 +1,63 @@
+==============================================================================
+MODULE   Barracuda.Minion.BarracudaLaneMinionConfig
+SOURCE   Barracuda/Minion/BarracudaLaneMinionConfig.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+==============================================================================
+UCLASS()
+class FBarracudaLaneMinionConfig
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 GenericDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 AdditionalTowerDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 ProjectileMaxDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 ProjectileInitialSpeed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 ProjectileHomingAcceleration;
+
+}
+
+------------------------------------------------------------------------------
+FBarracudaLaneMinionConfig() const
+// 16 instr, 124 B bytecode, id=0x6CFA67FA, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = 0;
+    this.GenericDamage = 0;
+    v2 = 0;
+    this.AdditionalTowerDamage = 0;
+    v2 = 0;
+    this.ProjectileMaxDistance = 0;
+    v2 = 0;
+    this.ProjectileInitialSpeed = 0;
+    v2 = 0;
+    this.ProjectileHomingAcceleration = 0;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:0 d:134230794        ; FBarracudaLaneMinionConfig::GenericDamage  (+0)
+    //     2  SetV8          wW0:2 q:0x0
+    //     5  WRTV8          rW0:2
+    //     6  LoadThisR      W0:8 d:134230794        ; FBarracudaLaneMinionConfig::AdditionalTowerDamage  (+8)
+    //     8  SetV8          wW0:2 q:0x0
+    //    11  WRTV8          rW0:2
+    //    12  LoadThisR      W0:16 d:134230794       ; FBarracudaLaneMinionConfig::ProjectileMaxDistance  (+16)
+    //    14  SetV8          wW0:2 q:0x0
+    //    17  WRTV8          rW0:2
+    //    18  LoadThisR      W0:24 d:134230794       ; FBarracudaLaneMinionConfig::ProjectileInitialSpeed  (+24)
+    //    20  SetV8          wW0:2 q:0x0
+    //    23  WRTV8          rW0:2
+    //    24  LoadThisR      W0:32 d:134230794       ; FBarracudaLaneMinionConfig::ProjectileHomingAcceleration  (+32)
+    //    26  SetV8          wW0:2 q:0x0
+    //    29  WRTV8          rW0:2
+    //    30  RET            W0:2
+

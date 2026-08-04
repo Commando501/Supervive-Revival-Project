@@ -1,0 +1,574 @@
+// ============================================================================
+//  MODULE   FFA.LokiRespawnComponent
+//  SOURCE   FFA/LokiRespawnComponent.as
+//  CONTENT  1 class(es), 21 function(s), 0 enum(s), 1 global(s), 5036 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiRespawnComponent;
+
+ULokiRespawnComponent@ ULokiRespawnComponent()   // traits=0x20
+{
+    ULokiRespawnComponent v2;
+
+    v2 = ULokiRespawnComponent();
+    return v2;
+}
+
+UClass@ ULokiRespawnComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiRespawnComponent);
+    return v2;
+}
+
+ULokiRespawnComponent@ ULokiRespawnComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiRespawnComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiRespawnComponent, v2, typeid(ULokiRespawnComponent@), WithName);
+    return v2;
+}
+
+ULokiRespawnComponent@ ULokiRespawnComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiRespawnComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiRespawnComponent, v2, typeid(ULokiRespawnComponent@), WithName);
+    return v2;
+}
+
+ULokiRespawnComponent@ ULokiRespawnComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiRespawnComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiRespawnComponent, v2, typeid(ULokiRespawnComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiRespawnComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiRespawnComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<FVector> Starts;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int StartIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<AActor@> BarrierActor;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<UGameplayEffect@> OnSpawnEffect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSet<ALokiPlayerState@> NonSpawningBotStates;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int HumansBeforeBotDespawn;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 SpawnRadius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int SpawnIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool HasCreatedPlayerStarts;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    FOnUpdated OnPlayerStartsCreated;
+
+    ULokiRespawnComponent()   // traits=0x21
+    {
+        auto v1;
+        auto v4;
+        auto v5;
+
+        this.Starts = TArray<FVector>();
+        this.BarrierActor = TSubclassOf<AActor@>();
+        this.OnSpawnEffect = TSubclassOf<UGameplayEffect@>();
+        this.NonSpawningBotStates = TSet<ALokiPlayerState@>();
+        this.OnPlayerStartsCreated = FOnUpdated();
+        v1 = 3;
+        this.HumansBeforeBotDespawn = v1;
+        v4 = 3000.0;
+        this.SpawnRadius = v4;
+        v1 = 0;
+        this.SpawnIndex = v1;
+        v5 = false;
+        this.HasCreatedPlayerStarts = v5;
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = this.HasCreatedPlayerStarts;
+        v1 = !v1;
+        if (v1) {
+            if (this.GeneratePlayerStarts()) {
+                v1 = true;
+                this.HasCreatedPlayerStarts = v1;
+                this.OnPlayerStartsCreated.Broadcast();
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        ALokiGameState v4;
+        ALokiGameMode v10;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v4.OnPlayerKilled.AddUFunction(this, n"OnPlayerKilled");
+        v10 = Loki::GetLokiGameMode(__WorldContext);
+        v10.OnPlayerLogout.AddUFunction(this, n"OnLogout");
+        return;
+    }
+
+    bool GeneratePlayerStarts()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"GeneratePlayerStarts");
+        return v1;
+    }
+
+    UFUNCTION(UnrealName=GeneratePlayerStarts, BlueprintEvent, CanOverrideEvent)
+    bool GeneratePlayerStarts_Implementation()   // traits=0x20
+    {
+        TArray<AActor@> v4;
+        int v5;
+        TArrayIterator<AActor@> v12;
+        auto v19;
+        AActor v22;
+        FVector v28;
+        auto v30;
+
+        v4 = TArray<AActor@>();
+        GetAllActorsOfClassWithTag(n"SafeTeamSpawnPathfindingAnchor", v4, typeid(TArray));
+        v12 = v4.Iterator();
+        while (true) {
+            v19 = v12.CanProceed;
+            if (!v19) break;
+            v22 = v12.Proceed();
+            v12.Proceed();
+            if (v22 != nullptr) {
+                v28 = v22.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                this.Starts.Add(v28);
+            }
+        }
+        v5 = this.Starts.Num();
+        v5 = v5 - 1;
+        v30 = Math::RandRange(0, v5);
+        this.StartIndex = v30;
+        v19 = true;
+        return v19;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnPlayerKilled(const FPlayerKillEventData& Data)   // traits=0x20
+    {
+        ALokiPlayerState v2;
+        auto v3;
+        auto v4;
+        auto v5;
+        ULokiPlayerRespawnComponent v10;
+        AActor v12;
+        FString v16;
+        FName v18;
+
+        v2 = Data.VictimPlayerState;
+        if (v2 != nullptr) {
+            v3 = this.NonSpawningBotStates.Contains(Data.VictimPlayerState);
+            v3 = !v3;
+            if (!v3) {
+                v5 = 0;
+            } else {
+                v4 = Data.VictimPlayerState.IsABot();
+                v4 = !v4;
+                if (v4) {
+                    v4 = true;
+                } else {
+                    v5 = this.ShouldSpawnBot();
+                    v4 = v5;
+                }
+                v5 = v4;
+            }
+            if (v5) {
+                v10 = this.GetPlayerRespawnComponent(Data.VictimPlayerState);
+                v12 = Data.VictimPlayerState.GetOwner();
+                if (v12 == nullptr) {
+                    v5 = 0;
+                } else {
+                    v4 = v10 != nullptr;
+                    v5 = v4;
+                }
+                if (v5) {
+                    v10.ScheduleRespawn();
+                }
+                return;
+            } else {
+                v12 = this.GetOwner();
+                v18 = v12.GetName();
+                v16 = FString();
+                v16.Append("[");
+                v16.Append("[").Append(v18);
+                v16.Append("[").Append(v18).Append("] Adding bot (");
+                v16.Append("[").Append(v18).Append("] Adding bot (").Append(Data.VictimPlayerState.PlatformPlayerID);
+                v16.Append("[").Append(v18).Append("] Adding bot (").Append(Data.VictimPlayerState.PlatformPlayerID).Append(") to non-spawning list");
+                Log::Log(v16.Append("[").Append(v18).Append("] Adding bot (").Append(Data.VictimPlayerState.PlatformPlayerID).Append(") to non-spawning list"));
+                this.NonSpawningBotStates.Add(Data.VictimPlayerState);
+            }
+        }
+        return;
+    }
+
+    FTransform GetValidPlayerStart(ALokiPlayerState@ PS)   // traits=0x20
+    {
+        FTransform v24;
+
+        __Evt_PushArgument__ALokiPlayerState(PS);
+        v24 = FTransform();
+        __Evt_PushArgumentRef__FTransform(v24);
+        __Evt_Execute(this, n"GetValidPlayerStart");
+        __ret = FTransform(v24);
+        return;
+    }
+
+    UFUNCTION(UnrealName=GetValidPlayerStart, BlueprintEvent, CanOverrideEvent)
+    FTransform GetValidPlayerStart_Implementation(ALokiPlayerState@ PS)   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        FTransform v28;
+
+        v1 = this.StartIndex;
+        v1 = v1 + 1;
+        v2 = this.Starts.Num();
+        v1 = v1 % v2;
+        this.StartIndex = v1;
+        v2 = this.StartIndex;
+        v28 = FTransform(this.Starts[v2]);
+        __ret = FTransform(v28);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    FVector2D GetRandomPointInCircle(const float64 Radius)   // traits=0x20
+    {
+        float32 v1;
+        FVector2D v6;
+
+        v1 = float32(Radius);
+        v6 = Math::RandPointInCircle(v1);
+        __ret = FVector2D(v6);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void Respawn(ALokiPlayerState@ PS)   // traits=0x20
+    {
+        auto v1;
+        ALokiCharacter v6;
+        auto v7;
+        int v8;
+        bool v10;
+        ALokiGameMode v14;
+        FTransform v40;
+        TSubclassOf<UGameplayEffect@> v66;
+        ULokiAbilitySystemComponent v70;
+        FGameplayEffectContextHandle v82;
+        FGameplayEffectSpecHandle v92;
+        FActiveGameplayEffectHandle v94;
+
+        v1 = this.HasCreatedPlayerStarts;
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = PS.GetLokiCharacter();
+            if (v6 == nullptr) {
+                v1 = 0;
+            } else {
+                v7 = v6.GetLivingState();
+                v8 = int(v7);
+                v10 = v8 == 1;
+                v1 = v10;
+            }
+            if (v1) {
+                return;
+            } else {
+                v14 = Loki::GetLokiGameMode(__WorldContext);
+                v40 = this.GetValidPlayerStart(PS);
+                v10 = false;
+                v6 = v14.SpawnPlayer(PS, v40, nullptr, v10);
+                if (v6 == nullptr) {
+                    return;
+                } else {
+                    v66 = TSubclassOf<UGameplayEffect@>();
+                    v66 = this.OnSpawnEffect;
+                    v10 = v66 == nullptr;
+                    v10 = !v10;
+                    if (v10) {
+                        v70 = v6.GetLokiAbilitySystem_BP();
+                        v82 = v70.MakeEffectContext();
+                        v92 = v70.MakeOutgoingSpec(this.OnSpawnEffect, 0, v82);
+                        v94 = v70.ApplyGameplayEffectSpecToSelf(v92)  /* UFunction BP_ApplyGameplayEffectSpecToSelf */;
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    bool ShouldSpawnBot()   // traits=0x20
+    {
+        ALokiGameState v4;
+        ALokiGameMode v8;
+        auto v9;
+        auto v10;
+        TArray<ALokiPlayerState@> v14;
+        TArrayConstIterator<ALokiPlayerState@> v20;
+        auto v27;
+        ALokiPlayerState v30;
+        auto v31;
+        auto v32;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v8 = Loki::GetLokiGameMode(__WorldContext);
+        v9 = 0;
+        v14 = v4.GetLokiPlayerStates();
+        v20 = v14.Iterator();
+        while (true) {
+            v27 = v20.CanProceed;
+            if (!v27) break;
+            v30 = v20.Proceed();
+            v20.Proceed();
+            v27 = v30.IsABot();
+            v27 = !v27;
+            if (!v27) {
+                v27 = 0;
+            } else {
+                v31 = v8.DisconnectedPlayerStates.Contains(v30.PlatformPlayerID);
+                v31 = !v31;
+                v27 = v31;
+            }
+            if (v27) {
+                v9++;
+            }
+        }
+        v10 = this.HumansBeforeBotDespawn;
+        v10 = v9 - v10;
+        v32 = this.NonSpawningBotStates.Num();
+        v27 = v10 <= v32;
+        return v27;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnLogout(AController@ ExitingController)   // traits=0x20
+    {
+        ALokiPlayerState v2;
+        auto v3;
+        TSetIterator<ALokiPlayerState@> v12;
+        ALokiPlayerState v22;
+        FString v26;
+        AActor v28;
+        FName v30;
+
+        if (this.ShouldSpawnBot()) {
+            v12 = this.NonSpawningBotStates.Iterator();
+            while (true) {
+                v3 = v12.CanProceed;
+                if (!v3) break;
+                v22 = v12.Proceed();
+                v2 = v22;
+                v12.Proceed();
+                break;
+            }
+        }
+        if (v2 != nullptr) {
+            this.NonSpawningBotStates.Remove(v2);
+            v28 = this.GetOwner();
+            v30 = v28.GetName();
+            v26 = FString();
+            v26.Append("[");
+            v26.Append("[").Append(v30);
+            v26.Append("[").Append(v30).Append("] Removing bot from non-spawning list");
+            Log::Log(v26.Append("[").Append(v30).Append("] Removing bot from non-spawning list"));
+            this.Respawn(v2);
+        }
+        return;
+    }
+
+    ULokiPlayerRespawnComponent@ GetPlayerRespawnComponent(ALokiPlayerState@ PS)   // traits=0x20
+    {
+        UClass v2;
+        TSubclassOf<UActorComponent@> v4;
+        UActorComponent v6;
+        ULokiPlayerRespawnComponent v8;
+
+        v2 = ULokiPlayerRespawnComponent::StaticClass();
+        v4 = TSubclassOf<UActorComponent@>(v2);
+        v6 = PS.GetComponentByClass(v4);
+        if (v6 != nullptr) {
+            v8 = cast<ULokiPlayerRespawnComponent@>(v6);
+            return v8;
+        } else {
+            v8 = nullptr;
+        }
+        return v8;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    FVector FindFurthestPlayerStart()   // traits=0x20
+    {
+        int v1;
+        int v2;
+        auto v3;
+        FString v8;
+        AActor v10;
+        FName v12;
+        TArray<FVector> v16;
+        ALokiGameState v20;
+        TArray<ALokiPlayerState@> v24;
+        TArrayConstIterator<ALokiPlayerState@> v30;
+        ALokiPlayerState v38;
+        ALokiCharacter v42;
+        auto v43;
+        FVector v50;
+        FVector v56;
+        auto v58;
+        auto v60;
+        auto v61;
+        FVector v68;
+        auto v70;
+        TArrayIterator<FVector> v76;
+        FVector v84;
+        auto v86;
+
+        v1 = this.Starts.Num();
+        if (v1 == 0) {
+            v10 = this.GetOwner();
+            v12 = v10.GetName();
+            v8 = FString();
+            v8.Append("[");
+            v8.Append("[").Append(v12);
+            v8.Append("[").Append(v12).Append("] No player starts found");
+            Log::Warning(v8.Append("[").Append(v12).Append("] No player starts found"));
+            __ret = FVector(FVector::ZeroVector);
+            return;
+        } else {
+            v16 = TArray<FVector>();
+            v20 = Loki::GetLokiGameState(__WorldContext);
+            v24 = v20.GetLokiPlayerStates();
+            v30 = v24.Iterator();
+            while (true) {
+                v3 = v30.CanProceed;
+                if (!v3) break;
+                v38 = v30.Proceed();
+                v30.Proceed();
+                v42 = v38.GetLokiCharacter();
+                if (v42 == nullptr) {
+                    v3 = 0;
+                } else {
+                    v43 = v42.IsAlive();
+                    v3 = v43;
+                }
+                if (v3) {
+                    v50 = v42.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v16.Add(v50);
+                }
+            }
+            v1 = v16.Num();
+            if (v1 == 0) {
+                v2 = this.SpawnIndex;
+                v2 = v2 + 1;
+                v1 = this.Starts.Num();
+                v2 = v2 % v1;
+                this.SpawnIndex = v2;
+                v1 = this.SpawnIndex;
+                __ret = FVector(this.Starts[v1]);
+                return;
+            } else {
+                v56 = FVector(this.Starts[0]);
+                v58 = 0;
+                v1 = this.SpawnIndex;
+                v1 = -v1;
+                while (true) {
+                    v2 = this.SpawnIndex;
+                    v61 = v1 + v2;
+                    v2 = this.Starts.Num();
+                    if (v61 >= v2) break;
+                    v61 = this.Starts.Num();
+                    v2 = v61 + v1;
+                    v61 = this.Starts.Num();
+                    v2 = v2 % v61;
+                    v68 = FVector(this.Starts[v2]);
+                    v70 = 0;
+                    v76 = v16.Iterator();
+                    while (true) {
+                        v43 = v76.CanProceed;
+                        if (!v43) break;
+                        v84 = v76.Proceed();
+                        v50 = v68 - v84;
+                        v60 = v50.Size();
+                        if (v60 < v70) {
+                            v3 = true;
+                        } else {
+                            v86 = 0;
+                            v43 = v70 == v86;
+                            v3 = v43;
+                        }
+                        if (v3) {
+                            v70 = v60;
+                        }
+                    }
+                    if (v70 > v58) {
+                        v58 = v70;
+                        v56 = v68;
+                    }
+                    v86 = this.SpawnRadius;
+                    if (v70 > v86) {
+                        v2 = this.SpawnIndex;
+                        v2 = v2 + 1;
+                        v61 = this.Starts.Num();
+                        v2 = v2 % v61;
+                        this.SpawnIndex = v2;
+                        __ret = FVector(v68);
+                        return;
+                    }
+                    v1++;
+                }
+                __ret = FVector(v56);
+            }
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        return;
+    }
+
+    void ~ULokiRespawnComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

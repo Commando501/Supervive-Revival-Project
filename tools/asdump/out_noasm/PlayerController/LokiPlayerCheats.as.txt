@@ -1,0 +1,768 @@
+// ============================================================================
+//  MODULE   PlayerController.LokiPlayerCheats
+//  SOURCE   PlayerController/LokiPlayerCheats.as
+//  CONTENT  1 class(es), 51 function(s), 0 enum(s), 1 global(s), 5472 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiPlayerCheats_AS;
+
+ALokiPlayerCheats_AS@ ALokiPlayerCheats_AS()   // traits=0x20
+{
+    ALokiPlayerCheats_AS v2;
+
+    v2 = ALokiPlayerCheats_AS();
+    return v2;
+}
+
+UClass@ ALokiPlayerCheats_AS::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiPlayerCheats_AS);
+    return v2;
+}
+
+ALokiPlayerCheats_AS@ ALokiPlayerCheats_AS::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiPlayerCheats_AS v8;
+
+    v2 = __StaticType_ALokiPlayerCheats_AS.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiPlayerCheats_AS@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ALokiPlayerCheats_AS : ALokiPlayerCheats
+// unreal base : /Script/Loki.LokiPlayerCheats
+// C++ header  : ../../../Loki/Source/Loki/Cheats/LokiPlayerCheats.h
+// static class global: __StaticType_ALokiPlayerCheats_AS
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<UGameplayEffect@> CheatDisableHealthRegenEffectClass;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient)
+    FActiveGameplayEffectHandle CheatDisableHealthRegenEffectHandle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<UGameplayEffect@> CheatDisableManaRegenEffectClass;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient)
+    FActiveGameplayEffectHandle CheatDisableManaRegenEffectHandle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 AutoJumpStartTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 AutoJumpPeriod;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 AutoJumpLastTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool AutoJumpPressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<AAIController@> WispControllerClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<ALokiHeroCharacter@> WispHeroClass;
+
+    ALokiPlayerCheats_AS()   // traits=0x21
+    {
+        this.CheatDisableHealthRegenEffectClass = TSubclassOf<UGameplayEffect@>();
+        this.CheatDisableHealthRegenEffectHandle = FActiveGameplayEffectHandle();
+        this.CheatDisableManaRegenEffectClass = TSubclassOf<UGameplayEffect@>();
+        this.CheatDisableManaRegenEffectHandle = FActiveGameplayEffectHandle();
+        this.WispControllerClass = TSubclassOf<AAIController@>();
+        this.WispHeroClass = TSubclassOf<ALokiHeroCharacter@>();
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        this.TickAutoJump();
+        return;
+    }
+
+    void RunCommand(const FString& Command, const bool bAlsoServerExec = false)   // traits=0x20
+    {
+        ALokiPlayerController v4;
+        FString v10;
+
+        v4 = this.GetPlayerController();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            System::ExecuteConsoleCommand(__WorldContext, Command, v4);
+            if (bAlsoServerExec) {
+                v10 = FString();
+                v10.Append("ServerExec ");
+                v10.Append("ServerExec ").Append(Command);
+                System::ExecuteConsoleCommand(__WorldContext, v10.Append("ServerExec ").Append(Command), v4);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatToggleHealthRegen()   // traits=0x20
+    {
+        this.AuthCheatToggleHealthRegen();
+        return;
+    }
+
+    void AuthCheatToggleHealthRegen()   // traits=0x20
+    {
+        __Evt_Execute(this, n"AuthCheatToggleHealthRegen");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatToggleHealthRegen, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatToggleHealthRegen_Implementation()   // traits=0x20
+    {
+        ULokiAbilitySystemComponent v4;
+        auto v5;
+        auto v6;
+        FGameplayEffectContextHandle v20;
+        FGameplayEffectSpecHandle v30;
+        FActiveGameplayEffectHandle v32;
+
+        v4 = this.GetAbilitySystemComponent();
+        if (v4 == nullptr) {
+            v5 = 0;
+        } else {
+            v6 = this.CheatDisableHealthRegenEffectClass.IsValid();
+            v5 = v6;
+        }
+        if (v5) {
+            v6 = v4.HasActiveGameplayEffect(this.CheatDisableHealthRegenEffectHandle);
+            if (v6) {
+                v4.RemoveActiveGameplayEffect(this.CheatDisableHealthRegenEffectHandle, -1);
+                return;
+            } else {
+                v20 = v4.MakeEffectContext();
+                v30 = v4.MakeOutgoingSpec(this.CheatDisableHealthRegenEffectClass, 0, v20);
+                v32 = v4.ApplyGameplayEffectSpecToSelf(v30)  /* UFunction BP_ApplyGameplayEffectSpecToSelf */;
+                this.CheatDisableHealthRegenEffectHandle = v32;
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatToggleManaRegen()   // traits=0x20
+    {
+        this.AuthCheatToggleManaRegen();
+        return;
+    }
+
+    void AuthCheatToggleManaRegen()   // traits=0x20
+    {
+        __Evt_Execute(this, n"AuthCheatToggleManaRegen");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatToggleManaRegen, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatToggleManaRegen_Implementation()   // traits=0x20
+    {
+        ULokiAbilitySystemComponent v4;
+        auto v5;
+        auto v6;
+        FGameplayEffectContextHandle v20;
+        FGameplayEffectSpecHandle v30;
+        FActiveGameplayEffectHandle v32;
+
+        v4 = this.GetAbilitySystemComponent();
+        if (v4 == nullptr) {
+            v5 = 0;
+        } else {
+            v6 = this.CheatDisableManaRegenEffectClass.IsValid();
+            v5 = v6;
+        }
+        if (v5) {
+            v6 = v4.HasActiveGameplayEffect(this.CheatDisableManaRegenEffectHandle);
+            if (v6) {
+                v4.RemoveActiveGameplayEffect(this.CheatDisableManaRegenEffectHandle, -1);
+                return;
+            } else {
+                v20 = v4.MakeEffectContext();
+                v30 = v4.MakeOutgoingSpec(this.CheatDisableManaRegenEffectClass, 0, v20);
+                v32 = v4.ApplyGameplayEffectSpecToSelf(v30)  /* UFunction BP_ApplyGameplayEffectSpecToSelf */;
+                this.CheatDisableManaRegenEffectHandle = v32;
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatGrantGold(const int Amount)   // traits=0x20
+    {
+        this.AuthCheatGrantGold(Amount);
+        return;
+    }
+
+    void AuthCheatGrantGold(const int Amount)   // traits=0x20
+    {
+        __Evt_PushArgument__int32(Amount);
+        __Evt_Execute(this, n"AuthCheatGrantGold");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatGrantGold, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatGrantGold_Implementation(const int Amount)   // traits=0x20
+    {
+        ALokiPlayerState v4;
+        ECurrencyGrantReason v5;
+
+        v4 = this.GetPlayerState();
+        v5 = ECurrencyGrantReason::Misc;
+        v4.GrantWalletCurrency("Gold", Amount, v5);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatGrantGems(const int Amount)   // traits=0x20
+    {
+        this.AuthCheatGrantGems(Amount);
+        return;
+    }
+
+    void AuthCheatGrantGems(const int Amount)   // traits=0x20
+    {
+        __Evt_PushArgument__int32(Amount);
+        __Evt_Execute(this, n"AuthCheatGrantGems");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatGrantGems, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatGrantGems_Implementation(const int Amount)   // traits=0x20
+    {
+        ALokiPlayerState v4;
+        ECurrencyGrantReason v5;
+
+        v4 = this.GetPlayerState();
+        v5 = ECurrencyGrantReason::Misc;
+        v4.GrantWalletCurrency("Gems", Amount, v5);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatUnlockFullArmory()   // traits=0x20
+    {
+        this.AuthCheatUnlockFullArmory();
+        return;
+    }
+
+    void AuthCheatUnlockFullArmory()   // traits=0x20
+    {
+        __Evt_Execute(this, n"AuthCheatUnlockFullArmory");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatUnlockFullArmory, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatUnlockFullArmory_Implementation()   // traits=0x20
+    {
+        ALokiGameState v2;
+        bool v5;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        if (v2 != nullptr) {
+            v5 = true;
+            v2.SetArmoryFullyUnlocked(v5);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatExecuteUAV()   // traits=0x20
+    {
+        ALokiPlayerState v2;
+        APawn v6;
+        FVector v22;
+        FVector v28;
+        auto v30;
+        int v31;
+
+        v2 = this.GetPlayerState();
+        v6 = v2.GetPawn();
+        v28 = FVector();
+        if (v6 != nullptr) {
+            v22 = v6.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v28 = v22;
+        } else {
+            v28 = FVector::ZeroVector;
+        }
+        if (v2 != nullptr) {
+            v30 = v2.GetTeamIndex_BP();
+            v31 = v30;
+        } else {
+            v31 = -1;
+        }
+        this.AuthCheatExecuteUAV(v28, v31);
+        return;
+    }
+
+    void AuthCheatExecuteUAV(const FVector& SourceLocation, const int TeamIndex = - 1)   // traits=0x20
+    {
+        __Evt_PushArgument__FVector(SourceLocation);
+        __Evt_PushArgument__int(TeamIndex);
+        __Evt_Execute(this, n"AuthCheatExecuteUAV");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatExecuteUAV, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatExecuteUAV_Implementation(const FVector& SourceLocation, const int TeamIndex = - 1)   // traits=0x20
+    {
+        ALokiGameState_AS v2;
+        ALokiGameState v4;
+        ALokiGameState_AS v6;
+        ULokiGameStateUAVComponent v10;
+        FLokiUAVConfig v46;
+        FActiveUAV v80;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 != nullptr) {
+            v6 = cast<ALokiGameState_AS@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v10 = v2.UAVComponent;
+            if (v10 == nullptr) {
+                return;
+            } else {
+                v46.FLokiUAVConfig();
+                v80 = v10.ExecuteUAV(v46, SourceLocation, TeamIndex);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatExecuteUAVGlobal()   // traits=0x20
+    {
+        ALokiPlayerState v2;
+        APawn v6;
+        FVector v22;
+        FVector v28;
+
+        v2 = this.GetPlayerState();
+        v6 = v2.GetPawn();
+        v28 = FVector();
+        if (v6 != nullptr) {
+            v22 = v6.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v28 = v22;
+        } else {
+            v28 = FVector::ZeroVector;
+        }
+        this.AuthCheatExecuteUAV(v28, -1);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatBarracudaNextPhase()   // traits=0x20
+    {
+        this.AuthCheatBarracudaNextPhase();
+        return;
+    }
+
+    void AuthCheatBarracudaNextPhase()   // traits=0x20
+    {
+        __Evt_Execute(this, n"AuthCheatBarracudaNextPhase");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatBarracudaNextPhase, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatBarracudaNextPhase_Implementation()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v4;
+
+        v4 = GetBarracudaGameStateComponent();
+        if (v4 != nullptr) {
+            v4.AuthMoveToNextBarracudaPhase();
+        }
+        return;
+    }
+
+    void AuthCheatBarracudaToggleSpawnerType(const FGameplayTag& SpawnerType)   // traits=0x20
+    {
+        __Evt_PushArgument__FGameplayTag(SpawnerType);
+        __Evt_Execute(this, n"AuthCheatBarracudaToggleSpawnerType");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatBarracudaToggleSpawnerType, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatBarracudaToggleSpawnerType_Implementation(const FGameplayTag& SpawnerType)   // traits=0x20
+    {
+        UBarracudaGameStateComponent v4;
+
+        v4 = GetBarracudaGameStateComponent();
+        if (v4 != nullptr) {
+            if (v4.DisabledSpawnerTypes.HasTagExact(SpawnerType)) {
+                v4.DisabledSpawnerTypes.RemoveTag(SpawnerType);
+                return;
+            } else {
+                v4.DisabledSpawnerTypes.AddTag(SpawnerType);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatBarracudaToggleJungleSpawners()   // traits=0x20
+    {
+        this.AuthCheatBarracudaToggleSpawnerType(GameplayTags::Static_Barracuda_Spawner_Neutral);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatBarracudaToggleLaneSpawners()   // traits=0x20
+    {
+        this.AuthCheatBarracudaToggleSpawnerType(GameplayTags::Static_Barracuda_Spawner_Creep);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatBarracudaToggleDayNightCycle()   // traits=0x20
+    {
+        this.AuthCheatBarracudaToggleDayNightCycle();
+        return;
+    }
+
+    void AuthCheatBarracudaToggleDayNightCycle()   // traits=0x20
+    {
+        __Evt_Execute(this, n"AuthCheatBarracudaToggleDayNightCycle");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatBarracudaToggleDayNightCycle, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatBarracudaToggleDayNightCycle_Implementation()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v4;
+        auto v5;
+
+        v4 = GetBarracudaGameStateComponent();
+        if (v4 != nullptr) {
+            v5 = v4.bDayNightTransitionEnabled;
+            v5 = !v5;
+            v4.bDayNightTransitionEnabled = v5;
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatBarracudaAdvanceDayNightCycle()   // traits=0x20
+    {
+        this.AuthCheatBarracudaAdvanceDayNightCycle();
+        return;
+    }
+
+    void AuthCheatBarracudaAdvanceDayNightCycle()   // traits=0x20
+    {
+        __Evt_Execute(this, n"AuthCheatBarracudaAdvanceDayNightCycle");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatBarracudaAdvanceDayNightCycle, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthCheatBarracudaAdvanceDayNightCycle_Implementation()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v4;
+        ABarracudaGameMode v8;
+        auto v9;
+        auto v10;
+        auto v12;
+
+        v4 = GetBarracudaGameStateComponent();
+        v8 = GetBarracudaGameMode();
+        if (v4 == nullptr) {
+            v9 = 0;
+        } else {
+            v10 = v8 != nullptr;
+            v9 = v10;
+        }
+        if (v9) {
+            v12 = v8.GetMatchTime();
+            v4.NextDayNightSwapTime = v12;
+        }
+        return;
+    }
+
+    private FVector GetMyLocation()   // traits=0x28
+    {
+        FVector v6;
+        ALokiPlayerController v10;
+        APawn v16;
+        FVector v22;
+
+        v6 = FVector(FVector::ZeroVector);
+        v10 = this.GetPlayerController();
+        if (v10 != nullptr) {
+            v16 = v10.GetControlledPawn()  /* UFunction K2_GetPawn */;
+            if (v16 != nullptr) {
+                v22 = v16.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v6 = v22;
+            }
+        }
+        __ret = FVector(v6);
+        return;
+    }
+
+    void ServerSpawnWispAS(const int TeamIndex, const FVector& Location = FVector :: ZeroVector)   // traits=0x20
+    {
+        __Evt_PushArgument__int32(TeamIndex);
+        __Evt_PushArgument__FVector(Location);
+        __Evt_Execute(this, n"ServerSpawnWispAS");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerSpawnWispAS, BlueprintCallable, BlueprintEvent, NetServer, meta.DisplayName=Server Spawn Wisp (AngelScript))
+    void ServerSpawnWispAS_Implementation(const int TeamIndex, const FVector& Location = FVector :: ZeroVector)   // traits=0x20
+    {
+        bool v1;
+        AAIController v6;
+        APlayerState v8;
+        ALokiPlayerState v10;
+        ALokiPlayerState v12;
+        ALokiHeroCharacter v16;
+        ALokiGameState v20;
+        ALokiTeamState v24;
+        TArray<ALokiPlayerState@> v28;
+        auto v33;
+        FGameplayEffectContextHandle v40;
+
+        v1 = false;
+        v6 = SpawnActor(this.WispControllerClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v1, nullptr);
+        v8 = v6.PlayerState;
+        if (v8 != nullptr) {
+            v10 = cast<ALokiPlayerState@>(v8);
+        } else {
+            v10 = nullptr;
+        }
+        v12 = v10;
+        v1 = true;
+        v16 = SpawnActor(this.WispHeroClass, Location, FRotator::ZeroRotator, NAME_None, v1, nullptr);
+        v16.SetOwner(v12);
+        FinishSpawningActor(v16);
+        v6.Possess(v16);
+        LokiTeam::SetTeamForActor(v16, TeamIndex);
+        v20 = Loki::GetLokiGameState(__WorldContext);
+        if (v20 != nullptr) {
+            v24 = v20.GetOrCreateTeamState(TeamIndex);
+            v28 = v24.GetLivingPlayers();
+            v33 = v28.Num();
+            if (v33 < 2) {
+                v1 = true;
+                this.CheatSetTeamEliminated(this, TeamIndex, v1);
+            }
+        }
+        v40 = FGameplayEffectContextHandle();
+        v16.LivingStateMachine.RequestMoveTowardDeath(v40);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SpawnEnemyWispAtMyLocation()   // traits=0x20
+    {
+        int v2;
+        FVector v8;
+
+        v2 = this.GetUnusedTeamIndex(this);
+        v8 = this.GetMyLocation();
+        this.ServerSpawnWispAS(v2, v8);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SpawnAllyWispAtMyLocation()   // traits=0x20
+    {
+        ALokiPlayerState v4;
+        int v5;
+        FVector v12;
+
+        v4 = this.GetPlayerState();
+        v5 = LokiTeam::GetTeamFromActor(v4);
+        v12 = this.GetMyLocation();
+        this.ServerSpawnWispAS(v5, v12);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatSpawnEnemyWisp()   // traits=0x20
+    {
+        FVector v6;
+        FVector v12;
+        FVector v24;
+        int v26;
+
+        v12 = this.GetClientCursorLocation();
+        v6 = FVector(0, 0, 500.0);
+        v12 += v6;
+        v26 = this.GetUnusedTeamIndex(this);
+        this.ServerSpawnWispAS(v26, v12);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatSpawnAllyWisp()   // traits=0x20
+    {
+        FVector v6;
+        FVector v12;
+        FVector v24;
+        ALokiPlayerState v28;
+        int v29;
+
+        v12 = this.GetClientCursorLocation();
+        v6 = FVector(0, 0, 500.0);
+        v12 += v6;
+        v28 = this.GetPlayerState();
+        v29 = LokiTeam::GetTeamFromActor(v28);
+        this.ServerSpawnWispAS(v29, v12);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandEnableStuckAbilityLogs()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.RunCommand("RequestAdmin", v1);
+        v1 = true;
+        this.RunCommand("Log LogAbilitySystem Verbose", v1);
+        v1 = true;
+        this.RunCommand("Log LogLokiAbilitySystemComponent Verbose", v1);
+        v1 = true;
+        this.RunCommand("Log LogLokiGameplaySpell Verbose", v1);
+        v1 = true;
+        this.RunCommand("DebugLogSpellBuffering 1", v1);
+        v1 = false;
+        this.RunCommand("ShowDebug AbilitySystem", v1);
+        v1 = false;
+        this.RunCommand("AbilitySystem.Debug.NextCategory", v1);
+        v1 = false;
+        this.RunCommand("AbilitySystem.Debug.NextCategory", v1);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandCheatAutoJump(const float64 Period)   // traits=0x20
+    {
+        float64 v2;
+        auto v4;
+
+        v2 = 0;
+        if (Period > v2) {
+            v4 = Gameplay::GetServerTime(__WorldContext);
+            v2 = float64(v4);
+            this.AutoJumpStartTime = v2;
+            this.AutoJumpPeriod = Period;
+            return;
+        } else {
+            v2 = 0;
+            this.AutoJumpStartTime = v2;
+        }
+        return;
+    }
+
+    void TickAutoJump()   // traits=0x20
+    {
+        float64 v2;
+        auto v4;
+        auto v5;
+        ALokiHeroCharacter v10;
+        auto v12;
+        auto v13;
+
+        v2 = this.AutoJumpStartTime;
+        v4 = 0;
+        if (v2 <= v4) {
+            return;
+        } else {
+            v10 = this.GetHeroCharacter();
+            if (v10 == nullptr) {
+                return;
+            } else {
+                v5 = this.AutoJumpPressed;
+                if (v5) {
+                    v5 = false;
+                    this.AutoJumpPressed = v5;
+                    v10.JumpActionStop();
+                    return;
+                } else {
+                    v13 = Gameplay::GetServerTime(__WorldContext);
+                    v2 = float64(v13);
+                    v12 = v2;
+                    v4 = this.AutoJumpLastTime;
+                    v2 = v12 - v4;
+                    v4 = this.AutoJumpPeriod;
+                    if (v2 > v4) {
+                        this.AutoJumpLastTime = v12;
+                        v10.JumpActionStart();
+                        v5 = true;
+                        this.AutoJumpPressed = v5;
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandEnableMovementDebug()   // traits=0x20
+    {
+        ALokiPlayerController v4;
+        bool v5;
+
+        v4 = this.GetPlayerController();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v5 = false;
+            this.RunCommand("GodMode", v5);
+            v5 = true;
+            this.RunCommand("Log LogCharacterMovement Verbose", v5);
+            v5 = false;
+            this.RunCommand("p.NetShowCorrections 1", v5);
+            v5 = true;
+            this.RunCommand("p.DebugLogAllMoves 1", v5);
+            v5 = true;
+            this.RunCommand("p.DebugLogAllMoves1D 1", v5);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ConsoleCommandDisableMovementDebug()   // traits=0x20
+    {
+        ALokiPlayerController v4;
+        bool v5;
+
+        v4 = this.GetPlayerController();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v5 = true;
+            this.RunCommand("p.DebugLogAllMoves 0", v5);
+        }
+        return;
+    }
+
+    void ~ALokiPlayerCheats_AS()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

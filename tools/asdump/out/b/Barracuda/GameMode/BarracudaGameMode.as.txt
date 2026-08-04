@@ -1,0 +1,2164 @@
+// ============================================================================
+//  MODULE   Barracuda.GameMode.BarracudaGameMode
+//  SOURCE   Barracuda/GameMode/BarracudaGameMode.as
+//  CONTENT  1 class(es), 32 function(s), 0 enum(s), 1 global(s), 8128 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Barracuda_GameMode_BarracudaGameModeStatics
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaGameMode;
+
+ABarracudaGameMode@ ABarracudaGameMode()   // traits=0x20
+{
+    v2 = ABarracudaGameMode();
+    return v2;
+}
+/* ---- ABarracudaGameMode: 7 dwords / 4 instructions (cache offset 0x1aab0) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84190 ABarracudaGameMode                    
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+ABarracudaGameMode@ GetBarracudaGameMode()   // traits=0x20
+{
+    v4 = Loki::GetLokiGameMode(__WorldContext);
+    if (v4 == nullptr) {
+        return v8;
+    } else {
+        if (v4 != nullptr) {
+            v8 = cast<ABarracudaGameMode@>(v4);
+        } else {
+            v8 = nullptr;
+        }
+    }
+    return v8;
+}
+/* ---- GetBarracudaGameMode: 29 dwords / 18 instructions (cache offset 0x1ab65) ----
+    0000  PshGPtr       __WorldContext                              
+    000C  CALLSYS       GetLokiGameMode                             
+    0018  STOREOBJ      v4                                          
+    001C  CmpPtrNull    v4                                          
+    0020  JNZ           4                                             -> L0038
+    0028  FreeNullV8    v8                                          
+    002C  LOADOBJ       v8                                          
+    0030  JMP           14                                            -> L0070
+  L0038:
+    0038  CmpPtrNull    v4                                          
+    003C  JZ            9                                             -> L0068
+    0044  TYPEID        1207972605                                    ; ABarracudaGameMode@
+    004C  PSF           v8                                          
+    0050  PshVPtr       v4                                          
+    0054  CALLSYS       UObject::opCast                             
+    0060  JMP           1                                             -> L006C
+  L0068:
+    0068  ClrVPtr       v8                                          
+  L006C:
+    006C  LOADOBJ       v8                                          
+  L0070:
+    0070  RET           0                                           
+*/
+
+UClass@ ABarracudaGameMode::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ABarracudaGameMode);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x1ad15) ----
+    0000  PshGPtr       __StaticType_ABarracudaGameMode             
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ABarracudaGameMode@ ABarracudaGameMode::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_ABarracudaGameMode.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ABarracudaGameMode@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x1af3c) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_ABarracudaGameMode             
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972605                                    ; ABarracudaGameMode@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ABarracudaGameMode : ALokiTowerDefenseGameMode
+// unreal base : /Script/Loki.LokiTowerDefenseGameMode
+// C++ header  : ../../../Loki/Source/Loki/GameModes/LokiTowerDefenseGameMode.h
+// static class global: __StaticType_ABarracudaGameMode
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UBarracudaRallyMinionsComponent@ RallyMinionsComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UBarracudaPlayerSpawnerComponent@ BarracudaPlayerSpawnerComponent;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    float32 MatchStartTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Bounties)
+    float32 GoldLossOnDeath;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Bounties)
+    TArray<int> GoldBountyPerCurrentStreak;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Day/Night)
+    float64 DayNightDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bIsDay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Bounties)
+    TArray<float32> MinionSplitXPBonuses;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Bounties)
+    TArray<float32> MercyHeroKillXPCoefficients;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Bounties)
+    float32 UnderdogHeroKillXPBonusPerLevel;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bAnyTowersKilled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Dragon)
+    TArray<TSubclassOf<UGameplayEffect@>> DragonRewards;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    int NumDragonsKilled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    TMap<ALokiPlayerState@, float64> LastKnockedTimeTable;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults)
+    float64 KnockXPCooldownTime;
+    FGameplayTag DragonKilledPilotVO;
+    FGameplayTag MomentumBossKilledPilotVO;
+    TSubclassOf<UGameplayEffect@> MomentumBuffEffect;
+
+    ABarracudaGameMode()   // traits=0x21
+    {
+        this.GoldBountyPerCurrentStreak = TArray();
+        this.MinionSplitXPBonuses = TArray();
+        this.MercyHeroKillXPCoefficients = TArray();
+        this.DragonRewards = TArray();
+        this.LastKnockedTimeTable = TMap();
+        this.DragonKilledPilotVO = FGameplayTag();
+        this.MomentumBossKilledPilotVO = FGameplayTag();
+        this.MomentumBuffEffect = TSubclassOf();
+        return;
+    }
+    /* ---- ABarracudaGameMode: 53 dwords / 27 instructions (cache offset 0x2014e) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         2040 134230781                                ; .GoldBountyPerCurrentStreak
+        000C  CALLSYS       TArray::$beh0                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         2072 134230781                                ; .MinionSplitXPBonuses
+        0024  CALLSYS       TArray::$beh0                               
+        0030  PshVPtr       this                                        
+        0034  ADDSi         2088 134230781                                ; .MercyHeroKillXPCoefficients
+        003C  CALLSYS       TArray::$beh0                               
+        0048  PshVPtr       this                                        
+        004C  ADDSi         2112 134230781                                ; .DragonRewards
+        0054  CALLSYS       TArray::$beh0                               
+        0060  PshVPtr       this                                        
+        0064  ADDSi         2136 134230781                                ; .LastKnockedTimeTable
+        006C  CALLSYS       TMap::$beh0                                 
+        0078  PshVPtr       this                                        
+        007C  ADDSi         2224 134230781                                ; .DragonKilledPilotVO
+        0084  CALLSYS       FGameplayTag::$beh0                         
+        0090  PshVPtr       this                                        
+        0094  ADDSi         2232 134230781                                ; .MomentumBossKilledPilotVO
+        009C  CALLSYS       FGameplayTag::$beh0                         
+        00A8  PshVPtr       this                                        
+        00AC  ADDSi         2240 134230781                                ; .MomentumBuffEffect
+        00B4  CALLSYS       TSubclassOf::$beh0                          
+        00C0  PshVPtr       this                                        
+        00C4  FinConstruct  ABarracudaGameMode                          
+        00D0  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod)
+    UBarracudaGameStateComponent@ GetGameStateComponent() const   // traits=0x24
+    {
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            return v8;
+        } else {
+            v8 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+        }
+        return v8;
+    }
+    /* ---- GetGameStateComponent: 23 dwords / 14 instructions (cache offset 0x1bb59) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetLokiGameState                            
+        0018  STOREOBJ      v4                                          
+        001C  CmpPtrNull    v4                                          
+        0020  JNZ           4                                             -> L0038
+        0028  FreeNullV8    v8                                          
+        002C  LOADOBJ       v8                                          
+        0030  JMP           8                                             -> L0058
+      L0038:
+        0038  PshGPtr       NAME_None                                   
+        0044  PshVPtr       v4                                          
+        0048  CALL          84255                                         ; Get
+        0050  STOREOBJ      v8                                          
+        0054  LOADOBJ       v8                                          
+      L0058:
+        0058  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        v2.OnPlayerKilled.AddUFunction(this, n"OnPlayerKilled");
+        v8 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v8 != nullptr) {
+            v15 = false;
+            v14 = FGameEvent_BarracudaPhaseChanged();
+            v28 = v8.RegisterForEvent(this, v14, typeid(FGameEvent_BarracudaPhaseChanged), nullptr, n"AuthHandleBarracudaPhaseChanged", v15);
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 62 dwords / 34 instructions (cache offset 0x1bcec) ----
+        0000  PshC4         9                                           
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  PshGPtr       __WorldContext                              
+        0028  CALLSYS       GetLokiGameState                            
+        0034  STOREOBJ      v2                                          
+        0038  PshVPtr       v2                                          
+        003C  ADDSi         1800 67115161                                 ; .OnPlayerKilled
+        0044  CALLSYS       FPlayerKillEventSignature::AddUFunction     
+        0050  PshGPtr       __WorldContext                              
+        005C  CALLSYS       GetGlobalGameEventRouter                    
+        0068  STOREOBJ      v8                                          
+        006C  CmpPtrNull    v8                                          
+        0070  JZ            31                                            -> L00F4
+        0078  SetV1         v15 0                                       
+        0080  PshV4         v15                                         
+        0084  PshC4         10                                          
+        008C  CALLSYS       __STATIC_NAME                               
+        0098  PshRPtr                                                   
+        009C  PshNull                                                   
+        00A0  TYPEID        67120880                                      ; FGameEvent_BarracudaPhaseChanged
+        00A8  PSF           v14                                         
+        00AC  CALLSYS       FGameEvent_BarracudaPhaseChanged::$beh0     
+        00B8  PSF           v14                                         
+        00BC  PshVPtr       this                                        
+        00C0  PSF           v28                                         
+        00C4  PshVPtr       v8                                          
+        00C8  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        00D4  PSF           v14                                         
+        00D8  CALLSYS       FGameEvent_BarracudaPhaseChanged::$beh2     
+        00E4  PSF           v28                                         
+        00E8  CALLSYS       FGameEventListenerHandle::$beh2             
+      L00F4:
+        00F4  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void AuthHandleBarracudaPhaseChanged(const FGameEvent_BarracudaPhaseChanged& Event, const AActor@ Context)   // traits=0x20
+    {
+        v2 = GetCurrentBarracudaPhaseType();
+        v3 = int(v2);
+        if (v3 == 2) {
+            this.OnNewDay();
+            v10 = Loki::GetLokiGameState(__WorldContext);
+            v8 = UBarracudaGameStateComponent::Get(v10, NAME_None);
+            v13 = Gameplay::GetServerTime(__WorldContext);
+            v13 = v13 + 60.0;
+            v16 = float64(v13);
+            v8.NextDayNightSwapTime = v16;
+        }
+        return;
+    }
+    /* ---- AuthHandleBarracudaPhaseChanged: 44 dwords / 23 instructions (cache offset 0x1bfcc) ----
+        0000  CALL          84265                                         ; GetCurrentBarracudaPhaseType
+        0008  CpyRtoV4      v2                                          
+        000C  sbTOi         v3 v2                                       
+        0014  CMPIi         v3 2                                        
+        001C  JNZ           34                                            -> L00AC
+        0024  PshVPtr       this                                        
+        0028  CALLINTF      84178                                         ; ABarracudaGameMode::OnNewDay
+        0030  PshGPtr       NAME_None                                   
+        003C  PshGPtr       __WorldContext                              
+        0048  CALLSYS       GetLokiGameState                            
+        0054  STOREOBJ      v10                                         
+        0058  PshVPtr       v10                                         
+        005C  CALL          84255                                         ; Get
+        0064  STOREOBJ      v8                                          
+        0068  PshGPtr       __WorldContext                              
+        0074  CALLSYS       GetServerTime                               
+        0080  CpyRtoV4      v13                                         
+        0084  ADDIf         v13 v13 1114636288                          
+        0090  fTOd          v16 v13                                     
+        0098  LoadRObjR     v8 208 134230778                              ; .NextDayNightSwapTime
+        00A4  WRTV8         v16                                         
+        00A8  FreeNullV8    v8                                          
+      L00AC:
+        00AC  RET           6                                           
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        this.HandleDayNight();
+        return;
+    }
+    /* ---- Tick_Implementation: 4 dwords / 3 instructions (cache offset 0x1c1f5) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84182                                         ; ABarracudaGameMode::HandleDayNight
+        000C  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=OnNewPhase, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnNewPhase_Implementation(const ERoundPhase NextPhase, const ERoundPhase LastPhase)   // traits=0x20
+    {
+        v1 = int(NextPhase);
+        if (v1 == 7) {
+            v3 = false;
+            this.bIsDay = v3;
+            this.OnNewNight();
+        }
+        return;
+    }
+    /* ---- OnNewPhase_Implementation: 15 dwords / 9 instructions (cache offset 0x1c364) ----
+        0000  sbTOi         v1 NextPhase                                
+        0008  CMPIi         v1 7                                        
+        0010  JNZ           8                                             -> L0038
+        0018  SetV1         v3 0                                        
+        0020  LoadThisR     2064 134230781                                ; this.bIsDay
+        0028  WRTV1         v3                                          
+        002C  PshVPtr       this                                        
+        0030  CALLINTF      84180                                         ; ABarracudaGameMode::OnNewNight
+      L0038:
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=AugmentCharacterLoadoutItems, BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+    void AugmentCharacterLoadoutItems_Implementation(TArray<FStartupItemSpec>&inout LoadoutItems)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- AugmentCharacterLoadoutItems_Implementation: 1 dwords / 1 instructions (cache offset 0x1c4f8) ----
+        0000  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    bool HasBarracudaMatchStarted()   // traits=0x20
+    {
+        v1 = Gameplay::GetServerTime(__WorldContext);
+        v2 = this.MatchStartTime;
+        v3 = v1 >= v2;
+        return v3;
+    }
+    /* ---- HasBarracudaMatchStarted: 16 dwords / 10 instructions (cache offset 0x1c5fe) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetServerTime                               
+        0018  CpyRtoV4      v1                                          
+        001C  LoadThisR     2032 134230781                                ; this.MatchStartTime
+        0024  RDR4          v2                                          
+        0028  CMPf          v1 v2                                       
+        0030  TNS                                                       
+        0034  CpyRtoV4      v3                                          
+        0038  CpyVtoR4      v3                                          
+        003C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    float64 GetMatchTime()   // traits=0x20
+    {
+        v1 = Gameplay::GetServerTime(__WorldContext);
+        v2 = this.MatchStartTime;
+        v1 = v1 - v2;
+        v4 = float64(v1);
+        return v4;
+    }
+    /* ---- GetMatchTime: 16 dwords / 9 instructions (cache offset 0x1c730) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetServerTime                               
+        0018  CpyRtoV4      v1                                          
+        001C  LoadThisR     2032 134230781                                ; this.MatchStartTime
+        0024  RDR4          v2                                          
+        0028  SUBf          v1 v1 v2                                    
+        0030  fTOd          v4 v1                                       
+        0038  CpyVtoR8      v4                                          
+        003C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnPlayerKilled(const FPlayerKillEventData& KillData)   // traits=0x20
+    {
+        v1 = KillData.EventResult;
+        v2 = int(v1);
+        if (v2 != 2) {
+            return;
+        } else {
+            if (this.LastKnockedTimeTable.Contains(KillData.VictimPlayerState)) {
+                v5 = Gameplay::GetServerTime(__WorldContext);
+                v12 = float64(v5);
+                v8 = KillData.EventResult;
+                v10 = this.KnockXPCooldownTime;
+                v8 = v8 + v10;
+                if (v12 < v8) {
+                    return;
+                }
+            } else {
+                v5 = Gameplay::GetServerTime(__WorldContext);
+                v8 = float64(v5);
+                this.LastKnockedTimeTable.Add(KillData.VictimPlayerState, v8);
+                v14 = KillData.VictimPlayerState.GetLokiCharacter();
+                if (v14 != nullptr) {
+                    v16 = cast<ALokiHeroCharacter@>(v14);
+                } else {
+                    v16 = nullptr;
+                }
+                v18 = v16;
+                if (v18 != nullptr) {
+                    v22 = v18.PlayerState;
+                    if (v22 != nullptr) {
+                        v24 = cast<ALokiPlayerState@>(v22);
+                    } else {
+                        v24 = nullptr;
+                    }
+                    v26 = v24;
+                } else {
+                }
+                v20 = v26;
+                v2 = v20.GetTeamIndex_BP();
+                v28 = -1;
+                if (v18 != nullptr) {
+                    v5 = v18.GetLevel();
+                    v27 = Math::RoundToInt(v5);
+                    v28 = v27;
+                }
+                v30 = KillData.Killer;
+                if (v30 != nullptr) {
+                    v16 = cast<ALokiHeroCharacter@>(v30);
+                } else {
+                    v16 = nullptr;
+                }
+                v32 = v16;
+                if (v32 != nullptr) {
+                    v36 = v32.PlayerState;
+                    if (v36 != nullptr) {
+                        v26 = cast<ALokiPlayerState@>(v36);
+                    } else {
+                        v26 = nullptr;
+                    }
+                    v24 = v26;
+                } else {
+                }
+                v34 = v24;
+                v3 = LokiTeam::GetTeamFromActor(KillData.Killer);
+                v38 = -1;
+                if (v32 != nullptr) {
+                    v5 = v32.GetLevel();
+                    v37 = Math::RoundToInt(v5);
+                    v38 = v37;
+                }
+                v39 = 0;
+                if (v20 != nullptr) {
+                    v27 = v20.GetWalletCurrencyAmount("Gold");
+                    v41 = float32(v27);
+                    v5 = this.GoldLossOnDeath;
+                    v41 = v41 * v5;
+                    v37 = Math::RoundToInt(v41);
+                    v39 = v37;
+                    v4 = false;
+                    v20.ConsumeWalletCurrency("Gold", v39, v4);
+                }
+                v46 = TArray();
+                v56 = v18.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v60 = this.GetPlayerStatesForRewardsInRadius(v56, 1159479296, v3, KillData.Killer);
+                v64 = TArray();
+                v64 = KillData.AssistPlayerStats;
+                if (v34 != nullptr) {
+                    v64.AddUnique(v34);
+                }
+                v27 = 0;
+                while (true) {
+                    v40 = v60.Num();
+                    if (v27 >= v40) break;
+                    v27++;
+                    v46.AddUnique(v60[v27]);
+                }
+                v27 = 0;
+                while (true) {
+                    v37 = v64.Num();
+                    if (v27 >= v37) break;
+                    v27++;
+                    v46.AddUnique(v64[v27]);
+                }
+                v70 = v46.Iterator();
+                while (true) {
+                    v4 = v70.CanProceed;
+                    if (!v4) break;
+                    v78 = v70.Proceed();
+                    v27 = 0;
+                    v79 = 0;
+                    v70.Proceed();
+                    if (v64.Contains(v78)) {
+                        v40 = v46.Num();
+                        v37 = Math::IntegerDivisionTrunc(v39, v40);
+                        v27 = v27 + v37;
+                    }
+                    if (v78 != v34) {
+                        v4 = 0;
+                    } else {
+                        v42 = v20 != nullptr;
+                        v4 = v42;
+                    }
+                    if (v4) {
+                        v40 = v20.GetCurrentKillStreak();
+                        if (v40 > 0) {
+                            v81 = v20.GetCurrentKillStreak();
+                            v37 = this.GoldBountyPerCurrentStreak.Num();
+                            v40 = 1;
+                            v37 = v37 - v40;
+                            v40 = Math::Min(v37, v81);
+                            v27 = v27 + v40;
+                        }
+                    }
+                    v82 = 4;
+                    v78.GrantWalletCurrency("Gold", v27, v82);
+                    if (v18 == nullptr) {
+                        v4 = 0;
+                    } else {
+                        v42 = v46.Contains(v78);
+                        v4 = v42;
+                    }
+                    if (v4) {
+                        v5 = v18.GetExperience();
+                        v41 = 1045220557;
+                        v5 = v5 * v41;
+                        v41 = v5 + 75.0;
+                        v85 = 1065353216;
+                        v80 = v78.GetPlayerLevel();
+                        v37 = v18.GetCharacterLevel();
+                        v40 = v80 - v37;
+                        if (v40 <= 0) {
+                            v4 = 0;
+                        } else {
+                            v37 = this.MercyHeroKillXPCoefficients.Num();
+                            v42 = v37 > 0;
+                            v4 = v42;
+                        }
+                        if (v4) {
+                            v86 = this.MercyHeroKillXPCoefficients.Num();
+                            v81 = 1;
+                            v37 = v86 - v81;
+                            v81 = Math::Min(v37, v40);
+                            v83 = this.GoldLossOnDeath;
+                            v85 = v83;
+                        } else {
+                            if (v40 <= -2) {
+                                v5 = this.UnderdogHeroKillXPBonusPerLevel;
+                                v87 = Math::Abs(v40);
+                                v83 = float32(v87);
+                                v84 = v5 * v83;
+                                v85 = v84 + 1.0;
+                            }
+                        }
+                        v89 = 0;
+                        v87 = v20.GetCurrentKillStreak();
+                        if (v87 > 2) {
+                            v86 = v20.GetCurrentKillStreak();
+                            v87 = v86 * 15;
+                            v86 = v28 * v87;
+                            v84 = float32(v86);
+                            v89 = v84;
+                        }
+                        v83 = v41 + v89;
+                        v84 = v83 * v85;
+                        v86 = v46.Num();
+                        v88 = float32(v86);
+                        v83 = v84 / v88;
+                        v37 = v46.Num();
+                        if (v37 > 1) {
+                            v86 = v46.Num();
+                            v87 = this.MinionSplitXPBonuses.Num();
+                            v87 = v87 - 1;
+                            v37 = Math::Min(v87, v86);
+                            v90 = this.UnderdogHeroKillXPBonusPerLevel;
+                            v91 = v90;
+                            v90 = v91 + 1.0;
+                            v83 = v83 * v90;
+                        }
+                        v37 = Math::RoundToInt(v83);
+                        v79 = v79 + v37;
+                    }
+                    v14 = v78.GetLokiCharacter();
+                    if (v14 != nullptr) {
+                        v42 = true;
+                        v14 = v78.GetLokiCharacter();
+                        v14.AuthGrantExperience(v79, v42);
+                    }
+                    if (v27 > 0) {
+                        v4 = true;
+                    } else {
+                        v42 = v79 > 0;
+                        v4 = v42;
+                    }
+                    if (v4) {
+                        v82 = 2;
+                        v56 = v18.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        this.OnBountyGivenToPlayer(v56, v78, v27, v82, v79);
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- OnPlayerKilled: 725 dwords / 431 instructions (cache offset 0x1c891) ----
+        0000  LoadRObjR     KillData 80 67120796                          ; .EventResult
+        000C  RDR1          v1                                          
+        0010  sbTOi         v2 v1                                       
+        0018  CMPIi         v2 2                                        
+        0020  JZ            2                                             -> L0030
+        0028  JMP           712                                           -> L0B50
+      L0030:
+        0030  PshVPtr       KillData                                    
+        0034  ADDSi         48 67120796                                   ; .VictimPlayerState
+        003C  PshVPtr       this                                        
+        0040  ADDSi         2136 134230781                                ; .LastKnockedTimeTable
+        0048  CALLSYS       TMap::Contains                              
+        0054  JLowZ         30                                            -> L00D4
+        005C  PshGPtr       __WorldContext                              
+        0068  CALLSYS       GetServerTime                               
+        0074  CpyRtoV4      v5                                          
+        0078  fTOd          v12 v5                                      
+        0080  PshVPtr       KillData                                    
+        0084  ADDSi         48 67120796                                   ; .VictimPlayerState
+        008C  PshVPtr       this                                        
+        0090  ADDSi         2136 134230781                                ; .LastKnockedTimeTable
+        0098  CALLSYS       TMap::opIndex                               
+        00A4  RDR8          v8                                          
+        00A8  LoadThisR     2216 134230781                                ; this.KnockXPCooldownTime
+        00B0  RDR8          v10                                         
+        00B4  ADDd          v8 v8 v10                                   
+        00BC  CMPd          v12 v8                                      
+        00C4  JNS           2                                             -> L00D4
+        00CC  JMP           671                                           -> L0B50
+      L00D4:
+        00D4  PshGPtr       __WorldContext                              
+        00E0  CALLSYS       GetServerTime                               
+        00EC  CpyRtoV4      v5                                          
+        00F0  fTOd          v8 v5                                       
+        00F8  PSF           v8                                          
+        00FC  PshVPtr       KillData                                    
+        0100  ADDSi         48 67120796                                   ; .VictimPlayerState
+        0108  PshVPtr       this                                        
+        010C  ADDSi         2136 134230781                                ; .LastKnockedTimeTable
+        0114  CALLSYS       TMap::Add                                   
+        0120  PshVPtr       KillData                                    
+        0124  ADDSi         48 67120796                                   ; .VictimPlayerState
+        012C  RDSPtr                                                    
+        0130  CALLSYS       ALokiPlayerState::GetLokiCharacter          
+        013C  STOREOBJ      v14                                         
+        0140  CmpPtrNull    v14                                         
+        0144  JZ            9                                             -> L0170
+        014C  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        0154  PSF           v16                                         
+        0158  PshVPtr       v14                                         
+        015C  CALLSYS       UObject::opCast                             
+        0168  JMP           1                                             -> L0174
+      L0170:
+        0170  ClrVPtr       v16                                         
+      L0174:
+        0174  PshVPtr       v16                                         
+        0178  RefCpyV       v18                                         
+        017C  CmpPtrNull    v18                                         
+        0180  JZ            22                                            -> L01E0
+        0188  PshVPtr       v18                                         
+        018C  ADDSi         984 67111506                                  ; .PlayerState
+        0194  RDSPtr                                                    
+        0198  RefCpyV       v22                                         
+        019C  CmpPtrNull    v22                                         
+        01A0  JZ            9                                             -> L01CC
+        01A8  TYPEID        1140857146                                    ; ALokiPlayerState@
+        01B0  PSF           v24                                         
+        01B4  PshVPtr       v22                                         
+        01B8  CALLSYS       UObject::opCast                             
+        01C4  JMP           1                                             -> L01D0
+      L01CC:
+        01CC  ClrVPtr       v24                                         
+      L01D0:
+        01D0  PshVPtr       v24                                         
+        01D4  RefCpyV       v26                                         
+        01D8  JMP           1                                             -> L01E4
+      L01E0:
+        01E0  FreeNullV8    v26                                         
+      L01E4:
+        01E4  PshVPtr       v26                                         
+        01E8  RefCpyV       v20                                         
+        01EC  PshVPtr       v20                                         
+        01F0  CALLSYS       ALokiPlayerState::GetTeamIndex_BP           
+        01FC  CpyRtoV4      v2                                          
+        0200  SetV4         v28 -1                                      
+        0208  CmpPtrNull    v18                                         
+        020C  JZ            12                                            -> L0244
+        0214  PshVPtr       v18                                         
+        0218  CALLSYS       ALokiCharacter::GetLevel                    
+        0224  CpyRtoV4      v5                                          
+        0228  PshV4         v5                                          
+        022C  CALLSYS       RoundToInt                                  
+        0238  CpyRtoV4      v27                                         
+        023C  CpyVtoV4      v28 v27                                     
+      L0244:
+        0244  PshVPtr       KillData                                    
+        0248  ADDSi         0 67120796                                    ; .Killer
+        0250  RDSPtr                                                    
+        0254  RefCpyV       v30                                         
+        0258  CmpPtrNull    v30                                         
+        025C  JZ            9                                             -> L0288
+        0264  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        026C  PSF           v16                                         
+        0270  PshVPtr       v30                                         
+        0274  CALLSYS       UObject::opCast                             
+        0280  JMP           1                                             -> L028C
+      L0288:
+        0288  ClrVPtr       v16                                         
+      L028C:
+        028C  PshVPtr       v16                                         
+        0290  RefCpyV       v32                                         
+        0294  CmpPtrNull    v32                                         
+        0298  JZ            22                                            -> L02F8
+        02A0  PshVPtr       v32                                         
+        02A4  ADDSi         984 67111506                                  ; .PlayerState
+        02AC  RDSPtr                                                    
+        02B0  RefCpyV       v36                                         
+        02B4  CmpPtrNull    v36                                         
+        02B8  JZ            9                                             -> L02E4
+        02C0  TYPEID        1140857146                                    ; ALokiPlayerState@
+        02C8  PSF           v26                                         
+        02CC  PshVPtr       v36                                         
+        02D0  CALLSYS       UObject::opCast                             
+        02DC  JMP           1                                             -> L02E8
+      L02E4:
+        02E4  ClrVPtr       v26                                         
+      L02E8:
+        02E8  PshVPtr       v26                                         
+        02EC  RefCpyV       v24                                         
+        02F0  JMP           1                                             -> L02FC
+      L02F8:
+        02F8  FreeNullV8    v24                                         
+      L02FC:
+        02FC  PshVPtr       v24                                         
+        0300  RefCpyV       v34                                         
+        0304  PshVPtr       KillData                                    
+        0308  ADDSi         0 67120796                                    ; .Killer
+        0310  RDSPtr                                                    
+        0314  CALLSYS       GetTeamFromActor                            
+        0320  CpyRtoV4      v3                                          
+        0324  SetV4         v38 -1                                      
+        032C  CmpPtrNull    v32                                         
+        0330  JZ            12                                            -> L0368
+        0338  PshVPtr       v32                                         
+        033C  CALLSYS       ALokiCharacter::GetLevel                    
+        0348  CpyRtoV4      v5                                          
+        034C  PshV4         v5                                          
+        0350  CALLSYS       RoundToInt                                  
+        035C  CpyRtoV4      v37                                         
+        0360  CpyVtoV4      v38 v37                                     
+      L0368:
+        0368  SetV4         v39 0                                       
+        0370  CmpPtrNull    v20                                         
+        0374  JZ            33                                            -> L0400
+        037C  PGA           "Gold"                                      
+        0388  PshVPtr       v20                                         
+        038C  CALLSYS       ALokiPlayerState::GetWalletCurrencyAmount   
+        0398  CpyRtoV4      v27                                         
+        039C  iTOf          v41 v27                                     
+        03A4  LoadThisR     2036 134230781                                ; this.GoldLossOnDeath
+        03AC  RDR4          v5                                          
+        03B0  MULf          v41 v41 v5                                  
+        03B8  PshV4         v41                                         
+        03BC  CALLSYS       RoundToInt                                  
+        03C8  CpyRtoV4      v37                                         
+        03CC  CpyVtoV4      v39 v37                                     
+        03D4  SetV1         v4 0                                        
+        03DC  PshV4         v4                                          
+        03E0  PshV4         v39                                         
+        03E4  PGA           "Gold"                                      
+        03F0  PshVPtr       v20                                         
+        03F4  CALLSYS       ALokiPlayerState::ConsumeWalletCurrency     
+      L0400:
+        0400  PSF           v46                                         
+        0404  CALLSYS       TArray::$beh0                               
+        0410  PshVPtr       KillData                                    
+        0414  ADDSi         0 67120796                                    ; .Killer
+        041C  RDSPtr                                                    
+        0420  PshV4         v3                                          
+        0424  PshC4         1159479296                                  
+        042C  PSF           v56                                         
+        0430  PshVPtr       v18                                         
+        0434  CALLSYS       AActor::GetActorLocation                    
+        0440  PSF           v56                                         
+        0444  PSF           v60                                         
+        0448  PshVPtr       this                                        
+        044C  CALLINTF      84177                                         ; ABarracudaGameMode::GetPlayerStatesForRewardsInRadius
+        0454  PshVPtr       KillData                                    
+        0458  ADDSi         32 67120796                                   ; .AssistPlayerStats
+        0460  PSF           v64                                         
+        0464  CALLSYS       TArray::$beh0                               
+        0470  PSF           v64                                         
+        0474  CALLSYS       TArray::opAssign                            
+        0480  CmpPtrNull    v34                                         
+        0484  JZ            5                                             -> L04A0
+        048C  PSF           v34                                         
+        0490  PSF           v64                                         
+        0494  CALLSYS       TArray::AddUnique                           
+      L04A0:
+        04A0  SetV4         v27 0                                       
+        04A8  JMP           12                                            -> L04E0
+      L04B0:
+        04B0  SUSPEND                                                   
+        04B4  PshV4         v27                                         
+        04B8  PSF           v60                                         
+        04BC  Thiscall1     TArray::opIndex                             
+        04C8  PshRPtr                                                   
+        04CC  PSF           v46                                         
+        04D0  CALLSYS       TArray::AddUnique                           
+        04DC  IncVi         v27                                         
+      L04E0:
+        04E0  PSF           v60                                         
+        04E4  CALLSYS       TArray::Num                                 
+        04F0  CpyRtoV4      v40                                         
+        04F4  CMPi          v27 v40                                     
+        04FC  JS            -21                                           -> L04B0
+        0504  SetV4         v27 0                                       
+        050C  JMP           12                                            -> L0544
+      L0514:
+        0514  SUSPEND                                                   
+        0518  PshV4         v27                                         
+        051C  PSF           v64                                         
+        0520  Thiscall1     TArray::opIndex                             
+        052C  PshRPtr                                                   
+        0530  PSF           v46                                         
+        0534  CALLSYS       TArray::AddUnique                           
+        0540  IncVi         v27                                         
+      L0544:
+        0544  PSF           v64                                         
+        0548  CALLSYS       TArray::Num                                 
+        0554  CpyRtoV4      v37                                         
+        0558  CMPi          v27 v37                                     
+        0560  JS            -21                                           -> L0514
+        0568  PSF           v70                                         
+        056C  PSF           v46                                         
+        0570  CALLSYS       TArray::Iterator                            
+        057C  JMP           352                                           -> L0B04
+      L0584:
+        0584  SUSPEND                                                   
+        0588  PSF           v70                                         
+        058C  CALLSYS       TArrayIterator::Proceed                     
+        0598  PshRPtr                                                   
+        059C  RDSPtr                                                    
+        05A0  RefCpyV       v78                                         
+        05A4  SetV4         v27 0                                       
+        05AC  SetV4         v79 0                                       
+        05B4  PSF           v78                                         
+        05B8  PSF           v64                                         
+        05BC  CALLSYS       TArray::Contains                            
+        05C8  JLowZ         13                                            -> L0604
+        05D0  PSF           v46                                         
+        05D4  CALLSYS       TArray::Num                                 
+        05E0  CpyRtoV4      v40                                         
+        05E4  PshV4         v40                                         
+        05E8  PshV4         v39                                         
+        05EC  CALLSYS       IntegerDivisionTrunc                        
+        05F8  CpyRtoV4      v37                                         
+        05FC  ADDi          v27 v27 v37                                 
+      L0604:
+        0604  CmpPtr        v78 v34                                     
+        060C  JZ            4                                             -> L0624
+        0614  SetV4         v4 0                                        
+        061C  JMP           5                                             -> L0638
+      L0624:
+        0624  CmpPtrNull    v20                                         
+        0628  TNZ                                                       
+        062C  CpyRtoV4      v42                                         
+        0630  CpyVtoV4      v4 v42                                      
+      L0638:
+        0638  CpyVtoR1      v4                                          
+        063C  JLowZ         33                                            -> L06C8
+        0644  PshVPtr       v20                                         
+        0648  CALLSYS       ALokiPlayerState::GetCurrentKillStreak      
+        0654  CpyRtoV4      v40                                         
+        0658  CMPIi         v40 0                                       
+        0660  JNP           24                                            -> L06C8
+        0668  PshVPtr       v20                                         
+        066C  CALLSYS       ALokiPlayerState::GetCurrentKillStreak      
+        0678  CpyRtoV4      v81                                         
+        067C  PshV4         v81                                         
+        0680  PshVPtr       this                                        
+        0684  ADDSi         2040 134230781                                ; .GoldBountyPerCurrentStreak
+        068C  CALLSYS       TArray::Num                                 
+        0698  CpyRtoV4      v37                                         
+        069C  SetV4         v40 1                                       
+        06A4  SUBi          v37 v37 v40                                 
+        06AC  PshV4         v37                                         
+        06B0  CALLSYS       Min                                         
+        06BC  CpyRtoV4      v40                                         
+        06C0  ADDi          v27 v27 v40                                 
+      L06C8:
+        06C8  SetV1         v82 4                                       
+        06D0  PshV4         v82                                         
+        06D4  PshV4         v27                                         
+        06D8  PGA           "Gold"                                      
+        06E4  PshVPtr       v78                                         
+        06E8  CALLSYS       ALokiPlayerState::GrantWalletCurrency       
+        06F4  CmpPtrNull    v18                                         
+        06F8  JNZ           4                                             -> L0710
+        0700  SetV4         v4 0                                        
+        0708  JMP           8                                             -> L0730
+      L0710:
+        0710  PSF           v78                                         
+        0714  PSF           v46                                         
+        0718  CALLSYS       TArray::Contains                            
+        0724  CpyRtoV4      v42                                         
+        0728  CpyVtoV4      v4 v42                                      
+      L0730:
+        0730  CpyVtoR1      v4                                          
+        0734  JLowZ         188                                           -> L0A2C
+        073C  PshVPtr       v18                                         
+        0740  CALLSYS       ALokiCharacter::GetExperience               
+        074C  CpyRtoV4      v5                                          
+        0750  SetV4         v41 1045220557                              
+        0758  MULf          v5 v5 v41                                   
+        0760  ADDIf         v41 v5 1117126656                           
+        076C  SetV4         v85 1065353216                              
+        0774  PshVPtr       v78                                         
+        0778  CALLSYS       ALokiPlayerState::GetPlayerLevel            
+        0784  CpyRtoV4      v80                                         
+        0788  PshVPtr       v18                                         
+        078C  CALLSYS       ALokiCharacter::GetCharacterLevel           
+        0798  CpyRtoV4      v37                                         
+        079C  SUBi          v40 v80 v37                                 
+        07A4  CMPIi         v40 0                                       
+        07AC  JP            4                                             -> L07C4
+        07B4  SetV4         v4 0                                        
+        07BC  JMP           13                                            -> L07F8
+      L07C4:
+        07C4  PshVPtr       this                                        
+        07C8  ADDSi         2088 134230781                                ; .MercyHeroKillXPCoefficients
+        07D0  CALLSYS       TArray::Num                                 
+        07DC  CpyRtoV4      v37                                         
+        07E0  CMPIi         v37 0                                       
+        07E8  TP                                                        
+        07EC  CpyRtoV4      v42                                         
+        07F0  CpyVtoV4      v4 v42                                      
+      L07F8:
+        07F8  CpyVtoR1      v4                                          
+        07FC  JLowZ         29                                            -> L0878
+        0804  PshV4         v40                                         
+        0808  PshVPtr       this                                        
+        080C  ADDSi         2088 134230781                                ; .MercyHeroKillXPCoefficients
+        0814  CALLSYS       TArray::Num                                 
+        0820  CpyRtoV4      v86                                         
+        0824  SetV4         v81 1                                       
+        082C  SUBi          v37 v86 v81                                 
+        0834  PshV4         v37                                         
+        0838  CALLSYS       Min                                         
+        0844  CpyRtoV4      v81                                         
+        0848  PshV4         v81                                         
+        084C  PshVPtr       this                                        
+        0850  ADDSi         2088 134230781                                ; .MercyHeroKillXPCoefficients
+        0858  Thiscall1     TArray::opIndex                             
+        0864  RDR4          v83                                         
+        0868  CpyVtoV4      v85 v83                                     
+        0870  JMP           19                                            -> L08C4
+      L0878:
+        0878  CMPIi         v40 -2                                      
+        0880  JP            15                                            -> L08C4
+        0888  LoadThisR     2104 134230781                                ; this.UnderdogHeroKillXPBonusPerLevel
+        0890  RDR4          v5                                          
+        0894  PshV4         v40                                         
+        0898  CALLSYS       Abs                                         
+        08A4  CpyRtoV4      v87                                         
+        08A8  iTOf          v83 v87                                     
+        08B0  MULf          v84 v5 v83                                  
+        08B8  ADDIf         v85 v84 1065353216                          
+      L08C4:
+        08C4  SetV4         v89 0                                       
+        08CC  PshVPtr       v20                                         
+        08D0  CALLSYS       ALokiPlayerState::GetCurrentKillStreak      
+        08DC  CpyRtoV4      v87                                         
+        08E0  CMPIi         v87 2                                       
+        08E8  JNP           14                                            -> L0928
+        08F0  PshVPtr       v20                                         
+        08F4  CALLSYS       ALokiPlayerState::GetCurrentKillStreak      
+        0900  CpyRtoV4      v86                                         
+        0904  MULIi         v87 v86 15                                  
+        0910  MULi          v86 v28 v87                                 
+        0918  iTOf          v84 v86                                     
+        0920  CpyVtoV4      v89 v84                                     
+      L0928:
+        0928  ADDf          v83 v41 v89                                 
+        0930  MULf          v84 v83 v85                                 
+        0938  PSF           v46                                         
+        093C  CALLSYS       TArray::Num                                 
+        0948  CpyRtoV4      v86                                         
+        094C  iTOf          v88 v86                                     
+        0954  DIVf          v83 v84 v88                                 
+        095C  PSF           v46                                         
+        0960  CALLSYS       TArray::Num                                 
+        096C  CpyRtoV4      v37                                         
+        0970  CMPIi         v37 1                                       
+        0978  JNP           36                                            -> L0A10
+        0980  PSF           v46                                         
+        0984  CALLSYS       TArray::Num                                 
+        0990  CpyRtoV4      v86                                         
+        0994  PshV4         v86                                         
+        0998  PshVPtr       this                                        
+        099C  ADDSi         2072 134230781                                ; .MinionSplitXPBonuses
+        09A4  CALLSYS       TArray::Num                                 
+        09B0  CpyRtoV4      v87                                         
+        09B4  SUBIi         v87 v87 1                                   
+        09C0  PshV4         v87                                         
+        09C4  CALLSYS       Min                                         
+        09D0  CpyRtoV4      v37                                         
+        09D4  PshV4         v37                                         
+        09D8  PshVPtr       this                                        
+        09DC  ADDSi         2072 134230781                                ; .MinionSplitXPBonuses
+        09E4  Thiscall1     TArray::opIndex                             
+        09F0  RDR4          v90                                         
+        09F4  CpyVtoV4      v91 v90                                     
+        09FC  ADDIf         v90 v91 1065353216                          
+        0A08  MULf          v83 v83 v90                                 
+      L0A10:
+        0A10  PshV4         v83                                         
+        0A14  CALLSYS       RoundToInt                                  
+        0A20  CpyRtoV4      v37                                         
+        0A24  ADDi          v79 v79 v37                                 
+      L0A2C:
+        0A2C  PshVPtr       v78                                         
+        0A30  CALLSYS       ALokiPlayerState::GetLokiCharacter          
+        0A3C  STOREOBJ      v14                                         
+        0A40  CmpPtrNull    v14                                         
+        0A44  JZ            13                                            -> L0A80
+        0A4C  SetV1         v42 1                                       
+        0A54  PshV4         v42                                         
+        0A58  PshV4         v79                                         
+        0A5C  PshVPtr       v78                                         
+        0A60  CALLSYS       ALokiPlayerState::GetLokiCharacter          
+        0A6C  STOREOBJ      v14                                         
+        0A70  PshVPtr       v14                                         
+        0A74  CALLSYS       ALokiCharacter::AuthGrantExperience         
+      L0A80:
+        0A80  CMPIi         v27 0                                       
+        0A88  JNP           4                                             -> L0AA0
+        0A90  SetV1         v4 1                                        
+        0A98  JMP           6                                             -> L0AB8
+      L0AA0:
+        0AA0  CMPIi         v79 0                                       
+        0AA8  TP                                                        
+        0AAC  CpyRtoV4      v42                                         
+        0AB0  CpyVtoV4      v4 v42                                      
+      L0AB8:
+        0AB8  CpyVtoR1      v4                                          
+        0ABC  JLowZ         15                                            -> L0B00
+        0AC4  PshV4         v79                                         
+        0AC8  SetV1         v82 2                                       
+        0AD0  PshV4         v82                                         
+        0AD4  PshV4         v27                                         
+        0AD8  PshVPtr       v78                                         
+        0ADC  PSF           v56                                         
+        0AE0  PshVPtr       v18                                         
+        0AE4  CALLSYS       AActor::GetActorLocation                    
+        0AF0  PSF           v56                                         
+        0AF4  PshVPtr       this                                        
+        0AF8  CALLINTF      84174                                         ; ABarracudaGameMode::OnBountyGivenToPlayer
+      L0B00:
+        0B00  FreeNullV8    v78                                         
+      L0B04:
+        0B04  LoadVObjR     v70 16 268448510                              ; .CanProceed
+        0B10  RDR1          v4                                          
+        0B14  CpyVtoR1      v4                                          
+        0B18  JLowNZ        -359                                          -> L0584
+        0B20  PSF           v64                                         
+        0B24  CALLSYS       TArray::$beh2                               
+        0B30  PSF           v60                                         
+        0B34  CALLSYS       TArray::$beh2                               
+        0B40  PSF           v46                                         
+        0B44  CALLSYS       TArray::$beh2                               
+      L0B50:
+        0B50  RET           4                                           
+    */
+
+    void OnBountyGivenToPlayer(const FVector& TargetLocation, ALokiPlayerState@ TargetState, const int GoldAmount, const ECurrencyGrantReason TargetReason, const int XPAmount)   // traits=0x20
+    {
+        __Evt_PushArgument__FVector(TargetLocation);
+        __Evt_PushArgument__ALokiPlayerState(TargetState);
+        __Evt_PushArgument__int32(GoldAmount);
+        __Evt_PushArgument__ECurrencyGrantReason(TargetReason);
+        __Evt_PushArgument__int32(arg_m8);
+        __Evt_Execute(this, n"OnBountyGivenToPlayer");
+        return;
+    }
+    /* ---- OnBountyGivenToPlayer: 31 dwords / 16 instructions (cache offset 0x1d956) ----
+        0000  PshVPtr       TargetLocation                              
+        0004  CALLSYS       __Evt_PushArgument__FVector                 
+        0010  PSF           TargetState                                 
+        0014  CALLSYS       __Evt_PushArgument__ALokiPlayerState        
+        0020  PSF           GoldAmount                                  
+        0024  CALLSYS       __Evt_PushArgument__int32                   
+        0030  PSF           TargetReason                                
+        0034  CALLSYS       __Evt_PushArgument__ECurrencyGrantReason    
+        0040  PSF           arg_m8                                      
+        0044  CALLSYS       __Evt_PushArgument__int32                   
+        0050  PshC4         100                                         
+        0058  CALLSYS       __STATIC_NAME                               
+        0064  PshRPtr                                                   
+        0068  PshVPtr       this                                        
+        006C  CALLSYS       __Evt_Execute                               
+        0078  RET           9                                           
+    */
+
+    UFUNCTION(UnrealName=OnBountyGivenToPlayer, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnBountyGivenToPlayer_Implementation(const FVector& TargetLocation, ALokiPlayerState@ TargetState, const int GoldAmount, const ECurrencyGrantReason TargetReason, const int XPAmount)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- OnBountyGivenToPlayer_Implementation: 1 dwords / 1 instructions (cache offset 0x1db9b) ----
+        0000  RET           9                                           
+    */
+
+    UFUNCTION(UnrealName=OnActorKilled_BP, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnActorKilled_BP_Implementation(AActor@ VictimActor, AController@ Killer)   // traits=0x20
+    {
+        v2 = Killer;
+        if (v2 == nullptr) {
+            v3 = true;
+        } else {
+            v6 = VictimActor;
+            v7 = v6 == nullptr;
+            v3 = v7;
+        }
+        if (v3) {
+            return;
+        } else {
+            v12 = Killer.PlayerState;
+            if (v12 != nullptr) {
+                v14 = cast<ALokiPlayerState@>(v12);
+            } else {
+                v14 = nullptr;
+            }
+            v10 = v14;
+            v16 = UBarracudaMinionRewardComponent::Get(VictimActor, NAME_None);
+            if (v16 != nullptr) {
+                v20 = v16.GetGoldBounty(Killer);
+                v19 = v16.GetXPBounty(Killer);
+                v28 = Killer.GetControlledPawn()  /* UFunction K2_GetPawn */;
+                v21 = LokiTeam::GetTeamFromActor(v28);
+                v34 = VictimActor.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v40 = this.GetPlayerStatesForRewardsInRadius(v34, 1153138688, v21, Killer);
+                v21 = v40.Num();
+                v48 = v40.Iterator();
+                while (true) {
+                    v3 = v48.CanProceed;
+                    if (!v3) break;
+                    v56 = v48.Proceed();
+                    v57 = 0;
+                    v58 = 0;
+                    v48.Proceed();
+                    if (v10 == nullptr) {
+                        v7 = 0;
+                    } else {
+                        v3 = v56 == v10;
+                        v7 = v3;
+                    }
+                    if (v7) {
+                        v57 = v20;
+                        v60 = ALokiMinionCharacter::StaticClass();
+                        if (VictimActor.IsA(v60)) {
+                            v64 = AbilitySystem::GetAbilitySystemComponent(v56);
+                            if (v64.HasTagAttribute(GameplayTags::Attribute_MinionGoldMultiplier)) {
+                                v35 = v64.GetTagAttributeMin(GameplayTags::Attribute_MinionGoldMultiplier);
+                                v68 = float64(v35);
+                                v66 = v68;
+                                v68 = float64(v57);
+                                v68 = v66 * v68;
+                                v41 = Math::FloorToInt(v68);
+                                v57 = v41;
+                            }
+                        }
+                        v69 = 2;
+                        v56.GrantWalletCurrency("Gold", v57, v69);
+                    }
+                    v71 = float32(v19);
+                    v70 = 1065353216;
+                    v35 = float32(v21);
+                    v70 = v70 / v35;
+                    v35 = v71 * v70;
+                    v41 = Math::RoundToInt(v35);
+                    v58 = v41;
+                    if (v21 > 1) {
+                        v41 = this.MinionSplitXPBonuses.Num();
+                        v41 = v41 - 1;
+                        v73 = Math::Min(v41, v21);
+                        v71 = *refReg;
+                        v72 = v71;
+                        v35 = float32(v58);
+                        v71 = v72 + 1.0;
+                        v70 = v35 * v71;
+                        v73 = Math::RoundToInt(v70);
+                        v58 = v58 + v73;
+                    }
+                    v76 = v56.GetLokiCharacter();
+                    if (v76 != nullptr) {
+                        v3 = true;
+                        v76.AuthGrantExperience(v58, v3);
+                    }
+                    if (v57 > 0) {
+                        v7 = true;
+                    } else {
+                        v3 = v58 > 0;
+                        v7 = v3;
+                    }
+                    if (v7) {
+                        v69 = 2;
+                        v34 = VictimActor.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        this.OnBountyGivenToPlayer(v34, v56, v57, v69, v58);
+                    }
+                }
+            }
+            if (v10 == nullptr) {
+                v3 = 0;
+            } else {
+                v7 = Loki::HasMatchingGameplayTag(VictimActor, GameplayTags::Barracuda_Minion_GrantsDragonBuff);
+                v3 = v7;
+            }
+            if (v3) {
+                this.OnDragonKilled(v10);
+            }
+            if (v10 == nullptr) {
+                v7 = 0;
+            } else {
+                v3 = Loki::HasMatchingGameplayTag(VictimActor, GameplayTags::Barracuda_Minion_GrantsMomentumBuff);
+                v7 = v3;
+            }
+            if (v7) {
+                this.OnMomentumBossKilled(v10);
+            }
+        }
+        return;
+    }
+    /* ---- OnActorKilled_BP_Implementation: 358 dwords / 218 instructions (cache offset 0x1dd14) ----
+        0000  PshVPtr       Killer                                      
+        0004  RefCpyV       v2                                          
+        0008  CmpPtrNull    v2                                          
+        000C  JNZ           4                                             -> L0024
+        0014  SetV1         v3 1                                        
+        001C  JMP           7                                             -> L0040
+      L0024:
+        0024  PshVPtr       VictimActor                                 
+        0028  RefCpyV       v6                                          
+        002C  CmpPtrNull    v6                                          
+        0030  TZ                                                        
+        0034  CpyRtoV4      v7                                          
+        0038  CpyVtoV4      v3 v7                                       
+      L0040:
+        0040  CpyVtoR1      v3                                          
+        0044  JLowZ         2                                             -> L0054
+        004C  JMP           336                                           -> L0594
+      L0054:
+        0054  PshVPtr       Killer                                      
+        0058  ADDSi         960 67111411                                  ; .PlayerState
+        0060  RDSPtr                                                    
+        0064  RefCpyV       v12                                         
+        0068  CmpPtrNull    v12                                         
+        006C  JZ            9                                             -> L0098
+        0074  TYPEID        1140857146                                    ; ALokiPlayerState@
+        007C  PSF           v14                                         
+        0080  PshVPtr       v12                                         
+        0084  CALLSYS       UObject::opCast                             
+        0090  JMP           1                                             -> L009C
+      L0098:
+        0098  ClrVPtr       v14                                         
+      L009C:
+        009C  PshVPtr       v14                                         
+        00A0  RefCpyV       v10                                         
+        00A4  PshGPtr       NAME_None                                   
+        00B0  PshVPtr       VictimActor                                 
+        00B4  CALL          84293                                         ; Get
+        00BC  STOREOBJ      v16                                         
+        00C0  CmpPtrNull    v16                                         
+        00C4  JZ            258                                           -> L04D4
+        00CC  PshVPtr       Killer                                      
+        00D0  PshVPtr       v16                                         
+        00D4  CALLINTF      84286                                         ; UBarracudaMinionRewardComponent::GetGoldBounty
+        00DC  CpyRtoV4      v20                                         
+        00E0  PshVPtr       Killer                                      
+        00E4  PshVPtr       v16                                         
+        00E8  CALLINTF      84287                                         ; UBarracudaMinionRewardComponent::GetXPBounty
+        00F0  CpyRtoV4      v19                                         
+        00F4  PshVPtr       Killer                                      
+        00F8  PshVPtr       Killer                                      
+        00FC  CALLSYS       AController::GetControlledPawn              
+        0108  STOREOBJ      v28                                         
+        010C  PshVPtr       v28                                         
+        0110  CALLSYS       GetTeamFromActor                            
+        011C  CpyRtoV4      v21                                         
+        0120  PshV4         v21                                         
+        0124  PshC4         1153138688                                  
+        012C  PSF           v34                                         
+        0130  PshVPtr       VictimActor                                 
+        0134  CALLSYS       AActor::GetActorLocation                    
+        0140  PSF           v34                                         
+        0144  PSF           v40                                         
+        0148  PshVPtr       this                                        
+        014C  CALLINTF      84177                                         ; ABarracudaGameMode::GetPlayerStatesForRewardsInRadius
+        0154  PSF           v40                                         
+        0158  CALLSYS       TArray::Num                                 
+        0164  CpyRtoV4      v21                                         
+        0168  PSF           v48                                         
+        016C  PSF           v40                                         
+        0170  CALLSYS       TArray::Iterator                            
+        017C  JMP           201                                           -> L04A8
+      L0184:
+        0184  SUSPEND                                                   
+        0188  PSF           v48                                         
+        018C  CALLSYS       TArrayIterator::Proceed                     
+        0198  PshRPtr                                                   
+        019C  RDSPtr                                                    
+        01A0  RefCpyV       v56                                         
+        01A4  SetV4         v57 0                                       
+        01AC  SetV4         v58 0                                       
+        01B4  CmpPtrNull    v10                                         
+        01B8  JNZ           4                                             -> L01D0
+        01C0  SetV4         v7 0                                        
+        01C8  JMP           6                                             -> L01E8
+      L01D0:
+        01D0  CmpPtr        v56 v10                                     
+        01D8  TZ                                                        
+        01DC  CpyRtoV4      v3                                          
+        01E0  CpyVtoV4      v7 v3                                       
+      L01E8:
+        01E8  CpyVtoR1      v7                                          
+        01EC  JLowZ         62                                            -> L02EC
+        01F4  CpyVtoV4      v57 v20                                     
+        01FC  CALLSYS       StaticClass                                 
+        0208  STOREOBJ      v60                                         
+        020C  PshVPtr       v60                                         
+        0210  PshVPtr       VictimActor                                 
+        0214  CALLSYS       UObject::IsA                                
+        0220  JLowZ         38                                            -> L02C0
+        0228  PshVPtr       v56                                         
+        022C  CALLSYS       GetAbilitySystemComponent                   
+        0238  STOREOBJ      v64                                         
+        023C  PshGPtr       GameplayTags::Attribute_MinionGoldMultiplier
+        0248  PshVPtr       v64                                         
+        024C  CALLSYS       UAbilitySystemComponent::HasTagAttribute    
+        0258  JLowZ         23                                            -> L02BC
+        0260  PshGPtr       GameplayTags::Attribute_MinionGoldMultiplier
+        026C  PshVPtr       v64                                         
+        0270  CALLSYS       UAbilitySystemComponent::GetTagAttributeMin 
+        027C  CpyRtoV4      v35                                         
+        0280  fTOd          v68 v35                                     
+        0288  CpyVtoV8      v66 v68                                     
+        0290  iTOd          v68 v57                                     
+        0298  MULd          v68 v66 v68                                 
+        02A0  PshV8         v68                                         
+        02A4  CALLSYS       FloorToInt                                  
+        02B0  CpyRtoV4      v41                                         
+        02B4  CpyVtoV4      v57 v41                                     
+      L02BC:
+        02BC  FreeNullV8    v64                                         
+      L02C0:
+        02C0  SetV1         v69 2                                       
+        02C8  PshV4         v69                                         
+        02CC  PshV4         v57                                         
+        02D0  PGA           "Gold"                                      
+        02DC  PshVPtr       v56                                         
+        02E0  CALLSYS       ALokiPlayerState::GrantWalletCurrency       
+      L02EC:
+        02EC  iTOf          v71 v19                                     
+        02F4  SetV4         v70 1065353216                              
+        02FC  iTOf          v35 v21                                     
+        0304  DIVf          v70 v70 v35                                 
+        030C  MULf          v35 v71 v70                                 
+        0314  PshV4         v35                                         
+        0318  CALLSYS       RoundToInt                                  
+        0324  CpyRtoV4      v41                                         
+        0328  CpyVtoV4      v58 v41                                     
+        0330  CMPIi         v21 1                                       
+        0338  JNP           40                                            -> L03E0
+        0340  PshV4         v21                                         
+        0344  PshVPtr       this                                        
+        0348  ADDSi         2072 134230781                                ; .MinionSplitXPBonuses
+        0350  CALLSYS       TArray::Num                                 
+        035C  CpyRtoV4      v41                                         
+        0360  SUBIi         v41 v41 1                                   
+        036C  PshV4         v41                                         
+        0370  CALLSYS       Min                                         
+        037C  CpyRtoV4      v73                                         
+        0380  PshV4         v73                                         
+        0384  PshVPtr       this                                        
+        0388  ADDSi         2072 134230781                                ; .MinionSplitXPBonuses
+        0390  Thiscall1     TArray::opIndex                             
+        039C  RDR4          v71                                         
+        03A0  CpyVtoV4      v72 v71                                     
+        03A8  iTOf          v35 v58                                     
+        03B0  ADDIf         v71 v72 1065353216                          
+        03BC  MULf          v70 v35 v71                                 
+        03C4  PshV4         v70                                         
+        03C8  CALLSYS       RoundToInt                                  
+        03D4  CpyRtoV4      v73                                         
+        03D8  ADDi          v58 v58 v73                                 
+      L03E0:
+        03E0  PshVPtr       v56                                         
+        03E4  CALLSYS       ALokiPlayerState::GetLokiCharacter          
+        03F0  STOREOBJ      v76                                         
+        03F4  CmpPtrNull    v76                                         
+        03F8  JZ            8                                             -> L0420
+        0400  SetV1         v3 1                                        
+        0408  PshV4         v3                                          
+        040C  PshV4         v58                                         
+        0410  PshVPtr       v76                                         
+        0414  CALLSYS       ALokiCharacter::AuthGrantExperience         
+      L0420:
+        0420  CMPIi         v57 0                                       
+        0428  JNP           4                                             -> L0440
+        0430  SetV1         v7 1                                        
+        0438  JMP           6                                             -> L0458
+      L0440:
+        0440  CMPIi         v58 0                                       
+        0448  TP                                                        
+        044C  CpyRtoV4      v3                                          
+        0450  CpyVtoV4      v7 v3                                       
+      L0458:
+        0458  CpyVtoR1      v7                                          
+        045C  JLowZ         15                                            -> L04A0
+        0464  PshV4         v58                                         
+        0468  SetV1         v69 2                                       
+        0470  PshV4         v69                                         
+        0474  PshV4         v57                                         
+        0478  PshVPtr       v56                                         
+        047C  PSF           v34                                         
+        0480  PshVPtr       VictimActor                                 
+        0484  CALLSYS       AActor::GetActorLocation                    
+        0490  PSF           v34                                         
+        0494  PshVPtr       this                                        
+        0498  CALLINTF      84174                                         ; ABarracudaGameMode::OnBountyGivenToPlayer
+      L04A0:
+        04A0  FreeNullV8    v76                                         
+        04A4  FreeNullV8    v56                                         
+      L04A8:
+        04A8  LoadVObjR     v48 16 268448510                              ; .CanProceed
+        04B4  RDR1          v3                                          
+        04B8  CpyVtoR1      v3                                          
+        04BC  JLowNZ        -208                                          -> L0184
+        04C4  PSF           v40                                         
+        04C8  CALLSYS       TArray::$beh2                               
+      L04D4:
+        04D4  CmpPtrNull    v10                                         
+        04D8  JNZ           4                                             -> L04F0
+        04E0  SetV4         v3 0                                        
+        04E8  JMP           10                                            -> L0518
+      L04F0:
+        04F0  PshGPtr       GameplayTags::Barracuda_Minion_GrantsDragonBuff
+        04FC  PshVPtr       VictimActor                                 
+        0500  CALLSYS       HasMatchingGameplayTag                      
+        050C  CpyRtoV4      v7                                          
+        0510  CpyVtoV4      v3 v7                                       
+      L0518:
+        0518  CpyVtoR1      v3                                          
+        051C  JLowZ         4                                             -> L0534
+        0524  PshVPtr       v10                                         
+        0528  PshVPtr       this                                        
+        052C  CALLINTF      84186                                         ; ABarracudaGameMode::OnDragonKilled
+      L0534:
+        0534  CmpPtrNull    v10                                         
+        0538  JNZ           4                                             -> L0550
+        0540  SetV4         v7 0                                        
+        0548  JMP           10                                            -> L0578
+      L0550:
+        0550  PshGPtr       GameplayTags::Barracuda_Minion_GrantsMomentumBuff
+        055C  PshVPtr       VictimActor                                 
+        0560  CALLSYS       HasMatchingGameplayTag                      
+        056C  CpyRtoV4      v3                                          
+        0570  CpyVtoV4      v7 v3                                       
+      L0578:
+        0578  CpyVtoR1      v7                                          
+        057C  JLowZ         4                                             -> L0594
+        0584  PshVPtr       v10                                         
+        0588  PshVPtr       this                                        
+        058C  CALLINTF      84185                                         ; ABarracudaGameMode::OnMomentumBossKilled
+      L0594:
+        0594  RET           6                                           
+    */
+
+    TArray<ALokiPlayerState@> GetPlayerStatesForRewardsInRadius(const FVector& Location, const float32 Radius, const int TargetTeam, AActor@ Killer)   // traits=0x20
+    {
+        v4 = TArray();
+        v8 = TArray();
+        v9 = 2;
+        v8.Add(v9);
+        v14 = TArray();
+        v18 = TArray();
+        v20 = ALokiHeroCharacter::StaticClass();
+        v22 = 0;
+        System::SphereOverlapActors(__WorldContext, Radius, Killer, v8, v20, v14, v18);
+        while (true) {
+            v24 = v18.Num();
+            if (v22 >= v24) break;
+            v26 = v18[v22];
+            v24 = LokiTeam::GetTeamFromActor(v26);
+            if (v24 == arg_m7) {
+                if (v26 != nullptr) {
+                    v30 = cast<ALokiCharacter@>(v26);
+                } else {
+                    v30 = nullptr;
+                }
+                v28 = v30;
+                if (v28 != nullptr) {
+                    v4.AddUnique(v28);
+                }
+            }
+            v22++;
+        }
+        v34 = TArray();
+        v22 = 0;
+        while (true) {
+            v23 = v4.Num();
+            if (v22 >= v23) break;
+            v36 = v4[v22].PlayerState;
+            if (v36 != nullptr) {
+                v36 = v4[v22].PlayerState;
+                if (v36 != nullptr) {
+                    v38 = cast<ALokiPlayerState@>(v36);
+                } else {
+                    v38 = nullptr;
+                }
+                v34.AddUnique(v38);
+            }
+            v22++;
+        }
+        Location = TArray();
+        Location = v34;
+        return;
+    }
+    /* ---- GetPlayerStatesForRewardsInRadius: 188 dwords / 115 instructions (cache offset 0x1e6d9) ----
+        0000  PSF           v4                                          
+        0004  CALLSYS       TArray::$beh0                               
+        0010  PSF           v8                                          
+        0014  CALLSYS       TArray::$beh0                               
+        0020  SetV1         v9 2                                        
+        0028  PSF           v9                                          
+        002C  PSF           v8                                          
+        0030  CALLSYS       TArray::Add                                 
+        003C  PSF           v14                                         
+        0040  CALLSYS       TArray::$beh0                               
+        004C  PSF           v18                                         
+        0050  CALLSYS       TArray::$beh0                               
+        005C  PSF           v18                                         
+        0060  PSF           v14                                         
+        0064  CALLSYS       StaticClass                                 
+        0070  STOREOBJ      v20                                         
+        0074  PshVPtr       v20                                         
+        0078  PSF           v8                                          
+        007C  PshV4         Killer                                      
+        0080  PshVPtr       Radius                                      
+        0084  PshGPtr       __WorldContext                              
+        0090  CALLSYS       SphereOverlapActors                         
+        009C  SetV4         v22 0                                       
+        00A4  JMP           44                                            -> L015C
+      L00AC:
+        00AC  SUSPEND                                                   
+        00B0  PshV4         v22                                         
+        00B4  PSF           v18                                         
+        00B8  Thiscall1     TArray::opIndex                             
+        00C4  PshRPtr                                                   
+        00C8  RDSPtr                                                    
+        00CC  RefCpyV       v26                                         
+        00D0  PshVPtr       v26                                         
+        00D4  CALLSYS       GetTeamFromActor                            
+        00E0  CpyRtoV4      v24                                         
+        00E4  CMPi          v24 arg_m7                                  
+        00EC  JNZ           24                                            -> L0154
+        00F4  CmpPtrNull    v26                                         
+        00F8  JZ            9                                             -> L0124
+        0100  TYPEID        1140856817                                    ; ALokiCharacter@
+        0108  PSF           v30                                         
+        010C  PshVPtr       v26                                         
+        0110  CALLSYS       UObject::opCast                             
+        011C  JMP           1                                             -> L0128
+      L0124:
+        0124  ClrVPtr       v30                                         
+      L0128:
+        0128  PshVPtr       v30                                         
+        012C  RefCpyV       v28                                         
+        0130  CmpPtrNull    v28                                         
+        0134  JZ            5                                             -> L0150
+        013C  PSF           v28                                         
+        0140  PSF           v4                                          
+        0144  CALLSYS       TArray::AddUnique                           
+      L0150:
+        0150  FreeNullV8    v28                                         
+      L0154:
+        0154  FreeNullV8    v26                                         
+        0158  IncVi         v22                                         
+      L015C:
+        015C  PSF           v18                                         
+        0160  CALLSYS       TArray::Num                                 
+        016C  CpyRtoV4      v24                                         
+        0170  CMPi          v22 v24                                     
+        0178  JS            -53                                           -> L00AC
+        0180  PSF           v34                                         
+        0184  CALLSYS       TArray::$beh0                               
+        0190  SetV4         v22 0                                       
+        0198  JMP           45                                            -> L0254
+      L01A0:
+        01A0  SUSPEND                                                   
+        01A4  PshV4         v22                                         
+        01A8  PSF           v4                                          
+        01AC  Thiscall1     TArray::opIndex                             
+        01B8  PshRPtr                                                   
+        01BC  RDSPtr                                                    
+        01C0  ADDSi         984 67111506                                  ; .PlayerState
+        01C8  RDSPtr                                                    
+        01CC  RefCpyV       v36                                         
+        01D0  CmpPtrNull    v36                                         
+        01D4  JZ            29                                            -> L0250
+        01DC  PshV4         v22                                         
+        01E0  PSF           v4                                          
+        01E4  Thiscall1     TArray::opIndex                             
+        01F0  PshRPtr                                                   
+        01F4  RDSPtr                                                    
+        01F8  ADDSi         984 67111506                                  ; .PlayerState
+        0200  RDSPtr                                                    
+        0204  RefCpyV       v36                                         
+        0208  CmpPtrNull    v36                                         
+        020C  JZ            9                                             -> L0238
+        0214  TYPEID        1140857146                                    ; ALokiPlayerState@
+        021C  PSF           v38                                         
+        0220  PshVPtr       v36                                         
+        0224  CALLSYS       UObject::opCast                             
+        0230  JMP           1                                             -> L023C
+      L0238:
+        0238  ClrVPtr       v38                                         
+      L023C:
+        023C  PSF           v38                                         
+        0240  PSF           v34                                         
+        0244  CALLSYS       TArray::AddUnique                           
+      L0250:
+        0250  IncVi         v22                                         
+      L0254:
+        0254  PSF           v4                                          
+        0258  CALLSYS       TArray::Num                                 
+        0264  CpyRtoV4      v23                                         
+        0268  CMPi          v22 v23                                     
+        0270  JS            -54                                           -> L01A0
+        0278  PshVPtr       Location                                    
+        027C  CALLSYS       TArray::$beh0                               
+        0288  PSF           v34                                         
+        028C  PshVPtr       Location                                    
+        0290  CALLSYS       TArray::opAssign                            
+        029C  PSF           v34                                         
+        02A0  CALLSYS       TArray::$beh2                               
+        02AC  PSF           v18                                         
+        02B0  CALLSYS       TArray::$beh2                               
+        02BC  PSF           v14                                         
+        02C0  CALLSYS       TArray::$beh2                               
+        02CC  PSF           v8                                          
+        02D0  CALLSYS       TArray::$beh2                               
+        02DC  PSF           v4                                          
+        02E0  CALLSYS       TArray::$beh2                               
+        02EC  RET           10                                          
+    */
+
+    void OnNewDay()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnNewDay");
+        return;
+    }
+    /* ---- OnNewDay: 11 dwords / 6 instructions (cache offset 0x1ebd6) ----
+        0000  PshC4         101                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=OnNewDay, BlueprintEvent, CanOverrideEvent, NoOp, meta.Category=Day/Night)
+    void OnNewDay_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- OnNewDay_Implementation: 1 dwords / 1 instructions (cache offset 0x1ec92) ----
+        0000  RET           2                                           
+    */
+
+    void OnNewNight()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnNewNight");
+        return;
+    }
+    /* ---- OnNewNight: 11 dwords / 6 instructions (cache offset 0x1ed91) ----
+        0000  PshC4         102                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=OnNewNight, BlueprintEvent, CanOverrideEvent, NoOp, meta.Category=Day/Night)
+    void OnNewNight_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- OnNewNight_Implementation: 1 dwords / 1 instructions (cache offset 0x1ee4f) ----
+        0000  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, meta.Category=Day/Night)
+    void HandleDayNight()   // traits=0x20
+    {
+        v4 = this.GetGameStateComponent();
+        if (!this.HasBarracudaMatchStarted()) {
+            v5 = 0;
+        } else {
+            v6 = v4 != nullptr;
+            v5 = v6;
+        }
+        if (v5) {
+            v10 = this.GetMatchTime();
+            v5 = v4.bDayNightTransitionEnabled;
+            if (!v5) {
+                v5 = 0;
+            } else {
+                v8 = v4.NextDayNightSwapTime;
+                v6 = v10 >= v8;
+                v5 = v6;
+            }
+            if (v5) {
+                v6 = this.bIsDay;
+                if (v6) {
+                    v5 = false;
+                    this.bIsDay = v5;
+                    this.OnNewNight();
+                } else {
+                    v6 = true;
+                    this.bIsDay = v6;
+                    this.OnNewDay();
+                }
+                v12 = this.DayNightDuration;
+                v8 = v4.NextDayNightSwapTime;
+                v8 = v8 + v12;
+                v4.NextDayNightSwapTime = v8;
+            }
+        }
+        return;
+    }
+    /* ---- HandleDayNight: 84 dwords / 53 instructions (cache offset 0x1ef54) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84165                                         ; ABarracudaGameMode::GetGameStateComponent
+        000C  STOREOBJ      v4                                          
+        0010  PshVPtr       this                                        
+        0014  CALLINTF      84171                                         ; ABarracudaGameMode::HasBarracudaMatchStarted
+        001C  JLowNZ        4                                             -> L0034
+        0024  SetV4         v5 0                                        
+        002C  JMP           5                                             -> L0048
+      L0034:
+        0034  CmpPtrNull    v4                                          
+        0038  TNZ                                                       
+        003C  CpyRtoV4      v6                                          
+        0040  CpyVtoV4      v5 v6                                       
+      L0048:
+        0048  CpyVtoR1      v5                                          
+        004C  JLowZ         62                                            -> L014C
+        0054  PshVPtr       this                                        
+        0058  CALLINTF      84172                                         ; ABarracudaGameMode::GetMatchTime
+        0060  CpyRtoV8      v10                                         
+        0064  LoadRObjR     v4 216 134230778                              ; .bDayNightTransitionEnabled
+        0070  RDR1          v5                                          
+        0074  CpyVtoR1      v5                                          
+        0078  JLowNZ        4                                             -> L0090
+        0080  SetV4         v5 0                                        
+        0088  JMP           10                                            -> L00B8
+      L0090:
+        0090  LoadRObjR     v4 208 134230778                              ; .NextDayNightSwapTime
+        009C  RDR8          v8                                          
+        00A0  CMPd          v10 v8                                      
+        00A8  TNS                                                       
+        00AC  CpyRtoV4      v6                                          
+        00B0  CpyVtoV4      v5 v6                                       
+      L00B8:
+        00B8  CpyVtoR1      v5                                          
+        00BC  JLowZ         34                                            -> L014C
+        00C4  LoadThisR     2064 134230781                                ; this.bIsDay
+        00CC  RDR1          v6                                          
+        00D0  CpyVtoR1      v6                                          
+        00D4  JLowZ         10                                            -> L0104
+        00DC  SetV1         v5 0                                        
+        00E4  LoadThisR     2064 134230781                                ; this.bIsDay
+        00EC  WRTV1         v5                                          
+        00F0  PshVPtr       this                                        
+        00F4  CALLINTF      84180                                         ; ABarracudaGameMode::OnNewNight
+        00FC  JMP           8                                             -> L0124
+      L0104:
+        0104  SetV1         v6 1                                        
+        010C  LoadThisR     2064 134230781                                ; this.bIsDay
+        0114  WRTV1         v6                                          
+        0118  PshVPtr       this                                        
+        011C  CALLINTF      84178                                         ; ABarracudaGameMode::OnNewDay
+      L0124:
+        0124  LoadThisR     2056 134230781                                ; this.DayNightDuration
+        012C  RDR8          v12                                         
+        0130  LoadRObjR     v4 208 134230778                              ; .NextDayNightSwapTime
+        013C  RDR8          v8                                          
+        0140  ADDd          v8 v8 v12                                   
+        0148  WRTV8         v8                                          
+      L014C:
+        014C  RET           2                                           
+    */
+
+    bool TowerKilled(ALokiTower@ TargetTower)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiTower(TargetTower);
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"TowerKilled");
+        return v1;
+    }
+    /* ---- TowerKilled: 24 dwords / 13 instructions (cache offset 0x1f25a) ----
+        0000  PSF           TargetTower                                 
+        0004  CALLSYS       __Evt_PushArgument__ALokiTower              
+        0010  SetV1         v2 0                                        
+        0018  CpyVtoV4      v1 v2                                       
+        0020  PSF           v1                                          
+        0024  CALLSYS       __Evt_PushArgumentRef__bool                 
+        0030  PshC4         103                                         
+        0038  CALLSYS       __STATIC_NAME                               
+        0044  PshRPtr                                                   
+        0048  PshVPtr       this                                        
+        004C  CALLSYS       __Evt_Execute                               
+        0058  CpyVtoR4      v1                                          
+        005C  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=TowerKilled, BlueprintEvent, CanOverrideEvent)
+    bool TowerKilled_Implementation(ALokiTower@ TargetTower)   // traits=0x20
+    {
+        v2 = this.bAnyTowersKilled;
+        v2 = !v2;
+        v1 = true;
+        this.bAnyTowersKilled = v1;
+        return v2;
+    }
+    /* ---- TowerKilled_Implementation: 11 dwords / 8 instructions (cache offset 0x1f389) ----
+        0000  LoadThisR     2108 134230781                                ; this.bAnyTowersKilled
+        0008  RDR1          v2                                          
+        000C  NOT           v2                                          
+        0010  SetV1         v1 1                                        
+        0018  LoadThisR     2108 134230781                                ; this.bAnyTowersKilled
+        0020  WRTV1         v1                                          
+        0024  CpyVtoR4      v2                                          
+        0028  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnMomentumBossKilled(ALokiPlayerState@ KillerPlayerState)   // traits=0x20
+    {
+        if (this.MomentumBossKilledPilotVO.IsValid()) {
+            v4 = GetBarracudaGameStateComponent();
+            v4.AuthPlayPilotVOForAll(this.MomentumBossKilledPilotVO);
+        }
+        return;
+    }
+    /* ---- OnMomentumBossKilled: 18 dwords / 11 instructions (cache offset 0x1f4e4) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         2232 134230781                                ; .MomentumBossKilledPilotVO
+        000C  CALLSYS       FGameplayTag::IsValid                       
+        0018  JLowZ         9                                             -> L0044
+        0020  PshVPtr       this                                        
+        0024  ADDSi         2232 134230781                                ; .MomentumBossKilledPilotVO
+        002C  CALL          84263                                         ; GetBarracudaGameStateComponent
+        0034  STOREOBJ      v4                                          
+        0038  PshVPtr       v4                                          
+        003C  CALLINTF      84229                                         ; UBarracudaGameStateComponent::AuthPlayPilotVOForAll
+      L0044:
+        0044  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnDragonKilled(ALokiPlayerState@ KillerPlayerState)   // traits=0x20
+    {
+        v2 = GetBarracudaGameStateComponent();
+        v2.NumDragonsKilled++;
+        v3 = this.DragonRewards.Num();
+        v3 = v3 - 1;
+        v2 = GetBarracudaGameStateComponent();
+        v5 = v2.NumDragonsKilled;
+        v6 = Math::Min(v5, v3);
+        if (v6 >= 0) {
+            v4 = KillerPlayerState.GetTeamIndex_BP();
+            this.ApplyEffectToTeam(v4, this.DragonRewards[v6]);
+        }
+        if (this.DragonKilledPilotVO.IsValid()) {
+            v2 = GetBarracudaGameStateComponent();
+            v2.AuthPlayPilotVOForAll(this.DragonKilledPilotVO);
+        }
+        return;
+    }
+    /* ---- OnDragonKilled: 69 dwords / 41 instructions (cache offset 0x1f682) ----
+        0000  CALL          84263                                         ; GetBarracudaGameStateComponent
+        0008  STOREOBJ      v2                                          
+        000C  LoadRObjR     v2 496 134230778                              ; .NumDragonsKilled
+        0018  INCi                                                      
+        001C  PshVPtr       this                                        
+        0020  ADDSi         2112 134230781                                ; .DragonRewards
+        0028  CALLSYS       TArray::Num                                 
+        0034  CpyRtoV4      v3                                          
+        0038  SUBIi         v3 v3 1                                     
+        0044  PshV4         v3                                          
+        0048  CALL          84263                                         ; GetBarracudaGameStateComponent
+        0050  STOREOBJ      v2                                          
+        0054  LoadRObjR     v2 496 134230778                              ; .NumDragonsKilled
+        0060  RDR4          v5                                          
+        0064  PshV4         v5                                          
+        0068  CALLSYS       Min                                         
+        0074  CpyRtoV4      v6                                          
+        0078  CMPIi         v6 0                                        
+        0080  JS            17                                            -> L00CC
+        0088  PshV4         v6                                          
+        008C  PshVPtr       this                                        
+        0090  ADDSi         2112 134230781                                ; .DragonRewards
+        0098  Thiscall1     TArray::opIndex                             
+        00A4  PshRPtr                                                   
+        00A8  PshVPtr       KillerPlayerState                           
+        00AC  CALLSYS       ALokiPlayerState::GetTeamIndex_BP           
+        00B8  CpyRtoV4      v4                                          
+        00BC  PshV4         v4                                          
+        00C0  PshVPtr       this                                        
+        00C4  CALLINTF      84187                                         ; ABarracudaGameMode::ApplyEffectToTeam
+      L00CC:
+        00CC  PshVPtr       this                                        
+        00D0  ADDSi         2224 134230781                                ; .DragonKilledPilotVO
+        00D8  CALLSYS       FGameplayTag::IsValid                       
+        00E4  JLowZ         9                                             -> L0110
+        00EC  PshVPtr       this                                        
+        00F0  ADDSi         2224 134230781                                ; .DragonKilledPilotVO
+        00F8  CALL          84263                                         ; GetBarracudaGameStateComponent
+        0100  STOREOBJ      v2                                          
+        0104  PshVPtr       v2                                          
+        0108  CALLINTF      84229                                         ; UBarracudaGameStateComponent::AuthPlayPilotVOForAll
+      L0110:
+        0110  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ApplyEffectToTeam(const int TeamIndex, const TSubclassOf<UGameplayEffect@>& EffectClass)   // traits=0x20
+    {
+        if (EffectClass == nullptr) {
+            return;
+        } else {
+            v6 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, TeamIndex);
+            v12 = v6.Iterator();
+            while (true) {
+                v1 = v12.CanProceed;
+                if (!v1) break;
+                v20 = v12.Proceed();
+                v12.Proceed();
+                v24 = AbilitySystem::GetAbilitySystemComponent(v20);
+                v36 = v24.MakeEffectContext();
+                v1 = false;
+                v39 = v24.ApplyGameplayEffectToSelf(EffectClass, 0, v36, v1)  /* UFunction BP_ApplyGameplayEffectToSelf */;
+            }
+        }
+        return;
+    }
+    /* ---- ApplyEffectToTeam: 76 dwords / 46 instructions (cache offset 0x1f935) ----
+        0000  PshNull                                                   
+        0004  PshVPtr       EffectClass                                 
+        0008  CALLSYS       TSubclassOf::opEquals                       
+        0014  JLowZ         2                                             -> L0024
+        001C  JMP           66                                            -> L012C
+      L0024:
+        0024  PSF           v12                                         
+        0028  PshV4         TeamIndex                                   
+        002C  PshGPtr       __WorldContext                              
+        0038  PSF           v6                                          
+        003C  CALLSYS       GetPlayerStatesOnTeam                       
+        0048  PSF           v6                                          
+        004C  CALLSYS       TArray::Iterator                            
+        0058  JMP           40                                            -> L0100
+      L0060:
+        0060  SUSPEND                                                   
+        0064  PSF           v12                                         
+        0068  CALLSYS       TArrayConstIterator::Proceed                
+        0074  PshRPtr                                                   
+        0078  RDSPtr                                                    
+        007C  RefCpyV       v20                                         
+        0080  PshVPtr       v20                                         
+        0084  CALLSYS       GetAbilitySystemComponent                   
+        0090  STOREOBJ      v24                                         
+        0094  PSF           v36                                         
+        0098  PshVPtr       v24                                         
+        009C  CALLSYS       UAbilitySystemComponent::MakeEffectContext  
+        00A8  SetV1         v1 0                                        
+        00B0  PshV4         v1                                          
+        00B4  PSF           v36                                         
+        00B8  PshC4         0                                           
+        00C0  PshVPtr       EffectClass                                 
+        00C4  PSF           v39                                         
+        00C8  PshVPtr       v24                                         
+        00CC  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectToSelf
+        00D8  PSF           v39                                         
+        00DC  CALLSYS       FActiveGameplayEffectHandle::$beh2          
+        00E8  PSF           v36                                         
+        00EC  CALLSYS       FGameplayEffectContextHandle::$beh2         
+        00F8  FreeNullV8    v24                                         
+        00FC  FreeNullV8    v20                                         
+      L0100:
+        0100  LoadVObjR     v12 16 268448511                              ; .CanProceed
+        010C  RDR1          v1                                          
+        0110  CpyVtoR1      v1                                          
+        0114  JLowNZ        -47                                           -> L0060
+        011C  PSF           v6                                          
+        0120  CALLSYS       TArray::$beh2                               
+      L012C:
+        012C  RET           5                                           
+    */
+
+    void TowerGoldRewardVisual(ALokiTower@ TargetTower, ALokiPlayerState@ TargetPlayer, const int GoldAmount)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiTower(TargetTower);
+        __Evt_PushArgument__ALokiPlayerState(TargetPlayer);
+        __Evt_PushArgument__int32(GoldAmount);
+        __Evt_Execute(this, n"TowerGoldRewardVisual");
+        return;
+    }
+    /* ---- TowerGoldRewardVisual: 23 dwords / 12 instructions (cache offset 0x1fd09) ----
+        0000  PSF           TargetTower                                 
+        0004  CALLSYS       __Evt_PushArgument__ALokiTower              
+        0010  PSF           TargetPlayer                                
+        0014  CALLSYS       __Evt_PushArgument__ALokiPlayerState        
+        0020  PSF           GoldAmount                                  
+        0024  CALLSYS       __Evt_PushArgument__int32                   
+        0030  PshC4         104                                         
+        0038  CALLSYS       __STATIC_NAME                               
+        0044  PshRPtr                                                   
+        0048  PshVPtr       this                                        
+        004C  CALLSYS       __Evt_Execute                               
+        0058  RET           7                                           
+    */
+
+    UFUNCTION(UnrealName=TowerGoldRewardVisual, BlueprintEvent, CanOverrideEvent, NoOp)
+    void TowerGoldRewardVisual_Implementation(ALokiTower@ TargetTower, ALokiPlayerState@ TargetPlayer, const int GoldAmount)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- TowerGoldRewardVisual_Implementation: 1 dwords / 1 instructions (cache offset 0x1feb6) ----
+        0000  RET           7                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = 1232348144;
+        this.MatchStartTime = v1;
+        v4 = 4643985272004935680;
+        this.DayNightDuration = v4;
+        v5 = false;
+        this.bIsDay = v5;
+        v1 = 1045220557;
+        this.GoldLossOnDeath = v1;
+        v1 = 1048576000;
+        this.UnderdogHeroKillXPBonusPerLevel = v1;
+        v6 = 0;
+        this.NumDragonsKilled = v6;
+        v4 = 4629137466983448576;
+        this.KnockXPCooldownTime = v4;
+        return;
+    }
+    /* ---- __InitDefaults: 38 dwords / 22 instructions (cache offset 0x1ffab) ----
+        0000  SetV4         v1 1232348144                               
+        0008  LoadThisR     2032 134230781                                ; this.MatchStartTime
+        0010  WRTV4         v1                                          
+        0014  SetV8         v4 0x4072c00000000000                       
+        0020  LoadThisR     2056 134230781                                ; this.DayNightDuration
+        0028  WRTV8         v4                                          
+        002C  SetV1         v5 0                                        
+        0034  LoadThisR     2064 134230781                                ; this.bIsDay
+        003C  WRTV1         v5                                          
+        0040  SetV4         v1 1045220557                               
+        0048  LoadThisR     2036 134230781                                ; this.GoldLossOnDeath
+        0050  WRTV4         v1                                          
+        0054  SetV4         v1 1048576000                               
+        005C  LoadThisR     2104 134230781                                ; this.UnderdogHeroKillXPBonusPerLevel
+        0064  WRTV4         v1                                          
+        0068  SetV4         v6 0                                        
+        0070  LoadThisR     2128 134230781                                ; this.NumDragonsKilled
+        0078  WRTV4         v6                                          
+        007C  SetV8         v4 0x403e000000000000                       
+        0088  LoadThisR     2216 134230781                                ; this.KnockXPCooldownTime
+        0090  WRTV8         v4                                          
+        0094  RET           2                                           
+    */
+
+    void ~ABarracudaGameMode()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ABarracudaGameMode: 43 dwords / 22 instructions (cache offset 0x202fa) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         2040 134230781                                ; .GoldBountyPerCurrentStreak
+        000C  CALLSYS       TArray::$beh2                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         2072 134230781                                ; .MinionSplitXPBonuses
+        0024  CALLSYS       TArray::$beh2                               
+        0030  PshVPtr       this                                        
+        0034  ADDSi         2088 134230781                                ; .MercyHeroKillXPCoefficients
+        003C  CALLSYS       TArray::$beh2                               
+        0048  PshVPtr       this                                        
+        004C  ADDSi         2112 134230781                                ; .DragonRewards
+        0054  CALLSYS       TArray::$beh2                               
+        0060  PshVPtr       this                                        
+        0064  ADDSi         2136 134230781                                ; .LastKnockedTimeTable
+        006C  CALLSYS       TMap::$beh2                                 
+        0078  PshVPtr       this                                        
+        007C  ADDSi         2224 134230781                                ; .DragonKilledPilotVO
+        0084  CALLSYS       FGameplayTag::$beh2                         
+        0090  PshVPtr       this                                        
+        0094  ADDSi         2232 134230781                                ; .MomentumBossKilledPilotVO
+        009C  CALLSYS       FGameplayTag::$beh2                         
+        00A8  RET           2                                           
+    */
+
+}
+

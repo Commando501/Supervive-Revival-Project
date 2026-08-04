@@ -1,0 +1,186 @@
+// ============================================================================
+//  MODULE   UAV.UAVAudioPlayer
+//  SOURCE   UAV/UAVAudioPlayer.as
+//  CONTENT  1 class(es), 7 function(s), 0 enum(s), 1 global(s), 468 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AUAVAudioPlayer;
+
+AUAVAudioPlayer@ AUAVAudioPlayer()   // traits=0x20
+{
+    AUAVAudioPlayer v2;
+
+    v2 = AUAVAudioPlayer();
+    return v2;
+}
+/* ---- AUAVAudioPlayer: 7 dwords / 4 instructions (cache offset 0xbe0dd) ----
+    0000  PSF           v2
+    0004  ALLOC         85403 AUAVAudioPlayer                         ; new AUAVAudioPlayer  ctor=void AUAVAudioPlayer::AUAVAudioPlayer()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ AUAVAudioPlayer::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_AUAVAudioPlayer);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xbe199) ----
+    0000  PshGPtr       __StaticType_AUAVAudioPlayer
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+AUAVAudioPlayer@ AUAVAudioPlayer::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AUAVAudioPlayer v8;
+
+    v2 = __StaticType_AUAVAudioPlayer.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AUAVAudioPlayer@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0xbe3bd) ----
+    0000  PshVPtr       Level
+    0004  PshV4         bDeferredSpawn
+    0008  PshVPtr       Name
+    000C  PshVPtr       Rotation
+    0010  PshVPtr       Location
+    0014  PshGPtr       __StaticType_AUAVAudioPlayer
+    0020  CHKREF
+    0024  CALLSYS       TSubclassOf::Get                              ; UClass@ TSubclassOf<UObject@>::Get() const
+    0030  STOREOBJ      v2
+    0034  PshVPtr       v2
+    0038  PSF           v4
+    003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    0048  PSF           v4
+    004C  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    0058  STOREOBJ      v6
+    005C  CmpPtrNull    v6
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972734                                    ; AUAVAudioPlayer@
+    0070  PSF           v8
+    0074  PshVPtr       v6
+    0078  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8
+  L0090:
+    0090  LOADOBJ       v8
+    0094  RET           9
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class AUAVAudioPlayer : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_AUAVAudioPlayer
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_ActiveUAVCopy)
+    FActiveUAV ActiveUAVCopy;
+
+    AUAVAudioPlayer()   // traits=0x21
+    {
+        this.ActiveUAVCopy.FActiveUAV();
+        return;
+    }
+    /* ---- AUAVAudioPlayer: 10 dwords / 6 instructions (cache offset 0xbe915) ----
+        0000  PshVPtr       this
+        0004  ADDSi         912 134230910                                 ; .ActiveUAVCopy
+        000C  CALL          85414                                         ; void FActiveUAV::FActiveUAV()
+        0014  PshVPtr       this
+        0018  FinConstruct  AUAVAudioPlayer
+        0024  RET           2
+    */
+
+    void OnRep_ActiveUAVCopy()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnRep_ActiveUAVCopy");
+        return;
+    }
+    /* ---- OnRep_ActiveUAVCopy: 11 dwords / 6 instructions (cache offset 0xbe60f) ----
+        0000  PshC4         203
+        0008  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0014  PshRPtr
+        0018  PshVPtr       this
+        001C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0028  RET           2
+    */
+
+    UFUNCTION(UnrealName=OnRep_ActiveUAVCopy, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnRep_ActiveUAVCopy_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- OnRep_ActiveUAVCopy_Implementation: 1 dwords / 1 instructions (cache offset 0xbe6d6) ----
+        0000  RET           2
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        ENetDormancy v3;
+
+        v1 = false;
+        this.PrimaryActorTick.SetbStartWithTickEnabled(v1);
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = true;
+        this.SetbAlwaysRelevant(v1);
+        v2 = true;
+        this.LokiReplicationStrategy.CustomReplicationStrategy = v2;
+        v3 = ENetDormancy::DORM_Initial;
+        this.SetNetDormancy(v3);
+        return;
+    }
+    /* ---- __InitDefaults: 40 dwords / 24 instructions (cache offset 0xbe7c9) ----
+        0000  SetV1         v1 0
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  ADDSi         56 67111343                                   ; .PrimaryActorTick
+        0018  CALLSYS       FActorTickFunction::SetbStartWithTickEnabled  ; void FActorTickFunction::SetbStartWithTickEnabled(bool)
+        0024  SetV1         v1 1
+        002C  PshV4         v1
+        0030  PshVPtr       this
+        0034  CALLSYS       AActor::SetbReplicates                        ; void AActor::SetbReplicates(bool)
+        0040  SetV1         v1 1
+        0048  PshV4         v1
+        004C  PshVPtr       this
+        0050  CALLSYS       AActor::SetbAlwaysRelevant                    ; void AActor::SetbAlwaysRelevant(bool)
+        005C  SetV1         v2 1
+        0064  PshVPtr       this
+        0068  ADDSi         904 67111343                                  ; .LokiReplicationStrategy
+        0070  ADDSi         0 67118017                                    ; .CustomReplicationStrategy
+        0078  PopRPtr
+        007C  WRTV1         v2
+        0080  SetV1         v3 4
+        0088  PshV4         v3
+        008C  PshVPtr       this
+        0090  CALLSYS       AActor::SetNetDormancy                        ; void AActor::SetNetDormancy(ENetDormancy)
+        009C  RET           2
+    */
+
+}
+

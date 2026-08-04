@@ -1,0 +1,354 @@
+// ============================================================================
+//  MODULE   UAV.UAVVaultContentActor
+//  SOURCE   UAV/UAVVaultContentActor.as
+//  CONTENT  1 class(es), 11 function(s), 0 enum(s), 1 global(s), 1204 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AUAVVaultContentActor;
+
+AUAVVaultContentActor@ AUAVVaultContentActor()   // traits=0x20
+{
+    v2 = AUAVVaultContentActor();
+    return v2;
+}
+/* ---- AUAVVaultContentActor: 7 dwords / 4 instructions (cache offset 0xc1667) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         85431 AUAVVaultContentActor                 
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ AUAVVaultContentActor::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_AUAVVaultContentActor);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xc1729) ----
+    0000  PshGPtr       __StaticType_AUAVVaultContentActor          
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+AUAVVaultContentActor@ AUAVVaultContentActor::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_AUAVVaultContentActor.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AUAVVaultContentActor@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0xc1953) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_AUAVVaultContentActor          
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972745                                    ; AUAVVaultContentActor@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class AUAVVaultContentActor : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_AUAVVaultContentActor
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta.ExposeOnSpawn, meta.Category=UAV)
+    FLokiTeamVaultDataItem VaultDataItem;
+
+    AUAVVaultContentActor()   // traits=0x21
+    {
+        this.VaultDataItem = FLokiTeamVaultDataItem();
+        return;
+    }
+    /* ---- AUAVVaultContentActor: 11 dwords / 6 instructions (cache offset 0xc26d8) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         912 134230921                                 ; .VaultDataItem
+        000C  CALLSYS       FLokiTeamVaultDataItem::$beh0               
+        0018  PshVPtr       this                                        
+        001C  FinConstruct  AUAVVaultContentActor                       
+        0028  RET           2                                           
+    */
+
+    void VaultDataItemUpdated()   // traits=0x20
+    {
+        __Evt_Execute(this, n"VaultDataItemUpdated");
+        return;
+    }
+    /* ---- VaultDataItemUpdated: 11 dwords / 6 instructions (cache offset 0xc1ba3) ----
+        0000  PshC4         205                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=VaultDataItemUpdated, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void VaultDataItemUpdated_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- VaultDataItemUpdated_Implementation: 1 dwords / 1 instructions (cache offset 0xc1c6b) ----
+        0000  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        v2 = true;
+        v1 = v2;
+        v3 = this.VaultDataItem.ID;
+        if (v3 < 0) {
+            v2 = false;
+            v1 = v2;
+        }
+        v6 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v6 != nullptr) {
+            v29 = false;
+            v28 = FGameEvent_TeamVaultData_Update();
+            v42 = v6.RegisterForEvent(this, v28, typeid(FGameEvent_TeamVaultData_Update), nullptr, n"OnUpdate", v29);
+            v29 = false;
+            v62 = FGameEvent_TeamVaultData_Remove();
+            v42 = v6.RegisterForEvent(this, v62, typeid(FGameEvent_TeamVaultData_Remove), nullptr, n"OnRemove", v29);
+        } else {
+            v2 = false;
+            v1 = v2;
+        }
+        if (v1) {
+            this.VaultDataItemUpdated();
+            return;
+        } else {
+            this.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 110 dwords / 63 instructions (cache offset 0xc1d69) ----
+        0000  SetV1         v2 1                                        
+        0008  CpyVtoV4      v1 v2                                       
+        0010  PshVPtr       this                                        
+        0014  ADDSi         912 134230921                                 ; .VaultDataItem
+        001C  ADDSi         28 67120959                                   ; .ID
+        0024  PopRPtr                                                   
+        0028  RDR4          v3                                          
+        002C  CMPIi         v3 0                                        
+        0034  JNS           4                                             -> L004C
+        003C  SetV1         v2 0                                        
+        0044  CpyVtoV4      v1 v2                                       
+      L004C:
+        004C  PshGPtr       __WorldContext                              
+        0058  CALLSYS       GetGlobalGameEventRouter                    
+        0064  STOREOBJ      v6                                          
+        0068  CmpPtrNull    v6                                          
+        006C  JZ            64                                            -> L0174
+        0074  SetV1         v29 0                                       
+        007C  PshV4         v29                                         
+        0080  PshC4         90                                          
+        0088  CALLSYS       __STATIC_NAME                               
+        0094  PshRPtr                                                   
+        0098  PshNull                                                   
+        009C  TYPEID        67120961                                      ; FGameEvent_TeamVaultData_Update
+        00A4  PSF           v28                                         
+        00A8  CALLSYS       FGameEvent_TeamVaultData_Update::$beh0      
+        00B4  PSF           v28                                         
+        00B8  PshVPtr       this                                        
+        00BC  PSF           v42                                         
+        00C0  PshVPtr       v6                                          
+        00C4  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        00D0  PSF           v28                                         
+        00D4  CALLSYS       FGameEvent_TeamVaultData_Update::$beh2      
+        00E0  PSF           v42                                         
+        00E4  CALLSYS       FGameEventListenerHandle::$beh2             
+        00F0  SetV1         v29 0                                       
+        00F8  PshV4         v29                                         
+        00FC  PshC4         91                                          
+        0104  CALLSYS       __STATIC_NAME                               
+        0110  PshRPtr                                                   
+        0114  PshNull                                                   
+        0118  TYPEID        67120962                                      ; FGameEvent_TeamVaultData_Remove
+        0120  PSF           v62                                         
+        0124  CALLSYS       FGameEvent_TeamVaultData_Remove::$beh0      
+        0130  PSF           v62                                         
+        0134  PshVPtr       this                                        
+        0138  PSF           v42                                         
+        013C  PshVPtr       v6                                          
+        0140  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        014C  PSF           v62                                         
+        0150  CALLSYS       FGameEvent_TeamVaultData_Remove::$beh2      
+        015C  PSF           v42                                         
+        0160  CALLSYS       FGameEventListenerHandle::$beh2             
+        016C  JMP           4                                             -> L0184
+      L0174:
+        0174  SetV1         v2 0                                        
+        017C  CpyVtoV4      v1 v2                                       
+      L0184:
+        0184  CpyVtoR1      v1                                          
+        0188  JLowZ         5                                             -> L01A4
+        0190  PshVPtr       this                                        
+        0194  CALLINTF      85426                                         ; AUAVVaultContentActor::VaultDataItemUpdated
+        019C  JMP           4                                             -> L01B4
+      L01A4:
+        01A4  PshVPtr       this                                        
+        01A8  CALLSYS       AActor::DestroyActor                        
+      L01B4:
+        01B4  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnUpdate(const FGameEvent_TeamVaultData_Update& Event, const AActor@& Context)   // traits=0x28
+    {
+        v18 = FLokiTeamVaultDataItem(Event.VaultDataItem);
+        v19 = v18.ID;
+        v20 = this.VaultDataItem.ID;
+        if (v19 != v20) {
+            return;
+        } else {
+            this.VaultDataItem = v18;
+            this.SetActorLocation(this.VaultDataItem.Location)  /* UFunction K2_SetActorLocation */;
+            this.VaultDataItemUpdated();
+        }
+        return;
+    }
+    /* ---- OnUpdate: 52 dwords / 30 instructions (cache offset 0xc2182) ----
+        0000  PshVPtr       Event                                       
+        0004  ADDSi         8 67120961                                    ; .VaultDataItem
+        000C  PSF           v18                                         
+        0010  CALLSYS       FLokiTeamVaultDataItem::$beh0               
+        001C  LoadVObjR     v18 28 67120959                               ; .ID
+        0028  RDR4          v19                                         
+        002C  PshVPtr       this                                        
+        0030  ADDSi         912 134230921                                 ; .VaultDataItem
+        0038  ADDSi         28 67120959                                   ; .ID
+        0040  PopRPtr                                                   
+        0044  RDR4          v20                                         
+        0048  CMPi          v19 v20                                     
+        0050  JZ            6                                             -> L0070
+        0058  PSF           v18                                         
+        005C  CALLSYS       FLokiTeamVaultDataItem::$beh2               
+        0068  JMP           23                                            -> L00CC
+      L0070:
+        0070  PSF           v18                                         
+        0074  PshVPtr       this                                        
+        0078  ADDSi         912 134230921                                 ; .VaultDataItem
+        0080  CALLSYS       FLokiTeamVaultDataItem::opAssign            
+        008C  PshVPtr       this                                        
+        0090  ADDSi         912 134230921                                 ; .VaultDataItem
+        0098  ADDSi         32 67120959                                   ; .Location
+        00A0  PshVPtr       this                                        
+        00A4  CALLSYS       AActor::SetActorLocation                    
+        00B0  PshVPtr       this                                        
+        00B4  CALLINTF      85426                                         ; AUAVVaultContentActor::VaultDataItemUpdated
+        00BC  PSF           v18                                         
+        00C0  CALLSYS       FLokiTeamVaultDataItem::$beh2               
+      L00CC:
+        00CC  RET           6                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnRemove(const FGameEvent_TeamVaultData_Remove& Event, const AActor@& Context)   // traits=0x28
+    {
+        v18 = FLokiTeamVaultDataItem(Event.VaultDataItem);
+        v19 = v18.ID;
+        v20 = this.VaultDataItem.ID;
+        if (v19 != v20) {
+            return;
+        } else {
+            this.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+    /* ---- OnRemove: 37 dwords / 21 instructions (cache offset 0xc23fe) ----
+        0000  PshVPtr       Event                                       
+        0004  ADDSi         8 67120962                                    ; .VaultDataItem
+        000C  PSF           v18                                         
+        0010  CALLSYS       FLokiTeamVaultDataItem::$beh0               
+        001C  LoadVObjR     v18 28 67120959                               ; .ID
+        0028  RDR4          v19                                         
+        002C  PshVPtr       this                                        
+        0030  ADDSi         912 134230921                                 ; .VaultDataItem
+        0038  ADDSi         28 67120959                                   ; .ID
+        0040  PopRPtr                                                   
+        0044  RDR4          v20                                         
+        0048  CMPi          v19 v20                                     
+        0050  JZ            6                                             -> L0070
+        0058  PSF           v18                                         
+        005C  CALLSYS       FLokiTeamVaultDataItem::$beh2               
+        0068  JMP           8                                             -> L0090
+      L0070:
+        0070  PshVPtr       this                                        
+        0074  CALLSYS       AActor::DestroyActor                        
+        0080  PSF           v18                                         
+        0084  CALLSYS       FLokiTeamVaultDataItem::$beh2               
+      L0090:
+        0090  RET           6                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = false;
+        this.SetbReplicates(v1);
+        v1 = false;
+        this.PrimaryActorTick.SetbStartWithTickEnabled(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 17 dwords / 10 instructions (cache offset 0xc25d6) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       AActor::SetbReplicates                      
+        001C  SetV1         v1 0                                        
+        0024  PshV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  ADDSi         56 67111343                                   ; .PrimaryActorTick
+        0034  CALLSYS       FActorTickFunction::SetbStartWithTickEnabled
+        0040  RET           2                                           
+    */
+
+    void ~AUAVVaultContentActor()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~AUAVVaultContentActor: 7 dwords / 4 instructions (cache offset 0xc27df) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         912 134230921                                 ; .VaultDataItem
+        000C  CALLSYS       FLokiTeamVaultDataItem::$beh2               
+        0018  RET           2                                           
+    */
+
+}
+

@@ -1,0 +1,2160 @@
+// ============================================================================
+//  MODULE   GameMode.DropPhase.LokiDropPhase_PlayerStateComponent
+//  SOURCE   GameMode/DropPhase/LokiDropPhase_PlayerStateComponent.as
+//  CONTENT  1 class(es), 34 function(s), 0 enum(s), 1 global(s), 6760 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiDropPhase_PlayerStateComponent;
+
+ULokiDropPhase_PlayerStateComponent@ ULokiDropPhase_PlayerStateComponent()   // traits=0x20
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    v2 = ULokiDropPhase_PlayerStateComponent();
+    return v2;
+}
+/* ---- ULokiDropPhase_PlayerStateComponent: 7 dwords / 4 instructions (cache offset 0x7e09e) ----
+    0000  PSF           v2
+    0004  ALLOC         84957 ULokiDropPhase_PlayerStateComponent     ; new ULokiDropPhase_PlayerStateComponent  ctor=void ULokiDropPhase_PlayerStateComponent::ULokiDropPhase_PlayerStateComponent()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ULokiDropPhase_PlayerStateComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiDropPhase_PlayerStateComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x7e16e) ----
+    0000  PshGPtr       __StaticType_ULokiDropPhase_PlayerStateComponent
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ULokiDropPhase_PlayerStateComponent@ ULokiDropPhase_PlayerStateComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiDropPhase_PlayerStateComponent, v2, typeid(ULokiDropPhase_PlayerStateComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x7e2bb) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972695                                    ; ULokiDropPhase_PlayerStateComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiDropPhase_PlayerStateComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetComponentByClass                   ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiDropPhase_PlayerStateComponent@ ULokiDropPhase_PlayerStateComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiDropPhase_PlayerStateComponent, v2, typeid(ULokiDropPhase_PlayerStateComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x7e420) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972695                                    ; ULokiDropPhase_PlayerStateComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiDropPhase_PlayerStateComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass           ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiDropPhase_PlayerStateComponent@ ULokiDropPhase_PlayerStateComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiDropPhase_PlayerStateComponent, v2, typeid(ULokiDropPhase_PlayerStateComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x7e580) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972695                                    ; ULokiDropPhase_PlayerStateComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiDropPhase_PlayerStateComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_CreateComponentByClass                ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiDropPhase_PlayerStateComponent : ULokiPlayerDropPlaneComponent
+// unreal base : /Script/Loki.LokiPlayerDropPlaneComponent
+// C++ header  : ../../../Loki/Source/Loki/Player/LokiPlayerDropPlaneComponent.h
+// static class global: __StaticType_ULokiDropPhase_PlayerStateComponent
+{
+    protected float64 MaxHeightRange;
+    protected float64 MinimumTargetLocationMovementSpeed;
+    protected float64 MaximumTargetLocationMovementSpeed;
+    protected float64 PodDetachFromLeaderMinTime;
+    protected float64 PodDetachFromLeaderMaxTime;
+    protected bool bDropPhaseControlsDisabled;
+    protected bool bCanSelectDropLocation;
+    protected float64 TargetMovespeedDelta;
+    protected float64 NetworkUpdateFrequencey;
+    protected FVector BufferedDestinationDelta;
+    protected ALokiDropPod@ DropPodActor;
+    protected FGameEventListenerHandle PodSteeringEventListenerHanddle;
+    protected bool bPodSteeringEnabled;
+    protected bool bPodDetachingEnabled;
+    protected bool bIgnoreInput;
+    private bool bAlwaysUpdateNetwork;
+    private FTimerHandle NetworkUpdateFrequencyTimer;
+    protected const float64 INVALID_MOVEMENT_VALUE;
+    private float64 MovementForwardValue;
+    private float64 MovementRightValue;
+    protected ELokiMovementInputDirection CurrMoveDirection;
+    protected float64 CrewPodDetachStartTime;
+    protected bool bPodIsAttachedToLeader;
+    protected float64 DetachInputStartTime;
+    protected float64 CurrTotalTimeForDetach;
+
+    ULokiDropPhase_PlayerStateComponent()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+        auto v4;
+
+        this.BufferedDestinationDelta = FVector();
+        this.PodSteeringEventListenerHanddle = FGameEventListenerHandle();
+        this.NetworkUpdateFrequencyTimer = FTimerHandle();
+        v2 = 20000.0;
+        this.MaxHeightRange = v2;
+        v2 = 300.0;
+        this.MinimumTargetLocationMovementSpeed = v2;
+        v2 = 900.0;
+        this.MaximumTargetLocationMovementSpeed = v2;
+        v2 = 0.5;
+        this.PodDetachFromLeaderMinTime = v2;
+        v2 = 2.0;
+        this.PodDetachFromLeaderMaxTime = v2;
+        v3 = false;
+        this.bDropPhaseControlsDisabled = v3;
+        v3 = false;
+        this.bCanSelectDropLocation = v3;
+        v2 = 0.05;
+        this.NetworkUpdateFrequencey = v2;
+        v3 = false;
+        this.bPodSteeringEnabled = v3;
+        v3 = false;
+        this.bPodDetachingEnabled = v3;
+        v3 = true;
+        this.bIgnoreInput = v3;
+        v3 = true;
+        this.bAlwaysUpdateNetwork = v3;
+        v2 = -1000.0;
+        this.INVALID_MOVEMENT_VALUE = v2;
+        v2 = this.INVALID_MOVEMENT_VALUE;
+        this.MovementForwardValue = v2;
+        v2 = this.INVALID_MOVEMENT_VALUE;
+        this.MovementRightValue = v2;
+        v4 = false;
+        this.CurrMoveDirection = v4;
+        v2 = 0;
+        this.CrewPodDetachStartTime = v2;
+        v3 = true;
+        this.bPodIsAttachedToLeader = v3;
+        v2 = -1.0;
+        this.DetachInputStartTime = v2;
+        v2 = -1.0;
+        this.CurrTotalTimeForDetach = v2;
+        return;
+    }
+    /* ---- ULokiDropPhase_PlayerStateComponent: 135 dwords / 74 instructions (cache offset 0x8271a) ----
+        0000  PshVPtr       this
+        0004  ADDSi         512 134230871                                 ; .BufferedDestinationDelta
+        000C  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        0018  PshVPtr       this
+        001C  ADDSi         544 134230871                                 ; .PodSteeringEventListenerHanddle
+        0024  CALLSYS       FGameEventListenerHandle::$beh0               ; void FGameEventListenerHandle::$beh0()
+        0030  PshVPtr       this
+        0034  ADDSi         600 134230871                                 ; .NetworkUpdateFrequencyTimer
+        003C  CALLSYS       FTimerHandle::$beh0                           ; void FTimerHandle::$beh0()
+        0048  SetV8         v2 0x40d3880000000000
+        0054  LoadThisR     448 134230871                                 ; this.MaxHeightRange
+        005C  WRTV8         v2
+        0060  SetV8         v2 0x4072c00000000000
+        006C  LoadThisR     456 134230871                                 ; this.MinimumTargetLocationMovementSpeed
+        0074  WRTV8         v2
+        0078  SetV8         v2 0x408c200000000000
+        0084  LoadThisR     464 134230871                                 ; this.MaximumTargetLocationMovementSpeed
+        008C  WRTV8         v2
+        0090  SetV8         v2 0x3fe0000000000000
+        009C  LoadThisR     472 134230871                                 ; this.PodDetachFromLeaderMinTime
+        00A4  WRTV8         v2
+        00A8  SetV8         v2 0x4000000000000000
+        00B4  LoadThisR     480 134230871                                 ; this.PodDetachFromLeaderMaxTime
+        00BC  WRTV8         v2
+        00C0  SetV1         v3 0
+        00C8  LoadThisR     488 134230871                                 ; this.bDropPhaseControlsDisabled
+        00D0  WRTV1         v3
+        00D4  SetV1         v3 0
+        00DC  LoadThisR     489 134230871                                 ; this.bCanSelectDropLocation
+        00E4  WRTV1         v3
+        00E8  SetV8         v2 0x3fa999999999999a
+        00F4  LoadThisR     504 134230871                                 ; this.NetworkUpdateFrequencey
+        00FC  WRTV8         v2
+        0100  SetV1         v3 0
+        0108  LoadThisR     592 134230871                                 ; this.bPodSteeringEnabled
+        0110  WRTV1         v3
+        0114  SetV1         v3 0
+        011C  LoadThisR     593 134230871                                 ; this.bPodDetachingEnabled
+        0124  WRTV1         v3
+        0128  SetV1         v3 1
+        0130  LoadThisR     594 134230871                                 ; this.bIgnoreInput
+        0138  WRTV1         v3
+        013C  SetV1         v3 1
+        0144  LoadThisR     595 134230871                                 ; this.bAlwaysUpdateNetwork
+        014C  WRTV1         v3
+        0150  SetV8         v2 0xc08f400000000000
+        015C  LoadThisR     608 134230871                                 ; this.INVALID_MOVEMENT_VALUE
+        0164  WRTV8         v2
+        0168  LoadThisR     608 134230871                                 ; this.INVALID_MOVEMENT_VALUE
+        0170  RDR8          v2
+        0174  LoadThisR     616 134230871                                 ; this.MovementForwardValue
+        017C  WRTV8         v2
+        0180  LoadThisR     608 134230871                                 ; this.INVALID_MOVEMENT_VALUE
+        0188  RDR8          v2
+        018C  LoadThisR     624 134230871                                 ; this.MovementRightValue
+        0194  WRTV8         v2
+        0198  SetV1         v4 0
+        01A0  LoadThisR     632 134230871                                 ; this.CurrMoveDirection
+        01A8  WRTV1         v4
+        01AC  SetV8         v2 0x0
+        01B8  LoadThisR     640 134230871                                 ; this.CrewPodDetachStartTime
+        01C0  WRTV8         v2
+        01C4  SetV1         v3 1
+        01CC  LoadThisR     648 134230871                                 ; this.bPodIsAttachedToLeader
+        01D4  WRTV1         v3
+        01D8  SetV8         v2 0xbff0000000000000
+        01E4  LoadThisR     656 134230871                                 ; this.DetachInputStartTime
+        01EC  WRTV8         v2
+        01F0  SetV8         v2 0xbff0000000000000
+        01FC  LoadThisR     664 134230871                                 ; this.CurrTotalTimeForDetach
+        0204  WRTV8         v2
+        0208  PshVPtr       this
+        020C  FinConstruct  ULokiDropPhase_PlayerStateComponent
+        0218  RET           2
+    */
+
+    UFUNCTION(UnrealName=OnSelectDropLocationStarted, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnSelectDropLocationStarted_Implementation()   // traits=0x30
+    {
+        bool v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = true;
+            this.bCanSelectDropLocation = v1;
+            v1 = true;
+            this.SetComponentTickEnabled(v1);
+        }
+        return;
+    }
+    /* ---- OnSelectDropLocationStarted_Implementation: 23 dwords / 15 instructions (cache offset 0x7edf9) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      84945                                         ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+        000C  CpyRtoV4      v1
+        0010  NOT           v1
+        0014  CpyVtoR1      v1
+        0018  JLowZ         2                                             -> L0028
+        0020  JMP           12                                            -> L0058
+      L0028:
+        0028  SetV1         v1 1
+        0030  LoadThisR     489 134230871                                 ; this.bCanSelectDropLocation
+        0038  WRTV1         v1
+        003C  SetV1         v1 1
+        0044  PshV4         v1
+        0048  PshVPtr       this
+        004C  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+      L0058:
+        0058  RET           2
+    */
+
+    UFUNCTION(UnrealName=OnEventRouterReady, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnEventRouterReady_Implementation(UGameEventRouterComponent@ Router)   // traits=0x20
+    {
+        FGameEvent_GameAugmentSet v6;
+        auto v7;
+        FGameEventListenerHandle v20;
+        FGameEvent_PodSteeringEnabled v24;
+
+        v7 = false;
+        v6 = FGameEvent_GameAugmentSet();
+        v20 = Router.RegisterForEvent(this, v6, typeid(FGameEvent_GameAugmentSet), nullptr, n"OnGameAugmentSet", v7);
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v7 = false;
+            v24 = FGameEvent_PodSteeringEnabled();
+            v20 = Router.RegisterForEvent(this, v24, typeid(FGameEvent_PodSteeringEnabled), nullptr, n"OnPodSteeringEnabled", v7);
+            this.PodSteeringEventListenerHanddle = v20;
+        }
+        return;
+    }
+    /* ---- OnEventRouterReady_Implementation: 78 dwords / 44 instructions (cache offset 0x7efae) ----
+        0000  SetV1         v7 0
+        0008  PshV4         v7
+        000C  PshC4         62
+        0014  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0020  PshRPtr
+        0024  PshNull
+        0028  TYPEID        67120897                                      ; FGameEvent_GameAugmentSet
+        0030  PSF           v6
+        0034  CALLSYS       FGameEvent_GameAugmentSet::$beh0              ; void FGameEvent_GameAugmentSet::$beh0()
+        0040  PSF           v6
+        0044  PshVPtr       this
+        0048  PSF           v20
+        004C  PshVPtr       Router
+        0050  CALLSYS       UGameEventRouterComponent::RegisterForEvent   ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+        005C  PSF           v6
+        0060  CALLSYS       FGameEvent_GameAugmentSet::$beh2              ; void FGameEvent_GameAugmentSet::$beh2()
+        006C  PSF           v20
+        0070  CALLSYS       FGameEventListenerHandle::$beh2               ; void FGameEventListenerHandle::$beh2()
+        007C  PshGPtr       __WorldContext
+        0088  CALLSYS       LokiIsClient                                  ; bool Loki::LokiIsClient(const UObject@)
+        0094  JLowZ         38                                            -> L0134
+        009C  SetV1         v7 0
+        00A4  PshV4         v7
+        00A8  PshC4         63
+        00B0  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        00BC  PshRPtr
+        00C0  PshNull
+        00C4  TYPEID        67120951                                      ; FGameEvent_PodSteeringEnabled
+        00CC  PSF           v24
+        00D0  CALLSYS       FGameEvent_PodSteeringEnabled::$beh0          ; void FGameEvent_PodSteeringEnabled::$beh0()
+        00DC  PSF           v24
+        00E0  PshVPtr       this
+        00E4  PSF           v20
+        00E8  PshVPtr       Router
+        00EC  CALLSYS       UGameEventRouterComponent::RegisterForEvent   ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+        00F8  PSF           v24
+        00FC  CALLSYS       FGameEvent_PodSteeringEnabled::$beh2          ; void FGameEvent_PodSteeringEnabled::$beh2()
+        0108  PSF           v20
+        010C  PshVPtr       this
+        0110  ADDSi         544 134230871                                 ; .PodSteeringEventListenerHanddle
+        0118  CALLSYS       FGameEventListenerHandle::opAssign            ; FGameEventListenerHandle& FGameEventListenerHandle::opAssign(const FGameEventListenerHandle&)
+        0124  PSF           v20
+        0128  CALLSYS       FGameEventListenerHandle::$beh2               ; void FGameEventListenerHandle::$beh2()
+      L0134:
+        0134  RET           4
+    */
+
+    UFUNCTION(UnrealName=OnSelectDropLocationEnded, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnSelectDropLocationEnded_Implementation()   // traits=0x30
+    {
+        bool v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = false;
+            this.bCanSelectDropLocation = v1;
+            v1 = false;
+            this.SetComponentTickEnabled(v1);
+        }
+        return;
+    }
+    /* ---- OnSelectDropLocationEnded_Implementation: 23 dwords / 15 instructions (cache offset 0x7f28a) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      84945                                         ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+        000C  CpyRtoV4      v1
+        0010  NOT           v1
+        0014  CpyVtoR1      v1
+        0018  JLowZ         2                                             -> L0028
+        0020  JMP           12                                            -> L0058
+      L0028:
+        0028  SetV1         v1 0
+        0030  LoadThisR     489 134230871                                 ; this.bCanSelectDropLocation
+        0038  WRTV1         v1
+        003C  SetV1         v1 0
+        0044  PshV4         v1
+        0048  PshVPtr       this
+        004C  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+      L0058:
+        0058  RET           2
+    */
+
+    UFUNCTION(UnrealName=OnDropPodStarted, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnDropPodStarted_Implementation(AActor@ PodActor)   // traits=0x30
+    {
+        ALokiDropPod v2;
+        auto v3;
+        ALokiPlayerState v6;
+        FTimerHandle v8;
+
+        if (PodActor != nullptr) {
+            v2 = cast<ALokiDropPod@>(PodActor);
+        } else {
+            v2 = nullptr;
+        }
+        this.DropPodActor = v2;
+        v3 = this.IsLocalClient();
+        v3 = !v3;
+        if (v3) {
+            return;
+        } else {
+            v6 = this.DropPodActor.GetPilotPlayerState();
+            if (v6 == nullptr) {
+                v8 = System::SetTimerForNextTick(this, "OnDropPodStartedWithPilot");
+                return;
+            } else {
+                this.OnDropPodStartedWithPilot();
+            }
+        }
+        return;
+    }
+    /* ---- OnDropPodStarted_Implementation: 58 dwords / 37 instructions (cache offset 0x7f43d) ----
+        0000  CmpPtrNull    PodActor
+        0004  JZ            9                                             -> L0030
+        000C  TYPEID        1207972696                                    ; ALokiDropPod@
+        0014  PSF           v2
+        0018  PshVPtr       PodActor
+        001C  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0028  JMP           1                                             -> L0034
+      L0030:
+        0030  ClrVPtr       v2
+      L0034:
+        0034  PshVPtr       v2
+        0038  PshVPtr       this
+        003C  ADDSi         536 134230871                                 ; .DropPodActor
+        0044  REFCPY
+        0048  PopPtr
+        004C  PshVPtr       this
+        0050  CALLINTF      84945                                         ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+        0058  CpyRtoV4      v3
+        005C  NOT           v3
+        0060  CpyVtoR1      v3
+        0064  JLowZ         2                                             -> L0074
+        006C  JMP           28                                            -> L00E4
+      L0074:
+        0074  PshVPtr       this
+        0078  ADDSi         536 134230871                                 ; .DropPodActor
+        0080  RDSPtr
+        0084  CALLSYS       ALokiDropPodBase::GetPilotPlayerState         ; ALokiPlayerState@ ALokiDropPodBase::GetPilotPlayerState() const
+        0090  STOREOBJ      v6
+        0094  CmpPtrNull    v6
+        0098  JNZ           14                                            -> L00D8
+        00A0  PGA           "OnDropPodStartedWithPilot"
+        00AC  PshVPtr       this
+        00B0  PSF           v8
+        00B4  CALLSYS       SetTimerForNextTick                           ; FTimerHandle System::SetTimerForNextTick(UObject@, FString)
+        00C0  PSF           v8
+        00C4  CALLSYS       FTimerHandle::$beh2                           ; void FTimerHandle::$beh2()
+        00D0  JMP           3                                             -> L00E4
+      L00D8:
+        00D8  PshVPtr       this
+        00DC  CALLINTF      84935                                         ; void ULokiDropPhase_PlayerStateComponent::OnDropPodStartedWithPilot()
+      L00E4:
+        00E4  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnDropPodStartedWithPilot()   // traits=0x30
+    {
+        bool v1;
+        bool v2;
+        auto v6;
+        auto v8;
+        auto v10;
+        float32 v14;
+        FTimerHandle v16;
+
+        v1 = this.DropPodActor.bIsTeamLeaderPod;
+        v1 = !v1;
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v2 = this.DropPodActor.bIsLocalPlayerPilot;
+            v1 = v2;
+        }
+        if (v1) {
+            v6 = this.DropPodActor.IntroSequenceTotalTime;
+            v8 = this.DropPodActor.PodDetachTotalTime;
+            v6 = v6 - v8;
+            v10 = this.PodDetachFromLeaderMaxTime;
+            v8 = v6 - v10;
+            v2 = false;
+            v1 = false;
+            v14 = float32(v8);
+            v16 = System::SetTimer(this, n"OnAllowPodDetach", v14, v1, v2, 0, 0);
+            return;
+        } else {
+            v2 = false;
+            this.bIgnoreInput = v2;
+        }
+        return;
+    }
+    /* ---- OnDropPodStartedWithPilot: 88 dwords / 57 instructions (cache offset 0x7f6a0) ----
+        0000  PshVPtr       this
+        0004  ADDSi         536 134230871                                 ; .DropPodActor
+        000C  RDSPtr
+        0010  ADDSi         1117 134230872                                ; .bIsTeamLeaderPod
+        0018  PopRPtr
+        001C  RDR1          v1
+        0020  NOT           v1
+        0024  CpyVtoR1      v1
+        0028  JLowNZ        4                                             -> L0040
+        0030  SetV4         v1 0
+        0038  JMP           10                                            -> L0068
+      L0040:
+        0040  PshVPtr       this
+        0044  ADDSi         536 134230871                                 ; .DropPodActor
+        004C  RDSPtr
+        0050  ADDSi         1124 134230872                                ; .bIsLocalPlayerPilot
+        0058  PopRPtr
+        005C  RDR1          v2
+        0060  CpyVtoV4      v1 v2
+      L0068:
+        0068  CpyVtoR1      v1
+        006C  JLowZ         53                                            -> L0148
+        0074  PshVPtr       this
+        0078  ADDSi         536 134230871                                 ; .DropPodActor
+        0080  RDSPtr
+        0084  ADDSi         1000 134230872                                ; .IntroSequenceTotalTime
+        008C  PopRPtr
+        0090  RDR8          v6
+        0094  PshVPtr       this
+        0098  ADDSi         536 134230871                                 ; .DropPodActor
+        00A0  RDSPtr
+        00A4  ADDSi         1040 134230872                                ; .PodDetachTotalTime
+        00AC  PopRPtr
+        00B0  RDR8          v8
+        00B4  SUBd          v6 v6 v8
+        00BC  LoadThisR     480 134230871                                 ; this.PodDetachFromLeaderMaxTime
+        00C4  RDR8          v10
+        00C8  SUBd          v8 v6 v10
+        00D0  PshC4         0
+        00D8  PshC4         0
+        00E0  SetV1         v2 0
+        00E8  PshV4         v2
+        00EC  SetV1         v1 0
+        00F4  PshV4         v1
+        00F8  dTOf          v14 v8
+        0100  PshV4         v14
+        0104  PshC4         64
+        010C  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0118  PshRPtr
+        011C  PshVPtr       this
+        0120  PSF           v16
+        0124  CALLSYS       SetTimer                                      ; FTimerHandle System::SetTimer(UObject@, FName, float32, bool, bool, float32, float32)
+        0130  PSF           v16
+        0134  CALLSYS       FTimerHandle::$beh2                           ; void FTimerHandle::$beh2()
+        0140  JMP           5                                             -> L015C
+      L0148:
+        0148  SetV1         v2 0
+        0150  LoadThisR     594 134230871                                 ; this.bIgnoreInput
+        0158  WRTV1         v2
+      L015C:
+        015C  RET           2
+    */
+
+    protected float64 GetInputTimeForDetach()   // traits=0x30
+    {
+        float64 v2;
+        UWorld v4;
+        auto v6;
+        auto v8;
+        float64 v12;
+
+        v4 = this.GetWorld();
+        v6 = v4.GetTimeSeconds();
+        v8 = this.DetachInputStartTime;
+        v6 = v6 - v8;
+        v8 = this.PodDetachFromLeaderMaxTime;
+        if (v6 >= v8) {
+            v2 = this.PodDetachFromLeaderMinTime;
+            return v2;
+        } else {
+            v12 = this.PodDetachFromLeaderMinTime;
+            v8 = this.PodDetachFromLeaderMaxTime;
+            v2 = v8 - v6;
+            v8 = Math::Max(v2, v12);
+            return v8;
+        }
+        return v8;
+    }
+    /* ---- GetInputTimeForDetach: 46 dwords / 29 instructions (cache offset 0x7f950) ----
+        0000  PshVPtr       this
+        0004  CALLSYS       UObject::GetWorld                             ; UWorld@ UObject::GetWorld() const
+        0010  STOREOBJ      v4
+        0014  PshVPtr       v4
+        0018  CALLSYS       UWorld::GetTimeSeconds                        ; float64 UWorld::GetTimeSeconds() const
+        0024  CpyRtoV8      v6
+        0028  LoadThisR     656 134230871                                 ; this.DetachInputStartTime
+        0030  RDR8          v8
+        0034  SUBd          v6 v6 v8
+        003C  LoadThisR     480 134230871                                 ; this.PodDetachFromLeaderMaxTime
+        0044  RDR8          v8
+        0048  CMPd          v6 v8
+        0050  JS            6                                             -> L0070
+        0058  LoadThisR     472 134230871                                 ; this.PodDetachFromLeaderMinTime
+        0060  RDR8          v2
+        0064  CpyVtoR8      v2
+        0068  JMP           17                                            -> L00B4
+      L0070:
+        0070  LoadThisR     472 134230871                                 ; this.PodDetachFromLeaderMinTime
+        0078  RDR8          v12
+        007C  PshV8         v12
+        0080  LoadThisR     480 134230871                                 ; this.PodDetachFromLeaderMaxTime
+        0088  RDR8          v8
+        008C  SUBd          v2 v8 v6
+        0094  PshV8         v2
+        0098  CALLSYS       Max                                           ; float64 Math::Max(float64, float64)
+        00A4  CpyRtoV8      v8
+        00A8  CpyVtoR8      v8
+        00AC  JMP           0                                             -> L00B4
+      L00B4:
+        00B4  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnAllowPodDetach()   // traits=0x20
+    {
+        ALokiDropPod v2;
+        AActor v4;
+        ALokiDropPod v6;
+        auto v7;
+        UWorld v10;
+        auto v12;
+        ELokiMovementInputDirection v13;
+        ELokiCrewPodDetachState v14;
+
+        v4 = this.DropPod;
+        if (v4 != nullptr) {
+            v6 = cast<ALokiDropPod@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v7 = true;
+            this.bPodDetachingEnabled = v7;
+            v7 = false;
+            this.bIgnoreInput = v7;
+            v10 = this.GetWorld();
+            v12 = v10.GetTimeSeconds();
+            this.DetachInputStartTime = v12;
+            v13 = ELokiMovementInputDirection::None;
+            v14 = ELokiCrewPodDetachState::Detachable;
+            v2.SetCrewPodDetachState(v14, 0, v13, FVector::ZeroVector);
+        }
+        return;
+    }
+    /* ---- OnAllowPodDetach: 64 dwords / 40 instructions (cache offset 0x7facd) ----
+        0000  PshVPtr       this
+        0004  ADDSi         272 67115317                                  ; .DropPod
+        000C  RDSPtr
+        0010  RefCpyV       v4
+        0014  CmpPtrNull    v4
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1207972696                                    ; ALokiDropPod@
+        0028  PSF           v6
+        002C  PshVPtr       v4
+        0030  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v6
+      L0048:
+        0048  PshVPtr       v6
+        004C  RefCpyV       v2
+        0050  CmpPtrNull    v2
+        0054  JNZ           2                                             -> L0064
+        005C  JMP           38                                            -> L00FC
+      L0064:
+        0064  SetV1         v7 1
+        006C  LoadThisR     593 134230871                                 ; this.bPodDetachingEnabled
+        0074  WRTV1         v7
+        0078  SetV1         v7 0
+        0080  LoadThisR     594 134230871                                 ; this.bIgnoreInput
+        0088  WRTV1         v7
+        008C  PshVPtr       this
+        0090  CALLSYS       UObject::GetWorld                             ; UWorld@ UObject::GetWorld() const
+        009C  STOREOBJ      v10
+        00A0  PshVPtr       v10
+        00A4  CALLSYS       UWorld::GetTimeSeconds                        ; float64 UWorld::GetTimeSeconds() const
+        00B0  CpyRtoV8      v12
+        00B4  LoadThisR     656 134230871                                 ; this.DetachInputStartTime
+        00BC  WRTV8         v12
+        00C0  PshGPtr       FVector::ZeroVector
+        00CC  SetV1         v13 0
+        00D4  PshV4         v13
+        00D8  PshC8         0x0
+        00E4  SetV1         v14 2
+        00EC  PshV4         v14
+        00F0  PshVPtr       v2
+        00F4  CALLINTF      84990                                         ; void ALokiDropPod::SetCrewPodDetachState(const ELokiCrewPodDetachState, const float64, const ELokiMovementInputDirection, const FVector&)
+      L00FC:
+        00FC  RET           2
+    */
+
+    UFUNCTION(UnrealName=OnDropPodEnded, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnDropPodEnded_Implementation()   // traits=0x30
+    {
+        auto v1;
+        UGameEventRouterComponent v4;
+
+        this.DropPodActor = nullptr;
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = this.bAlwaysUpdateNetwork;
+            v1 = !v1;
+            if (v1) {
+                System::ClearAndInvalidateTimerHandle(__WorldContext, this.NetworkUpdateFrequencyTimer);
+            }
+            v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            v4.StopListeningToEvent(this.PodSteeringEventListenerHanddle);
+            v1 = false;
+            this.bPodSteeringEnabled = v1;
+        }
+        return;
+    }
+    /* ---- OnDropPodEnded_Implementation: 52 dwords / 32 instructions (cache offset 0x7fd10) ----
+        0000  PshNull
+        0004  PshVPtr       this
+        0008  ADDSi         536 134230871                                 ; .DropPodActor
+        0010  REFCPY
+        0014  PopPtr
+        0018  PshVPtr       this
+        001C  CALLINTF      84945                                         ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+        0024  CpyRtoV4      v1
+        0028  NOT           v1
+        002C  CpyVtoR1      v1
+        0030  JLowZ         2                                             -> L0040
+        0038  JMP           35                                            -> L00CC
+      L0040:
+        0040  LoadThisR     595 134230871                                 ; this.bAlwaysUpdateNetwork
+        0048  RDR1          v1
+        004C  NOT           v1
+        0050  CpyVtoR1      v1
+        0054  JLowZ         9                                             -> L0080
+        005C  PshVPtr       this
+        0060  ADDSi         600 134230871                                 ; .NetworkUpdateFrequencyTimer
+        0068  PshGPtr       __WorldContext
+        0074  CALLSYS       ClearAndInvalidateTimerHandle                 ; void System::ClearAndInvalidateTimerHandle(const UObject@, FTimerHandle&)
+      L0080:
+        0080  PshGPtr       __WorldContext
+        008C  CALLSYS       GetGlobalGameEventRouter                      ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+        0098  STOREOBJ      v4
+        009C  PshVPtr       this
+        00A0  ADDSi         544 134230871                                 ; .PodSteeringEventListenerHanddle
+        00A8  PshVPtr       v4
+        00AC  CALLSYS       UGameEventRouterComponent::StopListeningToEvent  ; void UGameEventRouterComponent::StopListeningToEvent(FGameEventListenerHandle&)
+        00B8  SetV1         v1 0
+        00C0  LoadThisR     592 134230871                                 ; this.bPodSteeringEnabled
+        00C8  WRTV1         v1
+      L00CC:
+        00CC  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnPodSteeringEnabled(const FGameEvent_PodSteeringEnabled& Event, const EGameEventStatefulEventType EventType)   // traits=0x30
+    {
+        auto v1;
+        auto v2;
+        int v3;
+        ALokiPlayerState v6;
+        AActor v8;
+        ALokiPlayerState v10;
+        auto v11;
+        auto v12;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = this.bDropPhaseControlsDisabled;
+            v1 = v2;
+        }
+        if (v1) {
+            return;
+        } else {
+            v3 = int(EventType);
+            if (v3 == EGameEventStatefulEventType::Cleared) {
+                v1 = false;
+                this.bPodSteeringEnabled = v1;
+                v2 = false;
+                this.bPodDetachingEnabled = v2;
+                return;
+            } else {
+                v1 = true;
+                this.bPodSteeringEnabled = v1;
+                v2 = true;
+                this.bPodDetachingEnabled = v2;
+                v8 = this.GetOwner();
+                if (v8 != nullptr) {
+                    v10 = cast<ALokiPlayerState@>(v8);
+                } else {
+                    v10 = nullptr;
+                }
+                v6 = v10;
+                v1 = this.bPodIsAttachedToLeader;
+                if (v1) {
+                    if (v6 == nullptr) {
+                        v2 = 0;
+                    } else {
+                        v11 = v6.IsSpawnTeamLeader();
+                        v11 = !v11;
+                        v2 = v11;
+                    }
+                    v12 = v2;
+                } else {
+                    v11 = false;
+                    v12 = v11;
+                }
+                this.bPodIsAttachedToLeader = v12;
+                this.TryStartSteering();
+            }
+        }
+        return;
+    }
+    /* ---- OnPodSteeringEnabled: 107 dwords / 66 instructions (cache offset 0x7ff88) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      84945                                         ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+        000C  CpyRtoV4      v1
+        0010  NOT           v1
+        0014  CpyVtoR1      v1
+        0018  JLowZ         4                                             -> L0030
+        0020  SetV1         v1 1
+        0028  JMP           5                                             -> L0044
+      L0030:
+        0030  LoadThisR     488 134230871                                 ; this.bDropPhaseControlsDisabled
+        0038  RDR1          v2
+        003C  CpyVtoV4      v1 v2
+      L0044:
+        0044  CpyVtoR1      v1
+        0048  JLowZ         2                                             -> L0058
+        0050  JMP           84                                            -> L01A8
+      L0058:
+        0058  sbTOi         v3 EventType
+        0060  CMPIi         v3 2
+        0068  JNZ           12                                            -> L00A0
+        0070  SetV1         v1 0
+        0078  LoadThisR     592 134230871                                 ; this.bPodSteeringEnabled
+        0080  WRTV1         v1
+        0084  SetV1         v2 0
+        008C  LoadThisR     593 134230871                                 ; this.bPodDetachingEnabled
+        0094  WRTV1         v2
+        0098  JMP           66                                            -> L01A8
+      L00A0:
+        00A0  SetV1         v1 1
+        00A8  LoadThisR     592 134230871                                 ; this.bPodSteeringEnabled
+        00B0  WRTV1         v1
+        00B4  SetV1         v2 1
+        00BC  LoadThisR     593 134230871                                 ; this.bPodDetachingEnabled
+        00C4  WRTV1         v2
+        00C8  PshVPtr       this
+        00CC  CALLSYS       UActorComponent::GetOwner                     ; AActor@ UActorComponent::GetOwner() const
+        00D8  STOREOBJ      v8
+        00DC  CmpPtrNull    v8
+        00E0  JZ            9                                             -> L010C
+        00E8  TYPEID        1140857146                                    ; ALokiPlayerState@
+        00F0  PSF           v10
+        00F4  PshVPtr       v8
+        00F8  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0104  JMP           1                                             -> L0110
+      L010C:
+        010C  ClrVPtr       v10
+      L0110:
+        0110  PshVPtr       v10
+        0114  RefCpyV       v6
+        0118  LoadThisR     648 134230871                                 ; this.bPodIsAttachedToLeader
+        0120  RDR1          v1
+        0124  CpyVtoR1      v1
+        0128  JLowZ         19                                            -> L017C
+        0130  CmpPtrNull    v6
+        0134  JNZ           4                                             -> L014C
+        013C  SetV4         v2 0
+        0144  JMP           8                                             -> L016C
+      L014C:
+        014C  PshVPtr       v6
+        0150  CALLSYS       ALokiPlayerState::IsSpawnTeamLeader           ; bool ALokiPlayerState::IsSpawnTeamLeader() const
+        015C  CpyRtoV4      v11
+        0160  NOT           v11
+        0164  CpyVtoV4      v2 v11
+      L016C:
+        016C  CpyVtoV4      v12 v2
+        0174  JMP           4                                             -> L018C
+      L017C:
+        017C  SetV1         v11 0
+        0184  CpyVtoV4      v12 v11
+      L018C:
+        018C  LoadThisR     648 134230871                                 ; this.bPodIsAttachedToLeader
+        0194  WRTV1         v12
+        0198  PshVPtr       this
+        019C  CALLINTF      84940                                         ; void ULokiDropPhase_PlayerStateComponent::TryStartSteering()
+        01A4  FreeNullV8    v6
+      L01A8:
+        01A8  RET           5
+    */
+
+    void TryStartSteering()   // traits=0x20
+    {
+        auto v1;
+        ELokiMovementInputDirection v2;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            if (this.HasDropPodControl()) {
+                v2 = this.CurrMoveDirection;
+                this.UpdatePodMovement(v2);
+            }
+        }
+        return;
+    }
+    /* ---- TryStartSteering: 23 dwords / 16 instructions (cache offset 0x80292) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      84945                                         ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+        000C  CpyRtoV4      v1
+        0010  NOT           v1
+        0014  CpyVtoR1      v1
+        0018  JLowZ         2                                             -> L0028
+        0020  JMP           12                                            -> L0058
+      L0028:
+        0028  PshVPtr       this
+        002C  CALLINTF      84953                                         ; bool ULokiDropPhase_PlayerStateComponent::HasDropPodControl() const
+        0034  JLowZ         7                                             -> L0058
+        003C  LoadThisR     632 134230871                                 ; this.CurrMoveDirection
+        0044  RDR1          v2
+        0048  PshV4         v2
+        004C  PshVPtr       this
+        0050  CALLINTF      84954                                         ; void ULokiDropPhase_PlayerStateComponent::UpdatePodMovement(const ELokiMovementInputDirection)
+      L0058:
+        0058  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x30
+    {
+        auto v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            this.UpdateDropLocationCursor();
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 14 dwords / 10 instructions (cache offset 0x803e7) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      84945                                         ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+        000C  CpyRtoV4      v1
+        0010  NOT           v1
+        0014  CpyVtoR1      v1
+        0018  JLowZ         2                                             -> L0028
+        0020  JMP           3                                             -> L0034
+      L0028:
+        0028  PshVPtr       this
+        002C  CALLINTF      84946                                         ; void ULokiDropPhase_PlayerStateComponent::UpdateDropLocationCursor()
+      L0034:
+        0034  RET           4
+    */
+
+    UFUNCTION(UnrealName=OnForwardMovementInput, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnForwardMovementInput_Implementation(const float64 ForwardValue)   // traits=0x30
+    {
+        auto v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            this.MovementForwardValue = ForwardValue;
+            this.ProcessMovement();
+        }
+        return;
+    }
+    /* ---- OnForwardMovementInput_Implementation: 17 dwords / 12 instructions (cache offset 0x8056b) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      84945                                         ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+        000C  CpyRtoV4      v1
+        0010  NOT           v1
+        0014  CpyVtoR1      v1
+        0018  JLowZ         2                                             -> L0028
+        0020  JMP           6                                             -> L0040
+      L0028:
+        0028  LoadThisR     616 134230871                                 ; this.MovementForwardValue
+        0030  WRTV8         ForwardValue
+        0034  PshVPtr       this
+        0038  CALLINTF      84947                                         ; void ULokiDropPhase_PlayerStateComponent::ProcessMovement()
+      L0040:
+        0040  RET           4
+    */
+
+    UFUNCTION(UnrealName=OnRightMovementInput, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnRightMovementInput_Implementation(const float64 RightValue)   // traits=0x30
+    {
+        auto v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            this.MovementRightValue = RightValue;
+            this.ProcessMovement();
+        }
+        return;
+    }
+    /* ---- OnRightMovementInput_Implementation: 17 dwords / 12 instructions (cache offset 0x80709) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      84945                                         ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+        000C  CpyRtoV4      v1
+        0010  NOT           v1
+        0014  CpyVtoR1      v1
+        0018  JLowZ         2                                             -> L0028
+        0020  JMP           6                                             -> L0040
+      L0028:
+        0028  LoadThisR     624 134230871                                 ; this.MovementRightValue
+        0030  WRTV8         RightValue
+        0034  PshVPtr       this
+        0038  CALLINTF      84947                                         ; void ULokiDropPhase_PlayerStateComponent::ProcessMovement()
+      L0040:
+        0040  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnGameAugmentSet(const FGameEvent_GameAugmentSet& Event, const EGameEventStatefulEventType EventType)   // traits=0x30
+    {
+        int v1;
+        auto v3;
+        TSubclassOf<ALokiGameAugment@> v6;
+        ALokiGameAugment v8;
+
+        v1 = int(EventType);
+        if (v1 != EGameEventStatefulEventType::Cleared) {
+            v6 = TSubclassOf<ALokiGameAugment@>();
+            v6 = Event.GameAugmentClass;
+            v3 = v6 == nullptr;
+            v3 = !v3;
+            if (v3) {
+                v8 = Event.GameAugmentClass.GetDefaultObject();
+                v3 = v8.bDropPhaseControlsDisabled;
+                this.bDropPhaseControlsDisabled = v3;
+            }
+        }
+        return;
+    }
+    /* ---- OnGameAugmentSet: 42 dwords / 25 instructions (cache offset 0x808c7) ----
+        0000  sbTOi         v1 EventType
+        0008  CMPIi         v1 2
+        0010  JZ            35                                            -> L00A4
+        0018  PSF           v6
+        001C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiGameAugment@>::$beh0()
+        0028  PshVPtr       Event
+        002C  ADDSi         8 67120897                                    ; .GameAugmentClass
+        0034  PSF           v6
+        0038  CALLSYS       TSubclassOf::opAssign                         ; TSubclassOf<ALokiGameAugment@>& TSubclassOf<ALokiGameAugment@>::opAssign(const TSubclassOf<ALokiGameAugment@>&)
+        0044  PshNull
+        0048  PSF           v6
+        004C  CALLSYS       TSubclassOf::opEquals                         ; bool TSubclassOf<ALokiGameAugment@>::opEquals(UClass@) const
+        0058  CpyRtoV4      v3
+        005C  NOT           v3
+        0060  CpyVtoR1      v3
+        0064  JLowZ         14                                            -> L00A4
+        006C  PshVPtr       Event
+        0070  ADDSi         8 67120897                                    ; .GameAugmentClass
+        0078  CALLSYS       TSubclassOf::GetDefaultObject                 ; ALokiGameAugment@ TSubclassOf<ALokiGameAugment@>::GetDefaultObject() const
+        0084  STOREOBJ      v8
+        0088  LoadRObjR     v8 912 67115120                               ; .bDropPhaseControlsDisabled
+        0094  RDR1          v3
+        0098  LoadThisR     488 134230871                                 ; this.bDropPhaseControlsDisabled
+        00A0  WRTV1         v3
+      L00A4:
+        00A4  RET           5
+    */
+
+    bool IsLocalClient()   // traits=0x20
+    {
+        auto v1;
+        APlayerState v4;
+        AActor v6;
+        APlayerState v8;
+        APlayerController v10;
+
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v6 = this.GetOwner();
+            if (v6 != nullptr) {
+                v8 = cast<APlayerState@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            v10 = v4.GetPlayerController();
+            v1 = v10 != nullptr;
+            return v1;
+        } else {
+            v1 = false;
+        }
+        return v1;
+    }
+    /* ---- IsLocalClient: 43 dwords / 27 instructions (cache offset 0x80aba) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsClient                                  ; bool Loki::LokiIsClient(const UObject@)
+        0018  JLowZ         31                                            -> L009C
+        0020  PshVPtr       this
+        0024  CALLSYS       UActorComponent::GetOwner                     ; AActor@ UActorComponent::GetOwner() const
+        0030  STOREOBJ      v6
+        0034  CmpPtrNull    v6
+        0038  JZ            9                                             -> L0064
+        0040  TYPEID        1140855230                                    ; APlayerState@
+        0048  PSF           v8
+        004C  PshVPtr       v6
+        0050  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        005C  JMP           1                                             -> L0068
+      L0064:
+        0064  ClrVPtr       v8
+      L0068:
+        0068  PshVPtr       v8
+        006C  RefCpyV       v4
+        0070  PshVPtr       v4
+        0074  CALLSYS       APlayerState::GetPlayerController             ; APlayerController@ APlayerState::GetPlayerController() const
+        0080  STOREOBJ      v10
+        0084  CmpPtrNull    v10
+        0088  TNZ
+        008C  CpyRtoV4      v1
+        0090  CpyVtoR4      v1
+        0094  JMP           3                                             -> L00A8
+      L009C:
+        009C  SetV1         v1 0
+        00A4  CpyVtoR4      v1
+      L00A8:
+        00A8  RET           2
+    */
+
+    private void UpdateDropLocationCursor()   // traits=0x28
+    {
+        ALokiPlayerState v2;
+        AActor v4;
+        ALokiPlayerState v6;
+        ALokiPlayerController v8;
+        auto v9;
+        APlayerController v12;
+        ALokiPlayerController v14;
+        ALokiPlayerController v16;
+        ALokiHeightMap v18;
+        auto v21;
+        ELokiProjectionDistanceType v29;
+        FVector v36;
+        FVector2D v44;
+        float64 v46;
+        float64 v48;
+        FVector v54;
+        FVector v60;
+        auto v62;
+        auto v63;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiPlayerState@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v12 = v2.GetPlayerController();
+            if (v12 != nullptr) {
+                v14 = cast<ALokiPlayerController@>(v12);
+            } else {
+                v14 = nullptr;
+            }
+            v16 = v14;
+        } else {
+        }
+        v8 = v16;
+        v18 = ALokiHeightMap::GetInstance(__WorldContext);
+        if (v8 == nullptr) {
+            v9 = 0;
+        } else {
+            v21 = v18 != nullptr;
+            v9 = v21;
+        }
+        if (v9) {
+            v29 = ELokiProjectionDistanceType::Default;
+            v36 = v8.GetCursorLocation(v29);
+            v46 = v36.Y;
+            v48 = v36.X;
+            v44 = FVector2D(v48, v46);
+            v54 = FVector();
+            v60 = FVector();
+            if (Gameplay::DeprojectScreenToWorld(v8, v44, v54, v60)) {
+                v63 = v18.GetTerrainPercentInRadius(v54, 1000.0);
+                v48 = float64(v63);
+                v62 = v48;
+                v9 = v18.IsTerrainInRadius(v54, 1000.0, 0.5);
+            }
+        }
+        return;
+    }
+    /* ---- UpdateDropLocationCursor: 134 dwords / 82 instructions (cache offset 0x80c3f) ----
+        0000  PshVPtr       this
+        0004  CALLSYS       UActorComponent::GetOwner                     ; AActor@ UActorComponent::GetOwner() const
+        0010  STOREOBJ      v4
+        0014  CmpPtrNull    v4
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857146                                    ; ALokiPlayerState@
+        0028  PSF           v6
+        002C  PshVPtr       v4
+        0030  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v6
+      L0048:
+        0048  PshVPtr       v6
+        004C  RefCpyV       v2
+        0050  CmpPtrNull    v2
+        0054  JZ            22                                            -> L00B4
+        005C  PshVPtr       v2
+        0060  CALLSYS       APlayerState::GetPlayerController             ; APlayerController@ APlayerState::GetPlayerController() const
+        006C  STOREOBJ      v12
+        0070  CmpPtrNull    v12
+        0074  JZ            9                                             -> L00A0
+        007C  TYPEID        1140857134                                    ; ALokiPlayerController@
+        0084  PSF           v14
+        0088  PshVPtr       v12
+        008C  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0098  JMP           1                                             -> L00A4
+      L00A0:
+        00A0  ClrVPtr       v14
+      L00A4:
+        00A4  PshVPtr       v14
+        00A8  RefCpyV       v16
+        00AC  JMP           1                                             -> L00B8
+      L00B4:
+        00B4  FreeNullV8    v16
+      L00B8:
+        00B8  PshVPtr       v16
+        00BC  RefCpyV       v8
+        00C0  PshGPtr       __WorldContext
+        00CC  CALLSYS       GetInstance                                   ; ALokiHeightMap@ ALokiHeightMap::GetInstance(const UObject@)
+        00D8  STOREOBJ      v18
+        00DC  CmpPtrNull    v8
+        00E0  JNZ           4                                             -> L00F8
+        00E8  SetV4         v9 0
+        00F0  JMP           5                                             -> L010C
+      L00F8:
+        00F8  CmpPtrNull    v18
+        00FC  TNZ
+        0100  CpyRtoV4      v21
+        0104  CpyVtoV4      v9 v21
+      L010C:
+        010C  CpyVtoR1      v9
+        0110  JLowZ         63                                            -> L0214
+        0118  SetV1         v29 0
+        0120  PshV4         v29
+        0124  PSF           v36
+        0128  PshVPtr       v8
+        012C  CALLSYS       ALokiPlayerController::GetCursorLocation      ; FVector ALokiPlayerController::GetCursorLocation(ELokiProjectionDistanceType) const
+        0138  LoadVObjR     v36 8 67117444                                ; .Y
+        0144  RDR8          v46
+        0148  PshV8         v46
+        014C  LoadVObjR     v36 0 67117444                                ; .X
+        0158  RDR8          v48
+        015C  PshV8         v48
+        0160  PSF           v44
+        0164  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0170  PSF           v54
+        0174  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        0180  PSF           v60
+        0184  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        0190  PSF           v60
+        0194  PSF           v54
+        0198  PSF           v44
+        019C  PshVPtr       v8
+        01A0  CALLSYS       DeprojectScreenToWorld                        ; bool Gameplay::DeprojectScreenToWorld(const APlayerController@, const FVector2D&, FVector&, FVector&)
+        01AC  JLowZ         24                                            -> L0214
+        01B4  PshC8         0x408f400000000000
+        01C0  PSF           v54
+        01C4  PshVPtr       v18
+        01C8  CALLSYS       ALokiHeightMap::GetTerrainPercentInRadius     ; float32 ALokiHeightMap::GetTerrainPercentInRadius(const FVector, const float64)
+        01D4  CpyRtoV4      v63
+        01D8  fTOd          v48 v63
+        01E0  CpyVtoV8      v62 v48
+        01E8  PshC4         1056964608
+        01F0  PshC8         0x408f400000000000
+        01FC  PSF           v54
+        0200  PshVPtr       v18
+        0204  CALLSYS       ALokiHeightMap::IsTerrainInRadius             ; bool ALokiHeightMap::IsTerrainInRadius(const FVector, const float64, const float32)
+        0210  CpyRtoV4      v9
+      L0214:
+        0214  RET           2
+    */
+
+    private void ProcessMovement()   // traits=0x28
+    {
+        auto v1;
+        auto v2;
+        float64 v4;
+        float64 v6;
+        ELokiMovementInputDirection v8;
+
+        v1 = this.bDropPhaseControlsDisabled;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = this.bIgnoreInput;
+            v1 = v2;
+        }
+        if (v1) {
+            v1 = true;
+        } else {
+            v4 = this.MovementForwardValue;
+            v6 = this.INVALID_MOVEMENT_VALUE;
+            v2 = v4 == v6;
+            v1 = v2;
+        }
+        if (v1) {
+            v1 = true;
+        } else {
+            v6 = this.MovementRightValue;
+            v4 = this.INVALID_MOVEMENT_VALUE;
+            v2 = v6 == v4;
+            v1 = v2;
+        }
+        if (v1) {
+            return;
+        } else {
+            v4 = this.MovementRightValue;
+            v6 = this.MovementForwardValue;
+            v8 = this.CalculateDetachDirection(v6, v4);
+            if (this.UpdatePodControl(v8)) {
+                v2 = this.bPodIsAttachedToLeader;
+                v2 = !v2;
+                if (v2) {
+                    this.UpdatePodMovement(v8);
+                }
+            }
+            v4 = this.INVALID_MOVEMENT_VALUE;
+            this.MovementForwardValue = v4;
+            v6 = this.INVALID_MOVEMENT_VALUE;
+            this.MovementRightValue = v6;
+        }
+        return;
+    }
+    /* ---- ProcessMovement: 100 dwords / 66 instructions (cache offset 0x81023) ----
+        0000  LoadThisR     488 134230871                                 ; this.bDropPhaseControlsDisabled
+        0008  RDR1          v1
+        000C  CpyVtoR1      v1
+        0010  JLowZ         4                                             -> L0028
+        0018  SetV1         v1 1
+        0020  JMP           5                                             -> L003C
+      L0028:
+        0028  LoadThisR     594 134230871                                 ; this.bIgnoreInput
+        0030  RDR1          v2
+        0034  CpyVtoV4      v1 v2
+      L003C:
+        003C  CpyVtoR1      v1
+        0040  JLowZ         4                                             -> L0058
+        0048  SetV1         v1 1
+        0050  JMP           12                                            -> L0088
+      L0058:
+        0058  LoadThisR     616 134230871                                 ; this.MovementForwardValue
+        0060  RDR8          v4
+        0064  LoadThisR     608 134230871                                 ; this.INVALID_MOVEMENT_VALUE
+        006C  RDR8          v6
+        0070  CMPd          v4 v6
+        0078  TZ
+        007C  CpyRtoV4      v2
+        0080  CpyVtoV4      v1 v2
+      L0088:
+        0088  CpyVtoR1      v1
+        008C  JLowZ         4                                             -> L00A4
+        0094  SetV1         v1 1
+        009C  JMP           12                                            -> L00D4
+      L00A4:
+        00A4  LoadThisR     624 134230871                                 ; this.MovementRightValue
+        00AC  RDR8          v6
+        00B0  LoadThisR     608 134230871                                 ; this.INVALID_MOVEMENT_VALUE
+        00B8  RDR8          v4
+        00BC  CMPd          v6 v4
+        00C4  TZ
+        00C8  CpyRtoV4      v2
+        00CC  CpyVtoV4      v1 v2
+      L00D4:
+        00D4  CpyVtoR1      v1
+        00D8  JLowZ         2                                             -> L00E8
+        00E0  JMP           41                                            -> L018C
+      L00E8:
+        00E8  LoadThisR     624 134230871                                 ; this.MovementRightValue
+        00F0  RDR8          v4
+        00F4  PshV8         v4
+        00F8  LoadThisR     616 134230871                                 ; this.MovementForwardValue
+        0100  RDR8          v6
+        0104  PshV8         v6
+        0108  PshVPtr       this
+        010C  CALLINTF      84949                                         ; ELokiMovementInputDirection ULokiDropPhase_PlayerStateComponent::CalculateDetachDirection(const float64, const float64)
+        0114  CpyRtoV4      v8
+        0118  PshV4         v8
+        011C  PshVPtr       this
+        0120  CALLINTF      84948                                         ; bool ULokiDropPhase_PlayerStateComponent::UpdatePodControl(const ELokiMovementInputDirection)
+        0128  JLowZ         11                                            -> L015C
+        0130  LoadThisR     648 134230871                                 ; this.bPodIsAttachedToLeader
+        0138  RDR1          v2
+        013C  NOT           v2
+        0140  CpyVtoR1      v2
+        0144  JLowZ         4                                             -> L015C
+        014C  PshV4         v8
+        0150  PshVPtr       this
+        0154  CALLINTF      84954                                         ; void ULokiDropPhase_PlayerStateComponent::UpdatePodMovement(const ELokiMovementInputDirection)
+      L015C:
+        015C  LoadThisR     608 134230871                                 ; this.INVALID_MOVEMENT_VALUE
+        0164  RDR8          v4
+        0168  LoadThisR     616 134230871                                 ; this.MovementForwardValue
+        0170  WRTV8         v4
+        0174  LoadThisR     608 134230871                                 ; this.INVALID_MOVEMENT_VALUE
+        017C  RDR8          v6
+        0180  LoadThisR     624 134230871                                 ; this.MovementRightValue
+        0188  WRTV8         v6
+      L018C:
+        018C  RET           2
+    */
+
+    protected bool UpdatePodControl(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        auto v1;
+        ALokiDropPod v4;
+        AActor v6;
+        ALokiDropPod v8;
+        int v9;
+        float64 v12;
+        auto v14;
+        ELokiMovementInputDirection v15;
+        ELokiCrewPodDetachState v16;
+        UWorld v18;
+        auto v22;
+
+        v1 = this.bPodIsAttachedToLeader;
+        v1 = !v1;
+        if (v1) {
+            v1 = this.HasDropPodControl();
+            return v1;
+        } else {
+            v6 = this.DropPod;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiDropPod@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            if (v4 == nullptr) {
+                v1 = false;
+                return v1;
+            } else {
+                v9 = int(MoveDirection);
+                if (v9 == ELokiMovementInputDirection::None) {
+                    v12 = this.CrewPodDetachStartTime;
+                    v14 = 0;
+                    if (v12 > v14) {
+                        v14 = 0;
+                        this.CrewPodDetachStartTime = v14;
+                        v15 = ELokiMovementInputDirection::None;
+                        v16 = ELokiCrewPodDetachState::DetachInputStopped;
+                        v4.SetCrewPodDetachState(v16, 0, v15, FVector::ZeroVector);
+                    }
+                    v1 = false;
+                    return v1;
+                } else {
+                    v14 = this.CrewPodDetachStartTime;
+                    v12 = 0;
+                    if (v14 <= v12) {
+                        v18 = this.GetWorld();
+                        v12 = v18.GetTimeSeconds();
+                        this.CrewPodDetachStartTime = v12;
+                        v15 = ELokiMovementInputDirection::None;
+                        v16 = ELokiCrewPodDetachState::DetachInputStarted;
+                        v4.SetCrewPodDetachState(v16, 0, v15, FVector::ZeroVector);
+                        v14 = this.GetInputTimeForDetach();
+                        this.CurrTotalTimeForDetach = v14;
+                    }
+                    v18 = this.GetWorld();
+                    v14 = v18.GetTimeSeconds();
+                    v12 = this.CrewPodDetachStartTime;
+                    v14 = v14 - v12;
+                    v22 = this.CurrTotalTimeForDetach;
+                    v12 = v14 / v22;
+                    v22 = 1.0;
+                    if (v12 >= v22) {
+                        this.DetachPodFromLeader(MoveDirection);
+                        this.TryStartSteering();
+                        v1 = this.HasDropPodControl();
+                        return v1;
+                    } else {
+                        v16 = ELokiCrewPodDetachState::DetachInputContinue;
+                        v4.SetCrewPodDetachState(v16, v12, MoveDirection, FVector::ZeroVector);
+                        v1 = false;
+                    }
+                }
+            }
+        }
+        return v1;
+    }
+    /* ---- UpdatePodControl: 185 dwords / 112 instructions (cache offset 0x812c2) ----
+        0000  LoadThisR     648 134230871                                 ; this.bPodIsAttachedToLeader
+        0008  RDR1          v1
+        000C  NOT           v1
+        0010  CpyVtoR1      v1
+        0014  JLowZ         7                                             -> L0038
+        001C  PshVPtr       this
+        0020  CALLINTF      84953                                         ; bool ULokiDropPhase_PlayerStateComponent::HasDropPodControl() const
+        0028  CpyRtoV4      v1
+        002C  CpyVtoR4      v1
+        0030  JMP           170                                           -> L02E0
+      L0038:
+        0038  PshVPtr       this
+        003C  ADDSi         272 67115317                                  ; .DropPod
+        0044  RDSPtr
+        0048  RefCpyV       v6
+        004C  CmpPtrNull    v6
+        0050  JZ            9                                             -> L007C
+        0058  TYPEID        1207972696                                    ; ALokiDropPod@
+        0060  PSF           v8
+        0064  PshVPtr       v6
+        0068  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0074  JMP           1                                             -> L0080
+      L007C:
+        007C  ClrVPtr       v8
+      L0080:
+        0080  PshVPtr       v8
+        0084  RefCpyV       v4
+        0088  CmpPtrNull    v4
+        008C  JNZ           5                                             -> L00A8
+        0094  SetV1         v1 0
+        009C  CpyVtoR4      v1
+        00A0  JMP           142                                           -> L02E0
+      L00A8:
+        00A8  sbTOi         v9 MoveDirection
+        00B0  CMPIi         v9 0
+        00B8  JNZ           36                                            -> L0150
+        00C0  LoadThisR     640 134230871                                 ; this.CrewPodDetachStartTime
+        00C8  RDR8          v12
+        00CC  SetV8         v14 0x0
+        00D8  CMPd          v12 v14
+        00E0  JNP           21                                            -> L013C
+        00E8  SetV8         v14 0x0
+        00F4  LoadThisR     640 134230871                                 ; this.CrewPodDetachStartTime
+        00FC  WRTV8         v14
+        0100  PshGPtr       FVector::ZeroVector
+        010C  SetV1         v15 0
+        0114  PshV4         v15
+        0118  PshC8         0x0
+        0124  SetV1         v16 4
+        012C  PshV4         v16
+        0130  PshVPtr       v4
+        0134  CALLINTF      84990                                         ; void ALokiDropPod::SetCrewPodDetachState(const ELokiCrewPodDetachState, const float64, const ELokiMovementInputDirection, const FVector&)
+      L013C:
+        013C  SetV1         v1 0
+        0144  CpyVtoR4      v1
+        0148  JMP           100                                           -> L02E0
+      L0150:
+        0150  LoadThisR     640 134230871                                 ; this.CrewPodDetachStartTime
+        0158  RDR8          v14
+        015C  SetV8         v12 0x0
+        0168  CMPd          v14 v12
+        0170  JP            35                                            -> L0204
+        0178  PshVPtr       this
+        017C  CALLSYS       UObject::GetWorld                             ; UWorld@ UObject::GetWorld() const
+        0188  STOREOBJ      v18
+        018C  PshVPtr       v18
+        0190  CALLSYS       UWorld::GetTimeSeconds                        ; float64 UWorld::GetTimeSeconds() const
+        019C  CpyRtoV8      v12
+        01A0  LoadThisR     640 134230871                                 ; this.CrewPodDetachStartTime
+        01A8  WRTV8         v12
+        01AC  PshGPtr       FVector::ZeroVector
+        01B8  SetV1         v15 0
+        01C0  PshV4         v15
+        01C4  PshC8         0x0
+        01D0  SetV1         v16 3
+        01D8  PshV4         v16
+        01DC  PshVPtr       v4
+        01E0  CALLINTF      84990                                         ; void ALokiDropPod::SetCrewPodDetachState(const ELokiCrewPodDetachState, const float64, const ELokiMovementInputDirection, const FVector&)
+        01E8  PshVPtr       this
+        01EC  CALLINTF      84936                                         ; float64 ULokiDropPhase_PlayerStateComponent::GetInputTimeForDetach()
+        01F4  CpyRtoV8      v14
+        01F8  LoadThisR     664 134230871                                 ; this.CurrTotalTimeForDetach
+        0200  WRTV8         v14
+      L0204:
+        0204  PshVPtr       this
+        0208  CALLSYS       UObject::GetWorld                             ; UWorld@ UObject::GetWorld() const
+        0214  STOREOBJ      v18
+        0218  PshVPtr       v18
+        021C  CALLSYS       UWorld::GetTimeSeconds                        ; float64 UWorld::GetTimeSeconds() const
+        0228  CpyRtoV8      v14
+        022C  LoadThisR     640 134230871                                 ; this.CrewPodDetachStartTime
+        0234  RDR8          v12
+        0238  SUBd          v14 v14 v12
+        0240  LoadThisR     664 134230871                                 ; this.CurrTotalTimeForDetach
+        0248  RDR8          v22
+        024C  DIVd          v12 v14 v22
+        0254  SetV8         v22 0x3ff0000000000000
+        0260  CMPd          v12 v22
+        0268  JS            14                                            -> L02A8
+        0270  PshV4         MoveDirection
+        0274  PshVPtr       this
+        0278  CALLINTF      84950                                         ; void ULokiDropPhase_PlayerStateComponent::DetachPodFromLeader(const ELokiMovementInputDirection)
+        0280  PshVPtr       this
+        0284  CALLINTF      84940                                         ; void ULokiDropPhase_PlayerStateComponent::TryStartSteering()
+        028C  PshVPtr       this
+        0290  CALLINTF      84953                                         ; bool ULokiDropPhase_PlayerStateComponent::HasDropPodControl() const
+        0298  CpyRtoV4      v1
+        029C  CpyVtoR4      v1
+        02A0  JMP           14                                            -> L02E0
+      L02A8:
+        02A8  PshGPtr       FVector::ZeroVector
+        02B4  PshV4         MoveDirection
+        02B8  PshV8         v12
+        02BC  SetV1         v16 5
+        02C4  PshV4         v16
+        02C8  PshVPtr       v4
+        02CC  CALLINTF      84990                                         ; void ALokiDropPod::SetCrewPodDetachState(const ELokiCrewPodDetachState, const float64, const ELokiMovementInputDirection, const FVector&)
+        02D4  SetV1         v1 0
+        02DC  CpyVtoR4      v1
+      L02E0:
+        02E0  RET           3
+    */
+
+    protected ELokiMovementInputDirection CalculateDetachDirection(const float64 ForwardMovementValue, const float64 RightMovementValue)   // traits=0x30
+    {
+        auto v2;
+        auto v3;
+        auto v4;
+        auto v5;
+        auto v6;
+
+        v2 = 0;
+        if (ForwardMovementValue != v2) {
+            v3 = 0;
+        } else {
+            v2 = 0;
+            v4 = RightMovementValue == v2;
+            v3 = v4;
+        }
+        if (v3) {
+            v5 = false;
+            return v5;
+        } else {
+            v2 = 0;
+            if (ForwardMovementValue > v2) {
+                v2 = 0;
+                if (RightMovementValue == v2) {
+                    v5 = true;
+                    return v5;
+                }
+                v2 = 0;
+                if (RightMovementValue > v2) {
+                    v6 = 2;
+                    v5 = v6;
+                } else {
+                    v6 = 8;
+                    v5 = v6;
+                }
+                return v5;
+            } else {
+                v2 = 0;
+                if (ForwardMovementValue < v2) {
+                    v2 = 0;
+                    if (RightMovementValue == v2) {
+                        v5 = 5;
+                        return v5;
+                    }
+                    v2 = 0;
+                    if (RightMovementValue > v2) {
+                        v6 = 4;
+                        v5 = v6;
+                    } else {
+                        v6 = 6;
+                        v5 = v6;
+                    }
+                    return v5;
+                } else {
+                    v2 = 0;
+                    if (RightMovementValue > v2) {
+                        v6 = 3;
+                        v5 = v6;
+                    } else {
+                        v6 = 7;
+                        v5 = v6;
+                    }
+                    return v5;
+                }
+            }
+        }
+        return v5;
+    }
+    /* ---- CalculateDetachDirection: 127 dwords / 64 instructions (cache offset 0x81797) ----
+        0000  SetV8         v2 0x0
+        000C  CMPd          ForwardMovementValue v2
+        0014  JZ            4                                             -> L002C
+        001C  SetV4         v3 0
+        0024  JMP           9                                             -> L0050
+      L002C:
+        002C  SetV8         v2 0x0
+        0038  CMPd          RightMovementValue v2
+        0040  TZ
+        0044  CpyRtoV4      v4
+        0048  CpyVtoV4      v3 v4
+      L0050:
+        0050  CpyVtoR1      v3
+        0054  JLowZ         5                                             -> L0070
+        005C  SetV1         v5 0
+        0064  CpyVtoR4      v5
+        0068  JMP           98                                            -> L01F8
+      L0070:
+        0070  SetV8         v2 0x0
+        007C  CMPd          ForwardMovementValue v2
+        0084  JNP           32                                            -> L010C
+        008C  SetV8         v2 0x0
+        0098  CMPd          RightMovementValue v2
+        00A0  JNZ           5                                             -> L00BC
+        00A8  SetV1         v5 1
+        00B0  CpyVtoR4      v5
+        00B4  JMP           79                                            -> L01F8
+      L00BC:
+        00BC  SetV8         v2 0x0
+        00C8  CMPd          RightMovementValue v2
+        00D0  JNP           6                                             -> L00F0
+        00D8  SetV1         v6 2
+        00E0  CpyVtoV4      v5 v6
+        00E8  JMP           4                                             -> L0100
+      L00F0:
+        00F0  SetV1         v6 8
+        00F8  CpyVtoV4      v5 v6
+      L0100:
+        0100  CpyVtoR4      v5
+        0104  JMP           59                                            -> L01F8
+      L010C:
+        010C  SetV8         v2 0x0
+        0118  CMPd          ForwardMovementValue v2
+        0120  JNS           32                                            -> L01A8
+        0128  SetV8         v2 0x0
+        0134  CMPd          RightMovementValue v2
+        013C  JNZ           5                                             -> L0158
+        0144  SetV1         v5 5
+        014C  CpyVtoR4      v5
+        0150  JMP           40                                            -> L01F8
+      L0158:
+        0158  SetV8         v2 0x0
+        0164  CMPd          RightMovementValue v2
+        016C  JNP           6                                             -> L018C
+        0174  SetV1         v6 4
+        017C  CpyVtoV4      v5 v6
+        0184  JMP           4                                             -> L019C
+      L018C:
+        018C  SetV1         v6 6
+        0194  CpyVtoV4      v5 v6
+      L019C:
+        019C  CpyVtoR4      v5
+        01A0  JMP           20                                            -> L01F8
+      L01A8:
+        01A8  SetV8         v2 0x0
+        01B4  CMPd          RightMovementValue v2
+        01BC  JNP           6                                             -> L01DC
+        01C4  SetV1         v6 3
+        01CC  CpyVtoV4      v5 v6
+        01D4  JMP           4                                             -> L01EC
+      L01DC:
+        01DC  SetV1         v6 7
+        01E4  CpyVtoV4      v5 v6
+      L01EC:
+        01EC  CpyVtoR4      v5
+        01F0  JMP           0                                             -> L01F8
+      L01F8:
+        01F8  RET           6
+    */
+
+    protected void DetachPodFromLeader(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        auto v1;
+        ALokiDropPod v4;
+        AActor v6;
+        ALokiDropPod v8;
+
+        v1 = this.bPodDetachingEnabled;
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = this.DropPod;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiDropPod@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            if (v4 != nullptr) {
+                v1 = false;
+                this.bPodIsAttachedToLeader = v1;
+                v4.DetachPodFromLeader(MoveDirection);
+                this.ServerDetachPodFromLeader(MoveDirection);
+            }
+        }
+        return;
+    }
+    /* ---- DetachPodFromLeader: 46 dwords / 32 instructions (cache offset 0x81aed) ----
+        0000  LoadThisR     593 134230871                                 ; this.bPodDetachingEnabled
+        0008  RDR1          v1
+        000C  NOT           v1
+        0010  CpyVtoR1      v1
+        0014  JLowZ         2                                             -> L0024
+        001C  JMP           36                                            -> L00B4
+      L0024:
+        0024  PshVPtr       this
+        0028  ADDSi         272 67115317                                  ; .DropPod
+        0030  RDSPtr
+        0034  RefCpyV       v6
+        0038  CmpPtrNull    v6
+        003C  JZ            9                                             -> L0068
+        0044  TYPEID        1207972696                                    ; ALokiDropPod@
+        004C  PSF           v8
+        0050  PshVPtr       v6
+        0054  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0060  JMP           1                                             -> L006C
+      L0068:
+        0068  ClrVPtr       v8
+      L006C:
+        006C  PshVPtr       v8
+        0070  RefCpyV       v4
+        0074  CmpPtrNull    v4
+        0078  JZ            13                                            -> L00B4
+        0080  SetV1         v1 0
+        0088  LoadThisR     648 134230871                                 ; this.bPodIsAttachedToLeader
+        0090  WRTV1         v1
+        0094  PshV4         MoveDirection
+        0098  PshVPtr       v4
+        009C  CALLINTF      84995                                         ; void ALokiDropPod::DetachPodFromLeader(const ELokiMovementInputDirection)
+        00A4  PshV4         MoveDirection
+        00A8  PshVPtr       this
+        00AC  CALLINTF      84951                                         ; void ULokiDropPhase_PlayerStateComponent::ServerDetachPodFromLeader(const ELokiMovementInputDirection)
+      L00B4:
+        00B4  RET           3
+    */
+
+    protected void ServerDetachPodFromLeader(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        __Evt_PushArgument__ELokiMovementInputDirection(MoveDirection);
+        __Evt_Execute(this, n"ServerDetachPodFromLeader");
+        return;
+    }
+    /* ---- ServerDetachPodFromLeader: 15 dwords / 8 instructions (cache offset 0x81cc9) ----
+        0000  PSF           MoveDirection
+        0004  CALLSYS       __Evt_PushArgument__ELokiMovementInputDirection  ; void __Evt_PushArgument__ELokiMovementInputDirection(const ELokiMovementInputDirection&)
+        0010  PshC4         179
+        0018  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0024  PshRPtr
+        0028  PshVPtr       this
+        002C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0038  RET           3
+    */
+
+    UFUNCTION(UnrealName=ServerDetachPodFromLeader, BlueprintCallable, BlueprintEvent, NetServer)
+    protected void ServerDetachPodFromLeader_Implementation(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        ALokiDropPod v2;
+        AActor v4;
+        ALokiDropPod v6;
+        auto v7;
+
+        v4 = this.DropPod;
+        if (v4 != nullptr) {
+            v6 = cast<ALokiDropPod@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v7 = false;
+            this.bPodIsAttachedToLeader = v7;
+            v2.DetachPodFromLeader(MoveDirection);
+        }
+        return;
+    }
+    /* ---- ServerDetachPodFromLeader_Implementation: 33 dwords / 23 instructions (cache offset 0x81de4) ----
+        0000  PshVPtr       this
+        0004  ADDSi         272 67115317                                  ; .DropPod
+        000C  RDSPtr
+        0010  RefCpyV       v4
+        0014  CmpPtrNull    v4
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1207972696                                    ; ALokiDropPod@
+        0028  PSF           v6
+        002C  PshVPtr       v4
+        0030  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v6
+      L0048:
+        0048  PshVPtr       v6
+        004C  RefCpyV       v2
+        0050  CmpPtrNull    v2
+        0054  JZ            9                                             -> L0080
+        005C  SetV1         v7 0
+        0064  LoadThisR     648 134230871                                 ; this.bPodIsAttachedToLeader
+        006C  WRTV1         v7
+        0070  PshV4         MoveDirection
+        0074  PshVPtr       v2
+        0078  CALLINTF      84995                                         ; void ALokiDropPod::DetachPodFromLeader(const ELokiMovementInputDirection)
+      L0080:
+        0080  RET           3
+    */
+
+    protected bool HasDropPodControl() const   // traits=0x34
+    {
+        auto v1;
+        auto v2;
+        ALokiPlayerState v4;
+        AActor v6;
+        ALokiPlayerState v8;
+        ALokiDropPod v10;
+
+        v1 = this.bPodSteeringEnabled;
+        v1 = !v1;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = this.bPodIsAttachedToLeader;
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = false;
+            return v2;
+        } else {
+            v6 = this.GetOwner();
+            if (v6 != nullptr) {
+                v8 = cast<ALokiPlayerState@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            v10 = this.DropPodActor;
+            if (v10 == nullptr) {
+                v1 = 0;
+            } else {
+                v2 = this.DropPodActor.IsPlayerStatePilot(v4);
+                v1 = v2;
+            }
+        }
+        return v1;
+    }
+    /* ---- HasDropPodControl: 68 dwords / 45 instructions (cache offset 0x81f9c) ----
+        0000  LoadThisR     592 134230871                                 ; this.bPodSteeringEnabled
+        0008  RDR1          v1
+        000C  NOT           v1
+        0010  CpyVtoR1      v1
+        0014  JLowZ         4                                             -> L002C
+        001C  SetV1         v1 1
+        0024  JMP           5                                             -> L0040
+      L002C:
+        002C  LoadThisR     648 134230871                                 ; this.bPodIsAttachedToLeader
+        0034  RDR1          v2
+        0038  CpyVtoV4      v1 v2
+      L0040:
+        0040  CpyVtoR1      v1
+        0044  JLowZ         5                                             -> L0060
+        004C  SetV1         v2 0
+        0054  CpyVtoR4      v2
+        0058  JMP           43                                            -> L010C
+      L0060:
+        0060  PshVPtr       this
+        0064  CALLSYS       UActorComponent::GetOwner                     ; AActor@ UActorComponent::GetOwner() const
+        0070  STOREOBJ      v6
+        0074  CmpPtrNull    v6
+        0078  JZ            9                                             -> L00A4
+        0080  TYPEID        1140857146                                    ; ALokiPlayerState@
+        0088  PSF           v8
+        008C  PshVPtr       v6
+        0090  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        009C  JMP           1                                             -> L00A8
+      L00A4:
+        00A4  ClrVPtr       v8
+      L00A8:
+        00A8  PshVPtr       v8
+        00AC  RefCpyV       v4
+        00B0  PshVPtr       this
+        00B4  ADDSi         536 134230871                                 ; .DropPodActor
+        00BC  RDSPtr
+        00C0  RefCpyV       v10
+        00C4  CmpPtrNull    v10
+        00C8  JNZ           4                                             -> L00E0
+        00D0  SetV4         v1 0
+        00D8  JMP           10                                            -> L0108
+      L00E0:
+        00E0  PshVPtr       v4
+        00E4  PshVPtr       this
+        00E8  ADDSi         536 134230871                                 ; .DropPodActor
+        00F0  RDSPtr
+        00F4  CALLINTF      85002                                         ; bool ALokiDropPod::IsPlayerStatePilot(ALokiPlayerState@)
+        00FC  CpyRtoV4      v2
+        0100  CpyVtoV4      v1 v2
+      L0108:
+        0108  CpyVtoR4      v1
+      L010C:
+        010C  RET           2
+    */
+
+    protected void UpdatePodMovement(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        auto v1;
+        int v2;
+        int v3;
+        ALokiDropPod v6;
+
+        v2 = int(MoveDirection);
+        v1 = this.CurrMoveDirection;
+        v3 = int(v1);
+        if (v2 != v3) {
+            v6 = this.DropPodActor;
+            if (v6 != nullptr) {
+                this.DropPodActor.CurrentInputDirection = MoveDirection;
+                this.ServerUpdatePodMovement(MoveDirection);
+            }
+            this.CurrMoveDirection = MoveDirection;
+        }
+        return;
+    }
+    /* ---- UpdatePodMovement: 35 dwords / 24 instructions (cache offset 0x821bc) ----
+        0000  sbTOi         v2 MoveDirection
+        0008  LoadThisR     632 134230871                                 ; this.CurrMoveDirection
+        0010  RDR1          v1
+        0014  sbTOi         v3 v1
+        001C  CMPi          v2 v3
+        0024  JZ            23                                            -> L0088
+        002C  PshVPtr       this
+        0030  ADDSi         536 134230871                                 ; .DropPodActor
+        0038  RDSPtr
+        003C  RefCpyV       v6
+        0040  CmpPtrNull    v6
+        0044  JZ            12                                            -> L007C
+        004C  PshVPtr       this
+        0050  ADDSi         536 134230871                                 ; .DropPodActor
+        0058  RDSPtr
+        005C  ADDSi         1522 134230872                                ; .CurrentInputDirection
+        0064  PopRPtr
+        0068  WRTV1         MoveDirection
+        006C  PshV4         MoveDirection
+        0070  PshVPtr       this
+        0074  CALLINTF      84955                                         ; void ULokiDropPhase_PlayerStateComponent::ServerUpdatePodMovement(const ELokiMovementInputDirection)
+      L007C:
+        007C  LoadThisR     632 134230871                                 ; this.CurrMoveDirection
+        0084  WRTV1         MoveDirection
+      L0088:
+        0088  RET           3
+    */
+
+    protected void ServerUpdatePodMovement(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        __Evt_PushArgument__ELokiMovementInputDirection(MoveDirection);
+        __Evt_Execute(this, n"ServerUpdatePodMovement");
+        return;
+    }
+    /* ---- ServerUpdatePodMovement: 15 dwords / 8 instructions (cache offset 0x82352) ----
+        0000  PSF           MoveDirection
+        0004  CALLSYS       __Evt_PushArgument__ELokiMovementInputDirection  ; void __Evt_PushArgument__ELokiMovementInputDirection(const ELokiMovementInputDirection&)
+        0010  PshC4         180
+        0018  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0024  PshRPtr
+        0028  PshVPtr       this
+        002C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0038  RET           3
+    */
+
+    UFUNCTION(UnrealName=ServerUpdatePodMovement, BlueprintCallable, BlueprintEvent, NetServer)
+    protected void ServerUpdatePodMovement_Implementation(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        ALokiDropPod v2;
+
+        this.CurrMoveDirection = MoveDirection;
+        v2 = this.DropPodActor;
+        if (v2 != nullptr) {
+            this.DropPodActor.CurrentInputDirection = MoveDirection;
+        }
+        return;
+    }
+    /* ---- ServerUpdatePodMovement_Implementation: 20 dwords / 15 instructions (cache offset 0x8246b) ----
+        0000  LoadThisR     632 134230871                                 ; this.CurrMoveDirection
+        0008  WRTV1         MoveDirection
+        000C  PshVPtr       this
+        0010  ADDSi         536 134230871                                 ; .DropPodActor
+        0018  RDSPtr
+        001C  RefCpyV       v2
+        0020  CmpPtrNull    v2
+        0024  JZ            8                                             -> L004C
+        002C  PshVPtr       this
+        0030  ADDSi         536 134230871                                 ; .DropPodActor
+        0038  RDSPtr
+        003C  ADDSi         1522 134230872                                ; .CurrentInputDirection
+        0044  PopRPtr
+        0048  WRTV1         MoveDirection
+      L004C:
+        004C  RET           3
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.PrimaryComponentTick.SetbStartWithTickEnabled(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 10 dwords / 6 instructions (cache offset 0x825d2) ----
+        0000  SetV1         v1 0
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  ADDSi         64 67111352                                   ; .PrimaryComponentTick
+        0018  CALLSYS       FActorComponentTickFunction::SetbStartWithTickEnabled  ; void FActorComponentTickFunction::SetbStartWithTickEnabled(bool)
+        0024  RET           2
+    */
+
+    void ~ULokiDropPhase_PlayerStateComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiDropPhase_PlayerStateComponent: 13 dwords / 7 instructions (cache offset 0x82a1f) ----
+        0000  PshVPtr       this
+        0004  ADDSi         544 134230871                                 ; .PodSteeringEventListenerHanddle
+        000C  CALLSYS       FGameEventListenerHandle::$beh2               ; void FGameEventListenerHandle::$beh2()
+        0018  PshVPtr       this
+        001C  ADDSi         600 134230871                                 ; .NetworkUpdateFrequencyTimer
+        0024  CALLSYS       FTimerHandle::$beh2                           ; void FTimerHandle::$beh2()
+        0030  RET           2
+    */
+
+}
+

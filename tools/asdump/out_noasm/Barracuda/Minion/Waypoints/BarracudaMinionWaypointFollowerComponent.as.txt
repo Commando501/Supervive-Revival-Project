@@ -1,0 +1,460 @@
+// ============================================================================
+//  MODULE   Barracuda.Minion.Waypoints.BarracudaMinionWaypointFollowerComponent
+//  SOURCE   Barracuda/Minion/Waypoints/BarracudaMinionWaypointFollowerComponent.as
+//  CONTENT  1 class(es), 15 function(s), 0 enum(s), 1 global(s), 3580 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaMinionWaypointFollowerComponent;
+
+UBarracudaMinionWaypointFollowerComponent@ UBarracudaMinionWaypointFollowerComponent()   // traits=0x20
+{
+    UBarracudaMinionWaypointFollowerComponent v2;
+
+    v2 = UBarracudaMinionWaypointFollowerComponent();
+    return v2;
+}
+
+UClass@ UBarracudaMinionWaypointFollowerComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaMinionWaypointFollowerComponent);
+    return v2;
+}
+
+UBarracudaMinionWaypointFollowerComponent@ UBarracudaMinionWaypointFollowerComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaMinionWaypointFollowerComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaMinionWaypointFollowerComponent, v2, typeid(UBarracudaMinionWaypointFollowerComponent@), WithName);
+    return v2;
+}
+
+UBarracudaMinionWaypointFollowerComponent@ UBarracudaMinionWaypointFollowerComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaMinionWaypointFollowerComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaMinionWaypointFollowerComponent, v2, typeid(UBarracudaMinionWaypointFollowerComponent@), WithName);
+    return v2;
+}
+
+UBarracudaMinionWaypointFollowerComponent@ UBarracudaMinionWaypointFollowerComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaMinionWaypointFollowerComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaMinionWaypointFollowerComponent, v2, typeid(UBarracudaMinionWaypointFollowerComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaMinionWaypointFollowerComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaMinionWaypointFollowerComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    float64 LastWaypointTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bDrawDebug;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 DebugDrawPathDurationWarningThreshold;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 DebugDrawPathDurationErrorThreshold;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    ABarracudaMinionWaypoint@ CurrentWaypoint;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    ABarracudaMinionWaypoint@ LastWaypoint;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    float64 LastCombatTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    FVector CachedLocation;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    float64 TimeFirstArrivedAtCachedLocation;
+
+    UBarracudaMinionWaypointFollowerComponent()   // traits=0x21
+    {
+        auto v2;
+
+        this.CachedLocation = FVector();
+        v2 = 0;
+        this.LastWaypointTime = v2;
+        v2 = 30.0;
+        this.DebugDrawPathDurationWarningThreshold = v2;
+        v2 = 90.0;
+        this.DebugDrawPathDurationErrorThreshold = v2;
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+        float64 v4;
+        ABarracudaMinionWaypoint v6;
+
+        v1 = Gameplay::GetServerTime(__WorldContext);
+        v4 = float64(v1);
+        this.LastWaypointTime = v4;
+        v6 = this.CurrentWaypoint;
+        if (v6 == nullptr) {
+            v6 = this.GetInitialWaypoint();
+            this.CurrentWaypoint = v6;
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+        AActor v4;
+        AActor v6;
+        auto v8;
+        auto v9;
+        float64 v12;
+        UAbilitySystemComponent v16;
+        FVector v22;
+        FVector v28;
+        FVector v34;
+        FColor v41;
+        auto v44;
+
+        v1 = this.HasCurrentWaypoint();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = this.GetOwner();
+            if (v4 == nullptr) {
+                return;
+            } else {
+                v9 = Gameplay::GetServerTime(__WorldContext);
+                v12 = float64(v9);
+                v8 = v12;
+                v6 = this.GetOwner();
+                v16 = AbilitySystem::GetAbilitySystemComponent(v6);
+                if (v16 != nullptr) {
+                    if (v16.HasMatchingGameplayTag(GameplayTags::State_Combat_InCombat)  /* UFunction Script_HasMatchingGameplayTag */) {
+                        this.LastCombatTime = v8;
+                    }
+                }
+                v28 = v4.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v1 = v28 == this.CachedLocation;
+                v1 = !v1;
+                if (v1) {
+                    this.CachedLocation = v28;
+                    this.TimeFirstArrivedAtCachedLocation = v8;
+                } else {
+                    if (this.IsStuck()) {
+                        this.TryRescue();
+                    }
+                }
+                v1 = this.bDrawDebug;
+                if (v1) {
+                    v6 = this.GetOwner();
+                    v22 = v6.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v34 = this.GetTargetLocationForCurrentWaypoint();
+                    v41 = FColor(FColor::Green);
+                    v12 = this.LastWaypointTime;
+                    v12 = v8 - v12;
+                    v44 = this.DebugDrawPathDurationErrorThreshold;
+                    if (v12 > v44) {
+                        v41 = FColor::Red;
+                        LokiGameplay::ServerDrawDebugCapsule(__WorldContext, v22, 500.0, 100.0, FQuat::Identity, FColor::Red, 0);
+                    } else {
+                        v44 = this.DebugDrawPathDurationWarningThreshold;
+                        if (v12 > v44) {
+                            v41 = FColor::Yellow;
+                        }
+                    }
+                    LokiGameplay::ServerDrawDebugLine(__WorldContext, v22, v34, v41, 0);
+                }
+            }
+        }
+        return;
+    }
+
+    bool HasCurrentWaypoint()   // traits=0x20
+    {
+        ABarracudaMinionWaypoint v2;
+        auto v3;
+
+        v2 = this.CurrentWaypoint;
+        v3 = v2 != nullptr;
+        return v3;
+    }
+
+    FVector GetTargetLocationForCurrentWaypoint()   // traits=0x20
+    {
+        auto v1;
+        FVector v8;
+        FVector v14;
+        FVector v20;
+        TSubclassOf<UNavigationQueryFilter@> v22;
+
+        v1 = this.HasCurrentWaypoint();
+        v1 = !v1;
+        if (v1) {
+            __ret = FVector(FVector::ZeroVector);
+            return;
+        } else {
+            v14 = this.CurrentWaypoint.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v20 = FVector(FVector::ZeroVector);
+            v8 = FVector();
+            v22 = TSubclassOf<UNavigationQueryFilter@>(nullptr);
+            v1 = UNavigationSystemV1::ProjectPointToNavigation(__WorldContext, v14, v20, nullptr, v22, v8);
+            if (v1) {
+                v14 = v20;
+            }
+            __ret = FVector(v14);
+        }
+        return;
+    }
+
+    void ReachedWaypoint(ABarracudaMinionWaypoint@ Waypoint)   // traits=0x20
+    {
+        ABarracudaMinionWaypoint v2;
+        ABarracudaMinionWaypoint v4;
+        AActor v8;
+        ABarracudaMinionWaypoint v10;
+
+        v2 = this.CurrentWaypoint;
+        v4 = Waypoint;
+        if (v2 == v4) {
+            this.LastWaypoint = this.CurrentWaypoint;
+            v8 = this.GetOwner();
+            v10 = Waypoint.GetNextWaypoint(v8);
+            this.CurrentWaypoint = v10;
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    ABarracudaMinionWaypoint@ GetInitialWaypoint()   // traits=0x20
+    {
+        AActor v2;
+        UBarracudaLaneComponent v6;
+        auto v7;
+        ABarracudaMinionWaypoint v10;
+        auto v11;
+        auto v12;
+        auto v13;
+        auto v14;
+        UBarracudaGameStateComponent v16;
+        ALokiGameState v18;
+        TSetIterator<ABarracudaMinionWaypoint@> v28;
+        ABarracudaMinionWaypoint v38;
+        UBarracudaLaneComponent v40;
+        auto v41;
+
+        v2 = this.GetOwner();
+        v6 = UBarracudaLaneComponent::Get(v2, NAME_None);
+        if (v6 == nullptr) {
+            return v10;
+        } else {
+            v12 = v6.LaneIndex;
+            v11 = v12;
+            v2 = this.GetOwner();
+            v12 = LokiTeam::GetTeamFromActor(v2);
+            v7 = v12 == 0;
+            v18 = Loki::GetLokiGameState(__WorldContext);
+            v16 = UBarracudaGameStateComponent::Get(v18, NAME_None);
+            if (v16 != nullptr) {
+                v28 = v16.MinionWaypoints.Iterator();
+                while (true) {
+                    v14 = v28.CanProceed;
+                    if (!v14) break;
+                    v38 = v28.Proceed();
+                    v28.Proceed();
+                    v40 = UBarracudaLaneComponent::Get(v38, NAME_None);
+                    if (v40 != nullptr) {
+                        v13 = v40.LaneIndex;
+                        if (v11 == v13) {
+                            if (!v7) {
+                                v41 = 0;
+                            } else {
+                                v10 = v38.WaypointTowardTeam0;
+                                v14 = v10 == nullptr;
+                                v41 = v14;
+                            }
+                            if (v41) {
+                                return v38;
+                            }
+                            v14 = v7;
+                            v14 = !v14;
+                            if (!v14) {
+                                v14 = 0;
+                            } else {
+                                v10 = v38.WaypointTowardTeam1;
+                                v41 = v10 == nullptr;
+                                v14 = v41;
+                            }
+                            if (v14) {
+                                return v38;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return v10;
+    }
+
+    bool IsStuck()   // traits=0x20
+    {
+        auto v2;
+        auto v3;
+        float64 v6;
+        auto v8;
+        auto v10;
+        auto v12;
+        auto v13;
+        auto v14;
+        auto v15;
+        ALokiCharacter v18;
+        AActor v20;
+        ALokiCharacter v22;
+        ULokiCharacterMovementComponent v24;
+        auto v25;
+
+        v3 = Gameplay::GetServerTime(__WorldContext);
+        v6 = float64(v3);
+        v2 = v6;
+        v6 = this.TimeFirstArrivedAtCachedLocation;
+        v6 = v2 - v6;
+        v12 = Math::Max(v6, 0);
+        v10 = 5.0;
+        v14 = v12 > v10;
+        v13 = false;
+        v15 = v13;
+        v20 = this.GetOwner();
+        if (v20 != nullptr) {
+            v22 = cast<ALokiCharacter@>(v20);
+        } else {
+            v22 = nullptr;
+        }
+        v18 = v22;
+        if (v18 == nullptr) {
+            v13 = 0;
+        } else {
+            v24 = v18.GetLokiCharacterMovement();
+            v25 = v24 != nullptr;
+            v13 = v25;
+        }
+        if (!v13) {
+            v13 = 0;
+        } else {
+            v24 = v18.GetLokiCharacterMovement();
+            v25 = v24.CurrentFloor.GetbWalkableFloor();
+            v25 = !v25;
+            v13 = v25;
+        }
+        if (v13) {
+            v25 = true;
+            v15 = v25;
+        }
+        if (!v14) {
+            v13 = 0;
+        } else {
+            v13 = v15;
+        }
+        if (v13) {
+            v25 = true;
+            return v25;
+        } else {
+            v8 = this.LastCombatTime;
+            v6 = v2 - v8;
+            v8 = Math::Max(v6, 0);
+            v10 = 5.0;
+            if (v8 < v10) {
+                v13 = false;
+                return v13;
+            } else {
+                if (v14) {
+                    v25 = true;
+                    return v25;
+                } else {
+                    v13 = false;
+                }
+            }
+        }
+        return v13;
+    }
+
+    void TryRescue()   // traits=0x20
+    {
+        FVector v6;
+        AActor v8;
+        FVector v14;
+        FRotator v20;
+        auto v27;
+        auto v28;
+        FVector v34;
+        ABarracudaMinionWaypoint v36;
+
+        v8 = this.GetOwner();
+        v14 = v8.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+        v8 = this.GetOwner();
+        v20 = v8.GetActorRotation()  /* UFunction K2_GetActorRotation */;
+        v28 = false;
+        v27 = v28;
+        v34 = FVector();
+        v36 = this.LastWaypoint;
+        if (v36 != nullptr) {
+            v28 = true;
+            v27 = v28;
+            v6 = this.LastWaypoint.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v34 = v6;
+        } else {
+            if (this.HasCurrentWaypoint()) {
+                v28 = true;
+                v27 = v28;
+                v6 = this.GetTargetLocationForCurrentWaypoint();
+                v34 = v6;
+            }
+        }
+        if (v27) {
+            v8 = this.GetOwner();
+            v8.Teleport(v34, v20)  /* UFunction K2_TeleportTo */;
+        }
+        v28 = this.bDrawDebug;
+        if (v28) {
+            if (v27) {
+                LokiGameplay::ServerDrawDebugLine(__WorldContext, v14, v34, FColor::Purple, 10.0);
+                return;
+            }
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v4;
+
+        v1 = false;
+        this.SetbReplicates(v1);
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        v4 = 0;
+        this.LastCombatTime = v4;
+        v4 = 0;
+        this.TimeFirstArrivedAtCachedLocation = v4;
+        v4 = 0;
+        this.LastWaypointTime = v4;
+        v1 = false;
+        this.bDrawDebug = v1;
+        return;
+    }
+
+}
+

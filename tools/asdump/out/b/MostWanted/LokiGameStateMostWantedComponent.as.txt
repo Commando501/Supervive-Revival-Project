@@ -1,0 +1,281 @@
+// ============================================================================
+//  MODULE   MostWanted.LokiGameStateMostWantedComponent
+//  SOURCE   MostWanted/LokiGameStateMostWantedComponent.as
+//  CONTENT  1 class(es), 9 function(s), 0 enum(s), 1 global(s), 864 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiGameStateMostWantedComponent;
+
+ULokiGameStateMostWantedComponent@ ULokiGameStateMostWantedComponent()   // traits=0x20
+{
+    v2 = ULokiGameStateMostWantedComponent();
+    return v2;
+}
+/* ---- ULokiGameStateMostWantedComponent: 7 dwords / 4 instructions (cache offset 0xa8c8e) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         85238 ULokiGameStateMostWantedComponent     
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ULokiGameStateMostWantedComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ULokiGameStateMostWantedComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xa8d5c) ----
+    0000  PshGPtr       __StaticType_ULokiGameStateMostWantedComponent
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ULokiGameStateMostWantedComponent@ ULokiGameStateMostWantedComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiGameStateMostWantedComponent, v2, typeid(ULokiGameStateMostWantedComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0xa8ea7) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972721                                    ; ULokiGameStateMostWantedComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiGameStateMostWantedComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiGameStateMostWantedComponent@ ULokiGameStateMostWantedComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiGameStateMostWantedComponent, v2, typeid(ULokiGameStateMostWantedComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0xa900a) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972721                                    ; ULokiGameStateMostWantedComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiGameStateMostWantedComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiGameStateMostWantedComponent@ ULokiGameStateMostWantedComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiGameStateMostWantedComponent, v2, typeid(ULokiGameStateMostWantedComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0xa9168) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972721                                    ; ULokiGameStateMostWantedComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiGameStateMostWantedComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiGameStateMostWantedComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiGameStateMostWantedComponent
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    int MostWantedCount;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    int ActiveMostWantedCount;
+
+    ULokiGameStateMostWantedComponent()   // traits=0x21
+    {
+        v1 = 0;
+        this.MostWantedCount = v1;
+        v1 = 0;
+        this.ActiveMostWantedCount = v1;
+        return;
+    }
+    /* ---- ULokiGameStateMostWantedComponent: 15 dwords / 9 instructions (cache offset 0xa996a) ----
+        0000  SetV4         v1 0                                        
+        0008  LoadThisR     208 134230897                                 ; this.MostWantedCount
+        0010  WRTV4         v1                                          
+        0014  SetV4         v1 0                                        
+        001C  LoadThisR     212 134230897                                 ; this.ActiveMostWantedCount
+        0024  WRTV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  FinConstruct  ULokiGameStateMostWantedComponent           
+        0038  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            v25 = false;
+            v24 = FGameEvent_MostWanted();
+            v38 = v4.RegisterForEvent(this, v24, typeid(FGameEvent_MostWanted), nullptr, n"HandleMostWantedEvent", v25);
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 48 dwords / 26 instructions (cache offset 0xa93a5) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         39                                            -> L00BC
+        0020  PshGPtr       __WorldContext                              
+        002C  CALLSYS       GetGlobalGameEventRouter                    
+        0038  STOREOBJ      v4                                          
+        003C  SetV1         v25 0                                       
+        0044  PshV4         v25                                         
+        0048  PshC4         85                                          
+        0050  CALLSYS       __STATIC_NAME                               
+        005C  PshRPtr                                                   
+        0060  PshNull                                                   
+        0064  TYPEID        67120904                                      ; FGameEvent_MostWanted
+        006C  PSF           v24                                         
+        0070  CALLSYS       FGameEvent_MostWanted::$beh0                
+        007C  PSF           v24                                         
+        0080  PshVPtr       this                                        
+        0084  PSF           v38                                         
+        0088  PshVPtr       v4                                          
+        008C  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        0098  PSF           v24                                         
+        009C  CALLSYS       FGameEvent_MostWanted::$beh2                
+        00A8  PSF           v38                                         
+        00AC  CALLSYS       FGameEventListenerHandle::$beh2             
+        00B8  FreeNullV8    v4                                          
+      L00BC:
+        00BC  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void HandleMostWantedEvent(const FGameEvent_MostWanted& Event, const AActor@& Context)   // traits=0x20
+    {
+        v1 = Event.State;
+        v2 = int(v1);
+        if (v2 <= 4) {
+            if (v2 >= 0) {
+                v3 = v2 - 0;
+                switch (v3)
+                {
+                    case 0: goto L012C;
+                    case 1: goto L0074;
+                    case 2: goto L0088;
+                    case 3: goto L00D0;
+                    case 4: goto L00E4;
+                }
+    L0074:
+                this.MostWantedCount++;
+                return;
+    L0088:
+                v2 = this.MostWantedCount;
+                v2 = v2 - 1;
+                v4 = Math::Max(0, v2);
+                this.MostWantedCount = v4;
+                return;
+    L00D0:
+                this.ActiveMostWantedCount++;
+                return;
+    L00E4:
+                v4 = this.ActiveMostWantedCount;
+                v3 = v4 - 1;
+                v4 = Math::Max(0, v3);
+                this.ActiveMostWantedCount = v4;
+                return;
+    L012C:
+                return;
+            }
+        } else {
+            throw;  /* code 0 */
+        }
+        return;
+    }
+    /* ---- HandleMostWantedEvent: 79 dwords / 43 instructions (cache offset 0xa9643) ----
+        0000  LoadRObjR     Event 8 67120904                              ; .State
+        000C  RDR1          v1                                          
+        0010  sbTOi         v2 v1                                       
+        0018  CMPIi         v2 4                                        
+        0020  JP            67                                            -> L0134
+        0028  CMPIi         v2 0                                        
+        0030  JS            63                                            -> L0134
+        0038  SUBIi         v3 v2 0                                     
+        0044  JMPP          v3 4                                        
+        004C  JMP           54                                            -> L012C
+        0054  JMP           6                                             -> L0074
+        005C  JMP           9                                             -> L0088
+        0064  JMP           25                                            -> L00D0
+        006C  JMP           28                                            -> L00E4
+      L0074:
+        0074  LoadThisR     208 134230897                                 ; this.MostWantedCount
+        007C  INCi                                                      
+        0080  JMP           44                                            -> L0138
+      L0088:
+        0088  LoadThisR     208 134230897                                 ; this.MostWantedCount
+        0090  RDR4          v2                                          
+        0094  SUBIi         v2 v2 1                                     
+        00A0  PshV4         v2                                          
+        00A4  PshC4         0                                           
+        00AC  CALLSYS       Max                                         
+        00B8  CpyRtoV4      v4                                          
+        00BC  LoadThisR     208 134230897                                 ; this.MostWantedCount
+        00C4  WRTV4         v4                                          
+        00C8  JMP           26                                            -> L0138
+      L00D0:
+        00D0  LoadThisR     212 134230897                                 ; this.ActiveMostWantedCount
+        00D8  INCi                                                      
+        00DC  JMP           21                                            -> L0138
+      L00E4:
+        00E4  LoadThisR     212 134230897                                 ; this.ActiveMostWantedCount
+        00EC  RDR4          v4                                          
+        00F0  SUBIi         v3 v4 1                                     
+        00FC  PshV4         v3                                          
+        0100  PshC4         0                                           
+        0108  CALLSYS       Max                                         
+        0114  CpyRtoV4      v4                                          
+        0118  LoadThisR     212 134230897                                 ; this.ActiveMostWantedCount
+        0120  WRTV4         v4                                          
+        0124  JMP           3                                             -> L0138
+      L012C:
+        012C  JMP           1                                             -> L0138
+      L0134:
+        0134  ThrowException 0                                           
+      L0138:
+        0138  RET           6                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = false;
+        this.SetComponentTickEnabled(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 15 dwords / 9 instructions (cache offset 0xa9870) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetbReplicates             
+        001C  SetV1         v1 0                                        
+        0024  PshV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       UActorComponent::SetComponentTickEnabled    
+        0038  RET           2                                           
+    */
+
+}
+

@@ -1,0 +1,46 @@
+// ============================================================================
+//  MODULE   Barracuda.Minion.BarracudaLaneMinionConfig
+//  SOURCE   Barracuda/Minion/BarracudaLaneMinionConfig.as
+//  CONTENT  1 class(es), 1 function(s), 0 enum(s), 0 global(s), 124 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FBarracudaLaneMinionConfig
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 GenericDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 AdditionalTowerDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 ProjectileMaxDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 ProjectileInitialSpeed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 ProjectileHomingAcceleration;
+
+    FBarracudaLaneMinionConfig()   // traits=0x21
+    {
+        auto v2;
+
+        v2 = 0;
+        this.GenericDamage = v2;
+        v2 = 0;
+        this.AdditionalTowerDamage = v2;
+        v2 = 0;
+        this.ProjectileMaxDistance = v2;
+        v2 = 0;
+        this.ProjectileInitialSpeed = v2;
+        v2 = 0;
+        this.ProjectileHomingAcceleration = v2;
+        return;
+    }
+
+}
+

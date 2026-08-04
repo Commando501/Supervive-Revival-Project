@@ -1,0 +1,282 @@
+// ============================================================================
+//  MODULE   Barracuda.Minion.Waypoints.BarracudaMinionWaypoint
+//  SOURCE   Barracuda/Minion/Waypoints/BarracudaMinionWaypoint.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 908 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaMinionWaypoint;
+
+ABarracudaMinionWaypoint@ ABarracudaMinionWaypoint()   // traits=0x20
+{
+    v2 = ABarracudaMinionWaypoint();
+    return v2;
+}
+/* ---- ABarracudaMinionWaypoint: 7 dwords / 4 instructions (cache offset 0x2b524) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84299 ABarracudaMinionWaypoint              
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ABarracudaMinionWaypoint::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ABarracudaMinionWaypoint);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x2b5e9) ----
+    0000  PshGPtr       __StaticType_ABarracudaMinionWaypoint       
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ABarracudaMinionWaypoint@ ABarracudaMinionWaypoint::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_ABarracudaMinionWaypoint.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ABarracudaMinionWaypoint@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x2b816) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_ABarracudaMinionWaypoint       
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972620                                    ; ABarracudaMinionWaypoint@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ABarracudaMinionWaypoint : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_ABarracudaMinionWaypoint
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int InitialLaneIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ABarracudaMinionWaypoint@ WaypointTowardTeam0;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ABarracudaMinionWaypoint@ WaypointTowardTeam1;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.RootComponent)
+    UBoxComponent@ TriggerComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UBarracudaLaneComponent@ LaneComponent;
+
+    ABarracudaMinionWaypoint()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- ABarracudaMinionWaypoint: 5 dwords / 3 instructions (cache offset 0x2c58b) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  ABarracudaMinionWaypoint                    
+        0010  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        v1 = this.InitialLaneIndex;
+        this.LaneComponent.SetLaneIndex(v1);
+        this.TriggerComponent.OnComponentBeginOverlap.AddUFunction(this, n"HandleTriggerOverlap");
+        v6 = Loki::GetLokiGameState(__WorldContext);
+        v4 = UBarracudaGameStateComponent::Get(v6, NAME_None);
+        if (v4 != nullptr) {
+            v4.MinionWaypoints.Add(this);
+        }
+        return;
+    }
+    /* ---- LokiBeginPlay_Implementation: 51 dwords / 30 instructions (cache offset 0x2bd12) ----
+        0000  LoadThisR     912 134230796                                 ; this.InitialLaneIndex
+        0008  RDR4          v1                                          
+        000C  PshV4         v1                                          
+        0010  PshVPtr       this                                        
+        0014  ADDSi         944 134230796                                 ; .LaneComponent
+        001C  RDSPtr                                                    
+        0020  CALLINTF      84100                                         ; UBarracudaLaneComponent::SetLaneIndex
+        0028  PshC4         13                                          
+        0030  CALLSYS       __STATIC_NAME                               
+        003C  PshRPtr                                                   
+        0040  PshVPtr       this                                        
+        0044  PshVPtr       this                                        
+        0048  ADDSi         936 134230796                                 ; .TriggerComponent
+        0050  RDSPtr                                                    
+        0054  ADDSi         1633 67111354                                 ; .OnComponentBeginOverlap
+        005C  CALLSYS       FComponentBeginOverlapSignature::AddUFunction
+        0068  PshGPtr       NAME_None                                   
+        0074  PshGPtr       __WorldContext                              
+        0080  CALLSYS       GetLokiGameState                            
+        008C  STOREOBJ      v6                                          
+        0090  PshVPtr       v6                                          
+        0094  CALL          84255                                         ; Get
+        009C  STOREOBJ      v4                                          
+        00A0  CmpPtrNull    v4                                          
+        00A4  JZ            7                                             -> L00C8
+        00AC  PSF           this                                        
+        00B0  PshVPtr       v4                                          
+        00B4  ADDSi         304 134230778                                 ; .MinionWaypoints
+        00BC  CALLSYS       TSet::Add                                   
+      L00C8:
+        00C8  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void HandleTriggerOverlap(UPrimitiveComponent@ OverlappedComponent, AActor@ OtherActor, UPrimitiveComponent@ OtherComp, const int OtherBodyIndex, const bool bFromSweep, const FHitResult&in SweepResult)   // traits=0x20
+    {
+        v4 = UBarracudaMinionWaypointFollowerComponent::Get(OtherActor, NAME_None);
+        if (v4 != nullptr) {
+            v4.ReachedWaypoint(this);
+        }
+        return;
+    }
+    /* ---- HandleTriggerOverlap: 15 dwords / 10 instructions (cache offset 0x2c078) ----
+        0000  PshGPtr       NAME_None                                   
+        000C  PshVPtr       OtherActor                                  
+        0010  CALL          84316                                         ; Get
+        0018  STOREOBJ      v4                                          
+        001C  CmpPtrNull    v4                                          
+        0020  JZ            4                                             -> L0038
+        0028  PshVPtr       this                                        
+        002C  PshVPtr       v4                                          
+        0030  CALLINTF      84308                                         ; UBarracudaMinionWaypointFollowerComponent::ReachedWaypoint
+      L0038:
+        0038  RET           12                                          
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    ABarracudaMinionWaypoint@ GetNextWaypoint(AActor@ Actor)   // traits=0x20
+    {
+        v2 = LokiTeam::GetTeamFromActor(Actor);
+        if (v2 == 0) {
+            v6 = this.WaypointTowardTeam1;
+            return v6;
+        } else {
+            v6 = this.WaypointTowardTeam0;
+        }
+        return v6;
+    }
+    /* ---- GetNextWaypoint: 24 dwords / 17 instructions (cache offset 0x2c20b) ----
+        0000  PshVPtr       Actor                                       
+        0004  CALLSYS       GetTeamFromActor                            
+        0010  CpyRtoV4      v2                                          
+        0014  CMPIi         v2 0                                        
+        001C  JNZ           8                                             -> L0044
+        0024  PshVPtr       this                                        
+        0028  ADDSi         928 134230796                                 ; .WaypointTowardTeam1
+        0030  RDSPtr                                                    
+        0034  RefCpyV       v6                                          
+        0038  LOADOBJ       v6                                          
+        003C  JMP           6                                             -> L005C
+      L0044:
+        0044  PshVPtr       this                                        
+        0048  ADDSi         920 134230796                                 ; .WaypointTowardTeam0
+        0050  RDSPtr                                                    
+        0054  RefCpyV       v6                                          
+        0058  LOADOBJ       v6                                          
+      L005C:
+        005C  RET           4                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = false;
+        this.SetbReplicates(v1);
+        v2 = -1;
+        this.InitialLaneIndex = v2;
+        v1 = true;
+        this.SetActorHiddenInGame(v1);
+        v1 = false;
+        this.SetbNetLoadOnClient(v1);
+        v1 = true;
+        v8 = FVector(4641240890982006784, 4641240890982006784, 4641240890982006784);
+        this.TriggerComponent.SetBoxExtent(v8, v1);
+        v1 = true;
+        this.TriggerComponent.SetCollisionProfileName(n"Trigger", v1);
+        v1 = true;
+        this.TriggerComponent.SetNotifyRigidBodyCollision(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 77 dwords / 43 instructions (cache offset 0x2c37a) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       AActor::SetbReplicates                      
+        001C  SetV4         v2 -1                                       
+        0024  LoadThisR     912 134230796                                 ; this.InitialLaneIndex
+        002C  WRTV4         v2                                          
+        0030  SetV1         v1 1                                        
+        0038  PshV4         v1                                          
+        003C  PshVPtr       this                                        
+        0040  CALLSYS       AActor::SetActorHiddenInGame                
+        004C  SetV1         v1 0                                        
+        0054  PshV4         v1                                          
+        0058  PshVPtr       this                                        
+        005C  CALLSYS       AActor::SetbNetLoadOnClient                 
+        0068  SetV1         v1 1                                        
+        0070  PshV4         v1                                          
+        0074  PshC8         0x4069000000000000                          
+        0080  PshC8         0x4069000000000000                          
+        008C  PshC8         0x4069000000000000                          
+        0098  PSF           v8                                          
+        009C  CALLSYS       FVector::$beh0                              
+        00A8  PSF           v8                                          
+        00AC  PshVPtr       this                                        
+        00B0  ADDSi         936 134230796                                 ; .TriggerComponent
+        00B8  RDSPtr                                                    
+        00BC  CALLSYS       UBoxComponent::SetBoxExtent                 
+        00C8  SetV1         v1 1                                        
+        00D0  PshV4         v1                                          
+        00D4  PshC4         12                                          
+        00DC  CALLSYS       __STATIC_NAME                               
+        00E8  PshRPtr                                                   
+        00EC  PshVPtr       this                                        
+        00F0  ADDSi         936 134230796                                 ; .TriggerComponent
+        00F8  RDSPtr                                                    
+        00FC  CALLSYS       UPrimitiveComponent::SetCollisionProfileName
+        0108  SetV1         v1 1                                        
+        0110  PshV4         v1                                          
+        0114  PshVPtr       this                                        
+        0118  ADDSi         936 134230796                                 ; .TriggerComponent
+        0120  RDSPtr                                                    
+        0124  CALLSYS       UPrimitiveComponent::SetNotifyRigidBodyCollision
+        0130  RET           2                                           
+    */
+
+}
+

@@ -1,0 +1,241 @@
+==============================================================================
+MODULE   Barracuda.Components.BarracudaStructureComponent
+SOURCE   Barracuda/Components/BarracudaStructureComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaStructureComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaStructureComponent@ UBarracudaStructureComponent()
+// 4 instr, 28 B bytecode, id=0x2D24C569, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaStructureComponent v2;
+
+    v2 = UBarracudaStructureComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84150 q:0x26e6e873a00; new UBarracudaStructureComponent   ctor=UBarracudaStructureComponent::UBarracudaStructureComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x1007FFE7, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaStructureComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b7cd8         ; __StaticType_UBarracudaStructureComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaStructureComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x51695BE2, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaStructureComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaStructureComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972603            ; UBarracudaStructureComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7cd8         ; __StaticType_UBarracudaStructureComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaStructureComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xA8688ACD, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaStructureComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaStructureComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972603            ; UBarracudaStructureComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7cd8         ; __StaticType_UBarracudaStructureComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaStructureComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x9FC3B442, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaStructureComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaStructureComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972603            ; UBarracudaStructureComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7cd8         ; __StaticType_UBarracudaStructureComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UBarracudaStructureComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bAttackable;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bRespawnLocation;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaStructureComponent() const
+// 3 instr, 20 B bytecode, id=0x91A8E1F9, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6e873a00         ; UBarracudaStructureComponent
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiBeginPlay
+void LokiBeginPlay_Implementation()
+// 17 instr, 120 B bytecode, id=0xE41B35B3, varspace=10
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v2;
+    AActor v10;
+
+    v2 = UBarracudaGameStateComponent::Get(Loki::GetLokiGameState(__WorldContext), NAME_None);
+    if (v2 != null) {
+        v10 = this.GetOwner();
+        v2.Structures.Add(v10);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //     3  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     6  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     9  STOREOBJ       wW0:4
+    //    10  PshVPtr        rW0:4
+    //    11  CALL           d:84255                 ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+    //    13  STOREOBJ       wW0:2
+    //    14  CmpPtrNull     rW0:2
+    //    15  JZ             ->29
+    //    17  PshVPtr        rW0:0
+    //    18  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    21  STOREOBJ       wW0:10
+    //    22  PSF            rW0:10
+    //    23  PshVPtr        rW0:2
+    //    24  ADDSi          W0:224 d:134230778      ; UBarracudaGameStateComponent::Structures  (+224)
+    //    26  CALLSYS        q:0x26e6ee8e240         ; void TSet<AActor@>::Add(const AActor@ const&)
+    //    29  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiEndPlay
+void LokiEndPlay_Implementation()
+// 17 instr, 120 B bytecode, id=0xB1F82D0D, varspace=10
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v2;
+    AActor v10;
+
+    v2 = UBarracudaGameStateComponent::Get(Loki::GetLokiGameState(__WorldContext), NAME_None);
+    if (v2 != null) {
+        v10 = this.GetOwner();
+        v2.Structures.Remove(v10);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //     3  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     6  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     9  STOREOBJ       wW0:4
+    //    10  PshVPtr        rW0:4
+    //    11  CALL           d:84255                 ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+    //    13  STOREOBJ       wW0:2
+    //    14  CmpPtrNull     rW0:2
+    //    15  JZ             ->29
+    //    17  PshVPtr        rW0:0
+    //    18  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    21  STOREOBJ       wW0:10
+    //    22  PSF            rW0:10
+    //    23  PshVPtr        rW0:2
+    //    24  ADDSi          W0:224 d:134230778      ; UBarracudaGameStateComponent::Structures  (+224)
+    //    26  CALLSYS        q:0x26e6ee8e080         ; bool TSet<AActor@>::Remove(const AActor@ const&)
+    //    29  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 7 instr, 44 B bytecode, id=0xD5C36C49, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.bRespawnLocation = false;
+    v1 = false;
+    this.bAttackable = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  LoadThisR      W0:209 d:134230779      ; UBarracudaStructureComponent::bRespawnLocation  (+209)
+    //     4  WRTV1          rW0:1
+    //     5  SetV1          wW0:1 d:0
+    //     7  LoadThisR      W0:208 d:134230779      ; UBarracudaStructureComponent::bAttackable  (+208)
+    //     9  WRTV1          rW0:1
+    //    10  RET            W0:2
+

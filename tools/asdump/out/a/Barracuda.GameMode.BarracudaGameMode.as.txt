@@ -1,0 +1,2251 @@
+==============================================================================
+MODULE   Barracuda.GameMode.BarracudaGameMode
+SOURCE   Barracuda/GameMode/BarracudaGameMode.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+// statics class: Module_Barracuda_GameMode_BarracudaGameModeStatics
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaGameMode;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ABarracudaGameMode@ ABarracudaGameMode()
+// 4 instr, 28 B bytecode, id=0xB65EA31B, varspace=2
+------------------------------------------------------------------------------
+{
+    ABarracudaGameMode v2;
+
+    v2 = ABarracudaGameMode();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84190 q:0x26e6e873700; new ABarracudaGameMode   ctor=ABarracudaGameMode::ABarracudaGameMode
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+ABarracudaGameMode@ GetBarracudaGameMode()
+// 18 instr, 116 B bytecode, id=0xFA3ECABF, varspace=8
+------------------------------------------------------------------------------
+{
+    ALokiGameMode v4;
+    ABarracudaGameMode v8;
+
+    v4 = Loki::GetLokiGameMode(__WorldContext);
+    if (v4 != null) {
+        if (v4 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ABarracudaGameMode>(v4);
+        }
+    } else {
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d440         ; ALokiGameMode@ Loki::GetLokiGameMode(UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JNZ            ->14
+    //    10  FreeNullV8     wW0:8
+    //    11  LOADOBJ        rW0:8
+    //    12  JMP            ->28
+    //    14  CmpPtrNull     rW0:4
+    //    15  JZ             ->26
+    //    17  TYPEID         d:1207972605            ; ABarracudaGameMode@
+    //    19  PSF            rW0:8
+    //    20  PshVPtr        rW0:4
+    //    21  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    24  JMP            ->27
+    //    26  ClrVPtr        wW0:8
+    //    27  LOADOBJ        rW0:8
+    //    28  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xAAE24D82, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ABarracudaGameMode);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b80d8         ; __StaticType_ABarracudaGameMode
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ABarracudaGameMode@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x664FD4F5, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaGameMode v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ABarracudaGameMode.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ABarracudaGameMode>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b80d8         ; __StaticType_ABarracudaGameMode
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972605            ; ABarracudaGameMode@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ABarracudaGameMode : ALokiTowerDefenseGameMode
+// base /Script/Loki.LokiTowerDefenseGameMode  ->  ../../../Loki/Source/Loki/GameModes/LokiTowerDefenseGameMode.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) UBarracudaRallyMinionsComponent@ RallyMinionsComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) UBarracudaPlayerSpawnerComponent@ BarracudaPlayerSpawnerComponent;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) float MatchStartTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Bounties)) float GoldLossOnDeath;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Bounties)) TArray<int> GoldBountyPerCurrentStreak;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Day/Night)) float64 DayNightDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) bool bIsDay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Bounties)) TArray<float> MinionSplitXPBonuses;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Bounties)) TArray<float> MercyHeroKillXPCoefficients;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Bounties)) float UnderdogHeroKillXPBonusPerLevel;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) bool bAnyTowersKilled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Dragon)) TArray<TSubclassOf<UGameplayEffect@>> DragonRewards;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) int NumDragonsKilled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) TMap<ALokiPlayerState@, float64> LastKnockedTimeTable;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults) float64 KnockXPCooldownTime;
+    FGameplayTag DragonKilledPilotVO;
+    FGameplayTag MomentumBossKilledPilotVO;
+    TSubclassOf<UGameplayEffect@> MomentumBuffEffect;
+
+}
+
+------------------------------------------------------------------------------
+ABarracudaGameMode() const
+// 27 instr, 212 B bytecode, id=0x6E21413C, varspace=0
+------------------------------------------------------------------------------
+{
+    this.GoldBountyPerCurrentStreak = TArray<int>();
+    this.MinionSplitXPBonuses = TArray<float>();
+    this.MercyHeroKillXPCoefficients = TArray<float>();
+    this.DragonRewards = TArray<TSubclassOf<UGameplayEffect@>>();
+    this.LastKnockedTimeTable = TMap<ALokiPlayerState@, float64>();
+    this.DragonKilledPilotVO = FGameplayTag();
+    this.MomentumBossKilledPilotVO = FGameplayTag();
+    this.MomentumBuffEffect = TSubclassOf<UGameplayEffect@>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:2040 d:134230781     ; ABarracudaGameMode::GoldBountyPerCurrentStreak  (+2040)
+    //     3  CALLSYS        q:0x26e6ee8f740         ; void TArray<int>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:2072 d:134230781     ; ABarracudaGameMode::MinionSplitXPBonuses  (+2072)
+    //     9  CALLSYS        q:0x26e6ee8f580         ; void TArray<float>::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:2088 d:134230781     ; ABarracudaGameMode::MercyHeroKillXPCoefficients  (+2088)
+    //    15  CALLSYS        q:0x26e6ee8f580         ; void TArray<float>::$beh0()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:2112 d:134230781     ; ABarracudaGameMode::DragonRewards  (+2112)
+    //    21  CALLSYS        q:0x26e6ee87240         ; void TArray<TSubclassOf<UGameplayEffect@>>::$beh0()
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:2136 d:134230781     ; ABarracudaGameMode::LastKnockedTimeTable  (+2136)
+    //    27  CALLSYS        q:0x26e6ee8f3c0         ; void TMap<ALokiPlayerState@, float64>::$beh0()
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:2224 d:134230781     ; ABarracudaGameMode::DragonKilledPilotVO  (+2224)
+    //    33  CALLSYS        q:0x26e78762380         ; void FGameplayTag::$beh0()
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:2232 d:134230781     ; ABarracudaGameMode::MomentumBossKilledPilotVO  (+2232)
+    //    39  CALLSYS        q:0x26e78762380         ; void FGameplayTag::$beh0()
+    //    42  PshVPtr        rW0:0
+    //    43  ADDSi          W0:2240 d:134230781     ; ABarracudaGameMode::MomentumBuffEffect  (+2240)
+    //    45  CALLSYS        q:0x26e6ee82700         ; void TSubclassOf<UGameplayEffect@>::$beh0()
+    //    48  PshVPtr        rW0:0
+    //    49  FinConstruct   q:0x26e6e873700         ; ABarracudaGameMode
+    //    52  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Const)
+UBarracudaGameStateComponent@ GetGameStateComponent()
+// 14 instr, 92 B bytecode, id=0x114D121C, varspace=8
+------------------------------------------------------------------------------
+{
+    ALokiGameState v4;
+    UBarracudaGameStateComponent v8;
+
+    v4 = Loki::GetLokiGameState(__WorldContext);
+    if (v4 != null) {
+        v8 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+    } else {
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JNZ            ->14
+    //    10  FreeNullV8     wW0:8
+    //    11  LOADOBJ        rW0:8
+    //    12  JMP            ->22
+    //    14  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    17  PshVPtr        rW0:4
+    //    18  CALL           d:84255                 ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+    //    20  STOREOBJ       wW0:8
+    //    21  LOADOBJ        rW0:8
+    //    22  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 34 instr, 248 B bytecode, id=0x539FB67D, varspace=28
+------------------------------------------------------------------------------
+{
+    UGameEventRouterComponent v8;
+    FGameEvent_BarracudaPhaseChanged v14;
+    FGameEventListenerHandle v28;
+
+    Loki::GetLokiGameState(__WorldContext).OnPlayerKilled.AddUFunction(this, __STATIC_NAME(9));
+    v8 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+    if (v8 != null) {
+        v14 = FGameEvent_BarracudaPhaseChanged();
+        v28 = v8.RegisterForEvent(this, v14, null, __STATIC_NAME(10), false);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:9
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    10  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    13  STOREOBJ       wW0:2
+    //    14  PshVPtr        rW0:2
+    //    15  ADDSi          W0:1800 d:67115161      ; ALokiGameState::OnPlayerKilled  (+1800)
+    //    17  CALLSYS        q:0x26e771b4bc0         ; void FPlayerKillEventSignature::AddUFunction(const UObject@, const FName&)
+    //    20  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    23  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //    26  STOREOBJ       wW0:8
+    //    27  CmpPtrNull     rW0:8
+    //    28  JZ             ->61
+    //    30  SetV1          wW0:15 d:0
+    //    32  PshV4          rW0:15
+    //    33  PshC4          d:10
+    //    35  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    38  PshRPtr
+    //    39  PshNull
+    //    40  TYPEID         d:67120880              ; FGameEvent_BarracudaPhaseChanged
+    //    42  PSF            rW0:14
+    //    43  CALLSYS        q:0x26e79396d00         ; void FGameEvent_BarracudaPhaseChanged::$beh0()
+    //    46  PSF            rW0:14
+    //    47  PshVPtr        rW0:0
+    //    48  PSF            rW0:28
+    //    49  PshVPtr        rW0:8
+    //    50  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    53  PSF            rW0:14
+    //    54  CALLSYS        q:0x26e79396b40         ; void FGameEvent_BarracudaPhaseChanged::$beh2()
+    //    57  PSF            rW0:28
+    //    58  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    61  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void AuthHandleBarracudaPhaseChanged(const FGameEvent_BarracudaPhaseChanged&inout Event, const AActor@ Context)
+// 23 instr, 176 B bytecode, id=0x213FFEAC, varspace=16
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v8;
+    auto v13;
+
+    if (int(GetCurrentBarracudaPhaseType()) == 2) {
+        this.OnNewDay();
+        v8 = UBarracudaGameStateComponent::Get(Loki::GetLokiGameState(__WorldContext), NAME_None);
+        v13 = Gameplay::GetServerTime(__WorldContext);
+        v13 = v13 + 60;
+        v8.NextDayNightSwapTime = float64(v13);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84265                 ; EBarracudaPhaseType GetCurrentBarracudaPhaseType()
+    //     2  CpyRtoV4       wW0:2
+    //     3  sbTOi          wW0:3 rW1:2
+    //     5  CMPIi          rW0:3 d:2
+    //     7  JNZ            ->43
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:84178                 ; void ABarracudaGameMode::OnNewDay()
+    //    12  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    15  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    18  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    21  STOREOBJ       wW0:10
+    //    22  PshVPtr        rW0:10
+    //    23  CALL           d:84255                 ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+    //    25  STOREOBJ       wW0:8
+    //    26  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    29  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    32  CpyRtoV4       wW0:13
+    //    33  ADDIf          wW0:13 rW1:13 DW2:1114636288
+    //    36  fTOd           wW0:16 rW1:13
+    //    38  LoadRObjR      rW0:8 W1:208 DW2:134230778; UBarracudaGameStateComponent::NextDayNightSwapTime  (+208)
+    //    41  WRTV8          rW0:16
+    //    42  FreeNullV8     wW0:8
+    //    43  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 3 instr, 16 B bytecode, id=0xCEB8888E, varspace=0
+------------------------------------------------------------------------------
+{
+    this.HandleDayNight();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84182                 ; void ABarracudaGameMode::HandleDayNight()
+    //     3  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnNewPhase
+void OnNewPhase_Implementation(const ERoundPhase NextPhase, const ERoundPhase LastPhase)
+// 9 instr, 60 B bytecode, id=0x5A29A062, varspace=3
+------------------------------------------------------------------------------
+{
+    if (int(NextPhase) == 7) {
+        this.bIsDay = false;
+        this.OnNewNight();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  sbTOi          wW0:1 rW1:-2
+    //     2  CMPIi          rW0:1 d:7
+    //     4  JNZ            ->14
+    //     6  SetV1          wW0:3 d:0
+    //     8  LoadThisR      W0:2064 d:134230781     ; ABarracudaGameMode::bIsDay  (+2064)
+    //    10  WRTV1          rW0:3
+    //    11  PshVPtr        rW0:0
+    //    12  CALLINTF       d:84180                 ; void ABarracudaGameMode::OnNewNight()
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: AugmentCharacterLoadoutItems
+void AugmentCharacterLoadoutItems_Implementation(TArray<FStartupItemSpec>&inout LoadoutItems)
+// 1 instr, 4 B bytecode, id=0x240FBE65, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+bool HasBarracudaMatchStarted()
+// 10 instr, 64 B bytecode, id=0x9C7EB2D0, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v3;
+
+    v1 = Gameplay::GetServerTime(__WorldContext);
+    v3 = v1 >= this.MatchStartTime;
+    return v3;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  LoadThisR      W0:2032 d:134230781     ; ABarracudaGameMode::MatchStartTime  (+2032)
+    //     9  RDR4           wW0:2
+    //    10  CMPf           rW0:1 rW1:2
+    //    12  TNS
+    //    13  CpyRtoV4       wW0:3
+    //    14  CpyVtoR4       rW0:3
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+float64 GetMatchTime()
+// 9 instr, 64 B bytecode, id=0x62B2A436, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+
+    v1 = Gameplay::GetServerTime(__WorldContext);
+    v1 = v1 - this.MatchStartTime;
+    v4 = float64(v1);
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  LoadThisR      W0:2032 d:134230781     ; ABarracudaGameMode::MatchStartTime  (+2032)
+    //     9  RDR4           wW0:2
+    //    10  SUBf           wW0:1 rW1:1 rW2:2
+    //    12  fTOd           wW0:4 rW1:1
+    //    14  CpyVtoR8       rW0:4
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnPlayerKilled(const FPlayerKillEventData&inout KillData)
+// 431 instr, 2900 B bytecode, id=0x077D7694, varspace=91
+------------------------------------------------------------------------------
+{
+    auto v2;
+    int v3;
+    auto v4;
+    float v5;
+    float64 v8;
+    auto v12;
+    ALokiCharacter v14;
+    ALokiHeroCharacter v16;
+    ALokiHeroCharacter v18;
+    ALokiPlayerState v20;
+    APlayerState v22;
+    ALokiPlayerState v24;
+    ALokiPlayerState v26;
+    int v27;
+    int v28;
+    APawn v30;
+    ALokiHeroCharacter v32;
+    ALokiPlayerState v34;
+    APlayerState v36;
+    int v37;
+    int v38;
+    int v39;
+    int v40;
+    float v41;
+    auto v42;
+    TArray<ALokiPlayerState@> v46;
+    FVector v56;
+    TArray<ALokiPlayerState@> v60;
+    TArray<ALokiPlayerState@> v64;
+    TArrayIterator<ALokiPlayerState@> v70;
+    ALokiPlayerState v78;
+    int v79;
+    auto v80;
+    int v81;
+    auto v82;
+    float v83;
+    auto v84;
+    float v85;
+    int v86;
+    int v87;
+    auto v89;
+    auto v90;
+
+    if (int(KillData.EventResult) == 2) {
+        if (this.LastKnockedTimeTable.Contains(KillData.VictimPlayerState)) {
+            v5 = Gameplay::GetServerTime(__WorldContext);
+            v12 = float64(v5);
+            v8 = this.LastKnockedTimeTable[KillData.VictimPlayerState];
+            v8 = v8 + this.KnockXPCooldownTime;
+            if (v12 < v8) {
+                goto L724;
+            }
+        }
+        v5 = Gameplay::GetServerTime(__WorldContext);
+        v8 = float64(v5);
+        this.LastKnockedTimeTable.Add(KillData.VictimPlayerState, v8);
+        v14 = KillData.VictimPlayerState.GetLokiCharacter();
+        if (v14 == null) {
+            v16 = null;
+        } else {
+            v16 = cast<ALokiHeroCharacter>(v14);
+        }
+        v18 = v16;
+        if (v16 == null) {
+        } else {
+            v22 = v18.PlayerState;
+            if (v22 == null) {
+                v24 = null;
+            } else {
+                v24 = cast<ALokiPlayerState>(v22);
+            }
+            v26 = v24;
+        }
+        v20 = v26;
+        v2 = v26.GetTeamIndex_BP();
+        v28 = -1;
+        if (v18 != null) {
+            v5 = v18.GetLevel();
+            v27 = Math::RoundToInt(v5);
+            v28 = v27;
+        }
+        v30 = KillData.Killer;
+        if (v30 == null) {
+            v16 = null;
+        } else {
+            v16 = cast<ALokiHeroCharacter>(v30);
+        }
+        v32 = v16;
+        if (v16 == null) {
+        } else {
+            v36 = v32.PlayerState;
+            if (v36 == null) {
+                v26 = null;
+            } else {
+                v26 = cast<ALokiPlayerState>(v36);
+            }
+            v24 = v26;
+        }
+        v34 = v24;
+        v3 = LokiTeam::GetTeamFromActor(KillData.Killer);
+        v38 = -1;
+        if (v32 != null) {
+            v5 = v32.GetLevel();
+            v37 = Math::RoundToInt(v5);
+            v38 = v37;
+        }
+        v39 = 0;
+        if (v20 != null) {
+            v27 = v20.GetWalletCurrencyAmount("Gold");
+            v41 = float(v27);
+            v5 = this.GoldLossOnDeath;
+            v41 = v41 * v5;
+            v37 = Math::RoundToInt(v41);
+            v39 = v37;
+            v4 = false;
+            v20.ConsumeWalletCurrency("Gold", v37, false);
+        }
+        v46 = TArray<ALokiPlayerState@>();
+        v56 = v18.GetActorLocation();
+        v60 = this.GetPlayerStatesForRewardsInRadius(v56, 2500, v3, KillData.Killer);
+        v64 = TArray<ALokiPlayerState@>();
+        v64 = KillData.AssistPlayerStats;
+        if (v34 != null) {
+            v64.AddUnique(v34);
+        }
+        v27 = 0;
+        while (true) {
+            v40 = v60.Num();
+            if (v27 >= v40) break;
+            v27++;
+            v46.AddUnique(v60[v27]);
+        }
+        v27 = 0;
+        while (true) {
+            v37 = v64.Num();
+            if (v27 >= v37) break;
+            v27++;
+            v46.AddUnique(v64[v27]);
+        }
+        v70 = v46.Iterator();
+        while (true) {
+            v4 = v70.CanProceed;
+            if (!v4) break;
+            v78 = v70.Proceed();
+            v27 = 0;
+            v79 = 0;
+            if (v64.Contains(v78)) {
+                v40 = v46.Num();
+                v37 = Math::IntegerDivisionTrunc(v39, v40);
+                v27 = v27 + v37;
+            }
+            if (v78 == v34) {
+                v42 = v20 != null;
+                v4 = v42;
+            } else {
+                v4 = 0;
+            }
+            if (v4) {
+                v40 = v20.GetCurrentKillStreak();
+                if (v40 > 0) {
+                    v81 = v20.GetCurrentKillStreak();
+                    v37 = this.GoldBountyPerCurrentStreak.Num();
+                    v40 = 1;
+                    v37 = v37 - 1;
+                    v40 = Math::Min(v37, v81);
+                    v27 = v27 + v40;
+                }
+            }
+            v82 = 4;
+            v78.GrantWalletCurrency("Gold", v27, 4);
+            if (v18 != null) {
+                v42 = v46.Contains(v78);
+                v4 = v42;
+            } else {
+                v4 = 0;
+            }
+            if (v4) {
+                v5 = v18.GetExperience();
+                v41 = 1045220557;
+                v5 = v5 * 1045220557;
+                v41 = v5 + 75;
+                v85 = 1065353216;
+                v80 = v78.GetPlayerLevel();
+                v37 = v18.GetCharacterLevel();
+                v40 = v80 - v37;
+                if (v40 > 0) {
+                    v37 = this.MercyHeroKillXPCoefficients.Num();
+                    v42 = v37 > 0;
+                    v4 = v42;
+                } else {
+                    v4 = 0;
+                }
+                if (!v4) {
+                    if (v40 <= -2) {
+                        v5 = this.UnderdogHeroKillXPBonusPerLevel;
+                        v87 = Math::Abs(v40);
+                        v83 = float(v87);
+                        v84 = v5 * v83;
+                        v85 = v84 + 1;
+                    }
+                } else {
+                    v86 = this.MercyHeroKillXPCoefficients.Num();
+                    v81 = 1;
+                    v37 = v86 - 1;
+                    v81 = Math::Min(v37, v40);
+                    v83 = this.MercyHeroKillXPCoefficients[v81];
+                    v85 = v83;
+                }
+                v89 = 0;
+                v87 = v20.GetCurrentKillStreak();
+                if (v87 > 2) {
+                    v86 = v20.GetCurrentKillStreak();
+                    v87 = v86 * 15;
+                    v86 = v28 * v87;
+                    v84 = float(v86);
+                    v89 = v84;
+                }
+                v83 = v41 + v89;
+                v84 = v83 * v85;
+                v86 = v46.Num();
+                v83 = v84 / float(v86);
+                v37 = v46.Num();
+                if (v37 > 1) {
+                    v86 = v46.Num();
+                    v87 = this.MinionSplitXPBonuses.Num();
+                    v87 = v87 - 1;
+                    v37 = Math::Min(v87, v86);
+                    v90 = this.MinionSplitXPBonuses[v37];
+                    v90 = v90 + 1;
+                    v83 = v83 * v90;
+                }
+                v37 = Math::RoundToInt(v83);
+                v79 = v79 + v37;
+            }
+            v14 = v78.GetLokiCharacter();
+            if (v14 != null) {
+                v42 = true;
+                v14 = v78.GetLokiCharacter();
+                v14.AuthGrantExperience(v79, true);
+            }
+            if (v27 <= 0) {
+                v42 = v79 > 0;
+                v4 = v42;
+            } else {
+                v4 = true;
+            }
+            if (v4) {
+                v82 = 2;
+                v56 = v18.GetActorLocation();
+                this.OnBountyGivenToPlayer(v56, v78, v27, 2, v79);
+            }
+        }
+    } else {
+    }
+    L724:
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadRObjR      rW0:-2 W1:80 DW2:67120796; FPlayerKillEventData::EventResult  (+80)
+    //     3  RDR1           wW0:1
+    //     4  sbTOi          wW0:2 rW1:1
+    //     6  CMPIi          rW0:2 d:2
+    //     8  JZ             ->12
+    //    10  JMP            ->724
+    //    12  PshVPtr        rW0:-2
+    //    13  ADDSi          W0:48 d:67120796        ; FPlayerKillEventData::VictimPlayerState  (+48)
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:2136 d:134230781     ; ABarracudaGameMode::LastKnockedTimeTable  (+2136)
+    //    18  CALLSYS        q:0x26e6ee8dd00         ; bool TMap<ALokiPlayerState@, float64>::Contains(const ALokiPlayerState@ const&) const
+    //    21  JLowZ          ->53
+    //    23  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    26  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    29  CpyRtoV4       wW0:5
+    //    30  fTOd           wW0:12 rW1:5
+    //    32  PshVPtr        rW0:-2
+    //    33  ADDSi          W0:48 d:67120796        ; FPlayerKillEventData::VictimPlayerState  (+48)
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:2136 d:134230781     ; ABarracudaGameMode::LastKnockedTimeTable  (+2136)
+    //    38  CALLSYS        q:0x26e6ee8d980         ; float64& TMap<ALokiPlayerState@, float64>::opIndex(const ALokiPlayerState@ const&)
+    //    41  RDR8           wW0:8
+    //    42  LoadThisR      W0:2216 d:134230781     ; ABarracudaGameMode::KnockXPCooldownTime  (+2216)
+    //    44  RDR8           wW0:10
+    //    45  ADDd           wW0:8 rW1:8 rW2:10
+    //    47  CMPd           rW0:12 rW1:8
+    //    49  JNS            ->53
+    //    51  JMP            ->724
+    //    53  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    56  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    59  CpyRtoV4       wW0:5
+    //    60  fTOd           wW0:8 rW1:5
+    //    62  PSF            rW0:8
+    //    63  PshVPtr        rW0:-2
+    //    64  ADDSi          W0:48 d:67120796        ; FPlayerKillEventData::VictimPlayerState  (+48)
+    //    66  PshVPtr        rW0:0
+    //    67  ADDSi          W0:2136 d:134230781     ; ABarracudaGameMode::LastKnockedTimeTable  (+2136)
+    //    69  CALLSYS        q:0x26e6ee8d7c0         ; void TMap<ALokiPlayerState@, float64>::Add(const ALokiPlayerState@ const&, const float64&)
+    //    72  PshVPtr        rW0:-2
+    //    73  ADDSi          W0:48 d:67120796        ; FPlayerKillEventData::VictimPlayerState  (+48)
+    //    75  RDSPtr
+    //    76  CALLSYS        q:0x26e7a390b00         ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+    //    79  STOREOBJ       wW0:14
+    //    80  CmpPtrNull     rW0:14
+    //    81  JZ             ->92
+    //    83  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //    85  PSF            rW0:16
+    //    86  PshVPtr        rW0:14
+    //    87  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    90  JMP            ->93
+    //    92  ClrVPtr        wW0:16
+    //    93  PshVPtr        rW0:16
+    //    94  RefCpyV        wW0:18
+    //    95  CmpPtrNull     rW0:18
+    //    96  JZ             ->120
+    //    98  PshVPtr        rW0:18
+    //    99  ADDSi          W0:984 d:67111506       ; APawn::PlayerState  (+984)
+    //   101  RDSPtr
+    //   102  RefCpyV        wW0:22
+    //   103  CmpPtrNull     rW0:22
+    //   104  JZ             ->115
+    //   106  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //   108  PSF            rW0:24
+    //   109  PshVPtr        rW0:22
+    //   110  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   113  JMP            ->116
+    //   115  ClrVPtr        wW0:24
+    //   116  PshVPtr        rW0:24
+    //   117  RefCpyV        wW0:26
+    //   118  JMP            ->121
+    //   120  FreeNullV8     wW0:26
+    //   121  PshVPtr        rW0:26
+    //   122  RefCpyV        wW0:20
+    //   123  PshVPtr        rW0:20
+    //   124  CALLSYS        q:0x26e7a396ec0         ; int ALokiPlayerState::GetTeamIndex_BP() const
+    //   127  CpyRtoV4       wW0:2
+    //   128  SetV4          wW0:28 d:-1
+    //   130  CmpPtrNull     rW0:18
+    //   131  JZ             ->145
+    //   133  PshVPtr        rW0:18
+    //   134  CALLSYS        q:0x26e7a188e40         ; float ALokiCharacter::GetLevel() const
+    //   137  CpyRtoV4       wW0:5
+    //   138  PshV4          rW0:5
+    //   139  CALLSYS        q:0x26e70358900         ; int Math::RoundToInt(float)
+    //   142  CpyRtoV4       wW0:27
+    //   143  CpyVtoV4       wW0:28 rW1:27
+    //   145  PshVPtr        rW0:-2
+    //   146  ADDSi          W0:0 d:67120796         ; FPlayerKillEventData::Killer  (+0)
+    //   148  RDSPtr
+    //   149  RefCpyV        wW0:30
+    //   150  CmpPtrNull     rW0:30
+    //   151  JZ             ->162
+    //   153  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //   155  PSF            rW0:16
+    //   156  PshVPtr        rW0:30
+    //   157  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   160  JMP            ->163
+    //   162  ClrVPtr        wW0:16
+    //   163  PshVPtr        rW0:16
+    //   164  RefCpyV        wW0:32
+    //   165  CmpPtrNull     rW0:32
+    //   166  JZ             ->190
+    //   168  PshVPtr        rW0:32
+    //   169  ADDSi          W0:984 d:67111506       ; APawn::PlayerState  (+984)
+    //   171  RDSPtr
+    //   172  RefCpyV        wW0:36
+    //   173  CmpPtrNull     rW0:36
+    //   174  JZ             ->185
+    //   176  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //   178  PSF            rW0:26
+    //   179  PshVPtr        rW0:36
+    //   180  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   183  JMP            ->186
+    //   185  ClrVPtr        wW0:26
+    //   186  PshVPtr        rW0:26
+    //   187  RefCpyV        wW0:24
+    //   188  JMP            ->191
+    //   190  FreeNullV8     wW0:24
+    //   191  PshVPtr        rW0:24
+    //   192  RefCpyV        wW0:34
+    //   193  PshVPtr        rW0:-2
+    //   194  ADDSi          W0:0 d:67120796         ; FPlayerKillEventData::Killer  (+0)
+    //   196  RDSPtr
+    //   197  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //   200  CpyRtoV4       wW0:3
+    //   201  SetV4          wW0:38 d:-1
+    //   203  CmpPtrNull     rW0:32
+    //   204  JZ             ->218
+    //   206  PshVPtr        rW0:32
+    //   207  CALLSYS        q:0x26e7a188e40         ; float ALokiCharacter::GetLevel() const
+    //   210  CpyRtoV4       wW0:5
+    //   211  PshV4          rW0:5
+    //   212  CALLSYS        q:0x26e70358900         ; int Math::RoundToInt(float)
+    //   215  CpyRtoV4       wW0:37
+    //   216  CpyVtoV4       wW0:38 rW1:37
+    //   218  SetV4          wW0:39 d:0
+    //   220  CmpPtrNull     rW0:20
+    //   221  JZ             ->256
+    //   223  PGA            q:0x26e7af06b90         ; "Gold"
+    //   226  PshVPtr        rW0:20
+    //   227  CALLSYS        q:0x26e7a396280         ; int ALokiPlayerState::GetWalletCurrencyAmount(const FString&) const
+    //   230  CpyRtoV4       wW0:27
+    //   231  iTOf           wW0:41 rW1:27
+    //   233  LoadThisR      W0:2036 d:134230781     ; ABarracudaGameMode::GoldLossOnDeath  (+2036)
+    //   235  RDR4           wW0:5
+    //   236  MULf           wW0:41 rW1:41 rW2:5
+    //   238  PshV4          rW0:41
+    //   239  CALLSYS        q:0x26e70358900         ; int Math::RoundToInt(float)
+    //   242  CpyRtoV4       wW0:37
+    //   243  CpyVtoV4       wW0:39 rW1:37
+    //   245  SetV1          wW0:4 d:0
+    //   247  PshV4          rW0:4
+    //   248  PshV4          rW0:39
+    //   249  PGA            q:0x26e5dc744d0         ; "Gold"
+    //   252  PshVPtr        rW0:20
+    //   253  CALLSYS        q:0x26e7a35f200         ; bool ALokiPlayerState::ConsumeWalletCurrency(const FString&, int, bool)
+    //   256  PSF            rW0:46
+    //   257  CALLSYS        q:0x26e6ee8d600         ; void TArray<ALokiPlayerState@>::$beh0()
+    //   260  PshVPtr        rW0:-2
+    //   261  ADDSi          W0:0 d:67120796         ; FPlayerKillEventData::Killer  (+0)
+    //   263  RDSPtr
+    //   264  PshV4          rW0:3
+    //   265  PshC4          d:1159479296
+    //   267  PSF            rW0:56
+    //   268  PshVPtr        rW0:18
+    //   269  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   272  PSF            rW0:56
+    //   273  PSF            rW0:60
+    //   274  PshVPtr        rW0:0
+    //   275  CALLINTF       d:84177                 ; TArray<ALokiPlayerState@> ABarracudaGameMode::GetPlayerStatesForRewardsInRadius(const FVector&, const float, const int, AActor@)
+    //   277  PshVPtr        rW0:-2
+    //   278  ADDSi          W0:32 d:67120796        ; FPlayerKillEventData::AssistPlayerStats  (+32)
+    //   280  PSF            rW0:64
+    //   281  CALLSYS        q:0x26e6ee8d600         ; void TArray<ALokiPlayerState@>::$beh0()
+    //   284  PSF            rW0:64
+    //   285  CALLSYS        q:0x26e79347e80         ; TArray<ALokiPlayerState@>& TArray<ALokiPlayerState@>::opAssign(const TArray<ALokiPlayerState@>&)
+    //   288  CmpPtrNull     rW0:34
+    //   289  JZ             ->296
+    //   291  PSF            rW0:34
+    //   292  PSF            rW0:64
+    //   293  CALLSYS        q:0x26e6ee8d440         ; bool TArray<ALokiPlayerState@>::AddUnique(const ALokiPlayerState@ const&)
+    //   296  SetV4          wW0:27 d:0
+    //   298  JMP            ->312
+    //   300  SUSPEND
+    //   301  PshV4          rW0:27
+    //   302  PSF            rW0:60
+    //   303  Thiscall1      q:0x26e6ee8cf00         ; ALokiPlayerState@& TArray<ALokiPlayerState@>::opIndex(int)
+    //   306  PshRPtr
+    //   307  PSF            rW0:46
+    //   308  CALLSYS        q:0x26e6ee8d440         ; bool TArray<ALokiPlayerState@>::AddUnique(const ALokiPlayerState@ const&)
+    //   311  IncVi          rW0:27
+    //   312  PSF            rW0:60
+    //   313  CALLSYS        q:0x26e6ee8d280         ; int TArray<ALokiPlayerState@>::Num() const
+    //   316  CpyRtoV4       wW0:40
+    //   317  CMPi           rW0:27 rW1:40
+    //   319  JS             ->300
+    //   321  SetV4          wW0:27 d:0
+    //   323  JMP            ->337
+    //   325  SUSPEND
+    //   326  PshV4          rW0:27
+    //   327  PSF            rW0:64
+    //   328  Thiscall1      q:0x26e6ee8cf00         ; ALokiPlayerState@& TArray<ALokiPlayerState@>::opIndex(int)
+    //   331  PshRPtr
+    //   332  PSF            rW0:46
+    //   333  CALLSYS        q:0x26e6ee8d440         ; bool TArray<ALokiPlayerState@>::AddUnique(const ALokiPlayerState@ const&)
+    //   336  IncVi          rW0:27
+    //   337  PSF            rW0:64
+    //   338  CALLSYS        q:0x26e6ee8d280         ; int TArray<ALokiPlayerState@>::Num() const
+    //   341  CpyRtoV4       wW0:37
+    //   342  CMPi           rW0:27 rW1:37
+    //   344  JS             ->325
+    //   346  PSF            rW0:70
+    //   347  PSF            rW0:46
+    //   348  CALLSYS        q:0x26e6ee8c9c0         ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+    //   351  JMP            ->705
+    //   353  SUSPEND
+    //   354  PSF            rW0:70
+    //   355  CALLSYS        q:0x26e6ee8c640         ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+    //   358  PshRPtr
+    //   359  RDSPtr
+    //   360  RefCpyV        wW0:78
+    //   361  SetV4          wW0:27 d:0
+    //   363  SetV4          wW0:79 d:0
+    //   365  PSF            rW0:78
+    //   366  PSF            rW0:64
+    //   367  CALLSYS        q:0x26e6ee8c480         ; bool TArray<ALokiPlayerState@>::Contains(const ALokiPlayerState@ const&) const
+    //   370  JLowZ          ->385
+    //   372  PSF            rW0:46
+    //   373  CALLSYS        q:0x26e6ee8d280         ; int TArray<ALokiPlayerState@>::Num() const
+    //   376  CpyRtoV4       wW0:40
+    //   377  PshV4          rW0:40
+    //   378  PshV4          rW0:39
+    //   379  CALLSYS        q:0x26e703898c0         ; int Math::IntegerDivisionTrunc(int, int)
+    //   382  CpyRtoV4       wW0:37
+    //   383  ADDi           wW0:27 rW1:27 rW2:37
+    //   385  CmpPtr         rW0:78 rW1:34
+    //   387  JZ             ->393
+    //   389  SetV4          wW0:4 d:0
+    //   391  JMP            ->398
+    //   393  CmpPtrNull     rW0:20
+    //   394  TNZ
+    //   395  CpyRtoV4       wW0:42
+    //   396  CpyVtoV4       wW0:4 rW1:42
+    //   398  CpyVtoR1       rW0:4
+    //   399  JLowZ          ->434
+    //   401  PshVPtr        rW0:20
+    //   402  CALLSYS        q:0x26e7a393180         ; int ALokiPlayerState::GetCurrentKillStreak() const
+    //   405  CpyRtoV4       wW0:40
+    //   406  CMPIi          rW0:40 d:0
+    //   408  JNP            ->434
+    //   410  PshVPtr        rW0:20
+    //   411  CALLSYS        q:0x26e7a393180         ; int ALokiPlayerState::GetCurrentKillStreak() const
+    //   414  CpyRtoV4       wW0:81
+    //   415  PshV4          rW0:81
+    //   416  PshVPtr        rW0:0
+    //   417  ADDSi          W0:2040 d:134230781     ; ABarracudaGameMode::GoldBountyPerCurrentStreak  (+2040)
+    //   419  CALLSYS        q:0x26e6ee8c2c0         ; int TArray<int>::Num() const
+    //   422  CpyRtoV4       wW0:37
+    //   423  SetV4          wW0:40 d:1
+    //   425  SUBi           wW0:37 rW1:37 rW2:40
+    //   427  PshV4          rW0:37
+    //   428  CALLSYS        q:0x26e70382700         ; int Math::Min(int, int)
+    //   431  CpyRtoV4       wW0:40
+    //   432  ADDi           wW0:27 rW1:27 rW2:40
+    //   434  SetV1          wW0:82 d:4
+    //   436  PshV4          rW0:82
+    //   437  PshV4          rW0:27
+    //   438  PGA            q:0x26e6e67ffa0         ; "Gold"
+    //   441  PshVPtr        rW0:78
+    //   442  CALLSYS        q:0x26e7a395800         ; void ALokiPlayerState::GrantWalletCurrency(const FString&, int, ECurrencyGrantReason)
+    //   445  CmpPtrNull     rW0:18
+    //   446  JNZ            ->452
+    //   448  SetV4          wW0:4 d:0
+    //   450  JMP            ->460
+    //   452  PSF            rW0:78
+    //   453  PSF            rW0:46
+    //   454  CALLSYS        q:0x26e6ee8c480         ; bool TArray<ALokiPlayerState@>::Contains(const ALokiPlayerState@ const&) const
+    //   457  CpyRtoV4       wW0:42
+    //   458  CpyVtoV4       wW0:4 rW1:42
+    //   460  CpyVtoR1       rW0:4
+    //   461  JLowZ          ->651
+    //   463  PshVPtr        rW0:18
+    //   464  CALLSYS        q:0x26e7a183a40         ; float ALokiCharacter::GetExperience() const
+    //   467  CpyRtoV4       wW0:5
+    //   468  SetV4          wW0:41 d:1045220557
+    //   470  MULf           wW0:5 rW1:5 rW2:41
+    //   472  ADDIf          wW0:41 rW1:5 DW2:1117126656
+    //   475  SetV4          wW0:85 d:1065353216
+    //   477  PshVPtr        rW0:78
+    //   478  CALLSYS        q:0x26e7a3905c0         ; int ALokiPlayerState::GetPlayerLevel()
+    //   481  CpyRtoV4       wW0:80
+    //   482  PshVPtr        rW0:18
+    //   483  CALLSYS        q:0x26e7a1844c0         ; int ALokiCharacter::GetCharacterLevel() const
+    //   486  CpyRtoV4       wW0:37
+    //   487  SUBi           wW0:40 rW1:80 rW2:37
+    //   489  CMPIi          rW0:40 d:0
+    //   491  JP             ->497
+    //   493  SetV4          wW0:4 d:0
+    //   495  JMP            ->510
+    //   497  PshVPtr        rW0:0
+    //   498  ADDSi          W0:2088 d:134230781     ; ABarracudaGameMode::MercyHeroKillXPCoefficients  (+2088)
+    //   500  CALLSYS        q:0x26e6ee8c100         ; int TArray<float>::Num() const
+    //   503  CpyRtoV4       wW0:37
+    //   504  CMPIi          rW0:37 d:0
+    //   506  TP
+    //   507  CpyRtoV4       wW0:42
+    //   508  CpyVtoV4       wW0:4 rW1:42
+    //   510  CpyVtoR1       rW0:4
+    //   511  JLowZ          ->542
+    //   513  PshV4          rW0:40
+    //   514  PshVPtr        rW0:0
+    //   515  ADDSi          W0:2088 d:134230781     ; ABarracudaGameMode::MercyHeroKillXPCoefficients  (+2088)
+    //   517  CALLSYS        q:0x26e6ee8c100         ; int TArray<float>::Num() const
+    //   520  CpyRtoV4       wW0:86
+    //   521  SetV4          wW0:81 d:1
+    //   523  SUBi           wW0:37 rW1:86 rW2:81
+    //   525  PshV4          rW0:37
+    //   526  CALLSYS        q:0x26e70382700         ; int Math::Min(int, int)
+    //   529  CpyRtoV4       wW0:81
+    //   530  PshV4          rW0:81
+    //   531  PshVPtr        rW0:0
+    //   532  ADDSi          W0:2088 d:134230781     ; ABarracudaGameMode::MercyHeroKillXPCoefficients  (+2088)
+    //   534  Thiscall1      q:0x26e6ee8bd80         ; float& TArray<float>::opIndex(int)
+    //   537  RDR4           wW0:83
+    //   538  CpyVtoV4       wW0:85 rW1:83
+    //   540  JMP            ->561
+    //   542  CMPIi          rW0:40 d:-2
+    //   544  JP             ->561
+    //   546  LoadThisR      W0:2104 d:134230781     ; ABarracudaGameMode::UnderdogHeroKillXPBonusPerLevel  (+2104)
+    //   548  RDR4           wW0:5
+    //   549  PshV4          rW0:40
+    //   550  CALLSYS        q:0x26e70383180         ; int Math::Abs(int)
+    //   553  CpyRtoV4       wW0:87
+    //   554  iTOf           wW0:83 rW1:87
+    //   556  MULf           wW0:84 rW1:5 rW2:83
+    //   558  ADDIf          wW0:85 rW1:84 DW2:1065353216
+    //   561  SetV4          wW0:89 d:0
+    //   563  PshVPtr        rW0:20
+    //   564  CALLSYS        q:0x26e7a393180         ; int ALokiPlayerState::GetCurrentKillStreak() const
+    //   567  CpyRtoV4       wW0:87
+    //   568  CMPIi          rW0:87 d:2
+    //   570  JNP            ->586
+    //   572  PshVPtr        rW0:20
+    //   573  CALLSYS        q:0x26e7a393180         ; int ALokiPlayerState::GetCurrentKillStreak() const
+    //   576  CpyRtoV4       wW0:86
+    //   577  MULIi          wW0:87 rW1:86 DW2:15
+    //   580  MULi           wW0:86 rW1:28 rW2:87
+    //   582  iTOf           wW0:84 rW1:86
+    //   584  CpyVtoV4       wW0:89 rW1:84
+    //   586  ADDf           wW0:83 rW1:41 rW2:89
+    //   588  MULf           wW0:84 rW1:83 rW2:85
+    //   590  PSF            rW0:46
+    //   591  CALLSYS        q:0x26e6ee8d280         ; int TArray<ALokiPlayerState@>::Num() const
+    //   594  CpyRtoV4       wW0:86
+    //   595  iTOf           wW0:88 rW1:86
+    //   597  DIVf           wW0:83 rW1:84 rW2:88
+    //   599  PSF            rW0:46
+    //   600  CALLSYS        q:0x26e6ee8d280         ; int TArray<ALokiPlayerState@>::Num() const
+    //   603  CpyRtoV4       wW0:37
+    //   604  CMPIi          rW0:37 d:1
+    //   606  JNP            ->644
+    //   608  PSF            rW0:46
+    //   609  CALLSYS        q:0x26e6ee8d280         ; int TArray<ALokiPlayerState@>::Num() const
+    //   612  CpyRtoV4       wW0:86
+    //   613  PshV4          rW0:86
+    //   614  PshVPtr        rW0:0
+    //   615  ADDSi          W0:2072 d:134230781     ; ABarracudaGameMode::MinionSplitXPBonuses  (+2072)
+    //   617  CALLSYS        q:0x26e6ee8c100         ; int TArray<float>::Num() const
+    //   620  CpyRtoV4       wW0:87
+    //   621  SUBIi          wW0:87 rW1:87 DW2:1
+    //   624  PshV4          rW0:87
+    //   625  CALLSYS        q:0x26e70382700         ; int Math::Min(int, int)
+    //   628  CpyRtoV4       wW0:37
+    //   629  PshV4          rW0:37
+    //   630  PshVPtr        rW0:0
+    //   631  ADDSi          W0:2072 d:134230781     ; ABarracudaGameMode::MinionSplitXPBonuses  (+2072)
+    //   633  Thiscall1      q:0x26e6ee8bd80         ; float& TArray<float>::opIndex(int)
+    //   636  RDR4           wW0:90
+    //   637  CpyVtoV4       wW0:91 rW1:90
+    //   639  ADDIf          wW0:90 rW1:91 DW2:1065353216
+    //   642  MULf           wW0:83 rW1:83 rW2:90
+    //   644  PshV4          rW0:83
+    //   645  CALLSYS        q:0x26e70358900         ; int Math::RoundToInt(float)
+    //   648  CpyRtoV4       wW0:37
+    //   649  ADDi           wW0:79 rW1:79 rW2:37
+    //   651  PshVPtr        rW0:78
+    //   652  CALLSYS        q:0x26e7a390b00         ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+    //   655  STOREOBJ       wW0:14
+    //   656  CmpPtrNull     rW0:14
+    //   657  JZ             ->672
+    //   659  SetV1          wW0:42 d:1
+    //   661  PshV4          rW0:42
+    //   662  PshV4          rW0:79
+    //   663  PshVPtr        rW0:78
+    //   664  CALLSYS        q:0x26e7a390b00         ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+    //   667  STOREOBJ       wW0:14
+    //   668  PshVPtr        rW0:14
+    //   669  CALLSYS        q:0x26e7a1813c0         ; void ALokiCharacter::AuthGrantExperience(const int, bool)
+    //   672  CMPIi          rW0:27 d:0
+    //   674  JNP            ->680
+    //   676  SetV1          wW0:4 d:1
+    //   678  JMP            ->686
+    //   680  CMPIi          rW0:79 d:0
+    //   682  TP
+    //   683  CpyRtoV4       wW0:42
+    //   684  CpyVtoV4       wW0:4 rW1:42
+    //   686  CpyVtoR1       rW0:4
+    //   687  JLowZ          ->704
+    //   689  PshV4          rW0:79
+    //   690  SetV1          wW0:82 d:2
+    //   692  PshV4          rW0:82
+    //   693  PshV4          rW0:27
+    //   694  PshVPtr        rW0:78
+    //   695  PSF            rW0:56
+    //   696  PshVPtr        rW0:18
+    //   697  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   700  PSF            rW0:56
+    //   701  PshVPtr        rW0:0
+    //   702  CALLINTF       d:84174                 ; void ABarracudaGameMode::OnBountyGivenToPlayer(const FVector&, ALokiPlayerState@, const int, const ECurrencyGrantReason, const int)
+    //   704  FreeNullV8     wW0:78
+    //   705  LoadVObjR      rW0:70 W1:16 DW2:268448510; TArrayIterator::CanProceed  (+16)
+    //   708  RDR1           wW0:4
+    //   709  CpyVtoR1       rW0:4
+    //   710  JLowNZ         ->353
+    //   712  PSF            rW0:64
+    //   713  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   716  PSF            rW0:60
+    //   717  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   720  PSF            rW0:46
+    //   721  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   724  RET            W0:4
+
+------------------------------------------------------------------------------
+void OnBountyGivenToPlayer(const FVector&inout TargetLocation, ALokiPlayerState@ TargetState, const int GoldAmount, const ECurrencyGrantReason TargetReason, const int XPAmount)
+// 16 instr, 124 B bytecode, id=0x1EA532C4, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__FVector(TargetLocation);
+    __Evt_PushArgument__ALokiPlayerState(TargetState);
+    __Evt_PushArgument__int32(GoldAmount);
+    __Evt_PushArgument__ECurrencyGrantReason(TargetReason);
+    __Evt_PushArgument__int32(XPAmount);
+    __Evt_Execute(this, __STATIC_NAME(100));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e77fcb140         ; void __Evt_PushArgument__FVector(const FVector&)
+    //     4  PSF            rW0:-4
+    //     5  CALLSYS        q:0x26e77c04bc0         ; void __Evt_PushArgument__ALokiPlayerState(const ALokiPlayerState@&)
+    //     8  PSF            rW0:-6
+    //     9  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //    12  PSF            rW0:-7
+    //    13  CALLSYS        q:0x26e7750db40         ; void __Evt_PushArgument__ECurrencyGrantReason(const ECurrencyGrantReason&)
+    //    16  PSF            rW0:-8
+    //    17  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //    20  PshC4          d:100
+    //    22  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    25  PshRPtr
+    //    26  PshVPtr        rW0:0
+    //    27  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    30  RET            W0:9
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: OnBountyGivenToPlayer
+void OnBountyGivenToPlayer_Implementation(const FVector&inout TargetLocation, ALokiPlayerState@ TargetState, const int GoldAmount, const ECurrencyGrantReason TargetReason, const int XPAmount)
+// 1 instr, 4 B bytecode, id=0x296C9E4D, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:9
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnActorKilled_BP
+void OnActorKilled_BP_Implementation(AActor@ VictimActor, AController@ Killer)
+// 218 instr, 1432 B bytecode, id=0xBEE9C629, varspace=78
+------------------------------------------------------------------------------
+{
+    auto v3;
+    auto v7;
+    ALokiPlayerState v10;
+    APlayerState v12;
+    ALokiPlayerState v14;
+    UBarracudaMinionRewardComponent v16;
+    auto v19;
+    int v20;
+    int v21;
+    FVector v34;
+    float v35;
+    TArray<ALokiPlayerState@> v40;
+    int v41;
+    TArrayIterator<ALokiPlayerState@> v48;
+    ALokiPlayerState v56;
+    int v57;
+    int v58;
+    UAbilitySystemComponent v64;
+    auto v66;
+    float64 v68;
+    auto v69;
+    float v70;
+    auto v71;
+    auto v72;
+    int v73;
+    ALokiCharacter v76;
+
+    if (Killer != null) {
+        v7 = VictimActor == null;
+        v3 = v7;
+    } else {
+        v3 = true;
+    }
+    if (!v3) {
+        v12 = Killer.PlayerState;
+        if (v12 == null) {
+            v14 = null;
+        } else {
+            v14 = cast<ALokiPlayerState>(v12);
+        }
+        v10 = v14;
+        v16 = UBarracudaMinionRewardComponent::Get(VictimActor, NAME_None);
+        if (v16 != null) {
+            v20 = v16.GetGoldBounty(Killer);
+            v19 = v16.GetXPBounty(Killer);
+            v21 = LokiTeam::GetTeamFromActor(Killer.GetControlledPawn());
+            v34 = VictimActor.GetActorLocation();
+            v40 = this.GetPlayerStatesForRewardsInRadius(v34, 1500, v21, Killer);
+            v21 = v40.Num();
+            v48 = v40.Iterator();
+            while (true) {
+                v3 = v48.CanProceed;
+                if (!v3) break;
+                v56 = v48.Proceed();
+                v57 = 0;
+                v58 = 0;
+                if (v10 != null) {
+                    v3 = v56 == v10;
+                    v7 = v3;
+                } else {
+                    v7 = 0;
+                }
+                if (v7) {
+                    v57 = v20;
+                    if (VictimActor.IsA(ALokiMinionCharacter::StaticClass())) {
+                        v64 = AbilitySystem::GetAbilitySystemComponent(v56);
+                        if (v64.HasTagAttribute(GameplayTags::Attribute_MinionGoldMultiplier)) {
+                            v35 = v64.GetTagAttributeMin(GameplayTags::Attribute_MinionGoldMultiplier);
+                            v68 = float64(v35);
+                            v66 = v68;
+                            v68 = float64(v57);
+                            v68 = v68 * v68;
+                            v41 = Math::FloorToInt(v68);
+                            v57 = v41;
+                        }
+                    }
+                    v69 = 2;
+                    v56.GrantWalletCurrency("Gold", v57, 2);
+                }
+                v71 = float(v19);
+                v70 = 1065353216;
+                v35 = float(v21);
+                v70 = 1065353216 / v35;
+                v35 = v71 * v70;
+                v41 = Math::RoundToInt(v35);
+                v58 = v41;
+                if (v21 > 1) {
+                    v41 = this.MinionSplitXPBonuses.Num();
+                    v41 = v41 - 1;
+                    v73 = Math::Min(v41, v21);
+                    v71 = this.MinionSplitXPBonuses[v73];
+                    v72 = v71;
+                    v35 = float(v58);
+                    v71 = v71 + 1;
+                    v70 = v35 * v71;
+                    v73 = Math::RoundToInt(v70);
+                    v58 = v58 + v73;
+                }
+                v76 = v56.GetLokiCharacter();
+                if (v76 != null) {
+                    v3 = true;
+                    v76.AuthGrantExperience(v58, true);
+                }
+                if (v57 <= 0) {
+                    v3 = v58 > 0;
+                    v7 = v3;
+                } else {
+                    v7 = true;
+                }
+                if (v7) {
+                    v69 = 2;
+                    v34 = VictimActor.GetActorLocation();
+                    this.OnBountyGivenToPlayer(v34, v56, v57, 2, v58);
+                }
+            }
+        }
+        if (v10 != null) {
+            v7 = Loki::HasMatchingGameplayTag(VictimActor, GameplayTags::Barracuda_Minion_GrantsDragonBuff);
+            v3 = v7;
+        } else {
+            v3 = 0;
+        }
+        if (v3) {
+            this.OnDragonKilled(v10);
+        }
+        if (v10 != null) {
+            v3 = Loki::HasMatchingGameplayTag(VictimActor, GameplayTags::Barracuda_Minion_GrantsMomentumBuff);
+            v7 = v3;
+        } else {
+            v7 = 0;
+        }
+        if (v7) {
+            this.OnMomentumBossKilled(v10);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JNZ            ->9
+    //     5  SetV1          wW0:3 d:1
+    //     7  JMP            ->16
+    //     9  PshVPtr        rW0:-2
+    //    10  RefCpyV        wW0:6
+    //    11  CmpPtrNull     rW0:6
+    //    12  TZ
+    //    13  CpyRtoV4       wW0:7
+    //    14  CpyVtoV4       wW0:3 rW1:7
+    //    16  CpyVtoR1       rW0:3
+    //    17  JLowZ          ->21
+    //    19  JMP            ->357
+    //    21  PshVPtr        rW0:-4
+    //    22  ADDSi          W0:960 d:67111411       ; AController::PlayerState  (+960)
+    //    24  RDSPtr
+    //    25  RefCpyV        wW0:12
+    //    26  CmpPtrNull     rW0:12
+    //    27  JZ             ->38
+    //    29  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    31  PSF            rW0:14
+    //    32  PshVPtr        rW0:12
+    //    33  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    36  JMP            ->39
+    //    38  ClrVPtr        wW0:14
+    //    39  PshVPtr        rW0:14
+    //    40  RefCpyV        wW0:10
+    //    41  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    44  PshVPtr        rW0:-2
+    //    45  CALL           d:84293                 ; UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent::Get(const AActor@, const FName&)
+    //    47  STOREOBJ       wW0:16
+    //    48  CmpPtrNull     rW0:16
+    //    49  JZ             ->309
+    //    51  PshVPtr        rW0:-4
+    //    52  PshVPtr        rW0:16
+    //    53  CALLINTF       d:84286                 ; int UBarracudaMinionRewardComponent::GetGoldBounty(AController@)
+    //    55  CpyRtoV4       wW0:20
+    //    56  PshVPtr        rW0:-4
+    //    57  PshVPtr        rW0:16
+    //    58  CALLINTF       d:84287                 ; int UBarracudaMinionRewardComponent::GetXPBounty(AController@)
+    //    60  CpyRtoV4       wW0:19
+    //    61  PshVPtr        rW0:-4
+    //    62  PshVPtr        rW0:-4
+    //    63  CALLSYS        q:0x26e797a2000         ; APawn@ AController::GetControlledPawn() const   [UFunction K2_GetPawn]
+    //    66  STOREOBJ       wW0:28
+    //    67  PshVPtr        rW0:28
+    //    68  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //    71  CpyRtoV4       wW0:21
+    //    72  PshV4          rW0:21
+    //    73  PshC4          d:1153138688
+    //    75  PSF            rW0:34
+    //    76  PshVPtr        rW0:-2
+    //    77  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    80  PSF            rW0:34
+    //    81  PSF            rW0:40
+    //    82  PshVPtr        rW0:0
+    //    83  CALLINTF       d:84177                 ; TArray<ALokiPlayerState@> ABarracudaGameMode::GetPlayerStatesForRewardsInRadius(const FVector&, const float, const int, AActor@)
+    //    85  PSF            rW0:40
+    //    86  CALLSYS        q:0x26e6ee8d280         ; int TArray<ALokiPlayerState@>::Num() const
+    //    89  CpyRtoV4       wW0:21
+    //    90  PSF            rW0:48
+    //    91  PSF            rW0:40
+    //    92  CALLSYS        q:0x26e6ee8c9c0         ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+    //    95  JMP            ->298
+    //    97  SUSPEND
+    //    98  PSF            rW0:48
+    //    99  CALLSYS        q:0x26e6ee8c640         ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+    //   102  PshRPtr
+    //   103  RDSPtr
+    //   104  RefCpyV        wW0:56
+    //   105  SetV4          wW0:57 d:0
+    //   107  SetV4          wW0:58 d:0
+    //   109  CmpPtrNull     rW0:10
+    //   110  JNZ            ->116
+    //   112  SetV4          wW0:7 d:0
+    //   114  JMP            ->122
+    //   116  CmpPtr         rW0:56 rW1:10
+    //   118  TZ
+    //   119  CpyRtoV4       wW0:3
+    //   120  CpyVtoV4       wW0:7 rW1:3
+    //   122  CpyVtoR1       rW0:7
+    //   123  JLowZ          ->187
+    //   125  CpyVtoV4       wW0:57 rW1:20
+    //   127  CALLSYS        q:0x26e7ae58740         ; UClass@ ALokiMinionCharacter::StaticClass()
+    //   130  STOREOBJ       wW0:60
+    //   131  PshVPtr        rW0:60
+    //   132  PshVPtr        rW0:-2
+    //   133  CALLSYS        q:0x26e7039ac00         ; bool UObject::IsA(const UClass@) const
+    //   136  JLowZ          ->176
+    //   138  PshVPtr        rW0:56
+    //   139  CALLSYS        q:0x26e79e99000         ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+    //   142  STOREOBJ       wW0:64
+    //   143  PshGPtr        q:0x26e703fbac8         ; GameplayTags::Attribute_MinionGoldMultiplier
+    //   146  PshVPtr        rW0:64
+    //   147  CALLSYS        q:0x26e79e7aa40         ; bool UAbilitySystemComponent::HasTagAttribute(FGameplayTag) const
+    //   150  JLowZ          ->175
+    //   152  PshGPtr        q:0x26e703fbac8         ; GameplayTags::Attribute_MinionGoldMultiplier
+    //   155  PshVPtr        rW0:64
+    //   156  CALLSYS        q:0x26e79e74140         ; float UAbilitySystemComponent::GetTagAttributeMin(FGameplayTag) const
+    //   159  CpyRtoV4       wW0:35
+    //   160  fTOd           wW0:68 rW1:35
+    //   162  CpyVtoV8       wW0:66 rW1:68
+    //   164  iTOd           wW0:68 rW1:57
+    //   166  MULd           wW0:68 rW1:66 rW2:68
+    //   168  PshV8          rW0:68
+    //   169  CALLSYS        q:0x26e70358200         ; int Math::FloorToInt(float64)
+    //   172  CpyRtoV4       wW0:41
+    //   173  CpyVtoV4       wW0:57 rW1:41
+    //   175  FreeNullV8     wW0:64
+    //   176  SetV1          wW0:69 d:2
+    //   178  PshV4          rW0:69
+    //   179  PshV4          rW0:57
+    //   180  PGA            q:0x26e5dc745e0         ; "Gold"
+    //   183  PshVPtr        rW0:56
+    //   184  CALLSYS        q:0x26e7a395800         ; void ALokiPlayerState::GrantWalletCurrency(const FString&, int, ECurrencyGrantReason)
+    //   187  iTOf           wW0:71 rW1:19
+    //   189  SetV4          wW0:70 d:1065353216
+    //   191  iTOf           wW0:35 rW1:21
+    //   193  DIVf           wW0:70 rW1:70 rW2:35
+    //   195  MULf           wW0:35 rW1:71 rW2:70
+    //   197  PshV4          rW0:35
+    //   198  CALLSYS        q:0x26e70358900         ; int Math::RoundToInt(float)
+    //   201  CpyRtoV4       wW0:41
+    //   202  CpyVtoV4       wW0:58 rW1:41
+    //   204  CMPIi          rW0:21 d:1
+    //   206  JNP            ->248
+    //   208  PshV4          rW0:21
+    //   209  PshVPtr        rW0:0
+    //   210  ADDSi          W0:2072 d:134230781     ; ABarracudaGameMode::MinionSplitXPBonuses  (+2072)
+    //   212  CALLSYS        q:0x26e6ee8c100         ; int TArray<float>::Num() const
+    //   215  CpyRtoV4       wW0:41
+    //   216  SUBIi          wW0:41 rW1:41 DW2:1
+    //   219  PshV4          rW0:41
+    //   220  CALLSYS        q:0x26e70382700         ; int Math::Min(int, int)
+    //   223  CpyRtoV4       wW0:73
+    //   224  PshV4          rW0:73
+    //   225  PshVPtr        rW0:0
+    //   226  ADDSi          W0:2072 d:134230781     ; ABarracudaGameMode::MinionSplitXPBonuses  (+2072)
+    //   228  Thiscall1      q:0x26e6ee8bd80         ; float& TArray<float>::opIndex(int)
+    //   231  RDR4           wW0:71
+    //   232  CpyVtoV4       wW0:72 rW1:71
+    //   234  iTOf           wW0:35 rW1:58
+    //   236  ADDIf          wW0:71 rW1:72 DW2:1065353216
+    //   239  MULf           wW0:70 rW1:35 rW2:71
+    //   241  PshV4          rW0:70
+    //   242  CALLSYS        q:0x26e70358900         ; int Math::RoundToInt(float)
+    //   245  CpyRtoV4       wW0:73
+    //   246  ADDi           wW0:58 rW1:58 rW2:73
+    //   248  PshVPtr        rW0:56
+    //   249  CALLSYS        q:0x26e7a390b00         ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+    //   252  STOREOBJ       wW0:76
+    //   253  CmpPtrNull     rW0:76
+    //   254  JZ             ->264
+    //   256  SetV1          wW0:3 d:1
+    //   258  PshV4          rW0:3
+    //   259  PshV4          rW0:58
+    //   260  PshVPtr        rW0:76
+    //   261  CALLSYS        q:0x26e7a1813c0         ; void ALokiCharacter::AuthGrantExperience(const int, bool)
+    //   264  CMPIi          rW0:57 d:0
+    //   266  JNP            ->272
+    //   268  SetV1          wW0:7 d:1
+    //   270  JMP            ->278
+    //   272  CMPIi          rW0:58 d:0
+    //   274  TP
+    //   275  CpyRtoV4       wW0:3
+    //   276  CpyVtoV4       wW0:7 rW1:3
+    //   278  CpyVtoR1       rW0:7
+    //   279  JLowZ          ->296
+    //   281  PshV4          rW0:58
+    //   282  SetV1          wW0:69 d:2
+    //   284  PshV4          rW0:69
+    //   285  PshV4          rW0:57
+    //   286  PshVPtr        rW0:56
+    //   287  PSF            rW0:34
+    //   288  PshVPtr        rW0:-2
+    //   289  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   292  PSF            rW0:34
+    //   293  PshVPtr        rW0:0
+    //   294  CALLINTF       d:84174                 ; void ABarracudaGameMode::OnBountyGivenToPlayer(const FVector&, ALokiPlayerState@, const int, const ECurrencyGrantReason, const int)
+    //   296  FreeNullV8     wW0:76
+    //   297  FreeNullV8     wW0:56
+    //   298  LoadVObjR      rW0:48 W1:16 DW2:268448510; TArrayIterator::CanProceed  (+16)
+    //   301  RDR1           wW0:3
+    //   302  CpyVtoR1       rW0:3
+    //   303  JLowNZ         ->97
+    //   305  PSF            rW0:40
+    //   306  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   309  CmpPtrNull     rW0:10
+    //   310  JNZ            ->316
+    //   312  SetV4          wW0:3 d:0
+    //   314  JMP            ->326
+    //   316  PshGPtr        q:0x26e703fcac8         ; GameplayTags::Barracuda_Minion_GrantsDragonBuff
+    //   319  PshVPtr        rW0:-2
+    //   320  CALLSYS        q:0x26e7a11b840         ; bool Loki::HasMatchingGameplayTag(const UObject@, FGameplayTag)
+    //   323  CpyRtoV4       wW0:7
+    //   324  CpyVtoV4       wW0:3 rW1:7
+    //   326  CpyVtoR1       rW0:3
+    //   327  JLowZ          ->333
+    //   329  PshVPtr        rW0:10
+    //   330  PshVPtr        rW0:0
+    //   331  CALLINTF       d:84186                 ; void ABarracudaGameMode::OnDragonKilled(ALokiPlayerState@)
+    //   333  CmpPtrNull     rW0:10
+    //   334  JNZ            ->340
+    //   336  SetV4          wW0:7 d:0
+    //   338  JMP            ->350
+    //   340  PshGPtr        q:0x26e703fc9c8         ; GameplayTags::Barracuda_Minion_GrantsMomentumBuff
+    //   343  PshVPtr        rW0:-2
+    //   344  CALLSYS        q:0x26e7a11b840         ; bool Loki::HasMatchingGameplayTag(const UObject@, FGameplayTag)
+    //   347  CpyRtoV4       wW0:3
+    //   348  CpyVtoV4       wW0:7 rW1:3
+    //   350  CpyVtoR1       rW0:7
+    //   351  JLowZ          ->357
+    //   353  PshVPtr        rW0:10
+    //   354  PshVPtr        rW0:0
+    //   355  CALLINTF       d:84185                 ; void ABarracudaGameMode::OnMomentumBossKilled(ALokiPlayerState@)
+    //   357  RET            W0:6
+
+------------------------------------------------------------------------------
+TArray<ALokiPlayerState@> GetPlayerStatesForRewardsInRadius(const FVector&inout Location, const float Radius, const int TargetTeam, AActor@ Killer)
+// 115 instr, 752 B bytecode, id=0x346B49B7, varspace=38
+------------------------------------------------------------------------------
+{
+    TArray<ALokiCharacter@> v4;
+    TArray<EObjectTypeQuery> v8;
+    EObjectTypeQuery v9;
+    TArray<AActor@> v14;
+    TArray<AActor@> v18;
+    int v22;
+    auto v24;
+    AActor v26;
+    ALokiCharacter v28;
+    ALokiCharacter v30;
+    TArray<ALokiPlayerState@> v34;
+    APlayerState v36;
+    ALokiPlayerState v38;
+
+    v4 = TArray<ALokiCharacter@>();
+    v8 = TArray<EObjectTypeQuery>();
+    v9 = 2;
+    v8.Add(v9);
+    v14 = TArray<AActor@>();
+    v18 = TArray<AActor@>();
+    v22 = 0;
+    ALokiHeroCharacter::StaticClass();
+    System::SphereOverlapActors(__WorldContext, Location, Radius, v8, ALokiHeroCharacter::StaticClass(), v14, v18);
+    while (true) {
+        v24 = v18.Num();
+        if (v22 >= v24) break;
+        v26 = v18[v22];
+        v24 = LokiTeam::GetTeamFromActor(v26);
+        if (v24 == TargetTeam) {
+            if (v26 == null) {
+                v30 = null;
+            } else {
+                v30 = cast<ALokiCharacter>(v26);
+            }
+            if (v30 != null) {
+                v4.AddUnique(v28);
+            }
+        }
+        v22++;
+    }
+    v34 = TArray<ALokiPlayerState@>();
+    v22 = 0;
+    while (v22 < v4.Num()) {
+        v36 = v4[v22].PlayerState;
+        if (v36 != null) {
+            v36 = v4[v22].PlayerState;
+            if (v36 == null) {
+                v38 = null;
+            } else {
+                v38 = cast<ALokiPlayerState>(v36);
+            }
+            v34.AddUnique(v38);
+        }
+        v22++;
+    }
+    __return = TArray<ALokiPlayerState@>();
+    __return = v34;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ee8bbc0         ; void TArray<ALokiCharacter@>::$beh0()
+    //     4  PSF            rW0:8
+    //     5  CALLSYS        q:0x26e6ee8ba00         ; void TArray<EObjectTypeQuery>::$beh0()
+    //     8  SetV1          wW0:9 d:2
+    //    10  PSF            rW0:9
+    //    11  PSF            rW0:8
+    //    12  CALLSYS        q:0x26e6ee8b840         ; void TArray<EObjectTypeQuery>::Add(const EObjectTypeQuery&)
+    //    15  PSF            rW0:14
+    //    16  CALLSYS        q:0x26e6ee8b680         ; void TArray<AActor@>::$beh0()
+    //    19  PSF            rW0:18
+    //    20  CALLSYS        q:0x26e6ee8b680         ; void TArray<AActor@>::$beh0()
+    //    23  PSF            rW0:18
+    //    24  PSF            rW0:14
+    //    25  CALLSYS        q:0x26e7ae2e240         ; UClass@ ALokiHeroCharacter::StaticClass()
+    //    28  STOREOBJ       wW0:20
+    //    29  PshVPtr        rW0:20
+    //    30  PSF            rW0:8
+    //    31  PshV4          rW0:-6
+    //    32  PshVPtr        rW0:-4
+    //    33  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    36  CALLSYS        q:0x26e79b205c0         ; bool System::SphereOverlapActors(const UObject@, const FVector, float, const TArray<EObjectTypeQuery>&, UClass@, const TArray<AActor@>&, TArray<AActor@>&)
+    //    39  SetV4          wW0:22 d:0
+    //    41  JMP            ->87
+    //    43  SUSPEND
+    //    44  PshV4          rW0:22
+    //    45  PSF            rW0:18
+    //    46  Thiscall1      q:0x26e6ee8b140         ; AActor@& TArray<AActor@>::opIndex(int)
+    //    49  PshRPtr
+    //    50  RDSPtr
+    //    51  RefCpyV        wW0:26
+    //    52  PshVPtr        rW0:26
+    //    53  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //    56  CpyRtoV4       wW0:24
+    //    57  CMPi           rW0:24 rW1:-7
+    //    59  JNZ            ->85
+    //    61  CmpPtrNull     rW0:26
+    //    62  JZ             ->73
+    //    64  TYPEID         d:1140856817            ; ALokiCharacter@
+    //    66  PSF            rW0:30
+    //    67  PshVPtr        rW0:26
+    //    68  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    71  JMP            ->74
+    //    73  ClrVPtr        wW0:30
+    //    74  PshVPtr        rW0:30
+    //    75  RefCpyV        wW0:28
+    //    76  CmpPtrNull     rW0:28
+    //    77  JZ             ->84
+    //    79  PSF            rW0:28
+    //    80  PSF            rW0:4
+    //    81  CALLSYS        q:0x26e6ee8af80         ; bool TArray<ALokiCharacter@>::AddUnique(const ALokiCharacter@ const&)
+    //    84  FreeNullV8     wW0:28
+    //    85  FreeNullV8     wW0:26
+    //    86  IncVi          rW0:22
+    //    87  PSF            rW0:18
+    //    88  CALLSYS        q:0x26e6ee8b4c0         ; int TArray<AActor@>::Num() const
+    //    91  CpyRtoV4       wW0:24
+    //    92  CMPi           rW0:22 rW1:24
+    //    94  JS             ->43
+    //    96  PSF            rW0:34
+    //    97  CALLSYS        q:0x26e6ee8d600         ; void TArray<ALokiPlayerState@>::$beh0()
+    //   100  SetV4          wW0:22 d:0
+    //   102  JMP            ->149
+    //   104  SUSPEND
+    //   105  PshV4          rW0:22
+    //   106  PSF            rW0:4
+    //   107  Thiscall1      q:0x26e6ee8fc80         ; ALokiCharacter@& TArray<ALokiCharacter@>::opIndex(int)
+    //   110  PshRPtr
+    //   111  RDSPtr
+    //   112  ADDSi          W0:984 d:67111506       ; APawn::PlayerState  (+984)
+    //   114  RDSPtr
+    //   115  RefCpyV        wW0:36
+    //   116  CmpPtrNull     rW0:36
+    //   117  JZ             ->148
+    //   119  PshV4          rW0:22
+    //   120  PSF            rW0:4
+    //   121  Thiscall1      q:0x26e6ee8fc80         ; ALokiCharacter@& TArray<ALokiCharacter@>::opIndex(int)
+    //   124  PshRPtr
+    //   125  RDSPtr
+    //   126  ADDSi          W0:984 d:67111506       ; APawn::PlayerState  (+984)
+    //   128  RDSPtr
+    //   129  RefCpyV        wW0:36
+    //   130  CmpPtrNull     rW0:36
+    //   131  JZ             ->142
+    //   133  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //   135  PSF            rW0:38
+    //   136  PshVPtr        rW0:36
+    //   137  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   140  JMP            ->143
+    //   142  ClrVPtr        wW0:38
+    //   143  PSF            rW0:38
+    //   144  PSF            rW0:34
+    //   145  CALLSYS        q:0x26e6ee8d440         ; bool TArray<ALokiPlayerState@>::AddUnique(const ALokiPlayerState@ const&)
+    //   148  IncVi          rW0:22
+    //   149  PSF            rW0:4
+    //   150  CALLSYS        q:0x26e6ee8adc0         ; int TArray<ALokiCharacter@>::Num() const
+    //   153  CpyRtoV4       wW0:23
+    //   154  CMPi           rW0:22 rW1:23
+    //   156  JS             ->104
+    //   158  PshVPtr        rW0:-2
+    //   159  CALLSYS        q:0x26e6ee8d600         ; void TArray<ALokiPlayerState@>::$beh0()
+    //   162  PSF            rW0:34
+    //   163  PshVPtr        rW0:-2
+    //   164  CALLSYS        q:0x26e79347e80         ; TArray<ALokiPlayerState@>& TArray<ALokiPlayerState@>::opAssign(const TArray<ALokiPlayerState@>&)
+    //   167  PSF            rW0:34
+    //   168  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   171  PSF            rW0:18
+    //   172  CALLSYS        q:0x26e70663f80         ; void TArray<AActor@>::$beh2()
+    //   175  PSF            rW0:14
+    //   176  CALLSYS        q:0x26e70663f80         ; void TArray<AActor@>::$beh2()
+    //   179  PSF            rW0:8
+    //   180  CALLSYS        q:0x26e706667c0         ; void TArray<EObjectTypeQuery>::$beh2()
+    //   183  PSF            rW0:4
+    //   184  CALLSYS        q:0x26e771b7400         ; void TArray<ALokiCharacter@>::$beh2()
+    //   187  RET            W0:10
+
+------------------------------------------------------------------------------
+void OnNewDay()
+// 6 instr, 44 B bytecode, id=0x8C27C82A, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(101));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:101
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp, meta=(Category=Day/Night))
+// UFunction name: OnNewDay
+void OnNewDay_Implementation()
+// 1 instr, 4 B bytecode, id=0xA084ED4A, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+void OnNewNight()
+// 6 instr, 44 B bytecode, id=0x0A2BA972, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(102));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:102
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp, meta=(Category=Day/Night))
+// UFunction name: OnNewNight
+void OnNewNight_Implementation()
+// 1 instr, 4 B bytecode, id=0xB126EBA1, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, meta=(Category=Day/Night))
+void HandleDayNight()
+// 53 instr, 336 B bytecode, id=0x5F2CE0F6, varspace=12
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+    auto v5;
+    auto v6;
+    auto v8;
+    auto v10;
+    auto v12;
+
+    v4 = this.GetGameStateComponent();
+    if (this.HasBarracudaMatchStarted()) {
+        v6 = v4 != null;
+        v5 = v6;
+    } else {
+        v5 = 0;
+    }
+    if (v5) {
+        v10 = this.GetMatchTime();
+        v5 = v4.bDayNightTransitionEnabled;
+        if (v5) {
+            v8 = v4.NextDayNightSwapTime;
+            v6 = v10 >= v8;
+            v5 = v6;
+        } else {
+            v5 = 0;
+        }
+        if (v5) {
+            v6 = this.bIsDay;
+            if (!v6) {
+                v6 = true;
+                this.bIsDay = true;
+                this.OnNewDay();
+            } else {
+                v5 = false;
+                this.bIsDay = false;
+                this.OnNewNight();
+            }
+            v12 = this.DayNightDuration;
+            v8 = v4.NextDayNightSwapTime;
+            v8 = v8 + v12;
+            v4.NextDayNightSwapTime = v8;
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84165                 ; UBarracudaGameStateComponent@ ABarracudaGameMode::GetGameStateComponent() const
+    //     3  STOREOBJ       wW0:4
+    //     4  PshVPtr        rW0:0
+    //     5  CALLINTF       d:84171                 ; bool ABarracudaGameMode::HasBarracudaMatchStarted()
+    //     7  JLowNZ         ->13
+    //     9  SetV4          wW0:5 d:0
+    //    11  JMP            ->18
+    //    13  CmpPtrNull     rW0:4
+    //    14  TNZ
+    //    15  CpyRtoV4       wW0:6
+    //    16  CpyVtoV4       wW0:5 rW1:6
+    //    18  CpyVtoR1       rW0:5
+    //    19  JLowZ          ->83
+    //    21  PshVPtr        rW0:0
+    //    22  CALLINTF       d:84172                 ; float64 ABarracudaGameMode::GetMatchTime()
+    //    24  CpyRtoV8       wW0:10
+    //    25  LoadRObjR      rW0:4 W1:216 DW2:134230778; UBarracudaGameStateComponent::bDayNightTransitionEnabled  (+216)
+    //    28  RDR1           wW0:5
+    //    29  CpyVtoR1       rW0:5
+    //    30  JLowNZ         ->36
+    //    32  SetV4          wW0:5 d:0
+    //    34  JMP            ->46
+    //    36  LoadRObjR      rW0:4 W1:208 DW2:134230778; UBarracudaGameStateComponent::NextDayNightSwapTime  (+208)
+    //    39  RDR8           wW0:8
+    //    40  CMPd           rW0:10 rW1:8
+    //    42  TNS
+    //    43  CpyRtoV4       wW0:6
+    //    44  CpyVtoV4       wW0:5 rW1:6
+    //    46  CpyVtoR1       rW0:5
+    //    47  JLowZ          ->83
+    //    49  LoadThisR      W0:2064 d:134230781     ; ABarracudaGameMode::bIsDay  (+2064)
+    //    51  RDR1           wW0:6
+    //    52  CpyVtoR1       rW0:6
+    //    53  JLowZ          ->65
+    //    55  SetV1          wW0:5 d:0
+    //    57  LoadThisR      W0:2064 d:134230781     ; ABarracudaGameMode::bIsDay  (+2064)
+    //    59  WRTV1          rW0:5
+    //    60  PshVPtr        rW0:0
+    //    61  CALLINTF       d:84180                 ; void ABarracudaGameMode::OnNewNight()
+    //    63  JMP            ->73
+    //    65  SetV1          wW0:6 d:1
+    //    67  LoadThisR      W0:2064 d:134230781     ; ABarracudaGameMode::bIsDay  (+2064)
+    //    69  WRTV1          rW0:6
+    //    70  PshVPtr        rW0:0
+    //    71  CALLINTF       d:84178                 ; void ABarracudaGameMode::OnNewDay()
+    //    73  LoadThisR      W0:2056 d:134230781     ; ABarracudaGameMode::DayNightDuration  (+2056)
+    //    75  RDR8           wW0:12
+    //    76  LoadRObjR      rW0:4 W1:208 DW2:134230778; UBarracudaGameStateComponent::NextDayNightSwapTime  (+208)
+    //    79  RDR8           wW0:8
+    //    80  ADDd           wW0:8 rW1:8 rW2:12
+    //    82  WRTV8          rW0:8
+    //    83  RET            W0:2
+
+------------------------------------------------------------------------------
+bool TowerKilled(ALokiTower@ TargetTower)
+// 13 instr, 96 B bytecode, id=0x363A12EF, varspace=3
+------------------------------------------------------------------------------
+{
+    bool v1;
+
+    __Evt_PushArgument__ALokiTower(TargetTower);
+    v1 = false;
+    __Evt_PushArgumentRef__bool(v1);
+    __Evt_Execute(this, __STATIC_NAME(103));
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77c20940         ; void __Evt_PushArgument__ALokiTower(const ALokiTower@&)
+    //     4  SetV1          wW0:2 d:0
+    //     6  CpyVtoV4       wW0:1 rW1:2
+    //     8  PSF            rW0:1
+    //     9  CALLSYS        q:0x26e77fce080         ; void __Evt_PushArgumentRef__bool(const bool&)
+    //    12  PshC4          d:103
+    //    14  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    17  PshRPtr
+    //    18  PshVPtr        rW0:0
+    //    19  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    22  CpyVtoR4       rW0:1
+    //    23  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: TowerKilled
+bool TowerKilled_Implementation(ALokiTower@ TargetTower)
+// 8 instr, 44 B bytecode, id=0x5F198D19, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.bAnyTowersKilled;
+    v2 = !v2;
+    this.bAnyTowersKilled = true;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:2108 d:134230781     ; ABarracudaGameMode::bAnyTowersKilled  (+2108)
+    //     2  RDR1           wW0:2
+    //     3  NOT            rW0:2
+    //     4  SetV1          wW0:1 d:1
+    //     6  LoadThisR      W0:2108 d:134230781     ; ABarracudaGameMode::bAnyTowersKilled  (+2108)
+    //     8  WRTV1          rW0:1
+    //     9  CpyVtoR4       rW0:2
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnMomentumBossKilled(ALokiPlayerState@ KillerPlayerState)
+// 11 instr, 72 B bytecode, id=0x88B893F6, varspace=4
+------------------------------------------------------------------------------
+{
+    if (this.MomentumBossKilledPilotVO.IsValid()) {
+        GetBarracudaGameStateComponent().AuthPlayPilotVOForAll(this.MomentumBossKilledPilotVO);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:2232 d:134230781     ; ABarracudaGameMode::MomentumBossKilledPilotVO  (+2232)
+    //     3  CALLSYS        q:0x26e79f81580         ; bool FGameplayTag::IsValid() const
+    //     6  JLowZ          ->17
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:2232 d:134230781     ; ABarracudaGameMode::MomentumBossKilledPilotVO  (+2232)
+    //    11  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //    13  STOREOBJ       wW0:4
+    //    14  PshVPtr        rW0:4
+    //    15  CALLINTF       d:84229                 ; void UBarracudaGameStateComponent::AuthPlayPilotVOForAll(const FGameplayTag&)
+    //    17  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnDragonKilled(ALokiPlayerState@ KillerPlayerState)
+// 41 instr, 276 B bytecode, id=0xBFAF8C3C, varspace=7
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v2;
+    int v3;
+    int v6;
+
+    v2 = GetBarracudaGameStateComponent();
+    v2.NumDragonsKilled++;
+    v3 = this.DragonRewards.Num();
+    v3 = v3 - 1;
+    v2 = GetBarracudaGameStateComponent();
+    v6 = Math::Min(v2.NumDragonsKilled, v3);
+    if (v6 >= 0) {
+        this.ApplyEffectToTeam(KillerPlayerState.GetTeamIndex_BP(), this.DragonRewards[v6]);
+    }
+    if (this.DragonKilledPilotVO.IsValid()) {
+        v2 = GetBarracudaGameStateComponent();
+        v2.AuthPlayPilotVOForAll(this.DragonKilledPilotVO);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //     2  STOREOBJ       wW0:2
+    //     3  LoadRObjR      rW0:2 W1:496 DW2:134230778; UBarracudaGameStateComponent::NumDragonsKilled  (+496)
+    //     6  INCi
+    //     7  PshVPtr        rW0:0
+    //     8  ADDSi          W0:2112 d:134230781     ; ABarracudaGameMode::DragonRewards  (+2112)
+    //    10  CALLSYS        q:0x26e6ee8fac0         ; int TArray<TSubclassOf<UGameplayEffect@>>::Num() const
+    //    13  CpyRtoV4       wW0:3
+    //    14  SUBIi          wW0:3 rW1:3 DW2:1
+    //    17  PshV4          rW0:3
+    //    18  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //    20  STOREOBJ       wW0:2
+    //    21  LoadRObjR      rW0:2 W1:496 DW2:134230778; UBarracudaGameStateComponent::NumDragonsKilled  (+496)
+    //    24  RDR4           wW0:5
+    //    25  PshV4          rW0:5
+    //    26  CALLSYS        q:0x26e70382700         ; int Math::Min(int, int)
+    //    29  CpyRtoV4       wW0:6
+    //    30  CMPIi          rW0:6 d:0
+    //    32  JS             ->51
+    //    34  PshV4          rW0:6
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:2112 d:134230781     ; ABarracudaGameMode::DragonRewards  (+2112)
+    //    38  Thiscall1      q:0x26e6ee82e00         ; TSubclassOf<UGameplayEffect@>& TArray<TSubclassOf<UGameplayEffect@>>::opIndex(int)
+    //    41  PshRPtr
+    //    42  PshVPtr        rW0:-2
+    //    43  CALLSYS        q:0x26e7a396ec0         ; int ALokiPlayerState::GetTeamIndex_BP() const
+    //    46  CpyRtoV4       wW0:4
+    //    47  PshV4          rW0:4
+    //    48  PshVPtr        rW0:0
+    //    49  CALLINTF       d:84187                 ; void ABarracudaGameMode::ApplyEffectToTeam(const int, const TSubclassOf<UGameplayEffect@>&)
+    //    51  PshVPtr        rW0:0
+    //    52  ADDSi          W0:2224 d:134230781     ; ABarracudaGameMode::DragonKilledPilotVO  (+2224)
+    //    54  CALLSYS        q:0x26e79f81580         ; bool FGameplayTag::IsValid() const
+    //    57  JLowZ          ->68
+    //    59  PshVPtr        rW0:0
+    //    60  ADDSi          W0:2224 d:134230781     ; ABarracudaGameMode::DragonKilledPilotVO  (+2224)
+    //    62  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //    64  STOREOBJ       wW0:2
+    //    65  PshVPtr        rW0:2
+    //    66  CALLINTF       d:84229                 ; void UBarracudaGameStateComponent::AuthPlayPilotVOForAll(const FGameplayTag&)
+    //    68  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ApplyEffectToTeam(const int TeamIndex, const TSubclassOf<UGameplayEffect@>&inout EffectClass)
+// 46 instr, 304 B bytecode, id=0x79A0BF63, varspace=39
+------------------------------------------------------------------------------
+{
+    auto v1;
+    TArray<ALokiPlayerState@> v6;
+    TArrayConstIterator<ALokiPlayerState@> v12;
+    UAbilitySystemComponent v24;
+    FGameplayEffectContextHandle v36;
+    FActiveGameplayEffectHandle v39;
+
+    if (EffectClass != null) {
+        v6 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, TeamIndex);
+        v12 = v6.Iterator();
+        while (true) {
+            v1 = v12.CanProceed;
+            if (!v1) break;
+            v24 = AbilitySystem::GetAbilitySystemComponent(v12.Proceed());
+            v36 = v24.MakeEffectContext();
+            v1 = false;
+            v39 = v24.ApplyGameplayEffectToSelf(EffectClass, 0, v36, false);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshNull
+    //     1  PshVPtr        rW0:-3
+    //     2  CALLSYS        q:0x26e6ee82c40         ; bool TSubclassOf<UGameplayEffect@>::opEquals(UClass@) const
+    //     5  JLowZ          ->9
+    //     7  JMP            ->75
+    //     9  PSF            rW0:12
+    //    10  PshV4          rW0:-2
+    //    11  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    14  PSF            rW0:6
+    //    15  CALLSYS        q:0x26e7a250400         ; TArray<ALokiPlayerState@> LokiGameplay::GetPlayerStatesOnTeam(const UObject@, int)
+    //    18  PSF            rW0:6
+    //    19  CALLSYS        q:0x26e6ee8cd40         ; TArrayConstIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator() const
+    //    22  JMP            ->64
+    //    24  SUSPEND
+    //    25  PSF            rW0:12
+    //    26  CALLSYS        q:0x26e6ee8f900         ; ALokiPlayerState@ const& TArrayConstIterator<ALokiPlayerState@>::Proceed()
+    //    29  PshRPtr
+    //    30  RDSPtr
+    //    31  RefCpyV        wW0:20
+    //    32  PshVPtr        rW0:20
+    //    33  CALLSYS        q:0x26e79e99000         ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+    //    36  STOREOBJ       wW0:24
+    //    37  PSF            rW0:36
+    //    38  PshVPtr        rW0:24
+    //    39  CALLSYS        q:0x26e79e79fc0         ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+    //    42  SetV1          wW0:1 d:0
+    //    44  PshV4          rW0:1
+    //    45  PSF            rW0:36
+    //    46  PshC4          d:0
+    //    48  PshVPtr        rW0:-3
+    //    49  PSF            rW0:39
+    //    50  PshVPtr        rW0:24
+    //    51  CALLSYS        q:0x26e79e721c0         ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectToSelf(TSubclassOf<UGameplayEffect@>, float, FGameplayEffectContextHandle, bool)   [UFunction BP_ApplyGameplayEffectToSelf]
+    //    54  PSF            rW0:39
+    //    55  CALLSYS        q:0x26e78f7e940         ; void FActiveGameplayEffectHandle::$beh2()
+    //    58  PSF            rW0:36
+    //    59  CALLSYS        q:0x26e78f7c2c0         ; void FGameplayEffectContextHandle::$beh2()
+    //    62  FreeNullV8     wW0:24
+    //    63  FreeNullV8     wW0:20
+    //    64  LoadVObjR      rW0:12 W1:16 DW2:268448511; TArrayConstIterator::CanProceed  (+16)
+    //    67  RDR1           wW0:1
+    //    68  CpyVtoR1       rW0:1
+    //    69  JLowNZ         ->24
+    //    71  PSF            rW0:6
+    //    72  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //    75  RET            W0:5
+
+------------------------------------------------------------------------------
+void TowerGoldRewardVisual(ALokiTower@ TargetTower, ALokiPlayerState@ TargetPlayer, const int GoldAmount)
+// 12 instr, 92 B bytecode, id=0x4F52699B, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__ALokiTower(TargetTower);
+    __Evt_PushArgument__ALokiPlayerState(TargetPlayer);
+    __Evt_PushArgument__int32(GoldAmount);
+    __Evt_Execute(this, __STATIC_NAME(104));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77c20940         ; void __Evt_PushArgument__ALokiTower(const ALokiTower@&)
+    //     4  PSF            rW0:-4
+    //     5  CALLSYS        q:0x26e77c04bc0         ; void __Evt_PushArgument__ALokiPlayerState(const ALokiPlayerState@&)
+    //     8  PSF            rW0:-6
+    //     9  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //    12  PshC4          d:104
+    //    14  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    17  PshRPtr
+    //    18  PshVPtr        rW0:0
+    //    19  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    22  RET            W0:7
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: TowerGoldRewardVisual
+void TowerGoldRewardVisual_Implementation(ALokiTower@ TargetTower, ALokiPlayerState@ TargetPlayer, const int GoldAmount)
+// 1 instr, 4 B bytecode, id=0x2EE2740C, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:7
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 22 instr, 152 B bytecode, id=0xEC91DB32, varspace=6
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+
+    v1 = 1232348144;
+    this.MatchStartTime = 1232348144;
+    v4 = 300;
+    this.DayNightDuration = 300;
+    this.bIsDay = false;
+    v1 = 1045220557;
+    this.GoldLossOnDeath = 1045220557;
+    v1 = 1048576000;
+    this.UnderdogHeroKillXPBonusPerLevel = 1048576000;
+    this.NumDragonsKilled = 0;
+    v4 = 30;
+    this.KnockXPCooldownTime = 30;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV4          wW0:1 d:1232348144
+    //     2  LoadThisR      W0:2032 d:134230781     ; ABarracudaGameMode::MatchStartTime  (+2032)
+    //     4  WRTV4          rW0:1
+    //     5  SetV8          wW0:4 q:0x4072c00000000000
+    //     8  LoadThisR      W0:2056 d:134230781     ; ABarracudaGameMode::DayNightDuration  (+2056)
+    //    10  WRTV8          rW0:4
+    //    11  SetV1          wW0:5 d:0
+    //    13  LoadThisR      W0:2064 d:134230781     ; ABarracudaGameMode::bIsDay  (+2064)
+    //    15  WRTV1          rW0:5
+    //    16  SetV4          wW0:1 d:1045220557
+    //    18  LoadThisR      W0:2036 d:134230781     ; ABarracudaGameMode::GoldLossOnDeath  (+2036)
+    //    20  WRTV4          rW0:1
+    //    21  SetV4          wW0:1 d:1048576000
+    //    23  LoadThisR      W0:2104 d:134230781     ; ABarracudaGameMode::UnderdogHeroKillXPBonusPerLevel  (+2104)
+    //    25  WRTV4          rW0:1
+    //    26  SetV4          wW0:6 d:0
+    //    28  LoadThisR      W0:2128 d:134230781     ; ABarracudaGameMode::NumDragonsKilled  (+2128)
+    //    30  WRTV4          rW0:6
+    //    31  SetV8          wW0:4 q:0x403e000000000000
+    //    34  LoadThisR      W0:2216 d:134230781     ; ABarracudaGameMode::KnockXPCooldownTime  (+2216)
+    //    36  WRTV8          rW0:4
+    //    37  RET            W0:2
+
+------------------------------------------------------------------------------
+~ABarracudaGameMode()
+// 22 instr, 172 B bytecode, id=0x40BF6129, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:2040 d:134230781     ; ABarracudaGameMode::GoldBountyPerCurrentStreak  (+2040)
+    //     3  CALLSYS        q:0x26e70f352c0         ; void TArray<int>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:2072 d:134230781     ; ABarracudaGameMode::MinionSplitXPBonuses  (+2072)
+    //     9  CALLSYS        q:0x26e706ce940         ; void TArray<float>::$beh2()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:2088 d:134230781     ; ABarracudaGameMode::MercyHeroKillXPCoefficients  (+2088)
+    //    15  CALLSYS        q:0x26e706ce940         ; void TArray<float>::$beh2()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:2112 d:134230781     ; ABarracudaGameMode::DragonRewards  (+2112)
+    //    21  CALLSYS        q:0x26e78fb91c0         ; void TArray<TSubclassOf<UGameplayEffect@>>::$beh2()
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:2136 d:134230781     ; ABarracudaGameMode::LastKnockedTimeTable  (+2136)
+    //    27  CALLSYS        q:0x26e6e831200         ; void TMap<ALokiPlayerState@, float64>::$beh2()
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:2224 d:134230781     ; ABarracudaGameMode::DragonKilledPilotVO  (+2224)
+    //    33  CALLSYS        q:0x26e787621c0         ; void FGameplayTag::$beh2()
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:2232 d:134230781     ; ABarracudaGameMode::MomentumBossKilledPilotVO  (+2232)
+    //    39  CALLSYS        q:0x26e787621c0         ; void FGameplayTag::$beh2()
+    //    42  RET            W0:2
+

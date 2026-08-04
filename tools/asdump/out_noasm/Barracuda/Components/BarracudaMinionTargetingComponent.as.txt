@@ -1,0 +1,233 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaMinionTargetingComponent
+//  SOURCE   Barracuda/Components/BarracudaMinionTargetingComponent.as
+//  CONTENT  1 class(es), 13 function(s), 0 enum(s), 1 global(s), 1416 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaMinionTargetingComponent;
+
+UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent()   // traits=0x20
+{
+    UBarracudaMinionTargetingComponent v2;
+
+    v2 = UBarracudaMinionTargetingComponent();
+    return v2;
+}
+
+UClass@ UBarracudaMinionTargetingComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaMinionTargetingComponent);
+    return v2;
+}
+
+UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaMinionTargetingComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaMinionTargetingComponent, v2, typeid(UBarracudaMinionTargetingComponent@), WithName);
+    return v2;
+}
+
+UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaMinionTargetingComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaMinionTargetingComponent, v2, typeid(UBarracudaMinionTargetingComponent@), WithName);
+    return v2;
+}
+
+UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaMinionTargetingComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaMinionTargetingComponent, v2, typeid(UBarracudaMinionTargetingComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable)
+class UBarracudaMinionTargetingComponent : ULokiMinionTargetingComponent
+// unreal base : /Script/Loki.LokiMinionTargetingComponent
+// C++ header  : ../../../Loki/Source/Loki/Character/Minion/LokiMinionTargetingComponent.h
+// static class global: __StaticType_UBarracudaMinionTargetingComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ALokiCharacter@ HighPriorityEnemyCharacter;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    AActor@ CurrentTargetEnemy;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 ReleaseHighPriorityEnemyTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 HighPriorityEnemyMemory;
+
+    UBarracudaMinionTargetingComponent()   // traits=0x21
+    {
+        auto v2;
+
+        v2 = -1.0;
+        this.ReleaseHighPriorityEnemyTime = v2;
+        v2 = 5.0;
+        this.HighPriorityEnemyMemory = v2;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void NotifyEnemyHeroHitAlliedHero(ALokiCharacter@ EnemyCharacter)   // traits=0x20
+    {
+        ALokiCharacter v4;
+        auto v5;
+        ALokiCharacter v8;
+        ALokiCharacter v10;
+        auto v11;
+        auto v12;
+        auto v14;
+        float64 v16;
+
+        if (!this.IsActorInEnemyList(EnemyCharacter)) {
+            v11 = 0;
+        } else {
+            v4 = this.HighPriorityEnemyCharacter;
+            if (v4 == nullptr) {
+                v5 = true;
+            } else {
+                v8 = EnemyCharacter;
+                v10 = this.HighPriorityEnemyCharacter;
+                v11 = v8 == v10;
+                v5 = v11;
+            }
+            v11 = v5;
+        }
+        if (v11) {
+            v12 = Gameplay::GetServerTime(__WorldContext);
+            v16 = float64(v12);
+            v14 = this.HighPriorityEnemyMemory;
+            v16 = v16 + v14;
+            this.ReleaseHighPriorityEnemyTime = v16;
+            this.HighPriorityEnemyCharacter = EnemyCharacter;
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=UpdateTargetEnemy, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    AActor@ UpdateTargetEnemy_Implementation()   // traits=0x20
+    {
+        AActor v2;
+
+        this.UpdateCurrentTargetEnemy();
+        v2 = this.CurrentTargetEnemy;
+        return v2;
+    }
+
+    void UpdateCurrentTargetEnemy()   // traits=0x20
+    {
+        __Evt_Execute(this, n"UpdateCurrentTargetEnemy");
+        return;
+    }
+
+    UFUNCTION(UnrealName=UpdateCurrentTargetEnemy, BlueprintEvent, CanOverrideEvent, NoOp)
+    void UpdateCurrentTargetEnemy_Implementation()
+    {
+        return;
+    }
+
+    void DrawTargetingDebug() const   // traits=0x24
+    {
+        ALokiMinionCharacter v2;
+        AActor v4;
+        ALokiMinionCharacter v6;
+        FVector v14;
+        FVector v20;
+        FVector v26;
+        FVector v32;
+        FVector v38;
+        auto v39;
+        float64 v42;
+        FVector v48;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v4 = this.CurrentTargetEnemy;
+            if (v4 != nullptr) {
+                v20 = this.CurrentTargetEnemy.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v4 = this.GetOwner();
+                v14 = v4.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v26 = v20 - v14;
+                v39 = v2.AggroRange;
+                v42 = float64(v39);
+                v32 = v26.GetClampedToMaxSize2D(v42);
+                v48 = v14 + v32;
+                v4 = this.GetOwner();
+                v38 = v4.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                LokiGameplay::ServerDrawDebugLine(__WorldContext, v38, v48, FColor::Red, 0.10000000149011612);
+            }
+        }
+        return;
+    }
+
+    bool IsActorInEnemyList(AActor@ TargetActor) const   // traits=0x24
+    {
+        ALokiMinionCharacter v2;
+        AActor v4;
+        ALokiMinionCharacter v6;
+        auto v7;
+        TArray<FMinionEnemyListEntry> v12;
+        TArrayIterator<FMinionEnemyListEntry> v22;
+        auto v30;
+        AActor v32;
+        AActor v34;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 == nullptr) {
+            v7 = false;
+            return v7;
+        } else {
+            v12 = v2.GetEnemyList();
+            v22 = v12.Iterator();
+            while (true) {
+                v7 = v22.CanProceed;
+                if (!v7) break;
+                v30 = v22.Proceed();
+                v32 = v30.Actor;
+                v34 = TargetActor;
+                if (v32 == v34) {
+                    v7 = true;
+                    return v7;
+                }
+            }
+            v7 = false;
+        }
+        return v7;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        this.HighPriorityEnemyCharacter = nullptr;
+        return;
+    }
+
+}
+

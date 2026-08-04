@@ -1,0 +1,3111 @@
+==============================================================================
+MODULE   Core.AimingVis.LokiAimingLaser
+SOURCE   Core/AimingVis/LokiAimingLaser.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaser;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiAimingLaser@ ALokiAimingLaser()
+// 4 instr, 28 B bytecode, id=0x4844D3EC, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiAimingLaser v2;
+
+    v2 = ALokiAimingLaser();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84617 q:0x26e6ed74600; new ALokiAimingLaser   ctor=ALokiAimingLaser::ALokiAimingLaser
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x186D6418, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiAimingLaser);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b1cd8         ; __StaticType_ALokiAimingLaser
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiAimingLaser@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xD790365A, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaser v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiAimingLaser.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiAimingLaser>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b1cd8         ; __StaticType_ALokiAimingLaser
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972662            ; ALokiAimingLaser@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class FLaserTraceResult
+==============================================================================
+{
+    UPROPERTY() bool bDidHit;
+    UPROPERTY() FVector HitLocation;
+    UPROPERTY() float64 HitTime;
+    UPROPERTY() ALokiHeroHeightIndicator@ HitHeightIndicator;
+
+}
+
+------------------------------------------------------------------------------
+FLaserTraceResult() const
+// 14 instr, 92 B bytecode, id=0x055D5457, varspace=3
+------------------------------------------------------------------------------
+{
+    this.HitLocation = FVector();
+    this.HitTime = 0;
+    this.HitHeightIndicator = null;
+    this.bDidHit = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:8 d:134230836        ; FLaserTraceResult::HitLocation  (+8)
+    //     3  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //     6  LoadThisR      W0:32 d:134230836       ; FLaserTraceResult::HitTime  (+32)
+    //     8  SetV8          wW0:2 q:0x0
+    //    11  WRTV8          rW0:2
+    //    12  PshNull
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:40 d:134230836       ; FLaserTraceResult::HitHeightIndicator  (+40)
+    //    16  REFCPY
+    //    17  SetV1          wW0:3 d:0
+    //    19  LoadThisR      W0:0 d:134230836        ; FLaserTraceResult::bDidHit  (+0)
+    //    21  WRTV1          rW0:3
+    //    22  RET            W0:2
+
+==============================================================================
+UCLASS()
+class FAimingLaserSettings
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TSubclassOf<ALokiAimingLaser@> LaserClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 MaxDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bShowTraceHitFlare;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bLimitLaserToTraceHit;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bOverrideLimitLaserToCursor;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bLimitLaserToCursor;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) UMaterialInterface@ LaserMaterial;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) UMaterialInterface@ EndpointMaterial;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) UNiagaraSystem@ HitFlareNiagaraSystem;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bOverrideBrightness;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 Brightness;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bUnconditionallyVisibleWhenActive;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bIgnoresHeroes;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bBenefitsFromBonusPrimaryAttackDistance;
+
+}
+
+------------------------------------------------------------------------------
+FAimingLaserSettings() const
+// 46 instr, 296 B bytecode, id=0x4500BEDA, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v3;
+
+    this.LaserClass = TSubclassOf<ALokiAimingLaser@>();
+    this.LaserMaterial = null;
+    this.EndpointMaterial = null;
+    this.HitFlareNiagaraSystem = null;
+    v2 = 1000;
+    this.MaxDistance = 1000;
+    v3 = true;
+    this.bShowTraceHitFlare = true;
+    v3 = true;
+    this.bLimitLaserToTraceHit = true;
+    v3 = false;
+    this.bOverrideLimitLaserToCursor = false;
+    v3 = false;
+    this.bLimitLaserToCursor = false;
+    v3 = false;
+    this.bOverrideBrightness = false;
+    v2 = 1;
+    this.Brightness = 1;
+    v3 = false;
+    this.bUnconditionallyVisibleWhenActive = false;
+    v3 = false;
+    this.bIgnoresHeroes = false;
+    v3 = true;
+    this.bBenefitsFromBonusPrimaryAttackDistance = true;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230837        ; FAimingLaserSettings::LaserClass  (+0)
+    //     3  CALLSYS        q:0x26e6ef26980         ; void TSubclassOf<ALokiAimingLaser@>::$beh0()
+    //     6  PshNull
+    //     7  PshVPtr        rW0:0
+    //     8  ADDSi          W0:24 d:134230837       ; FAimingLaserSettings::LaserMaterial  (+24)
+    //    10  REFCPY
+    //    11  PshNull
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:32 d:134230837       ; FAimingLaserSettings::EndpointMaterial  (+32)
+    //    15  REFCPY
+    //    16  PshNull
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:40 d:134230837       ; FAimingLaserSettings::HitFlareNiagaraSystem  (+40)
+    //    20  REFCPY
+    //    21  SetV8          wW0:2 q:0x408f400000000000
+    //    24  LoadThisR      W0:8 d:134230837        ; FAimingLaserSettings::MaxDistance  (+8)
+    //    26  WRTV8          rW0:2
+    //    27  SetV1          wW0:3 d:1
+    //    29  LoadThisR      W0:16 d:134230837       ; FAimingLaserSettings::bShowTraceHitFlare  (+16)
+    //    31  WRTV1          rW0:3
+    //    32  SetV1          wW0:3 d:1
+    //    34  LoadThisR      W0:17 d:134230837       ; FAimingLaserSettings::bLimitLaserToTraceHit  (+17)
+    //    36  WRTV1          rW0:3
+    //    37  SetV1          wW0:3 d:0
+    //    39  LoadThisR      W0:18 d:134230837       ; FAimingLaserSettings::bOverrideLimitLaserToCursor  (+18)
+    //    41  WRTV1          rW0:3
+    //    42  SetV1          wW0:3 d:0
+    //    44  LoadThisR      W0:19 d:134230837       ; FAimingLaserSettings::bLimitLaserToCursor  (+19)
+    //    46  WRTV1          rW0:3
+    //    47  SetV1          wW0:3 d:0
+    //    49  LoadThisR      W0:48 d:134230837       ; FAimingLaserSettings::bOverrideBrightness  (+48)
+    //    51  WRTV1          rW0:3
+    //    52  SetV8          wW0:2 q:0x3ff0000000000000
+    //    55  LoadThisR      W0:56 d:134230837       ; FAimingLaserSettings::Brightness  (+56)
+    //    57  WRTV8          rW0:2
+    //    58  SetV1          wW0:3 d:0
+    //    60  LoadThisR      W0:64 d:134230837       ; FAimingLaserSettings::bUnconditionallyVisibleWhenActive  (+64)
+    //    62  WRTV1          rW0:3
+    //    63  SetV1          wW0:3 d:0
+    //    65  LoadThisR      W0:65 d:134230837       ; FAimingLaserSettings::bIgnoresHeroes  (+65)
+    //    67  WRTV1          rW0:3
+    //    68  SetV1          wW0:3 d:1
+    //    70  LoadThisR      W0:66 d:134230837       ; FAimingLaserSettings::bBenefitsFromBonusPrimaryAttackDistance  (+66)
+    //    72  WRTV1          rW0:3
+    //    73  RET            W0:2
+
+==============================================================================
+UCLASS()
+class ALokiAimingLaser : AActor
+// base /Script/Engine.Actor  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) USceneComponent@ RootComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) UStaticMeshComponent@ LaserEndpoint;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) UNiagaraComponent@ LaserHitFlare;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) ULokiProjectilePathComponent@ LaserProjectilePath;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) ALokiHeroCharacter@ OwnerHero;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) ULokiAimingVisComponentScript@ OwnerAimingVisComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) protected float64 CurrentEndPathTime;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) protected float64 CurrentCursorPathTime;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) protected float64 CurrentTraceHitPathTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) float64 MaxDistance;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) float64 ProjectileSourceOffsetDistanceXY;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) bool bShowTraceHitFlare;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) bool bLimitLaserToTraceHit;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) bool bIgnoresHeroes;
+    bool bLimitLaserToCursorUserSetting;
+    bool bLimitLaserToCursorOverride;
+    bool bLimitLaserToCursorOverrideValue;
+    ALokiHeroHeightIndicator@ IntersectedHeightIndicator;
+    const float64 OverlapHeightIndicatorRadiusBonus;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) bool bOverrideDesaturationAndOpacity;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) bool bOverrideRangeAndAlphaStep;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Laser)) float64 BehindGeoDottedLinesPerMeter;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) UCurveFloat@ ProgressCurve;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Laser)) bool bUsesProgressSequence;
+    bool bProgressActive;
+    bool bProgressCurveIsNormalized;
+    float64 CurrentProgressCurveDuration;
+    float64 CurrentProgressTime;
+    float64 PrimaryAttackDistance;
+    private FGameplayTag ExecutingTag;
+    private FGameplayTag BeingExecutedTag;
+    private FGameplayTagContainer ExecutionTagsContainer;
+    private bool bInvisibleFromExecute;
+    private bool bInvisibleFromOwnerHidden;
+
+}
+
+------------------------------------------------------------------------------
+ALokiAimingLaser() const
+// 59 instr, 432 B bytecode, id=0x489DE01A, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+
+    this.ExecutionTagsContainer = FGameplayTagContainer();
+    v1 = true;
+    this.bShowTraceHitFlare = true;
+    v1 = true;
+    this.bLimitLaserToTraceHit = true;
+    v1 = false;
+    this.bIgnoresHeroes = false;
+    v1 = true;
+    this.bLimitLaserToCursorUserSetting = true;
+    v1 = false;
+    this.bLimitLaserToCursorOverride = false;
+    v1 = false;
+    this.bLimitLaserToCursorOverrideValue = false;
+    v4 = 35;
+    this.OverlapHeightIndicatorRadiusBonus = 35;
+    v1 = false;
+    this.bOverrideDesaturationAndOpacity = false;
+    v1 = false;
+    this.bOverrideRangeAndAlphaStep = false;
+    v4 = 1.15;
+    this.BehindGeoDottedLinesPerMeter = 1.15;
+    v1 = true;
+    this.bProgressCurveIsNormalized = true;
+    v4 = 1;
+    this.CurrentProgressCurveDuration = 1;
+    v4 = 0;
+    this.PrimaryAttackDistance = 0;
+    this.ExecutingTag = FGameplayTag(GameplayTags::State_Execute_Executing);
+    this.BeingExecutedTag = FGameplayTag(GameplayTags::State_BeingExecuted);
+    v1 = false;
+    this.bInvisibleFromExecute = false;
+    v1 = false;
+    this.bInvisibleFromOwnerHidden = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1096 d:134230838     ; ALokiAimingLaser::ExecutionTagsContainer  (+1096)
+    //     3  CALLSYS        q:0x26e78761c80         ; void FGameplayTagContainer::$beh0()
+    //     6  SetV1          wW0:1 d:1
+    //     8  LoadThisR      W0:1000 d:134230838     ; ALokiAimingLaser::bShowTraceHitFlare  (+1000)
+    //    10  WRTV1          rW0:1
+    //    11  SetV1          wW0:1 d:1
+    //    13  LoadThisR      W0:1001 d:134230838     ; ALokiAimingLaser::bLimitLaserToTraceHit  (+1001)
+    //    15  WRTV1          rW0:1
+    //    16  SetV1          wW0:1 d:0
+    //    18  LoadThisR      W0:1002 d:134230838     ; ALokiAimingLaser::bIgnoresHeroes  (+1002)
+    //    20  WRTV1          rW0:1
+    //    21  SetV1          wW0:1 d:1
+    //    23  LoadThisR      W0:1003 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorUserSetting  (+1003)
+    //    25  WRTV1          rW0:1
+    //    26  SetV1          wW0:1 d:0
+    //    28  LoadThisR      W0:1004 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorOverride  (+1004)
+    //    30  WRTV1          rW0:1
+    //    31  SetV1          wW0:1 d:0
+    //    33  LoadThisR      W0:1005 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorOverrideValue  (+1005)
+    //    35  WRTV1          rW0:1
+    //    36  SetV8          wW0:4 q:0x4041800000000000
+    //    39  LoadThisR      W0:1016 d:134230838     ; ALokiAimingLaser::OverlapHeightIndicatorRadiusBonus  (+1016)
+    //    41  WRTV8          rW0:4
+    //    42  SetV1          wW0:1 d:0
+    //    44  LoadThisR      W0:1024 d:134230838     ; ALokiAimingLaser::bOverrideDesaturationAndOpacity  (+1024)
+    //    46  WRTV1          rW0:1
+    //    47  SetV1          wW0:1 d:0
+    //    49  LoadThisR      W0:1025 d:134230838     ; ALokiAimingLaser::bOverrideRangeAndAlphaStep  (+1025)
+    //    51  WRTV1          rW0:1
+    //    52  SetV8          wW0:4 q:0x3ff2666666666666
+    //    55  LoadThisR      W0:1032 d:134230838     ; ALokiAimingLaser::BehindGeoDottedLinesPerMeter  (+1032)
+    //    57  WRTV8          rW0:4
+    //    58  SetV1          wW0:1 d:1
+    //    60  LoadThisR      W0:1050 d:134230838     ; ALokiAimingLaser::bProgressCurveIsNormalized  (+1050)
+    //    62  WRTV1          rW0:1
+    //    63  SetV8          wW0:4 q:0x3ff0000000000000
+    //    66  LoadThisR      W0:1056 d:134230838     ; ALokiAimingLaser::CurrentProgressCurveDuration  (+1056)
+    //    68  WRTV8          rW0:4
+    //    69  SetV8          wW0:4 q:0x0
+    //    72  LoadThisR      W0:1072 d:134230838     ; ALokiAimingLaser::PrimaryAttackDistance  (+1072)
+    //    74  WRTV8          rW0:4
+    //    75  PshGPtr        q:0x26e705b8d48         ; GameplayTags::State_Execute_Executing
+    //    78  PshVPtr        rW0:0
+    //    79  ADDSi          W0:1080 d:134230838     ; ALokiAimingLaser::ExecutingTag  (+1080)
+    //    81  CALLSYS        q:0x26e78762000         ; void FGameplayTag::$beh0(const FGameplayTag&)
+    //    84  PshGPtr        q:0x26e705b8248         ; GameplayTags::State_BeingExecuted
+    //    87  PshVPtr        rW0:0
+    //    88  ADDSi          W0:1088 d:134230838     ; ALokiAimingLaser::BeingExecutedTag  (+1088)
+    //    90  CALLSYS        q:0x26e78762000         ; void FGameplayTag::$beh0(const FGameplayTag&)
+    //    93  SetV1          wW0:1 d:0
+    //    95  LoadThisR      W0:1128 d:134230838     ; ALokiAimingLaser::bInvisibleFromExecute  (+1128)
+    //    97  WRTV1          rW0:1
+    //    98  SetV1          wW0:1 d:0
+    //   100  LoadThisR      W0:1129 d:134230838     ; ALokiAimingLaser::bInvisibleFromOwnerHidden  (+1129)
+    //   102  WRTV1          rW0:1
+    //   103  PshVPtr        rW0:0
+    //   104  FinConstruct   q:0x26e6ed74600         ; ALokiAimingLaser
+    //   107  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 381 instr, 2484 B bytecode, id=0x3B1DAB8F, varspace=60
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    float64 v4;
+    FLaserTraceResult v28;
+    auto v29;
+    float64 v32;
+    auto v34;
+    float v43;
+    FVector v50;
+    UMaterialInstanceDynamic v54;
+    UMaterialInstanceDynamic v56;
+    float64 v58;
+
+    v1 = Loki::LokiIsClient(__WorldContext);
+    v1 = !v1;
+    if (!v1) {
+        v1 = this.ValidateOwner();
+        v1 = !v1;
+        if (!v1) {
+            if (!Loki::HasAnyMatchingGameplayTags(this.OwnerHero, this.ExecutionTagsContainer)) {
+                v1 = this.bInvisibleFromExecute;
+                if (v1) {
+                    v1 = true;
+                    this.SetVisibilityOnAll(true);
+                    v1 = false;
+                    this.bInvisibleFromExecute = false;
+                }
+                if (!this.OwnerHero.IsHidden()) {
+                    v2 = this.OwnerHero.HeroPredropHidden;
+                    v1 = v2;
+                } else {
+                    v1 = true;
+                }
+                if (!v1) {
+                    v1 = this.bInvisibleFromOwnerHidden;
+                    if (v1) {
+                        v2 = true;
+                        this.SetVisibilityOnAll(true);
+                        v1 = false;
+                        this.bInvisibleFromOwnerHidden = false;
+                    }
+                } else {
+                    v2 = this.bInvisibleFromOwnerHidden;
+                    v2 = !v2;
+                    if (v2) {
+                        v1 = false;
+                        this.SetVisibilityOnAll(false);
+                        v2 = true;
+                        this.bInvisibleFromOwnerHidden = true;
+                    }
+                }
+                v4 = this.CalculateCursorPathTime();
+                this.CurrentCursorPathTime = v4;
+                v4 = 1;
+                this.CurrentTraceHitPathTime = 1;
+                v28 = this.DoLaserTrace();
+                v2 = v28.bDidHit;
+                if (v2) {
+                    v1 = this.bLimitLaserToTraceHit;
+                    v2 = v1;
+                } else {
+                    v2 = 0;
+                }
+                if (v2) {
+                    v4 = v28.HitTime;
+                    this.CurrentTraceHitPathTime = v4;
+                }
+                v2 = IsValid(this.IntersectedHeightIndicator);
+                v29 = v28.bDidHit;
+                if (v29) {
+                    v1 = IsValid(v28.HitHeightIndicator);
+                    v29 = v1;
+                } else {
+                    v29 = 0;
+                }
+                if (!v29) {
+                    if (v2) {
+                        this.IntersectedHeightIndicator.EndLaserIntersection();
+                        this.IntersectedHeightIndicator = null;
+                    }
+                } else {
+                    this.IntersectedHeightIndicator = v28.HitHeightIndicator;
+                    this.IntersectedHeightIndicator.UpdateLaserIntersection(v28.HitLocation);
+                }
+                v1 = this.GetLimitLaserToCursor();
+                v1 = !v1;
+                if (!v1) {
+                    v4 = this.CurrentTraceHitPathTime;
+                    v32 = this.CurrentCursorPathTime;
+                    v34 = Math::Min(v32, v4);
+                    this.CurrentEndPathTime = v34;
+                } else {
+                    v4 = this.CurrentTraceHitPathTime;
+                    this.CurrentEndPathTime = v4;
+                }
+                v1 = this.OwnerHero.GetLokiCharacterMovement().IsMidAir();
+                this.LaserProjectilePath.bIsMidAir = v1;
+                v34 = this.CurrentEndPathTime;
+                v43 = float(v34);
+                v50 = this.LaserProjectilePath.GetPositionForTime(v43);
+                this.LaserEndpoint.SetWorldLocation(v50);
+                this.TickLaserHitFlare(v28);
+                v1 = this.bOverrideDesaturationAndOpacity;
+                v1 = !v1;
+                if (v1) {
+                    v29 = this.GetLimitLaserToCursor();
+                    v29 = !v29;
+                    if (v29) {
+                        v4 = this.CurrentCursorPathTime;
+                        v32 = this.CurrentEndPathTime;
+                        v1 = v4 < v32;
+                        v29 = v1;
+                    } else {
+                        v29 = 0;
+                    }
+                    if (!v29) {
+                        this.LaserEndpoint.SetScalarParameterValueOnMaterials(__STATIC_NAME(33), 0);
+                        this.LaserEndpoint.SetScalarParameterValueOnMaterials(__STATIC_NAME(35), 1);
+                        v1 = this.bShowTraceHitFlare;
+                        if (v1) {
+                            this.LaserHitFlare.SetNiagaraVariableFloat("Desaturate", 0);
+                        }
+                    } else {
+                        v56 = this.LaserProjectilePath.GetMaterial(0);
+                        v43 = v56.GetScalarParameterValue(__STATIC_NAME(32));
+                        v32 = float64(v43);
+                        v58 = v32;
+                        v43 = float(v32);
+                        this.LaserEndpoint.SetScalarParameterValueOnMaterials(__STATIC_NAME(33), v43);
+                        v43 = v56.GetScalarParameterValue(__STATIC_NAME(34));
+                        v32 = float64(v43);
+                        v43 = float(v32);
+                        this.LaserEndpoint.SetScalarParameterValueOnMaterials(__STATIC_NAME(35), v43);
+                        v1 = this.bShowTraceHitFlare;
+                        if (v1) {
+                            v43 = float(v58);
+                            this.LaserHitFlare.SetNiagaraVariableFloat("Desaturate", v43);
+                        }
+                    }
+                }
+                v1 = this.bOverrideRangeAndAlphaStep;
+                v1 = !v1;
+                if (v1) {
+                    if (!this.GetLimitLaserToCursor()) {
+                        v34 = this.CurrentTraceHitPathTime;
+                        v43 = float(v34);
+                        v54 = this.LaserProjectilePath.GetMaterial(0);
+                        v54.SetScalarParameterValue(__STATIC_NAME(36), v43);
+                        v34 = this.CurrentCursorPathTime;
+                        v43 = float(v34);
+                        v54 = this.LaserProjectilePath.GetMaterial(0);
+                        v54.SetScalarParameterValue(__STATIC_NAME(37), v43);
+                    } else {
+                        v32 = this.CurrentEndPathTime;
+                        v43 = float(v32);
+                        v54 = this.LaserProjectilePath.GetMaterial(0);
+                        v54.SetScalarParameterValue(__STATIC_NAME(36), v43);
+                    }
+                }
+                if (this.UsesProgressSequence()) {
+                    v1 = this.bProgressActive;
+                } else {
+                    v1 = 0;
+                }
+                if (v1) {
+                    this.TickProgress(DeltaSeconds);
+                }
+            } else {
+                v1 = this.bInvisibleFromExecute;
+                v1 = !v1;
+                if (v1) {
+                    v1 = false;
+                    this.SetVisibilityOnAll(false);
+                    v1 = true;
+                    this.bInvisibleFromExecute = true;
+                }
+            }
+        } else {
+            this.OwnerAimingVisComponent.DestroyLaser();
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->620
+    //    13  PshVPtr        rW0:0
+    //    14  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //    16  CpyRtoV4       wW0:1
+    //    17  NOT            rW0:1
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->29
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:952 d:134230838      ; ALokiAimingLaser::OwnerAimingVisComponent  (+952)
+    //    24  RDSPtr
+    //    25  CALLINTF       d:84666                 ; void ULokiAimingVisComponentScript::DestroyLaser()
+    //    27  JMP            ->620
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:1096 d:134230838     ; ALokiAimingLaser::ExecutionTagsContainer  (+1096)
+    //    32  PshVPtr        rW0:0
+    //    33  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //    35  RDSPtr
+    //    36  CALLSYS        q:0x26e7a11bbc0         ; bool Loki::HasAnyMatchingGameplayTags(const UObject@, const FGameplayTagContainer&)
+    //    39  JLowZ          ->61
+    //    41  LoadThisR      W0:1128 d:134230838     ; ALokiAimingLaser::bInvisibleFromExecute  (+1128)
+    //    43  RDR1           wW0:1
+    //    44  NOT            rW0:1
+    //    45  CpyVtoR1       rW0:1
+    //    46  JLowZ          ->59
+    //    48  SetV1          wW0:1 d:0
+    //    50  PshV4          rW0:1
+    //    51  PshVPtr        rW0:0
+    //    52  CALLINTF       d:84598                 ; void ALokiAimingLaser::SetVisibilityOnAll(const bool)
+    //    54  SetV1          wW0:1 d:1
+    //    56  LoadThisR      W0:1128 d:134230838     ; ALokiAimingLaser::bInvisibleFromExecute  (+1128)
+    //    58  WRTV1          rW0:1
+    //    59  JMP            ->620
+    //    61  LoadThisR      W0:1128 d:134230838     ; ALokiAimingLaser::bInvisibleFromExecute  (+1128)
+    //    63  RDR1           wW0:1
+    //    64  CpyVtoR1       rW0:1
+    //    65  JLowZ          ->78
+    //    67  SetV1          wW0:1 d:1
+    //    69  PshV4          rW0:1
+    //    70  PshVPtr        rW0:0
+    //    71  CALLINTF       d:84598                 ; void ALokiAimingLaser::SetVisibilityOnAll(const bool)
+    //    73  SetV1          wW0:1 d:0
+    //    75  LoadThisR      W0:1128 d:134230838     ; ALokiAimingLaser::bInvisibleFromExecute  (+1128)
+    //    77  WRTV1          rW0:1
+    //    78  PshVPtr        rW0:0
+    //    79  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //    81  RDSPtr
+    //    82  CALLSYS        q:0x26e70398e40         ; bool AActor::IsHidden() const
+    //    85  JLowZ          ->91
+    //    87  SetV1          wW0:1 d:1
+    //    89  JMP            ->101
+    //    91  PshVPtr        rW0:0
+    //    92  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //    94  RDSPtr
+    //    95  ADDSi          W0:7144 d:67115176      ; ALokiHeroCharacter::HeroPredropHidden  (+7144)
+    //    97  PopRPtr
+    //    98  RDR1           wW0:2
+    //    99  CpyVtoV4       wW0:1 rW1:2
+    //   101  CpyVtoR1       rW0:1
+    //   102  JLowZ          ->124
+    //   104  LoadThisR      W0:1129 d:134230838     ; ALokiAimingLaser::bInvisibleFromOwnerHidden  (+1129)
+    //   106  RDR1           wW0:2
+    //   107  NOT            rW0:2
+    //   108  CpyVtoR1       rW0:2
+    //   109  JLowZ          ->122
+    //   111  SetV1          wW0:1 d:0
+    //   113  PshV4          rW0:1
+    //   114  PshVPtr        rW0:0
+    //   115  CALLINTF       d:84598                 ; void ALokiAimingLaser::SetVisibilityOnAll(const bool)
+    //   117  SetV1          wW0:2 d:1
+    //   119  LoadThisR      W0:1129 d:134230838     ; ALokiAimingLaser::bInvisibleFromOwnerHidden  (+1129)
+    //   121  WRTV1          rW0:2
+    //   122  JMP            ->141
+    //   124  LoadThisR      W0:1129 d:134230838     ; ALokiAimingLaser::bInvisibleFromOwnerHidden  (+1129)
+    //   126  RDR1           wW0:1
+    //   127  CpyVtoR1       rW0:1
+    //   128  JLowZ          ->141
+    //   130  SetV1          wW0:2 d:1
+    //   132  PshV4          rW0:2
+    //   133  PshVPtr        rW0:0
+    //   134  CALLINTF       d:84598                 ; void ALokiAimingLaser::SetVisibilityOnAll(const bool)
+    //   136  SetV1          wW0:1 d:0
+    //   138  LoadThisR      W0:1129 d:134230838     ; ALokiAimingLaser::bInvisibleFromOwnerHidden  (+1129)
+    //   140  WRTV1          rW0:1
+    //   141  PshVPtr        rW0:0
+    //   142  CALLINTF       d:84578                 ; float64 ALokiAimingLaser::CalculateCursorPathTime()
+    //   144  CpyRtoV8       wW0:4
+    //   145  LoadThisR      W0:968 d:134230838      ; ALokiAimingLaser::CurrentCursorPathTime  (+968)
+    //   147  WRTV8          rW0:4
+    //   148  SetV8          wW0:4 q:0x3ff0000000000000
+    //   151  LoadThisR      W0:976 d:134230838      ; ALokiAimingLaser::CurrentTraceHitPathTime  (+976)
+    //   153  WRTV8          rW0:4
+    //   154  PSF            rW0:28
+    //   155  PshVPtr        rW0:0
+    //   156  CALLINTF       d:84579                 ; FLaserTraceResult ALokiAimingLaser::DoLaserTrace()
+    //   158  LoadVObjR      rW0:28 W1:0 DW2:134230836; FLaserTraceResult::bDidHit  (+0)
+    //   161  RDR1           wW0:2
+    //   162  CpyVtoR1       rW0:2
+    //   163  JLowNZ         ->169
+    //   165  SetV4          wW0:2 d:0
+    //   167  JMP            ->174
+    //   169  LoadThisR      W0:1001 d:134230838     ; ALokiAimingLaser::bLimitLaserToTraceHit  (+1001)
+    //   171  RDR1           wW0:1
+    //   172  CpyVtoV4       wW0:2 rW1:1
+    //   174  CpyVtoR1       rW0:2
+    //   175  JLowZ          ->184
+    //   177  LoadVObjR      rW0:28 W1:32 DW2:134230836; FLaserTraceResult::HitTime  (+32)
+    //   180  RDR8           wW0:4
+    //   181  LoadThisR      W0:976 d:134230838      ; ALokiAimingLaser::CurrentTraceHitPathTime  (+976)
+    //   183  WRTV8          rW0:4
+    //   184  PshVPtr        rW0:0
+    //   185  ADDSi          W0:1008 d:134230838     ; ALokiAimingLaser::IntersectedHeightIndicator  (+1008)
+    //   187  RDSPtr
+    //   188  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   191  CpyRtoV4       wW0:2
+    //   192  LoadVObjR      rW0:28 W1:0 DW2:134230836; FLaserTraceResult::bDidHit  (+0)
+    //   195  RDR1           wW0:29
+    //   196  CpyVtoR1       rW0:29
+    //   197  JLowNZ         ->203
+    //   199  SetV4          wW0:29 d:0
+    //   201  JMP            ->213
+    //   203  PSF            rW0:28
+    //   204  ADDSi          W0:40 d:134230836       ; FLaserTraceResult::HitHeightIndicator  (+40)
+    //   206  RDSPtr
+    //   207  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   210  CpyRtoV4       wW0:1
+    //   211  CpyVtoV4       wW0:29 rW1:1
+    //   213  CpyVtoR1       rW0:29
+    //   214  JLowZ          ->237
+    //   216  PSF            rW0:28
+    //   217  ADDSi          W0:40 d:134230836       ; FLaserTraceResult::HitHeightIndicator  (+40)
+    //   219  RDSPtr
+    //   220  PshVPtr        rW0:0
+    //   221  ADDSi          W0:1008 d:134230838     ; ALokiAimingLaser::IntersectedHeightIndicator  (+1008)
+    //   223  REFCPY
+    //   224  PopPtr
+    //   225  PSF            rW0:28
+    //   226  ADDSi          W0:8 d:134230836        ; FLaserTraceResult::HitLocation  (+8)
+    //   228  PshVPtr        rW0:0
+    //   229  ADDSi          W0:1008 d:134230838     ; ALokiAimingLaser::IntersectedHeightIndicator  (+1008)
+    //   231  RDSPtr
+    //   232  CALLSYS        q:0x26e7a2a2e00         ; void ALokiHeroHeightIndicator::UpdateLaserIntersection(FVector)
+    //   235  JMP            ->253
+    //   237  CpyVtoR1       rW0:2
+    //   238  JLowZ          ->253
+    //   240  PshVPtr        rW0:0
+    //   241  ADDSi          W0:1008 d:134230838     ; ALokiAimingLaser::IntersectedHeightIndicator  (+1008)
+    //   243  RDSPtr
+    //   244  CALLSYS        q:0x26e7a28f3c0         ; void ALokiHeroHeightIndicator::EndLaserIntersection()
+    //   247  PshNull
+    //   248  PshVPtr        rW0:0
+    //   249  ADDSi          W0:1008 d:134230838     ; ALokiAimingLaser::IntersectedHeightIndicator  (+1008)
+    //   251  REFCPY
+    //   252  PopPtr
+    //   253  PshVPtr        rW0:0
+    //   254  CALLINTF       d:84584                 ; bool ALokiAimingLaser::GetLimitLaserToCursor()
+    //   256  CpyRtoV4       wW0:1
+    //   257  NOT            rW0:1
+    //   258  CpyVtoR1       rW0:1
+    //   259  JLowZ          ->269
+    //   261  LoadThisR      W0:976 d:134230838      ; ALokiAimingLaser::CurrentTraceHitPathTime  (+976)
+    //   263  RDR8           wW0:4
+    //   264  LoadThisR      W0:960 d:134230838      ; ALokiAimingLaser::CurrentEndPathTime  (+960)
+    //   266  WRTV8          rW0:4
+    //   267  JMP            ->284
+    //   269  LoadThisR      W0:976 d:134230838      ; ALokiAimingLaser::CurrentTraceHitPathTime  (+976)
+    //   271  RDR8           wW0:4
+    //   272  PshV8          rW0:4
+    //   273  LoadThisR      W0:968 d:134230838      ; ALokiAimingLaser::CurrentCursorPathTime  (+968)
+    //   275  RDR8           wW0:32
+    //   276  PshV8          rW0:32
+    //   277  CALLSYS        q:0x26e70382a80         ; float64 Math::Min(float64, float64)
+    //   280  CpyRtoV8       wW0:34
+    //   281  LoadThisR      W0:960 d:134230838      ; ALokiAimingLaser::CurrentEndPathTime  (+960)
+    //   283  WRTV8          rW0:34
+    //   284  PshVPtr        rW0:0
+    //   285  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //   287  RDSPtr
+    //   288  CALLSYS        q:0x26e7a188580         ; ULokiCharacterMovementComponent@ ALokiCharacter::GetLokiCharacterMovement() const
+    //   291  STOREOBJ       wW0:36
+    //   292  PshVPtr        rW0:36
+    //   293  CALLSYS        q:0x26e7a19cb80         ; bool ULokiCharacterMovementComponent::IsMidAir() const
+    //   296  CpyRtoV4       wW0:1
+    //   297  PshVPtr        rW0:0
+    //   298  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   300  RDSPtr
+    //   301  ADDSi          W0:208 d:67115347       ; ULokiProjectilePathComponent::bIsMidAir  (+208)
+    //   303  PopRPtr
+    //   304  WRTV1          rW0:1
+    //   305  LoadThisR      W0:960 d:134230838      ; ALokiAimingLaser::CurrentEndPathTime  (+960)
+    //   307  RDR8           wW0:34
+    //   308  dTOf           wW0:43 rW1:34
+    //   310  PshV4          rW0:43
+    //   311  PSF            rW0:50
+    //   312  PshVPtr        rW0:0
+    //   313  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   315  RDSPtr
+    //   316  CALLSYS        q:0x26e7a3b1e40         ; FVector ULokiProjectilePathComponent::GetPositionForTime(float) const
+    //   319  PSF            rW0:50
+    //   320  PshVPtr        rW0:0
+    //   321  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //   323  RDSPtr
+    //   324  CALLSYS        q:0x26e79f60780         ; void USceneComponent::SetWorldLocation(const FVector&)   [UFunction K2_SetWorldLocation]
+    //   327  PSF            rW0:28
+    //   328  PshVPtr        rW0:0
+    //   329  CALLINTF       d:84573                 ; void ALokiAimingLaser::TickLaserHitFlare(const FLaserTraceResult&)
+    //   331  LoadThisR      W0:1024 d:134230838     ; ALokiAimingLaser::bOverrideDesaturationAndOpacity  (+1024)
+    //   333  RDR1           wW0:1
+    //   334  NOT            rW0:1
+    //   335  CpyVtoR1       rW0:1
+    //   336  JLowZ          ->507
+    //   338  PshVPtr        rW0:0
+    //   339  CALLINTF       d:84584                 ; bool ALokiAimingLaser::GetLimitLaserToCursor()
+    //   341  CpyRtoV4       wW0:29
+    //   342  NOT            rW0:29
+    //   343  CpyVtoR1       rW0:29
+    //   344  JLowNZ         ->350
+    //   346  SetV4          wW0:29 d:0
+    //   348  JMP            ->362
+    //   350  LoadThisR      W0:968 d:134230838      ; ALokiAimingLaser::CurrentCursorPathTime  (+968)
+    //   352  RDR8           wW0:4
+    //   353  LoadThisR      W0:960 d:134230838      ; ALokiAimingLaser::CurrentEndPathTime  (+960)
+    //   355  RDR8           wW0:32
+    //   356  CMPd           rW0:4 rW1:32
+    //   358  TS
+    //   359  CpyRtoV4       wW0:1
+    //   360  CpyVtoV4       wW0:29 rW1:1
+    //   362  CpyVtoR1       rW0:29
+    //   363  JLowZ          ->459
+    //   365  PshC4          d:0
+    //   367  PshVPtr        rW0:0
+    //   368  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   370  RDSPtr
+    //   371  CALLSYS        q:0x26e7a3b2700         ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+    //   374  STOREOBJ       wW0:56
+    //   375  PshC4          d:32
+    //   377  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   380  PshRPtr
+    //   381  PshVPtr        rW0:56
+    //   382  CALLSYS        q:0x26e79b328c0         ; float UMaterialInstanceDynamic::GetScalarParameterValue(FName)   [UFunction K2_GetScalarParameterValue]
+    //   385  CpyRtoV4       wW0:43
+    //   386  fTOd           wW0:32 rW1:43
+    //   388  CpyVtoV8       wW0:58 rW1:32
+    //   390  dTOf           wW0:43 rW1:58
+    //   392  PshV4          rW0:43
+    //   393  PshC4          d:33
+    //   395  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   398  PshRPtr
+    //   399  PshVPtr        rW0:0
+    //   400  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //   402  RDSPtr
+    //   403  CALLSYS        q:0x26e79776600         ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float)
+    //   406  PshC4          d:34
+    //   408  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   411  PshRPtr
+    //   412  PshVPtr        rW0:56
+    //   413  CALLSYS        q:0x26e79b328c0         ; float UMaterialInstanceDynamic::GetScalarParameterValue(FName)   [UFunction K2_GetScalarParameterValue]
+    //   416  CpyRtoV4       wW0:43
+    //   417  fTOd           wW0:32 rW1:43
+    //   419  CpyVtoV8       wW0:60 rW1:32
+    //   421  dTOf           wW0:43 rW1:60
+    //   423  PshV4          rW0:43
+    //   424  PshC4          d:35
+    //   426  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   429  PshRPtr
+    //   430  PshVPtr        rW0:0
+    //   431  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //   433  RDSPtr
+    //   434  CALLSYS        q:0x26e79776600         ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float)
+    //   437  LoadThisR      W0:1000 d:134230838     ; ALokiAimingLaser::bShowTraceHitFlare  (+1000)
+    //   439  RDR1           wW0:1
+    //   440  CpyVtoR1       rW0:1
+    //   441  JLowZ          ->456
+    //   443  dTOf           wW0:43 rW1:58
+    //   445  PshV4          rW0:43
+    //   446  PGA            q:0x26e60110310         ; "Desaturate"
+    //   449  PshVPtr        rW0:0
+    //   450  ADDSi          W0:928 d:134230838      ; ALokiAimingLaser::LaserHitFlare  (+928)
+    //   452  RDSPtr
+    //   453  CALLSYS        q:0x26e79ba4f40         ; void UNiagaraComponent::SetNiagaraVariableFloat(const FString&, float)
+    //   456  FreeNullV8     wW0:56
+    //   457  JMP            ->507
+    //   459  PshC4          d:0
+    //   461  PshC4          d:33
+    //   463  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   466  PshRPtr
+    //   467  PshVPtr        rW0:0
+    //   468  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //   470  RDSPtr
+    //   471  CALLSYS        q:0x26e79776600         ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float)
+    //   474  PshC4          d:1065353216
+    //   476  PshC4          d:35
+    //   478  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   481  PshRPtr
+    //   482  PshVPtr        rW0:0
+    //   483  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //   485  RDSPtr
+    //   486  CALLSYS        q:0x26e79776600         ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float)
+    //   489  LoadThisR      W0:1000 d:134230838     ; ALokiAimingLaser::bShowTraceHitFlare  (+1000)
+    //   491  RDR1           wW0:1
+    //   492  CpyVtoR1       rW0:1
+    //   493  JLowZ          ->507
+    //   495  PshC4          d:0
+    //   497  PGA            q:0x26e6f115940         ; "Desaturate"
+    //   500  PshVPtr        rW0:0
+    //   501  ADDSi          W0:928 d:134230838      ; ALokiAimingLaser::LaserHitFlare  (+928)
+    //   503  RDSPtr
+    //   504  CALLSYS        q:0x26e79ba4f40         ; void UNiagaraComponent::SetNiagaraVariableFloat(const FString&, float)
+    //   507  LoadThisR      W0:1025 d:134230838     ; ALokiAimingLaser::bOverrideRangeAndAlphaStep  (+1025)
+    //   509  RDR1           wW0:1
+    //   510  NOT            rW0:1
+    //   511  CpyVtoR1       rW0:1
+    //   512  JLowZ          ->599
+    //   514  PshVPtr        rW0:0
+    //   515  CALLINTF       d:84584                 ; bool ALokiAimingLaser::GetLimitLaserToCursor()
+    //   517  JLowZ          ->547
+    //   519  LoadThisR      W0:960 d:134230838      ; ALokiAimingLaser::CurrentEndPathTime  (+960)
+    //   521  RDR8           wW0:32
+    //   522  dTOf           wW0:43 rW1:32
+    //   524  PshV4          rW0:43
+    //   525  PshC4          d:36
+    //   527  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   530  PshRPtr
+    //   531  PshC4          d:0
+    //   533  PshVPtr        rW0:0
+    //   534  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   536  RDSPtr
+    //   537  CALLSYS        q:0x26e7a3b2700         ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+    //   540  STOREOBJ       wW0:54
+    //   541  PshVPtr        rW0:54
+    //   542  CALLSYS        q:0x26e79b31580         ; void UMaterialInstanceDynamic::SetScalarParameterValue(FName, float)
+    //   545  JMP            ->599
+    //   547  LoadThisR      W0:976 d:134230838      ; ALokiAimingLaser::CurrentTraceHitPathTime  (+976)
+    //   549  RDR8           wW0:34
+    //   550  dTOf           wW0:43 rW1:34
+    //   552  PshV4          rW0:43
+    //   553  PshC4          d:36
+    //   555  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   558  PshRPtr
+    //   559  PshC4          d:0
+    //   561  PshVPtr        rW0:0
+    //   562  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   564  RDSPtr
+    //   565  CALLSYS        q:0x26e7a3b2700         ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+    //   568  STOREOBJ       wW0:54
+    //   569  PshVPtr        rW0:54
+    //   570  CALLSYS        q:0x26e79b31580         ; void UMaterialInstanceDynamic::SetScalarParameterValue(FName, float)
+    //   573  LoadThisR      W0:968 d:134230838      ; ALokiAimingLaser::CurrentCursorPathTime  (+968)
+    //   575  RDR8           wW0:34
+    //   576  dTOf           wW0:43 rW1:34
+    //   578  PshV4          rW0:43
+    //   579  PshC4          d:37
+    //   581  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   584  PshRPtr
+    //   585  PshC4          d:0
+    //   587  PshVPtr        rW0:0
+    //   588  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   590  RDSPtr
+    //   591  CALLSYS        q:0x26e7a3b2700         ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+    //   594  STOREOBJ       wW0:54
+    //   595  PshVPtr        rW0:54
+    //   596  CALLSYS        q:0x26e79b31580         ; void UMaterialInstanceDynamic::SetScalarParameterValue(FName, float)
+    //   599  PshVPtr        rW0:0
+    //   600  CALLINTF       d:84610                 ; bool ALokiAimingLaser::UsesProgressSequence()
+    //   602  JLowNZ         ->608
+    //   604  SetV4          wW0:1 d:0
+    //   606  JMP            ->613
+    //   608  LoadThisR      W0:1049 d:134230838     ; ALokiAimingLaser::bProgressActive  (+1049)
+    //   610  RDR1           wW0:51
+    //   611  CpyVtoV4       wW0:1 rW1:51
+    //   613  CpyVtoR1       rW0:1
+    //   614  JLowZ          ->620
+    //   616  PshV8          rW0:-2
+    //   617  PshVPtr        rW0:0
+    //   618  CALLINTF       d:84614                 ; void ALokiAimingLaser::TickProgress(const float64)
+    //   620  RET            W0:4
+
+------------------------------------------------------------------------------
+void TickLaserHitFlare(const FLaserTraceResult&inout TraceResult)
+// 57 instr, 368 B bytecode, id=0x32B91F62, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    bool v3;
+    auto v6;
+
+    v1 = this.bShowTraceHitFlare;
+    v1 = !v1;
+    if (!v1) {
+        v1 = TraceResult.bDidHit;
+        v2 = v1;
+        if (v2) {
+            v1 = this.GetLimitLaserToCursor();
+            v3 = v1;
+        } else {
+            v3 = 0;
+        }
+        if (v3) {
+            v6 = this.CurrentCursorPathTime;
+            v1 = v6 < this.CurrentEndPathTime;
+            v3 = v1;
+        } else {
+            v3 = 0;
+        }
+        if (v3) {
+            v1 = false;
+            v2 = false;
+        }
+        v1 = false;
+        v3 = v2;
+        v3 = !v2;
+        this.LaserHitFlare.SetHiddenInGame(v3, false);
+        if (v2) {
+            this.LaserHitFlare.SetWorldLocation(TraceResult.HitLocation);
+            v1 = false;
+            this.LaserHitFlare.Activate(false);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1000 d:134230838     ; ALokiAimingLaser::bShowTraceHitFlare  (+1000)
+    //     2  RDR1           wW0:1
+    //     3  NOT            rW0:1
+    //     4  CpyVtoR1       rW0:1
+    //     5  JLowZ          ->9
+    //     7  JMP            ->91
+    //     9  LoadRObjR      rW0:-2 W1:0 DW2:134230836; FLaserTraceResult::bDidHit  (+0)
+    //    12  RDR1           wW0:1
+    //    13  CpyVtoV4       wW0:2 rW1:1
+    //    15  CpyVtoR1       rW0:2
+    //    16  JLowNZ         ->22
+    //    18  SetV4          wW0:3 d:0
+    //    20  JMP            ->28
+    //    22  PshVPtr        rW0:0
+    //    23  CALLINTF       d:84584                 ; bool ALokiAimingLaser::GetLimitLaserToCursor()
+    //    25  CpyRtoV4       wW0:1
+    //    26  CpyVtoV4       wW0:3 rW1:1
+    //    28  CpyVtoR1       rW0:3
+    //    29  JLowNZ         ->35
+    //    31  SetV4          wW0:3 d:0
+    //    33  JMP            ->47
+    //    35  LoadThisR      W0:968 d:134230838      ; ALokiAimingLaser::CurrentCursorPathTime  (+968)
+    //    37  RDR8           wW0:6
+    //    38  LoadThisR      W0:960 d:134230838      ; ALokiAimingLaser::CurrentEndPathTime  (+960)
+    //    40  RDR8           wW0:8
+    //    41  CMPd           rW0:6 rW1:8
+    //    43  TS
+    //    44  CpyRtoV4       wW0:1
+    //    45  CpyVtoV4       wW0:3 rW1:1
+    //    47  CpyVtoR1       rW0:3
+    //    48  JLowZ          ->54
+    //    50  SetV1          wW0:1 d:0
+    //    52  CpyVtoV4       wW0:2 rW1:1
+    //    54  SetV1          wW0:1 d:0
+    //    56  PshV4          rW0:1
+    //    57  CpyVtoV4       wW0:3 rW1:2
+    //    59  NOT            rW0:3
+    //    60  PshV4          rW0:3
+    //    61  PshVPtr        rW0:0
+    //    62  ADDSi          W0:928 d:134230838      ; ALokiAimingLaser::LaserHitFlare  (+928)
+    //    64  RDSPtr
+    //    65  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    68  CpyVtoR1       rW0:2
+    //    69  JLowZ          ->91
+    //    71  PshVPtr        rW0:-2
+    //    72  ADDSi          W0:8 d:134230836        ; FLaserTraceResult::HitLocation  (+8)
+    //    74  PshVPtr        rW0:0
+    //    75  ADDSi          W0:928 d:134230838      ; ALokiAimingLaser::LaserHitFlare  (+928)
+    //    77  RDSPtr
+    //    78  CALLSYS        q:0x26e79f60780         ; void USceneComponent::SetWorldLocation(const FVector&)   [UFunction K2_SetWorldLocation]
+    //    81  SetV1          wW0:1 d:0
+    //    83  PshV4          rW0:1
+    //    84  PshVPtr        rW0:0
+    //    85  ADDSi          W0:928 d:134230838      ; ALokiAimingLaser::LaserHitFlare  (+928)
+    //    87  RDSPtr
+    //    88  CALLSYS        q:0x26e79738580         ; void UActorComponent::Activate(bool)
+    //    91  RET            W0:4
+
+------------------------------------------------------------------------------
+ALokiHeroCharacter@ GetLokiHeroCharacter()
+// 50 instr, 284 B bytecode, id=0x28A76FF1, varspace=10
+------------------------------------------------------------------------------
+{
+    auto v1;
+    AActor v4;
+    ALokiHeroCharacter v8;
+    ALokiHeroCharacter v10;
+
+    // control flow not structured (structuring dropped 1 of 11 block(s)); flat form:
+        v1 = IsValid(this.OwnerHero);
+        v1 = !v1;
+        if (!v1) goto L64; else goto L12;
+    L12:
+        v4 = this.GetOwner();
+        v1 = IsValid(v4);
+        v1 = !v1;
+        if (!v1) goto L30; else goto L26;
+    L26:
+        goto L70;
+    L30:
+        if (v4 == null) goto L42; else goto L33;
+    L33:
+        v8 = cast<ALokiHeroCharacter>(v4);
+        goto L43;
+    L42:
+        v8 = null;
+    L43:
+        v10 = v8;
+        v1 = IsValid(v8);
+        v1 = !v1;
+        if (!v1) goto L58; else goto L54;
+    L54:
+        goto L70;
+    L58:
+        this.UpdateOwner(v10);
+    L64:
+        v8 = this.OwnerHero;
+    L70:
+        return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //     3  RDSPtr
+    //     4  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     7  CpyRtoV4       wW0:1
+    //     8  NOT            rW0:1
+    //     9  CpyVtoR1       rW0:1
+    //    10  JLowZ          ->64
+    //    12  PshVPtr        rW0:0
+    //    13  CALLSYS        q:0x26e7970bf40         ; AActor@ AActor::GetOwner() const
+    //    16  STOREOBJ       wW0:4
+    //    17  PshVPtr        rW0:4
+    //    18  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    21  CpyRtoV4       wW0:1
+    //    22  NOT            rW0:1
+    //    23  CpyVtoR1       rW0:1
+    //    24  JLowZ          ->30
+    //    26  FreeNullV8     wW0:8
+    //    27  LOADOBJ        rW0:8
+    //    28  JMP            ->70
+    //    30  CmpPtrNull     rW0:4
+    //    31  JZ             ->42
+    //    33  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //    35  PSF            rW0:8
+    //    36  PshVPtr        rW0:4
+    //    37  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    40  JMP            ->43
+    //    42  ClrVPtr        wW0:8
+    //    43  PshVPtr        rW0:8
+    //    44  RefCpyV        wW0:10
+    //    45  PshVPtr        rW0:10
+    //    46  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    49  CpyRtoV4       wW0:1
+    //    50  NOT            rW0:1
+    //    51  CpyVtoR1       rW0:1
+    //    52  JLowZ          ->58
+    //    54  FreeNullV8     wW0:8
+    //    55  LOADOBJ        rW0:8
+    //    56  JMP            ->70
+    //    58  PshVPtr        rW0:10
+    //    59  PshVPtr        rW0:0
+    //    60  CALLINTF       d:84577                 ; void ALokiAimingLaser::UpdateOwner(ALokiHeroCharacter@)
+    //    62  FreeNullV8     wW0:10
+    //    63  FreeNullV8     wW0:4
+    //    64  PshVPtr        rW0:0
+    //    65  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //    67  RDSPtr
+    //    68  RefCpyV        wW0:8
+    //    69  LOADOBJ        rW0:8
+    //    70  RET            W0:2
+
+------------------------------------------------------------------------------
+bool ValidateOwner()
+// 8 instr, 44 B bytecode, id=0x1DDDD709, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v3;
+
+    v3 = IsValid(this.GetLokiHeroCharacter());
+    return v3;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84574                 ; ALokiHeroCharacter@ ALokiAimingLaser::GetLokiHeroCharacter()
+    //     3  STOREOBJ       wW0:2
+    //     4  PshVPtr        rW0:2
+    //     5  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     8  CpyRtoV4       wW0:3
+    //     9  CpyVtoR4       rW0:3
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+bool IsOwnerLocallyControlled()
+// 16 instr, 100 B bytecode, id=0xC3CB8A89, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v5;
+
+    if (!IsValid(this.GetLokiHeroCharacter())) {
+        v5 = false;
+    } else {
+        v5 = this.OwnerHero.IsLocallyControlled();
+    }
+    return v5;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84574                 ; ALokiHeroCharacter@ ALokiAimingLaser::GetLokiHeroCharacter()
+    //     3  STOREOBJ       wW0:2
+    //     4  PshVPtr        rW0:2
+    //     5  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     8  JLowZ          ->21
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //    13  RDSPtr
+    //    14  CALLSYS        q:0x26e797d59c0         ; bool APawn::IsLocallyControlled() const
+    //    17  CpyRtoV4       wW0:5
+    //    18  CpyVtoR4       rW0:5
+    //    19  JMP            ->24
+    //    21  SetV1          wW0:5 d:0
+    //    23  CpyVtoR4       rW0:5
+    //    24  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void UpdateOwner(ALokiHeroCharacter@ HeroOwner)
+// 9 instr, 48 B bytecode, id=0xE394705D, varspace=0
+------------------------------------------------------------------------------
+{
+    this.SetOwner(HeroOwner);
+    this.OwnerHero = HeroOwner;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLSYS        q:0x26e79714680         ; void AActor::SetOwner(AActor@)
+    //     5  PshVPtr        rW0:-2
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //     9  REFCPY
+    //    10  PopPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+float64 CalculateCursorPathTime()
+// 24 instr, 172 B bytecode, id=0x2230DAA9, varspace=16
+------------------------------------------------------------------------------
+{
+    auto v2;
+    FVector v10;
+    float64 v14;
+
+    if (!this.IsOwnerLocallyControlled()) {
+        v14 = 9218868437227405311;
+    } else {
+        v10 = Loki::GetLocalCursorLocation(__WorldContext, 2);
+        v14 = float64(this.LaserProjectilePath.GetTimeForPosition(v10));
+    }
+    v2 = Math::Min(v14, 1);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84576                 ; bool ALokiAimingLaser::IsOwnerLocallyControlled()
+    //     3  JLowZ          ->30
+    //     5  SetV1          wW0:4 d:2
+    //     7  PshV4          rW0:4
+    //     8  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    11  PSF            rW0:10
+    //    12  CALLSYS        q:0x26e7a11e5c0         ; FVector Loki::GetLocalCursorLocation(UObject@, ELokiProjectionDistanceType)
+    //    15  PSF            rW0:10
+    //    16  PshVPtr        rW0:0
+    //    17  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    19  RDSPtr
+    //    20  CALLSYS        q:0x26e7a3b1c80         ; float ULokiProjectilePathComponent::GetTimeForPosition(FVector) const
+    //    23  CpyRtoV4       wW0:11
+    //    24  fTOd           wW0:16 rW1:11
+    //    26  CpyVtoV8       wW0:14 rW1:16
+    //    28  JMP            ->33
+    //    30  SetV8          wW0:14 q:0x7fefffffffffffff
+    //    33  PshC8          q:0x3ff0000000000000
+    //    36  PshV8          rW0:14
+    //    37  CALLSYS        q:0x26e70382a80         ; float64 Math::Min(float64, float64)
+    //    40  CpyRtoV8       wW0:2
+    //    41  CpyVtoR8       rW0:2
+    //    42  RET            W0:2
+
+------------------------------------------------------------------------------
+FLaserTraceResult DoLaserTrace()
+// 566 instr, 3804 B bytecode, id=0x6D6BB7CB, varspace=182
+------------------------------------------------------------------------------
+{
+    FLaserTraceResult v12;
+    TArray<FVector> v16;
+    auto v17;
+    auto v18;
+    TArray<FHitResult> v22;
+    float64 v24;
+    float64 v26;
+    auto v27;
+    FVector v34;
+    FVector v40;
+    TArray<AActor@> v44;
+    AActor v46;
+    int v47;
+    int v49;
+    int v50;
+    float64 v52;
+    auto v53;
+    auto v54;
+    FLinearColor v58;
+    float v59;
+    float v61;
+    FLinearColor v65;
+    auto v68;
+    TArrayIterator<FHitResult> v74;
+    auto v82;
+    float64 v84;
+    AActor v86;
+    ALokiCharacter v88;
+    ALokiCharacter v90;
+    auto v91;
+    UPrimitiveComponent v94;
+    FName v97;
+    FVector v104;
+    float64 v110;
+    TArray<ALokiHeroCharacter@> v114;
+    FVector v120;
+    FVector v126;
+    FVector v132;
+    FVector v138;
+    float64 v140;
+    TArrayIterator<ALokiHeroCharacter@> v146;
+    ALokiHeroCharacter v154;
+    FVector v160;
+    float64 v166;
+    FVector v174;
+    float64 v176;
+    ULokiAimingVisComponentScript v180;
+    ALokiHeroHeightIndicator v182;
+
+    v12.FLaserTraceResult();
+    v16 = TArray<FVector>();
+    this.LaserProjectilePath.GetPathSegments(v16);
+    v18 = this.GetLimitLaserToCursor();
+    v22 = TArray<FHitResult>();
+    v24 = 99999;
+    v17 = false;
+    v27 = false;
+    v34 = FVector();
+    v40 = FVector();
+    v44 = TArray<AActor@>();
+    v46 = this.OwnerHero;
+    v44.Add(v46);
+    v47 = 0;
+    while (true) {
+        v49 = v16.Num();
+        v49 = v49 - 1;
+        if (v47 >= v49) break;
+        v34 = v16[v47];
+        v49 = v47 + 1;
+        v40 = v16[v49];
+        v53 = this.LaserProjectilePath.GetTimeForPosition(v34);
+        v26 = float64(v53);
+        v52 = v26;
+        if (v18) {
+            v26 = this.CurrentCursorPathTime;
+            v17 = v52 > v26;
+            v54 = v17;
+        } else {
+            v54 = 0;
+        }
+        if (!v54) {
+            v17 = v12.bDidHit;
+            if (!v17) {
+                v17 = 0;
+                goto L135;
+            }
+            v26 = v12.HitTime;
+            v54 = v52 > v26;
+            v17 = v54;
+            L135:
+            if (v17) {
+                break;
+            }
+            v22.Empty(0);
+            v58 = FLinearColor(0, 1, 0, 1);
+            v65 = FLinearColor(1, 0, 0, 1);
+            v17 = true;
+            v54 = false;
+            v49 = v22.Num();
+            __STATIC_NAME(38);
+            System::LineTraceMultiByProfile(__WorldContext, v34, v40, __STATIC_NAME(38), false, v44, false, v22, true, v65, v58, 5);
+            if (v49 > 0) {
+                v74 = v22.Iterator();
+                while (true) {
+                    v54 = v74.CanProceed;
+                    if (!v54) break;
+                    v82 = v74.Proceed();
+                    v59 = this.LaserProjectilePath.GetTimeForPosition(v82.ImpactPoint);
+                    v26 = float64(v59);
+                    v84 = v26;
+                    if (v18) {
+                        v26 = this.CurrentCursorPathTime;
+                        v54 = v84 > v26;
+                        v17 = v54;
+                    } else {
+                        v17 = 0;
+                    }
+                    if (v17) {
+                        continue;
+                    }
+                    if (v82.GetbStartPenetrating()) {
+                        continue;
+                    }
+                    v59 = v82.Distance;
+                    v26 = float64(v59);
+                    if (v26 > v24) {
+                        continue;
+                    }
+                    v86 = v82.GetActor();
+                    if (IsValid(v86)) {
+                        v86 = v82.GetActor();
+                        if (v86.ActorHasTag(__STATIC_NAME(39))) {
+                            continue;
+                        }
+                    }
+                    v68 = false;
+                    v27 = false;
+                    v86 = v82.GetActor();
+                    if (v86 == null) {
+                        v90 = null;
+                    } else {
+                        v90 = cast<ALokiCharacter>(v86);
+                    }
+                    v88 = v90;
+                    v17 = IsValid(v90);
+                    if (v17) {
+                        v91 = this.bIgnoresHeroes;
+                        if (!v91) {
+                            v54 = v88.IsAllyTeam(this.OwnerHero);
+                            v68 = v54;
+                        } else {
+                            v68 = true;
+                        }
+                        if (v68) {
+                            continue;
+                        }
+                        v91 = true;
+                        v27 = true;
+                    }
+                    v68 = v17;
+                    v68 = !v17;
+                    if (v68) {
+                        v94 = v82.GetComponent();
+                        v50 = int(v94.GetCollisionObjectType());
+                        v91 = v50 != 18;
+                        v54 = v91;
+                    } else {
+                        v54 = 0;
+                    }
+                    if (v54) {
+                        v86 = v82.GetActor();
+                        v91 = v86.ActorHasTag(__STATIC_NAME(28));
+                        v91 = !v91;
+                        v68 = v91;
+                    } else {
+                        v68 = 0;
+                    }
+                    if (v68) {
+                        v94 = v82.GetComponent();
+                        v97 = v94.GetCollisionProfileName();
+                        v91 = v97 == __STATIC_NAME(40);
+                        v91 = !v91;
+                        v54 = v91;
+                    } else {
+                        v54 = 0;
+                    }
+                    if (v54) {
+                        v59 = v82.Distance;
+                        v26 = float64(v59);
+                        v24 = v26;
+                        v54 = true;
+                        v27 = true;
+                    }
+                    if (v27) {
+                        v59 = v82.Distance;
+                        v26 = float64(v59);
+                        v24 = v26;
+                        v54 = true;
+                        v12.bDidHit = true;
+                        v59 = float(v84);
+                        v104 = this.LaserProjectilePath.GetPositionForTime(v59);
+                        v12.HitLocation = v104;
+                        v12.HitTime = v84;
+                    }
+                }
+            }
+            v47++;
+            continue;
+        } else {
+            break;
+        }
+    }
+    v54 = false;
+    v50 = this.OwnerHero.GetTeamIndex();
+    v26 = this.MaxDistance;
+    v110 = 250;
+    v26 = v26 + 250;
+    v104 = this.OwnerHero.GetActorLocation();
+    v114 = ALokiHeroCharacterGrid::FindHeroCharactersInCircleBP(__WorldContext, v104, v26, v50, false);
+    v68 = this.bIgnoresHeroes;
+    v68 = !v68;
+    if (v68) {
+        v91 = v114.Num() > 0;
+        v54 = v91;
+    } else {
+        v54 = 0;
+    }
+    if (v54) {
+        v104 = this.OwnerHero.GetActorForwardVector();
+        v120 = FVector(v104);
+        v104 = this.OwnerHero.GetActorLocation();
+        v132 = FVector();
+        v138 = FVector();
+        v146 = v114.Iterator();
+        while (true) {
+            v54 = v146.CanProceed;
+            if (!v54) break;
+            v154 = v146.Proceed();
+            v126 = v154.GetActorLocation();
+            v132 = v160;
+            v110 = v132.DotProduct(v120);
+            v52 = v110;
+            v26 = 0.5;
+            if (v110 > 0.5) {
+                v138 = v160;
+                v110 = v126.Size2D();
+                v84 = v110;
+                if (!v154.GetLokiCharacterMovement().IsGliding()) {
+                    v26 = float64(v154.CapsuleComponent.GetCapsuleRadius());
+                    v110 = this.OverlapHeightIndicatorRadiusBonus;
+                    v166 = v26 + v110;
+                } else {
+                    v53 = v154.GetGliderCollisionCapsule().GetCapsuleRadius();
+                    v110 = float64(v53);
+                    v166 = v110;
+                }
+                v140 = v166;
+                if (v84 <= v166) {
+                    v166 = v140 * v140;
+                    v110 = v84 * v84;
+                    v26 = v166 - v110;
+                    v110 = Math::Sqrt(v26);
+                    v166 = v52 - v110;
+                    v61 = this.LaserProjectilePath.GetTimeForPosition(v160);
+                    v26 = float64(v61);
+                    v176 = v26;
+                    if (v18) {
+                        v166 = this.CurrentCursorPathTime;
+                        v54 = v176 > v166;
+                        v91 = v54;
+                    } else {
+                        v91 = 0;
+                    }
+                    if (v91) {
+                        continue;
+                    }
+                    v68 = v12.bDidHit;
+                    if (v68) {
+                        v166 = v12.HitTime;
+                        v91 = v176 > v166;
+                        v54 = v91;
+                    } else {
+                        v54 = 0;
+                    }
+                    if (v54) {
+                        continue;
+                    }
+                    v180 = ULokiAimingVisComponentScript::Get(v154, NAME_None);
+                    v68 = IsValid(v180);
+                    v68 = !v68;
+                    if (!v68) {
+                        v91 = v180.HasValidHeightIndicator();
+                        v91 = !v91;
+                        v54 = v91;
+                    } else {
+                        v54 = true;
+                    }
+                    if (v54) {
+                        continue;
+                    }
+                    v182 = v180.HeightIndicator;
+                    v68 = v182.TargetLocPtr.IsVisible();
+                    v68 = !v68;
+                    if (v68) {
+                        continue;
+                    }
+                    v54 = true;
+                    v12.bDidHit = true;
+                    v61 = float(v176);
+                    v174 = this.LaserProjectilePath.GetPositionForTime(v61);
+                    v12.HitLocation = v174;
+                    v12.HitTime = v176;
+                    v12.HitHeightIndicator = v182;
+                }
+            }
+        }
+    }
+    __return.FLaserTraceResult();
+    v12 = __return;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:12
+    //     1  CALL           d:84570                 ; void FLaserTraceResult::FLaserTraceResult()
+    //     3  PSF            rW0:16
+    //     4  CALLSYS        q:0x26e6ef267c0         ; void TArray<FVector>::$beh0()
+    //     7  PSF            rW0:16
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    11  RDSPtr
+    //    12  CALLSYS        q:0x26e7a3b2000         ; void ULokiProjectilePathComponent::GetPathSegments(TArray<FVector>&) const
+    //    15  PshVPtr        rW0:0
+    //    16  CALLINTF       d:84584                 ; bool ALokiAimingLaser::GetLimitLaserToCursor()
+    //    18  CpyRtoV4       wW0:18
+    //    19  PSF            rW0:22
+    //    20  CALLSYS        q:0x26e6ef26600         ; void TArray<FHitResult>::$beh0()
+    //    23  SetV8          wW0:24 q:0x40f869f000000000
+    //    26  SetV1          wW0:17 d:0
+    //    28  CpyVtoV4       wW0:27 rW1:17
+    //    30  PSF            rW0:34
+    //    31  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    34  PSF            rW0:40
+    //    35  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    38  PSF            rW0:44
+    //    39  CALLSYS        q:0x26e6ee8b680         ; void TArray<AActor@>::$beh0()
+    //    42  PshVPtr        rW0:0
+    //    43  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //    45  RDSPtr
+    //    46  RefCpyV        wW0:46
+    //    47  PSF            rW0:46
+    //    48  PSF            rW0:44
+    //    49  CALLSYS        q:0x26e6ef26440         ; void TArray<AActor@>::Add(const AActor@ const&)
+    //    52  SetV4          wW0:47 d:0
+    //    54  JMP            ->518
+    //    56  SUSPEND
+    //    57  PshV4          rW0:47
+    //    58  PSF            rW0:16
+    //    59  Thiscall1      q:0x26e6ef25f00         ; FVector& TArray<FVector>::opIndex(int)
+    //    62  PshRPtr
+    //    63  PSF            rW0:34
+    //    64  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    67  ADDIi          wW0:49 rW1:47 DW2:1
+    //    70  PshV4          rW0:49
+    //    71  PSF            rW0:16
+    //    72  Thiscall1      q:0x26e6ef25f00         ; FVector& TArray<FVector>::opIndex(int)
+    //    75  PshRPtr
+    //    76  PSF            rW0:40
+    //    77  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    80  PSF            rW0:34
+    //    81  PshVPtr        rW0:0
+    //    82  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    84  RDSPtr
+    //    85  CALLSYS        q:0x26e7a3b1c80         ; float ULokiProjectilePathComponent::GetTimeForPosition(FVector) const
+    //    88  CpyRtoV4       wW0:53
+    //    89  fTOd           wW0:26 rW1:53
+    //    91  CpyVtoV8       wW0:52 rW1:26
+    //    93  CpyVtoR1       rW0:18
+    //    94  JLowNZ         ->100
+    //    96  SetV4          wW0:54 d:0
+    //    98  JMP            ->109
+    //   100  LoadThisR      W0:968 d:134230838      ; ALokiAimingLaser::CurrentCursorPathTime  (+968)
+    //   102  RDR8           wW0:26
+    //   103  CMPd           rW0:52 rW1:26
+    //   105  TP
+    //   106  CpyRtoV4       wW0:17
+    //   107  CpyVtoV4       wW0:54 rW1:17
+    //   109  CpyVtoR1       rW0:54
+    //   110  JLowZ          ->114
+    //   112  JMP            ->530
+    //   114  LoadVObjR      rW0:12 W1:0 DW2:134230836; FLaserTraceResult::bDidHit  (+0)
+    //   117  RDR1           wW0:17
+    //   118  CpyVtoR1       rW0:17
+    //   119  JLowNZ         ->125
+    //   121  SetV4          wW0:17 d:0
+    //   123  JMP            ->135
+    //   125  LoadVObjR      rW0:12 W1:32 DW2:134230836; FLaserTraceResult::HitTime  (+32)
+    //   128  RDR8           wW0:26
+    //   129  CMPd           rW0:52 rW1:26
+    //   131  TP
+    //   132  CpyRtoV4       wW0:54
+    //   133  CpyVtoV4       wW0:17 rW1:54
+    //   135  CpyVtoR1       rW0:17
+    //   136  JLowZ          ->140
+    //   138  JMP            ->530
+    //   140  PshC4          d:0
+    //   142  PSF            rW0:22
+    //   143  CALLSYS        q:0x26e6ef25d40         ; void TArray<FHitResult>::Empty(int)
+    //   146  PshC4          d:1084227584
+    //   148  PshC4          d:1065353216
+    //   150  PshC4          d:0
+    //   152  PshC4          d:1065353216
+    //   154  PshC4          d:0
+    //   156  PSF            rW0:58
+    //   157  CALLSYS        q:0x26e69c475c0         ; void FLinearColor::$beh0(float, float, float, float)
+    //   160  PSF            rW0:58
+    //   161  PshC4          d:1065353216
+    //   163  PshC4          d:0
+    //   165  PshC4          d:0
+    //   167  PshC4          d:1065353216
+    //   169  PSF            rW0:65
+    //   170  CALLSYS        q:0x26e69c475c0         ; void FLinearColor::$beh0(float, float, float, float)
+    //   173  PSF            rW0:65
+    //   174  SetV1          wW0:17 d:1
+    //   176  PshV4          rW0:17
+    //   177  PSF            rW0:22
+    //   178  SetV1          wW0:67 d:0
+    //   180  PshV4          rW0:67
+    //   181  PSF            rW0:44
+    //   182  SetV1          wW0:54 d:0
+    //   184  PshV4          rW0:54
+    //   185  PshC4          d:38
+    //   187  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   190  PshRPtr
+    //   191  PSF            rW0:40
+    //   192  PSF            rW0:34
+    //   193  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   196  CALLSYS        q:0x26e79b1b140         ; bool System::LineTraceMultiByProfile(const UObject@, const FVector, const FVector, FName, bool, const TArray<AActor@>&, EDrawDebugTrace, TArray<FHitResult>&, bool, FLinearColor, FLinearColor, float)
+    //   199  PSF            rW0:22
+    //   200  CALLSYS        q:0x26e6ef25b80         ; int TArray<FHitResult>::Num() const
+    //   203  CpyRtoV4       wW0:49
+    //   204  CMPIi          rW0:49 d:0
+    //   206  JNP            ->517
+    //   208  PSF            rW0:74
+    //   209  PSF            rW0:22
+    //   210  CALLSYS        q:0x26e6ef25640         ; TArrayIterator<FHitResult> TArray<FHitResult>::Iterator()
+    //   213  JMP            ->510
+    //   215  SUSPEND
+    //   216  PSF            rW0:74
+    //   217  CALLSYS        q:0x26e6ef252c0         ; FHitResult& TArrayIterator<FHitResult>::Proceed()
+    //   220  CpyRtoV8       wW0:82
+    //   221  PshVPtr        rW0:82
+    //   222  ADDSi          W0:40 d:67117552        ; FHitResult::ImpactPoint  (+40)
+    //   224  PshVPtr        rW0:0
+    //   225  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   227  RDSPtr
+    //   228  CALLSYS        q:0x26e7a3b1c80         ; float ULokiProjectilePathComponent::GetTimeForPosition(FVector) const
+    //   231  CpyRtoV4       wW0:59
+    //   232  fTOd           wW0:26 rW1:59
+    //   234  CpyVtoV8       wW0:84 rW1:26
+    //   236  CpyVtoR1       rW0:18
+    //   237  JLowNZ         ->243
+    //   239  SetV4          wW0:17 d:0
+    //   241  JMP            ->252
+    //   243  LoadThisR      W0:968 d:134230838      ; ALokiAimingLaser::CurrentCursorPathTime  (+968)
+    //   245  RDR8           wW0:26
+    //   246  CMPd           rW0:84 rW1:26
+    //   248  TP
+    //   249  CpyRtoV4       wW0:54
+    //   250  CpyVtoV4       wW0:17 rW1:54
+    //   252  CpyVtoR1       rW0:17
+    //   253  JLowZ          ->257
+    //   255  JMP            ->510
+    //   257  PshVPtr        rW0:82
+    //   258  CALLSYS        q:0x26e79f66d00         ; bool FHitResult::GetbStartPenetrating() const
+    //   261  JLowZ          ->265
+    //   263  JMP            ->510
+    //   265  LoadRObjR      rW0:82 W1:8 DW2:67117552; FHitResult::Distance  (+8)
+    //   268  RDR4           wW0:59
+    //   269  fTOd           wW0:26 rW1:59
+    //   271  CMPd           rW0:26 rW1:24
+    //   273  JNP            ->277
+    //   275  JMP            ->510
+    //   277  PshVPtr        rW0:82
+    //   278  CALLSYS        q:0x26e79f67080         ; AActor@ FHitResult::GetActor() const
+    //   281  STOREOBJ       wW0:86
+    //   282  PshVPtr        rW0:86
+    //   283  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   286  JLowZ          ->307
+    //   288  PshC4          d:39
+    //   290  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   293  PshRPtr
+    //   294  PshVPtr        rW0:82
+    //   295  CALLSYS        q:0x26e79f67080         ; AActor@ FHitResult::GetActor() const
+    //   298  STOREOBJ       wW0:86
+    //   299  PshVPtr        rW0:86
+    //   300  CALLSYS        q:0x26e7970a180         ; bool AActor::ActorHasTag(FName) const
+    //   303  JLowZ          ->307
+    //   305  JMP            ->510
+    //   307  SetV1          wW0:68 d:0
+    //   309  CpyVtoV4       wW0:27 rW1:68
+    //   311  PshVPtr        rW0:82
+    //   312  CALLSYS        q:0x26e79f67080         ; AActor@ FHitResult::GetActor() const
+    //   315  STOREOBJ       wW0:86
+    //   316  CmpPtrNull     rW0:86
+    //   317  JZ             ->328
+    //   319  TYPEID         d:1140856817            ; ALokiCharacter@
+    //   321  PSF            rW0:90
+    //   322  PshVPtr        rW0:86
+    //   323  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   326  JMP            ->329
+    //   328  ClrVPtr        wW0:90
+    //   329  PshVPtr        rW0:90
+    //   330  RefCpyV        wW0:88
+    //   331  PshVPtr        rW0:88
+    //   332  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   335  CpyRtoV4       wW0:17
+    //   336  CpyVtoR1       rW0:17
+    //   337  JLowZ          ->370
+    //   339  LoadThisR      W0:1002 d:134230838     ; ALokiAimingLaser::bIgnoresHeroes  (+1002)
+    //   341  RDR1           wW0:91
+    //   342  CpyVtoR1       rW0:91
+    //   343  JLowZ          ->349
+    //   345  SetV1          wW0:68 d:1
+    //   347  JMP            ->360
+    //   349  PshVPtr        rW0:0
+    //   350  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //   352  RDSPtr
+    //   353  PshVPtr        rW0:88
+    //   354  CALLSYS        q:0x26e7a18d0c0         ; bool ALokiCharacter::IsAllyTeam(const AActor@) const
+    //   357  CpyRtoV4       wW0:54
+    //   358  CpyVtoV4       wW0:68 rW1:54
+    //   360  CpyVtoR1       rW0:68
+    //   361  JLowZ          ->366
+    //   363  FreeNullV8     wW0:88
+    //   364  JMP            ->510
+    //   366  SetV1          wW0:91 d:1
+    //   368  CpyVtoV4       wW0:27 rW1:91
+    //   370  CpyVtoV4       wW0:68 rW1:17
+    //   372  NOT            rW0:68
+    //   373  CpyVtoR1       rW0:68
+    //   374  JLowNZ         ->380
+    //   376  SetV4          wW0:54 d:0
+    //   378  JMP            ->398
+    //   380  PshVPtr        rW0:82
+    //   381  CALLSYS        q:0x26e79f66b40         ; UPrimitiveComponent@ FHitResult::GetComponent() const
+    //   384  STOREOBJ       wW0:94
+    //   385  PshVPtr        rW0:94
+    //   386  CALLSYS        q:0x26e79754d80         ; ECollisionChannel UPrimitiveComponent::GetCollisionObjectType() const
+    //   389  CpyRtoV4       wW0:95
+    //   390  sbTOi          wW0:50 rW1:95
+    //   392  CMPIi          rW0:50 d:18
+    //   394  TNZ
+    //   395  CpyRtoV4       wW0:91
+    //   396  CpyVtoV4       wW0:54 rW1:91
+    //   398  CpyVtoR1       rW0:54
+    //   399  JLowNZ         ->405
+    //   401  SetV4          wW0:68 d:0
+    //   403  JMP            ->424
+    //   405  PshC4          d:28
+    //   407  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   410  PshRPtr
+    //   411  PshVPtr        rW0:82
+    //   412  CALLSYS        q:0x26e79f67080         ; AActor@ FHitResult::GetActor() const
+    //   415  STOREOBJ       wW0:86
+    //   416  PshVPtr        rW0:86
+    //   417  CALLSYS        q:0x26e7970a180         ; bool AActor::ActorHasTag(FName) const
+    //   420  CpyRtoV4       wW0:91
+    //   421  NOT            rW0:91
+    //   422  CpyVtoV4       wW0:68 rW1:91
+    //   424  CpyVtoR1       rW0:68
+    //   425  JLowNZ         ->431
+    //   427  SetV4          wW0:54 d:0
+    //   429  JMP            ->455
+    //   431  PSF            rW0:97
+    //   432  PshVPtr        rW0:82
+    //   433  CALLSYS        q:0x26e79f66b40         ; UPrimitiveComponent@ FHitResult::GetComponent() const
+    //   436  STOREOBJ       wW0:94
+    //   437  PshVPtr        rW0:94
+    //   438  CALLSYS        q:0x26e79754bc0         ; FName UPrimitiveComponent::GetCollisionProfileName() const
+    //   441  PshC4          d:40
+    //   443  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   446  PshRPtr
+    //   447  PSF            rW0:97
+    //   448  CALLSYS        q:0x26e69d22000         ; bool FName::opEquals(const FName&) const
+    //   451  CpyRtoV4       wW0:91
+    //   452  NOT            rW0:91
+    //   453  CpyVtoV4       wW0:54 rW1:91
+    //   455  CpyVtoR1       rW0:54
+    //   456  JLowZ          ->470
+    //   458  LoadRObjR      rW0:82 W1:8 DW2:67117552; FHitResult::Distance  (+8)
+    //   461  RDR4           wW0:59
+    //   462  fTOd           wW0:26 rW1:59
+    //   464  CpyVtoV8       wW0:24 rW1:26
+    //   466  SetV1          wW0:54 d:1
+    //   468  CpyVtoV4       wW0:27 rW1:54
+    //   470  CpyVtoR1       rW0:27
+    //   471  JLowZ          ->509
+    //   473  LoadRObjR      rW0:82 W1:8 DW2:67117552; FHitResult::Distance  (+8)
+    //   476  RDR4           wW0:59
+    //   477  fTOd           wW0:26 rW1:59
+    //   479  CpyVtoV8       wW0:24 rW1:26
+    //   481  SetV1          wW0:54 d:1
+    //   483  LoadVObjR      rW0:12 W1:0 DW2:134230836; FLaserTraceResult::bDidHit  (+0)
+    //   486  WRTV1          rW0:54
+    //   487  dTOf           wW0:59 rW1:84
+    //   489  PshV4          rW0:59
+    //   490  PSF            rW0:104
+    //   491  PshVPtr        rW0:0
+    //   492  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   494  RDSPtr
+    //   495  CALLSYS        q:0x26e7a3b1e40         ; FVector ULokiProjectilePathComponent::GetPositionForTime(float) const
+    //   498  PSF            rW0:104
+    //   499  PSF            rW0:12
+    //   500  ADDSi          W0:8 d:134230836        ; FLaserTraceResult::HitLocation  (+8)
+    //   502  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   505  LoadVObjR      rW0:12 W1:32 DW2:134230836; FLaserTraceResult::HitTime  (+32)
+    //   508  WRTV8          rW0:84
+    //   509  FreeNullV8     wW0:88
+    //   510  LoadVObjR      rW0:74 W1:16 DW2:268448567; TArrayIterator::CanProceed  (+16)
+    //   513  RDR1           wW0:54
+    //   514  CpyVtoR1       rW0:54
+    //   515  JLowNZ         ->215
+    //   517  IncVi          rW0:47
+    //   518  PSF            rW0:16
+    //   519  CALLSYS        q:0x26e6ef26280         ; int TArray<FVector>::Num() const
+    //   522  CpyRtoV4       wW0:49
+    //   523  SUBIi          wW0:49 rW1:49 DW2:1
+    //   526  CMPi           rW0:47 rW1:49
+    //   528  JS             ->56
+    //   530  SetV1          wW0:54 d:0
+    //   532  PshV4          rW0:54
+    //   533  PshVPtr        rW0:0
+    //   534  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //   536  RDSPtr
+    //   537  CALLSYS        q:0x26e7a1875c0         ; int ALokiCharacter::GetTeamIndex() const
+    //   540  CpyRtoV4       wW0:50
+    //   541  PshV4          rW0:50
+    //   542  LoadThisR      W0:984 d:134230838      ; ALokiAimingLaser::MaxDistance  (+984)
+    //   544  RDR8           wW0:26
+    //   545  SetV8          wW0:110 q:0x406f400000000000
+    //   548  ADDd           wW0:26 rW1:26 rW2:110
+    //   550  PshV8          rW0:26
+    //   551  PSF            rW0:104
+    //   552  PshVPtr        rW0:0
+    //   553  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //   555  RDSPtr
+    //   556  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   559  PSF            rW0:104
+    //   560  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   563  PSF            rW0:114
+    //   564  CALLSYS        q:0x26e7a19a180         ; TArray<ALokiHeroCharacter@> ALokiHeroCharacterGrid::FindHeroCharactersInCircleBP(const UObject@, FVector, float64, int, bool)
+    //   567  LoadThisR      W0:1002 d:134230838     ; ALokiAimingLaser::bIgnoresHeroes  (+1002)
+    //   569  RDR1           wW0:68
+    //   570  NOT            rW0:68
+    //   571  CpyVtoR1       rW0:68
+    //   572  JLowNZ         ->578
+    //   574  SetV4          wW0:54 d:0
+    //   576  JMP            ->589
+    //   578  PSF            rW0:114
+    //   579  CALLSYS        q:0x26e6ef25100         ; int TArray<ALokiHeroCharacter@>::Num() const
+    //   582  CpyRtoV4       wW0:48
+    //   583  CMPIi          rW0:48 d:0
+    //   585  TP
+    //   586  CpyRtoV4       wW0:91
+    //   587  CpyVtoV4       wW0:54 rW1:91
+    //   589  CpyVtoR1       rW0:54
+    //   590  JLowZ          ->926
+    //   592  PSF            rW0:104
+    //   593  PshVPtr        rW0:0
+    //   594  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //   596  RDSPtr
+    //   597  CALLSYS        q:0x26e79707cc0         ; FVector AActor::GetActorForwardVector() const
+    //   600  PSF            rW0:104
+    //   601  PSF            rW0:120
+    //   602  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //   605  PSF            rW0:104
+    //   606  PshVPtr        rW0:0
+    //   607  ADDSi          W0:944 d:134230838      ; ALokiAimingLaser::OwnerHero  (+944)
+    //   609  RDSPtr
+    //   610  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   613  PSF            rW0:132
+    //   614  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //   617  PSF            rW0:138
+    //   618  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //   621  PSF            rW0:146
+    //   622  PSF            rW0:114
+    //   623  CALLSYS        q:0x26e6ef24bc0         ; TArrayIterator<ALokiHeroCharacter@> TArray<ALokiHeroCharacter@>::Iterator()
+    //   626  JMP            ->919
+    //   628  SUSPEND
+    //   629  PSF            rW0:146
+    //   630  CALLSYS        q:0x26e6ef24840         ; ALokiHeroCharacter@& TArrayIterator<ALokiHeroCharacter@>::Proceed()
+    //   633  PshRPtr
+    //   634  RDSPtr
+    //   635  RefCpyV        wW0:154
+    //   636  PSF            rW0:126
+    //   637  PshVPtr        rW0:154
+    //   638  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   641  PSF            rW0:104
+    //   642  PSF            rW0:160
+    //   643  PSF            rW0:126
+    //   644  CALLSYS        q:0x26e69d00cc0         ; FVector FVector::opSub(const FVector&) const
+    //   647  PSF            rW0:160
+    //   648  PSF            rW0:132
+    //   649  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   652  PSF            rW0:120
+    //   653  PSF            rW0:132
+    //   654  CALLSYS        q:0x26e69d06280         ; float64 FVector::DotProduct(const FVector&) const
+    //   657  CpyRtoV8       wW0:110
+    //   658  CpyVtoV8       wW0:52 rW1:110
+    //   660  SetV8          wW0:26 q:0x3fe0000000000000
+    //   663  CMPd           rW0:52 rW1:26
+    //   665  JNP            ->918
+    //   667  PshV8          rW0:52
+    //   668  PSF            rW0:160
+    //   669  PSF            rW0:120
+    //   670  CALLSYS        q:0x26e69d00780         ; FVector FVector::opMul(float64) const
+    //   673  PSF            rW0:160
+    //   674  PSF            rW0:138
+    //   675  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   678  PSF            rW0:132
+    //   679  PSF            rW0:126
+    //   680  PSF            rW0:138
+    //   681  CALLSYS        q:0x26e69d00cc0         ; FVector FVector::opSub(const FVector&) const
+    //   684  PSF            rW0:126
+    //   685  CALLSYS        q:0x26e69d04840         ; float64 FVector::Size2D() const
+    //   688  CpyRtoV8       wW0:110
+    //   689  CpyVtoV8       wW0:84 rW1:110
+    //   691  PshVPtr        rW0:154
+    //   692  CALLSYS        q:0x26e7a188580         ; ULokiCharacterMovementComponent@ ALokiCharacter::GetLokiCharacterMovement() const
+    //   695  STOREOBJ       wW0:162
+    //   696  PshVPtr        rW0:162
+    //   697  CALLSYS        q:0x26e7a19d0c0         ; bool ULokiCharacterMovementComponent::IsGliding() const
+    //   700  JLowZ          ->718
+    //   702  PshVPtr        rW0:154
+    //   703  CALLSYS        q:0x26e7a28a500         ; UCapsuleComponent@ ALokiHeroCharacter::GetGliderCollisionCapsule() const
+    //   706  STOREOBJ       wW0:164
+    //   707  PshVPtr        rW0:164
+    //   708  CALLSYS        q:0x26e7aa29a80         ; const float& UCapsuleComponent::GetCapsuleRadius() const
+    //   711  RDR4           wW0:53
+    //   712  fTOd           wW0:110 rW1:53
+    //   714  CpyVtoV8       wW0:166 rW1:110
+    //   716  JMP            ->733
+    //   718  PshVPtr        rW0:154
+    //   719  ADDSi          W0:1120 d:67111507      ; ACharacter::CapsuleComponent  (+1120)
+    //   721  RDSPtr
+    //   722  CALLSYS        q:0x26e7aa29a80         ; const float& UCapsuleComponent::GetCapsuleRadius() const
+    //   725  RDR4           wW0:60
+    //   726  fTOd           wW0:26 rW1:60
+    //   728  LoadThisR      W0:1016 d:134230838     ; ALokiAimingLaser::OverlapHeightIndicatorRadiusBonus  (+1016)
+    //   730  RDR8           wW0:110
+    //   731  ADDd           wW0:166 rW1:26 rW2:110
+    //   733  CpyVtoV8       wW0:140 rW1:166
+    //   735  CMPd           rW0:84 rW1:140
+    //   737  JP             ->918
+    //   739  MULd           wW0:166 rW1:140 rW2:140
+    //   741  MULd           wW0:110 rW1:84 rW2:84
+    //   743  SUBd           wW0:26 rW1:166 rW2:110
+    //   745  PshV8          rW0:26
+    //   746  CALLSYS        q:0x26e7035b300         ; float64 Math::Sqrt(float64)
+    //   749  CpyRtoV8       wW0:110
+    //   750  SUBd           wW0:166 rW1:52 rW2:110
+    //   752  PshV8          rW0:166
+    //   753  PSF            rW0:126
+    //   754  PSF            rW0:120
+    //   755  CALLSYS        q:0x26e69d00780         ; FVector FVector::opMul(float64) const
+    //   758  PSF            rW0:126
+    //   759  PSF            rW0:160
+    //   760  PSF            rW0:104
+    //   761  CALLSYS        q:0x26e69d00e80         ; FVector FVector::opAdd(const FVector&) const
+    //   764  PSF            rW0:160
+    //   765  PshVPtr        rW0:0
+    //   766  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   768  RDSPtr
+    //   769  CALLSYS        q:0x26e7a3b1c80         ; float ULokiProjectilePathComponent::GetTimeForPosition(FVector) const
+    //   772  CpyRtoV4       wW0:61
+    //   773  fTOd           wW0:26 rW1:61
+    //   775  CpyVtoV8       wW0:176 rW1:26
+    //   777  CpyVtoR1       rW0:18
+    //   778  JLowNZ         ->784
+    //   780  SetV4          wW0:91 d:0
+    //   782  JMP            ->793
+    //   784  LoadThisR      W0:968 d:134230838      ; ALokiAimingLaser::CurrentCursorPathTime  (+968)
+    //   786  RDR8           wW0:166
+    //   787  CMPd           rW0:176 rW1:166
+    //   789  TP
+    //   790  CpyRtoV4       wW0:54
+    //   791  CpyVtoV4       wW0:91 rW1:54
+    //   793  CpyVtoR1       rW0:91
+    //   794  JLowZ          ->799
+    //   796  FreeNullV8     wW0:154
+    //   797  JMP            ->919
+    //   799  LoadVObjR      rW0:12 W1:0 DW2:134230836; FLaserTraceResult::bDidHit  (+0)
+    //   802  RDR1           wW0:68
+    //   803  CpyVtoR1       rW0:68
+    //   804  JLowNZ         ->810
+    //   806  SetV4          wW0:54 d:0
+    //   808  JMP            ->820
+    //   810  LoadVObjR      rW0:12 W1:32 DW2:134230836; FLaserTraceResult::HitTime  (+32)
+    //   813  RDR8           wW0:166
+    //   814  CMPd           rW0:176 rW1:166
+    //   816  TP
+    //   817  CpyRtoV4       wW0:91
+    //   818  CpyVtoV4       wW0:54 rW1:91
+    //   820  CpyVtoR1       rW0:54
+    //   821  JLowZ          ->826
+    //   823  FreeNullV8     wW0:154
+    //   824  JMP            ->919
+    //   826  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   829  PshVPtr        rW0:154
+    //   830  CALL           d:84727                 ; ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript::Get(const AActor@, const FName&)
+    //   832  STOREOBJ       wW0:180
+    //   833  PshVPtr        rW0:180
+    //   834  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   837  CpyRtoV4       wW0:68
+    //   838  NOT            rW0:68
+    //   839  CpyVtoR1       rW0:68
+    //   840  JLowZ          ->846
+    //   842  SetV1          wW0:54 d:1
+    //   844  JMP            ->853
+    //   846  PshVPtr        rW0:180
+    //   847  CALLINTF       d:84711                 ; bool ULokiAimingVisComponentScript::HasValidHeightIndicator()
+    //   849  CpyRtoV4       wW0:91
+    //   850  NOT            rW0:91
+    //   851  CpyVtoV4       wW0:54 rW1:91
+    //   853  CpyVtoR1       rW0:54
+    //   854  JLowZ          ->860
+    //   856  FreeNullV8     wW0:180
+    //   857  FreeNullV8     wW0:154
+    //   858  JMP            ->919
+    //   860  PshVPtr        rW0:180
+    //   861  ADDSi          W0:216 d:67114911       ; ULokiAimingVisComponent::HeightIndicator  (+216)
+    //   863  RDSPtr
+    //   864  RefCpyV        wW0:182
+    //   865  PshVPtr        rW0:182
+    //   866  ADDSi          W0:1064 d:67115182      ; ALokiHeroHeightIndicator::TargetLocPtr  (+1064)
+    //   868  RDSPtr
+    //   869  CALLSYS        q:0x26e7973f200         ; bool USceneComponent::IsVisible() const
+    //   872  CpyRtoV4       wW0:68
+    //   873  NOT            rW0:68
+    //   874  CpyVtoR1       rW0:68
+    //   875  JLowZ          ->882
+    //   877  FreeNullV8     wW0:182
+    //   878  FreeNullV8     wW0:180
+    //   879  FreeNullV8     wW0:154
+    //   880  JMP            ->919
+    //   882  SetV1          wW0:54 d:1
+    //   884  LoadVObjR      rW0:12 W1:0 DW2:134230836; FLaserTraceResult::bDidHit  (+0)
+    //   887  WRTV1          rW0:54
+    //   888  dTOf           wW0:61 rW1:176
+    //   890  PshV4          rW0:61
+    //   891  PSF            rW0:174
+    //   892  PshVPtr        rW0:0
+    //   893  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   895  RDSPtr
+    //   896  CALLSYS        q:0x26e7a3b1e40         ; FVector ULokiProjectilePathComponent::GetPositionForTime(float) const
+    //   899  PSF            rW0:174
+    //   900  PSF            rW0:12
+    //   901  ADDSi          W0:8 d:134230836        ; FLaserTraceResult::HitLocation  (+8)
+    //   903  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   906  LoadVObjR      rW0:12 W1:32 DW2:134230836; FLaserTraceResult::HitTime  (+32)
+    //   909  WRTV8          rW0:176
+    //   910  PshVPtr        rW0:182
+    //   911  PSF            rW0:12
+    //   912  ADDSi          W0:40 d:134230836       ; FLaserTraceResult::HitHeightIndicator  (+40)
+    //   914  REFCPY
+    //   915  PopPtr
+    //   916  FreeNullV8     wW0:182
+    //   917  FreeNullV8     wW0:180
+    //   918  FreeNullV8     wW0:154
+    //   919  LoadVObjR      rW0:146 W1:16 DW2:268448568; TArrayIterator::CanProceed  (+16)
+    //   922  RDR1           wW0:54
+    //   923  CpyVtoR1       rW0:54
+    //   924  JLowNZ         ->628
+    //   926  PshVPtr        rW0:-2
+    //   927  CALL           d:84570                 ; void FLaserTraceResult::FLaserTraceResult()
+    //   929  PSF            rW0:12
+    //   930  PshVPtr        rW0:-2
+    //   931  COPY           W0:48 d:134230836       ; 48 dwords of FLaserTraceResult
+    //   933  PopPtr
+    //   934  PSF            rW0:114
+    //   935  CALLSYS        q:0x26e7a111580         ; void TArray<ALokiHeroCharacter@>::$beh2()
+    //   938  PSF            rW0:44
+    //   939  CALLSYS        q:0x26e70663f80         ; void TArray<AActor@>::$beh2()
+    //   942  PSF            rW0:22
+    //   943  CALLSYS        q:0x26e71018580         ; void TArray<FHitResult>::$beh2()
+    //   946  PSF            rW0:16
+    //   947  CALLSYS        q:0x26e703a4bc0         ; void TArray<FVector>::$beh2()
+    //   950  RET            W0:4
+
+------------------------------------------------------------------------------
+TArray<UMeshComponent@> GetColorableMeshes()
+// 18 instr, 136 B bytecode, id=0x5CB3472C, varspace=5
+------------------------------------------------------------------------------
+{
+    TArray<UMeshComponent@> v4;
+
+    v4 = TArray<UMeshComponent@>();
+    __Evt_PushArgumentRef(v4);
+    __Evt_Execute(this, __STATIC_NAME(125));
+    __return = TArray<UMeshComponent@>();
+    __return = v4;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ef24680         ; void TArray<UMeshComponent@>::$beh0()
+    //     4  TYPEID         d:268448570             ; TArray<UMeshComponent@>
+    //     6  PSF            rW0:4
+    //     7  CALLSYS        q:0x26e7861c480         ; void __Evt_PushArgumentRef(const ?&)
+    //    10  PshC4          d:125
+    //    12  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    15  PshRPtr
+    //    16  PshVPtr        rW0:0
+    //    17  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    20  PshVPtr        rW0:-2
+    //    21  CALLSYS        q:0x26e6ef24680         ; void TArray<UMeshComponent@>::$beh0()
+    //    24  PSF            rW0:4
+    //    25  PshVPtr        rW0:-2
+    //    26  CALLSYS        q:0x26e6eda2e00         ; TArray<UMeshComponent@>& TArray<UMeshComponent@>::opAssign(const TArray<UMeshComponent@>&)
+    //    29  PSF            rW0:4
+    //    30  CALLSYS        q:0x26e6eda2fc0         ; void TArray<UMeshComponent@>::$beh2()
+    //    33  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: GetColorableMeshes
+TArray<UMeshComponent@> GetColorableMeshes_Implementation()
+// 17 instr, 112 B bytecode, id=0x0CEEDC67, varspace=6
+------------------------------------------------------------------------------
+{
+    TArray<UMeshComponent@> v4;
+    UMeshComponent v6;
+
+    v4 = TArray<UMeshComponent@>();
+    v6 = this.LaserEndpoint;
+    v4.Add(v6);
+    __return = TArray<UMeshComponent@>();
+    __return = v4;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ef24680         ; void TArray<UMeshComponent@>::$beh0()
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //     7  RDSPtr
+    //     8  RefCpyV        wW0:6
+    //     9  PSF            rW0:6
+    //    10  PSF            rW0:4
+    //    11  CALLSYS        q:0x26e6ef244c0         ; void TArray<UMeshComponent@>::Add(const UMeshComponent@ const&)
+    //    14  PshVPtr        rW0:-2
+    //    15  CALLSYS        q:0x26e6ef24680         ; void TArray<UMeshComponent@>::$beh0()
+    //    18  PSF            rW0:4
+    //    19  PshVPtr        rW0:-2
+    //    20  CALLSYS        q:0x26e6eda2e00         ; TArray<UMeshComponent@>& TArray<UMeshComponent@>::opAssign(const TArray<UMeshComponent@>&)
+    //    23  PSF            rW0:4
+    //    24  CALLSYS        q:0x26e6eda2fc0         ; void TArray<UMeshComponent@>::$beh2()
+    //    27  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool GetLimitLaserToCursor()
+// 18 instr, 108 B bytecode, id=0xFB207F9A, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (!this.IsOwnerLocallyControlled()) {
+        v1 = false;
+    } else {
+        v1 = this.bLimitLaserToCursorOverride;
+        if (!v1) {
+            v1 = this.bLimitLaserToCursorUserSetting;
+        } else {
+            v1 = this.bLimitLaserToCursorOverrideValue;
+        }
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84576                 ; bool ALokiAimingLaser::IsOwnerLocallyControlled()
+    //     3  JLowZ          ->23
+    //     5  LoadThisR      W0:1004 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorOverride  (+1004)
+    //     7  RDR1           wW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->17
+    //    11  LoadThisR      W0:1005 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorOverrideValue  (+1005)
+    //    13  RDR1           wW0:1
+    //    14  CpyVtoR4       rW0:1
+    //    15  JMP            ->26
+    //    17  LoadThisR      W0:1003 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorUserSetting  (+1003)
+    //    19  RDR1           wW0:1
+    //    20  CpyVtoR4       rW0:1
+    //    21  JMP            ->26
+    //    23  SetV1          wW0:1 d:0
+    //    25  CpyVtoR4       rW0:1
+    //    26  RET            W0:2
+
+------------------------------------------------------------------------------
+void CustomEvent0(const float64 Value)
+// 8 instr, 60 B bytecode, id=0xE1A40186, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(Value);
+    __Evt_Execute(this, __STATIC_NAME(126));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:126
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: CustomEvent0
+void CustomEvent0_Implementation(const float64 Value)
+// 1 instr, 4 B bytecode, id=0xE2D1119A, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void CustomEvent1(const float64 Value)
+// 8 instr, 60 B bytecode, id=0x4E0611FC, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(Value);
+    __Evt_Execute(this, __STATIC_NAME(127));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:127
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: CustomEvent1
+void CustomEvent1_Implementation(const float64 Value)
+// 1 instr, 4 B bytecode, id=0x457B4225, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void CustomEvent2(const float64 Value)
+// 8 instr, 60 B bytecode, id=0x21A52326, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(Value);
+    __Evt_Execute(this, __STATIC_NAME(128));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:128
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: CustomEvent2
+void CustomEvent2_Implementation(const float64 Value)
+// 1 instr, 4 B bytecode, id=0x0AD206C4, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void CustomEvent3(const float64 Value)
+// 8 instr, 60 B bytecode, id=0x124E12D5, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(Value);
+    __Evt_Execute(this, __STATIC_NAME(129));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:129
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: CustomEvent3
+void CustomEvent3_Implementation(const float64 Value)
+// 1 instr, 4 B bytecode, id=0x1B17CBC6, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void OnLaserSpawned()
+// 6 instr, 44 B bytecode, id=0x2EBC1782, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(130));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:130
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: OnLaserSpawned
+void OnLaserSpawned_Implementation()
+// 1 instr, 4 B bytecode, id=0xCF94A27A, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+int GetCurrentLaserSettingsIndex()
+// 14 instr, 80 B bytecode, id=0x22692436, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    if (!this.ValidateOwner()) {
+        v2 = -1;
+    } else {
+        v2 = this.OwnerAimingVisComponent.CurrentLaserSettingsIndex;
+    }
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->16
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:952 d:134230838      ; ALokiAimingLaser::OwnerAimingVisComponent  (+952)
+    //     8  RDSPtr
+    //     9  ADDSi          W0:276 d:134230841      ; ULokiAimingVisComponentScript::CurrentLaserSettingsIndex  (+276)
+    //    11  PopRPtr
+    //    12  RDR4           wW0:2
+    //    13  CpyVtoR4       rW0:2
+    //    14  JMP            ->19
+    //    16  SetV4          wW0:2 d:-1
+    //    18  CpyVtoR4       rW0:2
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+void OnLaserSettingsIndexChanged(const int OldIndex, const int NewIndex)
+// 10 instr, 76 B bytecode, id=0x9BCD726C, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__int(OldIndex);
+    __Evt_PushArgument__int(NewIndex);
+    __Evt_Execute(this, __STATIC_NAME(131));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fc8ac0         ; void __Evt_PushArgument__int(const int&)
+    //     4  PSF            rW0:-3
+    //     5  CALLSYS        q:0x26e77fc8ac0         ; void __Evt_PushArgument__int(const int&)
+    //     8  PshC4          d:131
+    //    10  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    13  PshRPtr
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    18  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: OnLaserSettingsIndexChanged
+void OnLaserSettingsIndexChanged_Implementation(const int OldIndex, const int NewIndex)
+// 1 instr, 4 B bytecode, id=0x0E385E7F, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void SetVisibilityOnAll(const bool bNewVisibility)
+// 8 instr, 60 B bytecode, id=0x4EF29C84, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__bool(bNewVisibility);
+    __Evt_Execute(this, __STATIC_NAME(132));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fce240         ; void __Evt_PushArgument__bool(const bool&)
+    //     4  PshC4          d:132
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: SetVisibilityOnAll
+void SetVisibilityOnAll_Implementation(const bool bNewVisibility)
+// 9 instr, 56 B bytecode, id=0xB1693E5F, varspace=3
+------------------------------------------------------------------------------
+{
+    this.GetRootComponent().SetVisibility(bNewVisibility, true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:3 d:1
+    //     2  PshV4          rW0:3
+    //     3  PshV4          rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  CALLSYS        q:0x26e79712700         ; USceneComponent@ AActor::GetRootComponent() const   [UFunction K2_GetRootComponent]
+    //     8  STOREOBJ       wW0:2
+    //     9  PshVPtr        rW0:2
+    //    10  CALLSYS        q:0x26e79750e80         ; void USceneComponent::SetVisibility(bool, bool)
+    //    13  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetProjectileSpawnLocation(const float64 XDistance, const float64 ZDistance)
+// 19 instr, 116 B bytecode, id=0xC666FE75, varspace=2
+------------------------------------------------------------------------------
+{
+    float v2;
+
+    if (this.ValidateOwner()) {
+        this.ProjectileSourceOffsetDistanceXY = XDistance;
+        v2 = float(XDistance);
+        this.LaserProjectilePath.SetMeshBegin(v2);
+        v2 = float(ZDistance);
+        this.LaserProjectilePath.ProjectileHeight = v2;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->28
+    //     5  LoadThisR      W0:992 d:134230838      ; ALokiAimingLaser::ProjectileSourceOffsetDistanceXY  (+992)
+    //     7  WRTV8          rW0:-2
+    //     8  dTOf           wW0:2 rW1:-2
+    //    10  PshV4          rW0:2
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    14  RDSPtr
+    //    15  CALLSYS        q:0x26e7a3b1740         ; void ULokiProjectilePathComponent::SetMeshBegin(float)
+    //    18  dTOf           wW0:2 rW1:-4
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    23  RDSPtr
+    //    24  ADDSi          W0:212 d:67115347       ; ULokiProjectilePathComponent::ProjectileHeight  (+212)
+    //    26  PopRPtr
+    //    27  WRTV4          rW0:2
+    //    28  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetMaxDistance(const float64 NewMaxDistance)
+// 12 instr, 76 B bytecode, id=0x106C0527, varspace=2
+------------------------------------------------------------------------------
+{
+    if (this.ValidateOwner()) {
+        this.MaxDistance = NewMaxDistance;
+        this.LaserProjectilePath.SetMeshEnd(float(NewMaxDistance));
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->18
+    //     5  LoadThisR      W0:984 d:134230838      ; ALokiAimingLaser::MaxDistance  (+984)
+    //     7  WRTV8          rW0:-2
+    //     8  dTOf           wW0:2 rW1:-2
+    //    10  PshV4          rW0:2
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    14  RDSPtr
+    //    15  CALLSYS        q:0x26e7a3b1580         ; void ULokiProjectilePathComponent::SetMeshEnd(float)
+    //    18  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetHueShift(const float64 NewHueShift)
+// 17 instr, 116 B bytecode, id=0x01FA3568, varspace=5
+------------------------------------------------------------------------------
+{
+    if (this.ValidateOwner()) {
+        this.LaserProjectilePath.GetMaterial(0).SetScalarParameterValue(__STATIC_NAME(41), float(NewHueShift));
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->28
+    //     5  dTOf           wW0:5 rW1:-2
+    //     7  PshV4          rW0:5
+    //     8  PshC4          d:41
+    //    10  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    13  PshRPtr
+    //    14  PshC4          d:0
+    //    16  PshVPtr        rW0:0
+    //    17  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    19  RDSPtr
+    //    20  CALLSYS        q:0x26e7a3b2700         ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+    //    23  STOREOBJ       wW0:4
+    //    24  PshVPtr        rW0:4
+    //    25  CALLSYS        q:0x26e79b31580         ; void UMaterialInstanceDynamic::SetScalarParameterValue(FName, float)
+    //    28  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetLaserMaterial(UMaterialInterface@ NewMaterial)
+// 7 instr, 44 B bytecode, id=0x5DC10A8D, varspace=1
+------------------------------------------------------------------------------
+{
+    this.LaserProjectilePath.SetMaterial(0, NewMaterial);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshC4          d:0
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //     6  RDSPtr
+    //     7  CALLSYS        q:0x26e7a3b1900         ; void ULokiProjectilePathComponent::SetMaterial(int, UMaterialInterface@)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetEndpointMaterial(UMaterialInterface@ NewMaterial)
+// 7 instr, 44 B bytecode, id=0x9006C67B, varspace=1
+------------------------------------------------------------------------------
+{
+    this.LaserEndpoint.SetMaterial(0, NewMaterial);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshC4          d:0
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //     6  RDSPtr
+    //     7  CALLSYS        q:0x26e7975e940         ; void UPrimitiveComponent::SetMaterial(int, UMaterialInterface@)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetHitFlareNiagaraSystem(UNiagaraSystem@ NewNiagaraSystem)
+// 8 instr, 48 B bytecode, id=0xE2D34902, varspace=1
+------------------------------------------------------------------------------
+{
+    this.LaserHitFlare.SetAsset(NewNiagaraSystem, true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:928 d:134230838      ; ALokiAimingLaser::LaserHitFlare  (+928)
+    //     7  RDSPtr
+    //     8  CALLSYS        q:0x26e79ba6600         ; void UNiagaraComponent::SetAsset(UNiagaraSystem@, bool)
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetBrightness(const float64 NewBrightness)
+// 1 instr, 4 B bytecode, id=0x32CE4C98, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetLimitLaserToCursorUserSetting(const bool bNewLimitLaserToCursor)
+// 3 instr, 16 B bytecode, id=0x9A4516D2, varspace=0
+------------------------------------------------------------------------------
+{
+    this.bLimitLaserToCursorUserSetting = bNewLimitLaserToCursor;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1003 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorUserSetting  (+1003)
+    //     2  WRTV1          rW0:-2
+    //     3  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OverrideLimitLaserToCursor(const bool bNewLimitLaserToCursorOverride)
+// 6 instr, 36 B bytecode, id=0xFC0C64CC, varspace=1
+------------------------------------------------------------------------------
+{
+    this.bLimitLaserToCursorOverride = true;
+    this.bLimitLaserToCursorOverrideValue = bNewLimitLaserToCursorOverride;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  LoadThisR      W0:1004 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorOverride  (+1004)
+    //     4  WRTV1          rW0:1
+    //     5  LoadThisR      W0:1005 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorOverrideValue  (+1005)
+    //     7  WRTV1          rW0:-2
+    //     8  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ClearOverrideLimitLaserToCursor()
+// 4 instr, 24 B bytecode, id=0x8846D579, varspace=1
+------------------------------------------------------------------------------
+{
+    this.bLimitLaserToCursorOverride = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  LoadThisR      W0:1004 d:134230838     ; ALokiAimingLaser::bLimitLaserToCursorOverride  (+1004)
+    //     4  WRTV1          rW0:1
+    //     5  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool UsesProgressSequence()
+// 14 instr, 88 B bytecode, id=0xCFA58223, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.bUsesProgressSequence;
+    if (v2) {
+        v2 = IsValid(this.ProgressCurve);
+    } else {
+        v2 = 0;
+    }
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1048 d:134230838     ; ALokiAimingLaser::bUsesProgressSequence  (+1048)
+    //     2  RDR1           wW0:2
+    //     3  CpyVtoR1       rW0:2
+    //     4  JLowNZ         ->10
+    //     6  SetV4          wW0:2 d:0
+    //     8  JMP            ->20
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:1040 d:134230838     ; ALokiAimingLaser::ProgressCurve  (+1040)
+    //    13  RDSPtr
+    //    14  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    17  CpyRtoV4       wW0:1
+    //    18  CpyVtoV4       wW0:2 rW1:1
+    //    20  CpyVtoR4       rW0:2
+    //    21  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetProgressCurve(UCurveFloat@ NewProgressCurve)
+// 15 instr, 84 B bytecode, id=0x4B7C88C9, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (this.ValidateOwner()) {
+        this.ProgressCurve = NewProgressCurve;
+        v1 = this.bProgressActive;
+        if (v1) {
+            this.ResetProgress();
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->20
+    //     5  PshVPtr        rW0:-2
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:1040 d:134230838     ; ALokiAimingLaser::ProgressCurve  (+1040)
+    //     9  REFCPY
+    //    10  PopPtr
+    //    11  LoadThisR      W0:1049 d:134230838     ; ALokiAimingLaser::bProgressActive  (+1049)
+    //    13  RDR1           wW0:1
+    //    14  CpyVtoR1       rW0:1
+    //    15  JLowZ          ->20
+    //    17  PshVPtr        rW0:0
+    //    18  CALLINTF       d:84612                 ; void ALokiAimingLaser::ResetProgress()
+    //    20  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ResetProgress()
+// 10 instr, 68 B bytecode, id=0x8DA85720, varspace=4
+------------------------------------------------------------------------------
+{
+    if (this.ValidateOwner()) {
+        this.bProgressActive = false;
+        this.OnUpdateProgress(0);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->16
+    //     5  SetV1          wW0:1 d:0
+    //     7  LoadThisR      W0:1049 d:134230838     ; ALokiAimingLaser::bProgressActive  (+1049)
+    //     9  WRTV1          rW0:1
+    //    10  PshC8          q:0x0
+    //    13  PshVPtr        rW0:0
+    //    14  CALLINTF       d:84615                 ; void ALokiAimingLaser::OnUpdateProgress(const float64)
+    //    16  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void RestartProgressSequence(const float64 Duration, const bool bIsCurveNormalized)
+// 18 instr, 112 B bytecode, id=0xE7693604, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.ValidateOwner();
+    v1 = !v1;
+    if (!v1) {
+        v1 = true;
+        this.bProgressActive = true;
+        this.bProgressCurveIsNormalized = bIsCurveNormalized;
+        this.CurrentProgressCurveDuration = Duration;
+        this.CurrentProgressTime = 0;
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->10
+    //     8  JMP            ->27
+    //    10  SetV1          wW0:1 d:1
+    //    12  LoadThisR      W0:1049 d:134230838     ; ALokiAimingLaser::bProgressActive  (+1049)
+    //    14  WRTV1          rW0:1
+    //    15  LoadThisR      W0:1050 d:134230838     ; ALokiAimingLaser::bProgressCurveIsNormalized  (+1050)
+    //    17  WRTV1          rW0:-4
+    //    18  LoadThisR      W0:1056 d:134230838     ; ALokiAimingLaser::CurrentProgressCurveDuration  (+1056)
+    //    20  WRTV8          rW0:-2
+    //    21  SetV8          wW0:4 q:0x0
+    //    24  LoadThisR      W0:1064 d:134230838     ; ALokiAimingLaser::CurrentProgressTime  (+1064)
+    //    26  WRTV8          rW0:4
+    //    27  RET            W0:5
+
+------------------------------------------------------------------------------
+void TickProgress(const float64 DeltaSeconds)
+// 48 instr, 320 B bytecode, id=0xC546FA37, varspace=18
+------------------------------------------------------------------------------
+{
+    float64 v2;
+    float64 v4;
+    auto v5;
+    FVector2D v10;
+    float64 v12;
+    FVector2D v16;
+
+    v2 = this.CurrentProgressTime;
+    v2 = v2 + DeltaSeconds;
+    this.CurrentProgressTime = v2;
+    v2 = this.CurrentProgressTime;
+    v4 = v2;
+    v5 = this.bProgressCurveIsNormalized;
+    if (v5) {
+        v2 = this.CurrentProgressCurveDuration;
+        v10 = FVector2D(0, v2);
+        v16 = FVector2D(0, 1);
+        v2 = Math::GetMappedRangeValueClamped(v16, v10, v4);
+        v4 = v2;
+    }
+    v12 = float64(this.ProgressCurve.GetFloatValue(float(v4)));
+    this.OnUpdateProgress(v12);
+    v2 = this.CurrentProgressTime;
+    v12 = this.CurrentProgressCurveDuration;
+    if (v2 >= v12) {
+        v5 = false;
+        this.bProgressActive = false;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1064 d:134230838     ; ALokiAimingLaser::CurrentProgressTime  (+1064)
+    //     2  RDR8           wW0:2
+    //     3  ADDd           wW0:2 rW1:2 rW2:-2
+    //     5  WRTV8          rW0:2
+    //     6  LoadThisR      W0:1064 d:134230838     ; ALokiAimingLaser::CurrentProgressTime  (+1064)
+    //     8  RDR8           wW0:2
+    //     9  CpyVtoV8       wW0:4 rW1:2
+    //    11  LoadThisR      W0:1050 d:134230838     ; ALokiAimingLaser::bProgressCurveIsNormalized  (+1050)
+    //    13  RDR1           wW0:5
+    //    14  CpyVtoR1       rW0:5
+    //    15  JLowZ          ->47
+    //    17  PshV8          rW0:4
+    //    18  LoadThisR      W0:1056 d:134230838     ; ALokiAimingLaser::CurrentProgressCurveDuration  (+1056)
+    //    20  RDR8           wW0:2
+    //    21  PshV8          rW0:2
+    //    22  PshC8          q:0x0
+    //    25  PSF            rW0:10
+    //    26  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //    29  PSF            rW0:10
+    //    30  PshC8          q:0x3ff0000000000000
+    //    33  PshC8          q:0x0
+    //    36  PSF            rW0:16
+    //    37  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //    40  PSF            rW0:16
+    //    41  CALLSYS        q:0x26e70381200         ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+    //    44  CpyRtoV8       wW0:2
+    //    45  CpyVtoV8       wW0:4 rW1:2
+    //    47  dTOf           wW0:17 rW1:4
+    //    49  PshV4          rW0:17
+    //    50  PshVPtr        rW0:0
+    //    51  ADDSi          W0:1040 d:134230838     ; ALokiAimingLaser::ProgressCurve  (+1040)
+    //    53  RDSPtr
+    //    54  CALLSYS        q:0x26e79a63f80         ; float UCurveFloat::GetFloatValue(float) const
+    //    57  CpyRtoV4       wW0:18
+    //    58  fTOd           wW0:12 rW1:18
+    //    60  PshV8          rW0:12
+    //    61  PshVPtr        rW0:0
+    //    62  CALLINTF       d:84615                 ; void ALokiAimingLaser::OnUpdateProgress(const float64)
+    //    64  LoadThisR      W0:1064 d:134230838     ; ALokiAimingLaser::CurrentProgressTime  (+1064)
+    //    66  RDR8           wW0:2
+    //    67  LoadThisR      W0:1056 d:134230838     ; ALokiAimingLaser::CurrentProgressCurveDuration  (+1056)
+    //    69  RDR8           wW0:12
+    //    70  CMPd           rW0:2 rW1:12
+    //    72  JS             ->79
+    //    74  SetV1          wW0:5 d:0
+    //    76  LoadThisR      W0:1049 d:134230838     ; ALokiAimingLaser::bProgressActive  (+1049)
+    //    78  WRTV1          rW0:5
+    //    79  RET            W0:4
+
+------------------------------------------------------------------------------
+void OnUpdateProgress(const float64 ProgressValue)
+// 8 instr, 60 B bytecode, id=0x4C9EF5A3, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(ProgressValue);
+    __Evt_Execute(this, __STATIC_NAME(133));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:133
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: OnUpdateProgress
+void OnUpdateProgress_Implementation(const float64 ProgressValue)
+// 1 instr, 4 B bytecode, id=0x44E48D71, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 32 instr, 220 B bytecode, id=0x0AECB3F7, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.LaserEndpoint.SetCastShadow(false);
+    v1 = false;
+    this.LaserEndpoint.SetGenerateOverlapEvents(false);
+    v1 = true;
+    this.LaserEndpoint.SetCollisionProfileName(__STATIC_NAME(31), true);
+    this.ExecutionTagsContainer.AddTag(this.ExecutingTag);
+    this.ExecutionTagsContainer.AddTag(this.BeingExecutedTag);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //     6  RDSPtr
+    //     7  CALLSYS        q:0x26e7975cf00         ; void UPrimitiveComponent::SetCastShadow(bool)
+    //    10  SetV1          wW0:1 d:0
+    //    12  PshV4          rW0:1
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //    16  RDSPtr
+    //    17  CALLSYS        q:0x26e7975f900         ; void UPrimitiveComponent::SetGenerateOverlapEvents(bool)
+    //    20  SetV1          wW0:1 d:1
+    //    22  PshV4          rW0:1
+    //    23  PshC4          d:31
+    //    25  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    28  PshRPtr
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //    32  RDSPtr
+    //    33  CALLSYS        q:0x26e7975c800         ; void UPrimitiveComponent::SetCollisionProfileName(FName, bool)
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:1080 d:134230838     ; ALokiAimingLaser::ExecutingTag  (+1080)
+    //    39  PshVPtr        rW0:0
+    //    40  ADDSi          W0:1096 d:134230838     ; ALokiAimingLaser::ExecutionTagsContainer  (+1096)
+    //    42  CALLSYS        q:0x26e79f6e780         ; void FGameplayTagContainer::AddTag(const FGameplayTag&)
+    //    45  PshVPtr        rW0:0
+    //    46  ADDSi          W0:1088 d:134230838     ; ALokiAimingLaser::BeingExecutedTag  (+1088)
+    //    48  PshVPtr        rW0:0
+    //    49  ADDSi          W0:1096 d:134230838     ; ALokiAimingLaser::ExecutionTagsContainer  (+1096)
+    //    51  CALLSYS        q:0x26e79f6e780         ; void FGameplayTagContainer::AddTag(const FGameplayTag&)
+    //    54  RET            W0:2
+
+------------------------------------------------------------------------------
+~ALokiAimingLaser()
+// 10 instr, 76 B bytecode, id=0xE5E6112A, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1080 d:134230838     ; ALokiAimingLaser::ExecutingTag  (+1080)
+    //     3  CALLSYS        q:0x26e787621c0         ; void FGameplayTag::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:1088 d:134230838     ; ALokiAimingLaser::BeingExecutedTag  (+1088)
+    //     9  CALLSYS        q:0x26e787621c0         ; void FGameplayTag::$beh2()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:1096 d:134230838     ; ALokiAimingLaser::ExecutionTagsContainer  (+1096)
+    //    15  CALLSYS        q:0x26e78761ac0         ; void FGameplayTagContainer::$beh2()
+    //    18  RET            W0:2
+

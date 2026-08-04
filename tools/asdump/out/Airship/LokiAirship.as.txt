@@ -1,0 +1,2278 @@
+// ============================================================================
+//  MODULE   Airship.LokiAirship
+//  SOURCE   Airship/LokiAirship.as
+//  CONTENT  1 class(es), 17 function(s), 0 enum(s), 1 global(s), 8636 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiAirship_AS;
+
+ALokiAirship_AS@ ALokiAirship_AS()   // traits=0x20
+{
+    ALokiAirship_AS v2;
+
+    v2 = ALokiAirship_AS();
+    return v2;
+}
+/* ---- ALokiAirship_AS: 7 dwords / 4 instructions (cache offset 0xa0) ----
+    0000  PSF           v2
+    0004  ALLOC         84004 ALokiAirship_AS                         ; new ALokiAirship_AS  ctor=void ALokiAirship_AS::ALokiAirship_AS()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ALokiAirship_AS::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiAirship_AS);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x15c) ----
+    0000  PshGPtr       __StaticType_ALokiAirship_AS
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ALokiAirship_AS@ ALokiAirship_AS::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAirship_AS v8;
+
+    v2 = __StaticType_ALokiAirship_AS.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiAirship_AS@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x380) ----
+    0000  PshVPtr       Level
+    0004  PshV4         bDeferredSpawn
+    0008  PshVPtr       Name
+    000C  PshVPtr       Rotation
+    0010  PshVPtr       Location
+    0014  PshGPtr       __StaticType_ALokiAirship_AS
+    0020  CHKREF
+    0024  CALLSYS       TSubclassOf::Get                              ; UClass@ TSubclassOf<UObject@>::Get() const
+    0030  STOREOBJ      v2
+    0034  PshVPtr       v2
+    0038  PSF           v4
+    003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    0048  PSF           v4
+    004C  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    0058  STOREOBJ      v6
+    005C  CmpPtrNull    v6
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972585                                    ; ALokiAirship_AS@
+    0070  PSF           v8
+    0074  PshVPtr       v6
+    0078  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8
+  L0090:
+    0090  LOADOBJ       v8
+    0094  RET           9
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable)
+class ALokiAirship_AS : ALokiAirship
+// unreal base : /Script/Loki.LokiAirship
+// C++ header  : ../../../Loki/Source/Loki/Airship/LokiAirship.h
+// static class global: __StaticType_ALokiAirship_AS
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship)
+    FGameplayTag BoostTag;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Collision|Damage)
+    TSubclassOf<UGameplayEffect@> GenericCollisionEffect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Collision|Damage)
+    float64 MaxHeadOnCollisionAngle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Collision|Damage)
+    float64 MinGenericCollisionDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Collision|Damage)
+    float64 MaxGenericCollisionDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Collision|Damage)
+    float64 MinGenericCollisionSpeed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Collision|Damage)
+    float64 MaxGenericCollisionSpeed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Collision|Damage)
+    float64 AirshipCollisionFrontMultiplier;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Collision|Damage)
+    float64 AirshipCollisionRearMultiplier;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Damage)
+    TSubclassOf<UGameplayEffect@> RoadkillImpactEffect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Damage)
+    float64 MinRoadkillDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Damage)
+    float64 MaxRoadkillDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Damage)
+    float64 RoadkillDamageMinionCoefficient;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Damage)
+    float64 RoadkillDamageDestructibleCoefficient;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Damage)
+    float64 MinRoadkillDamageSpeed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Damage)
+    float64 MaxRoadkillDamageSpeed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Boop)
+    float64 MinRoadkillBoopSpeed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Boop)
+    float64 MaxRoadkillBoopSpeed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Boop)
+    float64 MinRoadkillBoopForceXY;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Boop)
+    float64 MaxRoadkillBoopForceXY;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Boop)
+    float64 MinRoadkillBoopForceZ;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Roadkill|Boop)
+    float64 MaxRoadkillBoopForceZ;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Fuel)
+    TSubclassOf<UGameplayEffect@> RunningEffect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Fuel)
+    float64 NumSecondsOfFuel;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Fuel)
+    float64 NumSecondsOfFuelWhileBoosting;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Fuel)
+    float64 FuelTickInterval;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Collision)
+    float64 MinEjectionRelativeSpeed;
+    float64 NextFuelTickTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Health Regen)
+    float64 HealthRegenTickInterval;
+    float64 NextHealthRegenTickTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Health Regen)
+    TArray<float64> HealthRegenThresholds;
+    FActiveGameplayEffectHandle HealthRegenDamagePhaseEffectHandle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Airship Health Regen)
+    TArray<TSubclassOf<UGameplayEffect@>> HealthRegenDamagePhaseEffects;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    int CurrentHealthRegenDamagePhase;
+    TMap<AActor@, float64> LastRoadkillTimes;
+    TMap<AActor@, float64> LastGenericCollisionTimes;
+
+    ALokiAirship_AS()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+
+        this.BoostTag = FGameplayTag();
+        this.GenericCollisionEffect = TSubclassOf<UGameplayEffect@>();
+        this.RoadkillImpactEffect = TSubclassOf<UGameplayEffect@>();
+        this.RunningEffect = TSubclassOf<UGameplayEffect@>();
+        this.HealthRegenThresholds = TArray<float64>();
+        this.HealthRegenDamagePhaseEffectHandle = FActiveGameplayEffectHandle();
+        this.HealthRegenDamagePhaseEffects = TArray<TSubclassOf<UGameplayEffect@>>();
+        this.LastRoadkillTimes = TMap<AActor@, float64>();
+        this.LastGenericCollisionTimes = TMap<AActor@, float64>();
+        v2 = 30.0;
+        this.MaxHeadOnCollisionAngle = v2;
+        v2 = 100.0;
+        this.MinGenericCollisionDamage = v2;
+        v2 = 150.0;
+        this.MaxGenericCollisionDamage = v2;
+        v2 = 900.0;
+        this.MinGenericCollisionSpeed = v2;
+        v2 = 2000.0;
+        this.MaxGenericCollisionSpeed = v2;
+        v2 = 0.1;
+        this.AirshipCollisionFrontMultiplier = v2;
+        v2 = 4.0;
+        this.AirshipCollisionRearMultiplier = v2;
+        v2 = 500.0;
+        this.MinRoadkillDamage = v2;
+        v2 = 5000.0;
+        this.MaxRoadkillDamage = v2;
+        v2 = 0.8;
+        this.RoadkillDamageMinionCoefficient = v2;
+        v2 = 1.6;
+        this.RoadkillDamageDestructibleCoefficient = v2;
+        v2 = 0;
+        this.MinRoadkillDamageSpeed = v2;
+        v2 = 1000.0;
+        this.MaxRoadkillDamageSpeed = v2;
+        v2 = 0;
+        this.MinRoadkillBoopSpeed = v2;
+        v2 = 0;
+        this.MaxRoadkillBoopSpeed = v2;
+        v2 = 0;
+        this.MinRoadkillBoopForceXY = v2;
+        v2 = 0;
+        this.MaxRoadkillBoopForceXY = v2;
+        v2 = 0;
+        this.MinRoadkillBoopForceZ = v2;
+        v2 = 0;
+        this.MaxRoadkillBoopForceZ = v2;
+        v2 = 180.0;
+        this.NumSecondsOfFuel = v2;
+        v2 = 60.0;
+        this.NumSecondsOfFuelWhileBoosting = v2;
+        v2 = 1.0;
+        this.FuelTickInterval = v2;
+        v2 = 600.0;
+        this.MinEjectionRelativeSpeed = v2;
+        v2 = 0;
+        this.NextFuelTickTime = v2;
+        v2 = 1.0;
+        this.HealthRegenTickInterval = v2;
+        v2 = 0;
+        this.NextHealthRegenTickTime = v2;
+        v3 = 0;
+        this.CurrentHealthRegenDamagePhase = v3;
+        return;
+    }
+    /* ---- ALokiAirship_AS: 220 dwords / 111 instructions (cache offset 0x5594) ----
+        0000  PshVPtr       this
+        0004  ADDSi         5176 134230761                                ; .BoostTag
+        000C  CALLSYS       FGameplayTag::$beh0                           ; void FGameplayTag::$beh0()
+        0018  PshVPtr       this
+        001C  ADDSi         5184 134230761                                ; .GenericCollisionEffect
+        0024  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UGameplayEffect@>::$beh0()
+        0030  PshVPtr       this
+        0034  ADDSi         5248 134230761                                ; .RoadkillImpactEffect
+        003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UGameplayEffect@>::$beh0()
+        0048  PshVPtr       this
+        004C  ADDSi         5352 134230761                                ; .RunningEffect
+        0054  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UGameplayEffect@>::$beh0()
+        0060  PshVPtr       this
+        0064  ADDSi         5416 134230761                                ; .HealthRegenThresholds
+        006C  CALLSYS       TArray::$beh0                                 ; void TArray<float64>::$beh0()
+        0078  PshVPtr       this
+        007C  ADDSi         5432 134230761                                ; .HealthRegenDamagePhaseEffectHandle
+        0084  CALLSYS       FActiveGameplayEffectHandle::$beh0            ; void FActiveGameplayEffectHandle::$beh0()
+        0090  PshVPtr       this
+        0094  ADDSi         5440 134230761                                ; .HealthRegenDamagePhaseEffects
+        009C  CALLSYS       TArray::$beh0                                 ; void TArray<TSubclassOf<UGameplayEffect@>>::$beh0()
+        00A8  PshVPtr       this
+        00AC  ADDSi         5464 134230761                                ; .LastRoadkillTimes
+        00B4  CALLSYS       TMap::$beh0                                   ; void TMap<AActor@, float64>::$beh0()
+        00C0  PshVPtr       this
+        00C4  ADDSi         5544 134230761                                ; .LastGenericCollisionTimes
+        00CC  CALLSYS       TMap::$beh0                                   ; void TMap<AActor@, float64>::$beh0()
+        00D8  SetV8         v2 0x403e000000000000
+        00E4  LoadThisR     5192 134230761                                ; this.MaxHeadOnCollisionAngle
+        00EC  WRTV8         v2
+        00F0  SetV8         v2 0x4059000000000000
+        00FC  LoadThisR     5200 134230761                                ; this.MinGenericCollisionDamage
+        0104  WRTV8         v2
+        0108  SetV8         v2 0x4062c00000000000
+        0114  LoadThisR     5208 134230761                                ; this.MaxGenericCollisionDamage
+        011C  WRTV8         v2
+        0120  SetV8         v2 0x408c200000000000
+        012C  LoadThisR     5216 134230761                                ; this.MinGenericCollisionSpeed
+        0134  WRTV8         v2
+        0138  SetV8         v2 0x409f400000000000
+        0144  LoadThisR     5224 134230761                                ; this.MaxGenericCollisionSpeed
+        014C  WRTV8         v2
+        0150  SetV8         v2 0x3fb999999999999a
+        015C  LoadThisR     5232 134230761                                ; this.AirshipCollisionFrontMultiplier
+        0164  WRTV8         v2
+        0168  SetV8         v2 0x4010000000000000
+        0174  LoadThisR     5240 134230761                                ; this.AirshipCollisionRearMultiplier
+        017C  WRTV8         v2
+        0180  SetV8         v2 0x407f400000000000
+        018C  LoadThisR     5256 134230761                                ; this.MinRoadkillDamage
+        0194  WRTV8         v2
+        0198  SetV8         v2 0x40b3880000000000
+        01A4  LoadThisR     5264 134230761                                ; this.MaxRoadkillDamage
+        01AC  WRTV8         v2
+        01B0  SetV8         v2 0x3fe999999999999a
+        01BC  LoadThisR     5272 134230761                                ; this.RoadkillDamageMinionCoefficient
+        01C4  WRTV8         v2
+        01C8  SetV8         v2 0x3ff999999999999a
+        01D4  LoadThisR     5280 134230761                                ; this.RoadkillDamageDestructibleCoefficient
+        01DC  WRTV8         v2
+        01E0  SetV8         v2 0x0
+        01EC  LoadThisR     5288 134230761                                ; this.MinRoadkillDamageSpeed
+        01F4  WRTV8         v2
+        01F8  SetV8         v2 0x408f400000000000
+        0204  LoadThisR     5296 134230761                                ; this.MaxRoadkillDamageSpeed
+        020C  WRTV8         v2
+        0210  SetV8         v2 0x0
+        021C  LoadThisR     5304 134230761                                ; this.MinRoadkillBoopSpeed
+        0224  WRTV8         v2
+        0228  SetV8         v2 0x0
+        0234  LoadThisR     5312 134230761                                ; this.MaxRoadkillBoopSpeed
+        023C  WRTV8         v2
+        0240  SetV8         v2 0x0
+        024C  LoadThisR     5320 134230761                                ; this.MinRoadkillBoopForceXY
+        0254  WRTV8         v2
+        0258  SetV8         v2 0x0
+        0264  LoadThisR     5328 134230761                                ; this.MaxRoadkillBoopForceXY
+        026C  WRTV8         v2
+        0270  SetV8         v2 0x0
+        027C  LoadThisR     5336 134230761                                ; this.MinRoadkillBoopForceZ
+        0284  WRTV8         v2
+        0288  SetV8         v2 0x0
+        0294  LoadThisR     5344 134230761                                ; this.MaxRoadkillBoopForceZ
+        029C  WRTV8         v2
+        02A0  SetV8         v2 0x4066800000000000
+        02AC  LoadThisR     5360 134230761                                ; this.NumSecondsOfFuel
+        02B4  WRTV8         v2
+        02B8  SetV8         v2 0x404e000000000000
+        02C4  LoadThisR     5368 134230761                                ; this.NumSecondsOfFuelWhileBoosting
+        02CC  WRTV8         v2
+        02D0  SetV8         v2 0x3ff0000000000000
+        02DC  LoadThisR     5376 134230761                                ; this.FuelTickInterval
+        02E4  WRTV8         v2
+        02E8  SetV8         v2 0x4082c00000000000
+        02F4  LoadThisR     5384 134230761                                ; this.MinEjectionRelativeSpeed
+        02FC  WRTV8         v2
+        0300  SetV8         v2 0x0
+        030C  LoadThisR     5392 134230761                                ; this.NextFuelTickTime
+        0314  WRTV8         v2
+        0318  SetV8         v2 0x3ff0000000000000
+        0324  LoadThisR     5400 134230761                                ; this.HealthRegenTickInterval
+        032C  WRTV8         v2
+        0330  SetV8         v2 0x0
+        033C  LoadThisR     5408 134230761                                ; this.NextHealthRegenTickTime
+        0344  WRTV8         v2
+        0348  SetV4         v3 0
+        0350  LoadThisR     5456 134230761                                ; this.CurrentHealthRegenDamagePhase
+        0358  WRTV4         v3
+        035C  PshVPtr       this
+        0360  FinConstruct  ALokiAirship_AS
+        036C  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetDamagePhase(const int NewPhase)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        FGameplayTagContainer v10;
+        TSubclassOf<UGameplayEffect@> v12;
+        bool v13;
+        TSubclassOf<UGameplayEffect@> v16;
+        FGameplayEffectContextHandle v22;
+        FActiveGameplayEffectHandle v31;
+
+        v1 = this.CurrentHealthRegenDamagePhase;
+        if (v1 != NewPhase) {
+            v10 = FGameplayTagContainer();
+            v10.AddTag(GameplayTags::Effect_Airdoo_Damaged_Smoking);
+            v10.AddTag(GameplayTags::Effect_Airdoo_Damaged_onFire);
+            this.AbilitySystemComponent.RemoveActiveEffectsWithGrantedTags(v10);
+            if (!this.HealthRegenDamagePhaseEffects.IsValidIndex(NewPhase)) {
+                v2 = 0;
+            } else {
+                v12 = TSubclassOf<UGameplayEffect@>();
+                v12 = this.HealthRegenDamagePhaseEffects[NewPhase];
+                v13 = v12 == nullptr;
+                v13 = !v13;
+                v2 = v13;
+            }
+            if (v2) {
+                v16 = TSubclassOf<UGameplayEffect@>(this.HealthRegenDamagePhaseEffects[NewPhase]);
+                v22 = this.AbilitySystemComponent.MakeEffectContext();
+                v13 = false;
+                v31 = this.AbilitySystemComponent.ApplyGameplayEffectToSelf(v16, 0, v22, v13)  /* UFunction BP_ApplyGameplayEffectToSelf */;
+                this.HealthRegenDamagePhaseEffectHandle = v31;
+            }
+            this.CurrentHealthRegenDamagePhase = NewPhase;
+        }
+        return;
+    }
+    /* ---- SetDamagePhase: 132 dwords / 76 instructions (cache offset 0x1d26) ----
+        0000  LoadThisR     5456 134230761                                ; this.CurrentHealthRegenDamagePhase
+        0008  RDR4          v1
+        000C  CMPi          v1 NewPhase
+        0014  JZ            124                                           -> L020C
+        001C  PSF           v10
+        0020  CALLSYS       FGameplayTagContainer::$beh0                  ; void FGameplayTagContainer::$beh0()
+        002C  PshGPtr       GameplayTags::Effect_Airdoo_Damaged_Smoking
+        0038  PSF           v10
+        003C  CALLSYS       FGameplayTagContainer::AddTag                 ; void FGameplayTagContainer::AddTag(const FGameplayTag&)
+        0048  PshGPtr       GameplayTags::Effect_Airdoo_Damaged_onFire
+        0054  PSF           v10
+        0058  CALLSYS       FGameplayTagContainer::AddTag                 ; void FGameplayTagContainer::AddTag(const FGameplayTag&)
+        0064  PSF           v10
+        0068  PshVPtr       this
+        006C  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        0074  RDSPtr
+        0078  CALLSYS       UAbilitySystemComponent::RemoveActiveEffectsWithGrantedTags  ; int UAbilitySystemComponent::RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer)
+        0084  PshV4         NewPhase
+        0088  PshVPtr       this
+        008C  ADDSi         5440 134230761                                ; .HealthRegenDamagePhaseEffects
+        0094  CALLSYS       TArray::IsValidIndex                          ; bool TArray<TSubclassOf<UGameplayEffect@>>::IsValidIndex(int) const
+        00A0  JLowNZ        4                                             -> L00B8
+        00A8  SetV4         v2 0
+        00B0  JMP           25                                            -> L011C
+      L00B8:
+        00B8  PSF           v12
+        00BC  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UGameplayEffect@>::$beh0()
+        00C8  PshV4         NewPhase
+        00CC  PshVPtr       this
+        00D0  ADDSi         5440 134230761                                ; .HealthRegenDamagePhaseEffects
+        00D8  Thiscall1     TArray::opIndex                               ; TSubclassOf<UGameplayEffect@>& TArray<TSubclassOf<UGameplayEffect@>>::opIndex(int)
+        00E4  PshRPtr
+        00E8  PSF           v12
+        00EC  CALLSYS       TSubclassOf::opAssign                         ; TSubclassOf<UGameplayEffect@>& TSubclassOf<UGameplayEffect@>::opAssign(const TSubclassOf<UGameplayEffect@>&)
+        00F8  PshNull
+        00FC  PSF           v12
+        0100  CALLSYS       TSubclassOf::opEquals                         ; bool TSubclassOf<UGameplayEffect@>::opEquals(UClass@) const
+        010C  CpyRtoV4      v13
+        0110  NOT           v13
+        0114  CpyVtoV4      v2 v13
+      L011C:
+        011C  CpyVtoR1      v2
+        0120  JLowZ         50                                            -> L01F0
+        0128  PshV4         NewPhase
+        012C  PshVPtr       this
+        0130  ADDSi         5440 134230761                                ; .HealthRegenDamagePhaseEffects
+        0138  Thiscall1     TArray::opIndex                               ; TSubclassOf<UGameplayEffect@>& TArray<TSubclassOf<UGameplayEffect@>>::opIndex(int)
+        0144  PshRPtr
+        0148  PSF           v16
+        014C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UGameplayEffect@>::$beh0(const TSubclassOf<UGameplayEffect@>&)
+        0158  PSF           v22
+        015C  PshVPtr       this
+        0160  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        0168  RDSPtr
+        016C  CALLSYS       UAbilitySystemComponent::MakeEffectContext    ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+        0178  SetV1         v13 0
+        0180  PshV4         v13
+        0184  PSF           v22
+        0188  PshC4         0
+        0190  PSF           v16
+        0194  PSF           v31
+        0198  PshVPtr       this
+        019C  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        01A4  RDSPtr
+        01A8  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectToSelf  ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectToSelf(TSubclassOf<UGameplayEffect@>, float32, FGameplayEffectContextHandle, bool)
+        01B4  PSF           v31
+        01B8  PshVPtr       this
+        01BC  ADDSi         5432 134230761                                ; .HealthRegenDamagePhaseEffectHandle
+        01C4  CALLSYS       FActiveGameplayEffectHandle::opAssign         ; FActiveGameplayEffectHandle& FActiveGameplayEffectHandle::opAssign(const FActiveGameplayEffectHandle&)
+        01D0  PSF           v31
+        01D4  CALLSYS       FActiveGameplayEffectHandle::$beh2            ; void FActiveGameplayEffectHandle::$beh2()
+        01E0  PSF           v22
+        01E4  CALLSYS       FGameplayEffectContextHandle::$beh2           ; void FGameplayEffectContextHandle::$beh2()
+      L01F0:
+        01F0  LoadThisR     5456 134230761                                ; this.CurrentHealthRegenDamagePhase
+        01F8  WRTV4         NewPhase
+        01FC  PSF           v10
+        0200  CALLSYS       FGameplayTagContainer::$beh2                  ; void FGameplayTagContainer::$beh2()
+      L020C:
+        020C  RET           3
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        bool v1;
+        bool v5;
+        auto v8;
+        float32 v9;
+        FTimerHandle v12;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            v5 = true;
+            v8 = this.HealthRegenTickInterval;
+            v9 = float32(v8);
+            v12 = System::SetTimer(this, n"HandleHealthRegeneration", v9, v5, v1, 0, 0);
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 40 dwords / 22 instructions (cache offset 0x211a) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  JLowZ         31                                            -> L009C
+        0020  PshC4         0
+        0028  PshC4         0
+        0030  SetV1         v1 0
+        0038  PshV4         v1
+        003C  SetV1         v5 1
+        0044  PshV4         v5
+        0048  LoadThisR     5400 134230761                                ; this.HealthRegenTickInterval
+        0050  RDR8          v8
+        0054  dTOf          v9 v8
+        005C  PshV4         v9
+        0060  PshC4         0
+        0068  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0074  PshRPtr
+        0078  PshVPtr       this
+        007C  PSF           v12
+        0080  CALLSYS       SetTimer                                      ; FTimerHandle System::SetTimer(UObject@, FName, float32, bool, bool, float32, float32)
+        008C  PSF           v12
+        0090  CALLSYS       FTimerHandle::$beh2                           ; void FTimerHandle::$beh2()
+      L009C:
+        009C  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void HandleHealthRegeneration()   // traits=0x20
+    {
+        auto v2;
+        float32 v3;
+        float64 v6;
+        auto v7;
+        auto v8;
+        auto v10;
+        auto v12;
+        float64 v14;
+        auto v18;
+        float64 v20;
+        float64 v22;
+
+        v3 = this.GetHealth();
+        v6 = float64(v3);
+        v2 = v6;
+        if (!Loki::LokiIsServer(__WorldContext)) {
+            v7 = 0;
+        } else {
+            v6 = 0;
+            v8 = v2 > v6;
+            v7 = v8;
+        }
+        if (!v7) {
+            v7 = 0;
+        } else {
+            v3 = this.GetMaxHealth();
+            v6 = float64(v3);
+            v8 = v2 < v6;
+            v7 = v8;
+        }
+        if (v7) {
+            v10 = 0;
+            v6 = this.GetStrength();
+            v12 = 0.33;
+            if (v6 <= v12) {
+                v7 = true;
+            } else {
+                v8 = Math::IsNearlyEqual(v6, 0.33, 0.01);
+                v7 = v8;
+            }
+            if (v7) {
+                v10 = 0.33;
+                this.SetDamagePhase(2);
+            } else {
+                v14 = 0.66;
+                if (v6 <= v14) {
+                    v7 = true;
+                } else {
+                    v8 = Math::IsNearlyEqual(v6, 0.66, 0.01);
+                    v7 = v8;
+                }
+                if (v7) {
+                    v10 = 0.66;
+                    this.SetDamagePhase(1);
+                } else {
+                    this.SetDamagePhase(0);
+                }
+            }
+            v3 = this.GetMaxHealth();
+            v14 = float64(v3);
+            v12 = v10 * v14;
+            v3 = this.GetHealth();
+            v20 = float64(v3);
+            v14 = v12 - v20;
+            v22 = 30.0;
+            v18 = 0.1;
+            if (v14 > v18) {
+                v18 = Math::Min(v14, v22);
+                v3 = float32(v18);
+                this.AbilitySystemComponent.AdjustHealth(v3);
+            }
+        }
+        return;
+    }
+    /* ---- HandleHealthRegeneration: 184 dwords / 97 instructions (cache offset 0x22e5) ----
+        0000  PshVPtr       this
+        0004  CALLSYS       ALokiAirship::GetHealth                       ; float32 ALokiAirship::GetHealth() const
+        0010  CpyRtoV4      v3
+        0014  fTOd          v6 v3
+        001C  CpyVtoV8      v2 v6
+        0024  PshGPtr       __WorldContext
+        0030  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        003C  JLowNZ        4                                             -> L0054
+        0044  SetV4         v7 0
+        004C  JMP           9                                             -> L0078
+      L0054:
+        0054  SetV8         v6 0x0
+        0060  CMPd          v2 v6
+        0068  TP
+        006C  CpyRtoV4      v8
+        0070  CpyVtoV4      v7 v8
+      L0078:
+        0078  CpyVtoR1      v7
+        007C  JLowNZ        4                                             -> L0094
+        0084  SetV4         v7 0
+        008C  JMP           13                                            -> L00C8
+      L0094:
+        0094  PshVPtr       this
+        0098  CALLSYS       ALokiAirship::GetMaxHealth                    ; float32 ALokiAirship::GetMaxHealth() const
+        00A4  CpyRtoV4      v3
+        00A8  fTOd          v6 v3
+        00B0  CMPd          v2 v6
+        00B8  TS
+        00BC  CpyRtoV4      v8
+        00C0  CpyVtoV4      v7 v8
+      L00C8:
+        00C8  CpyVtoR1      v7
+        00CC  JLowZ         130                                           -> L02DC
+        00D4  SetV8         v10 0x0
+        00E0  PshVPtr       this
+        00E4  CALLINTF      83996                                         ; float64 ALokiAirship_AS::GetStrength()
+        00EC  CpyRtoV8      v6
+        00F0  SetV8         v12 0x3fd51eb851eb851f
+        00FC  CMPd          v6 v12
+        0104  JP            4                                             -> L011C
+        010C  SetV1         v7 1
+        0114  JMP           13                                            -> L0150
+      L011C:
+        011C  PshC8         0x3f847ae147ae147b
+        0128  PshC8         0x3fd51eb851eb851f
+        0134  PshV8         v6
+        0138  CALLSYS       IsNearlyEqual                                 ; bool Math::IsNearlyEqual(float64, float64, float64)
+        0144  CpyRtoV4      v8
+        0148  CpyVtoV4      v7 v8
+      L0150:
+        0150  CpyVtoR1      v7
+        0154  JLowZ         10                                            -> L0184
+        015C  SetV8         v10 0x3fd51eb851eb851f
+        0168  PshC4         2
+        0170  PshVPtr       this
+        0174  CALLINTF      83992                                         ; void ALokiAirship_AS::SetDamagePhase(const int)
+        017C  JMP           42                                            -> L022C
+      L0184:
+        0184  SetV8         v14 0x3fe51eb851eb851f
+        0190  CMPd          v6 v14
+        0198  JP            4                                             -> L01B0
+        01A0  SetV1         v7 1
+        01A8  JMP           13                                            -> L01E4
+      L01B0:
+        01B0  PshC8         0x3f847ae147ae147b
+        01BC  PshC8         0x3fe51eb851eb851f
+        01C8  PshV8         v6
+        01CC  CALLSYS       IsNearlyEqual                                 ; bool Math::IsNearlyEqual(float64, float64, float64)
+        01D8  CpyRtoV4      v8
+        01DC  CpyVtoV4      v7 v8
+      L01E4:
+        01E4  CpyVtoR1      v7
+        01E8  JLowZ         10                                            -> L0218
+        01F0  SetV8         v10 0x3fe51eb851eb851f
+        01FC  PshC4         1
+        0204  PshVPtr       this
+        0208  CALLINTF      83992                                         ; void ALokiAirship_AS::SetDamagePhase(const int)
+        0210  JMP           5                                             -> L022C
+      L0218:
+        0218  PshC4         0
+        0220  PshVPtr       this
+        0224  CALLINTF      83992                                         ; void ALokiAirship_AS::SetDamagePhase(const int)
+      L022C:
+        022C  PshVPtr       this
+        0230  CALLSYS       ALokiAirship::GetMaxHealth                    ; float32 ALokiAirship::GetMaxHealth() const
+        023C  CpyRtoV4      v3
+        0240  fTOd          v14 v3
+        0248  MULd          v12 v10 v14
+        0250  PshVPtr       this
+        0254  CALLSYS       ALokiAirship::GetHealth                       ; float32 ALokiAirship::GetHealth() const
+        0260  CpyRtoV4      v3
+        0264  fTOd          v20 v3
+        026C  SUBd          v14 v12 v20
+        0274  SetV8         v22 0x403e000000000000
+        0280  SetV8         v18 0x3fb999999999999a
+        028C  CMPd          v14 v18
+        0294  JNP           16                                            -> L02DC
+        029C  PshV8         v22
+        02A0  PshV8         v14
+        02A4  CALLSYS       Min                                           ; float64 Math::Min(float64, float64)
+        02B0  CpyRtoV8      v18
+        02B4  dTOf          v3 v18
+        02BC  PshV4         v3
+        02C0  PshVPtr       this
+        02C4  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        02CC  RDSPtr
+        02D0  CALLSYS       ULokiAbilitySystemComponent::AdjustHealth     ; void ULokiAbilitySystemComponent::AdjustHealth(float32)
+      L02DC:
+        02DC  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+        ALokiCharacter v4;
+        auto v5;
+        TSubclassOf<UGameplayEffect@> v8;
+        auto v10;
+        auto v12;
+        FGameplayEffectContextHandle v18;
+        float32 v25;
+        FGameplayEffectSpecHandle v30;
+        FGameplayEffectSpecHandle v34;
+        auto v38;
+        auto v40;
+        float64 v42;
+        FActiveGameplayEffectHandle v44;
+
+        if (!Loki::LokiIsServer(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v4 = this.GetPilot();
+            v5 = v4 != nullptr;
+            v1 = v5;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v8 = TSubclassOf<UGameplayEffect@>();
+            v8 = this.RunningEffect;
+            v5 = v8 == nullptr;
+            v5 = !v5;
+            v1 = v5;
+        }
+        if (v1) {
+            v10 = this.NextFuelTickTime;
+            v10 = v10 - DeltaSeconds;
+            this.NextFuelTickTime = v10;
+            v10 = this.NextFuelTickTime;
+            v12 = 0;
+            while (v10 <= v12) {
+                v18 = this.AbilitySystemComponent.MakeEffectContext();
+                v30 = this.AbilitySystemComponent.MakeOutgoingSpec(this.RunningEffect, 0, v18);
+                v1 = this.AbilitySystemComponent.HasMatchingGameplayTag(this.BoostTag)  /* UFunction Script_HasMatchingGameplayTag */;
+                if (!v1) {
+                }
+                v12 = this.NumSecondsOfFuel;
+                v38 = v12;
+                v25 = this.GetMaxBoostFuel();
+                v42 = float64(v25);
+                v10 = this.FuelTickInterval;
+                v12 = v38 / v10;
+                v10 = v42 / v12;
+                v12 = -1.0;
+                v10 = v10 * v12;
+                v25 = float32(v10);
+                v34 = AbilitySystem::AssignTagSetByCallerMagnitude(v30, GameplayTags::Generic_Scale, v25);
+                v30 = v34;
+                v44 = this.AbilitySystemComponent.ApplyGameplayEffectSpecToSelf(v30)  /* UFunction BP_ApplyGameplayEffectSpecToSelf */;
+                v12 = this.FuelTickInterval;
+                v42 = this.NextFuelTickTime;
+                v40 = v42 + v12;
+                this.NextFuelTickTime = v40;
+                continue;
+            }
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 186 dwords / 109 instructions (cache offset 0x2773) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0
+        0028  JMP           10                                            -> L0058
+      L0030:
+        0030  PshVPtr       this
+        0034  CALLSYS       ALokiAirship::GetPilot                        ; ALokiCharacter@ ALokiAirship::GetPilot() const
+        0040  STOREOBJ      v4
+        0044  CmpPtrNull    v4
+        0048  TNZ
+        004C  CpyRtoV4      v5
+        0050  CpyVtoV4      v1 v5
+      L0058:
+        0058  CpyVtoR1      v1
+        005C  JLowNZ        4                                             -> L0074
+        0064  SetV4         v1 0
+        006C  JMP           20                                            -> L00C4
+      L0074:
+        0074  PSF           v8
+        0078  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UGameplayEffect@>::$beh0()
+        0084  PshVPtr       this
+        0088  ADDSi         5352 134230761                                ; .RunningEffect
+        0090  PSF           v8
+        0094  CALLSYS       TSubclassOf::opAssign                         ; TSubclassOf<UGameplayEffect@>& TSubclassOf<UGameplayEffect@>::opAssign(const TSubclassOf<UGameplayEffect@>&)
+        00A0  PshNull
+        00A4  PSF           v8
+        00A8  CALLSYS       TSubclassOf::opEquals                         ; bool TSubclassOf<UGameplayEffect@>::opEquals(UClass@) const
+        00B4  CpyRtoV4      v5
+        00B8  NOT           v5
+        00BC  CpyVtoV4      v1 v5
+      L00C4:
+        00C4  CpyVtoR1      v1
+        00C8  JLowZ         133                                           -> L02E4
+        00D0  LoadThisR     5392 134230761                                ; this.NextFuelTickTime
+        00D8  RDR8          v10
+        00DC  SUBd          v10 v10 DeltaSeconds
+        00E4  WRTV8         v10
+      L00E8:
+        00E8  LoadThisR     5392 134230761                                ; this.NextFuelTickTime
+        00F0  RDR8          v10
+        00F4  SetV8         v12 0x0
+        0100  CMPd          v10 v12
+        0108  JP            117                                           -> L02E4
+        0110  SUSPEND
+        0114  PSF           v18
+        0118  PshVPtr       this
+        011C  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        0124  RDSPtr
+        0128  CALLSYS       UAbilitySystemComponent::MakeEffectContext    ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+        0134  PSF           v18
+        0138  PshC4         0
+        0140  PshVPtr       this
+        0144  ADDSi         5352 134230761                                ; .RunningEffect
+        014C  PSF           v30
+        0150  PshVPtr       this
+        0154  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        015C  RDSPtr
+        0160  CALLSYS       UAbilitySystemComponent::MakeOutgoingSpec     ; FGameplayEffectSpecHandle UAbilitySystemComponent::MakeOutgoingSpec(TSubclassOf<UGameplayEffect@>, float32, FGameplayEffectContextHandle) const
+        016C  PshVPtr       this
+        0170  ADDSi         5176 134230761                                ; .BoostTag
+        0178  PshVPtr       this
+        017C  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        0184  RDSPtr
+        0188  CALLSYS       UAbilitySystemComponent::HasMatchingGameplayTag  ; bool UAbilitySystemComponent::HasMatchingGameplayTag(FGameplayTag) const
+        0194  CpyRtoV4      v1
+        0198  CpyVtoR1      v1
+        019C  JLowZ         4                                             -> L01B4
+        01A4  LoadThisR     5368 134230761                                ; this.NumSecondsOfFuelWhileBoosting
+        01AC  JMP           2                                             -> L01BC
+      L01B4:
+        01B4  LoadThisR     5360 134230761                                ; this.NumSecondsOfFuel
+      L01BC:
+        01BC  RDR8          v12
+        01C0  CpyVtoV8      v38 v12
+        01C8  PshVPtr       this
+        01CC  CALLSYS       ALokiAirship::GetMaxBoostFuel                 ; float32 ALokiAirship::GetMaxBoostFuel()
+        01D8  CpyRtoV4      v25
+        01DC  fTOd          v42 v25
+        01E4  LoadThisR     5376 134230761                                ; this.FuelTickInterval
+        01EC  RDR8          v10
+        01F0  DIVd          v12 v38 v10
+        01F8  DIVd          v10 v42 v12
+        0200  SetV8         v12 0xbff0000000000000
+        020C  MULd          v10 v10 v12
+        0214  dTOf          v25 v10
+        021C  PshV4         v25
+        0220  PshGPtr       GameplayTags::Generic_Scale
+        022C  PSF           v30
+        0230  PSF           v34
+        0234  CALLSYS       AssignTagSetByCallerMagnitude                 ; FGameplayEffectSpecHandle AbilitySystem::AssignTagSetByCallerMagnitude(FGameplayEffectSpecHandle, FGameplayTag, float32)
+        0240  PSF           v34
+        0244  PSF           v30
+        0248  CALLSYS       FGameplayEffectSpecHandle::opAssign           ; FGameplayEffectSpecHandle& FGameplayEffectSpecHandle::opAssign(const FGameplayEffectSpecHandle&)
+        0254  PSF           v34
+        0258  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+        0264  PSF           v30
+        0268  PSF           v44
+        026C  PshVPtr       this
+        0270  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        0278  RDSPtr
+        027C  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf  ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf(const FGameplayEffectSpecHandle&)
+        0288  PSF           v44
+        028C  CALLSYS       FActiveGameplayEffectHandle::$beh2            ; void FActiveGameplayEffectHandle::$beh2()
+        0298  LoadThisR     5376 134230761                                ; this.FuelTickInterval
+        02A0  RDR8          v12
+        02A4  LoadThisR     5392 134230761                                ; this.NextFuelTickTime
+        02AC  RDR8          v42
+        02B0  ADDd          v40 v42 v12
+        02B8  WRTV8         v40
+        02BC  PSF           v30
+        02C0  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+        02CC  PSF           v18
+        02D0  CALLSYS       FGameplayEffectContextHandle::$beh2           ; void FGameplayEffectContextHandle::$beh2()
+        02DC  JMP           -127                                          -> L00E8
+      L02E4:
+        02E4  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    float64 GetStrength()   // traits=0x20
+    {
+        ULokiAbilitySystemComponent v2;
+        auto v4;
+        auto v5;
+        float64 v8;
+
+        v2 = this.AbilitySystemComponent;
+        if (v2 != nullptr) {
+            v4 = this.GetMaxHealth();
+            if (v4 <= 0.0) {
+                v8 = 0;
+                return v8;
+            }
+            v5 = this.GetHealth();
+            v4 = this.GetMaxHealth();
+            v5 = v5 / v4;
+            v8 = float64(v5);
+            return v8;
+        } else {
+            v8 = 1.0;
+        }
+        return v8;
+    }
+    /* ---- GetStrength: 45 dwords / 27 instructions (cache offset 0x2c34) ----
+        0000  PshVPtr       this
+        0004  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        000C  RDSPtr
+        0010  RefCpyV       v2
+        0014  CmpPtrNull    v2
+        0018  JZ            32                                            -> L00A0
+        0020  PshVPtr       this
+        0024  CALLSYS       ALokiAirship::GetMaxHealth                    ; float32 ALokiAirship::GetMaxHealth() const
+        0030  CpyRtoV4      v4
+        0034  CMPIf         v4 0
+        003C  JP            6                                             -> L005C
+        0044  SetV8         v8 0x0
+        0050  CpyVtoR8      v8
+        0054  JMP           21                                            -> L00B0
+      L005C:
+        005C  PshVPtr       this
+        0060  CALLSYS       ALokiAirship::GetHealth                       ; float32 ALokiAirship::GetHealth() const
+        006C  CpyRtoV4      v5
+        0070  PshVPtr       this
+        0074  CALLSYS       ALokiAirship::GetMaxHealth                    ; float32 ALokiAirship::GetMaxHealth() const
+        0080  CpyRtoV4      v4
+        0084  DIVf          v5 v5 v4
+        008C  fTOd          v8 v5
+        0094  CpyVtoR8      v8
+        0098  JMP           4                                             -> L00B0
+      L00A0:
+        00A0  SetV8         v8 0x3ff0000000000000
+        00AC  CpyVtoR8      v8
+      L00B0:
+        00B0  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void HandleGenericImpact(AActor@ HitActor, const FHitResult& HitResult)   // traits=0x20
+    {
+        bool v1;
+        ALokiCharacter v4;
+        ALokiAirship_AS v6;
+        ALokiAirship_AS v8;
+        auto v9;
+        float64 v12;
+        FVector v18;
+        FVector v24;
+        FVector v30;
+        float64 v32;
+        float64 v34;
+        FVector v40;
+        FVector v46;
+        FVector v52;
+        FVector v58;
+        float64 v60;
+        FVector v66;
+        auto v68;
+        float64 v70;
+        float64 v72;
+        float64 v74;
+        float64 v76;
+        FVector2D v80;
+        FVector2D v84;
+        float64 v86;
+        FVector v92;
+        auto v94;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = this.GetPilot();
+            v1 = LokiTeam::IsEnemyTeam(HitActor, v4);
+            v1 = !v1;
+            if (v1) {
+                return;
+            } else {
+                if (HitActor != nullptr) {
+                    v8 = cast<ALokiAirship_AS@>(HitActor);
+                } else {
+                    v8 = nullptr;
+                }
+                v6 = v8;
+                if (v6 == nullptr) {
+                    return;
+                } else {
+                    if (this.HasRecentlyCollidedWithTarget(HitActor)) {
+                        return;
+                    } else {
+                        v9 = Gameplay::GetServerTime(__WorldContext);
+                        v12 = float64(v9);
+                        this.LastGenericCollisionTimes.Add(HitActor, v12);
+                        v24 = this.GetVelocity();
+                        v32 = v24.Y;
+                        v34 = v24.X;
+                        v18 = FVector(v34, v32, 0);
+                        v30 = HitActor.GetVelocity();
+                        v34 = v30.Y;
+                        v46 = HitActor.GetVelocity();
+                        v32 = v46.X;
+                        v52 = FVector(v32, v34, 0);
+                        v30 = v18 - v52;
+                        v12 = v30.Size2D();
+                        v34 = this.MinGenericCollisionSpeed;
+                        if (v12 >= v34) {
+                            v58 = HitActor.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                            v40 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                            v46 = v58 - v40;
+                            v46.Normalize(9.99999993922529e-09);
+                            v66 = this.GetAirshipForwardVector();
+                            v60 = v66.DotProduct(v46);
+                            v34 = Math::Acos(v60);
+                            v68 = Math::RadiansToDegrees(v34);
+                            v32 = this.MaxHeadOnCollisionAngle;
+                            if (v68 > v32) {
+                                return;
+                            } else {
+                                v40 = v6.GetAirshipForwardVector();
+                                v32 = HitResult.ImpactNormal.DotProduct(v40);
+                                v34 = Math::Acos(v32);
+                                v72 = Math::RadiansToDegrees(v34);
+                                v70 = this.AirshipCollisionRearMultiplier;
+                                v74 = this.AirshipCollisionFrontMultiplier;
+                                v80 = FVector2D(v74, v70);
+                                v84 = FVector2D(0, 180.0);
+                                v70 = Math::GetMappedRangeValueClamped(v84, v80, v72);
+                                v74 = this.MaxGenericCollisionDamage;
+                                v34 = this.MinGenericCollisionDamage;
+                                v80 = FVector2D(v34, v74);
+                                v34 = this.MaxGenericCollisionSpeed;
+                                v74 = this.MinGenericCollisionSpeed;
+                                v84 = FVector2D(v74, v34);
+                                v76 = Math::GetMappedRangeValueClamped(v84, v80, v12);
+                                v76 = v76 * v70;
+                                v4 = this.GetPilot();
+                                v6.ApplyGenericCollisionDamage(v76, v4);
+                                v74 = this.MinEjectionRelativeSpeed;
+                                if (v12 >= v74) {
+                                    v40 = this.GetVelocity();
+                                    v40.Normalize(9.99999993922529e-09);
+                                    v84 = FVector2D(60000.0, 600000.0);
+                                    v86 = this.MinEjectionRelativeSpeed;
+                                    v80 = FVector2D(v86, 2000.0);
+                                    v34 = Math::GetMappedRangeValueClamped(v80, v84, v12);
+                                    v40 *= v34;
+                                    v94 = 6000.0;
+                                    v40.Z = v94;
+                                    v1 = true;
+                                    v92 = this.GetVelocity();
+                                    v66 = v92 * 60.0;
+                                    v6.ImpulseAllPassengers(v66, v1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- HandleGenericImpact: 371 dwords / 219 instructions (cache offset 0x2e83) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  CpyRtoV4      v1
+        001C  NOT           v1
+        0020  CpyVtoR1      v1
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           357                                           -> L05C8
+      L0034:
+        0034  PshVPtr       this
+        0038  CALLSYS       ALokiAirship::GetPilot                        ; ALokiCharacter@ ALokiAirship::GetPilot() const
+        0044  STOREOBJ      v4
+        0048  PshVPtr       v4
+        004C  PshVPtr       HitActor
+        0050  CALLSYS       IsEnemyTeam                                   ; bool LokiTeam::IsEnemyTeam(const AActor@, const AActor@)
+        005C  CpyRtoV4      v1
+        0060  NOT           v1
+        0064  CpyVtoR1      v1
+        0068  JLowZ         2                                             -> L0078
+        0070  JMP           340                                           -> L05C8
+      L0078:
+        0078  CmpPtrNull    HitActor
+        007C  JZ            9                                             -> L00A8
+        0084  TYPEID        1207972585                                    ; ALokiAirship_AS@
+        008C  PSF           v8
+        0090  PshVPtr       HitActor
+        0094  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        00A0  JMP           1                                             -> L00AC
+      L00A8:
+        00A8  ClrVPtr       v8
+      L00AC:
+        00AC  PshVPtr       v8
+        00B0  RefCpyV       v6
+        00B4  CmpPtrNull    v6
+        00B8  JNZ           2                                             -> L00C8
+        00C0  JMP           320                                           -> L05C8
+      L00C8:
+        00C8  PshVPtr       HitActor
+        00CC  PshVPtr       this
+        00D0  CALLINTF      83999                                         ; bool ALokiAirship_AS::HasRecentlyCollidedWithTarget(AActor@)
+        00D8  JLowZ         2                                             -> L00E8
+        00E0  JMP           312                                           -> L05C8
+      L00E8:
+        00E8  PshGPtr       __WorldContext
+        00F4  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        0100  CpyRtoV4      v9
+        0104  fTOd          v12 v9
+        010C  PSF           v12
+        0110  PSF           HitActor
+        0114  PshVPtr       this
+        0118  ADDSi         5544 134230761                                ; .LastGenericCollisionTimes
+        0120  CALLSYS       TMap::Add                                     ; void TMap<AActor@, float64>::Add(const AActor@ const&, const float64&)
+        012C  PSF           v24
+        0130  PshVPtr       this
+        0134  CALLSYS       AActor::GetVelocity                           ; FVector AActor::GetVelocity() const
+        0140  PshC8         0x0
+        014C  LoadVObjR     v24 8 67117444                                ; .Y
+        0158  RDR8          v32
+        015C  PshV8         v32
+        0160  LoadVObjR     v24 0 67117444                                ; .X
+        016C  RDR8          v34
+        0170  PshV8         v34
+        0174  PSF           v18
+        0178  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        0184  PshC8         0x0
+        0190  PSF           v30
+        0194  PshVPtr       HitActor
+        0198  CALLSYS       AActor::GetVelocity                           ; FVector AActor::GetVelocity() const
+        01A4  LoadVObjR     v30 8 67117444                                ; .Y
+        01B0  RDR8          v34
+        01B4  PshV8         v34
+        01B8  PSF           v46
+        01BC  PshVPtr       HitActor
+        01C0  CALLSYS       AActor::GetVelocity                           ; FVector AActor::GetVelocity() const
+        01CC  LoadVObjR     v46 0 67117444                                ; .X
+        01D8  RDR8          v32
+        01DC  PshV8         v32
+        01E0  PSF           v52
+        01E4  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        01F0  PSF           v52
+        01F4  PSF           v30
+        01F8  PSF           v18
+        01FC  CALLSYS       FVector::opSub                                ; FVector FVector::opSub(const FVector&) const
+        0208  PSF           v30
+        020C  CALLSYS       FVector::Size2D                               ; float64 FVector::Size2D() const
+        0218  CpyRtoV8      v12
+        021C  LoadThisR     5216 134230761                                ; this.MinGenericCollisionSpeed
+        0224  RDR8          v34
+        0228  CMPd          v12 v34
+        0230  JNS           0                                             -> L0238
+      L0238:
+        0238  PSF           v58
+        023C  PshVPtr       HitActor
+        0240  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        024C  PSF           v40
+        0250  PshVPtr       this
+        0254  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0260  PSF           v40
+        0264  PSF           v46
+        0268  PSF           v58
+        026C  CALLSYS       FVector::opSub                                ; FVector FVector::opSub(const FVector&) const
+        0278  PshC8         0x3e45798ee0000000
+        0284  PSF           v46
+        0288  CALLSYS       FVector::Normalize                            ; bool FVector::Normalize(float64)
+        0294  PSF           v46
+        0298  PSF           v66
+        029C  PshVPtr       this
+        02A0  CALLSYS       ALokiAirship::GetAirshipForwardVector         ; FVector ALokiAirship::GetAirshipForwardVector() const
+        02AC  PSF           v66
+        02B0  CALLSYS       FVector::DotProduct                           ; float64 FVector::DotProduct(const FVector&) const
+        02BC  CpyRtoV8      v60
+        02C0  PshV8         v60
+        02C4  CALLSYS       Acos                                          ; float64 Math::Acos(float64)
+        02D0  CpyRtoV8      v34
+        02D4  PSF           v34
+        02D8  CALLSYS       RadiansToDegrees                              ; float64 Math::RadiansToDegrees(const float64&)
+        02E4  CpyRtoV8      v68
+        02E8  LoadThisR     5192 134230761                                ; this.MaxHeadOnCollisionAngle
+        02F0  RDR8          v32
+        02F4  CMPd          v68 v32
+        02FC  JNP           2                                             -> L030C
+        0304  JMP           175                                           -> L05C8
+      L030C:
+        030C  PSF           v40
+        0310  PshVPtr       v6
+        0314  CALLSYS       ALokiAirship::GetAirshipForwardVector         ; FVector ALokiAirship::GetAirshipForwardVector() const
+        0320  PSF           v40
+        0324  PshVPtr       HitResult
+        0328  ADDSi         88 67117552                                   ; .ImpactNormal
+        0330  CALLSYS       FVector::DotProduct                           ; float64 FVector::DotProduct(const FVector&) const
+        033C  CpyRtoV8      v32
+        0340  PshV8         v32
+        0344  CALLSYS       Acos                                          ; float64 Math::Acos(float64)
+        0350  CpyRtoV8      v34
+        0354  PSF           v34
+        0358  CALLSYS       RadiansToDegrees                              ; float64 Math::RadiansToDegrees(const float64&)
+        0364  CpyRtoV8      v72
+        0368  PshV8         v72
+        036C  LoadThisR     5240 134230761                                ; this.AirshipCollisionRearMultiplier
+        0374  RDR8          v70
+        0378  PshV8         v70
+        037C  LoadThisR     5232 134230761                                ; this.AirshipCollisionFrontMultiplier
+        0384  RDR8          v74
+        0388  PshV8         v74
+        038C  PSF           v80
+        0390  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        039C  PSF           v80
+        03A0  PshC8         0x4066800000000000
+        03AC  PshC8         0x0
+        03B8  PSF           v84
+        03BC  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        03C8  PSF           v84
+        03CC  CALLSYS       GetMappedRangeValueClamped                    ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+        03D8  CpyRtoV8      v70
+        03DC  PshV8         v12
+        03E0  LoadThisR     5208 134230761                                ; this.MaxGenericCollisionDamage
+        03E8  RDR8          v74
+        03EC  PshV8         v74
+        03F0  LoadThisR     5200 134230761                                ; this.MinGenericCollisionDamage
+        03F8  RDR8          v34
+        03FC  PshV8         v34
+        0400  PSF           v80
+        0404  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0410  PSF           v80
+        0414  LoadThisR     5224 134230761                                ; this.MaxGenericCollisionSpeed
+        041C  RDR8          v34
+        0420  PshV8         v34
+        0424  LoadThisR     5216 134230761                                ; this.MinGenericCollisionSpeed
+        042C  RDR8          v74
+        0430  PshV8         v74
+        0434  PSF           v84
+        0438  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0444  PSF           v84
+        0448  CALLSYS       GetMappedRangeValueClamped                    ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+        0454  CpyRtoV8      v76
+        0458  MULd          v76 v76 v70
+        0460  PshVPtr       this
+        0464  CALLSYS       ALokiAirship::GetPilot                        ; ALokiCharacter@ ALokiAirship::GetPilot() const
+        0470  STOREOBJ      v4
+        0474  PshVPtr       v4
+        0478  PshV8         v76
+        047C  PshVPtr       v6
+        0480  CALLINTF      83998                                         ; void ALokiAirship_AS::ApplyGenericCollisionDamage(const float64, APawn@)
+        0488  LoadThisR     5384 134230761                                ; this.MinEjectionRelativeSpeed
+        0490  RDR8          v74
+        0494  CMPd          v12 v74
+        049C  JS            73                                            -> L05C8
+        04A4  PSF           v40
+        04A8  PshVPtr       this
+        04AC  CALLSYS       AActor::GetVelocity                           ; FVector AActor::GetVelocity() const
+        04B8  PshC8         0x3e45798ee0000000
+        04C4  PSF           v40
+        04C8  CALLSYS       FVector::Normalize                            ; bool FVector::Normalize(float64)
+        04D4  PshV8         v12
+        04D8  PshC8         0x41224f8000000000
+        04E4  PshC8         0x40ed4c0000000000
+        04F0  PSF           v84
+        04F4  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0500  PSF           v84
+        0504  PshC8         0x409f400000000000
+        0510  LoadThisR     5384 134230761                                ; this.MinEjectionRelativeSpeed
+        0518  RDR8          v86
+        051C  PshV8         v86
+        0520  PSF           v80
+        0524  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0530  PSF           v80
+        0534  CALLSYS       GetMappedRangeValueClamped                    ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+        0540  CpyRtoV8      v34
+        0544  PshV8         v34
+        0548  PSF           v92
+        054C  PSF           v40
+        0550  CALLSYS       FVector::opMulAssign                          ; FVector FVector::opMulAssign(float64)
+        055C  SetV8         v94 0x40b7700000000000
+        0568  LoadVObjR     v40 16 67117444                               ; .Z
+        0574  WRTV8         v94
+        0578  SetV1         v1 1
+        0580  PshV4         v1
+        0584  PSF           v92
+        0588  PshVPtr       this
+        058C  CALLSYS       AActor::GetVelocity                           ; FVector AActor::GetVelocity() const
+        0598  PshC8         0x404e000000000000
+        05A4  PSF           v66
+        05A8  PSF           v92
+        05AC  CALLSYS       FVector::opMul                                ; FVector FVector::opMul(float64) const
+        05B8  PSF           v66
+        05BC  PshVPtr       v6
+        05C0  CALLINTF      84003                                         ; void ALokiAirship_AS::ImpulseAllPassengers(const FVector&, const bool)
+      L05C8:
+        05C8  RET           6
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ApplyGenericCollisionDamage(const float64 DamageAmount, APawn@ CollisionInstigator)   // traits=0x20
+    {
+        auto v1;
+        ULokiAbilitySystemComponent v4;
+        APawn v6;
+        UAbilitySystemComponent v8;
+        ULokiAbilitySystemComponent v10;
+        FGameplayEffectContextHandle v16;
+        float32 v23;
+        FGameplayEffectSpecHandle v28;
+        FGameplayEffectSpecHandle v32;
+        FActiveGameplayEffectHandle v34;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = CollisionInstigator;
+            if (v6 != nullptr) {
+                v8 = AbilitySystem::GetAbilitySystemComponent(CollisionInstigator);
+                if (v8 != nullptr) {
+                    v10 = cast<ULokiAbilitySystemComponent@>(v8);
+                } else {
+                    v10 = nullptr;
+                }
+                v4 = v10;
+            } else {
+                v8 = AbilitySystem::GetAbilitySystemComponent(this);
+                if (v8 != nullptr) {
+                    v10 = cast<ULokiAbilitySystemComponent@>(v8);
+                } else {
+                    v10 = nullptr;
+                }
+                v4 = v10;
+            }
+            if (v4 == nullptr) {
+                return;
+            } else {
+                v16 = v4.MakeEffectContext();
+                v28 = v4.MakeOutgoingSpec(this.GenericCollisionEffect, 0, v16);
+                v23 = float32(DamageAmount);
+                v32 = AbilitySystem::AssignTagSetByCallerMagnitude(v28, GameplayTags::Generic_Scale, v23);
+                v28 = v32;
+                v34 = v4.ApplyGameplayEffectSpecToTarget(v28, this.AbilitySystemComponent)  /* UFunction BP_ApplyGameplayEffectSpecToTarget */;
+            }
+        }
+        return;
+    }
+    /* ---- ApplyGenericCollisionDamage: 124 dwords / 76 instructions (cache offset 0x3968) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  CpyRtoV4      v1
+        001C  NOT           v1
+        0020  CpyVtoR1      v1
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           110                                           -> L01EC
+      L0034:
+        0034  PshVPtr       CollisionInstigator
+        0038  RefCpyV       v6
+        003C  CmpPtrNull    v6
+        0040  JZ            22                                            -> L00A0
+        0048  PshVPtr       CollisionInstigator
+        004C  CALLSYS       GetAbilitySystemComponent                     ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+        0058  STOREOBJ      v8
+        005C  CmpPtrNull    v8
+        0060  JZ            9                                             -> L008C
+        0068  TYPEID        1140856725                                    ; ULokiAbilitySystemComponent@
+        0070  PSF           v10
+        0074  PshVPtr       v8
+        0078  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0084  JMP           1                                             -> L0090
+      L008C:
+        008C  ClrVPtr       v10
+      L0090:
+        0090  PshVPtr       v10
+        0094  RefCpyV       v4
+        0098  JMP           20                                            -> L00F0
+      L00A0:
+        00A0  PshVPtr       this
+        00A4  CALLSYS       GetAbilitySystemComponent                     ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+        00B0  STOREOBJ      v8
+        00B4  CmpPtrNull    v8
+        00B8  JZ            9                                             -> L00E4
+        00C0  TYPEID        1140856725                                    ; ULokiAbilitySystemComponent@
+        00C8  PSF           v10
+        00CC  PshVPtr       v8
+        00D0  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        00DC  JMP           1                                             -> L00E8
+      L00E4:
+        00E4  ClrVPtr       v10
+      L00E8:
+        00E8  PshVPtr       v10
+        00EC  RefCpyV       v4
+      L00F0:
+        00F0  CmpPtrNull    v4
+        00F4  JNZ           2                                             -> L0104
+        00FC  JMP           58                                            -> L01EC
+      L0104:
+        0104  PSF           v16
+        0108  PshVPtr       v4
+        010C  CALLSYS       UAbilitySystemComponent::MakeEffectContext    ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+        0118  PSF           v16
+        011C  PshC4         0
+        0124  PshVPtr       this
+        0128  ADDSi         5184 134230761                                ; .GenericCollisionEffect
+        0130  PSF           v28
+        0134  PshVPtr       v4
+        0138  CALLSYS       UAbilitySystemComponent::MakeOutgoingSpec     ; FGameplayEffectSpecHandle UAbilitySystemComponent::MakeOutgoingSpec(TSubclassOf<UGameplayEffect@>, float32, FGameplayEffectContextHandle) const
+        0144  dTOf          v23 DamageAmount
+        014C  PshV4         v23
+        0150  PshGPtr       GameplayTags::Generic_Scale
+        015C  PSF           v28
+        0160  PSF           v32
+        0164  CALLSYS       AssignTagSetByCallerMagnitude                 ; FGameplayEffectSpecHandle AbilitySystem::AssignTagSetByCallerMagnitude(FGameplayEffectSpecHandle, FGameplayTag, float32)
+        0170  PSF           v32
+        0174  PSF           v28
+        0178  CALLSYS       FGameplayEffectSpecHandle::opAssign           ; FGameplayEffectSpecHandle& FGameplayEffectSpecHandle::opAssign(const FGameplayEffectSpecHandle&)
+        0184  PSF           v32
+        0188  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+        0194  PshVPtr       this
+        0198  ADDSi         1048 67114912                                 ; .AbilitySystemComponent
+        01A0  RDSPtr
+        01A4  PSF           v28
+        01A8  PSF           v34
+        01AC  PshVPtr       v4
+        01B0  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectSpecToTarget  ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectSpecToTarget(const FGameplayEffectSpecHandle&, UAbilitySystemComponent@)
+        01BC  PSF           v34
+        01C0  CALLSYS       FActiveGameplayEffectHandle::$beh2            ; void FActiveGameplayEffectHandle::$beh2()
+        01CC  PSF           v28
+        01D0  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+        01DC  PSF           v16
+        01E0  CALLSYS       FGameplayEffectContextHandle::$beh2           ; void FGameplayEffectContextHandle::$beh2()
+      L01EC:
+        01EC  RET           6
+    */
+
+    bool HasRecentlyCollidedWithTarget(AActor@ CollisionTargetActor)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        auto v4;
+        auto v6;
+        float64 v8;
+
+        if (this.LastGenericCollisionTimes.Contains(CollisionTargetActor)) {
+            v2 = Gameplay::GetServerTime(__WorldContext);
+            v8 = float64(v2);
+            v4 = *refReg;
+            v6 = 1.0;
+            v4 = v4 + v6;
+            v1 = this.LastGenericCollisionTimes[CollisionTargetActor];
+            return v1;
+        } else {
+            v1 = false;
+            return v1;
+        }
+        return v1;
+    }
+    /* ---- HasRecentlyCollidedWithTarget: 44 dwords / 25 instructions (cache offset 0x3dcf) ----
+        0000  PSF           CollisionTargetActor
+        0004  PshVPtr       this
+        0008  ADDSi         5544 134230761                                ; .LastGenericCollisionTimes
+        0010  CALLSYS       TMap::Contains                                ; bool TMap<AActor@, float64>::Contains(const AActor@ const&) const
+        001C  JLowZ         29                                            -> L0098
+        0024  PshGPtr       __WorldContext
+        0030  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        003C  CpyRtoV4      v2
+        0040  fTOd          v8 v2
+        0048  PSF           CollisionTargetActor
+        004C  PshVPtr       this
+        0050  ADDSi         5544 134230761                                ; .LastGenericCollisionTimes
+        0058  CALLSYS       TMap::opIndex                                 ; float64& TMap<AActor@, float64>::opIndex(const AActor@ const&)
+        0064  RDR8          v4
+        0068  SetV8         v6 0x3ff0000000000000
+        0074  ADDd          v4 v4 v6
+        007C  CMPd          v8 v4
+        0084  TS
+        0088  CpyRtoV4      v1
+        008C  CpyVtoR4      v1
+        0090  JMP           5                                             -> L00AC
+      L0098:
+        0098  SetV1         v1 0
+        00A0  CpyVtoR4      v1
+        00A4  JMP           0                                             -> L00AC
+      L00AC:
+        00AC  RET           4
+    */
+
+    bool IsRoadkillImmune(AActor@ HitActor)   // traits=0x20
+    {
+        bool v2;
+        FGameplayTag v4;
+
+        v2 = false;
+        v4 = FGameplayTag::RequestGameplayTag(n"Immunity.AirshipRoadkill", v2);
+        v2 = Loki::HasMatchingGameplayTag(HitActor, v4);
+        return v2;
+    }
+    /* ---- IsRoadkillImmune: 25 dwords / 15 instructions (cache offset 0x3f71) ----
+        0000  SetV1         v2 0
+        0008  PshV4         v2
+        000C  PshC4         1
+        0014  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0020  PshRPtr
+        0024  PSF           v4
+        0028  CALLSYS       RequestGameplayTag                            ; FGameplayTag FGameplayTag::RequestGameplayTag(const FName&, bool)
+        0034  PSF           v4
+        0038  PshVPtr       HitActor
+        003C  CALLSYS       HasMatchingGameplayTag                        ; bool Loki::HasMatchingGameplayTag(const UObject@, FGameplayTag)
+        0048  CpyRtoV4      v2
+        004C  PSF           v4
+        0050  CALLSYS       FGameplayTag::$beh2                           ; void FGameplayTag::$beh2()
+        005C  CpyVtoR4      v2
+        0060  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void HandleRoadkillCollision(AActor@ HitActor)   // traits=0x20
+    {
+        bool v1;
+        UAbilitySystemComponent v4;
+        UAbilitySystemComponent v6;
+        ALokiCharacter v8;
+        ALokiCharacter v10;
+        ULokiCharacterMovementComponent v12;
+        UClass v14;
+        TSubclassOf<UActorComponent@> v16;
+        UActorComponent v18;
+        ULokiCharacterMovementComponent v20;
+        AActor v22;
+        AActor v26;
+        auto v27;
+        float32 v28;
+        float64 v30;
+        FVector v36;
+        FVector v42;
+        FVector v48;
+        float64 v50;
+        float64 v52;
+        FVector v64;
+        FVector v70;
+        FVector v76;
+        float64 v78;
+        auto v80;
+        ULokiAbilitySystemComponent v82;
+        ULokiAbilitySystemComponent v84;
+        FGameplayEffectContextHandle v90;
+        FGameplayEffectSpecHandle v100;
+        FGameplayEffectSpecHandle v104;
+        float64 v106;
+        FVector2D v110;
+        FVector2D v114;
+        FActiveGameplayEffectHandle v116;
+        FVector v122;
+        float64 v124;
+        float64 v126;
+        ALokiActor v134;
+        bool v135;
+        bool v136;
+        bool v137;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = AbilitySystem::GetAbilitySystemComponent(HitActor);
+            if (this.IsRoadkillImmune(HitActor)) {
+                return;
+            } else {
+                v8 = this.GetPilot();
+                if (v8 == nullptr) {
+                    return;
+                } else {
+                    v1 = LokiTeam::IsEnemyTeam(HitActor, v8);
+                    v1 = !v1;
+                    if (v1) {
+                        return;
+                    } else {
+                        v14 = ULokiCharacterMovementComponent::StaticClass();
+                        v16 = TSubclassOf<UActorComponent@>(v14);
+                        v18 = HitActor.GetComponentByClass(v16);
+                        if (v18 != nullptr) {
+                            v20 = cast<ULokiCharacterMovementComponent@>(v18);
+                        } else {
+                            v20 = nullptr;
+                        }
+                        v12 = v20;
+                        if (v12 != nullptr) {
+                            v22 = v12.GetFollowingActor();
+                            v26 = this;
+                            if (v22 == v26) {
+                                return;
+                            }
+                            if (v22 == nullptr) {
+                                v1 = 0;
+                            } else {
+                                v14 = UClass@(__StaticType_ALokiAirship);
+                                v27 = v22.IsA(v14);
+                                v1 = v27;
+                            }
+                            if (v1) {
+                                return;
+                            }
+                        }
+                        if (this.HasRecentlyRoadkilledTarget(HitActor)) {
+                            return;
+                        } else {
+                            v28 = Gameplay::GetServerTime(__WorldContext);
+                            v30 = float64(v28);
+                            this.LastRoadkillTimes.Add(HitActor, v30);
+                            if (LokiTeam::IsAllyTeam(HitActor, this)) {
+                                return;
+                            } else {
+                                v42 = this.GetVelocity();
+                                v50 = v42.Y;
+                                v52 = v42.X;
+                                v36 = FVector(v52, v50, 0);
+                                v48 = HitActor.GetVelocity();
+                                v52 = v48.Y;
+                                v64 = HitActor.GetVelocity();
+                                v50 = v64.X;
+                                v70 = FVector(v50, v52, 0);
+                                v48 = v36 - v70;
+                                v30 = v48.Size2D();
+                                v80 = 900.0;
+                                v78 = v36.Size();
+                                v52 = 10.0;
+                                if (v78 < v52) {
+                                    return;
+                                } else {
+                                    v10 = this.GetPilot();
+                                    if (v10 != nullptr) {
+                                        v10 = this.GetPilot();
+                                        v6 = AbilitySystem::GetAbilitySystemComponent(v10);
+                                        if (v6 != nullptr) {
+                                            v84 = cast<ULokiAbilitySystemComponent@>(v6);
+                                        } else {
+                                            v84 = nullptr;
+                                        }
+                                        v82 = v84;
+                                    } else {
+                                        v6 = AbilitySystem::GetAbilitySystemComponent(this);
+                                        if (v6 != nullptr) {
+                                            v84 = cast<ULokiAbilitySystemComponent@>(v6);
+                                        } else {
+                                            v84 = nullptr;
+                                        }
+                                        v82 = v84;
+                                    }
+                                    if (v82 == nullptr) {
+                                        return;
+                                    } else {
+                                        if (v4 != nullptr) {
+                                            v90 = v82.MakeEffectContext();
+                                            v100 = v82.MakeOutgoingSpec(this.RoadkillImpactEffect, 0, v90);
+                                            v78 = this.MaxRoadkillDamage;
+                                            v52 = this.MinRoadkillDamage;
+                                            v110 = FVector2D(v52, v78);
+                                            v50 = this.MaxRoadkillDamageSpeed;
+                                            v52 = this.MinRoadkillDamageSpeed;
+                                            v114 = FVector2D(v52, v50);
+                                            v78 = Math::GetMappedRangeValueClamped(v114, v110, v30);
+                                            v14 = UClass@(__StaticType_ALokiMinionCharacter);
+                                            if (HitActor.IsA(v14)) {
+                                                v106 = this.RoadkillDamageMinionCoefficient;
+                                                v78 = v78 * v106;
+                                            } else {
+                                                v14 = UClass@(__StaticType_ALokiDestructible);
+                                                if (HitActor.IsA(v14)) {
+                                                    v52 = this.RoadkillDamageDestructibleCoefficient;
+                                                    v78 = v78 * v52;
+                                                }
+                                            }
+                                            v28 = float32(v78);
+                                            v104 = AbilitySystem::AssignTagSetByCallerMagnitude(v100, GameplayTags::Generic_Scale, v28);
+                                            v100 = v104;
+                                            v116 = v82.ApplyGameplayEffectSpecToTarget(v100, v4)  /* UFunction BP_ApplyGameplayEffectSpecToTarget */;
+                                            v122 = FVector(v36);
+                                            v76 = v122.GetSafeNormal(9.99999993922529e-09, FVector::ZeroVector);
+                                            v122 = v76;
+                                            v52 = this.MaxRoadkillBoopForceXY;
+                                            v106 = this.MinRoadkillBoopForceXY;
+                                            v114 = FVector2D(v106, v52);
+                                            v50 = this.MaxRoadkillBoopSpeed;
+                                            v52 = this.MinRoadkillBoopSpeed;
+                                            v110 = FVector2D(v52, v50);
+                                            v106 = Math::GetMappedRangeValueClamped(v110, v114, v30);
+                                            v52 = this.MaxRoadkillBoopForceZ;
+                                            v50 = this.MinRoadkillBoopForceZ;
+                                            v114 = FVector2D(v50, v52);
+                                            v50 = this.MaxRoadkillBoopSpeed;
+                                            v52 = this.MinRoadkillBoopSpeed;
+                                            v110 = FVector2D(v52, v50);
+                                            v124 = Math::GetMappedRangeValueClamped(v110, v114, v30);
+                                            v52 = v122.Y;
+                                            v126 = v52 * v106;
+                                            v52 = v122.X;
+                                            v50 = v52 * v106;
+                                            v76 = FVector(v50, v126, v124);
+                                            v27 = true;
+                                            v10 = this.GetPilot();
+                                            if (v10 != nullptr) {
+                                                v134 = this.GetPilot();
+                                            } else {
+                                                v134 = this;
+                                            }
+                                            v1 = false;
+                                            v135 = false;
+                                            v136 = false;
+                                            v137 = false;
+                                            HitActor.AddImpulse(v76, v137, v136, v135, v1, v134, <?>);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- HandleRoadkillCollision: 563 dwords / 339 instructions (cache offset 0x40c2) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  CpyRtoV4      v1
+        001C  NOT           v1
+        0020  CpyVtoR1      v1
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           549                                           -> L08C8
+      L0034:
+        0034  PshVPtr       HitActor
+        0038  CALLSYS       GetAbilitySystemComponent                     ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+        0044  STOREOBJ      v4
+        0048  PshVPtr       HitActor
+        004C  PshVPtr       this
+        0050  CALLINTF      84000                                         ; bool ALokiAirship_AS::IsRoadkillImmune(AActor@)
+        0058  JLowZ         2                                             -> L0068
+        0060  JMP           536                                           -> L08C8
+      L0068:
+        0068  PshVPtr       this
+        006C  CALLSYS       ALokiAirship::GetPilot                        ; ALokiCharacter@ ALokiAirship::GetPilot() const
+        0078  STOREOBJ      v8
+        007C  CmpPtrNull    v8
+        0080  JNZ           2                                             -> L0090
+        0088  JMP           526                                           -> L08C8
+      L0090:
+        0090  PshVPtr       v8
+        0094  PshVPtr       HitActor
+        0098  CALLSYS       IsEnemyTeam                                   ; bool LokiTeam::IsEnemyTeam(const AActor@, const AActor@)
+        00A4  CpyRtoV4      v1
+        00A8  NOT           v1
+        00AC  CpyVtoR1      v1
+        00B0  JLowZ         2                                             -> L00C0
+        00B8  JMP           514                                           -> L08C8
+      L00C0:
+        00C0  CALLSYS       StaticClass                                   ; UClass@ ULokiCharacterMovementComponent::StaticClass()
+        00CC  STOREOBJ      v14
+        00D0  PshVPtr       v14
+        00D4  PSF           v16
+        00D8  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+        00E4  PSF           v16
+        00E8  PshVPtr       HitActor
+        00EC  CALLSYS       AActor::GetComponentByClass                   ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+        00F8  STOREOBJ      v18
+        00FC  CmpPtrNull    v18
+        0100  JZ            9                                             -> L012C
+        0108  TYPEID        1140856829                                    ; ULokiCharacterMovementComponent@
+        0110  PSF           v20
+        0114  PshVPtr       v18
+        0118  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0124  JMP           1                                             -> L0130
+      L012C:
+        012C  ClrVPtr       v20
+      L0130:
+        0130  PshVPtr       v20
+        0134  RefCpyV       v12
+        0138  CmpPtrNull    v12
+        013C  JZ            41                                            -> L01E8
+        0144  PshVPtr       v12
+        0148  CALLSYS       ULokiCharacterMovementComponent::GetFollowingActor  ; AActor@ ULokiCharacterMovementComponent::GetFollowingActor() const
+        0154  STOREOBJ      v22
+        0158  PshVPtr       this
+        015C  RefCpyV       v26
+        0160  CmpPtr        v22 v26
+        0168  JNZ           2                                             -> L0178
+        0170  JMP           468                                           -> L08C8
+      L0178:
+        0178  CmpPtrNull    v22
+        017C  JNZ           4                                             -> L0194
+        0184  SetV4         v1 0
+        018C  JMP           15                                            -> L01D0
+      L0194:
+        0194  PshGPtr       __StaticType_ALokiAirship
+        01A0  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<ALokiAirship@>::opImplConv() const
+        01AC  STOREOBJ      v14
+        01B0  PshVPtr       v14
+        01B4  PshVPtr       v22
+        01B8  CALLSYS       UObject::IsA                                  ; bool UObject::IsA(const UClass@) const
+        01C4  CpyRtoV4      v27
+        01C8  CpyVtoV4      v1 v27
+      L01D0:
+        01D0  CpyVtoR1      v1
+        01D4  JLowZ         2                                             -> L01E4
+        01DC  JMP           441                                           -> L08C8
+      L01E4:
+        01E4  FreeNullV8    v22
+      L01E8:
+        01E8  PshVPtr       HitActor
+        01EC  PshVPtr       this
+        01F0  CALLINTF      84002                                         ; bool ALokiAirship_AS::HasRecentlyRoadkilledTarget(AActor@)
+        01F8  JLowZ         2                                             -> L0208
+        0200  JMP           432                                           -> L08C8
+      L0208:
+        0208  PshGPtr       __WorldContext
+        0214  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        0220  CpyRtoV4      v28
+        0224  fTOd          v30 v28
+        022C  PSF           v30
+        0230  PSF           HitActor
+        0234  PshVPtr       this
+        0238  ADDSi         5464 134230761                                ; .LastRoadkillTimes
+        0240  CALLSYS       TMap::Add                                     ; void TMap<AActor@, float64>::Add(const AActor@ const&, const float64&)
+        024C  PshVPtr       this
+        0250  PshVPtr       HitActor
+        0254  CALLSYS       IsAllyTeam                                    ; bool LokiTeam::IsAllyTeam(const AActor@, const AActor@)
+        0260  JLowZ         2                                             -> L0270
+        0268  JMP           406                                           -> L08C8
+      L0270:
+        0270  PSF           v42
+        0274  PshVPtr       this
+        0278  CALLSYS       AActor::GetVelocity                           ; FVector AActor::GetVelocity() const
+        0284  PshC8         0x0
+        0290  LoadVObjR     v42 8 67117444                                ; .Y
+        029C  RDR8          v50
+        02A0  PshV8         v50
+        02A4  LoadVObjR     v42 0 67117444                                ; .X
+        02B0  RDR8          v52
+        02B4  PshV8         v52
+        02B8  PSF           v36
+        02BC  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        02C8  PshC8         0x0
+        02D4  PSF           v48
+        02D8  PshVPtr       HitActor
+        02DC  CALLSYS       AActor::GetVelocity                           ; FVector AActor::GetVelocity() const
+        02E8  LoadVObjR     v48 8 67117444                                ; .Y
+        02F4  RDR8          v52
+        02F8  PshV8         v52
+        02FC  PSF           v64
+        0300  PshVPtr       HitActor
+        0304  CALLSYS       AActor::GetVelocity                           ; FVector AActor::GetVelocity() const
+        0310  LoadVObjR     v64 0 67117444                                ; .X
+        031C  RDR8          v50
+        0320  PshV8         v50
+        0324  PSF           v70
+        0328  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        0334  PSF           v70
+        0338  PSF           v48
+        033C  PSF           v36
+        0340  CALLSYS       FVector::opSub                                ; FVector FVector::opSub(const FVector&) const
+        034C  PSF           v48
+        0350  CALLSYS       FVector::Size2D                               ; float64 FVector::Size2D() const
+        035C  CpyRtoV8      v30
+        0360  SetV8         v80 0x408c200000000000
+        036C  PSF           v36
+        0370  CALLSYS       FVector::Size                                 ; float64 FVector::Size() const
+        037C  CpyRtoV8      v78
+        0380  SetV8         v52 0x4024000000000000
+        038C  CMPd          v78 v52
+        0394  JNS           2                                             -> L03A4
+        039C  JMP           329                                           -> L08C8
+      L03A4:
+        03A4  PshVPtr       this
+        03A8  CALLSYS       ALokiAirship::GetPilot                        ; ALokiCharacter@ ALokiAirship::GetPilot() const
+        03B4  STOREOBJ      v10
+        03B8  CmpPtrNull    v10
+        03BC  JZ            27                                            -> L0430
+        03C4  PshVPtr       this
+        03C8  CALLSYS       ALokiAirship::GetPilot                        ; ALokiCharacter@ ALokiAirship::GetPilot() const
+        03D4  STOREOBJ      v10
+        03D8  PshVPtr       v10
+        03DC  CALLSYS       GetAbilitySystemComponent                     ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+        03E8  STOREOBJ      v6
+        03EC  CmpPtrNull    v6
+        03F0  JZ            9                                             -> L041C
+        03F8  TYPEID        1140856725                                    ; ULokiAbilitySystemComponent@
+        0400  PSF           v84
+        0404  PshVPtr       v6
+        0408  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0414  JMP           1                                             -> L0420
+      L041C:
+        041C  ClrVPtr       v84
+      L0420:
+        0420  PshVPtr       v84
+        0424  RefCpyV       v82
+        0428  JMP           20                                            -> L0480
+      L0430:
+        0430  PshVPtr       this
+        0434  CALLSYS       GetAbilitySystemComponent                     ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+        0440  STOREOBJ      v6
+        0444  CmpPtrNull    v6
+        0448  JZ            9                                             -> L0474
+        0450  TYPEID        1140856725                                    ; ULokiAbilitySystemComponent@
+        0458  PSF           v84
+        045C  PshVPtr       v6
+        0460  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        046C  JMP           1                                             -> L0478
+      L0474:
+        0474  ClrVPtr       v84
+      L0478:
+        0478  PshVPtr       v84
+        047C  RefCpyV       v82
+      L0480:
+        0480  CmpPtrNull    v82
+        0484  JNZ           2                                             -> L0494
+        048C  JMP           269                                           -> L08C8
+      L0494:
+        0494  CmpPtrNull    v4
+        0498  JZ            266                                           -> L08C8
+        04A0  PSF           v90
+        04A4  PshVPtr       v82
+        04A8  CALLSYS       UAbilitySystemComponent::MakeEffectContext    ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+        04B4  PSF           v90
+        04B8  PshC4         0
+        04C0  PshVPtr       this
+        04C4  ADDSi         5248 134230761                                ; .RoadkillImpactEffect
+        04CC  PSF           v100
+        04D0  PshVPtr       v82
+        04D4  CALLSYS       UAbilitySystemComponent::MakeOutgoingSpec     ; FGameplayEffectSpecHandle UAbilitySystemComponent::MakeOutgoingSpec(TSubclassOf<UGameplayEffect@>, float32, FGameplayEffectContextHandle) const
+        04E0  PshV8         v30
+        04E4  LoadThisR     5264 134230761                                ; this.MaxRoadkillDamage
+        04EC  RDR8          v78
+        04F0  PshV8         v78
+        04F4  LoadThisR     5256 134230761                                ; this.MinRoadkillDamage
+        04FC  RDR8          v52
+        0500  PshV8         v52
+        0504  PSF           v110
+        0508  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0514  PSF           v110
+        0518  LoadThisR     5296 134230761                                ; this.MaxRoadkillDamageSpeed
+        0520  RDR8          v50
+        0524  PshV8         v50
+        0528  LoadThisR     5288 134230761                                ; this.MinRoadkillDamageSpeed
+        0530  RDR8          v52
+        0534  PshV8         v52
+        0538  PSF           v114
+        053C  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0548  PSF           v114
+        054C  CALLSYS       GetMappedRangeValueClamped                    ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+        0558  CpyRtoV8      v78
+        055C  PshGPtr       __StaticType_ALokiMinionCharacter
+        0568  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<ALokiMinionCharacter@>::opImplConv() const
+        0574  STOREOBJ      v14
+        0578  PshVPtr       v14
+        057C  PshVPtr       HitActor
+        0580  CALLSYS       UObject::IsA                                  ; bool UObject::IsA(const UClass@) const
+        058C  JLowZ         7                                             -> L05B0
+        0594  LoadThisR     5272 134230761                                ; this.RoadkillDamageMinionCoefficient
+        059C  RDR8          v106
+        05A0  MULd          v78 v78 v106
+        05A8  JMP           19                                            -> L05FC
+      L05B0:
+        05B0  PshGPtr       __StaticType_ALokiDestructible
+        05BC  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<ALokiDestructible@>::opImplConv() const
+        05C8  STOREOBJ      v14
+        05CC  PshVPtr       v14
+        05D0  PshVPtr       HitActor
+        05D4  CALLSYS       UObject::IsA                                  ; bool UObject::IsA(const UClass@) const
+        05E0  JLowZ         5                                             -> L05FC
+        05E8  LoadThisR     5280 134230761                                ; this.RoadkillDamageDestructibleCoefficient
+        05F0  RDR8          v52
+        05F4  MULd          v78 v78 v52
+      L05FC:
+        05FC  dTOf          v28 v78
+        0604  PshV4         v28
+        0608  PshGPtr       GameplayTags::Generic_Scale
+        0614  PSF           v100
+        0618  PSF           v104
+        061C  CALLSYS       AssignTagSetByCallerMagnitude                 ; FGameplayEffectSpecHandle AbilitySystem::AssignTagSetByCallerMagnitude(FGameplayEffectSpecHandle, FGameplayTag, float32)
+        0628  PSF           v104
+        062C  PSF           v100
+        0630  CALLSYS       FGameplayEffectSpecHandle::opAssign           ; FGameplayEffectSpecHandle& FGameplayEffectSpecHandle::opAssign(const FGameplayEffectSpecHandle&)
+        063C  PSF           v104
+        0640  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+        064C  PshVPtr       v4
+        0650  PSF           v100
+        0654  PSF           v116
+        0658  PshVPtr       v82
+        065C  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectSpecToTarget  ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectSpecToTarget(const FGameplayEffectSpecHandle&, UAbilitySystemComponent@)
+        0668  PSF           v116
+        066C  CALLSYS       FActiveGameplayEffectHandle::$beh2            ; void FActiveGameplayEffectHandle::$beh2()
+        0678  PSF           v36
+        067C  PSF           v122
+        0680  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+        068C  PshGPtr       FVector::ZeroVector
+        0698  PshC8         0x3e45798ee0000000
+        06A4  PSF           v76
+        06A8  PSF           v122
+        06AC  CALLSYS       FVector::GetSafeNormal                        ; FVector FVector::GetSafeNormal(float64, const FVector&) const
+        06B8  PSF           v76
+        06BC  PSF           v122
+        06C0  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        06CC  PshV8         v30
+        06D0  LoadThisR     5328 134230761                                ; this.MaxRoadkillBoopForceXY
+        06D8  RDR8          v52
+        06DC  PshV8         v52
+        06E0  LoadThisR     5320 134230761                                ; this.MinRoadkillBoopForceXY
+        06E8  RDR8          v106
+        06EC  PshV8         v106
+        06F0  PSF           v114
+        06F4  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0700  PSF           v114
+        0704  LoadThisR     5312 134230761                                ; this.MaxRoadkillBoopSpeed
+        070C  RDR8          v50
+        0710  PshV8         v50
+        0714  LoadThisR     5304 134230761                                ; this.MinRoadkillBoopSpeed
+        071C  RDR8          v52
+        0720  PshV8         v52
+        0724  PSF           v110
+        0728  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0734  PSF           v110
+        0738  CALLSYS       GetMappedRangeValueClamped                    ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+        0744  CpyRtoV8      v106
+        0748  PshV8         v30
+        074C  LoadThisR     5344 134230761                                ; this.MaxRoadkillBoopForceZ
+        0754  RDR8          v52
+        0758  PshV8         v52
+        075C  LoadThisR     5336 134230761                                ; this.MinRoadkillBoopForceZ
+        0764  RDR8          v50
+        0768  PshV8         v50
+        076C  PSF           v114
+        0770  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        077C  PSF           v114
+        0780  LoadThisR     5312 134230761                                ; this.MaxRoadkillBoopSpeed
+        0788  RDR8          v50
+        078C  PshV8         v50
+        0790  LoadThisR     5304 134230761                                ; this.MinRoadkillBoopSpeed
+        0798  RDR8          v52
+        079C  PshV8         v52
+        07A0  PSF           v110
+        07A4  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        07B0  PSF           v110
+        07B4  CALLSYS       GetMappedRangeValueClamped                    ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+        07C0  CpyRtoV8      v124
+        07C4  PshV8         v124
+        07C8  LoadVObjR     v122 8 67117444                               ; .Y
+        07D4  RDR8          v52
+        07D8  MULd          v126 v52 v106
+        07E0  PshV8         v126
+        07E4  LoadVObjR     v122 0 67117444                               ; .X
+        07F0  RDR8          v52
+        07F4  MULd          v50 v52 v106
+        07FC  PshV8         v50
+        0800  PSF           v76
+        0804  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        0810  SetV1         v27 1
+        0818  PshV4         v27
+        081C  PshVPtr       this
+        0820  CALLSYS       ALokiAirship::GetPilot                        ; ALokiCharacter@ ALokiAirship::GetPilot() const
+        082C  STOREOBJ      v10
+        0830  CmpPtrNull    v10
+        0834  JZ            7                                             -> L0858
+        083C  PshVPtr       this
+        0840  CALLSYS       ALokiAirship::GetPilot                        ; ALokiCharacter@ ALokiAirship::GetPilot() const
+        084C  STOREOBJ      v134
+        0850  JMP           2                                             -> L0860
+      L0858:
+        0858  PshVPtr       this
+        085C  RefCpyV       v134
+      L0860:
+        0860  PshVPtr       v134
+        0864  SetV1         v1 0
+        086C  PshV4         v1
+        0870  SetV1         v135 0
+        0878  PshV4         v135
+        087C  SetV1         v136 0
+        0884  PshV4         v136
+        0888  SetV1         v137 0
+        0890  PshV4         v137
+        0894  PSF           v76
+        0898  PshVPtr       HitActor
+        089C  CALLSYS       AActor::AddImpulse                            ; void AActor::AddImpulse(FVector, bool, bool, bool, bool, AActor@, bool)
+        08A8  PSF           v100
+        08AC  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+        08B8  PSF           v90
+        08BC  CALLSYS       FGameplayEffectContextHandle::$beh2           ; void FGameplayEffectContextHandle::$beh2()
+      L08C8:
+        08C8  RET           4
+    */
+
+    bool HasRecentlyRoadkilledTarget(AActor@ RoadkillTargetActor)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        auto v4;
+        auto v6;
+        float64 v8;
+
+        if (this.LastRoadkillTimes.Contains(RoadkillTargetActor)) {
+            v2 = Gameplay::GetServerTime(__WorldContext);
+            v8 = float64(v2);
+            v4 = *refReg;
+            v6 = 0.3;
+            v4 = v4 + v6;
+            v1 = this.LastRoadkillTimes[RoadkillTargetActor];
+            return v1;
+        } else {
+            v1 = false;
+            return v1;
+        }
+        return v1;
+    }
+    /* ---- HasRecentlyRoadkilledTarget: 44 dwords / 25 instructions (cache offset 0x504e) ----
+        0000  PSF           RoadkillTargetActor
+        0004  PshVPtr       this
+        0008  ADDSi         5464 134230761                                ; .LastRoadkillTimes
+        0010  CALLSYS       TMap::Contains                                ; bool TMap<AActor@, float64>::Contains(const AActor@ const&) const
+        001C  JLowZ         29                                            -> L0098
+        0024  PshGPtr       __WorldContext
+        0030  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        003C  CpyRtoV4      v2
+        0040  fTOd          v8 v2
+        0048  PSF           RoadkillTargetActor
+        004C  PshVPtr       this
+        0050  ADDSi         5464 134230761                                ; .LastRoadkillTimes
+        0058  CALLSYS       TMap::opIndex                                 ; float64& TMap<AActor@, float64>::opIndex(const AActor@ const&)
+        0064  RDR8          v4
+        0068  SetV8         v6 0x3fd3333333333333
+        0074  ADDd          v4 v4 v6
+        007C  CMPd          v8 v4
+        0084  TS
+        0088  CpyRtoV4      v1
+        008C  CpyVtoR4      v1
+        0090  JMP           5                                             -> L00AC
+      L0098:
+        0098  SetV1         v1 0
+        00A0  CpyVtoR4      v1
+        00A4  JMP           0                                             -> L00AC
+      L00AC:
+        00AC  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ImpulseAllPassengers(const FVector& ImpulseForce, const bool bForceDismount)   // traits=0x20
+    {
+        TArray<ALokiCharacter@> v8;
+        TArrayIterator<ALokiCharacter@> v14;
+        bool v21;
+        ALokiCharacter v24;
+        FName v26;
+        auto v27;
+        float64 v30;
+        bool v31;
+        bool v32;
+        bool v33;
+        bool v34;
+
+        v8 = this.GetPassengers();
+        v14 = v8.Iterator();
+        while (true) {
+            v21 = v14.CanProceed;
+            if (!v21) break;
+            v24 = v14.Proceed();
+            v14.Proceed();
+            if (bForceDismount) {
+                v26 = FName("Forced during all-passenger impulse");
+                this.ExitAirship(v24, v26, 0);
+            }
+            v27 = Gameplay::GetServerTime(__WorldContext);
+            v30 = float64(v27);
+            this.LastRoadkillTimes.Add(v24, v30);
+            v21 = false;
+            v31 = false;
+            v32 = false;
+            v33 = false;
+            v34 = false;
+            v24.AddImpulse(ImpulseForce, v34, v33, v32, v31, nullptr, v21);
+        }
+        return;
+    }
+    /* ---- ImpulseAllPassengers: 89 dwords / 54 instructions (cache offset 0x5237) ----
+        0000  PSF           v8
+        0004  PshVPtr       this
+        0008  CALLSYS       ALokiAirship::GetPassengers                   ; TArray<ALokiCharacter@> ALokiAirship::GetPassengers() const
+        0014  PSF           v14
+        0018  PSF           v8
+        001C  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiCharacter@> TArray<ALokiCharacter@>::Iterator()
+        0028  JMP           65                                            -> L0134
+      L0030:
+        0030  SUSPEND
+        0034  PSF           v14
+        0038  CALLSYS       TArrayIterator::Proceed                       ; ALokiCharacter@& TArrayIterator<ALokiCharacter@>::Proceed()
+        0044  PshRPtr
+        0048  RDSPtr
+        004C  RefCpyV       v24
+        0050  CpyVtoR1      bForceDismount
+        0054  JLowZ         15                                            -> L0098
+        005C  PshC4         0
+        0064  PGA           "Forced during all-passenger impulse"
+        0070  PSF           v26
+        0074  CALLSYS       FName::$beh0                                  ; void FName::$beh0(const FString&)
+        0080  PSF           v26
+        0084  PshVPtr       v24
+        0088  PshVPtr       this
+        008C  CALLSYS       ALokiAirship::ExitAirship                     ; bool ALokiAirship::ExitAirship(ALokiCharacter@, FName, float32)
+      L0098:
+        0098  PshGPtr       __WorldContext
+        00A4  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        00B0  CpyRtoV4      v27
+        00B4  fTOd          v30 v27
+        00BC  PSF           v30
+        00C0  PSF           v24
+        00C4  PshVPtr       this
+        00C8  ADDSi         5464 134230761                                ; .LastRoadkillTimes
+        00D0  CALLSYS       TMap::Add                                     ; void TMap<AActor@, float64>::Add(const AActor@ const&, const float64&)
+        00DC  SetV1         v21 0
+        00E4  PshV4         v21
+        00E8  PshNull
+        00EC  SetV1         v31 0
+        00F4  PshV4         v31
+        00F8  SetV1         v32 0
+        0100  PshV4         v32
+        0104  SetV1         v33 0
+        010C  PshV4         v33
+        0110  SetV1         v34 0
+        0118  PshV4         v34
+        011C  PshVPtr       ImpulseForce
+        0120  PshVPtr       v24
+        0124  CALLSYS       AActor::AddImpulse                            ; void AActor::AddImpulse(FVector, bool, bool, bool, bool, AActor@, bool)
+        0130  FreeNullV8    v24
+      L0134:
+        0134  LoadVObjR     v14 16 268448490                              ; .CanProceed
+        0140  RDR1          v21
+        0144  CpyVtoR1      v21
+        0148  JLowNZ        -72                                           -> L0030
+        0150  PSF           v8
+        0154  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiCharacter@>::$beh2()
+        0160  RET           5
+    */
+
+    void ~ALokiAirship_AS()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ALokiAirship_AS: 37 dwords / 19 instructions (cache offset 0x59d9) ----
+        0000  PshVPtr       this
+        0004  ADDSi         5176 134230761                                ; .BoostTag
+        000C  CALLSYS       FGameplayTag::$beh2                           ; void FGameplayTag::$beh2()
+        0018  PshVPtr       this
+        001C  ADDSi         5416 134230761                                ; .HealthRegenThresholds
+        0024  CALLSYS       TArray::$beh2                                 ; void TArray<float64>::$beh2()
+        0030  PshVPtr       this
+        0034  ADDSi         5432 134230761                                ; .HealthRegenDamagePhaseEffectHandle
+        003C  CALLSYS       FActiveGameplayEffectHandle::$beh2            ; void FActiveGameplayEffectHandle::$beh2()
+        0048  PshVPtr       this
+        004C  ADDSi         5440 134230761                                ; .HealthRegenDamagePhaseEffects
+        0054  CALLSYS       TArray::$beh2                                 ; void TArray<TSubclassOf<UGameplayEffect@>>::$beh2()
+        0060  PshVPtr       this
+        0064  ADDSi         5464 134230761                                ; .LastRoadkillTimes
+        006C  CALLSYS       TMap::$beh2                                   ; void TMap<AActor@, float64>::$beh2()
+        0078  PshVPtr       this
+        007C  ADDSi         5544 134230761                                ; .LastGenericCollisionTimes
+        0084  CALLSYS       TMap::$beh2                                   ; void TMap<AActor@, float64>::$beh2()
+        0090  RET           2
+    */
+
+}
+

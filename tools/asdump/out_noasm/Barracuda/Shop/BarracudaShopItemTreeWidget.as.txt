@@ -1,0 +1,153 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarracudaShopItemTreeWidget
+//  SOURCE   Barracuda/Shop/BarracudaShopItemTreeWidget.as
+//  CONTENT  1 class(es), 10 function(s), 0 enum(s), 1 global(s), 956 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemTreeWidget;
+
+UBarracudaShopItemTreeWidget@ UBarracudaShopItemTreeWidget()   // traits=0x20
+{
+    UBarracudaShopItemTreeWidget v2;
+
+    v2 = UBarracudaShopItemTreeWidget();
+    return v2;
+}
+
+UClass@ UBarracudaShopItemTreeWidget::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaShopItemTreeWidget);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaShopItemTreeWidget : UUserWidget
+// unreal base : /Script/UMG.UserWidget
+// C++ header  : ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+// static class global: __StaticType_UBarracudaShopItemTreeWidget
+{
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UBarracudaShopItemTreeNodeWidget@ RootNode;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TSet<ALokiBaseItem@> ItemsToPotentiallyMarkAsOwned;
+
+    UBarracudaShopItemTreeWidget()   // traits=0x21
+    {
+        this.ItemsToPotentiallyMarkAsOwned = TSet<ALokiBaseItem@>();
+        return;
+    }
+
+    UFUNCTION(UnrealName=PreConstruct, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void PreConstruct_Implementation(const bool IsDesignTime)   // traits=0x20
+    {
+        auto v1;
+        UBarracudaShopItemTreeNodeWidget v4;
+        auto v5;
+
+        v1 = IsDesignTime;
+        v1 = !v1;
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v4 = this.RootNode;
+            v5 = v4 != nullptr;
+            v1 = v5;
+        }
+        if (v1) {
+            this.RootNode.Tree = this;
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Construct, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Construct_Implementation()   // traits=0x20
+    {
+        UGameEventRouterComponent v4;
+        FUIEvent_Barracuda_Shop_FocusItem v10;
+        auto v11;
+        FGameEventListenerHandle v24;
+        FUIEvent_ItemEnteredOrExitedInventory v26;
+
+        v4 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+        if (v4 != nullptr) {
+            v11 = false;
+            v10 = FUIEvent_Barracuda_Shop_FocusItem();
+            v24 = v4.RegisterForEvent(this, v10, typeid(FUIEvent_Barracuda_Shop_FocusItem), nullptr, n"HandleFocusItem", v11);
+            v11 = false;
+            v26 = FUIEvent_ItemEnteredOrExitedInventory();
+            v24 = v4.RegisterForEvent(this, v26, typeid(FUIEvent_ItemEnteredOrExitedInventory), this, n"HandleItemEnteredOrExitedInventory", v11);
+        }
+        this.UpdateVisuals();
+        return;
+    }
+
+    UFUNCTION(CanOverrideEvent)
+    void HandleFocusItem(const FUIEvent_Barracuda_Shop_FocusItem& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.UpdateVisualsInternal(Event.Item);
+        return;
+    }
+
+    UFUNCTION(CanOverrideEvent)
+    void HandleItemEnteredOrExitedInventory(const FUIEvent_ItemEnteredOrExitedInventory& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.UpdateVisuals();
+        return;
+    }
+
+    void UpdateVisuals()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v4;
+        auto v5;
+        ABarracudaShop v8;
+        auto v9;
+
+        v4 = GetBarracudaGameStateComponent();
+        if (v4 == nullptr) {
+            v5 = 0;
+        } else {
+            v8 = v4.Shop;
+            v9 = v8 != nullptr;
+            v5 = v9;
+        }
+        if (v5) {
+            this.UpdateVisualsInternal(v4.Shop.ClientCurrentFocus);
+        }
+        return;
+    }
+
+    void UpdateVisualsInternal(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        ALokiPlayerState v6;
+        ULokiInventoryComponentComboItems v10;
+        TArray<ALokiBaseItem@> v16;
+
+        this.ItemsToPotentiallyMarkAsOwned.Empty(0);
+        v6 = Loki::GetLocalLokiPlayerState(__WorldContext);
+        if (v6 != nullptr) {
+            v10 = v6.GetInventory();
+            if (v10 != nullptr) {
+                v16 = v10.GetAllValidItems();
+                this.ItemsToPotentiallyMarkAsOwned.Append(v16);
+            }
+        }
+        this.RootNode.SetItem(ItemClass);
+        return;
+    }
+
+    void ~UBarracudaShopItemTreeWidget()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

@@ -1,0 +1,217 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaStructureComponent
+//  SOURCE   Barracuda/Components/BarracudaStructureComponent.as
+//  CONTENT  1 class(es), 9 function(s), 0 enum(s), 1 global(s), 540 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaStructureComponent;
+
+UBarracudaStructureComponent@ UBarracudaStructureComponent()   // traits=0x20
+{
+    UBarracudaStructureComponent v2;
+
+    v2 = UBarracudaStructureComponent();
+    return v2;
+}
+/* ---- UBarracudaStructureComponent: 7 dwords / 4 instructions (cache offset 0x18a9b) ----
+    0000  PSF           v2
+    0004  ALLOC         84150 UBarracudaStructureComponent            ; new UBarracudaStructureComponent  ctor=void UBarracudaStructureComponent::UBarracudaStructureComponent()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ UBarracudaStructureComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaStructureComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x18b64) ----
+    0000  PshGPtr       __StaticType_UBarracudaStructureComponent
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+UBarracudaStructureComponent@ UBarracudaStructureComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaStructureComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaStructureComponent, v2, typeid(UBarracudaStructureComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x18caa) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972603                                    ; UBarracudaStructureComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_UBarracudaStructureComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetComponentByClass                   ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+UBarracudaStructureComponent@ UBarracudaStructureComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaStructureComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaStructureComponent, v2, typeid(UBarracudaStructureComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x18e08) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972603                                    ; UBarracudaStructureComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_UBarracudaStructureComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass           ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+UBarracudaStructureComponent@ UBarracudaStructureComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaStructureComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaStructureComponent, v2, typeid(UBarracudaStructureComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x18f61) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972603                                    ; UBarracudaStructureComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_UBarracudaStructureComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_CreateComponentByClass                ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaStructureComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaStructureComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bAttackable;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bRespawnLocation;
+
+    UBarracudaStructureComponent()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- UBarracudaStructureComponent: 5 dwords / 3 instructions (cache offset 0x195c5) ----
+        0000  PshVPtr       this
+        0004  FinConstruct  UBarracudaStructureComponent
+        0010  RET           2
+    */
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v2;
+        ALokiGameState v4;
+        AActor v10;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v2 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+        if (v2 != nullptr) {
+            v10 = this.GetOwner();
+            v2.Structures.Add(v10);
+        }
+        return;
+    }
+    /* ---- LokiBeginPlay_Implementation: 30 dwords / 17 instructions (cache offset 0x19184) ----
+        0000  PshGPtr       NAME_None
+        000C  PshGPtr       __WorldContext
+        0018  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        0024  STOREOBJ      v4
+        0028  PshVPtr       v4
+        002C  CALL          84255                                         ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+        0034  STOREOBJ      v2
+        0038  CmpPtrNull    v2
+        003C  JZ            12                                            -> L0074
+        0044  PshVPtr       this
+        0048  CALLSYS       UActorComponent::GetOwner                     ; AActor@ UActorComponent::GetOwner() const
+        0054  STOREOBJ      v10
+        0058  PSF           v10
+        005C  PshVPtr       v2
+        0060  ADDSi         224 134230778                                 ; .Structures
+        0068  CALLSYS       TSet::Add                                     ; void TSet<AActor@>::Add(const AActor@ const&)
+      L0074:
+        0074  RET           2
+    */
+
+    UFUNCTION(UnrealName=LokiEndPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiEndPlay_Implementation()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v2;
+        ALokiGameState v4;
+        AActor v10;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v2 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+        if (v2 != nullptr) {
+            v10 = this.GetOwner();
+            v2.Structures.Remove(v10);
+        }
+        return;
+    }
+    /* ---- LokiEndPlay_Implementation: 30 dwords / 17 instructions (cache offset 0x19339) ----
+        0000  PshGPtr       NAME_None
+        000C  PshGPtr       __WorldContext
+        0018  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        0024  STOREOBJ      v4
+        0028  PshVPtr       v4
+        002C  CALL          84255                                         ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+        0034  STOREOBJ      v2
+        0038  CmpPtrNull    v2
+        003C  JZ            12                                            -> L0074
+        0044  PshVPtr       this
+        0048  CALLSYS       UActorComponent::GetOwner                     ; AActor@ UActorComponent::GetOwner() const
+        0054  STOREOBJ      v10
+        0058  PSF           v10
+        005C  PshVPtr       v2
+        0060  ADDSi         224 134230778                                 ; .Structures
+        0068  CALLSYS       TSet::Remove                                  ; bool TSet<AActor@>::Remove(const AActor@ const&)
+      L0074:
+        0074  RET           2
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = false;
+        this.bRespawnLocation = v1;
+        v1 = false;
+        this.bAttackable = v1;
+        return;
+    }
+    /* ---- __InitDefaults: 11 dwords / 7 instructions (cache offset 0x194e0) ----
+        0000  SetV1         v1 0
+        0008  LoadThisR     209 134230779                                 ; this.bRespawnLocation
+        0010  WRTV1         v1
+        0014  SetV1         v1 0
+        001C  LoadThisR     208 134230779                                 ; this.bAttackable
+        0024  WRTV1         v1
+        0028  RET           2
+    */
+
+}
+

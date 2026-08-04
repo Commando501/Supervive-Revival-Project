@@ -1,0 +1,147 @@
+==============================================================================
+MODULE   GameMode.DropPhase.LokiDropPodLaser
+SOURCE   GameMode/DropPhase/LokiDropPodLaser.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ALokiDropPodLaser;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiDropPodLaser@ ALokiDropPodLaser()
+// 4 instr, 28 B bytecode, id=0x64ED2CA3, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiDropPodLaser v2;
+
+    v2 = ALokiDropPodLaser();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85082 q:0x26e6ed7b200; new ALokiDropPodLaser   ctor=ALokiDropPodLaser::ALokiDropPodLaser
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x142F762B, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiDropPodLaser);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057f558         ; __StaticType_ALokiDropPodLaser
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiDropPodLaser@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xBBF330AA, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiDropPodLaser v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiDropPodLaser.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiDropPodLaser>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6057f558         ; __StaticType_ALokiDropPodLaser
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972704            ; ALokiDropPodLaser@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ALokiDropPodLaser : ALokiActor
+// base /Script/Engine.LokiActor  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/LokiActor.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) protected ALokiDropPod@ OwningDropPod;
+
+}
+
+------------------------------------------------------------------------------
+ALokiDropPodLaser() const
+// 3 instr, 20 B bytecode, id=0x24420E18, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6ed7b200         ; ALokiDropPodLaser
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+void InitializeIndicator(ALokiDropPod@ DropPod)
+// 12 instr, 68 B bytecode, id=0xE6A93AC9, varspace=2
+------------------------------------------------------------------------------
+{
+    this.OwningDropPod = DropPod;
+    this.SetOwner(DropPod.GetPilotPlayerState());
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:952 d:134230880      ; ALokiDropPodLaser::OwningDropPod  (+952)
+    //     4  REFCPY
+    //     5  PopPtr
+    //     6  PshVPtr        rW0:-2
+    //     7  CALLSYS        q:0x26e7addd600         ; ALokiPlayerState@ ALokiDropPodBase::GetPilotPlayerState() const
+    //    10  STOREOBJ       wW0:2
+    //    11  PshVPtr        rW0:2
+    //    12  PshVPtr        rW0:0
+    //    13  CALLSYS        q:0x26e79714680         ; void AActor::SetOwner(AActor@)
+    //    16  RET            W0:4
+

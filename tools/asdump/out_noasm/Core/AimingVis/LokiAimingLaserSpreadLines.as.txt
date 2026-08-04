@@ -1,0 +1,332 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.LokiAimingLaserSpreadLines
+//  SOURCE   Core/AimingVis/LokiAimingLaserSpreadLines.as
+//  CONTENT  1 class(es), 10 function(s), 0 enum(s), 1 global(s), 3448 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaserSpreadLines;
+
+ALokiAimingLaserSpreadLines@ ALokiAimingLaserSpreadLines()   // traits=0x20
+{
+    ALokiAimingLaserSpreadLines v2;
+
+    v2 = ALokiAimingLaserSpreadLines();
+    return v2;
+}
+
+UClass@ ALokiAimingLaserSpreadLines::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiAimingLaserSpreadLines);
+    return v2;
+}
+
+ALokiAimingLaserSpreadLines@ ALokiAimingLaserSpreadLines::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaserSpreadLines v8;
+
+    v2 = __StaticType_ALokiAimingLaserSpreadLines.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiAimingLaserSpreadLines@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class ALokiAimingLaserSpreadLines : ALokiAimingLaser
+// static class global: __StaticType_ALokiAimingLaserSpreadLines
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    USceneComponent@ LaserSpreadRoot1;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    USceneComponent@ LaserSpreadRoot2;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.Attach=LaserSpreadRoot1)
+    UStaticMeshComponent@ LaserSpread1;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.Attach=LaserSpreadRoot2)
+    UStaticMeshComponent@ LaserSpread2;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bSetSpreadAngleViaBloom;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bInterpolateBloomValue;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 InterpolationRampHalfLife;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 NonBloomSpreadAngle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 HideSpreadLasersAngle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 DimSpreadLasersAngleWindow;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 LaserOpacityMultWhenSpread;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    float64 LastBloomAngle;
+
+    ALokiAimingLaserSpreadLines()   // traits=0x21
+    {
+        auto v1;
+        auto v4;
+
+        this.ALokiAimingLaser();
+        v1 = true;
+        this.bSetSpreadAngleViaBloom = v1;
+        v1 = true;
+        this.bInterpolateBloomValue = v1;
+        v4 = 0.04;
+        this.InterpolationRampHalfLife = v4;
+        v4 = -1.0;
+        this.NonBloomSpreadAngle = v4;
+        v4 = 0.05;
+        this.HideSpreadLasersAngle = v4;
+        v4 = 2.0;
+        this.DimSpreadLasersAngleWindow = v4;
+        v4 = 0.35;
+        this.LaserOpacityMultWhenSpread = v4;
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)
+    {
+        bool v1;
+        float64 v4;
+        float64 v6;
+        float64 v8;
+        float32 v9;
+        auto v10;
+        float64 v12;
+        float64 v14;
+        FRotator v20;
+        bool v21;
+        ULokiCharacterMovementComponent v24;
+        auto v26;
+        FVector v32;
+        float32 v33;
+        ALokiHeightMap v36;
+        FVector v44;
+        float32 v45;
+        float64 v48;
+        auto v50;
+        float64 v52;
+        auto v54;
+        FVector2D v58;
+        FVector2D v62;
+        UMaterialInstanceDynamic v68;
+
+        this.Tick_Implementation(DeltaSeconds);
+        v1 = this.ValidateOwner();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = 0;
+            v1 = this.bSetSpreadAngleViaBloom;
+            if (v1) {
+                v9 = this.OwnerHero.GetCurrentBloomAngle();
+                v6 = float64(v9);
+                v8 = v6;
+                v4 = v8;
+                v10 = this.bInterpolateBloomValue;
+                if (!v10) {
+                    v10 = 0;
+                } else {
+                    v6 = this.LastBloomAngle;
+                    v1 = v8 > v6;
+                    v10 = v1;
+                }
+                if (v10) {
+                    v14 = 1.0;
+                    v6 = DeltaSeconds;
+                    v6 = -v6;
+                    v12 = this.InterpolationRampHalfLife;
+                    v6 = v6 / v12;
+                    v12 = Math::Exp2(v6);
+                    v6 = v14 - v12;
+                    v12 = Math::Lerp(this.LastBloomAngle, v8, v6);
+                    v4 = v12;
+                    v14 = v8 - v4;
+                    v12 = 0.005;
+                    if (v14 < v12) {
+                        v4 = v8;
+                    }
+                }
+                this.LastBloomAngle = v4;
+            } else {
+                v12 = this.NonBloomSpreadAngle;
+                v4 = v12;
+            }
+            v12 = 0.5;
+            v6 = v4 * v12;
+            v12 = this.HideSpreadLasersAngle;
+            if (v4 > v12) {
+                v12 = v6;
+                v12 = -v12;
+                v20 = FRotator(0, v12, 0);
+                this.LaserSpreadRoot1.SetRelativeRotation(v20)  /* UFunction K2_SetRelativeRotation */;
+                v20 = FRotator(0, v6, 0);
+                this.LaserSpreadRoot2.SetRelativeRotation(v20)  /* UFunction K2_SetRelativeRotation */;
+                v24 = this.OwnerHero.GetLokiCharacterMovement();
+                v10 = v24.IsMidAir();
+                if (v10) {
+                    v32 = this.OwnerHero.GetFeetLocation();
+                    v8 = v32.Z;
+                    v12 = this.OwnerHero.GetCharacterProjectileTerrainHeightOffset();
+                    v26 = v8 + v12;
+                } else {
+                    v33 = 0;
+                    v36 = ALokiHeightMap::GetInstance(__WorldContext);
+                    if (v36 != nullptr) {
+                        v32 = this.OwnerHero.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        v14 = v32.Y;
+                        v9 = float32(v14);
+                        v44 = this.OwnerHero.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        v14 = v44.X;
+                        v45 = float32(v14);
+                        v36.GetHeight(v33, v45, v9);
+                    }
+                    v14 = float64(v33);
+                    v12 = this.OwnerHero.GetCharacterProjectileTerrainHeightOffset();
+                    v26 = v14 + v12;
+                }
+                v12 = Math::DegreesToRadians(v6);
+                v14 = Math::Cos(v12);
+                v8 = this.MaxDistance;
+                v12 = v14 * v8;
+                v8 = Math::DegreesToRadians(v6);
+                v48 = Math::Sin(v8);
+                v14 = this.MaxDistance;
+                v8 = v48 * v14;
+                v44 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v50 = v44.Z;
+                v48 = v26 - v50;
+                v14 = v8;
+                v14 = -v14;
+                v44 = FVector(v12, v14, v48);
+                this.LaserSpreadRoot1.SetRelativeLocation(v44)  /* UFunction K2_SetRelativeLocation */;
+                v32 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v50 = v32.Z;
+                v14 = v26 - v50;
+                v32 = FVector(v12, v8, v14);
+                this.LaserSpreadRoot2.SetRelativeLocation(v32)  /* UFunction K2_SetRelativeLocation */;
+                if (this.LaserSpread1.GetbHiddenInGame()) {
+                    v1 = true;
+                    v21 = false;
+                    this.LaserSpread1.SetHiddenInGame(v21, v1);
+                    v1 = true;
+                    v21 = false;
+                    this.LaserSpread2.SetHiddenInGame(v21, v1);
+                }
+                v52 = 1.0;
+                v14 = this.HideSpreadLasersAngle;
+                v50 = this.DimSpreadLasersAngleWindow;
+                v48 = v14 + v50;
+                if (v4 < v48) {
+                    v58 = FVector2D(0, 1.0);
+                    v14 = this.HideSpreadLasersAngle;
+                    v62 = FVector2D(v14, v48);
+                    v50 = Math::GetMappedRangeValueClamped(v62, v58, v4);
+                    v52 = v50;
+                }
+                v9 = float32(v52);
+                this.LaserSpread1.SetScalarParameterValueOnMaterials(n"Final Opacity", v9);
+                v9 = float32(v52);
+                this.LaserSpread2.SetScalarParameterValueOnMaterials(n"Final Opacity", v9);
+                v14 = 1.0;
+                v54 = Math::Lerp(v14, this.LaserOpacityMultWhenSpread, v52);
+                v45 = float32(v54);
+                v68 = this.LaserProjectilePath.GetMaterial(0);
+                v68.SetScalarParameterValue(n"Final Opacity", v45);
+                v45 = float32(v54);
+                this.LaserEndpoint.SetScalarParameterValueOnMaterials(n"Final Opacity", v45);
+                return;
+            } else {
+                v21 = this.LaserSpread1.GetbHiddenInGame();
+                v21 = !v21;
+                if (v21) {
+                    v1 = true;
+                    v21 = true;
+                    this.LaserSpread1.SetHiddenInGame(v21, v1);
+                    v1 = true;
+                    v21 = true;
+                    this.LaserSpread2.SetHiddenInGame(v21, v1);
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=CustomEvent0, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void CustomEvent0_Implementation(const float64 Value)
+    {
+        this.PauseBloomVisualOnShot(Value);
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        FVector v8;
+        FRotator v20;
+
+        v1 = false;
+        this.LaserSpread1.SetCastShadow(v1);
+        v1 = false;
+        this.LaserSpread1.SetGenerateOverlapEvents(v1);
+        v1 = true;
+        this.LaserSpread1.SetCollisionProfileName(n"NoCollision", v1);
+        v8 = FVector(-200.0, 41.5, 0);
+        this.LaserSpread1.SetRelativeLocation(v8)  /* UFunction K2_SetRelativeLocation */;
+        v20 = FRotator(0, 90.0, 0);
+        this.LaserSpread1.SetRelativeRotation(v20)  /* UFunction K2_SetRelativeRotation */;
+        v8 = FVector(1.0, 3.0, 1.0);
+        this.LaserSpread1.SetRelativeScale3D(v8);
+        v1 = false;
+        this.LaserSpread2.SetCastShadow(v1);
+        v1 = false;
+        this.LaserSpread2.SetGenerateOverlapEvents(v1);
+        v1 = true;
+        this.LaserSpread2.SetCollisionProfileName(n"NoCollision", v1);
+        v8 = FVector(-200.0, -41.5, 0);
+        this.LaserSpread2.SetRelativeLocation(v8)  /* UFunction K2_SetRelativeLocation */;
+        v20 = FRotator(0, 90.0, 0);
+        this.LaserSpread2.SetRelativeRotation(v20)  /* UFunction K2_SetRelativeRotation */;
+        v8 = FVector(1.0, 3.0, 1.0);
+        this.LaserSpread2.SetRelativeScale3D(v8);
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void PauseBloomVisualOnShot(const float64 PauseAngle)   // traits=0x20
+    {
+        return;
+    }
+
+    void ~ALokiAimingLaserSpreadLines()   // traits=0x22
+    {
+        this.~ALokiAimingLaser();
+        return;
+    }
+
+}
+

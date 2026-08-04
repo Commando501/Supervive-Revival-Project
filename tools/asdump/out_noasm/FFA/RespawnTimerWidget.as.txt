@@ -1,0 +1,135 @@
+// ============================================================================
+//  MODULE   FFA.RespawnTimerWidget
+//  SOURCE   FFA/RespawnTimerWidget.as
+//  CONTENT  1 class(es), 10 function(s), 0 enum(s), 1 global(s), 720 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_URespawnTimerWidget;
+
+URespawnTimerWidget@ URespawnTimerWidget()   // traits=0x20
+{
+    URespawnTimerWidget v2;
+
+    v2 = URespawnTimerWidget();
+    return v2;
+}
+
+UClass@ URespawnTimerWidget::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_URespawnTimerWidget);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable)
+class URespawnTimerWidget : UUserWidget
+// unreal base : /Script/UMG.UserWidget
+// C++ header  : ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+// static class global: __StaticType_URespawnTimerWidget
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ULokiPlayerRespawnComponent@ PSC;
+
+    URespawnTimerWidget()   // traits=0x21
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=Construct, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Construct_Implementation()   // traits=0x20
+    {
+        FOnPlayerStateAssigned v4;
+
+        v4 = FOnPlayerStateAssigned();
+        v4.BindUFunction(this, n"OnPlayerStateAssigned");
+        Loki::TryGetLocalLokiPlayerState(__WorldContext, v4);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnPlayerStateAssigned(ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        UClass v2;
+        TSubclassOf<UActorComponent@> v4;
+        UActorComponent v6;
+        ULokiPlayerRespawnComponent v8;
+
+        v2 = ULokiPlayerRespawnComponent::StaticClass();
+        v4 = TSubclassOf<UActorComponent@>(v2);
+        v6 = PlayerState.GetComponentByClass(v4);
+        if (v6 != nullptr) {
+            v8 = cast<ULokiPlayerRespawnComponent@>(v6);
+        } else {
+            v8 = nullptr;
+        }
+        this.PSC = v8;
+        v8 = this.PSC;
+        if (v8 != nullptr) {
+            this.PSC.OnRespawnTimeUpdated.AddUFunction(this, n"OnRespawnTimeUpdated");
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const FGeometry& MyGeometry, const float64 InDeltaTime)   // traits=0x20
+    {
+        ULokiPlayerRespawnComponent v2;
+        float64 v6;
+
+        v2 = this.PSC;
+        if (v2 != nullptr) {
+            v6 = this.PSC.LocalRespawnTime;
+            this.UpdateTimerText(v6);
+        }
+        return;
+    }
+
+    void UpdateTimerText(const float64 TimeUntilRespawn)   // traits=0x20
+    {
+        __Evt_PushArgument__float(TimeUntilRespawn);
+        __Evt_Execute(this, n"UpdateTimerText");
+        return;
+    }
+
+    UFUNCTION(UnrealName=UpdateTimerText, BlueprintEvent, CanOverrideEvent, NoOp)
+    void UpdateTimerText_Implementation(const float64 TimeUntilRespawn)   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRespawnTimeUpdated()   // traits=0x20
+    {
+        ULokiPlayerRespawnComponent v2;
+        float64 v6;
+
+        v2 = this.PSC;
+        if (v2 != nullptr) {
+            v6 = this.PSC.LocalRespawnTime;
+            this.UpdateTimerText(v6);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRequestRespawn()   // traits=0x20
+    {
+        ULokiPlayerRespawnComponent v2;
+
+        v2 = this.PSC;
+        if (v2 != nullptr) {
+            this.PSC.AuthRequestRespawn();
+        }
+        return;
+    }
+
+}
+

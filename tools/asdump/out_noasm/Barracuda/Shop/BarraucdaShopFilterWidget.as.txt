@@ -1,0 +1,79 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarraucdaShopFilterWidget
+//  SOURCE   Barracuda/Shop/BarraucdaShopFilterWidget.as
+//  CONTENT  2 class(es), 6 function(s), 0 enum(s), 1 global(s), 292 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarraucdaShopFilterWidget;
+
+UBarraucdaShopFilterWidget@ UBarraucdaShopFilterWidget()   // traits=0x20
+{
+    UBarraucdaShopFilterWidget v2;
+
+    v2 = UBarraucdaShopFilterWidget();
+    return v2;
+}
+
+UClass@ UBarraucdaShopFilterWidget::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarraucdaShopFilterWidget);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FBarracudaShopTagFilter
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FText Label;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FGameplayTag Tag;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FGameplayTag RecommendedHeroTag;
+
+    FBarracudaShopTagFilter()   // traits=0x21
+    {
+        this.Label = FText();
+        this.Tag = FGameplayTag();
+        this.RecommendedHeroTag = FGameplayTag();
+        return;
+    }
+
+    void ~FBarracudaShopTagFilter()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarraucdaShopFilterWidget : UUserWidget
+// unreal base : /Script/UMG.UserWidget
+// C++ header  : ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+// static class global: __StaticType_UBarraucdaShopFilterWidget
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    TArray<FBarracudaShopTagFilter> TagFilters;
+
+    UBarraucdaShopFilterWidget()   // traits=0x21
+    {
+        this.TagFilters = TArray<FBarracudaShopTagFilter>();
+        return;
+    }
+
+    void ~UBarraucdaShopFilterWidget()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

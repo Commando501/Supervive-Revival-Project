@@ -1,0 +1,3350 @@
+// ============================================================================
+//  MODULE   UAV.LokiGameStateUAVComponent
+//  SOURCE   UAV/LokiGameStateUAVComponent.as
+//  CONTENT  1 class(es), 28 function(s), 0 enum(s), 1 global(s), 12416 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiGameStateUAVComponent;
+
+ULokiGameStateUAVComponent@ ULokiGameStateUAVComponent()   // traits=0x20
+{
+    ULokiGameStateUAVComponent v2;
+
+    v2 = ULokiGameStateUAVComponent();
+    return v2;
+}
+/* ---- ULokiGameStateUAVComponent: 7 dwords / 4 instructions (cache offset 0xb4a08) ----
+    0000  PSF           v2
+    0004  ALLOC         85373 ULokiGameStateUAVComponent              ; new ULokiGameStateUAVComponent  ctor=void ULokiGameStateUAVComponent::ULokiGameStateUAVComponent()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ULokiGameStateUAVComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiGameStateUAVComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xb4acf) ----
+    0000  PshGPtr       __StaticType_ULokiGameStateUAVComponent
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ULokiGameStateUAVComponent@ ULokiGameStateUAVComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiGameStateUAVComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiGameStateUAVComponent, v2, typeid(ULokiGameStateUAVComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0xb4c13) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972728                                    ; ULokiGameStateUAVComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiGameStateUAVComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetComponentByClass                   ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiGameStateUAVComponent@ ULokiGameStateUAVComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiGameStateUAVComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiGameStateUAVComponent, v2, typeid(ULokiGameStateUAVComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0xb4d6f) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972728                                    ; ULokiGameStateUAVComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiGameStateUAVComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass           ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiGameStateUAVComponent@ ULokiGameStateUAVComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiGameStateUAVComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiGameStateUAVComponent, v2, typeid(ULokiGameStateUAVComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0xb4ec6) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972728                                    ; ULokiGameStateUAVComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiGameStateUAVComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_CreateComponentByClass                ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiGameStateUAVComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiGameStateUAVComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected float64 PlayerGroupingDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected float64 VaultVisionDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    TSubclassOf<AUAVAudioPlayer@> GlobalAudioActorClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected TSubclassOf<UGameplayEffect@> MarkedTeamGameplayEffectClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected TSubclassOf<UGameplayEffect@> MarkedIndividualGameplayEffectClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected FGameplayTag UAVBlockedGameplayCueTag;
+    private FGameplayTag DataTag;
+    private FGameplayTag UAVImmunityTag;
+    private FGameplayTag UAVUpgradedTag;
+    private TArray<FActiveUAV> ActiveUAVs;
+    private TArray<AVaultItemSpawner@> AllVaultItemSpawners;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    private int NextUAVID;
+
+    ULokiGameStateUAVComponent()   // traits=0x21
+    {
+        auto v1;
+
+        this.GlobalAudioActorClass = TSubclassOf<AUAVAudioPlayer@>();
+        this.MarkedTeamGameplayEffectClass = TSubclassOf<UGameplayEffect@>();
+        this.MarkedIndividualGameplayEffectClass = TSubclassOf<UGameplayEffect@>();
+        this.UAVBlockedGameplayCueTag = FGameplayTag();
+        this.ActiveUAVs = TArray<FActiveUAV>();
+        this.AllVaultItemSpawners = TArray<AVaultItemSpawner@>();
+        this.DataTag = FGameplayTag(GameplayTags::Data);
+        this.UAVImmunityTag = FGameplayTag(GameplayTags::Immunity_UAV);
+        this.UAVUpgradedTag = FGameplayTag(GameplayTags::State_UAVUpgraded);
+        v1 = 0;
+        this.NextUAVID = v1;
+        return;
+    }
+    /* ---- ULokiGameStateUAVComponent: 73 dwords / 36 instructions (cache offset 0xbb458) ----
+        0000  PshVPtr       this
+        0004  ADDSi         224 134230904                                 ; .GlobalAudioActorClass
+        000C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AUAVAudioPlayer@>::$beh0()
+        0018  PshVPtr       this
+        001C  ADDSi         232 134230904                                 ; .MarkedTeamGameplayEffectClass
+        0024  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UGameplayEffect@>::$beh0()
+        0030  PshVPtr       this
+        0034  ADDSi         240 134230904                                 ; .MarkedIndividualGameplayEffectClass
+        003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UGameplayEffect@>::$beh0()
+        0048  PshVPtr       this
+        004C  ADDSi         248 134230904                                 ; .UAVBlockedGameplayCueTag
+        0054  CALLSYS       FGameplayTag::$beh0                           ; void FGameplayTag::$beh0()
+        0060  PshVPtr       this
+        0064  ADDSi         280 134230904                                 ; .ActiveUAVs
+        006C  CALLSYS       TArray::$beh0                                 ; void TArray<FActiveUAV>::$beh0()
+        0078  PshVPtr       this
+        007C  ADDSi         296 134230904                                 ; .AllVaultItemSpawners
+        0084  CALLSYS       TArray::$beh0                                 ; void TArray<AVaultItemSpawner@>::$beh0()
+        0090  PshGPtr       GameplayTags::Data
+        009C  PshVPtr       this
+        00A0  ADDSi         256 134230904                                 ; .DataTag
+        00A8  CALLSYS       FGameplayTag::$beh0                           ; void FGameplayTag::$beh0(const FGameplayTag&)
+        00B4  PshGPtr       GameplayTags::Immunity_UAV
+        00C0  PshVPtr       this
+        00C4  ADDSi         264 134230904                                 ; .UAVImmunityTag
+        00CC  CALLSYS       FGameplayTag::$beh0                           ; void FGameplayTag::$beh0(const FGameplayTag&)
+        00D8  PshGPtr       GameplayTags::State_UAVUpgraded
+        00E4  PshVPtr       this
+        00E8  ADDSi         272 134230904                                 ; .UAVUpgradedTag
+        00F0  CALLSYS       FGameplayTag::$beh0                           ; void FGameplayTag::$beh0(const FGameplayTag&)
+        00FC  SetV4         v1 0
+        0104  LoadThisR     312 134230904                                 ; this.NextUAVID
+        010C  WRTV4         v1
+        0110  PshVPtr       this
+        0114  FinConstruct  ULokiGameStateUAVComponent
+        0120  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v2;
+        auto v3;
+        float64 v6;
+        TArray<int> v10;
+        int v11;
+        auto v13;
+        bool v14;
+        FActiveUAV v16;
+        float64 v18;
+        auto v20;
+        auto v21;
+        int v22;
+        int v23;
+
+        v3 = Gameplay::GetServerTime(__WorldContext);
+        v6 = float64(v3);
+        v2 = v6;
+        v10 = TArray<int>();
+        v11 = 0;
+        while (true) {
+            v13 = this.ActiveUAVs.Num();
+            if (v11 >= v13) break;
+            v16 = this.ActiveUAVs[v11];
+            v3 = Gameplay::GetServerTime(__WorldContext);
+            v6 = float64(v3);
+            v18 = v6;
+            if (v16.ShouldPulse(v18)) {
+                this.PulseUAV(v16);
+            }
+            v14 = v16.Config.IsInfiniteDuration();
+            v14 = !v14;
+            if (!v14) {
+                v14 = 0;
+            } else {
+                v6 = v16.StartTime;
+                v20 = v16.Config.Duration;
+                v6 = v6 + v20;
+                v21 = v6 < v2;
+                v14 = v21;
+            }
+            if (v14) {
+                v10.Add(v11);
+            }
+            v11++;
+        }
+        v13 = v10.Num();
+        v22 = v13 - 1;
+        while (true) {
+            if (v22 < 0) break;
+            v11 = v16.Config.Duration;
+            v23 = v11;
+            v16 = this.ActiveUAVs[v23];
+            this.CleanupUAV(v16);
+            this.ActiveUAVs.RemoveAtSwap(v23);
+            v22--;
+        }
+        if (this.ActiveUAVs.IsEmpty()) {
+            v14 = false;
+            this.SetComponentTickEnabled(v14);
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 165 dwords / 97 instructions (cache offset 0xb55d8) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        0018  CpyRtoV4      v3
+        001C  fTOd          v6 v3
+        0024  CpyVtoV8      v2 v6
+        002C  PSF           v10
+        0030  CALLSYS       TArray::$beh0                                 ; void TArray<int>::$beh0()
+        003C  SetV4         v11 0
+        0044  JMP           72                                            -> L016C
+      L004C:
+        004C  SUSPEND
+        0050  PshV4         v11
+        0054  PshVPtr       this
+        0058  ADDSi         280 134230904                                 ; .ActiveUAVs
+        0060  Thiscall1     TArray::opIndex                               ; FActiveUAV& TArray<FActiveUAV>::opIndex(int)
+        006C  CpyRtoV8      v16
+        0070  PshGPtr       __WorldContext
+        007C  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        0088  CpyRtoV4      v3
+        008C  fTOd          v6 v3
+        0094  CpyVtoV8      v18 v6
+        009C  PshV8         v18
+        00A0  PshVPtr       v16
+        00A4  CALL          85410                                         ; bool FActiveUAV::ShouldPulse(const float64) const
+        00AC  JLowZ         4                                             -> L00C4
+        00B4  PshVPtr       v16
+        00B8  PshVPtr       this
+        00BC  CALLINTF      85353                                         ; void ULokiGameStateUAVComponent::PulseUAV(FActiveUAV&)
+      L00C4:
+        00C4  PshVPtr       v16
+        00C8  ADDSi         8 134230905                                   ; .Config
+        00D0  CALL          85408                                         ; bool FLokiUAVConfig::IsInfiniteDuration()
+        00D8  CpyRtoV4      v14
+        00DC  NOT           v14
+        00E0  CpyVtoR1      v14
+        00E4  JLowNZ        4                                             -> L00FC
+        00EC  SetV4         v14 0
+        00F4  JMP           19                                            -> L0148
+      L00FC:
+        00FC  LoadRObjR     v16 80 134230905                              ; .StartTime
+        0108  RDR8          v6
+        010C  PshVPtr       v16
+        0110  ADDSi         8 134230905                                   ; .Config
+        0118  ADDSi         0 134230906                                   ; .Duration
+        0120  PopRPtr
+        0124  RDR8          v20
+        0128  ADDd          v6 v6 v20
+        0130  CMPd          v6 v2
+        0138  TS
+        013C  CpyRtoV4      v21
+        0140  CpyVtoV4      v14 v21
+      L0148:
+        0148  CpyVtoR1      v14
+        014C  JLowZ         5                                             -> L0168
+        0154  PSF           v11
+        0158  PSF           v10
+        015C  CALLSYS       TArray::Add                                   ; void TArray<int>::Add(const int&)
+      L0168:
+        0168  IncVi         v11
+      L016C:
+        016C  PshVPtr       this
+        0170  ADDSi         280 134230904                                 ; .ActiveUAVs
+        0178  CALLSYS       TArray::Num                                   ; int TArray<FActiveUAV>::Num() const
+        0184  CpyRtoV4      v13
+        0188  CMPi          v11 v13
+        0190  JS            -83                                           -> L004C
+        0198  PSF           v10
+        019C  CALLSYS       TArray::Num                                   ; int TArray<int>::Num() const
+        01A8  CpyRtoV4      v13
+        01AC  SUBIi         v22 v13 1
+        01B8  JMP           29                                            -> L0234
+      L01C0:
+        01C0  SUSPEND
+        01C4  PshV4         v22
+        01C8  PSF           v10
+        01CC  Thiscall1     TArray::opIndex                               ; int& TArray<int>::opIndex(int)
+        01D8  RDR4          v11
+        01DC  CpyVtoV4      v23 v11
+        01E4  PshV4         v23
+        01E8  PshVPtr       this
+        01EC  ADDSi         280 134230904                                 ; .ActiveUAVs
+        01F4  Thiscall1     TArray::opIndex                               ; FActiveUAV& TArray<FActiveUAV>::opIndex(int)
+        0200  CpyRtoV8      v16
+        0204  PshVPtr       v16
+        0208  PshVPtr       this
+        020C  CALLINTF      85367                                         ; void ULokiGameStateUAVComponent::CleanupUAV(FActiveUAV&)
+        0214  PshV4         v23
+        0218  PshVPtr       this
+        021C  ADDSi         280 134230904                                 ; .ActiveUAVs
+        0224  CALLSYS       TArray::RemoveAtSwap                          ; void TArray<FActiveUAV>::RemoveAtSwap(int)
+        0230  DecVi         v22
+      L0234:
+        0234  CMPIi         v22 0
+        023C  JNS           -33                                           -> L01C0
+        0244  PshVPtr       this
+        0248  ADDSi         280 134230904                                 ; .ActiveUAVs
+        0250  CALLSYS       TArray::IsEmpty                               ; bool TArray<FActiveUAV>::IsEmpty() const
+        025C  JLowZ         7                                             -> L0280
+        0264  SetV1         v14 0
+        026C  PshV4         v14
+        0270  PshVPtr       this
+        0274  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+      L0280:
+        0280  PSF           v10
+        0284  CALLSYS       TArray::$beh2                                 ; void TArray<int>::$beh2()
+        0290  RET           4
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+        TArrayIterator<AVaultItemSpawner@> v8;
+        AVaultItemSpawner v16;
+        ALokiDestructible v18;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            GetAllActorsOfClass(this.AllVaultItemSpawners, typeid(TArray));
+            v8 = this.AllVaultItemSpawners.Iterator();
+            while (true) {
+                v1 = v8.CanProceed;
+                if (!v1) break;
+                v16 = v8.Proceed();
+                v8.Proceed();
+                v18 = v16.GetDoor();
+                if (v18 != nullptr) {
+                    v18.OnDestroyed.AddUFunction(this, n"OnVaultDoorDestroyed");
+                }
+                v16.OnDestroyed.AddUFunction(this, n"OnVaultDestroyed");
+            }
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 81 dwords / 48 instructions (cache offset 0xb59f2) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  CpyRtoV4      v1
+        001C  NOT           v1
+        0020  CpyVtoR1      v1
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           67                                            -> L0140
+      L0034:
+        0034  TYPEID        268448635                                     ; TArray
+        003C  PshVPtr       this
+        0040  ADDSi         296 134230904                                 ; .AllVaultItemSpawners
+        0048  CALLSYS       GetAllActorsOfClass                           ; void GetAllActorsOfClass(?&)
+        0054  PSF           v8
+        0058  PshVPtr       this
+        005C  ADDSi         296 134230904                                 ; .AllVaultItemSpawners
+        0064  CALLSYS       TArray::Iterator                              ; TArrayIterator<AVaultItemSpawner@> TArray<AVaultItemSpawner@>::Iterator()
+        0070  JMP           43                                            -> L0124
+      L0078:
+        0078  SUSPEND
+        007C  PSF           v8
+        0080  CALLSYS       TArrayIterator::Proceed                       ; AVaultItemSpawner@& TArrayIterator<AVaultItemSpawner@>::Proceed()
+        008C  PshRPtr
+        0090  RDSPtr
+        0094  RefCpyV       v16
+        0098  PshVPtr       v16
+        009C  CALLINTF      85449                                         ; ALokiDestructible@ AVaultItemSpawner::GetDoor()
+        00A4  STOREOBJ      v18
+        00A8  CmpPtrNull    v18
+        00AC  JZ            13                                            -> L00E8
+        00B4  PshC4         86
+        00BC  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        00C8  PshRPtr
+        00CC  PshVPtr       this
+        00D0  PshVPtr       v18
+        00D4  ADDSi         544 67111343                                  ; .OnDestroyed
+        00DC  CALLSYS       FActorDestroyedSignature::AddUFunction        ; void FActorDestroyedSignature::AddUFunction(UObject@, const FName&)
+      L00E8:
+        00E8  PshC4         87
+        00F0  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        00FC  PshRPtr
+        0100  PshVPtr       this
+        0104  PshVPtr       v16
+        0108  ADDSi         544 67111343                                  ; .OnDestroyed
+        0110  CALLSYS       FActorDestroyedSignature::AddUFunction        ; void FActorDestroyedSignature::AddUFunction(UObject@, const FName&)
+        011C  FreeNullV8    v18
+        0120  FreeNullV8    v16
+      L0124:
+        0124  LoadVObjR     v8 16 268448636                               ; .CanProceed
+        0130  RDR1          v1
+        0134  CpyVtoR1      v1
+        0138  JLowNZ        -50                                           -> L0078
+      L0140:
+        0140  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    FActiveUAV ExecuteUAV(const FLokiUAVConfig& Config, const FVector& SourceLocation, const int TeamIndex = - 1)   // traits=0x20
+    {
+        FActiveUAV v68;
+        bool v69;
+        auto v70;
+        auto v71;
+        float64 v74;
+        TSubclassOf<AUAVAudioPlayer@> v76;
+        AUAVAudioPlayer v78;
+
+        v68.FActiveUAV();
+        v69 = true;
+        v68.bValid = v69;
+        v70 = this.NextUAVID;
+        v68.ID = v70;
+        this.NextUAVID++;
+        SourceLocation = v68.Config;
+        v71 = Gameplay::GetServerTime(__WorldContext);
+        v74 = float64(v71);
+        v68.StartTime = v74;
+        v68.TeamIndex = arg_m8;
+        v68.SourceLocation = TeamIndex;
+        v76 = TSubclassOf<AUAVAudioPlayer@>();
+        v76 = this.GlobalAudioActorClass;
+        v69 = v76 == nullptr;
+        v69 = !v69;
+        if (v69) {
+            v69 = false;
+            v78 = SpawnActor(this.GlobalAudioActorClass, TeamIndex, FRotator::ZeroRotator, NAME_None, v69, nullptr);
+            if (v78 != nullptr) {
+                v68 = v78.ActiveUAVCopy;
+                v68.AudioActor = v78;
+            }
+        }
+        this.ActiveUAVs.Add(v68);
+        v69 = true;
+        this.SetComponentTickEnabled(v69);
+        Config.FActiveUAV();
+        v68 = Config;
+        return v78;
+    }
+    /* ---- ExecuteUAV: 129 dwords / 79 instructions (cache offset 0xb5d67) ----
+        0000  PSF           v68
+        0004  CALL          85414                                         ; void FActiveUAV::FActiveUAV()
+        000C  SetV1         v69 1
+        0014  LoadVObjR     v68 0 134230905                               ; .bValid
+        0020  WRTV1         v69
+        0024  LoadThisR     312 134230904                                 ; this.NextUAVID
+        002C  RDR4          v70
+        0030  LoadVObjR     v68 4 134230905                               ; .ID
+        003C  WRTV4         v70
+        0040  LoadThisR     312 134230904                                 ; this.NextUAVID
+        0048  INCi
+        004C  PshVPtr       SourceLocation
+        0050  PSF           v68
+        0054  ADDSi         8 134230905                                   ; .Config
+        005C  COPY          72 134230906                                  ; FLokiUAVConfig
+        0064  PopPtr
+        0068  PshGPtr       __WorldContext
+        0074  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        0080  CpyRtoV4      v71
+        0084  fTOd          v74 v71
+        008C  LoadVObjR     v68 80 134230905                              ; .StartTime
+        0098  WRTV8         v74
+        009C  LoadVObjR     v68 88 134230905                              ; .TeamIndex
+        00A8  WRTV4         arg_m8
+        00AC  PshVPtr       TeamIndex
+        00B0  PSF           v68
+        00B4  ADDSi         104 134230905                                 ; .SourceLocation
+        00BC  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        00C8  PSF           v76
+        00CC  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AUAVAudioPlayer@>::$beh0()
+        00D8  PshVPtr       this
+        00DC  ADDSi         224 134230904                                 ; .GlobalAudioActorClass
+        00E4  PSF           v76
+        00E8  CALLSYS       TSubclassOf::opAssign                         ; TSubclassOf<AUAVAudioPlayer@>& TSubclassOf<AUAVAudioPlayer@>::opAssign(const TSubclassOf<AUAVAudioPlayer@>&)
+        00F4  PshNull
+        00F8  PSF           v76
+        00FC  CALLSYS       TSubclassOf::opEquals                         ; bool TSubclassOf<AUAVAudioPlayer@>::opEquals(UClass@) const
+        0108  CpyRtoV4      v69
+        010C  NOT           v69
+        0110  CpyVtoR1      v69
+        0114  JLowZ         35                                            -> L01A8
+        011C  PshNull
+        0120  SetV1         v69 0
+        0128  PshV4         v69
+        012C  PshGPtr       NAME_None
+        0138  PshGPtr       FRotator::ZeroRotator
+        0144  PshVPtr       TeamIndex
+        0148  PshVPtr       this
+        014C  ADDSi         224 134230904                                 ; .GlobalAudioActorClass
+        0154  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+        0160  STOREOBJ      v78
+        0164  CmpPtrNull    v78
+        0168  JZ            13                                            -> L01A4
+        0170  PSF           v68
+        0174  PshVPtr       v78
+        0178  ADDSi         912 134230910                                 ; .ActiveUAVCopy
+        0180  COPY          136 134230905                                 ; FActiveUAV
+        0188  PopPtr
+        018C  PshVPtr       v78
+        0190  PSF           v68
+        0194  ADDSi         96 134230905                                  ; .AudioActor
+        019C  REFCPY
+        01A0  PopPtr
+      L01A4:
+        01A4  FreeNullV8    v78
+      L01A8:
+        01A8  PSF           v68
+        01AC  PshVPtr       this
+        01B0  ADDSi         280 134230904                                 ; .ActiveUAVs
+        01B8  CALLSYS       TArray::Add                                   ; void TArray<FActiveUAV>::Add(const FActiveUAV&)
+        01C4  SetV1         v69 1
+        01CC  PshV4         v69
+        01D0  PshVPtr       this
+        01D4  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+        01E0  PshVPtr       Config
+        01E4  CALL          85414                                         ; void FActiveUAV::FActiveUAV()
+        01EC  PSF           v68
+        01F0  PshVPtr       Config
+        01F4  COPY          136 134230905                                 ; FActiveUAV
+        01FC  PopPtr
+        0200  RET           9
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void CancelOngoingUAVs(const int TeamIndex = - 1)   // traits=0x20
+    {
+        int v1;
+        auto v2;
+        TArrayIterator<FActiveUAV> v8;
+        FActiveUAV v16;
+        ULokiFuzzyPlayerLocationComponent v18;
+
+        if (TeamIndex == -1) {
+            return;
+        } else {
+            v8 = this.ActiveUAVs.Iterator();
+            while (true) {
+                v2 = v8.CanProceed;
+                if (!v2) break;
+                v16 = v8.Proceed();
+                v1 = v16.TeamIndex;
+                if (v1 == TeamIndex) {
+                    this.CleanupUAV(v16);
+                    this.ActiveUAVs.Remove(v16);
+                    v1 = v16.TeamIndex;
+                    v18 = ALokiTeamState_TeamOnly::GetFuzzyPlayerLocationComponentByTeamIndex(__WorldContext, v1);
+                    if (v18 != nullptr) {
+                        v18.ClearLocations();
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- CancelOngoingUAVs: 68 dwords / 39 instructions (cache offset 0xb6146) ----
+        0000  CMPIi         TeamIndex -1
+        0008  JNZ           2                                             -> L0018
+        0010  JMP           61                                            -> L010C
+      L0018:
+        0018  PSF           v8
+        001C  PshVPtr       this
+        0020  ADDSi         280 134230904                                 ; .ActiveUAVs
+        0028  CALLSYS       TArray::Iterator                              ; TArrayIterator<FActiveUAV> TArray<FActiveUAV>::Iterator()
+        0034  JMP           45                                            -> L00F0
+      L003C:
+        003C  SUSPEND
+        0040  PSF           v8
+        0044  CALLSYS       TArrayIterator::Proceed                       ; FActiveUAV& TArrayIterator<FActiveUAV>::Proceed()
+        0050  CpyRtoV8      v16
+        0054  LoadRObjR     v16 88 134230905                              ; .TeamIndex
+        0060  RDR4          v1
+        0064  CMPi          v1 TeamIndex
+        006C  JNZ           31                                            -> L00F0
+        0074  PshVPtr       v16
+        0078  PshVPtr       this
+        007C  CALLINTF      85367                                         ; void ULokiGameStateUAVComponent::CleanupUAV(FActiveUAV&)
+        0084  PshVPtr       v16
+        0088  PshVPtr       this
+        008C  ADDSi         280 134230904                                 ; .ActiveUAVs
+        0094  CALLSYS       TArray::Remove                                ; int TArray<FActiveUAV>::Remove(const FActiveUAV&)
+        00A0  LoadRObjR     v16 88 134230905                              ; .TeamIndex
+        00AC  RDR4          v1
+        00B0  PshV4         v1
+        00B4  PshGPtr       __WorldContext
+        00C0  CALLSYS       GetFuzzyPlayerLocationComponentByTeamIndex    ; ULokiFuzzyPlayerLocationComponent@ ALokiTeamState_TeamOnly::GetFuzzyPlayerLocationComponentByTeamIndex(const UObject@, int)
+        00CC  STOREOBJ      v18
+        00D0  CmpPtrNull    v18
+        00D4  JZ            4                                             -> L00EC
+        00DC  PshVPtr       v18
+        00E0  CALLSYS       ULokiFuzzyPlayerLocationComponent::ClearLocations  ; void ULokiFuzzyPlayerLocationComponent::ClearLocations()
+      L00EC:
+        00EC  FreeNullV8    v18
+      L00F0:
+        00F0  LoadVObjR     v8 16 268448639                               ; .CanProceed
+        00FC  RDR1          v2
+        0100  CpyVtoR1      v2
+        0104  JLowNZ        -52                                           -> L003C
+      L010C:
+        010C  RET           3
+    */
+
+    private void PulseUAV(FActiveUAV&inout UAV)   // traits=0x28
+    {
+        ALokiGameState v2;
+        bool v5;
+        auto v6;
+        int v7;
+        ALokiGameMode v10;
+        auto v14;
+        bool v19;
+        TArray<ALokiTeamState@> v24;
+        TArray<ALokiPlayerState@> v28;
+        TArrayIterator<ALokiTeamState@> v34;
+        ALokiTeamState v42;
+        TArray<ALokiPlayerState@> v46;
+        TArray<ALokiPlayerState@> v50;
+        TArrayIterator<ALokiPlayerState@> v56;
+        TArrayIterator<ALokiPlayerState@> v62;
+        ALokiPlayerState v64;
+        APlayerController v70;
+        UClass v72;
+        TSubclassOf<UActorComponent@> v74;
+        UActorComponent v76;
+        ULokiPlayerControllerUAVComponent v78;
+        ULokiPlayerControllerUAVComponent v80;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            return;
+        } else {
+            v6 = UAV.TeamIndex;
+            if (v6 >= 0) {
+                v10 = Loki::GetLokiGameMode(__WorldContext);
+                v5 = IsValid(v10);
+                v5 = !v5;
+                if (v5) {
+                    return;
+                }
+                v7 = UAV.TeamIndex;
+                if (v10.IsTeamEliminated(v7)) {
+                    return;
+                }
+            }
+            UAV.PulseCount++;
+            v7 = UAV.TeamIndex;
+            if (this.ShouldUpgradeUAV(v7)) {
+                v5 = true;
+                UAV.Config.bShowIndividuals = v5;
+                v5 = true;
+                UAV.Config.bShowTeam = v5;
+                v14 = 0;
+                UAV.Config.InaccuracyDistance = v14;
+            }
+            v5 = false;
+            v19 = false;
+            v24 = v2.GetTeamStates(v19, v5);
+            v28 = TArray<ALokiPlayerState@>();
+            v34 = v24.Iterator();
+            while (true) {
+                v5 = v34.CanProceed;
+                if (!v5) break;
+                v42 = v34.Proceed();
+                v34.Proceed();
+                v6 = v42.GetIndex();
+                v7 = UAV.TeamIndex;
+                if (v6 != v7) {
+                    if (this.IsTeamUAVImmune(v42)) {
+                        this.NotifyTeamBlockedUAV(v42);
+                    } else {
+                        v5 = UAV.Config.bShowIndividuals;
+                        if (v5) {
+                            v50 = v42.GetLivingPlayers();
+                            v56 = v50.Iterator();
+                            while (true) {
+                                v19 = v56.CanProceed;
+                                if (!v19) break;
+                                v64 = v56.Proceed();
+                                v56.Proceed();
+                                v5 = this.IsValidUAVTarget(UAV, v64);
+                                v5 = !v5;
+                                if (!v5) {
+                                    v28.Add(v64);
+                                }
+                            }
+                        } else {
+                            this.PulseTeam(UAV, v42);
+                        }
+                    }
+                }
+            }
+            v19 = UAV.Config.bShowIndividuals;
+            if (v19) {
+                v7 = v28.Num();
+                UAV.PlayersDetected = v7;
+                v62 = v28.Iterator();
+                while (true) {
+                    v19 = v62.CanProceed;
+                    if (!v19) break;
+                    v64 = v62.Proceed();
+                    v62.Proceed();
+                    this.PulseIndividual(UAV, v64);
+                }
+            }
+            v5 = UAV.Config.bRevealVaults;
+            if (v5) {
+                this.RevealVaultContents(UAV);
+            }
+            v19 = UAV.Config.bLocalRadar;
+            if (v19) {
+                v7 = UAV.PlayersDetected;
+                if (v7 != 0) {
+                    v19 = 0;
+                } else {
+                    v6 = UAV.TeamIndex;
+                    v5 = v6 >= 0;
+                    v19 = v5;
+                }
+                if (v19) {
+                    v7 = UAV.TeamIndex;
+                    v42 = v2.GetTeamState(v7);
+                    if (v42 != nullptr) {
+                        v46 = v42.GetLivingPlayers();
+                        v56 = v46.Iterator();
+                        while (true) {
+                            v5 = v56.CanProceed;
+                            if (!v5) break;
+                            v64 = v56.Proceed();
+                            v56.Proceed();
+                            v70 = v64.GetPlayerController();
+                            if (v70 != nullptr) {
+                                v72 = ULokiPlayerControllerUAVComponent::StaticClass();
+                                v74 = TSubclassOf<UActorComponent@>(v72);
+                                v76 = v70.GetComponentByClass(v74);
+                                if (v76 != nullptr) {
+                                    v78 = cast<ULokiPlayerControllerUAVComponent@>(v76);
+                                } else {
+                                    v78 = nullptr;
+                                }
+                                v80 = v78;
+                                if (v80 != nullptr) {
+                                    v80.ClientNotifyLocalRadarEmpty();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- PulseUAV: 430 dwords / 271 instructions (cache offset 0xb6419) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        0018  STOREOBJ      v2
+        001C  PshVPtr       v2
+        0020  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        002C  CpyRtoV4      v5
+        0030  NOT           v5
+        0034  CpyVtoR1      v5
+        0038  JLowZ         2                                             -> L0048
+        0040  JMP           411                                           -> L06B4
+      L0048:
+        0048  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        0054  RDR4          v6
+        0058  CMPIi         v6 0
+        0060  JS            32                                            -> L00E8
+        0068  PshGPtr       __WorldContext
+        0074  CALLSYS       GetLokiGameMode                               ; ALokiGameMode@ Loki::GetLokiGameMode(UObject@)
+        0080  STOREOBJ      v10
+        0084  PshVPtr       v10
+        0088  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0094  CpyRtoV4      v5
+        0098  NOT           v5
+        009C  CpyVtoR1      v5
+        00A0  JLowZ         2                                             -> L00B0
+        00A8  JMP           385                                           -> L06B4
+      L00B0:
+        00B0  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        00BC  RDR4          v7
+        00C0  PshV4         v7
+        00C4  PshVPtr       v10
+        00C8  CALLSYS       ALokiGameMode::IsTeamEliminated               ; bool ALokiGameMode::IsTeamEliminated(int)
+        00D4  JLowZ         2                                             -> L00E4
+        00DC  JMP           372                                           -> L06B4
+      L00E4:
+        00E4  FreeNullV8    v10
+      L00E8:
+        00E8  LoadRObjR     UAV 128 134230905                             ; .PulseCount
+        00F4  INCi
+        00F8  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        0104  RDR4          v7
+        0108  PshV4         v7
+        010C  PshVPtr       this
+        0110  CALLINTF      85354                                         ; bool ULokiGameStateUAVComponent::ShouldUpgradeUAV(const int)
+        0118  JLowZ         28                                            -> L0190
+        0120  SetV1         v5 1
+        0128  PshVPtr       UAV
+        012C  ADDSi         8 134230905                                   ; .Config
+        0134  ADDSi         32 134230906                                  ; .bShowIndividuals
+        013C  PopRPtr
+        0140  WRTV1         v5
+        0144  SetV1         v5 1
+        014C  PshVPtr       UAV
+        0150  ADDSi         8 134230905                                   ; .Config
+        0158  ADDSi         33 134230906                                  ; .bShowTeam
+        0160  PopRPtr
+        0164  WRTV1         v5
+        0168  SetV8         v14 0x0
+        0174  PshVPtr       UAV
+        0178  ADDSi         8 134230905                                   ; .Config
+        0180  ADDSi         40 134230906                                  ; .InaccuracyDistance
+        0188  PopRPtr
+        018C  WRTV8         v14
+      L0190:
+        0190  SetV1         v5 0
+        0198  PshV4         v5
+        019C  SetV1         v19 0
+        01A4  PshV4         v19
+        01A8  PSF           v24
+        01AC  PshVPtr       v2
+        01B0  CALLSYS       ALokiGameState::GetTeamStates                 ; TArray<ALokiTeamState@> ALokiGameState::GetTeamStates(bool, bool) const
+        01BC  PSF           v28
+        01C0  CALLSYS       TArray::$beh0                                 ; void TArray<ALokiPlayerState@>::$beh0()
+        01CC  PSF           v34
+        01D0  PSF           v24
+        01D4  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiTeamState@> TArray<ALokiTeamState@>::Iterator()
+        01E0  JMP           105                                           -> L038C
+      L01E8:
+        01E8  SUSPEND
+        01EC  PSF           v34
+        01F0  CALLSYS       TArrayIterator::Proceed                       ; ALokiTeamState@& TArrayIterator<ALokiTeamState@>::Proceed()
+        01FC  PshRPtr
+        0200  RDSPtr
+        0204  RefCpyV       v42
+        0208  PshVPtr       v42
+        020C  CALLSYS       ALokiTeamState::GetIndex                      ; int ALokiTeamState::GetIndex() const
+        0218  CpyRtoV4      v6
+        021C  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        0228  RDR4          v7
+        022C  CMPi          v6 v7
+        0234  JNZ           3                                             -> L0248
+        023C  FreeNullV8    v42
+        0240  JMP           81                                            -> L038C
+      L0248:
+        0248  PshVPtr       v42
+        024C  PshVPtr       this
+        0250  CALLINTF      85365                                         ; bool ULokiGameStateUAVComponent::IsTeamUAVImmune(ALokiTeamState@)
+        0258  JLowZ         7                                             -> L027C
+        0260  PshVPtr       v42
+        0264  PshVPtr       this
+        0268  CALLINTF      85366                                         ; void ULokiGameStateUAVComponent::NotifyTeamBlockedUAV(ALokiTeamState@)
+        0270  FreeNullV8    v42
+        0274  JMP           68                                            -> L038C
+      L027C:
+        027C  PshVPtr       UAV
+        0280  ADDSi         8 134230905                                   ; .Config
+        0288  ADDSi         32 134230906                                  ; .bShowIndividuals
+        0290  PopRPtr
+        0294  RDR1          v5
+        0298  CpyVtoR1      v5
+        029C  JLowZ         52                                            -> L0374
+        02A4  PSF           v50
+        02A8  PshVPtr       v42
+        02AC  CALLSYS       ALokiTeamState::GetLivingPlayers              ; TArray<ALokiPlayerState@> ALokiTeamState::GetLivingPlayers() const
+        02B8  PSF           v56
+        02BC  PSF           v50
+        02C0  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+        02CC  JMP           27                                            -> L0340
+      L02D4:
+        02D4  SUSPEND
+        02D8  PSF           v56
+        02DC  CALLSYS       TArrayIterator::Proceed                       ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+        02E8  PshRPtr
+        02EC  RDSPtr
+        02F0  RefCpyV       v64
+        02F4  PshVPtr       v64
+        02F8  PshVPtr       UAV
+        02FC  PshVPtr       this
+        0300  CALLINTF      85364                                         ; bool ULokiGameStateUAVComponent::IsValidUAVTarget(const FActiveUAV&, ALokiPlayerState@)
+        0308  CpyRtoV4      v5
+        030C  NOT           v5
+        0310  CpyVtoR1      v5
+        0314  JLowZ         3                                             -> L0328
+        031C  FreeNullV8    v64
+        0320  JMP           6                                             -> L0340
+      L0328:
+        0328  PSF           v64
+        032C  PSF           v28
+        0330  CALLSYS       TArray::Add                                   ; void TArray<ALokiPlayerState@>::Add(const ALokiPlayerState@ const&)
+        033C  FreeNullV8    v64
+      L0340:
+        0340  LoadVObjR     v56 16 268448510                              ; .CanProceed
+        034C  RDR1          v19
+        0350  CpyVtoR1      v19
+        0354  JLowNZ        -34                                           -> L02D4
+        035C  PSF           v50
+        0360  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        036C  JMP           5                                             -> L0388
+      L0374:
+        0374  PshVPtr       v42
+        0378  PshVPtr       UAV
+        037C  PshVPtr       this
+        0380  CALLINTF      85356                                         ; void ULokiGameStateUAVComponent::PulseTeam(const FActiveUAV&, ALokiTeamState@)
+      L0388:
+        0388  FreeNullV8    v42
+      L038C:
+        038C  LoadVObjR     v34 16 268448555                              ; .CanProceed
+        0398  RDR1          v5
+        039C  CpyVtoR1      v5
+        03A0  JLowNZ        -112                                          -> L01E8
+        03A8  PshVPtr       UAV
+        03AC  ADDSi         8 134230905                                   ; .Config
+        03B4  ADDSi         32 134230906                                  ; .bShowIndividuals
+        03BC  PopRPtr
+        03C0  RDR1          v19
+        03C4  CpyVtoR1      v19
+        03C8  JLowZ         37                                            -> L0464
+        03D0  PSF           v28
+        03D4  CALLSYS       TArray::Num                                   ; int TArray<ALokiPlayerState@>::Num() const
+        03E0  CpyRtoV4      v7
+        03E4  LoadRObjR     UAV 132 134230905                             ; .PlayersDetected
+        03F0  WRTV4         v7
+        03F4  PSF           v62
+        03F8  PSF           v28
+        03FC  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+        0408  JMP           14                                            -> L0448
+      L0410:
+        0410  SUSPEND
+        0414  PSF           v62
+        0418  CALLSYS       TArrayIterator::Proceed                       ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+        0424  PshRPtr
+        0428  RDSPtr
+        042C  RefCpyV       v64
+        0430  PshVPtr       v64
+        0434  PshVPtr       UAV
+        0438  PshVPtr       this
+        043C  CALLINTF      85363                                         ; void ULokiGameStateUAVComponent::PulseIndividual(const FActiveUAV&, ALokiPlayerState@)
+        0444  FreeNullV8    v64
+      L0448:
+        0448  LoadVObjR     v62 16 268448510                              ; .CanProceed
+        0454  RDR1          v19
+        0458  CpyVtoR1      v19
+        045C  JLowNZ        -21                                           -> L0410
+      L0464:
+        0464  PshVPtr       UAV
+        0468  ADDSi         8 134230905                                   ; .Config
+        0470  ADDSi         48 134230906                                  ; .bRevealVaults
+        0478  PopRPtr
+        047C  RDR1          v5
+        0480  CpyVtoR1      v5
+        0484  JLowZ         4                                             -> L049C
+        048C  PshVPtr       UAV
+        0490  PshVPtr       this
+        0494  CALLINTF      85355                                         ; void ULokiGameStateUAVComponent::RevealVaultContents(const FActiveUAV&)
+      L049C:
+        049C  PshVPtr       UAV
+        04A0  ADDSi         8 134230905                                   ; .Config
+        04A8  ADDSi         65 134230906                                  ; .bLocalRadar
+        04B0  PopRPtr
+        04B4  RDR1          v19
+        04B8  CpyVtoR1      v19
+        04BC  JLowZ         116                                           -> L0694
+        04C4  LoadRObjR     UAV 132 134230905                             ; .PlayersDetected
+        04D0  RDR4          v7
+        04D4  CMPIi         v7 0
+        04DC  JZ            4                                             -> L04F4
+        04E4  SetV4         v19 0
+        04EC  JMP           10                                            -> L051C
+      L04F4:
+        04F4  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        0500  RDR4          v6
+        0504  CMPIi         v6 0
+        050C  TNS
+        0510  CpyRtoV4      v5
+        0514  CpyVtoV4      v19 v5
+      L051C:
+        051C  CpyVtoR1      v19
+        0520  JLowZ         91                                            -> L0694
+        0528  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        0534  RDR4          v7
+        0538  PshV4         v7
+        053C  PshVPtr       v2
+        0540  CALLSYS       ALokiGameState::GetTeamState                  ; ALokiTeamState@ ALokiGameState::GetTeamState(int) const
+        054C  STOREOBJ      v42
+        0550  CmpPtrNull    v42
+        0554  JZ            77                                            -> L0690
+        055C  PSF           v46
+        0560  PshVPtr       v42
+        0564  CALLSYS       ALokiTeamState::GetLivingPlayers              ; TArray<ALokiPlayerState@> ALokiTeamState::GetLivingPlayers() const
+        0570  PSF           v56
+        0574  PSF           v46
+        0578  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+        0584  JMP           54                                            -> L0664
+      L058C:
+        058C  SUSPEND
+        0590  PSF           v56
+        0594  CALLSYS       TArrayIterator::Proceed                       ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+        05A0  PshRPtr
+        05A4  RDSPtr
+        05A8  RefCpyV       v64
+        05AC  PshVPtr       v64
+        05B0  CALLSYS       APlayerState::GetPlayerController             ; APlayerController@ APlayerState::GetPlayerController() const
+        05BC  STOREOBJ      v70
+        05C0  CmpPtrNull    v70
+        05C4  JZ            36                                            -> L065C
+        05CC  CALL          85395                                         ; UClass@ ULokiPlayerControllerUAVComponent::StaticClass()
+        05D4  STOREOBJ      v72
+        05D8  PshVPtr       v72
+        05DC  PSF           v74
+        05E0  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+        05EC  PSF           v74
+        05F0  PshVPtr       v70
+        05F4  CALLSYS       AActor::GetComponentByClass                   ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+        0600  STOREOBJ      v76
+        0604  CmpPtrNull    v76
+        0608  JZ            9                                             -> L0634
+        0610  TYPEID        1207972736                                    ; ULokiPlayerControllerUAVComponent@
+        0618  PSF           v78
+        061C  PshVPtr       v76
+        0620  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        062C  JMP           1                                             -> L0638
+      L0634:
+        0634  ClrVPtr       v78
+      L0638:
+        0638  PshVPtr       v78
+        063C  RefCpyV       v80
+        0640  CmpPtrNull    v80
+        0644  JZ            3                                             -> L0658
+        064C  PshVPtr       v80
+        0650  CALLINTF      85386                                         ; void ULokiPlayerControllerUAVComponent::ClientNotifyLocalRadarEmpty()
+      L0658:
+        0658  FreeNullV8    v80
+      L065C:
+        065C  FreeNullV8    v70
+        0660  FreeNullV8    v64
+      L0664:
+        0664  LoadVObjR     v56 16 268448510                              ; .CanProceed
+        0670  RDR1          v5
+        0674  CpyVtoR1      v5
+        0678  JLowNZ        -61                                           -> L058C
+        0680  PSF           v46
+        0684  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+      L0690:
+        0690  FreeNullV8    v42
+      L0694:
+        0694  PSF           v28
+        0698  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        06A4  PSF           v24
+        06A8  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiTeamState@>::$beh2()
+      L06B4:
+        06B4  RET           4
+    */
+
+    private bool ShouldUpgradeUAV(const int TeamIndex)   // traits=0x28
+    {
+        ALokiGameState v2;
+        auto v5;
+        ALokiTeamState v8;
+        TArray<ALokiPlayerState@> v18;
+        TArrayIterator<ALokiPlayerState@> v24;
+        ALokiPlayerState v32;
+        UAbilitySystemComponent v34;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        if (v2 == nullptr) {
+            v5 = false;
+            return v5;
+        } else {
+            v8 = v2.GetTeamState(TeamIndex);
+            if (v8 == nullptr) {
+                v5 = false;
+                return v5;
+            } else {
+                v18 = v8.GetLivingPlayers();
+                v24 = v18.Iterator();
+                while (true) {
+                    v5 = v24.CanProceed;
+                    if (!v5) break;
+                    v32 = v24.Proceed();
+                    v24.Proceed();
+                    v34 = AbilitySystem::GetAbilitySystemComponent(v32);
+                    if (v34.HasMatchingGameplayTag(this.UAVUpgradedTag)  /* UFunction Script_HasMatchingGameplayTag */) {
+                        v5 = true;
+                        return v5;
+                    }
+                }
+                v5 = false;
+            }
+        }
+        return v5;
+    }
+    /* ---- ShouldUpgradeUAV: 91 dwords / 55 instructions (cache offset 0xb6fc0) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        0018  STOREOBJ      v2
+        001C  CmpPtrNull    v2
+        0020  JNZ           5                                             -> L003C
+        0028  SetV1         v5 0
+        0030  CpyVtoR4      v5
+        0034  JMP           75                                            -> L0168
+      L003C:
+        003C  PshV4         TeamIndex
+        0040  PshVPtr       v2
+        0044  CALLSYS       ALokiGameState::GetTeamState                  ; ALokiTeamState@ ALokiGameState::GetTeamState(int) const
+        0050  STOREOBJ      v8
+        0054  CmpPtrNull    v8
+        0058  JNZ           5                                             -> L0074
+        0060  SetV1         v5 0
+        0068  CpyVtoR4      v5
+        006C  JMP           61                                            -> L0168
+      L0074:
+        0074  PSF           v18
+        0078  PshVPtr       v8
+        007C  CALLSYS       ALokiTeamState::GetLivingPlayers              ; TArray<ALokiPlayerState@> ALokiTeamState::GetLivingPlayers() const
+        0088  PSF           v24
+        008C  PSF           v18
+        0090  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+        009C  JMP           35                                            -> L0130
+      L00A4:
+        00A4  SUSPEND
+        00A8  PSF           v24
+        00AC  CALLSYS       TArrayIterator::Proceed                       ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+        00B8  PshRPtr
+        00BC  RDSPtr
+        00C0  RefCpyV       v32
+        00C4  PshVPtr       v32
+        00C8  CALLSYS       GetAbilitySystemComponent                     ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+        00D4  STOREOBJ      v34
+        00D8  PshVPtr       this
+        00DC  ADDSi         272 134230904                                 ; .UAVUpgradedTag
+        00E4  PshVPtr       v34
+        00E8  CALLSYS       UAbilitySystemComponent::HasMatchingGameplayTag  ; bool UAbilitySystemComponent::HasMatchingGameplayTag(FGameplayTag) const
+        00F4  JLowZ         9                                             -> L0120
+        00FC  SetV1         v5 1
+        0104  PSF           v18
+        0108  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        0114  CpyVtoR4      v5
+        0118  JMP           18                                            -> L0168
+      L0120:
+        0120  FreeNullV8    v34
+        0124  FreeNullV8    v32
+        0128  JMP           0                                             -> L0130
+      L0130:
+        0130  LoadVObjR     v24 16 268448510                              ; .CanProceed
+        013C  RDR1          v5
+        0140  CpyVtoR1      v5
+        0144  JLowNZ        -42                                           -> L00A4
+        014C  SetV1         v5 0
+        0154  PSF           v18
+        0158  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        0164  CpyVtoR4      v5
+      L0168:
+        0168  RET           3
+    */
+
+    private void RevealVaultContents(const FActiveUAV& UAV)   // traits=0x28
+    {
+        ALokiGameState v2;
+        bool v5;
+        TArray<ALokiTeamState@> v10;
+        auto v11;
+        int v12;
+        ALokiTeamState v14;
+        bool v17;
+        TArray<ALokiTeamState@> v22;
+        TArrayIterator<ALokiTeamState@> v28;
+        ALokiTeamState_TeamOnly v36;
+        ULokiTeamVaultDataComponent v40;
+        TArray<FVector> v44;
+        TArrayIterator<ALokiPlayerState@> v50;
+        ALokiPlayerState v58;
+        APawn v60;
+        FVector v68;
+        TArrayIterator<AVaultItemSpawner@> v74;
+        AVaultItemSpawner v82;
+        ALokiDestructible v84;
+        auto v87;
+        TArrayIterator<FVector> v100;
+        FVector v108;
+        auto v110;
+        auto v112;
+        FLokiTeamVaultDataItem v148;
+        TArray<TSubclassOf<ALokiBaseItem@>> v152;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            return;
+        } else {
+            v10 = TArray<ALokiTeamState@>();
+            v11 = UAV.TeamIndex;
+            if (v11 >= 0) {
+                v12 = UAV.TeamIndex;
+                v14 = v2.GetTeamState(v12);
+                if (v14 != nullptr) {
+                    v10.Add(v14);
+                }
+            } else {
+                v5 = true;
+                v17 = true;
+                v22 = v2.GetTeamStates(v17, v5);
+                v10 = v22;
+            }
+            v28 = v10.Iterator();
+            while (true) {
+                v5 = v28.CanProceed;
+                if (!v5) break;
+                v14 = v28.Proceed();
+                v28.Proceed();
+                v36 = v14.GetTeamStateTeamOnly();
+                if (v36 != nullptr) {
+                    v40 = v36.TeamVaultDataComponent;
+                    if (v40 != nullptr) {
+                        v44 = TArray<FVector>();
+                        v50 = v14.Players.Iterator();
+                        while (true) {
+                            v5 = v50.CanProceed;
+                            if (!v5) break;
+                            v58 = v50.Proceed();
+                            v50.Proceed();
+                            v60 = v58.GetPawn();
+                            if (v60 != nullptr) {
+                                v68 = v60.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                v44.Add(v68);
+                            }
+                        }
+                        v74 = this.AllVaultItemSpawners.Iterator();
+                        while (true) {
+                            v5 = v74.CanProceed;
+                            if (!v5) break;
+                            v82 = v74.Proceed();
+                            v74.Proceed();
+                            if (v82 != nullptr) {
+                                v84 = v82.GetDoor();
+                                if (v84 == nullptr) {
+                                    v5 = true;
+                                } else {
+                                    v17 = v84.IsAlive();
+                                    v17 = !v17;
+                                    v5 = v17;
+                                }
+                                if (!v5) {
+                                    v17 = false;
+                                    v87 = v17;
+                                    v68 = v82.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                    v100 = v44.Iterator();
+                                    while (true) {
+                                        v17 = v100.CanProceed;
+                                        if (!v17) break;
+                                        v108 = v100.Proceed();
+                                        v112 = v68.Dist2D(v108);
+                                        v110 = this.VaultVisionDistance;
+                                        if (v112 <= v110) {
+                                            v17 = true;
+                                            v87 = v17;
+                                            break;
+                                        }
+                                    }
+                                    v5 = v87;
+                                    v5 = !v5;
+                                    if (!v5) {
+                                        v148 = FLokiTeamVaultDataItem();
+                                        v148.Vault = v82;
+                                        v11 = UAV.ID;
+                                        v148.SourceUAVID = v11;
+                                        v148.Location = v68;
+                                        v152 = v82.GetItemsForUAV();
+                                        v148.ItemClasses = v152;
+                                        v40.AddOrUpdateVaultData(v148);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- RevealVaultContents: 347 dwords / 216 instructions (cache offset 0xb7378) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        0018  STOREOBJ      v2
+        001C  PshVPtr       v2
+        0020  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        002C  CpyRtoV4      v5
+        0030  NOT           v5
+        0034  CpyVtoR1      v5
+        0038  JLowZ         2                                             -> L0048
+        0040  JMP           328                                           -> L0568
+      L0048:
+        0048  PSF           v10
+        004C  CALLSYS       TArray::$beh0                                 ; void TArray<ALokiTeamState@>::$beh0()
+        0058  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        0064  RDR4          v11
+        0068  CMPIi         v11 0
+        0070  JS            21                                            -> L00CC
+        0078  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        0084  RDR4          v12
+        0088  PshV4         v12
+        008C  PshVPtr       v2
+        0090  CALLSYS       ALokiGameState::GetTeamState                  ; ALokiTeamState@ ALokiGameState::GetTeamState(int) const
+        009C  STOREOBJ      v14
+        00A0  CmpPtrNull    v14
+        00A4  JZ            5                                             -> L00C0
+        00AC  PSF           v14
+        00B0  PSF           v10
+        00B4  CALLSYS       TArray::Add                                   ; void TArray<ALokiTeamState@>::Add(const ALokiTeamState@ const&)
+      L00C0:
+        00C0  FreeNullV8    v14
+        00C4  JMP           20                                            -> L011C
+      L00CC:
+        00CC  SetV1         v5 1
+        00D4  PshV4         v5
+        00D8  SetV1         v17 1
+        00E0  PshV4         v17
+        00E4  PSF           v22
+        00E8  PshVPtr       v2
+        00EC  CALLSYS       ALokiGameState::GetTeamStates                 ; TArray<ALokiTeamState@> ALokiGameState::GetTeamStates(bool, bool) const
+        00F8  PSF           v22
+        00FC  PSF           v10
+        0100  CALLSYS       TArray::opAssign                              ; TArray<ALokiTeamState@>& TArray<ALokiTeamState@>::opAssign(const TArray<ALokiTeamState@>&)
+        010C  PSF           v22
+        0110  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiTeamState@>::$beh2()
+      L011C:
+        011C  PSF           v28
+        0120  PSF           v10
+        0124  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiTeamState@> TArray<ALokiTeamState@>::Iterator()
+        0130  JMP           257                                           -> L053C
+      L0138:
+        0138  SUSPEND
+        013C  PSF           v28
+        0140  CALLSYS       TArrayIterator::Proceed                       ; ALokiTeamState@& TArrayIterator<ALokiTeamState@>::Proceed()
+        014C  PshRPtr
+        0150  RDSPtr
+        0154  RefCpyV       v14
+        0158  PshVPtr       v14
+        015C  CALLSYS       ALokiTeamState::GetTeamStateTeamOnly          ; ALokiTeamState_TeamOnly@ ALokiTeamState::GetTeamStateTeamOnly() const
+        0168  STOREOBJ      v36
+        016C  CmpPtrNull    v36
+        0170  JNZ           4                                             -> L0188
+        0178  FreeNullV8    v36
+        017C  FreeNullV8    v14
+        0180  JMP           237                                           -> L053C
+      L0188:
+        0188  PshVPtr       v36
+        018C  ADDSi         968 67115443                                  ; .TeamVaultDataComponent
+        0194  RDSPtr
+        0198  RefCpyV       v40
+        019C  CmpPtrNull    v40
+        01A0  JNZ           5                                             -> L01BC
+        01A8  FreeNullV8    v40
+        01AC  FreeNullV8    v36
+        01B0  FreeNullV8    v14
+        01B4  JMP           224                                           -> L053C
+      L01BC:
+        01BC  PSF           v44
+        01C0  CALLSYS       TArray::$beh0                                 ; void TArray<FVector>::$beh0()
+        01CC  PSF           v50
+        01D0  PshVPtr       v14
+        01D4  ADDSi         976 67115442                                  ; .Players
+        01DC  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+        01E8  JMP           32                                            -> L0270
+      L01F0:
+        01F0  SUSPEND
+        01F4  PSF           v50
+        01F8  CALLSYS       TArrayIterator::Proceed                       ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+        0204  PshRPtr
+        0208  RDSPtr
+        020C  RefCpyV       v58
+        0210  PshVPtr       v58
+        0214  CALLSYS       APlayerState::GetPawn                         ; APawn@ APlayerState::GetPawn() const
+        0220  STOREOBJ      v60
+        0224  CmpPtrNull    v60
+        0228  JNZ           4                                             -> L0240
+        0230  FreeNullV8    v60
+        0234  FreeNullV8    v58
+        0238  JMP           12                                            -> L0270
+      L0240:
+        0240  PSF           v68
+        0244  PshVPtr       v60
+        0248  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0254  PSF           v68
+        0258  PSF           v44
+        025C  CALLSYS       TArray::Add                                   ; void TArray<FVector>::Add(const FVector&)
+        0268  FreeNullV8    v60
+        026C  FreeNullV8    v58
+      L0270:
+        0270  LoadVObjR     v50 16 268448510                              ; .CanProceed
+        027C  RDR1          v5
+        0280  CpyVtoR1      v5
+        0284  JLowNZ        -39                                           -> L01F0
+        028C  PSF           v74
+        0290  PshVPtr       this
+        0294  ADDSi         296 134230904                                 ; .AllVaultItemSpawners
+        029C  CALLSYS       TArray::Iterator                              ; TArrayIterator<AVaultItemSpawner@> TArray<AVaultItemSpawner@>::Iterator()
+        02A8  JMP           149                                           -> L0504
+      L02B0:
+        02B0  SUSPEND
+        02B4  PSF           v74
+        02B8  CALLSYS       TArrayIterator::Proceed                       ; AVaultItemSpawner@& TArrayIterator<AVaultItemSpawner@>::Proceed()
+        02C4  PshRPtr
+        02C8  RDSPtr
+        02CC  RefCpyV       v82
+        02D0  CmpPtrNull    v82
+        02D4  JNZ           3                                             -> L02E8
+        02DC  FreeNullV8    v82
+        02E0  JMP           135                                           -> L0504
+      L02E8:
+        02E8  PshVPtr       v82
+        02EC  CALLINTF      85449                                         ; ALokiDestructible@ AVaultItemSpawner::GetDoor()
+        02F4  STOREOBJ      v84
+        02F8  CmpPtrNull    v84
+        02FC  JNZ           4                                             -> L0314
+        0304  SetV1         v5 1
+        030C  JMP           8                                             -> L0334
+      L0314:
+        0314  PshVPtr       v84
+        0318  CALLSYS       ALokiDestructible::IsAlive                    ; bool ALokiDestructible::IsAlive() const
+        0324  CpyRtoV4      v17
+        0328  NOT           v17
+        032C  CpyVtoV4      v5 v17
+      L0334:
+        0334  CpyVtoR1      v5
+        0338  JLowZ         4                                             -> L0350
+        0340  FreeNullV8    v84
+        0344  FreeNullV8    v82
+        0348  JMP           109                                           -> L0504
+      L0350:
+        0350  SetV1         v17 0
+        0358  CpyVtoV4      v87 v17
+        0360  PSF           v68
+        0364  PshVPtr       v82
+        0368  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0374  PSF           v100
+        0378  PSF           v44
+        037C  CALLSYS       TArray::Iterator                              ; TArrayIterator<FVector> TArray<FVector>::Iterator()
+        0388  JMP           25                                            -> L03F4
+      L0390:
+        0390  SUSPEND
+        0394  PSF           v100
+        0398  CALLSYS       TArrayIterator::Proceed                       ; FVector& TArrayIterator<FVector>::Proceed()
+        03A4  CpyRtoV8      v108
+        03A8  PshVPtr       v108
+        03AC  PSF           v68
+        03B0  CALLSYS       FVector::Dist2D                               ; float64 FVector::Dist2D(const FVector&) const
+        03BC  CpyRtoV8      v112
+        03C0  LoadThisR     216 134230904                                 ; this.VaultVisionDistance
+        03C8  RDR8          v110
+        03CC  CMPd          v112 v110
+        03D4  JP            6                                             -> L03F4
+        03DC  SetV1         v17 1
+        03E4  CpyVtoV4      v87 v17
+        03EC  JMP           7                                             -> L0410
+      L03F4:
+        03F4  LoadVObjR     v100 16 268448594                             ; .CanProceed
+        0400  RDR1          v17
+        0404  CpyVtoR1      v17
+        0408  JLowNZ        -32                                           -> L0390
+      L0410:
+        0410  CpyVtoV4      v5 v87
+        0418  NOT           v5
+        041C  CpyVtoR1      v5
+        0420  JLowZ         4                                             -> L0438
+        0428  FreeNullV8    v84
+        042C  FreeNullV8    v82
+        0430  JMP           51                                            -> L0504
+      L0438:
+        0438  PSF           v148
+        043C  CALLSYS       FLokiTeamVaultDataItem::$beh0                 ; void FLokiTeamVaultDataItem::$beh0()
+        0448  PshVPtr       v82
+        044C  PSF           v148
+        0450  ADDSi         16 67120959                                   ; .Vault
+        0458  REFCPY
+        045C  PopPtr
+        0460  LoadRObjR     UAV 4 134230905                               ; .ID
+        046C  RDR4          v11
+        0470  LoadVObjR     v148 24 67120959                              ; .SourceUAVID
+        047C  WRTV4         v11
+        0480  PSF           v68
+        0484  PSF           v148
+        0488  ADDSi         32 67120959                                   ; .Location
+        0490  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        049C  PSF           v152
+        04A0  PshVPtr       v82
+        04A4  CALLINTF      85447                                         ; TArray<TSubclassOf<ALokiBaseItem@>> AVaultItemSpawner::GetItemsForUAV()
+        04AC  PSF           v152
+        04B0  PSF           v148
+        04B4  ADDSi         56 67120959                                   ; .ItemClasses
+        04BC  CALLSYS       TArray::opAssign                              ; TArray<TSubclassOf<ALokiBaseItem@>>& TArray<TSubclassOf<ALokiBaseItem@>>::opAssign(const TArray<TSubclassOf<ALokiBaseItem@>>&)
+        04C8  PSF           v152
+        04CC  CALLSYS       TArray::$beh2                                 ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh2()
+        04D8  PSF           v148
+        04DC  PshVPtr       v40
+        04E0  CALLSYS       ULokiTeamVaultDataComponent::AddOrUpdateVaultData  ; void ULokiTeamVaultDataComponent::AddOrUpdateVaultData(FLokiTeamVaultDataItem)
+        04EC  PSF           v148
+        04F0  CALLSYS       FLokiTeamVaultDataItem::$beh2                 ; void FLokiTeamVaultDataItem::$beh2()
+        04FC  FreeNullV8    v84
+        0500  FreeNullV8    v82
+      L0504:
+        0504  LoadVObjR     v74 16 268448636                              ; .CanProceed
+        0510  RDR1          v5
+        0514  CpyVtoR1      v5
+        0518  JLowNZ        -156                                          -> L02B0
+        0520  PSF           v44
+        0524  CALLSYS       TArray::$beh2                                 ; void TArray<FVector>::$beh2()
+        0530  FreeNullV8    v40
+        0534  FreeNullV8    v36
+        0538  FreeNullV8    v14
+      L053C:
+        053C  LoadVObjR     v28 16 268448555                              ; .CanProceed
+        0548  RDR1          v5
+        054C  CpyVtoR1      v5
+        0550  JLowNZ        -264                                          -> L0138
+        0558  PSF           v10
+        055C  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiTeamState@>::$beh2()
+      L0568:
+        0568  RET           4
+    */
+
+    private void PulseTeam(const FActiveUAV& UAV, ALokiTeamState@ TeamState)   // traits=0x28
+    {
+        TSet<ALokiCharacter@> v20;
+        TArray<ALokiPlayerState@> v28;
+        TArrayIterator<ALokiPlayerState@> v34;
+        auto v41;
+        ALokiPlayerState v44;
+        ALokiCharacter v46;
+        auto v49;
+        FVector v56;
+        FVector v62;
+        auto v64;
+        float64 v66;
+        auto v67;
+        float64 v70;
+        TSetIterator<ALokiCharacter@> v78;
+        ULokiAbilitySystemComponent v88;
+        FGameplayEffectSpecHandle v94;
+        FGameplayEffectContextHandle v100;
+        float32 v101;
+        FGameplayEffectSpecHandle v106;
+        FActiveGameplayEffectHandle v108;
+        TArray<FUAVCharacterGrouping> v116;
+        TArrayIterator<FUAVCharacterGrouping> v122;
+        auto v130;
+        auto v132;
+        auto v134;
+        auto v136;
+        int v137;
+        int v138;
+        TArray<TSubclassOf<ALokiCharacter@>> v142;
+        TArrayConstIterator<ALokiCharacter@> v148;
+        FVector v160;
+        UClass v162;
+        TSubclassOf<ALokiCharacter@> v164;
+        float64 v172;
+
+        v20 = TSet<ALokiCharacter@>();
+        v28 = TeamState.GetLivingPlayers();
+        v34 = v28.Iterator();
+        while (true) {
+            v41 = v34.CanProceed;
+            if (!v41) break;
+            v44 = v34.Proceed();
+            v34.Proceed();
+            v46 = v44.GetLokiCharacter();
+            v41 = true;
+            v49 = v41;
+            v56 = v46.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v64 = UAV.Config.Radius;
+            v66 = 0;
+            if (v64 > v66) {
+                v66 = UAV.SourceLocation.Dist2D(v56);
+                v64 = UAV.Config.Radius;
+                v41 = v66 <= v64;
+                v49 = v41;
+            }
+            if (!IsValid(v46)) {
+                v41 = 0;
+            } else {
+                v67 = this.IsCharacterUAVImmune(v46);
+                v67 = !v67;
+                v41 = v67;
+            }
+            if (!v41) {
+                v67 = 0;
+            } else {
+                v67 = v49;
+            }
+            if (v67) {
+                v20.Add(v46);
+            }
+        }
+        v64 = UAV.GetPulseLifespan();
+        v78 = v20.Iterator();
+        while (true) {
+            v41 = v78.CanProceed;
+            if (!v41) break;
+            v46 = v78.Proceed();
+            v78.Proceed();
+            v88 = v46.GetLokiAbilitySystem_BP();
+            if (v88 != nullptr) {
+                v100 = FGameplayEffectContextHandle();
+                v106 = v88.MakeOutgoingSpec(this.MarkedTeamGameplayEffectClass, 0, v100);
+                v101 = float32(v64);
+                v94 = AbilitySystem::AssignTagSetByCallerMagnitude(v106, this.DataTag, v101);
+                v106 = v94;
+                v108 = v88.ApplyGameplayEffectSpecToSelf(v106)  /* UFunction BP_ApplyGameplayEffectSpecToSelf */;
+            }
+        }
+        v116 = this.MakeCharacterGroupings(v20);
+        v122 = v116.Iterator();
+        while (true) {
+            v41 = v122.CanProceed;
+            if (!v41) break;
+            v130 = v122.Proceed();
+            v56 = FVector(FVector::ZeroVector);
+            v132 = 0;
+            v134 = 0;
+            v136 = 0;
+            v138 = v130.Characters.Num();
+            v142 = TArray<TSubclassOf<ALokiCharacter@>>();
+            v148 = v130.Characters.Iterator();
+            while (true) {
+                v41 = v148.CanProceed;
+                if (!v41) break;
+                v46 = v148.Proceed();
+                v148.Proceed();
+                v62 = v46.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v56 += v62;
+                v101 = v46.GetLevel();
+                v70 = float64(v101);
+                v132 = v132 + v70;
+                v67 = UAV.Config.bShowCharacters;
+                if (v67) {
+                    v162 = v46.GetClass();
+                    v164 = TSubclassOf<ALokiCharacter@>(v162);
+                    v142.Add(v164);
+                }
+                v66 = GetRelicCountForPlayer(v46);
+                v134 = v134 + v66;
+                v66 = GetArmorLevelForPlayer(v46);
+                v136 = v136 + v66;
+            }
+            v66 = float64(v138);
+            v160 = v56 / v66;
+            v70 = float64(v138);
+            v66 = v136 / v70;
+            v70 = float64(v138);
+            v70 = v134 / v70;
+            v172 = float64(v138);
+            v172 = v132 / v172;
+            v137 = TeamState.GetIndex();
+            this.GenerateFuzzyLocation(UAV, v160, v138, v137, v172, v142, v70, v66);
+        }
+        return;
+    }
+    /* ---- PulseTeam: 397 dwords / 243 instructions (cache offset 0xb7e3c) ----
+        0000  PSF           v20
+        0004  CALLSYS       TSet::$beh0                                   ; void TSet<ALokiCharacter@>::$beh0()
+        0010  PSF           v28
+        0014  PshVPtr       TeamState
+        0018  CALLSYS       ALokiTeamState::GetLivingPlayers              ; TArray<ALokiPlayerState@> ALokiTeamState::GetLivingPlayers() const
+        0024  PSF           v34
+        0028  PSF           v28
+        002C  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+        0038  JMP           94                                            -> L01B8
+      L0040:
+        0040  SUSPEND
+        0044  PSF           v34
+        0048  CALLSYS       TArrayIterator::Proceed                       ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+        0054  PshRPtr
+        0058  RDSPtr
+        005C  RefCpyV       v44
+        0060  PshVPtr       v44
+        0064  CALLSYS       ALokiPlayerState::GetLokiCharacter            ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+        0070  STOREOBJ      v46
+        0074  SetV1         v41 1
+        007C  CpyVtoV4      v49 v41
+        0084  PSF           v56
+        0088  PshVPtr       v46
+        008C  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0098  PshVPtr       UAV
+        009C  ADDSi         8 134230905                                   ; .Config
+        00A4  ADDSi         56 134230906                                  ; .Radius
+        00AC  PopRPtr
+        00B0  RDR8          v64
+        00B4  SetV8         v66 0x0
+        00C0  CMPd          v64 v66
+        00C8  JNP           21                                            -> L0124
+        00D0  PSF           v56
+        00D4  PshVPtr       UAV
+        00D8  ADDSi         104 134230905                                 ; .SourceLocation
+        00E0  CALLSYS       FVector::Dist2D                               ; float64 FVector::Dist2D(const FVector&) const
+        00EC  CpyRtoV8      v66
+        00F0  PshVPtr       UAV
+        00F4  ADDSi         8 134230905                                   ; .Config
+        00FC  ADDSi         56 134230906                                  ; .Radius
+        0104  PopRPtr
+        0108  RDR8          v64
+        010C  CMPd          v66 v64
+        0114  TNP
+        0118  CpyRtoV4      v41
+        011C  CpyVtoV4      v49 v41
+      L0124:
+        0124  PshVPtr       v46
+        0128  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0134  JLowNZ        4                                             -> L014C
+        013C  SetV4         v41 0
+        0144  JMP           8                                             -> L016C
+      L014C:
+        014C  PshVPtr       v46
+        0150  PshVPtr       this
+        0154  CALLINTF      85361                                         ; bool ULokiGameStateUAVComponent::IsCharacterUAVImmune(ALokiCharacter@)
+        015C  CpyRtoV4      v67
+        0160  NOT           v67
+        0164  CpyVtoV4      v41 v67
+      L016C:
+        016C  CpyVtoR1      v41
+        0170  JLowNZ        4                                             -> L0188
+        0178  SetV4         v67 0
+        0180  JMP           2                                             -> L0190
+      L0188:
+        0188  CpyVtoV4      v67 v49
+      L0190:
+        0190  CpyVtoR1      v67
+        0194  JLowZ         5                                             -> L01B0
+        019C  PSF           v46
+        01A0  PSF           v20
+        01A4  CALLSYS       TSet::Add                                     ; void TSet<ALokiCharacter@>::Add(const ALokiCharacter@ const&)
+      L01B0:
+        01B0  FreeNullV8    v46
+        01B4  FreeNullV8    v44
+      L01B8:
+        01B8  LoadVObjR     v34 16 268448510                              ; .CanProceed
+        01C4  RDR1          v41
+        01C8  CpyVtoR1      v41
+        01CC  JLowNZ        -101                                          -> L0040
+        01D4  PshVPtr       UAV
+        01D8  CALL          85411                                         ; float64 FActiveUAV::GetPulseLifespan() const
+        01E0  CpyRtoV8      v64
+        01E4  PSF           v78
+        01E8  PSF           v20
+        01EC  CALLSYS       TSet::Iterator                                ; TSetIterator<ALokiCharacter@> TSet<ALokiCharacter@>::Iterator()
+        01F8  JMP           75                                            -> L032C
+      L0200:
+        0200  SUSPEND
+        0204  PSF           v78
+        0208  CALLSYS       TSetIterator::Proceed                         ; ALokiCharacter@ const& TSetIterator<ALokiCharacter@>::Proceed()
+        0214  PshRPtr
+        0218  RDSPtr
+        021C  RefCpyV       v46
+        0220  PshVPtr       v46
+        0224  CALLSYS       ALokiCharacter::GetLokiAbilitySystem_BP       ; ULokiAbilitySystemComponent@ ALokiCharacter::GetLokiAbilitySystem_BP() const
+        0230  STOREOBJ      v88
+        0234  CmpPtrNull    v88
+        0238  JNZ           4                                             -> L0250
+        0240  FreeNullV8    v88
+        0244  FreeNullV8    v46
+        0248  JMP           55                                            -> L032C
+      L0250:
+        0250  PSF           v100
+        0254  CALLSYS       FGameplayEffectContextHandle::$beh0           ; void FGameplayEffectContextHandle::$beh0()
+        0260  PSF           v100
+        0264  PshC4         0
+        026C  PshVPtr       this
+        0270  ADDSi         232 134230904                                 ; .MarkedTeamGameplayEffectClass
+        0278  PSF           v106
+        027C  PshVPtr       v88
+        0280  CALLSYS       UAbilitySystemComponent::MakeOutgoingSpec     ; FGameplayEffectSpecHandle UAbilitySystemComponent::MakeOutgoingSpec(TSubclassOf<UGameplayEffect@>, float32, FGameplayEffectContextHandle) const
+        028C  PSF           v100
+        0290  CALLSYS       FGameplayEffectContextHandle::$beh2           ; void FGameplayEffectContextHandle::$beh2()
+        029C  dTOf          v101 v64
+        02A4  PshV4         v101
+        02A8  PshVPtr       this
+        02AC  ADDSi         256 134230904                                 ; .DataTag
+        02B4  PSF           v106
+        02B8  PSF           v94
+        02BC  CALLSYS       AssignTagSetByCallerMagnitude                 ; FGameplayEffectSpecHandle AbilitySystem::AssignTagSetByCallerMagnitude(FGameplayEffectSpecHandle, FGameplayTag, float32)
+        02C8  PSF           v94
+        02CC  PSF           v106
+        02D0  CALLSYS       FGameplayEffectSpecHandle::opAssign           ; FGameplayEffectSpecHandle& FGameplayEffectSpecHandle::opAssign(const FGameplayEffectSpecHandle&)
+        02DC  PSF           v94
+        02E0  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+        02EC  PSF           v106
+        02F0  PSF           v108
+        02F4  PshVPtr       v88
+        02F8  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf  ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf(const FGameplayEffectSpecHandle&)
+        0304  PSF           v108
+        0308  CALLSYS       FActiveGameplayEffectHandle::$beh2            ; void FActiveGameplayEffectHandle::$beh2()
+        0314  PSF           v106
+        0318  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+        0324  FreeNullV8    v88
+        0328  FreeNullV8    v46
+      L032C:
+        032C  LoadVObjR     v78 24 268448513                              ; .CanProceed
+        0338  RDR1          v41
+        033C  CpyVtoR1      v41
+        0340  JLowNZ        -82                                           -> L0200
+        0348  PSF           v20
+        034C  PSF           v116
+        0350  PshVPtr       this
+        0354  CALLINTF      85359                                         ; TArray<FUAVCharacterGrouping> ULokiGameStateUAVComponent::MakeCharacterGroupings(TSet<ALokiCharacter@>&)
+        035C  PSF           v122
+        0360  PSF           v116
+        0364  CALLSYS       TArray::Iterator                              ; TArrayIterator<FUAVCharacterGrouping> TArray<FUAVCharacterGrouping>::Iterator()
+        0370  JMP           155                                           -> L05E4
+      L0378:
+        0378  SUSPEND
+        037C  PSF           v122
+        0380  CALLSYS       TArrayIterator::Proceed                       ; FUAVCharacterGrouping& TArrayIterator<FUAVCharacterGrouping>::Proceed()
+        038C  CpyRtoV8      v130
+        0390  PshGPtr       FVector::ZeroVector
+        039C  PSF           v56
+        03A0  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+        03AC  SetV8         v132 0x0
+        03B8  SetV8         v134 0x0
+        03C4  SetV8         v136 0x0
+        03D0  PshVPtr       v130
+        03D4  ADDSi         0 134230914                                   ; .Characters
+        03DC  CALLSYS       TArray::Num                                   ; int TArray<ALokiCharacter@>::Num() const
+        03E8  CpyRtoV4      v138
+        03EC  PSF           v142
+        03F0  CALLSYS       TArray::$beh0                                 ; void TArray<TSubclassOf<ALokiCharacter@>>::$beh0()
+        03FC  PSF           v148
+        0400  PshVPtr       v130
+        0404  ADDSi         0 134230914                                   ; .Characters
+        040C  CALLSYS       TArray::Iterator                              ; TArrayConstIterator<ALokiCharacter@> TArray<ALokiCharacter@>::Iterator() const
+        0418  JMP           66                                            -> L0528
+      L0420:
+        0420  SUSPEND
+        0424  PSF           v148
+        0428  CALLSYS       TArrayConstIterator::Proceed                  ; ALokiCharacter@ const& TArrayConstIterator<ALokiCharacter@>::Proceed()
+        0434  PshRPtr
+        0438  RDSPtr
+        043C  RefCpyV       v46
+        0440  PSF           v62
+        0444  PshVPtr       v46
+        0448  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0454  PSF           v62
+        0458  PSF           v160
+        045C  PSF           v56
+        0460  CALLSYS       FVector::opAddAssign                          ; FVector FVector::opAddAssign(const FVector&)
+        046C  PshVPtr       v46
+        0470  CALLSYS       ALokiCharacter::GetLevel                      ; float32 ALokiCharacter::GetLevel() const
+        047C  CpyRtoV4      v101
+        0480  fTOd          v70 v101
+        0488  ADDd          v132 v132 v70
+        0490  PshVPtr       UAV
+        0494  ADDSi         8 134230905                                   ; .Config
+        049C  ADDSi         64 134230906                                  ; .bShowCharacters
+        04A4  PopRPtr
+        04A8  RDR1          v67
+        04AC  CpyVtoR1      v67
+        04B0  JLowZ         15                                            -> L04F4
+        04B8  PshVPtr       v46
+        04BC  CALLSYS       UObject::GetClass                             ; UClass@ UObject::GetClass() const
+        04C8  STOREOBJ      v162
+        04CC  PshVPtr       v162
+        04D0  PSF           v164
+        04D4  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiCharacter@>::$beh0(UClass@)
+        04E0  PSF           v164
+        04E4  PSF           v142
+        04E8  CALLSYS       TArray::Add                                   ; void TArray<TSubclassOf<ALokiCharacter@>>::Add(const TSubclassOf<ALokiCharacter@>&)
+      L04F4:
+        04F4  PshVPtr       v46
+        04F8  CALL          84568                                         ; float64 GetRelicCountForPlayer(ALokiCharacter@)
+        0500  CpyRtoV8      v66
+        0504  ADDd          v134 v134 v66
+        050C  PshVPtr       v46
+        0510  CALL          84569                                         ; float64 GetArmorLevelForPlayer(ALokiCharacter@)
+        0518  CpyRtoV8      v66
+        051C  ADDd          v136 v136 v66
+        0524  FreeNullV8    v46
+      L0528:
+        0528  LoadVObjR     v148 16 268448643                             ; .CanProceed
+        0534  RDR1          v41
+        0538  CpyVtoR1      v41
+        053C  JLowNZ        -73                                           -> L0420
+        0544  iTOd          v66 v138
+        054C  PshV8         v66
+        0550  PSF           v160
+        0554  PSF           v56
+        0558  CALLSYS       FVector::opDiv                                ; FVector FVector::opDiv(float64) const
+        0564  iTOd          v70 v138
+        056C  DIVd          v66 v136 v70
+        0574  PshV8         v66
+        0578  iTOd          v70 v138
+        0580  DIVd          v70 v134 v70
+        0588  PshV8         v70
+        058C  PSF           v142
+        0590  iTOd          v172 v138
+        0598  DIVd          v172 v132 v172
+        05A0  PshV8         v172
+        05A4  PshVPtr       TeamState
+        05A8  CALLSYS       ALokiTeamState::GetIndex                      ; int ALokiTeamState::GetIndex() const
+        05B4  CpyRtoV4      v137
+        05B8  PshV4         v137
+        05BC  PshV4         v138
+        05C0  PSF           v160
+        05C4  PshVPtr       UAV
+        05C8  PshVPtr       this
+        05CC  CALLINTF      85362                                         ; void ULokiGameStateUAVComponent::GenerateFuzzyLocation(const FActiveUAV&, const FVector&, const int, const int, const float64, const TArray<TSubclassOf<ALokiCharacter@>>&, const float64, const float64)
+        05D4  PSF           v142
+        05D8  CALLSYS       TArray::$beh2                                 ; void TArray<TSubclassOf<ALokiCharacter@>>::$beh2()
+      L05E4:
+        05E4  LoadVObjR     v122 16 268448641                             ; .CanProceed
+        05F0  RDR1          v41
+        05F4  CpyVtoR1      v41
+        05F8  JLowNZ        -162                                          -> L0378
+        0600  PSF           v116
+        0604  CALLSYS       TArray::$beh2                                 ; void TArray<FUAVCharacterGrouping>::$beh2()
+        0610  PSF           v28
+        0614  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        0620  PSF           v20
+        0624  CALLSYS       TSet::$beh2                                   ; void TSet<ALokiCharacter@>::$beh2()
+        0630  RET           6
+    */
+
+    private TArray<FUAVCharacterGrouping> MakeCharacterGroupings(TSet<ALokiCharacter@>&inout RemainingCharacters)   // traits=0x28
+    {
+        TArray<FUAVCharacterGrouping> v4;
+        auto v5;
+        FUAVCharacterGrouping v14;
+        TArrayIterator<ALokiCharacter@> v20;
+        ALokiCharacter v28;
+
+        v4 = TArray<FUAVCharacterGrouping>();
+        v5 = RemainingCharacters.IsEmpty();
+        v5 = !v5;
+        while (v5) {
+            this.GetLargestCharacterGrouping(v14);
+            v4.Add(v14);
+            v20 = v14.Characters.Iterator();
+            while (true) {
+                v5 = v20.CanProceed;
+                if (!v5) break;
+                v28 = v20.Proceed();
+                v20.Proceed();
+                RemainingCharacters.Remove(v28);
+            }
+            v14.~FUAVCharacterGrouping();
+            continue;
+        }
+        __ret = TArray<FUAVCharacterGrouping>();
+        __ret = v4;
+        return;
+    }
+    /* ---- MakeCharacterGroupings: 73 dwords / 46 instructions (cache offset 0xb8927) ----
+        0000  PSF           v4
+        0004  CALLSYS       TArray::$beh0                                 ; void TArray<FUAVCharacterGrouping>::$beh0()
+      L0010:
+        0010  PshVPtr       RemainingCharacters
+        0014  CALLSYS       TSet::IsEmpty                                 ; bool TSet<ALokiCharacter@>::IsEmpty() const
+        0020  CpyRtoV4      v5
+        0024  NOT           v5
+        0028  CpyVtoR1      v5
+        002C  JLowZ         46                                            -> L00EC
+        0034  SUSPEND
+        0038  PshVPtr       RemainingCharacters
+        003C  PSF           v14
+        0040  PshVPtr       this
+        0044  CALLINTF      85360                                         ; FUAVCharacterGrouping ULokiGameStateUAVComponent::GetLargestCharacterGrouping(const TSet<ALokiCharacter@>&)
+        004C  PSF           v14
+        0050  PSF           v4
+        0054  CALLSYS       TArray::Add                                   ; void TArray<FUAVCharacterGrouping>::Add(const FUAVCharacterGrouping&)
+        0060  PSF           v20
+        0064  PSF           v14
+        0068  ADDSi         0 134230914                                   ; .Characters
+        0070  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiCharacter@> TArray<ALokiCharacter@>::Iterator()
+        007C  JMP           14                                            -> L00BC
+      L0084:
+        0084  SUSPEND
+        0088  PSF           v20
+        008C  CALLSYS       TArrayIterator::Proceed                       ; ALokiCharacter@& TArrayIterator<ALokiCharacter@>::Proceed()
+        0098  PshRPtr
+        009C  RDSPtr
+        00A0  RefCpyV       v28
+        00A4  PSF           v28
+        00A8  PshVPtr       RemainingCharacters
+        00AC  CALLSYS       TSet::Remove                                  ; bool TSet<ALokiCharacter@>::Remove(const ALokiCharacter@ const&)
+        00B8  FreeNullV8    v28
+      L00BC:
+        00BC  LoadVObjR     v20 16 268448490                              ; .CanProceed
+        00C8  RDR1          v5
+        00CC  CpyVtoR1      v5
+        00D0  JLowNZ        -21                                           -> L0084
+        00D8  PSF           v14
+        00DC  CALL          85520                                         ; void FUAVCharacterGrouping::~FUAVCharacterGrouping()
+        00E4  JMP           -55                                           -> L0010
+      L00EC:
+        00EC  PshVPtr       __ret
+        00F0  CALLSYS       TArray::$beh0                                 ; void TArray<FUAVCharacterGrouping>::$beh0()
+        00FC  PSF           v4
+        0100  PshVPtr       __ret
+        0104  CALLSYS       TArray::opAssign                              ; TArray<FUAVCharacterGrouping>& TArray<FUAVCharacterGrouping>::opAssign(const TArray<FUAVCharacterGrouping>&)
+        0110  PSF           v4
+        0114  CALLSYS       TArray::$beh2                                 ; void TArray<FUAVCharacterGrouping>::$beh2()
+        0120  RET           6
+    */
+
+    private FUAVCharacterGrouping GetLargestCharacterGrouping(const TSet<ALokiCharacter@>& Characters)   // traits=0x28
+    {
+        FUAVCharacterGrouping v8;
+        TSetConstIterator<ALokiCharacter@> v16;
+        TSetConstIterator<ALokiCharacter@> v24;
+        auto v25;
+        ALokiCharacter v28;
+        TArray<ALokiCharacter@> v32;
+        ALokiCharacter v42;
+        auto v44;
+        auto v45;
+        float64 v48;
+        auto v49;
+        auto v50;
+
+        v8.FUAVCharacterGrouping();
+        v16 = arg_m4.Iterator();
+        while (true) {
+            v25 = v16.CanProceed;
+            if (!v25) break;
+            v28 = v16.Proceed();
+            v16.Proceed();
+            v32 = TArray<ALokiCharacter@>();
+            v24 = arg_m4.Iterator();
+            while (true) {
+                v25 = v24.CanProceed;
+                if (!v25) break;
+                v42 = v24.Proceed();
+                v24.Proceed();
+                v45 = v42.GetDistanceTo(v28);
+                v48 = float64(v45);
+                v44 = v48;
+                v48 = this.PlayerGroupingDistance;
+                if (v44 < v48) {
+                    v32.Add(v42);
+                }
+            }
+            v49 = v8.Characters.Num();
+            v50 = v32.Num();
+            if (v49 < v50) {
+                v8.Characters = v32;
+            }
+        }
+        Characters.FUAVCharacterGrouping();
+        v8.~FUAVCharacterGrouping();
+        return v25;
+    }
+    /* ---- GetLargestCharacterGrouping: 115 dwords / 71 instructions (cache offset 0xb8bf2) ----
+        0000  PSF           v8
+        0004  CALL          85415                                         ; void FUAVCharacterGrouping::FUAVCharacterGrouping()
+        000C  PSF           v16
+        0010  PshVPtr       arg_m4
+        0014  CALLSYS       TSet::Iterator                                ; TSetConstIterator<ALokiCharacter@> TSet<ALokiCharacter@>::Iterator() const
+        0020  JMP           85                                            -> L017C
+      L0028:
+        0028  SUSPEND
+        002C  PSF           v16
+        0030  CALLSYS       TSetConstIterator::Proceed                    ; ALokiCharacter@ const& TSetConstIterator<ALokiCharacter@>::Proceed()
+        003C  PshRPtr
+        0040  RDSPtr
+        0044  RefCpyV       v28
+        0048  PSF           v32
+        004C  CALLSYS       TArray::$beh0                                 ; void TArray<ALokiCharacter@>::$beh0()
+        0058  PSF           v24
+        005C  PshVPtr       arg_m4
+        0060  CALLSYS       TSet::Iterator                                ; TSetConstIterator<ALokiCharacter@> TSet<ALokiCharacter@>::Iterator() const
+        006C  JMP           31                                            -> L00F0
+      L0074:
+        0074  SUSPEND
+        0078  PSF           v24
+        007C  CALLSYS       TSetConstIterator::Proceed                    ; ALokiCharacter@ const& TSetConstIterator<ALokiCharacter@>::Proceed()
+        0088  PshRPtr
+        008C  RDSPtr
+        0090  RefCpyV       v42
+        0094  PshVPtr       v28
+        0098  PshVPtr       v42
+        009C  CALLSYS       AActor::GetDistanceTo                         ; float32 AActor::GetDistanceTo(const AActor@) const
+        00A8  CpyRtoV4      v45
+        00AC  fTOd          v48 v45
+        00B4  CpyVtoV8      v44 v48
+        00BC  LoadThisR     208 134230904                                 ; this.PlayerGroupingDistance
+        00C4  RDR8          v48
+        00C8  CMPd          v44 v48
+        00D0  JNS           5                                             -> L00EC
+        00D8  PSF           v42
+        00DC  PSF           v32
+        00E0  CALLSYS       TArray::Add                                   ; void TArray<ALokiCharacter@>::Add(const ALokiCharacter@ const&)
+      L00EC:
+        00EC  FreeNullV8    v42
+      L00F0:
+        00F0  LoadVObjR     v24 24 268448644                              ; .CanProceed
+        00FC  RDR1          v25
+        0100  CpyVtoR1      v25
+        0104  JLowNZ        -38                                           -> L0074
+        010C  PSF           v8
+        0110  ADDSi         0 134230914                                   ; .Characters
+        0118  CALLSYS       TArray::Num                                   ; int TArray<ALokiCharacter@>::Num() const
+        0124  CpyRtoV4      v49
+        0128  PSF           v32
+        012C  CALLSYS       TArray::Num                                   ; int TArray<ALokiCharacter@>::Num() const
+        0138  CpyRtoV4      v50
+        013C  CMPi          v49 v50
+        0144  JNS           7                                             -> L0168
+        014C  PSF           v32
+        0150  PSF           v8
+        0154  ADDSi         0 134230914                                   ; .Characters
+        015C  CALLSYS       TArray::opAssign                              ; TArray<ALokiCharacter@>& TArray<ALokiCharacter@>::opAssign(const TArray<ALokiCharacter@>&)
+      L0168:
+        0168  PSF           v32
+        016C  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiCharacter@>::$beh2()
+        0178  FreeNullV8    v28
+      L017C:
+        017C  LoadVObjR     v16 24 268448644                              ; .CanProceed
+        0188  RDR1          v25
+        018C  CpyVtoR1      v25
+        0190  JLowNZ        -92                                           -> L0028
+        0198  PshVPtr       Characters
+        019C  CALL          85415                                         ; void FUAVCharacterGrouping::FUAVCharacterGrouping()
+        01A4  PSF           v8
+        01A8  PshVPtr       Characters
+        01AC  CopyScript    FUAVCharacterGrouping
+        01B8  PopPtr
+        01BC  PSF           v8
+        01C0  CALL          85520                                         ; void FUAVCharacterGrouping::~FUAVCharacterGrouping()
+        01C8  RET           6
+    */
+
+    private bool IsCharacterUAVImmune(ALokiCharacter@ LokiCharacter)   // traits=0x28
+    {
+        auto v1;
+        auto v2;
+
+        if (LokiCharacter.IsInvisible()) {
+            v1 = true;
+            return LokiCharacter.IsInvisible();
+        } else {
+            v2 = LokiCharacter.IsInBrush();
+            v1 = v2;
+        }
+        return v1;
+    }
+    /* ---- IsCharacterUAVImmune: 19 dwords / 11 instructions (cache offset 0xb8fc1) ----
+        0000  PshVPtr       LokiCharacter
+        0004  CALLSYS       ALokiCharacter::IsInvisible                   ; bool ALokiCharacter::IsInvisible() const
+        0010  JLowZ         4                                             -> L0028
+        0018  SetV1         v1 1
+        0020  JMP           7                                             -> L0044
+      L0028:
+        0028  PshVPtr       LokiCharacter
+        002C  CALLSYS       ALokiCharacter::IsInBrush                     ; bool ALokiCharacter::IsInBrush() const
+        0038  CpyRtoV4      v2
+        003C  CpyVtoV4      v1 v2
+      L0044:
+        0044  CpyVtoR4      v1
+        0048  RET           4
+    */
+
+    private void GenerateFuzzyLocation(const FActiveUAV& UAV, const FVector& Location, const int PlayerCount, const int TeamIndex, const float64 TeamLevel, const TArray<TSubclassOf<ALokiCharacter@>>& CharacterClasses, const float64 AverageRelicCount, const float64 AverageArmorLevel)   // traits=0x28
+    {
+        ALokiGameState v2;
+        bool v5;
+        FLokiFuzzyPlayerLocationItem v54;
+        auto v55;
+        FVector v62;
+        float32 v63;
+        auto v66;
+        float64 v68;
+        auto v69;
+        int v70;
+        TArray<ULokiFuzzyPlayerLocationComponent@> v74;
+        ULokiFuzzyPlayerLocationComponent v76;
+        bool v83;
+        TArray<ALokiTeamState@> v88;
+        TArrayIterator<ALokiTeamState@> v94;
+        ALokiTeamState v102;
+        ALokiTeamState_TeamOnly v104;
+        TArrayIterator<ULokiFuzzyPlayerLocationComponent@> v110;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            return;
+        } else {
+            v54 = FLokiFuzzyPlayerLocationItem();
+            v55 = true;
+            v54.Source = v55;
+            v62 = UAV.ObfuscateLocation(Location);
+            v54.Location = v62;
+            v54.PlayerCount = PlayerCount;
+            v63 = Gameplay::GetServerTime(__WorldContext);
+            v68 = float64(v63);
+            v66 = UAV.GetPulseLifespan();
+            v68 = v68 + v66;
+            v63 = float32(v68);
+            v54.ExpiryTime = v63;
+            v5 = UAV.Config.bShowTeam;
+            if (v5) {
+                v69 = TeamIndex;
+            } else {
+                v69 = -1;
+            }
+            v54.TeamIndex = v69;
+            v54.CharacterClasses = CharacterClasses;
+            v63 = float32(TeamLevel);
+            v54.AverageLevel = v63;
+            v63 = float32(AverageRelicCount);
+            v54.AverageRelicCount = v63;
+            v63 = float32(AverageArmorLevel);
+            v54.AverageArmorLevel = v63;
+            v5 = UAV.Config.bLocalRadar;
+            if (v5) {
+                v69 = UAV.ID;
+                v54.UAVID = v69;
+                v70 = UAV.PlayersDetected;
+                v54.TotalPlayerCount = v70;
+            }
+            v74 = TArray<ULokiFuzzyPlayerLocationComponent@>();
+            v69 = UAV.TeamIndex;
+            if (v69 >= 0) {
+                v70 = UAV.TeamIndex;
+                v76 = ALokiTeamState_TeamOnly::GetFuzzyPlayerLocationComponentByTeamIndex(__WorldContext, v70);
+                if (v76 != nullptr) {
+                    v74.Add(v76);
+                }
+            } else {
+                v5 = true;
+                v83 = true;
+                v88 = v2.GetTeamStates(v83, v5);
+                v94 = v88.Iterator();
+                while (true) {
+                    v5 = v94.CanProceed;
+                    if (!v5) break;
+                    v102 = v94.Proceed();
+                    v94.Proceed();
+                    v104 = v102.GetTeamStateTeamOnly();
+                    if (v104 == nullptr) {
+                        v83 = 0;
+                    } else {
+                        v69 = v102.GetIndex();
+                        v5 = v69 != TeamIndex;
+                        v83 = v5;
+                    }
+                    if (v83) {
+                        v104 = v102.GetTeamStateTeamOnly();
+                        v76 = v104.FuzzyPlayerLocationComponent;
+                        if (v76 != nullptr) {
+                            v74.Add(v76);
+                        }
+                    }
+                }
+            }
+            v110 = v74.Iterator();
+            while (true) {
+                v83 = v110.CanProceed;
+                if (!v83) break;
+                v76 = v110.Proceed();
+                v110.Proceed();
+                v76.AddLocation(v54);
+            }
+        }
+        return;
+    }
+    /* ---- GenerateFuzzyLocation: 291 dwords / 171 instructions (cache offset 0xb927d) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        0018  STOREOBJ      v2
+        001C  PshVPtr       v2
+        0020  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        002C  CpyRtoV4      v5
+        0030  NOT           v5
+        0034  CpyVtoR1      v5
+        0038  JLowZ         2                                             -> L0048
+        0040  JMP           272                                           -> L0488
+      L0048:
+        0048  PSF           v54
+        004C  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh0           ; void FLokiFuzzyPlayerLocationItem::$beh0()
+        0058  SetV1         v55 1
+        0060  LoadVObjR     v54 16 67120891                               ; .Source
+        006C  WRTV1         v55
+        0070  PshVPtr       Location
+        0074  PSF           v62
+        0078  PshVPtr       UAV
+        007C  CALL          85412                                         ; FVector FActiveUAV::ObfuscateLocation(const FVector&) const
+        0084  PSF           v62
+        0088  PSF           v54
+        008C  ADDSi         24 67120891                                   ; .Location
+        0094  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        00A0  LoadVObjR     v54 48 67120891                               ; .PlayerCount
+        00AC  WRTV4         PlayerCount
+        00B0  PshGPtr       __WorldContext
+        00BC  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        00C8  CpyRtoV4      v63
+        00CC  fTOd          v68 v63
+        00D4  PshVPtr       UAV
+        00D8  CALL          85411                                         ; float64 FActiveUAV::GetPulseLifespan() const
+        00E0  CpyRtoV8      v66
+        00E4  ADDd          v68 v68 v66
+        00EC  dTOf          v63 v68
+        00F4  LoadVObjR     v54 52 67120891                               ; .ExpiryTime
+        0100  WRTV4         v63
+        0104  PshVPtr       UAV
+        0108  ADDSi         8 134230905                                   ; .Config
+        0110  ADDSi         33 134230906                                  ; .bShowTeam
+        0118  PopRPtr
+        011C  RDR1          v5
+        0120  CpyVtoR1      v5
+        0124  JLowZ         4                                             -> L013C
+        012C  CpyVtoV4      v69 TeamIndex
+        0134  JMP           2                                             -> L0144
+      L013C:
+        013C  SetV4         v69 -1
+      L0144:
+        0144  LoadVObjR     v54 56 67120891                               ; .TeamIndex
+        0150  WRTV4         v69
+        0154  PshVPtr       CharacterClasses
+        0158  PSF           v54
+        015C  ADDSi         64 67120891                                   ; .CharacterClasses
+        0164  CALLSYS       TArray::opAssign                              ; TArray<TSubclassOf<ALokiCharacter@>>& TArray<TSubclassOf<ALokiCharacter@>>::opAssign(const TArray<TSubclassOf<ALokiCharacter@>>&)
+        0170  dTOf          v63 TeamLevel
+        0178  LoadVObjR     v54 60 67120891                               ; .AverageLevel
+        0184  WRTV4         v63
+        0188  dTOf          v63 AverageRelicCount
+        0190  LoadVObjR     v54 88 67120891                               ; .AverageRelicCount
+        019C  WRTV4         v63
+        01A0  dTOf          v63 AverageArmorLevel
+        01A8  LoadVObjR     v54 92 67120891                               ; .AverageArmorLevel
+        01B4  WRTV4         v63
+        01B8  PshVPtr       UAV
+        01BC  ADDSi         8 134230905                                   ; .Config
+        01C4  ADDSi         65 134230906                                  ; .bLocalRadar
+        01CC  PopRPtr
+        01D0  RDR1          v5
+        01D4  CpyVtoR1      v5
+        01D8  JLowZ         16                                            -> L0220
+        01E0  LoadRObjR     UAV 4 134230905                               ; .ID
+        01EC  RDR4          v69
+        01F0  LoadVObjR     v54 80 67120891                               ; .UAVID
+        01FC  WRTV4         v69
+        0200  LoadRObjR     UAV 132 134230905                             ; .PlayersDetected
+        020C  RDR4          v70
+        0210  LoadVObjR     v54 84 67120891                               ; .TotalPlayerCount
+        021C  WRTV4         v70
+      L0220:
+        0220  PSF           v74
+        0224  CALLSYS       TArray::$beh0                                 ; void TArray<ULokiFuzzyPlayerLocationComponent@>::$beh0()
+        0230  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        023C  RDR4          v69
+        0240  CMPIi         v69 0
+        0248  JS            23                                            -> L02AC
+        0250  LoadRObjR     UAV 88 134230905                              ; .TeamIndex
+        025C  RDR4          v70
+        0260  PshV4         v70
+        0264  PshGPtr       __WorldContext
+        0270  CALLSYS       GetFuzzyPlayerLocationComponentByTeamIndex    ; ULokiFuzzyPlayerLocationComponent@ ALokiTeamState_TeamOnly::GetFuzzyPlayerLocationComponentByTeamIndex(const UObject@, int)
+        027C  STOREOBJ      v76
+        0280  CmpPtrNull    v76
+        0284  JZ            5                                             -> L02A0
+        028C  PSF           v76
+        0290  PSF           v74
+        0294  CALLSYS       TArray::Add                                   ; void TArray<ULokiFuzzyPlayerLocationComponent@>::Add(const ULokiFuzzyPlayerLocationComponent@ const&)
+      L02A0:
+        02A0  FreeNullV8    v76
+        02A4  JMP           83                                            -> L03F8
+      L02AC:
+        02AC  SetV1         v5 1
+        02B4  PshV4         v5
+        02B8  SetV1         v83 1
+        02C0  PshV4         v83
+        02C4  PSF           v88
+        02C8  PshVPtr       v2
+        02CC  CALLSYS       ALokiGameState::GetTeamStates                 ; TArray<ALokiTeamState@> ALokiGameState::GetTeamStates(bool, bool) const
+        02D8  PSF           v94
+        02DC  PSF           v88
+        02E0  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiTeamState@> TArray<ALokiTeamState@>::Iterator()
+        02EC  JMP           54                                            -> L03CC
+      L02F4:
+        02F4  SUSPEND
+        02F8  PSF           v94
+        02FC  CALLSYS       TArrayIterator::Proceed                       ; ALokiTeamState@& TArrayIterator<ALokiTeamState@>::Proceed()
+        0308  PshRPtr
+        030C  RDSPtr
+        0310  RefCpyV       v102
+        0314  PshVPtr       v102
+        0318  CALLSYS       ALokiTeamState::GetTeamStateTeamOnly          ; ALokiTeamState_TeamOnly@ ALokiTeamState::GetTeamStateTeamOnly() const
+        0324  STOREOBJ      v104
+        0328  CmpPtrNull    v104
+        032C  JNZ           4                                             -> L0344
+        0334  SetV4         v83 0
+        033C  JMP           11                                            -> L0370
+      L0344:
+        0344  PshVPtr       v102
+        0348  CALLSYS       ALokiTeamState::GetIndex                      ; int ALokiTeamState::GetIndex() const
+        0354  CpyRtoV4      v69
+        0358  CMPi          v69 TeamIndex
+        0360  TNZ
+        0364  CpyRtoV4      v5
+        0368  CpyVtoV4      v83 v5
+      L0370:
+        0370  CpyVtoR1      v83
+        0374  JLowZ         19                                            -> L03C8
+        037C  PshVPtr       v102
+        0380  CALLSYS       ALokiTeamState::GetTeamStateTeamOnly          ; ALokiTeamState_TeamOnly@ ALokiTeamState::GetTeamStateTeamOnly() const
+        038C  STOREOBJ      v104
+        0390  PshVPtr       v104
+        0394  ADDSi         960 67115443                                  ; .FuzzyPlayerLocationComponent
+        039C  RDSPtr
+        03A0  RefCpyV       v76
+        03A4  CmpPtrNull    v76
+        03A8  JZ            5                                             -> L03C4
+        03B0  PSF           v76
+        03B4  PSF           v74
+        03B8  CALLSYS       TArray::Add                                   ; void TArray<ULokiFuzzyPlayerLocationComponent@>::Add(const ULokiFuzzyPlayerLocationComponent@ const&)
+      L03C4:
+        03C4  FreeNullV8    v76
+      L03C8:
+        03C8  FreeNullV8    v102
+      L03CC:
+        03CC  LoadVObjR     v94 16 268448555                              ; .CanProceed
+        03D8  RDR1          v5
+        03DC  CpyVtoR1      v5
+        03E0  JLowNZ        -61                                           -> L02F4
+        03E8  PSF           v88
+        03EC  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiTeamState@>::$beh2()
+      L03F8:
+        03F8  PSF           v110
+        03FC  PSF           v74
+        0400  CALLSYS       TArray::Iterator                              ; TArrayIterator<ULokiFuzzyPlayerLocationComponent@> TArray<ULokiFuzzyPlayerLocationComponent@>::Iterator()
+        040C  JMP           14                                            -> L044C
+      L0414:
+        0414  SUSPEND
+        0418  PSF           v110
+        041C  CALLSYS       TArrayIterator::Proceed                       ; ULokiFuzzyPlayerLocationComponent@& TArrayIterator<ULokiFuzzyPlayerLocationComponent@>::Proceed()
+        0428  PshRPtr
+        042C  RDSPtr
+        0430  RefCpyV       v76
+        0434  PSF           v54
+        0438  PshVPtr       v76
+        043C  CALLSYS       ULokiFuzzyPlayerLocationComponent::AddLocation  ; int ULokiFuzzyPlayerLocationComponent::AddLocation(FLokiFuzzyPlayerLocationItem)
+        0448  FreeNullV8    v76
+      L044C:
+        044C  LoadVObjR     v110 16 268448645                             ; .CanProceed
+        0458  RDR1          v83
+        045C  CpyVtoR1      v83
+        0460  JLowNZ        -21                                           -> L0414
+        0468  PSF           v74
+        046C  CALLSYS       TArray::$beh2                                 ; void TArray<ULokiFuzzyPlayerLocationComponent@>::$beh2()
+        0478  PSF           v54
+        047C  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh2           ; void FLokiFuzzyPlayerLocationItem::$beh2()
+      L0488:
+        0488  RET           16
+    */
+
+    private void PulseIndividual(const FActiveUAV& UAV, ALokiPlayerState@ PlayerState)   // traits=0x28
+    {
+        ALokiCharacter v2;
+        auto v5;
+        auto v8;
+        float64 v10;
+        FVector v16;
+        float64 v18;
+        ULokiAbilitySystemComponent v20;
+        UObject v24;
+        auto v25;
+        FGameplayEffectSpecHandle v30;
+        FGameplayEffectContextHandle v36;
+        float32 v37;
+        FGameplayEffectSpecHandle v42;
+        FActiveGameplayEffectHandle v44;
+        TArray<TSubclassOf<ALokiCharacter@>> v48;
+        UClass v50;
+        TSubclassOf<ALokiCharacter@> v52;
+        int v53;
+        float64 v56;
+
+        v2 = PlayerState.GetLokiCharacter();
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            return;
+        } else {
+            if (this.IsCharacterUAVImmune(v2)) {
+                return;
+            } else {
+                v8 = UAV.Config.Radius;
+                v10 = 0;
+                if (v8 > v10) {
+                    v16 = v2.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v10 = UAV.SourceLocation.Dist2D(v16);
+                    v8 = UAV.Config.Radius;
+                    if (v10 > v8) {
+                        return;
+                    }
+                } else {
+                    v8 = UAV.GetPulseLifespan();
+                    v20 = v2.GetLokiAbilitySystem_BP();
+                    if (!IsValid(v20)) {
+                        v5 = 0;
+                    } else {
+                        v24 = UObject@(this.MarkedIndividualGameplayEffectClass);
+                        v25 = IsValid(v24);
+                        v5 = v25;
+                    }
+                    if (v5) {
+                        v36 = FGameplayEffectContextHandle();
+                        v42 = v20.MakeOutgoingSpec(this.MarkedIndividualGameplayEffectClass, 0, v36);
+                        v37 = float32(v8);
+                        v30 = AbilitySystem::AssignTagSetByCallerMagnitude(v42, this.DataTag, v37);
+                        v42 = v30;
+                        v44 = v20.ApplyGameplayEffectSpecToSelf(v42)  /* UFunction BP_ApplyGameplayEffectSpecToSelf */;
+                    }
+                    v48 = TArray<TSubclassOf<ALokiCharacter@>>();
+                    v25 = UAV.Config.bShowCharacters;
+                    if (v25) {
+                        v50 = v2.GetClass();
+                        v52 = TSubclassOf<ALokiCharacter@>(v50);
+                        v48.Add(v52);
+                    }
+                    v10 = GetArmorLevelForPlayer(v2);
+                    v18 = GetRelicCountForPlayer(v2);
+                    v37 = v2.GetLevel();
+                    v56 = float64(v37);
+                    v53 = v2.GetTeamIndex();
+                    v16 = v2.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    this.GenerateFuzzyLocation(UAV, v16, 1, v53, v56, v48, v18, v10);
+                }
+            }
+        }
+        return;
+    }
+    /* ---- PulseIndividual: 224 dwords / 138 instructions (cache offset 0xb9a29) ----
+        0000  PshVPtr       PlayerState
+        0004  CALLSYS       ALokiPlayerState::GetLokiCharacter            ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+        0010  STOREOBJ      v2
+        0014  PshVPtr       v2
+        0018  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0024  CpyRtoV4      v5
+        0028  NOT           v5
+        002C  CpyVtoR1      v5
+        0030  JLowZ         2                                             -> L0040
+        0038  JMP           207                                           -> L037C
+      L0040:
+        0040  PshVPtr       v2
+        0044  PshVPtr       this
+        0048  CALLINTF      85361                                         ; bool ULokiGameStateUAVComponent::IsCharacterUAVImmune(ALokiCharacter@)
+        0050  JLowZ         2                                             -> L0060
+        0058  JMP           199                                           -> L037C
+      L0060:
+        0060  PshVPtr       UAV
+        0064  ADDSi         8 134230905                                   ; .Config
+        006C  ADDSi         56 134230906                                  ; .Radius
+        0074  PopRPtr
+        0078  RDR8          v8
+        007C  SetV8         v10 0x0
+        0088  CMPd          v8 v10
+        0090  JNP           26                                            -> L0100
+        0098  PSF           v16
+        009C  PshVPtr       v2
+        00A0  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        00AC  PSF           v16
+        00B0  PshVPtr       UAV
+        00B4  ADDSi         104 134230905                                 ; .SourceLocation
+        00BC  CALLSYS       FVector::Dist2D                               ; float64 FVector::Dist2D(const FVector&) const
+        00C8  CpyRtoV8      v10
+        00CC  PshVPtr       UAV
+        00D0  ADDSi         8 134230905                                   ; .Config
+        00D8  ADDSi         56 134230906                                  ; .Radius
+        00E0  PopRPtr
+        00E4  RDR8          v8
+        00E8  CMPd          v10 v8
+        00F0  JNP           2                                             -> L0100
+        00F8  JMP           159                                           -> L037C
+      L0100:
+        0100  PshVPtr       UAV
+        0104  CALL          85411                                         ; float64 FActiveUAV::GetPulseLifespan() const
+        010C  CpyRtoV8      v8
+        0110  PshVPtr       v2
+        0114  CALLSYS       ALokiCharacter::GetLokiAbilitySystem_BP       ; ULokiAbilitySystemComponent@ ALokiCharacter::GetLokiAbilitySystem_BP() const
+        0120  STOREOBJ      v20
+        0124  PshVPtr       v20
+        0128  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0134  JLowNZ        4                                             -> L014C
+        013C  SetV4         v5 0
+        0144  JMP           14                                            -> L0184
+      L014C:
+        014C  PshVPtr       this
+        0150  ADDSi         240 134230904                                 ; .MarkedIndividualGameplayEffectClass
+        0158  CALLSYS       TSubclassOf::opImplConv                       ; UObject@ TSubclassOf<UGameplayEffect@>::opImplConv() const
+        0164  STOREOBJ      v24
+        0168  PshVPtr       v24
+        016C  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0178  CpyRtoV4      v25
+        017C  CpyVtoV4      v5 v25
+      L0184:
+        0184  CpyVtoR1      v5
+        0188  JLowZ         53                                            -> L0264
+        0190  PSF           v36
+        0194  CALLSYS       FGameplayEffectContextHandle::$beh0           ; void FGameplayEffectContextHandle::$beh0()
+        01A0  PSF           v36
+        01A4  PshC4         0
+        01AC  PshVPtr       this
+        01B0  ADDSi         240 134230904                                 ; .MarkedIndividualGameplayEffectClass
+        01B8  PSF           v42
+        01BC  PshVPtr       v20
+        01C0  CALLSYS       UAbilitySystemComponent::MakeOutgoingSpec     ; FGameplayEffectSpecHandle UAbilitySystemComponent::MakeOutgoingSpec(TSubclassOf<UGameplayEffect@>, float32, FGameplayEffectContextHandle) const
+        01CC  PSF           v36
+        01D0  CALLSYS       FGameplayEffectContextHandle::$beh2           ; void FGameplayEffectContextHandle::$beh2()
+        01DC  dTOf          v37 v8
+        01E4  PshV4         v37
+        01E8  PshVPtr       this
+        01EC  ADDSi         256 134230904                                 ; .DataTag
+        01F4  PSF           v42
+        01F8  PSF           v30
+        01FC  CALLSYS       AssignTagSetByCallerMagnitude                 ; FGameplayEffectSpecHandle AbilitySystem::AssignTagSetByCallerMagnitude(FGameplayEffectSpecHandle, FGameplayTag, float32)
+        0208  PSF           v30
+        020C  PSF           v42
+        0210  CALLSYS       FGameplayEffectSpecHandle::opAssign           ; FGameplayEffectSpecHandle& FGameplayEffectSpecHandle::opAssign(const FGameplayEffectSpecHandle&)
+        021C  PSF           v30
+        0220  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+        022C  PSF           v42
+        0230  PSF           v44
+        0234  PshVPtr       v20
+        0238  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf  ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf(const FGameplayEffectSpecHandle&)
+        0244  PSF           v44
+        0248  CALLSYS       FActiveGameplayEffectHandle::$beh2            ; void FActiveGameplayEffectHandle::$beh2()
+        0254  PSF           v42
+        0258  CALLSYS       FGameplayEffectSpecHandle::$beh2              ; void FGameplayEffectSpecHandle::$beh2()
+      L0264:
+        0264  PSF           v48
+        0268  CALLSYS       TArray::$beh0                                 ; void TArray<TSubclassOf<ALokiCharacter@>>::$beh0()
+        0274  PshVPtr       UAV
+        0278  ADDSi         8 134230905                                   ; .Config
+        0280  ADDSi         64 134230906                                  ; .bShowCharacters
+        0288  PopRPtr
+        028C  RDR1          v25
+        0290  CpyVtoR1      v25
+        0294  JLowZ         15                                            -> L02D8
+        029C  PshVPtr       v2
+        02A0  CALLSYS       UObject::GetClass                             ; UClass@ UObject::GetClass() const
+        02AC  STOREOBJ      v50
+        02B0  PshVPtr       v50
+        02B4  PSF           v52
+        02B8  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiCharacter@>::$beh0(UClass@)
+        02C4  PSF           v52
+        02C8  PSF           v48
+        02CC  CALLSYS       TArray::Add                                   ; void TArray<TSubclassOf<ALokiCharacter@>>::Add(const TSubclassOf<ALokiCharacter@>&)
+      L02D8:
+        02D8  PshVPtr       v2
+        02DC  CALL          84569                                         ; float64 GetArmorLevelForPlayer(ALokiCharacter@)
+        02E4  CpyRtoV8      v10
+        02E8  PshV8         v10
+        02EC  PshVPtr       v2
+        02F0  CALL          84568                                         ; float64 GetRelicCountForPlayer(ALokiCharacter@)
+        02F8  CpyRtoV8      v18
+        02FC  PshV8         v18
+        0300  PSF           v48
+        0304  PshVPtr       v2
+        0308  CALLSYS       ALokiCharacter::GetLevel                      ; float32 ALokiCharacter::GetLevel() const
+        0314  CpyRtoV4      v37
+        0318  fTOd          v56 v37
+        0320  PshV8         v56
+        0324  PshVPtr       v2
+        0328  CALLSYS       ALokiCharacter::GetTeamIndex                  ; int ALokiCharacter::GetTeamIndex() const
+        0334  CpyRtoV4      v53
+        0338  PshV4         v53
+        033C  PshC4         1
+        0344  PSF           v16
+        0348  PshVPtr       v2
+        034C  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0358  PSF           v16
+        035C  PshVPtr       UAV
+        0360  PshVPtr       this
+        0364  CALLINTF      85362                                         ; void ULokiGameStateUAVComponent::GenerateFuzzyLocation(const FActiveUAV&, const FVector&, const int, const int, const float64, const TArray<TSubclassOf<ALokiCharacter@>>&, const float64, const float64)
+        036C  PSF           v48
+        0370  CALLSYS       TArray::$beh2                                 ; void TArray<TSubclassOf<ALokiCharacter@>>::$beh2()
+      L037C:
+        037C  RET           6
+    */
+
+    private bool IsValidUAVTarget(const FActiveUAV& UAV, ALokiPlayerState@ PlayerState)   // traits=0x28
+    {
+        ALokiCharacter v2;
+        auto v5;
+        auto v8;
+        auto v10;
+        FVector v16;
+
+        v2 = PlayerState.GetLokiCharacter();
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            v5 = false;
+            return v5;
+        } else {
+            if (this.IsCharacterUAVImmune(v2)) {
+                v5 = false;
+                return v5;
+            } else {
+                v8 = UAV.Config.Radius;
+                v10 = 0;
+                if (v8 > v10) {
+                    v16 = v2.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v10 = UAV.SourceLocation.Dist2D(v16);
+                    v8 = UAV.Config.Radius;
+                    if (v10 > v8) {
+                        v5 = false;
+                        return v5;
+                    }
+                } else {
+                    v5 = true;
+                }
+            }
+        }
+        return v5;
+    }
+    /* ---- IsValidUAVTarget: 77 dwords / 48 instructions (cache offset 0xba08e) ----
+        0000  PshVPtr       PlayerState
+        0004  CALLSYS       ALokiPlayerState::GetLokiCharacter            ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+        0010  STOREOBJ      v2
+        0014  PshVPtr       v2
+        0018  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0024  CpyRtoV4      v5
+        0028  NOT           v5
+        002C  CpyVtoR1      v5
+        0030  JLowZ         5                                             -> L004C
+        0038  SetV1         v5 0
+        0040  CpyVtoR4      v5
+        0044  JMP           57                                            -> L0130
+      L004C:
+        004C  PshVPtr       v2
+        0050  PshVPtr       this
+        0054  CALLINTF      85361                                         ; bool ULokiGameStateUAVComponent::IsCharacterUAVImmune(ALokiCharacter@)
+        005C  JLowZ         5                                             -> L0078
+        0064  SetV1         v5 0
+        006C  CpyVtoR4      v5
+        0070  JMP           46                                            -> L0130
+      L0078:
+        0078  PshVPtr       UAV
+        007C  ADDSi         8 134230905                                   ; .Config
+        0084  ADDSi         56 134230906                                  ; .Radius
+        008C  PopRPtr
+        0090  RDR8          v8
+        0094  SetV8         v10 0x0
+        00A0  CMPd          v8 v10
+        00A8  JNP           29                                            -> L0124
+        00B0  PSF           v16
+        00B4  PshVPtr       v2
+        00B8  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        00C4  PSF           v16
+        00C8  PshVPtr       UAV
+        00CC  ADDSi         104 134230905                                 ; .SourceLocation
+        00D4  CALLSYS       FVector::Dist2D                               ; float64 FVector::Dist2D(const FVector&) const
+        00E0  CpyRtoV8      v10
+        00E4  PshVPtr       UAV
+        00E8  ADDSi         8 134230905                                   ; .Config
+        00F0  ADDSi         56 134230906                                  ; .Radius
+        00F8  PopRPtr
+        00FC  RDR8          v8
+        0100  CMPd          v10 v8
+        0108  JNP           5                                             -> L0124
+        0110  SetV1         v5 0
+        0118  CpyVtoR4      v5
+        011C  JMP           3                                             -> L0130
+      L0124:
+        0124  SetV1         v5 1
+        012C  CpyVtoR4      v5
+      L0130:
+        0130  RET           6
+    */
+
+    private bool IsTeamUAVImmune(ALokiTeamState@ TeamState)   // traits=0x28
+    {
+        TArray<ALokiPlayerState@> v4;
+        TArrayConstIterator<ALokiPlayerState@> v10;
+        auto v17;
+        ALokiPlayerState v20;
+        UAbilitySystemComponent v22;
+
+        v4 = TeamState.GetLivingPlayers();
+        v10 = v4.Iterator();
+        while (true) {
+            v17 = v10.CanProceed;
+            if (!v17) break;
+            v20 = v10.Proceed();
+            v10.Proceed();
+            v22 = AbilitySystem::GetAbilitySystemComponent(v20);
+            if (v22.HasMatchingGameplayTag(this.UAVImmunityTag)  /* UFunction Script_HasMatchingGameplayTag */) {
+                v17 = true;
+                return v17;
+            }
+        }
+        v17 = false;
+        return v17;
+    }
+    /* ---- IsTeamUAVImmune: 60 dwords / 37 instructions (cache offset 0xba320) ----
+        0000  PSF           v10
+        0004  PSF           v4
+        0008  PshVPtr       TeamState
+        000C  CALLSYS       ALokiTeamState::GetLivingPlayers              ; TArray<ALokiPlayerState@> ALokiTeamState::GetLivingPlayers() const
+        0018  PSF           v4
+        001C  CALLSYS       TArray::Iterator                              ; TArrayConstIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator() const
+        0028  JMP           33                                            -> L00B4
+      L0030:
+        0030  SUSPEND
+        0034  PSF           v10
+        0038  CALLSYS       TArrayConstIterator::Proceed                  ; ALokiPlayerState@ const& TArrayConstIterator<ALokiPlayerState@>::Proceed()
+        0044  PshRPtr
+        0048  RDSPtr
+        004C  RefCpyV       v20
+        0050  PshVPtr       v20
+        0054  CALLSYS       GetAbilitySystemComponent                     ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+        0060  STOREOBJ      v22
+        0064  PshVPtr       this
+        0068  ADDSi         264 134230904                                 ; .UAVImmunityTag
+        0070  PshVPtr       v22
+        0074  CALLSYS       UAbilitySystemComponent::HasMatchingGameplayTag  ; bool UAbilitySystemComponent::HasMatchingGameplayTag(FGameplayTag) const
+        0080  JLowZ         9                                             -> L00AC
+        0088  SetV1         v17 1
+        0090  PSF           v4
+        0094  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        00A0  CpyVtoR4      v17
+        00A4  JMP           16                                            -> L00EC
+      L00AC:
+        00AC  FreeNullV8    v22
+        00B0  FreeNullV8    v20
+      L00B4:
+        00B4  LoadVObjR     v10 16 268448511                              ; .CanProceed
+        00C0  RDR1          v17
+        00C4  CpyVtoR1      v17
+        00C8  JLowNZ        -40                                           -> L0030
+        00D0  PSF           v4
+        00D4  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        00E0  SetV1         v17 0
+        00E8  CpyVtoR4      v17
+      L00EC:
+        00EC  RET           4
+    */
+
+    private void NotifyTeamBlockedUAV(ALokiTeamState@ TeamState)   // traits=0x28
+    {
+        bool v1;
+        TArray<ALokiPlayerState@> v6;
+        TArrayConstIterator<ALokiPlayerState@> v12;
+        ALokiPlayerState v20;
+        UAbilitySystemComponent v22;
+        FGameplayCueParameters v82;
+
+        v1 = this.UAVBlockedGameplayCueTag.IsValid();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = TeamState.GetLivingPlayers();
+            v12 = v6.Iterator();
+            while (true) {
+                v1 = v12.CanProceed;
+                if (!v1) break;
+                v20 = v12.Proceed();
+                v12.Proceed();
+                v22 = AbilitySystem::GetAbilitySystemComponent(v20);
+                if (IsValid(v22)) {
+                    v1 = false;
+                    v82 = FGameplayCueParameters();
+                    v22.ExecuteGameplayCue_BP(this.UAVBlockedGameplayCueTag, v82, v1);
+                }
+            }
+        }
+        return;
+    }
+    /* ---- NotifyTeamBlockedUAV: 77 dwords / 47 instructions (cache offset 0xba5af) ----
+        0000  PshVPtr       this
+        0004  ADDSi         248 134230904                                 ; .UAVBlockedGameplayCueTag
+        000C  CALLSYS       FGameplayTag::IsValid                         ; bool FGameplayTag::IsValid() const
+        0018  CpyRtoV4      v1
+        001C  NOT           v1
+        0020  CpyVtoR1      v1
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           63                                            -> L0130
+      L0034:
+        0034  PSF           v12
+        0038  PSF           v6
+        003C  PshVPtr       TeamState
+        0040  CALLSYS       ALokiTeamState::GetLivingPlayers              ; TArray<ALokiPlayerState@> ALokiTeamState::GetLivingPlayers() const
+        004C  PSF           v6
+        0050  CALLSYS       TArray::Iterator                              ; TArrayConstIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator() const
+        005C  JMP           40                                            -> L0104
+      L0064:
+        0064  SUSPEND
+        0068  PSF           v12
+        006C  CALLSYS       TArrayConstIterator::Proceed                  ; ALokiPlayerState@ const& TArrayConstIterator<ALokiPlayerState@>::Proceed()
+        0078  PshRPtr
+        007C  RDSPtr
+        0080  RefCpyV       v20
+        0084  PshVPtr       v20
+        0088  CALLSYS       GetAbilitySystemComponent                     ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+        0094  STOREOBJ      v22
+        0098  PshVPtr       v22
+        009C  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        00A8  JLowZ         19                                            -> L00FC
+        00B0  SetV1         v1 0
+        00B8  PshV4         v1
+        00BC  PSF           v82
+        00C0  CALLSYS       FGameplayCueParameters::$beh0                 ; void FGameplayCueParameters::$beh0()
+        00CC  PSF           v82
+        00D0  PshVPtr       this
+        00D4  ADDSi         248 134230904                                 ; .UAVBlockedGameplayCueTag
+        00DC  PshVPtr       v22
+        00E0  CALLSYS       UAbilitySystemComponent::ExecuteGameplayCue_BP  ; void UAbilitySystemComponent::ExecuteGameplayCue_BP(const FGameplayTag, const FGameplayCueParameters&, bool)
+        00EC  PSF           v82
+        00F0  CALLSYS       FGameplayCueParameters::$beh2                 ; void FGameplayCueParameters::$beh2()
+      L00FC:
+        00FC  FreeNullV8    v22
+        0100  FreeNullV8    v20
+      L0104:
+        0104  LoadVObjR     v12 16 268448511                              ; .CanProceed
+        0110  RDR1          v1
+        0114  CpyVtoR1      v1
+        0118  JLowNZ        -47                                           -> L0064
+        0120  PSF           v6
+        0124  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+      L0130:
+        0130  RET           4
+    */
+
+    private void CleanupUAV(FActiveUAV&inout UAV)   // traits=0x28
+    {
+        auto v1;
+        TArray<ULokiTeamVaultDataComponent@> v6;
+        TArrayConstIterator<ULokiTeamVaultDataComponent@> v12;
+        ULokiTeamVaultDataComponent v20;
+        int v21;
+
+        UAV.Cleanup();
+        v1 = UAV.Config.bRevealVaults;
+        if (v1) {
+            v6 = this.GetAllTeamVaultDataComponents();
+            v12 = v6.Iterator();
+            while (true) {
+                v1 = v12.CanProceed;
+                if (!v1) break;
+                v20 = v12.Proceed();
+                v12.Proceed();
+                v21 = UAV.ID;
+                v20.RemoveVaultDataBySourceUAV(v21);
+            }
+        }
+        return;
+    }
+    /* ---- CleanupUAV: 54 dwords / 35 instructions (cache offset 0xba87e) ----
+        0000  PshVPtr       UAV
+        0004  CALL          85413                                         ; void FActiveUAV::Cleanup()
+        000C  PshVPtr       UAV
+        0010  ADDSi         8 134230905                                   ; .Config
+        0018  ADDSi         48 134230906                                  ; .bRevealVaults
+        0020  PopRPtr
+        0024  RDR1          v1
+        0028  CpyVtoR1      v1
+        002C  JLowZ         40                                            -> L00D4
+        0034  PSF           v12
+        0038  PSF           v6
+        003C  PshVPtr       this
+        0040  CALLINTF      85370                                         ; TArray<ULokiTeamVaultDataComponent@> ULokiGameStateUAVComponent::GetAllTeamVaultDataComponents()
+        0048  PSF           v6
+        004C  CALLSYS       TArray::Iterator                              ; TArrayConstIterator<ULokiTeamVaultDataComponent@> TArray<ULokiTeamVaultDataComponent@>::Iterator() const
+        0058  JMP           18                                            -> L00A8
+      L0060:
+        0060  SUSPEND
+        0064  PSF           v12
+        0068  CALLSYS       TArrayConstIterator::Proceed                  ; ULokiTeamVaultDataComponent@ const& TArrayConstIterator<ULokiTeamVaultDataComponent@>::Proceed()
+        0074  PshRPtr
+        0078  RDSPtr
+        007C  RefCpyV       v20
+        0080  LoadRObjR     UAV 4 134230905                               ; .ID
+        008C  RDR4          v21
+        0090  PshV4         v21
+        0094  PshVPtr       v20
+        0098  CALLSYS       ULokiTeamVaultDataComponent::RemoveVaultDataBySourceUAV  ; void ULokiTeamVaultDataComponent::RemoveVaultDataBySourceUAV(int)
+        00A4  FreeNullV8    v20
+      L00A8:
+        00A8  LoadVObjR     v12 16 268448646                              ; .CanProceed
+        00B4  RDR1          v1
+        00B8  CpyVtoR1      v1
+        00BC  JLowNZ        -25                                           -> L0060
+        00C4  PSF           v6
+        00C8  CALLSYS       TArray::$beh2                                 ; void TArray<ULokiTeamVaultDataComponent@>::$beh2()
+      L00D4:
+        00D4  RET           4
+    */
+
+    private TArray<ULokiTeamVaultDataComponent@> GetAllTeamVaultDataComponents()   // traits=0x28
+    {
+        TArray<ULokiTeamVaultDataComponent@> v4;
+        ALokiGameState v6;
+        bool v9;
+        bool v10;
+        TArray<ALokiTeamState@> v14;
+        TArrayConstIterator<ALokiTeamState@> v20;
+        auto v27;
+        ALokiTeamState v30;
+        ALokiTeamState_TeamOnly v32;
+        ULokiTeamVaultDataComponent v36;
+        auto v37;
+
+        v4 = TArray<ULokiTeamVaultDataComponent@>();
+        v6 = Loki::GetLokiGameState(__WorldContext);
+        if (v6 != nullptr) {
+            v9 = true;
+            v10 = true;
+            v14 = v6.GetTeamStates(v10, v9);
+            v20 = v14.Iterator();
+            while (true) {
+                v27 = v20.CanProceed;
+                if (!v27) break;
+                v30 = v20.Proceed();
+                v20.Proceed();
+                v32 = v30.GetTeamStateTeamOnly();
+                if (v32 == nullptr) {
+                    v27 = 0;
+                } else {
+                    v36 = v32.TeamVaultDataComponent;
+                    v37 = v36 != nullptr;
+                    v27 = v37;
+                }
+                if (v27) {
+                    v4.Add(v32.TeamVaultDataComponent);
+                }
+            }
+        }
+        __ret = TArray<ULokiTeamVaultDataComponent@>();
+        __ret = v4;
+        return;
+    }
+    /* ---- GetAllTeamVaultDataComponents: 99 dwords / 61 instructions (cache offset 0xbaa7c) ----
+        0000  PSF           v4
+        0004  CALLSYS       TArray::$beh0                                 ; void TArray<ULokiTeamVaultDataComponent@>::$beh0()
+        0010  PshGPtr       __WorldContext
+        001C  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        0028  STOREOBJ      v6
+        002C  CmpPtrNull    v6
+        0030  JZ            71                                            -> L0154
+        0038  PSF           v20
+        003C  SetV1         v9 1
+        0044  PshV4         v9
+        0048  SetV1         v10 1
+        0050  PshV4         v10
+        0054  PSF           v14
+        0058  PshVPtr       v6
+        005C  CALLSYS       ALokiGameState::GetTeamStates                 ; TArray<ALokiTeamState@> ALokiGameState::GetTeamStates(bool, bool) const
+        0068  PSF           v14
+        006C  CALLSYS       TArray::Iterator                              ; TArrayConstIterator<ALokiTeamState@> TArray<ALokiTeamState@>::Iterator() const
+        0078  JMP           42                                            -> L0128
+      L0080:
+        0080  SUSPEND
+        0084  PSF           v20
+        0088  CALLSYS       TArrayConstIterator::Proceed                  ; ALokiTeamState@ const& TArrayConstIterator<ALokiTeamState@>::Proceed()
+        0094  PshRPtr
+        0098  RDSPtr
+        009C  RefCpyV       v30
+        00A0  PshVPtr       v30
+        00A4  CALLSYS       ALokiTeamState::GetTeamStateTeamOnly          ; ALokiTeamState_TeamOnly@ ALokiTeamState::GetTeamStateTeamOnly() const
+        00B0  STOREOBJ      v32
+        00B4  CmpPtrNull    v32
+        00B8  JNZ           4                                             -> L00D0
+        00C0  SetV4         v27 0
+        00C8  JMP           10                                            -> L00F8
+      L00D0:
+        00D0  PshVPtr       v32
+        00D4  ADDSi         968 67115443                                  ; .TeamVaultDataComponent
+        00DC  RDSPtr
+        00E0  RefCpyV       v36
+        00E4  CmpPtrNull    v36
+        00E8  TNZ
+        00EC  CpyRtoV4      v37
+        00F0  CpyVtoV4      v27 v37
+      L00F8:
+        00F8  CpyVtoR1      v27
+        00FC  JLowZ         7                                             -> L0120
+        0104  PshVPtr       v32
+        0108  ADDSi         968 67115443                                  ; .TeamVaultDataComponent
+        0110  PSF           v4
+        0114  CALLSYS       TArray::Add                                   ; void TArray<ULokiTeamVaultDataComponent@>::Add(const ULokiTeamVaultDataComponent@ const&)
+      L0120:
+        0120  FreeNullV8    v32
+        0124  FreeNullV8    v30
+      L0128:
+        0128  LoadVObjR     v20 16 268448647                              ; .CanProceed
+        0134  RDR1          v27
+        0138  CpyVtoR1      v27
+        013C  JLowNZ        -49                                           -> L0080
+        0144  PSF           v14
+        0148  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiTeamState@>::$beh2()
+      L0154:
+        0154  PshVPtr       __ret
+        0158  CALLSYS       TArray::$beh0                                 ; void TArray<ULokiTeamVaultDataComponent@>::$beh0()
+        0164  PSF           v4
+        0168  PshVPtr       __ret
+        016C  CALLSYS       TArray::opAssign                              ; TArray<ULokiTeamVaultDataComponent@>& TArray<ULokiTeamVaultDataComponent@>::opAssign(const TArray<ULokiTeamVaultDataComponent@>&)
+        0178  PSF           v4
+        017C  CALLSYS       TArray::$beh2                                 ; void TArray<ULokiTeamVaultDataComponent@>::$beh2()
+        0188  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnVaultDestroyed(AActor@ DestroyedActor)   // traits=0x28
+    {
+        TArray<ULokiTeamVaultDataComponent@> v4;
+        TArrayConstIterator<ULokiTeamVaultDataComponent@> v10;
+        auto v17;
+        ULokiTeamVaultDataComponent v20;
+
+        v4 = this.GetAllTeamVaultDataComponents();
+        v10 = v4.Iterator();
+        while (true) {
+            v17 = v10.CanProceed;
+            if (!v17) break;
+            v20 = v10.Proceed();
+            v10.Proceed();
+            v20.RemoveVaultDataByVault(DestroyedActor);
+        }
+        return;
+    }
+    /* ---- OnVaultDestroyed: 37 dwords / 24 instructions (cache offset 0xbadf0) ----
+        0000  PSF           v10
+        0004  PSF           v4
+        0008  PshVPtr       this
+        000C  CALLINTF      85370                                         ; TArray<ULokiTeamVaultDataComponent@> ULokiGameStateUAVComponent::GetAllTeamVaultDataComponents()
+        0014  PSF           v4
+        0018  CALLSYS       TArray::Iterator                              ; TArrayConstIterator<ULokiTeamVaultDataComponent@> TArray<ULokiTeamVaultDataComponent@>::Iterator() const
+        0024  JMP           14                                            -> L0064
+      L002C:
+        002C  SUSPEND
+        0030  PSF           v10
+        0034  CALLSYS       TArrayConstIterator::Proceed                  ; ULokiTeamVaultDataComponent@ const& TArrayConstIterator<ULokiTeamVaultDataComponent@>::Proceed()
+        0040  PshRPtr
+        0044  RDSPtr
+        0048  RefCpyV       v20
+        004C  PshVPtr       DestroyedActor
+        0050  PshVPtr       v20
+        0054  CALLSYS       ULokiTeamVaultDataComponent::RemoveVaultDataByVault  ; void ULokiTeamVaultDataComponent::RemoveVaultDataByVault(const AActor@)
+        0060  FreeNullV8    v20
+      L0064:
+        0064  LoadVObjR     v10 16 268448646                              ; .CanProceed
+        0070  RDR1          v17
+        0074  CpyVtoR1      v17
+        0078  JLowNZ        -21                                           -> L002C
+        0080  PSF           v4
+        0084  CALLSYS       TArray::$beh2                                 ; void TArray<ULokiTeamVaultDataComponent@>::$beh2()
+        0090  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnVaultDoorDestroyed(AActor@ DestroyedActor)   // traits=0x28
+    {
+        TArrayIterator<AVaultItemSpawner@> v6;
+        auto v13;
+        AVaultItemSpawner v16;
+        ALokiDestructible v18;
+        AActor v20;
+        auto v21;
+
+        v6 = this.AllVaultItemSpawners.Iterator();
+        while (true) {
+            v13 = v6.CanProceed;
+            if (!v13) break;
+            v16 = v6.Proceed();
+            v6.Proceed();
+            if (v16 == nullptr) {
+                v13 = 0;
+            } else {
+                v18 = v16.GetDoor();
+                v20 = DestroyedActor;
+                v21 = v18 == v20;
+                v13 = v21;
+            }
+            if (v13) {
+                this.OnVaultDestroyed(v16);
+                return;
+            }
+        }
+        return;
+    }
+    /* ---- OnVaultDoorDestroyed: 54 dwords / 36 instructions (cache offset 0xbb02d) ----
+        0000  PSF           v6
+        0004  PshVPtr       this
+        0008  ADDSi         296 134230904                                 ; .AllVaultItemSpawners
+        0010  CALLSYS       TArray::Iterator                              ; TArrayIterator<AVaultItemSpawner@> TArray<AVaultItemSpawner@>::Iterator()
+        001C  JMP           37                                            -> L00B8
+      L0024:
+        0024  SUSPEND
+        0028  PSF           v6
+        002C  CALLSYS       TArrayIterator::Proceed                       ; AVaultItemSpawner@& TArrayIterator<AVaultItemSpawner@>::Proceed()
+        0038  PshRPtr
+        003C  RDSPtr
+        0040  RefCpyV       v16
+        0044  CmpPtrNull    v16
+        0048  JNZ           4                                             -> L0060
+        0050  SetV4         v13 0
+        0058  JMP           12                                            -> L0090
+      L0060:
+        0060  PshVPtr       v16
+        0064  CALLINTF      85449                                         ; ALokiDestructible@ AVaultItemSpawner::GetDoor()
+        006C  STOREOBJ      v18
+        0070  PshVPtr       DestroyedActor
+        0074  RefCpyV       v20
+        0078  CmpPtr        v18 v20
+        0080  TZ
+        0084  CpyRtoV4      v21
+        0088  CpyVtoV4      v13 v21
+      L0090:
+        0090  CpyVtoR1      v13
+        0094  JLowZ         6                                             -> L00B4
+        009C  PshVPtr       v16
+        00A0  PshVPtr       this
+        00A4  CALLINTF      85371                                         ; void ULokiGameStateUAVComponent::OnVaultDestroyed(AActor@)
+        00AC  JMP           8                                             -> L00D4
+      L00B4:
+        00B4  FreeNullV8    v16
+      L00B8:
+        00B8  LoadVObjR     v6 16 268448636                               ; .CanProceed
+        00C4  RDR1          v13
+        00C8  CpyVtoR1      v13
+        00CC  JLowNZ        -44                                           -> L0024
+      L00D4:
+        00D4  RET           4
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v4;
+
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        v1 = true;
+        this.PrimaryComponentTick.SetbAllowTickOnDedicatedServer(v1);
+        v1 = false;
+        this.PrimaryComponentTick.SetbStartWithTickEnabled(v1);
+        v4 = 2000.0;
+        this.PlayerGroupingDistance = v4;
+        v4 = 20000.0;
+        this.VaultVisionDistance = v4;
+        this.UAVBlockedGameplayCueTag = GameplayTags::GameplayCue_Effect_UAVBlocked;
+        return;
+    }
+    /* ---- __InitDefaults: 47 dwords / 25 instructions (cache offset 0xbb29d) ----
+        0000  SetV1         v1 1
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  CALLSYS       UActorComponent::SetbExcludeFromClient        ; void UActorComponent::SetbExcludeFromClient(bool)
+        001C  SetV1         v1 1
+        0024  PshV4         v1
+        0028  PshVPtr       this
+        002C  ADDSi         64 67111352                                   ; .PrimaryComponentTick
+        0034  CALLSYS       FActorComponentTickFunction::SetbAllowTickOnDedicatedServer  ; void FActorComponentTickFunction::SetbAllowTickOnDedicatedServer(bool)
+        0040  SetV1         v1 0
+        0048  PshV4         v1
+        004C  PshVPtr       this
+        0050  ADDSi         64 67111352                                   ; .PrimaryComponentTick
+        0058  CALLSYS       FActorComponentTickFunction::SetbStartWithTickEnabled  ; void FActorComponentTickFunction::SetbStartWithTickEnabled(bool)
+        0064  SetV8         v4 0x409f400000000000
+        0070  LoadThisR     208 134230904                                 ; this.PlayerGroupingDistance
+        0078  WRTV8         v4
+        007C  SetV8         v4 0x40d3880000000000
+        0088  LoadThisR     216 134230904                                 ; this.VaultVisionDistance
+        0090  WRTV8         v4
+        0094  PshGPtr       GameplayTags::GameplayCue_Effect_UAVBlocked
+        00A0  PshVPtr       this
+        00A4  ADDSi         248 134230904                                 ; .UAVBlockedGameplayCueTag
+        00AC  CALLSYS       FGameplayTag::opAssign                        ; FGameplayTag& FGameplayTag::opAssign(const FGameplayTag&)
+        00B8  RET           2
+    */
+
+    void ~ULokiGameStateUAVComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiGameStateUAVComponent: 37 dwords / 19 instructions (cache offset 0xbb65c) ----
+        0000  PshVPtr       this
+        0004  ADDSi         248 134230904                                 ; .UAVBlockedGameplayCueTag
+        000C  CALLSYS       FGameplayTag::$beh2                           ; void FGameplayTag::$beh2()
+        0018  PshVPtr       this
+        001C  ADDSi         256 134230904                                 ; .DataTag
+        0024  CALLSYS       FGameplayTag::$beh2                           ; void FGameplayTag::$beh2()
+        0030  PshVPtr       this
+        0034  ADDSi         264 134230904                                 ; .UAVImmunityTag
+        003C  CALLSYS       FGameplayTag::$beh2                           ; void FGameplayTag::$beh2()
+        0048  PshVPtr       this
+        004C  ADDSi         272 134230904                                 ; .UAVUpgradedTag
+        0054  CALLSYS       FGameplayTag::$beh2                           ; void FGameplayTag::$beh2()
+        0060  PshVPtr       this
+        0064  ADDSi         280 134230904                                 ; .ActiveUAVs
+        006C  CALLSYS       TArray::$beh2                                 ; void TArray<FActiveUAV>::$beh2()
+        0078  PshVPtr       this
+        007C  ADDSi         296 134230904                                 ; .AllVaultItemSpawners
+        0084  CALLSYS       TArray::$beh2                                 ; void TArray<AVaultItemSpawner@>::$beh2()
+        0090  RET           2
+    */
+
+}
+

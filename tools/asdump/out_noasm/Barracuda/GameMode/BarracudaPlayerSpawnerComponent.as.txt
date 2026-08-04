@@ -1,0 +1,249 @@
+// ============================================================================
+//  MODULE   Barracuda.GameMode.BarracudaPlayerSpawnerComponent
+//  SOURCE   Barracuda/GameMode/BarracudaPlayerSpawnerComponent.as
+//  CONTENT  1 class(es), 11 function(s), 0 enum(s), 1 global(s), 1760 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaPlayerSpawnerComponent;
+
+UBarracudaPlayerSpawnerComponent@ UBarracudaPlayerSpawnerComponent()   // traits=0x20
+{
+    UBarracudaPlayerSpawnerComponent v2;
+
+    v2 = UBarracudaPlayerSpawnerComponent();
+    return v2;
+}
+
+UClass@ UBarracudaPlayerSpawnerComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaPlayerSpawnerComponent);
+    return v2;
+}
+
+UBarracudaPlayerSpawnerComponent@ UBarracudaPlayerSpawnerComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaPlayerSpawnerComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaPlayerSpawnerComponent, v2, typeid(UBarracudaPlayerSpawnerComponent@), WithName);
+    return v2;
+}
+
+UBarracudaPlayerSpawnerComponent@ UBarracudaPlayerSpawnerComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaPlayerSpawnerComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaPlayerSpawnerComponent, v2, typeid(UBarracudaPlayerSpawnerComponent@), WithName);
+    return v2;
+}
+
+UBarracudaPlayerSpawnerComponent@ UBarracudaPlayerSpawnerComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaPlayerSpawnerComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaPlayerSpawnerComponent, v2, typeid(UBarracudaPlayerSpawnerComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaPlayerSpawnerComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaPlayerSpawnerComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TArray<float64> RespawnTimePerLevel;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 MatchTimeRespawnCeiling;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 MatchRespawnTimeFactor;
+
+    UBarracudaPlayerSpawnerComponent()   // traits=0x21
+    {
+        this.RespawnTimePerLevel = TArray<float64>();
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        this.TryRespawningPlayers();
+        return;
+    }
+
+    float64 CalculateDeathTimer(ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        int v1;
+        int v2;
+        int v4;
+        auto v6;
+        float64 v8;
+        auto v10;
+        float64 v12;
+        auto v14;
+
+        v1 = this.RespawnTimePerLevel.Num();
+        if (v1 > 0) {
+            v1 = PlayerState.GetPlayerLevel();
+            v2 = this.RespawnTimePerLevel.Num();
+            v2 = v2 - 1;
+            v4 = Math::Min(v2, v1);
+            v8 = *refReg;
+            v6 = v8;
+            v8 = GetCurrentBarracudaPhaseTime();
+            v12 = this.MatchTimeRespawnCeiling;
+            v8 = v8 / v12;
+            v14 = 1.0;
+            v12 = 0;
+            v10 = Math::Lerp(v8, v12, this.MatchRespawnTimeFactor);
+            v12 = v14 + v10;
+            v6 = v6 * v12;
+            return v6;
+        } else {
+            v2 = PlayerState.GetPlayerLevel();
+            v1 = v2 * 5;
+            v12 = float64(v1);
+            return v12;
+        }
+        return v12;
+    }
+
+    private void TryRespawningPlayers()   // traits=0x28
+    {
+        ALokiGameState v4;
+        bool v5;
+        auto v6;
+        int v7;
+        int v8;
+        AActor v10;
+        ABarracudaGameMode v12;
+        ABarracudaGameMode v14;
+        auto v16;
+        auto v17;
+        float64 v20;
+        TArray<ALokiPlayerState@> v24;
+        TArrayConstIterator<ALokiPlayerState@> v30;
+        ALokiPlayerState v38;
+        UBarracudaPlayerStateComponent v42;
+        ALokiCharacter v46;
+        auto v47;
+        FTransform v96;
+        UBarracudaGameStateComponent v100;
+        AActor v104;
+        FVector v110;
+        float64 v112;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v6 = v4.GetCurrentPhase();
+            v7 = int(v6);
+            if (v7 != 7) {
+                return;
+            } else {
+                v10 = this.GetOwner();
+                if (v10 != nullptr) {
+                    v12 = cast<ABarracudaGameMode@>(v10);
+                } else {
+                    v12 = nullptr;
+                }
+                v14 = v12;
+                if (v14 == nullptr) {
+                    return;
+                } else {
+                    v17 = Gameplay::GetServerTime(__WorldContext);
+                    v20 = float64(v17);
+                    v16 = v20;
+                    v24 = v4.GetLokiPlayerStates();
+                    v30 = v24.Iterator();
+                    while (true) {
+                        v5 = v30.CanProceed;
+                        if (!v5) break;
+                        v38 = v30.Proceed();
+                        v30.Proceed();
+                        v42 = UBarracudaPlayerStateComponent::Get(v38, NAME_None);
+                        if (v42 != nullptr) {
+                            v46 = v38.GetLokiCharacter();
+                            if (v46 == nullptr) {
+                                v5 = 0;
+                            } else {
+                                v47 = v46.IsDead();
+                                v47 = !v47;
+                                v5 = v47;
+                            }
+                            if (v5) {
+                                v42.SetNextRespawnTime(-1.0);
+                            } else {
+                                if (!v42.HasNextRespawnTime()) {
+                                    v5 = 0;
+                                } else {
+                                    v20 = v42.GetNextRespawnTime();
+                                    v47 = v20 < v16;
+                                    v5 = v47;
+                                }
+                                if (v5) {
+                                    v96 = FTransform();
+                                    v100 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+                                    if (v100 != nullptr) {
+                                        v8 = LokiTeam::GetTeamFromActor(v38);
+                                        v104 = v100.GetRespawnStructure(v8);
+                                        if (v104 != nullptr) {
+                                            v110 = v104.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                            v96.SetLocation(v110);
+                                        }
+                                    }
+                                    v42.ClearNextRespawnTime();
+                                    v5 = false;
+                                    v14.SpawnPlayer(v38, v96, nullptr, v5);
+                                } else {
+                                    v47 = v42.HasNextRespawnTime();
+                                    v47 = !v47;
+                                    if (v47) {
+                                        v20 = this.CalculateDeathTimer(v38);
+                                        v112 = v16 + v20;
+                                        v42.SetNextRespawnTime(v112);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v4;
+
+        v1 = false;
+        this.SetbReplicates(v1);
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        v4 = 1800.0;
+        this.MatchTimeRespawnCeiling = v4;
+        v4 = 0.2;
+        this.MatchRespawnTimeFactor = v4;
+        return;
+    }
+
+    void ~UBarracudaPlayerSpawnerComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

@@ -1,0 +1,1442 @@
+// ============================================================================
+//  MODULE   Interaction.LokiInteractionPlayerComponent
+//  SOURCE   Interaction/LokiInteractionPlayerComponent.as
+//  CONTENT  5 class(es), 72 function(s), 0 enum(s), 1 global(s), 11996 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+event FOnInteractionUsableChangedDelegate;
+event FOnInteractionPressedDelegate;
+event FOnInteractionReleasedDelegate;
+
+const TSubclassOf<UObject@> __StaticType_ULokiInteractionPlayerComponent;
+
+ULokiInteractionPlayerComponent@ ULokiInteractionPlayerComponent()   // traits=0x20
+{
+    ULokiInteractionPlayerComponent v2;
+
+    v2 = ULokiInteractionPlayerComponent();
+    return v2;
+}
+
+UClass@ ULokiInteractionPlayerComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiInteractionPlayerComponent);
+    return v2;
+}
+
+ULokiInteractionPlayerComponent@ ULokiInteractionPlayerComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiInteractionPlayerComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiInteractionPlayerComponent, v2, typeid(ULokiInteractionPlayerComponent@), WithName);
+    return v2;
+}
+
+ULokiInteractionPlayerComponent@ ULokiInteractionPlayerComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiInteractionPlayerComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiInteractionPlayerComponent, v2, typeid(ULokiInteractionPlayerComponent@), WithName);
+    return v2;
+}
+
+ULokiInteractionPlayerComponent@ ULokiInteractionPlayerComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiInteractionPlayerComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiInteractionPlayerComponent, v2, typeid(ULokiInteractionPlayerComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FLokiUsableData
+{
+    UPROPERTY()
+    AActor@ Actor;
+    UPROPERTY()
+    UPrimitiveComponent@ OverlapComponent;
+    UPROPERTY()
+    ULokiUsableComponent@ UsableComponent;
+
+    FLokiUsableData()   // traits=0x21
+    {
+        this.Actor = nullptr;
+        this.OverlapComponent = nullptr;
+        this.UsableComponent = nullptr;
+        return;
+    }
+
+    FLokiUsableData(AActor@ InActor, UPrimitiveComponent@ InOverlapComponent, ULokiUsableComponent@ InUsableComponent)   // traits=0x21
+    {
+        this.Actor = nullptr;
+        this.OverlapComponent = nullptr;
+        this.UsableComponent = nullptr;
+        this.Actor = InActor;
+        this.OverlapComponent = InOverlapComponent;
+        this.UsableComponent = InUsableComponent;
+        return;
+    }
+
+    bool Equals(const FLokiUsableData& InUsableData) const   // traits=0x24
+    {
+        AActor v2;
+        AActor v4;
+        auto v5;
+        UPrimitiveComponent v8;
+        UPrimitiveComponent v10;
+        auto v11;
+
+        v2 = this.Actor;
+        v4 = InUsableData.Actor;
+        if (v2 != v4) {
+            v5 = 0;
+            return v4;
+        } else {
+            v8 = this.OverlapComponent;
+            v10 = InUsableData.OverlapComponent;
+            v11 = v8 == v10;
+            v5 = v11;
+        }
+        return v5;
+    }
+
+    bool NotEquals(const FLokiUsableData& InUsableData) const   // traits=0x24
+    {
+        AActor v2;
+        AActor v4;
+        auto v5;
+        UPrimitiveComponent v8;
+        UPrimitiveComponent v10;
+        auto v11;
+
+        v2 = this.Actor;
+        v4 = InUsableData.Actor;
+        if (v2 != v4) {
+            v5 = true;
+            return v4;
+        } else {
+            v8 = this.OverlapComponent;
+            v10 = InUsableData.OverlapComponent;
+            v11 = v8 != v10;
+            v5 = v11;
+        }
+        return v5;
+    }
+
+    void SetData(AActor@ InActor, UPrimitiveComponent@ InOverlapComponent, ULokiUsableComponent@ InUsableComponent)   // traits=0x20
+    {
+        this.Actor = InActor;
+        this.OverlapComponent = InOverlapComponent;
+        this.UsableComponent = InUsableComponent;
+        return;
+    }
+
+    void Clear()   // traits=0x20
+    {
+        this.Actor = nullptr;
+        this.OverlapComponent = nullptr;
+        this.UsableComponent = nullptr;
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiInteractionPlayerComponent : ULokiPlayerInteractionComponent
+// unreal base : /Script/Loki.LokiPlayerInteractionComponent
+// C++ header  : ../../../Loki/Source/Loki/Player/LokiPlayerInteractionComponent.h
+// static class global: __StaticType_ULokiInteractionPlayerComponent
+{
+    protected ALokiPlayerController@ CachedLokiPC;
+    protected ALokiHeroCharacter@ CachedLokiCharacter;
+    protected ULokiAbilitySystemComponent@ CachedLokiAbilitySystem;
+    protected ULokiHeroUsableComponent@ UsableDetectionComponent;
+    protected FLokiUsableData ActiveUsable;
+    protected FLokiUsableData SelectedUsable;
+    protected FLokiUsableData HoveredUsable;
+    protected FLokiUsableData FocusedUsable;
+    protected TArray<AActor@> UsableList;
+    protected bool bInteractionInputPressed;
+    protected float64 InteractionCooldownStartTime;
+    protected float64 MinInteractionCooldownTime;
+    protected bool bInputHoldInteractionCanProcess;
+    protected bool bCanProcessBufferedInteraction;
+    protected float64 ProcessInteractionBufferStartTime;
+    const float64 MaxProcessBufferedInteractionTime;
+    protected bool bHoveredComponentIsValid;
+    const bool bIsSupportingCooldownBuffering;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    UAkAudioEvent@ UsableNotFoundAudio;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnInteractionUsableChangedDelegate OnInteractionUsableChanged;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnInteractionPressedDelegate OnInteractionPressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnInteractionReleasedDelegate OnInteractionReleased;
+
+    ULokiInteractionPlayerComponent()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+
+        this.ActiveUsable.FLokiUsableData();
+        this.SelectedUsable.FLokiUsableData();
+        this.HoveredUsable.FLokiUsableData();
+        this.FocusedUsable.FLokiUsableData();
+        this.UsableList = TArray<AActor@>();
+        this.OnInteractionUsableChanged.FOnInteractionUsableChangedDelegate();
+        this.OnInteractionPressed.FOnInteractionPressedDelegate();
+        this.OnInteractionReleased.FOnInteractionReleasedDelegate();
+        v2 = 0.2;
+        this.MinInteractionCooldownTime = v2;
+        v2 = -1.0;
+        this.ProcessInteractionBufferStartTime = v2;
+        v2 = 0.5;
+        this.MaxProcessBufferedInteractionTime = v2;
+        v3 = true;
+        this.bIsSupportingCooldownBuffering = v3;
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        UGameEventRouterComponent v2;
+        FGameEvent_GameReady_Controller v24;
+        auto v25;
+        FGameEventListenerHandle v38;
+        bool v39;
+
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        v25 = false;
+        v24 = FGameEvent_GameReady_Controller();
+        v38 = v2.RegisterForEvent(this, v24, typeid(FGameEvent_GameReady_Controller), nullptr, n"OnPlayerInitialized", v25);
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v39 = false;
+            this.SetComponentTickEnabled(v39);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnTest(const FGameEvent_SpellOutcome_PlayerState& Event, const ALokiPlayerState@ Context)   // traits=0x20
+    {
+        TArrayConstIterator<FLokiSpellInstanceTarget> v6;
+        auto v13;
+        auto v16;
+        TWeakObjectPtr<AActor@> v18;
+
+        v6 = Event.SpellTargets.Iterator();
+        while (true) {
+            v13 = v6.CanProceed;
+            if (!v13) break;
+            v16 = v6.Proceed();
+            v18 = TWeakObjectPtr<AActor@>();
+            v18 = v16.TargetActor;
+            v13 = v18 == nullptr;
+            v13 = !v13;
+            if (!v13) {
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+        ULokiHeroUsableComponent v4;
+        ALokiPlayerController v6;
+        auto v7;
+        ULokiUsableComponent v10;
+        AActor v12;
+        ULokiUsableComponent v16;
+        AActor v18;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            return;
+        } else {
+            v1 = false;
+            this.bHoveredComponentIsValid = v1;
+            v4 = this.UsableDetectionComponent;
+            if (v4 == nullptr) {
+                v1 = 0;
+            } else {
+                v6 = this.CachedLokiPC;
+                v7 = v6 != nullptr;
+                v1 = v7;
+            }
+            if (v1) {
+                v7 = this.UsableDetectionComponent.IsComponentInUsableList(this.CachedLokiPC.HoveredComponent);
+                this.bHoveredComponentIsValid = v7;
+            }
+            v6 = this.CachedLokiPC;
+            if (v6 == nullptr) {
+                v7 = 0;
+            } else {
+                v1 = this.CachedLokiPC.IsActorHoveringEnabled();
+                v7 = v1;
+            }
+            if (v7) {
+                this.HoveredUsable.Clear();
+                v12 = this.CachedLokiPC.HoveredActor;
+                if (v12 != nullptr) {
+                    v16 = ULokiUsableComponent::Get(this.CachedLokiPC.HoveredActor, NAME_None);
+                } else {
+                }
+                v10 = v16;
+                if (v10 != nullptr) {
+                    if (v10.CanBeUsed(this.CachedLokiCharacter)) {
+                        this.HoveredUsable.Actor = this.CachedLokiPC.HoveredActor;
+                        this.HoveredUsable.UsableComponent = v10;
+                        v7 = this.bHoveredComponentIsValid;
+                        if (v7) {
+                            v12 = this.CachedLokiPC.HoveredComponent.GetOwner();
+                            v18 = this.CachedLokiPC.HoveredActor;
+                            if (v12 == v18) {
+                                this.HoveredUsable.OverlapComponent = this.CachedLokiPC.HoveredComponent;
+                            }
+                        }
+                    }
+                }
+                this.ProcessInteractionSelection();
+            }
+            v7 = this.bIsSupportingCooldownBuffering;
+            if (!v7) {
+                v7 = 0;
+            } else {
+                v1 = this.InteractionsAreOnCooldown();
+                v1 = !v1;
+                v7 = v1;
+            }
+            if (v7) {
+                this.TryProcessingBufferedInput(this.ActiveUsable.UsableComponent);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void AddUsable(AActor@ InUsable)   // traits=0x20
+    {
+        auto v1;
+        AActor v4;
+        auto v5;
+        APawn v8;
+        ALokiPlayerController v10;
+        APawn v14;
+        ALokiHeroCharacter v16;
+        APawn v18;
+        ULokiUsableComponent v20;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = true;
+        } else {
+            v4 = InUsable;
+            v5 = v4 == nullptr;
+            v1 = v5;
+        }
+        if (v1) {
+            v1 = true;
+        } else {
+            v5 = this.UsableList.Contains(InUsable);
+            v1 = v5;
+        }
+        if (v1) {
+            return;
+        } else {
+            v10 = this.CachedLokiPC;
+            if (v10 != nullptr) {
+                v14 = this.CachedLokiPC.GetControlledPawn()  /* UFunction K2_GetPawn */;
+            } else {
+            }
+            v8 = v14;
+            v16 = this.CachedLokiCharacter;
+            if (v16 == nullptr) {
+                v1 = true;
+            } else {
+                v5 = v8 == nullptr;
+                v1 = v5;
+            }
+            if (v1) {
+                v1 = true;
+            } else {
+                v18 = this.CachedLokiCharacter;
+                v5 = v18 != v8;
+                v1 = v5;
+            }
+            if (v1) {
+                return;
+            } else {
+                this.UsableList.Add(InUsable);
+                this.ProcessInteractionSelection();
+                v20 = ULokiUsableComponent::Get(InUsable, NAME_None);
+                this.TryProcessingBufferedInput(v20);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void RemoveUsable(AActor@ InUsable)   // traits=0x20
+    {
+        auto v1;
+        AActor v4;
+        auto v5;
+        AActor v8;
+        AActor v10;
+        ELokiUsableInteractionEndResult v11;
+        FLokiUsableData v18;
+        ULokiUsableComponent v20;
+        ELokiUsableActionNetworkType v23;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = true;
+        } else {
+            v4 = InUsable;
+            v5 = v4 == nullptr;
+            v1 = v5;
+        }
+        if (v1) {
+            return;
+        } else {
+            v8 = InUsable;
+            v10 = this.ActiveUsable.Actor;
+            if (v8 == v10) {
+                v11 = ELokiUsableInteractionEndResult::UsableRemoved;
+                v18 = this.CancelActiveUsable(v11);
+            } else {
+                v20 = ULokiUsableComponent::Get(InUsable, NAME_None);
+                if (v20 != nullptr) {
+                    v11 = ELokiUsableInteractionEndResult::UsableRemoved;
+                    v23 = ELokiUsableActionNetworkType::ClientOnly;
+                    v20.StopInteraction(this.CachedLokiCharacter, v23, v11);
+                }
+            }
+            this.UsableList.Remove(InUsable);
+            this.ProcessInteractionSelection();
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ProcessInteractionInputPressed()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = true;
+        this.bInputHoldInteractionCanProcess = v1;
+        this.ProcessActiveInteraction();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ProcessInteractionInputReleased()   // traits=0x20
+    {
+        auto v1;
+        ULokiAbilitySystemComponent v4;
+        auto v5;
+        ULokiUsableComponent v8;
+        ELokiUsableInteractionInputType v9;
+
+        v1 = this.bInteractionInputPressed;
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = false;
+            this.bInteractionInputPressed = v1;
+            this.OnInteractionReleased.Broadcast(this.ActiveUsable.Actor);
+            v4 = this.CachedLokiAbilitySystem;
+            if (v4 == nullptr) {
+                v1 = 0;
+            } else {
+                v5 = this.CachedLokiAbilitySystem.HasMatchingGameplayTag(GameplayTags::State_Knocked)  /* UFunction Script_HasMatchingGameplayTag */;
+                v5 = !v5;
+                v1 = v5;
+            }
+            if (v1) {
+                v8 = this.ActiveUsable.UsableComponent;
+                if (v8 != nullptr) {
+                    v9 = ELokiUsableInteractionInputType::OnRelease;
+                    this.ActiveUsable.UsableComponent.UpdateInteraction(this.CachedLokiCharacter, v9);
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void CancelUsableIfActive(AActor@ InUsableActor)   // traits=0x20
+    {
+        AActor v2;
+        auto v3;
+        AActor v6;
+        AActor v8;
+        auto v9;
+        ULokiUsableComponent v12;
+        ELokiUsableInteractionEndResult v13;
+        FLokiUsableData v20;
+
+        v2 = InUsableActor;
+        if (v2 == nullptr) {
+            v3 = 0;
+        } else {
+            v6 = InUsableActor;
+            v8 = this.ActiveUsable.Actor;
+            v9 = v6 == v8;
+            v3 = v9;
+        }
+        if (!v3) {
+            v3 = 0;
+        } else {
+            v12 = this.ActiveUsable.UsableComponent;
+            v9 = v12 != nullptr;
+            v3 = v9;
+        }
+        if (!v3) {
+            v3 = 0;
+        } else {
+            v9 = this.ActiveUsable.UsableComponent.IsUsableInteracting(this.CachedLokiCharacter);
+            v3 = v9;
+        }
+        if (v3) {
+            v13 = ELokiUsableInteractionEndResult::Interrupted;
+            v20 = this.CancelActiveUsable(v13);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool RequestCancelActiveUsable()   // traits=0x20
+    {
+        ELokiUsableInteractionEndResult v7;
+        FLokiUsableData v14;
+        AActor v16;
+        auto v17;
+
+        v7 = ELokiUsableInteractionEndResult::Interrupted;
+        v14 = this.CancelActiveUsable(v7);
+        v16 = v14.Actor;
+        v17 = v16 != nullptr;
+        return v17;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool IsActorFocusedUsable(AActor@ InActor)   // traits=0x20
+    {
+        AActor v2;
+        auto v3;
+        AActor v6;
+        AActor v8;
+        auto v9;
+
+        v2 = InActor;
+        if (v2 == nullptr) {
+            v3 = 0;
+            return v2;
+        } else {
+            v6 = InActor;
+            v8 = this.FocusedUsable.Actor;
+            v9 = v6 == v8;
+            v3 = v9;
+        }
+        return v3;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnPlayerInitialized(const FGameEvent_GameReady_Controller& Event, const EGameEventStatefulEventType EventType, const AController@ Context)   // traits=0x30
+    {
+        AActor v2;
+        ALokiPlayerController v4;
+        ALokiHeroCharacter v8;
+        APawn v10;
+        ALokiHeroCharacter v12;
+
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiPlayerController@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        this.CachedLokiPC = v4;
+        this.CachedLokiPC.OnSpawnedCharacterChanged.AddUFunction(this, n"OnSpawnedCharacterChangedCalled");
+        v10 = this.CachedLokiPC.GetControlledPawn()  /* UFunction K2_GetPawn */;
+        if (v10 != nullptr) {
+            v12 = cast<ALokiHeroCharacter@>(v10);
+        } else {
+            v12 = nullptr;
+        }
+        v8 = v12;
+        if (v8 != nullptr) {
+            this.OnSpawnedCharacterChangedCalled(v8);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnSpawnedCharacterChangedCalled(const ALokiCharacter@ NewCharacter)   // traits=0x30
+    {
+        ELokiUsableInteractionEndResult v1;
+        FLokiUsableData v8;
+        ALokiHeroCharacter v10;
+        auto v11;
+        ALokiCharacter v14;
+        ALokiCharacter v16;
+        auto v17;
+        ULokiAbilitySystemComponent v20;
+        ULokiHeroUsableComponent v24;
+
+        this.ClearUsables();
+        v1 = ELokiUsableInteractionEndResult::InstigatorLivingStateChange;
+        v8 = this.CancelActiveUsable(v1);
+        v10 = this.CachedLokiCharacter;
+        if (v10 == nullptr) {
+            v11 = 0;
+        } else {
+            v14 = this.CachedLokiCharacter;
+            v16 = NewCharacter;
+            v17 = v14 != v16;
+            v11 = v17;
+        }
+        if (v11) {
+            this.CachedLokiCharacter.OnLivingStateChanged.UnbindObject(this);
+            this.CachedLokiCharacter.OnAbilitySystemInitialized.UnbindObject(this);
+            v20 = this.CachedLokiAbilitySystem;
+            if (v20 != nullptr) {
+                this.CachedLokiAbilitySystem.OnGameplaySpellAdded.UnbindObject(this);
+                this.CachedLokiAbilitySystem = nullptr;
+            }
+            this.UsableDetectionComponent = nullptr;
+        }
+        if (NewCharacter != nullptr) {
+            v10 = cast<ALokiHeroCharacter@>(NewCharacter);
+        } else {
+            v10 = nullptr;
+        }
+        this.CachedLokiCharacter = v10;
+        v10 = this.CachedLokiCharacter;
+        if (v10 != nullptr) {
+            this.CachedLokiCharacter.OnLivingStateChanged.AddUFunction(this, n"OnLivingStateChangedCalled");
+            v24 = ULokiHeroUsableComponent::Get(this.CachedLokiCharacter, NAME_None);
+            this.UsableDetectionComponent = v24;
+            if (Loki::LokiIsClient(__WorldContext)) {
+                this.CachedLokiCharacter.OnAbilitySystemInitialized.AddUFunction(this, n"OnAbilitySystemInitializedCalled");
+                if (this.CachedLokiCharacter.IsAbilitySystemInitialized()) {
+                    v20 = this.CachedLokiCharacter.GetLokiAbilitySystem_BP();
+                    this.OnAbilitySystemInitializedCalled(v20);
+                }
+            }
+            this.ProcessInteractionSelection();
+        }
+        return;
+    }
+
+    protected void ClearUsables()   // traits=0x30
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            return;
+        } else {
+            this.UsableList.Empty(0);
+            this.ActiveUsable.Clear();
+            this.SelectedUsable.Clear();
+            this.HoveredUsable.Clear();
+            this.FocusedUsable.Clear();
+            this.UsableDetectionComponent = nullptr;
+        }
+        return;
+    }
+
+    protected FLokiUsableData CancelActiveUsable(const ELokiUsableInteractionEndResult ResultType)   // traits=0x30
+    {
+        FLokiUsableData v6;
+        auto v7;
+        AActor v10;
+        auto v11;
+        ULokiUsableComponent v14;
+        ALokiHeroCharacter v16;
+        ELokiUsableActionNetworkType v17;
+
+        v6.FLokiUsableData();
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v7 = true;
+        } else {
+            v10 = this.ActiveUsable.Actor;
+            v11 = v10 == nullptr;
+            v7 = v11;
+        }
+        if (v7) {
+            v7 = true;
+        } else {
+            v14 = this.ActiveUsable.UsableComponent;
+            v11 = v14 == nullptr;
+            v7 = v11;
+        }
+        if (v7) {
+            v7 = true;
+        } else {
+            v16 = this.CachedLokiCharacter;
+            v11 = v16 == nullptr;
+            v7 = v11;
+        }
+        if (v7) {
+            __ret.FLokiUsableData();
+            __ret = v6;
+            return;
+        } else {
+            if (this.ActiveUsable.UsableComponent.IsInteractionEnding(this.CachedLokiCharacter)) {
+                __ret.FLokiUsableData();
+                __ret = v6;
+                return;
+            } else {
+                if (this.ShouldCancelActiveUsableInteraction()) {
+                    v17 = ELokiUsableActionNetworkType::ClientOnly;
+                    this.ActiveUsable.UsableComponent.StopInteraction(this.CachedLokiCharacter, v17, ResultType);
+                    v6 = this.ActiveUsable;
+                }
+                this.CachedLokiPC.ForceCloseUI();
+                this.ActiveUsable.Clear();
+                __ret.FLokiUsableData();
+                __ret = v6;
+            }
+        }
+        return;
+    }
+
+    protected bool ShouldCancelActiveUsableInteraction()   // traits=0x30
+    {
+        auto v1;
+
+        v1 = this.ActiveUsable.UsableComponent.IsUsableInteracting(this.CachedLokiCharacter);
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnLivingStateChangedCalled(const ELivingState LivingState, ALokiCharacter@ LokiCharacter)   // traits=0x30
+    {
+        this.SelectedUsable.Clear();
+        this.ProcessInteractionSelection();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnAbilitySystemInitializedCalled(ULokiAbilitySystemComponent@ LokiASComponent)   // traits=0x30
+    {
+        this.CachedLokiAbilitySystem = LokiASComponent;
+        LokiASComponent.OnGameplaySpellAdded.AddUFunction(this, n"OnGameplaySpellAddedCalled");
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnGameplaySpellAddedCalled(UGameplayAbility@ Ability, UObject@ SourceObject)   // traits=0x30
+    {
+        UObject v2;
+        UObject v4;
+        bool v5;
+        ULokiGameplayUsableSpell v8;
+        ULokiGameplayUsableSpell v10;
+
+        v2 = SourceObject;
+        v4 = this.ActiveUsable.Actor;
+        if (v2 == v4) {
+            if (Ability != nullptr) {
+                v10 = cast<ULokiGameplayUsableSpell@>(Ability);
+            } else {
+                v10 = nullptr;
+            }
+            v8 = v10;
+            if (v8 != nullptr) {
+                v5 = this.bInteractionInputPressed;
+                v8.InitializeLocalSpellInput(v5);
+            }
+        }
+        return;
+    }
+
+    protected void ProcessInteractionSelection()   // traits=0x30
+    {
+        auto v1;
+        ALokiHeroCharacter v4;
+        auto v5;
+        int v6;
+        auto v8;
+        ELokiUsableInteractionEndResult v9;
+        FLokiUsableData v16;
+        AActor v18;
+        ULokiHeroUsableComponent v20;
+        UPrimitiveComponent v22;
+        AActor v24;
+        ULokiUsableComponent v26;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            return;
+        } else {
+            v4 = this.CachedLokiCharacter;
+            if (v4 == nullptr) {
+                v1 = true;
+            } else {
+                v5 = this.CachedLokiCharacter.GetLivingState();
+                v6 = int(v5);
+                v8 = v6 != 1;
+                v1 = v8;
+            }
+            if (v1) {
+                v9 = ELokiUsableInteractionEndResult::InstigatorLivingStateChange;
+                v16 = this.CancelActiveUsable(v9);
+                this.UpdateSelectedUsable();
+                return;
+            } else {
+                this.SelectedUsable.Clear();
+                v18 = this.HoveredUsable.Actor;
+                if (v18 == nullptr) {
+                    v8 = 0;
+                } else {
+                    v1 = this.IsInUsableList(this.HoveredUsable.Actor);
+                    v8 = v1;
+                }
+                if (!v8) {
+                    v8 = 0;
+                } else {
+                    v1 = this.HoveredUsable.UsableComponent.CanBeUsed(this.CachedLokiCharacter);
+                    v8 = v1;
+                }
+                if (v8) {
+                    this.SelectedUsable = this.HoveredUsable;
+                    v20 = this.UsableDetectionComponent;
+                    if (v20 != nullptr) {
+                        v22 = this.UsableDetectionComponent.GetClosestOverlappingComponentWithTags(this.HoveredUsable.Actor);
+                        this.SelectedUsable.OverlapComponent = v22;
+                    }
+                } else {
+                    v24 = ULokiUsableComponent::GetHighestPriorityUsable(this.CachedLokiCharacter, this.UsableList);
+                    this.SelectedUsable.Actor = v24;
+                    v18 = this.SelectedUsable.Actor;
+                    if (v18 != nullptr) {
+                        v26 = ULokiUsableComponent::Get(this.SelectedUsable.Actor, NAME_None);
+                        this.SelectedUsable.UsableComponent = v26;
+                    }
+                    v20 = this.UsableDetectionComponent;
+                    if (v20 != nullptr) {
+                        v22 = this.UsableDetectionComponent.GetClosestOverlappingComponentWithTags(v24);
+                        this.SelectedUsable.OverlapComponent = v22;
+                    }
+                }
+                this.UpdateSelectedUsable();
+            }
+        }
+        return;
+    }
+
+    protected void UpdateSelectedUsable()   // traits=0x30
+    {
+        auto v1;
+        auto v2;
+        AActor v4;
+        AActor v6;
+        AActor v8;
+        UPrimitiveComponent v10;
+        UPrimitiveComponent v12;
+        auto v13;
+        ULokiUsableComponent v16;
+        ULokiUsableComponent v18;
+        FText v22;
+        ULokiUsableComponent v26;
+
+        v2 = false;
+        v1 = v2;
+        v4 = this.FocusedUsable.Actor;
+        if (v4 != nullptr) {
+            v6 = this.FocusedUsable.Actor;
+            v8 = this.SelectedUsable.Actor;
+            if (v6 != v8) {
+                v2 = true;
+            } else {
+                v10 = this.FocusedUsable.OverlapComponent;
+                v12 = this.SelectedUsable.OverlapComponent;
+                v13 = v10 != v12;
+                v2 = v13;
+            }
+            if (v2) {
+                v16 = this.FocusedUsable.UsableComponent;
+                this.FocusedUsable = this.SelectedUsable;
+                v13 = true;
+                v1 = v13;
+                v16.Unfocus();
+            }
+        } else {
+            this.FocusedUsable = this.SelectedUsable;
+            v2 = true;
+            v1 = v2;
+        }
+        v4 = this.FocusedUsable.Actor;
+        if (v4 == nullptr) {
+            v2 = 0;
+        } else {
+            v18 = this.FocusedUsable.UsableComponent;
+            v13 = v18 != nullptr;
+            v2 = v13;
+        }
+        if (v2) {
+            if (v1) {
+                this.FocusedUsable.UsableComponent.Focus(this.FocusedUsable.OverlapComponent);
+                v4 = this.FocusedUsable.Actor;
+                if (v4 == nullptr) {
+                    v2 = 0;
+                } else {
+                    v18 = this.FocusedUsable.UsableComponent;
+                    v13 = v18 != nullptr;
+                    v2 = v13;
+                }
+                if (v2) {
+                    v22 = this.FocusedUsable.UsableComponent.GetPrompt(this.CachedLokiCharacter, this.FocusedUsable.OverlapComponent);
+                    this.FocusedUsable.UsableComponent.SetInteractionUIPrompt(v22);
+                    this.OnInteractionUsableChanged.Broadcast(this.FocusedUsable.Actor, this.FocusedUsable.OverlapComponent);
+                }
+            }
+            return;
+        } else {
+            v13 = this.UsableList.IsEmpty();
+            v13 = !v13;
+            if (v13) {
+                v4 = this.UsableList[0];
+                if (v4 != nullptr) {
+                    v26 = ULokiUsableComponent::Get(this.UsableList[0], NAME_None);
+                } else {
+                }
+                v16 = v26;
+                if (v16 != nullptr) {
+                    v22 = v16.GetFailurePrompt(this.CachedLokiCharacter, nullptr);
+                    v2 = v22.IsEmpty();
+                    v2 = !v2;
+                    if (v2) {
+                        v16.Focus(nullptr);
+                        v16.SetInteractionUIPrompt(v22);
+                        this.FocusedUsable.SetData(this.UsableList[0], nullptr, v16);
+                        this.OnInteractionUsableChanged.Broadcast(this.UsableList[0], nullptr);
+                    }
+                }
+                return;
+            } else {
+                if (v1) {
+                    this.OnInteractionUsableChanged.Broadcast(nullptr, nullptr);
+                }
+            }
+        }
+        return;
+    }
+
+    protected bool IsInUsableList(AActor@ InUsable)   // traits=0x30
+    {
+        auto v1;
+
+        v1 = this.UsableList.Contains(InUsable);
+        return v1;
+    }
+
+    void ProcessActiveInteraction()   // traits=0x20
+    {
+        auto v1;
+        ELokiUsableInteractionEndResult v2;
+        auto v3;
+        auto v4;
+        ULokiUsableComponent v6;
+        auto v8;
+        int v9;
+        int v10;
+        auto v11;
+        FLokiUsableData v24;
+        AActor v26;
+        ALokiHeroCharacter v28;
+        auto v29;
+        auto v30;
+
+        if (this.InteractionsAreOnCooldown()) {
+            v1 = this.bIsSupportingCooldownBuffering;
+            if (v1) {
+                this.StartProcessInteractionBuffer();
+            }
+            return;
+        } else {
+            this.ResetInteractionsCooldown();
+            v1 = true;
+            this.bInteractionInputPressed = v1;
+            v3 = 4;
+            v2 = v3;
+            v1 = false;
+            v4 = v1;
+            v6 = this.ActiveUsable.UsableComponent;
+            if (v6 != nullptr) {
+                if (this.ActiveUsable.UsableComponent.IsUsableInteracting(this.CachedLokiCharacter)) {
+                    v8 = this.ActiveUsable.UsableComponent.GetActiveInteractionRepressBehavior(this.CachedLokiCharacter);
+                    v9 = int(v8);
+                    if (v9 == 0) {
+                        return;
+                    }
+                    v10 = int(v8);
+                    v1 = v10 == 2;
+                    v4 = v1;
+                    if (v4) {
+                        v11 = 5;
+                        v3 = v11;
+                    } else {
+                        v11 = 6;
+                        v3 = v11;
+                    }
+                    v2 = v3;
+                }
+            }
+            v24 = this.CancelActiveUsable(v2);
+            v26 = this.SelectedUsable.Actor;
+            if (v26 == nullptr) {
+                v28 = this.CachedLokiCharacter;
+                if (v28 == nullptr) {
+                    v30 = 0;
+                } else {
+                    v29 = this.CachedLokiCharacter.HeroPredropHidden;
+                    v29 = !v29;
+                    v30 = false;
+                    v30 = !v30;
+                    v29 = v29 == v30;
+                    v30 = v29;
+                }
+                if (v30) {
+                    LokiAudio::PostEventActor(__WorldContext, this.UsableNotFoundAudio, this.CachedLokiCharacter);
+                }
+                this.StartProcessInteractionBuffer();
+            } else {
+                if (this.SelectedUsable.NotEquals(v24)) {
+                    v1 = true;
+                } else {
+                    v1 = v4;
+                }
+                if (v1) {
+                    this.ActivateUsable(this.SelectedUsable);
+                }
+            }
+            this.OnInteractionPressed.Broadcast(this.ActiveUsable.Actor);
+        }
+        return;
+    }
+
+    protected void ActivateUsable(const FLokiUsableData& InUsable)   // traits=0x30
+    {
+        auto v1;
+        ULokiUsableComponent v4;
+        auto v5;
+
+        this.ActiveUsable = this.SelectedUsable;
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = true;
+        } else {
+            v4 = this.ActiveUsable.UsableComponent;
+            v5 = v4 == nullptr;
+            v1 = v5;
+        }
+        if (v1) {
+            return;
+        } else {
+            this.ActiveUsable.UsableComponent.StartInteraction(this.CachedLokiCharacter, this.ActiveUsable.OverlapComponent);
+        }
+        return;
+    }
+
+    protected bool InteractionsAreOnCooldown() const   // traits=0x34
+    {
+        auto v2;
+        auto v4;
+        auto v5;
+        UWorld v8;
+        auto v10;
+        auto v11;
+
+        v2 = this.InteractionCooldownStartTime;
+        v4 = 0;
+        if (v2 <= v4) {
+            v5 = 0;
+            return this.InteractionCooldownStartTime;
+        } else {
+            v8 = this.GetWorld();
+            v2 = v8.GetTimeSeconds();
+            v4 = this.InteractionCooldownStartTime;
+            v2 = v2 - v4;
+            v10 = this.MinInteractionCooldownTime;
+            v11 = v2 < v10;
+            v5 = v11;
+        }
+        return v5;
+    }
+
+    protected void ResetInteractionsCooldown()   // traits=0x30
+    {
+        UWorld v2;
+        auto v4;
+
+        v2 = this.GetWorld();
+        v4 = v2.GetTimeSeconds();
+        this.InteractionCooldownStartTime = v4;
+        return;
+    }
+
+    protected void StartProcessInteractionBuffer()   // traits=0x30
+    {
+        auto v1;
+        UWorld v4;
+        auto v6;
+
+        v1 = true;
+        this.bCanProcessBufferedInteraction = v1;
+        v4 = this.GetWorld();
+        v6 = v4.GetTimeSeconds();
+        this.ProcessInteractionBufferStartTime = v6;
+        return;
+    }
+
+    protected void StopProcessInteractionBuffer()   // traits=0x30
+    {
+        auto v1;
+        auto v4;
+
+        v1 = false;
+        this.bCanProcessBufferedInteraction = v1;
+        v4 = -1.0;
+        this.ProcessInteractionBufferStartTime = v4;
+        return;
+    }
+
+    protected bool CanProcessBufferedInteraction()   // traits=0x30
+    {
+        UWorld v2;
+        auto v4;
+        auto v6;
+        auto v8;
+        auto v9;
+        auto v10;
+
+        v10 = this.bCanProcessBufferedInteraction;
+        if (!v10) {
+            v10 = 0;
+            return v10;
+        } else {
+            v2 = this.GetWorld();
+            v4 = v2.GetTimeSeconds();
+            v6 = this.ProcessInteractionBufferStartTime;
+            v4 = v4 - v6;
+            v8 = this.MaxProcessBufferedInteractionTime;
+            v9 = v4 < v8;
+            v10 = v9;
+        }
+        return v10;
+    }
+
+    void TryProcessingBufferedInput(ULokiUsableComponent@ UsableComp)   // traits=0x20
+    {
+        ULokiUsableComponent v2;
+        auto v3;
+        auto v4;
+        auto v5;
+        auto v6;
+        auto v7;
+        auto v8;
+
+        v2 = UsableComp;
+        if (v2 != nullptr) {
+            v3 = UsableComp.InteractionRequiresInputHold();
+            v4 = v3;
+            v4 = !v4;
+            if (!v4) {
+                v4 = 0;
+            } else {
+                v6 = this.CanProcessBufferedInteraction();
+                v4 = v6;
+            }
+            if (!v3) {
+                v5 = 0;
+            } else {
+                v6 = this.bInteractionInputPressed;
+                v5 = v6;
+            }
+            if (!v5) {
+                v6 = 0;
+            } else {
+                v8 = this.bInputHoldInteractionCanProcess;
+                v6 = v8;
+            }
+            if (v4) {
+                v5 = true;
+            } else {
+                v5 = v6;
+            }
+            if (v5) {
+                this.ProcessActiveInteraction();
+                v7 = false;
+                this.bInputHoldInteractionCanProcess = v7;
+                this.StopProcessInteractionBuffer();
+            }
+        }
+        return;
+    }
+
+    void ~ULokiInteractionPlayerComponent()   // traits=0x22
+    {
+        this.OnInteractionUsableChanged.~FOnInteractionUsableChangedDelegate();
+        this.OnInteractionPressed.~FOnInteractionPressedDelegate();
+        this.OnInteractionReleased.~FOnInteractionReleasedDelegate();
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnInteractionUsableChangedDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnInteractionUsableChangedDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FOnInteractionUsableChangedDelegate(const FOnInteractionUsableChangedDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FOnInteractionUsableChangedDelegate& opAssign(const FOnInteractionUsableChangedDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast(AActor@ UsableActor, UPrimitiveComponent@ UsableActorOverlapComponent) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument__AActor(UsableActor);
+            __Evt_PushArgument__UPrimitiveComponent(UsableActorOverlapComponent);
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnInteractionUsableChangedDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FOnInteractionUsableChangedDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnInteractionPressedDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnInteractionPressedDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FOnInteractionPressedDelegate(const FOnInteractionPressedDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FOnInteractionPressedDelegate& opAssign(const FOnInteractionPressedDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast(AActor@ UsableActor) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument__AActor(UsableActor);
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnInteractionPressedDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FOnInteractionPressedDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnInteractionReleasedDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnInteractionReleasedDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FOnInteractionReleasedDelegate(const FOnInteractionReleasedDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FOnInteractionReleasedDelegate& opAssign(const FOnInteractionReleasedDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast(AActor@ UsableActor) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument__AActor(UsableActor);
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnInteractionReleasedDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FOnInteractionReleasedDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

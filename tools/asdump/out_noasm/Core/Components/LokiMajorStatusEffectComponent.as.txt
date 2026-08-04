@@ -1,0 +1,163 @@
+// ============================================================================
+//  MODULE   Core.Components.LokiMajorStatusEffectComponent
+//  SOURCE   Core/Components/LokiMajorStatusEffectComponent.as
+//  CONTENT  1 class(es), 11 function(s), 0 enum(s), 1 global(s), 992 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiMajorStatusEffectComponent_AS;
+
+ULokiMajorStatusEffectComponent_AS@ ULokiMajorStatusEffectComponent_AS()   // traits=0x20
+{
+    ULokiMajorStatusEffectComponent_AS v2;
+
+    v2 = ULokiMajorStatusEffectComponent_AS();
+    return v2;
+}
+
+UClass@ ULokiMajorStatusEffectComponent_AS::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiMajorStatusEffectComponent_AS);
+    return v2;
+}
+
+ULokiMajorStatusEffectComponent_AS@ ULokiMajorStatusEffectComponent_AS::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiMajorStatusEffectComponent_AS v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiMajorStatusEffectComponent_AS, v2, typeid(ULokiMajorStatusEffectComponent_AS@), WithName);
+    return v2;
+}
+
+ULokiMajorStatusEffectComponent_AS@ ULokiMajorStatusEffectComponent_AS::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiMajorStatusEffectComponent_AS v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiMajorStatusEffectComponent_AS, v2, typeid(ULokiMajorStatusEffectComponent_AS@), WithName);
+    return v2;
+}
+
+ULokiMajorStatusEffectComponent_AS@ ULokiMajorStatusEffectComponent_AS::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiMajorStatusEffectComponent_AS v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiMajorStatusEffectComponent_AS, v2, typeid(ULokiMajorStatusEffectComponent_AS@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiMajorStatusEffectComponent_AS : ULokiMajorStatusEffectComponent
+// unreal base : /Script/Loki.LokiMajorStatusEffectComponent
+// C++ header  : ../../../Loki/Source/Loki/Character/LokiMajorStatusEffectComponent.h
+// static class global: __StaticType_ULokiMajorStatusEffectComponent_AS
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    protected ALokiCharacter@ MyCharacter;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TMap<FGameplayTag, FActiveGameplayEffectHandle> EffectHandles;
+
+    ULokiMajorStatusEffectComponent_AS()   // traits=0x21
+    {
+        this.EffectHandles = TMap<FGameplayTag, FActiveGameplayEffectHandle>();
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        AActor v2;
+        ALokiCharacter v4;
+
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiCharacter@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        this.MyCharacter = v4;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetLongestRemainingEffectHandle(const FGameplayTag& Tag)   // traits=0x20
+    {
+        auto v1;
+        ULokiAbilitySystemComponent v4;
+        FGameplayTagContainer v14;
+        TArray<FActiveGameplayEffectHandle> v18;
+        TArrayConstIterator<FActiveGameplayEffectHandle> v28;
+        FActiveGameplayEffectHandle v36;
+        auto v38;
+        auto v40;
+        auto v42;
+        FActiveGameplayEffectHandle v44;
+
+        v1 = IsValid(this.MyCharacter);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = this.MyCharacter.GetLokiAbilitySystem_BP();
+            v1 = IsValid(v4);
+            v1 = !v1;
+            if (v1) {
+                return;
+            } else {
+                v14 = GameplayTag::MakeGameplayTagContainerFromTag(Tag);
+                v18 = v4.GetActiveEffectsWithAllOwningTags(v14);
+                v28 = v18.Iterator();
+                while (true) {
+                    v1 = v28.CanProceed;
+                    if (!v1) break;
+                    v36 = v28.Proceed();
+                    v40 = this.BP_EffectRemainingDuration(v36);
+                    v42 = 0;
+                    v44 = FActiveGameplayEffectHandle();
+                    if (this.EffectHandles.Find(Tag, v44)) {
+                        v38 = this.BP_EffectRemainingDuration(v44);
+                        v42 = v38;
+                    }
+                    if (v40 > v42) {
+                        this.EffectHandles.Add(Tag, v36);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    float64 BP_EffectRemainingDuration(const FActiveGameplayEffectHandle& ActiveEffectHandle)   // traits=0x20
+    {
+        float64 v2;
+
+        __Evt_PushArgument__FActiveGameplayEffectHandle(ActiveEffectHandle);
+        v2 = 0;
+        __Evt_PushArgumentRef__float(v2);
+        __Evt_Execute(this, n"BP_EffectRemainingDuration");
+        return v2;
+    }
+
+    UFUNCTION(UnrealName=BP_EffectRemainingDuration, BlueprintEvent, CanOverrideEvent, meta.DisplayName=Effect Remaining Duration)
+    float64 BP_EffectRemainingDuration_Implementation(const FActiveGameplayEffectHandle& ActiveEffectHandle)   // traits=0x20
+    {
+        auto v2;
+
+        v2 = 0;
+        return v2;
+    }
+
+    void ~ULokiMajorStatusEffectComponent_AS()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

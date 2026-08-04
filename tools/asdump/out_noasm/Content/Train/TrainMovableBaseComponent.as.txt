@@ -1,0 +1,512 @@
+// ============================================================================
+//  MODULE   Content.Train.TrainMovableBaseComponent
+//  SOURCE   Content/Train/TrainMovableBaseComponent.as
+//  CONTENT  4 class(es), 31 function(s), 0 enum(s), 4 global(s), 3260 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UTrainAnchor;
+const TSubclassOf<UObject@> __StaticType_UBackTrainAnchor;
+const TSubclassOf<UObject@> __StaticType_UFrontTrainAnchor;
+const TSubclassOf<UObject@> __StaticType_UTrainMovableBaseComponent;
+
+UTrainAnchor@ UTrainAnchor()   // traits=0x20
+{
+    UTrainAnchor v4;
+
+    v4 = UTrainAnchor();
+    return v4;
+}
+
+UBackTrainAnchor@ UBackTrainAnchor()   // traits=0x20
+{
+    UBackTrainAnchor v4;
+
+    v4 = UBackTrainAnchor();
+    return v4;
+}
+
+UFrontTrainAnchor@ UFrontTrainAnchor()   // traits=0x20
+{
+    UFrontTrainAnchor v4;
+
+    v4 = UFrontTrainAnchor();
+    return v4;
+}
+
+UTrainMovableBaseComponent@ UTrainMovableBaseComponent()   // traits=0x20
+{
+    UTrainMovableBaseComponent v2;
+
+    v2 = UTrainMovableBaseComponent();
+    return v2;
+}
+
+UClass@ UTrainAnchor::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UTrainAnchor);
+    return v2;
+}
+
+UClass@ UBackTrainAnchor::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBackTrainAnchor);
+    return v2;
+}
+
+UClass@ UFrontTrainAnchor::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UFrontTrainAnchor);
+    return v2;
+}
+
+UClass@ UTrainMovableBaseComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UTrainMovableBaseComponent);
+    return v2;
+}
+
+UTrainAnchor@ UTrainAnchor::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UTrainAnchor v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UTrainAnchor, v2, typeid(UTrainAnchor@), WithName);
+    return v2;
+}
+
+UTrainAnchor@ UTrainAnchor::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UTrainAnchor v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UTrainAnchor, v2, typeid(UTrainAnchor@), WithName);
+    return v2;
+}
+
+UTrainAnchor@ UTrainAnchor::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UTrainAnchor v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UTrainAnchor, v2, typeid(UTrainAnchor@), WithName);
+    return v2;
+}
+
+UBackTrainAnchor@ UBackTrainAnchor::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBackTrainAnchor v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBackTrainAnchor, v2, typeid(UBackTrainAnchor@), WithName);
+    return v2;
+}
+
+UBackTrainAnchor@ UBackTrainAnchor::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBackTrainAnchor v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBackTrainAnchor, v2, typeid(UBackTrainAnchor@), WithName);
+    return v2;
+}
+
+UBackTrainAnchor@ UBackTrainAnchor::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBackTrainAnchor v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBackTrainAnchor, v2, typeid(UBackTrainAnchor@), WithName);
+    return v2;
+}
+
+UFrontTrainAnchor@ UFrontTrainAnchor::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UFrontTrainAnchor v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UFrontTrainAnchor, v2, typeid(UFrontTrainAnchor@), WithName);
+    return v2;
+}
+
+UFrontTrainAnchor@ UFrontTrainAnchor::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UFrontTrainAnchor v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UFrontTrainAnchor, v2, typeid(UFrontTrainAnchor@), WithName);
+    return v2;
+}
+
+UFrontTrainAnchor@ UFrontTrainAnchor::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UFrontTrainAnchor v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UFrontTrainAnchor, v2, typeid(UFrontTrainAnchor@), WithName);
+    return v2;
+}
+
+UTrainMovableBaseComponent@ UTrainMovableBaseComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UTrainMovableBaseComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UTrainMovableBaseComponent, v2, typeid(UTrainMovableBaseComponent@), WithName);
+    return v2;
+}
+
+UTrainMovableBaseComponent@ UTrainMovableBaseComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UTrainMovableBaseComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UTrainMovableBaseComponent, v2, typeid(UTrainMovableBaseComponent@), WithName);
+    return v2;
+}
+
+UTrainMovableBaseComponent@ UTrainMovableBaseComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UTrainMovableBaseComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UTrainMovableBaseComponent, v2, typeid(UTrainMovableBaseComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UTrainAnchor : USceneComponent
+// unreal base : /Script/Engine.SceneComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/SceneComponent.h
+// static class global: __StaticType_UTrainAnchor
+{
+    UTrainAnchor()   // traits=0x21
+    {
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = true;
+        this.SetbHiddenInGame(v1);
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UBackTrainAnchor : UTrainAnchor
+// static class global: __StaticType_UBackTrainAnchor
+{
+    UBackTrainAnchor()   // traits=0x21
+    {
+        this.UTrainAnchor();
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UFrontTrainAnchor : UTrainAnchor
+// static class global: __StaticType_UFrontTrainAnchor
+{
+    UFrontTrainAnchor()   // traits=0x21
+    {
+        this.UTrainAnchor();
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UTrainMovableBaseComponent : UMovableBaseComponent
+// unreal base : /Script/Engine.MovableBaseComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h
+// static class global: __StaticType_UTrainMovableBaseComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    float64 InitialOffset;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    float64 Speed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    USplineComponent@ TrackSpline;
+
+    UTrainMovableBaseComponent()   // traits=0x21
+    {
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod)
+    float64 GetLength() const   // traits=0x24
+    {
+        UBackTrainAnchor v2;
+        AActor v4;
+        UClass v6;
+        TSubclassOf<UActorComponent@> v8;
+        UActorComponent v10;
+        UBackTrainAnchor v12;
+        UFrontTrainAnchor v14;
+        UFrontTrainAnchor v16;
+        auto v17;
+        auto v18;
+        auto v20;
+        FVector v26;
+        FVector v32;
+        auto v34;
+
+        v6 = UBackTrainAnchor::StaticClass();
+        v8 = TSubclassOf<UActorComponent@>(v6);
+        v4 = this.GetOwner();
+        v10 = v4.GetComponentByClass(v8);
+        if (v10 != nullptr) {
+            v12 = cast<UBackTrainAnchor@>(v10);
+        } else {
+            v12 = nullptr;
+        }
+        v2 = v12;
+        v6 = UFrontTrainAnchor::StaticClass();
+        v8 = TSubclassOf<UActorComponent@>(v6);
+        v4 = this.GetOwner();
+        v10 = v4.GetComponentByClass(v8);
+        if (v10 != nullptr) {
+            v16 = cast<UFrontTrainAnchor@>(v10);
+        } else {
+            v16 = nullptr;
+        }
+        v14 = v16;
+        if (v2 == nullptr) {
+            v17 = true;
+        } else {
+            v18 = v14 == nullptr;
+            v17 = v18;
+        }
+        if (v17) {
+            v20 = 0;
+            return v20;
+        } else {
+            v26 = v14.GetRelativeLocation();
+            v20 = v26.X;
+            v32 = v2.GetRelativeLocation();
+            v34 = v32.X;
+            v20 = v20 - v34;
+        }
+        return v20;
+    }
+
+    UFUNCTION(UnrealName=GetRootTransformAtTime, BlueprintOverride, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    bool GetRootTransformAtTime_Implementation(const float64 Timestamp, FTransform&inout OutTransform) const   // traits=0x24
+    {
+        auto v2;
+        USplineComponent v4;
+        auto v5;
+        float32 v6;
+        auto v7;
+        float64 v10;
+        AActor v12;
+        UBackTrainAnchor v14;
+        UClass v16;
+        TSubclassOf<UActorComponent@> v18;
+        UActorComponent v20;
+        UBackTrainAnchor v22;
+        UFrontTrainAnchor v24;
+        UFrontTrainAnchor v26;
+        auto v27;
+        FVector v34;
+        FVector v40;
+        auto v42;
+        auto v44;
+        FVector v50;
+        ESplineCoordinateSpace v51;
+        FVector v60;
+        FRotator v78;
+        FTransform v104;
+        FTransform v128;
+        FTransform v152;
+
+        v4 = this.TrackSpline;
+        if (v4 != nullptr) {
+            v6 = this.TrackSpline.GetSplineLength();
+            v7 = v6;
+        } else {
+            v7 = 0;
+        }
+        v10 = float64(v7);
+        v2 = v10;
+        v10 = 0;
+        if (v2 <= v10) {
+            v12 = this.GetOwner();
+            v12.GetActorTransform()  /* UFunction GetTransform */;
+            OutTransform = v12.GetActorTransform()  /* UFunction GetTransform */;
+            v5 = true;
+            return v5;
+        } else {
+            v16 = UBackTrainAnchor::StaticClass();
+            v18 = TSubclassOf<UActorComponent@>(v16);
+            v12 = this.GetOwner();
+            v20 = v12.GetComponentByClass(v18);
+            if (v20 != nullptr) {
+                v22 = cast<UBackTrainAnchor@>(v20);
+            } else {
+                v22 = nullptr;
+            }
+            v14 = v22;
+            v16 = UFrontTrainAnchor::StaticClass();
+            v18 = TSubclassOf<UActorComponent@>(v16);
+            v12 = this.GetOwner();
+            v20 = v12.GetComponentByClass(v18);
+            if (v20 != nullptr) {
+                v26 = cast<UFrontTrainAnchor@>(v20);
+            } else {
+                v26 = nullptr;
+            }
+            v24 = v26;
+            if (v14 == nullptr) {
+                v5 = true;
+            } else {
+                v27 = v24 == nullptr;
+                v5 = v27;
+            }
+            if (v5) {
+                v12 = this.GetOwner();
+                v12.GetActorTransform()  /* UFunction GetTransform */;
+                OutTransform = v12.GetActorTransform()  /* UFunction GetTransform */;
+                v5 = true;
+                return v5;
+            } else {
+                v40 = v24.GetRelativeLocation();
+                v44 = this.GetDistanceAlongSpline(Timestamp, 0);
+                v51 = ESplineCoordinateSpace::World;
+                v6 = float32(v44);
+                v34 = this.TrackSpline.GetLocationAtDistanceAlongSpline(v6, v51);
+                v10 = this.GetLength();
+                v10 = -v10;
+                v42 = this.GetDistanceAlongSpline(Timestamp, v10);
+                v51 = ESplineCoordinateSpace::World;
+                v6 = float32(v42);
+                v50 = this.TrackSpline.GetLocationAtDistanceAlongSpline(v6, v51);
+                v60 = v34 - v50;
+                v78 = FRotator::MakeFromX(v60);
+                v128 = FTransform(v78, v34, FVector::OneVector);
+                v104 = v24.GetRelativeTransform();
+                v152 = v104.Inverse();
+                v104 = v152 * v128;
+                OutTransform = v104;
+                v27 = true;
+            }
+        }
+        return v27;
+    }
+
+    UFUNCTION(UnrealName=GetRootVelocityAtTime, BlueprintOverride, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    bool GetRootVelocityAtTime_Implementation(const float64 Timestamp, FVector&inout OutVelocity) const   // traits=0x24
+    {
+        FTransform v24;
+        float32 v25;
+        auto v26;
+        FVector v32;
+        FQuat v40;
+        FVector v46;
+        float64 v48;
+
+        v24 = FTransform(FTransform::Identity);
+        v25 = float32(Timestamp);
+        v26 = this.GetRootTransformAtTime(v25, v24);
+        v26 = !v26;
+        if (v26) {
+            OutVelocity = FVector::ZeroVector;
+            v26 = false;
+            return v26;
+        } else {
+            v40 = v24.GetRotation();
+            v46 = v40.GetForwardVector();
+            v32 = FVector(v46);
+            v48 = this.Speed;
+            v46 = v32 * v48;
+            OutVelocity = v46;
+            v26 = true;
+        }
+        return v26;
+    }
+
+    private float64 GetDistanceAlongSpline(const float64 Timestamp, const float64 OffsetDistance = 0) const   // traits=0x2c
+    {
+        USplineComponent v2;
+        float64 v6;
+        auto v8;
+        auto v9;
+        auto v12;
+
+        v2 = this.TrackSpline;
+        if (v2 == nullptr) {
+            v6 = 0;
+            return v6;
+        } else {
+            v9 = this.TrackSpline.GetSplineLength();
+            v6 = float64(v9);
+            v8 = v6;
+            v6 = 0;
+            if (v8 <= v6) {
+                v6 = 0;
+                return v6;
+            } else {
+                v6 = this.InitialOffset;
+                v6 = v6 + OffsetDistance;
+                v12 = this.Speed;
+                v12 = Timestamp * v12;
+                v6 = v6 + v12;
+                v12 = v6 % v8;
+            }
+        }
+        return v12;
+    }
+
+    bool GetBackAnchorLocation(FVector&inout OutBackLocation) const   // traits=0x24
+    {
+        UBackTrainAnchor v2;
+        AActor v4;
+        UClass v6;
+        TSubclassOf<UActorComponent@> v8;
+        UActorComponent v10;
+        UBackTrainAnchor v12;
+        auto v13;
+        FVector v20;
+
+        v6 = UBackTrainAnchor::StaticClass();
+        v8 = TSubclassOf<UActorComponent@>(v6);
+        v4 = this.GetOwner();
+        v10 = v4.GetComponentByClass(v8);
+        if (v10 != nullptr) {
+            v12 = cast<UBackTrainAnchor@>(v10);
+        } else {
+            v12 = nullptr;
+        }
+        v2 = v12;
+        if (v2 == nullptr) {
+            v13 = false;
+            return v13;
+        } else {
+            v20 = v2.GetRelativeLocation();
+            OutBackLocation = v20;
+            v13 = true;
+        }
+        return v13;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v2;
+
+        v2 = 1000.0;
+        this.Speed = v2;
+        return;
+    }
+
+}
+
