@@ -672,7 +672,18 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 		// the authority; see docs/tutorial-playability-plan.md). Client builds a valid CoreGameMatchModel and
 		// parks locally; tutorial_launch_fo.dll then opens LVL_Tutorial with the real gamemode.
 		// Set back to "127.0.0.1:7777" for the DS/stub route.
-		"address":      "127.0.0.1:7777", // BASELINE / DS route. Set to "" for the FORCE-OPEN tutorial route (pair with forceTutorialMatch=true above).
+		// ★ S107 (2026-07-27) — EMPTY for the FORCE-OPEN route. MEASURED this session:
+		// after the FParty.State fix above unblocked the START button, the client POSTed
+		// /startSoloMode ONCE (capture.log #1980, 22:26:22) — the backend armed a MatchID,
+		// the client fetched this match doc, and then tried to travel to a DS on
+		// 127.0.0.1:7777 that is NOT RUNNING. It never got there, but /core-game/players
+		// now reports a non-empty MatchID forever, so the client believes it is ALREADY IN
+		// A MATCH and every subsequent START is a silent no-op (zero egress, zero log).
+		// An empty address is what makes the client build a valid CoreGameMatchModel and
+		// PARK LOCALLY instead (docs/endpoints.md:50 "Local tutorial = EMPTY address"),
+		// which is the state tutorial_launch_fo.dll then force-opens into.
+		// Set back to "127.0.0.1:7777" ONLY for the DS/stub route.
+		"address":      "",
 		"ServerID":     "revival-tutorial-ds-0001",
 		"MachineID":    "revival-local",
 		"RegionID":     "na",
@@ -1208,6 +1219,33 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 		"isOpen":          false,
 		"fillTeam":        false,
 		"createdAt":       now,
+		// ★ S107 (2026-07-27) — FParty.State, the gate behind TryStartSoloMode.
+		//
+		// SYMPTOM that motivated this: at the TUTORIALS tab with BASIC TRAINING selected,
+		// pressing START did NOTHING — zero new HTTP requests in capture.log and zero new
+		// lines in Loki.log (the client log after the click is idle GC only). An inert click
+		// with no egress means the handler bails BEFORE any network call, so this was never
+		// a missing endpoint.
+		//
+		// MECHANISM: Comp_MainMenu_QueueController -> PartyManager.TryStartSoloMode(Mode, ...)
+		// reads the party's State at PartyModel+0x558+0x18. `FParty` prop 2 is a plain
+		// FString State (offset 0x18, MEASURED from Binds.Cache), and we never served it, so
+		// it read empty and the call bailed. The exe's enum entries are
+		// EPartyState::{Default,Matchmaking,CustomGame,Unknown} (.rdata 0x08ABD2A8..0x08ABD390),
+		// so "Default" is the idle/startable value. The same field is what the client's
+		// 'skipping set latencies, party state: %s' guard reads (see docs/fk5-battle-gate-settled.md).
+		//
+		// This durably replaces the live memory poke the tutorial route had been using to
+		// clear the same gate (docs/coverage-audit-s101.md:160).
+		//
+		// TYPE SAFETY: both keys below are Str props, and the validity model
+		// (internal/menu/menu.go) only rejects a doc on a MATCHED key with the WRONG TYPE —
+		// so a wrong *value* here can change the state machine but cannot break the party
+		// document. If "Default" proves wrong, "default" is the other candidate.
+		"state": "Default",
+		// FParty.ClientVersion — PartyManager.cpp logs 'Client version not valid, leaving
+		// matchmaking' when this mismatches. Value is the client's own X-Theorycraft-Clientversion.
+		"clientVersion": "release2.4.live-156430-shipping",
 		// ★ LOAD-BEARING — must strictly advance or the client discards the WHOLE
 		// document. UPartyModel::SetParty (base+0x587BE90) bails on
 		// `jge` against its cached FParty.Version. This was pinned to 1 until
