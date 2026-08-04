@@ -50,9 +50,27 @@
   cycle, not a retention window. The one surviving report is the last one precisely
   because nothing was launched after it.
 
-  => Archive immediately BEFORE launching (deterministic: the launch is the destroyer)
-     and immediately AFTER the game exits (so the artifact lands in dumps\ while the
-     run is still fresh). Neither is a race. launch-redirect.ps1 does both.
+  => Archive immediately BEFORE launching. The launch is the destroyer, so this is
+     deterministic, not a race. launch-redirect.ps1 calls it there and ONLY there.
+
+  ★ CONFIRMED BY DIRECT EXPERIMENT, 2026-08-04 16:38 (this had been INFERRED only).
+  A -NoHook launch was performed with one report pending. In the same second that the
+  new crashpad_handler.exe started (16:38:51):
+
+      reports/   1 report (43,804,912 B)  ->  EMPTY
+      metadata   150 B, num_records=1     ->  16 B, num_records=0 (bare header)
+
+  The pre-launch sweep had already taken it (SHA-256 f97c584c…, verified). So the rule
+  is MEASURED: the launch clears the database, and archiving just before it loses
+  nothing. NOTE the actor is the new crashpad_handler starting, not the game per se.
+
+  There is deliberately NO post-exit sweep. `& $exe` does NOT block -- the shipping exe
+  detaches and returns in ~1 s -- so a call placed after it runs before the game has
+  even mounted its paks, duplicating the pre-launch archive under a misleading name.
+  At pre-launch time Saved\Logs\Loki.log is still the DEAD session's log (UE rotates at
+  startup), so the pre-launch sweep already captures the correct log for the death it
+  is archiving. To grab a dump without waiting for the next launch, run this script by
+  hand after the death.
 
   ⚠ RESIDUAL RISK, stated because an instrument must declare its own blind spot.
   This scheme depends on the upload FAILING. Uploads are globally enabled
