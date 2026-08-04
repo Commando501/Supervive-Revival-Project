@@ -311,6 +311,12 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   Copies the marker off after each stage into `docs/fk24-stage-<label>-<n>-<shim>.txt`,
   because `Marker()` opens `CREATE_ALWAYS` so **every injection truncates
   `docs/tutorial-launch-marker.txt`** (FK-25). See the launch procedure above.
+- **Crash-dump archiver:** `configs/archive-crashdumps.ps1` — preserves Sentry/crashpad crash
+  reports (the 43.8 MB minidump + that run's own `Loki.log`) out of
+  `<GameRoot>\Loki\.sentry-native\` into `dumps\crashpad-<stamp>\`, SHA-256 verified, source never
+  deleted. `launch-redirect.ps1` calls it automatically before launching and after the game exits;
+  safe to run by hand anytime (`-Label <tag>`). Parse a dump with
+  `python tools/crashtri/mdctx.py <reports/*.dmp>` — there is no cdb/WinDbg on this machine.
 - **RPM probes:** `tools/re/*.py` — Python probes driving the native-call primitive
   (struct/field/rep-layout walkers, param/OUT-param builders, mission-model dumps).
 - **Admin panel:** loopback JSON API + embedded GUI in `server/internal/admin/`
@@ -343,11 +349,22 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   wrong repeatedly (DS missions work cost several passes). Verify struct/array
   shapes against live RPM.
 - **Don't read "no `UECC-*` directory in `Saved\Crashes`" as "the run died with no dump."**
-  Sentry's **crashpad** writes a full minidump (one caught live at 43.9 MB) and then
-  **uploads and DELETES it within ~3 minutes**. `harvest.py` and every hand-rolled census
-  that enumerates `UECC-*` is blind to it. If a run dies and you want the frames, **copy the
-  crashpad database aside within ~60 s** or they are gone. The clean tell in `Loki.log` is
-  `handing control over to crashpad` (anti-correlated 6/6 with a `UECC-*` dir).
+  Sentry's **crashpad** writes a full minidump (43.8 MB) plus that run's own `Loki.log` into
+  `<GameRoot>\Loki\.sentry-native\`. `harvest.py` and every hand-rolled census that enumerates
+  `UECC-*` is blind to it. The clean tell in `Loki.log` is `handing control over to crashpad`.
+  ⚠ That key is **NOT the last line** (two `LogTemp` lines follow it in the one death with a
+  preserved dump) — scan the whole file, never `tail`. Bare `crashpad` is useless as a key: it
+  matches two **startup** lines present in every session.
+- **Don't rush to save a crashpad dump — and don't trust the retired "~60 seconds" advice.**
+  RETRACTED S109: the old "uploads and DELETES it within ~3 minutes" was the gap between two `ls`
+  calls with a relaunch inside it. MEASURED: crashpad tries **one** upload at crash+2 s, and on
+  failure the report sits in `state=Pending` **indefinitely** (65+ min observed) because
+  `crashpad_handler.exe` dies with the game and cannot retry. **The NEXT GAME LAUNCH is what
+  clears it.** `launch-redirect.ps1` now archives the database automatically before launching and
+  after the game exits (`configs/archive-crashdumps.ps1`, SHA-256 verified, never deletes the
+  source); run it standalone anytime. ⚠ It depends on the upload failing — if the archiver ever
+  warns "crashpad handoff but NO report on disk", uploads started succeeding and you must
+  hosts-block `o566896.ingest.sentry.io`. See `docs/s109-fk9-capture-durable.md`.
 - **Don't leave an S9x diagnostic switched on and then reason about the game.** This has now
   bitten twice: `KTESTACTOR` (S106) built a second degenerate body, and `KSTATICTEST` (S108b)
   called `PlayAnimation` on a `StaticMeshComponent`, faulting every run — SEH-caught, so it
