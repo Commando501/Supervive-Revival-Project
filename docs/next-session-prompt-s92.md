@@ -106,6 +106,10 @@ tools\inject\inject.exe mmap <PID> tools\sigbypass-mod\tutorial_launch_fo.dll
 - ⚠ `func_enum.py <PID> <BASE> <ClassObj>` needs the CLASS address (read instance+0x18), not the instance.
 - ⚠ FField's TYPE class is at FField+0x08, not +0x18 — don't read a property's type with UObject `ClassOf`.
 - ⚠ Force-open can crash ~1s after entering the tutorial GameState (2 of 3 in S90; 0 of 1 in S91). Just relaunch.
+  > ⚠ **RETRACTED 2026-07-27 (S106).** Original text preserved above. Not a random rate — **two
+  > deterministic crash signatures**, byte-identical across launches, both shim-caused, both with
+  > compiled fixes. "Just relaunch" was the wrong response for ~15 sessions.
+  > → **`docs/fk7-crash-settled.md`**
 - The feature-toggle "not ready" spam still floods (S89/S90 documented: the readiness EVENT never fires); it is
   NOT this task's blocker — ignore it.
 

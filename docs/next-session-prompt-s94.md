@@ -68,6 +68,11 @@ from scratch (`AddComponentByClass` + `SetSkeletalMeshAsset`). The mechanism wor
 # 2) wait "TryUIReady SUCCESS" AND uptime >= 95s. Resolve the LIVE pid:
 #    $gp = Get-Process SUPERVIVE-Win64-Shipping | Sort StartTime -Desc | Select -First 1 ; $gpid = $gp.Id
 # 3) inject force-open, wait "to Finished" (retry the whole launch if the game dies — ~2 of 3 crash here):
+#    >> RETRACTED 2026-07-27 (S106): "~2 of 3 crash here" is FALSE as a mechanism. The crashes are
+#    >> DETERMINISTIC -- two named signatures (worker-thread anim UAF; GameThread camera-pointer
+#    >> corruption), byte-identical chains across launches, both shim-caused, both with compiled fixes.
+#    >> Do NOT plan around retries. See docs/fk7-crash-settled.md (and Step 0 there: three of the
+#    >> tutorial_launch DLLs on disk are A/B traps).
 tools\inject\inject.exe mmap $gpid tools\sigbypass-mod\tutorial_launch_fo.dll
 # 4) gft_ready_fix -> spawn+possess hero -> (teleport to ground) -> make-mesh -> top-down cam:
 tools\inject\inject.exe mmap $gpid tools\sigbypass-mod\gft_ready_fix.dll
