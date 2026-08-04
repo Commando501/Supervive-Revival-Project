@@ -1,0 +1,187 @@
+<#
+  fk24-stage.ps1 — stage the tutorial world and inject a probe/candidate DLL into it.
+
+  WHY THIS EXISTS (S108, 2026-08-04)
+  ----------------------------------
+  The S107 recipe (docs/next-session-prompt-s108.md §0) needs a HUMAN to press
+  PLAY -> TUTORIALS -> BASIC TRAINING -> START before anything can be injected, because
+  RM_PLAY and RM_SPAWNPOSSESS are CONTINUATION modes: they attach to an already-running
+  tutorial and `return 0` before the force-open block, so `-Hook <play dll>` alone cannot work.
+
+  The button press has exactly ONE backend effect: POST /party/parties/{id}/startSoloMode sets
+  playerState.SoloMode, and handleCoreGamePlayer's gate is `forceTutorialMatch || SoloMode != ""`.
+  So setting `forceTutorialMatch = true` in server/internal/interactive/interactive.go substitutes
+  for the press exactly, and the client parks itself with nobody at the keyboard. That flag MUST be
+  true for this script to fire — it checks, and refuses to run if the backend is not serving a match.
+
+  ORDER IS LOAD-BEARING, and every step is gated on MEASURED evidence rather than a fixed sleep:
+    1. tutorial_launch_fo.dll   force-opens LVL_Tutorial into the parked match model
+    2. gft_ready_fix.dll        game-feature-toggle ready marker
+    3. tutorial_launch_sp.dll   spawn + possess  (ONE-SHOT, no retry loop -- inject only once the
+                                world is genuinely up, or you get [SP] gm=0x0 pc=0x0 and the run is dead)
+    4. <-Probe>                 the play/probe build under test
+
+  ⚠ docs/tutorial-launch-marker.txt is opened CREATE_ALWAYS, so EVERY injection TRUNCATES it (FK-25).
+    This script copies it off after each stage into docs/fk24-stage-<Label>-<n>-<shim>.txt so no
+    stage's output is lost, and that is the only reason the earlier stages' lines survive at all.
+
+  Read-only w.r.t. the game otherwise. Run from an ELEVATED PowerShell.
+#>
+[CmdletBinding()]
+param(
+  [Parameter(Mandatory=$true)][string]$Probe,       # path to the DLL under test (usually build\tutorial_launch_play*.dll)
+  [string]$Label = "run",                           # tag for the copied-off marker files
+  [int]$MinUptimeSec   = 110,                       # login+lobby settle before we touch anything
+  [int]$WaitProcSec    = 300,                       # how long to wait for the game to appear
+  [int]$WaitParkedSec  = 420,                       # how long to wait for the parked match model
+  [int]$WaitWorldSec   = 180,                       # how long to wait for LVL_Tutorial after force-open
+  [switch]$SkipProbe                                # stage the world only (fo+gft+sp), inject nothing else
+)
+
+$ErrorActionPreference = 'Stop'
+$repo    = Split-Path -Parent $PSScriptRoot
+$inject  = Join-Path $repo 'tools\inject\inject.exe'
+$shimDir = Join-Path $repo 'tools\sigbypass-mod'
+$docs    = Join-Path $repo 'docs'
+$lokiLog = Join-Path $env:LOCALAPPDATA 'SUPERVIVE\Saved\Logs\Loki.log'
+$marker  = Join-Path $docs 'tutorial-launch-marker.txt'
+$capture = Join-Path $docs 'capture.log'
+
+function Say($m){ Write-Host "[stage] $m" }
+
+# Loki.log is held open by the game with a share mode we must match, so Get-Content can hard-fail
+# mid-run. Read through an explicit FileShare::ReadWrite handle instead.
+function Read-Locked([string]$path,[int]$tailBytes = 400000){
+  if(-not (Test-Path $path)){ return '' }
+  try{
+    $fs = [IO.File]::Open($path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite)
+    try{
+      if($fs.Length -gt $tailBytes){ [void]$fs.Seek(-$tailBytes,[IO.SeekOrigin]::End) }
+      $sr = New-Object IO.StreamReader($fs)
+      return $sr.ReadToEnd()
+    } finally { $fs.Dispose() }
+  } catch { return '' }
+}
+
+function Wait-For([string]$what,[int]$timeoutSec,[scriptblock]$test){
+  $t0 = Get-Date
+  while(((Get-Date) - $t0).TotalSeconds -lt $timeoutSec){
+    if(& $test){ Say "$what -> OK ($([int]((Get-Date)-$t0).TotalSeconds)s)"; return $true }
+    Start-Sleep -Seconds 3
+  }
+  Say "$what -> *** TIMEOUT after ${timeoutSec}s ***"
+  return $false
+}
+
+foreach($p in @($inject,(Join-Path $shimDir 'tutorial_launch_fo.dll'),
+                        (Join-Path $shimDir 'gft_ready_fix.dll'),
+                        (Join-Path $shimDir 'tutorial_launch_sp.dll'))){
+  if(-not (Test-Path $p)){ throw "missing required file: $p" }
+}
+if(-not $SkipProbe){
+  if(-not (Test-Path $Probe)){ throw "probe DLL not found: $Probe" }
+  $Probe = (Resolve-Path $Probe).Path
+}
+
+# ---- PRE-FLIGHT: the backend must actually be arming a match, or the client never parks and the
+#      force-open reverts to the lobby in ~300 ms (the S63/S64 failure this whole route depends on
+#      avoiding). Measure it rather than assuming the source flag was rebuilt into the binary.
+Say 'pre-flight: is ags serving an armed match?'
+$armed = $false
+try{
+  $me = (Invoke-WebRequest -Uri 'http://127.0.0.1:8080/revival/admin/state' -UseBasicParsing -TimeoutSec 5 -ErrorAction SilentlyContinue)
+} catch { }
+foreach($pid_ in @('9b9d2c887e2524f918e383a895f2f1c2')){
+  try{
+    $r = Invoke-WebRequest -Uri "http://127.0.0.1:8080/core-game/players/$pid_" -UseBasicParsing -TimeoutSec 5
+    $j = $r.Content | ConvertFrom-Json
+    Say ("  /core-game/players -> MatchID='{0}' Version={1}" -f $j.MatchID,$j.Version)
+    if($j.MatchID){ $armed = $true }
+  } catch { Say "  /core-game/players query failed: $($_.Exception.Message)" }
+}
+if(-not $armed){
+  throw "ags is NOT arming a match (MatchID empty). Set forceTutorialMatch=true in server/internal/interactive/interactive.go, rebuild ags, restart it. Without this the client never parks and force-open reverts."
+}
+
+# ---- 1. the game process
+Say 'waiting for game process...'
+$proc = $null
+if(-not (Wait-For 'game process' $WaitProcSec { $script:proc = Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue | Select-Object -First 1; $null -ne $script:proc })){ exit 2 }
+$gamePid = $proc.Id
+$start   = $proc.StartTime
+Say "game PID=$gamePid started=$start"
+
+# ---- 2. the PARKED state. Three independent signals, all required:
+#         (a) the UI is up          -> Loki.log 'TryUIReady SUCCESS'
+#         (b) the match was fetched -> capture.log GET /core-game/matches AFTER this process started
+#         (c) enough uptime for login+lobby to settle
+$parked = Wait-For 'parked match model (uiready + match fetched + uptime)' $WaitParkedSec {
+  $up = ((Get-Date) - $start).TotalSeconds
+  if($up -lt $MinUptimeSec){ return $false }
+  $log = Read-Locked $lokiLog
+  if($log -notmatch 'TryUIReady SUCCESS'){ return $false }
+  if(Test-Path $capture){
+    $cap = Read-Locked $capture 200000
+    if($cap -notmatch 'core-game/matches'){ return $false }
+  }
+  return $true
+}
+if(-not $parked){ Say 'proceeding anyway is NOT safe -- aborting'; exit 3 }
+Say ("uptime={0}s" -f [int](((Get-Date) - $start).TotalSeconds))
+
+function Stage-Inject([string]$dll,[int]$n,[string]$tag){
+  Say ">>> inject $tag"
+  & $inject mmap $gamePid $dll 2>&1 | ForEach-Object { Say "    $_" }
+  Start-Sleep -Seconds 2
+  $dst = Join-Path $docs ("fk24-stage-{0}-{1}-{2}.txt" -f $Label,$n,$tag)
+  if(Test-Path $marker){ Copy-Item $marker $dst -Force; Say "    marker -> $(Split-Path -Leaf $dst)" }
+}
+
+# ---- 3. gft_ready_fix FIRST, then force-open, then WAIT for the world before the one-shot spawn+possess.
+#
+# ★ S108 ORDER CORRECTION (MEASURED 2026-08-04, run wp2r1). The documented recipe is fo -> gft -> sp,
+#   and S107 got away with it only because it injected all four back to back, so gft landed DURING the
+#   5.7 s LoadMap and was resident before the tutorial GameState came up. This script originally
+#   inserted a world-gate between fo and gft -- which delayed gft past LoadMap, and the run died ~60 ms
+#   after "LogLokiGameMode: Display: Client is ready to play", with the log full of
+#   "ULokiGameFeatureToggles::Get <X> called when feature toggles were not ready" and NO UE crash dump
+#   (Sentry's crashpad took the process, so it is invisible to the dump census -- FK-25 class).
+#   gft_ready_fix re-applies its bit every ~2 s for the whole session and needs no world, so injecting
+#   it BEFORE the force-open removes the race entirely rather than merely winning it by luck.
+Stage-Inject (Join-Path $shimDir 'gft_ready_fix.dll') 1 'gft'
+Start-Sleep -Seconds 3
+Stage-Inject (Join-Path $shimDir 'tutorial_launch_fo.dll') 2 'fo'
+
+# ★ Gate on the LOAD COMPLETING, not on the string 'LVL_Tutorial' -- the force-open's own console
+#   command ('open LVL_Tutorial?game=...') contains that substring and is echoed to the log, so the
+#   old test passed 3 s in, before the map had loaded at all. Question the key you grepped for.
+$worldUp = Wait-For 'LVL_Tutorial load complete' $WaitWorldSec {
+  $log = Read-Locked $lokiLog
+  $log -match 'Load map complete /Game/Loki/Maps/Tutorial/LVL_Tutorial'
+}
+if(-not $worldUp){ Say 'no tutorial world -> injecting sp now would be a wasted one-shot. ABORTING.'; exit 4 }
+Start-Sleep -Seconds 8   # let the gamemode finish init before the one-shot resolve
+
+Stage-Inject (Join-Path $shimDir 'tutorial_launch_sp.dll') 3 'sp'
+
+# ---- 4. the DLL under test.
+#
+# ★ S108 GATE (MEASURED 2026-08-04, run wp2r2). A fixed 5 s wait after `sp` is NOT enough: the probe
+#   went in while spawn+possess was still running, RM_PLAY found no possessed hero, printed
+#   "[PL] ResolveWakeMove failed (no possessed hero -- spawn+possess first) -> abort" and aborted
+#   WITHOUT arming. RM_PLAY's resolve is one-shot, so that silently wasted the launch. Gate on sp's own
+#   completion line instead. Read the marker BEFORE injecting -- the injection truncates it (FK-25).
+if(-not $SkipProbe){
+  $spDone = Wait-For '[SP] done step=4 (hero possessed)' 120 {
+    if(-not (Test-Path $marker)){ return $false }
+    $mk = Read-Locked $marker 200000
+    ($mk -match '\[SP\]\s+done step=4') -and ($mk -match 'spawnedPawn=0x[0-9A-Fa-f]+')
+  }
+  if(-not $spDone){ Say 'spawn+possess never completed -> RM_PLAY would abort. ABORTING.'; exit 5 }
+  Start-Sleep -Seconds 3
+  Stage-Inject $Probe 4 ('probe-' + [IO.Path]::GetFileNameWithoutExtension($Probe))
+  Say 'probe injected; armed window begins'
+} else {
+  Say 'SkipProbe: world staged, nothing further injected'
+}
+Say 'stage complete'
