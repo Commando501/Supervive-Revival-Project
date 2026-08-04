@@ -1,0 +1,308 @@
+==============================================================================
+MODULE   Barracuda.Components.BarracudaJungleCreepComponent
+SOURCE   Barracuda/Components/BarracudaJungleCreepComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaJungleCreepComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaJungleCreepComponent@ UBarracudaJungleCreepComponent()
+// 4 instr, 28 B bytecode, id=0x39C6FAE3, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaJungleCreepComponent v2;
+
+    v2 = UBarracudaJungleCreepComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84072 q:0x26e6e874f00; new UBarracudaJungleCreepComponent   ctor=UBarracudaJungleCreepComponent::UBarracudaJungleCreepComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x63BED978, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaJungleCreepComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b7358         ; __StaticType_UBarracudaJungleCreepComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaJungleCreepComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x8ED8FF4C, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaJungleCreepComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaJungleCreepComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972593            ; UBarracudaJungleCreepComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7358         ; __StaticType_UBarracudaJungleCreepComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaJungleCreepComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xFFE56C05, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaJungleCreepComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972593            ; UBarracudaJungleCreepComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7358         ; __StaticType_UBarracudaJungleCreepComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaJungleCreepComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xDC9FA783, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaJungleCreepComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972593            ; UBarracudaJungleCreepComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7358         ; __StaticType_UBarracudaJungleCreepComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UBarracudaJungleCreepComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(EditableOnDefaults, EditableOnInstance) float64 UnstuckTeleportTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 StuckDetectionTime;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaJungleCreepComponent() const
+// 6 instr, 44 B bytecode, id=0xC7D7B31F, varspace=2
+------------------------------------------------------------------------------
+{
+    this.StuckDetectionTime = 30;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x403e000000000000
+    //     3  LoadThisR      W0:216 d:134230769      ; UBarracudaJungleCreepComponent::StuckDetectionTime  (+216)
+    //     5  WRTV8          rW0:2
+    //     6  PshVPtr        rW0:0
+    //     7  FinConstruct   q:0x26e6e874f00         ; UBarracudaJungleCreepComponent
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 73 instr, 504 B bytecode, id=0xC5C29819, varspace=32
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiMinionCharacter v4;
+    AActor v6;
+    ALokiMinionCharacter v8;
+    FVector v14;
+    FVector v20;
+    auto v22;
+    auto v24;
+    auto v26;
+    FRotator v32;
+
+    v1 = Loki::LokiIsServer(__WorldContext);
+    v1 = !v1;
+    if (!v1) {
+        v6 = this.GetOwner();
+        if (v6 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ALokiMinionCharacter>(v6);
+        }
+        v4 = v8;
+        if (v8 != null) {
+            if (!v4.HasBlackboardTargetEnemy()) {
+                v20 = v4.GetSpawnLocation();
+                v14 = v4.GetActorLocation();
+                v22 = v14.Dist2D(v20);
+                v24 = 500;
+                v1 = v22 < 500;
+            } else {
+                v1 = true;
+            }
+            if (!v1) {
+                v26 = Gameplay::GetServerTime(__WorldContext);
+                v22 = float64(v26);
+                v24 = this.UnstuckTeleportTime;
+                if (v22 > v24) {
+                    v32 = v4.GetActorRotation();
+                    v14 = v4.GetSpawnLocation();
+                    v4.Teleport(v14, v32);
+                }
+            } else {
+                v26 = Gameplay::GetServerTime(__WorldContext);
+                v24 = float64(v26);
+                v22 = this.StuckDetectionTime;
+                v24 = v24 + v22;
+                this.UnstuckTeleportTime = v24;
+            }
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->125
+    //    13  PshVPtr        rW0:0
+    //    14  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    17  STOREOBJ       wW0:6
+    //    18  CmpPtrNull     rW0:6
+    //    19  JZ             ->30
+    //    21  TYPEID         d:1140857087            ; ALokiMinionCharacter@
+    //    23  PSF            rW0:8
+    //    24  PshVPtr        rW0:6
+    //    25  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    28  JMP            ->31
+    //    30  ClrVPtr        wW0:8
+    //    31  PshVPtr        rW0:8
+    //    32  RefCpyV        wW0:4
+    //    33  CmpPtrNull     rW0:4
+    //    34  JZ             ->125
+    //    36  PshVPtr        rW0:4
+    //    37  CALLSYS        q:0x26e7a319fc0         ; bool ALokiMinionCharacter::HasBlackboardTargetEnemy()
+    //    40  JLowZ          ->46
+    //    42  SetV1          wW0:1 d:1
+    //    44  JMP            ->71
+    //    46  PSF            rW0:20
+    //    47  PshVPtr        rW0:4
+    //    48  CALLSYS        q:0x26e7a31a180         ; FVector ALokiMinionCharacter::GetSpawnLocation() const
+    //    51  PSF            rW0:20
+    //    52  PSF            rW0:14
+    //    53  PshVPtr        rW0:4
+    //    54  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    57  PSF            rW0:14
+    //    58  CALLSYS        q:0x26e69d07940         ; float64 FVector::Dist2D(const FVector&) const
+    //    61  CpyRtoV8       wW0:22
+    //    62  SetV8          wW0:24 q:0x407f400000000000
+    //    65  CMPd           rW0:22 rW1:24
+    //    67  TS
+    //    68  CpyRtoV4       wW0:25
+    //    69  CpyVtoV4       wW0:1 rW1:25
+    //    71  CpyVtoR1       rW0:1
+    //    72  JLowZ          ->93
+    //    74  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    77  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    80  CpyRtoV4       wW0:26
+    //    81  fTOd           wW0:24 rW1:26
+    //    83  LoadThisR      W0:216 d:134230769      ; UBarracudaJungleCreepComponent::StuckDetectionTime  (+216)
+    //    85  RDR8           wW0:22
+    //    86  ADDd           wW0:24 rW1:24 rW2:22
+    //    88  LoadThisR      W0:208 d:134230769      ; UBarracudaJungleCreepComponent::UnstuckTeleportTime  (+208)
+    //    90  WRTV8          rW0:24
+    //    91  JMP            ->125
+    //    93  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    96  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    99  CpyRtoV4       wW0:26
+    //   100  fTOd           wW0:22 rW1:26
+    //   102  LoadThisR      W0:208 d:134230769      ; UBarracudaJungleCreepComponent::UnstuckTeleportTime  (+208)
+    //   104  RDR8           wW0:24
+    //   105  CMPd           rW0:22 rW1:24
+    //   107  JNP            ->125
+    //   109  PSF            rW0:32
+    //   110  PshVPtr        rW0:4
+    //   111  CALLSYS        q:0x26e79712c40         ; FRotator AActor::GetActorRotation() const   [UFunction K2_GetActorRotation]
+    //   114  PSF            rW0:32
+    //   115  PSF            rW0:14
+    //   116  PshVPtr        rW0:4
+    //   117  CALLSYS        q:0x26e7a31a180         ; FVector ALokiMinionCharacter::GetSpawnLocation() const
+    //   120  PSF            rW0:14
+    //   121  PshVPtr        rW0:4
+    //   122  CALLSYS        q:0x26e797113c0         ; bool AActor::Teleport(FVector, FRotator)   [UFunction K2_TeleportTo]
+    //   125  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 9 instr, 60 B bytecode, id=0xC6574236, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = true;
+    this.SetbExcludeFromClient(true);
+    v1 = true;
+    this.SetComponentTickEnabled(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62bbc0         ; void UActorComponent::SetbExcludeFromClient(bool)
+    //     7  SetV1          wW0:1 d:1
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //    14  RET            W0:2
+

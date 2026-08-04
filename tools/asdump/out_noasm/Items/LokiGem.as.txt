@@ -1,0 +1,553 @@
+// ============================================================================
+//  MODULE   Items.LokiGem
+//  SOURCE   Items/LokiGem.as
+//  CONTENT  1 class(es), 18 function(s), 0 enum(s), 1 global(s), 4604 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Items_LokiGemStatics
+
+const TSubclassOf<UObject@> __StaticType_ALokiGem;
+
+ALokiGem@ ALokiGem()   // traits=0x20
+{
+    ALokiGem v2;
+
+    v2 = ALokiGem();
+    return v2;
+}
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+FVector GetGemStartingLocationInDirection(const FVector& Origin, const FVector& Direction)   // traits=0x20
+{
+    float64 v2;
+    float64 v4;
+    FVector v10;
+    FVector v16;
+    float64 v18;
+    FVector v24;
+    ALokiHeightMap v34;
+    float32 v36;
+    float32 v37;
+    float32 v38;
+    float64 v40;
+
+    v2 = 150.0;
+    v16 = Direction.GetSafeNormal2D(9.99999993922529e-09, FVector::ZeroVector);
+    v18 = Math::RandRange(0, v2);
+    v24 = v16 * v18;
+    v16 = Origin + v24;
+    v34 = ALokiHeightMap::GetInstance(__WorldContext);
+    if (v34 == nullptr) {
+        __ret = FVector(v16);
+        return;
+    } else {
+        v36 = 0;
+        v4 = v16.Y;
+        v37 = float32(v4);
+        v4 = v16.X;
+        v38 = float32(v4);
+        v38 = v36 + 75.0;
+        v4 = float64(v38);
+        v34.GetHeight(v36, v38, v37);
+        v18 = v16.Y;
+        v40 = v16.X;
+        v10 = FVector(v40, v18, v4);
+        v16 = v10;
+        __ret = FVector(v16);
+    }
+    return;
+}
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+FVector GetGemRandomStartingLocation(const FVector& Origin)   // traits=0x20
+{
+    FVector v12;
+    FVector v20;
+
+    v12 = Math::VRand();
+    v20 = v12.GetSafeNormal2D(9.99999993922529e-09, FVector::ZeroVector);
+    v12 = GetGemStartingLocationInDirection(Origin, v20);
+    __ret = FVector(v12);
+    return;
+}
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+ALokiGem@ SpawnExtraGemWithTeam(const TSubclassOf<ALokiGem@>& GemClass, const FVector& SpawnLocation, const int TeamIndex)   // traits=0x20
+{
+    auto v1;
+    ALokiGem v4;
+    FTransform v28;
+    ALokiGem v30;
+    ESpawnActorScaleMethod v31;
+    ESpawnActorCollisionHandlingMethod v32;
+
+    v1 = GemClass.IsValid();
+    v1 = !v1;
+    if (v1) {
+        return v4;
+    } else {
+        v28 = FTransform(FTransform::Identity);
+        v28.SetLocation(SpawnLocation);
+        v31 = ESpawnActorScaleMethod::MultiplyWithRoot;
+        v32 = ESpawnActorCollisionHandlingMethod::Undefined;
+        v30 = LokiGameplay::SpawnPoolableActorFromClassDeferred(__WorldContext, GemClass, v28, nullptr, nullptr, v32, v31);
+        if (v30 == nullptr) {
+            return v4;
+        } else {
+            v30.TeamIndex = TeamIndex;
+            FinishSpawningActor(v30);
+        }
+    }
+    return v30;
+}
+
+UClass@ ALokiGem::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiGem);
+    return v2;
+}
+
+ALokiGem@ ALokiGem::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiGem v8;
+
+    v2 = __StaticType_ALokiGem.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiGem@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ALokiGem : ALokiGemBase
+// unreal base : /Script/Loki.LokiGemBase
+// C++ header  : ../../../Loki/Source/Loki/Items/LokiGemBase.h
+// static class global: __StaticType_ALokiGem
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    int GemCount;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    int BonusGemMultiplier;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    FGameplayTag GemVacuumTag;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bIsVaultItem;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float32 HeightToStop;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_IsMoving)
+    bool bIsMoving;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float32 NoPickupTime;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.RootComponent)
+    USceneComponent@ RootSceneComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.Attach=RootSceneComponent)
+    USphereComponent@ SphereCollision;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UVisibilityReceiver@ VisibilityReceiver;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UProjectileMovementComponent@ ProjMovementComp;
+
+    ALokiGem()   // traits=0x21
+    {
+        auto v1;
+        auto v2;
+        auto v3;
+
+        this.GemVacuumTag = FGameplayTag();
+        v1 = 0;
+        this.GemCount = v1;
+        v1 = 2;
+        this.BonusGemMultiplier = v1;
+        v2 = false;
+        this.bIsVaultItem = v2;
+        v3 = 0;
+        this.HeightToStop = v3;
+        v2 = false;
+        this.bIsMoving = v2;
+        v3 = 0;
+        this.NoPickupTime = v3;
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        ECollisionEnabled v4;
+        bool v6;
+        float32 v7;
+        FTimerHandle v10;
+
+        v1 = false;
+        this.SetActorTickEnabled(v1);
+        v1 = false;
+        this.ProjMovementComp.SetComponentTickEnabled(v1);
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            this.bIsMoving = v1;
+            v2 = 0;
+            this.HeightToStop = v2;
+            v1 = false;
+            this.bIsVaultItem = v1;
+            v1 = true;
+            this.SetReplicateMovement(v1);
+            this.SetToHeightMapLevel();
+            v2 = this.NoPickupTime;
+            if (v2 > 0.0) {
+                v4 = ECollisionEnabled::NoCollision;
+                this.SphereCollision.SetCollisionEnabled(v4);
+                v1 = false;
+                v6 = false;
+                v7 = this.NoPickupTime;
+                v10 = System::SetTimer(this, n"EnableGemCollision", v7, v6, v1, 0, 0);
+                return;
+            } else {
+                this.EnableGemCollision();
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void EnableGemCollision()   // traits=0x20
+    {
+        ECollisionEnabled v2;
+
+        this.SphereCollision.OnComponentBeginOverlap.AddUFunction(this, n"OnComponentBeginOverlap");
+        v2 = ECollisionEnabled::NoCollision;
+        this.SphereCollision.SetCollisionEnabled(v2);
+        v2 = ECollisionEnabled::QueryAndPhysics;
+        this.SphereCollision.SetCollisionEnabled(v2);
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiEndPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiEndPlay_Implementation()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.ProjMovementComp.SetComponentTickEnabled(v1);
+        this.SphereCollision.OnComponentBeginOverlap.Unbind(this, n"OnComponentBeginOverlap");
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        FVector v6;
+        auto v8;
+        auto v9;
+        float64 v12;
+        bool v13;
+        FHitResult v76;
+
+        v6 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+        v8 = v6.Z;
+        v9 = this.HeightToStop;
+        v12 = float64(v9);
+        if (v8 <= v12) {
+            v76 = FHitResult();
+            this.ProjMovementComp.StopSimulating(v76);
+            v13 = false;
+            this.SetActorTickEnabled(v13);
+            v13 = false;
+            this.bIsMoving = v13;
+            v13 = false;
+            this.SetReplicateMovement(v13);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnComponentBeginOverlap(UPrimitiveComponent@ OverlappedComponent, AActor@ OtherActor, UPrimitiveComponent@ OtherComp, const int OtherBodyIndex, const bool bFromSweep, const FHitResult&in SweepResult)   // traits=0x20
+    {
+        auto v1;
+        ALokiHeroCharacter v4;
+        ALokiHeroCharacter v6;
+        APlayerState v8;
+        ALokiPlayerState v10;
+        ALokiPlayerState v12;
+        auto v13;
+        auto v14;
+        UAbilitySystemComponent v18;
+        bool v19;
+        int v21;
+        ECurrencyGrantReason v22;
+        FGameplayCueParameters v80;
+        FVector v86;
+
+        v1 = this.bIsVaultItem;
+        if (v1) {
+            return;
+        } else {
+            if (OtherActor != nullptr) {
+                v4 = cast<ALokiHeroCharacter@>(OtherActor);
+            } else {
+                v4 = nullptr;
+            }
+            v6 = v4;
+            if (v6 == nullptr) {
+                return;
+            } else {
+                v1 = v6.IsAlive();
+                v1 = !v1;
+                if (v1) {
+                    return;
+                } else {
+                    v8 = v6.PlayerState;
+                    if (v8 != nullptr) {
+                        v10 = cast<ALokiPlayerState@>(v8);
+                    } else {
+                        v10 = nullptr;
+                    }
+                    v12 = v10;
+                    if (v12 == nullptr) {
+                        return;
+                    } else {
+                        v13 = this.TeamIndex;
+                        if (v13 != -2) {
+                            v13 = this.TeamIndex;
+                            v14 = v12.GetTeamIndex_BP();
+                            if (v13 == v14) {
+                                return;
+                            }
+                        } else {
+                            v18 = AbilitySystem::GetAbilitySystemComponent(v12);
+                            if (v18 == nullptr) {
+                                return;
+                            } else {
+                                v1 = v18.HasMatchingGameplayTag(GameplayTags::State_GemMultiplier)  /* UFunction Script_HasMatchingGameplayTag */;
+                                if (v1) {
+                                    v14 = this.GemCount;
+                                    v13 = this.BonusGemMultiplier;
+                                    v21 = v14 * v13;
+                                } else {
+                                    v13 = this.GemCount;
+                                    v21 = v13;
+                                }
+                                v22 = ECurrencyGrantReason::Misc;
+                                v12.GrantWalletCurrency("Gems", v21, v22);
+                                v80 = FGameplayCueParameters();
+                                v86 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                v80.Location = v86;
+                                v19 = false;
+                                v18.ExecuteGameplayCue_BP(this.GemVacuumTag, v80, v19);
+                                this.DestroyActor()  /* UFunction K2_DestroyActor */;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void TossInDirection(const FVector& Direction, const float64 Length, const float64 DirectionVariance)   // traits=0x20
+    {
+        bool v1;
+        float64 v4;
+        float32 v5;
+        float32 v6;
+        auto v7;
+        float64 v10;
+        float64 v12;
+        float64 v14;
+        float64 v16;
+        float64 v18;
+        float64 v20;
+        float64 v22;
+        float64 v24;
+        FVector v30;
+        FVector v36;
+        FVector v42;
+        FVector v48;
+        FVector v54;
+        ALokiHeightMap v58;
+
+        v1 = true;
+        this.SetReplicateMovement(v1);
+        v7 = Math::RandRange(55.0, 75.0);
+        v10 = float64(v7);
+        v4 = v10;
+        v10 = 2.0;
+        v10 = DirectionVariance / v10;
+        v14 = -1.0;
+        v14 = v14 * DirectionVariance;
+        v16 = 2.0;
+        v14 = v14 / v16;
+        v16 = Math::RandRange(v14, v10);
+        v18 = 0;
+        v20 = 0;
+        v22 = 0;
+        v24 = 0;
+        v10 = Math::DegreesToRadians(v4);
+        Math::SinCos(v20, v18, v10);
+        v12 = Math::DegreesToRadians(v16);
+        Math::SinCos(v24, v22, v12);
+        v10 = v18 * v24;
+        v12 = v18 * v22;
+        v36 = FVector(v12, v10, v20);
+        v30 = Direction.GetSafeNormal2D(9.99999993922529e-09, FVector::ZeroVector);
+        v48 = v30 + v36;
+        v42 = v48.GetSafeNormal(9.99999993922529e-09, FVector::ZeroVector);
+        v30 = v42 * Length;
+        this.ProjMovementComp.Velocity = v30;
+        this.ProjMovementComp.SetUpdatedComponent(this.RootSceneComponent);
+        v1 = true;
+        this.ProjMovementComp.SetComponentTickEnabled(v1);
+        v58 = ALokiHeightMap::GetInstance(__WorldContext);
+        if (v58 != nullptr) {
+            v54 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v12 = v54.Y;
+            v5 = float32(v12);
+            v42 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v12 = v42.X;
+            v6 = float32(v12);
+            v58.GetHeight(this.HeightToStop, v6, v5);
+            v7 = this.HeightToStop;
+            v6 = v7 + 35.0;
+            this.HeightToStop = v6;
+        }
+        v1 = true;
+        this.SetActorTickEnabled(v1);
+        v1 = true;
+        this.bIsMoving = v1;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void Toss()   // traits=0x20
+    {
+        float64 v2;
+        auto v5;
+        float64 v8;
+        FVector v20;
+
+        v5 = Math::RandRange(100, 500);
+        v8 = float64(v5);
+        v2 = v8;
+        v20 = FVector(1.0, 0, 0);
+        this.TossInDirection(v20, v2, 360.0);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetToHeightMapLevel()   // traits=0x20
+    {
+        ALokiHeightMap v4;
+        float32 v6;
+        float32 v7;
+        FVector v14;
+        FVector v20;
+        float64 v22;
+        float32 v23;
+        FVector v36;
+        float64 v38;
+        float64 v40;
+
+        v4 = ALokiHeightMap::GetInstance(__WorldContext);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v6 = 0;
+            v14 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v22 = v14.Y;
+            v7 = float32(v22);
+            v20 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v22 = v20.X;
+            v23 = float32(v22);
+            v23 = v6 + 75.0;
+            v22 = float64(v23);
+            v4.GetHeight(v6, v23, v7);
+            v14 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v38 = v14.Y;
+            v20 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v40 = v20.X;
+            v36 = FVector(v40, v38, v22);
+            this.SetActorLocation(v36)  /* UFunction K2_SetActorLocation */;
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_IsMoving()   // traits=0x20
+    {
+        auto v1;
+        FHitResult v64;
+
+        v1 = this.bIsMoving;
+        v1 = !v1;
+        if (v1) {
+            v64 = FHitResult();
+            this.ProjMovementComp.StopSimulating(v64);
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        ENetDormancy v3;
+        float32 v4;
+        ECollisionChannel v5;
+        ECollisionEnabled v6;
+
+        v1 = true;
+        this.bEnablePooling = v1;
+        v2 = 100;
+        this.PoolPrimeSize = v2;
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = false;
+        this.SetReplicateMovement(v1);
+        v3 = ENetDormancy::DORM_Awake;
+        this.SetNetDormancy(v3);
+        v1 = true;
+        this.LokiReplicationStrategy.bVision = v1;
+        v1 = false;
+        this.LokiReplicationStrategy.bDistanceBased = v1;
+        v1 = true;
+        this.SphereCollision.SetSphereRadius(400.0, v1);
+        v5 = ECollisionChannel::ECC_GameTraceChannel4;
+        this.SphereCollision.SetCollisionObjectType(v5);
+        v6 = ECollisionEnabled::QueryAndPhysics;
+        this.SphereCollision.SetCollisionEnabled(v6);
+        v2 = 1;
+        this.ProjMovementComp.MaxSimulationIterations = v2;
+        v4 = 0.5;
+        this.ProjMovementComp.MaxSimulationTimeStep = v4;
+        v4 = 1000.0;
+        this.ProjMovementComp.SetMaxSpeed(v4);
+        v1 = false;
+        this.ProjMovementComp.SetComponentTickEnabled(v1);
+        return;
+    }
+
+    void ~ALokiGem()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

@@ -1,0 +1,292 @@
+==============================================================================
+MODULE   FFA.RespawnTimerWidget
+SOURCE   FFA/RespawnTimerWidget.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_URespawnTimerWidget;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+URespawnTimerWidget@ URespawnTimerWidget()
+// 4 instr, 28 B bytecode, id=0x9F500898, varspace=2
+------------------------------------------------------------------------------
+{
+    URespawnTimerWidget v2;
+
+    v2 = URespawnTimerWidget();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84912 q:0x26e6ed70d00; new URespawnTimerWidget   ctor=URespawnTimerWidget::URespawnTimerWidget
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x81DBD691, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_URespawnTimerWidget);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057fa58         ; __StaticType_URespawnTimerWidget
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+==============================================================================
+UCLASS(Abstract)
+class URespawnTimerWidget : UUserWidget
+// base /Script/UMG.UserWidget  ->  ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) ULokiPlayerRespawnComponent@ PSC;
+
+}
+
+------------------------------------------------------------------------------
+URespawnTimerWidget() const
+// 3 instr, 20 B bytecode, id=0x55008908, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6ed70d00         ; URespawnTimerWidget
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Construct
+void Construct_Implementation()
+// 14 instr, 108 B bytecode, id=0x8DB8B91E, varspace=5
+------------------------------------------------------------------------------
+{
+    FOnPlayerStateAssigned v4;
+
+    v4 = FOnPlayerStateAssigned();
+    v4.BindUFunction(this, __STATIC_NAME(60));
+    Loki::TryGetLocalLokiPlayerState(__WorldContext, v4);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e653c2fc0         ; void FOnPlayerStateAssigned::$beh0()
+    //     4  PshC4          d:60
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  PSF            rW0:4
+    //    12  CALLSYS        q:0x26e77119a80         ; void FOnPlayerStateAssigned::BindUFunction(UObject@, const FName&)
+    //    15  PSF            rW0:4
+    //    16  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    19  CALLSYS        q:0x26e7a135480         ; void Loki::TryGetLocalLokiPlayerState(UObject@, FOnPlayerStateAssigned)
+    //    22  PSF            rW0:4
+    //    23  CALLSYS        q:0x26e653c2e00         ; void FOnPlayerStateAssigned::$beh2()
+    //    26  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnPlayerStateAssigned(ALokiPlayerState@ PlayerState)
+// 38 instr, 232 B bytecode, id=0x10A53288, varspace=10
+------------------------------------------------------------------------------
+{
+    TSubclassOf<UActorComponent@> v4;
+    UActorComponent v6;
+    ULokiPlayerRespawnComponent v8;
+
+    v4 = TSubclassOf<UActorComponent@>(ULokiPlayerRespawnComponent::StaticClass());
+    v6 = PlayerState.GetComponentByClass(v4);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ULokiPlayerRespawnComponent>(v6);
+    }
+    this.PSC = v8;
+    v8 = this.PSC;
+    if (v8 != null) {
+        this.PSC.OnRespawnTimeUpdated.AddUFunction(this, __STATIC_NAME(61));
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84881                 ; UClass@ ULokiPlayerRespawnComponent::StaticClass()
+    //     2  STOREOBJ       wW0:2
+    //     3  PshVPtr        rW0:2
+    //     4  PSF            rW0:4
+    //     5  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //     8  PSF            rW0:4
+    //     9  PshVPtr        rW0:-2
+    //    10  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //    13  STOREOBJ       wW0:6
+    //    14  CmpPtrNull     rW0:6
+    //    15  JZ             ->26
+    //    17  TYPEID         d:1207972687            ; ULokiPlayerRespawnComponent@
+    //    19  PSF            rW0:8
+    //    20  PshVPtr        rW0:6
+    //    21  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    24  JMP            ->27
+    //    26  ClrVPtr        wW0:8
+    //    27  PshVPtr        rW0:8
+    //    28  PshVPtr        rW0:0
+    //    29  ADDSi          W0:744 d:134230867      ; URespawnTimerWidget::PSC  (+744)
+    //    31  REFCPY
+    //    32  PopPtr
+    //    33  PshVPtr        rW0:0
+    //    34  ADDSi          W0:744 d:134230867      ; URespawnTimerWidget::PSC  (+744)
+    //    36  RDSPtr
+    //    37  RefCpyV        wW0:8
+    //    38  CmpPtrNull     rW0:8
+    //    39  JZ             ->57
+    //    41  PshC4          d:61
+    //    43  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    46  PshRPtr
+    //    47  PshVPtr        rW0:0
+    //    48  PshVPtr        rW0:0
+    //    49  ADDSi          W0:744 d:134230867      ; URespawnTimerWidget::PSC  (+744)
+    //    51  RDSPtr
+    //    52  ADDSi          W0:232 d:134230863      ; ULokiPlayerRespawnComponent::OnRespawnTimeUpdated  (+232)
+    //    54  CALLSYS        q:0x26e7719e5c0         ; void FOnUpdated::AddUFunction(const UObject@, const FName&)
+    //    57  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const FGeometry&inout MyGeometry, const float64 InDeltaTime)
+// 16 instr, 84 B bytecode, id=0x4D86077F, varspace=6
+------------------------------------------------------------------------------
+{
+    if (this.PSC != null) {
+        this.UpdateTimerText(this.PSC.LocalRespawnTime);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:744 d:134230867      ; URespawnTimerWidget::PSC  (+744)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->20
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:744 d:134230867      ; URespawnTimerWidget::PSC  (+744)
+    //    11  RDSPtr
+    //    12  ADDSi          W0:224 d:134230863      ; ULokiPlayerRespawnComponent::LocalRespawnTime  (+224)
+    //    14  PopRPtr
+    //    15  RDR8           wW0:6
+    //    16  PshV8          rW0:6
+    //    17  PshVPtr        rW0:0
+    //    18  CALLINTF       d:84908                 ; void URespawnTimerWidget::UpdateTimerText(const float64)
+    //    20  RET            W0:6
+
+------------------------------------------------------------------------------
+void UpdateTimerText(const float64 TimeUntilRespawn)
+// 8 instr, 60 B bytecode, id=0x02C15CEE, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(TimeUntilRespawn);
+    __Evt_Execute(this, __STATIC_NAME(178));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:178
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: UpdateTimerText
+void UpdateTimerText_Implementation(const float64 TimeUntilRespawn)
+// 1 instr, 4 B bytecode, id=0x667AF604, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRespawnTimeUpdated()
+// 16 instr, 84 B bytecode, id=0x5D9BF10A, varspace=6
+------------------------------------------------------------------------------
+{
+    if (this.PSC != null) {
+        this.UpdateTimerText(this.PSC.LocalRespawnTime);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:744 d:134230867      ; URespawnTimerWidget::PSC  (+744)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->20
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:744 d:134230867      ; URespawnTimerWidget::PSC  (+744)
+    //    11  RDSPtr
+    //    12  ADDSi          W0:224 d:134230863      ; ULokiPlayerRespawnComponent::LocalRespawnTime  (+224)
+    //    14  PopRPtr
+    //    15  RDR8           wW0:6
+    //    16  PshV8          rW0:6
+    //    17  PshVPtr        rW0:0
+    //    18  CALLINTF       d:84908                 ; void URespawnTimerWidget::UpdateTimerText(const float64)
+    //    20  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRequestRespawn()
+// 11 instr, 60 B bytecode, id=0x7B2A6F12, varspace=3
+------------------------------------------------------------------------------
+{
+    if (this.PSC != null) {
+        this.PSC.AuthRequestRespawn();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:744 d:134230867      ; URespawnTimerWidget::PSC  (+744)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->14
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:744 d:134230867      ; URespawnTimerWidget::PSC  (+744)
+    //    11  RDSPtr
+    //    12  CALLINTF       d:84876                 ; void ULokiPlayerRespawnComponent::AuthRequestRespawn()
+    //    14  RET            W0:2
+

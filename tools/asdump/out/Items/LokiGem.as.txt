@@ -1,0 +1,1289 @@
+// ============================================================================
+//  MODULE   Items.LokiGem
+//  SOURCE   Items/LokiGem.as
+//  CONTENT  1 class(es), 18 function(s), 0 enum(s), 1 global(s), 4604 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Items_LokiGemStatics
+
+const TSubclassOf<UObject@> __StaticType_ALokiGem;
+
+ALokiGem@ ALokiGem()   // traits=0x20
+{
+    ALokiGem v2;
+
+    v2 = ALokiGem();
+    return v2;
+}
+/* ---- ALokiGem: 7 dwords / 4 instructions (cache offset 0x9dabc) ----
+    0000  PSF           v2
+    0004  ALLOC         85173 ALokiGem                                ; new ALokiGem  ctor=void ALokiGem::ALokiGem()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+FVector GetGemStartingLocationInDirection(const FVector& Origin, const FVector& Direction)   // traits=0x20
+{
+    float64 v2;
+    float64 v4;
+    FVector v10;
+    FVector v16;
+    float64 v18;
+    FVector v24;
+    ALokiHeightMap v34;
+    float32 v36;
+    float32 v37;
+    float32 v38;
+    float64 v40;
+
+    v2 = 150.0;
+    v16 = Direction.GetSafeNormal2D(9.99999993922529e-09, FVector::ZeroVector);
+    v18 = Math::RandRange(0, v2);
+    v24 = v16 * v18;
+    v16 = Origin + v24;
+    v34 = ALokiHeightMap::GetInstance(__WorldContext);
+    if (v34 == nullptr) {
+        __ret = FVector(v16);
+        return;
+    } else {
+        v36 = 0;
+        v4 = v16.Y;
+        v37 = float32(v4);
+        v4 = v16.X;
+        v38 = float32(v4);
+        v38 = v36 + 75.0;
+        v4 = float64(v38);
+        v34.GetHeight(v36, v38, v37);
+        v18 = v16.Y;
+        v40 = v16.X;
+        v10 = FVector(v40, v18, v4);
+        v16 = v10;
+        __ret = FVector(v16);
+    }
+    return;
+}
+/* ---- GetGemStartingLocationInDirection: 103 dwords / 57 instructions (cache offset 0x9dbef) ----
+    0000  SetV8         v2 0x4062c00000000000
+    000C  PshGPtr       FVector::ZeroVector
+    0018  PshC8         0x3e45798ee0000000
+    0024  PSF           v16
+    0028  PshVPtr       Direction
+    002C  CALLSYS       FVector::GetSafeNormal2D                      ; FVector FVector::GetSafeNormal2D(float64, const FVector&) const
+    0038  PshV8         v2
+    003C  PshC8         0x0
+    0048  CALLSYS       RandRange                                     ; float64 Math::RandRange(float64, float64)
+    0054  CpyRtoV8      v18
+    0058  PshV8         v18
+    005C  PSF           v24
+    0060  PSF           v16
+    0064  CALLSYS       FVector::opMul                                ; FVector FVector::opMul(float64) const
+    0070  PSF           v24
+    0074  PSF           v16
+    0078  PshVPtr       Origin
+    007C  CALLSYS       FVector::opAdd                                ; FVector FVector::opAdd(const FVector&) const
+    0088  PshGPtr       __WorldContext
+    0094  CALLSYS       GetInstance                                   ; ALokiHeightMap@ ALokiHeightMap::GetInstance(const UObject@)
+    00A0  STOREOBJ      v34
+    00A4  CmpPtrNull    v34
+    00A8  JNZ           7                                             -> L00CC
+    00B0  PSF           v16
+    00B4  PshVPtr       __ret
+    00B8  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+    00C4  JMP           51                                            -> L0198
+  L00CC:
+    00CC  SetV4         v36 0
+    00D4  LoadVObjR     v16 8 67117444                                ; .Y
+    00E0  RDR8          v4
+    00E4  dTOf          v37 v4
+    00EC  PshV4         v37
+    00F0  LoadVObjR     v16 0 67117444                                ; .X
+    00FC  RDR8          v4
+    0100  dTOf          v38 v4
+    0108  PshV4         v38
+    010C  PSF           v36
+    0110  PshVPtr       v34
+    0114  CALLSYS       ALokiHeightMap::GetHeight                     ; bool ALokiHeightMap::GetHeight(float32&, float32, float32)
+    0120  ADDIf         v38 v36 1117126656
+    012C  fTOd          v4 v38
+    0134  PshV8         v4
+    0138  LoadVObjR     v16 8 67117444                                ; .Y
+    0144  RDR8          v18
+    0148  PshV8         v18
+    014C  LoadVObjR     v16 0 67117444                                ; .X
+    0158  RDR8          v40
+    015C  PshV8         v40
+    0160  PSF           v10
+    0164  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+    0170  PSF           v10
+    0174  PSF           v16
+    0178  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+    0184  PSF           v16
+    0188  PshVPtr       __ret
+    018C  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+  L0198:
+    0198  RET           6
+*/
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+FVector GetGemRandomStartingLocation(const FVector& Origin)   // traits=0x20
+{
+    FVector v12;
+    FVector v20;
+
+    v12 = Math::VRand();
+    v20 = v12.GetSafeNormal2D(9.99999993922529e-09, FVector::ZeroVector);
+    v12 = GetGemStartingLocationInDirection(Origin, v20);
+    __ret = FVector(v12);
+    return;
+}
+/* ---- GetGemRandomStartingLocation: 26 dwords / 15 instructions (cache offset 0x9dfd5) ----
+    0000  PshGPtr       FVector::ZeroVector
+    000C  PshC8         0x3e45798ee0000000
+    0018  PSF           v20
+    001C  PSF           v12
+    0020  CALLSYS       VRand                                         ; FVector Math::VRand()
+    002C  PSF           v12
+    0030  CALLSYS       FVector::GetSafeNormal2D                      ; FVector FVector::GetSafeNormal2D(float64, const FVector&) const
+    003C  PSF           v20
+    0040  PshVPtr       Origin
+    0044  PSF           v12
+    0048  CALL          85176                                         ; FVector GetGemStartingLocationInDirection(const FVector&, const FVector&)
+    0050  PSF           v12
+    0054  PshVPtr       __ret
+    0058  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+    0064  RET           4
+*/
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+ALokiGem@ SpawnExtraGemWithTeam(const TSubclassOf<ALokiGem@>& GemClass, const FVector& SpawnLocation, const int TeamIndex)   // traits=0x20
+{
+    auto v1;
+    ALokiGem v4;
+    FTransform v28;
+    ALokiGem v30;
+    ESpawnActorScaleMethod v31;
+    ESpawnActorCollisionHandlingMethod v32;
+
+    v1 = GemClass.IsValid();
+    v1 = !v1;
+    if (v1) {
+        return v4;
+    } else {
+        v28 = FTransform(FTransform::Identity);
+        v28.SetLocation(SpawnLocation);
+        v31 = ESpawnActorScaleMethod::MultiplyWithRoot;
+        v32 = ESpawnActorCollisionHandlingMethod::Undefined;
+        v30 = LokiGameplay::SpawnPoolableActorFromClassDeferred(__WorldContext, GemClass, v28, nullptr, nullptr, v32, v31);
+        if (v30 == nullptr) {
+            return v4;
+        } else {
+            v30.TeamIndex = TeamIndex;
+            FinishSpawningActor(v30);
+        }
+    }
+    return v30;
+}
+/* ---- SpawnExtraGemWithTeam: 59 dwords / 37 instructions (cache offset 0x9e271) ----
+    0000  PshVPtr       GemClass
+    0004  CALLSYS       TSubclassOf::IsValid                          ; bool TSubclassOf<ALokiGem@>::IsValid() const
+    0010  CpyRtoV4      v1
+    0014  NOT           v1
+    0018  CpyVtoR1      v1
+    001C  JLowZ         4                                             -> L0034
+    0024  FreeNullV8    v4
+    0028  LOADOBJ       v4
+    002C  JMP           45                                            -> L00E8
+  L0034:
+    0034  PshGPtr       FTransform::Identity
+    0040  PSF           v28
+    0044  CALLSYS       FTransform::$beh0                             ; void FTransform::$beh0(const FTransform&)
+    0050  PshVPtr       SpawnLocation
+    0054  PSF           v28
+    0058  CALLSYS       FTransform::SetLocation                       ; void FTransform::SetLocation(const FVector&)
+    0064  SetV1         v31 1
+    006C  PshV4         v31
+    0070  SetV1         v32 0
+    0078  PshV4         v32
+    007C  PshNull
+    0080  PshNull
+    0084  PSF           v28
+    0088  PshVPtr       GemClass
+    008C  PshGPtr       __WorldContext
+    0098  CALLSYS       SpawnPoolableActorFromClassDeferred           ; AActor@ LokiGameplay::SpawnPoolableActorFromClassDeferred(UObject@, TSubclassOf<AActor@>, const FTransform&, AActor@, APawn@, ESpawnActorCollisionHandlingMethod, ESpawnActorScaleMethod)
+    00A4  STOREOBJ      v30
+    00A8  CmpPtrNull    v30
+    00AC  JNZ           4                                             -> L00C4
+    00B4  FreeNullV8    v4
+    00B8  LOADOBJ       v4
+    00BC  JMP           9                                             -> L00E8
+  L00C4:
+    00C4  LoadRObjR     v30 920 67115165                              ; .TeamIndex
+    00D0  WRTV4         TeamIndex
+    00D4  PshVPtr       v30
+    00D8  CALLSYS       FinishSpawningActor                           ; void FinishSpawningActor(AActor@)
+    00E4  LOADOBJ       v30
+  L00E8:
+    00E8  RET           5
+*/
+
+UClass@ ALokiGem::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiGem);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x9e4fc) ----
+    0000  PshGPtr       __StaticType_ALokiGem
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ALokiGem@ ALokiGem::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiGem v8;
+
+    v2 = __StaticType_ALokiGem.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiGem@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x9e719) ----
+    0000  PshVPtr       Level
+    0004  PshV4         bDeferredSpawn
+    0008  PshVPtr       Name
+    000C  PshVPtr       Rotation
+    0010  PshVPtr       Location
+    0014  PshGPtr       __StaticType_ALokiGem
+    0020  CHKREF
+    0024  CALLSYS       TSubclassOf::Get                              ; UClass@ TSubclassOf<UObject@>::Get() const
+    0030  STOREOBJ      v2
+    0034  PshVPtr       v2
+    0038  PSF           v4
+    003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    0048  PSF           v4
+    004C  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    0058  STOREOBJ      v6
+    005C  CmpPtrNull    v6
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972713                                    ; ALokiGem@
+    0070  PSF           v8
+    0074  PshVPtr       v6
+    0078  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8
+  L0090:
+    0090  LOADOBJ       v8
+    0094  RET           9
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ALokiGem : ALokiGemBase
+// unreal base : /Script/Loki.LokiGemBase
+// C++ header  : ../../../Loki/Source/Loki/Items/LokiGemBase.h
+// static class global: __StaticType_ALokiGem
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    int GemCount;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    int BonusGemMultiplier;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    FGameplayTag GemVacuumTag;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bIsVaultItem;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float32 HeightToStop;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_IsMoving)
+    bool bIsMoving;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float32 NoPickupTime;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.RootComponent)
+    USceneComponent@ RootSceneComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.Attach=RootSceneComponent)
+    USphereComponent@ SphereCollision;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UVisibilityReceiver@ VisibilityReceiver;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UProjectileMovementComponent@ ProjMovementComp;
+
+    ALokiGem()   // traits=0x21
+    {
+        auto v1;
+        auto v2;
+        auto v3;
+
+        this.GemVacuumTag = FGameplayTag();
+        v1 = 0;
+        this.GemCount = v1;
+        v1 = 2;
+        this.BonusGemMultiplier = v1;
+        v2 = false;
+        this.bIsVaultItem = v2;
+        v3 = 0;
+        this.HeightToStop = v3;
+        v2 = false;
+        this.bIsMoving = v2;
+        v3 = 0;
+        this.NoPickupTime = v3;
+        return;
+    }
+    /* ---- ALokiGem: 41 dwords / 24 instructions (cache offset 0xa0d4a) ----
+        0000  PshVPtr       this
+        0004  ADDSi         936 134230889                                 ; .GemVacuumTag
+        000C  CALLSYS       FGameplayTag::$beh0                           ; void FGameplayTag::$beh0()
+        0018  SetV4         v1 0
+        0020  LoadThisR     928 134230889                                 ; this.GemCount
+        0028  WRTV4         v1
+        002C  SetV4         v1 2
+        0034  LoadThisR     932 134230889                                 ; this.BonusGemMultiplier
+        003C  WRTV4         v1
+        0040  SetV1         v2 0
+        0048  LoadThisR     944 134230889                                 ; this.bIsVaultItem
+        0050  WRTV1         v2
+        0054  SetV4         v3 0
+        005C  LoadThisR     948 134230889                                 ; this.HeightToStop
+        0064  WRTV4         v3
+        0068  SetV1         v2 0
+        0070  LoadThisR     952 134230889                                 ; this.bIsMoving
+        0078  WRTV1         v2
+        007C  SetV4         v3 0
+        0084  LoadThisR     956 134230889                                 ; this.NoPickupTime
+        008C  WRTV4         v3
+        0090  PshVPtr       this
+        0094  FinConstruct  ALokiGem
+        00A0  RET           2
+    */
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        ECollisionEnabled v4;
+        bool v6;
+        float32 v7;
+        FTimerHandle v10;
+
+        v1 = false;
+        this.SetActorTickEnabled(v1);
+        v1 = false;
+        this.ProjMovementComp.SetComponentTickEnabled(v1);
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            this.bIsMoving = v1;
+            v2 = 0;
+            this.HeightToStop = v2;
+            v1 = false;
+            this.bIsVaultItem = v1;
+            v1 = true;
+            this.SetReplicateMovement(v1);
+            this.SetToHeightMapLevel();
+            v2 = this.NoPickupTime;
+            if (v2 > 0.0) {
+                v4 = ECollisionEnabled::NoCollision;
+                this.SphereCollision.SetCollisionEnabled(v4);
+                v1 = false;
+                v6 = false;
+                v7 = this.NoPickupTime;
+                v10 = System::SetTimer(this, n"EnableGemCollision", v7, v6, v1, 0, 0);
+                return;
+            } else {
+                this.EnableGemCollision();
+            }
+        }
+        return;
+    }
+    /* ---- LokiBeginPlay_Implementation: 102 dwords / 59 instructions (cache offset 0x9f003) ----
+        0000  SetV1         v1 0
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  CALLSYS       AActor::SetActorTickEnabled                   ; void AActor::SetActorTickEnabled(bool)
+        001C  SetV1         v1 0
+        0024  PshV4         v1
+        0028  PshVPtr       this
+        002C  ADDSi         984 134230889                                 ; .ProjMovementComp
+        0034  RDSPtr
+        0038  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+        0044  PshGPtr       __WorldContext
+        0050  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        005C  JLowZ         76                                            -> L0194
+        0064  SetV1         v1 0
+        006C  LoadThisR     952 134230889                                 ; this.bIsMoving
+        0074  WRTV1         v1
+        0078  SetV4         v2 0
+        0080  LoadThisR     948 134230889                                 ; this.HeightToStop
+        0088  WRTV4         v2
+        008C  SetV1         v1 0
+        0094  LoadThisR     944 134230889                                 ; this.bIsVaultItem
+        009C  WRTV1         v1
+        00A0  SetV1         v1 1
+        00A8  PshV4         v1
+        00AC  PshVPtr       this
+        00B0  CALLSYS       AActor::SetReplicateMovement                  ; void AActor::SetReplicateMovement(bool)
+        00BC  PshVPtr       this
+        00C0  CALLINTF      85171                                         ; void ALokiGem::SetToHeightMapLevel()
+        00C8  LoadThisR     956 134230889                                 ; this.NoPickupTime
+        00D0  RDR4          v2
+        00D4  CMPIf         v2 0
+        00DC  JNP           41                                            -> L0188
+        00E4  SetV1         v4 0
+        00EC  PshV4         v4
+        00F0  PshVPtr       this
+        00F4  ADDSi         968 134230889                                 ; .SphereCollision
+        00FC  RDSPtr
+        0100  CALLSYS       UPrimitiveComponent::SetCollisionEnabled      ; void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled)
+        010C  PshC4         0
+        0114  PshC4         0
+        011C  SetV1         v1 0
+        0124  PshV4         v1
+        0128  SetV1         v6 0
+        0130  PshV4         v6
+        0134  LoadThisR     956 134230889                                 ; this.NoPickupTime
+        013C  RDR4          v7
+        0140  PshV4         v7
+        0144  PshC4         79
+        014C  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0158  PshRPtr
+        015C  PshVPtr       this
+        0160  PSF           v10
+        0164  CALLSYS       SetTimer                                      ; FTimerHandle System::SetTimer(UObject@, FName, float32, bool, bool, float32, float32)
+        0170  PSF           v10
+        0174  CALLSYS       FTimerHandle::$beh2                           ; void FTimerHandle::$beh2()
+        0180  JMP           3                                             -> L0194
+      L0188:
+        0188  PshVPtr       this
+        018C  CALLINTF      85165                                         ; void ALokiGem::EnableGemCollision()
+      L0194:
+        0194  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void EnableGemCollision()   // traits=0x20
+    {
+        ECollisionEnabled v2;
+
+        this.SphereCollision.OnComponentBeginOverlap.AddUFunction(this, n"OnComponentBeginOverlap");
+        v2 = ECollisionEnabled::NoCollision;
+        this.SphereCollision.SetCollisionEnabled(v2);
+        v2 = ECollisionEnabled::QueryAndPhysics;
+        this.SphereCollision.SetCollisionEnabled(v2);
+        return;
+    }
+    /* ---- EnableGemCollision: 37 dwords / 22 instructions (cache offset 0x9f2f4) ----
+        0000  PshC4         80
+        0008  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0014  PshRPtr
+        0018  PshVPtr       this
+        001C  PshVPtr       this
+        0020  ADDSi         968 134230889                                 ; .SphereCollision
+        0028  RDSPtr
+        002C  ADDSi         1633 67111354                                 ; .OnComponentBeginOverlap
+        0034  CALLSYS       FComponentBeginOverlapSignature::AddUFunction  ; void FComponentBeginOverlapSignature::AddUFunction(UObject@, const FName&)
+        0040  SetV1         v2 0
+        0048  PshV4         v2
+        004C  PshVPtr       this
+        0050  ADDSi         968 134230889                                 ; .SphereCollision
+        0058  RDSPtr
+        005C  CALLSYS       UPrimitiveComponent::SetCollisionEnabled      ; void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled)
+        0068  SetV1         v2 3
+        0070  PshV4         v2
+        0074  PshVPtr       this
+        0078  ADDSi         968 134230889                                 ; .SphereCollision
+        0080  RDSPtr
+        0084  CALLSYS       UPrimitiveComponent::SetCollisionEnabled      ; void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled)
+        0090  RET           2
+    */
+
+    UFUNCTION(UnrealName=LokiEndPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiEndPlay_Implementation()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.ProjMovementComp.SetComponentTickEnabled(v1);
+        this.SphereCollision.OnComponentBeginOverlap.Unbind(this, n"OnComponentBeginOverlap");
+        return;
+    }
+    /* ---- LokiEndPlay_Implementation: 27 dwords / 16 instructions (cache offset 0x9f482) ----
+        0000  SetV1         v1 0
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  ADDSi         984 134230889                                 ; .ProjMovementComp
+        0018  RDSPtr
+        001C  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+        0028  PshC4         80
+        0030  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        003C  PshRPtr
+        0040  PshVPtr       this
+        0044  PshVPtr       this
+        0048  ADDSi         968 134230889                                 ; .SphereCollision
+        0050  RDSPtr
+        0054  ADDSi         1633 67111354                                 ; .OnComponentBeginOverlap
+        005C  CALLSYS       FComponentBeginOverlapSignature::Unbind       ; void FComponentBeginOverlapSignature::Unbind(UObject@, const FName&)
+        0068  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        FVector v6;
+        auto v8;
+        auto v9;
+        float64 v12;
+        bool v13;
+        FHitResult v76;
+
+        v6 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+        v8 = v6.Z;
+        v9 = this.HeightToStop;
+        v12 = float64(v9);
+        if (v8 <= v12) {
+            v76 = FHitResult();
+            this.ProjMovementComp.StopSimulating(v76);
+            v13 = false;
+            this.SetActorTickEnabled(v13);
+            v13 = false;
+            this.bIsMoving = v13;
+            v13 = false;
+            this.SetReplicateMovement(v13);
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 54 dwords / 31 instructions (cache offset 0x9f617) ----
+        0000  PSF           v6
+        0004  PshVPtr       this
+        0008  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0014  LoadVObjR     v6 16 67117444                                ; .Z
+        0020  RDR8          v8
+        0024  LoadThisR     948 134230889                                 ; this.HeightToStop
+        002C  RDR4          v9
+        0030  fTOd          v12 v9
+        0038  CMPd          v8 v12
+        0040  JP            35                                            -> L00D4
+        0048  PSF           v76
+        004C  CALLSYS       FHitResult::$beh0                             ; void FHitResult::$beh0()
+        0058  PSF           v76
+        005C  PshVPtr       this
+        0060  ADDSi         984 134230889                                 ; .ProjMovementComp
+        0068  RDSPtr
+        006C  CALLSYS       UProjectileMovementComponent::StopSimulating  ; void UProjectileMovementComponent::StopSimulating(const FHitResult&)
+        0078  PSF           v76
+        007C  CALLSYS       FHitResult::$beh2                             ; void FHitResult::$beh2()
+        0088  SetV1         v13 0
+        0090  PshV4         v13
+        0094  PshVPtr       this
+        0098  CALLSYS       AActor::SetActorTickEnabled                   ; void AActor::SetActorTickEnabled(bool)
+        00A4  SetV1         v13 0
+        00AC  LoadThisR     952 134230889                                 ; this.bIsMoving
+        00B4  WRTV1         v13
+        00B8  SetV1         v13 0
+        00C0  PshV4         v13
+        00C4  PshVPtr       this
+        00C8  CALLSYS       AActor::SetReplicateMovement                  ; void AActor::SetReplicateMovement(bool)
+      L00D4:
+        00D4  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnComponentBeginOverlap(UPrimitiveComponent@ OverlappedComponent, AActor@ OtherActor, UPrimitiveComponent@ OtherComp, const int OtherBodyIndex, const bool bFromSweep, const FHitResult&in SweepResult)   // traits=0x20
+    {
+        auto v1;
+        ALokiHeroCharacter v4;
+        ALokiHeroCharacter v6;
+        APlayerState v8;
+        ALokiPlayerState v10;
+        ALokiPlayerState v12;
+        auto v13;
+        auto v14;
+        UAbilitySystemComponent v18;
+        bool v19;
+        int v21;
+        ECurrencyGrantReason v22;
+        FGameplayCueParameters v80;
+        FVector v86;
+
+        v1 = this.bIsVaultItem;
+        if (v1) {
+            return;
+        } else {
+            if (OtherActor != nullptr) {
+                v4 = cast<ALokiHeroCharacter@>(OtherActor);
+            } else {
+                v4 = nullptr;
+            }
+            v6 = v4;
+            if (v6 == nullptr) {
+                return;
+            } else {
+                v1 = v6.IsAlive();
+                v1 = !v1;
+                if (v1) {
+                    return;
+                } else {
+                    v8 = v6.PlayerState;
+                    if (v8 != nullptr) {
+                        v10 = cast<ALokiPlayerState@>(v8);
+                    } else {
+                        v10 = nullptr;
+                    }
+                    v12 = v10;
+                    if (v12 == nullptr) {
+                        return;
+                    } else {
+                        v13 = this.TeamIndex;
+                        if (v13 != -2) {
+                            v13 = this.TeamIndex;
+                            v14 = v12.GetTeamIndex_BP();
+                            if (v13 == v14) {
+                                return;
+                            }
+                        } else {
+                            v18 = AbilitySystem::GetAbilitySystemComponent(v12);
+                            if (v18 == nullptr) {
+                                return;
+                            } else {
+                                v1 = v18.HasMatchingGameplayTag(GameplayTags::State_GemMultiplier)  /* UFunction Script_HasMatchingGameplayTag */;
+                                if (v1) {
+                                    v14 = this.GemCount;
+                                    v13 = this.BonusGemMultiplier;
+                                    v21 = v14 * v13;
+                                } else {
+                                    v13 = this.GemCount;
+                                    v21 = v13;
+                                }
+                                v22 = ECurrencyGrantReason::Misc;
+                                v12.GrantWalletCurrency("Gems", v21, v22);
+                                v80 = FGameplayCueParameters();
+                                v86 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                v80.Location = v86;
+                                v19 = false;
+                                v18.ExecuteGameplayCue_BP(this.GemVacuumTag, v80, v19);
+                                this.DestroyActor()  /* UFunction K2_DestroyActor */;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- OnComponentBeginOverlap: 168 dwords / 102 instructions (cache offset 0x9f9a7) ----
+        0000  LoadThisR     944 134230889                                 ; this.bIsVaultItem
+        0008  RDR1          v1
+        000C  CpyVtoR1      v1
+        0010  JLowZ         2                                             -> L0020
+        0018  JMP           159                                           -> L029C
+      L0020:
+        0020  CmpPtrNull    OtherActor
+        0024  JZ            9                                             -> L0050
+        002C  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        0034  PSF           v4
+        0038  PshVPtr       OtherActor
+        003C  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0048  JMP           1                                             -> L0054
+      L0050:
+        0050  ClrVPtr       v4
+      L0054:
+        0054  PshVPtr       v4
+        0058  RefCpyV       v6
+        005C  CmpPtrNull    v6
+        0060  JNZ           2                                             -> L0070
+        0068  JMP           139                                           -> L029C
+      L0070:
+        0070  PshVPtr       v6
+        0074  CALLSYS       ALokiCharacter::IsAlive                       ; bool ALokiCharacter::IsAlive() const
+        0080  CpyRtoV4      v1
+        0084  NOT           v1
+        0088  CpyVtoR1      v1
+        008C  JLowZ         2                                             -> L009C
+        0094  JMP           128                                           -> L029C
+      L009C:
+        009C  PshVPtr       v6
+        00A0  ADDSi         984 67111506                                  ; .PlayerState
+        00A8  RDSPtr
+        00AC  RefCpyV       v8
+        00B0  CmpPtrNull    v8
+        00B4  JZ            9                                             -> L00E0
+        00BC  TYPEID        1140857146                                    ; ALokiPlayerState@
+        00C4  PSF           v10
+        00C8  PshVPtr       v8
+        00CC  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        00D8  JMP           1                                             -> L00E4
+      L00E0:
+        00E0  ClrVPtr       v10
+      L00E4:
+        00E4  PshVPtr       v10
+        00E8  RefCpyV       v12
+        00EC  CmpPtrNull    v12
+        00F0  JNZ           2                                             -> L0100
+        00F8  JMP           103                                           -> L029C
+      L0100:
+        0100  LoadThisR     920 67115165                                  ; this.TeamIndex
+        0108  RDR4          v13
+        010C  CMPIi         v13 -2
+        0114  JZ            14                                            -> L0154
+        011C  LoadThisR     920 67115165                                  ; this.TeamIndex
+        0124  RDR4          v13
+        0128  PshVPtr       v12
+        012C  CALLSYS       ALokiPlayerState::GetTeamIndex_BP             ; int ALokiPlayerState::GetTeamIndex_BP() const
+        0138  CpyRtoV4      v14
+        013C  CMPi          v13 v14
+        0144  JNZ           2                                             -> L0154
+        014C  JMP           82                                            -> L029C
+      L0154:
+        0154  PshVPtr       v12
+        0158  CALLSYS       GetAbilitySystemComponent                     ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+        0164  STOREOBJ      v18
+        0168  CmpPtrNull    v18
+        016C  JNZ           2                                             -> L017C
+        0174  JMP           72                                            -> L029C
+      L017C:
+        017C  PshGPtr       GameplayTags::State_GemMultiplier
+        0188  PshVPtr       v18
+        018C  CALLSYS       UAbilitySystemComponent::HasMatchingGameplayTag  ; bool UAbilitySystemComponent::HasMatchingGameplayTag(FGameplayTag) const
+        0198  CpyRtoV4      v1
+        019C  CpyVtoR1      v1
+        01A0  JLowZ         10                                            -> L01D0
+        01A8  LoadThisR     928 134230889                                 ; this.GemCount
+        01B0  RDR4          v14
+        01B4  LoadThisR     932 134230889                                 ; this.BonusGemMultiplier
+        01BC  RDR4          v13
+        01C0  MULi          v21 v14 v13
+        01C8  JMP           5                                             -> L01E4
+      L01D0:
+        01D0  LoadThisR     928 134230889                                 ; this.GemCount
+        01D8  RDR4          v13
+        01DC  CpyVtoV4      v21 v13
+      L01E4:
+        01E4  SetV1         v22 0
+        01EC  PshV4         v22
+        01F0  PshV4         v21
+        01F4  PGA           "Gems"
+        0200  PshVPtr       v12
+        0204  CALLSYS       ALokiPlayerState::GrantWalletCurrency         ; void ALokiPlayerState::GrantWalletCurrency(const FString&, int, ECurrencyGrantReason)
+        0210  PSF           v80
+        0214  CALLSYS       FGameplayCueParameters::$beh0                 ; void FGameplayCueParameters::$beh0()
+        0220  PSF           v86
+        0224  PshVPtr       this
+        0228  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0234  PSF           v86
+        0238  PSF           v80
+        023C  ADDSi         112 67119868                                  ; .Location
+        0244  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        0250  SetV1         v19 0
+        0258  PshV4         v19
+        025C  PSF           v80
+        0260  PshVPtr       this
+        0264  ADDSi         936 134230889                                 ; .GemVacuumTag
+        026C  PshVPtr       v18
+        0270  CALLSYS       UAbilitySystemComponent::ExecuteGameplayCue_BP  ; void UAbilitySystemComponent::ExecuteGameplayCue_BP(const FGameplayTag, const FGameplayCueParameters&, bool)
+        027C  PshVPtr       this
+        0280  CALLSYS       AActor::DestroyActor                          ; void AActor::DestroyActor()
+        028C  PSF           v80
+        0290  CALLSYS       FGameplayCueParameters::$beh2                 ; void FGameplayCueParameters::$beh2()
+      L029C:
+        029C  RET           12
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void TossInDirection(const FVector& Direction, const float64 Length, const float64 DirectionVariance)   // traits=0x20
+    {
+        bool v1;
+        float64 v4;
+        float32 v5;
+        float32 v6;
+        auto v7;
+        float64 v10;
+        float64 v12;
+        float64 v14;
+        float64 v16;
+        float64 v18;
+        float64 v20;
+        float64 v22;
+        float64 v24;
+        FVector v30;
+        FVector v36;
+        FVector v42;
+        FVector v48;
+        FVector v54;
+        ALokiHeightMap v58;
+
+        v1 = true;
+        this.SetReplicateMovement(v1);
+        v7 = Math::RandRange(55.0, 75.0);
+        v10 = float64(v7);
+        v4 = v10;
+        v10 = 2.0;
+        v10 = DirectionVariance / v10;
+        v14 = -1.0;
+        v14 = v14 * DirectionVariance;
+        v16 = 2.0;
+        v14 = v14 / v16;
+        v16 = Math::RandRange(v14, v10);
+        v18 = 0;
+        v20 = 0;
+        v22 = 0;
+        v24 = 0;
+        v10 = Math::DegreesToRadians(v4);
+        Math::SinCos(v20, v18, v10);
+        v12 = Math::DegreesToRadians(v16);
+        Math::SinCos(v24, v22, v12);
+        v10 = v18 * v24;
+        v12 = v18 * v22;
+        v36 = FVector(v12, v10, v20);
+        v30 = Direction.GetSafeNormal2D(9.99999993922529e-09, FVector::ZeroVector);
+        v48 = v30 + v36;
+        v42 = v48.GetSafeNormal(9.99999993922529e-09, FVector::ZeroVector);
+        v30 = v42 * Length;
+        this.ProjMovementComp.Velocity = v30;
+        this.ProjMovementComp.SetUpdatedComponent(this.RootSceneComponent);
+        v1 = true;
+        this.ProjMovementComp.SetComponentTickEnabled(v1);
+        v58 = ALokiHeightMap::GetInstance(__WorldContext);
+        if (v58 != nullptr) {
+            v54 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v12 = v54.Y;
+            v5 = float32(v12);
+            v42 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v12 = v42.X;
+            v6 = float32(v12);
+            v58.GetHeight(this.HeightToStop, v6, v5);
+            v7 = this.HeightToStop;
+            v6 = v7 + 35.0;
+            this.HeightToStop = v6;
+        }
+        v1 = true;
+        this.SetActorTickEnabled(v1);
+        v1 = true;
+        this.bIsMoving = v1;
+        return;
+    }
+    /* ---- TossInDirection: 213 dwords / 118 instructions (cache offset 0x9ff32) ----
+        0000  SetV1         v1 1
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  CALLSYS       AActor::SetReplicateMovement                  ; void AActor::SetReplicateMovement(bool)
+        001C  PshC4         1117126656
+        0024  PshC4         1113325568
+        002C  CALLSYS       RandRange                                     ; float32 Math::RandRange(float32, float32)
+        0038  CpyRtoV4      v7
+        003C  fTOd          v10 v7
+        0044  CpyVtoV8      v4 v10
+        004C  SetV8         v10 0x4000000000000000
+        0058  DIVd          v10 DirectionVariance v10
+        0060  PshV8         v10
+        0064  SetV8         v14 0xbff0000000000000
+        0070  MULd          v14 v14 DirectionVariance
+        0078  SetV8         v16 0x4000000000000000
+        0084  DIVd          v14 v14 v16
+        008C  PshV8         v14
+        0090  CALLSYS       RandRange                                     ; float64 Math::RandRange(float64, float64)
+        009C  CpyRtoV8      v16
+        00A0  SetV8         v18 0x0
+        00AC  SetV8         v20 0x0
+        00B8  SetV8         v22 0x0
+        00C4  SetV8         v24 0x0
+        00D0  PSF           v4
+        00D4  CALLSYS       DegreesToRadians                              ; float64 Math::DegreesToRadians(const float64&)
+        00E0  CpyRtoV8      v10
+        00E4  PshV8         v10
+        00E8  PSF           v18
+        00EC  PSF           v20
+        00F0  CALLSYS       SinCos                                        ; void Math::SinCos(float64&, float64&, float64)
+        00FC  PSF           v16
+        0100  CALLSYS       DegreesToRadians                              ; float64 Math::DegreesToRadians(const float64&)
+        010C  CpyRtoV8      v12
+        0110  PshV8         v12
+        0114  PSF           v22
+        0118  PSF           v24
+        011C  CALLSYS       SinCos                                        ; void Math::SinCos(float64&, float64&, float64)
+        0128  PshV8         v20
+        012C  MULd          v10 v18 v24
+        0134  PshV8         v10
+        0138  MULd          v12 v18 v22
+        0140  PshV8         v12
+        0144  PSF           v36
+        0148  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        0154  PshGPtr       FVector::ZeroVector
+        0160  PshC8         0x3e45798ee0000000
+        016C  PSF           v30
+        0170  PshVPtr       Direction
+        0174  CALLSYS       FVector::GetSafeNormal2D                      ; FVector FVector::GetSafeNormal2D(float64, const FVector&) const
+        0180  PSF           v36
+        0184  PSF           v48
+        0188  PSF           v30
+        018C  CALLSYS       FVector::opAdd                                ; FVector FVector::opAdd(const FVector&) const
+        0198  PshGPtr       FVector::ZeroVector
+        01A4  PshC8         0x3e45798ee0000000
+        01B0  PSF           v42
+        01B4  PSF           v48
+        01B8  CALLSYS       FVector::GetSafeNormal                        ; FVector FVector::GetSafeNormal(float64, const FVector&) const
+        01C4  PshV8         Length
+        01C8  PSF           v30
+        01CC  PSF           v42
+        01D0  CALLSYS       FVector::opMul                                ; FVector FVector::opMul(float64) const
+        01DC  PSF           v30
+        01E0  PshVPtr       this
+        01E4  ADDSi         984 134230889                                 ; .ProjMovementComp
+        01EC  RDSPtr
+        01F0  ADDSi         232 67112453                                  ; .Velocity
+        01F8  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        0204  PshVPtr       this
+        0208  ADDSi         960 134230889                                 ; .RootSceneComponent
+        0210  RDSPtr
+        0214  PshVPtr       this
+        0218  ADDSi         984 134230889                                 ; .ProjMovementComp
+        0220  RDSPtr
+        0224  CALLSYS       UMovementComponent::SetUpdatedComponent       ; void UMovementComponent::SetUpdatedComponent(USceneComponent@)
+        0230  SetV1         v1 1
+        0238  PshV4         v1
+        023C  PshVPtr       this
+        0240  ADDSi         984 134230889                                 ; .ProjMovementComp
+        0248  RDSPtr
+        024C  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+        0258  PshGPtr       __WorldContext
+        0264  CALLSYS       GetInstance                                   ; ALokiHeightMap@ ALokiHeightMap::GetInstance(const UObject@)
+        0270  STOREOBJ      v58
+        0274  CmpPtrNull    v58
+        0278  JZ            40                                            -> L0320
+        0280  PSF           v54
+        0284  PshVPtr       this
+        0288  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0294  LoadVObjR     v54 8 67117444                                ; .Y
+        02A0  RDR8          v12
+        02A4  dTOf          v5 v12
+        02AC  PshV4         v5
+        02B0  PSF           v42
+        02B4  PshVPtr       this
+        02B8  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        02C4  LoadVObjR     v42 0 67117444                                ; .X
+        02D0  RDR8          v12
+        02D4  dTOf          v6 v12
+        02DC  PshV4         v6
+        02E0  LoadThisR     948 134230889                                 ; this.HeightToStop
+        02E8  PshRPtr
+        02EC  PshVPtr       v58
+        02F0  CALLSYS       ALokiHeightMap::GetHeight                     ; bool ALokiHeightMap::GetHeight(float32&, float32, float32)
+        02FC  LoadThisR     948 134230889                                 ; this.HeightToStop
+        0304  RDR4          v7
+        0308  ADDIf         v6 v7 1108082688
+        0314  LoadThisR     948 134230889                                 ; this.HeightToStop
+        031C  WRTV4         v6
+      L0320:
+        0320  SetV1         v1 1
+        0328  PshV4         v1
+        032C  PshVPtr       this
+        0330  CALLSYS       AActor::SetActorTickEnabled                   ; void AActor::SetActorTickEnabled(bool)
+        033C  SetV1         v1 1
+        0344  LoadThisR     952 134230889                                 ; this.bIsMoving
+        034C  WRTV1         v1
+        0350  RET           8
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void Toss()   // traits=0x20
+    {
+        float64 v2;
+        auto v5;
+        float64 v8;
+        FVector v20;
+
+        v5 = Math::RandRange(100, 500);
+        v8 = float64(v5);
+        v2 = v8;
+        v20 = FVector(1.0, 0, 0);
+        this.TossInDirection(v20, v2, 360.0);
+        return;
+    }
+    /* ---- Toss: 34 dwords / 17 instructions (cache offset 0xa047b) ----
+        0000  PshC4         500
+        0008  PshC4         100
+        0010  CALLSYS       RandRange                                     ; int Math::RandRange(int, int)
+        001C  CpyRtoV4      v5
+        0020  iTOd          v8 v5
+        0028  CpyVtoV8      v2 v8
+        0030  PshC8         0x0
+        003C  PshC8         0x0
+        0048  PshC8         0x3ff0000000000000
+        0054  PSF           v20
+        0058  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        0064  PshC8         0x4076800000000000
+        0070  PshV8         v2
+        0074  PSF           v20
+        0078  PshVPtr       this
+        007C  CALLINTF      85169                                         ; void ALokiGem::TossInDirection(const FVector&, const float64, const float64)
+        0084  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetToHeightMapLevel()   // traits=0x20
+    {
+        ALokiHeightMap v4;
+        float32 v6;
+        float32 v7;
+        FVector v14;
+        FVector v20;
+        float64 v22;
+        float32 v23;
+        FVector v36;
+        float64 v38;
+        float64 v40;
+
+        v4 = ALokiHeightMap::GetInstance(__WorldContext);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v6 = 0;
+            v14 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v22 = v14.Y;
+            v7 = float32(v22);
+            v20 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v22 = v20.X;
+            v23 = float32(v22);
+            v23 = v6 + 75.0;
+            v22 = float64(v23);
+            v4.GetHeight(v6, v23, v7);
+            v14 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v38 = v14.Y;
+            v20 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v40 = v20.X;
+            v36 = FVector(v40, v38, v22);
+            this.SetActorLocation(v36)  /* UFunction K2_SetActorLocation */;
+        }
+        return;
+    }
+    /* ---- SetToHeightMapLevel: 79 dwords / 45 instructions (cache offset 0xa0618) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetInstance                                   ; ALokiHeightMap@ ALokiHeightMap::GetInstance(const UObject@)
+        0018  STOREOBJ      v4
+        001C  CmpPtrNull    v4
+        0020  JNZ           2                                             -> L0030
+        0028  JMP           66                                            -> L0138
+      L0030:
+        0030  SetV4         v6 0
+        0038  PSF           v14
+        003C  PshVPtr       this
+        0040  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        004C  LoadVObjR     v14 8 67117444                                ; .Y
+        0058  RDR8          v22
+        005C  dTOf          v7 v22
+        0064  PshV4         v7
+        0068  PSF           v20
+        006C  PshVPtr       this
+        0070  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        007C  LoadVObjR     v20 0 67117444                                ; .X
+        0088  RDR8          v22
+        008C  dTOf          v23 v22
+        0094  PshV4         v23
+        0098  PSF           v6
+        009C  PshVPtr       v4
+        00A0  CALLSYS       ALokiHeightMap::GetHeight                     ; bool ALokiHeightMap::GetHeight(float32&, float32, float32)
+        00AC  ADDIf         v23 v6 1117126656
+        00B8  fTOd          v22 v23
+        00C0  PshV8         v22
+        00C4  PSF           v14
+        00C8  PshVPtr       this
+        00CC  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        00D8  LoadVObjR     v14 8 67117444                                ; .Y
+        00E4  RDR8          v38
+        00E8  PshV8         v38
+        00EC  PSF           v20
+        00F0  PshVPtr       this
+        00F4  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0100  LoadVObjR     v20 0 67117444                                ; .X
+        010C  RDR8          v40
+        0110  PshV8         v40
+        0114  PSF           v36
+        0118  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        0124  PSF           v36
+        0128  PshVPtr       this
+        012C  CALLSYS       AActor::SetActorLocation                      ; void AActor::SetActorLocation(const FVector&)
+      L0138:
+        0138  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_IsMoving()   // traits=0x20
+    {
+        auto v1;
+        FHitResult v64;
+
+        v1 = this.bIsMoving;
+        v1 = !v1;
+        if (v1) {
+            v64 = FHitResult();
+            this.ProjMovementComp.StopSimulating(v64);
+        }
+        return;
+    }
+    /* ---- OnRep_IsMoving: 24 dwords / 15 instructions (cache offset 0xa091b) ----
+        0000  LoadThisR     952 134230889                                 ; this.bIsMoving
+        0008  RDR1          v1
+        000C  NOT           v1
+        0010  CpyVtoR1      v1
+        0014  JLowZ         16                                            -> L005C
+        001C  PSF           v64
+        0020  CALLSYS       FHitResult::$beh0                             ; void FHitResult::$beh0()
+        002C  PSF           v64
+        0030  PshVPtr       this
+        0034  ADDSi         984 134230889                                 ; .ProjMovementComp
+        003C  RDSPtr
+        0040  CALLSYS       UProjectileMovementComponent::StopSimulating  ; void UProjectileMovementComponent::StopSimulating(const FHitResult&)
+        004C  PSF           v64
+        0050  CALLSYS       FHitResult::$beh2                             ; void FHitResult::$beh2()
+      L005C:
+        005C  RET           2
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        ENetDormancy v3;
+        float32 v4;
+        ECollisionChannel v5;
+        ECollisionEnabled v6;
+
+        v1 = true;
+        this.bEnablePooling = v1;
+        v2 = 100;
+        this.PoolPrimeSize = v2;
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = false;
+        this.SetReplicateMovement(v1);
+        v3 = ENetDormancy::DORM_Awake;
+        this.SetNetDormancy(v3);
+        v1 = true;
+        this.LokiReplicationStrategy.bVision = v1;
+        v1 = false;
+        this.LokiReplicationStrategy.bDistanceBased = v1;
+        v1 = true;
+        this.SphereCollision.SetSphereRadius(400.0, v1);
+        v5 = ECollisionChannel::ECC_GameTraceChannel4;
+        this.SphereCollision.SetCollisionObjectType(v5);
+        v6 = ECollisionEnabled::QueryAndPhysics;
+        this.SphereCollision.SetCollisionEnabled(v6);
+        v2 = 1;
+        this.ProjMovementComp.MaxSimulationIterations = v2;
+        v4 = 0.5;
+        this.ProjMovementComp.MaxSimulationTimeStep = v4;
+        v4 = 1000.0;
+        this.ProjMovementComp.SetMaxSpeed(v4);
+        v1 = false;
+        this.ProjMovementComp.SetComponentTickEnabled(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 122 dwords / 76 instructions (cache offset 0xa0aa1) ----
+        0000  SetV1         v1 1
+        0008  LoadThisR     723 67111343                                  ; this.bEnablePooling
+        0010  WRTV1         v1
+        0014  SetV4         v2 100
+        001C  LoadThisR     736 67111343                                  ; this.PoolPrimeSize
+        0024  WRTV4         v2
+        0028  SetV1         v1 1
+        0030  PshV4         v1
+        0034  PshVPtr       this
+        0038  CALLSYS       AActor::SetbReplicates                        ; void AActor::SetbReplicates(bool)
+        0044  SetV1         v1 0
+        004C  PshV4         v1
+        0050  PshVPtr       this
+        0054  CALLSYS       AActor::SetReplicateMovement                  ; void AActor::SetReplicateMovement(bool)
+        0060  SetV1         v3 1
+        0068  PshV4         v3
+        006C  PshVPtr       this
+        0070  CALLSYS       AActor::SetNetDormancy                        ; void AActor::SetNetDormancy(ENetDormancy)
+        007C  SetV1         v1 1
+        0084  PshVPtr       this
+        0088  ADDSi         904 67111343                                  ; .LokiReplicationStrategy
+        0090  ADDSi         3 67118017                                    ; .bVision
+        0098  PopRPtr
+        009C  WRTV1         v1
+        00A0  SetV1         v1 0
+        00A8  PshVPtr       this
+        00AC  ADDSi         904 67111343                                  ; .LokiReplicationStrategy
+        00B4  ADDSi         2 67118017                                    ; .bDistanceBased
+        00BC  PopRPtr
+        00C0  WRTV1         v1
+        00C4  SetV1         v1 1
+        00CC  PshV4         v1
+        00D0  PshC4         1137180672
+        00D8  PshVPtr       this
+        00DC  ADDSi         968 134230889                                 ; .SphereCollision
+        00E4  RDSPtr
+        00E8  CALLSYS       USphereComponent::SetSphereRadius             ; void USphereComponent::SetSphereRadius(float32, bool)
+        00F4  SetV1         v5 17
+        00FC  PshV4         v5
+        0100  PshVPtr       this
+        0104  ADDSi         968 134230889                                 ; .SphereCollision
+        010C  RDSPtr
+        0110  CALLSYS       UPrimitiveComponent::SetCollisionObjectType   ; void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel)
+        011C  SetV1         v6 3
+        0124  PshV4         v6
+        0128  PshVPtr       this
+        012C  ADDSi         968 134230889                                 ; .SphereCollision
+        0134  RDSPtr
+        0138  CALLSYS       UPrimitiveComponent::SetCollisionEnabled      ; void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled)
+        0144  SetV4         v2 1
+        014C  PshVPtr       this
+        0150  ADDSi         984 134230889                                 ; .ProjMovementComp
+        0158  RDSPtr
+        015C  ADDSi         464 67113176                                  ; .MaxSimulationIterations
+        0164  PopRPtr
+        0168  WRTV4         v2
+        016C  SetV4         v4 1056964608
+        0174  PshVPtr       this
+        0178  ADDSi         984 134230889                                 ; .ProjMovementComp
+        0180  RDSPtr
+        0184  ADDSi         460 67113176                                  ; .MaxSimulationTimeStep
+        018C  PopRPtr
+        0190  WRTV4         v4
+        0194  SetV4         v4 1148846080
+        019C  PSF           v4
+        01A0  PshVPtr       this
+        01A4  ADDSi         984 134230889                                 ; .ProjMovementComp
+        01AC  RDSPtr
+        01B0  CALLSYS       UProjectileMovementComponent::SetMaxSpeed     ; void UProjectileMovementComponent::SetMaxSpeed(const float32&)
+        01BC  SetV1         v1 0
+        01C4  PshV4         v1
+        01C8  PshVPtr       this
+        01CC  ADDSi         984 134230889                                 ; .ProjMovementComp
+        01D4  RDSPtr
+        01D8  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+        01E4  RET           2
+    */
+
+    void ~ALokiGem()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ALokiGem: 7 dwords / 4 instructions (cache offset 0xa0ebc) ----
+        0000  PshVPtr       this
+        0004  ADDSi         936 134230889                                 ; .GemVacuumTag
+        000C  CALLSYS       FGameplayTag::$beh2                           ; void FGameplayTag::$beh2()
+        0018  RET           2
+    */
+
+}
+

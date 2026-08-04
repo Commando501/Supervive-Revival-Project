@@ -1,0 +1,218 @@
+==============================================================================
+MODULE   Barracuda.GameState.BarracudaGameStateGlobals
+SOURCE   Barracuda/GameState/BarracudaGameStateGlobals.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+// statics class: Module_Barracuda_GameState_BarracudaGameStateGlobalsStatics
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+// 14 instr, 92 B bytecode, id=0xDC1727E4, varspace=8
+------------------------------------------------------------------------------
+{
+    ALokiGameState v4;
+    UBarracudaGameStateComponent v8;
+
+    v4 = Loki::GetLokiGameState(__WorldContext);
+    if (v4 != null) {
+        v8 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+    } else {
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JNZ            ->14
+    //    10  FreeNullV8     wW0:8
+    //    11  LOADOBJ        rW0:8
+    //    12  JMP            ->22
+    //    14  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    17  PshVPtr        rW0:4
+    //    18  CALL           d:84255                 ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+    //    20  STOREOBJ       wW0:8
+    //    21  LOADOBJ        rW0:8
+    //    22  RET            W0:0
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+FBarracudaPhase GetCurrentBarracudaPhase()
+// 29 instr, 204 B bytecode, id=0xB3140A31, varspace=8
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+    int v6;
+    FBarracudaPhase v8;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 != null) {
+        v6 = v4.CurrentPhaseIndex;
+        if (v4.BarracudaPhases.IsValidIndex(v6)) {
+            v6 = v4.CurrentPhaseIndex;
+            __return = FBarracudaPhase(v4.BarracudaPhases[v6]);
+            goto L50;
+        }
+    }
+    v8 = FBarracudaPhase();
+    __return = FBarracudaPhase(v8);
+    L50:
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //     2  STOREOBJ       wW0:4
+    //     3  CmpPtrNull     rW0:4
+    //     4  JZ             ->37
+    //     6  LoadRObjR      rW0:4 W1:448 DW2:134230778; UBarracudaGameStateComponent::CurrentPhaseIndex  (+448)
+    //     9  RDR4           wW0:6
+    //    10  PshV4          rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //    14  CALLSYS        q:0x26e6ef02e00         ; bool TArray<FBarracudaPhase>::IsValidIndex(int) const
+    //    17  JLowZ          ->37
+    //    19  LoadRObjR      rW0:4 W1:448 DW2:134230778; UBarracudaGameStateComponent::CurrentPhaseIndex  (+448)
+    //    22  RDR4           wW0:6
+    //    23  PshV4          rW0:6
+    //    24  PshVPtr        rW0:4
+    //    25  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //    27  Thiscall1      q:0x26e6ef02a80         ; FBarracudaPhase& TArray<FBarracudaPhase>::opIndex(int)
+    //    30  PshRPtr
+    //    31  PshVPtr        rW0:0
+    //    32  CALLSYS        q:0x26e79376980         ; void FBarracudaPhase::$beh0(const FBarracudaPhase&)
+    //    35  JMP            ->50
+    //    37  PSF            rW0:8
+    //    38  CALLSYS        q:0x26e79376d00         ; void FBarracudaPhase::$beh0()
+    //    41  PSF            rW0:8
+    //    42  PshVPtr        rW0:0
+    //    43  CALLSYS        q:0x26e79376980         ; void FBarracudaPhase::$beh0(const FBarracudaPhase&)
+    //    46  PSF            rW0:8
+    //    47  CALLSYS        q:0x26e79376b40         ; void FBarracudaPhase::$beh2()
+    //    50  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+EBarracudaPhaseType GetCurrentBarracudaPhaseType()
+// 8 instr, 52 B bytecode, id=0xE00D77A4, varspace=5
+------------------------------------------------------------------------------
+{
+    FBarracudaPhase v4;
+    auto v5;
+
+    v4 = GetCurrentBarracudaPhase();
+    v5 = v4.Type;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALL           d:84264                 ; FBarracudaPhase GetCurrentBarracudaPhase()
+    //     3  LoadVObjR      rW0:4 W1:0 DW2:67120849 ; FBarracudaPhase::Type  (+0)
+    //     6  RDR1           wW0:5
+    //     7  PSF            rW0:4
+    //     8  CALLSYS        q:0x26e79376b40         ; void FBarracudaPhase::$beh2()
+    //    11  CpyVtoR4       rW0:5
+    //    12  RET            W0:0
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+float64 GetCurrentBarracudaPhaseTime()
+// 17 instr, 124 B bytecode, id=0x254301C2, varspace=11
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+    auto v8;
+    auto v10;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 != null) {
+        v8 = float64(Gameplay::GetServerTime(__WorldContext));
+        v10 = v8;
+        v8 = v4.CurrentPhaseStartTime;
+        v8 = v8 - v8;
+    } else {
+        v8 = 0;
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //     2  STOREOBJ       wW0:4
+    //     3  CmpPtrNull     rW0:4
+    //     4  JNZ            ->12
+    //     6  SetV8          wW0:8 q:0x0
+    //     9  CpyVtoR8       rW0:8
+    //    10  JMP            ->30
+    //    12  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    15  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    18  CpyRtoV4       wW0:11
+    //    19  fTOd           wW0:8 rW1:11
+    //    21  CpyVtoV8       wW0:10 rW1:8
+    //    23  LoadRObjR      rW0:4 W1:456 DW2:134230778; UBarracudaGameStateComponent::CurrentPhaseStartTime  (+456)
+    //    26  RDR8           wW0:8
+    //    27  SUBd           wW0:8 rW1:10 rW2:8
+    //    29  CpyVtoR8       rW0:8
+    //    30  RET            W0:0
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+float64 GetCurrentBarracudaPhaseTimeReminaing()
+// 21 instr, 152 B bytecode, id=0x04ABE124, varspace=12
+------------------------------------------------------------------------------
+{
+    FBarracudaPhase v4;
+    auto v5;
+    auto v10;
+    auto v12;
+
+    v4 = GetCurrentBarracudaPhase();
+    v5 = v4.Duration;
+    if (v5 > 0) {
+        v10 = GetCurrentBarracudaPhaseTime();
+        v5 = v4.Duration;
+        v12 = float64(v5);
+        v12 = v12 - v10;
+    } else {
+        v10 = 0;
+    }
+    return v12;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALL           d:84264                 ; FBarracudaPhase GetCurrentBarracudaPhase()
+    //     3  LoadVObjR      rW0:4 W1:4 DW2:67120849 ; FBarracudaPhase::Duration  (+4)
+    //     6  RDR4           wW0:5
+    //     7  CMPIf          rW0:5 d:0
+    //     9  JP             ->21
+    //    11  SetV8          wW0:10 q:0x0
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e79376b40         ; void FBarracudaPhase::$beh2()
+    //    18  CpyVtoR8       rW0:10
+    //    19  JMP            ->37
+    //    21  CALL           d:84266                 ; float64 GetCurrentBarracudaPhaseTime()
+    //    23  CpyRtoV8       wW0:10
+    //    24  LoadVObjR      rW0:4 W1:4 DW2:67120849 ; FBarracudaPhase::Duration  (+4)
+    //    27  RDR4           wW0:5
+    //    28  fTOd           wW0:12 rW1:5
+    //    30  SUBd           wW0:12 rW1:12 rW2:10
+    //    32  PSF            rW0:4
+    //    33  CALLSYS        q:0x26e79376b40         ; void FBarracudaPhase::$beh2()
+    //    36  CpyVtoR8       rW0:12
+    //    37  RET            W0:0
+

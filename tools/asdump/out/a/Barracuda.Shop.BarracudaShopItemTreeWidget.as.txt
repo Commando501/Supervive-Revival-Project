@@ -1,0 +1,347 @@
+==============================================================================
+MODULE   Barracuda.Shop.BarracudaShopItemTreeWidget
+SOURCE   Barracuda/Shop/BarracudaShopItemTreeWidget.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemTreeWidget;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaShopItemTreeWidget@ UBarracudaShopItemTreeWidget()
+// 4 instr, 28 B bytecode, id=0x494189A9, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaShopItemTreeWidget v2;
+
+    v2 = UBarracudaShopItemTreeWidget();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84397 q:0x26e6865f100; new UBarracudaShopItemTreeWidget   ctor=UBarracudaShopItemTreeWidget::UBarracudaShopItemTreeWidget
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xDEE8F98E, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaShopItemTreeWidget);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b22d8         ; __StaticType_UBarracudaShopItemTreeWidget
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+==============================================================================
+UCLASS()
+class UBarracudaShopItemTreeWidget : UUserWidget
+// base /Script/UMG.UserWidget  ->  ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, meta=(BindWidget)) UBarracudaShopItemTreeNodeWidget@ RootNode;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) TSet<ALokiBaseItem@> ItemsToPotentiallyMarkAsOwned;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaShopItemTreeWidget() const
+// 6 instr, 44 B bytecode, id=0xF830BEE4, varspace=0
+------------------------------------------------------------------------------
+{
+    this.ItemsToPotentiallyMarkAsOwned = TSet<ALokiBaseItem@>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:752 d:134230813      ; UBarracudaShopItemTreeWidget::ItemsToPotentiallyMarkAsOwned  (+752)
+    //     3  CALLSYS        q:0x26e6ef07240         ; void TSet<ALokiBaseItem@>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  FinConstruct   q:0x26e6865f100         ; UBarracudaShopItemTreeWidget
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: PreConstruct
+void PreConstruct_Implementation(const bool IsDesignTime)
+// 24 instr, 132 B bytecode, id=0xA16AA7C1, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = IsDesignTime;
+    v1 = !IsDesignTime;
+    if (v1) {
+        v1 = this.RootNode != null;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.RootNode.Tree = this;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CpyVtoV4       wW0:1 rW1:-2
+    //     2  NOT            rW0:1
+    //     3  CpyVtoR1       rW0:1
+    //     4  JLowNZ         ->10
+    //     6  SetV4          wW0:1 d:0
+    //     8  JMP            ->20
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:744 d:134230813      ; UBarracudaShopItemTreeWidget::RootNode  (+744)
+    //    13  RDSPtr
+    //    14  RefCpyV        wW0:4
+    //    15  CmpPtrNull     rW0:4
+    //    16  TNZ
+    //    17  CpyRtoV4       wW0:5
+    //    18  CpyVtoV4       wW0:1 rW1:5
+    //    20  CpyVtoR1       rW0:1
+    //    21  JLowZ          ->32
+    //    23  PshVPtr        rW0:0
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:744 d:134230813      ; UBarracudaShopItemTreeWidget::RootNode  (+744)
+    //    27  RDSPtr
+    //    28  ADDSi          W0:800 d:134230812      ; UBarracudaShopItemTreeNodeWidget::Tree  (+800)
+    //    30  REFCPY
+    //    31  PopPtr
+    //    32  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Construct
+void Construct_Implementation()
+// 44 instr, 304 B bytecode, id=0x9335798F, varspace=26
+------------------------------------------------------------------------------
+{
+    UGameEventRouterComponent v4;
+    FUIEvent_Barracuda_Shop_FocusItem v10;
+    auto v11;
+    FGameEventListenerHandle v24;
+    FUIEvent_ItemEnteredOrExitedInventory v26;
+
+    v4 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+    if (v4 != null) {
+        v11 = false;
+        v10 = FUIEvent_Barracuda_Shop_FocusItem();
+        v24 = v4.RegisterForEvent(this, v10, null, __STATIC_NAME(20), false);
+        v11 = false;
+        v26 = FUIEvent_ItemEnteredOrExitedInventory();
+        v24 = v4.RegisterForEvent(this, v26, this, __STATIC_NAME(21), false);
+    }
+    this.UpdateVisuals();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79fa1200         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetUIGameEventRouter(const UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JZ             ->72
+    //    10  SetV1          wW0:11 d:0
+    //    12  PshV4          rW0:11
+    //    13  PshC4          d:20
+    //    15  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    18  PshRPtr
+    //    19  PshNull
+    //    20  TYPEID         d:67121337              ; FUIEvent_Barracuda_Shop_FocusItem
+    //    22  PSF            rW0:10
+    //    23  CALLSYS        q:0x26e79567080         ; void FUIEvent_Barracuda_Shop_FocusItem::$beh0()
+    //    26  PSF            rW0:10
+    //    27  PshVPtr        rW0:0
+    //    28  PSF            rW0:24
+    //    29  PshVPtr        rW0:4
+    //    30  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    33  PSF            rW0:10
+    //    34  CALLSYS        q:0x26e79566ec0         ; void FUIEvent_Barracuda_Shop_FocusItem::$beh2()
+    //    37  PSF            rW0:24
+    //    38  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    41  SetV1          wW0:11 d:0
+    //    43  PshV4          rW0:11
+    //    44  PshC4          d:21
+    //    46  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    49  PshRPtr
+    //    50  PshVPtr        rW0:0
+    //    51  TYPEID         d:67121352              ; FUIEvent_ItemEnteredOrExitedInventory
+    //    53  PSF            rW0:26
+    //    54  CALLSYS        q:0x26e79567b00         ; void FUIEvent_ItemEnteredOrExitedInventory::$beh0()
+    //    57  PSF            rW0:26
+    //    58  PshVPtr        rW0:0
+    //    59  PSF            rW0:24
+    //    60  PshVPtr        rW0:4
+    //    61  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    64  PSF            rW0:26
+    //    65  CALLSYS        q:0x26e79567940         ; void FUIEvent_ItemEnteredOrExitedInventory::$beh2()
+    //    68  PSF            rW0:24
+    //    69  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    72  PshVPtr        rW0:0
+    //    73  CALLINTF       d:84395                 ; void UBarracudaShopItemTreeWidget::UpdateVisuals()
+    //    75  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(CanOverrideEvent)
+void HandleFocusItem(const FUIEvent_Barracuda_Shop_FocusItem&inout Event, const AActor@ Context)
+// 5 instr, 28 B bytecode, id=0xA4FB4385, varspace=0
+------------------------------------------------------------------------------
+{
+    this.UpdateVisualsInternal(Event.Item);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:67121337         ; FUIEvent_Barracuda_Shop_FocusItem::Item  (+8)
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84396                 ; void UBarracudaShopItemTreeWidget::UpdateVisualsInternal(const TSubclassOf<ALokiBaseItem@>&)
+    //     6  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(CanOverrideEvent)
+void HandleItemEnteredOrExitedInventory(const FUIEvent_ItemEnteredOrExitedInventory&inout Event, const AActor@ Context)
+// 3 instr, 16 B bytecode, id=0xEC324409, varspace=0
+------------------------------------------------------------------------------
+{
+    this.UpdateVisuals();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84395                 ; void UBarracudaShopItemTreeWidget::UpdateVisuals()
+    //     3  RET            W0:6
+
+------------------------------------------------------------------------------
+void UpdateVisuals()
+// 23 instr, 132 B bytecode, id=0x6F4D8B1B, varspace=9
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+    auto v5;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 != null) {
+        v5 = v4.Shop != null;
+    } else {
+        v5 = 0;
+    }
+    if (v5) {
+        this.UpdateVisualsInternal(v4.Shop.ClientCurrentFocus);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //     2  STOREOBJ       wW0:4
+    //     3  CmpPtrNull     rW0:4
+    //     4  JNZ            ->10
+    //     6  SetV4          wW0:5 d:0
+    //     8  JMP            ->20
+    //    10  PshVPtr        rW0:4
+    //    11  ADDSi          W0:392 d:134230778      ; UBarracudaGameStateComponent::Shop  (+392)
+    //    13  RDSPtr
+    //    14  RefCpyV        wW0:8
+    //    15  CmpPtrNull     rW0:8
+    //    16  TNZ
+    //    17  CpyRtoV4       wW0:9
+    //    18  CpyVtoV4       wW0:5 rW1:9
+    //    20  CpyVtoR1       rW0:5
+    //    21  JLowZ          ->32
+    //    23  PshVPtr        rW0:4
+    //    24  ADDSi          W0:392 d:134230778      ; UBarracudaGameStateComponent::Shop  (+392)
+    //    26  RDSPtr
+    //    27  ADDSi          W0:1048 d:134230802     ; ABarracudaShop::ClientCurrentFocus  (+1048)
+    //    29  PshVPtr        rW0:0
+    //    30  CALLINTF       d:84396                 ; void UBarracudaShopItemTreeWidget::UpdateVisualsInternal(const TSubclassOf<ALokiBaseItem@>&)
+    //    32  RET            W0:2
+
+------------------------------------------------------------------------------
+void UpdateVisualsInternal(const TSubclassOf<ALokiBaseItem@>&inout ItemClass)
+// 30 instr, 204 B bytecode, id=0x713E0F02, varspace=20
+------------------------------------------------------------------------------
+{
+    ALokiPlayerState v6;
+    ULokiInventoryComponentComboItems v10;
+    TArray<ALokiBaseItem@> v16;
+
+    this.ItemsToPotentiallyMarkAsOwned.Empty(0);
+    v6 = Loki::GetLocalLokiPlayerState(__WorldContext);
+    if (v6 != null) {
+        v10 = v6.GetInventory();
+        if (v10 != null) {
+            v16 = v10.GetAllValidItems();
+            this.ItemsToPotentiallyMarkAsOwned.Append(v16);
+        }
+    }
+    this.RootNode.SetItem(ItemClass);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:0
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:752 d:134230813      ; UBarracudaShopItemTreeWidget::ItemsToPotentiallyMarkAsOwned  (+752)
+    //     5  CALLSYS        q:0x26e6ef0cf00         ; void TSet<ALokiBaseItem@>::Empty(int)
+    //     8  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    11  CALLSYS        q:0x26e7a11dd00         ; ALokiPlayerState@ Loki::GetLocalLokiPlayerState(UObject@)
+    //    14  STOREOBJ       wW0:6
+    //    15  CmpPtrNull     rW0:6
+    //    16  JZ             ->43
+    //    18  PshVPtr        rW0:6
+    //    19  CALLSYS        q:0x26e7a391900         ; ULokiInventoryComponentComboItems@ ALokiPlayerState::GetInventory() const
+    //    22  STOREOBJ       wW0:10
+    //    23  CmpPtrNull     rW0:10
+    //    24  JZ             ->42
+    //    26  PSF            rW0:16
+    //    27  PshVPtr        rW0:10
+    //    28  CALLSYS        q:0x26e7a2a4140         ; TArray<ALokiBaseItem@> ULokiInventoryComponentBase::GetAllValidItems() const
+    //    31  PSF            rW0:16
+    //    32  PshVPtr        rW0:0
+    //    33  ADDSi          W0:752 d:134230813      ; UBarracudaShopItemTreeWidget::ItemsToPotentiallyMarkAsOwned  (+752)
+    //    35  CALLSYS        q:0x26e6ef0cb80         ; void TSet<ALokiBaseItem@>::Append(const TArray<ALokiBaseItem@>&)
+    //    38  PSF            rW0:16
+    //    39  CALLSYS        q:0x26e7a0eb680         ; void TArray<ALokiBaseItem@>::$beh2()
+    //    42  FreeNullV8     wW0:10
+    //    43  PshVPtr        rW0:-2
+    //    44  PshVPtr        rW0:0
+    //    45  ADDSi          W0:744 d:134230813      ; UBarracudaShopItemTreeWidget::RootNode  (+744)
+    //    47  RDSPtr
+    //    48  CALLINTF       d:84387                 ; void UBarracudaShopItemTreeNodeWidget::SetItem(const TSubclassOf<ALokiBaseItem@>&)
+    //    50  RET            W0:4
+
+------------------------------------------------------------------------------
+~UBarracudaShopItemTreeWidget()
+// 4 instr, 28 B bytecode, id=0x8895BBD7, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:752 d:134230813      ; UBarracudaShopItemTreeWidget::ItemsToPotentiallyMarkAsOwned  (+752)
+    //     3  CALLSYS        q:0x26e7a0ebbc0         ; void TSet<ALokiBaseItem@>::$beh2()
+    //     6  RET            W0:2
+

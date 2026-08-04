@@ -1,0 +1,881 @@
+==============================================================================
+MODULE   PlayerController.LokiPlayerController
+SOURCE   PlayerController/LokiPlayerController.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+event FOnSneakPressedDelegate;
+event FOnSneakReleasedDelegate;
+event FOnPracticeRespawnPressedDelegate;
+
+const TSubclassOf<UObject@> __StaticType_ALokiPlayerController_AS;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiPlayerController_AS@ ALokiPlayerController_AS()
+// 4 instr, 28 B bytecode, id=0x34559442, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiPlayerController_AS v2;
+
+    v2 = ALokiPlayerController_AS();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85318 q:0x26e6ed78500; new ALokiPlayerController_AS   ctor=ALokiPlayerController_AS::ALokiPlayerController_AS
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x0149B7F2, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiPlayerController_AS);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057d058         ; __StaticType_ALokiPlayerController_AS
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiPlayerController_AS@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xC893DECD, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiPlayerController_AS v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiPlayerController_AS.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiPlayerController_AS>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6057d058         ; __StaticType_ALokiPlayerController_AS
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972724            ; ALokiPlayerController_AS@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ALokiPlayerController_AS : ALokiPlayerController
+// base /Script/Loki.LokiPlayerController  ->  ../../../Loki/Source/Loki/LokiPlayerController.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) ULokiPlayerControllerUAVComponent@ UAVComponent;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnSneakPressedDelegate OnSneakPressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnSneakReleasedDelegate OnSneakReleased;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnPracticeRespawnPressedDelegate OnPracticeRespawnPressed;
+
+}
+
+------------------------------------------------------------------------------
+ALokiPlayerController_AS() const
+// 12 instr, 80 B bytecode, id=0x54D39338, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnSneakPressed.FOnSneakPressedDelegate();
+    this.OnSneakReleased.FOnSneakReleasedDelegate();
+    this.OnPracticeRespawnPressed.FOnPracticeRespawnPressedDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:4016 d:134230900     ; ALokiPlayerController_AS::OnSneakPressed  (+4016)
+    //     3  CALL           d:85320                 ; void FOnSneakPressedDelegate::FOnSneakPressedDelegate()
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:4032 d:134230900     ; ALokiPlayerController_AS::OnSneakReleased  (+4032)
+    //     8  CALL           d:85329                 ; void FOnSneakReleasedDelegate::FOnSneakReleasedDelegate()
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:4048 d:134230900     ; ALokiPlayerController_AS::OnPracticeRespawnPressed  (+4048)
+    //    13  CALL           d:85338                 ; void FOnPracticeRespawnPressedDelegate::FOnPracticeRespawnPressedDelegate()
+    //    15  PshVPtr        rW0:0
+    //    16  FinConstruct   q:0x26e6ed78500         ; ALokiPlayerController_AS
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ClientGliderActivated()
+// 3 instr, 16 B bytecode, id=0x1321D91B, varspace=0
+------------------------------------------------------------------------------
+{
+    this.BP_OnClientGliderActivated();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85312                 ; void ALokiPlayerController_AS::BP_OnClientGliderActivated()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ClientGliderDeactivated()
+// 3 instr, 16 B bytecode, id=0x1F17C493, varspace=0
+------------------------------------------------------------------------------
+{
+    this.BP_OnClientGliderDectivated();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85314                 ; void ALokiPlayerController_AS::BP_OnClientGliderDectivated()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SpectatorMapMove()
+// 3 instr, 16 B bytecode, id=0x6C1F4EB6, varspace=0
+------------------------------------------------------------------------------
+{
+    this.BP_OnSpectatorMapMove();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85316                 ; void ALokiPlayerController_AS::BP_OnSpectatorMapMove()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void BP_OnClientGliderActivated()
+// 6 instr, 44 B bytecode, id=0x926713F7, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(198));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:198
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp, meta=(DisplayName=On Client Glider Activated))
+// UFunction name: BP_OnClientGliderActivated
+void BP_OnClientGliderActivated_Implementation()
+// 1 instr, 4 B bytecode, id=0xE7351F3E, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+void BP_OnClientGliderDectivated()
+// 6 instr, 44 B bytecode, id=0x1F9EA426, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(199));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:199
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp, meta=(DisplayName=On Client Glider Deactivated))
+// UFunction name: BP_OnClientGliderDectivated
+void BP_OnClientGliderDectivated_Implementation()
+// 1 instr, 4 B bytecode, id=0x01A4A7CF, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+void BP_OnSpectatorMapMove()
+// 6 instr, 44 B bytecode, id=0x39EF9639, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(200));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:200
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp, meta=(DisplayName=On Spectator Map Move))
+// UFunction name: BP_OnSpectatorMapMove
+void BP_OnSpectatorMapMove_Implementation()
+// 1 instr, 4 B bytecode, id=0x1CCD79DA, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+~ALokiPlayerController_AS()
+// 10 instr, 64 B bytecode, id=0x810BA7F5, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnSneakPressed.~FOnSneakPressedDelegate();
+    this.OnSneakReleased.~FOnSneakReleasedDelegate();
+    this.OnPracticeRespawnPressed.~FOnPracticeRespawnPressedDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:4016 d:134230900     ; ALokiPlayerController_AS::OnSneakPressed  (+4016)
+    //     3  CALL           d:85514                 ; void FOnSneakPressedDelegate::~FOnSneakPressedDelegate()
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:4032 d:134230900     ; ALokiPlayerController_AS::OnSneakReleased  (+4032)
+    //     8  CALL           d:85516                 ; void FOnSneakReleasedDelegate::~FOnSneakReleasedDelegate()
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:4048 d:134230900     ; ALokiPlayerController_AS::OnPracticeRespawnPressed  (+4048)
+    //    13  CALL           d:85517                 ; void FOnPracticeRespawnPressedDelegate::~FOnPracticeRespawnPressedDelegate()
+    //    15  RET            W0:2
+
+==============================================================================
+class FOnSneakPressedDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FOnSneakPressedDelegate() const
+// 4 instr, 28 B bytecode, id=0x04CF9C27, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FOnSneakPressedDelegate(const FOnSneakPressedDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0xA476700A, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:85322                 ; FOnSneakPressedDelegate& FOnSneakPressedDelegate::opAssign(const FOnSneakPressedDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FOnSneakPressedDelegate& opAssign(const FOnSneakPressedDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0x79989942, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast()
+// 12 instr, 80 B bytecode, id=0x9ABCE063, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->19
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //    16  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0xC094E17E, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230901             ; FOnSneakPressedDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x095021F2, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x6F7F52B4, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0x50F19785, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0x2CBF09C2, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FOnSneakPressedDelegate()
+// 4 instr, 28 B bytecode, id=0xCB73AF02, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230901        ; FOnSneakPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+class FOnSneakReleasedDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FOnSneakReleasedDelegate() const
+// 4 instr, 28 B bytecode, id=0x9268575F, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FOnSneakReleasedDelegate(const FOnSneakReleasedDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0x3D5B2A7E, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:85331                 ; FOnSneakReleasedDelegate& FOnSneakReleasedDelegate::opAssign(const FOnSneakReleasedDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FOnSneakReleasedDelegate& opAssign(const FOnSneakReleasedDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0x1EBF6617, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast()
+// 12 instr, 80 B bytecode, id=0x20E3A7A2, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->19
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //    16  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0x23E284A8, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230902             ; FOnSneakReleasedDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x3BFE8B2B, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x6F39DCB6, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0xDB52B3E3, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0xAC66213C, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FOnSneakReleasedDelegate()
+// 4 instr, 28 B bytecode, id=0xA528C33E, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230902        ; FOnSneakReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+class FOnPracticeRespawnPressedDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FOnPracticeRespawnPressedDelegate() const
+// 4 instr, 28 B bytecode, id=0x83C3D3DC, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FOnPracticeRespawnPressedDelegate(const FOnPracticeRespawnPressedDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0x7CAA2069, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:85340                 ; FOnPracticeRespawnPressedDelegate& FOnPracticeRespawnPressedDelegate::opAssign(const FOnPracticeRespawnPressedDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FOnPracticeRespawnPressedDelegate& opAssign(const FOnPracticeRespawnPressedDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0x8ECA5387, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast()
+// 12 instr, 80 B bytecode, id=0x9A0C0298, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->19
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //    16  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0x975DE9EC, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230903             ; FOnPracticeRespawnPressedDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0xB63AFD4E, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0xCCC8FD47, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0xF26BC4C8, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0x5EBBD6BA, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FOnPracticeRespawnPressedDelegate()
+// 4 instr, 28 B bytecode, id=0x7DA39FC3, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230903        ; FOnPracticeRespawnPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+

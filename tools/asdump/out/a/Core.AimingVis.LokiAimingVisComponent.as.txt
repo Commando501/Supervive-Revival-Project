@@ -1,0 +1,3661 @@
+==============================================================================
+MODULE   Core.AimingVis.LokiAimingVisComponent
+SOURCE   Core/AimingVis/LokiAimingVisComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiAimingVisComponentScript;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript()
+// 4 instr, 28 B bytecode, id=0x96350EA0, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiAimingVisComponentScript v2;
+
+    v2 = ULokiAimingVisComponentScript();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84723 q:0x26e6ed73a00; new ULokiAimingVisComponentScript   ctor=ULokiAimingVisComponentScript::ULokiAimingVisComponentScript
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x0314A6BA, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiAimingVisComponentScript);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b0958         ; __StaticType_ULokiAimingVisComponentScript
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiAimingVisComponentScript@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x10B3EDFE, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiAimingVisComponentScript v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiAimingVisComponentScript, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972665            ; ULokiAimingVisComponentScript@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b0958         ; __StaticType_ULokiAimingVisComponentScript
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiAimingVisComponentScript@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x8E432F39, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiAimingVisComponentScript v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiAimingVisComponentScript, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972665            ; ULokiAimingVisComponentScript@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b0958         ; __StaticType_ULokiAimingVisComponentScript
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiAimingVisComponentScript@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xC695C8CB, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiAimingVisComponentScript v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiAimingVisComponentScript, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972665            ; ULokiAimingVisComponentScript@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b0958         ; __StaticType_ULokiAimingVisComponentScript
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class FLaserScriptOverrides
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bOverrideDesaturationAndOpacity;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bOverrideRangeAndAlphaStep;
+
+}
+
+------------------------------------------------------------------------------
+FLaserScriptOverrides() const
+// 7 instr, 44 B bytecode, id=0x840436FD, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.bOverrideDesaturationAndOpacity = false;
+    v1 = false;
+    this.bOverrideRangeAndAlphaStep = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  LoadThisR      W0:0 d:134230845        ; FLaserScriptOverrides::bOverrideDesaturationAndOpacity  (+0)
+    //     4  WRTV1          rW0:1
+    //     5  SetV1          wW0:1 d:0
+    //     7  LoadThisR      W0:1 d:134230845        ; FLaserScriptOverrides::bOverrideRangeAndAlphaStep  (+1)
+    //     9  WRTV1          rW0:1
+    //    10  RET            W0:2
+
+==============================================================================
+UCLASS()
+class ULokiAimingVisComponentScript : ULokiAimingVisComponent
+// base /Script/Loki.LokiAimingVisComponent  ->  ../../../Loki/Source/Loki/LokiAimingVisComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) ALokiCharacter@ OwnerCharacter;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient) bool bHasInitializedClient;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient) bool bHasInitializedLocalClient;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) bool bHeroUsesAimingLaser;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient) ALokiAimingLaser@ ClientLaserInstance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) TArray<FAimingLaserSettings> LaserSettings;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) int SpawnLaserSettingsIndex;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) int CurrentLaserSettingsIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) int ReplicatedLaserSettingsIndex;
+
+}
+
+------------------------------------------------------------------------------
+ULokiAimingVisComponentScript() const
+// 21 instr, 144 B bytecode, id=0x75208C67, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+
+    this.LaserSettings = TArray<FAimingLaserSettings>();
+    v1 = false;
+    this.bHasInitializedClient = false;
+    v1 = false;
+    this.bHasInitializedLocalClient = false;
+    v1 = true;
+    this.bHeroUsesAimingLaser = true;
+    v2 = 0;
+    this.SpawnLaserSettingsIndex = 0;
+    v2 = -1;
+    this.ReplicatedLaserSettingsIndex = -1;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //     3  CALLSYS        q:0x26e6ef2a180         ; void TArray<FAimingLaserSettings>::$beh0()
+    //     6  SetV1          wW0:1 d:0
+    //     8  LoadThisR      W0:240 d:134230841      ; ULokiAimingVisComponentScript::bHasInitializedClient  (+240)
+    //    10  WRTV1          rW0:1
+    //    11  SetV1          wW0:1 d:0
+    //    13  LoadThisR      W0:241 d:134230841      ; ULokiAimingVisComponentScript::bHasInitializedLocalClient  (+241)
+    //    15  WRTV1          rW0:1
+    //    16  SetV1          wW0:1 d:1
+    //    18  LoadThisR      W0:242 d:134230841      ; ULokiAimingVisComponentScript::bHeroUsesAimingLaser  (+242)
+    //    20  WRTV1          rW0:1
+    //    21  SetV4          wW0:2 d:0
+    //    23  LoadThisR      W0:272 d:134230841      ; ULokiAimingVisComponentScript::SpawnLaserSettingsIndex  (+272)
+    //    25  WRTV4          rW0:2
+    //    26  SetV4          wW0:2 d:-1
+    //    28  LoadThisR      W0:280 d:134230841      ; ULokiAimingVisComponentScript::ReplicatedLaserSettingsIndex  (+280)
+    //    30  WRTV4          rW0:2
+    //    31  PshVPtr        rW0:0
+    //    32  FinConstruct   q:0x26e6ed73a00         ; ULokiAimingVisComponentScript
+    //    35  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiBeginPlay
+void LokiBeginPlay_Implementation()
+// 9 instr, 56 B bytecode, id=0xA37AF60B, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.ReplicatedLaserSettingsIndex;
+    if (v1 >= 0) {
+        v1 = this.ReplicatedLaserSettingsIndex;
+        this.SpawnLaserSettingsIndex = v1;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:280 d:134230841      ; ULokiAimingVisComponentScript::ReplicatedLaserSettingsIndex  (+280)
+    //     2  RDR4           wW0:1
+    //     3  CMPIi          rW0:1 d:0
+    //     5  JS             ->13
+    //     7  LoadThisR      W0:280 d:134230841      ; ULokiAimingVisComponentScript::ReplicatedLaserSettingsIndex  (+280)
+    //     9  RDR4           wW0:1
+    //    10  LoadThisR      W0:272 d:134230841      ; ULokiAimingVisComponentScript::SpawnLaserSettingsIndex  (+272)
+    //    12  WRTV4          rW0:1
+    //    13  RET            W0:2
+
+------------------------------------------------------------------------------
+void InitClient()
+// 6 instr, 44 B bytecode, id=0x23444280, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(134));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:134
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+// UFunction name: InitClient
+void InitClient_Implementation()
+// 40 instr, 260 B bytecode, id=0xFE4BF949, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = Loki::LokiIsClient(__WorldContext);
+    v1 = !v1;
+    if (!v1) {
+        v1 = this.bHasInitializedClient;
+        v1 = !v1;
+        if (v1) {
+            v1 = this.ValidateOwner();
+            v1 = !v1;
+            if (!v1) {
+                this.OnShowAimingLaserChanged();
+                this.OnLimitLaserToCursorChanged();
+                this.InitClientLaser();
+                this.OwnerCharacter.OnDestroyed.AddUFunction(this, __STATIC_NAME(42));
+                this.BindHardCodedDelegates();
+                v1 = true;
+                this.bHasInitializedClient = true;
+            } else {
+            }
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->64
+    //    13  LoadThisR      W0:240 d:134230841      ; ULokiAimingVisComponentScript::bHasInitializedClient  (+240)
+    //    15  RDR1           wW0:1
+    //    16  NOT            rW0:1
+    //    17  CpyVtoR1       rW0:1
+    //    18  JLowZ          ->64
+    //    20  PshVPtr        rW0:0
+    //    21  CALLINTF       d:84653                 ; bool ULokiAimingVisComponentScript::ValidateOwner()
+    //    23  CpyRtoV4       wW0:1
+    //    24  NOT            rW0:1
+    //    25  CpyVtoR1       rW0:1
+    //    26  JLowZ          ->30
+    //    28  JMP            ->64
+    //    30  PshVPtr        rW0:0
+    //    31  CALLINTF       d:84671                 ; void ULokiAimingVisComponentScript::OnShowAimingLaserChanged()
+    //    33  PshVPtr        rW0:0
+    //    34  CALLINTF       d:84673                 ; void ULokiAimingVisComponentScript::OnLimitLaserToCursorChanged()
+    //    36  PshVPtr        rW0:0
+    //    37  CALLINTF       d:84661                 ; void ULokiAimingVisComponentScript::InitClientLaser()
+    //    39  PshC4          d:42
+    //    41  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    44  PshRPtr
+    //    45  PshVPtr        rW0:0
+    //    46  PshVPtr        rW0:0
+    //    47  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //    49  RDSPtr
+    //    50  ADDSi          W0:544 d:67111343       ; AActor::OnDestroyed  (+544)
+    //    52  CALLSYS        q:0x26e77214f40         ; void FActorDestroyedSignature::AddUFunction(UObject@, const FName&)
+    //    55  PshVPtr        rW0:0
+    //    56  CALLSYS        q:0x26e7a0a36c0         ; void ULokiAimingVisComponent::BindHardCodedDelegates()
+    //    59  SetV1          wW0:1 d:1
+    //    61  LoadThisR      W0:240 d:134230841      ; ULokiAimingVisComponentScript::bHasInitializedClient  (+240)
+    //    63  WRTV1          rW0:1
+    //    64  RET            W0:2
+
+------------------------------------------------------------------------------
+void InitLocalClient()
+// 6 instr, 44 B bytecode, id=0x6C76D729, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(135));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:135
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+// UFunction name: InitLocalClient
+void InitLocalClient_Implementation()
+// 60 instr, 444 B bytecode, id=0xFF17A9BF, varspace=7
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    FOnGenericPlayerConfigValueUpdated v7;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v2 = this.IsOwnerLocallyControlled();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = this.bHasInitializedLocalClient;
+        v2 = !v2;
+        if (v2) {
+            v7 = FOnGenericPlayerConfigValueUpdated(this, __STATIC_NAME(45));
+            UPlayerConfigManager::RegisterOnGenericPlayerConfigValueUpdated(__WorldContext, __STATIC_NAME(43), __STATIC_NAME(44), v7);
+            v7 = FOnGenericPlayerConfigValueUpdated(this, __STATIC_NAME(47));
+            UPlayerConfigManager::RegisterOnGenericPlayerConfigValueUpdated(__WorldContext, __STATIC_NAME(43), __STATIC_NAME(46), v7);
+            this.OnShowAimingLaserChanged();
+            this.OnLimitLaserToCursorChanged();
+            this.InitClientLaser();
+            v1 = true;
+            this.bHasInitializedLocalClient = true;
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84654                 ; bool ULokiAimingVisComponentScript::IsOwnerLocallyControlled()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->110
+    //    21  LoadThisR      W0:241 d:134230841      ; ULokiAimingVisComponentScript::bHasInitializedLocalClient  (+241)
+    //    23  RDR1           wW0:2
+    //    24  NOT            rW0:2
+    //    25  CpyVtoR1       rW0:2
+    //    26  JLowZ          ->110
+    //    28  PshC4          d:45
+    //    30  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    33  PshRPtr
+    //    34  PshVPtr        rW0:0
+    //    35  PSF            rW0:7
+    //    36  CALLSYS        q:0x26e7125f200         ; void FOnGenericPlayerConfigValueUpdated::$beh0(UObject@, const FName&)
+    //    39  PSF            rW0:7
+    //    40  PshC4          d:44
+    //    42  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    45  PshRPtr
+    //    46  PshC4          d:43
+    //    48  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    51  PshRPtr
+    //    52  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    55  CALLSYS        q:0x26e7a4a7780         ; void UPlayerConfigManager::RegisterOnGenericPlayerConfigValueUpdated(UObject@, FName, FName, FOnGenericPlayerConfigValueUpdated)
+    //    58  PSF            rW0:7
+    //    59  CALLSYS        q:0x26e6534a500         ; void FOnGenericPlayerConfigValueUpdated::$beh2()
+    //    62  PshC4          d:47
+    //    64  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    67  PshRPtr
+    //    68  PshVPtr        rW0:0
+    //    69  PSF            rW0:7
+    //    70  CALLSYS        q:0x26e7125f200         ; void FOnGenericPlayerConfigValueUpdated::$beh0(UObject@, const FName&)
+    //    73  PSF            rW0:7
+    //    74  PshC4          d:46
+    //    76  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    79  PshRPtr
+    //    80  PshC4          d:43
+    //    82  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    85  PshRPtr
+    //    86  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    89  CALLSYS        q:0x26e7a4a7780         ; void UPlayerConfigManager::RegisterOnGenericPlayerConfigValueUpdated(UObject@, FName, FName, FOnGenericPlayerConfigValueUpdated)
+    //    92  PSF            rW0:7
+    //    93  CALLSYS        q:0x26e6534a500         ; void FOnGenericPlayerConfigValueUpdated::$beh2()
+    //    96  PshVPtr        rW0:0
+    //    97  CALLINTF       d:84671                 ; void ULokiAimingVisComponentScript::OnShowAimingLaserChanged()
+    //    99  PshVPtr        rW0:0
+    //   100  CALLINTF       d:84673                 ; void ULokiAimingVisComponentScript::OnLimitLaserToCursorChanged()
+    //   102  PshVPtr        rW0:0
+    //   103  CALLINTF       d:84661                 ; void ULokiAimingVisComponentScript::InitClientLaser()
+    //   105  SetV1          wW0:1 d:1
+    //   107  LoadThisR      W0:241 d:134230841      ; ULokiAimingVisComponentScript::bHasInitializedLocalClient  (+241)
+    //   109  WRTV1          rW0:1
+    //   110  RET            W0:2
+
+------------------------------------------------------------------------------
+void InitOnLocalASC()
+// 6 instr, 44 B bytecode, id=0xA8FAF1A5, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(136));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:136
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+// UFunction name: InitOnLocalASC
+void InitOnLocalASC_Implementation()
+// 21 instr, 152 B bytecode, id=0xEF7A042D, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateOwner();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.OwnerCharacter.OnLivingStateChanged.AddUFunction(this, __STATIC_NAME(48));
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84653                 ; bool ULokiAimingVisComponentScript::ValidateOwner()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->37
+    //    21  PshC4          d:48
+    //    23  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    26  PshRPtr
+    //    27  PshVPtr        rW0:0
+    //    28  PshVPtr        rW0:0
+    //    29  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //    31  RDSPtr
+    //    32  ADDSi          W0:3128 d:67114993      ; ALokiCharacter::OnLivingStateChanged  (+3128)
+    //    34  CALLSYS        q:0x26e711bb840         ; void FLivingStateDelegate::AddUFunction(const UObject@, const FName&)
+    //    37  RET            W0:2
+
+------------------------------------------------------------------------------
+float64 GetBonusPrimaryAttackDistance()
+// 10 instr, 76 B bytecode, id=0xCF8F63A9, varspace=5
+------------------------------------------------------------------------------
+{
+    float64 v2;
+
+    v2 = 0;
+    __Evt_PushArgumentRef__float(v2);
+    __Evt_Execute(this, __STATIC_NAME(137));
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  PSF            rW0:2
+    //     4  CALLSYS        q:0x26e77fcd980         ; void __Evt_PushArgumentRef__float(const float64&)
+    //     7  PshC4          d:137
+    //     9  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    12  PshRPtr
+    //    13  PshVPtr        rW0:0
+    //    14  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    17  CpyVtoR8       rW0:2
+    //    18  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: GetBonusPrimaryAttackDistance
+float64 GetBonusPrimaryAttackDistance_Implementation()
+// 3 instr, 20 B bytecode, id=0x060A3FD3, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = 0;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnBonusPrimaryAttackDistanceChanged(const float64 NewBonusMaxDist)
+// 29 instr, 180 B bytecode, id=0xC7A3D0AB, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v4;
+    float64 v8;
+
+    if (this.HasValidAimingLaser()) {
+        v8 = this.LaserSettings[this.CurrentLaserSettingsIndex].MaxDistance;
+        v4 = v8;
+        v8 = 1;
+        v8 = 1 + NewBonusMaxDist;
+        v8 = v8 * v8;
+        this.ClientLaserInstance.SetMaxDistance(v8);
+        this.ClientLaserInstance.PrimaryAttackDistance = NewBonusMaxDist;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //     3  JLowZ          ->44
+    //     5  LoadThisR      W0:276 d:134230841      ; ULokiAimingVisComponentScript::CurrentLaserSettingsIndex  (+276)
+    //     7  RDR4           wW0:5
+    //     8  PshV4          rW0:5
+    //     9  PshVPtr        rW0:0
+    //    10  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //    12  Thiscall1      q:0x26e6ef23dc0         ; FAimingLaserSettings& TArray<FAimingLaserSettings>::opIndex(int)
+    //    15  PshRPtr
+    //    16  ADDSi          W0:8 d:134230837        ; FAimingLaserSettings::MaxDistance  (+8)
+    //    18  PopRPtr
+    //    19  RDR8           wW0:8
+    //    20  CpyVtoV8       wW0:4 rW1:8
+    //    22  SetV8          wW0:8 q:0x3ff0000000000000
+    //    25  ADDd           wW0:8 rW1:8 rW2:-2
+    //    27  MULd           wW0:8 rW1:4 rW2:8
+    //    29  PshV8          rW0:8
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    33  RDSPtr
+    //    34  CALLINTF       d:84601                 ; void ALokiAimingLaser::SetMaxDistance(const float64)
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    39  RDSPtr
+    //    40  ADDSi          W0:1072 d:134230838     ; ALokiAimingLaser::PrimaryAttackDistance  (+1072)
+    //    42  PopRPtr
+    //    43  WRTV8          rW0:-2
+    //    44  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool ValidateOwner()
+// 49 instr, 288 B bytecode, id=0x06883752, varspace=10
+------------------------------------------------------------------------------
+{
+    auto v1;
+    AActor v4;
+    ALokiCharacter v8;
+    ALokiCharacter v10;
+
+    // control flow not structured (structuring dropped 1 of 11 block(s)); flat form:
+        v1 = IsValid(this.OwnerCharacter);
+        v1 = !v1;
+        if (!v1) goto L68; else goto L12;
+    L12:
+        v4 = this.GetOwner();
+        v1 = IsValid(v4);
+        v1 = !v1;
+        if (!v1) goto L31; else goto L26;
+    L26:
+        v1 = false;
+        goto L71;
+    L31:
+        if (v4 == null) goto L43; else goto L34;
+    L34:
+        v10 = cast<ALokiCharacter>(v4);
+        goto L44;
+    L43:
+        v10 = null;
+    L44:
+        v8 = v10;
+        v1 = IsValid(v10);
+        v1 = !v1;
+        if (!v1) goto L60; else goto L55;
+    L55:
+        v1 = false;
+        goto L71;
+    L60:
+        this.OwnerCharacter = v8;
+    L68:
+        v1 = true;
+    L71:
+        return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //     3  RDSPtr
+    //     4  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     7  CpyRtoV4       wW0:1
+    //     8  NOT            rW0:1
+    //     9  CpyVtoR1       rW0:1
+    //    10  JLowZ          ->68
+    //    12  PshVPtr        rW0:0
+    //    13  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    16  STOREOBJ       wW0:4
+    //    17  PshVPtr        rW0:4
+    //    18  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    21  CpyRtoV4       wW0:1
+    //    22  NOT            rW0:1
+    //    23  CpyVtoR1       rW0:1
+    //    24  JLowZ          ->31
+    //    26  SetV1          wW0:1 d:0
+    //    28  CpyVtoR4       rW0:1
+    //    29  JMP            ->71
+    //    31  CmpPtrNull     rW0:4
+    //    32  JZ             ->43
+    //    34  TYPEID         d:1140856817            ; ALokiCharacter@
+    //    36  PSF            rW0:10
+    //    37  PshVPtr        rW0:4
+    //    38  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    41  JMP            ->44
+    //    43  ClrVPtr        wW0:10
+    //    44  PshVPtr        rW0:10
+    //    45  RefCpyV        wW0:8
+    //    46  PshVPtr        rW0:8
+    //    47  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    50  CpyRtoV4       wW0:1
+    //    51  NOT            rW0:1
+    //    52  CpyVtoR1       rW0:1
+    //    53  JLowZ          ->60
+    //    55  SetV1          wW0:1 d:0
+    //    57  CpyVtoR4       rW0:1
+    //    58  JMP            ->71
+    //    60  PshVPtr        rW0:8
+    //    61  PshVPtr        rW0:0
+    //    62  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //    64  REFCPY
+    //    65  PopPtr
+    //    66  FreeNullV8     wW0:8
+    //    67  FreeNullV8     wW0:4
+    //    68  SetV1          wW0:1 d:1
+    //    70  CpyVtoR4       rW0:1
+    //    71  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool IsOwnerLocallyControlled()
+// 16 instr, 92 B bytecode, id=0xA28FA2C3, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.ValidateOwner();
+    v1 = !v1;
+    if (!v1) {
+        v1 = this.OwnerCharacter.IsLocallyControlled();
+    } else {
+        v1 = false;
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84653                 ; bool ULokiAimingVisComponentScript::ValidateOwner()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->13
+    //     8  SetV1          wW0:1 d:0
+    //    10  CpyVtoR4       rW0:1
+    //    11  JMP            ->22
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //    16  RDSPtr
+    //    17  CALLSYS        q:0x26e797d59c0         ; bool APawn::IsLocallyControlled() const
+    //    20  CpyRtoV4       wW0:1
+    //    21  CpyVtoR4       rW0:1
+    //    22  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool ValidateLaser()
+// 14 instr, 96 B bytecode, id=0x633195F0, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        if (this.UsesAimingLaser()) {
+            v1 = this.HasValidAimingLaser();
+            goto L23;
+        }
+    }
+    v1 = false;
+    L23:
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowZ          ->20
+    //     8  PshVPtr        rW0:0
+    //     9  CALLINTF       d:84656                 ; bool ULokiAimingVisComponentScript::UsesAimingLaser()
+    //    11  JLowZ          ->20
+    //    13  PshVPtr        rW0:0
+    //    14  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    16  CpyRtoV4       wW0:1
+    //    17  CpyVtoR4       rW0:1
+    //    18  JMP            ->23
+    //    20  SetV1          wW0:1 d:0
+    //    22  CpyVtoR4       rW0:1
+    //    23  RET            W0:2
+
+------------------------------------------------------------------------------
+bool UsesAimingLaser()
+// 11 instr, 80 B bytecode, id=0x5D2975EF, varspace=3
+------------------------------------------------------------------------------
+{
+    bool v1;
+
+    v1 = false;
+    __Evt_PushArgumentRef__bool(v1);
+    __Evt_Execute(this, __STATIC_NAME(138));
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:2 d:0
+    //     2  CpyVtoV4       wW0:1 rW1:2
+    //     4  PSF            rW0:1
+    //     5  CALLSYS        q:0x26e77fce080         ; void __Evt_PushArgumentRef__bool(const bool&)
+    //     8  PshC4          d:138
+    //    10  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    13  PshRPtr
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    18  CpyVtoR4       rW0:1
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+// UFunction name: UsesAimingLaser
+bool UsesAimingLaser_Implementation()
+// 41 instr, 284 B bytecode, id=0x5BE0871D, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v1;
+    int v2;
+    auto v3;
+
+    // control flow not structured (structuring dropped 1 of 8 block(s)); flat form:
+        v1 = this.bHeroUsesAimingLaser;
+        if (!v1) goto L67; else goto L6;
+    L6:
+        v3 = this.LaserSettings.Num();
+        if (v3 <= 0) goto L67; else goto L17;
+    L17:
+        if (!UPlayerConfigManager::GetGenericPlayerConfigBoolValue(__WorldContext, __STATIC_NAME(43), __STATIC_NAME(44))) goto L42; else goto L37;
+    L37:
+        v1 = true;
+        goto L70;
+    L42:
+        v2 = this.CurrentLaserSettingsIndex;
+        if (v2 >= v3) goto L67; else goto L49;
+    L49:
+        v2 = this.CurrentLaserSettingsIndex;
+        v1 = this.LaserSettings[v2].bUnconditionallyVisibleWhenActive;
+        goto L70;
+    L67:
+        v1 = false;
+    L70:
+        return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:242 d:134230841      ; ULokiAimingVisComponentScript::bHeroUsesAimingLaser  (+242)
+    //     2  RDR1           wW0:1
+    //     3  CpyVtoR1       rW0:1
+    //     4  JLowZ          ->67
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //     9  CALLSYS        q:0x26e6ef23c00         ; int TArray<FAimingLaserSettings>::Num() const
+    //    12  CpyRtoV4       wW0:3
+    //    13  CMPIi          rW0:3 d:0
+    //    15  JNP            ->67
+    //    17  PshC4          d:44
+    //    19  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    22  PshRPtr
+    //    23  PshC4          d:43
+    //    25  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    28  PshRPtr
+    //    29  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    32  CALLSYS        q:0x26e7a4a8580         ; bool UPlayerConfigManager::GetGenericPlayerConfigBoolValue(UObject@, FName, FName)
+    //    35  JLowZ          ->42
+    //    37  SetV1          wW0:1 d:1
+    //    39  CpyVtoR4       rW0:1
+    //    40  JMP            ->70
+    //    42  LoadThisR      W0:276 d:134230841      ; ULokiAimingVisComponentScript::CurrentLaserSettingsIndex  (+276)
+    //    44  RDR4           wW0:2
+    //    45  CMPi           rW0:2 rW1:3
+    //    47  JNS            ->67
+    //    49  LoadThisR      W0:276 d:134230841      ; ULokiAimingVisComponentScript::CurrentLaserSettingsIndex  (+276)
+    //    51  RDR4           wW0:2
+    //    52  PshV4          rW0:2
+    //    53  PshVPtr        rW0:0
+    //    54  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //    56  Thiscall1      q:0x26e6ef23dc0         ; FAimingLaserSettings& TArray<FAimingLaserSettings>::opIndex(int)
+    //    59  PshRPtr
+    //    60  ADDSi          W0:64 d:134230837       ; FAimingLaserSettings::bUnconditionallyVisibleWhenActive  (+64)
+    //    62  PopRPtr
+    //    63  RDR1           wW0:1
+    //    64  CpyVtoR4       rW0:1
+    //    65  JMP            ->70
+    //    67  SetV1          wW0:1 d:0
+    //    69  CpyVtoR4       rW0:1
+    //    70  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool HasValidAimingLaser()
+// 7 instr, 40 B bytecode, id=0xD17737E2, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = IsValid(this.ClientLaserInstance);
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //     3  RDSPtr
+    //     4  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     7  CpyRtoV4       wW0:1
+    //     8  CpyVtoR4       rW0:1
+    //     9  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+ALokiAimingLaser@ GetAimingLaserInstanceIfValid()
+// 15 instr, 96 B bytecode, id=0xF923F42E, varspace=4
+------------------------------------------------------------------------------
+{
+    ALokiAimingLaser v4;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        if (this.HasValidAimingLaser()) {
+            v4 = this.ClientLaserInstance;
+        }
+    }
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowZ          ->21
+    //     8  PshVPtr        rW0:0
+    //     9  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    11  JLowZ          ->21
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    16  RDSPtr
+    //    17  RefCpyV        wW0:4
+    //    18  LOADOBJ        rW0:4
+    //    19  JMP            ->23
+    //    21  FreeNullV8     wW0:4
+    //    22  LOADOBJ        rW0:4
+    //    23  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+ALokiAimingLaser@ GetOrCreateAimingLaserInstance()
+// 15 instr, 96 B bytecode, id=0x947F181B, varspace=4
+------------------------------------------------------------------------------
+{
+    ALokiAimingLaser v4;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        if (this.ValidateLaser()) {
+            v4 = this.ClientLaserInstance;
+        }
+    }
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowZ          ->21
+    //     8  PshVPtr        rW0:0
+    //     9  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    11  JLowZ          ->21
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    16  RDSPtr
+    //    17  RefCpyV        wW0:4
+    //    18  LOADOBJ        rW0:4
+    //    19  JMP            ->23
+    //    21  FreeNullV8     wW0:4
+    //    22  LOADOBJ        rW0:4
+    //    23  RET            W0:2
+
+------------------------------------------------------------------------------
+void InitClientLaser()
+// 6 instr, 44 B bytecode, id=0x8051C260, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(139));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:139
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+// UFunction name: InitClientLaser
+void InitClientLaser_Implementation()
+// 43 instr, 264 B bytecode, id=0x846D0C76, varspace=22
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    int v3;
+    FAimingLaserSettings v22;
+
+    if (this.UsesAimingLaser()) {
+        v2 = this.HasValidAimingLaser();
+        v2 = !v2;
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v3 = this.SpawnLaserSettingsIndex;
+        v2 = v3 >= 0;
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v22.FAimingLaserSettings();
+        v22 = this.LaserSettings[this.SpawnLaserSettingsIndex];
+        this.SpawnLaser(v22);
+        v3 = this.SpawnLaserSettingsIndex;
+        this.SwitchLaserSettingsInternal(v3);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84656                 ; bool ULokiAimingVisComponentScript::UsesAimingLaser()
+    //     3  JLowNZ         ->9
+    //     5  SetV4          wW0:1 d:0
+    //     7  JMP            ->16
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    12  CpyRtoV4       wW0:2
+    //    13  NOT            rW0:2
+    //    14  CpyVtoV4       wW0:1 rW1:2
+    //    16  CpyVtoR1       rW0:1
+    //    17  JLowNZ         ->23
+    //    19  SetV4          wW0:1 d:0
+    //    21  JMP            ->32
+    //    23  LoadThisR      W0:272 d:134230841      ; ULokiAimingVisComponentScript::SpawnLaserSettingsIndex  (+272)
+    //    25  RDR4           wW0:3
+    //    26  CMPIi          rW0:3 d:0
+    //    28  TNS
+    //    29  CpyRtoV4       wW0:2
+    //    30  CpyVtoV4       wW0:1 rW1:2
+    //    32  CpyVtoR1       rW0:1
+    //    33  JLowZ          ->65
+    //    35  PSF            rW0:22
+    //    36  CALL           d:84571                 ; void FAimingLaserSettings::FAimingLaserSettings()
+    //    38  LoadThisR      W0:272 d:134230841      ; ULokiAimingVisComponentScript::SpawnLaserSettingsIndex  (+272)
+    //    40  RDR4           wW0:4
+    //    41  PshV4          rW0:4
+    //    42  PshVPtr        rW0:0
+    //    43  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //    45  Thiscall1      q:0x26e6ef23dc0         ; FAimingLaserSettings& TArray<FAimingLaserSettings>::opIndex(int)
+    //    48  PshRPtr
+    //    49  PSF            rW0:22
+    //    50  CopyScript     q:0x26e6ed74900         ; FAimingLaserSettings
+    //    53  PopPtr
+    //    54  PSF            rW0:22
+    //    55  PshVPtr        rW0:0
+    //    56  CALLINTF       d:84664                 ; void ULokiAimingVisComponentScript::SpawnLaser(const FAimingLaserSettings&)
+    //    58  LoadThisR      W0:272 d:134230841      ; ULokiAimingVisComponentScript::SpawnLaserSettingsIndex  (+272)
+    //    60  RDR4           wW0:3
+    //    61  PshV4          rW0:3
+    //    62  PshVPtr        rW0:0
+    //    63  CALLINTF       d:84667                 ; void ULokiAimingVisComponentScript::SwitchLaserSettingsInternal(const int)
+    //    65  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnGamepadHasCursorChanged
+void OnGamepadHasCursorChanged_Implementation(const bool bGamepadHasCursor)
+// 62 instr, 356 B bytecode, id=0xE9862A9C, varspace=16
+------------------------------------------------------------------------------
+{
+    auto v3;
+    auto v8;
+    ALokiHeroCharacter v10;
+    ALokiCharacter v12;
+    ALokiHeroCharacter v14;
+
+    if (this.ClientLaserInstance != null) {
+        v3 = this.ClientLaserInstance.LaserProjectilePath != null;
+    } else {
+        v3 = 0;
+    }
+    if (v3) {
+        if (!bGamepadHasCursor) {
+            v12 = this.OwnerCharacter;
+            if (v12 == null) {
+                v14 = null;
+            } else {
+                v14 = cast<ALokiHeroCharacter>(v12);
+            }
+            v10 = v14;
+            if (v14 != null) {
+                v8 = float(v10.GetCharacterProjectileTerrainHeightOffset());
+                this.ClientLaserInstance.LaserProjectilePath.ProjectileHeight = v8;
+            }
+        } else {
+            v8 = 1106247680;
+            this.ClientLaserInstance.LaserProjectilePath.ProjectileHeight = 1106247680;
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JNZ            ->12
+    //     8  SetV4          wW0:3 d:0
+    //    10  JMP            ->25
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    15  RDSPtr
+    //    16  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    18  RDSPtr
+    //    19  RefCpyV        wW0:6
+    //    20  CmpPtrNull     rW0:6
+    //    21  TNZ
+    //    22  CpyRtoV4       wW0:7
+    //    23  CpyVtoV4       wW0:3 rW1:7
+    //    25  CpyVtoR1       rW0:3
+    //    26  JLowZ          ->88
+    //    28  CpyVtoR1       rW0:-2
+    //    29  JLowZ          ->46
+    //    31  SetV4          wW0:8 d:1106247680
+    //    33  PshVPtr        rW0:0
+    //    34  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    36  RDSPtr
+    //    37  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    39  RDSPtr
+    //    40  ADDSi          W0:212 d:67115347       ; ULokiProjectilePathComponent::ProjectileHeight  (+212)
+    //    42  PopRPtr
+    //    43  WRTV4          rW0:8
+    //    44  JMP            ->88
+    //    46  PshVPtr        rW0:0
+    //    47  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //    49  RDSPtr
+    //    50  RefCpyV        wW0:12
+    //    51  CmpPtrNull     rW0:12
+    //    52  JZ             ->63
+    //    54  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //    56  PSF            rW0:14
+    //    57  PshVPtr        rW0:12
+    //    58  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    61  JMP            ->64
+    //    63  ClrVPtr        wW0:14
+    //    64  PshVPtr        rW0:14
+    //    65  RefCpyV        wW0:10
+    //    66  CmpPtrNull     rW0:10
+    //    67  JZ             ->87
+    //    69  PshVPtr        rW0:10
+    //    70  CALLSYS        q:0x26e7a184140         ; float64 ALokiCharacter::GetCharacterProjectileTerrainHeightOffset() const
+    //    73  CpyRtoV8       wW0:16
+    //    74  dTOf           wW0:8 rW1:16
+    //    76  PshVPtr        rW0:0
+    //    77  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    79  RDSPtr
+    //    80  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    82  RDSPtr
+    //    83  ADDSi          W0:212 d:67115347       ; ULokiProjectilePathComponent::ProjectileHeight  (+212)
+    //    85  PopRPtr
+    //    86  WRTV4          rW0:8
+    //    87  FreeNullV8     wW0:10
+    //    88  RET            W0:3
+
+------------------------------------------------------------------------------
+void SpawnLaser(const FAimingLaserSettings&inout Settings)
+// 9 instr, 68 B bytecode, id=0x2ED01FF4, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument(Settings);
+    __Evt_Execute(this, __STATIC_NAME(140));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230837             ; FAimingLaserSettings
+    //     2  PshVPtr        rW0:-2
+    //     3  CALLSYS        q:0x26e7861c640         ; void __Evt_PushArgument(const ?&)
+    //     6  PshC4          d:140
+    //     8  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    11  PshRPtr
+    //    12  PshVPtr        rW0:0
+    //    13  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    16  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+// UFunction name: SpawnLaser
+void SpawnLaser_Implementation(const FAimingLaserSettings&inout Settings)
+// 161 instr, 1036 B bytecode, id=0xFB6A7248, varspace=56
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    ALokiCharacter v6;
+    ALokiHeroCharacter v8;
+    ALokiHeroCharacter v10;
+    FVector v16;
+    FVector v22;
+    FVector v28;
+    FVector v40;
+    float64 v42;
+    ALokiAimingLaser v50;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v2 = this.ValidateOwner();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = this.UsesAimingLaser();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = Settings.bUnconditionallyVisibleWhenActive;
+        v2 = !v2;
+        if (v2) {
+            v1 = this.IsOwnerLocallyControlled();
+            v1 = !v1;
+            v2 = v1;
+        } else {
+            v2 = 0;
+        }
+        if (!v2) {
+            v1 = Settings.LaserClass.IsValid();
+            v1 = !v1;
+            if (!v1) {
+                if (this.HasValidAimingLaser()) {
+                    if (this.ClientLaserInstance.IsA(cast<UClass@>(Settings.LaserClass))) {
+                        goto L258;
+                    }
+                    this.DestroyLaser();
+                }
+                v6 = this.OwnerCharacter;
+                if (v6 == null) {
+                    v8 = null;
+                } else {
+                    v8 = cast<ALokiHeroCharacter>(v6);
+                }
+                v10 = v8;
+                if (IsValid(v8)) {
+                    v22 = v10.GetCharacterProjectileSpawnLocation();
+                    v16 = v10.GetActorTransform().InverseTransformPosition(v22);
+                    v28 = this.OwnerCharacter.GetActorLocation();
+                    v40 = FVector(FVector::UpVector);
+                    v42 = v16.Z;
+                    v1 = false;
+                    v50 = SpawnActor(Settings.LaserClass, v40, FRotator::ZeroRotator, NAME_None, false, null);
+                    v50.SetInstigator(this.OwnerCharacter);
+                    v50.OwnerAimingVisComponent = this;
+                    v50.UpdateOwner(v10);
+                    v50.AttachToActor(this.OwnerCharacter, NAME_None, 2);
+                    v42 = v10.GetCharacterProjectileTerrainHeightOffset();
+                    v50.SetProjectileSpawnLocation(v16.Size2D(), v42);
+                    v2 = true;
+                    this.ClientLaserSetVisibility(true);
+                    this.ClientLaserInstance = v50;
+                    this.OnLimitLaserToCursorChanged();
+                    this.ClientLaserInstance.OnLaserSpawned();
+                }
+            } else {
+            }
+        } else {
+        }
+    }
+    L258:
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84653                 ; bool ULokiAimingVisComponentScript::ValidateOwner()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowNZ         ->25
+    //    21  SetV4          wW0:1 d:0
+    //    23  JMP            ->31
+    //    25  PshVPtr        rW0:0
+    //    26  CALLINTF       d:84656                 ; bool ULokiAimingVisComponentScript::UsesAimingLaser()
+    //    28  CpyRtoV4       wW0:2
+    //    29  CpyVtoV4       wW0:1 rW1:2
+    //    31  CpyVtoR1       rW0:1
+    //    32  JLowZ          ->258
+    //    34  LoadRObjR      rW0:-2 W1:64 DW2:134230837; FAimingLaserSettings::bUnconditionallyVisibleWhenActive  (+64)
+    //    37  RDR1           wW0:2
+    //    38  NOT            rW0:2
+    //    39  CpyVtoR1       rW0:2
+    //    40  JLowNZ         ->46
+    //    42  SetV4          wW0:2 d:0
+    //    44  JMP            ->53
+    //    46  PshVPtr        rW0:0
+    //    47  CALLINTF       d:84654                 ; bool ULokiAimingVisComponentScript::IsOwnerLocallyControlled()
+    //    49  CpyRtoV4       wW0:1
+    //    50  NOT            rW0:1
+    //    51  CpyVtoV4       wW0:2 rW1:1
+    //    53  CpyVtoR1       rW0:2
+    //    54  JLowZ          ->58
+    //    56  JMP            ->258
+    //    58  PshVPtr        rW0:-2
+    //    59  ADDSi          W0:0 d:134230837        ; FAimingLaserSettings::LaserClass  (+0)
+    //    61  CALLSYS        q:0x26e6ef23a40         ; bool TSubclassOf<ALokiAimingLaser@>::IsValid() const
+    //    64  CpyRtoV4       wW0:1
+    //    65  NOT            rW0:1
+    //    66  CpyVtoR1       rW0:1
+    //    67  JLowZ          ->71
+    //    69  JMP            ->258
+    //    71  PshVPtr        rW0:0
+    //    72  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    74  JLowZ          ->98
+    //    76  PshVPtr        rW0:-2
+    //    77  ADDSi          W0:0 d:134230837        ; FAimingLaserSettings::LaserClass  (+0)
+    //    79  CALLSYS        q:0x26e6ef2aa40         ; UClass@ TSubclassOf<ALokiAimingLaser@>::opImplConv() const
+    //    82  STOREOBJ       wW0:4
+    //    83  PshVPtr        rW0:4
+    //    84  PshVPtr        rW0:0
+    //    85  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    87  RDSPtr
+    //    88  CALLSYS        q:0x26e7039ac00         ; bool UObject::IsA(const UClass@) const
+    //    91  JLowZ          ->95
+    //    93  JMP            ->258
+    //    95  PshVPtr        rW0:0
+    //    96  CALLINTF       d:84666                 ; void ULokiAimingVisComponentScript::DestroyLaser()
+    //    98  PshVPtr        rW0:0
+    //    99  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //   101  RDSPtr
+    //   102  RefCpyV        wW0:6
+    //   103  CmpPtrNull     rW0:6
+    //   104  JZ             ->115
+    //   106  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //   108  PSF            rW0:8
+    //   109  PshVPtr        rW0:6
+    //   110  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   113  JMP            ->116
+    //   115  ClrVPtr        wW0:8
+    //   116  PshVPtr        rW0:8
+    //   117  RefCpyV        wW0:10
+    //   118  PshVPtr        rW0:10
+    //   119  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   122  JLowZ          ->257
+    //   124  PSF            rW0:22
+    //   125  PshVPtr        rW0:10
+    //   126  CALLSYS        q:0x26e7a184300         ; FVector ALokiCharacter::GetCharacterProjectileSpawnLocation() const
+    //   129  PSF            rW0:22
+    //   130  PSF            rW0:16
+    //   131  PshVPtr        rW0:10
+    //   132  CALLSYS        q:0x26e7970adc0         ; const FTransform& AActor::GetActorTransform() const   [UFunction GetTransform]
+    //   135  PshRPtr
+    //   136  CALLSYS        q:0x26e7061a340         ; FVector FTransform::InverseTransformPosition(const FVector&) const
+    //   139  PSF            rW0:28
+    //   140  PshVPtr        rW0:0
+    //   141  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //   143  RDSPtr
+    //   144  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   147  PshGPtr        q:0x26e7681c948         ; FVector::UpVector
+    //   150  PSF            rW0:40
+    //   151  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //   154  LoadVObjR      rW0:16 W1:16 DW2:67117444; FVector::Z  (+16)
+    //   157  RDR8           wW0:42
+    //   158  PshV8          rW0:42
+    //   159  PSF            rW0:48
+    //   160  PSF            rW0:40
+    //   161  CALLSYS        q:0x26e69d00780         ; FVector FVector::opMul(float64) const
+    //   164  PSF            rW0:48
+    //   165  PSF            rW0:40
+    //   166  PSF            rW0:28
+    //   167  CALLSYS        q:0x26e69d00e80         ; FVector FVector::opAdd(const FVector&) const
+    //   170  PshNull
+    //   171  SetV1          wW0:1 d:0
+    //   173  PshV4          rW0:1
+    //   174  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   177  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //   180  PSF            rW0:40
+    //   181  PshVPtr        rW0:-2
+    //   182  ADDSi          W0:0 d:134230837        ; FAimingLaserSettings::LaserClass  (+0)
+    //   184  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //   187  STOREOBJ       wW0:50
+    //   188  PshVPtr        rW0:0
+    //   189  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //   191  RDSPtr
+    //   192  PshVPtr        rW0:50
+    //   193  CALLSYS        q:0x26e7a628740         ; void AActor::SetInstigator(APawn@)
+    //   196  PshVPtr        rW0:0
+    //   197  PshVPtr        rW0:50
+    //   198  ADDSi          W0:952 d:134230838      ; ALokiAimingLaser::OwnerAimingVisComponent  (+952)
+    //   200  REFCPY
+    //   201  PopPtr
+    //   202  PshVPtr        rW0:10
+    //   203  PshVPtr        rW0:50
+    //   204  CALLINTF       d:84577                 ; void ALokiAimingLaser::UpdateOwner(ALokiHeroCharacter@)
+    //   206  SetV1          wW0:53 d:2
+    //   208  PshV4          rW0:53
+    //   209  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   212  PshVPtr        rW0:0
+    //   213  ADDSi          W0:232 d:134230841      ; ULokiAimingVisComponentScript::OwnerCharacter  (+232)
+    //   215  RDSPtr
+    //   216  PshVPtr        rW0:50
+    //   217  CALLSYS        q:0x26e79f5b4c0         ; void AActor::AttachToActor(AActor@, FName, EAttachmentRule)   [UFunction K2_AttachToActor]
+    //   220  PshVPtr        rW0:10
+    //   221  CALLSYS        q:0x26e7a184140         ; float64 ALokiCharacter::GetCharacterProjectileTerrainHeightOffset() const
+    //   224  CpyRtoV8       wW0:42
+    //   225  PshV8          rW0:42
+    //   226  PSF            rW0:16
+    //   227  CALLSYS        q:0x26e69d04840         ; float64 FVector::Size2D() const
+    //   230  CpyRtoV8       wW0:56
+    //   231  PshV8          rW0:56
+    //   232  PshVPtr        rW0:50
+    //   233  CALLINTF       d:84600                 ; void ALokiAimingLaser::SetProjectileSpawnLocation(const float64, const float64)
+    //   235  SetV1          wW0:2 d:1
+    //   237  PshV4          rW0:2
+    //   238  PshVPtr        rW0:0
+    //   239  CALLINTF       d:84675                 ; void ULokiAimingVisComponentScript::ClientLaserSetVisibility(const bool)
+    //   241  PshVPtr        rW0:50
+    //   242  PshVPtr        rW0:0
+    //   243  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   245  REFCPY
+    //   246  PopPtr
+    //   247  PshVPtr        rW0:0
+    //   248  CALLINTF       d:84673                 ; void ULokiAimingVisComponentScript::OnLimitLaserToCursorChanged()
+    //   250  PshVPtr        rW0:0
+    //   251  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   253  RDSPtr
+    //   254  CALLINTF       d:84593                 ; void ALokiAimingLaser::OnLaserSpawned()
+    //   256  FreeNullV8     wW0:50
+    //   257  FreeNullV8     wW0:10
+    //   258  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void DestroyLaser()
+// 8 instr, 52 B bytecode, id=0x0148879C, varspace=1
+------------------------------------------------------------------------------
+{
+    if (this.HasValidAimingLaser()) {
+        this.ClientLaserInstance.DestroyActor();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //     3  JLowZ          ->12
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //     8  RDSPtr
+    //     9  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //    12  RET            W0:2
+
+------------------------------------------------------------------------------
+void SwitchLaserSettingsInternal(const int NewIndex)
+// 8 instr, 60 B bytecode, id=0x63ABD593, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__int(NewIndex);
+    __Evt_Execute(this, __STATIC_NAME(141));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fc8ac0         ; void __Evt_PushArgument__int(const int&)
+    //     4  PshC4          d:141
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, meta=(BlueprintProtected))
+// UFunction name: SwitchLaserSettingsInternal
+void SwitchLaserSettingsInternal_Implementation(const int NewIndex)
+// 166 instr, 1060 B bytecode, id=0x322A7630, varspace=30
+------------------------------------------------------------------------------
+{
+    bool v1;
+    int v2;
+    FAimingLaserSettings v22;
+    float64 v26;
+    float64 v28;
+    auto v30;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        if (this.ValidateOwner()) {
+            if (this.LaserSettings.IsValidIndex(NewIndex)) {
+                v2 = this.CurrentLaserSettingsIndex;
+                this.CurrentLaserSettingsIndex = NewIndex;
+                v22.FAimingLaserSettings();
+                v22 = this.LaserSettings[NewIndex];
+                if (IsValid(cast<UObject@>(v22.LaserClass))) {
+                    this.DestroyLaser();
+                    this.SpawnLaser(v22);
+                }
+                v1 = this.HasValidAimingLaser();
+                v1 = !v1;
+                if (!v1) {
+                    v1 = v22.bOverrideLimitLaserToCursor;
+                    if (!v1) {
+                        this.ClientLaserInstance.ClearOverrideLimitLaserToCursor();
+                    } else {
+                        v1 = v22.bLimitLaserToCursor;
+                        this.ClientLaserInstance.OverrideLimitLaserToCursor(v1);
+                    }
+                    v28 = v22.MaxDistance;
+                    v26 = v28;
+                    v1 = v22.bBenefitsFromBonusPrimaryAttackDistance;
+                    if (v1) {
+                        v28 = this.GetBonusPrimaryAttackDistance();
+                        this.ClientLaserInstance.PrimaryAttackDistance = v28;
+                        v30 = 1;
+                        v28 = this.GetBonusPrimaryAttackDistance();
+                        v30 = 1 + v28;
+                        v26 = v26 * v30;
+                    }
+                    this.ClientLaserInstance.SetMaxDistance(v26);
+                    if (IsValid(v22.LaserMaterial)) {
+                        this.ClientLaserInstance.SetLaserMaterial(v22.LaserMaterial);
+                    }
+                    if (IsValid(v22.EndpointMaterial)) {
+                        this.ClientLaserInstance.SetEndpointMaterial(v22.EndpointMaterial);
+                    }
+                    if (IsValid(v22.HitFlareNiagaraSystem)) {
+                        this.ClientLaserInstance.SetHitFlareNiagaraSystem(v22.HitFlareNiagaraSystem);
+                    }
+                    v1 = v22.bOverrideBrightness;
+                    if (v1) {
+                        v28 = v22.Brightness;
+                        this.ClientLaserInstance.SetBrightness(v28);
+                    }
+                    v1 = v22.bShowTraceHitFlare;
+                    this.ClientLaserInstance.bShowTraceHitFlare = v1;
+                    v1 = v22.bLimitLaserToTraceHit;
+                    this.ClientLaserInstance.bLimitLaserToTraceHit = v1;
+                    v1 = v22.bIgnoresHeroes;
+                    this.ClientLaserInstance.bIgnoresHeroes = v1;
+                    this.ClientLaserInstance.OnLaserSettingsIndexChanged(v2, NewIndex);
+                } else {
+                }
+            }
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowZ          ->264
+    //     8  PshVPtr        rW0:0
+    //     9  CALLINTF       d:84653                 ; bool ULokiAimingVisComponentScript::ValidateOwner()
+    //    11  JLowZ          ->264
+    //    13  PshV4          rW0:-2
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //    17  CALLSYS        q:0x26e6ef2a880         ; bool TArray<FAimingLaserSettings>::IsValidIndex(int) const
+    //    20  JLowZ          ->264
+    //    22  LoadThisR      W0:276 d:134230841      ; ULokiAimingVisComponentScript::CurrentLaserSettingsIndex  (+276)
+    //    24  RDR4           wW0:3
+    //    25  CpyVtoV4       wW0:2 rW1:3
+    //    27  LoadThisR      W0:276 d:134230841      ; ULokiAimingVisComponentScript::CurrentLaserSettingsIndex  (+276)
+    //    29  WRTV4          rW0:-2
+    //    30  PSF            rW0:22
+    //    31  CALL           d:84571                 ; void FAimingLaserSettings::FAimingLaserSettings()
+    //    33  PshV4          rW0:-2
+    //    34  PshVPtr        rW0:0
+    //    35  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //    37  Thiscall1      q:0x26e6ef23dc0         ; FAimingLaserSettings& TArray<FAimingLaserSettings>::opIndex(int)
+    //    40  PshRPtr
+    //    41  PSF            rW0:22
+    //    42  CopyScript     q:0x26e6ed74900         ; FAimingLaserSettings
+    //    45  PopPtr
+    //    46  PSF            rW0:22
+    //    47  ADDSi          W0:0 d:134230837        ; FAimingLaserSettings::LaserClass  (+0)
+    //    49  CALLSYS        q:0x26e6ef2ac00         ; UObject@ TSubclassOf<ALokiAimingLaser@>::opImplConv() const
+    //    52  STOREOBJ       wW0:24
+    //    53  PshVPtr        rW0:24
+    //    54  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    57  JLowZ          ->66
+    //    59  PshVPtr        rW0:0
+    //    60  CALLINTF       d:84666                 ; void ULokiAimingVisComponentScript::DestroyLaser()
+    //    62  PSF            rW0:22
+    //    63  PshVPtr        rW0:0
+    //    64  CALLINTF       d:84664                 ; void ULokiAimingVisComponentScript::SpawnLaser(const FAimingLaserSettings&)
+    //    66  PshVPtr        rW0:0
+    //    67  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    69  CpyRtoV4       wW0:1
+    //    70  NOT            rW0:1
+    //    71  CpyVtoR1       rW0:1
+    //    72  JLowZ          ->76
+    //    74  JMP            ->264
+    //    76  LoadVObjR      rW0:22 W1:18 DW2:134230837; FAimingLaserSettings::bOverrideLimitLaserToCursor  (+18)
+    //    79  RDR1           wW0:1
+    //    80  CpyVtoR1       rW0:1
+    //    81  JLowZ          ->96
+    //    83  LoadVObjR      rW0:22 W1:19 DW2:134230837; FAimingLaserSettings::bLimitLaserToCursor  (+19)
+    //    86  RDR1           wW0:1
+    //    87  PshV4          rW0:1
+    //    88  PshVPtr        rW0:0
+    //    89  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    91  RDSPtr
+    //    92  CALLINTF       d:84608                 ; void ALokiAimingLaser::OverrideLimitLaserToCursor(const bool)
+    //    94  JMP            ->102
+    //    96  PshVPtr        rW0:0
+    //    97  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    99  RDSPtr
+    //   100  CALLINTF       d:84609                 ; void ALokiAimingLaser::ClearOverrideLimitLaserToCursor()
+    //   102  LoadVObjR      rW0:22 W1:8 DW2:134230837; FAimingLaserSettings::MaxDistance  (+8)
+    //   105  RDR8           wW0:28
+    //   106  CpyVtoV8       wW0:26 rW1:28
+    //   108  LoadVObjR      rW0:22 W1:66 DW2:134230837; FAimingLaserSettings::bBenefitsFromBonusPrimaryAttackDistance  (+66)
+    //   111  RDR1           wW0:1
+    //   112  CpyVtoR1       rW0:1
+    //   113  JLowZ          ->138
+    //   115  PshVPtr        rW0:0
+    //   116  CALLINTF       d:84650                 ; float64 ULokiAimingVisComponentScript::GetBonusPrimaryAttackDistance()
+    //   118  CpyRtoV8       wW0:28
+    //   119  PshVPtr        rW0:0
+    //   120  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   122  RDSPtr
+    //   123  ADDSi          W0:1072 d:134230838     ; ALokiAimingLaser::PrimaryAttackDistance  (+1072)
+    //   125  PopRPtr
+    //   126  WRTV8          rW0:28
+    //   127  SetV8          wW0:30 q:0x3ff0000000000000
+    //   130  PshVPtr        rW0:0
+    //   131  CALLINTF       d:84650                 ; float64 ULokiAimingVisComponentScript::GetBonusPrimaryAttackDistance()
+    //   133  CpyRtoV8       wW0:28
+    //   134  ADDd           wW0:30 rW1:30 rW2:28
+    //   136  MULd           wW0:26 rW1:26 rW2:30
+    //   138  PshV8          rW0:26
+    //   139  PshVPtr        rW0:0
+    //   140  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   142  RDSPtr
+    //   143  CALLINTF       d:84601                 ; void ALokiAimingLaser::SetMaxDistance(const float64)
+    //   145  PSF            rW0:22
+    //   146  ADDSi          W0:24 d:134230837       ; FAimingLaserSettings::LaserMaterial  (+24)
+    //   148  RDSPtr
+    //   149  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   152  JLowZ          ->164
+    //   154  PSF            rW0:22
+    //   155  ADDSi          W0:24 d:134230837       ; FAimingLaserSettings::LaserMaterial  (+24)
+    //   157  RDSPtr
+    //   158  PshVPtr        rW0:0
+    //   159  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   161  RDSPtr
+    //   162  CALLINTF       d:84603                 ; void ALokiAimingLaser::SetLaserMaterial(UMaterialInterface@)
+    //   164  PSF            rW0:22
+    //   165  ADDSi          W0:32 d:134230837       ; FAimingLaserSettings::EndpointMaterial  (+32)
+    //   167  RDSPtr
+    //   168  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   171  JLowZ          ->183
+    //   173  PSF            rW0:22
+    //   174  ADDSi          W0:32 d:134230837       ; FAimingLaserSettings::EndpointMaterial  (+32)
+    //   176  RDSPtr
+    //   177  PshVPtr        rW0:0
+    //   178  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   180  RDSPtr
+    //   181  CALLINTF       d:84604                 ; void ALokiAimingLaser::SetEndpointMaterial(UMaterialInterface@)
+    //   183  PSF            rW0:22
+    //   184  ADDSi          W0:40 d:134230837       ; FAimingLaserSettings::HitFlareNiagaraSystem  (+40)
+    //   186  RDSPtr
+    //   187  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   190  JLowZ          ->202
+    //   192  PSF            rW0:22
+    //   193  ADDSi          W0:40 d:134230837       ; FAimingLaserSettings::HitFlareNiagaraSystem  (+40)
+    //   195  RDSPtr
+    //   196  PshVPtr        rW0:0
+    //   197  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   199  RDSPtr
+    //   200  CALLINTF       d:84605                 ; void ALokiAimingLaser::SetHitFlareNiagaraSystem(UNiagaraSystem@)
+    //   202  LoadVObjR      rW0:22 W1:48 DW2:134230837; FAimingLaserSettings::bOverrideBrightness  (+48)
+    //   205  RDR1           wW0:1
+    //   206  CpyVtoR1       rW0:1
+    //   207  JLowZ          ->220
+    //   209  LoadVObjR      rW0:22 W1:56 DW2:134230837; FAimingLaserSettings::Brightness  (+56)
+    //   212  RDR8           wW0:28
+    //   213  PshV8          rW0:28
+    //   214  PshVPtr        rW0:0
+    //   215  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   217  RDSPtr
+    //   218  CALLINTF       d:84606                 ; void ALokiAimingLaser::SetBrightness(const float64)
+    //   220  LoadVObjR      rW0:22 W1:16 DW2:134230837; FAimingLaserSettings::bShowTraceHitFlare  (+16)
+    //   223  RDR1           wW0:1
+    //   224  PshVPtr        rW0:0
+    //   225  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   227  RDSPtr
+    //   228  ADDSi          W0:1000 d:134230838     ; ALokiAimingLaser::bShowTraceHitFlare  (+1000)
+    //   230  PopRPtr
+    //   231  WRTV1          rW0:1
+    //   232  LoadVObjR      rW0:22 W1:17 DW2:134230837; FAimingLaserSettings::bLimitLaserToTraceHit  (+17)
+    //   235  RDR1           wW0:1
+    //   236  PshVPtr        rW0:0
+    //   237  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   239  RDSPtr
+    //   240  ADDSi          W0:1001 d:134230838     ; ALokiAimingLaser::bLimitLaserToTraceHit  (+1001)
+    //   242  PopRPtr
+    //   243  WRTV1          rW0:1
+    //   244  LoadVObjR      rW0:22 W1:65 DW2:134230837; FAimingLaserSettings::bIgnoresHeroes  (+65)
+    //   247  RDR1           wW0:1
+    //   248  PshVPtr        rW0:0
+    //   249  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   251  RDSPtr
+    //   252  ADDSi          W0:1002 d:134230838     ; ALokiAimingLaser::bIgnoresHeroes  (+1002)
+    //   254  PopRPtr
+    //   255  WRTV1          rW0:1
+    //   256  PshV4          rW0:-2
+    //   257  PshV4          rW0:2
+    //   258  PshVPtr        rW0:0
+    //   259  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //   261  RDSPtr
+    //   262  CALLINTF       d:84596                 ; void ALokiAimingLaser::OnLaserSettingsIndexChanged(const int, const int)
+    //   264  RET            W0:3
+
+------------------------------------------------------------------------------
+void OnLivingStateChangedLaser(const ELivingState NewLivingState)
+// 8 instr, 60 B bytecode, id=0xA420C884, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__ELivingState(NewLivingState);
+    __Evt_Execute(this, __STATIC_NAME(142));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e774cf3c0         ; void __Evt_PushArgument__ELivingState(const ELivingState&)
+    //     4  PshC4          d:142
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnLivingStateChangedLaser
+void OnLivingStateChangedLaser_Implementation(const ELivingState NewLivingState)
+// 69 instr, 468 B bytecode, id=0x1C2CCD00, varspace=22
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    int v3;
+    int v4;
+    FAimingLaserSettings v22;
+
+    // control flow not structured (structuring dropped 10 of 21 block(s)); flat form:
+        if (Loki::LokiIsClient(__WorldContext)) goto L12; else goto L8;
+    L8:
+        v1 = 0;
+        goto L18;
+    L12:
+        v2 = this.UsesAimingLaser();
+        v1 = v2;
+    L18:
+        if (v1) goto L25; else goto L21;
+    L21:
+        v1 = 0;
+        goto L31;
+    L25:
+        v2 = this.ValidateOwner();
+        v1 = v2;
+    L31:
+        if (!v1) goto L116; else goto L34;
+    L34:
+        v3 = int(NewLivingState);
+        if (v3 > 2) goto L116; else goto L40;
+    L40:
+        if (v3 < 0) goto L116; else goto L44;
+    L44:
+        v4 = v3 - 0;
+        switch (v4) { /* computed jump */ }
+        // computed jump -- flow not reconstructed
+        goto L61;
+        goto L71;
+        v2 = false;
+        this.ClientLaserSetVisibility(false);
+        goto L116;
+    L61:
+        if (!this.HasValidAimingLaser()) goto L69; else goto L66;
+    L66:
+        this.DestroyLaser();
+    L69:
+        goto L116;
+    L71:
+        if (!this.HasValidAimingLaser()) goto L84; else goto L76;
+    L76:
+        v1 = true;
+        this.ClientLaserSetVisibility(true);
+        goto L114;
+    L84:
+        v22.FAimingLaserSettings();
+        v3 = this.SpawnLaserSettingsIndex;
+        v22 = this.LaserSettings[v3];
+        this.SpawnLaser(v22);
+        v4 = this.SpawnLaserSettingsIndex;
+        this.SwitchLaserSettingsInternal(v4);
+    L114:
+    L116:
+        return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84656                 ; bool ULokiAimingVisComponentScript::UsesAimingLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowNZ         ->25
+    //    21  SetV4          wW0:1 d:0
+    //    23  JMP            ->31
+    //    25  PshVPtr        rW0:0
+    //    26  CALLINTF       d:84653                 ; bool ULokiAimingVisComponentScript::ValidateOwner()
+    //    28  CpyRtoV4       wW0:2
+    //    29  CpyVtoV4       wW0:1 rW1:2
+    //    31  CpyVtoR1       rW0:1
+    //    32  JLowZ          ->116
+    //    34  sbTOi          wW0:3 rW1:-2
+    //    36  CMPIi          rW0:3 d:2
+    //    38  JP             ->116
+    //    40  CMPIi          rW0:3 d:0
+    //    42  JS             ->116
+    //    44  SUBIi          wW0:4 rW1:3 DW2:0
+    //    47  JMPP           rW0:4 d:2
+    //    49  JMP            ->61
+    //    51  JMP            ->71
+    //    53  SetV1          wW0:2 d:0
+    //    55  PshV4          rW0:2
+    //    56  PshVPtr        rW0:0
+    //    57  CALLINTF       d:84675                 ; void ULokiAimingVisComponentScript::ClientLaserSetVisibility(const bool)
+    //    59  JMP            ->116
+    //    61  PshVPtr        rW0:0
+    //    62  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    64  JLowZ          ->69
+    //    66  PshVPtr        rW0:0
+    //    67  CALLINTF       d:84666                 ; void ULokiAimingVisComponentScript::DestroyLaser()
+    //    69  JMP            ->116
+    //    71  PshVPtr        rW0:0
+    //    72  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    74  JLowZ          ->84
+    //    76  SetV1          wW0:1 d:1
+    //    78  PshV4          rW0:1
+    //    79  PshVPtr        rW0:0
+    //    80  CALLINTF       d:84675                 ; void ULokiAimingVisComponentScript::ClientLaserSetVisibility(const bool)
+    //    82  JMP            ->114
+    //    84  PSF            rW0:22
+    //    85  CALL           d:84571                 ; void FAimingLaserSettings::FAimingLaserSettings()
+    //    87  LoadThisR      W0:272 d:134230841      ; ULokiAimingVisComponentScript::SpawnLaserSettingsIndex  (+272)
+    //    89  RDR4           wW0:3
+    //    90  PshV4          rW0:3
+    //    91  PshVPtr        rW0:0
+    //    92  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //    94  Thiscall1      q:0x26e6ef23dc0         ; FAimingLaserSettings& TArray<FAimingLaserSettings>::opIndex(int)
+    //    97  PshRPtr
+    //    98  PSF            rW0:22
+    //    99  CopyScript     q:0x26e6ed74900         ; FAimingLaserSettings
+    //   102  PopPtr
+    //   103  PSF            rW0:22
+    //   104  PshVPtr        rW0:0
+    //   105  CALLINTF       d:84664                 ; void ULokiAimingVisComponentScript::SpawnLaser(const FAimingLaserSettings&)
+    //   107  LoadThisR      W0:272 d:134230841      ; ULokiAimingVisComponentScript::SpawnLaserSettingsIndex  (+272)
+    //   109  RDR4           wW0:4
+    //   110  PshV4          rW0:4
+    //   111  PshVPtr        rW0:0
+    //   112  CALLINTF       d:84667                 ; void ULokiAimingVisComponentScript::SwitchLaserSettingsInternal(const int)
+    //   114  JMP            ->116
+    //   116  RET            W0:3
+
+------------------------------------------------------------------------------
+void OnShowAimingLaserChanged()
+// 6 instr, 44 B bytecode, id=0x3887873E, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(45));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:45
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnShowAimingLaserChanged
+void OnShowAimingLaserChanged_Implementation()
+// 39 instr, 228 B bytecode, id=0x57A5C769, varspace=20
+------------------------------------------------------------------------------
+{
+    auto v1;
+    int v2;
+    FAimingLaserSettings v20;
+
+    v1 = this.UsesAimingLaser();
+    v1 = !v1;
+    if (!v1) {
+        v1 = this.HasValidAimingLaser();
+        v1 = !v1;
+        if (v1) {
+            v20.FAimingLaserSettings();
+            v2 = this.SpawnLaserSettingsIndex;
+            v20 = this.LaserSettings[v2];
+            this.SpawnLaser(v20);
+            v2 = this.SpawnLaserSettingsIndex;
+            this.SwitchLaserSettingsInternal(v2);
+        }
+    } else {
+        if (this.HasValidAimingLaser()) {
+            this.DestroyLaser();
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84656                 ; bool ULokiAimingVisComponentScript::UsesAimingLaser()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->18
+    //     8  PshVPtr        rW0:0
+    //     9  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    11  JLowZ          ->16
+    //    13  PshVPtr        rW0:0
+    //    14  CALLINTF       d:84666                 ; void ULokiAimingVisComponentScript::DestroyLaser()
+    //    16  JMP            ->56
+    //    18  PshVPtr        rW0:0
+    //    19  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    21  CpyRtoV4       wW0:1
+    //    22  NOT            rW0:1
+    //    23  CpyVtoR1       rW0:1
+    //    24  JLowZ          ->56
+    //    26  PSF            rW0:20
+    //    27  CALL           d:84571                 ; void FAimingLaserSettings::FAimingLaserSettings()
+    //    29  LoadThisR      W0:272 d:134230841      ; ULokiAimingVisComponentScript::SpawnLaserSettingsIndex  (+272)
+    //    31  RDR4           wW0:2
+    //    32  PshV4          rW0:2
+    //    33  PshVPtr        rW0:0
+    //    34  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //    36  Thiscall1      q:0x26e6ef23dc0         ; FAimingLaserSettings& TArray<FAimingLaserSettings>::opIndex(int)
+    //    39  PshRPtr
+    //    40  PSF            rW0:20
+    //    41  CopyScript     q:0x26e6ed74900         ; FAimingLaserSettings
+    //    44  PopPtr
+    //    45  PSF            rW0:20
+    //    46  PshVPtr        rW0:0
+    //    47  CALLINTF       d:84664                 ; void ULokiAimingVisComponentScript::SpawnLaser(const FAimingLaserSettings&)
+    //    49  LoadThisR      W0:272 d:134230841      ; ULokiAimingVisComponentScript::SpawnLaserSettingsIndex  (+272)
+    //    51  RDR4           wW0:2
+    //    52  PshV4          rW0:2
+    //    53  PshVPtr        rW0:0
+    //    54  CALLINTF       d:84667                 ; void ULokiAimingVisComponentScript::SwitchLaserSettingsInternal(const int)
+    //    56  RET            W0:2
+
+------------------------------------------------------------------------------
+void OnLimitLaserToCursorChanged()
+// 6 instr, 44 B bytecode, id=0x2991DB54, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(47));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:47
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnLimitLaserToCursorChanged
+void OnLimitLaserToCursorChanged_Implementation()
+// 29 instr, 212 B bytecode, id=0x83DD73D2, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v1;
+    bool v2;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        if (this.UsesAimingLaser()) {
+            v2 = this.HasValidAimingLaser();
+            v1 = v2;
+        } else {
+            v1 = 0;
+        }
+        if (v1) {
+            v2 = UPlayerConfigManager::GetGenericPlayerConfigBoolValue(__WorldContext, __STATIC_NAME(43), __STATIC_NAME(46));
+            this.ClientLaserInstance.SetLimitLaserToCursorUserSetting(v2);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowZ          ->52
+    //     8  PshVPtr        rW0:0
+    //     9  CALLINTF       d:84656                 ; bool ULokiAimingVisComponentScript::UsesAimingLaser()
+    //    11  JLowNZ         ->17
+    //    13  SetV4          wW0:1 d:0
+    //    15  JMP            ->23
+    //    17  PshVPtr        rW0:0
+    //    18  CALLINTF       d:84658                 ; bool ULokiAimingVisComponentScript::HasValidAimingLaser()
+    //    20  CpyRtoV4       wW0:2
+    //    21  CpyVtoV4       wW0:1 rW1:2
+    //    23  CpyVtoR1       rW0:1
+    //    24  JLowZ          ->52
+    //    26  PshC4          d:46
+    //    28  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    31  PshRPtr
+    //    32  PshC4          d:43
+    //    34  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    37  PshRPtr
+    //    38  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    41  CALLSYS        q:0x26e7a4a8580         ; bool UPlayerConfigManager::GetGenericPlayerConfigBoolValue(UObject@, FName, FName)
+    //    44  CpyRtoV4       wW0:2
+    //    45  PshV4          rW0:2
+    //    46  PshVPtr        rW0:0
+    //    47  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    49  RDSPtr
+    //    50  CALLINTF       d:84607                 ; void ALokiAimingLaser::SetLimitLaserToCursorUserSetting(const bool)
+    //    52  RET            W0:2
+
+------------------------------------------------------------------------------
+void ClientLaserSetVisibility(const bool bNewVisibility)
+// 8 instr, 60 B bytecode, id=0xA8CF19B4, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__bool(bNewVisibility);
+    __Evt_Execute(this, __STATIC_NAME(143));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fce240         ; void __Evt_PushArgument__bool(const bool&)
+    //     4  PshC4          d:143
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetVisibility
+void ClientLaserSetVisibility_Implementation(const bool bNewVisibility)
+// 17 instr, 116 B bytecode, id=0x679EE8C5, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.SetVisibilityOnAll(bNewVisibility);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->28
+    //    21  PshV4          rW0:-2
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    25  RDSPtr
+    //    26  CALLINTF       d:84598                 ; void ALokiAimingLaser::SetVisibilityOnAll(const bool)
+    //    28  RET            W0:3
+
+------------------------------------------------------------------------------
+void ClientLaserSetScriptOverrides(const FLaserScriptOverrides&inout Overrides)
+// 9 instr, 68 B bytecode, id=0xA8A5D25F, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument(Overrides);
+    __Evt_Execute(this, __STATIC_NAME(144));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230845             ; FLaserScriptOverrides
+    //     2  PshVPtr        rW0:-2
+    //     3  CALLSYS        q:0x26e7861c640         ; void __Evt_PushArgument(const ?&)
+    //     6  PshC4          d:144
+    //     8  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    11  PshRPtr
+    //    12  PshVPtr        rW0:0
+    //    13  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    16  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetScriptOverrides
+void ClientLaserSetScriptOverrides_Implementation(const FLaserScriptOverrides&inout Overrides)
+// 28 instr, 184 B bytecode, id=0x91223267, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v2 = this.ValidateLaser();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = Overrides.bOverrideDesaturationAndOpacity;
+        this.ClientLaserInstance.bOverrideDesaturationAndOpacity = v2;
+        v1 = Overrides.bOverrideRangeAndAlphaStep;
+        this.ClientLaserInstance.bOverrideRangeAndAlphaStep = v1;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->45
+    //    21  LoadRObjR      rW0:-2 W1:0 DW2:134230845; FLaserScriptOverrides::bOverrideDesaturationAndOpacity  (+0)
+    //    24  RDR1           wW0:2
+    //    25  PshVPtr        rW0:0
+    //    26  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    28  RDSPtr
+    //    29  ADDSi          W0:1024 d:134230838     ; ALokiAimingLaser::bOverrideDesaturationAndOpacity  (+1024)
+    //    31  PopRPtr
+    //    32  WRTV1          rW0:2
+    //    33  LoadRObjR      rW0:-2 W1:1 DW2:134230845; FLaserScriptOverrides::bOverrideRangeAndAlphaStep  (+1)
+    //    36  RDR1           wW0:1
+    //    37  PshVPtr        rW0:0
+    //    38  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    40  RDSPtr
+    //    41  ADDSi          W0:1025 d:134230838     ; ALokiAimingLaser::bOverrideRangeAndAlphaStep  (+1025)
+    //    43  PopRPtr
+    //    44  WRTV1          rW0:1
+    //    45  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientLaserSetProgressCurve(UCurveFloat@ NewCurve)
+// 8 instr, 60 B bytecode, id=0xF16496E2, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__UCurveFloat(NewCurve);
+    __Evt_Execute(this, __STATIC_NAME(145));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77936b40         ; void __Evt_PushArgument__UCurveFloat(const UCurveFloat@&)
+    //     4  PshC4          d:145
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetProgressCurve
+void ClientLaserSetProgressCurve_Implementation(UCurveFloat@ NewCurve)
+// 17 instr, 116 B bytecode, id=0xF55BE532, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.SetProgressCurve(NewCurve);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->28
+    //    21  PshVPtr        rW0:-2
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    25  RDSPtr
+    //    26  CALLINTF       d:84611                 ; void ALokiAimingLaser::SetProgressCurve(UCurveFloat@)
+    //    28  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientLaserRestartProgressSequence(const float64 Duration, const bool bIsCurveNormalized)
+// 10 instr, 76 B bytecode, id=0x4480C58E, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(Duration);
+    __Evt_PushArgument__bool(bIsCurveNormalized);
+    __Evt_Execute(this, __STATIC_NAME(146));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PSF            rW0:-4
+    //     5  CALLSYS        q:0x26e77fce240         ; void __Evt_PushArgument__bool(const bool&)
+    //     8  PshC4          d:146
+    //    10  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    13  PshRPtr
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    18  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserRestartProgressSequence
+void ClientLaserRestartProgressSequence_Implementation(const float64 Duration, const bool bIsCurveNormalized)
+// 18 instr, 120 B bytecode, id=0x8983C4EB, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.RestartProgressSequence(Duration, bIsCurveNormalized);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->29
+    //    21  PshV4          rW0:-4
+    //    22  PshV8          rW0:-2
+    //    23  PshVPtr        rW0:0
+    //    24  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    26  RDSPtr
+    //    27  CALLINTF       d:84613                 ; void ALokiAimingLaser::RestartProgressSequence(const float64, const bool)
+    //    29  RET            W0:5
+
+------------------------------------------------------------------------------
+void ClientLaserResetProgress()
+// 6 instr, 44 B bytecode, id=0xADA11D76, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(147));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:147
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserResetProgress
+void ClientLaserResetProgress_Implementation()
+// 16 instr, 112 B bytecode, id=0xCB9AEE30, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.ResetProgress();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->27
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    24  RDSPtr
+    //    25  CALLINTF       d:84612                 ; void ALokiAimingLaser::ResetProgress()
+    //    27  RET            W0:2
+
+------------------------------------------------------------------------------
+void ClientLaserTriggerCustomEvent(const int EventNumber, const float64 Value)
+// 10 instr, 76 B bytecode, id=0x0415E643, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__int(EventNumber);
+    __Evt_PushArgument__float(Value);
+    __Evt_Execute(this, __STATIC_NAME(148));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fc8ac0         ; void __Evt_PushArgument__int(const int&)
+    //     4  PSF            rW0:-3
+    //     5  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     8  PshC4          d:148
+    //    10  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    13  PshRPtr
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    18  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserTriggerCustomEvent
+void ClientLaserTriggerCustomEvent_Implementation(const int EventNumber, const float64 Value)
+// 48 instr, 332 B bytecode, id=0x8FEDF2C0, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    // control flow not structured (structuring dropped 8 of 17 block(s)); flat form:
+        if (Loki::LokiIsClient(__WorldContext)) goto L12; else goto L8;
+    L8:
+        v1 = 0;
+        goto L18;
+    L12:
+        v1 = this.ValidateLaser();
+    L18:
+        if (!v1) goto L82; else goto L21;
+    L21:
+        if (EventNumber > 3) goto L82; else goto L25;
+    L25:
+        if (EventNumber > 3) goto L82; else goto L29;
+    L29:
+        if (EventNumber < 0) goto L82; else goto L33;
+    L33:
+        switch (EventNumber - 0) { /* computed jump */ }
+        // computed jump -- flow not reconstructed
+        goto L46;
+        goto L55;
+        goto L64;
+        goto L73;
+    L46:
+        this.ClientLaserInstance.CustomEvent0(Value);
+        goto L82;
+    L55:
+        this.ClientLaserInstance.CustomEvent1(Value);
+        goto L82;
+    L64:
+        this.ClientLaserInstance.CustomEvent2(Value);
+        goto L82;
+    L73:
+        this.ClientLaserInstance.CustomEvent3(Value);
+    L82:
+        return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->82
+    //    21  CMPIi          rW0:-2 d:3
+    //    23  JP             ->82
+    //    25  CMPIi          rW0:-2 d:3
+    //    27  JP             ->82
+    //    29  CMPIi          rW0:-2 d:0
+    //    31  JS             ->82
+    //    33  SUBIi          wW0:3 rW1:-2 DW2:0
+    //    36  JMPP           rW0:3 d:3
+    //    38  JMP            ->46
+    //    40  JMP            ->55
+    //    42  JMP            ->64
+    //    44  JMP            ->73
+    //    46  PshV8          rW0:-3
+    //    47  PshVPtr        rW0:0
+    //    48  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    50  RDSPtr
+    //    51  CALLINTF       d:84585                 ; void ALokiAimingLaser::CustomEvent0(const float64)
+    //    53  JMP            ->82
+    //    55  PshV8          rW0:-3
+    //    56  PshVPtr        rW0:0
+    //    57  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    59  RDSPtr
+    //    60  CALLINTF       d:84587                 ; void ALokiAimingLaser::CustomEvent1(const float64)
+    //    62  JMP            ->82
+    //    64  PshV8          rW0:-3
+    //    65  PshVPtr        rW0:0
+    //    66  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    68  RDSPtr
+    //    69  CALLINTF       d:84589                 ; void ALokiAimingLaser::CustomEvent2(const float64)
+    //    71  JMP            ->82
+    //    73  PshV8          rW0:-3
+    //    74  PshVPtr        rW0:0
+    //    75  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    77  RDSPtr
+    //    78  CALLINTF       d:84591                 ; void ALokiAimingLaser::CustomEvent3(const float64)
+    //    80  JMP            ->82
+    //    82  RET            W0:5
+
+------------------------------------------------------------------------------
+void ClientLaserSetMaxDistance(const float64 MaxDistance)
+// 8 instr, 60 B bytecode, id=0x31AFB674, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(MaxDistance);
+    __Evt_Execute(this, __STATIC_NAME(149));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:149
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetMaxDistance
+void ClientLaserSetMaxDistance_Implementation(const float64 MaxDistance)
+// 17 instr, 116 B bytecode, id=0xA9A6F24E, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.SetMaxDistance(MaxDistance);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->28
+    //    21  PshV8          rW0:-2
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    25  RDSPtr
+    //    26  CALLINTF       d:84601                 ; void ALokiAimingLaser::SetMaxDistance(const float64)
+    //    28  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientLaserSetHueShift(const float64 NewHueShift)
+// 8 instr, 60 B bytecode, id=0x0E1042BF, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(NewHueShift);
+    __Evt_Execute(this, __STATIC_NAME(150));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:150
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetHueShift
+void ClientLaserSetHueShift_Implementation(const float64 NewHueShift)
+// 17 instr, 116 B bytecode, id=0xEF20E20D, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.SetHueShift(NewHueShift);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->28
+    //    21  PshV8          rW0:-2
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    25  RDSPtr
+    //    26  CALLINTF       d:84602                 ; void ALokiAimingLaser::SetHueShift(const float64)
+    //    28  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientLaserSetLaserMaterial(UMaterialInterface@ NewMaterial)
+// 8 instr, 60 B bytecode, id=0x59E82414, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__UMaterialInterface(NewMaterial);
+    __Evt_Execute(this, __STATIC_NAME(151));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e7776f740         ; void __Evt_PushArgument__UMaterialInterface(const UMaterialInterface@&)
+    //     4  PshC4          d:151
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetLaserMaterial
+void ClientLaserSetLaserMaterial_Implementation(UMaterialInterface@ NewMaterial)
+// 17 instr, 116 B bytecode, id=0x6A2A378A, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.SetLaserMaterial(NewMaterial);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->28
+    //    21  PshVPtr        rW0:-2
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    25  RDSPtr
+    //    26  CALLINTF       d:84603                 ; void ALokiAimingLaser::SetLaserMaterial(UMaterialInterface@)
+    //    28  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientLaserSetEndpointMaterial(UMaterialInterface@ NewMaterial)
+// 8 instr, 60 B bytecode, id=0x31DE3000, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__UMaterialInterface(NewMaterial);
+    __Evt_Execute(this, __STATIC_NAME(152));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e7776f740         ; void __Evt_PushArgument__UMaterialInterface(const UMaterialInterface@&)
+    //     4  PshC4          d:152
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetEndpointMaterial
+void ClientLaserSetEndpointMaterial_Implementation(UMaterialInterface@ NewMaterial)
+// 17 instr, 116 B bytecode, id=0x6396186E, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.SetEndpointMaterial(NewMaterial);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->28
+    //    21  PshVPtr        rW0:-2
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    25  RDSPtr
+    //    26  CALLINTF       d:84604                 ; void ALokiAimingLaser::SetEndpointMaterial(UMaterialInterface@)
+    //    28  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientLaserSetHitFlareNiagaraSystem(UNiagaraSystem@ NewNiagaraSystem)
+// 8 instr, 60 B bytecode, id=0xFF826C74, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__UNiagaraSystem(NewNiagaraSystem);
+    __Evt_Execute(this, __STATIC_NAME(153));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e779b4bc0         ; void __Evt_PushArgument__UNiagaraSystem(const UNiagaraSystem@&)
+    //     4  PshC4          d:153
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetHitFlareNiagaraSystem
+void ClientLaserSetHitFlareNiagaraSystem_Implementation(UNiagaraSystem@ NewNiagaraSystem)
+// 17 instr, 116 B bytecode, id=0x91182F4C, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.SetHitFlareNiagaraSystem(NewNiagaraSystem);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->28
+    //    21  PshVPtr        rW0:-2
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    25  RDSPtr
+    //    26  CALLINTF       d:84605                 ; void ALokiAimingLaser::SetHitFlareNiagaraSystem(UNiagaraSystem@)
+    //    28  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientLaserSetBrightness(const float64 NewBrightness)
+// 8 instr, 60 B bytecode, id=0x8843A1F2, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(NewBrightness);
+    __Evt_Execute(this, __STATIC_NAME(154));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:154
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetBrightness
+void ClientLaserSetBrightness_Implementation(const float64 NewBrightness)
+// 17 instr, 116 B bytecode, id=0x85195C96, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.SetBrightness(NewBrightness);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->28
+    //    21  PshV8          rW0:-2
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    25  RDSPtr
+    //    26  CALLINTF       d:84606                 ; void ALokiAimingLaser::SetBrightness(const float64)
+    //    28  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientLaserOverrideLimitLaserToCursor(const bool bNewLimitLaserToCursorOverride)
+// 8 instr, 60 B bytecode, id=0xDF011A89, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__bool(bNewLimitLaserToCursorOverride);
+    __Evt_Execute(this, __STATIC_NAME(155));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fce240         ; void __Evt_PushArgument__bool(const bool&)
+    //     4  PshC4          d:155
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserOverrideLimitLaserToCursor
+void ClientLaserOverrideLimitLaserToCursor_Implementation(const bool bNewLimitLaserToCursorOverride)
+// 17 instr, 116 B bytecode, id=0x744C788D, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.OverrideLimitLaserToCursor(bNewLimitLaserToCursorOverride);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->28
+    //    21  PshV4          rW0:-2
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    25  RDSPtr
+    //    26  CALLINTF       d:84608                 ; void ALokiAimingLaser::OverrideLimitLaserToCursor(const bool)
+    //    28  RET            W0:3
+
+------------------------------------------------------------------------------
+void ClientLaserClearOverrideLimitLaserToCursor()
+// 6 instr, 44 B bytecode, id=0xD346A2F0, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(156));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:156
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserClearOverrideLimitLaserToCursor
+void ClientLaserClearOverrideLimitLaserToCursor_Implementation()
+// 16 instr, 112 B bytecode, id=0x5A3C20F9, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v1 = this.ValidateLaser();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.ClientLaserInstance.ClearOverrideLimitLaserToCursor();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->27
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    24  RDSPtr
+    //    25  CALLINTF       d:84609                 ; void ALokiAimingLaser::ClearOverrideLimitLaserToCursor()
+    //    27  RET            W0:2
+
+------------------------------------------------------------------------------
+void ClientLaserSwitchSettings(const int NewSettingsIndex)
+// 8 instr, 60 B bytecode, id=0xF3212032, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__int(NewSettingsIndex);
+    __Evt_Execute(this, __STATIC_NAME(157));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fc8ac0         ; void __Evt_PushArgument__int(const int&)
+    //     4  PshC4          d:157
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSwitchSettings
+void ClientLaserSwitchSettings_Implementation(const int NewSettingsIndex)
+// 11 instr, 76 B bytecode, id=0x726D1CDA, varspace=2
+------------------------------------------------------------------------------
+{
+    this.ReplicatedLaserSettingsIndex = NewSettingsIndex;
+    if (Loki::LokiIsClient(__WorldContext)) {
+        this.SwitchLaserSettingsInternal(this.ReplicatedLaserSettingsIndex);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:280 d:134230841      ; ULokiAimingVisComponentScript::ReplicatedLaserSettingsIndex  (+280)
+    //     2  WRTV4          rW0:-2
+    //     3  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     6  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     9  JLowZ          ->18
+    //    11  LoadThisR      W0:280 d:134230841      ; ULokiAimingVisComponentScript::ReplicatedLaserSettingsIndex  (+280)
+    //    13  RDR4           wW0:2
+    //    14  PshV4          rW0:2
+    //    15  PshVPtr        rW0:0
+    //    16  CALLINTF       d:84667                 ; void ULokiAimingVisComponentScript::SwitchLaserSettingsInternal(const int)
+    //    18  RET            W0:3
+
+------------------------------------------------------------------------------
+void ClientLaserShowRangeMarker(const bool bNewShowRangeMarker)
+// 8 instr, 60 B bytecode, id=0x69171F88, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__bool(bNewShowRangeMarker);
+    __Evt_Execute(this, __STATIC_NAME(158));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fce240         ; void __Evt_PushArgument__bool(const bool&)
+    //     4  PshC4          d:158
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserShowRangeMarker
+void ClientLaserShowRangeMarker_Implementation(const bool bNewShowRangeMarker)
+// 42 instr, 280 B bytecode, id=0xBB0229A0, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    ALokiAimingLaser v6;
+    ALokiAimingLaserRangeMarker v8;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v2 = this.ValidateLaser();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = this.ClientLaserInstance.IsA(cast<UClass@>(__StaticType_ALokiAimingLaserRangeMarker));
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v6 = this.ClientLaserInstance;
+        if (v6 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ALokiAimingLaserRangeMarker>(v6);
+        }
+        v8.SetShowRangeMarker(bNewShowRangeMarker);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowNZ         ->25
+    //    21  SetV4          wW0:1 d:0
+    //    23  JMP            ->44
+    //    25  PshGPtr        q:0x26e6f1b1fd8         ; __StaticType_ALokiAimingLaserRangeMarker
+    //    28  CHKREF
+    //    29  CALLSYS        q:0x26e6ef2a340         ; UClass@ TSubclassOf<ALokiAimingLaserRangeMarker@>::opImplConv() const
+    //    32  STOREOBJ       wW0:4
+    //    33  PshVPtr        rW0:4
+    //    34  PshVPtr        rW0:0
+    //    35  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    37  RDSPtr
+    //    38  CALLSYS        q:0x26e7039ac00         ; bool UObject::IsA(const UClass@) const
+    //    41  CpyRtoV4       wW0:2
+    //    42  CpyVtoV4       wW0:1 rW1:2
+    //    44  CpyVtoR1       rW0:1
+    //    45  JLowZ          ->69
+    //    47  PshV4          rW0:-2
+    //    48  PshVPtr        rW0:0
+    //    49  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    51  RDSPtr
+    //    52  RefCpyV        wW0:6
+    //    53  CmpPtrNull     rW0:6
+    //    54  JZ             ->65
+    //    56  TYPEID         d:1207972667            ; ALokiAimingLaserRangeMarker@
+    //    58  PSF            rW0:8
+    //    59  PshVPtr        rW0:6
+    //    60  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    63  JMP            ->66
+    //    65  ClrVPtr        wW0:8
+    //    66  PshVPtr        rW0:8
+    //    67  CALLINTF       d:84623                 ; void ALokiAimingLaserRangeMarker::SetShowRangeMarker(const bool)
+    //    69  RET            W0:3
+
+------------------------------------------------------------------------------
+void ClientLaserSetRangeMarkerDistance(const float64 NewDistance)
+// 8 instr, 60 B bytecode, id=0x37AD8DE8, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(NewDistance);
+    __Evt_Execute(this, __STATIC_NAME(159));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:159
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetRangeMarkerDistance
+void ClientLaserSetRangeMarkerDistance_Implementation(const float64 NewDistance)
+// 42 instr, 280 B bytecode, id=0xEEBE6DBC, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    ALokiAimingLaser v6;
+    ALokiAimingLaserRangeMarker v8;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v2 = this.ValidateLaser();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = this.ClientLaserInstance.IsA(cast<UClass@>(__StaticType_ALokiAimingLaserRangeMarker));
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v6 = this.ClientLaserInstance;
+        if (v6 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ALokiAimingLaserRangeMarker>(v6);
+        }
+        v8.SetRangeMarkerDistance(NewDistance);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowNZ         ->25
+    //    21  SetV4          wW0:1 d:0
+    //    23  JMP            ->44
+    //    25  PshGPtr        q:0x26e6f1b1fd8         ; __StaticType_ALokiAimingLaserRangeMarker
+    //    28  CHKREF
+    //    29  CALLSYS        q:0x26e6ef2a340         ; UClass@ TSubclassOf<ALokiAimingLaserRangeMarker@>::opImplConv() const
+    //    32  STOREOBJ       wW0:4
+    //    33  PshVPtr        rW0:4
+    //    34  PshVPtr        rW0:0
+    //    35  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    37  RDSPtr
+    //    38  CALLSYS        q:0x26e7039ac00         ; bool UObject::IsA(const UClass@) const
+    //    41  CpyRtoV4       wW0:2
+    //    42  CpyVtoV4       wW0:1 rW1:2
+    //    44  CpyVtoR1       rW0:1
+    //    45  JLowZ          ->69
+    //    47  PshV8          rW0:-2
+    //    48  PshVPtr        rW0:0
+    //    49  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    51  RDSPtr
+    //    52  RefCpyV        wW0:6
+    //    53  CmpPtrNull     rW0:6
+    //    54  JZ             ->65
+    //    56  TYPEID         d:1207972667            ; ALokiAimingLaserRangeMarker@
+    //    58  PSF            rW0:8
+    //    59  PshVPtr        rW0:6
+    //    60  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    63  JMP            ->66
+    //    65  ClrVPtr        wW0:8
+    //    66  PshVPtr        rW0:8
+    //    67  CALLINTF       d:84624                 ; void ALokiAimingLaserRangeMarker::SetRangeMarkerDistance(const float64)
+    //    69  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientLaserSetRangeMarkerMaterial(UMaterialInterface@ NewMaterial)
+// 8 instr, 60 B bytecode, id=0xE57B9F3F, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__UMaterialInterface(NewMaterial);
+    __Evt_Execute(this, __STATIC_NAME(160));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e7776f740         ; void __Evt_PushArgument__UMaterialInterface(const UMaterialInterface@&)
+    //     4  PshC4          d:160
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientLaserSetRangeMarkerMaterial
+void ClientLaserSetRangeMarkerMaterial_Implementation(UMaterialInterface@ NewMaterial)
+// 42 instr, 280 B bytecode, id=0x801E7C1C, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    ALokiAimingLaser v6;
+    ALokiAimingLaserRangeMarker v8;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v2 = this.ValidateLaser();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = this.ClientLaserInstance.IsA(cast<UClass@>(__StaticType_ALokiAimingLaserRangeMarker));
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v6 = this.ClientLaserInstance;
+        if (v6 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ALokiAimingLaserRangeMarker>(v6);
+        }
+        v8.SetRangeMarkerMaterial(NewMaterial);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84655                 ; bool ULokiAimingVisComponentScript::ValidateLaser()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowNZ         ->25
+    //    21  SetV4          wW0:1 d:0
+    //    23  JMP            ->44
+    //    25  PshGPtr        q:0x26e6f1b1fd8         ; __StaticType_ALokiAimingLaserRangeMarker
+    //    28  CHKREF
+    //    29  CALLSYS        q:0x26e6ef2a340         ; UClass@ TSubclassOf<ALokiAimingLaserRangeMarker@>::opImplConv() const
+    //    32  STOREOBJ       wW0:4
+    //    33  PshVPtr        rW0:4
+    //    34  PshVPtr        rW0:0
+    //    35  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    37  RDSPtr
+    //    38  CALLSYS        q:0x26e7039ac00         ; bool UObject::IsA(const UClass@) const
+    //    41  CpyRtoV4       wW0:2
+    //    42  CpyVtoV4       wW0:1 rW1:2
+    //    44  CpyVtoR1       rW0:1
+    //    45  JLowZ          ->69
+    //    47  PSF            rW0:-2
+    //    48  PshVPtr        rW0:0
+    //    49  ADDSi          W0:248 d:134230841      ; ULokiAimingVisComponentScript::ClientLaserInstance  (+248)
+    //    51  RDSPtr
+    //    52  RefCpyV        wW0:6
+    //    53  CmpPtrNull     rW0:6
+    //    54  JZ             ->65
+    //    56  TYPEID         d:1207972667            ; ALokiAimingLaserRangeMarker@
+    //    58  PSF            rW0:8
+    //    59  PshVPtr        rW0:6
+    //    60  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    63  JMP            ->66
+    //    65  ClrVPtr        wW0:8
+    //    66  PshVPtr        rW0:8
+    //    67  CALLINTF       d:84625                 ; void ALokiAimingLaserRangeMarker::SetRangeMarkerMaterial(UMaterialInterface@&)
+    //    69  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool HasValidHeightIndicator()
+// 7 instr, 40 B bytecode, id=0xCFEAC519, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = IsValid(this.HeightIndicator);
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:216 d:67114911       ; ULokiAimingVisComponent::HeightIndicator  (+216)
+    //     3  RDSPtr
+    //     4  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     7  CpyRtoV4       wW0:1
+    //     8  CpyVtoR4       rW0:1
+    //     9  RET            W0:2
+
+------------------------------------------------------------------------------
+void DestroyHeightIndicator()
+// 6 instr, 44 B bytecode, id=0xEC17BA99, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(161));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:161
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: DestroyHeightIndicator
+void DestroyHeightIndicator_Implementation()
+// 8 instr, 52 B bytecode, id=0xB68AF7A5, varspace=1
+------------------------------------------------------------------------------
+{
+    if (this.HasValidHeightIndicator()) {
+        this.HeightIndicator.DestroyActor();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84711                 ; bool ULokiAimingVisComponentScript::HasValidHeightIndicator()
+    //     3  JLowZ          ->12
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:216 d:67114911       ; ULokiAimingVisComponent::HeightIndicator  (+216)
+    //     8  RDSPtr
+    //     9  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //    12  RET            W0:2
+
+------------------------------------------------------------------------------
+void OnTookDamageHeightIndicator(ALokiCharacter@ SourceCharacter, AActor@ TargetActor, const float TotalDamage, const FLokiDamageStatistic&in DamageStatistic, const FGameplayEffectSpec&in EffectSpec, const FGameplayTagContainer&in ExecutionTags)
+// 18 instr, 140 B bytecode, id=0xB4E5DA92, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__ALokiCharacter(SourceCharacter);
+    __Evt_PushArgument__AActor(TargetActor);
+    __Evt_PushArgument__float32(TotalDamage);
+    __Evt_PushArgument__FLokiDamageStatistic(DamageStatistic);
+    __Evt_PushArgument__FGameplayEffectSpec(EffectSpec);
+    __Evt_PushArgument__FGameplayTagContainer(ExecutionTags);
+    __Evt_Execute(this, __STATIC_NAME(162));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77b9b4c0         ; void __Evt_PushArgument__ALokiCharacter(const ALokiCharacter@&)
+    //     4  PSF            rW0:-4
+    //     5  CALLSYS        q:0x26e7762b300         ; void __Evt_PushArgument__AActor(const AActor@&)
+    //     8  PSF            rW0:-6
+    //     9  CALLSYS        q:0x26e77fcdec0         ; void __Evt_PushArgument__float32(const float&)
+    //    12  PshVPtr        rW0:-7
+    //    13  CALLSYS        q:0x26e784cf900         ; void __Evt_PushArgument__FLokiDamageStatistic(const FLokiDamageStatistic&)
+    //    16  PshVPtr        rW0:-9
+    //    17  CALLSYS        q:0x26e783ab4c0         ; void __Evt_PushArgument__FGameplayEffectSpec(const FGameplayEffectSpec&)
+    //    20  PshVPtr        rW0:-11
+    //    21  CALLSYS        q:0x26e7805adc0         ; void __Evt_PushArgument__FGameplayTagContainer(const FGameplayTagContainer&)
+    //    24  PshC4          d:162
+    //    26  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    29  PshRPtr
+    //    30  PshVPtr        rW0:0
+    //    31  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    34  RET            W0:13
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnTookDamageHeightIndicator
+void OnTookDamageHeightIndicator_Implementation(ALokiCharacter@ SourceCharacter, AActor@ TargetActor, const float TotalDamage, const FLokiDamageStatistic&in DamageStatistic, const FGameplayEffectSpec&in EffectSpec, const FGameplayTagContainer&in ExecutionTags)
+// 22 instr, 128 B bytecode, id=0x43416624, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (this.ValidateOwner()) {
+        v1 = this.HasValidHeightIndicator();
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        this.HeightIndicator.OnTookDamage(SourceCharacter, TargetActor, TotalDamage, DamageStatistic, EffectSpec, ExecutionTags);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84653                 ; bool ULokiAimingVisComponentScript::ValidateOwner()
+    //     3  JLowNZ         ->9
+    //     5  SetV4          wW0:1 d:0
+    //     7  JMP            ->15
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:84711                 ; bool ULokiAimingVisComponentScript::HasValidHeightIndicator()
+    //    12  CpyRtoV4       wW0:2
+    //    13  CpyVtoV4       wW0:1 rW1:2
+    //    15  CpyVtoR1       rW0:1
+    //    16  JLowZ          ->31
+    //    18  PshVPtr        rW0:-11
+    //    19  PshVPtr        rW0:-9
+    //    20  PshVPtr        rW0:-7
+    //    21  PshV4          rW0:-6
+    //    22  PshVPtr        rW0:-4
+    //    23  PshVPtr        rW0:-2
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:216 d:67114911       ; ULokiAimingVisComponent::HeightIndicator  (+216)
+    //    27  RDSPtr
+    //    28  CALLSYS        q:0x26e7a2a3500         ; void ALokiHeroHeightIndicator::OnTookDamage(ALokiCharacter@, AActor@, float, const FLokiDamageStatistic&, const FGameplayEffectSpec&, const FGameplayTagContainer&)
+    //    31  RET            W0:13
+
+------------------------------------------------------------------------------
+void ClientSetHeightIndicatorVisibility(const bool bNewVisibility)
+// 8 instr, 60 B bytecode, id=0xB40B54F0, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__bool(bNewVisibility);
+    __Evt_Execute(this, __STATIC_NAME(163));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fce240         ; void __Evt_PushArgument__bool(const bool&)
+    //     4  PshC4          d:163
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+// UFunction name: ClientSetHeightIndicatorVisibility
+void ClientSetHeightIndicatorVisibility_Implementation(const bool bNewVisibility)
+// 32 instr, 220 B bytecode, id=0xE7A95F4C, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v2 = this.HasValidHeightIndicator();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = this.HeightIndicator.ShouldShowHeightIndicator();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = true;
+        this.HeightIndicator.GetRootComponent().SetVisibility(bNewVisibility, true);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84711                 ; bool ULokiAimingVisComponentScript::HasValidHeightIndicator()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowNZ         ->25
+    //    21  SetV4          wW0:1 d:0
+    //    23  JMP            ->35
+    //    25  PshVPtr        rW0:0
+    //    26  ADDSi          W0:216 d:67114911       ; ULokiAimingVisComponent::HeightIndicator  (+216)
+    //    28  RDSPtr
+    //    29  CALLSYS        q:0x26e7a2a2fc0         ; bool ALokiHeroHeightIndicator::ShouldShowHeightIndicator()
+    //    32  CpyRtoV4       wW0:2
+    //    33  CpyVtoV4       wW0:1 rW1:2
+    //    35  CpyVtoR1       rW0:1
+    //    36  JLowZ          ->54
+    //    38  SetV1          wW0:2 d:1
+    //    40  PshV4          rW0:2
+    //    41  PshV4          rW0:-2
+    //    42  PshVPtr        rW0:0
+    //    43  ADDSi          W0:216 d:67114911       ; ULokiAimingVisComponent::HeightIndicator  (+216)
+    //    45  RDSPtr
+    //    46  CALLSYS        q:0x26e79712700         ; USceneComponent@ AActor::GetRootComponent() const   [UFunction K2_GetRootComponent]
+    //    49  STOREOBJ       wW0:4
+    //    50  PshVPtr        rW0:4
+    //    51  CALLSYS        q:0x26e79750e80         ; void USceneComponent::SetVisibility(bool, bool)
+    //    54  RET            W0:3
+
+------------------------------------------------------------------------------
+void OnShowHeightIndicatorsChanged()
+// 6 instr, 44 B bytecode, id=0x36E5EDF8, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(164));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:164
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnShowHeightIndicatorsChanged
+void OnShowHeightIndicatorsChanged_Implementation()
+// 20 instr, 136 B bytecode, id=0xFA159ABA, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+    bool v2;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v2 = this.HasValidHeightIndicator();
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (v1) {
+        v2 = this.HeightIndicator.ShouldShowHeightIndicator();
+        this.ClientSetHeightIndicatorVisibility(v2);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowNZ         ->12
+    //     8  SetV4          wW0:1 d:0
+    //    10  JMP            ->18
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84711                 ; bool ULokiAimingVisComponentScript::HasValidHeightIndicator()
+    //    15  CpyRtoV4       wW0:2
+    //    16  CpyVtoV4       wW0:1 rW1:2
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowZ          ->33
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:216 d:67114911       ; ULokiAimingVisComponent::HeightIndicator  (+216)
+    //    24  RDSPtr
+    //    25  CALLSYS        q:0x26e7a2a2fc0         ; bool ALokiHeroHeightIndicator::ShouldShowHeightIndicator()
+    //    28  CpyRtoV4       wW0:2
+    //    29  PshV4          rW0:2
+    //    30  PshVPtr        rW0:0
+    //    31  CALLINTF       d:84716                 ; void ULokiAimingVisComponentScript::ClientSetHeightIndicatorVisibility(const bool)
+    //    33  RET            W0:2
+
+------------------------------------------------------------------------------
+void OnLivingStateChanged(const ELivingState NewLivingState, ALokiCharacter@ Character)
+// 10 instr, 76 B bytecode, id=0x645178CD, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__ELivingState(NewLivingState);
+    __Evt_PushArgument__ALokiCharacter(Character);
+    __Evt_Execute(this, __STATIC_NAME(48));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e774cf3c0         ; void __Evt_PushArgument__ELivingState(const ELivingState&)
+    //     4  PSF            rW0:-3
+    //     5  CALLSYS        q:0x26e77b9b4c0         ; void __Evt_PushArgument__ALokiCharacter(const ALokiCharacter@&)
+    //     8  PshC4          d:48
+    //    10  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    13  PshRPtr
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    18  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnLivingStateChanged
+void OnLivingStateChanged_Implementation(const ELivingState NewLivingState, ALokiCharacter@ Character)
+// 4 instr, 20 B bytecode, id=0x95095B25, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnLivingStateChangedLaser(NewLivingState);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV4          rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:84669                 ; void ULokiAimingVisComponentScript::OnLivingStateChangedLaser(const ELivingState)
+    //     4  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnOwnerDestroyed(AActor@ DestroyedActor)
+// 3 instr, 16 B bytecode, id=0x84ACB732, varspace=0
+------------------------------------------------------------------------------
+{
+    this.DestroyHeightIndicator();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84712                 ; void ULokiAimingVisComponentScript::DestroyHeightIndicator()
+    //     3  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 5 instr, 32 B bytecode, id=0x8EE46292, varspace=1
+------------------------------------------------------------------------------
+{
+    this.SetbReplicates(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //     7  RET            W0:2
+
+------------------------------------------------------------------------------
+~ULokiAimingVisComponentScript()
+// 4 instr, 28 B bytecode, id=0x3BC03E47, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:256 d:134230841      ; ULokiAimingVisComponentScript::LaserSettings  (+256)
+    //     3  CALLSYS        q:0x26e6edc28c0         ; void TArray<FAimingLaserSettings>::$beh2()
+    //     6  RET            W0:2
+

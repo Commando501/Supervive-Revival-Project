@@ -1,0 +1,958 @@
+// ============================================================================
+//  MODULE   Barracuda.GameMode.BarracudaGameMode
+//  SOURCE   Barracuda/GameMode/BarracudaGameMode.as
+//  CONTENT  1 class(es), 32 function(s), 0 enum(s), 1 global(s), 8128 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Barracuda_GameMode_BarracudaGameModeStatics
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaGameMode;
+
+ABarracudaGameMode@ ABarracudaGameMode()   // traits=0x20
+{
+    ABarracudaGameMode v2;
+
+    v2 = ABarracudaGameMode();
+    return v2;
+}
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+ABarracudaGameMode@ GetBarracudaGameMode()   // traits=0x20
+{
+    ALokiGameMode v4;
+    ABarracudaGameMode v8;
+
+    v4 = Loki::GetLokiGameMode(__WorldContext);
+    if (v4 == nullptr) {
+        return v8;
+    } else {
+        if (v4 != nullptr) {
+            v8 = cast<ABarracudaGameMode@>(v4);
+        } else {
+            v8 = nullptr;
+        }
+    }
+    return v8;
+}
+
+UClass@ ABarracudaGameMode::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ABarracudaGameMode);
+    return v2;
+}
+
+ABarracudaGameMode@ ABarracudaGameMode::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaGameMode v8;
+
+    v2 = __StaticType_ABarracudaGameMode.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ABarracudaGameMode@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ABarracudaGameMode : ALokiTowerDefenseGameMode
+// unreal base : /Script/Loki.LokiTowerDefenseGameMode
+// C++ header  : ../../../Loki/Source/Loki/GameModes/LokiTowerDefenseGameMode.h
+// static class global: __StaticType_ABarracudaGameMode
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UBarracudaRallyMinionsComponent@ RallyMinionsComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UBarracudaPlayerSpawnerComponent@ BarracudaPlayerSpawnerComponent;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    float32 MatchStartTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Bounties)
+    float32 GoldLossOnDeath;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Bounties)
+    TArray<int> GoldBountyPerCurrentStreak;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Day/Night)
+    float64 DayNightDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bIsDay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Bounties)
+    TArray<float32> MinionSplitXPBonuses;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Bounties)
+    TArray<float32> MercyHeroKillXPCoefficients;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Bounties)
+    float32 UnderdogHeroKillXPBonusPerLevel;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bAnyTowersKilled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Dragon)
+    TArray<TSubclassOf<UGameplayEffect@>> DragonRewards;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    int NumDragonsKilled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    TMap<ALokiPlayerState@, float64> LastKnockedTimeTable;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults)
+    float64 KnockXPCooldownTime;
+    FGameplayTag DragonKilledPilotVO;
+    FGameplayTag MomentumBossKilledPilotVO;
+    TSubclassOf<UGameplayEffect@> MomentumBuffEffect;
+
+    ABarracudaGameMode()   // traits=0x21
+    {
+        this.GoldBountyPerCurrentStreak = TArray<int>();
+        this.MinionSplitXPBonuses = TArray<float32>();
+        this.MercyHeroKillXPCoefficients = TArray<float32>();
+        this.DragonRewards = TArray<TSubclassOf<UGameplayEffect@>>();
+        this.LastKnockedTimeTable = TMap<ALokiPlayerState@, float64>();
+        this.DragonKilledPilotVO = FGameplayTag();
+        this.MomentumBossKilledPilotVO = FGameplayTag();
+        this.MomentumBuffEffect = TSubclassOf<UGameplayEffect@>();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod)
+    UBarracudaGameStateComponent@ GetGameStateComponent() const   // traits=0x24
+    {
+        ALokiGameState v4;
+        UBarracudaGameStateComponent v8;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            return v8;
+        } else {
+            v8 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+        }
+        return v8;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        ALokiGameState v2;
+        UGameEventRouterComponent v8;
+        FGameEvent_BarracudaPhaseChanged v14;
+        auto v15;
+        FGameEventListenerHandle v28;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        v2.OnPlayerKilled.AddUFunction(this, n"OnPlayerKilled");
+        v8 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v8 != nullptr) {
+            v15 = false;
+            v14 = FGameEvent_BarracudaPhaseChanged();
+            v28 = v8.RegisterForEvent(this, v14, typeid(FGameEvent_BarracudaPhaseChanged), nullptr, n"AuthHandleBarracudaPhaseChanged", v15);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void AuthHandleBarracudaPhaseChanged(const FGameEvent_BarracudaPhaseChanged& Event, const AActor@ Context)   // traits=0x20
+    {
+        auto v2;
+        int v3;
+        UBarracudaGameStateComponent v8;
+        ALokiGameState v10;
+        auto v13;
+        float64 v16;
+
+        v2 = GetCurrentBarracudaPhaseType();
+        v3 = int(v2);
+        if (v3 == 2) {
+            this.OnNewDay();
+            v10 = Loki::GetLokiGameState(__WorldContext);
+            v8 = UBarracudaGameStateComponent::Get(v10, NAME_None);
+            v13 = Gameplay::GetServerTime(__WorldContext);
+            v13 = v13 + 60.0;
+            v16 = float64(v13);
+            v8.NextDayNightSwapTime = v16;
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        this.HandleDayNight();
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnNewPhase, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnNewPhase_Implementation(const ERoundPhase NextPhase, const ERoundPhase LastPhase)   // traits=0x20
+    {
+        int v1;
+        auto v3;
+
+        v1 = int(NextPhase);
+        if (v1 == ERoundPhase::EGP_Combat) {
+            v3 = false;
+            this.bIsDay = v3;
+            this.OnNewNight();
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=AugmentCharacterLoadoutItems, BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+    void AugmentCharacterLoadoutItems_Implementation(TArray<FStartupItemSpec>&inout LoadoutItems)   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    bool HasBarracudaMatchStarted()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        auto v3;
+
+        v1 = Gameplay::GetServerTime(__WorldContext);
+        v2 = this.MatchStartTime;
+        v3 = v1 >= v2;
+        return v3;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    float64 GetMatchTime()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        float64 v4;
+
+        v1 = Gameplay::GetServerTime(__WorldContext);
+        v2 = this.MatchStartTime;
+        v1 = v1 - v2;
+        v4 = float64(v1);
+        return v4;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnPlayerKilled(const FPlayerKillEventData& KillData)   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        int v3;
+        bool v4;
+        float32 v5;
+        float64 v8;
+        auto v10;
+        float64 v12;
+        ALokiCharacter v14;
+        ALokiHeroCharacter v16;
+        ALokiHeroCharacter v18;
+        ALokiPlayerState v20;
+        APlayerState v22;
+        ALokiPlayerState v24;
+        ALokiPlayerState v26;
+        int v27;
+        auto v28;
+        APawn v30;
+        ALokiHeroCharacter v32;
+        ALokiPlayerState v34;
+        APlayerState v36;
+        int v37;
+        auto v38;
+        int v39;
+        int v40;
+        float32 v41;
+        bool v42;
+        TArray<ALokiPlayerState@> v46;
+        FVector v56;
+        TArray<ALokiPlayerState@> v60;
+        TArray<ALokiPlayerState@> v64;
+        TArrayIterator<ALokiPlayerState@> v70;
+        ALokiPlayerState v78;
+        int v79;
+        auto v80;
+        int v81;
+        ECurrencyGrantReason v82;
+        float32 v83;
+        float32 v84;
+        auto v85;
+        int v86;
+        int v87;
+        float32 v88;
+        auto v89;
+        auto v90;
+        auto v91;
+
+        v1 = KillData.EventResult;
+        v2 = int(v1);
+        if (v2 != 2) {
+            return;
+        } else {
+            if (this.LastKnockedTimeTable.Contains(KillData.VictimPlayerState)) {
+                v5 = Gameplay::GetServerTime(__WorldContext);
+                v12 = float64(v5);
+                v8 = KillData.EventResult;
+                v10 = this.KnockXPCooldownTime;
+                v8 = v8 + v10;
+                if (v12 < v8) {
+                    return;
+                }
+            } else {
+                v5 = Gameplay::GetServerTime(__WorldContext);
+                v8 = float64(v5);
+                this.LastKnockedTimeTable.Add(KillData.VictimPlayerState, v8);
+                v14 = KillData.VictimPlayerState.GetLokiCharacter();
+                if (v14 != nullptr) {
+                    v16 = cast<ALokiHeroCharacter@>(v14);
+                } else {
+                    v16 = nullptr;
+                }
+                v18 = v16;
+                if (v18 != nullptr) {
+                    v22 = v18.PlayerState;
+                    if (v22 != nullptr) {
+                        v24 = cast<ALokiPlayerState@>(v22);
+                    } else {
+                        v24 = nullptr;
+                    }
+                    v26 = v24;
+                } else {
+                }
+                v20 = v26;
+                v2 = v20.GetTeamIndex_BP();
+                v28 = -1;
+                if (v18 != nullptr) {
+                    v5 = v18.GetLevel();
+                    v27 = Math::RoundToInt(v5);
+                    v28 = v27;
+                }
+                v30 = KillData.Killer;
+                if (v30 != nullptr) {
+                    v16 = cast<ALokiHeroCharacter@>(v30);
+                } else {
+                    v16 = nullptr;
+                }
+                v32 = v16;
+                if (v32 != nullptr) {
+                    v36 = v32.PlayerState;
+                    if (v36 != nullptr) {
+                        v26 = cast<ALokiPlayerState@>(v36);
+                    } else {
+                        v26 = nullptr;
+                    }
+                    v24 = v26;
+                } else {
+                }
+                v34 = v24;
+                v3 = LokiTeam::GetTeamFromActor(KillData.Killer);
+                v38 = -1;
+                if (v32 != nullptr) {
+                    v5 = v32.GetLevel();
+                    v37 = Math::RoundToInt(v5);
+                    v38 = v37;
+                }
+                v39 = 0;
+                if (v20 != nullptr) {
+                    v27 = v20.GetWalletCurrencyAmount("Gold");
+                    v41 = float32(v27);
+                    v5 = this.GoldLossOnDeath;
+                    v41 = v41 * v5;
+                    v37 = Math::RoundToInt(v41);
+                    v39 = v37;
+                    v4 = false;
+                    v20.ConsumeWalletCurrency("Gold", v39, v4);
+                }
+                v46 = TArray<ALokiPlayerState@>();
+                v56 = v18.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v60 = this.GetPlayerStatesForRewardsInRadius(v56, 2500.0, v3, KillData.Killer);
+                v64 = TArray<ALokiPlayerState@>();
+                v64 = KillData.AssistPlayerStats;
+                if (v34 != nullptr) {
+                    v64.AddUnique(v34);
+                }
+                v27 = 0;
+                while (true) {
+                    v40 = v60.Num();
+                    if (v27 >= v40) break;
+                    v27++;
+                    v46.AddUnique(v60[v27]);
+                }
+                v27 = 0;
+                while (true) {
+                    v37 = v64.Num();
+                    if (v27 >= v37) break;
+                    v27++;
+                    v46.AddUnique(v64[v27]);
+                }
+                v70 = v46.Iterator();
+                while (true) {
+                    v4 = v70.CanProceed;
+                    if (!v4) break;
+                    v78 = v70.Proceed();
+                    v27 = 0;
+                    v79 = 0;
+                    v70.Proceed();
+                    if (v64.Contains(v78)) {
+                        v40 = v46.Num();
+                        v37 = Math::IntegerDivisionTrunc(v39, v40);
+                        v27 = v27 + v37;
+                    }
+                    if (v78 != v34) {
+                        v4 = 0;
+                    } else {
+                        v42 = v20 != nullptr;
+                        v4 = v42;
+                    }
+                    if (v4) {
+                        v40 = v20.GetCurrentKillStreak();
+                        if (v40 > 0) {
+                            v81 = v20.GetCurrentKillStreak();
+                            v37 = this.GoldBountyPerCurrentStreak.Num();
+                            v40 = 1;
+                            v37 = v37 - v40;
+                            v40 = Math::Min(v37, v81);
+                            v27 = v27 + v40;
+                        }
+                    }
+                    v82 = ECurrencyGrantReason::DroppedByEnemy;
+                    v78.GrantWalletCurrency("Gold", v27, v82);
+                    if (v18 == nullptr) {
+                        v4 = 0;
+                    } else {
+                        v42 = v46.Contains(v78);
+                        v4 = v42;
+                    }
+                    if (v4) {
+                        v5 = v18.GetExperience();
+                        v41 = 0.20000000298023224;
+                        v5 = v5 * v41;
+                        v41 = v5 + 75.0;
+                        v85 = 1.0;
+                        v80 = v78.GetPlayerLevel();
+                        v37 = v18.GetCharacterLevel();
+                        v40 = v80 - v37;
+                        if (v40 <= 0) {
+                            v4 = 0;
+                        } else {
+                            v37 = this.MercyHeroKillXPCoefficients.Num();
+                            v42 = v37 > 0;
+                            v4 = v42;
+                        }
+                        if (v4) {
+                            v86 = this.MercyHeroKillXPCoefficients.Num();
+                            v81 = 1;
+                            v37 = v86 - v81;
+                            v81 = Math::Min(v37, v40);
+                            v83 = this.GoldLossOnDeath;
+                            v85 = v83;
+                        } else {
+                            if (v40 <= -2) {
+                                v5 = this.UnderdogHeroKillXPBonusPerLevel;
+                                v87 = Math::Abs(v40);
+                                v83 = float32(v87);
+                                v84 = v5 * v83;
+                                v85 = v84 + 1.0;
+                            }
+                        }
+                        v89 = 0;
+                        v87 = v20.GetCurrentKillStreak();
+                        if (v87 > 2) {
+                            v86 = v20.GetCurrentKillStreak();
+                            v87 = v86 * 15;
+                            v86 = v28 * v87;
+                            v84 = float32(v86);
+                            v89 = v84;
+                        }
+                        v83 = v41 + v89;
+                        v84 = v83 * v85;
+                        v86 = v46.Num();
+                        v88 = float32(v86);
+                        v83 = v84 / v88;
+                        v37 = v46.Num();
+                        if (v37 > 1) {
+                            v86 = v46.Num();
+                            v87 = this.MinionSplitXPBonuses.Num();
+                            v87 = v87 - 1;
+                            v37 = Math::Min(v87, v86);
+                            v90 = this.UnderdogHeroKillXPBonusPerLevel;
+                            v91 = v90;
+                            v90 = v91 + 1.0;
+                            v83 = v83 * v90;
+                        }
+                        v37 = Math::RoundToInt(v83);
+                        v79 = v79 + v37;
+                    }
+                    v14 = v78.GetLokiCharacter();
+                    if (v14 != nullptr) {
+                        v42 = true;
+                        v14 = v78.GetLokiCharacter();
+                        v14.AuthGrantExperience(v79, v42);
+                    }
+                    if (v27 > 0) {
+                        v4 = true;
+                    } else {
+                        v42 = v79 > 0;
+                        v4 = v42;
+                    }
+                    if (v4) {
+                        v82 = ECurrencyGrantReason::MonsterKilled;
+                        v56 = v18.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        this.OnBountyGivenToPlayer(v56, v78, v27, v82, v79);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void OnBountyGivenToPlayer(const FVector& TargetLocation, ALokiPlayerState@ TargetState, const int GoldAmount, const ECurrencyGrantReason TargetReason, const int XPAmount)   // traits=0x20
+    {
+        __Evt_PushArgument__FVector(TargetLocation);
+        __Evt_PushArgument__ALokiPlayerState(TargetState);
+        __Evt_PushArgument__int32(GoldAmount);
+        __Evt_PushArgument__ECurrencyGrantReason(TargetReason);
+        __Evt_PushArgument__int32(XPAmount);
+        __Evt_Execute(this, n"OnBountyGivenToPlayer");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnBountyGivenToPlayer, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnBountyGivenToPlayer_Implementation(const FVector& TargetLocation, ALokiPlayerState@ TargetState, const int GoldAmount, const ECurrencyGrantReason TargetReason, const int XPAmount)   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnActorKilled_BP, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnActorKilled_BP_Implementation(AActor@ VictimActor, AController@ Killer)   // traits=0x20
+    {
+        AController v2;
+        bool v3;
+        AActor v6;
+        auto v7;
+        ALokiPlayerState v10;
+        APlayerState v12;
+        ALokiPlayerState v14;
+        UBarracudaMinionRewardComponent v16;
+        auto v19;
+        auto v20;
+        int v21;
+        APawn v28;
+        FVector v34;
+        float32 v35;
+        TArray<ALokiPlayerState@> v40;
+        int v41;
+        TArrayIterator<ALokiPlayerState@> v48;
+        ALokiPlayerState v56;
+        int v57;
+        int v58;
+        UClass v60;
+        UAbilitySystemComponent v64;
+        auto v66;
+        float64 v68;
+        ECurrencyGrantReason v69;
+        float32 v70;
+        float32 v71;
+        auto v72;
+        int v73;
+        ALokiCharacter v76;
+
+        v2 = Killer;
+        if (v2 == nullptr) {
+            v3 = true;
+        } else {
+            v6 = VictimActor;
+            v7 = v6 == nullptr;
+            v3 = v7;
+        }
+        if (v3) {
+            return;
+        } else {
+            v12 = Killer.PlayerState;
+            if (v12 != nullptr) {
+                v14 = cast<ALokiPlayerState@>(v12);
+            } else {
+                v14 = nullptr;
+            }
+            v10 = v14;
+            v16 = UBarracudaMinionRewardComponent::Get(VictimActor, NAME_None);
+            if (v16 != nullptr) {
+                v20 = v16.GetGoldBounty(Killer);
+                v19 = v16.GetXPBounty(Killer);
+                v28 = Killer.GetControlledPawn()  /* UFunction K2_GetPawn */;
+                v21 = LokiTeam::GetTeamFromActor(v28);
+                v34 = VictimActor.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v40 = this.GetPlayerStatesForRewardsInRadius(v34, 1500.0, v21, Killer);
+                v21 = v40.Num();
+                v48 = v40.Iterator();
+                while (true) {
+                    v3 = v48.CanProceed;
+                    if (!v3) break;
+                    v56 = v48.Proceed();
+                    v57 = 0;
+                    v58 = 0;
+                    v48.Proceed();
+                    if (v10 == nullptr) {
+                        v7 = 0;
+                    } else {
+                        v3 = v56 == v10;
+                        v7 = v3;
+                    }
+                    if (v7) {
+                        v57 = v20;
+                        v60 = ALokiMinionCharacter::StaticClass();
+                        if (VictimActor.IsA(v60)) {
+                            v64 = AbilitySystem::GetAbilitySystemComponent(v56);
+                            if (v64.HasTagAttribute(GameplayTags::Attribute_MinionGoldMultiplier)) {
+                                v35 = v64.GetTagAttributeMin(GameplayTags::Attribute_MinionGoldMultiplier);
+                                v68 = float64(v35);
+                                v66 = v68;
+                                v68 = float64(v57);
+                                v68 = v66 * v68;
+                                v41 = Math::FloorToInt(v68);
+                                v57 = v41;
+                            }
+                        }
+                        v69 = ECurrencyGrantReason::MonsterKilled;
+                        v56.GrantWalletCurrency("Gold", v57, v69);
+                    }
+                    v71 = float32(v19);
+                    v70 = 1.0;
+                    v35 = float32(v21);
+                    v70 = v70 / v35;
+                    v35 = v71 * v70;
+                    v41 = Math::RoundToInt(v35);
+                    v58 = v41;
+                    if (v21 > 1) {
+                        v41 = this.MinionSplitXPBonuses.Num();
+                        v41 = v41 - 1;
+                        v73 = Math::Min(v41, v21);
+                        v71 = *refReg;
+                        v72 = v71;
+                        v35 = float32(v58);
+                        v71 = v72 + 1.0;
+                        v70 = v35 * v71;
+                        v73 = Math::RoundToInt(v70);
+                        v58 = v58 + v73;
+                    }
+                    v76 = v56.GetLokiCharacter();
+                    if (v76 != nullptr) {
+                        v3 = true;
+                        v76.AuthGrantExperience(v58, v3);
+                    }
+                    if (v57 > 0) {
+                        v7 = true;
+                    } else {
+                        v3 = v58 > 0;
+                        v7 = v3;
+                    }
+                    if (v7) {
+                        v69 = ECurrencyGrantReason::MonsterKilled;
+                        v34 = VictimActor.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        this.OnBountyGivenToPlayer(v34, v56, v57, v69, v58);
+                    }
+                }
+            }
+            if (v10 == nullptr) {
+                v3 = 0;
+            } else {
+                v7 = Loki::HasMatchingGameplayTag(VictimActor, GameplayTags::Barracuda_Minion_GrantsDragonBuff);
+                v3 = v7;
+            }
+            if (v3) {
+                this.OnDragonKilled(v10);
+            }
+            if (v10 == nullptr) {
+                v7 = 0;
+            } else {
+                v3 = Loki::HasMatchingGameplayTag(VictimActor, GameplayTags::Barracuda_Minion_GrantsMomentumBuff);
+                v7 = v3;
+            }
+            if (v7) {
+                this.OnMomentumBossKilled(v10);
+            }
+        }
+        return;
+    }
+
+    TArray<ALokiPlayerState@> GetPlayerStatesForRewardsInRadius(const FVector& Location, const float32 Radius, const int TargetTeam, AActor@ Killer)   // traits=0x20
+    {
+        TArray<ALokiCharacter@> v4;
+        TArray<EObjectTypeQuery> v8;
+        EObjectTypeQuery v9;
+        TArray<AActor@> v14;
+        TArray<AActor@> v18;
+        UClass v20;
+        int v22;
+        auto v23;
+        auto v24;
+        AActor v26;
+        ALokiCharacter v28;
+        ALokiCharacter v30;
+        TArray<ALokiPlayerState@> v34;
+        APlayerState v36;
+        ALokiPlayerState v38;
+
+        v4 = TArray<ALokiCharacter@>();
+        v8 = TArray<EObjectTypeQuery>();
+        v9 = 2;
+        v8.Add(v9);
+        v14 = TArray<AActor@>();
+        v18 = TArray<AActor@>();
+        v20 = ALokiHeroCharacter::StaticClass();
+        v22 = 0;
+        System::SphereOverlapActors(__WorldContext, Location, Radius, v8, v20, v14, v18);
+        while (true) {
+            v24 = v18.Num();
+            if (v22 >= v24) break;
+            v26 = v18[v22];
+            v24 = LokiTeam::GetTeamFromActor(v26);
+            if (v24 == TargetTeam) {
+                if (v26 != nullptr) {
+                    v30 = cast<ALokiCharacter@>(v26);
+                } else {
+                    v30 = nullptr;
+                }
+                v28 = v30;
+                if (v28 != nullptr) {
+                    v4.AddUnique(v28);
+                }
+            }
+            v22++;
+        }
+        v34 = TArray<ALokiPlayerState@>();
+        v22 = 0;
+        while (true) {
+            v23 = v4.Num();
+            if (v22 >= v23) break;
+            v36 = v4[v22].PlayerState;
+            if (v36 != nullptr) {
+                v36 = v4[v22].PlayerState;
+                if (v36 != nullptr) {
+                    v38 = cast<ALokiPlayerState@>(v36);
+                } else {
+                    v38 = nullptr;
+                }
+                v34.AddUnique(v38);
+            }
+            v22++;
+        }
+        __ret = TArray<ALokiPlayerState@>();
+        __ret = v34;
+        return;
+    }
+
+    void OnNewDay()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnNewDay");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnNewDay, BlueprintEvent, CanOverrideEvent, NoOp, meta.Category=Day/Night)
+    void OnNewDay_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    void OnNewNight()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnNewNight");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnNewNight, BlueprintEvent, CanOverrideEvent, NoOp, meta.Category=Day/Night)
+    void OnNewNight_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, meta.Category=Day/Night)
+    void HandleDayNight()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v4;
+        auto v5;
+        auto v6;
+        auto v8;
+        auto v10;
+        auto v12;
+
+        v4 = this.GetGameStateComponent();
+        if (!this.HasBarracudaMatchStarted()) {
+            v5 = 0;
+        } else {
+            v6 = v4 != nullptr;
+            v5 = v6;
+        }
+        if (v5) {
+            v10 = this.GetMatchTime();
+            v5 = v4.bDayNightTransitionEnabled;
+            if (!v5) {
+                v5 = 0;
+            } else {
+                v8 = v4.NextDayNightSwapTime;
+                v6 = v10 >= v8;
+                v5 = v6;
+            }
+            if (v5) {
+                v6 = this.bIsDay;
+                if (v6) {
+                    v5 = false;
+                    this.bIsDay = v5;
+                    this.OnNewNight();
+                } else {
+                    v6 = true;
+                    this.bIsDay = v6;
+                    this.OnNewDay();
+                }
+                v12 = this.DayNightDuration;
+                v8 = v4.NextDayNightSwapTime;
+                v8 = v8 + v12;
+                v4.NextDayNightSwapTime = v8;
+            }
+        }
+        return;
+    }
+
+    bool TowerKilled(ALokiTower@ TargetTower)   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+
+        __Evt_PushArgument__ALokiTower(TargetTower);
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"TowerKilled");
+        return v1;
+    }
+
+    UFUNCTION(UnrealName=TowerKilled, BlueprintEvent, CanOverrideEvent)
+    bool TowerKilled_Implementation(ALokiTower@ TargetTower)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        v2 = this.bAnyTowersKilled;
+        v2 = !v2;
+        v1 = true;
+        this.bAnyTowersKilled = v1;
+        return v2;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnMomentumBossKilled(ALokiPlayerState@ KillerPlayerState)   // traits=0x20
+    {
+        UBarracudaGameStateComponent v4;
+
+        if (this.MomentumBossKilledPilotVO.IsValid()) {
+            v4 = GetBarracudaGameStateComponent();
+            v4.AuthPlayPilotVOForAll(this.MomentumBossKilledPilotVO);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnDragonKilled(ALokiPlayerState@ KillerPlayerState)   // traits=0x20
+    {
+        UBarracudaGameStateComponent v2;
+        int v3;
+        int v4;
+        int v5;
+        int v6;
+
+        v2 = GetBarracudaGameStateComponent();
+        v2.NumDragonsKilled++;
+        v3 = this.DragonRewards.Num();
+        v3 = v3 - 1;
+        v2 = GetBarracudaGameStateComponent();
+        v5 = v2.NumDragonsKilled;
+        v6 = Math::Min(v5, v3);
+        if (v6 >= 0) {
+            v4 = KillerPlayerState.GetTeamIndex_BP();
+            this.ApplyEffectToTeam(v4, this.DragonRewards[v6]);
+        }
+        if (this.DragonKilledPilotVO.IsValid()) {
+            v2 = GetBarracudaGameStateComponent();
+            v2.AuthPlayPilotVOForAll(this.DragonKilledPilotVO);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ApplyEffectToTeam(const int TeamIndex, const TSubclassOf<UGameplayEffect@>& EffectClass)   // traits=0x20
+    {
+        bool v1;
+        TArray<ALokiPlayerState@> v6;
+        TArrayConstIterator<ALokiPlayerState@> v12;
+        ALokiPlayerState v20;
+        UAbilitySystemComponent v24;
+        FGameplayEffectContextHandle v36;
+        FActiveGameplayEffectHandle v39;
+
+        if (EffectClass == nullptr) {
+            return;
+        } else {
+            v6 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, TeamIndex);
+            v12 = v6.Iterator();
+            while (true) {
+                v1 = v12.CanProceed;
+                if (!v1) break;
+                v20 = v12.Proceed();
+                v12.Proceed();
+                v24 = AbilitySystem::GetAbilitySystemComponent(v20);
+                v36 = v24.MakeEffectContext();
+                v1 = false;
+                v39 = v24.ApplyGameplayEffectToSelf(EffectClass, 0, v36, v1)  /* UFunction BP_ApplyGameplayEffectToSelf */;
+            }
+        }
+        return;
+    }
+
+    void TowerGoldRewardVisual(ALokiTower@ TargetTower, ALokiPlayerState@ TargetPlayer, const int GoldAmount)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiTower(TargetTower);
+        __Evt_PushArgument__ALokiPlayerState(TargetPlayer);
+        __Evt_PushArgument__int32(GoldAmount);
+        __Evt_Execute(this, n"TowerGoldRewardVisual");
+        return;
+    }
+
+    UFUNCTION(UnrealName=TowerGoldRewardVisual, BlueprintEvent, CanOverrideEvent, NoOp)
+    void TowerGoldRewardVisual_Implementation(ALokiTower@ TargetTower, ALokiPlayerState@ TargetPlayer, const int GoldAmount)   // traits=0x20
+    {
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+        auto v4;
+        auto v5;
+        auto v6;
+
+        v1 = 999999.0;
+        this.MatchStartTime = v1;
+        v4 = 300.0;
+        this.DayNightDuration = v4;
+        v5 = false;
+        this.bIsDay = v5;
+        v1 = 0.20000000298023224;
+        this.GoldLossOnDeath = v1;
+        v1 = 0.25;
+        this.UnderdogHeroKillXPBonusPerLevel = v1;
+        v6 = 0;
+        this.NumDragonsKilled = v6;
+        v4 = 30.0;
+        this.KnockXPCooldownTime = v4;
+        return;
+    }
+
+    void ~ABarracudaGameMode()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

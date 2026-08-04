@@ -1,0 +1,66 @@
+// ============================================================================
+//  MODULE   GameState.LokiGameState
+//  SOURCE   GameState/LokiGameState.as
+//  CONTENT  1 class(es), 4 function(s), 0 enum(s), 1 global(s), 240 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiGameState_AS;
+
+ALokiGameState_AS@ ALokiGameState_AS()   // traits=0x20
+{
+    ALokiGameState_AS v2;
+
+    v2 = ALokiGameState_AS();
+    return v2;
+}
+
+UClass@ ALokiGameState_AS::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiGameState_AS);
+    return v2;
+}
+
+ALokiGameState_AS@ ALokiGameState_AS::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiGameState_AS v8;
+
+    v2 = __StaticType_ALokiGameState_AS.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiGameState_AS@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ALokiGameState_AS : ALokiGameState
+// unreal base : /Script/Loki.LokiGameState
+// C++ header  : ../../../Loki/Source/Loki/LokiGameState.h
+// static class global: __StaticType_ALokiGameState_AS
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    ULokiGameStateUAVComponent@ UAVComponent;
+
+    ALokiGameState_AS()   // traits=0x21
+    {
+        return;
+    }
+
+}
+

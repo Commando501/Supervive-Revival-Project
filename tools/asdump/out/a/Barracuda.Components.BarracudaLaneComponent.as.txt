@@ -1,0 +1,455 @@
+==============================================================================
+MODULE   Barracuda.Components.BarracudaLaneComponent
+SOURCE   Barracuda/Components/BarracudaLaneComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+event FOnLaneIndexUpdated;
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaLaneComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaLaneComponent@ UBarracudaLaneComponent()
+// 4 instr, 28 B bytecode, id=0x62E542BC, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaLaneComponent v2;
+
+    v2 = UBarracudaLaneComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84101 q:0x26e6e874900; new UBarracudaLaneComponent   ctor=UBarracudaLaneComponent::UBarracudaLaneComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x6BB35FA1, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaLaneComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b3358         ; __StaticType_UBarracudaLaneComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaLaneComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x3421B09B, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaLaneComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaLaneComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972595            ; UBarracudaLaneComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3358         ; __StaticType_UBarracudaLaneComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaLaneComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x228FBD16, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaLaneComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaLaneComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972595            ; UBarracudaLaneComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3358         ; __StaticType_UBarracudaLaneComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaLaneComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xAFAAE0EF, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaLaneComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaLaneComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972595            ; UBarracudaLaneComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3358         ; __StaticType_UBarracudaLaneComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UBarracudaLaneComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) int LaneIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnLaneIndexUpdated OnLaneIndexUpdated;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaLaneComponent() const
+// 6 instr, 40 B bytecode, id=0xDA061EA7, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnLaneIndexUpdated.FOnLaneIndexUpdated();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:216 d:134230771      ; UBarracudaLaneComponent::OnLaneIndexUpdated  (+216)
+    //     3  CALL           d:84104                 ; void FOnLaneIndexUpdated::FOnLaneIndexUpdated()
+    //     5  PshVPtr        rW0:0
+    //     6  FinConstruct   q:0x26e6e874900         ; UBarracudaLaneComponent
+    //     9  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+bool HasLaneIndex()
+// 7 instr, 36 B bytecode, id=0x0030CEEA, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v3;
+
+    v3 = this.LaneIndex != -1;
+    return v3;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:208 d:134230771      ; UBarracudaLaneComponent::LaneIndex  (+208)
+    //     2  RDR4           wW0:1
+    //     3  CMPIi          rW0:1 d:-1
+    //     5  TNZ
+    //     6  CpyRtoV4       wW0:3
+    //     7  CpyVtoR4       rW0:3
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+void SetLaneIndex(const int NewValue)
+// 16 instr, 96 B bytecode, id=0xFA77A4A5, varspace=3
+------------------------------------------------------------------------------
+{
+    int v1;
+    int v3;
+
+    v1 = this.LaneIndex;
+    if (v1 != NewValue) {
+        v1 = this.LaneIndex;
+        v3 = v1;
+        this.LaneIndex = NewValue;
+        this.OnLaneIndexUpdated.Broadcast(this, v1, NewValue);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:208 d:134230771      ; UBarracudaLaneComponent::LaneIndex  (+208)
+    //     2  RDR4           wW0:1
+    //     3  CMPi           rW0:1 rW1:-2
+    //     5  JZ             ->23
+    //     7  LoadThisR      W0:208 d:134230771      ; UBarracudaLaneComponent::LaneIndex  (+208)
+    //     9  RDR4           wW0:1
+    //    10  CpyVtoV4       wW0:3 rW1:1
+    //    12  LoadThisR      W0:208 d:134230771      ; UBarracudaLaneComponent::LaneIndex  (+208)
+    //    14  WRTV4          rW0:-2
+    //    15  PshV4          rW0:-2
+    //    16  PshV4          rW0:3
+    //    17  PshVPtr        rW0:0
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:216 d:134230771      ; UBarracudaLaneComponent::OnLaneIndexUpdated  (+216)
+    //    21  CALL           d:84107                 ; void FOnLaneIndexUpdated::Broadcast(UBarracudaLaneComponent@, const int, const int) const
+    //    23  RET            W0:3
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 12 instr, 80 B bytecode, id=0x768010EB, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    this.LaneIndex = -1;
+    v2 = false;
+    this.SetbReplicates(false);
+    v2 = true;
+    this.SetbExcludeFromClient(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV4          wW0:1 d:-1
+    //     2  LoadThisR      W0:208 d:134230771      ; UBarracudaLaneComponent::LaneIndex  (+208)
+    //     4  WRTV4          rW0:1
+    //     5  SetV1          wW0:2 d:0
+    //     7  PshV4          rW0:2
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //    12  SetV1          wW0:2 d:1
+    //    14  PshV4          rW0:2
+    //    15  PshVPtr        rW0:0
+    //    16  CALLSYS        q:0x26e7a62bbc0         ; void UActorComponent::SetbExcludeFromClient(bool)
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+~UBarracudaLaneComponent()
+// 4 instr, 24 B bytecode, id=0x269A1756, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnLaneIndexUpdated.~FOnLaneIndexUpdated();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:216 d:134230771      ; UBarracudaLaneComponent::OnLaneIndexUpdated  (+216)
+    //     3  CALL           d:85458                 ; void FOnLaneIndexUpdated::~FOnLaneIndexUpdated()
+    //     5  RET            W0:2
+
+==============================================================================
+class FOnLaneIndexUpdated
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FOnLaneIndexUpdated() const
+// 4 instr, 28 B bytecode, id=0xB3CF6935, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FOnLaneIndexUpdated(const FOnLaneIndexUpdated&inout Other) const
+// 7 instr, 44 B bytecode, id=0xA930EF64, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:84106                 ; FOnLaneIndexUpdated& FOnLaneIndexUpdated::opAssign(const FOnLaneIndexUpdated&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FOnLaneIndexUpdated& opAssign(const FOnLaneIndexUpdated&inout Other)
+// 8 instr, 48 B bytecode, id=0xEEE3E86A, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast(UBarracudaLaneComponent@ LaneComponent, const int OldIndex, const int NewIndex)
+// 19 instr, 136 B bytecode, id=0x40BFC690, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_PushArgument(LaneComponent);
+        __Evt_PushArgument__int32(OldIndex);
+        __Evt_PushArgument__int32(NewIndex);
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->33
+    //    13  TYPEID         d:1207972595            ; UBarracudaLaneComponent@
+    //    15  PSF            rW0:-2
+    //    16  CALLSYS        q:0x26e7861c640         ; void __Evt_PushArgument(const ?&)
+    //    19  PSF            rW0:-4
+    //    20  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //    23  PSF            rW0:-5
+    //    24  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //    30  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    33  RET            W0:6
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0x2104B1D3, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230772             ; FOnLaneIndexUpdated
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x5EDCC290, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x6306C2C1, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0xFBC9A9AE, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0xF9EDC313, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FOnLaneIndexUpdated()
+// 4 instr, 28 B bytecode, id=0x5D82C4A3, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230772        ; FOnLaneIndexUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+

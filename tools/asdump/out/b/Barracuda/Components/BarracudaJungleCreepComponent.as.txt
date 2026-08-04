@@ -1,0 +1,270 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaJungleCreepComponent
+//  SOURCE   Barracuda/Components/BarracudaJungleCreepComponent.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 844 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaJungleCreepComponent;
+
+UBarracudaJungleCreepComponent@ UBarracudaJungleCreepComponent()   // traits=0x20
+{
+    v2 = UBarracudaJungleCreepComponent();
+    return v2;
+}
+/* ---- UBarracudaJungleCreepComponent: 7 dwords / 4 instructions (cache offset 0x10e64) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84072 UBarracudaJungleCreepComponent        
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UBarracudaJungleCreepComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UBarracudaJungleCreepComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x10f2f) ----
+    0000  PshGPtr       __StaticType_UBarracudaJungleCreepComponent 
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UBarracudaJungleCreepComponent@ UBarracudaJungleCreepComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaJungleCreepComponent, v2, typeid(UBarracudaJungleCreepComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x11077) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972593                                    ; UBarracudaJungleCreepComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaJungleCreepComponent 
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaJungleCreepComponent@ UBarracudaJungleCreepComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepComponent, v2, typeid(UBarracudaJungleCreepComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x111d7) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972593                                    ; UBarracudaJungleCreepComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaJungleCreepComponent 
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaJungleCreepComponent@ UBarracudaJungleCreepComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepComponent, v2, typeid(UBarracudaJungleCreepComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x11332) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972593                                    ; UBarracudaJungleCreepComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaJungleCreepComponent 
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaJungleCreepComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaJungleCreepComponent
+{
+    UPROPERTY(EditableOnDefaults, EditableOnInstance)
+    float64 UnstuckTeleportTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 StuckDetectionTime;
+
+    UBarracudaJungleCreepComponent()   // traits=0x21
+    {
+        v2 = 4629137466983448576;
+        this.StuckDetectionTime = v2;
+        return;
+    }
+    /* ---- UBarracudaJungleCreepComponent: 11 dwords / 6 instructions (cache offset 0x11a68) ----
+        0000  SetV8         v2 0x403e000000000000                       
+        000C  LoadThisR     216 134230769                                 ; this.StuckDetectionTime
+        0014  WRTV8         v2                                          
+        0018  PshVPtr       this                                        
+        001C  FinConstruct  UBarracudaJungleCreepComponent              
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = this.GetOwner();
+            if (v6 != nullptr) {
+                v8 = cast<ALokiMinionCharacter@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            if (v4 != nullptr) {
+                if (v4.HasBlackboardTargetEnemy()) {
+                    v1 = true;
+                } else {
+                    v20 = v4.GetSpawnLocation();
+                    v14 = v4.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v22 = v14.Dist2D(v20);
+                    v24 = 4647503709213818880;
+                    v25 = v22 < v24;
+                    v1 = v25;
+                }
+                if (v1) {
+                    v26 = Gameplay::GetServerTime(__WorldContext);
+                    v24 = float64(v26);
+                    v22 = this.StuckDetectionTime;
+                    v24 = v24 + v22;
+                    this.UnstuckTeleportTime = v24;
+                    return;
+                } else {
+                    v26 = Gameplay::GetServerTime(__WorldContext);
+                    v22 = float64(v26);
+                    v24 = this.UnstuckTeleportTime;
+                    if (v22 > v24) {
+                        v32 = v4.GetActorRotation()  /* UFunction K2_GetActorRotation */;
+                        v14 = v4.GetSpawnLocation();
+                        v4.Teleport(v14, v32)  /* UFunction K2_TeleportTo */;
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 126 dwords / 73 instructions (cache offset 0x11595) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  CpyRtoV4      v1                                          
+        001C  NOT           v1                                          
+        0020  CpyVtoR1      v1                                          
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           112                                           -> L01F4
+      L0034:
+        0034  PshVPtr       this                                        
+        0038  CALLSYS       UActorComponent::GetOwner                   
+        0044  STOREOBJ      v6                                          
+        0048  CmpPtrNull    v6                                          
+        004C  JZ            9                                             -> L0078
+        0054  TYPEID        1140857087                                    ; ALokiMinionCharacter@
+        005C  PSF           v8                                          
+        0060  PshVPtr       v6                                          
+        0064  CALLSYS       UObject::opCast                             
+        0070  JMP           1                                             -> L007C
+      L0078:
+        0078  ClrVPtr       v8                                          
+      L007C:
+        007C  PshVPtr       v8                                          
+        0080  RefCpyV       v4                                          
+        0084  CmpPtrNull    v4                                          
+        0088  JZ            89                                            -> L01F4
+        0090  PshVPtr       v4                                          
+        0094  CALLSYS       ALokiMinionCharacter::HasBlackboardTargetEnemy
+        00A0  JLowZ         4                                             -> L00B8
+        00A8  SetV1         v1 1                                        
+        00B0  JMP           25                                            -> L011C
+      L00B8:
+        00B8  PSF           v20                                         
+        00BC  PshVPtr       v4                                          
+        00C0  CALLSYS       ALokiMinionCharacter::GetSpawnLocation      
+        00CC  PSF           v20                                         
+        00D0  PSF           v14                                         
+        00D4  PshVPtr       v4                                          
+        00D8  CALLSYS       AActor::GetActorLocation                    
+        00E4  PSF           v14                                         
+        00E8  CALLSYS       FVector::Dist2D                             
+        00F4  CpyRtoV8      v22                                         
+        00F8  SetV8         v24 0x407f400000000000                      
+        0104  CMPd          v22 v24                                     
+        010C  TS                                                        
+        0110  CpyRtoV4      v25                                         
+        0114  CpyVtoV4      v1 v25                                      
+      L011C:
+        011C  CpyVtoR1      v1                                          
+        0120  JLowZ         19                                            -> L0174
+        0128  PshGPtr       __WorldContext                              
+        0134  CALLSYS       GetServerTime                               
+        0140  CpyRtoV4      v26                                         
+        0144  fTOd          v24 v26                                     
+        014C  LoadThisR     216 134230769                                 ; this.StuckDetectionTime
+        0154  RDR8          v22                                         
+        0158  ADDd          v24 v24 v22                                 
+        0160  LoadThisR     208 134230769                                 ; this.UnstuckTeleportTime
+        0168  WRTV8         v24                                         
+        016C  JMP           32                                            -> L01F4
+      L0174:
+        0174  PshGPtr       __WorldContext                              
+        0180  CALLSYS       GetServerTime                               
+        018C  CpyRtoV4      v26                                         
+        0190  fTOd          v22 v26                                     
+        0198  LoadThisR     208 134230769                                 ; this.UnstuckTeleportTime
+        01A0  RDR8          v24                                         
+        01A4  CMPd          v22 v24                                     
+        01AC  JNP           16                                            -> L01F4
+        01B4  PSF           v32                                         
+        01B8  PshVPtr       v4                                          
+        01BC  CALLSYS       AActor::GetActorRotation                    
+        01C8  PSF           v32                                         
+        01CC  PSF           v14                                         
+        01D0  PshVPtr       v4                                          
+        01D4  CALLSYS       ALokiMinionCharacter::GetSpawnLocation      
+        01E0  PSF           v14                                         
+        01E4  PshVPtr       v4                                          
+        01E8  CALLSYS       AActor::Teleport                            
+      L01F4:
+        01F4  RET           4                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 15 dwords / 9 instructions (cache offset 0x11975) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetbExcludeFromClient      
+        001C  SetV1         v1 1                                        
+        0024  PshV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       UActorComponent::SetComponentTickEnabled    
+        0038  RET           2                                           
+    */
+
+}
+

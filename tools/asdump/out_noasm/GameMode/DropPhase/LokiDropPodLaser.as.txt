@@ -1,0 +1,76 @@
+// ============================================================================
+//  MODULE   GameMode.DropPhase.LokiDropPodLaser
+//  SOURCE   GameMode/DropPhase/LokiDropPodLaser.as
+//  CONTENT  1 class(es), 5 function(s), 0 enum(s), 1 global(s), 308 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiDropPodLaser;
+
+ALokiDropPodLaser@ ALokiDropPodLaser()   // traits=0x20
+{
+    ALokiDropPodLaser v2;
+
+    v2 = ALokiDropPodLaser();
+    return v2;
+}
+
+UClass@ ALokiDropPodLaser::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiDropPodLaser);
+    return v2;
+}
+
+ALokiDropPodLaser@ ALokiDropPodLaser::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiDropPodLaser v8;
+
+    v2 = __StaticType_ALokiDropPodLaser.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiDropPodLaser@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ALokiDropPodLaser : ALokiActor
+// unreal base : /Script/Engine.LokiActor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/LokiActor.h
+// static class global: __StaticType_ALokiDropPodLaser
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    protected ALokiDropPod@ OwningDropPod;
+
+    ALokiDropPodLaser()   // traits=0x21
+    {
+        return;
+    }
+
+    void InitializeIndicator(ALokiDropPod@ DropPod)   // traits=0x20
+    {
+        ALokiPlayerState v2;
+
+        this.OwningDropPod = DropPod;
+        v2 = DropPod.GetPilotPlayerState();
+        this.SetOwner(v2);
+        return;
+    }
+
+}
+

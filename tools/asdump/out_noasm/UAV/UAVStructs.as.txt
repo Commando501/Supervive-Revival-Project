@@ -1,0 +1,211 @@
+// ============================================================================
+//  MODULE   UAV.UAVStructs
+//  SOURCE   UAV/UAVStructs.as
+//  CONTENT  3 class(es), 9 function(s), 0 enum(s), 0 global(s), 980 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class FLokiUAVConfig
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 Duration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 InitialDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 Period;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 BlinkDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bShowIndividuals;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bShowTeam;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 InaccuracyDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bRevealVaults;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 Radius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bShowCharacters;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bLocalRadar;
+
+    FLokiUAVConfig()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+
+        v2 = 11.0;
+        this.Duration = v2;
+        v2 = 1.0;
+        this.InitialDelay = v2;
+        v2 = 5.0;
+        this.Period = v2;
+        v2 = 0.2;
+        this.BlinkDuration = v2;
+        v3 = false;
+        this.bShowIndividuals = v3;
+        v3 = false;
+        this.bShowTeam = v3;
+        v2 = 1500.0;
+        this.InaccuracyDistance = v2;
+        v3 = true;
+        this.bRevealVaults = v3;
+        v2 = 0;
+        this.Radius = v2;
+        v3 = false;
+        this.bShowCharacters = v3;
+        v3 = false;
+        this.bLocalRadar = v3;
+        return;
+    }
+
+    bool IsInfiniteDuration()   // traits=0x20
+    {
+        auto v2;
+        auto v4;
+        auto v5;
+
+        v2 = this.Duration;
+        v4 = 0;
+        v5 = v2 <= v4;
+        return v5;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class FActiveUAV
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    bool bValid;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int ID;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    FLokiUAVConfig Config;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    float64 StartTime;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int TeamIndex;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    AUAVAudioPlayer@ AudioActor;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    FVector SourceLocation;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int PulseCount;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance)
+    int PlayersDetected;
+
+    FActiveUAV()   // traits=0x21
+    {
+        auto v1;
+        auto v2;
+        auto v4;
+
+        v1 = 0;
+        this.ID = v1;
+        this.Config.FLokiUAVConfig();
+        v2 = false;
+        this.bValid = v2;
+        v4 = 0;
+        this.StartTime = v4;
+        v1 = 1;
+        this.TeamIndex = v1;
+        this.AudioActor = nullptr;
+        this.SourceLocation = FVector(FVector::ZeroVector);
+        v1 = 0;
+        this.PulseCount = v1;
+        v1 = 0;
+        this.PlayersDetected = v1;
+        return;
+    }
+
+    bool ShouldPulse(const float64 CurrentServerTime) const   // traits=0x24
+    {
+        auto v4;
+        auto v6;
+        auto v7;
+        float64 v10;
+        auto v11;
+
+        v4 = this.StartTime;
+        v6 = this.Config.InitialDelay;
+        v4 = v4 + v6;
+        v7 = this.PulseCount;
+        v10 = float64(v7);
+        v6 = this.Config.Period;
+        v10 = v10 * v6;
+        v6 = v4 + v10;
+        v11 = CurrentServerTime > v6;
+        return v11;
+    }
+
+    float64 GetPulseLifespan() const   // traits=0x24
+    {
+        auto v2;
+        auto v4;
+
+        v2 = this.Config.Period;
+        v4 = this.Config.BlinkDuration;
+        v2 = v2 - v4;
+        return v2;
+    }
+
+    FVector ObfuscateLocation(const FVector& Location) const   // traits=0x24
+    {
+        FVector v6;
+        FVector v12;
+        float64 v16;
+        float64 v20;
+        FVector v26;
+
+        v12 = Math::VRand();
+        v16 = this.Config.InaccuracyDistance;
+        v20 = Math::RandRange(0, v16);
+        v6 = v12 * v20;
+        v26 = Location + v6;
+        __ret = FVector(v26);
+        return;
+    }
+
+    void Cleanup()   // traits=0x20
+    {
+        AUAVAudioPlayer v2;
+
+        v2 = this.AudioActor;
+        if (v2 != nullptr) {
+            this.AudioActor.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FUAVCharacterGrouping
+{
+    UPROPERTY()
+    TArray<ALokiCharacter@> Characters;
+
+    FUAVCharacterGrouping()   // traits=0x21
+    {
+        this.Characters = TArray<ALokiCharacter@>();
+        return;
+    }
+
+    void ~FUAVCharacterGrouping()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

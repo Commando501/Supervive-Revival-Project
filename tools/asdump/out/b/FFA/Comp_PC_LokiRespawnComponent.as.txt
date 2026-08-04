@@ -1,0 +1,213 @@
+// ============================================================================
+//  MODULE   FFA.Comp_PC_LokiRespawnComponent
+//  SOURCE   FFA/Comp_PC_LokiRespawnComponent.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 624 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UComp_PC_LokiRespawnComponent;
+
+UComp_PC_LokiRespawnComponent@ UComp_PC_LokiRespawnComponent()   // traits=0x20
+{
+    v2 = UComp_PC_LokiRespawnComponent();
+    return v2;
+}
+/* ---- UComp_PC_LokiRespawnComponent: 7 dwords / 4 instructions (cache offset 0x7129c) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84829 UComp_PC_LokiRespawnComponent         
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UComp_PC_LokiRespawnComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UComp_PC_LokiRespawnComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x71366) ----
+    0000  PshGPtr       __StaticType_UComp_PC_LokiRespawnComponent  
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UComp_PC_LokiRespawnComponent@ UComp_PC_LokiRespawnComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UComp_PC_LokiRespawnComponent, v2, typeid(UComp_PC_LokiRespawnComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x714ad) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972682                                    ; UComp_PC_LokiRespawnComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UComp_PC_LokiRespawnComponent  
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UComp_PC_LokiRespawnComponent@ UComp_PC_LokiRespawnComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UComp_PC_LokiRespawnComponent, v2, typeid(UComp_PC_LokiRespawnComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x7160c) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972682                                    ; UComp_PC_LokiRespawnComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UComp_PC_LokiRespawnComponent  
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UComp_PC_LokiRespawnComponent@ UComp_PC_LokiRespawnComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UComp_PC_LokiRespawnComponent, v2, typeid(UComp_PC_LokiRespawnComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x71766) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972682                                    ; UComp_PC_LokiRespawnComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UComp_PC_LokiRespawnComponent  
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UComp_PC_LokiRespawnComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UComp_PC_LokiRespawnComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<UUserWidget@> RespawnTimerWidget;
+
+    UComp_PC_LokiRespawnComponent()   // traits=0x21
+    {
+        this.RespawnTimerWidget = TSubclassOf();
+        return;
+    }
+    /* ---- UComp_PC_LokiRespawnComponent: 11 dwords / 6 instructions (cache offset 0x71c83) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230858                                 ; .RespawnTimerWidget
+        000C  CALLSYS       TSubclassOf::$beh0                          
+        0018  PshVPtr       this                                        
+        001C  FinConstruct  UComp_PC_LokiRespawnComponent               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v4 = this.GetOwner();
+            if (v4 != nullptr) {
+                v6 = cast<ALokiPlayerController@>(v4);
+            } else {
+                v6 = nullptr;
+            }
+            v8 = v6;
+            if (v8 == nullptr) {
+                v1 = 0;
+            } else {
+                v10 = TSubclassOf();
+                v10 = this.RespawnTimerWidget;
+                v11 = v10 == nullptr;
+                v11 = !v11;
+                v1 = v11;
+            }
+            if (v1) {
+                v16 = WidgetBlueprint::CreateWidget(__WorldContext, this.RespawnTimerWidget, v8);
+                v16.AddToViewport(0);
+            }
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 78 dwords / 46 instructions (cache offset 0x71900) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowZ         69                                            -> L0134
+        0020  PshVPtr       this                                        
+        0024  CALLSYS       UActorComponent::GetOwner                   
+        0030  STOREOBJ      v4                                          
+        0034  CmpPtrNull    v4                                          
+        0038  JZ            9                                             -> L0064
+        0040  TYPEID        1140857134                                    ; ALokiPlayerController@
+        0048  PSF           v6                                          
+        004C  PshVPtr       v4                                          
+        0050  CALLSYS       UObject::opCast                             
+        005C  JMP           1                                             -> L0068
+      L0064:
+        0064  ClrVPtr       v6                                          
+      L0068:
+        0068  PshVPtr       v6                                          
+        006C  RefCpyV       v8                                          
+        0070  CmpPtrNull    v8                                          
+        0074  JNZ           4                                             -> L008C
+        007C  SetV4         v1 0                                        
+        0084  JMP           20                                            -> L00DC
+      L008C:
+        008C  PSF           v10                                         
+        0090  CALLSYS       TSubclassOf::$beh0                          
+        009C  PshVPtr       this                                        
+        00A0  ADDSi         208 134230858                                 ; .RespawnTimerWidget
+        00A8  PSF           v10                                         
+        00AC  CALLSYS       TSubclassOf::opAssign                       
+        00B8  PshNull                                                   
+        00BC  PSF           v10                                         
+        00C0  CALLSYS       TSubclassOf::opEquals                       
+        00CC  CpyRtoV4      v11                                         
+        00D0  NOT           v11                                         
+        00D4  CpyVtoV4      v1 v11                                      
+      L00DC:
+        00DC  CpyVtoR1      v1                                          
+        00E0  JLowZ         18                                            -> L0130
+        00E8  PshVPtr       v8                                          
+        00EC  PshVPtr       this                                        
+        00F0  ADDSi         208 134230858                                 ; .RespawnTimerWidget
+        00F8  PshGPtr       __WorldContext                              
+        0104  CALLSYS       CreateWidget                                
+        0110  STOREOBJ      v16                                         
+        0114  PshC4         0                                           
+        011C  PshVPtr       v16                                         
+        0120  CALLSYS       UUserWidget::AddToViewport                  
+        012C  FreeNullV8    v16                                         
+      L0130:
+        0130  FreeNullV8    v8                                          
+      L0134:
+        0134  RET           2                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.SetbReplicates(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 8 dwords / 5 instructions (cache offset 0x71bad) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetbReplicates             
+        001C  RET           2                                           
+    */
+
+}
+

@@ -1,0 +1,248 @@
+// ============================================================================
+//  MODULE   Core.LokiScriptUtility
+//  SOURCE   Core/LokiScriptUtility.as
+//  CONTENT  0 class(es), 4 function(s), 0 enum(s), 0 global(s), 812 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Core_LokiScriptUtilityStatics
+
+FVector LinearColorToVector(const FLinearColor& Color)   // traits=0x20
+{
+    v7 = arg_m2.B;
+    v10 = float64(v7);
+    v7 = arg_m2.G;
+    v12 = float64(v7);
+    v7 = arg_m2.R;
+    v14 = float64(v7);
+    v6 = FVector(v14, v12, v10);
+    Color = FVector(v6);
+    return;
+}
+/* ---- LinearColorToVector: 31 dwords / 18 instructions (cache offset 0x4f150) ----
+    0000  LoadRObjR     arg_m2 8 67117434                             ; .B
+    000C  RDR4          v7                                          
+    0010  fTOd          v10 v7                                      
+    0018  PshV8         v10                                         
+    001C  LoadRObjR     arg_m2 4 67117434                             ; .G
+    0028  RDR4          v7                                          
+    002C  fTOd          v12 v7                                      
+    0034  PshV8         v12                                         
+    0038  LoadRObjR     arg_m2 0 67117434                             ; .R
+    0044  RDR4          v7                                          
+    0048  fTOd          v14 v7                                      
+    0050  PshV8         v14                                         
+    0054  PSF           v6                                          
+    0058  CALLSYS       FVector::$beh0                              
+    0064  PSF           v6                                          
+    0068  PshVPtr       Color                                       
+    006C  CALLSYS       FVector::$beh0                              
+    0078  RET           4                                           
+*/
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+ULokiAimingVisComponentScript@ GetOwnerAimingVisComponent(ULokiDisplayableAbility@ Ability)   // traits=0x20
+{
+    if (IsValid(Ability)) {
+        v6 = Ability.GetAvatarLokiCharacterFromActorInfo();
+        if (IsValid(Ability)) {
+            if (v6 != nullptr) {
+                v8 = cast<ALokiHeroCharacter@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v10 = v8;
+            if (IsValid(v10)) {
+                v12 = ULokiAimingVisComponentScript::Get(v10, NAME_None);
+                return v12;
+            }
+        }
+    }
+    return v12;
+}
+/* ---- GetOwnerAimingVisComponent: 53 dwords / 33 instructions (cache offset 0x4f2bb) ----
+    0000  PshVPtr       Ability                                     
+    0004  CALLSYS       IsValid                                     
+    0010  JLowZ         44                                            -> L00C8
+    0018  PshVPtr       Ability                                     
+    001C  CALLSYS       ULokiDisplayableAbility::GetAvatarLokiCharacterFromActorInfo
+    0028  STOREOBJ      v6                                          
+    002C  PshVPtr       Ability                                     
+    0030  CALLSYS       IsValid                                     
+    003C  JLowZ         32                                            -> L00C4
+    0044  CmpPtrNull    v6                                          
+    0048  JZ            9                                             -> L0074
+    0050  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+    0058  PSF           v8                                          
+    005C  PshVPtr       v6                                          
+    0060  CALLSYS       UObject::opCast                             
+    006C  JMP           1                                             -> L0078
+  L0074:
+    0074  ClrVPtr       v8                                          
+  L0078:
+    0078  PshVPtr       v8                                          
+    007C  RefCpyV       v10                                         
+    0080  PshVPtr       v10                                         
+    0084  CALLSYS       IsValid                                     
+    0090  JLowZ         10                                            -> L00C0
+    0098  PshGPtr       NAME_None                                   
+    00A4  PshVPtr       v10                                         
+    00A8  CALL          84727                                         ; Get
+    00B0  STOREOBJ      v12                                         
+    00B4  LOADOBJ       v12                                         
+    00B8  JMP           4                                             -> L00D0
+  L00C0:
+    00C0  FreeNullV8    v10                                         
+  L00C4:
+    00C4  FreeNullV8    v6                                          
+  L00C8:
+    00C8  FreeNullV8    v12                                         
+    00CC  LOADOBJ       v12                                         
+  L00D0:
+    00D0  RET           2                                           
+*/
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+float64 GetRelicCountForPlayer(ALokiCharacter@ Character)   // traits=0x20
+{
+    v2 = Character;
+    if (v2 == nullptr) {
+        v6 = 0;
+        return v6;
+    } else {
+        v10 = Character.GetInventoryComboItems();
+        if (v10 == nullptr) {
+            v6 = 0;
+            return v6;
+        } else {
+            v14 = TArray();
+            v20 = v10.GetPowerItem(0);
+            if (v20 != nullptr) {
+                v14.Add(v20);
+            }
+            v22 = v10.GetPowerItem(1);
+            if (v22 != nullptr) {
+                v14.Add(v22);
+            }
+            v15 = v14.Num();
+            v6 = float64(v15);
+        }
+    }
+    return v6;
+}
+/* ---- GetRelicCountForPlayer: 72 dwords / 43 instructions (cache offset 0x4f54b) ----
+    0000  PshVPtr       Character                                   
+    0004  RefCpyV       v2                                          
+    0008  CmpPtrNull    v2                                          
+    000C  JNZ           6                                             -> L002C
+    0014  SetV8         v6 0x0                                      
+    0020  CpyVtoR8      v6                                          
+    0024  JMP           60                                            -> L011C
+  L002C:
+    002C  PshVPtr       Character                                   
+    0030  CALLSYS       ALokiCharacter::GetInventoryComboItems      
+    003C  STOREOBJ      v10                                         
+    0040  CmpPtrNull    v10                                         
+    0044  JNZ           6                                             -> L0064
+    004C  SetV8         v6 0x0                                      
+    0058  CpyVtoR8      v6                                          
+    005C  JMP           46                                            -> L011C
+  L0064:
+    0064  PSF           v14                                         
+    0068  CALLSYS       TArray::$beh0                               
+    0074  PshC4         0                                           
+    007C  PshVPtr       v10                                         
+    0080  CALLSYS       ULokiInventoryComponentComboItems::GetPowerItem
+    008C  STOREOBJ      v20                                         
+    0090  CmpPtrNull    v20                                         
+    0094  JZ            5                                             -> L00B0
+    009C  PSF           v20                                         
+    00A0  PSF           v14                                         
+    00A4  CALLSYS       TArray::Add                                 
+  L00B0:
+    00B0  PshC4         1                                           
+    00B8  PshVPtr       v10                                         
+    00BC  CALLSYS       ULokiInventoryComponentComboItems::GetPowerItem
+    00C8  STOREOBJ      v22                                         
+    00CC  CmpPtrNull    v22                                         
+    00D0  JZ            5                                             -> L00EC
+    00D8  PSF           v22                                         
+    00DC  PSF           v14                                         
+    00E0  CALLSYS       TArray::Add                                 
+  L00EC:
+    00EC  PSF           v14                                         
+    00F0  CALLSYS       TArray::Num                                 
+    00FC  CpyRtoV4      v15                                         
+    0100  iTOd          v6 v15                                      
+    0108  PSF           v14                                         
+    010C  CALLSYS       TArray::$beh2                               
+    0118  CpyVtoR8      v6                                          
+  L011C:
+    011C  RET           2                                           
+*/
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+float64 GetArmorLevelForPlayer(ALokiCharacter@ Character)   // traits=0x20
+{
+    v2 = Character;
+    if (v2 == nullptr) {
+        v6 = 0;
+        return v6;
+    } else {
+        v10 = Character.GetInventoryComboItems();
+        if (v10 == nullptr) {
+            v6 = 0;
+            return v6;
+        } else {
+            v14 = v10.GetArmorItem();
+            if (v14 == nullptr) {
+                v6 = 0;
+                return v6;
+            } else {
+                v15 = v14.TierNumber;
+                v6 = float64(v15);
+            }
+        }
+    }
+    return v6;
+}
+/* ---- GetArmorLevelForPlayer: 47 dwords / 28 instructions (cache offset 0x4f883) ----
+    0000  PshVPtr       Character                                   
+    0004  RefCpyV       v2                                          
+    0008  CmpPtrNull    v2                                          
+    000C  JNZ           6                                             -> L002C
+    0014  SetV8         v6 0x0                                      
+    0020  CpyVtoR8      v6                                          
+    0024  JMP           35                                            -> L00B8
+  L002C:
+    002C  PshVPtr       Character                                   
+    0030  CALLSYS       ALokiCharacter::GetInventoryComboItems      
+    003C  STOREOBJ      v10                                         
+    0040  CmpPtrNull    v10                                         
+    0044  JNZ           6                                             -> L0064
+    004C  SetV8         v6 0x0                                      
+    0058  CpyVtoR8      v6                                          
+    005C  JMP           21                                            -> L00B8
+  L0064:
+    0064  PshVPtr       v10                                         
+    0068  CALLSYS       ULokiInventoryComponentComboItems::GetArmorItem
+    0074  STOREOBJ      v14                                         
+    0078  CmpPtrNull    v14                                         
+    007C  JNZ           6                                             -> L009C
+    0084  SetV8         v6 0x0                                      
+    0090  CpyVtoR8      v6                                          
+    0094  JMP           7                                             -> L00B8
+  L009C:
+    009C  LoadRObjR     v14 1120 67114958                             ; .TierNumber
+    00A8  RDR4          v15                                         
+    00AC  iTOd          v6 v15                                      
+    00B4  CpyVtoR8      v6                                          
+  L00B8:
+    00B8  RET           2                                           
+*/
+

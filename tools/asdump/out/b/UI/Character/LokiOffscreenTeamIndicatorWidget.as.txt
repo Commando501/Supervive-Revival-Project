@@ -1,0 +1,250 @@
+// ============================================================================
+//  MODULE   UI.Character.LokiOffscreenTeamIndicatorWidget
+//  SOURCE   UI/Character/LokiOffscreenTeamIndicatorWidget.as
+//  CONTENT  1 class(es), 7 function(s), 0 enum(s), 1 global(s), 904 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiOffscreenTeamIndicatorWidget_AS;
+
+ULokiOffscreenTeamIndicatorWidget_AS@ ULokiOffscreenTeamIndicatorWidget_AS()   // traits=0x20
+{
+    v2 = ULokiOffscreenTeamIndicatorWidget_AS();
+    return v2;
+}
+/* ---- ULokiOffscreenTeamIndicatorWidget_AS: 7 dwords / 4 instructions (cache offset 0xc3fd7) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         85444 ULokiOffscreenTeamIndicatorWidget_AS  
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ULokiOffscreenTeamIndicatorWidget_AS::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ULokiOffscreenTeamIndicatorWidget_AS);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xc40a8) ----
+    0000  PshGPtr       __StaticType_ULokiOffscreenTeamIndicatorWidget_AS
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiOffscreenTeamIndicatorWidget_AS : ULokiOffscreenTeamIndicatorWidget
+// unreal base : /Script/Loki.LokiOffscreenTeamIndicatorWidget
+// C++ header  : ../../../Loki/Source/Loki/UI/Character/LokiOffscreenTeamIndicatorWidget.h
+// static class global: __StaticType_ULokiOffscreenTeamIndicatorWidget_AS
+{
+    private const FText Meters;
+    private const FText Kilometers;
+
+    ULokiOffscreenTeamIndicatorWidget_AS()   // traits=0x21
+    {
+        v4 = FText::FromString("m");
+        this.Meters = FText(v4);
+        v4 = FText::FromString("km");
+        this.Kilometers = FText(v4);
+        return;
+    }
+    /* ---- ULokiOffscreenTeamIndicatorWidget_AS: 41 dwords / 21 instructions (cache offset 0xc4bbf) ----
+        0000  PGA           "m"                                         
+        000C  PSF           v4                                          
+        0010  CALLSYS       FromString                                  
+        001C  PSF           v4                                          
+        0020  PshVPtr       this                                        
+        0024  ADDSi         840 134230924                                 ; .Meters
+        002C  CALLSYS       FText::$beh0                                
+        0038  PSF           v4                                          
+        003C  CALLSYS       FText::$beh2                                
+        0048  PGA           "km"                                        
+        0054  PSF           v4                                          
+        0058  CALLSYS       FromString                                  
+        0064  PSF           v4                                          
+        0068  PshVPtr       this                                        
+        006C  ADDSi         856 134230924                                 ; .Kilometers
+        0074  CALLSYS       FText::$beh0                                
+        0080  PSF           v4                                          
+        0084  CALLSYS       FText::$beh2                                
+        0090  PshVPtr       this                                        
+        0094  FinConstruct  ULokiOffscreenTeamIndicatorWidget_AS        
+        00A0  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, meta.BlueprintProtected)
+    protected void GetHeroLocations(FVector&out LocalPlayerLocation, FVector&out AllyLocation, bool&out bLocationsValid)   // traits=0x30
+    {
+        v1 = false;
+        bLocationsValid = v1;
+        v4 = Loki::GetLocalLokiCharacter(__WorldContext);
+        if (IsValid(v4)) {
+            v12 = v4.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            LocalPlayerLocation = v12;
+        }
+        if (IsValid(this.AllyPlayerState)) {
+            v14 = this.AllyPlayerState.GetLokiCharacter();
+            if (IsValid(v14)) {
+                v12 = v14.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                AllyLocation = v12;
+            }
+        }
+        v1 = true;
+        bLocationsValid = v1;
+        return;
+    }
+    /* ---- GetHeroLocations: 68 dwords / 41 instructions (cache offset 0xc42dd) ----
+        0000  SetV1         v1 0                                        
+        0008  PshVPtr       bLocationsValid                             
+        000C  PopRPtr                                                   
+        0010  WRTV1         v1                                          
+        0014  PshGPtr       __WorldContext                              
+        0020  CALLSYS       GetLocalLokiCharacter                       
+        002C  STOREOBJ      v4                                          
+        0030  PshVPtr       v4                                          
+        0034  CALLSYS       IsValid                                     
+        0040  JLowZ         10                                            -> L0070
+        0048  PSF           v12                                         
+        004C  PshVPtr       v4                                          
+        0050  CALLSYS       AActor::GetActorLocation                    
+        005C  PSF           v12                                         
+        0060  PshVPtr       LocalPlayerLocation                         
+        0064  CALLSYS       FVector::opAssign                           
+      L0070:
+        0070  PshVPtr       this                                        
+        0074  ADDSi         808 67115294                                  ; .AllyPlayerState
+        007C  RDSPtr                                                    
+        0080  CALLSYS       IsValid                                     
+        008C  JLowZ         25                                            -> L00F8
+        0094  PshVPtr       this                                        
+        0098  ADDSi         808 67115294                                  ; .AllyPlayerState
+        00A0  RDSPtr                                                    
+        00A4  CALLSYS       ALokiPlayerState::GetLokiCharacter          
+        00B0  STOREOBJ      v14                                         
+        00B4  PshVPtr       v14                                         
+        00B8  CALLSYS       IsValid                                     
+        00C4  JLowZ         10                                            -> L00F4
+        00CC  PSF           v12                                         
+        00D0  PshVPtr       v14                                         
+        00D4  CALLSYS       AActor::GetActorLocation                    
+        00E0  PSF           v12                                         
+        00E4  PshVPtr       AllyLocation                                
+        00E8  CALLSYS       FVector::opAssign                           
+      L00F4:
+        00F4  FreeNullV8    v14                                         
+      L00F8:
+        00F8  SetV1         v1 1                                        
+        0100  PshVPtr       bLocationsValid                             
+        0104  PopRPtr                                                   
+        0108  WRTV1         v1                                          
+        010C  RET           8                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, ConstMethod, meta.BlueprintProtected)
+    protected void CalculateImageAngle(const FVector& LocalPlayerLocation, const FVector& AllyLocation, float32&out ImageAngle) const   // traits=0x34
+    {
+        v6 = AllyLocation - LocalPlayerLocation;
+        v12 = FRotator::MakeFromX(v6);
+        v14 = v12.Yaw;
+        v15 = float32(v14);
+        ImageAngle = v15;
+        return;
+    }
+    /* ---- CalculateImageAngle: 21 dwords / 14 instructions (cache offset 0xc465d) ----
+        0000  PshVPtr       LocalPlayerLocation                         
+        0004  PSF           v6                                          
+        0008  PshVPtr       AllyLocation                                
+        000C  CALLSYS       FVector::opSub                              
+        0018  PSF           v6                                          
+        001C  PSF           v12                                         
+        0020  CALLSYS       MakeFromX                                   
+        002C  LoadVObjR     v12 8 67117423                                ; .Yaw
+        0038  RDR8          v14                                         
+        003C  dTOf          v15 v14                                     
+        0044  PshVPtr       ImageAngle                                  
+        0048  PopRPtr                                                   
+        004C  WRTV4         v15                                         
+        0050  RET           8                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, ConstMethod, meta.BlueprintProtected)
+    protected void CalculateAnchors(const FVector& LocalPlayerLocation, const FVector& AllyLocation, const float64 InsetMultiplier, FVector2D&out Anchors) const   // traits=0x34
+    {
+        v2 = LocalPlayerLocation.Y;
+        v4 = AllyLocation.Y;
+        v2 = v2 - v4;
+        v4 = LocalPlayerLocation.X;
+        v6 = AllyLocation.X;
+        v4 = v4 - v6;
+        v10 = FVector2D(v4, v2);
+        Anchors = v10;
+        Anchors.Normalize(4487126258294980608);
+        v2 = 13826050856027422720;
+        v6 = InsetMultiplier * v2;
+        Anchors *= v6;
+        v10 = FVector2D(4602678819172646912, 4602678819172646912);
+        Anchors += v10;
+        return;
+    }
+    /* ---- CalculateAnchors: 66 dwords / 35 instructions (cache offset 0xc48fe) ----
+        0000  LoadRObjR     LocalPlayerLocation 8 67117444                ; .Y
+        000C  RDR8          v2                                          
+        0010  LoadRObjR     AllyLocation 8 67117444                       ; .Y
+        001C  RDR8          v4                                          
+        0020  SUBd          v2 v2 v4                                    
+        0028  PshV8         v2                                          
+        002C  LoadRObjR     LocalPlayerLocation 0 67117444                ; .X
+        0038  RDR8          v4                                          
+        003C  LoadRObjR     AllyLocation 0 67117444                       ; .X
+        0048  RDR8          v6                                          
+        004C  SUBd          v4 v4 v6                                    
+        0054  PshV8         v4                                          
+        0058  PSF           v10                                         
+        005C  CALLSYS       FVector2D::$beh0                            
+        0068  PSF           v10                                         
+        006C  PshVPtr       Anchors                                     
+        0070  CALLSYS       FVector2D::opAssign                         
+        007C  PshC8         0x3e45798ee0000000                          
+        0088  PshVPtr       Anchors                                     
+        008C  CALLSYS       FVector2D::Normalize                        
+        0098  SetV8         v2 0xbfe0000000000000                       
+        00A4  MULd          v6 InsetMultiplier v2                       
+        00AC  PshV8         v6                                          
+        00B0  PSF           v10                                         
+        00B4  PshVPtr       Anchors                                     
+        00B8  CALLSYS       FVector2D::opMulAssign                      
+        00C4  PshC8         0x3fe0000000000000                          
+        00D0  PshC8         0x3fe0000000000000                          
+        00DC  PSF           v10                                         
+        00E0  CALLSYS       FVector2D::$beh0                            
+        00EC  PSF           v10                                         
+        00F0  PSF           v14                                         
+        00F4  PshVPtr       Anchors                                     
+        00F8  CALLSYS       FVector2D::opAddAssign                      
+        0104  RET           10                                          
+    */
+
+    void ~ULokiOffscreenTeamIndicatorWidget_AS()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiOffscreenTeamIndicatorWidget_AS: 13 dwords / 7 instructions (cache offset 0xc4d89) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         840 134230924                                 ; .Meters
+        000C  CALLSYS       FText::$beh2                                
+        0018  PshVPtr       this                                        
+        001C  ADDSi         856 134230924                                 ; .Kilometers
+        0024  CALLSYS       FText::$beh2                                
+        0030  RET           2                                           
+    */
+
+}
+

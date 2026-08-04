@@ -1,0 +1,1349 @@
+// ============================================================================
+//  MODULE   Barracuda.GameState.BarracudaGameStateComponent
+//  SOURCE   Barracuda/GameState/BarracudaGameStateComponent.as
+//  CONTENT  3 class(es), 43 function(s), 0 enum(s), 1 global(s), 4216 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+event FOnDragonKillsUpdated;
+event FOnTeamKillsUpdated;
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaGameStateComponent;
+
+UBarracudaGameStateComponent@ UBarracudaGameStateComponent()   // traits=0x20
+{
+    UBarracudaGameStateComponent v2;
+
+    v2 = UBarracudaGameStateComponent();
+    return v2;
+}
+/* ---- UBarracudaGameStateComponent: 7 dwords / 4 instructions (cache offset 0x230fc) ----
+    0000  PSF           v2
+    0004  ALLOC         84233 UBarracudaGameStateComponent            ; new UBarracudaGameStateComponent  ctor=void UBarracudaGameStateComponent::UBarracudaGameStateComponent()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ UBarracudaGameStateComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaGameStateComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x231c5) ----
+    0000  PshGPtr       __StaticType_UBarracudaGameStateComponent
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaGameStateComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaGameStateComponent, v2, typeid(UBarracudaGameStateComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x2330b) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972602                                    ; UBarracudaGameStateComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_UBarracudaGameStateComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetComponentByClass                   ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+UBarracudaGameStateComponent@ UBarracudaGameStateComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaGameStateComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaGameStateComponent, v2, typeid(UBarracudaGameStateComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x23469) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972602                                    ; UBarracudaGameStateComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_UBarracudaGameStateComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass           ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaGameStateComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaGameStateComponent, v2, typeid(UBarracudaGameStateComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x235c2) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972602                                    ; UBarracudaGameStateComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_UBarracudaGameStateComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_CreateComponentByClass                ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaGameStateComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaGameStateComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Replicated, ReplicationCondition=0)
+    float64 NextDayNightSwapTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bDayNightTransitionEnabled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TSet<AActor@> Structures;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TSet<ABarracudaMinionWaypoint@> MinionWaypoints;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<ABarracudaShop@> ShopClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Replicated, ReplicationCondition=0)
+    ABarracudaShop@ Shop;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient)
+    FGameplayTagContainer DisabledSpawnerTypes;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults)
+    TArray<FBarracudaPhase> BarracudaPhases;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_CurrentPhaseIndex)
+    int CurrentPhaseIndex;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, ReplicationCondition=0)
+    float64 CurrentPhaseStartTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_OnTeamKillsUpdated)
+    TArray<int> TeamKillScores;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnTeamKillsUpdated OnTeamKillsUpdated;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_DragonKillsUpdated)
+    int NumDragonsKilled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnDragonKillsUpdated OnDragonKillsUpdated;
+
+    UBarracudaGameStateComponent()   // traits=0x21
+    {
+        auto v1;
+        auto v4;
+
+        this.Structures = TSet<AActor@>();
+        this.MinionWaypoints = TSet<ABarracudaMinionWaypoint@>();
+        this.ShopClass = TSubclassOf<ABarracudaShop@>();
+        this.DisabledSpawnerTypes = FGameplayTagContainer();
+        this.BarracudaPhases = TArray<FBarracudaPhase>();
+        this.TeamKillScores = TArray<int>();
+        this.OnTeamKillsUpdated.FOnTeamKillsUpdated();
+        this.OnDragonKillsUpdated.FOnDragonKillsUpdated();
+        v1 = 0;
+        this.CurrentPhaseIndex = v1;
+        v4 = 0;
+        this.CurrentPhaseStartTime = v4;
+        v1 = 0;
+        this.NumDragonsKilled = v1;
+        return;
+    }
+    /* ---- UBarracudaGameStateComponent: 67 dwords / 36 instructions (cache offset 0x25e3b) ----
+        0000  PshVPtr       this
+        0004  ADDSi         224 134230778                                 ; .Structures
+        000C  CALLSYS       TSet::$beh0                                   ; void TSet<AActor@>::$beh0()
+        0018  PshVPtr       this
+        001C  ADDSi         304 134230778                                 ; .MinionWaypoints
+        0024  CALLSYS       TSet::$beh0                                   ; void TSet<ABarracudaMinionWaypoint@>::$beh0()
+        0030  PshVPtr       this
+        0034  ADDSi         384 134230778                                 ; .ShopClass
+        003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ABarracudaShop@>::$beh0()
+        0048  PshVPtr       this
+        004C  ADDSi         400 134230778                                 ; .DisabledSpawnerTypes
+        0054  CALLSYS       FGameplayTagContainer::$beh0                  ; void FGameplayTagContainer::$beh0()
+        0060  PshVPtr       this
+        0064  ADDSi         432 134230778                                 ; .BarracudaPhases
+        006C  CALLSYS       TArray::$beh0                                 ; void TArray<FBarracudaPhase>::$beh0()
+        0078  PshVPtr       this
+        007C  ADDSi         464 134230778                                 ; .TeamKillScores
+        0084  CALLSYS       TArray::$beh0                                 ; void TArray<int>::$beh0()
+        0090  PshVPtr       this
+        0094  ADDSi         480 134230778                                 ; .OnTeamKillsUpdated
+        009C  CALL          84245                                         ; void FOnTeamKillsUpdated::FOnTeamKillsUpdated()
+        00A4  PshVPtr       this
+        00A8  ADDSi         504 134230778                                 ; .OnDragonKillsUpdated
+        00B0  CALL          84236                                         ; void FOnDragonKillsUpdated::FOnDragonKillsUpdated()
+        00B8  SetV4         v1 0
+        00C0  LoadThisR     448 134230778                                 ; this.CurrentPhaseIndex
+        00C8  WRTV4         v1
+        00CC  SetV8         v4 0x0
+        00D8  LoadThisR     456 134230778                                 ; this.CurrentPhaseStartTime
+        00E0  WRTV8         v4
+        00E4  SetV4         v1 0
+        00EC  LoadThisR     496 134230778                                 ; this.NumDragonsKilled
+        00F4  WRTV4         v1
+        00F8  PshVPtr       this
+        00FC  FinConstruct  UBarracudaGameStateComponent
+        0108  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_OnTeamKillsUpdated()   // traits=0x20
+    {
+        this.OnTeamKillsUpdated.Broadcast(this.TeamKillScores);
+        return;
+    }
+    /* ---- OnRep_OnTeamKillsUpdated: 9 dwords / 6 instructions (cache offset 0x23f45) ----
+        0000  PshVPtr       this
+        0004  ADDSi         464 134230778                                 ; .TeamKillScores
+        000C  PshVPtr       this
+        0010  ADDSi         480 134230778                                 ; .OnTeamKillsUpdated
+        0018  CALL          84248                                         ; void FOnTeamKillsUpdated::Broadcast(const TArray<int>&) const
+        0020  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_DragonKillsUpdated()   // traits=0x20
+    {
+        int v1;
+
+        v1 = this.NumDragonsKilled;
+        this.OnDragonKillsUpdated.Broadcast(v1);
+        return;
+    }
+    /* ---- OnRep_DragonKillsUpdated: 10 dwords / 7 instructions (cache offset 0x24067) ----
+        0000  LoadThisR     496 134230778                                 ; this.NumDragonsKilled
+        0008  RDR4          v1
+        000C  PshV4         v1
+        0010  PshVPtr       this
+        0014  ADDSi         504 134230778                                 ; .OnDragonKillsUpdated
+        001C  CALL          84239                                         ; void FOnDragonKillsUpdated::Broadcast(const int) const
+        0024  RET           2
+    */
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+        ALokiGameState v6;
+        ABarracudaShop v8;
+        TSubclassOf<ABarracudaShop@> v10;
+        bool v11;
+        AActor v14;
+        int v15;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = Loki::GetLokiGameState(__WorldContext);
+            v8 = this.Shop;
+            if (v8 != nullptr) {
+                v1 = 0;
+            } else {
+                v10 = TSubclassOf<ABarracudaShop@>();
+                v10 = this.ShopClass;
+                v11 = v10 == nullptr;
+                v11 = !v11;
+                v1 = v11;
+            }
+            if (v1) {
+                v14 = this.GetOwner();
+                v14.FlushNetDormancy();
+                v11 = false;
+                v8 = SpawnActor(this.ShopClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v11, nullptr);
+                this.Shop = v8;
+            }
+            v15 = 0;
+            this.TeamKillScores.Add(v15);
+            v15 = 0;
+            this.TeamKillScores.Add(v15);
+            if (v6 != nullptr) {
+                v6.OnPlayerKilled.AddUFunction(this, n"OnPlayerKilled");
+            }
+        }
+        return;
+    }
+    /* ---- LokiBeginPlay_Implementation: 125 dwords / 72 instructions (cache offset 0x24191) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  CpyRtoV4      v1
+        001C  NOT           v1
+        0020  CpyVtoR1      v1
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           111                                           -> L01F0
+      L0034:
+        0034  PshGPtr       __WorldContext
+        0040  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        004C  STOREOBJ      v6
+        0050  PshVPtr       this
+        0054  ADDSi         392 134230778                                 ; .Shop
+        005C  RDSPtr
+        0060  RefCpyV       v8
+        0064  CmpPtrNull    v8
+        0068  JZ            4                                             -> L0080
+        0070  SetV4         v1 0
+        0078  JMP           20                                            -> L00D0
+      L0080:
+        0080  PSF           v10
+        0084  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ABarracudaShop@>::$beh0()
+        0090  PshVPtr       this
+        0094  ADDSi         384 134230778                                 ; .ShopClass
+        009C  PSF           v10
+        00A0  CALLSYS       TSubclassOf::opAssign                         ; TSubclassOf<ABarracudaShop@>& TSubclassOf<ABarracudaShop@>::opAssign(const TSubclassOf<ABarracudaShop@>&)
+        00AC  PshNull
+        00B0  PSF           v10
+        00B4  CALLSYS       TSubclassOf::opEquals                         ; bool TSubclassOf<ABarracudaShop@>::opEquals(UClass@) const
+        00C0  CpyRtoV4      v11
+        00C4  NOT           v11
+        00C8  CpyVtoV4      v1 v11
+      L00D0:
+        00D0  CpyVtoR1      v1
+        00D4  JLowZ         35                                            -> L0168
+        00DC  PshVPtr       this
+        00E0  CALLSYS       UActorComponent::GetOwner                     ; AActor@ UActorComponent::GetOwner() const
+        00EC  STOREOBJ      v14
+        00F0  PshVPtr       v14
+        00F4  CALLSYS       AActor::FlushNetDormancy                      ; void AActor::FlushNetDormancy()
+        0100  PshNull
+        0104  SetV1         v11 0
+        010C  PshV4         v11
+        0110  PshGPtr       NAME_None
+        011C  PshGPtr       FRotator::ZeroRotator
+        0128  PshGPtr       FVector::ZeroVector
+        0134  PshVPtr       this
+        0138  ADDSi         384 134230778                                 ; .ShopClass
+        0140  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+        014C  STOREOBJ      v8
+        0150  PshVPtr       v8
+        0154  PshVPtr       this
+        0158  ADDSi         392 134230778                                 ; .Shop
+        0160  REFCPY
+        0164  PopPtr
+      L0168:
+        0168  SetV4         v15 0
+        0170  PSF           v15
+        0174  PshVPtr       this
+        0178  ADDSi         464 134230778                                 ; .TeamKillScores
+        0180  CALLSYS       TArray::Add                                   ; void TArray<int>::Add(const int&)
+        018C  SetV4         v15 0
+        0194  PSF           v15
+        0198  PshVPtr       this
+        019C  ADDSi         464 134230778                                 ; .TeamKillScores
+        01A4  CALLSYS       TArray::Add                                   ; void TArray<int>::Add(const int&)
+        01B0  CmpPtrNull    v6
+        01B4  JZ            13                                            -> L01F0
+        01BC  PshC4         9
+        01C4  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        01D0  PshRPtr
+        01D4  PshVPtr       this
+        01D8  PshVPtr       v6
+        01DC  ADDSi         1800 67115161                                 ; .OnPlayerKilled
+        01E4  CALLSYS       FPlayerKillEventSignature::AddUFunction       ; void FPlayerKillEventSignature::AddUFunction(const UObject@, const FName&)
+      L01F0:
+        01F0  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnPlayerKilled(const FPlayerKillEventData& KillData)   // traits=0x20
+    {
+        this.UpdateTeamKills();
+        return;
+    }
+    /* ---- OnPlayerKilled: 4 dwords / 3 instructions (cache offset 0x24543) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      84222                                         ; void UBarracudaGameStateComponent::UpdateTeamKills()
+        000C  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void UpdateTeamKills()   // traits=0x20
+    {
+        ALokiGameState v4;
+        auto v5;
+        TArray<int> v10;
+        int v11;
+        TArray<ALokiPlayerState@> v16;
+        TArrayConstIterator<ALokiPlayerState@> v22;
+        TArrayConstIterator<ALokiPlayerState@> v28;
+        ALokiPlayerState v30;
+        auto v31;
+        int v32;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 != nullptr) {
+            v10 = TArray<int>();
+            v11 = 0;
+            v16 = v4.GetPlayerStatesOnTeam(0);
+            v22 = v16.Iterator();
+            while (true) {
+                v5 = v22.CanProceed;
+                if (!v5) break;
+                v30 = v22.Proceed();
+                v22.Proceed();
+                v31 = v30.GetKills();
+                v11 = v11 + v31;
+            }
+            v32 = 0;
+            v16 = v4.GetPlayerStatesOnTeam(1);
+            v28 = v16.Iterator();
+            while (true) {
+                v5 = v28.CanProceed;
+                if (!v5) break;
+                v30 = v28.Proceed();
+                v28.Proceed();
+                v31 = v30.GetKills();
+                v32 = v32 + v31;
+            }
+            v10.Add(v11);
+            v10.Add(v32);
+            this.TeamKillScores = v10;
+            this.OnTeamKillsUpdated.Broadcast(this.TeamKillScores);
+        }
+        return;
+    }
+    /* ---- UpdateTeamKills: 130 dwords / 77 instructions (cache offset 0x2463e) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        0018  STOREOBJ      v4
+        001C  CmpPtrNull    v4
+        0020  JZ            119                                           -> L0204
+        0028  PSF           v10
+        002C  CALLSYS       TArray::$beh0                                 ; void TArray<int>::$beh0()
+        0038  SetV4         v11 0
+        0040  PSF           v22
+        0044  PshC4         0
+        004C  PSF           v16
+        0050  PshVPtr       v4
+        0054  CALLSYS       ALokiGameState::GetPlayerStatesOnTeam         ; TArray<ALokiPlayerState@> ALokiGameState::GetPlayerStatesOnTeam(int) const
+        0060  PSF           v16
+        0064  CALLSYS       TArray::Iterator                              ; TArrayConstIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator() const
+        0070  JMP           16                                            -> L00B8
+      L0078:
+        0078  SUSPEND
+        007C  PSF           v22
+        0080  CALLSYS       TArrayConstIterator::Proceed                  ; ALokiPlayerState@ const& TArrayConstIterator<ALokiPlayerState@>::Proceed()
+        008C  PshRPtr
+        0090  RDSPtr
+        0094  RefCpyV       v30
+        0098  PshVPtr       v30
+        009C  CALLSYS       ALokiPlayerState::GetKills                    ; int ALokiPlayerState::GetKills() const
+        00A8  CpyRtoV4      v31
+        00AC  ADDi          v11 v11 v31
+        00B4  FreeNullV8    v30
+      L00B8:
+        00B8  LoadVObjR     v22 16 268448511                              ; .CanProceed
+        00C4  RDR1          v5
+        00C8  CpyVtoR1      v5
+        00CC  JLowNZ        -23                                           -> L0078
+        00D4  PSF           v16
+        00D8  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        00E4  SetV4         v32 0
+        00EC  PSF           v28
+        00F0  PshC4         1
+        00F8  PSF           v16
+        00FC  PshVPtr       v4
+        0100  CALLSYS       ALokiGameState::GetPlayerStatesOnTeam         ; TArray<ALokiPlayerState@> ALokiGameState::GetPlayerStatesOnTeam(int) const
+        010C  PSF           v16
+        0110  CALLSYS       TArray::Iterator                              ; TArrayConstIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator() const
+        011C  JMP           16                                            -> L0164
+      L0124:
+        0124  SUSPEND
+        0128  PSF           v28
+        012C  CALLSYS       TArrayConstIterator::Proceed                  ; ALokiPlayerState@ const& TArrayConstIterator<ALokiPlayerState@>::Proceed()
+        0138  PshRPtr
+        013C  RDSPtr
+        0140  RefCpyV       v30
+        0144  PshVPtr       v30
+        0148  CALLSYS       ALokiPlayerState::GetKills                    ; int ALokiPlayerState::GetKills() const
+        0154  CpyRtoV4      v31
+        0158  ADDi          v32 v32 v31
+        0160  FreeNullV8    v30
+      L0164:
+        0164  LoadVObjR     v28 16 268448511                              ; .CanProceed
+        0170  RDR1          v5
+        0174  CpyVtoR1      v5
+        0178  JLowNZ        -23                                           -> L0124
+        0180  PSF           v16
+        0184  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        0190  PSF           v11
+        0194  PSF           v10
+        0198  CALLSYS       TArray::Add                                   ; void TArray<int>::Add(const int&)
+        01A4  PSF           v32
+        01A8  PSF           v10
+        01AC  CALLSYS       TArray::Add                                   ; void TArray<int>::Add(const int&)
+        01B8  PSF           v10
+        01BC  PshVPtr       this
+        01C0  ADDSi         464 134230778                                 ; .TeamKillScores
+        01C8  CALLSYS       TArray::opAssign                              ; TArray<int>& TArray<int>::opAssign(const TArray<int>&)
+        01D4  PshVPtr       this
+        01D8  ADDSi         464 134230778                                 ; .TeamKillScores
+        01E0  PshVPtr       this
+        01E4  ADDSi         480 134230778                                 ; .OnTeamKillsUpdated
+        01EC  CALL          84248                                         ; void FOnTeamKillsUpdated::Broadcast(const TArray<int>&) const
+        01F4  PSF           v10
+        01F8  CALLSYS       TArray::$beh2                                 ; void TArray<int>::$beh2()
+      L0204:
+        0204  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        int v3;
+        auto v6;
+        auto v7;
+        auto v8;
+        auto v10;
+        float64 v12;
+        float64 v14;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v2 = this.CurrentPhaseIndex;
+            v2 = v2 + 1;
+            if (this.BarracudaPhases.IsValidIndex(v2)) {
+                v3 = this.CurrentPhaseIndex;
+                v6 = this.BarracudaPhases[v3];
+                v7 = v6.Duration;
+                if (v7 > 0.0) {
+                    v8 = Gameplay::GetServerTime(__WorldContext);
+                    v12 = float64(v8);
+                    v10 = v12;
+                    v12 = this.CurrentPhaseStartTime;
+                    v12 = v10 - v12;
+                    v7 = v6.Duration;
+                    v14 = float64(v7);
+                    if (v12 > v14) {
+                        this.AuthMoveToNextBarracudaPhase();
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 77 dwords / 42 instructions (cache offset 0x24a87) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  CpyRtoV4      v1
+        001C  NOT           v1
+        0020  CpyVtoR1      v1
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           63                                            -> L0130
+      L0034:
+        0034  LoadThisR     448 134230778                                 ; this.CurrentPhaseIndex
+        003C  RDR4          v2
+        0040  ADDIi         v2 v2 1
+        004C  PshV4         v2
+        0050  PshVPtr       this
+        0054  ADDSi         432 134230778                                 ; .BarracudaPhases
+        005C  CALLSYS       TArray::IsValidIndex                          ; bool TArray<FBarracudaPhase>::IsValidIndex(int) const
+        0068  JLowZ         48                                            -> L0130
+        0070  LoadThisR     448 134230778                                 ; this.CurrentPhaseIndex
+        0078  RDR4          v3
+        007C  PshV4         v3
+        0080  PshVPtr       this
+        0084  ADDSi         432 134230778                                 ; .BarracudaPhases
+        008C  Thiscall1     TArray::opIndex                               ; FBarracudaPhase& TArray<FBarracudaPhase>::opIndex(int)
+        0098  CpyRtoV8      v6
+        009C  LoadRObjR     v6 4 67120849                                 ; .Duration
+        00A8  RDR4          v7
+        00AC  CMPIf         v7 0
+        00B4  JNP           29                                            -> L0130
+        00BC  PshGPtr       __WorldContext
+        00C8  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        00D4  CpyRtoV4      v8
+        00D8  fTOd          v12 v8
+        00E0  CpyVtoV8      v10 v12
+        00E8  LoadThisR     456 134230778                                 ; this.CurrentPhaseStartTime
+        00F0  RDR8          v12
+        00F4  SUBd          v12 v10 v12
+        00FC  LoadRObjR     v6 4 67120849                                 ; .Duration
+        0108  RDR4          v7
+        010C  fTOd          v14 v7
+        0114  CMPd          v12 v14
+        011C  JNP           3                                             -> L0130
+        0124  PshVPtr       this
+        0128  CALLINTF      84224                                         ; void UBarracudaGameStateComponent::AuthMoveToNextBarracudaPhase()
+      L0130:
+        0130  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthMoveToNextBarracudaPhase()   // traits=0x20
+    {
+        int v1;
+        int v2;
+        auto v3;
+        EBarracudaPhaseType v4;
+        auto v5;
+        auto v6;
+        float64 v8;
+
+        v1 = this.CurrentPhaseIndex;
+        v1 = v1 + 1;
+        v3 = this.BarracudaPhases.IsValidIndex(v1);
+        v3 = !v3;
+        if (v3) {
+            return;
+        } else {
+            v2 = this.CurrentPhaseIndex;
+            v5 = this.BarracudaPhases[v2].Type;
+            v4 = v5;
+            this.CurrentPhaseIndex++;
+            v6 = Gameplay::GetServerTime(__WorldContext);
+            v8 = float64(v6);
+            this.CurrentPhaseStartTime = v8;
+            this.EmitPhaseChangedEvent(v4);
+        }
+        return;
+    }
+    /* ---- AuthMoveToNextBarracudaPhase: 57 dwords / 35 instructions (cache offset 0x24d09) ----
+        0000  LoadThisR     448 134230778                                 ; this.CurrentPhaseIndex
+        0008  RDR4          v1
+        000C  ADDIi         v1 v1 1
+        0018  PshV4         v1
+        001C  PshVPtr       this
+        0020  ADDSi         432 134230778                                 ; .BarracudaPhases
+        0028  CALLSYS       TArray::IsValidIndex                          ; bool TArray<FBarracudaPhase>::IsValidIndex(int) const
+        0034  CpyRtoV4      v3
+        0038  NOT           v3
+        003C  CpyVtoR1      v3
+        0040  JLowZ         2                                             -> L0050
+        0048  JMP           36                                            -> L00E0
+      L0050:
+        0050  LoadThisR     448 134230778                                 ; this.CurrentPhaseIndex
+        0058  RDR4          v2
+        005C  PshV4         v2
+        0060  PshVPtr       this
+        0064  ADDSi         432 134230778                                 ; .BarracudaPhases
+        006C  Thiscall1     TArray::opIndex                               ; FBarracudaPhase& TArray<FBarracudaPhase>::opIndex(int)
+        0078  PshRPtr
+        007C  ADDSi         0 67120849                                    ; .Type
+        0084  PopRPtr
+        0088  RDR1          v5
+        008C  CpyVtoV4      v4 v5
+        0094  LoadThisR     448 134230778                                 ; this.CurrentPhaseIndex
+        009C  INCi
+        00A0  PshGPtr       __WorldContext
+        00AC  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        00B8  CpyRtoV4      v6
+        00BC  fTOd          v8 v6
+        00C4  LoadThisR     456 134230778                                 ; this.CurrentPhaseStartTime
+        00CC  WRTV8         v8
+        00D0  PshV4         v4
+        00D4  PshVPtr       this
+        00D8  CALLINTF      84226                                         ; void UBarracudaGameStateComponent::EmitPhaseChangedEvent(const EBarracudaPhaseType)
+      L00E0:
+        00E0  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_CurrentPhaseIndex(const int PreviousPhaseIndex)   // traits=0x20
+    {
+        EBarracudaPhaseType v3;
+        auto v4;
+
+        if (this.BarracudaPhases.IsValidIndex(PreviousPhaseIndex)) {
+            v4 = this.BarracudaPhases[PreviousPhaseIndex].Type;
+            v3 = v4;
+        } else {
+            v4 = false;
+            v3 = v4;
+        }
+        this.EmitPhaseChangedEvent(v3);
+        return;
+    }
+    /* ---- OnRep_CurrentPhaseIndex: 34 dwords / 21 instructions (cache offset 0x24f49) ----
+        0000  PshV4         PreviousPhaseIndex
+        0004  PshVPtr       this
+        0008  ADDSi         432 134230778                                 ; .BarracudaPhases
+        0010  CALLSYS       TArray::IsValidIndex                          ; bool TArray<FBarracudaPhase>::IsValidIndex(int) const
+        001C  JLowZ         16                                            -> L0064
+        0024  PshV4         PreviousPhaseIndex
+        0028  PshVPtr       this
+        002C  ADDSi         432 134230778                                 ; .BarracudaPhases
+        0034  Thiscall1     TArray::opIndex                               ; FBarracudaPhase& TArray<FBarracudaPhase>::opIndex(int)
+        0040  PshRPtr
+        0044  ADDSi         0 67120849                                    ; .Type
+        004C  PopRPtr
+        0050  RDR1          v4
+        0054  CpyVtoV4      v3 v4
+        005C  JMP           4                                             -> L0074
+      L0064:
+        0064  SetV1         v4 0
+        006C  CpyVtoV4      v3 v4
+      L0074:
+        0074  PshV4         v3
+        0078  PshVPtr       this
+        007C  CALLINTF      84226                                         ; void UBarracudaGameStateComponent::EmitPhaseChangedEvent(const EBarracudaPhaseType)
+        0084  RET           3
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void EmitPhaseChangedEvent(const EBarracudaPhaseType PreviousPhaseType)   // traits=0x28
+    {
+        UGameEventRouterComponent v2;
+        FGameEvent_BarracudaPhaseChanged v14;
+        auto v15;
+
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v14 = FGameEvent_BarracudaPhaseChanged();
+            v14.PreviousPhaseType = PreviousPhaseType;
+            v15 = GetCurrentBarracudaPhaseType();
+            v14.CurrentPhaseType = v15;
+            v2.BroadcastEvent(v14, typeid(FGameEvent_BarracudaPhaseChanged), nullptr);
+        }
+        return;
+    }
+    /* ---- EmitPhaseChangedEvent: 40 dwords / 22 instructions (cache offset 0x2510d) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetGlobalGameEventRouter                      ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+        0018  STOREOBJ      v2
+        001C  CmpPtrNull    v2
+        0020  JNZ           2                                             -> L0030
+        0028  JMP           27                                            -> L009C
+      L0030:
+        0030  PSF           v14
+        0034  CALLSYS       FGameEvent_BarracudaPhaseChanged::$beh0       ; void FGameEvent_BarracudaPhaseChanged::$beh0()
+        0040  LoadVObjR     v14 8 67120880                                ; .PreviousPhaseType
+        004C  WRTV1         PreviousPhaseType
+        0050  CALL          84265                                         ; EBarracudaPhaseType GetCurrentBarracudaPhaseType()
+        0058  CpyRtoV4      v15
+        005C  LoadVObjR     v14 9 67120880                                ; .CurrentPhaseType
+        0068  WRTV1         v15
+        006C  PshNull
+        0070  TYPEID        67120880                                      ; FGameEvent_BarracudaPhaseChanged
+        0078  PSF           v14
+        007C  PshVPtr       v2
+        0080  CALLSYS       UGameEventRouterComponent::BroadcastEvent     ; void UGameEventRouterComponent::BroadcastEvent(const ?&, UObject@)
+        008C  PSF           v14
+        0090  CALLSYS       FGameEvent_BarracudaPhaseChanged::$beh2       ; void FGameEvent_BarracudaPhaseChanged::$beh2()
+      L009C:
+        009C  RET           3
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, BlueprintAuthorityOnly, CanOverrideEvent, meta.Category=Barracuda|GameState)
+    AActor@ GetRespawnStructure(const int TeamIndex)   // traits=0x20
+    {
+        TSetIterator<AActor@> v8;
+        auto v17;
+        AActor v20;
+        UBarracudaStructureComponent v24;
+        auto v25;
+        auto v26;
+        AActor v28;
+
+        v8 = this.Structures.Iterator();
+        while (true) {
+            v17 = v8.CanProceed;
+            if (!v17) break;
+            v20 = v8.Proceed();
+            v8.Proceed();
+            if (v20 != nullptr) {
+                v24 = UBarracudaStructureComponent::Get(v20, NAME_None);
+                if (v24 == nullptr) {
+                    v17 = 0;
+                } else {
+                    v25 = v24.bRespawnLocation;
+                    v17 = v25;
+                }
+                if (v17) {
+                    v26 = LokiTeam::GetTeamFromActor(v20);
+                    if (v26 == TeamIndex) {
+                        return v20;
+                    }
+                }
+            }
+        }
+        return v28;
+    }
+    /* ---- GetRespawnStructure: 70 dwords / 44 instructions (cache offset 0x2533d) ----
+        0000  PSF           v8
+        0004  PshVPtr       this
+        0008  ADDSi         224 134230778                                 ; .Structures
+        0010  CALLSYS       TSet::Iterator                                ; TSetIterator<AActor@> TSet<AActor@>::Iterator()
+        001C  JMP           51                                            -> L00F0
+      L0024:
+        0024  SUSPEND
+        0028  PSF           v8
+        002C  CALLSYS       TSetIterator::Proceed                         ; AActor@ const& TSetIterator<AActor@>::Proceed()
+        0038  PshRPtr
+        003C  RDSPtr
+        0040  RefCpyV       v20
+        0044  CmpPtrNull    v20
+        0048  JNZ           3                                             -> L005C
+        0050  FreeNullV8    v20
+        0054  JMP           37                                            -> L00F0
+      L005C:
+        005C  PshGPtr       NAME_None
+        0068  PshVPtr       v20
+        006C  CALL          84154                                         ; UBarracudaStructureComponent@ UBarracudaStructureComponent::Get(const AActor@, const FName&)
+        0074  STOREOBJ      v24
+        0078  CmpPtrNull    v24
+        007C  JNZ           4                                             -> L0094
+        0084  SetV4         v17 0
+        008C  JMP           6                                             -> L00AC
+      L0094:
+        0094  LoadRObjR     v24 209 134230779                             ; .bRespawnLocation
+        00A0  RDR1          v25
+        00A4  CpyVtoV4      v17 v25
+      L00AC:
+        00AC  CpyVtoR1      v17
+        00B0  JLowZ         12                                            -> L00E8
+        00B8  PshVPtr       v20
+        00BC  CALLSYS       GetTeamFromActor                              ; int LokiTeam::GetTeamFromActor(const AActor@)
+        00C8  CpyRtoV4      v26
+        00CC  CMPi          v26 TeamIndex
+        00D4  JNZ           3                                             -> L00E8
+        00DC  LOADOBJ       v20
+        00E0  JMP           11                                            -> L0114
+      L00E8:
+        00E8  FreeNullV8    v24
+        00EC  FreeNullV8    v20
+      L00F0:
+        00F0  LoadVObjR     v8 24 268448515                               ; .CanProceed
+        00FC  RDR1          v17
+        0100  CpyVtoR1      v17
+        0104  JLowNZ        -58                                           -> L0024
+        010C  FreeNullV8    v28
+        0110  LOADOBJ       v28
+      L0114:
+        0114  RET           3
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod)
+    float64 SecondsUntilNextDayNightSwap() const   // traits=0x24
+    {
+        auto v2;
+        auto v3;
+        float64 v6;
+        auto v10;
+
+        v3 = Gameplay::GetServerTime(__WorldContext);
+        v6 = float64(v3);
+        v2 = v6;
+        v6 = this.NextDayNightSwapTime;
+        v6 = v6 - v2;
+        v10 = Math::Max(v6, 0);
+        return v10;
+    }
+    /* ---- SecondsUntilNextDayNightSwap: 26 dwords / 14 instructions (cache offset 0x25673) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        0018  CpyRtoV4      v3
+        001C  fTOd          v6 v3
+        0024  CpyVtoV8      v2 v6
+        002C  PshC8         0x0
+        0038  LoadThisR     208 134230778                                 ; this.NextDayNightSwapTime
+        0040  RDR8          v6
+        0044  SUBd          v6 v6 v2
+        004C  PshV8         v6
+        0050  CALLSYS       Max                                           ; float64 Math::Max(float64, float64)
+        005C  CpyRtoV8      v10
+        0060  CpyVtoR8      v10
+        0064  RET           2
+    */
+
+    void AuthPlayPilotVOForAll(const FGameplayTag& PilotVOTag)   // traits=0x20
+    {
+        __Evt_PushArgument__FGameplayTag(PilotVOTag);
+        __Evt_Execute(this, n"AuthPlayPilotVOForAll");
+        return;
+    }
+    /* ---- AuthPlayPilotVOForAll: 15 dwords / 8 instructions (cache offset 0x25815) ----
+        0000  PshVPtr       PilotVOTag
+        0004  CALLSYS       __Evt_PushArgument__FGameplayTag              ; void __Evt_PushArgument__FGameplayTag(const FGameplayTag&)
+        0010  PshC4         105
+        0018  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0024  PshRPtr
+        0028  PshVPtr       this
+        002C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0038  RET           4
+    */
+
+    UFUNCTION(UnrealName=AuthPlayPilotVOForAll, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthPlayPilotVOForAll_Implementation(const FGameplayTag& PilotVOTag)   // traits=0x20
+    {
+        this.MultiPlayPilotVO(PilotVOTag);
+        return;
+    }
+    /* ---- AuthPlayPilotVOForAll_Implementation: 5 dwords / 4 instructions (cache offset 0x25929) ----
+        0000  PshVPtr       PilotVOTag
+        0004  PshVPtr       this
+        0008  CALLINTF      84231                                         ; void UBarracudaGameStateComponent::MultiPlayPilotVO(const FGameplayTag&)
+        0010  RET           4
+    */
+
+    void MultiPlayPilotVO(const FGameplayTag& PilotVOTag)   // traits=0x20
+    {
+        __Evt_PushArgument__FGameplayTag(PilotVOTag);
+        __Evt_Execute(this, n"MultiPlayPilotVO");
+        return;
+    }
+    /* ---- MultiPlayPilotVO: 15 dwords / 8 instructions (cache offset 0x25a6b) ----
+        0000  PshVPtr       PilotVOTag
+        0004  CALLSYS       __Evt_PushArgument__FGameplayTag              ; void __Evt_PushArgument__FGameplayTag(const FGameplayTag&)
+        0010  PshC4         106
+        0018  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0024  PshRPtr
+        0028  PshVPtr       this
+        002C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0038  RET           4
+    */
+
+    UFUNCTION(UnrealName=MultiPlayPilotVO, BlueprintCallable, BlueprintEvent, NetMulticast)
+    void MultiPlayPilotVO_Implementation(const FGameplayTag& PilotVOTag)   // traits=0x20
+    {
+        FString v4;
+
+        v4 = FString();
+        ULokiBarkUtilities::RequestVOPilot(__WorldContext, PilotVOTag, v4);
+        return;
+    }
+    /* ---- MultiPlayPilotVO_Implementation: 17 dwords / 9 instructions (cache offset 0x25b7a) ----
+        0000  PSF           v4
+        0004  CALLSYS       FString::$beh0                                ; void FString::$beh0()
+        0010  PSF           v4
+        0014  PshVPtr       PilotVOTag
+        0018  PshGPtr       __WorldContext
+        0024  CALLSYS       RequestVOPilot                                ; bool ULokiBarkUtilities::RequestVOPilot(UObject@, const FGameplayTag, FString&)
+        0030  PSF           v4
+        0034  CALLSYS       FString::$beh2                                ; void FString::$beh2()
+        0040  RET           4
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v4;
+        UClass v6;
+
+        v1 = true;
+        this.SetbReplicates(v1);
+        v4 = 60.0;
+        this.NextDayNightSwapTime = v4;
+        v1 = true;
+        this.bDayNightTransitionEnabled = v1;
+        v6 = ABarracudaShop::StaticClass();
+        this.ShopClass = v6;
+        return;
+    }
+    /* ---- __InitDefaults: 29 dwords / 17 instructions (cache offset 0x25cce) ----
+        0000  SetV1         v1 1
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  CALLSYS       UActorComponent::SetbReplicates               ; void UActorComponent::SetbReplicates(bool)
+        001C  SetV8         v4 0x404e000000000000
+        0028  LoadThisR     208 134230778                                 ; this.NextDayNightSwapTime
+        0030  WRTV8         v4
+        0034  SetV1         v1 1
+        003C  LoadThisR     216 134230778                                 ; this.bDayNightTransitionEnabled
+        0044  WRTV1         v1
+        0048  CALL          84353                                         ; UClass@ ABarracudaShop::StaticClass()
+        0050  STOREOBJ      v6
+        0054  PshVPtr       v6
+        0058  PshVPtr       this
+        005C  ADDSi         384 134230778                                 ; .ShopClass
+        0064  CALLSYS       TSubclassOf::opAssign                         ; void TSubclassOf<ABarracudaShop@>::opAssign(UClass@)
+        0070  RET           2
+    */
+
+    void ~UBarracudaGameStateComponent()   // traits=0x22
+    {
+        this.OnTeamKillsUpdated.~FOnTeamKillsUpdated();
+        this.OnDragonKillsUpdated.~FOnDragonKillsUpdated();
+        return;
+    }
+    /* ---- ~UBarracudaGameStateComponent: 41 dwords / 22 instructions (cache offset 0x26029) ----
+        0000  PshVPtr       this
+        0004  ADDSi         224 134230778                                 ; .Structures
+        000C  CALLSYS       TSet::$beh2                                   ; void TSet<AActor@>::$beh2()
+        0018  PshVPtr       this
+        001C  ADDSi         304 134230778                                 ; .MinionWaypoints
+        0024  CALLSYS       TSet::$beh2                                   ; void TSet<ABarracudaMinionWaypoint@>::$beh2()
+        0030  PshVPtr       this
+        0034  ADDSi         400 134230778                                 ; .DisabledSpawnerTypes
+        003C  CALLSYS       FGameplayTagContainer::$beh2                  ; void FGameplayTagContainer::$beh2()
+        0048  PshVPtr       this
+        004C  ADDSi         432 134230778                                 ; .BarracudaPhases
+        0054  CALLSYS       TArray::$beh2                                 ; void TArray<FBarracudaPhase>::$beh2()
+        0060  PshVPtr       this
+        0064  ADDSi         464 134230778                                 ; .TeamKillScores
+        006C  CALLSYS       TArray::$beh2                                 ; void TArray<int>::$beh2()
+        0078  PshVPtr       this
+        007C  ADDSi         480 134230778                                 ; .OnTeamKillsUpdated
+        0084  CALL          85466                                         ; void FOnTeamKillsUpdated::~FOnTeamKillsUpdated()
+        008C  PshVPtr       this
+        0090  ADDSi         504 134230778                                 ; .OnDragonKillsUpdated
+        0098  CALL          85465                                         ; void FOnDragonKillsUpdated::~FOnDragonKillsUpdated()
+        00A0  RET           2
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnDragonKillsUpdated
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnDragonKillsUpdated()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+    /* ---- FOnDragonKillsUpdated: 7 dwords / 4 instructions (cache offset 0x268f6) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230788                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::$beh0              ; void _FMulticastScriptDelegate::$beh0()
+        0018  RET           2
+    */
+
+    FOnDragonKillsUpdated(const FOnDragonKillsUpdated& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+    /* ---- FOnDragonKillsUpdated: 11 dwords / 7 instructions (cache offset 0x269d6) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230788                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::$beh0              ; void _FMulticastScriptDelegate::$beh0()
+        0018  PshVPtr       Other
+        001C  PshVPtr       this
+        0020  CALL          84238                                         ; FOnDragonKillsUpdated& FOnDragonKillsUpdated::opAssign(const FOnDragonKillsUpdated&)
+        0028  RET           4
+    */
+
+    FOnDragonKillsUpdated& opAssign(const FOnDragonKillsUpdated& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+    /* ---- opAssign: 12 dwords / 8 instructions (cache offset 0x26289) ----
+        0000  PshVPtr       Other
+        0004  ADDSi         0 134230788                                   ; ._Inner
+        000C  PshVPtr       this
+        0010  ADDSi         0 134230788                                   ; ._Inner
+        0018  CALLSYS       _FMulticastScriptDelegate::opAssign           ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+        0024  PshVPtr       this
+        0028  PopRPtr
+        002C  RET           4
+    */
+
+    void Broadcast(const int NumDragons) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument__int(NumDragons);
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+    /* ---- Broadcast: 24 dwords / 14 instructions (cache offset 0x26376) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230788                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::IsBound            ; bool _FMulticastScriptDelegate::IsBound() const
+        0018  CpyRtoV4      v1
+        001C  NOT           v1
+        0020  CpyVtoR1      v1
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           10                                            -> L005C
+      L0034:
+        0034  PSF           NumDragons
+        0038  CALLSYS       __Evt_PushArgument__int                       ; void __Evt_PushArgument__int(const int&)
+        0044  PshVPtr       this
+        0048  ADDSi         0 134230788                                   ; ._Inner
+        0050  CALLSYS       __Evt_ExecuteDelegate                         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+      L005C:
+        005C  RET           3
+    */
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnDragonKillsUpdated));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+    /* ---- AddUFunction: 17 dwords / 11 instructions (cache offset 0x264cf) ----
+        0000  TYPEID        134230788                                     ; FOnDragonKillsUpdated
+        0008  PshVPtr       this
+        000C  CALLSYS       __DelegateSignature                           ; UDelegateFunction@ __DelegateSignature(?&)
+        0018  STOREOBJ      v2
+        001C  PshVPtr       v2
+        0020  PshVPtr       FunctionName
+        0024  PshVPtr       Object
+        0028  PshVPtr       this
+        002C  ADDSi         0 134230788                                   ; ._Inner
+        0034  CALLSYS       _FMulticastScriptDelegate::AddUFunction       ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+        0040  RET           6
+    */
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+    /* ---- Unbind: 9 dwords / 6 instructions (cache offset 0x26612) ----
+        0000  PshVPtr       FunctionName
+        0004  PshVPtr       Object
+        0008  PshVPtr       this
+        000C  ADDSi         0 134230788                                   ; ._Inner
+        0014  CALLSYS       _FMulticastScriptDelegate::Unbind             ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+        0020  RET           6
+    */
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+    /* ---- UnbindObject: 8 dwords / 5 instructions (cache offset 0x266f2) ----
+        0000  PshVPtr       Object
+        0004  PshVPtr       this
+        0008  ADDSi         0 134230788                                   ; ._Inner
+        0010  CALLSYS       _FMulticastScriptDelegate::UnbindObject       ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+        001C  RET           4
+    */
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+    /* ---- IsBound: 9 dwords / 6 instructions (cache offset 0x26792) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230788                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::IsBound            ; bool _FMulticastScriptDelegate::IsBound() const
+        0018  CpyRtoV4      v1
+        001C  CpyVtoR4      v1
+        0020  RET           2
+    */
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+    /* ---- Clear: 7 dwords / 4 instructions (cache offset 0x26834) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230788                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::Clear              ; void _FMulticastScriptDelegate::Clear()
+        0018  RET           2
+    */
+
+    void ~FOnDragonKillsUpdated()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~FOnDragonKillsUpdated: 7 dwords / 4 instructions (cache offset 0x26ad5) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230788                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::$beh2              ; void _FMulticastScriptDelegate::$beh2()
+        0018  RET           2
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnTeamKillsUpdated
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnTeamKillsUpdated()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+    /* ---- FOnTeamKillsUpdated: 7 dwords / 4 instructions (cache offset 0x2728a) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230789                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::$beh0              ; void _FMulticastScriptDelegate::$beh0()
+        0018  RET           2
+    */
+
+    FOnTeamKillsUpdated(const FOnTeamKillsUpdated& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+    /* ---- FOnTeamKillsUpdated: 11 dwords / 7 instructions (cache offset 0x27368) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230789                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::$beh0              ; void _FMulticastScriptDelegate::$beh0()
+        0018  PshVPtr       Other
+        001C  PshVPtr       this
+        0020  CALL          84247                                         ; FOnTeamKillsUpdated& FOnTeamKillsUpdated::opAssign(const FOnTeamKillsUpdated&)
+        0028  RET           4
+    */
+
+    FOnTeamKillsUpdated& opAssign(const FOnTeamKillsUpdated& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+    /* ---- opAssign: 12 dwords / 8 instructions (cache offset 0x26c17) ----
+        0000  PshVPtr       Other
+        0004  ADDSi         0 134230789                                   ; ._Inner
+        000C  PshVPtr       this
+        0010  ADDSi         0 134230789                                   ; ._Inner
+        0018  CALLSYS       _FMulticastScriptDelegate::opAssign           ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+        0024  PshVPtr       this
+        0028  PopRPtr
+        002C  RET           4
+    */
+
+    void Broadcast(const TArray<int>& KillScores) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument(KillScores, typeid(TArray));
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+    /* ---- Broadcast: 26 dwords / 15 instructions (cache offset 0x26d04) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230789                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::IsBound            ; bool _FMulticastScriptDelegate::IsBound() const
+        0018  CpyRtoV4      v1
+        001C  NOT           v1
+        0020  CpyVtoR1      v1
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           12                                            -> L0064
+      L0034:
+        0034  TYPEID        268448518                                     ; TArray
+        003C  PshVPtr       KillScores
+        0040  CALLSYS       __Evt_PushArgument                            ; void __Evt_PushArgument(const ?&)
+        004C  PshVPtr       this
+        0050  ADDSi         0 134230789                                   ; ._Inner
+        0058  CALLSYS       __Evt_ExecuteDelegate                         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+      L0064:
+        0064  RET           4
+    */
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnTeamKillsUpdated));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+    /* ---- AddUFunction: 17 dwords / 11 instructions (cache offset 0x26e65) ----
+        0000  TYPEID        134230789                                     ; FOnTeamKillsUpdated
+        0008  PshVPtr       this
+        000C  CALLSYS       __DelegateSignature                           ; UDelegateFunction@ __DelegateSignature(?&)
+        0018  STOREOBJ      v2
+        001C  PshVPtr       v2
+        0020  PshVPtr       FunctionName
+        0024  PshVPtr       Object
+        0028  PshVPtr       this
+        002C  ADDSi         0 134230789                                   ; ._Inner
+        0034  CALLSYS       _FMulticastScriptDelegate::AddUFunction       ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+        0040  RET           6
+    */
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+    /* ---- Unbind: 9 dwords / 6 instructions (cache offset 0x26fa8) ----
+        0000  PshVPtr       FunctionName
+        0004  PshVPtr       Object
+        0008  PshVPtr       this
+        000C  ADDSi         0 134230789                                   ; ._Inner
+        0014  CALLSYS       _FMulticastScriptDelegate::Unbind             ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+        0020  RET           6
+    */
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+    /* ---- UnbindObject: 8 dwords / 5 instructions (cache offset 0x27088) ----
+        0000  PshVPtr       Object
+        0004  PshVPtr       this
+        0008  ADDSi         0 134230789                                   ; ._Inner
+        0010  CALLSYS       _FMulticastScriptDelegate::UnbindObject       ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+        001C  RET           4
+    */
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+    /* ---- IsBound: 9 dwords / 6 instructions (cache offset 0x27128) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230789                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::IsBound            ; bool _FMulticastScriptDelegate::IsBound() const
+        0018  CpyRtoV4      v1
+        001C  CpyVtoR4      v1
+        0020  RET           2
+    */
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+    /* ---- Clear: 7 dwords / 4 instructions (cache offset 0x271ca) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230789                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::Clear              ; void _FMulticastScriptDelegate::Clear()
+        0018  RET           2
+    */
+
+    void ~FOnTeamKillsUpdated()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~FOnTeamKillsUpdated: 7 dwords / 4 instructions (cache offset 0x27465) ----
+        0000  PshVPtr       this
+        0004  ADDSi         0 134230789                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::$beh2              ; void _FMulticastScriptDelegate::$beh2()
+        0018  RET           2
+    */
+
+}
+

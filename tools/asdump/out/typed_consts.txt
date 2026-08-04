@@ -1,0 +1,1420 @@
+== <untyped / plain string or FName> (1150) ==
+    __WorldContext
+    __StaticType_ALokiAirship
+    __StaticType_ALokiMinionCharacter
+    __StaticType_ALokiDestructible
+    Forced during all-passenger impulse
+    NAME_None
+    Gold
+    AuthBuyItem - Sent Purchase Event
+    Gold
+    Gold
+    Gold
+    Gold
+    Gold
+    Gold
+    Gold
+    Gold
+    BarracudaShop - DebugLogGraph
+     unique items
+    Found 
+    ]
+    ][Total Cost: 
+     - [Recipe: 
+        
+    Gold
+    LOREM IPSUM
+    __StaticType_ALokiHeightMap
+    UpdateLocalState
+    Desaturate
+    Desaturate
+    __StaticType_ALokiPlayerStart
+    Hero:assault
+    Hero:firefox
+    Hero:freeze
+    Hero:sniper
+    Hero:flex
+    Hero:hookguy
+    Hero:rocketjumper
+    Hero:Storm
+    Hero:BurstCaster
+    Hero:BountyHunter
+    AllPlayersDisconnected
+    ) to non-spawning list
+    ] Adding bot (
+    [
+    ] Removing bot from non-spawning list
+    [
+    ] No player starts found
+    [
+    OnDropPodStartedWithPilot
+    Gems
+    Gold
+    StartMoving
+    ServerExec 
+    Gold
+    Gems
+    RequestAdmin
+    Log LogAbilitySystem Verbose
+    Log LogLokiAbilitySystemComponent Verbose
+    Log LogLokiGameplaySpell Verbose
+    DebugLogSpellBuffering 1
+    ShowDebug AbilitySystem
+    AbilitySystem.Debug.NextCategory
+    AbilitySystem.Debug.NextCategory
+    GodMode
+    Log LogCharacterMovement Verbose
+    p.NetShowCorrections 1
+    p.DebugLogAllMoves 1
+    p.DebugLogAllMoves1D 1
+    p.DebugLogAllMoves 0
+    ] ULokiPlayerControllerUAVComponent doesn't have UAVMapActorClass set on instance. This is required to show UAV Map Icons
+    [
+    ] ULokiPlayerControllerUAVComponent doesn't have UAVVaultContentActorClass set on instance. This is required to show UAV Map Icons
+    [
+    m
+    km
+    HandleHealthRegeneration
+    Immunity.AirshipRoadkill
+    Utility
+    MinorUtility
+    Boots
+    OnPlayerInitialized
+    Inventory
+    OnAssetLoadComplete
+    OnClassLoadComplete
+    OnPlayerKilled
+    AuthHandleBarracudaPhaseChanged
+    OnCharacterDamaged
+    Trigger
+    HandleTriggerOverlap
+    OnFilterByName
+    OnResetFilters
+    OnFilterToggleTag
+    OnFocusItem
+    OnToggleVisibility
+    OnFilterUpdated
+    HandleFocusItem
+    HandleItemEnteredOrExitedInventory
+    ClientOnBuyItem
+    ClientOnSellItem
+    AuthOnNewRoundPhase
+    AuthOnNewDayNightState
+    HandleVisibilityEvaluated
+    StaggerSpawn
+    3DTerrain
+    AuthHandleBlockHit
+    UpdateLocalState
+    NoCollision
+    Range Desat Mult
+    Script Desaturation
+    Range Opacity Floor
+    Final Opacity
+    Alpha Step
+    Range Step
+    AimingLaser
+    DamagePassthrough
+    ShootThrough
+    Script Hue
+    OnOwnerDestroyed
+    Aiming
+    UseAimingLaser
+    OnShowAimingLaserChanged
+    LimitLaserToCursor
+    OnLimitLaserToCursorChanged
+    OnLivingStateChanged
+    Domination
+    Shield
+    Health
+    Consumable
+    OnPlayerDisconnected
+    OnRoundPhaseChanged
+    OnPlayerStartsCreated
+    LokiPlayerRespawnComponent
+    OnLogout
+    SafeTeamSpawnPathfindingAnchor
+    LokiRespawnComponent
+    OnPlayerStateAssigned
+    OnRespawnTimeUpdated
+    OnGameAugmentSet
+    OnPodSteeringEnabled
+    OnAllowPodDetach
+    singleBody_01_m_jnt
+    body_01_m_jnt
+    OnPodTeamIndexChanged
+    OnDropPodHit
+    OnIntroSequenceFinished
+    FinishDestroyPod
+    OnOutroSequenceStart
+    OnOutroSequenceFinished
+    LokiDropPodImpactIndicator
+    GroundLaserIndicator
+    OnSpawnedCharacterChangedCalled
+    OnLivingStateChangedCalled
+    OnAbilitySystemInitializedCalled
+    OnGameplaySpellAddedCalled
+    EnableGemCollision
+    OnComponentBeginOverlap
+    OnInventoryItemAdded
+    OnInventoryItemRemoved
+    OnControllerChanged
+    OnMoveCompleted
+    HandleMostWantedEvent
+    OnVaultDoorDestroyed
+    OnVaultDestroyed
+    OnLocationAdded
+    OnVaultDataAdded
+    OnUpdate
+    OnRemove
+    ServerSwapSlotAndBuyKit
+    ServerSellSlotAndBuyItem
+    AuthSellItem_BP
+    ShouldShopSellItem_BP
+    ServerBuyItem
+    ServerBuyShopSaleItem
+    ServerSwapSlotAndBuyItem
+    UpdateCurrentTargetEnemy
+    OnBountyGivenToPlayer
+    OnNewDay
+    OnNewNight
+    TowerKilled
+    TowerGoldRewardVisual
+    AuthPlayPilotVOForAll
+    MultiPlayPilotVO
+    NetMulticastSpawnerNextSpawnTime
+    ClearItemContainer
+    AddItemToContainer
+    EventFinishedAddingItems
+    CreateInputItemWidget
+    UpdateVisuals
+    ServerSellItem
+    ClientBiomeSoulAcquired
+    BP_OnClientBiomeSoulAcquired
+    GetTriggeredDuration
+    GetFadingDuration
+    GetDeadDuration
+    GetRespawningDuration
+    ClientTickTriggered
+    ClientTickFading
+    ClientTickDead
+    ClientTickRespawning
+    BP_NewLocalState
+    GetColorableMeshes
+    CustomEvent0
+    CustomEvent1
+    CustomEvent2
+    CustomEvent3
+    OnLaserSpawned
+    OnLaserSettingsIndexChanged
+    SetVisibilityOnAll
+    OnUpdateProgress
+    InitClient
+    InitLocalClient
+    InitOnLocalASC
+    GetBonusPrimaryAttackDistance
+    UsesAimingLaser
+    InitClientLaser
+    SpawnLaser
+    SwitchLaserSettingsInternal
+    OnLivingStateChangedLaser
+    ClientLaserSetVisibility
+    ClientLaserSetScriptOverrides
+    ClientLaserSetProgressCurve
+    ClientLaserRestartProgressSequence
+    ClientLaserResetProgress
+    ClientLaserTriggerCustomEvent
+    ClientLaserSetMaxDistance
+    ClientLaserSetHueShift
+    ClientLaserSetLaserMaterial
+    ClientLaserSetEndpointMaterial
+    ClientLaserSetHitFlareNiagaraSystem
+    ClientLaserSetBrightness
+    ClientLaserOverrideLimitLaserToCursor
+    ClientLaserClearOverrideLimitLaserToCursor
+    ClientLaserSwitchSettings
+    ClientLaserShowRangeMarker
+    ClientLaserSetRangeMarkerDistance
+    ClientLaserSetRangeMarkerMaterial
+    DestroyHeightIndicator
+    OnTookDamageHeightIndicator
+    ClientSetHeightIndicatorVisibility
+    OnShowHeightIndicatorsChanged
+    SetMaxRangeFromRMB
+    BP_EffectRemainingDuration
+    AuthCheatNightToDay
+    AuthCheatDayToNight
+    BP_IsCharacterInShadow
+    BP_CheatNightToDay
+    BP_CheatDayToNight
+    InitPlayer
+    OnCharacterRespawned
+    GetSpawnDelay
+    AuthRequestRespawn
+    GeneratePlayerStarts
+    GetValidPlayerStart
+    UpdateTimerText
+    ServerDetachPodFromLeader
+    ServerUpdatePodMovement
+    BP_StartPodGameplay
+    BP_OnPrematurePodDestruction
+    OnDropPodReplicated
+    OnLandingRadiusChanged
+    ShouldTransferItem
+    PostTransferToTeamElimBox
+    AuthCheatToggleHealthRegen
+    AuthCheatToggleManaRegen
+    AuthCheatGrantGold
+    AuthCheatGrantGems
+    AuthCheatUnlockFullArmory
+    AuthCheatExecuteUAV
+    AuthCheatBarracudaNextPhase
+    AuthCheatBarracudaToggleSpawnerType
+    AuthCheatBarracudaToggleDayNightCycle
+    AuthCheatBarracudaAdvanceDayNightCycle
+    ServerSpawnWispAS
+    BP_OnClientGliderActivated
+    BP_OnClientGliderDectivated
+    BP_OnSpectatorMapMove
+    ClientNotifyLocalRadarEmpty
+    ClientNotifyLocalRadarInstigator
+    OnRep_ActiveUAVCopy
+    ClientUpdateIcon
+    VaultDataItemUpdated
+    GetItemsForUAV
+    GetDoor
+    CurrentHealthRegenDamagePhase
+    AbilitySystemComponent
+    HealthRegenDamagePhaseEffects
+    HealthRegenDamagePhaseEffectHandle
+    HealthRegenTickInterval
+    RunningEffect
+    NextFuelTickTime
+    BoostTag
+    NumSecondsOfFuelWhileBoosting
+    NumSecondsOfFuel
+    FuelTickInterval
+    LastGenericCollisionTimes
+    MinGenericCollisionSpeed
+    MaxHeadOnCollisionAngle
+    AirshipCollisionRearMultiplier
+    AirshipCollisionFrontMultiplier
+    MaxGenericCollisionDamage
+    MinGenericCollisionDamage
+    MaxGenericCollisionSpeed
+    MinEjectionRelativeSpeed
+    GenericCollisionEffect
+    LastRoadkillTimes
+    RoadkillImpactEffect
+    MaxRoadkillDamage
+    MinRoadkillDamage
+    MaxRoadkillDamageSpeed
+    MinRoadkillDamageSpeed
+    RoadkillDamageMinionCoefficient
+    RoadkillDamageDestructibleCoefficient
+    MaxRoadkillBoopForceXY
+    MinRoadkillBoopForceXY
+    MaxRoadkillBoopSpeed
+    MinRoadkillBoopSpeed
+    MaxRoadkillBoopForceZ
+    MinRoadkillBoopForceZ
+    HealthRegenThresholds
+    NextHealthRegenTickTime
+    OnPlayerInitializedHandle
+    Handle
+    bLoadComplete
+    DisabledItemAssetIDs
+    LoadedClasses
+    DisabledItems
+    PerkSlotName
+    PurchasedKits
+    DefaultArmory
+    RelicSlotName
+    BootsSlotName
+    bPlayAnimation
+    SaleItem
+    ShopSaleTable
+    StuckDetectionTime
+    UnstuckTeleportTime
+    CurrentTargetEnemy
+    HighPriorityEnemyCharacter
+    ReleaseHighPriorityEnemyTime
+    LaneIndex
+    OnLaneIndexUpdated
+    HighPriorityEnemyMemory
+    InternalNextRespawnTime
+    OnNextRespawnTimeChanged
+    Structures
+    bRespawnLocation
+    bAttackable
+    NextDayNightSwapTime
+    bIsDay
+    MatchStartTime
+    LastKnockedTimeTable
+    KnockXPCooldownTime
+    PlayerState
+    GoldLossOnDeath
+    GoldBountyPerCurrentStreak
+    MercyHeroKillXPCoefficients
+    UnderdogHeroKillXPBonusPerLevel
+    MinionSplitXPBonuses
+    bDayNightTransitionEnabled
+    DayNightDuration
+    bAnyTowersKilled
+    MomentumBossKilledPilotVO
+    NumDragonsKilled
+    DragonRewards
+    DragonKilledPilotVO
+    MomentumBuffEffect
+    NumDragonsKilled
+    RespawnTimePerLevel
+    MatchTimeRespawnCeiling
+    MatchRespawnTimeFactor
+    RallyAggroRange
+    TeamKillScores
+    OnTeamKillsUpdated
+    OnDragonKillsUpdated
+    Shop
+    ShopClass
+    CurrentPhaseIndex
+    BarracudaPhases
+    CurrentPhaseStartTime
+    MinionWaypoints
+    DisabledSpawnerTypes
+    SpawnerToSpawnTime
+    bGrantLoot
+    LastHitGoldBonus
+    GoldRewardMethod
+    InitialLaneIndex
+    LaneComponent
+    TriggerComponent
+    WaypointTowardTeam1
+    WaypointTowardTeam0
+    LastWaypointTime
+    CurrentWaypoint
+    LastCombatTime
+    CachedLocation
+    TimeFirstArrivedAtCachedLocation
+    bDrawDebug
+    DebugDrawPathDurationErrorThreshold
+    DebugDrawPathDurationWarningThreshold
+    LastWaypoint
+    WaypointLocationKey
+    Interval
+    RandomDeviation
+    Item
+    Inputs
+    Outputs
+    RecipeCost
+    TotalCost
+    bHasTotalCost
+    bDebugLogGraph
+    SellValueCoefficient
+    ItemGraphNodes
+    AllItems
+    ItemLootTables
+    ClientNameFilterString
+    ClientTagFilters
+    ClientCurrentFocus
+    GameplayTags
+    ItemClass
+    ShopItemWidget
+    ItemName
+    ChildContainer
+    DesignTimePreviewDepthCount
+    DesignTimePrviewInputCount
+    bDesignTimePreviewOwned
+    OwnedIndicator
+    Tree
+    ItemsToPotentiallyMarkAsOwned
+    RootNode
+    RepresentedItem
+    ValueType
+    Label
+    Tag
+    RecommendedHeroTag
+    TagFilters
+    TeamComponent
+    InitialTeam
+    OnNewDayNightStateDelegate
+    VisibilityReceiver
+    bShowTimer
+    MapIconComponent
+    RespawnType
+    NextSpawnTime
+    bTimerRequiresVision
+    bSpawnLoopHasStarted
+    MinimumBarracudaPhaseType
+    SpawnLoopStartTime
+    InitialSpawnDelay
+    SpawnPeriod
+    LastSpawnTime
+    bStaggerSpawn
+    Wave
+    LaneComponent
+    StartingEffects
+    MinionInstances
+    bHasLivingMinion
+    bSpawnAtAveragePlayerLevel
+    LevelThresholdsByGametime
+    WaveBuffer
+    CurrentWaveBufferIndex
+    BarracksDownEffect
+    BarracksClass
+    SpawnAudioEvent
+    SpawnPilotVO
+    CapsuleCollision
+    OnBiomeTouchUnlocked
+    ShadowDecalRotation
+    ShadowDecalSize
+    ShadowDecalMaterial
+    ShadowDecalComponent
+    ShadowDecalMID
+    RingDecalRotation
+    RingDecalSize
+    RingDecalMaterial
+    RingDecalComponent
+    RingDecalMID
+    LocalState
+    LastTriggerTime
+    LastHeightMapDirtyTime
+    NextUpdateTimerHandle
+    StaticMesh
+    StaticMeshComponent
+    bGenerateBackupMantleCollision
+    BackupMantleCollision
+    StateToCumulativeDurationMap
+    DefaultTriggeredDuration
+    DefaultFadingDuration
+    DefaultDeadDuration
+    DefaultRespawningDuration
+    StateAudioEvents
+    bShowDebug
+    TrackSpline
+    Speed
+    InitialOffset
+    OwnerAimingVisComponent
+    ExecutionTagsContainer
+    OwnerHero
+    bInvisibleFromExecute
+    bInvisibleFromOwnerHidden
+    CurrentCursorPathTime
+    CurrentTraceHitPathTime
+    bLimitLaserToTraceHit
+    IntersectedHeightIndicator
+    CurrentEndPathTime
+    LaserProjectilePath
+    LaserEndpoint
+    bOverrideDesaturationAndOpacity
+    bShowTraceHitFlare
+    LaserHitFlare
+    bOverrideRangeAndAlphaStep
+    bProgressActive
+    bIgnoresHeroes
+    MaxDistance
+    CapsuleComponent
+    OverlapHeightIndicatorRadiusBonus
+    HeightIndicator
+    TargetLocPtr
+    bLimitLaserToCursorOverride
+    bLimitLaserToCursorOverrideValue
+    bLimitLaserToCursorUserSetting
+    CurrentLaserSettingsIndex
+    ProjectileSourceOffsetDistanceXY
+    bUsesProgressSequence
+    ProgressCurve
+    bProgressCurveIsNormalized
+    CurrentProgressCurveDuration
+    CurrentProgressTime
+    BehindGeoDottedLinesPerMeter
+    PrimaryAttackDistance
+    ExecutingTag
+    BeingExecutedTag
+    bShowRangeMarker
+    RangeMarker
+    MarkerDistance
+    bOverrideRangeMarkerDesaturationAndOpacity
+    bShowRangeMarkerOnSpawn
+    bSetSpreadAngleViaBloom
+    bInterpolateBloomValue
+    LastBloomAngle
+    InterpolationRampHalfLife
+    NonBloomSpreadAngle
+    HideSpreadLasersAngle
+    LaserSpreadRoot1
+    LaserSpreadRoot2
+    LaserSpread1
+    LaserSpread2
+    DimSpreadLasersAngleWindow
+    LaserOpacityMultWhenSpread
+    ReplicatedLaserSettingsIndex
+    SpawnLaserSettingsIndex
+    bHasInitializedClient
+    OwnerCharacter
+    bHasInitializedLocalClient
+    LaserSettings
+    ClientLaserInstance
+    bHeroUsesAimingLaser
+    RangeMin
+    RangeMax
+    VisTimeRemaining
+    PostAttackVisFadeout
+    PostAttackVisDuration
+    ProgressMarker
+    bShowProgressMarker
+    SettingsIndexLMB
+    SettingsIndexBase
+    CurrentProgressEndTime
+    SettingsIndexRMB
+    SettingsIndexUlt
+    ArrowPerfectGreenChargeMin
+    ArrowPerfectGreenChargeMax
+    ArrowRangeMaxBluePerfect
+    ArrowRangeMaxBlue
+    ArrowRangeMaxGreen
+    ArrowRangeMinGreen
+    ArrowStartChargeFrac
+    ProgressMarkerOriginalScale
+    bRangeMarkerDimmed
+    RangeMarkerDimmedMaterial
+    RangeMarkerLitMaterial
+    RangeMarkerOriginalScale
+    bLaserEndpointDimmed
+    LaserEndpointDimmedMaterial
+    LaserEndpointLitMaterial
+    ImpaleRangeMax
+    ImpaleRangeMin
+    UltArrowRangeMax
+    LMBRangeMarkerDistance
+    MyCharacter
+    EffectHandles
+    OnTimelineChanged
+    OnDayNightStateChanged
+    OnDayBegin
+    OnDayEnd
+    RespawnTimerWidget
+    AvailableBots
+    SpawnedTeamCount
+    InitializedPlayerStates
+    LevelToGrant
+    DisconnectedPlayerStates
+    ArmorItem
+    BandageItem
+    ConnectedPlayerControllers
+    RespawnTime
+    LocalRespawnTime
+    OnRespawnTimeUpdated
+    HasCreatedPlayerStarts
+    OnPlayerStartsCreated
+    IsCombatPhase
+    InitialSpawnDelay
+    bOnlyScheduleRespawnsDuringCombatPhase
+    bStartTimerOnlyOnKill
+    SpawnDelay
+    Starts
+    StartIndex
+    NonSpawningBotStates
+    OnSpawnEffect
+    HumansBeforeBotDespawn
+    SpawnIndex
+    SpawnRadius
+    BarrierActor
+    PSC
+    RandomSeed
+    DayToExotics
+    DayToLootTable
+    bCanSelectDropLocation
+    PodSteeringEventListenerHanddle
+    DropPodActor
+    bIsTeamLeaderPod
+    bIsLocalPlayerPilot
+    IntroSequenceTotalTime
+    PodDetachTotalTime
+    PodDetachFromLeaderMaxTime
+    bIgnoreInput
+    DetachInputStartTime
+    PodDetachFromLeaderMinTime
+    DropPod
+    bPodDetachingEnabled
+    bAlwaysUpdateNetwork
+    NetworkUpdateFrequencyTimer
+    bPodSteeringEnabled
+    bDropPhaseControlsDisabled
+    bPodIsAttachedToLeader
+    CurrMoveDirection
+    MovementForwardValue
+    MovementRightValue
+    INVALID_MOVEMENT_VALUE
+    CrewPodDetachStartTime
+    CurrTotalTimeForDetach
+    CurrentInputDirection
+    BufferedDestinationDelta
+    MaxHeightRange
+    MinimumTargetLocationMovementSpeed
+    MaximumTargetLocationMovementSpeed
+    NetworkUpdateFrequencey
+    PodTeamIndex
+    bHasStartedGameplay
+    DetachingFromLeaderPodStartTime
+    CrewDetachEvent
+    bIsHidingDropPhaseHiddenActors
+    bRetryCharacterCameraGlue
+    bRetryCrewPodCameraGlue
+    bRetryLeaderPodCameraGlue
+    CurrPodDestination
+    LeaderPod
+    PodMeshComponent
+    ImpactIndicator
+    AttachedCrewPods
+    PodStateEvent
+    PlayersInside
+    PlayersAttached
+    InitialDropPodSpeed
+    bPodIsDestroying
+    TotalPodDestructionDelayTime
+    DisplayDropPhaseHiddenActorsHeight
+    LeaderDetachEvent
+    DetachingCrewPods
+    AllDetachedCrewPods
+    PodDetachData
+    OnCrewPodDetached
+    OnLeaderPodHasCrewPodDetached
+    bPilotHasPodControl
+    PodDetachTotalDistance
+    PlayersToSpawnCrewPodFor
+    CrewDropPodClass
+    TotalTimeForPodControls
+    bReadyForOutro
+    OnPodOutroStarted
+    OutroSequenceTotalTime
+    bSteeringEnabled
+    SteeringStartTime
+    ImpactIndicatorClass
+    GroundLaserIndicatorClass
+    GroundLaserIndicator
+    bIsCrewPod
+    CrewPodBoneName
+    LeaderPodBoneName
+    OnPodMoveDirectionChanged
+    LastInputDirection
+    MaxSteerDistance
+    MaxNonLeaderSteerDistance
+    OutroDistance
+    IndicatorInterpSpeed
+    OwningDropPod
+    OwningPlayerState
+    bIsIndicatorInitialized
+    LandingRadius
+    OwningDropPod
+    TeamDropPodClass
+    bHoveredComponentIsValid
+    UsableDetectionComponent
+    CachedLokiPC
+    HoveredUsable
+    CachedLokiCharacter
+    bIsSupportingCooldownBuffering
+    ActiveUsable
+    UsableList
+    bInputHoldInteractionCanProcess
+    bInteractionInputPressed
+    OnInteractionReleased
+    CachedLokiAbilitySystem
+    FocusedUsable
+    SelectedUsable
+    OnInteractionUsableChanged
+    UsableNotFoundAudio
+    OnInteractionPressed
+    InteractionCooldownStartTime
+    MinInteractionCooldownTime
+    bCanProcessBufferedInteraction
+    ProcessInteractionBufferStartTime
+    MaxProcessBufferedInteractionTime
+    ProjMovementComp
+    bIsMoving
+    HeightToStop
+    bIsVaultItem
+    NoPickupTime
+    SphereCollision
+    GemCount
+    BonusGemMultiplier
+    GemVacuumTag
+    RootSceneComponent
+    bEnablePooling
+    PoolPrimeSize
+    BaseClass
+    RecommendedItems
+    PreferredItems
+    bAllowUpgradesFromDupes
+    TeamElimBoxClass
+    bDropOnTeamElimination
+    InventorySlots
+    T0SlotsToDestroy
+    GoldDropClass
+    TeamIndexToBoxMap
+    PlayersQueue
+    UpdateTimerHandle
+    MinimumInsuredGoldValue
+    OwningCharacter
+    OwningAIController
+    PathNodeActors
+    LastPathingActor
+    CurrNodeActorList
+    RotateToActor
+    RotationPrecision
+    MostWantedCount
+    ActiveMostWantedCount
+    bPanning
+    bResetting
+    TimePressed
+    CursorScreenLocationWhenPressed
+    OffsetThisPress
+    MinimumDragDuration
+    CumulativeOffset
+    LastPawnLocation
+    CameraPickupRadius
+    CheatDisableHealthRegenEffectClass
+    CheatDisableHealthRegenEffectHandle
+    CheatDisableManaRegenEffectClass
+    CheatDisableManaRegenEffectHandle
+    UAVComponent
+    WispControllerClass
+    WispHeroClass
+    AutoJumpStartTime
+    AutoJumpPeriod
+    AutoJumpPressed
+    AutoJumpLastTime
+    OnSneakPressed
+    OnSneakReleased
+    OnPracticeRespawnPressed
+    ActiveUAVs
+    AllVaultItemSpawners
+    NextUAVID
+    GlobalAudioActorClass
+    ActiveUAVCopy
+    UAVUpgradedTag
+    VaultVisionDistance
+    MarkedTeamGameplayEffectClass
+    DataTag
+    PlayerGroupingDistance
+    MarkedIndividualGameplayEffectClass
+    UAVImmunityTag
+    UAVBlockedGameplayCueTag
+    UAVMapActorClass
+    UAVVaultContentActorClass
+    LastRadarPlayer
+    LastRadarID
+    LocalRadarPlayers
+    LastEventNotifyTime
+    UAVActivatedEventNotifyCooldown
+    VaultDataItem
+    MyItemID
+    TargetWidget
+    bHideBasedOnActivatableParent
+    LeftBlocker
+    TopBlocker
+    RightBlocker
+    BottomBlocker
+    AllyPlayerState
+    Meters
+    Kilometers
+    Y
+    X
+    ImpactNormal
+    Z
+    CanProceed
+    ArmoryUniqueEffects
+    StarRequirement
+    bIsItemSpell
+    CanProceed
+    EffectClass
+    InventoryEquipment
+    EquipmentAsset
+    Equipment
+    XP
+    CanProceed
+    bIncludeInConciseTooltip
+    CanProceed
+    ItemsCollection
+    PrimaryAssetId
+    ItemClass
+    AssetId
+    ItemType
+    ShopkeeperGoldPrice
+    Price
+    StarLevel
+    StarCount
+    bPrototype
+    CanProceed
+    StarCount
+    Item
+    GoldCost
+    PlayerState
+    Game_Id
+    PlatformPlayerID
+    Player_Id
+    Item_Id
+    Remaining_Gold
+    Cost
+    Game_Time
+    Source
+    StarLevel
+    Power
+    Prototype
+    Prototype
+    bFullyUnlockedArmory
+    ItemClass
+    PriceOverride
+    CurrDayNightState
+    PrevDayNightState
+    DaysEncountered
+    NightsEncountered
+    _Inner
+    AggroRange
+    Actor
+    CanProceed
+    PlayerState
+    _Inner
+    OnPlayerKilled
+    EventResult
+    VictimPlayerState
+    Killer
+    AssistPlayerStats
+    CanProceed
+    PlayerState
+    CanProceed
+    DamageStatistic
+    SourceCharacter
+    CanProceed
+    Duration
+    Type
+    PreviousPhaseType
+    CurrentPhaseType
+    CanProceed
+    _Inner
+    _Inner
+    TeamStateTeamOnlyClass
+    GenericDamage
+    AdditionalTowerDamage
+    ProjectileMaxDistance
+    ProjectileInitialSpeed
+    ProjectileHomingAcceleration
+    Gold
+    XP
+    OnComponentBeginOverlap
+    CanProceed
+    CurrentFloor
+    SelectedKeyName
+    ItemsToConsume
+    Gold
+    CanProceed
+    CanProceed
+    CanProceed
+    GuaranteedItems
+    ItemClassToSpawn
+    ShopRecipe
+    ComponentItems
+    CanProceed
+    CanProceed
+    CanProceed
+    CanProceed
+    Query
+    Tag
+    Item
+    CanProceed
+    LokiReplicationStrategy
+    bDistanceBased
+    CustomReplicationStrategy
+    ShopMetaData
+    MetaTags
+    CanProceed
+    CanProceed
+    ItemClass
+    Item
+    Gametime
+    Level
+    MinionClass
+    Count
+    MinimumMatchTime
+    Entries
+    OnRoundPhaseChanged
+    OnVisibilityEvaluated
+    DayNightState
+    CanProceed
+    GameStartWorldTime
+    CanProceed
+    CanProceed
+    CanProceed
+    CanProceed
+    bVisibilityNotificationsEnabled
+    bUsedOutsideOfReplication
+    _Inner
+    Max
+    Min
+    OnComponentHit
+    Tags
+    PrimaryActorTick
+    NetUpdateFrequency
+    MinNetUpdateFrequency
+    B
+    G
+    R
+    TierNumber
+    HitLocation
+    HitTime
+    HitHeightIndicator
+    bDidHit
+    LaserClass
+    LaserMaterial
+    EndpointMaterial
+    HitFlareNiagaraSystem
+    MaxDistance
+    bShowTraceHitFlare
+    bLimitLaserToTraceHit
+    bOverrideLimitLaserToCursor
+    bLimitLaserToCursor
+    bOverrideBrightness
+    Brightness
+    bUnconditionallyVisibleWhenActive
+    bIgnoresHeroes
+    bBenefitsFromBonusPrimaryAttackDistance
+    HeroPredropHidden
+    bIsMidAir
+    ImpactPoint
+    Distance
+    CanProceed
+    CanProceed
+    ProjectileHeight
+    bOverrideDesaturationAndOpacity
+    bOverrideRangeAndAlphaStep
+    OnDestroyed
+    OnLivingStateChanged
+    MaxBloom
+    CanProceed
+    _Inner
+    _Inner
+    _Inner
+    _Inner
+    PlayerStartTag
+    CanProceed
+    GameplayBlueprint
+    CanProceed
+    SlotCategory
+    ItemActor
+    CanProceed
+    OnDisconnected
+    bDisconnected
+    OnPlayerLogout
+    CanProceed
+    CanProceed
+    Exotics
+    CanProceed
+    GameAugmentClass
+    bDropPhaseControlsDisabled
+    PrimaryComponentTick
+    CrewDetachState
+    PodDetachDirection
+    PodDetachStartLocation
+    LeaderDetachStartLocation
+    MoveDirection
+    OnTeamIndexChanged
+    DetachState
+    CanProceed
+    DropPod
+    DropPodState
+    PodPilot
+    bIsLeaderPod
+    Velocity
+    DetachingCrewPod
+    LeaderPod
+    PodPilot
+    InputProgressPercent
+    InputDirection
+    Direction
+    LeaderPod
+    DetachingCrewPods
+    DetachState
+    LeaderPodPilot
+    InputDirection
+    Direction
+    DropPod
+    PodPilot
+    InputDirection
+    Direction
+    _Inner
+    _Inner
+    _Inner
+    _Inner
+    Actor
+    OverlapComponent
+    UsableComponent
+    SpellTargets
+    TargetActor
+    CanProceed
+    HoveredComponent
+    HoveredActor
+    OnSpawnedCharacterChanged
+    OnAbilitySystemInitialized
+    OnGameplaySpellAdded
+    _Inner
+    _Inner
+    _Inner
+    TeamIndex
+    Location
+    bVision
+    MaxSimulationIterations
+    MaxSimulationTimeStep
+    DefaultRecommendedLoadout
+    ItemClasses
+    RelevantEquipmentAttributes
+    InventoryEffects
+    CanProceed
+    CanProceed
+    Item
+    CanProceed
+    Item
+    LastWalkingLocation
+    bStarterItem
+    PlayerStateDupeArray
+    bDropCurrencyOnPlayerDeath
+    ReceiveControllerChangedDelegate
+    ReceiveMoveCompleted
+    State
+    bDynamicCameraPanEnabled
+    CameraManualPanOffset
+    LivingStateMachine
+    _Inner
+    _Inner
+    _Inner
+    Config
+    StartTime
+    Duration
+    CanProceed
+    bValid
+    ID
+    TeamIndex
+    SourceLocation
+    AudioActor
+    CanProceed
+    PulseCount
+    bShowIndividuals
+    bShowTeam
+    InaccuracyDistance
+    PlayersDetected
+    bRevealVaults
+    bLocalRadar
+    TeamVaultDataComponent
+    Players
+    Vault
+    SourceUAVID
+    Location
+    ItemClasses
+    Radius
+    Characters
+    bShowCharacters
+    CanProceed
+    CanProceed
+    CanProceed
+    Source
+    Location
+    PlayerCount
+    ExpiryTime
+    TeamIndex
+    CharacterClasses
+    AverageLevel
+    AverageRelicCount
+    AverageArmorLevel
+    UAVID
+    TotalPlayerCount
+    FuzzyPlayerLocationComponent
+    CanProceed
+    CanProceed
+    CanProceed
+    PlayerState
+    PlayerLocationItem
+    TeamIndex
+    Location
+    CharacterClass
+    PlayerLevel
+    CanProceed
+    PlayerLocationItems
+    VaultDataItem
+    ID
+    PlayerLocationItem
+    PlayerLocationItem
+    InitialDelay
+    Period
+    BlinkDuration
+    ID
+    VaultDataItem
+    VaultDataItem
+    X
+    Y
+    Yaw
+
+== GameplayTags (20) ==
+    Effect_Airdoo_Damaged_Smoking
+    Effect_Airdoo_Damaged_onFire
+    Generic_Scale
+    Item_ShopDiscount_DiscountApplied
+    Attribute_MinionGoldMultiplier
+    Barracuda_Minion_GrantsDragonBuff
+    Barracuda_Minion_GrantsMomentumBuff
+    State_Combat_InCombat
+    GameMode_Barracuda_InBase
+    State_Dead
+    State_Execute_Executing
+    State_BeingExecuted
+    State_Knocked
+    State_GemMultiplier
+    Static_Barracuda_Spawner_Neutral
+    Static_Barracuda_Spawner_Creep
+    Data
+    Immunity_UAV
+    State_UAVUpgraded
+    GameplayCue_Effect_UAVBlocked
+
+== FColor (4) ==
+    Red
+    Green
+    Yellow
+    Purple
+
+== Content.Train.TrainMovableBaseComponent (4) ==
+    __StaticType_UTrainAnchor
+    __StaticType_UBackTrainAnchor
+    __StaticType_UFrontTrainAnchor
+    __StaticType_UTrainMovableBaseComponent
+
+== FVector (3) ==
+    ZeroVector
+    OneVector
+    UpVector
+
+== Barracuda.Shop.BarracudaShop (2) ==
+    __StaticType_UBarracudaShopItemGraphNode
+    __StaticType_ABarracudaShop
+
+== Airship.LokiAirship (1) ==
+    __StaticType_ALokiAirship_AS
+
+== FRotator (1) ==
+    ZeroRotator
+
+== Armory.LokiPlayerControllerArmoryComponent (1) ==
+    __StaticType_ULokiPlayerControllerArmoryComponent
+
+== Armory.LokiPlayerControllerShopSkylandsComponent (1) ==
+    __StaticType_ULokiPlayerControllerShopSkylandsComponent
+
+== Barracuda.Components.BarracudaJungleCreepComponent (1) ==
+    __StaticType_UBarracudaJungleCreepComponent
+
+== Barracuda.Components.BarracudaJungleCreepTargetingComponent (1) ==
+    __StaticType_UBarracudaJungleCreepTargetingComponent
+
+== Barracuda.Components.BarracudaLaneComponent (1) ==
+    __StaticType_UBarracudaLaneComponent
+
+== Barracuda.Components.BarracudaLaneCreepTargetingComponent (1) ==
+    __StaticType_UBarracudaLaneCreepTargetingComponent
+
+== Barracuda.Components.BarracudaMinionTargetingComponent (1) ==
+    __StaticType_UBarracudaMinionTargetingComponent
+
+== Barracuda.Components.BarracudaPlayerStateComponent (1) ==
+    __StaticType_UBarracudaPlayerStateComponent
+
+== Barracuda.Components.BarracudaStructureComponent (1) ==
+    __StaticType_UBarracudaStructureComponent
+
+== Barracuda.Components.BarracudaTowerTargetingComponent (1) ==
+    __StaticType_UBarracudaTowerTargetingComponent
+
+== Barracuda.GameMode.BarracudaGameMode (1) ==
+    __StaticType_ABarracudaGameMode
+
+== Barracuda.GameMode.BarracudaPlayerSpawnerComponent (1) ==
+    __StaticType_UBarracudaPlayerSpawnerComponent
+
+== Barracuda.GameMode.BarracudaRallyMinionsComponent (1) ==
+    __StaticType_UBarracudaRallyMinionsComponent
+
+== Barracuda.GameState.BarracudaGameStateComponent (1) ==
+    __StaticType_UBarracudaGameStateComponent
+
+== Barracuda.GameState.BarracudaTeamState (1) ==
+    __StaticType_ABarracudaTeamState
+
+== Barracuda.GameState.BarracudaTeamState_TeamOnly (1) ==
+    __StaticType_ABarracudaTeamState_TeamOnly
+
+== Barracuda.Minion.BarracudaMinionRewardComponent (1) ==
+    __StaticType_UBarracudaMinionRewardComponent
+
+== Barracuda.Minion.Waypoints.BarracudaMinionWaypoint (1) ==
+    __StaticType_ABarracudaMinionWaypoint
+
+== FQuat (1) ==
+    Identity
+
+== Barracuda.Minion.Waypoints.BarracudaMinionWaypointFollowerComponent (1) ==
+    __StaticType_UBarracudaMinionWaypointFollowerComponent
+
+== Barracuda.Minion.Waypoints.BTService_UpdateMinionWaypoint (1) ==
+    __StaticType_UBTService_BarracudaUpdateMinionWaypoint
+
+== Barracuda.Shop.BarracudaShopItemListWidget (1) ==
+    __StaticType_UBarracudaShopItemListWidget
+
+== Barracuda.Shop.BarracudaShopItemTreeNodeWidget (1) ==
+    __StaticType_UBarracudaShopItemTreeNodeWidget
+
+== Barracuda.Shop.BarracudaShopItemTreeWidget (1) ==
+    __StaticType_UBarracudaShopItemTreeWidget
+
+== EKeys (1) ==
+    RightMouseButton
+
+== Barracuda.Shop.BarracudaShopItemWidget (1) ==
+    __StaticType_UBarracudaShopItemWidget
+
+== Barracuda.Shop.BarracudaShopPlayerControllerComponent (1) ==
+    __StaticType_UBarracudaShopPlayerControllerComponent
+
+== Barracuda.Shop.BarraucdaShopFilterWidget (1) ==
+    __StaticType_UBarraucdaShopFilterWidget
+
+== Barracuda.Spawners.BarracudaMinionSpawner (1) ==
+    __StaticType_ABarracudaMinionSpawner
+
+== Character.LokiHeroCharacter (1) ==
+    __StaticType_ALokiHeroCharacter_AS
+
+== Character.LokiHeroGroundIndicator (1) ==
+    __StaticType_ULokiHeroGroundIndicator
+
+== Content.TemporaryFloor (1) ==
+    __StaticType_ATemporaryFloor
+
+== FTransform (1) ==
+    Identity
+
+== Core.AimingVis.LokiAimingLaser (1) ==
+    __StaticType_ALokiAimingLaser
+
+== Core.AimingVis.LokiAimingLaserRangeMarker (1) ==
+    __StaticType_ALokiAimingLaserRangeMarker
+
+== Core.AimingVis.LokiAimingLaserSpreadLines (1) ==
+    __StaticType_ALokiAimingLaserSpreadLines
+
+== Core.AimingVis.LokiAimingVisComponent (1) ==
+    __StaticType_ULokiAimingVisComponentScript
+
+== Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_HookGuy (1) ==
+    __StaticType_ALokiAimingLaserSpreadLines_HookGuy
+
+== Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_Ronin (1) ==
+    __StaticType_ALokiAimingLaserSpreadLines_Ronin
+
+== Core.AimingVis.HunterSpecific.LokiAimingLaser_Huntress (1) ==
+    __StaticType_ALokiAimingLaser_Huntress
+
+== Core.Components.LokiMajorStatusEffectComponent (1) ==
+    __StaticType_ULokiMajorStatusEffectComponent_AS
+
+== DayNightController.LokiDayNightController (1) ==
+    __StaticType_ALokiDayNightController_AS
+
+== FFA.Comp_PC_LokiRespawnComponent (1) ==
+    __StaticType_UComp_PC_LokiRespawnComponent
+
+== FFA.FFABotSpawner (1) ==
+    __StaticType_UFFABotSpawnerComponent
+
+== FFA.FFAGameMode (1) ==
+    __StaticType_AFFAGameMode
+
+== FFA.LokiPlayerRespawnComponent (1) ==
+    __StaticType_ULokiPlayerRespawnComponent
+
+== FFA.LokiRespawnComponent (1) ==
+    __StaticType_ULokiRespawnComponent
+
+== FFA.RespawnTimerWidget (1) ==
+    __StaticType_URespawnTimerWidget
+
+== GameMode.LokiGameMode_ExoticLootComponent (1) ==
+    __StaticType_ULokiExoticLootComponent
+
+== GameMode.DropPhase.LokiDropPhase_PlayerStateComponent (1) ==
+    __StaticType_ULokiDropPhase_PlayerStateComponent
+
+== GameMode.DropPhase.LokiDropPod (1) ==
+    __StaticType_ALokiDropPod
+
+== GameMode.DropPhase.LokiDropPodImpactIndicator (1) ==
+    __StaticType_ALokiDropPodImpactIndicator
+
+== GameMode.DropPhase.LokiDropPodLaser (1) ==
+    __StaticType_ALokiDropPodLaser
+
+== GameMode.DropPhase.LokiDropShip (1) ==
+    __StaticType_ALokiDropShip
+
+== GameState.LokiGameState (1) ==
+    __StaticType_ALokiGameState_AS
+
+== Interaction.LokiInteractionPlayerComponent (1) ==
+    __StaticType_ULokiInteractionPlayerComponent
+
+== Items.LokiGem (1) ==
+    __StaticType_ALokiGem
+
+== Items.LokiItemVisualsComponent (1) ==
+    __StaticType_ULokiItemVisualsComponent
+
+== Items.LokiTeamElimBoxComponent (1) ==
+    __StaticType_ULokiTeamElimBoxComponent
+
+== Minions.LokiNodePathingComponent (1) ==
+    __StaticType_ULokiNodePathingComponent
+
+== MostWanted.LokiGameStateMostWantedComponent (1) ==
+    __StaticType_ULokiGameStateMostWantedComponent
+
+== PlayerController.LokiDragCameraComponent (1) ==
+    __StaticType_ULokiDragCameraComponent
+
+== PlayerController.LokiPlayerCheats (1) ==
+    __StaticType_ALokiPlayerCheats_AS
+
+== PlayerController.LokiPlayerController (1) ==
+    __StaticType_ALokiPlayerController_AS
+
+== UAV.LokiGameStateUAVComponent (1) ==
+    __StaticType_ULokiGameStateUAVComponent
+
+== UAV.LokiPlayerControllerUAVComponent (1) ==
+    __StaticType_ULokiPlayerControllerUAVComponent
+
+== UAV.UAVAudioPlayer (1) ==
+    __StaticType_AUAVAudioPlayer
+
+== UAV.UAVMapActor (1) ==
+    __StaticType_AUAVMapActor
+
+== UAV.UAVVaultContentActor (1) ==
+    __StaticType_AUAVVaultContentActor
+
+== FVector2D (1) ==
+    ZeroVector
+
+== UI.LokiWidgetHighlighterHitTestBlocker (1) ==
+    __StaticType_ULokiWidgetHighlighterHitTestBlocker_AS
+
+== UI.Character.LokiOffscreenTeamIndicatorWidget (1) ==
+    __StaticType_ULokiOffscreenTeamIndicatorWidget_AS
+
+== Vault.VaultItemSpawner (1) ==
+    __StaticType_AVaultItemSpawner
+

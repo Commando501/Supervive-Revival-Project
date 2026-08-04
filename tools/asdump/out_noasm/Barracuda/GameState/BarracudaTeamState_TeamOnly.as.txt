@@ -1,0 +1,125 @@
+// ============================================================================
+//  MODULE   Barracuda.GameState.BarracudaTeamState_TeamOnly
+//  SOURCE   Barracuda/GameState/BarracudaTeamState_TeamOnly.as
+//  CONTENT  1 class(es), 9 function(s), 0 enum(s), 1 global(s), 624 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Barracuda_GameState_BarracudaTeamState_TeamOnlyStatics
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaTeamState_TeamOnly;
+
+ABarracudaTeamState_TeamOnly@ ABarracudaTeamState_TeamOnly()   // traits=0x20
+{
+    ABarracudaTeamState_TeamOnly v2;
+
+    v2 = ABarracudaTeamState_TeamOnly();
+    return v2;
+}
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+ABarracudaTeamState_TeamOnly@ GetBarracudaTeamStateTeamOnly(const int TeamIndex)   // traits=0x20
+{
+    ABarracudaTeamState v4;
+    ABarracudaTeamState_TeamOnly v8;
+    ALokiTeamState_TeamOnly v12;
+
+    v4 = GetBarracudaTeamState(TeamIndex);
+    if (v4 == nullptr) {
+        return v8;
+    } else {
+        v12 = v4.GetTeamStateTeamOnly();
+        if (v12 != nullptr) {
+            v8 = cast<ABarracudaTeamState_TeamOnly@>(v12);
+        } else {
+            v8 = nullptr;
+        }
+    }
+    return v8;
+}
+
+UClass@ ABarracudaTeamState_TeamOnly::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ABarracudaTeamState_TeamOnly);
+    return v2;
+}
+
+ABarracudaTeamState_TeamOnly@ ABarracudaTeamState_TeamOnly::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaTeamState_TeamOnly v8;
+
+    v2 = __StaticType_ABarracudaTeamState_TeamOnly.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ABarracudaTeamState_TeamOnly@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ABarracudaTeamState_TeamOnly : ALokiTeamState_TeamOnly
+// unreal base : /Script/Loki.LokiTeamState_TeamOnly
+// C++ header  : ../../../Loki/Source/Loki/LokiTeamState_TeamOnly.h
+// static class global: __StaticType_ABarracudaTeamState_TeamOnly
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TMap<ABarracudaMinionSpawner@, float64> SpawnerToSpawnTime;
+
+    ABarracudaTeamState_TeamOnly()   // traits=0x21
+    {
+        this.SpawnerToSpawnTime = TMap<ABarracudaMinionSpawner@, float64>();
+        return;
+    }
+
+    UFUNCTION(CanOverrideEvent)
+    void SetSpawnerSpawnTime(ABarracudaMinionSpawner@ Spawner, const float64 NextSpawnTime)   // traits=0x20
+    {
+        float64 v2;
+
+        if (this.SpawnerToSpawnTime.Find(Spawner, v2)) {
+            if (v2 == NextSpawnTime) {
+                return;
+            }
+        } else {
+            this.NetMulticastSpawnerNextSpawnTime(Spawner, NextSpawnTime);
+        }
+        return;
+    }
+
+    private void NetMulticastSpawnerNextSpawnTime(ABarracudaMinionSpawner@ Spawner, const float64 NextSpawnTime)   // traits=0x28
+    {
+        __Evt_PushArgument(Spawner, typeid(ABarracudaMinionSpawner@));
+        __Evt_PushArgument__float(NextSpawnTime);
+        __Evt_Execute(this, n"NetMulticastSpawnerNextSpawnTime");
+        return;
+    }
+
+    UFUNCTION(UnrealName=NetMulticastSpawnerNextSpawnTime, BlueprintEvent, NetMulticast)
+    private void NetMulticastSpawnerNextSpawnTime_Implementation(ABarracudaMinionSpawner@ Spawner, const float64 NextSpawnTime)   // traits=0x28
+    {
+        this.SpawnerToSpawnTime.Add(Spawner, NextSpawnTime);
+        return;
+    }
+
+    void ~ABarracudaTeamState_TeamOnly()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

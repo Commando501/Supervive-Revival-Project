@@ -1,0 +1,355 @@
+// ============================================================================
+//  MODULE   Barracuda.Minion.BarracudaMinionRewardComponent
+//  SOURCE   Barracuda/Minion/BarracudaMinionRewardComponent.as
+//  CONTENT  1 class(es), 11 function(s), 1 enum(s), 1 global(s), 1040 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+enum EBarracudaMinionGoldRewardMethod
+{
+    LastHitterOnly = 0,
+    SplitBetweenLastHitterTeam = 1,
+}
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaMinionRewardComponent;
+
+UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent()   // traits=0x20
+{
+    v2 = UBarracudaMinionRewardComponent();
+    return v2;
+}
+/* ---- UBarracudaMinionRewardComponent: 7 dwords / 4 instructions (cache offset 0x2a09c) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84289 UBarracudaMinionRewardComponent       
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UBarracudaMinionRewardComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UBarracudaMinionRewardComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x2a168) ----
+    0000  PshGPtr       __StaticType_UBarracudaMinionRewardComponent
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaMinionRewardComponent, v2, typeid(UBarracudaMinionRewardComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x2a2b1) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972619                                    ; UBarracudaMinionRewardComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaMinionRewardComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaMinionRewardComponent, v2, typeid(UBarracudaMinionRewardComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x2a412) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972619                                    ; UBarracudaMinionRewardComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaMinionRewardComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaMinionRewardComponent, v2, typeid(UBarracudaMinionRewardComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x2a56e) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972619                                    ; UBarracudaMinionRewardComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaMinionRewardComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UBarracudaMinionRewardComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaMinionRewardComponent
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults)
+    EBarracudaMinionGoldRewardMethod GoldRewardMethod;
+    UPROPERTY(BlueprintReadable)
+    bool bGrantLoot;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int LastHitGoldBonus;
+
+    UBarracudaMinionRewardComponent()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- UBarracudaMinionRewardComponent: 5 dwords / 3 instructions (cache offset 0x2b1c3) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  UBarracudaMinionRewardComponent             
+        0010  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void DisableAllRewards()   // traits=0x20
+    {
+        v1 = false;
+        this.bGrantLoot = v1;
+        return;
+    }
+    /* ---- DisableAllRewards: 6 dwords / 4 instructions (cache offset 0x2a815) ----
+        0000  SetV1         v1 0                                        
+        0008  LoadThisR     209 134230795                                 ; this.bGrantLoot
+        0010  WRTV1         v1                                          
+        0014  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetGoldBounty(AController@ KillerController)   // traits=0x20
+    {
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v14 = FMinionRewards();
+            v16 = v2.GetLevel();
+            v17 = Math::RoundToInt(v16);
+            v2.GetRewardsForLevel(v17, v14);
+            v15 = v14.Gold;
+            return v15;
+        } else {
+            v15 = 0;
+        }
+        return v15;
+    }
+    /* ---- GetGoldBounty: 58 dwords / 36 instructions (cache offset 0x2a95a) ----
+        0000  PshVPtr       this                                        
+        0004  CALLSYS       UActorComponent::GetOwner                   
+        0010  STOREOBJ      v4                                          
+        0014  CmpPtrNull    v4                                          
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857087                                    ; ALokiMinionCharacter@
+        0028  PSF           v6                                          
+        002C  PshVPtr       v4                                          
+        0030  CALLSYS       UObject::opCast                             
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v6                                          
+      L0048:
+        0048  PshVPtr       v6                                          
+        004C  RefCpyV       v2                                          
+        0050  CmpPtrNull    v2                                          
+        0054  JZ            31                                            -> L00D8
+        005C  PSF           v14                                         
+        0060  CALLSYS       FMinionRewards::$beh0                       
+        006C  PshVPtr       v2                                          
+        0070  CALLSYS       ALokiCharacter::GetLevel                    
+        007C  CpyRtoV4      v16                                         
+        0080  PshV4         v16                                         
+        0084  CALLSYS       RoundToInt                                  
+        0090  CpyRtoV4      v17                                         
+        0094  PSF           v14                                         
+        0098  PshV4         v17                                         
+        009C  PshVPtr       v2                                          
+        00A0  CALLSYS       ALokiMinionCharacter::GetRewardsForLevel    
+        00AC  LoadVObjR     v14 4 67121161                                ; .Gold
+        00B8  RDR4          v15                                         
+        00BC  PSF           v14                                         
+        00C0  CALLSYS       FMinionRewards::$beh2                       
+        00CC  CpyVtoR4      v15                                         
+        00D0  JMP           3                                             -> L00E4
+      L00D8:
+        00D8  SetV4         v15 0                                       
+        00E0  CpyVtoR4      v15                                         
+      L00E4:
+        00E4  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetXPBounty(AController@ KillerController)   // traits=0x20
+    {
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v14 = FMinionRewards();
+            v15 = v2.GetLevel();
+            v16 = Math::RoundToInt(v15);
+            v2.GetRewardsForLevel(v16, v14);
+            v16 = v14.XP;
+            return v16;
+        } else {
+            v16 = 0;
+        }
+        return v16;
+    }
+    /* ---- GetXPBounty: 58 dwords / 36 instructions (cache offset 0x2abe1) ----
+        0000  PshVPtr       this                                        
+        0004  CALLSYS       UActorComponent::GetOwner                   
+        0010  STOREOBJ      v4                                          
+        0014  CmpPtrNull    v4                                          
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857087                                    ; ALokiMinionCharacter@
+        0028  PSF           v6                                          
+        002C  PshVPtr       v4                                          
+        0030  CALLSYS       UObject::opCast                             
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v6                                          
+      L0048:
+        0048  PshVPtr       v6                                          
+        004C  RefCpyV       v2                                          
+        0050  CmpPtrNull    v2                                          
+        0054  JZ            31                                            -> L00D8
+        005C  PSF           v14                                         
+        0060  CALLSYS       FMinionRewards::$beh0                       
+        006C  PSF           v14                                         
+        0070  PshVPtr       v2                                          
+        0074  CALLSYS       ALokiCharacter::GetLevel                    
+        0080  CpyRtoV4      v15                                         
+        0084  PshV4         v15                                         
+        0088  CALLSYS       RoundToInt                                  
+        0094  CpyRtoV4      v16                                         
+        0098  PshV4         v16                                         
+        009C  PshVPtr       v2                                          
+        00A0  CALLSYS       ALokiMinionCharacter::GetRewardsForLevel    
+        00AC  LoadVObjR     v14 0 67121161                                ; .XP
+        00B8  RDR4          v16                                         
+        00BC  PSF           v14                                         
+        00C0  CALLSYS       FMinionRewards::$beh2                       
+        00CC  CpyVtoR4      v16                                         
+        00D0  JMP           3                                             -> L00E4
+      L00D8:
+        00D8  SetV4         v16 0                                       
+        00E0  CpyVtoR4      v16                                         
+      L00E4:
+        00E4  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetLastHitGoldBounty(AController@ KillerController)   // traits=0x20
+    {
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v14 = FMinionRewards();
+            v15 = v2.GetLevel();
+            v16 = Math::RoundToInt(v15);
+            v2.GetRewardsForLevel(v16, v14);
+            v16 = v14.Gold;
+            return v16;
+        } else {
+            v16 = 0;
+        }
+        return v16;
+    }
+    /* ---- GetLastHitGoldBounty: 58 dwords / 36 instructions (cache offset 0x2ae6f) ----
+        0000  PshVPtr       this                                        
+        0004  CALLSYS       UActorComponent::GetOwner                   
+        0010  STOREOBJ      v4                                          
+        0014  CmpPtrNull    v4                                          
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857087                                    ; ALokiMinionCharacter@
+        0028  PSF           v6                                          
+        002C  PshVPtr       v4                                          
+        0030  CALLSYS       UObject::opCast                             
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v6                                          
+      L0048:
+        0048  PshVPtr       v6                                          
+        004C  RefCpyV       v2                                          
+        0050  CmpPtrNull    v2                                          
+        0054  JZ            31                                            -> L00D8
+        005C  PSF           v14                                         
+        0060  CALLSYS       FMinionRewards::$beh0                       
+        006C  PSF           v14                                         
+        0070  PshVPtr       v2                                          
+        0074  CALLSYS       ALokiCharacter::GetLevel                    
+        0080  CpyRtoV4      v15                                         
+        0084  PshV4         v15                                         
+        0088  CALLSYS       RoundToInt                                  
+        0094  CpyRtoV4      v16                                         
+        0098  PshV4         v16                                         
+        009C  PshVPtr       v2                                          
+        00A0  CALLSYS       ALokiMinionCharacter::GetRewardsForLevel    
+        00AC  LoadVObjR     v14 4 67121161                                ; .Gold
+        00B8  RDR4          v16                                         
+        00BC  PSF           v14                                         
+        00C0  CALLSYS       FMinionRewards::$beh2                       
+        00CC  CpyVtoR4      v16                                         
+        00D0  JMP           3                                             -> L00E4
+      L00D8:
+        00D8  SetV4         v16 0                                       
+        00E0  CpyVtoR4      v16                                         
+      L00E4:
+        00E4  RET           4                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.bGrantLoot = v1;
+        v2 = 0;
+        this.LastHitGoldBonus = v2;
+        v3 = false;
+        this.GoldRewardMethod = v3;
+        return;
+    }
+    /* ---- __InitDefaults: 16 dwords / 10 instructions (cache offset 0x2b0bf) ----
+        0000  SetV1         v1 1                                        
+        0008  LoadThisR     209 134230795                                 ; this.bGrantLoot
+        0010  WRTV1         v1                                          
+        0014  SetV4         v2 0                                        
+        001C  LoadThisR     212 134230795                                 ; this.LastHitGoldBonus
+        0024  WRTV4         v2                                          
+        0028  SetV1         v3 0                                        
+        0030  LoadThisR     208 134230795                                 ; this.GoldRewardMethod
+        0038  WRTV1         v3                                          
+        003C  RET           2                                           
+    */
+
+}
+

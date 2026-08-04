@@ -1,0 +1,148 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaJungleCreepComponent
+//  SOURCE   Barracuda/Components/BarracudaJungleCreepComponent.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 844 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaJungleCreepComponent;
+
+UBarracudaJungleCreepComponent@ UBarracudaJungleCreepComponent()   // traits=0x20
+{
+    UBarracudaJungleCreepComponent v2;
+
+    v2 = UBarracudaJungleCreepComponent();
+    return v2;
+}
+
+UClass@ UBarracudaJungleCreepComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaJungleCreepComponent);
+    return v2;
+}
+
+UBarracudaJungleCreepComponent@ UBarracudaJungleCreepComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaJungleCreepComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaJungleCreepComponent, v2, typeid(UBarracudaJungleCreepComponent@), WithName);
+    return v2;
+}
+
+UBarracudaJungleCreepComponent@ UBarracudaJungleCreepComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaJungleCreepComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepComponent, v2, typeid(UBarracudaJungleCreepComponent@), WithName);
+    return v2;
+}
+
+UBarracudaJungleCreepComponent@ UBarracudaJungleCreepComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaJungleCreepComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepComponent, v2, typeid(UBarracudaJungleCreepComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaJungleCreepComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaJungleCreepComponent
+{
+    UPROPERTY(EditableOnDefaults, EditableOnInstance)
+    float64 UnstuckTeleportTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 StuckDetectionTime;
+
+    UBarracudaJungleCreepComponent()   // traits=0x21
+    {
+        auto v2;
+
+        v2 = 30.0;
+        this.StuckDetectionTime = v2;
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+        ALokiMinionCharacter v4;
+        AActor v6;
+        ALokiMinionCharacter v8;
+        FVector v14;
+        FVector v20;
+        float64 v22;
+        float64 v24;
+        auto v25;
+        auto v26;
+        FRotator v32;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = this.GetOwner();
+            if (v6 != nullptr) {
+                v8 = cast<ALokiMinionCharacter@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            if (v4 != nullptr) {
+                if (v4.HasBlackboardTargetEnemy()) {
+                    v1 = true;
+                } else {
+                    v20 = v4.GetSpawnLocation();
+                    v14 = v4.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v22 = v14.Dist2D(v20);
+                    v24 = 500.0;
+                    v25 = v22 < v24;
+                    v1 = v25;
+                }
+                if (v1) {
+                    v26 = Gameplay::GetServerTime(__WorldContext);
+                    v24 = float64(v26);
+                    v22 = this.StuckDetectionTime;
+                    v24 = v24 + v22;
+                    this.UnstuckTeleportTime = v24;
+                    return;
+                } else {
+                    v26 = Gameplay::GetServerTime(__WorldContext);
+                    v22 = float64(v26);
+                    v24 = this.UnstuckTeleportTime;
+                    if (v22 > v24) {
+                        v32 = v4.GetActorRotation()  /* UFunction K2_GetActorRotation */;
+                        v14 = v4.GetSpawnLocation();
+                        v4.Teleport(v14, v32)  /* UFunction K2_TeleportTo */;
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        return;
+    }
+
+}
+

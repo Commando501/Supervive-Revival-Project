@@ -1,0 +1,653 @@
+==============================================================================
+MODULE   Barracuda.Shop.BarracudaShopItemTreeNodeWidget
+SOURCE   Barracuda/Shop/BarracudaShopItemTreeNodeWidget.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemTreeNodeWidget;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaShopItemTreeNodeWidget@ UBarracudaShopItemTreeNodeWidget()
+// 4 instr, 28 B bytecode, id=0x539CAAB7, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaShopItemTreeNodeWidget v2;
+
+    v2 = UBarracudaShopItemTreeNodeWidget();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84388 q:0x26e6865ee00; new UBarracudaShopItemTreeNodeWidget   ctor=UBarracudaShopItemTreeNodeWidget::UBarracudaShopItemTreeNodeWidget
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xCF1F57A7, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaShopItemTreeNodeWidget);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b42d8         ; __StaticType_UBarracudaShopItemTreeNodeWidget
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+==============================================================================
+UCLASS()
+class UBarracudaShopItemTreeNodeWidget : UUserWidget
+// base /Script/UMG.UserWidget  ->  ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, meta=(BindWidget)) UPanelWidget@ ChildContainer;
+    UPROPERTY(BlueprintReadable, meta=(BindWidget)) UTextBlock@ ItemName;
+    UPROPERTY(BlueprintReadable, meta=(BindWidget)) UOverlay@ OwnedIndicator;
+    UPROPERTY(BlueprintReadable, meta=(BindWidget)) UBarracudaShopItemWidget@ ShopItemWidget;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(ExposeOnSpawn)) int DesignTimePrviewInputCount;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(ExposeOnSpawn)) int DesignTimePreviewDepthCount;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) bool bDesignTimePreviewOwned;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient, meta=(ExposeOnSpawn)) TSubclassOf<ALokiBaseItem@> ItemClass;
+    UPROPERTY(BlueprintReadable, Transient, meta=(ExposeOnSpawn)) UBarracudaShopItemTreeWidget@ Tree;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaShopItemTreeNodeWidget() const
+// 15 instr, 104 B bytecode, id=0x76C1E631, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    this.ItemClass = TSubclassOf<ALokiBaseItem@>();
+    v1 = 2;
+    this.DesignTimePrviewInputCount = 2;
+    v1 = 2;
+    this.DesignTimePreviewDepthCount = 2;
+    this.bDesignTimePreviewOwned = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:792 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemClass  (+792)
+    //     3  CALLSYS        q:0x26e6ee891c0         ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+    //     6  SetV4          wW0:1 d:2
+    //     8  LoadThisR      W0:776 d:134230812      ; UBarracudaShopItemTreeNodeWidget::DesignTimePrviewInputCount  (+776)
+    //    10  WRTV4          rW0:1
+    //    11  SetV4          wW0:1 d:2
+    //    13  LoadThisR      W0:780 d:134230812      ; UBarracudaShopItemTreeNodeWidget::DesignTimePreviewDepthCount  (+780)
+    //    15  WRTV4          rW0:1
+    //    16  SetV1          wW0:2 d:0
+    //    18  LoadThisR      W0:784 d:134230812      ; UBarracudaShopItemTreeNodeWidget::bDesignTimePreviewOwned  (+784)
+    //    20  WRTV1          rW0:2
+    //    21  PshVPtr        rW0:0
+    //    22  FinConstruct   q:0x26e6865ee00         ; UBarracudaShopItemTreeNodeWidget
+    //    25  RET            W0:2
+
+------------------------------------------------------------------------------
+UBarracudaShopItemTreeNodeWidget@ CreateInputItemWidget(const TSubclassOf<ALokiBaseItem@>&inout InItemClass, const int InDesignTimePreviewInputCount, const int InDesignTimePreviewDepthCount)
+// 17 instr, 128 B bytecode, id=0x1B74BE18, varspace=3
+------------------------------------------------------------------------------
+{
+    UBarracudaShopItemTreeNodeWidget v2;
+
+    __Evt_PushArgument(InItemClass);
+    __Evt_PushArgument__int32(InDesignTimePreviewInputCount);
+    __Evt_PushArgument__int32(InDesignTimePreviewDepthCount);
+    __Evt_PushArgumentRef(v2);
+    __Evt_Execute(this, __STATIC_NAME(111));
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:268448387             ; TSubclassOf<ALokiBaseItem@>
+    //     2  PshVPtr        rW0:-2
+    //     3  CALLSYS        q:0x26e7861c640         ; void __Evt_PushArgument(const ?&)
+    //     6  PSF            rW0:-4
+    //     7  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //    10  PSF            rW0:-5
+    //    11  CALLSYS        q:0x26e7861d0c0         ; void __Evt_PushArgument__int32(const int&)
+    //    14  TYPEID         d:1207972636            ; UBarracudaShopItemTreeNodeWidget@
+    //    16  PSF            rW0:2
+    //    17  CALLSYS        q:0x26e7861c480         ; void __Evt_PushArgumentRef(const ?&)
+    //    20  PshC4          d:111
+    //    22  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    25  PshRPtr
+    //    26  PshVPtr        rW0:0
+    //    27  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    30  LOADOBJ        rW0:2
+    //    31  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: CreateInputItemWidget
+UBarracudaShopItemTreeNodeWidget@ CreateInputItemWidget_Implementation(const TSubclassOf<ALokiBaseItem@>&inout InItemClass, const int InDesignTimePreviewInputCount, const int InDesignTimePreviewDepthCount)
+// 3 instr, 12 B bytecode, id=0xE198D1DF, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaShopItemTreeNodeWidget v2;
+
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  FreeNullV8     wW0:2
+    //     1  LOADOBJ        rW0:2
+    //     2  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: PreConstruct
+void PreConstruct_Implementation(const bool IsDesignTime)
+// 6 instr, 32 B bytecode, id=0xDDC613A7, varspace=0
+------------------------------------------------------------------------------
+{
+    if (IsDesignTime) {
+        this.UpdateVisuals(IsDesignTime);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CpyVtoR1       rW0:-2
+    //     1  JLowZ          ->7
+    //     3  PshV4          rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  CALLINTF       d:84383                 ; void UBarracudaShopItemTreeNodeWidget::UpdateVisuals(const bool)
+    //     7  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Construct
+void Construct_Implementation()
+// 5 instr, 28 B bytecode, id=0xFC1CB000, varspace=1
+------------------------------------------------------------------------------
+{
+    this.UpdateVisuals(false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84383                 ; void UBarracudaShopItemTreeNodeWidget::UpdateVisuals(const bool)
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+void UpdateVisuals(const bool bDesignTime = false)
+// 38 instr, 232 B bytecode, id=0xE374A03A, varspace=9
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiBaseItem v6;
+    ESlateVisibility v8;
+    ESlateVisibility v9;
+
+    v1 = bDesignTime;
+    v1 = !bDesignTime;
+    if (v1) {
+        v6 = this.ItemClass.GetDefaultObject();
+        if (v6 != null) {
+            this.ShopItemWidget.SetRepresentedItem(v6);
+        }
+        if (v6 == null) {
+            v9 = 2;
+            v8 = 2;
+        } else {
+            v9 = 0;
+            v8 = 0;
+        }
+        this.ShopItemWidget.SetVisibility(v8);
+    }
+    this.UpdateName(bDesignTime);
+    this.UpdateRootNode(bDesignTime);
+    this.UpdateOwnership(bDesignTime);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CpyVtoV4       wW0:1 rW1:-2
+    //     2  NOT            rW0:1
+    //     3  CpyVtoR1       rW0:1
+    //     4  JLowZ          ->45
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:792 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemClass  (+792)
+    //     9  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    12  STOREOBJ       wW0:6
+    //    13  CmpPtrNull     rW0:6
+    //    14  JZ             ->23
+    //    16  PshVPtr        rW0:6
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:768 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ShopItemWidget  (+768)
+    //    20  RDSPtr
+    //    21  CALLINTF       d:84403                 ; void UBarracudaShopItemWidget::SetRepresentedItem(ALokiBaseItem@)
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->32
+    //    26  SetV1          wW0:9 d:0
+    //    28  CpyVtoV4       wW0:8 rW1:9
+    //    30  JMP            ->36
+    //    32  SetV1          wW0:9 d:2
+    //    34  CpyVtoV4       wW0:8 rW1:9
+    //    36  PshV4          rW0:8
+    //    37  PshVPtr        rW0:0
+    //    38  ADDSi          W0:768 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ShopItemWidget  (+768)
+    //    40  RDSPtr
+    //    41  CALLSYS        q:0x26e7971ba00         ; void UWidget::SetVisibility(ESlateVisibility)
+    //    44  FreeNullV8     wW0:6
+    //    45  PshV4          rW0:-2
+    //    46  PshVPtr        rW0:0
+    //    47  CALLINTF       d:84384                 ; void UBarracudaShopItemTreeNodeWidget::UpdateName(const bool)
+    //    49  PshV4          rW0:-2
+    //    50  PshVPtr        rW0:0
+    //    51  CALLINTF       d:84385                 ; void UBarracudaShopItemTreeNodeWidget::UpdateRootNode(const bool)
+    //    53  PshV4          rW0:-2
+    //    54  PshVPtr        rW0:0
+    //    55  CALLINTF       d:84386                 ; void UBarracudaShopItemTreeNodeWidget::UpdateOwnership(const bool)
+    //    57  RET            W0:3
+
+------------------------------------------------------------------------------
+void UpdateName(const bool bDesignTime)
+// 42 instr, 300 B bytecode, id=0xAB11C95C, varspace=14
+------------------------------------------------------------------------------
+{
+    FText v4;
+    FText v8;
+    auto v9;
+    ALokiBaseItem v14;
+
+    v8 = FText();
+    v9 = false;
+    if (!bDesignTime) {
+        if (this.ItemClass.IsValid()) {
+            v14 = this.ItemClass.GetDefaultObject();
+            if (v14 != null) {
+                v4 = v14.GetPlayerFacingName();
+                v8 = v4;
+            }
+        }
+    } else {
+        v4 = FText::FromString("LOREM IPSUM");
+        v8 = v4;
+    }
+    this.ItemName.SetText(v8);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:8
+    //     1  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //     4  SetV1          wW0:10 d:0
+    //     6  CpyVtoV4       wW0:9 rW1:10
+    //     8  CpyVtoR1       rW0:-2
+    //     9  JLowZ          ->29
+    //    11  PGA            q:0x26e6e67f8b0         ; "LOREM IPSUM"
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e703adb40         ; FText FText::FromString(const FString&)
+    //    18  PSF            rW0:4
+    //    19  PSF            rW0:8
+    //    20  CALLSYS        q:0x26e69d0c100         ; FText& FText::opAssign(const FText&)
+    //    23  PSF            rW0:4
+    //    24  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    27  JMP            ->62
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:792 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemClass  (+792)
+    //    32  CALLSYS        q:0x26e6ee86600         ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+    //    35  JLowZ          ->62
+    //    37  PshVPtr        rW0:0
+    //    38  ADDSi          W0:792 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemClass  (+792)
+    //    40  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    43  STOREOBJ       wW0:14
+    //    44  CmpPtrNull     rW0:14
+    //    45  JZ             ->61
+    //    47  PSF            rW0:4
+    //    48  PshVPtr        rW0:14
+    //    49  CALLSYS        q:0x26e7a0ecd40         ; FText ALokiBaseItem::GetPlayerFacingName() const
+    //    52  PSF            rW0:4
+    //    53  PSF            rW0:8
+    //    54  CALLSYS        q:0x26e69d0c100         ; FText& FText::opAssign(const FText&)
+    //    57  PSF            rW0:4
+    //    58  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    61  FreeNullV8     wW0:14
+    //    62  PSF            rW0:8
+    //    63  PshVPtr        rW0:0
+    //    64  ADDSi          W0:752 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemName  (+752)
+    //    66  RDSPtr
+    //    67  CALLSYS        q:0x26e798644c0         ; void UTextBlock::SetText(FText)
+    //    70  PSF            rW0:8
+    //    71  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    74  RET            W0:3
+
+------------------------------------------------------------------------------
+void UpdateRootNode(const bool bDesignTime)
+// 90 instr, 588 B bytecode, id=0x8BF1C8EC, varspace=36
+------------------------------------------------------------------------------
+{
+    TArray<TSubclassOf<ALokiBaseItem@>> v4;
+    int v5;
+    int v6;
+    auto v7;
+    auto v8;
+    auto v9;
+    TSubclassOf<ALokiBaseItem@> v12;
+    ALokiBaseItem v16;
+    TArrayIterator<TSubclassOf<ALokiBaseItem@>> v22;
+    TSubclassOf<ALokiBaseItem@> v30;
+
+    this.ChildContainer.ClearChildren();
+    v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+    if (bDesignTime) {
+        v5 = this.DesignTimePreviewDepthCount;
+        v7 = v5 > 0;
+        v8 = v7;
+    } else {
+        v8 = 0;
+    }
+    if (!v8) {
+        v8 = bDesignTime;
+        v8 = !bDesignTime;
+        if (v8) {
+            v7 = this.ItemClass.IsValid();
+            v8 = v7;
+        } else {
+            v8 = 0;
+        }
+        if (v8) {
+            v16 = this.ItemClass.GetDefaultObject();
+            if (v16 != null) {
+                v4 = v16.ShopRecipe.ComponentItems;
+            }
+        }
+    } else {
+        v9 = 0;
+        while (true) {
+            v6 = this.DesignTimePrviewInputCount;
+            if (v9 >= v6) break;
+            v12 = TSubclassOf<ALokiBaseItem@>(null);
+            v4.Add(v12);
+            v9++;
+        }
+    }
+    v5 = this.DesignTimePreviewDepthCount;
+    v5 = v5 - 1;
+    v22 = v4.Iterator();
+    while (true) {
+        v7 = v22.CanProceed;
+        if (!v7) break;
+        v30 = v22.Proceed();
+        v6 = this.DesignTimePrviewInputCount;
+        this.CreateInputItemWidget(v30, v6, v5);
+        this.ChildContainer.AddChild(this.CreateInputItemWidget(v30, v6, v5));
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:744 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ChildContainer  (+744)
+    //     3  RDSPtr
+    //     4  CALLSYS        q:0x26e7981fc80         ; void UPanelWidget::ClearChildren()
+    //     7  PSF            rW0:4
+    //     8  CALLSYS        q:0x26e6ee89a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+    //    11  CpyVtoR1       rW0:-2
+    //    12  JLowNZ         ->18
+    //    14  SetV4          wW0:8 d:0
+    //    16  JMP            ->27
+    //    18  LoadThisR      W0:780 d:134230812      ; UBarracudaShopItemTreeNodeWidget::DesignTimePreviewDepthCount  (+780)
+    //    20  RDR4           wW0:5
+    //    21  CMPIi          rW0:5 d:0
+    //    23  TP
+    //    24  CpyRtoV4       wW0:7
+    //    25  CpyVtoV4       wW0:8 rW1:7
+    //    27  CpyVtoR1       rW0:8
+    //    28  JLowZ          ->55
+    //    30  SetV4          wW0:9 d:0
+    //    32  JMP            ->46
+    //    34  SUSPEND
+    //    35  PshNull
+    //    36  PSF            rW0:12
+    //    37  CALLSYS        q:0x26e6ee84d80         ; void TSubclassOf<ALokiBaseItem@>::$beh0(UClass@)
+    //    40  PSF            rW0:12
+    //    41  PSF            rW0:4
+    //    42  CALLSYS        q:0x26e6ef06440         ; void TArray<TSubclassOf<ALokiBaseItem@>>::Add(const TSubclassOf<ALokiBaseItem@>&)
+    //    45  IncVi          rW0:9
+    //    46  LoadThisR      W0:776 d:134230812      ; UBarracudaShopItemTreeNodeWidget::DesignTimePrviewInputCount  (+776)
+    //    48  RDR4           wW0:6
+    //    49  CMPi           rW0:9 rW1:6
+    //    51  JS             ->34
+    //    53  JMP            ->97
+    //    55  CpyVtoV4       wW0:8 rW1:-2
+    //    57  NOT            rW0:8
+    //    58  CpyVtoR1       rW0:8
+    //    59  JLowNZ         ->65
+    //    61  SetV4          wW0:8 d:0
+    //    63  JMP            ->74
+    //    65  PshVPtr        rW0:0
+    //    66  ADDSi          W0:792 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemClass  (+792)
+    //    68  CALLSYS        q:0x26e6ee86600         ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+    //    71  CpyRtoV4       wW0:7
+    //    72  CpyVtoV4       wW0:8 rW1:7
+    //    74  CpyVtoR1       rW0:8
+    //    75  JLowZ          ->97
+    //    77  PshVPtr        rW0:0
+    //    78  ADDSi          W0:792 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemClass  (+792)
+    //    80  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    83  STOREOBJ       wW0:16
+    //    84  CmpPtrNull     rW0:16
+    //    85  JZ             ->96
+    //    87  PshVPtr        rW0:16
+    //    88  ADDSi          W0:1136 d:67114958      ; ALokiBaseItem::ShopRecipe  (+1136)
+    //    90  ADDSi          W0:0 d:67121023         ; FLokiItemRecipe::ComponentItems  (+0)
+    //    92  PSF            rW0:4
+    //    93  CALLSYS        q:0x26e793c98c0         ; TArray<TSubclassOf<ALokiBaseItem@>>& TArray<TSubclassOf<ALokiBaseItem@>>::opAssign(const TArray<TSubclassOf<ALokiBaseItem@>>&)
+    //    96  FreeNullV8     wW0:16
+    //    97  LoadThisR      W0:780 d:134230812      ; UBarracudaShopItemTreeNodeWidget::DesignTimePreviewDepthCount  (+780)
+    //    99  RDR4           wW0:5
+    //   100  SUBIi          wW0:5 rW1:5 DW2:1
+    //   103  PSF            rW0:22
+    //   104  PSF            rW0:4
+    //   105  CALLSYS        q:0x26e6ef0a6c0         ; TArrayIterator<TSubclassOf<ALokiBaseItem@>> TArray<TSubclassOf<ALokiBaseItem@>>::Iterator()
+    //   108  JMP            ->135
+    //   110  SUSPEND
+    //   111  PSF            rW0:22
+    //   112  CALLSYS        q:0x26e6ef0a340         ; TSubclassOf<ALokiBaseItem@>& TArrayIterator<TSubclassOf<ALokiBaseItem@>>::Proceed()
+    //   115  CpyRtoV8       wW0:30
+    //   116  PshV4          rW0:5
+    //   117  LoadThisR      W0:776 d:134230812      ; UBarracudaShopItemTreeNodeWidget::DesignTimePrviewInputCount  (+776)
+    //   119  RDR4           wW0:6
+    //   120  PshV4          rW0:6
+    //   121  PshVPtr        rW0:30
+    //   122  PshVPtr        rW0:0
+    //   123  CALLINTF       d:84379                 ; UBarracudaShopItemTreeNodeWidget@ UBarracudaShopItemTreeNodeWidget::CreateInputItemWidget(const TSubclassOf<ALokiBaseItem@>&, const int, const int)
+    //   125  STOREOBJ       wW0:34
+    //   126  PshVPtr        rW0:34
+    //   127  PshVPtr        rW0:0
+    //   128  ADDSi          W0:744 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ChildContainer  (+744)
+    //   130  RDSPtr
+    //   131  CALLSYS        q:0x26e7981fe40         ; UPanelSlot@ UPanelWidget::AddChild(UWidget@)
+    //   134  FreeNullV8     wW0:34
+    //   135  LoadVObjR      rW0:22 W1:16 DW2:268448535; TArrayIterator::CanProceed  (+16)
+    //   138  RDR1           wW0:7
+    //   139  CpyVtoR1       rW0:7
+    //   140  JLowNZ         ->110
+    //   142  PSF            rW0:4
+    //   143  CALLSYS        q:0x26e793c9a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh2()
+    //   146  RET            W0:3
+
+------------------------------------------------------------------------------
+void UpdateOwnership(const bool bDesignTime)
+// 83 instr, 540 B bytecode, id=0x5B0C7219, varspace=26
+------------------------------------------------------------------------------
+{
+    auto v2;
+    ESlateVisibility v3;
+    ESlateVisibility v4;
+    ALokiBaseItem v6;
+    TSetIterator<ALokiBaseItem@> v14;
+    ALokiBaseItem v24;
+
+    if (!bDesignTime) {
+        v2 = this.ItemClass.IsValid();
+        v2 = !v2;
+        if (!v2) {
+            v14 = this.Tree.ItemsToPotentiallyMarkAsOwned.Iterator();
+            while (true) {
+                v2 = v14.CanProceed;
+                if (!v2) break;
+                v24 = v14.Proceed();
+                if (v24.IsA(cast<UClass@>(this.ItemClass))) {
+                    v6 = v24;
+                    break;
+                }
+            }
+            if (v6 == null) {
+                v4 = 1;
+                this.OwnedIndicator.SetVisibility(1);
+            } else {
+                this.OwnedIndicator.SetVisibility(4);
+                this.Tree.ItemsToPotentiallyMarkAsOwned.Remove(v6);
+            }
+        } else {
+            v4 = 1;
+            this.OwnedIndicator.SetVisibility(1);
+        }
+    } else {
+        v2 = this.bDesignTimePreviewOwned;
+        if (!v2) {
+            v4 = 1;
+            v3 = 1;
+        } else {
+            v4 = 4;
+            v3 = 4;
+        }
+        this.OwnedIndicator.SetVisibility(v3);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CpyVtoR1       rW0:-2
+    //     1  JLowZ          ->29
+    //     3  LoadThisR      W0:784 d:134230812      ; UBarracudaShopItemTreeNodeWidget::bDesignTimePreviewOwned  (+784)
+    //     5  RDR1           wW0:2
+    //     6  CpyVtoR1       rW0:2
+    //     7  JLowZ          ->15
+    //     9  SetV1          wW0:4 d:4
+    //    11  CpyVtoV4       wW0:3 rW1:4
+    //    13  JMP            ->19
+    //    15  SetV1          wW0:4 d:1
+    //    17  CpyVtoV4       wW0:3 rW1:4
+    //    19  PshV4          rW0:3
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:760 d:134230812      ; UBarracudaShopItemTreeNodeWidget::OwnedIndicator  (+760)
+    //    23  RDSPtr
+    //    24  CALLSYS        q:0x26e7971ba00         ; void UWidget::SetVisibility(ESlateVisibility)
+    //    27  JMP            ->134
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:792 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemClass  (+792)
+    //    32  CALLSYS        q:0x26e6ee86600         ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+    //    35  CpyRtoV4       wW0:2
+    //    36  NOT            rW0:2
+    //    37  CpyVtoR1       rW0:2
+    //    38  JLowZ          ->52
+    //    40  SetV1          wW0:4 d:1
+    //    42  PshV4          rW0:4
+    //    43  PshVPtr        rW0:0
+    //    44  ADDSi          W0:760 d:134230812      ; UBarracudaShopItemTreeNodeWidget::OwnedIndicator  (+760)
+    //    46  RDSPtr
+    //    47  CALLSYS        q:0x26e7971ba00         ; void UWidget::SetVisibility(ESlateVisibility)
+    //    50  JMP            ->134
+    //    52  PSF            rW0:14
+    //    53  PshVPtr        rW0:0
+    //    54  ADDSi          W0:800 d:134230812      ; UBarracudaShopItemTreeNodeWidget::Tree  (+800)
+    //    56  RDSPtr
+    //    57  ADDSi          W0:752 d:134230813      ; UBarracudaShopItemTreeWidget::ItemsToPotentiallyMarkAsOwned  (+752)
+    //    59  CALLSYS        q:0x26e6ef0d600         ; TSetIterator<ALokiBaseItem@> TSet<ALokiBaseItem@>::Iterator()
+    //    62  JMP            ->92
+    //    64  SUSPEND
+    //    65  PSF            rW0:14
+    //    66  CALLSYS        q:0x26e6ef0d280         ; ALokiBaseItem@ const& TSetIterator<ALokiBaseItem@>::Proceed()
+    //    69  PshRPtr
+    //    70  RDSPtr
+    //    71  RefCpyV        wW0:24
+    //    72  PshVPtr        rW0:0
+    //    73  ADDSi          W0:792 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemClass  (+792)
+    //    75  CALLSYS        q:0x26e6ee84a00         ; UClass@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+    //    78  STOREOBJ       wW0:26
+    //    79  PshVPtr        rW0:26
+    //    80  PshVPtr        rW0:24
+    //    81  CALLSYS        q:0x26e7039ac00         ; bool UObject::IsA(const UClass@) const
+    //    84  JLowZ          ->91
+    //    86  PshVPtr        rW0:24
+    //    87  RefCpyV        wW0:6
+    //    88  FreeNullV8     wW0:24
+    //    89  JMP            ->99
+    //    91  FreeNullV8     wW0:24
+    //    92  LoadVObjR      rW0:14 W1:24 DW2:268448542; TSetIterator::CanProceed  (+24)
+    //    95  RDR1           wW0:2
+    //    96  CpyVtoR1       rW0:2
+    //    97  JLowNZ         ->64
+    //    99  CmpPtrNull     rW0:6
+    //   100  JZ             ->124
+    //   102  PSF            rW0:6
+    //   103  PshVPtr        rW0:0
+    //   104  ADDSi          W0:800 d:134230812      ; UBarracudaShopItemTreeNodeWidget::Tree  (+800)
+    //   106  RDSPtr
+    //   107  ADDSi          W0:752 d:134230813      ; UBarracudaShopItemTreeWidget::ItemsToPotentiallyMarkAsOwned  (+752)
+    //   109  CALLSYS        q:0x26e6ef0d0c0         ; bool TSet<ALokiBaseItem@>::Remove(const ALokiBaseItem@ const&)
+    //   112  SetV1          wW0:1 d:4
+    //   114  PshV4          rW0:1
+    //   115  PshVPtr        rW0:0
+    //   116  ADDSi          W0:760 d:134230812      ; UBarracudaShopItemTreeNodeWidget::OwnedIndicator  (+760)
+    //   118  RDSPtr
+    //   119  CALLSYS        q:0x26e7971ba00         ; void UWidget::SetVisibility(ESlateVisibility)
+    //   122  JMP            ->134
+    //   124  SetV1          wW0:4 d:1
+    //   126  PshV4          rW0:4
+    //   127  PshVPtr        rW0:0
+    //   128  ADDSi          W0:760 d:134230812      ; UBarracudaShopItemTreeNodeWidget::OwnedIndicator  (+760)
+    //   130  RDSPtr
+    //   131  CALLSYS        q:0x26e7971ba00         ; void UWidget::SetVisibility(ESlateVisibility)
+    //   134  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetItem(const TSubclassOf<ALokiBaseItem@>&inout InItemClass)
+// 9 instr, 56 B bytecode, id=0x2F96707F, varspace=1
+------------------------------------------------------------------------------
+{
+    this.ItemClass = InItemClass;
+    this.UpdateVisuals(false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:792 d:134230812      ; UBarracudaShopItemTreeNodeWidget::ItemClass  (+792)
+    //     4  CALLSYS        q:0x26e79312380         ; TSubclassOf<ALokiBaseItem@>& TSubclassOf<ALokiBaseItem@>::opAssign(const TSubclassOf<ALokiBaseItem@>&)
+    //     7  SetV1          wW0:1 d:0
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLINTF       d:84383                 ; void UBarracudaShopItemTreeNodeWidget::UpdateVisuals(const bool)
+    //    13  RET            W0:4
+

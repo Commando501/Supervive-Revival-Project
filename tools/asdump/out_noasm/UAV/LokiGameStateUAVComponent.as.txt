@@ -1,0 +1,1244 @@
+// ============================================================================
+//  MODULE   UAV.LokiGameStateUAVComponent
+//  SOURCE   UAV/LokiGameStateUAVComponent.as
+//  CONTENT  1 class(es), 28 function(s), 0 enum(s), 1 global(s), 12416 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiGameStateUAVComponent;
+
+ULokiGameStateUAVComponent@ ULokiGameStateUAVComponent()   // traits=0x20
+{
+    ULokiGameStateUAVComponent v2;
+
+    v2 = ULokiGameStateUAVComponent();
+    return v2;
+}
+
+UClass@ ULokiGameStateUAVComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiGameStateUAVComponent);
+    return v2;
+}
+
+ULokiGameStateUAVComponent@ ULokiGameStateUAVComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiGameStateUAVComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiGameStateUAVComponent, v2, typeid(ULokiGameStateUAVComponent@), WithName);
+    return v2;
+}
+
+ULokiGameStateUAVComponent@ ULokiGameStateUAVComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiGameStateUAVComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiGameStateUAVComponent, v2, typeid(ULokiGameStateUAVComponent@), WithName);
+    return v2;
+}
+
+ULokiGameStateUAVComponent@ ULokiGameStateUAVComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiGameStateUAVComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiGameStateUAVComponent, v2, typeid(ULokiGameStateUAVComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiGameStateUAVComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiGameStateUAVComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected float64 PlayerGroupingDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected float64 VaultVisionDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    TSubclassOf<AUAVAudioPlayer@> GlobalAudioActorClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected TSubclassOf<UGameplayEffect@> MarkedTeamGameplayEffectClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected TSubclassOf<UGameplayEffect@> MarkedIndividualGameplayEffectClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    protected FGameplayTag UAVBlockedGameplayCueTag;
+    private FGameplayTag DataTag;
+    private FGameplayTag UAVImmunityTag;
+    private FGameplayTag UAVUpgradedTag;
+    private TArray<FActiveUAV> ActiveUAVs;
+    private TArray<AVaultItemSpawner@> AllVaultItemSpawners;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    private int NextUAVID;
+
+    ULokiGameStateUAVComponent()   // traits=0x21
+    {
+        auto v1;
+
+        this.GlobalAudioActorClass = TSubclassOf<AUAVAudioPlayer@>();
+        this.MarkedTeamGameplayEffectClass = TSubclassOf<UGameplayEffect@>();
+        this.MarkedIndividualGameplayEffectClass = TSubclassOf<UGameplayEffect@>();
+        this.UAVBlockedGameplayCueTag = FGameplayTag();
+        this.ActiveUAVs = TArray<FActiveUAV>();
+        this.AllVaultItemSpawners = TArray<AVaultItemSpawner@>();
+        this.DataTag = FGameplayTag(GameplayTags::Data);
+        this.UAVImmunityTag = FGameplayTag(GameplayTags::Immunity_UAV);
+        this.UAVUpgradedTag = FGameplayTag(GameplayTags::State_UAVUpgraded);
+        v1 = 0;
+        this.NextUAVID = v1;
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v2;
+        auto v3;
+        float64 v6;
+        TArray<int> v10;
+        int v11;
+        auto v13;
+        bool v14;
+        FActiveUAV v16;
+        float64 v18;
+        auto v20;
+        auto v21;
+        int v22;
+        int v23;
+
+        v3 = Gameplay::GetServerTime(__WorldContext);
+        v6 = float64(v3);
+        v2 = v6;
+        v10 = TArray<int>();
+        v11 = 0;
+        while (true) {
+            v13 = this.ActiveUAVs.Num();
+            if (v11 >= v13) break;
+            v16 = this.ActiveUAVs[v11];
+            v3 = Gameplay::GetServerTime(__WorldContext);
+            v6 = float64(v3);
+            v18 = v6;
+            if (v16.ShouldPulse(v18)) {
+                this.PulseUAV(v16);
+            }
+            v14 = v16.Config.IsInfiniteDuration();
+            v14 = !v14;
+            if (!v14) {
+                v14 = 0;
+            } else {
+                v6 = v16.StartTime;
+                v20 = v16.Config.Duration;
+                v6 = v6 + v20;
+                v21 = v6 < v2;
+                v14 = v21;
+            }
+            if (v14) {
+                v10.Add(v11);
+            }
+            v11++;
+        }
+        v13 = v10.Num();
+        v22 = v13 - 1;
+        while (true) {
+            if (v22 < 0) break;
+            v11 = v16.Config.Duration;
+            v23 = v11;
+            v16 = this.ActiveUAVs[v23];
+            this.CleanupUAV(v16);
+            this.ActiveUAVs.RemoveAtSwap(v23);
+            v22--;
+        }
+        if (this.ActiveUAVs.IsEmpty()) {
+            v14 = false;
+            this.SetComponentTickEnabled(v14);
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+        TArrayIterator<AVaultItemSpawner@> v8;
+        AVaultItemSpawner v16;
+        ALokiDestructible v18;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            GetAllActorsOfClass(this.AllVaultItemSpawners, typeid(TArray));
+            v8 = this.AllVaultItemSpawners.Iterator();
+            while (true) {
+                v1 = v8.CanProceed;
+                if (!v1) break;
+                v16 = v8.Proceed();
+                v8.Proceed();
+                v18 = v16.GetDoor();
+                if (v18 != nullptr) {
+                    v18.OnDestroyed.AddUFunction(this, n"OnVaultDoorDestroyed");
+                }
+                v16.OnDestroyed.AddUFunction(this, n"OnVaultDestroyed");
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    FActiveUAV ExecuteUAV(const FLokiUAVConfig& Config, const FVector& SourceLocation, const int TeamIndex = - 1)   // traits=0x20
+    {
+        FActiveUAV v68;
+        bool v69;
+        auto v70;
+        auto v71;
+        float64 v74;
+        TSubclassOf<AUAVAudioPlayer@> v76;
+        AUAVAudioPlayer v78;
+
+        v68.FActiveUAV();
+        v69 = true;
+        v68.bValid = v69;
+        v70 = this.NextUAVID;
+        v68.ID = v70;
+        this.NextUAVID++;
+        v68.Config = Config;
+        v71 = Gameplay::GetServerTime(__WorldContext);
+        v74 = float64(v71);
+        v68.StartTime = v74;
+        v68.TeamIndex = TeamIndex;
+        v68.SourceLocation = SourceLocation;
+        v76 = TSubclassOf<AUAVAudioPlayer@>();
+        v76 = this.GlobalAudioActorClass;
+        v69 = v76 == nullptr;
+        v69 = !v69;
+        if (v69) {
+            v69 = false;
+            v78 = SpawnActor(this.GlobalAudioActorClass, SourceLocation, FRotator::ZeroRotator, NAME_None, v69, nullptr);
+            if (v78 != nullptr) {
+                v78.ActiveUAVCopy = v68;
+                v68.AudioActor = v78;
+            }
+        }
+        this.ActiveUAVs.Add(v68);
+        v69 = true;
+        this.SetComponentTickEnabled(v69);
+        __ret.FActiveUAV();
+        __ret = v68;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void CancelOngoingUAVs(const int TeamIndex = - 1)   // traits=0x20
+    {
+        int v1;
+        auto v2;
+        TArrayIterator<FActiveUAV> v8;
+        FActiveUAV v16;
+        ULokiFuzzyPlayerLocationComponent v18;
+
+        if (TeamIndex == -1) {
+            return;
+        } else {
+            v8 = this.ActiveUAVs.Iterator();
+            while (true) {
+                v2 = v8.CanProceed;
+                if (!v2) break;
+                v16 = v8.Proceed();
+                v1 = v16.TeamIndex;
+                if (v1 == TeamIndex) {
+                    this.CleanupUAV(v16);
+                    this.ActiveUAVs.Remove(v16);
+                    v1 = v16.TeamIndex;
+                    v18 = ALokiTeamState_TeamOnly::GetFuzzyPlayerLocationComponentByTeamIndex(__WorldContext, v1);
+                    if (v18 != nullptr) {
+                        v18.ClearLocations();
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    private void PulseUAV(FActiveUAV&inout UAV)   // traits=0x28
+    {
+        ALokiGameState v2;
+        bool v5;
+        auto v6;
+        int v7;
+        ALokiGameMode v10;
+        auto v14;
+        bool v19;
+        TArray<ALokiTeamState@> v24;
+        TArray<ALokiPlayerState@> v28;
+        TArrayIterator<ALokiTeamState@> v34;
+        ALokiTeamState v42;
+        TArray<ALokiPlayerState@> v46;
+        TArray<ALokiPlayerState@> v50;
+        TArrayIterator<ALokiPlayerState@> v56;
+        TArrayIterator<ALokiPlayerState@> v62;
+        ALokiPlayerState v64;
+        APlayerController v70;
+        UClass v72;
+        TSubclassOf<UActorComponent@> v74;
+        UActorComponent v76;
+        ULokiPlayerControllerUAVComponent v78;
+        ULokiPlayerControllerUAVComponent v80;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            return;
+        } else {
+            v6 = UAV.TeamIndex;
+            if (v6 >= 0) {
+                v10 = Loki::GetLokiGameMode(__WorldContext);
+                v5 = IsValid(v10);
+                v5 = !v5;
+                if (v5) {
+                    return;
+                }
+                v7 = UAV.TeamIndex;
+                if (v10.IsTeamEliminated(v7)) {
+                    return;
+                }
+            }
+            UAV.PulseCount++;
+            v7 = UAV.TeamIndex;
+            if (this.ShouldUpgradeUAV(v7)) {
+                v5 = true;
+                UAV.Config.bShowIndividuals = v5;
+                v5 = true;
+                UAV.Config.bShowTeam = v5;
+                v14 = 0;
+                UAV.Config.InaccuracyDistance = v14;
+            }
+            v5 = false;
+            v19 = false;
+            v24 = v2.GetTeamStates(v19, v5);
+            v28 = TArray<ALokiPlayerState@>();
+            v34 = v24.Iterator();
+            while (true) {
+                v5 = v34.CanProceed;
+                if (!v5) break;
+                v42 = v34.Proceed();
+                v34.Proceed();
+                v6 = v42.GetIndex();
+                v7 = UAV.TeamIndex;
+                if (v6 != v7) {
+                    if (this.IsTeamUAVImmune(v42)) {
+                        this.NotifyTeamBlockedUAV(v42);
+                    } else {
+                        v5 = UAV.Config.bShowIndividuals;
+                        if (v5) {
+                            v50 = v42.GetLivingPlayers();
+                            v56 = v50.Iterator();
+                            while (true) {
+                                v19 = v56.CanProceed;
+                                if (!v19) break;
+                                v64 = v56.Proceed();
+                                v56.Proceed();
+                                v5 = this.IsValidUAVTarget(UAV, v64);
+                                v5 = !v5;
+                                if (!v5) {
+                                    v28.Add(v64);
+                                }
+                            }
+                        } else {
+                            this.PulseTeam(UAV, v42);
+                        }
+                    }
+                }
+            }
+            v19 = UAV.Config.bShowIndividuals;
+            if (v19) {
+                v7 = v28.Num();
+                UAV.PlayersDetected = v7;
+                v62 = v28.Iterator();
+                while (true) {
+                    v19 = v62.CanProceed;
+                    if (!v19) break;
+                    v64 = v62.Proceed();
+                    v62.Proceed();
+                    this.PulseIndividual(UAV, v64);
+                }
+            }
+            v5 = UAV.Config.bRevealVaults;
+            if (v5) {
+                this.RevealVaultContents(UAV);
+            }
+            v19 = UAV.Config.bLocalRadar;
+            if (v19) {
+                v7 = UAV.PlayersDetected;
+                if (v7 != 0) {
+                    v19 = 0;
+                } else {
+                    v6 = UAV.TeamIndex;
+                    v5 = v6 >= 0;
+                    v19 = v5;
+                }
+                if (v19) {
+                    v7 = UAV.TeamIndex;
+                    v42 = v2.GetTeamState(v7);
+                    if (v42 != nullptr) {
+                        v46 = v42.GetLivingPlayers();
+                        v56 = v46.Iterator();
+                        while (true) {
+                            v5 = v56.CanProceed;
+                            if (!v5) break;
+                            v64 = v56.Proceed();
+                            v56.Proceed();
+                            v70 = v64.GetPlayerController();
+                            if (v70 != nullptr) {
+                                v72 = ULokiPlayerControllerUAVComponent::StaticClass();
+                                v74 = TSubclassOf<UActorComponent@>(v72);
+                                v76 = v70.GetComponentByClass(v74);
+                                if (v76 != nullptr) {
+                                    v78 = cast<ULokiPlayerControllerUAVComponent@>(v76);
+                                } else {
+                                    v78 = nullptr;
+                                }
+                                v80 = v78;
+                                if (v80 != nullptr) {
+                                    v80.ClientNotifyLocalRadarEmpty();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    private bool ShouldUpgradeUAV(const int TeamIndex)   // traits=0x28
+    {
+        ALokiGameState v2;
+        auto v5;
+        ALokiTeamState v8;
+        TArray<ALokiPlayerState@> v18;
+        TArrayIterator<ALokiPlayerState@> v24;
+        ALokiPlayerState v32;
+        UAbilitySystemComponent v34;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        if (v2 == nullptr) {
+            v5 = false;
+            return v5;
+        } else {
+            v8 = v2.GetTeamState(TeamIndex);
+            if (v8 == nullptr) {
+                v5 = false;
+                return v5;
+            } else {
+                v18 = v8.GetLivingPlayers();
+                v24 = v18.Iterator();
+                while (true) {
+                    v5 = v24.CanProceed;
+                    if (!v5) break;
+                    v32 = v24.Proceed();
+                    v24.Proceed();
+                    v34 = AbilitySystem::GetAbilitySystemComponent(v32);
+                    if (v34.HasMatchingGameplayTag(this.UAVUpgradedTag)  /* UFunction Script_HasMatchingGameplayTag */) {
+                        v5 = true;
+                        return v5;
+                    }
+                }
+                v5 = false;
+            }
+        }
+        return v5;
+    }
+
+    private void RevealVaultContents(const FActiveUAV& UAV)   // traits=0x28
+    {
+        ALokiGameState v2;
+        bool v5;
+        TArray<ALokiTeamState@> v10;
+        auto v11;
+        int v12;
+        ALokiTeamState v14;
+        bool v17;
+        TArray<ALokiTeamState@> v22;
+        TArrayIterator<ALokiTeamState@> v28;
+        ALokiTeamState_TeamOnly v36;
+        ULokiTeamVaultDataComponent v40;
+        TArray<FVector> v44;
+        TArrayIterator<ALokiPlayerState@> v50;
+        ALokiPlayerState v58;
+        APawn v60;
+        FVector v68;
+        TArrayIterator<AVaultItemSpawner@> v74;
+        AVaultItemSpawner v82;
+        ALokiDestructible v84;
+        auto v87;
+        TArrayIterator<FVector> v100;
+        FVector v108;
+        auto v110;
+        auto v112;
+        FLokiTeamVaultDataItem v148;
+        TArray<TSubclassOf<ALokiBaseItem@>> v152;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            return;
+        } else {
+            v10 = TArray<ALokiTeamState@>();
+            v11 = UAV.TeamIndex;
+            if (v11 >= 0) {
+                v12 = UAV.TeamIndex;
+                v14 = v2.GetTeamState(v12);
+                if (v14 != nullptr) {
+                    v10.Add(v14);
+                }
+            } else {
+                v5 = true;
+                v17 = true;
+                v22 = v2.GetTeamStates(v17, v5);
+                v10 = v22;
+            }
+            v28 = v10.Iterator();
+            while (true) {
+                v5 = v28.CanProceed;
+                if (!v5) break;
+                v14 = v28.Proceed();
+                v28.Proceed();
+                v36 = v14.GetTeamStateTeamOnly();
+                if (v36 != nullptr) {
+                    v40 = v36.TeamVaultDataComponent;
+                    if (v40 != nullptr) {
+                        v44 = TArray<FVector>();
+                        v50 = v14.Players.Iterator();
+                        while (true) {
+                            v5 = v50.CanProceed;
+                            if (!v5) break;
+                            v58 = v50.Proceed();
+                            v50.Proceed();
+                            v60 = v58.GetPawn();
+                            if (v60 != nullptr) {
+                                v68 = v60.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                v44.Add(v68);
+                            }
+                        }
+                        v74 = this.AllVaultItemSpawners.Iterator();
+                        while (true) {
+                            v5 = v74.CanProceed;
+                            if (!v5) break;
+                            v82 = v74.Proceed();
+                            v74.Proceed();
+                            if (v82 != nullptr) {
+                                v84 = v82.GetDoor();
+                                if (v84 == nullptr) {
+                                    v5 = true;
+                                } else {
+                                    v17 = v84.IsAlive();
+                                    v17 = !v17;
+                                    v5 = v17;
+                                }
+                                if (!v5) {
+                                    v17 = false;
+                                    v87 = v17;
+                                    v68 = v82.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                    v100 = v44.Iterator();
+                                    while (true) {
+                                        v17 = v100.CanProceed;
+                                        if (!v17) break;
+                                        v108 = v100.Proceed();
+                                        v112 = v68.Dist2D(v108);
+                                        v110 = this.VaultVisionDistance;
+                                        if (v112 <= v110) {
+                                            v17 = true;
+                                            v87 = v17;
+                                            break;
+                                        }
+                                    }
+                                    v5 = v87;
+                                    v5 = !v5;
+                                    if (!v5) {
+                                        v148 = FLokiTeamVaultDataItem();
+                                        v148.Vault = v82;
+                                        v11 = UAV.ID;
+                                        v148.SourceUAVID = v11;
+                                        v148.Location = v68;
+                                        v152 = v82.GetItemsForUAV();
+                                        v148.ItemClasses = v152;
+                                        v40.AddOrUpdateVaultData(v148);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    private void PulseTeam(const FActiveUAV& UAV, ALokiTeamState@ TeamState)   // traits=0x28
+    {
+        TSet<ALokiCharacter@> v20;
+        TArray<ALokiPlayerState@> v28;
+        TArrayIterator<ALokiPlayerState@> v34;
+        auto v41;
+        ALokiPlayerState v44;
+        ALokiCharacter v46;
+        auto v49;
+        FVector v56;
+        FVector v62;
+        auto v64;
+        float64 v66;
+        auto v67;
+        float64 v70;
+        TSetIterator<ALokiCharacter@> v78;
+        ULokiAbilitySystemComponent v88;
+        FGameplayEffectSpecHandle v94;
+        FGameplayEffectContextHandle v100;
+        float32 v101;
+        FGameplayEffectSpecHandle v106;
+        FActiveGameplayEffectHandle v108;
+        TArray<FUAVCharacterGrouping> v116;
+        TArrayIterator<FUAVCharacterGrouping> v122;
+        auto v130;
+        auto v132;
+        auto v134;
+        auto v136;
+        int v137;
+        int v138;
+        TArray<TSubclassOf<ALokiCharacter@>> v142;
+        TArrayConstIterator<ALokiCharacter@> v148;
+        FVector v160;
+        UClass v162;
+        TSubclassOf<ALokiCharacter@> v164;
+        float64 v172;
+
+        v20 = TSet<ALokiCharacter@>();
+        v28 = TeamState.GetLivingPlayers();
+        v34 = v28.Iterator();
+        while (true) {
+            v41 = v34.CanProceed;
+            if (!v41) break;
+            v44 = v34.Proceed();
+            v34.Proceed();
+            v46 = v44.GetLokiCharacter();
+            v41 = true;
+            v49 = v41;
+            v56 = v46.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v64 = UAV.Config.Radius;
+            v66 = 0;
+            if (v64 > v66) {
+                v66 = UAV.SourceLocation.Dist2D(v56);
+                v64 = UAV.Config.Radius;
+                v41 = v66 <= v64;
+                v49 = v41;
+            }
+            if (!IsValid(v46)) {
+                v41 = 0;
+            } else {
+                v67 = this.IsCharacterUAVImmune(v46);
+                v67 = !v67;
+                v41 = v67;
+            }
+            if (!v41) {
+                v67 = 0;
+            } else {
+                v67 = v49;
+            }
+            if (v67) {
+                v20.Add(v46);
+            }
+        }
+        v64 = UAV.GetPulseLifespan();
+        v78 = v20.Iterator();
+        while (true) {
+            v41 = v78.CanProceed;
+            if (!v41) break;
+            v46 = v78.Proceed();
+            v78.Proceed();
+            v88 = v46.GetLokiAbilitySystem_BP();
+            if (v88 != nullptr) {
+                v100 = FGameplayEffectContextHandle();
+                v106 = v88.MakeOutgoingSpec(this.MarkedTeamGameplayEffectClass, 0, v100);
+                v101 = float32(v64);
+                v94 = AbilitySystem::AssignTagSetByCallerMagnitude(v106, this.DataTag, v101);
+                v106 = v94;
+                v108 = v88.ApplyGameplayEffectSpecToSelf(v106)  /* UFunction BP_ApplyGameplayEffectSpecToSelf */;
+            }
+        }
+        v116 = this.MakeCharacterGroupings(v20);
+        v122 = v116.Iterator();
+        while (true) {
+            v41 = v122.CanProceed;
+            if (!v41) break;
+            v130 = v122.Proceed();
+            v56 = FVector(FVector::ZeroVector);
+            v132 = 0;
+            v134 = 0;
+            v136 = 0;
+            v138 = v130.Characters.Num();
+            v142 = TArray<TSubclassOf<ALokiCharacter@>>();
+            v148 = v130.Characters.Iterator();
+            while (true) {
+                v41 = v148.CanProceed;
+                if (!v41) break;
+                v46 = v148.Proceed();
+                v148.Proceed();
+                v62 = v46.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v56 += v62;
+                v101 = v46.GetLevel();
+                v70 = float64(v101);
+                v132 = v132 + v70;
+                v67 = UAV.Config.bShowCharacters;
+                if (v67) {
+                    v162 = v46.GetClass();
+                    v164 = TSubclassOf<ALokiCharacter@>(v162);
+                    v142.Add(v164);
+                }
+                v66 = GetRelicCountForPlayer(v46);
+                v134 = v134 + v66;
+                v66 = GetArmorLevelForPlayer(v46);
+                v136 = v136 + v66;
+            }
+            v66 = float64(v138);
+            v160 = v56 / v66;
+            v70 = float64(v138);
+            v66 = v136 / v70;
+            v70 = float64(v138);
+            v70 = v134 / v70;
+            v172 = float64(v138);
+            v172 = v132 / v172;
+            v137 = TeamState.GetIndex();
+            this.GenerateFuzzyLocation(UAV, v160, v138, v137, v172, v142, v70, v66);
+        }
+        return;
+    }
+
+    private TArray<FUAVCharacterGrouping> MakeCharacterGroupings(TSet<ALokiCharacter@>&inout RemainingCharacters)   // traits=0x28
+    {
+        TArray<FUAVCharacterGrouping> v4;
+        auto v5;
+        FUAVCharacterGrouping v14;
+        TArrayIterator<ALokiCharacter@> v20;
+        ALokiCharacter v28;
+
+        v4 = TArray<FUAVCharacterGrouping>();
+        v5 = RemainingCharacters.IsEmpty();
+        v5 = !v5;
+        while (v5) {
+            v14 = this.GetLargestCharacterGrouping(RemainingCharacters);
+            v4.Add(v14);
+            v20 = v14.Characters.Iterator();
+            while (true) {
+                v5 = v20.CanProceed;
+                if (!v5) break;
+                v28 = v20.Proceed();
+                v20.Proceed();
+                RemainingCharacters.Remove(v28);
+            }
+            v14.~FUAVCharacterGrouping();
+            continue;
+        }
+        __ret = TArray<FUAVCharacterGrouping>();
+        __ret = v4;
+        return;
+    }
+
+    private FUAVCharacterGrouping GetLargestCharacterGrouping(const TSet<ALokiCharacter@>& Characters)   // traits=0x28
+    {
+        FUAVCharacterGrouping v8;
+        TSetConstIterator<ALokiCharacter@> v16;
+        TSetConstIterator<ALokiCharacter@> v24;
+        auto v25;
+        ALokiCharacter v28;
+        TArray<ALokiCharacter@> v32;
+        ALokiCharacter v42;
+        auto v44;
+        auto v45;
+        float64 v48;
+        auto v49;
+        auto v50;
+
+        v8.FUAVCharacterGrouping();
+        v16 = Characters.Iterator();
+        while (true) {
+            v25 = v16.CanProceed;
+            if (!v25) break;
+            v28 = v16.Proceed();
+            v16.Proceed();
+            v32 = TArray<ALokiCharacter@>();
+            v24 = Characters.Iterator();
+            while (true) {
+                v25 = v24.CanProceed;
+                if (!v25) break;
+                v42 = v24.Proceed();
+                v24.Proceed();
+                v45 = v42.GetDistanceTo(v28);
+                v48 = float64(v45);
+                v44 = v48;
+                v48 = this.PlayerGroupingDistance;
+                if (v44 < v48) {
+                    v32.Add(v42);
+                }
+            }
+            v49 = v8.Characters.Num();
+            v50 = v32.Num();
+            if (v49 < v50) {
+                v8.Characters = v32;
+            }
+        }
+        __ret.FUAVCharacterGrouping();
+        v8.~FUAVCharacterGrouping();
+        return;
+    }
+
+    private bool IsCharacterUAVImmune(ALokiCharacter@ LokiCharacter)   // traits=0x28
+    {
+        auto v1;
+        auto v2;
+
+        if (LokiCharacter.IsInvisible()) {
+            v1 = true;
+            return LokiCharacter.IsInvisible();
+        } else {
+            v2 = LokiCharacter.IsInBrush();
+            v1 = v2;
+        }
+        return v1;
+    }
+
+    private void GenerateFuzzyLocation(const FActiveUAV& UAV, const FVector& Location, const int PlayerCount, const int TeamIndex, const float64 TeamLevel, const TArray<TSubclassOf<ALokiCharacter@>>& CharacterClasses, const float64 AverageRelicCount, const float64 AverageArmorLevel)   // traits=0x28
+    {
+        ALokiGameState v2;
+        bool v5;
+        FLokiFuzzyPlayerLocationItem v54;
+        auto v55;
+        FVector v62;
+        float32 v63;
+        auto v66;
+        float64 v68;
+        auto v69;
+        int v70;
+        TArray<ULokiFuzzyPlayerLocationComponent@> v74;
+        ULokiFuzzyPlayerLocationComponent v76;
+        bool v83;
+        TArray<ALokiTeamState@> v88;
+        TArrayIterator<ALokiTeamState@> v94;
+        ALokiTeamState v102;
+        ALokiTeamState_TeamOnly v104;
+        TArrayIterator<ULokiFuzzyPlayerLocationComponent@> v110;
+
+        v2 = Loki::GetLokiGameState(__WorldContext);
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            return;
+        } else {
+            v54 = FLokiFuzzyPlayerLocationItem();
+            v55 = true;
+            v54.Source = v55;
+            v62 = UAV.ObfuscateLocation(Location);
+            v54.Location = v62;
+            v54.PlayerCount = PlayerCount;
+            v63 = Gameplay::GetServerTime(__WorldContext);
+            v68 = float64(v63);
+            v66 = UAV.GetPulseLifespan();
+            v68 = v68 + v66;
+            v63 = float32(v68);
+            v54.ExpiryTime = v63;
+            v5 = UAV.Config.bShowTeam;
+            if (v5) {
+                v69 = TeamIndex;
+            } else {
+                v69 = -1;
+            }
+            v54.TeamIndex = v69;
+            v54.CharacterClasses = CharacterClasses;
+            v63 = float32(TeamLevel);
+            v54.AverageLevel = v63;
+            v63 = float32(AverageRelicCount);
+            v54.AverageRelicCount = v63;
+            v63 = float32(AverageArmorLevel);
+            v54.AverageArmorLevel = v63;
+            v5 = UAV.Config.bLocalRadar;
+            if (v5) {
+                v69 = UAV.ID;
+                v54.UAVID = v69;
+                v70 = UAV.PlayersDetected;
+                v54.TotalPlayerCount = v70;
+            }
+            v74 = TArray<ULokiFuzzyPlayerLocationComponent@>();
+            v69 = UAV.TeamIndex;
+            if (v69 >= 0) {
+                v70 = UAV.TeamIndex;
+                v76 = ALokiTeamState_TeamOnly::GetFuzzyPlayerLocationComponentByTeamIndex(__WorldContext, v70);
+                if (v76 != nullptr) {
+                    v74.Add(v76);
+                }
+            } else {
+                v5 = true;
+                v83 = true;
+                v88 = v2.GetTeamStates(v83, v5);
+                v94 = v88.Iterator();
+                while (true) {
+                    v5 = v94.CanProceed;
+                    if (!v5) break;
+                    v102 = v94.Proceed();
+                    v94.Proceed();
+                    v104 = v102.GetTeamStateTeamOnly();
+                    if (v104 == nullptr) {
+                        v83 = 0;
+                    } else {
+                        v69 = v102.GetIndex();
+                        v5 = v69 != TeamIndex;
+                        v83 = v5;
+                    }
+                    if (v83) {
+                        v104 = v102.GetTeamStateTeamOnly();
+                        v76 = v104.FuzzyPlayerLocationComponent;
+                        if (v76 != nullptr) {
+                            v74.Add(v76);
+                        }
+                    }
+                }
+            }
+            v110 = v74.Iterator();
+            while (true) {
+                v83 = v110.CanProceed;
+                if (!v83) break;
+                v76 = v110.Proceed();
+                v110.Proceed();
+                v76.AddLocation(v54);
+            }
+        }
+        return;
+    }
+
+    private void PulseIndividual(const FActiveUAV& UAV, ALokiPlayerState@ PlayerState)   // traits=0x28
+    {
+        ALokiCharacter v2;
+        auto v5;
+        auto v8;
+        float64 v10;
+        FVector v16;
+        float64 v18;
+        ULokiAbilitySystemComponent v20;
+        UObject v24;
+        auto v25;
+        FGameplayEffectSpecHandle v30;
+        FGameplayEffectContextHandle v36;
+        float32 v37;
+        FGameplayEffectSpecHandle v42;
+        FActiveGameplayEffectHandle v44;
+        TArray<TSubclassOf<ALokiCharacter@>> v48;
+        UClass v50;
+        TSubclassOf<ALokiCharacter@> v52;
+        int v53;
+        float64 v56;
+
+        v2 = PlayerState.GetLokiCharacter();
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            return;
+        } else {
+            if (this.IsCharacterUAVImmune(v2)) {
+                return;
+            } else {
+                v8 = UAV.Config.Radius;
+                v10 = 0;
+                if (v8 > v10) {
+                    v16 = v2.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v10 = UAV.SourceLocation.Dist2D(v16);
+                    v8 = UAV.Config.Radius;
+                    if (v10 > v8) {
+                        return;
+                    }
+                } else {
+                    v8 = UAV.GetPulseLifespan();
+                    v20 = v2.GetLokiAbilitySystem_BP();
+                    if (!IsValid(v20)) {
+                        v5 = 0;
+                    } else {
+                        v24 = UObject@(this.MarkedIndividualGameplayEffectClass);
+                        v25 = IsValid(v24);
+                        v5 = v25;
+                    }
+                    if (v5) {
+                        v36 = FGameplayEffectContextHandle();
+                        v42 = v20.MakeOutgoingSpec(this.MarkedIndividualGameplayEffectClass, 0, v36);
+                        v37 = float32(v8);
+                        v30 = AbilitySystem::AssignTagSetByCallerMagnitude(v42, this.DataTag, v37);
+                        v42 = v30;
+                        v44 = v20.ApplyGameplayEffectSpecToSelf(v42)  /* UFunction BP_ApplyGameplayEffectSpecToSelf */;
+                    }
+                    v48 = TArray<TSubclassOf<ALokiCharacter@>>();
+                    v25 = UAV.Config.bShowCharacters;
+                    if (v25) {
+                        v50 = v2.GetClass();
+                        v52 = TSubclassOf<ALokiCharacter@>(v50);
+                        v48.Add(v52);
+                    }
+                    v10 = GetArmorLevelForPlayer(v2);
+                    v18 = GetRelicCountForPlayer(v2);
+                    v37 = v2.GetLevel();
+                    v56 = float64(v37);
+                    v53 = v2.GetTeamIndex();
+                    v16 = v2.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    this.GenerateFuzzyLocation(UAV, v16, 1, v53, v56, v48, v18, v10);
+                }
+            }
+        }
+        return;
+    }
+
+    private bool IsValidUAVTarget(const FActiveUAV& UAV, ALokiPlayerState@ PlayerState)   // traits=0x28
+    {
+        ALokiCharacter v2;
+        auto v5;
+        auto v8;
+        auto v10;
+        FVector v16;
+
+        v2 = PlayerState.GetLokiCharacter();
+        v5 = IsValid(v2);
+        v5 = !v5;
+        if (v5) {
+            v5 = false;
+            return v5;
+        } else {
+            if (this.IsCharacterUAVImmune(v2)) {
+                v5 = false;
+                return v5;
+            } else {
+                v8 = UAV.Config.Radius;
+                v10 = 0;
+                if (v8 > v10) {
+                    v16 = v2.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v10 = UAV.SourceLocation.Dist2D(v16);
+                    v8 = UAV.Config.Radius;
+                    if (v10 > v8) {
+                        v5 = false;
+                        return v5;
+                    }
+                } else {
+                    v5 = true;
+                }
+            }
+        }
+        return v5;
+    }
+
+    private bool IsTeamUAVImmune(ALokiTeamState@ TeamState)   // traits=0x28
+    {
+        TArray<ALokiPlayerState@> v4;
+        TArrayConstIterator<ALokiPlayerState@> v10;
+        auto v17;
+        ALokiPlayerState v20;
+        UAbilitySystemComponent v22;
+
+        v4 = TeamState.GetLivingPlayers();
+        v10 = v4.Iterator();
+        while (true) {
+            v17 = v10.CanProceed;
+            if (!v17) break;
+            v20 = v10.Proceed();
+            v10.Proceed();
+            v22 = AbilitySystem::GetAbilitySystemComponent(v20);
+            if (v22.HasMatchingGameplayTag(this.UAVImmunityTag)  /* UFunction Script_HasMatchingGameplayTag */) {
+                v17 = true;
+                return v17;
+            }
+        }
+        v17 = false;
+        return v17;
+    }
+
+    private void NotifyTeamBlockedUAV(ALokiTeamState@ TeamState)   // traits=0x28
+    {
+        bool v1;
+        TArray<ALokiPlayerState@> v6;
+        TArrayConstIterator<ALokiPlayerState@> v12;
+        ALokiPlayerState v20;
+        UAbilitySystemComponent v22;
+        FGameplayCueParameters v82;
+
+        v1 = this.UAVBlockedGameplayCueTag.IsValid();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = TeamState.GetLivingPlayers();
+            v12 = v6.Iterator();
+            while (true) {
+                v1 = v12.CanProceed;
+                if (!v1) break;
+                v20 = v12.Proceed();
+                v12.Proceed();
+                v22 = AbilitySystem::GetAbilitySystemComponent(v20);
+                if (IsValid(v22)) {
+                    v1 = false;
+                    v82 = FGameplayCueParameters();
+                    v22.ExecuteGameplayCue_BP(this.UAVBlockedGameplayCueTag, v82, v1);
+                }
+            }
+        }
+        return;
+    }
+
+    private void CleanupUAV(FActiveUAV&inout UAV)   // traits=0x28
+    {
+        auto v1;
+        TArray<ULokiTeamVaultDataComponent@> v6;
+        TArrayConstIterator<ULokiTeamVaultDataComponent@> v12;
+        ULokiTeamVaultDataComponent v20;
+        int v21;
+
+        UAV.Cleanup();
+        v1 = UAV.Config.bRevealVaults;
+        if (v1) {
+            v6 = this.GetAllTeamVaultDataComponents();
+            v12 = v6.Iterator();
+            while (true) {
+                v1 = v12.CanProceed;
+                if (!v1) break;
+                v20 = v12.Proceed();
+                v12.Proceed();
+                v21 = UAV.ID;
+                v20.RemoveVaultDataBySourceUAV(v21);
+            }
+        }
+        return;
+    }
+
+    private TArray<ULokiTeamVaultDataComponent@> GetAllTeamVaultDataComponents()   // traits=0x28
+    {
+        TArray<ULokiTeamVaultDataComponent@> v4;
+        ALokiGameState v6;
+        bool v9;
+        bool v10;
+        TArray<ALokiTeamState@> v14;
+        TArrayConstIterator<ALokiTeamState@> v20;
+        auto v27;
+        ALokiTeamState v30;
+        ALokiTeamState_TeamOnly v32;
+        ULokiTeamVaultDataComponent v36;
+        auto v37;
+
+        v4 = TArray<ULokiTeamVaultDataComponent@>();
+        v6 = Loki::GetLokiGameState(__WorldContext);
+        if (v6 != nullptr) {
+            v9 = true;
+            v10 = true;
+            v14 = v6.GetTeamStates(v10, v9);
+            v20 = v14.Iterator();
+            while (true) {
+                v27 = v20.CanProceed;
+                if (!v27) break;
+                v30 = v20.Proceed();
+                v20.Proceed();
+                v32 = v30.GetTeamStateTeamOnly();
+                if (v32 == nullptr) {
+                    v27 = 0;
+                } else {
+                    v36 = v32.TeamVaultDataComponent;
+                    v37 = v36 != nullptr;
+                    v27 = v37;
+                }
+                if (v27) {
+                    v4.Add(v32.TeamVaultDataComponent);
+                }
+            }
+        }
+        __ret = TArray<ULokiTeamVaultDataComponent@>();
+        __ret = v4;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnVaultDestroyed(AActor@ DestroyedActor)   // traits=0x28
+    {
+        TArray<ULokiTeamVaultDataComponent@> v4;
+        TArrayConstIterator<ULokiTeamVaultDataComponent@> v10;
+        auto v17;
+        ULokiTeamVaultDataComponent v20;
+
+        v4 = this.GetAllTeamVaultDataComponents();
+        v10 = v4.Iterator();
+        while (true) {
+            v17 = v10.CanProceed;
+            if (!v17) break;
+            v20 = v10.Proceed();
+            v10.Proceed();
+            v20.RemoveVaultDataByVault(DestroyedActor);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnVaultDoorDestroyed(AActor@ DestroyedActor)   // traits=0x28
+    {
+        TArrayIterator<AVaultItemSpawner@> v6;
+        auto v13;
+        AVaultItemSpawner v16;
+        ALokiDestructible v18;
+        AActor v20;
+        auto v21;
+
+        v6 = this.AllVaultItemSpawners.Iterator();
+        while (true) {
+            v13 = v6.CanProceed;
+            if (!v13) break;
+            v16 = v6.Proceed();
+            v6.Proceed();
+            if (v16 == nullptr) {
+                v13 = 0;
+            } else {
+                v18 = v16.GetDoor();
+                v20 = DestroyedActor;
+                v21 = v18 == v20;
+                v13 = v21;
+            }
+            if (v13) {
+                this.OnVaultDestroyed(v16);
+                return;
+            }
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v4;
+
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        v1 = true;
+        this.PrimaryComponentTick.SetbAllowTickOnDedicatedServer(v1);
+        v1 = false;
+        this.PrimaryComponentTick.SetbStartWithTickEnabled(v1);
+        v4 = 2000.0;
+        this.PlayerGroupingDistance = v4;
+        v4 = 20000.0;
+        this.VaultVisionDistance = v4;
+        this.UAVBlockedGameplayCueTag = GameplayTags::GameplayCue_Effect_UAVBlocked;
+        return;
+    }
+
+    void ~ULokiGameStateUAVComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

@@ -1,0 +1,1184 @@
+==============================================================================
+MODULE   DayNightController.LokiDayNightController
+SOURCE   DayNightController/LokiDayNightController.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+event FTimelineChangedDelegate;
+event FDayNightStateChangedDelegate;
+event FDayBeginDelegate;
+event FDayEndDelegate;
+
+const TSubclassOf<UObject@> __StaticType_ALokiDayNightController_AS;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiDayNightController_AS@ ALokiDayNightController_AS()
+// 4 instr, 28 B bytecode, id=0xCDE845FD, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiDayNightController_AS v2;
+
+    v2 = ALokiDayNightController_AS();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84786 q:0x26e6ed72b00; new ALokiDayNightController_AS   ctor=ALokiDayNightController_AS::ALokiDayNightController_AS
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x215F8CC4, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiDayNightController_AS);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057f7d8         ; __StaticType_ALokiDayNightController_AS
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiDayNightController_AS@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x17798DFC, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiDayNightController_AS v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiDayNightController_AS.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiDayNightController_AS>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6057f7d8         ; __StaticType_ALokiDayNightController_AS
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972675            ; ALokiDayNightController_AS@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ALokiDayNightController_AS : ALokiDayNightController
+// base /Script/Loki.LokiDayNightController  ->  ../../../Loki/Source/Loki/World/LokiDayNightController.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FTimelineChangedDelegate OnTimelineChanged;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FDayNightStateChangedDelegate OnDayNightStateChanged;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FDayBeginDelegate OnDayBegin;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FDayEndDelegate OnDayEnd;
+
+}
+
+------------------------------------------------------------------------------
+ALokiDayNightController_AS() const
+// 15 instr, 100 B bytecode, id=0xE409ECBA, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnTimelineChanged.FTimelineChangedDelegate();
+    this.OnDayNightStateChanged.FDayNightStateChangedDelegate();
+    this.OnDayBegin.FDayBeginDelegate();
+    this.OnDayEnd.FDayEndDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:912 d:134230851      ; ALokiDayNightController_AS::OnTimelineChanged  (+912)
+    //     3  CALL           d:84789                 ; void FTimelineChangedDelegate::FTimelineChangedDelegate()
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:928 d:134230851      ; ALokiDayNightController_AS::OnDayNightStateChanged  (+928)
+    //     8  CALL           d:84798                 ; void FDayNightStateChangedDelegate::FDayNightStateChangedDelegate()
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:944 d:134230851      ; ALokiDayNightController_AS::OnDayBegin  (+944)
+    //    13  CALL           d:84807                 ; void FDayBeginDelegate::FDayBeginDelegate()
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:960 d:134230851      ; ALokiDayNightController_AS::OnDayEnd  (+960)
+    //    18  CALL           d:84816                 ; void FDayEndDelegate::FDayEndDelegate()
+    //    20  PshVPtr        rW0:0
+    //    21  FinConstruct   q:0x26e6ed72b00         ; ALokiDayNightController_AS
+    //    24  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Const)
+bool IsCharacterInShadow(ALokiCharacter@ Character)
+// 6 instr, 28 B bytecode, id=0xB44D84BE, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.BP_IsCharacterInShadow(Character);
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:84780                 ; bool ALokiDayNightController_AS::BP_IsCharacterInShadow(ALokiCharacter@) const
+    //     4  CpyRtoV4       wW0:1
+    //     5  CpyVtoR4       rW0:1
+    //     6  RET            W0:4
+
+------------------------------------------------------------------------------
+void AuthCheatNightToDay(const float64 Time)
+// 8 instr, 60 B bytecode, id=0xF351089B, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(Time);
+    __Evt_Execute(this, __STATIC_NAME(167));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:167
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast)
+// UFunction name: AuthCheatNightToDay
+void AuthCheatNightToDay_Implementation(const float64 Time)
+// 4 instr, 20 B bytecode, id=0xE8F0CDCB, varspace=0
+------------------------------------------------------------------------------
+{
+    this.BP_CheatNightToDay(Time);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV8          rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:84782                 ; void ALokiDayNightController_AS::BP_CheatNightToDay(const float64)
+    //     4  RET            W0:4
+
+------------------------------------------------------------------------------
+void AuthCheatDayToNight(const float64 Time)
+// 8 instr, 60 B bytecode, id=0x544FA794, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(Time);
+    __Evt_Execute(this, __STATIC_NAME(168));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:168
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast)
+// UFunction name: AuthCheatDayToNight
+void AuthCheatDayToNight_Implementation(const float64 Time)
+// 4 instr, 20 B bytecode, id=0x3DCB0B96, varspace=0
+------------------------------------------------------------------------------
+{
+    this.BP_CheatDayToNight(Time);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV8          rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:84784                 ; void ALokiDayNightController_AS::BP_CheatDayToNight(const float64)
+    //     4  RET            W0:4
+
+------------------------------------------------------------------------------
+bool BP_IsCharacterInShadow(ALokiCharacter@ Character)
+// 13 instr, 96 B bytecode, id=0x812A3EEA, varspace=3
+------------------------------------------------------------------------------
+{
+    bool v1;
+
+    __Evt_PushArgument__ALokiCharacter(Character);
+    v1 = false;
+    __Evt_PushArgumentRef__bool(v1);
+    __Evt_Execute(this, __STATIC_NAME(169));
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77b9b4c0         ; void __Evt_PushArgument__ALokiCharacter(const ALokiCharacter@&)
+    //     4  SetV1          wW0:2 d:0
+    //     6  CpyVtoV4       wW0:1 rW1:2
+    //     8  PSF            rW0:1
+    //     9  CALLSYS        q:0x26e77fce080         ; void __Evt_PushArgumentRef__bool(const bool&)
+    //    12  PshC4          d:169
+    //    14  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    17  PshRPtr
+    //    18  PshVPtr        rW0:0
+    //    19  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    22  CpyVtoR4       rW0:1
+    //    23  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, BlueprintPure, CanOverrideEvent, Const, meta=(BlueprintProtected))
+// UFunction name: BP_IsCharacterInShadow
+bool BP_IsCharacterInShadow_Implementation(ALokiCharacter@ Character)
+// 3 instr, 16 B bytecode, id=0x5BBEE417, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  CpyVtoR4       rW0:1
+    //     3  RET            W0:4
+
+------------------------------------------------------------------------------
+void BP_CheatNightToDay(const float64 Time)
+// 8 instr, 60 B bytecode, id=0x84CD326C, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(Time);
+    __Evt_Execute(this, __STATIC_NAME(170));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:170
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp, meta=(BlueprintProtected))
+// UFunction name: BP_CheatNightToDay
+void BP_CheatNightToDay_Implementation(const float64 Time)
+// 1 instr, 4 B bytecode, id=0x8C63C60E, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void BP_CheatDayToNight(const float64 Time)
+// 8 instr, 60 B bytecode, id=0xA9FAFF55, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(Time);
+    __Evt_Execute(this, __STATIC_NAME(171));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:171
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp, meta=(BlueprintProtected))
+// UFunction name: BP_CheatDayToNight
+void BP_CheatDayToNight_Implementation(const float64 Time)
+// 1 instr, 4 B bytecode, id=0xCAFF1C51, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 5 instr, 32 B bytecode, id=0xBACD39D2, varspace=1
+------------------------------------------------------------------------------
+{
+    this.SetbReplicates(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a6291c0         ; void AActor::SetbReplicates(bool)
+    //     7  RET            W0:2
+
+------------------------------------------------------------------------------
+~ALokiDayNightController_AS()
+// 13 instr, 84 B bytecode, id=0xA002CA38, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnTimelineChanged.~FTimelineChangedDelegate();
+    this.OnDayNightStateChanged.~FDayNightStateChangedDelegate();
+    this.OnDayBegin.~FDayBeginDelegate();
+    this.OnDayEnd.~FDayEndDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:912 d:134230851      ; ALokiDayNightController_AS::OnTimelineChanged  (+912)
+    //     3  CALL           d:85488                 ; void FTimelineChangedDelegate::~FTimelineChangedDelegate()
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:928 d:134230851      ; ALokiDayNightController_AS::OnDayNightStateChanged  (+928)
+    //     8  CALL           d:85490                 ; void FDayNightStateChangedDelegate::~FDayNightStateChangedDelegate()
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:944 d:134230851      ; ALokiDayNightController_AS::OnDayBegin  (+944)
+    //    13  CALL           d:85491                 ; void FDayBeginDelegate::~FDayBeginDelegate()
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:960 d:134230851      ; ALokiDayNightController_AS::OnDayEnd  (+960)
+    //    18  CALL           d:85492                 ; void FDayEndDelegate::~FDayEndDelegate()
+    //    20  RET            W0:2
+
+==============================================================================
+class FTimelineChangedDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FTimelineChangedDelegate() const
+// 4 instr, 28 B bytecode, id=0xF0D8FCD4, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FTimelineChangedDelegate(const FTimelineChangedDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0x6A150CBA, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:84791                 ; FTimelineChangedDelegate& FTimelineChangedDelegate::opAssign(const FTimelineChangedDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FTimelineChangedDelegate& opAssign(const FTimelineChangedDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0xA0A5E838, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast(const float64 SimpleTrack, const float64 RampTrack)
+// 16 instr, 112 B bytecode, id=0x6238E2BF, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_PushArgument__float(SimpleTrack);
+        __Evt_PushArgument__float(RampTrack);
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->27
+    //    13  PSF            rW0:-2
+    //    14  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //    17  PSF            rW0:-4
+    //    18  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //    24  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    27  RET            W0:6
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0xD61275E9, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230852             ; FTimelineChangedDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0xF73DE673, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0xA940FBA5, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0x8E014635, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0x9F93539C, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FTimelineChangedDelegate()
+// 4 instr, 28 B bytecode, id=0xBA026031, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230852        ; FTimelineChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+class FDayNightStateChangedDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FDayNightStateChangedDelegate() const
+// 4 instr, 28 B bytecode, id=0x713F6789, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FDayNightStateChangedDelegate(const FDayNightStateChangedDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0xAA4A292C, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:84800                 ; FDayNightStateChangedDelegate& FDayNightStateChangedDelegate::opAssign(const FDayNightStateChangedDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FDayNightStateChangedDelegate& opAssign(const FDayNightStateChangedDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0xCCA35F22, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast(const ELokiDayNightState Current, const ELokiDayNightState Next)
+// 16 instr, 112 B bytecode, id=0xFB7AC7CE, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_PushArgument__ELokiDayNightState(Current);
+        __Evt_PushArgument__ELokiDayNightState(Next);
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->27
+    //    13  PSF            rW0:-2
+    //    14  CALLSYS        q:0x26e774cf040         ; void __Evt_PushArgument__ELokiDayNightState(const ELokiDayNightState&)
+    //    17  PSF            rW0:-3
+    //    18  CALLSYS        q:0x26e774cf040         ; void __Evt_PushArgument__ELokiDayNightState(const ELokiDayNightState&)
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //    24  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    27  RET            W0:4
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0x3523AFE9, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230853             ; FDayNightStateChangedDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x0201C7EE, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0xAC46CB8C, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0x46687357, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0xEF9387D3, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FDayNightStateChangedDelegate()
+// 4 instr, 28 B bytecode, id=0x16E43D54, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230853        ; FDayNightStateChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+class FDayBeginDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FDayBeginDelegate() const
+// 4 instr, 28 B bytecode, id=0xE8397CD1, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FDayBeginDelegate(const FDayBeginDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0xF5E21C5D, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:84809                 ; FDayBeginDelegate& FDayBeginDelegate::opAssign(const FDayBeginDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FDayBeginDelegate& opAssign(const FDayBeginDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0x3A03687E, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast()
+// 12 instr, 80 B bytecode, id=0x9DF927D2, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->19
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //    16  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0x62D976C9, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230854             ; FDayBeginDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x26EA846F, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x7D41BCC5, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0xBAA9B2EA, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0x53E16D6A, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FDayBeginDelegate()
+// 4 instr, 28 B bytecode, id=0x7CFC3C75, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230854        ; FDayBeginDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+class FDayEndDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FDayEndDelegate() const
+// 4 instr, 28 B bytecode, id=0x20EAE90A, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FDayEndDelegate(const FDayEndDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0x331D3EF8, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:84818                 ; FDayEndDelegate& FDayEndDelegate::opAssign(const FDayEndDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FDayEndDelegate& opAssign(const FDayEndDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0x63C1BF22, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast()
+// 12 instr, 80 B bytecode, id=0x0FFA171F, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->19
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //    16  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0x9A5C38E7, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230855             ; FDayEndDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0xE5A7BDF6, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x12A8BE17, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0x243219CE, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0x2B6A83E5, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FDayEndDelegate()
+// 4 instr, 28 B bytecode, id=0x42F088AF, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230855        ; FDayEndDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+

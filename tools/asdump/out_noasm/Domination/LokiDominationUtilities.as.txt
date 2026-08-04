@@ -1,0 +1,106 @@
+// ============================================================================
+//  MODULE   Domination.LokiDominationUtilities
+//  SOURCE   Domination/LokiDominationUtilities.as
+//  CONTENT  0 class(es), 1 function(s), 0 enum(s), 0 global(s), 956 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Domination_LokiDominationUtilitiesStatics
+
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent, Static)
+ALokiPlayerStart@ GetDominationSpawnForPlayer(ALokiPlayerState@ PlayerState)   // traits=0x20
+{
+    ALokiPlayerState v2;
+    auto v3;
+    ALokiPlayerStart v6;
+    ALokiGameState v10;
+    auto v11;
+    auto v12;
+    TArray<ALokiPlayerStart@> v16;
+    UClass v18;
+    TArray<ALokiPlayerState@> v22;
+    auto v28;
+    auto v30;
+    ALokiPlayerStart v32;
+    TArrayIterator<ALokiPlayerStart@> v38;
+    ALokiPlayerStart v46;
+    FName v48;
+    FVector v54;
+    FVector v60;
+    auto v62;
+    TArrayIterator<ALokiPlayerState@> v68;
+    ALokiPlayerState v76;
+    ALokiCharacter v80;
+    int v83;
+    int v84;
+
+    v2 = PlayerState;
+    if (v2 == nullptr) {
+        return v6;
+    } else {
+        v10 = Loki::GetLokiGameState(__WorldContext);
+        if (v10 == nullptr) {
+            return v6;
+        } else {
+            v12 = PlayerState.GetTeamIndex_BP();
+            v16 = TArray<ALokiPlayerStart@>();
+            v18 = UClass@(__StaticType_ALokiPlayerStart);
+            GetAllActorsOfClass(v18, v16, typeid(TArray));
+            v22 = v10.GetLokiPlayerStates();
+            v28 = 0;
+            v38 = v16.Iterator();
+            while (true) {
+                v3 = v38.CanProceed;
+                if (!v3) break;
+                v46 = v38.Proceed();
+                v38.Proceed();
+                v48 = FName(v46.PlayerStartTag);
+                v3 = v48 == n"Domination";
+                v3 = !v3;
+                if (!v3) {
+                    v54 = v46.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v62 = 999999.0;
+                    v68 = v22.Iterator();
+                    while (true) {
+                        v3 = v68.CanProceed;
+                        if (!v3) break;
+                        v76 = v68.Proceed();
+                        v68.Proceed();
+                        v11 = v76.GetTeamIndex_BP();
+                        if (v12 != v11) {
+                            v80 = v76.GetLokiCharacter();
+                            if (IsValid(v80)) {
+                                v60 = v80.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                v30 = v54.Dist2D(v60);
+                                if (v30 < v62) {
+                                    v62 = v30;
+                                }
+                            }
+                        }
+                    }
+                    if (v62 > v28) {
+                        v28 = v62;
+                        v32 = v46;
+                    }
+                }
+            }
+            if (v32 == nullptr) {
+                v11 = v16.Num();
+                if (v11 == 0) {
+                    return v6;
+                }
+                v83 = v16.Num();
+                v83 = v83 - 1;
+                v84 = Math::RandRange(0, v83);
+                v32 = v16[v84];
+            }
+        }
+    }
+    return v32;
+}
+

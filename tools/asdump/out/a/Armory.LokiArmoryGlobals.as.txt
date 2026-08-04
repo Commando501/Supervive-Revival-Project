@@ -1,0 +1,953 @@
+==============================================================================
+MODULE   Armory.LokiArmoryGlobals
+SOURCE   Armory/LokiArmoryGlobals.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+// statics class: Module_Armory_LokiArmoryGlobalsStatics
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+TArray<FString> GetPerTierPowerDescription(const TSubclassOf<ALokiBaseItem@>&inout ItemClass)
+// 116 instr, 816 B bytecode, id=0x07AE2086, varspace=34
+------------------------------------------------------------------------------
+{
+    TArray<FString> v4;
+    auto v5;
+    ALokiBaseItem v8;
+    FText v14;
+    FText v18;
+    int v19;
+    int v20;
+    FString v26;
+    FLokiArmoryUniqueEffect v32;
+    auto v33;
+
+    v4 = TArray<FString>();
+    v5 = ItemClass.IsValid();
+    v5 = !v5;
+    if (!v5) {
+        v8 = ItemClass.GetDefaultObject();
+        v5 = IsValid(v8);
+        v5 = !v5;
+        if (!v5) {
+            v18 = FText();
+            v19 = 0;
+            while (v19 < 6) {
+                v26 = FString();
+                v4.Add(v26);
+                v19++;
+            }
+            v19 = 0;
+            while (true) {
+                v20 = v8.ArmoryUniqueEffects.Num();
+                if (v19 >= v20) break;
+                v32 = FLokiArmoryUniqueEffect(v8.ArmoryUniqueEffects[v19]);
+                v33 = v32.StarRequirement;
+                v20 = v4.Num();
+                if (v33 < v20) {
+                    v20 = v32.StarRequirement;
+                    v5 = v20 < 0;
+                } else {
+                    v5 = true;
+                }
+                if (!v5) {
+                    v14 = v8.GetArmoryUniqueEffectDescriptionAtIndex(v19);
+                    v26 = v14.ToString();
+                    v20 = v32.StarRequirement;
+                    v4[v20] = v26;
+                } else {
+                }
+                v19++;
+            }
+            __return = TArray<FString>();
+            __return = v4;
+        } else {
+            __return = TArray<FString>();
+            __return = v4;
+        }
+    } else {
+        __return = TArray<FString>();
+        __return = v4;
+    }
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ee867c0         ; void TArray<FString>::$beh0()
+    //     4  PshVPtr        rW0:-2
+    //     5  CALLSYS        q:0x26e6ee86600         ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+    //     8  CpyRtoV4       wW0:5
+    //     9  NOT            rW0:5
+    //    10  CpyVtoR1       rW0:5
+    //    11  JLowZ          ->28
+    //    13  PshVPtr        rW0:0
+    //    14  CALLSYS        q:0x26e6ee867c0         ; void TArray<FString>::$beh0()
+    //    17  PSF            rW0:4
+    //    18  PshVPtr        rW0:0
+    //    19  CALLSYS        q:0x26e69d29e00         ; TArray<FString>& TArray<FString>::opAssign(const TArray<FString>&)
+    //    22  PSF            rW0:4
+    //    23  CALLSYS        q:0x26e69d29fc0         ; void TArray<FString>::$beh2()
+    //    26  JMP            ->203
+    //    28  PshVPtr        rW0:-2
+    //    29  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    32  STOREOBJ       wW0:8
+    //    33  PshVPtr        rW0:8
+    //    34  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    37  CpyRtoV4       wW0:5
+    //    38  NOT            rW0:5
+    //    39  CpyVtoR1       rW0:5
+    //    40  JLowZ          ->57
+    //    42  PshVPtr        rW0:0
+    //    43  CALLSYS        q:0x26e6ee867c0         ; void TArray<FString>::$beh0()
+    //    46  PSF            rW0:4
+    //    47  PshVPtr        rW0:0
+    //    48  CALLSYS        q:0x26e69d29e00         ; TArray<FString>& TArray<FString>::opAssign(const TArray<FString>&)
+    //    51  PSF            rW0:4
+    //    52  CALLSYS        q:0x26e69d29fc0         ; void TArray<FString>::$beh2()
+    //    55  JMP            ->203
+    //    57  PSF            rW0:18
+    //    58  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //    61  SetV4          wW0:19 d:0
+    //    63  JMP            ->80
+    //    65  SUSPEND
+    //    66  PSF            rW0:26
+    //    67  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //    70  PSF            rW0:26
+    //    71  PSF            rW0:4
+    //    72  CALLSYS        q:0x26e6ee86280         ; void TArray<FString>::Add(const FString&)
+    //    75  PSF            rW0:26
+    //    76  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //    79  IncVi          rW0:19
+    //    80  CMPIi          rW0:19 d:6
+    //    82  JS             ->65
+    //    84  SetV4          wW0:19 d:0
+    //    86  JMP            ->175
+    //    88  SUSPEND
+    //    89  PshV4          rW0:19
+    //    90  PshVPtr        rW0:8
+    //    91  ADDSi          W0:1496 d:67114958      ; ALokiBaseItem::ArmoryUniqueEffects  (+1496)
+    //    93  Thiscall1      q:0x26e6ee85d40         ; FLokiArmoryUniqueEffect& TArray<FLokiArmoryUniqueEffect>::opIndex(int)
+    //    96  PshRPtr
+    //    97  PSF            rW0:32
+    //    98  CALLSYS        q:0x26e793f44c0         ; void FLokiArmoryUniqueEffect::$beh0(const FLokiArmoryUniqueEffect&)
+    //   101  LoadVObjR      rW0:32 W1:0 DW2:67121024; FLokiArmoryUniqueEffect::StarRequirement  (+0)
+    //   104  RDR4           wW0:33
+    //   105  PSF            rW0:4
+    //   106  CALLSYS        q:0x26e6ee85b80         ; int TArray<FString>::Num() const
+    //   109  CpyRtoV4       wW0:20
+    //   110  CMPi           rW0:33 rW1:20
+    //   112  JS             ->118
+    //   114  SetV1          wW0:5 d:1
+    //   116  JMP            ->128
+    //   118  LoadVObjR      rW0:32 W1:0 DW2:67121024; FLokiArmoryUniqueEffect::StarRequirement  (+0)
+    //   121  RDR4           wW0:20
+    //   122  CMPIi          rW0:20 d:0
+    //   124  TS
+    //   125  CpyRtoV4       wW0:34
+    //   126  CpyVtoV4       wW0:5 rW1:34
+    //   128  CpyVtoR1       rW0:5
+    //   129  JLowZ          ->137
+    //   131  PSF            rW0:32
+    //   132  CALLSYS        q:0x26e793f4680         ; void FLokiArmoryUniqueEffect::$beh2()
+    //   135  JMP            ->174
+    //   137  PSF            rW0:26
+    //   138  PshV4          rW0:19
+    //   139  PSF            rW0:14
+    //   140  PshVPtr        rW0:8
+    //   141  CALLSYS        q:0x26e7a0ea500         ; FText ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex(int) const
+    //   144  PSF            rW0:14
+    //   145  CALLSYS        q:0x26e796b4300         ; FString FText::ToString() const
+    //   148  PSF            rW0:14
+    //   149  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   152  PSF            rW0:26
+    //   153  LoadVObjR      rW0:32 W1:0 DW2:67121024; FLokiArmoryUniqueEffect::StarRequirement  (+0)
+    //   156  RDR4           wW0:20
+    //   157  PshV4          rW0:20
+    //   158  PSF            rW0:4
+    //   159  Thiscall1      q:0x26e6ee85800         ; FString& TArray<FString>::opIndex(int)
+    //   162  PshRPtr
+    //   163  CALLSYS        q:0x26e628a8740         ; FString& FString::opAssign(const FString&)
+    //   166  PSF            rW0:26
+    //   167  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //   170  PSF            rW0:32
+    //   171  CALLSYS        q:0x26e793f4680         ; void FLokiArmoryUniqueEffect::$beh2()
+    //   174  IncVi          rW0:19
+    //   175  PshVPtr        rW0:8
+    //   176  ADDSi          W0:1496 d:67114958      ; ALokiBaseItem::ArmoryUniqueEffects  (+1496)
+    //   178  CALLSYS        q:0x26e6ee860c0         ; int TArray<FLokiArmoryUniqueEffect>::Num() const
+    //   181  CpyRtoV4       wW0:20
+    //   182  CMPi           rW0:19 rW1:20
+    //   184  JS             ->88
+    //   186  PshVPtr        rW0:0
+    //   187  CALLSYS        q:0x26e6ee867c0         ; void TArray<FString>::$beh0()
+    //   190  PSF            rW0:4
+    //   191  PshVPtr        rW0:0
+    //   192  CALLSYS        q:0x26e69d29e00         ; TArray<FString>& TArray<FString>::opAssign(const TArray<FString>&)
+    //   195  PSF            rW0:18
+    //   196  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   199  PSF            rW0:4
+    //   200  CALLSYS        q:0x26e69d29fc0         ; void TArray<FString>::$beh2()
+    //   203  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+bool IsItemSpellDescription(ALokiBaseItem@ Item, const int StarCount)
+// 33 instr, 220 B bytecode, id=0xCB36AF84, varspace=17
+------------------------------------------------------------------------------
+{
+    auto v1;
+    TArrayIterator<FLokiArmoryUniqueEffect> v8;
+    auto v16;
+
+    v1 = IsValid(Item);
+    v1 = !v1;
+    if (!v1) {
+        v8 = Item.ArmoryUniqueEffects.Iterator();
+        while (true) {
+            v1 = v8.CanProceed;
+            if (!v1) break;
+            v16 = v8.Proceed();
+            if (v16.StarRequirement == StarCount) {
+                v1 = v16.bIsItemSpell;
+                goto L54;
+            }
+        }
+        v1 = false;
+    } else {
+        v1 = false;
+    }
+    L54:
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     4  CpyRtoV4       wW0:1
+    //     5  NOT            rW0:1
+    //     6  CpyVtoR1       rW0:1
+    //     7  JLowZ          ->14
+    //     9  SetV1          wW0:1 d:0
+    //    11  CpyVtoR4       rW0:1
+    //    12  JMP            ->54
+    //    14  PSF            rW0:8
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:1496 d:67114958      ; ALokiBaseItem::ArmoryUniqueEffects  (+1496)
+    //    18  CALLSYS        q:0x26e6ee852c0         ; TArrayIterator<FLokiArmoryUniqueEffect> TArray<FLokiArmoryUniqueEffect>::Iterator()
+    //    21  JMP            ->44
+    //    23  SUSPEND
+    //    24  PSF            rW0:8
+    //    25  CALLSYS        q:0x26e6ee84f40         ; FLokiArmoryUniqueEffect& TArrayIterator<FLokiArmoryUniqueEffect>::Proceed()
+    //    28  CpyRtoV8       wW0:16
+    //    29  LoadRObjR      rW0:16 W1:0 DW2:67121024; FLokiArmoryUniqueEffect::StarRequirement  (+0)
+    //    32  RDR4           wW0:17
+    //    33  CMPi           rW0:17 rW1:-2
+    //    35  JNZ            ->44
+    //    37  LoadRObjR      rW0:16 W1:16 DW2:67121024; FLokiArmoryUniqueEffect::bIsItemSpell  (+16)
+    //    40  RDR1           wW0:1
+    //    41  CpyVtoR4       rW0:1
+    //    42  JMP            ->54
+    //    44  LoadVObjR      rW0:8 W1:16 DW2:268448491; TArrayIterator::CanProceed  (+16)
+    //    47  RDR1           wW0:1
+    //    48  CpyVtoR1       rW0:1
+    //    49  JLowNZ         ->23
+    //    51  SetV1          wW0:1 d:0
+    //    53  CpyVtoR4       rW0:1
+    //    54  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+TSubclassOf<UGameplayEffect@> GetUniqueEffectForStar(const TSubclassOf<ALokiBaseItem@>&inout ItemClass, const int StarCount)
+// 66 instr, 452 B bytecode, id=0x8FAAC992, varspace=23
+------------------------------------------------------------------------------
+{
+    auto v1;
+    TSubclassOf<UGameplayEffect@> v4;
+    ALokiBaseItem v6;
+    TArrayIterator<FLokiArmoryUniqueEffect> v14;
+    auto v22;
+
+    v1 = ItemClass.IsValid();
+    v1 = !v1;
+    if (!v1) {
+        v6 = ItemClass.GetDefaultObject();
+        v1 = IsValid(v6);
+        v1 = !v1;
+        if (!v1) {
+            v14 = v6.ArmoryUniqueEffects.Iterator();
+            while (true) {
+                v1 = v14.CanProceed;
+                if (!v1) break;
+                v22 = v14.Proceed();
+                if (v22.StarRequirement == StarCount) {
+                    __return = TSubclassOf<UGameplayEffect@>();
+                    __return = v22.EffectClass;
+                    goto L112;
+                }
+            }
+            __return = TSubclassOf<UGameplayEffect@>();
+            v4 = TSubclassOf<UGameplayEffect@>(null);
+            __return = v4;
+        } else {
+            __return = TSubclassOf<UGameplayEffect@>();
+            v4 = TSubclassOf<UGameplayEffect@>(null);
+            __return = v4;
+        }
+    } else {
+        __return = TSubclassOf<UGameplayEffect@>();
+        v4 = TSubclassOf<UGameplayEffect@>(null);
+        __return = v4;
+    }
+    L112:
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e6ee86600         ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+    //     4  CpyRtoV4       wW0:1
+    //     5  NOT            rW0:1
+    //     6  CpyVtoR1       rW0:1
+    //     7  JLowZ          ->25
+    //     9  PshVPtr        rW0:0
+    //    10  CALLSYS        q:0x26e6ee82700         ; void TSubclassOf<UGameplayEffect@>::$beh0()
+    //    13  PshNull
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee828c0         ; void TSubclassOf<UGameplayEffect@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  PshVPtr        rW0:0
+    //    20  CALLSYS        q:0x26e78f90240         ; TSubclassOf<UGameplayEffect@>& TSubclassOf<UGameplayEffect@>::opAssign(const TSubclassOf<UGameplayEffect@>&)
+    //    23  JMP            ->112
+    //    25  PshVPtr        rW0:-2
+    //    26  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    29  STOREOBJ       wW0:6
+    //    30  PshVPtr        rW0:6
+    //    31  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    34  CpyRtoV4       wW0:1
+    //    35  NOT            rW0:1
+    //    36  CpyVtoR1       rW0:1
+    //    37  JLowZ          ->55
+    //    39  PshVPtr        rW0:0
+    //    40  CALLSYS        q:0x26e6ee82700         ; void TSubclassOf<UGameplayEffect@>::$beh0()
+    //    43  PshNull
+    //    44  PSF            rW0:4
+    //    45  CALLSYS        q:0x26e6ee828c0         ; void TSubclassOf<UGameplayEffect@>::$beh0(UClass@)
+    //    48  PSF            rW0:4
+    //    49  PshVPtr        rW0:0
+    //    50  CALLSYS        q:0x26e78f90240         ; TSubclassOf<UGameplayEffect@>& TSubclassOf<UGameplayEffect@>::opAssign(const TSubclassOf<UGameplayEffect@>&)
+    //    53  JMP            ->112
+    //    55  PSF            rW0:14
+    //    56  PshVPtr        rW0:6
+    //    57  ADDSi          W0:1496 d:67114958      ; ALokiBaseItem::ArmoryUniqueEffects  (+1496)
+    //    59  CALLSYS        q:0x26e6ee852c0         ; TArrayIterator<FLokiArmoryUniqueEffect> TArray<FLokiArmoryUniqueEffect>::Iterator()
+    //    62  JMP            ->91
+    //    64  SUSPEND
+    //    65  PSF            rW0:14
+    //    66  CALLSYS        q:0x26e6ee84f40         ; FLokiArmoryUniqueEffect& TArrayIterator<FLokiArmoryUniqueEffect>::Proceed()
+    //    69  CpyRtoV8       wW0:22
+    //    70  LoadRObjR      rW0:22 W1:0 DW2:67121024; FLokiArmoryUniqueEffect::StarRequirement  (+0)
+    //    73  RDR4           wW0:23
+    //    74  CMPi           rW0:23 rW1:-4
+    //    76  JNZ            ->91
+    //    78  PshVPtr        rW0:0
+    //    79  CALLSYS        q:0x26e6ee82700         ; void TSubclassOf<UGameplayEffect@>::$beh0()
+    //    82  PshVPtr        rW0:22
+    //    83  ADDSi          W0:8 d:67121024         ; FLokiArmoryUniqueEffect::EffectClass  (+8)
+    //    85  PshVPtr        rW0:0
+    //    86  CALLSYS        q:0x26e78f90240         ; TSubclassOf<UGameplayEffect@>& TSubclassOf<UGameplayEffect@>::opAssign(const TSubclassOf<UGameplayEffect@>&)
+    //    89  JMP            ->112
+    //    91  LoadVObjR      rW0:14 W1:16 DW2:268448491; TArrayIterator::CanProceed  (+16)
+    //    94  RDR1           wW0:1
+    //    95  CpyVtoR1       rW0:1
+    //    96  JLowNZ         ->64
+    //    98  PshVPtr        rW0:0
+    //    99  CALLSYS        q:0x26e6ee82700         ; void TSubclassOf<UGameplayEffect@>::$beh0()
+    //   102  PshNull
+    //   103  PSF            rW0:4
+    //   104  CALLSYS        q:0x26e6ee828c0         ; void TSubclassOf<UGameplayEffect@>::$beh0(UClass@)
+    //   107  PSF            rW0:4
+    //   108  PshVPtr        rW0:0
+    //   109  CALLSYS        q:0x26e78f90240         ; TSubclassOf<UGameplayEffect@>& TSubclassOf<UGameplayEffect@>::opAssign(const TSubclassOf<UGameplayEffect@>&)
+    //   112  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+FText GetArmoryUniqueEffectTextForItem(ALokiBaseItem@ Item, const FText&inout InactiveWarningFmt, const FText&inout LevelUpText)
+// 106 instr, 724 B bytecode, id=0x827F7E70, varspace=23
+------------------------------------------------------------------------------
+{
+    auto v1;
+    FText v6;
+    UClass v8;
+    UObject v10;
+    ALokiBaseItem v12;
+    ALokiBaseItem v14;
+    TSubclassOf<ALokiBaseItem@> v18;
+    FText v22;
+
+    v1 = IsValid(Item);
+    v1 = !v1;
+    if (!v1) {
+        v8 = Item.GetClass();
+        v10 = v8.GetDefaultObject();
+        if (v10 == null) {
+            v12 = null;
+        } else {
+            v12 = cast<ALokiBaseItem>(v10);
+        }
+        v14 = v12;
+        if (v12 != Item) {
+            v1 = Item.CanHaveAnyArmoryUniqueEffects();
+            v1 = !v1;
+            if (!v1) {
+                v6 = Item.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                if (!Item.MeetsRequirementsForUniqueEffectAtIndex(0)) {
+                    if (!Item.HasArmoryStarsForUniqueEffectAtIndex(0)) {
+                        __return = FText(LevelUpText);
+                    } else {
+                        v22 = FText::Format(InactiveWarningFmt, v6);
+                        __return = FText(v22);
+                    }
+                } else {
+                    v22 = FText();
+                    __return = FText(v22);
+                }
+            } else {
+                v6 = FText();
+                __return = FText(v6);
+            }
+        } else {
+            v8 = Item.GetClass();
+            v18 = TSubclassOf<ALokiBaseItem@>(v8);
+            v6 = GetArmoryUniqueEffectTextForItemClass(v18, InactiveWarningFmt, LevelUpText);
+            __return = FText(v6);
+        }
+    } else {
+        v6 = FText();
+        __return = FText(v6);
+    }
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     4  CpyRtoV4       wW0:1
+    //     5  NOT            rW0:1
+    //     6  CpyVtoR1       rW0:1
+    //     7  JLowZ          ->24
+    //     9  PSF            rW0:6
+    //    10  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //    13  PSF            rW0:6
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //    18  PSF            rW0:6
+    //    19  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    22  JMP            ->180
+    //    24  PshVPtr        rW0:-2
+    //    25  CALLSYS        q:0x26e70394bc0         ; UClass@ UObject::GetClass() const
+    //    28  STOREOBJ       wW0:8
+    //    29  PshVPtr        rW0:8
+    //    30  CALLSYS        q:0x26e70396600         ; UObject@ UClass::GetDefaultObject() const
+    //    33  STOREOBJ       wW0:10
+    //    34  CmpPtrNull     rW0:10
+    //    35  JZ             ->46
+    //    37  TYPEID         d:1140856782            ; ALokiBaseItem@
+    //    39  PSF            rW0:12
+    //    40  PshVPtr        rW0:10
+    //    41  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    44  JMP            ->47
+    //    46  ClrVPtr        wW0:12
+    //    47  PshVPtr        rW0:12
+    //    48  RefCpyV        wW0:14
+    //    49  PshVPtr        rW0:-2
+    //    50  RefCpyV        wW0:16
+    //    51  CmpPtr         rW0:14 rW1:16
+    //    53  JNZ            ->82
+    //    55  PshVPtr        rW0:-6
+    //    56  PshVPtr        rW0:-4
+    //    57  PshVPtr        rW0:-2
+    //    58  CALLSYS        q:0x26e70394bc0         ; UClass@ UObject::GetClass() const
+    //    61  STOREOBJ       wW0:8
+    //    62  PshVPtr        rW0:8
+    //    63  PSF            rW0:18
+    //    64  CALLSYS        q:0x26e6ee84d80         ; void TSubclassOf<ALokiBaseItem@>::$beh0(UClass@)
+    //    67  PSF            rW0:18
+    //    68  PSF            rW0:6
+    //    69  CALL           d:84014                 ; FText GetArmoryUniqueEffectTextForItemClass(const TSubclassOf<ALokiBaseItem@>&, const FText&, const FText&)
+    //    71  PSF            rW0:6
+    //    72  PshVPtr        rW0:0
+    //    73  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //    76  PSF            rW0:6
+    //    77  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    80  JMP            ->180
+    //    82  PshVPtr        rW0:-2
+    //    83  CALLSYS        q:0x26e7a0e4680         ; bool ALokiBaseItem::CanHaveAnyArmoryUniqueEffects() const
+    //    86  CpyRtoV4       wW0:1
+    //    87  NOT            rW0:1
+    //    88  CpyVtoR1       rW0:1
+    //    89  JLowZ          ->106
+    //    91  PSF            rW0:6
+    //    92  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //    95  PSF            rW0:6
+    //    96  PshVPtr        rW0:0
+    //    97  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   100  PSF            rW0:6
+    //   101  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   104  JMP            ->180
+    //   106  PshC4          d:0
+    //   108  PSF            rW0:6
+    //   109  PshVPtr        rW0:-2
+    //   110  CALLSYS        q:0x26e7a0ea500         ; FText ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex(int) const
+    //   113  PshC4          d:0
+    //   115  PshVPtr        rW0:-2
+    //   116  CALLSYS        q:0x26e7a102540         ; bool ALokiBaseItem::MeetsRequirementsForUniqueEffectAtIndex(int) const
+    //   119  JLowZ          ->140
+    //   121  PSF            rW0:22
+    //   122  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //   125  PSF            rW0:22
+    //   126  PshVPtr        rW0:0
+    //   127  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   130  PSF            rW0:22
+    //   131  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   134  PSF            rW0:6
+    //   135  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   138  JMP            ->180
+    //   140  PshC4          d:0
+    //   142  PshVPtr        rW0:-2
+    //   143  CALLSYS        q:0x26e7a0eecc0         ; bool ALokiBaseItem::HasArmoryStarsForUniqueEffectAtIndex(int) const
+    //   146  JLowZ          ->171
+    //   148  TYPEID         d:67117450              ; FText
+    //   150  PSF            rW0:6
+    //   151  PshVPtr        rW0:-4
+    //   152  PSF            rW0:22
+    //   153  CALLSYS        q:0x26e703aaf80         ; FText FText::Format(const FText&, const ?&)
+    //   156  PSF            rW0:22
+    //   157  PshVPtr        rW0:0
+    //   158  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   161  PSF            rW0:22
+    //   162  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   165  PSF            rW0:6
+    //   166  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   169  JMP            ->180
+    //   171  PshVPtr        rW0:-6
+    //   172  PshVPtr        rW0:0
+    //   173  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   176  PSF            rW0:6
+    //   177  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   180  RET            W0:8
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+FText GetArmoryUniqueEffectTextForItemClass(const TSubclassOf<ALokiBaseItem@>&inout ItemClass, const FText&inout InactiveWarningFmt, const FText&inout LevelUpText)
+// 226 instr, 1624 B bytecode, id=0x147D5952, varspace=67
+------------------------------------------------------------------------------
+{
+    auto v3;
+    FText v8;
+    ALokiBaseItem v12;
+    auto v13;
+    FLokiArmoryUniqueEffect v20;
+    ALokiPlayerController v24;
+    TSubclassOf<UActorComponent@> v28;
+    UActorComponent v30;
+    ULokiPlayerControllerArmoryComponent v32;
+    auto v35;
+    auto v36;
+    FText v40;
+    UPlayerArmoryModel v48;
+    TArrayIterator<UEquipmentModel@> v54;
+    UEquipmentModel v62;
+    TSubclassOf<ALokiBaseItem@> v66;
+
+    v3 = IsValid(cast<UObject@>(ItemClass));
+    v3 = !v3;
+    if (!v3) {
+        v12 = ItemClass.GetDefaultObject();
+        v3 = IsValid(v12);
+        v3 = !v3;
+        if (!v3) {
+            if (!v12.ArmoryUniqueEffects.IsEmpty()) {
+                v20 = FLokiArmoryUniqueEffect(v12.ArmoryUniqueEffects[0]);
+                if (!Loki::IsInGameWorld(__WorldContext)) {
+                    v48 = UArmoryManager::GetArmoryManager(__WorldContext).GetPlayerArmoryModel();
+                    v3 = false;
+                    v35 = false;
+                    v36 = -1;
+                    v54 = v48.InventoryEquipment.Iterator();
+                    while (true) {
+                        v3 = v54.CanProceed;
+                        if (!v3) break;
+                        v62 = v54.Proceed();
+                        if (v62.EquipmentAsset.Equipment.IsValid()) {
+                            v66 = v62.EquipmentAsset.Equipment.Get();
+                            if (v66 == ItemClass) {
+                                v3 = true;
+                                v35 = true;
+                                v13 = v62.XP;
+                                if (v13 >= 2) {
+                                    v13 = v62.XP;
+                                    if (v13 >= 5) {
+                                        v36 = 2;
+                                    } else {
+                                        v36 = 1;
+                                    }
+                                } else {
+                                    v36 = 0;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (v20.StarRequirement > v36) {
+                        __return = FText(LevelUpText);
+                    } else {
+                        v8 = v12.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                        __return = FText(v8);
+                    }
+                } else {
+                    v24 = Loki::GetLocalLokiController(__WorldContext);
+                    if (IsValid(v24)) {
+                        v28 = TSubclassOf<UActorComponent@>(ULokiPlayerControllerArmoryComponent::StaticClass());
+                        v30 = v24.GetComponentByClass(v28);
+                        if (v30 == null) {
+                            v32 = null;
+                        } else {
+                            v32 = cast<ULokiPlayerControllerArmoryComponent>(v30);
+                        }
+                        v3 = IsValid(v32);
+                        v3 = !v3;
+                        if (!v3) {
+                            v3 = false;
+                            v35 = false;
+                            v36 = -1;
+                            v13 = v20.StarRequirement;
+                            if (v13 > -1) {
+                                L251:
+                                __return = FText(LevelUpText);
+                            } else {
+                                if (!v12.HasArmoryTierForUniqueEffectAtIndex(0)) {
+                                    v8 = v12.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                                    v40 = FText::Format(InactiveWarningFmt, v8);
+                                    __return = FText(v40);
+                                } else {
+                                    v8 = v12.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                                    __return = FText(v8);
+                                }
+                            }
+                        } else {
+                            v8 = FText();
+                            __return = FText(v8);
+                        }
+                    }
+                    goto L251;
+                }
+            } else {
+                v8 = FText();
+                __return = FText(v8);
+            }
+        } else {
+            v8 = FText();
+            __return = FText(v8);
+        }
+    } else {
+        v8 = FText();
+        __return = FText(v8);
+    }
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e6ee84bc0         ; UObject@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+    //     4  STOREOBJ       wW0:2
+    //     5  PshVPtr        rW0:2
+    //     6  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     9  CpyRtoV4       wW0:3
+    //    10  NOT            rW0:3
+    //    11  CpyVtoR1       rW0:3
+    //    12  JLowZ          ->29
+    //    14  PSF            rW0:8
+    //    15  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //    18  PSF            rW0:8
+    //    19  PshVPtr        rW0:0
+    //    20  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //    23  PSF            rW0:8
+    //    24  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    27  JMP            ->405
+    //    29  PshVPtr        rW0:-2
+    //    30  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    33  STOREOBJ       wW0:12
+    //    34  PshVPtr        rW0:12
+    //    35  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    38  CpyRtoV4       wW0:3
+    //    39  NOT            rW0:3
+    //    40  CpyVtoR1       rW0:3
+    //    41  JLowZ          ->58
+    //    43  PSF            rW0:8
+    //    44  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //    47  PSF            rW0:8
+    //    48  PshVPtr        rW0:0
+    //    49  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //    52  PSF            rW0:8
+    //    53  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    56  JMP            ->405
+    //    58  PshVPtr        rW0:12
+    //    59  ADDSi          W0:1496 d:67114958      ; ALokiBaseItem::ArmoryUniqueEffects  (+1496)
+    //    61  CALLSYS        q:0x26e6ee84840         ; bool TArray<FLokiArmoryUniqueEffect>::IsEmpty() const
+    //    64  JLowZ          ->81
+    //    66  PSF            rW0:8
+    //    67  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //    70  PSF            rW0:8
+    //    71  PshVPtr        rW0:0
+    //    72  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //    75  PSF            rW0:8
+    //    76  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    79  JMP            ->405
+    //    81  PshC4          d:0
+    //    83  PshVPtr        rW0:12
+    //    84  ADDSi          W0:1496 d:67114958      ; ALokiBaseItem::ArmoryUniqueEffects  (+1496)
+    //    86  Thiscall1      q:0x26e6ee85d40         ; FLokiArmoryUniqueEffect& TArray<FLokiArmoryUniqueEffect>::opIndex(int)
+    //    89  PshRPtr
+    //    90  PSF            rW0:20
+    //    91  CALLSYS        q:0x26e793f44c0         ; void FLokiArmoryUniqueEffect::$beh0(const FLokiArmoryUniqueEffect&)
+    //    94  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    97  CALLSYS        q:0x26e7a11f3c0         ; bool Loki::IsInGameWorld(UObject@)
+    //   100  JLowZ          ->262
+    //   102  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   105  CALLSYS        q:0x26e7a11dec0         ; ALokiPlayerController@ Loki::GetLocalLokiController(UObject@)
+    //   108  STOREOBJ       wW0:24
+    //   109  PshVPtr        rW0:24
+    //   110  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   113  JLowZ          ->251
+    //   115  CALL           d:84049                 ; UClass@ ULokiPlayerControllerArmoryComponent::StaticClass()
+    //   117  STOREOBJ       wW0:26
+    //   118  PshVPtr        rW0:26
+    //   119  PSF            rW0:28
+    //   120  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //   123  PSF            rW0:28
+    //   124  PshVPtr        rW0:24
+    //   125  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //   128  STOREOBJ       wW0:30
+    //   129  CmpPtrNull     rW0:30
+    //   130  JZ             ->141
+    //   132  TYPEID         d:1207972588            ; ULokiPlayerControllerArmoryComponent@
+    //   134  PSF            rW0:32
+    //   135  PshVPtr        rW0:30
+    //   136  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   139  JMP            ->142
+    //   141  ClrVPtr        wW0:32
+    //   142  PshVPtr        rW0:32
+    //   143  RefCpyV        wW0:34
+    //   144  PshVPtr        rW0:34
+    //   145  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   148  CpyRtoV4       wW0:3
+    //   149  NOT            rW0:3
+    //   150  CpyVtoR1       rW0:3
+    //   151  JLowZ          ->172
+    //   153  PSF            rW0:8
+    //   154  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //   157  PSF            rW0:8
+    //   158  PshVPtr        rW0:0
+    //   159  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   162  PSF            rW0:8
+    //   163  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   166  PSF            rW0:20
+    //   167  CALLSYS        q:0x26e793f4680         ; void FLokiArmoryUniqueEffect::$beh2()
+    //   170  JMP            ->405
+    //   172  SetV1          wW0:3 d:0
+    //   174  CpyVtoV4       wW0:35 rW1:3
+    //   176  SetV4          wW0:36 d:-1
+    //   178  LoadVObjR      rW0:20 W1:0 DW2:67121024; FLokiArmoryUniqueEffect::StarRequirement  (+0)
+    //   181  RDR4           wW0:13
+    //   182  CMPi           rW0:13 rW1:36
+    //   184  JP             ->250
+    //   186  PshC4          d:0
+    //   188  PshVPtr        rW0:12
+    //   189  CALLSYS        q:0x26e7a0eeb00         ; bool ALokiBaseItem::HasArmoryTierForUniqueEffectAtIndex(int) const
+    //   192  JLowZ          ->216
+    //   194  PshC4          d:0
+    //   196  PSF            rW0:8
+    //   197  PshVPtr        rW0:12
+    //   198  CALLSYS        q:0x26e7a0ea500         ; FText ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex(int) const
+    //   201  PSF            rW0:8
+    //   202  PshVPtr        rW0:0
+    //   203  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   206  PSF            rW0:8
+    //   207  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   210  PSF            rW0:20
+    //   211  CALLSYS        q:0x26e793f4680         ; void FLokiArmoryUniqueEffect::$beh2()
+    //   214  JMP            ->405
+    //   216  TYPEID         d:67117450              ; FText
+    //   218  PshC4          d:0
+    //   220  PSF            rW0:8
+    //   221  PshVPtr        rW0:12
+    //   222  CALLSYS        q:0x26e7a0ea500         ; FText ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex(int) const
+    //   225  PSF            rW0:8
+    //   226  PshVPtr        rW0:-4
+    //   227  PSF            rW0:40
+    //   228  CALLSYS        q:0x26e703aaf80         ; FText FText::Format(const FText&, const ?&)
+    //   231  PSF            rW0:8
+    //   232  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   235  PSF            rW0:40
+    //   236  PshVPtr        rW0:0
+    //   237  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   240  PSF            rW0:40
+    //   241  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   244  PSF            rW0:20
+    //   245  CALLSYS        q:0x26e793f4680         ; void FLokiArmoryUniqueEffect::$beh2()
+    //   248  JMP            ->405
+    //   250  FreeNullV8     wW0:34
+    //   251  PshVPtr        rW0:-6
+    //   252  PshVPtr        rW0:0
+    //   253  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   256  PSF            rW0:20
+    //   257  CALLSYS        q:0x26e793f4680         ; void FLokiArmoryUniqueEffect::$beh2()
+    //   260  JMP            ->405
+    //   262  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   265  CALLSYS        q:0x26e7a03bd80         ; UArmoryManager@ UArmoryManager::GetArmoryManager(UObject@)
+    //   268  STOREOBJ       wW0:44
+    //   269  PshVPtr        rW0:44
+    //   270  CALLSYS        q:0x26e7a03bbc0         ; UPlayerArmoryModel@ UArmoryManager::GetPlayerArmoryModel() const
+    //   273  STOREOBJ       wW0:48
+    //   274  SetV1          wW0:3 d:0
+    //   276  CpyVtoV4       wW0:35 rW1:3
+    //   278  SetV4          wW0:36 d:-1
+    //   280  PSF            rW0:54
+    //   281  PshVPtr        rW0:48
+    //   282  ADDSi          W0:80 d:67115528        ; UPlayerArmoryModel::InventoryEquipment  (+80)
+    //   284  CALLSYS        q:0x26e6ee84300         ; TArrayIterator<UEquipmentModel@> TArray<UEquipmentModel@>::Iterator()
+    //   287  JMP            ->359
+    //   289  SUSPEND
+    //   290  PSF            rW0:54
+    //   291  CALLSYS        q:0x26e6ee83f80         ; UEquipmentModel@& TArrayIterator<UEquipmentModel@>::Proceed()
+    //   294  PshRPtr
+    //   295  RDSPtr
+    //   296  RefCpyV        wW0:62
+    //   297  PshVPtr        rW0:62
+    //   298  ADDSi          W0:176 d:67115527       ; UEquipmentModel::EquipmentAsset  (+176)
+    //   300  RDSPtr
+    //   301  ADDSi          W0:112 d:67115059       ; ULokiDataAsset_Equipment::Equipment  (+112)
+    //   303  CALLSYS        q:0x26e6ee83dc0         ; bool TSoftClassPtr<ALokiBaseItem@>::IsValid() const
+    //   306  JLowZ          ->358
+    //   308  PSF            rW0:66
+    //   309  PshVPtr        rW0:62
+    //   310  ADDSi          W0:176 d:67115527       ; UEquipmentModel::EquipmentAsset  (+176)
+    //   312  RDSPtr
+    //   313  ADDSi          W0:112 d:67115059       ; ULokiDataAsset_Equipment::Equipment  (+112)
+    //   315  CALLSYS        q:0x26e6ee83c00         ; TSubclassOf<ALokiBaseItem@> TSoftClassPtr<ALokiBaseItem@>::Get() const
+    //   318  PshVPtr        rW0:-2
+    //   319  PSF            rW0:66
+    //   320  CALLSYS        q:0x26e6ee8ac00         ; bool TSubclassOf<ALokiBaseItem@>::opEquals(const TSubclassOf<ALokiBaseItem@>&) const
+    //   323  JLowZ          ->358
+    //   325  SetV1          wW0:3 d:1
+    //   327  CpyVtoV4       wW0:35 rW1:3
+    //   329  LoadRObjR      rW0:62 W1:68 DW2:67115525; UItemModel::XP  (+68)
+    //   332  RDR4           wW0:13
+    //   333  CMPIi          rW0:13 d:2
+    //   335  JNS            ->341
+    //   337  SetV4          wW0:36 d:0
+    //   339  JMP            ->355
+    //   341  LoadRObjR      rW0:62 W1:68 DW2:67115525; UItemModel::XP  (+68)
+    //   344  RDR4           wW0:13
+    //   345  CMPIi          rW0:13 d:5
+    //   347  JNS            ->353
+    //   349  SetV4          wW0:36 d:1
+    //   351  JMP            ->355
+    //   353  SetV4          wW0:36 d:2
+    //   355  FreeNullV8     wW0:62
+    //   356  JMP            ->366
+    //   358  FreeNullV8     wW0:62
+    //   359  LoadVObjR      rW0:54 W1:16 DW2:268448493; TArrayIterator::CanProceed  (+16)
+    //   362  RDR1           wW0:3
+    //   363  CpyVtoR1       rW0:3
+    //   364  JLowNZ         ->289
+    //   366  LoadVObjR      rW0:20 W1:0 DW2:67121024; FLokiArmoryUniqueEffect::StarRequirement  (+0)
+    //   369  RDR4           wW0:67
+    //   370  CMPi           rW0:67 rW1:36
+    //   372  JP             ->396
+    //   374  PshC4          d:0
+    //   376  PSF            rW0:8
+    //   377  PshVPtr        rW0:12
+    //   378  CALLSYS        q:0x26e7a0ea500         ; FText ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex(int) const
+    //   381  PSF            rW0:8
+    //   382  PshVPtr        rW0:0
+    //   383  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   386  PSF            rW0:8
+    //   387  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   390  PSF            rW0:20
+    //   391  CALLSYS        q:0x26e793f4680         ; void FLokiArmoryUniqueEffect::$beh2()
+    //   394  JMP            ->405
+    //   396  PshVPtr        rW0:-6
+    //   397  PshVPtr        rW0:0
+    //   398  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //   401  PSF            rW0:20
+    //   402  CALLSYS        q:0x26e793f4680         ; void FLokiArmoryUniqueEffect::$beh2()
+    //   405  RET            W0:8
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+bool HasEffectsIgnoredInConciseTooltip(const TArray<FLokiArmoryUniqueEffect>&inout UniqueEffects)
+// 25 instr, 164 B bytecode, id=0xACD3A27D, varspace=17
+------------------------------------------------------------------------------
+{
+    TArrayConstIterator<FLokiArmoryUniqueEffect> v6;
+    auto v13;
+    auto v17;
+
+    v6 = UniqueEffects.Iterator();
+    while (true) {
+        v13 = v6.CanProceed;
+        if (!v13) break;
+        v13 = v6.Proceed().bIncludeInConciseTooltip;
+        v13 = !v13;
+        v17 = false;
+        v17 = !false;
+        if (v13 == v17) {
+            v17 = true;
+            goto L40;
+        }
+    }
+    v13 = false;
+    L40:
+    return v13;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:6
+    //     1  PshVPtr        rW0:0
+    //     2  CALLSYS        q:0x26e6ee85640         ; TArrayConstIterator<FLokiArmoryUniqueEffect> TArray<FLokiArmoryUniqueEffect>::Iterator() const
+    //     5  JMP            ->30
+    //     7  SUSPEND
+    //     8  PSF            rW0:6
+    //     9  CALLSYS        q:0x26e6ee8aa40         ; const FLokiArmoryUniqueEffect& TArrayConstIterator<FLokiArmoryUniqueEffect>::Proceed()
+    //    12  CpyRtoV8       wW0:16
+    //    13  LoadRObjR      rW0:16 W1:17 DW2:67121024; FLokiArmoryUniqueEffect::bIncludeInConciseTooltip  (+17)
+    //    16  RDR1           wW0:13
+    //    17  NOT            rW0:13
+    //    18  SetV1          wW0:17 d:0
+    //    20  NOT            rW0:17
+    //    21  CMPi           rW0:13 rW1:17
+    //    23  JNZ            ->30
+    //    25  SetV1          wW0:17 d:1
+    //    27  CpyVtoR4       rW0:17
+    //    28  JMP            ->40
+    //    30  LoadVObjR      rW0:6 W1:16 DW2:268448494; TArrayConstIterator::CanProceed  (+16)
+    //    33  RDR1           wW0:13
+    //    34  CpyVtoR1       rW0:13
+    //    35  JLowNZ         ->7
+    //    37  SetV1          wW0:13 d:0
+    //    39  CpyVtoR4       rW0:13
+    //    40  RET            W0:2
+

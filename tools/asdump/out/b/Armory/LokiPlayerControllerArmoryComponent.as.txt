@@ -1,0 +1,2236 @@
+// ============================================================================
+//  MODULE   Armory.LokiPlayerControllerArmoryComponent
+//  SOURCE   Armory/LokiPlayerControllerArmoryComponent.as
+//  CONTENT  1 class(es), 38 function(s), 0 enum(s), 1 global(s), 8684 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiPlayerControllerArmoryComponent;
+
+ULokiPlayerControllerArmoryComponent@ ULokiPlayerControllerArmoryComponent()   // traits=0x20
+{
+    v2 = ULokiPlayerControllerArmoryComponent();
+    return v2;
+}
+/* ---- ULokiPlayerControllerArmoryComponent: 7 dwords / 4 instructions (cache offset 0x8064) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84046 ULokiPlayerControllerArmoryComponent  
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ULokiPlayerControllerArmoryComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ULokiPlayerControllerArmoryComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x8135) ----
+    0000  PshGPtr       __StaticType_ULokiPlayerControllerArmoryComponent
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ULokiPlayerControllerArmoryComponent@ ULokiPlayerControllerArmoryComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiPlayerControllerArmoryComponent, v2, typeid(ULokiPlayerControllerArmoryComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x8283) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972588                                    ; ULokiPlayerControllerArmoryComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiPlayerControllerArmoryComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiPlayerControllerArmoryComponent@ ULokiPlayerControllerArmoryComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerArmoryComponent, v2, typeid(ULokiPlayerControllerArmoryComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x83e9) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972588                                    ; ULokiPlayerControllerArmoryComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiPlayerControllerArmoryComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiPlayerControllerArmoryComponent@ ULokiPlayerControllerArmoryComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerArmoryComponent, v2, typeid(ULokiPlayerControllerArmoryComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x854a) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972588                                    ; ULokiPlayerControllerArmoryComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiPlayerControllerArmoryComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ULokiPlayerControllerArmoryComponent : ULokiPlayerControllerArmoryComponentBase
+// unreal base : /Script/Loki.LokiPlayerControllerArmoryComponentBase
+// C++ header  : ../../../Loki/Source/Loki/Armory/LokiPlayerControllerArmoryComponent.h
+// static class global: __StaticType_ULokiPlayerControllerArmoryComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    const FName RelicSlotName;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    const FName PerkSlotName;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    const FName BootsSlotName;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    bool bLoadComplete;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    TArray<FString> PurchasedKits;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient)
+    TArray<UClass@> LoadedClasses;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    FPlayerArmory DefaultArmory;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance)
+    ULoadAssetHandle@ Handle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    TArray<TSubclassOf<AActor@>> DisabledItems;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    TArray<FPrimaryAssetId> DisabledItemAssetIDs;
+    FGameEventListenerHandle OnPlayerInitializedHandle;
+
+    ULokiPlayerControllerArmoryComponent()   // traits=0x21
+    {
+        this.PurchasedKits = TArray();
+        this.LoadedClasses = TArray();
+        this.DefaultArmory = FPlayerArmory();
+        this.DisabledItems = TArray();
+        this.DisabledItemAssetIDs = TArray();
+        this.OnPlayerInitializedHandle = FGameEventListenerHandle();
+        this.RelicSlotName = FName(n"Utility");
+        this.PerkSlotName = FName(n"MinorUtility");
+        this.BootsSlotName = FName(n"Boots");
+        v2 = false;
+        this.bLoadComplete = v2;
+        return;
+    }
+    /* ---- ULokiPlayerControllerArmoryComponent: 82 dwords / 42 instructions (cache offset 0xe0f7) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         368 134230764                                 ; .PurchasedKits
+        000C  CALLSYS       TArray::$beh0                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         384 134230764                                 ; .LoadedClasses
+        0024  CALLSYS       TArray::$beh0                               
+        0030  PshVPtr       this                                        
+        0034  ADDSi         400 134230764                                 ; .DefaultArmory
+        003C  CALLSYS       FPlayerArmory::$beh0                        
+        0048  PshVPtr       this                                        
+        004C  ADDSi         456 134230764                                 ; .DisabledItems
+        0054  CALLSYS       TArray::$beh0                               
+        0060  PshVPtr       this                                        
+        0064  ADDSi         472 134230764                                 ; .DisabledItemAssetIDs
+        006C  CALLSYS       TArray::$beh0                               
+        0078  PshVPtr       this                                        
+        007C  ADDSi         488 134230764                                 ; .OnPlayerInitializedHandle
+        0084  CALLSYS       FGameEventListenerHandle::$beh0             
+        0090  PshC4         2                                           
+        0098  CALLSYS       __STATIC_NAME                               
+        00A4  PshRPtr                                                   
+        00A8  PshVPtr       this                                        
+        00AC  ADDSi         336 134230764                                 ; .RelicSlotName
+        00B4  CALLSYS       FName::$beh0                                
+        00C0  PshC4         3                                           
+        00C8  CALLSYS       __STATIC_NAME                               
+        00D4  PshRPtr                                                   
+        00D8  PshVPtr       this                                        
+        00DC  ADDSi         344 134230764                                 ; .PerkSlotName
+        00E4  CALLSYS       FName::$beh0                                
+        00F0  PshC4         4                                           
+        00F8  CALLSYS       __STATIC_NAME                               
+        0104  PshRPtr                                                   
+        0108  PshVPtr       this                                        
+        010C  ADDSi         352 134230764                                 ; .BootsSlotName
+        0114  CALLSYS       FName::$beh0                                
+        0120  SetV1         v2 0                                        
+        0128  LoadThisR     360 134230764                                 ; this.bLoadComplete
+        0130  WRTV1         v2                                          
+        0134  PshVPtr       this                                        
+        0138  FinConstruct  ULokiPlayerControllerArmoryComponent        
+        0144  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        v13 = false;
+        v12 = FGameEvent_GameReady_Controller();
+        v26 = v2.RegisterForEvent(this, v12, typeid(FGameEvent_GameReady_Controller), nullptr, n"OnPlayerInitialized", v13);
+        this.OnPlayerInitializedHandle = v26;
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 46 dwords / 26 instructions (cache offset 0x8c1d) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetGlobalGameEventRouter                    
+        0018  STOREOBJ      v2                                          
+        001C  SetV1         v13 0                                       
+        0024  PshV4         v13                                         
+        0028  PshC4         5                                           
+        0030  CALLSYS       __STATIC_NAME                               
+        003C  PshRPtr                                                   
+        0040  PshNull                                                   
+        0044  TYPEID        67120899                                      ; FGameEvent_GameReady_Controller
+        004C  PSF           v12                                         
+        0050  CALLSYS       FGameEvent_GameReady_Controller::$beh0      
+        005C  PSF           v12                                         
+        0060  PshVPtr       this                                        
+        0064  PSF           v26                                         
+        0068  PshVPtr       v2                                          
+        006C  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        0078  PSF           v12                                         
+        007C  CALLSYS       FGameEvent_GameReady_Controller::$beh2      
+        0088  PSF           v26                                         
+        008C  PshVPtr       this                                        
+        0090  ADDSi         488 134230764                                 ; .OnPlayerInitializedHandle
+        0098  CALLSYS       FGameEventListenerHandle::opAssign          
+        00A4  PSF           v26                                         
+        00A8  CALLSYS       FGameEventListenerHandle::$beh2             
+        00B4  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=EndPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void EndPlay_Implementation(const EEndPlayReason EndPlayReason)   // traits=0x20
+    {
+        v2 = this.Handle;
+        if (v2 != nullptr) {
+            this.Handle.Done();
+        }
+        return;
+    }
+    /* ---- EndPlay_Implementation: 16 dwords / 11 instructions (cache offset 0x8e60) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         448 134230764                                 ; .Handle
+        000C  RDSPtr                                                    
+        0010  RefCpyV       v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JZ            7                                             -> L003C
+        0020  PshVPtr       this                                        
+        0024  ADDSi         448 134230764                                 ; .Handle
+        002C  RDSPtr                                                    
+        0030  CALLSYS       ULoadAssetHandle::Done                      
+      L003C:
+        003C  RET           3                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    bool IsArmoryEnabled()   // traits=0x20
+    {
+        if (LokiGameplay::GetFeatureTogglesReady(__WorldContext)) {
+            v2 = 106;
+            v1 = LokiGameplay::GetFeatureToggleValue(__WorldContext, v2);
+            return v1;
+        } else {
+            v1 = false;
+        }
+        return v1;
+    }
+    /* ---- IsArmoryEnabled: 25 dwords / 13 instructions (cache offset 0x8fa8) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetFeatureTogglesReady                      
+        0018  JLowZ         13                                            -> L0054
+        0020  SetV1         v2 106                                      
+        0028  PshV4         v2                                          
+        002C  PshGPtr       __WorldContext                              
+        0038  CALLSYS       GetFeatureToggleValue                       
+        0044  CpyRtoV4      v1                                          
+        0048  CpyVtoR4      v1                                          
+        004C  JMP           3                                             -> L0060
+      L0054:
+        0054  SetV1         v1 0                                        
+        005C  CpyVtoR4      v1                                          
+      L0060:
+        0060  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    TArray<FArmoryShopItem> GetArmoryItemsForShop()   // traits=0x20
+    {
+        v4 = TArray();
+        v28 = this.GetArmory();
+        v34 = v28.ItemsCollection.Iterator();
+        while (true) {
+            v41 = v34.CanProceed;
+            if (!v41) break;
+            v44 = v34.Proceed();
+            v46 = this.GetClassFromPrimaryAssetId(v44.PrimaryAssetId);
+            if (!v46 == nullptr) {
+                if (!this.IsAssetIDEnabled(v44.PrimaryAssetId)) {
+                    v41 = 0;
+                } else {
+                    v49 = this.IsAssetEnabled(v46);
+                    v41 = v49;
+                }
+                if (v41) {
+                    v52 = v46.GetDefaultObject();
+                    if (v52 != nullptr) {
+                        v56 = false;
+                        v55 = v56;
+                        v59 = v52.GetSlotName();
+                        v41 = v59 == n"Boots";
+                        if (v41) {
+                            v56 = 3;
+                            v55 = v56;
+                        } else {
+                            v59 = v52.GetSlotName();
+                            v49 = v59 == n"MinorUtility";
+                            if (v49) {
+                                v56 = true;
+                                v55 = v56;
+                            } else {
+                                v59 = v52.GetSlotName();
+                                v49 = v59 == n"Utility";
+                                if (v49) {
+                                    v49 = true;
+                                } else {
+                                    v59 = v52.GetSlotName();
+                                    v41 = v59 == n"Inventory";
+                                    v49 = v41;
+                                }
+                                if (v49) {
+                                    v56 = 2;
+                                    v55 = v56;
+                                }
+                            }
+                        }
+                        v76 = FArmoryShopItem();
+                        v76.ItemClass = v46;
+                        v76.AssetId = v44.PrimaryAssetId;
+                        v76.ItemType = v55;
+                        v54 = v46.GetDefaultObject();
+                        v57 = v54.ShopkeeperGoldPrice;
+                        v76.Price = v57;
+                        v57 = v44.StarLevel;
+                        v57 = v57 - 1;
+                        v76.StarCount = v57;
+                        v41 = this.GetIsPrototypeItem(v44.PrimaryAssetId);
+                        v76.bPrototype = v41;
+                        v4.Add(v76);
+                    }
+                }
+            }
+        }
+        LokiGameplay::SortArmoryItems(v4);
+        arg_m2 = TArray();
+        arg_m2 = v4;
+        return;
+    }
+    /* ---- GetArmoryItemsForShop: 273 dwords / 156 instructions (cache offset 0x9116) ----
+        0000  PSF           v4                                          
+        0004  CALLSYS       TArray::$beh0                               
+        0010  PSF           v28                                         
+        0014  PshVPtr       this                                        
+        0018  CALLSYS       ULokiPlayerControllerArmoryComponentBase::GetArmory
+        0024  PSF           v34                                         
+        0028  PSF           v28                                         
+        002C  ADDSi         24 67120828                                   ; .ItemsCollection
+        0034  CALLSYS       TArray::Iterator                            
+        0040  JMP           226                                           -> L03D0
+      L0048:
+        0048  SUSPEND                                                   
+        004C  PSF           v34                                         
+        0050  CALLSYS       TArrayIterator::Proceed                     
+        005C  CpyRtoV8      v44                                         
+        0060  PshVPtr       v44                                         
+        0064  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        006C  PSF           v46                                         
+        0070  PshVPtr       this                                        
+        0074  CALLINTF      84037                                         ; ULokiPlayerControllerArmoryComponent::GetClassFromPrimaryAssetId
+        007C  PshNull                                                   
+        0080  PSF           v46                                         
+        0084  CALLSYS       TSubclassOf::opEquals                       
+        0090  JLowZ         2                                             -> L00A0
+        0098  JMP           204                                           -> L03D0
+      L00A0:
+        00A0  PshVPtr       v44                                         
+        00A4  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        00AC  PshVPtr       this                                        
+        00B0  CALLINTF      84044                                         ; ULokiPlayerControllerArmoryComponent::IsAssetIDEnabled
+        00B8  JLowNZ        4                                             -> L00D0
+        00C0  SetV4         v41 0                                       
+        00C8  JMP           7                                             -> L00EC
+      L00D0:
+        00D0  PSF           v46                                         
+        00D4  PshVPtr       this                                        
+        00D8  CALLINTF      84043                                         ; ULokiPlayerControllerArmoryComponent::IsAssetEnabled
+        00E0  CpyRtoV4      v49                                         
+        00E4  CpyVtoV4      v41 v49                                     
+      L00EC:
+        00EC  CpyVtoR1      v41                                         
+        00F0  JLowZ         182                                           -> L03D0
+        00F8  PSF           v46                                         
+        00FC  CALLSYS       TSubclassOf::GetDefaultObject               
+        0108  STOREOBJ      v52                                         
+        010C  CmpPtrNull    v52                                         
+        0110  JNZ           3                                             -> L0124
+        0118  FreeNullV8    v52                                         
+        011C  JMP           171                                           -> L03D0
+      L0124:
+        0124  SetV1         v56 0                                       
+        012C  CpyVtoV4      v55 v56                                     
+        0134  PSF           v59                                         
+        0138  PshVPtr       v52                                         
+        013C  CALLSYS       ALokiBaseItem::GetSlotName                  
+        0148  PshC4         4                                           
+        0150  CALLSYS       __STATIC_NAME                               
+        015C  PshRPtr                                                   
+        0160  PSF           v59                                         
+        0164  CALLSYS       FName::opEquals                             
+        0170  CpyRtoV4      v41                                         
+        0174  CpyVtoR1      v41                                         
+        0178  JLowZ         6                                             -> L0198
+        0180  SetV1         v56 3                                       
+        0188  CpyVtoV4      v55 v56                                     
+        0190  JMP           73                                            -> L02BC
+      L0198:
+        0198  PSF           v59                                         
+        019C  PshVPtr       v52                                         
+        01A0  CALLSYS       ALokiBaseItem::GetSlotName                  
+        01AC  PshC4         3                                           
+        01B4  CALLSYS       __STATIC_NAME                               
+        01C0  PshRPtr                                                   
+        01C4  PSF           v59                                         
+        01C8  CALLSYS       FName::opEquals                             
+        01D4  CpyRtoV4      v49                                         
+        01D8  CpyVtoR1      v49                                         
+        01DC  JLowZ         6                                             -> L01FC
+        01E4  SetV1         v56 1                                       
+        01EC  CpyVtoV4      v55 v56                                     
+        01F4  JMP           48                                            -> L02BC
+      L01FC:
+        01FC  PSF           v59                                         
+        0200  PshVPtr       v52                                         
+        0204  CALLSYS       ALokiBaseItem::GetSlotName                  
+        0210  PshC4         2                                           
+        0218  CALLSYS       __STATIC_NAME                               
+        0224  PshRPtr                                                   
+        0228  PSF           v59                                         
+        022C  CALLSYS       FName::opEquals                             
+        0238  CpyRtoV4      v49                                         
+        023C  CpyVtoR1      v49                                         
+        0240  JLowZ         4                                             -> L0258
+        0248  SetV1         v49 1                                       
+        0250  JMP           18                                            -> L02A0
+      L0258:
+        0258  PSF           v59                                         
+        025C  PshVPtr       v52                                         
+        0260  CALLSYS       ALokiBaseItem::GetSlotName                  
+        026C  PshC4         6                                           
+        0274  CALLSYS       __STATIC_NAME                               
+        0280  PshRPtr                                                   
+        0284  PSF           v59                                         
+        0288  CALLSYS       FName::opEquals                             
+        0294  CpyRtoV4      v41                                         
+        0298  CpyVtoV4      v49 v41                                     
+      L02A0:
+        02A0  CpyVtoR1      v49                                         
+        02A4  JLowZ         4                                             -> L02BC
+        02AC  SetV1         v56 2                                       
+        02B4  CpyVtoV4      v55 v56                                     
+      L02BC:
+        02BC  PSF           v76                                         
+        02C0  CALLSYS       FArmoryShopItem::$beh0                      
+        02CC  PSF           v46                                         
+        02D0  PSF           v76                                         
+        02D4  ADDSi         0 67121011                                    ; .ItemClass
+        02DC  CALLSYS       TSubclassOf::opAssign                       
+        02E8  PshVPtr       v44                                         
+        02EC  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        02F4  PSF           v76                                         
+        02F8  ADDSi         40 67121011                                   ; .AssetId
+        0300  CALLSYS       FPrimaryAssetId::opAssign                   
+        030C  LoadVObjR     v76 8 67121011                                ; .ItemType
+        0318  WRTV1         v55                                         
+        031C  PSF           v46                                         
+        0320  CALLSYS       TSubclassOf::GetDefaultObject               
+        032C  STOREOBJ      v54                                         
+        0330  LoadRObjR     v54 1132 67114958                             ; .ShopkeeperGoldPrice
+        033C  RDR4          v57                                         
+        0340  LoadVObjR     v76 16 67121011                               ; .Price
+        034C  WRTV4         v57                                         
+        0350  LoadRObjR     v44 16 67120826                               ; .StarLevel
+        035C  RDR4          v57                                         
+        0360  SUBIi         v57 v57 1                                   
+        036C  LoadVObjR     v76 12 67121011                               ; .StarCount
+        0378  WRTV4         v57                                         
+        037C  PshVPtr       v44                                         
+        0380  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        0388  PshVPtr       this                                        
+        038C  CALLINTF      84038                                         ; ULokiPlayerControllerArmoryComponent::GetIsPrototypeItem
+        0394  CpyRtoV4      v41                                         
+        0398  LoadVObjR     v76 56 67121011                               ; .bPrototype
+        03A4  WRTV1         v41                                         
+        03A8  PSF           v76                                         
+        03AC  PSF           v4                                          
+        03B0  CALLSYS       TArray::Add                                 
+        03BC  PSF           v76                                         
+        03C0  CALLSYS       FArmoryShopItem::$beh2                      
+        03CC  FreeNullV8    v52                                         
+      L03D0:
+        03D0  LoadVObjR     v34 16 268448495                              ; .CanProceed
+        03DC  RDR1          v41                                         
+        03E0  CpyVtoR1      v41                                         
+        03E4  JLowNZ        -233                                          -> L0048
+        03EC  PSF           v4                                          
+        03F0  CALLSYS       SortArmoryItems                             
+        03FC  PshVPtr       arg_m2                                      
+        0400  CALLSYS       TArray::$beh0                               
+        040C  PSF           v4                                          
+        0410  PshVPtr       arg_m2                                      
+        0414  CALLSYS       TArray::opAssign                            
+        0420  PSF           v28                                         
+        0424  CALLSYS       FPlayerArmory::$beh2                        
+        0430  PSF           v4                                          
+        0434  CALLSYS       TArray::$beh2                               
+        0440  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    TArray<FArmoryShopItem> GetArmoryTrinkets()   // traits=0x20
+    {
+        v4 = TArray();
+        v28 = this.GetArmory();
+        arg_m2 = TArray();
+        arg_m2 = v4;
+        return;
+    }
+    /* ---- GetArmoryTrinkets: 27 dwords / 15 instructions (cache offset 0x98b2) ----
+        0000  PSF           v4                                          
+        0004  CALLSYS       TArray::$beh0                               
+        0010  PSF           v28                                         
+        0014  PshVPtr       this                                        
+        0018  CALLSYS       ULokiPlayerControllerArmoryComponentBase::GetArmory
+        0024  PshVPtr       arg_m2                                      
+        0028  CALLSYS       TArray::$beh0                               
+        0034  PSF           v4                                          
+        0038  PshVPtr       arg_m2                                      
+        003C  CALLSYS       TArray::opAssign                            
+        0048  PSF           v28                                         
+        004C  CALLSYS       FPlayerArmory::$beh2                        
+        0058  PSF           v4                                          
+        005C  CALLSYS       TArray::$beh2                               
+        0068  RET           4                                           
+    */
+
+    void ServerSwapSlotAndBuyKit(const FArmoryShopItem& Item, const TSubclassOf<ALokiBaseItem@>& ItemClass, const int InventorySlotIndex)   // traits=0x20
+    {
+        __Evt_PushArgument__FArmoryShopItem(Item);
+        __Evt_PushArgument(ItemClass, typeid(TSubclassOf));
+        __Evt_PushArgument__int(InventorySlotIndex);
+        __Evt_Execute(this, n"ServerSwapSlotAndBuyKit");
+        return;
+    }
+    /* ---- ServerSwapSlotAndBuyKit: 25 dwords / 13 instructions (cache offset 0x9b32) ----
+        0000  PshVPtr       Item                                        
+        0004  CALLSYS       __Evt_PushArgument__FArmoryShopItem         
+        0010  TYPEID        268448387                                     ; TSubclassOf
+        0018  PshVPtr       ItemClass                                   
+        001C  CALLSYS       __Evt_PushArgument                          
+        0028  PSF           InventorySlotIndex                          
+        002C  CALLSYS       __Evt_PushArgument__int                     
+        0038  PshC4         92                                          
+        0040  CALLSYS       __STATIC_NAME                               
+        004C  PshRPtr                                                   
+        0050  PshVPtr       this                                        
+        0054  CALLSYS       __Evt_Execute                               
+        0060  RET           7                                           
+    */
+
+    UFUNCTION(UnrealName=ServerSwapSlotAndBuyKit, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerSwapSlotAndBuyKit_Implementation(const FArmoryShopItem& Item, const TSubclassOf<ALokiBaseItem@>& ItemClass, const int InventorySlotIndex)   // traits=0x20
+    {
+        v1 = ItemClass.IsValid();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = ItemClass.GetDefaultObject();
+            v6 = v4.GetSlotName();
+            v1 = this.AuthDropPowerAtSlot(v6, InventorySlotIndex);
+            if (v1) {
+                this.AuthBuyItem(Item);
+            }
+        }
+        return;
+    }
+    /* ---- ServerSwapSlotAndBuyKit_Implementation: 35 dwords / 24 instructions (cache offset 0x9ce7) ----
+        0000  PshVPtr       ItemClass                                   
+        0004  CALLSYS       TSubclassOf::IsValid                        
+        0010  CpyRtoV4      v1                                          
+        0014  NOT           v1                                          
+        0018  CpyVtoR1      v1                                          
+        001C  JLowZ         2                                             -> L002C
+        0024  JMP           23                                            -> L0088
+      L002C:
+        002C  PshV4         InventorySlotIndex                          
+        0030  PSF           v6                                          
+        0034  PshVPtr       ItemClass                                   
+        0038  CALLSYS       TSubclassOf::GetDefaultObject               
+        0044  STOREOBJ      v4                                          
+        0048  PshVPtr       v4                                          
+        004C  CALLSYS       ALokiBaseItem::GetSlotName                  
+        0058  PSF           v6                                          
+        005C  PshVPtr       this                                        
+        0060  CALLINTF      84030                                         ; ULokiPlayerControllerArmoryComponent::AuthDropPowerAtSlot
+        0068  CpyRtoV4      v1                                          
+        006C  CpyVtoR1      v1                                          
+        0070  JLowZ         4                                             -> L0088
+        0078  PshVPtr       Item                                        
+        007C  PshVPtr       this                                        
+        0080  CALLINTF      84033                                         ; ULokiPlayerControllerArmoryComponent::AuthBuyItem
+      L0088:
+        0088  RET           7                                           
+    */
+
+    void ServerSellSlotAndBuyItem(const FArmoryShopItem& Item, const TSubclassOf<ALokiBaseItem@>& ItemClass, const int InventorySlotIndex)   // traits=0x20
+    {
+        __Evt_PushArgument__FArmoryShopItem(Item);
+        __Evt_PushArgument(ItemClass, typeid(TSubclassOf));
+        __Evt_PushArgument__int(InventorySlotIndex);
+        __Evt_Execute(this, n"ServerSellSlotAndBuyItem");
+        return;
+    }
+    /* ---- ServerSellSlotAndBuyItem: 25 dwords / 13 instructions (cache offset 0x9f82) ----
+        0000  PshVPtr       Item                                        
+        0004  CALLSYS       __Evt_PushArgument__FArmoryShopItem         
+        0010  TYPEID        268448387                                     ; TSubclassOf
+        0018  PshVPtr       ItemClass                                   
+        001C  CALLSYS       __Evt_PushArgument                          
+        0028  PSF           InventorySlotIndex                          
+        002C  CALLSYS       __Evt_PushArgument__int                     
+        0038  PshC4         93                                          
+        0040  CALLSYS       __STATIC_NAME                               
+        004C  PshRPtr                                                   
+        0050  PshVPtr       this                                        
+        0054  CALLSYS       __Evt_Execute                               
+        0060  RET           7                                           
+    */
+
+    UFUNCTION(UnrealName=ServerSellSlotAndBuyItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerSellSlotAndBuyItem_Implementation(const FArmoryShopItem& Item, const TSubclassOf<ALokiBaseItem@>& ItemClass, const int InventorySlotIndex)   // traits=0x20
+    {
+        v1 = ItemClass.IsValid();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = ItemClass.GetDefaultObject();
+            v6 = v4.GetSlotName();
+            v1 = this.AuthSellItemAtSlot(v6, InventorySlotIndex);
+            if (v1) {
+                this.AuthBuyItem(Item);
+            }
+        }
+        return;
+    }
+    /* ---- ServerSellSlotAndBuyItem_Implementation: 35 dwords / 24 instructions (cache offset 0xa138) ----
+        0000  PshVPtr       ItemClass                                   
+        0004  CALLSYS       TSubclassOf::IsValid                        
+        0010  CpyRtoV4      v1                                          
+        0014  NOT           v1                                          
+        0018  CpyVtoR1      v1                                          
+        001C  JLowZ         2                                             -> L002C
+        0024  JMP           23                                            -> L0088
+      L002C:
+        002C  PshV4         InventorySlotIndex                          
+        0030  PSF           v6                                          
+        0034  PshVPtr       ItemClass                                   
+        0038  CALLSYS       TSubclassOf::GetDefaultObject               
+        0044  STOREOBJ      v4                                          
+        0048  PshVPtr       v4                                          
+        004C  CALLSYS       ALokiBaseItem::GetSlotName                  
+        0058  PSF           v6                                          
+        005C  PshVPtr       this                                        
+        0060  CALLINTF      84025                                         ; ULokiPlayerControllerArmoryComponent::AuthSellItemAtSlot
+        0068  CpyRtoV4      v1                                          
+        006C  CpyVtoR1      v1                                          
+        0070  JLowZ         4                                             -> L0088
+        0078  PshVPtr       Item                                        
+        007C  PshVPtr       this                                        
+        0080  CALLINTF      84033                                         ; ULokiPlayerControllerArmoryComponent::AuthBuyItem
+      L0088:
+        0088  RET           7                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    bool AuthSellItemAtSlot(const FName& SlotName, const int SlotIndex)   // traits=0x20
+    {
+        v1 = this.IsArmoryEnabled();
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v6 = this.GetPlayerState();
+            if (v6 == nullptr) {
+                v1 = false;
+                return v1;
+            } else {
+                v10 = v6.GetInventory();
+                if (v10 == nullptr) {
+                    v1 = false;
+                    return v1;
+                } else {
+                    v14 = v10.GetItemFromSlot(SlotName, SlotIndex);
+                    if (v14 != nullptr) {
+                        v1 = this.AuthSellItem_BP(v14);
+                        return v1;
+                    } else {
+                        v1 = false;
+                    }
+                }
+            }
+        }
+        return v1;
+    }
+    /* ---- AuthSellItemAtSlot: 60 dwords / 41 instructions (cache offset 0xa38f) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84018                                         ; ULokiPlayerControllerArmoryComponent::IsArmoryEnabled
+        000C  CpyRtoV4      v1                                          
+        0010  NOT           v1                                          
+        0014  CpyVtoR1      v1                                          
+        0018  JLowZ         5                                             -> L0034
+        0020  SetV1         v1 0                                        
+        0028  CpyVtoR4      v1                                          
+        002C  JMP           46                                            -> L00EC
+      L0034:
+        0034  PshVPtr       this                                        
+        0038  CALLINTF      84036                                         ; ULokiPlayerControllerArmoryComponent::GetPlayerState
+        0040  STOREOBJ      v6                                          
+        0044  CmpPtrNull    v6                                          
+        0048  JNZ           5                                             -> L0064
+        0050  SetV1         v1 0                                        
+        0058  CpyVtoR4      v1                                          
+        005C  JMP           34                                            -> L00EC
+      L0064:
+        0064  PshVPtr       v6                                          
+        0068  CALLSYS       ALokiPlayerState::GetInventory              
+        0074  STOREOBJ      v10                                         
+        0078  CmpPtrNull    v10                                         
+        007C  JNZ           5                                             -> L0098
+        0084  SetV1         v1 0                                        
+        008C  CpyVtoR4      v1                                          
+        0090  JMP           21                                            -> L00EC
+      L0098:
+        0098  PshV4         SlotIndex                                   
+        009C  PshVPtr       SlotName                                    
+        00A0  PshVPtr       v10                                         
+        00A4  CALLSYS       ULokiInventoryComponentBase::GetItemFromSlot
+        00B0  STOREOBJ      v14                                         
+        00B4  CmpPtrNull    v14                                         
+        00B8  JZ            8                                             -> L00E0
+        00C0  PshVPtr       v14                                         
+        00C4  PshVPtr       this                                        
+        00C8  CALLINTF      84026                                         ; ULokiPlayerControllerArmoryComponent::AuthSellItem_BP
+        00D0  CpyRtoV4      v1                                          
+        00D4  CpyVtoR4      v1                                          
+        00D8  JMP           3                                             -> L00EC
+      L00E0:
+        00E0  SetV1         v1 0                                        
+        00E8  CpyVtoR4      v1                                          
+      L00EC:
+        00EC  RET           5                                           
+    */
+
+    bool AuthSellItem_BP(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiBaseItem(Item);
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"AuthSellItem_BP");
+        return v1;
+    }
+    /* ---- AuthSellItem_BP: 24 dwords / 13 instructions (cache offset 0xa64b) ----
+        0000  PSF           Item                                        
+        0004  CALLSYS       __Evt_PushArgument__ALokiBaseItem           
+        0010  SetV1         v2 0                                        
+        0018  CpyVtoV4      v1 v2                                       
+        0020  PSF           v1                                          
+        0024  CALLSYS       __Evt_PushArgumentRef__bool                 
+        0030  PshC4         94                                          
+        0038  CALLSYS       __STATIC_NAME                               
+        0044  PshRPtr                                                   
+        0048  PshVPtr       this                                        
+        004C  CALLSYS       __Evt_Execute                               
+        0058  CpyVtoR4      v1                                          
+        005C  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=AuthSellItem_BP, BlueprintEvent, CanOverrideEvent)
+    bool AuthSellItem_BP_Implementation(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        v1 = false;
+        return v1;
+    }
+    /* ---- AuthSellItem_BP_Implementation: 4 dwords / 3 instructions (cache offset 0xa777) ----
+        0000  SetV1         v1 0                                        
+        0008  CpyVtoR4      v1                                          
+        000C  RET           4                                           
+    */
+
+    bool ShouldShopSellItem_BP(const TSubclassOf<ALokiBaseItem@>& ItemClass, AActor@ SourceShopkeep)   // traits=0x20
+    {
+        __Evt_PushArgument(ItemClass, typeid(TSubclassOf));
+        __Evt_PushArgument__AActor(SourceShopkeep);
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"ShouldShopSellItem_BP");
+        return v1;
+    }
+    /* ---- ShouldShopSellItem_BP: 30 dwords / 16 instructions (cache offset 0xa8f2) ----
+        0000  TYPEID        268448387                                     ; TSubclassOf
+        0008  PshVPtr       ItemClass                                   
+        000C  CALLSYS       __Evt_PushArgument                          
+        0018  PSF           SourceShopkeep                              
+        001C  CALLSYS       __Evt_PushArgument__AActor                  
+        0028  SetV1         v2 0                                        
+        0030  CpyVtoV4      v1 v2                                       
+        0038  PSF           v1                                          
+        003C  CALLSYS       __Evt_PushArgumentRef__bool                 
+        0048  PshC4         95                                          
+        0050  CALLSYS       __STATIC_NAME                               
+        005C  PshRPtr                                                   
+        0060  PshVPtr       this                                        
+        0064  CALLSYS       __Evt_Execute                               
+        0070  CpyVtoR4      v1                                          
+        0074  RET           6                                           
+    */
+
+    UFUNCTION(UnrealName=ShouldShopSellItem_BP, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    bool ShouldShopSellItem_BP_Implementation(const TSubclassOf<ALokiBaseItem@>& ItemClass, AActor@ SourceShopkeep)   // traits=0x20
+    {
+        v1 = true;
+        return v1;
+    }
+    /* ---- ShouldShopSellItem_BP_Implementation: 4 dwords / 3 instructions (cache offset 0xaa80) ----
+        0000  SetV1         v1 1                                        
+        0008  CpyVtoR4      v1                                          
+        000C  RET           6                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    bool AuthDropPowerAtSlot(const FName& SlotName, const int SlotIndex)   // traits=0x20
+    {
+        v1 = this.IsArmoryEnabled();
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v6 = this.GetPlayerState();
+            if (v6 == nullptr) {
+                v1 = false;
+                return v1;
+            } else {
+                v10 = v6.GetInventory();
+                if (v10 == nullptr) {
+                    v1 = false;
+                    return v1;
+                } else {
+                    v14 = v10.GetItemFromSlot(SlotName, SlotIndex);
+                    if (v14 != nullptr) {
+                        v16 = 2;
+                        v15 = v16;
+                        v1 = v10.TryRemoveFromInventory(v14, v15);
+                        return v1;
+                    } else {
+                        v1 = false;
+                    }
+                }
+            }
+        }
+        return v1;
+    }
+    /* ---- AuthDropPowerAtSlot: 66 dwords / 44 instructions (cache offset 0xabf9) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84018                                         ; ULokiPlayerControllerArmoryComponent::IsArmoryEnabled
+        000C  CpyRtoV4      v1                                          
+        0010  NOT           v1                                          
+        0014  CpyVtoR1      v1                                          
+        0018  JLowZ         5                                             -> L0034
+        0020  SetV1         v1 0                                        
+        0028  CpyVtoR4      v1                                          
+        002C  JMP           52                                            -> L0104
+      L0034:
+        0034  PshVPtr       this                                        
+        0038  CALLINTF      84036                                         ; ULokiPlayerControllerArmoryComponent::GetPlayerState
+        0040  STOREOBJ      v6                                          
+        0044  CmpPtrNull    v6                                          
+        0048  JNZ           5                                             -> L0064
+        0050  SetV1         v1 0                                        
+        0058  CpyVtoR4      v1                                          
+        005C  JMP           40                                            -> L0104
+      L0064:
+        0064  PshVPtr       v6                                          
+        0068  CALLSYS       ALokiPlayerState::GetInventory              
+        0074  STOREOBJ      v10                                         
+        0078  CmpPtrNull    v10                                         
+        007C  JNZ           5                                             -> L0098
+        0084  SetV1         v1 0                                        
+        008C  CpyVtoR4      v1                                          
+        0090  JMP           27                                            -> L0104
+      L0098:
+        0098  PshV4         SlotIndex                                   
+        009C  PshVPtr       SlotName                                    
+        00A0  PshVPtr       v10                                         
+        00A4  CALLSYS       ULokiInventoryComponentBase::GetItemFromSlot
+        00B0  STOREOBJ      v14                                         
+        00B4  CmpPtrNull    v14                                         
+        00B8  JZ            14                                            -> L00F8
+        00C0  SetV1         v16 2                                       
+        00C8  CpyVtoV4      v15 v16                                     
+        00D0  PshV4         v15                                         
+        00D4  PshVPtr       v14                                         
+        00D8  PshVPtr       v10                                         
+        00DC  CALLSYS       ULokiInventoryComponentBase::TryRemoveFromInventory
+        00E8  CpyRtoV4      v1                                          
+        00EC  CpyVtoR4      v1                                          
+        00F0  JMP           3                                             -> L0104
+      L00F8:
+        00F8  SetV1         v1 0                                        
+        0100  CpyVtoR4      v1                                          
+      L0104:
+        0104  RET           5                                           
+    */
+
+    void ServerBuyItem(const FArmoryShopItem& Item)   // traits=0x20
+    {
+        __Evt_PushArgument__FArmoryShopItem(Item);
+        __Evt_Execute(this, n"ServerBuyItem");
+        return;
+    }
+    /* ---- ServerBuyItem: 15 dwords / 8 instructions (cache offset 0xaecc) ----
+        0000  PshVPtr       Item                                        
+        0004  CALLSYS       __Evt_PushArgument__FArmoryShopItem         
+        0010  PshC4         96                                          
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ServerBuyItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerBuyItem_Implementation(const FArmoryShopItem& Item)   // traits=0x20
+    {
+        this.AuthBuyItem(Item);
+        return;
+    }
+    /* ---- ServerBuyItem_Implementation: 5 dwords / 4 instructions (cache offset 0xafd2) ----
+        0000  PshVPtr       Item                                        
+        0004  PshVPtr       this                                        
+        0008  CALLINTF      84033                                         ; ULokiPlayerControllerArmoryComponent::AuthBuyItem
+        0010  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthBuyItem(const FArmoryShopItem& Item)   // traits=0x20
+    {
+        v1 = this.IsArmoryEnabled();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = this.GetPlayerState();
+            if (v6 == nullptr) {
+                return;
+            } else {
+                if (this.CanBuyItem(Item)) {
+                    v8 = AbilitySystem::GetAbilitySystemComponent(v6);
+                    v12 = Item.Price;
+                    v11 = v12;
+                    if (v8 == nullptr) {
+                        v1 = 0;
+                    } else {
+                        v13 = v8.HasMatchingGameplayTag(GameplayTags::Item_ShopDiscount_DiscountApplied)  /* UFunction Script_HasMatchingGameplayTag */;
+                        v1 = v13;
+                    }
+                    if (v1) {
+                        v16 = float64(v11);
+                        v18 = 4605380978949069210;
+                        v16 = v16 * v18;
+                        v12 = int(v16);
+                        v11 = v12;
+                    }
+                    v12 = v6.GetWalletGold();
+                    if (v12 >= v11) {
+                        v22 = v6.GetInventory();
+                        if (v22 == nullptr) {
+                            return;
+                        }
+                        if (Item.ItemClass.IsValid()) {
+                            v1 = true;
+                            v26 = SpawnActor(Item.ItemClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v1, nullptr);
+                            if (v26 != nullptr) {
+                                v12 = this.GetStarCountForItem(Item.ItemClass);
+                                v26.StarCount = v12;
+                                FinishSpawningActor(v26);
+                            }
+                            v13 = false;
+                            v1 = true;
+                            v27 = 2;
+                            v28 = v22.TryAddToInventory(v26, v27, NAME_None, -1, v1, v13);
+                            v28 = !v28;
+                            if (v28) {
+                                v26.DestroyActor()  /* UFunction K2_DestroyActor */;
+                            } else {
+                                v13 = false;
+                                v6.ConsumeWalletCurrency("Gold", v11, v13);
+                                v44 = FGameEvent_OnItemPurchase_PlayerState();
+                                v26 = v44.Item;
+                                v44.GoldCost = v11;
+                                v6 = v44.PlayerState;
+                                v46 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+                                v46.BroadcastEvent(v44, typeid(FGameEvent_OnItemPurchase_PlayerState), v6);
+                                v52 = FString();
+                                v52.Append("AuthBuyItem - Sent Purchase Event");
+                                Log::Log(v52.Append("AuthBuyItem - Sent Purchase Event"));
+                                v54 = ALokiServerAnalyticsManager::GetFromContext(__WorldContext);
+                                if (v54 != nullptr) {
+                                    v74 = FAnalyticsItemPurchaseEvent();
+                                    v52 = LokiAnalytics::GetMatchId(__WorldContext);
+                                    v74.Game_Id = v52;
+                                    v74.Player_Id = v6.PlatformPlayerID;
+                                    v76 = UClass@(Item.ItemClass);
+                                    v52 = System::GetClassDisplayName(v76);
+                                    v74.Item_Id = v52;
+                                    v12 = v6.GetWalletCurrencyAmount("Gold");
+                                    v74.Remaining_Gold = v12;
+                                    v74.Cost = v11;
+                                    v77 = Gameplay::GetServerTime(__WorldContext);
+                                    v74.Game_Time = v77;
+                                    v78 = 3;
+                                    v74.Source = v78;
+                                    v12 = Item.StarCount;
+                                    v12 = v12 + 1;
+                                    v74.StarLevel = v12;
+                                    v54.AddItemPurchaseEvent(v74);
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+            }
+        }
+        return;
+    }
+    /* ---- AuthBuyItem: 356 dwords / 199 instructions (cache offset 0xb101) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84018                                         ; ULokiPlayerControllerArmoryComponent::IsArmoryEnabled
+        000C  CpyRtoV4      v1                                          
+        0010  NOT           v1                                          
+        0014  CpyVtoR1      v1                                          
+        0018  JLowZ         2                                             -> L0028
+        0020  JMP           345                                           -> L058C
+      L0028:
+        0028  PshVPtr       this                                        
+        002C  CALLINTF      84036                                         ; ULokiPlayerControllerArmoryComponent::GetPlayerState
+        0034  STOREOBJ      v6                                          
+        0038  CmpPtrNull    v6                                          
+        003C  JNZ           2                                             -> L004C
+        0044  JMP           336                                           -> L058C
+      L004C:
+        004C  PshVPtr       Item                                        
+        0050  PshVPtr       this                                        
+        0054  CALLINTF      84045                                         ; ULokiPlayerControllerArmoryComponent::CanBuyItem
+        005C  JLowZ         330                                           -> L058C
+        0064  PshVPtr       v6                                          
+        0068  CALLSYS       GetAbilitySystemComponent                   
+        0074  STOREOBJ      v8                                          
+        0078  LoadRObjR     Item 16 67121011                              ; .Price
+        0084  RDR4          v12                                         
+        0088  CpyVtoV4      v11 v12                                     
+        0090  CmpPtrNull    v8                                          
+        0094  JNZ           4                                             -> L00AC
+        009C  SetV4         v1 0                                        
+        00A4  JMP           10                                            -> L00D4
+      L00AC:
+        00AC  PshGPtr       GameplayTags::Item_ShopDiscount_DiscountApplied
+        00B8  PshVPtr       v8                                          
+        00BC  CALLSYS       UAbilitySystemComponent::HasMatchingGameplayTag
+        00C8  CpyRtoV4      v13                                         
+        00CC  CpyVtoV4      v1 v13                                      
+      L00D4:
+        00D4  CpyVtoR1      v1                                          
+        00D8  JLowZ         11                                            -> L010C
+        00E0  iTOd          v16 v11                                     
+        00E8  SetV8         v18 0x3fe999999999999a                      
+        00F4  MULd          v16 v16 v18                                 
+        00FC  dTOi          v12 v16                                     
+        0104  CpyVtoV4      v11 v12                                     
+      L010C:
+        010C  PshVPtr       v6                                          
+        0110  CALLSYS       ALokiPlayerState::GetWalletGold             
+        011C  CpyRtoV4      v12                                         
+        0120  CMPi          v12 v11                                     
+        0128  JS            276                                           -> L0580
+        0130  PshVPtr       v6                                          
+        0134  CALLSYS       ALokiPlayerState::GetInventory              
+        0140  STOREOBJ      v22                                         
+        0144  CmpPtrNull    v22                                         
+        0148  JNZ           2                                             -> L0158
+        0150  JMP           269                                           -> L058C
+      L0158:
+        0158  PshVPtr       Item                                        
+        015C  ADDSi         0 67121011                                    ; .ItemClass
+        0164  CALLSYS       TSubclassOf::IsValid                        
+        0170  JLowZ         257                                           -> L057C
+        0178  PshNull                                                   
+        017C  SetV1         v1 1                                        
+        0184  PshV4         v1                                          
+        0188  PshGPtr       NAME_None                                   
+        0194  PshGPtr       FRotator::ZeroRotator                       
+        01A0  PshGPtr       FVector::ZeroVector                         
+        01AC  PshVPtr       Item                                        
+        01B0  ADDSi         0 67121011                                    ; .ItemClass
+        01B8  CALLSYS       SpawnActor                                  
+        01C4  STOREOBJ      v26                                         
+        01C8  CmpPtrNull    v26                                         
+        01CC  JZ            15                                            -> L0210
+        01D4  PshVPtr       Item                                        
+        01D8  ADDSi         0 67121011                                    ; .ItemClass
+        01E0  PshVPtr       this                                        
+        01E4  CALLINTF      84035                                         ; ULokiPlayerControllerArmoryComponent::GetStarCountForItem
+        01EC  CpyRtoV4      v12                                         
+        01F0  LoadRObjR     v26 1124 67114958                             ; .StarCount
+        01FC  WRTV4         v12                                         
+        0200  PshVPtr       v26                                         
+        0204  CALLSYS       FinishSpawningActor                         
+      L0210:
+        0210  SetV1         v13 0                                       
+        0218  PshV4         v13                                         
+        021C  SetV1         v1 1                                        
+        0224  PshV4         v1                                          
+        0228  PshC4         -1                                          
+        0230  PshGPtr       NAME_None                                   
+        023C  SetV1         v27 2                                       
+        0244  PshV4         v27                                         
+        0248  PshVPtr       v26                                         
+        024C  PshVPtr       v22                                         
+        0250  CALLSYS       ULokiInventoryComponentBase::TryAddToInventory
+        025C  CpyRtoV4      v28                                         
+        0260  NOT           v28                                         
+        0264  CpyVtoR1      v28                                         
+        0268  JLowZ         6                                             -> L0288
+        0270  PshVPtr       v26                                         
+        0274  CALLSYS       AActor::DestroyActor                        
+        0280  JMP           188                                           -> L0578
+      L0288:
+        0288  SetV1         v13 0                                       
+        0290  PshV4         v13                                         
+        0294  PshV4         v11                                         
+        0298  PGA           "Gold"                                      
+        02A4  PshVPtr       v6                                          
+        02A8  CALLSYS       ALokiPlayerState::ConsumeWalletCurrency     
+        02B4  PSF           v44                                         
+        02B8  CALLSYS       FGameEvent_OnItemPurchase_PlayerState::$beh0
+        02C4  PshVPtr       v26                                         
+        02C8  PSF           v44                                         
+        02CC  ADDSi         8 67120928                                    ; .Item
+        02D4  REFCPY                                                    
+        02D8  PopPtr                                                    
+        02DC  LoadVObjR     v44 16 67120928                               ; .GoldCost
+        02E8  WRTV4         v11                                         
+        02EC  PshVPtr       v6                                          
+        02F0  PSF           v44                                         
+        02F4  ADDSi         24 67120928                                   ; .PlayerState
+        02FC  REFCPY                                                    
+        0300  PopPtr                                                    
+        0304  PshGPtr       __WorldContext                              
+        0310  CALLSYS       GetGlobalGameEventRouter                    
+        031C  STOREOBJ      v46                                         
+        0320  PshVPtr       v6                                          
+        0324  TYPEID        67120928                                      ; FGameEvent_OnItemPurchase_PlayerState
+        032C  PSF           v44                                         
+        0330  PshVPtr       v46                                         
+        0334  CALLSYS       UGameEventRouterComponent::BroadcastEvent   
+        0340  PGA           "AuthBuyItem - Sent Purchase Event"         
+        034C  PSF           v52                                         
+        0350  CALLSYS       FString::$beh0                              
+        035C  PSF           v52                                         
+        0360  CALLSYS       FString::Append                             
+        036C  PshRPtr                                                   
+        0370  CALLSYS       Log                                         
+        037C  PSF           v52                                         
+        0380  CALLSYS       FString::$beh2                              
+        038C  PshGPtr       __WorldContext                              
+        0398  CALLSYS       GetFromContext                              
+        03A4  STOREOBJ      v54                                         
+        03A8  CmpPtrNull    v54                                         
+        03AC  JZ            107                                           -> L0560
+        03B4  PSF           v74                                         
+        03B8  CALLSYS       FAnalyticsItemPurchaseEvent::$beh0          
+        03C4  PshGPtr       __WorldContext                              
+        03D0  PSF           v52                                         
+        03D4  CALLSYS       GetMatchId                                  
+        03E0  PSF           v52                                         
+        03E4  PSF           v74                                         
+        03E8  ADDSi         0 67120998                                    ; .Game_Id
+        03F0  CALLSYS       FString::opAssign                           
+        03FC  PSF           v52                                         
+        0400  CALLSYS       FString::$beh2                              
+        040C  PshVPtr       v6                                          
+        0410  ADDSi         2240 67115322                                 ; .PlatformPlayerID
+        0418  PSF           v74                                         
+        041C  ADDSi         16 67120998                                   ; .Player_Id
+        0424  CALLSYS       FString::opAssign                           
+        0430  PshVPtr       Item                                        
+        0434  ADDSi         0 67121011                                    ; .ItemClass
+        043C  CALLSYS       TSubclassOf::opImplConv                     
+        0448  STOREOBJ      v76                                         
+        044C  PshVPtr       v76                                         
+        0450  PSF           v52                                         
+        0454  CALLSYS       GetClassDisplayName                         
+        0460  PSF           v52                                         
+        0464  PSF           v74                                         
+        0468  ADDSi         32 67120998                                   ; .Item_Id
+        0470  CALLSYS       FString::opAssign                           
+        047C  PSF           v52                                         
+        0480  CALLSYS       FString::$beh2                              
+        048C  PGA           "Gold"                                      
+        0498  PshVPtr       v6                                          
+        049C  CALLSYS       ALokiPlayerState::GetWalletCurrencyAmount   
+        04A8  CpyRtoV4      v12                                         
+        04AC  LoadVObjR     v74 48 67120998                               ; .Remaining_Gold
+        04B8  WRTV4         v12                                         
+        04BC  LoadVObjR     v74 52 67120998                               ; .Cost
+        04C8  WRTV4         v11                                         
+        04CC  PshGPtr       __WorldContext                              
+        04D8  CALLSYS       GetServerTime                               
+        04E4  CpyRtoV4      v77                                         
+        04E8  LoadVObjR     v74 56 67120998                               ; .Game_Time
+        04F4  WRTV4         v77                                         
+        04F8  SetV1         v78 3                                       
+        0500  LoadVObjR     v74 60 67120998                               ; .Source
+        050C  WRTV1         v78                                         
+        0510  LoadRObjR     Item 12 67121011                              ; .StarCount
+        051C  RDR4          v12                                         
+        0520  ADDIi         v12 v12 1                                   
+        052C  LoadVObjR     v74 64 67120998                               ; .StarLevel
+        0538  WRTV4         v12                                         
+        053C  PSF           v74                                         
+        0540  PshVPtr       v54                                         
+        0544  CALLSYS       ALokiServerAnalyticsManager::AddItemPurchaseEvent
+        0550  PSF           v74                                         
+        0554  CALLSYS       FAnalyticsItemPurchaseEvent::$beh2          
+      L0560:
+        0560  FreeNullV8    v54                                         
+        0564  FreeNullV8    v46                                         
+        0568  PSF           v44                                         
+        056C  CALLSYS       FGameEvent_OnItemPurchase_PlayerState::$beh2
+      L0578:
+        0578  FreeNullV8    v26                                         
+      L057C:
+        057C  FreeNullV8    v22                                         
+      L0580:
+        0580  FreeNullV8    v8                                          
+        0584  JMP           0                                             -> L058C
+      L058C:
+        058C  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    TArray<TSubclassOf<ALokiBaseItem@>> GetArmoryEvolveChoices(ALokiBaseItem@ Item, const int InventorySlotIndex)   // traits=0x20
+    {
+        v4 = TArray();
+        Item = TArray();
+        Item = v4;
+        return;
+    }
+    /* ---- GetArmoryEvolveChoices: 18 dwords / 10 instructions (cache offset 0xba44) ----
+        0000  PSF           v4                                          
+        0004  CALLSYS       TArray::$beh0                               
+        0010  PshVPtr       Item                                        
+        0014  CALLSYS       TArray::$beh0                               
+        0020  PSF           v4                                          
+        0024  PshVPtr       Item                                        
+        0028  CALLSYS       TArray::opAssign                            
+        0034  PSF           v4                                          
+        0038  CALLSYS       TArray::$beh2                               
+        0044  RET           7                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetStarCountForItem(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        if (ItemClass == nullptr) {
+            v2 = -1;
+            return v2;
+        } else {
+            v26 = this.GetArmory();
+            v32 = v26.ItemsCollection.Iterator();
+            while (true) {
+                v1 = v32.CanProceed;
+                if (!v1) break;
+                v40 = v32.Proceed();
+                v42 = this.GetClassFromPrimaryAssetId(v40.PrimaryAssetId);
+                if (v42 == ItemClass) {
+                    v2 = v40.StarLevel;
+                    v2 = v2 - 1;
+                    return v2;
+                }
+            }
+            v45 = -1;
+        }
+        return v45;
+    }
+    /* ---- GetStarCountForItem: 75 dwords / 44 instructions (cache offset 0xbbf9) ----
+        0000  PshNull                                                   
+        0004  PshVPtr       ItemClass                                   
+        0008  CALLSYS       TSubclassOf::opEquals                       
+        0014  JLowZ         5                                             -> L0030
+        001C  SetV4         v2 -1                                       
+        0024  CpyVtoR4      v2                                          
+        0028  JMP           62                                            -> L0128
+      L0030:
+        0030  PSF           v26                                         
+        0034  PshVPtr       this                                        
+        0038  CALLSYS       ULokiPlayerControllerArmoryComponentBase::GetArmory
+        0044  PSF           v32                                         
+        0048  PSF           v26                                         
+        004C  ADDSi         24 67120828                                   ; .ItemsCollection
+        0054  CALLSYS       TArray::Iterator                            
+        0060  JMP           34                                            -> L00F0
+      L0068:
+        0068  SUSPEND                                                   
+        006C  PSF           v32                                         
+        0070  CALLSYS       TArrayIterator::Proceed                     
+        007C  CpyRtoV8      v40                                         
+        0080  PshVPtr       v40                                         
+        0084  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        008C  PSF           v42                                         
+        0090  PshVPtr       this                                        
+        0094  CALLINTF      84037                                         ; ULokiPlayerControllerArmoryComponent::GetClassFromPrimaryAssetId
+        009C  PshVPtr       ItemClass                                   
+        00A0  PSF           v42                                         
+        00A4  CALLSYS       TSubclassOf::opEquals                       
+        00B0  JLowZ         14                                            -> L00F0
+        00B8  LoadRObjR     v40 16 67120826                               ; .StarLevel
+        00C4  RDR4          v2                                          
+        00C8  SUBIi         v2 v2 1                                     
+        00D4  PSF           v26                                         
+        00D8  CALLSYS       FPlayerArmory::$beh2                        
+        00E4  CpyVtoR4      v2                                          
+        00E8  JMP           14                                            -> L0128
+      L00F0:
+        00F0  LoadVObjR     v32 16 268448495                              ; .CanProceed
+        00FC  RDR1          v1                                          
+        0100  CpyVtoR1      v1                                          
+        0104  JLowNZ        -41                                           -> L0068
+        010C  SetV4         v45 -1                                      
+        0114  PSF           v26                                         
+        0118  CALLSYS       FPlayerArmory::$beh2                        
+        0124  CpyVtoR4      v45                                         
+      L0128:
+        0128  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private ALokiPlayerState@ GetPlayerState()   // traits=0x28
+    {
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiPlayerController@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        v6 = v4;
+        if (v6 == nullptr) {
+            return v10;
+        } else {
+            v10 = v6.GetLokiPlayerState();
+        }
+        return v10;
+    }
+    /* ---- GetPlayerState: 34 dwords / 23 instructions (cache offset 0xbf40) ----
+        0000  PshVPtr       this                                        
+        0004  CALLSYS       UActorComponent::GetOwner                   
+        0010  STOREOBJ      v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857134                                    ; ALokiPlayerController@
+        0028  PSF           v4                                          
+        002C  PshVPtr       v2                                          
+        0030  CALLSYS       UObject::opCast                             
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v4                                          
+      L0048:
+        0048  PshVPtr       v4                                          
+        004C  RefCpyV       v6                                          
+        0050  CmpPtrNull    v6                                          
+        0054  JNZ           4                                             -> L006C
+        005C  FreeNullV8    v10                                         
+        0060  LOADOBJ       v10                                         
+        0064  JMP           6                                             -> L0084
+      L006C:
+        006C  PshVPtr       v6                                          
+        0070  CALLSYS       ALokiPlayerController::GetLokiPlayerState   
+        007C  STOREOBJ      v10                                         
+        0080  LOADOBJ       v10                                         
+      L0084:
+        0084  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    TSubclassOf<ALokiBaseItem@> GetClassFromPrimaryAssetId(const FPrimaryAssetId& Asset)   // traits=0x20
+    {
+        v2 = System::GetClassFromPrimaryAssetId(arg_m4);
+        v5 = v2 == nullptr;
+        v5 = !v5;
+        if (v5) {
+            v10 = v2.GetDefaultObject();
+            if (v10 != nullptr) {
+                v12 = cast<ULokiDataAsset_Power@>(v10);
+            } else {
+                v12 = nullptr;
+            }
+            v8 = v12;
+            if (v8 != nullptr) {
+                Asset = TSubclassOf();
+                v14 = v8.Power.Get();
+                Asset = v14;
+                return;
+            }
+            v10 = v2.GetDefaultObject();
+            if (v10 != nullptr) {
+                v18 = cast<ULokiDataAsset_Equipment@>(v10);
+            } else {
+                v18 = nullptr;
+            }
+            v16 = v18;
+            if (v16 != nullptr) {
+                Asset = TSubclassOf();
+                v14 = v16.Equipment.Get();
+                Asset = v14;
+                return;
+            }
+        }
+        Asset = TSubclassOf();
+        v14 = TSubclassOf(nullptr);
+        Asset = v14;
+        return;
+    }
+    /* ---- GetClassFromPrimaryAssetId: 114 dwords / 71 instructions (cache offset 0xc13c) ----
+        0000  PshVPtr       arg_m4                                      
+        0004  PSF           v2                                          
+        0008  CALLSYS       GetClassFromPrimaryAssetId                  
+        0014  PshNull                                                   
+        0018  PSF           v2                                          
+        001C  CALLSYS       TSubclassOf::opEquals                       
+        0028  CpyRtoV4      v5                                          
+        002C  NOT           v5                                          
+        0030  CpyVtoR1      v5                                          
+        0034  JLowZ         84                                            -> L018C
+        003C  PSF           v2                                          
+        0040  CALLSYS       TSubclassOf::GetDefaultObject               
+        004C  STOREOBJ      v10                                         
+        0050  CmpPtrNull    v10                                         
+        0054  JZ            9                                             -> L0080
+        005C  TYPEID        1140856898                                    ; ULokiDataAsset_Power@
+        0064  PSF           v12                                         
+        0068  PshVPtr       v10                                         
+        006C  CALLSYS       UObject::opCast                             
+        0078  JMP           1                                             -> L0084
+      L0080:
+        0080  ClrVPtr       v12                                         
+      L0084:
+        0084  PshVPtr       v12                                         
+        0088  RefCpyV       v8                                          
+        008C  CmpPtrNull    v8                                          
+        0090  JZ            18                                            -> L00E0
+        0098  PshVPtr       Asset                                       
+        009C  CALLSYS       TSubclassOf::$beh0                          
+        00A8  PSF           v14                                         
+        00AC  PshVPtr       v8                                          
+        00B0  ADDSi         112 67115074                                  ; .Power
+        00B8  CALLSYS       TSoftClassPtr::Get                          
+        00C4  PSF           v14                                         
+        00C8  PshVPtr       Asset                                       
+        00CC  CALLSYS       TSubclassOf::opAssign                       
+        00D8  JMP           57                                            -> L01C4
+      L00E0:
+        00E0  PSF           v2                                          
+        00E4  CALLSYS       TSubclassOf::GetDefaultObject               
+        00F0  STOREOBJ      v10                                         
+        00F4  CmpPtrNull    v10                                         
+        00F8  JZ            9                                             -> L0124
+        0100  TYPEID        1140856883                                    ; ULokiDataAsset_Equipment@
+        0108  PSF           v18                                         
+        010C  PshVPtr       v10                                         
+        0110  CALLSYS       UObject::opCast                             
+        011C  JMP           1                                             -> L0128
+      L0124:
+        0124  ClrVPtr       v18                                         
+      L0128:
+        0128  PshVPtr       v18                                         
+        012C  RefCpyV       v16                                         
+        0130  CmpPtrNull    v16                                         
+        0134  JZ            18                                            -> L0184
+        013C  PshVPtr       Asset                                       
+        0140  CALLSYS       TSubclassOf::$beh0                          
+        014C  PSF           v14                                         
+        0150  PshVPtr       v16                                         
+        0154  ADDSi         112 67115059                                  ; .Equipment
+        015C  CALLSYS       TSoftClassPtr::Get                          
+        0168  PSF           v14                                         
+        016C  PshVPtr       Asset                                       
+        0170  CALLSYS       TSubclassOf::opAssign                       
+        017C  JMP           16                                            -> L01C4
+      L0184:
+        0184  FreeNullV8    v16                                         
+        0188  FreeNullV8    v8                                          
+      L018C:
+        018C  PshVPtr       Asset                                       
+        0190  CALLSYS       TSubclassOf::$beh0                          
+        019C  PshNull                                                   
+        01A0  PSF           v14                                         
+        01A4  CALLSYS       TSubclassOf::$beh0                          
+        01B0  PSF           v14                                         
+        01B4  PshVPtr       Asset                                       
+        01B8  CALLSYS       TSubclassOf::opAssign                       
+      L01C4:
+        01C4  RET           6                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool GetIsPrototypeItem(const FPrimaryAssetId& Asset)   // traits=0x20
+    {
+        v2 = System::GetClassFromPrimaryAssetId(Asset);
+        v5 = v2 == nullptr;
+        v5 = !v5;
+        if (v5) {
+            v10 = v2.GetDefaultObject();
+            if (v10 != nullptr) {
+                v12 = cast<ULokiDataAsset_Power@>(v10);
+            } else {
+                v12 = nullptr;
+            }
+            v8 = v12;
+            if (v8 != nullptr) {
+                v5 = v8.Prototype;
+                return v5;
+            }
+            v10 = v2.GetDefaultObject();
+            if (v10 != nullptr) {
+                v16 = cast<ULokiDataAsset_Equipment@>(v10);
+            } else {
+                v16 = nullptr;
+            }
+            v14 = v16;
+            if (v14 != nullptr) {
+                v5 = v14.Prototype;
+                return v5;
+            }
+        }
+        v5 = false;
+        return v5;
+    }
+    /* ---- GetIsPrototypeItem: 81 dwords / 53 instructions (cache offset 0xc59c) ----
+        0000  PshVPtr       Asset                                       
+        0004  PSF           v2                                          
+        0008  CALLSYS       GetClassFromPrimaryAssetId                  
+        0014  PshNull                                                   
+        0018  PSF           v2                                          
+        001C  CALLSYS       TSubclassOf::opEquals                       
+        0028  CpyRtoV4      v5                                          
+        002C  NOT           v5                                          
+        0030  CpyVtoR1      v5                                          
+        0034  JLowZ         62                                            -> L0134
+        003C  PSF           v2                                          
+        0040  CALLSYS       TSubclassOf::GetDefaultObject               
+        004C  STOREOBJ      v10                                         
+        0050  CmpPtrNull    v10                                         
+        0054  JZ            9                                             -> L0080
+        005C  TYPEID        1140856898                                    ; ULokiDataAsset_Power@
+        0064  PSF           v12                                         
+        0068  PshVPtr       v10                                         
+        006C  CALLSYS       UObject::opCast                             
+        0078  JMP           1                                             -> L0084
+      L0080:
+        0080  ClrVPtr       v12                                         
+      L0084:
+        0084  PshVPtr       v12                                         
+        0088  RefCpyV       v8                                          
+        008C  CmpPtrNull    v8                                          
+        0090  JZ            7                                             -> L00B4
+        0098  LoadRObjR     v8 104 67115074                               ; .Prototype
+        00A4  RDR1          v5                                          
+        00A8  CpyVtoR4      v5                                          
+        00AC  JMP           35                                            -> L0140
+      L00B4:
+        00B4  PSF           v2                                          
+        00B8  CALLSYS       TSubclassOf::GetDefaultObject               
+        00C4  STOREOBJ      v10                                         
+        00C8  CmpPtrNull    v10                                         
+        00CC  JZ            9                                             -> L00F8
+        00D4  TYPEID        1140856883                                    ; ULokiDataAsset_Equipment@
+        00DC  PSF           v16                                         
+        00E0  PshVPtr       v10                                         
+        00E4  CALLSYS       UObject::opCast                             
+        00F0  JMP           1                                             -> L00FC
+      L00F8:
+        00F8  ClrVPtr       v16                                         
+      L00FC:
+        00FC  PshVPtr       v16                                         
+        0100  RefCpyV       v14                                         
+        0104  CmpPtrNull    v14                                         
+        0108  JZ            7                                             -> L012C
+        0110  LoadRObjR     v14 104 67115059                              ; .Prototype
+        011C  RDR1          v5                                          
+        0120  CpyVtoR4      v5                                          
+        0124  JMP           5                                             -> L0140
+      L012C:
+        012C  FreeNullV8    v14                                         
+        0130  FreeNullV8    v8                                          
+      L0134:
+        0134  SetV1         v5 0                                        
+        013C  CpyVtoR4      v5                                          
+      L0140:
+        0140  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnPlayerInitialized(const FGameEvent_GameReady_Controller& Event, const EGameEventStatefulEventType EventType, const AController@ Context)   // traits=0x28
+    {
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        v2.StopListeningToEvent(this.OnPlayerInitializedHandle);
+        if (this.ShouldUnlockFullArmory()) {
+            this.UnlockFullArmory();
+        }
+        this.AsyncLoadArmory();
+        return;
+    }
+    /* ---- OnPlayerInitialized: 29 dwords / 15 instructions (cache offset 0xc98f) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetGlobalGameEventRouter                    
+        0018  STOREOBJ      v2                                          
+        001C  PshVPtr       this                                        
+        0020  ADDSi         488 134230764                                 ; .OnPlayerInitializedHandle
+        0028  PshVPtr       v2                                          
+        002C  CALLSYS       UGameEventRouterComponent::StopListeningToEvent
+        0038  PshVPtr       this                                        
+        003C  CALLSYS       ULokiPlayerControllerArmoryComponentBase::ShouldUnlockFullArmory
+        0048  JLowZ         4                                             -> L0060
+        0050  PshVPtr       this                                        
+        0054  CALLSYS       ULokiPlayerControllerArmoryComponentBase::UnlockFullArmory
+      L0060:
+        0060  PshVPtr       this                                        
+        0064  CALLSYS       ULokiPlayerControllerArmoryComponentBase::AsyncLoadArmory
+        0070  RET           7                                           
+    */
+
+    UFUNCTION(UnrealName=AsyncLoadArmory, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    private void AsyncLoadArmory_Implementation()   // traits=0x28
+    {
+        v4 = TArray();
+        v28 = this.GetArmory();
+        v34 = v28.ItemsCollection.Iterator();
+        while (true) {
+            v41 = v34.CanProceed;
+            if (!v41) break;
+            v44 = v34.Proceed();
+            v4.Add(v44.PrimaryAssetId);
+        }
+        v48 = FOnLoadComplete();
+        v48.BindUFunction(this, n"OnAssetLoadComplete");
+        v52 = ULokiAssetManager::AsyncLoadPrimaryAssets(__WorldContext, v4, v48);
+        v52 = this.Handle;
+        return;
+    }
+    /* ---- AsyncLoadArmory_Implementation: 81 dwords / 47 instructions (cache offset 0xcb32) ----
+        0000  PSF           v4                                          
+        0004  CALLSYS       TArray::$beh0                               
+        0010  PSF           v28                                         
+        0014  PshVPtr       this                                        
+        0018  CALLSYS       ULokiPlayerControllerArmoryComponentBase::GetArmory
+        0024  PSF           v34                                         
+        0028  PSF           v28                                         
+        002C  ADDSi         24 67120828                                   ; .ItemsCollection
+        0034  CALLSYS       TArray::Iterator                            
+        0040  JMP           13                                            -> L007C
+      L0048:
+        0048  SUSPEND                                                   
+        004C  PSF           v34                                         
+        0050  CALLSYS       TArrayIterator::Proceed                     
+        005C  CpyRtoV8      v44                                         
+        0060  PshVPtr       v44                                         
+        0064  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        006C  PSF           v4                                          
+        0070  CALLSYS       TArray::Add                                 
+      L007C:
+        007C  LoadVObjR     v34 16 268448495                              ; .CanProceed
+        0088  RDR1          v41                                         
+        008C  CpyVtoR1      v41                                         
+        0090  JLowNZ        -20                                           -> L0048
+        0098  PSF           v48                                         
+        009C  CALLSYS       FOnLoadComplete::$beh0                      
+        00A8  PshC4         7                                           
+        00B0  CALLSYS       __STATIC_NAME                               
+        00BC  PshRPtr                                                   
+        00C0  PshVPtr       this                                        
+        00C4  PSF           v48                                         
+        00C8  CALLSYS       FOnLoadComplete::BindUFunction              
+        00D4  PSF           v48                                         
+        00D8  PSF           v4                                          
+        00DC  PshGPtr       __WorldContext                              
+        00E8  CALLSYS       AsyncLoadPrimaryAssets                      
+        00F4  STOREOBJ      v52                                         
+        00F8  PshVPtr       v52                                         
+        00FC  PshVPtr       this                                        
+        0100  ADDSi         448 134230764                                 ; .Handle
+        0108  REFCPY                                                    
+        010C  PopPtr                                                    
+        0110  PSF           v48                                         
+        0114  CALLSYS       FOnLoadComplete::$beh2                      
+        0120  PSF           v28                                         
+        0124  CALLSYS       FPlayerArmory::$beh2                        
+        0130  PSF           v4                                          
+        0134  CALLSYS       TArray::$beh2                               
+        0140  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnAssetLoadComplete()   // traits=0x28
+    {
+        v1 = true;
+        this.bLoadComplete = v1;
+        v6 = ULokiAssetManager::GetLokiAssetManager();
+        v30 = this.GetArmory();
+        v34 = TArray();
+        v40 = v30.ItemsCollection.Iterator();
+        while (true) {
+            v1 = v40.CanProceed;
+            if (!v1) break;
+            v48 = v40.Proceed();
+            if (Loki::LokiIsServer(__WorldContext)) {
+                v1 = LokiGameplay::IsAssetIDEnabled(__WorldContext, v48.PrimaryAssetId);
+                v1 = !v1;
+                if (v1) {
+                    v1 = true;
+                    this.SetIsReplicated(v1);
+                    this.DisabledItemAssetIDs.AddUnique(v48.PrimaryAssetId);
+                }
+            }
+            v52 = v6.GetLokiDataAsset(v48.PrimaryAssetId);
+            if (v52 != nullptr) {
+                v54 = cast<ULokiDataAsset_Power@>(v52);
+            } else {
+                v54 = nullptr;
+            }
+            v50 = v54;
+            if (v50 != nullptr) {
+                v58 = FOnSoftClassLoaded();
+                v58.BindUFunction(this, n"OnClassLoadComplete");
+                v50.Power.LoadAsync(v58);
+            } else {
+                v52 = v6.GetLokiDataAsset(v48.PrimaryAssetId);
+                if (v52 != nullptr) {
+                    v64 = cast<ULokiDataAsset_Equipment@>(v52);
+                } else {
+                    v64 = nullptr;
+                }
+                v62 = v64;
+                if (v62 != nullptr) {
+                    v58 = FOnSoftClassLoaded();
+                    v58.BindUFunction(this, n"OnClassLoadComplete");
+                    v62.Equipment.LoadAsync(v58);
+                }
+            }
+        }
+        v1 = this.bFullyUnlockedArmory;
+        if (v1) {
+            this.RemoveSeasonContentFromFullArmory();
+        }
+        return;
+    }
+    /* ---- OnAssetLoadComplete: 205 dwords / 119 instructions (cache offset 0xce32) ----
+        0000  SetV1         v1 1                                        
+        0008  LoadThisR     360 134230764                                 ; this.bLoadComplete
+        0010  WRTV1         v1                                          
+        0014  CALLSYS       GetLokiAssetManager                         
+        0020  STOREOBJ      v6                                          
+        0024  PSF           v30                                         
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       ULokiPlayerControllerArmoryComponentBase::GetArmory
+        0038  PSF           v34                                         
+        003C  CALLSYS       TArray::$beh0                               
+        0048  PSF           v40                                         
+        004C  PSF           v30                                         
+        0050  ADDSi         24 67120828                                   ; .ItemsCollection
+        0058  CALLSYS       TArray::Iterator                            
+        0064  JMP           152                                           -> L02CC
+      L006C:
+        006C  SUSPEND                                                   
+        0070  PSF           v40                                         
+        0074  CALLSYS       TArrayIterator::Proceed                     
+        0080  CpyRtoV8      v48                                         
+        0084  PshGPtr       __WorldContext                              
+        0090  CALLSYS       LokiIsServer                                
+        009C  JLowZ         30                                            -> L011C
+        00A4  PshVPtr       v48                                         
+        00A8  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        00B0  PshGPtr       __WorldContext                              
+        00BC  CALLSYS       IsAssetIDEnabled                            
+        00C8  CpyRtoV4      v1                                          
+        00CC  NOT           v1                                          
+        00D0  CpyVtoR1      v1                                          
+        00D4  JLowZ         16                                            -> L011C
+        00DC  SetV1         v1 1                                        
+        00E4  PshV4         v1                                          
+        00E8  PshVPtr       this                                        
+        00EC  CALLSYS       UActorComponent::SetIsReplicated            
+        00F8  PshVPtr       v48                                         
+        00FC  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        0104  PshVPtr       this                                        
+        0108  ADDSi         472 134230764                                 ; .DisabledItemAssetIDs
+        0110  CALLSYS       TArray::AddUnique                           
+      L011C:
+        011C  PshVPtr       v48                                         
+        0120  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        0128  PshVPtr       v6                                          
+        012C  CALLSYS       ULokiAssetManager::GetLokiDataAsset         
+        0138  STOREOBJ      v52                                         
+        013C  CmpPtrNull    v52                                         
+        0140  JZ            9                                             -> L016C
+        0148  TYPEID        1140856898                                    ; ULokiDataAsset_Power@
+        0150  PSF           v54                                         
+        0154  PshVPtr       v52                                         
+        0158  CALLSYS       UObject::opCast                             
+        0164  JMP           1                                             -> L0170
+      L016C:
+        016C  ClrVPtr       v54                                         
+      L0170:
+        0170  PshVPtr       v54                                         
+        0174  RefCpyV       v50                                         
+        0178  CmpPtrNull    v50                                         
+        017C  JZ            28                                            -> L01F4
+        0184  PSF           v58                                         
+        0188  CALLSYS       FOnSoftClassLoaded::$beh0                   
+        0194  PshC4         8                                           
+        019C  CALLSYS       __STATIC_NAME                               
+        01A8  PshRPtr                                                   
+        01AC  PshVPtr       this                                        
+        01B0  PSF           v58                                         
+        01B4  CALLSYS       FOnSoftClassLoaded::BindUFunction           
+        01C0  PSF           v58                                         
+        01C4  PshVPtr       v50                                         
+        01C8  ADDSi         112 67115074                                  ; .Power
+        01D0  CALLSYS       TSoftClassPtr::LoadAsync                    
+        01DC  PSF           v58                                         
+        01E0  CALLSYS       FOnSoftClassLoaded::$beh2                   
+        01EC  JMP           53                                            -> L02C8
+      L01F4:
+        01F4  PshVPtr       v48                                         
+        01F8  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        0200  PshVPtr       v6                                          
+        0204  CALLSYS       ULokiAssetManager::GetLokiDataAsset         
+        0210  STOREOBJ      v52                                         
+        0214  CmpPtrNull    v52                                         
+        0218  JZ            9                                             -> L0244
+        0220  TYPEID        1140856883                                    ; ULokiDataAsset_Equipment@
+        0228  PSF           v64                                         
+        022C  PshVPtr       v52                                         
+        0230  CALLSYS       UObject::opCast                             
+        023C  JMP           1                                             -> L0248
+      L0244:
+        0244  ClrVPtr       v64                                         
+      L0248:
+        0248  PshVPtr       v64                                         
+        024C  RefCpyV       v62                                         
+        0250  CmpPtrNull    v62                                         
+        0254  JZ            26                                            -> L02C4
+        025C  PSF           v58                                         
+        0260  CALLSYS       FOnSoftClassLoaded::$beh0                   
+        026C  PshC4         8                                           
+        0274  CALLSYS       __STATIC_NAME                               
+        0280  PshRPtr                                                   
+        0284  PshVPtr       this                                        
+        0288  PSF           v58                                         
+        028C  CALLSYS       FOnSoftClassLoaded::BindUFunction           
+        0298  PSF           v58                                         
+        029C  PshVPtr       v62                                         
+        02A0  ADDSi         112 67115059                                  ; .Equipment
+        02A8  CALLSYS       TSoftClassPtr::LoadAsync                    
+        02B4  PSF           v58                                         
+        02B8  CALLSYS       FOnSoftClassLoaded::$beh2                   
+      L02C4:
+        02C4  FreeNullV8    v62                                         
+      L02C8:
+        02C8  FreeNullV8    v50                                         
+      L02CC:
+        02CC  LoadVObjR     v40 16 268448495                              ; .CanProceed
+        02D8  RDR1          v1                                          
+        02DC  CpyVtoR1      v1                                          
+        02E0  JLowNZ        -159                                          -> L006C
+        02E8  LoadThisR     208 67115314                                  ; this.bFullyUnlockedArmory
+        02F0  RDR1          v1                                          
+        02F4  CpyVtoR1      v1                                          
+        02F8  JLowZ         4                                             -> L0310
+        0300  PshVPtr       this                                        
+        0304  CALLSYS       ULokiPlayerControllerArmoryComponentBase::RemoveSeasonContentFromFullArmory
+      L0310:
+        0310  PSF           v34                                         
+        0314  CALLSYS       TArray::$beh2                               
+        0320  PSF           v30                                         
+        0324  CALLSYS       FPlayerArmory::$beh2                        
+        0330  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnClassLoadComplete(UClass@ LoadedClass)   // traits=0x28
+    {
+        this.LoadedClasses.AddUnique(LoadedClass);
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v4 = TSubclassOf(LoadedClass);
+            v1 = LokiGameplay::IsAssetEnabled(__WorldContext, v4);
+            v1 = !v1;
+            if (v1) {
+                v1 = true;
+                this.SetIsReplicated(v1);
+                v4 = TSubclassOf(LoadedClass);
+                this.DisabledItems.AddUnique(v4);
+            }
+        }
+        return;
+    }
+    /* ---- OnClassLoadComplete: 52 dwords / 29 instructions (cache offset 0xd452) ----
+        0000  PSF           LoadedClass                                 
+        0004  PshVPtr       this                                        
+        0008  ADDSi         384 134230764                                 ; .LoadedClasses
+        0010  CALLSYS       TArray::AddUnique                           
+        001C  PshGPtr       __WorldContext                              
+        0028  CALLSYS       LokiIsServer                                
+        0034  JLowZ         36                                            -> L00CC
+        003C  PshVPtr       LoadedClass                                 
+        0040  PSF           v4                                          
+        0044  CALLSYS       TSubclassOf::$beh0                          
+        0050  PSF           v4                                          
+        0054  PshGPtr       __WorldContext                              
+        0060  CALLSYS       IsAssetEnabled                              
+        006C  CpyRtoV4      v1                                          
+        0070  NOT           v1                                          
+        0074  CpyVtoR1      v1                                          
+        0078  JLowZ         19                                            -> L00CC
+        0080  SetV1         v1 1                                        
+        0088  PshV4         v1                                          
+        008C  PshVPtr       this                                        
+        0090  CALLSYS       UActorComponent::SetIsReplicated            
+        009C  PshVPtr       LoadedClass                                 
+        00A0  PSF           v4                                          
+        00A4  CALLSYS       TSubclassOf::$beh0                          
+        00B0  PSF           v4                                          
+        00B4  PshVPtr       this                                        
+        00B8  ADDSi         456 134230764                                 ; .DisabledItems
+        00C0  CALLSYS       TArray::AddUnique                           
+      L00CC:
+        00CC  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool IsAssetEnabled(const TSubclassOf<AActor@>& ItemClass)   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = LokiGameplay::IsAssetEnabled(__WorldContext, ItemClass);
+            return v1;
+        } else {
+            v1 = this.DisabledItems.Contains(ItemClass);
+            v1 = !v1;
+        }
+        return v1;
+    }
+    /* ---- IsAssetEnabled: 30 dwords / 17 instructions (cache offset 0xd6b7) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         11                                            -> L004C
+        0020  PshVPtr       ItemClass                                   
+        0024  PshGPtr       __WorldContext                              
+        0030  CALLSYS       IsAssetEnabled                              
+        003C  CpyRtoV4      v1                                          
+        0040  CpyVtoR4      v1                                          
+        0044  JMP           10                                            -> L0074
+      L004C:
+        004C  PshVPtr       ItemClass                                   
+        0050  PshVPtr       this                                        
+        0054  ADDSi         456 134230764                                 ; .DisabledItems
+        005C  CALLSYS       TArray::Contains                            
+        0068  CpyRtoV4      v1                                          
+        006C  NOT           v1                                          
+        0070  CpyVtoR4      v1                                          
+      L0074:
+        0074  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool IsAssetIDEnabled(const FPrimaryAssetId& ItemAssetID)   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = LokiGameplay::IsAssetIDEnabled(__WorldContext, ItemAssetID);
+            return v1;
+        } else {
+            v1 = this.DisabledItemAssetIDs.Contains(ItemAssetID);
+            v1 = !v1;
+        }
+        return v1;
+    }
+    /* ---- IsAssetIDEnabled: 30 dwords / 17 instructions (cache offset 0xd86f) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         11                                            -> L004C
+        0020  PshVPtr       ItemAssetID                                 
+        0024  PshGPtr       __WorldContext                              
+        0030  CALLSYS       IsAssetIDEnabled                            
+        003C  CpyRtoV4      v1                                          
+        0040  CpyVtoR4      v1                                          
+        0044  JMP           10                                            -> L0074
+      L004C:
+        004C  PshVPtr       ItemAssetID                                 
+        0050  PshVPtr       this                                        
+        0054  ADDSi         472 134230764                                 ; .DisabledItemAssetIDs
+        005C  CALLSYS       TArray::Contains                            
+        0068  CpyRtoV4      v1                                          
+        006C  NOT           v1                                          
+        0070  CpyVtoR4      v1                                          
+      L0074:
+        0074  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool CanBuyItem(const FArmoryShopItem& Item)   // traits=0x20
+    {
+        v1 = this.IsAssetIDEnabled(Item.AssetId);
+        v1 = !v1;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = this.IsAssetEnabled(Item.ItemClass);
+            v2 = !v2;
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = false;
+            return v2;
+        } else {
+            v26 = this.GetArmory();
+            v32 = v26.ItemsCollection.Iterator();
+            while (true) {
+                v1 = v32.CanProceed;
+                if (!v1) break;
+                v40 = v32.Proceed();
+                v44 = FPrimaryAssetId(v40.PrimaryAssetId);
+                v2 = v44 == Item.AssetId;
+                if (v2) {
+                    v46 = Item.ItemClass.GetDefaultObject();
+                    if (v46 != nullptr) {
+                        v50 = v46.GetSlotName();
+                        v2 = v50 == this.PerkSlotName;
+                        if (v2) {
+                            v54 = this.GetPlayerState();
+                            if (v54 != nullptr) {
+                                v58 = v54.GetInventory();
+                                if (v58 != nullptr) {
+                                    v1 = v58.HasItemByClass(Item.ItemClass);
+                                    v1 = !v1;
+                                    return v1;
+                                }
+                            }
+                        }
+                    }
+                    v2 = true;
+                    return v2;
+                }
+            }
+            v1 = false;
+        }
+        return v1;
+    }
+    /* ---- CanBuyItem: 158 dwords / 99 instructions (cache offset 0xda1c) ----
+        0000  PshVPtr       Item                                        
+        0004  ADDSi         40 67121011                                   ; .AssetId
+        000C  PshVPtr       this                                        
+        0010  CALLINTF      84044                                         ; ULokiPlayerControllerArmoryComponent::IsAssetIDEnabled
+        0018  CpyRtoV4      v1                                          
+        001C  NOT           v1                                          
+        0020  CpyVtoR1      v1                                          
+        0024  JLowZ         4                                             -> L003C
+        002C  SetV1         v1 1                                        
+        0034  JMP           10                                            -> L0064
+      L003C:
+        003C  PshVPtr       Item                                        
+        0040  ADDSi         0 67121011                                    ; .ItemClass
+        0048  PshVPtr       this                                        
+        004C  CALLINTF      84043                                         ; ULokiPlayerControllerArmoryComponent::IsAssetEnabled
+        0054  CpyRtoV4      v2                                          
+        0058  NOT           v2                                          
+        005C  CpyVtoV4      v1 v2                                       
+      L0064:
+        0064  CpyVtoR1      v1                                          
+        0068  JLowZ         5                                             -> L0084
+        0070  SetV1         v2 0                                        
+        0078  CpyVtoR4      v2                                          
+        007C  JMP           124                                           -> L0274
+      L0084:
+        0084  PSF           v26                                         
+        0088  PshVPtr       this                                        
+        008C  CALLSYS       ULokiPlayerControllerArmoryComponentBase::GetArmory
+        0098  PSF           v32                                         
+        009C  PSF           v26                                         
+        00A0  ADDSi         24 67120828                                   ; .ItemsCollection
+        00A8  CALLSYS       TArray::Iterator                            
+        00B4  JMP           96                                            -> L023C
+      L00BC:
+        00BC  SUSPEND                                                   
+        00C0  PSF           v32                                         
+        00C4  CALLSYS       TArrayIterator::Proceed                     
+        00D0  CpyRtoV8      v40                                         
+        00D4  PshVPtr       v40                                         
+        00D8  ADDSi         0 67120826                                    ; .PrimaryAssetId
+        00E0  PSF           v44                                         
+        00E4  CALLSYS       FPrimaryAssetId::$beh0                      
+        00F0  PshVPtr       Item                                        
+        00F4  ADDSi         40 67121011                                   ; .AssetId
+        00FC  PSF           v44                                         
+        0100  CALLSYS       FPrimaryAssetId::opEquals                   
+        010C  CpyRtoV4      v2                                          
+        0110  PSF           v44                                         
+        0114  CALLSYS       FPrimaryAssetId::$beh2                      
+        0120  CpyVtoR1      v2                                          
+        0124  JLowZ         68                                            -> L023C
+        012C  PshVPtr       Item                                        
+        0130  ADDSi         0 67121011                                    ; .ItemClass
+        0138  CALLSYS       TSubclassOf::GetDefaultObject               
+        0144  STOREOBJ      v46                                         
+        0148  CmpPtrNull    v46                                         
+        014C  JZ            49                                            -> L0218
+        0154  PSF           v50                                         
+        0158  PshVPtr       v46                                         
+        015C  CALLSYS       ALokiBaseItem::GetSlotName                  
+        0168  PshVPtr       this                                        
+        016C  ADDSi         344 134230764                                 ; .PerkSlotName
+        0174  PSF           v50                                         
+        0178  CALLSYS       FName::opEquals                             
+        0184  CpyRtoV4      v2                                          
+        0188  CpyVtoR1      v2                                          
+        018C  JLowZ         33                                            -> L0218
+        0194  PshVPtr       this                                        
+        0198  CALLINTF      84036                                         ; ULokiPlayerControllerArmoryComponent::GetPlayerState
+        01A0  STOREOBJ      v54                                         
+        01A4  CmpPtrNull    v54                                         
+        01A8  JZ            25                                            -> L0214
+        01B0  PshVPtr       v54                                         
+        01B4  CALLSYS       ALokiPlayerState::GetInventory              
+        01C0  STOREOBJ      v58                                         
+        01C4  CmpPtrNull    v58                                         
+        01C8  JZ            16                                            -> L0210
+        01D0  PshVPtr       Item                                        
+        01D4  ADDSi         0 67121011                                    ; .ItemClass
+        01DC  PshVPtr       v58                                         
+        01E0  CALLSYS       ULokiInventoryComponentBase::HasItemByClass 
+        01EC  CpyRtoV4      v1                                          
+        01F0  NOT           v1                                          
+        01F4  PSF           v26                                         
+        01F8  CALLSYS       FPlayerArmory::$beh2                        
+        0204  CpyVtoR4      v1                                          
+        0208  JMP           25                                            -> L0274
+      L0210:
+        0210  FreeNullV8    v58                                         
+      L0214:
+        0214  FreeNullV8    v54                                         
+      L0218:
+        0218  SetV1         v2 1                                        
+        0220  PSF           v26                                         
+        0224  CALLSYS       FPlayerArmory::$beh2                        
+        0230  CpyVtoR4      v2                                          
+        0234  JMP           14                                            -> L0274
+      L023C:
+        023C  LoadVObjR     v32 16 268448495                              ; .CanProceed
+        0248  RDR1          v1                                          
+        024C  CpyVtoR1      v1                                          
+        0250  JLowNZ        -103                                          -> L00BC
+        0258  SetV1         v1 0                                        
+        0260  PSF           v26                                         
+        0264  CALLSYS       FPlayerArmory::$beh2                        
+        0270  CpyVtoR4      v1                                          
+      L0274:
+        0274  RET           4                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = false;
+        this.SetComponentTickEnabled(v1);
+        v1 = false;
+        this.SetbReplicates(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 15 dwords / 9 instructions (cache offset 0xdf8a) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetComponentTickEnabled    
+        001C  SetV1         v1 0                                        
+        0024  PshV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       UActorComponent::SetbReplicates             
+        0038  RET           2                                           
+    */
+
+    void ~ULokiPlayerControllerArmoryComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiPlayerControllerArmoryComponent: 37 dwords / 19 instructions (cache offset 0xe329) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         368 134230764                                 ; .PurchasedKits
+        000C  CALLSYS       TArray::$beh2                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         384 134230764                                 ; .LoadedClasses
+        0024  CALLSYS       TArray::$beh2                               
+        0030  PshVPtr       this                                        
+        0034  ADDSi         400 134230764                                 ; .DefaultArmory
+        003C  CALLSYS       FPlayerArmory::$beh2                        
+        0048  PshVPtr       this                                        
+        004C  ADDSi         456 134230764                                 ; .DisabledItems
+        0054  CALLSYS       TArray::$beh2                               
+        0060  PshVPtr       this                                        
+        0064  ADDSi         472 134230764                                 ; .DisabledItemAssetIDs
+        006C  CALLSYS       TArray::$beh2                               
+        0078  PshVPtr       this                                        
+        007C  ADDSi         488 134230764                                 ; .OnPlayerInitializedHandle
+        0084  CALLSYS       FGameEventListenerHandle::$beh2             
+        0090  RET           2                                           
+    */
+
+}
+
