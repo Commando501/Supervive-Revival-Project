@@ -30,3 +30,15 @@ __pycache__/
 
 # MSYS/Git-Bash crash droppings
 *.stackdump
+
+# Locally-generated TLS chain for the redirect (root CA + leaf + PRIVATE KEY).
+# NEVER track these. server/internal/tlscert EnsureCert() generates them on first
+# run and REUSES whatever is already on disk, and launch-redirect.ps1 appends
+# certs/root.crt to the game's cacert.pem — which is the client's GENERAL CA
+# bundle, not a per-host pin. So a committed root.crt/server.key would make every
+# self-hoster who starts ags directly (rather than via the launcher, which wipes
+# this dir first) install a CA whose private key is public into their trust store.
+# The certs are not machine-specific and a shared one would "work"; that is exactly
+# why this is easy to get wrong. Nothing needs to be created by hand — EnsureCert
+# does os.MkdirAll and generates a fresh 10-year chain when the dir is empty.
+/certs/
