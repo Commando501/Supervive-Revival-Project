@@ -954,3 +954,76 @@ distinguishing a resolved module from a guessed one.
   but not a packer mapping. This is the audit's "ANIM crash".
 * `_0000` — `pc = 0x2C5D0641C47`, zero-byte dump, `frame0mod=Unknown`; unresolved, and its status as a
   game death is disputed (see the denominator audit §2).
+
+---
+
+## 12. ★★★ DISCRIMINATOR RESULT — the shims provoke it, and BOTH families reproduce at the menu
+
+**2026-08-04 18:17–18:20.** Default launch (full shim set), `forceTutorialMatch = false`, idle at the
+**menu** — no tutorial, no world. Protocol otherwise identical to the clean runs. Driver:
+`scratchpad/shim-runs.ps1`.
+
+### 3 of 3 died
+
+| run | outcome | died at | shims confirmed active | crashpad key | dump |
+|---|---|---:|---|---:|---|
+| shim 1 | **DIED** | ~65 s | all 6 | 0 | **none** |
+| shim 2 | **DIED** | **~23 s** | catalog-store-fix | 1 | `3e17e732` (5.4 MB) |
+| shim 3 | **DIED** | ~37–41 s | 3 | 1 | `590cfd83` (43.7 MB) |
+
+⚠ **Driver bug, corrected here:** run 2's summary line reads `uptime=0s`. `$elapsed` is not recomputed
+on the death path out of the positive-control loop. Real figure from timestamps: process started
+18:18:36, crashpad flush 18:18:59 ⇒ **~23 s**. Do not quote the 0.
+
+**Positive control passed on every run** — shim markers (all 15 days stale beforehand) were rewritten
+after each launch, so these are genuinely instrumented runs, not clean runs wearing a label.
+
+### The contrast is now clean, and it is the whole answer
+
+| configuration | tutorial? | shims? | exposure | deaths |
+|---|---|---|---:|---:|
+| clean `-NoHook`, menu-idle | no | **no** | 5,173 s (86.2 min), 4 runs | **0** |
+| **shims, menu-idle** | **no** | **yes** | ~129 s, 3 runs | **3** |
+| instrumented + force-open tutorial | yes | yes | 1,487 s (24.8 min), 5 sessions | 5 |
+
+⇒ **MEASURED: the tutorial is NOT required. The shims are sufficient.** The confound that survived
+runs 1–4 is broken: holding "menu-idle" fixed and toggling only the shims flips the outcome from
+0/4 deaths to 3/3 deaths, and the shim runs die **an order of magnitude faster** (23–65 s vs 86 min
+of clean survival). Every death is far short of the documented ~285 s integrity-check window.
+
+### ★ Both families reproduced — on demand, at the menu
+
+```
+shim run 2  3e17e732:  rip = 0x7FFD3B400001   parm0=0x8 EXECUTE/DEP   NO module
+                       chain = EMPTY (zero SUPERVIVE frames)
+                       stack = KERNEL32+0x17374, ntdll+0x4CC91   <- thread-entry pair
+            => FAMILY A, and note the address is BYTE-IDENTICAL to the reference
+               tutorial death 41cdafa3. Different process, different session, same
+               fault address — confirming the family is carried by a recurring LOAD
+               ADDRESS (the packer's mapper is deterministic), not by a computation.
+
+shim run 3  590cfd83:  rip = 0x1C835EC205D    parm0=0x0 READ (unmapped)  NO module
+                       0x1C835EC205D - 0x205D = 0x1C835EC0000  (64 KB aligned)
+            => FAMILY B — the family discovered offline in §11, now caught live.
+```
+
+**★ And run 3 is a first: a Family B death WITH SUPERVIVE frames on the stack —
+`chain = 888cee8 8831758`.** Every one of the six corpus members of Family B is chainless. This is
+the first specimen that carries game frames, i.e. the first one that can be tied to a call site.
+Neither RVA appears in FK-7 Family A (`3495973 3405f13 3691a72…`), Family B (`3c5dc52…`/`12c7e2d…`)
+or the S108 family — it is a new chain. **That is the next lead, and it is free.**
+
+### What this does and does not say
+
+* **DOES:** our instrumentation — injection and/or shim behaviour — provokes both packer families,
+  reliably and within a minute, with no tutorial involved. FK-7 work must treat instrumented-run
+  deaths as suspect by default.
+* **DOES NOT** distinguish **the act of manual-mapping a DLL** from **what the shims then do**. Both
+  are "our modifications", and the clean arm skipped both (`-NoHook` also skips `inject.exe`).
+  Separating them needs a run that injects a **do-nothing** DLL. That is the next experiment, and it
+  is cheap.
+* **DOES NOT** let shim count be read as a dose: the "shims active" column is a lower bound sampled at
+  death, so it rises with lifetime by construction. Run 1 lived longest *and* shows all six. Reading
+  that as "more shims = slower death" would be backwards causality from a sampling artifact.
+* ⚠ **Run 1 died with NO crashpad artifact and no handoff line** — a genuine "neither artifact" death,
+  the class the denominator audit found and sized at 3. Its cause is unrecorded.
