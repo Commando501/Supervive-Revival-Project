@@ -1,4 +1,4 @@
-package interactive
+﻿package interactive
 
 import (
 	"encoding/base64"
@@ -17,7 +17,7 @@ type Service struct {
 	store *store
 	// partyDirty, if set, is called with a player id after a loadout-affecting write
 	// so the lobby service can drop that player's messenger socket and force a prompt
-	// party re-apply (the S85 avatar-switch latency fix — see lobby.MarkDirty). nil in
+	// party re-apply (the S85 avatar-switch latency fix â€” see lobby.MarkDirty). nil in
 	// tests / when no lobby service is wired.
 	partyDirty func(id string)
 }
@@ -44,7 +44,7 @@ func (s *Service) markLoadoutDirty(id string) {
 // {} catch-all; registering them lets writes round-trip. Patterns are more
 // specific than the catch-all "/" in cmd/ags, so they take precedence, and none
 // collide with package menu's routes (menu owns /progression/players/{id}/tracks;
-// we own /progression/players/{id} and .../mission — distinct patterns).
+// we own /progression/players/{id} and .../mission â€” distinct patterns).
 func (s *Service) Register(mux *http.ServeMux) {
 	// ---- Personalization: client profile (the most visible round-trip) ----
 	// The client SAVES preferences/visibility tracking here (SetClientProfileRequest,
@@ -65,15 +65,15 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// usmap schemas (see loadout.go) identify this GET as the loadout fetch the
 	// customization page repopulates from (ULoadoutReconciler). We answer with
 	// the full loadout doc built from persisted equips; the original probe keys
-	// are kept alongside (unmatched keys are ignored — zero regression).
+	// are kept alongside (unmatched keys are ignored â€” zero regression).
 	mux.HandleFunc("GET /personalization/players/{id}", s.handleGetPersonalizationPlayer)
 
 	// ---- Personalization: customization equips (slot cosmetics, emotes, titles,
-	// hero skin bundles, luxe chromas) — see loadout.go for the recovered models.
+	// hero skin bundles, luxe chromas) â€” see loadout.go for the recovered models.
 	s.registerLoadout(mux)
 
 	// ---- Progression ----
-	// GET /progression/players/{id} logged "Invalid response received" on {} — it
+	// GET /progression/players/{id} logged "Invalid response received" on {} â€” it
 	// wants the standard AccelByte data/paging wrapper (model
 	// FAccelByteModelsListUserProgressionInfoPagingSlicedResult). PUT .../mission
 	// claims/tracks a mission; no request body is captured (likely query/empty), so
@@ -81,33 +81,33 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /progression/players/{id}", s.handleGetProgression)
 	mux.HandleFunc("PUT /progression/players/{id}/mission", s.handlePutMission)
 
-	// ---- Missions (Option 2: real progress tracking) — see missions.go ----
+	// ---- Missions (Option 2: real progress tracking) â€” see missions.go ----
 	// Revival-only endpoints (NOT an impersonated client route): the client-side
 	// missions shim fetches per-objective progress here on menu load and applies it
 	// to the modal's bars; match-end hooks increment it. Persisted per objective
 	// unique-name (GetUniqueObjectiveName) in the shared store.
 	s.registerMissions(mux)
 
-	// ---- Party (solo auto-party — the tutorial/match launch gate) ----
+	// ---- Party (solo auto-party â€” the tutorial/match launch gate) ----
 	// The client polls GET /party/players/{id}?defaultQueue=tutorialNew to fetch (and
 	// lazily create) its party. With the {} stub the client's PartyManager believes
 	// "player not in party" (Loki.log warns exactly that), so clicking a tutorial /
-	// FIND MATCH is a silent client-side no-op — it never even sends a start request.
+	// FIND MATCH is a silent client-side no-op â€” it never even sends a start request.
 	// We synthesize a valid SOLO party (the player as JOINED leader) so the launch
 	// flow unblocks. Model is AccelByte's V2 session-based party (PartyMembers, member
 	// status JOINED/CONNECTED, PartyReservation) wrapped by Theorycraft's /party
 	// service; exact JSON shape is unconfirmed (no response body was ever captured), so
-	// this is a superset probe — UE ignores unmatched keys and matches case-insensitively.
+	// this is a superset probe â€” UE ignores unmatched keys and matches case-insensitively.
 	mux.HandleFunc("GET /party/players/{id}", s.handleGetParty)
 
 	// The detailed party object. After GET /party/players/{id} tells the client its
 	// partyId, the client polls GET /party/parties/{partyId} for the full party (members,
-	// queue state, …). This is what populates the PARTY panel slots; the {} stub leaves
+	// queue state, â€¦). This is what populates the PARTY panel slots; the {} stub leaves
 	// them empty. Same Theorycraft model as /party/players; player id is derived from the
 	// partyId ("party-<playerId>") we minted, falling back to the JWT.
 	mux.HandleFunc("GET /party/parties/{partyId}", s.handleGetPartyDetail)
 
-	// ---- Party: set my member (hero/cosmetics selection — the selected-hunter flow) ----
+	// ---- Party: set my member (hero/cosmetics selection â€” the selected-hunter flow) ----
 	// Picking an owned hunter in the ALL HUNTERS roster calls TryPickMyHeroAndCosmetics on
 	// the native PartyManager (traced from WBP_UI_PartyHeroSelect bytecode: OnHeroSelected ->
 	// TryPick -> PartyManager.TryPickMyHeroAndCosmetics(HeroAssetId, CosmeticsAssetId)). That
@@ -122,7 +122,7 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// PROBE: the exact verb+path for the member write was never captured (heroes only became
 	// selectable this session), so we register the best-guess POST/PUT on the members subpath.
 	// If the real path differs, this simply never fires (the write falls through to {} as
-	// before — no regression); the seed default still renders a hunter. Confirm/trim the path
+	// before â€” no regression); the seed default still renders a hunter. Confirm/trim the path
 	// from a live capture of a hero click, then narrow this.
 	mux.HandleFunc("POST /party/parties/{partyId}/members/{memberId}", s.handleSetPartyMember)
 	mux.HandleFunc("PUT /party/parties/{partyId}/members/{memberId}", s.handleSetPartyMember)
@@ -135,17 +135,17 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// the (local) tutorial match, and echo the party as a clean success body.
 	mux.HandleFunc("POST /party/parties/{partyId}/startSoloMode", s.handleStartSoloMode)
 
-	// ---- Party: matchmaking (available queues — unlocks the ActivityPicker tiles) ----
+	// ---- Party: matchmaking (available queues â€” unlocks the ActivityPicker tiles) ----
 	// The play menu is WBP_ActivityPickerScreen; its InitializeQueues builds each activity
 	// tile ONLY if the tile's queue id is present in PartyModel.GetQueues() (traced from
 	// bytecode: GetPartyManager->GetPartyModel->GetQueues, then per-tile FindQueueByID +
-	// Set_Contains). A tile whose queue isn't in that set renders "locked" — it shows a hover
+	// Set_Contains). A tile whose queue isn't in that set renders "locked" â€” it shows a hover
 	// highlight but a CLICK can't latch a selection (the selected state is derived from the
 	// party's TargetQueueID, and the queue must resolve first), so FIND MATCH stays a no-op.
 	// That set is populated from GET /party/matchmaking/info, which deserializes into QueueInfo
 	// (usmap QueueInfo: Queues []string, ETag string, LastUpdated DateTime). With the {} stub
 	// the list is empty -> every tile locked -> the exact silent no-op the user hit.
-	// We advertise the full known queue-id set — the string constants InitializeQueues checks:
+	// We advertise the full known queue-id set â€” the string constants InitializeQueues checks:
 	//   default deathmatch practice dropin customgame bots tutorialNew training
 	//   armorydeathmath tournament   ("armorydeathmath" is the game's own misspelling, verbatim).
 	// customGameModes is the sibling list for the custom-game screen -> CustomGameModeInfo
@@ -157,25 +157,25 @@ func (s *Service) Register(mux *http.ServeMux) {
 
 	// ---- Core-game (match lifecycle / region ping) ----
 	// GET /core-game/players/{id} is the "do I have an active match to rejoin?" heartbeat
-	// (rapid-polled while a solo-start allocates — ~17/s in S61). GROUND TRUTH (usmap
+	// (rapid-polled while a solo-start allocates â€” ~17/s in S61). GROUND TRUTH (usmap
 	// CoreGamePlayer, 4 props): { ID, MatchID, Version, CanDisassociate }. The client
 	// watches for a non-empty MatchID, then fetches the full match (MatchInfo) from the
 	// match route below and travels. GET /core-game/regions feeds the region latency ping
 	// (the menu's "??? - ms" + the missing ST_ServerLocations). The upstream hero-asset gate
 	// that used to block this (every hunter UnknownHero) is now solved (roster fix), and the
 	// native solo-start walls are down (S61: login vtable slot 285 + TryStartSoloMode party-
-	// state gate), so this is the live travel channel — see handleCoreGamePlayer.
+	// state gate), so this is the live travel channel â€” see handleCoreGamePlayer.
 	mux.HandleFunc("GET /core-game/players/{id}", s.handleCoreGamePlayer)
 	mux.HandleFunc("GET /core-game/regions", s.handleCoreGameRegions)
 
-	// GET /core-game/matches/{matchId} — the match-details fetch (S62 PROBE). Once
+	// GET /core-game/matches/{matchId} â€” the match-details fetch (S62 PROBE). Once
 	// /core-game/players reports a non-empty MatchID (real CoreGamePlayer model), the
 	// client's CoreGameManager fetches the full match to populate CoreGameMatchModel
 	// (MatchInfo/MatchState) and fire OnMatchStarted -> travel. The exact route was never
 	// captured (MatchID had always been empty until now), so this is the best-guess path;
 	// if the client actually uses a different route it falls through to the {} catch-all
 	// and shows up in docs/capture.log (which reveals the true path for the follow-up).
-	// Returns a tutorial MatchInfo (usmap model) — see buildTutorialMatchInfo.
+	// Returns a tutorial MatchInfo (usmap model) â€” see buildTutorialMatchInfo.
 	mux.HandleFunc("GET /core-game/matches/{matchId}", s.handleCoreGameMatch)
 
 	// ---- Mailbox ----
@@ -255,14 +255,14 @@ func (s *Service) handleSetLobbyPlatform(w http.ResponseWriter, r *http.Request)
 	}
 	// Echo the accepted preference back as a typed ack, plus the full updated
 	// loadout in every envelope the reconciler might parse (set-then-return; the
-	// client merges this write response — see loadoutResponse).
+	// client merges this write response â€” see loadoutResponse).
 	resp := s.loadoutResponse(r.PathValue("id"))
 	resp["lobbyPlatformAssetId"] = req.LobbyPlatformAssetId
 	writeJSON(w, resp)
 }
 
 // handleGetPersonalizationPlayer answers the personalization root GET with the
-// full PersonalizationLoadout doc (see loadout.go — this is the readback the
+// full PersonalizationLoadout doc (see loadout.go â€” this is the readback the
 // customization page rebuilds from). The pre-2026-07-06 probe keys for the
 // backdrop are kept alongside; they were never observed to hurt and removing
 // them would change two variables at once.
@@ -282,13 +282,13 @@ func (s *Service) handleGetPersonalizationPlayer(w http.ResponseWriter, r *http.
 // (+585A594 cmp / +585A597 jle bail). Starts at 3 (live PM+0xA0 = -1, so the first served
 // value just has to be >= 0) and bumps on EVERY request, because the client re-polls this
 // route every ~61s and a constant would be adopted once and then permanently ignored.
-// CONFIRMED LIVE 2026-07-18 (S83): serving this made the ingester adopt — PM+0xA0 went -1 -> 4,
+// CONFIRMED LIVE 2026-07-18 (S83): serving this made the ingester adopt â€” PM+0xA0 went -1 -> 4,
 // PM+0x17C (Level) 0 -> 12, PM+0x180 (XP) 0 -> 1500, PM+0x388 -> 1, and Loki.log's Progress Notif
 // went {currentTierIndex:0,currentXP:0,requiredXP:2000} -> {12, 1500, requiredXP:22000} (the client
 // RECOMPUTED requiredXP for tier 12 from the packed CDO ladder, i.e. it is really consuming this).
 //
 // Version bumps ONLY when the served content changes. The gate is strict (>), so an unchanged
-// Version is simply not re-adopted — which is what we want: bumping every request re-Broadcast the
+// Version is simply not re-adopted â€” which is what we want: bumping every request re-Broadcast the
 // PM+0x48 delegate (CheckAccountPassChanges/CheckMastery/CheckLoginReward/CheckEventProgression)
 // on the client's ~61s poll forever, i.e. a permanent fan-out for no new data.
 // progressionState tracks the served FPlayerProgression.Version PER PLAYER. It must be
@@ -334,7 +334,7 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 	// "Invalid response received" on {} => wants the data/paging wrapper. Empty
 	// (no per-player progression yet) is valid and quiets the retry.
 	//
-	// 2026-07-18 (S82) — LEVER A for the PASSES account pass ("Hunter's Journey").
+	// 2026-07-18 (S82) â€” LEVER A for the PASSES account pass ("Hunter's Journey").
 	// RE of BattlepassViewManager::CheckAccountPassChanges (offline disasm, adversarially
 	// verified) showed the account pass is gated by the ProgressionManager, NOT the
 	// battlepass storefront progressiontracks: GetAccountTrack (game RVA 0x5840700) returns
@@ -344,13 +344,13 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 	// The HuntersJourney correlation itself is client-side (the published-pass class's
 	// FPrimaryAssetId string is the VM lookup key); the account VM is FOUND (not built) here,
 	// so lever A alone may only pass the GATE (setting +0x208/+0x90) without rendering the
-	// tab if the VM isn't pre-built — but it also DEMAND-DECRYPTS the account-VM builder
+	// tab if the VM isn't pre-built â€” but it also DEMAND-DECRYPTS the account-VM builder
 	// branch so it can be RE'd. Model = FAccelByteModelsListUserProgressionInfoPagingSlicedResult
 	// { Data:[FAccelByteModelsListUserProgressionInfo], Paging, Total }. Each entry's fields
-	// are Str/Int/Bool/enum-Str/nested-struct — none can wrong-type-reject the doc (DateTime
+	// are Str/Int/Bool/enum-Str/nested-struct â€” none can wrong-type-reject the doc (DateTime
 	// fields OMITTED to avoid any format risk; absent is safe per the validity model).
 	// ProgressionType enum = EAccelByteProgressionTrackType (PROGRESSION_TRACK=2, the
-	// NON-season type — distinct from the SEASON_PASS storefront track). Not "-ranked".
+	// NON-season type â€” distinct from the SEASON_PASS storefront track). Not "-ranked".
 	// See memory supervive-passes-battlepass-status (S82 part 3).
 	id := r.PathValue("id")
 	track := map[string]any{
@@ -374,7 +374,7 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 		"ProgressionTrack": track,
 		"Active":           true,
 	}
-	// 2026-07-18 (S83) — ROUTE A: the ACCOUNT-PASS PROGRESS lever. Strict SUPERSET of the
+	// 2026-07-18 (S83) â€” ROUTE A: the ACCOUNT-PASS PROGRESS lever. Strict SUPERSET of the
 	// response above: every existing key is untouched, we only ADD three top-level keys.
 	// Unknown keys are ignored, so if the wire model is still the AccelByte envelope this is
 	// byte-equivalent to before and CANNOT regress.
@@ -384,7 +384,7 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 	//   +58618B2 call 0x58454A0 (dispatcher) -> +58454D2 lea rdx -> 0x8B4D0D0 L"/progression/players/"
 	//   OnSuccess 0x585C460 -> +585C48C jmp 0x585A570  (the ingester)
 	// 0x585A570 copy-constructs FPlayerProgression into PM+0x90 via 0x58061A0 (writes
-	// track+0xEC @+5806363), sets PM+0x208 and PM+0x388, then Broadcasts PM+0x48 — to which
+	// track+0xEC @+5806363), sets PM+0x208 and PM+0x388, then Broadcasts PM+0x48 â€” to which
 	// CheckAccountPassChanges & friends are AddDynamic-bound. So one accepted response does the
 	// whole refresh natively; we never fabricate a struct or force-call anything.
 	//
@@ -393,22 +393,22 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 	// AccountPass: FProgressionTrackLevel (size 0x60) { Level, XP, Cleared, UnclaimedRewards } }.
 	// Only the scalar leaves are served here: a MATCHED key with a wrong CONTAINER type rejects
 	// the WHOLE document (and would look identical to "no effect"), so Matches/MissionInfo/
-	// HeroMastery/LoginReward/EventProgression/UnclaimedRewards are deliberately OMITTED —
+	// HeroMastery/LoginReward/EventProgression/UnclaimedRewards are deliberately OMITTED â€”
 	// absent is safe. Name matching is case-insensitive (the camelCase in Loki.log is
 	// FJsonObjectConverter's OUTPUT convention, not an input requirement).
 	//
 	// VERSION MUST BE MONOTONIC PER REQUEST. The ingester's gate is
 	//   +585A594 cmp dword[src+0x10], dword[PM+0xA0] ; +585A597 jle bail
-	// i.e. STRICT >. Live PM+0xA0 = -1 (signed), so any Version >= 0 passes the first time — but
+	// i.e. STRICT >. Live PM+0xA0 = -1 (signed), so any Version >= 0 passes the first time â€” but
 	// a CONSTANT would then be <= the adopted value and re-deadlock on the client's ~61s poll.
 	// That is exactly the "worked once then stopped" signature, so bump every request.
 	//
 	// DISCRIMINATOR (tools/re/battlepass_pm_probe.py): dword[PM+0xA0] moves off -1 to the served
 	// Version, and dword[PM+0x17C] (AccountPass.Level) becomes the served Level. byte[PM+0x388]
 	// flipping to 1 here is a LEGITIMATE side effect (the ingester archives PM+0x90 -> PM+0x210
-	// first) — categorically different from poking that byte by hand, which arms a wild free.
+	// first) â€” categorically different from poking that byte by hand, which arms a wild free.
 	// NB the sibling route /progression/players/{id}/tracks is a PROVEN dead end for this
-	// (see menu.go handlePlayerProgressionTracks) — it feeds a different manager entirely.
+	// (see menu.go handlePlayerProgressionTracks) â€” it feeds a different manager entirely.
 	//
 	// The values come from PERSISTED PER-PLAYER STATE, editable live from the admin panel
 	// (PUT /api/progression/{id}); a fresh account reads the zero value = tier 0 / no XP.
@@ -429,12 +429,12 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
-	// The PUT carries an EMPTY body (Content-Length 0) — it is a fire-and-forget
+	// The PUT carries an EMPTY body (Content-Length 0) â€” it is a fire-and-forget
 	// "reconcile my mission progress" trigger (exe: ServerAddMissionProgress /
 	// SetMissionProgress), not a claim with a payload.
 	//
 	// Response model = `MissionData` (exe FName cluster, block 96). The OLD note
-	// here said the Missions modal blocker was the AssetManager Track A gate — that
+	// here said the Missions modal blocker was the AssetManager Track A gate â€” that
 	// was based on the prior session's hypothesis. END-OF-2026-06-29 RE chain
 	// proved otherwise: AddDynamicAsset registrations don't move the modal. The
 	// real chain is:
@@ -442,7 +442,7 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 	//     UMissionsModel.GetActive/GetClaimableMissionModel(id)
 	//   which iterates a TSet at UMissionsModel+0x30 holding UMissionModel* with
 	//     PoolId field at +0x40. findptr on UMissionModel CDO vtable returns
-	//     ONLY the CDO — NO live UMissionModel UObjects exist anywhere in the
+	//     ONLY the CDO â€” NO live UMissionModel UObjects exist anywhere in the
 	//     process. The pipeline waits for the server to populate them.
 	//   OnPSMissionsUpdated (FName 0x0058FF4F) fires when server pushes the data;
 	//   CreateMissionModelFromFinalProgress (0x0058FEE1) is the factory.
@@ -453,8 +453,8 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 	// (around the struct's own FName id 0x006002E0 in block 96 / 98) include:
 	//   Completions / Completions_Key (TMap)
 	//   TrackIDToClaimableRewards / _Key (TMap)
-	//   Pools (TArray or TMap — type unconfirmed)
-	//   NewMissionTime (DateTime — the "year 0" warning source)
+	//   Pools (TArray or TMap â€” type unconfirmed)
+	//   NewMissionTime (DateTime â€” the "year 0" warning source)
 	//   MillisUntilNewMission (int64)
 	//   PoolId (FPrimaryAssetId, per-pool field)
 	//   GrantedAt / Expiry / MillisUntilExpiry (DateTime, int64)
@@ -467,7 +467,7 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 	// matched field rejects the whole doc. We add fields in dependency order,
 	// most-confident-types first, and observe Loki.log on each rebuild for
 	// "Deserialization failure" / "Invalid response received". One pool entry
-	// for DA_MissionPoolDailyEasy is the smoke-test target — if the Dailies
+	// for DA_MissionPoolDailyEasy is the smoke-test target â€” if the Dailies
 	// category renders ANYTHING on the next modal open, the chain is correct
 	// and we iterate to add the other 12 pools.
 	now := time.Now().UTC()
@@ -493,11 +493,11 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 		"NewMissionTime":            nextRefresh.Format(time.RFC3339),
 		"MillisUntilNewMission":     int64(24 * 3600 * 1000),
 		// Pools FProperty has 5 hits across classes with ElementSizes 0x10, 0x18,
-		// 0x28, 0x50, 0x50 — the 0x50 ones are full TMap headers. On MissionData
+		// 0x28, 0x50, 0x50 â€” the 0x50 ones are full TMap headers. On MissionData
 		// the field type is unconfirmed; we send a TMap<FPrimaryAssetId, PoolData>
 		// shape (UE5 JSON encodes TMap<FName-keyed> as a JSON object). If the
 		// actual type is TArray UE will silently ignore this Pools key (unknown
-		// field → no error). If wrong-typed match, the whole doc rejects with
+		// field â†’ no error). If wrong-typed match, the whole doc rejects with
 		// "Deserialization failure" in Loki.log.
 		"Pools": map[string]any{
 			"MissionPool:DA_MissionPoolDailyEasy": poolEntry,
@@ -508,7 +508,7 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 // tutorialMatchState is the ECoreGameMatchState reported in the served MatchInfo
 // (MatchInfo.State / .StateEnum). This is the PRIMARY sweep knob for S62: if
 // "InProgress" doesn't make the client travel to the local tutorial, flip to
-// another state and rebuild ags — the client is already rapid-polling, so it
+// another state and rebuild ags â€” the client is already rapid-polling, so it
 // picks up the new match/state on its next poll (no re-click needed as long as
 // the same solo-start session is live).
 //
@@ -524,23 +524,37 @@ func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
 const tutorialMatchState = "InProgress"
 
 // forceTutorialMatch, when true, reports the phantom tutorial match on
-// /core-game/players even without a live solo-start. Normally FALSE — the match
+// /core-game/players even without a live solo-start. Normally FALSE â€” the match
 // is armed by the client's own POST /startSoloMode (sets playerState.SoloMode).
 // Flip to true only to probe the endpoint out of the solo-start flow (S53 showed
 // that's inert out of flow), OR to keep an already-entered match reported across
 // an ags hot-swap (SoloMode is transient and clears on restart). S62 ADDRESS
 // PROBE: was true to keep the client pinned in the pre-game lobby across hot-swaps,
 // but the client fires its travel/connect attempt ONCE at match ENTRY (using the
-// address present then) and never re-fires from a polled update — so a fresh entry
+// address present then) and never re-fires from a polled update â€” so a fresh entry
 // with the address already served is required. Back to FALSE: with SoloMode also
 // transient (cleared on restart), this releases the client from the dead empty-
 // address match back to the menu, ready for a clean START -> fresh entry that
 // gets address 127.0.0.1:7777 on its very first match fetch.
 // S65 PATH-1 HYBRID: TRUE so the idle client (which polls /core-game/players ~1/min) auto-fetches the match
-// and its OWN parser builds a complete, self-consistent CoreGameMatchModel (bIsValid + MatchInfo) — far more
+// and its OWN parser builds a complete, self-consistent CoreGameMatchModel (bIsValid + MatchInfo) â€” far more
 // robust than hand-writing the 1496-byte embedded MatchInfo struct. Paired with an EMPTY ConnectionDetails.address
 // (below) so the client parks LOCALLY in the pre-game lobby (no DS connect/timeout), keeping the model valid;
 // then the force-open shim opens LVL_Tutorial with the model already populated. (Revert to false for normal runs.)
+// â˜… S108 (2026-08-04) â€” TRUE, for the FK-24 / FK-7 probe sittings. This is the S65/S90/S91 FORCE-OPEN
+// config (TRUE + EMPTY ConnectionDetails.address), and it is set here for a reason worth recording:
+// it removes the HUMAN from the run loop. The S107 recipe reaches the parked pre-game lobby via
+// PLAY -> TUTORIALS -> BASIC TRAINING -> START, whose only backend effect is POST /startSoloMode
+// setting playerState.SoloMode -- and handleCoreGamePlayer's gate is
+// `forceTutorialMatch || SoloMode != ""`, so the flag substitutes for the button press exactly.
+// MEASURED 2026-08-04: SoloMode has no other reader in the codebase (store.go:66 + this gate), so
+// nothing else changes. The client's own ~1/min /core-game/players poll then arms the match, it
+// fetches the match doc, builds a valid CoreGameMatchModel and parks locally on the loading screen --
+// which is precisely the state tutorial_launch_fo.dll force-opens into. Set back to false to restore
+// the plain interactive menu (a manual START then arms the match exactly as before).
+// âš  LEFT AT false so a normal launch still gets the plain interactive main menu. Flip to TRUE for any
+// FK-24 / FK-7 tutorial sitting -- configs\fk24-stage.ps1 pre-flights this exact value and refuses to
+// run with a helpful message if it is false, so the tooling will point you back here.
 const forceTutorialMatch = false // BASELINE (fully functional main menu, no DS connect). Set TRUE + EMPTY ConnectionDetails.address below for the FORCE-OPEN tutorial route (S91-S93 deploy/objective work). "127.0.0.1:7777" = DS route. S91 used the FORCE-OPEN tutorial route: set TRUE and pair with an EMPTY ConnectionDetails.address below (client parks locally; tutorial_launch_fo.dll opens LVL_Tutorial with the real gamemode). "127.0.0.1:7777" (baseline) = the DS/stub route. S91 spawned the TrainingQuest_Basics_* actors + built the BP-call primitive + started training via GameStateTryStartTraining; see docs/session-91-quest-spawn-bpcall.md + docs/tutorial-playability-plan.md.
 
 // tutorialMatchID derives the (stable, greppable) match id for a player's phantom
@@ -556,7 +570,7 @@ func tutorialMatchID(id string) string { return "match-" + id }
 // thrashing within a run (stable across the ~1/min polls of a single ags instance).
 var matchStateVersion = time.Now().Unix()
 
-// handleCoreGamePlayer answers GET /core-game/players/{id} — the "do I have an
+// handleCoreGamePlayer answers GET /core-game/players/{id} â€” the "do I have an
 // active match to rejoin?" heartbeat (rapid-polled while the client waits for a
 // solo-start to allocate). GROUND TRUTH (usmap CoreGamePlayer, 4 props):
 //
@@ -564,7 +578,7 @@ var matchStateVersion = time.Now().Unix()
 //	                 CanDisassociate BoolProperty }
 //
 // There is NO nested MatchParticipant/MatchInfo/State/Address here (the S53
-// "binary scan" model was wrong — those are separate structs). The client watches
+// "binary scan" model was wrong â€” those are separate structs). The client watches
 // this endpoint for a NON-EMPTY MatchID; on transition it fetches the full match
 // (MatchInfo) from the match route and travels. So the whole job here is: report
 // an empty MatchID when idle, and a real MatchID (+ bumped Version) once a match
@@ -596,7 +610,7 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, resp)
 }
 
-// handleCoreGameMatch answers GET /core-game/matches/{matchId} — the S62 PROBE for
+// handleCoreGameMatch answers GET /core-game/matches/{matchId} â€” the S62 PROBE for
 // the match-details fetch the client makes once /core-game/players reports a
 // MatchID. Returns the usmap MatchInfo model for a LOCAL solo tutorial. Route is a
 // best guess (see the Register comment); if wrong it never fires and capture.log
@@ -604,7 +618,7 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 func (s *Service) handleCoreGameMatch(w http.ResponseWriter, r *http.Request) {
 	matchID := r.PathValue("matchId")
 	id := strings.TrimPrefix(matchID, "match-")
-	if id == matchID { // not our prefix — fall back to the JWT subject
+	if id == matchID { // not our prefix â€” fall back to the JWT subject
 		if sub := subjectFromBearer(r.Header.Get("Authorization")); sub != "" {
 			id = sub
 		}
@@ -615,19 +629,19 @@ func (s *Service) handleCoreGameMatch(w http.ResponseWriter, r *http.Request) {
 
 // tutorialMapName is the map the client should load for the tutorial. The
 // force-open route used the full package path; matchmaking configs may use a
-// short name instead — if the client travels to the wrong/no map, this is the
+// short name instead â€” if the client travels to the wrong/no map, this is the
 // first field to adjust (watch Loki.log "Browse"/"LoadMap").
 const tutorialMapName = "/Game/Loki/Maps/Tutorial/LVL_Tutorial"
 
 // buildTutorialMatchInfo builds the usmap MatchInfo (19 props) for a LOCAL solo
 // tutorial match. KEY for local (non-DS) travel: ConnectionDetails.address is
-// EMPTY — there is no dedicated server for the tutorial, so an empty address
+// EMPTY â€” there is no dedicated server for the tutorial, so an empty address
 // should signal a local map load rather than a NetConnection (the client made
 // ZERO NetConnection attempts in S61, favoring local travel). GameConfig carries
 // the map/mode/solo-start-position; StateEnum/State carry the lifecycle state
 // (tutorialMatchState). Field names/types per usmap MatchInfo + CoreGameMatchGameConfig
 // + CoreGameServerInfo; unmatched keys are ignored, a wrong-typed matched key trips
-// "Deserialization failure" (LogJson names it) — kept minimal to reduce that surface.
+// "Deserialization failure" (LogJson names it) â€” kept minimal to reduce that surface.
 func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string]any {
 	now := time.Now().UTC().Format(time.RFC3339)
 	gameConfig := map[string]any{
@@ -640,7 +654,7 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 		"MaxTeamSize":           1,
 		"SoloModeStartLocation": 0,
 	}
-	// MatchParticipant (usmap, 17 props) — the local player's entry (PlayerInfo).
+	// MatchParticipant (usmap, 17 props) â€” the local player's entry (PlayerInfo).
 	playerInfo := map[string]any{
 		"ID":           id,
 		"TeamID":       0,
@@ -655,26 +669,26 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 	}
 	// CoreGameServerInfo (usmap, 6 props). S62 ADDRESS PROBE: empty address parked
 	// the client in the pre-game lobby ("Attempting to travel to Match: Address:''")
-	// — the menu route travels by CONNECTING to a server, not a local map load. So
+	// â€” the menu route travels by CONNECTING to a server, not a local map load. So
 	// serve a loopback DS address and watch whether the client fires a real
 	// NetConnection to it (LogNet/StatelessConnect). Nothing is listening on 7777
-	// yet — the connect ATTEMPT is the diagnostic; a working DS is the follow-up.
+	// yet â€” the connect ATTEMPT is the diagnostic; a working DS is the follow-up.
 	connectionDetails := map[string]any{
-		// S65 PATH-1 HYBRID used EMPTY address (client builds the model but parks locally — no DS connect).
+		// S65 PATH-1 HYBRID used EMPTY address (client builds the model but parks locally â€” no DS connect).
 		// S74 B2: back to the HYBRID empty address for the force-open route (client builds a valid
 		// CoreGameMatchModel + parks locally in the pre-game lobby; force-open then travels to LVL_Tutorial
-		// with that valid model in place → no revert, gamemode fully inits). Set to "127.0.0.1:7777" for the DS route.
+		// with that valid model in place â†’ no revert, gamemode fully inits). Set to "127.0.0.1:7777" for the DS route.
 		// S76: reverted to the menu/force-open baseline (empty) after the DS cheat-lever experiment
 		// concluded (docs/session-76-ds-cheat-lever.md). Set to "127.0.0.1:7777" to re-run the DS route.
-		// S76 Route D (spectator free-cam of the live tutorial world) — working-tree experiment config.
-		// S90: EMPTY for the FORCE-OPEN route (the only route that can complete tutorial objectives —
+		// S76 Route D (spectator free-cam of the live tutorial world) â€” working-tree experiment config.
+		// S90: EMPTY for the FORCE-OPEN route (the only route that can complete tutorial objectives â€”
 		// TrainingQuest_Basics_Base.OnObjectiveComplete is FUNC_BlueprintAuthorityOnly, so the client must be
 		// the authority; see docs/tutorial-playability-plan.md). Client builds a valid CoreGameMatchModel and
 		// parks locally; tutorial_launch_fo.dll then opens LVL_Tutorial with the real gamemode.
 		// Set back to "127.0.0.1:7777" for the DS/stub route.
-		// ★ S107 (2026-07-27) — EMPTY for the FORCE-OPEN route. MEASURED this session:
+		// â˜… S107 (2026-07-27) â€” EMPTY for the FORCE-OPEN route. MEASURED this session:
 		// after the FParty.State fix above unblocked the START button, the client POSTed
-		// /startSoloMode ONCE (capture.log #1980, 22:26:22) — the backend armed a MatchID,
+		// /startSoloMode ONCE (capture.log #1980, 22:26:22) â€” the backend armed a MatchID,
 		// the client fetched this match doc, and then tried to travel to a DS on
 		// 127.0.0.1:7777 that is NOT RUNNING. It never got there, but /core-game/players
 		// now reports a non-empty MatchID forever, so the client believes it is ALREADY IN
@@ -712,7 +726,7 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 // plus a superset of plausible host/port/display keys (UE ignores unmatched, matches
 // case-insensitively).
 //
-// 2026-06-29 — PROBE #2: object-envelope. Live readback (Loki.log):
+// 2026-06-29 â€” PROBE #2: object-envelope. Live readback (Loki.log):
 //
 //	LogJson: Warning: JsonObjectStringToUStruct - Unable to parse json=[[{"Address":...}]]
 //	LogLokiPlatformQuery: Error: Deserialization failure on Query: GET .../core-game/regions
@@ -720,11 +734,11 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 // UE's warning format is literally `json=[%s]` (outer brackets are part of the log format,
 // not the body) so the body the server emitted was the single-wrapped bare array
 // `[{...}]\n`. Per the validity model documented at the top of menu.go ("a bare [] hits
-// Deserialization failure — array vs. object struct"), the target UStruct is an object,
+// Deserialization failure â€” array vs. object struct"), the target UStruct is an object,
 // so a bare TArray top-level fails. PROBE #1's "returned as a bare array" comment was
 // wrong about what the call site expects. Flipping to an object envelope with the obvious
 // field name (`Regions`, matching `GetRegions`'s return). If "Regions" is the wrong field
-// name the symptom will flip from Deserialization failure → Invalid response received
+// name the symptom will flip from Deserialization failure â†’ Invalid response received
 // (predicate fails), which would name the next probe.
 func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) {
 	region := map[string]any{
@@ -744,7 +758,7 @@ func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) 
 
 func (s *Service) handleMailboxConfigVersion(w http.ResponseWriter, r *http.Request) {
 	// Field recovered from exe FName pool: MailboxConfigVersion. Probe the common
-	// camelCase spellings as ints (safe — a matched int key deserializes, unmatched
+	// camelCase spellings as ints (safe â€” a matched int key deserializes, unmatched
 	// keys are ignored). Relaunch readback (LogMailbox) confirms which key lands.
 	writeJSON(w, map[string]any{
 		"version":              0,
@@ -759,18 +773,18 @@ func (s *Service) handleMailboxConfigVersion(w http.ResponseWriter, r *http.Requ
 //
 // PROBE: the /party response body was never captured, so the exact JSON shape is
 // inferred from the exe (AccelByte V2 session party + Theorycraft party wrapper). We
-// emit a superset of plausible field names (PascalCase — UE matches case-insensitively)
+// emit a superset of plausible field names (PascalCase â€” UE matches case-insensitively)
 // covering both the AccelByte-style fields (PartyId/LeaderId/Members/Invited/
 // CrossplayEnabled/CreatedAt) and the Theorycraft reservation-style ones (PartyMembers/
 // RemovedPartyMembers/TeamNum). Unmatched keys are ignored; the player appears as the
-// sole JOINED leader/member. Relaunch readback (LogPartyManager — the "player not in
+// sole JOINED leader/member. Relaunch readback (LogPartyManager â€” the "player not in
 // party" warning clearing, and whether the tutorial button now acts) tells us which
 // fields landed and what to trim.
 func (s *Service) handleGetParty(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	display := displayNameFromBearer(r.Header.Get("Authorization"))
 	// Seed the selected activity from the client's own ?defaultQueue=<q> hint (only if the
-	// player hasn't picked one yet) so the party always carries a target queue — the
+	// player hasn't picked one yet) so the party always carries a target queue â€” the
 	// "must always have one activity selected" invariant. Falls back to "default" below.
 	if dq := r.URL.Query().Get("defaultQueue"); dq != "" && s.store.get(id).SelectedQueueID == "" {
 		s.store.update(id, func(st *playerState) { st.SelectedQueueID = dq })
@@ -789,7 +803,7 @@ func (s *Service) selectedQueue(id string) string {
 }
 
 // defaultHeroAssetId is the hunter the party slot renders before the player has
-// picked one — the same default (owned) hero the inventory marks IsDefault
+// picked one â€” the same default (owned) hero the inventory marks IsDefault
 // ("alchemist"). Seeding it means the center shows a real hunter instead of the
 // "?" placeholder on first login; a subsequent pick overrides it (persisted).
 const defaultHeroAssetId = "Hero:alchemist"
@@ -806,23 +820,23 @@ func (s *Service) selectedHero(id string) string {
 
 // selectedCosmetic returns the saved skin bundle ("HeroCosmeticsBundle:<name>") for the
 // player's currently-selected hero, or "" if none. It is NO LONGER served on the party
-// member (proven inert 2026-07-09 — see handleSetPartyMember): the client ignores the
+// member (proven inert 2026-07-09 â€” see handleSetPartyMember): the client ignores the
 // echoed member cosmetic. Retained only so buildSoloParty's signature is unchanged and a
 // future client-side shim can reuse the resolution; buildSoloParty discards the value.
 func (s *Service) selectedCosmetic(id string) string {
-	// heroCosmetic looks up the map UNDER THE LOCK — a live read here raced update()
+	// heroCosmetic looks up the map UNDER THE LOCK â€” a live read here raced update()
 	// (concurrent map read/write, the crash class that took down ags in loadoutDoc).
 	return s.store.heroCosmetic(id, s.selectedHero(id))
 }
 
-// handleGetPartyDetail answers GET /party/parties/{partyId} — the full party object the
-// client polls (380×/session) after learning its partyId. Hitting the {} stub leaves the
+// handleGetPartyDetail answers GET /party/parties/{partyId} â€” the full party object the
+// client polls (380Ã—/session) after learning its partyId. Hitting the {} stub leaves the
 // PARTY panel slots empty. We rebuild the same solo party; the player id is recovered from
 // the minted partyId ("party-<playerId>"), falling back to the JWT sub.
 func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 	partyID := r.PathValue("partyId")
 	id := strings.TrimPrefix(partyID, "party-")
-	if id == partyID { // not our prefix — fall back to the JWT subject
+	if id == partyID { // not our prefix â€” fall back to the JWT subject
 		if sub := subjectFromBearer(r.Header.Get("Authorization")); sub != "" {
 			id = sub
 		}
@@ -837,11 +851,11 @@ func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 // Comp_MainMenu_QueueController.OnStartSoloModeComplete(bSuccess, MessageID, QueryContext) fires on this
 // response: an empty {} is ACCEPTED (bSuccess=true, no deserialize error) but the TRAVEL is downstream
 // (OnJoinQueueSuccess -> match-connect), so a clean 200 alone doesn't travel. We record SoloMode=<mode> on
-// the player (so /core-game/players can report the local tutorial match to drive the travel — the next probe)
+// the player (so /core-game/players can report the local tutorial match to drive the travel â€” the next probe)
 // and echo the party as the success body.
 //
 // NOTE (durable follow-ups): (1) the gate that gets us here needs PartyModel+0x558+0x18 == "default"/
-// "Matchmaking"; currently satisfied by a live memory poke — the durable fix is populating that party JSON
+// "Matchmaking"; currently satisfied by a live memory poke â€” the durable fix is populating that party JSON
 // field (key not yet mapped). (2) The travel mechanism after solo-start is now via /core-game/players: it
 // reports the real usmap CoreGamePlayer with a non-empty MatchID (S62), which should make the client fetch
 // the match (handleCoreGameMatch) and travel locally. S61 saw no travel because that endpoint served an
@@ -849,7 +863,7 @@ func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 func (s *Service) handleStartSoloMode(w http.ResponseWriter, r *http.Request) {
 	partyID := r.PathValue("partyId")
 	id := strings.TrimPrefix(partyID, "party-")
-	if id == partyID { // not our prefix — fall back to the JWT subject
+	if id == partyID { // not our prefix â€” fall back to the JWT subject
 		if sub := subjectFromBearer(r.Header.Get("Authorization")); sub != "" {
 			id = sub
 		}
@@ -897,7 +911,7 @@ const matchmakingETag = "revival-queues-v1"
 //
 // i.e. Queues is really ArrayProperty<StructProperty QueueDetails>. Each element is a
 // QueueDetails{ID, IsRanked, IsSpecial, Config:QueueConfig} (usmap struct defs). Config
-// carries the party-size limits the client validates the (solo) party against — MaxPartySize
+// carries the party-size limits the client validates the (solo) party against â€” MaxPartySize
 // must be >=1 or the tile re-locks after resolving. Field names/types per usmap QueueDetails
 // + QueueConfig; RankedSchedule (Map) / RankedRestrictionsSchedule (struct) are omitted and
 // left at UE defaults (unmatched keys are ignored). Uniform config across queues is enough to
@@ -936,7 +950,7 @@ func (s *Service) handleMatchmakingInfo(w http.ResponseWriter, r *http.Request) 
 }
 
 // handleMatchmakingCustomGameModes answers GET /party/matchmaking/customGameModes with the
-// CustomGameModeInfo model (usmap: Modes []string, ETag, LastUpdated) — the custom-game
+// CustomGameModeInfo model (usmap: Modes []string, ETag, LastUpdated) â€” the custom-game
 // sibling of QueueInfo. Empty Modes is fine (no custom modes advertised); the typed shape
 // just keeps the {} stub from tripping a deserialize error.
 func (s *Service) handleMatchmakingCustomGameModes(w http.ResponseWriter, r *http.Request) {
@@ -953,7 +967,7 @@ func (s *Service) handleMatchmakingCustomGameModes(w http.ResponseWriter, r *htt
 // ("party-<playerId>"), falling back to the memberId path value / JWT sub.
 //
 // CAPTURE-CONFIRMED 2026-07-09 (this was a best-guess route since s48): clicking a skin
-// in CUSTOMIZATION→SKIN fires
+// in CUSTOMIZATIONâ†’SKIN fires
 //
 //	PUT /party/parties/party-<id>/members/<id>
 //	{"iD":"<id>","heroAssetId":"Hero:Alchemist",
@@ -963,10 +977,10 @@ func (s *Service) handleMatchmakingCustomGameModes(w http.ResponseWriter, r *htt
 // followed ~5s later by PUT /personalization/players/<id>/cosmeticsbundle/Hero:<name>
 // (the debounced per-hero preference write, loadout.go).
 //
-// SKIN PERSISTENCE — BACKEND ROUTE CONCLUSIVELY CLOSED (2026-07-09). We tried persisting
+// SKIN PERSISTENCE â€” BACKEND ROUTE CONCLUSIVELY CLOSED (2026-07-09). We tried persisting
 // + serving the picked cosmeticsAssetId back on the party member. It is INERT: the client
 // rebuilds the party member from the /party GET every poll and reads only heroAssetId,
-// never the cosmetic. Direct proof in Loki.log — after equipping Mastery (member PUT
+// never the cosmetic. Direct proof in Loki.log â€” after equipping Mastery (member PUT
 // carried AlchemistDefault_MAS, server echoed it), the party slot STILL loaded
 // "HeroCosmeticsBundle:AlchemistDefault_STR": the GetDefaultCosmeticsBundleIdForHeroId
 // fallback that both the party slot and the SKIN tab use whenever the member cosmetic is
@@ -975,7 +989,7 @@ func (s *Service) handleMatchmakingCustomGameModes(w http.ResponseWriter, r *htt
 // working path is client-side: loadout_fix redirects GetDefaultCosmeticsBundleIdForHeroId (the
 // shared fallback) to the saved skin (SOLVED 2026-07-09, docs/session-53-customization-persistence.md).
 // So below we persist heroAssetId, and we ALSO record the body's cosmeticsAssetId into the per-hero
-// preference map — NOT to echo it on the party member (inert), but to feed GET /revival/loadout
+// preference map â€” NOT to echo it on the party member (inert), but to feed GET /revival/loadout
 // immediately so the shim can flip its redirect to a freshly-picked skin without waiting on the
 // ~5s-debounced cosmeticsbundle PUT.
 func (s *Service) handleSetPartyMember(w http.ResponseWriter, r *http.Request) {
@@ -1002,7 +1016,7 @@ func (s *Service) handleSetPartyMember(w http.ResponseWriter, r *http.Request) {
 			//
 			// SEED-ONLY (2026-07-19): never OVERWRITE an established per-hero skin from this member
 			// sync. The member body carries the client's *equipped* cosmetic, which is STALE for any
-			// hunter whose client-side equip is broken — precisely the hunters the shim exists to fix
+			// hunter whose client-side equip is broken â€” precisely the hunters the shim exists to fix
 			// (Brall/Eluna). This PUT fires on every click, ~0.2s AFTER the shim's authoritative
 			// POST /revival/loadout/cosmetic; when it overwrote, it reverted the just-picked skin back
 			// to the old one, so "skins wouldn't switch / didn't carry over" for the stuck hunters.
@@ -1055,7 +1069,7 @@ func heroAssetIDFromBody(body []byte) string {
 // cosmeticAssetIDFromBody extracts the picked skin bundle as a "HeroCosmeticsBundle:<name>"
 // PrimaryAssetId string from a SetPartyMemberRequest body (wire key cosmeticsAssetId,
 // capture-confirmed 2026-07-09), tolerating the same string|object forms as the hero.
-// Used to feed the /revival/loadout redirect (see handleSetPartyMember) — NOT to echo the
+// Used to feed the /revival/loadout redirect (see handleSetPartyMember) â€” NOT to echo the
 // cosmetic on the party member. Returns "" when absent/empty.
 func cosmeticAssetIDFromBody(body []byte) string {
 	if len(body) == 0 {
@@ -1173,7 +1187,7 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 	// Root cause (RE'd 2026-07-19, live read-only RPM against the running client):
 	// the avatar widgets never read the PersonalizationManager. WBP_UI_Social_PlayerAvatarIconV2_C
 	// gates on IsValidSoftClassReference(TargetAvatarAsset) and, when it fails, deliberately calls
-	// Image_Avatar.SetBrushResourceObject(TX_Transparent) — the blank we see is painted on purpose.
+	// Image_Avatar.SetBrushResourceObject(TX_Transparent) â€” the blank we see is painted on purpose.
 	// TargetAvatarAsset is filled by BPFL_Social_C::DetermineSocialInfoForPlatformPlayer, which for
 	// a valid+online party member reads
 	//     PartyMember.PersonalizationLoadout.SlotCosmeticsEntries
@@ -1187,12 +1201,12 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 	// CosmeticsAssetID (hero skins). PersonalizationLoadout is a DIFFERENT field and had never
 	// been served. Reuses loadoutDoc() so the wire shape stays in one place; its layout was
 	// independently confirmed against live RPM (ScriptStruct PersonalizationLoadout @0x145E5806A60:
-	// ID@0x00, Version@0x10, EmoteIds@0x18, TitleIds@0x28, SlotCosmeticsEntries@0x38, ...) — one of
+	// ID@0x00, Version@0x10, EmoteIds@0x18, TitleIds@0x28, SlotCosmeticsEntries@0x38, ...) â€” one of
 	// the rare cases where the extracted usmap matched.
 	//
 	// TYPE SAFETY: SlotCosmeticsEntries is an ARRAY of {slot, asset} structs. Per the validity model
 	// (internal/menu/menu.go) an unmatched key is ignored but a MATCHED key with the wrong container
-	// type rejects the whole doc — which here would break the party panel, not just the avatar. The
+	// type rejects the whole doc â€” which here would break the party panel, not just the avatar. The
 	// shape below comes from loadoutDoc(), which already emits the array form.
 	if loadout != nil {
 		member["personalizationLoadout"] = loadout
@@ -1206,7 +1220,7 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 		"ownerId":  id,
 		// The selected matchmaking activity. The client's Comp_MainMenu_QueueController
 		// requires the party to always carry a non-empty target queue (usmap Party.TargetQueueID
-		// / .TargetQueueIDs) — otherwise IsPartyOwner/CanControlQueue-gated modifies fail with
+		// / .TargetQueueIDs) â€” otherwise IsPartyOwner/CanControlQueue-gated modifies fail with
 		// "Unable to modify activity. You must always have one activity selected." Seeded from
 		// the client's own GET /party/players/{id}?defaultQueue=<q> and updated on switch.
 		"targetQueueId":   targetQueue,
@@ -1219,10 +1233,10 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 		"isOpen":          false,
 		"fillTeam":        false,
 		"createdAt":       now,
-		// ★ S107 (2026-07-27) — FParty.State, the gate behind TryStartSoloMode.
+		// â˜… S107 (2026-07-27) â€” FParty.State, the gate behind TryStartSoloMode.
 		//
 		// SYMPTOM that motivated this: at the TUTORIALS tab with BASIC TRAINING selected,
-		// pressing START did NOTHING — zero new HTTP requests in capture.log and zero new
+		// pressing START did NOTHING â€” zero new HTTP requests in capture.log and zero new
 		// lines in Loki.log (the client log after the click is idle GC only). An inert click
 		// with no egress means the handler bails BEFORE any network call, so this was never
 		// a missing endpoint.
@@ -1239,18 +1253,18 @@ func buildSoloParty(id, display, heroAssetId, cosmeticsAssetId, targetQueue stri
 		// clear the same gate (docs/coverage-audit-s101.md:160).
 		//
 		// TYPE SAFETY: both keys below are Str props, and the validity model
-		// (internal/menu/menu.go) only rejects a doc on a MATCHED key with the WRONG TYPE —
+		// (internal/menu/menu.go) only rejects a doc on a MATCHED key with the WRONG TYPE â€”
 		// so a wrong *value* here can change the state machine but cannot break the party
 		// document. If "Default" proves wrong, "default" is the other candidate.
 		"state": "Default",
-		// FParty.ClientVersion — PartyManager.cpp logs 'Client version not valid, leaving
+		// FParty.ClientVersion â€” PartyManager.cpp logs 'Client version not valid, leaving
 		// matchmaking' when this mismatches. Value is the client's own X-Theorycraft-Clientversion.
 		"clientVersion": "release2.4.live-156430-shipping",
-		// ★ LOAD-BEARING — must strictly advance or the client discards the WHOLE
+		// â˜… LOAD-BEARING â€” must strictly advance or the client discards the WHOLE
 		// document. UPartyModel::SetParty (base+0x587BE90) bails on
 		// `jge` against its cached FParty.Version. This was pinned to 1 until
 		// 2026-07-19, which meant the party applied exactly once at launch and no
-		// later poll ever landed — avatars, displayName and everything else only
+		// later poll ever landed â€” avatars, displayName and everything else only
 		// refreshed on relaunch. See store.partyVersion() for the full disassembly.
 		"version": partyVersion,
 	}
