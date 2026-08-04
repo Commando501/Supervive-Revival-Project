@@ -35,6 +35,15 @@ No cdb/WinDbg on this machine. The dump was opened `rb` only and is unmodified.
 4. **INFERRED (high confidence) — this death does NOT attribute the ~1–5 minute tutorial death.**
    It attributes the death of *this one run* to the protection runtime (`runtime.dll`) starting a
    thread at a deliberately-or-systematically bogus address. The game's own code is not on the stack.
+5. **★ MEASURED (added §11) — there is a SECOND packer family, and together they are ~13 % of the
+   corpus.** Walking the 6 chainless-but-parseable dumps confirmed family A directly (UE's own
+   ModuleList *names* `runtime.dll` in `61C55551` and `A55704B3`, closing the PE-shape inference the
+   skeptic flagged), and turned up a previously unrecorded family B: **6 crashes executing at
+   `<64 KB-aligned base> + 0x205D` in memory that is not mapped at all.** Both are control transfer
+   into a packer mapping with **zero** game frames. **A + B = 11 of 87 census rows (12.6 %), + the
+   crashpad dump = 12 known, and all of it should be excluded from FK-7 analysis.**
+   ⚠ And a third census artifact: `frame0mod` for these rows (`ntdll`, `mdnsNSP`) is **UE's
+   nearest-module guess and is SPURIOUS** — `modof()` resolves them to no module at all.
 
 ---
 
@@ -722,11 +731,100 @@ The brief asked this directly. **INFERRED, and I am deliberately not resolving i
 (`memory/supervive-instrument-artifact-pattern`): a true fact about one dump generalised into a claim
 about a mechanism.
 
-**The cheapest experiment that separates them** (not run here): one launch with `-NoHook`, no
-injection, no hosts redirect, left idle for ≥10 minutes, watching for a `runtime.dll+1` death. If it
-fires, it is a defect and FK-7 work should ignore it entirely. If 3–4 such runs stay clean while
-instrumented runs die this way, the tamper reading gets its first real support. **Zero backend
-changes, zero code.**
+**The cheapest experiment that separates them**: one launch with `-NoHook`, no injection, left idle
+for ≥10 minutes, watching for a `runtime.dll+1` death. If it fires, it is a defect and FK-7 work
+should ignore it entirely. If 3–4 such runs stay clean while instrumented runs die this way, the
+tamper reading gets its first real support. **Zero backend changes, zero code.**
+
+> ## ★ RUN 1 PERFORMED — 2026-08-04 16:38, and it did NOT separate them
+>
+> `.\configs\launch-redirect.ps1 -NoHook` · no shims · `forceTutorialMatch = false` · idle at the
+> menu. Predictions were registered **before** launching, so the result cannot be read backwards.
+>
+> **MEASURED — the run SURVIVED 33.8 minutes = 4.2× the reference death's 487.3 s**, and was still
+> alive and healthy when observation stopped:
+>
+> | | value |
+> |---|---|
+> | maps loaded | `LVL_Login` → `LVL_LobbyV2_Persistent` (menu reached normally) |
+> | threads | **120**, flat over the whole run (the crashed run's dump had ~136) |
+> | working set | 977 MB at 17 min → **451 MB** at 34 min (falling; no leak) |
+> | `handing control over to crashpad` | **0** |
+> | `flushing session and queue` / `Critical error` / `Fatal` / `RequestExit` | **0 / 0 / 0 / 0** |
+> | new crashpad report | **0** |
+> | new `UECC-*` dir | **0** |
+>
+> **This is the WEAK outcome, exactly as pre-registered, and it does NOT support the tamper reading.**
+> Three reasons, all of which must travel with the result:
+> 1. **n = 1.** The plan called for 3–4 clean runs; one is not a base rate. Two family members fired
+>    ~2.9 s into ordinary startups, so the hazard is *sporadic* — a single quiet window is expected
+>    even under the defect hypothesis.
+> 2. **CONFOUNDED.** "No shims" arrived bundled with "no tutorial". The activity gap is large:
+>    **607 KB of log in 17 min here vs 7.4 MB in 8 min** for the crashed run. This process is doing
+>    far less work. (Thread count is comparable, so it is not a trivial-process comparison — but it
+>    is not a matched one either.)
+> 3. **There may be NO shim-free family member to compare against.** `61C55551` (07-10) and
+>    `A55704B3` (07-19) date from a period when the launcher injected by default, so the corpus may
+>    contain zero confirmed un-instrumented instances. This run did not produce one.
+>
+> **What it DOES establish (MEASURED):** the `runtime.dll+1` death is **not certain per process
+> lifetime**. A clean run can pass both the ~2.9 s startup window and the 487 s mid-run window
+> without it. That kills "every process eventually hits this" and confirms the family is sporadic.
+>
+> *(Incidental: the only errors in the whole run are Vivox voice login failing with
+> `Access Token Service Unavailable` — that backend is dead too. It is not fatal and is unrelated.)*
+>
+> ---
+>
+> ## ★★ RUNS 2–4 PERFORMED — the base rate exists now, and it is lopsided
+>
+> Driver: `scratchpad/idle-runs.ps1`, protocol held identical to run 1. Each run launched, held
+> 900 s, then terminated with `Stop-Process -Force`. **MEASURED:**
+>
+> | run | outcome | uptime | log | crashpad key / flush / fatal / crit | reports before→after |
+> |---|---|---:|---:|---|---|
+> | 1 | SURVIVED (killed) | **2460 s** (41.0 min, 5.05×) | 885 KB | 0 / 0 / 0 / 0 | 1 → 0 *(the purge, §7 of the capture doc)* |
+> | 2 | SURVIVED (killed) | 905 s (15.1 min, 1.86×) | 476 KB | 0 / 0 / 0 / 0 | 0 → 0 |
+> | 3 | SURVIVED (killed) | 904 s (15.1 min, 1.86×) | 536 KB | 0 / 0 / 0 / 0 | 0 → 0 |
+> | 4 | SURVIVED (killed) | 904 s (15.1 min, 1.86×) | 471 KB | 0 / 0 / 0 / 0 | 0 → 0 |
+>
+> **4 of 4 clean runs survived. 5,173 s = 86.2 min of clean process lifetime, ZERO deaths of any
+> kind.** Control check: terminating by `TerminateProcess` raises no exception, and indeed **no run
+> produced a crashpad report** — so killed runs did not contaminate the count.
+>
+> ### The contrast with the same day's instrumented runs
+>
+> Same machine, same build, same day (**MEASURED**, from `Log file open` + last-activity timestamps):
+>
+> | configuration | exposure | deaths |
+> |---|---:|---:|
+> | instrumented + force-open tutorial | 1,487 s (24.8 min) over 5 sessions | **5** |
+> | clean `-NoHook`, menu-idle | 5,173 s (86.2 min) over 4 runs | **0** |
+>
+> Instrumented hazard ≈ 1 death per 297 s. Applied to 5,173 s that predicts **≈ 17 deaths**;
+> we observed **0**. Poisson `P(0 | λ=17.4) ≈ 3 × 10⁻⁸`. The clean runs also each passed the **~2.9 s
+> startup window** that killed two family members, four times over.
+>
+> ⇒ **INFERRED (now well-supported): the deaths are provoked by the instrumented / tutorial
+> configuration, not by process lifetime.** "Every process eventually hits this" is dead. The
+> forensics §8 lean toward *systematic protector defect* is **weakened**; the tamper-response reading
+> gets its first real support.
+>
+> ### ⚠ What is STILL not established — the confound is unbroken
+>
+> **Which variable does it.** "No shims", "no tutorial" and "far less work" are perfectly confounded:
+> every clean run sat at the menu. And note the death side is weaker than it looks — **only 1 of those
+> 5 instrumented deaths is confirmed `runtime.dll+1`** (`41cdafa3`); the other 4 had their dumps
+> purged by the next launch before FK-9 was fixed, so their causes are simply unknown. The honest
+> statement is *"the instrumented tutorial configuration dies and the clean menu configuration does
+> not"* — which is useful, and is not the same as attributing the family.
+>
+> ### The next experiment, and it is the discriminator
+>
+> **Default launch (full shim set) idled at the menu, 15 min × 3.** This separates shims from tutorial,
+> which run 1–4 cannot. If those die → the shims provoke it. If they survive → it is the
+> tutorial/world, and the shims are exonerated. Note that "tutorial without shims" is **not**
+> constructible — the force-open *is* a shim — so this is the only available split. Same cost, ~50 min.
 
 ---
 
@@ -783,3 +881,76 @@ in either direction; it removes a data point that was quietly being counted as o
    keepalive gap, unrelated to the crash, and cheap to fix.
 5. **The `-NoHook` idle-run experiment** in §8 is the only thing that separates "deliberate" from
    "defect", and it is nearly free.
+
+---
+
+## 11. ★ The free lead, taken: the chainless bucket is TWO packer families, not junk
+
+Follow-on from the denominator audit's corrected diagnosis (`base=0x0` means *no SUPERVIVE frame in
+the callstack*, not a parse failure). The 13 chainless census rows were flagged as unexamined
+candidates. **All 6 with walkable minidumps have now been walked.** Every claim here is MEASURED via
+`tools/crashtri/mdctx.py`.
+
+They are **not one phenomenon**. They split cleanly into two families plus two singletons:
+
+### A. `<image base> + 1` — the `runtime.dll` family (5 in census, 6 with the crashpad dump)
+
+`064CE137` · `61C55551` · `62C094F1` · `63AD699C` · `A55704B3` (+ `41cdafa3`, crashpad)
+
+**Direct module attribution, which the crashpad dump could not give us:** in the two walkable
+members the UE dump's ModuleList *names the module*, so `modof()` resolves the fault PC outright:
+
+```
+61C55551   pc=0x7FF8F0400001   parm0=0x8 (EXECUTE)   -> runtime.dll + 0x1
+A55704B3   pc=0x7FF90E000001   parm0=0x8 (EXECUTE)   -> runtime.dll + 0x1
+```
+
+This closes the identification the skeptic flagged as resting on PE-shape inference: the family is
+`runtime.dll+1`, named by the OS's own module list, at two different ASLR bases.
+
+### B. `<64 KB-aligned base> + 0x205D` — a SECOND, previously unrecorded family (6)
+
+`298DDD37` · `83E3410A` · `858B6F07` · `8C3ECC71` · `B84A0661` · `EBFECFE7`
+
+```
+298DDD37   pc=0x1C9C9A0205D   pc-0x205D = 0x1C9C9A00000   64 KB aligned   parm0=0x0
+8C3ECC71   pc=0x1856CA8205D   pc-0x205D = 0x1856CA80000   64 KB aligned   parm0=0x0
+B84A0661   pc=0x267E7A9205D   pc-0x205D = 0x267E7A90000   64 KB aligned   parm0=0x0
+```
+
+MEASURED in all three: `rip == fault address` (executing there), `modof()` = **NONE** for both the PC
+and the computed base, and subtracting the constant `0x205D` lands on a **64 KB-aligned** address —
+the granularity of a `VirtualAlloc`/section mapping. So this is `<hidden mapping> + 0x205D`, a fixed
+offset into a variably-based private region.
+
+**`parm0 = 0x0` (read), not `0x8`** — the distinction matters: family A executes on a page that is
+mapped but **NX** (a DEP violation), family B fetches from an address that is **not mapped at all**.
+
+### The two are siblings, and neither is a game bug
+
+Both are **control transfer into a packer-managed mapping that cannot be executed**. Neither has a
+single SUPERVIVE frame on the stack. Together:
+
+**11 of 87 census rows = 12.6 % of the UECC corpus — plus the crashpad dump = 12 known.**
+
+⇒ **That ~13 % should be excluded from FK-7 analysis entirely.** It is protector control flow, not
+game code, and it was previously invisible because `harvest.py` classifies by SUPERVIVE RVA chain and
+these have none.
+
+### ⚠ A third instrument artifact in the census, found on the way
+
+`frame0mod` is **UE's nearest-module guess, and for both families it is SPURIOUS.** MEASURED:
+`modof()` resolves these fault addresses to **no loaded module at all**, yet the census confidently
+labels family A `ntdll` (5 rows) and family B `mdnsNSP` (6 rows). `mdnsNSP` is Bonjour's Winsock
+name-service provider and has nothing to do with any of this.
+
+**Do not read `frame0mod` as an attribution for chainless rows.** Anyone grepping the census for
+"crashes in ntdll" or "crashes in mdnsNSP" is reading a guess, and the census offers no marker
+distinguishing a resolved module from a guessed one.
+
+### Remaining singletons (not either family)
+
+* `154E12A5` — `pc = 0x0`, `parm0 = 0x8`: an **execute at NULL**. Same *class* (bad control transfer)
+  but not a packer mapping. This is the audit's "ANIM crash".
+* `_0000` — `pc = 0x2C5D0641C47`, zero-byte dump, `frame0mod=Unknown`; unresolved, and its status as a
+  game death is disputed (see the denominator audit §2).
