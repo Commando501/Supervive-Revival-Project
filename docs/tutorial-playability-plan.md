@@ -413,6 +413,25 @@ GameplayStatics path now proven to work, and let them bind to the live `BP_Train
 ⚠ ALSO: the force-open crashed on 2 of 3 launches this round (dies ~1s after `Entering game state
 BP_LokiGameState_Tutorial_C`) — the documented intermittent crash. Budget retries; a 90s pre-inject settle helped.
 
+> ⚠ **RETRACTED 2026-07-27 (S106) — the paragraph above is preserved as written, but "intermittent"
+> and "budget retries" are FALSE.** The crashes are **deterministic**. 86 crash minidumps exist (the
+> project believed for ~60 sessions that none did — that was FK-8); 68% of chained crashes are exact
+> repeats of another crash, and all 10 crashes in the FK-7 window sit in a 28-second band (173–201 s)
+> across **two** stack families:
+> - **Family A — worker thread:** use-after-free on a garbage-collected `UAnimationAsset` inside
+>   `FAnimSync::TickAssetPlayerInstances`. Shim-caused (`LoadAsset_Blocking` results are invisible to
+>   UE's GC; there is no `AddToRoot` in `tutorial_launch.cpp`).
+> - **Family B — game thread:** `PlayerCameraManager->ViewTarget.Target` has its **low byte overwritten
+>   with `0x01`**, then `APlayerCameraManager`'s per-frame tick dispatches through it. The view target
+>   is positively identified as **the shim's own spawned camera actor**, via the shim-private constant
+>   triple `KCAMPITCH -66.0 / -90.0 / 0.0` recovered from `ViewTarget.POV.Rotation` in crash memory.
+>   It is **NOT** a use-after-free — the actor is alive and GC-reachable.
+>
+> Both have compiled fixes (`KVTGUARD`, `KGCROOT`), **neither yet live-verified**. **Also corrected:**
+> the shared antecedent is the shim's **blocking mesh load**, not a GC (`LogGarbage` appears in **zero**
+> log files); and the crash corpus explains **at most half** the failure rate — 5 of 9 tutorial sessions
+> died with no dump at all. → **`docs/fk7-crash-settled.md`**
+
 ### ⇒ THE REAL REMAINING QUESTION
 None of the tutorial lesson objects exist: 0 `TrainingQuest_*`, 0 `BP_TutorialTrainingQuestSequencer_C`.
 The sequencer is a LEVEL-PLACED actor (it has DefaultSceneRoot + SimpleConstructionScript + SCS_Node), and the

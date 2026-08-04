@@ -689,6 +689,43 @@ empties are real); **legacy `UPlayerInput::ActionMappings`/`AxisMappings` are AB
 them behind WITH_EDITORONLY_DATA -> stripped from shipping). ⇒ **there is no legacy input path, so SUPERVIVE MUST drive
 Enhanced Input from IMCs** -- which means the IMC assets DO exist somewhere and the searches above simply failed to find
 them. 0 of 14,921 loaded BP fns call `AddMappingContext` ⇒ the load+add is **NATIVE**.
+
+> ## ⛔ RETRACTED IN FULL — S104, 2026-07-26. READ `docs/fk2-input-settled.md` BEFORE THE PARAGRAPH ABOVE.
+>
+> The paragraph above (lines 685-691) is **FK-2**. It is wrong, and it steered four sessions.
+> The text is preserved for the method record — **do not act on it.**
+>
+> - The **OBSERVATION** is CORRECT: `UPlayerInput` in this build really does reflect only 6 props
+>   (confirmed independently by `schema.txt:41089`).
+> - The **EXPLANATION is FALSE, and it is false about stock UE.** In UE 5.4 those arrays carry **no
+>   `UPROPERTY` macro at all** — plain public C++ members, present in Shipping. `WITH_EDITORONLY_DATA`
+>   appears **0 times** in the file. See `H:/Unreal Engine/UE_5.4/.../GameFramework/PlayerInput.h:439-446`
+>   (whole class body has exactly 2 UPROPERTYs). The inference chain was rotten at its first link.
+> - The **CONCLUSION is FALSE and INVERTED.** SUPERVIVE runs the **LEGACY** FName action/axis path.
+>   `Loki/Config/DefaultInput.ini` ships **221 `+ActionMappings` + 20 `+AxisMappings`**, and the
+>   per-player table lives on `ULokiPlayerConfigManager` (`schema.txt:40990`), config-serialized to
+>   `[/Script/Loki.PlayerConfigManager]` in `UserSettings.ini`: **186 actions + 16 axes**,
+>   `InputConfigVersion=13`. Full table: `docs/input-map.csv`.
+> - **There are ZERO IMC/IA assets** in all 107,123 shipped files. The same ini sets
+>   `DefaultPlayerInputClass=/Script/EnhancedInput.EnhancedPlayerInput` — **Enhanced CLASSES, LEGACY
+>   DATA**. `UEnhancedPlayerInput::ProcessInputStack` is a one-line `Super::` pass-through. That single
+>   sentence reconciles every retraction in this thread.
+> - **Movement is an AXIS** (`Forward` W/S, `Right` A/D, `Up` Space/LCtrl) — which is why an
+>   action-only search missed WASD. This was correctly named in commit `b420a69` on 2026-07-16 and
+>   never written here; the mechanism was correctly found in `46d873a` the same day and under-credited.
+>   **That — a correction dying in a commit message — is the process defect, not the input fact.**
+>
+> ⚠ Two sibling artifacts inherit the error and are corrected in `docs/fk2-input-settled.md` §4.3:
+> (i) `46d873a`'s "native LokiPlayerController has ZERO input events" is a **tautology of
+> `find_func.py`** (`:47` filters `ocls(obj)!="Function"`; native `BindAxis` takes a raw member
+> pointer) — so S80r's "two halves on different PCs" theory and the S80s-u `SetPlayer` hunt should
+> **not** be re-opened on that basis. (ii) `MoveForward`/`MoveRight` are **NOT** hero movement —
+> `349c250` disassembled them as the spectator/free-cam path.
+>
+> **Still genuinely open** (do not round this up): the mapping table is proven to **EXIST** and the
+> legacy consumer API proven **COMPILED IN**, but is **not yet proven to DRIVE live input**. The one
+> probe that settles it is in `docs/fk2-input-settled.md` §5 Step 3.
+
 **NEXT (in confidence order):**
 1. ★ **Find the NATIVE add-site instead of hunting the asset** -- it will NAME the asset for us.
    `tools/re/disasm_live.py` on `AddMappingContext`'s exec thunk (UFunction 0x28504E423A0, read `Func@+0xE0` for the

@@ -138,6 +138,10 @@ Don't promise ability play without first proving GAS can be initialised outside 
 & "G:\git\Supervive Revival Project\configs\launch-redirect.ps1" -NoHook   # background; Steam relaunches under a NEW pid
 # 2) wait "TryUIReady SUCCESS" AND uptime >= 100s; resolve the LIVE pid (newest by StartTime)
 # 3) inject in THIS ORDER (retry the whole launch if the game dies on fo — ~2 of 3 do):
+#    >> RETRACTED 2026-07-27 (S106): "~2 of 3 do" is FALSE as a mechanism. DETERMINISTIC crashes --
+#    >> two named signatures, byte-identical RVA chains across independent launches, both shim-caused,
+#    >> both with compiled fixes. Retrying was the wrong response for ~15 sessions.
+#    >> See docs/fk7-crash-settled.md (Step 0: three tutorial_launch DLLs on disk are A/B traps).
 tools\inject\inject.exe mmap $gpid tools\sigbypass-mod\tutorial_launch_fo.dll        # wait for "WORLD UP"
 tools\inject\inject.exe mmap $gpid tools\sigbypass-mod\gft_ready_fix.dll
 tools\inject\inject.exe mmap $gpid tools\sigbypass-mod\tutorial_launch_sp.dll        # hero spawn (SCALE FIX lives here)

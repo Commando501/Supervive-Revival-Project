@@ -129,6 +129,12 @@ puppet}` + `gft_ready_fix.dll`.
 - Steam relaunches the game under a NEW pid — always resolve the newest: `Get-Process SUPERVIVE-Win64-Shipping |
   Sort StartTime -Desc | Select -First 1`.
 - Force-open crashes intermittently on the fo inject (~2 of 3); budget relaunches. Delete `Loki.log` before each run.
+  > ⚠ **RETRACTED 2026-07-27 (S106).** Original text preserved above. "Intermittently" is FALSE — the
+  > crashes are **deterministic**: two named signatures (worker-thread anim UAF; GameThread
+  > camera-pointer corruption), byte-identical chains across launches, both shim-caused, both with
+  > compiled fixes. **Do not budget relaunches — stack the experiments.** (Deleting `Loki.log` before
+  > each run is still correct, and is now load-bearing for the verification plan.)
+  > → **`docs/fk7-crash-settled.md`**
 - Two PI-hooking `tutorial_launch` modes can't run at once (they hold the PI hook for their whole duration) — let one
   finish (or its 120s hold release) before injecting the next.
 - The `[SP]` spawn shim LIFTS the hero into the sky — bad for viewing; teleport to ground for the visible test.

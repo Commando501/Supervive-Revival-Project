@@ -114,6 +114,11 @@ tools\inject\inject.exe mmap <PID> tools\sigbypass-mod\tutorial_launch_seq.dll
 
 - ⚠ **Force-open crashes intermittently** — it died ~1s after `Entering game state BP_LokiGameState_Tutorial_C` on
   **2 of 3** launches. Just relaunch; a 90s pre-inject settle helped. Budget retries into your plan.
+  > ⚠ **RETRACTED 2026-07-27 (S106).** Original text preserved above. "Intermittent" is FALSE — the
+  > crashes are **deterministic**, with byte-identical RVA chains across independent launches. Two
+  > named signatures (worker-thread anim UAF; GameThread camera-pointer corruption), both shim-caused,
+  > both with compiled fixes. **Do NOT budget retries — stack the experiments.**
+  > → **`docs/fk7-crash-settled.md`**
 - ⚠ **CENSUS TRAP**: the substring `TrainingQuest` ALSO matches `BP_TutorialTrainingQuest**Sequencer**_C`, so a
   naive count reads 1 and looks like success. Count real quests with `Quest_Basics` / `Training_Quest`.
 - ⚠ **Stale client log**: always DELETE `Loki.log` before a run. Otherwise a "did the world load?" grep matches the
