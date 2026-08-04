@@ -487,6 +487,12 @@ static void DumpCrashCtx(EXCEPTION_POINTERS* ep){
 #ifndef KWPSELFTEST
 #define KWPSELFTEST 1    // in-session POSITIVE CONTROL: two idempotent stores to &Target from the game thread
 #endif
+#ifndef KWPSELFWAITMS
+// S108: how long WpSelfWatch waits for the positive control to produce a verdict. The old value was a
+// hard-coded 8000, which is SHORTER than the one-shot RM_PLAY init block that owns the game thread at
+// arming time -- so S107 declared the instrument void before the instrument had had a chance to run.
+#define KWPSELFWAITMS 90000
+#endif
 #ifndef KWPMAXLOG
 #define KWPMAXLOG 48     // full log lines for the first N &Target traps; after that, novel RIPs only
 #endif
@@ -546,6 +552,9 @@ static volatile LONG g_wpStorm=0, g_wpStop=0, g_wpArmReq=0, g_wpDisarmReq=0;
 static DWORD g_wpOldProt=0;
 static volatile LONG g_wpTraps=0, g_wpTrapsTgt=0, g_wpForeign=0, g_wpDr6Zero=0, g_wpDropped=0, g_wpTrapsSelf=0;
 static volatile LONG g_wpCorruptTraps=0, g_wpPendSlotFull=0;
+// ★ S108 — orphan single-steps swallowed by the terminal fallback in WpHandle (see there). Counted so
+// the run reports how often the fallback had to save the process rather than hiding it.
+static volatile LONG g_wpOrphanSwallowed=0;
 // ── S107 review fixes ──────────────────────────────────────────────────────────────────────────────
 // D3: WpDisarm used to clear g_wpArmed BEFORE walking ~140 threads to clear their DR7 (~3-5 ms). A DR
 //     hit inside that window was declined by WpHandle and propagated as an UNHANDLED single-step, which
@@ -673,7 +682,52 @@ static bool WpHandle(EXCEPTION_POINTERS* ep,DWORD code,LONG* out){
         // STATUS_SINGLE_STEP to the OS and kill the process.  Inside the grace window we still swallow
         // traps that PROVABLY name our slots -- but we do NOT record them, because coverage is over.
         LONG gu=InterlockedCompareExchange(&g_wpGraceUntil,0,0);
-        if(!gu || (LONG)(GetTickCount()-(DWORD)gu)>=0) return false;
+        if(!gu || (LONG)(GetTickCount()-(DWORD)gu)>=0){
+#if KWPROBE==1
+            // ★★ S108 TERMINAL FALLBACK — this is what killed S107's run, diagnosed from its own dump.
+            // The debug registers live in the THREAD, not in g_wpArmed. Any path that leaves DR7 set on a
+            // thread while the flag is down (a partial/failed disarm, a second probe image owning the
+            // flag, the packer restoring a context) turns the very next store to &Target into a
+            // STATUS_SINGLE_STEP that WpHandle DECLINES -- and an unhandled single-step terminates the
+            // process. MEASURED in dump 166396E2: exception 0x80000004, Dr7 == g_wpDr7Val, Dr6 low nibble
+            // = B0|B1, RIP one byte past the probe's own `mov [rbx],r14` selftest store, 127/128 threads
+            // still armed. The kill was the instrument, and it was read as a game crash.
+            // So: if the hardware PROVABLY names our slots AND Dr0 still holds our address, swallow it
+            // even with the flag down. We do NOT record it as coverage -- the run is over as a
+            // measurement; this only stops the instrument from killing its own host.
+            if(code==WP_SINGLE_STEP){
+                CONTEXT* cc=ep->ContextRecord;
+                if((cc->ContextFlags&CONTEXT_DEBUG_REGISTERS)==CONTEXT_DEBUG_REGISTERS){
+                    uint64_t mine0=g_wpDrBit0|g_wpDrBit1;
+                    if((cc->Dr6&mine0) && g_wpAddr && cc->Dr0==(DWORD64)g_wpAddr){
+                        cc->Dr6 &= ~mine0;
+                        InterlockedIncrement(&g_wpOrphanSwallowed);
+                        *out=EXCEPTION_CONTINUE_EXECUTION; return true;
+                    }
+                }
+            }
+#endif
+#if KWPROBE==2
+            // ★★ S108b — THE PAGE-MODE HALF OF D-S108-3, which the first fix missed. Page protection is a
+            // property of the ADDRESS SPACE, not of g_wpArmed, exactly as debug registers are a property of
+            // the thread. If the flag goes down while the page is still PAGE_READONLY, the next write to
+            // ANY of the ~4 KB (ViewTarget.POV lives there and is written every frame) faults, WpHandle
+            // declines, and the unhandled AV kills the process. MEASURED 2026-08-04: dump FED1F952 is this
+            // shim self-killing in page mode. Shipping the DR fallback alone left `_wprobe2*.dll` lethal.
+            if(code==0xC0000005 && ep->ExceptionRecord->NumberParameters>=2
+               && ep->ExceptionRecord->ExceptionInformation[0]==1){          // 1 = write access
+                uintptr_t fa=(uintptr_t)ep->ExceptionRecord->ExceptionInformation[1];
+                if(g_wpPage && fa>=g_wpPage && fa<g_wpPage+g_wpPageSz){
+                    DWORD old=0;
+                    if(VirtualProtect((void*)g_wpPage,g_wpPageSz,g_wpOldProt?g_wpOldProt:PAGE_READWRITE,&old)){
+                        InterlockedIncrement(&g_wpOrphanSwallowed);
+                        *out=EXCEPTION_CONTINUE_EXECUTION; return true;      // retry the store, now writable
+                    }
+                }
+            }
+#endif
+            return false;
+        }
     }
     CONTEXT* c=ep->ContextRecord; DWORD tid=GetCurrentThreadId();
 #if KWPROBE==1
@@ -1489,6 +1543,16 @@ static int       g_vtTries=0;
 // ---- FK-24 probe hooks that live on the GAME THREAD. All three are a handful of stores; none of them
 //      arms anything (the arm sweep suspends threads and must never run here -- S81's rule). ---------
 static volatile LONG g_wpSelfReq=0, g_wpSelfPhase=0, g_wpSelfDoneTick=0;
+// ★ S108 (2026-08-04) — counts entries into VtGuard that REACH the selftest call site (i.e. past
+// VtResolve, past the GcAlive stand-down, past SafeReadable). S107's run declared
+// "selftest FAIL ... the watchpoint is VOID on the game thread" while printing selfPhase=0 — and
+// selfPhase only advances AFTER the idempotent store has executed, so selfPhase=0 means the store
+// NEVER RAN. That is a statement about VtGuard's cadence, not about the watchpoint, and the FAIL
+// line's own wording asserted the latter. This counter is the discriminator: selfPhase==0 with
+// vtHits==0 means VtGuard never got the game thread back after arming (the one-shot RM_PLAY init
+// block holds it for >8 s); selfPhase==0 with vtHits>0 means the store was reached but bailed on
+// VtValid/SafeReadable. Neither is evidence about the trap. See WpSelfWatch below.
+static volatile LONG g_wpVtHits=0;
 static volatile LONG g_wpCorruptSeen=0; static DWORD g_wpCorruptTick=0; static uint64_t g_wpCorruptVal=0;
 static void WpArmRequest(int at){ if(KWPARMAT==at) InterlockedExchange(&g_wpArmReq,1); }
 // Called by VtGuard the instant it sees the measured corruption. This is the CORRELATION gate: every
@@ -1613,6 +1677,7 @@ static void VtGuard(uintptr_t pc,uintptr_t preferred){
     uintptr_t* slot=(uintptr_t*)(g_vtPCM+g_vtOff);
     if(!SafeReadable(slot,8)) return;
 #if KWPROBE
+    InterlockedIncrement(&g_wpVtHits);   // S108: measured BEFORE the selftest, so a quiet selftest is attributable
     WpSelfTestTick(slot);   // FK-24 positive control: two idempotent stores, once, right after arming
 #endif
     uintptr_t cur=*slot;
@@ -2045,9 +2110,18 @@ static void WpVerdict(const char* phase){
                 (long)g_wpPolls,(unsigned long)(GetTickCount()-g_wpArmTick),(int)KWPPOLLMS);
     const char* v; const char* nxt;
     if(!selftest){
-        v="ROW6 VOID-INSTRUMENT: the selftest store fired NO trap => the watchpoint was never live on the game thread. This run says NOTHING about the writer.";
-        nxt=(KWPROBE==1)?"read the per-thread dr7ReadbackZero counts; if non-zero the packer defeats DR -> rebuild with -DKWPROBE=2":
-                         "check [WP] arm PAGE_READONLY / V1, and that CrashVEH is still registered first";
+        // ★ S108 — split ROW6. `!selftest` only means "no self trap was recorded"; whether that is a dead
+        // watchpoint or an unrun control is decided by selfPhase (advanced only after the store retires).
+        // Escalating DR->page on the unrun case is wasted, because the page build drives its selftest from
+        // the SAME VtGuard call site and would reproduce it exactly.
+        if(InterlockedCompareExchange(&g_wpSelfPhase,0,0)==0){
+            v="ROW6a UNTESTED-INSTRUMENT: the selftest store NEVER EXECUTED (selfPhase=0), so the watchpoint was never exercised. This is NOT 'void' and NOT a negative -- it is no test at all, and it says nothing about the writer OR about DR viability.";
+            nxt="read vtHits on the census lines: 0 => VtGuard never re-entered after arming (raise KWPSELFWAITMS or arm later with -DKWPARMAT=1); >0 => the store bailed on VtValid/SafeReadable. Do NOT switch KWPROBE mode on this row.";
+        } else {
+            v="ROW6 VOID-INSTRUMENT: the selftest store EXECUTED and fired NO trap => the watchpoint was never live on the game thread. This run says NOTHING about the writer.";
+            nxt=(KWPROBE==1)?"read the per-thread dr7ReadbackZero counts; if non-zero the packer defeats DR -> rebuild with -DKWPROBE=2":
+                             "check [WP] arm PAGE_READONLY / V1, and that CrashVEH is still registered first";
+        }
     } else if(corrTrap>0){
         v="ROW1 ANSWER: a CORRUPTING store was trapped. The writer is named by rip/rva + the instruction bytes + which register held the PCM.";
         nxt="run wpattrib.py on the printed rva (the command line is in the trap record), then re-run once to confirm the RVA REPEATS -- a one-shot RVA is a lead, not a cause";
@@ -2145,12 +2219,25 @@ static DWORD WINAPI WpThread(LPVOID){
                     Markerf("[WP]   correlate: *** NO CORRUPTING TRAP recorded before this [VTG] INVALID (val=0x%llX)"
                             " -- THE PROBE MISSED THE WRITER (VOID, not a negative) ***\r\n",(unsigned long long)g_wpCorruptVal);
                 if(g_wpNewAtCorrupt<0) g_wpNewAtCorrupt=g_wpLastNew; } }
-            if(now-g_wpLastCensus>=30000){ g_wpLastCensus=now;
-                Markerf("[WP] census t=+%lus traps=%ld tgt=%ld self=%ld corrupting=%ld distinctRVAs=%d armedTids=%d voidTids=%d selftest=%s\r\n",
-                        (unsigned long)((now-g_wpArmTick)/1000),
+            // ★ S108b — the TRIGGER underflowed too, not just the display. `now` is sampled before
+            // WpArm(), so g_wpLastCensus (set from a post-arm GetTickCount) is GREATER than `now` on the
+            // first ticks and the unsigned compare comes out huge -> DR mode fired a bogus `t=+0s` census
+            // immediately. Signed difference handles both that and the 49-day wrap. The first fix clamped
+            // only the printed value, which hid the symptom and left the cause -- exactly the half-fix
+            // this file keeps warning about.
+            if((LONG)(now-g_wpLastCensus)>=30000){ g_wpLastCensus=now;
+                // S108: `now` is sampled at the top of the loop, BEFORE WpArm() runs, and the arm sweep
+                // takes >1 s over ~128 threads -- so g_wpArmTick lands AFTER `now` and the unsigned
+                // subtraction underflowed to the nonsense `t=+4294966s` seen in S107's first census.
+                // Clamped. S108 also reports selfPhase and vtHits so a NOT-YET selftest is attributable
+                // at every census, not only at the one-shot 8 s deadline.
+                Markerf("[WP] census t=+%lus traps=%ld tgt=%ld self=%ld corrupting=%ld distinctRVAs=%d armedTids=%d voidTids=%d selftest=%s selfPhase=%ld vtHits=%ld orphanSwallowed=%ld\r\n",
+                        (unsigned long)((now>=g_wpArmTick)?((now-g_wpArmTick)/1000):0),
                         (long)InterlockedCompareExchange(&g_wpTraps,0,0),(long)InterlockedCompareExchange(&g_wpTrapsTgt,0,0),
                         (long)InterlockedCompareExchange(&g_wpTrapsSelf,0,0),(long)InterlockedCompareExchange(&g_wpCorruptTraps,0,0),
-                        g_wpNSeenRva,g_wpNTids,g_wpVoidThreads,g_wpAnySelfTrap?"PASS":"NOT-YET"); }
+                        g_wpNSeenRva,g_wpNTids,g_wpVoidThreads,g_wpAnySelfTrap?"PASS":"NOT-YET",
+                        (long)InterlockedCompareExchange(&g_wpSelfPhase,0,0),(long)InterlockedCompareExchange(&g_wpVtHits,0,0),
+                        (long)InterlockedCompareExchange(&g_wpOrphanSwallowed,0,0)); }
 #if KWPHOLDMS
             if(now-g_wpArmTick>=(DWORD)KWPHOLDMS){ WpDisarm("hold expired"); WpVerdict("hold-expired"); }
 #endif
@@ -2160,7 +2247,18 @@ static DWORD WINAPI WpThread(LPVOID){
     return 0;
 }
 // SELFTEST verdict is emitted once, as soon as it is decidable, so a sitting is never spent on a void.
+// ★ S108 (2026-08-04) — REWRITTEN, and this is a correction of the instrument, not a tuning knob.
+// S107 printed "selftest *** FAIL: no trap 8000 ms after arming (selfPhase=0) -- the watchpoint is
+// VOID on the game thread" and the session escalated on it. But selfPhase only advances AFTER the
+// idempotent store has RETIRED (WpSelfTestTick), so selfPhase=0 says the store NEVER EXECUTED. "The
+// store ran and did not trap" (a real void) and "the store never ran" (no test happened at all) are
+// different results with different next actions, and the old wording asserted the first while
+// measuring the second -- the project's dominant error mode, inside the positive control built to
+// prevent it. The deadline was also too short by construction: arming happens inside the one-shot
+// RM_PLAY init block, which holds the game thread well past 8 s (S107: init completed between the
+// +8 s FAIL and the +29 s census), so VtGuard could not reach the call site in time.
 static DWORD WINAPI WpSelfWatch(LPVOID){
+    bool announced8=false;
     for(;;){
         if(InterlockedCompareExchange(&g_wpStop,0,0)) return 0;
         if(InterlockedCompareExchange(&g_wpArmed,0,0)&&g_wpArmTick){
@@ -2168,10 +2266,34 @@ static DWORD WINAPI WpSelfWatch(LPVOID){
                 Markerf("[WP] selftest *** PASS: the idempotent store(s) trapped (8B->B0|B1 seen=%d, 1B->B0-only seen=%d)"
                         " -- THE WATCHPOINT IS LIVE ON THE GAME THREAD ***\r\n",(int)g_wpSelfB0B1,(int)g_wpSelfB0only);
                 return 0; }
-            if(GetTickCount()-g_wpArmTick>8000){
-                Markerf("[WP] selftest *** FAIL: no trap 8000 ms after arming (selfPhase=%ld) -- the watchpoint is VOID"
-                        " on the game thread. READ NOTHING ELSE IN THIS RUN AS A NEGATIVE. ***\r\n",
-                        (long)InterlockedCompareExchange(&g_wpSelfPhase,0,0));
+            DWORD el=GetTickCount()-g_wpArmTick;
+            LONG  ph=InterlockedCompareExchange(&g_wpSelfPhase,0,0);
+            LONG  vh=InterlockedCompareExchange(&g_wpVtHits,0,0);
+            LONG  dt=InterlockedCompareExchange(&g_wpSelfDoneTick,0,0);
+            // (a) THE ONLY SHAPE THAT LICENSES "VOID": both stores executed, then a drain grace window
+            //     (the ring is drained at ~4 Hz) passed with no trap recorded.
+            if(ph>=2 && dt && (GetTickCount()-(DWORD)dt)>2000){
+                Markerf("[WP] selftest *** FAIL(VOID-WATCHPOINT): both idempotent stores EXECUTED (selfPhase=2,"
+                        " vtHits=%ld) and NO trap was recorded 2000 ms later -- the watchpoint is genuinely VOID"
+                        " on the game thread. READ NOTHING ELSE IN THIS RUN AS A NEGATIVE. ***\r\n",(long)vh);
+                return 0; }
+            // (b) NOT the same thing -- this is exactly where S107 printed FAIL.
+            if(el>8000 && !announced8){ announced8=true;
+                Markerf("[WP] selftest NOT-YET at 8000 ms: selfPhase=%ld vtHits=%ld -- the idempotent store has"
+                        " NOT EXECUTED, so this is NOT evidence about the watchpoint (S107 read it as such and"
+                        " escalated). VtGuard has not reached the selftest call site since arming. Still watching"
+                        " to %d ms.\r\n",(long)ph,(long)vh,(int)KWPSELFWAITMS); }
+            if(el>(DWORD)KWPSELFWAITMS){
+                if(ph==0)
+                    Markerf("[WP] selftest *** INCONCLUSIVE: selfPhase=0 vtHits=%ld after %lu ms -- the positive"
+                            " control NEVER RAN, so the watchpoint is UNTESTED: this is neither 'live' nor 'void'."
+                            " vtHits=0 => the game thread never re-entered VtGuard; vtHits>0 => the store bailed on"
+                            " VtValid/SafeReadable. Do NOT escalate on this line alone. ***\r\n",
+                            (long)vh,(unsigned long)el);
+                else
+                    Markerf("[WP] selftest *** FAIL(VOID-WATCHPOINT): selfPhase=%ld vtHits=%ld, the store executed"
+                            " and no trap arrived within %lu ms -- watchpoint VOID on the game thread. READ NOTHING"
+                            " ELSE IN THIS RUN AS A NEGATIVE. ***\r\n",(long)ph,(long)vh,(unsigned long)el);
                 return 0; }
         }
         Sleep(100);
@@ -3910,10 +4032,28 @@ static void* g_plLabFn=nullptr; static uintptr_t g_plLabThunk=0, g_plLabChild=0;
 #define KSMACTOR 1           // spawn a real StaticMeshActor + set the mesh on its ENGINE-built root (spawn-vs-component test).
 #endif
 #ifndef KSTATICTEST
-#define KSTATICTEST 1        // ★ THE DISCRIMINATOR: also build a plain StaticMeshComponent using a mesh taken from a
-                             // level StaticMeshComponent that IS visibly rendering. If OUR copy of a known-rendering
-                             // mesh still doesn't draw, the failure is our component-creation path (not skeletal/mesh
-                             // specific) -> the render proxy is never created. If it DOES draw, it's skeletal-only.
+// ★★ S108b (2026-08-04) — DEFAULT FLIPPED 1 -> 0.  This is the S95 spawn-vs-component DISCRIMINATOR:
+// build a plain StaticMeshComponent from a mesh borrowed off a level component that IS visibly
+// rendering, so that "our copy doesn't draw" separates a broken component-creation path from a
+// skeletal-only problem.  It answered that question long ago and is now pure cost.
+//
+// WHY IT MUST BE OFF BY DEFAULT (MEASURED, docs/s108b-ksmactor-bisect.md):
+//   The block at :4960 calls BuildHeroBody(hero, StaticMeshComponent, ...) at :4970, and
+//   BuildHeroBody unconditionally drives PlayAnimation -- on a component that has no animation.
+//   That faults 0xC0000005 every run.  The fault is SEH-caught, so it does not kill the process; what
+//   it does is worse and quieter:
+//       [ANIM] PlayAnimation(...) FAULTED -> anim swapping DISABLED for the rest of the session
+//   ⇒ THE HERO'S WALK/RUN ANIMATION WAS DEAD FOR THE WHOLE SESSION, every session, because of a
+//     leftover diagnostic.  With KSTATICTEST=0 the marker instead cycles
+//     `PlayAnimation(run, loop) ok` / `PlayAnimation(idle, loop) ok` and locomotion animates
+//     (MEASURED in both bisect arms; confirmed visually by the user).
+//   The faulting object names itself in the register dump: `[NULL] cls RBX=StaticMeshComponent`.
+//   KSMACTOR is EXONERATED -- the nostatictest arm ran its [SMA] block to completion with 0 faults.
+//
+// Same precedent, same reason as KTESTACTOR (S106, :4020): an S9x diagnostic left switched on that
+// quietly damaged every later run.  Rebuild with -DKSTATICTEST=1 (variant `play-statictest`) to get
+// the discriminator back.
+#define KSTATICTEST 0
 #endif
 #ifndef KTESTDX
 #define KTESTDX 500          // X offset of that test actor from the hero.
