@@ -11,8 +11,14 @@ refresh), the STORE, COSMETICS, the full MISSIONS page (with working progress
 bars), the PASSES / Hunter's Journey account pass (full 85-tier ladder), and the
 AVATAR / CALLSIGN customization (render + live switching) all render live. That was
 achieved with the backend feed **plus** a set of client-side native shims built on a
-reusable game-thread native-call primitive (see below). Current frontier = the
-match-setup layer (launching into a playable map).
+reusable game-thread native-call primitive (see below).
+
+**Current frontier = the tutorial WORLD.** Getting in is solved (S107/S108): the client
+loads `LVL_Tutorial`, the hero spawns, is possessed, moves, and **walks/runs with real
+locomotion animation** (S108b). The whole sitting is now **hands-free** — no human at the
+keyboard (see "Tutorial sittings" below). What is still open is *simulation* (abilities /
+combat: the hero owns no ability system) and *stability* (the run dies within ~1–5 min and
+the cause is not attributed).
 
 ## Before doing anything else
 
@@ -74,6 +80,25 @@ match-setup layer (launching into a playable map).
 
 Before RE-touching any of these, READ the relevant doc above first — the value is
 the trial-and-error history, and the corrected root causes are easy to regress on.
+
+### Before touching anything tutorial- / FK-7- / FK-24-shaped
+Read `docs/s108-fk24-instrument-corrected.md` **including its RETRACTIONS block at the
+top, which governs**, then `docs/s108b-ksmactor-bisect.md`, `docs/s108-crash-triage.md`,
+`docs/s108-fk7-verification-attempt.md` and `docs/s108-skeptic-review.md`. Memory:
+`supervive-fk24-probe-self-lethal`, `supervive-tutorial-crash-fk7`.
+
+The short version, because it has already cost two sessions:
+- **The FK-24 watchpoint probe was killing the game**, and its crash was recorded as a
+  game crash for a whole session. Dump `166396E2` (DR mode) and `FED1F952` (page mode) are
+  both **the shim self-killing**, not FK-7. Do not feed them to `crash_census.csv` analysis.
+- **S107's "the watchpoint is VOID → escalate `wprobe`→`wprobe2`" was unfounded.** The DR
+  watchpoint fired fine (127/128 threads armed, GameThread among them). The writer of the
+  `0x01` byte at `PCM+0x420` is **still NOT named**; FK-24 is OPEN.
+- **FK-7 is OPEN.** Zero reproduce-then-repair runs exist. The `play_novtguard` positive
+  control is MANDATORY and a **quiet control means the sitting is VOID, not a pass**.
+  Hold to **T+220–250 s, NOT T+300 s** — the code-integrity kill lands at ~285 s.
+- ⚠ `a67239a0d83d9300` is **no longer** `play`'s hash (S108b flipped `KSTATICTEST`);
+  it is now `play-statictest`. Docs citing it as "the candidate" are stale.
 
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
@@ -152,6 +177,59 @@ the backend `capture.log` for HTTP traffic). The loopback admin panel is at
 `http://127.0.0.1:9210/` while `ags` runs (hunter unlocks, store/ownership, wallet,
 mission progress, per-account state; see `docs/admin-panel.md`).
 
+### ★ Tutorial sittings (FK-7 / FK-24 / anything in `LVL_Tutorial`) — HANDS-FREE
+
+**Do not improvise this, and do not use `-Hook <play dll>`.** `RM_PLAY` and
+`RM_SPAWNPOSSESS` are **continuation** modes: they attach to an already-running tutorial
+and `return 0` before the force-open block, so a lone `-Hook` **cannot work** (S107 wasted
+a launch proving it).
+
+The old recipe needed a human to press PLAY → TUTORIALS → BASIC TRAINING → START. It no
+longer does. That press has exactly ONE backend effect — `POST /startSoloMode` sets
+`playerState.SoloMode` — and `handleCoreGamePlayer` gates on
+`forceTutorialMatch || SoloMode != ""`. So flip the flag instead:
+
+```powershell
+# 1. server/internal/interactive/interactive.go -> const forceTutorialMatch = true
+& "$env:ProgramFiles\Go\bin\go.exe" build -C server -o ags.exe ./cmd/ags
+
+# 2. ELEVATED PowerShell. Steam must already be running.
+.\configs\launch-redirect.ps1 -NoHook          # returns after launching; game keeps running
+
+# 3. SECOND call, once the game is up — stages the world and injects the DLL under test:
+.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_play.dll -Label myrun
+```
+
+MEASURED: with the flag on, the client parks itself **~13 s** after launch. `fk24-stage.ps1`
+pre-flights that `ags` is really arming a match and refuses to run otherwise, then injects
+`gft_ready_fix` → `tutorial_launch_fo` → `tutorial_launch_sp` → your probe, **gating each
+step on measured evidence** and copying the marker off after every injection.
+**Set the flag back to `false` when done** — otherwise a normal launch auto-parks into the
+tutorial loading screen and looks broken.
+
+⚠ **Order is load-bearing, and each of these cost a dead run:**
+- `gft_ready_fix` goes **BEFORE** the force-open. The old documented `fo → gft → sp` order
+  only worked because S107 injected all four back-to-back and gft landed *during* the 5.7 s
+  LoadMap. Gate between them and the run dies with the log full of
+  `ULokiGameFeatureToggles::Get … called when feature toggles were not ready`.
+- Wait for `Load map complete /Game/Loki/Maps/Tutorial/LVL_Tutorial` — **not** the bare
+  string `LVL_Tutorial`, which the force-open's own echoed console command also contains.
+- Wait for sp's own `[SP] done step=4` before injecting the probe. `ResolveSpawnPossess`
+  and `RM_PLAY`'s resolve are both **one-shot, no retry**; a fixed 5 s sleep is not enough
+  and the probe aborts at `[PL] ResolveWakeMove failed … -> abort` having armed nothing.
+- `[SP] gm=0x0 pc=0x0 startSpot=0x0 heroClass=0x0` = the world is gone. Do not proceed.
+
+**Expected yield: only ~2 of 4 launches reach the armed window.** Budget on *armed windows
+reached*, never on launches.
+
+Success looks like this in `docs\tutorial-launch-marker.txt`:
+```
+[SP]   gm=0x… pc=0x… startSpot=0x… heroClass=0x…        <- ALL FOUR non-zero
+[SP]   done step=4 spawnedPawn=0x… cls=BP_HERO_Ronin_C
+[PL]   *** init complete: body=BUILT; camera + WASD active ***
+[ANIM] PlayAnimation(run, loop) ok / PlayAnimation(idle, loop) ok   <- locomotion animating
+```
+
 For iterative server-only restarts (game already running at menu, want to swap
 backend behavior): kill `ags`, rebuild with
 `& "$env:ProgramFiles\Go\bin\go.exe" build -C server -o server\ags.exe ./cmd/ags`,
@@ -228,6 +306,11 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   cosmetics), `missions_fix` (durable missions page), `mainmenu_refresh_pi8`
   (pick→center refresh), `loadout_fix`, `tutorial_launch`, plus the
   `missions_nativecall_probe*` RE series that built the native-call primitive.
+- **Tutorial sitting driver:** `configs/fk24-stage.ps1` — stages the tutorial world and
+  injects a probe/candidate DLL hands-free. `-Probe <dll> [-Label <tag>] [-SkipProbe]`.
+  Copies the marker off after each stage into `docs/fk24-stage-<label>-<n>-<shim>.txt`,
+  because `Marker()` opens `CREATE_ALWAYS` so **every injection truncates
+  `docs/tutorial-launch-marker.txt`** (FK-25). See the launch procedure above.
 - **RPM probes:** `tools/re/*.py` — Python probes driving the native-call primitive
   (struct/field/rep-layout walkers, param/OUT-param builders, mission-model dumps).
 - **Admin panel:** loopback JSON API + embedded GUI in `server/internal/admin/`
@@ -259,6 +342,23 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
 - Don't trust the extracted usmap for replicated container types — it has been
   wrong repeatedly (DS missions work cost several passes). Verify struct/array
   shapes against live RPM.
+- **Don't read "no `UECC-*` directory in `Saved\Crashes`" as "the run died with no dump."**
+  Sentry's **crashpad** writes a full minidump (one caught live at 43.9 MB) and then
+  **uploads and DELETES it within ~3 minutes**. `harvest.py` and every hand-rolled census
+  that enumerates `UECC-*` is blind to it. If a run dies and you want the frames, **copy the
+  crashpad database aside within ~60 s** or they are gone. The clean tell in `Loki.log` is
+  `handing control over to crashpad` (anti-correlated 6/6 with a `UECC-*` dir).
+- **Don't leave an S9x diagnostic switched on and then reason about the game.** This has now
+  bitten twice: `KTESTACTOR` (S106) built a second degenerate body, and `KSTATICTEST` (S108b)
+  called `PlayAnimation` on a `StaticMeshComponent`, faulting every run — SEH-caught, so it
+  never crashed, it just printed `anim swapping DISABLED for the rest of the session` and
+  **killed the hero's walk/run animation in every session for weeks**. Both defaulted to 1
+  in shipped builds. When a shim behaves oddly, audit what the *shim* is doing before
+  theorising about the game.
+- **Don't A/B two DLLs without diffing their `.text` sha256.** Three artifacts have shipped
+  identical-but-differently-named, and an A/B against a copy of itself burns a live run.
+  When a `-D` default changes, DELETE the now-redundant variant rather than leaving a
+  duplicate (S108b removed `play-nostatictest`/`play-nodiag` for exactly this).
 
 ## Memory layout
 
@@ -272,6 +372,11 @@ demand when topics come up):
 - `supervive-missions-page-status` — missions page + the native-call primitive
 - `supervive-customization-persistence` — loadout write-back / equip persistence
 - `supervive-dedicated-server-status` — DS stub + missions replication (parked)
-- `supervive-tutorial-launch-status` — tutorial force-launch (not yet playable)
+- `supervive-tutorial-launch-status` — tutorial force-launch (world + possessed hero)
+- `supervive-fk24-probe-self-lethal` — ★ the FK-24 probe was killing the game and its
+  own VOID verdict was an artifact; hands-free sittings; the `KSTATICTEST` animation fix
+- `supervive-tutorial-crash-fk7` — FK-7, still OPEN (zero reproduce-then-repair runs)
+- `supervive-instrument-artifact-pattern` — ★★★ the project's dominant error mode; read
+  it before recording ANY negative result as a property of the game
 - `supervive-rpc-signature-solved` — ServerVerifyViewTarget 40-param signature
 - `supervive-ags-cert-rebuild-gotcha` — re-append root.crt to cacert.pem on rebuild
