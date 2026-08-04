@@ -400,12 +400,23 @@ if ($Hook) {
   & $exe @iniArgs
 }
 
-# ---- post-exit crashpad sweep (FK-9, S109) ----
-# `& $exe` blocks until the game exits, so we get here right after a death. Grab the
-# dump NOW rather than waiting for the next launch's pre-sweep: it means the artifact
-# is in dumps\ before anyone touches the machine, and it pairs the dump with the run
-# that is still fresh in mind. Harmless when the game exited cleanly (no reports ->
-# the script says so and returns). Also cross-checks Loki.log and shouts if the log
-# shows a crashpad handoff but no dump was captured -- see archive-crashdumps.ps1.
-& (Join-Path $PSScriptRoot "archive-crashdumps.ps1") -GameRoot $GameRoot -Label "postexit"
+# ---- NO post-exit sweep here, deliberately (FK-9, S109) ----
+# I first added a second archive call at this point, assuming `& $exe` blocks until the
+# game exits. IT DOES NOT: the shipping exe detaches, so `& $exe` returns in ~1 s and
+# this line ran BEFORE the game had even mounted its paks. MEASURED 2026-08-04 16:38 --
+# the "postexit" archive was written one second after the "before launch" one, of the
+# same report. It was pure duplication under a misleading name.
+#
+# The pre-launch sweep is sufficient, and provably so:
+#   * a pending report is only ever destroyed by a launch (MEASURED 16:38:51 -- metadata
+#     went 150 B/num_records=1 -> 16 B/num_records=0 in the same second crashpad_handler
+#     started), and we archive immediately before that;
+#   * at pre-launch time Saved\Logs\Loki.log is STILL the dead session's log, because UE
+#     rotates it at game startup -- so the sweep captures the correct, untruncated log
+#     for the death it is archiving, not the new run's.
+#
+# Blocking here to wait for the game to exit is NOT an option: CLAUDE.md's hands-free
+# tutorial recipe requires this script to return promptly so fk24-stage.ps1 can run.
+# If you want a dump in dumps\ without waiting for the next launch, run
+# `configs\archive-crashdumps.ps1 -Label <tag>` by hand after the death.
 
