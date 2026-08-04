@@ -4,6 +4,24 @@
 This one asks *"what don't we know we don't know?"* — and, more dangerously, *"what do we believe
 that isn't true?"*
 
+> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S108
+> Entries are updated in place with dated banners; **a banner always overrides the table beneath it.**
+> The original S101 text is never deleted, because the retraction history is the value.
+>
+> | entry | last touched | status |
+> |---|---|---|
+> | FK-1, FK-2, FK-3, FK-4, FK-5, FK-6 | S104–S105 | ✅ SETTLED (each with its own `fk*-settled.md`) |
+> | **FK-7** — tutorial crash | **S108** | **OPEN.** Belief closed-false; the FIX is unverified. S108's verification sitting was **VOID** (quiet control). |
+> | **FK-9** — Sentry vs UECC dumps | **S108** | ⚠ **PARTLY REHABILITATED** — the refutation over-corrected; crashpad writes a dump *and deletes it*. |
+> | **FK-24** — the `ViewTarget` writer | **S108** | **OPEN.** ★ The probe was killing the game, and its own VOID verdict was an artifact. |
+> | **FK-25** — the marker file | **S108** | ⚠ **STILL UNFIXED**; cost evidence again. Cheapest unspent item in this document. |
+> | **FK-26** — leftover S9x shim diagnostics | **S108** | ✅ **NEW + SETTLED.** `KSTATICTEST` was killing the hero's walk/run animation every session. |
+>
+> **The S108 lesson, in one line:** all three of that session's tasks turned out to be about **the
+> project's own instruments**, not the game — and the session then committed three *fresh* instances
+> of the same error while documenting it. See `memory/supervive-instrument-artifact-pattern.md`,
+> which S108 grew from five confirmed instances to eight.
+
 **Method.** Eleven ignorance dimensions were probed independently, then each was handed to an
 adversarial challenger who re-ran every negative search against primary artifacts and graded each
 claim. **Where prober and challenger disagreed, the challenger won.** Everything a challenger marked
@@ -349,6 +367,35 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 ### FK-7 — "The tutorial route is flaky — ~2 of 3 launches die on the first shim"
 **Severity: HIGH (it invites retry-until-it-works instead of a fix, and it throttles every experiment).**
 
+> ## ⛔ VERIFICATION ATTEMPTED 2026-08-04 (S108) — **THE SITTING WAS VOID. FK-7 STILL OPEN.**
+> → `docs/s108-fk7-verification-attempt.md`. **Zero reproduce-then-repair runs still exist.**
+>
+> The **mandatory** `play_novtguard` positive control was run and **was QUIET**: no camera-family
+> crash, no `[VTG]` line, and the session ran clean **through** the historic T+173…194 s window. By
+> §0's own governing rule that makes the sitting **VOID, not a pass**, so Runs 3–4 (`play`) were
+> deliberately **not** run — running them would have manufactured a false pass. n=1 against a
+> measured 1-in-3…1-in-2 base rate proves nothing; **≥3 controls** are needed before any `play` run
+> is readable.
+>
+> **Three findings that change how the next sitting must be built:**
+> - **★ The probe runs are NOT FK-7 evidence, in either direction.** They have their own mortality:
+>   probe-carrying runs died at **50–80 s**, the probe-free control at **~290 s**. Dumps `166396E2`
+>   and `FED1F952` are the *instrument* killing the host (FK-24 §2). Purge them from any FK-7 tally.
+> - **⚠ The T+300 s hold target is PAST the kill horizon.** The control died at ~290 s, and §0 row 10
+>   records the code-integrity kill at **~285 s**. Holding to T+300 s guarantees a death that is not
+>   FK-7 and cannot be distinguished from one. **Revise the hold to T+220–250 s before executing.**
+> - **`FlushAsyncLoading=5` with `LogChaosCloth=0`** — a pairing **absent from the 9-session corpus**,
+>   which had `=5,=1` for all 4 crash logs and `=4,=0` for all 5 dumpless. The pairing is therefore
+>   **not a law**, and any inference that used flush-count as a proxy for "the mesh build happened, so
+>   the FK-7 antecedent existed" needs re-checking. `LogChaosCloth` is the better antecedent marker.
+>
+> **Did the vtguard prevent Family B, or was it not exercised?** Answered independently twice —
+> from the dump (`docs/s108-crash-triage.md`) and from the quiet control — and the answer is
+> **NOT EXERCISED**. No evidence either way. One dump could not have proven prevention regardless.
+>
+> Run-budget correction: only **~2 of 4** launches reach the armed window at all. Budget on
+> *armed windows reached*, never on launches.
+
 > ## ✅ SETTLED 2026-07-27 (S106) — belief CONFIRMED FALSE. Full write-up: **`docs/fk7-crash-settled.md`**
 >
 > The entry below is preserved as written. **Its prediction held, its diagnosis did not.**
@@ -443,6 +490,31 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 
 ### FK-9 — "SUPERVIVE routes crashes through Sentry; no UECC minidump is written"
 **Severity: HIGH (same consequence as FK-8: it suppressed all crash forensics).**
+
+> ## ⚠ PARTLY REHABILITATED — 2026-08-04 (S108). **The refutation below over-corrected.**
+> The original belief was refuted with *"86 UECC directories exist"* — true, and the refutation
+> stands for the crashes that produce them. But S108 measured the other half, and the belief had a
+> real kernel that the swing past it discarded:
+>
+> **Some crashes genuinely route through Sentry's crashpad and create NO `UECC-*` directory at all.**
+> MEASURED across 5 tutorial deaths: the `Loki.log` tail ends at
+> `LogSentrySdk: handing control over to crashpad` with **no `[Callstack]` frames, no
+> `RequestExit` line, and nothing new under `Saved\Crashes`**. The discriminator is clean and
+> **anti-correlated 6/6**: `handing control over to crashpad` ⇔ no `UECC-*` dir.
+>
+> **★ And crashpad DOES write a minidump — it just deletes it.** Caught live: a **43,893,392-byte**
+> minidump plus its `Loki.log` sitting in the crashpad database, **gone ~3 minutes later** (uploaded,
+> then purged). So *"no dump was written"* and *"no dump exists now"* are different claims, and the
+> census instrument (`harvest.py` and every hand-rolled `Get-ChildItem Saved\Crashes`) can only see
+> the second.
+>
+> **Consequence, and it is load-bearing for FK-7/FK-24:** every statement of the form *"N of 87
+> dumps show X"* has a denominator that **structurally excludes this entire failure mode**. To get
+> the frames from such a death you must **copy the crashpad database aside within ~60 s**. S108 lost
+> one that way and has no named frames for it.
+>
+> This is the FK-4 shape again — a true statement about **one artifact class** (the UECC tree)
+> generalised into a statement about **the technique** (crash forensics).
 
 | | |
 |---|---|
@@ -643,6 +715,48 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 **Severity: HIGH. Split out of FK-7 on 2026-07-29 (S106e) — see `docs/fk7-crash-settled.md` §0.2 / §0.6.**
 **Status: the belief is DEAD; the underlying question is genuinely OPEN and needs a LIVE probe.**
 
+> ## ⛔ RUN LIVE — 2026-08-04 (S108). **THE PROBE WAS THE PROBLEM.** → `docs/s108-fk24-instrument-corrected.md`
+> **This banner GOVERNS and overrides the S107 banner below wherever they disagree.**
+> The writer is **still NOT named. FK-24 stays OPEN.** What S108 established is about the instrument.
+>
+> **1. ❌ S107's VOID verdict is FALSIFIED, and the escalation it ordered was never warranted.**
+> The line `selftest *** FAIL … the watchpoint is VOID on the game thread ***` is wrong about its own
+> subject, refuted two independent ways: (a) `g_wpSelfPhase` advances only **after** the idempotent
+> store retires, so `selfPhase=0` means the store **never executed** — a fact about `VtGuard`'s
+> cadence, not the watchpoint; (b) dump `166396E2` shows **127 of 128 threads armed, GameThread among
+> them, and the GameThread's DR FIRED** (`Dr7` == the probe's own `g_wpDr7Val`, `Dr6` = B0|B1).
+> **The packer never defeated DR.** ⇒ *"escalate to `wprobe2` on a VOID verdict"* was triggered by a
+> non-event, and the page build reproduced the same non-result because **it drives its selftest from
+> the same `VtGuard` call site**. Escalating modes cannot fix a starved positive control.
+>
+> **2. ★ The probe was KILLING THE GAME, and its kill was recorded as a game crash for a session.**
+> Debug registers live in the **thread** and page protection in the **address space** — neither lives
+> in `g_wpArmed`. Any flag-down-but-still-armed path turned the next store to `&Target` into an
+> exception `WpHandle` **declined**, and an unhandled single-step terminates the process. Dumps
+> **`166396E2` (DR mode)** and **`FED1F952` (page mode)** are both **the shim self-killing**.
+> ⇒ **Do not feed either to `crash_census.csv` analysis; they are instrument artifacts, not FK-7 data.**
+> Corroborated live and independently: probe-carrying runs died at **50–80 s**, the probe-free
+> `novtguard` control ran **~290 s**. Fixed by a terminal fallback in `WpHandle` (both modes).
+>
+> **3. ⚠ My own S108 conclusion `vtHits=1 ⇒ VtGuard never re-runs after init` is RETRACTED** — a
+> **sampling** artifact. Every reading came from the `+8 s` selftest line, ~40 marker lines **before**
+> `[PL] init complete`; there was no post-init sample in any run. The same run's own dump proves the
+> store executed later, so `vtHits ≥ 2`. The derived items FK-24a/b/c are withdrawn.
+>
+> **4. ★ The "Steers" row below was RIGHT about the leftover diagnostics — see the new FK-26.**
+> It flagged *"the three leftover S94 diagnostics (`KCHEATSPAWN`/`KSMACTOR`/`KSTATICTEST`) still ON in
+> the candidate build."* `KSTATICTEST` was faulting **every run** and silently disabling the hero's
+> walk/run animation. It did **not** contain the writer, but it was doing real damage.
+>
+> **5. Artifact hashes below are STALE.** After S108b flipped `KSTATICTEST`'s default,
+> `a67239a0d83d9300` is **no longer `play`** — it is now `play-statictest`. Current: `play` =
+> `ae532866e15fd8ac`, `wprobe` = `6bd374e2d81fde3d`, `wprobe2` = `20fa2a7d79bdd748`.
+> The `-Hook <play dll>` run line below **cannot work at all** — `RM_PLAY` is a *continuation* mode.
+> Use `configs\fk24-stage.ps1` (hands-free; see CLAUDE.md → "Tutorial sittings").
+>
+> **The next step is NOT a new watchpoint mode.** It is to (a) sample `vtHits`/`selfPhase` **after**
+> init from the census rather than the 8 s line, and (b) get the positive control to fire at all.
+
 > ## ★ THE PROBE IS BUILT AND READY — 2026-08-03 (S107) → **`docs/fk24-writer-probe.md`**
 >
 > **Read that doc before doing anything with FK-24.** It supersedes the "Cheapest experiment" cell
@@ -696,6 +810,26 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 **Severity: MEDIUM (it manufactures denominator errors). Split out of FK-7 on 2026-07-29 (S106e).**
 **Status: an INSTRUMENT defect, cheap to fix, and it has already cost one multi-agent investigation.**
 
+> ## ⚠ STILL UNFIXED, and it cost evidence again in S108 — 2026-08-04
+> The shim still opens with `CREATE_ALWAYS`. S108 worked **around** it rather than fixing it:
+> `configs/fk24-stage.ps1` copies the marker off after **every** injection into
+> `docs/fk24-stage-<label>-<n>-<shim>.txt`. That is the only reason each stage's output survived —
+> the crash-triage agent independently hit the unfixed version and recorded the missing `[VTG]`
+> line as *"the single missing measurement in this triage."*
+>
+> ⚠ **A trap the workaround itself introduced, worth naming because it produced a false pattern:**
+> the per-stage copies are taken *after each injection*, and `gft_ready_fix` writes a **different**
+> marker file — so `fk24-stage-<label>-1-gft.txt` actually holds the **previous run's** tutorial
+> marker. Only the `-3-sp` / `-4-probe` copies and the post-mortem `fk24-run-*.txt` are attributable
+> to their own run. Comparing across the `-1-gft` files produced a clean-looking correlation that was
+> partly an artifact of that off-by-one-run.
+>
+> **★ S108 also adds a SECOND instance of this entry's class, at a different layer — see FK-9.**
+> The marker loses *what the shim did*; the crashpad purge loses *what the game did*. Both are
+> "the record is destroyed shortly after the event, and the census cannot tell you it is missing."
+> The fix here remains **minutes** (append + PID + wall-clock, as `docs/gft-ready-marker.txt`
+> already does) and is still the cheapest unspent item in this document.
+
 | | |
 |---|---|
 | **Belief** | Implicit in every session that reads the marker to learn what the shim did — and in FK-7's *"5 of 9 tutorial sessions died with no exit marker"*, which treated 9 heterogeneous sessions as **one** experiment. |
@@ -703,6 +837,26 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 | **Why weaker** | `Marker()` opens with **`CREATE_ALWAYS`** (`tools/sigbypass-mod/tutorial_launch.cpp:4919`), so **every injection truncates the file.** A session's `RunMode` and compile-time flags survive **only** by the accident of someone committing the file at the right moment. Consequence, MEASURED: 3 of the 5 "unexplained" FK-7 deaths were recoverable as **RM_SPAWNPOSSESS, run to completion** (`[SP] done step=4 …`) *only* because commits `d61d325` / `f6a7985` / `6e8a7df` happened to land **+3 s / +3 s / +9 s** after each session's last log line — and **2 sessions (07-26 04:33:23, 04:36:18) are permanently mode-unattributable.** The file **is tracked in git**, so `git show <commit>:docs/tutorial-launch-marker.txt` was a per-session mode oracle for the whole route's history and was never once used. |
 | **Steers** | It produced FK-7's largest scope error — *"a second failure mode is invisible to the entire investigation, ~half the observed rate"* — which was a **denominator error** conflating two shim modes, and it consumed a full adversarial hunt to undo. It will do so again for any multi-launch A/B (i.e. every FK-7 verification sitting). |
 | **Cheapest experiment** | **This is a fix, not an experiment.** Append instead of truncating, with **PID + wall-clock** in the header line, or write per-PID markers (`docs/tutorial-launch-marker-<pid>.txt`). Precedent exists in the same tree: `docs/gft-ready-marker.txt` **appends** (50 injections retained). Then commit the marker after every run, as `docs/fk7-crash-settled.md` §0.5 now requires. **Minutes.** |
+
+---
+
+### FK-26 — "The leftover S9x diagnostics still switched ON in the shim are inert"
+**Severity: HIGH. Found and settled in one sitting, 2026-08-04 (S108b) → `docs/s108b-ksmactor-bisect.md`.**
+**Status: the belief is DEAD (measured). `KSTATICTEST` now defaults to 0.**
+
+> **★ This is the entry FK-24's own "Steers" row predicted** — *"the three leftover S94 diagnostics
+> (`KCHEATSPAWN`/`KSMACTOR`/`KSTATICTEST`) still ON in the candidate build"* — and nobody followed it
+> up for two sessions. They were not inert. One of them was breaking a headline feature.
+
+| | |
+|---|---|
+| **Belief** | Never stated, which is why it survived: diagnostics default to `1` in `tutorial_launch.cpp` and every later session reasoned about *the game's* behaviour with them running. `KSMACTOR` (`:4031`) and `KSTATICTEST` (`:4034`) both shipped ON, exactly as `KTESTACTOR` did until S106 defaulted it to 0 for building a second degenerate body. |
+| **Actual evidence** | None — the flags were simply never re-examined after the question they answered was settled. |
+| **Why weaker** | **MEASURED.** `KSTATICTEST` calls `BuildHeroBody(hero, StaticMeshComponent, …)` at `:4970`, and `BuildHeroBody` unconditionally drives `PlayAnimation` — **on a component that has no animation.** It faults `0xC0000005` every run. Because the fault is **SEH-caught it never crashed anything**, so it left no crash trail; instead the handler printed `anim swapping DISABLED for the rest of the session`. ⇒ **the hero's walk/run animation was dead in every session**, the run asset loaded and then never played. Single-variable bisect: the `nostatictest` arm ran `KSMACTOR`'s `[SMA]` block to completion with **zero** faults and cycled `PlayAnimation(run/idle) ok` for the life of the run. **`KSMACTOR` is EXONERATED.** The faulting object names itself: `[NULL] cls RBX=StaticMeshComponent RDI=StaticMeshComponent`. |
+| **Steers** | Every visual judgement about the hero since S94 — "locomotion animation isn't wired up yet" was **false**; it was wired up and being switched off within seconds of each session start. Also every `[NULL]`-fault reading in the FK-7/FK-24 markers, which were the shim's own self-inflicted AV rather than a game fault. |
+| **What it does NOT explain** | **The deaths.** Survival did not track the flags — `nodiag` (both off) died at ~130 s while `nostatictest` (one off) lived past 301 s, the *wrong* direction if `KSTATICTEST` were the killer. n=1 per arm against a 50–290 s spread. **The tutorial run still dies within ~1–5 min and the cause is unattributed.** |
+| **Generalisation, and it is the real value** | This is the **second** S9x diagnostic left switched on that quietly damaged every later run. Both were found by asking *what the shim was doing*, not what the game was doing. **There is no audit anywhere in the project of which compile-time flags a shipped shim actually carries** — `KCHEATSPAWN` is still ON and unexamined. That absence is the residual UNKNOWN here. |
+| **Cheapest experiment** | Already run (~2 launches). The remaining one: enumerate every `#define K*` default in `tutorial_launch.cpp` and ask, per flag, *"is this a fix or a leftover question?"* **Minutes, offline.** |
 
 ---
 
