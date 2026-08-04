@@ -13,19 +13,21 @@ timer — MEASURED: one survived **65+ minutes**, unchanged, after its single up
 `crashpad_handler.exe` is a child of the game and dies with it, so between a death and the next
 launch nothing is alive to touch the database at all.
 
-**INFERRED, not proven: the report is cleared by the next game launch**, when a fresh handler starts
-and reprocesses the database. This is consistent with all five of the day's sessions (§2), but a
-competing explanation — a delayed successful upload — has not been excluded, because **the clearing
-event has never been observed in the act**. See §5 and §6.
+**★ MEASURED (upgraded from INFERRED — see §7): the report is cleared by the next game launch.** The
+experiment was run at 16:38 the same day. `reports/` went from one 43.8 MB report to **empty** and
+`metadata` from 150 B / `num_records=1` to **16 B / `num_records=0`**, in the same second the new
+`crashpad_handler.exe` started. The competing explanation (a delayed successful upload) is
+**excluded**: the purge is synchronous with handler startup and empties the database wholesale rather
+than transitioning one report to `Completed`.
 
-**The "uploads and deletes it within ~3 minutes" figure is RETRACTED** regardless of which
-explanation is right. It was the interval between two `ls` calls, and a relaunch fell inside it.
+**The "uploads and deletes it within ~3 minutes" figure is RETRACTED.** It was the interval between
+two `ls` calls, and a relaunch fell inside it.
 
-**The fix does not depend on resolving that.** `launch-redirect.ps1` archives the database
-**immediately before launching** and **immediately after the game exits**;
-`archive-crashdumps.ps1` is `Copy-Item`-only (no `Remove-Item`, no `Move-Item`) and never touches the
-source. If the launch-clears-it rule is wrong, the consequence is a *lower yield*, never a lost
-original and never a broken launch. Confirmed by adversarial review (S109 skeptic, T5).
+**The fix.** `launch-redirect.ps1` archives the database **immediately before launching** — once, and
+only there. `archive-crashdumps.ps1` is `Copy-Item`-only (no `Remove-Item`, no `Move-Item`) and never
+touches the source, so even a wrong rule would cost *yield*, never an original and never a broken
+launch (confirmed by adversarial review, S109 skeptic T5). ⚠ A second "post-exit" call was tried and
+**removed**: `& $exe` does not block, so it fired one second after the first. See §7.
 
 ---
 
@@ -152,10 +154,15 @@ the `.run` dirs into `dumps\crashpad-<stamp>[-label]\`, SHA-256-verifies every `
 `ARCHIVE-INFO.txt` recording provenance. It **never deletes the source** — crashpad owns that
 directory, and a bad copy must not also mean a lost original. Failures warn but never abort a launch.
 
-**`configs/launch-redirect.ps1`** — calls it twice:
-* **before** `& $exe` (the launch is what clears the database, so this is the deterministic capture);
-* **after** `& $exe` returns (the game blocks the script, so this fires right after a death and puts
-  the artifact in `dumps\` while the run is still fresh).
+**`configs/launch-redirect.ps1`** — calls it **once**, immediately **before** `& $exe`. The launch is
+what clears the database, so that placement is the deterministic capture. It also lands at the one
+moment when `Saved\Logs\Loki.log` is still the **dead session's** log (UE rotates at game startup),
+so the sweep archives the correct untruncated log for the death it is preserving.
+
+⚠ A second call after `& $exe` was tried and **removed** — `& $exe` does not block (the shipping exe
+detaches and returns in ~1 s), so it fired one second after the first, before the game had mounted
+its paks. Making it wait would break the hands-free tutorial recipe, which needs this script to
+return promptly. See §7.
 
 Standalone use, safe at any time:
 
@@ -218,9 +225,63 @@ now durable without it. Cost of testing: one launch. Recorded as still open.
 
 * **It does not attribute any crash.** Capture is an instrument fix. See `docs/s109-dump-forensics.md`
   for the analysis of the preserved dump.
-* **It does not prove the launch-clears-the-database rule by direct experiment.** The rule is
-  MEASURED-consistent 5/5 across the day's sessions and mechanistically grounded in
-  `state=Pending` + `upload_attempts=1` + handler-dies-with-client, but no run has yet been performed
-  that watches the source vanish at launch. The next launch will demonstrate it for free: the source
-  is already archived twice, so nothing is at risk.
+* ~~It does not prove the launch-clears-the-database rule by direct experiment.~~
+  **✅ RESOLVED — the experiment was performed at 16:38 the same day. See §7.**
 * **It says nothing about why the upload fails**, only that it does (once, at crash + 2 s).
+
+---
+
+## 7. ★ The rule is now MEASURED — the clearing event was caught in the act
+
+**2026-08-04 16:38 local.** A `-NoHook` launch was performed with exactly one report pending. This
+was free: the report was already archived twice, so nothing was at risk.
+
+**Baseline, immediately before launch (MEASURED):**
+
+```
+reports/    1 file   41cdafa3-ceff-4d83-8d11-69fa9b75b54a.dmp   43,804,912 B
+metadata    150 B    num_records = 1, uuid 41cdafa3-ceff-4d83-8d11-69fa9b75b54a
+```
+
+**Immediately after launch (MEASURED):**
+
+```
+reports/    EMPTY
+attachments/ EMPTY
+metadata    16 B     num_records = 0     (bare header: 44 41 50 43 01 00 00 00 00 00 00 00 00 00 00 00)
+```
+
+**Timing pins the actor.** `metadata` mtime = **16:38:51.536**. `crashpad_handler.exe` (pid 39524)
+started at **16:38:51**. Same second. The game process itself started 13 s earlier, at 16:38:38.
+
+⇒ **The clearing agent is the NEW `crashpad_handler.exe` starting and reprocessing the database** —
+not the game process as such, and not a successful upload. The skeptic's competing explanation (a
+delayed successful upload) is excluded: the purge is synchronous with handler startup, and the
+database was emptied wholesale (`num_records → 0`) rather than one report transitioning to
+`Completed`.
+
+**The pre-launch sweep caught it.** Both archives hold the full 43,804,912 B at
+`sha256 f97c584cba8d917a…`:
+
+```
+dumps\crashpad-20260804-163837\           <- pre-launch sweep, the one that matters
+dumps\crashpad-20260804-163838-postexit\  <- see the wart below
+```
+
+⇒ **Status change: "the next launch clears it" moves from INFERRED to MEASURED.** §0 and §2 may now
+be read at full strength. `state = 2` remains an unverified enum, and is now moot — the database was
+purged wholesale regardless of what that field meant.
+
+### ⚠ The same run exposed a wart in the fix, now corrected
+
+The "post-exit" sweep fired **one second after** the pre-launch one, *before the game had mounted its
+paks*. Cause: **`& $exe` does not block** — the shipping exe detaches and returns in ~1 s. The call
+was pure duplication under a misleading name.
+
+**Removed rather than repaired.** Blocking to wait for the game to exit would break CLAUDE.md's
+hands-free tutorial recipe, which requires `launch-redirect.ps1` to return promptly so
+`fk24-stage.ps1` can run in a second terminal. The pre-launch sweep is sufficient and provably so:
+a launch is the only destroyer, and at pre-launch time `Saved\Logs\Loki.log` is **still the dead
+session's log** (UE rotates at startup), so it captures the correct untruncated log for the death it
+is archiving. To get a dump into `dumps\` without waiting for the next launch, run
+`configs\archive-crashdumps.ps1 -Label <tag>` by hand.
