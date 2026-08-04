@@ -129,6 +129,29 @@ $Variants = @{
         'play-nopimutex'  = @('-DKRUNMODE=RM_PLAY','-DKPIMUTEX=0')               # -1 dim: PI-hook mutex OFF
         'play-noxformfix' = @('-DKRUNMODE=RM_PLAY','-DKXFORMFIX=0')              # -1 dim: spawn-FTransform fix OFF
         'play-testactor'  = @('-DKRUNMODE=RM_PLAY','-DKTESTACTOR=1')             # +1 dim: 2nd skeletal body BACK ON
+        # ------------------------------------------------------------------------------------------
+        # ★ S108b — THE LEFTOVER-DIAGNOSTIC BISECT. KSMACTOR (:4031) and KSTATICTEST (:4034) are S95
+        #   spawn-vs-component discriminators that still default to 1, exactly as KTESTACTOR did until
+        #   S106 defaulted it to 0 for causing a second degenerate body. They are NOT fixes: they spawn
+        #   a StaticMeshActor and build a bare StaticMeshComponent on the hero purely to answer a
+        #   rendering question that is long since answered.
+        #   MEASURED 2026-08-04: in the two markers copied AFTER death, the SEH-caught
+        #   `[ANIM] PlayAnimation(...) FAULTED` appears iff the [SMT] KSTATICTEST block ran (1/1 vs 0/1),
+        #   and in `fk24-stage-testact1` the faulting registers name the class outright:
+        #   `[NULL] cls RBX=StaticMeshComponent RDI=StaticMeshComponent`. Mechanism is plain in the
+        #   source: KSTATICTEST calls BuildHeroBody(hero, StaticMeshComponent, ...) at :4970, and
+        #   BuildHeroBody unconditionally drives PlayAnimation -- on a component that has no animation.
+        #   Run 'play-nodiag' FIRST (the disjunction: cheap, high information); bisect with the two
+        #   single-variable arms only if it survives.
+        #   ★ RESOLVED S108b: KSTATICTEST now DEFAULTS TO 0 in the source, so 'play' itself carries the
+        #   fix and `play-nostatictest` is GONE -- it would now be byte-identical to 'play', which is
+        #   exactly the footgun this table warns about above (identical DLLs A/B'd against each other,
+        #   wasting a live run). The control is inverted instead, mirroring 'play-testactor'.
+        #   'play-nodiag' is ALSO gone: with KSTATICTEST defaulting to 0 it collapses onto
+        #   'play-nosmactor' (both would be RM_PLAY + KSMACTOR=0), i.e. the identical-DLL footgun again.
+        #   Two flags, two registered variants, no duplicates.
+        'play-statictest'  = @('-DKRUNMODE=RM_PLAY','-DKSTATICTEST=1')                 # +1 dim: the S95 [SMT] discriminator BACK ON
+        'play-nosmactor'   = @('-DKRUNMODE=RM_PLAY','-DKSMACTOR=0')                    # -1 dim: [SMA] StaticMeshActor spawn
         'topdowncam-novtguard' = @('-DKRUNMODE=RM_TOPDOWNCAM','-DKVTGUARD=0')
         # ------------------------------------------------------------------------------------------
         # ★ FK-24 WATCHPOINT PROBE (S107, tutorial_launch.cpp: KWPROBE).  These are DIAGNOSTIC builds,
@@ -153,6 +176,11 @@ $Variants = @{
         #   This variant reproduces the observed POV exactly, and the probe LOGS the live POV so the
         #   match is VERIFIED IN-RUN rather than assumed.  Use this one to hunt the writer.
         'play-wprobe-v66' = @('-DKRUNMODE=RM_PLAY','-DKWPROBE=1','-DKPUPYAW=-90')
+        # ★ S108 — the page-mode twin of play-wprobe-v66. Same vintage-matched POV, but the process-wide
+        #   PAGE_READONLY trap instead of per-thread DRs, so the packer's DR polling (MEASURED in S107:
+        #   "W2: 1 thread(s) had our Dr7 bits CLEARED BY SOMETHING ELSE") cannot open a coverage hole.
+        #   Still +1 dim from play-wprobe2, exactly as v66 is +1 dim from wprobe.
+        'play-wprobe2-v66' = @('-DKRUNMODE=RM_PLAY','-DKWPROBE=2','-DKPUPYAW=-90')
     }
     'gft_ready_fix' = @{
         ''           = @()
