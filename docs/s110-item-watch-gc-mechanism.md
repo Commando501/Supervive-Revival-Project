@@ -249,7 +249,9 @@ And the point of the whole exercise, from the marker:
 
 Four swaps, **at the default `KAUTOWALKATMS = 20000`** — not the `play-earlywalk` diagnostic that had to
 race the collection. The hero walks with real locomotion animation, and the idle screenshots the 20 s
-was protecting are back. `play-earlywalk` can be retired as a diagnostic.
+was protecting are back. **`play-earlywalk` has therefore been DELETED** — it existed only to out-run a
+collection that no longer happens, and it was the worst of the identical-size artifact pairs (byte-equal
+whole-file *and* `.text` sizes with `play`). `-DKAUTOWALKATMS=<ms>` still works for a one-off.
 
 ⚠ **`play`'s `.text` hash has moved again: `7bc4df9236ead0ac` → `513c6277c3ae88f3`.** And
 `play-noanimref` shares a 161,792-byte `.text` with `play-strictroot`. Diff hashes, never sizes.
