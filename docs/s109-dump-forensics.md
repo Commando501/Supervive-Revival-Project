@@ -1471,7 +1471,7 @@ and shim identity mostly changes how much activity lands inside that window.**
 
 ---
 
-## 19. ★★★★ FIXED — spacing the injections eliminates the deaths
+## 19. ★★★ Spacing the injections collapses the hazard — ⚠ SEE §20: "eliminates" IS TOO STRONG
 
 **2026-08-04 23:24 – 2026-08-05 00:20.** Identical full default set, menu-idle, but
 `-InjectGapSeconds 60`, so the secondaries land at ~T+20 / 80 / 140 / 200 / 260 instead of packed
@@ -1497,7 +1497,9 @@ into T+20..T+33. Hold 600 s × 5 runs.
   **6.25** deaths, observed 0 → `P(0 | λ=6.25) = 0.0019`.
 * per-second model: expected 70.1, observed 0 → `P ≈ 3×10⁻³¹`.
 
-⇒ **MEASURED: the cause is the BURST RATE of manual-maps, not any shim's identity or behaviour.**
+⇒ **MEASURED: the burst rate of manual-maps dominates the hazard, not any shim's identity or
+behaviour.** ⚠ **But see §20 — a later 12-run sweep found the residual hazard is NOT zero, and
+this arm's clean sweep was luck-consistent (it expected ~1 death at the pooled spaced rate).**
 
 **The treatment was verified on every run** — the driver parses `inject-secondaries.log` and measures
 the actual spacing; all five runs show 60 s gaps. A silent fallback to the 3 s default would have
@@ -1550,3 +1552,80 @@ and this result does **not** transfer automatically — but it is now the **lead
 explanation for the ~1–5 minute tutorial deaths**, and it is directly testable by adding the same
 gap. Combined with §12–§18, the standing conclusion holds and hardens: **instrumented-run deaths are
 suspect by default, and a tutorial death is more likely ours than the game's.**
+
+---
+
+## 20. ⚠⚠ KNEE BISECT — and it RETRACTS §19's "eliminates"
+
+**2026-08-05 00:21–01:14.** Gaps 10 / 20 / 30 s, 4 runs each, 300 s hold.
+
+| gap | runs | exposure | injections | deaths |
+|---:|---|---:|---:|---:|
+| 3 s (stock) | 3 | 129 s | 12 | **3** |
+| **10 s** | 4 | 1,210 s | 20 | **0** |
+| **20 s** | 4 | 1,214 s | 20 | **0** |
+| **30 s** | 4 | 669 s | 12 | **2** |
+| 60 s | 5 | 3,015 s | 25 | **0** |
+
+### ⚠ My scoring discarded two real deaths — corrected here
+
+Both gap-30 deaths were auto-scored `DIED-VOID(gap-not-applied)`. **That verdict is wrong.** They show
+`inj=1`, `observedGaps=[]`: the game died **after the first secondary injection but before the
+second**, so there was no interval to measure. The treatment *was* applied — the flag was passed;
+the run simply died too early for the instrument to observe it.
+
+My check required `$gaps.Count -ge 1`, i.e. **≥2 injections**, and silently converted "too early to
+measure" into "treatment absent". Had I taken the summary at face value, gap-30 would read clean and
+**the residual hazard would have vanished from the record.** Correct rule: VOID only when gaps were
+observed *and* differ from the request; a run dying before the second injection is a **real death at
+an unmeasured gap**.
+
+### The corrected numbers
+
+| | stock (3 s) | spaced (≥10 s), pooled |
+|---|---:|---:|
+| exposure | 129 s | **6,108 s** |
+| injections | 12 | **77** |
+| deaths | **3** | **2** |
+| rate | 1 per 43 s | **1 per 3,054 s** |
+
+* per-second hazard: **71× lower**
+* per-injection hazard: **9.6× lower** (0.250 → 0.026 deaths/injection)
+* `P(≥3 of 5 events in the stock arm | exposure share 0.021) = 8.6×10⁻⁵`
+
+⇒ **Spacing is a large, highly significant MITIGATION — not a cure.** §19 said "eliminates"; that is
+**retracted**. At the pooled spaced hazard, §19's own 3,015 s arm expected **0.99** deaths and saw 0
+— `P(0) = 0.37`, i.e. **entirely luck-consistent**. A single clean arm was never evidence of
+elimination, and I should not have written it as one.
+
+### Where the knee is
+
+10 s and 20 s are **indistinguishable from 60 s** in this data (0 deaths in 20 injections each).
+Gap-30's 2 deaths vs gap-10+20's 0 in 2,424 s gives `p = 0.047` on a **post-hoc–selected** comparison,
+so it is **not** evidence that 30 is worse than 10 — with 5 events spread over 4 gaps, this is what
+noise looks like.
+
+⇒ **Nothing here shows 60 s is required. 10 s buys the same measured benefit for ~40 s of extra menu
+wait instead of ~4.3 minutes.** Caveat, stated because the arms are small: each gap arm is only ~20
+injections, powered to detect *full* lethality (`P(0|λ=4)=0.018`), **not** to prove a small residual
+hazard is absent. It plainly is not absent — 2 deaths across the spaced arms prove that.
+
+### Recommendation
+
+**Set the default `GapSeconds` to 10–20** (I would take **20**: same measured result as 10, double the
+margin, still only ~80 s). That captures a ~70× hazard reduction for a cost the workflow will not
+notice. Then re-derive the residual with a long run at the chosen gap — the current bound is 1 death
+per ~3,054 s, which over a 15-minute tutorial sitting is roughly a **1-in-3.4 chance of a
+protector-induced death**. That is much better than 1-in-43-seconds, and it is **not zero**, so
+tutorial sittings should still archive dumps and treat an unexplained death as possibly ours.
+
+### Both gap-30 dumps are Family B
+
+```
+knee-g30-2  pc=0x202FAF8205D  parm0=0x0  -> FAMILY B
+knee-g30-3  pc=0x24F44DC205D  parm0=0x0  -> FAMILY B
+```
+
+Running total: Family B now dominates the spaced/low-hazard regime, while Family A (`+1`) clustered in
+the high-hazard burst arms. Suggestive of two thresholds on one mechanism; **not tested, and not
+claimed.**
