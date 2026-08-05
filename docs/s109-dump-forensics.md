@@ -1307,3 +1307,76 @@ from `catalog_pick_fix` and `battlepass_adopt_fix` — but it is **not** a test 
 not be written up as one. At menu-idle `pi8` will load, resolve, poll, and never arm. Expect
 `armedPIhook=0` on every run; if any run reports otherwise, something triggered a pick and that run
 needs separate treatment.
+
+---
+
+## 17. `mainmenu_refresh_pi8` alone — 6 runs, 0 deaths, and §16's prediction MEASURED
+
+**2026-08-04 21:10–22:41.** `-Hook mainmenu_refresh_pi8.dll` (`sha 35e43f8d…`, the injector's copy,
+not `build/`'s `396e669a…`), no secondaries, menu-idle, 900 s hold, **6 runs** — sized so the arm has
+power against the 1-per-1,862 s hazard rather than repeating §15's under-powered mistake.
+
+**Result: 6 of 6 SURVIVED.** Zero deaths, zero crashpad reports, launch stamps exactly 15:15 apart
+(21:10:13 → 22:26:28), confirming every run held the full 900 s.
+
+### ★ §16's prediction was measured, not assumed
+
+The driver greps the marker for `[armed]`. Every run:
+
+```
+run 1..6   armedPIhook = 0     [3] hook built = 1     (75-83 marker lines each)
+```
+
+`pi8` loaded, resolved 4 subjects and 3 handler fns, **built** its hook — and **never armed it**,
+exactly as §16 predicted from the source (`[3] hook built. Open HUNTERS + click a hunter.`).
+**This arm therefore contains ZERO installed PI hooks over 90 minutes**, and it is the first arm in
+the series where that was *measured* rather than inferred from which DLL was loaded.
+
+### Where the numbers stand
+
+| arm | exposure | deaths | 1 death per |
+|---|---:|---:|---:|
+| clean `-NoHook` | 5,173 s | 0 | — |
+| noop canary (inert) | 2,700 s | 0 | — |
+| `catalog_store_fix` alone | 2,700 s | 0 | — |
+| **`mainmenu_refresh_pi8` alone** | **5,400 s** | **0** | — |
+| `csf`+`pi8`+`pick`+`battlepass` | 1,862 s | 1 | 1,862 s |
+| **full default set** | 129 s | 3 | **43 s** |
+
+**Pooled zero-death exposure: 15,973 s = 4.44 hours.**
+
+⚠ **Stated honestly: this does NOT reach significance.** If the 1-death arm's hazard held here,
+expected 2.90 deaths, observed 0 → `P(0 | λ=2.90) = 0.055`. Suggestive, just short of 0.05.
+**`pi8` is not exonerated, it is un-implicated.** Saying more than that would be the §15 error again.
+
+### What is now cornered
+
+`catalog_store_fix` alone: clean. `pi8` alone: clean. Yet `csf` + `pi8` + `catalog_pick_fix` +
+`battlepass_adopt_fix` killed once in 31 minutes. ⇒ **the lethality in that arm belongs to
+`catalog_pick_fix`, `battlepass_adopt_fix`, or an interaction** — none of which has been tested alone.
+
+### ★ The next experiment should run at the HIGH-hazard end, not this one
+
+Bisecting further down here costs ~1–2 h per arm for a marginal p-value. The full set dies at
+**1 per 43 s** — ~43× faster — so **subtract one shim at a time from the FULL set** and each arm
+resolves in minutes:
+
+| arm | drops | leaves | expected |
+|---|---|---|---|
+| `-NoLoadout` | `loadout_fix` (installs a PI hook) | `missions_fix` still hooks | fast death ⇒ `loadout_fix` not required |
+| `-NoMissions` | `missions_fix` (installs a PI hook) | `loadout_fix` still hooks | fast death ⇒ `missions_fix` not required |
+| `-NoPasses` | `battlepass_adopt_fix` | both PI hookers remain | fast death ⇒ battlepass not required |
+
+Each arm: 15-minute cap, but a positive result should land in **under a minute**, so 3 runs ≈ 5–10 min
+rather than 45. **Subtractive-at-high-hazard is strictly more informative per minute than
+additive-at-low-hazard**, and it directly tests the two shims that *actually install PI hooks* —
+which, per §16, no arm has yet isolated.
+
+### ⚠ Driver defect in this run, and what it cost
+
+The per-run summary lines are **absent** from `pi8-runs-summary.txt`: I patched the format string to
+add `armedPIhook={12}` while supplying only 11 arguments, so every `-f` threw
+`Error formatting a string: Index … must be … less than the size of the args array` (18 occurrences).
+**No data was lost** — outcomes were recovered from the console markers, the launch-interval spacing
+and the copied per-run markers, all of which agree. But the summary file for this arm is empty and
+should not be read as "no runs happened". Fix before reuse: `{12}` → `{10}`.
