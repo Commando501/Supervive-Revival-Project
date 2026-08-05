@@ -1,0 +1,218 @@
+====================================================================================================
+item_watch  2026-08-05 14:13:39   pid=35340  base=0x7FF681610000
+log=G:\git\Supervive Revival Project\docs\s110-itemwatch-reach-20260805-141339.log
+csv=G:\git\Supervive Revival Project\docs\s110-itemwatch-reach-20260805-141339.csv
+====================================================================================================
+FUObjectArray @0x7FF68B448930  objects=0x213712499A0  numElements=189716
+chunks: 0x21371FD0008(65536), 0x21496AD0008(65536), 0x21498040008(58644)
+live objects: 177229 of 189716 slots
+
+--- CALIBRATION (400 sampled objects) --------------------------------------------------
+  InternalIndex @0x10  (matches the array slot for 400/400 objects)
+  ObjectFlags  @0x0C  (RF_ClassDefaultObject on 100% of 20 CDOs, 0% of 380 others)
+----------------------------------------------------------------------------------------------------
+decoys: 256 control objects (half uniform, half from the top 20% of indices, seed=1)
+scanning 177229 live objects for class~='AnimSequence' name~='Shared' ...
+  scan took 2.2 s, 5 hit(s)
+[t=   2.236] +TARGET AnimSequence/A_Shared_Resurrect_Loop#53779 obj=0x21410274C00 item=0x2137210B1D0 idx=53779
+           baseline item{obj=0x21410274C00 flags=00000002 [1:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53779, array slot is 53779 -> AGREE
+           from scan
+[t=   2.236] +TARGET AnimSequence/A_Shared_Resurrect_Intro#53780 obj=0x21410274A00 item=0x2137210B1E8 idx=53780
+           baseline item{obj=0x21410274A00 flags=00000002 [1:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53780, array slot is 53780 -> AGREE
+           from scan
+[t=   2.236] +TARGET AnimSequence/A_Shared_Idle#53781       obj=0x21410274800 item=0x2137210B200 idx=53781
+           baseline item{obj=0x21410274800 flags=00000002 [1:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53781, array slot is 53781 -> AGREE
+           from scan
+[t=   2.236] +TARGET AnimSequence/A_Shared_Movement_Run_N#53782 obj=0x21410274600 item=0x2137210B218 idx=53782
+           baseline item{obj=0x21410274600 flags=00000002 [1:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53782, array slot is 53782 -> AGREE
+           from scan
+[t=   2.236] +TARGET AnimSequence/A_Shared_Emote_JumpSwim#53839 obj=0x21404C8FA00 item=0x2137210B770 idx=53839
+           baseline item{obj=0x21404C8FA00 flags=00000002 [1:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53839, array slot is 53839 -> AGREE
+           from scan
+
+--- VERDICT TABLE, registered before the run (docs/next-session-prompt-s110.md S0) --------
+  A  item.SerialNumber changes, or item.Object -> a DIFFERENT object
+     => SLOT RECYCLED. The object was really destroyed and the index reissued.
+  B  item.Object -> 0 (and Flags -> 0), no recycle yet
+     => FreeUObjectIndex ran: ~UObjectBase executed. Real destruction.
+  C  a new item-flag bit appears before B, and that bit is the one the sweep sees spike
+     population-wide  => the REACHABILITY PASS marked it. If we rooted it, the poked bit
+     is NOT honoured by this build's GC.
+  D  neither the item nor the sweep moves, but the object's vtable/NamePrivate go bad
+     => OUT-OF-BAND teardown (package unload / stream-out / explicit destroy), or the
+     pointer was never the object we thought. GC was never involved.
+  VOID  no target event AND no decoy event => the watcher never showed it can see a change.
+----------------------------------------------------------------------------------------------------
+
+[t=   0.000] watching 5 target(s); interval=50 ms sweep=250 ms (stride 1/8)
+[t=   2.237] SWEEP#1  live~177216 free~12504  (1-in-8 sample, scaled)  bits: bit1 78%, bit24 1%, bit25 18%, bit30 22%
+           reachability flag currently = bit 1  (the bit most live objects carry; see the header note)
+[t=   5.015] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000002 ser=0} obj{gcAlive}
+[t=   5.015] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000002 ser=0} obj{gcAlive}
+[t=   5.015] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=   5.015] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000002 ser=0} obj{gcAlive}
+[t=   5.015] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000002 ser=0} obj{gcAlive}
+[t=  10.063] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000002 ser=0} obj{gcAlive}
+[t=  10.063] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  10.063] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=  10.063] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000002 ser=0} obj{gcAlive}
+[t=  10.063] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000002 ser=0} obj{gcAlive}
+[t=  15.065] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000002 ser=0} obj{gcAlive}
+[t=  15.065] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  15.065] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=  15.065] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000002 ser=0} obj{gcAlive}
+[t=  15.065] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000002 ser=0} obj{gcAlive}
+[t=  20.115] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000002 ser=0} obj{gcAlive}
+[t=  20.115] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  20.115] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=  20.115] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000002 ser=0} obj{gcAlive}
+[t=  20.115] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000002 ser=0} obj{gcAlive}
+[t=  25.161] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000002 ser=0} obj{gcAlive}
+[t=  25.161] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  25.161] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=  25.161] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000002 ser=0} obj{gcAlive}
+[t=  25.161] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000002 ser=0} obj{gcAlive}
+[t=  29.354] AnimSequence/A_Shared_Resurrec item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+[t=  29.354] AnimSequence/A_Shared_Resurrec item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+[t=  29.354] AnimSequence/A_Shared_Idle#537 item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+[t=  29.354] AnimSequence/A_Shared_Movement item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+[t=  29.354] AnimSequence/A_Shared_Emote_Ju item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+[t=  29.505] *** GC PASS #1 *** reachability flag bit1 -> bit0 (live~177208, -8 objects)
+[t=  29.505] decoy control: 232 slot(s) changed (#105473 flags 00000002->00000001; #174086 flags 00000002->00000001; #128007 flags 00000002->00000001)
+[t=  30.211] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  30.211] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  30.211] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  30.211] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  30.211] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  35.256] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  35.256] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  35.256] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  35.256] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  35.256] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  40.299] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  40.299] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  40.299] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  40.299] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  40.299] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  45.303] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  45.303] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  45.303] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  45.303] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  45.303] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  50.351] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  50.351] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  50.351] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  50.351] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  50.351] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  55.352] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  55.352] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  55.352] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  55.352] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  55.352] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  60.398] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  60.398] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  60.398] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  60.398] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  60.398] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  65.441] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  65.441] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  65.441] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  65.441] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  65.441] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  70.488] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  70.488] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  70.488] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  70.488] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  70.488] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  75.538] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  75.538] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  75.538] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  75.538] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  75.538] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  80.588] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  80.588] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  80.588] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  80.588] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  80.588] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  85.637] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000001 ser=0} obj{gcAlive}
+[t=  85.637] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000001 ser=0} obj{gcAlive}
+[t=  85.637] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000001 ser=0} obj{gcAlive}
+[t=  85.637] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000001 ser=0} obj{gcAlive}
+[t=  85.637] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000001 ser=0} obj{gcAlive}
+[t=  90.486] AnimSequence/A_Shared_Resurrec item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+[t=  90.486] AnimSequence/A_Shared_Resurrec item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+[t=  90.486] AnimSequence/A_Shared_Idle#537 item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+[t=  90.486] AnimSequence/A_Shared_Movement item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+[t=  90.486] AnimSequence/A_Shared_Emote_Ju item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+[t=  90.587] *** GC PASS #2 *** reachability flag bit0 -> bit2 (live~177208, -8 objects)
+[t=  90.587] decoy control: 232 slot(s) changed (#105473 flags 00000001->00000004; #174086 flags 00000001->00000004; #128007 flags 00000001->00000004)
+[t=  90.638] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000004 ser=0} obj{gcAlive}
+[t=  90.638] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  90.638] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000004 ser=0} obj{gcAlive}
+[t=  90.638] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000004 ser=0} obj{gcAlive}
+[t=  90.638] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000004 ser=0} obj{gcAlive}
+[t=  95.687] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000004 ser=0} obj{gcAlive}
+[t=  95.687] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  95.687] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000004 ser=0} obj{gcAlive}
+[t=  95.687] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000004 ser=0} obj{gcAlive}
+[t=  95.687] alive  AnimSequence/A_Shared_Emote_JumpSwim#53839 item{obj=0x21404C8FA00 flags=00000004 ser=0} obj{gcAlive}
+[t= 100.028] duration reached
+
+====================================================================================================
+SUMMARY  observed 100.0 s, 1937 ticks, 388 sweeps, 525432 RPM calls
+  max observed sampling gap: 51 ms  <- ALIASING BOUND: any state shorter than this could
+     have been missed, and no 'X never happened' claim below is stronger than that.
+  decoy control: 464 event(s) across 256 control objects
+  GC PASSES (reachability-flag flips): 2 in 100 s  ->  t = 29.5, 90.6
+     final reachable-flag bit: 2
+  GC activity seen at t = 29.5(reach-flip), 90.6(reach-flip)
+  live-object count: start 177216, min 177208 @t=29.5, max 177216 @t=2.2, end 177208
+
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Resurrect_Loop#53779   acquired t=2.236 from scan
+  obj=0x21410274C00  item=0x2137210B1D0  idx=53779
+  BASELINE item{obj=0x21410274C00 flags=00000002 [1:?] cluster=0 serial=0}
+    t=  29.354  item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+    t=  90.486  item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 51 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Resurrect_Intro#53780   acquired t=2.236 from scan
+  obj=0x21410274A00  item=0x2137210B1E8  idx=53780
+  BASELINE item{obj=0x21410274A00 flags=00000002 [1:?] cluster=0 serial=0}
+    t=  29.354  item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+    t=  90.486  item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 51 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Idle#53781   acquired t=2.236 from scan
+  obj=0x21410274800  item=0x2137210B200  idx=53781
+  BASELINE item{obj=0x21410274800 flags=00000002 [1:?] cluster=0 serial=0}
+    t=  29.354  item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+    t=  90.486  item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 51 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Movement_Run_N#53782   acquired t=2.236 from scan
+  obj=0x21410274600  item=0x2137210B218  idx=53782
+  BASELINE item{obj=0x21410274600 flags=00000002 [1:?] cluster=0 serial=0}
+    t=  29.354  item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+    t=  90.486  item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 51 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Emote_JumpSwim#53839   acquired t=2.236 from scan
+  obj=0x21404C8FA00  item=0x2137210B770  idx=53839
+  BASELINE item{obj=0x21404C8FA00 flags=00000002 [1:?] cluster=0 serial=0}
+    t=  29.354  item.Flags 00000002 -> 00000001   [+bit0(?)  -bit1(?)]
+    t=  90.486  item.Flags 00000001 -> 00000004   [+bit2(?)  -bit0(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 51 ms)
+====================================================================================================
+log: G:\git\Supervive Revival Project\docs\s110-itemwatch-reach-20260805-141339.log
+csv: G:\git\Supervive Revival Project\docs\s110-itemwatch-reach-20260805-141339.csv

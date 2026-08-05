@@ -109,6 +109,17 @@ The short version, because it has already cost two sessions:
   collection** — the run AnimSequence is still collected with a verified `flags -> 40000004` readback,
   if anything sooner. So "rooting keeps it alive" is **not established in this build**.
   See `docs/s109-dump-forensics.md` §22-§24.
+- ★★ **S110 ANSWERED THE MECHANISM — read `docs/s110-item-watch-gc-mechanism.md` before touching the
+  anim/GC thread.** The asset really IS garbage-collected (full `BeginDestroyed → FinishDestroyed →
+  LowLevelRename(NAME_None) → FreeUObjectIndex` pipeline, then the slot reissued 20 s later), so
+  "torn down out of band" is ELIMINATED. The poked RootSet bit was set and readback-verified 251 ms
+  before the destruction and did not prevent it; the engine zeroed it with the rest of the word.
+  **Do not "fix" this by rooting harder.** Four other objects poked identically in the same pass
+  survived — including one of the two `AnimSingleNodeInstance`s — because the traversal REACHED them.
+  The run anim is referenced by nothing but a DLL C global. ⚠ Also: **"Unreachable" is not a sticky
+  bit in this build.** Reachability is an alternating flag rotating through bits 0/1/2, flipped
+  population-wide each GC pass — which is what S109's unexplained `flags=00000004` / "bit 1 on 81% of
+  ordinary objects" actually was, and it gives a free read-only GC clock (`tools/re/item_watch.py`).
 
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
@@ -118,6 +129,9 @@ and `docs/endpoints.md` (every endpoint the client hits + handler status).
 Skim `docs/findings.md` and `docs/r2-findings.md` (IoStore catalog + usmap RE +
 the non-standard UObjectBase layout in this build: nameOff=0x20, classOff=0x18,
 NOT the stock 0x18/0x10). `docs/game-map.md` has the full 68,228-asset catalog.
+S110 calibrated the other two fields live (`tools/re/item_watch.py`, 400/400 and
+100%/0% controls): **ObjectFlags@0x0C, InternalIndex@0x10** — so an object's
+`FUObjectArray` slot can be read straight out of the object, no scan needed.
 
 ### Before touching anything AR-bin-shaped
 Read `docs/trackb-assetregistry-route.md`. The `assetregistry apply-patch`
