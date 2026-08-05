@@ -1629,3 +1629,78 @@ knee-g30-3  pc=0x24F44DC205D  parm0=0x0  -> FAMILY B
 Running total: Family B now dominates the spaced/low-hazard regime, while Family A (`+1`) clustered in
 the high-hazard burst arms. Suggestive of two thresholds on one mechanism; **not tested, and not
 claimed.**
+
+---
+
+## 21. ★★★ TUTORIAL SITTINGS WITH THE NEW SPACING — every death is the PROTECTOR
+
+**2026-08-05 01:36–02:11.** First test of the S109 spacing on the route where FK-7 actually lives.
+`forceTutorialMatch=true`, `-NoHook`, then `fk24-stage.ps1 -Probe tutorial_launch_play.dll` with the
+new 20 s minimum inter-injection gap. Probe verified by **`.text` sha `ae532866e15fd8ac`** = CLAUDE.md's
+`play` candidate (the whole-file hash differs — that table lists `.text` hashes; checking the wrong one
+would have run the `play-statictest` control by mistake).
+
+| attempt | outcome | uptime | armed at | armed window |
+|---|---|---:|---:|---:|
+| 1 | **DIED** | 529 s | t+179 s | 350 s |
+| 2 | **SURVIVED** (killed at hold) | **604 s** | t+209 s | 395 s |
+| 3 | NOSTAGE — died during staging | 339 s | — | — |
+| 4 | **DIED** | 267 s | t+191 s | 76 s |
+
+**3 of 4 attempts reached the armed window** — better than CLAUDE.md's documented ~2 of 4, though
+n=4 makes that anecdotal.
+
+### ★★ The headline: all three dumps are Family A, and the game is not on the stack
+
+```
+tut1-DEATH     pc=0x7FFD3B400001  parm0=0x8 EXECUTE/DEP  chain=EMPTY
+tut3-NOSTAGE   pc=0x7FFD3B400001  parm0=0x8 EXECUTE/DEP  chain=EMPTY
+tut4-DEATH     pc=0x7FFD3B400001  parm0=0x8 EXECUTE/DEP  chain=EMPTY
+```
+
+**Every death in this sitting is `runtime.dll + 1` with ZERO SUPERVIVE frames.** `0x7FFD3B400001` is
+now the fault address in **seven** independent deaths across the session. Not one of these is a game
+bug: the game's own code is not on the faulting stack in any of them.
+
+⇒ **The "~1–5 minute tutorial death" that has driven FK-7 for multiple sessions is, in every instance
+we have ever captured, the protector killing the process.** That does not prove FK-7 has no separate
+existence — it proves that **no captured tutorial death has yet been shown to be one.**
+
+### Survival: suggestive, not significant
+
+| | exposure | deaths | 1 per |
+|---|---:|---:|---:|
+| S108b baseline (stock ~5 s spacing): 50, ~170, 290, ~130, >301 s | 941 s | 4 | 235 s |
+| **this sitting (20 s spacing)** | **1,739 s** | **3** | **580 s** |
+
+**2.5× improvement**, but if the baseline hazard held we would have expected 7.4 deaths and saw 3:
+`P(≤3 | λ=7.4) = 0.063`. **Not significant.** Two of three armed runs (529 s, >604 s) exceed the
+entire S108b `play` range of 50–290 s, and the longest previously recorded run of any kind was
+>301 s — but with n=3 and a loosely-recorded baseline this is **encouraging, not established.**
+
+### ⚠ An open item this sitting surfaced, and it is NOT the spacing's doing
+
+My summary column read `anim=False` on all three armed runs. **That boolean was my own bad regex** —
+it required the literal words `run`/`idle`, but the marker prints asset names
+(`PlayAnimation(A_Ronin_Cosmetic_HeroSelect_Breathe, loop) ok`). Corrected reading of the markers:
+
+* `[PL] *** init complete: body=BUILT; camera + WASD active ***` — **present** on all armed runs
+* `[ANIM] run anim A_Ronin_Movement_OutOfCombat_N = 0x… (AnimSequence)` — resolved
+* `[ANIM] self-driven walk START` — reached
+* **but no repeated `PlayAnimation(run/idle, loop) ok` cycling**, which S108b §3 reports as the
+  signature of a healthy locomotion swap
+* **no `FAULTED` and no `anim swapping DISABLED`** — so this is *not* the `KSTATICTEST` bug S108b fixed
+
+**Unexplained, and explicitly not attributed.** The spacing change only inserts sleeps between
+injections and has no plausible path to animation behaviour. Candidates: a real regression elsewhere,
+a marker-truncation artifact (FK-25), or the cycling simply not being reached in these runs. **Needs
+its own look; do not read it as a cost of the spacing.**
+
+### Where this leaves FK-7
+
+Combined with §12–§20: instrumented-run deaths are suspect by default, the injection burst is a
+measured cause, spacing cuts the menu-route hazard ~71×, and **every tutorial death ever captured is
+the protector with no game frames**. The honest position is not "FK-7 is closed" — it is that
+**FK-7 has never had a confirmed instance**, and the phenomenon it was named for is now substantially
+accounted for by our own instrumentation. Any future claim of an FK-7 death needs a dump with
+SUPERVIVE frames on the faulting stack; none has ever been produced.
