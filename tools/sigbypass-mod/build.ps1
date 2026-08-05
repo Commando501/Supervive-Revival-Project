@@ -129,6 +129,20 @@ $Variants = @{
         'play-nopimutex'  = @('-DKRUNMODE=RM_PLAY','-DKPIMUTEX=0')               # -1 dim: PI-hook mutex OFF
         'play-noxformfix' = @('-DKRUNMODE=RM_PLAY','-DKXFORMFIX=0')              # -1 dim: spawn-FTransform fix OFF
         'play-testactor'  = @('-DKRUNMODE=RM_PLAY','-DKTESTACTOR=1')             # +1 dim: 2nd skeletal body BACK ON
+        # ★ S109 (2026-08-05) — the locomotion-animation confirmation build. -1 dim: the self-driven
+        #   walk starts at t+4 s instead of t+20 s after body build.
+        #   WHY: MEASURED 3/3 in the S109 tutorial sittings, the run AnimSequence is garbage-collected
+        #   6.9-7.8 s after body build, because KGCROOT's root-bit corroboration fails on this build
+        #   (expect 0x40000000, candidate 0x02000000 -> "REFUSING to poke flags", rooted=0 failed=5) so
+        #   nothing is rooted. KAUTOWALKATMS=20000 then starts the only unattended motion 13 s AFTER the
+        #   asset is already dead, so the idle<->run swap never fires and one run logged outright
+        #   "[GCW] run: DEAD UObject before PlayAnimation (comp alive=1 anim alive=0)".
+        #   4000 puts the swap inside the asset's ~7 s lifetime (walk window 4-9 s), ~3 s of margin.
+        #   A SUCCESS here confirms the whole GC chain; it is a DIAGNOSTIC, not the fix -- the real fix
+        #   is re-resolving the root bit. See docs/s109-dump-forensics.md section 22.
+        #   ⚠ Side effect: the walk now overlaps the three idle screenshots, which is what the 20 s was
+        #   protecting. Acceptable for this test; do not adopt as a default without moving the shots.
+        'play-earlywalk'  = @('-DKRUNMODE=RM_PLAY','-DKAUTOWALKATMS=4000')       # -1 dim: walk at t+4s not t+20s
         # ------------------------------------------------------------------------------------------
         # ★ S108b — THE LEFTOVER-DIAGNOSTIC BISECT. KSMACTOR (:4031) and KSTATICTEST (:4034) are S95
         #   spawn-vs-component discriminators that still default to 1, exactly as KTESTACTOR did until

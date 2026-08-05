@@ -1786,3 +1786,63 @@ So: either the GC was slower in S108b, or the rooting resolved then, or cycling 
 
 **Recommendation: (1) to confirm, then (2) as the real fix.** Note this is a *cosmetic/locomotion*
 defect — it does not affect survival, the crash families, or any S109 conclusion.
+
+---
+
+## 23. ★★★ ANIM CHAIN CONFIRMED — the swap now fires, and the ORDERING is the proof
+
+**2026-08-05 02:14–02:35.** `play-earlywalk` (`-DKAUTOWALKATMS=4000`, walk at t+4 s instead of t+20 s),
+3 attempts, 300 s hold. **Prediction registered before the run: `swapRun > 0`.**
+
+⚠ **The A/B is real, and nearly was not.** `play-earlywalk` is **234,496 bytes with a 161,280-byte
+`.text` — byte-identical sizes to `play`.** Only the `.text` hash separates them
+(`1882cbddf870020b` vs `ae532866e15fd8ac`). Size alone would have read as a failed build, and running
+the wrong one would have produced a confident null result. Registered in `build.ps1` as a proper
+one-dimension variant; C++ EH gate passes on a raw byte scan.
+
+### Result: 3 of 3, and the control was already in hand
+
+| arm | attempts | `swapRun` | `swapIdle` | armed |
+|---|---|---|---|---|
+| `play` (walk t+20 s) — **control** | 3 | **0, 0, 0** | 0, 0, 0 | 3/4 |
+| **`play-earlywalk` (walk t+4 s)** | 3 | **1, 1, 1** | 0, 1, 1 | **3/3** |
+
+### The ordering, which is the actual evidence
+
+```
+attempt 3
+  [ANIM] PlayAnimation(A_Ronin_Cosmetic_HeroSelect_Breathe, loop) ok
+  [ANIM] run anim A_Ronin_Movement_OutOfCombat_N = 0x238F72E6200 (AnimSequence)
+  [ANIM] self-driven walk START
+  [ANIM] PlayAnimation(run, loop) ok                                     <- THE SWAP FIRES
+  [ANIM] PlayAnimation(idle, loop) ok                                    <- and returns
+  [GCW] *** RUN ANIM 0x238F72E6200 WAS GARBAGE-COLLECTED (t=10250ms) *** <- collected AFTER
+```
+
+**Same asset pointer `0x238F72E6200` in the resolve, the swap and the collection.** In the control the
+GC (6.9-7.8 s) preceded the walk (20 s); here the walk (4 s) precedes the GC (10.25 s). Nothing about
+the GC was fixed — **the swap simply now wins the race.** Attempt 2 is the same shape with the *idle*
+anim collected at 9,625 ms after both swaps completed.
+
+⇒ **§22's chain is confirmed end to end: rooting fails → assets are collected ~7-10 s after body build
+→ with the walk at 20 s the asset was already dead → with the walk at 4 s the swap succeeds.**
+One run→idle cycle is exactly what a single 5 s walk window (`KAUTOWALKMS=5000`) should produce; the
+"repeated cycling" S108b describes would need repeated motion.
+
+### ⚠ This is a DIAGNOSTIC. Do not adopt it.
+
+* It does not fix anything — the assets are still unrooted and still collected. It only moves the use
+  earlier than the collection. **The real fix remains re-resolving the root bit** (expect
+  `0x40000000`, observed candidate `0x02000000`), which would also root the body component and the
+  anim instances as S106 intended.
+* The 20 s value exists so the walk lands **after** the three idle screenshots; 4 s overlaps them.
+
+### Survival in this arm — noted, NOT concluded
+
+All three died at **265 / 269 / ~300 s** (0 of 3 past 300 s), against the `play` arm's 267 / 529 /
+>604 s (2 of 3 past 300 s). Both dumps recovered are **Family A, `pc=0x7FFD3B400001`** — the protector
+again, now **nine** independent deaths at that address.
+
+**Do not read this as "earlywalk is less stable."** n=3 per arm; the hold here was capped at 300 s so
+the upper tail is truncated by construction and the arms are not comparable on exposure; and this is a
+different binary. It is a flag for a future comparison, not a finding.
