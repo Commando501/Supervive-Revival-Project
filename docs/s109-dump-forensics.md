@@ -1177,7 +1177,7 @@ the game may be this.
 
 ---
 
-## 15. ★★★ DOSE-RESPONSE: the `ProcessInternal` hook is the mechanism, and multiplicity multiplies it
+## 15. ★★ DOSE-RESPONSE across shim load — ⚠ SEE THE CORRECTION BANNER: it is NOT the PI hook
 
 **2026-08-04 20:33–21:19.** `launch-redirect.ps1 -NoMissions -NoLoadout` —
 the isolation flags `CLAUDE.md:156` itself names. Resulting set:
@@ -1246,3 +1246,64 @@ prime suspect on mechanism, **but it is not isolated.** The lethality could belo
 1 per 1,862 s, three 15-minute runs expect only ~1.5 deaths, so **3 runs cannot distinguish "lethal"
 from "safe"**. This arm needs **≥6 runs** (or longer holds) to be worth running at all. Budget ~1.5 h.
 Scoring it on 3 runs would repeat the error this section just documented.
+
+---
+
+## 16. ⚠⚠ CORRECTION TO §15 — "PI hookers 0/1/3" counted SHIMS, not INSTALLED HOOKS
+
+Found 2026-08-04 21:05, while designing the `pi8`-alone arm — i.e. **the next experiment caught the
+error in the last one.** §15's arithmetic is right and its headline is wrong.
+
+**MEASURED, from the shim sources.** Whether a PI-hooking shim actually writes the 5-byte `jmp` into
+`ProcessInternal`'s prologue *while idle at the menu* differs per shim:
+
+| shim | installs the PI hook at menu-idle? | evidence |
+|---|---|---|
+| `mainmenu_refresh_pi8` | **NO** | `InstallHook()` is reached only via the pick/`desired` path. Its own marker says `[3] hook built. Open HUNTERS + click a hunter.` No click ⇒ no install. |
+| `loadout_fix` | **YES** | `Sleep(4000); HookLock(); if(!InstallHook()){… "[3] FAIL InstallHook" …}` — unconditional init step. |
+| `missions_fix` | **YES** | `ApplyOnce()` → `HookLock(); if(!InstallHook())…`, the fetch-driven rebuild/swap. |
+
+Re-labelling §15's arms by **hooks actually installed**, not shims present:
+
+| arm | shims called "PI hookers" | **PI hooks actually installed** | exposure | deaths |
+|---|---:|---:|---:|---:|
+| clean / noop / `csf` alone | 0 | **0** | 10,573 s | 0 |
+| `-NoMissions -NoLoadout` | 1 (`pi8`) | **0** — `pi8` never arms without a click | 1,862 s | **1** |
+| full default set | 3 | **2** (`loadout_fix` + `missions_fix`; `pi8` idle) | 129 s | 3 |
+
+### What this changes
+
+**RETRACTED: "the `ProcessInternal` hook is the mechanism."** The `-NoMissions -NoLoadout` arm
+installed **zero** PI hooks and still killed the process at 55 s. An installed PI hook is therefore
+**not necessary** for a death, and §15's title claimed otherwise.
+
+**What SURVIVES, unchanged:** the numbers, the monotone dose-response, and both p-values. Adding shim
+load to `catalog_store_fix` introduces lethality (`p ≈ 0.0034`) and more of it is ~43× worse
+(`p ≈ 5×10⁻⁵`). The **dose is shim activity** — worker threads, symbol resolution, polling,
+thread-suspending writes — **not specifically PI-prologue patching.**
+
+**And the `.text` story gets sharper, not weaker.** §14 already showed `catalog_store_fix`'s
+self-restoring `jz`-NOP is harmless over 45 min. Now the deadliest arm is the one where two shims
+*additionally* patch PI's prologue — but the 1-death arm patched no game code at all beyond
+`catalog_store_fix`'s. **Writing game `.text` is neither necessary nor sufficient.**
+
+### The error, named
+
+I labelled the arms by **shim identity** and then read that label as a **mechanism**. The label was
+accurate ("`pi8` is a PI-hooking shim") and the inference from it was false ("therefore a PI hook was
+installed"). That is the project's signature failure mode in its purest form — same shape as
+`base=0x0` earlier today, and the fifth instance in this session. Filed to
+`memory/supervive-instrument-artifact-pattern`.
+
+**Method note that would have caught it immediately:** none of these arms ever measured whether a
+hook was installed — only which DLL was loaded. The `pi8`-alone driver now greps its marker for
+`[armed]` and reports `armedPIhook=N`, so the claim is measured rather than assumed. **A variable you
+have not instrumented is not a variable you have controlled.**
+
+### Consequence for the running experiment
+
+The `pi8`-alone arm (6 runs, launched 21:10) is still the correct next isolation — it splits `pi8`
+from `catalog_pick_fix` and `battlepass_adopt_fix` — but it is **not** a test of the PI hook, and must
+not be written up as one. At menu-idle `pi8` will load, resolve, poll, and never arm. Expect
+`armedPIhook=0` on every run; if any run reports otherwise, something triggered a pick and that run
+needs separate treatment.
