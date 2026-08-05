@@ -899,6 +899,54 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 
 ---
 
+### FK-27 — "Poking `EInternalObjectFlags::RootSet` keeps a shim-loaded asset alive, the way `AddToRoot` does"
+**Severity: HIGH. Settled 2026-08-05 (S110) → `docs/s110-item-watch-gc-mechanism.md` §4d.**
+**Status: the belief is DEAD, and as of the phase-locked run it is dead in the STRONG form: the bit is INERT, not raced.**
+
+| | |
+|---|---|
+| **Belief** | `tutorial_launch.cpp:1209` states it as the fix: *"put every UObject this shim loads … into UE's GC root set, the same thing `UObject::AddToRoot()` does — it sets `EInternalObjectFlags::RootSet` in the object's `FUObjectItem`."* Carried from S106 through S109. |
+| **Actual evidence** | Stock-UE semantics, reasoned about, never tested end-to-end. S109 §24 fixed the corroboration so the poke *happened* (`rooted=5 failed=0`, every write readback-verified `00000004 → 40000004`) and retracted half the claim by outcome — the asset still died, if anything sooner — but could not say why, because `GcAlive` cannot distinguish collection from teardown. |
+| **Why weaker** | **MEASURED, one armed window.** The run `AnimSequence` was rooted at `t=187.845` with a verified readback and **destroyed 251 ms later** through the complete purge pipeline — `RF_BeginDestroyed` → `RF_FinishDestroyed` → `LowLevelRename(NAME_None)` → `FreeUObjectIndex`, with the index reissued to a new object 20 s later. It carried bit 30 continuously until the free (117 ms aliasing bound), and the engine **zeroed the flag word, RootSet included**, as part of freeing it. |
+| **The real cause, and it is not the rooting** | Four other objects poked *identically in the same pass* survived, including **one of the two `AnimSingleNodeInstance`s** — same class, same code path, opposite outcome. The survivors were re-marked by the traversal because they are genuinely referenced; the run anim is referenced by nothing but a C global inside the DLL, which UE cannot see. ⇒ the fix is **a real reference from a reachable UObject** (or reload-on-death), never a bigger hammer on the flag. |
+| **Steers** | The whole `GcRoot` subsystem — `KGCROOT`, `KGCROOTBIT`, `KGCROOTMAXPCT`, `KGCROOTSTRICT`, the `play-strictroot` control arm — and `docs/s109-dump-forensics.md` §22's "fixes, cheapest first", whose recommended real fix (#2, "re-resolve the root bit") is now known to fix a genuine bug that was never the animation's cause. |
+| **Settled by the phase-locked run** | The one thing run 1 could not separate — *inert* vs *raced a pass whose root set was already gathered* — is now closed. Only the **injection phase** was changed (`-SkipProbe`, then inject by hand at a chosen point in the GC cycle). Three armed windows give a monotone series: lead **0.15 s → destroyed**, **2.9 s → destroyed**, **33.1 s → destroyed**. In the last, the bit was readback-verified and the object sat through **six consecutive 5 s heartbeats** before the pass killed it 708 ms after the flip. A root set gathered 33 s ahead of a pass that completes inside one 250 ms sweep is not a credible reading. ⇒ **INERT.** |
+| **Timing-independent corroboration** | At a single pass in run 2, **six** objects all carrying bit 30 were traversed as ordinary objects: four were re-marked and survived, two were not (`ROOTED+STALE`) and were destroyed within 3 s. The engine's own ~4,913 root-set objects carry **no** reachability bit and are never marked. A poked object never joins that set. |
+| **Cheapest experiment** | Already run (3 armed windows out of 6 launches; 2 NOSTAGE, 1 VOID). What it also killed: **the load does not provoke the GC.** The staging pipeline is deterministic and the GC clock is ~61.1 s from launch, so the load phase was near-constant across runs — that, not a load-triggered collection, is why S109's deaths clustered 1.1–7.8 s after body build. |
+
+---
+
+### FK-28 — "The `FUObjectItem` flag word follows stock `EInternalObjectFlags`, so `Unreachable` is bit 28"
+**Severity: HIGH (it made a whole subsystem unreadable). Settled 2026-08-05 (S110).**
+**Status: DEAD. ⚠ This does NOT retract S109 §25 — the field OFFSETS are correct. The SEMANTICS were assumed.**
+
+| | |
+|---|---|
+| **Belief** | Implicit everywhere the flag word is discussed: `tools/re/uobjitem_layout.py`'s header, `s109-dump-forensics.md` §24–§25, and this document's own FK-24 thread. S109 verified the layout (`Flags@0x08`, stride `0x18`) and confirmed bit 30 is RootSet-like and bit 25 Native-like — then extrapolated the *rest* of the stock enum from those two hits. |
+| **Actual evidence** | Two bits matching stock. §25 itself flagged the anomaly and left it open: *"bit 1 is set on 81% of ordinary objects and 0% of native classes … not a value in the stock `EInternalObjectFlags`. Unexplained."* |
+| **Why weaker** | **MEASURED.** Reachability in this build is **a value, not a bit**: every live object carries exactly one of bits **0, 1 or 2**, and the whole population swaps which one on each GC pass (`bit1 → bit0 → bit2 → bit1`; 232 of 256 control objects flipped inside a single 250 ms sweep). An object is unreachable when it fails to carry the **current** value. **Bit 28 was never observed set on anything.** That *is* §25's unexplained bit 1, and §24's puzzling `flags == 0x00000004` on live assets. |
+| **Corollary, measured** | Rooted and marked are mutually exclusive naturally: of 22,152 sampled live objects, **4,915 rooted of which 0% carry the current flag; 17,237 unrooted of which 100% do.** Root-set objects are *excluded* from marking. So `GcRoot`'s `InterlockedOr` produces a RootSet-**and**-marked state that 0.03% of the natural population is in — the shim's rooted objects do not look like the engine's. |
+| **Steers** | Any future reasoning about GC state, and it retires "we cannot see the GC" — the flip is a **free read-only GC clock**. Measured spacing at rest is **61.1 s**, matching the game's own `gc.TimeBetweenPurgingPendingKillObjects = 61.1`; the tutorial map load shows up as a purge of 125,472 objects. |
+| **Generalisation** | The same error shape as FK-14 and FK-18: a *partially* verified structure treated as fully verified. Two bits were checked; twenty-nine were assumed. **When a layout is confirmed, that confirms the offsets, not the enum.** |
+| **Cheapest experiment** | Already run — `tools/re/item_watch.py`, read-only, at the **menu**, no tutorial window needed. |
+
+---
+
+### FK-29 — "A `SerialNumber` change means the slot was recycled"
+**Severity: MEDIUM, but it is the sharpest illustration in the register. Settled 2026-08-05 (S110).**
+**Status: DEAD in both directions. It was the HEADLINE discriminator of the experiment it was wrong about.**
+
+| | |
+|---|---|
+| **Belief** | `docs/next-session-prompt-s110.md` §0, stated as the decisive test: *"**`SerialNumber` changes** ⇒ the slot was **recycled**: the object was really destroyed and the index reissued. Decisive for 'real destruction'."* |
+| **Actual evidence** | Stock-UE reasoning about what serial numbers are *for*. Never checked against a live object. |
+| **Why weaker** | **MEASURED, twice, in opposite directions.** (1) UE allocates serial numbers **lazily**, in `AllocateSerialNumber`, the first time anything makes an `FWeakObjectPtr` — a live, untouched control object went `0 → 3373` inside 20 s at the menu with nothing else changing. `0 → N` is *a weak pointer being taken*. (2) `FreeUObjectIndex` **clears** it — the run anim went `63939 → 0` in the same 50 ms tick as `NamePrivate → 0` and `RF_FinishDestroyed`. `N → 0` is *the object being destroyed*. **Only `N → M`, both non-zero, is a reissue.** |
+| **Steers** | It cost a verdict: the first tutorial run's own log prints `SLOT RECYCLED` for the run anim when the truth was `FREED`. The line is preserved, wrong, in `docs/s110-itemwatch-tut2-20260805-142308.log`; `item_watch.py` is fixed. |
+| **Generalisation, and it is the point** | Direction (1) was caught **by the decoy control on the very first smoke run**, before a second of game time was spent — the run cost nothing because the instrument watched 256 objects it had no hypothesis about. Direction (2) was caught only because the *other* signals (`RF_FinishDestroyed`, `item.Object → 0`) disagreed with it. **Redundant signals are what turn a wrong rule into a caught rule.** |
+| **Cheapest experiment** | Already run. |
+
+---
+
 ## 3. The UNKNOWN_UNKNOWN Register
 
 Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 366 commits.

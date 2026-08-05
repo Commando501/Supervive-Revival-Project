@@ -156,13 +156,56 @@ re-marked, two were not and died).
 
 ---
 
+## 4d. ★★★ RUN 2 — the phase-locked experiment: INERT, not raced. FK-27 closes.
+
+**Run 1 could not separate** *"the poked bit is structurally inert"* from *"the poke raced a pass whose
+root set was already gathered"* — it landed 151 ms before the marking. Prediction registered before the
+sitting (`docs/s110-prediction-registered.txt`, RUN 2): Q1 lead > 20 s; Q2 survive ⇒ raced, die ⇒ inert;
+Q3 I expect inert.
+
+**Method.** Nothing about the game changed — same DLL, same staging, **only the injection phase**. Stage
+the world with `fk24-stage.ps1 -SkipProbe`, read the GC clock `item_watch.py` prints live, and inject the
+probe by hand at a chosen point in the cycle. The clock made this predictable: passes land at
+`uptime ≈ 73 + 61.1k`, and because the staging pipeline is deterministic **the load phase is nearly
+constant across runs** — which is why S109's deaths all clustered 1.1–7.8 s after body build. It was
+never that the load provokes a GC (Q4 answered, negative); the load simply always landed at the same
+point in the cycle. Shifting the injection by ~35 s moves it anywhere in the period.
+
+**Result — three armed windows, a clean monotone series:**
+
+| run | lead: root → next GC pass | outcome at that pass |
+|---|---:|---|
+| run 1 (`tut2`) | **0.15 s** | destroyed |
+| run 2 (`phase3`) | **2.9 s** | destroyed |
+| **run 3 (`phase5`, phase-locked)** | **33.1 s** | **destroyed** |
+
+```
+t=277.089  item.Flags 00000004 -> 40000004   [+bit30 RootSet]      poke, readback verified
+t=281.080  alive … flags=40000004 gcAlive          ] six consecutive heartbeats, 33 s,
+t=286.083 / 291.088 / 296.134 / 301.184 / 306.232 ] nothing touching the object
+t=310.170  *** GC PASS #6 *** bit2 -> bit1;  state ROOTED+MARK -> ROOTED+STALE
+t=310.322  RF_BeginDestroyed;  NamePrivate -> 0
+t=310.525  RF_FinishDestroyed; SerialNumber 63947 -> 0
+t=310.878  item.Object -> 0, item.Flags 40000004 -> 00000000       destroyed, 708 ms after the pass
+```
+
+**The bit was set and readback-verified 33.1 s before the pass began**, the object sat untouched through
+six heartbeats, and the pass destroyed it anyway. A root set gathered 33 s ahead of a reachability pass
+that completes inside one 250 ms sweep is not a credible reading. ⇒ **Q2 = inert. Q3 confirmed. FK-27
+closes:** poking `EInternalObjectFlags::RootSet` does not enter an object into this build's root set.
+
+**The mechanism, independent of any timing argument** (and replicated in both armed runs): at the pass,
+**every** shim-poked object is traversed like an ordinary object. In run 2, six objects all carrying
+bit 30 went into pass #5 — four were re-marked (`40000001 → 40000004`) and survived, two were not
+(`ROOTED+STALE`) and were destroyed within 3 s. Meanwhile the engine's own ~4,913 root-set objects carry
+**no reachability bit at all** and are never marked. A poked object never joins that set; it keeps its
+stale mark and is collected on the merits of its references. The bit is a no-op in both directions.
+
+---
+
 ## 5. What is still open, and the cheap experiments
 
-1. **Inert vs raced.** Root an asset and hold it across **two or more** complete GC passes with the poke
-   landing far from a flip. `item_watch.py` already prints the pass clock, so the design is: watch the
-   flip at `t`, expect the next at `t+61`, and check the object's state at `t+30`. If a rooted-but-
-   unreferenced object survives a pass it never should have, the bit is honoured and S109's deaths were
-   timing; if it dies at the next pass regardless, the bit is inert. **One armed window.**
+1. ~~**Inert vs raced.**~~ **ANSWERED — see §4d. Inert.** FK-27 in `docs/ignorance-map-s101.md` is closed.
 2. **The real fix, and it is testable in the same window.** Store the loaded `AnimSequence` into a
    UPROPERTY on the (reachable, surviving) `SkeletalMeshComponent` instead of a DLL global, and see
    whether it gets re-marked at the next pass. `PlayAnimation` already installs it into the single-node

@@ -112,9 +112,11 @@ The short version, because it has already cost two sessions:
 - ★★ **S110 ANSWERED THE MECHANISM — read `docs/s110-item-watch-gc-mechanism.md` before touching the
   anim/GC thread.** The asset really IS garbage-collected (full `BeginDestroyed → FinishDestroyed →
   LowLevelRename(NAME_None) → FreeUObjectIndex` pipeline, then the slot reissued 20 s later), so
-  "torn down out of band" is ELIMINATED. The poked RootSet bit was set and readback-verified 251 ms
-  before the destruction and did not prevent it; the engine zeroed it with the rest of the word.
-  **Do not "fix" this by rooting harder.** Four other objects poked identically in the same pass
+  "torn down out of band" is ELIMINATED. **The poked RootSet bit is INERT** — a phase-locked experiment
+  (only the injection phase varied) gives leads of **0.15 s / 2.9 s / 33.1 s from poke to the next GC
+  pass, and the asset was destroyed at that pass every time**; in the last it sat through six clean
+  heartbeats and died 708 ms after the flip, so it is not a race. The engine zeroes bit 30 with the
+  rest of the word on free. **Do not "fix" this by rooting harder.** Four other objects poked identically in the same pass
   survived — including one of the two `AnimSingleNodeInstance`s — because the traversal REACHED them.
   The run anim is referenced by nothing but a DLL C global. ⚠ Also: **"Unreachable" is not a sticky
   bit in this build.** Reachability is an alternating flag rotating through bits 0/1/2, flipped

@@ -39,3 +39,44 @@ VOID conditions registered in advance:
   * the target is never acquired (no anim load line in the marker)  -> the run measures nothing
   * zero target events AND zero decoy events                        -> the watcher is unproven, VOID
   * the game dies before the anim loads                             -> not a data point
+
+================================================================================================
+RUN 2 -- THE PHASE-LOCKED TWO-GC-PASS EXPERIMENT (FK-27)
+registered before the sitting, 2026-08-05
+
+QUESTION. Run 1 showed the run AnimSequence rooted (readback-verified) and destroyed 251 ms later,
+with the poke landing only 151 ms before that GC pass's marking became visible. That cannot separate:
+    (a) the poked RootSet bit is STRUCTURALLY INERT -- the engine's root set is not "objects with
+        bit 30", so the poke never protected anything; or
+    (b) the poke RACED an in-flight pass whose root set had already been gathered, and would have
+        worked with more lead time.
+
+DESIGN. Single variable changed from run 1: INJECTION PHASE. Same DLL (tutorial_launch_play.dll,
+.text 7bc4df9236ead0ac), same staging, same probe. Stage the world with -SkipProbe, watch the GC
+clock that item_watch.py prints live, and inject the probe IMMEDIATELY AFTER a reachability flip so
+the asset is loaded and rooted with ~45-55 s of lead before the next pass instead of 0.15 s.
+
+PREDICTIONS:
+
+  Q1  The lead time (root -> next GC pass) will exceed 20 s. This is a check on the METHOD, not the
+      game: if phase-locking does not actually buy lead time the run cannot answer anything, and I
+      should say so rather than reading the outcome.
+
+  Q2  THE DISCRIMINATOR. Given Q1 holds:
+        * the asset SURVIVES the next full pass  => (b): the bit IS honoured, FK-27 narrows to a
+          race, and the fix is to root EARLIER (or to force a GC before the body build).
+        * the asset DIES at the next pass anyway => (a): the bit is INERT. FK-27 closes, and the
+          only remaining route is a real UObject reference.
+
+  Q3  I expect (a) -- inert. Reason: run 1 measured that the engine's own rooted objects carry NO
+      reachability flag at all (0% of 4,915), while the shim's poked objects keep theirs and get
+      re-marked exactly like ordinary objects. That is the signature of the poke not entering the
+      root set. Stated so it can be wrong.
+
+  Q4  If the load itself provokes a collection -- i.e. a GC pass fires within ~2 s of body build
+      REGARDLESS of when I inject -- then phase-locking is impossible, Q2 is unanswerable this run,
+      and THAT is the finding: it would explain why every death in S109/S110 clusters 1.1-7.8 s
+      after body build rather than spreading over the 61 s period.
+
+VOID conditions: no armed window; the anim never loads; zero decoy events; the game dies before the
+next pass after the poke (in which case the lead time achieved is still reported, and nothing else).
