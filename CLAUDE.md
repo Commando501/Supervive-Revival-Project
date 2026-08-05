@@ -153,13 +153,36 @@ One launch = every durable fix, together. `-NoMissions` / `-NoLoadout` / `-NoPas
 trim individual shims; `-Hook <path>` injects exactly one DLL and no
 secondaries. `-Missions` is kept as a deprecated no-op alias (missions are now default).
 
-**VALIDATION PENDING (as of 2026-07-10):** the default set now runs THREE PI-hookers in
-one launch (`pi8` + `loadout_fix` + `missions_fix`). Each pair has been validated live
-(pi8+missions in S59; pi8+loadout in the skins session), but the full triple has not yet
-had a confirmation launch. The shared-mutex + transient-install design is N-way safe by
-construction and contention is low, but do one validation pass when the game is free. If
-the triple ever misbehaves, `-NoMissions` / `-NoLoadout` isolate it. See
-`supervive-missions-page-status` memory.
+**★ THE SECONDARIES ARE NOW INJECTED 20 s APART, AND THE MENU TAKES ~100 s TO FULLY POPULATE.**
+That is deliberate and is **not** a regression — do not "fix" it by lowering the gap. S109
+(2026-08-05) measured that injecting them ~3 s apart is what kills the process: with the old
+3 s gap the four secondaries landed in a ~13 s burst and the game died at **1 per 43 s**;
+at ≥10 s gaps the hazard is **71× lower** (`P = 8.6e-5`). Gap sweep, treatment verified per run:
+
+| gap | exposure | injections | deaths |
+|---:|---:|---:|---:|
+| 3 s (old default) | 129 s | 12 | **3** |
+| 10 s | 1,210 s | 20 | 0 |
+| **20 s (new default)** | 1,214 s | 20 | **0** |
+| 30 s | 669 s | 12 | 2 |
+| 60 s | 3,015 s | 25 | 0 |
+
+`configs/inject-secondaries.ps1 -GapSeconds N` (or `launch-redirect.ps1 -InjectGapSeconds N`)
+changes it; pass `3` to reproduce the old burst. ⚠ **MITIGATION, NOT A CURE** — residual is
+~1 death per 3,054 s (~1-in-3.4 over a 15-min sitting), so keep archiving dumps and treat an
+unexplained death as **possibly ours**. Full evidence: `docs/s109-dump-forensics.md` §12–§20
+(§20 retracts an earlier "eliminates" claim; §16 retracts "the PI hook is the mechanism").
+
+**⚠ `configs/fk24-stage.ps1` injects FOUR DLLs back-to-back and has NOT been given the same
+treatment.** It is the same burst pattern on the tutorial route, and is now the leading
+candidate for the ~1–5 min tutorial deaths. Untested — do it before trusting a tutorial death.
+
+**RESOLVED (was VALIDATION PENDING since 2026-07-10):** the default set runs THREE PI-hookers
+(`pi8` + `loadout_fix` + `missions_fix`) and the full triple now has many confirmation launches.
+It is **not** the killer: S109 showed `-NoPasses` (both PI hookers present) is ~21× *safer* than
+`-NoMissions` (one present), and `pi8` alone ran 90 min clean. The shared-mutex design is fine;
+the injection **burst** was the problem. `-NoMissions` / `-NoLoadout` still isolate individual
+shims. See `supervive-missions-page-status` and `supervive-crashpad-capture-runtime-family`.
 
 **Steam must be running first**, or login dies with `Auth Failure 14005` (SteamAPI
 init fails). Easy to miss; surface this gotcha if you see Steam not running.

@@ -64,11 +64,11 @@ param(
   [switch]$NoMissions,   # drop missions_fix.dll from the default set (isolate non-missions surfaces)
   [switch]$NoLoadout,   # drop loadout_fix.dll from the default set (isolate non-customization surfaces)
   [switch]$NoPasses,    # drop battlepass_adopt_fix.dll (PASSES / Hunter's Journey) from the default set
-  [int]$InjectGapSeconds # S109: seconds between successive secondary manual-maps (injector default 3).
-                         # The 3 s default packs all four secondaries into a ~13 s burst starting at
-                         # T+20 s, and EVERY death in the S109 series (20-65 s) lands at or after that
-                         # burst, while every config that skips the sequence survived 4.44 h with zero
-                         # deaths. See docs/s109-dump-forensics.md section 18.
+  [int]$InjectGapSeconds # S109: seconds between successive secondary manual-maps. Injector default is
+                         # now 20 (raised from 3 on 2026-08-05). At 3 s the four secondaries were
+                         # mapped in a ~13 s burst and EVERY death in the S109 series landed at or
+                         # after it; >=10 s gaps cut the hazard ~71x. Pass 3 to restore the old burst.
+                         # See docs/s109-dump-forensics.md sections 18-20.
 )
 # DEFAULT (no flags): primary catalog_store_fix.dll (store + HUNTERS roster) is injected at launch, then
 # configs/inject-secondaries.ps1 injects the full secondary set once it settles � pick/refresh (pi8),

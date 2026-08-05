@@ -31,9 +31,10 @@ param(
   [switch]$NoMissions,
   [switch]$NoLoadout,
   [switch]$NoPasses,   # S83: skip battlepass_adopt_fix (PASSES / Hunter's Journey)
-  [int]$GapSeconds = 3,# S109: seconds between successive manual-maps. See the note at the loop --
-                       # the 3 s default packs all four secondaries into a ~13 s burst, and every
-                       # death in the S109 series lands at or after that burst.
+  [int]$GapSeconds = 20,# S109: seconds between successive manual-maps. DEFAULT RAISED 3 -> 20 on
+                        # 2026-08-05 after a 5-point gap sweep; see the note at the loop. Costs ~80 s
+                        # before the full menu set is live (was ~35 s) and cuts the protector-kill
+                        # hazard ~71x. Pass -GapSeconds 3 to restore the old burst behaviour.
   [int]$MaxWaitProcSec = 150,
   [int]$MaxWaitUnhookSec = 120
 )
@@ -91,14 +92,30 @@ else { Log "WARNING: primary [unhook] not seen in ${MaxWaitUnhookSec}s - injecti
 
 # 3) inject each secondary sequentially.
 #
-# ★ THE GAP IS LOAD-BEARING (S109, 2026-08-04). It was 3 s to "avoid overlapping hook installs".
-# MEASURED: with a 3 s gap the four secondaries are all mapped inside a ~13 s burst starting at
-# T+20 s, and EVERY death recorded in the S109 series (20, 23, 25, 30, 35, 41, 51, 55, 65 s) falls
-# at or after that burst -- while every configuration that skips this sequence entirely (clean,
-# a single inert canary, catalog_store_fix alone, pi8 alone) survived 4.44 h with ZERO deaths.
-# See docs/s109-dump-forensics.md section 18.
+# ★ THE GAP IS LOAD-BEARING (S109, 2026-08-04/05). It used to be 3 s, to "avoid overlapping hook
+# installs". MEASURED: at 3 s the four secondaries are mapped inside a ~13 s burst starting at
+# T+20 s, and EVERY death in the S109 series (20, 23, 25, 30, 35, 41, 51, 55, 65 s) lands at or
+# after that burst -- while every configuration that skips this sequence entirely (clean, a single
+# inert canary, catalog_store_fix alone, pi8 alone) survived 4.44 h with ZERO deaths.
 #
-# -GapSeconds spreads the burst. Default stays 3 so behaviour is unchanged unless asked for.
+# A 5-point gap sweep, treatment verified per run by parsing this very log:
+#
+#     gap    runs   exposure   injections   deaths
+#      3 s      3      129 s           12        3     <- 1 per 43 s
+#     10 s      4    1,210 s           20        0
+#     20 s      4    1,214 s           20        0     <- DEFAULT
+#     30 s      4      669 s           12        2
+#     60 s      5    3,015 s           25        0
+#
+#   pooled >=10 s: 6,108 s / 77 injections / 2 deaths = 1 per 3,054 s
+#   -> 71x lower per second, 9.6x lower per injection, P = 8.6e-05
+#
+# 20 s was chosen over 10 s for margin and over 60 s for cost: it is indistinguishable from 60 s in
+# the data and adds ~80 s (not 4.3 min) before the store/roster/missions/passes are all live.
+#
+# ⚠ This is a MITIGATION, NOT A CURE. The residual is ~1 death per 3,054 s, i.e. roughly 1-in-3.4
+# across a 15-minute sitting. Keep archiving crash dumps and treat an unexplained death as possibly
+# ours. See docs/s109-dump-forensics.md sections 18-20 (20 retracts an earlier "eliminates" claim).
 foreach ($d in $dlls) {
   if (-not (Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue)) { Log "game exited - stopping"; return }
   $path = Join-Path $Repo $d
