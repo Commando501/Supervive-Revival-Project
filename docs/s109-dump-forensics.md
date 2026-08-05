@@ -1174,3 +1174,75 @@ hooks PI).
 ⚠ Whatever the result, the FK-7 consequence from §12 stands and strengthens: **every tutorial sitting
 in the record ran the full default set**, i.e. the unvalidated triple. Tutorial deaths attributed to
 the game may be this.
+
+---
+
+## 15. ★★★ DOSE-RESPONSE: the `ProcessInternal` hook is the mechanism, and multiplicity multiplies it
+
+**2026-08-04 20:33–21:19.** `launch-redirect.ps1 -NoMissions -NoLoadout` —
+the isolation flags `CLAUDE.md:156` itself names. Resulting set:
+`catalog_store_fix` + `pi8` + `catalog_pick_fix` + `battlepass_adopt_fix` = **one** PI hooker
+instead of three. Menu-idle, 900 s hold, 3 runs.
+
+**Result: NOT a clean survival — 2 survived, 1 DIED at 55 s.**
+
+| run | outcome | uptime | active (all 4 expected) | **forbidden active** | dump |
+|---|---|---:|---|---|---|
+| pi1 1 | SURVIVED | 906 s | 4 @ t+41 s | **none (good)** | — |
+| pi1 2 | SURVIVED | 901 s | 4 @ t+5 s | **none (good)** | — |
+| pi1 3 | **DIED** | **55 s** | 4 @ t+5 s | **none (good)** | `673de738` (43.4 MB) |
+
+**Both halves of the two-sided control passed on every run:** all four included shims activated, and
+`loadout_fix` / `missions_fix` **never** activated — so the exclusion flags genuinely worked and these
+runs are the configuration intended. A survival with a silently-ignored flag would have sent this
+bisect down the wrong branch.
+
+### The dose-response
+
+| arm | PI hookers | runs | exposure | deaths | 1 death per |
+|---|---:|---:|---:|---:|---:|
+| clean `-NoHook` | 0 | 4 | 5,173 s | 0 | — |
+| noop canary (inert) | 0 | 3 | 2,700 s | 0 | — |
+| `catalog_store_fix` alone | 0 | 3 | 2,700 s | 0 | — |
+| **`-NoMissions -NoLoadout`** | **1** | 3 | **1,862 s** | **1** | **1,862 s** |
+| **full default set** | **3** | 3 | **129 s** | **3** | **43 s** |
+
+**Pooled PI=0: 10,573 s (2.94 h) with ZERO deaths.**
+
+* If the PI=1 hazard held in the PI=0 arms, expected **5.68** deaths; observed **0**.
+  `P(0 | λ=5.68) = 0.0034`.
+* If the PI=1 hazard held in the PI=3 arm, expected **0.069** deaths; observed **3**.
+  `P(≥3 | λ=0.069) = 5.3 × 10⁻⁵`.
+
+⇒ **MEASURED: introducing a `ProcessInternal` hooker introduces lethality (p ≈ 0.003), and going from
+one to three multiplies the hazard ~43×** (1 per 1,862 s → 1 per 43 s), p ≈ 5×10⁻⁵. Monotone across
+0 → 1 → 3. `CLAUDE.md:156`'s month-old "the full triple has never had a confirmation launch" is
+**vindicated, and understated** — the triple is not merely unvalidated, it is ~43× worse than one.
+
+**But the correct reading is a RATE, not a switch.** One PI hooker is *not* safe; it is *slow*. Two of
+three runs surviving 15 minutes is exactly what a 1-per-1,862 s hazard looks like. **Anyone who ran
+`-NoMissions -NoLoadout` twice and called it clean would have been wrong** — which is precisely why
+this arm needed n≥3.
+
+### The dump: Family A, and the SAME address a third time
+
+```
+673de738   rip = 0x7FFD3B400001   parm0=0x8 EXECUTE/DEP   no module   chain EMPTY
+           stack = KERNEL32+0x17374, ntdll+0x4CC91
+```
+
+`0x7FFD3B400001` is now the fault address in **three independent deaths** — the reference tutorial
+death `41cdafa3`, shim run 2 `3e17e732`, and this. Three processes, three sessions, one address.
+That is the recurring **load address** of `runtime.dll`, confirming §12's reading yet again.
+
+### ⚠ What is still confounded — stated because it changes the next test
+
+The PI=1 arm added **three** shims to the `catalog_store_fix` baseline, not one: `pi8`,
+`catalog_pick_fix` and `battlepass_adopt_fix`. `pi8` is the only PI hooker among them and is the
+prime suspect on mechanism, **but it is not isolated.** The lethality could belong to
+`catalog_pick_fix` or `battlepass_adopt_fix`.
+
+**Next test: `-Hook mainmenu_refresh_pi8.dll` alone, menu-idle.** ⚠ Power matters here — at
+1 per 1,862 s, three 15-minute runs expect only ~1.5 deaths, so **3 runs cannot distinguish "lethal"
+from "safe"**. This arm needs **≥6 runs** (or longer holds) to be worth running at all. Budget ~1.5 h.
+Scoring it on 3 runs would repeat the error this section just documented.
