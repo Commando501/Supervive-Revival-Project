@@ -1926,3 +1926,66 @@ play NEW (§24 fix)  7bc4df9236ead0ac
 ```
 Same trap S108b created with `a67239a0`. `play` and `play-strictroot` share a **161,792-byte `.text`**
 and differ only by hash. Survival was unremarkable (275 / 292 s, 2 of 3 armed).
+
+---
+
+## 25. FLAG-WORD LAYOUT CHECKED — it is CORRECT, which eliminates the cheapest remaining hypothesis
+
+§24 left three candidates for why a rooted object is still torn down. The third — *"the flag word is
+not laid out as assumed"* — was the cheapest, and it is now **eliminated**.
+
+**Method.** `tools/re/uobjitem_layout.py` (new, read-only RPM, no injection). Sample the live
+`FUObjectArray` at the **menu** — no tutorial staging needed — split objects into a reference set that
+*must* be rooted (native `UClass`es, which UE allocates with `RF_MarkAsRootSet`) and everything else,
+then report per-bit frequencies **at every dword offset in the item**, not just the assumed one. If the
+field had moved, this finds it.
+
+**MEASURED** (pid 47216, base `0x7FF681610000`, 189,760 objects; 115 native UClasses / 3,803 ordinary):
+
+```
+offset +0x08   AND(native)=40000000  OR(native)=42000000
+    bit 30 (0x40000000)  native 100%  ordinary  19%   <== RootSet-like
+    bit 25 (0x02000000)  native  99%  ordinary  14%   (Native)
+    bit  1 (0x00000002)  native   0%  ordinary  81%
+offset +0x0C   AND=0  OR=0        (uniform ~1-19% noise -> ClusterRootIndex, an index not flags)
+offset +0x10   AND=0  OR=00007FFF (small integers -> SerialNumber)
+offset +0x14   AND=0  OR=0
+```
+
+Raw items confirm it by eye — every native class reads `… | 00 00 00 42 …` at +0x08:
+
+```
+NATIVE  LandscapeProxy            80 12 2f 09 f3 01 00 00 | 00 00 00 42 00 00 00 00 …
+Package//Script/TextureUtili      90 30 84 07 f3 01 00 00 | 00 00 00 40 00 00 00 00 …
+```
+
+⇒ **The assumed layout is right.** `FUObjectItem` is `{Object@0x00, Flags@0x08, ClusterRootIndex@0x0C,
+SerialNumber@0x10}`, stride `0x18`, and **bit 30 is the RootSet-like bit**: universal on native
+classes (`AND(native) = 0x40000000` exactly) and present on a minority of ordinary objects. `KGCROOTBIT
+= 0x40000000` is the correct constant, and the shim was poking the correct bit in the correct field.
+
+**It also validates §24's fix quantitatively.** Ordinary objects carry RootSet at **19%** here — so the
+old `& ~OR(64 samples)` test had essentially **no chance** of surviving: at 19%, the probability all 64
+samples lack the bit is `0.81^64 ≈ 1.2 × 10⁻⁶`. The guard was not unlucky, it was **arithmetically
+doomed**, and `KGCROOT` could never have worked since S106. The frequency threshold (33%) sits
+correctly above the observed 19%.
+
+### What remains
+
+Of §24's three candidates, only two survive, and both are about **semantics, not layout**:
+
+1. **The GC does not honour a directly-poked bit.** UE's `AddToRoot` sets this flag *through*
+   `GUObjectArray`, and modern UE also keeps cluster/reachability state that a raw poke does not touch.
+   A flag we set may simply be recomputed or ignored.
+2. **The asset is not GC'd at all** — streamed out, package-unloaded, or explicitly marked garbage.
+   `GcAlive` (vtable-in-image + `NamePrivate != 0`) cannot distinguish those from collection.
+
+**Next probe, and it is again read-only:** watch one loaded AnimSequence's item across its death —
+sample `Flags`, `ClusterRootIndex` and `SerialNumber` every 250 ms from body build. A **SerialNumber
+change means the slot was recycled** (real destruction + reuse); flags flipping `Unreachable` means
+reachability GC; neither changing while the object's vtable/name go bad means something tore the object
+down out of band. That distinguishes all three without a single write.
+
+⚠ Also worth recording: **bit 1 is set on 81% of ordinary objects and 0% of native classes.** It is not
+a value in the stock `EInternalObjectFlags`. Unexplained, unused by us, and a hint that this build's
+flag semantics are not entirely stock — but it is **not** the field-layout error I went looking for.
