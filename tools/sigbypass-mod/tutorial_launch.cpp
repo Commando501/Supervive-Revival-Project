@@ -1222,6 +1222,16 @@ static uintptr_t FindClassExact(const char* want){
 #ifndef KGCROOTBIT
 #define KGCROOTBIT 0x40000000   // EInternalObjectFlags::RootSet == 1<<30 (stable UE4/UE5). Corroborated live.
 #endif
+#ifndef KGCROOTMAXPCT
+#define KGCROOTMAXPCT 33     // S109: max %% of randomly-sampled ordinary objects that may carry KGCROOTBIT
+                             // and still have it accepted as RootSet. Ordinary objects CAN be rooted
+                             // (GameInstance, subsystems, anything that called AddToRoot), so the old
+                             // "none of them may have it" test vetoed the correct bit on 1 contaminated
+                             // sample in 64. RootSet is rare among random objects; a generic flag is not.
+#endif
+#ifndef KGCROOTSTRICT
+#define KGCROOTSTRICT 0      // 1 = restore the pre-S109 AND(rooted)&~OR(unrooted) test, for A/B
+#endif
 static int32_t g_gcBit=0; static bool g_gcRes=false; static int g_gcRooted=0, g_gcFailed=0;
 static bool SafeWritable(const void* a,size_t sz){
 #if KWPROBE==2
@@ -1258,11 +1268,31 @@ static bool GcItemFlags(uintptr_t obj,int32_t* out){
 // Derive the RootSet bit from the LIVE array instead of trusting a constant.
 //  * ROOTED reference set  = native UClasses. UE allocates every native class with RF_MarkAsRootSet, which
 //    StaticAllocateObject converts into EInternalObjectFlags::RootSet, so the bit must be set on all of them.
-//  * UNROOTED reference set = ordinary live objects (not a UClass, not a "Default__" CDO), which must not
-//    have it. Sampled widely across the array so one odd object cannot poison the result.
-//  candidate = AND(rooted) & ~OR(unrooted), restricted to the high flag byte.
-// EInternalObjectFlags::Native (1<<25) also survives that filter (it is likewise set on classes only), which
-// is why the result is not used blind: we only poke if the candidate set CONTAINS KGCROOTBIT.
+//  * "UNROOTED" reference set = ordinary live objects (not a UClass, not a "Default__" CDO).
+//
+// ★ S109 FIX (2026-08-05) — the second reference set was built on a FALSE PREMISE and the whole guard
+//   had been silently inert because of it. The old test was
+//        cand = AND(rooted) & ~OR(unrooted) & 0xFF000000     // accept iff cand contains KGCROOTBIT
+//   and its comment asserted ordinary objects "must not have" RootSet. They can, and routinely do:
+//   anything that called AddToRoot -- the GameInstance, engine subsystems, config and manager objects --
+//   is an ordinary non-class object that is legitimately in the root set. The filter only excluded
+//   Class/Package/Function/Enum/ScriptStruct and Default__ CDOs, so those slipped straight in.
+//
+//   MEASURED live, 3/3 tutorial sittings (docs/s109-dump-forensics.md sections 22-23):
+//        nRooted=5 and=42000000  nUnrooted=64 or=41000004  cand=02000000  expect=40000000
+//   AND(rooted) = 0x42000000 CONTAINS 0x40000000: RootSet is set on all five native classes, exactly as
+//   the theory says. But OR(unrooted) = 0x41000004 also has bit 30, so `& ~orU` stripped it and the
+//   surviving candidate was 0x02000000 = EInternalObjectFlags::Native (1<<25). The guard then refused,
+//   nothing was ever rooted, and the run AnimSequence was collected 6.9-10.3 s after body build --
+//   which is what killed the locomotion animation.
+//   ONE contaminated sample out of 64 was enough to veto the bit. A hard OR has no tolerance at all.
+//
+//   THE FIX: keep the strong half (the bit must be set on EVERY native class) and replace the brittle
+//   half with a FREQUENCY test. RootSet is rare among randomly sampled objects; a generic flag is not.
+//   So require freq(bit)/nU <= KGCROOTMAXPCT. That is the property the original was reaching for.
+//   The Native bit (1<<25) still survives the AND, which is why the accepted bit is still required to be
+//   KGCROOTBIT rather than "whatever survived" -- we never poke a bit we merely inferred.
+//   -DKGCROOTSTRICT=1 restores the old AND/~OR behaviour for A/B.
 static bool GcResolveBit(){
     if(g_gcRes) return g_gcBit!=0;
     g_gcRes=true;
@@ -1271,7 +1301,7 @@ static bool GcResolveBit(){
     for(int i=0;i<(int)(sizeof(kRooted)/sizeof(kRooted[0]));i++){
         uintptr_t c=FindClassExact(kRooted[i]); if(!c)continue; int32_t f=0; if(!GcItemFlags(c,&f))continue;
         andR&=f; nR++; }
-    int32_t orU=0; int nU=0;
+    int32_t orU=0; int nU=0; int nUbit=0;   // S109: nUbit = how many sampled objects carry KGCROOTBIT
     { uintptr_t oo=g_modBase+kObjObjectsRva;
       if(SafeReadable((void*)oo,0x18)){
         uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
@@ -1284,12 +1314,25 @@ static bool GcResolveBit(){
               uintptr_t cls=ClassOf(obj); if(!LooksLikePtr(cls))continue; char cn[96]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
               if(strstr(cn,"Class")||strstr(cn,"Package")||strstr(cn,"Function")||strstr(cn,"Enum")||strstr(cn,"ScriptStruct"))continue;
               char on[96]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on)); if(strncmp(on,"Default__",9)==0)continue;
-              orU|=*(int32_t*)(item+8); nU++; } } } } }
+              { int32_t uf=*(int32_t*)(item+8); orU|=uf;
+                if(uf&(int32_t)KGCROOTBIT) nUbit++; }              // S109: COUNT it, don't just OR it
+              nU++; } } } } }
     int32_t cand = andR & ~orU & (int32_t)0xFF000000;
-    if(nR>=2 && nU>=8 && (cand & (int32_t)KGCROOTBIT)) g_gcBit=(int32_t)KGCROOTBIT;
-    else g_gcBit=0;
-    Markerf("[GC] rootbit: nRooted=%d and=%08X nUnrooted=%d or=%08X cand=%08X expect=%08X -> %s\r\n",
-            nR,(unsigned)andR,nU,(unsigned)orU,(unsigned)cand,(unsigned)KGCROOTBIT,
+    int pct = (nU>0) ? (nUbit*100)/nU : 100;
+#if KGCROOTSTRICT
+    // legacy behaviour, kept for A/B: any single rooted sample vetoes the bit
+    bool ok = (nR>=2 && nU>=8 && (cand & (int32_t)KGCROOTBIT));
+    const char* how="STRICT(AND&~OR)";
+#else
+    // S109: the bit must be universal on native classes, and RARE among ordinary objects.
+    bool ok = (nR>=2 && nU>=8 && (andR & (int32_t)KGCROOTBIT) && pct<=KGCROOTMAXPCT);
+    const char* how="FREQ";
+#endif
+    g_gcBit = ok ? (int32_t)KGCROOTBIT : 0;
+    Markerf("[GC] rootbit[%s]: nRooted=%d and=%08X nUnrooted=%d or=%08X cand=%08X expect=%08X"
+            " onNatives=%d bitFreq=%d/%d(%d%%) max=%d%% -> %s\r\n",
+            how,nR,(unsigned)andR,nU,(unsigned)orU,(unsigned)cand,(unsigned)KGCROOTBIT,
+            (andR&(int32_t)KGCROOTBIT)?1:0,nUbit,nU,pct,(int)KGCROOTMAXPCT,
             g_gcBit?"CORROBORATED (rooting enabled)":"NOT corroborated -> REFUSING to poke flags");
     return g_gcBit!=0;
 }
