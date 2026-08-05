@@ -148,6 +148,15 @@ $Variants = @{
         #   ("cand=02000000 expect=40000000 -> REFUSING to poke flags") because ordinary rooted
         #   objects contaminated the OR. Expect: strict => rooted=0 failed=5, assets GC'd ~7-10 s.
         'play-strictroot' = @('-DKRUNMODE=RM_PLAY','-DKGCROOTSTRICT=1')          # -1 dim: old root-bit test
+        # ★ S110 (2026-08-05) — control for the REFERENCE fix (KANIMREF, on by default in 'play').
+        #   The fix parks the run AnimSequence in the body component's unused
+        #   AnimationData.AnimToPlay UPROPERTY so UE's traversal can reach it. Rooting was measured
+        #   INERT (bit 30 verified set 33.1 s before a pass; destroyed at that pass anyway -- three
+        #   armed windows, only the injection phase varied). See docs/s110-item-watch-gc-mechanism.md.
+        #   Expect with KANIMREF=0: the run anim goes ROOTED+STALE at the next reachability flip and is
+        #   destroyed within ~1 s, exactly as in the S110 runs. With it on: re-marked, and it survives.
+        #   Read the verdict with `python tools\re\item_watch.py --marker`.
+        'play-noanimref'  = @('-DKRUNMODE=RM_PLAY','-DKANIMREF=0')               # -1 dim: no UPROPERTY reference
         # ------------------------------------------------------------------------------------------
         # ★ S108b — THE LEFTOVER-DIAGNOSTIC BISECT. KSMACTOR (:4031) and KSTATICTEST (:4034) are S95
         #   spawn-vs-component discriminators that still default to 1, exactly as KTESTACTOR did until
