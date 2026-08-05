@@ -1704,3 +1704,85 @@ the protector with no game frames**. The honest position is not "FK-7 is closed"
 **FK-7 has never had a confirmed instance**, and the phenomenon it was named for is now substantially
 accounted for by our own instrumentation. Any future claim of an FK-7 death needs a dump with
 SUPERVIVE frames on the faulting stack; none has ever been produced.
+
+---
+
+## 22. ★★ THE ANIMATION CYCLING — ROOT-CAUSED: the run anim is GC'd 13 s before it is needed
+
+Follow-up to §21's open item. **Root cause found, and it is NOT the injection spacing.**
+
+### The chain, all MEASURED from the three armed-run markers
+
+**1. Rooting fails — the shim refuses to guess, correctly.** `KGCROOT` is default 1, but its root-bit
+corroboration does not resolve on this build:
+
+```
+[GC] rootbit: nRooted=5 and=42000000 nUnrooted=64 or=41000004 cand=02000000
+              expect=40000000 -> NOT corroborated -> REFUSING to poke flags
+[GC] loaded-asset  0x…  NOT rooted (bit unresolved)      <- run anim
+[GC] body-component 0x…  NOT rooted (bit unresolved)
+[GC] anim-instance rooted x0 (rooted=0 failed=5)
+```
+
+`KGCROOTBIT` is `0x40000000` (`RootSet`, "corroborated live" per the source), but the observed
+candidate is `0x02000000` and `expect` is not met, so the shim declines to poke flags. **That refusal
+is right** — guessing a flag bit would be far worse — but the consequence is that **nothing is rooted.**
+
+**2. The run anim is then collected, fast and reproducibly:**
+
+```
+attempt 1  [GCW] *** RUN ANIM 0x1F93525FA00 WAS GARBAGE-COLLECTED (t=7828ms after body build) ***
+attempt 2  [GCW] *** RUN ANIM 0x219AF95AC00 WAS GARBAGE-COLLECTED (t=6860ms after body build) ***
+attempt 4  [GCW] *** RUN ANIM 0x1A5B67D0600 WAS GARBAGE-COLLECTED (t=7781ms after body build) ***
+```
+
+**3 of 3 runs, 6.9–7.8 s after body build.**
+
+**3. But the walk that needs it does not start for 20 s.** `KAUTOWALKATMS = 20000` — "ms after body
+build when the self-driven walk starts (AFTER the three idle shots)". The idle↔run swap only fires
+when `|velocity| > KRUNSPEED (40)`, and the only thing that moves the hero unattended is that walk
+(`KPUPSPEED = 600`, comfortably over the threshold).
+
+⇒ **The asset is dead ~13 seconds before anything asks to play it.**
+
+**4. And attempt 4 caught the collision explicitly** — the one run where the swap was actually
+attempted:
+
+```
+[GCW] run: DEAD UObject before PlayAnimation (comp=0x1A4CA3AB140 alive=1 anim=0x1A5B67D0600 alive=0)
+      -> anim swapping DISABLED. The asset was garbage-collected: check the [GC] lines above.
+```
+
+`comp alive=1, anim alive=0` — the component survived, the **animation asset** did not. `PlayAnimOn`'s
+S106 `GcAlive` guard then latched `g_plAnimDead` and stopped swapping, exactly as designed.
+
+### Why this is not the spacing change
+
+The spacing only inserts sleeps **between injections**, before the body is built. Every timing above is
+measured **relative to body build**, so the whole chain is invariant to it. Attempts 1/2/4 each show
+`self-driven walk START`, i.e. the walk logic ran on schedule.
+
+### ⚠ Whether this is a REGRESSION is NOT established — and the reason is FK-25 again
+
+`docs/s108b-ksmactor-bisect.md` §3 reports repeated `PlayAnimation(run/idle, loop) ok` cycling on the
+`KSTATICTEST=0` arms. I could not compare against it: **the S108b step-4 marker copy is 406 bytes** —
+`fk24-stage` copies the marker 2 s after injection, and `Marker()` opens `CREATE_ALWAYS`, so the copy
+captured the file *before the probe had written anything*. That is FK-25 costing a comparison, again.
+So: either the GC was slower in S108b, or the rooting resolved then, or cycling was always marginal.
+**Unknown, and I am not guessing.**
+
+### The fixes, cheapest first
+
+1. **Move the walk before the collection.** `KAUTOWALKATMS 20000 → ~4000` puts the swap inside the
+   asset's ~7 s lifetime. **One `-D`, and it would confirm the entire causal chain in a single run** —
+   if cycling reappears, the story is proven end to end. ⚠ The 20 s value exists so the walk lands
+   after the three idle screenshots, so this trades a diagnostic for a diagnostic; adjust the shot
+   schedule with it.
+2. **Re-resolve the root bit.** The corroboration expects `0x40000000` and sees a `0x02000000`
+   candidate. Fixing that makes `KGCROOT` do its job and fixes the *cause* rather than out-running it —
+   and it would also root the body component and anim instances, which is what S106 built it for.
+3. **Re-load on death** instead of latching off: when `GcAlive(anim)` fails, `LoadMeshByPath` again
+   rather than disabling swapping for the session. Robust, but treats the symptom.
+
+**Recommendation: (1) to confirm, then (2) as the real fix.** Note this is a *cosmetic/locomotion*
+defect — it does not affect survival, the crash families, or any S109 conclusion.
