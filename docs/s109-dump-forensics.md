@@ -1380,3 +1380,91 @@ add `armedPIhook={12}` while supplying only 11 arguments, so every `-f` threw
 **No data was lost** — outcomes were recovered from the console markers, the launch-interval spacing
 and the copied per-run markers, all of which agree. But the summary file for this arm is empty and
 should not be read as "no runs happened". Fix before reuse: `{12}` → `{10}`.
+
+---
+
+## 18. ★★★ SUBTRACTIVE SWEEP — and the real discriminator is the INJECTION WINDOW, not the shim
+
+**2026-08-04 22:56–23:17.** Full default set minus exactly one shim, 300 s hold × 3 per arm. Chosen
+because the full set dies at 1-per-43 s, so an arm that keeps the fast kill shows it in minutes.
+
+| arm | drops | outcomes | exposure | deaths | 1 per |
+|---|---|---|---:|---:|---:|
+| `-NoLoadout` | `loadout_fix` | S / **D@20 s** / S | 628 s | 1 | 628 s |
+| **`-NoMissions`** | `missions_fix` | **D@35 s / D@25 s / D@30 s** | **90 s** | **3** | **30 s** |
+| `-NoPasses` | `battlepass_adopt_fix` | S / **D@51 s** / S | 655 s | 1 | 655 s |
+| *(full set, ref)* | — | D/D/D | 129 s | 3 | 43 s |
+
+The dropped shim's marker **never advanced in any of the 9 runs**, so every exclusion took.
+
+**MEASURED: dropping `missions_fix` does NOT reduce lethality** — 3/3 at 25–35 s, if anything faster
+than the full set. **Dropping `loadout_fix` or `battlepass_adopt_fix` cuts the hazard ~21×**
+(1-per-30 s → 1-per-628/655 s). Rate-ratio test, exposure-adjusted:
+`P(≥3 of 5 events landing in NoMissions | exposure share 0.066) = 0.0025`.
+
+### ★ The observation that reframes the whole series
+
+`docs/inject-secondaries.log` gives the injection timeline — **MEASURED**:
+
+```
+T+0 s    game process up
+T+20 s   "primary catalog_store_fix installed+unhooked - safe to inject secondaries"
+T+20 s   inject pi8 → T+24 s pick → T+27 s loadout → T+30 s missions → T+33 s COMPLETE
+```
+
+Now every death ever recorded in this series, by uptime:
+
+```
+20 s  23 s  25 s  30 s  35 s  41 s  51 s  55 s  65 s
+```
+
+**Not one death has ever occurred before T+20 s — the exact moment secondary injection begins.**
+The earliest death (20 s) lands on the first injection; the cluster 20–35 s sits inside the 13-second
+window in which four DLLs are manual-mapped back to back.
+
+And the complementary half:
+
+| arms that never run the detached secondary sequence | exposure | deaths |
+|---|---:|---:|
+| clean `-NoHook`, noop canary, `csf` alone, `pi8` alone | **15,973 s = 4.44 h** | **0** |
+
+⇒ **Every death in the series happened at or after the secondary-injection window, and no arm that
+skips that sequence has ever died** — across four and a half hours. That is a sharper discriminator
+than any single shim's identity, and it also explains why the `active=[csf]` column reads bare on the
+fastest deaths: **those runs died *during* injection, before the secondaries could write markers.**
+
+⚠ **Consequence for how these arms must be read: this is intention-to-treat.** We know which *flag*
+was passed; for deaths at 20–35 s we cannot confirm which secondaries had finished mapping. The arm
+comparison stays valid (same harness, flag is the only difference), but "shim X was present at death"
+is **not** established for the fast deaths.
+
+### The dumps: both families, and Family A a fourth time
+
+```
+sub-NoMissions-1  e7d14df5   pc=0x14BA020205D   parm0=0x0  -> FAMILY B
+sub-NoMissions-2  5e4cce11   pc=0x1830F7C205D   parm0=0x0  -> FAMILY B
+sub-NoMissions-3  d9a2e984   pc=0x7FFD3B400001  parm0=0x8  -> FAMILY A
+sub-NoPasses-2    2b109408   pc=0x2154F6C205D   parm0=0x0  -> FAMILY B
+```
+
+3 of 4 are Family B. `0x7FFD3B400001` is now the fault address in a **fourth** independent death.
+Both families are produced by the same trigger, which argues they are two faces of one protector
+response rather than two unrelated bugs.
+
+### Why "which shim" may be the wrong question
+
+`-NoPasses` keeps **both** PI hookers (`loadout` + `missions`) and is ~21× *safer* than `-NoMissions`,
+which keeps only one. That does not fit any story where a particular shim's behaviour is the cause,
+and it is the third result pointing the same way (§16, §17). Combined with the timing, the better
+model is: **hazard is driven by the burst of manual-maps and the concurrent activity it kicks off,
+and shim identity mostly changes how much activity lands inside that window.**
+
+### Next, in priority order
+
+1. **Space the injections out.** Same five shims, but inject with e.g. 60 s gaps instead of 3 s.
+   If deaths vanish, the cause is *burst rate*, and the fix is a one-line change to
+   `inject-secondaries.ps1` — no shim rewrite. **Cheapest and highest-value test remaining.**
+2. **Inject two inert noop canaries back to back**, replicating the burst with zero shim behaviour.
+   Separates "rapid mapping" from "what the mapped code does" — the §13 canary tested one DLL only.
+3. Only then bisect shim identity further; at n=3/arm the current arms cannot separate interaction
+   models.
