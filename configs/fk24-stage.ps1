@@ -35,7 +35,12 @@ param(
   [int]$WaitProcSec    = 300,                       # how long to wait for the game to appear
   [int]$WaitParkedSec  = 420,                       # how long to wait for the parked match model
   [int]$WaitWorldSec   = 180,                       # how long to wait for LVL_Tutorial after force-open
-  [switch]$SkipProbe                                # stage the world only (fo+gft+sp), inject nothing else
+  [switch]$SkipProbe,                               # stage the world only (fo+gft+sp), inject nothing else
+  [int]$InjectGapSeconds = 20                       # S109: MINIMUM seconds between successive manual-maps.
+                                                    # Evidence-gate waits count toward it, so this only
+                                                    # sleeps the shortfall. 20 matches the new default in
+                                                    # inject-secondaries.ps1. Pass 5 to reproduce the old
+                                                    # gft->fo spacing. See docs/s109-dump-forensics.md 18-20.
 )
 
 $ErrorActionPreference = 'Stop'
@@ -129,9 +134,35 @@ $parked = Wait-For 'parked match model (uiready + match fetched + uptime)' $Wait
 if(-not $parked){ Say 'proceeding anyway is NOT safe -- aborting'; exit 3 }
 Say ("uptime={0}s" -f [int](((Get-Date) - $start).TotalSeconds))
 
+# ★ MINIMUM INJECTION GAP (S109, 2026-08-05). Injecting DLLs in quick succession is what provokes
+#   the protector's `runtime.dll+1` / `+0x205D` kills. MEASURED on the menu route: a 3 s gap between
+#   manual-maps gave 1 death per 43 s; >=10 s gaps gave 1 per 3,054 s -- a 71x reduction, P = 8.6e-5.
+#   docs/s109-dump-forensics.md sections 18-20.
+#
+#   This stager was NOT a uniform burst, so it needed measuring rather than assuming. Real spacing:
+#       gft -> fo     ~5 s   (Stage-Inject's Sleep 2 + the Sleep 3 below)  <-- LETHAL REGIME
+#       fo  -> sp     19 s   (19/19/19/19/19 across five S108 runs)        <-- already safe
+#       sp  -> probe  7-17 s (17/15/17/7)                                  <-- borderline
+#   ⚠ Do NOT try to re-derive those from docs/fk24-stage-*-N-*.txt mtimes: Copy-Item preserves the
+#   SOURCE file's LastWriteTime, and step 1 copies a stale tutorial-launch-marker that gft never
+#   writes -- which is why that delta reads as +210 s or even +41,742 s. Steps 2-4 are real.
+#
+#   We enforce a MINIMUM gap measured from the previous injection, so the existing evidence gates
+#   (world-load, [SP] done) COUNT TOWARD IT and we only sleep the remainder. That buys the safe
+#   spacing for ~15-30 s of added staging rather than ~50 s of unconditional sleeps -- which matters,
+#   because the code-integrity kill lands ~285 s in and every second spent staging is armed-window
+#   budget spent. The evidence gates themselves are untouched; they are load-bearing (see below).
+$script:lastInjectAt = $null
 function Stage-Inject([string]$dll,[int]$n,[string]$tag){
+  if($null -ne $script:lastInjectAt){
+    $since = [int]((Get-Date) - $script:lastInjectAt).TotalSeconds
+    $need  = $InjectGapSeconds - $since
+    if($need -gt 0){ Say ("    spacing: {0}s since last inject, waiting {1}s more (min gap {2}s)" -f $since,$need,$InjectGapSeconds); Start-Sleep -Seconds $need }
+    else           { Say ("    spacing: {0}s since last inject, min gap {1}s already satisfied" -f $since,$InjectGapSeconds) }
+  }
   Say ">>> inject $tag"
   & $inject mmap $gamePid $dll 2>&1 | ForEach-Object { Say "    $_" }
+  $script:lastInjectAt = Get-Date
   Start-Sleep -Seconds 2
   $dst = Join-Path $docs ("fk24-stage-{0}-{1}-{2}.txt" -f $Label,$n,$tag)
   if(Test-Path $marker){ Copy-Item $marker $dst -Force; Say "    marker -> $(Split-Path -Leaf $dst)" }

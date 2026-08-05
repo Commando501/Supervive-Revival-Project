@@ -173,9 +173,19 @@ changes it; pass `3` to reproduce the old burst. ⚠ **MITIGATION, NOT A CURE** 
 unexplained death as **possibly ours**. Full evidence: `docs/s109-dump-forensics.md` §12–§20
 (§20 retracts an earlier "eliminates" claim; §16 retracts "the PI hook is the mechanism").
 
-**⚠ `configs/fk24-stage.ps1` injects FOUR DLLs back-to-back and has NOT been given the same
-treatment.** It is the same burst pattern on the tutorial route, and is now the leading
-candidate for the ~1–5 min tutorial deaths. Untested — do it before trusting a tutorial death.
+**★ `configs/fk24-stage.ps1` now enforces the same minimum gap** (`-InjectGapSeconds`, default
+**20**). It was NOT a uniform burst — measured spacing was gft→fo **~5 s** (lethal regime),
+fo→sp **19 s**, sp→probe **7–17 s** — so only the first gap was clearly bad. The gate is a
+*minimum*: the existing evidence waits (world-load, `[SP] done step=4`) count toward it and only
+the shortfall is slept, costing **~15–29 s** of staging rather than ~50 s. The probe now arms
+around **T+175 s** instead of ~T+145 s, leaving ~110 s before the ~285 s integrity kill — so the
+**T+220–250 s hold still fits, but the armed window is tighter**; budget accordingly.
+⚠ **UNVALIDATED ON A LIVE TUTORIAL RUN.** The 71× reduction was measured on the *menu* route.
+Whether it moves the ~1–5 min tutorial deaths is the open question — and it is now the single
+highest-value experiment on the board.
+⚠ Do NOT re-derive stage spacing from `docs/fk24-stage-*-N-*.txt` mtimes: `Copy-Item` preserves the
+SOURCE's LastWriteTime, and step 1 copies a stale marker `gft` never writes, so that delta reads as
++210 s or even +41,742 s. Only steps 2–4 are real.
 
 **RESOLVED (was VALIDATION PENDING since 2026-07-10):** the default set runs THREE PI-hookers
 (`pi8` + `loadout_fix` + `missions_fix`) and the full triple now has many confirmation launches.
