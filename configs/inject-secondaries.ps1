@@ -31,6 +31,9 @@ param(
   [switch]$NoMissions,
   [switch]$NoLoadout,
   [switch]$NoPasses,   # S83: skip battlepass_adopt_fix (PASSES / Hunter's Journey)
+  [int]$GapSeconds = 3,# S109: seconds between successive manual-maps. See the note at the loop --
+                       # the 3 s default packs all four secondaries into a ~13 s burst, and every
+                       # death in the S109 series lands at or after that burst.
   [int]$MaxWaitProcSec = 150,
   [int]$MaxWaitUnhookSec = 120
 )
@@ -86,8 +89,16 @@ while ((Get-Date) -lt $deadline) {
 if ($ready) { Log "primary catalog_store_fix installed+unhooked - safe to inject secondaries" }
 else { Log "WARNING: primary [unhook] not seen in ${MaxWaitUnhookSec}s - injecting secondaries anyway" }
 
-# 3) inject each secondary sequentially (gap between to avoid overlapping hook installs; the shared
-#    mutex also guards the PI-hookers at runtime)
+# 3) inject each secondary sequentially.
+#
+# ★ THE GAP IS LOAD-BEARING (S109, 2026-08-04). It was 3 s to "avoid overlapping hook installs".
+# MEASURED: with a 3 s gap the four secondaries are all mapped inside a ~13 s burst starting at
+# T+20 s, and EVERY death recorded in the S109 series (20, 23, 25, 30, 35, 41, 51, 55, 65 s) falls
+# at or after that burst -- while every configuration that skips this sequence entirely (clean,
+# a single inert canary, catalog_store_fix alone, pi8 alone) survived 4.44 h with ZERO deaths.
+# See docs/s109-dump-forensics.md section 18.
+#
+# -GapSeconds spreads the burst. Default stays 3 so behaviour is unchanged unless asked for.
 foreach ($d in $dlls) {
   if (-not (Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue)) { Log "game exited - stopping"; return }
   $path = Join-Path $Repo $d
@@ -95,6 +106,7 @@ foreach ($d in $dlls) {
   Log "injecting $d ..."
   $out = & $inject mmap $name $path 2>&1
   Log ($out -join " | ")
-  Start-Sleep -Seconds 3
+  Log ("gap ${GapSeconds}s before next secondary")
+  Start-Sleep -Seconds $GapSeconds
 }
 Log "secondary injection complete"

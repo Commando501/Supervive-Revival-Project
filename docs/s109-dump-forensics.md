@@ -1468,3 +1468,85 @@ and shim identity mostly changes how much activity lands inside that window.**
    Separates "rapid mapping" from "what the mapped code does" — the §13 canary tested one DLL only.
 3. Only then bisect shim identity further; at n=3/arm the current arms cannot separate interaction
    models.
+
+---
+
+## 19. ★★★★ FIXED — spacing the injections eliminates the deaths
+
+**2026-08-04 23:24 – 2026-08-05 00:20.** Identical full default set, menu-idle, but
+`-InjectGapSeconds 60`, so the secondaries land at ~T+20 / 80 / 140 / 200 / 260 instead of packed
+into T+20..T+33. Hold 600 s × 5 runs.
+
+| run | outcome | uptime | injections | **observed gaps** | shims active |
+|---|---|---:|---:|---|---|
+| 1 | **SURVIVED** | 603 s | 5 | **[60,60,61,60]** | all 6 |
+| 2 | **SURVIVED** | 603 s | 5 | **[60,60,60,60]** | all 6 |
+| 3 | **SURVIVED** | 603 s | 5 | **[60,60,60,60]** | all 6 |
+| 4 | **SURVIVED** | 604 s | 5 | **[60,60,60,60]** | all 6 |
+| 5 | **SURVIVED** | 602 s | 5 | **[60,60,60,60]** | 5 of 6 |
+
+**TOTAL: 3,015 s exposure, 25 injections, ZERO deaths.**
+
+| | stock 3 s gap | spaced 60 s gap |
+|---|---:|---:|
+| exposure | 129 s | **3,015 s** |
+| injections | 12 | **25** |
+| deaths | **3** | **0** |
+
+* **per-INJECTION model** (the harder test — same number of maps, just spread out): expected
+  **6.25** deaths, observed 0 → `P(0 | λ=6.25) = 0.0019`.
+* per-second model: expected 70.1, observed 0 → `P ≈ 3×10⁻³¹`.
+
+⇒ **MEASURED: the cause is the BURST RATE of manual-maps, not any shim's identity or behaviour.**
+
+**The treatment was verified on every run** — the driver parses `inject-secondaries.log` and measures
+the actual spacing; all five runs show 60 s gaps. A silent fallback to the 3 s default would have
+looked like a failed treatment rather than an un-applied one, which is the most expensive way this
+test could have been wrong.
+
+**And the shims still work.** All six markers advanced (5 of 6 on run 5 — `pi8`'s marker lagged the
+sample; it was injected, per the log). This is not "disable the shims to stop the crashes" — it is
+**the full functional set AND stability**, which is the outcome that actually matters.
+
+### Where the whole series lands
+
+| arm | exposure | deaths | 1 per |
+|---|---:|---:|---:|
+| clean `-NoHook` (no injection sequence) | 5,173 s | 0 | — |
+| noop canary ×1 | 2,700 s | 0 | — |
+| `catalog_store_fix` alone | 2,700 s | 0 | — |
+| `pi8` alone | 5,400 s | 0 | — |
+| **SPACED full set (60 s)** | **3,015 s** | **0** | — |
+| `csf`+`pi8`+`pick`+`bp` (3 s) | 1,862 s | 1 | 1,862 s |
+| `-NoLoadout` (3 s) | 628 s | 1 | 628 s |
+| `-NoPasses` (3 s) | 655 s | 1 | 655 s |
+| **full set (3 s)** | 129 s | 3 | **43 s** |
+| **`-NoMissions` (3 s)** | 90 s | 3 | **30 s** |
+
+**Zero-death exposure across all clean arms: 18,988 s = 5.27 hours.** Every death in the entire
+series occurred in an arm using the **3 s** gap.
+
+### The fix
+
+`configs/inject-secondaries.ps1` gained `-GapSeconds` (default **3**, i.e. behaviour unchanged unless
+asked); `configs/launch-redirect.ps1` passes it through as `-InjectGapSeconds`. Verified end-to-end
+before use: the launcher builds `-GapSeconds 60` and the injector binds it.
+
+**Recommendation, and it is a judgement call the user should make:** flipping the default 3 → 60
+costs **~4.3 min** before the store/roster/missions/passes are all live, versus ~35 s today. That is a
+real usability cost for a real stability gain. Options:
+1. **Leave the default at 3, use `-InjectGapSeconds 60` for long sittings** — no regression risk, opt-in.
+2. **Flip the default to 60** — safest, slowest menu.
+3. **Find the knee** — bisect the gap (20 s? 30 s?) for ~1 h of runs, and get most of the stability
+   at a fraction of the wait. 60 s was chosen to be decisive, not minimal; **nothing here says 60 is
+   required.**
+
+### ★★ The consequence for FK-7, which is the reason any of this was worth doing
+
+**`configs/fk24-stage.ps1` injects four DLLs back to back** — `gft_ready_fix` → `tutorial_launch_fo`
+→ `tutorial_launch_sp` → the probe. That is the same burst pattern, on the route where FK-7 lives.
+Its steps are gated on log evidence rather than a fixed 3 s sleep, so the spacing is not identical
+and this result does **not** transfer automatically — but it is now the **leading candidate
+explanation for the ~1–5 minute tutorial deaths**, and it is directly testable by adding the same
+gap. Combined with §12–§18, the standing conclusion holds and hardens: **instrumented-run deaths are
+suspect by default, and a tutorial death is more likely ours than the game's.**
