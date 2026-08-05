@@ -11,7 +11,27 @@ the default timing, with no diagnostic build.
 
 ---
 
+> ## ✅ TASK ONE STEP 1 IS DONE — and it INVERTED the premise. Read `docs/s111-asc-census.md` first.
+> **The hero DOES have an ability system.** `LokiAbilitySystemComponent 0x274BDE53400`, owned by the
+> `LokiPlayerState_HeroAffiliated` companion, with `SpawnedAttributes` **Num=2**. The three fields
+> every existing tool reads (`@0xF00/0xF08/0xF10` on the pawn) are a **CACHE**, and both the shim and
+> `gas_recon.py` mistook them for the ability system. That is FK-30.
+>
+> **The real gap is two things, not a subsystem:** `AvatarActor` is **NULL** (so the ASC is never bound
+> to the pawn — the second half of `InitAbilityActorInfo`), and `ActivatableAbilities` is **Num=0**.
+> Start at §5 of `docs/s111-asc-census.md`: call `TryUpdateAbilitySystem` (native, parameterless,
+> already resolved by the shim) and see whether the bind and the caches populate.
+>
+> Also measured: **344 initialised ability systems** exist in the loaded tutorial world (brush, trees,
+> `BP_CapturePoint_Tutorial_C`), so GAS runs here constantly — and the world has **no game-spawned hero
+> or AI pawn** at this stage, only spectators, so the spawn-path comparison below could not be run and
+> is no longer the question. The `SpawnPlayer` route is NOT indicated by this evidence.
+>
+> ⚠ The "would we be first" verdict this probe emits in a **parked** process is an artifact of the world
+> not being loaded. A negative measured in an empty world is not a negative.
+
 ## 0. ★ TASK ONE — the hero has no ability system, and the shim already tells you exactly where it stops
+### ⚠ SUPERSEDED — the premise of this section is false; see the banner above. Kept as the record.
 
 **Why this and not stability:** S109/S110 established that **every tutorial death ever captured is the
 protector** (`runtime.dll+1`, zero SUPERVIVE frames, now nine-plus independent instances). FK-7 has

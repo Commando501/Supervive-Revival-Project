@@ -947,6 +947,23 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 
 ---
 
+### FK-30 — "The force-open hero has NO ability system"
+**Severity: HIGH — it mis-sized the whole simulation route. Settled 2026-08-05 (S111) → `docs/s111-asc-census.md`.**
+**Status: the belief is DEAD. The ASC exists, is populated, and is missing ONE field.**
+
+| | |
+|---|---|
+| **Belief** | Stated everywhere the simulation route is discussed: `docs/next-session-prompt-s111.md` §0 ("the hero owns no ability system"), `memory/supervive-cheat-surface-inventory` ("the hero has no ASC, so cheats gate nothing"), and the shim's own verdict line `[GAS] ===== RESULT: initialised 0 -> 0 *** STILL NOT INITIALISED *** =====`. |
+| **Actual evidence** | Three reads of the **hero pawn's** `AbilitySystemComponentStorage@0xF00` / `AttributeSetStorage@0xF08` / `AttributeSetHealthStorage@0xF10`, all NULL. `gas_recon.py` prints **"NO ASC on the hero"** from the same three reads and then *skips its own sections B/C/D*, so every follow-up inherited the conclusion. |
+| **Why weaker** | **Those three fields are a CACHE, and S100 had already written that down** — "the real owner is `LokiPlayerState_HeroAffiliated`, a companion ACTOR carrying AbilitySystemComponent + AttributeSet + AttributeSetHealth". The conclusion was drawn anyway, by two different tools, and never cross-checked against the object graph. |
+| **MEASURED** | Sweeping every ASC object in the process instead: spawning the hero takes ASC objects **424 → 425**, initialised **344 → 345**, `LokiPlayerState_HeroAffiliated` **0 → 1**. The hero's ASC is `0x274BDE53400`, `OwnerActor` = the companion, `SpawnedAttributes` **Num=2** (`LokiAttributeSet` + `LokiAttributeSetHealth`). Carrier fully populated incl. `PlayerInventory`. |
+| **The real gap, and it is small** | `AvatarActor` is **NULL** (every scenery ASC has `Owner == Avatar == the actor`), so the ASC is never bound to the pawn — the second half of `InitAbilityActorInfo`. And `ActivatableAbilities` **Num=0**. Two things, not a subsystem. The API is already reachable as native thunks: `BP_AuthGiveAbilityWithInputID`, `AuthGiveAbilityWithSourceObject`, `TryActivateAbilityByInputID`, `K2_InitStats`. |
+| **Steers** | The size of the whole simulation route ("reconstruct the ability-system init the server-authoritative deploy performs" — `gas_probe.py`'s own case (B)); FK-6's re-grade; and the S111 brief's Task One, which asked the right question and would have got the wrong answer from the existing tools. |
+| **Second belief killed in the same sweep** | *"Nothing in this world has ever run the init; we would be first."* — which this probe itself emitted **from a world that was not loaded**. With `LVL_Tutorial` up there are **344 initialised ability systems** (`BP_Brush_C` x199, pine trees x134, and `BP_CapturePoint_Tutorial_C`). A negative measured in an empty world is not a negative. |
+| **Cheapest experiment** | Already run, and it needed **no armed `play` window** — `gft` + `fo` to load the world, `sp` for the contrast, then `python tools\re\asc_census.py`. Three injections. |
+
+---
+
 ## 3. The UNKNOWN_UNKNOWN Register
 
 Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 366 commits.
