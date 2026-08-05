@@ -1101,3 +1101,76 @@ the gate printed **"absent (good)" for all four symbols without ever executing**
 issuing a clean bill of health. Re-done as a raw byte scan in Python, which is tool-independent.
 Caught before it mattered, but it is the same shape as S109-b/c and is now the fourth instance today.
 **A gate that cannot fail is not a gate.**
+
+---
+
+## 14. ★★ `catalog_store_fix` ALONE is EXONERATED — the killer is in the SECONDARIES
+
+**2026-08-04 19:43–20:29.** Single-variable bisect of §12's result. `-Hook` the launcher's own
+`catalog_store_fix.dll` (`sha256 fe937ac3…` — **not** the `build/` copy, which is a different binary
+at `c1e4a6e4…`), no secondaries, menu-idle, 900 s hold.
+
+| run | outcome | uptime | shim active | crashpad key | reports |
+|---|---|---:|---|---:|---|
+| csf 1 | **SURVIVED** | 900 s | yes, t+5 s | 0 | 0 → 0 |
+| csf 2 | **SURVIVED** | 900 s | yes, t+5 s | 0 | 0 → 0 |
+| csf 3 | **SURVIVED** | 900 s | yes, t+5 s | 0 | 0 → 0 |
+
+Positive control passed on all three: the marker's mtime advanced past each run's gate
+(18:19:40 → 19:44:35 → 19:59:49 → 20:14:xx). Gated on **mtime, not line count**, because this shim's
+marker opens `CREATE_ALWAYS` and truncates (FK-25).
+
+### The four-arm picture
+
+| arm | mapped DLL | writes game `.text` | PI hook | exposure | deaths |
+|---|---|---|---|---:|---:|
+| clean `-NoHook` | no | no | no | 86.2 min, 4 runs | **0** |
+| noop canary | yes | no | no | 45.0 min, 3 runs | **0** |
+| **`catalog_store_fix` alone** | yes | **YES** | no | **45.0 min, 3 runs** | **0** |
+| full shim set | yes | yes | **YES ×3** | ~129 s, 3 runs | **3** |
+
+⇒ **MEASURED: the prime suspect is wrong.** The self-restoring `jz`-NOP, the AssetManager scan and
+the CatalogEntry poke run for 45 minutes across 3 launches without a single death. **Writing the
+game's `.text` is not, by itself, what provokes the packer.** Non-lethal exposure is now
+**176.2 min / 0 deaths** against **~129 s / 3 deaths** for the full set.
+
+**This also retires the §12 inference it was built on.** Shim run 2 died at ~23 s with
+`catalog_store_fix` the only shim *confirmed active*, which is what nominated it. That column was a
+lower bound sampled at death — §12 said so explicitly — and the caveat is now vindicated: the
+secondaries inject from a detached helper that waits for the primary to settle, so at 23 s one may
+have been mapped and simply not yet have written its marker. **Do not read "shims confirmed active"
+as "shims present."**
+
+### ★ The next suspect was already flagged in this repo, unvalidated, for a month
+
+The remaining variables are the five secondaries: `mainmenu_refresh_pi8`, `catalog_pick_fix`,
+`loadout_fix`, `missions_fix`, `battlepass_adopt_fix`. **Three of them are `ProcessInternal`
+hookers** — `pi8`, `loadout_fix`, `missions_fix` — and each writes a 5-byte `jmp` into `PI`'s
+prologue, transiently, serialized through `Local\SuperviveMissionsPIHook`.
+
+`CLAUDE.md:156` has carried this since **2026-07-10**, and it has never been discharged:
+
+> **VALIDATION PENDING:** the default set now runs THREE PI-hookers in one launch (`pi8` +
+> `loadout_fix` + `missions_fix`). Each pair has been validated live … **but the full triple has not
+> yet had a confirmation launch.** The shared-mutex + transient-install design is N-way safe *by
+> construction* and contention is low, but do one validation pass when the game is free. **If the
+> triple ever misbehaves, `-NoMissions` / `-NoLoadout` isolate it.**
+
+Every launch in §12 ran that unvalidated triple. "N-way safe by construction" is an argument, not a
+measurement — and CLAUDE.md's own warning names the isolation flags to use.
+
+### The next test, single-variable, using the documented flags
+
+**`launch-redirect.ps1 -NoMissions -NoLoadout`, menu-idle, 15 min × 3.** That drops two of the three
+PI-hookers, leaving `pi8` alone (plus `catalog_pick_fix` and `battlepass_adopt_fix`, neither of which
+hooks PI).
+
+* **survives** → PI-hooker **multiplicity** is implicated, the month-old warning is vindicated, and
+  the fix is a scheduling/serialisation bug in our own code — the best possible outcome, because it
+  is ours to fix.
+* **dies** → a single PI hook, or `catalog_pick_fix` / `battlepass_adopt_fix`, is sufficient; split
+  again from there.
+
+⚠ Whatever the result, the FK-7 consequence from §12 stands and strengthens: **every tutorial sitting
+in the record ran the full default set**, i.e. the unvalidated triple. Tutorial deaths attributed to
+the game may be this.
