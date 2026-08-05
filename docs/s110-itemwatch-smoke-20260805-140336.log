@@ -1,0 +1,47 @@
+====================================================================================================
+item_watch  2026-08-05 14:03:36   pid=35340  base=0x7FF681610000
+log=G:\git\Supervive Revival Project\docs\s110-itemwatch-smoke-20260805-140336.log
+csv=G:\git\Supervive Revival Project\docs\s110-itemwatch-smoke-20260805-140336.csv
+====================================================================================================
+FUObjectArray @0x7FF68B448930  objects=0x213712499A0  numElements=51886
+chunks: 0x21371FD0008(51886)
+live objects: 46181 of 51886 slots
+
+--- CALIBRATION (400 sampled objects) --------------------------------------------------
+  InternalIndex @0x10  (matches the array slot for 400/400 objects)
+  ObjectFlags  @0x0C  (RF_ClassDefaultObject on 100% of 65 CDOs, 0% of 335 others)
+----------------------------------------------------------------------------------------------------
+decoys: 64 control objects (half uniform, half from the top 20% of indices, seed=1)
+
+--- VERDICT TABLE, registered before the run (docs/next-session-prompt-s110.md S0) --------
+  A  item.SerialNumber changes, or item.Object -> a DIFFERENT object
+     => SLOT RECYCLED. The object was really destroyed and the index reissued.
+  B  item.Object -> 0 (and Flags -> 0), no recycle yet
+     => FreeUObjectIndex ran: ~UObjectBase executed. Real destruction.
+  C  a new item-flag bit appears before B, and that bit is the one the sweep sees spike
+     population-wide  => the REACHABILITY PASS marked it. If we rooted it, the poked bit
+     is NOT honoured by this build's GC.
+  D  neither the item nor the sweep moves, but the object's vtable/NamePrivate go bad
+     => OUT-OF-BAND teardown (package unload / stream-out / explicit destroy), or the
+     pointer was never the object we thought. GC was never involved.
+  VOID  no target event AND no decoy event => the watcher never showed it can see a change.
+----------------------------------------------------------------------------------------------------
+
+[t=   0.000] watching 0 target(s); interval=50 ms sweep=1000 ms (stride 1/8)
+[t=   0.000] SWEEP#1 live=5773 free=713  baseline bits: bit0 15%, bit25 69%, bit26 2%, bit30 85%
+[t=   9.126] decoy control: 3 slot(s) changed (#46233 flags 00000001->00100001; #51293 serial 0->3373; #45694 flags 00000001->00100001)
+[t=  10.141] decoy control: 2 slot(s) changed (#46233 flags 00100001->00000001; #45694 flags 00100001->00000001)
+[t=  20.008] duration reached
+
+====================================================================================================
+SUMMARY  observed 20.0 s, 395 ticks, 20 sweeps, 3386 RPM calls
+  max observed sampling gap: 53 ms  <- ALIASING BOUND: any state shorter than this could
+     have been missed, and no 'X never happened' claim below is stronger than that.
+  decoy control: 5 event(s) across 64 control objects
+  MEASURED reachability-mark bit: NONE SEEN -- no population-wide flag spike in 20 sweeps.
+     Either no GC reachability pass ran in the window, or the sweep cadence (1000 ms) aliased it.
+
+NO TARGETS WERE EVER ACQUIRED -- nothing was watched. This run measures nothing.
+====================================================================================================
+log: G:\git\Supervive Revival Project\docs\s110-itemwatch-smoke-20260805-140336.log
+csv: G:\git\Supervive Revival Project\docs\s110-itemwatch-smoke-20260805-140336.csv
