@@ -1,3 +1,18 @@
+> ## ✅ CONSUMED — S110 ran this and closed it. Next session: **`docs/next-session-prompt-s111.md`**.
+> **Outcome:** the asset is genuinely **COLLECTED** (full destroy pipeline, slot reissued), so
+> "torn down out of band" is eliminated. The poked `RootSet` bit turned out **INERT** — settled
+> separately by a phase-locked experiment — and the real fix was giving the asset a reachable
+> UPROPERTY reference (`KANIMREF`). Locomotion now animates at the default walk timing.
+> Write-up: `docs/s110-item-watch-gc-mechanism.md`. Instrument: `tools/re/item_watch.py`.
+>
+> ⚠ **Two things in this file are now known WRONG, and they are kept only as the record:**
+> * §0's headline rule *"`SerialNumber` changes ⇒ the slot was recycled"* is **false as stated** —
+>   UE allocates serial numbers lazily on first weak pointer, and clears them on free. See FK-29.
+> * §2's *"hold to T+220–250 s, the code-integrity kill lands at ~285 s"* is **too pessimistic** —
+>   measured deaths at 293 / 338 / 434 s, with runs alive at ≥408 s. See S111 §2.
+> * §2's `play` hash `7bc4df9236ead0ac` is **stale**; current is `513c6277c3ae88f3`, and
+>   `play-earlywalk` has been deleted.
+
 # S110 — start with the SerialNumber probe: is the anim asset COLLECTED, or torn down out of band?
 
 **Read this whole file before touching anything.** Everything below was measured live on
