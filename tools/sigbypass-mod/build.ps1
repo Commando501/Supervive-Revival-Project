@@ -129,20 +129,19 @@ $Variants = @{
         'play-nopimutex'  = @('-DKRUNMODE=RM_PLAY','-DKPIMUTEX=0')               # -1 dim: PI-hook mutex OFF
         'play-noxformfix' = @('-DKRUNMODE=RM_PLAY','-DKXFORMFIX=0')              # -1 dim: spawn-FTransform fix OFF
         'play-testactor'  = @('-DKRUNMODE=RM_PLAY','-DKTESTACTOR=1')             # +1 dim: 2nd skeletal body BACK ON
-        # ★ S109 (2026-08-05) — the locomotion-animation confirmation build. -1 dim: the self-driven
-        #   walk starts at t+4 s instead of t+20 s after body build.
-        #   WHY: MEASURED 3/3 in the S109 tutorial sittings, the run AnimSequence is garbage-collected
-        #   6.9-7.8 s after body build, because KGCROOT's root-bit corroboration fails on this build
-        #   (expect 0x40000000, candidate 0x02000000 -> "REFUSING to poke flags", rooted=0 failed=5) so
-        #   nothing is rooted. KAUTOWALKATMS=20000 then starts the only unattended motion 13 s AFTER the
-        #   asset is already dead, so the idle<->run swap never fires and one run logged outright
-        #   "[GCW] run: DEAD UObject before PlayAnimation (comp alive=1 anim alive=0)".
-        #   4000 puts the swap inside the asset's ~7 s lifetime (walk window 4-9 s), ~3 s of margin.
-        #   A SUCCESS here confirms the whole GC chain; it is a DIAGNOSTIC, not the fix -- the real fix
-        #   is re-resolving the root bit. See docs/s109-dump-forensics.md section 22.
-        #   ⚠ Side effect: the walk now overlaps the three idle screenshots, which is what the 20 s was
-        #   protecting. Acceptable for this test; do not adopt as a default without moving the shots.
-        'play-earlywalk'  = @('-DKRUNMODE=RM_PLAY','-DKAUTOWALKATMS=4000')       # -1 dim: walk at t+4s not t+20s
+        # ✝ 'play-earlywalk' (-DKAUTOWALKATMS=4000) — REMOVED S110 (2026-08-05). It existed only to
+        #   RACE the collection: with the run AnimSequence being GC'd 2-8 s after body build, moving the
+        #   self-driven walk from t+20 s to t+4 s put the idle<->run swap inside the asset's lifetime.
+        #   It did its job (S109 §23, 3/3 vs 0/3) and proved the causal chain, but it was always a
+        #   DIAGNOSTIC, and it cost the three idle screenshots the 20 s was protecting.
+        #   S110 removed the reason for it: KANIMREF parks the asset in a reachable UPROPERTY, so it
+        #   survives GC entirely and the swap fires at the DEFAULT KAUTOWALKATMS=20000 (measured: two
+        #   GC passes survived, 4 swaps, zero [GCW] lines). Racing a collection that no longer happens
+        #   is not a control, it is a second artifact to confuse with 'play' -- and this pair was the
+        #   worst offender for that: byte-identical whole-file AND .text SIZES, separable only by hash.
+        #   Per CLAUDE.md's rule, delete rather than leave a near-identical DLL lying around.
+        #   To resurrect the behaviour for a one-off: -DKAUTOWALKATMS=<ms> still works, no variant needed.
+        #   History: docs/s109-dump-forensics.md §23, docs/s110-item-watch-gc-mechanism.md §4e.
         # ★ S109 (2026-08-05) — control for the root-bit fix. -1 dim: restores the pre-S109
         #   AND(rooted)&~OR(unrooted) corroboration, which MEASURED 3/3 refused the correct bit
         #   ("cand=02000000 expect=40000000 -> REFUSING to poke flags") because ordinary rooted

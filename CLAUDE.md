@@ -100,9 +100,10 @@ The short version, because it has already cost two sessions:
 - ⚠ **`play`'s `.text` hash has moved THREE times. Current: `513c6277c3ae88f3`** (S110 `KANIMREF`).
   `7bc4df9236ead0ac` was `play` only between S109 and S110; `ae532866e15fd8ac` only between S108b and
   S109; `a67239a0d83d9300` is `play-statictest`. Docs citing any of those as "the candidate" are stale.
-  ⚠ `play-strictroot` / `play-noanimref` share a 161,792-byte `.text`, and `play` / `play-earlywalk`
-  shared identical whole-file AND `.text` SIZES — **only the hash separates them. Diff `.text`, never
-  size.** `python "$env:TEMP\th.py"`-style section hashing, or `docs/s109-dump-forensics.md` §23.
+  ⚠ `play-strictroot` / `play-noanimref` share a 161,792-byte `.text`; historically `play` /
+  `play-earlywalk` shared identical whole-file AND `.text` SIZES (which is part of why earlywalk was
+  DELETED in S110) — **only the hash separates such pairs. Diff `.text`, never size.** Use
+  `tools/sigbypass-mod/verify_dll.py` or the section-hash snippet in `docs/s109-dump-forensics.md` §23.
 - ⚠ **`KGCROOT` was silently INERT from S106 until S109.** Its root-bit corroboration used
   `AND(native classes) & ~OR(sampled ordinary objects)` on the false premise that ordinary objects are
   never rooted; **one** rooted sample in 64 vetoed the correct bit, so nothing was ever rooted. Fixed
@@ -121,7 +122,8 @@ The short version, because it has already cost two sessions:
   `AnimationData.AnimToPlay` UPROPERTY so the traversal reaches it — offsets resolved BY NAME, write
   readback-verified. CONFIRMED: re-marked at **two** consecutive GC passes, zero `[GCW]` lines, and
   `PlayAnimation(run/idle, loop) ok` cycling **at the default `KAUTOWALKATMS=20000`** — so
-  `play-earlywalk` is retired as a diagnostic. Control arm: `play-noanimref`.
+  `play-earlywalk` (which only RACED the collection) was **deleted**; `-DKAUTOWALKATMS=<ms>` still
+  works for a one-off. Control arm: `play-noanimref`.
   ⚠ Also: **"Unreachable" is not a sticky bit in this build.** Reachability is an alternating flag
   rotating through bits 0/1/2, flipped population-wide each GC pass — which is what S109's unexplained
   `flags=00000004` / "bit 1 on 81% of ordinary objects" actually was, and it gives a free read-only GC
