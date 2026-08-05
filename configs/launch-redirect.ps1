@@ -63,7 +63,12 @@ param(
                          # invocations / docs still work. (Was: "durable Missions mode".)
   [switch]$NoMissions,   # drop missions_fix.dll from the default set (isolate non-missions surfaces)
   [switch]$NoLoadout,   # drop loadout_fix.dll from the default set (isolate non-customization surfaces)
-  [switch]$NoPasses     # drop battlepass_adopt_fix.dll (PASSES / Hunter's Journey) from the default set
+  [switch]$NoPasses,    # drop battlepass_adopt_fix.dll (PASSES / Hunter's Journey) from the default set
+  [int]$InjectGapSeconds # S109: seconds between successive secondary manual-maps (injector default 3).
+                         # The 3 s default packs all four secondaries into a ~13 s burst starting at
+                         # T+20 s, and EVERY death in the S109 series (20-65 s) lands at or after that
+                         # burst, while every config that skips the sequence survived 4.44 h with zero
+                         # deaths. See docs/s109-dump-forensics.md section 18.
 )
 # DEFAULT (no flags): primary catalog_store_fix.dll (store + HUNTERS roster) is injected at launch, then
 # configs/inject-secondaries.ps1 injects the full secondary set once it settles � pick/refresh (pi8),
@@ -125,6 +130,10 @@ if (-not $NoHook -and -not $Revert -and -not $NoLaunch -and -not $Hook) {
     if ($NoMissions) { $secExtra += "-NoMissions" }
     if ($NoLoadout)  { $secExtra += "-NoLoadout" }
     if ($NoPasses)   { $secExtra += "-NoPasses" }
+    # S109: spread the secondary manual-maps. Default 3 s packs all four into a ~13 s burst,
+    # and every death in the S109 series lands at or after that burst (docs/s109-dump-forensics.md
+    # section 18). Pass -InjectGapSeconds 60 to spread it.
+    if ($PSBoundParameters.ContainsKey('InjectGapSeconds')) { $secExtra += "-GapSeconds $InjectGapSeconds" }
     $parts = @("pick/refresh","pick-commit")
     if (-not $NoLoadout)  { $parts += "customization" }
     if (-not $NoMissions) { $parts += "missions" }
