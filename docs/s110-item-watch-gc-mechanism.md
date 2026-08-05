@@ -203,17 +203,66 @@ stale mark and is collected on the merits of its references. The bit is a no-op 
 
 ---
 
+## 4e. ★★★ THE FIX — confirmed end to end. The run anim now survives, and locomotion animates.
+
+If rooting is inert and reachability is what matters, the fix writes itself: **put the asset somewhere
+the traversal will find it.** `KANIMREF`, one 8-byte write, no new objects, no native call.
+
+**The slot: `USkeletalMeshComponent::AnimationData.AnimToPlay`.** Three reasons that one:
+* the component is **reachable and measured to survive every pass** (it is owned by the hero actor);
+* the component is **ours** — the shim created it via `AddComponentByClass` — so nothing else reads it;
+* `AnimationData` is **unused by us**: the swap drives `PlayAnimation()`, which writes the single-node
+  instance's `CurrentAsset`. That is a one-asset slot, and it is exactly why the **idle** anim already
+  survived and the run anim did not — the run anim is not the current asset until the walk starts,
+  ~20 s after it has already been collected.
+
+Both offsets are resolved **by name** (`PropOffsetSuper` on the component for `AnimationData`, then on
+the `SingleAnimationPlayData` `UScriptStruct` for `AnimToPlay` — never "it's the first member"), the
+slot must already read as null-or-pointer, and the write is verified by readback. Any failure refuses
+and says so instead of putting 8 bytes over playback state.
+
+**MEASURED, one armed window** (`tutorial_launch_play.dll`, `.text 513c6277c3ae88f3`; control arm
+`play-noanimref` = `86c07ede88380697`). Predictions R1–R4 registered beforehand; all four held.
+
+```
+[REF] SingleAnimationPlayData=0x2AB3DC482C0 AnimToPlay@0x0
+[REF] run-anim: AnimationData.AnimToPlay @comp+0xAB8 (struct 0xAB8 + 0x0) 0 -> 2AD3900EE00 OK
+
+t=236.111  item.Flags 00000001 -> 40000001   the GcRoot poke (inert, harmless)
+t=241.776  item.Flags 40000001 -> 40000004   *** GC PASS #5: RE-MARKED (bit0 -> bit2) ***
+t=302.863  item.Flags 40000004 -> 40000002   *** GC PASS #6: RE-MARKED (bit2 -> bit1) ***
+```
+
+**Two full GC passes survived**, the asset tracking the population's reachability value exactly like the
+four objects that always survived. It never entered `ROOTED+STALE` — the state that preceded destruction
+within ~1 s in all three prior runs. **Zero `[GCW]` lines**: nothing was ever declared dead.
+
+And the point of the whole exercise, from the marker:
+
+```
+[ANIM] PlayAnimation(run, loop) ok
+[ANIM] PlayAnimation(idle, loop) ok
+[ANIM] self-driven walk START
+[ANIM] PlayAnimation(run, loop) ok
+[ANIM] PlayAnimation(idle, loop) ok
+```
+
+Four swaps, **at the default `KAUTOWALKATMS = 20000`** — not the `play-earlywalk` diagnostic that had to
+race the collection. The hero walks with real locomotion animation, and the idle screenshots the 20 s
+was protecting are back. `play-earlywalk` can be retired as a diagnostic.
+
+⚠ **`play`'s `.text` hash has moved again: `7bc4df9236ead0ac` → `513c6277c3ae88f3`.** And
+`play-noanimref` shares a 161,792-byte `.text` with `play-strictroot`. Diff hashes, never sizes.
+
+---
+
 ## 5. What is still open, and the cheap experiments
 
 1. ~~**Inert vs raced.**~~ **ANSWERED — see §4d. Inert.** FK-27 in `docs/ignorance-map-s101.md` is closed.
-2. **The real fix, and it is testable in the same window.** Store the loaded `AnimSequence` into a
-   UPROPERTY on the (reachable, surviving) `SkeletalMeshComponent` instead of a DLL global, and see
-   whether it gets re-marked at the next pass. `PlayAnimation` already installs it into the single-node
-   instance's tick record, which suggests a slot exists that would keep it alive — worth checking why
-   that reference did not save it (the instance that *held* it, `#189868`, died in the same pass).
-3. **Does the load provoke the GC?** Deaths cluster 1.1–7.8 s after body build across four runs, which is
-   tight for a 0–61 s window. Either the loader forces a collection, or body build reliably lands just
-   before a scheduled one. The pass clock now makes this a one-run measurement.
+2. ~~**The real fix.**~~ **DONE AND CONFIRMED — see §4e.** `KANIMREF`, default on in `play`.
+3. ~~**Does the load provoke the GC?**~~ **ANSWERED, negative (§4d).** The staging pipeline is
+   deterministic and the clock is ~61.1 s from launch, so the load phase was near-constant across runs.
+   That, not a load-triggered collection, is why the deaths clustered 1.1–7.8 s after body build.
 4. **Bits 0/1/2 as a rotation of three** is an odd design; whether the third value is a real third state
    or something else (e.g. a two-bit counter plus a carry) is unresolved and does not matter yet.
 

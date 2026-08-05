@@ -4365,6 +4365,61 @@ static bool PlayAnimOn(uintptr_t comp, uintptr_t anim, const char* tag){
     else Markerf("[ANIM] PlayAnimation(%s, loop) ok\r\n",tag);
     return !f;
 }
+// ================= S110 — GIVE THE ASSET A REAL REFERENCE (the actual fix for the run anim) ======
+// WHY THIS EXISTS, and why it is NOT another rooting attempt. docs/s110-item-watch-gc-mechanism.md:
+// the poked RootSet bit is MEASURED INERT in this build. Phase-locked experiment, only the injection
+// phase varied, three armed windows: the bit was set and readback-verified 0.15 s / 2.9 s / **33.1 s**
+// before the next GC pass, and the asset was destroyed at that pass every time -- in the last run it
+// sat through six clean 5 s heartbeats and then died 708 ms after the reachability flip. The engine
+// zeroes bit 30 with the rest of the flag word on free. Poking harder cannot work.
+//
+// What DOES keep an object alive here is being REACHED by the traversal. Same run, same pass, six
+// objects all carrying bit 30: the four the traversal reached were re-marked and survived; the two it
+// did not (the run anim and an orphaned AnimSingleNodeInstance) were destroyed within 3 s. The run
+// anim is referenced by nothing but g_plRunAnim -- a plain C global in this DLL, which UE cannot see.
+//
+// So put it somewhere UE CAN see: USkeletalMeshComponent::AnimationData.AnimToPlay, an object-typed
+// UPROPERTY on the component. Three reasons that slot and not another:
+//   * the component is REACHABLE and measured to survive every pass (it is owned by the hero actor);
+//   * the component is OURS -- the shim created it via AddComponentByClass -- so nothing else reads it;
+//   * AnimationData is unused by us: the swap drives PlayAnimation() explicitly, which writes the
+//     single-node instance's CurrentAsset, never this. It is a free object slot on a live object.
+// PlayAnimation's own CurrentAsset is why the IDLE anim already survives and the run anim does not:
+// it holds exactly one asset, and the run anim is not it until the walk starts ~20 s too late.
+//
+// Both offsets are resolved BY NAME and the write is verified by readback. Nothing here assumes a
+// layout: if either lookup fails, or the slot does not already look like an empty/valid object
+// pointer, it REFUSES and says so rather than writing 8 bytes over playback state.
+#ifndef KANIMREF
+#define KANIMREF 1           // -DKANIMREF=0 -> A/B control: no reference held, reproduces the collection
+#endif
+static void AnimRefHold(uintptr_t comp, uintptr_t anim, const char* tag){
+#if !KANIMREF
+    (void)comp; (void)anim; Markerf("[REF] %s: KANIMREF=0, not referencing (control arm)\r\n",tag);
+#else
+    if(!LooksLikePtr(comp)||!LooksLikePtr(anim)){ Markerf("[REF] %s: bad comp/anim -> skipped\r\n",tag); return; }
+    uint32_t so=PropOffsetSuper(ClassOf(comp),"AnimationData");
+    if(so==0xFFFFFFFF){ Markerf("[REF] %s: no AnimationData property on the component -> NOT referenced\r\n",tag); return; }
+    // AnimToPlay's offset INSIDE FSingleAnimationPlayData, resolved from the UScriptStruct itself
+    // (a UScriptStruct is a UStruct, so the same ChildProperties walk works). Never assume "first member".
+    static uint32_t io=0xFFFFFFFF; static bool ioTried=false;
+    if(!ioTried){ ioTried=true;
+        uintptr_t ss=FindObjExact("SingleAnimationPlayData");
+        if(ss) io=PropOffsetSuper(ss,"AnimToPlay");
+        Markerf("[REF] SingleAnimationPlayData=0x%llX AnimToPlay@0x%X\r\n",(unsigned long long)ss,io); }
+    if(io==0xFFFFFFFF){ Markerf("[REF] %s: AnimToPlay offset unresolved -> NOT referenced\r\n",tag); return; }
+    uintptr_t slot=comp+so+io;
+    if(!SafeWritable((void*)slot,8)){ Markerf("[REF] %s: slot 0x%llX not writable -> NOT referenced\r\n",tag,(unsigned long long)slot); return; }
+    uintptr_t before=*(uintptr_t*)slot;
+    if(before!=0 && !LooksLikePtr(before)){
+        Markerf("[REF] %s: slot holds 0x%llX (not null, not a pointer) -> REFUSING to write\r\n",tag,(unsigned long long)before); return; }
+    *(uintptr_t*)slot=anim;
+    uintptr_t after=*(uintptr_t*)slot;
+    Markerf("[REF] %s: AnimationData.AnimToPlay @comp+0x%X (struct 0x%X + 0x%X) %llX -> %llX %s\r\n",
+            tag,so+io,so,io,(unsigned long long)before,(unsigned long long)after,after==anim?"OK":"FAILED");
+#endif
+}
+// ================= end S110 reference hold =====================================================
 // Run a console command on the game thread (KismetSystemLibrary::ExecuteConsoleCommand — the same primitive that
 // force-opens the map). Used for the self-screenshot; the WorldContextObject is the live PlayerController.
 static void*     g_plCcFn=nullptr; static uintptr_t g_plCcThunk=0, g_plCcChild=0, g_plCcCDO=0; static bool g_plCcRes=false;
@@ -5047,6 +5102,11 @@ static void DoPlay(){
             char rn[96]="-"; if(LooksLikePtr(g_plRunAnim)&&ClassOf(g_plRunAnim)) GetFNameStr(NameId(ClassOf(g_plRunAnim)),rn,sizeof(rn));
             Markerf("[ANIM] run anim %s = 0x%llX (%s)%s\r\n",KRUNANIMNAME,(unsigned long long)g_plRunAnim,rn,
                     LooksLikePtr(g_plRunAnim)?"":"  <- LOAD FAILED, idle only");
+            // ★ S110 — the run anim is the ONE asset nothing references (the idle survives because
+            // PlayAnimation put it in the single-node instance's CurrentAsset). Park it in the
+            // component's unused AnimationData.AnimToPlay so the GC traversal reaches it. Rooting it
+            // is measured inert; see AnimRefHold's comment block.
+            AnimRefHold(g_plComp,g_plRunAnim,"run-anim");
         }
         g_plBodyDone=true; g_plBodyTick=GetTickCount();
 #if KWPROBE

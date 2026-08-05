@@ -80,3 +80,54 @@ PREDICTIONS:
 
 VOID conditions: no armed window; the anim never loads; zero decoy events; the game dies before the
 next pass after the poke (in which case the lead time achieved is still reported, and nothing else).
+
+================================================================================================
+RUN 4 -- THE UPROPERTY REFERENCE FIX (KANIMREF)
+registered before the sitting, 2026-08-05
+
+THE FIX. Rooting is measured INERT (RUN 2 above: bit 30 verified set 33.1 s before a pass, destroyed
+at that pass anyway). What keeps objects alive here is being REACHED by the traversal. So park the run
+AnimSequence in USkeletalMeshComponent::AnimationData.AnimToPlay -- an object-typed UPROPERTY on the
+body component, which is ours, is measured to survive every pass, and which we otherwise never use
+(the swap drives PlayAnimation(), which writes the single-node instance's CurrentAsset instead --
+that is exactly why the IDLE anim already survives and the run anim does not).
+
+ARMS, distinct by .text hash, one dimension apart:
+    tutorial_launch_play.dll            513c6277c3ae88f3   KANIMREF=1  (fix on)
+    tutorial_launch_play_noanimref.dll  86c07ede88380697   KANIMREF=0  (control)
+  NOTE play's .text hash has MOVED AGAIN: 7bc4df9236ead0ac -> 513c6277c3ae88f3.
+  NOTE play-noanimref shares a 161,792-byte .text with play-strictroot. Diff hashes, never sizes.
+
+PREDICTIONS:
+
+  R1  Both offsets resolve by name and the write reads back:
+      "[REF] run-anim: AnimationData.AnimToPlay @comp+0x... OK". If either lookup fails the shim
+      REFUSES and says so -- that is a gate that can fail, and a refusal makes the run inconclusive
+      for R2 rather than a negative result.
+
+  R2  THE DISCRIMINATOR. At the first GC pass after the load, the run anim is RE-MARKED with the new
+      reachability value (state stays out of ROOTED+STALE) and SURVIVES. In all three prior armed
+      windows it went ROOTED+STALE at that pass and was destroyed within ~1 s.
+      Falsified if it goes ROOTED+STALE and dies anyway -- which would mean AnimationData is not
+      traversed, and the next slot to try is a second component's CurrentAsset.
+
+  R3  END-TO-END: with the asset alive past t+20 s, the self-driven walk finally has something to
+      play, so the marker shows "[ANIM] PlayAnimation(run, loop) ok" and the idle<->run cycling that
+      S108b reported and S109 could never reproduce. This is the actual user-visible goal.
+
+  R4  I expect R2 to hold. Reason: the four objects that survived every pass in the prior runs are
+      exactly the four reachable through UPROPERTYs from the hero actor. Stated so it can be wrong.
+
+VOID conditions: no armed window (FK-26 NOSTAGE); the anim never loads; the game dies before the
+first GC pass after the load; zero decoy events.
+
+------------------------------------------------------------------------------------------------
+RUN 4 OUTCOMES (recorded after the sitting) -- ALL FOUR HELD.
+  R1 HELD. "[REF] SingleAnimationPlayData=0x2AB3DC482C0 AnimToPlay@0x0" then
+           "[REF] run-anim: AnimationData.AnimToPlay @comp+0xAB8 (struct 0xAB8 + 0x0) 0 -> ... OK".
+  R2 HELD. Re-marked at TWO consecutive passes -- 40000001 -> 40000004 at pass #5 (t=241.8) and
+           40000004 -> 40000002 at pass #6 (t=302.9). Never entered ROOTED+STALE. Zero [GCW] lines.
+  R3 HELD. Four "PlayAnimation(run|idle, loop) ok" swaps at the DEFAULT KAUTOWALKATMS=20000.
+  R4 HELD (I expected R2 to hold, for the stated reason).
+Log: docs/s110-itemwatch-animref-*.log. The game died at ~390 s of the usual protector death,
+long after the verdict; that is not part of this result.
