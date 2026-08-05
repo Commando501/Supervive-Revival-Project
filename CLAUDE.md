@@ -97,8 +97,18 @@ The short version, because it has already cost two sessions:
 - **FK-7 is OPEN.** Zero reproduce-then-repair runs exist. The `play_novtguard` positive
   control is MANDATORY and a **quiet control means the sitting is VOID, not a pass**.
   Hold to **T+220–250 s, NOT T+300 s** — the code-integrity kill lands at ~285 s.
-- ⚠ `a67239a0d83d9300` is **no longer** `play`'s hash (S108b flipped `KSTATICTEST`);
-  it is now `play-statictest`. Docs citing it as "the candidate" are stale.
+- ⚠ **`play`'s `.text` hash has moved TWICE. Current: `7bc4df9236ead0ac`** (S109 root-bit fix).
+  `ae532866e15fd8ac` was `play` only between S108b and S109; `a67239a0d83d9300` is `play-statictest`
+  (S108b flipped `KSTATICTEST`). Docs citing either as "the candidate" are stale.
+  ⚠ `play` / `play-strictroot` share a 161,792-byte `.text`, and `play` / `play-earlywalk` shared
+  identical whole-file AND `.text` SIZES — **only the hash separates them. Diff `.text`, never size.**
+- ⚠ **`KGCROOT` was silently INERT from S106 until S109.** Its root-bit corroboration used
+  `AND(native classes) & ~OR(sampled ordinary objects)` on the false premise that ordinary objects are
+  never rooted; **one** rooted sample in 64 vetoed the correct bit, so nothing was ever rooted. Fixed
+  (frequency test; `-DKGCROOTSTRICT=1` restores the old one). ⚠ **Fixing it did NOT stop the asset
+  collection** — the run AnimSequence is still collected with a verified `flags -> 40000004` readback,
+  if anything sooner. So "rooting keeps it alive" is **not established in this build**.
+  See `docs/s109-dump-forensics.md` §22-§24.
 
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)

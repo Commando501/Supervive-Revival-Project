@@ -143,6 +143,11 @@ $Variants = @{
         #   ⚠ Side effect: the walk now overlaps the three idle screenshots, which is what the 20 s was
         #   protecting. Acceptable for this test; do not adopt as a default without moving the shots.
         'play-earlywalk'  = @('-DKRUNMODE=RM_PLAY','-DKAUTOWALKATMS=4000')       # -1 dim: walk at t+4s not t+20s
+        # ★ S109 (2026-08-05) — control for the root-bit fix. -1 dim: restores the pre-S109
+        #   AND(rooted)&~OR(unrooted) corroboration, which MEASURED 3/3 refused the correct bit
+        #   ("cand=02000000 expect=40000000 -> REFUSING to poke flags") because ordinary rooted
+        #   objects contaminated the OR. Expect: strict => rooted=0 failed=5, assets GC'd ~7-10 s.
+        'play-strictroot' = @('-DKRUNMODE=RM_PLAY','-DKGCROOTSTRICT=1')          # -1 dim: old root-bit test
         # ------------------------------------------------------------------------------------------
         # ★ S108b — THE LEFTOVER-DIAGNOSTIC BISECT. KSMACTOR (:4031) and KSTATICTEST (:4034) are S95
         #   spawn-vs-component discriminators that still default to 1, exactly as KTESTACTOR did until

@@ -1846,3 +1846,83 @@ again, now **nine** independent deaths at that address.
 **Do not read this as "earlywalk is less stable."** n=3 per arm; the hold here was capped at 300 s so
 the upper tail is truncated by construction and the arms are not comparable on exposure; and this is a
 different binary. It is a flag for a future comparison, not a finding.
+
+---
+
+## 24. ★★ ROOT-BIT RESOLUTION FIXED — and it does NOT keep the asset alive
+
+**2026-08-05 02:50–03:10.** The §22/§23 root cause said rooting fails, so assets are collected. I fixed
+the rooting. **Half of that story survives contact with the game; the other half does not.**
+
+### The bug, and it was exactly as diagnosed
+
+The old corroboration was `cand = AND(native classes) & ~OR(64 sampled ordinary objects)`, accepted
+only if `cand` contained `KGCROOTBIT`. Its comment asserted ordinary objects "must not have" RootSet.
+**False** — anything that called `AddToRoot` (GameInstance, engine subsystems, managers) is an ordinary
+non-class object legitimately in the root set, and the filter excluded only Class/Package/Function/
+Enum/ScriptStruct and CDOs.
+
+**The fix keeps the strong half** (the bit must be set on *every* native class) and replaces the
+brittle half with a **frequency test**: RootSet is rare among random objects, a generic flag is not.
+`-DKGCROOTSTRICT=1` restores the old test; `play-strictroot` is registered as a one-dimension control.
+
+**It works, and the new telemetry confirms the diagnosis to the sample:**
+
+```
+[GC] rootbit[FREQ]: nRooted=5 and=42000000 nUnrooted=64 or=40000004 cand=02000000 expect=40000000
+                    onNatives=1 bitFreq=1/64(1%) max=33% -> CORROBORATED (rooting enabled)
+[GC] anim-instance rooted x2 (rooted=5 failed=0)
+```
+
+**`bitFreq = 1/64`.** Exactly one contaminated sample in sixty-four was vetoing the correct bit — the
+predicted failure, measured. Rooting went **`rooted=0 failed=5` → `rooted=5 failed=0`**, and every poke
+verifies by readback: `flags 00000004 -> 40000004 OK`.
+
+### ⚠ But the asset is STILL collected — and sooner
+
+The run AnimSequence is rooted with a verified readback, and dies anyway:
+
+```
+[GC]   ROOT loaded-asset 0x226FBC09E00 (AnimSequence) … flags 00000004 -> 40000004 OK
+[ANIM] run anim A_Ronin_Movement_OutOfCombat_N = 0x226FBC09E00 (AnimSequence)
+[ANIM] PlayAnimation(run, loop) ok
+[ANIM] PlayAnimation(idle, loop) ok
+[GCW] *** RUN ANIM 0x226FBC09E00 WAS GARBAGE-COLLECTED (t=5484ms after body build) ***
+```
+
+| | GC of the run anim, ms after body build |
+|---|---|
+| before (bit unresolved, **nothing** rooted) | 7828 / 6860 / 7781 |
+| **after (rooted, readback OK)** | **5484 / 2140** |
+
+**Rooting made no difference — if anything the collections came earlier.** So:
+
+⇒ **RETRACTED, from §22: "rooting fails ⇒ the asset is collected" was only half right.** Rooting did
+fail, and fixing it was a real bug fix — but **rooting is not what was keeping the asset alive, and
+making it work does not stop the collection.** The premise that the poked `RootSet` bit protects the
+object — inherited from S106 and never tested end-to-end until now — **does not hold in this build.**
+
+### What that leaves
+
+`GcAlive` fails on vtable-outside-image or `NamePrivate == 0`, so the object really is being torn down;
+this is not a detector artifact. Candidates, none tested:
+1. **The GC does not honour a directly-poked flag here** — it may consult a separate root-set structure,
+   or `0x40000000` may not be `RootSet` in this build. The native-class `AND` of `0x42000000`
+   (= `RootSet|Native` under the stock enum) is suggestive but **not proof**: native classes survive GC
+   for other reasons, so they cannot discriminate.
+2. **The asset is not GC'd at all but streamed/unloaded**, or explicitly marked garbage.
+3. The initial flags are `0x00000004` — **bit 2 is not a value in the stock `EInternalObjectFlags`**,
+   which is a hint that the flag word here is not laid out as assumed.
+
+**Keep the fix**: the corroboration was genuinely broken, `KGCROOT` had been silently inert since S106,
+and it now does what it says. **But do not describe it as a fix for the animation** — it is not.
+`play-earlywalk` (racing the collection) remains the only thing measured to make the swap fire reliably.
+
+### ⚠ `play`'s hash changed — CLAUDE.md's reference is now stale
+
+```
+play OLD (pre-fix)  ae532866e15fd8ac
+play NEW (§24 fix)  7bc4df9236ead0ac
+```
+Same trap S108b created with `a67239a0`. `play` and `play-strictroot` share a **161,792-byte `.text`**
+and differ only by hash. Survival was unremarkable (275 / 292 s, 2 of 3 armed).
