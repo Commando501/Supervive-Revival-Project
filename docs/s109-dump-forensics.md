@@ -1027,3 +1027,77 @@ or the S108 family — it is a new chain. **That is the next lead, and it is fre
   that as "more shims = slower death" would be backwards causality from a sampling artifact.
 * ⚠ **Run 1 died with NO crashpad artifact and no handoff line** — a genuine "neither artifact" death,
   the class the denominator audit found and sized at 3. Its cause is unrecorded.
+
+---
+
+## 13. ★★★ NOOP-CANARY — manual-mapping is EXONERATED; it is shim BEHAVIOUR
+
+**2026-08-04 18:52–19:37.** §12 proved our instrumentation provokes the packer deaths, but could not
+say whether the culprit was **the act of manual-mapping a DLL** or **what the shims subsequently do**
+— `-NoHook` skips both. This isolates the first.
+
+`tools/sigbypass-mod/noop_canary.cpp` → `build/noop_canary.dll`: mapped by the **identical** mechanism
+(`launch-redirect.ps1 -Hook`, i.e. `inject.exe watch-now`, manual map, same as every real shim), and
+then does **nothing** — no hook, no `.text` patch, no thread, no native call, no page-protection
+change. Its whole body is one appended marker line. Verified before use: valid x64 PE32+,
+`IMAGE_FILE_DLL`, entry point `0x14E0`, **imports only `KERNEL32.dll`** (no CRT), and **zero** C++
+exception machinery (`__CxxFrameHandler3` / `_CxxThrowException` / `__cxa_throw` / `_purecall` all
+absent — scanned as raw bytes, see the trap below).
+
+### 3 of 3 SURVIVED the full hold
+
+| run | outcome | uptime | DLL mapped | crashpad key | reports |
+|---|---|---:|---|---:|---|
+| noop 1 | **SURVIVED** | 900 s | **yes, t+5 s** | 0 | 2 → 0 *(pre-launch sweep took both, then the launch purged)* |
+| noop 2 | **SURVIVED** | 900 s | **yes, t+5 s** | 0 | 0 → 0 |
+| noop 3 | **SURVIVED** | 900 s | **yes, t+5 s** | 0 | 0 → 0 |
+
+**Positive control passed on all three** — `docs/noop-canary-marker.txt` grew by exactly one line per
+run, three distinct pids at three distinct load addresses:
+
+```
+[NOOP] mapped 2026-08-04 18:52:20.457  pid=39196  self=0x1522DA90000  exe=0x7FF7E3CB0000
+[NOOP] mapped 2026-08-04 19:07:32.588  pid=44636  self=0x1E074030000  exe=0x7FF7E3CB0000
+[NOOP] mapped 2026-08-04 19:22:46.509  pid=44844  self=0x14FE5D90000  exe=0x7FF7E3CB0000
+```
+
+A run whose marker did not grow would have been scored **VOID**, not SURVIVED — because `-Hook`
+injects one DLL and no secondaries, so a silent mapping failure degenerates into a *clean* run.
+
+### The three-arm result
+
+| arm | mapped DLL? | shim behaviour? | exposure | deaths |
+|---|---|---|---:|---:|
+| clean `-NoHook` | no | no | 5,173 s (86.2 min), 4 runs | **0** |
+| **noop canary** | **YES** | **no** | **2,700 s (45.0 min), 3 runs** | **0** |
+| full shim set | yes | **yes** | ~129 s, 3 runs | **3** |
+
+⇒ **MEASURED: manual-mapping alone does NOT provoke the packer.** 45 minutes of a DLL resident in the
+process, mapped by the exact injection path the project uses, zero deaths — while the same injection
+path carrying real shims kills the process in 23–65 s. **The injection technique is exonerated; the
+cause is what the shims DO.** Combined non-shim exposure is now **131.2 min / 0 deaths** against
+**~129 s / 3 deaths** with shims.
+
+### ★ The next bisect, and it is single-variable
+
+The default set is `catalog_store_fix` (primary) + `mainmenu_refresh_pi8`, `catalog_pick_fix`,
+`loadout_fix`, `missions_fix`, `battlepass_adopt_fix` (secondaries).
+
+**`catalog_store_fix` is the prime suspect on two independent grounds:**
+1. It is the **only** shim in the default set that **writes to the game's `.text`** — the
+   self-restoring `jz`-NOP, plus an AssetManager scan and a CatalogEntry poke.
+2. In §12's shim run 2 — the fastest death at **~23 s** — it was the **only** shim confirmed active.
+
+**Test: `-Hook catalog_store_fix.dll` alone (no secondaries), menu-idle, 15 min × 3.** Same harness,
+one variable. Dies → the `.text` patch or its scan is the mechanism, and that is a *fixable* bug
+rather than a property of the game. Survives → the cause is in the PI-hooking secondaries, and the
+next split is `mainmenu_refresh_pi8` vs the rest.
+
+### ⚠ Instrument trap hit and corrected while building this
+
+My first exception gate ran `strings -a build/noop_canary.dll | grep -qF __CxxFrameHandler3`.
+**`strings` is not installed on this machine.** The pipeline produced nothing, `grep -q` failed, and
+the gate printed **"absent (good)" for all four symbols without ever executing** — a missing tool
+issuing a clean bill of health. Re-done as a raw byte scan in Python, which is tool-independent.
+Caught before it mattered, but it is the same shape as S109-b/c and is now the fourth instance today.
+**A gate that cannot fail is not a gate.**
