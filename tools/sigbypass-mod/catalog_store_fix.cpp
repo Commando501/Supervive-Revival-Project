@@ -183,6 +183,27 @@ static inline bool SafeReadD(uintptr_t a,int32_t*   out){ return SafeCopy(out,(c
 #define KNOSCAN 0
 #endif
 
+// ⚠⚠ ARM E1/E2/E3 BISECT SWITCHES — ALL DEFAULT 0. NEVER SHIP ANY OF THESE ON. ⚠⚠
+// Arm E (docs/s111-arme-shim-activity.md) proved the protector kill is provoked by this shim's own
+// worker activity: one INERT mapped DLL survived 11/11 at a 320 s hold, this one died 7/8 at the
+// identical hold and image count (p = 0.00016). Arm E still leaves FIVE behaviours running, so these
+// three switches remove one variable each. Whichever restores arm D's 0 % is the trigger.
+//   KNOVEH   skip SnapshotModules + AddVectoredExceptionHandler — a VEH, installed into a process
+//            whose protector itself dispatches through VEH
+//   KNOSLOT  skip BuildStub (an EXECUTABLE private allocation) + the slot-110 vtable write
+//   KNOJZ    skip the .text jz-NOP — the only write into module image memory
+// Each is reachable only through its registered build.ps1 variant, which emits a DIFFERENTLY NAMED
+// dll. Run them at 320 s holds: at 60 s the arms do not separate (arm E is only ~12 % by 60 s).
+#ifndef KNOVEH
+#define KNOVEH 0
+#endif
+#ifndef KNOSLOT
+#define KNOSLOT 0
+#endif
+#ifndef KNOJZ
+#define KNOJZ 0
+#endif
+
 typedef int (*PFN_OnHit)(uintptr_t p,void* ctx);
 static constexpr size_t kScanChunk = 256*1024;
 static constexpr size_t kScanPage  = 4096;
@@ -421,18 +442,24 @@ static DWORD WINAPI Worker(LPVOID){
     // from 'we never reached the target'; no shim stamps a source SHA or build time into its
     // marker." Stamping it makes the S111 scan fix verifiable from the marker alone.
     Markerf("[0] catalog_store_fix worker started (ready-gate + purchasable poke) "
-            "build=%s %s scan=%s\r\n",__DATE__,__TIME__,
-            KNOSCAN ? "DISABLED-ARMC-CONTROL" : "SAFECOPY-S111");
+            "build=%s %s scan=%s veh=%d slot=%d jz=%d\r\n",__DATE__,__TIME__,
+            KNOSCAN ? "DISABLED-ARMC-CONTROL" : "SAFECOPY-S111",
+            KNOVEH ? 0 : 1, KNOSLOT ? 0 : 1, KNOJZ ? 0 : 1);
     HMODULE hExe=GetModuleHandleA("SUPERVIVE-Win64-Shipping.exe");
     if(!hExe){Marker("[0] FAIL GetModuleHandle\r\n");return 1;}
     g_modBase=(uintptr_t)hExe;
     Markerf("[0] modBase=0x%llX\r\n",(unsigned long long)g_modBase);
     { HANDLE ch=CreateFileA(kCrashPath,GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr); if(ch!=INVALID_HANDLE_VALUE)CloseHandle(ch); }
+#if !KNOVEH
     SnapshotModules();
     AddVectoredExceptionHandler(1,CrashVEH);
     Marker("[0] crash-VEH installed\r\n");
+#else
+    Marker("[0] KNOVEH: SnapshotModules + crash-VEH SKIPPED (arm E1 control)\r\n");
+#endif
     if(!WaitTid(g_modBase,60000)){Marker("[1] FAIL GGameThreadId\r\n");return 2;}
     uintptr_t* pslot=(uintptr_t*)(g_modBase+kVtRva+(uintptr_t)SLOT_IDL*8);
+#if !KNOSLOT
     DWORD dl=GetTickCount()+30000; bool ready=false;
     while(GetTickCount()<dl){if(SafeReadable(pslot,8)){uintptr_t v=*pslot;if(v>g_modBase&&v<g_modBase+0xC000000){ready=true;break;}}Sleep(5);}
     if(!ready){Marker("[2] FAIL slot 110\r\n");return 3;}
@@ -440,6 +467,12 @@ static DWORD WINAPI Worker(LPVOID){
     g_stubIdl=BuildStub((void*)&h_idl_pre,(void*)&h_idl_post,g_origIdl);
     DWORD op=0; VirtualProtect(pslot,8,PAGE_READWRITE,&op); *pslot=(uintptr_t)g_stubIdl; DWORD d=0; VirtualProtect(pslot,8,op,&d);
     Marker("[3] GetPrimaryAssetIdList hooked (scan armed)\r\n");
+#else
+    // No stub is allocated and the vtable is never written, so there is nothing to restore later.
+    // g_unhooked=true keeps both unhook paths from touching pslot.
+    g_unhooked=true;
+    Marker("[3] KNOSLOT: BuildStub + slot-110 vtable hook SKIPPED (arm E2 control)\r\n");
+#endif
 
     uintptr_t vtabAbs=g_modBase+kCatMgrVtRva;
     DWORD start=GetTickCount(); DWORD lastScan=0; DWORD lastHb=0; uint64_t pokes=0;
@@ -453,12 +486,14 @@ static DWORD WINAPI Worker(LPVOID){
     // first few seconds (guarded by flags); the loop then keeps re-poking the CatalogEntry
     // purchasable/canuse flags so the browse tiles render whenever the user opens the store.
     while(GetTickCount()-start < 1800000){
+#if !KNOJZ
         if(!jzPatched){
             uint8_t* jz=(uint8_t*)(g_modBase+kJzRva);
             if(SafeReadable(jz,2) && jz[0]==0x74 && jz[1]==0x0C){
                 DWORD o=0; if(VirtualProtect(jz,2,PAGE_EXECUTE_READWRITE,&o)){ origJz[0]=jz[0]; origJz[1]=jz[1]; jz[0]=0x90; jz[1]=0x90; DWORD dd=0; VirtualProtect(jz,2,o,&dd); jzPatched=true; Marker("[patch] jz NOP'd (IsCatalogDataReady ignores +0x354)\r\n"); }
             }
         }
+#endif  // KNOJZ — arm E3 control: no .text write of any kind
         // find the live CatalogManager once (map populated = catalog loaded => broadcast has fired w/ the patch)
         if(!g_catMgr && GetTickCount()-lastScan>=400){
             lastScan=GetTickCount();

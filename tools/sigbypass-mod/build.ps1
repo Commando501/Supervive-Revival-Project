@@ -105,6 +105,11 @@ $Variants = @{
     # fires. Never inject this for anything but the control arm, and never hold it long.
     'catalog_store_fix' = @{
         'noscan' = @('-DKNOSCAN=1')
+        # S111 arm E1/E2/E3 bisect. Each is noscan (= arm E) MINUS one behaviour, so each is a
+        # one-variable step down from arm E. CONTROLS ONLY — none of these is a candidate.
+        'noscan-noveh'  = @('-DKNOSCAN=1','-DKNOVEH=1')   # E1: no SnapshotModules + no VEH
+        'noscan-noslot' = @('-DKNOSCAN=1','-DKNOSLOT=1')  # E2: no BuildStub + no slot-110 vtable write
+        'noscan-nojz'   = @('-DKNOSCAN=1','-DKNOJZ=1')    # E3: no .text jz-NOP
     }
     'tutorial_launch' = @{
         # RunMode switch, tutorial_launch.cpp:93. Default when KRUNMODE is unset is RM_CHEATSPAWN.
