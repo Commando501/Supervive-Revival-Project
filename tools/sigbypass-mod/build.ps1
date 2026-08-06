@@ -98,6 +98,14 @@ $MsvcIncompatible = @{
 # --- variants: suffix -> extra -D flags. Only shims with a compile-time mode switch need an entry;
 #     every other .cpp builds as a single plain <name>.dll with no registry entry at all. ------------
 $Variants = @{
+    # catalog_store_fix: ARM-C CONTROL ONLY (S111). Disables the memory scan entirely to test whether
+    # the SafeCopy/ReadProcessMemory scan is what drives the protector (runtime.dll+1) deaths that ran
+    # 11/30 vs 5/30 in the 60-launch A/B (p=0.072). ⚠ NOT A CANDIDATE — with the scan off the shim
+    # cannot find the CatalogManager, so the roster/store never populate and the jz self-restore never
+    # fires. Never inject this for anything but the control arm, and never hold it long.
+    'catalog_store_fix' = @{
+        'noscan' = @('-DKNOSCAN=1')
+    }
     'tutorial_launch' = @{
         # RunMode switch, tutorial_launch.cpp:93. Default when KRUNMODE is unset is RM_CHEATSPAWN.
         'fo'         = @('-DKRUNMODE=RM_FORCEOPEN')

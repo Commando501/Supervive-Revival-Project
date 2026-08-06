@@ -164,6 +164,25 @@ static inline bool SafeReadD(uintptr_t a,int32_t*   out){ return SafeCopy(out,(c
 // deliberately NOT done -- detection time gates catLoadedAt, and the jz self-restore fires
 // catLoadedAt+6000, so a later detection means a LONGER .text patch uptime and a closer approach to
 // the code-integrity check. That trade needs a live run, not an assumption.
+// ⚠⚠ KNOSCAN — ARM-C CONTROL BUILD ONLY. DEFAULT 0. NEVER SHIP THIS ON. ⚠⚠
+// Disables the memory scan ENTIRELY (neither the old unguarded walk nor the new SafeCopy one).
+// It exists to answer ONE question, left open by the 60-launch A/B
+// (docs/s111-scanfix-ab-campaign.md §1): protector deaths ran 11/30 with the fix vs 5/30 without
+// (p=0.072), and ReadProcessMemory is a memory-scanning API inside an anti-tamper-protected
+// process. If arm C (no scan at all) still shows ~11/30 protector deaths, RPM is EXONERATED and
+// the effect is competing risks. If arm C drops to ~5/30, RPM is implicated.
+// ⚠ With the scan off the shim CANNOT find the CatalogManager, so: no [cm] line, no purchasable
+//   poke, and the jz self-restore never fires (it is gated on catLoadedAt) — meaning the .text
+//   patch stays for the life of the run. Harmless at the 60 s hold used for the A/B (the
+//   code-integrity kill is minutes away) but it is a REAL difference from arms A and B; do not run
+//   this arm long. This build is a CONTROL, not a candidate.
+// ⚠ CLAUDE.md: "Don't leave an S9x diagnostic switched on and then reason about the game." That has
+//   already cost this project two sessions (KTESTACTOR, KSTATICTEST). Default is 0; the only way to
+//   get it is the registered `noscan` variant, which writes a DIFFERENTLY NAMED dll.
+#ifndef KNOSCAN
+#define KNOSCAN 0
+#endif
+
 typedef int (*PFN_OnHit)(uintptr_t p,void* ctx);
 static constexpr size_t kScanChunk = 256*1024;
 static constexpr size_t kScanPage  = 4096;
@@ -177,6 +196,10 @@ static void ScanChunkBuf(uintptr_t at,size_t len,uintptr_t needle,PFN_OnHit onHi
 }
 
 static void ScanPrivateForQword(uintptr_t needle,PFN_OnHit onHit,void* ctx){
+#if KNOSCAN
+    (void)needle; (void)onHit; (void)ctx;
+    return;                 // ARM-C CONTROL: no memory scan of any kind is performed.
+#else
     SYSTEM_INFO si; GetSystemInfo(&si);
     uintptr_t addr=(uintptr_t)si.lpMinimumApplicationAddress;
     uintptr_t maxA=(uintptr_t)si.lpMaximumApplicationAddress;
@@ -206,6 +229,7 @@ static void ScanPrivateForQword(uintptr_t needle,PFN_OnHit onHit,void* ctx){
         }
         if(next<=addr) break; addr=next;
     }
+#endif  // KNOSCAN
 }
 
 // ─────────── read-only VEH crash logger (adapted from scan_on_enum_veh) ───────────
@@ -397,7 +421,8 @@ static DWORD WINAPI Worker(LPVOID){
     // from 'we never reached the target'; no shim stamps a source SHA or build time into its
     // marker." Stamping it makes the S111 scan fix verifiable from the marker alone.
     Markerf("[0] catalog_store_fix worker started (ready-gate + purchasable poke) "
-            "build=%s %s scan=SAFECOPY-S111\r\n",__DATE__,__TIME__);
+            "build=%s %s scan=%s\r\n",__DATE__,__TIME__,
+            KNOSCAN ? "DISABLED-ARMC-CONTROL" : "SAFECOPY-S111");
     HMODULE hExe=GetModuleHandleA("SUPERVIVE-Win64-Shipping.exe");
     if(!hExe){Marker("[0] FAIL GetModuleHandle\r\n");return 1;}
     g_modBase=(uintptr_t)hExe;
