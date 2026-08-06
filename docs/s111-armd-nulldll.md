@@ -68,21 +68,30 @@ With mapping-as-such cleared, the surviving candidates are:
 
 **Arm E: `-Hook catalog_store_fix_noscan.dll`.**
 
-That build already exists (it *is* arm C's primary). Injected alone it performs the `.text` `jz`-NOP
-and **nothing else** — no scan, no PI hook — at the **same image count as arm D**. So arm E vs arm D
-is a genuine one-variable comparison:
+That build already exists (it *is* arm C's primary), and injected alone it runs at the **same image
+count as arm D**.
 
-| | images | `.text` patch | PI hook |
-|---|:--:|:--:|:--:|
-| D | 1 | ✗ | ✗ |
-| **E** | **1** | **✓** | ✗ |
+> ### ❌ CORRECTION — "the `jz`-NOP and nothing else" was wrong
+> An earlier draft of this section claimed arm E performs only the `.text` patch. Reading the Worker
+> shows `KNOSCAN=1` still leaves a good deal running: it writes a marker file, calls
+> `SnapshotModules()`, **installs a vectored exception handler**, allocates an **executable stub**
+> (`BuildStub`), **hooks vtable slot 110** via `VirtualProtect`+write, patches the `jz`, and later
+> unhooks. Only the memory scan is removed. Arm E is therefore **"the primary shim's whole activity
+> minus the scan"**, not an isolated `.text` test.
 
-- **arm E dies ~30 %** → the `.text` `jz`-NOP is the trigger. That is very good news: the patch is
-  already self-restoring and its lifetime is tunable, or it can be replaced by the data-only
-  `[+0x354]` poke the shim already performs as belt-and-braces.
-- **arm E is 0/11** → the `.text` patch is innocent too, and suspicion moves to the PI prologue
-  writes or to image count. Arm F (`-Hook mainmenu_refresh_pi8.dll`, a PI-hooker alone) splits that,
-  and five copies of `nulldll` would settle the count question.
+| | images | shim activity |
+|---|:--:|---|
+| D | 1 | none whatsoever |
+| **E** | **1** | marker I/O + VEH + exec stub + slot-110 hook + `.text` `jz`-NOP |
+
+E vs D is still the largest split available for free — it separates **the primary shim's own actions**
+from **the secondaries' PI prologue writes and the 1→5 image count**:
+
+- **arm E dies ~30 %** → the trigger is inside the primary shim itself. A follow-up bisect with new
+  `-D` switches (VEH off / slot-110 hook off / `jz` off) then names which of its five actions, and
+  each of those is individually cheap to change or drop.
+- **arm E is 0/11** → the primary is innocent *alone*, and suspicion moves to the secondaries' PI
+  prologue writes (arm F = `-Hook mainmenu_refresh_pi8.dll`) or to image count (5 × `nulldll`).
 
 No new code is required for arm E. ~1 hour for 11 runs.
 
