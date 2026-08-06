@@ -426,6 +426,79 @@ than another name to search for. Prefer following the code over predicting it.
 
 ---
 
+## 11. ★★★ CHAIN CLOSED — the gate is the hero's own `@0xF00`, and the fix is one 8-byte write
+
+§10's hypothesis was **wrong, and the experiment that killed it handed over the real answer.** Both
+values were read live, before and after the shim's GAS chain, read-only, in one run.
+
+### The measurement
+
+| field | BEFORE (world up, no GAS chain) | AFTER (GAS chain run) |
+|---|---|---|
+| `PS+0x650` cached subject | NULL | **`LokiAbilitySystemComponent`** |
+| `PS+0x430` sibling gate | — | **`BP_HERO_Ronin_C`** (our hero) |
+| `PS+0x658` sibling cache | NULL | **NULL** ← still |
+| `PS+0x4F8` HeroAffiliatedObject | NULL | the carrier |
+| hero `@0xF00` ASCStorage | — | **NULL** |
+| `ASC.AvatarActor` | — | **NULL** |
+
+**`+0x650` went NULL → ASC.** So the change-detector *did* see a change, did *not* take its early `je`,
+and *did* broadcast `AbilitySystemChanged`. **§10's "no change ⇒ no broadcast ⇒ no bind" is falsified.**
+
+### The two getters, and they are one-liners
+
+Both `GetAbilitySystemComponent()` implementations, disassembled offline from `dumps/tutorial-hero/`:
+
+```
+PlayerState side   base+0x56BA9E0   (called with rcx = PS + 0x470)
+    mov rax,[rcx+0x88]      ; PS+0x470+0x88 = PS+0x4F8  = HeroAffiliatedObject
+    test rax,rax ; je ret_null
+    mov rax,[rax+0x3E8]     ; carrier->AbilitySystemComponent
+    ret
+
+hero side          base+0x55A9610   (called with rcx = hero + 0x7F0)
+    mov rax,[rcx+0x710]     ; hero+0x7F0+0x710 = hero+0xF00 = AbilitySystemComponentStorage
+    ret
+```
+
+### ★ The complete causal chain, every link measured
+
+1. The shim builds the carrier + ASC + 2 attribute sets and writes `PlayerState.HeroAffiliatedObject`. ✓
+2. `TryUpdateAbilitySystem` → the **PlayerState-side** getter walks `HeroAffiliatedObject->ASC` and finds
+   it → `+0x650` NULL→ASC → change detected → **the event is broadcast.** ✓
+3. The sibling `base+0x56CEDB0` gates on `PS+0x430` — the hero pawn, **present** ✓ — and then calls the
+   **hero-side** getter, which is `return hero->AbilitySystemComponentStorage@0xF00` → **NULL** →
+   **it bails.** `+0x658` is never set, and `AvatarActor` is never bound. ✗
+
+⇒ **`@0xF00` is not a symptom. It is the gate.** The field the shim and `gas_recon` have been reading
+for four sessions and reporting as "not initialised" is the exact input the wiring tests, and because
+the carrier was built by hand nothing ever populated it.
+
+### The fix, and it is the same shape as the one that worked
+
+**Write the carrier's ASC pointer into the hero's `AbilitySystemComponentStorage@0xF00`, then let the
+chain run.** One 8-byte write to a **reflected UPROPERTY on an object the shim itself created** — the
+same shape as `KANIMREF`, which is the one fix this project landed cleanly (§4e). After it, the
+hero-side getter returns non-null, the sibling proceeds past its bail, and does the wiring the shim has
+been trying to hand-roll.
+
+Order matters: write `@0xF00` **after** `EnsureHeroAffiliatedCarrier` (so the ASC exists) and **before**
+`TryUpdateAbilitySystem` (so the sibling sees it). In `tutorial_launch.cpp` that is between `:4575`
+and `:4624`. Offsets to resolve by name, not hardcode: `AbilitySystemComponentStorage` on the hero,
+`AbilitySystemComponent` on the carrier.
+
+Registered prediction for that run: `IsAbilitySystemInitialized` flips to 1, `ASC.AvatarActor` becomes
+the hero pawn, and `PS+0x658` stops being NULL. **`ActivatableAbilities` may well stay 0** — granting is
+a separate step (`BP_AuthGiveAbilityWithInputID`), so a bind without abilities is a *success*, not a
+partial failure.
+
+⚠ Note what worked here, after two sessions of guessing: **§8 and §9 were analogies to stock UE and
+both were wrong; §10 read the binary and got a mechanism but the wrong one; §11 tested §10's mechanism
+read-only and the falsification itself pointed at the answer.** The cheap read-only test was worth more
+than either guess, and it cost one staged run with no writes.
+
+---
+
 ## 6. Reproducing
 
 ```powershell
