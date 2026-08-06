@@ -12,15 +12,21 @@ the default timing, with no diagnostic build.
 ---
 
 > ## ✅ TASK ONE STEP 1 IS DONE — and it INVERTED the premise. Read `docs/s111-asc-census.md` first.
-> **The hero DOES have an ability system.** `LokiAbilitySystemComponent 0x274BDE53400`, owned by the
-> `LokiPlayerState_HeroAffiliated` companion, with `SpawnedAttributes` **Num=2**. The three fields
-> every existing tool reads (`@0xF00/0xF08/0xF10` on the pawn) are a **CACHE**, and both the shim and
-> `gas_recon.py` mistook them for the ability system. That is FK-30.
+> **An ability system EXISTS for the hero — `LokiAbilitySystemComponent 0x274BDE53400` on the
+> `LokiPlayerState_HeroAffiliated` companion, with `SpawnedAttributes` Num=2 — but the SHIM built it**
+> (`EnsureHeroAffiliatedCarrier` spawns the carrier; `K2_InitStats` makes the attribute sets). The
+> three fields every existing tool reads (`@0xF00/0xF08/0xF10` on the pawn) are a **CACHE**, and both
+> the shim and `gas_recon.py` mistook them for the ability system — that part is FK-30 and stands.
 >
-> **The real gap is two things, not a subsystem:** `AvatarActor` is **NULL** (so the ASC is never bound
-> to the pawn — the second half of `InitAbilityActorInfo`), and `ActivatableAbilities` is **Num=0**.
-> Start at §5 of `docs/s111-asc-census.md`: call `TryUpdateAbilitySystem` (native, parameterless,
-> already resolved by the shim) and see whether the bind and the caches populate.
+> **The real gap is two things:** `AvatarActor` is **NULL** (the ASC is never bound to the pawn — the
+> second half of `InitAbilityActorInfo`), and `ActivatableAbilities` is **Num=0**.
+>
+> ⚠ **Do NOT "just call `TryUpdateAbilitySystem`" — it is already called TWICE** (`:4624`, `:4641`),
+> verdict `0 -> 0`, and the shim's own comment says "TryUpdate is update-not-create". Measured live:
+> **no reflected function anywhere binds the avatar** — `LokiCharacter` has `RemoveFromAbilitySystem`
+> and no add, the carrier has zero UFunctions, Angelscript exposes a getter and no setter. Start at
+> **§7 of `docs/s111-asc-census.md`**: the route is the native impl, offline, anchored at
+> `RemoveFromAbilitySystem` exec thunk RVA `0x5302ED0`.
 >
 > Also measured: **344 initialised ability systems** exist in the loaded tutorial world (brush, trees,
 > `BP_CapturePoint_Tutorial_C`), so GAS runs here constantly — and the world has **no game-spawned hero
