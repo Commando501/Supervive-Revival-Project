@@ -11,7 +11,7 @@ such run*. Total across the S111 experimental series: **101 launches**.
 | | runs | hold | deaths | **protector deaths** |
 |---|---:|---:|---:|---:|
 | injected arms, pooled (A+B+C) | 90 | 60 s | 34 | **25 (28 %)** |
-| arm C alone (1 shim, scan disabled) | 30 | 60 s | 9 | **9 (30 %)** |
+| arm C alone (**5 shims**, primary's scan disabled) | 30 | 60 s | 9 | **9 (30 %)** |
 | **`-NoHook` (no shims at all)** | **11** | **320 s** | **0** | **0 (0 %)** |
 
 - vs arm C: **p = 0.0408**
@@ -32,11 +32,20 @@ never populate, so maybe it just does less and dies less.
 
 **Arm C rules that out.** Arm C ran the `KNOSCAN` control build, which *also* never finds the
 CatalogManager and *also* leaves the roster and store unpopulated. Functionally the client is in the
-same impoverished state as `-NoHook`. The **only** difference is that arm C had one DLL
-manually mapped into it.
+same impoverished state as `-NoHook`. The **only** difference is that arm C had DLLs manually mapped
+into it.
 
-> arm C (unpopulated + 1 injected DLL) → **30 %** protector deaths
-> `-NoHook` (unpopulated + 0 injected DLLs) → **0 %**
+> ### ❌ CORRECTION 2026-08-06 — the arm count was wrong when first published
+> This file originally said arm C had **1** injected DLL. It had **5**: the primary
+> `catalog_store_fix` plus four secondaries (`mainmenu_refresh_pi8`, `catalog_pick_fix`,
+> `loadout_fix`, `battlepass_adopt_fix` — `missions_fix` excluded by `-NoMissions`), confirmed in
+> `docs/inject-secondaries.log`. **The conclusion is unaffected** — the contrast is still 0 injected
+> DLLs vs some, and the A-vs-C comparison that exonerated `ReadProcessMemory` had 5 DLLs on *both*
+> sides. But the isolation this control achieves is **"any injection at all" vs "none"**, NOT
+> "one DLL", and the next experiment must therefore start from one DLL, not from five.
+
+> arm C (unpopulated + **5** injected DLLs) → **30 %** protector deaths
+> `-NoHook` (unpopulated + **0** injected DLLs) → **0 %**
 
 The discriminating variable is **the injection itself**, not the workload.
 
