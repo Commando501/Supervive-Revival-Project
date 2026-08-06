@@ -97,9 +97,16 @@ The short version, because it has already cost two sessions:
 - **FK-7 is OPEN.** Zero reproduce-then-repair runs exist. The `play_novtguard` positive
   control is MANDATORY and a **quiet control means the sitting is VOID, not a pass**.
   Hold to **T+220–250 s, NOT T+300 s.** ⚠ **The hold survives; the "~285 s" number does NOT** (S111,
-  FK-8 corpus mining). MEASURED over 114 distinct death records: the late-kill mode is **240–295 s,
+  FK-8 corpus mining). MEASURED over 114 distinct death records: one late-kill mode is **240–295 s,
   N=15, median 264 s — only 4 of 15 are ≥283 s, and 4 of 15 are asserts** (asserts are not
-  anti-tamper kills). Worse, `SecondsSinceStart` is the **launch** clock and therefore contains the
+  anti-tamper kills). ⚠ **That band describes ONE CLASS, not the population — do NOT hold to it**
+  (S111 reconciliation, `docs/s111-fk8-s110-reconciliation.md`). On the **crashpad** class, tutorial
+  route, N=13 — which contains every S110 sitting — deaths run **87–524 s, median 283, and 7 of 13
+  fall OUTSIDE 240–295**, four of them above it (336 / 432 / 491 / 524 s). Two of those four are not
+  S110 runs, so the tail was already in FK-8's own corpus. S110's own "budget ~330 s" is likewise too
+  tight. ⇒ **No `T+<n>` rule survives; use the staging-invariant anchor below and the fault family.**
+  (The two sessions' clocks were cross-checked and agree to 2–3 s, so this is a real spread, not a
+  clock artifact.) Worse, `SecondsSinceStart` is the **launch** clock and therefore contains the
   operator's staging schedule, which moved **+33.0 s** between the July and August batches — so any
   `T+<n>` rule silently drifts when `-InjectGapSeconds` changes. **Prefer the staging-invariant form:
   hold ≲50 s past `Load map complete …/LVL_Tutorial`.** Detect the kill by **fault family**
