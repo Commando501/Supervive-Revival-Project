@@ -95,17 +95,24 @@ UAbilitySystemComponent::InitAbilityActorInfo   base+0x447F410
 
 ## 2. Traps that will cost you a run
 
-* ⚠⚠ **`fk24-stage.ps1` injects `tools\sigbypass-mod\*.dll` (the ROOT copies), NOT `build\`** — and
-  `build.ps1` writes to `build\`. So **you can build a fix, run the standard staging, and test the old
-  binary.** MEASURED today by `.text` hash:
-  | shim | root | build | verdict |
-  |---|---|---|---|
-  | `gft_ready_fix` | `6b2fe2c2a747c19f` | `6b2fe2c2a747c19f` | identical `.text` (PE-header bytes only) |
-  | `tutorial_launch_fo` | `fa184b20934cc4b0` | `fa184b20934cc4b0` | identical `.text` |
-  | **`tutorial_launch_sp`** | **`d0d3cc140c4f4286`** | **`4285c0dd22ae9976`** | **ROOT IS STALE — no `KGASSTORAGE`** |
-  Either inject the `build\` path explicitly, or copy `build\tutorial_launch_sp.dll` over the root copy
-  **and say so**. (Note the file-level `cmp` says all three differ; only `.text` tells you which
-  matters — the project's "diff `.text`, never whole-file" rule earning its keep.)
+* **DEPLOYED-vs-BUILD drift — now GUARDED, but know the shape of it.** `build.ps1` writes to
+  `tools\sigbypass-mod\build\`; `fk24-stage.ps1` injects the **deployed** copies in
+  `tools\sigbypass-mod\`. Two tiers on purpose, but nothing enforced the relationship, so you could
+  build a fix, run the standard staging, and test the old binary.
+  **FIXED (S111):** `fk24-stage.ps1` now `.text`-hashes every shim it injects against `build\` and
+  **ABORTS** on a mismatch (`-AllowStale` overrides). `tutorial_launch_sp` has been synced — but note
+  `tools/sigbypass-mod/.gitignore` excludes `*.dll`, so **no shim binary is version-controlled**: that
+  copy is machine-local and a fresh clone has to build both tiers anyway. **The guard is the durable
+  half of this fix; the copy is housekeeping.**
+  MEASURED across the 142 deployed DLLs: **64 `.text`-identical, 68 with no build counterpart,
+  10 DRIFTED.** ⚠ **`tutorial_launch_play.dll` is still one of the 10, and it is the dangerous one:**
+  deployed `.text` is **`a67239a0d83d9300`** — the hash CLAUDE.md identifies as **`play-statictest`**,
+  the S108b diagnostic that faulted every run and disabled anim swapping. Left un-synced deliberately
+  (out of scope, and the guard now aborts on it) — **pass `-Probe …\build\tutorial_launch_play.dll`,
+  or sync it first.**
+  ⚠ Compare `.text`, never whole-file: a file-level `cmp` calls all three staging shims different when
+  two are functionally identical (PE-header bytes). That rule is the difference between one real
+  problem and three imaginary ones.
 * ⚠ **PowerShell `Select-Object -First N` tears down the upstream command.** A probe that ran fine
   exits 255 and looks like a crash, and a script that writes a file at the end writes **nothing**.
   Cost two runs and one capture today, *including one after I had written it into this very file.*
