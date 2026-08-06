@@ -1,8 +1,16 @@
-# Offline disassembler over dumps/merged.dump.exe (file-offset==RVA, ImageBase=0x7FF6AF000000).
+# Offline disassembler over a dumpimage capture (file-offset==RVA, ImageBase set by the capture).
 # Resolves rip-relative operands, call targets, and FName indices.
-import capstone, sys, struct
-DUMP="dumps/merged.dump.exe"
-IMAGEBASE=0x7FF6AF000000
+#
+#   usage: offline_disasm.py <RVA-hex> [nbytes]
+#   env:   CG_DUMP=<path>   CG_BASE=<ImageBase-hex>     (defaults = the S101 merged MENU image)
+#
+# ⚠ S111: the default image is a MENU snapshot, so anything that only runs in a world reads as ZEROS
+# (the build demand-decrypts .text on execution). For ability-system / in-world code use the in-world
+# capture instead -- it has those pages and its own ImageBase:
+#   CG_DUMP=dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe CG_BASE=0x7FF6505C0000
+import capstone, sys, struct, os
+DUMP=os.environ.get("CG_DUMP","dumps/merged.dump.exe")
+IMAGEBASE=int(os.environ.get("CG_BASE","0x7FF6AF000000"),16)
 NAMEPOOL_RVA=0x9D81450
 f=open(DUMP,"rb"); DATA=f.read()
 def rd(rva,n):

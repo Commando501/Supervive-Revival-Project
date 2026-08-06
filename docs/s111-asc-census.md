@@ -365,6 +365,67 @@ brief's trap list, hit again by its own author.** Use `| Out-Null` and read the 
 
 ---
 
+## 10. THE FOUR CALLS — `TryUpdateAbilitySystem` is a change-detector that BROADCASTS. It never binds.
+
+§9 left a four-item shortlist. All four are now disassembled, entirely offline against
+`dumps/tutorial-hero/`, and they close the question of what `TryUpdateAbilitySystem` actually does.
+
+| callee | what it is | how it is known |
+|---|---|---|
+| `base+0x5276450` | **lazy type-getter for `GameEvent_AbilitySystemChanged_PlayerState`** | the string is *in the function*: `lea r8,[rip+…]` → `wide="GameEvent_AbilitySystemChanged_P…"`, cached into a static at `0xA0160A8` |
+| `base+0x4933B00` | **generic game-event broadcast helper** (takes the event struct by pointer, null-checks `[rdx]`/`[rdx+8]`, `movups xmm0,[rdx]`) | **27 call sites** across Loki code |
+| `base+0x49361B0` | **the game-event bus / subsystem lookup** (global singleton at `0x9FB9A70`) | **52 call sites** |
+| `base+0x56CEDB0` | same-TU sibling: another change-detect, on `[this+0x430]` vs `[this+0x658]`, ending in the same broadcast helper | reads/compares only; calls `0x4933B00` too |
+
+★ **The decisive cross-reference: `base+0x5276450` has EXACTLY ONE call site in the entire image —
+`+0x56CE860`, inside `TryUpdateAbilitySystem`.** So that function is the sole producer of the
+`AbilitySystemChanged` event, and every Loki-range thing it does is *broadcasting*, not wiring.
+
+### What `TryUpdateAbilitySystem` is, from the binary
+
+```
+fetch    virtual call on [this+0x470] slot +0x10        -> the current subject
+validate RF_Garbage check at [subject+0x0C] bit 30
+compare  mov rax,[this+0x650] ; cmp rdi,rax ; je RETURN  <- ★ unchanged => does NOTHING
+otherwise: update the cache, build GameEvent_AbilitySystemChanged_PlayerState, broadcast it
+```
+
+It is a **change-detector plus an event broadcast**. It contains no bind, no `InitAbilityActorInfo`,
+nothing that touches `AvatarActor`. "TryUpdate is update-not-create" — the comment at
+`tutorial_launch.cpp:4505` — is now confirmed at instruction level, and it is *narrower* than that
+comment implies: it does not even wire, it only announces.
+
+### ★★ The mechanism hypothesis this produces, and it explains everything
+
+The bind must live in a **listener** of `GameEvent_AbilitySystemChanged_PlayerState`. And the broadcast
+only fires **when the cached value changes**.
+
+The shim builds its carrier by hand — `SpawnActorCls` + `AddComponentByClass` + `K2_InitStats` — and
+installs it with a **direct property write** to `PlayerState.HeroAffiliatedObject@0x4F8`. It never goes
+through whatever normally assigns that, so when it then calls `TryUpdateAbilitySystem`, the
+change-detector plausibly sees **no change** (or a null fetch), returns at the `je`, and **no event is
+broadcast — so no listener ever runs, and nothing ever binds the avatar.** That is consistent with
+every measurement in this document: ASC present, attribute sets present, `AvatarActor` null,
+`ActivatableAbilities` 0, and `initialised 0 -> 0` on both call attempts.
+
+### The next experiment, and it is cheap and read-only first
+
+1. **Read `PlayerState+0x650` and the subject the virtual at `[this+0x470]`/`+0x10` returns**, before
+   and after the shim's GAS chain. If they are equal — or the fetch is null — the early `je` is taken
+   and the whole event path is dead. That is a `vtable_dump.py` + two RPM reads, no writes.
+2. If confirmed, the fix is to make the fetch see a change: poke `+0x650` to something different (or
+   null) *before* calling `TryUpdateAbilitySystem`, so the comparison fails, the event fires, and the
+   real listener does the wiring the shim has been trying to hand-roll for three sessions.
+3. Only if that fails does finding the listener matter — and it is findable: xref the event-bus
+   registration rather than the type-getter.
+
+⚠ Note the shape of the last three steps of this investigation: **`AddToAbilitySystem` (§8) and
+`PossessedBy` (§9) were both guesses from stock-UE analogy, and both were wrong.** §10 is the first
+step that came from reading what the binary actually does, and it produced a testable mechanism rather
+than another name to search for. Prefer following the code over predicting it.
+
+---
+
 ## 6. Reproducing
 
 ```powershell
