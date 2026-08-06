@@ -46,14 +46,14 @@ session log captured (297,413 B), `handing control over to crashpad` present.
 |---|---|---|---|
 | `RIP & 0xFFFF` | `0x205D` | `0x0001` | **`0x0001`** |
 | `ExceptionInformation[0]` | `0` (READ) | `8` (EXECUTE) | **`8` (EXECUTE)** |
-| RIP vs accessed addr | differ | **equal** | **equal** (`0x7FFDF4200001`) |
+| RIP vs accessed addr | differ | **equal** | **equal** (`0x7FFD3B400001`) |
 | RIP inside a registered module | yes (the shim) | no | **no** |
 
 Shape match against the three family-A addresses already in the corpus:
 
 ```
 corpus : 0x7FF90E000001   0x7FF8F0400001   0x7FFB9EE00001
-THIS   : 0x7FFDF4200001      <- <base>+1, low16 = 0x0001, EXECUTE
+THIS   : 0x7FFD3B400001      <- <base>+1, low16 = 0x0001, EXECUTE
 ```
 
 **This is categorically not the scan.** A `ReadProcessMemory`-backed scan cannot produce an EXECUTE
@@ -62,9 +62,25 @@ corpus's largest self-inflicted class (24 of 114 before this run; **25** with it
 
 ⚠ `runtime.dll` is **absent from this dump's module list**, so `RIP-1 == runtime.dll base` could not
 be confirmed here. That absence is not new and not an error: the write-up records `runtime.dll`
-missing from crashpad module lists in **0/22**, now **0/23** — a reproducible property that remains
+missing from crashpad module lists in **0/22**, now **0/24** — a reproducible property that remains
 **unexplained** (`docs/fk8-crash-timing-mined.md` §6, where the earlier "manual mapping" explanation
-for it was refuted).
+for it was refuted). Re-verified at the corrected address: **no module is based at `RIP-1`, and RIP
+falls inside no registered module**, in both dumps (221 and 220 modules).
+
+> ### ❌ CORRECTION — the fault address first published for this run was wrong (arithmetic, mine)
+> The first version of this file gave `0x7FFDF4200001`. The dump reports decimal
+> **140725597503489**, which is **`0x7FFD3B400001`** — I converted it by hand and got it wrong. The
+> *classification is unaffected* (low16 `0x0001`, EXECUTE, RIP == accessed address, no module), and
+> every other number here stands.
+>
+> **How it was caught, and the general lesson:** running the two dumps through
+> `tools/crashtri/fk8_classify.py` returned the **same** RIP for both, which looked exactly like the
+> wrong-`ThreadContext` artifact this project has already been bitten by (`§8` item 7 — "every crash
+> is at one identical address", 22/22). Chasing that disagreement found the error in *my arithmetic*,
+> not in the tool. **Two crashes at one address was the correct answer**: the write-up measured that
+> the EXE base is **per-boot, not per-process**, so two runs in the same boot session legitimately
+> share `<protector base>+1`. A suspicious-looking identical value is not automatically an artifact —
+> but it is always worth one check by a second instrument.
 
 ## 4. What this run does and does not establish
 
