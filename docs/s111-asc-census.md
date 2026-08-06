@@ -565,6 +565,74 @@ previously stopped reading. **Read to the end of the function before naming it.*
 
 ---
 
+## 13. ★★★ `InitAbilityActorInfo` FOUND — `base+0x447F410`. Found by behaviour, not by name.
+
+Searching by name failed three times (§8, §9, §11). Searching by **what the function writes** found it
+in one offline pass, with no symbol, no RTTI and no unwind table.
+
+### Method — `tools/re/find_store_pair.py`
+
+`InitAbilityActorInfo` is the only thing that writes **both** `OwnerActor` (ASC+0x408) and
+`AvatarActor` (ASC+0x410). Scan `.text` for `REX.W mov [reg+disp32], reg` at both offsets, then filter:
+
+| filter | candidates |
+|---|---|
+| both stores present, within 0x100 bytes | **98** |
+| …same base register (same object) | ↓ |
+| …different source registers (owner ≠ avatar param) | **13** |
+| …in the engine GameplayAbilities range + body shape | **1** |
+
+### The function
+
+```
+base+0x447F410   mov [rsp+0x10],rbx / [rsp+0x18],rsi / [rsp+0x20],rdi ; push rbp/r14/r15 ; sub rsp,0x90
+                 mov rdi, rcx            ; this = the ASC
+                 mov rbx, r8             ; r8  = InAvatarActor
+   …
+base+0x447F47D   mov rcx,[rdi+0x418]     ; ★ AbilityActorInfo  (the TSharedPtr's raw pointer)
+                 mov r9, rdi             ; this
+                 mov r8, rbx             ; avatar
+                 mov rdx, r15            ; owner
+                 mov r10,[rcx]
+                 call [r10+8]            ; ★ AbilityActorInfo->InitFromActor(owner, avatar, this)
+                 mov rcx,[rdi+0x410]     ; old avatar
+                 mov [rdi+0x410], rbx    ; ★ AvatarActor = avatar
+                 mov [rdi+0x408], r15    ; ★ OwnerActor  = owner
+                 …RF_Garbage check on the old avatar…
+```
+
+That is stock `UAbilitySystemComponent::InitAbilityActorInfo` line for line.
+
+**Signature: `(rcx = ASC, rdx = OwnerActor, r8 = AvatarActor)`** — a plain `__fastcall` method, three
+pointer arguments, no return value.
+
+### ★ Two offsets recovered that nothing else was going to give us
+
+* **`AbilityActorInfo` is at `ASC+0x418`** — the unreflected `TSharedPtr` that `ps_gas_fields.py` and
+  `gas_recon.py` both report as *"not on the class chain"*, because it is not a UPROPERTY. It is the
+  structure abilities actually read, and it is why writing `AvatarActor@0x410` alone was never going to
+  be equivalent to a bind (§7).
+* **`InitFromActor` is virtual slot `+0x8`** on the actor-info object.
+
+### What this unblocks, and the cost
+
+The bind is now a **known address with a known signature**, which is a completely different position
+from three sections ago. Calling it means a **raw call to a non-UFunction** — no `FFrame`, none of the
+guards the ProcessInternal primitive provides — so it is new machinery and should be treated as such,
+not as a variation on the existing shim (§7 flagged this; it is still true). The alternative,
+replicating it by hand, needs `InitFromActor` anyway and so is not cheaper.
+
+⚠ **Two tooling facts learned the hard way, now in the tool's header:**
+* **`.pdata` is entirely zero in this build.** The `dumpimage` manifest reports `.pdata 100.0%`, which
+  counts *readable pages, not content* — a section can be fully readable and fully empty.
+* **There is no int3 padding between functions** (171 `0xCC` bytes in a 2 MB `.text` sample), so the
+  usual backward-scan-for-`CC` trick returns garbage. It did exactly that to me here, and I briefly
+  read the loop's own limit as a result. Function starts come from 16-byte alignment plus a
+  shadow-space argument spill, and the printed start is a **hint to confirm by disassembly**, not an
+  answer — the first version of the heuristic returned `0x447F420`, sixteen bytes into the function.
+
+---
+
 ## 6. Reproducing
 
 ```powershell
