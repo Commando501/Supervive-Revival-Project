@@ -36,11 +36,12 @@ param(
   [int]$WaitParkedSec  = 420,                       # how long to wait for the parked match model
   [int]$WaitWorldSec   = 180,                       # how long to wait for LVL_Tutorial after force-open
   [switch]$SkipProbe,                               # stage the world only (fo+gft+sp), inject nothing else
-  [int]$InjectGapSeconds = 20                       # S109: MINIMUM seconds between successive manual-maps.
+  [int]$InjectGapSeconds = 20,                      # S109: MINIMUM seconds between successive manual-maps.
                                                     # Evidence-gate waits count toward it, so this only
                                                     # sleeps the shortfall. 20 matches the new default in
                                                     # inject-secondaries.ps1. Pass 5 to reproduce the old
                                                     # gft->fo spacing. See docs/s109-dump-forensics.md 18-20.
+  [switch]$AllowStale                               # inject anyway when a shim's .text differs from build\
 )
 
 $ErrorActionPreference = 'Stop'
@@ -53,6 +54,61 @@ $marker  = Join-Path $docs 'tutorial-launch-marker.txt'
 $capture = Join-Path $docs 'capture.log'
 
 function Say($m){ Write-Host "[stage] $m" }
+
+# ---- S111: THE DEPLOYED-vs-BUILD STALENESS GUARD -------------------------------------------------
+# `build.ps1` writes to tools\sigbypass-mod\build\, but this script injects the DEPLOYED copies in
+# tools\sigbypass-mod\. Those are two tiers on purpose (build output vs blessed artifact) -- but
+# nothing enforced the relationship, so they drifted silently and you could BUILD A FIX, RUN THE
+# STANDARD STAGING, AND TEST THE OLD BINARY.
+#
+# MEASURED 2026-08-05 across the 142 deployed DLLs: 64 `.text`-identical to build, 68 with no build
+# counterpart at all, and 10 DRIFTED -- including `tutorial_launch_sp.dll` (root d0d3cc140c4f4286 vs
+# build 4285c0dd22ae9976, i.e. missing KGASSTORAGE) and, worse, `tutorial_launch_play.dll`, whose
+# deployed `.text` is a67239a0d83d9300 -- the hash CLAUDE.md identifies as `play-statictest`, the
+# S108b diagnostic that faulted every run and disabled anim swapping.
+#
+# Compare `.text` ONLY. A whole-file compare says all three staging shims differ when two of them are
+# functionally identical (the delta is PE-header/debug bytes), which is the project's standing
+# "diff .text, never whole-file" rule -- here it is the difference between one real problem and three.
+function Get-TextHash([string]$path){
+  if(-not (Test-Path $path)){ return $null }
+  $d = [IO.File]::ReadAllBytes($path)
+  $pe = [BitConverter]::ToInt32($d, 0x3C)
+  $ns = [BitConverter]::ToUInt16($d, $pe + 6)
+  $opt= [BitConverter]::ToUInt16($d, $pe + 20)
+  $off = $pe + 24 + $opt
+  for($i = 0; $i -lt $ns; $i++){
+    $s = $off + $i * 40
+    $nm = ([Text.Encoding]::ASCII.GetString($d, $s, 8)).TrimEnd([char]0)
+    if($nm -eq '.text'){
+      $sz = [BitConverter]::ToInt32($d, $s + 16)
+      $pr = [BitConverter]::ToInt32($d, $s + 20)
+      $sha = [Security.Cryptography.SHA256]::Create()
+      $h = $sha.ComputeHash($d, $pr, $sz)
+      return (($h | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0,16)
+    }
+  }
+  return $null
+}
+# Refuses by default: a silent wrong-binary test costs an armed window, and armed windows are the
+# scarce resource here. -AllowStale overrides when the older artifact is genuinely what you want.
+function Assert-Fresh([string]$dll){
+  $bld = Join-Path (Split-Path -Parent $dll) ('build\' + (Split-Path -Leaf $dll))
+  if(-not (Test-Path $bld)){ return }                       # historic variant, nothing to compare
+  $a = Get-TextHash $dll; $b = Get-TextHash $bld
+  if($null -eq $a -or $null -eq $b -or $a -eq $b){ return }
+  $msg = ("STALE DEPLOYED SHIM: {0}`n" -f (Split-Path -Leaf $dll)) +
+         ("           deployed .text {0}`n" -f $a) +
+         ("           build\   .text {0}`n" -f $b) +
+          "           build.ps1 wrote a newer binary than the one about to be injected."
+  if($AllowStale){ Say "WARNING - $msg"; Say "           (-AllowStale given; injecting the deployed copy anyway)" }
+  else {
+    Say "ABORT - $msg"
+    Say "           Fix: copy the build\ artifact over the deployed one, or pass -AllowStale,"
+    Say "           or point -Probe directly at the build\ path."
+    throw "stale shim: $dll"
+  }
+}
 
 # Loki.log is held open by the game with a share mode we must match, so Get-Content can hard-fail
 # mid-run. Read through an explicit FileShare::ReadWrite handle instead.
@@ -160,6 +216,7 @@ function Stage-Inject([string]$dll,[int]$n,[string]$tag){
     if($need -gt 0){ Say ("    spacing: {0}s since last inject, waiting {1}s more (min gap {2}s)" -f $since,$need,$InjectGapSeconds); Start-Sleep -Seconds $need }
     else           { Say ("    spacing: {0}s since last inject, min gap {1}s already satisfied" -f $since,$InjectGapSeconds) }
   }
+  Assert-Fresh $dll
   Say ">>> inject $tag"
   & $inject mmap $gamePid $dll 2>&1 | ForEach-Object { Say "    $_" }
   $script:lastInjectAt = Get-Date
