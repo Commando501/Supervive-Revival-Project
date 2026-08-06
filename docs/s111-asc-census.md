@@ -1,4 +1,31 @@
+> ## ⚠⚠ RETRACTION — THIS BANNER GOVERNS. Read it before anything below.
+> **The ASC, the carrier and both attribute sets are the SHIM'S OWN creations, not the game's.**
+> `EnsureHeroAffiliatedCarrier` (`tutorial_launch.cpp:4511`) **spawns** `LokiPlayerState_HeroAffiliated`
+> with `SpawnActorCls`, its constructor builds the ASC, and the shim then calls `K2_InitStats` twice to
+> make the two attribute sets. The census deltas I read as the game wiring the hero up —
+> ASCs 424→425, initialised 344→345, companions 0→1 — are **our objects appearing**. The marker proves
+> it: `[GAS] HeroAffiliatedObject@0x4F8 = 0x0` *before*, then `carrier=0x27617F91750` — the exact
+> address the census reported as the ASC's owner.
+>
+> **What still stands, unchanged:** every measurement. The ASC exists with `OwnerActor` set,
+> `SpawnedAttributes` **Num=2**, **`AvatarActor` NULL**, **`ActivatableAbilities` Num=0**; the pawn's
+> `@0xF00/0xF08/0xF10` are a cache and the `[GAS]` verdict line that reads them is misleading (FK-30's
+> real content); 344 initialised ASCs on scenery; and **no game-spawned hero or AI pawn exists** in the
+> tutorial world, so the spawn-path hypothesis remains untestable and unsupported.
+>
+> **What is retracted:** the *attribution*. The correct headline is **"the shim's own S101 carrier route
+> got further than its verdict line reported"** — NOT "the game gives the hero an ability system".
+>
+> **How I got it wrong, and it is the same error this very document lectures about:** I swept live
+> objects and never asked *which of these did my own shim create*. §4 below congratulates the probe for
+> catching two artifacts; it missed the third, in the same session, in the write-up itself. The question
+> "is this a fact about the game or about my instrument?" has to include *"…or about my own shim?"*.
+>
+> **Follow-up measured 2026-08-05 (§7):** there is **no reflected function anywhere that binds the
+> avatar**, and `TryUpdateAbilitySystem` — already called twice by the shim — is not it.
+
 # S111 §1 — "the hero owns no ability system" is FALSE. The ASC exists, is populated, and is missing ONE field.
+### ⚠ Title overstated — see the retraction banner. The ASC exists because WE built it.
 
 **2026-08-05.** `docs/next-session-prompt-s111.md` §0 asked the cheapest question that could halve the
 simulation problem: **do game-spawned pawns have an ASC, and does ours?** The answer inverts the
@@ -152,6 +179,51 @@ next person does not re-introduce it.
    gate nothing" rests on the same false premise and should be re-graded.
 4. ⚠ **Do not read the pawn's `@0xF00/0xF08/0xF10` as the ability-system state again.** They are a
    cache. `asc_census.py` reads the objects.
+
+---
+
+## 7. FOLLOW-UP — "call `TryUpdateAbilitySystem` to bind the avatar" is ALREADY DONE, and cannot work
+
+Measured live, read-only, at a parked menu (`tools/re/class_funcs.py`).
+
+**It is already called, twice.** `tutorial_launch.cpp:4624` (step 3) and `:4641` (step 3b, re-run after
+forcing `Role = ROLE_Authority`), both after the carrier is installed and `ServerSetHeroClass` +
+`OnRep_HeroClass` have run. The verdict every time is `initialised 0 -> 0`. The shim's own comment at
+`:4505` already says why it cannot bootstrap: **"TryUpdate is update-not-create"**. Re-running it costs
+an armed window and returns a known null.
+
+**And nothing else reflected can do it either.** The full live UFunction enumeration:
+
+| class | ability-related UFunctions |
+|---|---|
+| `LokiCharacter` | `AbilitySystemIsTargeting`, `AuthAddAbilityPoints`, `AuthRemoveAbilityPoint`, `GetAbilityLevel`, `GetAbilityPointsForLevelUp`, `GetKillCreditAbility`, `GetLokiAbilitySystem_BP`, `IsAbilityBlocked`, `IsAbilitySystemInitialized`, **`RemoveFromAbilitySystem`** |
+| `LokiPlayerState` | `AuthAddAbilityPoints`, **`TryUpdateAbilitySystem`** (Native, not even BPCallable) |
+| `LokiPlayerState_HeroAffiliated` | **zero UFunctions of its own** — a pure data carrier |
+
+★ **There is a `RemoveFromAbilitySystem` and no `AddToAbilitySystem`.** The add/bind half is not
+reflected at all — consistent with UE, where `InitAbilityActorInfo(Owner, Avatar)` is C++-only and is
+called from `PossessedBy` / `OnRep_PlayerState`. The Angelscript bindings agree: they expose
+`GetAvatarActorFromASC()` and **no setter**.
+
+**Why a direct write of `AvatarActor` is not the shortcut it looks like.** `OwnerActor@0x408` and
+`AvatarActor@0x410` *are* reflected UPROPERTYs, so writing one is mechanically easy — but the thing
+abilities actually read is `FGameplayAbilityActorInfo` behind a `TSharedPtr`, and this probe confirmed
+`AbilityActorInfo` is **not on the class chain** (not reflected). Writing the UPROPERTY alone would
+produce a half-bound system that still fails wherever it matters. Do it only as a *diagnostic*, with
+`IsAbilitySystemInitialized` and `GetLokiAbilitySystem_BP` as the two witnesses.
+
+**The route, and it is OFFLINE.** Find the native implementation and call it raw through the existing
+native-call machinery. Anchors measured this session (base `0x7FF6505C0000`):
+
+```
+RemoveFromAbilitySystem  exec thunk RVA  0x5302ED0     <- the paired Add is usually adjacent
+TryUpdateAbilitySystem   exec thunk RVA  0x5438C20
+```
+
+Disassemble those thunks in `dumps/merged.dump.exe` to reach the real implementations, then look for
+the sibling that calls `InitAbilityActorInfo`. `tools/re/offline_xref.py` / `disasm_live.py`, no game
+time. ⚠ A raw call to a non-UFunction has no `FFrame` and no guards — it is a different and riskier
+primitive than everything the shim does today; treat it as new work, not a variation.
 
 ---
 
