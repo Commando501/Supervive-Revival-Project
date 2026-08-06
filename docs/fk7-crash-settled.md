@@ -416,6 +416,25 @@ In the FK-7 window specifically (2026-07-24 → 07-26), **all 10 crashes fall in
 
 Ten crashes, 173–201 s, **two stack families**. That is the opposite of flaky.
 
+> ### ⚠ CORRECTIONS 2026-08-05 (S111) — the band reproduces; two things about it do not.
+> Source: `docs/fk8-crash-timing-mined.md` §3.5, §4.1. Both re-verified in-session.
+>
+> 1. ❌ **"ANIM family" is a MISNOMER, and it is not two members but one.** `0x3495973` and
+>    `0x349596d` resolve to **the same function `0x3494B40`** (4,336 B, an **EXACT** `.pdata` extent
+>    from minidump stream 13). Its string literals are `"Ticking Group [%s] GroupLeader [%d]"` and
+>    `"Invalid position from Leader %d. Trying next leader"` — it is the **tick task-graph
+>    dispatcher**, which matches its `Foreground Worker #0` crashed thread. There is no animation code
+>    in this family. Reproduce in seconds: `python tools/strxref/strxref.py func 0x3495973`.
+>    (The positive control for that tool: `0x3ee9cf5` → `UEngine::LoadMap`, which agrees with the
+>    row's own assert file.)
+> 2. ⚠ **Effective N is ~2, not 10.** Nine of these ten rows are a **single 2 h 55 m sitting**.
+>    Independence was assumed and does not hold.
+> 3. ⚠ **The band is in the LAUNCH clock**, which carries the operator's staging schedule (measured
+>    +33.0 s July→August). The band is era-B-specific. Re-anchored to `Load map complete
+>    …/LVL_Tutorial`, era-B deaths are **49.5–73.5 s after the map load** — use that form. ⚠ Two
+>    independent re-anchorings **disagree** (73.1→88.8 s vs 49.5–73.5 s); until that is adjudicated
+>    (write-up §7.1) **do not cite either re-anchored number as settled**.
+
 ### 1.2 The two signatures
 
 | | **Family A — worker thread** | **Family B — game thread** |
@@ -715,6 +734,18 @@ The largest cluster (**23× `115604d`**, code `0x00004000`) is **not an access v
 UE's fatal-assert path: *"Fatal error: [UnrealEngine.cpp][Line: 15551] Couldn't spawn player: ALoki…"*
 (06-29 → 07-11). Three other long-standing families are unrelated to the tutorial era:
 `FAsyncLoadingThread fe1746` ×5, worker `107d500` ×7, RHIThread ×6.
+
+> ⚠ **CORRECTION 2026-08-05 (S111): the `107d500` ×7 are SHUTDOWN-PATH crashes — remove them from
+> every game-bug denominator.** All 7 carry `<IsRequestingExit>true</IsRequestingExit>`, and that set
+> is **set-identical 7/7 both ways** to the `107d500` chain (independently re-verified in-session with
+> a second parser: `{3EF4049A, 45C23461, 5CAD7A20, 64A6BCAC, 6AA0F217, DE62E243, F86B2A5B}`). The
+> engine was already tearing down — this is "the game AVs on quit", which also explains the otherwise
+> absurd 11.8 h `SecondsSinceStart` values (42387, 8403, 3216).
+> **Also newly named: 6 rows carry `IsStuck == true` with `StuckThreadId == the GameThread` — UE's
+> `FThreadHeartBeat` firing, i.e. the GameThread stopped ticking BEFORE the fault.** Four are
+> tutorial-route, and one (`C82D6169`, 184 s) is a row previously used as in-window FK-7 evidence.
+> Pooling hangs with instantaneous faults pools two mechanisms. Both columns are in
+> `docs/fk8-crash-corpus.csv` (`is_requesting_exit`, `is_stuck`) and neither had ever been read.
 
 ### 4.2 `SecondsSinceStart` is usable — FK-8 corrected
 

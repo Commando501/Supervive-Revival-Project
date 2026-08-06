@@ -79,7 +79,7 @@ Same crash across iter 3 and iter 4:
     ErrorMessage: Unhandled Exception: EXCEPTION_ACCESS_VIOLATION writing
       address 0x00007ff68a55b368
     PCallStackHash: 771B16831B5A288D9965304142173931609EADE1
-    SecondsSinceStart: 30 (Sentry captures this at fixed point — always 30)
+    SecondsSinceStart: 30  ❌ RETRACTED 2026-08-05 — see the banner at the end of this file
 
 Same PCallStack every time — deterministic bug in the same code path.
 
@@ -227,3 +227,59 @@ long-term fix but expensive.
 Same recipe as session 35 (elevated inject + positional URL in cmd batch)
 but launched into stub-s39-iter4.log. No new tooling needed. Sessions 39+
 should follow the same procedure — it Just Works.
+
+
+=== ❌ RETRACTION 2026-08-05 (S111) — the "always 30" parenthetical was FALSE ===
+=== This banner governs; it overrides line 82 above.                        ===
+
+Line 82 of this file originally read:
+
+    SecondsSinceStart: 30 (Sentry captures this at fixed point — always 30)
+
+That parenthetical was an INFERENCE from N=1 crash, written as a structural
+law. It is false, and it is the single most expensive line in this project's
+docs: it closed the richest diagnostic corpus we own for 60+ sessions.
+Catalogued as FK-8 in docs/ignorance-map-s101.md.
+
+MEASURED 2026-08-05, one python pass over every CrashContext.runtime-xml in
+%LOCALAPPDATA%\SUPERVIVE\Saved\Crashes (N=92 directories, 92 parsed, 0 failures):
+
+  SecondsSinceStart == 30 in EXACTLY 5 of 92 rows (5.4%).
+  Range 0 .. 42,387 s.  Median 45 s.
+
+  bin            n
+  0                15     <- degenerate class, see below
+  1..12             0
+  13..107          43
+  108..172          0     <- a 65 s DEAD ZONE with zero crashes
+  173..201         11
+  202..288          9
+  289..400          0     <- the band is sharply bounded on BOTH sides
+  401..999          8
+  >=1000            6
+
+The value is a real elapsed-time measurement, not a fixed capture point.
+
+Two things this file could not have known, both MEASURED in the same pass:
+
+1. This session's own crash is REAL and is still on disk. PCallStackHash
+   771B16831B5A288D9965304142173931609EADE1 resolves to exactly one directory,
+   UECC-Windows-D06CC55E4D5F89435DB8F6BFC05647E4_0000 — the only row in the
+   whole corpus carrying that hash. The other four secs==30 rows are two
+   DIFFERENT crashes (AC48B9B4... x3 and D5ABA8A5577B... x1). So even the
+   two same-valued observations this file cites were not evidence of a fixed
+   capture point — they were two samples of one deterministic crash.
+
+2. All 15 secs==0 rows share PCallStackHash DA39A3EE5E6B4B0D3255BFEF95601890
+   AFD80709, which is SHA-1 of the EMPTY STRING — i.e. the PCallStack was
+   empty and the hash is of nothing. secs==0 + empty stack is a degenerate
+   crash-context class, not a fast crash. Several of those rows carry fault
+   addresses of the form 0x00007ff9_0e00_0001 / 0x00007ff8_f040_0001 — the
+   poison-RIP anti-tamper signature. Do not pool them with game crashes.
+
+⚠ SCOPE OF THIS NEGATIVE: the numbers above describe the UECC-* artifact class
+only. Deaths that route through Sentry's crashpad write NO CrashContext XML at
+all (FK-9) and are structurally invisible to this census.
+
+Full mining pass, cluster table and timeline: docs/fk8-crash-timing-mined.md.
+Corpus regenerator: tools/crashtri/fk8_corpus.py.
