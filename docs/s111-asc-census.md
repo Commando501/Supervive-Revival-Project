@@ -301,6 +301,70 @@ look for the ASC being handed `(PlayerState, Pawn)`. Entirely offline against `d
 
 ---
 
+## 9. THE `PossessedBy` WALK — the bind is NOT there. The pawn side is stock engine code.
+
+§8's remaining route was: the hero is possessed in the captured state, so walk its vtable to
+`PossessedBy` and find the ASC being handed `(PlayerState, Pawn)`. **Done, and it is a clean negative.**
+
+### The chain, each hop measured
+
+`PossessedBy` has no UFunction, no reflection name and no RTTI, so the only handle is the vtable slot.
+Recovering the slot index without a reference build:
+
+| step | result |
+|---|---|
+| `AController::Possess` exec thunk (from `class_funcs.py`) | `base+0x3702740` |
+| its `P_FINISH` + tail call → implementation | `base+0x36E2B60` |
+| inside it, the only deep-vtable call, with `rdx` still holding `InPawn` | `call [rax+0x868]` ⇒ **`OnPossess` = controller slot 269** |
+| controller vtable (live) slot 269 | `base+0x569AB30` — a **Loki override**, `ALokiPlayerController::OnPossess` |
+| its first call, `this`/pawn preserved ⇒ `Super::OnPossess` | `base+0x3C422A0` |
+| inside `AController::OnPossess`, the deep-vtable call on the pawn | `call [rax+0x848]` ⇒ **`PossessedBy` = pawn slot 265** |
+| **hero vtable** `base+0x89A6DA0`, slot 265 (`+0x848`) | **`base+0x353C310`** |
+
+Two facts fell out of that walk for free, both corroborating existing project constants:
+* `AController::Possess` reads its pawn at `[rcx+0x3F8]` — **exactly the `pawnOff` fallback
+  `tutorial_launch.cpp` already hardcodes**;
+* the pawn's own Controller sits at `+0x400`, and `UObject::ProcessEvent` is controller slot `+0x270`.
+
+### The negative
+
+`base+0x353C310` is **`ACharacter::PossessedBy` — engine code. `ALokiCharacter` does not override it.**
+(Loki code lives at `0x5xxxxxx`; this is `0x35xxxxx`.) Its entire body:
+
+```
+call base+0x3BB1C00            ; Super = APawn::PossessedBy
+cmp  qword [rbx+0x450], 0 ; je ret
+test byte  [rbx+0x68], 0x10 ; je ret
+cmp  byte  [rbx+0x72], 2  ; jne ret
+call [rax+0x5b0]               ; a virtual on self
+or   byte [rax+0xc29], 1       ; sets one bit and returns
+```
+
+And `APawn::PossessedBy` (`base+0x3BB1C00`) calls only `[rax+0x538]`, `[rax+0x738]`,
+`base+0x1258BF0`, `0x33A4B30`, `0x3CA9890`, `0x3C917D0` — **every one of them engine-range. Not a
+single Loki-range call in the whole `PossessedBy` chain.**
+
+⇒ **The avatar bind does not happen on the pawn side in this build.** The stock UE pattern
+(`PossessedBy` → `ASC->InitAbilityActorInfo(PS, this)`) is simply not what this game does — which is
+consistent with the ASC living on a `LokiPlayerState_HeroAffiliated` companion rather than on the pawn
+or its PlayerState. §7's reasoning-by-analogy-with-stock-UE was wrong about where to look.
+
+### Where that leaves it
+
+Back to the PlayerState side, with a narrowed target. `TryUpdateAbilitySystem` (`base+0x56CE5F0`)
+makes exactly **three Loki-range calls** — `base+0x49361B0`, `base+0x5276450`, `base+0x4933B00` —
+plus its same-TU sibling `base+0x56CEDB0`. Everything else it calls is an engine helper. Those four
+are now the entire candidate set for the wiring, and all of them are readable in
+`dumps/tutorial-hero/`. **That is an offline job with a four-item shortlist**, which is a much better
+position than §7's "find a function whose name does not exist".
+
+⚠ **Method note, and it cost a capture.** The first hero-vtable dump wrote nothing, because I piped it
+through `Select-Object -First 6` — PowerShell tears down the upstream command, so the script died
+before its final write. **That is the same trap recorded in §6 of the S110 write-up and in the S111
+brief's trap list, hit again by its own author.** Use `| Out-Null` and read the file, or `-Last`.
+
+---
+
 ## 6. Reproducing
 
 ```powershell
