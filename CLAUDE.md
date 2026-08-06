@@ -220,6 +220,21 @@ changes it; pass `3` to reproduce the old burst. ⚠ **MITIGATION, NOT A CURE** 
 unexplained death as **possibly ours**. Full evidence: `docs/s109-dump-forensics.md` §12–§20
 (§20 retracts an earlier "eliminates" claim; §16 retracts "the PI hook is the mechanism").
 
+★★★ **S111 (2026-08-06): THE DEATHS ARE OURS — CAUSED BY INJECTION ITSELF.** MEASURED over 101
+launches (`docs/s111-nohook-control.md`): a **`-NoHook` control, 11 launches × 320 s hold, produced
+ZERO deaths**, against **25/90 (28 %) across all injected arms** (p = 0.036) and **9/30 (30 %)** for
+a one-shim arm whose scan was disabled (p = 0.041). The comparison is clean because that one-shim arm
+*also* leaves the roster/store unpopulated — so the discriminating variable is **the injected DLL,
+not the workload**. Every `-NoHook` run survived **5.3× longer** than the window in which injected
+runs were dying. So the ~30 % per-launch death rate is a property of **our injection**, not the game,
+and it is an engineering problem rather than a hazard to budget around.
+⚠ **WHICH aspect is still unknown** — manual-map vs the self-restoring `.text` jz-NOP vs the PI
+prologue writes are still confounded. The cheap next step is a do-nothing DLL (`DllMain` returns
+immediately), ~10 runs: if that already dies at ~30 %, manual mapping itself is the trigger.
+⚠ Also MEASURED: the **~285 s code-integrity kill did not fire once in 11 runs that all crossed it** —
+first direct support for "it catches a STANDING `.text` patch" (a `-NoHook` run leaves none), rather
+than an inference from timing.
+
 ⚠⚠ **THE TABLE ABOVE IS UNDER RE-EXAMINATION (S111).** Do not delete it — but the outcome variable
 was **never split by fault family**, and it does not survive that split. MEASURED: both deaths in the
 30 s row (`knee-g30-2`, `knee-g30-3`) are `catalog_store_fix.dll`'s launch-time heap scan faulting at
