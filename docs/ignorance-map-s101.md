@@ -12,6 +12,7 @@ that isn't true?"*
 > |---|---|---|
 > | FK-1, FK-2, FK-3, FK-4, FK-5, FK-6 | S104–S105 | ✅ SETTLED (each with its own `fk*-settled.md`) |
 > | **FK-7** — tutorial crash | **S108** | **OPEN.** Belief closed-false; the FIX is unverified. S108's verification sitting was **VOID** (quiet control). |
+> | **FK-8** — `SecondsSinceStart` | **S111** | ✅ **CLOSED with a permutation positive control.** ★ Closing it showed **≥31.6 % of the whole crash corpus is self-inflicted**, and that all 22 crashpad reports are — so the S109/S110 tutorial campaign produced **zero** FK-7 evidence. `docs/fk8-crash-timing-mined.md` |
 > | **FK-9** — Sentry vs UECC dumps | **S109** | ✅ **CAPTURE SOLVED** — cleared by the *next launch*, not a timer; the "~3 min window" is retracted. Archiver shipped. |
 > | **FK-24** — the `ViewTarget` writer | **S108** | **OPEN.** ★ The probe was killing the game, and its own VOID verdict was an artifact. |
 > | **FK-25** — the marker file | **S108** | ⚠ **STILL UNFIXED**; cost evidence again. Cheapest unspent item in this document. |
@@ -477,6 +478,46 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 
 ### FK-8 — "`SecondsSinceStart` is always 30 (Sentry captures at a fixed point)"
 **Severity: HIGH — this one line closed the richest diagnostic corpus in the project for 60+ sessions.**
+
+> ## ✅ CLOSED — 2026-08-05 (S111), with a POSITIVE CONTROL. Full mining pass: `docs/fk8-crash-timing-mined.md`.
+> **The row below is preserved. Its numbers are superseded; its diagnosis was right.**
+>
+> **Closed properly, not by counterexample.** "The values differ" only shows the field is not constant.
+> The field is a genuine per-run elapsed measure, proven by a **permutation control**: within a sitting
+> a run cannot outlast the wall-clock gap since the previous crash. Observed violations **0 / 56**;
+> permuted mean **8.56** over 20,000 shuffles; **P(0) = 0/20000**. Corroborated cross-class — the log's
+> own first→last span equals the reported seconds to **<1 s** in both artifact classes.
+>
+> **Restated on today's tree (N=92 UECC dirs, all parsed):** `==0` **15** (was 12), `13–107` **43**
+> (identical set), `173–288` **20** (was 19), `654–952` **7**, `>952` **6**; **exactly-30 still 5.**
+> True corpus size is **114 distinct death records** (92 UECC + 22 distinct crashpad reports — the
+> crashpad class writes no XML and every prior census was blind to it), **97 timing-usable**.
+>
+> **★ The belief had a real generator, and that is the lesson.** 3 of the 5 thirties are the *same*
+> deterministic crash (`FAsyncLoadingThread`, chain `fe1746 2b8e7c5 2b8ebe8`, fault `0x1E3010020`, all
+> 2026-07-01, all menu-login). S39 saw one reproducible signature twice and generalised it into a
+> property of the field. **A textbook instance of `supervive-instrument-artifact-pattern`, and the
+> cheapest one in the record to have caught.**
+>
+> **⚠ What closing it revealed is worth more than the closure.** The corpus is **conditioned on a
+> death AND on an artifact being written**, and **≥36 of 114 (31.6 %) are self-inflicted**: 24 are the
+> anti-tamper protector (`RIP == runtime.dll base + 1`, EXECUTE) and up to 15 are **our own
+> always-injected `catalog_store_fix.dll`** faulting at `.text` RVA `0x205d` — identified to the byte
+> via a 40-byte code-window match plus exception-time registers (`Rax = SUPERVIVE+0x8831758` ==
+> `kCatMgrVtRva`, `R14 = kernel32!VirtualQuery`). **All 22 crashpad reports are in those two classes,
+> so the entire S109/S110 tutorial campaign produced ZERO game-attributable deaths.** Two further
+> mechanisms nobody had named: **7 shutdown-path crashes** (`is_requesting_exit == true`, set-identical
+> 7/7 to the `+0x107d500` cluster — verified independently in-session) and **6 GameThread hangs**
+> (`is_stuck == true`). The "game-attributable" residual is ≤62 and is a *residual*, not a measurement.
+>
+> **Also killed here:** the "~285 s integrity kill" (it is a 240–295 s mode, median **264 s**, 4/15
+> asserts) and the FK-7 **"ANIM family"** name — `0x3495973` and `0x349596d` are the **same** function
+> `0x3494B40`, the **tick task-graph dispatcher** (`"Ticking Group [%s] GroupLeader [%d]"`), confirmed
+> in-session with `tools/strxref` against an EXACT `.pdata` extent. It was never animation code.
+>
+> **⚠ SCOPE:** every number above describes deaths that **left an artifact**. The artifact-less class
+> (§5.3 of the write-up) is real, unquantified, and perishable.
+> **Corpus regenerator:** `python tools/crashtri/fk8_corpus.py` → `docs/fk8-crash-corpus.{csv,json}`.
 
 | | |
 |---|---|
@@ -1095,7 +1136,7 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 | "There is no legacy input path" | 186 ActionMappings in a plaintext file, on a bespoke Loki class (FK-2) |
 | "The dev console is fully stripped" | 5 of 10 ABSENT-listed strings present; `DebugExecBindings Num=16` measured live (FK-13) |
 | "The tutorial route is flaky (~2 of 3)" | Byte-identical RVA chains across independent launches (FK-7) — **SETTLED S106: two named deterministic signatures, both shim-caused, both fixes compiled but unverified; corpus explains only ~half the rate. `docs/fk7-crash-settled.md`** |
-| "`SecondsSinceStart` is always 30" | 5 of 86 (FK-8) |
+| "`SecondsSinceStart` is always 30" | 5 of 92 UECC / 114 distinct deaths — **FK-8 CLOSED S111 with a permutation control** (0/56 violations, P<5e-5) |
 | "Crashes route through Sentry; no UECC dumps" | 86 UECC dirs including 9 from the newest runs (FK-9) |
 | "`runtime.dll` is packed" | 11 sections, ~48 MB at entropy 5.3–6.6, plaintext `.pdata` (FK-10) |
 | "Verbose is compiled out of shipping" | `LogSentrySdk: Verbose:` in the live log; `[Core.Log]` in the shipped ini (FK-11) |
@@ -1140,7 +1181,7 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 | **4** | **DropPlane is falsified as reachable** | N=1 against a tutorial-specific variant, with the source itself recording wrong arg types (FK-22) | Read `LokiDropShip.as` for the markers it queries |
 | **5** | **The S78 free-look rotation wall** | Its leading hypothesis (Enhanced Input) was retracted 2 sessions later, and its own stated remaining path — "hook the camera-update function" — is the per-frame heap vtable hook S78 shipped *in the same session* and never pointed at rotation. Untouched since 2026-07-15. ⚠ *Its hard measurement survives the retraction: no look-sensitivity field exists on the PC, and rewriting every enumerated sensitivity float had zero effect* | Intercept the camera-update slot's OUT rotation and scale it |
 | **6** | **The game-feature-toggle carrier is a fixed-offset wall** | Three sessions of replication bit-splicing while an HTTP `FeatureToggleOverrides` map on a route we already serve was never tried (E2, FK-23e) | Populate `Extra.FeatureToggleOverrides` and diff the "not ready" spam |
-| **7** | **The ~3–5 min code-integrity check** | The mechanism has never been located, disassembled, or its period measured; S77 reached it by elimination. ⚠ *Weaker candidate than the rest:* S43's table is a controlled A/B on the one variable that matters (patched control ~4.75 min vs identical build un-hooked stable ≥6 min), the poison-jump register signature is N=4 across ASLR bases, and this audit's own 173–201 s cluster sits **inside** the window. The operational rule ("no standing `.text` patch") remains well-supported; only the mechanism is unknown | Hunt xxHash/Zstd constants in `.rdata` (FK-10 names the algorithms); statistical modulo test on the 86 `SecondsSinceStart` values |
+| **7** | **The ~3–5 min code-integrity check** | The mechanism has never been located, disassembled, or its period measured; S77 reached it by elimination. ⚠ *Weaker candidate than the rest:* S43's table is a controlled A/B on the one variable that matters (patched control ~4.75 min vs identical build un-hooked stable ≥6 min), the poison-jump register signature is N=4 across ASLR bases, and this audit's own 173–201 s cluster sits **inside** the window. The operational rule ("no standing `.text` patch") remains well-supported; only the mechanism is unknown | Hunt xxHash/Zstd constants in `.rdata` (FK-10 names the algorithms). ⚠ **The modulo test is SPENT and NEGATIVE (S111):** Rayleigh max-over-grid 20–400 s, N=91 — best period 214.5 s, z=29.27, bootstrap **p = 0.414**; positive control fires at σ≤20 s and fails at σ=40 s, so the test had real power and found nothing. Scope: absent from the timing of deaths that **left an artifact**; blind to the artifact-less class. Also ⚠ this row's supporting "173–201 s cluster sits inside the window" is now known to be **era-B-only**, and its stack family is the **tick task-graph dispatcher**, not animation |
 | 8 | Angelscript-implemented UFunctions dispatch correctly through the native thunk | Never measured; 0 shim mentions (F6) | Print the owning class of every PI-dispatched UFunction for 5 s |
 
 ---

@@ -96,7 +96,15 @@ The short version, because it has already cost two sessions:
   `0x01` byte at `PCM+0x420` is **still NOT named**; FK-24 is OPEN.
 - **FK-7 is OPEN.** Zero reproduce-then-repair runs exist. The `play_novtguard` positive
   control is MANDATORY and a **quiet control means the sitting is VOID, not a pass**.
-  Hold to **T+220–250 s, NOT T+300 s** — the code-integrity kill lands at ~285 s.
+  Hold to **T+220–250 s, NOT T+300 s.** ⚠ **The hold survives; the "~285 s" number does NOT** (S111,
+  FK-8 corpus mining). MEASURED over 114 distinct death records: the late-kill mode is **240–295 s,
+  N=15, median 264 s — only 4 of 15 are ≥283 s, and 4 of 15 are asserts** (asserts are not
+  anti-tamper kills). Worse, `SecondsSinceStart` is the **launch** clock and therefore contains the
+  operator's staging schedule, which moved **+33.0 s** between the July and August batches — so any
+  `T+<n>` rule silently drifts when `-InjectGapSeconds` changes. **Prefer the staging-invariant form:
+  hold ≲50 s past `Load map complete …/LVL_Tutorial`.** Detect the kill by **fault family**
+  (`RIP == runtime.dll base + 1`, EXECUTE, `ExceptionInformation[0]==8`), never by elapsed time.
+  See `docs/fk8-crash-timing-mined.md` §2.3.
 - ⚠ **`play`'s `.text` hash has moved THREE times. Current: `513c6277c3ae88f3`** (S110 `KANIMREF`).
   `7bc4df9236ead0ac` was `play` only between S109 and S110; `ae532866e15fd8ac` only between S108b and
   S109; `a67239a0d83d9300` is `play-statictest`. Docs citing any of those as "the candidate" are stale.
@@ -205,13 +213,24 @@ changes it; pass `3` to reproduce the old burst. ⚠ **MITIGATION, NOT A CURE** 
 unexplained death as **possibly ours**. Full evidence: `docs/s109-dump-forensics.md` §12–§20
 (§20 retracts an earlier "eliminates" claim; §16 retracts "the PI hook is the mechanism").
 
+⚠⚠ **THE TABLE ABOVE IS UNDER RE-EXAMINATION (S111).** Do not delete it — but the outcome variable
+was **never split by fault family**, and it does not survive that split. MEASURED: both deaths in the
+30 s row (`knee-g30-2`, `knee-g30-3`) are `catalog_store_fix.dll`'s launch-time heap scan faulting at
+`.text` RVA `0x205d` — a death the **primary** injector causes and that `-InjectGapSeconds` does not
+touch at all. `sub-NoMissions-1/-2` and `sub-NoPasses-2` are the same family. So an unknown share of
+the "hazard" being attributed to injection spacing is a fixed per-launch hazard from the primary
+shim. Re-fit before trusting the 71× figure: classify each death by `RIP & 0xFFFF` first
+(`docs/fk8-crash-timing-mined.md` §3.1, §7.2 item 3).
+
 **★ `configs/fk24-stage.ps1` now enforces the same minimum gap** (`-InjectGapSeconds`, default
 **20**). It was NOT a uniform burst — measured spacing was gft→fo **~5 s** (lethal regime),
 fo→sp **19 s**, sp→probe **7–17 s** — so only the first gap was clearly bad. The gate is a
 *minimum*: the existing evidence waits (world-load, `[SP] done step=4`) count toward it and only
 the shortfall is slept, costing **~15–29 s** of staging rather than ~50 s. The probe now arms
-around **T+175 s** instead of ~T+145 s, leaving ~110 s before the ~285 s integrity kill — so the
+around **T+175 s** instead of ~T+145 s, leaving ~110 s before the late-kill mode — so the
 **T+220–250 s hold still fits, but the armed window is tighter**; budget accordingly.
+⚠ Both numbers here are **staging-schedule-relative**, not properties of the game (S111): the launch
+clock moved +33.0 s July→August, so re-anchor to `Load map complete …/LVL_Tutorial` when it matters.
 ⚠ **UNVALIDATED ON A LIVE TUTORIAL RUN.** The 71× reduction was measured on the *menu* route.
 Whether it moves the ~1–5 min tutorial deaths is the open question — and it is now the single
 highest-value experiment on the board.
