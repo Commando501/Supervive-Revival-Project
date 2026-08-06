@@ -102,6 +102,13 @@ $Variants = @{
         # RunMode switch, tutorial_launch.cpp:93. Default when KRUNMODE is unset is RM_CHEATSPAWN.
         'fo'         = @('-DKRUNMODE=RM_FORCEOPEN')
         'sp'         = @('-DKRUNMODE=RM_SPAWNPOSSESS')
+        # ★ S111 — control arm for the ability-system GATE fix (KGASSTORAGE, default ON in 'sp').
+        #   The fix writes the carrier's ASC into the hero's AbilitySystemComponentStorage@0xF00,
+        #   because the hero-side getter the wiring reads is literally `mov rax,[rcx+0x710]; ret` on
+        #   that field, and it returning NULL is what makes TryUpdateAbilitySystem's sibling bail.
+        #   With KGASSTORAGE=0 expect the S111 baseline exactly: PS+0x650 populated, PS+0x658 NULL,
+        #   ASC.AvatarActor NULL. See docs/s111-asc-census.md §11.
+        'sp-nostorage' = @('-DKRUNMODE=RM_SPAWNPOSSESS','-DKGASSTORAGE=0')
         'cheatspawn' = @('-DKRUNMODE=RM_CHEATSPAWN')
         'makemesh'   = @('-DKRUNMODE=RM_MAKEMESH')
         'topdowncam' = @('-DKRUNMODE=RM_TOPDOWNCAM')

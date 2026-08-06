@@ -131,3 +131,52 @@ RUN 4 OUTCOMES (recorded after the sitting) -- ALL FOUR HELD.
   R4 HELD (I expected R2 to hold, for the stated reason).
 Log: docs/s110-itemwatch-animref-*.log. The game died at ~390 s of the usual protector death,
 long after the verdict; that is not part of this result.
+
+================================================================================================
+RUN 5 -- S111 THE ABILITY-SYSTEM GATE (KGASSTORAGE)
+registered before the sitting, 2026-08-05
+
+THE FIX. docs/s111-asc-census.md §11: the hero-side ASC getter is `mov rax,[rcx+0x710]; ret` on
+hero+0xF00 (AbilitySystemComponentStorage). TryUpdateAbilitySystem's sibling calls it and bails when it
+returns NULL -- which is why PS+0x658 stays NULL and ASC.AvatarActor is never bound, even though the
+PlayerState side works (PS+0x650 measured NULL -> ASC, so the event DOES broadcast).
+PopulateHeroAscCache writes the carrier's ASC into that field, by name, with readback, after
+EnsureHeroAffiliatedCarrier and before TryUpdateAbilitySystem.
+
+ARMS, distinct by .text hash, one dimension apart:
+    build\tutorial_launch_sp.dll             4285c0dd22ae9976   KGASSTORAGE=1  (fix)
+    build\tutorial_launch_sp_nostorage.dll   6280308746efe814   KGASSTORAGE=0  (control)
+  ⚠ tools\sigbypass-mod\tutorial_launch_sp.dll is a STALE Jul-29 copy (d0d3cc140c4f4286) and is what
+    fk24-stage.ps1 injects. Inject the build\ path EXPLICITLY for this test.
+
+PREDICTIONS:
+  S1  The write lands: "[GAS] *** cache: hero.AbilitySystemComponentStorage@0xF00 (expect 0xF00)
+      0 -> <asc> OK ***". A refusal (property not found / not writable / already populated) makes the
+      run inconclusive for S2 rather than a negative.
+  S2  THE DISCRIMINATOR. AFTER the chain, ASC.AvatarActor == the hero pawn, i.e. the marker prints
+      "*** AVATAR IS THE HERO -- BOUND ***", and PS+0x658 is no longer NULL.
+      Falsified if AvatarActor stays NULL -- which would mean the sibling bails for a SECOND reason
+      beyond the cache, and the next read is whatever its next branch tests.
+  S3  ActivatableAbilities MAY STAY 0. Granting is a separate step (BP_AuthGiveAbilityWithInputID), so
+      a bind with zero abilities is a SUCCESS for this experiment, not a partial failure. Stated in
+      advance so it cannot be re-read as disappointment afterwards.
+  S4  IsAbilitySystemInitialized will probably flip to 1 -- but it reads the hero's cache, which we
+      just wrote, so it is NO LONGER AN INDEPENDENT WITNESS for this run. AvatarActor is the witness.
+      (This is why ReportAscActorInfo was added.)
+
+VOID: no armed window (FK-26); the carrier is not built; the game dies before the chain completes.
+
+------------------------------------------------------------------------------------------------
+RUN 5 OUTCOMES (recorded after the sitting)
+  S1 HELD.       "[GAS] *** cache: hero.AbilitySystemComponentStorage@0xF00 (expect 0xF00)
+                 0 -> 26B22974D80 OK ***" -- the property resolved BY NAME to exactly 0xF00.
+  S2 FALSIFIED.  ASC.AvatarActor stayed 0x0 and PS+0x658 did not change. The bind did not happen.
+  S3 n/a         (no bind, so granting was never reached).
+  S4 WRONG, usefully: IsAbilitySystemInitialized stayed 0 WITH the cache populated, so it does NOT
+                 merely read that cache -- it remains an independent witness. GetLokiAbilitySystem_BP
+                 (which does read the cache) now returns the ASC.
+  CAUSE: the sibling base+0x56CEDB0 does not bind anything. Read past its gate for the first time, it
+  caches a value at +0x658, writes two floats at +0x690/+0x694, and broadcasts GameEvent_CrewDrop... .
+  It is a generic "broadcast whatever PlayerState value changed" helper, not ability wiring. I had
+  inferred its purpose from its call site without reading it.
+  KEEP the fix: @0xF00 is genuinely the hero-side getter's backing field. Necessary, not sufficient.

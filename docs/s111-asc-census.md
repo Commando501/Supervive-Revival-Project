@@ -499,6 +499,72 @@ than either guess, and it cost one staged run with no writes.
 
 ---
 
+## 12. THE GATE WRITE — it lands, and it is NOT sufficient. The sibling never bound anything.
+
+`KGASSTORAGE` implemented and tested. Predictions registered beforehand (`docs/s110-prediction-registered.txt`,
+RUN 5). **S1 held. S2 is falsified.**
+
+```
+[GAS] BEFORE ASC 0x26B22974D80 Owner@0x408=…(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[GAS] *** cache: hero.AbilitySystemComponentStorage@0xF00 (expect 0xF00)  0 -> 26B22974D80  OK ***
+[GAS] AFTER  AbilitySystemComponentStorage  @0xF00 = 0x26B22974D80 (LokiAbilitySystemComponent)
+[GAS] AFTER  ASC 0x26B22974D80 Owner@0x408=…  Avatar@0x410=0x0(NULL)      <-- STILL NULL
+[GAS] AFTER  IsAbilitySystemInitialized -> parm@0x0=0 res=0
+[GAS] GetLokiAbilitySystem_BP -> 0x26B22974D80 (LokiAbilitySystemComponent)   <-- now works
+[GAS] ===== RESULT: initialised 0 -> 0  *** STILL NOT INITIALISED *** =====
+```
+
+The write lands exactly where predicted (the property resolved to `0xF00` by name), and
+`GetLokiAbilitySystem_BP` — which reads that cache — now returns the ASC. **But `AvatarActor` is
+unchanged.**
+
+### Why: the sibling does not bind. I inferred that it did, and never read it.
+
+Disassembling `base+0x56CEDB0` **past** its gate, which §10/§11 never did:
+
+```
+lea rcx,[rdi+0x658] ; call 0x53B7760      ; store the new value into the +0x658 cache
+movss [rdi+0x690], xmm0                    ; write two FLOATS
+movss [rdi+0x694], xmm1
+call 0x4936900 / 0x5397D90 / 0x54E96C0
+lea  rax,[rip+…] -> 0x88481F8              ; an event type…
+call 0x4933B00                             ; …and the SAME broadcast helper
+```
+
+and the type it references decodes as **`GameEvent_CrewDrop…`** — two floats, i.e. a drop *position*.
+`base+0x56CEDB0` is a generic "compare cached PlayerState values and broadcast whatever changed"
+helper. **It has nothing to do with the ability system.** It sits in the same translation unit and is
+called from `TryUpdateAbilitySystem`, which is the entire basis on which I called it "the
+PlayerState-side ability-system wiring".
+
+⇒ **Both `TryUpdateAbilitySystem` and its sibling are change-detect + broadcast. Neither binds
+anything.** The whole client-side `LokiPlayerState` GAS surface is *notification*, not wiring — which
+is why filling the gate changed the getter's answer and nothing else.
+
+### What is now solid
+
+* **`@0xF00` is genuinely the hero-side getter's backing field** (`mov rax,[rcx+0x710]; ret`), and
+  filling it is *correct* — `GetLokiAbilitySystem_BP` needs it. **Keep `KGASSTORAGE` on: necessary,
+  not sufficient.** Control arm `sp-nostorage` is registered.
+* **`IsAbilitySystemInitialized` is still an independent witness.** It stayed `0` with the cache
+  populated, so it does not merely read that cache — S4's caution was unnecessary, and the bit remains
+  trustworthy as a success test.
+* The bind is `InitAbilityActorInfo`, and nothing on the client PlayerState path calls it.
+
+### Next, and it is structural + offline
+
+Find the code that writes the ASC's actor-info pair directly: scan `.text` in `dumps/tutorial-hero/`
+for a store to `[reg+0x410]` adjacent to a store to `[reg+0x408]`. That *is* `InitAbilityActorInfo`'s
+signature at the instruction level, it needs no symbol, and it works on a stripped binary. Then either
+call it, or replicate it and find out whether the unreflected `AbilityActorInfo` TSharedPtr matters.
+
+⚠ **Third time.** §8 assumed a paired `AddToAbilitySystem`; §9 assumed the bind was in `PossessedBy`;
+§11/§12 assumed the sibling did the wiring. Each was an assumption about what an *unread* function
+does, and each cost a run. §10 and §12 only became solid by disassembling past the point I had
+previously stopped reading. **Read to the end of the function before naming it.**
+
+---
+
 ## 6. Reproducing
 
 ```powershell

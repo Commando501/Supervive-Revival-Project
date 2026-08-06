@@ -4561,6 +4561,75 @@ static uintptr_t EnsureHeroAffiliatedCarrier(uintptr_t ps){
     return carrier;
 }
 
+// ★★★ S111 — THE GATE. docs/s111-asc-census.md §11, every link measured.
+//
+// The chain the game runs is:  TryUpdateAbilitySystem -> (its same-TU sibling base+0x56CEDB0)
+//   1. sibling gates on PlayerState+0x430 -- the hero pawn. MEASURED PRESENT.
+//   2. sibling then calls the HERO-side IAbilitySystemInterface getter (hero+0x7F0 vtable, slot +0x10,
+//      impl base+0x55A9610), which is literally two instructions:
+//           mov rax,[rcx+0x710]      ; rcx = hero+0x7F0, so this is hero+0xF00
+//           ret                      ; = AbilitySystemComponentStorage
+//   3. that returns NULL, so the sibling BAILS, PlayerState+0x658 is never set, and the ASC's
+//      AvatarActor is never bound.
+//
+// The PlayerState side works fine -- its getter (base+0x56BA9E0) walks HeroAffiliatedObject->ASC and
+// finds ours, so TryUpdateAbilitySystem does see a change (PS+0x650 NULL -> ASC, measured) and does
+// broadcast. Only the hero-side cache is empty, because the carrier was built by hand and nothing ever
+// populated it.
+//
+// So: @0xF00 is not a symptom, it is the INPUT the wiring tests. Fill it from the carrier and the
+// sibling can proceed. One 8-byte write to a reflected UPROPERTY on an object this shim created
+// itself -- the same shape as KANIMREF, which is the one fix that landed cleanly (S110).
+//
+// Deliberately writes ONLY the ASC cache, not AttributeSetStorage/AttributeSetHealthStorage: @0xF00 is
+// the offset the disassembly proves is read, and a single variable keeps the result attributable. If
+// the sibling turns out to want the attribute caches too, that shows up as a second, separate bail.
+#ifndef KGASSTORAGE
+#define KGASSTORAGE 1        // -DKGASSTORAGE=0 -> control arm: leave the cache empty, reproduce the bail
+#endif
+static void PopulateHeroAscCache(uintptr_t ps, uintptr_t hero){
+#if !KGASSTORAGE
+    (void)ps; (void)hero;
+    Marker("[GAS] cache: KGASSTORAGE=0, hero ASC cache NOT populated (control arm)\r\n");
+#else
+    uint32_t hoOff=PropOffsetSuper(ClassOf(ps),"HeroAffiliatedObject");
+    uintptr_t carrier=(hoOff!=0xFFFFFFFF&&SafeReadable((void*)(ps+hoOff),8))?*(uintptr_t*)(ps+hoOff):0;
+    if(!LooksLikePtr(carrier)){ Marker("[GAS] cache: no HeroAffiliated carrier -> nothing to cache\r\n"); return; }
+    uint32_t ascOff=PropOffsetSuper(ClassOf(carrier),"AbilitySystemComponent");
+    uintptr_t asc=(ascOff!=0xFFFFFFFF&&SafeReadable((void*)(carrier+ascOff),8))?*(uintptr_t*)(carrier+ascOff):0;
+    if(!LooksLikePtr(asc)){ Markerf("[GAS] cache: carrier.AbilitySystemComponent@0x%X is NULL -> nothing to cache\r\n",ascOff); return; }
+    uint32_t stOff=PropOffsetSuper(ClassOf(hero),"AbilitySystemComponentStorage");
+    if(stOff==0xFFFFFFFF){ Marker("[GAS] cache: hero has NO AbilitySystemComponentStorage property -> abort\r\n"); return; }
+    if(!SafeWritable((void*)(hero+stOff),8)){ Markerf("[GAS] cache: hero+0x%X not writable -> abort\r\n",stOff); return; }
+    uintptr_t before=*(uintptr_t*)(hero+stOff);
+    if(LooksLikePtr(before)){ Markerf("[GAS] cache: already populated (0x%llX) -> leaving it alone\r\n",(unsigned long long)before); return; }
+    *(uintptr_t*)(hero+stOff)=asc;
+    uintptr_t after=*(uintptr_t*)(hero+stOff);
+    Markerf("[GAS] *** cache: hero.AbilitySystemComponentStorage@0x%X (expect 0xF00)  %llX -> %llX  %s ***\r\n",
+            stOff,(unsigned long long)before,(unsigned long long)after,(after==asc)?"OK":"FAILED");
+#endif
+}
+// Report the ASC's actor-info pair. AvatarActor becoming the hero pawn IS the success witness for the
+// bind -- IsAbilitySystemInitialized reads the hero's cache and would now be true merely because we
+// wrote it, so it is no longer an independent witness for this experiment.
+static void ReportAscActorInfo(uintptr_t ps, uintptr_t hero, const char* when){
+    uint32_t hoOff=PropOffsetSuper(ClassOf(ps),"HeroAffiliatedObject");
+    uintptr_t carrier=(hoOff!=0xFFFFFFFF&&SafeReadable((void*)(ps+hoOff),8))?*(uintptr_t*)(ps+hoOff):0;
+    if(!LooksLikePtr(carrier)){ Markerf("[GAS] %s actorinfo: no carrier\r\n",when); return; }
+    uint32_t ascOff=PropOffsetSuper(ClassOf(carrier),"AbilitySystemComponent");
+    uintptr_t asc=(ascOff!=0xFFFFFFFF&&SafeReadable((void*)(carrier+ascOff),8))?*(uintptr_t*)(carrier+ascOff):0;
+    if(!LooksLikePtr(asc)){ Markerf("[GAS] %s actorinfo: no ASC\r\n",when); return; }
+    uint32_t ownOff=PropOffsetSuper(ClassOf(asc),"OwnerActor"), avaOff=PropOffsetSuper(ClassOf(asc),"AvatarActor");
+    uintptr_t ow=(ownOff!=0xFFFFFFFF&&SafeReadable((void*)(asc+ownOff),8))?*(uintptr_t*)(asc+ownOff):0;
+    uintptr_t av=(avaOff!=0xFFFFFFFF&&SafeReadable((void*)(asc+avaOff),8))?*(uintptr_t*)(asc+avaOff):0;
+    char on[96]="-",an[96]="-";
+    if(LooksLikePtr(ow)&&ClassOf(ow)) GetFNameStr(NameId(ClassOf(ow)),on,sizeof(on));
+    if(LooksLikePtr(av)&&ClassOf(av)) GetFNameStr(NameId(ClassOf(av)),an,sizeof(an));
+    Markerf("[GAS] %s ASC 0x%llX Owner@0x%X=0x%llX(%s) Avatar@0x%X=0x%llX(%s)%s\r\n",when,
+            (unsigned long long)asc,ownOff,(unsigned long long)ow,LooksLikePtr(ow)?on:"NULL",
+            avaOff,(unsigned long long)av,LooksLikePtr(av)?an:"NULL",
+            (av==hero)?"   *** AVATAR IS THE HERO -- BOUND ***":"");
+}
 static void WireAbilitySystem(uintptr_t hero, uintptr_t pc){
     Marker("[GAS] ===== S101: driving LokiPlayerState's own ability-system wiring chain =====\r\n");
     uint32_t psOff=PropOffsetSuper(ClassOf(pc),"PlayerState");
@@ -4573,6 +4642,10 @@ static void WireAbilitySystem(uintptr_t hero, uintptr_t pc){
     bool before=ReadAbilityInitBit(hero,"BEFORE");
     // ★ S103 — the carrier must exist BEFORE the chain; TryUpdateAbilitySystem only updates, never creates.
     if(KGASCARRIER) EnsureHeroAffiliatedCarrier(ps);
+    // ★★★ S111 — and the hero's own ASC cache must be populated BEFORE TryUpdateAbilitySystem, because
+    // its sibling reads that cache to decide whether to do the wiring at all. See PopulateHeroAscCache.
+    ReportAscActorInfo(ps,hero,"BEFORE");
+    PopulateHeroAscCache(ps,hero);
 
     // STEP 1 — HeroClass. Prefer the native setter; fall back to writing the property, which is what the S90
     // spawn path already does (PlayerState.HeroClass is a UClass* field the spawn reads).
@@ -4642,6 +4715,7 @@ static void WireAbilitySystem(uintptr_t hero, uintptr_t pc){
     }
 
     ReportGasState(hero,"AFTER ");
+    ReportAscActorInfo(ps,hero,"AFTER ");
     bool after=ReadAbilityInitBit(hero,"AFTER ");
     // The accessor is the second witness: a non-null ASC means the carrier really was created and cached.
     { void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(hero),"GetLokiAbilitySystem_BP",&f,&th,&ch);
