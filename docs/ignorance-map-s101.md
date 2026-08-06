@@ -684,6 +684,7 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 | **Steers** | The "structural ceiling" framing; Ghidra's data model; audit item 0.2's expected gain. |
 | **Note** | The audit *does* correct this at line 283 (+2,044,822 bytes from merging `toggles`/`vmbuild`/`accountpass`), so the residual false-known is the **stale guidance in CLAUDE.md and memory**, plus the never-stated `.data` caveat, plus the untried `rcb` rebase (below). |
 | **Cheapest experiment** | Re-run `mergedumps` (audit 0.2). **Minutes.** |
+| **★ DONE 2026-08-05 (S111)** | The multi-state strategy has now actually been executed once: `dumps/tutorial-hero/` was captured from a **staged tutorial world with the hero spawned and possessed** — 67.42% overall, `.text` **53.2%**, `.rdata`/`.data` 100%. That is the first genuinely non-menu capture state the project owns, and it is the right image for any ability-system or in-world question. ⚠ It **cannot** be merged with `merged.dump.exe`: different ImageBase (`0x7FF6505C0000` vs `0x7FF6AF000000`) and `mergedumps` rejects mismatched bases by design, so the two remain separate images rather than one better one. The residual false-known (stale multi-state guidance in CLAUDE.md/memory, the `.data` mixing caveat, the untried `rcb` rebase) is unchanged. |
 
 ---
 

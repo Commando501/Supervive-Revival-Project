@@ -227,6 +227,80 @@ primitive than everything the shim does today; treat it as new work, not a varia
 
 ---
 
+## 8. THE `0x5302ED0` DISASSEMBLY — it cannot be read, and the "paired add" does not exist
+
+§7 proposed `RemoveFromAbilitySystem`'s exec thunk (RVA `0x5302ED0`) as the anchor for finding a paired
+`AddToAbilitySystem`. **Both halves of that plan are dead. I proposed it; it was wrong twice over.**
+
+**1. The page never decrypts.** Verified three ways:
+* `dumps/merged.dump.exe` → 48 bytes of **zeros** at `0x5302ED0` (and at the `TryUpdateAbilitySystem`
+  implementation `0x56CE5F0` too);
+* a **fully staged in-world process** — tutorial map loaded, hero spawned and possessed, GAS chain run
+  (`[FOW] GAS step3: TryUpdateAbilitySystem (native) ok`) — live RPM at `0x5302ED0` **failed outright**:
+  the page is not even committed;
+* nothing in the build ever *calls* `RemoveFromAbilitySystem`, so the demand-decrypt never fires for it.
+
+**2. The anchor was wrong in principle even if it had decrypted.** `0x5302ED0` is an **exec thunk**. UE
+emits exec thunks in a generated, name-ordered block; they are not laid out beside the implementations
+they call. "The paired Add is usually adjacent" is true of *implementations*, not of `exec*` stubs.
+
+**3. And there is no paired add.** Direct search of the 169 MB in-world image:
+
+```
+AddToAbilitySystem         ascii=-          utf16=-      <-- does not exist, anywhere
+InitAbilityActorInfo       ascii=-          utf16=-      (C++ method, no reflection name — expected)
+RemoveFromAbilitySystem    ascii=0x88DFEA8               (reflection metadata)
+TryUpdateAbilitySystem     ascii=0x8A2CBF0
+AbilitySystemInitialized   ascii=0x8859E3A
+```
+
+`RemoveFromAbilitySystem` is reflected and has no reflected counterpart. **The Remove/Add symmetry I
+assumed is not in this build.** Searching for it by name is closed.
+
+### What the trip did yield
+
+**`ALokiPlayerState::TryUpdateAbilitySystem` implementation @ `base+0x56CE5F0`** (reached through the
+exec thunk's `P_FINISH` + tail-jump at `base+0x5438C20`), readable, and its shape confirms
+*update-not-create* **from the binary** rather than from the shim's comment:
+
+```
+mov  rbp, rcx                       ; this (LokiPlayerState)
+add  rcx, 0x470 ; mov rax,[rcx] ; call [rax+0x10]      ; virtual fetch of the current subject
+mov  eax, [rdi+0xc] ; shr eax, 0x1e ; not al ; test al,1 ; je null   ; RF_Garbage validity check
+mov  rax, [rbp+0x650]
+cmp  rdi, rax
+je   +0x56CE889                     ; ★ unchanged -> RETURN, having done nothing
+```
+
+★ **That `[rdi+0xc] >> 0x1e` is an independent confirmation of S110's `ObjectFlags@0x0C` calibration** —
+the game's own code reads `EObjectFlags` bit 30 (`RF_Garbage`) at exactly that offset.
+
+A sibling in the same translation unit, **`base+0x56CEDB0`**, called from `+0x56CE835`, repeats the
+change-detect shape against `[rdi+0x658]` after two validity checks. That pair is the PlayerState-side
+ability-system wiring and is the place to keep reading.
+
+### ★ A 67.42% IN-WORLD IMAGE DUMP — `dumps/tutorial-hero/`
+
+Captured from the staged state above with `usmapdump dumpimage`:
+
+```
+base     0x7FF6505C0000     coverage 120,094,720 / 178,130,944 (67.42%)
+.text    53.2%      .rdata 100%      .data 100%      .pdata 100%
+```
+
+**This is the first genuinely non-menu capture state the project has ever taken** — FK-18's "cheapest
+experiment", finally executed. ⚠ It **cannot** be merged into `dumps/merged.dump.exe`: different
+ImageBase (`0x7FF6505C0000` vs `0x7FF6AF000000`), and `mergedumps` rejects mismatched bases by design.
+It stands as its own image, and it is the right one for any ability-system or in-world question.
+
+### Next, structurally rather than by name
+
+The bind is whoever calls `InitAbilityActorInfo`. In the captured state the hero **is possessed**, so
+`PossessedBy`'s page is decrypted: walk the hero's vtable to `APawn::PossessedBy`, read its calls, and
+look for the ASC being handed `(PlayerState, Pawn)`. Entirely offline against `dumps/tutorial-hero/`.
+
+---
+
 ## 6. Reproducing
 
 ```powershell
