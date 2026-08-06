@@ -1,209 +1,172 @@
-# S111 — the tutorial hero is complete except for SIMULATION. Start at the `[GAS]` chain.
+# NEXT SESSION — the ability-system BIND is one call away, and the call has been located
 
-**Read this whole file before touching anything.** Everything below was measured live on 2026-08-05
-(S110) and is committed on `dedicated-server-stub` (`fde4915`..`2690822`, all pushed). Branch is clean,
+**Read this whole file before touching anything.** Everything below was measured on 2026-08-05 and is
+committed on `dedicated-server-stub` (`fde4915`..`5c16224`, all pushed). Branch clean,
 `forceTutorialMatch = false`, `ags` rebuilt, nothing running.
 
-**S110 in one line:** the run-animation defect is *solved* — root-caused to a real GC collection, the
-inherited "just root it" premise falsified with a phase-locked experiment, and fixed by giving the
-asset a reference the GC can actually reach. The hero now walks and runs with locomotion animation at
-the default timing, with no diagnostic build.
+> ⚠ **Numbering.** "S111" was consumed by **two parallel sessions on the same day**: an ability-system
+> / GC line (`docs/s110-*`, `docs/s111-asc-census.md`) and an FK-8 crash-corpus line
+> (`docs/fk8-*`, commit `e5cd820`). Both are real, both are committed, and one point where they
+> collided is reconciled in `docs/s111-fk8-s110-reconciliation.md`. This file is the brief for
+> whoever comes next; the filename is historical.
 
 ---
 
-> ## ✅ TASK ONE STEP 1 IS DONE — and it INVERTED the premise. Read `docs/s111-asc-census.md` first.
-> **An ability system EXISTS for the hero — `LokiAbilitySystemComponent 0x274BDE53400` on the
-> `LokiPlayerState_HeroAffiliated` companion, with `SpawnedAttributes` Num=2 — but the SHIM built it**
-> (`EnsureHeroAffiliatedCarrier` spawns the carrier; `K2_InitStats` makes the attribute sets). The
-> three fields every existing tool reads (`@0xF00/0xF08/0xF10` on the pawn) are a **CACHE**, and both
-> the shim and `gas_recon.py` mistook them for the ability system — that part is FK-30 and stands.
->
-> **The real gap is two things:** `AvatarActor` is **NULL** (the ASC is never bound to the pawn — the
-> second half of `InitAbilityActorInfo`), and `ActivatableAbilities` is **Num=0**.
->
-> ⚠ **Do NOT "just call `TryUpdateAbilitySystem`" — it is already called TWICE** (`:4624`, `:4641`),
-> verdict `0 -> 0`, and the shim's own comment says "TryUpdate is update-not-create". Measured live:
-> **no reflected function anywhere binds the avatar** — `LokiCharacter` has `RemoveFromAbilitySystem`
-> and no add, the carrier has zero UFunctions, Angelscript exposes a getter and no setter. Start at
-> **§7 of `docs/s111-asc-census.md`**: the route is the native impl, offline, anchored at
-> `RemoveFromAbilitySystem` exec thunk RVA `0x5302ED0`.
->
-> Also measured: **344 initialised ability systems** exist in the loaded tutorial world (brush, trees,
-> `BP_CapturePoint_Tutorial_C`), so GAS runs here constantly — and the world has **no game-spawned hero
-> or AI pawn** at this stage, only spectators, so the spawn-path comparison below could not be run and
-> is no longer the question. The `SpawnPlayer` route is NOT indicated by this evidence.
->
-> ⚠ The "would we be first" verdict this probe emits in a **parked** process is an artifact of the world
-> not being loaded. A negative measured in an empty world is not a negative.
+## 0. ★ TASK ONE — call `InitAbilityActorInfo`. It is at `base+0x447F410`.
 
-## 0. ★ TASK ONE — the hero has no ability system, and the shim already tells you exactly where it stops
-### ⚠ SUPERSEDED — the premise of this section is false; see the banner above. Kept as the record.
+**The state of the hero's ability system, all measured** (`docs/s111-asc-census.md`):
 
-**Why this and not stability:** S109/S110 established that **every tutorial death ever captured is the
-protector** (`runtime.dll+1`, zero SUPERVIVE frames, now nine-plus independent instances). FK-7 has
-never had a confirmed instance. Chasing "stability" risks chasing the anti-tamper. Meanwhile runs are
-now lasting **338–434 s** (§2), which is plenty of window to do real work in. Simulation is the actual
-milestone: the hero moves and animates but cannot *do* anything.
+| | |
+|---|---|
+| ASC object | **EXISTS** — but **the shim builds it**: `EnsureHeroAffiliatedCarrier` spawns a `LokiPlayerState_HeroAffiliated`, whose constructor makes the ASC |
+| attribute sets | **2**, made by the shim's own `K2_InitStats` calls |
+| `ASC.OwnerActor` | set (the carrier) |
+| **`ASC.AvatarActor`** | **NULL** ← the gap |
+| `ActivatableAbilities` | **0** ← the other gap |
+| hero `AbilitySystemComponentStorage@0xF00` | now filled by `KGASSTORAGE` (S111) — **necessary, not sufficient** |
 
-**The blocker is already instrumented.** From the last armed run's marker, verbatim:
+**Nothing in the client-side `LokiPlayerState` path binds the avatar.** `TryUpdateAbilitySystem` and
+its same-TU sibling are *change-detect + event broadcast*, both read to the end and confirmed — the
+sibling turned out to broadcast `GameEvent_CrewDrop…`, nothing to do with GAS. No reflected function
+anywhere does the bind: `ALokiCharacter` has `RemoveFromAbilitySystem` and **no add**;
+`LokiPlayerState_HeroAffiliated` has **zero** UFunctions; Angelscript exposes `GetAvatarActorFromASC`
+and no setter.
+
+**So the bind must be called directly, and it has been found — by behaviour, not by name:**
 
 ```
-[GAS] hero Role@0x160=3
-[GAS] GetHeroAsset -> 0x2AC084EFC40 (BP_HeroAsset_Ronin_C)          <- resolves fine
-[GAS] AFTER  AbilitySystemComponentStorage  @0xF00 = 0x0 (NULL)
-[GAS] AFTER  AttributeSetStorage            @0xF08 = 0x0 (NULL)
-[GAS] AFTER  AttributeSetHealthStorage      @0xF10 = 0x0 (NULL)
-[GAS] AFTER  IsAbilitySystemInitialized -> parm@0x0=0 res=0
-[GAS] GetLokiAbilitySystem_BP -> 0x0 (NULL)
-[GAS] ===== RESULT: initialised 0 -> 0  *** STILL NOT INITIALISED *** =====
+UAbilitySystemComponent::InitAbilityActorInfo   base+0x447F410
+    signature (rcx = ASC, rdx = OwnerActor, r8 = AvatarActor)   __fastcall, 3 pointers, void
+    body:  mov rcx,[rdi+0x418]        ; AbilityActorInfo  (TSharedPtr raw ptr)  <- ASC+0x418
+           call [r10+8]               ; AbilityActorInfo->InitFromActor(owner, avatar, this)
+           mov [rdi+0x410], rbx       ; AvatarActor = avatar
+           mov [rdi+0x408], r15       ; OwnerActor  = owner
 ```
 
-`tutorial_launch.cpp:4565` onward ("S101: driving LokiPlayerState's own ability-system wiring chain")
-already: finds the PlayerState, resolves the hero class and `GetHeroAsset`, builds a carrier object,
-writes `PlayerState.HeroAffiliatedObject`, and tries `K2_InitStats` on the attribute sets. The three
-storage slots stay NULL regardless. **So the question is not "where is the ASC" — it is "which step of
-the game's own wiring is not running", and every step is already logged.**
+### What to actually do, cheapest first
 
-**The hypothesis worth testing first, and it is cheap and READ-ONLY.** The shim spawns the hero itself
-(`SpawnActorCls` + possess) rather than through the game's own path, so it plausibly skips whatever
-initialises the ability system. `ALokiGameMode::SpawnPlayer` is the real hero-spawn primitive and is
-**Angelscript, fully decompiled** (`tools/asdump`; memory `supervive-angelscript-layer`).
-
-> **Step 1, no shim, no armed window needed:** find a pawn in the tutorial world that the GAME spawned
-> — a bot, an AI, a training dummy — and read its `AbilitySystemComponentStorage@0xF00`. If the game's
-> own pawns have a live ASC and ours does not, the spawn path IS the difference and the route is to
-> spawn through `SpawnPlayer`. If *nothing* in the map has an ASC, the ability system is not running at
-> all in this mode and the target moves to whatever gates it. **This is a read-only RPM probe** —
-> `tools/re/gas_probe.py` and `gas_recon.py` already exist; `obj_by_class.py` finds the pawns.
-> **One menu-or-tutorial attach, ~30 minutes, and it splits the problem in half.**
-
-⚠ Register which outcome you expect before you look. Both are informative; only one is a surprise.
-
-### A 30-minute OFFLINE warm-up, if you want a cheap win first
-
-* **`chain = 888cee8 8831758`** — the first Family B specimen carrying SUPERVIVE frames (dump
-  `590cfd83`, in `dumps/crashpad-20260804-182004-shimrun3-DEATH`). **Nobody has looked up those two
-  RVAs in three sessions.** If they land in game code it is the first real FK-7 evidence that exists.
-  `tools/re/offline_xref.py` / `disasm_live.py` against `dumps/merged.dump.exe`. Cheap, possibly decisive.
-* **Audit `KGCROOT`.** It is now MEASURED INERT (§1). It still runs a full root-bit corroboration and
-  pokes flags on every load, and prints `[GC] ROOT loaded-asset … OK` lines that *look* like they are
-  protecting something. That is precisely the instrument-artifact hazard this project keeps tripping
-  over. Either delete it or re-label the log lines "poked (measured inert, kept as telemetry)". Leave
-  the corroboration code — it is correct now and it measures a real bit.
+1. **Read `ASC+0x418` first (read-only, no writes).** If `AbilityActorInfo` is null the call will
+   dereference null — `InitAbilityActorInfo` opens by loading it and calling through its vtable.
+   `tools/re/ps_gas_fields.py` already walks to the ASC; add one read. **Do this before any call.**
+2. **Then the call.** It is a **raw, non-UFunction call**, so the ProcessInternal primitive does not
+   apply (no `FFrame`) — but it is less exotic than it sounds: a 3-argument `__fastcall` through a
+   function pointer, on the game thread, inside the shim's existing SEH guard. The shim already has
+   the game-thread context (the PI-hook piggyback) and `CallNativeGuarded`'s guard pattern to copy.
+3. ⚠ **Do NOT hardcode `0x447F410`.** Project rule is resolve-by-name, and here there *is* no name —
+   so resolve by **signature scan at runtime**, using the same discriminator that found it:
+   a `REX.W mov [reg+0x408], reg` and a `mov [reg+0x410], reg` with the **same base and different
+   source registers**, within ~0x100 bytes. `tools/re/find_store_pair.py` is the offline version of
+   exactly that scan and can be ported. A hardcoded RVA silently becomes wrong on any game update.
+4. **Register the prediction before the run.** Expect: `ASC.AvatarActor` becomes the hero pawn, and
+   `IsAbilitySystemInitialized` flips to 1 — that bit is a **trustworthy independent witness**
+   (S111 verified it stayed 0 even after `@0xF00` was filled, so it does not merely read the cache).
+   **`ActivatableAbilities` may well stay 0** — granting is a separate step
+   (`BP_AuthGiveAbilityWithInputID`, reflected and callable). A bind with zero abilities is a
+   **success**, not a partial failure. Say so in advance.
 
 ---
 
-## 1. What S110 established — do NOT re-derive any of it
+## 1. What S111 established — do NOT re-derive
 
-Full write-up: `docs/s110-item-watch-gc-mechanism.md`. Memory: `supervive-gc-reachability-mechanism`.
-Ignorance map: **FK-27, FK-28, FK-29** are new entries in `docs/ignorance-map-s101.md`.
+### The animation / GC thread — **CLOSED**
+* The run anim really is garbage-collected (full destroy pipeline, slot reissued).
+* **The poked RootSet bit is INERT.** Phase-locked experiment, only injection phase varied: leads of
+  **0.15 / 2.9 / 33.1 s** to the next GC pass, destroyed at that pass **every time**. Do not root harder.
+* **"Unreachable" is not a sticky bit here.** Reachability is an **alternating flag rotating through
+  bits 0/1/2**, flipped population-wide each pass — a free read-only **GC clock** (~61.1 s at rest).
+* **FIXED by `KANIMREF`**: park the asset in the body component's unused `AnimationData.AnimToPlay`
+  UPROPERTY. Survives two GC passes, zero `[GCW]` lines, run/idle cycling **at the default
+  `KAUTOWALKATMS=20000`**. `play-earlywalk` deleted as redundant.
+* `UObjectBase`: **`ObjectFlags@0x0C`, `InternalIndex@0x10`** (and the game's own `RF_Garbage` check
+  reads `+0x0C`, confirming it independently).
 
-1. **The asset really IS garbage-collected.** Full pipeline observed in order: `RF_BeginDestroyed` →
-   `RF_FinishDestroyed` → `LowLevelRename(NAME_None)` → `FreeUObjectIndex`, then the slot reissued to a
-   new object ~20 s later. "Torn down out of band" is **eliminated**.
-2. **★ The poked `RootSet` bit is INERT.** Phase-locked experiment, only the injection phase varied,
-   three armed windows: lead from verified poke to the next GC pass **0.15 s / 2.9 s / 33.1 s — destroyed
-   at that pass every time.** In the last it sat through six clean 5 s heartbeats and died 708 ms after
-   the flip. The engine zeroes bit 30 with the rest of the word on free. **Do not root harder.**
-3. **★★ "Unreachable" is not a sticky bit in this build.** Reachability is an **alternating value**
-   rotating through bits 0/1/2, flipped population-wide on each GC pass. An object is unreachable when it
-   fails to carry the *current* one. Bit 28 was never seen set on anything. This is what S109 recorded as
-   the unexplained `flags == 0x00000004` and "bit 1 on 81% of ordinary objects, 0% of natives".
-4. **Rooted and marked are mutually exclusive naturally**: 4,915 rooted objects of which **0%** carry the
-   current flag; 17,237 unrooted of which **100%** do. Root-set objects are *excluded* from marking, so a
-   poked object never joins that set — it keeps a stale mark and is collected on the merits of its refs.
-5. **★★★ THE FIX (`KANIMREF`, default ON in `play`)** — park the run `AnimSequence` in the body
-   component's unused `AnimationData.AnimToPlay` UPROPERTY. Confirmed: re-marked at **two** consecutive
-   GC passes, zero `[GCW]` lines, and `PlayAnimation(run/idle, loop) ok` cycling **at the default
-   `KAUTOWALKATMS=20000`**. Control arm `play-noanimref`. Why that slot: `PlayAnimation` writes the
-   single-node instance's `CurrentAsset`, which holds exactly **one** asset — which is why the *idle*
-   anim always survived and the run anim never did.
-6. **`UObjectBase` layout completed**: `ObjectFlags@0x0C`, `InternalIndex@0x10` (calibrated 400/400 and
-   100%/0% against controls that could fail), alongside the known `ClassPrivate@0x18`, `NamePrivate@0x20`.
-   An object's array slot is now readable **straight out of the object**, no scan.
-7. **The load does NOT provoke the GC.** The staging pipeline is deterministic and the clock is ~61.1 s
-   from launch, so the load phase was near-constant across runs — that, not a load-triggered collection,
-   is why S109's deaths all clustered 1.1–7.8 s after body build.
+### The crash thread (FK-8, parallel session)
+* 114 death records mined; **`+0x205D` = `catalog_store_fix.dll` `.text` RVA `0x205d`** — closes what
+  the previous handoff listed as an open lead.
+* ⚠ **The injection-spacing 71× result is under re-examination**: deaths in the 30 s row are
+  `catalog_store_fix` launch-time faults, which `-InjectGapSeconds` does not affect. Re-fit before
+  citing it.
+* **Timing: no `T+<n>` hold rule survives.** Tutorial-route crashpad deaths span **87–524 s** (N=13,
+  median 283); the `240–295 / median 264` band in CLAUDE.md describes **one class**, not the
+  population. Anchor to `Load map complete …/LVL_Tutorial` and classify by **fault family**
+  (`RIP == runtime.dll base + 1`). See `docs/s111-fk8-s110-reconciliation.md`.
 
 ---
 
-## 2. Numbers that change how you budget a sitting
+## 2. Traps that will cost you a run
 
-* **★ The "~285 s code-integrity kill" is too pessimistic.** MEASURED across S110's seven tutorial
-  launches: deaths at **293 s, 338 s, 434 s**, plus two runs still alive at **≥361 s and ≥408 s** when
-  deliberately killed. Nothing died near 285 s. Budget on ~330 s conservatively, not 285 — it buys a
-  whole extra GC cycle of observation. (CLAUDE.md's 285 s figure is left in place as the *integrity
-  check* timing; it is evidently not a reliable death predictor.)
-* **Armed-window yield: 4 of 7 tutorial launches** (2 NOSTAGE force-open failures — FK-26; 1 staged but
-  died before body build). Slightly better than the documented "~2 of 4", same order. Still budget on
-  **armed windows, never launches**.
-* **★ The GC clock is predictable and now instrumented.** Passes land at **uptime ≈ 75 s, then every
-  ~61.1 s**, disturbed by the tutorial map load (which shows up as a purge of ~125,000 objects, and two
-  short 29–32 s intervals around it). `tools/re/item_watch.py --marker` prints them live.
-* **★ Phase-locked injection works and is reusable.** `fk24-stage.ps1 -SkipProbe` stages the world, then
-  `tools\inject\inject.exe mmap <pid> <dll>` whenever you choose. Body build lands ~13 s after injection.
-  That is how the 33.1 s lead in §1.2 was obtained; use it whenever an experiment needs a known phase.
-
----
-
-## 3. Traps that will cost you a run
-
-* ⚠ **`play`'s `.text` hash has moved a THIRD time. Current: `513c6277c3ae88f3`.** `7bc4df9236ead0ac`
-  was `play` only between S109 and S110; `ae532866e15fd8ac` only between S108b and S109;
-  `a67239a0d83d9300` is `play-statictest`. **Verify by `.text` hash, never whole-file and never size** —
-  `play-strictroot` and `play-noanimref` share a 161,792-byte `.text`.
-* ⚠ **`play-earlywalk` was DELETED** (it only raced a collection that no longer happens). Docs written
-  before 2026-08-05 that recommend it are stale. `-DKAUTOWALKATMS=<ms>` still works for a one-off.
-* ⚠ **FK-25 is still live**: `Marker()` opens `CREATE_ALWAYS`, so every injection truncates
-  `docs/tutorial-launch-marker.txt` and `fk24-stage.ps1`'s step-N copies routinely capture the file
-  *before the probe wrote anything*. Read the LIVE marker after the run. (`item_watch.py --marker`
-  handles the truncation correctly — a shrinking file is a rewind, not an error.)
-* ⚠ **`Copy-Item` preserves the SOURCE's LastWriteTime.** Never derive timings from copied-marker mtimes.
-* ⚠ **PowerShell `Select-Object -First N` kills the upstream pipeline**, so a probe that ran fine exits
-  255 and looks like a crash. Use `-Last`, `Out-File`, or read the log file. This cost two runs in S110.
+* ⚠⚠ **`fk24-stage.ps1` injects `tools\sigbypass-mod\*.dll` (the ROOT copies), NOT `build\`** — and
+  `build.ps1` writes to `build\`. So **you can build a fix, run the standard staging, and test the old
+  binary.** MEASURED today by `.text` hash:
+  | shim | root | build | verdict |
+  |---|---|---|---|
+  | `gft_ready_fix` | `6b2fe2c2a747c19f` | `6b2fe2c2a747c19f` | identical `.text` (PE-header bytes only) |
+  | `tutorial_launch_fo` | `fa184b20934cc4b0` | `fa184b20934cc4b0` | identical `.text` |
+  | **`tutorial_launch_sp`** | **`d0d3cc140c4f4286`** | **`4285c0dd22ae9976`** | **ROOT IS STALE — no `KGASSTORAGE`** |
+  Either inject the `build\` path explicitly, or copy `build\tutorial_launch_sp.dll` over the root copy
+  **and say so**. (Note the file-level `cmp` says all three differ; only `.text` tells you which
+  matters — the project's "diff `.text`, never whole-file" rule earning its keep.)
+* ⚠ **PowerShell `Select-Object -First N` tears down the upstream command.** A probe that ran fine
+  exits 255 and looks like a crash, and a script that writes a file at the end writes **nothing**.
+  Cost two runs and one capture today, *including one after I had written it into this very file.*
+  Use `-Last`, `| Out-Null`, or read the output file.
+* ⚠ **`dumps/merged.dump.exe` is a MENU snapshot** — in-world code reads as **zeros** there. Use
+  `dumps/tutorial-hero/` (67.42 %, `.text` 53.2 %) with
+  `CG_DUMP=… CG_BASE=0x7FF6505C0000` for anything gameplay-shaped. It cannot be merged into
+  `merged.dump.exe` (different ImageBase; `mergedumps` rejects that by design).
+* ⚠ **`.pdata` is entirely ZERO in this build**, and there is **no int3 padding** between functions
+  (171 `0xCC` in a 2 MB sample). Neither the unwind table nor a backward-`CC` scan will give you
+  function bounds. Use 16-byte alignment + a shadow-space argument spill, and confirm by disassembly.
+  ⚠ The `dumpimage` manifest's `.pdata 100.0%` counts **readable pages, not content**.
+* ⚠ **An empty column in an export is not absence of evidence.** The FK-8 corpus CSV has empty
+  `exception_code` for all 22 crashpad rows, but those dumps *were* classified from the minidumps
+  directly. I read the blank column as "unclassified" and was wrong.
+* ⚠ `Marker()` opens `CREATE_ALWAYS` (FK-25) — read the LIVE marker after a run, not the staged copies.
 * ⚠ **Set `forceTutorialMatch` back to `false` and rebuild `ags` when done.** It is `false` now.
+
+---
+
+## 3. Tooling added today (all read-only unless noted)
+
+| tool | what it gives you |
+|---|---|
+| `tools/re/item_watch.py` | watch a UObject's `FUObjectItem` across its death; **prints the GC clock**; decoy controls; VOID gate |
+| `tools/re/asc_census.py` | every ASC in the process grouped by owner; the pawn-vs-object distinction |
+| `tools/re/ps_gas_fields.py` | the exact fields `TryUpdateAbilitySystem`'s change-detector compares |
+| `tools/re/vtable_dump.py` | a live object's C++ vtable as RVAs, for offline slot analysis |
+| `tools/re/find_store_pair.py` | **find a function on a stripped binary by the two fields it writes** — this is what located `InitAbilityActorInfo` |
+| `tools/re/offline_disasm.py` | now takes `CG_DUMP` / `CG_BASE` env overrides |
+| `dumps/tutorial-hero/` | the first non-menu image capture the project owns |
 
 ---
 
 ## 4. Other open leads, in rough value order
 
-1. **The orphaned second `AnimSingleNodeInstance`.** The shim creates two; one is referenced by the live
-   component and survives, the other is destroyed at the first GC pass in **every** run including the
-   successful one (`VERDICT: A SLOT RECYCLED at t=244.554`). Harmless today — the shim keeps no pointer
-   to it — but it is a real dangling object that `GcRootAllOfClass` "roots" and believes is alive. Worth
-   ten minutes to find why two are made.
-2. **6 chainless-but-parseable UECC dumps** were walked in S109 §11; another **7 are zero-byte**. The
-   `+0x205D` family (6 members) has never been characterised beyond "executes in an unmapped 64 KB-aligned
-   region".
-3. **Anti-tamper vs protector defect is still OPEN** — 487 s ≠ the documented ~285 s integrity kill, and
-   §2's survival spread makes that discrepancy more interesting, not less.
-4. **`harvest.py` still enumerates `UECC-*` only** and is blind to the crashpad path (44 archived dumps
-   in `dumps/crashpad-*` it cannot see). S109 deliberately did not rebuild it.
-5. **Bits 0/1/2 as a rotation of three** is an odd design. Whether the third value is a real third state
-   or something else is unresolved and does not matter yet.
+1. **Grant an ability** once the bind lands — `BP_AuthGiveAbilityWithInputID` /
+   `AuthGiveAbilityWithSourceObject` are reflected and callable today. Ability *content* is on
+   `ALokiCharacter::CharacterAbilities` / `BaseCharacterAbilities` and `BP_HeroAsset_Ronin_C`.
+2. **The orphaned second `AnimSingleNodeInstance`** — destroyed at the first GC pass in every run
+   including the successful one. Harmless (nothing holds it) but it is a real dangling object.
+3. **Re-fit the injection-spacing hazard** after classifying each death by fault family (FK-8 §7.2).
+4. **`harvest.py` still enumerates `UECC-*` only** and is blind to the crashpad path.
+5. **Bits 0/1/2 as a rotation of three** — an odd design, unexplained, currently harmless.
 
 ---
 
-## 5. The rule that governed S110, and should govern S111
+## 5. The rule that earned its keep today
 
-S110 caught **three** instrument artifacts, and two were caught by controls *before* they cost anything:
+Three times this session I named a function from its call site instead of reading it — a paired
+`AddToAbilitySystem` that does not exist, a bind in `PossessedBy` that is stock engine code, and a
+"wiring sibling" that broadcasts drop positions. **Each cost a run.** Both things that actually landed
+— the `KANIMREF` fix and `InitAbilityActorInfo` — came from reading to the end of a function, or from
+searching on *behaviour* rather than on a name.
 
-* *"`SerialNumber` changes ⇒ the slot was recycled"* — the S110 brief's own headline discriminator, and
-  **wrong**. UE allocates serial numbers lazily on first weak pointer; a live, untouched decoy went
-  `0 → 3373` at the menu. Caught on the first smoke run by 256 decoy objects nobody had a hypothesis about.
-* *`SerialNumber N → 0`* is the **free** clearing it, not a reissue. This one **did** cost a verdict — the
-  first tutorial log prints `SLOT RECYCLED` where the truth was `FREED`. Caught only because the other
-  signals (`RF_FinishDestroyed`, `item.Object → 0`) disagreed with it.
-* `Select-Object -First` faking two crashes (§3).
+* **Read to the end of the function before naming it.**
+* **Register the prediction and the VOID conditions before the run**, and score them honestly
+  afterwards (`docs/s110-prediction-registered.txt` has five, including two that were falsified).
+* **Watch things you have no hypothesis about** — the decoy controls in `item_watch.py` caught a wrong
+  rule on the first smoke run, before any game time was spent.
+* **Prefer the read-only test.** The experiment that falsified my own mechanism hypothesis cost one
+  staged run with no writes, and the falsification is what pointed at the answer.
 
-So, non-negotiably, and it is exactly what made S110 work:
-
-* **A gate that cannot fail is not a gate.** Every offset `item_watch.py` uses is calibrated against a
-  control that can return false, and it prints `UNRESOLVED` rather than guessing.
-* **Watch things you have no hypothesis about.** The decoys cost nothing and caught the first artifact.
-* **Register the prediction before the run** (`docs/s110-prediction-registered.txt` has four of them, all
-  scored honestly afterwards) and **state the VOID conditions in advance** — S110 declared one run void
-  for a reason written down before it started, rather than reading a death that came too early.
-* **Print the aliasing bound**, and make no negative claim stronger than it.
-
-`memory/supervive-instrument-artifact-pattern.md` now carries 16+ confirmed instances. Read it first.
+`memory/supervive-instrument-artifact-pattern.md` now carries 19+ confirmed instances. Read it first.
