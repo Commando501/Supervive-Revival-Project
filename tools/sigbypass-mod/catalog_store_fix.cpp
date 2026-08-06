@@ -15,6 +15,48 @@
 // Build:  clang++ -shared -O2 catalog_ready_fix.cpp -o catalog_ready_fix.dll -lkernel32
 // Inject: tools/inject watch SUPERVIVE-Win64-Shipping.exe catalog_ready_fix.dll 0x3EC57D0 40555356574154415541564157
 // Marker: docs/catalog-ready-fix-marker.txt
+//
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// 2026-08-05 (S111) — THIS SHIM WAS KILLING THE GAME. FIXED. NOT YET LIVE-VERIFIED.
+//
+// WHAT: the memory scans dereferenced `*(uintptr_t*)p` with NO guard, walking a whole-region
+//   VirtualQuery snapshot that goes stale the instant the game frees anything. FindCatalogManagers_first
+//   is polled by the Worker EVERY 400 ms until the catalog loads, so it sweeps all committed private
+//   memory continuously through the phase where UE frees the most — the worst possible exposure.
+//
+// HOW IT WAS FOUND: not by reading this file. Crash-dump forensics over the 114-record corpus
+//   (docs/fk8-crash-timing-mined.md §3.1) isolated a fault family at RIP & 0xFFFF == 0x205d and
+//   matched a 40-byte code window from the minidump against THIS DLL's .text at RVA 0x205d, with
+//   Rax == SUPERVIVE+0x8831758 (kCatMgrVtRva) and R14 == kernel32!VirtualQuery at exception time.
+//   >=11 recorded process deaths, typically 15-45 s in on menu routes. Those deaths were being
+//   attributed to injection spacing (CLAUDE.md's -InjectGapSeconds hazard table) and to FK-7.
+//
+// WHAT WAS TRIED / REJECTED:
+//   * __try/__except (SEH) — REJECTED, and it is the trap here: the packer installs a VECTORED
+//     handler, which runs BEFORE any SEH frame handler, so the process can die before __except is
+//     consulted. (C++ EH is already forbidden project-wide for the adjacent reason.)
+//   * re-VirtualQuery per 4 KB page — REJECTED: narrows the window, never closes it. Still a race,
+//     and costs a syscall per page (more than the shipped fix costs per 256 KB).
+//   * WriteProcessMemory for PokeAllPurchasable's writes — REJECTED as out of scope: 2 syscalls x
+//     up to `num` entries x every 500 ms, on a path that has NEVER appeared in the crash corpus.
+//
+// WHAT WORKED: ReadProcessMemory on self. NtReadVirtualMemory probes in KERNEL mode and reports
+//   STATUS_PARTIAL_COPY by return value — it cannot raise a user-mode exception in the caller, so
+//   there is no race left to lose. See the SafeCopy / ScanPrivateForQword block below.
+//
+// EVIDENCE IT WORKS (offline, tools/sigbypass-mod/tests/scan_race_test.cpp — verbatim copies of both
+//   bodies, a thread decommitting pages mid-walk, coordinated so the scan is provably inside the
+//   region first):  OLD arm segfaults 3/3 (exit 139).  NEW arm survives 3/3 and still finds the
+//   needle in the no-race control.  Cost ~1.2x, background thread.
+//   ⚠ The FIRST version of that harness let the OLD arm survive — the scan short-circuited before
+//     reaching the shredded pages. A quiet negative control is VOID, not a pass; it was rebuilt.
+//
+// ⚠ NOT LIVE-VERIFIED. Zero game runs of this build exist. The baseline to beat is 11 deaths at
+//   RVA 0x205d. Marker now stamps `build=<date> <time> scan=SAFECOPY-S111` so a run can be
+//   attributed to this build from the marker alone (ignorance-map gap F3).
+// ⚠ catalog_ready_fix.cpp (2 sites) and catalog_purchasable_fix.cpp (1 site) STILL CARRY THE
+//   DEFECT. Neither is in the default injection set; both are banner-warned. Port before injecting.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 #include <windows.h>
 #include <tlhelp32.h>
@@ -71,6 +113,100 @@ static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnp
 
 static bool SafeReadable(const void* a,size_t sz){MEMORY_BASIC_INFORMATION m{};if(!VirtualQuery(a,&m,sizeof(m)))return false;if(!(m.State&MEM_COMMIT))return false;if(m.Protect&(PAGE_NOACCESS|PAGE_GUARD))return false;return (uintptr_t)a+sz<=(uintptr_t)m.BaseAddress+m.RegionSize;}
 static bool LooksLikePtr(uintptr_t v){return v>=0x10000 && v<0x0001000000000000ULL && (v&0x7)==0;}
+
+// ─────────────── 2026-08-05 (S111): FAULT-FREE MEMORY ACCESS ───────────────
+// WHY THIS EXISTS. Crash-dump forensics over the 114-record corpus
+// (docs/fk8-crash-timing-mined.md §3.1) attributed a whole crash family to THIS DLL: fault
+// RIP & 0xFFFF == 0x205d, a READ fault (ExceptionInformation[0]==0), identified to the byte by
+// matching a 40-byte code window out of the minidump against this DLL's .text at RVA 0x205d, with
+// Rax == SUPERVIVE+0x8831758 (kCatMgrVtRva) and R14 == kernel32!VirtualQuery at exception time.
+// It is FindCatalogManagers_first. At least 11 process deaths, typically 15-45 s in on menu routes.
+//
+// THE DEFECT (both scan loops had it, identically):
+//     for(uintptr_t p=base; p+8<=end; p+=8)
+//         if(*(uintptr_t*)p==vtabAbs && SafeReadable((void*)(p+kMapOff),16)){ ... }
+//                ^^^^^^^^^^^^^^^^ dereferenced with NO guard whatsoever.
+// SafeReadable was consulted only AFTER the vtable compare, and it validates p+kMapOff, not p.
+// VirtualQuery snapshots an ENTIRE region up front; the loop then walks that stale snapshot while
+// the game is actively freeing memory (the caller polls this every 400 ms through asset load, so
+// the exposure is enormous). Any page decommitted mid-walk = instant AV.
+//
+// WHY NOT SEH. __try/__except would look like the obvious fix and is a TRAP here: the packer
+// installs a VECTORED exception handler, which by definition runs BEFORE any SEH frame handler,
+// so the process can die before __except is ever consulted. CLAUDE.md already forbids C++ EH in
+// injected payloads for the adjacent reason. Neither mechanism is used below.
+//
+// WHY THIS WORKS. ReadProcessMemory -> NtReadVirtualMemory PROBES IN KERNEL MODE and reports
+// STATUS_PARTIAL_COPY by return value; it never raises a user-mode exception in the calling
+// thread, whatever the game does to the page underneath us. There is no race left to lose: we do
+// not validate-then-read, we simply cannot fault. GetCurrentProcess() is a constant pseudo-handle
+// (-1), not a syscall, so this costs one kernel transition per CHUNK -- not per read.
+static inline bool SafeCopy(void* dst,const void* src,size_t n){
+    SIZE_T got=0;
+    return ReadProcessMemory(GetCurrentProcess(),src,dst,n,&got) && got==n;
+}
+static inline bool SafeReadQ(uintptr_t a,uintptr_t* out){ return SafeCopy(out,(const void*)a,sizeof(*out)); }
+static inline bool SafeReadD(uintptr_t a,int32_t*   out){ return SafeCopy(out,(const void*)a,sizeof(*out)); }
+
+// Scan every committed private region for an 8-byte-aligned qword == `needle`, without ever
+// dereferencing game memory. Copies through SafeCopy into a small reused buffer that stays hot in
+// L2 (so the added cost over the old in-place scan is the cache-resident store side, not a second
+// pass over RAM), then scans the copy. onHit returns 1 to accept and stop, 0 to keep going.
+// Pages that vanish mid-scan are SKIPPED, never faulted on: a failed chunk read degrades to
+// per-page reads and only the pages that are actually gone are dropped. We deliberately do not
+// rely on ReadProcessMemory's partial-copy prefix semantics.
+// MEASURED cost of safety (standalone control harness, tools/sigbypass-mod/tests/scan_race_test.cpp,
+// 512 MB region, avg of 3, whole-address-space sweep incl. process startup):
+//     old unguarded 275 ms | 16 KB 391 | 64 KB 356 | 256 KB 338 | 1 MB 329
+// 256 KB is the knee -- past it the gain is ~3 % for 4x the .bss. Net overhead ~1.2x, paid on a
+// background thread, in exchange for a fault class that killed the process >=11 times.
+// NOT changed: the Worker's 400 ms poll cadence. Backing it off would cut this cost further and was
+// deliberately NOT done -- detection time gates catLoadedAt, and the jz self-restore fires
+// catLoadedAt+6000, so a later detection means a LONGER .text patch uptime and a closer approach to
+// the code-integrity check. That trade needs a live run, not an assumption.
+typedef int (*PFN_OnHit)(uintptr_t p,void* ctx);
+static constexpr size_t kScanChunk = 256*1024;
+static constexpr size_t kScanPage  = 4096;
+static uint8_t g_scanBuf[kScanChunk];   // worker thread only; scans are single-threaded
+
+static void ScanChunkBuf(uintptr_t at,size_t len,uintptr_t needle,PFN_OnHit onHit,void* ctx,bool* stop){
+    const uintptr_t* q=(const uintptr_t*)g_scanBuf;
+    for(size_t i=0;i+8<=len;i+=8){
+        if(q[i/8]==needle && onHit(at+i,ctx)){ *stop=true; return; }
+    }
+}
+
+static void ScanPrivateForQword(uintptr_t needle,PFN_OnHit onHit,void* ctx){
+    SYSTEM_INFO si; GetSystemInfo(&si);
+    uintptr_t addr=(uintptr_t)si.lpMinimumApplicationAddress;
+    uintptr_t maxA=(uintptr_t)si.lpMaximumApplicationAddress;
+    bool stop=false;
+    while(addr<maxA && !stop){
+        MEMORY_BASIC_INFORMATION m{};
+        if(!VirtualQuery((void*)addr,&m,sizeof(m))) break;
+        uintptr_t next=(uintptr_t)m.BaseAddress+m.RegionSize;
+        bool ok=(m.State&MEM_COMMIT)&&!(m.Protect&(PAGE_NOACCESS|PAGE_GUARD))&&
+                (m.Protect&(PAGE_READWRITE|PAGE_EXECUTE_READWRITE|PAGE_WRITECOPY|PAGE_EXECUTE_WRITECOPY));
+        if(ok && m.Type==MEM_PRIVATE){
+            uintptr_t base=(uintptr_t)m.BaseAddress, end=base+m.RegionSize;
+            for(uintptr_t c=base; c<end && !stop; c+=kScanChunk){
+                size_t len=(size_t)((end-c)<kScanChunk?(end-c):kScanChunk);
+                if(SafeCopy(g_scanBuf,(const void*)c,len)){
+                    ScanChunkBuf(c,len,needle,onHit,ctx,&stop);
+                }else{
+                    // the region went away under us (or partly). Retry page-by-page and keep
+                    // whatever is still there. THIS IS THE PATH THAT USED TO BE AN AV.
+                    for(uintptr_t pg=c; pg<c+len && !stop; pg+=kScanPage){
+                        size_t pl=(size_t)((c+len-pg)<kScanPage?(c+len-pg):kScanPage);
+                        if(!SafeCopy(g_scanBuf,(const void*)pg,pl)) continue;
+                        ScanChunkBuf(pg,pl,needle,onHit,ctx,&stop);
+                    }
+                }
+            }
+        }
+        if(next<=addr) break; addr=next;
+    }
+}
 
 // ─────────── read-only VEH crash logger (adapted from scan_on_enum_veh) ───────────
 // Capture the faulting RIP / SUPERVIVE RVA / module / registers / stack band into
@@ -175,70 +311,78 @@ static DWORD WaitTid(uintptr_t mb,DWORD to){uint32_t*s=(uint32_t*)(mb+kGGameTidR
 // finishes loading) so we can pre-set the 5th ready-flag [+0x354]=1; then when the game finishes the 4
 // real categories and checks readiness, all 5 are set and it BROADCASTS OnCatalogDataReady naturally
 // (no .text patch => no code-integrity crash). Fills `out[]` (cap N), returns count.
+// 2026-08-05 (S111): rewritten onto ScanPrivateForQword. Was an unguarded `*(uintptr_t*)p` walk
+// over a stale VirtualQuery snapshot -- same defect as FindCatalogManagers_first, which the crash
+// corpus caught in the act. Behaviour on success is unchanged: same vtable match, same
+// +kReadyOff readability requirement, same dedup, same cap.
+struct FcmCtx { uintptr_t* out; int cap; int n; };
+static int OnHitCollect(uintptr_t p,void* v){
+    FcmCtx* c=(FcmCtx*)v;
+    uintptr_t probe;
+    if(!SafeReadQ(p+kReadyOff,&probe)) return 0;     // was SafeReadable(); now the read itself is safe
+    for(int i=0;i<c->n;i++) if(c->out[i]==p) return 0;
+    c->out[c->n++]=p;
+    return c->n>=c->cap ? 1 : 0;
+}
 static int FindCatalogManagers(uintptr_t vtabAbs, uintptr_t* out, int cap){
-    SYSTEM_INFO si; GetSystemInfo(&si);
-    uintptr_t addr=(uintptr_t)si.lpMinimumApplicationAddress;
-    uintptr_t maxA=(uintptr_t)si.lpMaximumApplicationAddress; int n=0;
-    while(addr<maxA && n<cap){
-        MEMORY_BASIC_INFORMATION m{};
-        if(!VirtualQuery((void*)addr,&m,sizeof(m))) break;
-        uintptr_t next=(uintptr_t)m.BaseAddress+m.RegionSize;
-        bool ok = (m.State&MEM_COMMIT) && !(m.Protect&(PAGE_NOACCESS|PAGE_GUARD)) &&
-                  (m.Protect&(PAGE_READWRITE|PAGE_EXECUTE_READWRITE|PAGE_WRITECOPY|PAGE_EXECUTE_WRITECOPY));
-        if(ok && m.Type==MEM_PRIVATE){
-            uintptr_t base=(uintptr_t)m.BaseAddress; uintptr_t end=base+m.RegionSize;
-            for(uintptr_t p=base; p+8<=end && n<cap; p+=8){
-                if(*(uintptr_t*)p==vtabAbs && SafeReadable((void*)(p+kReadyOff),8)){
-                    bool dup=false; for(int i=0;i<n;i++) if(out[i]==p){dup=true;break;}
-                    if(!dup) out[n++]=p;
-                }
-            }
-        }
-        if(next<=addr) break; addr=next;
-    }
-    return n;
+    FcmCtx c{out,cap,0};
+    if(cap<=0) return 0;
+    ScanPrivateForQword(vtabAbs,OnHitCollect,&c);
+    return c.n;
 }
 
 // Find the ONE live CatalogManager (vtable match whose +0x60 catalog map is populated). Returns 0 until
 // the catalog has loaded. Used only to detect "catalog loaded" for restore timing (find-once, then stop).
+// ★ 2026-08-05 (S111): THIS IS THE FUNCTION THAT WAS KILLING THE GAME (fault at .text RVA 0x205d,
+// >=11 recorded process deaths). The old body dereferenced `*(uintptr_t*)p` completely unguarded,
+// walking a stale whole-region VirtualQuery snapshot, and the Worker polls it EVERY 400 ms until
+// the catalog loads -- i.e. continuously, through exactly the phase where the game frees the most
+// memory. Rewritten onto ScanPrivateForQword; the accept predicate is byte-for-byte the same
+// (vtable match, +0x60 map Data looks like a pointer, 50 <= Num <= 5000), only the reads changed.
+struct FcmFirstCtx { uintptr_t hit; };
+static int OnHitFirstLive(uintptr_t p,void* v){
+    uintptr_t md; int32_t mn;
+    if(!SafeReadQ(p+kMapOff,&md))      return 0;     // both were SafeReadable()-then-deref (a TOCTOU
+    if(!SafeReadD(p+kMapOff+8,&mn))    return 0;     // in its own right); now they cannot fault
+    if(!LooksLikePtr(md) || mn<50 || mn>5000) return 0;
+    ((FcmFirstCtx*)v)->hit=p;
+    return 1;                                        // accept & stop -- same first-match semantics
+}
 static uintptr_t FindCatalogManagers_first(uintptr_t vtabAbs){
-    SYSTEM_INFO si; GetSystemInfo(&si);
-    uintptr_t addr=(uintptr_t)si.lpMinimumApplicationAddress, maxA=(uintptr_t)si.lpMaximumApplicationAddress;
-    while(addr<maxA){
-        MEMORY_BASIC_INFORMATION m{}; if(!VirtualQuery((void*)addr,&m,sizeof(m))) break;
-        uintptr_t next=(uintptr_t)m.BaseAddress+m.RegionSize;
-        bool ok=(m.State&MEM_COMMIT)&&!(m.Protect&(PAGE_NOACCESS|PAGE_GUARD))&&(m.Protect&(PAGE_READWRITE|PAGE_EXECUTE_READWRITE|PAGE_WRITECOPY|PAGE_EXECUTE_WRITECOPY));
-        if(ok && m.Type==MEM_PRIVATE){
-            uintptr_t base=(uintptr_t)m.BaseAddress, end=base+m.RegionSize;
-            for(uintptr_t p=base; p+8<=end; p+=8){
-                if(*(uintptr_t*)p==vtabAbs && SafeReadable((void*)(p+kMapOff),16)){
-                    uintptr_t md=*(uintptr_t*)(p+kMapOff); int32_t mn=*(int32_t*)(p+kMapOff+8);
-                    if(LooksLikePtr(md)&&mn>=50&&mn<=5000) return p;
-                }
-            }
-        }
-        if(next<=addr) break; addr=next;
-    }
-    return 0;
+    FcmFirstCtx c{0};
+    ScanPrivateForQword(vtabAbs,OnHitFirstLive,&c);
+    return c.hit;
 }
 
 // A live UObject: its first qword (vtable) points into the module image.
-static bool LooksLikeObject(uintptr_t p,uintptr_t modBase){ if(!LooksLikePtr(p)||!SafeReadable((void*)p,8)) return false; uintptr_t vt=*(uintptr_t*)p; return vt>=modBase && vt<modBase+0xC000000; }
+static bool LooksLikeObject(uintptr_t p,uintptr_t modBase){ if(!LooksLikePtr(p)) return false; uintptr_t vt; if(!SafeReadQ(p,&vt)) return false; return vt>=modBase && vt<modBase+0xC000000; }
 
 // Iterate the CatalogManager Catalog TMap sparse array; poke each CatalogEntry's status flags
 // so the browse tiles render (CanUse=1, CannotUseReason=0, IsDisabled=0, IsHidden=0,
 // IsPurchasable=1). Returns count poked. Pure DATA writes (no .text touch).
 static int PokeAllPurchasable(uintptr_t catMgr,uintptr_t modBase){
-    if(!SafeReadable((void*)(catMgr+kMapOff),16)) return 0;
-    uintptr_t data=*(uintptr_t*)(catMgr+kMapOff); int32_t num=*(int32_t*)(catMgr+kMapOff+8);
+    uintptr_t data; int32_t num;
+    // 2026-08-05 (S111): reads moved off SafeReadable()-then-deref onto SafeRead*. Same predicates.
+    if(!SafeReadQ(catMgr+kMapOff,&data))   return 0;
+    if(!SafeReadD(catMgr+kMapOff+8,&num))  return 0;
     if(!LooksLikePtr(data)||num<=0||num>20000) return 0;
     int poked=0; int cap=num*3+256;
     for(int i=0;i<cap && poked<num;i++){
         uintptr_t elem=data+(uintptr_t)i*0x20;
-        if(!SafeReadable((void*)(elem+0x10),8)) continue;
-        uintptr_t entry=*(uintptr_t*)(elem+0x10);
+        uintptr_t entry;
+        if(!SafeReadQ(elem+0x10,&entry)) continue;
         if(!LooksLikeObject(entry,modBase)) continue;
-        if(!SafeReadable((void*)(entry+kOffPurch),1)) continue;
+        uint8_t probe;
+        // Proves the flag page is present RIGHT NOW; LooksLikeObject already proved the entry's
+        // vtable points into the image, i.e. it is a live UObject and not recycled memory.
+        if(!SafeCopy(&probe,(const void*)(entry+kOffPurch),1)) continue;
+        // ⚠ RESIDUAL, DELIBERATE, SCOPED: these five stay DIRECT writes. Converting them to
+        // WriteProcessMemory would make them fault-free too, but at 2 syscalls x up to `num`
+        // entries x every 500 ms that is a real cost on a path that has NEVER appeared in the
+        // crash corpus -- the measured family is the SCAN (.text RVA 0x205d), not the poke. The
+        // window here is nanoseconds (probe-then-write on the same page) versus the scan's
+        // milliseconds-to-seconds walk of a stale region snapshot. Revisit only if a fault ever
+        // lands in this function's RVA range. See docs/fk8-crash-timing-mined.md §3.1.
         uint8_t* e=(uint8_t*)entry;
         e[kOffCanUse]=1; e[kOffReason]=0; e[kOffDisabled]=0; e[kOffHidden]=0; e[kOffPurch]=1;
         poked++;
@@ -249,7 +393,11 @@ static int PokeAllPurchasable(uintptr_t catMgr,uintptr_t modBase){
 static DWORD WINAPI Worker(LPVOID){
     HANDLE h=CreateFileA(kMarkerPath,GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);
     if(h!=INVALID_HANDLE_VALUE)CloseHandle(h);
-    Marker("[0] catalog_store_fix worker started (ready-gate + purchasable poke)\r\n");
+    // Build stamp: ignorance-map gap F3 is "nothing distinguishes 'the target ran and did nothing'
+    // from 'we never reached the target'; no shim stamps a source SHA or build time into its
+    // marker." Stamping it makes the S111 scan fix verifiable from the marker alone.
+    Markerf("[0] catalog_store_fix worker started (ready-gate + purchasable poke) "
+            "build=%s %s scan=SAFECOPY-S111\r\n",__DATE__,__TIME__);
     HMODULE hExe=GetModuleHandleA("SUPERVIVE-Win64-Shipping.exe");
     if(!hExe){Marker("[0] FAIL GetModuleHandle\r\n");return 1;}
     g_modBase=(uintptr_t)hExe;
@@ -290,12 +438,14 @@ static DWORD WINAPI Worker(LPVOID){
         if(!g_catMgr && GetTickCount()-lastScan>=400){
             lastScan=GetTickCount();
             uintptr_t cm=FindCatalogManagers_first(vtabAbs);
-            if(cm){ g_catMgr=cm; catLoadedAt=GetTickCount(); int32_t mnum=*(int32_t*)(cm+kMapOff+8);
+            if(cm){ g_catMgr=cm; catLoadedAt=GetTickCount(); int32_t mnum=-1; SafeReadD(cm+kMapOff+8,&mnum);
                 Markerf("[cm] live CatalogManager @0x%llX (map Num=%d) — catalog loaded\r\n",(unsigned long long)cm,mnum); }
         }
         // belt-and-suspenders data poke of [+0x354]=1 on the live instance (harmless; helps if the game re-checks)
-        if(g_catMgr && SafeReadable((void*)(g_catMgr+kReadyOff),8)){
-            uint8_t* f=(uint8_t*)(g_catMgr+kReadyOff); if(f[4]==0){ f[4]=1; pokes++; } }
+        if(g_catMgr){
+            uint8_t rf[8];
+            if(SafeCopy(rf,(const void*)(g_catMgr+kReadyOff),8) && rf[4]==0){
+                ((uint8_t*)(g_catMgr+kReadyOff))[4]=1; pokes++; } }
         // NEW: poke every CatalogEntry purchasable/canuse so the browse tiles render (throttled).
         if(g_catMgr && GetTickCount()-lastPurchTick>=500){ lastPurchTick=GetTickCount(); lastPurch=PokeAllPurchasable(g_catMgr,g_modBase); purchPokes++; }
         // ~6s after the catalog loaded (grid has built), RESTORE the jz so no persistent .text mod remains.

@@ -1,3 +1,9 @@
+// ⚠⚠ 2026-08-05 (S111) — DO NOT INJECT THIS WITHOUT PORTING THE SCAN FIX FIRST. ⚠⚠
+// Still carries the unguarded-scan defect (1 site) that crash-dump forensics attributed to >=11
+// process deaths in catalog_store_fix.dll: `*(uintptr_t*)p` dereferenced with no guard while
+// walking a stale VirtualQuery region snapshot. See docs/fk8-crash-timing-mined.md §3.1; the fix
+// and its offline control are in catalog_store_fix.cpp and tools/sigbypass-mod/tests/.
+//
 // catalog_purchasable_fix — POKE TEST for the store browse tabs (BUNDLES/SKINS/ACCESSORIES).
 //
 // Root cause (RE'd 2026-07-05, docs + memory supervive-store-status): those tabs use the

@@ -1,3 +1,12 @@
+// ⚠⚠ 2026-08-05 (S111) — DO NOT INJECT THIS WITHOUT PORTING THE SCAN FIX FIRST. ⚠⚠
+// This file still carries the unguarded-scan defect that was killing the game from
+// catalog_store_fix.dll: `if(*(uintptr_t*)p==vtabAbs && SafeReadable(...))` dereferences p with no
+// guard at all, walking a stale whole-region VirtualQuery snapshot (2 sites here). Crash-dump
+// forensics attributed >=11 process deaths to the identical code in catalog_store_fix
+// (docs/fk8-crash-timing-mined.md §3.1). It is NOT in the default injection set, which is the only
+// reason it has not been killing runs too. The fix + an offline control that reproduces the crash
+// are in catalog_store_fix.cpp (ScanPrivateForQword / SafeCopy) and tools/sigbypass-mod/tests/.
+//
 // catalog_ready_fix — session 47 FIX test. Root cause (docs/session-47-tile-widget-FOUND.txt): the ALL
 // HUNTERS grid (WBP_HeroPicker) only runs LoadCharacters if IsCatalogDataReady() is true; that native impl
 // (+0x57BB700, rcx=CatalogManager) returns true only when ALL of [CatMgr+0x350..0x354] are nonzero, but the
