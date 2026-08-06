@@ -80,7 +80,17 @@ def classify(path):
     }
 
 
-def expand(args):
+def expand(args, dedupe=True):
+    """Collect .dmp paths.
+
+    ⚠ DEDUPE BY REPORT UUID BY DEFAULT, and do not turn it off casually.
+    `configs/archive-crashdumps.ps1` snapshots the whole crashpad database BOTH before a launch
+    AND after the game exits, so a single death is normally archived 2+ times under different
+    `crashpad-<stamp>-<label>` directories (docs/fk8-crash-timing-mined.md §1.1: 45 archives held
+    47 .dmp files but only 22 DISTINCT reports; one uuid appeared in 4 archives).  Counting
+    archives, or counting .dmp files, inflates the death count.  Caught doing exactly that during
+    the S111 run series -- 3 files, 2 real deaths.  The uuid IS the report identity.
+    """
     out = []
     for a in args:
         for p in (glob.glob(a) or [a]):
@@ -88,7 +98,20 @@ def expand(args):
                 out += sorted(glob.glob(os.path.join(p, "**", "*.dmp"), recursive=True))
             elif p.lower().endswith(".dmp"):
                 out.append(p)
-    return out
+    if not dedupe:
+        return out
+    seen, uniq, dropped = set(), [], 0
+    for p in out:
+        uuid = os.path.splitext(os.path.basename(p))[0]
+        if uuid in seen:
+            dropped += 1
+            continue
+        seen.add(uuid)
+        uniq.append(p)
+    if dropped:
+        print("[dedupe] %d duplicate archive copies dropped; %d distinct report uuid(s)\n"
+              % (dropped, len(uniq)))
+    return uniq
 
 
 if __name__ == "__main__":
