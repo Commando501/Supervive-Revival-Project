@@ -59,10 +59,18 @@ def classify(path):
     low16 = rip & 0xFFFF
     in_mod = bool(r.get("rip_mod"))
 
+    # ⚠ 2026-08-05: the original rule required `not in_mod`, because every crashpad dump examined
+    # had runtime.dll ABSENT from its module list (0/24) and so resolved family A to "no module".
+    # That is a property of the CRASHPAD artifact class, not of the fault. A UECC dump captured the
+    # same fault the same evening (UECC-Windows-B2E8454F...) and DOES list runtime.dll, resolving
+    # RIP-1 to exactly its base -- the first DIRECT confirmation that family A is `runtime.dll + 1`
+    # rather than an inference from the address shape. Requiring `not in_mod` therefore misfiled the
+    # better-evidenced dump as "in-module:runtime.dll". Accept either.
+    mod_ok = (not in_mod) or (str(r.get("rip_mod", "")).lower().endswith("runtime.dll"))
     fam, why = "UNCLASSIFIED", []
-    if low16 == 0x0001 and acc == 8 and rip == addr and not in_mod:
+    if low16 == 0x0001 and acc == 8 and rip == addr and mod_ok:
         fam = "A-protector"
-        why.append("RIP==accessed==base+1, EXECUTE, no module")
+        why.append("RIP==accessed==base+1, EXECUTE, module=%s" % (r.get("rip_mod") or "none"))
     elif low16 == 0x205D and acc == 0:
         fam = "B-catalog_store_fix(PRE-FIX)"
         why.append("RIP&0xFFFF==0x205d, READ")
