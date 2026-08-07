@@ -93,6 +93,20 @@ top, which governs**, then `docs/s108b-ksmactor-bisect.md`, `docs/s108-crash-tri
 `docs/s108-fk7-verification-attempt.md` and `docs/s108-skeptic-review.md`. Memory:
 `supervive-fk24-probe-self-lethal`, `supervive-tutorial-crash-fk7`.
 
+★★★ **START HERE IF THE TASK IS FK-7 / TUTORIAL: `docs/s111-FK7-HANDOFF.md`, then
+`docs/NEXT-SESSION-PROMPT.md`.** S111 (2026-08-07) measured that a **standing `.text` write is what
+makes the protector kill the process** (patch standing 11/12 vs no patch 0/5, p = 0.00097; a
+*permanent* heap-**bytecode** patch is free, 0/9). And **`tutorial_launch.cpp:6511-6513` (RM_PLAY)
+holds a 5-byte `.text` patch at `ProcessInternal` for 600 s** — `g_done` is never set in RM_PLAY —
+which is the exact condition measured at **~88 % lethal**, standing for the entire sitting and
+bracketing the whole observed FK-7 death spread (87–524 s). ⇒ **The primary hypothesis is now that
+FK-7 is largely OUR OWN PI hook.** Audited: only **11** death records survive every contamination
+filter, **ten of them from one 15-hour stretch**, and **all are shim-mediated** —
+`log_forceopen_tutorial_url == 2` in 15/15, i.e. **no shim-free tutorial run has ever been made.**
+⚠ Also: the mandated 3× `play_novtguard` control gate would declare a sitting VOID ~4 times in 5
+even when everything works (the camera family is ~8 % per staged launch) — fix the control before
+spending launches.
+
 The short version, because it has already cost two sessions:
 - **The FK-24 watchpoint probe was killing the game**, and its crash was recorded as a
   game crash for a whole session. Dump `166396E2` (DR mode) and `FED1F952` (page mode) are

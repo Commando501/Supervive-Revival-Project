@@ -419,14 +419,24 @@ Ten crashes, 173–201 s, **two stack families**. That is the opposite of flaky.
 > ### ⚠ CORRECTIONS 2026-08-05 (S111) — the band reproduces; two things about it do not.
 > Source: `docs/fk8-crash-timing-mined.md` §3.5, §4.1. Both re-verified in-session.
 >
-> 1. ❌ **"ANIM family" is a MISNOMER, and it is not two members but one.** `0x3495973` and
->    `0x349596d` resolve to **the same function `0x3494B40`** (4,336 B, an **EXACT** `.pdata` extent
->    from minidump stream 13). Its string literals are `"Ticking Group [%s] GroupLeader [%d]"` and
->    `"Invalid position from Leader %d. Trying next leader"` — it is the **tick task-graph
->    dispatcher**, which matches its `Foreground Worker #0` crashed thread. There is no animation code
->    in this family. Reproduce in seconds: `python tools/strxref/strxref.py func 0x3495973`.
->    (The positive control for that tool: `0x3ee9cf5` → `UEngine::LoadMap`, which agrees with the
->    row's own assert file.)
+> 1. ⚠⚠ **THIS ITEM WAS WRONG AND IS RETRACTED (2026-08-07). The name "ANIM family" is CORRECT.**
+>    The S111 pass claimed `0x3494B40` was "the **tick task-graph dispatcher** … there is no animation
+>    code in this family". That was produced by quoting **two of its four** string literals — the two
+>    that sound task-graph-ish out of context — and dropping the decisive one. The full set is:
+>      `"Ticking Group [%s] GroupLeader [%d]"`
+>      `"Invalid position from Leader %d. Trying next leader"`
+>      `"[PreviousMarker %s, NextMarker %s] : %0.2f "`  ← **×2, and unambiguously ANIMATION marker sync**
+>    "Ticking Group" / "GroupLeader" / "Invalid position from Leader" are **anim SYNC-GROUP** terms, not
+>    task-graph ones. **S106's original identification — `FAnimSync::TickAssetPlayerInstances` — stands**
+>    (`docs/fk7-crash-settled.md:640-643`, which already noted all three are `AnimSync.cpp` literals).
+>    ⇒ A textbook instance of `supervive-instrument-artifact-pattern`, committed by the session that was
+>    documenting that pattern: an **incomplete instrument reading** generalised into a structural claim.
+>    **What DOES survive, and is the only part to carry forward:** `0x3495973` and `0x349596d` resolve to
+>    **the same function `0x3494B40`** (4,336 B, EXACT `.pdata` extent) — they are one family member, not
+>    two. (`:623-624` had already said so in July.)
+>    Reproduce the full literal set: `python tools/strxref/strxref.py func 0x3495973` — and **read all
+>    four lines.** (Tool positive control: `0x3ee9cf5` → `UEngine::LoadMap`, agrees with the row's own
+>    assert file.)
 > 2. ⚠ **Effective N is ~2, not 10.** Nine of these ten rows are a **single 2 h 55 m sitting**.
 >    Independence was assumed and does not hold.
 > 3. ⚠ **The band is in the LAUNCH clock**, which carries the operator's staging schedule (measured
