@@ -462,6 +462,16 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   build contains no `.text` write, and the roster still renders because the shim's existing
   **`[+0x354]` DATA poke** is sufficient — screenshot-verified (`docs/s111-jz-dropped-shipping.md`).
   Rollback = `-Variant jzpatch`. **Prefer a data write over a `.text` write in every new shim.**
+  ★★ **AND IT IS `.text` SPECIFICALLY, NOT CODE MODIFICATION** (S111 arm J,
+  `docs/s111-armj-bytecode-vs-text.md` — predicted from source *before* running, then measured):
+  `catalog_pick_fix` **permanently** patches UFunction **Script bytecode** (heap `TArray<uint8>`,
+  `EX_Return`+jump, never restored) and is **0/9 deaths at a 320 s hold — identical to injecting
+  nothing** — while a *self-restoring* 2-byte `.text` write is **7/8** (p = 0.00041). Ladder at
+  320 s: nothing **0/22** · bytecode **0/9** · transient `.text` ×3 **4/12** · standing `.text`
+  **7/8**. ⇒ **express shim effects as DATA or BYTECODE writes; never touch the module image.**
+  ⚠ **The `-Hook` primary injection silently fails ~1 in 10** (S111 caught one with a treatment
+  guard). Never assume "copied the file ⇒ injected" — verify via `docs/inject-watch.out.log`
+  changing *and* naming the DLL, or via the shim's own marker stamp.
   ⚠ The other four shims (`mainmenu_refresh_pi8`, `loadout_fix`, `missions_fix`) still install
   `ProcessInternal` prologue patches — also `.text` writes, never bisected individually.
 - Don't leave a `ProcessInternal` hook PERMANENTLY installed if another PI-hooking shim
