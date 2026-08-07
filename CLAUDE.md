@@ -27,8 +27,14 @@ the cause is not attributed).
 - **Roster / store / cosmetics** — root cause was one un-set client-side
   catalog-ready sub-flag (`CatMgr+0x354`), NOT the backend, NOT enumeration, NOT
   LokiAssetManager bypass (all falsified over ~13 sessions). Fix = the native shim
-  `tools/sigbypass-mod/catalog_store_fix.dll` (self-restoring `jz`-NOP that dodges
-  the ~3–5 min integrity check + AssetManager scan + CatalogEntry poke). STORE
+  `tools/sigbypass-mod/catalog_store_fix.dll`. ★ **As of 2026-08-06 it contains NO `.text`
+  patch at all** — the old self-restoring `jz`-NOP was MEASURED to be the protector-kill
+  trigger (`docs/s111-bisect-jz-is-the-trigger.md`) and was dropped; the shim's existing
+  **`[+0x354]` DATA poke** on the live CatalogManager is sufficient and the roster still
+  renders (screenshot-verified, `docs/s111-jz-dropped-shipping.md`). It still does the
+  AssetManager scan + CatalogEntry poke. Rollback: `build.ps1 -Variant jzpatch`.
+  ⚠ The data poke must land BEFORE the user first opens HUNTERS — keep it early and
+  continuous, or the grid can Construct-and-wait with an empty roster (S47). STORE
   tiles also need the backend to mark cosmetics `IsOwned` (`handleInventory`).
   Living log: `docs/hero-roster-attempts.md`; memory `supervive-hero-roster-blocker`
   + `supervive-store-status`.
@@ -444,8 +450,20 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   via off-thread call, thread-hijack with fresh stack, thread-hijack with own
   stack, and APC on the real game thread).
 - Don't leave a permanent `.text` patch in place — the ~3–5 min code-integrity
-  check catches it and kills the process. Any raw `jz`-NOP must be self-restoring
-  (patch → let the builder run → restore), the way `catalog_store_fix.dll` does.
+  check catches it and kills the process. ★★ **S111 MEASURED THIS, and it is far worse than
+  "permanent" — even a SELF-RESTORING patch is lethal while it stands.** One-variable bisect at 1
+  image / 320 s: patch standing **11/12** deaths vs no patch **0/5**, p = 0.00097
+  (`docs/s111-bisect-jz-is-the-trigger.md`). Removing the VEH or the exec-stub/vtable hook changed
+  nothing; removing the 2-byte `.text` write stopped every death. The whole ladder is explained by
+  **how long a `.text` modification stands**: `-NoHook` 0 %, inert mapped DLL 0 %, production
+  (patch restored ~6 s after catalog load, so standing ~5–45 s) **28 %**, controls that never
+  restore ~90 %. ⇒ **the `.text` patch is the single biggest self-inflicted hazard in the project.**
+  ★ `catalog_store_fix` NO LONGER PATCHES AT ALL (2026-08-06): `KNOJZ` defaults to 1, the shipping
+  build contains no `.text` write, and the roster still renders because the shim's existing
+  **`[+0x354]` DATA poke** is sufficient — screenshot-verified (`docs/s111-jz-dropped-shipping.md`).
+  Rollback = `-Variant jzpatch`. **Prefer a data write over a `.text` write in every new shim.**
+  ⚠ The other four shims (`mainmenu_refresh_pi8`, `loadout_fix`, `missions_fix`) still install
+  `ProcessInternal` prologue patches — also `.text` writes, never bisected individually.
 - Don't leave a `ProcessInternal` hook PERMANENTLY installed if another PI-hooking shim
   is present — they race on the prologue. Coexisting PI-hookers must install the jmp only
   TRANSIENTLY and serialize via the shared `Local\SuperviveMissionsPIHook` mutex (the way
