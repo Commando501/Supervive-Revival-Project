@@ -200,8 +200,22 @@ static inline bool SafeReadD(uintptr_t a,int32_t*   out){ return SafeCopy(out,(c
 #ifndef KNOSLOT
 #define KNOSLOT 0
 #endif
+// ★★ KNOJZ NOW DEFAULTS TO 1 — THE .text PATCH IS OFF IN THE SHIPPED BUILD (2026-08-06, S111).
+// The jz-NOP was MEASURED to be the trigger for the protector kill that has been costing ~30 % of
+// all launches: one-variable bisect, patch standing 11/12 vs no patch 0/5, p = 0.00097
+// (docs/s111-bisect-jz-is-the-trigger.md). Dropping it is safe because the shim ALREADY sets the
+// same condition as DATA — the `[+0x354]=1` poke on the live CatalogManager, in the worker loop.
+// VERIFIED FUNCTIONALLY 2026-08-06: with jz=0 the ALL HUNTERS grid renders the full roster
+// (screenshot-confirmed by the user), marker showing scan=SAFECOPY-S111 veh=1 slot=1 jz=0,
+// `[cm] live CatalogManager (map Num=1339)`, lastPurch=1339, and the run cleared a 320 s hold.
+// ⚠ S47 (docs/session-47-tile-widget-FOUND.txt:385) warns the poke does NOT repopulate a grid that
+//   has ALREADY Constructed and is waiting on the delegate. That is consistent: the shim pokes
+//   continuously from catalog-load onward, so the flag is set well before the user opens HUNTERS
+//   and the grid takes the direct LoadCharacters path on Construct. If a future change delays the
+//   scan past first navigation, this could regress — keep the poke early and continuous.
+// Roll back with -DKNOJZ=0 (variant `jzpatch`) if the roster ever fails to populate.
 #ifndef KNOJZ
-#define KNOJZ 0
+#define KNOJZ 1
 #endif
 
 typedef int (*PFN_OnHit)(uintptr_t p,void* ctx);

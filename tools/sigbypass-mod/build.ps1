@@ -103,13 +103,19 @@ $Variants = @{
     # 11/30 vs 5/30 in the 60-launch A/B (p=0.072). ⚠ NOT A CANDIDATE — with the scan off the shim
     # cannot find the CatalogManager, so the roster/store never populate and the jz self-restore never
     # fires. Never inject this for anything but the control arm, and never hold it long.
+    # catalog_store_fix. ★ KNOJZ now DEFAULTS TO 1, so the PLAIN build has NO .text patch — that is
+    # the shipping build (S111: the jz-NOP was the protector trigger, 11/12 vs 0/5, p=0.00097, and the
+    # [+0x354] DATA poke alone renders the roster, screenshot-verified). Every entry below is a CONTROL
+    # or a ROLLBACK, never a candidate. ⚠ The KNOSCAN arms pin KNOJZ=0 on purpose: arms C/E/E1/E2 were
+    # flown WITH the patch, and dropping that pin would silently change what those names mean AND make
+    # 'noscan' byte-identical to 'noscan-nojz'.
     'catalog_store_fix' = @{
-        'noscan' = @('-DKNOSCAN=1')
-        # S111 arm E1/E2/E3 bisect. Each is noscan (= arm E) MINUS one behaviour, so each is a
-        # one-variable step down from arm E. CONTROLS ONLY — none of these is a candidate.
-        'noscan-noveh'  = @('-DKNOSCAN=1','-DKNOVEH=1')   # E1: no SnapshotModules + no VEH
-        'noscan-noslot' = @('-DKNOSCAN=1','-DKNOSLOT=1')  # E2: no BuildStub + no slot-110 vtable write
-        'noscan-nojz'   = @('-DKNOSCAN=1','-DKNOJZ=1')    # E3: no .text jz-NOP
+        ''              = @()                                             # ★ SHIPPING: scan on, NO .text patch
+        'jzpatch'       = @('-DKNOJZ=0')                                  # ROLLBACK: old .text jz-NOP behaviour
+        'noscan'        = @('-DKNOSCAN=1','-DKNOJZ=0')                    # arm C / arm E: no scan, patch ON
+        'noscan-noveh'  = @('-DKNOSCAN=1','-DKNOJZ=0','-DKNOVEH=1')       # arm E1: - VEH
+        'noscan-noslot' = @('-DKNOSCAN=1','-DKNOJZ=0','-DKNOSLOT=1')      # arm E2: - BuildStub + slot-110
+        'noscan-nojz'   = @('-DKNOSCAN=1')                                # arm E3: no scan AND no patch
     }
     'tutorial_launch' = @{
         # RunMode switch, tutorial_launch.cpp:93. Default when KRUNMODE is unset is RM_CHEATSPAWN.
