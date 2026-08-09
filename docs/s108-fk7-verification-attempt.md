@@ -1,3 +1,5 @@
+> ⛔ **FK-7 IS CLOSED (S112, 2026-08-08).** Any statement below that FK-7 is open, unverified, or needs a reproduce-then-repair run is **HISTORICAL**. Cause = our own standing `.text` patch (10/10 died with it vs 3/36 without, p = 7e-8); fixed, shipped, deployed. The remaining tutorial failures were split out as **FK-31 / FK-32** (`docs/fk31-fk32-successors.md`). Start at `docs/s112-fk7-ab-results.md`.
+
 # S108 — FK-7 verification attempt: the sitting is VOID, FK-7 stays OPEN
 
 **Date:** 2026-08-04 (S108) · **Verdict: FK-7 remains OPEN. Not closed, not re-scoped downward.**

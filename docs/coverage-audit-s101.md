@@ -305,7 +305,7 @@ Parked as a strategy, but the water mark is much higher than "parked" suggests.
 | `.pdata` (unwind/function table) | **0 of 6,283,264 bytes** readable in memory; encrypted garbage on disk |
 | Ghidra | 1 program (`SUPERVIVE-deobf.exe`), 2.1 GB, **0 recovered symbol names**, untracked |
 
-**Defeated:** the VMProtect-style import protection — `deobfimports` emulates each obfuscated trampoline against the live process and rebuilds a real import table, **1,107/1,107 slots, 0 off-target**, independently confirmed by parsing the output PE.
+**Defeated:** the import protection (⚠ NOT VMProtect — REFUTED, `docs/fk10-protector-identified.md`) — `deobfimports` emulates each obfuscated trampoline against the live process and rebuilds a real import table, **1,107/1,107 slots, 0 off-target**, independently confirmed by parsing the output PE.
 
 **Worked around, not defeated:** the ~3–5 minute code-integrity check (dodged by never leaving a standing `.text` patch), the packer's VEH (no C++ exceptions in payloads), CIG (manual mapping).
 
@@ -511,7 +511,7 @@ Claims that were asserted, then **falsified or overturned by later measurement**
 | "`ProcessEvent` (vtable slot 56) is the BP invoke path" | Uniform **no-op** for injected calls. Dispatch is `ProcessInternal` direct. |
 | "OUT-param crashes are anti-tamper" | A bug. `FFrame.OutParms` is at `+0x80` (S58). |
 | "The deploy-context wall" | **Retracted 2026-07-16** — never existed; BP deploy functions never ran because ProcessEvent is neutered. |
-| "The IAT holds resolved system-DLL pointers" | Wrong — it is VMProtect-protected (hence `deobfimports`). |
+| "The IAT holds resolved system-DLL pointers" | Wrong — it is import-protected, hence `deobfimports`. ⚠ The "VMProtect" label is REFUTED (`docs/fk10-protector-identified.md`). |
 | "FName indices are stable across launches" | **Not stable.** |
 | "The usmap is authoritative for replicated containers" | Wrong repeatedly (`ObjectiveProgress`, `Missions`, `GameFeatureToggles`). Verify against live RPM. |
 | "`ScanPrimaryAssetTypesFromConfig` is a viable shim target" | `__report_gsfailure`s regardless of thread context — tested 4 ways. **Banned.** |

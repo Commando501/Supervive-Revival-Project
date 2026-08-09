@@ -509,6 +509,18 @@ inside the world → `mergedumps` → `--rebuild`. The addresses are already eno
 
 ### 6.3 The one question string-xref cannot reach at all
 
+> ## ⚠⚠ SCOPE ERROR — CORRECTED 2026-08-09 (S113). The "clean negative" below is NOT clean.
+> `tools/strxref/strxref.py:63` hardcodes `DEFAULT_DUMP = dumps\merged.dump.exe` — **the game exe.**
+> `runtime.dll`, a *separate* 67.5 MB module and **the only plausible home for the check**, appears
+> **0 times** in this document and was never scanned. The phrase *"and it is not coverage-blocked"*
+> is exactly wrong: it was coverage-blocked in the strongest possible way, **by target selection**.
+> This is the 20th recorded instance of the instrument-artifact pattern.
+> **What the correct target actually contains:** `runtime.dll` is plaintext and disassemblable, and
+> one offline pass found the full XXH3 `kSecret` at RVA `0x9c00`, SHA-256/SHA-1/MD5 tables at
+> `packer2 0x942740–0x9467e0`, and a `.pdata`-free ISA-L multi-buffer tail at `0x8ffcd4–0x93e886`.
+> ⚠ Note the xxHash there is **Zstd's frame checksum**, not the integrity hash — see
+> `docs/fk10-protector-identified.md` §5. **The two SQLite/EAC false leads below still stand.**
+
 **The ~3–5 min `.text` integrity check — clean negative, and it is not coverage-blocked.** No
 string in this module names it: `tamper`, `VMProtect`, `code has been modified`, `anti-cheat` →
 **zero** matches image-wide, both encodings. Two seductive false leads killed:

@@ -1,2 +1,31 @@
 [0] mainmenu_refresh_pi8 (Refresh + broadcast member.OnHeroAssetIDChanged via ProcessInternal+FFrame) started
-[1] gameTid=35516
+[1] gameTid=19108
+[2] resolved subjects=4 refreshFn=000002951C33E500 spawners=4 member=0x294ECA65F00 handlerFns=3
+   [init] spawner[0]=0x29576F52320 TargetAssetID=SuccubusDefault
+   [init] spawner[1]=0x29576F51D50 TargetAssetID=<none>
+   [init] spawner[2]=0x29576F51780 TargetAssetID=<none>
+   [init] spawner[3]=0x29576F511B0 TargetAssetID=<none>
+[3] hook built. Open HUNTERS + click a hunter.
+[PICK] Hero:Succubus
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0
+[hb] member=Hero:Succubus desired=2306056 calls=0 hitsGT=0 hooked=0

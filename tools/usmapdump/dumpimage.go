@@ -32,7 +32,7 @@
 // NOT DONE HERE (follow-ups, called out so the dump's limits are explicit): IAT
 // reconstruction (the header import dir points at the packer stub, not the resolved
 // engine imports — rebuilding it is Scylla's job and error-prone; left for a second
-// pass), and de-virtualization of any VMProtect-style functions (a handful won't
+// pass), and de-obfuscation of any heavily-obfuscated functions (a handful won't
 // decompile cleanly — the bulk engine .text is plainly resident, which is why disasm
 // already works against it).
 package main

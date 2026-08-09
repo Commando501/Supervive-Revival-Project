@@ -1,3 +1,41 @@
+> # ⛔ SUPERSEDED — FK-7 IS CLOSED (S112, 2026-08-08)
+>
+> **This file's §0 "CLOSURE STATUS — OPEN (do NOT close)" no longer governs. It was correct when
+> written and its reasoning was sound; the experiment it asked for has since been run.**
+>
+> **START AT `docs/s112-fk7-ab-results.md`** (and `docs/s112-fk7-fk8-completion-review.md`).
+>
+> **What §0 demanded and what happened:**
+> * §0 said *"the camera fix repairs a symptom whose writer is unidentified"* and *"zero live runs of
+>   any fix exist"* — so it refused to close on a compiled DLL. **Correct call.** S112 flew a
+>   pre-registered, one-variable A/B: **standing `.text` patch 10/10 armed windows DIED vs no
+>   module-image write 3/36 (8 %) — Fisher p = 0.00000007.**
+> * The cause is **our own standing `.text` patch at `ProcessInternal`**, not a game defect. It is
+>   fixed, SHIPPED as the default, deployed, and confirmed on the documented recipe path with no
+>   functional regression (5/5 surviving runs show `[PL] init complete` + run/idle locomotion +
+>   zero `[GCW]`).
+> * §0's mandated `play_novtguard` positive control was **replaced** — it fires on an ~8 % event and
+>   would declare ~4 sittings in 5 VOID. The working control is `[PL] *** init complete ***`.
+>
+> **What this file still gets RIGHT and you should still read:** the belief "deterministic, ~2 of 3
+> die" is FALSE (§1.1); the camera family's corrupted `ViewTarget.Target` is **the shim's own spawned
+> actor** (proven via `KCAMPITCH -66.0`); the `Scale3D.Z` truncation root cause and `KXFORMFIX`.
+>
+> **What this file gets WRONG (do not act on):**
+> * `:1273` *"the code-integrity confound never operated — patch uptime 60–79 s vs ~285 s kill
+>   latency"* → **contradicted and now measured**: hazard tracks how long a `.text` write STANDS, and
+>   60–79 s is squarely lethal.
+> * Any `T+<n>` hold rule → `SecondsSinceStart` is the launch clock; anchor to `Load map complete`.
+> * `:177-181` *"camera bug is 1-in-3 to 1-in-2 per launch"* → denominator error; ~8 % per launch, and
+>   it occurred **0 times in 41 S112 launches**.
+> * The `0x3495973`/`0x349596d` "ANIM family" naming — those are ONE function at `0x3494B40`, and it
+>   **is** animation code (`FAnimSync::TickAssetPlayerInstances`; four literals incl.
+>   `[PreviousMarker %s, NextMarker %s]` ×2). S111's "tick task-graph dispatcher" rename was wrong.
+>
+> **What is still open is NOT FK-7** — it was split into two successors:
+> **FK-31** (the staging hazard, 22/82 launches = 27 %, kills the game before the probe is injected)
+> and **FK-32** (the `0x0000DEAD` artifact-less residual, 3/36). See `docs/fk31-fk32-successors.md`.
+
 # FK-7 SETTLED — the tutorial crash is deterministic, not flaky
 
 **Date:** 2026-07-27 (S106) · **§0 closure decision added 2026-07-29 (S106e)**
@@ -15,7 +53,7 @@ the source), **INFERRED** (derived from measurements, could still be wrong), or 
 
 ---
 
-# 0. CLOSURE STATUS — **OPEN** (do NOT close)
+# 0. CLOSURE STATUS — ~~**OPEN** (do NOT close)~~ **→ CLOSED S112, see the banner at the top of this file**
 
 **Decided 2026-07-29 (S106e).** Two adversarial hunts (writer-attribution, silent-deaths), one
 hardening pass and one closure skeptic ran against §1–§8. **The skeptic's verdict governs and it is

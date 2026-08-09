@@ -9,7 +9,8 @@
   different code - opening the STORE, browsing the HUNTERS roster, MISSIONS, loadout each
   decrypt their shim's native-call code. This helper snapshots the live game at each state
   you name into dumps/<state>/, then unions them (mergedumps) and rebuilds the import table
-  (deobfimports - SUPERVIVE's imports are VMProtect-protected trampolines) into
+  (deobfimports - SUPERVIVE's imports are obfuscated trampolines; NOT VMProtect, see
+  docs/fk10-protector-identified.md) into
   dumps/merged.dump.iat.exe. Finalize while the game is still running (deobf emulates the
   live stubs).
 
@@ -173,7 +174,7 @@ function Invoke-Finalize {
   & $usmap mergedumps $mergedOut $DumpsDir
   if ($LASTEXITCODE -ne 0) { Write-Host "mergedumps FAILED (exit $LASTEXITCODE)" -ForegroundColor Red; return }
 
-  # SUPERVIVE's imports are VMProtect/Themida-protected (IAT points to obfuscated
+  # SUPERVIVE's imports are protected by a bespoke scheme (IAT points to obfuscated
   # trampolines), so use `deobfimports` which emulates each stub against the LIVE process.
   # Falls back to `reconstructiat` (direct) only for unprotected targets.
   $alive = Get-Process -Name $procName -ErrorAction SilentlyContinue | Select-Object -First 1

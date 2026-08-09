@@ -317,6 +317,12 @@ instruction, exactly this fault address, on exactly this per-frame path — and 
 
 ## 5. The ~3–5 min `.text` integrity check — CLEAN NEGATIVE, and two false leads killed
 
+> ⚠⚠ **SCOPE ERROR, corrected S113 (`docs/fk10-protector-identified.md`).** "This module" is the
+> **game exe** (`strxref.py:63` hardcodes `merged.dump.exe`). `runtime.dll` — the protector, and the
+> only plausible home for the check — appears **0 times** here and was never scanned. The heading's
+> "CLEAN NEGATIVE" does not hold. The real leads are in `runtime.dll`, which is plaintext and
+> disassemblable. **The two false leads killed below (SQLite, EAC) still stand.**
+
 **No string in this module names a `.text` integrity check.** MEASURED, both encodings:
 `tamper`, `VMProtect`, `code has been modified`, `anti-cheat` → **zero** matches image-wide.
 

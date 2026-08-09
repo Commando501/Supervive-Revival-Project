@@ -1,1 +1,12 @@
 [0] battlepass_adopt_fix (force OnSuccess adoption of HuntersJourney account pass) started
+[2b] vmgr=0x29434C8DA00 asset(HuntersJourney_C)=0x295146DF4C0
+[2] BPIM=0x2950A661AA0  pre: Num=0 adopted=0 target=1  OnSuccess=0x7FF655D88130
+[3] hook built; installing to catch the game thread and force adoption...
+[4] called=1  pre(Num=0 adopted=0 target=1) -> post(Num=1 adopted=104)
+[4] account VM=0x295FB10E080  ProgressionTrackAsset +0xE8: before=0x295146DF4C0 -> after=0x295146DF4C0 (bound=YES to HuntersJourney_C 0x295146DF4C0)
+[5] gates: PM=0x29429E27A20 flagA(+0x208)=1  tier(+0x90+0xEC): before=0 -> after=0  LevelsToDisplay(+0x70)=85  calledCheckAccountPassChanges=1
+[5] published-pass chain: X(assetloader)=0x294F9B5EB00  P(pass class)=0x2950C1E2F50 name='HuntersJourney_C'
+[5] VM lookup key K = P->GetPrimaryAssetId().ToString() = 'ProgressionTrack:HuntersJourney'   (track ProgressionTrackID set to this)
+[5] Levels via CheckAccountPassChanges: before=86 -> after=86 *** TIER GRID BUILT ***
+[6] SEASONAL (kArmSeasonal=0): SeasonalPassViewModel@+0x1A8 before=0x0 -> after=0x0  Levels=-1 LevelsToDisplay=-1  (unchanged)
+[4] *** ADOPTED + account VM + asset bound + Levels tier grid POPULATED. Passes account tab is data-ready. ***

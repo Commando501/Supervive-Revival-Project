@@ -346,8 +346,8 @@ func main() {
 		cmdReconstructIAT(os.Args[2], out)
 		return
 	}
-	// deobfimports: <proc> <dumpFile> [outFile] — for import-PROTECTED dumps (VMProtect/
-	// Themida trampolines): emulate each stub against the live process to recover the real
+	// deobfimports: <proc> <dumpFile> [outFile] — for import-PROTECTED dumps (⚠ NOT VMProtect/
+	// Themida — refuted, docs/fk10-protector-identified.md): emulate each stub to recover the real
 	// API, then rebuild the import table. Needs the source process alive + the sidecar.
 	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "deobfimports" {
 		out := ""

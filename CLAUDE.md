@@ -16,9 +16,12 @@ reusable game-thread native-call primitive (see below).
 **Current frontier = the tutorial WORLD.** Getting in is solved (S107/S108): the client
 loads `LVL_Tutorial`, the hero spawns, is possessed, moves, and **walks/runs with real
 locomotion animation** (S108b). The whole sitting is now **hands-free** — no human at the
-keyboard (see "Tutorial sittings" below). What is still open is *simulation* (abilities /
-combat: the hero owns no ability system) and *stability* (the run dies within ~1–5 min and
-the cause is not attributed).
+keyboard (see "Tutorial sittings" below). ★★ **STABILITY IS LARGELY SOLVED (S112, 2026-08-08):**
+FK-7 — "the run dies within ~1–5 min" — was substantially **our own standing `.text` patch**, and the
+shipped `tutorial_launch_play.dll` no longer makes one (10/10 armed windows died with it vs 2/30
+without, Fisher p = 0.00000008; 16/16 survived a full 600 s hold). What is still open is *simulation*
+(abilities / combat: the hero owns no ability system) and the **staging hazard** — ~25 % of launches
+still die before the probe is injected, with only `gft`+`fo` resident.
 
 ## Before doing anything else
 
@@ -93,8 +96,99 @@ top, which governs**, then `docs/s108b-ksmactor-bisect.md`, `docs/s108-crash-tri
 `docs/s108-fk7-verification-attempt.md` and `docs/s108-skeptic-review.md`. Memory:
 `supervive-fk24-probe-self-lethal`, `supervive-tutorial-crash-fk7`.
 
-★★★ **START HERE IF THE TASK IS FK-7 / TUTORIAL: `docs/s111-FK7-HANDOFF.md`, then
-`docs/NEXT-SESSION-PROMPT.md`.** S111 (2026-08-07) measured that a **standing `.text` write is what
+★★★★★ **FK-7 IS CLOSED — fixed, shipped and verified (S112, 2026-08-08).**
+**Do NOT re-open it.** `docs/fk7-crash-settled.md` §0 still reads "OPEN (do NOT close)"; that verdict
+was correct when written, the experiment it demanded has now been run, and the file carries a
+SUPERSEDED banner at the top. Read `docs/s112-fk7-ab-results.md` first.
+**What still fails on the tutorial route was SPLIT OUT as FK-31 / FK-32 — see
+`docs/fk31-fk32-successors.md`.** Neither is FK-7; each has a different mechanism and window, and
+pooling them under FK-7 would repeat this project's own recorded error of merging distinct
+mechanisms under one label.
+- **FK-31 — the staging hazard (NOW THE DOMINANT FAILURE): 22/82 launches (27 %)** die before the
+  probe is injected, with only `gft`+`fo` resident; all dumped ones are `OURS/protector`. `fo`'s
+  ≤8 s `.text` prologue and ≤25.5 s `.rdata` slot-285 patch are CONFOUNDED in every run ever flown.
+  ⚠ `KNOLOGINVT` is **FALSIFIED — do not re-run it** (4/4 died, 0/4 map loads, fatal
+  `ALokiGameMode::Login failed to Login`, p = 0.0026). Next: patch-then-immediately-restore.
+- **FK-32 — the `0x0000DEAD` residual: 3/36 armed windows**, no artifact of any kind, NOT a protector
+  kill. `0xDEAD` is not ours (no `TerminateProcess`/`ExitProcess` in any shim source; our own
+  `Stop-Process` exits `0xFFFFFFFF`, measured). ⚠ N=2 — suggestive, not established. The exit-code
+  instrument is permanent, so **harvest it, don't spend launches on it.**
+
+★★★★★ **FK-7 detail (S112, 2026-08-08).** Final corpus: **standing `.text`
+patch 10/10 armed windows DIED vs no module-image write 3/36 (8 %) — Fisher p = 0.00000007.** The
+shipped `tutorial_launch_play.dll` (`.text 5151621d2154e454`, DEPLOYED) arms on **2 heap pointers**
+and writes no module image; confirmed on the default recipe path, **5 of 6 armed windows survived a
+full 600 s**. Rollback = `-Variant play-textpatch` (`433cf7d8f6a0770f`), which IS the measured control.
+⚠ **What remains is NOT FK-7:** the **staging hazard, 22/82 launches (27 %)**, which kills the game
+before the probe is injected and is untouched by this fix — it is now the dominant tutorial-route
+failure. And **no shim-free tutorial run has ever been made**, so a game defect is unsupported but
+not excluded.
+⚠ **The residual is 3/36 and unexplained.** All three left NO artifact; the two instrumented ones
+exit **`0x0000DEAD`** (a silent TerminateProcess sentinel that is NOT ours — our `Stop-Process` exits
+`0xFFFFFFFF`, measured as a control). N=2, reproducible, unattributed.
+
+★★★★ **FK-7 WAS RE-TESTED AND LARGELY ANSWERED (S112, 2026-08-07). START AT
+`docs/s112-fk7-fk8-completion-review.md`, then `docs/s112-fk7-ab-results.md`; the S111 handoff below
+is now history, not a plan.** Review verdict: **FK-7 substantially answered, NOT closed; FK-8 closed
+and independently re-confirmed.** Three review findings that govern:
+- ★ the "treatment survived by doing LESS" objection is **FALSIFIED** — identical `[PL]` init, MORE
+  shim work per second, and the hero walks the SAME path in both arms (treatment reaches `x≈2841`,
+  control dies partway at `x≈1379`);
+- ★ **FK-8 re-confirmed DIRECTLY against ground truth** (N=11, median delta −6.2 s) — but with a
+  **systematic ~6 s undercount** and **one unexplained −48.8 s outlier**, so per-death
+  `SecondsSinceStart` carries occasional tens-of-seconds error. **Do not lean on narrow bands.**
+- ⚠ **the camera family occurred 0 times in 41 launches, which is NOT evidence `KXFORMFIX` worked**
+  (denominator is the 21 armed windows; at ~8 % P(0) ≈ 0.17).
+★★★ **PHASE 3 FLOWN (2026-08-08) — the result is now overwhelming.** Matched 600 s holds, footprint
+the only variable: `play-funcswap` (17,126 pointers) **0/8 died** and `play-funcswap-one` (**2**
+pointers) **0/8 died**, all 16 surviving the full 600 s. Pooled across every non-`.text` arm:
+**2/30 (6.7 %) vs the standing-`.text` control's 10/10 — Fisher p = 0.00000008.**
+- ★★ **`build.ps1 -Variant play-funcswap-one` (`5151621d2154e454`) is the SHIPPABLE form** — it arms
+  on **`swapped=2` heap pointers**, not 17,126, and RM_PLAY runs normally for 600 s. Target
+  `ReceiveTickClient` was picked from a MEASURED settled-world profile (`play-funcswap-profile`,
+  90 s window: 1549 hits/90 s ≈ once per frame). The old 4 s window only profiles world load, where
+  every candidate reads `hits=1` and none is selectable.
+- ⚠ **The footprint hypothesis is UNTESTED, not refuted** — 0/8 vs 0/8 cannot discriminate. Phase 3
+  simply could not reproduce the residual; the phase-1 2/10 now looks like noise, since the LONGER
+  600 s hold produced **0/16** (the opposite of a dose-response).
+- ⚠⚠ **`KNOLOGINVT` FALSIFIED — do not re-run it.** Dropping `fo`'s slot-285 `.rdata` patch kills the
+  route: **4/4 launches, 0/4 map loads**, fatal `ALokiGameMode::Login failed to Login` (exactly what
+  the S62 source comment predicts), p = 0.0026. S62's purpose STANDS. The `.rdata`-is-caught-too
+  question **cannot be tested by removal**; it needs a patch-then-immediately-restore design.
+- **The staging hazard is now the largest open item on the tutorial route** (~25 % of launches die
+  before the probe is injected; 6/22 in phase 3).
+A pre-registered one-variable A/B on the tutorial route, **N = 10 armed windows per arm**:
+**control (RM_PLAY's 600 s standing `.text` patch) died 10/10; treatment (the same shim with the
+hook expressed as a heap `UFunction.Func` swap, zero module-image writes) died 2/10. Fisher's exact
+p = 0.00071.** ⇒ **FK-7 is substantially OUR OWN standing `.text` patch.** Build:
+`build.ps1 -Variant play-funcswap` (`badecc840bafee84`); control rebuilt from HEAD is
+`433cf7d8f6a0770f`.
+- ★ **The kill MODE differs, not just the rate.** Control deaths exit **`0xC0000005`** and leave the
+  `runtime.dll+1` crashpad dump; the treatment death exits **`0x0000DEAD`** and leaves **nothing**.
+  `0xDEAD` is NOT ours (no `TerminateProcess`/`ExitProcess` anywhere in the shim sources). ⇒ the
+  project's "artifact-less death class" is **not all hangs** — some are silent kills, and holding an
+  OS handle open across process exit recovers the code for free. Do this in every future harness.
+- ★ **28/28 dumps this session were `OURS/protector`. ZERO game-defect dumps.** The dump that would
+  be the first real FK-7 evidence still does not exist.
+- ⚠ **The residual is 2/10 and is OPEN** — not a protector kill, no artifact. Leading suspect is the
+  treatment's OWN footprint (it swaps 17,126 `Func` pointers); `-DKFSNAME=<name>` swaps one instead.
+- ⚠⚠ **8 of 20 non-arming launches DIED DURING STAGING**, with only `gft`+`fo` resident and the probe
+  never injected — before RM_PLAY's patch exists. So **"FK-7 is our PI hook" is too narrow.** `fo`'s
+  ≤25.5 s `.rdata` slot-285 vtable patch is the leading suspect and is still CONFOUNDED with its own
+  transient `.text` write. `KNOLOGINVT` **does not exist** (the S111 handoff cites it as if it did);
+  neither did `KPLAYHOLDMS` until S112 added it (`-Variant play-hold300`).
+- ⚠ **`build\tutorial_launch_play.dll` was ONE COMMIT STALE** (`513c6277c3ae88f3` vs HEAD's
+  `433cf7d8f6a0770f`); `KWIREGAS` defaults to **1**, so the gap was live code, not dead. Archived as
+  `build\tutorial_launch_play_a827ef9_ARCHIVED.dll`. **Rebuild `play` before any A/B against it.**
+- ★ **Positive control that actually works:** `[PL] *** init complete ***` (`tutorial_launch.cpp:5190`)
+  — fires ~100 %, is arm-symmetric, and catches a silent no-op in a non-`.text` arm. **Do NOT use the
+  mandated 3× `play_novtguard` gate**: it fires on an ~8 % event and voids ~4 sittings in 5.
+- Harness: `configs/fk7-ab-run.ps1` (one armed window) + `configs/fk7-ab-campaign.ps1` (alternates on
+  ARMED WINDOWS, not launches) + `tools/crashtri/fk7_ab_analyze.py`.
+- ⚠ `tools/crashtri/fk8_classify.py` dedupes UECC dumps on the constant `"UEMinidump"` → reports
+  **1 distinct report for 105 directories**. Do not point it at `Saved\Crashes`.
+
+Historical (S111): `docs/s111-FK7-HANDOFF.md`, then `docs/NEXT-SESSION-PROMPT.md`. S111 (2026-08-07) measured that a **standing `.text` write is what
 makes the protector kill the process** (patch standing 11/12 vs no patch 0/5, p = 0.00097; a
 *permanent* heap-**bytecode** patch is free, 0/9). And **`tutorial_launch.cpp:6511-6513` (RM_PLAY)
 holds a 5-byte `.text` patch at `ProcessInternal` for 600 s** — `g_done` is never set in RM_PLAY —
@@ -181,6 +275,65 @@ Read `docs/trackb-assetregistry-route.md`. The `assetregistry apply-patch`
 extractor subcommand works end-to-end; loose-file AR.bin deployment has been
 proven INERT in this IoStore build (UE ignores the loose file even when valid).
 Deployment requires an IoStore mod-pak overlay — non-trivial.
+
+### Before touching anything protector- / anti-tamper- / packer-shaped
+★★★ **FK-10 IS SETTLED (S113, 2026-08-09) — read `docs/fk10-protector-identified.md`.** All offline,
+zero launches. **The protection is NOT VMProtect and NOT Themida** — refuted six independent ways.
+It is a **bespoke stack that internally calls itself "Packer", version 3.3.1**, first-party
+Theorycraft-signed. **Do not substitute a second vendor name**: the honest label is
+*"bespoke protector, self-identifies as `packer/3.3.1`, vendor unidentified."* Replacing one guess
+with another is the exact error FK-10 exists to correct.
+- ★★ **`runtime.dll` is NOT PACKED. Its 46.6 MB of protector code is plaintext x86-64 and is
+  disassemblable OFFLINE TODAY** — feed the disassembler the loader's function table at
+  **RVA `0x14D8758`** (222,960 B, 18,580 entries), **NOT** the `.pdata` *section* (`0x1000`), which is
+  vestigial and the loader never reads. Only the protector's *data* (`packer0`, 94.8 % of pages) and
+  *resources* (`.rsrc`, 99.9 %) are encrypted; its instructions never are. It is *obfuscated*
+  (MBA — `not`/`and`/`imul` ≈ 43 % of instructions), not packed. Start with `packer30` (2.2 MB,
+  `call`-structured, holds the entry function and the 4 largest functions).
+- ★ **The decisive ID:** at file offset `0x007C1BEC` (UTF-16) `runtime.dll` holds
+  `/api/5710262/minidump/?sentry_client=packer/3.3.1&sentry_key=149a7ac2…` — **the same org, project
+  and key as the game's own Sentry DSN**, differing only in `sentry_client`. A commercial packer does
+  not embed the customer's private DSN.
+- ★ **`deobfimports`' own 1107/1107, 0-undecodable result REFUTES the name**: its emulator supports
+  21 opcodes with **no conditional branches, no `CALL`, no flags**, and `default: return 0,false`.
+  A virtualized (VMProtect-style) stub would resolve **zero**. 100 % ⇒ every stub is branch-free
+  arithmetic.
+- ★ **The game exe is not "packed" either — it is SELECTIVELY ENCRYPTED IN PLACE** under a stock
+  MSVC/UE5 section layout with **no packer sections** and its OEP (`0x751EFD0`) **inside `.text`**.
+  `.text` 30,281/30,281 pages encrypted (100 %), `.pdata` 100 %, `.rdata` 28.1 %, **`.reloc` 0 %**.
+  Every data directory the loader *reads* is plaintext; the **IAT**, which the loader only *writes*,
+  is encrypted. ⇒ **22.8 MB of `.rdata` is plaintext ON DISK** (47 runs ≥64 KB from RVA `0x0764C000`)
+  — static string work against the on-disk exe is viable there.
+- ⚠ **Wall #7's "no string names the integrity check — CLEAN NEGATIVE, not coverage-blocked" is a
+  SCOPE ERROR** (20th instrument-artifact instance). `tools/strxref/strxref.py:63` hardcodes
+  `DEFAULT_DUMP = dumps\merged.dump.exe` — **the game exe**; `runtime.dll` appears **0 times** in
+  either citing doc. The negative structurally excluded the protector.
+- ⚠ **The "hunt xxHash" lead for Wall #7 is SPENT.** xxHash IS present (full XXH3 `kSecret` at RVA
+  `0x9c00`) but its one-shot `0x8200f0` has exactly one caller, `0x8f9dd0`, which tests
+  `(dword & 0xFFFFFFF0) == 0x184D2A50` ⇒ **it is Zstd's frame checksum, not the integrity hash.**
+  **Successor lead:** SHA-256/SHA-1/MD5 tables in `packer2 0x942740–0x9467e0` (two back-to-back
+  SHA-256 IVs = lane packing) tracing to a `.pdata`-free tail at **RVA `0x8ffcd4–0x93e886`, 251 KB**
+  — **[I]** Intel ISA-L Crypto **multi-buffer** assembly (a BOM component the map missed). A 16-lane
+  page hasher fits the dose-response *and* explains the negative Rayleigh result: a periodic timer
+  sampling a SUBSET of pages gives aperiodic deaths. ⇒ the right claim is **not** "the check isn't
+  periodic" but **"it doesn't verify all of `.text` every pass."**
+- ★★ **FK-32 (`0x0000DEAD`) is CLOSED on mechanism:** `runtime.dll` RVA `0x80f7f0` is
+  `mov edx,0xDEAD; syscall` = **`NtTerminateProcess(h, 0xDEAD)`** — the protector deliberately kills
+  the process. Reached via a NULL-bounded 5-entry pointer table at `packer0 0x1831c0` whose 4th entry
+  is `NtCreateThreadEx`. `preloader.dll` is ELIMINATED (0 occurrences; control: 2 in runtime.dll).
+- ⚠ **The game exe's `IMAGE_DIRECTORY_ENTRY_EXCEPTION` is RVA=0 / size=0** while it ships a 6.28 MB
+  *encrypted* `.pdata` (controls: runtime/tbb/steam_api64/preloader all read fine). So
+  `RtlLookupFunctionEntry` finds nothing for the main image. **The "no C++-exception payloads" rule
+  STANDS, but its recorded mechanism (the packer's VEH) is probably wrong** — a missing function
+  table kills all three canaries identically. One probe settles it.
+- Real BOM (`Loki/Binaries/Win64/thirdpartylicenses.txt`, 31,834 B): System Informer · xxHash ·
+  constexpr-xxh3 · **Intel ISA-L Crypto** · MinHook · **HDE64** (`hde64_table` byte-exact at
+  `packer0 0x7c6a10`) · Zstandard · mbedtls (its CA store is `.rsrc` RT_RCDATA 10001, a Zstd frame →
+  579,410 B of DER — **this is what bypasses `cacert.pem`**) · tpm-tss · tiny-json · bscanf · embedded
+  printf. **EAC is genuinely ABSENT**, so `-NoEAC`/`-NullEAC` are dead levers.
+- ⚠ **Every behavioural string in these binaries is UTF-16LE.** An ASCII-only scan finds essentially
+  nothing. `runtime.dll`'s 249,822 "ASCII strings" are dominated by 7,197 copies of `AWAVAUATVWUSH`
+  — a **function prologue, not text**.
 
 ### Before touching anything native-shim-shaped
 The keystone technique is a **game-thread native-call primitive**: hook
@@ -323,7 +476,7 @@ longer does. That press has exactly ONE backend effect — `POST /startSoloMode`
 .\configs\launch-redirect.ps1 -NoHook          # returns after launching; game keeps running
 
 # 3. SECOND call, once the game is up — stages the world and injects the DLL under test:
-.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_play.dll -Label myrun
+.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\tutorial_launch_play.dll -Label myrun
 ```
 
 MEASURED: with the flag on, the client parks itself **~13 s** after launch. `fk24-stage.ps1`
@@ -416,7 +569,8 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   OFFLINE. Validated on explorer (1066/1066). For SUPERVIVE use `deobfimports` instead — its
   IAT is import-PROTECTED (see below), so reconstructiat resolves ~0 of its slots.
 - **usmapdump deobfimports:** `usmapdump.exe deobfimports <proc> <dumpFile> [outFile]` — the
-  SUPERVIVE path. Its imports are VMProtect/Themida-PROTECTED: each IAT slot points to an
+  SUPERVIVE path. Its imports are import-PROTECTED (⚠ **NOT VMProtect/Themida — that name is
+  REFUTED, see `docs/fk10-protector-identified.md`**): each IAT slot points to an
   obfuscated trampoline in a packer-hidden region (NOT any registered module), computing the
   real API as `real = C2 ^ ROL64(C1 + M, 0x33)` (per-stub C1/C2 imm64; M = a per-launch data
   qword) then `jmp`-ing to it. deobfimports EMULATES each stub (x86asm decoder + tiny integer
@@ -426,8 +580,12 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   code + M are read live; M encodes the ASLR-relocated target). Validated: **1107/1107 slots,
   0 undecodable, 0 off-target**; output parses in `debug/pe` (all 1107 named). `capture-dumps.ps1
   -Finalize` calls this automatically while the game runs.
-- **Manual mapper / DLL injector:** `tools/inject/` — for no-throw payloads only
-  (C++ exception unwinding gets eaten by the packer's vectored exception filter).
+- **Manual mapper / DLL injector:** `tools/inject/` — for no-throw payloads only.
+  ⚠ The recorded mechanism ("C++ exception unwinding gets eaten by the packer's vectored exception
+  filter") is now DOUBTED, though the rule stands: S113 measured the game exe's
+  `IMAGE_DIRECTORY_ENTRY_EXCEPTION` as **RVA=0 / size=0** (4 control binaries read fine), so
+  `RtlLookupFunctionEntry` resolves nothing for the main image — which kills all three canaries
+  identically without any VEH involvement. See `docs/fk10-protector-identified.md` §4.
 - **Native shims:** `tools/sigbypass-mod/` — `catalog_store_fix` (roster/store/
   cosmetics), `missions_fix` (durable missions page), `mainmenu_refresh_pi8`
   (pick→center refresh), `loadout_fix`, `tutorial_launch`, plus the
@@ -463,6 +621,18 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   function `__report_gsfailure`s mid-call regardless of thread context (verified
   via off-thread call, thread-hijack with fresh stack, thread-hijack with own
   stack, and APC on the real game thread).
+- ★★★ **THE TUTORIAL ROUTE NO LONGER WRITES `.text` AT ALL (S112, shipped 2026-08-08).** RM_PLAY's
+  `ProcessInternal` patch is gone: `KFUNCSWAP` and `KFSNAME` now DEFAULT to the heap
+  `UFunction.Func` swap, so the shipped `tutorial_launch_play.dll` (`.text 5151621d2154e454`) arms on
+  **`swapped=2` heap pointers** and touches no module image. MEASURED: standing `.text` **10/10 armed
+  windows died** vs no module-image write **2/30**, Fisher **p = 0.00000008**; at a matched 600 s hold
+  the heap form was **0/16**. `SafeWrite` is linker-eliminated from the shipped DLL — verifiable by
+  `FlushInstructionCache` / `VirtualAlloc` / `VirtualFree` being ABSENT from its import table.
+  Rollback = `build.ps1 -Variant play-textpatch` (`433cf7d8f6a0770f`), which is also the A/B's control
+  arm, so the rollback is a measured quantity rather than an untested path.
+  ⚠ The other PI-hookers (`mainmenu_refresh_pi8`, `loadout_fix`, `missions_fix`) STILL patch `.text`
+  transiently — the MENU route is unconverted. `tutorial_launch.cpp`'s `FsScan`/`FsThunk` is the
+  worked example to copy.
 - Don't leave a permanent `.text` patch in place — the ~3–5 min code-integrity
   check catches it and kills the process. ★★ **S111 MEASURED THIS, and it is far worse than
   "permanent" — even a SELF-RESTORING patch is lethal while it stands.** One-variable bisect at 1

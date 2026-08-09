@@ -1,22 +1,28 @@
+> ⛔ **FK-7 IS CLOSED (S112, 2026-08-08).** Any statement below that FK-7 is open, unverified, or needs a reproduce-then-repair run is **HISTORICAL**. Cause = our own standing `.text` patch (10/10 died with it vs 3/36 without, p = 7e-8); fixed, shipped, deployed. The remaining tutorial failures were split out as **FK-31 / FK-32** (`docs/fk31-fk32-successors.md`). Start at `docs/s112-fk7-ab-results.md`.
+
 # SUPERVIVE Revival — The Ignorance Map (S101, inverted audit)
 
 **Companion to `docs/coverage-audit-s101.md`.** That document asked *"how much do we have?"*
 This one asks *"what don't we know we don't know?"* — and, more dangerously, *"what do we believe
 that isn't true?"*
 
-> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S108
+> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S112
 > Entries are updated in place with dated banners; **a banner always overrides the table beneath it.**
 > The original S101 text is never deleted, because the retraction history is the value.
 >
 > | entry | last touched | status |
 > |---|---|---|
 > | FK-1, FK-2, FK-3, FK-4, FK-5, FK-6 | S104–S105 | ✅ SETTLED (each with its own `fk*-settled.md`) |
-> | **FK-7** — tutorial crash | **S108** | **OPEN.** Belief closed-false; the FIX is unverified. S108's verification sitting was **VOID** (quiet control). |
+> | **FK-7** — tutorial crash | **S112** | ✅✅ **CLOSED — belief false, cause MEASURED, fix SHIPPED.** Standing `.text` patch of our own: **10/10 armed windows died with it vs 3/36 without, Fisher p = 7e-8.** Deployed default now arms on **2 heap pointers**, no module-image write; 5/6 armed windows survived 600 s, no functional regression. **Do not re-open.** `docs/s112-fk7-ab-results.md` |
 > | **FK-8** — `SecondsSinceStart` | **S111** | ✅ **CLOSED with a permutation positive control.** ★ Closing it showed **≥31.6 % of the whole crash corpus is self-inflicted**, and that all 22 crashpad reports are — so the S109/S110 tutorial campaign produced **zero** FK-7 evidence. `docs/fk8-crash-timing-mined.md` |
 > | **FK-9** — Sentry vs UECC dumps | **S109** | ✅ **CAPTURE SOLVED** — cleared by the *next launch*, not a timer; the "~3 min window" is retracted. Archiver shipped. |
 > | **FK-24** — the `ViewTarget` writer | **S108** | **OPEN.** ★ The probe was killing the game, and its own VOID verdict was an artifact. |
 > | **FK-25** — the marker file | **S108** | ⚠ **STILL UNFIXED**; cost evidence again. Cheapest unspent item in this document. |
 > | **FK-26** — leftover S9x shim diagnostics | **S108** | ✅ **NEW + SETTLED.** `KSTATICTEST` was killing the hero's walk/run animation every session. |
+> | **FK-31** — `fo`'s `.rdata` patch "is obsolete" | **S112** | ✅ **NEW + FALSIFIED**, and it **carries FK-7's successor problem**: the **staging hazard, 22/82 launches (27 %)**, now the dominant tutorial-route failure. `KNOLOGINVT` **must not be re-run** (4/4 died, 0/4 map loads). `docs/fk31-fk32-successors.md` |
+> | **FK-32** — "the artifact-less deaths are hangs" | **S112** | ✅ **NEW + FALSIFIED.** At least some are **`0x0000DEAD` silent kills**, recovered by reading the process exit code. ⚠ N=2 — suggestive, not established. Residual **3/36**. |
+> | **FK-33** — S112 instrument false-knowns (batched) | **S112** | ✅ **NEW + SETTLED.** The FK-7 "candidate" build was a commit stale; the mandated 3x `play_novtguard` control voids ~4 sittings in 5; a new crashpad dir is not a death; `fk8_classify.py` reports 1 report for 105 dirs. |
+> | **FK-34** — `UECC-C13252F5` "is the last FK-7 survivor" | **S112** | ✅ **NEW + FALSIFIED.** It is the ANIM family (a shim-lifetime bug). ⇒ **zero** FK-7 death records survive a mechanism filter. |
 >
 > **The S108 lesson, in one line:** all three of that session's tasks turned out to be about **the
 > project's own instruments**, not the game — and the session then committed three *fresh* instances
@@ -368,6 +374,45 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 ### FK-7 — "The tutorial route is flaky — ~2 of 3 launches die on the first shim"
 **Severity: HIGH (it invites retry-until-it-works instead of a fix, and it throttles every experiment).**
 
+> ## CLOSED 2026-08-08 (S112) — **belief FALSE, cause MEASURED, fix SHIPPED.** -> `docs/s112-fk7-ab-results.md`
+>
+> **Do not re-open. Do not run another FK-7 sitting.** The banners below are HISTORY; where they
+> conflict with this one, this one governs.
+>
+> **The cause was OUR OWN standing `.text` patch**, not the game. RM_PLAY installed a 5-byte jmp at
+> `ProcessInternal` and held it for the whole 600 s run (`g_done` is never set in RM_PLAY).
+> Pre-registered, one-variable A/B, arms alternating on ARMED WINDOWS:
+>
+> | condition | armed windows | died |
+> |---|---:|---:|
+> | standing `.text` patch | 10 | **10 (100 %)** |
+> | no module-image write (heap `UFunction.Func` swap) | 36 | **3 (8 %)** |
+>
+> **Fisher's exact, two-sided: p = 0.00000007.**
+>
+> **SHIPPED**: `KFUNCSWAP`/`KFSNAME` now DEFAULT to the heap swap; the deployed
+> `tutorial_launch_play.dll` (`.text 5151621d2154e454`) arms on **2 heap pointers** and writes no
+> module image. Confirmed on the documented recipe path: 5/6 armed windows survived a full **600 s**
+> with **no functional regression** (`[PL] init complete` + run/idle locomotion + zero `[GCW]`).
+> Rollback `-Variant play-textpatch` (`433cf7d8f6a0770f`) **is** the measured control arm.
+>
+> **What this closure did NOT do**, stated so it is not over-read:
+> - **28/28 dumps were `OURS/protector`; ZERO game-defect dumps.** A tutorial-specific game defect is
+>   **unsupported** — and **unexcludable on this route**, because a shim-free tutorial run cannot
+>   exist by construction (the map only opens because `fo` force-opens it). **8 % is our floor, not
+>   the game's rate.**
+> - The **camera family occurred 0 times in 41 launches**, which is NOT evidence `KXFORMFIX` worked
+>   (effective denominator is the 21 armed windows; P(0) ~ 0.17 at the historical ~8 % rate).
+> - **FK-24 is untouched** — the writer of the `0x01` byte is still unnamed.
+>
+> **What remained was split out** rather than left keeping a solved item open — see **FK-31**
+> (staging hazard, now the dominant tutorial-route failure) and **FK-32** (the `0x0000DEAD`
+> artifact-less residual), and `docs/fk31-fk32-successors.md`.
+>
+> **The S108 banner below is superseded on two specifics:** its mandated 3x `play_novtguard` control
+> is **unusable** (it fires on an ~8 % event — see FK-33), and its `T+220-250 s` hold revision is
+> void because `SecondsSinceStart` is the LAUNCH clock (anchor to `Load map complete` instead).
+
 > ## ⛔ VERIFICATION ATTEMPTED 2026-08-04 (S108) — **THE SITTING WAS VOID. FK-7 STILL OPEN.**
 > → `docs/s108-fk7-verification-attempt.md`. **Zero reproduce-then-repair runs still exist.**
 >
@@ -609,6 +654,39 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 
 ### FK-10 — "`runtime.dll` is packed" / "the packer is VMProtect/Themida"
 **Severity: HIGH (every risk judgement about injection rests on the wrong product's documented behaviour).**
+
+> ## ✅ SETTLED — 2026-08-09 (S113). **Read `docs/fk10-protector-identified.md`; it supersedes this entry.**
+> Offline, read-only, **zero launches consumed**. Both halves of the belief are wrong, and the
+> "cheapest experiment" below was run and over-delivered.
+>
+> - **The vendor name is REFUTED six independent ways.** Decisive: `runtime.dll` @ file offset
+>   `0x007C1BEC` holds `/api/5710262/minidump/?sentry_client=`**`packer/3.3.1`**`&sentry_key=149a7ac2…`
+>   — **the same Sentry org, project and key as the game's own DSN**, differing only in
+>   `sentry_client`. A commercial packer does not embed the customer's private DSN. Also: our own
+>   `deobfimports` resolves **1107/1107 stubs, 0 undecodable**, with an emulator that has **no
+>   conditional branches, no `CALL`, no flags** — a virtualized VMProtect stub would resolve *zero*.
+>   The internal product name is literally **"Packer"** (`Packer/1.0` User-Agent at `0x7C2F90`).
+>   ⚠ **Do not substitute a second vendor name.** Correct label: *bespoke protector, self-identifies
+>   as `packer/3.3.1`, vendor unidentified.*
+> - **★ "`runtime.dll` is packed" is REFUTED: 46.6 MB of its code is PLAINTEXT x86-64 and is
+>   disassemblable offline today** (4 controlled tests: 0.00 % invalid bytes on linear sweep vs
+>   5.25 % for known-ciphertext controls; 10,824/10,824 unique 4 KiB blocks; 7,190 prologues vs 7,197
+>   table functions). It is *obfuscated* (MBA), not packed. Use the loader table at RVA `0x14D8758`
+>   (18,580 fns) — the `.pdata` **section** is vestigial.
+> - **"~48 MB at entropy 5.3–6.6"** = an exact subtotal of the four appended sections
+>   (`packer30+40+31+42` = 48,133,632 B, H 5.36–6.57). The file is **67,511,496 B** and 19.3 MB of it
+>   (`packer0`, `packer1`, `.rsrc`) **is** encrypted. **"22,248-byte `.pdata`"** is the vestigial
+>   table's VirtualSize.
+> - **C7's "preloader.dll, ntdll-only imports" is REFUTED** — 52 imports across ntdll (43), USER32
+>   (8), GDI32 (1). **C5's "not even enumerable as a module" is the wrong half** — manually mapped,
+>   but `SEC_IMAGE` file-backed and therefore nameable. **C14's `.rsrc` = 9.62 MB** is
+>   `.rsrc`+`.reloc`; contents now enumerated (no *plaintext* embedded PE; a driver inside 9.2 MB of
+>   ciphertext is **not** excluded).
+> - **Two BOM components the entry missed:** an embedded printf, and **Intel ISA-L Crypto** — a third
+>   hashing engine offering **multi-buffer SHA/MD5**, which became the successor lead for Wall #7.
+> - **Bonus: FK-32 CLOSED on mechanism.** `runtime.dll` RVA `0x80f7f0` =
+>   `mov edx,0xDEAD; syscall` ⇒ **`NtTerminateProcess(h, 0xDEAD)`**. The protector kills the process
+>   deliberately. `preloader.dll` eliminated as the killer (control-backed).
 
 | | |
 |---|---|
@@ -1009,6 +1087,100 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 
 ---
 
+### FK-31 — "`fo`'s slot-285 `.rdata` `CustomLogin` patch is obsolete now that S107/S108 made the world load reliably"
+**Severity: HIGH (leading suspect for the tutorial route's now-dominant failure, and the obvious fix for it destroys the route).**
+
+**FALSE — MEASURED 2026-08-08 (S112).** The S111 FK-7 handoff recorded this as "worth one build". It
+was built (`-Variant fo-nologinvt`, `.text b834ff93827654aa`) and flown: **4/4 launches died, 0/4
+loaded the map**, every one with the exact fatal the S62 source comment predicts —
+`LogSpawn: Warning: Login failed: ALokiGameMode::Login failed to Login` -> `Couldn't spawn player`.
+Fisher vs the `.rdata`-present baseline (13/51): **p = 0.0026**.
+
+=> **The patch is still load-bearing; S62's purpose stands.** => **`KNOLOGINVT` must not be re-run.**
+=> And the question it was meant to answer — *is `.rdata` caught by the protector too?* — **cannot be
+tested by removal at all.**
+
+**The open problem it was meant to solve is now the biggest one on the route:** **22 of 82 launches
+(27 %) die during STAGING**, before the probe DLL is injected, with only `gft_ready_fix` + `fo`
+resident. `gft_ready_fix` writes no module image, so the writer is `fo`, which makes **two**
+module-image writes that are confounded in every run ever flown: a transient <=8 s **`.text`**
+prologue jmp and a <=25.5 s **`.rdata`** slot-285 patch. Every dumped instance is `OURS/protector`.
+Next design: **patch-then-immediately-restore** (shrink the `.rdata` window without deleting the
+behaviour), then a heap expression of `CustomLogin` if that fails — `FsScan`/`FsThunk` is the worked
+example. Detail: `docs/fk31-fk32-successors.md`.
+
+WARNING — **not a re-filing of FK-26.** FK-26 was "the force-open dies *with no dump*" and is
+REFUTED (that was an instrument blind spot). These deaths **do** dump and are classified. Different
+open question.
+
+---
+
+### FK-32 — "The artifact-less death class is hangs — `CrashReportClient.ini` sets `Stall.RecordDump=false`, so hangs are *configured* to leave nothing"
+**Severity: MEDIUM (it explained away a whole death class with a plausible mechanism nobody had tested).**
+
+**FALSE for at least some of them — MEASURED 2026-08-08 (S112),** using an instrument nothing in this
+project had used: **hold an OS handle open across process exit and read the exit code.**
+
+| source | exit code | how measured |
+|---|---|---|
+| access violation (the protector's crash kill) | `0xC0000005` | 27 deaths, all under a `.text` writer |
+| **our own `Stop-Process -Force` / `.Kill()`** | **`0xFFFFFFFF`** | run as an explicit control |
+| the artifact-less death | **`0x0000DEAD`** | 2 deaths, both under non-`.text` builds |
+
+`0xDEAD` is **not ours**: it appears twice in the shim sources, both as *read* sentinels, and there is
+**no `TerminateProcess`/`ExitProcess` call anywhere in them**. => Some artifact-less deaths are not
+hangs — they are **deliberate silent kills**, and the exit code recovers them for free. This also
+answers FK-8's own section 7.2 item 2 ("crashes or `Stop-Process`?" — **neither**).
+
+WARNING — **N = 2. Suggestive, not established.** The instrument is now permanent in
+`configs/fk7-ab-run.ps1`, so **harvest this corpus; do not spend launches on it.**
+Open residual: **3/36 armed windows (8 %)** still die with no module-image write anywhere.
+
+---
+
+### FK-33 — Batched: four instrument/artifact false-knowns from S112
+**Severity: MEDIUM-HIGH (each one silently corrupts an experiment rather than failing loudly).**
+
+1. **"`build\tutorial_launch_play.dll` is the FK-7 candidate build."** **FALSE — it was ONE COMMIT
+   STALE** (`513c6277c3ae88f3`; HEAD builds `433cf7d8f6a0770f`). The intervening commit adds
+   `PopulateHeroAscCache`/`ReportAscActorInfo`, and **`KWIREGAS` defaults to `1`**, so the gap was
+   **live code, not dead**. A/Bing a new arm against it would have moved **two** variables.
+   => **Rebuild from HEAD before any A/B**, and diff `.text` sha256 — never file size.
+2. **"The 3x `play_novtguard` positive control is the mandated gate for an FK-7 sitting."**
+   **FALSE — unaffordable, and aimed at the wrong thing.** It fires only on the camera family, ~8 %
+   per staged launch, so `P(all 3 quiet) ~ 0.78` — it would declare **~4 sittings in 5 VOID even when
+   everything works**. Replacement that works: RM_PLAY's own `[PL] *** init complete ***`
+   (`tutorial_launch.cpp:5190`) — ~100 %, **arm-symmetric**, and it catches a silent no-op in a
+   non-`.text` arm, which is that arm's most likely failure mode.
+3. **"A new `dumps\crashpad-*` directory is evidence of a death."** **FALSE** — a stale PENDING
+   report survived **11+ launches**, contradicting `archive-crashdumps.ps1`'s own premise that the
+   next launch clears the database. => **Dedupe by report uuid.** (Related: CLAUDE.md claimed the
+   archiver runs pre-launch *and* post-exit; it runs **pre-launch only**.)
+4. **"`tools/crashtri/fk8_classify.py` can census the UECC tree."** **FALSE** — it dedupes on
+   `splitext(basename)`, which is the **constant `"UEMinidump"`** for every UECC dump, so it reports
+   **1 distinct report for 105 directories**. Its protector test is fine (`endswith("runtime.dll")`).
+
+---
+
+### FK-34 — "`UECC-C13252F5` is the one current-era FK-7 death that survives every contamination filter"
+**Severity: MEDIUM (it was the last piece of evidence that FK-7 might be a game defect).**
+
+**FALSE — re-classified 2026-08-08 (S112).** `RIP = SUPERVIVE+0x349596D` (`call [rax+0x2F8]`), READ AV
+at `0xFFFFFFFFFFFFFFFF`, worker thread, chain `349596D-3405F13-3691A72` — **squarely the ANIM family**,
+which S110 measured to be a **shim-lifetime bug** (a `UAnimationAsset` the shim loaded and never kept
+reachable), and it **predates `KANIMREF`**.
+
+It passes every *signature* filter and fails a *mechanism* filter. => **Zero FK-7 death records
+survive a mechanism filter.** Its "258 s" is the launch clock; anchored to map load it is
+**T+88.8 s**, unremarkable.
+
+Related correction: `0x3495973` / `0x349596d` are **one** function at `0x3494B40`, and it **is**
+animation code — `strxref` returns **four** literals including `[PreviousMarker %s, NextMarker %s]`
+**twice**, plus Ticking Group / GroupLeader / Leader. S111's rename to "the tick task-graph
+dispatcher" quoted 2 of 4 and is **wrong**; S106's `FAnimSync::TickAssetPlayerInstances` **stands**.
+
+---
+
 ## 3. The UNKNOWN_UNKNOWN Register
 
 Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 366 commits.
@@ -1136,10 +1308,10 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 | "The packer defeats static string-xref" | The strings are UTF-16 and are in our own dump at the same RVAs (FK-4) |
 | "There is no legacy input path" | 186 ActionMappings in a plaintext file, on a bespoke Loki class (FK-2) |
 | "The dev console is fully stripped" | 5 of 10 ABSENT-listed strings present; `DebugExecBindings Num=16` measured live (FK-13) |
-| "The tutorial route is flaky (~2 of 3)" | Byte-identical RVA chains across independent launches (FK-7) — **SETTLED S106: two named deterministic signatures, both shim-caused, both fixes compiled but unverified; corpus explains only ~half the rate. `docs/fk7-crash-settled.md`** |
+| "The tutorial route is flaky (~2 of 3)" | Byte-identical RVA chains across independent launches (FK-7) — **CLOSED S112: the cause was our own standing `.text` patch (10/10 died with it vs 3/36 without, p = 7e-8); fix shipped and confirmed. The S106 "two shim-caused signatures" diagnosis was directionally right — it was ours — but the mechanism was the module-image write, not the camera/anim families. `docs/s112-fk7-ab-results.md`** |
 | "`SecondsSinceStart` is always 30" | 5 of 92 UECC / 114 distinct deaths — **FK-8 CLOSED S111 with a permutation control** (0/56 violations, P<5e-5) |
 | "Crashes route through Sentry; no UECC dumps" | 86 UECC dirs including 9 from the newest runs (FK-9) |
-| "`runtime.dll` is packed" | 11 sections, ~48 MB at entropy 5.3–6.6, plaintext `.pdata` (FK-10) |
+| "`runtime.dll` is packed" | **FALSE — settled S113.** 46.6 MB of **plaintext obfuscated x86-64**, disassemblable offline (linear sweep 0.00 % invalid vs 5.25 % on ciphertext controls). Only its *data*/*resources* are encrypted. Vendor name refuted 6 ways; it is a bespoke `packer/3.3.1` (FK-10 → `docs/fk10-protector-identified.md`) |
 | "Verbose is compiled out of shipping" | `LogSentrySdk: Verbose:` in the live log; `[Core.Log]` in the shipped ini (FK-11) |
 | "The on-disk exe is useless for RE" | `.rdata` entropy 5.2–6.0 with 2,280 source paths — *though the dump already supersets it* (FK-4) |
 | "`SUPERVIVE.exe` is a CEF/Electron shell" | `BootstrapPackagedGame` PDB, zero CEF strings (FK-17) |
@@ -1182,7 +1354,7 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 | **4** | **DropPlane is falsified as reachable** | N=1 against a tutorial-specific variant, with the source itself recording wrong arg types (FK-22) | Read `LokiDropShip.as` for the markers it queries |
 | **5** | **The S78 free-look rotation wall** | Its leading hypothesis (Enhanced Input) was retracted 2 sessions later, and its own stated remaining path — "hook the camera-update function" — is the per-frame heap vtable hook S78 shipped *in the same session* and never pointed at rotation. Untouched since 2026-07-15. ⚠ *Its hard measurement survives the retraction: no look-sensitivity field exists on the PC, and rewriting every enumerated sensitivity float had zero effect* | Intercept the camera-update slot's OUT rotation and scale it |
 | **6** | **The game-feature-toggle carrier is a fixed-offset wall** | Three sessions of replication bit-splicing while an HTTP `FeatureToggleOverrides` map on a route we already serve was never tried (E2, FK-23e) | Populate `Extra.FeatureToggleOverrides` and diff the "not ready" spam |
-| **7** | **The ~3–5 min code-integrity check** | The mechanism has never been located, disassembled, or its period measured; S77 reached it by elimination. ⚠ *Weaker candidate than the rest:* S43's table is a controlled A/B on the one variable that matters (patched control ~4.75 min vs identical build un-hooked stable ≥6 min), the poison-jump register signature is N=4 across ASLR bases, and this audit's own 173–201 s cluster sits **inside** the window. The operational rule ("no standing `.text` patch") remains well-supported; only the mechanism is unknown | Hunt xxHash/Zstd constants in `.rdata` (FK-10 names the algorithms). ⚠ **The modulo test is SPENT and NEGATIVE (S111):** Rayleigh max-over-grid 20–400 s, N=91 — best period 214.5 s, z=29.27, bootstrap **p = 0.414**; positive control fires at σ≤20 s and fails at σ=40 s, so the test had real power and found nothing. Scope: absent from the timing of deaths that **left an artifact**; blind to the artifact-less class. Also ⚠ this row's supporting "173–201 s cluster sits inside the window" is now known to be **era-B-only**, and its stack family is ~~the ~~tick task-graph dispatcher~~ [RETRACTED — it IS animation code]~~ **[RETRACTED — it IS animation code]**, not animation |
+| **7** | **The ~3–5 min code-integrity check** | The mechanism has never been located, disassembled, or its period measured; S77 reached it by elimination. ⚠ *Weaker candidate than the rest:* S43's table is a controlled A/B on the one variable that matters (patched control ~4.75 min vs identical build un-hooked stable ≥6 min), the poison-jump register signature is N=4 across ASLR bases, and this audit's own 173–201 s cluster sits **inside** the window. The operational rule ("no standing `.text` patch") remains well-supported; only the mechanism is unknown | ~~Hunt xxHash/Zstd constants in `.rdata` (FK-10 names the algorithms).~~ ⚠⚠ **THAT LEAD IS SPENT (S113, `docs/fk10-protector-identified.md` §5).** It was run with controls (49/49 planted constants recovered). xxHash IS present — full XXH3 `kSecret` at RVA `0x9c00`, routines at `0x8eb250`/`0x8d98b0`/`0x8ed920`/`0x889b20` — but the one-shot `0x8200f0` has **exactly one caller**, `0x8f9dd0`, which tests `(dword & 0xFFFFFFF0) == 0x184D2A50` ⇒ **xxHash here is Zstd's frame checksum, not the integrity hash.** ★ **SUCCESSOR LEAD, with an exact range:** SHA-256/SHA-1/MD5 tables cluster in `packer2 0x942740–0x9467e0` (two back-to-back SHA-256 IVs = lane packing), tracing to AVX2/MMX code and a 16-entry `cmovne` job ladder in a **`.pdata`-free tail at RVA `0x8ffcd4–0x93e886`, 251 KB** — **[I]** Intel ISA-L Crypto **multi-buffer** assembly (ships as `.asm`, hence no unwind records; a BOM component this map missed). **`runtime.dll` is plaintext, so this is disassemblable offline today.** ★★ **And a 16-lane page hasher RECONCILES the negative Rayleigh result below:** a periodic timer that samples a SUBSET of `.text`'s 30,281 pages per pass yields `period × Geometric(p)` detection times — aperiodic and long-tailed, exactly the measured 87–524 s spread. ⇒ the supportable claim is **not** "the check is not periodic" but **"the check does not verify all of `.text` on every pass."** ⚠ Also note this row's own scope error, now corrected: the companion "no string names it — CLEAN NEGATIVE, not coverage-blocked" (`fk3-fk4-settled.md:513`) was measured by `strxref.py`, which hardcodes the **game exe** dump; `runtime.dll` was never scanned. ⚠ **The modulo test is SPENT and NEGATIVE (S111):** Rayleigh max-over-grid 20–400 s, N=91 — best period 214.5 s, z=29.27, bootstrap **p = 0.414**; positive control fires at σ≤20 s and fails at σ=40 s, so the test had real power and found nothing. Scope: absent from the timing of deaths that **left an artifact**; blind to the artifact-less class. Also ⚠ this row's supporting "173–201 s cluster sits inside the window" is now known to be **era-B-only**, and its stack family is ~~the ~~tick task-graph dispatcher~~ [RETRACTED — it IS animation code]~~ **[RETRACTED — it IS animation code]**, not animation |
 | 8 | Angelscript-implemented UFunctions dispatch correctly through the native thunk | Never measured; 0 shim mentions (F6) | Print the owning class of every PI-dispatched UFunction for 5 s |
 
 ---
@@ -1438,7 +1610,10 @@ remaining ledger largely is not.
 - Its remaining ledger (abilities, combat, enemies, items, 25 lessons) is 100% simulation work whose
   **transferability to a multiplayer target has never been argued**. That sub-question is genuinely
   unposed and is the real content of the "local maximum" worry.
-- It is throttled by a deterministic crash at 173–201 s (FK-7) that nobody has opened.
+- ~~It is throttled by a deterministic crash at 173–201 s (FK-7) that nobody has opened.~~
+  **RESOLVED S112** — FK-7 was our own standing `.text` patch; the shipped shim removes it and runs
+  hold 600 s. What still throttles the route is **FK-31**, the staging hazard (27 % of launches die
+  before the probe is injected), which is a different mechanism in a different window.
 - It has never been compared against **custom games**, **practice mode**, or **FFA/Arena-with-bots** —
   and no doc anywhere makes that comparison. The audit's Tier-1 list contains **no target-selection
   item at all**.

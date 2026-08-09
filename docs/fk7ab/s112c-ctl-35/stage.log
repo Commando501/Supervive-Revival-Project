@@ -1,0 +1,43 @@
+[stage] pre-flight: is ags serving an armed match?
+[stage]   /core-game/players -> MatchID='match-9b9d2c887e2524f918e383a895f2f1c2' Version=1786151173
+[stage] waiting for game process...
+[stage] game process -> OK (0s)
+[stage] game PID=31248 started=08/07/2026 20:06:16
+[stage] parked match model (uiready + match fetched + uptime) -> OK (146s)
+[stage] uptime=146s
+[stage] >>> inject gft
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\gft_ready_fix.dll into PID 31248
+[stage]       remote image base: 0x29EEFED0000 (size 0x25000)
+[stage]       relocations applied (delta 0x29D6FED0000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x17D entries at 0x29EEFEF2000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x29EEFED0000 ?
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     spacing: 5s since last inject, waiting 15s more (min gap 20s)
+[stage] >>> inject fo
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\tutorial_launch_fo.dll into PID 31248
+[stage]       remote image base: 0x29EEFF00000 (size 0x2C000)
+[stage]       relocations applied (delta 0x29D6FF00000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x196 entries at 0x29EEFF29000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x29EEFF00000 ?
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s112c-ctl-35-2-fo.txt
+[stage] LVL_Tutorial load complete -> *** TIMEOUT after 45s ***
+[stage] no tutorial world -> injecting sp now would be a wasted one-shot. ABORTING.
+[stage] pre-flight: is ags serving an armed match?
+[stage]   /core-game/players -> MatchID='match-9b9d2c887e2524f918e383a895f2f1c2' Version=1786151173
+[stage] waiting for game process...
+[stage] game process -> OK (0s)
+[stage] game PID=31248 started=08/07/2026 20:06:16
+[stage] parked match model (uiready + match fetched + uptime) -> *** TIMEOUT after 420s ***
+[stage] proceeding anyway is NOT safe -- aborting
+[stage] pre-flight: is ags serving an armed match?
+[stage]   /core-game/players -> MatchID='match-9b9d2c887e2524f918e383a895f2f1c2' Version=1786151173
+[stage] waiting for game process...
+[stage] game process -> OK (0s)
+[stage] game PID=31248 started=08/07/2026 20:06:16
+[stage] parked match model (uiready + match fetched + uptime) -> *** TIMEOUT after 420s ***
+[stage] proceeding anyway is NOT safe -- aborting

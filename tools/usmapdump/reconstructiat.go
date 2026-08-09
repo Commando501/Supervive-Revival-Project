@@ -253,7 +253,8 @@ type iatDescr struct {
 
 // cmdReconstructIAT: offline path — the dump's IAT holds resolved export addresses
 // directly (unprotected imports, e.g. explorer). Each slot resolves straight against the
-// exports sidecar captured at dump time. For VMProtect/Themida-style IMPORT-PROTECTED
+// exports sidecar captured at dump time. For IMPORT-PROTECTED (see docs/fk10-protector-identified.md;
+// NOT VMProtect/Themida)
 // dumps (IAT points to obfuscated trampolines, e.g. SUPERVIVE) use `deobfimports` instead.
 func cmdReconstructIAT(dumpPath, outPath string) {
 	expPath := findExportsSidecar(dumpPath)

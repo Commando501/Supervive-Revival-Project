@@ -442,8 +442,11 @@ static void DumpCrashCtx(EXCEPTION_POINTERS* ep){
 //
 //   NOT DONE, and named so nobody re-proposes it: attaching a real debugger from a second process
 //   (DebugActiveProcess + CREATE_THREAD_DEBUG_EVENT) is the textbook fix for thread coverage, but this
-//   binary is VMProtect/Themida-packed -- PEB.BeingDebugged / NtGlobalFlag / ProcessDebugPort are all
-//   trivially checked and attaching changes exception dispatch, i.e. it changes the experiment.
+//   binary is protected (NOT VMProtect/Themida -- that name is REFUTED, see
+//   docs/fk10-protector-identified.md; it is a bespoke "packer/3.3.1") -- PEB.BeingDebugged /
+//   NtGlobalFlag / ProcessDebugPort are all trivially checked, the shipped SUPERVIVE-Diagnoser.exe
+//   names "debuggers" as an explicit detection category, and attaching changes exception dispatch,
+//   i.e. it changes the experiment. The conclusion is UNCHANGED; only the product name was wrong.
 //
 // ───────────────────────────────────────────────────────────────────────────────────────────────────
 // WHY DR ARMING CAN ONLY EVER BE A POLL (structural, not a preference): DllMain calls
@@ -1251,6 +1254,248 @@ static bool SafeWritable(const void* a,size_t sz){
     if(!(m.Protect&wr))return false;
     return (uintptr_t)a+sz<=(uintptr_t)m.BaseAddress+m.RegionSize;
 }
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★ KFUNCSWAP (2026-08-07) — RM_PLAY's game-thread callbacks with ZERO module-image writes.
+//
+// WHY.  S111 measured, one variable at a time, that a write into the module's .text section is what
+// makes the anti-tamper protector kill the process.  At a 320 s hold: nothing injected 0/11 deaths;
+// a PERMANENT patch of heap UFunction *bytecode* 0/9; three TRANSIENT .text prologue patches 4/12;
+// ONE STANDING .text 2-byte patch 7/8 (p = 0.00097 / 0.00041).  It is `.text` SPECIFICALLY, not code
+// modification in general.  RM_PLAY (see the kRunMode==RM_PLAY block near the bottom of this file)
+// calls InstallHook(), which writes a 5-byte 0xE9 jmp into ProcessInternal -- module .text -- and
+// then holds it for KPLAYHOLDMS (600 s by default) because RM_PLAY never sets g_done.  That is the
+// ~88 %-lethal condition, standing for the whole sitting, in EVERY FK-7 tutorial run ever made.
+//
+// WHAT.  UFunction.Func (+0xE0, already known to this file as UFUNC_FUNC) is a field of a HEAP
+// UObject, and for a Blueprint UFunction its value IS &ProcessInternal -- which is precisely why
+// hooking ProcessInternal intercepts BP dispatch in the first place.  UFunction::Invoke is a two-
+// instruction dispatcher that loads Func and calls it as
+//     void (*)(UObject* Context, FFrame& Stack, void* Result)
+// i.e. EXACTLY PFN_THUNK (:34) and EXACTLY OnPI's signature (:970).  So: overwrite Func on the BP
+// UFunctions with a pointer to FsThunk below, call OnPI, then pass through to the real
+// ProcessInternal -- the same order the .text stub used (OnPI first, then the trampoline).
+//   * zero module-image bytes are touched (no .text, no .rdata);
+//   * no SafeWrite, so no whole-process thread suspend either;
+//   * the write is an ALIGNED 8-byte store, so a racing reader sees either the old or the new value
+//     and both are correct -- there is no torn state and no need to stop the world.
+//
+// TARGET SELECTION.  Deliberately NOT a hard-coded function name: this arms EVERY UFunction whose
+// Func currently equals &ProcessInternal, discovered by one GUObjectArray walk.  That is the exact
+// analogue of the .text hook's coverage for classes loaded at arm time (and never a superset), so the
+// cadence question is answered by construction rather than by a guess -- MEASURED reference point:
+// docs/session-75-movement-diagnosis.md recorded hitsGT=4287 over a ~3 s window in a live tutorial
+// world, i.e. ~1400 game-thread ProcessInternal dispatches per second.  KFSREARMMS re-walks
+// periodically so BP classes streamed in later are picked up too.  The [FS] instrumentation reports
+// the hottest individual UFunctions by name, so a follow-up build can narrow to KFSNAME="<one name>"
+// and cut the swap count from thousands to one, on measurement instead of on a hunch.
+//
+// SAFETY RULES OBSERVED HERE
+//   * only objects whose ClassPrivate == the UClass named "Function" are considered, and only those
+//     whose Func is bit-exactly the ProcessInternal we verified the prologue of, so a non-UFunction
+//     can never be written to;
+//   * NamePrivate==0 is the project's own measured signature of a destructed UObject (see the GC-root
+//     comment block below), so such objects are skipped -- that is what stops the disarm pass from
+//     writing 8 bytes into a freed allocation;
+//   * every write is readback-verified before it is counted, the same discipline as KANIMREF/KGASSTORAGE;
+//   * re-entrancy: the shim's own CallNative/CallBPGuarded cache the thunk they read, and both only
+//     ever run from inside OnPI where g_inHook==1, so even if one of them calls through a swapped Func
+//     the resulting FsThunk -> OnPI returns immediately and the pass-through still executes the
+//     function correctly.  There is no recursion path.
+//
+// UNPROVEN (state it, do not bury it): S111 arm J proved the protector does not checksum UFunction
+// *Script* bytecode.  Func is a field of a different heap allocation.  The inference is strong but a
+// ~10-run control is what would settle it -- and that control costs the same as any other arm.
+// -DKFUNCSWAP=1 (variant `play-funcswap`) turns this on; DEFAULT 0 = the .text hook, byte-unchanged.
+// ★★★ SHIPPED 2026-08-08 (S112). DEFAULT 1 -- RM_PLAY takes its game-thread callbacks by swapping
+// UFunction.Func (+0xE0) on the HEAP instead of patching `ProcessInternal` in the module image.
+//
+// WHY THIS IS THE DEFAULT. The old path installed a 5-byte `.text` jmp and held it for the whole
+// 600 s run (`g_done` is never set in RM_PLAY). MEASURED, pre-registered, one variable:
+//     standing `.text` patch  10/10 armed windows DIED (100 %)
+//     no module-image write    2/30 armed windows died (6.7 %)   Fisher p = 0.00000008
+// and at a matched 600 s hold the heap form was 0/16. It is not a rate improvement, it is the
+// removal of the project's oldest self-inflicted hazard. docs/s112-fk7-ab-results.md.
+//
+// Rollback: `build.ps1 -Variant play-textpatch` restores the `.text` hook (it is also the A/B's
+// control arm, so the rollback build IS the measured comparator, not an untested path).
+#ifndef KFUNCSWAP
+#define KFUNCSWAP 1
+#endif
+// The RM_PLAY hold. 600000 = the historical value; -DKPLAYHOLDMS=<ms> shrinks the window a standing
+// .text patch is exposed for (variant `play-hold300`). Bare token so the default expands identically.
+#ifndef KPLAYHOLDMS
+#define KPLAYHOLDMS 600000
+#endif
+#if KFUNCSWAP
+#ifndef KNOLOGINVT
+#define KNOLOGINVT 0        // S112: 1 = RM_FORCEOPEN skips the slot-285 CustomLogin `.rdata` patch.
+                            // Default 0 keeps every existing artifact byte-identical.
+#endif
+#ifndef KFSMAX
+#define KFSMAX 0            // 0 = swap every match. >0 caps it (scan order, so a cap can MISS the hot one).
+#endif
+// ★ Default is the SINGLE hot function, not "" (= all 17,126). MEASURED (S112 phase 3): naming it
+// arms `swapped=2` heap pointers instead of 17,126 -- ~8,500x smaller -- and RM_PLAY still runs
+// normally for the full 600 s (8/8 survived). Target chosen from a real settled-world profile
+// (`play-funcswap-profile`, 90 s window): BP_LokiHeroCharacter_C::ReceiveTickClient, 1549 hits/90 s
+// ~ once per frame, which is exactly the cadence the camera re-assert / WASD / VtGuard need.
+// ⚠ Do NOT re-derive this from a 4 s window -- that only profiles world load, where every candidate
+// reads hits=1 and none is selectable. `-Variant play-funcswap` restores the all-functions arm.
+#ifndef KFSNAME
+#define KFSNAME "ReceiveTickClient"   // "" = every BP UFunction. An exact FName arms just those.
+#endif
+#ifndef KFSPROFILEMS
+#define KFSPROFILEMS 4000   // per-UFunction attribution window (the [FS] hot[] report), then it switches off
+#endif
+#ifndef KFSWATCHMS
+#define KFSWATCHMS 8000     // the "is this a silent no-op?" verdict line -- inside the first 30 s of the run
+#endif
+#ifndef KFSREPORTMS
+#define KFSREPORTMS 15000   // heartbeat: hit counters over time
+#endif
+#ifndef KFSREARMMS
+#define KFSREARMMS 60000    // re-walk for BP classes loaded after arming (0 = never). Worker thread, not GT.
+#endif
+#ifndef KFSHOTN
+#define KFSHOTN 32          // attribution table size; saturation is reported, counts stay valid
+#endif
+static uintptr_t g_fsPi=0;                        // the REAL ProcessInternal (module .text) -- pass-through target
+static uintptr_t g_fsFuncCls=0;                   // the UClass named "Function" (fast per-object filter)
+static volatile long g_fsCalls=0;                 // FsThunk entries, ALL threads (distinguishes "swap took" from "GT quiet")
+static volatile long g_fsProfile=0;               // 1 while the attribution table is being filled
+static uintptr_t g_fsSeen[KFSHOTN]={0};           // distinct FFrame.Node (= the dispatched UFunction) on the game thread
+static volatile long g_fsSeenHits[KFSHOTN]={0};
+static volatile long g_fsSeenN=0;
+static long g_fsSwapped=0;
+// The replacement UFunction.Func. Same signature as the real ProcessInternal, so UFunction::Invoke's
+// `call [rax]` is unchanged; OnPI runs first (as the .text stub did), then the real dispatcher runs.
+extern "C" void FsThunk(void* ctx,void* frame,void* result){
+    InterlockedIncrement(&g_fsCalls);
+    if(g_fsProfile && GetCurrentThreadId()==g_gameTid && LooksLikePtr((uintptr_t)frame)){
+        // ProcessInternal reads the executing UFunction out of the frame it is handed, so FFrame.Node
+        // IS the target -- attribution for free, no per-target codegen.  Game thread only, so the
+        // table needs no interlocks.
+        uintptr_t node=*(uintptr_t*)((uint8_t*)frame+FF_NODE);
+        long n=g_fsSeenN,i=0; for(;i<n;i++) if(g_fsSeen[i]==node) break;
+        if(i<n) g_fsSeenHits[i]=g_fsSeenHits[i]+1;
+        else if(n<KFSHOTN){ g_fsSeen[n]=node; g_fsSeenHits[n]=1; g_fsSeenN=n+1; }
+    }
+    OnPI(ctx,frame,result);
+    if(g_fsPi) ((PFN_THUNK)g_fsPi)(ctx,frame,result);
+}
+// Walk GUObjectArray; rewrite UFunction.Func from `from` to `to` wherever it matches. Returns the
+// number of VERIFIED changes. Reads are SafeReadable-guarded exactly like FindInstByClass; the only
+// write is one aligned qword into a heap UObject field.
+static long FsScan(uintptr_t from,uintptr_t to,long* outObjs,long* outFuncs,long cap,const char* onlyName){
+    long changed=0,ufn=0,objs=0; bool stop=false;
+    if(!g_fsFuncCls||from==to) return 0;
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18)) return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000) return 0;
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks&&!stop;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue; objs++;
+            if(ClassOf(obj)!=g_fsFuncCls) continue;      // not a UFunction -> can never be written
+            if(NameId(obj)==0) continue;                 // destructed (LowLevelRename(NAME_None)) -> never poke a corpse
+            ufn++;
+            if(!SafeReadable((void*)(obj+UFUNC_FUNC),8)) continue;
+            if(*(uintptr_t*)(obj+UFUNC_FUNC)!=from) continue;
+            if(onlyName&&onlyName[0]&&!NameIs(obj,onlyName)) continue;
+            if(!SafeWritable((void*)(obj+UFUNC_FUNC),8)) continue;
+            *(uintptr_t*)(obj+UFUNC_FUNC)=to;
+            if(*(uintptr_t*)(obj+UFUNC_FUNC)!=to) continue;   // readback-verified before it counts
+            changed++;
+            if(cap>0&&changed>=cap){ stop=true; break; }
+        }
+    }
+    if(outObjs)*outObjs=objs; if(outFuncs)*outFuncs=ufn;
+    return changed;
+}
+static void FsReportHot(){
+    long n=g_fsSeenN; if(n>KFSHOTN)n=KFSHOTN;
+    Markerf("[FS] hot: %ld distinct UFunction%s dispatched on the GAME THREAD in the first %d ms%s\r\n",
+            n,(n==1)?"":"s",(int)KFSPROFILEMS,(n>=KFSHOTN)?"  (TABLE SATURATED -- the listed counts are still exact)":"");
+    for(long i=0;i<n;i++){
+        char fn[128]="?"; GetFNameStr(NameId(g_fsSeen[i]),fn,sizeof(fn));
+        char on[128]="?"; uintptr_t owner=SafeReadable((void*)(g_fsSeen[i]+0x28),8)?*(uintptr_t*)(g_fsSeen[i]+0x28):0;
+        if(LooksLikePtr(owner)) GetFNameStr(NameId(owner),on,sizeof(on));
+        Markerf("[FS]   hot[%02ld] hits=%-7ld %s::%s  (0x%llX)   <- candidate for -DKFSNAME\r\n",
+                i,(long)g_fsSeenHits[i],on,fn,(unsigned long long)g_fsSeen[i]);
+    }
+    if(n==0) Marker("[FS]   (none -- the swapped functions are not being dispatched on the game thread)\r\n");
+}
+// Arm. Returns false ONLY on a condition that makes RM_PLAY a guaranteed no-op, and says why.
+static bool FsArm(){
+    g_fsPi=g_modBase+kPiRva;
+    if(!SafeReadable((void*)g_fsPi,5)||memcmp((void*)g_fsPi,kPiProlog,5)!=0){
+        Markerf("[FS] FAIL: ProcessInternal prologue mismatch @0x%llX -- someone else is hooking it; refusing to arm\r\n",
+                (unsigned long long)g_fsPi); return false; }
+    // The "Function" UClass. Prefer a UFunction this shim already resolved (exact, no scan); the
+    // by-name class lookup is the fallback.
+    void* seeds[]={g_ecc,g_beginFn,g_finishFn,g_spawnFn,g_possessFn,g_slFn,g_vpFn};
+    for(int i=0;i<(int)(sizeof(seeds)/sizeof(seeds[0]))&&!g_fsFuncCls;i++){
+        if(!LooksLikePtr((uintptr_t)seeds[i])) continue;
+        uintptr_t c=ClassOf((uintptr_t)seeds[i]); if(LooksLikePtr(c)&&NameIs(c,"Function")) g_fsFuncCls=c; }
+    if(!g_fsFuncCls) g_fsFuncCls=FindClassExact("Function");
+    if(!LooksLikePtr(g_fsFuncCls)){ Marker("[FS] FAIL: could not resolve the UClass 'Function' -> cannot filter targets\r\n"); return false; }
+    Markerf("[FS] cfg KFUNCSWAP=1 max=%d name='%s' profileMs=%d watchMs=%d reportMs=%d rearmMs=%d | pi=0x%llX stub=0x%llX funcCls=0x%llX gameTid=%lu\r\n",
+            (int)KFSMAX,KFSNAME,(int)KFSPROFILEMS,(int)KFSWATCHMS,(int)KFSREPORTMS,(int)KFSREARMMS,
+            (unsigned long long)g_fsPi,(unsigned long long)(uintptr_t)&FsThunk,(unsigned long long)g_fsFuncCls,g_gameTid);
+    long objs=0,ufn=0; DWORD ts=GetTickCount();
+    g_fsSwapped=FsScan(g_fsPi,(uintptr_t)&FsThunk,&objs,&ufn,(long)KFSMAX,KFSNAME);
+    Markerf("[FS] arm: swapped=%ld BP UFunctions  (scan %lu ms over %ld objects, %ld UFunctions total) -- NO .text WRITE\r\n",
+            g_fsSwapped,GetTickCount()-ts,objs,ufn);
+    if(g_fsSwapped<=0){
+        Marker("[FS] *** ZERO TARGETS SWAPPED -- RM_PLAY WOULD GET NO GAME-THREAD CALLBACKS AT ALL. ***\r\n");
+        Marker("[FS] *** Either no BP UFunction dispatches through this ProcessInternal, or the world is not loaded. ***\r\n");
+        Marker("[FS] *** Do NOT read a quiet run as an FK-7 result: use tutorial_launch_play_hold300.dll instead. ***\r\n");
+        return false; }
+    g_fsProfile=1;
+    return true;
+}
+// The RM_PLAY hold, with the instrumentation that lets the operator classify the run in <30 s.
+static void FsHold(DWORD ms){
+    DWORD t0=GetTickCount(),lastRep=t0,lastArm=t0; bool hotDone=false,watched=false;
+    while(!g_done && GetTickCount()-t0<ms){
+        Sleep(20);
+        DWORD now=GetTickCount(),el=now-t0;
+        // Stop the game thread writing the attribution table, give any in-flight update one Sleep to
+        // retire, THEN read it -- the report is a diagnostic, not worth racing over.
+        if(!hotDone && el>=(DWORD)KFSPROFILEMS){ hotDone=true; g_fsProfile=0; Sleep(50); FsReportHot(); }
+        if(!watched && el>=(DWORD)KFSWATCHMS){ watched=true;
+            long h=InterlockedCompareExchange(&g_hitsGT,0,0);
+            if(h==0) Markerf("[FS] *** NO GAME-THREAD HITS after %lu ms (allThreadCalls=%ld swapped=%ld) -- THE SWAP IS A "
+                             "SILENT NO-OP; nothing in RM_PLAY (body/camera/WASD) will ever run. Re-run with "
+                             "tutorial_launch_play_hold300.dll. ***\r\n",el,(long)g_fsCalls,g_fsSwapped);
+            else Markerf("[FS] *** ARMED AND LIVE: hitsGT=%ld allThreadCalls=%ld after %lu ms (~%ld game-thread dispatches/s) ***\r\n",
+                         h,(long)g_fsCalls,el,(long)(h*1000/(el?el:1)));
+        }
+        if(now-lastRep>=(DWORD)KFSREPORTMS){ lastRep=now;
+            Markerf("[FS] t=+%lus hitsGT=%ld called=%ld allThreadCalls=%ld swapped=%ld\r\n",
+                    el/1000,(long)g_hitsGT,(long)g_called,(long)g_fsCalls,g_fsSwapped); }
+        if((DWORD)KFSREARMMS>0 && now-lastArm>=(DWORD)KFSREARMMS){
+            long o=0,u=0; long add=FsScan(g_fsPi,(uintptr_t)&FsThunk,&o,&u,0,KFSNAME);
+            lastArm=GetTickCount();
+            if(add>0){ g_fsSwapped+=add; Markerf("[FS] re-arm: +%ld BP UFunctions loaded since the last walk (total=%ld)\r\n",add,g_fsSwapped); } }
+    }
+}
+// Disarm. g_done is raised FIRST so OnPI stops doing work instantly -- the .text unhook was atomic
+// (one 5-byte restore), whereas this walk takes ~a second, and without the flag OnPI could still be
+// entered through a not-yet-restored target while the scan is in flight.
+static void FsDisarm(){
+    g_done=1;
+    long objs=0,ufn=0; DWORD ts=GetTickCount();
+    long back=FsScan((uintptr_t)&FsThunk,g_fsPi,&objs,&ufn,0,nullptr);
+    Markerf("[FS] disarm: restored=%ld of %ld swapped (scan %lu ms, %ld UFunctions live)%s\r\n",
+            back,g_fsSwapped,GetTickCount()-ts,ufn,(back<g_fsSwapped)?"  (the shortfall is objects GC'd during the hold -- expected)":"");
+}
+#endif   // KFUNCSWAP
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
 // obj -> &FUObjectItem (Object@0x00, Flags@0x08, ClusterRootIndex@0x0C, SerialNumber@0x10; stride 0x18).
 static uintptr_t GcFindItem(uintptr_t obj){
     if(!LooksLikePtr(obj))return 0;
@@ -6506,11 +6751,20 @@ static DWORD WINAPI Worker(LPVOID){
     if(kRunMode==RM_PLAY){
         Marker("[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)\r\n");
         if(!ResolvePlay()){ Marker("[PL] resolve failed -> abort\r\n"); return 0; }
+#if KFUNCSWAP
+        // ★ HEAP ROUTE (S112). No BuildHook, no InstallHook, no SafeWrite -- ProcessInternal's bytes are
+        //   never touched. See the KFUNCSWAP block for why the .text write is the thing worth removing.
+        Marker("[PL] KFUNCSWAP=1: taking game-thread callbacks via UFunction.Func (+0xE0) instead of a .text hook\r\n");
+        if(!FsArm()){ Marker("[PL] FAIL funcswap arm\r\n"); return 6; }
+        FsHold(KPLAYHOLDMS);
+        FsDisarm();
+#else
         g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[PL] FAIL PI prologue\r\n");return 4;}
         memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[PL] FAIL BuildHook\r\n");return 5;}
         if(!InstallHook()){Marker("[PL] FAIL InstallHook\r\n");return 6;}
-        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<600000) Sleep(20);   // ~10 min of playable hold, then release
+        DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<KPLAYHOLDMS) Sleep(20);   // ~10 min of playable hold, then release
         UninstallHook();
+#endif
 #if KWPROBE
         WpShutdown();   // disarm every thread / restore the page, drain the ring, print the one-line VERDICT
 #endif
@@ -6567,9 +6821,43 @@ static DWORD WINAPI Worker(LPVOID){
     memcpy(g_stolen,g_pi,5); g_stub=BuildHook((uintptr_t)g_pi,g_stolen); if(!g_stub||!g_tramp){Marker("[2] FAIL BuildHook\r\n");return 5;}
     Marker("[3] hook built; issuing ExecuteConsoleCommand('open LVL_Tutorial') on the game thread...\r\n");
     if(kPokeMatchModel){ g_cgm=FindCoreGameManager(); Markerf("[3] pre-cached CoreGameManager=0x%llX\r\n",(unsigned long long)g_cgm); }
+    // ★ S112 KNOLOGINVT — the slot-285 `.rdata` window, made droppable so it can finally be TESTED.
+    //
+    // WHY. S111 measured that a standing `.text` write triggers the protector kill, and S112 confirmed
+    // it on the tutorial route (control 10/10 dead vs treatment 2/10, p = 0.00071). But S112 also
+    // measured something the FK-7 framing did not predict: **8 of 20 launches that never reached an
+    // armed window DIED DURING STAGING**, with only `gft_ready_fix` + this shim resident and the probe
+    // never injected — i.e. before RM_PLAY's standing patch exists at all. Every such death that left
+    // a dump is `OURS/protector`. `gft_ready_fix` writes no module image, so the writer is HERE.
+    //
+    // This shim makes two module-image writes: a TRANSIENT <=8 s `.text` prologue jmp (InstallHook,
+    // just below) and this <=25.5 s `.rdata` slot-285 patch across 5 vtables. They are CONFOUNDED in
+    // every run ever flown. S111 only ever measured `.text`; the assertion that `.rdata` is caught too
+    // is an S61-era INFERENCE that has never been tested under a one-variable protocol.
+    //
+    // KNOLOGINVT=1 drops the `.rdata` write and leaves the `.text` one, which is the missing arm.
+    // ⚠ It may well break the route: the comment below (:6810-6814) records that restoring slot-285
+    // too early lets the strict native Login run and fatals with "ALokiGameMode::Login failed to
+    // Login". Whether that is STILL true after S107/S108 made the world load reliably has never been
+    // checked. So the expected outcomes are BOTH informative:
+    //     world still loads + staging deaths drop  => `.rdata` is a real protector trigger AND the
+    //                                                 patch is obsolete; delete it from the route.
+    //     world still loads + staging deaths same  => `.rdata` is NOT the trigger; suspect the
+    //                                                 transient `.text` write instead.
+    //     Login fatal / no world                   => the patch is still load-bearing; the `.rdata`
+    //                                                 question needs a different experiment.
+    // Read the marker for `[VT] custom-login` (absent when KNOLOGINVT=1) and the log for the fatal.
+#if KNOLOGINVT
+    Marker("[VT] KNOLOGINVT=1 -- slot-285 CustomLogin NOT installed (no .rdata write this run)\r\n");
+#else
     InstallCustomLogin(true);   // S62: slot-285 -> CustomLogin (calls stock Login + logs the PlayerState at Login-return)
+#endif
     // (GameSession de-override removed — the vtdiff read past the vtable end; instrument ErrorMessage instead.)
-    if(!InstallHook()){Marker("[3] FAIL InstallHook\r\n");InstallCustomLogin(false);return 6;}
+    if(!InstallHook()){Marker("[3] FAIL InstallHook\r\n");
+#if !KNOLOGINVT
+        InstallCustomLogin(false);
+#endif
+        return 6;}
     DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<8000) Sleep(20);
     UninstallHook();
     if(g_done){
@@ -6590,8 +6878,12 @@ static DWORD WINAPI Worker(LPVOID){
     } else {
         Markerf("[4] TIMEOUT no game-thread PI in 8s (hitsGT=%ld)\r\n",(long)g_hitsGT);
     }
+#if KNOLOGINVT
+    Marker("[5] done (KNOLOGINVT: nothing to restore -- no .rdata write was made)\r\n");
+#else
     InstallCustomLogin(false);  // restore slot-285 so the ~3-5min code-integrity check sees the vtables clean
     Marker("[5] done (vtable restored)\r\n");
+#endif
     return 0;
 }
 BOOL APIENTRY DllMain(HMODULE h,DWORD r,LPVOID){if(r==DLL_PROCESS_ATTACH){DisableThreadLibraryCalls(h);HANDLE t=CreateThread(nullptr,0,Worker,nullptr,0,nullptr);if(t)CloseHandle(t);}return TRUE;}
