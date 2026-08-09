@@ -1,0 +1,30 @@
+﻿[stage] pre-flight: is ags serving an armed match?
+[stage]   /core-game/players -> MatchID='match-9b9d2c887e2524f918e383a895f2f1c2' Version=1786222392
+[stage] waiting for game process...
+[stage] game process -> OK (0s)
+[stage] game PID=43156 started=08/08/2026 15:53:15
+[stage] parked match model (uiready + match fetched + uptime) -> OK (115s)
+[stage] uptime=116s
+[stage] >>> inject gft
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\gft_ready_fix.dll into PID 43156
+[stage]       remote image base: 0x21F639A0000 (size 0x25000)
+[stage]       relocations applied (delta 0x21DE39A0000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x17D entries at 0x21F639C2000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x21F639A0000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage] force-open DLL: tutorial_launch_fo.dll
+[stage]     spacing: 5s since last inject, waiting 15s more (min gap 20s)
+[stage] >>> inject fo
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\tutorial_launch_fo.dll into PID 43156
+[stage]       remote image base: 0x22014420000 (size 0x2C000)
+[stage]       relocations applied (delta 0x21E94420000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x196 entries at 0x22014449000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x22014420000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s112p3-ctl-20-2-fo.txt
+[stage] LVL_Tutorial load complete -> *** GAME PROCESS GONE after 6s -- aborting the wait ***
+[stage] no tutorial world -> injecting sp now would be a wasted one-shot. ABORTING.

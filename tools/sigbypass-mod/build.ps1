@@ -120,6 +120,16 @@ $Variants = @{
     'tutorial_launch' = @{
         # RunMode switch, tutorial_launch.cpp:93. Default when KRUNMODE is unset is RM_CHEATSPAWN.
         'fo'         = @('-DKRUNMODE=RM_FORCEOPEN')
+        # ★ S112 -- the missing arm of the module-image question. S112 measured 8 of 20 non-arming
+        #   launches DYING DURING STAGING with only gft+fo resident (probe never injected, so RM_PLAY's
+        #   standing .text patch cannot explain them); every such death that dumped was OURS/protector.
+        #   `fo` makes TWO module-image writes and they are confounded in every run ever flown: a
+        #   TRANSIENT <=8 s `.text` prologue jmp, and a <=25.5 s `.rdata` slot-285 CustomLogin patch.
+        #   S111 only ever measured `.text`; "`.rdata` is caught too" is an S61-era INFERENCE.
+        #   This drops the `.rdata` write and keeps the `.text` one => one variable.
+        #   ⚠ May break the route (the strict native Login can fatal). All three outcomes inform --
+        #   see the rationale block at the InstallCustomLogin call site in tutorial_launch.cpp.
+        'fo-nologinvt' = @('-DKRUNMODE=RM_FORCEOPEN','-DKNOLOGINVT=1')            # -1 dim: no .rdata vtable write
         'sp'         = @('-DKRUNMODE=RM_SPAWNPOSSESS')
         # ★ S111 — control arm for the ability-system GATE fix (KGASSTORAGE, default ON in 'sp').
         #   The fix writes the carrier's ASC into the hero's AbilitySystemComponentStorage@0xF00,
@@ -150,6 +160,62 @@ $Variants = @{
         #       strings (the pre-fix build, most obvious name). DELETED from the source dir; this
         #       registry regenerates it correctly.
         'play'            = @('-DKRUNMODE=RM_PLAY')                              # ★ CANDIDATE: all fixes on
+        # ★★ S112 SHIPPED: 'play' now defaults to KFUNCSWAP=1 + KFSNAME="ReceiveTickClient", i.e. the
+        #   hook is a 2-pointer HEAP write and the module image is never touched. 'play-textpatch' is
+        #   the ROLLBACK, and it is also the A/B's measured control arm (10/10 armed windows died),
+        #   so rolling back is a known quantity rather than an untested path.
+        'play-textpatch'  = @('-DKRUNMODE=RM_PLAY','-DKFUNCSWAP=0')               # -1 dim: the OLD standing .text hook
+        # ------------------------------------------------------------------------------------------
+        # ★★★ S112 (2026-08-07) — THE .text-FREE ARM.  Read the KFUNCSWAP block in tutorial_launch.cpp.
+        #   RM_PLAY's InstallHook() writes a 5-byte jmp into ProcessInternal (module .text) and holds it
+        #   for the WHOLE 600 s sitting, because RM_PLAY never sets g_done.  S111 measured that a
+        #   STANDING .text write is the protector-kill trigger: 7/8 deaths at a 320 s hold vs 0/22 for
+        #   nothing injected and 0/9 for a PERMANENT heap-bytecode patch (p=0.00041).  So every FK-7
+        #   tutorial run ever made held the ~88 %-lethal condition for its entire duration.
+        #
+        #   'play-funcswap' takes the same game-thread callbacks by overwriting UFunction.Func (+0xE0)
+        #   -- a HEAP field whose value for a BP UFunction already IS &ProcessInternal -- on every BP
+        #   UFunction found by one GUObjectArray walk, and passing through to the real dispatcher.
+        #   +1 dim from 'play': identical behaviour, zero module-image bytes written.
+        #   ⚠ VERIFY THE ARM IN-RUN, do not assume it: the marker prints, within ~8 s,
+        #       [FS] *** ARMED AND LIVE: hitsGT=... (~N game-thread dispatches/s) ***      <- good
+        #       [FS] *** NO GAME-THREAD HITS after ... THE SWAP IS A SILENT NO-OP ***      <- fall back
+        #   plus an [FS] hot[] table naming the busiest UFunctions, so a follow-up build can narrow to
+        #   -DKFSNAME="<name>" and swap one pointer instead of thousands.
+        #
+        #   'play-hold300' is the DOCUMENTED FALLBACK if funcswap is not viable: it keeps the .text
+        #   hook but parameterises the hold (KPLAYHOLDMS) down to 300 s.  Strictly worse -- it only
+        #   shortens the exposure, it does not remove it -- but it is one token and it moves the
+        #   variable.  ⚠ Do NOT duty-cycle install/uninstall instead: S111 varied patch DURATION, not
+        #   the NUMBER of write events, so trading one long window for many short ones is speculative.
+        #   Both are -1/+1 dim from 'play' in exactly one dimension each, per the rule above.
+        'play-funcswap'   = @('-DKRUNMODE=RM_PLAY','-DKFSNAME=\"\"')                # +1 dim: swap ALL ~17,126 BP UFunctions
+        'play-hold300'    = @('-DKRUNMODE=RM_PLAY','-DKPLAYHOLDMS=300000')       # -1 dim: same .text hook, 300 s not 600 s
+        # ★ S112 completion-review follow-ups. 'play-funcswap' swaps ~17,126 UFunction.Func pointers,
+        #   which is a large novel surface and the leading suspect for its OWN 2/10 residual. These two
+        #   shrink and then isolate it:
+        #     * -profile widens the attribution window from 4 s (world-load, everything hits=1 and
+        #       useless) to 90 s so the hot[] table names functions from a SETTLED world;
+        #     * -one arms exactly ONE UFunction -- a ~17,000x smaller footprint -- and holds the full
+        #       600 s, which also finally covers the historical 87-524 s FK-7 death spread.
+        #   Fill in KFSNAME from a -profile run's hot[00] BEFORE building -one.
+        'play-funcswap-profile' = @('-DKRUNMODE=RM_PLAY','-DKFUNCSWAP=1','-DKFSPROFILEMS=90000','-DKFSHOTN=64')
+        # ✝ 'play-funcswap-600' REMOVED -- KPLAYHOLDMS already defaults to 600000, so it duplicated 'play'.
+        # ★ S112 -- the completion review's highest-value arm. KFSNAME matches the UFunction's OWN
+        #   FName (FsScan -> NameIs), so this arms only the UFunctions called `ReceiveTickClient`
+        #   instead of all 17,126 BP UFunctions -- a ~4-order-of-magnitude smaller footprint, which is
+        #   the leading suspect for 'play-funcswap's own 2/10 residual.
+        #   Target chosen from a MEASURED settled-world profile (`play-funcswap-profile`, run
+        #   s112p-prof-02): BP_LokiHeroCharacter_C::ReceiveTickClient, 1549 hits / 90 s = ~17/s, i.e.
+        #   once per frame -- exactly the cadence RM_PLAY's camera re-assert / WASD / VtGuard need.
+        #   The 4 s window used before this profiled only the WORLD LOAD, where everything reads hits=1
+        #   and every candidate is useless; widening it to 90 s is what made this selectable.
+        #   KPLAYHOLDMS already defaults to 600000, so this also holds the full 600 s and finally
+        #   covers the historical 87-524 s FK-7 death spread.
+        # ✝ 'play-funcswap-one' REMOVED 2026-08-08 -- with KFUNCSWAP/KFSNAME now defaulting to its
+        #   exact flags it would be BYTE-IDENTICAL to 'play'. CLAUDE.md's rule: when a -D default
+        #   changes, DELETE the redundant variant rather than leave a second name for one artifact.
+        # ------------------------------------------------------------------------------------------
         'play-novtguard'  = @('-DKRUNMODE=RM_PLAY','-DKVTGUARD=0')               # -1 dim: view-target guard OFF
         'play-nogcroot'   = @('-DKRUNMODE=RM_PLAY','-DKGCROOT=0')                # -1 dim: GC-root guard OFF
         'play-nopimutex'  = @('-DKRUNMODE=RM_PLAY','-DKPIMUTEX=0')               # -1 dim: PI-hook mutex OFF

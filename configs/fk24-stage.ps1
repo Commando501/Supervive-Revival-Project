@@ -41,7 +41,11 @@ param(
                                                     # sleeps the shortfall. 20 matches the new default in
                                                     # inject-secondaries.ps1. Pass 5 to reproduce the old
                                                     # gft->fo spacing. See docs/s109-dump-forensics.md 18-20.
-  [switch]$AllowStale                               # inject anyway when a shim's .text differs from build\
+  [switch]$AllowStale,                              # inject anyway when a shim's .text differs from build\
+  [string]$Fo = ""                                  # S112: alternate force-open DLL (e.g. the
+                                                    # `fo-nologinvt` arm, which drops the slot-285
+                                                    # `.rdata` vtable write). Empty = the deployed
+                                                    # tutorial_launch_fo.dll, i.e. unchanged behaviour.
 )
 
 $ErrorActionPreference = 'Stop'
@@ -128,15 +132,27 @@ function Wait-For([string]$what,[int]$timeoutSec,[scriptblock]$test){
   $t0 = Get-Date
   while(((Get-Date) - $t0).TotalSeconds -lt $timeoutSec){
     if(& $test){ Say "$what -> OK ($([int]((Get-Date)-$t0).TotalSeconds)s)"; return $true }
+    # ★ S112 LIVENESS GUARD. Every gate below polls a LOG or a MARKER, and a dead process writes
+    #   neither -- so when the game dies mid-staging (measured: frequently, within ~1 s of the map
+    #   load) the gate cannot tell "not yet" from "never again" and burns its whole timeout. Worse,
+    #   `Stage-Inject` discards inject.exe's exit code, so an injection into an exited PID logs
+    #   `FAILED: OpenProcess: The parameter is incorrect.` and the run sails on to wait 120 s for a
+    #   marker line nothing is alive to write. Fail fast instead; the caller's abort paths are
+    #   already correct, they were just being reached three minutes late.
+    if($script:gamePid -and -not (Get-Process -Id $script:gamePid -ErrorAction SilentlyContinue)){
+      Say "$what -> *** GAME PROCESS GONE after $([int]((Get-Date)-$t0).TotalSeconds)s -- aborting the wait ***"
+      return $false
+    }
     Start-Sleep -Seconds 3
   }
   Say "$what -> *** TIMEOUT after ${timeoutSec}s ***"
   return $false
 }
 
-foreach($p in @($inject,(Join-Path $shimDir 'tutorial_launch_fo.dll'),
-                        (Join-Path $shimDir 'gft_ready_fix.dll'),
-                        (Join-Path $shimDir 'tutorial_launch_sp.dll'))){
+$foDll = if($Fo){ (Resolve-Path $Fo).Path } else { Join-Path $shimDir 'tutorial_launch_fo.dll' }
+foreach($p in @($inject,$foDll,
+                (Join-Path $shimDir 'gft_ready_fix.dll'),
+                (Join-Path $shimDir 'tutorial_launch_sp.dll'))){
   if(-not (Test-Path $p)){ throw "missing required file: $p" }
 }
 if(-not $SkipProbe){
@@ -168,7 +184,8 @@ if(-not $armed){
 Say 'waiting for game process...'
 $proc = $null
 if(-not (Wait-For 'game process' $WaitProcSec { $script:proc = Get-Process SUPERVIVE-Win64-Shipping -ErrorAction SilentlyContinue | Select-Object -First 1; $null -ne $script:proc })){ exit 2 }
-$gamePid = $proc.Id
+$script:gamePid = $proc.Id
+$gamePid = $script:gamePid
 $start   = $proc.StartTime
 Say "game PID=$gamePid started=$start"
 
@@ -238,7 +255,8 @@ function Stage-Inject([string]$dll,[int]$n,[string]$tag){
 #   it BEFORE the force-open removes the race entirely rather than merely winning it by luck.
 Stage-Inject (Join-Path $shimDir 'gft_ready_fix.dll') 1 'gft'
 Start-Sleep -Seconds 3
-Stage-Inject (Join-Path $shimDir 'tutorial_launch_fo.dll') 2 'fo'
+Say ("force-open DLL: {0}" -f (Split-Path -Leaf $foDll))
+Stage-Inject $foDll 2 'fo'
 
 # ★ Gate on the LOAD COMPLETING, not on the string 'LVL_Tutorial' -- the force-open's own console
 #   command ('open LVL_Tutorial?game=...') contains that substring and is echoed to the log, so the

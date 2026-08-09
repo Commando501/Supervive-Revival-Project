@@ -92,7 +92,8 @@ value now**" — which is why nobody went back to it for ~26 sessions. That reco
 correctly from the premise. The premise was wrong.
 
 Two secondary reasons it stayed hidden: there are no `.as` source files anywhere in the install
-(only the compiled cache), and the exe is VMProtect/Themida-packed, so the *script VM* was never a
+(only the compiled cache), and the exe's `.text` is encrypted at rest (⚠ NOT VMProtect/Themida — REFUTED,
+`docs/fk10-protector-identified.md`), so the *script VM* was never a
 natural thing to look for while fighting the native side.
 
 ---

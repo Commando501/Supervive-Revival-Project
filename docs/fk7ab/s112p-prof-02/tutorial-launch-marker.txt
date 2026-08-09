@@ -1,0 +1,446 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)
+[PL] gameHwnd=0x0 (0 => focus check disabled)
+[WM] PC=0x2DDA55B7630 hero=0x2DE11F0AAC0(BP_HERO_Ronin_C) CMC=0x2DD82C738F0 grav@0x1A0 vel@0xE8 mode@0x231
+[WM] thunks SetActive=0x7FF653B88900(act@0x0 rst@0x1) SetTickEn=0x7FF653B890E0(en@0x0) SetMoveMode=0x7FF653BC9180(mode@0x0 cust@0x1) SetActorTick=0x7FF65396CA70(en@0x0)
+[WM] root=0x2DE0ECE88F0 SetActorLocation=0x7FF65396B0C0(loc@0x0 sweep@0x18 tele@0x118) wakeZ=500
+[SEQ] seqClass=0x2DE04DE0400 gm=0x2DE6C5B8960 gsCDO=0x2DC94DEA140 begin=0x7FF653DBEEC0 finish=0x7FF653DC2CC0 vol=(283,277,-250)
+[SEQ] BEFORE: TrainingQuest=0  Sequencer=0
+[TC] pc=0x2DDA55B7630 hero=0x2DE11F0AAC0 camCls=0x2DC959C8800 svtThunk=0x7FF654229A60(tgt@0x0) gm=0x2DE6C5B8960 begin=0x7FF653DBEEC0
+[TRN] params AsyncLoadPrimaryAssets[0] WorldContextObject @0x0 flags=0x18001000400280
+[TRN] params AsyncLoadPrimaryAssets[1] Assets @0x8 flags=0x10000000000280
+[TRN] params AsyncLoadPrimaryAssets[2] OnLoadComplete @0x18 flags=0x18001000000280
+[TRN] params AsyncLoadPrimaryAssets[3] ReturnValue @0x28 flags=0x18001000000780
+[PL] loadInfra lam=0x2DCDA0A28F0 world=0x2DC9CC17A20 pafs=0x7FF65586B760 alpa=0x7FF655869440
+[TRN] params MakeSoftObjectPath[0] PathString @0x0 flags=0x3018000000000280
+[TRN] params MakeSoftObjectPath[1] ReturnValue @0x10 flags=0x18000000000780
+[TRN] params LoadAsset_Blocking[0] Asset @0x0 flags=0x1C000000000080
+[TRN] params LoadAsset_Blocking[1] ReturnValue @0x28 flags=0x18001000000780
+[PL] route1 ksl=0x2DC9673B780 msp=0x7FF653F380D0(path@0x0 ret@0x10) lab=0x7FF653F34E40(asset@0x0 ret@0x28)
+[FOW] resolved 'RegisterFogOfWarPrimitive' fn=0x2DC94BD0180 thunk=0x7FF65583B9F0 owner=FogOfWarPrimitiveCollector cdo=0x2DC94F1BC50
+[FOW] resolved 'IsFogOfWarVisibleToLocal' fn=0x2DC94C05E20 thunk=0x7FF6558A67A0 owner=LokiBlueprintLibrary cdo=0x2DC94F31AD0
+[FOW] cdo=0x2DC94F1BC50 reg=0x7FF65583B9F0(comp@0x0 ret@0x8) vis=0x7FF6558A67A0(tgt@0x0 ret@0x8)
+[TRN] params ServerCheatSpawnActor[0] ClassToSpawn @0x0 flags=0x1C001000000280
+[TRN] params ServerCheatSpawnActor[1] Location @0x8 flags=0x3018001048000282
+[TRN] params ServerCheatChangeHero[0] HeroClass @0x0 flags=0x1C001000000280
+[CHEAT] cdo=0x2DC94F9B460 cls=0x2DC99C49E80 getLocal=0x7FF6559E4F70(wco@0x0 ret@0x8) spawnActor=0x7FF6559E6A50(cls@0x0 loc@0x8) changeHero=0x7FF6559E6760(cls@0x0)
+[TRN] params FinishAddComponent[0] Component @0x0 flags=0x18001000080280
+[TRN] params FinishAddComponent[1] bManualAttachment @0x8 flags=0x18001040000280
+[TRN] params FinishAddComponent[2] RelativeTransform @0x10 flags=0x3018001048000182
+[PL] route2 finishAddComp=0x7FF653966CF0(comp@0x0 manual@0x8 xform@0x10)
+[PL] hero=0x2DE11F0AAC0 CMC=0x2DD82C738F0 mesh=0x0(-) skelCls=0x2DC95971000 camCls=0x2DC959C8800 pc=0x2DDA55B7630 gm=0x2DE6C5B8960 gsCDO=0x2DC94DEA140 begin=0x7FF653DBEEC0
+[PL] KFUNCSWAP=1: taking game-thread callbacks via UFunction.Func (+0xE0) instead of a .text hook
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=90000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF6519054A0 stub=0x2DE11E275D0 funcCls=0x2DCF9DAB000 gameTid=22880
+[VTG] pcm=0x2DDA1AC8020 ViewTarget@0x420 (reflection) PendingViewTarget@0xC40  [crash-dump measurement: 0x420]
+[GAS] ===== S101: driving LokiPlayerState's own ability-system wiring chain =====
+[GAS] PlayerState @0x3C0 = 0x2DDAD012230 (BP_LokiPlayerState_C)
+[GAS] BEFORE AbilitySystemComponentStorage  @0xF00 = 0x2DE3D0F1A80 (LokiAbilitySystemComponent)
+[GAS] BEFORE AttributeSetStorage            @0xF08 = 0x0 (NULL)
+[GAS] BEFORE AttributeSetHealthStorage      @0xF10 = 0x0 (NULL)
+[GAS] BEFORE IsAbilitySystemInitialized -> parm@0x0=0 res=0
+[GAS] HeroAffiliatedObject@0x4F8 = 0x2DE0F360080
+[GAS] BEFORE ASC 0x2DE3D0F1A80 Owner@0x408=0x2DE0F360080(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[GAS] cache: already populated (0x2DE3D0F1A80) -> leaving it alone
+[FS] arm: swapped=17126 BP UFunctions  (scan 3797 ms over 151330 objects, 33816 UFunctions total) -- NO .text WRITE
+[GAS] step1 heroClass(BP_HERO_Ronin_C)=0x2DD9EC91BA0
+[GAS] step1 ServerSetHeroClass(NewClass@0x0) ok
+[GAS] step1 HeroClass@0x620 = 0x2DD9EC91BA0 (already set)
+[GAS] PlayerState Role@0x160=3 RemoteRole@0x72=1  (3=ROLE_Authority)
+[GAS] hero Role@0x160=3
+[GAS] GetHeroAsset -> 0x2DD8680DBC0 (BP_HeroAsset_Ronin_C)
+[FOW] GAS step2: OnRep_HeroClass (native) ok
+[FOW] GAS step3: TryUpdateAbilitySystem (native) ok
+[GAS] AFTER  AbilitySystemComponentStorage  @0xF00 = 0x2DE3D0F1A80 (LokiAbilitySystemComponent)
+[GAS] AFTER  AttributeSetStorage            @0xF08 = 0x0 (NULL)
+[GAS] AFTER  AttributeSetHealthStorage      @0xF10 = 0x0 (NULL)
+[GAS] AFTER  ASC 0x2DE3D0F1A80 Owner@0x408=0x2DE0F360080(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[GAS] AFTER  IsAbilitySystemInitialized -> parm@0x0=0 res=0
+[GAS] GetLokiAbilitySystem_BP -> 0x2DE3D0F1A80 (LokiAbilitySystemComponent)
+[GAS] ===== RESULT: initialised 0 -> 0  *** STILL NOT INITIALISED *** =====
+[PL] teleport hero -> ground (-65,-1770,393)
+[PL] SetMovementMode(5)
+[PL] SetActorHiddenInGame(hero,false)
+[FOW] disable: FogOfWarSceneView inst=0x2DDAA30FC10
+[FOW]   SetActorTickEnabled(false)
+[FOW]   SetActorHiddenInGame(true)
+[FOW] disable: FogOfWarPrimitiveCollector inst=0x2DDAA30A570
+[FOW]   SetActorTickEnabled(false)
+[FOW]   SetActorHiddenInGame(true)
+[PL] MakeSoftObjectPath ok (pkgFName=0x491F51 assetFName=0xF4A77)
+[PL] LoadAsset_Blocking ok -> 0x2DD9DD4AD50 (BlueprintGeneratedClass)
+[GC] rootbit[FREQ]: nRooted=5 and=42000000 nUnrooted=64 or=41800001 cand=02000000 expect=40000000 onNatives=1 bitFreq=1/64(1%) max=33% -> CORROBORATED (rooting enabled)
+[GC] ROOT loaded-asset 0x2DD9DD4AD50 (BlueprintGeneratedClass) item=0x2DDACF23D70 flags 00000001 -> 40000001 OK
+[PL] route2 BP-comp class = 0x2DD9DD4AD50 (BlueprintGeneratedClass)
+[PL] AddComponentByClass ok -> comp=0x2DDAFF46280(BP_Ronin_DefaultSKMeshComponent_C)
+[PL] comp RelativeScale3D@0x188 was (1.000,1.000,1.000) -> (1,1,1)
+[PL] SetWorldScale3D(1,1,1) ok
+[PL] ClothingSimulationFactory@0xC78=null
+[PL] SetAnimationMode(1)
+[XF] FinishAddComponent RelativeTransform@0x10 copy=0x60 Scale3D=(1.000,1.000,1.000)
+[PL] FinishAddComponent ok
+[PL] MakeSoftObjectPath ok (pkgFName=0x5BF7F assetFName=0x231C2D)
+[PL] LoadAsset_Blocking ok -> 0x2DD8D481C00 (AnimSequence)
+[GC] ROOT loaded-asset 0x2DD8D481C00 (AnimSequence) item=0x2DDACF23398 flags 00000001 -> 40000001 OK
+[PL] anim asset=0x2DD8D481C00 (AnimSequence)
+[ANIM] PlayAnimation(A_Ronin_Cosmetic_HeroSelect_Breathe, loop) ok
+[FS] *** ARMED AND LIVE: hitsGT=1 allThreadCalls=5 after 8000 ms (~0 game-thread dispatches/s) ***
+[GC] ROOT body-component 0x2DDAFF46280 (BP_Ronin_DefaultSKMeshComponent_C) item=0x2DDACF23A88 flags 00000001 -> 40000001 OK
+[GC] ROOT anim-instance 0x2DE6D9AA960 (AnimSingleNodeInstance) item=0x2DDACF23518 flags 00000001 -> 40000001 OK
+[GC] ROOT anim-instance 0x2DCFFCE2B60 (AnimSingleNodeInstance) item=0x2DDACF23A70 flags 00000001 -> 40000001 OK
+[GC] anim-instance rooted x2 (rooted=5 failed=0)
+[FOW] RegisterFogOfWarPrimitive(body) ok -> ret=0
+[PL] body built (animMode=1 tick=1 visible deferred=1)
+[CHEAT] localCheatObj=0x0(-)
+[FS] t=+15s hitsGT=1 called=0 allThreadCalls=5 swapped=17126
+[XF] KXFORMFIX=1  Scale3D@0x40  copy=0x60 bytes  (B.xform@0x10 coll@0x70)  scale=(3.00,3.00,3.00)
+[QST] sma-test FinishSpawning -> res=0x2DE6E6899A0 par=0x0 | proxy(root)=null
+[SMA] cls=0x2DC95952E00 actor=0x2DE6E6899A0 root=0x2DE703D7120(StaticMeshComponent) mesh=0x2DC94DE16B0
+[SMA] SetStaticMesh on the ENGINE-built root ok  (look for a big sphere beside the hero)
+[PL] MakeSoftObjectPath ok (pkgFName=0x25AAD5 assetFName=0x1FC404)
+[PL] LoadAsset_Blocking ok -> 0x2DE3CDB6800 (AnimSequence)
+[GC] ROOT loaded-asset 0x2DE3CDB6800 (AnimSequence) item=0x2DDACF1B700 flags 00000001 -> 40000001 OK
+[ANIM] run anim A_Ronin_Movement_OutOfCombat_N = 0x2DE3CDB6800 (AnimSequence)
+[REF] SingleAnimationPlayData=0x2DC948F82C0 AnimToPlay@0x0
+[REF] run-anim: AnimationData.AnimToPlay @comp+0xAB8 (struct 0xAB8 + 0x0) 0 -> 2DE3CDB6800 OK
+[PL] *** init complete: body=BUILT; camera + WASD active ***
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(-65,-1770,393) mesh=0x2DDB3E151A0 bVisible=99 | cam=(0,0,0)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[QST] topdown-cam FinishSpawning -> res=0x2DCCBDB73C0 par=0x0 | proxy(root)=SET
+[TC] *** spawned CameraActor=0x2DCCBDB73C0 at (-65,-541,3153) setLoc@0x0 setRot@0x0 ***
+[SHOT] idle1 @3.0s hero=(-65,-1770,393) cam=(-65,-541,3153) anim=idle
+[FOW] resolved 'ExecuteConsoleCommand' fn=0x2DC947DD8B0 thunk=0x7FF653F1D790 owner=KismetSystemLibrary cdo=0x2DC94DED050
+[SHOT] idle1: console 'HighResShot 1' ok
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(-65,-1770,393) mesh=0x2DDB3E151A0 bVisible=99 | cam=(-65,-541,3153)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(-65,-1770,393) mesh=0x2DDB3E151A0 bVisible=99 | cam=(-65,-541,3153)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[SHOT] idle2 @8.0s hero=(-65,-1770,393) cam=(-65,-541,3153) anim=idle
+[SHOT] idle2: console 'HighResShot 1' ok
+[FS] t=+30s hitsGT=1846 called=1845 allThreadCalls=1850 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(-65,-1770,393) mesh=0x2DDB3E151A0 bVisible=99 | cam=(-65,-541,3153)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(-65,-1770,393) mesh=0x2DDB3E151A0 bVisible=99 | cam=(-65,-541,3153)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[SHOT] idle3 @14.0s hero=(-65,-1770,393) cam=(-65,-541,3153) anim=idle
+[SHOT] idle3: console 'HighResShot 1' ok
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(-65,-1770,393) mesh=0x2DDB3E151A0 bVisible=99 | cam=(-65,-541,3153)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(-65,-1770,393) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(-65,-1770,393) mesh=0x2DDB3E151A0 bVisible=99 | cam=(-65,-541,3153)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[ANIM] self-driven walk START (so the run anim can be captured with no human at the keyboard)
+[ANIM] PlayAnimation(run, loop) ok
+[SHOT] run @22.5s hero=(1398,-1770,441) cam=(1398,-541,3201) anim=run
+[SHOT] run: console 'HighResShot 1' ok
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(1616,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(1616,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(1616,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[ANIM] PlayAnimation(idle, loop) ok
+[FS] t=+45s hitsGT=5350 called=5349 allThreadCalls=5354 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+60s hitsGT=9154 called=9153 allThreadCalls=9158 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+75s hitsGT=12632 called=12631 allThreadCalls=12636 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] hot: 37 distinct UFunctions dispatched on the GAME THREAD in the first 90000 ms
+[FS]   hot[00] hits=1       BP_TrainingVolumeBase_C::BndEvt__BP_ShmovementCourseVolume_Box_K2Node_ComponentBoundEvent_1_ComponentBeginOverlapSignature__DelegateSignature  (0x2DE1F8C7500)   <- candidate for -DKFSNAME
+[FS]   hot[01] hits=1       BP_CapturePoint_C::BndEvt__AlertSphereComponent_K2Node_ComponentBoundEvent_3_ComponentBeginOverlapSignature__DelegateSignature  (0x2DE19DFD700)   <- candidate for -DKFSNAME
+[FS]   hot[02] hits=1       BP_CapturePoint_C::BndEvt__CaptureCapsuleComponent_K2Node_ComponentBoundEvent_0_ComponentBeginOverlapSignature__DelegateSignature  (0x2DE19DFF200)   <- candidate for -DKFSNAME
+[FS]   hot[03] hits=1       Comp_CapturePoint_ItemQueueing_C::OnCollisionOverlapBegin  (0x2DE19DFCF00)   <- candidate for -DKFSNAME
+[FS]   hot[04] hits=1549    BP_LokiHeroCharacter_C::ReceiveTickClient  (0x2DDA7D41A00)   <- candidate for -DKFSNAME
+[FS]   hot[05] hits=1547    BP_LokiHeroCharacter_C::ReceiveTickVisible  (0x2DDA7D41B00)   <- candidate for -DKFSNAME
+[FS]   hot[06] hits=337     Comp_PlayerController_Shop_Skylands_C::OnCharacterMoved  (0x2DE150DF700)   <- candidate for -DKFSNAME
+[FS]   hot[07] hits=1548    BP_HeroHeightIndicator_C::ReceiveUpdateHeightOffset  (0x2DD7CB75300)   <- candidate for -DKFSNAME
+[FS]   hot[08] hits=1548    BP_LineOfSightRendering_Component_C::ReceiveTick  (0x2DE6DBC9D00)   <- candidate for -DKFSNAME
+[FS]   hot[09] hits=1548    Comp_GameMode_EoGFinisher_C::ReceiveTick  (0x2DDA31EF600)   <- candidate for -DKFSNAME
+[FS]   hot[10] hits=1548    Comp_PlayerController_DamageNumbers_C::ReceiveTick  (0x2DDA5091600)   <- candidate for -DKFSNAME
+[FS]   hot[11] hits=1548    BP_LokiPlayerController_C::ReceiveTick  (0x2DE6DEA5700)   <- candidate for -DKFSNAME
+[FS]   hot[12] hits=1548    BP_HERO_Ronin_C::ReceiveTick  (0x2DE6DDAA200)   <- candidate for -DKFSNAME
+[FS]   hot[13] hits=690     BP_LokiGameMode_Tutorial_C::ReceiveTick  (0x2DEBA169A00)   <- candidate for -DKFSNAME
+[FS]   hot[14] hits=690     Comp_PlayerController_Pings_C::ReceiveTick  (0x2DD60A43B00)   <- candidate for -DKFSNAME
+[FS]   hot[15] hits=304     Comp_PlayerController_Stats_C::ExecuteUbergraph_Comp_PlayerController_Stats  (0x2DDAEB84800)   <- candidate for -DKFSNAME
+[FS]   hot[16] hits=1546    ABP_ResBeacon_C::BlueprintUpdateAnimation  (0x2DDFD654800)   <- candidate for -DKFSNAME
+[FS]   hot[17] hits=184     BP_EnvironmentDestructible_C::ReceiveEndPlay  (0x2DDA510AE00)   <- candidate for -DKFSNAME
+[FS]   hot[18] hits=1       BP_PineTree_C::BndEvt__BP_PineTree_Capsule_Stuck_K2Node_ComponentBoundEvent_2_ComponentEndOverlapSignature__DelegateSignature  (0x2DE23F18900)   <- candidate for -DKFSNAME
+[FS]   hot[19] hits=31      BP_BrushTall_C::BndEvt__BP_BrushTall_Capsule_K2Node_ComponentBoundEvent_1_ComponentEndOverlapSignature__DelegateSignature  (0x2DE1D4EF200)   <- candidate for -DKFSNAME
+[FS]   hot[20] hits=81      Comp_Usable_Base_C::BP_LokiEndPlay  (0x2DCFB42CB00)   <- candidate for -DKFSNAME
+[FS]   hot[21] hits=8       BP_TrainingVolumeBase_C::BndEvt__BP_ShmovementCourseVolume_Box_K2Node_ComponentBoundEvent_0_ComponentEndOverlapSignature__DelegateSignature  (0x2DE1F8CB000)   <- candidate for -DKFSNAME
+[FS]   hot[22] hits=69      Comp_PlayerController_Camera_C::ReceiveTick  (0x2DE1D24D500)   <- candidate for -DKFSNAME
+[FS]   hot[23] hits=1       BP_LokiSpawner_Random_Minions_Squad_C::ReceiveEndPlay  (0x2DD7A309200)   <- candidate for -DKFSNAME
+[FS]   hot[24] hits=6       BP_CapturePoint_C::ExecuteUbergraph_BP_CapturePoint  (0x2DE19DF9E00)   <- candidate for -DKFSNAME
+[FS]   hot[25] hits=1       BP_CapturePoint_C::BndEvt__CaptureCapsuleComponent_K2Node_ComponentBoundEvent_2_ComponentEndOverlapSignature__DelegateSignature  (0x2DE19DFBD00)   <- candidate for -DKFSNAME
+[FS]   hot[26] hits=16      BP_Brush_C::ReceiveBeginPlay  (0x2DE1D240F00)   <- candidate for -DKFSNAME
+[FS]   hot[27] hits=16      BP_Brush_C::OnUpdateCollision  (0x2DE1D240E00)   <- candidate for -DKFSNAME
+[FS]   hot[28] hits=1       BP_WindRing_C::ReceiveBeginPlay  (0x2DDB01CF700)   <- candidate for -DKFSNAME
+[FS]   hot[29] hits=2       BP_BarkManager_C::SlowTick_30sec  (0x2DDA1F67B00)   <- candidate for -DKFSNAME
+[FS]   hot[30] hits=2       BP_Abyss_Skirt_C::ReceiveBeginPlay  (0x2DDA8507C00)   <- candidate for -DKFSNAME
+[FS]   hot[31] hits=1       BP_LokiRelevantWidget_Component_C::ReceiveBeginPlay  (0x2DDA510ED00)   <- candidate for -DKFSNAME
+[FS]   hot[32] hits=1       BP_LokiRelevantWidget_Component_C::BP_LokiBeginPlay  (0x2DDA510EA00)   <- candidate for -DKFSNAME
+[FS]   hot[33] hits=1       BP_LokiSpawner_Random_Minions_Squad_Tutorial_C::ReceiveBeginPlay  (0x2DD7A30F400)   <- candidate for -DKFSNAME
+[FS]   hot[34] hits=1       BP_LokiBattleRoyaleSpawner_C::BP_LokiBeginPlay  (0x2DD5F847500)   <- candidate for -DKFSNAME
+[FS]   hot[35] hits=16      BP_PineTree_C::ReceiveBeginPlay  (0x2DE23F10200)   <- candidate for -DKFSNAME
+[FS]   hot[36] hits=16      BP_PineTree_C::OnUpdateCollision  (0x2DE23F1BE00)   <- candidate for -DKFSNAME
+[FS] t=+90s hitsGT=16418 called=16417 allThreadCalls=16422 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+105s hitsGT=19961 called=19960 allThreadCalls=19965 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+120s hitsGT=23506 called=23505 allThreadCalls=23510 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+135s hitsGT=26681 called=26680 allThreadCalls=26685 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+150s hitsGT=30057 called=30056 allThreadCalls=30061 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+165s hitsGT=33420 called=33419 allThreadCalls=33424 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+180s hitsGT=36834 called=36833 allThreadCalls=36838 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+195s hitsGT=40143 called=40142 allThreadCalls=40147 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+210s hitsGT=43529 called=43528 allThreadCalls=43533 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+225s hitsGT=46974 called=46973 allThreadCalls=46978 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+240s hitsGT=50363 called=50362 allThreadCalls=50367 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+256s hitsGT=54173 called=54172 allThreadCalls=54177 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+271s hitsGT=57615 called=57614 allThreadCalls=57619 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0
+[FS] t=+286s hitsGT=61073 called=61072 allThreadCalls=61077 swapped=17126
+[DIAG] hero root RelativeScale3D=(1.000,1.000,1.000)  (ok)
+[DIAG] hero=(2856,-1770,441) bHidden=112 fowVisible=0 | comp=0x2DDAFF46280 world=(2856,-1770,441) mesh=0x2DDB3E151A0 bVisible=99 | cam=(2856,-541,3201)
+[FOW] RegisterFogOfWarPrimitive(re-assert) ok -> ret=0

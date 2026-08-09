@@ -1,4 +1,7 @@
-// deobfimports.go — reconstruct imports for a VMProtect/Themida-style IMPORT-PROTECTED
+// deobfimports.go — reconstruct imports for an IMPORT-PROTECTED
+// (⚠ NOT VMProtect/Themida — that name is REFUTED; see docs/fk10-protector-identified.md.
+//  Ironically THIS FILE is the disproof: the emulator below has no conditional branches,
+//  no CALL and no flags, yet resolves 1107/1107 stubs — impossible for a virtualized packer.)
 // dump (SUPERVIVE). Unlike an unprotected binary (explorer), SUPERVIVE's IAT slots do NOT
 // hold real export addresses — they point to obfuscated TRAMPOLINES in a packer-hidden
 // region (not a registered module, so `reconstructiat`'s sidecar lookup misses them).
