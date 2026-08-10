@@ -141,6 +141,40 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 ### FK-1 — "The Angelscript layer is thin; the deploy/round/respawn core is native C++"
 **Severity: CRITICAL. Found independently by 2 dimensions (player-journey, walls).**
 
+> ## ✅ SETTLED — 2026-08-09 (S113). **Read `docs/fk1-angelscript-settled.md`; it supersedes this entry.**
+> Offline + one read-only RPM probe. **Zero launches consumed. The belief is REFUTED and the
+> "accept the ceiling" verdict is FALSE.**
+> - **Refuted in S101** (`tools/asdump`, which this entry still says needs deciding on — it shipped):
+>   78 modules · **110 classes** · 1,463 functions · **100 %** of bytecode decoded.
+> - ⚠ **This entry's own numbers and reasoning are wrong.** The undercount is **9.0× (81÷9)**, not
+>   4.3× — S74's "18 `_AS` classes" is **9 classes × 2 token forms**, a double-count this correction
+>   inherited. And the **"Surviving nuance" reuses the discredited inference**: the `_AS` suffix marks
+>   only script classes shadowing a same-named native parent, so *"no `X_AS`"* proves **nothing** about
+>   X. `memory/supervive-angelscript-layer` is phrased correctly; **this register entry is not**.
+> - **The round mode IS native** (3 independent instruments, bidirectional controls) — conclusion
+>   confirmed, reasoning struck. `LokiDropInGameMode` is a *referenced native base*
+>   (`__StaticType_` count **0**), it is **not** a round mode, and "DropIn" ≠ drop phase.
+>   ★ **But that is NOT a ceiling:** every member is a named UFUNCTION/UPROPERTY reachable by the S55
+>   primitive, and **the phase lives on `ALokiGameState` with a public `AuthSetCurrentPhase` setter.**
+>   The tutorial **already runs** the round mode (`BP_LokiGameMode_Tutorial_C`).
+> - ★★ **The script layer is AOT-transpiled to C++ and compiled into the exe** ("StaticJIT"), not
+>   interpreted: 1463/1463 cache Ids appear as registration-stub immediates (control 0/4000), and a
+>   **1,459-row symbol table** was recovered. **Callable by the existing S55 recipe.** ⚠ **`Func !=
+>   ProcessInternal`**, so §4.2 item 8's proposed experiment ("print every PI-dispatched UFunction")
+>   returns **zero AS classes even when they are perfectly callable** — **it is a trap; negative
+>   control only.**
+> - ★★★ **The REAL wall, named for the first time: four server-authority C++ functions are EMPTY
+>   STUBS** — `ALokiGameMode::SpawnPlayer` = `xor eax,eax; ret`, `AuthSetSpawnTeamLeader` = `ret`,
+>   `SetDropLeader` = `ret`, `OverridePlaneLocations` = `ret` (likely `WITH_SERVER_CODE`-stripped).
+>   This closes `AvatarActor = NULL`: the design routes the GAS bind through `SpawnPlayer`, and the
+>   client does not contain it. **But the SCRIPT authority functions ARE compiled in and a direct
+>   thunk call bypasses net routing** — so the deploy door is shut in C++ and possibly open in script.
+> - **The usmap gap is CLOSED**: supplement shipped (`tools/asdump/out/usmap/mappings+as.usmap`),
+>   **263 property values newly decoded** across 26 assets, base usmap round-trips bit-identically.
+>   FK-14's "which usmap does the extractor load" is resolved: `tools/extractor/mappings.usmap`.
+> - ⚠ **Live RPM correction:** AS **UClasses are NOT registered at the menu** (0 of 15 sampled, with
+>   3 passing native controls); AS **enums and structs are**. Callability testing needs a loaded map.
+
 | | |
 |---|---|
 | **Belief** | `docs/session-74-routeB-as-native-split.md`: *"★ THE KEY FINDING — only 18 classes are Angelscript"*; *"There is NO … deploy AS class"*; *"Deploy actors are native/BP too: ALokiDropPod*, Comp_PC_LokiRespawnComponent, AuthRequestRespawn, CheckSetInitialRespawn, GetPlayerRespawnComponent — none carry the `_AS` suffix"* → *"The native C++ deploy/round core is the irreducible blocker"* → *"C. Accept the ceiling."* Echoed in `memory/supervive-dedicated-server-status.md:619-642` and frozen into the git subject **"S74 Route B: Angelscript inventory — AS layer is thin, deploy/round is native."** |
@@ -701,6 +735,37 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 
 ### FK-11 — "Verbose/VeryVerbose are compiled out — this is a SHIPPING build"
 **Severity: HIGH (it foreclosed the cheapest instrument the project could possibly own).**
+
+> ## ✅ SETTLED — 2026-08-09 (S113). **Read `docs/fk11-log-verbosity-settled.md`; it supersedes this entry.**
+> Offline, read-only, **zero launches consumed. The belief is FALSE** — not "true for some
+> categories", and not even true for Loki code specifically.
+> - **MEASURED three ways:** global `COMPILED_IN_MINIMUM_VERBOSITY` = **`VeryVerbose` (7)**;
+>   `USE_LOGGING_IN_SHIPPING` = **1**; of **14,030** decoded `UE_LOG` call sites, **1,339 are Verbose
+>   and 513 VeryVerbose** (a global cap at `Log` would have deleted all 1,852). Histogram over 665
+>   cross-validated objects: **≥ Verbose = 98.0 %**; only 11 categories are capped below VeryVerbose,
+>   each an individual Epic/plugin declaration matching Epic's published values (a control the method
+>   could have failed).
+> - ★ **109/109 Loki-dominant categories are `VeryVerbose`. Zero capped at `Log`.** 71 compiled-in
+>   Verbose/VeryVerbose call sites inside `\Loki\Source\` across 35 categories.
+> - ⚠⚠ **THIS ENTRY'S OWN "CHEAPEST EXPERIMENT" WOULD HAVE SILENTLY FAILED**, and the silence would
+>   very likely have been recorded as *"confirmed: Verbose is compiled out"* — recreating the
+>   false-known. Three independent reasons: **(a) `-LogCmds` does not parse in this binary** —
+>   `logcmds` occurs 3× and all three are **help text** (`0x076B25E0`/`0x076B26B0`/`0x076B2860`), with
+>   no standalone `LogCmds=` literal, while peer literals `LOG=`/`ABSLOG=`/`logcategoryfiles=`/
+>   `NOCONSOLE` all exist; **(b)** 3 of its 4 named categories are Class-B/C — code paths that never
+>   execute on any reachable route; **(c)** `LogNetSerialization` at VeryVerbose is catastrophically
+>   spammy. **Use `[Core.Log]` via ini instead** — the binary states its precedence
+>   (*compiled-in → ini → command line*) at `0x076B1FA0`, and stage three is missing, so **ini wins**.
+> - ★ **The shipped `[Core.Log]` is ALREADY BINDING:** zero violations across a 4.10 GB / 28.7 M-line
+>   corpus; `LogAccelByte` emits **3** lines while driving the entire backend flow. **The project has
+>   been reading a log that was deliberately turned down.**
+> - **"Steers" figure corrected:** silence is **760/903 (84.2 %)**, not "~825–870 of ~1,004" (that was
+>   the wide *substring* count). `LogLokiSpawner` and `LogAbilitySystem` were wrongly listed as silent.
+> - ⚠ **The real trap is NEVER-RAN vs SUPPRESSED**: 384 of 842 logs reach `LVL_Tutorial` but none
+>   contains combat, drop phase, bots, damage, XP or replication. Only **Class A** categories (owner
+>   provably ran, still silent) are pure suppression wins.
+> - **Angelscript logging is silent by AUTHORSHIP, not gating** (6 calls in 4,963 syscalls, 0.12 %) —
+>   raising verbosity cannot make script code talk. Downgrades FK-22.
 
 | | |
 |---|---|
