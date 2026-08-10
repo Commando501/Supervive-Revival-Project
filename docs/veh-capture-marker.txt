@@ -1,3 +1,0 @@
-[0] veh_capture installed (pure observer)
-[0] exeBase=0x00007FF682A80000
-[0] modules=0x000000000000002E

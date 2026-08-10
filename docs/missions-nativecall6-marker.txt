@@ -1,3 +1,0 @@
-[0] missions_nativecall_probe6 (Avenue A + PARAMS: CreateMissionModelFromFinalProgress(empty)) started
-[2] MissionsModel=0x262FDC71180 func=00000262029548B0 thunk=0x7FF6BA9958B0(rva 0x54A58B0) childProps=0x262457E8C80 gameTid=39960
-[3] hook built; calling CreateMissionModelFromFinalProgress(EMPTY) via direct thunk + compiled-in params...

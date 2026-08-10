@@ -1,4 +1,0 @@
-[0] createthread_probe start
-NtCreateThreadEx=0x00007FF8F026EE70
-[x] unexpected prologue; not hooking
-prologue=90 E9 AA 5C A1 00 00 00 

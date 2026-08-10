@@ -1,5 +1,0 @@
-[0] missions_nativecall_probe2 (thunk run-through hook — definitive) started
-[2] ProgMgr=0x1B159277A20 GetMissionsModel=000001B15D964990 thunk=0x7FF6BA9C8190 knownMM=0x1B247EB2800
-[3] thunk hook installed; arming one GetMissionsModel via ProcessEvent...
-[4] PE CALLED. thunkHits=0 (during our call). GetMissionsModel ret=0x0 knownMM=0x1B247EB2800 hitsGT=1
-[4] => thunkHits==0 => ProcessEvent did NOT enter the native thunk. ProcessEvent no-ops for native (or wrong PE addr).
