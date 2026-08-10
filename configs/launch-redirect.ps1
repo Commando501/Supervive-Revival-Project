@@ -46,6 +46,12 @@ param(
   [string]$GameRoot = "G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE",
   [switch]$Revert,
   [switch]$NoLaunch,
+  # Extra raw switches appended to the game's command line, e.g.
+  #   -ExtraArgs '-ini:Engine:[Core.Log]:LogOnline=Verbose','-LogCmds="LogFoo Verbose"'
+  # Added S113 for FK-11 (log-verbosity control plane). The engine echoes the whole
+  # command line as `LogInit: Command Line:`, so anything passed here is verifiable
+  # as DELIVERED independently of whether it took effect.
+  [string[]]$ExtraArgs = @(),
   [string]$Open = "",
   [string]$Hook = "",   # path to a shim DLL to inject on launch (manual-map via inject.exe).
                          # For a working STORE + HUNTERS roster, use:
@@ -106,6 +112,9 @@ if (-not $isAdmin) {
   if ($Missions)   { $argList += "-Missions" }    # accepted (no-op alias) � forwarded so it isn't silently dropped
   if ($NoMissions) { $argList += "-NoMissions" }
   if ($NoLoadout)  { $argList += "-NoLoadout" }
+  # S113: forward -ExtraArgs too. CLAUDE.md records that -NoPasses was silently
+  # DROPPED across elevation, which invalidated a whole bisection - do not repeat it.
+  if ($ExtraArgs -and $ExtraArgs.Count) { $argList += @("-ExtraArgs", ($ExtraArgs -join ',')) }
   Start-Process powershell -Verb RunAs -ArgumentList $argList
   return
 }
@@ -328,6 +337,12 @@ $iniArgs = @(
   "-ini:Game:[$loki]:ProdClientConfigURL=$local",
   "-log"
 )
+# Raw extra switches (S113, FK-11). Appended verbatim; verify delivery by reading
+# the `LogInit: Command Line:` echo at the top of Loki.log.
+if ($ExtraArgs -and $ExtraArgs.Count) {
+  Write-Host "Extra command-line args ($($ExtraArgs.Count)):" -ForegroundColor Cyan
+  foreach ($a in $ExtraArgs) { Write-Host "  $a" -ForegroundColor DarkGray; $iniArgs += $a }
+}
 # Probe #6: append UE's built-in `open <addr>:<port>` console command via
 # -ExecCmds. Fires after engine init, so it'll race the login flow - if it
 # triggers a NetConnection attempt before login completes, we still get the

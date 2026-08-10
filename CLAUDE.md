@@ -276,6 +276,137 @@ extractor subcommand works end-to-end; loose-file AR.bin deployment has been
 proven INERT in this IoStore build (UE ignores the loose file even when valid).
 Deployment requires an IoStore mod-pak overlay — non-trivial.
 
+### Before touching anything Angelscript- / deploy- / respawn- / "the ceiling" shaped
+★★★ **FK-1 IS SETTLED (S113, 2026-08-09) — read `docs/fk1-angelscript-settled.md`.** S74's
+*"only 18 classes are Angelscript … the native deploy/round core is the irreducible blocker …
+**accept the ceiling**"* (commit `19db6a2`) is **REFUTED**, and so is the ceiling.
+- ★★ **The script layer is AOT-TRANSPILED TO C++ and compiled into the exe ("StaticJIT") — it is not
+  interpreted.** 1463/1463 cache function Ids appear as `mov edx,imm32` registration-stub immediates
+  (control 0/4000); a **1,459-row symbol table** (script fn → raw / `_VMEntry` / `_ParmsEntry` RVAs)
+  was recovered; bodies live at `.text 0x059128B0–0x05A7F070`. ⇒ **script UFunctions are callable by
+  the existing S55 native-call recipe, unchanged.** ⚠ **`Func != ProcessInternal`, so the PI hook
+  NEVER fires for a script UFunction** — the ignorance map's proposed "print every PI-dispatched
+  UFunction for 5 s" test returns **zero AS classes even when they are perfectly callable.** It is a
+  TRAP; use it only as a negative control.
+- ★★★ **THE REAL WALL: four server-authority C++ functions are EMPTY STUBS in the shipping client**
+  (byte-level, coverage-guarded, controls): `ALokiGameMode::SpawnPlayer` `0x534C070` =
+  `xor eax,eax; ret` · `ALokiPlayerState::AuthSetSpawnTeamLeader` `0x5254180` = `ret` ·
+  `ALokiTeamState_TeamOnly::SetDropLeader` `0x2C2CE30` = `ret` · `ALokiDropPlane::OverridePlaneLocations`
+  `0x53372A0` = `ret`. Likely `WITH_SERVER_CODE`-stripped. **This explains ~7 failed spawn attempts
+  across S68/S74 and CLOSES `AvatarActor = NULL`:** the design routes the whole GAS bind through
+  `SpawnPlayer` (disassembly-verified in `FFA/LokiRespawnComponent::Respawn`, which null-checks the
+  character but NOT the ASC) and the client does not contain it.
+  ⇒ ★ **But the SCRIPT authority functions ARE compiled in, and a direct `Func` call bypasses
+  ProcessEvent's net routing** (22 `NetServer` script fns run locally regardless of authority). The
+  deploy door is shut in C++ and possibly open in script: `ULokiRespawnComponent::Respawn`
+  (`0x5A6AC40`), `ALokiDropShip::SpawnDropPodForTeam` (`0x597E730`), the `ALokiDropPod` steppers,
+  `UFFABotSpawnerComponent::BeginPlay`.
+- **The round mode IS native — but that is NOT a ceiling.** Every member is a named
+  UFUNCTION/UPROPERTY reachable by the primitive, and **the phase lives on `ALokiGameState` with a
+  public `AuthSetCurrentPhase` setter**, so the `EGP_Combat` gate has TWO write paths. The tutorial
+  **already runs** the round mode (`BP_LokiGameMode_Tutorial_C`); native `ALokiTutorialGameMode` is
+  vestigial. `LokiDropInGameMode` is a *referenced native base*, is **not** a round mode, and
+  "DropIn" ≠ drop phase.
+- ★ **The usmap gap is CLOSED.** `tools/asdump/out/usmap/mappings+as.usmap` adds the 110 AS types;
+  base round-trips **bit-identically** (11,344/11,344 structs, 2,226/2,226 enums). **263 property
+  values newly decoded** across 26 assets — `BP_GameMode_Barracuda` 27 → 65 props,
+  `LaserSettings` `{}` → a full 14-field struct. ⚠ Only **`UPROPERTY()`** members are reflected
+  (470 of 581) — measured by a 4-arm one-variable test with a reversed-order positive control.
+  **FK-14 resolved:** the extractor loads `tools/extractor/mappings.usmap` (md5 `3892b937…`).
+- ⚠ **Live RPM (S113): AS UClasses are NOT registered at the menu** — 0 of 15 sampled names, against
+  3 passing native controls (`LokiGameMode` 72 fns, `LokiPlayerController` 151, `LokiPlayerCheats` 65).
+  AS **enums and structs ARE** live. **So any callability test needs a LOADED MAP, not the menu.**
+  Probe names: `tools/asdump/out/usmap/as_schema_full.csv`, column `ue_name` (66 AS UClasses).
+- ⚠ **Two memory claims are now FALSE:** *"every drop-phase step is a `BlueprintCallable` UFUNCTION"*
+  (`InitializeDropPod` is not a UFUNCTION at all; 3 of 10 listed are not BPCallable, so the
+  "skip the plane" two-call recipe is **not executable**), and *"fix = `AuthSetSpawnTeamLeader()`
+  before spawning"* (**no body**; and `SpawnDropPodForTeam` bails on `TeamDropPodClass == nullptr`
+  first). Conversely **zero `BlueprintAuthorityOnly` anywhere** — the S90 gotcha does not recur.
+- ★ **FK-6 re-grade:** `ALokiPlayerCheats_AS` is a **separate script-generated UClass** from the C++
+  `ALokiPlayerCheats` that FK-6 closed on, and it has **32 UFUNCTIONs with compiled native bodies**
+  (`AuthCheatGrantGold`, `AuthCheatUnlockFullArmory`, `AuthCheatExecuteUAV`). `Exec == 0` across all
+  500 script UFUNCTIONs — the console cannot reach them, **but the thunk can.**
+- ⚠ **Reading discipline for `tools/asdump` output:** the per-function **disassembly appendix is
+  GROUND TRUTH; the pseudo-source is a reading aid.** The structurer can **silently invert a guard**
+  (46 of 1,463 functions share the risk shape). Verify anything load-bearing against the disassembly.
+
+### Before touching anything logging- / instrumentation- / "we can't see it" shaped
+★★★ **FK-11 IS SETTLED (S113, 2026-08-09) — read `docs/fk11-log-verbosity-settled.md`.** Offline,
+zero launches. **Verbose/VeryVerbose are NOT compiled out.** The old rule
+(`next-session-prompt-s45.md:185`, *"this is a SHIPPING build; Verbose/VeryVerbose UE_LOG is
+compiled out (confirmed)"*) is **FALSE** and its "(confirmed)" was attached to a session containing
+no test. **This foreclosed the cheapest instrument the project could own for ~60 sessions.**
+- **MEASURED:** global `COMPILED_IN_MINIMUM_VERBOSITY` = **`VeryVerbose` (7)**; `USE_LOGGING_IN_SHIPPING`
+  = **1**; of 14,030 decoded `UE_LOG` call sites, **1,339 are Verbose and 513 VeryVerbose**;
+  **98.0 %** of categories have `CompileTimeVerbosity ≥ Verbose`; and **109/109 Loki-dominant
+  categories are VeryVerbose — zero capped at `Log`**. There are **71 Verbose/VeryVerbose call sites
+  inside `\Loki\Source\`** across 35 categories.
+- ⚠⚠ **DO NOT USE `-LogCmds` — it does not parse in this binary.** `logcmds` occurs exactly 3× in the
+  178 MB image and **all three are help text** (`0x076B25E0`, `0x076B26B0`, `0x076B2860`); there is no
+  standalone `LogCmds=` literal. Controls: peer switch literals `LOG=`, `ABSLOG=`,
+  `logcategoryfiles=`, `NOCONSOLE`, `FORCELOGFLUSH` all DO exist; on-disk exe agrees; `.rdata` is
+  99.64 % complete. **The help text is what a casual scan finds and it reads like proof the flag
+  works.** FK-11's own "cheapest experiment" was this flag — it would have produced nothing and the
+  nothing would have been recorded as "confirmed, Verbose is compiled out."
+- ★ **USE `[Core.Log]` INSTEAD — it is triple-confirmed and ALREADY BINDING.** The binary states its
+  own precedence at `0x076B1FA0`: *compiled-in → ini → command line*; stage three is missing, so
+  **ini is the last word**. Across a 4.10 GB / 28.7 M-line log corpus, all 15 shipped `[Core.Log]`
+  entries show **zero violations** — `LogAccelByte` (which drives the whole login/catalog/store/party
+  flow) emits **3 lines** vs 244–422 for unpinned peers. **We have been reading a log that was
+  deliberately turned down.**
+- ★★★ **FLOWN AND CONFIRMED LIVE (2026-08-09, one `-NoHook` menu launch).** Scoreboard, all three
+  mechanisms in one run, each on its own category:
+  **A — user `Engine.ini` `[Core.Log]`: WORKS** (`LogAccelByte` 3 → **52** lines, **46 Verbose**).
+  **B — `-ini:Engine:[Core.Log]:…`: FAILED**, clean control (`LogOnline` emitted 2 `Warning:` lines,
+  so it ran, and stayed pinned) ⇒ **`-ini:` is applied too late for `[Core.Log]`; use the user ini.**
+  **C — `-LogCmds`: inconclusive** — the category chosen had no positive control, so its zero cannot
+  discriminate "ignored" from "never logs". Both B and C were verifiably **DELIVERED** (engine echo),
+  so they are failures of effect, not delivery.
+  **Whole log: Verbose 13 → 1,018; Error 100,618 → 2; size 14.1 MB → 1.4 MB.** The log is now **10×
+  smaller and carries 78× more Verbose.** `LogTemp=Fatal` zeroed all 100,616 spam lines.
+- ★★ **What it immediately revealed:** `LogAbilitySystem` 25 → **4,161 lines / 959 Verbose** on a plain
+  menu launch — **137× `Initializing new default set for LokiAttributeSet[N]`**, plus a real per-hero
+  data defect (`Unable to match Attribute from SneakSpeedMultiplier (row: <Hero>.LokiAttributeSet.
+  SneakSpeedMultiplier)` for **every** hero). `LogAccelByte` now traces the whole backend
+  conversation (SDK entry point + verb + full URL + status + request handle), including the
+  previously invisible **`[AccelByte] Key for Cached Token can not be empty.`** And
+  **`AccelByteWebSocket::OnMessageReceived` fires repeatedly** ⇒ frames ARE arriving on the client
+  socket, which hands **FK-15** an instrument it never had.
+- **Use the shipped tooling:** `configs/set-log-verbosity.ps1 [-Preset Mechanism|ClassA|Gas]`
+  (backs up, clears ReadOnly, merges `[Core.Log]`, re-sets ReadOnly; `-Revert`, `-WhatIf`) and
+  `configs/check-log-verbosity.ps1` (reads the log **live**, shares the handle, prints per-category
+  line + Verbose counts against measured baselines). `launch-redirect.ps1` now takes **`-ExtraArgs`**
+  for raw extra switches (forwarded across elevation).
+- **Mechanism (precedent already in this repo):** append `[Core.Log]` to
+  `%LOCALAPPDATA%\SUPERVIVE\Saved\Config\WindowsClient\Engine.ini`, then re-set **ReadOnly**. That
+  file already carries this project's own `[HTTP.Curl] bVerifyPeer=false` + `[SSL]` fix for the
+  documented "`-ini:` applied too late" problem (`launch-redirect.ps1:279`).
+- ★ **Two free instruments in every log:** `LogInit: Command Line:` echoes the **entire** command
+  line verbatim (so any switch is verifiable as *delivered*, separately from whether it *worked*),
+  and `LogConfig:` narrates config application.
+- ⚠ **The dominant trap is NEVER-RAN vs SUPPRESSED.** 384 of 842 logs reach `LVL_Tutorial` but **none**
+  contains combat, drop phase, bots, damage, XP or client replication. Raising verbosity on a
+  never-run category changes nothing. **Class A** (owner provably ran, still silent — real
+  suppression wins): `LogLokiHeroCharacter`, `LogLokiCharacter`, `LogLokiCharacterMovement`,
+  `LogLokiPlayerController`, `LogGameFeatureToggles`, `LogLokiMenuActions`. **Class B** (loaded, path
+  not exercised): the GAS family. **Class C** (never ran): all netcode, drop phase, inventory/damage.
+- ★ **Fly `LogBlueprintLogLibrary` FIRST.** Loki's own `UBlueprintLogLibrary` exposes `Verbose` /
+  `VeryVerbose` **static UFunctions** callable via the existing native-call primitive, and the
+  category already emits (598 logs) — it proves the whole mechanism with **zero gameplay dependency**.
+- ⚠ **Spam hazards:** `LogNetSerialization` (per-bit — it was in FK-11's own suggested line; **strike
+  it**), `LogNetTraffic`, `LogRepTraffic`, `LogRepProperties`, `LogRepCompares`. **Special case:
+  `LogGameFeatureToggles` is HIGH risk despite being silent** — the same subsystem already emits ~10⁵
+  lines/run via `LogTemp`. Raise it to `Log` first, never straight to `Verbose`.
+- **Two free wins:** `LogTemp` is **97.5 %** of the log (100,616 of 103,169 lines — the feature-toggle
+  spam, at **`Error`**), so **`LogTemp=Fatal`** reclaims the whole budget (`Warning` will NOT work);
+  and **`DFLLog=Fatal`** in the shipped ini mutes a real 33-method debug library — un-muting is free.
+- **The Angelscript layer is silent by AUTHORSHIP, not gating** — 20 `Log::` functions exist but the
+  shipped scripts call them **6 times in 4,963 syscalls (0.12 %)**. Raising verbosity cannot make
+  script code talk; this downgrades the drop-phase route. The script API has no `Verbose` at all.
+- ⚠ **`FLogCategoryBase` layout in this build: `Verbosity@0, DebugBreakOnLog@1, DefaultVerbosity@2,
+  CompileTimeVerbosity@3, FName@4`** — FName is **LAST**. Ctor is `base+0x1063710` (**not**
+  `0x1138F20`, which is `FName::FName`). Verbosities are passed as `mov r8b/r9b, imm8`, not `imm32`.
+
 ### Before touching anything protector- / anti-tamper- / packer-shaped
 ★★★ **FK-10 IS SETTLED (S113, 2026-08-09) — read `docs/fk10-protector-identified.md`.** All offline,
 zero launches. **The protection is NOT VMProtect and NOT Themida** — refuted six independent ways.
