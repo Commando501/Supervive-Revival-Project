@@ -1,5 +1,0 @@
-[0] missions_nativecall_probe4 (Avenue A: DIRECT native-thunk call w/ captured live FFrame) started
-[2] ProgMgr=0x26200D67A20 GetMissionsModel=0000026202964990 thunk=0x7FF6BA9C8190(rva 0x54D8190) knownMM=0x262FDC71180 gameTid=39960
-[3] hook built; calling GetMissionsModel THUNK directly on the game thread...
-[4] CALLED. thunk ret=0x262FDC71180 knownMM=0x262FDC71180 matches=1 hitsGT=1
-[4] *** ret==knownMM => DIRECT THUNK CALL EXECUTES NATIVE UFunctions on the game thread. AVENUE A PRIMITIVE WORKS. ***

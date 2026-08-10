@@ -10,19 +10,41 @@
 /docs/server.out.log
 /server/docs/
 
+# ags's own stdout/stderr redirects. Anchored to /server/ on purpose:
+# docs/ags-*.log must stay trackable, because the sibling backend's captured
+# stdout (docs/ds-server-*.log, 30 files) is tracked DELIBERATELY as route
+# evidence and an unanchored `ags-*.log` would swallow the next one.
+/server/ags-*.log
+
 # Interactive (Track B) runtime player state
 /server/state/
+# ...and the same file when ags is started from the repo root instead:
+# interactive.go's newStore("state/interactive.json") is CWD-relative, so the
+# store lands wherever ags was launched from. Anchored rather than a bare
+# `state/` so a future Go package at server/internal/state/ stays trackable.
+/state/
 
 # Live-process image dumps (usmapdump dumpimage) — hundreds of MB, regenerable
 /dumps/
 
+# Crashpad/Sentry minidumps — ~44 MB each. Every one on disk today already sits
+# under /dumps/ or unreal-stub/Saved/; this is left unanchored to also catch one
+# copied out to another directory for triage during FK-7/FK-8/FK-9 work.
+*.dmp
+
 # Editor / OS
 .DS_Store
 Thumbs.db
+desktop.ini
 .idea/
 .vscode/
 
 /ghidra/
+# The on-disk directory is capital-G `Ghidra/` (2.1 GB project database) and it
+# matches the lowercase rule above ONLY because this clone has
+# core.ignorecase=true. On a case-sensitive clone that silently stops matching,
+# so spell the real name out as well.
+/Ghidra/
 
 # Python bytecode caches
 __pycache__/
@@ -42,3 +64,111 @@ __pycache__/
 # why this is easy to get wrong. Nothing needs to be created by hand — EnsureCert
 # does os.MkdirAll and generates a fresh 10-year chain when the dir is empty.
 /certs/
+# ...and server/certs/, which is where the chain actually lands on the documented
+# manual recipe: main.go:43's -certs flag defaults to the CWD-relative "certs"
+# and ags is normally started with cwd=server/. The launcher passes an absolute
+# -certs and so writes the root copy; a hand-started ags writes this one. The
+# rule above was anchored to the root and therefore never covered it — which is
+# how server/certs/server.key ended up tracked across five commits. Untracking
+# is NOT remediation for that key; rotate the chain.
+/server/certs/
+
+# ---------------------------------------------------------------------------
+# Runtime output (added after a three-area audit, 2026-08-10). Each rule below
+# is anchored to a writer in the tree and was checked against the tracked set
+# with `git check-ignore`. docs/ is this project's evidence store, so the rules
+# here are deliberately narrow: none of them reaches a .md, a session write-up,
+# or a per-run evidence corpus. Do not "tidy" them into wildcards.
+# ---------------------------------------------------------------------------
+
+# FK-7 A/B: the per-run CLIENT logs only. configs/fk7-ab-run.ps1 copies the
+# game's whole Loki.log into docs/fk7ab/<label>/ on every run — 93 files,
+# 1.89 GB, six of them over GitHub's 100 MB hard push limit. The stage.log /
+# launch.log / marker snapshots that sit beside them in the same directories are
+# KEPT on purpose: they are the evidence index behind the Fisher p = 7e-8 result,
+# and the analysis lives in docs/s112-fk7-ab-results.md. These 93 are untracked
+# already; shedding them from history is a separate filter-repo pass.
+/docs/fk7ab/**/Loki.log
+
+# Shim runtime transcripts. Every native shim opens its own docs/<name>-marker.txt
+# with CREATE_ALWAYS in DllMain and truncates it once per injection (FK-25), and
+# the default launch injects six shims. Anchored to depth 1 DELIBERATELY:
+# docs/fk7ab/<label>/tutorial-launch-marker.txt is the archived per-run copy and
+# must stay tracked, so never broaden this to `*-marker.txt` or `docs/**/`.
+# docs/tutorial-launch-marker.PRE-WPROBE.txt is spared by its suffix.
+/docs/*-marker.txt
+# ...except the VEH crash-callstack capture (scan_on_enum_veh.cpp:82) — one-shot
+# forensics from a crash that may not reproduce, not a regenerable heartbeat.
+!/docs/veh-crash-marker.txt
+
+# Shim SEH crash sinks — enumerated, not globbed. A `/docs/*-crash.txt` glob also
+# swallows docs/session-39-menu-crash.txt (285 lines of hand-written narrative
+# plus a retraction block) and would silently catch any future docs/<fk>-crash.txt
+# prose. These are the closed set declared as kCrashPath in tools/sigbypass-mod.
+/docs/catalog-ready-fix-crash.txt
+/docs/catalog-store-fix-crash.txt
+/docs/catalog-pick-fix-crash.txt
+/docs/mainmenu-refresh-crash.txt
+/docs/mainmenu-refresh-pi*-crash.txt
+
+# Start-Process stderr sinks (launch-redirect.ps1's "$watchOut.err"), truncated
+# on every -Hook launch and never yet non-empty. A glob rather than the literal
+# path because the name is derived from $watchOut.
+/docs/*.out.log.err
+
+# configs/phase0-server.ps1 passes -abslog=<this> and DELETES it before every
+# run, so it is ephemeral by its own design. Do NOT broaden to phase0-server*.log
+# — the docs/ds-server-backup-* series next door is tracked evidence.
+/docs/phase0-server.log
+
+# Two `dotnet run` console captures from the extractor (MSB3246 warnings and a
+# Paks/Out path echo). Named exactly rather than globbed: docs/*.log is this
+# repo's primary evidence medium (~300 tracked files, incl.
+# docs/fk11-live-result-20260809.log) and a family-wide ban there would silently
+# drop a future cited capture.
+/docs/bpdump-discover.log
+/docs/bpdump-style.log
+
+# MSVC compile/link byproducts. tools/sigbypass-mod/.gitignore already declares
+# these junk for one directory; hoisting them means the next C++ tool dir is
+# covered without a fresh nested file. tools/inject/ never had one, which is why
+# 11 of these are tracked there today.
+*.exp
+*.lib
+*.pdb
+*.ilk
+*.obj
+# tools/inject/canary/ deliberately tracks the artifacts of the closed
+# "packer eats C++ exception unwinding" experiment. Keep the door open for an
+# .obj landing beside them rather than making it silently un-addable.
+!/tools/inject/canary/*.obj
+
+# Compiled shims. Source is the deliverable: tools/sigbypass-mod/.gitignore
+# states the policy — a stale committed .dll that silently disagrees with its
+# source is worse than no .dll at all — and .text sha256 identity is enforced by
+# verify_dll.py against locally-built binaries, not by git. Scoped to tools/** so
+# it cannot reach the vendored redistributables under Output/.
+/tools/**/*.dll
+
+# Build-output directories under tools/. The build/ rule is ONE level deep on
+# purpose: a `tools/**/build/` also reaches tools/asdump/out/<Package>/, whose
+# directory names come from the GAME's script packages and are re-emitted on
+# every dump — a package named `build` would silently drop tracked RE output.
+/tools/*/build/
+/tools/**/obj/
+
+# Ad-hoc `2> build_err.txt` compiler spew.
+/tools/**/build_err.txt
+
+# FModel's own program directory — 18.25 MB of third-party vgmstream / Oodle /
+# Detex redistributables plus a 5.85 MB vgmstream-win.zip and an imgui layout
+# dropping. CUE4Parse re-downloads them on demand; Output/Logs records it doing
+# exactly that. The three text files in there are upstream vgmstream's own
+# README/USAGE/COPYING, not project-authored.
+/Output/.data/
+# Extractor asset exports — regenerable from the paks. The .json is byte-identical
+# to docs/exports/WBP_UI_MissionModalCategory.json, which is the copy the docs cite.
+/Output/Exports/
+# NOTE: deliberately NOT a blanket /Output/. Output/Logs/FModel-Log-2026-06-29.log
+# is cited by name in docs/ignorance-map-s101.md:1316 as the evidence artifact for
+# ignorance-map item D4.

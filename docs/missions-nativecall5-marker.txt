@@ -1,5 +1,0 @@
-[0] missions_nativecall_probe5 (Avenue A return-by-value: GetMissions() on live MissionsModel) started
-[2] MissionsModel=0x262FDC71180 GetMissions=0000026202954F40 thunk=0x7FF6BA996210(rva 0x54A6210) gameTid=39960
-[3] hook built; calling GetMissions() THUNK directly on the game thread...
-[4] CALLED. GetMissions() -> TArray{ Data=0x0 Num=0 Max=0 } hitsGT=1
-[4] *** return-by-value WORKS: a well-formed TArray came back => Avenue A handles TArray returns. (Num is the baseline mission count.) ***

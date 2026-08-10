@@ -1,6 +1,0 @@
-[0] missions_nativecall_probe3 (Avenue B: ProcessEvent from a NON-ProcessInternal game-thread context) started
-[2] ProgMgr=0x26200D67A20 GetMissionsModel=0000026202964990 thunk=0x7FF6BA9C8190 knownMM=0x262FDC71180 gameTid=39960
-[2] PE first16: 48 89 5C 24 18 55 56 57 41 54 41 55 41 56 41 57
-[3] thunk hook installed; installing ProcessEvent hook + sampling native->script boundaries...
-[4] DONE. peSeen=0 attempts=0 thunkHits=0 matches(ret==knownMM)=0 lastRet=0x0 knownMM=0x262FDC71180
-[4] => 0 attempts: PE hook never fired on game thread while armed (retry / check gameTid).

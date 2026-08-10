@@ -1,6 +1,0 @@
-[0] missions_assettest2 (hero control vs mission) started
-[2] mgr=0x1A52053AEA0 PrimaryAssetIDFromString=000001A4DA3138C0 GetLokiDataAsset=000001A4DA313500
-[3] armed...
-[4] CONTROL Hero:Alchemist  id={0x0,0x0} -> asset=0x0 class=<null>
-[4] MISSION ArmoryDaily_PlayAGame id={0x0,0x0} -> asset=0x0 class=<null>
-[4] => hero control ALSO null -> the call/id path is wrong (inconclusive; GetLokiDataAsset may only return preloaded assets).
