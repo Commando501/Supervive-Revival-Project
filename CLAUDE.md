@@ -39,14 +39,12 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   ⚠ The data poke must land BEFORE the user first opens HUNTERS — keep it early and
   continuous, or the grid can Construct-and-wait with an empty roster (S47). STORE
   tiles also need the backend to mark cosmetics `IsOwned` (`handleInventory`).
-  Living log: `docs/hero-roster-attempts.md`; memory `supervive-hero-roster-blocker`
-  + `supervive-store-status`.
+  Living log: `docs/hero-roster-attempts.md`.
 - **Missions** — the full page renders client-side via the native-call primitive
   (`AsyncLoadPrimaryAssets` → `CreateMissionModelFromFinalProgress` → swap
   `ProgMgr.MissionsModel`), packaged as `tools/sigbypass-mod/missions_fix.dll`
   (`launch-redirect.ps1 -Missions`). Per-account progress served by the backend.
-  Read `docs/session-59-progress-bars.txt` + `docs/missions-progression-hookup.md`;
-  memory `supervive-missions-page-status`.
+  Read `docs/session-59-progress-bars.txt` + `docs/missions-progression-hookup.md`.
 - **PASSES / Hunter's Journey (ACCOUNT pass)** — the page renders live with its full
   85-tier ladder (S83). Two client-side root causes, NOT the backend (that route was
   exhausted over ~9 probes): (1) `CheckAccountPassChanges` (`0x5794480`, the populate's
@@ -59,8 +57,7 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   is `TArray<UObject*>` (NOT PrimaryAssetId) and the populate `0x57DF4B0` CONSTRUCTS
   objects — **never force-call it** (that was the S82 crash); and the old note
   "P = S[+0x238]" is WRONG (S *is* `HuntersJourney_C`).
-  Read `docs/session-83-passes-tier-grid-solved.txt`; memory
-  `supervive-passes-battlepass-status` (its POST-SESSION CORRECTIONS block is
+  Read `docs/session-83-passes-tier-grid-solved.txt` (its POST-SESSION CORRECTIONS block is
   load-bearing — a later 21-agent RE pass showed the grid is built by the VM
   builder's Init `0x57BB560` ahead of both gates, so the map key is the SOLE
   verified cause, and it FALSIFIED "the backend route is exhausted": the native
@@ -85,7 +82,7 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   `OnPersonalizationLoadoutChanged` `base+0x587C699`) would reach ~0.2s but adds a PI-hooker —
   parked. ⚠ `PartyModel` exposes NO reflected `Version` UProperty (absence of a UProperty ≠
   absence of the field). ⚠ the `avId:""` presence trap: sample presence AFTER an equip.
-  Read `docs/session-85-avatar-render.md`; memory `supervive-avatar-render-status`.
+  Read `docs/session-85-avatar-render.md`.
 
 Before RE-touching any of these, READ the relevant doc above first — the value is
 the trial-and-error history, and the corrected root causes are easy to regress on.
@@ -93,8 +90,8 @@ the trial-and-error history, and the corrected root causes are easy to regress o
 ### Before touching anything tutorial- / FK-7- / FK-24-shaped
 Read `docs/s108-fk24-instrument-corrected.md` **including its RETRACTIONS block at the
 top, which governs**, then `docs/s108b-ksmactor-bisect.md`, `docs/s108-crash-triage.md`,
-`docs/s108-fk7-verification-attempt.md` and `docs/s108-skeptic-review.md`. Memory:
-`supervive-fk24-probe-self-lethal`, `supervive-tutorial-crash-fk7`.
+`docs/s108-fk7-verification-attempt.md` and `docs/s108-skeptic-review.md`. Also
+`docs/s108-fk24-instrument-corrected.md` and `docs/fk7-crash-settled.md` (SUPERSEDED banner).
 
 ★★★★★ **FK-7 IS CLOSED — fixed, shipped and verified (S112, 2026-08-08).**
 **Do NOT re-open it.** `docs/fk7-crash-settled.md` §0 still reads "OPEN (do NOT close)"; that verdict
@@ -635,7 +632,7 @@ has no guards, so it works where slot-56 `ProcessEvent` no-ops for native functi
 Param passing, OUT params (`FFrame.OutParms @ +0x80`), and `AsyncLoadPrimaryAssets`
 are all RE'd on top of it. Read `docs/session-55-native-call-primitive.txt` (+ s56/
 s57/s58/s59) and the `missions_nativecall_probe*.cpp` / `tools/re/*.py` families
-before building a new shim. Memory: `supervive-missions-page-status`.
+before building a new shim. Also `docs/missions-progression-hookup.md`.
 
 Two `ProcessInternal` hooks that stay PERMANENTLY installed race (they clobber each
 other's prologue). The fix (S59): every PI-hooking shim (`mainmenu_refresh_pi8`,
@@ -730,7 +727,7 @@ SOURCE's LastWriteTime, and step 1 copies a stale marker `gft` never writes, so 
 It is **not** the killer: S109 showed `-NoPasses` (both PI hookers present) is ~21× *safer* than
 `-NoMissions` (one present), and `pi8` alone ran 90 min clean. The shared-mutex design is fine;
 the injection **burst** was the problem. `-NoMissions` / `-NoLoadout` still isolate individual
-shims. See `supervive-missions-page-status` and `supervive-crashpad-capture-runtime-family`.
+shims. See `docs/s109-fk9-capture-durable.md` and `docs/fk8-crash-timing-mined.md`.
 
 **Steam must be running first**, or login dies with `Auth Failure 14005` (SteamAPI
 init fails). Easy to miss; surface this gotcha if you see Steam not running.
@@ -1021,26 +1018,80 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   When a `-D` default changes, DELETE the now-redundant variant rather than leaving a
   duplicate (S108b removed `play-nostatictest`/`play-nodiag` for exactly this).
 
-## Memory layout
+## Working style
 
-`memory/MEMORY.md` is the auto-loaded index. Project memory files (loaded on
-demand when topics come up):
-- `supervive-revival-overview` — goals, stack, redirect approach
-- `supervive-milestone{1,2,3}-status` — chronological milestones
-- `supervive-milestone3-trackb-status` — interactive write-back endpoints
-- `supervive-hero-roster-blocker` — SOLVED; roster/store/cosmetics root cause + fix
-- `supervive-store-status` — STORE online (bundles/skins/featured/supporter packs)
-- `supervive-missions-page-status` — missions page + the native-call primitive
-- `supervive-customization-persistence` — loadout write-back / equip persistence
-- `supervive-dedicated-server-status` — DS stub + missions replication (parked)
-- `supervive-tutorial-launch-status` — tutorial force-launch (world + possessed hero)
-- `supervive-fk24-probe-self-lethal` — ★ the FK-24 probe was killing the game and its
-  own VOID verdict was an artifact; hands-free sittings; the `KSTATICTEST` animation fix
-- `supervive-tutorial-crash-fk7` — FK-7, still OPEN (zero reproduce-then-repair runs)
-- `supervive-instrument-artifact-pattern` — ★★★ the project's dominant error mode; read
-  it before recording ANY negative result as a property of the game
-- `supervive-fk13-console-exec-settled` — ★★★ the dev console is compiled out but the EXEC
-  SURFACE is alive (138 native `FUNC_Exec` fns); Route B installs a real `UCheatManager` and is
-  proven end-to-end. Read before any console/exec/cheat-verb work
-- `supervive-rpc-signature-solved` — ServerVerifyViewTarget 40-param signature
-- `supervive-ags-cert-rebuild-gotcha` — re-append root.crt to cacert.pem on rebuild
+**Never bank, never treat any wall as final.** There is always another angle. Keep pushing
+continuously; do NOT recommend stopping or "banking at the ceiling."
+
+**Why:** this is a marathon reverse-engineering effort and the user wants relentless forward motion —
+every "hard wall" in this project's history was eventually cracked by finding a new lever.
+
+- Do NOT end a session by recommending "bank it" or presenting stop-vs-continue as the main choice.
+  Keep generating and testing new hypotheses.
+- When context is about to run out, THEN produce (a) a fresh-session handoff prompt and (b) updated
+  documentation so a new session continues seamlessly (see the existing `docs/next-session-prompt-*.md`).
+- Before declaring any wall "definitive," question your own assumptions and tools first — validate
+  that the primitive you're using (a ProcessEvent RVA, an offset, a call convention) is actually
+  correct. **A broken tool masquerades as a wall**, which is the whole subject of the method rules
+  below.
+
+## Method rules — read `docs/method-rules.md` first
+
+Two standing rules that are not about any one subsystem, and that have overturned more walls here
+than any single investigation:
+
+1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
+   blind spot recorded as a property of the game. **36 confirmed instances**, each of which closed a
+   technique, each of which fell in minutes. Read it before recording ANY negative result as a
+   property of the game. Includes the nine "how to apply" rules — positive controls, naming the
+   artifact you measured, and **rule 9: grep for the claim before correcting one instance of it.**
+2. **★★ Read the shipped artifacts first** — check whether the game already ships the answer in
+   plaintext before reaching for a debugger. Four multi-session walls fell to that alone.
+
+## Where knowledge lives
+
+Everything is in the repo, under version control — there is no separate memory store (the Claude
+memory directory was migrated into `docs/` and removed on **2026-08-12**; it duplicated `CLAUDE.md`
+and `docs/` at a fourth compression level, and its claims could not be `git blame`d or reverted,
+which is a bad property for a project whose value is its retraction history).
+
+- **`CLAUDE.md`** (this file) — the auto-loaded digest: current status per subsystem, closed
+  hypotheses, and the "what NOT to do" list. ⚠ **A digest is an instrument** — S115-d is the
+  instance where compressing a table into prose here manufactured a false claim that read as a hard
+  measurement conflict for a full session. Never print a byte string next to an address it did not
+  come from.
+- **`docs/ignorance-map-s101.md`** — the living index: the FALSE_KNOWN register, the walls register,
+  instrument blindness, and the ranked focus plan. Kept in lockstep with this file.
+- **`docs/<fk-n>-*-settled.md`** — the primary evidence for each settled unknown, with the
+  measurements and the controls. These are ground truth; this file is a summary of them.
+- **`docs/method-rules.md`** — the two method rules above.
+- **`docs/next-session-prompt-*.md`** — chronological handoffs.
+
+⚠ **Historical handoffs still say things like "read memory `supervive-x`".** Those are dated
+archives and were deliberately NOT rewritten — editing them would falsify the record of what a past
+session was actually told. Successors for the names that appear:
+
+| retired memory | now |
+|---|---|
+| `instrument-artifact-pattern` | `docs/method-rules.md` §1 |
+| `read-the-shipped-artifacts-first` | `docs/method-rules.md` §2 |
+| `never-bank-directive` | this file, "Working style" |
+| `ags-cert-rebuild-gotcha` | `docs/ags-cert-rebuild-gotcha.md` |
+| `angelscript-layer`, `fk1-*` | `docs/fk1-angelscript-settled.md`, `docs/fk1-stub-claim-recheck.md` |
+| `cheat-surface-inventory` | `docs/fk6-cheat-surface-settled.md`, `docs/fk13-console-exec-settled.md` |
+| `crashpad-capture-runtime-family` | `docs/s109-fk9-capture-durable.md`, `docs/fk8-crash-timing-mined.md` |
+| `tutorial-crash-fk7` | `docs/fk7-crash-settled.md` (SUPERSEDED banner) → `docs/s112-fk7-ab-results.md` |
+| `gc-reachability-mechanism` | `docs/s110-item-watch-gc-mechanism.md` |
+| `input-mechanism-settled` | `docs/fk2-input-settled.md` |
+| `protector-identified` | `docs/fk10-protector-identified.md` |
+| `log-verbosity-available` | `docs/fk11-log-verbosity-settled.md` |
+| `battle-gate-fk5` | `docs/fk5-battle-gate-settled.md` |
+| `dedicated-server-status` | `docs/dedicated-server-stub.md` |
+| `hero-roster-blocker`, `store-status` | `docs/hero-roster-attempts.md` + the roster block above |
+| `missions-page-status` | `docs/missions-progression-hookup.md`, `docs/session-59-progress-bars.txt` |
+| `passes-battlepass-status` | `docs/session-83-passes-tier-grid-solved.txt` |
+| `avatar-render-status`, `customization-persistence` | `docs/session-85-avatar-render.md` |
+| `tutorial-launch-status` | the `docs/s108-*` family + `docs/fk31-fk32-successors.md` |
+| `milestone3-trackb-status` | `docs/trackb-notes.md`, `docs/endpoints.md` |
+| `strxref-symbols` | `docs/strxref-{known-addresses,open-questions,state-coverage,vtables}.md` |
+| `coverage-audit-s101` | `docs/coverage-audit-s101.md` ⚠ its known/unknown map is **stale** — FK-1/5/10/11/13 have all settled since; use `docs/ignorance-map-s101.md` |
