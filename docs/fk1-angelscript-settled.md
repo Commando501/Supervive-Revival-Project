@@ -159,16 +159,28 @@ script functions run locally regardless of authority.**
 
 ## 5. ★★★ The REAL wall, named for the first time: four server-authority functions are empty stubs
 
+> ⚠ **S115 CORRECTION — column 2 is the exec THUNK (real code). The bytes below are the IMPL, at a
+> different RVA that the original table never printed.** Re-measured in **both** dumps —
+> see `docs/fk1-stub-claim-recheck.md`. **The finding STANDS**; only the address bookkeeping was
+> ambiguous, and that ambiguity read as a hard measurement conflict for a full session
+> (`docs/fk13-console-exec-settled.md` §6.1, now resolved). The IMPL column below is new.
+
 Measured at byte level in `dumps/merged.dump.exe`, coverage-guarded, with controls
 (`scratchpad/stub_census.py`; its resolver validated **4/4** against independently measured live
-thunk addresses):
+thunk addresses). ⚠ `stub_census.py` was never committed and is **gone** from the tree and from git
+history; the S115 re-measurement instruments are `scratchpad/stub_recheck{,2,3,4,5,6}.py`:
 
-| function | exec thunk | body |
-|---|---|---|
-| `ALokiGameMode::SpawnPlayer` | `0x534C070` | **`xor eax,eax; ret`** (58 callers of the folded stub) |
-| `ALokiPlayerState::AuthSetSpawnTeamLeader` | `0x5254180` | **`ret`** (4,784 callers) |
-| `ALokiTeamState_TeamOnly::SetDropLeader` | `0x2C2CE30` | **`ret`** |
-| `ALokiDropPlane::OverridePlaneLocations` | `0x53372A0` | **`ret`** |
+| function | exec thunk (real code) | **IMPL** | impl body |
+|---|---|---|---|
+| `ALokiGameMode::SpawnPlayer` | `0x534C070` (478 B, 115 insn) | **`0x0F7EB50`** | **`xor eax,eax; ret`** = `return nullptr` |
+| `ALokiPlayerState::AuthSetSpawnTeamLeader` | `0x5254180` ⚠ **91-way ICF, NON-IDENTIFYING** (7 insn `P_FINISH; jmp`) | **`0x0F7EC20`** | **`ret 0`** (`c2 00 00`) |
+| `ALokiTeamState_TeamOnly::SetDropLeader` | `0x2C2CE30` ⚠ **23-way ICF** (133 B, 34 insn) | **`0x0F7EC20`** | **`ret 0`** |
+| `ALokiDropPlane::OverridePlaneLocations` | `0x53372A0` (238 B, 53 insn) | **`0x0F7EC20`** | **`ret 0`** |
+
+⚠ The original table's *"58 callers"* / *"4,784 callers"* counts were real census quantities but
+attributed to the wrong rows. Measured S115: **58** exec thunks fold to `0x0F7EC20`, **15** to
+`0x0F7EB60`, **5** to `0x0F7EB50`. The empty-impl **base rate is 1.2 % (78 / 6,669)**, so this is
+informative, not ambient — which is the load-bearing part of the claim.
 
 All four are server-authority functions — most likely **`WITH_SERVER_CODE`-stripped**. This gives
 the project's long-standing "server-authoritative deploy" wall a **mechanism** instead of a

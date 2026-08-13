@@ -288,14 +288,20 @@ Deployment requires an IoStore mod-pak overlay — non-trivial.
   NEVER fires for a script UFunction** — the ignorance map's proposed "print every PI-dispatched
   UFunction for 5 s" test returns **zero AS classes even when they are perfectly callable.** It is a
   TRAP; use it only as a negative control.
-- ★★★ **THE REAL WALL: four server-authority C++ functions are EMPTY STUBS in the shipping client**
-  (byte-level, coverage-guarded, controls): `ALokiGameMode::SpawnPlayer` `0x534C070` =
-  `xor eax,eax; ret` · `ALokiPlayerState::AuthSetSpawnTeamLeader` `0x5254180` = `ret` ·
-  `ALokiTeamState_TeamOnly::SetDropLeader` `0x2C2CE30` = `ret` · `ALokiDropPlane::OverridePlaneLocations`
-  `0x53372A0` = `ret`. Likely `WITH_SERVER_CODE`-stripped. **This explains ~7 failed spawn attempts
+- ★★★ **THE REAL WALL: four server-authority C++ functions have EMPTY IMPLEMENTATIONS in the
+  shipping client** (byte-level, coverage-guarded, controls; re-verified in BOTH dumps S115 —
+  `docs/fk1-stub-claim-recheck.md`). ⚠ The exec THUNK and the IMPL are different addresses; the
+  thunks are real code, the impls are folded stubs:
+  `ALokiGameMode::SpawnPlayer` thunk `0x534C070` → impl **`0x0F7EB50` = `xor eax,eax; ret`** ·
+  `ALokiPlayerState::AuthSetSpawnTeamLeader` thunk `0x5254180` (⚠ 91-way ICF-folded, NON-IDENTIFYING)
+  → impl **`0x0F7EC20` = `ret 0`** ·
+  `ALokiTeamState_TeamOnly::SetDropLeader` thunk `0x2C2CE30` (⚠ 23-way ICF) → impl **`0x0F7EC20`** ·
+  `ALokiDropPlane::OverridePlaneLocations` thunk `0x53372A0` → impl **`0x0F7EC20`**.
+  Empty-impl base rate in this image is **1.2 % (78/6,669)**, so this is informative, not ambient.
+  Likely `WITH_SERVER_CODE`-stripped [I]. **This explains ~7 failed spawn attempts
   across S68/S74 and CLOSES `AvatarActor = NULL`:** the design routes the whole GAS bind through
   `SpawnPlayer` (disassembly-verified in `FFA/LokiRespawnComponent::Respawn`, which null-checks the
-  character but NOT the ASC) and the client does not contain it.
+  character but NOT the ASC) and the client's `SpawnPlayer` returns nullptr.
   ⇒ ★ **But the SCRIPT authority functions ARE compiled in, and a direct `Func` call bypasses
   ProcessEvent's net routing** (22 `NetServer` script fns run locally regardless of authority). The
   deploy door is shut in C++ and possibly open in script: `ULokiRespawnComponent::Respawn`
