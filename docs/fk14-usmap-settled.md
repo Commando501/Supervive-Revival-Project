@@ -645,6 +645,27 @@ would have been written to agree with the build, and the **wrong** patch would h
 ⇒ **Standing rule this settlement adds: never infer a struct offset by homology from stock UE in this
 build. Measure it, with a discriminator that dereferences the candidate and validates the target.**
 This build's `UObjectBase` was already known non-stock; `FProperty` now is too.
+⇒ ★★ **Second standing rule, from §3.2b: an aggregate score over a heterogeneous population can
+CERTIFY a broken patch.** Pooling five container families gave `+0x78` a 96.6 % score — clearing a
+90 % gate while silently making every `TMap` read its value as its key and leaving 142 Sets
+unresolved. **Score per family, per member. A control that pools is not a control.**
+
+### 11.1 A fifth instance, procedural rather than technical
+
+**A stale context snapshot was acted on as if it were the repo.** During this session the assistant's
+auto-loaded memory index still described the Claude memory store as live, and `MEMORY.md` was
+**recreated from that snapshot** — but commit `c56e189` (*"docs: migrate the 4 load-bearing memories
+into the repo; retire the memory store"*, 2026-08-12 23:55) had **deliberately retired it hours
+earlier**, after auditing 37 files and finding 33 stale or duplicated. The recreation was caught only
+because the commit appeared in `git log` while committing something else.
+⇒ **Rule: an auto-loaded summary, index or memory is a claim about the past, not a reading of the
+repo. Verify it against `git log` before acting on it** — exactly as the memory-recall discipline in
+`CLAUDE.md` says of any recalled fact that names a file or flag.
+⇒ **The Claude memory store is RETIRED for this project.** `docs/` + `CLAUDE.md` are the only sources
+of truth; both are version-controlled, git-blameable and revertible, which is the property the store
+lacked and the reason it was dropped. **This document is the canonical FK-14 record** — no digest of
+it should be maintained anywhere else, because a second copy at a different compression level is how
+three of the retractions above were manufactured in the first place.
 
 ---
 
