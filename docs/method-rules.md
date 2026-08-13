@@ -189,6 +189,24 @@ afterward.
     ⚠ Note the shape: the warning existed, in this session's own notes, and was not applied. Having
     the caveat written down is not the same as honouring it at the moment of writing the conclusion.
 
+13. **★★★ S117: WRITING A METHOD RULE IS NOT APPLYING IT — the same session that added rule 10
+    ("self-test the harness inside the harness") then shipped a harness with no self-test, and
+    published its output as a measurement.** A `findptr` sweep over 7 candidates reported "0 aligned
+    pointers [M]"; that was a **grep bug**. The tool prints hits as `    @0xADDR   bytes: …` and the
+    script matched `^ +0x[0-9A-F]+`, which never matches the leading `@`. Every "no hit" was the
+    parser failing silently. The false negative was committed **and pushed** as a measured result,
+    complete with an inference built on top of it ("the visible copies must be transient").
+    **What caught it was a positive control that cost one command:** a global at RVA `0x9FFEBD0`
+    provably points at one of the very candidates being scanned — running that address through the
+    harness returned "no hit" for a pointer that demonstrably exists.
+    ⇒ **Before trusting any search harness, feed it something you have already proved is there.**
+    Not the tool — the *harness around* the tool. The tool was correct throughout; the four lines of
+    shell wrapping it were not, and only the wrapper's output was ever read.
+    ⚠ This is the third self-inflicted instrument failure in one sitting (rg-absent shell, UTC-vs-
+    local, this). The pattern is not ignorance of the rule. It is that harness code feels like
+    plumbing rather than instrumentation, so it escapes the scrutiny applied to the measurement it
+    produces. **Treat every line of glue as part of the instrument.**
+
 Also of a piece: **findings that die in commit messages get re-litigated.** `46d873a` and `b420a69`
 had the input mechanism right on 2026-07-16 and were never promoted to a doc, so four later sessions
 re-derived it. **Promote findings out of commit bodies into `docs/`.**

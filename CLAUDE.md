@@ -303,15 +303,26 @@ offline RE** — a steerable version of "coverage rises with what the game has r
 live `Lobby` object, and **two routes have now been tried and failed** — do not repeat them:
 (1) via the accumulate buffer `Lobby+0xC8` — fails **by construction**, the FString's Data pointer
 addresses the BUFFER START, not our message inside it, so `findptr` on the message correctly
-returns 0; (2) via the envelope markers — self-validating in principle (`[P]`→"LbS" **and**
-`[P+0x10]`→"LbE" ⇒ `P == Lobby+0xA8`), but `findptr` over 7 of the 12 `"LbS"` candidates found
-**0 aligned pointers** [M], so the visible copies are transient (header parse / log formatting),
-not the object's allocation. ⚠ `Lobby+0xA8/+0xB8` being the markers is still INFERRED (from
-`0x4b35a80`'s two empty-FString tests + the observed handshake), never read.
-**Next, cheapest first:** rerun `wstrings "LbS"` **uncapped** (the search was capped at 12) →
-`findptr` the rest; then the descriptor globals `0x9FFE6F0`/`0x9FFE810`/`0x9FFE860`, which already
-hold live heap pointers; then `vtslot`; a shim capturing `rdi` in `HandleNotif` is decisive but is
-an injection, and this whole surface has been driven backend-only so far.
+returns 0; (2) via the envelope markers — self-validating in principle (`[P]`→"LbS" **and** `[P+0x10]`→"LbE"
+⇒ `P == Lobby+0xA8`) — ⚠⚠ **its "0 aligned pointers [M]" result was RETRACTED: a GREP BUG, not a
+measurement.** `findptr` prints `    @0xADDR   bytes: …` and the harness matched `^ +0x…`, missing
+the `@`, so every "no hit" was the parser failing. **Caught by a positive control that should have
+run first** (the global at RVA `0x9FFEBD0` provably points at `0x1D24F130AE0`; the harness called
+that a miss too). ⚠ **Third instrument failure of my own that session, and it came AFTER writing
+method rule 10.** Re-run with a parser self-test that aborts unless it sees the known hit.
+★★ **CONFIRMED MEANWHILE — the offsets are no longer inferred [M].** The ctor at `.text 0x4AF2270`:
+`+0x68` "X-Ab-Platform-User-Id", `+0x78` "X-Ab-LobbySessionID", `+0x88` **"X-Ab-EnvelopeStart"**,
+`+0x98` **"X-Ab-EnvelopeEnd"** (header NAMES), then `+0xA8` zeroed → resized → memcpy'd from a
+global = the **VALUE** slot. ★ And the marker is the client's **baked-in default**: the global at
+RVA **`0x9FFEBD0`** is `FString{Data=0x1D24F130AE0, Num=4, Max=8}` = `"LbS"`. The client chooses
+the markers, tells us in the handshake, and sets its own `+0xA8`/`+0xB8` — which is why they are
+never empty. ⚠ `0x1D24F130B50` (16 B later) is `"friends"`, so these globals are a config array,
+**not** an adjacent LbS/LbE pair.
+★ `wstrings "LbS"` uncapped returns **27**, not 12 — the first run was capped and dropped 15
+candidates. 26 are standalone `"LbS "`; the 27th is the raw HTTP header line.
+**Next:** the re-run scan over all 26; then descriptor globals `0x9FFE6F0`/`0x9FFE810`/`0x9FFE860`;
+then `vtslot`; a shim capturing `rdi` in `HandleNotif` is decisive but is an injection, and this
+surface has been driven backend-only throughout.
 ⚠ **No handler ACTED** — a `type:`-only frame carries no payload, so the open question is now
 **per-type PAYLOAD, not routing**, and the console iterates one in seconds. ⚠ Even
 `disconnectNotif` / `partyKickNotif` / `userBannedNotification` were inert: sockets held 581 s
