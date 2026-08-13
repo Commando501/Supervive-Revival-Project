@@ -45,12 +45,22 @@ CACHE = os.path.join(REPO, 'tools', 're', '.exec_surface_cache')
 FUNCCSV = os.path.join(REPO, 'tools', 're', 'out', 'uht_funcflags_tuthero.csv')
 TBASE = 0x1000
 
-# folds this image is already known to use (docs/fk13-console-exec-settled.md, CLAUDE.md)
-KNOWN_FOLDS = {0x00F7EC20: 'ret 0 (universal empty stub, 165789 slots)',
-               0x05254180: 'ret',
-               0x052FD980: 'tail-jmp -> 0x0F7EB60',
-               0x000F7EB60: 'xor al,al; ret (returns false)',
-               0x00F7EB60: 'xor al,al; ret (returns false)'}
+# Folds this image is already known to use.
+# ⚠ S115 CORRECTION (docs/fk1-stub-claim-recheck.md): this table previously carried
+#   0x05254180: 'ret'  and  0x052FD980: 'tail-jmp -> 0x0F7EB60'
+# Both are WRONG and both are now REMOVED.  Neither is a fold TARGET -- they are exec
+# THUNKS with real bodies that happen to tail-call a fold:
+#   0x05254180  mov rax,[rdx+0x20] ... P_FINISH ; jmp 0x0F7EC20   (7 insn, 91-way ICF)
+#   0x052FD980  push rbx ; sub rsp,0x20 ; mov rax,[rdx+0x20] ...  (thunk prologue)
+# Grading either as FOLDED-STUB mislabels a real thunk, and the 0x05254180 entry was
+# inherited verbatim from the very claim this tool was later used to check -- i.e. the
+# tool had ingested its own test subject.  (This file's own control set already knew:
+# see the 'RECORDED AS A STUB -- actually the shared execFoo THUNK' row, which only
+# graded correctly because the control runs with BLIND=True.)
+# Entries below are measured fold targets: first bytes verified in both dumps, S115.
+KNOWN_FOLDS = {0x00F7EC20: 'ret 0 (c2 00 00; universal empty stub, 58 exec-thunk impls)',
+               0x00F7EB60: 'xor al,al; ret (32 c0 c3; returns false, 15 exec-thunk impls)',
+               0x00F7EB50: 'xor eax,eax; ret (33 c0 c3; returns null/0, 5 exec-thunk impls)'}
 MIN_REAL = 24          # bytes of real instructions before we call a body REAL
 
 IDENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]{1,79}$')
@@ -715,9 +725,12 @@ def cmd_control(a):
     print('The confound to kill is SIZE: the folds are 2-3 bytes, so the positive')
     print('controls include 3-, 9- and 22-byte REAL bodies, not just big ones.\n')
     neg = [(0x000F7EB60, 3, 'the "returns false" fold: xor al,al; ret'),
-           (0x00F7EC20, 3, 'the universal empty fold: ret 0  (165,789 pointer slots)'),
-           (0x05254180, 0, 'RECORDED AS A STUB -- actually the shared execFoo THUNK'),
-           (0x052FD980, 0, 'RECORDED AS A STUB -- actually a shared execFoo THUNK')]
+           (0x00F7EB50, 3, 'the "returns null/0" fold: xor eax,eax; ret  (S115)'),
+           (0x00F7EC20, 3, 'the universal empty fold: ret 0  (165,789 pointer slots)')]
+    # Must grade REAL: these are exec THUNKS that merely tail-call a fold.  Kept as a
+    # control precisely because both were once mis-recorded as folds (S115).
+    thunk = [(0x05254180, 0, 'ONCE RECORDED AS A STUB -- the shared 0-param execFoo THUNK (91-way ICF)'),
+             (0x052FD980, 0, 'ONCE RECORDED AS A STUB -- a shared execFoo THUNK')]
     pos = [(0x03C24F38, 9, 'vcall trampoline mov rax,[rcx]; jmp [rax+0xc38]  (9 B, REAL)'),
            (0x03C49F80, 22, 'APlayerController::RestartLevel impl (22 B, REAL)'),
            (0x0383A570, 263, 'UGameViewportClient::Exec_Runtime'),
@@ -726,14 +739,18 @@ def cmd_control(a):
     for rva, sz, why in neg:
         g, d, nb, ni = grade_body(rva)
         print('  %#010x  %-24s %-62s  %s' % (rva, g, d[:62], why))
+    print('\n-- EXPECT REAL: exec THUNKS that tail-call a fold (NOT folds themselves) --')
+    for rva, sz, why in thunk:
+        g, d, nb, ni = grade_body(rva)
+        print('  %#010x  %-24s %-62s  %s' % (rva, g, d[:62], why))
     print('\n-- EXPECT REAL / SMALL-REAL --')
     for rva, sz, why in pos:
         g, d, nb, ni = grade_body(rva)
         print('  %#010x  %-24s %-62s  %s' % (rva, g, d[:62], why))
-    print('\nSPLIT: every row above the line grades FOLDED (directly or through its')
-    print('tail-jmp); every row below grades REAL/SMALL-REAL, INCLUDING a 9-byte body.')
-    print('So the grader is keying on "does the body touch memory or call anything",')
-    print('not on length.')
+    print('\nSPLIT: only the first block grades FOLDED; the thunk block and the body')
+    print('block both grade REAL, INCLUDING a 9-byte body. So the grader is keying on')
+    print('"does the body touch memory or call anything", not on length -- and it does')
+    print('NOT confuse a thunk that tail-calls a fold with the fold itself (S115).')
     if a.extra:
         print('\n-- EXTRA --')
         for x in a.extra:

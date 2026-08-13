@@ -255,7 +255,10 @@ for "therefore the primitive can call it" — untested]
 5. **Which of the 138 exec functions are stubs?** Only 6 verified by disassembly; zero-parameter ones
    can be graded, parameterised ones need a bounded thunk walk `uht_funcflags.py` does not yet do.
 
-### ⚠ 6.1 An unrelated discrepancy that needs its own check
+### ✅ 6.1 An unrelated discrepancy that needs its own check — **RESOLVED S115**
+
+> **RESOLVED 2026-08-12 — `docs/fk1-stub-claim-recheck.md`. Lane 3's measurement was CORRECT.
+> So was FK-1's. They describe two different addresses.**
 
 Lane 3 measured `ALokiGameMode::SpawnPlayer @0x534C070`, `ALokiTeamState_TeamOnly::SetDropLeader
 @0x2C2CE30` and `ALokiDropPlane::OverridePlaneLocations @0x53372A0` in **two** independent dumps as
@@ -263,9 +266,22 @@ Lane 3 measured `ALokiGameMode::SpawnPlayer @0x534C070`, `ALokiTeamState_TeamOnl
 `CLAUDE.md` and `docs/fk1-angelscript-settled.md:168-171`, which record all three as bare
 `xor eax,eax; ret` / `ret` stubs ("the real wall").
 
-**This is flagged, not resolved.** It is load-bearing for FK-1 and outside FK-13's scope. One of the
-two measurements is wrong — most likely an RVA/VA or image-base confusion on one side. It needs a
-dedicated single-variable re-measurement before anything is changed in `CLAUDE.md`.
+~~**This is flagged, not resolved.**~~ **Resolution:** those RVAs are the `execFoo` **thunks** and
+they really do hold real code (lane 3 ✓). Each thunk's **implementation target** is a folded empty
+stub at an RVA FK-1's table never printed — `SpawnPlayer` → `0x0F7EB50` (`xor eax,eax; ret`), the
+other three → `0x0F7EC20` (`ret 0`) — so FK-1's bytes are right too ✓. FK-1's *"the real wall"* and
+its closure of `AvatarActor = NULL` **stand** (empty-impl base rate 1.2 %, 78/6,669).
+
+⚠ The one sentence here that **falls**: *"One of the two measurements is wrong — most likely an
+RVA/VA or image-base confusion on one side."* Neither is wrong, and there is **no base confusion
+anywhere** — both dumps are flat and byte-identical at every address involved. The false statement
+was manufactured in the `CLAUDE.md` **digest** (an `=` substituted for a dropped "exec thunk" column
+header), not in either source doc. `CLAUDE.md` has since been corrected.
+
+⚠ Also settled here: `0x5254180` is **91-way ICF-folded and NON-IDENTIFYING** — it is the shared
+zero-parameter exec thunk, which is why it appears in this document family under at least seven
+different function names (`docs/fk13-live-run-2026-08-12.md:18,19,27`,
+`docs/fk6-cheat-impl-census.csv:119,138,166`). Always print fold multiplicity next to a folded RVA.
 
 ---
 
