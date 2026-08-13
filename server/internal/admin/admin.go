@@ -29,6 +29,7 @@ import (
 	"net/http"
 
 	"supervive-revival/server/internal/interactive"
+	"supervive-revival/server/internal/lobby"
 	"supervive-revival/server/internal/menu"
 )
 
@@ -38,9 +39,15 @@ var staticFS embed.FS
 // Service wires the admin API to the state it administers.
 type Service struct {
 	Interactive *interactive.Service
+	// Lobby exposes the live WebSocket connections for the FK-15 push console
+	// (see ws.go). Every lobby.Service method used here is nil-safe, so a nil
+	// Lobby degrades to "no live sockets" rather than panicking the panel.
+	Lobby *lobby.Service
 }
 
-func New(inter *interactive.Service) *Service { return &Service{Interactive: inter} }
+func New(inter *interactive.Service, lob *lobby.Service) *Service {
+	return &Service{Interactive: inter, Lobby: lob}
+}
 
 // Register attaches the GUI + API routes. Call on the dedicated admin mux.
 func (s *Service) Register(mux *http.ServeMux) {
@@ -60,6 +67,9 @@ func (s *Service) Register(mux *http.ServeMux) {
 
 	mux.HandleFunc("GET /api/progression/{id}", s.handleGetAccountPass)
 	mux.HandleFunc("PUT /api/progression/{id}", s.handlePutAccountPass)
+
+	// FK-15 server→client WebSocket push console (see ws.go).
+	s.registerWS(mux)
 }
 
 // Guard wraps the admin handler with a loopback-only check. The listener is

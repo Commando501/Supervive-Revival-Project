@@ -30,7 +30,9 @@
   Which category set to apply.
     Mechanism  - minimal: just the LogAccelByte canary. Proves the ini path works.
     ClassA     - Mechanism + the six categories whose owners provably run today.
-    Gas        - ClassA + the ability-system family (the current frontier).
+    Gas        - ClassA + the ability-system family.
+    Ws         - Mechanism + the server->client WebSocket push detectors (FK-15).
+                 Standalone: does NOT include ClassA. See docs/fk15-ws-push-audit.md.
   Default: ClassA.
 
 .PARAMETER Categories
@@ -53,7 +55,7 @@
 #>
 [CmdletBinding()]
 param(
-  [ValidateSet('Mechanism','ClassA','Gas')]
+  [ValidateSet('Mechanism','ClassA','Gas','Ws')]
   [string]$Preset = 'ClassA',
   [hashtable]$Categories,
   [switch]$NoFreeWins,
@@ -93,6 +95,35 @@ $classA = [ordered]@{
   'LogLokiMenuActions'        = 'Verbose'
   'LogGameFeatureToggles'     = 'Log'   # NOT Verbose: same subsystem already emits ~1e5 lines/run via LogTemp
 }
+# Ws = the FK-15 server->client push experiment (S117, docs/fk15-ws-push-audit.md).
+# ⚠ Category names matter more than usual here. The five 2026-06-29 push probes cited six
+# detectors; FOUR have never emitted a line across 326 archived client logs, and TWO of them
+# (LogPlatformLobby, LogPlatformQuery) DO NOT EXIST in the binary at all -- they appear nowhere
+# in this repo except the sentence asserting their silence. Do not re-add them.
+# LogAccelByte is the load-bearing one: it owns
+#   LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnMessageReceived
+# which is the ONLY direct receipt that an inbound frame reached the client's SDK, and it is the
+# free pre-registered positive control (our own 4 solicited responses must produce 4 receipts
+# before any probe frame is sent).
+#
+# ★★ LogAccelByte IS NOT A SUBSTITUTE FOR LogAccelByteLobby -- MEASURED, and this is the
+# single most important line in this preset. In docs/fk11-live-result-20260809.log, flown with
+# LogAccelByte=Verbose, there are 52 `LogAccelByte:` lines INCLUDING 4x OnMessageReceived (so
+# frames were provably arriving and being processed) and ZERO `LogAccelByteLobby:` lines and
+# ZERO Lobby.cpp format strings (`Type: %s`, `JSON Version: %s`, `Sending request: %s`).
+# The lobby dispatcher logs to its own category, whose live state reads Verbosity=Warning(3),
+# CompileTimeVerbosity=VeryVerbose(7) at .data 0x9FFE2A0 -- i.e. fully compiled in, just muted.
+# `Type: %s` (site .text 0x04B0B12B) needs VeryVerbose and prints the type of EVERY frame the
+# client routes, which is the direct read on whether a pushed frame reached the dispatcher.
+$ws = [ordered]@{
+  'LogAccelByte'                   = 'Verbose'     # OnMessageReceived -- receipt + positive control
+  'LogAccelByteLobby'              = 'VeryVerbose' # THE dispatcher. `Type: %s` needs VeryVerbose
+  'LogAccelByteNotificationBuffer' = 'VeryVerbose' # sequenceID/dedup gate (the REAL precondition)
+  'LogAccelByteMessagingSystem'    = 'Verbose'
+  'LogAccelByteWebsocket'          = 'Verbose'
+  'LogNet'                         = 'Verbose'     # a NetConnection attempt is the dsNotif win
+  'LogMessenger'                   = 'Verbose'     # the OTHER socket; already emits => a control
+}
 $gas = [ordered]@{
   'LogLokiAbilitySystemComponent' = 'Verbose'
   'LogAbilitySystemComponent'     = 'Verbose'   # engine - most likely to NAME why AvatarActor is null
@@ -110,6 +141,7 @@ $freeWins = [ordered]@{ 'LogTemp' = 'Fatal'; 'DFLLog' = 'Log' }
 $want = [ordered]@{}
 foreach ($k in $mechanism.Keys) { $want[$k] = $mechanism[$k] }
 if ($Preset -in 'ClassA','Gas') { foreach ($k in $classA.Keys) { $want[$k] = $classA[$k] } }
+if ($Preset -eq 'Ws')           { foreach ($k in $ws.Keys)     { $want[$k] = $ws[$k] } }
 if ($Preset -eq 'Gas')          { foreach ($k in $gas.Keys)    { $want[$k] = $gas[$k] } }
 if (-not $NoFreeWins)           { foreach ($k in $freeWins.Keys) { $want[$k] = $freeWins[$k] } }
 if ($Categories) { foreach ($k in $Categories.Keys) { $want[$k] = $Categories[$k] } }

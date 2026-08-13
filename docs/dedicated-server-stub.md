@@ -431,6 +431,18 @@ still got silent absorption, which moves the negative result deeper
 
 ### Binary WS protocol-name evidence
 
+> ⚠⚠ **SUPERSEDED S117, 2026-08-13 — read `docs/fk15-ws-push-audit.md` first.**
+> The FOUND list is sound as far as it goes but is a **hand-picked scan list, not an
+> enumeration**: the client's message-type table is contiguous at RVA `0x86011D0`–`0x8602828`
+> and holds **119 tokens (43 Request / 43 Response / 32 real Notif)**, not 16. Two entries
+> below are not message types (`LobbyMessage` is a class, `MMv2` a version token).
+> ★ **The ABSENT list contains a load-bearing false negative:** the AccelByte v1 token is
+> **`dsNotif`, not `dsNotice`** — and `dsNotif` **is present** in this build. The absence
+> recorded below is a wrong-token artifact, and it is what redirected probes #3 and #5 onto
+> `matchmakingNotif`. ⚠ Do not "fix" this by quoting a substring count: a naive scan reports
+> `dsNotif` 10×, but **9 of those are inside `…FriendsNotif`** ("Frien**dsNotif**"). As
+> standalone tokens `dsNotif` and `matchmakingNotif` occur **once each**.
+
 UTF-16 scan confirmed which AccelByte v1 lobby type-name strings exist
 in this build (and which don't):
 
@@ -457,6 +469,25 @@ confirms that DS state is tracked client-side as part of presence, not
 purely as a server-pushed notif.
 
 ### Architectural conclusion: matchmaking state machine requires a ticket id
+
+> ⚠⚠ **WITHDRAWN S117, 2026-08-13 — `docs/fk15-ws-push-audit.md`.** This was an **inference from a
+> silence the instrument could not have broken**, and it is the founding text for FK-15's
+> "push is non-functional".
+> - **All five probes fired 2026-06-29, 41 days before the project could raise log verbosity.**
+>   Every detector they cite was pinned to `Warning` by the shipped `DefaultEngine.ini`, and
+>   **`LogPlatformLobby` / `LogPlatformQuery` do not exist in the binary**. Across 326 archived
+>   client logs, all six detectors have emitted **0 lines, ever**.
+> - **Push demonstrably works**: 4 × `AccelByteWebSocket::OnMessageReceived` for our 4 frames [M].
+> - **The probes tested 1 of 32 notif types**, chosen because of the `dsNotice`/`dsNotif` artifact
+>   above — and `matchmakingNotif` is the one type most likely to be ticket-gated, so generalising
+>   from it to "the push mechanism" is the error this file's own conclusion makes.
+> - ★ **The stated blocker is obsolete.** "The client never sends `startMatchmakingRequest` … because
+>   of the upstream hero-asset gate (documented as exhausted)" — that gate was **solved 2026-07-05**
+>   (`c1eaf88`), **6 days after these probes**, and the roster/store/party have been live since. The
+>   probes have never been re-run.
+>
+> What survives: on 2026-06-29, these specific payloads produced no *warning-or-above* client
+> complaint. That excludes a loud rejection and nothing else.
 
 The five negative probes converge on one structural finding:
 

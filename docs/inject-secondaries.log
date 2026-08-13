@@ -1,12 +1,21 @@
 
-22:42:40  secondary injector started (repo=G:\git\Supervive Revival Project) NoMissions=True NoLoadout=False
-22:42:40  set: tools\sigbypass-mod\mainmenu_refresh_pi8.dll, tools\sigbypass-mod\catalog_pick_fix.dll, tools\sigbypass-mod\loadout_fix.dll, tools\sigbypass-mod\battlepass_adopt_fix.dll
-22:42:40  game process is up
-22:42:40  primary catalog_store_fix installed+unhooked - safe to inject secondaries
-22:42:40  injecting tools\sigbypass-mod\mainmenu_refresh_pi8.dll ...
-22:42:41  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\mainmenu_refresh_pi8.dll into PID 6836 |   remote image base: 0x20E711B0000 (size 0x2E000) |   relocations applied (delta 0x20CF11B0000) |   import: KERNEL32.dll |   exception table: 0x191 entries at 0x20E711DB000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x20E711B0000 ??? | OK: manual-map complete (DllMain returned).
-22:42:41  gap 3s before next secondary
-22:42:44  injecting tools\sigbypass-mod\catalog_pick_fix.dll ...
-22:42:44  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\catalog_pick_fix.dll into PID 6836 |   remote image base: 0x20E1AE80000 (size 0x26000) |   relocations applied (delta 0x20C9AE80000) |   import: KERNEL32.dll |   exception table: 0x181 entries at 0x20E1AEA3000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x20E1AE80000 ??? | OK: manual-map complete (DllMain returned).
-22:42:44  gap 3s before next secondary
-22:42:47  game exited - stopping
+04:32:58  secondary injector started (repo=G:\git\Supervive Revival Project) NoMissions=False NoLoadout=False
+04:32:58  set: tools\sigbypass-mod\mainmenu_refresh_pi8.dll, tools\sigbypass-mod\catalog_pick_fix.dll, tools\sigbypass-mod\loadout_fix.dll, tools\sigbypass-mod\missions_fix.dll, tools\sigbypass-mod\battlepass_adopt_fix.dll
+04:32:58  game process is up
+04:32:58  primary catalog_store_fix installed+unhooked - safe to inject secondaries
+04:32:58  injecting tools\sigbypass-mod\mainmenu_refresh_pi8.dll ...
+04:33:00  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\mainmenu_refresh_pi8.dll into PID 52924 |   remote image base: 0x24DDCA10000 (size 0x2E000) |   relocations applied (delta 0x24C5CA10000) |   import: KERNEL32.dll |   exception table: 0x191 entries at 0x24DDCA3B000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x24DDCA10000 ??? | OK: manual-map complete (DllMain returned).
+04:33:00  gap 20s before next secondary
+04:33:20  injecting tools\sigbypass-mod\catalog_pick_fix.dll ...
+04:33:20  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\catalog_pick_fix.dll into PID 52924 |   remote image base: 0x24E56950000 (size 0x26000) |   relocations applied (delta 0x24CD6950000) |   import: KERNEL32.dll |   exception table: 0x181 entries at 0x24E56973000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x24E56950000 ??? | OK: manual-map complete (DllMain returned).
+04:33:20  gap 20s before next secondary
+04:33:40  injecting tools\sigbypass-mod\loadout_fix.dll ...
+04:33:41  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\loadout_fix.dll into PID 52924 |   remote image base: 0x24E9A9C0000 (size 0x8D000) |   relocations applied (delta 0x24D1A9C0000) |   import: KERNEL32.dll |   import: WININET.dll |   exception table: 0x1BF entries at 0x24E9AA4A000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x24E9A9C0000 ??? | OK: manual-map complete (DllMain returned).
+04:33:41  gap 20s before next secondary
+04:34:01  injecting tools\sigbypass-mod\missions_fix.dll ...
+04:34:01  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\missions_fix.dll into PID 52924 |   remote image base: 0x24F162A0000 (size 0xD4000) |   relocations applied (delta 0x24D962A0000) |   import: KERNEL32.dll |   import: WININET.dll |   exception table: 0x1B9 entries at 0x24F16371000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x24F162A0000 ??? | OK: manual-map complete (DllMain returned).
+04:34:01  gap 20s before next secondary
+04:34:21  injecting tools\sigbypass-mod\battlepass_adopt_fix.dll ...
+04:34:21  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\battlepass_adopt_fix.dll into PID 52924 |   remote image base: 0x24E7E150000 (size 0x29000) |   relocations applied (delta 0x24CFE150000) |   import: KERNEL32.dll |   exception table: 0x18F entries at 0x24E7E176000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x24E7E150000 ??? | OK: manual-map complete (DllMain returned).
+04:34:21  gap 20s before next secondary
+04:34:41  secondary injection complete

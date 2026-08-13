@@ -1,0 +1,34 @@
+FK-15 PROBE 2 — TEXT HEARTBEAT REPLY — LIVE RESULT, 2026-08-13
+==============================================================
+
+CHANGE: on the client's binary "hb" on /notifications/players/{id}, also write
+        TEXT {"Resource":"hb","Version":0,"Payload":""}.
+        Single variable: binary echo and proactive keepalive left untouched.
+        Revert lever: enableTextHeartbeatReply = false.
+
+DEPLOY: 03:53:12 local == 08:53:12 UTC (log timestamps are UTC = local + 5h)
+
+BEFORE — watchdog fired once per ~61s, like clockwork (UTC):
+    2026.08.13-08.46.32
+    2026.08.13-08.49.09
+    2026.08.13-08.50.10
+    2026.08.13-08.51.11
+    2026.08.13-08.52.13
+    2026.08.13-08.53.13
+    ^ 08:53:13 is the in-flight connection from the OLD ags, killed 1s after the restart.
+
+AFTER — ZERO watchdog fires. Socket held continuously:
+    messenger ws3 uptime=325s (prior maximum was ~61s)
+
+DELIVERY (docs/capture.log), 1:1 as designed:
+    client BINARY hb received : 5
+    our TEXT hb replies sent  : 5
+
+TWO INSTRUMENT ERRORS MADE WHILE MEASURING THIS — both nearly reported:
+  1. A background watcher used 'rg', which is NOT on PATH in the background shell.
+     Every count was an empty string, '[ "" -gt "" ]' errored, and the script fell
+     through to printing 'RESULT: HELD' — a FALSE PASS that agreed with the hypothesis.
+  2. Log timestamps are UTC; the deploy time was local. A by-minute histogram over
+     '03.xx' read a window FIVE HOURS BEFORE the change and showed the watchdog still
+     firing — a FALSE FAIL.
+  A broken instrument produced both the answer I wanted and its opposite, in that order.

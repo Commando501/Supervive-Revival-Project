@@ -1,0 +1,35 @@
+FK-15 PROBE 1 — LIVE RESULT, 2026-08-13
+=======================================
+
+Pre-registered prediction (docs/fk15-ws-push-audit.md, RecommendedProbes[0]):
+  push the literal TEXT 'FK15-PROBE-FROM-AGS' on /notifications/players/{id};
+  UMessengerManager::OnMessage fails to parse it as JSON and logs
+  'Messenger recieved unexpected message: <sentinel>' at Warning.
+
+BASELINE, captured immediately before the push (live Loki.log, 8,389,938 bytes):
+  Messenger recieved unexpected message   0
+  Messenger recieved message              0
+  FK15-PROBE-FROM-AGS                     0
+  heartbeat not received                393   <- same-category Warning positive control
+  Messenger connection established      394
+
+PUSH (admin API, one frame, 19 bytes TEXT):
+  POST /api/ws/push {"socket":"ws1","label":"fk15-p1-messenger","raw":"FK15-PROBE-FROM-AGS"}
+  -> {"handle":"ws1","path":"/notifications/players/9b9d2c887e2524f918e383a895f2f1c2",
+      "bytes":19,"opcode":"TEXT","payload":"FK15-PROBE-FROM-AGS"}
+
+RESULT — verbatim from the client's own log:
+---------------------------------------------
+23702:[2026.08.13-08.48.54:314][559]LogJson: Warning: JsonObjectStringToUStruct - Unable to parse json=[FK15-PROBE-FROM-AGS]
+23703:[2026.08.13-08.48.54:317][559]LogMessenger: Warning: Messenger recieved unexpected message: FK15-PROBE-FROM-AGS
+23704-[2026.08.13-08.49.09:542][ 15]LogMessenger: Warning: heartbeat not received in 5 seconds. Last heartbeat sent: 2026-08-13T08:49:04.542Z
+23705-[2026.08.13-08.49.09:543][ 15]LogMessenger: Messenger disconnect invoked isShutdown:0
+23706-[2026.08.13-08.49.09:543][ 15]LogMessenger: Messenger closing socket
+23707-[2026.08.13-08.49.09:609][ 17]LogMessenger: Messenger socket closed wasClean:1 Status: 1000 Reason: Successfully closed connection to our peer 
+---------------------------------------------
+
+POST-PUSH counts:
+  FK15-PROBE-FROM-AGS                     2  (LogJson + LogMessenger, both echo our string)
+  Messenger recieved unexpected message   1  (was 0)
+
+ags build: 2026-08-13 03:47:25

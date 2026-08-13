@@ -19,6 +19,19 @@ import (
 	"supervive-revival/server/internal/ws"
 )
 
+// ---- LEGACY probe constants (probes #3 and #5) ----------------------------
+//
+// SUPERSEDED 2026-08-13 by the FK-15 push console in push.go + the admin
+// panel's "WS Push" tab, which pushes operator-authored frames at runtime.
+// Prefer it: these constants require a source edit, an ags rebuild and a fresh
+// launch per variant, which is why this question has sat at N=5 for ~40
+// sessions. They are also the two frames whose 20+ bundled speculative fields
+// make their own negative results unattributable.
+//
+// Kept (disabled) because the trial-and-error history is the value — see the
+// project's code conventions — and because they document the exact wire shapes
+// already tried, which the console should not waste a launch repeating.
+//
 // phantomDsPushDelay > 0 enables the dedicated-server-stub chapter's probe #3
 // (legacy: single-frame matchmakingNotif push). Superseded by probe #5's
 // start→done sequence (see phantomMatchmakingSequence below). Kept here as
@@ -53,6 +66,36 @@ const phantomMatchmakingSequence = false
 const phantomMmStartDelay = 3 * time.Second
 const phantomMmDoneDelay = 2 * time.Second
 
+// ⚠⚠ SUPERSEDED BY MEASUREMENT (S117, 2026-08-13) — docs/fk15-ws-push-audit.md §3.5.
+// THIS PUSH HAS NEVER REACHED THE CLIENT'S HANDLER, and tuning the interval below
+// cannot help. `UMessengerManager::OnMessage` (.text 0x57C8F00) parses each **TEXT**
+// frame as ONE JSON object into FNotificationMessage{Resource,Version,Payload}, and
+// only `Resource == "hb"` clears the 5 s watchdog. A BINARY frame never gets there:
+// the messenger binds no binary delegate.
+//
+// The evidence was in every log the whole time. Over 1,419 connections (re-confirmed
+// on a second, later log at 23/22/0/0):
+//     Messenger connection established     1419
+//     heartbeat not received in 5 seconds  1418   <- Warning: the category IS emitting
+//     Messenger recieved message              0
+//     Messenger recieved unexpected message   0   <- ALSO Warning; would have fired 1418x
+// `recieved unexpected message` logs at Warning on a JSON parse failure, so our binary
+// "hb" would have logged every single time. Zero, in a log carrying 1,418 Warnings from
+// the same category ⇒ a CLEAN NEGATIVE, not a muted channel.
+//
+// Measured consequence: connect→kill median 60.0 s, EXACTLY ONE heartbeat per
+// connection — the send period exceeds the connection's own lifetime, which is why no
+// amount of interval tuning ever worked.
+//
+// FIX (untested live, ranked probe #2): on receiving the client's binary "hb", reply
+// with a TEXT frame `{"Resource":"hb","Version":0,"Payload":""}`.
+// ⚠ It also removes the free periodic resync the client currently gets from
+// reconnecting — re-verify S85 avatar latency afterwards. The explicit Conn.Drop()
+// lever (MarkDirty) is unaffected, and a per-resource version-bump push is a strictly
+// better replacement for it: it refetches ONE resource with no teardown, which retires
+// the "~1s reconnect floor is not backend-controllable" note below.
+//
+// ---- original note, kept for the trial-and-error record ----
 // messengerHeartbeatInterval is how often the server proactively pushes a
 // binary "hb" frame on the Theorycraft messenger socket (path
 // /notifications/players/{id}). The client's LogMessenger watchdog fires
@@ -64,6 +107,44 @@ const phantomMmDoneDelay = 2 * time.Second
 // expect. 30s = ~half the observed 60s send-cycle, leaving slack for the 5s
 // reply window.
 const messengerHeartbeatInterval = 30 * time.Second
+
+// ---- probe #2: the TEXT heartbeat reply (S117, 2026-08-13) -----------------
+//
+// THE FIX for the ~60 s messenger reconnect churn, derived from the RE above and
+// from probe #1's live confirmation that this socket delivers TEXT frames to the
+// application layer (docs/fk15-probe1-live-result-20260813.txt).
+//
+// `UMessengerManager::OnMessage` parses each TEXT frame as ONE JSON object into
+// FNotificationMessage{Resource,Version,Payload}. Only `Resource == "hb"` finds
+// and clears the 5 s watchdog timer. Our BINARY echo cannot do it — binary frames
+// never reach the handler at all (0 `recieved unexpected message` across 1,419
+// connections, in logs carrying 1,418 same-category Warnings).
+//
+// SINGLE VARIABLE, deliberately. This change ADDS one TEXT write on receipt of the
+// client's binary "hb" and touches nothing else:
+//   - the existing BINARY echo stays (it is measured-inert, so leaving it cannot
+//     affect the outcome, and removing it would be a second variable). Drop it in
+//     a follow-up once this is confirmed.
+//   - the proactive keepalive above stays BINARY, i.e. still inert. It is not
+//     needed: the client's watchdog is armed by ITS OWN send, so a reply is
+//     sufficient. Also a follow-up.
+//
+// Set enableTextHeartbeatReply = false to revert to exactly the prior behaviour.
+//
+// ⚠ EXPECTED SIDE EFFECT — check this before calling it a win. The ~60 s
+// reconnect cycle is what currently gives the client a FREE periodic state
+// resync, and S85's avatar fix piggybacks on that cycle. S85's explicit
+// `Conn.Drop()` (MarkDirty) is UNAFFECTED — it is a deliberate drop, not the
+// watchdog — so avatar switching should still work. What disappears is the
+// implicit resync every ~60 s. Re-verify avatar latency after this lands, and
+// watch for anything else that silently depended on the churn.
+const enableTextHeartbeatReply = true
+
+// messengerHeartbeatText is the exact frame the client's parser accepts. Field
+// names match FNotificationMessage (schema.txt:37963) exactly; UE's JSON→UStruct
+// matches case-insensitively and ignores unknown keys, but there is no reason to
+// rely on either here.
+const messengerHeartbeatText = `{"Resource":"hb","Version":0,"Payload":""}`
 
 // ---- messenger-drop lever (S85 avatar-switch latency fix, 2026-07-21) ----
 //
@@ -93,6 +174,19 @@ type EventLogger interface {
 	Event(format string, args ...any)
 }
 
+// logf is the package's single logging path, nil-safe because New(nil) is a
+// supported construction (the package's own tests use it, and MarkDirty is
+// documented nil-safe). Handle previously called s.log.Event directly and
+// panicked on a nil logger while dropMessenger nil-checked — an inconsistency
+// found by the FK-15 push-console tests, not by production, since cmd/ags
+// always passes a real capture logger.
+func (s *Service) logf(format string, args ...any) {
+	if s == nil || s.log == nil {
+		return
+	}
+	s.log.Event(format, args...)
+}
+
 type Service struct {
 	log EventLogger
 
@@ -106,7 +200,42 @@ type Service struct {
 	lastDrop map[string]time.Time
 	// dropPending marks that a trailing drop is already scheduled for this player.
 	dropPending map[string]bool
+
+	// sockets is the FK-15 push console's registry of every live WS connection
+	// (both /lobby and the messenger), keyed by a short stable handle. See push.go.
+	sockets  map[string]*socket
+	socketNo int
+	// partyVersion supplies the monotonic party version for the targeted-resync
+	// path (enableTargetedResync). Set once at startup; nil disables that path.
+	partyVersion func() int64
 }
+
+// enableTargetedResync makes MarkDirty push a per-resource version bump instead
+// of dropping the socket.
+//
+// ★★★ PROVEN END-TO-END LIVE, 2026-08-13 — REFETCH **AND APPLY**, NO TEARDOWN.
+// docs/fk15-probe3-live-result-20260813.txt.
+//
+// The apply was demonstrated with a controlled round-trip on the lobby platform
+// (the podium under the hunter), chosen because `loadout_fix.cpp` — which polls
+// /revival/loadout every ~175 ms and would otherwise mask any result — contains
+// ZERO lobby-platform code, while loadout.go:411 carries lobbyPlatformPreference
+// inside the party document. So the podium is party-doc-driven and shim-blind.
+//
+//	A  backend already Collector, NO push  -> podium unchanged (client unaware)
+//	B  push fired                          -> podium GOLD   (refetched + applied)
+//	C  reverted to Starter + push          -> podium BLUE   (applied in reverse)
+//
+// Throughout: messenger DROP 0, connects 1, socket uptime continuous.
+//
+// ⇒ S85's socket drop is RETIRED as the primary lever. It remains the fallback
+// (see dropMessenger) for when there is no version source or no live messenger,
+// so a loadout change can never end up with no mechanism at all.
+// ⇒ lobby.go's old note that the "~1 s reconnect floor is not backend-
+// controllable" is OBSOLETE: there is no reconnect any more.
+//
+// Set false to revert to the drop.
+const enableTargetedResync = true
 
 func New(log EventLogger) *Service {
 	return &Service{
@@ -114,6 +243,7 @@ func New(log EventLogger) *Service {
 		messengers:  map[string]*ws.Conn{},
 		lastDrop:    map[string]time.Time{},
 		dropPending: map[string]bool{},
+		sockets:     map[string]*socket{},
 	}
 }
 
@@ -182,13 +312,30 @@ func (s *Service) MarkDirty(id string) {
 	s.mu.Unlock()
 }
 
-// dropMessenger ungracefully closes c (if non-nil), forcing a reconnect+resync.
+// dropMessenger makes player id's client re-read its party.
+//
+// Two mechanisms, selected by enableTargetedResync:
+//   - targeted (probe #3): push a per-resource version bump. The client
+//     refetches just that resource and the socket stays up. MEASURED to trigger
+//     a refetch in 491 ms with no reconnect — but see the flag's comment for why
+//     it is not the default yet.
+//   - drop (S85, default): ungracefully close the socket. The client reconnects
+//     in ~0.7-1.5 s and its resync re-reads everything. Heavier, but it is the
+//     path with a measured end-to-end avatar-apply result.
+//
+// The targeted path FALLS BACK to the drop if it cannot push (no version source,
+// or no live messenger), so enabling the flag can never leave a loadout change
+// with no mechanism at all.
 func (s *Service) dropMessenger(id string, c *ws.Conn) {
+	if enableTargetedResync && s.notifyPartyResources(id) {
+		s.logf("messenger TARGETED RESYNC for %s (loadout changed -> per-resource version bump, socket kept)", id)
+		return
+	}
 	if c == nil {
 		return
 	}
 	if s.log != nil {
-		s.log.Event("messenger DROP for %s (loadout changed -> force reconnect+resync)", id)
+		s.logf("messenger DROP for %s (loadout changed -> force reconnect+resync)", id)
 	}
 	_ = c.Drop() // ungraceful: unblocks the read loop, which returns + cleans up
 }
@@ -226,14 +373,21 @@ func messengerPlayerID(path string) string {
 func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 	conn, err := ws.Upgrade(w, r)
 	if err != nil {
-		s.log.Event("WS upgrade FAILED %s: %v", r.URL.Path, err)
+		s.logf("WS upgrade FAILED %s: %v", r.URL.Path, err)
 		return
 	}
-	s.log.Event("WS connected %s (subproto=%q)", r.URL.Path, r.Header.Get("Sec-WebSocket-Protocol"))
+	s.logf("WS connected %s (subproto=%q)", r.URL.Path, r.Header.Get("Sec-WebSocket-Protocol"))
 	defer func() {
 		conn.Close()
-		s.log.Event("WS closed %s", r.URL.Path)
+		s.logf("WS closed %s", r.URL.Path)
 	}()
+
+	// FK-15 push console: register every live socket so the admin panel can
+	// address it by handle and push a single, operator-authored frame at it.
+	// Registration is unconditional (both /lobby and the messenger) because the
+	// whole point is that only ONE of the two channels has ever been probed.
+	handle := s.registerSocket(r.URL.Path, conn)
+	defer s.unregisterSocket(handle)
 
 	isMessenger := strings.HasPrefix(r.URL.Path, "/notifications/players/")
 	if isMessenger {
@@ -265,45 +419,54 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			if isMessenger {
 				if ne, ok := err.(net.Error); ok && ne.Timeout() {
-					s.log.Event("WS -> %s BINARY hb (proactive %s keepalive)", r.URL.Path, messengerHeartbeatInterval)
+					s.logf("WS -> %s BINARY hb (proactive %s keepalive)", r.URL.Path, messengerHeartbeatInterval)
 					if werr := conn.WriteFrame(ws.OpBinary, []byte("hb")); werr != nil {
-						s.log.Event("WS proactive hb write FAILED %s: %v", r.URL.Path, werr)
+						s.logf("WS proactive hb write FAILED %s: %v", r.URL.Path, werr)
 						return
 					}
 					continue
 				}
 			}
-			s.log.Event("WS read end %s: %v", r.URL.Path, err)
+			s.logf("WS read end %s: %v", r.URL.Path, err)
 			return
 		}
 		switch f.Opcode {
 		case ws.OpText:
-			s.log.Event("WS <- %s TEXT %q", r.URL.Path, string(f.Payload))
+			s.logf("WS <- %s TEXT %q", r.URL.Path, string(f.Payload))
 			if reply := s.respondText(f.Payload); reply != "" {
-				s.log.Event("WS -> %s TEXT %q", r.URL.Path, reply)
+				s.logf("WS -> %s TEXT %q", r.URL.Path, reply)
 				_ = conn.WriteText(reply)
 			}
 		case ws.OpBinary:
-			s.log.Event("WS <- %s BINARY (%d bytes) %x", r.URL.Path, len(f.Payload), f.Payload)
+			s.logf("WS <- %s BINARY (%d bytes) %x", r.URL.Path, len(f.Payload), f.Payload)
 			// AccelByte notification/lobby heartbeat is the binary token "hb";
 			// echo it back. Kept alongside the proactive push above: the echo
 			// is what stopped the initial ~5s close-cycle in an earlier
 			// session, and a client probe should still get a reply.
 			if string(f.Payload) == "hb" {
 				if werr := conn.WriteFrame(ws.OpBinary, []byte("hb")); werr != nil {
-					s.log.Event("WS hb echo write FAILED %s: %v", r.URL.Path, werr)
+					s.logf("WS hb echo write FAILED %s: %v", r.URL.Path, werr)
+				}
+				// Probe #2: the reply that can actually clear the client's 5 s
+				// watchdog. Messenger only — /lobby is a different protocol and
+				// would just log this as an unparseable message.
+				if isMessenger && enableTextHeartbeatReply {
+					s.logf("WS -> %s TEXT hb reply %s", r.URL.Path, messengerHeartbeatText)
+					if werr := conn.WriteText(messengerHeartbeatText); werr != nil {
+						s.logf("WS hb TEXT reply FAILED %s: %v", r.URL.Path, werr)
+					}
 				}
 			}
 		case ws.OpPing:
-			s.log.Event("WS <- %s PING", r.URL.Path)
+			s.logf("WS <- %s PING", r.URL.Path)
 			_ = conn.Pong(f.Payload)
 		case ws.OpPong:
 			// ignore
 		case ws.OpClose:
-			s.log.Event("WS <- %s CLOSE", r.URL.Path)
+			s.logf("WS <- %s CLOSE", r.URL.Path)
 			return
 		default:
-			s.log.Event("WS <- %s op=0x%x (%d bytes) %x", r.URL.Path, f.Opcode, len(f.Payload), f.Payload)
+			s.logf("WS <- %s op=0x%x (%d bytes) %x", r.URL.Path, f.Opcode, len(f.Payload), f.Payload)
 		}
 	}
 }
@@ -422,9 +585,9 @@ func (s *Service) phantomDsPush(conn *ws.Conn, path string) {
 		"ServerInfo: "+dsInfoJSON,
 	)
 
-	s.log.Event("WS -> %s TEXT %q (phantom matchmakingNotif push)", path, notif)
+	s.logf("WS -> %s TEXT %q (phantom matchmakingNotif push)", path, notif)
 	if err := conn.WriteText(notif); err != nil {
-		s.log.Event("WS phantom matchmakingNotif push FAILED %s: %v", path, err)
+		s.logf("WS phantom matchmakingNotif push FAILED %s: %v", path, err)
 	}
 }
 
@@ -465,9 +628,9 @@ func (s *Service) phantomMatchmakingFlow(conn *ws.Conn, path string) {
 		"queuedAt: "+time.Now().UTC().Format(time.RFC3339),
 		"partyAttributes: {}",
 	)
-	s.log.Event("WS -> %s TEXT %q (phantom matchmakingNotif status=start, probe #5 stage 1)", path, start)
+	s.logf("WS -> %s TEXT %q (phantom matchmakingNotif status=start, probe #5 stage 1)", path, start)
 	if err := conn.WriteText(start); err != nil {
-		s.log.Event("WS phantom mm start push FAILED %s: %v", path, err)
+		s.logf("WS phantom mm start push FAILED %s: %v", path, err)
 		return
 	}
 
@@ -504,8 +667,8 @@ func (s *Service) phantomMatchmakingFlow(conn *ws.Conn, path string) {
 		"serverInfo: "+dsInfoJSON,
 		"ServerInfo: "+dsInfoJSON,
 	)
-	s.log.Event("WS -> %s TEXT %q (phantom matchmakingNotif status=done, probe #5 stage 2)", path, done)
+	s.logf("WS -> %s TEXT %q (phantom matchmakingNotif status=done, probe #5 stage 2)", path, done)
 	if err := conn.WriteText(done); err != nil {
-		s.log.Event("WS phantom mm done push FAILED %s: %v", path, err)
+		s.logf("WS phantom mm done push FAILED %s: %v", path, err)
 	}
 }
