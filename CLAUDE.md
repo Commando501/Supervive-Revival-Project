@@ -287,6 +287,20 @@ BEFORE the handler lookup.** The 33==33 jump-table corroboration stands on its *
 the sweep did not confirm it live.
 ★ **Free control, reuse it:** push a type that cannot exist. If your "handler found" detector reads
 the same for the bogus type, it is not measuring what you think.
+★★★ **SETTLED STATICALLY INSTEAD (`docs/fk15-handlenotif-jumptable-20260813.md`): ALL 33 CASES ARE
+REAL.** `Lobby::HandleNotif`'s jump table (33 dword RVAs at `.text 0x4b04978`; index = `enum-1`,
+default `0x4b048f9`) has **33/33 entries pointing into `.text` and ZERO equal to the default**
+(32 distinct; idx 17/18 share the banned/unbanned pair). ⇒ **`dsNotif` reaches a real case body.**
+A case = `{delegate, type descriptor}` handed to one shared deserialize+broadcast helper
+(`0x4b06020`); idx 23 verified live: `lea rdx,[rdi+0x1550]; lea rcx,[→0x9FFE6F0]; call 0x4b06020`.
+⚠ The index→type map comes from a RUNTIME `TMap` at `.data 0x9FFE2D0` — "idx 23 = dsNotif" is
+INFERRED from `.rdata` order and unconfirmed; the headline holds regardless since all 33 are real.
+★★★★ **AND THE SWEEP DECRYPTED THEM: 9/33 → 33/33 case bodies.** Those pages had NEVER executed in
+any of the 68 prior dumps. ⇒ **driving a code path from the backend FORCES `.text` decryption for
+offline RE** — a steerable version of "coverage rises with what the game has run". Banked in
+`dumps/lobby-dispatch-decrypted/`. **Reuse this: push the messages, then `dumpimage`.**
+⚠ Still open for `dsNotif`: whether anything is BOUND to the delegate it broadcasts. Needs the live
+`Lobby` object (a string scan fails — the FString points at the buffer start, not our message).
 ⚠ **No handler ACTED** — a `type:`-only frame carries no payload, so the open question is now
 **per-type PAYLOAD, not routing**, and the console iterates one in seconds. ⚠ Even
 `disconnectNotif` / `partyKickNotif` / `userBannedNotification` were inert: sockets held 581 s
