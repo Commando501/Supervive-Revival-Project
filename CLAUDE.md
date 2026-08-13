@@ -273,6 +273,17 @@ never comparable.
 **FIX:** `ws.Conn.WriteText` wraps with the socket's own negotiated markers (a no-op on the
 messenger); `WriteTextRaw` keeps the unwrapped form for probes. **Result on reconnect: dispatch
 0 → 4**, four responses parsed for the first time ever.
+★★★ **THE FULL 33-TYPE SWEEP THEN RAN CLEAN — 33/33 DISPATCHED, NOTHING FELL THROUGH**
+(`docs/fk15-sweep-33-types-20260813.md`). Dispatch 5 → 38; **0** `no specific handler case
+assigned`, **0** parse errors, **0** deserialize failures, and `Message fragmented` did NOT grow.
+⇒ **the `/lobby` receive channel is fully functional for the first time in this project's history**,
+and the 33-names == 33-jump-table-cases corroboration is now confirmed live.
+⚠ **No handler ACTED** — a `type:`-only frame carries no payload, so the open question is now
+**per-type PAYLOAD, not routing**, and the console iterates one in seconds. ⚠ Even
+`disconnectNotif` / `partyKickNotif` / `userBannedNotification` were inert: sockets held 581 s
+across the whole sweep, 0 crashpad. ⚠ `AlreadyProbed` is now deliberately **EMPTY** — the old
+`matchmakingNotif` record was VOID (unwrapped, never dispatched) and skipping on it would have
+protected a null that never happened; **`matchmakingNotif` is fully re-testable.**
 ★★ **`dsNotif` then landed:** `JSON Version: {"type":"dsNotif",...}` → **`Type: dsNotif`**, and
 crucially **NO** `"no specific handler case assigned"` error ⇒ it reached its **dedicated handler
 case**. No NetConnection followed, so the open question is narrow (what its delegate needs), not a
