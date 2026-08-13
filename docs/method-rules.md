@@ -170,6 +170,25 @@ afterward.
     precisely because `grep -ci lobbyplatform loadout_fix.cpp` = 0. **Before trusting an indicator,
     grep for everything else that can move it.**
 
+12. **★★ S117: AN ABSENT ERROR MESSAGE IS ONLY EVIDENCE IF YOU KNOW IT CAN BE PRINTED — and
+    the cheapest check is to feed the system something impossible.** A 33-type sweep was written
+    up as "all 33 routed to a **dedicated handler case**" on the strength of zero
+    `Error; Detected of type notif but no specific handler case assigned` lines. That absence was
+    worthless: the RE pass for this very investigation had **already recorded in writing** that
+    those two error strings are not plain `UE_LOG`s — they are `Printf`'d into an FString and
+    pushed through a virtual on `Lobby+0x218`, so they may never reach the log — and the claim was
+    made anyway, then committed and pushed.
+    **The disproof cost nothing and was accidental:** a leftover placeholder push sent the type
+    `dsNotice-PLACEHOLDER`, a name absent from the binary, and it produced the *identical* trace
+    including `Type: dsNotice-PLACEHOLDER`. So the line being used as the success signal is emitted
+    **before** the lookup it was assumed to follow.
+    ⇒ **Send the impossible input on purpose.** A bogus id, a nonexistent type, a malformed key: if
+    your detector reads the same for it as for the real thing, the detector is not measuring what
+    you think, and every result resting on it is void. This is the negative control applied to a
+    *log line* rather than to a scan, and it takes one extra push.
+    ⚠ Note the shape: the warning existed, in this session's own notes, and was not applied. Having
+    the caveat written down is not the same as honouring it at the moment of writing the conclusion.
+
 Also of a piece: **findings that die in commit messages get re-litigated.** `46d873a` and `b420a69`
 had the input mechanism right on 2026-07-16 and were never promoted to a doc, so four later sessions
 re-derived it. **Promote findings out of commit bodies into `docs/`.**
