@@ -256,6 +256,30 @@ The short version, because it has already cost two sessions:
   clock (`tools/re/item_watch.py --marker`, ~61.1 s period).
 
 ### Before touching anything WebSocket- / notification- / server-push-shaped
+★★★★★ **THE `/lobby` ENVELOPE — EVERY FRAME WE EVER SENT THERE WAS SILENTLY DROPPED, NOW FIXED
+(S117, 2026-08-13). Read `docs/fk15-lobby-fragment-defect-20260813.md` FIRST.**
+The client asks for message delimiters in its WS handshake and we never honoured them:
+`X-Ab-EnvelopeStart: LbS` / `X-Ab-EnvelopeEnd: LbE` (literals `.rdata 0x8604890` / `0x86048A8`).
+It stores them as the FStrings at **`lobby+0xA8` / `+0xB8`**, and `Lobby::OnMessage`'s completeness
+check (**`.text 0x4b35a80`**, gating the fragment log at `0x4b0adf8`) takes the no-framing fast path
+**only when BOTH are empty**. MEASURED before the fix: **14 `Raw Lobby Response` → 14
+`Message fragmented` → 0 dispatches.** `Type: %s` (`0x04B0B12B`) had **never fired**.
+⇒ **Our `listOfFriendsResponse` / `setUserStatusResponse` etc. were NEVER parsed**, and all five
+2026-06-29 probes were buffered the same way — that is the mechanism behind FK-15's "silent
+absorption", and it was on OUR side.
+★ **This is also why the messenger probes worked and the `/lobby` ones did not** — the messenger
+negotiates **empty** markers (`envelope=[""..""]`), so it needs no envelope. The two channels were
+never comparable.
+**FIX:** `ws.Conn.WriteText` wraps with the socket's own negotiated markers (a no-op on the
+messenger); `WriteTextRaw` keeps the unwrapped form for probes. **Result on reconnect: dispatch
+0 → 4**, four responses parsed for the first time ever.
+★★ **`dsNotif` then landed:** `JSON Version: {"type":"dsNotif",...}` → **`Type: dsNotif`**, and
+crucially **NO** `"no specific handler case assigned"` error ⇒ it reached its **dedicated handler
+case**. No NetConnection followed, so the open question is narrow (what its delegate needs), not a
+silence.
+⚠ **Standing lesson:** the handshake is part of the protocol. Before concluding a channel ignores
+you, log what the client ASKED FOR in its upgrade request.
+
 ★★★★★ **FK-15 IS SETTLED — REFUTED AND CONFIRMED LIVE (S117, 2026-08-13).** Read
 `docs/fk15-ws-push-audit.md`, then `docs/fk15-probe1-live-result-20260813.txt`.
 **THE CLIENT PRINTED OUR SENTINEL BACK.** One 19-byte TEXT frame on `/notifications/players/{id}`:

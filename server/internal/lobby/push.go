@@ -296,7 +296,13 @@ func (s *Service) Push(req PushRequest) ([]PushResult, error) {
 		// exactly what was on the wire when it died. (The reverse ordering is
 		// how a probe becomes unreconstructable after the fact.)
 		s.logf("WS PUSH[%s] -> %s %s (%d bytes) %q", req.Label, e.path, opName, len(body), string(body))
-		if err := e.conn.WriteFrame(opcode, body); err != nil {
+		var werr error
+		if opcode == ws.OpText {
+			werr = e.conn.WriteText(string(body)) // envelope-wrapped, like production
+		} else {
+			werr = e.conn.WriteFrame(opcode, body)
+		}
+		if err := werr; err != nil {
 			res.Error = err.Error()
 			s.logf("WS PUSH[%s] FAILED %s: %v", req.Label, e.path, err)
 		} else {
@@ -464,7 +470,7 @@ func (s *Service) NotifyResource(playerID, resource string, version int64, label
 		label = "notify"
 	}
 	s.logf("WS NOTIFY[%s] -> %s %s", label, resource, body)
-	if err := c.WriteFrame(ws.OpText, []byte(body)); err != nil {
+	if err := c.WriteText(body); err != nil {
 		s.logf("WS NOTIFY[%s] FAILED %s: %v", label, resource, err)
 		return err
 	}
