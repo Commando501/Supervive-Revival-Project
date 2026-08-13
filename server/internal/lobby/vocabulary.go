@@ -202,13 +202,17 @@ var RecommendedProbes = []RecommendedProbe{
 		Rank:    3,
 		Channel: "messenger",
 		Name:    "Targeted resync via version bump — server-side-only observable",
-		Raw:     `{"Resource":"/progression/players/<playerId>","Version":9999999,"Payload":""}`,
-		Why: "The /progression/players/ handler (.text 0x5859130) is seven instructions with NO " +
-			"resource equality check — the only gate is Version > cached. Success shows up as " +
-			"`GET /progression/players/{id}` in our OWN capture.log: no client log, no " +
-			"screenshot, no verbosity change needed. Also the template for replacing S85's " +
-			"socket drop with a targeted /party/parties/<id> push (no teardown, no ~1 s " +
-			"reconnect floor).",
+		Raw:     `{"Resource":"/match-history/players/<playerId>","Version":7,"Payload":""}`,
+		Why: "These handlers are ~seven instructions with NO resource equality check — the only " +
+			"gate is Version > cached. Success shows up as a GET in our OWN capture.log: no " +
+			"client log, no screenshot, no verbosity change needed. FLOWN 2026-08-13: the GET " +
+			"landed 491 ms after the push with the messenger connect count UNCHANGED. " +
+			"⚠⚠ VERSION: pass the version the HTTP document will CARRY, never more. This probe " +
+			"uses /match-history (served as an empty catch-all, so its cache stays 0 and any " +
+			"small positive value works). A version ABOVE what the document carries causes an " +
+			"UNBOUNDED REFETCH LOOP — measured at 46 fetches in 4 s on /party/parties, cleared " +
+			"only by restarting ags. The shipped MarkDirty path is safe by construction because " +
+			"notifyPartyResources passes PartyVersion(), the same counter buildSoloParty serves.",
 		Expect:   "a GET for that resource appears in docs/capture.log within a second",
 		NeedsIni: false,
 	},

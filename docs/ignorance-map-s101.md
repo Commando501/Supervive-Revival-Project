@@ -1044,7 +1044,8 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 > the **background** shell (→ a fall-through **false PASS**), and `Loki.log` is **UTC** while deploy
 > times are **local** (→ a **false FAIL** five hours off). Self-test every harness; state the
 > timezone.
-> ★★★ **PROBE 3 CONFIRMED + SHIPPED (default OFF):** a pushed version bump causes a **targeted
+> ★★★ **PROBE 3 CONFIRMED + SHIPPED — AND NOW ON BY DEFAULT (see the apply proof below):** a
+> pushed version bump causes a **targeted
 > refetch in 491 ms with NO teardown** — `lobby.NotifyResource(...)`, with `MarkDirty` able to use
 > it instead of dropping the socket. ⚠⚠ **Version is a footgun, both modes measured:** too low →
 > **silently ignored** (`partyVer` is seeded `time.Now().UnixMilli()`); too high → **unbounded
@@ -1070,7 +1071,7 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 >   (`LogPlatformLobby`, `LogPlatformQuery`) DO NOT EXIST in the binary** — they occur nowhere in
 >   this repo except the sentence asserting their silence. Across **326** archived client logs all
 >   six have emitted **0 lines, ever**. The probes could exclude only a warning-level rejection.
-> - ★★ **They tested 1 of 32 notif types.** The real table is contiguous at RVA
+> - ★★ **They tested 1 of 33 notif types.** The real table is contiguous at RVA
 >   `0x86011D0`–`0x8602828`: **119 tokens, 43 Request / 43 Response / 32 real Notif**
 >   (`server/internal/lobby/vocabulary.go`). The one type probed, `matchmakingNotif`, is the one
 >   most likely to be ticket-gated.
@@ -1689,7 +1690,7 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 |---|---|---|---|
 | **1** | **QoS UDP responder gates BATTLE/PRACTICE** | Inference from an absence; its own source hedged "OR the ICMP module"; `QosManagerServerUrl=` empty in all 12 environments; the populated machinery is Theorycraft's `ULatencyManager` + UE's `FNetPing` (FK-5) | Restore the queue list, click BATTLE, read the capture |
 | ↳ | **✅ SETTLED S105 → `docs/fk5-battle-gate-settled.md`.** *Row preserved above; its diagnosis was right and is now measured.* No `ULatencyMeasurer` has **ever** been created (`LatencyManager.cpp:315`, verbosity **Display**, 0 hits / 14 logs) and the UDP-echo impl `0x1F8CFC0` is a **100 % zero page** — QoS was never observed to block anything. ⚠ **No replacement culprit**: `TryJoinQueue`'s page `0x5875000` is also 100 % zero, so what blocks BATTLE *past the tile* is **UNKNOWN**. ★ **The experiment is cheaper than this row says — zero backend change**: `bots` is already served and is **not** in the native `IsSpecialQueue` set, so **BOTS → FIND MATCH** enters the real `TryJoinQueue` today. No account level needed (`CanControlQueue` loops `GetCurrentQueues` ×25, `GetQueues` ×0). | **BOTS → FIND MATCH, read `capture.log` in order** |
-| ~~**2**~~ | ✅ **FELL S117 — "Server→client WS push is non-functional" is REFUTED** (`docs/fk15-ws-push-audit.md`) | It was fake: push is MEASURED WORKING (4 × `OnMessageReceived` for our 4 frames); the 5 probes predate log verbosity by 41 days and 2 of their 6 detector categories **do not exist**; they tested **1 of 32** notif types, picked via a `dsNotice`/`dsNotif` typo | Done — harness shipped; next is `dsNotif` + a 32-type sweep |
+| ~~**2**~~ | ✅ **FELL S117 — "Server→client WS push is non-functional" is REFUTED** (`docs/fk15-ws-push-audit.md`) | It was fake: push is MEASURED WORKING (4 × `OnMessageReceived` for our 4 frames); the 5 probes predate log verbosity by 41 days and 2 of their 6 detector categories **do not exist**; they tested **1 of 33** notif types, picked via a `dsNotice`/`dsNotif` typo | **DONE.** Harness shipped; probes 1-3 flown and confirmed live (sentinel echoed back; heartbeat churn fixed; targeted resync proven to refetch **and apply**). Remaining: sweep the other 30 types, and push `dsNotif` itself |
 | **3** | **The 6-shim default set crashes** | S85, never re-tested in 17 sessions. A stronger alternative cause exists: `inject-secondaries.ps1:82` gates on `'\[unhook\]'` in a marker file **nothing clears between launches**, so all five secondaries inject *during* the primary's thread-suspending SafeWrite. ⚠ Also fix `launch-redirect.ps1:95-105`, which forwards every flag across elevation **except `-NoPasses`** — any `-NoPasses` bisection silently runs *with* the passes shim | Delete markers pre-launch (or gate on mtime ≥ process start), then one validation launch |
 | **4** | **DropPlane is falsified as reachable** | N=1 against a tutorial-specific variant, with the source itself recording wrong arg types (FK-22) | Read `LokiDropShip.as` for the markers it queries |
 | **5** | **The S78 free-look rotation wall** | Its leading hypothesis (Enhanced Input) was retracted 2 sessions later, and its own stated remaining path — "hook the camera-update function" — is the per-frame heap vtable hook S78 shipped *in the same session* and never pointed at rotation. Untouched since 2026-07-15. ⚠ *Its hard measurement survives the retraction: no look-sensitivity field exists on the PC, and rewriting every enumerated sensitivity float had zero effect* | Intercept the camera-update slot's OUT rotation and scale it |
