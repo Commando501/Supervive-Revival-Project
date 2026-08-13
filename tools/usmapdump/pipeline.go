@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // classified holds the three reflection categories plus the resolved layout offsets.
@@ -157,11 +158,23 @@ func runPipeline(name string, verbose bool) *classified {
 	return c
 }
 
-func cmdExtract(name string) {
+func cmdExtract(name string, outDir string) {
 	c := runPipeline(name, true)
 	defer procCloseHandle.Call(c.r.h)
 
 	x := buildAddrIndex(c.classes, c.structs, c.enums)
+
+	// FK-14: resolve the FProperty sub-object offsets BY MEASUREMENT against this very
+	// process before walking anything, print the score table, and refuse to emit a
+	// mis-typed usmap. See calibrate.go and docs/fk14-usmap-settled.md §9.
+	if !calibrateOffsets(c.r, c.p, x, c.classes, c.structs) {
+		fmt.Println("\nABORT: offset calibration did not clear its gate. No usmap written.")
+		os.Exit(2)
+	}
+	if os.Getenv("FK14_CALIB_ONLY") != "" {
+		fmt.Println("\nFK14_CALIB_ONLY set — calibration done, nothing written.")
+		return
+	}
 
 	fmt.Println("\n  walking UClass properties...")
 	classInfos := make([]structInfo, 0, len(c.classes))
@@ -192,6 +205,7 @@ func cmdExtract(name string) {
 	}
 	fmt.Printf("\nR2.4 result: %d UClass + %d UScriptStruct = %d total props; %d UEnum values\n",
 		len(classInfos), len(structInfos), totalProps, totalEnumValues)
+	printExtractStats()
 
 	// Print first 10 of each kind to stdout for eyeball verification.
 	allStructs := append([]structInfo{}, classInfos...)
@@ -200,16 +214,21 @@ func cmdExtract(name string) {
 	emitSchema(allStructs, enumInfos, os.Stdout, 10)
 
 	// Write the FULL schema to disk for inspection.
-	out, err := os.Create("schema.txt")
+	schemaPath := filepath.Join(outDir, "schema.txt")
+	out, err := os.Create(schemaPath)
 	if err == nil {
 		emitSchema(allStructs, enumInfos, out, 0)
 		out.Close()
-		fmt.Println("\nFull schema written to: schema.txt")
+		fmt.Println("\nFull schema written to:", schemaPath)
 	}
 
-	// R2.5: serialize to .usmap. Drop into the extractor's search dir (Program.cs picks
-	// up the first *.usmap in tools/extractor/).
+	// R2.5: serialize to .usmap, into outDir only.
+	//
+	// ⚠ FK-14 (S116): there used to be a SECOND emitUsmapBeside here writing the same
+	// bytes to the ABSOLUTE path `…\tools\extractor\mappings.usmap`. It fired on every
+	// `extract` from any CWD and is [M] how the canonical usmap became an orphan with no
+	// recoverable schema (docs/fk14-usmap-settled.md §7). DELETED — deliberately. Deploy
+	// a new usmap by copying it explicitly, never as a side effect of extraction.
 	fmt.Println("\n=== R2.5 serialize .usmap ===")
-	emitUsmapBeside("mappings.usmap", classInfos, structInfos, enumInfos)
-	emitUsmapBeside(`G:\git\Supervive Revival Project\tools\extractor\mappings.usmap`, classInfos, structInfos, enumInfos)
+	emitUsmapBeside(filepath.Join(outDir, "mappings.usmap"), classInfos, structInfos, enumInfos)
 }

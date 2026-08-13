@@ -316,8 +316,15 @@ func main() {
 		cmdObjects(os.Args[2])
 		return
 	}
-	if len(os.Args) == 3 && os.Args[1] == "extract" {
-		cmdExtract(os.Args[2])
+	// extract: <proc> [outDir] — outDir defaults to the CWD. ⚠ FK-14: this command used to
+	// ALSO write its usmap to the absolute path tools\extractor\mappings.usmap on every
+	// run, from any CWD. That write is gone; deploy a usmap by copying it deliberately.
+	if (len(os.Args) == 3 || len(os.Args) == 4) && os.Args[1] == "extract" {
+		outDir := "."
+		if len(os.Args) == 4 {
+			outDir = os.Args[3]
+		}
+		cmdExtract(os.Args[2], outDir)
 		return
 	}
 	// dumpimage: <proc> [outDir] — snapshot the unpacked module image + private exec
