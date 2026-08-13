@@ -318,6 +318,46 @@ by contrast — `EnsureCert` reuses `certs/root.crt`, so restarting with the sam
 dir serves the identical cert and `cacert.pem` stays valid (verify: exactly one
 `SUPERVIVE Revival Root CA` in the bundle, matching `certs/root.crt`).
 
+## THIRD FLIGHT — `disconnectNotif`: a CONTROLLED NEGATIVE (and two near-miss false positives)
+
+Flown twice: bare, then in AccelByte's real sequence (notif **immediately followed by closing the
+socket**, which is what the server actually does — the notif announces a disconnect the server is
+about to perform).
+
+**Result: no attributable effect, with a proper control.** Paired arms, same session, minutes apart:
+
+| arm | action | client behaviour |
+|---|---|---|
+| A | `disconnectNotif` **then** drop `/lobby` | `Connection closed. Status code: 1006 Clean: false Reconnecting: true` → reconnect ~500 ms → friends re-request burst |
+| B (control) | **bare drop, no notif** | *byte-identical*, after normalising timestamps and request ids |
+
+A normalised `diff` of the two log windows differs **only in the notif's own receipt lines**
+(`Type: disconnectNotif`, the raw frame, the JSON echo). Close code, cleanliness, reconnect timing
+and the re-request burst are all the same. ⇒ **the notif contributed nothing observable.**
+
+What IS established: the frame parses cleanly (no `LogJson` error) and case 1's delegate `+0x228`
+**is bound**, so a `SocialManager` subscriber ran. Its effect is simply not externally visible —
+same shape as `userStatusNotif` before it had a row to render into. Not excluded: a UI toast that
+never reaches the log, or a purely internal flag.
+
+### ⚠⚠ TWO FALSE POSITIVES THIS TYPE ALMOST PRODUCED — both killed by a control
+
+1. **`GET /party/players/{id}/voice` at +640 ms**, with ToxMod (voice moderation) re-initialising at
+   +230 ms. A compelling causal story. **It polls on a fixed ~31 s cadence**
+   (`18:43:38 · 18:44:09 · 18:44:40 · 18:45:11 ← "reaction" · 18:45:42 · 18:46:13`) and landed
+   exactly on schedule. Every other nearby request was also on its own tick (mailbox 90 s;
+   matchmaking / configuration / content-service 30 s).
+   ⇒ **Proximity in time is not causation when the client polls on a cadence. MEASURE THE BASE RATE
+   of any endpoint before attributing a hit to your push** — at a 31 s period, something lands within
+   a second or two surprisingly often.
+2. **UI widget activity** (`WBP_UI_Social_Modal_InviteFriends`, `WBP_UI_SocialBarFlyout`,
+   `InvalidateAllWidgets`) ~5 s later. **The operator had the friends context menu open and was
+   clicking.** ⇒ when a human is driving the UI, UI logs are confounded and cannot be attributed.
+
+★ The reusable pair: **a base-rate check for periodic traffic, and a matched control arm for
+event-driven traffic.** Between them they converted an apparent "disconnectNotif does three things"
+into a clean, defensible "it does nothing we can see".
+
 ## What this unlocks, and what is still open
 
 - **Push a friends notif and watch `USocialManager` react.** That is the first push in this
