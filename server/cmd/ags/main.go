@@ -87,6 +87,9 @@ func main() {
 	// and re-applies its party promptly (the S85 avatar-switch latency fix — the client
 	// applies the party only on a messenger-reconnect resync, not on HTTP polls).
 	interSvc.SetPartyDirtyNotifier(lobbySvc.MarkDirty)
+	// Version source for the targeted per-resource resync (FK-15 probe #3). Wired
+	// unconditionally; lobby.enableTargetedResync decides whether it is used.
+	lobbySvc.SetPartyVersionFunc(interSvc.PartyVersion)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if ws.IsUpgrade(r) {
 			lobbySvc.Handle(w, r)
@@ -107,7 +110,7 @@ func main() {
 	// pollutes docs/capture.log.
 	if *adminAddr != "" {
 		adminMux := http.NewServeMux()
-		admin.New(interSvc).Register(adminMux)
+		admin.New(interSvc, lobbySvc).Register(adminMux)
 		handler := admin.Guard(adminMux)
 		// Bind BOTH loopback stacks when the host is loopback/localhost. Browsers
 		// resolve `localhost` to IPv6 ::1 first on Windows, but a single

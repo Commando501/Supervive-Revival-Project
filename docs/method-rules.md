@@ -125,6 +125,51 @@ afterward.
    S115 miss was exactly this (edited from a read taken before `3b29842` landed, committed a
    self-contradicting `CLAUDE.md`, caught only by a grep the user asked for afterwards).
 
+10. **★★ S117: SELF-TEST THE HARNESS INSIDE THE HARNESS — a broken watcher does not report as
+    broken, it reports as a RESULT.** Measuring one live change (`docs/fk15-probe2-live-result-20260813.txt`)
+    produced two false readings in one sitting, in opposite directions:
+    - **`rg` is NOT on PATH in the *background* shell** — it *is* in the foreground one, so the same
+      command that works interactively silently fails when backgrounded. Every count came back an
+      empty string, `[ "" -gt "" ]` errored to stderr (invisible among the noise), and the loop fell
+      through to printing **`RESULT: HELD`** — a **false PASS that happened to agree with the
+      hypothesis**, which is the hardest kind to catch.
+    - **Log timestamps are UTC; `ags`/PowerShell times are local** (here UTC = local + 5 h). A
+      by-minute histogram keyed on the *local* hour read a window **five hours before the change**
+      and showed the old behaviour continuing — a **false FAIL**.
+    ⇒ **Every harness must verify itself before its first real reading:** `command -v` each binary
+    it depends on, run a **positive control** (a string you know is there) and a **negative control**
+    (one you know is not), and **abort loudly on an empty or non-numeric probe** rather than
+    comparing it. And **state the timezone whenever a log line is correlated with a deploy, commit
+    or wall-clock event** — this project already learned the same lesson about *elapsed* time in
+    FK-8 (§6 above); absolute time has the identical failure mode.
+    ⚠ Note the shape: the shell that runs your check is not necessarily the shell you tested it in.
+
+11. **★★ S117: SHOW THE NEEDLE CAN MOVE BEFORE YOU RUN THE EXPERIMENT.** A positive control on
+    your *measuring* instrument is not enough — the *display path* needs one too. Testing whether
+    the client applies a server-pushed loadout, the chosen observable was the menu podium's hero
+    skin. The server side was flawless (push sent, client refetched, socket held) and the screen
+    did not move — because the podium skin is rendered by `loadout_fix.cpp` replaying equips via
+    native calls, and **no shim was injected in that session** (`GET /revival/loadout` = 0, all
+    shim markers days stale). The null was **guaranteed before the experiment started**, and no
+    amount of correct backend work could have changed it. Ask first: *what would have to be true
+    for this indicator to change at all, and is it true right now?*
+    ⚠ Compounding it: three screenshots at two different window sizes were compared by eye, and
+    extra detail visible at the larger scale was reported as a garment change. **Do not argue a
+    result from subtle detail across differently-scaled images** — demand a change that cannot be
+    read two ways, or read the state directly (RPM) instead of looking at it.
+    ★★ **AND THE COMPANION RULE, from the rerun that finally worked: when two readings of an image
+    disagree, do not debate the pixels — build a REVERSIBLE change and drive it back and forth.**
+    On the retest the operator read two shots as identical (watching the skin, which had genuinely
+    not changed) while the podium colour had shifted. Instead of arguing, the change was reverted
+    and re-pushed, producing **blue → gold → blue on command**. A round-trip under your own control
+    is proof; a single before/after pair is an opinion. It also costs nothing extra — the revert was
+    needed anyway.
+    ★ **Choose an observable your own tooling cannot drive.** The retest also had to discard the
+    obvious indicator (the hero skin) because a client-side shim polls the same data every ~175 ms
+    and would have produced the "right" answer for the wrong reason. The lobby platform was chosen
+    precisely because `grep -ci lobbyplatform loadout_fix.cpp` = 0. **Before trusting an indicator,
+    grep for everything else that can move it.**
+
 Also of a piece: **findings that die in commit messages get re-litigated.** `46d873a` and `b420a69`
 had the input mechanism right on 2026-07-16 and were never promoted to a doc, so four later sessions
 re-derived it. **Promote findings out of commit bodies into `docs/`.**

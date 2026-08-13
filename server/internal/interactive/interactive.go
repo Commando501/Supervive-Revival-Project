@@ -32,6 +32,12 @@ func New() *Service {
 // lobby.Service.MarkDirty). Called once at startup from cmd/ags.
 func (s *Service) SetPartyDirtyNotifier(fn func(id string)) { s.partyDirty = fn }
 
+// PartyVersion exposes the monotonic party version for the lobby's targeted
+// per-resource resync (FK-15 probe #3). The messenger's refetch gate is
+// "pushed version > cached version", so it needs the same counter the party
+// document is served with, not an ad-hoc one.
+func (s *Service) PartyVersion() int64 { return s.store.partyVersion() }
+
 // markLoadoutDirty signals that id's loadout changed, so the client can be nudged to
 // re-apply its party promptly. No-op if no notifier is wired.
 func (s *Service) markLoadoutDirty(id string) {

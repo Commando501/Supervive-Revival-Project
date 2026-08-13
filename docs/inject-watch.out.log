@@ -1,11 +1,11 @@
-watch-now: waiting for "SUPERVIVE-Win64-Shipping.exe", then mmap-injecting G:\git\Supervive Revival Project\tools\sigbypass-mod\build\catalog_store_fix.dll
-watch-now: process appeared after 6 poll(s); PID=5680
+watch-now: waiting for "SUPERVIVE-Win64-Shipping.exe", then mmap-injecting G:\git\Supervive Revival Project\tools\sigbypass-mod\catalog_store_fix.dll
+watch-now: process appeared after 8 poll(s); PID=52924
 watch-now: PROCESS_ALL_ACCESS handle obtained after 0 poll(s)
-Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\build\catalog_store_fix.dll into PID 5680
-  remote image base: 0x22D77340000 (size 0x6A000)
-  relocations applied (delta 0x22BF7340000)
+Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\catalog_store_fix.dll into PID 52924
+  remote image base: 0x24DD6440000 (size 0x6A000)
+  relocations applied (delta 0x24C56440000)
   import: KERNEL32.dll
-  exception table: 0x187 entries at 0x22D773A7000 (will RtlAddFunctionTable)
+  exception table: 0x187 entries at 0x24DD64A7000 (will RtlAddFunctionTable)
   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
-  verify: MZ at 0x22D77340000 ✓
+  verify: MZ at 0x24DD6440000 ✓
 OK: manual-map complete (DllMain returned).

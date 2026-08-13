@@ -1027,13 +1027,80 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 ### FK-15 — "Server→client WebSocket push is measured non-functional (5 negative probes)"
 **Severity: MEDIUM-HIGH (it writes off the entire multi-party notification surface).**
 
+> ✅✅ **SETTLED S117, 2026-08-13 — REFUTED BY AUDIT *AND* CONFIRMED BY DIRECT EXPERIMENT.**
+> Primary evidence: `docs/fk15-ws-push-audit.md` + `docs/fk15-probe1-live-result-20260813.txt`.
+> **★★★ THE CLIENT PRINTED OUR SENTINEL BACK.** One 19-byte TEXT frame on the messenger →
+> `LogMessenger: Warning: Messenger recieved unexpected message: FK15-PROBE-FROM-AGS`, against a
+> baseline of **0** captured immediately beforehand and **393 same-category Warnings** in the same
+> log. Server→client push works and reaches the application layer. **Do not re-open.**
+> ★ Bonus: **`LogJson`'s silence was NEVER-RAN, not suppressed** — it fired unprompted at `Warning`
+> because nothing had ever handed it malformed JSON.
+> ★★★★ **PROBE 2 ALSO SHIPPED AND CONFIRMED — the ~60 s messenger churn is FIXED.** Replying in
+> **TEXT** `{"Resource":"hb","Version":0,"Payload":""}` to the client's binary `hb` took the
+> watchdog from **once per ~61 s like clockwork** to **zero fires**, socket held **325 s+** (prior
+> max ~61 s), delivery 1:1. ✅ **S85 checked, not assumed:** an explicit `conn.Drop()` still forces
+> reconnect + resync in <6 s. ⇒ the messenger is now a **stable server→client channel**.
+> ⚠⚠ Two instrument failures while measuring it, both nearly recorded as results: `rg` is absent in
+> the **background** shell (→ a fall-through **false PASS**), and `Loki.log` is **UTC** while deploy
+> times are **local** (→ a **false FAIL** five hours off). Self-test every harness; state the
+> timezone.
+> ★★★ **PROBE 3 CONFIRMED + SHIPPED (default OFF):** a pushed version bump causes a **targeted
+> refetch in 491 ms with NO teardown** — `lobby.NotifyResource(...)`, with `MarkDirty` able to use
+> it instead of dropping the socket. ⚠⚠ **Version is a footgun, both modes measured:** too low →
+> **silently ignored** (`partyVer` is seeded `time.Now().UnixMilli()`); too high → **unbounded
+> refetch loop** (46 fetches in 4 s, cleared only by restarting `ags`). Pass the version the
+> document will carry — the shipped path uses `PartyVersion()` and is correct by construction.
+> ★★★★★ **AND THE APPLY IS PROVEN TOO (2026-08-13) — the flag SHIPS ON.** Controlled round-trip on
+> the lobby platform: podium **BLUE → GOLD → BLUE** on command, `messenger DROP` **0** and connects
+> **1** throughout. ⇒ **S85's socket drop is RETIRED** as the primary lever, and lobby.go's
+> *"~1 s reconnect floor is not backend-controllable"* is obsolete — there is no reconnect now.
+> ★★ **Observable selection is the transferable lesson:** the hero skin is USELESS here because
+> `loadout_fix` polls its feed every ~175 ms and applies skins itself; the **lobby platform** is in
+> the party doc (`loadout.go:411`) and has **zero** shim code, so it is party-doc-driven and
+> shim-blind. ⚠ An earlier attempt was invalid because **no shim was injected at all**
+> (`GET /revival/loadout` = 0) — the display path did not exist and its null was guaranteed.
+> - ★★★ **Push WORKS, and the measurement already existed.** In the 2026-08-09 verbose run the
+>   client logs `AccelByte::AccelByteWebSocket::OnMessageReceived` **exactly 4 times — 1:1 with the
+>   4 frames `respondText` sends** [M]. One `/lobby` socket held **3 h 43 min**, zero closes; the
+>   client asks each of its 4 requests **once** and never retries. ⇒ transport, framing, parse and
+>   SDK surfacing all work. What is untested is whether an **unsolicited** frame produces a
+>   **visible** effect.
+> - ★★ **The 5 negatives are VOID, not weak.** All fired **2026-06-29, 41 days before FK-11's
+>   verbosity fix**. Every detector was pinned to `Warning` by the shipped ini, and **2 of the 6
+>   (`LogPlatformLobby`, `LogPlatformQuery`) DO NOT EXIST in the binary** — they occur nowhere in
+>   this repo except the sentence asserting their silence. Across **326** archived client logs all
+>   six have emitted **0 lines, ever**. The probes could exclude only a warning-level rejection.
+> - ★★ **They tested 1 of 32 notif types.** The real table is contiguous at RVA
+>   `0x86011D0`–`0x8602828`: **119 tokens, 43 Request / 43 Response / 32 real Notif**
+>   (`server/internal/lobby/vocabulary.go`). The one type probed, `matchmakingNotif`, is the one
+>   most likely to be ticket-gated.
+> - ★ **And it was chosen by a wrong-token search:** the v1 name is **`dsNotif`, not `dsNotice`**,
+>   and `dsNotif` **is present**. ⚠ Do not quote "10×" — 9 of those hits are inside
+>   `…FriendsNotif`; standalone, `dsNotif` and `matchmakingNotif` occur **once each**.
+> - ★ **The recorded blocker is obsolete:** the hero-asset gate it blames was solved **6 days after
+>   the probes** (`c1eaf88`, 2026-07-05). Never re-run since.
+> - ★★★ **The OTHER socket is worse than anyone thought:** `UMessengerManager::OnMessage` parses
+>   **TEXT/JSON** into `FNotificationMessage{Resource,Version,Payload}`, and our **binary** `hb`
+>   never reaches it — `recieved unexpected message` (a **Warning**) fired **0** times across
+>   **1,419** connections in which `heartbeat not received` fired **1,418** times. A clean negative
+>   with a built-in positive control. ⇒ the messenger has **never delivered one frame** to its
+>   application layer, and *"a format problem, not a delivery problem"* is backwards — **delivery
+>   fails first**. Fix = reply TEXT `{"Resource":"hb","Version":0,"Payload":""}`.
+> - **Transport exonerated by measurement** (not by reading): frames at 1/2/60/125/126/127/**1462**/
+>   65535/65536 B all arrive byte-identical, read back by an independent RFC 6455 decoder.
+> - **Harness shipped:** admin-panel "WS Push" tab + `/api/ws/{sockets,preview,push,sweep,vocabulary,drop}`.
+>   A probe is now a button press, and one sweep walks all 32 types in ~96 s.
+> **Open, and correctly scoped:** *which* notif types produce a visible client effect. Start with
+> `dsNotif`; re-fly probe #3 at raised verbosity with the free pre-registered positive control
+> (our own 4 responses must log 4 receipts first).
+
 | | |
 |---|---|
 | **Belief** | `docs/coverage-audit-s101.md:98`. |
 | **Actual evidence** | `server/internal/lobby/lobby.go:385-511` — **all five probes build only `matchmakingNotif` frames**, and each bundles 20+ speculative fields (`ip`/`port`/`Address`/`Port`/`HostName`/`ServerUrl`/`dsInfo`/`DsInfo`/…) in one frame, directly violating the project's own single-variable convention. So even the negative result is ambiguous. |
 | **Why weaker** | One message type ≠ the push mechanism. The **messenger DROP** path *does* work end-to-end (S85 `enableMessengerDrop` + `lobby.MarkDirty`), proving the client acts on server-side socket events. And a *targeted* push **is** expressible today: `registerMessenger` (`lobby.go:121`) keys live connections by player id in `s.messengers` — it is only the `/lobby` socket that lacks an id association. |
 | **Steers** | Party invites, join notices, friend requests, kicks — every server-initiated multiplayer event. |
-| **Cheapest experiment** | Push one party-invite-shaped frame (`partyGetInvitedNotice` / `UserNotification_PartyInvite`) on both sockets and watch for a toast **or a `LogJson` complaint** — a complaint is a *win*, it proves the type is parsed. **Hours.** |
+| **Cheapest experiment** | ~~Push one party-invite-shaped frame (`partyGetInvitedNotice` / `UserNotification_PartyInvite`) on both sockets and watch for a toast **or a `LogJson` complaint**.~~ ⚠⚠ **THIS EXPERIMENT WAS A GUARANTEED NULL — do not fly it (S117).** `partyGetInvitedNotice` has **0 hits** in either encoding (the real lobby token is `partyGetInvitedNotif`); `UserNotification_PartyInvite` is a **client-side `UObject` built by `UUserNotificationManager` from local models, not a wire type** (invite content never crosses the socket); and **`LogJson` has emitted 0 lines in 326 client logs** so its complaint could never have appeared. **Replacement:** send the literal text `FK15-PROBE-FROM-AGS` on the **messenger** — `UMessengerManager::OnMessage` fails to parse it and logs `Messenger recieved unexpected message: <sentinel>` at **`Warning`**, visible at today's verbosity, against a **measured-zero baseline over 1,419 connections**. See `docs/fk15-ws-push-audit.md` §3.5. |
 
 ---
 
@@ -1622,7 +1689,7 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 |---|---|---|---|
 | **1** | **QoS UDP responder gates BATTLE/PRACTICE** | Inference from an absence; its own source hedged "OR the ICMP module"; `QosManagerServerUrl=` empty in all 12 environments; the populated machinery is Theorycraft's `ULatencyManager` + UE's `FNetPing` (FK-5) | Restore the queue list, click BATTLE, read the capture |
 | ↳ | **✅ SETTLED S105 → `docs/fk5-battle-gate-settled.md`.** *Row preserved above; its diagnosis was right and is now measured.* No `ULatencyMeasurer` has **ever** been created (`LatencyManager.cpp:315`, verbosity **Display**, 0 hits / 14 logs) and the UDP-echo impl `0x1F8CFC0` is a **100 % zero page** — QoS was never observed to block anything. ⚠ **No replacement culprit**: `TryJoinQueue`'s page `0x5875000` is also 100 % zero, so what blocks BATTLE *past the tile* is **UNKNOWN**. ★ **The experiment is cheaper than this row says — zero backend change**: `bots` is already served and is **not** in the native `IsSpecialQueue` set, so **BOTS → FIND MATCH** enters the real `TryJoinQueue` today. No account level needed (`CanControlQueue` loops `GetCurrentQueues` ×25, `GetQueues` ×0). | **BOTS → FIND MATCH, read `capture.log` in order** |
-| **2** | **Server→client WS push is non-functional** | 5 probes, one message type, each bundling 20+ fields; the messenger-drop path demonstrably works; targeted push *is* expressible via `s.messengers` (FK-15) | Push one party-invite-shaped frame |
+| ~~**2**~~ | ✅ **FELL S117 — "Server→client WS push is non-functional" is REFUTED** (`docs/fk15-ws-push-audit.md`) | It was fake: push is MEASURED WORKING (4 × `OnMessageReceived` for our 4 frames); the 5 probes predate log verbosity by 41 days and 2 of their 6 detector categories **do not exist**; they tested **1 of 32** notif types, picked via a `dsNotice`/`dsNotif` typo | Done — harness shipped; next is `dsNotif` + a 32-type sweep |
 | **3** | **The 6-shim default set crashes** | S85, never re-tested in 17 sessions. A stronger alternative cause exists: `inject-secondaries.ps1:82` gates on `'\[unhook\]'` in a marker file **nothing clears between launches**, so all five secondaries inject *during* the primary's thread-suspending SafeWrite. ⚠ Also fix `launch-redirect.ps1:95-105`, which forwards every flag across elevation **except `-NoPasses`** — any `-NoPasses` bisection silently runs *with* the passes shim | Delete markers pre-launch (or gate on mtime ≥ process start), then one validation launch |
 | **4** | **DropPlane is falsified as reachable** | N=1 against a tutorial-specific variant, with the source itself recording wrong arg types (FK-22) | Read `LokiDropShip.as` for the markers it queries |
 | **5** | **The S78 free-look rotation wall** | Its leading hypothesis (Enhanced Input) was retracted 2 sessions later, and its own stated remaining path — "hook the camera-update function" — is the per-frame heap vtable hook S78 shipped *in the same session* and never pointed at rotation. Untouched since 2026-07-15. ⚠ *Its hard measurement survives the retraction: no look-sensitivity field exists on the PC, and rewriting every enumerated sensitivity float had zero effect* | Intercept the camera-update slot's OUT rotation and scale it |
@@ -1978,7 +2045,7 @@ not a pivot.
 | B-5 | Serve `Extra.FeatureToggleOverrides` + `GameConfig.CVars` on `/core-game/matches/{id}` | E2, FK-23e, Wall #6 | A backend field vs three sessions of bit-splicing |
 | B-6 | Try `-as-development-mode` (flag only, cache intact) | F1 | The game has told us 87 times |
 | B-7 | Restore the queue list, click BATTLE, read what the client asks for next | FK-5, Wall #1 | Settles whether QoS is even the blocker |
-| B-8 | Push one party-invite-shaped WS frame | FK-15, Wall #2 | A `LogJson` complaint is a win |
+| B-8 | ✅ **RESCOPED S117** — ★ send the literal text `FK15-PROBE-FROM-AGS` on the **messenger** (no ini change; baseline is a measured zero over 1,419 connections), then the TEXT heartbeat, then `dsNotif`, then sweep all 33 notif types — all one-click in the panel's WS Push tab. ⚠ `LogJson` is the WRONG detector (0 lines in 326 logs), and **`LogAccelByte` is NOT the dispatcher's category** — use `-Preset Ws`, which raises `LogAccelByteLobby` to VeryVerbose | FK-15 (`docs/fk15-ws-push-audit.md`) | One launch; positive controls are free and pre-registered |
 
 ### Tier C — Multi-session, real research
 

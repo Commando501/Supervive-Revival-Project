@@ -18,7 +18,7 @@ There is no single coverage number, and any attempt to give one is misleading. T
 
 Concretely:
 
-- **Service-impersonation layer (the Go backend): ~72%.** Of 40 distinct endpoints the client actually calls, **25 return real data, 6 are typed/proven-inert stubs, 9 fall to the `{}` catch-all** — and the live client logs **zero** validity or deserialization errors. This layer is close to done for menu use. What's missing is the *write* half (27 of ~33 party operations), the WebSocket vocabulary (**4 of 16** declared lobby message types answered), and everything a real match would touch.
+- **Service-impersonation layer (the Go backend): ~72%.** Of 40 distinct endpoints the client actually calls, **25 return real data, 6 are typed/proven-inert stubs, 9 fall to the `{}` catch-all** — and the live client logs **zero** validity or deserialization errors. This layer is close to done for menu use. What's missing is the *write* half (27 of ~33 party operations), the WebSocket vocabulary (~~**4 of 16**~~ **4 of 43** declared lobby request types answered — the "16" was a scan artifact, see `docs/fk15-ws-push-audit.md` §3.4), and everything a real match would touch.
 - **Front-end menu layer: ~65%.** Of **44 enumerated surfaces, 24 are fully LIVE**, 8 partial, 5 defective, **7 never opened in ~100 sessions**. Six of the 24 live surfaces depend on injected shims — and the full six-shim launch set is recorded as **crashing** (S85) and has never been re-tested.
 - **Content catalog layer: ~55%.** Path enumeration is **100% (107,123 files)**. Structural decode is **88% of `.uasset` but 0% of 7,300 `.umap`**. Semantic decode is far lower: **0 of 481 items have a display name, 4 of 2,429 GameplayEffects record Modifiers, 0 of 60 curve tables are extracted.**
 - **Game-design layer (what the game *is*): ~37%.** We have a near-complete **name index** (25 heroes, 40 queues, 34 POIs, 330 missions, 871 gameplay tags) and almost no **tuning data** — not one hero's health, not one ability's damage, not one circle timing.
@@ -95,7 +95,18 @@ The architecture is genuinely good: one mux, a catch-all that returns empty-succ
 **What we DON'T**
 
 - **The write half of the party surface: 6 of ~33 declared operations.** `/joinQueue`, `/setTargetQueues`, `/sendInvite`, `/setIsOpen`, `/leave`, `/refreshRanks` and 21 more fall to the catch-all. Any real queue or multiplayer flow walks straight into them.
-- **The WebSocket vocabulary: 4 of 16.** The auditor scored this 4/4 = 100% against *what an idle menu sends*. The exe declares 16 lobby type-name strings (`docs/dedicated-server-stub.md:434-447`) and server→client push is **measured non-functional** (5 negative probes).
+- ~~**The WebSocket vocabulary: 4 of 16.** … and server→client push is **measured non-functional** (5 negative probes).~~
+  ⚠⚠ **RETRACTED S117, 2026-08-13 — BOTH HALVES ARE FALSE. See `docs/fk15-ws-push-audit.md`.**
+  (a) **Push works, and the measurement already existed:** with `LogAccelByte` raised, the client logs
+  `AccelByteWebSocket::OnMessageReceived` **4 times for the 4 frames our backend sends** [M], and one
+  `/lobby` socket held **3 h 43 min** with zero closes. The 5 probes all predate FK-11's verbosity fix
+  by **41 days**, so every detector they named was pinned to `Warning` — and **2 of the 6
+  (`LogPlatformLobby`, `LogPlatformQuery`) do not exist in the binary at all**, occurring nowhere in
+  this repo except the sentence asserting their silence.
+  (b) **The "16" is a hand-picked scan list, not an enumeration.** The client's message-type table
+  (contiguous, RVA `0x86011D0`–`0x8602828`) holds **119 tokens — 43 Request / 43 Response / 32 real
+  Notif** [M]. Two of the 16 are not message types; the list **omits two of its own numerator's four
+  items**. The honest ratio is **4 of 43** requests answered, and **1 of 32** notif types ever pushed.
 - **The `/notifications` messenger socket still dies every ~60-70 s.** Four client-initiated closes in 5 minutes, each 5.0 s after the client's own heartbeat. The proactive 30 s keepalive is *proven delivered* (logged 6× in the capture) and still fails — so this is a **format** problem, not a delivery problem. The S85 avatar-latency fix *exploits* this reconnect cycle, which hides the bug.
 - **No model for any of the 9 catch-all endpoints** — `/mmr/*`, `/match-history/*`, `/player-stats/*`, `/referral/*`, `/party/*/voice`. They currently tolerate `{}` only because the account has no data; the moment a real match completes, Career→History and Stats have nowhere to get anything.
 - **Egress outside the redirect is structurally invisible.** Only 2 hostnames are in the hosts file; everything else reaches us via the 25 `ServiceHostnames` we hand the client. Anything the client addresses by hard-coded hostname bypasses the entire census. Live proof: **Vivox (23 requests)** and **`o566896.ingest.sentry.io` (2 requests)** — the latter recorded *nowhere* in the repo as a live outbound endpoint.
@@ -481,7 +492,7 @@ The default 6-shim launch is recorded as **crashing** (S85, with PID-level contr
 ~0.5% of functions named. No `.pdata`, so Ghidra recovers every boundary heuristically. **2 MB of gameplay `.text` is sitting on disk unmerged.** 1,057 recorded name→thunk pairs are unusable because no probe prints the module base.
 
 **9. The party/queue write surface and the lobby protocol.**
-6 of ~33 party operations, 4 of 16 lobby message types, server→client push measured non-functional, messenger binary framing unknown beyond a 2-byte token. Plus a diagnostic queue trim that was never reverted, actively degrading the BATTLE and PRACTICE tabs today.
+6 of ~33 party operations, ~~4 of 16 lobby message types, server→client push measured non-functional~~ (**both RETRACTED S117 — 4 of 43, and push is MEASURED WORKING; see `docs/fk15-ws-push-audit.md`**), messenger binary framing unknown beyond a 2-byte token. Plus a diagnostic queue trim that was never reverted, actively degrading the BATTLE and PRACTICE tabs today.
 
 **10. Egress outside the redirect.**
 The endpoint census can structurally only see traffic that arrives at our mux. Two live outbound hosts are proven (Vivox, Sentry) and one of them appears nowhere in the repo as an outbound endpoint. We do not know what else the client talks to.
