@@ -10,8 +10,27 @@ broadcast — into a delegate with no subscribers.
 
 Located by the structural signature the constructor guarantees: an `FString`
 whose data is `"LbS"` with, exactly 16 bytes later, an `FString` whose data is
-`"LbE"`. Only one candidate of 26 matched. **Validated on four independent
-offsets before use** — none of which were part of the search:
+`"LbE"`.
+
+⚠ **CORRECTION to this document's first draft:** it said "only one candidate of 26 matched" — written
+before the scan finished. **Two** matched. They are trivially separable, and the separation is the
+point:
+
+| P | region | verdict |
+|---|---|---|
+| `0x1D251AA1D28` | **heap** (`0x1D2…`) | a live object's field ⇒ **the Lobby** |
+| `0x7FF7D1EF1A18` | **module `.data`** (RVA `0xA001A18`) | a static default LbS/LbE pair ⇒ not an instance |
+
+Both genuinely point at `"LbS"` and, 16 bytes on, `"LbE"` (both buffers read and confirmed). The
+discriminator is the **address range**, not the structure. **Do not assert a unique match before the
+search that could falsify it has finished.**
+
+★ This also corrects a note in `fk15-handlenotif-jumptable-20260813.md` claiming the LbS/LbE
+**adjacency is not real** — generalised from one sample (`0x9FFEBD0`, whose next FString is
+`"friends"`). At RVA `0xA001A18` the pair *is* adjacent. Adjacency holds in some tables and not
+others; neither direction is a rule.
+
+**Validated on four independent offsets before use** — none of which were part of the search:
 
 | offset | expected (from the ctor at `.text 0x4AF2270`) | read |
 |---|---|---|
