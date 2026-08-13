@@ -51,9 +51,18 @@ idx 23, read from the running process:
 ```
 lea rdx, [rdi+0x1550]        ; a delegate member on the Lobby object
 lea rcx, [rip -> 0x9FFE6F0]  ; static descriptor (a populated reflection table)
-call 0x4b06020               ; shared deserialize + broadcast helper
+call 0x4ad6020               ; shared deserialize + broadcast helper
 jmp  0x4b04955               ; epilogue
 ```
+
+⚠ **ADDRESS CORRECTION (same day):** this doc first recorded the helper as
+`0x4b06020`. That was a transcription slip — the live call is `0x7ff7cc9c6020`
+and the module base is `0x7FF7C7EF0000`, so the RVA is **`0x4AD6020`**.
+`0x4b06020` is a real but unrelated address, which is exactly why the error was
+not self-evident: disassembling it produced plausible-looking code mid-function.
+**Verified:** `0x4AD6020` has a proper prologue (security cookie, then a large
+stack struct zeroed) — the "zero-init model → deserialize → broadcast" shape.
+**Always recompute an RVA from the live VA and the module base; never retype it.**
 
 So a case = {delegate, type descriptor} handed to one common helper. Three cases
 carry a descriptor of this shape: idx 8 (`Lobby+0x11b0`, desc `0x9FFE810`),
