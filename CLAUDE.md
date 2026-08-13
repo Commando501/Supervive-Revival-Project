@@ -293,8 +293,8 @@ default `0x4b048f9`) has **33/33 entries pointing into `.text` and ZERO equal to
 (32 distinct; idx 17/18 share the banned/unbanned pair). ⇒ **`dsNotif` reaches a real case body.**
 A case = `{delegate, type descriptor}` handed to one shared deserialize+broadcast helper
 (`0x4AD6020`); idx 23 verified live: `lea rdx,[rdi+0x1550]; lea rcx,[→0x9FFE6F0]; call 0x4AD6020`.
-⚠ The index→type map comes from a RUNTIME `TMap` at `.data 0x9FFE2D0` — "idx 23 = dsNotif" is
-INFERRED from `.rdata` order and unconfirmed; the headline holds regardless since all 33 are real.
+⚠ SUPERSEDED BY S118: the "one shared helper" is really **three** (`0x4AD6020`/`0x4AD6220`/`0x4AD6420`),
+and "idx 23 = dsNotif" is **no longer inferred — it is MEASURED** (see the S118 block below).
 ★★★★ **AND THE SWEEP DECRYPTED THEM: 9/33 → 33/33 case bodies.** Those pages had NEVER executed in
 any of the 68 prior dumps. ⇒ **driving a code path from the backend FORCES `.text` decryption for
 offline RE** — a steerable version of "coverage rises with what the game has run". Banked in
@@ -306,19 +306,54 @@ signature the ctor guarantees — an `FString` "LbS" with an `FString` "LbE" exa
 and **validated on four independent offsets that were not part of the search**: `+0x88` Num=**19**
 (`"X-Ab-EnvelopeStart"`), `+0x98` Num=**17** (`"X-Ab-EnvelopeEnd"`), `+0xA8`=`"LbS"`,
 `+0xB8`=`"LbE"`.
-**Delegate table: 16 BOUND (entries=3 each: `+0x12c0/+0x12d0/+0x12e0/+0x1570/+0x1590/+0x15a0/
-+0x15c0/+0x15d0/+0x15f0/+0x1600/+0x1610/+0x1630`…), 46 UNBOUND (all-zero) — and
-`+0x1550` (case 23) and `+0x1510` (case 19) are BOTH UNBOUND** [M].
-★ **The 16 bound slots are the internal positive control** — same object, same instant, same tool —
-so "all zeros" is a real unbound reading, not a failed peek.
-⇒ **Pushing that notif can never have an effect in this build. The route is closed at the client's
+`+0x1550` (case 23) and `+0x1510` (case 19) are BOTH UNBOUND [M] — and so is `+0x11b0` (case 8).
+⇒ **Pushing those notifs can never have an effect in this build. The route is closed at the client's
 SUBSCRIPTION layer**, not at routing/parsing/deserialization, all of which were proven working.
-⚠ Scope: "case 23 == `dsNotif`" is still INFERRED from `.rdata` order. What is MEASURED is that the
-delegate *case 23 broadcasts* is unbound.
-★★ **THE ACTIONABLE INVERSION: the 16 BOUND delegates are the types Loki actually subscribes to,
-and they are the only ones that can move the client.** Map those offsets back to case indices (each
-case does `lea rdx,[rdi+<offset>]`, extractable from `dumps/lobby-dispatch-decrypted/`) to get the
-shortlist. **Stop pushing types picked from a string table; push the ones with a listener.**
+⚠ That doc's "16 BOUND (entries=3), 46 UNBOUND" is **SUPERSEDED** — the count was truncated AND the
+stride was wrong. See below.
+
+★★★★★ **THE MAP IS DONE — 7 OF 33 TYPES CAN MOVE THIS CLIENT (S118, 2026-08-13). Read
+`docs/fk15-bound-delegate-map-20260813.md`.**
+| enum | case | delegate | type |
+|---|---|---|---|
+| 2 | 1 | `+0x228` | **`disconnectNotif`** |
+| 16 | 15 | `+0x12d0` | **`userStatusNotif`** |
+| 25-29 | 24-28 | `+0x1630`/`+0x1640`/`+0x1650`/`+0x1660`/`+0x1670` | **`accept`/`request`/`unfriend`/`cancel`/`rejectFriendsNotif`** |
+The other 26 broadcast into a delegate with **no subscriber** — incl. `dsNotif`, `matchmakingNotif`
+and every `party*`. ★ **21 of the 23 bound delegates belong to ONE `USocialManager`** (1 to
+`UMyActivityManager`, 2 raw-method to Lobby itself), which is *why* the reachable surface is exactly
+the friends/presence family. `BoundNotifTypes` in `server/internal/lobby/vocabulary.go` is the list.
+⚠ **A slot is SINGLE-CAST `FDelegateBase` `{void* Alloc; int32 DelegateSize; pad}` — "entries=3" was
+NEVER a subscriber count**, it is an allocation size in 16-byte units, identical on every bound slot.
+`+0xC` is padding holding stale heap garbage (reads `0x1D2` even when UNBOUND), which is what made
+it look like a `TArray{Data,Num,Max}`. Boundness = `DelegateSize != 0` then a virtual call.
+⚠⚠ **ENUMERATE AT 8-BYTE STRIDE.** Members sit at offsets ≡ 8 (mod 16) — the same alignment that
+puts LbS/LbE at `+0xA8`/`+0xB8`. A 0x10-stride scan cannot see `+0x228`, which is **`disconnectNotif`**
+⇒ the miss changed a conclusion (6 vs 7), not just a tally. Both S117 and the first S118 scan had it.
+⚠ **Identify a delegate by its allocation starting with a module-address VTABLE, never by allocation-pool
+adjacency** — that inference misread a real delegate (`+0x1a00`) as an FString. Controls: a known
+delegate must be accepted AND a known FString buffer rejected.
+⚠ **The S117 bound list was truncated at 12 of 16 and ended in a literal `…`.** Four hidden offsets
+are four of the seven answers; joining against it yields 2 hits. **Never join against an ellipsis.**
+
+★★★ **THE ENUM→NAME MAP IS MEASURED, and it CORRECTS the shipped vocabulary.** Read live from the
+`TMap<FString,uint8>` at `.data 0x9FFE2D0` (`Elements.Data=0x1D230AF9280`, ArrayNum=**33**, dense) —
+the exact byte `HandleNotif` dispatches on; the 33 values are a perfect permutation of 1..33.
+**`.rdata` order is CONFIRMED for enum 1-31 and REFUTED at 32-33**: enum 32 = **`signalingP2PNotif`**
+(not `errorNotif`), enum 33 = **`errorNotif`**, and **`messageSessionNotif` is ABSENT from the v1 map**
+(it is not undispatchable — prior RE puts it on a separate handler at `.text 0x4B07E80`, unverified).
+Root cause: two off-by-one window errors that **cancelled into a plausible 33** — `signalingP2PNotif`
+sits 0x128 below the lower bound, `messageSessionNotif` exactly ON the upper bound.
+⚠⚠ `vocabulary.go` warned about this exact failure mode and then committed a different pair of it,
+**and `push_test.go` asserted the false claim** — the test that would catch the error had ingested it
+(rule 9). Both fixed; `BoundNotifTypes` + a guard test added.
+★★ **`idx 23 == dsNotif` is MEASURED** — the shape-A "descriptor" is a plain `FString` whose buffer
+IS the type name (`0x9FFE6F0`→`"dsNotif"`). S117's unbound finding is unaffected.
+⚠ **Hand arithmetic is an instrument.** "Recompute, never retype an RVA" is not enough: an
+addition done by hand dropped a carry and read one page low, and the page below decoded as
+*plausible* UObjects — briefly written up as a real anomaly. **Recompute with a machine.**
+★ **Keep the process alive.** S118 was nearly free because the S117 process was still running (same
+ASLR, same heap, decrypted pages, live `/lobby` socket). Check `Get-Process` before re-deriving.
 
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
@@ -1158,7 +1193,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **36 confirmed instances**, each of which closed a
+   blind spot recorded as a property of the game. **42 confirmed instances**, each of which closed a
    technique, each of which fell in minutes. Read it before recording ANY negative result as a
    property of the game. Includes the nine "how to apply" rules — positive controls, naming the
    artifact you measured, and **rule 9: grep for the claim before correcting one instance of it.**
