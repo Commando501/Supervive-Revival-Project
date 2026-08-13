@@ -292,7 +292,7 @@ REAL.** `Lobby::HandleNotif`'s jump table (33 dword RVAs at `.text 0x4b04978`; i
 default `0x4b048f9`) has **33/33 entries pointing into `.text` and ZERO equal to the default**
 (32 distinct; idx 17/18 share the banned/unbanned pair). ⇒ **`dsNotif` reaches a real case body.**
 A case = `{delegate, type descriptor}` handed to one shared deserialize+broadcast helper
-(`0x4b06020`); idx 23 verified live: `lea rdx,[rdi+0x1550]; lea rcx,[→0x9FFE6F0]; call 0x4b06020`.
+(`0x4AD6020`); idx 23 verified live: `lea rdx,[rdi+0x1550]; lea rcx,[→0x9FFE6F0]; call 0x4AD6020`.
 ⚠ The index→type map comes from a RUNTIME `TMap` at `.data 0x9FFE2D0` — "idx 23 = dsNotif" is
 INFERRED from `.rdata` order and unconfirmed; the headline holds regardless since all 33 are real.
 ★★★★ **AND THE SWEEP DECRYPTED THEM: 9/33 → 33/33 case bodies.** Those pages had NEVER executed in
