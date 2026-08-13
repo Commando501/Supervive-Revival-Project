@@ -947,6 +947,46 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 ### FK-14 — "The usmap is wrong for REPLICATED CONTAINER types" (mis-scoped: it is non-deterministic across the board)
 **Severity: MEDIUM-HIGH (it scopes a mitigation too narrowly).**
 
+> ★★★★★ **SETTLED — S116, 2026-08-12/13. READ `docs/fk14-usmap-settled.md`; it governs over
+> everything below.** Four parallel agents, offline + read-only RPM, zero launches.
+> - ✅ **The 326 is REAL and reproduced to the digit** (326 / 219 container / 26 Loki-owned).
+> - ❌ **"Non-deterministic" is REFUTED as a tool property** — three back-to-back extractions from one
+>   live process are **byte-identical** [M]. Tool evolution is also excluded (the extraction path has
+>   been frozen since `26c6302`, 2026-07-02, and two dumps **18 h apart from the identical binary**
+>   disagree on **312**).
+> - ★★ **ROOT CAUSE: a fixed offset bug.** `tools/usmapdump/extract.go:115` reads a container's inner
+>   **inline at `FField+0x80`** — past the end of the object — so it captures **whatever FField the
+>   allocator placed next. Adjacency is frozen within a process instance and differs across launches**,
+>   which is why 3/3 runs matched and two sessions disagreed. Correct = **`*(FField+0x78)` as a
+>   pointer** [M: 96.6 % vs 3.4 % at `+0x70` vs **0.1 %** for the current read; control 13,360/13,360].
+>   The `extract.go:164` owner guard is **inert** (`ownerHint = 0` at depth 0) *and* self-confirming.
+> - ★★ **The variance was never the interesting part.** ~**70 %** of container inner types are wrong in
+>   **every** usmap ever produced, deterministically; **41 %** of Array/Set inners are a fabricated
+>   `ByteProperty`; **all 555 Maps + 142 Sets carry `Map<Byte,Byte>`/`Set<Byte>`**; and a *second*
+>   writer defect drops **100 % of enum properties (1,840)** and renumbers **7,713** schema indices.
+> - ★ **A fresh extraction is NOT better** — all five usmaps score 29.4–29.9 % against an independent
+>   oracle, errors **symmetric**. Re-extracting without the fix buys nothing.
+> - ⚠ **The four sizes are duplicate `AnimBlueprintGenerated*Data` records** (anim-BP residency), not
+>   coverage and not randomness: all five extractions carry **11,344 unique struct names / 2,226 enums**.
+> - ⚠ **Both load-bearing examples are decided, and BOTH of this entry's readings are wrong:**
+>   `DefaultMappingContexts` = `TArray<FDefaultContextSetting>` (**no usmap can express it** — so
+>   **S79/S80's "EMPTY" was read against a wrong inner type**), and `ScreenEffectCollections` =
+>   `TArray<UMaterialParameterCollection*>` — **NOT `ELokiGameFeatureToggle`**, so **the S88 toggle wall
+>   was built on a `labelPtr` hit on adjacent heap.**
+> - ⚠ **This entry's `ULokiPlayerConfigManager` evidence is not in the 326**, the class is named
+>   `PlayerConfigManager`, and **all four dumps read it identically** — the shift is deterministic and
+>   permanent, not dump-to-dump variance.
+> - ⚠ **"Nothing usmap-derived is trustworthy" is OVER-BROAD.** Struct names, property names, supers,
+>   `StructProperty` type names, scalars and the 2,226-entry enum VALUE table are **0.000 % variant and
+>   correct**. `endpoints.md:49`'s `CoreGamePlayer` is **4 scalars**, so row (g)'s FK-14-based doubt
+>   **does not apply to it**.
+> - ⚠ **Live foot-gun:** `pipeline.go:214` overwrites the canonical usmap on **every** extract from any
+>   CWD — that is how it became an orphan with no recoverable schema. Backup taken; delete that write.
+> - **Audit item 26 is DONE** (canonical MD5 table + consumer map, §7 of the settlement doc).
+>   Two consumers load **stale** usmaps (`asdump.py`; `analyze.py`/`compare.py`), severity LOW-measured;
+>   and **`mappings+as.usmap` is loaded by NOBODY** — CLAUDE.md's "the usmap gap is CLOSED" describes an
+>   artifact that is built, verified, and **not wired in**.
+
 | | |
 |---|---|
 | **Belief** | `CLAUDE.md:259`: *"Don't trust the extracted usmap for replicated container types — it has been wrong repeatedly. Verify struct/array shapes against live RPM."* Echoed at `coverage-audit-s101.md:459`. |

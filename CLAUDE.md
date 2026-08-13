@@ -823,8 +823,21 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
 
 ## Tooling shortcuts
 
-- **Extractor:** `tools/extractor/` — .NET 9 / CUE4Parse-based. Subcommands:
-  `enumerate`, `names`, `namesall`, `dump`, `raw`, `schema`, `assetregistry`.
+- **Extractor:** `tools/extractor/` — .NET 9 / CUE4Parse-based. ★ **TRUE subcommand list is TEN**
+  (`Program.cs:22`, verified S116): `dump names namesall schema assetregistry wherefile mkpak peekpak
+  bpdump rawfile`. ⚠ The old list here was wrong twice: **`raw` is really `rawfile`**, and
+  **`enumerate` is not a subcommand at all** — it is the no-subcommand default mode, and
+  `out/allassets.txt` is the preserved crash log of someone typing it
+  (`Paks: enumerate` → `DirectoryNotFoundException`). `bpdump` drove several breakthroughs and was
+  undocumented. (This also settles ignorance-map row (c).)
+  ⚠ **`dump` has NO output-dir and NO usmap override** — it always writes the repo `out/`, and the
+  usmap is resolved ambiently by search order with no md5 logged. Output is **flat by basename** with
+  **586 colliding basenames** (last writer wins). A proposed `--usmap` / `--out` / `--list` patch
+  (~20-line argv pre-pass, prints the loaded usmap's md5) is at
+  `scratchpad/fk14-assets/PROPOSED-extractor-flags.diff`.
+  **Timing [M]:** ~32.9 ms/asset marginal + 1,436 ms startup ⇒ full re-dump **~59 min** at the current
+  80-path chunking (**20.7 min of that is pure process startup**, 865 processes), or **~38 min** with
+  `--list`.
   Build/run with
   `& "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release` from `tools/extractor/extractor`.
 - **usmap regeneration:** `tools/usmapdump/usmapdump.exe extract <exe-path>`
@@ -986,9 +999,48 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   TRANSIENTLY and serialize via the shared `Local\SuperviveMissionsPIHook` mutex (the way
   `mainmenu_refresh_pi8` / `missions_fix` / `loadout_fix` do). That's what lets all three
   inject together in the default set — any NEW PI-hooking shim must follow the same pattern.
-- Don't trust the extracted usmap for replicated container types — it has been
-  wrong repeatedly (DS missions work cost several passes). Verify struct/array
-  shapes against live RPM.
+- ★★★ **Don't trust the usmap's CONTAINER INNER or ENUM UNDERLYING types — they are ~70 % wrong,
+  DETERMINISTICALLY, in every usmap this project has ever produced (FK-14 SETTLED, S116).** The old
+  rule here ("wrong for *replicated* container types … verify against live RPM") was mis-scoped in
+  BOTH directions and is replaced by: **container inner + enum underlying types are wrong regardless
+  of replication; struct names, property names, super-struct links, `StructProperty` type names,
+  scalar types and enum VALUE tables are identical across every extraction ever taken and CAN be
+  trusted.** Root cause = `tools/usmapdump/extract.go:115` reads a container's inner **inline at
+  `FField+0x80`**, which is past the end of the object, so it captures **whatever FField the allocator
+  placed next** (`ArrayProperty+0x80` is 99.8 % pointer-ranged with only **39 distinct values** — it is
+  literally the next FField's vtable). ⚠⚠ **The correct offsets are PER FAMILY — they do NOT share
+  one** (each 100 % with a 0 % runner-up, two independent passes over 44,398 properties):
+  `FArrayProperty::Inner` **`*(+0x78)`** · `FSetProperty::ElementProp` **`*(+0x70)`** ·
+  `FOptionalProperty::ValueProperty` **`*(+0x70)`** · `FMapProperty::KeyProp` **`*(+0x70)`** /
+  `ValueProp` **`*(+0x78)`** · `FEnumProperty::UnderlyingProp` **`*(+0x70)`** / `Enum` **`*(+0x78)`** ·
+  type-carrying families (Struct/Object/Class/Soft*/Weak/Lazy/Interface/Byte) **`+0x70`**.
+  ★ **`sizeof(FProperty) == 0x70` and the layout is essentially STOCK** — `+0x70` is uniformly the
+  derived class's first member. The one deviant is **`FArrayProperty`, which has an 8-byte hole at
+  `+0x70` (UNIDENTIFIED — not `ArrayFlags`) with `Inner` at `+0x78`.**
+  ⚠⚠ **The aggregate "containers are at `+0x78`, 96.6 %" is an OVER-GENERALISATION that holds for 1 of
+  5 families** — it decomposes exactly as Array 3,548 + Map *Value* 555 at `+0x78`, and Set 142 +
+  Optional 2 + Map *Key* 555 at `+0x70`. **Calibrate per family AND per member, never pooled:** a
+  pooled score blesses `+0x78` at 96.6 %, clears a 90 % gate, and ships a silently-broken
+  Map/Set/Optional build **certified**.
+  ⇒ **The extractor is DETERMINISTIC** (3 back-to-back runs byte-identical); FK-14's "non-deterministic"
+  headline is REFUTED — the variance is **heap adjacency**, frozen within a process, different across
+  launches. Never take an array **stride** from the usmap. Where an element type matters use
+  `tools/asdump/out/binds_members.csv` or the UHT `FPropertyParams` oracle in
+  `dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe`.
+  ⚠ **`tools/extractor/out` (69,142 JSON / 1.3 GB) is invalidated for container + enum values** —
+  confirmed in shipped output (`BP_StoreOffer_StarterPack.json` → `"AssetGrants": [0,5,0,3,10,0,0,0]`).
+  Scalars and struct-typed properties are fine, so the **backend model work is largely SAFE**
+  (`endpoints.md:49`'s `CoreGamePlayer` is 4 scalars — untouched by this).
+  ⚠ **Two prior walls were built on this artifact:** `DefaultMappingContexts` is
+  `TArray<FDefaultContextSetting>` (so **S79/S80's "measured as EMPTY" was read against a wrong inner
+  type**), and `ScreenEffectCollections` is `TArray<UMaterialParameterCollection*>` — **NOT**
+  `ELokiGameFeatureToggle`, so **the S88 toggle wall chased a `labelPtr` hit on adjacent heap.**
+  ⚠ **`pipeline.go:214` silently overwrites the canonical `tools/extractor/mappings.usmap` on EVERY
+  `usmapdump extract`, from any CWD** — that is how the canonical file became an orphan whose
+  `schema.txt` is unrecoverable. Backup: `scratchpad/fk14-safety/`. Delete that write.
+  ⚠ FK-1's recorded root cause (`usmap.go:325 writeInnerOrByte`) is a **downstream workaround**, not
+  the cause; its "**unknown-typed**" filter has fired **ZERO** times and its cited `SpawnSelectEndTime`
+  defect is **not a defect** (UHT says `Float` is correct). Read `docs/fk14-usmap-settled.md` first.
 - **Don't read "no `UECC-*` directory in `Saved\Crashes`" as "the run died with no dump."**
   Sentry's **crashpad** writes a full minidump (43.8 MB) plus that run's own `Loki.log` into
   `<GameRoot>\Loki\.sentry-native\`. `harvest.py` and every hand-rolled census that enumerates
