@@ -291,7 +291,15 @@ var RecommendedProbes = []RecommendedProbe{
 // project could see `LogAccelByte`, whose `OnMessageReceived` line is the only
 // direct receipt for an inbound frame. Re-probing `matchmakingNotif` at raised
 // verbosity is legitimate; it is a different measurement, not a repeat.
-var AlreadyProbed = map[string]string{
-	"matchmakingNotif": "probes #3 (single status=done) and #5 (status=start→done), 2026-06-29, " +
-		"both ~35 bundled fields, both observed at shipped log verbosity (i.e. blind)",
-}
+// ⚠⚠ EMPTIED 2026-08-13 — the historical "probed" record was VOID and skipping on
+// it would have silently protected a null that never happened. Probes #3/#5 were
+// sent UNWRAPPED, before the AccelByte envelope fix, so they were buffered as
+// fragments and NEVER DISPATCHED (0 `Type: %s` lines in the whole corpus). They
+// tested nothing. `matchmakingNotif` is fully re-testable.
+//
+// ★ All 33 types have since been swept WITH the envelope and every one dispatched
+// to a bound handler case (docs/fk15-sweep-33-types-20260813.md). What remains
+// unprobed is per-type PAYLOAD, not routing — so a "have we pushed this type"
+// flag is the wrong axis to skip on. Left empty deliberately; if you re-populate
+// it, key it on (type, payload-shape), not on type alone.
+var AlreadyProbed = map[string]string{}

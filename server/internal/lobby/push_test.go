@@ -396,14 +396,19 @@ func TestSweepWalksVocabulary(t *testing.T) {
 	}
 }
 
-// TestSweepDefaultsToFullVocabulary and skips what was already probed, so a
-// launch is not spent re-confirming a known null.
+// TestSweepSkipsProbed covers the skip MECHANISM, not any particular entry.
+//
+// It injects a temporary AlreadyProbed entry rather than relying on the shipped
+// map, which is now deliberately EMPTY: the historical matchmakingNotif record
+// was void (those probes were sent unwrapped, before the envelope fix, so they
+// were never dispatched), and skipping on it would have protected a null that
+// never happened. A test that asserts "the shipped map excludes X" bakes a
+// retracted claim into the suite.
 func TestSweepSkipsProbed(t *testing.T) {
 	svc, br, _ := liveSocket(t, "/lobby")
 	h := svc.Sockets()[0].Handle
 
 	go func() {
-		// Drain so the sweep's writes never block on a full socket buffer.
 		for {
 			if _, err := readClientFrame(br); err != nil {
 				return
@@ -411,22 +416,44 @@ func TestSweepSkipsProbed(t *testing.T) {
 		}
 	}()
 
+	saved := AlreadyProbed
+	AlreadyProbed = map[string]string{"errorNotif": "test fixture"}
+	defer func() { AlreadyProbed = saved }()
+
 	res, err := svc.Sweep(SweepRequest{Socket: h, GapMs: 1, Label: "full", Skip: true})
 	if err != nil {
 		t.Fatalf("sweep: %v", err)
 	}
-	if want := len(LobbyNotifTypes) - len(AlreadyProbed); len(res) != want {
-		t.Fatalf("pushed %d, want %d (vocabulary minus already-probed)", len(res), want)
+	if want := len(LobbyNotifTypes) - 1; len(res) != want {
+		t.Fatalf("pushed %d, want %d (vocabulary minus the one probed type)", len(res), want)
 	}
-	// Compare the WHOLE payload, not a substring: `rematchmakingNotif` contains
-	// `matchmakingNotif`, so a Contains() assertion here fails on a correct
-	// implementation. That is the same substring-vs-token trap that made a naive
-	// scan report `dsNotif` 10 times when it occurs once (see vocabulary.go) —
-	// worth keeping the note, since it caught this test rather than the code.
+	// Whole-payload compare: `rematchmakingNotif` contains `matchmakingNotif`,
+	// so a Contains() assertion fails on a correct implementation.
 	for _, r := range res {
-		if r.Payload == "type: matchmakingNotif" {
-			t.Error("skipProbed should have excluded matchmakingNotif")
+		if r.Payload == "type: errorNotif" {
+			t.Error("skipProbed did not exclude the probed type")
 		}
+	}
+}
+
+// TestSweepFullVocabularyByDefault: with the shipped (empty) AlreadyProbed,
+// skipProbed must be a no-op — all 33 types go out.
+func TestSweepFullVocabularyByDefault(t *testing.T) {
+	svc, br, _ := liveSocket(t, "/lobby")
+	h := svc.Sockets()[0].Handle
+	go func() {
+		for {
+			if _, err := readClientFrame(br); err != nil {
+				return
+			}
+		}
+	}()
+	res, err := svc.Sweep(SweepRequest{Socket: h, GapMs: 1, Label: "all", Skip: true})
+	if err != nil {
+		t.Fatalf("sweep: %v", err)
+	}
+	if len(res) != len(LobbyNotifTypes) {
+		t.Fatalf("pushed %d, want the full %d", len(res), len(LobbyNotifTypes))
 	}
 }
 
