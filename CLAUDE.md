@@ -367,8 +367,15 @@ it cannot be background traffic. ⇒ the bound/unbound model is **PREDICTIVE**.
 33-type sweep's silence is therefore evidence about NOTHING; do not cite it per-type.
 ⚠ Payload field names matter and fail SILENTLY (`JsonObjectStringToUStruct` ignores unknown keys):
 accept/request/unfriend use **`FriendId`**, cancel/reject use **`UserId`**.
-★★★★ **AND `userStatusNotif` DRIVES THE FRIENDS UI ON COMMAND, BOTH DIRECTIONS** — friend rendered
-`OFFLINE → ONLINE → OFFLINE` purely from pushes. Precondition: the client needs a ROW to render into,
+★★★★ **AND `userStatusNotif` DRIVES THE FRIENDS UI** — a friend rendered **`→ ONLINE`** purely from a
+push. ⚠⚠ **ONE DIRECTION ONLY.** An earlier version of this line claimed "BOTH DIRECTIONS /
+`OFFLINE → ONLINE → OFFLINE`"; that was **RETRACTED** — the OFFLINE leg was published without ever
+being observed (asked for confirmation, never got it, wrote it up anyway: **a pending question is not
+a result**). Tested properly ×2 since: `availability: offline` **parses cleanly** (so `offline` is a
+valid enum — an invalid one shouts in `LogJson`) and the panel **does not change**.
+★ Leading hypothesis, UNTESTED: every offline push carried a **valid activity blob**, and the client
+may render "has activity ⇒ online". Retest with an **empty/omitted activity** before concluding.
+Precondition: the client needs a ROW to render into,
 so serve the friend (`AGS_PROBE_FRIEND=<userId>` → `listOfFriendsResponse`); the first two pushes'
 null was **uninterpretable, not negative** (rule 11). We still do NOT answer `friendsStatusRequest`,
 which is what keeps it single-variable: the ONLY source of "online" is our push.
@@ -1225,7 +1232,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **42 confirmed instances**, each of which closed a
+   blind spot recorded as a property of the game. **43 confirmed instances**, each of which closed a
    technique, each of which fell in minutes. Read it before recording ANY negative result as a
    property of the game. Includes the nine "how to apply" rules — positive controls, naming the
    artifact you measured, and **rule 9: grep for the claim before correcting one instance of it.**
