@@ -284,7 +284,7 @@ The belief *"server→client WebSocket push is measured non-functional (5 negati
   re-issued). What is gone is only the *implicit* ~60 s resync.
   ⚠ Still inert and worth removing in a follow-up: the BINARY `hb` echo and the 30 s proactive
   BINARY keepalive. Both were left untouched deliberately to keep the change single-variable.
-- ★★★ **PROBE 3 CONFIRMED + SHIPPED (default OFF) — a targeted per-resource resync**
+- ★★★ **PROBE 3 CONFIRMED + SHIPPED, AND ON BY DEFAULT — a targeted per-resource resync**
   (`docs/fk15-probe3-live-result-20260813.txt`). Pushing
   `{"Resource":"/match-history/players/<id>","Version":7,"Payload":""}` produced
   `GET /match-history/players/<id>` **491 ms later with the messenger connect count UNCHANGED** —

@@ -451,7 +451,7 @@ func TestSweepAbortsOnDeadSocket(t *testing.T) {
 
 // TestVocabularyIntegrity guards the recovered table against silent edits: the
 // count and two load-bearing members are pinned, since the whole FK-15 re-open
-// rests on dsNotif being present and on matchmakingNotif being 1 of 32.
+// rests on dsNotif being present and on matchmakingNotif being 1 of 33.
 func TestVocabularyIntegrity(t *testing.T) {
 	// 33, tied to the 33-entry jump table at .text 0x04B04978 — not to a regex.
 	// A endswith("Notif") filter yields 32 by dropping the two *Notification cases.

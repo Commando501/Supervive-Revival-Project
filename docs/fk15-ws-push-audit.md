@@ -51,7 +51,7 @@
 >    A textbook never-ran-vs-suppressed case, caught live.
 > 2. **The heartbeat defect reproduced on cue**: 15 s later, `heartbeat not received in 5 seconds`
 >    → `disconnect` → `socket closed wasClean:1 Status: 1000`, exactly as characterised in §3.5.
->    Probe 2 is the fix and is now the highest-value remaining item.
+>    Probe 2 was the fix — since flown and confirmed (see the block above).
 
 > **Verdict: the belief is false as stated, and the evidence it rests on is void.**
 > Server→client WebSocket push **demonstrably works** — the client's own SDK logs a receipt for
@@ -216,7 +216,7 @@ principle.
 
 ---
 
-## 3. ★★★ The probes tested 1 of 32 notif types — and picked it via a wrong-token search
+## 3. ★★★ The probes tested 1 of 33 notif types — and picked it via a wrong-token search
 
 ### 3.1 The real vocabulary — **33 types, every one with a bound dispatcher case**
 
@@ -467,7 +467,7 @@ rebuild and a full game launch. The console makes a probe cost a button press.
 | `POST /api/ws/preview` | assemble a frame and show the exact bytes, **with no game running** |
 | `POST /api/ws/push` | send one operator-authored frame |
 | `POST /api/ws/sweep` | one minimal frame per type, spaced — **one launch walks all 32** |
-| `GET /api/ws/vocabulary` | the 32 notif types, flagged with what has already been probed |
+| `GET /api/ws/vocabulary` | the 33 notif types, flagged with what has already been probed |
 | `POST /api/ws/drop/{handle}` | the **positive control** (see below) |
 
 Properties chosen to stop this harness manufacturing its own false negatives:
@@ -534,6 +534,11 @@ socket** — a messenger frame sent on `/lobby` tests nothing.
 
 **Probes 1–3 are on the MESSENGER and 1–5 need no ini change at all.**
 
+> ✅ **STATUS 2026-08-13: probes 1, 2 and 3 are FLOWN AND CONFIRMED — do not re-fly them.**
+> 1 settled FK-15 (sentinel echoed back), 2 shipped as `enableTextHeartbeatReply` (watchdog fires
+> ~1/min → **0**), 3 shipped as `enableTargetedResync` (refetch **and apply**, no teardown).
+> **Probes 4–7 remain open**, as does sweeping the other 30 notif types.
+
 1. ★★★ **A non-JSON sentinel on the messenger — the single best probe available.** Send the literal
    text `FK15-PROBE-FROM-AGS`. `OnMessage` will fail to parse it as JSON and log
    `Messenger recieved unexpected message: FK15-PROBE-FROM-AGS` at **`Warning`** — visible today.
@@ -543,9 +548,16 @@ socket** — a messenger frame sent on `/lobby` tests nothing.
    client's binary `hb`. Expected: the 60 s reconnect churn **stops**. Independently valuable, and
    it turns the ~55 s usable window per connection into an indefinite one.
    ⚠ Re-verify S85 avatar latency afterwards — it removes the free periodic resync.
-3. ★★ **Targeted resync** — `{"Resource":"/progression/players/<id>","Version":9999999}`. That
-   handler has **no resource equality check**; the only gate is `Version >` cache. Success appears
-   in **our own `capture.log`** as a `GET` — no client log, no verbosity change, no screenshot.
+3. ★★ **Targeted resync** — `{"Resource":"/progression/players/<id>","Version":<the version the
+   document will carry>}`. That handler has **no resource equality check**; the only gate is
+   `Version >` cache. Success appears in **our own `capture.log`** as a `GET` — no client log, no
+   verbosity change, no screenshot.
+   ⚠⚠ **This originally read `"Version":9999999`. DO NOT DO THAT — it was measured to cause an
+   UNBOUNDED REFETCH LOOP** (46 fetches in 4 s, ~one per 70 ms, cleared only by restarting `ags`):
+   the client caches the pushed version, refetches, receives a document with a LOWER version, still
+   believes itself stale, and asks again forever. Pass the version the document will actually carry.
+   For resources served as empty catch-alls (no version in the doc) any small positive value works —
+   that is why the `/match-history` probe succeeded with `Version 7`.
 4. ★★★ **`messageNotif` with an undeserializable payload — the `/lobby` arrival test, no ini change.**
    `type: messageNotif\ntopic: fk15-probe\npayload: {"notAField":1}`.
    `OnMessage` routes `messageNotif` into `CheckMissingNotification` **unconditionally**, which
