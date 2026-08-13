@@ -367,14 +367,17 @@ it cannot be background traffic. ⇒ the bound/unbound model is **PREDICTIVE**.
 33-type sweep's silence is therefore evidence about NOTHING; do not cite it per-type.
 ⚠ Payload field names matter and fail SILENTLY (`JsonObjectStringToUStruct` ignores unknown keys):
 accept/request/unfriend use **`FriendId`**, cancel/reject use **`UserId`**.
-★★★★ **AND `userStatusNotif` DRIVES THE FRIENDS UI** — a friend rendered **`→ ONLINE`** purely from a
-push. ⚠⚠ **ONE DIRECTION ONLY.** An earlier version of this line claimed "BOTH DIRECTIONS /
-`OFFLINE → ONLINE → OFFLINE`"; that was **RETRACTED** — the OFFLINE leg was published without ever
-being observed (asked for confirmation, never got it, wrote it up anyway: **a pending question is not
-a result**). Tested properly ×2 since: `availability: offline` **parses cleanly** (so `offline` is a
-valid enum — an invalid one shouts in `LogJson`) and the panel **does not change**.
-★ Leading hypothesis, UNTESTED: every offline push carried a **valid activity blob**, and the client
-may render "has activity ⇒ online". Retest with an **empty/omitted activity** before concluding.
+★★★★ **AND `userStatusNotif` DRIVES THE FRIENDS UI, BOTH DIRECTIONS** — a friend rendered
+`ONLINE` and `OFFLINE` purely from pushes.
+⚠⚠ **THE RECIPE DIFFERS PER DIRECTION, AND THIS IS THE WHOLE TRICK: `→ OFFLINE` REQUIRES OMITTING
+`activity`.** MEASURED, single-variable: `offline` + a valid activity blob = **no change** (×2);
+`offline` with `activity` **omitted** = **flips to OFFLINE**. ⇒ **the activity blob OVERRIDES
+`availability`** ("has an activity ⇒ render online"). Sending both is self-contradictory and the
+client believes the activity — a silent, inexplicable null if you don't know this.
+⚠ History worth keeping: "both directions" was first published **unobserved** (asked for
+confirmation, was redirected, wrote it up anyway — *a pending question is not a result*,
+method-rules S118-g) and was RETRACTED. The retraction is what generated the hypothesis that found
+the override rule. **Retracting beat defending.**
 Precondition: the client needs a ROW to render into,
 so serve the friend (`AGS_PROBE_FRIEND=<userId>` → `listOfFriendsResponse`); the first two pushes'
 null was **uninterpretable, not negative** (rule 11). We still do NOT answer `friendsStatusRequest`,

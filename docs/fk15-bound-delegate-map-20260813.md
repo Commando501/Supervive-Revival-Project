@@ -301,25 +301,37 @@ avatar id from S85. Getting `a` wrong sinks the whole activity struct and with i
 | push | payload | FRIENDS panel |
 |---|---|---|
 | — | (friend served, no presence) | `0 ONLINE / 1 OFFLINE` |
-| `availability: online`, `a: "Menus"` | parsed clean | **`1 ONLINE / 0 OFFLINE`**, rank badge + full social context menu (Invite to Party / Request Party Invite / Remove Friend) |
-| `availability: offline` | parsed clean | **NO CHANGE — still `1 ONLINE`** [M, ×2] |
+| `availability: online`, activity = valid blob | parsed clean | **`1 ONLINE / 0 OFFLINE`**, rank badge + full social context menu (Invite to Party / Request Party Invite / Remove Friend) |
+| `availability: offline`, activity = **valid blob** | parsed clean | **NO CHANGE — still `1 ONLINE`** [M, ×2] |
+| `availability: offline`, activity **OMITTED** | parsed clean | **`0 ONLINE / 1 OFFLINE`** [M] |
 
-⇒ **Server-driven presence is confirmed in ONE direction only: `→ ONLINE`.**
+★★★ **MECHANISM (measured, single-variable): THE ACTIVITY BLOB OVERRIDES `availability`.**
+Arms 2 and 3 differ in **exactly one field**. Sending a live activity alongside
+`availability: offline` is self-contradictory and **the client believes the activity** —
+"has an activity ⇒ render as online". ⇒ **To take a friend offline you must OMIT `activity`.**
 
-⚠⚠ **RETRACTION (2026-08-13, same session).** This table first read *"flips back"* and this line first
-claimed *"on command, in both directions"*, and that shipped in commit `30e44b2` (doc, `CLAUDE.md`
-and the commit message). **The OFFLINE leg was never observed.** I pushed it, asked the operator to
-confirm, was asked for a different experiment before any answer came, and wrote up both legs anyway.
-**A pending question is not a result.**
-**Now tested properly, twice** (23:42:20Z and 23:52:31Z): `availability: offline` **parses cleanly**
-(no `LogJson` error, so `offline` IS a valid enum value — an invalid one shouts, as `S118PROBE` did)
-and the panel **stays `1 ONLINE`**. Corroborating evidence: after `unfriendNotif` removed the row and
-a reconnect restored it, the client re-rendered the friend as **ONLINE** with the activity from the
-earlier push — i.e. ONLINE was the retained state throughout.
-★ **Leading hypothesis, UNTESTED:** every offline push carried a **valid activity blob**
-(`a: "Menus"`). The client may render "has an activity ⇒ online", so the activity contradicts the
-availability. The single-variable test is to push `availability: offline` with an **empty or omitted
-activity**. Do that before concluding anything about the OFFLINE path.
+⇒ **Server-driven presence is bidirectional — `→ ONLINE` and `→ OFFLINE` both confirmed —
+but only with the correct recipe per direction.**
+
+⚠⚠ **RETRACTION AND ITS RESOLUTION (2026-08-13, same session) — READ BOTH HALVES.**
+This table first read *"flips back"* and claimed *"on command, in both directions"*, shipped in
+commit `30e44b2` (doc, `CLAUDE.md`, commit message). **The OFFLINE leg had never been observed.**
+I pushed it, asked the operator to confirm, was given a different experiment before any answer
+arrived, and wrote up both legs anyway. **A pending question is not a result** (method rule 1, S118-g).
+
+The retraction was **correct and necessary**, and not merely a paperwork fix: tested properly twice
+(23:42:20Z, 23:52:31Z), the frames I had actually sent **did nothing** — panel stayed `1 ONLINE`.
+Corroborating: after `unfriendNotif` removed the row and a reconnect restored it, the client
+re-rendered the friend as **ONLINE**, i.e. ONLINE was the retained state throughout.
+
+The retraction then **generated the hypothesis that solved it** (flagged UNTESTED at the time):
+every offline push had carried a valid activity blob. Retested with `activity` omitted — single
+variable — and the row went **OFFLINE**. ⇒ the outcome "bidirectional" is true, but the **recipe I
+had published was wrong**, and no amount of repeating it would ever have worked.
+★ **This is the value of retracting rather than defending:** the honest "it does not flip" produced
+the one experiment that found the mechanism. Had the original unevidenced claim stood, the
+activity-overrides-availability rule would still be unknown, and the next person to push `offline`
+with an activity would have hit a silent, inexplicable null.
 
 ★ **Free instrument discovered:** `LogJson` echoes the rejected value AND names the exact
 property and enum. That is the direct antidote to this surface's worst trap — UE's
@@ -398,7 +410,7 @@ exactly like a dead handler.
 | type | effect | strength |
 |---|---|---|
 | `requestFriendsNotif` | HTTP identity resolve (+276 ms) → clickable friend-request card; accepting sent `acceptFriendsRequest` back to us | **strong, visible, bidirectional** |
-| `userStatusNotif` | presence renders: `→ ONLINE` **confirmed**; `→ OFFLINE` **does NOT take** (parses clean, no change, ×2) | **strong, visible, ONE-directional** |
+| `userStatusNotif` | presence renders `→ ONLINE` and `→ OFFLINE` — ⚠ **OFFLINE requires OMITTING `activity`** (a live activity overrides availability) | **strong, visible, bidirectional** |
 | `unfriendNotif` | friend row removed; restored by reconnect | **strong, visible, round-tripped** |
 | `disconnectNotif` | nothing observable, vs a matched bare-drop control | **controlled negative** |
 
