@@ -206,6 +206,45 @@ S117 TEXT heartbeat reply is holding). `Loki.log`: `Type:` 41, `Raw Lobby Respon
 The envelope fix (`1f2b06e`) is present and empirically working, but **rebuild before
 drawing any server-side conclusion from HEAD source.**
 
+## ★★★★★ FLOWN THE SAME SESSION — A PUSHED NOTIF DROVE THE CLIENT, FIRST TIME EVER
+
+The map was tested against the live process it was derived from. **Pre-registered signal**
+(chosen before the push, baseline 0): push a bound type carrying a **fabricated user id that
+exists nowhere else**, and watch for the client to go resolve it — an observable in OUR OWN
+`capture.log`, independent of client log verbosity.
+
+```
+18:14:58.828  WS PUSH[s118-boundprobe-requestFriends] -> /lobby TEXT (68 bytes)
+              "type: requestFriendsNotif\nfriendId: f15118aaaaaaaaaaaaaaaaaaaaaaaaaa"
+18:14:59.104  GET /iam/v4/public/namespaces/supervive/users/f15118aaaaaaaaaaaaaaaaaaaaaaaaaa
+```
+
+**+276 ms.** The client took an id that appears nowhere but in our frame and fetched that
+user's profile — `USocialManager` resolving the requester of an incoming friend request.
+⇒ **receive → envelope-strip → parse → route → deserialize → broadcast → SUBSCRIBER ACTS.**
+The chain is closed end to end for the first time in this project's history.
+
+### Three arms, one socket, one session — binding and payload isolated separately
+
+| arm | type | delegate | payload | client action |
+|---|---|---|---|---|
+| 1 | `requestFriendsNotif` | **BOUND** `+0x1640` | real `friendId` | **GET at +276 ms** |
+| 2 | `requestFriendsNotif` | **BOUND** `+0x1640` | *no fields* (S117 sweep, 20:58:56Z) | **none** |
+| 3 | `dsNotif` | **UNBOUND** `+0x1550` | full 11 fields, 190 B | **none** |
+
+- **Arm 1 vs 3 isolates BINDING**: arm 3 carried the *richer* payload on the same socket with
+  the same envelope and produced nothing; its `MatchID` (`fk15-match-0001`) occurs **exactly
+  once** in the whole capture — our own push line. The client never referenced it.
+- **Arm 1 vs 2 isolates PAYLOAD**: the same bound type with an empty `FriendId` did nothing,
+  which is why the S117 33-type sweep looked inert even on types that *do* have a listener.
+  ⚠ **A sweep of bare `{"type":X}` frames cannot detect a live handler.** Do not read the
+  S117 sweep's silence as evidence about any type.
+- **Denominator:** `GET /iam/v4/public/namespaces/supervive/users/` appears **1 time in the
+  entire 7 MB capture log**, so the hit cannot be background traffic.
+
+★ **The model is now PREDICTIVE, not just descriptive**: it said 7 types can move the client
+and 26 cannot, and the one bound type tested moved it while the unbound one didn't.
+
 ## What this unlocks, and what is still open
 
 - **Push a friends notif and watch `USocialManager` react.** That is the first push in this
