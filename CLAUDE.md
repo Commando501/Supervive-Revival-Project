@@ -355,6 +355,19 @@ addition done by hand dropped a carry and read one page low, and the page below 
 ★ **Keep the process alive.** S118 was nearly free because the S117 process was still running (same
 ASLR, same heap, decrypted pages, live `/lobby` socket). Check `Get-Process` before re-deriving.
 
+★★★★★ **AND IT WAS FLOWN — A PUSHED NOTIF DROVE THE CLIENT, FIRST TIME IN THIS PROJECT.** Pushing
+`requestFriendsNotif` with a **fabricated** `friendId` produced, **+276 ms later**,
+`GET /iam/v4/public/namespaces/supervive/users/f15118aaaa…` — the client resolving a user that exists
+only in our frame. ⇒ **receive → parse → route → deserialize → broadcast → SUBSCRIBER ACTS**, closed
+end to end. Three arms on one socket: bound+payload → **GET**; bound+**no fields** (the S117 sweep) →
+nothing; **unbound** `dsNotif` with a RICHER 11-field payload → nothing (its MatchID appears once in
+the whole capture — our own push line). That endpoint is hit **1 time in the entire 7 MB capture**, so
+it cannot be background traffic. ⇒ the bound/unbound model is **PREDICTIVE**.
+⚠⚠ **A sweep of bare `{"type":X}` frames CANNOT detect a live handler** — arm 2 proves it. The S117
+33-type sweep's silence is therefore evidence about NOTHING; do not cite it per-type.
+⚠ Payload field names matter and fail SILENTLY (`JsonObjectStringToUStruct` ignores unknown keys):
+accept/request/unfriend use **`FriendId`**, cancel/reject use **`UserId`**.
+
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
 and `docs/endpoints.md` (every endpoint the client hits + handler status).
