@@ -160,6 +160,36 @@ $Variants = @{
         #       strings (the pre-fix build, most obvious name). DELETED from the source dir; this
         #       registry regenerates it correctly.
         'play'            = @('-DKRUNMODE=RM_PLAY')                              # ★ CANDIDATE: all fixes on
+        # ★★★ S114 "ROUTE B" (docs/fk13-console-exec-settled.md, docs/fk13-live-run-2026-08-12.md).
+        #   Constructs a UCheatManager with the live PlayerController as Outer and stores it in the
+        #   reflected `CheatManager` UPROPERTY (+0x520), which the shipping build never does because
+        #   `AddCheats` compiled out under `UE_WITH_CHEAT_MANAGER = (1 && !UE_BUILD_SHIPPING)`. The
+        #   class was never stripped: `CheatClass` (+0x528) is populated in BOTH the menu and the
+        #   staged tutorial world (MEASURED). Installing it puts UCheatManager's 42 real exec verbs on
+        #   `UPlayer::Exec` branch 7, reachable by ExecuteConsoleCommand.
+        #   Writes: ONE aligned qword into a heap UObject field, readback-verified. NO module image.
+        #   One-shot (sets g_done), so the Func-swap is restored promptly -- a far smaller exposure
+        #   window than RM_PLAY's 600 s hold.
+        'cheatmgr'        = @('-DKRUNMODE=RM_CHEATMGR')
+        #   ★ MEASURED 2026-08-12, menu route: 'cheatmgr' arms on KFSNAME="ReceiveTickClient" and that
+        #   function is NOT DISPATCHED AT THE MENU -- the shim's own watchdog printed
+        #   "NO GAME-THREAD HITS after 8000 ms (allThreadCalls=0 swapped=2)" and DoCheatMgr never ran.
+        #   ReceiveTickClient was profiled in a SETTLED TUTORIAL WORLD (S112), so it is the right target
+        #   in-world and the wrong one at the menu. 'cheatmgr-any' swaps EVERY BP UFunction instead, so
+        #   it catches whatever the menu actually ticks. Footprint is ~17k pointers rather than 2, which
+        #   S112 measured at 0/8 deaths over 600 s holds -- and this mode is one-shot, so its window is
+        #   seconds, not minutes. Use 'cheatmgr' in-world, 'cheatmgr-any' at the menu.
+        'cheatmgr-any'    = @('-DKRUNMODE=RM_CHEATMGR','-DKFSNAME=\"\"')
+        #   +1 dim: also EXECUTES a verb in-shim as a positive control. Separate variant because it
+        #   changes game state, which installing does not. Diff the .text sha256 against 'cheatmgr'.
+        'cheatmgr-verify' = @('-DKRUNMODE=RM_CHEATMGR','-DKCMVERIFY=1')
+        #   The MENU-route verify build: wide swap (menu never dispatches ReceiveTickClient) + execute
+        #   KCMVERIFYCMD. Default verb is LogLoc, whose UCheatManager body reaches
+        #   BugItStringCreator -> UE_LOG(LogCheatManager, Log, "BugItGo %f ...") -- so success is the
+        #   literal "BugItGo" appearing in Loki.log. All three literals were confirmed present in the
+        #   shipped image before this variant was flown (wide=1 each, against 3 present controls).
+        #   ⚠ NOT "God": measured to emit no log line at all, i.e. a silent instrument.
+        'cheatmgr-any-verify' = @('-DKRUNMODE=RM_CHEATMGR','-DKFSNAME=\"\"','-DKCMVERIFY=1')
         # ★★ S112 SHIPPED: 'play' now defaults to KFUNCSWAP=1 + KFSNAME="ReceiveTickClient", i.e. the
         #   hook is a 2-pointer HEAP write and the module image is never touched. 'play-textpatch' is
         #   the ROLLBACK, and it is also the A/B's measured control arm (10/10 armed windows died),

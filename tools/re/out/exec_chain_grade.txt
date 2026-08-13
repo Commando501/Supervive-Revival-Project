@@ -1,0 +1,471 @@
+image SUPERVIVE-Win64-Shipping.dump.exe  base=0x7ff6505c0000
+FNameNativePtrPair runs found: 2487   pairs: 17892   assigned (class,func) keys: 16490
+
+INSTRUMENT POSITIVE CONTROL (thunk RVAs derived independently in fk13 doc):
+  APlayerController        LocalTravel              expect 0x3c64600  got 0x3c64600   MATCH
+  UKismetSystemLibrary     ExecuteConsoleCommand    expect 0x395d790  got 0x395d790   MATCH
+  ==> 2/2  instrument verified
+
+=== UPlayerInput  (5 exec)   [ON CHAIN: PlayerInput branch, dispatched 1st]
+  ClearSmoothing                         thunk 0x3f3fcf0 -> impl 0x3f14930  [direct]  REAL
+        sig  ClearSmoothing()
+        P_FINISH@0x3f3fd01 -> call 0x3f14930 | 97 B .pdata, 22 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x20
+  InvertAxis                             thunk 0x3f40200 -> impl 0x3f2bb80  [direct]  REAL
+        sig  void InvertAxis(FName AxisName)
+        P_FINISH@0x3f4026c -> call 0x3f2bb80 | 535 B .pdata, 146 insn decoded, first: mov qword ptr [rsp + 0x10], rdx; push rbx; push rbp
+  InvertAxisKey                          thunk 0x3f40290 -> impl 0x3f402ef  [inlined-local]  REAL
+        sig  void InvertAxisKey(struct AxisKey)
+        P_FINISH@n/a -> call 0x3f402ef INSIDE the thunk: the member was inlined and this is an outlined local block | 237 B .pdata, 40 insn decoded, first: mov rax, qword ptr [rbx + 0x20]; test rax, rax; setne dil
+  SetBind                                thunk 0x3f44fc0 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED
+        sig  void SetBind(FName BindName, FString Command)
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+  SetMouseSensitivity                    thunk 0x3f45080 -> impl 0x3f38120  [direct]  REAL
+        sig  void SetMouseSensitivity(float Sensitivity)
+        P_FINISH@0x3f450e8 -> call 0x3f38120 | 322 B .pdata, 72 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rbp; lea rbp, [rsp - 0x57]
+
+=== APlayerController  (14 exec)   [ON CHAIN: ExecActor branch (the PC itself)]
+  Camera                                 thunk 0x3c5e2a0 -> impl 0x3c2ab00  [virtual]  REAL
+        sig  void Camera(FName NewMode)
+        vtbl+0xde8 (slot 445) of APlayerController vtable 0x81a82f8 [conf=MED] | 64 B .pdata, 17 insn decoded, first: mov qword ptr [rsp + 0x10], rbx; push rdi; sub rsp, 0x20
+  ConsoleKey                             thunk 0x3c61570 -> impl 0x138fcc0  [virtual]  REAL
+        sig  void ConsoleKey(struct Key)
+        vtbl+0xd88 (slot 433) of APlayerController vtable 0x81a82f8 [conf=MED] | 77 B .pdata, 25 insn decoded, first: push rbx; sub rsp, 0x20; mov rbx, qword ptr [rdx + 0x10]
+  EnableCheats                           thunk 0x3c61920 -> impl 0x3c35480  [virtual]  REAL
+        sig  EnableCheats()
+        vtbl+0xc10 (slot 386) of APlayerController vtable 0x81a82f8 [conf=MED] | 64 B .pdata, 3 insn decoded, first: mov rax, qword ptr [rcx]; xor edx, edx; jmp qword ptr [rax + 0xee8]
+  FOV                                    thunk 0x3c61cc0 -> impl 0x3c376e0  [virtual]  REAL
+        sig  void FOV(float NewFOV)
+        vtbl+0xc28 (slot 389) of APlayerController vtable 0x81a82f8 [conf=MED] | 64 B .pdata, 5 insn decoded, first: mov rcx, qword ptr [rcx + 0x470]; test rcx, rcx; je 0x3c376f6
+  LocalTravel                            thunk 0x3c64600 -> impl 0x3c41980  [virtual]  REAL
+        sig  void LocalTravel(FString URL)
+        vtbl+0xc38 (slot 391) of APlayerController vtable 0x81a82f8 [conf=MED] | 74 B .pdata, 21 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x40
+  Pause                                  thunk 0x3c64730 -> impl 0x3c43920  [virtual]  REAL
+        sig  Pause()
+        vtbl+0xc58 (slot 395) of APlayerController vtable 0x81a82f8 [conf=MED] | 60 B .pdata, 16 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x20
+  RestartLevel                           thunk 0x3c652b0 -> impl 0x3c49f80  [virtual]  REAL
+        sig  RestartLevel()
+        vtbl+0xc30 (slot 390) of APlayerController vtable 0x81a82f8 [conf=MED] | 239 B .pdata, 57 insn decoded, first: push rdi; sub rsp, 0x60; mov rdi, rcx
+  SendToConsole                          thunk 0x3c652d0 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB
+        sig  void SendToConsole(FString Command)
+        vtbl+0xd90 (slot 434) of APlayerController vtable 0x81a82f8 [conf=MED] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  ServerExec                             thunk 0x33ac000 -> ELIMINATED   thunk-grade REAL  [thunk ICF-shared by 6 fns]
+        sig  void ServerExec(FString Msg)
+        no non-helper call after P_FINISH (33 insn, 0 non-trivial): the member call was compiled out | 127 B .pdata, 33 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x30
+        shared with: AActor::LogMapCheckError, AActor::LogMapCheckWarning, APlayerController::ServerExec, UTraceUtilLibrary::TraceBookmark, UTraceUtilLibrary::TraceMarkRegionEnd, UTraceUtilLibrary::TraceMarkRegionStart
+  SetName                                thunk 0x3c693b0 -> impl 0x3c4e6d0  [virtual]  SMALL-REAL
+        sig  void SetName(FString S)
+        vtbl+0xc60 (slot 396) of APlayerController vtable 0x81a82f8 [conf=MED] | 11 B [837a08010f8f66caffffc3] : cmp dword ptr [rdx + 8], 1; jg 0x3c4b140; ret 
+  StartFire                              thunk 0x3c69d60 -> impl 0x3c51030  [virtual]  REAL
+        sig  void StartFire(uint8 FireModeNum)
+        vtbl+0xcf8 (slot 415) of APlayerController vtable 0x81a82f8 [conf=MED] | 321 B .pdata, 63 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rsi; push rdi
+  SwitchLevel                            thunk 0x3c69ed0 -> impl 0x3c56d50  [virtual]  REAL
+        sig  void SwitchLevel(FString URL)
+        vtbl+0xc68 (slot 397) of APlayerController vtable 0x81a82f8 [conf=MED] | 64 B .pdata, 19 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x20
+  TestServerLevelVisibilityChange        thunk 0x3c69f70 -> ELIMINATED   thunk-grade REAL
+        sig  void TestServerLevelVisibilityChange(FName PackageName, FName FileName)
+        no non-helper call after P_FINISH (42 insn, 0 non-trivial): the member call was compiled out | 170 B .pdata, 42 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x20
+  ToggleSpeaking                         thunk 0x3c6a020 -> impl 0x3c58a80  [virtual]  REAL
+        sig  void ToggleSpeaking(bool bInSpeaking)
+        vtbl+0xd30 (slot 422) of APlayerController vtable 0x81a82f8 [conf=MED] | 150 B .pdata, 32 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rsi; push rdi
+
+=== ALokiPlayerController  (8 exec)   [ON CHAIN: ExecActor branch (the PC itself)]
+  DebugTimelineAdvanceTime               thunk 0x52fd620 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 9 fns]
+        sig  void DebugTimelineAdvanceTime(float Seconds)
+        P_FINISH@0x52fd688 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  DebugTimelineSetTime                   thunk 0x52fd620 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 9 fns]
+        sig  void DebugTimelineSetTime(float NewTime)
+        P_FINISH@0x52fd688 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  RequestAdmin                           thunk 0x54261b0 -> impl 0x569df90  [direct]  TAILJMP->REAL
+        sig  RequestAdmin()
+        P_FINISH@0x54261c1 -> call 0x569df90 | tail-jmp 0x541c580 : 60 B .pdata, 16 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x20
+  ResetObjects                           thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  ResetObjects()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  SendGameplayTagsReport                 thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  SendGameplayTagsReport()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  SendNetProfile                         thunk 0x5426380 -> impl 0x5426433  [inlined-local]  REAL
+        sig  void SendNetProfile(FString Param)
+        P_FINISH@0x54263fa -> call 0x5426433 INSIDE the thunk: the member was inlined and this is an outlined local block | 228 B .pdata, 13 insn decoded, first: lea rdx, [rsp + 0x30]; mov rcx, rdi; call 0x569e3d0
+  SendNetStat                            thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  SendNetStat()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  ServerDebugEnsureAllowRepeat           thunk 0x534be80 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED  [thunk ICF-shared by 6 fns]
+        sig  void ServerDebugEnsureAllowRepeat(FString Cmd)
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+        shared with: ALokiPlayerCheats::CheatChangeHero, ALokiPlayerController::EACIntegrityViolationEventListener, ALokiPlayerController::EACLoginViolationEventListener, ALokiPlayerController::ServerDebugEnsureAllowRepeat, ULokiGameInstance::ShowEACIntegrityViolationWidget, ULokiGameInstance::ShowEACLoginViolationWidget
+
+=== ALokiCharacter  (10 exec)   [ON CHAIN: PCPawn branch (GetPawnOrSpectator)]
+  CheatExperience                        thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  CheatExperience()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  CheatToggleCharacterDebugMode          thunk 0x52fe560 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED
+        sig  void CheatToggleCharacterDebugMode(FString Mode)
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | page all-zero in every dump (never executed); .pdata size=228
+  DebugStatString                        thunk 0x52fed90 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED
+        sig  DebugStatString()
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+  InfiniteHealth                         thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  InfiniteHealth()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  InfiniteMana                           thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  InfiniteMana()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  InfiniteStamina                        thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  InfiniteStamina()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  ResetCooldowns                         thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  ResetCooldowns()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  TeleportAlly                           thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  TeleportAlly()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  TeleportEnemy                          thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  TeleportEnemy()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  TeleportNear                           thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  TeleportNear()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+
+=== AHUD  (6 exec)   [ON CHAIN: MyHUD branch]
+  NextDebugTarget                        thunk 0x38732f0 -> impl 0x389a2f0  [virtual]  REAL  [thunk ICF-shared by 2 fns]
+        sig  NextDebugTarget()
+        vtbl+0x830 (slot 262) of AHUD vtable 0x80990e0 [conf=HIGH] | 312 B .pdata, 82 insn decoded, first: sub rsp, 0x38; xor eax, eax; mov qword ptr [rsp + 0x40], rbx
+  PreviousDebugTarget                    thunk 0x38abd50 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED  [thunk ICF-shared by 3 fns]
+        sig  PreviousDebugTarget()
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+        shared with: AHUD::PreviousDebugTarget, ALokiBaseItem::PlayerStateDupeArrayChanged, ALokiPlayerCheats::ServerUpdateHype
+  ShowDebug                              thunk 0x38ac050 -> impl 0x389fc70  [virtual]  REAL
+        sig  void ShowDebug(FName DebugType)
+        vtbl+0x7c0 (slot 248) of AHUD vtable 0x80990e0 [conf=HIGH] | 521 B .pdata, 126 insn decoded, first: push r14; sub rsp, 0x60; mov qword ptr [rsp + 0x80], rbx
+  ShowDebugForReticleTargetToggle        thunk 0x38ac0e0 -> inlined   thunk-grade REAL
+        sig  void ShowDebugForReticleTargetToggle(UClass* DesiredClass)
+        no non-helper call after P_FINISH (54 insn, 10 non-trivial): the member call was inlined into the thunk | 206 B .pdata, 54 insn decoded, first: mov qword ptr [rsp + 0x10], rbx; mov qword ptr [rsp + 0x18], rsi; push rdi
+  ShowDebugToggleSubCategory             thunk 0x38ac1b0 -> impl 0x38a0260  [direct]  REAL
+        sig  void ShowDebugToggleSubCategory(FName Category)
+        P_FINISH@0x38ac21c -> call 0x38a0260 | 357 B .pdata, 28 insn decoded, first: mov qword ptr [rsp + 8], rcx; push rbx; push rdi
+  ShowHUD                                thunk 0x32ca3d0 -> impl 0x38a03d0  [virtual]  REAL  [thunk ICF-shared by 15 fns]
+        sig  ShowHUD()
+        vtbl+0x7b8 (slot 247) of AHUD vtable 0x80990e0 [conf=HIGH] | 64 B .pdata, 10 insn decoded, first: movzx edx, byte ptr [rcx + 0x398]; movzx eax, dl; shr al, 1
+
+=== AGameMode  (1 exec)   [ON CHAIN: GetAuthGameMode branch]
+  Say                                    thunk 0x380b670 -> impl 0x37ed6b0  [virtual]  REAL
+        sig  void Say(FString Msg)
+        vtbl+0xa40 (slot 328) of AGameMode vtable 0x8076978 [conf=MED] | 64 B .pdata, 7 insn decoded, first: xor eax, eax; mov r8, rdx; mov qword ptr [rsp + 8], rax
+
+=== ALokiPlayerCheats  (25 exec)   [ON CHAIN (indirect): ALokiPlayerController fwd @PC+0xA30]
+  CheatAddMissionProgress                thunk 0x5421d60 -> impl 0x0f7ec20  [direct]  FOLDED-STUB
+        sig  void CheatAddMissionProgress(FString MissionId, FString ObjectiveName, float Progress)
+        P_FINISH@0x5421e5e -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  CheatAutoStrafe                        thunk 0x5421ea0 -> impl 0x55cf430  [direct]  REAL
+        sig  void CheatAutoStrafe(double Period, double Speed)
+        P_FINISH@0x5421f55 -> call 0x55cf430 | 181 B .pdata, 41 insn decoded, first: push rbx; sub rsp, 0x40; movaps xmmword ptr [rsp + 0x30], xmm6
+  CheatAutoStrafeToggleDirection         thunk 0x5421f80 -> impl 0x55cf4f0  [direct]  SMALL-REAL
+        sig  CheatAutoStrafeToggleDirection()
+        P_FINISH@0x5421f91 -> call 0x55cf4f0 | 17 B [80b9b0030000000f94c08881b0030000c3] : cmp byte ptr [rcx + 0x3b0], 0; sete al; mov byte ptr [rcx + 0x3b0], al; ret 
+  CheatChangeHero                        thunk 0x534be80 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED  [thunk ICF-shared by 6 fns]
+        sig  void CheatChangeHero(FString HeroName)
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+        shared with: ALokiPlayerCheats::CheatChangeHero, ALokiPlayerController::EACIntegrityViolationEventListener, ALokiPlayerController::EACLoginViolationEventListener, ALokiPlayerController::ServerDebugEnsureAllowRepeat, ULokiGameInstance::ShowEACIntegrityViolationWidget, ULokiGameInstance::ShowEACLoginViolationWidget
+  CheatGetAllClientActorsByClassName     thunk 0x5421fa0 -> impl 0x5422003  [inlined-local]  COVERAGE-BLOCKED
+        sig  int32 CheatGetAllClientActorsByClassName(FString ClassName)
+        P_FINISH@n/a -> call 0x5422003 INSIDE the thunk: the member was inlined and this is an outlined local block | page all-zero in every dump (never executed); .pdata size=168
+  CheatMeasureCursor                     thunk 0x5422050 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED  [thunk ICF-shared by 2 fns]
+        sig  CheatMeasureCursor()
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+        shared with: ALokiPlayerCheats::CheatMeasureCursor, ALokiPlayerState::CollectIntraGameAnalytics
+  CheatMuteAudio                         thunk 0x5422070 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED
+        sig  void CheatMuteAudio(int32 Mute)
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+  CheatNoCooldowns                       thunk 0x5422100 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED
+        sig  void CheatNoCooldowns(double Enabled)
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+  CheatSetEmote                          thunk 0x5422180 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED
+        sig  void CheatSetEmote(uint8 EmoteIndex, FName EmoteName)
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+  CheatSetRankedPoints                   thunk 0x52fd8f0 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 18 fns]
+        sig  void CheatSetRankedPoints(int32 Amount)
+        P_FINISH@0x52fd95a -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  CheatSetXP                             thunk 0x52fd8f0 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 18 fns]
+        sig  void CheatSetXP(int32 XPAmount)
+        P_FINISH@0x52fd95a -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  CheatTeleportLocation                  thunk 0x5422360 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED
+        sig  void CheatTeleportLocation(double X, double Y, double Z)
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+  CheatTravelToMainMenu                  thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  CheatTravelToMainMenu()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  EnableForceDisplayCharacterName        thunk 0x54245f0 -> impl 0x55d3990  [direct]  SMALL-REAL
+        sig  void EnableForceDisplayCharacterName(double Enabled)
+        P_FINISH@0x5424659 -> call 0x55d3990 | 17 B [0f57c0660f2ec87408c6819203000001c3] : xorps xmm0, xmm0; ucomisd xmm1, xmm0; je 0x55d39a1; mov byte ptr [rcx + 0x39
+  EnableHotkeyCheats                     thunk 0x5424670 -> impl 0x55d39b0  [direct]  SMALL-REAL
+        sig  void EnableHotkeyCheats(double Enabled)
+        P_FINISH@0x54246d9 -> call 0x55d39b0 | 17 B [0f57c0660f2ec87408c6819003000001c3] : xorps xmm0, xmm0; ucomisd xmm1, xmm0; je 0x55d39c1; mov byte ptr [rcx + 0x39
+  HeightMapVisualize                     thunk 0x5425450 -> impl 0x55dccf0  [direct]  REAL
+        sig  void HeightMapVisualize(int32 Enabled)
+        P_FINISH@0x54254ba -> call 0x55dccf0 | 49 B .pdata, 13 insn decoded, first: push rbx; sub rsp, 0x20; mov ebx, edx
+  HeightMapVisualizeHideAbyss            thunk 0x54254e0 -> impl 0x55dcd30  [direct]  REAL
+        sig  void HeightMapVisualizeHideAbyss(int32 Enabled)
+        P_FINISH@0x542554a -> call 0x55dcd30 | 49 B .pdata, 13 insn decoded, first: push rbx; sub rsp, 0x20; mov ebx, edx
+  HeightMapVisualizeRadius               thunk 0x5425570 -> impl 0x55dcd70  [direct]  REAL
+        sig  void HeightMapVisualizeRadius(double Radius)
+        P_FINISH@0x54255d9 -> call 0x55dcd70 | 56 B .pdata, 15 insn decoded, first: sub rsp, 0x38; movaps xmmword ptr [rsp + 0x20], xmm6; movaps xmm6, xmm1
+  LogActorsAtWorldOrigin                 thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  LogActorsAtWorldOrigin()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  LogActorsInRadiusNear                  thunk 0x5425800 -> impl 0x0f7ec20  [direct]  FOLDED-STUB
+        sig  void LogActorsInRadiusNear(struct& Position, double Radius)
+        P_FINISH@0x54258c6 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  Note                                   thunk 0x5425b70 -> impl 0x55df3e0  [direct]  REAL
+        sig  void Note(FString Comment)
+        P_FINISH@0x5425be1 -> call 0x55df3e0 | 113 B .pdata, 28 insn decoded, first: mov qword ptr [rsp + 0x10], rbx; push rsi; sub rsp, 0x20
+  RequestStatusDump                      thunk 0x5426340 -> impl 0x55e3f30  [direct]  REAL
+        sig  RequestStatusDump()
+        P_FINISH@0x5426351 -> call 0x55e3f30 | 57 B .pdata, 18 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x20
+  RequestStatusDumpCursor                thunk 0x5426360 -> impl 0x55e3f70  [direct]  SMALL-REAL
+        sig  RequestStatusDumpCursor()
+        P_FINISH@0x5426371 -> call 0x55e3f70 | 14 B [4883ec28e897690d004883c428c3] : sub rsp, 0x28; call 0x56ba910; add rsp, 0x28; ret 
+  SetGamepadAimSettings                  thunk 0x5428180 -> impl 0x55653e0  [direct]  COVERAGE-BLOCKED
+        sig  void SetGamepadAimSettings(float Sensitivity, float Deadzone, float InputRange, float ScreenPercent, bool bTwinStick)
+        P_FINISH@0x542830f -> call 0x55653e0 | no .pdata entry and page never executed
+  TestErrorMessage                       thunk 0x5317db0 -> impl 0x5317e63  [inlined-local]  REAL  [thunk ICF-shared by 2 fns]
+        sig  void TestErrorMessage(FString TestMessage)
+        P_FINISH@0x5317e2a -> call 0x5317e63 INSIDE the thunk: the member was inlined and this is an outlined local block | 228 B .pdata, 13 insn decoded, first: lea rdx, [rsp + 0x30]; mov rcx, rdi; call 0x55e74a0
+
+=== ULokiTimelineManager  (5 exec)   [ON CHAIN (indirect): ALokiGameState fwd @GS+0x9B8]
+  DebugTimelineAddEvent                  thunk 0x54835b0 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED
+        sig  void DebugTimelineAddEvent(float TimeFromNow, FString EventName)
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+  DebugTimelinePrintEvents               thunk 0x54836e0 -> COVERAGE-BLOCKED   thunk-grade COVERAGE-BLOCKED  [thunk ICF-shared by 2 fns]
+        sig  DebugTimelinePrintEvents()
+        thunk page all-zero in every dump: NEVER EXECUTED, so nothing can be said about it | no .pdata entry and page never executed
+        shared with: ULokiTimelineManager::DebugTimelinePrintEvents, ULokiTimelineManager::OnRep_CurrentServerTimeInitialOnly
+  DebugTimelineReset                     thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  DebugTimelineReset()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  DebugTimelineResetAndPause             thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  DebugTimelineResetAndPause()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  DebugTimelineResume                    thunk 0x5254180 -> impl 0x0f7ec20  [direct]  FOLDED-STUB  [thunk ICF-shared by 92 fns]
+        sig  DebugTimelineResume()
+        P_FINISH@0x5254191 -> call 0xf7ec20 | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+
+=== ULokiClientPlayerCheats  (5 exec)   [reachable: ULokiGameInstance fwd @GI+0x298]
+  CheatFakeLobbyRewardFlow               thunk 0x5316250 -> impl 0x55cf510  [direct]  REAL
+        sig  CheatFakeLobbyRewardFlow()
+        P_FINISH@0x5316261 -> call 0x55cf510 | 79 B .pdata, 22 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x20
+  CheatLobbyAddBadge                     thunk 0x5316270 -> impl 0x55cf560  [direct]  REAL
+        sig  void CheatLobbyAddBadge(FName AssetType, FName AssetID)
+        P_FINISH@0x5316320 -> call 0x55cf560 | 60 B .pdata, 17 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x30
+  CheatResetClientProfile                thunk 0x5316340 -> impl 0x55cf5f0  [direct]  REAL
+        sig  CheatResetClientProfile()
+        P_FINISH@0x5316351 -> call 0x55cf5f0 | 360 B .pdata, 90 insn decoded, first: push rbp; lea rbp, [rsp - 0x57]; sub rsp, 0x100
+  TestDeeplink                           thunk 0x5317cc0 -> impl 0x5317d73  [inlined-local]  REAL
+        sig  void TestDeeplink(FString DeeplinkPath)
+        P_FINISH@0x5317d3a -> call 0x5317d73 INSIDE the thunk: the member was inlined and this is an outlined local block | 228 B .pdata, 13 insn decoded, first: lea rdx, [rsp + 0x30]; mov rcx, rdi; call 0x55e7470
+  TestErrorMessage                       thunk 0x5317db0 -> impl 0x5317e63  [inlined-local]  REAL  [thunk ICF-shared by 2 fns]
+        sig  void TestErrorMessage(FString TestMessage)
+        P_FINISH@0x5317e2a -> call 0x5317e63 INSIDE the thunk: the member was inlined and this is an outlined local block | 228 B .pdata, 13 insn decoded, first: lea rdx, [rsp + 0x30]; mov rcx, rdi; call 0x55e74a0
+
+=== UGameInstance  (2 exec)   [reachable: ULokiGameInstance::ProcessConsoleExec fallback]
+  DebugCreatePlayer                      thunk 0x3801f60 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB
+        sig  void DebugCreatePlayer(int32 ControllerId)
+        vtbl+0x328 (slot 101) of UGameInstance vtable 0x806c8c8 [conf=MED] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  DebugRemovePlayer                      thunk 0x3801ff0 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB
+        sig  void DebugRemovePlayer(int32 ControllerId)
+        vtbl+0x330 (slot 102) of UGameInstance vtable 0x806c8c8 [conf=MED] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+
+=== UGameViewportClient  (3 exec)   [NOT via ProcessConsoleExec -- Exec_Runtime string verbs]
+  SSSwapControllers                      thunk 0x326d280 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB  [thunk ICF-shared by 10 fns]
+        sig  SSSwapControllers()
+        vtbl+0x2c0 (slot 88) of UGameViewportClient vtable 0x8084da0 [conf=MED] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  SetConsoleTarget                       thunk 0x3873640 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB
+        sig  void SetConsoleTarget(int32 PlayerIndex)
+        vtbl+0x2d0 (slot 90) of UGameViewportClient vtable 0x8084da0 [conf=MED] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  ShowTitleSafeArea                      thunk 0x326d2a0 -> impl 0x3865a50  [virtual]  REAL  [thunk ICF-shared by 13 fns]
+        sig  ShowTitleSafeArea()
+        vtbl+0x2c8 (slot 89) of UGameViewportClient vtable 0x8084da0 [conf=MED] | 213 B .pdata, 24 insn decoded, first: sub rsp, 0x28; mov ecx, dword ptr [rip + 0x684c152]; mov rax, qword ptr gs:[0x58]
+
+=== UCheatManager  (50 exec)   [BLOCKED: CheatManager stays NULL, AddCheats = fold 0xF7EC20]
+  BugIt                                  thunk 0x35c6a70 -> impl 0x359e750  [virtual]  REAL
+        sig  void BugIt(FString ScreenShotDescription)
+        vtbl+0x410 (slot 130) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 626 B .pdata, 158 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rsi; mov qword ptr [rsp
+  BugItGo                                thunk 0x35c6b10 -> impl 0x359e9d0  [virtual]  REAL
+        sig  void BugItGo(float X, float Y, float Z, float Pitch, float Yaw, float Roll)
+        vtbl+0x400 (slot 128) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 118 B .pdata, 24 insn decoded, first: sub rsp, 0x68; movss xmm0, dword ptr [rsp + 0x90]; lea r8, [rsp + 0x20]
+  BugItStringCreator                     thunk 0x35c6d00 -> impl 0x359ebf0  [virtual]  REAL
+        sig  void BugItStringCreator(struct ViewLocation, struct ViewRotation, FString(out) GoString, FString(out) LocString)
+        vtbl+0x418 (slot 131) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 594 B .pdata, 144 insn decoded, first: mov rax, rsp; mov qword ptr [rax + 8], rbx; mov qword ptr [rax + 0x10], rsi
+  ChangeSize                             thunk 0x35c6ed0 -> impl 0x35a40d0  [virtual]  REAL
+        sig  void ChangeSize(float F)
+        vtbl+0x2e0 (slot 92) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 64 B .pdata, 16 insn decoded, first: mov qword ptr [rsp + 0x18], rbx; push rbp; lea rbp, [rsp - 0x57]
+  CheatScript                            thunk 0x35c6f60 -> impl 0x35c7013  [inlined-local]  REAL
+        sig  void CheatScript(FString ScriptName)
+        P_FINISH@0x35c6fda -> call 0x35c7013 INSIDE the thunk: the member was inlined and this is an outlined local block | 228 B .pdata, 13 insn decoded, first: lea rdx, [rsp + 0x30]; mov rcx, rdi; call 0x35a4310
+  DamageTarget                           thunk 0x35c7110 -> impl 0x35a7720  [virtual]  REAL
+        sig  void DamageTarget(float DamageAmount)
+        vtbl+0x310 (slot 98) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 625 B .pdata, 136 insn decoded, first: mov qword ptr [rsp + 0x18], rbx; push rbp; push rsi
+  DebugCapsuleSweep                      thunk 0x35c71a0 -> impl 0x35a7b10  [virtual]  REAL
+        sig  DebugCapsuleSweep()
+        vtbl+0x3a0 (slot 116) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 135 B .pdata, 23 insn decoded, first: push rbx; sub rsp, 0x20; mov edx, dword ptr [rcx + 0x40]
+  DebugCapsuleSweepCapture               thunk 0x35c71c0 -> impl 0x35a7ba0  [virtual]  REAL
+        sig  DebugCapsuleSweepCapture()
+        vtbl+0x3c0 (slot 120) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 64 B .pdata, 10 insn decoded, first: mov edx, dword ptr [rcx + 0x60]; inc dword ptr [rcx + 0x78]; add rcx, 0x58
+  DebugCapsuleSweepChannel               thunk 0x35c71e0 -> impl 0x35a7bc0  [virtual]  SMALL-REAL
+        sig  void DebugCapsuleSweepChannel(uint8 Channel)
+        vtbl+0x3b0 (slot 118) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 4 B [885154c3] : mov byte ptr [rcx + 0x54], dl; ret 
+  DebugCapsuleSweepClear                 thunk 0x35c7260 -> impl 0x35a7bd0  [virtual]  REAL
+        sig  DebugCapsuleSweepClear()
+        vtbl+0x3d0 (slot 122) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 161 B .pdata, 49 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rbp; mov qword ptr [rsp 
+  DebugCapsuleSweepComplex               thunk 0x35c7280 -> impl 0x35a7c80  [virtual]  SMALL-REAL
+        sig  void DebugCapsuleSweepComplex(bool bTraceComplex)
+        vtbl+0x3b8 (slot 119) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 21 B [8b4140440fb6c283e0fd4503c0440bc044894140c3] : mov eax, dword ptr [rcx + 0x40]; movzx r8d, dl; and eax, 0xfffffffd;
+  DebugCapsuleSweepPawn                  thunk 0x35c7310 -> impl 0x35a7ca0  [virtual]  REAL
+        sig  DebugCapsuleSweepPawn()
+        vtbl+0x3c8 (slot 121) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 64 B .pdata, 17 insn decoded, first: cmp byte ptr [rip + 0x69dd335], 0; sete al; mov byte ptr [rip + 0x69dd32c], al
+  DebugCapsuleSweepSize                  thunk 0x35c7330 -> impl 0x35a7ce0  [virtual]  SMALL-REAL
+        sig  void DebugCapsuleSweepSize(float HalfHeight, float Radius)
+        vtbl+0x3a8 (slot 117) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 11 B [f30f114948f30f11514cc3] : movss dword ptr [rcx + 0x48], xmm1; movss dword ptr [rcx + 0x4c], xmm2; ret 
+  DestroyAll                             thunk 0x35c7400 -> impl 0x35a7fc0  [virtual]  REAL
+        sig  void DestroyAll(UClass* aClass)
+        vtbl+0x320 (slot 100) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 859 B .pdata, 214 insn decoded, first: push rbp; lea rbp, [rsp - 0x57]; sub rsp, 0xb0
+  DestroyAllPawnsExceptTarget            thunk 0x35c74b0 -> impl 0x35a8320  [virtual]  REAL  [thunk ICF-shared by 2 fns]
+        sig  DestroyAllPawnsExceptTarget()
+        vtbl+0x328 (slot 101) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 1003 B .pdata, 247 insn decoded, first: push rbp; push rbx; push rsi
+  DestroyPawns                           thunk 0x35c74d0 -> impl 0x35a8a70  [virtual]  REAL
+        sig  void DestroyPawns(UClass* aClass)
+        vtbl+0x330 (slot 102) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 940 B .pdata, 241 insn decoded, first: mov r11, rsp; push rbp; lea rbp, [r11 - 0x5f]
+  DestroyServerStatReplicator            thunk 0x35c7580 -> impl 0x35a8ea0  [direct]  REAL
+        sig  DestroyServerStatReplicator()
+        P_FINISH@0x35c7591 -> call 0x35a8ea0 | 224 B .pdata, 52 insn decoded, first: mov qword ptr [rsp + 0x10], rbx; push rdi; sub rsp, 0x30
+  DestroyTarget                          thunk 0x35c75a0 -> impl 0x35a8f80  [virtual]  REAL  [thunk ICF-shared by 3 fns]
+        sig  DestroyTarget()
+        vtbl+0x318 (slot 99) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 269 B .pdata, 65 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rsi; push rdi
+  DumpChatState                          thunk 0x35c75e0 -> impl 0x35a9d70  [virtual]  REAL
+        sig  DumpChatState()
+        vtbl+0x3f0 (slot 126) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 75 B .pdata, 20 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rsi; push rdi
+  DumpOnlineSessionState                 thunk 0x35c7600 -> impl 0x35a9dc0  [virtual]  REAL
+        sig  DumpOnlineSessionState()
+        vtbl+0x3e0 (slot 124) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 75 B .pdata, 20 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rsi; push rdi
+  DumpPartyState                         thunk 0x35c7620 -> impl 0x35a9e10  [virtual]  REAL
+        sig  DumpPartyState()
+        vtbl+0x3e8 (slot 125) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 75 B .pdata, 20 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rsi; push rdi
+  DumpVoiceMutingState                   thunk 0x35c7640 -> impl 0x35a9e60  [virtual]  REAL
+        sig  DumpVoiceMutingState()
+        vtbl+0x3f8 (slot 127) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 242 B .pdata, 55 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rsi; push rdi
+  FlushLog                               thunk 0x35c7900 -> impl 0x35ab310  [virtual]  REAL
+        sig  FlushLog()
+        vtbl+0x420 (slot 132) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 36 B .pdata, 9 insn decoded, first: sub rsp, 0x28; call 0x10f5290; xor edx, edx
+  Fly                                    thunk 0x35c7920 -> impl 0x35ab340  [virtual]  REAL  [thunk ICF-shared by 2 fns]
+        sig  Fly()
+        vtbl+0x2e8 (slot 93) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 185 B .pdata, 49 insn decoded, first: push rbx; sub rsp, 0x30; mov eax, dword ptr [rcx + 0xc]
+  FreezeFrame                            thunk 0x35c7940 -> impl 0x35ab400  [virtual]  REAL
+        sig  void FreezeFrame(float Delay)
+        vtbl+0x2d0 (slot 90) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 406 B .pdata, 96 insn decoded, first: push rsi; push rdi; sub rsp, 0x68
+  Ghost                                  thunk 0x33ac270 -> impl 0x35afcb0  [virtual]  REAL  [thunk ICF-shared by 5 fns]
+        sig  Ghost()
+        vtbl+0x2f8 (slot 95) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 185 B .pdata, 49 insn decoded, first: push rbx; sub rsp, 0x30; mov eax, dword ptr [rcx + 0xc]
+  God                                    thunk 0x35c7fd0 -> impl 0x35afd70  [virtual]  REAL  [thunk ICF-shared by 3 fns]
+        sig  God()
+        vtbl+0x300 (slot 96) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 221 B .pdata, 65 insn decoded, first: mov qword ptr [rsp + 0x10], rbx; push rdi; sub rsp, 0x30
+  InvertMouse                            thunk 0x35c8090 -> impl 0x35b1dc0  [virtual]  REAL
+        sig  InvertMouse()
+        vtbl+0x438 (slot 135) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 94 B .pdata, 24 insn decoded, first: sub rsp, 0x48; mov eax, dword ptr [rcx + 0xc]; shr eax, 4
+  LogLoc                                 thunk 0x35c8210 -> impl 0x35b3680  [virtual]  REAL
+        sig  LogLoc()
+        vtbl+0x428 (slot 133) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 307 B .pdata, 76 insn decoded, first: mov qword ptr [rsp + 8], rbx; mov qword ptr [rsp + 0x10], rsi; mov qword ptr [rsp 
+  OnlyLoadLevel                          thunk 0x35c8300 -> impl 0x35b4760  [virtual]  REAL
+        sig  void OnlyLoadLevel(FName PackageName)
+        vtbl+0x370 (slot 110) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 64 B .pdata, 4 insn decoded, first: mov rax, qword ptr [rcx]; xor r9d, r9d; mov r8b, 1
+  PlayersOnly                            thunk 0x35c8770 -> impl 0x35b6df0  [virtual]  REAL
+        sig  PlayersOnly()
+        vtbl+0x340 (slot 104) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 170 B .pdata, 33 insn decoded, first: push rdi; sub rsp, 0x20; mov rax, qword ptr [rcx]
+  SetMouseSensitivityToDefault           thunk 0x35c9830 -> impl 0x35bd410  [virtual]  REAL
+        sig  SetMouseSensitivityToDefault()
+        vtbl+0x430 (slot 134) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 208 B .pdata, 55 insn decoded, first: push rdi; sub rsp, 0x30; mov eax, dword ptr [rcx + 0xc]
+  SetWorldOrigin                         thunk 0x35ca260 -> impl 0x35be3f0  [direct]  REAL
+        sig  SetWorldOrigin()
+        P_FINISH@0x35ca271 -> call 0x35be3f0 | 256 B .pdata, 57 insn decoded, first: mov qword ptr [rsp + 8], rbx; push rdi; sub rsp, 0x90
+  Slomo                                  thunk 0x35ca280 -> impl 0x35bec10  [virtual]  REAL
+        sig  void Slomo(float NewTimeDilation)
+        vtbl+0x308 (slot 97) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 60 B .pdata, 17 insn decoded, first: sub rsp, 0x38; mov eax, dword ptr [rcx + 0xc]; shr eax, 4
+  SpawnServerStatReplicator              thunk 0x35ca310 -> impl 0x35a8ea0  [direct]  REAL
+        sig  SpawnServerStatReplicator()
+        P_FINISH@0x35ca32a -> call 0x35a8ea0 | 224 B .pdata, 52 insn decoded, first: mov qword ptr [rsp + 0x10], rbx; push rdi; sub rsp, 0x30
+  StreamLevelIn                          thunk 0x35ca3f0 -> impl 0x35c2ad0  [virtual]  REAL
+        sig  void StreamLevelIn(FName PackageName)
+        vtbl+0x368 (slot 109) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 64 B .pdata, 4 insn decoded, first: mov rax, qword ptr [rcx]; mov r9b, 1; movzx r8d, r9b
+  StreamLevelOut                         thunk 0x35ca480 -> impl 0x35c2af0  [virtual]  REAL
+        sig  void StreamLevelOut(FName PackageName)
+        vtbl+0x378 (slot 111) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 64 B .pdata, 4 insn decoded, first: mov rax, qword ptr [rcx]; xor r9d, r9d; xor r8d, r8d
+  Summon                                 thunk 0x35ca510 -> impl 0x35c2b00  [virtual]  REAL
+        sig  void Summon(FString ClassName)
+        vtbl+0x338 (slot 103) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 1093 B .pdata, 251 insn decoded, first: mov r11, rsp; push rbp; lea rbp, [r11 - 0x58]
+  Teleport                               thunk 0x207bde0 -> impl 0x35c3e20  [virtual]  REAL  [thunk ICF-shared by 6 fns]
+        sig  Teleport()
+        vtbl+0x2d8 (slot 91) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 1353 B .pdata, 274 insn decoded, first: mov qword ptr [rsp + 0x10], rbx; mov qword ptr [rsp + 0x18], rsi; push rbp
+  TestCollisionDistance                  thunk 0x35ca5b0 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB
+        sig  TestCollisionDistance()
+        vtbl+0x3d8 (slot 123) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  ToggleAILogging                        thunk 0x33aac90 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB  [thunk ICF-shared by 2 fns]
+        sig  ToggleAILogging()
+        vtbl+0x390 (slot 114) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  ToggleDebugCamera                      thunk 0x35ca5d0 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB
+        sig  ToggleDebugCamera()
+        vtbl+0x380 (slot 112) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  ToggleServerStatReplicatorClientOverwrite thunk 0x35ca5f0 -> impl 0x338a740  [direct]  REAL
+        sig  ToggleServerStatReplicatorClientOverwrite()
+        P_FINISH@0x35ca605 -> call 0x338a740 | 30 B .pdata, 9 insn decoded, first: push rbx; sub rsp, 0x20; mov rbx, rcx
+  ToggleServerStatReplicatorUpdateStatNet thunk 0x35ca670 -> impl 0x338a740  [direct]  REAL
+        sig  ToggleServerStatReplicatorUpdateStatNet()
+        P_FINISH@0x35ca685 -> call 0x338a740 | 30 B .pdata, 9 insn decoded, first: push rbx; sub rsp, 0x20; mov rbx, rcx
+  UpdateSafeArea                         thunk 0x35ca6f0 -> impl 0x0fbe430  [direct]  REAL
+        sig  UpdateSafeArea()
+        P_FINISH@0x35ca6ff -> call 0xfbe430 | 134 B .pdata, 39 insn decoded, first: push rsi; sub rsp, 0x20; inc dword ptr [rcx + 0x14]
+  ViewActor                              thunk 0x35ca710 -> impl 0x35c5560  [virtual]  COVERAGE-BLOCKED
+        sig  void ViewActor(FName ActorName)
+        vtbl+0x358 (slot 107) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | no .pdata entry and page never executed
+  ViewClass                              thunk 0x35ca7a0 -> impl 0x35c5940  [virtual]  COVERAGE-BLOCKED
+        sig  void ViewClass(UClass* DesiredClass)
+        vtbl+0x360 (slot 108) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | no .pdata entry and page never executed
+  ViewPlayer                             thunk 0x35ca850 -> impl 0x35c5eb0  [virtual]  COVERAGE-BLOCKED
+        sig  void ViewPlayer(FString S)
+        vtbl+0x350 (slot 106) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | no .pdata entry and page never executed
+  ViewSelf                               thunk 0x35ca8f0 -> impl 0x35c6220  [virtual]  REAL  [thunk ICF-shared by 2 fns]
+        sig  ViewSelf()
+        vtbl+0x348 (slot 105) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 367 B .pdata, 98 insn decoded, first: mov qword ptr [rsp + 0x10], rbx; push rdi; sub rsp, 0x60
+  Walk                                   thunk 0x207be00 -> impl 0x35c64d0  [virtual]  REAL  [thunk ICF-shared by 6 fns]
+        sig  Walk()
+        vtbl+0x2f0 (slot 94) of UCheatManager vtable 0x7fa7e28 [conf=HIGH] | 96 B .pdata, 28 insn decoded, first: push rbx; sub rsp, 0x20; mov eax, dword ptr [rcx + 0xc]
+
+=== ADebugCameraController  (1 exec)   [only if it is the possessed/ExecActor controller]
+  ShowDebugSelectedInfo                  thunk 0x377c6a0 -> impl 0x3774fa0  [virtual]  SMALL-REAL
+        sig  ShowDebugSelectedInfo()
+        vtbl+0x1000 (slot 512) of ADebugCameraController vtable 0x80357f0 [conf=MED] | 8 B [83b18009000001c3] : xor dword ptr [rcx + 0x980], 1; ret 
+
+=== UAISystem  (2 exec)   [no ProcessConsoleExec caller found on the chain]
+  AIIgnorePlayers                        thunk 0x207be00 -> impl 0x45e7350  [virtual]  SMALL-REAL  [thunk ICF-shared by 6 fns]
+        sig  AIIgnorePlayers()
+        vtbl+0x2f0 (slot 94) of UAISystem vtable 0x843b790 [conf=HIGH] | 15 B [803d3981a005000f94053281a005c3] : cmp byte ptr [rip + 0x5a08139], 0; sete byte ptr [rip + 0x5a08132]; ret 
+  AILoggingVerbose                       thunk 0x33ac270 -> impl 0x45e7360  [virtual]  REAL  [thunk ICF-shared by 5 fns]
+        sig  AILoggingVerbose()
+        vtbl+0x2f8 (slot 95) of UAISystem vtable 0x843b790 [conf=HIGH] | 145 B .pdata, 40 insn decoded, first: push rbx; sub rsp, 0x40; mov rbx, qword ptr [rcx + 0x28]
+
+=== UAbilitySystemGlobals  (2 exec)   [no ProcessConsoleExec caller found on the chain]
+  ToggleIgnoreAbilitySystemCooldowns     thunk 0x35c7fd0 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB  [thunk ICF-shared by 3 fns]
+        sig  ToggleIgnoreAbilitySystemCooldowns()
+        vtbl+0x300 (slot 96) of UAbilitySystemGlobals vtable 0x83a9570 [conf=HIGH] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+  ToggleIgnoreAbilitySystemCosts         thunk 0x33ac230 -> impl 0x0f7ec20  [virtual]  FOLDED-STUB  [thunk ICF-shared by 5 fns]
+        sig  ToggleIgnoreAbilitySystemCosts()
+        vtbl+0x308 (slot 97) of UAbilitySystemGlobals vtable 0x83a9570 [conf=HIGH] | known fold @0xf7ec20: ret 0 (universal empty stub, 165789 slots)
+
+=== UHealthSnapshotBlueprintLibrary  (3 exec)   [static BP library; not on the chain]
+  LogPerformanceSnapshot                 thunk 0x3cb03b0 -> impl 0x3cb04a6  [inlined-local]  REAL
+        sig  void LogPerformanceSnapshot(FString SnapshotTitle, bool bResetStats)
+        P_FINISH@0x3cb046d -> call 0x3cb04a6 INSIDE the thunk: the member was inlined and this is an outlined local block | 296 B .pdata, 13 insn decoded, first: movzx edx, dil; lea rcx, [rsp + 0x30]; call 0x3c9c060
+  StartPerformanceSnapshots              thunk 0x3cb05a0 -> impl 0x3cab8d0  [direct]  REAL
+        sig  StartPerformanceSnapshots()
+        P_FINISH@0x3cb05af -> call 0x3cab8d0 | 376 B .pdata, 89 insn decoded, first: sub rsp, 0x58; mov qword ptr [rsp + 0x68], rbx; mov qword ptr [rsp + 0x50], rdi
+  StopPerformanceSnapshots               thunk 0x3cb05c0 -> impl 0x3cac7c0  [direct]  REAL
+        sig  StopPerformanceSnapshots()
+        P_FINISH@0x3cb05cf -> call 0x3cac7c0 | 190 B .pdata, 45 insn decoded, first: sub rsp, 0x48; cmp qword ptr [rip + 0x6300d0c], 0; je 0x3cac879

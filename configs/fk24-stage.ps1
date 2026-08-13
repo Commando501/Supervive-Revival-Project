@@ -199,7 +199,18 @@ $parked = Wait-For 'parked match model (uiready + match fetched + uptime)' $Wait
   $log = Read-Locked $lokiLog
   if($log -notmatch 'TryUIReady SUCCESS'){ return $false }
   if(Test-Path $capture){
-    $cap = Read-Locked $capture 200000
+    # S114 FIX (2026-08-12): was `Read-Locked $capture 200000`, i.e. only the last
+    # 200 KB of capture.log. That is a TAIL window, and the client fetches
+    # /core-game/matches ONCE, early. Any HTTP traffic after it pushes the fetch
+    # out of the window and this gate can never pass -- the stager then burns its
+    # full 420 s WaitParkedSec and aborts with exit 3, wasting the launch.
+    # MEASURED this session: attempt 1 passed only by luck (fetch at offset
+    # 2,509,540 of 2,580,033 -- 70 KB from the end); attempt 2 had the identical
+    # fetch at 1,264,837 of 2,359,848 -- 1.1 MB out of window -- and stalled.
+    # FK-11's [Core.Log] verbosity work inflated per-run HTTP traffic enough to
+    # make the old window fail routinely. capture.log is recreated per ags start,
+    # so reading it whole is correct and cheap.
+    $cap = Read-Locked $capture 40000000
     if($cap -notmatch 'core-game/matches'){ return $false }
   }
   return $true

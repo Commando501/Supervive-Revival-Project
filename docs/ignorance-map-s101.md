@@ -794,13 +794,65 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 ### FK-13 — "Binary scan confirmed the dev console is fully stripped"
 **Severity: MEDIUM-HIGH (it is the founding justification for the injection-only architecture).**
 
+> ## ✅ SETTLED — S114, 2026-08-12 → **`docs/fk13-console-exec-settled.md`**,
+> ## **`docs/fk13-live-run-2026-08-12.md`**, **`docs/fk13-routeb-shipped.md`**
+>
+> **The OUTCOME was right and every REASON was wrong — and the operational conclusion is FALSE.**
+>
+> - ✅ **The console really is gone.** `ALLOW_CONSOLE == 0`, by three independent instruments:
+>   `UGameViewportClient::Init` (RVA `0x0384FB00`, 1810 B, decrypted) writes both neighbouring stock
+>   members but has **zero** reads of `UEngine::ConsoleClass` (+0x120) and **zero** stores to
+>   `ViewportConsole` (+0x48); guard-exclusive `Console.cpp` literals score **8/8 controls vs 0/5
+>   markers** in an image whose `.rdata` is **100 %** readable; and the `UEngine::Exec` literal pool's
+>   gaps are exactly the compile-guarded verbs. ⇒ pressing `~` can **never** work and no config
+>   changes that. `config-control-plane-s101.md` §5 levers #1/#4 are dead; its probes P1/P2/P4 are
+>   answered offline. [M]
+> - ❌ **…but NOT because the config knobs were stripped** (S101 already showed all four ship), and
+>   ❌ **NOT because S3 scanned a packed binary** — S101's own explanation is also wrong: all six
+>   overturned tokens are readable in the **shipped on-disk exe with a plain ASCII search**. The real
+>   cause of S3's miss is unrecovered; do not propagate the packed-binary story. [M]
+> - ❌❌ **"All cheap external paths are exhausted ⇒ injection only" is FALSE. This is the finding.**
+>   FK-13 was **three independent compile flags**, not one (`TargetRules.cs:1368,1374,1429`):
+>   `bUseLoggingInShipping` (default 0, **this build 1**), `bUseConsoleInShipping` (default 0,
+>   **this build 0**), and `bUseExecCommandsInShipping` — whose stock default is **1**.
+>   `UE_ALLOW_EXEC_COMMANDS == 1` here, so `UEngine::Exec` (`0x3ED66C0`, 2,521 B),
+>   `CallFunctionByNameWithArguments` (`0x1343420`), `FSelfRegisteringExec` and the whole
+>   IConsoleManager cvar channel are all compiled in, and **138 native UFunctions carry `FUNC_Exec`**.
+>   ⚠ This **re-scopes FK-6, it does not contradict it**: FK-6's *"console Exec == 0/500"* was measured
+>   over the **500 Angelscript** UFUNCTIONs and was never a claim about native ones. [M]
+> - ★★★★★ **ROUTE B SHIPPED AND PROVEN END-TO-END.** `APlayerController::CheatManager` (+0x520) was
+>   NULL in every measurement this project ever took, because `AddCheats` compiled out under
+>   `UE_WITH_CHEAT_MANAGER = (1 && !UE_BUILD_SHIPPING)` — but `CheatClass` (+0x528) was **already
+>   populated**. The new `RM_CHEATMGR` mode constructs a `UCheatManager` and stores it there:
+>   **one heap qword, readback-verified, ZERO module-image writes.** Verified live by
+>   `ExecuteConsoleCommand("LogLoc")` → `LogCheatManager: BugItGo 0.000000 …` in `Loki.log`
+>   (baseline 0). **42 real exec verbs** now reachable. [M]
+> - ✅ Also closed: the project had been driving this channel unknowingly since ~S91 — the force-open
+>   shim *is* `ExecuteConsoleCommand("open LVL_Tutorial?game=…")`. S3's own goal was reachable all
+>   along; the **delivery mechanism** was wrong, not the verb.
+> - ❌ **DEAD, measured:** `DebugExecBindings` are config-loaded (exactly the 16 from `BaseInput.ini`)
+>   but **never evaluated** (`#if !UE_BUILD_SHIPPING`; clean literal-pool gap + **0** TArray accesses at
+>   `+0x1A8` in the PlayerInput region against a **925**-access control). `-ExecCmds` **does not parse**
+>   (0 wide hits vs 5 same-class switch controls that all resolve) — the *second* non-functional UE
+>   switch after `-LogCmds`. Loki's own debug menu is reflected but `Show/Hide/ToggleDebugMenu` are
+>   **empty bodies**, and `ULokiBlueprintLibrary::CheatsEnabled` folds to `xor al,al; ret`. [M]
+> - ⚠ **STILL OPEN:** `OPEN` is absent from `UEngine::Exec`'s literal pool yet `open` demonstrably
+>   works, so its dispatch site is unidentified. And the 25 `ALokiPlayerCheats` verbs remain
+>   unreachable — `ALokiPlayerController::ProcessConsoleExec` (`0x569BE50`) *does* forward to
+>   `PC+0xA30`, but that field is NULL live and `AddLokiPlayerCheats` is an empty fold.
+> - ★ **Reusable method born here:** *guard-exclusive marker strings* — `TEXT()` literals occurring
+>   ONLY inside a `#if` region (verified across 24,864 UE source files), controlled by literals from
+>   the **same translation unit** outside the guard. ⚠ The rule *"strings cannot decide
+>   ALLOW_CONSOLE"* is true only of **UHT-emitted** names and FALSE of guard-exclusive literals —
+>   recording it unqualified would foreclose a method that works.
+
 | | |
 |---|---|
 | **Belief** | `docs/dedicated-server-stub.md:541-556`, with an explicit ABSENT list: `EnableCheats`, `-cheat`, `-cheats`, `ConsoleKey`, `ConsoleKeys`, `DebugExecBindings`, `ConsoleClass`, `allowcheats`, `/Script/Engine.Console`, `CheatManagerClass` → *"all cheap external paths are now exhausted; the remaining options require in-process code."* |
 | **Actual evidence** | A Session-3 string scan of a binary that demand-decrypts `.text`, using a tool that had **no wide-string subcommand** (`usmapdump wstrings` was added 2026-06-28, *after* the scan). An ASCII-only scan of this image finds 94 `Log*` tokens where a wide scan finds 1,004 — a 10.7× blind spot in the exact instrument used. |
 | **Why weaker** | Re-tested against `dumps/merged.dump.exe`: `ConsoleKey` ×2, `ConsoleKeys` ×1, `DebugExecBindings` ×1, `ConsoleClass` ×2, `EnableCheats` ×1 — **all five PRESENT**. (`allowcheats`, `/Script/Engine.Console`, `CheatManagerClass`, `ToggleConsole` remain 0, so the picture is mixed, not inverted.) Independent corroboration nobody joined up: `docs/session-79-moonshot-plan.md:688` measured `DebugExecBindings @+0x1A8 Num=16 **NON-empty**` live — the same symbol S3 declared absent. |
 | **Steers** | The premise that in-process injection is the only control path. |
-| **Cheapest experiment** | Try `-ini:Engine:[/Script/Engine.PlayerInput]:+DebugExecBindings=…` on one launch. **Minutes.** |
+| **Cheapest experiment** | ~~Try `-ini:Engine:[/Script/Engine.PlayerInput]:+DebugExecBindings=…` on one launch.~~ ⚠⚠ **THIS PRESCRIPTION WAS WRONG TWICE AND WOULD HAVE PRODUCED A SILENT NULL RECORDED AS CONFIRMATION.** (1) `UPlayerInput` is `UCLASS(config=Input)`, so the base name is **`Input`**, not `Engine` — the section would never have been read. (2) FK-11 then MEASURED that the `-ini:` command-line form is applied **too late to bind** (it failed for `[Core.Log]` with a clean positive control, while the USER ini worked). And (3) even delivered correctly it changes nothing, because `DebugExecBindings` are **never evaluated** in this build. This is the FK-11 pattern exactly — a prescribed "cheap experiment" whose null is indistinguishable from "the feature is absent". **Superseded by the S114 work above; do not run it.** |
 
 ---
 
@@ -1372,7 +1424,7 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 | "`.rdata` is structurally capped at 63.12%" | 33/9,085 all-zero pages (FK-3) |
 | "The packer defeats static string-xref" | The strings are UTF-16 and are in our own dump at the same RVAs (FK-4) |
 | "There is no legacy input path" | 186 ActionMappings in a plaintext file, on a bespoke Loki class (FK-2) |
-| "The dev console is fully stripped" | 5 of 10 ABSENT-listed strings present; `DebugExecBindings Num=16` measured live (FK-13) |
+| "The dev console is fully stripped" | 5 of 10 ABSENT-listed strings present; `DebugExecBindings Num=16` measured live (FK-13) — **SETTLED S114: the console really IS gone (`ALLOW_CONSOLE == 0`, three instruments), but every stated reason was wrong and the operational conclusion *"all cheap external paths are exhausted ⇒ injection only"* is FALSE. `UE_ALLOW_EXEC_COMMANDS == 1` (its UBT default is 1), 138 native `FUNC_Exec` UFunctions exist, and Route B now runs 42 of them live via one heap qword. `docs/fk13-console-exec-settled.md`, `docs/fk13-routeb-shipped.md`** |
 | "The tutorial route is flaky (~2 of 3)" | Byte-identical RVA chains across independent launches (FK-7) — **CLOSED S112: the cause was our own standing `.text` patch (10/10 died with it vs 3/36 without, p = 7e-8); fix shipped and confirmed. The S106 "two shim-caused signatures" diagnosis was directionally right — it was ours — but the mechanism was the module-image write, not the camera/anim families. `docs/s112-fk7-ab-results.md`** |
 | "`SecondsSinceStart` is always 30" | 5 of 92 UECC / 114 distinct deaths — **FK-8 CLOSED S111 with a permutation control** (0/56 violations, P<5e-5) |
 | "Crashes route through Sentry; no UECC dumps" | 86 UECC dirs including 9 from the newest runs (FK-9) |

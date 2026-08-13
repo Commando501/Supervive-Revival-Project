@@ -1,0 +1,73 @@
+# FK-13 lane-3 census token list.  Lines starting '!' are POSITIVE CONTROLS
+# (independently confirmed present -- see docs/config-control-plane-s101.md 0.1,
+# the UInputSettings UHT property-name block at RVA 0x08253d08-0x08253e90).
+#
+# --- S3's ABSENT list (docs/dedicated-server-stub.md:541-556) -----------------
+EnableCheats
+-cheat
+-cheats
+ConsoleKey
+ConsoleKeys
+DebugExecBindings
+ConsoleClass
+allowcheats
+/Script/Engine.Console
+CheatManagerClass
+# --- S3's FOUND list ---------------------------------------------------------
+UCheatManager
+CheatManager
+UConsole
+IpNetDriver
+GameNetDriver
+NetDriverDef
+# --- lane-3 additions --------------------------------------------------------
+ToggleConsole
+ViewportConsole
+Console
+ConsoleClassName
+ExecCmds
+DebugExec
+ConsoleCommand
+ALLOW_CONSOLE_IN_SHIPPING
+ALLOW_CONSOLE
+FKeyBind
+ConsoleVariables
+DumpConsoleCommands
+ShowDebug
+GameplayDebugger
+Exec
+# --- adjacent console/exec machinery -----------------------------------------
+ConsoleSettings
+HistoryBot
+ConsoleAutoComplete
+AutoCompleteList
+bEnableConsoleSupport
+CheatScript
+InputKey
+ProcessConsoleExec
+ConsoleKeys=Tilde
+Tilde
+UE_ALLOW_EXEC_COMMANDS
+FSelfRegisteringExec
+FConsoleCommandExecutor
+Cmd
+EnableConsole120Fps
+# --- POSITIVE CONTROLS: UInputSettings UHT block, known intact ---------------
+!ActionMappings
+!AxisMappings
+!SpeechMappings
+!DefaultPlayerInputClass
+!DefaultInputComponentClass
+!DefaultTouchInterface
+!DefaultViewportMouseCaptureMode
+!FOVScale
+!DoubleClickTime
+# --- POSITIVE CONTROLS: other things this project has measured present -------
+!LokiGameViewportClient
+!LokiPlayerController
+!PlayerConfigManager
+!GameViewportClient
+!PlayerInput
+!EnhancedPlayerInput
+!LogAccelByte
+!ProcessInternal
