@@ -12,6 +12,7 @@ package lobby
 import (
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -483,7 +484,7 @@ func (s *Service) respondText(payload []byte) string {
 	id := msg["id"]
 	switch msg["type"] {
 	case "listOfFriendsRequest":
-		return buildLobby("listOfFriendsResponse", id, "code: 0", "friendsId: []")
+		return buildLobby("listOfFriendsResponse", id, "code: 0", probeFriendsID())
 	case "listIncomingFriendsRequest":
 		return buildLobby("listIncomingFriendsResponse", id, "code: 0", "friendsId: []")
 	case "listOutgoingFriendsRequest":
@@ -493,6 +494,31 @@ func (s *Service) respondText(payload []byte) string {
 	default:
 		return ""
 	}
+}
+
+// probeFriendsID renders the `friendsId` line of listOfFriendsResponse. It is
+// EMPTY by default, so a normal sitting is byte-identical to one taken before
+// this existed; set `AGS_PROBE_FRIEND=<userId>` to inject one synthetic friend.
+//
+// WHY THIS EXISTS (S118, 2026-08-13). `userStatusNotif` is one of the 7 notif
+// types whose client delegate has a subscriber (`docs/fk15-bound-delegate-map-20260813.md`),
+// but pushing it produced no observable effect — because with `friendsId: []`
+// the client has NO ROW to render a presence update into. That null was
+// uninterpretable, not negative: exactly the method-rule-11 trap ("what would
+// have to be true for this indicator to change at all, and is it true now?").
+// Injecting a friend gives presence something to attach to, so ONLINE/OFFLINE
+// can be driven back and forth as a round trip rather than argued from one
+// before/after pair.
+//
+// ⚠ Deliberately does NOT also answer `friendsStatusRequest` (which the client
+// sends to ask for friends' presence, and which we still do not handle). That
+// keeps the experiment single-variable: with no status response, the ONLY way
+// the friend can appear online is our pushed `userStatusNotif`.
+func probeFriendsID() string {
+	if id := os.Getenv("AGS_PROBE_FRIEND"); id != "" {
+		return "friendsId: [" + id + "]"
+	}
+	return "friendsId: []"
 }
 
 // parseLobby splits a lobby message into its key/value fields.

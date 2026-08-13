@@ -367,6 +367,25 @@ it cannot be background traffic. ⇒ the bound/unbound model is **PREDICTIVE**.
 33-type sweep's silence is therefore evidence about NOTHING; do not cite it per-type.
 ⚠ Payload field names matter and fail SILENTLY (`JsonObjectStringToUStruct` ignores unknown keys):
 accept/request/unfriend use **`FriendId`**, cancel/reject use **`UserId`**.
+★★★★ **AND `userStatusNotif` DRIVES THE FRIENDS UI ON COMMAND, BOTH DIRECTIONS** — friend rendered
+`OFFLINE → ONLINE → OFFLINE` purely from pushes. Precondition: the client needs a ROW to render into,
+so serve the friend (`AGS_PROBE_FRIEND=<userId>` → `listOfFriendsResponse`); the first two pushes'
+null was **uninterpretable, not negative** (rule 11). We still do NOT answer `friendsStatusRequest`,
+which is what keeps it single-variable: the ONLY source of "online" is our push.
+★★ **READ THE CLIENT'S OWN `setUserStatusRequest` FOR THE WIRE FORMAT — do not guess it:**
+`availability: online` (**lowercase** enum name) and `activity` is **base64-encoded JSON**, not a
+string: `{"a":"Menus","cV":"…","pId":"party-<id>","pQs":[],"pO":0,"pS":1,"mPS":3,"rk":0,"rkP":0,
+"r":[],"avId":"","t":[],"dsId":""}`. `a` is an **`ELokiActivityState`** enum; a wrong value sinks the
+whole activity struct and the update with it.
+★★★ **FREE INSTRUMENT: `LogJson` echoes the REJECTED VALUE and names the property + enum**
+(`Unable to import enum ELokiActivityState from string value S118PROBE for property A`). That is the
+antidote to this surface's worst trap — unknown keys are ignored silently, so a mistyped field reads
+as "dead handler". **Watch `LogJson` on every push.** ★ A failed parse is a STRONGER receipt than a
+silent success: it proved the `SocialManager` subscriber runs by quoting our own data back, with zero
+UI dependency.
+⚠⚠ **`ags` TRUNCATES `docs/capture.log` on restart** (measured 7.87 MB → 66 KB). **Back it up before
+restarting** or the run's evidence is destroyed. Cert continuity is safe: `EnsureCert` reuses
+`certs/root.crt`, so the same `-certs` dir serves an identical cert and `cacert.pem` stays valid.
 
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
