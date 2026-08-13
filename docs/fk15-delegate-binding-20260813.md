@@ -1,3 +1,19 @@
+> ⚠⚠ **PARTIALLY SUPERSEDED (S118, same day) — read
+> [fk15-bound-delegate-map-20260813.md](fk15-bound-delegate-map-20260813.md) first.**
+> The headline **STANDS**: `dsNotif`'s delegate is unbound and nothing listens. Three things
+> below are wrong or incomplete:
+> 1. **"16 BOUND … 46 UNBOUND" is wrong on both counts.** The scan stepped **0x10**, but
+>    members also sit at offsets ≡ 8 (mod 16). At 8-byte stride there are **23** bound
+>    slots, and one of the missed ones (`+0x228`) is `disconnectNotif` — a real notif
+>    delegate, so the miss changed a conclusion, not just a tally.
+> 2. **The printed bound list is truncated at 12 of 16 and ends in a literal `…`.** Four
+>    of the hidden offsets are four of the seven answers.
+> 3. **"entries=3" is NOT a subscriber count.** The record is single-cast `FDelegateBase`
+>    `{void* Alloc; int32 DelegateSize; pad}`; `3` is an allocation size in 16-byte units,
+>    identical on every bound slot. `+0xC` is padding holding stale heap garbage.
+>
+> Also: "case 23 == `dsNotif`" is no longer inferred — S118 **measured** it.
+
 # The `dsNotif` delegate is UNBOUND — nothing listens
 
 **S117, 2026-08-13.** Closes the last question of the FK-15 chain: the notif is

@@ -49,16 +49,40 @@ package lobby
 // jump-table count and not by a regex:
 //   - A `endswith("Notif")` filter SILENTLY DROPS `userBannedNotification` and
 //     `userUnbannedNotification`, which are dispatch cases.
-//   - A window opened wider than the sub-block picks up `signalingP2PNotif`
-//     (`0x86018F8`), which sits INSIDE the Request block, surrounded by `*Request`
-//     names, and is NOT one of the 33 cases.
-// Those two mistakes produce 32 — a plausible-looking count that is wrong in both
-// directions at once. Always tie a recovered table to an independent count.
+// Always tie a recovered table to an independent count.
 //
-// ⚠ `signalingP2PNotif` is real and present; it is simply not in this dispatch block.
-// Whether another path routes it is UNRESOLVED — do not add it here without evidence.
+// ★★★ CORRECTED 2026-08-13 (S118) — THE TAIL OF THIS LIST WAS WRONG, AND THE
+// SECOND "SCAN ERROR" RECORDED ABOVE WAS ITSELF THE ERROR.
 //
-// The list is ordered as it appears in the image (`0x8601A20`..`0x8602730`).
+// The enum is now MEASURED, not inferred: the live `TMap<FString,uint8>` at
+// `.data 0x9FFE2D0` (Elements.Data=0x1D230AF9280, ArrayNum=33, dense) was decoded
+// element by element. `HandleNotif` dispatches on exactly that byte
+// (`movzx r15d, byte[Elements.Data + idx*32 + 0x10]`, jump index = enum-1), so
+// this is definitional. The 33 value bytes are a perfect permutation of 1..33.
+//
+//	enum 32 = `signalingP2PNotif`   (key Num=18 -> 17 chars; buffer read back verbatim)
+//	enum 33 = `errorNotif`          (key Num=11 -> 10 chars; buffer read back verbatim)
+//	`messageSessionNotif` is ABSENT from the v1 map entirely (it would need Num=20).
+//
+// ⇒ image order == enum order is SOUND for enum 1..33; what was wrong was the
+// curation of which strings belong. The old window `0x8601A20`..`0x8602730` made
+// TWO off-by-one boundary errors that cancelled into a plausible 33: it EXCLUDED
+// `signalingP2PNotif` (`0x86018F8`, 0x128 bytes below the lower bound — structurally
+// uncatchable, and its exclusion was then written up as a property of the game), and
+// it INCLUDED `messageSessionNotif` (`0x8602730`, exactly the upper bound, i.e. the
+// first string AFTER the block, pulled in by an inclusive endpoint). The block also
+// contains `partySendNotifResponse`, a Response, so it only ever held 32 real types.
+//
+// ⚠ The comment this replaces asserted the opposite and a unit test asserted it too
+// (`push_test.go` errored if `signalingP2PNotif` appeared) — i.e. the test that would
+// have caught the mistake had ingested the mistake. Method rule 9.
+//
+// ⚠ `messageSessionNotif` being absent from THIS map does NOT mean it is
+// undispatchable — prior RE puts it on a separate exact-match handler at
+// `.text 0x4B07E80`, which was NOT re-verified in S118. It is simply not a v1 enum
+// member, so it is not one of the 33 jump-table cases.
+//
+// The list is ordered by ENUM (index i == enum i+1 == jump-table case i).
 var LobbyNotifTypes = []string{
 	"connectNotif",
 	"disconnectNotif",
@@ -91,8 +115,58 @@ var LobbyNotifTypes = []string{
 	"rejectFriendsNotif",
 	"blockPlayerNotif",
 	"unblockPlayerNotif",
-	"errorNotif",
-	"messageSessionNotif",
+	"signalingP2PNotif", // enum 32 — MEASURED from the live TMap (S118), not a scan artifact
+	"errorNotif",        // enum 33
+}
+
+// BoundNotifTypes is the shortlist that actually matters: the notif types whose
+// client-side delegate HAS A SUBSCRIBER. Everything else in LobbyNotifTypes
+// parses, routes, deserializes and broadcasts into a delegate nobody listens to,
+// so it can never move this build (S117 established that for dsNotif; S118
+// generalised it).
+//
+// Derived by joining, at the delegate-offset level:
+//   - each jump-table case body's `lea rdx,[rdi+<off>]` (all 33 extracted; live
+//     disassembly cross-checked against dumps/lobby-dispatch-decrypted/), with
+//   - the live bound/unbound state of the Lobby object's delegate table
+//     (Lobby=0x1D251AA1C80), vtable-confirmed instance by instance.
+//
+// 23 delegate slots are bound; only these 7 are reachable from a notif case. The
+// other 16 are broadcast by NO jump-table case — they are RESPONSE / socket-lifecycle
+// delegates, not notif delegates.
+//
+// ⚠ A slot is NOT a multicast delegate. It is UE's single-cast `FDelegateBase`
+// { void* DelegateAllocation; int32 DelegateSize; pad }. `DelegateSize` is an
+// allocation size in 16-byte units — every bound slot reads **3** (a 40-byte
+// TBaseUObjectMethodDelegateInstance), so "entries=3" in the S117 record was never a
+// subscriber count. `+0xC` is padding holding stale heap garbage (it reads 0x1D2 even
+// on UNBOUND slots), which is what made the record look like a TArray {Data,Num,Max}.
+// The client tests boundness as `DelegateSize != 0` then a virtual call — ExecuteIfBound.
+//
+// ⚠⚠ ENUMERATE AT 8-BYTE STRIDE, NOT 16. Several members sit at offsets ≡ 8 (mod 16)
+// — the same alignment that puts the LbS/LbE FStrings at +0xA8/+0xB8. A 0x10-stride
+// scan structurally cannot see them and silently drops **disconnectNotif**
+// (`+0x228`), i.e. the miss changes a conclusion, not just a tally.
+// ⚠ Allocation-pool adjacency does NOT identify a delegate — a real instance was
+// misread as an FString because it sat next to string buffers. The discriminator is
+// that the allocation begins with a module-address VTABLE. Use a positive AND a
+// negative control (a known FString buffer must be rejected).
+//
+// ⚠ The five friends types occupy CONTIGUOUS cases 24..28 and contiguous delegates
+// +0x1630..+0x1670 at a perfect 0x10 stride. Four of those were missing from the S117
+// record, whose print truncated at 12 of 16 — the older list yields only 2 hits here.
+//
+// Subscriber: 21 of the 23 bindings are on ONE `USocialManager` instance, 1 on
+// `UMyActivityManager` (+0x12c0), 2 are raw-method delegates Lobby binds to itself.
+// That is exactly why the reachable set is the friends/presence family.
+var BoundNotifTypes = map[string]string{
+	"disconnectNotif":     "case 1, delegate Lobby+0x228",
+	"userStatusNotif":     "case 15, delegate Lobby+0x12d0",
+	"acceptFriendsNotif":  "case 24, delegate Lobby+0x1630",
+	"requestFriendsNotif": "case 25, delegate Lobby+0x1640",
+	"unfriendNotif":       "case 26, delegate Lobby+0x1650",
+	"cancelFriendsNotif":  "case 27, delegate Lobby+0x1660",
+	"rejectFriendsNotif":  "case 28, delegate Lobby+0x1670",
 }
 
 // ---------------------------------------------------------------------------

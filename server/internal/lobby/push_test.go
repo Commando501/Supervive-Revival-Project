@@ -496,8 +496,11 @@ func TestVocabularyIntegrity(t *testing.T) {
 		}
 	}
 	for _, must := range []string{"dsNotif", "matchmakingNotif", "partyInviteNotif",
-		// The two the suffix filter drops, and the v2 envelope with its own handler.
-		"userBannedNotification", "userUnbannedNotification", "messageSessionNotif"} {
+		// The two the suffix filter drops...
+		"userBannedNotification", "userUnbannedNotification",
+		// ...and enum 32, which the ORIGINAL scan window excluded and this test
+		// then asserted was absent. See below.
+		"signalingP2PNotif"} {
 		if !seen[must] {
 			t.Errorf("vocabulary is missing %q", must)
 		}
@@ -505,10 +508,41 @@ func TestVocabularyIntegrity(t *testing.T) {
 	if seen["dsNotice"] {
 		t.Error("dsNotice is NOT the AccelByte token and is absent from the image")
 	}
-	// Sits inside the Request block at 0x86018F8, outside the 33-case dispatch
-	// sub-block. Including it is how a too-wide scan window reaches a wrong 33.
-	if seen["signalingP2PNotif"] {
-		t.Error("signalingP2PNotif is not one of the 33 dispatch cases")
+	// ★ CORRECTED 2026-08-13 (S118). This test previously asserted the OPPOSITE:
+	// `if seen["signalingP2PNotif"] { t.Error("...is not one of the 33 dispatch
+	// cases") }`. That was false, and because the assertion encoded the very claim
+	// it was meant to police, the test could only ever protect the error — method
+	// rule 9, "the tool used to check the claim had ingested the claim".
+	//
+	// MEASURED from the live TMap<FString,uint8> at .data 0x9FFE2D0, the byte
+	// HandleNotif actually dispatches on: enum 32 = signalingP2PNotif,
+	// enum 33 = errorNotif, and messageSessionNotif is absent from the v1 map.
+	// The 33 value bytes form a perfect permutation of 1..33.
+	//
+	// messageSessionNotif is NOT undispatchable — it is simply not a v1 enum
+	// member; prior RE puts it on a separate exact-match handler at .text
+	// 0x4B07E80 (not re-verified in S118). So it must NOT be in this list.
+	if seen["messageSessionNotif"] {
+		t.Error("messageSessionNotif is not a v1 enum member (absent from the " +
+			"dispatch TMap); it routes via the separate v2 handler at 0x4B07E80")
+	}
+}
+
+// TestBoundNotifTypesAreDispatchable guards the S118 shortlist: every type whose
+// delegate has a subscriber must also be a real dispatch type. If a rename or a
+// re-scan ever desynchronises the two lists, this catches it.
+func TestBoundNotifTypesAreDispatchable(t *testing.T) {
+	all := map[string]bool{}
+	for _, tp := range LobbyNotifTypes {
+		all[tp] = true
+	}
+	if len(BoundNotifTypes) != 7 {
+		t.Errorf("expected 7 bound notif types, got %d", len(BoundNotifTypes))
+	}
+	for tp := range BoundNotifTypes {
+		if !all[tp] {
+			t.Errorf("bound type %q is not in LobbyNotifTypes", tp)
+		}
 	}
 }
 
