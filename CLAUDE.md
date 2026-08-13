@@ -299,8 +299,19 @@ INFERRED from `.rdata` order and unconfirmed; the headline holds regardless sinc
 any of the 68 prior dumps. ⇒ **driving a code path from the backend FORCES `.text` decryption for
 offline RE** — a steerable version of "coverage rises with what the game has run". Banked in
 `dumps/lobby-dispatch-decrypted/`. **Reuse this: push the messages, then `dumpimage`.**
-⚠ Still open for `dsNotif`: whether anything is BOUND to the delegate it broadcasts. Needs the live
-`Lobby` object (a string scan fails — the FString points at the buffer start, not our message).
+⚠ **Still open for `dsNotif`: whether anything is BOUND to the delegate it broadcasts.** Needs the
+live `Lobby` object, and **two routes have now been tried and failed** — do not repeat them:
+(1) via the accumulate buffer `Lobby+0xC8` — fails **by construction**, the FString's Data pointer
+addresses the BUFFER START, not our message inside it, so `findptr` on the message correctly
+returns 0; (2) via the envelope markers — self-validating in principle (`[P]`→"LbS" **and**
+`[P+0x10]`→"LbE" ⇒ `P == Lobby+0xA8`), but `findptr` over 7 of the 12 `"LbS"` candidates found
+**0 aligned pointers** [M], so the visible copies are transient (header parse / log formatting),
+not the object's allocation. ⚠ `Lobby+0xA8/+0xB8` being the markers is still INFERRED (from
+`0x4b35a80`'s two empty-FString tests + the observed handshake), never read.
+**Next, cheapest first:** rerun `wstrings "LbS"` **uncapped** (the search was capped at 12) →
+`findptr` the rest; then the descriptor globals `0x9FFE6F0`/`0x9FFE810`/`0x9FFE860`, which already
+hold live heap pointers; then `vtslot`; a shim capturing `rdi` in `HandleNotif` is decisive but is
+an injection, and this whole surface has been driven backend-only so far.
 ⚠ **No handler ACTED** — a `type:`-only frame carries no payload, so the open question is now
 **per-type PAYLOAD, not routing**, and the console iterates one in seconds. ⚠ Even
 `disconnectNotif` / `partyKickNotif` / `userBannedNotification` were inert: sockets held 581 s

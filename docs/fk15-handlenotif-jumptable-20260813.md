@@ -91,3 +91,45 @@ address (which resisted the earlier string-scan approach: the FString points at
 the buffer start, not at our message, so `findptr` on the message finds nothing).
 Options: locate the object via the descriptor tables at `0x9FFE6F0`/`0x9FFE810`/
 `0x9FFE860`, or via a vtable scan.
+
+---
+
+## Locating the live `Lobby` object — attempted, NOT achieved
+
+To answer "is anything bound to the delegate", the object's address is needed.
+Two routes were tried and both failed; recording them so the next attempt does
+not repeat them.
+
+**Route 1 — via the accumulate buffer (`Lobby+0xC8`).** Push a unique sentinel,
+find it with `wstrings`, then `findptr` to the FString that owns it. **Failed by
+construction:** the FString's Data pointer addresses the *buffer start*, not our
+message inside it, so `findptr` on the message address correctly returns 0.
+
+**Route 2 — via the envelope markers (`Lobby+0xA8` = "LbS", `+0xB8` = "LbE").**
+This one is self-validating: any `P` where `[P]` points to "LbS" **and**
+`[P+0x10]` points to "LbE" is `Lobby+0xA8` by the struct layout. `wstrings "LbS"`
+returned 12 candidates; `findptr` was run against the 7 outside the
+`0x1D24F130xxx` cluster (that region holds the descriptor-table pointer
+`0x1D24F130B20`, so it is a static arena, not the object).
+
+**Result: 0 aligned pointers to any of the 7.** [M]
+
+That negative is informative rather than empty. It means the marker strings we
+can see are **not** the allocation an `FString` at `Lobby+0xA8` points at — they
+are transient copies (the HTTP header parse, request buffers, log formatting).
+Either the object holds a different allocation not among the 12 hits (the search
+was capped at 12 — **rerun uncapped first, it is the cheapest next step**), or
+the markers are not stored where this analysis assumes.
+
+⚠ Note the assumption still carrying weight: `Lobby+0xA8/+0xB8` being the two
+markers is INFERRED from `0x4b35a80`'s two "is this FString empty" tests plus the
+observed `envelope=["LbS".."LbE"]` handshake. It is consistent and probably right,
+but it has not been confirmed by reading either FString.
+
+**Untried routes, in order of expected cost:**
+1. `wstrings "LbS"` **uncapped**, then `findptr` the remaining candidates.
+2. The descriptor globals `0x9FFE6F0` / `0x9FFE810` / `0x9FFE860` already hold
+   live heap pointers; walk what references them.
+3. `usmapdump vtslot` if `AccelByte::Api::Lobby` has a vtable.
+4. A shim that captures `rdi` inside `HandleNotif` — decisive, but it is an
+   injection and this whole surface has been driven backend-only so far.
