@@ -307,19 +307,23 @@ Deployment requires an IoStore mod-pak overlay — non-trivial.
   deploy door is shut in C++ and possibly open in script: `ULokiRespawnComponent::Respawn`
   (`0x5A6AC40`), `ALokiDropShip::SpawnDropPodForTeam` (`0x597E730`), the `ALokiDropPod` steppers,
   `UFFABotSpawnerComponent::BeginPlay`.
-- ⚠⚠ **THE FOUR-STUB CLAIM IS UNDER CHALLENGE — FLAGGED, NOT RESOLVED (S114, 2026-08-12).** A lane of
-  S114 disassembled `ALokiGameMode::SpawnPlayer` `0x534C070`,
-  `ALokiTeamState_TeamOnly::SetDropLeader` `0x2C2CE30` and
-  `ALokiDropPlane::OverridePlaneLocations` `0x53372A0` in **TWO independent dumps** and read **large
-  real functions with security cookies and parameter setup** — directly contradicting the three
-  gradings above and `docs/fk1-angelscript-settled.md:168-171`. **One of the two measurements is
-  wrong** (most likely an RVA/VA or image-base confusion on one side); **which one is NOT KNOWN.**
-  This is load-bearing for FK-1, for "accept the ceiling", and for `AvatarActor = NULL`, so **do not
-  resolve it in either direction from memory, and do not build on either reading** until a dedicated
-  single-variable re-measurement is run. See `docs/fk13-console-exec-settled.md` §6.1.
-  ⚠ Scope: `ALokiPlayerState::AuthSetSpawnTeamLeader` `0x5254180` is **NOT** in dispute — S114
-  re-confirmed that address LIVE as this image's shared `/OPT:ICF` empty fold
-  (`P_FINISH; jmp 0x00F7EC20` = `ret 0`), reached as the `Func` of three unrelated UFunctions.
+- ✅ **THE FOUR-STUB CHALLENGE IS RESOLVED (S115, 2026-08-12) — `docs/fk1-stub-claim-recheck.md`.**
+  S114 read `0x534C070` / `0x2C2CE30` / `0x53372A0` in TWO dumps as **large real functions with
+  security cookies and parameter setup**. That reading was **CORRECT — and so was FK-1's.** They
+  describe **different addresses**: those RVAs are the exec **THUNKS** (real code), and the empty
+  bytes belong to each thunk's **IMPL**, an address FK-1's table never printed (see the corrected
+  entry above). **Neither measurement was wrong, and there is no RVA/VA or image-base confusion
+  anywhere** — both dumps are flat and byte-identical at every address involved.
+  ⇒ **FK-1's "the real wall" and its closure of `AvatarActor = NULL` STAND; build on them.**
+  Empty-impl base rate is **1.2 % (78/6,669)**, so the finding is informative, not ambient.
+  ⚠ The false statement was manufactured **in this file** — a table headed
+  `| function | exec thunk | body |` was compressed to prose, dropping the column label and
+  substituting `=`. **Never print a byte string next to an address it did not come from.**
+  ⚠ Scope note, now sharpened: `ALokiPlayerState::AuthSetSpawnTeamLeader` `0x5254180` was never in
+  dispute, but the address is **91-way ICF-folded and NON-IDENTIFYING** — it is this image's shared
+  zero-parameter `execFoo` thunk (**7 real instructions**, `P_FINISH; jmp 0x00F7EC20`), not itself a
+  fold. It is the registered `Func` of **91** distinct UFunctions, so it can never identify one.
+  Always print fold multiplicity next to a folded RVA.
 - **The round mode IS native — but that is NOT a ceiling.** Every member is a named
   UFUNCTION/UPROPERTY reachable by the primitive, and **the phase lives on `ALokiGameState` with a
   public `AuthSetCurrentPhase` setter**, so the `EGP_Combat` gate has TWO write paths. The tutorial
