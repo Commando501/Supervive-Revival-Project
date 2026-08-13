@@ -301,6 +301,19 @@ Deployment requires an IoStore mod-pak overlay — non-trivial.
   deploy door is shut in C++ and possibly open in script: `ULokiRespawnComponent::Respawn`
   (`0x5A6AC40`), `ALokiDropShip::SpawnDropPodForTeam` (`0x597E730`), the `ALokiDropPod` steppers,
   `UFFABotSpawnerComponent::BeginPlay`.
+- ⚠⚠ **THE FOUR-STUB CLAIM IS UNDER CHALLENGE — FLAGGED, NOT RESOLVED (S114, 2026-08-12).** A lane of
+  S114 disassembled `ALokiGameMode::SpawnPlayer` `0x534C070`,
+  `ALokiTeamState_TeamOnly::SetDropLeader` `0x2C2CE30` and
+  `ALokiDropPlane::OverridePlaneLocations` `0x53372A0` in **TWO independent dumps** and read **large
+  real functions with security cookies and parameter setup** — directly contradicting the three
+  gradings above and `docs/fk1-angelscript-settled.md:168-171`. **One of the two measurements is
+  wrong** (most likely an RVA/VA or image-base confusion on one side); **which one is NOT KNOWN.**
+  This is load-bearing for FK-1, for "accept the ceiling", and for `AvatarActor = NULL`, so **do not
+  resolve it in either direction from memory, and do not build on either reading** until a dedicated
+  single-variable re-measurement is run. See `docs/fk13-console-exec-settled.md` §6.1.
+  ⚠ Scope: `ALokiPlayerState::AuthSetSpawnTeamLeader` `0x5254180` is **NOT** in dispute — S114
+  re-confirmed that address LIVE as this image's shared `/OPT:ICF` empty fold
+  (`P_FINISH; jmp 0x00F7EC20` = `ret 0`), reached as the `Func` of three unrelated UFunctions.
 - **The round mode IS native — but that is NOT a ceiling.** Every member is a named
   UFUNCTION/UPROPERTY reachable by the primitive, and **the phase lives on `ALokiGameState` with a
   public `AuthSetCurrentPhase` setter**, so the `EGP_Combat` gate has TWO write paths. The tutorial
@@ -326,6 +339,11 @@ Deployment requires an IoStore mod-pak overlay — non-trivial.
   `ALokiPlayerCheats` that FK-6 closed on, and it has **32 UFUNCTIONs with compiled native bodies**
   (`AuthCheatGrantGold`, `AuthCheatUnlockFullArmory`, `AuthCheatExecuteUAV`). `Exec == 0` across all
   500 script UFUNCTIONs — the console cannot reach them, **but the thunk can.**
+  ⚠ **S114 SCOPE CORRECTION:** that `Exec == 0` is **Angelscript-only** and was never a claim about
+  native UFunctions. **138 NATIVE UFunctions carry `FUNC_Exec`** (`UCheatManager` 48,
+  `ALokiPlayerCheats` 25, `APlayerController` 13, `ALokiCharacter` 10, …), and as of S114 a real
+  `UCheatManager` is installable on the live PlayerController, so **42 of them ARE string-reachable
+  today** — see the console/exec block above.
 - ⚠ **Reading discipline for `tools/asdump` output:** the per-function **disassembly appendix is
   GROUND TRUTH; the pseudo-source is a reading aid.** The structurer can **silently invert a guard**
   (46 of 1,463 functions share the risk shape). Verify anything load-bearing against the disassembly.
@@ -406,6 +424,139 @@ no test. **This foreclosed the cheapest instrument the project could own for ~60
 - ⚠ **`FLogCategoryBase` layout in this build: `Verbosity@0, DebugBreakOnLog@1, DefaultVerbosity@2,
   CompileTimeVerbosity@3, FName@4`** — FName is **LAST**. Ctor is `base+0x1063710` (**not**
   `0x1138F20`, which is `FName::FName`). Verbosities are passed as `mov r8b/r9b, imm8`, not `imm32`.
+
+### Before touching anything console- / exec- / cheat-verb-shaped
+★★★ **FK-13 IS SETTLED (S114, 2026-08-12) — read `docs/fk13-console-exec-settled.md`, then
+`docs/fk13-live-run-2026-08-12.md`, then `docs/fk13-routeb-shipped.md` (its §6 corrections, §7 guards
+and §9 end-to-end proof govern).** S3's *outcome* was right and **every reason it gave was wrong**;
+S101's explanation of S3's error was also wrong (all 6 overturned tokens are readable in the shipped
+on-disk exe with a plain ASCII search, so *"S3 scanned the packed binary"* does not explain the miss —
+**do not propagate it**). And S3's operational conclusion — *"all cheap external paths are exhausted;
+the remaining options require in-process code"* — is **FALSE**. That sentence is the founding
+justification for the injection-only architecture.
+- ⛔ **`ALLOW_CONSOLE == 0`: `~` CAN NEVER WORK, and no config, ini or command-line change alters
+  that. Do not spend a launch re-testing it.** [M] via three independent instruments:
+  `UGameViewportClient::Init` (`0x0384FB00`, 1,810 B, decrypted in BOTH dumps) has **zero** reads of
+  `ConsoleClass` (`+0x120`) and **zero** stores to `ViewportConsole` (`+0x48`) while writing both
+  neighbouring stock members; `Console.cpp` guard-exclusive literals score **8/8 controls vs 0/5
+  markers** at `.rdata` **100 %**; and the gaps in `UEngine::Exec`'s literal pool are exactly the
+  compile-guarded verbs. `UConsole` the CLASS *is* compiled and `ConsoleClass` IS resolved at startup —
+  only the viewport never constructs one, so `GEngine->GameViewport->ViewportConsole` is NULL.
+  `config-control-plane-s101.md` §5 levers **#1 and #4 are dead**; its probes **P1/P2/P4 are answered
+  offline**. `ULokiGameViewportClient` does not re-add one (its vtable differs from the base in 4 of
+  122 slots; neither `Init` nor `SetConsoleTarget` is among them).
+- **FK-13 was THREE independent compile flags, not one** [M — UBT `TargetRules.cs:1368,1374,1429`,
+  `UEBuildTarget.cs:5064,5073,5145`]: `bUseLoggingInShipping` (stock default 0, **this build 1** —
+  FK-11), `bUseConsoleInShipping` (stock default 0, **this build 0**), `bUseExecCommandsInShipping`
+  (**stock default 1**, this build **1**). **Never reason from one to another.** A fourth gate,
+  `UE_WITH_CHEAT_MANAGER = (1 && !UE_BUILD_SHIPPING)`, is a plain `#define` with **no `Target.cs`
+  escape** — that is what empties `AddCheats`.
+- ★★ **THE EXEC MACHINERY IS ALIVE.** `UE_ALLOW_EXEC_COMMANDS == 1`; `UEngine::Exec` `0x3ED66C0`
+  (2,521 B real body), `UGameViewportClient::Exec_Runtime`, `FSelfRegisteringExec::StaticExec`,
+  `UObject::CallFunctionByNameWithArguments` `0x1343420`, and the whole IConsoleManager cvar channel
+  are compiled. **138 native UFunctions carry `FUNC_Exec`** across 15 classes — `UCheatManager` 48,
+  `ALokiPlayerCheats` 25, `APlayerController` 13, `ALokiCharacter` 10, `ALokiPlayerController` 8,
+  `AHUD` 6, `UPlayerInput` 5, `ULokiClientPlayerCheats` 5, `ULokiTimelineManager` 5, … [M]
+- ★ **The entry point is `UKismetSystemLibrary::ExecuteConsoleCommand`** (exec thunk `0x395D790`,
+  flags `0x04022403` = `BlueprintCallable|Native|Static|Public`) — exactly the shape the S55
+  native-call primitive already calls, **with no `.text` write**. ★★ **And this project has been
+  driving that channel since ~S91 without naming it:** the force-open shim's
+  `ExecuteConsoleCommand("open LVL_Tutorial?game=…")` fires at `rva 0x395D790`, and
+  `Load map complete …/LVL_Tutorial` is its receipt across dozens of runs. ⇒ S3's
+  `-ExecCmds="open …"` null was a **delivery** failure, not a verb failure.
+  ⚠ **OPEN:** `OPEN` is *absent* from `UEngine::Exec`'s literal pool [M], so `open` must be serviced
+  elsewhere on the chain (`UWorld` / `UGameInstance` / a Loki override). **Both facts are measured;
+  the dispatch site is unresolved — do not write up "OPEN is compiled out."**
+- ★★★★★ **ROUTE B IS SHIPPED AND PROVEN END-TO-END — a console string reached a cheat verb.**
+  `APlayerController::CheatManager` (`+0x520`) was NULL in every measurement this project has ever
+  taken. The new `RM_CHEATMGR` mode in `tools/sigbypass-mod/tutorial_launch.cpp` constructs one via
+  `UGameplayStatics::SpawnObject(pc->CheatClass, pc)` and stores it in the reflected `CheatManager`
+  UPROPERTY — **ONE aligned heap qword, readback-verified, ZERO module-image writes** (the `.text`
+  arm is a compile-time REFUSAL that prints why). `CheatClass` (`+0x528`) was **already populated in
+  BOTH the menu and the staged tutorial world**: the class selection was never stripped, only the
+  body of `AddCheats`. **Proof:** `ExecuteConsoleCommand("LogLoc")` →
+  `LogCheatManager: BugItGo 0.000000 …` in `Loki.log`, baseline 0, **both format literals confirmed
+  present in the image BEFORE the run** (a pre-registered signal, not a post-hoc grep). 69 min
+  uptime, 0 crashpad handoffs, Func-swap restored 18,223/18,223. **42 REAL exec verbs**
+  (42 REAL / 3 FOLD / 3 COVERAGE-BLOCKED / 2 UNRESOLVED — *not* the "44" first stated).
+  ★ `SpawnObject`, not `NewObject`, for a non-obvious reason: shipping has `DO_CHECK == 0`, so
+  `NewObject`'s internal `ClassWithin` assert is compiled out and **a wrong Outer would be SILENT**;
+  `SpawnObject`'s *runtime* Within test is the only one that survives shipping.
+
+Builds (`tools/sigbypass-mod/build.ps1`; `.text` sha256 — **diff `.text`, never size**):
+
+| variant | `.text` sha256 | use |
+|---|---|---|
+| `cheatmgr` | `750b83bf0f36e90e` | **in-world** (arms on `ReceiveTickClient`) |
+| `cheatmgr-any` | `b551996df67f106b` | **menu** (`KFSNAME=""`, swaps all BP UFunctions) |
+| `cheatmgr-any-verify` | `4507e376d099a3b5` | **the flown proof** — menu + executes `KCMVERIFYCMD` (default `LogLoc`) |
+| `cheatmgr-verify` | `bc2abddf627bdeed` | in-world + verify — ⚠ **the on-disk build predates the R7/R8/R9 guards; REBUILD before use** |
+
+Pre-guard builds were `a90e14dcde1dffa8` / `ef2fd89f87168871` — do not confuse them. ⚠ The S112
+import-absence check (`FlushInstructionCache`/`VirtualAlloc` absent) does **NOT** verify this DLL —
+it hosts other modes that legitimately import those. The no-`.text`-write property rests on source
+reading plus the compiled-out refusal.
+
+- ⚠⚠ **THREE TRAPS, EACH OF WHICH PRODUCED A FALSE RESULT BEFORE IT WAS CAUGHT**
+  (`docs/fk13-routeb-shipped.md` §4 / §6 / §9.1):
+  1. **`ReceiveTickClient` is never dispatched AT THE MENU** — `cheatmgr` is a silent no-op there.
+     Its own watchdog said so (`NO GAME-THREAD HITS after 8000 ms … swapped=2`). Use `cheatmgr-any`
+     at the menu, `cheatmgr` in-world.
+  2. **`God` emits NO log line at all** — a silent instrument, so its null is uninterpretable.
+     `KCMVERIFYCMD` defaults to **`LogLoc`**, whose `UCheatManager` body reaches
+     `BugItStringCreator` → `UE_LOG(LogCheatManager, …)`.
+  3. **A borrowed helper (`RunConsole`) read globals populated by a DIFFERENT run mode** and passed a
+     null PC, so `ExecuteConsoleCommand` fell through to `GEngine->Exec(nullptr, …)` and branch 7
+     never ran — while printing `console 'LogLoc' ok`. Fix = `RunConsoleOnPC(pc, cmd)` passes the PC
+     as BOTH `WorldContextObject` and `SpecificPlayer`. **Check the provenance of every global a
+     borrowed helper touches.**
+  ⇒ ★★ **"THE CALL RETURNED OK" IS NEVER A SUCCESS CRITERION. Only the verb's OWN output is.**
+  ⚠ `UPlayer::Exec`'s branches are `else if`-chained, so an earlier branch returning true swallows the
+  command before branch 7 — **pick verbs that exist ONLY on `UCheatManager`.**
+- **The 25 `ALokiPlayerCheats` verbs: THE ROAD IS BUILT, THE DESTINATION WAS NEVER CONSTRUCTED.**
+  `ALokiPlayerController` **overrides** `ProcessConsoleExec` (`0x569BE50`, vtable slot 81 / disp
+  `+0x288`): it calls `Super` first, then null-checks `[this+0xA30]` (the `LokiPlayerCheats`
+  ObjectProperty) before forwarding. Routing: **YES**, offline-decisive. Instance: **NO** —
+  `PC+0xA30` is NULL live in the menu *and* in the staged tutorial world (offset resolved BY NAME
+  from live reflection), and `AddLokiPlayerCheats` / `FinishAddLokiPlayerCheats` are **empty folds**
+  (`Func = 0x5254180`), confirmed LIVE. `ULokiGameInstance::LokiClientPlayerCheats` (`+0x298`) is
+  likewise NULL, which kills the "cheapest win on the board". `ALokiGameState` and `ULokiGameInstance`
+  have their own forwarders (TimelineManager / LokiClientPlayerCheats) with the same problem.
+  ⚠ **OPEN:** whether spawning an `ALokiPlayerCheats` actor and writing `+0xA30` reaches those 25
+  verbs has **not been tried.**
+- ⚠ **DEAD — do not spend launches:** `DebugExecBindings` are config-loaded (exactly the 16 from
+  `BaseInput.ini`, matching S80i's live `Num=16`) but **NEVER EVALUATED** — the whole evaluation path
+  is `#if !UE_BUILD_SHIPPING`; measured as a clean `PlayerInput.cpp` literal-pool gap (6 same-file
+  controls present; `NoDebugExecBindings` and `KEYBINDING` both **0**) plus **0** TArray-shaped
+  accesses at displacement `0x1A8` in the PlayerInput region against a **925**-access control.
+  **Do not press F9.** `-ExecCmds` **does not parse** (0 wide hits vs 5 same-class `FParse` switch
+  controls that all resolve; on-disk exe agrees) — the **SECOND** non-functional UE switch after
+  `-LogCmds`, so **treat every UE command-line switch as unverified until you locate its parse
+  literal.** Loki's own data-driven debug menu is fully reflected but `Show/Hide/ToggleDebugMenu` are
+  **empty bodies** (its `Ctrl+\` binding in `UserSettings.ini` means nothing);
+  `ULokiBlueprintLibrary::CheatsEnabled` folds to `xor al,al; ret`; and `viewmode` ships the refusal
+  string *"Debug viewmodes not allowed in Test or Shipping builds."*, so a null from it proves nothing.
+- **cvars are a SHIM-FREE channel.** `ExecuteConsoleCommand` tries
+  `IConsoleManager::ProcessUserConsoleInput()` FIRST — no instance, no pawn, no override — and cvars
+  are additionally settable with **no injection at all** via `[ConsoleVariables]` in the USER
+  `Engine.ini` (same file and mechanism as FK-11's `[Core.Log]`; `-ini:` is applied too late).
+  44-entry `loki.*` inventory: `tools/re/out/cvar_census_tuthero.txt`. ⚠ **[I]** anything flagged
+  `ECVF_Cheat` is excluded — `DISABLE_CHEAT_CVARS` is `(UE_BUILD_SHIPPING || …)`, a hard `#define`
+  with no `Target.cs` escape; **which of the 44 carry that flag has not been enumerated.**
+- ★ **FK-6 is RE-SCOPED, not contradicted.** Its *"console `Exec` == 0/500"* was measured over the
+  **500 Angelscript** UFUNCTIONs and was never a claim about native ones. And its real closure — the
+  CONSTRUCTOR (`AddCheats` = `ret 0` under `UE_WITH_CHEAT_MANAGER == 0`), not the bodies — is
+  **CORRECT**; Route B is precisely the "constructing shim" the S105 retraction said would be such a fix.
+- ★ **Method worth reusing: guard-exclusive marker strings.** Take `TEXT()` literals that occur ONLY
+  inside a `#if` region (verified engine-wide across 24,864 UE source files) and control them with
+  literals from the **SAME translation unit** outside the guard — single variable = guard membership.
+  ⚠ The rule *"strings cannot decide `ALLOW_CONSOLE`"* is true only of **UHT-emitted** names and
+  **FALSE** of guard-exclusive literals; recorded without that qualifier it forecloses a method that
+  works. (UHT also strips the `F`/`U`/`A` prefix for reflected names, so probing `FKeyBind`/`UConsole`
+  produces a false ABSENT.)
+- ⚠ **Run every `.rdata` presence/absence claim against
+  `dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe` (`.rdata` 100.0 %)**, never
+  `merged.dump.exe` alone (63.1 %).
 
 ### Before touching anything protector- / anti-tamper- / packer-shaped
 ★★★ **FK-10 IS SETTLED (S113, 2026-08-09) — read `docs/fk10-protector-identified.md`.** All offline,
@@ -726,6 +877,12 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   Copies the marker off after each stage into `docs/fk24-stage-<label>-<n>-<shim>.txt`,
   because `Marker()` opens `CREATE_ALWAYS` so **every injection truncates
   `docs/tutorial-launch-marker.txt`** (FK-25). See the launch procedure above.
+  ★ **S114 FIX — it was silently taxing every tutorial sitting.** The parked-state gate tail-read only
+  the **last 200 KB** of `capture.log`, but the client fetches `/core-game/matches` **once, early**, so
+  on any log-heavy run that evidence had already scrolled out of the window and the gate could never
+  pass — the stager then burned its full 420 s `WaitParkedSec` and aborted, **wasting the launch**.
+  MEASURED: one attempt passed by luck (fetch 70 KB from the end), the next had the identical fetch
+  **1.1 MB out of window**. Now reads the file whole; the gate passes in ~0 s.
 - **Crash-dump archiver:** `configs/archive-crashdumps.ps1` — preserves Sentry/crashpad crash
   reports (the 43.8 MB minidump + that run's own `Loki.log`) out of
   `<GameRoot>\Loki\.sentry-native\` into `dumps\crashpad-<stamp>\`, SHA-256 verified, source never
@@ -734,6 +891,23 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   `python tools/crashtri/mdctx.py <reports/*.dmp>` — there is no cdb/WinDbg on this machine.
 - **RPM probes:** `tools/re/*.py` — Python probes driving the native-call primitive
   (struct/field/rep-layout walkers, param/OUT-param builders, mission-model dumps).
+  ★ **S114 console/exec family** (mostly OFFLINE, static-image): `console_probe.py` (pure-RPM live
+  console/exec state — `ViewportConsole`, `UConsole` instances, decoded `DebugExecBindings`; 6/6
+  offline self-test), `console_census.py` (controlled wide+ASCII multi-image token census),
+  `exec_surface_probe.py`, `exec_chain_grade.py` (grades every verb on the `UPlayer::Exec` chain),
+  `uht_funcflags.py` (`FFunctionParams` decoder → the 138 `FUNC_Exec` table, output
+  `out/uht_funcflags_tuthero.csv`), `cvar_census.py` (→ `out/cvar_census_tuthero.txt`, the 44
+  `loki.*` cvars), `guard_markers.py` / `guard_test.py` (the guard-exclusive-literal method),
+  `cheat_reach_probe.py` (cheat-object reachability), `read_field.py` (raw single-field read).
+  Config-side: `configs/set-debug-execbindings.ps1` — ⚠ **largely moot**, since `DebugExecBindings`
+  are never evaluated; keep it only as the untested probe of whether a user `Input.ini` is read at all.
+  ⚠ **Class lookups share a blind spot:** `obj_by_class.py` matches by SUBSTRING and
+  `cheat_reach_probe.py` by `endswith`, and **neither finds `PC_MainMenu_C`** — which is the live
+  menu PlayerController. Using one as the "proven" cross-check for the other produced a false
+  "there is no PlayerController at the menu" in S114. **Two instruments that fail the same way are
+  not corroboration** — use a class-derivation walk. (`cheat_reach_probe.py`'s derivation walk was
+  also broken — it reported `LokiGameInstance LIVE=0` on a running game — and was FIXED in S114;
+  its own `[CTRL]` gate is what caught it.)
 - **Admin panel:** loopback JSON API + embedded GUI in `server/internal/admin/`
   (`-admin`, default `http://127.0.0.1:9210/`). See `docs/admin-panel.md`.
 
@@ -752,6 +926,17 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   function `__report_gsfailure`s mid-call regardless of thread context (verified
   via off-thread call, thread-hijack with fresh stack, thread-hijack with own
   stack, and APC on the real game thread).
+- **Don't try to open the dev console, and don't re-test it.** `ALLOW_CONSOLE == 0`, measured three
+  independent ways in S114: `~`, `ToggleConsole`, `ConsoleKeys`, an `EnableCheats`/`CheatManagerClass`
+  ini knob and every command-line variant are all dead, and `ViewportConsole` is NULL **by
+  construction** (the viewport never builds one). ⚠ Also dead: **`-ExecCmds`** and **`-LogCmds`** —
+  neither has a parse literal anywhere in the image. The working channel is
+  `UKismetSystemLibrary::ExecuteConsoleCommand` (thunk `0x395D790`) via the native-call primitive,
+  which this project has been using since ~S91. See the console/exec block above.
+- **Don't accept "the call returned ok" as evidence a verb ran.** S114 got
+  `console 'LogLoc' ok` from a call that never reached a PlayerController at all. **Only the verb's
+  OWN output counts** — and pick a verb that actually emits: **`God` prints nothing whatsoever**, so
+  its silence is uninterpretable. `LogLoc` (→ `LogCheatManager: BugItGo …`) is the graded verifier.
 - ★★★ **THE TUTORIAL ROUTE NO LONGER WRITES `.text` AT ALL (S112, shipped 2026-08-08).** RM_PLAY's
   `ProcessInternal` patch is gone: `KFUNCSWAP` and `KFSNAME` now DEFAULT to the heap
   `UFunction.Func` swap, so the shipped `tutorial_launch_play.dll` (`.text 5151621d2154e454`) arms on
@@ -844,5 +1029,8 @@ demand when topics come up):
 - `supervive-tutorial-crash-fk7` — FK-7, still OPEN (zero reproduce-then-repair runs)
 - `supervive-instrument-artifact-pattern` — ★★★ the project's dominant error mode; read
   it before recording ANY negative result as a property of the game
+- `supervive-fk13-console-exec-settled` — ★★★ the dev console is compiled out but the EXEC
+  SURFACE is alive (138 native `FUNC_Exec` fns); Route B installs a real `UCheatManager` and is
+  proven end-to-end. Read before any console/exec/cheat-verb work
 - `supervive-rpc-signature-solved` — ServerVerifyViewTarget 40-param signature
 - `supervive-ags-cert-rebuild-gotcha` — re-append root.crt to cacert.pem on rebuild
