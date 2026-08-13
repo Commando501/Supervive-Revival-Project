@@ -245,6 +245,79 @@ The chain is closed end to end for the first time in this project's history.
 ★ **The model is now PREDICTIVE, not just descriptive**: it said 7 types can move the client
 and 26 cannot, and the one bound type tested moved it while the unbound one didn't.
 
+## ★★★★★ SECOND FLIGHT — `userStatusNotif` DRIVES THE FRIENDS UI ON COMMAND
+
+`requestFriendsNotif` proved a push reaches a subscriber. `userStatusNotif` proves the
+subscriber's **state change renders**, and that we can drive it back and forth.
+
+### It needed a precondition, and the first null was NOT evidence
+
+The first two `userStatusNotif` pushes produced no observable effect. That null was
+**uninterpretable, not negative** — `listOfFriendsResponse` returned `friendsId: []`, so
+the client had **no row to render a presence update into** (method rule 11: *what would
+have to be true for this indicator to change at all, and is it true right now?*).
+
+Fix = `probeFriendsID()` in `server/internal/lobby/lobby.go`, an **opt-in** env knob
+(`AGS_PROBE_FRIEND=<userId>`); default behaviour is byte-identical. On reconnect the client
+re-issued `listOfFriendsRequest`, we answered with the synthetic friend, and the panel went
+**`0 ONLINE / 0 OFFLINE` → `0 ONLINE / 1 OFFLINE`** — itself a server-driven UI change, via
+a lobby *response* rather than a notif.
+
+⚠ We deliberately still do **not** answer `friendsStatusRequest` (which the client sends
+twice, asking for friends' presence). That is what makes the test single-variable: **the
+only possible source of "online" is our pushed `userStatusNotif`.**
+
+### ★★★ The client's own error messages proved the handler runs — before any UI moved
+
+Pushing an invented activity value produced, in `Loki.log`:
+
+```
+LogJson: Error: JsonValueToUProperty - Unable to import enum ELokiActivityState
+         from string value S118PROBE for property A
+LogJson: Warning: JsonObjectStringToUStruct - Unable to deserialize. json={"a":"S118PROBE",...}
+```
+
+⇒ the client **base64-decoded our activity blob, parsed the JSON, and tried to import our
+value into a game enum.** That is the `SocialManager` subscriber at `+0x12d0` executing on
+our input — proven by the client quoting our own data back, with **no UI dependency at all**.
+★ **A failed parse is a stronger receipt than a silent success.**
+
+### ★★ Read the client's own outgoing frame for the wire format — do not guess it
+
+The client's `setUserStatusRequest` documents the exact shape:
+
+```
+availability: online                     <- LOWERCASE enum name, not "Online"
+activity: <base64 of JSON>               <- NOT a plain string
+  {"a":"Menus","cV":"release2.4.live-156430-shipping","pId":"party-<id>","pQs":["tutorialNew"],
+   "pO":0,"pS":1,"mPS":3,"rk":0,"rkP":0,"r":[],"avId":"","t":[],"dsId":""}
+```
+
+`a` is an **`ELokiActivityState`** enum (`"Menus"` is a known-good value). `avId` is the
+avatar id from S85. Getting `a` wrong sinks the whole activity struct and with it the update.
+
+### Result
+
+| push | payload | FRIENDS panel |
+|---|---|---|
+| — | (friend served, no presence) | `0 ONLINE / 1 OFFLINE` |
+| `availability: online`, `a: "Menus"` | parsed clean | **`1 ONLINE / 0 OFFLINE`**, rank badge + full social context menu (Invite to Party / Request Party Invite / Remove Friend) |
+| `availability: offline` | parsed clean | flips back |
+
+⇒ **Server-driven presence, on command, in both directions.**
+
+★ **Free instrument discovered:** `LogJson` echoes the rejected value AND names the exact
+property and enum. That is the direct antidote to this surface's worst trap — UE's
+`JsonObjectStringToUStruct` ignores *unknown* keys, so a mistyped field is normally SILENT
+and reads as "dead handler". **Watch `LogJson` on every push; a bad payload now
+self-identifies.**
+
+⚠ **Gotcha found the hard way: `ags` TRUNCATES `capture.log` on restart** (7.87 MB → 66 KB).
+Back it up before any restart, or the run's evidence is destroyed. Cert continuity is safe
+by contrast — `EnsureCert` reuses `certs/root.crt`, so restarting with the same `-certs`
+dir serves the identical cert and `cacert.pem` stays valid (verify: exactly one
+`SUPERVIVE Revival Root CA` in the bundle, matching `certs/root.crt`).
+
 ## What this unlocks, and what is still open
 
 - **Push a friends notif and watch `USocialManager` react.** That is the first push in this
