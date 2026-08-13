@@ -90,7 +90,7 @@ static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
 static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for SpawnPlayer (96-byte FTransform OUT)
 
 // ---- S68 spawn+possess mode (LEAD B / OPTION 2) ----
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22 };
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23 };
 #ifndef KRUNMODE
 #define KRUNMODE RM_CHEATSPAWN
 #endif
@@ -315,6 +315,7 @@ static bool ResolveMeshCam(); static void DoMeshCam();          // S93 RM_MESHCA
 static bool ResolveDropIn(); static void DoDropIn();            // S93 RM_DROPIN: drive the DropPlane drop-in descent (SpawnPlane->AddPlayerToDropPlane)
 static bool ResolveMakeMesh(); static void DoMakeMesh();        // S93 RM_MAKEMESH: recreate a visible hero body from scratch (AddComponentByClass+SetSkeletalMeshAsset)
 static bool ResolvePlay(); static void DoPlay();               // S94 RM_PLAY: the VISIBLE + MOVABLE hero (ground-teleport + Ronin mesh + top-down cam + WASD puppet, one shim)
+static void DoCheatMgr();                                      // S114 RM_CHEATMGR: "Route B" — construct a UCheatManager and install it on the live PC (42 real exec verbs)
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
@@ -995,6 +996,10 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     if(kRunMode==RM_MESHCAM){ DoMeshCam(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done)
     if(kRunMode==RM_DROPIN){ DoDropIn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoDropIn
     if(kRunMode==RM_MAKEMESH){ DoMakeMesh(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoMakeMesh
+    // S114 Route B. One-shot: install and stop. Sets g_done so the swap is restored promptly and the
+    // shim stops taking game-thread callbacks — the opposite of RM_PLAY's 600 s hold, and therefore a
+    // much smaller exposure window.
+    if(kRunMode==RM_CHEATMGR){ DoCheatMgr(); InterlockedIncrement(&g_called); g_done=1; g_inHook=0; return; }
     if(kRunMode==RM_PLAY){ DoPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done) — camera + WASD each hit
     if(kRunMode==RM_TRAINING){ DoTraining(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoTraining (one step per hit)
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
@@ -1358,6 +1363,28 @@ static bool SafeWritable(const void* a,size_t sz){
 #endif
 #ifndef KFSHOTN
 #define KFSHOTN 32          // attribution table size; saturation is reported, counts stay valid
+#endif
+// S114 RM_CHEATMGR: optional in-shim verification. DEFAULT OFF -- installing the CheatManager is a
+// pointer write and is reversible; EXECUTING a cheat changes game state, so it must be opted into
+// explicitly (-DKCMVERIFY=1) rather than happening as a side effect of installing.
+#ifndef KCMVERIFY
+#define KCMVERIFY 0
+#endif
+// ⚠ NOT "God". S114 lane 4 MEASURED that `God` emits NO log line in this build, which makes it a
+//   SILENT instrument: a successful run and a run that never reached branch 7 look identical. That is
+//   the FK-11 trap (a prescribed experiment whose negative cannot be distinguished from "never ran").
+//   `LogLoc` prints the player location through the normal logging path, so it is observable.
+//   Pair it with `[Core.Log] LogScriptCore=Verbose` (FK-11 mechanism: the USER Engine.ini, NOT -ini:)
+//   as the keystone "the router ran at all" control.
+#ifndef KCMVERIFYCMD
+#define KCMVERIFYCMD "LogLoc"
+#endif
+// How long RM_CHEATMGR waits for a game-thread dispatch to land on a swapped UFunction. It is an
+// UPPER bound only: DoCheatMgr sets g_done, and FsHold's loop is `while(!g_done && elapsed<ms)`, so a
+// successful install returns in the time it takes one frame to dispatch ReceiveTickClient. Kept short
+// on purpose -- the exposure window is the thing S112 taught us to minimise.
+#ifndef KCMHOLDMS
+#define KCMHOLDMS 120000
 #endif
 static uintptr_t g_fsPi=0;                        // the REAL ProcessInternal (module .text) -- pass-through target
 static uintptr_t g_fsFuncCls=0;                   // the UClass named "Function" (fast per-object filter)
@@ -4686,6 +4713,245 @@ static void RunConsole(const wchar_t* cmd, const char* tag){
     Markerf("[SHOT] %s: console '%ls' %s\r\n",tag,cmd,f?"FAULTED":"ok");
 }
 
+// Run a console command explicitly THROUGH a given PlayerController.
+//
+// ⚠ Why this exists instead of reusing RunConsole(): RunConsole passes
+// `WorldContextObject = g_wmPC ? g_wmPC : g_worldCtx` and `SpecificPlayer = 0`. Both of those globals
+// are populated by OTHER run modes (ResolveWakeMove / the force-open's ProgressionManager lookup) and
+// are ZERO in RM_CHEATMGR. MEASURED 2026-08-12: with both null, stock ExecuteConsoleCommand does
+//     UWorld* World = GetWorldFromContextObject(null) -> null
+//     TargetPC = (Player || !World) ? Player : World->GetFirstPlayerController();
+//              = (false || true)    ? null   : ...        -> nullptr
+//     -> GEngine->Exec(nullptr, Cmd)
+// i.e. it never touches a PlayerController, so `UPlayer::Exec` never runs and branch 7 is never
+// reached. The shim reported `console 'LogLoc' ok` (the call did not fault) while Loki.log showed
+// ZERO "BugItGo" lines -- a textbook "it ran and did nothing" that would read as success to anyone
+// checking only for a crash.
+// Passing the PC as SpecificPlayer short-circuits the whole lookup: `Player || !World` is true, so
+// TargetPC = Player. We pass it as the WorldContextObject too, so the world resolves properly.
+static void RunConsoleOnPC(uintptr_t pc, const wchar_t* cmd, const char* tag){
+    if(!g_plCcRes){ g_plCcRes=true;
+        ResolveFuncGlobal("ExecuteConsoleCommand",&g_plCcFn,&g_plCcThunk,&g_plCcChild,&g_plCcCDO);
+        if(g_plCcChild){ g_oCcWCO=ParamOffset(g_plCcChild,"WorldContextObject");
+                         g_oCcCmd=ParamOffset(g_plCcChild,"Command");
+                         g_oCcSP =ParamOffset(g_plCcChild,"SpecificPlayer"); } }
+    if(!g_plCcThunk||!LooksLikePtr(g_plCcCDO)||g_oCcCmd==0xFFFFFFFF){
+        Markerf("[CHM] %s: ExecuteConsoleCommand unresolved (thunk=0x%llX cdo=0x%llX cmd@0x%X)\r\n",
+                tag,(unsigned long long)g_plCcThunk,(unsigned long long)g_plCcCDO,g_oCcCmd); return; }
+    if(!LooksLikePtr(pc)){ Markerf("[CHM] %s: no PC to route through\r\n",tag); return; }
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    if(g_oCcWCO!=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oCcWCO)=(uint64_t)pc;
+    SetFStringAt((uint8_t*)g_gsbuf,g_oCcCmd,cmd);
+    if(g_oCcSP !=0xFFFFFFFF) *(uint64_t*)(g_gsbuf+g_oCcSP )=(uint64_t)pc;   // ★ the fix
+    Markerf("[CHM] %s: ExecuteConsoleCommand('%ls') WCO=0x%llX SpecificPlayer=0x%llX (wco@0x%X sp@0x%X)\r\n",
+            tag,cmd,(unsigned long long)pc,(unsigned long long)pc,g_oCcWCO,g_oCcSP);
+    bool f=CallNativeGuarded(g_plCcFn,g_plCcThunk,g_plCcChild,(void*)g_plCcCDO,g_gsbuf,g_rbuf);
+    Markerf("[CHM] %s: call %s -- now grep Loki.log for the verb's OWN output; "
+            "'ok' here only means the call did not fault\r\n",tag,f?"FAULTED":"returned");
+}
+
+// ============================================================================================
+// ★★★★ RM_CHEATMGR (S114, 2026-08-12) — "ROUTE B": give the PlayerController the UCheatManager
+//       the shipping build refuses to build for it, and 42 real exec verbs come online.
+//
+// WHY THIS WORKS (all MEASURED, docs/fk13-console-exec-settled.md + docs/fk13-live-run-2026-08-12.md):
+//   * `UE_ALLOW_EXEC_COMMANDS == 1` in this build (UBT's `bUseExecCommandsInShipping` DEFAULTS to
+//     true), so `UPlayer::Exec` (RVA 0x3C36AA0) is compiled with all ten stock branches. Branch 7 is
+//     `PlayerController->CheatManager->ProcessConsoleExec(...)`.
+//   * `UCheatManager::ProcessConsoleExec` (RVA 0x35B7430, 154 B) is a REAL body, and 44 of its 50
+//     `FUNC_Exec` UFunctions have real bodies (Summon 1093 B, Teleport 1353 B, DamageTarget 625 B,
+//     DestroyAll 859 B, God, Fly, Ghost, Slomo...).
+//   * `UE_WITH_CHEAT_MANAGER` is `(1 && !UE_BUILD_SHIPPING)` -- a PLAIN #define with no Target.cs
+//     escape -- so `APlayerController::AddCheats`'s ENTIRE body compiled out to `ret`. That is the
+//     only thing missing. Confirmed live: its thunk resolves through vtbl+0xEE8 to the universal
+//     fold 0x00F7EC20 (`ret 0`).
+//   * BUT `CheatClass` (+0x528) is ALREADY POPULATED with the UCheatManager UClass -- measured
+//     non-null in BOTH the main menu and the staged tutorial world -- while `CheatManager` (+0x520)
+//     is NULL in both. The class SELECTION was never stripped; only the construction was.
+//
+// SO: do exactly what stock `AddCheats` would have done, minus the compiled-out gate:
+//       CheatManager = NewObject<UCheatManager>(this, CheatClass);
+// and skip `InitCheatManager()`. That call is UNGUARDED in stock UE but does only three things --
+// `ReceiveInitCheatManager()` (a BP event), `OnCheatManagerCreatedDelegate.Broadcast(this)`, and an
+// `OnEndPlay` cleanup registration -- NONE of which `ProcessConsoleExec` needs. Skipping it costs a
+// missed cleanup on level end and avoids calling a plain virtual through a hand-built vtable index.
+//
+// CONSTRUCTION PRIMITIVE: `UGameplayStatics::SpawnObject(TSubclassOf<UObject>, UObject* Outer)` --
+// a static BlueprintCallable UFunction, so the S55 native-call primitive reaches it with no new
+// machinery. Stock body (GameplayStatics.cpp:813):
+//     if (*ObjectClass == nullptr)                       -> warn "no class specified", return null
+//     if (!Outer)                                        -> warn "null outer",          return null
+//     if (ClassWithin && !Outer->IsA(ClassWithin))        -> warn "outer %s is not %s",  return null
+//     return NewObject<UObject>(Outer, ObjectClass, NAME_None, RF_StrongRefOnFrame);
+// Two consequences we depend on:
+//   (a) it ENFORCES `ClassWithin` itself. `UCheatManager` is `UCLASS(Within=PlayerController)`, and
+//       our outer is a PlayerController subclass, so the check passes -- and if it ever does not,
+//       we get a named `LogScript: Warning:` line instead of a corrupt object. Free diagnostic.
+//   (b) ★ it constructs with **RF_StrongRefOnFrame**, i.e. the object is kept alive by a reference
+//       on the script frame ONLY. We therefore store it into the reflected `CheatManager` UPROPERTY
+//       IMMEDIATELY, in this same game-thread callback. That is what makes it permanently reachable
+//       by ordinary GC traversal -- and it is the exact lesson of S110, which MEASURED that poking
+//       the RootSet bit is INERT in this build while parking an object in a real UPROPERTY works.
+//       Do NOT "fix" a future GC problem here by rooting harder.
+//
+// ZERO MODULE-IMAGE WRITES. This mode adds no `.text` patch of any kind: it rides the existing
+// KFUNCSWAP heap `UFunction.Func` swap for its game-thread callback (S112 MEASURED a standing
+// `.text` patch at 10/10 armed-window deaths vs 3/36 without, Fisher p = 7e-8). The only writes this
+// mode performs are ONE aligned qword into a heap UObject field, readback-verified.
+// ============================================================================================
+static uintptr_t g_chmPC=0, g_chmObj=0;
+static uint32_t  g_chmOffMgr=0xFFFFFFFF, g_chmOffCls=0xFFFFFFFF;
+static void*     g_chmSoFn=nullptr; static uintptr_t g_chmSoThunk=0, g_chmSoChild=0, g_chmSoCDO=0;
+
+// The live PlayerController, identified by REFLECTION rather than by class-name shape.
+// ⚠ A name-substring test is not sound here: the menu PC is `PC_MainMenu_C` (contains neither
+// "PlayerController" nor "LokiPlayerController"), while `Comp_PlayerController_Chat_C` and 68 other
+// COMPONENTS do contain it. That exact blind spot produced a false "no PlayerController exists at the
+// menu" reading in S114 before it was caught. So: try the known class shapes, then ACCEPT only an
+// object whose class actually reflects both `CheatManager` and `CheatClass`.
+static uintptr_t FindCheatablePC(){
+    static const char* kCand[]={"LokiPlayerController_Dev","LokiPlayerController","PC_MainMenu","PlayerController"};
+    for(int i=0;i<4;i++){
+        uintptr_t pc=FindInstByClass(kCand[i],nullptr);
+        if(!LooksLikePtr(pc)) continue;
+        uintptr_t cls=ClassOf(pc); if(!LooksLikePtr(cls)) continue;
+        uint32_t om=PropOffsetSuper(cls,"CheatManager"), oc=PropOffsetSuper(cls,"CheatClass");
+        char cn[96]="?"; GetFNameStr(NameId(cls),cn,sizeof(cn));
+        if(om==0xFFFFFFFF||oc==0xFFFFFFFF){
+            Markerf("[CHM] cand '%s' -> 0x%llX (%s) REJECTED: CheatManager@0x%X CheatClass@0x%X\r\n",
+                    kCand[i],(unsigned long long)pc,cn,om,oc);
+            continue; }
+        g_chmOffMgr=om; g_chmOffCls=oc;
+        Markerf("[CHM] PC=0x%llX class=%s  CheatManager@0x%X CheatClass@0x%X (by name, not literals)\r\n",
+                (unsigned long long)pc,cn,om,oc);
+        return pc;
+    }
+    return 0;
+}
+
+static void DoCheatMgr(){
+    Marker("[CHM] === RM_CHEATMGR: install a UCheatManager on the live PlayerController ===\r\n");
+
+    g_chmPC=FindCheatablePC();
+    if(!g_chmPC){ Marker("[CHM] ABORT: no PlayerController reflecting CheatManager+CheatClass\r\n"); return; }
+
+    // Idempotence: never build a second one.
+    uintptr_t cur = SafeReadable((void*)(g_chmPC+g_chmOffMgr),8) ? *(uintptr_t*)(g_chmPC+g_chmOffMgr) : 0;
+    if(LooksLikePtr(cur)){
+        char cn[96]="?"; if(ClassOf(cur)) GetFNameStr(NameId(ClassOf(cur)),cn,sizeof(cn));
+        Markerf("[CHM] ALREADY INSTALLED: CheatManager=0x%llX (%s) -- skipping construction\r\n",
+                (unsigned long long)cur,cn);
+        g_chmObj=cur;
+#if KCMVERIFY
+        // ⚠ This used to `return` here, which meant the verify step could NEVER run against a process
+        //   that already had the CheatManager installed -- i.e. exactly the case you are in when you
+        //   inject a -verify build to test an install performed by an earlier injection. Fall through.
+        Markerf("[CHM] KCMVERIFY=1: exercising the router with '%s' on the EXISTING manager\r\n",KCMVERIFYCMD);
+        RunConsoleOnPC(g_chmPC,L"" KCMVERIFYCMD,"chm-verify");
+#endif
+        return; }
+
+    uintptr_t cheatCls = SafeReadable((void*)(g_chmPC+g_chmOffCls),8) ? *(uintptr_t*)(g_chmPC+g_chmOffCls) : 0;
+    if(!LooksLikePtr(cheatCls)){
+        Markerf("[CHM] ABORT: CheatClass is NULL (0x%llX) -- nothing to construct\r\n",
+                (unsigned long long)cheatCls); return; }
+    { char cn[96]="?"; GetFNameStr(NameId(cheatCls),cn,sizeof(cn));
+      Markerf("[CHM] CheatClass=0x%llX (%s)\r\n",(unsigned long long)cheatCls,cn); }
+
+    // UGameplayStatics::SpawnObject(ObjectClass, Outer) -> UObject*
+    if(!g_chmSoThunk){
+        ResolveFuncGlobal("SpawnObject",&g_chmSoFn,&g_chmSoThunk,&g_chmSoChild,&g_chmSoCDO);
+        Markerf("[CHM] SpawnObject: fn=%p thunk=0x%llX child=0x%llX cdo=0x%llX\r\n",
+                g_chmSoFn,(unsigned long long)g_chmSoThunk,(unsigned long long)g_chmSoChild,
+                (unsigned long long)g_chmSoCDO); }
+    if(!g_chmSoThunk||!LooksLikePtr(g_chmSoCDO)||!LooksLikePtr(g_chmSoChild)){
+        Marker("[CHM] ABORT: UGameplayStatics::SpawnObject unresolved\r\n"); return; }
+
+    uint32_t oCls=ParamOffset(g_chmSoChild,"ObjectClass");
+    uint32_t oOut=ParamOffset(g_chmSoChild,"Outer");
+    uint32_t oRet=ParamOffset(g_chmSoChild,"ReturnValue");
+    Markerf("[CHM] SpawnObject params: ObjectClass@0x%X Outer@0x%X ReturnValue@0x%X\r\n",oCls,oOut,oRet);
+    if(oCls==0xFFFFFFFF||oOut==0xFFFFFFFF||oRet==0xFFFFFFFF){
+        Marker("[CHM] ABORT: SpawnObject param offsets not resolved by name\r\n"); return; }
+
+    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(uint64_t*)(g_gsbuf+oCls)=(uint64_t)cheatCls;
+    *(uint64_t*)(g_gsbuf+oOut)=(uint64_t)g_chmPC;
+    bool faulted=CallNativeGuarded(g_chmSoFn,g_chmSoThunk,g_chmSoChild,(void*)g_chmSoCDO,g_gsbuf,g_rbuf);
+    uintptr_t obj=*(uintptr_t*)(g_gsbuf+oRet);
+    if(!LooksLikePtr(obj)) obj=*(uintptr_t*)g_rbuf;      // some natives land the return in the result buf
+    Markerf("[CHM] SpawnObject %s -> 0x%llX\r\n",faulted?"FAULTED":"ok",(unsigned long long)obj);
+    if(faulted){ Marker("[CHM] ABORT: SpawnObject faulted; NOT writing anything\r\n"); return; }
+    if(!LooksLikePtr(obj)){
+        Marker("[CHM] ABORT: SpawnObject returned NULL. Check Loki.log for 'LogScript: Warning: "
+               "UGameplayStatics::SpawnObject' -- it names which of the three guards rejected us.\r\n");
+        return; }
+
+    // Verify what we got before we store it. A wrong class here would be far worse than a NULL.
+    uintptr_t ocls=ClassOf(obj); char on[96]="?";
+    if(LooksLikePtr(ocls)) GetFNameStr(NameId(ocls),on,sizeof(on));
+    Markerf("[CHM] constructed 0x%llX class=%s\r\n",(unsigned long long)obj,on);
+
+    // ★ R7 GUARD — CLASS IDENTITY. Everything downstream dereferences this pointer as a UCheatManager:
+    //   `UPlayer::Exec` branch 7 does `mov rax,[rcx]; call [rax+0x288]`, and UCheatManager's own
+    //   ProcessConsoleExec then reads a TArray at [this+0x80]/[this+0x88] and CALLS through each
+    //   element's vtable. Storing a non-CheatManager would therefore execute whatever that object's
+    //   slot 0x288 happens to be, on the first console command -- a fault we could not attribute
+    //   afterwards. SpawnObject already enforces ClassWithin, but that constrains the OUTER, not the
+    //   constructed class, so it is not this check. Walk the super chain by name.
+    bool isCM=false;
+    for(uintptr_t c=ocls; LooksLikePtr(c); c=(SafeReadable((void*)(c+0x48),8)?*(uintptr_t*)(c+0x48):0)){
+        if(NameIs(c,"CheatManager")){ isCM=true; break; }
+    }
+    if(!isCM){
+        Markerf("[CHM] ABORT: constructed object is '%s', which does not derive from CheatManager. "
+                "NOT storing it -- branch 7 would call through its vtable slot 0x288.\r\n",on);
+        return; }
+
+    // ★ R8 GUARD — ALIGNMENT. The offset comes from reflection, and branch 7 reads this field from the
+    //   game thread with no lock. x86-64 guarantees store atomicity only for a NATURALLY-ALIGNED qword;
+    //   a misaligned store could be observed torn and dereferenced as a half-written pointer.
+    if(((g_chmPC+g_chmOffMgr)&7)!=0){
+        Markerf("[CHM] ABORT: PC+0x%X = 0x%llX is not 8-byte aligned; refusing a possibly-torn store\r\n",
+                g_chmOffMgr,(unsigned long long)(g_chmPC+g_chmOffMgr)); return; }
+
+    // ★ R9 GUARD — OFFSET CROSS-CHECK. By-name resolution is the primary and stays authoritative; this
+    //   only WARNS if it disagrees with the offsets measured live on 2026-08-12, matching
+    //   cheat_reach_probe.py's print-both-and-flag pattern. Never abort on it: a legitimate game update
+    //   would move the offset, and by-name would be the correct answer.
+    if(g_chmOffMgr!=0x520 || g_chmOffCls!=0x528)
+        Markerf("[CHM] WARN: by-name offsets (mgr@0x%X cls@0x%X) differ from the S114 measured literals "
+                "(0x520/0x528). Trusting by-name; verify externally.\r\n",g_chmOffMgr,g_chmOffCls);
+
+    // ★ Store into the reflected UPROPERTY NOW, in this same game-thread callback.
+    //   `APlayerController::CheatManager` is UPROPERTY(Transient, BlueprintReadOnly) -- and Transient
+    //   does NOT remove a property from the GC reference token stream, so this write is what makes the
+    //   object reachable. Stock UE relies on exactly this one Transient UPROPERTY as the cheat manager's
+    //   SOLE keep-alive for its entire lifetime, so we are not inventing a lifetime policy here.
+    //   ⚠ SpawnObject allocated with RF_StrongRefOnFrame (0x01000000), which despite the name is NOT a
+    //   keep-alive at all -- its only consumer is the ubergraph persistent-frame collector. So there is
+    //   NO grace period to rely on: unreferenced, this object is collectable at the next pass.
+    if(!SafeWritable((void*)(g_chmPC+g_chmOffMgr),8)){
+        Markerf("[CHM] ABORT: PC+0x%X not writable -- object left unreferenced (it will be collected)\r\n",
+                g_chmOffMgr); return; }
+    *(uintptr_t*)(g_chmPC+g_chmOffMgr)=obj;
+    uintptr_t back=*(uintptr_t*)(g_chmPC+g_chmOffMgr);
+    if(back!=obj){
+        Markerf("[CHM] ABORT: readback mismatch (wrote 0x%llX read 0x%llX)\r\n",
+                (unsigned long long)obj,(unsigned long long)back); return; }
+    g_chmObj=obj;
+    Markerf("[CHM] *** INSTALLED: PC(0x%llX)->CheatManager@0x%X = 0x%llX (%s) -- readback verified ***\r\n",
+            (unsigned long long)g_chmPC,g_chmOffMgr,(unsigned long long)obj,on);
+    Marker("[CHM] UPlayer::Exec branch 7 is now live. Verify externally with cheat_reach_probe.py,\r\n"
+           "[CHM] then drive it with ExecuteConsoleCommand(\"<verb>\").\r\n");
+
+#if KCMVERIFY
+    // Optional in-shim positive control. Off by default: it EXECUTES a cheat, which changes game
+    // state, so it must be an explicit opt-in rather than a side effect of installing.
+    RunConsoleOnPC(g_chmPC,L"" KCMVERIFYCMD,"chm-verify");
+#endif
+}
+
 // ★★★★ S101 — DRIVE THE GAME'S OWN ABILITY-SYSTEM WIRING CHAIN.
 //
 // S100 measured that the force-open hero has NO ability system: AbilitySystemComponentStorage /
@@ -6747,6 +7013,33 @@ static DWORD WINAPI Worker(LPVOID){
         UninstallHook();
         Markerf("[MK] done (step=%d comp=0x%llX called=%ld)\r\n",g_mkStep,(unsigned long long)g_mkComp,(long)g_called);
         return 0;
+    }
+    // ★★★ S114 "ROUTE B". One-shot: arm the heap Func-swap, let ONE game-thread dispatch run
+    //     DoCheatMgr, which sets g_done, then disarm. Nothing is held.
+    if(kRunMode==RM_CHEATMGR){
+        Marker("[CHM] Route B: construct a UCheatManager and install it on the live PlayerController.\r\n"
+               "[CHM] Inject AFTER the world is up (menu is fine -- CheatClass is populated in both).\r\n");
+#if KFUNCSWAP
+        // ★ HEAP ROUTE ONLY. FsArm swaps UFunction.Func (+0xE0) on the heap; ProcessInternal's bytes
+        //   are never touched. FsArm itself refuses if the PI prologue is already hooked by someone else.
+        Marker("[CHM] KFUNCSWAP=1: game-thread callback via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        if(!FsArm()){ Marker("[CHM] FAIL funcswap arm\r\n"); return 6; }
+        FsHold(KCMHOLDMS);      // returns as soon as DoCheatMgr sets g_done
+        FsDisarm();
+#else
+        // Deliberate refusal rather than a silent fallback. Every OTHER mode in this file reaches the
+        // game thread through InstallHook(), which is `SafeWrite(g_pi, jmp, 5)` -- a standing 5-byte
+        // .text patch at ProcessInternal. S112 MEASURED that exact construct at 10/10 armed-window
+        // deaths vs 3/36 with no module-image write (Fisher p = 0.00000008). Route B's entire premise
+        // is that installing a CheatManager costs ONE heap qword; taking a .text patch to deliver it
+        // would trade a 1-in-8 hazard for a near-certain one.
+        Marker("[CHM] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a 5-byte .text patch at\r\n"
+               "[CHM] ProcessInternal, measured 10/10 lethal (S112, Fisher p=7e-8). Rebuild with KFUNCSWAP=1.\r\n");
+        return 7;
+#endif
+        Markerf("[CHM] done (installed=0x%llX pc=0x%llX called=%ld hitsGT=%ld)\r\n",
+                (unsigned long long)g_chmObj,(unsigned long long)g_chmPC,(long)g_called,(long)g_hitsGT);
+        return g_chmObj ? 0 : 8;
     }
     if(kRunMode==RM_PLAY){
         Marker("[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)\r\n");

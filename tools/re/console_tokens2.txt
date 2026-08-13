@@ -1,0 +1,64 @@
+# FK-13 lane-3 census, PASS 2.
+# Correction from pass 1: UHT strips the F/U/A prefix for REFLECTED names, so the
+# right probe for FKeyBind is `KeyBind` and for UConsole is `Console`.  Pass 1's
+# `FKeyBind`=0 was an instrument artifact of my own token list, not a property of
+# the binary.  Lines starting '!' are POSITIVE CONTROLS.
+#
+# --- FKeyBind USTRUCT: reflected name + its member names ---------------------
+KeyBind
+bIgnoreCtrl
+bIgnoreShift
+bIgnoreAlt
+bIgnoreCmd
+bDisabled
+# --- UConsole UCLASS: reflected properties (Console.h) -----------------------
+ConsoleTargetPlayer
+DefaultTexture_Black
+DefaultTexture_White
+HistoryBuffer
+MaxScrollbackSize
+TypedStr
+# --- UConsoleSettings (EngineSettings) ---------------------------------------
+ManualAutoCompleteList
+AutoCompleteMapPaths
+BackgroundOpacityPercentage
+bOrderTopToBottom
+bDisplayHelpInAutoComplete
+HistoryBot
+# --- UConsole runtime literals / states --------------------------------------
+LogConsoleResponse
+ConsoleVariablesEditor
+Typing
+ConsoleCommand
+ConsoleKeyMappings
+# --- exec / travel verbs S3 cared about --------------------------------------
+ServerTravel
+DisconnectSession
+Browse
+Reconnect
+Disconnect
+# --- other debug/exec surfaces ------------------------------------------------
+ShowDebug
+DebugCameraController
+ToggleDebugCamera
+DebugCamera
+EnableDebugCamera
+Shot
+HighResShot
+Stat
+DumpGPU
+PROFILEGPU
+NextDebugTarget
+PreviousDebugTarget
+viewmode
+wireframe
+# --- runtime.dll POSITIVE CONTROLS (from docs/fk10-protector-identified.md) ---
+!sentry_client
+!packer
+!minidump
+!NtCreateThreadEx
+# --- game-exe POSITIVE CONTROLS ----------------------------------------------
+!ActionMappings
+!DebugExecBindings
+!LokiPlayerCheats
+!LokiGameViewportClient

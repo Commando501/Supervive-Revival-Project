@@ -1,0 +1,20 @@
+BODY-GRADER CONTROL SET   (KNOWN_FOLDS lookup DISABLED -- pure disassembly)
+The confound to kill is SIZE: the folds are 2-3 bytes, so the positive
+controls include 3-, 9- and 22-byte REAL bodies, not just big ones.
+
+-- EXPECT FOLDED-STUB (or TAILJMP-> one) --
+  0x00f7eb60  FOLDED-STUB              CONST-fold, 3 B [32c0c3] : xor al, al; ret                      the "returns false" fold: xor al,al; ret
+  0x00f7ec20  FOLDED-STUB              EMPTY-fold, 3 B [c20000] : ret 0                                the universal empty fold: ret 0  (165,789 pointer slots)
+  0x05254180  REAL                     64 B .pdata, 7 insn decoded, first: mov rax, qword ptr [rdx +   RECORDED AS A STUB -- actually the shared execFoo THUNK
+  0x052fd980  REAL                     43 B .pdata, 14 insn decoded, first: push rbx; sub rsp, 0x20;   RECORDED AS A STUB -- actually a shared execFoo THUNK
+
+-- EXPECT REAL / SMALL-REAL --
+  0x03c24f38  REAL                     64 B .pdata, 2 insn decoded, first: mov rax, qword ptr [rcx];   vcall trampoline mov rax,[rcx]; jmp [rax+0xc38]  (9 B, REAL)
+  0x03c49f80  REAL                     239 B .pdata, 57 insn decoded, first: push rdi; sub rsp, 0x60;  APlayerController::RestartLevel impl (22 B, REAL)
+  0x0383a570  REAL                     2695 B .pdata, 25 insn decoded, first: mov qword ptr [rsp + 0x  UGameViewportClient::Exec_Runtime
+  0x03ed66c0  REAL                     2521 B .pdata, 673 insn decoded, first: mov qword ptr [rsp + 0  UEngine::Exec (fk13 §3C)
+
+SPLIT: every row above the line grades FOLDED (directly or through its
+tail-jmp); every row below grades REAL/SMALL-REAL, INCLUDING a 9-byte body.
+So the grader is keying on "does the body touch memory or call anything",
+not on length.

@@ -172,3 +172,9 @@ __pycache__/
 # NOTE: deliberately NOT a blanket /Output/. Output/Logs/FModel-Log-2026-06-29.log
 # is cited by name in docs/ignorance-map-s101.md:1316 as the evidence artifact for
 # ignorance-map item D4.
+
+# S114 exec-surface analysis cache. 119 MB, and every byte is DERIVED: text_union.bin
+# is a .text union rebuilt from dumps/ on demand, text_cov.bin its coverage bitmap,
+# thunk_callhist.pkl a memoised disassembly pass. Regenerated automatically by
+# tools/re/{exec_surface_probe,exec_chain_grade,callers_of}.py, which own the path.
+/tools/re/.exec_surface_cache/
