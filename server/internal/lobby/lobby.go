@@ -376,7 +376,8 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 		s.logf("WS upgrade FAILED %s: %v", r.URL.Path, err)
 		return
 	}
-	s.logf("WS connected %s (subproto=%q)", r.URL.Path, r.Header.Get("Sec-WebSocket-Protocol"))
+	s.logf("WS connected %s (subproto=%q) envelope=[%q..%q]", r.URL.Path,
+		r.Header.Get("Sec-WebSocket-Protocol"), conn.EnvelopeStart, conn.EnvelopeEnd)
 	defer func() {
 		conn.Close()
 		s.logf("WS closed %s", r.URL.Path)
