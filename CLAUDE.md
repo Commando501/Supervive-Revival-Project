@@ -273,11 +273,20 @@ never comparable.
 **FIX:** `ws.Conn.WriteText` wraps with the socket's own negotiated markers (a no-op on the
 messenger); `WriteTextRaw` keeps the unwrapped form for probes. **Result on reconnect: dispatch
 0 → 4**, four responses parsed for the first time ever.
-★★★ **THE FULL 33-TYPE SWEEP THEN RAN CLEAN — 33/33 DISPATCHED, NOTHING FELL THROUGH**
-(`docs/fk15-sweep-33-types-20260813.md`). Dispatch 5 → 38; **0** `no specific handler case
-assigned`, **0** parse errors, **0** deserialize failures, and `Message fragmented` did NOT grow.
-⇒ **the `/lobby` receive channel is fully functional for the first time in this project's history**,
-and the 33-names == 33-jump-table-cases corroboration is now confirmed live.
+★★★ **THE FULL 33-TYPE SWEEP THEN RAN CLEAN — 33/33 RECEIVED, PARSED AND ROUTED**
+(`docs/fk15-sweep-33-types-20260813.md`). Dispatch 5 → 38; **0** parse errors, **0** deserialize
+failures, and `Message fragmented` did NOT grow. ⇒ **the `/lobby` receive channel is fully
+functional for the first time in this project's history.**
+⚠⚠ **CORRECTED same day — do NOT read this as "33/33 reached a bound handler case."** That claim
+rested on the absence of `Error; Detected of type notif but no specific handler case assigned`,
+and **that absence is not evidence**: those two error strings are **not plain `UE_LOG`s** — they are
+`Printf`'d into an FString and pushed through a virtual on `Lobby+0x218`, so they may never reach
+the log. **Disproof:** a bogus type (`dsNotice-PLACEHOLDER`, which exists nowhere in the binary)
+produced the IDENTICAL trace including **`Type: dsNotice-PLACEHOLDER`** ⇒ **`Type: %s` is logged
+BEFORE the handler lookup.** The 33==33 jump-table corroboration stands on its **static** evidence;
+the sweep did not confirm it live.
+★ **Free control, reuse it:** push a type that cannot exist. If your "handler found" detector reads
+the same for the bogus type, it is not measuring what you think.
 ⚠ **No handler ACTED** — a `type:`-only frame carries no payload, so the open question is now
 **per-type PAYLOAD, not routing**, and the console iterates one in seconds. ⚠ Even
 `disconnectNotif` / `partyKickNotif` / `userBannedNotification` were inert: sockets held 581 s
