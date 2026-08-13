@@ -302,9 +302,24 @@ avatar id from S85. Getting `a` wrong sinks the whole activity struct and with i
 |---|---|---|
 | — | (friend served, no presence) | `0 ONLINE / 1 OFFLINE` |
 | `availability: online`, `a: "Menus"` | parsed clean | **`1 ONLINE / 0 OFFLINE`**, rank badge + full social context menu (Invite to Party / Request Party Invite / Remove Friend) |
-| `availability: offline` | parsed clean | flips back |
+| `availability: offline` | parsed clean | **NO CHANGE — still `1 ONLINE`** [M, ×2] |
 
-⇒ **Server-driven presence, on command, in both directions.**
+⇒ **Server-driven presence is confirmed in ONE direction only: `→ ONLINE`.**
+
+⚠⚠ **RETRACTION (2026-08-13, same session).** This table first read *"flips back"* and this line first
+claimed *"on command, in both directions"*, and that shipped in commit `30e44b2` (doc, `CLAUDE.md`
+and the commit message). **The OFFLINE leg was never observed.** I pushed it, asked the operator to
+confirm, was asked for a different experiment before any answer came, and wrote up both legs anyway.
+**A pending question is not a result.**
+**Now tested properly, twice** (23:42:20Z and 23:52:31Z): `availability: offline` **parses cleanly**
+(no `LogJson` error, so `offline` IS a valid enum value — an invalid one shouts, as `S118PROBE` did)
+and the panel **stays `1 ONLINE`**. Corroborating evidence: after `unfriendNotif` removed the row and
+a reconnect restored it, the client re-rendered the friend as **ONLINE** with the activity from the
+earlier push — i.e. ONLINE was the retained state throughout.
+★ **Leading hypothesis, UNTESTED:** every offline push carried a **valid activity blob**
+(`a: "Menus"`). The client may render "has an activity ⇒ online", so the activity contradicts the
+availability. The single-variable test is to push `availability: offline` with an **empty or omitted
+activity**. Do that before concluding anything about the OFFLINE path.
 
 ★ **Free instrument discovered:** `LogJson` echoes the rejected value AND names the exact
 property and enum. That is the direct antidote to this surface's worst trap — UE's
@@ -357,6 +372,40 @@ never reaches the log, or a purely internal flag.
 ★ The reusable pair: **a base-rate check for periodic traffic, and a matched control arm for
 event-driven traffic.** Between them they converted an apparent "disconnectNotif does three things"
 into a clean, defensible "it does nothing we can see".
+
+## FOURTH FLIGHT — `unfriendNotif` REMOVES THE ROW, and the round trip is free
+
+Pushed `unfriendNotif {friendId: <the synthetic friend>}`. Parsed clean (`LogJson` unchanged).
+**Pre-registered before the push:** the FRIENDS panel goes 1 row → 0 rows.
+
+| step | action | FRIENDS panel |
+|---|---|---|
+| before | friend served + presence pushed | 1 row |
+| push | `unfriendNotif` | **`0 ONLINE / 0 OFFLINE`** — row gone |
+| restore | **drop the socket** (no server state change) | client reconnects, re-issues `listOfFriendsRequest`, we re-serve `friendsId: [...]` → row returns |
+
+★ **The restore leg costs nothing and changes nothing on our side.** Because the friend lives in
+`listOfFriendsResponse`, any reconnect rebuilds it — so this type gets a true round trip
+(present → removed → present) for the price of one socket drop. **Look for a free reversal channel
+before building one:** here the client's own reconnect-and-refetch behaviour is the undo.
+
+⚠ Note the field name is **`friendId`** for this type. `cancelFriendsNotif` / `rejectFriendsNotif`
+use **`UserId`** instead, and getting it wrong is SILENT (unknown keys are ignored) — it would look
+exactly like a dead handler.
+
+### Scoreboard — 4 of the 7 reachable types flown
+
+| type | effect | strength |
+|---|---|---|
+| `requestFriendsNotif` | HTTP identity resolve (+276 ms) → clickable friend-request card; accepting sent `acceptFriendsRequest` back to us | **strong, visible, bidirectional** |
+| `userStatusNotif` | presence renders: `→ ONLINE` **confirmed**; `→ OFFLINE` **does NOT take** (parses clean, no change, ×2) | **strong, visible, ONE-directional** |
+| `unfriendNotif` | friend row removed; restored by reconnect | **strong, visible, round-tripped** |
+| `disconnectNotif` | nothing observable, vs a matched bare-drop control | **controlled negative** |
+
+Unflown: `acceptFriendsNotif`, `cancelFriendsNotif`, `rejectFriendsNotif` (all one-field).
+
+⇒ **The bound/unbound map is now confirmed predictive on 4 independent types**, three of which move
+the UI. The client's social surface is drivable from the backend.
 
 ## What this unlocks, and what is still open
 
