@@ -122,14 +122,27 @@ The first install succeeded, but three checks were missing — it was luck, not 
 
 ## 8. Builds
 
+All four verified against the built DLLs on 2026-08-12. ⚠ Project rule: **diff `.text`, never size** —
+`cheatmgr` and `cheatmgr-any-verify` differ by 2,048 bytes of file size but that is not what separates
+them.
+
 | Variant | `.text` sha256 | Use |
 |---|---|---|
-| `cheatmgr` | `750b83bf0f36e90e` | in-world (`ReceiveTickClient`) |
+| `cheatmgr` | `750b83bf0f36e90e` | in-world (arms on `ReceiveTickClient`) |
 | `cheatmgr-any` | `b551996df67f106b` | **menu** (swaps all BP UFunctions) |
-| `cheatmgr-verify` | *(rebuild before use)* | +1 dim: also executes `KCMVERIFYCMD` |
+| **`cheatmgr-any-verify`** | **`4507e376d099a3b5`** | ★ **the build that produced the LogLoc proof** |
+| `cheatmgr-verify` | `bc2abddf627bdeed` | ⚠ on-disk build **predates the R7/R8/R9 guards AND the `RunConsoleOnPC` fix — rebuild before use** |
 
-Pre-guard builds were `a90e14dcde1dffa8` / `ef2fd89f87168871` — do not confuse them.
-`verify_dll.py`: PASS (no C++ exception machinery, no CRT).
+⚠ **Superseded hashes, recorded so nobody flies one by mistake:** `a90e14dcde1dffa8` and
+`ef2fd89f87168871` are the **pre-guard** `cheatmgr` / `cheatmgr-any`; `be7cb0a259dd8ff6` is the
+`cheatmgr-any-verify` built **before** the `RunConsoleOnPC` fix — i.e. the build whose verify step
+silently no-opped (§9.1). It is NOT the proof build.
+
+`verify_dll.py`: PASS on all (no C++ exception machinery, no CRT import).
+
+**Regression control:** rebuilding the shipped `play` variant from this tree yields
+`.text 5151621d2154e454`, byte-identical to the hash CLAUDE.md documents — so the +295 lines and the
+new run mode left RM_PLAY untouched. Re-run that check after any future edit to this file.
 
 ## 9. ★★★★★ END-TO-END PROVEN — a console string reached a cheat verb
 

@@ -6,7 +6,7 @@
 This one asks *"what don't we know we don't know?"* — and, more dangerously, *"what do we believe
 that isn't true?"*
 
-> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S112
+> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S114
 > Entries are updated in place with dated banners; **a banner always overrides the table beneath it.**
 > The original S101 text is never deleted, because the retraction history is the value.
 >
@@ -16,6 +16,7 @@ that isn't true?"*
 > | **FK-7** — tutorial crash | **S112** | ✅✅ **CLOSED — belief false, cause MEASURED, fix SHIPPED.** Standing `.text` patch of our own: **10/10 armed windows died with it vs 3/36 without, Fisher p = 7e-8.** Deployed default now arms on **2 heap pointers**, no module-image write; 5/6 armed windows survived 600 s, no functional regression. **Do not re-open.** `docs/s112-fk7-ab-results.md` |
 > | **FK-8** — `SecondsSinceStart` | **S111** | ✅ **CLOSED with a permutation positive control.** ★ Closing it showed **≥31.6 % of the whole crash corpus is self-inflicted**, and that all 22 crashpad reports are — so the S109/S110 tutorial campaign produced **zero** FK-7 evidence. `docs/fk8-crash-timing-mined.md` |
 > | **FK-9** — Sentry vs UECC dumps | **S109** | ✅ **CAPTURE SOLVED** — cleared by the *next launch*, not a timer; the "~3 min window" is retracted. Archiver shipped. |
+> | **FK-13** — "the dev console is fully stripped" | **S114** | ✅ **SETTLED — outcome TRUE, every stated reason FALSE, operational conclusion FALSE.** The console really is gone (`ALLOW_CONSOLE == 0`, three independent instruments) — but FK-13 was **three independent compile flags**, not one, and `bUseExecCommandsInShipping`'s stock default is **1**. So **`UE_ALLOW_EXEC_COMMANDS == 1`**, **138 native `FUNC_Exec` UFunctions** ship, and **Route B is shipped and proven end-to-end**: a `UCheatManager` constructed into `PC+0x520` (**one heap qword, zero module-image writes**) put **42 real exec verbs** live, verified by `ExecuteConsoleCommand("LogLoc")` → `LogCheatManager: BugItGo …` against a baseline of 0. ⇒ *"all cheap external paths are exhausted; the remaining options require in-process code"* is **dead**. ⚠ Still OPEN: where `open` is dispatched, and whether the 25 `ALokiPlayerCheats` verbs are reachable by spawning the actor. `docs/fk13-console-exec-settled.md`, `docs/fk13-live-run-2026-08-12.md`, `docs/fk13-routeb-shipped.md` |
 > | **FK-24** — the `ViewTarget` writer | **S108** | **OPEN.** ★ The probe was killing the game, and its own VOID verdict was an artifact. |
 > | **FK-25** — the marker file | **S108** | ⚠ **STILL UNFIXED**; cost evidence again. Cheapest unspent item in this document. |
 > | **FK-26** — leftover S9x shim diagnostics | **S108** | ✅ **NEW + SETTLED.** `KSTATICTEST` was killing the hero's walk/run animation every session. |
@@ -203,6 +204,27 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 > state: UNSETTLED, and never actually asked). The decisive probe is §5 Step 3 of the settled doc.
 > The FK-2 steer *"WASD is PARTIAL — velocity puppet only; stock input path dead"* is retracted as
 > **untested**, not inverted — see §1.4 for why inverting it would be the more expensive mistake.
+>
+> **★ S114 ADDENDUM — 2026-08-12: a worked example of this ⚠ 's exact hazard, on `UPlayerInput`
+> itself.** → `docs/fk13-console-exec-settled.md` §3A.
+> `UPlayerInput::DebugExecBindings` is **config-loaded and never evaluated.** `Engine/Config/
+> BaseInput.ini` ships exactly **16** `+DebugExecBindings`, `DefaultInput.ini`'s
+> `[/Script/Engine.PlayerInput]` adds and removes none, and S80i measured `@+0x1A8 **Num=16**` **live**
+> as its own positive control (`fk2-input-settled.md:477`) — an exact match, so **the config path
+> provably works**. And **nothing reads the array.** Measured two independent ways: the
+> `PlayerInput.cpp` wide-literal pool is intact and in exact stock source order with a **clean gap
+> precisely where the `#if !UE_BUILD_SHIPPING` block's literals belong** (6 same-file controls
+> present; `NoDebugExecBindings` and `KEYBINDING`, the only two literals unique to that block, both
+> **0**); and region-scoped disassembly finds **0** TArray-shaped accesses at displacement `0x1A8`
+> anywhere in the PlayerInput code region, against a control of **925** TArray-shaped pairs at 89
+> other offsets in that same region. [M]
+> ⇒ **A populated, live, correctly-parsed config array on this very class can still drive nothing.**
+> That is exactly why FK-2's "proven to EXIST ≠ proven to DRIVE" hedge must not be rounded up; it
+> **raises** the value of §5 Step 3 rather than answering it.
+> ⚠ **Do NOT transfer this negative.** `ActionMappings`/`AxisMappings` live on
+> `ULokiPlayerConfigManager`, are a **different array with a different consumer**, and were not
+> measured here. Generalising from one array on `UPlayerInput` to the input path is the same move
+> that produced FK-2 in the first place. [I]
 
 | | |
 |---|---|
@@ -350,6 +372,49 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 ### FK-6 — "The cheat surface is definitively closed — bodies compiled out of shipping"
 **Severity: HIGH (it gates the project's #1 blind spot: enemies, damage, abilities).**
 **→ RE-GRADED MEDIUM. See the banner.**
+
+> ## ⚠ SCOPE CORRECTION — S114, 2026-08-12. **This banner GOVERNS on the two specifics named below; everything else in the S105 settlement stands unchanged.** → `docs/fk13-console-exec-settled.md` §3D, `docs/fk13-routeb-shipped.md`
+>
+> - ★ **The "Console" bullet's `Exec = 0 of 500` is ANGELSCRIPT-ONLY — it was never a claim about
+>   native UFunctions, and the native picture is the opposite.** **138 native UFunctions carry
+>   `FUNC_Exec`** across 15 classes: `UCheatManager` **48**, `ALokiPlayerCheats` **25**,
+>   `APlayerController` 13, `ALokiCharacter` 10, `ALokiPlayerController` 8, `AHUD` 6,
+>   `UPlayerInput` 5, `ULokiClientPlayerCheats` 5, `ULokiTimelineManager` 5, `UGameViewportClient` 3,
+>   … Decoded from UHT's `FFunctionParams` statics, layout calibrated against 4 ground-truth
+>   functions, with the 3,703 candidates rejected by the `ObjectFlags@+0x34 == 0x45` test **reported,
+>   not dropped**. [M] ⇒ **"FK-13 and FK-6 are independent" is now FALSE**: the exec channel is
+>   precisely how the `UCheatManager` surface is reached.
+> - ★★★★★ **This entry's own headline gap is CLOSED — and it closed for exactly the reason this
+>   banner gave.** *"Nobody has tried to construct one in 101 sessions"* was true; S114 tried, and the
+>   real closure really was the **CONSTRUCTOR**, not the bodies.
+>   `APlayerController::CheatManager` (`+0x520`) was NULL in every measurement this project has ever
+>   taken, while `CheatClass` (`+0x528`) was **already populated with the `UCheatManager` UClass in
+>   BOTH the menu and the staged tutorial world** — only `AddCheats`'s body was stripped
+>   (`UE_WITH_CHEAT_MANAGER = (1 && !UE_BUILD_SHIPPING)`, a plain `#define` with **no `Target.cs`
+>   escape**). The new `RM_CHEATMGR` mode builds one via `UGameplayStatics::SpawnObject(CheatClass,
+>   pc)` and stores it in the reflected UPROPERTY: **one heap qword, readback-verified, ZERO
+>   module-image writes.** Proven **end-to-end** — `ExecuteConsoleCommand("LogLoc")` produced
+>   `LogCheatManager: BugItGo 0.000000 …` in `Loki.log` against a **measured baseline of 0**, with
+>   both format literals confirmed present in the image *before* the run (a pre-registered signal,
+>   not a post-hoc grep). 69 min uptime, 0 crashpad handoffs. Byte-level grade of the 48:
+>   **42 REAL / 3 FOLD / 3 COVERAGE-BLOCKED / 2 UNRESOLVED.** [M]
+>   ⚠ **Do not read "42" as a correction of this entry's "39 REAL bodies"** — the denominators differ
+>   (S114 graded the 48 `FUNC_Exec` members; S105's 39 was a different count). The two have never
+>   been reconciled and nothing turns on it.
+> - ⚠ **The `ALokiPlayerCheats` half is still SHUT, and for a different reason than the native
+>   hotkey closure.** `ALokiPlayerController::ProcessConsoleExec` (vtable slot 81 / disp `0x288`,
+>   RVA `0x569BE50`) **does** forward to the `LokiPlayerCheats` ObjectProperty at `PC+0xA30` —
+>   routing measured offline and decisive — but that field is **NULL live** (read **by name** from
+>   live reflection on `BP_LokiPlayerController_Dev_C` in the staged tutorial world), and
+>   `AddLokiPlayerCheats` is an **empty fold**, now confirmed **live** as well as offline. The road is
+>   built; nothing was ever constructed at the end of it. **OPEN: whether spawning that actor
+>   ourselves reaches those 25 verbs has not been tried.** [M for both measurements; the reach
+>   question is untested]
+> - ⚠ **Two live facts that stop this being over-read.** Before the install there were **zero live
+>   cheat objects of any kind** — `ALokiPlayerCheats`, `ALokiPlayerCheats_AS`,
+>   `ULokiClientPlayerCheats`, `UCheatManager`, `UCheatManagerExtension` all **CDO=1, LIVE=0** — and
+>   `ULokiGameInstance::LokiClientPlayerCheats` (`+0x298`, offset resolved by name) is **NULL at the
+>   menu**, so its 5 REAL exec bodies have no instance to run on. [M]
 
 > ## ✅ SETTLED — S105, 2026-07-27 → **`docs/fk6-cheat-surface-settled.md`**
 > **One line: the cheat surface is PRESENT and NOT YET PROVEN CALLABLE.** Split four ways, because
@@ -766,6 +831,29 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 >   provably ran, still silent) are pure suppression wins.
 > - **Angelscript logging is silent by AUTHORSHIP, not gating** (6 calls in 4,963 syscalls, 0.12 %) —
 >   raising verbosity cannot make script code talk. Downgrades FK-22.
+>
+> **★ S114 ADDENDUM — 2026-08-12.** Two corroborations and one **new trap shape**.
+> → `docs/fk13-console-exec-settled.md` §3B, `docs/fk13-routeb-shipped.md` §6, §9.1.
+> - **`-ExecCmds` is the SECOND UE command-line switch measured non-functional in this binary** —
+>   **0** wide occurrences of `ExecCmds` in a **100 %-readable** `.rdata`, against five same-class
+>   `FParse` switch literals that all resolve in the identical scan (`LogCmds` 3, `LOG=` 5,
+>   `ABSLOG=` 2, `FORCELOGFLUSH` 2, `NOCONSOLE` 1), cross-checked against the on-disk shipped exe as
+>   a second image. [M] ⇒ promote FK-11's one-off finding to a **standing rule: treat every UE
+>   command-line switch as unverified until its literal is located in the image.** Note the two
+>   switches fail for *different* reasons — `-LogCmds` has three hits that are all help text,
+>   `-ExecCmds` has none at all — so "the string is present" is not the test either.
+> - **The `-ini:`-is-applied-too-late half was independently re-confirmed** and is now the stated
+>   reason a shipped shim prescribes the **USER `Engine.ini`** rather than the command line. It also
+>   retires FK-13's own "cheapest experiment" — see that entry. [M]
+> - ⚠ **A THIRD trap shape, beside NEVER-RAN and SUPPRESSED: SILENT BY AUTHORSHIP, at the verb
+>   level.** `UCheatManager::God` **emits no log line at any verbosity**. It was the first choice for
+>   verifying that the exec channel worked and would have produced an uninterpretable null — raising
+>   verbosity cannot help, because there is no call site. The replacement is the pattern to copy:
+>   pick a verb whose own output is a **pre-registered** literal (`LogLoc` → two
+>   `UE_LOG(LogCheatManager, Log, …)` lines), confirm the format literals exist in the image
+>   **before** the run, and record the **baseline count**. [M]
+>   ★ Stated as a rule because it cost a false pass: **"the call returned ok" is never a success
+>   criterion; only the verb's own output is.**
 
 | | |
 |---|---|
@@ -946,6 +1034,7 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 | **Actual evidence** | True when written. **~35 sessions stale**: the force-open route has real gamemode+gamestate, spawn/possess/teleport, a visible and animated hero (S93/S98/S99b), and holds 10 minutes. |
 | **Steers** | `dumps/` contains nine state directories, every one a menu or shim state. The single highest-yield capture available has never been taken. |
 | **Cheapest experiment** | During the next force-open, run `capture-dumps.ps1 -State tutorial` from a second elevated terminal, then `-Finalize`. Same session, no extra launch. Budget from the one data point: the merely-drop-in-loading `toggles` state yielded 2.11 MB. |
+| **★ DONE — captured S111, first spent S114** | The **Steers** row above is **stale**: the capture was taken in **S111** as `dumps/tutorial-hero/` (staged world, hero spawned and possessed — `.text` **53.2 %**, `.rdata`/`.data` **100 %**; recorded until now only under FK-18's ★ row). **S114 is the first session to actually spend it**, and the whole FK-13 settlement rests on it: `ALLOW_CONSOLE == 0` was decided by the **absence** of five guard-exclusive `Console.cpp` literals, and an absence is only interpretable because that image's `.rdata` is 37,212,160 B at **100.0 % readable** per its own manifest (vs **63.1 %** for `merged.dump.exe`, where the same zero would be uninterpretable). [M] ⇒ **Standing rule: run every `.rdata` presence/absence claim against `dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe`, never `merged.dump.exe` alone.** ⚠ The two **cannot** be merged (different ImageBase — FK-18/FK-19), so this is a *choose the right image* rule, not a coverage fix. ⚠ FK-20's underlying point **survives**: there are still **0** captures from any state past the tutorial (hero select, drop, in-match, EoG), and those remain the highest-yield uncaptured states. |
 
 ---
 
@@ -984,7 +1073,7 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 | e | `loki.go:118-121` records as a measured S85 result that feature toggles come from *"no separate HTTP endpoint (client hits ONLY /configuration/{public,client} + /mailbox/config/version)"* | `server/internal/loki/loki.go` | The enumeration **omits `/core-game/matches/{id}`**, which S62 proved the client fetches and which carries `GameConfig.CVars` and `Extra.FeatureToggleOverrides`. The sweep that closed the HTTP route did not cover the HTTP route that carries the payload. S88–S90 then spent three sessions bit-splicing a replicated subobject. | hours |
 | f | CLAUDE.md: *"VALIDATION PENDING (as of 2026-07-10) … the design is N-way safe **by construction**"* naming **three** PI-hookers | `CLAUDE.md:131-136` | 16 days / ~17 sessions stale, and the launch procedure immediately above it lists **six** shims. "Safe by construction" is an argument, not a measurement; it is the belief that permits the six-shim default; and S85's recorded six-shim crash plus the deterministic 173–201 s cluster are what it predicts away. | one session (audit 1.5) |
 | g | `docs/endpoints.md:49`: *"usmap ground truth `CoreGamePlayer` (4 props)"* | endpoints.md | Contradicts `CLAUDE.md:259` in the same repo, and FK-14 shows the usmap disagrees with itself on 326 types. `/core-game/players/{id}` is polled ~17/s and gates match rejoin. **Verdict: PLAUSIBLE, not confirmed** — nobody has cross-checked it live. | hours |
-| h | *"The packed process blocks non-system DLL loads"* (why UE4SS is dead) | `docs/findings.md:191-193` | Partly obsolete: the project now manual-maps six shims into that process every launch. The live reasons UE4SS is dead are (i) no import to proxy and (ii) the C++-exception ban — not a general DLL-load block. Nobody has re-tested the intermediate (manual-mapping a small no-throw console-enabler). | hours |
+| h | *"The packed process blocks non-system DLL loads"* (why UE4SS is dead) | `docs/findings.md:191-193` | Partly obsolete: the project now manual-maps six shims into that process every launch. The live reasons UE4SS is dead are (i) no import to proxy and (ii) the C++-exception ban — not a general DLL-load block. ~~Nobody has re-tested the intermediate (manual-mapping a small no-throw console-enabler).~~ **⚠ S114 RE-SCOPES that intermediate — it is not one experiment, it is two, and only one is dead.** A ***flag-flipping* console-enabler cannot work at any injection depth**: `ALLOW_CONSOLE == 0` is a **code** strip, not a runtime gate — `UGameViewportClient::Init` (`0x0384FB00`) contains **no** `NewObject<UConsole>` and **no** store to `ViewportConsole` (`+0x48`), so `~` has nothing to open and no DLL, ini or config change alters it (FK-13). [M] What is **not** excluded is a shim that **constructs a `UConsole` itself** and installs it — the class ships **fully compiled** (`GetPrivateStaticClass 0x03F00F70`, vtable `.rdata 0x08257B10`, real bodies `0x3F133B0..0x3F3DB70`) and `UEngine::ConsoleClass` is still resolved at startup by the stock `LoadEngineClass<UConsole>` triple. [M] ⇒ that route is **open but unbuilt**, and it is a larger build than the one S114 actually shipped for less reward: **Route B** installs a `UCheatManager` into `PC+0x520` — one heap qword, zero module-image writes — and already reaches **42 real exec verbs** (`docs/fk13-routeb-shipped.md`). [I for the cost comparison] | hours |
 
 ---
 
@@ -1392,7 +1481,7 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 |---|---|---|---|
 | F1 | **The `-as-development-mode` flag.** The shipping client logs, every launch: *"Angelscript: Warning: Using fully precompiled scripts. Hot reloading is disabled for this run. / Delete PrecompiledScript.Cache or run with `-as-development-mode` flag to enable hot reload."* Present in today's live `Loki.log` and in **87 of 216** captured log files, since S53. `-as-development-mode` = **0 hits** across docs, tools, server, configs, CLAUDE.md and `git log --all`. The launcher already passes `-ini:` overrides. ⚠ No `.as` sources ship — which makes this an **authoring** entry point against the 14,072 bound classes, not a recompile; whether the script compiler is linked into shipping is genuinely open | Potentially: editing game logic in a scripting language instead of hand-writing native shims against raw offsets | **minutes to test** |
 | F2 | **Is `PrecompiledScript.Cache` integrity-checked?** It is a **loose, writable file outside the paks**. S74 recorded a 16-byte content-hash header and never asked whether it is verified, who computes it, or what happens on mismatch. `Manifest_UFSFiles` carries paths+timestamps and **no hashes** | If unverified: gameplay-code injection with no DLL, no manual mapping, no VEH, no `.text` patch, no integrity dodge | hours |
-| F3 | **Nothing distinguishes "the target ran and did nothing" from "we never reached the target."** No shim writes an entry-hit counter for its target UFunction; none stamps a source SHA or build time into its marker; `shim-status.ps1` reports marker existence, not surface function. That one ambiguity is the observed signature of the cheat closes, `AuthCheatChangeCharacter`, `ServerCheatSpawnActor`, the toggle carrier, several deploy attempts — **and** of a stale DLL (23 of 25 `tutorial_launch_*.dll` on disk predate their own source) and of `inject.exe` resolving by process *name*, first match | The credibility of every "we called it and nothing happened" close | hours |
+| F3 | **Nothing distinguishes "the target ran and did nothing" from "we never reached the target."** No shim writes an entry-hit counter for its target UFunction; none stamps a source SHA or build time into its marker; `shim-status.ps1` reports marker existence, not surface function. That one ambiguity is the observed signature of the cheat closes, `AuthCheatChangeCharacter`, `ServerCheatSpawnActor`, the toggle carrier, several deploy attempts — **and** of a stale DLL (23 of 25 `tutorial_launch_*.dll` on disk predate their own source) and of `inject.exe` resolving by process *name*, first match. **★ S114 (2026-08-12) BUILT THE FIRST WORKING VERSION OF THIS — and paid the tuition twice in the same sitting** (`docs/fk13-routeb-shipped.md` §4, §9.1). **The failure:** a borrowed helper `RunConsole()` passed `WorldContextObject = g_wmPC ? g_wmPC : g_worldCtx` and `SpecificPlayer = 0` — **both globals are populated by *other* run modes and are zero in `RM_CHEATMGR`** — so stock `ExecuteConsoleCommand` resolved `TargetPC = nullptr` and fell through to `GEngine->Exec(nullptr, Cmd)`, never touching a PlayerController. The marker printed **`console 'LogLoc' ok`** while the effect count stayed at **0**. **The instruments that caught it:** (1) an explicit entry-hit counter on the hooked dispatch — `[FS] *** NO GAME-THREAD HITS after 8000 ms (allThreadCalls=0 swapped=2) ***`, which caught a *different* silent no-op the same day (`ReceiveTickClient` is never dispatched at the menu, so the narrow Func-swap arms and does nothing); (2) a **pre-registered output signal** — the verb's own two `LogCheatManager` format literals confirmed present in the image *before* the run, against a **measured baseline of 0**; (3) `[CTRL]` gates on the RPM probe, which declared a run VOID when its own subclass walk broke. [M] ⇒ **the pattern is copyable and should be the template**: an entry-hit counter on the dispatch, a pre-registered literal for the effect, a baseline, and a control. ⚠ It is built for **one shim family only**; everywhere else F3 stands unbuilt | The credibility of every "we called it and nothing happened" close | hours |
 | F4 | **No per-route hit counter on the Go mux.** 113–115 `HandleFunc` registrations vs 40 distinct observed method+path pairs; 83 routes match nothing in any capture; **`POST /revival/missions/match-result` — the only input to the missions and pass-XP engines — appears zero times.** Also 10 observed paths have no route and fall to the catch-all | Speculative handlers are indistinguishable from working ones; every future state-entry experiment would self-report | hours (15 lines of Go) |
 | F5 | **No probe prints a loaded module's FULL PATH.** `tools/re/dump_modules.py:18` uses a hardcoded name allow-list; `deobfimports` verifies against an exports sidecar keyed by module *name*, so a proxy or hijacked DLL with matching exports would verify clean | Settles the UE4SS-class question permanently; hardens the 1107/1107 import reconstruction | minutes |
 | F6 | **No Angelscript disassembler, and no test of whether the PI hook even observes AS-implemented UFunctions.** `_AS`/`Angelscript` = **0 occurrences across all 63 shim sources**. CLAUDE.md's dispatch rule names exactly two kinds (BP bytecode / native). ⚠ In UnrealEngine-Angelscript, script UFunctions are registered with a VM trampoline, so the direct thunk most likely dispatches *correctly* — the "silently runs the wrong body" fear is speculation, but nothing has measured it | Whether 78 script modules are observable at all | one session |
