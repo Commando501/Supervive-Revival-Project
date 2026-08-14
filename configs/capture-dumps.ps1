@@ -5,29 +5,51 @@
 
 .DESCRIPTION
   The shipping build demand-decrypts .text pages on execution, so a single dump only
-  captures the code that has RUN so far (~50% at a fresh menu). Different states run
-  different code - opening the STORE, browsing the HUNTERS roster, MISSIONS, loadout each
-  decrypt their shim's native-call code. This helper snapshots the live game at each state
-  you name into dumps/<state>/, then unions them (mergedumps) and rebuilds the import table
-  (deobfimports - SUPERVIVE's imports are obfuscated trampolines; NOT VMProtect, see
-  docs/fk10-protector-identified.md) into
-  dumps/merged.dump.iat.exe. Finalize while the game is still running (deobf emulates the
-  live stubs).
+  captures the code that has RUN so far (~50% at a fresh menu). This helper snapshots the
+  live game at each state you name into dumps/<state>/, then unions them (mergedumps) and
+  rebuilds the import table (deobfimports - SUPERVIVE's imports are obfuscated trampolines;
+  NOT VMProtect, see docs/fk10-protector-identified.md) into dumps/merged.dump.iat.exe.
+  Finalize while the game is still running (deobf emulates the live stubs).
 
-  HARD CONSTRAINT: every state must come from ONE game process lifetime - mergedumps rejects
-  inputs with a different ImageBase, and each launch gets a new ASLR base. So capture all
-  states WITHOUT relaunching. This script records the first dump's PID + base and warns if a
-  later dump drifts (i.e. the game was relaunched - those dumps won't merge).
+  ** ONLY A STATE THAT RUNS NEW CODE PAYS. ** MEASURED 2026-08-14 over the 11 dumps on disk
+  (docs/fk18-fk19-multistate-merge-settled.md): STORE, HUNTERS roster, MISSIONS and loadout
+  each contribute ZERO pages beyond dumps/menu. What actually paid, in .text pages that
+  merged.dump.exe lacked: tutorial-hero 570, toggles (drop-in loading) 539, rcb 270,
+  lobby-dispatch-decrypted 29, vmbuild 7, accountpass 1, and menu/store/roster/missions/
+  loadout 0 each. Do not spend a capture on another menu surface.
+
+  ** CROSS-SESSION CAPTURE IS FINE - THE OLD "ONE LIFETIME" RULE IS RETRACTED. ** This block
+  used to read "HARD CONSTRAINT: every state must come from ONE game process lifetime -
+  mergedumps rejects inputs with a different ImageBase ... capture all states WITHOUT
+  relaunching." That is measured false: .text carries 0 of the image's 1,403,750 base
+  relocations and is byte-identical across ImageBases on every shared decrypted page (0
+  differing bytes, 10 of 10 pairwise comparisons). mergedumps now merges .text page-granularly
+  and ignores ImageBase entirely. Worse, the old rule was self-sealing: it forced every capture
+  into one process lifetime, and within one lifetime .text decryption is MONOTONE, so the
+  snapshots are strictly nested and every extra one is worth exactly 0 pages. That is why the
+  five inputs to merged.dump.exe bought 0 .text bytes between them.
+  ==> RELAUNCH BETWEEN CAPTURES. The script still records the first dump's PID + base and
+  reports base drift, because a cross-base dump contributes .text only (its .rdata/.data are
+  base-dependent and are skipped, not spliced).
+
+  ** CAPTURE THE TUTORIAL WORLD - it is the highest-yield state reachable today. **
+  configs/fk24-stage.ps1 stages LVL_Tutorial hands-free with the hero spawned and possessed;
+  dumps/tutorial-hero (2026-08-05) came from exactly that and is the best single image on disk
+  (16,112 decrypted .text pages, 53.21%). Still uncaptured and top of the list: hero select,
+  drop phase, a LIVE MATCH, end-of-game. 13,656 .text pages (45.10%, 55.9 MB) are zero in all
+  11 dumps and only executing that code can reach them.
 
   PREREQS: run configs/launch-redirect.ps1 first (elevated) - it lands at the main menu with
   the full shim set active. Then navigate the game and snapshot with this script from the
-  SAME elevated terminal session (usmapdump needs SeDebugPrivilege to read the game).
-  The tutorial/match state is not captured here (that flow isn't playable yet); this is the
-  menu-with-shims capture. Gameplay .text stays a gap until the match flow works.
+  SAME elevated terminal session (usmapdump needs SeDebugPrivilege to read the game). That
+  is a PRIVILEGE requirement and is unrelated to the retracted ImageBase constraint above.
 
 .PARAMETER State     Capture the live game NOW into dumps/<State>/ and exit.
 .PARAMETER Finalize  Merge every dumps/*/ snapshot + reconstruct the IAT, then exit.
-.PARAMETER Clear     Delete everything under the dumps dir first (fresh session).
+.PARAMETER Clear     Delete captured STATE dirs only (dirs holding a *.dump.exe), after an
+                     interactive confirmation that prints the byte count. NEVER touches
+                     crashpad-*, merged*, *-archive*, usmap-* or extractor-out-* - dumps/ is
+                     16 GB of gitignored, irreplaceable evidence and there is no undo.
 .PARAMETER List      Show captured states + coverage and exit.
 .PARAMETER DumpsDir  Output root (default <repo>/dumps).
 .PARAMETER Proc      Target process (default SUPERVIVE-Win64-Shipping.exe).
@@ -52,7 +74,10 @@ if (-not $DumpsDir) { $DumpsDir = Join-Path $repoRoot "dumps" }
 $usmap    = Join-Path $repoRoot "tools\usmapdump\usmapdump.exe"
 $procName = [System.IO.Path]::GetFileNameWithoutExtension($Proc)
 $sessionFile = Join-Path $DumpsDir ".capture-session.txt"
-$mergedOut   = Join-Path $DumpsDir "merged.dump.exe"
+# merged2, NOT merged: dumps/merged.dump.exe is the historical artifact the strxref index was
+# validated against, and overwriting it silently invalidates that index. merged2.dump.exe is the
+# canonical cold image as of 2026-08-14 (S121) - .text 54.90% vs merged's 52.29%, strict superset.
+$mergedOut   = Join-Path $DumpsDir "merged2.dump.exe"
 
 # ---- preflight ----
 if (-not (Test-Path $usmap)) {
@@ -102,11 +127,36 @@ function Write-Session($gamePid, $base) {
 
 # ---- actions ----
 function Clear-Dumps {
-  if (Test-Path $DumpsDir) {
-    Get-ChildItem -Path $DumpsDir -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  # 2026-08-14 (S121): this used to be
+  #     Get-ChildItem $DumpsDir -Force | Remove-Item -Recurse -Force
+  # i.e. it deleted the ENTIRE dumps root. MEASURED at the time of the fix: 16 GB across 386
+  # entries, including 363 crashpad-* archives (the whole FK-7/FK-8/FK-31/FK-32 crash corpus,
+  # ~44 MB minidump each), merged.dump.exe (the historical artifact the strxref index was
+  # validated against), the usmap archives and the extractor output. /dumps/ is gitignored, so
+  # there is NO undo. configs/archive-crashdumps.ps1 writes into this same directory on every
+  # launch, so the corpus only ever grows here.
+  # It now deletes ONLY captured state directories -- a dir holding a top-level *.dump.exe --
+  # and never anything matching the protected patterns below.
+  if (-not (Test-Path $DumpsDir)) {
+    New-Item -ItemType Directory -Force -Path $DumpsDir | Out-Null
+    Write-Host "Created $DumpsDir" -ForegroundColor Green
+    return
   }
-  New-Item -ItemType Directory -Force -Path $DumpsDir | Out-Null
-  Write-Host "Cleared $DumpsDir" -ForegroundColor Green
+  $protected = @('crashpad-*', 'merged*', '*-archive*', 'usmap-*', 's109-*', 'extractor-out-*')
+  $victims = Get-ChildItem -Path $DumpsDir -Directory -Force -ErrorAction SilentlyContinue | Where-Object {
+    $name = $_.Name
+    if ($protected | Where-Object { $name -like $_ }) { return $false }
+    Test-Path (Join-Path $_.FullName '*.dump.exe')
+  }
+  if (-not $victims) { Write-Host "Nothing to clear (no captured state dirs)." -ForegroundColor Green; return }
+  $bytes = ($victims | ForEach-Object { (Get-ChildItem $_.FullName -Recurse -File -Force -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum } | Measure-Object -Sum).Sum
+  Write-Host "About to delete $($victims.Count) captured state dir(s), $([math]::Round($bytes/1GB,2)) GB:" -ForegroundColor Yellow
+  $victims | ForEach-Object { Write-Host "   $($_.Name)" -ForegroundColor Yellow }
+  Write-Host "PROTECTED and untouched: crashpad-*, merged*, *-archive*, usmap-*, s109-*, extractor-out-*" -ForegroundColor DarkGray
+  $ans = Read-Host "Type DELETE to confirm"
+  if ($ans -cne 'DELETE') { Write-Host "Aborted - nothing deleted." -ForegroundColor Green; return }
+  $victims | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  Write-Host "Cleared $($victims.Count) state dir(s) from $DumpsDir" -ForegroundColor Green
 }
 
 function Invoke-Dump($stateName) {
@@ -133,11 +183,17 @@ function Invoke-Dump($stateName) {
     Write-Session $gamePid $info.base
   } else {
     if ($sess.pid -ne "$gamePid") {
-      Write-Warning "Game PID changed ($($sess.pid) -> $gamePid): the game was RELAUNCHED mid-capture."
+      # Relaunching between captures is now the RECOMMENDED workflow (FK-19), so this is a
+      # note, not a warning. A warning that fires on the correct path trains you to ignore
+      # warnings -- and the stale first-write-wins session file made it fire every time.
+      Write-Host "  note: different PID than the first recorded dump ($($sess.pid) -> $gamePid) - fine, cross-session capture is supported." -ForegroundColor DarkGray
     }
     if ($info.base -and $sess.base -and ($info.base -ne $sess.base)) {
-      Write-Warning "ImageBase drift ($($sess.base) -> $($info.base)): this state will NOT merge with the earlier ones."
-      Write-Warning "  Recapture the whole set in ONE launch: .\capture-dumps.ps1 -Clear  then re-dump each state."
+      # NOT an error since 2026-08-14 (FK-19). .text has zero base relocations and is
+      # byte-identical across ImageBases, so a cross-base dump merges fine - it just
+      # contributes .text only. Do NOT recapture the set in one launch; that was the old
+      # advice and it is exactly what made every extra capture worthless (nested lifetimes).
+      Write-Host "  note: ImageBase drift ($($sess.base) -> $($info.base)) - fine. mergedumps takes this dump's .text (base-invariant); its .rdata/.data are skipped." -ForegroundColor DarkGray
     }
   }
   Write-Host ("  OK  '{0}'  .text={1}%  base={2}" -f $stateName, $info.text, $info.base) -ForegroundColor Green
@@ -155,8 +211,21 @@ function Show-List {
     Write-Host ("  {0,-16} .text={1,5}%  base={2}" -f $d.Name, $info.text, $info.base)
   }
   if (Test-Path $mergedOut) {
-    $mi = Get-DumpInfo $DumpsDir
-    Write-Host ("  {0,-16} .text={1,5}%  (MERGED)" -f "merged", $mi.text) -ForegroundColor Green
+    # The merge manifest is "<outFile>.txt" (merged2.dump.exe.txt), NOT "*.dump.txt", so the
+    # Get-DumpInfo filter used to miss it entirely and this row printed a BLANK percentage --
+    # i.e. the one number the whole workflow exists to move was invisible. 2026-08-14 (S121).
+    # Read the PAGES NON-ZERO column (the last "(nn.nn%)" on the .text line), because that is
+    # what the per-state rows above report. The first percentage on that line is NON-ZERO BYTES
+    # and is ~4 pp lower -- comparing the two would read as the merge having made things worse.
+    $mergedMan = "$mergedOut.txt"
+    $mtext = ""
+    if (Test-Path $mergedMan) {
+      foreach ($ln in (Get-Content $mergedMan)) {
+        if ($ln -match '^\.text\s.*\(([\d.]+)%\)\s*$') { $mtext = $matches[1] }
+      }
+    }
+    $mname = [System.IO.Path]::GetFileNameWithoutExtension($mergedOut) -replace '\.dump$',''
+    Write-Host ("  {0,-16} .text={1,5}%  (MERGED, pages)" -f $mname, $mtext) -ForegroundColor Green
   }
 }
 

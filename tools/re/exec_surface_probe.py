@@ -11,11 +11,16 @@ Three measurements, each with a built-in positive control, over the cold
 `dumpimage` snapshots in dumps/:
 
   textunion   Build a MAXIMALLY-covered .text by unioning ALL dumps -- including
-              the ones `usmapdump mergedumps` REFUSES (different ImageBase).
-              That refusal is over-conservative: this image has ZERO relocations
+              the ones `usmapdump mergedumps` USED TO REFUSE (different ImageBase).
+              That refusal was over-conservative: this image has ZERO relocations
               targeting .text (measured: 1,403,750 relocs -> 1,257,732 .rdata +
               146,018 .data + 0 .text), so .text bytes are base-independent.
-              merged.dump.exe alone = 52.29% of pages; the union = 54.83%.
+              -> FIXED 2026-08-14 (FK-19): mergedumps now does this itself. Prefer
+              dumps/merged2.dump.exe, which IS this union: 16,625 / 30,281 pages
+              (54.90%) vs merged.dump.exe's 15,833 (52.29%).
+              WARNING: the "54.83%" this text used to quote matches neither the
+              9-dump union (54.27%) nor the 11-dump union (54.90%) -- its corpus was
+              never stated. Do not cite it; re-derive from merged2's manifest.
 
   lit         Exact NUL-terminated literal presence (UTF-16LE *and* ASCII) with
               an explicit control list.  Use .rdata from dumps/tutorial-hero,
@@ -60,7 +65,10 @@ from array import array
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 DUMPS = os.path.join(REPO, 'dumps')
-MERGED = os.path.join(DUMPS, 'merged.dump.exe')
+  # 2026-08-14 (S121, FK-18/FK-19): merged2 is the canonical cold image -- same ImageBase
+  # 0x7FF6AF000000, byte-identical .rdata/.data, and a STRICT .text superset (16,625 vs
+  # 15,833 decrypted pages). docs/fk18-fk19-multistate-merge-settled.md
+MERGED = os.path.join(DUMPS, 'merged2.dump.exe')
 TUTHERO = os.path.join(DUMPS, 'tutorial-hero', 'SUPERVIVE-Win64-Shipping.dump.exe')
 PDATA_CSV = os.path.join(REPO, 'tools', 'strxref', 'index', 'pdata_union.csv')
 CACHE = os.path.join(REPO, 'tools', 're', '.exec_surface_cache')

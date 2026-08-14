@@ -60,7 +60,10 @@ from array import array
 from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_DUMP = r"G:\git\Supervive Revival Project\dumps\merged.dump.exe"
+  # 2026-08-14 (S121, FK-18/FK-19): merged2 is the canonical cold image -- same ImageBase
+  # 0x7FF6AF000000, byte-identical .rdata/.data, and a STRICT .text superset (16,625 vs
+  # 15,833 decrypted pages). docs/fk18-fk19-multistate-merge-settled.md
+DEFAULT_DUMP = r"G:\git\Supervive Revival Project\dumps\merged2.dump.exe"
 INDEX_DIR = os.path.join(HERE, "index")
 INDEX_PATH = os.path.join(INDEX_DIR, "strxref.idx")
 
@@ -69,12 +72,13 @@ INDEX_PATH = os.path.join(INDEX_DIR, "strxref.idx")
 # and all-zero in memory, so this tool originally had to infer every function
 # boundary.  It no longer does: the packer publishes the real x64 unwind data as
 # a DYNAMIC function table, and MiniDumpWriteDump serialises dynamic function
-# tables into MINIDUMP stream 13 (FunctionTableStream).  70 of the 85 UE crash
+# tables into MINIDUMP stream 13 (FunctionTableStream).  76 of the 108 UE crash
 # minidumps under %LOCALAPPDATA%\SUPERVIVE\Saved\Crashes carry it.
 #
-# pdataunion.py unions the 70 tables (they are materialised LAZILY, in step with
+# pdataunion.py unions those tables (they are materialised LAZILY, in step with
 # demand-decrypt, so each crash's table reflects that process's coverage) into
-# index/pdata_union.csv -- 382,282 exact, non-overlapping function bounds.
+# index/pdata_union.csv -- 382,704 exact, non-overlapping function bounds (2026-08-14;
+# the corpus grows with every crash, so re-run pdataunion.py after any crashing session).
 # Verified: 13/13 project-recorded function addresses are EXACT entries.
 #
 # When the file is present, `func`/`xref` report TRUE bounds instead of the
@@ -82,6 +86,7 @@ INDEX_PATH = os.path.join(INDEX_DIR, "strxref.idx")
 # heuristic, so the tool still works standalone.
 PDATA_PATH = os.path.join(INDEX_DIR, "pdata_union.csv")
 _PDATA = None
+_PDATA_NTABLES = 0
 
 
 def load_pdata(path=PDATA_PATH):
@@ -93,12 +98,22 @@ def load_pdata(path=PDATA_PATH):
         _PDATA = (None,)
         return None
     beg, end = array("l"), array("l")
+    ntab = 0
     with open(path) as f:
         next(f)
         for line in f:
             a, b, _s, _u, _k = line.split(",")
             beg.append(int(a, 16))
             end.append(int(b, 16))
+            # seen_in_dumps: how many crash tables carry this function. Its MAX over the
+            # file is the corpus size (155,722 functions appear in every table), so the
+            # count is DERIVED from the artifact instead of hardcoded -- the corpus grows
+            # with every crash, and a literal here went stale at 70 while it was really 76.
+            k = int(_k)
+            if k > ntab:
+                ntab = k
+    global _PDATA_NTABLES
+    _PDATA_NTABLES = ntab
     _PDATA = ((beg, end),)
     return _PDATA[0]
 
@@ -819,11 +834,30 @@ def build(dump_path, min_len, out_path, quiet=False):
 # --------------------------------------------------------------------------
 # Preamble figures this tool must reproduce (ignorance-map FK-3/FK-4 measurement
 # round, all at min_len=6 / strict-printable / NUL-terminated on .rdata).
+#
+# ⚠ THESE ARE IMAGE-SPECIFIC, and three of them are .text-DERIVED. The round was taken
+# against dumps/merged.dump.exe (15,833 decrypted .text pages). `ascii`, `utf16`, `total`
+# come from .rdata and are invariant across every image on disk. `leas`, `rdata_targets`
+# and `distinct` are counted by scanning .text, so they RISE whenever .text coverage rises
+# — they are a coverage readout, not an invariant, and comparing them to a fixed constant
+# turns a coverage GAIN into three reported failures. That happened on 2026-08-14 when the
+# default dump moved to merged2.dump.exe (16,625 pages, +792). Do not "fix" a delta here by
+# reverting the dump; check the attribution first, the way the EXPLAINED entry below does.
 PREAMBLE = dict(
     ascii=103002, utf16=85692, total=188694,
     leas=517515, rdata_targets=245894, distinct=106800,
     ascii_ref=12832, utf16_ref=41633,
 )
+# The .text-derived preamble rows re-measured against dumps/merged2.dump.exe, so a future
+# drift is still detectable rather than blanket-excused. Keyed by decrypted-page count.
+PREAMBLE_TEXT_BY_PAGES = {
+    15833: dict(leas=517515, rdata_targets=245894, distinct=106800),  # merged.dump.exe
+    16625: dict(leas=528001, rdata_targets=252651, distinct=108947),  # merged2, 11 dumps
+    16638: dict(leas=528284, rdata_targets=252886, distinct=109024),  # merged2 + dumps/heromastery
+}
+# An unpinned page count is NOT a failure: cmp_ falls back to the historical constant, the three
+# EXPLAINED entries below mark the delta as expected, and validation still passes. Add a row here
+# after any re-merge so the check goes back to being exact instead of merely excused.
 
 # Deltas vs the preamble that are EXPLAINED and expected, not regressions.
 EXPLAINED = {
@@ -839,6 +873,32 @@ EXPLAINED = {
         "(ASCII census and the LEA target set both MATCH exactly), and this figure "
         "is a deterministic set intersection of those two, independently "
         "reproduced by a second implementation. Treat 12,857 as the corrected value.",
+    # --- 2026-08-14 (S121): the three .text-derived rows. -------------------------------
+    # The default dump moved from merged.dump.exe (15,833 decrypted .text pages) to
+    # merged2.dump.exe (16,625, +792 -- docs/fk18-fk19-multistate-merge-settled.md). More
+    # decrypted code means more instructions to find, so these rise. ATTRIBUTED EXACTLY,
+    # instruction by instruction, before being excused:
+    #   LEA total    517,515 -> 528,001  (+10,486) = 10,485 matches starting inside a newly
+    #                decrypted page + 1 whose 0x48 sits in the last byte of an old page and
+    #                whose 0x8d is the first byte of a new one.
+    #   -> .rdata    245,894 -> 252,651  (+6,757)  = 6,750 from new pages + a net +7 from 9
+    #                page-STRADDLING leas whose rip displacement bytes lived in a page that
+    #                was zero before (7 gained an .rdata target, 0 lost one).
+    #   distinct     106,800 -> 108,947  (+2,147)  = 2,147 target RVAs absent from the old
+    #                target set.
+    #   LOST matches: 0. LOST targets: 0. Nothing regressed; the index strictly grew.
+    "lea r64,[rip+d32] in .text":
+        "+10,486 -- .text-DERIVED, not an invariant. The default dump is now "
+        "merged2.dump.exe (16,625 decrypted pages vs merged.dump.exe's 15,833). All "
+        "10,486 are attributed: 10,485 start inside a newly decrypted page and 1 straddles "
+        "a page boundary into one. 0 matches lost.",
+    "... targeting .rdata":
+        "+6,757 -- same cause. 6,750 from newly decrypted pages, net +7 from 9 "
+        "page-straddling leas whose displacement bytes were previously in a zero page. "
+        "0 lost.",
+    "... distinct .rdata targets":
+        "+2,147 -- same cause; 2,147 target RVAs the old image's .text never referenced "
+        "because the referencing code was not decrypted. 0 targets lost.",
 }
 
 # Externally-known function entries recorded across ~101 sessions of live RE
@@ -940,10 +1000,21 @@ def validate(idx, pe=None, verbose=True):
                 a6 += 1
     P("")
     P("  .rdata only, len>=6 (the preamble's parameters):")
-    def cmp_(label, got, want):
+    # .text-derived rows are checked against the row measured for THIS image's decrypted-page
+    # count when one is on file (PREAMBLE_TEXT_BY_PAGES), so drift stays detectable instead of
+    # being blanket-excused by an EXPLAINED entry. Only an image we have never measured falls
+    # back to the historical merged.dump.exe constant + the EXPLAINED note.
+    _npages = sum(1 for _p in range(idx.text_va, idx.text_end, 0x1000)
+                  if any(d[_p:_p + 0x1000]))
+    _texprofile = PREAMBLE_TEXT_BY_PAGES.get(_npages)
+
+    def cmp_(label, got, want, key=None):
+        pinned = False
+        if key and _texprofile and key in _texprofile:
+            want, pinned = _texprofile[key], True
         d_ = got - want
         if d_ == 0:
-            mark = "MATCH"
+            mark = "MATCH" + (" (pinned @ %d decrypted pages)" % _npages if pinned else "")
         else:
             mark = ("+%d" % d_ if d_ > 0 else str(d_))
             mark += " EXPLAINED" if label.strip() in EXPLAINED else " UNEXPECTED"
@@ -971,7 +1042,7 @@ def validate(idx, pe=None, verbose=True):
     P("")
     P("--- XREF SCAN ---")
     P("    rip-relative forms scanned: %s" % st["ripcounts"])
-    cmp_("lea r64,[rip+d32] in .text", st["ripcounts"].get("lea", 0), PREAMBLE["leas"])
+    cmp_("lea r64,[rip+d32] in .text", st["ripcounts"].get("lea", 0), PREAMBLE["leas"], "leas")
     tx = d[idx.text_va:idx.text_end]
     up = struct.unpack_from
     n_rd = 0
@@ -984,8 +1055,8 @@ def validate(idx, pe=None, verbose=True):
         if rlo <= t < rhi:
             n_rd += 1
             dist.add(t)
-    cmp_("  ... targeting .rdata", n_rd, PREAMBLE["rdata_targets"])
-    cmp_("  ... distinct .rdata targets", len(dist), PREAMBLE["distinct"])
+    cmp_("  ... targeting .rdata", n_rd, PREAMBLE["rdata_targets"], "rdata_targets")
+    cmp_("  ... distinct .rdata targets", len(dist), PREAMBLE["distinct"], "distinct")
     P("    absolute qword pointers in image: %d   (of which hold a string addr: %d)"
       % (st["n_abs"], st["n_slot2str"]))
     P("    resolved refs: exact-start %d  interior %d  via-pointer-table %d  unresolved %d"
@@ -1257,7 +1328,7 @@ def cmd_func(idx, args):
             print("entry   0x%07X   [.pdata EXACT]   evidence=%s"
                   % (tb, flagstr(f) if e == tb else "-"))
         print("extent  0x%07X .. 0x%07X (%d bytes) -- EXACT (minidump stream 13, %d tables)"
-              % (tb, te, te - tb, 70))
+              % (tb, te, te - tb, _PDATA_NTABLES))
         e, end = tb, te
     elif e is None:
         print("no function entry at or before 0x%07X" % args.rva)

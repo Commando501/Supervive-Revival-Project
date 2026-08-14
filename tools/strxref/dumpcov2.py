@@ -9,28 +9,75 @@ from dumpcov import Img, page_bits, PAGE
 DUMPS = r"G:\git\Supervive Revival Project\dumps"
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index", "pagecov.json")
 
-NAMES = ["menu", "store", "roster", "missions", "loadout",
-         "accountpass", "vmbuild", "toggles", "rcb"]
+# 2026-08-14 (S121): this was a hardcoded 9-name list, and load() below returned the cached
+# pagecov.json unconditionally if the file existed. Together those froze the coverage picture at
+# whatever was on disk on 2026-07-26: statecov.py went on printing "merged 15,833 / union 54.27%"
+# long after merged2 reached 16,638 / 54.95%, and three later captures (tutorial-hero,
+# lobby-dispatch-decrypted, heromastery) were invisible to every consumer of this cache.
+# A stale cache behind a repointed path is the same defect class FK-18 is about, so:
+#   * state dirs are DISCOVERED, not listed;
+#   * the merged image is MERGED_NAME below;
+#   * the cache is invalidated when any input is newer than it, or when the set of inputs changes.
+MERGED_NAME = "merged2.dump.exe"
+
+
+def _state_dirs():
+    """Every dumps/<state>/ holding a top-level *.dump.exe, sorted. Discovery, not a list."""
+    out = []
+    for n in sorted(os.listdir(DUMPS)):
+        d = os.path.join(DUMPS, n)
+        if not os.path.isdir(d):
+            continue
+        if os.path.exists(os.path.join(d, "SUPERVIVE-Win64-Shipping.dump.exe")):
+            out.append(n)
+    return out
+
+
+NAMES = _state_dirs()
+
+
+def _inputs():
+    """(key -> dump path) for every state dir plus the merged image, keyed as the cache is."""
+    m = {n: os.path.join(DUMPS, n, "SUPERVIVE-Win64-Shipping.dump.exe") for n in NAMES}
+    m["merged"] = os.path.join(DUMPS, MERGED_NAME)
+    return m
+
+
+def _cache_is_fresh(paths):
+    """Fresh iff the cache exists, covers exactly the current input set, and post-dates them all."""
+    if not os.path.exists(CACHE):
+        return False, "no cache"
+    try:
+        with open(CACHE) as f:
+            cached = set(json.load(f).keys())
+    except Exception as e:
+        return False, f"unreadable ({e})"
+    want = set(paths)
+    if cached != want:
+        missing, extra = sorted(want - cached), sorted(cached - want)
+        return False, f"input set changed (missing {missing}, stale {extra})"
+    ct = os.path.getmtime(CACHE)
+    newer = [k for k, v in paths.items() if os.path.exists(v) and os.path.getmtime(v) > ct]
+    if newer:
+        return False, f"inputs newer than cache: {sorted(newer)}"
+    return True, "fresh"
 
 
 def load():
-    if os.path.exists(CACHE):
+    paths = _inputs()
+    fresh, why = _cache_is_fresh(paths)
+    if fresh:
         with open(CACHE) as f:
             d = json.load(f)
         return {k: bytes.fromhex(v) for k, v in d.items()}
+    print(f"[pagecov] rebuilding cache: {why}")
     out = {}
-    for n in NAMES:
-        p = os.path.join(DUMPS, n, "SUPERVIVE-Win64-Shipping.dump.exe")
+    for n, p in paths.items():
         im = Img(p)
         t = im.sec(".text")
         bits, npg = page_bits(p, t[1], t[2])
         out[n] = bytes(bits)
         print(f"scanned {n}: {sum(bits)}/{npg}")
-    p = os.path.join(DUMPS, "merged.dump.exe")
-    im = Img(p)
-    t = im.sec(".text")
-    bits, npg = page_bits(p, t[1], t[2])
-    out["merged"] = bytes(bits)
     os.makedirs(os.path.dirname(CACHE), exist_ok=True)
     with open(CACHE, "w") as f:
         json.dump({k: v.hex() for k, v in out.items()}, f)
@@ -47,20 +94,20 @@ def main():
     TEXT_RVA = 0x1000
 
     print("=" * 92)
-    print("A. IS merged.dump.exe ACTUALLY A MERGE?")
+    print(f"A. IS {MERGED_NAME} ACTUALLY A MERGE?")
     print("=" * 92)
     m = cov["merged"]
     for n in NAMES:
         c = cov[n]
         only_in = sum(1 for i in range(N) if c[i] and not m[i])
-        print(f"  pages in {n:<12} but NOT in merged.dump.exe : {only_in:6d}")
+        print(f"  pages in {n:<24} but NOT in {MERGED_NAME} : {only_in:6d}")
     # the 5 inputs the manifest names
     inputs5 = ["menu", "store", "roster", "missions", "loadout"]
     un5 = bytes(N)
     for n in inputs5:
         un5 = u(un5, cov[n])
     print(f"\n  union of the 5 manifest inputs : {sum(un5):6d} pages ({100.0*sum(un5)/N:.2f}%)")
-    print(f"  merged.dump.exe                : {sum(m):6d} pages ({100.0*sum(m)/N:.2f}%)")
+    print(f"  {MERGED_NAME:<24}       : {sum(m):6d} pages ({100.0*sum(m)/N:.2f}%)")
     print(f"  best single input (loadout)    : {sum(cov['loadout']):6d} pages")
     print(f"  merged == union-of-5 ? {un5 == m}")
     print(f"  merged == loadout    ? {cov['loadout'] == m}")
@@ -83,7 +130,7 @@ def main():
 
     print()
     print("=" * 92)
-    print("C. MARGINAL NOVELTY -- pages each dump adds ON TOP OF merged.dump.exe")
+    print(f"C. MARGINAL NOVELTY -- pages each dump adds ON TOP OF {MERGED_NAME}")
     print("=" * 92)
     print(f"  {'dump':<14} {'own pages':>10} {'NEW vs merged':>14} {'new MB':>9}")
     for n in NAMES:

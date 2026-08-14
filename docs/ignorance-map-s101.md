@@ -18,6 +18,7 @@ that isn't true?"*
 > | **FK-9** — Sentry vs UECC dumps | **S109** | ✅ **CAPTURE SOLVED** — cleared by the *next launch*, not a timer; the "~3 min window" is retracted. Archiver shipped. |
 > | **FK-13** — "the dev console is fully stripped" | **S114** | ✅ **SETTLED — outcome TRUE, every stated reason FALSE, operational conclusion FALSE.** The console really is gone (`ALLOW_CONSOLE == 0`, three independent instruments) — but FK-13 was **three independent compile flags**, not one, and `bUseExecCommandsInShipping`'s stock default is **1**. So **`UE_ALLOW_EXEC_COMMANDS == 1`**, **138 native `FUNC_Exec` UFunctions** ship, and **Route B is shipped and proven end-to-end**: a `UCheatManager` constructed into `PC+0x520` (**one heap qword, zero module-image writes**) put **42 real exec verbs** live, verified by `ExecuteConsoleCommand("LogLoc")` → `LogCheatManager: BugItGo …` against a baseline of 0. ⇒ *"all cheap external paths are exhausted; the remaining options require in-process code"* is **dead**. ⚠ Still OPEN: where `open` is dispatched, and whether the 25 `ALokiPlayerCheats` verbs are reachable by spawning the actor. `docs/fk13-console-exec-settled.md`, `docs/fk13-live-run-2026-08-12.md`, `docs/fk13-routeb-shipped.md` |
 > | **FK-15** — "server→client WS push is non-functional" | **S118** | ✅✅✅ **REFUTED (S117) THEN FULLY CLOSED (S118).** Push works; the real question was *which types*. Joining all 33 jump-table cases to the live delegate table shows **only 7 of 33 have a subscriber** — **21 of the 23 bound delegates belong to ONE `USocialManager`**, so the reachable set is the friends/presence family. **All 7 flown; 6 drive VISIBLE UI changes**; `disconnectNotif` is a controlled negative. ⚠ **`dsNotif`, `matchmakingNotif` and every `party*` type are UNBOUND** — the route is closed at the client's *subscription* layer, so no payload can ever make them act. ★ The client **mutates its own social state** from a notif and only a refetch re-imposes ours ⇒ **pushed changes are transient unless the backend also serves them.** `docs/fk15-bound-delegate-map-20260813.md` |
+> | **FK-18 / FK-19** — "`merged.dump.exe` is a merged multi-state image" / "a different ImageBase makes a dump unusable" | **S121** | ✅✅ **BOTH CLOSED.** FK-18 confirmed and **sharpened**: the merge was a **NO-OP** (union of its 5 inputs == the seed), because `.text` decryption is **monotone within a process lifetime**, so N substates of one launch are worth exactly one dump *by construction*. FK-19's constraint was the cause, not a coexisting fact — and it is measured false: **0 of 1,403,750 base relocations target `.text`**, which is byte-identical across ImageBases (0 differing bytes, 10/10 pairwise). The two formed a **self-sealing loop**. Fixed and executed: `mergedumps` merges `.text` page-granularly ignoring ImageBase; `dumps/merged2.dump.exe` = **16,638 / 30,281 pages (54.95 %)** vs 15,833 (52.29 %), strict superset, coherent `.data`, `-wholeimage` reproduces the historical artifact **byte-for-byte**. Downstream: **+1,400 lit strings**, **13,639 crash-table functions gained readable bytes** (byteless 39,941 → 26,302). ⚠ Successors are NOT FK-18: the **read-vs-execute decryption trigger** (worth ~14,600 pages, one injected probe) and **crash-handling capture** (~2,334 pages, zero launches, untried). `docs/fk18-fk19-multistate-merge-settled.md` |
 > | **FK-24** — the `ViewTarget` writer | **S108** | **OPEN.** ★ The probe was killing the game, and its own VOID verdict was an artifact. |
 > | **FK-25** — the marker file | **S108** | ⚠ **STILL UNFIXED**; cost evidence again. Cheapest unspent item in this document. |
 > | **FK-26** — leftover S9x shim diagnostics | **S108** | ✅ **NEW + SETTLED.** `KSTATICTEST` was killing the hero's walk/run animation every session. |
@@ -1296,6 +1297,16 @@ every conclusion drawn from the contaminated data rather than patching the wordi
 
 ### FK-18 — "`merged.dump.exe` is a merged multi-state image"
 **Severity: MEDIUM (every static coverage number the project quotes is a single-state number).**
+★★★★★ **SETTLED 2026-08-14 (S121) — `docs/fk18-fk19-multistate-merge-settled.md`. Read that first;
+the rows below are the original entry, preserved.** Confirmed and sharpened: the merge was a **NO-OP**
+(union of its 5 inputs == the seed `dumps/loadout`; `.text` diff 0, `.rdata` diff 0, and the 1,195
+bytes are all `.data`). **Mechanism: `.text` decryption is MONOTONE within a process lifetime**, so
+the five snapshots of PID 4080 are strictly nested (`menu ⊂ store ⊂ roster ⊂ missions ≡ loadout`) and
+N substates of one launch are worth exactly one dump, by construction. **Fixed and executed:**
+`dumps/merged2.dump.exe` = **16,625 / 30,281 pages (54.90 %)** vs merged's 15,833 (52.29 %), strict
+superset, 0 regressions, `.rdata`/`.data` coherent instead of spliced. The `.data` caveat is now
+**bounded and retired** rather than documented (4,678 bytes change identity from seed choice alone;
+`merged2` carries none of it).
 
 | | |
 |---|---|
@@ -1311,6 +1322,16 @@ every conclusion drawn from the contaminated data rather than patching the wordi
 
 ### FK-19 — "`mergedumps` rejects a different ImageBase, therefore `rcb` is unusable"
 **Severity: MEDIUM (1 MB of already-paid-for gameplay `.text` sits discarded).**
+★★★★★ **SETTLED AND FIXED 2026-08-14 (S121) — `docs/fk18-fk19-multistate-merge-settled.md`.**
+No rebase was needed: **`.text` carries 0 of the image's 1,403,750 base relocations** (1,257,732
+`.rdata` + 146,018 `.data`), and `.text` is byte-identical across ImageBases on every shared decrypted
+page — **0 differing bytes in 10 of 10 pairwise comparisons**, with a same-base noise floor of 0 and a
+149,399/149,399 reloc-parser negative control. `mergedumps` now merges **`.text` only, page-granular,
+ImageBase-agnostic**, gated on an identical section table plus a per-donor overlap-conflict check
+(every current donor: **0, clean**). The three discarded cross-base dumps contribute **246 pages
+reachable no other way**, incl. character-movement code (`GetMaxJumpHeight`, `GetGravityDirection`,
+`GetMaxBrakingDeceleration`) — a subsystem §8.3 lists as DARK. ⚠ The prescription had existed since
+**S104** in `fk3-fk4-settled.md` §8.0 and went unimplemented for ~17 sessions.
 
 | | |
 |---|---|
@@ -2212,7 +2233,7 @@ not a pivot.
 | 26 | ✅ **DONE S116** — diffed (326 reproduced to the digit), all **five** usmaps' schemas decoded, canonical MD5 table + consumer map recorded (`docs/fk14-usmap-settled.md` §7). **Superseded by the fix itself** (`1b6f9de`): the root cause was found and repaired, so the diff is now history rather than a diagnostic. ⚠ Two consumers still load **stale** usmaps by hardcoded path (`asdump.py`; `analyze.py`/`compare.py`) — was LOW severity because enum tables were byte-identical, and **that reasoning has now expired**: the fixed base contains 1,813 enum records it did not before. | FK-14 |
 | 27 | Read the `/eog/`, `/custom/`, `/storefront/cheats/wallet/`, `/mailbox/` schema shapes and draft the EoG payload model | E1, E3, E4, E8 |
 | 28 | Watch `ClickTutorial/SNF_Tutorial_2_Drop_*.mp4` and `DropPhase_DropMapTransition/*.mp4` | C3 — the only footage of the systems S89–S93 reconstructed blind |
-| 29 | Re-run `mergedumps` including `toggles`/`vmbuild`/`accountpass`; then rebase and merge `rcb` | FK-18, FK-19, audit 0.2 |
+| 29 | ✅ **DONE S121** — re-merged all 11 dumps; no rebase was needed (`.text` holds 0 of 1,403,750 relocs). `dumps/merged2.dump.exe`, 15,833 → **16,625** pages | FK-18, FK-19, audit 0.2 |
 | 30 | Enumerate the 19 first-party `.uplugin` JSONs | C9 — `LokiSocketSubsystem`, `GameFeatures/LokiWinter` |
 
 ---
@@ -2247,7 +2268,7 @@ not a pivot.
 | B-1 | Turn the logs up (`-LogCmds`, fallback `[Core.Log]` in the user `Engine.ini`) and record the newly-alive category set | FK-11, §5.2 | The cheapest instrument the project can own; ~825 categories silent |
 | B-2 | Disassemble the 8 RVAs of the deterministic tutorial crash | FK-7 | Unblocks every >3-minute experiment |
 | B-3 | Fix the stale readiness gate + `-NoPasses` forwarding, then one clean 6-shim validation launch | Wall #3, audit 1.5 | Re-baselines all 6 front-end surfaces; the suspected root cause is a one-liner |
-| B-4 | Capture `-State tutorial` during a force-open and re-merge | FK-20, FK-18 | The highest-yield `.text` capture available |
+| B-4 | ~~Capture `-State tutorial` during a force-open and re-merge~~ ✅ **BOTH HALVES DONE** — capture S111 (`dumps/tutorial-hero`), **re-merge S121** (`dumps/merged2.dump.exe`, 52.29 % → **54.90 %** by page). Successor: capture **hero select / drop phase / a live match / end-of-game** — 0 captures exist from any of them | FK-20, FK-18 | The highest-yield `.text` capture available |
 | B-5 | Serve `Extra.FeatureToggleOverrides` + `GameConfig.CVars` on `/core-game/matches/{id}` | E2, FK-23e, Wall #6 | A backend field vs three sessions of bit-splicing |
 | B-6 | Try `-as-development-mode` (flag only, cache intact) | F1 | The game has told us 87 times |
 | B-7 | Restore the queue list, click BATTLE, read what the client asks for next | FK-5, Wall #1 | Settles whether QoS is even the blocker |

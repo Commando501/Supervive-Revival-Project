@@ -79,7 +79,7 @@ Single variable = guard membership. Controls and tests both drawn from **`Consol
 same translation unit and the same `.rdata` neighbourhood; the five test literals were verified
 guard-exclusive across **24,864** UE source files before use.
 
-| | tutorial-hero (`.rdata` **100.0%**) | merged (`.rdata` 63.1%) |
+| | tutorial-hero (`.rdata` 100.0% **readable**) | merged (`.rdata` **99.64% readable-by-page**; the 63.1% often cited is the non-zero-BYTE figure — not commensurable, see the retraction below) |
 |---|---|---|
 | Controls *outside* `#if ALLOW_CONSOLE` (`console.position.enable`, `con.MinLogVerbosity`, `[%i more matches]`, …) | **8/8 present**, `0x824CDC8`–`0x82588B0` | 8/8 |
 | Markers *exclusive* to the guard (`(opens connection to localhost)`, `open 127.0.0.1`, `travel %s`, …) | **0/5** | 0/5 |
@@ -296,6 +296,18 @@ different function names (`docs/fk13-live-run-2026-08-12.md:18,19,27`,
 | `configs/set-debug-execbindings.ps1` | Writes a user-layer `Input.ini`. **Now largely moot** (§3A) — keep only as the untested probe of whether a user `Input.ini` is read at all |
 | `docs/fk13-live-test-card.md` | One-sitting live card — **partially superseded**, see its banner |
 
-⚠ **Always run `.rdata` presence/absence claims against
-`dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe` (`.rdata` 100.0%)**, never
-`merged.dump.exe` alone (63.1%).
+⚠⚠ **RETRACTED 2026-08-14 (S121, FK-18) — the rule here used to read "always run `.rdata`
+presence/absence claims against `dumps/tutorial-hero/…` (`.rdata` 100.0%), never `merged.dump.exe`
+alone (63.1%)". It compares two different instruments** — 100.0% is `dumpimage`'s **readable-byte**
+figure, 63.1% is `mergedumps`' **non-zero-byte** figure — i.e. it is **FK-3 re-committed**, in the
+same document whose own table (§ the 8/8-controls / 0/5-markers rows above) shows **both images
+agreeing**. That agreement was the control that falsified the reason, printed alongside the rule.
+**MEASURED: `.rdata` completeness is identical in every image on disk** — the same **33 all-zero pages
+of 9,085 at the same RVAs** in all 11 dumps and in `merged.dump.exe` (symmetric difference 0; 99.64%
+readable-by-page). tutorial-hero's net advantage is **2,907 bytes of 37.2 MB (0.0078%) and 0 pages**,
+and 6,760 of the 6,761 differing positions sit at offset ≡ 2 (mod 8) — **relocation, not coverage.**
+⇒ **`.rdata` presence/absence is safe in ANY image.** ⚠ **Every FK-13 conclusion resting on an
+`.rdata` absence stands unchanged** (`ALLOW_CONSOLE == 0`, the `Console.cpp` guard-exclusive markers,
+the `UEngine::Exec` literal-pool gap) — only the stated justification was metric-confused.
+★ What genuinely differs between images is **`.text`**: use `dumps/merged2.dump.exe` (16,625 decrypted
+pages, 54.90%) for anything code-shaped. See `docs/fk18-fk19-multistate-merge-settled.md`.

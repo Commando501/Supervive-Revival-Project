@@ -41,13 +41,18 @@ def main():
         cov = {k: bytes.fromhex(v) for k, v in json.load(f).items()}
     m = cov["merged"]
     mset = set(i for i in range(len(m)) if m[i])
-    print(f"merged.dump.exe decrypted .text pages : {len(mset):,} / {NPG:,} "
+    # 2026-08-14 (S121): these two lines used to hardcode "merged.dump.exe" and "all 9 IMAGE
+    # dumps". Both numbers came from a cache that had silently frozen on 2026-07-26, so the
+    # labels were wrong AND the figures were stale -- it printed 15,833 / 54.27% for months
+    # after the real values were 16,638 / 54.95%. Derive both from the data.
+    from dumpcov2 import MERGED_NAME, NAMES as _STATES
+    print(f"{MERGED_NAME} decrypted .text pages : {len(mset):,} / {NPG:,} "
           f"({100.0*len(mset)/NPG:.2f}%)")
     imgunion = set()
     for k, v in cov.items():
         if k != "merged":
             imgunion |= set(i for i in range(len(v)) if v[i])
-    print(f"union of all 9 IMAGE dumps            : {len(imgunion):,} "
+    print(f"union of all {len(_STATES)} IMAGE dumps            : {len(imgunion):,} "
           f"({100.0*len(imgunion)/NPG:.2f}%)")
 
     dumps = sorted(glob.glob(os.path.join(CRASH, "UECC-*", "UEMinidump.dmp")))

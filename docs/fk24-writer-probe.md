@@ -433,9 +433,9 @@ instant it traps, because the CPU just fetched and executed that instruction. So
    every dump we own. That is why the bytes are in the record: it converts "an address in a zero page"
    into "the writer's machine code, in the log file". Pass them with `--bytes`.
 2. A fresh `usmapdump dumpimage` **from that same game state** would now decrypt the page, and
-   `mergedumps` folds it into `merged.dump.exe` permanently — so the *next* run of this probe gets full
-   naming for free. Constraint: `mergedumps` rejects a different-ASLR-base dump, so it must be the same
-   launch's base.
+   `mergedumps` folds it into `dumps/merged2.dump.exe` permanently — so the *next* run of this probe
+   gets full naming for free. ⚠ **No longer a constraint (2026-08-14, FK-19):** `mergedumps` accepts a
+   different-ASLR-base dump and folds in its `.text`, so the fresh dump may come from any later launch.
 3. Even with no bytes and no fresh dump: an arbitrary `.text` RVA still has **55.3 %** odds of an exact
    `.pdata` extent (MEASURED, sampled 4,000 random RVAs), and **6.4 % of `.text` has exact bounds but no
    bytes** — bounds usually survive when bytes do not, because they come from minidump stream 13 across

@@ -37,8 +37,18 @@ BASE_DUMP = os.path.join(ROOT, "dumps", "tutorial-hero", "SUPERVIVE-Win64-Shippi
 ALL_DUMPS = [os.path.join(ROOT, "dumps", d, "SUPERVIVE-Win64-Shipping.dump.exe")
              for d in ("menu", "store", "roster", "missions", "loadout",
                        "accountpass", "vmbuild", "toggles", "rcb", "tutorial-hero")] + \
-            [os.path.join(ROOT, "dumps", "merged.dump.exe")]
+            [os.path.join(ROOT, "dumps", "merged2.dump.exe")]
 PDATA = os.path.join(ROOT, "tools", "strxref", "index", "pdata_union.csv")
+# ⚠ 2026-08-14 (S121) — STALE-CACHE HAZARD, PARTIALLY MITIGATED.
+# This tool builds its own .text union from a hardcoded dump list and caches it to %TEMP%, where
+# the ONLY freshness test is the cache's SIZE — which is a constant. Adding a capture therefore
+# can never invalidate it. That is the identical defect that froze
+# tools/strxref/index/pagecov.json on 2026-07-26 and left statecov.py printing 15,833 / 54.27%
+# long after the truth was 16,638 / 54.95%.
+# MITIGATION SO FAR: the stale cache files were deleted, so the next run rebuilds.
+# PROPER FIX (not done): dumps/merged2.dump.exe IS this union already — verified a superset of
+# all 12 state dumps with 0 pages missing — so this in-process union is redundant. Read merged2
+# and delete the union machinery, or stamp the cache with each input's (path, mtime, size).
 UNION_CACHE = os.path.join(os.environ.get("TEMP", "."), "supervive_union_text_11.bin")
 
 IMAGE_BASE = 0x7FF6505C0000          # tutorial-hero

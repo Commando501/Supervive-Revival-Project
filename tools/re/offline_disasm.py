@@ -9,7 +9,10 @@
 # capture instead -- it has those pages and its own ImageBase:
 #   CG_DUMP=dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe CG_BASE=0x7FF6505C0000
 import capstone, sys, struct, os
-DUMP=os.environ.get("CG_DUMP","dumps/merged.dump.exe")
+  # 2026-08-14 (S121, FK-18/FK-19): merged2 is the canonical cold image -- same ImageBase
+  # 0x7FF6AF000000, byte-identical .rdata/.data, and a STRICT .text superset (16,625 vs
+  # 15,833 decrypted pages). docs/fk18-fk19-multistate-merge-settled.md
+DUMP=os.environ.get("CG_DUMP","dumps/merged2.dump.exe")
 IMAGEBASE=int(os.environ.get("CG_BASE","0x7FF6AF000000"),16)
 NAMEPOOL_RVA=0x9D81450
 f=open(DUMP,"rb"); DATA=f.read()
