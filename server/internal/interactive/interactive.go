@@ -668,8 +668,20 @@ func (s *Service) missionInfo(now time.Time) (map[string]any, string) {
 			"Expiry":    expiryStr,
 			"GrantedAt": grantedStr,
 		}
-		if c.Pool != "" {
+		// AGS_MISSION_NO_POOLID=1 — DIAGNOSTIC: omit PoolId from every MissionData entry while
+		// leaving Pools[] intact. Tests whether serving a PoolId for a pool the client does not
+		// consider grantable is what causes rejection. MEASURED motivation: of 105 missions that
+		// carry a declared PoolId only 11 are accepted, and those 11 are exactly the ones whose
+		// pool has a PoolGroupId (daily/weekly); the 218 missions we serve WITHOUT a PoolId are
+		// accepted at 53%. Leave UNSET in normal operation — it breaks the modal's grouping.
+		if c.Pool != "" && os.Getenv("AGS_MISSION_NO_POOLID") != "1" {
 			md["PoolId"] = "MissionPool:" + c.Pool
+			if !poolSeen[c.Pool] {
+				poolSeen[c.Pool] = true
+				poolOrder = append(poolOrder, c.Pool)
+			}
+		} else if c.Pool != "" {
+			// still advertise the pool in Pools[] so only the per-mission PoolId varies
 			if !poolSeen[c.Pool] {
 				poolSeen[c.Pool] = true
 				poolOrder = append(poolOrder, c.Pool)

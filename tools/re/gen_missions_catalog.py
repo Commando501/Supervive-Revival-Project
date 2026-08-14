@@ -67,9 +67,9 @@ def main() -> int:
         print("re-run the extractor first (tools/extractor)", file=sys.stderr)
         return 1
 
-    catalog, pools, skipped = {}, {}, 0
+    catalog, pools, skipped, abstract = {}, {}, 0, 0
     for f in files:
-        name = os.path.basename(f)[:-len(".json")][len("DA_Mission_"):]
+        filename = os.path.basename(f)[:-len(".json")][len("DA_Mission_"):]
         try:
             doc = json.load(open(f, encoding="utf-8"))
         except Exception as e:  # a malformed dump must be loud, not silently dropped
@@ -77,9 +77,11 @@ def main() -> int:
             skipped += 1
             continue
 
-        pool, objectives, debug = None, [], False
+        pool, objectives, debug, internal = None, [], False, None
         for export in doc:
             props = export.get("Properties") or {}
+            if props.get("InternalName"):
+                internal = props["InternalName"]
             pv = props.get("Pool")
             if isinstance(pv, dict) and pv.get("PrimaryAssetName"):
                 pool = pv["PrimaryAssetName"]
@@ -92,6 +94,30 @@ def main() -> int:
                         "name": objective_name(oc["ObjectName"]),
                         "max": float(o.get("TotalProgress") or 1),
                     })
+
+        # ⚠⚠ THE MISSION NAME IS `InternalName`, NOT THE FILE NAME. This is the whole
+        # acceptance rule and it was worth 126 -> 248 missions. The client registers each
+        # mission with the AssetManager under the DA's OWN InternalName property; only when
+        # that property is absent does it fall back to the asset FName. MEASURED two
+        # independent ways (2026-08-14): a live walk of
+        # UAssetManager.AssetTypeMap["Mission"].AssetMap (330 entries, keys decoded) and an
+        # offline classification of the 323 we were serving (TP=126, FP=0, FN=0).
+        # Serving the FILENAME meant 197 of 323 missions named a PrimaryAssetId that does not
+        # exist, and the client silently dropped every one.
+        # ★ Proof it is a REGISTRY and not per-file equality: the shipped data contains a swap —
+        # DA_Mission_Wukong_QKnocks_2 declares InternalName "wukong_qknocks_3" and _3 declares
+        # "wukong_qknocks_2". Per-file equality predicts both rejected; both were accepted.
+        # ★ Matching is CASE-INSENSITIVE (FName semantics): 41 of the original 126 matched only
+        # after case folding, e.g. file Earthtank_RMBAirDunk_3 declares "earthtank_rmbairdunk_3".
+        name = internal or filename
+
+        if internal is None:
+            # No InternalName => a CLASS_Abstract base template. MEASURED: exactly 75 such DAs,
+            # and they are precisely the 75 bases-of-variant-families that never landed. They are
+            # registered under their asset FName, but they are authoring templates rather than
+            # grantable missions, so they are deliberately NOT served.
+            abstract += 1
+            continue
 
         if not objectives:
             # No objective => nothing the progress store can key on. Counted, not hidden.
@@ -112,11 +138,14 @@ def main() -> int:
     json.dump(pools, open(pool_path, "w", encoding="utf-8"), indent=1, sort_keys=True)
 
     print(f"DA files scanned      : {len(files)}")
+    print(f"abstract (no InternalName, not served): {abstract}")
     print(f"missions written      : {len(catalog)}")
     print(f"  with a declared pool: {len(pools)}")
     print(f"  IsDebugOnly         : {sum(1 for v in catalog.values() if v.get('debug'))}")
     print(f"objectives written    : {sum(len(v['objectives']) for v in catalog.values())}")
     print(f"skipped (no objective or unreadable): {skipped}")
+    diff = sum(1 for n in catalog if n not in {os.path.basename(f)[:-5][len("DA_Mission_"):] for f in files})
+    print(f"names differing from their filename  : {diff}  <- these were ALL being dropped before")
     print(f"-> {cat_path}")
     print(f"-> {pool_path}")
     return 0
