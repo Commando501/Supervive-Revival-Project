@@ -59,5 +59,17 @@ for ci in range(numChunks):
             if nm.startswith("Default__"): continue   # skip CDOs — LIVE instances only
             hits.append((obj,cn,nm))
 print(f"found {len(hits)} LIVE (non-CDO) instance(s) whose class contains '{WANT}':")
-for obj,cn,nm in hits[:60]:
+# ⚠ THE DETAIL LIST IS CAPPED. It always was (hits[:60]), but SILENTLY — and on 2026-08-14
+# that produced a wrong result that survived several turns and reached a commit message:
+# counting output lines (`obj_by_class.py ... | grep -c "obj="`) saturates at the cap, so a
+# class with 126 live instances read as "60". The 60 was then used to conclude that whole
+# mission pools were being rejected, which was false.
+# The count above was CORRECT the whole time. The fix is to make truncation impossible to
+# miss, and to say plainly which number to trust.
+LIMIT = 60
+for obj,cn,nm in hits[:LIMIT]:
     print(f"  obj=0x{obj:X}  Class={cn}  Name={nm}")
+if len(hits) > LIMIT:
+    print(f"  ... {len(hits)-LIMIT} more not shown (detail list capped at {LIMIT}).")
+    print(f"  !! DO NOT COUNT THESE LINES -- the real total is {len(hits)}, printed above.")
+    print(f"  !! Pipe to a counter and you will get {LIMIT}, not {len(hits)}. Parse the 'found N' line.")

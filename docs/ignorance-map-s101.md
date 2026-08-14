@@ -1221,6 +1221,25 @@ chain self-triggers. **Nothing was broken; the "fix" was a verification.**
 not just noted; and **verify the premise before building the fix**, because a fix shipped here would
 have been permanent complexity defending against a bug that never existed.
 
+**⚠⚠ AND A THIRD, SAME DAY — the 45th instance, this one entirely self-inflicted and the most
+embarrassing kind.** `tools/re/obj_by_class.py` prints a correct total (`found N LIVE instance(s)`)
+and then a detail list **capped at 60 rows**. Counting the rows — `| grep -c "obj="` — therefore
+SATURATES at 60. A class with 126 live instances read as "60", and that 60 was carried through
+several turns into the conclusion that whole mission pools were being rejected
+("11/11 grouped landed, 0 of 94 ungrouped"), which is FALSE: 126 of 323 land, and `HunterMissions`
+lands 67/150 with no `PoolGroupId` at all. `PoolGroupId` governs UI visibility, not model
+acceptance. **The instrument was never wrong — the number it printed was right every time.**
+★ Rules: **parse a tool's stated total, never `wc` its output** — a truncated list is a silent
+clamp; and **cross-check any object census by POINTER EQUALITY on the target UClass**, which is
+name-free, immune to FName-decode failure, and is what settled this (127 objects share the
+`UMissionModel` UClass pointer = 126 map values + the CDO, every map value found, zero unreadable).
+The tool now prints an explicit "… N more not shown / DO NOT COUNT THESE LINES" banner.
+★ Also recovered while chasing it: the `_1`/`_2`/`_3` mission suffixes are TIER VARIANTS
+(`Alchemist_HealWithQ` max 10 → `_1` 7,500 → `_2` 75,000 → `_3` 300,000), and the 218 suffixed
+names are exactly the 218 with no declared pool — a variant inherits its base mission's pool and
+CUE4Parse omits inherited properties. **What decides model acceptance remains UNKNOWN** and is
+deliberately left unguessed: four pools take none at all, two take ~45 %.
+
 ---
 
 ### FK-18 — "`merged.dump.exe` is a merged multi-state image"
