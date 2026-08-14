@@ -14,7 +14,12 @@
 package loki
 
 import (
+	"bytes"
 	"encoding/json"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
 	"net/http"
 	"time"
 )
@@ -34,6 +39,16 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// lets the version check pass.
 	mux.HandleFunc("GET /configuration/public", s.handleClientConfig)
 	mux.HandleFunc("GET /configuration/client", s.handleClientConfig)
+
+	// FK-17 banner probe assets (see handleClientConfig's bannerConfigs block).
+	// The banner record carries SplashImageURL/IconUrl (remote images the client
+	// fetches itself) and ActionURL (opened when ActionType == WebURL). Serving all
+	// three locally makes the probe self-contained AND gives three independent
+	// receipts in docs/capture.log: a splash fetch, an icon fetch, and — only if the
+	// banner is actually clicked — a news.html fetch.
+	mux.HandleFunc("GET /revival/banner/splash.png", s.handleBannerSplash)
+	mux.HandleFunc("GET /revival/banner/icon.png", s.handleBannerIcon)
+	mux.HandleFunc("GET /revival/banner/news.html", s.handleBannerPage)
 
 	// PostAuth service (resolved from ServiceHostnames["postauth"]). The game
 	// calls {base}/postauth/... — e.g. reconcileRoles after login.
@@ -138,9 +153,194 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 			"156430",
 		},
 		"featureToggles": featureToggles,
-		"eTag":           "supervive-revival-2",
-		"lastUpdated":    nowISO(),
+		"bannerConfigs":  bannerConfigs(base),
+		// ⚠ BUMP THIS whenever the payload changes. The client is believed to only
+		// *apply* a config newer/different than the one it holds; a constant eTag with
+		// changed content is a plausible way to get a silent no-op. Was
+		// "supervive-revival-2" for everything up to the FK-17 banner probe.
+		"eTag":        "supervive-revival-3-fk17banner",
+		"lastUpdated": nowISO(),
 	})
+}
+
+// bannerConfigs builds ClientConfiguration.BannerConfigs — the client's own
+// data-driven announcement/news system, which this project has never served.
+//
+// FK-17 (S119, 2026-08-13). FK-17's dead half ("SUPERVIVE.exe is a CEF/Electron
+// shell") was already refuted; what survived was its **render path** question —
+// whether the never-opened News / Event Hub / Referral surfaces are web pages
+// impersonatable from this backend with no shim. They are reachable from here.
+//
+// MEASURED, from the native reflection schema (usmapdump schema.txt):
+//
+//	ClientConfiguration (12 props)  ... BannerConfigs  StructProperty (LokiClientBannerConfig)
+//	LokiClientBannerConfig (1 prop) ... Configs        ArrayProperty<...>
+//	LokiClientBannerData  (16 props):
+//	    ID, FeatureToggleKey, bIsEnabledByDefault, StartTime, EndTime,
+//	    BannerType   EnumProperty  -> ELokiBannerConfig_BannerType{Default=0, CustomWidget=1}
+//	    WidgetType   StrProperty   (names the widget class when BannerType==CustomWidget)
+//	    PrimaryText/SecondaryText/ButtonText  StructProperty(LokiBannerTextEntry{LocalizedText: TMap})
+//	    PrimaryTextColor, SecondaryTextColor  StrProperty
+//	    SplashImageURL, IconUrl               StrProperty   <- remote images
+//	    ActionType   EnumProperty  -> ELokiBannerConfig_ActionType{Click=0, WebURL=1, DeepLink=2}
+//	    ActionURL    StrProperty                            <- the web page
+//
+// The render targets ship in the pak (tools/extractor/out/allfiles.txt), all under
+// Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Party/:
+//
+//	WBP_LobbyBannerWidgetBase, WBP_UI_LobbyBannerURL, WBP_UI_LobbyBannerURLV2,
+//	WBP_UI_LobbyCarousel_LaunchBanner, BPFL_BannerConfig, EBannerConfigPlacementType
+//
+// and WBP_UI_LobbyCarousel_LaunchBanner is LIVE in the lobby every session — it shows
+// up in LogUIActionRouter in logs going back to S52 and in the currently-running
+// process. So the consumer is already on screen; only the data was missing.
+//
+// WHY THIS IS CHEAP TO TEST: the client polls GET /configuration/client?language=en
+// every ~30 s (MEASURED in docs/capture.log: #162 19:05:27, #345 19:05:57, #529
+// 19:06:27, …). So a banner change reaches an ALREADY-RUNNING client within 30 s —
+// no game relaunch, no injection, no .text write. (The comment above at Register()
+// saying "polled ~1/s" is stale; it is 30 s.)
+//
+// ⚠ FK-14 caveat, and it is the one real uncertainty here: the usmap's CONTAINER
+// INNER types are ~70 % wrong, and BOTH LokiClientBannerConfig.Configs and
+// LokiTimespanBannerConfig.Interstitials decode as SELF-REFERENTIAL arrays — the
+// textbook heap-adjacency artifact. So we do NOT know whether Configs holds
+// LokiTimespanBannerConfig{FeatureToggleKey,StartTime,EndTime,Banners,Interstitials}
+// or LokiClientBannerData directly.
+// HEDGE: each element below carries the UNION of both structs' fields. The only
+// overlapping names are FeatureToggleKey (string in both) and StartTime/EndTime
+// (DateTime in both), so the union is TYPE-SAFE under either reading — and per the
+// validity model (see server/internal/menu/menu.go) UE's JsonObjectStringToUStruct
+// ignores unknown keys and rejects only a MATCHED key with a wrong type. This is a
+// hedge against instrument uncertainty, not a bundled multi-hypothesis test: the
+// single hypothesis is "banner data served here reaches the lobby banner widget".
+func bannerConfigs(base string) map[string]any {
+	// Wide-open window: the record is scheduled by StartTime/EndTime, so a banner
+	// outside its window is indistinguishable from a banner that never parsed.
+	const start = "2020-01-01T00:00:00Z"
+	const end = "2099-12-31T23:59:59Z"
+
+	// LokiBannerTextEntry{ LocalizedText: TMap }. The key is a culture code — the
+	// request is ?language=en — but the exact key form is unverified, so serve
+	// several. Extra map keys are values, not schema, so this cannot cause a reject.
+	text := func(s string) map[string]any {
+		return map[string]any{"localizedText": map[string]string{
+			"en": s, "en-US": s, "default": s, "": s,
+		}}
+	}
+
+	banner := map[string]any{
+		"id":               "revival-fk17-banner",
+		"featureToggleKey": "", // empty => ungated; bIsEnabledByDefault decides
+		// UE's JSON converter may or may not strip the leading 'b' of a bool
+		// UPROPERTY. Serve both spellings — the unmatched one is ignored for free.
+		"bIsEnabledByDefault": true,
+		"isEnabledByDefault":  true,
+		"startTime":           start,
+		"endTime":             end,
+		// Enum values go over the wire as the enumerator NAME. (S118's userStatusNotif
+		// lesson: a wrong enum string sinks the whole struct — and LogJson echoes the
+		// rejected value and names the property + enum, so WATCH LogJson on this run.)
+		"bannerType":         "Default",
+		"widgetType":         "",
+		"primaryText":        text("SUPERVIVE REVIVAL"),
+		"secondaryText":      text("Backend is live. This banner came from the local server."),
+		"buttonText":         text("OPEN"),
+		"primaryTextColor":   "#FFFFFF",
+		"secondaryTextColor": "#C8C8C8",
+		"splashImageURL":     base + "/revival/banner/splash.png",
+		"iconUrl":            base + "/revival/banner/icon.png",
+		// The FK-17 payoff: if this is honoured, the client hands a URL to a web view.
+		"actionType": "WebURL",
+		"actionURL":  base + "/revival/banner/news.html",
+	}
+
+	// The union element (see the FK-14 hedge above).
+	elem := map[string]any{
+		"featureToggleKey": "",
+		"startTime":        start,
+		"endTime":          end,
+		"banners":          []any{banner},
+		"interstitials":    []any{}, // LokiClientBannerConfigManager.bHasSeenInterstitial
+		// implies a full-screen interstitial path; left empty so this probe stays
+		// about the in-lobby banner only.
+	}
+	for k, v := range banner {
+		if _, clash := elem[k]; !clash {
+			elem[k] = v
+		}
+	}
+
+	return map[string]any{"configs": []any{elem}}
+}
+
+// --- FK-17 banner probe assets -------------------------------------------------
+//
+// These exist so the banner probe is self-contained and, crucially, so each stage
+// of it leaves its OWN receipt in docs/capture.log. Three independent signals:
+//
+//	GET /revival/banner/splash.png  => the banner record parsed AND the widget is
+//	                                   resolving its images (strongest single receipt:
+//	                                   the client only fetches a URL it actually read
+//	                                   out of our JSON)
+//	GET /revival/banner/icon.png    => same, second field
+//	GET /revival/banner/news.html   => the banner was CLICKED and ActionType==WebURL
+//	                                   was honoured — i.e. a menu surface really is a
+//	                                   web page we control, which is FK-17's whole point
+//
+// ⚠ Do not read a missing news.html fetch as a negative: it requires a human click.
+// The image fetches are the automatic ones.
+func solidPNG(c color.RGBA, w, h int) []byte {
+	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	draw.Draw(img, img.Bounds(), &image.Uniform{c}, image.Point{}, draw.Src)
+	var buf bytes.Buffer
+	_ = png.Encode(&buf, img)
+	return buf.Bytes()
+}
+
+var (
+	bannerSplashPNG = solidPNG(color.RGBA{R: 0x1E, G: 0x2A, B: 0x4A, A: 0xFF}, 512, 256)
+	bannerIconPNG   = solidPNG(color.RGBA{R: 0xE8, G: 0x6A, B: 0x17, A: 0xFF}, 64, 64)
+)
+
+func writePNG(w http.ResponseWriter, b []byte) {
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(b)
+}
+
+func (s *Service) handleBannerSplash(w http.ResponseWriter, r *http.Request) {
+	writePNG(w, bannerSplashPNG)
+}
+
+func (s *Service) handleBannerIcon(w http.ResponseWriter, r *http.Request) {
+	writePNG(w, bannerIconPNG)
+}
+
+// handleBannerPage is the ActionURL target. If this is ever fetched, the client
+// rendered or opened a page we authored — which is exactly the capability FK-17
+// predicted and which needs no DLL injection at all.
+func (s *Service) handleBannerPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`<!doctype html><meta charset="utf-8">
+<title>SUPERVIVE Revival</title>
+<style>
+  html,body{margin:0;height:100%;background:#12182b;color:#f2f4f8;
+    font:16px/1.5 "Segoe UI",system-ui,sans-serif;display:grid;place-items:center}
+  .c{text-align:center;padding:2rem}
+  h1{margin:0 0 .5rem;font-size:2rem;letter-spacing:.08em}
+  p{margin:.25rem 0;color:#9fb0cc}
+  code{color:#e86a17}
+</style>
+<div class="c">
+  <h1>SUPERVIVE REVIVAL</h1>
+  <p>This page was served by the local Go backend.</p>
+  <p>If you can read this inside the game, <code>ActionType: WebURL</code> works
+     and the menu web surface is ours.</p>
+</div>`))
 }
 
 func nowISO() string { return time.Now().UTC().Format("2006-01-02T15:04:05Z") }

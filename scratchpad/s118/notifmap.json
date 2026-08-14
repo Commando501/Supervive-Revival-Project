@@ -1,0 +1,479 @@
+[
+ {
+  "enum": 1,
+  "name": "connectNotif",
+  "bodyRVA": "0x4b02d36",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1d0",
+    "state": "unbound",
+    "size": 0
+   },
+   {
+    "off": "0x1e0",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": [
+   "0x1c0"
+  ]
+ },
+ {
+  "enum": 2,
+  "name": "disconnectNotif",
+  "bodyRVA": "0x4b02dc4",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x228",
+    "state": "BOUND",
+    "size": 3
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 3,
+  "name": "partyLeaveNotif",
+  "bodyRVA": "0x4b02e09",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1100",
+    "state": "unbound",
+    "size": 0
+   },
+   {
+    "off": "0x1110",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 4,
+  "name": "partyInviteNotif",
+  "bodyRVA": "0x4b02ec8",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1130",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 5,
+  "name": "partyGetInvitedNotif",
+  "bodyRVA": "0x4b02f26",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1140",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 6,
+  "name": "partyJoinNotif",
+  "bodyRVA": "0x4b02f93",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1160",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 7,
+  "name": "partyRejectNotif",
+  "bodyRVA": "0x4b02fcb",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1180",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 8,
+  "name": "partyKickNotif",
+  "bodyRVA": "0x4b03030",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x11a0",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 9,
+  "name": "partyDataUpdateNotif",
+  "bodyRVA": "0x4b03375",
+  "typeStr": "partyDataUpdateNotif",
+  "slots": [
+   {
+    "off": "0x11b0",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 10,
+  "name": "partyConnectNotif",
+  "bodyRVA": "0x4b03393",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x11c0",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 11,
+  "name": "partyDisconnectNotif",
+  "bodyRVA": "0x4b033dd",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x11d0",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 12,
+  "name": "partyNotif",
+  "bodyRVA": "0x4b03095",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1240",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 13,
+  "name": "personalChatNotif",
+  "bodyRVA": "0x4b03427",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1260",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 14,
+  "name": "partyChatNotif",
+  "bodyRVA": "0x4b034b2",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1280",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 15,
+  "name": "channelChatNotif",
+  "bodyRVA": "0x4b0351b",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x12b0",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 16,
+  "name": "userStatusNotif",
+  "bodyRVA": "0x4b03580",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x12d0",
+    "state": "BOUND",
+    "size": 3
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 17,
+  "name": "messageNotif",
+  "bodyRVA": "0x4b035fd",
+  "typeStr": null,
+  "slots": [],
+  "rejected": []
+ },
+ {
+  "enum": 18,
+  "name": "userBannedNotification",
+  "bodyRVA": "0x4b03d29",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1308",
+    "state": "unbound",
+    "size": 0
+   },
+   {
+    "off": "0x1318",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 19,
+  "name": "userUnbannedNotification",
+  "bodyRVA": "0x4b03d29",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1308",
+    "state": "unbound",
+    "size": 0
+   },
+   {
+    "off": "0x1318",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 20,
+  "name": "matchmakingNotif",
+  "bodyRVA": "0x4b03a60",
+  "typeStr": "matchmakingNotif",
+  "slots": [
+   {
+    "off": "0x1510",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 21,
+  "name": "setReadyConsentNotif",
+  "bodyRVA": "0x4b03a7e",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1520",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 22,
+  "name": "setRejectConsentNotif",
+  "bodyRVA": "0x4b03ac8",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1530",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 23,
+  "name": "rematchmakingNotif",
+  "bodyRVA": "0x4b03b12",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1540",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 24,
+  "name": "dsNotif",
+  "bodyRVA": "0x4b03b5f",
+  "typeStr": "dsNotif",
+  "slots": [
+   {
+    "off": "0x1550",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 25,
+  "name": "acceptFriendsNotif",
+  "bodyRVA": "0x4b03b7d",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1630",
+    "state": "BOUND",
+    "size": 3
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 26,
+  "name": "requestFriendsNotif",
+  "bodyRVA": "0x4b03bb5",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1640",
+    "state": "BOUND",
+    "size": 3
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 27,
+  "name": "unfriendNotif",
+  "bodyRVA": "0x4b03bed",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1650",
+    "state": "BOUND",
+    "size": 3
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 28,
+  "name": "cancelFriendsNotif",
+  "bodyRVA": "0x4b03c25",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1660",
+    "state": "BOUND",
+    "size": 3
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 29,
+  "name": "rejectFriendsNotif",
+  "bodyRVA": "0x4b03c5d",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x1670",
+    "state": "BOUND",
+    "size": 3
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 30,
+  "name": "blockPlayerNotif",
+  "bodyRVA": "0x4b03c95",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x16c0",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 31,
+  "name": "unblockPlayerNotif",
+  "bodyRVA": "0x4b03cdf",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x16d0",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 32,
+  "name": "errorNotif",
+  "bodyRVA": "0x4b04858",
+  "typeStr": null,
+  "slots": [
+   {
+    "off": "0x218",
+    "state": "unbound",
+    "size": 0
+   },
+   {
+    "off": "0x16f0",
+    "state": "unbound",
+    "size": 0
+   }
+  ],
+  "rejected": []
+ },
+ {
+  "enum": 33,
+  "name": "messageSessionNotif",
+  "bodyRVA": "0x4b04396",
+  "typeStr": null,
+  "slots": [],
+  "rejected": []
+ }
+]

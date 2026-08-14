@@ -1,0 +1,12 @@
+=== ANCHOR 1: are the coordinator-supplied .data descriptors really FStrings with those names? ===
+  .data 0x09FFE6F0 -> FString{Data=0x1D24F130B20 Num=8 Max=8} = 'dsNotif'
+  .data 0x09FFE810 -> FString{Data=0x1D24F0B5470 Num=21 Max=24} = 'partyDataUpdateNotif'
+  .data 0x09FFE860 -> FString{Data=0x1D24F0B5740 Num=17 Max=24} = 'matchmakingNotif'
+
+=== ANCHOR 2: xrefstr -> which case body references each descriptor? ===
+  descriptor for dsNotif                (.data 0x9FFE6F0): 1 xref site(s)
+     lea @ .text 0x04B03B6C  -> inside case body 0x04B03B5F = jump idx [23] (enum [24])
+  descriptor for partyDataUpdateNotif   (.data 0x9FFE810): 1 xref site(s)
+     lea @ .text 0x04B03382  -> inside case body 0x04B03375 = jump idx [8] (enum [9])
+  descriptor for matchmakingNotif       (.data 0x9FFE860): 1 xref site(s)
+     lea @ .text 0x04B03A6D  -> inside case body 0x04B03A60 = jump idx [19] (enum [20])

@@ -1,0 +1,454 @@
+[
+ {
+  "caseIndex": 1,
+  "bodyRVA": "0x4b02d36",
+  "bodyLen": 142,
+  "typeName": null,
+  "delegateBases": []
+ },
+ {
+  "caseIndex": 2,
+  "bodyRVA": "0x4b02dc4",
+  "bodyLen": 69,
+  "typeName": null,
+  "delegateBases": []
+ },
+ {
+  "caseIndex": 3,
+  "bodyRVA": "0x4b02e09",
+  "bodyLen": 191,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1100",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   },
+   {
+    "off": "0x1110",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 4,
+  "bodyRVA": "0x4b02ec8",
+  "bodyLen": 94,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1130",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 5,
+  "bodyRVA": "0x4b02f26",
+  "bodyLen": 109,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1140",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 6,
+  "bodyRVA": "0x4b02f93",
+  "bodyLen": 56,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1160",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 7,
+  "bodyRVA": "0x4b02fcb",
+  "bodyLen": 101,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1180",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 8,
+  "bodyRVA": "0x4b03030",
+  "bodyLen": 101,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x11a0",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 9,
+  "bodyRVA": "0x4b03375",
+  "bodyLen": 30,
+  "typeName": "partyDataUpdateNotif",
+  "delegateBases": [
+   {
+    "off": "0x11b0",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 10,
+  "bodyRVA": "0x4b03393",
+  "bodyLen": 74,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x11c0",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 11,
+  "bodyRVA": "0x4b033dd",
+  "bodyLen": 74,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x11d0",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 12,
+  "bodyRVA": "0x4b03095",
+  "bodyLen": 736,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1240",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 13,
+  "bodyRVA": "0x4b03427",
+  "bodyLen": 139,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1260",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 14,
+  "bodyRVA": "0x4b034b2",
+  "bodyLen": 105,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1280",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 15,
+  "bodyRVA": "0x4b0351b",
+  "bodyLen": 101,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x12b0",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 16,
+  "bodyRVA": "0x4b03580",
+  "bodyLen": 125,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x12d0",
+    "ptr": "0x1d21663dcc0",
+    "size": 3,
+    "bound": true
+   }
+  ]
+ },
+ {
+  "caseIndex": 17,
+  "bodyRVA": "0x4b035fd",
+  "bodyLen": 768,
+  "typeName": null,
+  "delegateBases": []
+ },
+ {
+  "caseIndex": 18,
+  "bodyRVA": "0x4b03d29",
+  "bodyLen": 768,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1308",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   },
+   {
+    "off": "0x1318",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 19,
+  "bodyRVA": "0x4b03d29",
+  "bodyLen": 768,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1308",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   },
+   {
+    "off": "0x1318",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 20,
+  "bodyRVA": "0x4b03a60",
+  "bodyLen": 30,
+  "typeName": "matchmakingNotif",
+  "delegateBases": [
+   {
+    "off": "0x1510",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 21,
+  "bodyRVA": "0x4b03a7e",
+  "bodyLen": 74,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1520",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 22,
+  "bodyRVA": "0x4b03ac8",
+  "bodyLen": 74,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1530",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 23,
+  "bodyRVA": "0x4b03b12",
+  "bodyLen": 77,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1540",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 24,
+  "bodyRVA": "0x4b03b5f",
+  "bodyLen": 30,
+  "typeName": "dsNotif",
+  "delegateBases": [
+   {
+    "off": "0x1550",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 25,
+  "bodyRVA": "0x4b03b7d",
+  "bodyLen": 56,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1630",
+    "ptr": "0x1d21663e800",
+    "size": 3,
+    "bound": true
+   }
+  ]
+ },
+ {
+  "caseIndex": 26,
+  "bodyRVA": "0x4b03bb5",
+  "bodyLen": 56,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1640",
+    "ptr": "0x1d21663e7a0",
+    "size": 3,
+    "bound": true
+   }
+  ]
+ },
+ {
+  "caseIndex": 27,
+  "bodyRVA": "0x4b03bed",
+  "bodyLen": 56,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1650",
+    "ptr": "0x1d21663e920",
+    "size": 3,
+    "bound": true
+   }
+  ]
+ },
+ {
+  "caseIndex": 28,
+  "bodyRVA": "0x4b03c25",
+  "bodyLen": 56,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1660",
+    "ptr": "0x1d21663e740",
+    "size": 3,
+    "bound": true
+   }
+  ]
+ },
+ {
+  "caseIndex": 29,
+  "bodyRVA": "0x4b03c5d",
+  "bodyLen": 56,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x1670",
+    "ptr": "0x1d21663e650",
+    "size": 3,
+    "bound": true
+   }
+  ]
+ },
+ {
+  "caseIndex": 30,
+  "bodyRVA": "0x4b03c95",
+  "bodyLen": 74,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x16c0",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 31,
+  "bodyRVA": "0x4b03cdf",
+  "bodyLen": 74,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x16d0",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 32,
+  "bodyRVA": "0x4b04858",
+  "bodyLen": 768,
+  "typeName": null,
+  "delegateBases": [
+   {
+    "off": "0x16f0",
+    "ptr": "0x0",
+    "size": 0,
+    "bound": false
+   }
+  ]
+ },
+ {
+  "caseIndex": 33,
+  "bodyRVA": "0x4b04396",
+  "bodyLen": 768,
+  "typeName": null,
+  "delegateBases": []
+ }
+]

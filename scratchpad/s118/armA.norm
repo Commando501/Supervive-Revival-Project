@@ -1,0 +1,21 @@
+LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnMessageReceived
+LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnClosed
+LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnMessageReceived
+LogAccelByteLobby: Verbose: Raw Lobby Response
+LbStype: disconnectNotif
+message: S118ARMALbE
+LogAccelByteLobby: VeryVerbose: JSON Version: {"type":"disconnectNotif","message":"S118ARMA"}
+LogAccelByteLobby: VeryVerbose: Type: disconnectNotif
+LogAccelByteLobby: Verbose: Raw Lobby Response
+LogAccelByteLobby: Connection closed. Status code: 1006  Reason:  Clean: false Reconnecting: true
+LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::Connect
+LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnConnectionConnected
+LogAccelByteLobby: Connected
+LogAccelByte: Verbose: AccelByte::Api::Lobby::ListIncomingFriends
+LogAccelByteLobby: Verbose: Sending request: type: listIncomingFriendsRequest
+id: friends-NNNN
+LogAccelByte: Verbose: AccelByte::Api::Lobby::ListOutgoingFriends
+LogAccelByteLobby: Verbose: Sending request: type: listOutgoingFriendsRequest
+id: friends-NNNN
+LogAccelByte: Verbose: AccelByte::Api::Lobby::LoadFriendsList
+LogAccelByteLobby: Verbose: Sending request: type: listOfFriendsRequest
