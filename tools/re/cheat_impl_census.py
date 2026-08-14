@@ -72,7 +72,10 @@ except ImportError:
     sys.exit("need capstone:  pip install capstone")
 
 ROOT = r"G:\git\Supervive Revival Project"
-DUMP = os.path.join(ROOT, "dumps", "merged.dump.exe")
+  # 2026-08-14 (S121, FK-18/FK-19): merged2 is the canonical cold image -- same ImageBase
+  # 0x7FF6AF000000, byte-identical .rdata/.data, and a STRICT .text superset (16,625 vs
+  # 15,833 decrypted pages). docs/fk18-fk19-multistate-merge-settled.md
+DUMP = os.path.join(ROOT, "dumps", "merged2.dump.exe")
 ENUM = os.path.join(ROOT, "docs", "session-74-cheat-enum-dump.txt")
 PDATA = os.path.join(ROOT, "tools", "strxref", "index", "pdata_union.csv")
 CALLMULT = os.path.join(ROOT, "tools", "strxref", "index", "callmult.pkl")
@@ -91,9 +94,25 @@ CALLMULT = os.path.join(ROOT, "tools", "strxref", "index", "callmult.pkl")
 # AreHotkeyCheatsEnabled / CheatChangeHero / ServerCheatSpawnActor thunk pages
 # that merged.dump.exe alone does not have.
 # ---------------------------------------------------------------------------
+# 2026-08-14 (FK-19): `mergedumps` no longer refuses cross-base inputs, so this in-process
+# union is redundant -- prefer dumps/merged2.dump.exe (16,625 pages, 54.90%), which is this
+# same union baked into one file. The list below was missing `tutorial-hero` (570 pages
+# merged lacks -- the best single image on disk) and `lobby-dispatch-decrypted` (29); both
+# are added here so the standalone path matches merged2 exactly.
 EXTRA_DUMPS = [os.path.join(ROOT, "dumps", d, "SUPERVIVE-Win64-Shipping.dump.exe")
                for d in ("menu", "store", "roster", "missions", "loadout",
-                         "accountpass", "vmbuild", "toggles", "rcb")]
+                         "accountpass", "vmbuild", "toggles", "rcb",
+                         "tutorial-hero", "lobby-dispatch-decrypted")]
+# ⚠ 2026-08-14 (S121) — STALE-CACHE HAZARD, PARTIALLY MITIGATED.
+# This tool builds its own .text union from a hardcoded dump list and caches it to %TEMP%, where
+# the ONLY freshness test is the cache's SIZE — which is a constant. Adding a capture therefore
+# can never invalidate it. That is the identical defect that froze
+# tools/strxref/index/pagecov.json on 2026-07-26 and left statecov.py printing 15,833 / 54.27%
+# long after the truth was 16,638 / 54.95%.
+# MITIGATION SO FAR: the stale cache files were deleted, so the next run rebuilds.
+# PROPER FIX (not done): dumps/merged2.dump.exe IS this union already — verified a superset of
+# all 12 state dumps with 0 pages missing — so this in-process union is redundant. Read merged2
+# and delete the union machinery, or stamp the cache with each input's (path, mtime, size).
 UNION_CACHE = os.path.join(
     os.environ.get("TEMP", "."), "supervive_union_text.bin")
 

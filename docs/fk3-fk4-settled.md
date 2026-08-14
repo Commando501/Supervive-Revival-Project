@@ -134,7 +134,14 @@ result produced by the *lookup rule* was about to be attributed to the *target*.
 
 ### 2.1 The cap is `.text` demand-decrypt, and it is ~52%
 
-The packer decrypts `.text` **pages on execution**. A page whose code has never run is a 4 KiB
+⚠ **"on execution" was never measured — corrected 2026-08-14 (S121).** What is measured: dark pages
+are **`PAGE_NOACCESS`** (14,609 of 30,281 live), decryption is **fault-driven, page-granular and
+monotonic**, and faults are intercepted by a **ProcessInstrumentationCallback**, not a VEH. Whether a
+READ fault decrypts or only an EXECUTE fault is **OPEN** — and it is worth ~14,600 pages if reads
+work. See `docs/fk18-fk19-multistate-merge-settled.md` §12. The rest of this section is unaffected:
+coverage is still monotone in what the process has faulted on.
+
+The packer decrypts `.text` **pages on fault**. A page whose code has never run is a 4 KiB
 block of zeroes in every dump we can take. MEASURED: **15,833 of 30,281 `.text` pages (52.29%)
 are decrypted** in `merged.dump.exe`; 14,448 pages (47.7%, ~56 MB) are zero.
 
@@ -178,6 +185,24 @@ union of all 70 crash tables                19,495         64.38%
 GRAND union (images + crash tables)         19,715         65.11%
 NEVER decrypted by anything we have         10,566         34.89%   <- 41 MB, hard floor today
 ```
+
+★ **REFRESHED 2026-08-14 (S121)** — the "+602, free" row has been executed, two more image dumps
+exist, and the crash corpus grew 70 -> 76 usable tables:
+
+```
+merged.dump.exe   (S104, 5 menu substates)  15,833 pages   52.29%
+merged2.dump.exe  (S121, all 11 image dumps) 16,625        54.90%   <- canonical cold image
+best single crash-era process               18,980         62.68%
+union of all 76 crash tables                19,520         64.46%
+GRAND union (merged2 + crash tables)        19,742         65.20%
+NEVER decrypted or named by anything        10,539         34.80%
+```
+
+⚠ **The GRAND union barely moved (+27 pages).** ~765 of the 792 new image pages were ALREADY NAMED by
+crash unwind tables — the merge converted **bounds into bytes**, it did not expand the frontier. In
+function terms that is **13,639 crash-table functions that gained readable bytes** (byteless
+39,941 -> 26,302, -34.2%). **3,117 pages remain named-but-byteless** and only executing that code
+reaches them. See `docs/fk18-fk19-multistate-merge-settled.md`.
 
 **34.89% of `.text` — 10,566 pages, 41 MB — has never been decrypted in any process this project
 has a record of.** No offline work reaches it. Only executing that code does.
@@ -603,6 +628,17 @@ tells you which object is the singleton.
 
 ### 8.0 ⚠ PREREQUISITE — a fifth false-known, and it is load-bearing
 
+> ## ✅ IMPLEMENTED 2026-08-14 (S121) — `docs/fk18-fk19-multistate-merge-settled.md`
+> Everything measured in this section **reproduced exactly** 17 sessions later (1,403,750 relocs;
+> 1,257,732 `.rdata` / 146,018 `.data` / **0 `.text`**; rcb-vs-merged 15,215 shared pages, 0
+> differing) — and the prescription it ends with has now been **executed**. `mergedumps` merges
+> `.text` only, page-granular, ImageBase-agnostic; `dumps/merged2.dump.exe` is **16,625 / 30,281
+> pages (54.90%)** vs merged's 15,833 (52.29%). `-wholeimage` / `-samebaseonly` are the rollbacks.
+> ⚠ **Method note: this section sat correct and unimplemented while three cross-base dumps were
+> captured and discarded.** A settled doc that ends in a prescription is not settled until someone
+> runs it. §8.1's `merged2` command is likewise now executed; §2.3's table is refreshed in the new
+> doc (images 54.90%, crash-table union 64.46%, GRAND 65.20%, never-decrypted 34.80%).
+
 `tools/usmapdump/mergedumps.go:154` rejects any input whose `ImageBase` differs, and
 `configs/capture-dumps.ps1` elevates that to a hard constraint: *"capture all states WITHOUT
 relaunching."*
@@ -649,6 +685,15 @@ crash-era process had **62.45%** of `.text` decrypted against our best 52.29%.
 
 **Do not spend another capture on a menu surface. That is measured, not opinion.**
 **One in-match dump is worth 5.7× the entire re-merge of all nine existing image dumps.**
+
+★ **THE BAND HAS NOW BEEN TESTED ONCE (S121, 2026-08-14) AND IT HELD — at the LOW end.** The
+merged2 re-merge added **792** real new pages and the strxref rebuild lit **1,336** new UTF-16
+strings = **1.69 strings/page**, inside 0.84-3.90 and in its lower half. Mechanism, measured:
+frontier pages are THINNER than covered ones — **11.52 function entries/page vs 15.82**, and
+**4.74 string refs/page vs 9.56**. ⇒ **budget future captures at the low end of this band**, i.e.
+closer to 1-2 strings/page than to 3.9. (The 792 pages came from `toggles`/`tutorial-hero`/`rcb`, so
+they are two-or-three states rather than a random sample — which is exactly the regime the lower
+bound was written for.)
 
 Expected new lit strings from +3,430 pages: **~2,900 (lower bound) to ~13,400 (realistic)**. The
 band is honest: 0.84 strings/page is measured on *real* new pages, but all 9 image dumps are

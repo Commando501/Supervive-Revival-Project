@@ -262,7 +262,13 @@ is a build-time tool with a precise model of the OS loader — not a wrapper.
 
 **Two consequences:**
 1. It explains the long-documented **demand-decrypt** behaviour: `.text` is 100 % ciphertext at
-   rest, so pages necessarily become readable only as they execute.
+   rest, so pages become readable only once the process faults on them.
+   ⚠⚠ **"necessarily … only as they execute" is RETRACTED (S121, 2026-08-14).** That was an
+   inference from the encryption model, not a measurement, and it is one of three mutually
+   inconsistent restatements the repo carried. MEASURED live: dark pages are **`PAGE_NOACCESS`**
+   (14,609 of 30,281), which faults on **read, write AND execute** — so "only as they execute" is
+   not entailed by anything here. The read-vs-execute filter is **OPEN**; see
+   `docs/fk18-fk19-multistate-merge-settled.md` §12 for the mechanism and the pre-registered probe.
 2. **22.8 MB of `.rdata` is plaintext ON DISK**, in 47 runs of ≥64 KB (first at RVA
    0x0764C000–0x0768D000). Static string work against the on-disk exe is viable over that
    region — and a scan seeing this plaintext/ciphertext *mixture* is very likely the true
@@ -492,5 +498,5 @@ exact failure FK-10 exists to correct. "Vendor unidentified" is the accurate sta
 | "`.rsrc` is 9.62 MB" | C14 | That figure is `.rsrc`+`.reloc`; `.rsrc` alone is `0x92DA60`. Contents now enumerated; no plaintext embedded PE |
 | "Hunt xxHash — FK-10 names the algorithms" | Wall #7 | **Lead SPENT** — xxHash here is Zstd's frame checksum. Successor: ISA-L multi-buffer SHA at `0x8ffcd4–0x93e886` |
 | "no string names the integrity check — CLEAN NEGATIVE, not coverage-blocked" | `fk3-fk4-settled.md:513`, `strxref-open-questions.md:321` | **Scope error — 20th instrument-artifact instance.** `strxref.py:63` hardcodes `merged.dump.exe` (the *game exe*); `runtime.dll` appears 0 times in either doc. The negative structurally excluded the protector |
-| "the packer's VEH kills exception-using payloads" | `CLAUDE.md` | Rule **STANDS**; mechanism in doubt — the exe's `EXCEPTION` directory is RVA=0/size=0, so `RtlLookupFunctionEntry` finds nothing for the main image |
+| "the packer's VEH kills exception-using payloads" | `CLAUDE.md` | ⚠⚠ **BOTH halves of the mechanism are now REFUTED (S121, 2026-08-14).** (a) **There is no protector VEH.** `LdrpVectorHandlerList` decoded with the live cookie holds **exactly one** entry — the exe's own `cmp [rax],0xC0000374` heap-corruption handler. The protector hooks `KiUserExceptionDispatcher` via a **ProcessInstrumentationCallback** instead, leaving ntdll byte-identical to disk. (b) **`RtlLookupFunctionEntry` DOES resolve for the main image.** The static `EXCEPTION` dir is RVA=0/size=0, but the protector registers a **dynamic function table of 524,439 `RUNTIME_FUNCTION`s** covering `.text 0x8a00–0x7649f39` (sorted, 0 out of order), with **29,688 language handlers across 48 distinct handlers, all inside the exe** (top: `__C_specific_handler` ×26,219). ⇒ the rule *"no C++-exception payloads"* **STANDS empirically but now has NO known mechanism.** Do not cite the missing-function-table explanation. |
 | FK-32 `0x0000DEAD` unattributed | `fk31-fk32-successors.md` | **Mechanism CLOSED** — `NtTerminateProcess(h, 0xDEAD)` at `runtime.dll 0x80f7f0` |

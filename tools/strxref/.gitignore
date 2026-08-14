@@ -1,1 +1,3 @@
 index/
+# S121: the pre-merged2 index, kept as the rollback for the merged.dump.exe-era artifacts.
+index.*-backup/

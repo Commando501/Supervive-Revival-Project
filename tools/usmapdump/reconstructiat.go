@@ -27,6 +27,7 @@
 package main
 
 import (
+	"time"
 	"encoding/binary"
 	"fmt"
 	"os"
@@ -231,13 +232,30 @@ func findExportsSidecar(dumpPath string) string {
 	if cand := stem + ".exports.txt"; fileExists(cand) {
 		return cand
 	}
+	// FALLBACK. ⚠ This used to take the FIRST *.exports.txt the walk happened to reach, which is
+	// alphabetical order — for dumps/merged2.dump.exe that is dumps/accountpass/, a sidecar from
+	// a DIFFERENT BOOT. Export addresses are per-boot, so the wrong sidecar resolves nothing and
+	// the failure looks like "the stubs are undecodable" rather than "you loaded the wrong file".
+	// MEASURED 2026-08-14: that mis-selection produced 0 of 1,107 resolved; the correct same-boot
+	// sidecar produced 1,107 of 1,107. Now: newest wins, and the choice is always announced.
 	var found string
+	var newest time.Time
 	filepath.WalkDir(filepath.Dir(dumpPath), func(p string, d os.DirEntry, err error) error {
-		if err == nil && !d.IsDir() && found == "" && strings.HasSuffix(p, ".exports.txt") {
-			found = p
+		if err != nil || d.IsDir() || !strings.HasSuffix(p, ".exports.txt") {
+			return nil
+		}
+		if fi, e := d.Info(); e == nil && (found == "" || fi.ModTime().After(newest)) {
+			found, newest = p, fi.ModTime()
 		}
 		return nil
 	})
+	if found != "" {
+		fmt.Printf("  WARN: no sidecar named %q; falling back to the NEWEST one found: %s\n",
+			filepath.Base(stem+".exports.txt"), found)
+		fmt.Printf("        Export addresses are PER-BOOT. If this sidecar is not from the same boot\n")
+		fmt.Printf("        as the live process, every stub will read as undecodable. To pin it, copy\n")
+		fmt.Printf("        the right one to %s\n", stem+".exports.txt")
+	}
 	return found
 }
 
@@ -249,6 +267,10 @@ type iatDescr struct {
 	module        string
 	firstThunkRVA uint32
 	entries       []imp
+}
+
+func writeReconstructed(dumpPath, outPath string, resolveSlot func(uintptr) (imp, bool)) {
+	writeReconstructedFrom(dumpPath, outPath, resolveSlot, nil)
 }
 
 // cmdReconstructIAT: offline path — the dump's IAT holds resolved export addresses
@@ -279,7 +301,13 @@ func cmdReconstructIAT(dumpPath, outPath string) {
 // groups contiguous same-module slots into descriptors, and appends a real import section
 // (INT + hint/name + descriptors) so Ghidra/IDA name the calls. resolveSlot abstracts the
 // resolution strategy (direct sidecar lookup, or stub-emulation for protected imports).
-func writeReconstructed(dumpPath, outPath string, resolveSlot func(uintptr) (imp, bool)) {
+// writeReconstructed rebuilds a dump's import table. `slotSrc`, when non-nil, supplies the IAT
+// slot VALUES instead of reading them out of the dump file — see the note in cmdDeobfImports:
+// slot RVAs are image-relative and boot-invariant, but slot VALUES are addresses from the boot
+// that produced the dump, so a merged image whose .rdata came from an older boot cannot be
+// resolved against today's process unless the values are taken live.
+func writeReconstructedFrom(dumpPath, outPath string, resolveSlot func(uintptr) (imp, bool),
+	slotSrc func(rva uint32) (uintptr, bool)) {
 	img, err := os.ReadFile(dumpPath)
 	if err != nil {
 		fmt.Println("ERROR: reading dump:", err)
@@ -316,6 +344,11 @@ func writeReconstructed(dumpPath, outPath string, resolveSlot func(uintptr) (imp
 	for off := uint32(0); off+8 <= iatSize; off += 8 {
 		slotRVA := iatRVA + off
 		val := uintptr(binary.LittleEndian.Uint64(img[slotRVA:]))
+		if slotSrc != nil {
+			if lv, ok := slotSrc(slotRVA); ok {
+				val = lv
+			}
+		}
 		if val == 0 {
 			curIdx = -1
 			continue
@@ -338,8 +371,14 @@ func writeReconstructed(dumpPath, outPath string, resolveSlot func(uintptr) (imp
 		descrs[curIdx].entries = append(descrs[curIdx].entries, im)
 	}
 	if resolved == 0 {
-		fmt.Println("ERROR: resolved 0 IAT slots — the exports sidecar doesn't match this dump,")
-		fmt.Println("  or the IAT is import-protected (obfuscated stubs) and needs `deobfimports`.")
+		fmt.Println("ERROR: resolved 0 IAT slots. Two causes, in order of likelihood:")
+		fmt.Println("  1. THE EXPORTS SIDECAR IS FROM A DIFFERENT BOOT than the live process.")
+		fmt.Println("     Export addresses are per-boot. Copy the .exports.txt written by a dumpimage")
+		fmt.Println("     of THIS process next to the dump, named <stem>.exports.txt, and re-run.")
+		fmt.Println("     (This is the usual failure for a MERGED image: its .rdata comes from an")
+		fmt.Println("      older boot's seed — see docs/fk18-fk19-multistate-merge-settled.md.)")
+		fmt.Println("  2. The IAT is import-protected (obfuscated stubs) and needs `deobfimports`")
+		fmt.Println("     rather than `reconstructiat`.")
 		os.Exit(1)
 	}
 

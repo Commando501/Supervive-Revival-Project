@@ -278,7 +278,7 @@ func (r *reader) emulateStub(stubVA uintptr) (uintptr, bool) {
 // cmdDeobfImports resolves an import-protected dump's IAT by emulating each trampoline
 // against the live source process, then rebuilds the import table like reconstructiat.
 func cmdDeobfImports(proc, dumpPath, outPath string) {
-	r, pid, _, _ := mustOpen(proc)
+	r, pid, liveBase, _ := mustOpen(proc)
 	defer procCloseHandle.Call(r.h)
 
 	expPath := findExportsSidecar(dumpPath)
@@ -316,7 +316,29 @@ func cmdDeobfImports(proc, dumpPath, outPath string) {
 		return imp{}, false
 	}
 
-	writeReconstructed(dumpPath, outPath, resolver)
+	// ⚠ 2026-08-14 (S121): take the IAT slot VALUES from the LIVE process, not from the dump.
+	//
+	// Slot RVAs are image-relative and therefore boot-invariant, but a slot's VALUE is a pointer
+	// into the packer's hidden stub region — an address from the boot that produced the dump.
+	// Emulating a stale address against today's process reads whatever happens to be there now,
+	// which is nothing, so the stub is reported "undecodable".
+	//
+	// This became reachable the moment `mergedumps` started merging across ImageBases (FK-19):
+	// dumps/merged2.dump.exe carries .rdata from its seed's boot, so resolving it against any
+	// later process failed 1,099 of 1,107 slots. MEASURED, with the control that settles it:
+	// the SAME live process resolved its OWN same-boot dump 1,107/1,107, 0 undecodable.
+	//
+	// Reading the slot live fixes it for any dump of this build, merged or not. If the live read
+	// fails the caller falls back to the dump's own value, so a dead-process path still behaves
+	// exactly as before.
+	slotSrc := func(rva uint32) (uintptr, bool) {
+		if liveBase == 0 {
+			return 0, false
+		}
+		v := r.ptr(liveBase + uintptr(rva))
+		return v, v != 0
+	}
+	writeReconstructedFrom(dumpPath, outPath, resolver, slotSrc)
 
 	fmt.Printf("  deobf: %d direct + %d emulated resolved; %d stubs undecodable; %d emulated targets not in sidecar\n",
 		direct, emulated, undecodable, offTarget)

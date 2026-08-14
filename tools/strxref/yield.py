@@ -64,7 +64,7 @@ def main():
     lit = set(i for i in range(n) if refcount[i])
     print("index: %d strings, %d already lit" % (n, len(lit)))
 
-    merged = os.path.join(DUMPS, "merged.dump.exe")
+    merged = os.path.join(DUMPS, "merged2.dump.exe")
     im = Img(merged)
     T = im.sec(".text")
     R = im.sec(".rdata")

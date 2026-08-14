@@ -53,7 +53,10 @@ ROOT = r"G:\git\Supervive Revival Project"
 PRIMARY = os.path.join(ROOT, "dumps", "tutorial-hero",
                        "SUPERVIVE-Win64-Shipping.dump.exe")
 PRIMARY_BASE = 0x7FF6505C0000
-MERGED = os.path.join(ROOT, "dumps", "merged.dump.exe")
+  # 2026-08-14 (S121, FK-18/FK-19): merged2 is the canonical cold image -- same ImageBase
+  # 0x7FF6AF000000, byte-identical .rdata/.data, and a STRICT .text superset (16,625 vs
+  # 15,833 decrypted pages). docs/fk18-fk19-multistate-merge-settled.md
+MERGED = os.path.join(ROOT, "dumps", "merged2.dump.exe")
 MERGED_BASE = 0x7FF6AF000000
 
 EXTRA_DUMP_DIRS = ("menu", "store", "roster", "missions", "loadout",

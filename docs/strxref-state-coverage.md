@@ -14,13 +14,23 @@ measured, falsified, and dropped rather than written down.
 
 ## 0. Headline
 
-| | before | after this session |
-|---|---|---|
-| best `.text` page coverage | 52.29% (`merged.dump.exe`) | 52.29% *(unchanged — see §1)* |
-| `.text` coverage a re-merge of everything on disk would give | — | **54.27%** (+602 pages, +2.35 MB) |
-| `.text` coverage a dump from a *crash-era* state would give | — | **62.45%** (+3,430 pages, +13.4 MB) — measured, not guessed |
-| function bounds | 0 known; every extent heuristic | **382,282 EXACT bounds** recovered offline |
-| known code addresses / functions | 617 / "~120,000" (0.5%) | 617 / **≥382,282** = **0.16%** — the denominator was ~3× too small |
+> ## ★ UPDATED 2026-08-14 (S121) — the re-merge in row 2 has been EXECUTED
+> `dumps/merged2.dump.exe` is the canonical cold image: **16,625 / 30,281 pages = 54.90 %**, and the
+> strxref index is rebuilt against it. Two dumps captured after this file was written are included
+> (`tutorial-hero` 16,112 / 53.21 % — the best single image on disk; `lobby-dispatch-decrypted`
+> 15,381 / 50.79 %), and cross-base inputs now merge (FK-19). Crash-table corpus grew 70 → **76**
+> usable tables, union 382,282 → **382,704** functions. See
+> `docs/fk18-fk19-multistate-merge-settled.md`.
+
+| | before | after this session | **after S121** |
+|---|---|---|---|
+| best `.text` page coverage | 52.29% (`merged.dump.exe`) | 52.29% *(unchanged — see §1)* | **54.90 %** (`merged2.dump.exe`) |
+| `.text` coverage a re-merge of everything on disk would give | — | **54.27%** (+602 pages, +2.35 MB) | **executed: 54.90 %** (+792 pages) |
+| `.text` coverage a dump from a *crash-era* state would give | — | **62.45%** (+3,430 pages, +13.4 MB) — measured, not guessed | **62.68 %** (best of 76 tables) — still uncaptured |
+| function bounds | 0 known; every extent heuristic | **382,282 EXACT bounds** recovered offline | **382,704** |
+| known code addresses / functions | 617 / "~120,000" (0.5%) | 617 / **≥382,282** = **0.16%** — the denominator was ~3× too small | — |
+| **crash-table functions with readable BYTES** | — | 342,763 | **356,402** (+13,639) |
+| **crash-table functions named but BYTELESS** | — | 39,941 | **26,302** (−34.2 %) |
 
 **The single most valuable result: the missing `.pdata` is recovered.** 70 of the 85 crash
 minidumps carry the real x64 unwind table in stream 13. Unioned, they give **382,282 exact,
@@ -45,7 +55,14 @@ it is now verified, extracted, and wired into `strxref.py`.
 | `vmbuild` | 07-18 21:31 | 70728 | `0x7FF6AF000000` | 15,406 | 50.88% |
 | `toggles` | 07-21 02:27 | 27900 | `0x7FF6AF000000` | 15,324 | 50.61% |
 | `rcb` | 07-23 00:47 | 52104 | **`0x7FF79D3B0000`** | 15,485 | 51.14% |
+| `tutorial-hero` | 08-05 19:13 | 38064 | **`0x7FF6505C0000`** | **16,112** | **53.21%** |
+| `lobby-dispatch-decrypted` | 08-13 16:13 | 29856 | **`0x7FF7C7EF0000`** | 15,381 | 50.79% |
 | **`merged.dump.exe`** | 07-17 15:46 | — | `0x7FF6AF000000` | **15,833** | **52.29%** |
+| **`merged2.dump.exe`** | 08-14 03:32 | — | `0x7FF6AF000000` | **16,625** | **54.90%** |
+
+⚠ The last three rows post-date this file. `tutorial-hero` is the **best single image on disk** and
+was excluded from every merge until S121 purely because of its ImageBase (FK-19). Union of all 11 =
+**16,625 pages**; the five 07-17 rows are strictly nested and jointly add **0** over `missions`.
 
 (page = 4 KiB; "covered" = not entirely zero. For read-only `.text` in a flat `dumpimage`
 image this is an exact proxy for "decrypted" — a genuinely all-zero 4 KiB code page does
@@ -119,6 +136,22 @@ So the constraint is right for `.rdata`/`.data` and wrong for `.text` — and `.
 **Fix:** in `mergedumps.go`, allow a different-base input to contribute `.text` (and
 `.reloc`/`.rsrc`, which are also base-invariant) while still skipping its `.rdata`/`.data`.
 Then drop the "one process lifetime" constraint from `capture-dumps.ps1`.
+
+> ## ✅ DONE 2026-08-14 (S121) — `docs/fk18-fk19-multistate-merge-settled.md`
+> **Every integer in §1.4 reproduced independently** (1,403,750 / 1,257,732 / 146,018 / **0**;
+> rcb-vs-merged 15,215 shared pages, 0 differing) and the fix is implemented: `mergedumps` merges
+> **`.text` only, page-granular, ImageBase-agnostic**, gated on an identical section table plus a
+> per-donor overlap-conflict check. `capture-dumps.ps1`'s one-lifetime constraint is dropped and its
+> base-drift warning downgraded to a note. Result: `dumps/merged2.dump.exe`, **16,625 / 30,281 pages
+> (54.90 %)** vs merged's 15,833 (52.29 %). Rollbacks: `-wholeimage`, `-samebaseonly`.
+> ★ §1.4 also **under-stated its own case**: the one-lifetime rule was not merely wasteful, it was
+> **self-sealing** — within one lifetime `.text` decryption is monotone, so the snapshots are
+> strictly nested and every capture after the first is worth **exactly 0 pages**. That is why the
+> five inputs to `merged.dump.exe` bought 0 `.text` bytes between them.
+> ⚠ Two dumps have been captured since this file was written and are now in the merge:
+> `tutorial-hero` (2026-08-05, base `0x7FF6505C0000`, **16,112 pages / 53.21 %** — the best single
+> image on disk) and `lobby-dispatch-decrypted` (2026-08-13, base `0x7FF7C7EF0000`, 15,381 / 50.79 %).
+> The "+602 pages" figure at §1.3 was for the 9-dump corpus; with 11 it is **+792**.
 
 This matters far beyond `rcb`: **ASLR gives a new base most launches**, so under the current
 rule every future capture from a different session is silently discarded. It is the failure

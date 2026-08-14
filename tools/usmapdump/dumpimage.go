@@ -64,7 +64,28 @@ func alignUp32(v, a uint32) uint32 {
 // attemptable reports whether it's worth trying RPM on a committed page. We're broader
 // than readable(): execute-only pages (PAGE_EXECUTE 0x10, no read bit) are frequently
 // still RPM-readable from kernel-mode, so we try them and let a short read decide. Only
-// guard pages and PAGE_NOACCESS are hopeless. This build demand-decrypts pages on access,
+// guard pages and PAGE_NOACCESS are hopeless.
+//
+// ⚠ 2026-08-14 (S121): "demand-decrypts pages on access" was NEVER MEASURED, and neither were the
+// two competing restatements elsewhere in the repo ("on execution", fk3-fk4-settled.md:137;
+// "necessarily only as they execute", fk10-protector-identified.md:264). All three were the same
+// untested inference from the encryption model. WHAT IS MEASURED, live:
+//   * dark .text pages are COMMIT / PAGE_NOACCESS / MEM_MAPPED -- 15,672 EXECUTE_READ + 14,609
+//     NOACCESS = 30,281, exactly the .text page count. NOACCESS is not execute-only, so a READ
+//     fault and an EXECUTE fault are both real faults that both reach user mode.
+//   * decryption is fault-driven, PAGE-GRANULAR (16.1% of multi-page functions are partially
+//     decrypted) and MONOTONIC (0 pages reverted over 151 s).
+//   * faults are intercepted by a ProcessInstrumentationCallback (runtime.dll+0x8d9040) that
+//     rewrites the kernel return address when it equals ntdll!KiUserExceptionDispatcher. NOT a
+//     VEH (the only registered VEH is the exe's own heap-corruption handler) and NOT an ntdll
+//     patch (KiUserExceptionDispatcher is byte-identical to disk).
+//   * RPM on a dark page from OUTSIDE returns nothing and changes nothing: 0/200 dark pages vs
+//     200/200 on decrypted pages. ⇒ NO external tool can ever page these in. The fault has to be
+//     raised inside the process.
+// OPEN: whether a READ fault decrypts, or only an EXECUTE fault. Architecturally possible either
+// way; the handler's filter sits inside a 23,826-byte control-flow-flattened function. Settle it
+// with the pre-registered in-process SEH probe in docs/fk18-fk19-multistate-merge-settled.md §12,
+// NOT by re-reading this comment. This build demand-decrypts pages on FAULT,
 // so untouched pages read as 0 no matter what — captured as gaps in the coverage report.
 func attemptable(protect uint32) bool {
 	const pageNoAccess = 0x01

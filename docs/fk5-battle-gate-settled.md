@@ -895,8 +895,9 @@ samples — so a 20-second look proves nothing.
   .\tools\usmapdump\usmapdump.exe mergedumps dumps\merged.dump.exe dumps
   # then: python tools\strxref\strxref.py func 0x5875E90
   ```
-  ⚠ `mergedumps` requires all inputs to share the same module base; a different-ASLR-base dump is
-  rejected.
+  ⚠ **RETRACTED 2026-08-14 (FK-19):** `mergedumps` no longer requires a matching module base — it
+  merges `.text` (which carries 0 of the image's 1,403,750 base relocations) from any dump. **The
+  BATTLE-click capture does NOT have to share a launch with the existing dumps.**
 
 ### Time
 

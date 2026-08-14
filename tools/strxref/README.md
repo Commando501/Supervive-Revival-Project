@@ -75,25 +75,45 @@ the record named as unreadable read back verbatim:
 
 ## The real cap — and it is not what FK-3 said
 
-| | referenced | total | rate |
-|---|---:|---:|---:|
-| ASCII, exact start | 12,857 | 103,002 | 12.5% |
-| **UTF-16, exact start** | **42,213** | **85,677** | **49.3%** |
-| UTF-16, + interior + pointer-table | 55,473 | 85,677 | **64.7%** |
+Index built against `dumps/merged2.dump.exe` since 2026-08-14 (S121). Both columns shown —
+the `merged` column is the historical FK-3/FK-4 round, kept so the gain is legible.
 
-`.text` readable-page fraction: **52.29%**.
+| | merged (52.29% `.text`) | **merged2 (54.95% `.text`)** | delta |
+|---|---:|---:|---:|
+| ASCII, exact start | 12,857 / 103,002 = 12.5% | 13,040 / 103,002 = 12.7% | +183 |
+| **UTF-16, exact start** | **42,213 / 85,677 = 49.3%** | **42,663 / 85,677 = 49.8%** | +450 |
+| UTF-16, + interior + pointer-table | 55,473 = **64.7%** | **56,873 = 66.4%** | **+1,400** |
+| ASCII, full index | 14,518 = 14.1% | 14,705 = 14.3% | +187 |
+| strings with >=1 code ref (all enc, min_len 4) | 71,853 / 199,783 = 36.0% | **73,394 = 36.7%** | **+1,541** |
+| function entries inferred | 250,512 | 259,751 | +9,239 |
+| refs resolved | 151,366 | 155,121 | +3,755 |
+
+⚠ **The string COUNTS are identical in both columns** (199,783 total; 103,002 ASCII; 85,677 UTF-16)
+because `.rdata` is byte-identical between the two images. That is the control: only the
+`.text`-derived rows may move. Same for the 104,903 vtable runs and the 32,066 reflection RVAs.
+
+`.text` readable-page fraction: **54.95%** (was 52.29%). 16,638 / 30,281 decrypted pages.
+
+★ **Realised yield: 1.69 newly-lit strings per newly-decrypted page** (1,336 UTF-16 over 792 pages)
+— the LOW half of `docs/fk3-fk4-settled.md` §8.2's measured 0.84–3.90 band. Frontier pages are
+thinner than average: they carry **11.52 function entries/page vs 15.82** and **4.74 string refs/page
+vs 9.56** for pages already covered. Budget new captures on the low end of that band.
 
 UTF-16 resolution tracks `.text` decryption almost exactly ⇒ **essentially every
 string whose emitting code is decrypted IS successfully xref'd; the technique runs at
 full efficiency.** The cap is **`.text` demand-decrypt, not `.rdata`**, and it is
 **not structural** — it lifts as the game executes more code.
 
-> **To lift it:** `usmapdump dumpimage` from *different* game states (login, hero grid,
-> store, missions, and especially **in a match** — gameplay code never runs at menu),
-> each to its own `dumps/<state>/`, then `usmapdump mergedumps dumps/merged.dump.exe dumps`,
-> then `strxref.py --rebuild`. Today's `merged.dump.exe` is effectively ONE menu-state
-> dump (its four extra inputs contributed ~1.2 KB total), which is why 47.7% of `.text`
-> pages are still zero.
+> **To lift it:** `usmapdump dumpimage` from a state whose code has **never executed** — a live
+> match, drop phase, hero select, end-of-game. ⚠ **Menu substates are SPENT** (MEASURED 2026-08-14):
+> `menu`/`store`/`roster`/`missions`/`loadout` contribute **0 new pages each**; they were five
+> snapshots of one process lifetime, and `.text` decryption is monotone within a lifetime, so they
+> are strictly nested. `merged.dump.exe` is byte-identical to `dumps/loadout` in `.text` and
+> `.rdata`; its four extra inputs contributed 1,195 bytes, **all of them in `.data`**.
+> Then `usmapdump mergedumps dumps/merged2.dump.exe dumps` (never overwrite `merged.dump.exe` — this
+> index was validated against it) and `strxref.py --rebuild --dump …/merged2.dump.exe`.
+> **`merged2` is at 16,625 / 30,281 pages (54.90%)** vs merged's 15,833 (52.29%);
+> see `docs/fk18-fk19-multistate-merge-settled.md`.
 
 **S102 quantified all of that — see `docs/strxref-state-coverage.md`:**
 

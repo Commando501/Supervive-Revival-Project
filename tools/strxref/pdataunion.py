@@ -27,7 +27,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mdpdata as MD
 from dumpcov import PAGE
 
-MERGED = r"G:\git\Supervive Revival Project\dumps\merged.dump.exe"
+  # 2026-08-14 (S121, FK-18/FK-19): merged2 is the canonical cold image -- same ImageBase
+  # 0x7FF6AF000000, byte-identical .rdata/.data, and a STRICT .text superset (16,625 vs
+  # 15,833 decrypted pages). docs/fk18-fk19-multistate-merge-settled.md
+MERGED = r"G:\git\Supervive Revival Project\dumps\merged2.dump.exe"
 CRASH = r"C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Crashes"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index")
 TEXT_RVA, TEXT_SIZE = 0x1000, 0x7649000
@@ -85,7 +88,7 @@ def main():
     print(f"\n  entries seen in ALL {len(tables)} dumps : {hist[len(tables)]:,}")
     print(f"  entries seen in exactly 1 dump   : {hist[1]:,}   <- state-specific code")
 
-    # relationship to merged.dump.exe .text decryption
+    # relationship to the cold image's .text decryption (MERGED above; merged2 since S121)
     with open(MERGED, "rb") as f:
         img = f.read()
 
@@ -99,8 +102,8 @@ def main():
             d_yes += 1
         else:
             d_no += 1
-    print(f"\n  union functions whose entry page is DECRYPTED in merged.dump.exe: {d_yes:,}")
-    print(f"  union functions in pages merged.dump.exe NEVER decrypted        : {d_no:,}")
+    print(f"\n  union functions whose entry page is DECRYPTED in {os.path.basename(MERGED)}: {d_yes:,}")
+    print(f"  union functions in pages {os.path.basename(MERGED)} NEVER decrypted{'':{max(0,14-len(os.path.basename(MERGED)))}}: {d_no:,}")
     print("  ==> the crash tables name functions the image dump cannot even show bytes for.")
 
     # greedy incremental: how many dumps do you actually need?

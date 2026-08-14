@@ -11,8 +11,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dumpcov import Img, PAGE
 
 DUMPS = r"G:\git\Supervive Revival Project\dumps"
-NAMES = ["menu", "store", "roster", "missions", "loadout",
-         "accountpass", "vmbuild", "toggles", "rcb"]
+# 2026-08-14 (S121): this was a hardcoded nine-name list, so three captures taken since
+# (tutorial-hero, lobby-dispatch-decrypted, heromastery) were invisible to every probe
+# below. Discover the state dirs instead — same fix as dumpcov2.py.
+NAMES = [n for n in sorted(os.listdir(DUMPS))
+         if os.path.exists(os.path.join(DUMPS, n, "SUPERVIVE-Win64-Shipping.dump.exe"))]
 
 PROBES = [
     (0x751EFD0, "PE AddressOfEntryPoint (ran exactly once, at process start)"),
@@ -49,7 +52,7 @@ def main():
     # how much of the region AROUND the entry point is decrypted?
     print()
     print("decrypted-page density in 256 KB windows around the entry point:")
-    p = os.path.join(DUMPS, "merged.dump.exe")
+    p = os.path.join(DUMPS, "merged2.dump.exe")
     for lo in range(0x7500000, 0x7560000, 0x10000):
         cnt = 0
         for pg in range(16):

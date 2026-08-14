@@ -16,7 +16,10 @@ import strxref as SX
 import mdpdata as MD
 from dumpcov import PAGE
 
-MERGED = r"G:\git\Supervive Revival Project\dumps\merged.dump.exe"
+  # 2026-08-14 (S121, FK-18/FK-19): merged2 is the canonical cold image -- same ImageBase
+  # 0x7FF6AF000000, byte-identical .rdata/.data, and a STRICT .text superset (16,625 vs
+  # 15,833 decrypted pages). docs/fk18-fk19-multistate-merge-settled.md
+MERGED = r"G:\git\Supervive Revival Project\dumps\merged2.dump.exe"
 CRASH = r"C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Crashes"
 IDXP = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index", "strxref.idx")
 TEXT_RVA, TEXT_SIZE = 0x1000, 0x7649000
