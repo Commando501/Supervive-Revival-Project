@@ -224,6 +224,33 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   ⚠⚠ **The `User-Agent` trap fired AGAIN (2nd recorded instance).** Evidence read as "the client
   fetched twice and refused to adopt" — all three fetches were our own `Invoke-WebRequest`.
   **Filter `capture.log` by `User-Agent` BEFORE counting anyone's requests** (`Loki/UE5-CL-0` = game).
+  ★★★★★ **AND THE MISSION BARS MOVE — screenshot-confirmed.** `YOU CARRY THIS` renders
+  **1,500 / 3,000** with per-tier segments filling independently, matching every served value.
+  ⚠⚠ **BUT ONLY AFTER THE WIDGET IS REBUILT. Pushing progress to a page that is already open changes
+  NOTHING on screen** — switch hunter and back (the screen dedupes on same-hero, so away-and-back is a
+  real rebuild), or relaunch. [I] the ingester rebuilds the model objects on each adoption and older
+  widgets keep pointers to the previous generation. **Two surfaces were mis-diagnosed as broken feeds
+  because of this — rebuild the page before reading anything off it.**
+  ★ **Progress plumbing had TWO name-space defects, both fixed (commit `87563a2`):** the match-result
+  fan-out wrote SHIM-MANIFEST composite keys while `missionInfo` reads CATALOG ones (**overlap 7 of
+  187** — 180 writes were unreachable), and `objectiveRules` was keyed by the shim's objective names
+  too (**2 of 102** catalog objectives had a rule; `BR_Knocks`→`Knocks`, `a2winarenagames`→
+  `A2_WinArenaGames`, `TopXWithFullArmory`→`TopXWithFullArmoryInventory`, …). Coverage **3 → 22**
+  missions trackable, **2 → 20** objectives mapped. `catalogManifest()`/`fanoutManifest()` are now the
+  single source; `TestMatchResultKeysAreServable` pins the invariant and was verified to FAIL when
+  reverted (naming 33 unservable keys).
+  ⚠ The **293 hero-mastery objectives are unmappable from a match summary** — per-ability events no
+  match stat expresses. That is a property of the data, not a TODO. They move via
+  `POST /revival/missions/progress` (composite `<mission>/<objective>` keys) or the match-result
+  `objectives` passthrough.
+  ★ **The row LABEL shows the LAST tier** because we serve all three tiers as simultaneously granted,
+  so `ActiveIndex`'s gate (`IsValid(GetActiveMissionModel) || CompletionCounts>0`) never fails. The
+  SEGMENTS are per-tier and correct regardless. Lever if it should track the current tier:
+  `PrereqMissions` (161 of 330 DAs declare one). Not done — it changes a route measured at 330/330.
+  ⚠⚠ **`WBP_UI_MissionObjectiveProgress` ships a design-time `10/20` in `ProgressTextv2`, and the
+  MISSIONS MODAL shows it** because `GetCurrentProgress` bails on `IsValid(ObjectiveModel)`. **That
+  placeholder is NOT our data and never was** — do not read modal numbers as a backend signal; the
+  completion checkmarks ARE ours.
   ⚠ Open: the CLAIM path is unmapped (`FClaimHeroMasteryRewardsRequest` implies an untraced endpoint);
   `POST /party/parties/{p}/members/{id}/refreshMastery` exists and is untraced; there is no admin
   route for per-hero mastery yet (`SetHeroMastery` exists in code only); and mastery XP never moves
@@ -958,9 +985,22 @@ reading plus the compiled-out refusal.
   **FALSE** of guard-exclusive literals; recorded without that qualifier it forecloses a method that
   works. (UHT also strips the `F`/`U`/`A` prefix for reflected names, so probing `FKeyBind`/`UConsole`
   produces a false ABSENT.)
-- ⚠ **Run every `.rdata` presence/absence claim against
-  `dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe` (`.rdata` 100.0 %)**, never
-  `merged.dump.exe` alone (63.1 %).
+- ⚠⚠ **RETRACTED 2026-08-14 (S121, FK-18) — the old rule here read "run every `.rdata`
+  presence/absence claim against `dumps/tutorial-hero/…` (`.rdata` 100.0 %), never
+  `merged.dump.exe` alone (63.1 %)". That comparison is between TWO DIFFERENT INSTRUMENTS**:
+  100.0 % is `dumpimage`'s **readable-byte** figure, 63.1 % is `mergedumps`' **non-zero-byte**
+  figure. It is FK-3 re-committed under a new section name, three sessions after FK-3 settled.
+  **MEASURED: `.rdata` completeness is IDENTICAL in every image on disk** — all 11 state dumps
+  *and* `merged.dump.exe` have the **same 33 all-zero `.rdata` pages of 9,085, at the same RVAs**
+  (symmetric difference **0**); merged's `.rdata` is byte-identical to its seed `dumps/loadout`.
+  ⇒ **`.rdata` presence/absence is safe in ANY image** — the section is not demand-decrypted.
+  ⚠ FK-13's conclusions are UNAFFECTED (its own table records both images agreeing 8/8 and 0/5 —
+  that agreement is the control that falsifies the rule's stated reason, not the finding).
+  ★ **What actually differs between images is `.text`.** For anything CODE-shaped use
+  `dumps/merged2.dump.exe` (16,625 decrypted pages, **54.90 %** — the union of all 11 states) or
+  `dumps/tutorial-hero` (16,112, 53.21 % — best single image).
+  ⚠ `.rdata` **pointer values** DO differ across ImageBases (1,257,732 relocations; merged vs
+  tutorial-hero differ by 2,518,801 bytes). Read pointers only from an image whose base you are using.
 
 ### Before touching anything protector- / anti-tamper- / packer-shaped
 ★★★ **FK-10 IS SETTLED (S113, 2026-08-09) — read `docs/fk10-protector-identified.md`.** All offline,
@@ -1260,13 +1300,33 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
 - **usmapdump mergedumps:** `usmapdump.exe mergedumps <outFile> <in.dump.exe…|dir>` —
   unions several `dumpimage` snapshots into one maximally-covered image (fills each dump's
   demand-decrypt `.text` gaps from the others). A directory arg recurses for `*.dump.exe`.
-  This is the path to near-complete `.text`: dump from DIFFERENT game states (login, hero
-  grid, store, missions, and especially IN A MATCH — gameplay code never runs at menu),
-  each to its own `dumps/<state>/`, then `mergedumps dumps/merged.dump.exe dumps`. Gain per
-  dump = how much NEW code that state ran (two idle-menu dumps barely differ). CONSTRAINT:
-  all inputs must share the same module base (ImageBase); a different-ASLR-base dump is
-  rejected (its relocated `.text` bytes are incompatible). `.text` union is exact; the
-  reported %, being non-zero-based, slightly undercounts (readable-zero bytes read as gaps).
+  ★★★★★ **THE CANONICAL COLD IMAGE IS NOW `dumps/merged2.dump.exe` — `.text` 16,625 / 30,281
+  decrypted pages (54.90 %), a STRICT SUPERSET of `merged.dump.exe` (15,833, 52.29 %) with
+  0 regressions. Read `docs/fk18-fk19-multistate-merge-settled.md` before touching any of this.**
+  ⚠⚠ **THE OLD TEXT HERE WAS WRONG IN BOTH HALVES, AND THE TWO ERRORS SEALED EACH OTHER IN
+  (S121, 2026-08-14).** It said (i) *"dump from DIFFERENT game states (login, hero grid, store,
+  missions…)"* and (ii) *"CONSTRAINT: all inputs must share the same module base."*
+  **(i) is spent advice:** MEASURED, `menu`/`store`/`roster`/`missions`/`loadout` contribute
+  **0 pages each** — they were five snapshots of ONE process lifetime (PID 4080, 4 minutes), and
+  `.text` decryption is **monotone within a lifetime**, so the five are strictly nested
+  (`menu ⊂ store ⊂ roster ⊂ missions ≡ loadout`) and the whole 5-way merge bought **0 `.text`
+  bytes**. **(ii) is measured false:** `.text` carries **0 of the image's 1,403,750 base
+  relocations** (they are 1,257,732 `.rdata` + 146,018 `.data`), and `.text` is byte-identical
+  across ImageBases on every page two dumps both decrypted — **0 differing bytes in 10 of 10
+  pairwise comparisons**. ⇒ constraint (ii) forced every capture into one lifetime, where (i) is
+  provably worthless. **Relaunching between captures is now PREFERRED.**
+  ★ `mergedumps` now merges **`.text` only, page-granular, ignoring ImageBase**, and checks every
+  donor against the accumulator on shared pages (must be 0 conflicts, else the donor is rejected).
+  `-wholeimage` restores pre-S121 semantics; `-samebaseonly` restores the old rejection.
+  ⚠ **NEVER READ A MUTABLE GLOBAL OUT OF A MERGED IMAGE'S `.data`.** Under `-wholeimage` the
+  union splices writable globals from differently-timed snapshots into values that never
+  simultaneously existed, and *which* value you get depends on the seed — i.e. on directory-walk
+  order (MEASURED: 4,678 `.data` bytes change identity from seed choice alone; the historical
+  `merged.dump.exe` carries 1,195 spliced bytes in 335 runs over RVA `0x099C859B`–`0x0A0A2D39`).
+  The default `.text`-only mode fixes this: `merged2`'s `.rdata`/`.data` are byte-identical to its
+  single seed and are a coherent snapshot. Read globals from a single-state dump or live RPM.
+  ⚠ The manifest's per-section % is **non-zero bytes**, which is sound for `.text` and meaningless
+  for `.rdata`/`.data` — the manifest now prints the page metric beside it. Never compare the two.
 - **usmapdump reconstructiat:** `usmapdump.exe reconstructiat <dumpFile> [outFile]` —
   rebuilds a real import table so Ghidra/IDA name API calls instead of raw IAT thunks, when
   the dumped IAT holds DIRECT resolved export addresses (unprotected binaries, e.g.

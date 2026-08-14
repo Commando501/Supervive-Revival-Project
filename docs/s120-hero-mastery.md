@@ -192,6 +192,44 @@ It is unanalysed.
 
 ---
 
+## ★★★★★ THE BARS MOVE — CONFIRMED ON SCREEN (2026-08-14)
+
+`YOU CARRY THIS` renders **1,500 / 3,000** with a half-filled bar, and the per-tier segments fill
+independently across all three rows (COMBAT MEDIC tier 1 at 15/30; DIVINE AID tier 1 full 20/20 and
+tier 2 half 100/200) — matching every value served, exactly.
+
+### ⚠⚠ THE THING THAT MADE THIS LOOK BROKEN: A STALE WIDGET BINDING, NOT A DATA PROBLEM
+
+Pushing progress to a client **already sitting on the page changes nothing on screen.** The bars only
+picked it up after switching hunter and back, which forces the mastery screen to rebuild
+(`WBP_HeroMastery_Screen_v2::ExecuteUbergraph` stmt [57] dedupes on same-hero, so away-and-back is a
+genuine rebuild).
+
+[M] The data was in the client the whole time — a `GUObjectArray` walk found **330
+`UMissionObjectiveModel`** with **17 carrying our exact non-zero values** and 6 `Completed`, and 330
+`UMissionModel` all with `MissionAsset` set and `Objectives` TMap Num=1. [I] The ingester rebuilds
+the model objects on each adoption, so widgets built earlier hold pointers to a previous generation
+that still reads 0.
+
+⇒ **Do not diagnose this surface from a page that was already open.** Rebuild it (hunter switch, or
+relaunch) before reading anything off it. Two separate surfaces were mis-diagnosed as broken feeds
+because of this.
+
+### ★ The row TEXT shows the LAST tier, because we serve all three as active
+
+`GetProgressForMission(Index)` → `MissionsModel->GetCurrentAndTotalProgress(MissionAsset[Index],
+&Current, &Total)` (both **int32**), and `ActiveIndex` comes from a loop gated on
+`IsValid(GetActiveMissionModel(...)) || CompletionCounts[...] > 0`. Since we serve **every tier as
+simultaneously granted**, that gate never fails and the index lands on the last tier — which is why
+tier-1/tier-2 progress alone left the label reading `0 / 3,000`.
+
+The SEGMENTS are per-tier and correct regardless. If the label should instead track the tier the
+player is working on, the lever is `PrereqMissions` (161 of 330 DAs declare one): serve a tier only
+once its prereq is complete. **Not done** — it changes what we serve on a route measured at 330/330,
+and the segments already convey the full picture.
+
+---
+
 ## MAKING THE BARS MOVE (S120 part 2, 2026-08-14)
 
 The bars render but sat at 0 because **nothing could write a progress key the client reads**. Two
