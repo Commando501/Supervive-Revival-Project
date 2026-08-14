@@ -60,13 +60,31 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   carry no mission name, several `mission` values are OBJECTIVE names, its `pool` is a name-prefix
   GUESS inside `missions_fix.cpp:188-192` (it files `Armory_WeeklyWinGame` under `ArmoryOnboarding`
   when the DA says `WeeklyChallenges`), and only 23 of its 122 distinct names exist in the DA corpus.
-  ★ **`PoolGroupId` is the visibility rule**: only pools whose DA declares one (`daily`/`weekly`) get
-  a UI category. 11/11 missions in grouped pools landed; **0 of 94** in ungrouped pools
-  (HunterMissions, Tournament, TutorialMaps, Onboarding, …) did. So "only 60 of 323 land" is
-  CORRECT SHIPPED BEHAVIOUR, not a defect — a real player gets ~3 dailies + a weekly set.
-  ⚠ Two open items: the objective-name rule (`ObjectiveClass` minus `BP_MissionObjective_`/`_C`) is
-  verified on only 10 overlapping pairs; and `Missions.Num` reads 126 while only 60 live
-  `UMissionModel`s are countable — those should agree.
+  ★ **`PoolGroupId` governs UI VISIBILITY — a pool whose DA declares one (`daily`/`weekly`) gets a
+  category in the modal; the rest are accepted into the model but have nowhere to render.** That is
+  why the page shows only DAILIES + WEEKLIES.
+  ⚠⚠ **RETRACTED 2026-08-14, same bullet: "11/11 grouped landed, 0 of 94 ungrouped landed, only 60 of
+  323 land" is FALSE.** It rested on a clamped count — see the `obj_by_class.py` warning below.
+  **MEASURED correctly: 126 of 323 land, and `HunterMissions` lands 67/150 despite having NO
+  `PoolGroupId`.** So `PoolGroupId` does NOT gate model acceptance, only display. Per-pool uptake:
+  `HunterMissions` 67/150 · none 48/143 · `Weekly` 7/8 · `Daily` 2/3 · `DailyChallenge` 1/2 ·
+  `WeeklyChallenges` 1/1 · `TutorialMaps` 0/7 · `Tournament` 0/4 · `Onboarding` 0/3 ·
+  `DailyPCB_Armory` 0/2. **What actually decides acceptance is STILL UNKNOWN** — four pools take
+  none at all while two take ~45 %. Do not fill that gap with a guess.
+  ★ **The `_1`/`_2`/`_3` suffixes are real TIER VARIANTS, not duplicates**: `Alchemist_HealWithQ`
+  (max 10) / `_1` (7,500) / `_2` (75,000) / `_3` (300,000). **218 of 323 catalog names are suffixed,
+  and they are exactly the 218 with no declared pool** — a variant inherits its base mission's pool
+  and CUE4Parse omits inherited properties. That is the mechanism behind "partial pool coverage".
+  ⚠ Open: the objective-name rule (`ObjectiveClass` minus `BP_MissionObjective_`/`_C`) is verified on
+  only 10 overlapping pairs.
+  ⚠⚠ **`tools/re/obj_by_class.py` CAPS ITS DETAIL LIST AT 60 — never count its output lines.**
+  `obj_by_class.py … | grep -c "obj="` SATURATES at 60, so a class with 126 live instances reads as
+  "60". The tool's own `found N …` line was correct the whole time. This produced the retraction
+  above and reached a commit message before it was caught (2026-08-14; the tool now prints an
+  explicit "… N more not shown" + "DO NOT COUNT THESE LINES" banner). **Parse `found N`, never `wc`.**
+  ★ Cross-check any object census by POINTER EQUALITY on the target `UClass` — name-free, immune to
+  FName-decode failures, and it is what settled this (127 objects share the `UMissionModel` UClass
+  pointer: 126 map values + the CDO, with every map value found and zero unreadable).
   Read `docs/session-59-progress-bars.txt` + `docs/missions-progression-hookup.md` for the SHIM era.
 - **PASSES / Hunter's Journey (ACCOUNT pass)** — the page renders live with its full
   85-tier ladder (S83). Two client-side root causes, NOT the backend (that route was
