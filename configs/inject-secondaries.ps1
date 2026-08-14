@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Detached secondary-shim injector for the SUPERVIVE revival launch — the SINGLE injector for the full
   durable shim set (this superseded the old inject-missions.ps1, whose only extra was missions_fix).
@@ -20,7 +20,8 @@
   missions were mutually-exclusive launch MODES because two PERMANENT PI hooks race; the shared mutex +
   transient-install design — S59 — retired that split, so this one script now injects the whole set.)
 
-  -NoMissions / -NoLoadout drop those shims from the set (to isolate one surface while debugging).
+  -NoLoadout drops loadout_fix (to isolate one surface while debugging). -WithMissionsShim restores
+  missions_fix, which left the default set on 2026-08-14 because the missions page is now native.
 
   Spawned detached+hidden by launch-redirect.ps1 so it outlives that script (the game exe detaches and
   the launcher exits). Every shim self-defers its own work until its target objects exist, so exact
@@ -28,7 +29,9 @@
 #>
 param(
   [string]$Repo = (Split-Path -Parent $PSScriptRoot),
-  [switch]$NoMissions,
+  [switch]$NoMissions,        # DEPRECATED no-op: missions_fix left the default set 2026-08-14 (the
+                              # missions page is served natively now). Kept so old invocations work.
+  [switch]$WithMissionsShim,  # opt BACK IN to the retired missions_fix.dll (rollback switch)
   [switch]$NoLoadout,
   [switch]$NoPasses,   # S83: skip battlepass_adopt_fix (PASSES / Hunter's Journey)
   [int]$GapSeconds = 20,# S109: seconds between successive manual-maps. DEFAULT RAISED 3 -> 20 on
@@ -50,11 +53,36 @@ $log     = Join-Path $Repo "docs\inject-secondaries.log"
 #   loadout_fix: replays saved customization equips (skins/gliders/wisps/sprays/chromas) by calling the
 #     game's native setters on the game thread. Reads GET /revival/loadout. (-NoLoadout to skip.)
 #   missions_fix: fetches per-objective progress from ags and swaps the mission model on menu load + on
-#     change. Reads GET /revival/missions/progress + POSTs /revival/missions/manifest. (-NoMissions to skip.)
+#     change. Reads GET /revival/missions/progress + POSTs /revival/missions/manifest. RETIRED from the
+#     default set 2026-08-14 (served natively now); -WithMissionsShim restores it.
 $dlls = @("tools\sigbypass-mod\mainmenu_refresh_pi8.dll",
           "tools\sigbypass-mod\catalog_pick_fix.dll")
 if (-not $NoLoadout)  { $dlls += "tools\sigbypass-mod\loadout_fix.dll" }
-if (-not $NoMissions) { $dlls += "tools\sigbypass-mod\missions_fix.dll" }
+# ---------------------------------------------------------------------------------------------
+# missions_fix: RETIRED FROM THE DEFAULT SET, 2026-08-14. The missions page is now served
+# NATIVELY by the backend and needs no shim at all.
+#
+# WHAT REPLACED IT: server/internal/interactive serves FPlayerProgression.MissionInfo on
+# GET /progression/players/{id}. The native ingester (0x585A570) copy-constructs it into
+# ProgressionManager+0x90, which builds real UMissionModel/UMissionPoolModel objects, loads each
+# mission's data asset, and then UMissionsModel::OnMissionAssetLoaded (impl base+0x56F3ED0) sets
+# bAllMissionLoaded and broadcasts. MEASURED on a clean -NoHook run: DAILIES 3/3 and WEEKLIES 8/8
+# render with correct localized titles, real progress bars, correct XP tiers and a working CLAIMED
+# state — with ZERO shims resident. (The mission list comes from the game's own data assets via
+# server/internal/interactive/missions_catalog.json; the shim's manifest is no longer used.)
+#
+# WHY RETIRING IT MATTERS, not just tidiness: missions_fix manual-maps a DLL and installs a
+# TRANSIENT 5-byte ProcessInternal .text patch. CLAUDE.md's measured hazard ladder at a 320 s hold
+# is  nothing 0/22 · bytecode 0/9 · transient .text 4/12 · standing .text 7/8 — so every launch that
+# no longer does this is a launch that no longer takes the transient-.text risk.
+#
+# ★ BONUS the native path also fixed: bAllMissionLoaded gates the lobby NEWS/ANNOUNCEMENT banner
+# carousel too (WBP_UI_PlayScreen_LobbyV2 statement [10]), which the shim could never open because
+# its model swap left that flag at 0. The banner now renders from client-config.
+#
+# -WithMissionsShim restores it (rollback is one flag). -NoMissions is now a no-op alias, kept so
+# existing invocations and docs do not break.
+if ($WithMissionsShim) { $dlls += "tools\sigbypass-mod\missions_fix.dll" }
 # S83: PASSES / Hunter's Journey. Without this the PASSES section is empty and
 # /storefront/battlepass/progressiontracks tight-loops at ~15/s. The shim force-calls the real
 # adoption sink (OnSuccess 0x57C8130) with a track keyed 'ProgressionTrack:HuntersJourney' — that
@@ -68,7 +96,7 @@ if (-not $NoPasses)   { $dlls += "tools\sigbypass-mod\battlepass_adopt_fix.dll" 
 
 function Log($m){ "$([DateTime]::Now.ToString('HH:mm:ss'))  $m" | Out-File -FilePath $log -Append -Encoding ascii }
 "" | Out-File -FilePath $log -Encoding ascii   # truncate for this launch
-Log "secondary injector started (repo=$Repo) NoMissions=$NoMissions NoLoadout=$NoLoadout"
+Log "secondary injector started (repo=$Repo) WithMissionsShim=$WithMissionsShim NoLoadout=$NoLoadout"
 Log ("set: " + ($dlls -join ", "))
 
 if (-not (Test-Path $inject)) { Log "inject.exe not found at $inject - aborting"; return }

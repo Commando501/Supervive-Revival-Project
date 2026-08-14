@@ -1,12 +1,15 @@
-﻿package interactive
+package interactive
 
 import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -86,6 +89,11 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// we return a typed ack the client can consume.
 	mux.HandleFunc("GET /progression/players/{id}", s.handleGetProgression)
 	mux.HandleFunc("PUT /progression/players/{id}/mission", s.handlePutMission)
+
+	// ---- Match history ----
+	// Previously fell through to the {} catch-all. See handleMatchHistory: this is
+	// the FIRST of the two gates in front of the lobby banner carousel.
+	mux.HandleFunc("GET /match-history/players/{id}", s.handleMatchHistory)
 
 	// ---- Missions (Option 2: real progress tracking) â€” see missions.go ----
 	// Revival-only endpoints (NOT an impersonated client route): the client-side
@@ -419,19 +427,270 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 	// The values come from PERSISTED PER-PLAYER STATE, editable live from the admin panel
 	// (PUT /api/progression/{id}); a fresh account reads the zero value = tier 0 / no XP.
 	ap := s.AccountPass(id)
+	mi, miDigest := s.missionInfo(time.Now().UTC())
 	writeJSON(w, map[string]any{
 		"data":   []any{entry},
 		"paging": map[string]any{"previous": "", "next": ""},
 		"total":  1,
 
-		"ID":      id,
-		"Version": progressionVersionFor(id, fmt.Sprintf("%d/%d/%t", ap.Level, ap.XP, ap.Cleared)),
+		"ID": id,
+		// The mission digest joins the version key so a mission/progress change bumps Version
+		// too; without it the strict `>` gate below would silently drop the new document. The
+		// digest covers mission content only, never the per-request timestamps.
+		"Version": progressionVersionFor(id, fmt.Sprintf("%d/%d/%t|%s", ap.Level, ap.XP, ap.Cleared, miDigest)),
 		"AccountPass": map[string]any{
 			"Level":   ap.Level,
 			"XP":      ap.XP,
 			"Cleared": ap.Cleared,
 		},
+		"MissionInfo": mi,
 	})
+}
+
+// handleMatchHistory serves FMatchHistory. This is the FIRST of the two gates in front of
+// the lobby news/announcement banner carousel, and it had never been served at all — the
+// route fell through to the {} catch-all (200, 2 bytes).
+//
+// THE GATE (decoded from blueprint bytecode, WBP_UI_PlayScreen_LobbyV2::ExecuteUbergraph):
+//
+//	[ 7] EX_JumpIfNot( IsMatchHistoryLoaded )      <-- THIS. Jumps past the whole block.
+//	[10] EX_JumpIfNot( GetMissionsModel()->bAllMissionLoaded )
+//	[11] InitializeBanners()   -> GetTodaysBannerConfig -> carousel SetupFromConfig
+//
+// Gate [10] is now OPEN natively (see missionInfo() above — MEASURED: Missions.Num=1,
+// bAllMissionLoaded=1, and the missions page renders with no shim). Gate [7] is what
+// remains, and it is a pure data test.
+//
+// WHY THIS SHAPE. UMatchHistoryManager reflects only 3 UPROPERTYs (OnUpdatedMatchHistory,
+// MatchHistoryService, RefreshOperation), so the fields the gate reads are NON-reflected
+// natives. MEASURED live (PID 42112): +0x60 = 0, +0x68 = -2 (0xFFFFFFFFFFFFFFFE), and
+// MatchHistoryManager::IsMatchHistoryLoaded (thunk rva 0x54A6340, fold multiplicity 1) is
+// literally `cmp qword ptr [rcx+0x68], -1 ; setge al`, i.e.
+//
+//	IsMatchHistoryLoaded  ==  ( [this+0x68] >= -1 )
+//
+// That lines up exactly with an FMatchHistory stored INLINE on the manager:
+//
+//	+0x48  OnUpdatedMatchHistory  (multicast delegate, 16 B)
+//	+0x58  FMatchHistory.ID       (FString — +0x60 reading Num=0/Max=0 is an EMPTY string)
+//	+0x68  FMatchHistory.Version  (int64)   <-- the gate's field; -2 = never loaded
+//	+0x70  FMatchHistory.Matches  (TArray<FMatchHistoryEntry>)
+//
+// [INFERRED, not proven: the +0x58/+0x70 attribution. What IS measured is the predicate,
+// the -2, and the empty-FString-shaped +0x60.] So -2 is the never-loaded sentinel and ANY
+// document carrying Version >= -1 should flip the gate.
+//
+// THE MODEL (reflection, names/scalars trustworthy; FK-14 only taints container INNERS):
+//
+//	FMatchHistory { ID FString; Version int64; Matches TArray<FMatchHistoryEntry> }
+//
+// Matches is served EMPTY and that is deliberate on two counts: an empty history is
+// authentic for this account, and it keeps the probe single-variable — the gate needs
+// Version, not entries. FMatchHistoryEntry is a 15-field struct (DateTimes, an
+// FPrimaryAssetId HeroAssetID, nested FMatchHistoryTeamInfo / FLokiPlayerMatchStats, an
+// ERank enum); every one of those is a chance to wrong-type a MATCHED key and reject the
+// WHOLE document, which would look identical to "the gate does not work". Populate it only
+// after the gate is confirmed. ⚠ FK-21 also warns that an authentic empty and a broken
+// deserialization are observationally identical here — the discriminator is the LIVE
+// +0x68 read, not the Career UI.
+//
+// VERSION: monotonic per player, seeded from wall-clock so it survives an ags restart
+// (same reasoning as progressionVersionFor, which this reuses under a namespaced key).
+// ⚠ When pushing this resource over the messenger to force a refetch, pass THIS EXACT
+// value — push.go documents both failure modes: too low is silently ignored, too high
+// causes an UNBOUNDED REFETCH LOOP (46 fetches in 4 s, measured).
+func (s *Service) handleMatchHistory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	writeJSON(w, map[string]any{
+		"ID":      id,
+		"Version": MatchHistoryVersion(id),
+		"Matches": []any{},
+	})
+}
+
+// MatchHistoryVersion returns the Version handleMatchHistory will serve for this player.
+// Exported so a push can name the same number the document carries.
+func MatchHistoryVersion(id string) int64 {
+	// Namespaced key: progressionVersionFor is keyed by id, so "mh:"+id gives this
+	// resource its own independent counter without a second map.
+	return progressionVersionFor("mh:"+id, "mh1-empty")
+}
+
+// missionInfo builds FPlayerProgression.MissionInfo — the native mission payload.
+//
+// WHY THIS EXISTS (2026-08-13). The lobby gates BOTH the missions surface and the
+// news/announcement banner carousel behind UMissionsModel::bAllMissionLoaded, and that
+// flag is only written by UMissionsModel::OnMissionAssetLoaded (impl base+0x56F3ED0,
+// fold 1) once every UMissionModel in the model has a non-null MissionAsset. The DESIGNED
+// feed for that is replication: ALokiPlayerState_Missions is an Actor whose Missions and
+// FinalMissionProgress are both CPF_Net|CPF_RepNotify, and MEASURED live in the lobby there
+// are ZERO instances of it (only the CDO) — so at the menu that path can never start.
+//
+// The HTTP door is this key. MEASURED (UHT FStructParams/FPropertyParams tables in
+// dumps/tutorial-hero, .rdata 100% readable): FMissionInfo appears as a UPROPERTY in exactly
+// THREE places image-wide — a UFunction parameter (ALokiPlayerState_Missions::SetMissionProgress,
+// which is Final|Native|Public|BlueprintCallable with NO Net flags, i.e. locally callable,
+// unlike its sibling ServerAddMissionProgress which IS a server RPC), FPlayerProgressionGameServer,
+// and FPlayerProgression::MissionInfo at offset 0x68 — a top-level member of the document THIS
+// handler already serves. The ingester at 0x585A570 copy-constructs the whole 0x178-byte
+// FPlayerProgression into PM+0x90, MissionInfo included, by the same code path S83 already proved
+// end-to-end for AccountPass. So this key rides an ingest that is MEASURED working; it was
+// omitted until now only because its container types were unknown (see the comment above at the
+// "Matches/MissionInfo/HeroMastery/... deliberately OMITTED" line, which this supersedes).
+//
+// ⚠ OPEN, and the honest limit of this probe: whether anything downstream hands
+// PM+0x90.MissionInfo to SetMissionProgress is COVERAGE-BLOCKED — those .text pages read as
+// zeros (undecrypted) in both available dumps. That is unknown, NOT negative.
+//
+// THE SCHEMA IS MEASURED, not guessed (UHT; sizeof closes exactly at 0x80):
+//
+//	FMissionInfo (4 props, SizeOf 0x80)
+//	    MissionData       TArray<FMissionProgress>              @0x00
+//	    Pools             TArray<FMissionPool>                  @0x10
+//	    Completions       TMap<FPrimaryAssetId, int32>          @0x20
+//	    MissionClaimData  TArray<FMissionClaimData>             @0x70
+//	FMissionProgress  { ID FString; AssetId/PoolId FPrimaryAssetId; Complete/Failed bool;
+//	                    ObjectiveProgress TArray<FMissionObjectiveProgress>;
+//	                    MillisUntilExpiry int64; Expiry/GrantedAt FDateTime }
+//	FMissionObjectiveProgress { ObjectiveName FName; Progress/MaxProgress/StartingProgress float;
+//	                    Context TArray<FString>; InitialArmoryContext TArray<FPrimaryAssetId>;
+//	                    Complete/Failed bool }
+//	FMissionPool      { PoolId FPrimaryAssetId; MillisUntilNewMission int64; NewMissionTime FDateTime }
+//
+// ⚠⚠ THE ASSET IDs BELOW ARE THE REAL ONES, AND handlePutMission's ARE NOT.
+// FPrimaryAssetId serializes as "Type:Name". The NAME is NOT the package name — these data
+// assets override GetPrimaryAssetId() with a short name. GROUND TRUTH is missions_fix's own
+// AssetManager enumeration: it calls GetPrimaryAssetIdList(Mission|MissionPool) and reads the
+// FName straight out of each FPrimaryAssetId (missions_fix.cpp:181-186 TypeFromPAFS +
+// GetFNameStr), then writes it verbatim into the manifest it POSTs us. Live readback of
+// GET /revival/missions/manifest (330 entries):
+//
+//	{"mission":"ArmoryDaily_PlayAGame","objective":"PlayAGame","max":1,"pool":"DailyChallenge"}
+//
+// So the correct ids are Mission:ArmoryDaily_PlayAGame and MissionPool:DailyChallenge.
+// handlePutMission below still sends "Mission:DA_Mission_ArmoryDaily_PlayAGame" and
+// "MissionPool:DA_MissionPoolDailyEasy" — BOTH names are wrong (spurious DA_Mission_/
+// DA_MissionPool prefix, and DailyEasy is not even this mission's pool), which is a strong
+// candidate for why that route has never moved anything. Deliberately NOT fixed in the same
+// build: single-variable changes only.
+//
+// Completions and MissionClaimData are OMITTED. Their types are known now, but absent is safe
+// under the validity model (UE ignores unknown keys; only a MATCHED key with a WRONG type
+// rejects the whole document) and omitting them keeps the surface minimal.
+// missionInfo builds FPlayerProgression.MissionInfo from the OFFLINE MISSION CATALOG
+// (missions_catalog.go), which is derived from the game's own mission data assets. The
+// shim-supplied manifest is NO LONGER USED here — see missions_catalog.go for the measured
+// reasons it was dropped. The manifest endpoints still exist for the shim and the admin
+// panel; they simply no longer feed this document.
+//
+// Progress still comes from the same per-objective composite store the shim used
+// ("<mission>/<objective>"), so any progress already recorded keeps applying wherever the
+// catalog's names agree with it.
+//
+// See the block comment on handleGetProgression for WHY this key matters: it is the HTTP
+// door that populates the native mission model, opens UMissionsModel::bAllMissionLoaded,
+// and with it the lobby banner carousel — all with no shim and no .text write.
+func (s *Service) missionInfo(now time.Time) (map[string]any, string) {
+	const dayMillis = int64(24 * 3600 * 1000)
+	expiry := now.Add(24 * time.Hour)
+	expiryStr := expiry.Format(time.RFC3339)
+	grantedStr := now.Format(time.RFC3339)
+
+	progress := s.missionObjectives()
+
+	// AGS_MISSION_POOLS — comma-separated pool allowlist; empty (the default) serves every
+	// pool. DIAGNOSTIC ONLY: it exists so a run can be narrowed to a known-good subset when
+	// the client accepts fewer missions than we serve. Leave it UNSET in normal operation.
+	var keepPool map[string]bool
+	if allow := strings.TrimSpace(os.Getenv("AGS_MISSION_POOLS")); allow != "" {
+		keepPool = map[string]bool{}
+		for _, p := range strings.Split(allow, ",") {
+			if p = strings.TrimSpace(p); p != "" {
+				keepPool[p] = true
+			}
+		}
+		log.Printf("missions: AGS_MISSION_POOLS=%q active — serving only those pools", allow)
+	}
+
+	missionData := make([]any, 0, len(missionCatalog))
+	poolSeen := map[string]bool{}
+	var poolOrder []string
+	// digest covers ONLY stable content (missions, objectives, maxes, pools, progress) —
+	// deliberately NOT the timestamps below, which change every request and would otherwise
+	// bump Version on every poll and re-trigger the ingester forever.
+	h := fnv.New64a()
+
+	for _, name := range catalogMissionNames() {
+		c := missionCatalog[name]
+		if c.Debug {
+			continue // UMissionModel.IsDebugOnly exists; don't hand the client debug content
+		}
+		if keepPool != nil && !keepPool[c.Pool] {
+			continue
+		}
+
+		objs := make([]any, 0, len(c.Objectives))
+		allDone := len(c.Objectives) > 0
+		for _, o := range c.Objectives {
+			max := o.Max
+			if max <= 0 {
+				max = 1
+			}
+			prog := progress[compositeKey(name, o.Name)]
+			if prog > max {
+				prog = max
+			}
+			done := prog >= max
+			if !done {
+				allDone = false
+			}
+			objs = append(objs, map[string]any{
+				"ObjectiveName":    o.Name,
+				"Progress":         prog,
+				"MaxProgress":      max,
+				"StartingProgress": 0.0,
+				"Complete":         done,
+				"Failed":           false,
+				// Context / InitialArmoryContext omitted — absent is safe.
+			})
+			fmt.Fprintf(h, "%s/%s=%g/%g;", name, o.Name, prog, max)
+		}
+
+		md := map[string]any{
+			"ID":                "revival-" + name,
+			"AssetId":           "Mission:" + name,
+			"Complete":          allDone,
+			"Failed":            false,
+			"ObjectiveProgress": objs,
+			"MillisUntilExpiry": dayMillis,
+			// FDateTime imports ISO-8601. Verified live on this client: the banner probe's
+			// "2020-01-01T00:00:00Z" read back as ticks 637134336000000000.
+			"Expiry":    expiryStr,
+			"GrantedAt": grantedStr,
+		}
+		if c.Pool != "" {
+			md["PoolId"] = "MissionPool:" + c.Pool
+			if !poolSeen[c.Pool] {
+				poolSeen[c.Pool] = true
+				poolOrder = append(poolOrder, c.Pool)
+			}
+		}
+		missionData = append(missionData, md)
+	}
+
+	sort.Strings(poolOrder)
+	pools := make([]any, 0, len(poolOrder))
+	for _, p := range poolOrder {
+		pools = append(pools, map[string]any{
+			"PoolId":                "MissionPool:" + p,
+			"MillisUntilNewMission": dayMillis,
+			"NewMissionTime":        expiryStr,
+		})
+		fmt.Fprintf(h, "pool:%s;", p)
+	}
+
+	digest := fmt.Sprintf("mi3-%d-%d-%x", len(missionData), len(pools), h.Sum64())
+	return map[string]any{"MissionData": missionData, "Pools": pools}, digest
 }
 
 func (s *Service) handlePutMission(w http.ResponseWriter, r *http.Request) {
