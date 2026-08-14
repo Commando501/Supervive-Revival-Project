@@ -192,7 +192,70 @@ It is unanalysed.
 
 ---
 
-## THE CLAIM PATH (S120 part 3, 2026-08-14) — endpoint TRACED and SERVED; claimable state NOT reached
+## ★★★★★ THE CLAIM PATH IS CLOSED END TO END — THE REAL CLIENT CLAIMED (S120 part 3, 2026-08-14)
+
+**MEASURED, and it is the strongest kind of evidence available on this project: the GAME sent the
+requests.** Preserved in `dumps/s120-claim-evidence/`.
+
+    #231324 15:18:44.382 POST /progression/players/{id}/hero/rewards/claim -> 200
+        User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045...
+        body: {"heroId":"Hero:reshealer","claimIds":["hm:reshealer:0"]}
+    #231327 15:18:44.839  ... ["hm:reshealer:1"] -> 200
+    #231331 15:18:45.346  ... ["hm:reshealer:2"] -> 200
+
+ags granted all three (`mastery claim: … requested=1 granted=1 rejected=0` ×3) and the store
+persisted `masteryClaimed = {"reshealer":[0,1,2]}`.
+
+**EVERY inference in the trace was confirmed by the client's own bytes** — including the one flagged
+[I] as "a single letter, never seen on the wire":
+
+| predicted | client sent | was |
+|---|---|---|
+| `POST …/progression/players/{id}/hero/rewards/claim` | identical | [M] from `.rdata 0x08B4D3A0` |
+| `heroId` (StandardizeCase) | `heroId` | [I] → confirmed |
+| **`claimIds`** | **`claimIds`** | **[I] one letter → confirmed** |
+| `"Hero:<name>"` not `HeroMastery:` | `"Hero:reshealer"` | [I] → confirmed |
+| our minted ClaimIDs echoed verbatim | `hm:reshealer:0/1/2` | [M] |
+
+⇒ **Serving `FPlayerProgression.HeroMastery[].UnclaimedRewards` IS sufficient.** No populate hop was
+missing, no shim, no `.text` write. The client renders the reward, the user claims, we grant.
+
+### ⚠⚠ RETRACTION — MY "CONTROLLED NEGATIVE" WAS NOT CONTROLLED
+
+The previous revision of this section reported *"claimableRewards=[] ⇒ serving UnclaimedRewards is
+necessary but NOT sufficient"* and called it a controlled negative because the notif was FRESH
+(post-arming, tier actually changed). **That fixed staleness but not VALIDITY.**
+
+`claimableRewards` occurs 30 times in the whole log corpus and is `[]` in **30 of 30** — including
+the account pass at tier 10, and including runs where claiming demonstrably worked minutes later.
+**There is no known-good case anywhere**, so the field has no positive control and cannot
+discriminate "nothing is claimable" from "this payload field is simply never populated". I used a
+payload field as an instrument without ever showing it could read non-empty.
+
+★ Decisive counter-evidence: **the client fetched `/progression/players/{id}` exactly ONCE
+(04:04:05, UA `Loki/UE5-CL-0`) and there were ZERO relaunches in the capture** — so the very
+document I measured as "not claimable" is the one the client claimed from, 11 hours later. The
+negative was false at the moment I published it.
+
+This is the instrument-artifact pattern, 45th recorded instance, committed by the same session that
+had just written the rule down twice. **A "fresh" reading of an uncontrolled field is still
+uncontrolled.** Demand a positive control for the FIELD, not just recency of the sample.
+
+### What this does NOT overturn
+
+The disassembly stands: `GetAllClaimableHeroMasteryRewards` (impl `0x583F1F0`) really does go
+`FindVM` → `0x57ABCC0` → walk `[VM+0xC8]`/`[VM+0xD0]`. That is what the *manager* API reads. It is
+simply not evidence about whether the UI could offer a claim, and it was never in conflict with the
+outcome — I over-read it as a blocker.
+
+⚠ Still genuinely unknown: **what user action produced the claim**, and which widget offered it. No
+Blueprint references the hero claim (controlled census: hero-claim symbols 0 vs `ClaimReward` 24), so
+it is native-only — `BulkClaimAllProgressionTrackRewards` (thunk `0x5268FB0`) via the lobby
+multi-claim remains the leading candidate, unconfirmed.
+
+---
+
+## Superseded first pass (kept for the record): endpoint TRACED and SERVED; claimable state believed NOT reached
 
 ### ★★★★ [M] THE ENDPOINT, traced with a passing positive control
 

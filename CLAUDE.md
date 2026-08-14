@@ -251,10 +251,37 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   MISSIONS MODAL shows it** because `GetCurrentProgress` bails on `IsValid(ObjectiveModel)`. **That
   placeholder is NOT our data and never was** — do not read modal numbers as a backend signal; the
   completion checkmarks ARE ours.
-  ⚠ Open: the CLAIM path is unmapped (`FClaimHeroMasteryRewardsRequest` implies an untraced endpoint);
-  `POST /party/parties/{p}/members/{id}/refreshMastery` exists and is untraced; there is no admin
-  route for per-hero mastery yet (`SetHeroMastery` exists in code only); and mastery XP never moves
-  without match results.
+  ★★★★★ **THE CLAIM PATH IS CLOSED — THE REAL CLIENT CLAIMED (2026-08-14).** Evidence preserved in
+  `dumps/s120-claim-evidence/`. The GAME (`User-Agent: Loki/UE5-CL-0`) sent three POSTs, one per level:
+      `POST /progression/players/{id}/hero/rewards/claim`  -> 200
+      `{"heroId":"Hero:reshealer","claimIds":["hm:reshealer:0"]}`
+  ags granted all three and persisted `masteryClaimed={"reshealer":[0,1,2]}`.
+  Traced offline first from literal `L"/hero/rewards/claim"` at `.rdata 0x08B4D3A0` (one xref
+  `.text 0x05827E11`, builder `0x05827DA0`, verb POST, dispatch `0x057EC800`), and **every inference
+  was confirmed by the client's own bytes** — including `claimIds`, which was flagged [I] as "one
+  letter, never seen on the wire". ⇒ **Serving `FPlayerProgression.HeroMastery[].UnclaimedRewards` is
+  SUFFICIENT** — no shim, no `.text` write. Shape is a JSON **object with int-parsable keys**:
+  `{"0":{"ClaimID":"hm:<hero>:0","SKU":"Emote:SeraphHi"}}`; SKUs come from each mastery DA's 7-entry
+  `LevelRewards` (offline catalog `mastery_rewards.json`, `tools/re/gen_mastery_rewards.py`,
+  25 heroes x 7 = 175). Knob: `AGS_SERVE_MASTERY_REWARDS` (default OFF).
+  ⚠⚠ **RETRACTED SAME DAY — "`claimableRewards=[]` proves it is not claimable" WAS NOT A CONTROLLED
+  NEGATIVE.** That field is `[]` in **30 of 30** log occurrences corpus-wide (account pass included),
+  so it has **no known-good case and cannot discriminate**. It was called controlled because the
+  notif was FRESH — but recency fixes staleness, not VALIDITY. Decisive counter-evidence: the client
+  fetched `/progression` exactly ONCE and never relaunched, so the very document measured as "not
+  claimable" is the one it claimed from 11 hours later. **Demand a positive control for the FIELD,
+  not just a recent sample.** (45th instrument-artifact instance, committed by the session that had
+  just written the rule down twice.)
+  ★ The disassembly still stands and was never in conflict: `GetAllClaimableHeroMasteryRewards`
+  (thunk `0x5269160` -> impl `0x583F1F0`, fold 1) really does `FindVM` (`0x57AB180`) -> `0x57ABCC0`
+  -> walk `VM.Levels` `[VM+0xC8]`/`[VM+0xD0]`. That is what the MANAGER API reads; it was never
+  evidence about what the UI can offer, and reading it as a blocker was the over-read.
+  ⚠ Open: **which widget offers the claim is unknown** — no Blueprint references the hero claim
+  (controlled census: hero-claim symbols 0 vs `ClaimReward` 24), so it is native-only;
+  `BulkClaimAllProgressionTrackRewards` (thunk `0x5268FB0`) is the leading unconfirmed candidate.
+  `POST /party/parties/{p}/members/{id}/refreshMastery` is called at login and still untraced; there
+  is no admin route for per-hero mastery (`SetHeroMastery` exists in code only); mastery XP never
+  moves without match results.
 - **PASSES / Hunter's Journey (ACCOUNT pass)** — the page renders live with its full
   85-tier ladder (S83). Two client-side root causes, NOT the backend (that route was
   exhausted over ~9 probes): (1) `CheckAccountPassChanges` (`0x5794480`, the populate's
@@ -1050,7 +1077,12 @@ with another is the exact error FK-10 exists to correct.
 - ⚠ **The game exe's `IMAGE_DIRECTORY_ENTRY_EXCEPTION` is RVA=0 / size=0** while it ships a 6.28 MB
   *encrypted* `.pdata` (controls: runtime/tbb/steam_api64/preloader all read fine). So
   `RtlLookupFunctionEntry` finds nothing for the main image. **The "no C++-exception payloads" rule
-  STANDS, but its recorded mechanism (the packer's VEH) is probably wrong** — a missing function
+  STANDS, but BOTH recorded mechanisms are now REFUTED (S121)** — there is **no protector VEH**
+  (the only registered VEH is the exe's own heap-corruption handler; the protector hooks
+  `KiUserExceptionDispatcher` through a **ProcessInstrumentationCallback**, leaving ntdll
+  byte-identical), and **`RtlLookupFunctionEntry` DOES resolve for the main image** (a *dynamic*
+  function table of **524,439 `RUNTIME_FUNCTION`s** is registered at runtime, with 29,688 language
+  handlers). The no-C++-exceptions rule stands empirically with **no known mechanism**. A missing function
   table kills all three canaries identically. One probe settles it.
 - Real BOM (`Loki/Binaries/Win64/thirdpartylicenses.txt`, 31,834 B): System Informer · xxHash ·
   constexpr-xxh3 · **Intel ISA-L Crypto** · MinHook · **HDE64** (`hde64_table` byte-exact at
