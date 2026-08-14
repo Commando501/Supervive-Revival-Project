@@ -295,7 +295,11 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   the int3-padding scan does not work on this build.)
   ★ **[M] The flow is pure native C++, not a reflected entry point:** a walk of all **35,148** live
   `UFunction` objects found ZERO whose `Func` lands in any newly-decrypted page — independently
-  corroborating the 69,142-asset census (hero-claim symbols 0 vs controls `ClaimReward` 24).
+  corroborating the full-corpus census over **69,178** assets: `BulkClaimAllProgressionTrackRewards`
+  appears in exactly **1 file** (`WBP_UI_LobbyRewards`, which logged ZERO activations in both claim
+  sessions), `GetAllClaimableProgressionTrackRewards` in **0**, against the positive control
+  `ClaimReward` = **9 files / 24 occurrences**. ⚠ Quote the UNIT: an earlier write-up said
+  "ClaimReward 24" without it, which reads as a file count and is off by 2.7x.
   ★ The `0x57EC800` receipt behaved exactly as designed — `never ran` at baseline, `EXECUTED` after,
   with both negative controls still `never ran` **in the same run** that produced the positive.
   ⚠ Open (cosmetic): what native code invokes `BulkClaimAllProgressionTrackRewards` on tracker
