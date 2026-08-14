@@ -285,8 +285,14 @@ landing in page `0x5849000` (the int3-padding scan does not work on this build).
 
 ★ **[M] The flow is pure native C++, not a reflected entry point.** A walk of all **35,148** live
 `UFunction` objects found **ZERO** whose native `Func` lands in any newly-decrypted page. That is an
-independent corroboration of the earlier controlled census (hero-claim symbols 0 across 69,142
-assets against passing controls `ClaimReward` 24 / `HasClaimableMission` 2).
+independent corroboration of the full-corpus census over **69,178** assets:
+`BulkClaimAllProgressionTrackRewards` appears in exactly **1 file** — `WBP_UI_LobbyRewards`, which
+logged ZERO activations in both sessions where the claim fired — and
+`GetAllClaimableProgressionTrackRewards` in **0**, against the positive control `ClaimReward` =
+**9 files / 24 occurrences**.
+⚠ ALWAYS STATE THE UNIT. An earlier write-up recorded this control as "ClaimReward 24"; that is the
+OCCURRENCE count and reads as a FILE count, which is off by 2.7x. Both numbers were correct and the
+ambiguity was mine.
 
 ★ **The receipt worked exactly as designed:** `0x57EC800` read `never ran` in the baseline probe and
 `EXECUTED` after, while both negative controls (`CreateMissionsModel 0x56E0600`,
