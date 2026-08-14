@@ -405,16 +405,51 @@ before building one:** here the client's own reconnect-and-refetch behaviour is 
 use **`UserId`** instead, and getting it wrong is SILENT (unknown keys are ignored) — it would look
 exactly like a dead handler.
 
-### Scoreboard — 4 of the 7 reachable types flown
+## FIFTH FLIGHT — `acceptFriendsNotif` ADDS A FRIEND, and it exposes where state actually lives
+
+Pushed `acceptFriendsNotif {friendId: <a BRAND-NEW id>}` — deliberately **not** the existing friend,
+because "accepted" for someone already in the list would plausibly be a no-op and the null would be
+uninterpretable (method rule 11 again).
+
+**Base rates measured FIRST** (the `disconnectNotif` lesson): the IAM user-resolve endpoint had
+**0** hits in this capture window, and `listOfFriendsRequest` had fired **4 times, all at reconnects**
+— connect-only, never periodic. So both observables were attributable before the push.
+
+```
+18:59:28.405  WS PUSH acceptFriendsNotif  friendId: f15118bbbb…
+18:59:28.931  GET /iam/v4/public/namespaces/supervive/users/f15118bbbb…   (+526 ms)
+```
+
+**Result: the friends list grew to 2 rows** (`0 ONLINE / 2 OFFLINE`), the new friend rendered offline
+(we sent no presence for them). Same identity-resolve signature as `requestFriendsNotif`.
+
+★★ **`listOfFriendsRequest` did NOT re-fire** (still 4). ⇒ **the client added the friend LOCALLY, it
+did not refetch the list from us.** Its social state is not purely server-derived.
+
+★★★ **But the list is SERVER-AUTHORITATIVE on reconnect.** Dropping the socket makes the client
+refetch, we answer with only the original id, and the pushed friend disappears:
+
+| step | friends |
+|---|---|
+| baseline | 1 row (`aaa`, served by us) |
+| `acceptFriendsNotif` for `bbb` | **2 rows** — added client-side |
+| drop socket → refetch → we serve `[aaa]` only | back to 1 row |
+
+⇒ **Pushed social changes are TRANSIENT unless the backend also serves them.** A notif can drive the
+client's in-memory state, but any reconnect re-imposes whatever `listOfFriendsResponse` says. Anyone
+building on this surface needs both halves: the push for the live event, the response for durability.
+
+### Scoreboard — 5 of the 7 reachable types flown
 
 | type | effect | strength |
 |---|---|---|
 | `requestFriendsNotif` | HTTP identity resolve (+276 ms) → clickable friend-request card; accepting sent `acceptFriendsRequest` back to us | **strong, visible, bidirectional** |
 | `userStatusNotif` | presence renders `→ ONLINE` and `→ OFFLINE` — ⚠ **OFFLINE requires OMITTING `activity`** (a live activity overrides availability) | **strong, visible, bidirectional** |
 | `unfriendNotif` | friend row removed; restored by reconnect | **strong, visible, round-tripped** |
+| `acceptFriendsNotif` | friend ADDED to the list (client-local) + IAM identity resolve at +526 ms; removed again by a reconnect refetch | **strong, visible, reversible** |
 | `disconnectNotif` | nothing observable, vs a matched bare-drop control | **controlled negative** |
 
-Unflown: `acceptFriendsNotif`, `cancelFriendsNotif`, `rejectFriendsNotif` (all one-field).
+Unflown: `cancelFriendsNotif`, `rejectFriendsNotif` — ⚠ both take **`UserId`**, not `FriendId`.
 
 ⇒ **The bound/unbound map is now confirmed predictive on 4 independent types**, three of which move
 the UI. The client's social surface is drivable from the backend.
