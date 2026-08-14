@@ -143,9 +143,10 @@ func TestMatchResultGrantsPassXP(t *testing.T) {
 func TestMatchResultPassSkippedWhenAmbiguous(t *testing.T) {
 	s, mux := newTestService()
 
-	// No players on file at all.
+	// No players on file at all. Key is the CATALOG composite (S120) — the bare objective name was
+	// the old empty-manifest fallback, which is no longer taken because the catalog is never empty.
 	res := doJSON(t, mux, "POST", "/revival/missions/match-result", `{"win":true}`)
-	if o := objectivesOf(t, res); o["PlayAGame"] != 1 {
+	if o := objectivesOf(t, res); o["ArmoryDaily_PlayAGame/PlayAGame"] != 1 {
 		t.Fatalf("missions should still apply with no player: %v", o)
 	}
 
