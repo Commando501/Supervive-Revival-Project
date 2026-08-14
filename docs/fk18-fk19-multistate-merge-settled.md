@@ -4,7 +4,9 @@
 the register stated: the merge was a NO-OP.**
 **FK-19** — *"`mergedumps` rejects a different ImageBase, therefore `rcb` is unusable"* — **FIXED.**
 
-All offline. Zero launches, zero injections, nothing touched the game.
+**FK-18 and FK-19 themselves were settled entirely offline — zero launches, zero injections.**
+⚠ §12.4 is the exception and is clearly marked: the decryption-trigger probe it describes is a
+successor question, not FK-18, and it cost two throwaway `-NoHook` launches and two injections.
 
 **The artifact: `dumps/merged2.dump.exe`** — `.text` **16,625 / 30,281 decrypted pages (54.90 %)**
 against `merged.dump.exe`'s **15,833 (52.29 %)**, a **strict superset with 0 regressions**, and with a
