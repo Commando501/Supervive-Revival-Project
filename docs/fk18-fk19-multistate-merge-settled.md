@@ -574,13 +574,70 @@ already refuted its recorded mechanism (the missing function table — §11 and 
 ⇒ **Treat any fault raised from injected code as terminal.** Do not design a probe that relies on
 catching one.
 
+### 12.5 The crash-capture harness — BUILT, tested, and armed by default
+
+`usmapdump crashwatch <proc> <outDir>` (`tools/usmapdump/crashwatch.go`), armed automatically by
+`configs/launch-redirect.ps1` on every launch, `-NoCrashWatch` to disable.
+
+**The window is ~34 ms, measured from the archived corpus** — not estimated. From
+`dumps/crashpad-20260804-181909-shimrun2-DEATH/session-Loki.log`:
+
+```
+23.18.59:834  LogSentrySdk: flushing session and queue before crashpad handler
+23.18.59:835  LogSentrySdk: Verbose: invoking `on_crash` hook
+23.18.59:853  LogSentrySdk: Sentry HandleBeforeCrash End
+23.18.59:868  LogSentrySdk: handing control over to crashpad     <- last line in the file
+```
+
+A full `dumpimage` is 178 MB of RPM plus a `VirtualQuery` walk plus export enumeration over ~221
+modules. **Racing 34 ms with that is impossible, and polling faster does not help.**
+
+★ **The move that makes it work: SUSPEND THE DYING PROCESS.** `NtSuspendProcess` is one call and it
+freezes the target indefinitely, converting an unknown sub-second window into unlimited time. We
+dump at leisure, then **RESUME**, so crashpad still writes its own minidump and the stream-13
+function table is kept too. The process is already crashing, so the suspend costs nothing that was
+not already lost. ⇒ **dump wall-clock stops being load-bearing**, which is why it was never worth
+measuring first (`-dumpnow` measures it anyway, and `-nosuspend` is kept as the control arm).
+
+**Tested end to end without spending a game launch**, against a uniquely-named throwaway target so
+no real process could be suspended by mistake:
+
+| check | result |
+|---|---|
+| armed BEFORE the target existed, waited, attached on appearance | ✅ (this was a real bug — see below) |
+| trigger detected from a live log tail | ✅ both `flushing session…` and `=== Critical error ===` |
+| suspend latency after trigger | ✅ **0 ms** (`NtSuspendProcess` ~0.0 ms) |
+| dump completed while suspended | ✅ |
+| target RESUMED and survived | ✅ alive, 3 threads |
+| exit code captured across process death | ✅ `0xFFFFFFFF` correctly labelled |
+| `CRASHWATCH-INFO.txt` written with the pre-registered prediction | ✅ |
+
+⚠ **The bug the test caught, and it would have made the whole harness a silent no-op.** The
+launcher arms `crashwatch` *before* it starts the game, but the first implementation called
+`findPID` once and `os.Exit(1)` if the process was absent — so in the real sequence it would have
+died instantly, every launch, logging an error nobody reads, while appearing to be armed. Fixed
+with a `-wait` poll (default 180 s). **A crash harness that fails silently is worse than none, and
+only running it in the launcher's actual order exposed this.**
+
+**What it cannot catch, stated plainly:** the silent-kill class. FK-32 identified
+`runtime.dll+0x80f7f0` as `mov edx,0xDEAD; syscall` = `NtTerminateProcess(h, 0xDEAD)`. That path
+writes no log line and leaves no artifact — there is nothing to trigger on and no window to suspend
+into. The exit code is still captured, which is exactly how you tell that class apart afterwards.
+
+**Pre-registered, before the first real fire:** a crash-era image should land at **≈18,900 non-zero
+`.text` pages** and contribute **≈2,300** to a re-merge. If it lands near 15,700 like every healthy
+dump, the crash-path hypothesis is **wrong** — and that is the more interesting outcome. The
+prediction is written into every `CRASHWATCH-INFO.txt` so it cannot be quietly revised afterwards.
+
+**Fold a capture in with:** `usmapdump mergedumps dumps/merged2.dump.exe dumps`
+
 ### 12.3 Tooling changes made, and the ones still worth making
 
 **Made this session** (all verified): `-Clear` no longer deletes the dumps root (§13);
 `deobfimports` sources IAT slot values live; sidecar selection is newest-wins and announced; the
 merge manifest reports both metrics; `capture-dumps.ps1`'s MERGED row reports a real number.
 
-**Still worth making, in value order:**
+**Still worth making, in value order** (item 0 — the crash-capture harness — is now BUILT, §12.5):
 
 1. **Resolve the IAT at dump time** into a `<stem>.iatmap.txt`. `dumpimage.go:217-219` skips the
    trampoline region (`MEM_IMAGE` but owned by **none** of the 221 registered modules), which is
