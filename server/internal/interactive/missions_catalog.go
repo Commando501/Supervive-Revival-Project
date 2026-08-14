@@ -9,8 +9,16 @@ import (
 
 // CatalogMission is one mission as its own data asset declares it.
 type CatalogMission struct {
-	Pool       string             `json:"pool,omitempty"`
-	Debug      bool               `json:"debug,omitempty"`
+	Pool  string `json:"pool,omitempty"`
+	Debug bool   `json:"debug,omitempty"`
+	// Abstract marks a CLASS_Abstract base template (75 of 323). These declare no
+	// InternalName, so they are registered with the AssetManager under their FULL asset
+	// FName *including* the DA_Mission_ prefix — which is why the catalog key for them is
+	// "DA_Mission_<file>" while every other mission is keyed by its InternalName. They are
+	// tier-0 bases of the hero-mission families, all with exactly one objective and all in
+	// the HunterMissions pool. Kept as a distinct flag so a template is never mistaken for
+	// an authored mission when reading the catalog or debugging a render.
+	Abstract   bool               `json:"abstract,omitempty"`
 	Objectives []CatalogObjective `json:"objectives"`
 }
 
