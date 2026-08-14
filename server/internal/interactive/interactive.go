@@ -428,7 +428,12 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 	// (PUT /api/progression/{id}); a fresh account reads the zero value = tier 0 / no XP.
 	ap := s.AccountPass(id)
 	mi, miDigest := s.missionInfo(time.Now().UTC())
-	writeJSON(w, map[string]any{
+	// HERO MASTERY (S120) — FPlayerProgression.HeroMastery @0x148, TArray<FHeroMasteryProgress>.
+	// Returns (nil, "") unless AGS_SERVE_HEROMASTERY is set, in which case the key below is
+	// omitted and this document is byte-identical to the pre-S120 one. See heromastery.go for
+	// the measured schema, the two candidate HeroId type prefixes, and why this is knob-gated.
+	hm, hmDigest := s.heroMasteryEntries(id)
+	resp := map[string]any{
 		"data":   []any{entry},
 		"paging": map[string]any{"previous": "", "next": ""},
 		"total":  1,
@@ -437,14 +442,22 @@ func (s *Service) handleGetProgression(w http.ResponseWriter, r *http.Request) {
 		// The mission digest joins the version key so a mission/progress change bumps Version
 		// too; without it the strict `>` gate below would silently drop the new document. The
 		// digest covers mission content only, never the per-request timestamps.
-		"Version": progressionVersionFor(id, fmt.Sprintf("%d/%d/%t|%s", ap.Level, ap.XP, ap.Cleared, miDigest)),
+		// The hero-mastery digest joins it for the same reason — including the knob's own mode,
+		// so ARMING the knob is itself a content change that moves Version. Without that, a
+		// client that had already adopted this Version would ignore the newly-added key and the
+		// experiment would read as "serving HeroMastery does nothing".
+		"Version": progressionVersionFor(id, fmt.Sprintf("%d/%d/%t|%s|%s", ap.Level, ap.XP, ap.Cleared, miDigest, hmDigest)),
 		"AccountPass": map[string]any{
 			"Level":   ap.Level,
 			"XP":      ap.XP,
 			"Cleared": ap.Cleared,
 		},
 		"MissionInfo": mi,
-	})
+	}
+	if hm != nil {
+		resp["HeroMastery"] = hm
+	}
+	writeJSON(w, resp)
 }
 
 // handleMatchHistory serves FMatchHistory. This is the FIRST of the two gates in front of

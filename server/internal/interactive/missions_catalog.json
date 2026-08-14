@@ -47,6 +47,14 @@
 }
 ]
 },
+"Alchemist_UltMultihit_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Alchemist_UltMultihit"
+}
+]
+},
 "Alchemist_UltMultihit_2": {
 "objectives": [
 {
@@ -384,6 +392,14 @@
 }
 ]
 },
+"Beebo_RMBHitEnemies1": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Beebo_RMBHitEnemies"
+}
+]
+},
 "Beebo_RMBHitEnemies2": {
 "objectives": [
 {
@@ -445,6 +461,14 @@
 {
 "max": 400.0,
 "name": "BountyHunter_StunEnemies"
+}
+]
+},
+"BountyHunter_UltKnockEnemies_1": {
+"objectives": [
+{
+"max": 5.0,
+"name": "BountyHunter_UltKnockEnemies"
 }
 ]
 },
@@ -1853,6 +1877,14 @@
 }
 ]
 },
+"Reaper_QSweetSpotHit_1": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Reaper_QSweetSpotHit"
+}
+]
+},
 "Reaper_QSweetSpotHit_2": {
 "objectives": [
 {
@@ -2427,6 +2459,14 @@
 }
 ]
 },
+"Void_BlackholeMultiples_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Void_UltMultiples"
+}
+]
+},
 "Void_BlackholeMultiples_2": {
 "objectives": [
 {
@@ -2488,6 +2528,14 @@
 {
 "max": 500.0,
 "name": "BurstCaster_QMultiHit"
+}
+]
+},
+"burstcaster_rmbreturnhit_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "BurstCaster_RMBReturnHit"
 }
 ]
 },
@@ -2600,6 +2648,14 @@
 {
 "max": 1000.0,
 "name": "Farshot_OrbDetonates"
+}
+]
+},
+"farshot_knockaftertp_1": {
+"objectives": [
+{
+"max": 30.0,
+"name": "Farshot_KnockAfterTP"
 }
 ]
 },
