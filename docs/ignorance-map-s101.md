@@ -6,7 +6,7 @@
 This one asks *"what don't we know we don't know?"* — and, more dangerously, *"what do we believe
 that isn't true?"*
 
-> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S114
+> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S118
 > Entries are updated in place with dated banners; **a banner always overrides the table beneath it.**
 > The original S101 text is never deleted, because the retraction history is the value.
 >
@@ -17,6 +17,7 @@ that isn't true?"*
 > | **FK-8** — `SecondsSinceStart` | **S111** | ✅ **CLOSED with a permutation positive control.** ★ Closing it showed **≥31.6 % of the whole crash corpus is self-inflicted**, and that all 22 crashpad reports are — so the S109/S110 tutorial campaign produced **zero** FK-7 evidence. `docs/fk8-crash-timing-mined.md` |
 > | **FK-9** — Sentry vs UECC dumps | **S109** | ✅ **CAPTURE SOLVED** — cleared by the *next launch*, not a timer; the "~3 min window" is retracted. Archiver shipped. |
 > | **FK-13** — "the dev console is fully stripped" | **S114** | ✅ **SETTLED — outcome TRUE, every stated reason FALSE, operational conclusion FALSE.** The console really is gone (`ALLOW_CONSOLE == 0`, three independent instruments) — but FK-13 was **three independent compile flags**, not one, and `bUseExecCommandsInShipping`'s stock default is **1**. So **`UE_ALLOW_EXEC_COMMANDS == 1`**, **138 native `FUNC_Exec` UFunctions** ship, and **Route B is shipped and proven end-to-end**: a `UCheatManager` constructed into `PC+0x520` (**one heap qword, zero module-image writes**) put **42 real exec verbs** live, verified by `ExecuteConsoleCommand("LogLoc")` → `LogCheatManager: BugItGo …` against a baseline of 0. ⇒ *"all cheap external paths are exhausted; the remaining options require in-process code"* is **dead**. ⚠ Still OPEN: where `open` is dispatched, and whether the 25 `ALokiPlayerCheats` verbs are reachable by spawning the actor. `docs/fk13-console-exec-settled.md`, `docs/fk13-live-run-2026-08-12.md`, `docs/fk13-routeb-shipped.md` |
+> | **FK-15** — "server→client WS push is non-functional" | **S118** | ✅✅✅ **REFUTED (S117) THEN FULLY CLOSED (S118).** Push works; the real question was *which types*. Joining all 33 jump-table cases to the live delegate table shows **only 7 of 33 have a subscriber** — **21 of the 23 bound delegates belong to ONE `USocialManager`**, so the reachable set is the friends/presence family. **All 7 flown; 6 drive VISIBLE UI changes**; `disconnectNotif` is a controlled negative. ⚠ **`dsNotif`, `matchmakingNotif` and every `party*` type are UNBOUND** — the route is closed at the client's *subscription* layer, so no payload can ever make them act. ★ The client **mutates its own social state** from a notif and only a refetch re-imposes ours ⇒ **pushed changes are transient unless the backend also serves them.** `docs/fk15-bound-delegate-map-20260813.md` |
 > | **FK-24** — the `ViewTarget` writer | **S108** | **OPEN.** ★ The probe was killing the game, and its own VOID verdict was an artifact. |
 > | **FK-25** — the marker file | **S108** | ⚠ **STILL UNFIXED**; cost evidence again. Cheapest unspent item in this document. |
 > | **FK-26** — leftover S9x shim diagnostics | **S108** | ✅ **NEW + SETTLED.** `KSTATICTEST` was killing the hero's walk/run animation every session. |
@@ -24,11 +25,14 @@ that isn't true?"*
 > | **FK-32** — "the artifact-less deaths are hangs" | **S112** | ✅ **NEW + FALSIFIED.** At least some are **`0x0000DEAD` silent kills**, recovered by reading the process exit code. ⚠ N=2 — suggestive, not established. Residual **3/36**. |
 > | **FK-33** — S112 instrument false-knowns (batched) | **S112** | ✅ **NEW + SETTLED.** The FK-7 "candidate" build was a commit stale; the mandated 3x `play_novtguard` control voids ~4 sittings in 5; a new crashpad dir is not a death; `fk8_classify.py` reports 1 report for 105 dirs. |
 > | **FK-34** — `UECC-C13252F5` "is the last FK-7 survivor" | **S112** | ✅ **NEW + FALSIFIED.** It is the ANIM family (a shim-lifetime bug). ⇒ **zero** FK-7 death records survive a mechanism filter. |
+> | **FK-35** — S118 lobby/notif false-knowns (batched) | **S118** | ✅ **NEW + ALL FOUR FALSIFIED.** (a) the shipped 33-name notif list is **wrong at the tail** — `signalingP2PNotif` IS enum 32, `messageSessionNotif` is absent, caused by **two off-by-one boundary errors that CANCELLED into a plausible 33** (and a unit test asserted the false half); (b) `entries=3` is an **allocation size**, not a subscriber count (single-cast `FDelegateBase`); (c) "16 bound, 46 unbound" — the scan **stepped 0x10 over a structure with members at ≡8 (mod 16)** and the published list was **truncated at 12 with a literal `…`**, which changed the answer from 6 reachable types to 7; (d) presence "both directions" was **published unobserved** — offline needs `activity` OMITTED, because the activity blob **overrides** availability. |
 >
 > **The S108 lesson, in one line:** all three of that session's tasks turned out to be about **the
 > project's own instruments**, not the game — and the session then committed three *fresh* instances
-> of the same error while documenting it. See `memory/supervive-instrument-artifact-pattern.md`,
-> which S108 grew from five confirmed instances to eight.
+> of the same error while documenting it. See `docs/method-rules.md` §1 (⚠ the old pointer here was
+> `memory/supervive-instrument-artifact-pattern.md`, a store **deleted 2026-08-12** — the register
+> lives in the repo now), which S108 grew from five confirmed instances to eight. **It stands at 43
+> as of S118**, which added seven, four of them the analyst's own arithmetic and indexing.
 
 **Method.** Eleven ignorance dimensions were probed independently, then each was handed to an
 adversarial challenger who re-ran every negative search against primary artifacts and graded each
@@ -1091,17 +1095,48 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 >   65535/65536 B all arrive byte-identical, read back by an independent RFC 6455 decoder.
 > - **Harness shipped:** admin-panel "WS Push" tab + `/api/ws/{sockets,preview,push,sweep,vocabulary,drop}`.
 >   A probe is now a button press, and one sweep walks all 32 types in ~96 s.
-> **Open, and correctly scoped:** *which* notif types produce a visible client effect. Start with
-> `dsNotif`; re-fly probe #3 at raised verbosity with the free pre-registered positive control
-> (our own 4 responses must log 4 receipts first).
+> ✅✅✅ **CLOSED COMPLETELY S118, 2026-08-13 — the "open, correctly scoped" question below is
+> ANSWERED. Primary evidence: `docs/fk15-bound-delegate-map-20260813.md`.**
+> The old open item read *"which notif types produce a visible client effect — start with `dsNotif`"*.
+> **`dsNotif` was the wrong place to start**, and the answer is now measured end-to-end:
+> - **Only 7 of the 33 types can move this client**, because the other 26 broadcast into a delegate
+>   with **no subscriber**. Derived by joining all 33 jump-table case bodies (`lea rdx,[rdi+<off>]`)
+>   against the live bound/unbound state of `Lobby`'s delegate table. **21 of the 23 bound delegates
+>   belong to ONE `USocialManager`**, which is *why* the reachable set is the friends/presence family:
+>   `disconnectNotif` · `userStatusNotif` · `accept`/`request`/`unfriend`/`cancel`/`rejectFriendsNotif`.
+>   ⇒ **`dsNotif`, `matchmakingNotif` and every `party*` type are UNBOUND — pushing them can never
+>   have an effect in this build.** The route is closed at the client's **subscription** layer, not
+>   at transport/parse/route/deserialize, all of which S117 proved working.
+> - **ALL 7 WERE THEN FLOWN against the live client, and 6 produce VISIBLE UI changes** (friend
+>   request card, friend added/removed, presence online/offline, `INCOMING 1→0`, `OUTGOING 1→0`).
+>   `disconnectNotif` is a **controlled negative** against a matched bare-drop arm.
+>   ⇒ the delegate map is **predictive on every type it named**, having been derived entirely offline.
+> - ★★ **Structural finding worth more than the list: the client MUTATES ITS OWN social state from a
+>   notif, and only a refetch re-imposes ours.** Shown twice in opposite directions
+>   (`accept` added a friend with no `listOfFriendsRequest`; `reject` removed an outgoing request
+>   **while we were still serving it**). ⇒ **pushed social changes are TRANSIENT unless the backend
+>   also serves them** — build both halves.
+> - ⚠ **Payload field names split and fail SILENTLY** (unknown keys are ignored):
+>   `request`/`accept`/`unfriend` = `friendId`; `cancel`/`reject` = `userId`. Both confirmed on wire.
+> - ⚠ **`userStatusNotif` → OFFLINE requires OMITTING `activity`** — a live activity blob overrides
+>   `availability`. This was first published as a working round trip **without being observed**, then
+>   retracted; the retraction is what generated the experiment that found the override rule.
+> - ★ **New free instrument:** `LogJson` echoes a rejected value AND names the property + enum
+>   (`Unable to import enum ELokiActivityState from string value S118PROBE for property A`) — the
+>   antidote to silent unknown-key failures. **Watch it on every push.**
+> - ★ **Best UI instrument on this surface: the FRIEND REQUESTS modal**, which has explicit
+>   `INCOMING`/`OUTGOING` **counters** and reads out a precondition directly.
+> **Still open (small):** the 16 bound delegates that no notif case broadcasts (the response /
+> socket-lifecycle surface); whether `disconnectNotif`'s handler has any internal effect; and
+> `messageSessionNotif`'s separate v2 handler at `.text 0x4B07E80`, unverified.
 
 | | |
 |---|---|
 | **Belief** | `docs/coverage-audit-s101.md:98`. |
 | **Actual evidence** | `server/internal/lobby/lobby.go:385-511` — **all five probes build only `matchmakingNotif` frames**, and each bundles 20+ speculative fields (`ip`/`port`/`Address`/`Port`/`HostName`/`ServerUrl`/`dsInfo`/`DsInfo`/…) in one frame, directly violating the project's own single-variable convention. So even the negative result is ambiguous. |
 | **Why weaker** | One message type ≠ the push mechanism. The **messenger DROP** path *does* work end-to-end (S85 `enableMessengerDrop` + `lobby.MarkDirty`), proving the client acts on server-side socket events. And a *targeted* push **is** expressible today: `registerMessenger` (`lobby.go:121`) keys live connections by player id in `s.messengers` — it is only the `/lobby` socket that lacks an id association. |
-| **Steers** | Party invites, join notices, friend requests, kicks — every server-initiated multiplayer event. |
-| **Cheapest experiment** | ~~Push one party-invite-shaped frame (`partyGetInvitedNotice` / `UserNotification_PartyInvite`) on both sockets and watch for a toast **or a `LogJson` complaint**.~~ ⚠⚠ **THIS EXPERIMENT WAS A GUARANTEED NULL — do not fly it (S117).** `partyGetInvitedNotice` has **0 hits** in either encoding (the real lobby token is `partyGetInvitedNotif`); `UserNotification_PartyInvite` is a **client-side `UObject` built by `UUserNotificationManager` from local models, not a wire type** (invite content never crosses the socket); and **`LogJson` has emitted 0 lines in 326 client logs** so its complaint could never have appeared. **Replacement:** send the literal text `FK15-PROBE-FROM-AGS` on the **messenger** — `UMessengerManager::OnMessage` fails to parse it and logs `Messenger recieved unexpected message: <sentinel>` at **`Warning`**, visible at today's verbosity, against a **measured-zero baseline over 1,419 connections**. See `docs/fk15-ws-push-audit.md` §3.5. |
+| **Steers** | ~~Party invites, join notices, friend requests, kicks — every server-initiated multiplayer event.~~ ⚠ **CORRECTED S118: this over-stated the reach in one direction and under-stated it in another.** **Friend requests / presence: YES**, all 7 flown and 6 drive visible UI. **Party invites, join notices, kicks: NO** — every `party*` case broadcasts into an **UNBOUND** delegate, so no push of those types can move this build. The blocker for party is the client's *subscription* layer, not the push channel. |
+| **Cheapest experiment** | ~~Push one party-invite-shaped frame (`partyGetInvitedNotice` / `UserNotification_PartyInvite`) on both sockets and watch for a toast **or a `LogJson` complaint**.~~ ⚠⚠ **THIS EXPERIMENT WAS A GUARANTEED NULL — do not fly it (S117).** `partyGetInvitedNotice` has **0 hits** in either encoding (the real lobby token is `partyGetInvitedNotif`); `UserNotification_PartyInvite` is a **client-side `UObject` built by `UUserNotificationManager` from local models, not a wire type** (invite content never crosses the socket); and **`LogJson` has emitted 0 lines in 326 client logs** so its complaint could never have appeared. **Replacement:** send the literal text `FK15-PROBE-FROM-AGS` on the **messenger** — `UMessengerManager::OnMessage` fails to parse it and logs `Messenger recieved unexpected message: <sentinel>` at **`Warning`**, visible at today's verbosity, against a **measured-zero baseline over 1,419 connections**. See `docs/fk15-ws-push-audit.md` §3.5. ✅ **FLOWN AND CONFIRMED (S117).** ✅✅ **AND SUPERSEDED (S118): no experiment is needed here any more — all 7 reachable types have been flown, 6 drive visible UI. The remaining cheap experiments are listed in the S118 "still open" note above, none of them about the push mechanism itself.** |
 
 ---
 
@@ -1522,6 +1557,46 @@ dispatcher" quoted 2 of 4 and is **wrong**; S106's `FAnimSync::TickAssetPlayerIn
 
 ---
 
+### FK-35 — S118 lobby/notif false-knowns (batched)
+**Severity: MEDIUM-HIGH. Four beliefs, each of which steered work; all four MEASURED false.**
+Primary evidence: `docs/fk15-bound-delegate-map-20260813.md`.
+
+**(a) "The 33-name notif list in `vocabulary.go` is the dispatch enum."** **FALSE at the tail.**
+Read live from the `TMap<FString,uint8>` at `.data 0x9FFE2D0` — the byte `HandleNotif` actually
+dispatches on — the values are a perfect permutation of 1..33 and give **enum 32 =
+`signalingP2PNotif`**, **enum 33 = `errorNotif`**, with **`messageSessionNotif` absent from the v1
+map entirely**. `.rdata` image order IS the enum order for 1–31; what was wrong was *which strings
+belong*.
+★ **Root cause is the most instructive part: TWO off-by-one window boundary errors in OPPOSITE
+directions that CANCELLED into a plausible 33.** The window excluded `signalingP2PNotif` (0x128
+below its lower bound) and included `messageSessionNotif` (exactly ON the upper bound); the block
+also contains `partySendNotifResponse`, a Response, so it only ever held 32 real types.
+⚠⚠ **Two compensating errors are the hardest artifact to catch, because the independent count you
+validate against PASSES.** The file's own comment warned about this exact failure mode and then
+committed a different pair of it. ⚠ **And `push_test.go` asserted the false claim** — the test that
+would have caught it had ingested it (method rule 9).
+
+**(b) "`entries=3` on a bound delegate means three subscribers."** **FALSE.** The 16-byte record is
+UE's **single-cast** `FDelegateBase` `{void* Alloc; int32 DelegateSize; pad}`; `3` is an allocation
+size in 16-byte units and reads identically on every bound slot. `+0xC` is padding holding stale
+heap garbage (it reads `0x1D2` even when UNBOUND), which is what made it look like a `TArray`.
+
+**(c) "16 bound, 46 unbound" (S117).** **FALSE on both counts** — the scan stepped **0x10**, but
+members also sit at offsets **≡ 8 (mod 16)**. At 8-byte stride there are **23** bound slots, and one
+of the missed ones (`+0x228`) is **`disconnectNotif`**, a real notif delegate ⇒ **the miss changed a
+conclusion (6 reachable types vs 7), not just a tally.** Compounding it, the published list was
+**truncated at 12 of 16 and ended in a literal `…`**; four of the hidden offsets are four of the
+seven answers, so joining against it yields 2 hits. **Never join against an ellipsis.**
+
+**(d) "Presence can be driven both ways by setting `availability`."** **FALSE as stated, and it was
+published UNOBSERVED** (asked for confirmation, was redirected, wrote it up anyway — method-rules
+S118-g). `availability: offline` **parses cleanly and does nothing** while a valid `activity` blob
+is present: **the activity OVERRIDES availability** ("has an activity ⇒ render online"). Omit
+`activity` and it flips. ★ The retraction is what generated the experiment that found the override
+rule — **retracting beat defending.**
+
+---
+
 ## 3. The UNKNOWN_UNKNOWN Register
 
 Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 366 commits.
@@ -1690,7 +1765,7 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 |---|---|---|---|
 | **1** | **QoS UDP responder gates BATTLE/PRACTICE** | Inference from an absence; its own source hedged "OR the ICMP module"; `QosManagerServerUrl=` empty in all 12 environments; the populated machinery is Theorycraft's `ULatencyManager` + UE's `FNetPing` (FK-5) | Restore the queue list, click BATTLE, read the capture |
 | ↳ | **✅ SETTLED S105 → `docs/fk5-battle-gate-settled.md`.** *Row preserved above; its diagnosis was right and is now measured.* No `ULatencyMeasurer` has **ever** been created (`LatencyManager.cpp:315`, verbosity **Display**, 0 hits / 14 logs) and the UDP-echo impl `0x1F8CFC0` is a **100 % zero page** — QoS was never observed to block anything. ⚠ **No replacement culprit**: `TryJoinQueue`'s page `0x5875000` is also 100 % zero, so what blocks BATTLE *past the tile* is **UNKNOWN**. ★ **The experiment is cheaper than this row says — zero backend change**: `bots` is already served and is **not** in the native `IsSpecialQueue` set, so **BOTS → FIND MATCH** enters the real `TryJoinQueue` today. No account level needed (`CanControlQueue` loops `GetCurrentQueues` ×25, `GetQueues` ×0). | **BOTS → FIND MATCH, read `capture.log` in order** |
-| ~~**2**~~ | ✅ **FELL S117 — "Server→client WS push is non-functional" is REFUTED** (`docs/fk15-ws-push-audit.md`) | It was fake: push is MEASURED WORKING (4 × `OnMessageReceived` for our 4 frames); the 5 probes predate log verbosity by 41 days and 2 of their 6 detector categories **do not exist**; they tested **1 of 33** notif types, picked via a `dsNotice`/`dsNotif` typo | **DONE.** Harness shipped; probes 1-3 flown and confirmed live (sentinel echoed back; heartbeat churn fixed; targeted resync proven to refetch **and apply**). Remaining: sweep the other 30 types, and push `dsNotif` itself |
+| ~~**2**~~ | ✅ **FELL S117 — "Server→client WS push is non-functional" is REFUTED** (`docs/fk15-ws-push-audit.md`) | It was fake: push is MEASURED WORKING (4 × `OnMessageReceived` for our 4 frames); the 5 probes predate log verbosity by 41 days and 2 of their 6 detector categories **do not exist**; they tested **1 of 33** notif types, picked via a `dsNotice`/`dsNotif` typo | **DONE.** Harness shipped; probes 1-3 flown and confirmed live (sentinel echoed back; heartbeat churn fixed; targeted resync proven to refetch **and apply**). ✅✅ **AND FULLY CLOSED S118** (`docs/fk15-bound-delegate-map-20260813.md`): all 33 types swept, then the delegate table joined to the jump table — **only 7 of 33 have a subscriber**, and **all 7 were flown, 6 driving visible UI changes**. ⚠ `dsNotif` — the type this row said to push next — is **UNBOUND**; pushing it can never have an effect. The reachable set is the friends/presence family, because 21 of the 23 bound delegates belong to one `USocialManager`. |
 | **3** | **The 6-shim default set crashes** | S85, never re-tested in 17 sessions. A stronger alternative cause exists: `inject-secondaries.ps1:82` gates on `'\[unhook\]'` in a marker file **nothing clears between launches**, so all five secondaries inject *during* the primary's thread-suspending SafeWrite. ⚠ Also fix `launch-redirect.ps1:95-105`, which forwards every flag across elevation **except `-NoPasses`** — any `-NoPasses` bisection silently runs *with* the passes shim | Delete markers pre-launch (or gate on mtime ≥ process start), then one validation launch |
 | **4** | **DropPlane is falsified as reachable** | N=1 against a tutorial-specific variant, with the source itself recording wrong arg types (FK-22) | Read `LokiDropShip.as` for the markers it queries |
 | **5** | **The S78 free-look rotation wall** | Its leading hypothesis (Enhanced Input) was retracted 2 sessions later, and its own stated remaining path — "hook the camera-update function" — is the per-frame heap vtable hook S78 shipped *in the same session* and never pointed at rotation. Untouched since 2026-07-15. ⚠ *Its hard measurement survives the retraction: no look-sensitivity field exists on the PC, and rewriting every enumerated sensitivity float had zero effect* | Intercept the camera-update slot's OUT rotation and scale it |
@@ -1866,7 +1941,7 @@ auth-session ticket: `[uint32 len=0x14][8-byte gcToken][8-byte SteamID64]`, deco
 | **Member-write routing** | `handleSetPartyMember` (`interactive.go:970`), `handleGetPartyDetail` (`:811`) and `handleStartSoloMode` (`:838`) all resolve the player from `strings.TrimPrefix(partyId,"party-")` **before** memberId or the JWT subject. Since partyId is always `"party-"+self`, this has never differed — but with 2 members, **every member write lands on the leader**. A ~10-line reorder, far cheaper before the first test than after |
 | **Authorization** | There are **no authorization checks anywhere** — handlers take the id from the URL path, not the verified JWT subject. Cross-account read/write becomes possible the instant two identities exist. ⚠ *Mitigating:* the issued JWT already carries full-admin permissions, so coarse authority was never the gate |
 | **Presence** | No presence handler, store or model exists in `server/internal` (the 3 grep hits are comments). Every remote member would read as offline — degrading the avatar card, whose predicate is *"valid+online"* |
-| **Friends** | `lobby.go:317-332` hard-codes `friendsId: []` and returns `""` for everything else. No friend store anywhere. `git log --grep=friend` = 0 of 366 |
+| **Friends** | ~~`lobby.go:317-332` hard-codes `friendsId: []` and returns `""` for everything else. No friend store anywhere.~~ ⚠ **UPDATED S118.** Still true that there is **no friend store** — but the three list responses are now backed by opt-in env knobs (`AGS_PROBE_FRIEND` / `_INCOMING` / `_OUTGOING`, empty by default), and the whole friends surface is **proven drivable**: all 7 subscriber-bound notif types flown, 6 with visible UI effect. ★ **The client mutates its own friends state from a notif and only a refetch re-imposes ours**, so a real friend store must serve BOTH the response (durability) and the notif (the live event). `acceptFriendsRequest` is still **unanswered** by the server — the client sends it on Accept and we drop it |
 | **Version gate** | `store.partyVer` is one global counter. ⚠ *Adjudicated:* two members share **one** party document, so a shared counter is **correct**; only cross-party noise remains. Not a bug |
 | **Replication** | The stub sets **no** `ReplicationDriverClassName` while the shipped client config sets `/Script/Loki.LokiReplicationGraph`, and the game declares `ReplicationGraphNode_Loki{Vision,Team,Player,RepTilDormant,ScoreboardRow}`. And the stub **replicates `MaxPlayersPerTeam = 1`** (`LokiGameStateStub.h:245`, `LokiStubGameMode.cpp:135`) while the backend advertises `MaxTeamSize: 3` to the same client — an unnoticed contradiction inside our own stack |
 | **Deployment** | `ags` binds `":8080"` (all interfaces — *not* loopback-only, contra a common assumption); the loopback binding is the client-side hosts file plus cert SANs. But 0 of 135 shim DLLs are in git, there is no build script, and 956 KB of load-bearing memory is outside version control. `LAN`, `second Steam account` = 0 hits |
@@ -2046,7 +2121,7 @@ not a pivot.
 | B-5 | Serve `Extra.FeatureToggleOverrides` + `GameConfig.CVars` on `/core-game/matches/{id}` | E2, FK-23e, Wall #6 | A backend field vs three sessions of bit-splicing |
 | B-6 | Try `-as-development-mode` (flag only, cache intact) | F1 | The game has told us 87 times |
 | B-7 | Restore the queue list, click BATTLE, read what the client asks for next | FK-5, Wall #1 | Settles whether QoS is even the blocker |
-| B-8 | ✅ **RESCOPED S117** — ★ send the literal text `FK15-PROBE-FROM-AGS` on the **messenger** (no ini change; baseline is a measured zero over 1,419 connections), then the TEXT heartbeat, then `dsNotif`, then sweep all 33 notif types — all one-click in the panel's WS Push tab. ⚠ `LogJson` is the WRONG detector (0 lines in 326 logs), and **`LogAccelByte` is NOT the dispatcher's category** — use `-Preset Ws`, which raises `LogAccelByteLobby` to VeryVerbose | FK-15 (`docs/fk15-ws-push-audit.md`) | One launch; positive controls are free and pre-registered |
+| B-8 | ✅ **RESCOPED S117** — ★ send the literal text `FK15-PROBE-FROM-AGS` on the **messenger** (no ini change; baseline is a measured zero over 1,419 connections), then the TEXT heartbeat, then `dsNotif`, then sweep all 33 notif types — all one-click in the panel's WS Push tab. ⚠ `LogJson` is the WRONG detector (0 lines in 326 logs), and **`LogAccelByte` is NOT the dispatcher's category** — use `-Preset Ws`, which raises `LogAccelByteLobby` to VeryVerbose | FK-15 (`docs/fk15-ws-push-audit.md`) | ✅✅ **DONE S118 — nothing left here.** All 33 swept and dispatching; the delegate join then showed **only 7 of 33 have a subscriber**, and **all 7 flew, 6 with visible UI effect**. ⚠ `dsNotif`, named above as a target, is **UNBOUND**. Successor work is the *response* surface (a real friend store), not more pushes. |
 
 ### Tier C — Multi-session, real research
 
