@@ -1279,6 +1279,18 @@ a free, exact, per-id readout and it generalises to every FPrimaryAssetId the ba
 **NOT on the native path** — all three are PAGE_NOACCESS (never executed) in two independent live
 processes, decrypted only in `dumps/missions` where the retired shim force-called them.
 `interactive.go`'s "CreateMissionModelFromFinalProgress is the factory" describes the SHIM's path.
+★★ **AND THE FIX'S VISIBLE RESULT FALSIFIED ONE MORE OF MY OWN CLAIMS.** Before the screenshots I
+predicted the modal would look unchanged, because the newly-accepted missions sit in pools with no
+`PoolGroupId`. It went from **2 categories to 4**: ONBOARDING and SEASONAL both appeared, and both
+their pools (`Onboarding`, `Tournament`) declare `PoolGroupId = None`. ⇒ **`PoolGroupId` is not a
+gate on acceptance OR on visibility** — both readings were artifacts of the same filename bug,
+since only the daily/weekly pools happened to hold missions whose filename matched their
+`InternalName`. The category rail is driven by which pools have ACCEPTED MISSIONS. The pool's
+`MetaMission` also renders now (COMPLETE ALL DAILIES 0/3, 7500 XP).
+★ Worth keeping as method: a claim built on a dataset that a KNOWN BUG was filtering will look
+clean and survive review. `PoolGroupId` was retracted twice — once as acceptance, once as
+visibility — before the underlying defect was found. **When a bug is discovered upstream, re-derive
+every conclusion drawn from the contaminated data rather than patching the wording.**
 
 ---
 

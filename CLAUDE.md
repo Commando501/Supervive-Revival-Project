@@ -113,8 +113,18 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   60 of 323 land". The 60 was a clamped count (see the `obj_by_class.py` warning below) and the
   per-pool split it produced was noise — `PoolId` was separately DISPROVED as the filter by a
   single-variable probe (`AGS_MISSION_NO_POOLID=1`: PoolId omitted from all 323 entries, ingest
-  confirmed via `PM+0xA0`, count unchanged at 126). `PoolGroupId` governs only which pools get a UI
-  category in the modal, which is why the page shows DAILIES + WEEKLIES.
+  confirmed via `PM+0xA0`, count unchanged at 126).
+  ⚠⚠ **AND `PoolGroupId` IS NOT A GATE OF ANY KIND — RETRACTED TWICE, 2026-08-14.** It was first
+  recorded as gating ACCEPTANCE, corrected to gating UI VISIBILITY, and BOTH are wrong: they were
+  artifacts of the filename bug, because only the daily/weekly pools happened to contain missions
+  whose filename matched their `InternalName`. **MEASURED after the fix: `Onboarding` and
+  `Tournament` both declare `PoolGroupId = None` and BOTH now render as categories** (ONBOARDING and
+  SEASONAL). The modal went from 2 categories to 4. ⇒ **The category rail is driven by which pools
+  have ACCEPTED MISSIONS, not by `PoolGroupId`.** Prediction made before the screenshot — "the modal
+  will look identical because the new missions are in ungrouped pools" — was FALSIFIED.
+  ★ Also now rendering natively: the pool's **`MetaMission`** (`DA_MissionPoolDailyChallenge`
+  declares `MetaMission: Armory_CompleteDailies`) appears as the **COMPLETE ALL DAILIES 0/3** header
+  above the daily list, with its own 7500 XP reward.
   ★ **The `_1`/`_2`/`_3` suffixes are real TIER VARIANTS, not duplicates**: `Alchemist_HealWithQ`
   (max 10) / `_1` (7,500) / `_2` (75,000) / `_3` (300,000). **218 of 323 catalog names are suffixed,
   and they are exactly the 218 with no declared pool** — a variant inherits its base mission's pool
