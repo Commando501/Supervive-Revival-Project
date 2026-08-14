@@ -442,7 +442,9 @@ encryption model. All three are now corrected in place.
 | Interception | A **`ProcessInstrumentationCallback`** (entry `runtime.dll+0x8d9040`) that rewrites the kernel return address when it equals `ntdll!KiUserExceptionDispatcher`, redirecting to `runtime.dll+0x8fa370`. **Not a VEH** and **not an ntdll patch** — both refuted. |
 | External reads | **RPM on a dark page does nothing: 0 of 200**, against a **200/200** control on decrypted pages. ⇒ **no external tool can ever page these in.** |
 
-**STILL OPEN: does a READ fault decrypt, or only an EXECUTE fault?** The discriminator sits inside a
+**STILL OPEN when written; NOW STRONGLY INDICATED AS EXECUTE-ONLY — see §12.4, flown 2026-08-14.**
+
+**The question as it stood: does a READ fault decrypt, or only an EXECUTE fault?** The discriminator sits inside a
 23,826-byte control-flow-flattened function (`0x147acb3–0x14809c5`, `call X; jmp rax`); recursive
 descent reached 0.5 %. The only filter readable on that path tests **`ExceptionCode` alone**
 (`cmp eax, 0xC0000005`), with AV converging to the same continuation as breakpoint/single-step.
@@ -509,6 +511,66 @@ shipping D3D12 client, 9.7–36 % lit.
 The densest instrument available (named-class vtable slots) reaches **9.2 %** of the 13,656 dark
 pages. Reading §8.3 as "the dark half is GAS + CMC + netcode" over-generalises: the *labelled* part of
 the dark half is dominated by editor and unused-plugin modules no reachable state will ever run.
+
+### 12.4 The probe was flown — two launches, and the answer is STRONGLY INDICATED, not settled
+
+`tools/sigbypass-mod/decrypt_trigger_probe.cpp`, built `-Name decrypt_trigger_probe`, manual-mapped
+into a throwaway `-NoHook` launch. Imports **KERNEL32 only**; no `VirtualAlloc`, no
+`FlushInstructionCache`, no module-image write of any kind.
+
+**Run 1 — the harness killed the experiment before it ran.** Order was control (a), control (b),
+treatment, exactly as specified. Control (a) passed (read a decrypted page, byte `0x62`). Control
+(b) — a **deliberate** read of an unmapped address — **killed the process**: the marker stops at
+its header, `__except` never returned, and the death left **no artifact at all** (no crashpad
+handoff, no `Fatal error` line, no `UECC-*` dir, no minidump).
+⇒ ★ **A guaranteed-fault control must never run before the treatment in this process.** That is a
+harness bug, not a property of the question, and it cost one launch.
+⚠ The exit-code watcher also failed: `$p.ExitCode` returned `$null` because the .NET `Process`
+object had not cached the native handle, and the formatter rendered `$null` as
+**`0x00000000 "clean exit"`** — a fabricated result from a broken instrument, of exactly the kind
+this project keeps recording. Fixed by touching `$p.Handle` before `WaitForExit`, plus an explicit
+"UNAVAILABLE — do not read this as a clean exit" branch.
+
+**Run 2 — reordered to (a) → TREATMENT → (b), and the treatment is decisive.**
+
+```
+census: EXECUTE_READ 15,275 pages | NOACCESS 15,006 pages          (30,281 total, as expected)
+[CTRL-a lit ] rva 0x2000  EXECUTE_READ -> read SUCCEEDED, byte=0x62, protection unchanged
+[TREAT dark ] rva 0x1000  ABOUT TO READ ...
+              <marker ends; process dies>
+EXIT pid=37972 code=-1073741819 (0xC0000005) after 49.9 s -- ACCESS VIOLATION
+no crashpad handoff · no UECC dir · no minidump
+```
+
+**The exit code is the finding.** `0xC0000005` is an **unhandled access violation** — it is *not*
+`0x0000DEAD`, the protector's own `NtTerminateProcess` sentinel (`runtime.dll+0x80f7f0`) that
+FK-32 identified as its deliberate anti-tamper kill. So the process was **not** killed for
+tampering; it died because a read fault on a dark page went **unserviced**.
+
+That is the argument for EXECUTE-ONLY, and it does not depend on our `__except` working:
+the protector's dispatcher **is** installed and intercepting `KiUserExceptionDispatcher` (measured,
+§12.1); a read fault on a `PAGE_NOACCESS` `.text` page occurred; and the dispatcher did **not**
+decrypt-and-resume. Had reads been a decryption trigger there would have been no unhandled AV at
+all — the page would have materialised and execution continued.
+
+**Verdict: EXECUTE-ONLY, strongly indicated. Not yet settled, because of one identified confound.**
+The faulting instruction's RIP was inside our **injected module**. A dispatcher that services only
+faults originating within the game image would produce this identical result regardless of whether
+reads decrypt. That confound is removable and the removal is cheap:
+
+★ **The clean follow-up: make the faulting instruction be the GAME'S OWN CODE.** Find a load gadget
+in already-decrypted `.text` (`mov al,[rcx]; ret` or equivalent), point `rcx` at a dark page and
+call it via the existing S55 native-call primitive. The faulting RIP is then legitimate game code
+and the confound disappears entirely. If that *also* dies `0xC0000005`, EXECUTE-ONLY is settled and
+the ~14,600-page lever is definitively dead. One launch.
+
+**Also learned, and worth its own line: SEH does not protect an injected module here.**
+`__except(EXCEPTION_EXECUTE_HANDLER)` did not catch either fault, in either run, even though the
+manual mapper called `RtlAddFunctionTable` for the module's 0x17E-entry exception table. The
+project's standing *"no C++-exception payloads"* rule therefore **extends to SEH**, and this session
+already refuted its recorded mechanism (the missing function table — §11 and the `fk10` correction).
+⇒ **Treat any fault raised from injected code as terminal.** Do not design a probe that relies on
+catching one.
 
 ### 12.3 Tooling changes made, and the ones still worth making
 
