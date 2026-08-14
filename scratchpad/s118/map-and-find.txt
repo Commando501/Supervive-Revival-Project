@@ -1,0 +1,178 @@
+### .data around the notif map: RVA 0x9FFE200..0x9FFE400
+PID 29856  base=0x7FF7C7EF0000 size=0xA9E1000   reading 0x7FF7D1EED200 +512 bytes
+  7FF7D1EED200  A0 01 EF 55 D2 01 00 00 00 00 00 00 00 00 00 00  ...U............
+  7FF7D1EED210  E0 FF EE 55 D2 01 00 00 E0 FF EE 55 D2 01 00 00  ...U.......U....
+  7FF7D1EED220  00 00 00 00 00 00 00 00 20 2C EF 55 D2 01 00 00  ........ ,.U....
+  7FF7D1EED230  20 2C EF 55 D2 01 00 00 00 00 00 00 00 00 00 00   ,.U............
+  7FF7D1EED240  40 19 EF 55 D2 01 00 00 40 19 EF 55 D2 01 00 00  @..U....@..U....
+  7FF7D1EED250  00 00 00 00 00 00 00 00 B0 2E EF 55 D2 01 00 00  ...........U....
+  7FF7D1EED260  B0 2E EF 55 D2 01 00 00 00 00 00 00 00 00 00 00  ...U............
+  7FF7D1EED270  70 18 EF 55 D2 01 00 00 70 18 EF 55 D2 01 00 00  p..U....p..U....
+  7FF7D1EED280  00 00 00 00 00 00 00 00 C0 0B EF 55 D2 01 00 00  ...........U....
+  7FF7D1EED290  C0 0B EF 55 D2 01 00 00 00 00 00 00 00 00 00 00  ...U............
+  7FF7D1EED2A0  D0 1B EF 55 D2 01 00 00 D0 1B EF 55 D2 01 00 00  ...U.......U....
+  7FF7D1EED2B0  00 00 00 00 00 00 00 00 50 22 EF 55 D2 01 00 00  ........P".U....
+  7FF7D1EED2C0  50 22 EF 55 D2 01 00 00 00 00 00 00 00 00 00 00  P".U............
+  7FF7D1EED2D0  00 1B EF 55 D2 01 00 00 00 1B EF 55 D2 01 00 00  ...U.......U....
+  7FF7D1EED2E0  00 00 00 00 00 00 00 00 40 08 EF 55 D2 01 00 00  ........@..U....
+  7FF7D1EED2F0  40 08 EF 55 D2 01 00 00 00 00 00 00 00 00 00 00  @..U............
+  7FF7D1EED300  20 B8 FD 55 D2 01 00 00 20 B8 FD 55 D2 01 00 00   ..U.... ..U....
+  7FF7D1EED310  00 00 00 00 00 00 00 00 70 07 EF 55 D2 01 00 00  ........p..U....
+  7FF7D1EED320  70 07 EF 55 D2 01 00 00 00 00 00 00 00 00 00 00  p..U............
+  7FF7D1EED330  40 31 EF 55 D2 01 00 00 40 31 EF 55 D2 01 00 00  @1.U....@1.U....
+  7FF7D1EED340  00 00 00 00 00 00 00 00 A0 06 EF 55 D2 01 00 00  ...........U....
+  7FF7D1EED350  A0 06 EF 55 D2 01 00 00 00 00 00 00 00 00 00 00  ...U............
+  7FF7D1EED360  F0 AB FD 55 D2 01 00 00 F0 AB FD 55 D2 01 00 00  ...U.......U....
+  7FF7D1EED370  00 00 00 00 00 00 00 00 20 20 EF 55 D2 01 00 00  ........  .U....
+  7FF7D1EED380  20 20 EF 55 D2 01 00 00 00 00 00 00 00 00 00 00    .U............
+  7FF7D1EED390  A0 26 EF 55 D2 01 00 00 A0 26 EF 55 D2 01 00 00  .&.U.....&.U....
+  7FF7D1EED3A0  00 00 00 00 00 00 00 00 50 1F EF 55 D2 01 00 00  ........P..U....
+  7FF7D1EED3B0  50 1F EF 55 D2 01 00 00 00 00 00 00 00 00 00 00  P..U............
+  7FF7D1EED3C0  D0 25 EF 55 D2 01 00 00 D0 25 EF 55 D2 01 00 00  .%.U.....%.U....
+  7FF7D1EED3D0  00 00 00 00 00 00 00 00 80 36 EF 55 D2 01 00 00  .........6.U....
+  7FF7D1EED3E0  80 36 EF 55 D2 01 00 00 00 00 00 00 00 00 00 00  .6.U............
+  7FF7D1EED3F0  B0 16 EF 55 D2 01 00 00 B0 16 EF 55 D2 01 00 00  ...U.......U....
+
+### Find function RVA 0x8ED6520 (called with rcx=&map@0x9FFE2D0, edx=hash, r8=key)
+PID 29856  base=0x7FF7C7EF0000 size=0xA9E1000   disassembling 0x7FF7D0DC6520 +220 bytes
+  7FF7D0DC6520  F0 10 1F                  lock adc byte ptr [rdi], bl  [+0x8ED6520]
+  7FF7D0DC6523  CE    <decode-err: unrecognized instruction>  [+0x8ED6523]
+  7FF7D0DC6524  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED6524]
+  7FF7D0DC6527  00 D0                     add al, dl  [+0x8ED6527]
+  7FF7D0DC6529  10 1F                     adc byte ptr [rdi], bl  [+0x8ED6529]
+  7FF7D0DC652B  CE    <decode-err: unrecognized instruction>  [+0x8ED652B]
+  7FF7D0DC652C  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED652C]
+  7FF7D0DC652F  00 B0 10 1F CE F7         add byte ptr [rax+0xf7ce1f10], dh  [+0x8ED652F]
+  7FF7D0DC6535  7F 00                     jnle 0x7ff7d0dc6537  [+0x8ED6535]
+  7FF7D0DC6537  00 10                     add byte ptr [rax], dl  [+0x8ED6537]
+  7FF7D0DC6539  12 1F                     adc bl, byte ptr [rdi]  [+0x8ED6539]
+  7FF7D0DC653B  CE    <decode-err: unrecognized instruction>  [+0x8ED653B]
+  7FF7D0DC653C  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED653C]
+  7FF7D0DC653F  00 E0                     add al, ah  [+0x8ED653F]
+  7FF7D0DC6541  12 1F                     adc bl, byte ptr [rdi]  [+0x8ED6541]
+  7FF7D0DC6543  CE    <decode-err: unrecognized instruction>  [+0x8ED6543]
+  7FF7D0DC6544  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED6544]
+  7FF7D0DC6547  00 60 EB                  add byte ptr [rax-0x15], ah  [+0x8ED6547]
+  7FF7D0DC654A  E6 C8                     out 0xc8, al  [+0x8ED654A]
+  7FF7D0DC654C  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED654C]
+  7FF7D0DC654F  00 60 EB                  add byte ptr [rax-0x15], ah  [+0x8ED654F]
+  7FF7D0DC6552  E6 C8                     out 0xc8, al  [+0x8ED6552]
+  7FF7D0DC6554  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED6554]
+  7FF7D0DC6557  00 20                     add byte ptr [rax], ah  [+0x8ED6557]
+  7FF7D0DC6559  EC                        in al, dx  [+0x8ED6559]
+  7FF7D0DC655A  E6 C8                     out 0xc8, al  [+0x8ED655A]
+  7FF7D0DC655C  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED655C]
+  7FF7D0DC655F  00 B0 FA 79 CE F7         add byte ptr [rax+0xf7ce79fa], dh  [+0x8ED655F]
+  7FF7D0DC6565  7F 00                     jnle 0x7ff7d0dc6567  [+0x8ED6565]
+  7FF7D0DC6567  00 20                     add byte ptr [rax], ah  [+0x8ED6567]
+  7FF7D0DC6569  EC                        in al, dx  [+0x8ED6569]
+  7FF7D0DC656A  E6 C8                     out 0xc8, al  [+0x8ED656A]
+  7FF7D0DC656C  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED656C]
+  7FF7D0DC656F  00 50 9D                  add byte ptr [rax-0x63], dl  [+0x8ED656F]
+  7FF7D0DC6572  7B CE                     jnp 0x7ff7d0dc6542  [+0x8ED6572]
+  7FF7D0DC6574  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED6574]
+  7FF7D0DC6577  00 F0                     add al, dh  [+0x8ED6577]
+  7FF7D0DC6579  E1 A8                     loope 0x7ff7d0dc6523  [+0x8ED6579]
+  7FF7D0DC657B  C8 F7 7F 00               enter 0x7ff7, 0x0  [+0x8ED657B]
+  7FF7D0DC657F  00 C8                     add al, cl  [+0x8ED657F]
+  7FF7D0DC6581  F7 79 CE                  idiv dword ptr [rcx-0x32]  [+0x8ED6581]
+  7FF7D0DC6584  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED6584]
+  7FF7D0DC6587  00 D4                     add ah, dl  [+0x8ED6587]
+  7FF7D0DC6589  F7 79 CE                  idiv dword ptr [rcx-0x32]  [+0x8ED6589]
+  7FF7D0DC658C  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED658C]
+  7FF7D0DC658F  00 50 EB                  add byte ptr [rax-0x15], dl  [+0x8ED658F]
+  7FF7D0DC6592  E6 C8                     out 0xc8, al  [+0x8ED6592]
+  7FF7D0DC6594  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED6594]
+  7FF7D0DC6597  00 40 5F                  add byte ptr [rax+0x5f], al  [+0x8ED6597]
+  7FF7D0DC659A  7A CE                     jp 0x7ff7d0dc656a  [+0x8ED659A]
+  7FF7D0DC659C  F7 7F 00                  idiv dword ptr [rdi]  [+0x8ED659C]
+  7FF7D0DC659F  00 46 00                  add byte ptr [rsi], al  [+0x8ED659F]
+  7FF7D0DC65A2  57                        push rdi  [+0x8ED65A2]
+  7FF7D0DC65A3  00 6D 00                  add byte ptr [rbp], ch  [+0x8ED65A3]
+  7FF7D0DC65A6  66 00 4D 00               add byte ptr [rbp], cl  [+0x8ED65A6]
+  7FF7D0DC65AA  65 00 64 00 69            add byte ptr gs:[rax+rax+0x69], ah  [+0x8ED65AA]
+  7FF7D0DC65AF  00 61 00                  add byte ptr [rcx], ah  [+0x8ED65AF]
+  7FF7D0DC65B2  48 00 61 00               add byte ptr [rcx], spl  [+0x8ED65B2]
+  7FF7D0DC65B6  72 00                     jb 0x7ff7d0dc65b8  [+0x8ED65B6]
+  7FF7D0DC65B8  64 00 77 00               add byte ptr fs:[rdi], dh  [+0x8ED65B8]
+  7FF7D0DC65BC  61    <decode-err: unrecognized instruction>  [+0x8ED65BC]
+  7FF7D0DC65BD  00 72 00                  add byte ptr [rdx], dh  [+0x8ED65BD]
+  7FF7D0DC65C0  65 00 56 00               add byte ptr gs:[rsi], dl  [+0x8ED65C0]
+  7FF7D0DC65C4  69 00 64 00 65 00         imul eax, dword ptr [rax], 0x650064  [+0x8ED65C4]
+  7FF7D0DC65CA  6F                        outsd  [+0x8ED65CA]
+  7FF7D0DC65CB  00 44 00 65               add byte ptr [rax+rax+0x65], al  [+0x8ED65CB]
+  7FF7D0DC65CF  00 63 00                  add byte ptr [rbx], ah  [+0x8ED65CF]
+  7FF7D0DC65D2  6F                        outsd  [+0x8ED65D2]
+  7FF7D0DC65D3  00 64 00 69               add byte ptr [rax+rax+0x69], ah  [+0x8ED65D3]
+  7FF7D0DC65D7  00 6E 00                  add byte ptr [rsi], ch  [+0x8ED65D7]
+  7FF7D0DC65DA  67 00 54 00 65            add byte ptr [eax+eax+0x65], dl  [+0x8ED65DA]
+  7FF7D0DC65DF  00 78 00                  add byte ptr [rax], bh  [+0x8ED65DF]
+  7FF7D0DC65E2  74 00                     jz 0x7ff7d0dc65e4  [+0x8ED65E2]
+  7FF7D0DC65E4  75 00                     jnz 0x7ff7d0dc65e6  [+0x8ED65E4]
+  7FF7D0DC65E6  72 00                     jb 0x7ff7d0dc65e8  [+0x8ED65E6]
+  7FF7D0DC65E8  65 00 53 00               add byte ptr gs:[rbx], dl  [+0x8ED65E8]
+  7FF7D0DC65EC  61    <decode-err: unrecognized instruction>  [+0x8ED65EC]
+  7FF7D0DC65ED  00 6D 00                  add byte ptr [rbp], ch  [+0x8ED65ED]
+  7FF7D0DC65F0  70 00                     jo 0x7ff7d0dc65f2  [+0x8ED65F0]
+  7FF7D0DC65F2  6C                        insb  [+0x8ED65F2]
+  7FF7D0DC65F3  00 65 00                  add byte ptr [rbp], ah  [+0x8ED65F3]
+  7FF7D0DC65F6  5F                        pop rdi  [+0x8ED65F6]
+  7FF7D0DC65F7  00 44 00 65               add byte ptr [rax+rax+0x65], al  [+0x8ED65F7]
+  7FF7D0DC65FB  00                        <no instruction>  [+0x8ED65FB]
+
+### hash fn RVA 0x8E904F0
+PID 29856  base=0x7FF7C7EF0000 size=0xA9E1000   disassembling 0x7FF7D0D804F0 +120 bytes
+  7FF7D0D804F0  50                        push rax  [+0x8E904F0]
+  7FF7D0D804F1  00 EE                     add dh, ch  [+0x8E904F1]
+  7FF7D0D804F3  CF                        iretd  [+0x8E904F3]
+  7FF7D0D804F4  F7 7F 00                  idiv dword ptr [rdi]  [+0x8E904F4]
+  7FF7D0D804F7  00 00                     add byte ptr [rax], al  [+0x8E904F7]
+  7FF7D0D804F9  00 00                     add byte ptr [rax], al  [+0x8E904F9]
+  7FF7D0D804FB  00 00                     add byte ptr [rax], al  [+0x8E904FB]
+  7FF7D0D804FD  00 00                     add byte ptr [rax], al  [+0x8E904FD]
+  7FF7D0D804FF  00 80 00 00 00 00         add byte ptr [rax], al  [+0x8E904FF]
+  7FF7D0D80505  00 10                     add byte ptr [rax], dl  [+0x8E90505]
+  7FF7D0D80507  00 14 00                  add byte ptr [rax+rax], dl  [+0x8E90507]
+  7FF7D0D8050A  00 00                     add byte ptr [rax], al  [+0x8E9050A]
+  7FF7D0D8050C  45 00 00                  add byte ptr [r8], r8b  [+0x8E9050C]
+  7FF7D0D8050F  00 00                     add byte ptr [rax], al  [+0x8E9050F]
+  7FF7D0D80511  00 00                     add byte ptr [rax], al  [+0x8E90511]
+  7FF7D0D80513  00 00                     add byte ptr [rax], al  [+0x8E90513]
+  7FF7D0D80515  00 00                     add byte ptr [rax], al  [+0x8E90515]
+  7FF7D0D80517  00 00                     add byte ptr [rax], al  [+0x8E90517]
+  7FF7D0D80519  00 00                     add byte ptr [rax], al  [+0x8E90519]
+  7FF7D0D8051B  00 00                     add byte ptr [rax], al  [+0x8E9051B]
+  7FF7D0D8051D  00 00                     add byte ptr [rax], al  [+0x8E9051D]
+  7FF7D0D8051F  00 01                     add byte ptr [rcx], al  [+0x8E9051F]
+  7FF7D0D80521  00 10                     add byte ptr [rax], dl  [+0x8E90521]
+  7FF7D0D80523  00 00                     add byte ptr [rax], al  [+0x8E90523]
+  7FF7D0D80525  00 00                     add byte ptr [rax], al  [+0x8E90525]
+  7FF7D0D80527  00 58 2E                  add byte ptr [rax+0x2e], bl  [+0x8E90527]
+  7FF7D0D8052A  67 CF                     addr32 iretd  [+0x8E9052A]
+  7FF7D0D8052C  F7 7F 00                  idiv dword ptr [rdi]  [+0x8E9052C]
+  7FF7D0D8052F  00 00                     add byte ptr [rax], al  [+0x8E9052F]
+  7FF7D0D80531  00 00                     add byte ptr [rax], al  [+0x8E90531]
+  7FF7D0D80533  00 00                     add byte ptr [rax], al  [+0x8E90533]
+  7FF7D0D80535  00 00                     add byte ptr [rax], al  [+0x8E90535]
+  7FF7D0D80537  00 80 05 00 00 00         add byte ptr [rax+0x5], al  [+0x8E90537]
+  7FF7D0D8053D  00 10                     add byte ptr [rax], dl  [+0x8E9053D]
+  7FF7D0D8053F  00 0A                     add byte ptr [rdx], cl  [+0x8E9053F]
+  7FF7D0D80541  00 00                     add byte ptr [rax], al  [+0x8E90541]
+  7FF7D0D80543  00 45 00                  add byte ptr [rbp], al  [+0x8E90543]
+  7FF7D0D80546  00 00                     add byte ptr [rax], al  [+0x8E90546]
+  7FF7D0D80548  00 00                     add byte ptr [rax], al  [+0x8E90548]
+  7FF7D0D8054A  00 00                     add byte ptr [rax], al  [+0x8E9054A]
+  7FF7D0D8054C  00 00                     add byte ptr [rax], al  [+0x8E9054C]
+  7FF7D0D8054E  00 00                     add byte ptr [rax], al  [+0x8E9054E]
+  7FF7D0D80550  00 00                     add byte ptr [rax], al  [+0x8E90550]
+  7FF7D0D80552  00 00                     add byte ptr [rax], al  [+0x8E90552]
+  7FF7D0D80554  00 00                     add byte ptr [rax], al  [+0x8E90554]
+  7FF7D0D80556  00 00                     add byte ptr [rax], al  [+0x8E90556]
+  7FF7D0D80558  01 00                     add dword ptr [rax], eax  [+0x8E90558]
+  7FF7D0D8055A  18 00                     sbb byte ptr [rax], al  [+0x8E9055A]
+  7FF7D0D8055C  00 00                     add byte ptr [rax], al  [+0x8E9055C]
+  7FF7D0D8055E  00 00                     add byte ptr [rax], al  [+0x8E9055E]
+  7FF7D0D80560  70 04                     jo 0x7ff7d0d80566  [+0x8E90560]
+  7FF7D0D80562  D8 D0                     fcom st0, st0  [+0x8E90562]
+  7FF7D0D80564  F7 7F 00                  idiv dword ptr [rdi]  [+0x8E90564]
+  7FF7D0D80567  00                        <no instruction>  [+0x8E90567]

@@ -1,0 +1,849 @@
+[
+ {
+  "type": "connectNotif",
+  "struct": "AccelByteModelsLobbySessionId",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "LobbySessionID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "SequenceID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "SequenceNumber",
+    "type": "IntProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "disconnectNotif",
+  "struct": "AccelByteModelsDisconnectNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "Message",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyLeaveNotif",
+  "struct": "AccelByteModelsLeavePartyNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "LeaderId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Leader",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "PartyId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyInviteNotif",
+  "struct": "AccelByteModelsInvitationNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "InviterID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "InviteeID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyGetInvitedNotif",
+  "struct": "AccelByteModelsPartyGetInvitedNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "From",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "PartyId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "InvitationToken",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyJoinNotif",
+  "struct": "AccelByteModelsPartyJoinNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyRejectNotif",
+  "struct": "AccelByteModelsPartyRejectNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "PartyId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "LeaderId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Leader",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyKickNotif",
+  "struct": "AccelByteModelsGotKickedFromPartyNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "LeaderId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Leader",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "PartyId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyDataUpdateNotif",
+  "struct": "AccelByteModelsPartyDataNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "PartyId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "NameSpace",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Leader",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Members",
+    "type": "ArrayProperty<StrProperty>",
+    "typeUnverified": true
+   },
+   {
+    "name": "Invitees",
+    "type": "ArrayProperty<StructProperty UStruct:JsonObjectWrapper>",
+    "typeUnverified": true
+   },
+   {
+    "name": "Custom_attribute",
+    "type": "StructProperty (UStruct:JsonObjectWrapper)",
+    "typeUnverified": false
+   },
+   {
+    "name": "UpdatedAt",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyConnectNotif",
+  "struct": "AccelByteModelsPartyMemberConnectionNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "PartyId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyDisconnectNotif",
+  "struct": "AccelByteModelsPartyMemberConnectionNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "PartyId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyNotif",
+  "struct": "AccelByteModelsPartyNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "Sender",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Topic",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Payload",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "personalChatNotif",
+  "struct": "AccelByteModelsPersonalMessageNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "ID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "From",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "To",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Payload",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "ReceivedAt",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "partyChatNotif",
+  "struct": "AccelByteModelsPartyMessageNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "ID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "From",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "To",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Payload",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "ReceivedAt",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "channelChatNotif",
+  "struct": "AccelByteModelsChannelMessageNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "From",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "ChannelSlug",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Payload",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "SentAt",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "userStatusNotif",
+  "struct": "AccelByteModelsUsersPresenceNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Availability",
+    "type": "EnumProperty<StrProperty>",
+    "typeUnverified": true
+   },
+   {
+    "name": "Activity",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Platform",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "LastSeenAt",
+    "type": "StructProperty (UStruct:DateTime)",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "messageNotif",
+  "struct": "AccelByteModelsNotificationMessage",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "ID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "From",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "To",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Topic",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Payload",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "SentAt",
+    "type": "StructProperty (UStruct:DateTime)",
+    "typeUnverified": false
+   },
+   {
+    "name": "SequenceID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "SequenceNumber",
+    "type": "IntProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "userBannedNotification",
+  "struct": "AccelByteModelsUserBannedNotification",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "NameSpace",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Ban",
+    "type": "EnumProperty<StrProperty>",
+    "typeUnverified": true
+   },
+   {
+    "name": "EndDate",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Reason",
+    "type": "EnumProperty<BoolProperty>",
+    "typeUnverified": true
+   },
+   {
+    "name": "Enable",
+    "type": "BoolProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "userUnbannedNotification",
+  "struct": "AccelByteModelsUserBannedNotification",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "NameSpace",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Ban",
+    "type": "EnumProperty<StrProperty>",
+    "typeUnverified": true
+   },
+   {
+    "name": "EndDate",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Reason",
+    "type": "EnumProperty<BoolProperty>",
+    "typeUnverified": true
+   },
+   {
+    "name": "Enable",
+    "type": "BoolProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "matchmakingNotif",
+  "struct": "AccelByteModelsMatchmakingNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "MatchID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Status",
+    "type": "EnumProperty<StrProperty>",
+    "typeUnverified": true
+   },
+   {
+    "name": "GameMode",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Deployment",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "ClientVersion",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Joinable",
+    "type": "BoolProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "MatchingAllies",
+    "type": "StructProperty (UStruct:AccelByteModelsMatchingAllies)",
+    "typeUnverified": false
+   },
+   {
+    "name": "Region",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Message",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "ErrorCode",
+    "type": "IntProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "setReadyConsentNotif",
+  "struct": "AccelByteModelsReadyConsentNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "MatchID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "setRejectConsentNotif",
+  "struct": "AccelByteModelsRejectConsentNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "MatchID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "rematchmakingNotif",
+  "struct": "AccelByteModelsRematchmakingNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "BanDuration",
+    "type": "IntProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "dsNotif",
+  "struct": "AccelByteModelsDsNotice",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "Status",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "MatchID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "PodName",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Ip",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "ImageVersion",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "ServerVersion",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Port",
+    "type": "IntProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Message",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "IsOK",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Region",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Ports",
+    "type": "MapProperty",
+    "typeUnverified": true
+   },
+   {
+    "name": "CustomAttribute",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "acceptFriendsNotif",
+  "struct": "AccelByteModelsAcceptFriendsNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "FriendId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "requestFriendsNotif",
+  "struct": "AccelByteModelsRequestFriendsNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "FriendId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "unfriendNotif",
+  "struct": "AccelByteModelsUnfriendNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "FriendId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "cancelFriendsNotif",
+  "struct": "AccelByteModelsCancelFriendsNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "rejectFriendsNotif",
+  "struct": "AccelByteModelsRejectFriendsNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "blockPlayerNotif",
+  "struct": "AccelByteModelsBlockPlayerNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "BlockedUserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "unblockPlayerNotif",
+  "struct": "AccelByteModelsUnblockPlayerNotif",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "UserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "UnblockedUserId",
+    "type": "StrProperty",
+    "typeUnverified": false
+   }
+  ]
+ },
+ {
+  "type": "errorNotif",
+  "struct": null,
+  "found": false,
+  "fields": []
+ },
+ {
+  "type": "messageSessionNotif",
+  "struct": "AccelByteModelsSessionNotificationMessage",
+  "found": true,
+  "super": "",
+  "fields": [
+   {
+    "name": "Type",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Topic",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "Payload",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "SentAt",
+    "type": "StructProperty (UStruct:DateTime)",
+    "typeUnverified": false
+   },
+   {
+    "name": "SequenceID",
+    "type": "StrProperty",
+    "typeUnverified": false
+   },
+   {
+    "name": "SequenceNumber",
+    "type": "IntProperty",
+    "typeUnverified": false
+   }
+  ]
+ }
+]

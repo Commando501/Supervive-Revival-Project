@@ -1,0 +1,82 @@
+=== HARNESS SELF-TEST ===
+  [PASS] positive control: FString@0x9FFEBD0 -> 'LbS' (Num=4 Max=8)
+  [PASS] negative control: wstrings qqxxNotif -> 0 hits
+
+=== CONTAINER: TMap @ .data RVA 0x9FFE2D0 ===
+  Elements.Data = 0x1D230AF9280
+  ArrayNum      = 33   ArrayMax = 36
+  AllocFlags    = ['0xffffffff', '0x1', '0x0', '0x0']  (popcount=33)
+  NumBits=33 MaxBits=128 FirstFreeIndex=-1 NumFreeIndices=0
+  Hash=0x1D24EC88280 HashSize=32
+
+=== ELEMENTS (map slot order) ===
+slot  enum   type name                  evidence
+0     1      connectNotif               Data=0x1D24EFE9340 Num=13 Max=16 next=-1 hidx=15
+1     2      disconnectNotif            Data=0x1D24EFE9360 Num=16 Max=16 next=-1 hidx=19
+2     3      partyLeaveNotif            Data=0x1D24EFE9380 Num=16 Max=16 next=-1 hidx=21
+3     4      partyInviteNotif           Data=0x1D24F0B60A0 Num=17 Max=24 next=-1 hidx=18
+4     5      partyGetInvitedNotif       Data=0x1D24F0B60D0 Num=21 Max=24 next=-1 hidx=31
+5     6      partyJoinNotif             Data=0x1D24EFE93A0 Num=15 Max=16 next=-1 hidx=28
+6     7      partyRejectNotif           Data=0x1D24F0B6100 Num=17 Max=24 next=-1 hidx=27
+7     8      partyKickNotif             Data=0x1D24EFE93C0 Num=15 Max=16 next=-1 hidx=16
+8     9      partyDataUpdateNotif       Data=0x1D24F0B6130 Num=21 Max=24 next=3 hidx=18
+9     12     partyNotif                 Data=0x1D24EFE93E0 Num=11 Max=16 next=8 hidx=18
+10    10     partyConnectNotif          Data=0x1D24F0B6160 Num=18 Max=24 next=-1 hidx=10
+11    11     partyDisconnectNotif       Data=0x1D24F0B6190 Num=21 Max=24 next=-1 hidx=9
+12    13     personalChatNotif          Data=0x1D24F0B61C0 Num=18 Max=24 next=-1 hidx=6
+13    14     partyChatNotif             Data=0x1D24EFE9400 Num=15 Max=16 next=5 hidx=28
+14    15     channelChatNotif           Data=0x1D24F0B61F0 Num=17 Max=24 next=11 hidx=9
+15    16     userStatusNotif            Data=0x1D24EFE9420 Num=16 Max=16 next=-1 hidx=24
+16    17     messageNotif               Data=0x1D24EFE9440 Num=13 Max=16 next=-1 hidx=12
+17    18     userBannedNotification     Data=0x1D24F0B6220 Num=23 Max=24 next=-1 hidx=30
+18    19     userUnbannedNotification   Data=0x1D24F07F800 Num=25 Max=32 next=4 hidx=31
+19    20     matchmakingNotif           Data=0x1D24F0B6250 Num=17 Max=24 next=-1 hidx=7
+20    21     setReadyConsentNotif       Data=0x1D24F0B6280 Num=21 Max=24 next=-1 hidx=8
+21    22     setRejectConsentNotif      Data=0x1D24F0B62B0 Num=22 Max=24 next=17 hidx=30
+22    23     rematchmakingNotif         Data=0x1D24F0B62E0 Num=19 Max=24 next=-1 hidx=3
+23    24     dsNotif                    Data=0x1D24F130BA0 Num=8 Max=8 next=22 hidx=3
+24    25     acceptFriendsNotif         Data=0x1D24F0B6310 Num=19 Max=24 next=-1 hidx=26
+25    26     requestFriendsNotif        Data=0x1D24F0B6340 Num=20 Max=24 next=-1 hidx=13
+26    27     unfriendNotif              Data=0x1D24EFE9460 Num=14 Max=16 next=19 hidx=7
+27    28     cancelFriendsNotif         Data=0x1D24F0B6370 Num=19 Max=24 next=14 hidx=9
+28    29     rejectFriendsNotif         Data=0x1D24F0B63A0 Num=19 Max=24 next=2 hidx=21
+29    30     blockPlayerNotif           Data=0x1D24F0B63D0 Num=17 Max=24 next=-1 hidx=14
+30    31     unblockPlayerNotif         Data=0x1D24F0B6400 Num=19 Max=24 next=-1 hidx=0
+31    32     signalingP2PNotif          Data=0x1D24F0B6430 Num=18 Max=24 next=27 hidx=9
+32    33     errorNotif                 Data=0x1D24EFE9480 Num=11 Max=16 next=-1 hidx=11
+
+=== BY ENUM VALUE  (jump index = enum-1) ===
+enum   jmpidx type name                  map slot
+1      0      connectNotif               0
+2      1      disconnectNotif            1
+3      2      partyLeaveNotif            2
+4      3      partyInviteNotif           3
+5      4      partyGetInvitedNotif       4
+6      5      partyJoinNotif             5
+7      6      partyRejectNotif           6
+8      7      partyKickNotif             7
+9      8      partyDataUpdateNotif       8
+10     9      partyConnectNotif          10
+11     10     partyDisconnectNotif       11
+12     11     partyNotif                 9
+13     12     personalChatNotif          12
+14     13     partyChatNotif             13
+15     14     channelChatNotif           14
+16     15     userStatusNotif            15
+17     16     messageNotif               16
+18     17     userBannedNotification     17
+19     18     userUnbannedNotification   18
+20     19     matchmakingNotif           19
+21     20     setReadyConsentNotif       20
+22     21     setRejectConsentNotif      21
+23     22     rematchmakingNotif         22
+24     23     dsNotif                    23
+25     24     acceptFriendsNotif         24
+26     25     requestFriendsNotif        25
+27     26     unfriendNotif              26
+28     27     cancelFriendsNotif         27
+29     28     rejectFriendsNotif         28
+30     29     blockPlayerNotif           29
+31     30     unblockPlayerNotif         30
+32     31     signalingP2PNotif          31
+33     32     errorNotif                 32

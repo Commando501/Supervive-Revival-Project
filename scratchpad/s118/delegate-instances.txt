@@ -1,0 +1,33 @@
+### CAPTURE 2026-08-13T22:52:08Z PID=29856 base=0x7FF7C7EF0000 -- delegate instance allocations
+### SLOT +0x12c0  data=0x1D21663F430
+ERROR: bad address: strconv.ParseUint: parsing "1D21663F430\r": invalid syntax
+### SLOT +0x12d0  data=0x1D21663DCC0
+ERROR: bad address: strconv.ParseUint: parsing "1D21663DCC0\r": invalid syntax
+### SLOT +0x12e0  data=0x1D21663DC30
+ERROR: bad address: strconv.ParseUint: parsing "1D21663DC30\r": invalid syntax
+### SLOT +0x1570  data=0x1D21663E6E0
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E6E0\r": invalid syntax
+### SLOT +0x1590  data=0x1D21663DBA0
+ERROR: bad address: strconv.ParseUint: parsing "1D21663DBA0\r": invalid syntax
+### SLOT +0x15a0  data=0x1D21663E770
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E770\r": invalid syntax
+### SLOT +0x15c0  data=0x1D21663E710
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E710\r": invalid syntax
+### SLOT +0x15d0  data=0x1D21663E7D0
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E7D0\r": invalid syntax
+### SLOT +0x15f0  data=0x1D21663E830
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E830\r": invalid syntax
+### SLOT +0x1600  data=0x1D21663E860
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E860\r": invalid syntax
+### SLOT +0x1610  data=0x1D21663DC00
+ERROR: bad address: strconv.ParseUint: parsing "1D21663DC00\r": invalid syntax
+### SLOT +0x1630  data=0x1D21663E800
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E800\r": invalid syntax
+### SLOT +0x1640  data=0x1D21663E7A0
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E7A0\r": invalid syntax
+### SLOT +0x1650  data=0x1D21663E920
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E920\r": invalid syntax
+### SLOT +0x1660  data=0x1D21663E740
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E740\r": invalid syntax
+### SLOT +0x1670  data=0x1D21663E650
+ERROR: bad address: strconv.ParseUint: parsing "1D21663E650\r": invalid syntax

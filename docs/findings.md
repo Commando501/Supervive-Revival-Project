@@ -13,8 +13,37 @@ Written so the next session (or a new contributor) can continue without re-deriv
 - **HTTP stack:** libcurl 8.4.0 / OpenSSL 1.1.1t, `bVerifyPeer=true`. Loose CA bundle at
   `Loki/Content/Certificates/cacert.pem` (NOT packed — editable, and it IS the bundle
   libcurl uses).
-- **Launcher:** `SUPERVIVE.exe` → `preloader.dll` + `runtime.dll` is a CEF/Electron shell.
-  The in-engine login is UMG. We launch `SUPERVIVE-Win64-Shipping.exe` directly.
+- **Launcher:** `SUPERVIVE.exe` is Epic's **stock UE bootstrap launcher** — 240,328 B,
+  6–7 stock PE sections, a single PDB string `BootstrapPackagedGame-Win64-Shipping.pdb`,
+  and **zero** `electron` / `libcef` / `chromium` strings. The in-engine login is UMG. We
+  launch `SUPERVIVE-Win64-Shipping.exe` directly.
+
+  > ### ⚠ RETRACTED 2026-08-13 — FK-17
+  > **This line used to read:** *"**Launcher:** `SUPERVIVE.exe` → `preloader.dll` +
+  > `runtime.dll` is a CEF/Electron shell."*
+  >
+  > **That was FALSE.** It was inferred from filenames and never checked against the
+  > binaries. Two independent things are wrong with it:
+  > 1. `preloader.dll` and `runtime.dll` **are not beside `SUPERVIVE.exe`** — they live in
+  >    `Loki/Binaries/Win64/` and appear in **no shipping manifest**. And neither is a
+  >    browser shell: they are the bespoke protector, which self-identifies as
+  >    `packer/3.3.1` (see [fk10-protector-identified.md](fk10-protector-identified.md)).
+  > 2. `SUPERVIVE.exe` itself contains **no CEF/Electron/Chromium string at all**.
+  >
+  > **What is actually true — and it is more useful than the false version.** Chromium
+  > *is* in this game, but **inside the game process**, as Unreal's own `WebBrowserWidget`
+  > plugin plus `Engine/Binaries/ThirdParty/CEF3/Win64/`. It initialises on **every
+  > launch** (measured in `Saved/Logs/Loki.log`: `LogPluginManager: Mounting Engine plugin
+  > WebBrowserWidget`; `LogCEFBrowser: CEF GPU acceleration enabled`; `chrome_elf.dll`,
+  > `libcef.dll`, `libGLESv2.dll`, `libEGL.dll` all loaded from that ThirdParty path).
+  >
+  > **Why the error mattered:** it pointed reasoning at the one binary with **no** CEF and
+  > away from the one that has it, which is plausibly why the live in-game CEF surface was
+  > never investigated for ~100 sessions.
+  >
+  > ⚠ **Do not let this retraction spill onto the adjacent, VERIFIED claim** under
+  > *"usmap dumping is BLOCKED"* below: *"its PE import table lists ONLY `preloader.dll`"*
+  > is **TRUE** (one import descriptor). Only the "CEF/Electron shell" framing is retracted.
 - **Anti-cheat:** EasyAntiCheat present but does not block launching the shipping exe directly.
 - **Real AccelByte client_id:** `ba8fb59a34bb481abca08c46ba488025` (empty secret).
 

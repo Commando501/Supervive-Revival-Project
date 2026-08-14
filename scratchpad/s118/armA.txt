@@ -1,0 +1,22 @@
+[2026.08.13-23.47.45:420][900]LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnMessageReceived
+[2026.08.13-23.47.45:457][905]LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnClosed
+[2026.08.13-23.47.45:458][906]LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnMessageReceived
+[2026.08.13-23.47.45:713][940]LogAccelByteLobby: Verbose: Raw Lobby Response
+LbStype: disconnectNotif
+message: S118ARMALbE
+[2026.08.13-23.47.45:714][940]LogAccelByteLobby: VeryVerbose: JSON Version: {"type":"disconnectNotif","message":"S118ARMA"}
+[2026.08.13-23.47.45:714][940]LogAccelByteLobby: VeryVerbose: Type: disconnectNotif
+[2026.08.13-23.47.45:714][940]LogAccelByteLobby: Verbose: Raw Lobby Response
+
+[2026.08.13-23.47.45:714][940]LogAccelByteLobby: Connection closed. Status code: 1006  Reason:  Clean: false Reconnecting: true
+[2026.08.13-23.47.46:214][ 11]LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::Connect
+[2026.08.13-23.47.46:299][ 23]LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnConnectionConnected
+[2026.08.13-23.47.46:721][ 81]LogAccelByteLobby: Connected
+[2026.08.13-23.47.46:721][ 82]LogAccelByte: Verbose: AccelByte::Api::Lobby::ListIncomingFriends
+[2026.08.13-23.47.46:721][ 82]LogAccelByteLobby: Verbose: Sending request: type: listIncomingFriendsRequest
+id: friends-2916
+[2026.08.13-23.47.46:721][ 82]LogAccelByte: Verbose: AccelByte::Api::Lobby::ListOutgoingFriends
+[2026.08.13-23.47.46:721][ 82]LogAccelByteLobby: Verbose: Sending request: type: listOutgoingFriendsRequest
+id: friends-6995
+[2026.08.13-23.47.46:721][ 82]LogAccelByte: Verbose: AccelByte::Api::Lobby::LoadFriendsList
+[2026.08.13-23.47.46:722][ 82]LogAccelByteLobby: Verbose: Sending request: type: listOfFriendsRequest
