@@ -1,0 +1,2691 @@
+{
+"Alchemist_HealWithQ": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Alchemist_HealWithQ"
+}
+],
+"pool": "HunterMissions"
+},
+"Alchemist_HealWithQ_1": {
+"objectives": [
+{
+"max": 7500.0,
+"name": "Alchemist_HealWithQ"
+}
+]
+},
+"Alchemist_HealWithQ_2": {
+"objectives": [
+{
+"max": 75000.0,
+"name": "Alchemist_HealWithQ"
+}
+]
+},
+"Alchemist_HealWithQ_3": {
+"objectives": [
+{
+"max": 300000.0,
+"name": "Alchemist_HealWithQ"
+}
+]
+},
+"Alchemist_MortarDamage": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Alchemist_MortarDamage"
+}
+],
+"pool": "HunterMissions"
+},
+"Alchemist_MortarDamage_1": {
+"objectives": [
+{
+"max": 25.0,
+"name": "Alchemist_MortarDamage"
+}
+]
+},
+"Alchemist_MortarDamage_2": {
+"objectives": [
+{
+"max": 250.0,
+"name": "Alchemist_MortarDamage"
+}
+]
+},
+"Alchemist_MortarDamage_3": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "Alchemist_MortarDamage"
+}
+]
+},
+"Alchemist_UltMultihit": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Alchemist_UltMultihit"
+}
+],
+"pool": "HunterMissions"
+},
+"Alchemist_UltMultihit_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Alchemist_UltMultihit"
+}
+]
+},
+"Alchemist_UltMultihit_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "Alchemist_UltMultihit"
+}
+]
+},
+"ArmoryDaily_CompleteDailies": {
+"objectives": [
+{
+"max": 3.0,
+"name": "ArmoryDaily_CompleteDailies"
+}
+],
+"pool": "DailyChallenge"
+},
+"ArmoryDaily_GetKnocks": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Knocks"
+}
+],
+"pool": "Daily"
+},
+"ArmoryDaily_PlayAGame": {
+"objectives": [
+{
+"max": 1.0,
+"name": "PlayAGame"
+}
+],
+"pool": "DailyChallenge"
+},
+"ArmoryDaily_PurchaseItems": {
+"objectives": [
+{
+"max": 5.0,
+"name": "ArmoryOnboarding_PurchaseEquipmentOrTrinketsInShop"
+}
+],
+"pool": "Daily"
+},
+"ArmoryDaily_Sunrises": {
+"objectives": [
+{
+"max": 6.0,
+"name": "Sunrises"
+}
+],
+"pool": "Daily"
+},
+"ArmoryOnboarding_1": {
+"objectives": [
+{
+"max": 1.0,
+"name": "ArmoryOnboarding_PlayBR"
+}
+],
+"pool": "Onboarding"
+},
+"ArmoryOnboarding_2": {
+"objectives": [
+{
+"max": 1.0,
+"name": "ArmoryOnboarding_PlayBR"
+}
+],
+"pool": "Onboarding"
+},
+"ArmoryOnboarding_3": {
+"objectives": [
+{
+"max": 1.0,
+"name": "ArmoryOnboarding_PurchaseEquipment"
+}
+],
+"pool": "Onboarding"
+},
+"Armory_WeeklyBossKills": {
+"objectives": [
+{
+"max": 15.0,
+"name": "BossKills"
+}
+],
+"pool": "Weekly"
+},
+"Armory_WeeklyBoxes": {
+"objectives": [
+{
+"max": 45.0,
+"name": "Boxes"
+}
+],
+"pool": "Weekly"
+},
+"Armory_WeeklyCaptureBonfires": {
+"objectives": [
+{
+"max": 20.0,
+"name": "CaptureBonfires"
+}
+],
+"pool": "Weekly"
+},
+"Armory_WeeklyFullKit": {
+"objectives": [
+{
+"max": 3.0,
+"name": "TopXWithFullArmoryInventory"
+}
+],
+"pool": "Weekly"
+},
+"Armory_WeeklyMinions": {
+"objectives": [
+{
+"max": 500.0,
+"name": "KillMinions"
+}
+],
+"pool": "Weekly"
+},
+"Armory_WeeklyPlayUniqueHunters": {
+"objectives": [
+{
+"max": 5.0,
+"name": "PlayUniqueHunters"
+}
+],
+"pool": "Weekly"
+},
+"Armory_WeeklyTeamWipes": {
+"objectives": [
+{
+"max": 30.0,
+"name": "TeamWipes"
+}
+],
+"pool": "Weekly"
+},
+"Armory_WeeklyVaults": {
+"objectives": [
+{
+"max": 12.0,
+"name": "Vaults"
+}
+],
+"pool": "Weekly"
+},
+"Armory_WeeklyWinGame": {
+"objectives": [
+{
+"max": 1.0,
+"name": "WinABR"
+}
+],
+"pool": "WeeklyChallenges"
+},
+"Assault_CombatSlideFrequently_1": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Assault_CombatSlideFrequently"
+}
+]
+},
+"Assault_CombatSlideFrequently_2": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "Assault_CombatSlideFrequently"
+}
+]
+},
+"Assault_CombatSlideFrequently_3": {
+"objectives": [
+{
+"max": 4000.0,
+"name": "Assault_CombatSlideFrequently"
+}
+]
+},
+"Assault_CombatSlideFrequently_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Assault_CombatSlideFrequently"
+}
+],
+"pool": "HunterMissions"
+},
+"Assault_LMBDazedTargets_1": {
+"objectives": [
+{
+"max": 20.0,
+"name": "Assault_LMBDazedTargets"
+}
+]
+},
+"Assault_LMBDazedTargets_2": {
+"objectives": [
+{
+"max": 200.0,
+"name": "Assault_LMBDazedTargets"
+}
+]
+},
+"Assault_LMBDazedTargets_3": {
+"objectives": [
+{
+"max": 777.0,
+"name": "Assault_LMBDazedTargets"
+}
+]
+},
+"Assault_LMBDazedTargets_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Assault_LMBDazedTargets"
+}
+],
+"pool": "HunterMissions"
+},
+"Assault_MultihitLaser_1": {
+"objectives": [
+{
+"max": 20.0,
+"name": "Assault_MultihitLaser"
+}
+]
+},
+"Assault_MultihitLaser_2": {
+"objectives": [
+{
+"max": 200.0,
+"name": "Assault_MultihitLaser"
+}
+]
+},
+"Assault_MultihitLaser_3": {
+"objectives": [
+{
+"max": 600.0,
+"name": "Assault_MultihitLaser"
+}
+]
+},
+"Assault_MultihitLaser_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Assault_MultihitLaser"
+}
+],
+"pool": "HunterMissions"
+},
+"BacklineHealer_EKnockEnemiesTogether_1": {
+"objectives": [
+{
+"max": 25.0,
+"name": "BacklineHealer_EKnockEnemiesTogether"
+}
+]
+},
+"BacklineHealer_EKnockEnemiesTogether_2": {
+"objectives": [
+{
+"max": 250.0,
+"name": "BacklineHealer_EKnockEnemiesTogether"
+}
+]
+},
+"BacklineHealer_EKnockEnemiesTogether_3": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "BacklineHealer_EKnockEnemiesTogether"
+}
+]
+},
+"BacklineHealer_EKnockEnemiesTogether_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "BacklineHealer_EKnockEnemiesTogether"
+}
+],
+"pool": "HunterMissions"
+},
+"BacklineHealer_GaleForceProcs_1": {
+"objectives": [
+{
+"max": 100.0,
+"name": "BacklineHealer_GaleForceProcs"
+}
+]
+},
+"BacklineHealer_GaleForceProcs_2": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "BacklineHealer_GaleForceProcs"
+}
+]
+},
+"BacklineHealer_GaleForceProcs_3": {
+"objectives": [
+{
+"max": 4000.0,
+"name": "BacklineHealer_GaleForceProcs"
+}
+]
+},
+"BacklineHealer_GaleForceProcs_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "BacklineHealer_GaleForceProcs"
+}
+],
+"pool": "HunterMissions"
+},
+"BacklineHealer_RMultiHitTargets_1": {
+"objectives": [
+{
+"max": 20.0,
+"name": "BacklineHealer_RMultiHitTargets"
+}
+]
+},
+"BacklineHealer_RMultiHitTargets_2": {
+"objectives": [
+{
+"max": 200.0,
+"name": "BacklineHealer_RMultiHitTargets"
+}
+]
+},
+"BacklineHealer_RMultiHitTargets_3": {
+"objectives": [
+{
+"max": 800.0,
+"name": "BacklineHealer_RMultiHitTargets"
+}
+]
+},
+"BacklineHealer_RMultiHitTargets_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "BacklineHealer_RMultiHitTargets"
+}
+],
+"pool": "HunterMissions"
+},
+"Beebo_QKnockEnemies": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Beebo_QKnockEnemies"
+}
+],
+"pool": "HunterMissions"
+},
+"Beebo_QKnockEnemies_1": {
+"objectives": [
+{
+"max": 25.0,
+"name": "Beebo_QKnockEnemies"
+}
+]
+},
+"Beebo_QKnockEnemies_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Beebo_QKnockEnemies"
+}
+]
+},
+"Beebo_QKnockEnemies_3": {
+"objectives": [
+{
+"max": 500.0,
+"name": "Beebo_QKnockEnemies"
+}
+]
+},
+"Beebo_RAbductEnemies": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Beebo_RAbductEnemies"
+}
+],
+"pool": "HunterMissions"
+},
+"Beebo_RAbductEnemies_1": {
+"objectives": [
+{
+"max": 25.0,
+"name": "Beebo_RAbductEnemies"
+}
+]
+},
+"Beebo_RAbductEnemies_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Beebo_RAbductEnemies"
+}
+]
+},
+"Beebo_RAbductEnemies_3": {
+"objectives": [
+{
+"max": 500.0,
+"name": "Beebo_RAbductEnemies"
+}
+]
+},
+"Beebo_RMBHitEnemies": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Beebo_RMBHitEnemies"
+}
+],
+"pool": "HunterMissions"
+},
+"Beebo_RMBHitEnemies_2": {
+"objectives": [
+{
+"max": 20.0,
+"name": "Beebo_RMBHitEnemies"
+}
+]
+},
+"Beebo_RMBHitEnemies_3": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Beebo_RMBHitEnemies"
+}
+]
+},
+"BountyHunter_ShiftLandLMBs": {
+"objectives": [
+{
+"max": 5.0,
+"name": "BountyHunter_ShiftLandLMBs"
+}
+],
+"pool": "HunterMissions"
+},
+"BountyHunter_ShiftLandLMBs_1": {
+"objectives": [
+{
+"max": 50.0,
+"name": "BountyHunter_ShiftLandLMBs"
+}
+]
+},
+"BountyHunter_ShiftLandLMBs_2": {
+"objectives": [
+{
+"max": 500.0,
+"name": "BountyHunter_ShiftLandLMBs"
+}
+]
+},
+"BountyHunter_ShiftLandLMBs_3": {
+"objectives": [
+{
+"max": 2000.0,
+"name": "BountyHunter_ShiftLandLMBs"
+}
+]
+},
+"BountyHunter_StunEnemies": {
+"objectives": [
+{
+"max": 5.0,
+"name": "BountyHunter_StunEnemies"
+}
+],
+"pool": "HunterMissions"
+},
+"BountyHunter_StunEnemies_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "BountyHunter_StunEnemies"
+}
+]
+},
+"BountyHunter_StunEnemies_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "BountyHunter_StunEnemies"
+}
+]
+},
+"BountyHunter_StunEnemies_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "BountyHunter_StunEnemies"
+}
+]
+},
+"BountyHunter_UltKnockEnemies": {
+"objectives": [
+{
+"max": 5.0,
+"name": "BountyHunter_UltKnockEnemies"
+}
+],
+"pool": "HunterMissions"
+},
+"BountyHunter_UltKnockEnemies_2": {
+"objectives": [
+{
+"max": 50.0,
+"name": "BountyHunter_UltKnockEnemies"
+}
+]
+},
+"BountyHunter_UltKnockEnemies_3": {
+"objectives": [
+{
+"max": 200.0,
+"name": "BountyHunter_UltKnockEnemies"
+}
+]
+},
+"BurstCaster_PassiveProc": {
+"objectives": [
+{
+"max": 10.0,
+"name": "BurstCaster_PassiveProc"
+}
+],
+"pool": "HunterMissions"
+},
+"BurstCaster_PassiveProc_1": {
+"objectives": [
+{
+"max": 100.0,
+"name": "BurstCaster_PassiveProc"
+}
+]
+},
+"BurstCaster_PassiveProc_2": {
+"objectives": [
+{
+"max": 500.0,
+"name": "BurstCaster_PassiveProc"
+}
+]
+},
+"BurstCaster_PassiveProc_3": {
+"objectives": [
+{
+"max": 3000.0,
+"name": "BurstCaster_PassiveProc"
+}
+]
+},
+"BurstCaster_QMultiHit": {
+"objectives": [
+{
+"max": 10.0,
+"name": "BurstCaster_QMultiHit"
+}
+],
+"pool": "HunterMissions"
+},
+"BurstCaster_QMultiHit_1": {
+"objectives": [
+{
+"max": 25.0,
+"name": "BurstCaster_QMultiHit"
+}
+]
+},
+"BurstCaster_QMultiHit_2": {
+"objectives": [
+{
+"max": 150.0,
+"name": "BurstCaster_QMultiHit"
+}
+]
+},
+"BurstCaster_QMultiHit_3": {
+"objectives": [
+{
+"max": 500.0,
+"name": "BurstCaster_QMultiHit"
+}
+]
+},
+"BurstCaster_RMBReturnHit": {
+"objectives": [
+{
+"max": 10.0,
+"name": "BurstCaster_RMBReturnHit"
+}
+],
+"pool": "HunterMissions"
+},
+"BurstCaster_RMBReturnHit_2": {
+"objectives": [
+{
+"max": 125.0,
+"name": "BurstCaster_RMBReturnHit"
+}
+]
+},
+"BurstCaster_RMBReturnHit_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "BurstCaster_RMBReturnHit"
+}
+]
+},
+"CompleteAllTutorialMaps": {
+"objectives": [
+{
+"max": 6.0,
+"name": "CompleteAllTutorialMaps_Base"
+}
+],
+"pool": "TutorialMaps"
+},
+"Earthtank_CreateRocks": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Earthtank_CreateRocks"
+}
+],
+"pool": "HunterMissions"
+},
+"Earthtank_CreateRocks_1": {
+"objectives": [
+{
+"max": 200.0,
+"name": "Earthtank_CreateRocks"
+}
+]
+},
+"Earthtank_CreateRocks_2": {
+"objectives": [
+{
+"max": 2000.0,
+"name": "Earthtank_CreateRocks"
+}
+]
+},
+"Earthtank_CreateRocks_3": {
+"objectives": [
+{
+"max": 8000.0,
+"name": "Earthtank_CreateRocks"
+}
+]
+},
+"Earthtank_DamageWithRocks": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Earthtank_DamageWithRocks"
+}
+],
+"pool": "HunterMissions"
+},
+"Earthtank_DamageWithRocks_1": {
+"objectives": [
+{
+"max": 50.0,
+"name": "Earthtank_DamageWithRocks"
+}
+]
+},
+"Earthtank_DamageWithRocks_2": {
+"objectives": [
+{
+"max": 500.0,
+"name": "Earthtank_DamageWithRocks"
+}
+]
+},
+"Earthtank_DamageWithRocks_3": {
+"objectives": [
+{
+"max": 2000.0,
+"name": "Earthtank_DamageWithRocks"
+}
+]
+},
+"Earthtank_RMBAirDunk": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Earthtank_RMBAirDunk"
+}
+],
+"pool": "HunterMissions"
+},
+"Earthtank_RMBAirDunk_1": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Earthtank_RMBAirDunk"
+}
+]
+},
+"Earthtank_RMBAirDunk_2": {
+"objectives": [
+{
+"max": 50.0,
+"name": "Earthtank_RMBAirDunk"
+}
+]
+},
+"Earthtank_RMBAirDunk_3": {
+"objectives": [
+{
+"max": 200.0,
+"name": "Earthtank_RMBAirDunk"
+}
+]
+},
+"Farshot_Farknocks": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Farshot_Farknocks"
+}
+],
+"pool": "HunterMissions"
+},
+"Farshot_Farknocks_1": {
+"objectives": [
+{
+"max": 20.0,
+"name": "Farshot_Farknocks"
+}
+]
+},
+"Farshot_Farknocks_2": {
+"objectives": [
+{
+"max": 200.0,
+"name": "Farshot_Farknocks"
+}
+]
+},
+"Farshot_Farknocks_3": {
+"objectives": [
+{
+"max": 800.0,
+"name": "Farshot_Farknocks"
+}
+]
+},
+"Farshot_KnockAfterTP": {
+"objectives": [
+{
+"max": 30.0,
+"name": "Farshot_KnockAfterTP"
+}
+],
+"pool": "HunterMissions"
+},
+"Farshot_KnockAfterTP_2": {
+"objectives": [
+{
+"max": 300.0,
+"name": "Farshot_KnockAfterTP"
+}
+]
+},
+"Farshot_KnockAfterTP_3": {
+"objectives": [
+{
+"max": 1200.0,
+"name": "Farshot_KnockAfterTP"
+}
+]
+},
+"Farshot_QDetonates": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Farshot_OrbDetonates"
+}
+],
+"pool": "HunterMissions"
+},
+"Farshot_QDetonates_1": {
+"objectives": [
+{
+"max": 50.0,
+"name": "Farshot_OrbDetonates"
+}
+]
+},
+"Farshot_QDetonates_2": {
+"objectives": [
+{
+"max": 250.0,
+"name": "Farshot_OrbDetonates"
+}
+]
+},
+"Farshot_QDetonates_3": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "Farshot_OrbDetonates"
+}
+]
+},
+"Firefox_EMultiHit_1": {
+"objectives": [
+{
+"max": 15.0,
+"name": "Firefox_EMultiHit"
+}
+]
+},
+"Firefox_EMultiHit_2": {
+"objectives": [
+{
+"max": 150.0,
+"name": "Firefox_EMultiHit"
+}
+]
+},
+"Firefox_EMultiHit_3": {
+"objectives": [
+{
+"max": 600.0,
+"name": "Firefox_EMultiHit"
+}
+]
+},
+"Firefox_EMultiHit_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Firefox_EMultiHit"
+}
+],
+"pool": "HunterMissions"
+},
+"Firefox_L2IgniteKnocks_1": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Firefox_L2IgniteKnocks"
+}
+]
+},
+"Firefox_L2IgniteKnocks_2": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "Firefox_L2IgniteKnocks"
+}
+]
+},
+"Firefox_L2IgniteKnocks_3": {
+"objectives": [
+{
+"max": 4000.0,
+"name": "Firefox_L2IgniteKnocks"
+}
+]
+},
+"Firefox_L2IgniteKnocks_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Firefox_L2IgniteKnocks"
+}
+],
+"pool": "HunterMissions"
+},
+"Firefox_SpreadRMB_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Firefox_SpreadRMB"
+}
+]
+},
+"Firefox_SpreadRMB_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Firefox_SpreadRMB"
+}
+]
+},
+"Firefox_SpreadRMB_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "Firefox_SpreadRMB"
+}
+]
+},
+"Firefox_SpreadRMB_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Firefox_SpreadRMB"
+}
+],
+"pool": "HunterMissions"
+},
+"Flex_ConsecutiveLMBHits_1": {
+"objectives": [
+{
+"max": 20.0,
+"name": "Flex_ConsecutiveLMBHits"
+}
+]
+},
+"Flex_ConsecutiveLMBHits_2": {
+"objectives": [
+{
+"max": 200.0,
+"name": "Flex_ConsecutiveLMBHits"
+}
+]
+},
+"Flex_ConsecutiveLMBHits_3": {
+"objectives": [
+{
+"max": 800.0,
+"name": "Flex_ConsecutiveLMBHits"
+}
+]
+},
+"Flex_ConsecutiveLMBHits_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Flex_ConsecutiveLMBHits"
+}
+],
+"pool": "HunterMissions"
+},
+"Flex_KnocksAfterBindings_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Flex_KnocksAfterBindings"
+}
+]
+},
+"Flex_KnocksAfterBindings_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Flex_KnocksAfterBindings"
+}
+]
+},
+"Flex_KnocksAfterBindings_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "Flex_KnocksAfterBindings"
+}
+]
+},
+"Flex_KnocksAfterBindings_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Flex_KnocksAfterBindings"
+}
+],
+"pool": "HunterMissions"
+},
+"Flex_QintoR_1": {
+"objectives": [
+{
+"max": 30.0,
+"name": "Flex_QintoR"
+}
+]
+},
+"Flex_QintoR_2": {
+"objectives": [
+{
+"max": 300.0,
+"name": "Flex_QintoR"
+}
+]
+},
+"Flex_QintoR_3": {
+"objectives": [
+{
+"max": 1200.0,
+"name": "Flex_QintoR"
+}
+]
+},
+"Flex_QintoR_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Flex_QintoR"
+}
+],
+"pool": "HunterMissions"
+},
+"Freeze_BlockDamageWithWall_1": {
+"objectives": [
+{
+"max": 30000.0,
+"name": "Freeze_BlockDamageWithWall"
+}
+]
+},
+"Freeze_BlockDamageWithWall_2": {
+"objectives": [
+{
+"max": 300000.0,
+"name": "Freeze_BlockDamageWithWall"
+}
+]
+},
+"Freeze_BlockDamageWithWall_3": {
+"objectives": [
+{
+"max": 1000000.0,
+"name": "Freeze_BlockDamageWithWall"
+}
+]
+},
+"Freeze_BlockDamageWithWall_Base": {
+"objectives": [
+{
+"max": 2000.0,
+"name": "Freeze_BlockDamageWithWall"
+}
+],
+"pool": "HunterMissions"
+},
+"Freeze_RMultiStun_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Freeze_RMultiStun"
+}
+]
+},
+"Freeze_RMultiStun_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Freeze_RMultiStun"
+}
+]
+},
+"Freeze_RMultiStun_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "Freeze_RMultiStun"
+}
+]
+},
+"Freeze_RMultiStun_Base": {
+"objectives": [
+{
+"max": 1.0,
+"name": "Freeze_RMultiStun"
+}
+],
+"pool": "HunterMissions"
+},
+"Freeze_SkateKnocks_1": {
+"objectives": [
+{
+"max": 50.0,
+"name": "Freeze_SkateKnocks"
+}
+]
+},
+"Freeze_SkateKnocks_2": {
+"objectives": [
+{
+"max": 500.0,
+"name": "Freeze_SkateKnocks"
+}
+]
+},
+"Freeze_SkateKnocks_3": {
+"objectives": [
+{
+"max": 2000.0,
+"name": "Freeze_SkateKnocks"
+}
+]
+},
+"Freeze_SkateKnocks_Base": {
+"objectives": [
+{
+"max": 1.0,
+"name": "Freeze_SkateKnocks"
+}
+],
+"pool": "HunterMissions"
+},
+"Gunner_DamageWithBarbed_01": {
+"objectives": [
+{
+"max": 25000.0,
+"name": "Gunner_DamageWithBarbed"
+}
+]
+},
+"Gunner_DamageWithBarbed_02": {
+"objectives": [
+{
+"max": 250000.0,
+"name": "Gunner_DamageWithBarbed"
+}
+]
+},
+"Gunner_DamageWithBarbed_03": {
+"objectives": [
+{
+"max": 1000000.0,
+"name": "Gunner_DamageWithBarbed"
+}
+]
+},
+"Gunner_DamageWithBarbed_Base": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "Gunner_DamageWithBarbed"
+}
+],
+"pool": "HunterMissions"
+},
+"Gunner_LMBSiegeMode_1": {
+"objectives": [
+{
+"max": 150000.0,
+"name": "Gunner_LMBSiegeMode"
+}
+]
+},
+"Gunner_LMBSiegeMode_2": {
+"objectives": [
+{
+"max": 1500000.0,
+"name": "Gunner_LMBSiegeMode"
+}
+]
+},
+"Gunner_LMBSiegeMode_3": {
+"objectives": [
+{
+"max": 6000000.0,
+"name": "Gunner_LMBSiegeMode"
+}
+]
+},
+"Gunner_LMBSiegeMode_Base": {
+"objectives": [
+{
+"max": 100000.0,
+"name": "Gunner_LMBSiegeMode"
+}
+],
+"pool": "HunterMissions"
+},
+"Gunner_RExecute_1": {
+"objectives": [
+{
+"max": 15.0,
+"name": "Gunner_RExecute"
+}
+]
+},
+"Gunner_RExecute_2": {
+"objectives": [
+{
+"max": 150.0,
+"name": "Gunner_RExecute"
+}
+]
+},
+"Gunner_RExecute_3": {
+"objectives": [
+{
+"max": 600.0,
+"name": "Gunner_RExecute"
+}
+]
+},
+"Gunner_RExecute_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Gunner_RExecute"
+}
+],
+"pool": "HunterMissions"
+},
+"HookGuy_HooksOnHeroes_1": {
+"objectives": [
+{
+"max": 50.0,
+"name": "HookGuy_Hooks"
+}
+]
+},
+"HookGuy_HooksOnHeroes_2": {
+"objectives": [
+{
+"max": 500.0,
+"name": "HookGuy_Hooks"
+}
+]
+},
+"HookGuy_HooksOnHeroes_3": {
+"objectives": [
+{
+"max": 2000.0,
+"name": "HookGuy_Hooks"
+}
+]
+},
+"HookGuy_HooksOnHeroes_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "HookGuy_Hooks"
+}
+],
+"pool": "HunterMissions"
+},
+"HookGuy_Passive_1": {
+"objectives": [
+{
+"max": 15.0,
+"name": "HookGuy_Passive"
+}
+]
+},
+"HookGuy_Passive_2": {
+"objectives": [
+{
+"max": 150.0,
+"name": "HookGuy_Passive"
+}
+]
+},
+"HookGuy_Passive_3": {
+"objectives": [
+{
+"max": 666.0,
+"name": "HookGuy_Passive"
+}
+]
+},
+"HookGuy_Passive_Base": {
+"objectives": [
+{
+"max": 3.0,
+"name": "HookGuy_Passive"
+}
+],
+"pool": "HunterMissions"
+},
+"Hookguy_AbyssElbowDrop_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "HookGuy_ElbowDrop"
+}
+]
+},
+"Hookguy_AbyssElbowDrop_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "HookGuy_ElbowDrop"
+}
+]
+},
+"Hookguy_AbyssElbowDrop_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "HookGuy_ElbowDrop"
+}
+]
+},
+"Hookguy_AbyssElbowDrop_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "HookGuy_ElbowDrop"
+}
+],
+"pool": "HunterMissions"
+},
+"Huntress_DamageWithRainBase": {
+"objectives": [
+{
+"max": 5000.0,
+"name": "Huntress_DamageWithRain"
+}
+],
+"pool": "HunterMissions"
+},
+"Huntress_DamageWithRain_1": {
+"objectives": [
+{
+"max": 25000.0,
+"name": "Huntress_DamageWithRain"
+}
+]
+},
+"Huntress_DamageWithRain_2": {
+"objectives": [
+{
+"max": 250000.0,
+"name": "Huntress_DamageWithRain"
+}
+]
+},
+"Huntress_DamageWithRain_3": {
+"objectives": [
+{
+"max": 1000000.0,
+"name": "Huntress_DamageWithRain"
+}
+]
+},
+"Huntress_LMBPincushion_1": {
+"objectives": [
+{
+"max": 30.0,
+"name": "HuntressLMBPincushion"
+}
+]
+},
+"Huntress_LMBPincushion_2": {
+"objectives": [
+{
+"max": 300.0,
+"name": "HuntressLMBPincushion"
+}
+]
+},
+"Huntress_LMBPincushion_3": {
+"objectives": [
+{
+"max": 1200.0,
+"name": "HuntressLMBPincushion"
+}
+]
+},
+"Huntress_LMBPincushion_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "HuntressLMBPincushion"
+}
+],
+"pool": "HunterMissions"
+},
+"Huntress_RMBStun_1": {
+"objectives": [
+{
+"max": 30.0,
+"name": "Huntress_RMBStun"
+}
+]
+},
+"Huntress_RMBStun_2": {
+"objectives": [
+{
+"max": 300.0,
+"name": "Huntress_RMBStun"
+}
+]
+},
+"Huntress_RMBStun_3": {
+"objectives": [
+{
+"max": 1200.0,
+"name": "Huntress_RMBStun"
+}
+]
+},
+"Huntress_RMBStun_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Huntress_RMBStun"
+}
+],
+"pool": "HunterMissions"
+},
+"NewOnboarding_CompleteBasicTraining": {
+"objectives": [
+{
+"max": 1.0,
+"name": "NewOnboarding_CompleteBasicTraining"
+}
+],
+"pool": "TutorialMaps"
+},
+"NewOnboarding_CompleteObjectivesChallenge": {
+"objectives": [
+{
+"max": 2.0,
+"name": "NewOnboarding_CompleteObjectivesChallenge"
+}
+],
+"pool": "TutorialMaps"
+},
+"NewOnboarding_CompleteSpikingChallenge": {
+"objectives": [
+{
+"max": 2.0,
+"name": "NewOnboarding_CompleteSpikingChallenge"
+}
+],
+"pool": "TutorialMaps"
+},
+"NewOnboarding_CompleteTraversalChallenge": {
+"objectives": [
+{
+"max": 1.0,
+"name": "NewOnboarding_CompleteTraversalChallenge"
+}
+],
+"pool": "TutorialMaps"
+},
+"NewOnboarding_PlayCoopvAIMatch": {
+"objectives": [
+{
+"max": 1.0,
+"name": "PlayVSAI"
+}
+],
+"pool": "TutorialMaps"
+},
+"NewOnboarding_PlayTriosMatch": {
+"objectives": [
+{
+"max": 1.0,
+"name": "PlayTrios"
+}
+],
+"pool": "TutorialMaps"
+},
+"Oath_BlockDamageWithRMB_1": {
+"objectives": [
+{
+"max": 150000.0,
+"name": "Oath_BlockDamageWithRMB"
+}
+]
+},
+"Oath_BlockDamageWithRMB_2": {
+"objectives": [
+{
+"max": 1500000.0,
+"name": "Oath_BlockDamageWithRMB"
+}
+]
+},
+"Oath_BlockDamageWithRMB_3": {
+"objectives": [
+{
+"max": 6000000.0,
+"name": "Oath_BlockDamageWithRMB"
+}
+]
+},
+"Oath_BlockDamageWithRMB_Base": {
+"objectives": [
+{
+"max": 1.0,
+"name": "Oath_BlockDamageWithRMB"
+}
+],
+"pool": "HunterMissions"
+},
+"Oath_RezAllies_1": {
+"objectives": [
+{
+"max": 10000.0,
+"name": "OathRezAllies"
+}
+]
+},
+"Oath_RezAllies_2": {
+"objectives": [
+{
+"max": 100000.0,
+"name": "OathRezAllies"
+}
+]
+},
+"Oath_RezAllies_3": {
+"objectives": [
+{
+"max": 400000.0,
+"name": "OathRezAllies"
+}
+]
+},
+"Oath_RezAllies_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "OathRezAllies"
+}
+],
+"pool": "HunterMissions"
+},
+"Oath_WallStunEnemies_1": {
+"objectives": [
+{
+"max": 30.0,
+"name": "Oath_WallStunEnemies"
+}
+]
+},
+"Oath_WallStunEnemies_2": {
+"objectives": [
+{
+"max": 300.0,
+"name": "Oath_WallStunEnemies"
+}
+]
+},
+"Oath_WallStunEnemies_3": {
+"objectives": [
+{
+"max": 1200.0,
+"name": "Oath_WallStunEnemies"
+}
+]
+},
+"Oath_WallStunEnemies_Base": {
+"objectives": [
+{
+"max": 1.0,
+"name": "Oath_WallStunEnemies"
+}
+],
+"pool": "HunterMissions"
+},
+"Reaper_LichMode": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Reaper_LichMode"
+}
+],
+"pool": "HunterMissions"
+},
+"Reaper_LichMode_1": {
+"objectives": [
+{
+"max": 50.0,
+"name": "Reaper_LichMode"
+}
+]
+},
+"Reaper_LichMode_2": {
+"objectives": [
+{
+"max": 500.0,
+"name": "Reaper_LichMode"
+}
+]
+},
+"Reaper_LichMode_3": {
+"objectives": [
+{
+"max": 2000.0,
+"name": "Reaper_LichMode"
+}
+]
+},
+"Reaper_QSweetSpotHit": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Reaper_QSweetSpotHit"
+}
+],
+"pool": "HunterMissions"
+},
+"Reaper_QSweetSpotHit_2": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "Reaper_QSweetSpotHit"
+}
+]
+},
+"Reaper_QSweetSpotHit_3": {
+"objectives": [
+{
+"max": 4000.0,
+"name": "Reaper_QSweetSpotHit"
+}
+]
+},
+"Reaper_RMBHit": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Reaper_RMBHit"
+}
+],
+"pool": "HunterMissions"
+},
+"Reaper_RMBHit_1": {
+"objectives": [
+{
+"max": 15.0,
+"name": "Reaper_RMBHit"
+}
+]
+},
+"Reaper_RMBHit_2": {
+"objectives": [
+{
+"max": 150.0,
+"name": "Reaper_RMBHit"
+}
+]
+},
+"Reaper_RMBHit_3": {
+"objectives": [
+{
+"max": 600.0,
+"name": "Reaper_RMBHit"
+}
+]
+},
+"ResHealer_ETossToAllies_1": {
+"objectives": [
+{
+"max": 80.0,
+"name": "ResHealer_ETossToAllies"
+}
+]
+},
+"ResHealer_ETossToAllies_2": {
+"objectives": [
+{
+"max": 800.0,
+"name": "ResHealer_ETossToAllies"
+}
+]
+},
+"ResHealer_ETossToAllies_3": {
+"objectives": [
+{
+"max": 3000.0,
+"name": "ResHealer_ETossToAllies"
+}
+]
+},
+"ResHealer_ETossToAllies_Base": {
+"objectives": [
+{
+"max": 20.0,
+"name": "ResHealer_ETossToAllies"
+}
+],
+"pool": "HunterMissions"
+},
+"ResHealer_QRootKnocks_1": {
+"objectives": [
+{
+"max": 30.0,
+"name": "ResHealer_QRootKnocks"
+}
+]
+},
+"ResHealer_QRootKnocks_2": {
+"objectives": [
+{
+"max": 300.0,
+"name": "ResHealer_QRootKnocks"
+}
+]
+},
+"ResHealer_QRootKnocks_3": {
+"objectives": [
+{
+"max": 1200.0,
+"name": "ResHealer_QRootKnocks"
+}
+]
+},
+"ResHealer_QRootKnocks_Base": {
+"objectives": [
+{
+"max": 20.0,
+"name": "ResHealer_QRootKnocks"
+}
+],
+"pool": "HunterMissions"
+},
+"ResHealer_ResWithR_1": {
+"objectives": [
+{
+"max": 20.0,
+"name": "ResHealer_ResWithR"
+}
+]
+},
+"ResHealer_ResWithR_2": {
+"objectives": [
+{
+"max": 200.0,
+"name": "ResHealer_ResWithR"
+}
+]
+},
+"ResHealer_ResWithR_3": {
+"objectives": [
+{
+"max": 800.0,
+"name": "ResHealer_ResWithR"
+}
+]
+},
+"ResHealer_ResWithR_Base": {
+"objectives": [
+{
+"max": 1.0,
+"name": "ResHealer_ResWithR"
+}
+],
+"pool": "HunterMissions"
+},
+"RocketJumper_LMBChains_1": {
+"objectives": [
+{
+"max": 30.0,
+"name": "RocketJumper_LMBChains"
+}
+]
+},
+"RocketJumper_LMBChains_2": {
+"objectives": [
+{
+"max": 300.0,
+"name": "RocketJumper_LMBChains"
+}
+]
+},
+"RocketJumper_LMBChains_3": {
+"objectives": [
+{
+"max": 1200.0,
+"name": "RocketJumper_LMBChains"
+}
+]
+},
+"RocketJumper_LMBChains_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "RocketJumper_LMBChains"
+}
+],
+"pool": "HunterMissions"
+},
+"RocketJumper_PunchWisps_1": {
+"objectives": [
+{
+"max": 40.0,
+"name": "RocketJumper_PunchWisps"
+}
+]
+},
+"RocketJumper_PunchWisps_2": {
+"objectives": [
+{
+"max": 400.0,
+"name": "RocketJumper_PunchWisps"
+}
+]
+},
+"RocketJumper_PunchWisps_3": {
+"objectives": [
+{
+"max": 1600.0,
+"name": "RocketJumper_PunchWisps"
+}
+]
+},
+"RocketJumper_PunchWisps_Base": {
+"objectives": [
+{
+"max": 20.0,
+"name": "RocketJumper_PunchWisps"
+}
+],
+"pool": "HunterMissions"
+},
+"RocketJumper_RIntoQ_1": {
+"objectives": [
+{
+"max": 20.0,
+"name": "RocketJumper_RIntoQ"
+}
+]
+},
+"RocketJumper_RIntoQ_2": {
+"objectives": [
+{
+"max": 200.0,
+"name": "RocketJumper_RIntoQ"
+}
+]
+},
+"RocketJumper_RIntoQ_3": {
+"objectives": [
+{
+"max": 800.0,
+"name": "RocketJumper_RIntoQ"
+}
+]
+},
+"RocketJumper_RIntoQ_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "RocketJumper_RIntoQ"
+}
+],
+"pool": "HunterMissions"
+},
+"Ronin_AirSlamDunks_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Ronin_AirSlamDunks"
+}
+]
+},
+"Ronin_AirSlamDunks_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Ronin_AirSlamDunks"
+}
+]
+},
+"Ronin_AirSlamDunks_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "Ronin_AirSlamDunks"
+}
+]
+},
+"Ronin_AirSlamDunks_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Ronin_AirSlamDunks"
+}
+],
+"pool": "HunterMissions"
+},
+"Ronin_EmpoweredBlazingSpirit_1": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "Ronin_EmpoweredBlazingSpirit"
+}
+]
+},
+"Ronin_EmpoweredBlazingSpirit_2": {
+"objectives": [
+{
+"max": 10000.0,
+"name": "Ronin_EmpoweredBlazingSpirit"
+}
+]
+},
+"Ronin_EmpoweredBlazingSpirit_3": {
+"objectives": [
+{
+"max": 40000.0,
+"name": "Ronin_EmpoweredBlazingSpirit"
+}
+]
+},
+"Ronin_EmpoweredBlazingSpirit_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Ronin_EmpoweredBlazingSpirit"
+}
+],
+"pool": "HunterMissions"
+},
+"Ronin_RMBKnocks_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Ronin_RMBKnocks"
+}
+]
+},
+"Ronin_RMBKnocks_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Ronin_RMBKnocks"
+}
+]
+},
+"Ronin_RMBKnocks_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "Ronin_RMBKnocks"
+}
+]
+},
+"Ronin_RMBKnocks_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Ronin_RMBKnocks"
+}
+],
+"pool": "HunterMissions"
+},
+"Sniper_360noscope_1": {
+"objectives": [
+{
+"max": 70.0,
+"name": "Sniper_360noscope"
+}
+]
+},
+"Sniper_360noscope_2": {
+"objectives": [
+{
+"max": 700.0,
+"name": "Sniper_360noscope"
+}
+]
+},
+"Sniper_360noscope_3": {
+"objectives": [
+{
+"max": 3000.0,
+"name": "Sniper_360noscope"
+}
+]
+},
+"Sniper_360noscope_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Sniper_360noscope"
+}
+],
+"pool": "HunterMissions"
+},
+"Sniper_BirdEnemies_1": {
+"objectives": [
+{
+"max": 30.0,
+"name": "Sniper_BirdThem"
+}
+]
+},
+"Sniper_BirdEnemies_2": {
+"objectives": [
+{
+"max": 300.0,
+"name": "Sniper_BirdThem"
+}
+]
+},
+"Sniper_BirdEnemies_3": {
+"objectives": [
+{
+"max": 1200.0,
+"name": "Sniper_BirdThem"
+}
+]
+},
+"Sniper_BirdEnemies_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Sniper_BirdThem"
+}
+],
+"pool": "HunterMissions"
+},
+"Sniper_ConsecutiveHits1": {
+"objectives": [
+{
+"max": 60.0,
+"name": "Sniper_ConsecutiveHits"
+}
+]
+},
+"Sniper_ConsecutiveHits2": {
+"objectives": [
+{
+"max": 600.0,
+"name": "Sniper_ConsecutiveHits"
+}
+]
+},
+"Sniper_ConsecutiveHits3": {
+"objectives": [
+{
+"max": 2222.0,
+"name": "Sniper_ConsecutiveHits"
+}
+]
+},
+"Sniper_ConsecutiveHits_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Sniper_ConsecutiveHits"
+}
+],
+"pool": "HunterMissions"
+},
+"Stalker_CloneDamageDealt_1": {
+"objectives": [
+{
+"max": 25000.0,
+"name": "Stalker_CloneDamageDealt"
+}
+]
+},
+"Stalker_CloneDamageDealt_2": {
+"objectives": [
+{
+"max": 250000.0,
+"name": "Stalker_CloneDamageDealt"
+}
+]
+},
+"Stalker_CloneDamageDealt_3": {
+"objectives": [
+{
+"max": 1000000.0,
+"name": "Stalker_CloneDamageDealt"
+}
+]
+},
+"Stalker_CloneDamageDealt_base": {
+"objectives": [
+{
+"max": 10000.0,
+"name": "Stalker_CloneDamageDealt"
+}
+],
+"pool": "HunterMissions"
+},
+"Stalker_MidAirRMBSpikes_1": {
+"objectives": [
+{
+"max": 50.0,
+"name": "Stalker_MidAirRMBSpikes"
+}
+]
+},
+"Stalker_MidAirRMBSpikes_2": {
+"objectives": [
+{
+"max": 500.0,
+"name": "Stalker_MidAirRMBSpikes"
+}
+]
+},
+"Stalker_MidAirRMBSpikes_3": {
+"objectives": [
+{
+"max": 2000.0,
+"name": "Stalker_MidAirRMBSpikes"
+}
+]
+},
+"Stalker_MidAirRMBSpikes_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Stalker_MidAirRMBSpikes"
+}
+],
+"pool": "HunterMissions"
+},
+"Stalker_QExecutes_1": {
+"objectives": [
+{
+"max": 20.0,
+"name": "Stalker_QExecutes"
+}
+]
+},
+"Stalker_QExecutes_2": {
+"objectives": [
+{
+"max": 200.0,
+"name": "Stalker_QExecutes"
+}
+]
+},
+"Stalker_QExecutes_3": {
+"objectives": [
+{
+"max": 800.0,
+"name": "Stalker_QExecutes"
+}
+]
+},
+"Stalker_QExecutes_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Stalker_QExecutes"
+}
+],
+"pool": "HunterMissions"
+},
+"Storm_DashResets_1": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Storm_DashResets"
+}
+]
+},
+"Storm_DashResets_2": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "Storm_DashResets"
+}
+]
+},
+"Storm_DashResets_3": {
+"objectives": [
+{
+"max": 4000.0,
+"name": "Storm_DashResets"
+}
+]
+},
+"Storm_DashResets_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Storm_DashResets"
+}
+],
+"pool": "HunterMissions"
+},
+"Storm_RMBAirborne_1": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Storm_RMBAirborne"
+}
+]
+},
+"Storm_RMBAirborne_2": {
+"objectives": [
+{
+"max": 1000.0,
+"name": "Storm_RMBAirborne"
+}
+]
+},
+"Storm_RMBAirborne_3": {
+"objectives": [
+{
+"max": 4000.0,
+"name": "Storm_RMBAirborne"
+}
+]
+},
+"Storm_RMBAirborne_Base": {
+"objectives": [
+{
+"max": 1.0,
+"name": "Storm_RMBAirborne"
+}
+],
+"pool": "HunterMissions"
+},
+"Storm_SpreadRStacks_1": {
+"objectives": [
+{
+"max": 15.0,
+"name": "Storm_SpreadRStacks"
+}
+]
+},
+"Storm_SpreadRStacks_2": {
+"objectives": [
+{
+"max": 150.0,
+"name": "Storm_SpreadRStacks"
+}
+]
+},
+"Storm_SpreadRStacks_3": {
+"objectives": [
+{
+"max": 600.0,
+"name": "Storm_SpreadRStacks"
+}
+]
+},
+"Storm_SpreadRStacks_Base": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Storm_SpreadRStacks"
+}
+],
+"pool": "HunterMissions"
+},
+"Succubus_RMBHealAllies": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Succubus_RMBHealAllies"
+}
+],
+"pool": "HunterMissions"
+},
+"Succubus_RMBHealAllies_1": {
+"objectives": [
+{
+"max": 20000.0,
+"name": "Succubus_RMBHealAllies"
+}
+]
+},
+"Succubus_RMBHealAllies_2": {
+"objectives": [
+{
+"max": 200000.0,
+"name": "Succubus_RMBHealAllies"
+}
+]
+},
+"Succubus_RMBHealAllies_3": {
+"objectives": [
+{
+"max": 800000.0,
+"name": "Succubus_RMBHealAllies"
+}
+]
+},
+"Succubus_RStunEnemies": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Succubus_RStunEnemies"
+}
+],
+"pool": "HunterMissions"
+},
+"Succubus_RStunEnemies_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Succubus_RStunEnemies"
+}
+]
+},
+"Succubus_RStunEnemies_2": {
+"objectives": [
+{
+"max": 40.0,
+"name": "Succubus_RStunEnemies"
+}
+]
+},
+"Succubus_RStunEnemies_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "Succubus_RStunEnemies"
+}
+]
+},
+"Succubus_StompWisps": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Succubus_StompWisps"
+}
+],
+"pool": "HunterMissions"
+},
+"Succubus_StompWisps_1": {
+"objectives": [
+{
+"max": 60.0,
+"name": "Succubus_StompWisps"
+}
+]
+},
+"Succubus_StompWisps_2": {
+"objectives": [
+{
+"max": 600.0,
+"name": "Succubus_StompWisps"
+}
+]
+},
+"Succubus_StompWisps_3": {
+"objectives": [
+{
+"max": 2400.0,
+"name": "Succubus_StompWisps"
+}
+]
+},
+"TimedSurvive1_Armory": {
+"objectives": [
+{
+"max": 30.0,
+"name": "TimeSurvive"
+}
+],
+"pool": "DailyPCB_Armory"
+},
+"TimedSurvive2_Armory": {
+"objectives": [
+{
+"max": 60.0,
+"name": "TimeSurvive"
+}
+],
+"pool": "DailyPCB_Armory"
+},
+"Tournament_GetKnocks": {
+"objectives": [
+{
+"max": 50.0,
+"name": "Knocks_Assists"
+}
+],
+"pool": "Tournament"
+},
+"Tournament_PlayAGame": {
+"objectives": [
+{
+"max": 5.0,
+"name": "PlayAGame"
+}
+],
+"pool": "Tournament"
+},
+"Tournament_Top4": {
+"objectives": [
+{
+"max": 3.0,
+"name": "Top3"
+}
+],
+"pool": "Tournament"
+},
+"Tournament_WinGame": {
+"objectives": [
+{
+"max": 1.0,
+"name": "A2_WinArenaGames"
+}
+],
+"pool": "Tournament"
+},
+"Void_BlackholeMultiples_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Void_UltMultiples"
+}
+],
+"pool": "HunterMissions"
+},
+"Void_ShiftTeleportEnemies_1": {
+"objectives": [
+{
+"max": 30.0,
+"name": "Void_ShiftTeleportEnemies"
+}
+]
+},
+"Void_ShiftTeleportEnemies_2": {
+"objectives": [
+{
+"max": 300.0,
+"name": "Void_ShiftTeleportEnemies"
+}
+]
+},
+"Void_ShiftTeleportEnemies_3": {
+"objectives": [
+{
+"max": 1200.0,
+"name": "Void_ShiftTeleportEnemies"
+}
+]
+},
+"Void_ShiftTeleportEnemies_Base": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Void_ShiftTeleportEnemies"
+}
+],
+"pool": "HunterMissions"
+},
+"Void_UltMultiples_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Void_UltMultiples"
+}
+]
+},
+"Void_UltMultiples_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "Void_UltMultiples"
+}
+]
+},
+"Void_VoidSnapIntoKill_1": {
+"objectives": [
+{
+"max": 20.0,
+"name": "Void_VoidSnapIntoKill"
+}
+]
+},
+"Void_VoidSnapIntoKill_2": {
+"objectives": [
+{
+"max": 200.0,
+"name": "Void_VoidSnapIntoKill"
+}
+]
+},
+"Void_VoidSnapIntoKill_3": {
+"objectives": [
+{
+"max": 800.0,
+"name": "Void_VoidSnapIntoKill"
+}
+]
+},
+"Void_VoidSnapIntoKill_Base": {
+"objectives": [
+{
+"max": 50.0,
+"name": "Void_VoidSnapIntoKill"
+}
+],
+"pool": "HunterMissions"
+},
+"Wukong_QKnocks": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Wukong_QKnocks"
+}
+],
+"pool": "HunterMissions"
+},
+"Wukong_QKnocks_1": {
+"objectives": [
+{
+"max": 10.0,
+"name": "Wukong_QKnocks"
+}
+]
+},
+"Wukong_QKnocks_2": {
+"objectives": [
+{
+"max": 100.0,
+"name": "Wukong_QKnocks"
+}
+]
+},
+"Wukong_QKnocks_3": {
+"objectives": [
+{
+"max": 400.0,
+"name": "Wukong_QKnocks"
+}
+]
+},
+"Wukong_RMBDunks": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Wukong_RMBDunks"
+}
+],
+"pool": "HunterMissions"
+},
+"Wukong_RMBDunks_1": {
+"objectives": [
+{
+"max": 8.0,
+"name": "Wukong_RMBDunks"
+}
+]
+},
+"Wukong_RMBDunks_2": {
+"objectives": [
+{
+"max": 88.0,
+"name": "Wukong_RMBDunks"
+}
+]
+},
+"Wukong_RMBDunks_3": {
+"objectives": [
+{
+"max": 888.0,
+"name": "Wukong_RMBDunks"
+}
+]
+},
+"Wukong_ShiftEmpoweredDamage": {
+"objectives": [
+{
+"max": 5.0,
+"name": "Wukong_ShiftEmpoweredDamage"
+}
+],
+"pool": "HunterMissions"
+},
+"Wukong_ShiftEmpoweredDamage_1": {
+"objectives": [
+{
+"max": 25000.0,
+"name": "Wukong_ShiftEmpoweredDamage"
+}
+]
+},
+"Wukong_ShiftEmpoweredDamage_2": {
+"objectives": [
+{
+"max": 250000.0,
+"name": "Wukong_ShiftEmpoweredDamage"
+}
+]
+},
+"Wukong_ShiftEmpoweredDamage_3": {
+"objectives": [
+{
+"max": 1000000.0,
+"name": "Wukong_ShiftEmpoweredDamage"
+}
+]
+}
+}

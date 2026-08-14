@@ -40,11 +40,34 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   continuous, or the grid can Construct-and-wait with an empty roster (S47). STORE
   tiles also need the backend to mark cosmetics `IsOwned` (`handleInventory`).
   Living log: `docs/hero-roster-attempts.md`.
-- **Missions** — the full page renders client-side via the native-call primitive
-  (`AsyncLoadPrimaryAssets` → `CreateMissionModelFromFinalProgress` → swap
-  `ProgMgr.MissionsModel`), packaged as `tools/sigbypass-mod/missions_fix.dll`
-  (`launch-redirect.ps1 -Missions`). Per-account progress served by the backend.
-  Read `docs/session-59-progress-bars.txt` + `docs/missions-progression-hookup.md`.
+- ★★★★★ **Missions — NOW FULLY NATIVE AND SHIM-FREE (S119, 2026-08-14).** `missions_fix.dll`
+  is **RETIRED from the default set**; the page renders from the BACKEND alone. Serve
+  `FPlayerProgression.MissionInfo` on `GET /progression/players/{id}` and the client's own
+  native ingester (`0x585A570`) copy-constructs it into `ProgressionManager+0x90`, builds real
+  `UMissionModel`/`UMissionPoolModel`s, async-loads each mission's DA, and then
+  `UMissionsModel::OnMissionAssetLoaded` (impl `base+0x56F3ED0`, fold 1) sets `bAllMissionLoaded`
+  and broadcasts. MEASURED on a clean `-NoHook` run: **DAILIES 3/3 + WEEKLIES 8/8** with correct
+  localized titles, real progress bars, correct XP tiers (2500 daily / 15000 weekly) and a working
+  CLAIMED state, **zero shims resident**. Rollback is one flag: `-WithMissionsShim`.
+  ⚠ The OLD note ("renders client-side via the native-call primitive … packaged as
+  `missions_fix.dll` … `-Missions`") described the SHIM workaround and is superseded.
+  ⚠ `MissionsActor` stays NULL and that is FINE — the *designed* feed is replication
+  (`ALokiPlayerState_Missions.Missions`/`.FinalMissionProgress` are `CPF_Net|CPF_RepNotify`, and
+  ZERO instances of that actor exist at the menu), so the HTTP door is the only route and it works.
+  ★ **The mission list comes from the GAME'S OWN DATA ASSETS, not from the shim's manifest** —
+  `server/internal/interactive/missions_catalog.json`, regenerate with
+  `python tools/re/gen_missions_catalog.py`. The manifest was measured unfit: 75 of its 330 rows
+  carry no mission name, several `mission` values are OBJECTIVE names, its `pool` is a name-prefix
+  GUESS inside `missions_fix.cpp:188-192` (it files `Armory_WeeklyWinGame` under `ArmoryOnboarding`
+  when the DA says `WeeklyChallenges`), and only 23 of its 122 distinct names exist in the DA corpus.
+  ★ **`PoolGroupId` is the visibility rule**: only pools whose DA declares one (`daily`/`weekly`) get
+  a UI category. 11/11 missions in grouped pools landed; **0 of 94** in ungrouped pools
+  (HunterMissions, Tournament, TutorialMaps, Onboarding, …) did. So "only 60 of 323 land" is
+  CORRECT SHIPPED BEHAVIOUR, not a defect — a real player gets ~3 dailies + a weekly set.
+  ⚠ Two open items: the objective-name rule (`ObjectiveClass` minus `BP_MissionObjective_`/`_C`) is
+  verified on only 10 overlapping pairs; and `Missions.Num` reads 126 while only 60 live
+  `UMissionModel`s are countable — those should agree.
+  Read `docs/session-59-progress-bars.txt` + `docs/missions-progression-hookup.md` for the SHIM era.
 - **PASSES / Hunter's Journey (ACCOUNT pass)** — the page renders live with its full
   85-tier ladder (S83). Two client-side root causes, NOT the backend (that route was
   exhausted over ~9 probes): (1) `CheckAccountPassChanges` (`0x5794480`, the populate's
@@ -415,6 +438,47 @@ UI dependency.
 ⚠⚠ **`ags` TRUNCATES `docs/capture.log` on restart** (measured 7.87 MB → 66 KB). **Back it up before
 restarting** or the run's evidence is destroyed. Cert continuity is safe: `EnsureCert` reuses
 `certs/root.crt`, so the same `-certs` dir serves an identical cert and `cacert.pem` stays valid.
+
+### Before touching anything news- / banner- / announcement- / CEF-shaped
+★★★★★ **FK-17 IS SETTLED (S119, 2026-08-14). The lobby NEWS BANNER renders from our backend with
+ZERO injection — and NO menu surface is a web page.**
+- ⛔ **The render-path hypothesis is REFUTED. Do not re-open it.** Three independent instruments:
+  exactly **1 of 68,303** shipped assets embeds a `WebBrowser` (`WBP_UI_Login_Screen_AwaitingLegal`,
+  the login ToS modal) and its blueprint never sets a URL; a validated `GUObjectArray` walk over
+  195,084 objects finds **one** `UWebBrowser` — the CDO; and `UWebBrowser` is the only browser-owning
+  UClass in the whole reflection table. News / Event Hub / Referral are native UMG with live native
+  managers. The `LogWebBrowser: Deleting browser for Url=.` line at every startup is that vestigial
+  login modal, **not our fault and not a lead**.
+- ★★ **The real lever is `ClientConfiguration.BannerConfigs`**, served by `handleClientConfig` in
+  `server/internal/loki/loki.go`. Chain: `BannerConfigs` → `LokiClientBannerConfig.Configs`
+  (`TArray<LokiTimespanBannerConfig>`) → `.Banners` (`TArray<LokiClientBannerData>`, 16 fields:
+  text/colors/`SplashImageURL`/`IconURL`/`ActionType`/`ActionURL`). CONFIRMED live: our banner text,
+  our colors, our splash image, and clicking it opened our own page in the OS browser
+  (`ActionType: WebURL` → `UKismetSystemLibrary::LaunchURL` — the SYSTEM browser, never in-game).
+- ★ `SplashImageURL` accepts an ABSOLUTE url: `BPFL_BannerConfig::"Get Content Service Asset URL from
+  Path"` passes anything starting `http://`/`https://` through verbatim (`bRequiresAuth=false`);
+  otherwise it prefixes `GetServiceAddress("contentservice") + "/content-service/assets/"`.
+- ⚠⚠ **THE BANNER IS GATED BEHIND TWO GATES, BOTH IN `WBP_UI_PlayScreen_LobbyV2::ExecuteUbergraph`:**
+  `[7] EX_JumpIfNot(IsMatchHistoryLoaded)` then `[10] EX_JumpIfNot(GetMissionsModel()->bAllMissionLoaded)`
+  then `[11] InitializeBanners()`. Gate 1 is `[MatchHistoryManager+0x68] >= -1` (sentinel **-2** =
+  never loaded) — opened by serving `FMatchHistory{ID,Version,Matches:[]}`; an EMPTY `Matches` is
+  enough and keeps the risky 15-field `FMatchHistoryEntry` out of it. Gate 2 is the missions flag
+  above. **Both are HTTP-openable; neither needs a shim.**
+- ⚠ **ORDER-DEPENDENT:** `InitializeBanners` runs from `BP_OnActivated`; if the play screen activates
+  before both gates open, nothing re-triggers it that launch. A resource push after the missions
+  settle is the deterministic fix (untried).
+- ⚠⚠ **INSTRUMENT TRAP, cost me a false "regression":** the client CACHES downloaded banner images to
+  `%LOCALAPPDATA%\SUPERVIVE\Saved\ImageCaches` (+ `ImageCacheIndex.json`). After the first render the
+  banner draws **with no HTTP request at all**, so "no splash.png fetch in `capture.log`" is
+  UNINTERPRETABLE, not negative. Check the cache index, or the screen.
+- ★★ **`NotifyResource` drives a refetch of ONE resource with no reconnect** — measured on
+  `/progression/players/{id}` (client refetched 0.8 s later, `User-Agent: Loki/UE5-CL-0`). That
+  endpoint is otherwise fetched ONCE per session, so this is how to iterate on it without relaunching.
+  ⚠ Pass EXACTLY the version the document will carry: too low is ignored, too high causes an
+  unbounded refetch loop (`server/internal/lobby/push.go`).
+- ⚠ **ALWAYS CHECK `User-Agent` ON A CAPTURED REQUEST.** Our own `curl` verification calls land in
+  `docs/capture.log` and read exactly like client traffic; the game is `Loki/UE5-CL-0`, an
+  `ActionType: WebURL` click is `Mozilla/…Chrome/…`. This nearly produced a fabricated headline.
 
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
@@ -808,20 +872,27 @@ inject together as the default set (see the launch procedure below).
 From an **ELEVATED PowerShell**:
 ```powershell
 cd "G:\git\Supervive Revival Project"
-.\configs\launch-redirect.ps1              # redirect + server + game; injects the FULL shim set
-.\configs\launch-redirect.ps1 -NoMissions  # everything EXCEPT missions_fix (isolate non-missions surfaces)
-.\configs\launch-redirect.ps1 -NoLoadout   # everything EXCEPT loadout_fix (isolate non-customization surfaces)
-.\configs\launch-redirect.ps1 -NoHook      # clean RE run, no shim injection
+.\configs\launch-redirect.ps1                    # redirect + server + game; injects the default shim set
+.\configs\launch-redirect.ps1 -NoLoadout         # everything EXCEPT loadout_fix (isolate non-customization surfaces)
+.\configs\launch-redirect.ps1 -WithMissionsShim  # ROLLBACK: re-inject the retired missions_fix.dll
+.\configs\launch-redirect.ps1 -NoHook            # clean RE run, no shim injection
 ```
 
 By default the launcher injects the primary `catalog_store_fix.dll` (roster + store +
-cosmetics) at launch, then `configs/inject-secondaries.ps1` injects the full secondary
+cosmetics) at launch, then `configs/inject-secondaries.ps1` injects the secondary
 set once it settles: `mainmenu_refresh_pi8` (pick→center refresh), `catalog_pick_fix`
-(pick-commit), `loadout_fix` (customization/skin persistence), `missions_fix`
-(durable missions page), and `battlepass_adopt_fix` (PASSES / Hunter's Journey — S83).
-One launch = every durable fix, together. `-NoMissions` / `-NoLoadout` / `-NoPasses`
-trim individual shims; `-Hook <path>` injects exactly one DLL and no
-secondaries. `-Missions` is kept as a deprecated no-op alias (missions are now default).
+(pick-commit), `loadout_fix` (customization/skin persistence), and
+`battlepass_adopt_fix` (PASSES / Hunter's Journey — S83).
+One launch = every durable fix, together. `-NoLoadout` / `-NoPasses` trim individual
+shims; `-Hook <path>` injects exactly one DLL and no secondaries.
+
+★★ **`missions_fix` LEFT THE DEFAULT SET on 2026-08-14** — the missions page is served
+natively by the backend now (see the Missions block above). That removes **one manual-map and
+one transient `ProcessInternal` `.text` patch from every launch**, which on this project's own
+measured hazard ladder (nothing 0/22 · bytecode 0/9 · transient `.text` 4/12 · standing `.text`
+7/8 at a 320 s hold) is a real reduction, not tidiness. `-WithMissionsShim` restores it on either
+script. `-NoMissions` and `-Missions` survive as documented no-op aliases so old invocations and
+docs still run.
 
 **★ THE SECONDARIES ARE NOW INJECTED 20 s APART, AND THE MENU TAKES ~100 s TO FULLY POPULATE.**
 That is deliberate and is **not** a regression — do not "fix" it by lowering the gap. S109

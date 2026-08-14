@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Redirect the SUPERVIVE client's dead backends to our local community server and
   launch the game.
@@ -67,7 +67,9 @@ param(
   [switch]$NoHook,       # skip ALL shim auto-injection (clean RE run)
   [switch]$Missions,     # DEPRECATED no-op alias: missions are now in the DEFAULT set. Kept so old
                          # invocations / docs still work. (Was: "durable Missions mode".)
-  [switch]$NoMissions,   # drop missions_fix.dll from the default set (isolate non-missions surfaces)
+  [switch]$NoMissions,   # DEPRECATED no-op: missions_fix left the default set 2026-08-14 (the missions
+                         # page is served natively by the backend now). Kept so old invocations work.
+  [switch]$WithMissionsShim, # opt BACK IN to the retired missions_fix.dll (one-flag rollback)
   [switch]$NoLoadout,   # drop loadout_fix.dll from the default set (isolate non-customization surfaces)
   [switch]$NoPasses,    # drop battlepass_adopt_fix.dll (PASSES / Hunter's Journey) from the default set
   [int]$InjectGapSeconds # S109: seconds between successive secondary manual-maps. Injector default is
@@ -136,7 +138,7 @@ if (-not $NoHook -and -not $Revert -and -not $NoLaunch -and -not $Hook) {
     # (missions_fix). The three PI-hookers coexist via the shared Local\SuperviveMissionsPIHook mutex.
     $InjectSecondaries = $true
     $secExtra = @()
-    if ($NoMissions) { $secExtra += "-NoMissions" }
+    if ($WithMissionsShim) { $secExtra += "-WithMissionsShim" }
     if ($NoLoadout)  { $secExtra += "-NoLoadout" }
     if ($NoPasses)   { $secExtra += "-NoPasses" }
     # S109: spread the secondary manual-maps. Default 3 s packs all four into a ~13 s burst,
@@ -145,8 +147,8 @@ if (-not $NoHook -and -not $Revert -and -not $NoLaunch -and -not $Hook) {
     if ($PSBoundParameters.ContainsKey('InjectGapSeconds')) { $secExtra += "-GapSeconds $InjectGapSeconds" }
     $parts = @("pick/refresh","pick-commit")
     if (-not $NoLoadout)  { $parts += "customization" }
-    if (-not $NoMissions) { $parts += "missions" }
-    Write-Host "Auto-hook: store/roster (catalog_store_fix) + $($parts -join ' + '). Use -NoHook (clean RE), -NoMissions / -NoLoadout to trim." -ForegroundColor Cyan
+    if ($WithMissionsShim) { $parts += "missions(shim,retired)" }
+    Write-Host "Auto-hook: store/roster (catalog_store_fix) + $($parts -join ' + '). Missions render natively (no shim). Use -NoHook (clean RE), -NoLoadout to trim, -WithMissionsShim to restore the retired missions_fix." -ForegroundColor Cyan
   } else {
     Write-Host "Auto-hook: catalog_store_fix.dll not found at $defaultHook" -ForegroundColor Yellow
     Write-Host "  -> launching WITHOUT the store/roster hook (STORE + HUNTERS will be empty)." -ForegroundColor Yellow
@@ -403,11 +405,11 @@ if ($Hook) {
     if (Test-Path $secInj) {
       $setDesc = @("pi8","catalog_pick_fix")
       if (-not $NoLoadout)  { $setDesc += "loadout_fix" }
-      if (-not $NoMissions) { $setDesc += "missions_fix" }
+      if ($WithMissionsShim) { $setDesc += "missions_fix(retired)" }
       Write-Host "  Secondary shims ($($setDesc -join ' + ')) will inject once the store/roster hook settles." -ForegroundColor DarkGray
       # Quote the spaced paths in ONE argument string (Start-Process does not quote -ArgumentList array
       # elements, so the repo path would split and powershell couldn't find the script). Append the
-      # -NoMissions / -NoLoadout toggles the injector honours.
+      # -WithMissionsShim / -NoLoadout toggles the injector honours.
       $secArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$secInj`" -Repo `"$repoRoot`""
       foreach ($e in $secExtra) { $secArgs += " $e" }
       Start-Process powershell -WindowStyle Hidden -ArgumentList $secArgs | Out-Null

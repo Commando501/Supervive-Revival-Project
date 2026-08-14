@@ -1166,6 +1166,47 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 | **Scope limit** | The adjacent `findings.md:184` claim — *"its PE import table lists ONLY preloader.dll"* — is **TRUE** (verified: one import descriptor). Do not let this retraction spill onto it. |
 | **Cheapest experiment** | Already done. Correct both files. **Minutes.** |
 
+**★★★★★ CLOSED — S119, 2026-08-14. Both halves resolved, in opposite directions.**
+
+**(a) The doc defect is fixed.** `docs/findings.md:16` now states the measured truth (stock UE
+`BootstrapPackagedGame` launcher, zero CEF strings). Corrected in place with the retraction visible.
+
+**(b) The surviving "Steers" hypothesis — *News/Event Hub/Referral may be web pages* — is REFUTED.**
+Three independent instruments, each controlled:
+
+* static asset corpus — exactly **1 of 68,303** shipped assets embeds a `WebBrowser`:
+  `WBP_UI_Login_Screen_AwaitingLegal`, the AccelByte legal/ToS modal. Controls on the same
+  instrument: RichTextBlock 17 files, ScrollBox 57, fabricated class 0.
+* live `GUObjectArray` walk, 195,084 objects — exactly **one** `UWebBrowser`, and it is the CDO.
+  Finder validated against `PC_MainMenu_C` (the class CLAUDE.md records other probes silently
+  missing) plus a fabricated-name negative control.
+* reflection table, 18,325 UFunctions / 11,385 classes — **no Loki-authored browser class**;
+  `UWebBrowser` is stock and alone.
+
+The `LogWebBrowser: Deleting browser for Url=.` line seen at every startup is that one vestigial
+login modal, whose blueprint never assigns a URL. **We were not the reason it was blank.**
+Banner clicks go to `UKismetSystemLibrary::LaunchURL` — the **OS** browser, never an in-game page.
+
+**(c) The opportunity the row was pointing at is REAL, via a different mechanism, and is now
+SHIPPED.** The News surface is the lobby banner carousel: native UMG, driven entirely by
+`ClientConfiguration.BannerConfigs` — a field of the client-config document this backend already
+serves and had never populated. Confirmed live: our text, our colors, our splash image, and a click
+opening our own page. **No shim, no `.text` write.** Full detail in CLAUDE.md, "Before touching
+anything news- / banner- / announcement- / CEF-shaped".
+
+**(d) Two gates were found and both are HTTP-openable** —
+`[7] IsMatchHistoryLoaded` (`[MatchHistoryManager+0x68] >= -1`, sentinel −2) and
+`[10] bAllMissionLoaded`. Opening the second required serving
+`FPlayerProgression.MissionInfo`, which **also made the missions page fully native and retired
+`missions_fix.dll` from the default injection set** — removing one manual-map and one transient
+`ProcessInternal` `.text` patch from every launch.
+
+**⚠ Method note worth carrying:** the "banner rendered" detector (an HTTP fetch of the splash image)
+is only valid on a cache MISS — the client caches banner images to `Saved/ImageCaches`, so after the
+first render it draws with no request at all. A later zero was briefly read as a regression. And
+`User-Agent` must be checked on every captured request: our own `curl` verifications land in
+`capture.log` looking exactly like client traffic, which nearly produced a fabricated result.
+
 ---
 
 ### FK-18 — "`merged.dump.exe` is a merged multi-state image"
@@ -1217,6 +1258,7 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 | **Actual evidence** | The reasoning "a new account correctly has no history." |
 | **Why weaker** | **This account is not new.** `Saved/ImageCaches` holds 56 JPGs dated Nov 2024 – Aug 2025 (live-service era), and `UserSettings.ini` records `HasPlayedTutorial=True`, `HasSeenRankedPopup=True`, `HasSeenReturningPlayerModal=True`, plus `MailboxLastOpenedAt/ClosedAt`. A broken deserialization is observationally identical to an authentic empty, and no positive test was ever run. *Mitigating: the audit does hedge at line 100.* |
 | **Cheapest experiment** | Serve one synthetic match-history row and one non-zero stat; see whether the panels render it. **Hours.** |
+| **★ S119 UPDATE (2026-08-14)** | **Half-answered, and the method objection is now dead.** `GET /match-history/players/{id}` is no longer an empty catch-all — `server/internal/interactive.handleMatchHistory` serves a real `FMatchHistory{ID, Version, Matches:[]}`. The row's core complaint was that *"a broken deserialization is observationally identical to an authentic empty"*; that is no longer true, because we now have a LIVE DISCRIMINATOR: `MatchHistoryManager+0x68` reads back **our exact served `Version`**, proving the document parsed. So the current Career→History empty is MEASURED authentic rather than assumed. **Still open:** `Matches` is deliberately served EMPTY (the gate needs only `Version`, and `FMatchHistoryEntry` is a 15-field struct — two `FDateTime`, an `FPrimaryAssetId`, nested `FMatchHistoryTeamInfo`/`FLokiPlayerMatchStats`, an `ERank` enum — every one a chance to wrong-type a matched key and reject the whole document). Serving one populated row remains the experiment, and it should go in ALONE. |
 
 ---
 
@@ -1732,6 +1774,8 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 | "Verbose is compiled out of shipping" | `LogSentrySdk: Verbose:` in the live log; `[Core.Log]` in the shipped ini (FK-11) |
 | "The on-disk exe is useless for RE" | `.rdata` entropy 5.2–6.0 with 2,280 source paths — *though the dump already supersets it* (FK-4) |
 | "`SUPERVIVE.exe` is a CEF/Electron shell" | `BootstrapPackagedGame` PDB, zero CEF strings (FK-17) |
+| "News/Event Hub/Referral may be web pages, impersonatable with no shim" | **FK-17 CLOSED S119: REFUTED as web pages** (1 `WebBrowser` in 68,303 assets, and it is the vestigial login ToS modal; 1 live `UWebBrowser` in 195,084 objects, the CDO). But the *underlying* opportunity was real via `ClientConfiguration.BannerConfigs` — the lobby news banner now renders from the backend with **zero injection** |
+| "The missions page requires `missions_fix.dll`" | **FALSE as of S119.** `FPlayerProgression.MissionInfo` on `GET /progression/players/{id}` drives the native ingester end to end — DAILIES 3/3 + WEEKLIES 8/8 with real progress, XP and CLAIMED state on a clean `-NoHook` run. The shim is retired from the default set (`-WithMissionsShim` to restore) |
 
 ### 4.2 CONFIRMED (independently re-tested; still holds)
 

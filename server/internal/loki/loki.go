@@ -7,7 +7,7 @@
 //     (LogClientConfig; non-fatal — client reaches the menu even on failure)
 //   - Steam login -> POST https://accounts.projectloki.theorycraftgames.com/...
 //     (LogLokiAuthManager "Attempting to login with Steam"; on failure:
-//      "Auth Failure 14005 Request not sent")
+//     "Auth Failure 14005 Request not sent")
 //
 // The exact accounts path/schema is still being captured; until known, those
 // routes fall through to the capture stub. This package owns what we've confirmed.
@@ -201,6 +201,38 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 // no game relaunch, no injection, no .text write. (The comment above at Register()
 // saying "polled ~1/s" is stale; it is 30 s.)
 //
+// ★★★ THE CONSUMPTION CHAIN, DECODED FROM BYTECODE (bpdump of
+// WBP_UI_PlayScreen_LobbyV2::ExecuteUbergraph + WBP_UI_LobbyCarousel_LaunchBanner).
+// Read this before concluding anything from a banner that does not appear:
+//
+//	[10] EX_JumpIfNot( GetMissionsModel().bAllMissionLoaded )   <-- ⚠⚠ THE REAL GATE
+//	[11] InitializeBanners()
+//	       mgr   = GetClientBannerConfigManager(WorldContext)
+//	       today = mgr->GetTodaysBannerConfig()                 // -> LokiTimespanBannerConfig
+//	       LaunchBannerCarousel ->SetupFromConfig( today.Banners )       // unconditional
+//	       ActivateWidget()
+//	       InterstitialContainer->SetupFromConfig( today.Interstitials )
+//	  then per element, in the carousel's ubergraph:
+//	    [75] NotEqual_ByteByte( Config[i].BannerType, 1 )       // 1 = CustomWidget
+//	    [76] EX_PopExecutionFlowIfNot(...)                      // continue only if != CustomWidget
+//	    [78] BPFL_BannerConfig::"Get Content Service Asset URL from Path"( Config[i].SplashImageURL )
+//	    [79] Map_Add( WebImageURLs, FullURL, Config[i].ID )     // later fetched by QueueFetchImages
+//
+// ⚠⚠ **`InitializeBanners` — and therefore the ENTIRE banner path — only runs when the
+// MISSIONS MODEL reports `bAllMissionLoaded`.** In this project that model is populated by the
+// client-side shim `missions_fix.dll`, so a `-NoHook` launch can never render a banner no matter
+// how correct this payload is. MEASURED: on a clean `-NoHook` relaunch the payload deserialized
+// perfectly (Configs.Num=1, all 16 fields intact) while the carousel sat with Carousel.Slots.Num=0
+// and WidgetSwitcher_LoadingState.ActiveWidgetIndex=0 (parked on Overlay_Loading) — i.e.
+// SetupFromConfig was never called and GetTodaysBannerConfig was never even reached.
+// ⇒ **Test banners with the DEFAULT shim set (missions_fix present), never with -NoHook.**
+//
+// ★ The image field is NOT required to be a bare path. "Get Content Service Asset URL from Path"
+// is a passthrough for absolute URLs (MEASURED, bpdump): if the string StartsWith "http://" or
+// "https://" it is used verbatim with bRequiresAuth=false; otherwise it becomes
+// GetServiceAddress("contentservice") + "/content-service/assets/" + <path>, with auth required.
+// So the localhost URLs below are used as-is.
+//
 // ⚠ FK-14 caveat, and it is the one real uncertainty here: the usmap's CONTAINER
 // INNER types are ~70 % wrong, and BOTH LokiClientBannerConfig.Configs and
 // LokiTimespanBannerConfig.Interstitials decode as SELF-REFERENTIAL arrays — the
@@ -255,20 +287,43 @@ func bannerConfigs(base string) map[string]any {
 		"actionURL":  base + "/revival/banner/news.html",
 	}
 
-	// The union element (see the FK-14 hedge above).
+	// ★ THE UNION HEDGE IS RESOLVED — MEASURED, and the hedge worked exactly as designed.
+	// A read-only walk of the LIVE heap (PID 60260) through offsets resolved BY NAME showed
+	// the client materialized the TIMESPAN reading:
+	//   ClientConfiguration.BannerConfigs.Configs   Num=1  (MergedConfiguration likewise 1;
+	//                                                       OverrideConfiguration coherently unset)
+	//   element = LokiTimespanBannerConfig, stride 64  (last prop Interstitials @+0x30 +16 = 0x40)
+	//   .Banners  Num=1, element = LokiClientBannerData, stride 408 (ActionURL @+0x188 +16 = 0x198)
+	//   all 16 banner fields intact, StartTime/EndTime parsed to real FDateTime ticks,
+	//   ActionType = 1 = WebURL, BannerType = 0 = Default, each LocalizedText TMap Num=4.
+	// Controls in the same walk: ETag read back our string, ClientVersions 4, ServiceHostnames 26,
+	// FeatureToggles 5 — so the numbers are statements about the data, not about the walk.
+	// ⇒ the 16 LokiClientBannerData keys the hedge copied to the element's top level are provably
+	// inert, and are dropped here so future banner tests stay single-variable.
+	//
+	// ★★ REUSABLE FK-14 WORKAROUND, worth remembering: where the usmap's container inner type is
+	// untrustworthy, serve a TYPE-SAFE UNION of the candidate structs, then read the live heap to
+	// see which reading the client materialized. The element STRIDE plus the FProperty chain
+	// identify the struct that the usmap could not. That is how this was settled — not by trusting
+	// either schema dump, which disagreed with each other exactly as FK-14 predicts.
+	//
+	// The correct inner type, MEASURED live via the FK-14-correct offsets
+	// (FArrayProperty::Inner = *(field+0x78), then FStructProperty::Struct = *(inner+0x70)):
+	//     LokiClientBannerConfig.Configs  ->  TArray<LokiTimespanBannerConfig>
+	//     LokiTimespanBannerConfig.Banners ->  TArray<LokiClientBannerData>
+	// The second is independently corroborated from BYTECODE: WBP_UI_PlayScreen_LobbyV2's
+	// InitializeBanners passes GetTodaysBannerConfig().Banners straight into the carousel's
+	// SetupFromConfig(Config: TArray), whose loop does Array_Get(Config, i) and then reads
+	// item.BannerType / item.SplashImageURL / item.ID — i.e. banner RECORDS, not ID strings.
 	elem := map[string]any{
 		"featureToggleKey": "",
 		"startTime":        start,
 		"endTime":          end,
 		"banners":          []any{banner},
-		"interstitials":    []any{}, // LokiClientBannerConfigManager.bHasSeenInterstitial
-		// implies a full-screen interstitial path; left empty so this probe stays
-		// about the in-lobby banner only.
-	}
-	for k, v := range banner {
-		if _, clash := elem[k]; !clash {
-			elem[k] = v
-		}
+		// LokiClientBannerConfigManager.bHasSeenInterstitial implies a full-screen
+		// interstitial path (WBP_UI_Interstitial_Container also takes SetupFromConfig).
+		// Left empty so this probe stays about the in-lobby banner only.
+		"interstitials": []any{},
 	}
 
 	return map[string]any{"configs": []any{elem}}
