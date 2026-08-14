@@ -63,14 +63,31 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   ★ **`PoolGroupId` governs UI VISIBILITY — a pool whose DA declares one (`daily`/`weekly`) gets a
   category in the modal; the rest are accepted into the model but have nowhere to render.** That is
   why the page shows only DAILIES + WEEKLIES.
-  ⚠⚠ **RETRACTED 2026-08-14, same bullet: "11/11 grouped landed, 0 of 94 ungrouped landed, only 60 of
-  323 land" is FALSE.** It rested on a clamped count — see the `obj_by_class.py` warning below.
-  **MEASURED correctly: 126 of 323 land, and `HunterMissions` lands 67/150 despite having NO
-  `PoolGroupId`.** So `PoolGroupId` does NOT gate model acceptance, only display. Per-pool uptake:
-  `HunterMissions` 67/150 · none 48/143 · `Weekly` 7/8 · `Daily` 2/3 · `DailyChallenge` 1/2 ·
-  `WeeklyChallenges` 1/1 · `TutorialMaps` 0/7 · `Tournament` 0/4 · `Onboarding` 0/3 ·
-  `DailyPCB_Armory` 0/2. **What actually decides acceptance is STILL UNKNOWN** — four pools take
-  none at all while two take ~45 %. Do not fill that gap with a guess.
+  ★★★★★ **MISSION ACCEPTANCE IS SOLVED (2026-08-14). THE MISSION NAME IS THE DA's `InternalName`
+  PROPERTY, NOT ITS FILE NAME.** The client registers every mission with the AssetManager under its
+  own `InternalName`; serving the filename meant most missions named a `FPrimaryAssetId` that does
+  not exist, and the client silently dropped every one. **Serving `InternalName` took uptake from
+  126/323 to 248/248 — set-identical, zero dropped either way, measured on a COLD client.**
+  Confirmed two independent ways before it was flown, then by exact prediction:
+  a live walk of `UAssetManager.AssetTypeMap["Mission"].AssetMap` (330 registered entries — ALL
+  missions are registered, so registration was never the differentiator, only the KEY), and an
+  offline classification of the 323 then being served (TP 126, FP 0, FN 0). Both predicted 248, and
+  248 is what landed.
+  ★ **It is a REGISTRY, not per-file equality** — the shipped data contains a swap:
+  `DA_Mission_Wukong_QKnocks_2` declares `InternalName "wukong_qknocks_3"` and `_3` declares
+  `"wukong_qknocks_2"`. Per-file equality predicts both rejected; both were accepted.
+  ★ **Matching is CASE-INSENSITIVE (FName semantics, not FString)** — 41 of the original 126 matched
+  only after case folding (`DA_Mission_Earthtank_RMBAirDunk_3` declares `earthtank_rmbairdunk_3`).
+  ★ **75 DAs declare NO `InternalName` — exactly the `CLASS_Abstract` base templates**, and exactly
+  the 75 bases-of-variant-families that never landed. They are authoring templates, not grantable
+  missions; `gen_missions_catalog.py` deliberately does not serve them. That is the mechanism behind
+  the old "bases never land (0/75)" observation.
+  ⚠⚠ **RETRACTED, superseded by the above:** "11/11 grouped landed, 0 of 94 ungrouped landed, only
+  60 of 323 land". The 60 was a clamped count (see the `obj_by_class.py` warning below) and the
+  per-pool split it produced was noise — `PoolId` was separately DISPROVED as the filter by a
+  single-variable probe (`AGS_MISSION_NO_POOLID=1`: PoolId omitted from all 323 entries, ingest
+  confirmed via `PM+0xA0`, count unchanged at 126). `PoolGroupId` governs only which pools get a UI
+  category in the modal, which is why the page shows DAILIES + WEEKLIES.
   ★ **The `_1`/`_2`/`_3` suffixes are real TIER VARIANTS, not duplicates**: `Alchemist_HealWithQ`
   (max 10) / `_1` (7,500) / `_2` (75,000) / `_3` (300,000). **218 of 323 catalog names are suffixed,
   and they are exactly the 218 with no declared pool** — a variant inherits its base mission's pool

@@ -1237,8 +1237,29 @@ The tool now prints an explicit "… N more not shown / DO NOT COUNT THESE LINES
 ★ Also recovered while chasing it: the `_1`/`_2`/`_3` mission suffixes are TIER VARIANTS
 (`Alchemist_HealWithQ` max 10 → `_1` 7,500 → `_2` 75,000 → `_3` 300,000), and the 218 suffixed
 names are exactly the 218 with no declared pool — a variant inherits its base mission's pool and
-CUE4Parse omits inherited properties. **What decides model acceptance remains UNKNOWN** and is
-deliberately left unguessed: four pools take none at all, two take ~45 %.
+CUE4Parse omits inherited properties. **★★★★★ ANSWERED the same day: the mission name is the data asset's `InternalName` property,
+not its file name.** The client registers every mission with the AssetManager under its own
+`InternalName`; our catalog derived names from the DA FILENAME, so most missions named an
+`FPrimaryAssetId` that does not exist and were silently dropped. **Serving `InternalName` took
+uptake from 126/323 to 248/248 — set-identical, zero dropped in either direction, on a cold
+client.** Established two independent ways BEFORE it was flown: a live walk of
+`UAssetManager.AssetTypeMap["Mission"].AssetMap` (330 entries — every mission IS registered, so
+registration was never the differentiator, only the KEY), and an offline classification of the 323
+then served (TP 126, FP 0, FN 0). Both predicted 248; 248 landed.
+★ It is a REGISTRY, not per-file equality: the shipped data contains a swap
+(`DA_Mission_Wukong_QKnocks_2` declares `wukong_qknocks_3`, `_3` declares `wukong_qknocks_2`) —
+per-file equality predicts both rejected, both were accepted. Matching is CASE-INSENSITIVE (FName,
+not FString): 41 of the original 126 matched only after case folding. The 75 DAs with no
+`InternalName` are exactly the `CLASS_Abstract` base templates, which is the mechanism behind the
+old "bases never land (0/75)" observation.
+⚠ The per-pool split that preceded this was noise: `PoolId` was separately DISPROVED as the filter
+by a single-variable probe (omit it from all 323, confirm ingest via `PM+0xA0`, count unchanged).
+★★ **Method note — the merge trap bit TWICE here and nearly produced two more false results.**
+The ingester MERGES into the existing model rather than replacing it, so an in-place re-push can
+only ever grow the count. That made the PoolId probe's "no change" weak, and it made the first
+`InternalName` reading look like a perfect 248/248 when the map actually held 205 new keys plus 43
+stale ones from the previous ingest — a coincidence that arrived at the right number for the wrong
+reason. **Any acceptance measurement must be taken on a COLD client.**
 
 ---
 
