@@ -1260,6 +1260,25 @@ only ever grow the count. That made the PoolId probe's "no change" weak, and it 
 `InternalName` reading look like a perfect 248/248 when the map actually held 205 new keys plus 43
 stale ones from the previous ingest — a coincidence that arrived at the right number for the wrong
 reason. **Any acceptance measurement must be taken on a COLD client.**
+★★★★★ **Confirmed a THIRD way, from disassembly, and it exposes the cheapest instrument on the
+surface.** The ingest loop (`base+0x5700E13`, stride 0x60) calls `MakeMissionModel`
+(`base+0x56F16F0`, fold 1) and drops the element at `base+0x5700E8C` when it returns nullptr; that
+happens iff `UAssetManager::GetPrimaryAssetPath(id)` returns an EMPTY path inside
+`AsyncLoadPrimaryAssets` (`base+0x561C6B0`, test at `base+0x561C7F4`). Pool, expiry, `BaseMission`,
+`IsDebugOnly` and dedupe were each ELIMINATED from the disassembly. **And the drop is LOGGED:**
+`LogLokiAssetManager: Error: Invalid asset path for Mission:<Name>` plus
+`LogBaseMission: Warning: Mission object is null` — 591 = 3 x 197 lines in the broken session, the
+197 names set-identical to the 197 rejected, and **0 of each after the fix** (verified first-hand).
+⇒ ★ **The client had been naming every rejected id in plaintext the whole time.** The answer was
+reached instead by family/pool statistics, a live AssetManager walk and an offline classifier —
+all correct, none necessary. **Method rule #2 (read the shipped artifacts first) would have gone
+straight to it; grep `Invalid asset path for` before inferring anything about accepted ids.** It is
+a free, exact, per-id readout and it generalises to every FPrimaryAssetId the backend serves.
+⚠⚠ **Correction to a long-standing repo belief:** `CreateMissionsModel` (`0x56E0600`),
+`CreateMissionModelFromFinalProgress` (`0x56E0560`) and `OnPSMissionsUpdated` (`0x56F51B0`) are
+**NOT on the native path** — all three are PAGE_NOACCESS (never executed) in two independent live
+processes, decrypted only in `dumps/missions` where the retired shim force-called them.
+`interactive.go`'s "CreateMissionModelFromFinalProgress is the factory" describes the SHIM's path.
 
 ---
 

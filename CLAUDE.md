@@ -78,6 +78,33 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   `"wukong_qknocks_2"`. Per-file equality predicts both rejected; both were accepted.
   ★ **Matching is CASE-INSENSITIVE (FName semantics, not FString)** — 41 of the original 126 matched
   only after case folding (`DA_Mission_Earthtank_RMBAirDunk_3` declares `earthtank_rmbairdunk_3`).
+  ★★ **THE MECHANISM, from disassembly (independent third confirmation):** the ingest loop over
+  `FMissionInfo.MissionData` runs at `base+0x5700E13` (stride 0x60) and calls `MakeMissionModel`
+  (`base+0x56F16F0`, fold 1). That returns nullptr when the model's `AssetHandle` is null, and the
+  loop DROPS the element at `base+0x5700E8C`. The handle is null because
+  `ULokiAssetManager::AsyncLoadPrimaryAssets` (`base+0x561C6B0`) tests
+  `UAssetManager::GetPrimaryAssetPath(id)` (vtable disp `0x338`) for an EMPTY path at
+  `base+0x561C7F4` and drops unresolvable ids from the load list. **The predicate is a
+  PrimaryAssetId registry resolve and NOTHING else** — pool, expiry/GrantedAt/MillisUntilExpiry,
+  `BaseMission`, `IsDebugOnly` and dedupe were each ELIMINATED from the disassembly (`IsDebugOnly`
+  is passed a constant zero and never read; a dedupe hit goes to a MERGE branch, never a drop).
+  ★★★★★ **AND IT IS LOGGED — THE CLIENT WAS TELLING US, 197 TIMES:**
+      `LogLokiAssetManager: Error: Invalid asset path for Mission:<Name>`
+      `LogBaseMission: Warning: Mission object is null`   (MissionsModel.cpp:366)
+  In the broken session those appeared 591 = 3 x 197 times and the 197 distinct names were
+  SET-IDENTICAL to the 197 rejected. After the fix both counts are **0** (verified). `LogBaseMission`
+  is Verbosity=Log so a Warning always prints — the silence is meaningful, not suppressed.
+  ⇒ **Grep the log for `Invalid asset path for` before doing ANY statistical inference about which
+  ids the client accepted.** It is a free, exact, per-id readout and it generalises to every
+  `FPrimaryAssetId` we serve, not just missions. This was found only after a long inference detour —
+  method rule #2 (read the shipped artifacts first) would have gone straight to it.
+  ⚠⚠ **CORRECTION to a long-standing repo belief:** `UMissionsModel::CreateMissionsModel`
+  (`0x56E0600`), `CreateMissionModelFromFinalProgress` (`0x56E0560`) and `OnPSMissionsUpdated`
+  (`0x56F51B0`) are **NOT on the native path** — all three are `PAGE_NOACCESS` (never demand-decrypted,
+  i.e. never executed) in two independent live processes. They are decrypted only in `dumps/missions`,
+  i.e. they ran ONLY when the retired `missions_fix` shim force-called them. The comment in
+  `server/internal/interactive/interactive.go` calling `CreateMissionModelFromFinalProgress` "the
+  factory" describes the SHIM's path, not the game's.
   ★ **75 DAs declare NO `InternalName` — exactly the `CLASS_Abstract` base templates**, and exactly
   the 75 bases-of-variant-families that never landed. They are authoring templates, not grantable
   missions; `gen_missions_catalog.py` deliberately does not serve them. That is the mechanism behind
