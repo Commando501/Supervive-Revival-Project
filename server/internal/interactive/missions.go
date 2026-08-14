@@ -310,17 +310,20 @@ type CoverageReport struct {
 	Missions           []MissionCoverage `json:"missions"`
 }
 
-// missionCoverage cross-references the registered manifest against objectiveRules. Missions keep
+// missionCoverage cross-references the SERVED mission list against objectiveRules. Missions keep
 // first-seen order; the two gap lists are sorted for stable output.
+//
+// ⚠ Sourced from fanoutManifest (the catalog), not the shim manifest — the report has to describe
+// the missions we actually serve, or it grades a mission set the client never sees and its
+// "untrackable" counts are about the wrong 330 missions.
 func (s *Service) missionCoverage() CoverageReport {
 	mapped := mappedObjectiveNames()
-	st := s.store.get(missionsLocalKey)
 
 	order := []string{}
 	byMission := map[string]*MissionCoverage{}
 	distinctObj := map[string]bool{} // objective name -> is it mapped
-	usedRule := map[string]bool{}    // rule name -> matched at least one manifest objective
-	for _, e := range st.MissionManifest {
+	usedRule := map[string]bool{}    // rule name -> matched at least one served objective
+	for _, e := range s.fanoutManifest() {
 		mc := byMission[e.Mission]
 		if mc == nil {
 			mc = &MissionCoverage{Mission: e.Mission, Pool: e.Pool}
@@ -478,21 +481,65 @@ func containsFold(s, sub string) bool { return strings.Contains(strings.ToLower(
 // live from the mission DAs (Tournament / Dailies / Weeklies / Onboarding). "PlayAGame" is shared by
 // the Tournament and Daily "play a game" missions, so a single +1 advances both (see the collision
 // note in store.go / session-59).
+// ⚠⚠ TWO NAME SPACES LIVE HERE, AND MIXING THEM UP IS WHY NOTHING MOVED (S120, 2026-08-14).
+// The rules below the divider use the SHIM manifest's objective names; the ones above use the
+// names the DATA ASSETS declare, which is what missions_catalog.json carries and therefore what
+// missionInfo actually serves and reads back. MEASURED before the fix: of 102 distinct catalog
+// objective names, exactly **2** had a rule — so even with the fan-out corrected, a match could
+// advance almost nothing. Nearly every rule name was a near-miss of the real one:
+//
+//	rule (shim)                 data asset (catalog)
+//	a2winarenagames        ->   A2_WinArenaGames
+//	BR_3Top4               ->   Top3
+//	BR_Knocks_Assists      ->   Knocks_Assists
+//	BR_Knocks              ->   Knocks
+//	BR_WinABR              ->   WinABR
+//	BR_KillBosses          ->   BossKills
+//	BR_Minions             ->   KillMinions
+//	BR_Capture Bonfires    ->   CaptureBonfires
+//	TopXWithFullArmory     ->   TopXWithFullArmoryInventory
+//	Armory_PlayUniqueHunters -> PlayUniqueHunters
+//	Onboarding_PlayTriosMatch -> PlayTrios
+//
+// Both sets are kept. They cannot double-count: a mission's objective has exactly ONE name, so a
+// given fan-out source matches at most one rule per objective. Keeping the shim names means the
+// `-WithMissionsShim` rollback path still accounts correctly.
 var objectiveRules = []struct {
 	Name  string
 	Delta func(m matchResult) float64
 }{
-	// Any completed match.
+	// ---- CATALOG NAMES (authoritative: what the data assets declare, what we serve) ----
 	{"PlayAGame", func(m matchResult) float64 { return 1 }},
-	// SEASONAL / Tournament.
+	// Tournament / Seasonal.
+	{"A2_WinArenaGames", func(m matchResult) float64 { return b2f(m.Win) }},
+	{"Top3", func(m matchResult) float64 { return b2f(m.Placement >= 1 && m.Placement <= 3) }},
+	{"Knocks_Assists", func(m matchResult) float64 { return m.Knocks + m.Assists }},
+	// Dailies.
+	{"Knocks", func(m matchResult) float64 { return m.Knocks }},
+	{"Sunrises", func(m matchResult) float64 { return m.Sunrises }},
+	{"ArmoryOnboarding_PurchaseEquipmentOrTrinketsInShop", func(m matchResult) float64 { return m.Purchases }},
+	// Weeklies.
+	{"WinABR", func(m matchResult) float64 { return b2f(m.Win) }},
+	{"BossKills", func(m matchResult) float64 { return m.BossKills }},
+	{"Boxes", func(m matchResult) float64 { return m.ChestsOpened }},
+	{"Vaults", func(m matchResult) float64 { return m.VaultsOpened }},
+	{"CaptureBonfires", func(m matchResult) float64 { return m.BonfiresCaptured }},
+	{"KillMinions", func(m matchResult) float64 { return m.MinionKills }},
+	{"TeamWipes", func(m matchResult) float64 { return m.TeamWipes }},
+	{"PlayUniqueHunters", func(m matchResult) float64 { return m.UniqueHeroes }},
+	{"TopXWithFullArmoryInventory", func(m matchResult) float64 { return b2f(m.Placement >= 1 && m.Placement <= 6) }},
+	// Onboarding / tutorial-map game modes.
+	{"PlayTrios", func(m matchResult) float64 { return b2f(containsFold(m.GameMode, "trios")) }},
+	{"PlayVSAI", func(m matchResult) float64 { return b2f(containsFold(m.GameMode, "coop") || containsFold(m.GameMode, "ai")) }},
+	{"ArmoryOnboarding_PlayBR", func(m matchResult) float64 { return b2f(containsFold(m.GameMode, "br")) }},
+	{"ArmoryOnboarding_PurchaseEquipment", func(m matchResult) float64 { return m.Purchases }},
+
+	// ---- SHIM MANIFEST NAMES (kept for the -WithMissionsShim rollback path) ----
 	{"a2winarenagames", func(m matchResult) float64 { return b2f(m.Win) }},
 	{"BR_3Top4", func(m matchResult) float64 { return b2f(m.Placement >= 1 && m.Placement <= 3) }},
 	{"BR_Knocks_Assists", func(m matchResult) float64 { return m.Knocks + m.Assists }},
-	// Dailies.
 	{"BR_Knocks", func(m matchResult) float64 { return m.Knocks }},
 	{"BR_Sunrises", func(m matchResult) float64 { return m.Sunrises }},
-	{"ArmoryOnboarding_PurchaseEquipment", func(m matchResult) float64 { return m.Purchases }},
-	// Weeklies.
 	{"BR_WinABR", func(m matchResult) float64 { return b2f(m.Win) }},
 	{"BR_KillBosses", func(m matchResult) float64 { return m.BossKills }},
 	{"BR_Boxes", func(m matchResult) float64 { return m.ChestsOpened }},
@@ -502,9 +549,25 @@ var objectiveRules = []struct {
 	{"BR_WipeTeams", func(m matchResult) float64 { return m.TeamWipes }},
 	{"Armory_PlayUniqueHunters", func(m matchResult) float64 { return m.UniqueHeroes }},
 	{"TopXWithFullArmory", func(m matchResult) float64 { return b2f(m.Placement >= 1 && m.Placement <= 6) }},
-	// Onboarding (trios / coop-vs-AI).
 	{"Onboarding_PlayTriosMatch", func(m matchResult) float64 { return b2f(containsFold(m.GameMode, "trios") || containsFold(m.GameMode, "coop")) }},
 }
+
+// DELIBERATELY UNMAPPED, and why — so the gap is a recorded decision, not an oversight:
+//
+//	TimeSurvive                       PC-Bang survival missions, max 30 / 60. Plausibly minutes,
+//	                                  but the UNIT IS UNVERIFIED and matchResult has no such field;
+//	                                  inventing one would bake a guess into the wire format.
+//	ArmoryDaily_CompleteDailies       a META mission (the "COMPLETE ALL DAILIES 0/3" header). It
+//	                                  counts other missions' completions, not a match stat.
+//	NewOnboarding_Complete*           tutorial-map completions; no match stat corresponds.
+//	CompleteAllTutorialMaps_Base
+//
+// All of them remain reachable via the explicit `objectives` passthrough on a match-result POST.
+//
+// ⚠ THE 293 HERO-MASTERY OBJECTIVES ARE UNMAPPABLE FROM A MATCH SUMMARY, and that is a property of
+// the data, not a TODO. They are per-ability events ("heal allies with Cinnabar Cocktail", "knock
+// enemies shortly after rooting them") that no match-level stat can express. Moving those bars needs
+// either per-ability telemetry the client never sends us, or the explicit passthrough.
 
 // mappedNameDeltas turns a match result into per-objective-NAME increments via objectiveRules. Zero
 // deltas are dropped so an unrelated objective is never touched. These names are then fanned out to
@@ -546,17 +609,23 @@ func (s *Service) handleMatchResult(w http.ResponseWriter, r *http.Request) {
 // was resolved, which never blocks the mission side).
 func (s *Service) applyMatchResult(m matchResult) (map[string]float64, PassAward) {
 	nameDeltas := mappedNameDeltas(m)
-	st0 := s.store.get(missionsLocalKey)
 
-	// Fan each objective-name delta out to per-mission composite keys.
+	// Fan each objective-name delta out to per-mission composite keys, over the CATALOG — the same
+	// source missionInfo serves and reads back. Fanning over the shim manifest instead wrote keys
+	// that mostly do not exist in the served document: only 7 of its 187 composite keys match a
+	// catalog key (measured; see catalogManifest). Progress written to the other 180 was invisible.
+	fan := s.fanoutManifest()
 	applied := map[string]float64{}
-	for _, e := range st0.MissionManifest {
+	for _, e := range fan {
 		if d, ok := nameDeltas[e.Objective]; ok && d != 0 {
 			applied[compositeKey(e.Mission, e.Objective)] += d
 		}
 	}
-	// If no manifest was registered yet, fall back to the bare objective names so a match still records.
-	if len(st0.MissionManifest) == 0 {
+	// Only if there is no (mission, objective) list at all — a broken embedded catalog AND no
+	// registered manifest — fall back to bare objective names so a match still records SOMETHING.
+	// ⚠ Those bare keys are NOT what missionInfo reads, so they will not move a bar; they exist to
+	// preserve the increment for later reconciliation, not to display.
+	if len(fan) == 0 {
 		for k, v := range nameDeltas {
 			applied[k] += v
 		}

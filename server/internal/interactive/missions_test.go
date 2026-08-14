@@ -2,7 +2,10 @@ package interactive
 
 import (
 	"encoding/json"
+	"sort"
+	"strings"
 	"testing"
+	"time"
 )
 
 // objectivesOf pulls the {"objectives": {...}} map out of a mission-progress response.
@@ -64,6 +67,12 @@ func TestMissionProgressRoundTrip(t *testing.T) {
 
 // TestMatchResultMapping covers Option 2c: a match summary advances the right objectives by the
 // right amounts (mapped rules + explicit passthrough), and a second match accumulates.
+//
+// ⚠ The expected keys are REAL catalog missions and REAL data-asset objective names, not synthetic
+// ones. That is the point: before S120 the rules were keyed by the shim manifest's names
+// ("BR_Knocks", "a2winarenagames"), which the data assets do not use ("Knocks", "A2_WinArenaGames"),
+// so a match advanced 2 of 102 objectives. A test built on synthetic names cannot see that class of
+// bug — it has to name the same strings the shipped assets do.
 func TestMatchResultMapping(t *testing.T) {
 	_, mux := newTestService()
 
@@ -71,15 +80,16 @@ func TestMatchResultMapping(t *testing.T) {
 	got := objectivesOf(t, doJSON(t, mux, "POST", "/revival/missions/match-result",
 		`{"win":true,"placement":1,"knocks":8,"assists":2,"chestsOpened":3,"minionKills":40,"gameMode":"tournament"}`))
 	checks := map[string]float64{
-		"PlayAGame":         1,  // any game
-		"a2winarenagames":   1,  // win (tournament)
-		"BR_WinABR":         1,  // win (weekly)
-		"BR_3Top4":          1,  // top 3
-		"BR_Knocks_Assists": 10, // knocks+assists
-		"BR_Knocks":         8,  // knocks (daily)
-		"BR_Boxes":          3,  // chests
-		"BR_Minions":        40, // minions
-		"TopXWithFullArmory": 1, // top 6
+		"ArmoryDaily_PlayAGame/PlayAGame":                            1,  // any game
+		"Tournament_PlayAGame_1/PlayAGame":                           1,  // ... and independently here
+		"Tournament_WinGame_1/A2_WinArenaGames":                      1,  // win (tournament)
+		"Armory_WeeklyWinGame/WinABR":                                1,  // win (weekly)
+		"Tournament_Top3_1/Top3":                                     1,  // top 3
+		"Tournament_KnocksAssists_1/Knocks_Assists":                  10, // knocks+assists
+		"ArmoryDaily_GetKnocks/Knocks":                               8,  // knocks (daily)
+		"Armory_WeeklyBoxes/Boxes":                                   3,  // chests
+		"Armory_WeeklyMinions/KillMinions":                           40, // minions
+		"Armory_WeeklyPurchaseEquipment/TopXWithFullArmoryInventory": 1,  // top 6
 	}
 	for k, want := range checks {
 		if got[k] != want {
@@ -87,53 +97,116 @@ func TestMatchResultMapping(t *testing.T) {
 		}
 	}
 	// An unrelated objective must NOT be touched by a zero-stat rule.
-	if _, ok := got["BR_Sunrises"]; ok {
-		t.Fatalf("BR_Sunrises should be absent (no sunrises in the match): %v", got)
+	if _, ok := got["ArmoryDaily_Sunrises/Sunrises"]; ok {
+		t.Fatalf("Sunrises should be absent (no sunrises in the match): %v", got)
 	}
-	// A trios coop match with an explicit passthrough delta accumulates on top.
+	// A trios match with an explicit passthrough delta accumulates on top.
 	got2 := objectivesOf(t, doJSON(t, mux, "POST", "/revival/missions/match-result",
-		`{"gameMode":"trios","objectives":{"BR_Sunrises":2}}`))
-	if got2["PlayAGame"] != 2 {
-		t.Fatalf("second match did not accumulate PlayAGame: %v", got2["PlayAGame"])
+		`{"gameMode":"trios","objectives":{"ArmoryDaily_Sunrises/Sunrises":2}}`))
+	if got2["ArmoryDaily_PlayAGame/PlayAGame"] != 2 {
+		t.Fatalf("second match did not accumulate PlayAGame: %v", got2["ArmoryDaily_PlayAGame/PlayAGame"])
 	}
-	if got2["Onboarding_PlayTriosMatch"] != 1 {
-		t.Fatalf("trios game did not advance Onboarding_PlayTriosMatch: %v", got2)
+	if got2["PlayTriosMatch/PlayTrios"] != 1 {
+		t.Fatalf("trios game did not advance the PlayTrios mission: %v", got2)
 	}
-	if got2["BR_Sunrises"] != 2 {
-		t.Fatalf("explicit passthrough delta not applied: %v", got2["BR_Sunrises"])
+	if got2["ArmoryDaily_Sunrises/Sunrises"] != 2 {
+		t.Fatalf("explicit passthrough delta not applied: %v", got2["ArmoryDaily_Sunrises/Sunrises"])
 	}
 }
 
-// TestMatchResultManifestFanout covers per-mission granularity: with a manifest registered, a match's
-// objective-name delta fans out to EACH mission that has the objective, keyed by "<mission>/<objective>",
-// so missions sharing an objective name (PlayAGame on Tournament + a Daily) track independently.
-func TestMatchResultManifestFanout(t *testing.T) {
+// TestMatchResultCatalogFanout covers per-mission granularity: a match's objective-name delta fans
+// out to EACH catalog mission carrying that objective, keyed "<mission>/<objective>", so missions
+// sharing an objective name track independently. PlayAGame is shared by ArmoryDaily_PlayAGame
+// (max 1) and Tournament_PlayAGame_1 (max 5) in the shipped data.
+//
+// ⚠ Renamed from TestMatchResultManifestFanout: the fan-out source is the CATALOG now, not the shim
+// manifest. The old test registered a manifest and asserted it drove the fan-out — behaviour that
+// wrote keys missionInfo never reads (7 of 187 matched). See catalogManifest.
+func TestMatchResultCatalogFanout(t *testing.T) {
 	_, mux := newTestService()
-	doJSON(t, mux, "POST", "/revival/missions/manifest", `{"entries":[
-		{"mission":"Tournament_PlayAGame","objective":"PlayAGame","max":5},
-		{"mission":"ArmoryDaily_PlayAGame","objective":"PlayAGame","max":1},
-		{"mission":"Tournament_KnocksAssists","objective":"BR_Knocks_Assists","max":50}
-	]}`)
 
 	got := objectivesOf(t, doJSON(t, mux, "POST", "/revival/missions/match-result",
 		`{"win":true,"placement":1,"knocks":8,"assists":2,"gameMode":"tournament"}`))
-	if got["Tournament_PlayAGame/PlayAGame"] != 1 {
+	if got["Tournament_PlayAGame_1/PlayAGame"] != 1 {
 		t.Fatalf("tournament play composite: %v", got)
 	}
 	if got["ArmoryDaily_PlayAGame/PlayAGame"] != 1 {
 		t.Fatalf("daily play composite (independent): %v", got)
 	}
-	if got["Tournament_KnocksAssists/BR_Knocks_Assists"] != 10 {
+	if got["Tournament_KnocksAssists_1/Knocks_Assists"] != 10 {
 		t.Fatalf("knocks+assists composite: %v", got)
 	}
-	// With a manifest registered, the bare objective name must NOT be a key (composite only).
+	// The bare objective name must NOT be a key — only composites are readable by missionInfo.
 	if _, ok := got["PlayAGame"]; ok {
 		t.Fatalf("bare objective name leaked into composite store: %v", got)
 	}
-	// A second tournament game accumulates each composite independently.
+	// A registered shim manifest must NOT override the catalog: its names are a different
+	// (and mostly wrong) name space, and letting it win is exactly the S120 defect.
+	doJSON(t, mux, "POST", "/revival/missions/manifest", `{"entries":[
+		{"mission":"Tournament_PlayAGame","objective":"PlayAGame","max":5}
+	]}`)
 	got2 := objectivesOf(t, doJSON(t, mux, "POST", "/revival/missions/match-result", `{"gameMode":"tournament"}`))
-	if got2["Tournament_PlayAGame/PlayAGame"] != 2 || got2["ArmoryDaily_PlayAGame/PlayAGame"] != 2 {
-		t.Fatalf("second game did not accumulate composites independently: %v", got2)
+	if got2["Tournament_PlayAGame_1/PlayAGame"] != 2 || got2["ArmoryDaily_PlayAGame/PlayAGame"] != 2 {
+		t.Fatalf("second game did not accumulate catalog composites independently: %v", got2)
+	}
+	if _, ok := got2["Tournament_PlayAGame/PlayAGame"]; ok {
+		t.Fatalf("a registered manifest overrode the catalog and wrote an unservable key: %v", got2)
+	}
+}
+
+// TestMatchResultKeysAreServable is the invariant that would have caught the S120 defect, and it is
+// the reason this file is worth more than its individual assertions: EVERY key the match-result
+// engine writes must be a key missionInfo actually serves and reads back. When the two disagree the
+// progress is written, persisted, echoed by the API — and invisible in the game, which is precisely
+// how it went unnoticed.
+func TestMatchResultKeysAreServable(t *testing.T) {
+	s, mux := newTestService()
+
+	// A maximal match: every stat non-zero, so every rule with a stat fires at once.
+	got := objectivesOf(t, doJSON(t, mux, "POST", "/revival/missions/match-result",
+		`{"win":true,"placement":1,"knocks":5,"assists":5,"teamWipes":2,"minionKills":9,"bossKills":2,
+		  "chestsOpened":4,"vaultsOpened":1,"bonfiresCaptured":3,"sunrises":1,"purchases":6,
+		  "uniqueHeroes":2,"gameMode":"trios"}`))
+	if len(got) == 0 {
+		t.Fatal("a maximal match advanced nothing at all")
+	}
+
+	// Build the set of composite keys the served document can actually express.
+	servable := map[string]bool{}
+	mi, _ := s.missionInfo(time.Now().UTC())
+	for _, md := range mi["MissionData"].([]any) {
+		m := md.(map[string]any)
+		name := strings.TrimPrefix(m["AssetId"].(string), "Mission:")
+		for _, op := range m["ObjectiveProgress"].([]any) {
+			servable[compositeKey(name, op.(map[string]any)["ObjectiveName"].(string))] = true
+		}
+	}
+
+	// CONTROLS, so a pass here means something. The servable set must ACCEPT a key we know is
+	// served and REJECT both shapes of key the pre-S120 code produced — a bare objective name
+	// (the empty-manifest fallback) and a shim-manifest composite. Without these, `servable`
+	// silently containing everything would make the assertion below vacuous.
+	if !servable["ArmoryDaily_PlayAGame/PlayAGame"] {
+		t.Fatal("control failed: a known-served composite key is not in the servable set")
+	}
+	if servable["PlayAGame"] {
+		t.Fatal("control failed: a BARE objective name must not be servable")
+	}
+	if servable["Tournament_PlayAGame/PlayAGame"] {
+		t.Fatal("control failed: a shim-manifest composite must not be servable " +
+			"(the catalog calls that mission Tournament_PlayAGame_1)")
+	}
+
+	var unservable []string
+	for k := range got {
+		if !servable[k] {
+			unservable = append(unservable, k)
+		}
+	}
+	if len(unservable) > 0 {
+		sort.Strings(unservable)
+		t.Fatalf("match-result wrote %d key(s) missionInfo can never read (progress would be invisible):\n  %s",
+			len(unservable), strings.Join(unservable, "\n  "))
 	}
 }
 
@@ -268,53 +341,74 @@ func TestMissionRotation(t *testing.T) {
 
 // TestMissionCoverage covers the match-result coverage report: a mission is "full" when every objective
 // has a rule, "partial" when some do, "none" when none do; unmapped objectives and unused rules are listed.
+// ⚠ Asserts INVARIANTS over the real embedded catalog, not exact counts against a synthetic
+// manifest. The report now grades what we SERVE (the catalog), so a synthetic manifest no longer
+// steers it — and exact totals would break on every legitimate catalog regeneration.
 func TestMissionCoverage(t *testing.T) {
 	_, mux := newTestService()
-	doJSON(t, mux, "POST", "/revival/missions/manifest", `{"entries":[
-		{"mission":"DailyPlay","objective":"PlayAGame","max":1,"pool":"Dailies"},
-		{"mission":"WeeklyCombo","objective":"BR_Knocks","max":10,"pool":"Weeklies"},
-		{"mission":"WeeklyCombo","objective":"SomeHeroThing","max":5,"pool":"Weeklies"},
-		{"mission":"HeroAbility","objective":"Alchemist_HealWithQ","max":100,"pool":"HunterMissions"}
-	]}`)
 
 	var rep CoverageReport
 	reencode(t, doJSON(t, mux, "GET", "/revival/missions/coverage", ""), &rep)
 
-	if rep.Summary.MissionsTotal != 3 || rep.Summary.MissionsFullyTrackable != 1 ||
-		rep.Summary.MissionsPartial != 1 || rep.Summary.MissionsUntrackable != 1 {
-		t.Fatalf("mission coverage counts: %+v", rep.Summary)
+	if rep.Summary.MissionsTotal != len(missionCatalog) {
+		t.Fatalf("coverage should grade the served catalog: MissionsTotal=%d, catalog=%d",
+			rep.Summary.MissionsTotal, len(missionCatalog))
 	}
-	if rep.Summary.ObjectivesTotal != 4 || rep.Summary.ObjectivesMapped != 2 || rep.Summary.ObjectivesUnmapped != 2 {
-		t.Fatalf("objective coverage counts: %+v", rep.Summary)
+	// Every mission must be classified into exactly one bucket.
+	if got := rep.Summary.MissionsFullyTrackable + rep.Summary.MissionsPartial + rep.Summary.MissionsUntrackable; got != rep.Summary.MissionsTotal {
+		t.Fatalf("buckets do not partition the missions: %+v", rep.Summary)
 	}
-	// Per-mission classification.
+	// The re-pointed rules must actually bite. Before S120 this was 2; a regression to a
+	// near-miss name space would collapse it again, which is the whole point of the check.
+	if rep.Summary.ObjectivesMapped < 15 {
+		t.Fatalf("objective coverage collapsed to %d mapped — are the rules keyed by the "+
+			"data-asset names or the shim's? %+v", rep.Summary.ObjectivesMapped, rep.Summary)
+	}
 	byName := map[string]MissionCoverage{}
 	for _, m := range rep.Missions {
 		byName[m.Mission] = m
 	}
-	if byName["DailyPlay"].Coverage != "full" {
-		t.Fatalf("DailyPlay should be full: %+v", byName["DailyPlay"])
+	// A generic daily is fully trackable from a plain match...
+	if byName["ArmoryDaily_PlayAGame"].Coverage != "full" {
+		t.Fatalf("ArmoryDaily_PlayAGame should be full: %+v", byName["ArmoryDaily_PlayAGame"])
 	}
-	if byName["WeeklyCombo"].Coverage != "partial" {
-		t.Fatalf("WeeklyCombo should be partial: %+v", byName["WeeklyCombo"])
+	if byName["Armory_WeeklyBoxes"].Coverage != "full" {
+		t.Fatalf("Armory_WeeklyBoxes should be full: %+v", byName["Armory_WeeklyBoxes"])
 	}
-	if byName["HeroAbility"].Coverage != "none" {
-		t.Fatalf("HeroAbility should be none: %+v", byName["HeroAbility"])
+	// ...while a per-ability hero mission is not, and that is a property of the data (no match
+	// stat expresses "heal allies with Cinnabar Cocktail"), not a missing rule.
+	if byName["Alchemist_HealWithQ_1"].Coverage != "none" {
+		t.Fatalf("a hero-mastery mission should be untrackable from a match summary: %+v",
+			byName["Alchemist_HealWithQ_1"])
 	}
-	// Unmapped list is exactly the two unmapped objective names, sorted.
-	if len(rep.UnmappedObjectives) != 2 || rep.UnmappedObjectives[0] != "Alchemist_HealWithQ" || rep.UnmappedObjectives[1] != "SomeHeroThing" {
-		t.Fatalf("unmapped objectives: %v", rep.UnmappedObjectives)
+	// The unmapped list must be dominated by the per-ability hero objectives, and must NOT contain
+	// anything a match summary plainly expresses — a generic stat name showing up here means the
+	// rules drifted off the data-asset name space again.
+	unmapped := map[string]bool{}
+	for _, u := range rep.UnmappedObjectives {
+		unmapped[u] = true
 	}
-	// Unused rules exclude the two that matched, and include a known-present rule.
+	for _, mustBeMapped := range []string{"PlayAGame", "Knocks", "WinABR", "Boxes", "KillMinions", "TeamWipes", "Top3"} {
+		if unmapped[mustBeMapped] {
+			t.Fatalf("%q is a plain match stat but has no rule — rules are off the data-asset "+
+				"name space: %v", mustBeMapped, rep.UnmappedObjectives)
+		}
+	}
+	if !unmapped["Alchemist_HealWithQ"] {
+		t.Fatalf("a per-ability hero objective should be unmapped: %v", rep.UnmappedObjectives)
+	}
+	// Unused rules exclude the ones that matched, and DO include the retained shim-name aliases —
+	// those are kept only for the -WithMissionsShim rollback path, so against the catalog they are
+	// expected to be unused. That expectation is itself the tell that the two name spaces differ.
 	used := map[string]bool{}
 	for _, u := range rep.UnusedRules {
 		used[u] = true
 	}
-	if used["PlayAGame"] || used["BR_Knocks"] {
+	if used["PlayAGame"] || used["Knocks"] {
 		t.Fatalf("a matched rule leaked into unusedRules: %v", rep.UnusedRules)
 	}
-	if !used["a2winarenagames"] {
-		t.Fatalf("an unused rule (a2winarenagames) should be listed: %v", rep.UnusedRules)
+	if !used["a2winarenagames"] || !used["BR_Knocks"] {
+		t.Fatalf("the retained shim-name aliases should read as unused against the catalog: %v", rep.UnusedRules)
 	}
 	if rep.Summary.RulesUnused != len(rep.UnusedRules) || rep.Summary.RulesTotal < rep.Summary.RulesUnused {
 		t.Fatalf("rules summary inconsistent: %+v (unused=%v)", rep.Summary, rep.UnusedRules)

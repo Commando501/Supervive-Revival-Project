@@ -90,6 +90,54 @@ var missionCatalog = func() map[string]CatalogMission {
 	return m
 }()
 
+// catalogManifest projects the catalog into the same (mission, objective, max, pool) shape the
+// shim's manifest used, so the match-result fan-out and the coverage report describe the missions
+// we ACTUALLY SERVE.
+//
+// WHY (S120, 2026-08-14). The progress store is keyed by compositeKey(mission, objective), and
+// missionInfo READS those keys using CATALOG mission names. applyMatchResult was WRITING them using
+// SHIM-MANIFEST mission names. Those two name spaces barely overlap, so nearly every increment a
+// match produced landed on a key nothing ever reads.
+//
+// MEASURED against the live persisted manifest (330 rows) and the catalog (330 missions):
+//
+//	catalog composite keys                 330
+//	manifest composite keys                187
+//	manifest keys that MATCH a catalog key   7   <-- the entire overlap
+//	manifest keys with NO catalog match    180
+//
+// So 180 of 187 possible increments were unreachable. This is the same root cause that made the
+// manifest unfit as a mission list (see the block comment above: its `pool` is a name-prefix guess
+// and only 23 of its 122 mission names appear in the DA corpus) — it was fixed for the LIST in S119
+// and left unfixed for PROGRESS.
+//
+// ⚠ The manifest is NOT empty and this is NOT an "unregistered shim" problem: it persists to
+// state/interactive.json and survives ags restarts, so it long outlives the retired missions_fix.
+// An earlier reading of this defect as "the manifest is empty so the fallback writes bare names"
+// was WRONG — measured, the fallback never fires and every key it writes is composite. The defect
+// is a NAME-SPACE MISMATCH, not an empty source.
+func catalogManifest() []ManifestEntry {
+	out := make([]ManifestEntry, 0, len(missionCatalog))
+	for _, name := range catalogMissionNames() {
+		c := missionCatalog[name]
+		for _, o := range c.Objectives {
+			out = append(out, ManifestEntry{Mission: name, Objective: o.Name, Max: o.Max, Pool: c.Pool})
+		}
+	}
+	return out
+}
+
+// fanoutManifest is the authoritative (mission, objective) list for progress accounting: the
+// catalog when it loaded, else whatever the shim last registered. The fallback exists only so a
+// broken/empty embedded catalog degrades to the old behaviour instead of silently accounting
+// nothing — it is not expected to fire.
+func (s *Service) fanoutManifest() []ManifestEntry {
+	if m := catalogManifest(); len(m) > 0 {
+		return m
+	}
+	return s.store.get(missionsLocalKey).MissionManifest
+}
+
 // catalogMissionNames returns the catalog's mission names in a stable (sorted) order, so
 // the served document — and therefore its content digest — does not churn between requests.
 func catalogMissionNames() []string {

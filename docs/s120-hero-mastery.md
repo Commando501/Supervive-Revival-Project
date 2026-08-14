@@ -192,6 +192,95 @@ It is unanalysed.
 
 ---
 
+## MAKING THE BARS MOVE (S120 part 2, 2026-08-14)
+
+The bars render but sat at 0 because **nothing could write a progress key the client reads**. Two
+independent defects, both now fixed, both measured before and after.
+
+### ⚠⚠ DEFECT 1 — the match-result fan-out wrote a DIFFERENT NAME SPACE
+
+`missionInfo` READS `compositeKey(mission, objective)` built from **catalog** names.
+`applyMatchResult` WROTE composite keys built from the **shim manifest's** names. MEASURED against
+the live persisted manifest:
+
+| | |
+|---|---|
+| catalog composite keys (read) | **330** |
+| manifest composite keys (written) | 187 |
+| **overlap** | **7** |
+| manifest keys with no catalog match | **180** |
+
+⇒ progress was written, persisted, and echoed by the API — and **invisible in game**. That is
+exactly why it went unnoticed.
+
+⚠ **An earlier reading of this as "the manifest is empty so it falls back to bare names" was WRONG.**
+The manifest persists to `state/interactive.json` and survives ags restarts, so it long outlives the
+retired `missions_fix` — 330 rows were still there. The fallback never fires. Measure before naming a
+mechanism.
+
+★ Live proof of the damage: of 14 keys in the store, **8 were orphaned** —
+`Tournament_PlayAGame/PlayAGame` (store) vs `Tournament_PlayAGame_1/PlayAGame` (catalog), and
+`Tournament_KnocksAssists/BR_Knocks_Assists` vs `Tournament_KnocksAssists_1/Knocks_Assists`, where
+**both halves differ**.
+
+**FIX:** `catalogManifest()` / `fanoutManifest()` — fan out over the catalog, the same source
+`missionInfo` serves. The stored manifest survives only as a fallback for an empty catalog.
+
+### ⚠⚠ DEFECT 2 — `objectiveRules` was keyed by the shim's names too
+
+Even with the fan-out fixed, of **102** distinct catalog objective names exactly **2** had a rule.
+Nearly every rule was a near-miss of the real name:
+
+```
+a2winarenagames  -> A2_WinArenaGames      BR_3Top4    -> Top3        BR_Knocks -> Knocks
+BR_Knocks_Assists-> Knocks_Assists        BR_WinABR   -> WinABR      BR_Minions-> KillMinions
+BR_KillBosses    -> BossKills             BR_Vaults   -> Vaults      BR_Boxes  -> Boxes
+BR_Capture Bonfires -> CaptureBonfires    TopXWithFullArmory -> TopXWithFullArmoryInventory
+Armory_PlayUniqueHunters -> PlayUniqueHunters   Onboarding_PlayTriosMatch -> PlayTrios
+```
+
+**FIX:** added the catalog names; kept the shim names as aliases for the `-WithMissionsShim` rollback
+path. They cannot double-count — a mission's objective has exactly one name, so a given fan-out
+source matches at most one rule per objective.
+
+**MEASURED, coverage report:** `MissionsFullyTrackable` **3 → 22**, `ObjectivesMapped` **2 → 20**.
+
+**MEASURED live:** one tournament-win POST now applies to **10 real servable keys**
+(`ArmoryDaily_GetKnocks/Knocks +8`, `Tournament_KnocksAssists_1/Knocks_Assists +10`,
+`Armory_WeeklyMinions/KillMinions +40`, …). Before the fix those increments landed on keys nothing
+reads.
+
+### ★ THE INVARIANT TEST — and its negative control
+
+`TestMatchResultKeysAreServable`: **every key the match-result engine writes must be a key
+`missionInfo` serves and reads back.** That is the property both defects violated.
+
+It is controlled, not merely green: the servable set must ACCEPT a known-served composite and REJECT
+both broken shapes (a bare objective name, and a shim-manifest composite). And the whole test was
+verified to FAIL when the fan-out is reverted — it then names **33 unservable keys**. A test that has
+never been seen to fail is not evidence.
+
+### ⚠ WHAT STILL CANNOT MOVE FROM A MATCH, AND WHY IT IS NOT A TODO
+
+The **293 hero-mastery objectives are unmappable from a match summary** — they are per-ability events
+("heal allies with Cinnabar Cocktail", "knock enemies shortly after rooting them") that no
+match-level stat expresses. That is a property of the data, not a missing rule. Moving those bars
+needs per-ability telemetry the client never sends, or the explicit `objectives` passthrough.
+Deliberately unmapped and recorded as decisions, not oversights: `TimeSurvive` (unit unverified —
+inventing a field would bake a guess into the wire format), `ArmoryDaily_CompleteDailies` (a META
+mission counting other completions), and the `NewOnboarding_*` / `CompleteAllTutorialMaps_Base`
+tutorial completions.
+
+⇒ **Mastery bars move today via the direct path**, which is measured working end to end:
+
+```bash
+curl -X POST http://127.0.0.1:8080/revival/missions/progress -d '{"objectives":{"ResHealerETossToAllies_1/ResHealer_ETossToAllies":80}}'
+```
+
+then force the client to re-read it with `POST http://127.0.0.1:9210/api/ws/drop/<handle>`.
+
+---
+
 ## 0. The headline
 
 **Hero Mastery is a SPLIT surface, and conflating the two halves is the trap.**
