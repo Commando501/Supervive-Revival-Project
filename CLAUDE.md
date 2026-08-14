@@ -319,6 +319,25 @@ stride was wrong. See below.
 | 2 | 1 | `+0x228` | **`disconnectNotif`** |
 | 16 | 15 | `+0x12d0` | **`userStatusNotif`** |
 | 25-29 | 24-28 | `+0x1630`/`+0x1640`/`+0x1650`/`+0x1660`/`+0x1670` | **`accept`/`request`/`unfriend`/`cancel`/`rejectFriendsNotif`** |
+★★★★★ **ALL 7 HAVE BEEN FLOWN AGAINST THE LIVE CLIENT — 6 produce VISIBLE UI changes**, 1
+(`disconnectNotif`) is a controlled negative vs a matched bare-drop arm. The map is **predictive on
+every type it named**: friends list, presence, and both pending-request lists are all drivable from
+the backend. `requestFriendsNotif` → request card + IAM resolve (+276 ms) · `acceptFriendsNotif` →
+friend added (+526 ms resolve) · `unfriendNotif` → row removed · `cancelFriendsNotif` → `INCOMING
+1→0` · `rejectFriendsNotif` → `OUTGOING 1→0` · `userStatusNotif` → presence both ways.
+★★ **THE BEST INSTRUMENT ON THIS SURFACE IS THE FRIEND REQUESTS MODAL** — it has explicit
+`INCOMING`/`OUTGOING` **counters**, so it is countable, separates the two pending lists, and reads
+out a precondition directly. Prefer it to the transient corner card.
+★★ **The client MUTATES ITS OWN SOCIAL STATE from a notif; only a refetch re-imposes ours.** Shown
+twice, in opposite directions: `acceptFriendsNotif` added a friend without any
+`listOfFriendsRequest`, and a reconnect then wiped it; `rejectFriendsNotif` removed an outgoing
+request **while we were still serving it**. ⇒ **pushed social changes are TRANSIENT unless the
+backend also serves them** — build both halves (push for the event, response for durability).
+★ **Staging knobs, all opt-in and empty by default** (`server/internal/lobby/lobby.go`):
+`AGS_PROBE_FRIEND` / `AGS_PROBE_INCOMING` / `AGS_PROBE_OUTGOING`. ⚠ Prefer building a precondition
+with a PUSH where possible (an incoming request comes free from `requestFriendsNotif`) — same
+mechanism under test. Only `reject` needs a knob, because nothing but the client can populate the
+outgoing list.
 The other 26 broadcast into a delegate with **no subscriber** — incl. `dsNotif`, `matchmakingNotif`
 and every `party*`. ★ **21 of the 23 bound delegates belong to ONE `USocialManager`** (1 to
 `UMyActivityManager`, 2 raw-method to Lobby itself), which is *why* the reachable surface is exactly

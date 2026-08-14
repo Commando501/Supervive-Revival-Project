@@ -439,7 +439,69 @@ refetch, we answer with only the original id, and the pushed friend disappears:
 client's in-memory state, but any reconnect re-imposes whatever `listOfFriendsResponse` says. Anyone
 building on this surface needs both halves: the push for the live event, the response for durability.
 
-### Scoreboard — 5 of the 7 reachable types flown
+## SIXTH FLIGHT — `cancelFriendsNotif`, and the best instrument on this surface
+
+★★ **Use the FRIEND REQUESTS modal — it has explicit COUNTERS** (`INCOMING REQUESTS n` /
+`OUTGOING REQUESTS n`). Far better than the transient corner card: it is countable, it distinguishes
+the two pending lists, and it reads out the precondition for `cancel`/`reject` directly.
+
+**The precondition was built with a push, not a code change** — which is strictly better, because it
+is created by the same mechanism under test:
+
+```
+19:02:26.066  WS PUSH requestFriendsNotif  friendId: f15118cccc…   (setup)
+19:02:26.615  GET /iam/…/users/f15118cccc…                          (+549 ms)
+              -> modal: INCOMING REQUESTS 1  "Reviver#6612 sent you a friend request"
+19:0x         WS PUSH cancelFriendsNotif    userId:   f15118cccc…
+              -> modal: INCOMING REQUESTS 0, corner card gone          [M]
+```
+
+★★★ **This also CONFIRMS THE FIELD-NAME SPLIT ON THE WIRE.** `cancelFriendsNotif` is the first type
+whose key differs from the family default, and `userId` worked. So the schema's split is real:
+`request`/`accept`/`unfriend` take **`FriendId`**, `cancel`/`reject` take **`UserId`**.
+⚠ Had it failed, the result would have been genuinely ambiguous — a wrong key is ignored **silently**
+by `JsonObjectStringToUStruct`, so "wrong field name" and "handler does nothing" are indistinguishable
+from outside. The clean discriminator, if you ever hit that: re-push with the other key; if *that*
+works, the schema mapping is wrong.
+
+## SEVENTH FLIGHT — `rejectFriendsNotif` needed a knob, because pushes cannot build its precondition
+
+`reject` acts on the **OUTGOING** list ("the person you sent a request to rejected it"), and unlike
+`incoming`, no push can populate it — only the client can, via `requestFriendsRequest`, which we do
+not answer. So `probeIDList` was generalised to three opt-in env knobs:
+
+| knob | serves | why |
+|---|---|---|
+| `AGS_PROBE_FRIEND` | `listOfFriendsResponse` | established friends (presence, unfriend) |
+| `AGS_PROBE_INCOMING` | `listIncomingFriendsResponse` | requests to us |
+| `AGS_PROBE_OUTGOING` | `listOutgoingFriendsResponse` | requests from us — **reject's precondition** |
+
+All empty by default; a normal sitting is byte-identical. Precondition verified **server-side**
+without spending a round trip: after the restart we served `friendsId: [f15118dddd…]` on
+`listOutgoingFriendsResponse` and the client resolved that id over IAM **259 ms** later, i.e. it
+registered and is displaying the pending request.
+
+**Result: `OUTGOING REQUESTS 1 → 0`.** [M]
+
+```
+19:05:04.569  client -> listOutgoingFriendsRequest      (once, on reconnect)
+19:05:04.603  we     -> friendsId: [f15118dddd…]
+19:05:04.862  client -> GET /iam/…/users/f15118dddd…    (+259 ms, it registered)
+19:05:41.904  WS PUSH   rejectFriendsNotif  userId: …   (+37 s)
+              -> OUTGOING REQUESTS 0, and NO refetch in between
+```
+
+⚠ The obvious confound — "the modal was reopened and simply refetched" — is **excluded by the
+capture**: `listOutgoingFriendsRequest` occurs **exactly once** in the whole log, 37 s BEFORE the
+push. Nothing re-asked us afterwards.
+
+★★ **And there is a free internal control inside this run: we were STILL SERVING that outgoing id.**
+The server's answer to `listOutgoingFriendsRequest` is unchanged and still says the request exists,
+yet the client displays 0. ⇒ independently corroborates the `acceptFriendsNotif` finding: **the
+client mutates its own social state from a notif, and only a refetch re-imposes ours.** Two types,
+opposite directions (add vs remove), same conclusion.
+
+### Scoreboard — 7 of the 7 reachable types flown
 
 | type | effect | strength |
 |---|---|---|
@@ -447,9 +509,17 @@ building on this surface needs both halves: the push for the live event, the res
 | `userStatusNotif` | presence renders `→ ONLINE` and `→ OFFLINE` — ⚠ **OFFLINE requires OMITTING `activity`** (a live activity overrides availability) | **strong, visible, bidirectional** |
 | `unfriendNotif` | friend row removed; restored by reconnect | **strong, visible, round-tripped** |
 | `acceptFriendsNotif` | friend ADDED to the list (client-local) + IAM identity resolve at +526 ms; removed again by a reconnect refetch | **strong, visible, reversible** |
+| `cancelFriendsNotif` | incoming request removed: modal `INCOMING REQUESTS 1 → 0`, corner card gone | **strong, visible, paired setup** |
+| `rejectFriendsNotif` | outgoing request removed: modal `OUTGOING REQUESTS 1 → 0`, no refetch involved | **strong, visible, knob-staged** |
 | `disconnectNotif` | nothing observable, vs a matched bare-drop control | **controlled negative** |
 
-Unflown: `cancelFriendsNotif`, `rejectFriendsNotif` — ⚠ both take **`UserId`**, not `FriendId`.
+**ALL 7 FLOWN. 6 of the 7 produce visible client changes; 1 is a controlled negative.**
+⇒ The bound/unbound map derived from the delegate table is **confirmed predictive on every type it
+named.** The client's entire social surface — friends list, presence, incoming and outgoing requests
+— is drivable from the backend.
+
+⚠ **Field names split and fail SILENTLY:** `request`/`accept`/`unfriend` = **`friendId`**;
+`cancel`/`reject` = **`userId`**. Both confirmed on the wire.
 
 ⇒ **The bound/unbound map is now confirmed predictive on 4 independent types**, three of which move
 the UI. The client's social surface is drivable from the backend.
