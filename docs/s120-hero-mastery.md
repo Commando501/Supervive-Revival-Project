@@ -192,6 +192,97 @@ It is unanalysed.
 
 ---
 
+## THE CLAIM PATH (S120 part 3, 2026-08-14) — endpoint TRACED and SERVED; claimable state NOT reached
+
+### ★★★★ [M] THE ENDPOINT, traced with a passing positive control
+
+    POST {progressionBase}/progression/players/{userId}/hero/rewards/claim
+
+- literal `L"/hero/rewards/claim"` (UTF-16LE) at **`.rdata 0x08B4D3A0`**; exactly ONE rip-relative
+  xref, `lea r8,[rip+0x3325588]` at **`.text 0x05827E11`**
+- builder **`0x05827DA0`**: `"/progression/players/" + UserId` + `"/hero/rewards/claim"`, then
+  `base = GetServiceAddress(key L"progression")` — the same key as all 11 progression call sites,
+  and the client's real GET has no path prefix, so base is scheme+host only
+- verb **POST** (`lea rdx,[0x8600824 ansi="POST"]` at `0x05827F24`); dispatch `call 0x057EC800`
+- CONTROL: the same method re-found `L"/progression/players/"` at `.rdata 0x08B4D0D0` and its
+  documented dispatcher (11 refs incl. `lea rdx` at `0x058454D2`) before any new claim was made.
+
+**REQUEST** `FClaimHeroMasteryRewardsRequest` (UHT `0x09C42048`, SizeOf 0x20, 2 props):
+`{"heroId":"Hero:reshealer","claimIds":["hm:reshealer:0"]}`.
+Casing is `FJsonObjectConverter::StandardizeCase`, proven from a REAL client POST in
+`capture.log` #479 (UA `Loki/UE5-CL-0`): `LastBattlepassIDSeen` → `lastBattlepassIdSeen`.
+⚠ `ClaimIDs → "claimIds"` is that rule applied to `"IDs"` and has never been seen on the wire — [I],
+one letter. The handler accepts every casing rather than betting on it.
+
+**RESPONSE** `{"successfulClaimIds":[…],"unclaimedClaimIds":[…]}` — no
+`ClaimHeroMasteryRewardsResponse` type exists, and `FClaimProgressionTrackRewardsResponse` /
+`FClaimMissionRewardsResponse` are both SizeOf 0x20 with identical fields, so the JSON is the same
+whichever is instantiated.
+
+### ★★ [M] `UnclaimedRewards` SERVES AND INGESTES — 0 → 75
+
+`{"0":{"ClaimID":"hm:reshealer:0","SKU":"Emote:SeraphHi"}}` — a JSON **object with int-parsable
+keys**. Measured live: total `UnclaimedRewards` across the 25 heroes went **0 → 25** (level 0) and
+then **→ 75** at level 2 (25 × 3), adopted Version exact, **LogJson errors 0**, `Invalid asset path`
+0, MissionData still 330. **The blast radius did not fire** — the shape is right.
+
+### ⚠⚠ [M] BUT IT DOES NOT REACH `claimableRewards`. THE PLAN'S PREMISE IS FALSIFIED.
+
+With 75 rewards ingested, a tier change forcing a FRESH notif, and zero parse errors:
+
+    09:04:05:969  track=HeroMastery:reshealer  tier=2  claimableRewards=[]
+
+⇒ **Serving `UnclaimedRewards` is necessary but NOT sufficient.** This is a controlled negative: the
+notif is fresh (post-arming, tier actually changed), the data is provably present, and nothing failed
+to parse. Contrast the earlier reading of the SAME field, which was **uninterpretable** because the
+last notif predated the change — that distinction is the whole reason this one counts.
+
+**And the disassembly said so first.** `UClaimableRewardManager::GetAllClaimableHeroMasteryRewards`
+(thunk `0x5269160` → impl **`0x583F1F0`**, fold 1) does NOT read `UnclaimedRewards`:
+
+    mov rbx,[rcx+0x58]            ; the view manager
+    call 0x558B110 / 0x12F4230    ; FPrimaryAssetId -> ToString
+    call 0x57AB180                ; FindVM  (the SAME FindVM as the S83 account-pass fix)
+    test rbx,rbx / je -> false
+    call 0x57ABCC0(VM, outArray)  ; walks [VM+0xC8] / [VM+0xD0] = VM.Levels, bails when empty
+
+⇒ claimables are built from the per-hero **BattlepassViewModel's Levels**, and `UnclaimedRewards`
+could only reach them via `CheckMasteryChanges` (impl `0x5795510`) → populate. **That hop does not
+happen** [M, by the null above].
+★ The VMs themselves are fine: MEASURED 4 live `BP_BattlepassViewModel_C` with `Levels` Num =
+**86** (Hunter's Journey), 11, **9**, **9** — the 9s match `WBP_HeroMastery_LevelIcon`'s `[0,8]`
+clamp exactly, and they are created lazily per viewed hero. So `FindVM` can hit and there IS an
+array to walk; the levels simply are not marked claimable.
+★ The ACCOUNT PASS shows the identical symptom (`ProgressionTrack:HuntersJourney tier=10
+claimableRewards=[]`), which lines up with S83's own still-open item. **Same gap, both tracks** —
+worth attacking once rather than twice.
+
+### [M] NO BLUEPRINT REACHES THIS ROUTE
+
+A controlled census over all 69,142 extracted assets: `ClaimHeroMasteryRewards` 0 / `ClaimIDs` 0 /
+`GetAllClaimableHeroMasteryRewards` 0, against passing positive controls `ClaimReward` 24 /
+`HasClaimableMission` 2. The Claim button on `WBP_HeroMastery_Mission_v2` is the **MISSION** claim
+(`/mission/rewards/claim`), NOT this one. ⇒ **do not use that button as this route's success
+criterion.** The likely user-reachable path is the lobby multi-claim
+(`BulkClaimAllProgressionTrackRewards`, thunk `0x5268FB0`).
+
+### ★ FREE RECEIPT, STILL ARMED
+
+The shared claim sender **`0x057EC800` is `PAGE_NOACCESS`** in the live process (negative control:
+`CreateMissionsModel 0x56E0600` likewise unreadable, so the instrument discriminates). **No claim
+POST of either kind has ever been dispatched this session.** If it flips to `EXECUTE_READ`, a real
+claim went out. Zero-cost, valid while PID 45848 lives.
+
+### Next lever, ranked
+
+1. **What marks a VM Level claimable.** Disassemble the populate (`0x57DF4B0`) and the VM builder's
+   Init (`0x57BB560`) — S83 already proved both run — and find the field `0x57ABCC0` tests per level.
+2. **`GET /progression/players/{id}/tracks/rewards`** is a stub in `menu.go:70`. It is the only
+   other reward-shaped route the client knows; it may be what actually carries claimable state.
+3. `byte[PM+0x388]` is CLAUDE.md's recorded claim gate and reads **1** — so it is NOT the blocker.
+
+---
+
 ## ★★★★★ THE BARS MOVE — CONFIRMED ON SCREEN (2026-08-14)
 
 `YOU CARRY THIS` renders **1,500 / 3,000** with a half-filled bar, and the per-tier segments fill

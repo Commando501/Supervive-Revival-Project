@@ -89,6 +89,10 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// we return a typed ack the client can consume.
 	mux.HandleFunc("GET /progression/players/{id}", s.handleGetProgression)
 	mux.HandleFunc("PUT /progression/players/{id}/mission", s.handlePutMission)
+	// POST /progression/players/{id}/hero/rewards/claim — the hero-mastery reward claim. The URL,
+	// verb and body were traced from the shipped binary (literal L"/hero/rewards/claim" at
+	// .rdata 0x08B4D3A0, builder .text 0x05827DA0); see heromastery.go's block comment.
+	s.registerHeroMastery(mux)
 
 	// ---- Match history ----
 	// Previously fell through to the {} catch-all. See handleMatchHistory: this is
