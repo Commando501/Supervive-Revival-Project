@@ -109,15 +109,18 @@ def main() -> int:
         # "wukong_qknocks_2". Per-file equality predicts both rejected; both were accepted.
         # ★ Matching is CASE-INSENSITIVE (FName semantics): 41 of the original 126 matched only
         # after case folding, e.g. file Earthtank_RMBAirDunk_3 declares "earthtank_rmbairdunk_3".
-        name = internal or filename
-
-        if internal is None:
-            # No InternalName => a CLASS_Abstract base template. MEASURED: exactly 75 such DAs,
-            # and they are precisely the 75 bases-of-variant-families that never landed. They are
-            # registered under their asset FName, but they are authoring templates rather than
-            # grantable missions, so they are deliberately NOT served.
+        # No InternalName => a CLASS_Abstract base template. MEASURED: exactly 75 such DAs, all
+        # with exactly 1 objective and all in the HunterMissions pool. They ARE registered with the
+        # AssetManager, but under their FULL asset FName *including* the DA_Mission_ prefix
+        # (live registered keys minus the InternalName set = 75 entries, all prefixed —
+        # 'da_mission_alchemist_healwithq' etc). That is precisely why stripping the prefix made
+        # all 75 unresolvable, and it is the mechanism behind the old
+        # "bases of a variant-family never land: 0/75" observation.
+        # So they are servable — just under the prefixed key.
+        is_abstract = internal is None
+        name = internal if internal is not None else "DA_Mission_" + filename
+        if is_abstract:
             abstract += 1
-            continue
 
         if not objectives:
             # No objective => nothing the progress store can key on. Counted, not hidden.
@@ -125,6 +128,10 @@ def main() -> int:
             continue
 
         entry = {"objectives": objectives}
+        if is_abstract:
+            # Marked so the server (and a reader) can tell a template apart from a real
+            # mission. Served under its prefixed registered key; see the note above.
+            entry["abstract"] = True
         if pool:
             entry["pool"] = pool
             pools[name] = pool
@@ -138,7 +145,7 @@ def main() -> int:
     json.dump(pools, open(pool_path, "w", encoding="utf-8"), indent=1, sort_keys=True)
 
     print(f"DA files scanned      : {len(files)}")
-    print(f"abstract (no InternalName, not served): {abstract}")
+    print(f"abstract (CLASS_Abstract, served under DA_Mission_ prefix): {abstract}")
     print(f"missions written      : {len(catalog)}")
     print(f"  with a declared pool: {len(pools)}")
     print(f"  IsDebugOnly         : {sum(1 for v in catalog.values() if v.get('debug'))}")

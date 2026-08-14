@@ -106,9 +106,14 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   `server/internal/interactive/interactive.go` calling `CreateMissionModelFromFinalProgress` "the
   factory" describes the SHIM's path, not the game's.
   ★ **75 DAs declare NO `InternalName` — exactly the `CLASS_Abstract` base templates**, and exactly
-  the 75 bases-of-variant-families that never landed. They are authoring templates, not grantable
-  missions; `gen_missions_catalog.py` deliberately does not serve them. That is the mechanism behind
-  the old "bases never land (0/75)" observation.
+  the 75 bases-of-variant-families that never landed. That is the mechanism behind the old
+  "bases never land (0/75)" observation. **They ARE registered — under their FULL asset FName
+  INCLUDING the `DA_Mission_` prefix** (`da_mission_alchemist_healwithq`), which is why stripping the
+  prefix made all 75 unresolvable. Serving them as `Mission:DA_Mission_<file>` works:
+  **MEASURED 323/323 accepted, set-identical, zero drops, `Invalid asset path` count 0.**
+  All 75 carry exactly one objective and sit in the `HunterMissions` pool, whose
+  `UMissionPoolModel` now materialises (8 -> 9 pool models). They are marked `"abstract": true` in
+  `missions_catalog.json` so a template is never mistaken for an authored mission.
   ⚠⚠ **RETRACTED, superseded by the above:** "11/11 grouped landed, 0 of 94 ungrouped landed, only
   60 of 323 land". The 60 was a clamped count (see the `obj_by_class.py` warning below) and the
   per-pool split it produced was noise — `PoolId` was separately DISPROVED as the filter by a
