@@ -486,9 +486,9 @@ func (s *Service) respondText(payload []byte) string {
 	case "listOfFriendsRequest":
 		return buildLobby("listOfFriendsResponse", id, "code: 0", probeFriendsID())
 	case "listIncomingFriendsRequest":
-		return buildLobby("listIncomingFriendsResponse", id, "code: 0", "friendsId: []")
+		return buildLobby("listIncomingFriendsResponse", id, "code: 0", probeIDList("AGS_PROBE_INCOMING"))
 	case "listOutgoingFriendsRequest":
-		return buildLobby("listOutgoingFriendsResponse", id, "code: 0", "friendsId: []")
+		return buildLobby("listOutgoingFriendsResponse", id, "code: 0", probeIDList("AGS_PROBE_OUTGOING"))
 	case "setUserStatusRequest":
 		return buildLobby("setUserStatusResponse", id, "code: 0")
 	default:
@@ -514,8 +514,26 @@ func (s *Service) respondText(payload []byte) string {
 // sends to ask for friends' presence, and which we still do not handle). That
 // keeps the experiment single-variable: with no status response, the ONLY way
 // the friend can appear online is our pushed `userStatusNotif`.
-func probeFriendsID() string {
-	if id := os.Getenv("AGS_PROBE_FRIEND"); id != "" {
+func probeFriendsID() string { return probeIDList("AGS_PROBE_FRIEND") }
+
+// probeIDList renders a `friendsId` line from an env knob, empty by default.
+//
+// AGS_PROBE_FRIEND    -> listOfFriendsResponse         (established friends)
+// AGS_PROBE_INCOMING  -> listIncomingFriendsResponse   (requests TO us)
+// AGS_PROBE_OUTGOING  -> listOutgoingFriendsResponse   (requests FROM us)
+//
+// The incoming/outgoing knobs exist for the same reason as the first
+// (S118): `cancelFriendsNotif` and `rejectFriendsNotif` act on the PENDING
+// request lists, so with both served empty there is nothing for them to
+// remove and their nulls would be uninterpretable rather than negative.
+//
+// ⚠ `cancelFriendsNotif` needed no knob — an incoming request can be created
+// with a push (`requestFriendsNotif`), which is strictly better because the
+// precondition is then built by the same mechanism under test. `rejectFriends`
+// has no such push: it acts on the OUTGOING list, which only the client can
+// populate (via `requestFriendsRequest`, which we do not answer). Hence this.
+func probeIDList(env string) string {
+	if id := os.Getenv(env); id != "" {
 		return "friendsId: [" + id + "]"
 	}
 	return "friendsId: []"
