@@ -161,6 +161,73 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   FName-decode failures, and it is what settled this (127 objects share the `UMissionModel` UClass
   pointer: 126 map values + the CDO, with every map value found and zero unreadable).
   Read `docs/session-59-progress-bars.txt` + `docs/missions-progression-hookup.md` for the SHIM era.
+- ★★★★★ **HERO MASTERY — SOLVED END TO END, SHIM-FREE, SCREENSHOT-CONFIRMED (S120, 2026-08-14).
+  Read `docs/s120-hero-mastery.md` before touching it.** HUNTERS → MASTERY renders and is UNLOCKED.
+  **It is a SPLIT surface and conflating the halves is the trap:** the row LIST comes 100% from the
+  25 shipped `LokiDataAsset_HeroMastery` assets (`MissionSets: Array<MissionSet{Missions:
+  Array<FPrimaryAssetId>}>`, uniformly 3x3 = **225** ids) with ZERO backend involvement; PROGRESS
+  comes from the `UMissionsModel` we already fill; and the per-hero LEVEL/XP track comes from
+  **`FPlayerProgression.HeroMastery`**, which we had been omitting — that was the only missing feed.
+  ★ **There is NO pool filter here** (`grep "Pool"` = 0 across its bytecode vs a 6-hit `MissionSets`
+  control), which is *why* hunter missions render here and never in the modal. ★ **It does NOT gate
+  on `bAllMissionLoaded`** (absent across all 7 bpdumps vs a 17-hit `GetMissionsModel` control).
+  **SCHEMA [M]** (UHT, positive control = re-deriving `FMissionInfo` first; agreed by
+  `binds_members.csv` and by disasm of `GetHeroMastery` impl `base+0x5841D70`):
+  `FPlayerProgression` SizeOf **0x178**, 8 props, closes exactly — `ID@0x0, Version@0x10,
+  Matches@0x18, MissionInfo@0x68, AccountPass@0xe8, HeroMastery@0x148 TArray<FHeroMasteryProgress>,
+  LoginReward@0x158, EventProgression@0x168`. `FHeroMasteryProgress : FProgressionTrackLevel` SizeOf
+  **0x70** = `Level@0x04 i32, XP@0x08 i32, Cleared@0x0C bool, UnclaimedRewards@0x10
+  TMap<int32,FHeroMasteryRewardClaimData>, HeroId@0x60 FPrimaryAssetId`. No enums/UObject*/FDateTime
+  anywhere under it. Consumer = the ingester `0x585A570` we already prove daily, then
+  `CheckMasteryChanges` (thunk `0x5254220` → **impl `0x5795510`**, the mastery twin of the
+  account-pass `0x5794480`, same TU). **No shim, no `.text` write.**
+  ★★ **`HeroId` IS `Hero:<name>`, NOT `HeroMastery:<name>` — MEASURED, not inferred.** Served both
+  forms with different Levels in one flight; the UI drew the `Hero:` value ⇒ `GetHeroMastery`'s
+  linear **first-match** scan wins. ⚠ Both forms emit a `Progress Notif` (that is
+  `CheckMasteryChanges` iterating), so **notif order does NOT tell you which the UI used** — an
+  earlier "last wins" reading from exactly that was wrong. `InternalName == Hero.PrimaryAssetName`
+  for all 25 heroes, and FName matching is case-insensitive.
+  ★★ **THE PAGE IS GATED BY THE ACCOUNT PASS:** `PlayerHasGameFeature = (AccountPass.Level + 1) >=
+  GetLevelGameFeatureUnlocked(MasteryGameFeature)`, and **the required level is 10** — the UI prints
+  it verbatim as `🔒 Hunter's Journey Level 10`. Serving `AccountPass.Level = 10` **removed the lock**
+  (single-variable; every HeroMastery value held constant, which is what rules out the "10 == our
+  served 10" coincidence). ★ Rows render **while still locked** — the gate covers the track, not the list.
+  **Knobs** (`server/internal/interactive/heromastery.go`): `AGS_SERVE_HEROMASTERY=hero|mastery|both`
+  (**unset = OFF, and OFF is byte-identical to pre-S120**), `AGS_HEROMASTERY_PROBE_DELTA`,
+  `AGS_HEROMASTERY_BASE_LEVEL` (both diagnostic). Ship `hero`.
+  ⚠⚠ **BLAST RADIUS IS THREE SURFACES:** `FJsonObjectConverter` rejects the WHOLE struct on the first
+  matched key it cannot import, so a wrong-typed `HeroMastery` closes the missions page, the account
+  pass AND news-banner gate 2 together — and looks exactly like "no effect". That is why it is
+  knob-gated. `UnclaimedRewards` is deliberately OMITTED (a `TMap<int32,…>` sent as an array is
+  exactly that failure).
+  ★ **FREE INSTRUMENT: `LogJson` names the failing property verbatim**
+  (`Unable to import JSON value into property HeroMastery`, and `Unable to import Array element N`).
+  Same class of per-item readout as `Invalid asset path for Mission:`. Grep both before ANY inference.
+  ★ **The 7-mission gap was OURS and is fixed:** `gen_missions_catalog.py` dropped DAs with no
+  `Objectives`, but a `_1` tier that overrides nothing INHERITS them and CUE4Parse omits inherited
+  properties. 330 DAs ship, 323 declare objectives, **exactly 7 do not, set-identical to the 7
+  unserved mastery refs.** A `Super`-chain pass fixed it: **323 → 330 served, 0 existing entries
+  changed, 225/225 mastery refs resolve, `Invalid asset path` still 0.**
+  ⚠⚠ **`extractor bpdump` leaves `<Name>_uasset.json` copies in the flat `out/` dir.** A variant's
+  copy collapses harmlessly onto its `InternalName` key, but an ABSTRACT base has none, so it is
+  keyed by FILE NAME and a stray copy becomes a WHOLE EXTRA MISSION — measured: the catalog silently
+  grew to **331**, the extra being an id registered nowhere. Caught ONLY because 331 missed a
+  pre-registered prediction of 330. The generator now excludes `*_uasset.json`.
+  ⚠⚠ **CORRECTS THIS FILE:** "roughly 293 of the 323 we serve are Hero Mastery content" is WRONG.
+  The mastery assets name **225** ids; **none of the 75 abstract bases is referenced by any mastery
+  set**, so serving them did nothing for this surface.
+  ⚠⚠ **AND CORRECTS `interactive.go`: the client does NOT re-poll `/progression/players/{id}` every
+  ~61 s.** MEASURED at the menu: **exactly ONE fetch per messenger connection**, then nothing for
+  8 minutes while the served Version advanced. ★ **The lever is `POST /api/ws/drop/{handle}`** (admin)
+  — S85's socket-drop generalises to `/progression`; refetch lands within ~3 s and needs no Version
+  guesswork, unlike `NotifyResource`.
+  ⚠⚠ **The `User-Agent` trap fired AGAIN (2nd recorded instance).** Evidence read as "the client
+  fetched twice and refused to adopt" — all three fetches were our own `Invoke-WebRequest`.
+  **Filter `capture.log` by `User-Agent` BEFORE counting anyone's requests** (`Loki/UE5-CL-0` = game).
+  ⚠ Open: the CLAIM path is unmapped (`FClaimHeroMasteryRewardsRequest` implies an untraced endpoint);
+  `POST /party/parties/{p}/members/{id}/refreshMastery` exists and is untraced; there is no admin
+  route for per-hero mastery yet (`SetHeroMastery` exists in code only); and mastery XP never moves
+  without match results.
 - **PASSES / Hunter's Journey (ACCOUNT pass)** — the page renders live with its full
   85-tier ladder (S83). Two client-side root causes, NOT the backend (that route was
   exhausted over ~9 probes): (1) `CheckAccountPassChanges` (`0x5794480`, the populate's

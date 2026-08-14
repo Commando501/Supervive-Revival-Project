@@ -61,13 +61,25 @@ def objective_name(class_ref: str) -> str:
 
 
 def main() -> int:
-    files = sorted(glob.glob(DA_GLOB))
+    # ⚠ EXCLUDE "*_uasset.json" (2026-08-14, S120). `extractor bpdump` and some ad-hoc
+    # extractor invocations write a SECOND copy of an asset as <Name>_uasset.json into the
+    # same flat out/ directory. For a variant those collapse harmlessly onto the same
+    # InternalName key, but an ABSTRACT base has no InternalName, so it is keyed by its file
+    # name and a stray copy becomes a WHOLE EXTRA MISSION — measured: one RE pass during this
+    # session left 4 such files behind and the catalog silently grew to 331, the extra being
+    # "DA_Mission_Void_BlackholeMultiples_Base_uasset". That id is registered nowhere, so the
+    # client would reject it and log `Invalid asset path for Mission:...`.
+    # Caught only because the emitted count (331) missed the pre-registered prediction (330);
+    # a run without that prediction would have shipped it. The canonical corpus is the plain
+    # DA_Mission_*.json set.
+    files = sorted(f for f in glob.glob(DA_GLOB) if not f.endswith("_uasset.json"))
     if not files:
         print(f"no mission DAs found at {DA_GLOB}", file=sys.stderr)
         print("re-run the extractor first (tools/extractor)", file=sys.stderr)
         return 1
 
     catalog, pools, skipped, abstract = {}, {}, 0, 0
+    parsed, by_file = [], {}
     for f in files:
         filename = os.path.basename(f)[:-len(".json")][len("DA_Mission_"):]
         try:
@@ -77,8 +89,18 @@ def main() -> int:
             skipped += 1
             continue
 
-        pool, objectives, debug, internal = None, [], False, None
+        pool, objectives, debug, internal, super_key = None, [], False, None, None
         for export in doc:
+            # The BlueprintGeneratedClass export carries the inheritance link:
+            #   "Super": {"ObjectName": "BlueprintGeneratedClass'DA_Mission_Beebo_RMBHitEnemies_C'"}
+            # Needed by the inheritance pass below; harmless on a base (no Super).
+            sv = export.get("Super")
+            if isinstance(sv, dict) and sv.get("ObjectName"):
+                sn = sv["ObjectName"]
+                sn = sn.split("'")[1] if "'" in sn else sn
+                sn = re.sub(r"_C$", "", sn)
+                if sn.startswith("DA_Mission_"):
+                    super_key = sn[len("DA_Mission_"):]
             props = export.get("Properties") or {}
             if props.get("InternalName"):
                 internal = props["InternalName"]
@@ -94,6 +116,59 @@ def main() -> int:
                         "name": objective_name(oc["ObjectName"]),
                         "max": float(o.get("TotalProgress") or 1),
                     })
+        rec = {
+            "filename": filename, "pool": pool, "objectives": objectives,
+            "debug": debug, "internal": internal, "super": super_key,
+        }
+        parsed.append(rec)
+        by_file[filename] = rec
+
+    # ---- INHERITED-OBJECTIVES PASS (2026-08-14, S120) -------------------------------
+    # A tier variant that overrides NOTHING but its rewards has no Objectives key of its
+    # own, because CUE4Parse serializes only non-default properties. The engine resolves
+    # that through the CDO's Super chain; we have to do the same or the mission looks
+    # objective-less and gets dropped by the `if not objectives` skip below.
+    #
+    # MEASURED, and this is exactly a 7-for-7 closure, not a heuristic:
+    #   * 330 mission DAs ship; 323 declare Objectives; EXACTLY 7 do not.
+    #   * the 25 shipped LokiDataAsset_HeroMastery assets name 225 distinct missions
+    #     (25 heroes x 3 MissionSets x 3 tiers), of which we served 218.
+    #   * the 7 we did NOT serve are SET-IDENTICAL to the 7 objective-less DAs.
+    # So this pass is worth exactly the Hero Mastery gap and nothing else: 218/225 -> 225/225.
+    #
+    # ⚠ Two of the 7 are only findable BY InternalName, never by file name — the same rule
+    # that was worth 126 -> 248 last session. DA_Mission_Void_UltMultiples_1 declares
+    # InternalName "Void_BlackholeMultiples_1", and DA_Mission_Beebo_RMBHitEnemies_1
+    # declares "Beebo_RMBHitEnemies1" (no underscore). A filename search reports both as
+    # "absent from the shipped data", which is FALSE and would have written off 2 of the 7.
+    #
+    # Scope is deliberately narrow (single-variable): objectives ONLY, and only when the
+    # variant declares none. Pool is NOT inherited — that would newly attach a pool to all
+    # 218 variants, changing what the other 323 missions are served with. PoolId was already
+    # DISPROVEN as an acceptance filter, and Hero Mastery has no pool filter at all, so
+    # there is nothing to gain against a real regression risk.
+    inherited = 0
+    for rec in parsed:
+        if rec["objectives"]:
+            continue
+        seen, cur = set(), rec["super"]
+        while cur and cur not in seen:          # guarded walk; the data is a chain, not a DAG
+            seen.add(cur)
+            base = by_file.get(cur)
+            if base is None:
+                break
+            if base["objectives"]:
+                # copy, so a later mutation of the base cannot alias into the variant
+                rec["objectives"] = [dict(o) for o in base["objectives"]]
+                rec["inherited_from"] = cur
+                inherited += 1
+                break
+            cur = base["super"]
+
+    for rec in parsed:
+        filename = rec["filename"]
+        pool, objectives = rec["pool"], rec["objectives"]
+        debug, internal = rec["debug"], rec["internal"]
 
         # ⚠⚠ THE MISSION NAME IS `InternalName`, NOT THE FILE NAME. This is the whole
         # acceptance rule and it was worth 126 -> 248 missions. The client registers each
@@ -150,6 +225,11 @@ def main() -> int:
     print(f"  with a declared pool: {len(pools)}")
     print(f"  IsDebugOnly         : {sum(1 for v in catalog.values() if v.get('debug'))}")
     print(f"objectives written    : {sum(len(v['objectives']) for v in catalog.values())}")
+    print(f"objectives INHERITED from a Super  : {inherited}")
+    for rec in parsed:
+        if rec.get("inherited_from"):
+            nm = rec["internal"] or ("DA_Mission_" + rec["filename"])
+            print(f"    {nm}  <- {rec['inherited_from']}")
     print(f"skipped (no objective or unreadable): {skipped}")
     diff = sum(1 for n in catalog if n not in {os.path.basename(f)[:-5][len("DA_Mission_"):] for f in files})
     print(f"names differing from their filename  : {diff}  <- these were ALL being dropped before")

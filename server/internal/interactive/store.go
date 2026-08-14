@@ -112,6 +112,17 @@ type playerState struct {
 	// AccountPassCleared marks the whole track finished. No omitempty: false is a meaningful,
 	// explicitly-set value here and the admin GUI round-trips the doc.
 	AccountPassCleared bool `json:"accountPassCleared"`
+
+	// --- HERO MASTERY: per-hero mastery track (S120) — see heromastery.go ---
+	// Keyed by the hero's InternalName as declared by its LokiDataAsset_HeroMastery
+	// ("Alchemist", "reshealer", "RONIN", ... — shipped casing, matched case-insensitively).
+	// Served as FPlayerProgression.HeroMastery = TArray<FHeroMasteryProgress> @0x148 on
+	// GET /progression/players/{id}, which rides the SAME native ingester (0x585A570) already
+	// proven for AccountPass and MissionInfo. Absent/zero is the correct fresh-account state.
+	// ⚠ Only emitted when AGS_SERVE_HEROMASTERY is set — see heroMasteryMode() for why that
+	// knob exists (a wrong-typed key here rejects the WHOLE document and would silently close
+	// the missions page, the account pass and the news banner together).
+	HeroMastery map[string]HeroMasteryProgress `json:"heroMastery,omitempty"`
 }
 
 // store is an in-memory player-state map with best-effort JSON-file persistence
