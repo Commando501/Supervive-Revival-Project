@@ -1207,6 +1207,20 @@ first render it draws with no request at all. A later zero was briefly read as a
 `User-Agent` must be checked on every captured request: our own `curl` verifications land in
 `capture.log` looking exactly like client traffic, which nearly produced a fabricated result.
 
+**⚠⚠ FOLLOW-UP, 2026-08-14 — that same artifact went on to manufacture a FALSE FINDING, which is the
+44th instance of the instrument-artifact pattern and the more instructive half of this row.** The
+cached-image null was identified, written down as "uninterpretable"… and then reasoned from anyway a
+few steps later, yielding a confident claim that the banner was **order-dependent** (that
+`InitializeBanners` runs from `BP_OnActivated`, so a play screen activating before both gates open
+would never re-trigger). That was never measured. Asked to *fix* it, the first step was to make the
+render detectable — banner image URLs now carry `?v=<nonce>`, changing once per ags start — and the
+premise immediately collapsed: on a plain default launch with `pushes=0` on both sockets, the gates
+open at `00:42:43` and the client fetches the splash at `00:43:06`, **23 s later, unprompted**. The
+chain self-triggers. **Nothing was broken; the "fix" was a verification.**
+★ Two transferable rules: **naming an artifact does not neutralise it** — the guard has to be built,
+not just noted; and **verify the premise before building the fix**, because a fix shipped here would
+have been permanent complexity defending against a bug that never existed.
+
 ---
 
 ### FK-18 — "`merged.dump.exe` is a merged multi-state image"

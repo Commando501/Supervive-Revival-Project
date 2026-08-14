@@ -464,13 +464,25 @@ ZERO injection — and NO menu surface is a web page.**
   never loaded) — opened by serving `FMatchHistory{ID,Version,Matches:[]}`; an EMPTY `Matches` is
   enough and keeps the risky 15-field `FMatchHistoryEntry` out of it. Gate 2 is the missions flag
   above. **Both are HTTP-openable; neither needs a shim.**
-- ⚠ **ORDER-DEPENDENT:** `InitializeBanners` runs from `BP_OnActivated`; if the play screen activates
-  before both gates open, nothing re-triggers it that launch. A resource push after the missions
-  settle is the deterministic fix (untried).
-- ⚠⚠ **INSTRUMENT TRAP, cost me a false "regression":** the client CACHES downloaded banner images to
-  `%LOCALAPPDATA%\SUPERVIVE\Saved\ImageCaches` (+ `ImageCacheIndex.json`). After the first render the
-  banner draws **with no HTTP request at all**, so "no splash.png fetch in `capture.log`" is
-  UNINTERPRETABLE, not negative. Check the cache index, or the screen.
+- ~~⚠ ORDER-DEPENDENT: `InitializeBanners` runs from `BP_OnActivated`; if the play screen activates
+  before both gates open, nothing re-triggers it that launch.~~ **RETRACTED 2026-08-14 — FALSE, and it
+  was never measured.** It was inferred from a missing splash fetch on a default launch, i.e. from the
+  CACHED-IMAGE null described in the next bullet — the very artifact identified minutes earlier and
+  then reasoned from anyway (instrument-artifact pattern, 44th instance). **MEASURED with the `?v=`
+  nonce forcing a cache miss: on a plain default launch with `pushes=0` on both sockets and no manual
+  intervention, the gates open at `00:42:43` and the client fetches the splash at `00:43:06` — 23 s
+  later, unprompted.** The chain self-triggers; there is nothing to fix. ⇒ **Do not build a
+  "re-trigger" push for this.**
+- ⚠⚠ **INSTRUMENT TRAP — it produced BOTH a false "regression" AND a false finding.** The client
+  CACHES downloaded banner images to `%LOCALAPPDATA%\SUPERVIVE\Saved\ImageCaches` (+
+  `ImageCacheIndex.json`). After the first render the banner draws **with no HTTP request at all**, so
+  "no splash.png fetch in `capture.log`" is UNINTERPRETABLE, not negative. It first read as a
+  regression; then, uncaught, it became the fabricated "order-dependence" claim retracted above.
+  ★ **FIXED PERMANENTLY — the banner image URLs now carry `?v=<bannerAssetNonce>`**
+  (`server/internal/loki/loki.go`), a token that changes once per **ags start** and is constant within
+  a run. Each run therefore takes exactly one cache miss per image, so a splash fetch is real positive
+  evidence the carousel populated **and its absence is interpretable again**, while the client's cache
+  still works normally inside the run. **Do not remove the `?v=` — it is the instrument.**
 - ★★ **`NotifyResource` drives a refetch of ONE resource with no reconnect** — measured on
   `/progression/players/{id}` (client refetched 0.8 s later, `User-Agent: Loki/UE5-CL-0`). That
   endpoint is otherwise fetched ONCE per session, so this is how to iterate on it without relaunching.

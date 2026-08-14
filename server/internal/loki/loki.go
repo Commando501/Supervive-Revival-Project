@@ -21,6 +21,7 @@ import (
 	"image/draw"
 	"image/png"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -280,8 +281,19 @@ func bannerConfigs(base string) map[string]any {
 		"buttonText":         text("OPEN"),
 		"primaryTextColor":   "#FFFFFF",
 		"secondaryTextColor": "#C8C8C8",
-		"splashImageURL":     base + "/revival/banner/splash.png",
-		"iconUrl":            base + "/revival/banner/icon.png",
+		// ⚠⚠ THE ?v= IS AN INSTRUMENT, NOT DECORATION — DO NOT REMOVE IT.
+		// The client CACHES banner images to %LOCALAPPDATA%\SUPERVIVE\Saved\ImageCaches
+		// (see ImageCacheIndex.json, which after the first render contains exactly
+		// "http://localhost:8080/revival/banner/splash.png"). Once cached, the banner draws
+		// with NO HTTP REQUEST AT ALL — so "no splash fetch in docs/capture.log" stops meaning
+		// "the banner did not render" and starts meaning nothing whatsoever. That null was
+		// briefly read as a regression on 2026-08-14.
+		// bannerAssetNonce changes once per ags start, so each RUN takes exactly one cache miss
+		// per image: a splash fetch in the capture is then real, positive evidence that the
+		// carousel populated, and its ABSENCE is interpretable again. Within a run the URL is
+		// stable, so the client's cache still works normally.
+		"splashImageURL": base + "/revival/banner/splash.png?v=" + bannerAssetNonce,
+		"iconUrl":        base + "/revival/banner/icon.png?v=" + bannerAssetNonce,
 		// The FK-17 payoff: if this is honoured, the client hands a URL to a web view.
 		"actionType": "WebURL",
 		"actionURL":  base + "/revival/banner/news.html",
@@ -356,6 +368,13 @@ func solidPNG(c color.RGBA, w, h int) []byte {
 var (
 	bannerSplashPNG = solidPNG(color.RGBA{R: 0x1E, G: 0x2A, B: 0x4A, A: 0xFF}, 512, 256)
 	bannerIconPNG   = solidPNG(color.RGBA{R: 0xE8, G: 0x6A, B: 0x17, A: 0xFF}, 64, 64)
+
+	// bannerAssetNonce is stamped into the banner image URLs as ?v=<nonce>. It changes once
+	// per ags start and is CONSTANT within a run — see the comment at splashImageURL for why
+	// this exists (it is what keeps "did the banner render?" answerable at all, given the
+	// client's on-disk image cache). Seconds granularity is plenty: the only requirement is
+	// that a fresh ags produces a URL the client has not already cached.
+	bannerAssetNonce = strconv.FormatInt(time.Now().Unix(), 10)
 )
 
 func writePNG(w http.ResponseWriter, b []byte) {
