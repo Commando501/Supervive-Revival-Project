@@ -119,13 +119,29 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   per-pool split it produced was noise — `PoolId` was separately DISPROVED as the filter by a
   single-variable probe (`AGS_MISSION_NO_POOLID=1`: PoolId omitted from all 323 entries, ingest
   confirmed via `PM+0xA0`, count unchanged at 126).
+  ★★★★★ **THE MODAL'S CATEGORY LIST IS A HARDCODED ALLOWLIST — settled from the asset, 2026-08-14.**
+  `WBP_UI_MissionModal` contains a fixed set of `WBP_UI_MissionModalCategory` widgets, each with an
+  explicit **`PoolAsset[]`** array naming the pools it displays:
+      Armory   -> ArmoryOnboarding                    Onboarding -> OnboardingPlanbee, Onboarding
+      Dailies  -> DailyEasy, DailyChallenge           Weeklies   -> Weekly, WeeklyChallenge
+      Seasonal -> Tournament                          PC Bang    -> DailyPCB, DailyPCB_Armory
+  A category renders when its pools have accepted missions (which is why ONBOARDING and SEASONAL
+  appeared once their missions resolved). **`DA_MissionPoolHunterMissions` is in NO category's
+  `PoolAsset[]`, so hunter missions can NEVER appear in this modal** — MEASURED: 323/323 missions
+  accepted, `HunterMissions` pool model live, and still no HUNTER MISSIONS category.
+  ⇒ ★ **Hunter missions belong to HERO MASTERY, not the missions modal** (`WBP_HeroMastery_
+  TooltipMissionList`, `WBP_HeroMastery_MissionDifficulty`). Since the 75 abstract bases AND the 218
+  tier variants that inherit their pool are ALL `HunterMissions`, roughly **293 of the 323 we serve
+  are Hero Mastery content** and only ~30 are modal content — which is exactly what renders.
+  ⚠ So do NOT chase "why don't all 323 show in the modal": it is the wrong surface for most of them.
   ⚠⚠ **AND `PoolGroupId` IS NOT A GATE OF ANY KIND — RETRACTED TWICE, 2026-08-14.** It was first
   recorded as gating ACCEPTANCE, corrected to gating UI VISIBILITY, and BOTH are wrong: they were
   artifacts of the filename bug, because only the daily/weekly pools happened to contain missions
   whose filename matched their `InternalName`. **MEASURED after the fix: `Onboarding` and
   `Tournament` both declare `PoolGroupId = None` and BOTH now render as categories** (ONBOARDING and
-  SEASONAL). The modal went from 2 categories to 4. ⇒ **The category rail is driven by which pools
-  have ACCEPTED MISSIONS, not by `PoolGroupId`.** Prediction made before the screenshot — "the modal
+  SEASONAL). The modal went from 2 categories to 4. ⇒ **The category rail is driven by the modal's hardcoded
+  `PoolAsset[]` allowlist (see above), gated on those pools having ACCEPTED MISSIONS — not by
+  `PoolGroupId`.** Prediction made before the screenshot — "the modal
   will look identical because the new missions are in ungrouped pools" — was FALSIFIED.
   ★ Also now rendering natively: the pool's **`MetaMission`** (`DA_MissionPoolDailyChallenge`
   declares `MetaMission: Armory_CompleteDailies`) appears as the **COMPLETE ALL DAILIES 0/3** header
