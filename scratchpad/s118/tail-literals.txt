@@ -1,3 +1,0 @@
-=== tail case bodies: inline FString literal operands (machine-computed) ===
-  idx 31  enum 32   lea @0x04B0485C -> .rdata 0x0854E560  Num=7  = 'message'
-  idx 32  enum 33   lea @0x04B0439A -> .rdata 0x086041A0  Num=11  = 'requestType'

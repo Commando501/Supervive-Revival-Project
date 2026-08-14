@@ -178,3 +178,31 @@ __pycache__/
 # thunk_callhist.pkl a memoised disassembly pass. Regenerated automatically by
 # tools/re/{exec_surface_probe,exec_chain_grade,callers_of}.py, which own the path.
 /tools/re/.exec_surface_cache/
+
+# ---------------------------------------------------------------------------------------
+# Per-run launch/capture artifacts. EVIDENCE for one sitting, not source.
+#
+# These were committed once by accident (2779f81, 618,258 insertions across 66 files —
+# a 230k-line relaunch.out.log, capture/loki snapshots, and a whole scratchpad run dir)
+# and must not be again. Back them up under docs/ as usual; git just won't track them.
+#
+# Deliberately NARROW. Do not broaden to docs/*.log or /scratchpad/ — both hold files that
+# are legitimately tracked: the ds-server-*/ds-client-*/fk11-live-result-* log families,
+# docs/relaunch-loop.log and docs/relaunch-{normal-,}s52*.out.log (S52 evidence), and
+# scratchpad/{stub_recheck*,decode_*}.py (the S115 keepers the ignorance map cites).
+# Note docs/loki.log.* matches only the snapshot family — NOT docs/lokiassetmanager-*.md.
+/docs/capture.log.*
+/docs/loki.log.*
+/docs/loki-extract.*
+/docs/relaunch.out.log
+/docs/relaunch.err.log
+/docs/relaunch2.out.log
+/docs/relaunch2.err.log
+/docs/fk17-relaunch.out.log
+/docs/missioninfo-clean-run.out.log
+/docs/cold21.out.log
+/docs/coldcatalog.out.log
+/docs/defaultlaunch.out.log
+/scratchpad/s118/
+/scratchpad/s118-*
+/scratchpad/s118_*
