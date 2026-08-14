@@ -123,6 +123,12 @@ type playerState struct {
 	// knob exists (a wrong-typed key here rejects the WHOLE document and would silently close
 	// the missions page, the account pass and the news banner together).
 	HeroMastery map[string]HeroMasteryProgress `json:"heroMastery,omitempty"`
+	// MasteryClaimed records which mastery LEVELS the player has already claimed, keyed by the
+	// hero's lower-cased InternalName. Served as the complement of
+	// FHeroMasteryProgress.UnclaimedRewards: a level is offered until it appears here.
+	// Persisted so a claim survives an ags restart — otherwise every restart would re-offer
+	// rewards the player already took, which is indistinguishable from the claim route not working.
+	MasteryClaimed map[string][]int `json:"masteryClaimed,omitempty"`
 }
 
 // store is an in-memory player-state map with best-effort JSON-file persistence

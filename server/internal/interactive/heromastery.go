@@ -72,12 +72,123 @@ package interactive
 // `Invalid asset path for Mission:`. Grep for it BEFORE any statistical inference.
 
 import (
+	_ "embed"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 )
+
+// ---- HERO MASTERY REWARDS + THE CLAIM ROUTE (S120, 2026-08-14) ----------------------------
+//
+// THE ENDPOINT IS MEASURED, not guessed:
+//
+//	POST {progressionBase}/progression/players/{userId}/hero/rewards/claim
+//
+// Traced exactly the way handleGetProgression's chain was, with the same method re-finding
+// L"/progression/players/" at .rdata 0x08B4D0D0 as a passing positive control first:
+//   - literal L"/hero/rewards/claim" (UTF-16LE) at .rdata 0x08B4D3A0
+//   - its ONE rip-relative xref: `lea r8,[rip+0x3325588]` at .text 0x05827E11
+//   - enclosing builder 0x05827DA0: "/progression/players/" + UserId, + "/hero/rewards/claim",
+//     then base = GetServiceAddress(key L"progression") — the same key used at all 11 progression
+//     call sites, and the client's real GET has no path prefix, so base is scheme+host only
+//   - verb POST (`lea rdx,[0x8600824 ansi="POST"]` at 0x05827F24)
+//   - dispatch `call 0x057EC800` at 0x05827F60
+//
+// REQUEST: FClaimHeroMasteryRewardsRequest (UHT FStructParams 0x09C42048, SizeOf 0x20, 2 props)
+//   HeroID FPrimaryAssetId @0x00 ; ClaimIDs TArray<FString> @0x10
+// Key casing is FJsonObjectConverter::StandardizeCase — proven from a real client POST in
+// docs/capture.log #479 (UA Loki/UE5-CL-0): LastBattlepassIDSeen -> "lastBattlepassIdSeen".
+// So HeroID -> "heroId". [I] ClaimIDs -> "claimIds" is that rule applied to "IDs" and has never
+// been seen on the wire, so the handler accepts every casing rather than betting on one letter.
+//
+// RESPONSE: no ClaimHeroMasteryRewardsResponse type exists; the shared sender 0x057EC800 has
+// exactly two callers (this and /accountpass/rewards/claim), and FClaimProgressionTrackRewardsResponse
+// and FClaimMissionRewardsResponse are both SizeOf 0x20 with identical fields
+// {SuccessfulClaimIDs, UnclaimedClaimIDs} — so the JSON is the same whichever is instantiated.
+//
+// ⚠⚠ WHAT IS **NOT** ESTABLISHED, AND IT GOVERNS THE EXPECTATION:
+// 1. `UnclaimedRewards` is NOT read by the claimable getter. MEASURED by disassembling
+//    UClaimableRewardManager::GetAllClaimableHeroMasteryRewards (thunk 0x5269160 -> impl
+//    0x583F1F0, fold 1): it converts the FPrimaryAssetId, ToString (0x12F4230), FindVM
+//    (0x57AB180 — the SAME FindVM the S83 account-pass fix used), and on a hit calls
+//    0x57ABCC0, which walks the VIEW MODEL's Levels array at [VM+0xC8]/[VM+0xD0] and bails
+//    immediately when empty. So claimables come from the per-hero BattlepassViewModel, and
+//    UnclaimedRewards can only reach it via CheckMasteryChanges (impl 0x5795510) -> populate.
+//    That hop is INFERRED, not measured.
+//    ★ Encouraging: the per-hero VMs exist and are populated — MEASURED live, 4 BP_BattlepassViewModel_C
+//    with Levels Num = 86 (Hunter's Journey), 11, 9, 9; the 9s match WBP_HeroMastery_LevelIcon's
+//    [0,8] clamp exactly. They are created lazily per viewed hero.
+// 2. NO BLUEPRINT reaches the hero claim. A controlled census over all 69,142 extracted assets
+//    returned ClaimHeroMasteryRewards 0 / ClaimIDs 0 / GetAllClaimableHeroMasteryRewards 0 against
+//    passing positive controls ClaimReward 24 / HasClaimableMission 2. The Claim button on
+//    WBP_HeroMastery_Mission_v2 is the MISSION claim (-> /mission/rewards/claim), NOT this one.
+//    ⇒ do NOT use that button as the success criterion for this route.
+// 3. What natively triggers builder 0x05827DA0 is UNKNOWN — no caller is visible in the ~52%
+//    of .text that is decrypted. The likely user-reachable path is the lobby multi-claim
+//    (BulkClaimAllProgressionTrackRewards, thunk 0x5268FB0).
+//
+// ★ FREE, EXACT RECEIPT: the shared sender 0x057EC800 is PAGE_NOACCESS in the live process,
+// i.e. NO claim POST of either kind has ever been issued this session. If it ever flips to
+// EXECUTE_READ, a claim was really dispatched. Zero-cost detector; valid while the PID lives.
+
+// masteryRewards is hero InternalName -> level ("0".."6") -> reward FPrimaryAssetId "Type:Name",
+// built offline from the 25 shipped LokiDataAsset_HeroMastery LevelRewards maps.
+// Regenerate with tools/re/gen_mastery_rewards.py.
+//
+//go:embed mastery_rewards.json
+var masteryRewardsJSON []byte
+
+var masteryRewards = func() map[string]map[string]string {
+	m := map[string]map[string]string{}
+	if err := json.Unmarshal(masteryRewardsJSON, &m); err != nil {
+		// Loud: silently empty rewards would look exactly like "the client ignored them".
+		log.Printf("mastery: mastery_rewards.json failed to parse (%v) — no rewards will be served", err)
+		return map[string]map[string]string{}
+	}
+	return m
+}()
+
+// masteryClaimID is the ClaimID we mint for one (hero, level). It is OUR identifier — the client
+// echoes it back verbatim in ClaimIDs, so its only requirements are stability and uniqueness.
+func masteryClaimID(hero string, level int) string {
+	return fmt.Sprintf("hm:%s:%d", strings.ToLower(hero), level)
+}
+
+// parseMasteryClaimID reverses masteryClaimID. Returns ok=false for anything we did not mint.
+func parseMasteryClaimID(id string) (hero string, level int, ok bool) {
+	p := strings.Split(id, ":")
+	if len(p) != 3 || p[0] != "hm" {
+		return "", 0, false
+	}
+	n, err := strconv.Atoi(p[2])
+	if err != nil || n < 0 {
+		return "", 0, false
+	}
+	return p[1], n, true
+}
+
+// heroFromAssetID accepts "Hero:Alchemist", "HeroMastery:Alchemist" or a bare "Alchemist".
+// Both prefixes are accepted deliberately: the request is built CLIENT-side and which id it
+// carries is [I], while ULokiAssetStatics::GetHeroIdForHeroMasteryId / GetHeroMasteryIdForHeroId
+// existing at all proves the two are distinct and mutually convertible. Matching is
+// case-insensitive (FName semantics).
+func heroFromAssetID(s string) string {
+	if i := strings.LastIndex(s, ":"); i >= 0 {
+		s = s[i+1:]
+	}
+	for h := range masteryRewards {
+		if strings.EqualFold(h, s) {
+			return h
+		}
+	}
+	return ""
+}
 
 // heroMasteryIDs is the InternalName of every shipped LokiDataAsset_HeroMastery.
 //
@@ -133,6 +244,89 @@ func (s *Service) SetHeroMastery(id, hero string, p HeroMasteryProgress) HeroMas
 		st.HeroMastery[hero] = p
 	})
 	return p
+}
+
+// masteryClaimed returns the set of mastery levels this player has already claimed for one hero.
+func (s *Service) masteryClaimed(playerID, hero string) map[int]bool {
+	st := s.store.get(playerID)
+	out := map[int]bool{}
+	for _, lv := range st.MasteryClaimed[strings.ToLower(hero)] {
+		out[lv] = true
+	}
+	return out
+}
+
+// registerHeroMastery wires the measured claim route. See the block comment at the top of this
+// file for how the URL, verb and body were traced.
+//
+// ⚠ The client builds the FULL url as base + "/progression/players/" + id + "/hero/rewards/claim",
+// so the path we register must match that suffix exactly.
+func (s *Service) registerHeroMastery(mux *http.ServeMux) {
+	mux.HandleFunc("POST /progression/players/{id}/hero/rewards/claim", s.handleClaimHeroMasteryRewards)
+}
+
+// handleClaimHeroMasteryRewards services the mastery reward claim.
+//
+// Request  {"heroId":"Hero:reshealer","claimIds":["hm:reshealer:0"]}
+// Response {"successfulClaimIds":["hm:reshealer:0"],"unclaimedClaimIds":[]}
+//
+// Every key is accepted in any casing. The response field names follow the same
+// FJsonObjectConverter::StandardizeCase rule the client uses on the way out
+// (SuccessfulClaimIDs -> successfulClaimIds), and UE ignores unknown keys, so the PascalCase
+// aliases are emitted too — absent is safe, wrong-typed is not, and duplicating a correct value
+// under two names cannot wrong-type anything.
+func (s *Service) handleClaimHeroMasteryRewards(w http.ResponseWriter, r *http.Request) {
+	playerID := r.PathValue("id")
+	raw, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+
+	// Decode into a case-insensitive bag: Go's encoding/json already matches field names
+	// case-insensitively, which covers heroId/heroID/HeroID and claimIds/claimIDs/ClaimIDs.
+	var body struct {
+		HeroID   string   `json:"heroId"`
+		ClaimIDs []string `json:"claimIds"`
+	}
+	_ = json.Unmarshal(raw, &body)
+
+	hero := heroFromAssetID(body.HeroID)
+	ok := make([]string, 0, len(body.ClaimIDs))
+	bad := make([]string, 0)
+
+	for _, cid := range body.ClaimIDs {
+		h, lv, parsed := parseMasteryClaimID(cid)
+		// A claim is honoured only if it is one we could have offered: our id format, the hero
+		// the request names (when it named one), a level the asset actually rewards, and not
+		// already claimed. Anything else goes back as unclaimed rather than being silently
+		// swallowed — the client has a field for exactly that.
+		if !parsed || (hero != "" && !strings.EqualFold(h, hero)) {
+			bad = append(bad, cid)
+			continue
+		}
+		target := hero
+		if target == "" {
+			target = heroFromAssetID(h)
+		}
+		if target == "" || masteryRewards[target][strconv.Itoa(lv)] == "" || s.masteryClaimed(playerID, target)[lv] {
+			bad = append(bad, cid)
+			continue
+		}
+		s.store.update(playerID, func(st *playerState) {
+			if st.MasteryClaimed == nil {
+				st.MasteryClaimed = map[string][]int{}
+			}
+			k := strings.ToLower(target)
+			st.MasteryClaimed[k] = append(st.MasteryClaimed[k], lv)
+		})
+		ok = append(ok, cid)
+	}
+	log.Printf("mastery claim: player=%s hero=%q requested=%d granted=%d rejected=%d",
+		playerID, body.HeroID, len(body.ClaimIDs), len(ok), len(bad))
+
+	writeJSON(w, map[string]any{
+		"successfulClaimIds": ok,
+		"unclaimedClaimIds":  bad,
+		"SuccessfulClaimIDs": ok,
+		"UnclaimedClaimIDs":  bad,
+	})
 }
 
 // heroMasteryMode reads the AGS_SERVE_HEROMASTERY knob.
@@ -229,32 +423,98 @@ func (s *Service) heroMasteryEntries(id string) ([]any, string) {
 		if lvl < base {
 			lvl = base // diagnostic floor; a stored value always wins
 		}
+		unclaimed, uDigest := s.unclaimedRewardsFor(id, name, lvl)
 		if mode == "hero" || mode == "both" {
-			entries = append(entries, map[string]any{
+			e := map[string]any{
 				"HeroId":  "Hero:" + name,
 				"Level":   lvl,
 				"XP":      p.XP,
 				"Cleared": p.Cleared,
-			})
+			}
+			if unclaimed != nil {
+				e["UnclaimedRewards"] = unclaimed
+			}
+			entries = append(entries, e)
 		}
 		if mode == "mastery" || mode == "both" {
 			ml := lvl
 			if mode == "both" {
 				ml += delta // 0 unless the self-discriminating probe is armed
 			}
-			entries = append(entries, map[string]any{
+			e := map[string]any{
 				"HeroId":  "HeroMastery:" + name,
 				"Level":   ml,
 				"XP":      p.XP,
 				"Cleared": p.Cleared,
-			})
+			}
+			if unclaimed != nil {
+				e["UnclaimedRewards"] = unclaimed
+			}
+			entries = append(entries, e)
 		}
-		fmt.Fprintf(&sb, "%s=%d/%d/%t;", name, p.Level, p.XP, p.Cleared)
+		fmt.Fprintf(&sb, "%s=%d/%d/%t/%s;", name, p.Level, p.XP, p.Cleared, uDigest)
 	}
 	// The mode, delta AND base join the digest: flipping any knob must move Version, or the strict
 	// `>` adoption gate at +585A594 silently drops the new document and the run reads as "the knob
 	// does nothing". ⚠ `base` is easy to forget here because the per-hero digest above records the
 	// STORED level, not the floored one — an earlier revision of this function omitted it and the
-	// diagnostic floor would have been invisible to the client.
-	return entries, fmt.Sprintf("hm1-%s-d%d-b%d-%d-%s", mode, delta, base, len(entries), sb.String())
+	// diagnostic floor would have been invisible to the client. The per-hero unclaimed digest is
+	// folded in above for the same reason: a claim must move Version or the client keeps the old
+	// document and the reward appears un-claimed forever.
+	return entries, fmt.Sprintf("hm2-%s-d%d-b%d-r%s-%d-%s",
+		mode, delta, base, os.Getenv("AGS_SERVE_MASTERY_REWARDS"), len(entries), sb.String())
+}
+
+// unclaimedRewardsFor builds one hero's FHeroMasteryProgress.UnclaimedRewards, plus a digest.
+// Returns (nil, "") when the knob is off, so the served entry is byte-identical to before.
+//
+// ⚠⚠ THE SHAPE IS THE WHOLE RISK. UnclaimedRewards is TMap<int32, FHeroMasteryRewardClaimData>,
+// and UE's FJsonObjectConverter needs a JSON **OBJECT whose keys parse as integers** — NOT an
+// array. A wrong-typed MATCHED key makes it reject the ENTIRE FPlayerProgression, which closes
+// the missions page, the Hunter's Journey pass AND news-banner gate 2 at once and looks exactly
+// like "no effect". Hence its own env gate, off by default:
+//
+//	{"0": {"ClaimID": "hm:reshealer:0", "SKU": "Emote:SeraphHi"}}
+//
+// ★ Free discriminator if it IS wrong: LogJson names the property verbatim —
+// `JsonObjectToUStruct - Unable to import JSON value into property HeroMastery`. Grep for it
+// before inferring anything, and check DAILIES still renders 3/3 as the blast-radius canary.
+//
+// WHICH LEVELS ARE OFFERED: every level the player has reached (0..Level) that has a reward in the
+// asset and has not been claimed. A fresh account at Level 0 therefore gets exactly ONE unclaimed
+// reward per hero, which is conveniently the minimal single-entry probe.
+// ⚠ [I] "reward key == mastery level index" is the natural reading but is NOT settled — there are
+// 7 rewards (0..6), 8 XPAmounts, and a [0,8] icon clamp (live VM Levels Num = 9). A level above 6
+// simply has no reward; nothing is synthesised for it.
+func (s *Service) unclaimedRewardsFor(playerID, hero string, level int) (map[string]any, string) {
+	if strings.TrimSpace(os.Getenv("AGS_SERVE_MASTERY_REWARDS")) == "" {
+		return nil, ""
+	}
+	rewards := masteryRewards[hero]
+	if len(rewards) == 0 {
+		return nil, ""
+	}
+	claimed := s.masteryClaimed(playerID, hero)
+
+	out := map[string]any{}
+	var sb strings.Builder
+	for lv := 0; lv <= level; lv++ {
+		key := strconv.Itoa(lv)
+		sku, ok := rewards[key]
+		if !ok || claimed[lv] {
+			continue
+		}
+		out[key] = map[string]any{
+			"ClaimID": masteryClaimID(hero, lv),
+			"SKU":     sku,
+		}
+		fmt.Fprintf(&sb, "%d,", lv)
+	}
+	if len(out) == 0 {
+		// Serve the key as an empty object rather than omitting it: an explicitly empty TMap is
+		// a meaningful "nothing to claim", and it keeps the shape identical across states so a
+		// parse failure cannot be blamed on the key appearing only sometimes.
+		return map[string]any{}, "none"
+	}
+	return out, sb.String()
 }

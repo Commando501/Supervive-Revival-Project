@@ -1,7 +1,8 @@
 package interactive
 
 import (
-	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -265,7 +266,146 @@ func TestHeroMasteryStoredProgressRoundTrips(t *testing.T) {
 	if digest == "" {
 		t.Error("empty digest while armed; Version could not track content changes")
 	}
-	if fmt.Sprint(digest[:3]) != "hm1" {
+	// The digest carries a version prefix so its FORMAT can change without a stale value ever
+	// comparing equal to a new one. Assert the prefix exists, not which version it is — pinning
+	// the exact version made this test fail on a legitimate format bump.
+	if !strings.HasPrefix(digest, "hm") {
 		t.Errorf("digest %q lost its version prefix", digest)
+	}
+}
+
+// TestMasteryRewardsOffByDefault: UnclaimedRewards is the riskiest key we can add to
+// FPlayerProgression — a wrong container shape rejects the WHOLE document and takes the missions
+// page, the account pass and the news banner with it. So it must be opt-in.
+func TestMasteryRewardsOffByDefault(t *testing.T) {
+	t.Setenv("AGS_SERVE_HEROMASTERY", "hero")
+	s, _ := newTestService()
+	entries, _ := s.heroMasteryEntries("p-off")
+	for _, e := range entries {
+		if _, ok := e.(map[string]any)["UnclaimedRewards"]; ok {
+			t.Fatal("UnclaimedRewards served with AGS_SERVE_MASTERY_REWARDS unset; it must be opt-in")
+		}
+	}
+}
+
+// TestMasteryRewardsShape pins the ONE thing that can break three surfaces at once: the TMap must
+// serialise as a JSON OBJECT whose keys parse as int32, never an array.
+func TestMasteryRewardsShape(t *testing.T) {
+	t.Setenv("AGS_SERVE_HEROMASTERY", "hero")
+	t.Setenv("AGS_SERVE_MASTERY_REWARDS", "1")
+	s, _ := newTestService()
+	s.SetHeroMastery("p-shape", "reshealer", HeroMasteryProgress{Level: 2})
+
+	entries, _ := s.heroMasteryEntries("p-shape")
+	var found map[string]any
+	for _, e := range entries {
+		m := e.(map[string]any)
+		if m["HeroId"] == "Hero:reshealer" {
+			found, _ = m["UnclaimedRewards"].(map[string]any)
+		}
+	}
+	if found == nil {
+		t.Fatal("UnclaimedRewards absent or not a JSON object — an array here rejects all of FPlayerProgression")
+	}
+	// Level 2 => levels 0,1,2 earned and unclaimed.
+	if len(found) != 3 {
+		t.Fatalf("want 3 unclaimed rewards at level 2, got %d: %#v", len(found), found)
+	}
+	for k, v := range found {
+		if _, err := strconv.Atoi(k); err != nil {
+			t.Errorf("key %q does not parse as an int32 — UE's FMapProperty requires it", k)
+		}
+		e := v.(map[string]any)
+		if e["ClaimID"] == "" || e["SKU"] == "" {
+			t.Errorf("entry %q missing ClaimID/SKU: %#v", k, e)
+		}
+	}
+	// SKUs come from the shipped asset, not from us.
+	if got := found["0"].(map[string]any)["SKU"]; got != "Emote:SeraphHi" {
+		t.Errorf("level 0 SKU = %v, want Emote:SeraphHi (ResHealerMastery LevelRewards[0])", got)
+	}
+	// A level with no reward in the asset is never synthesised.
+	s.SetHeroMastery("p-shape2", "reshealer", HeroMasteryProgress{Level: 20})
+	e2, _ := s.heroMasteryEntries("p-shape2")
+	for _, e := range e2 {
+		m := e.(map[string]any)
+		if m["HeroId"] == "Hero:reshealer" {
+			if n := len(m["UnclaimedRewards"].(map[string]any)); n != 7 {
+				t.Errorf("level 20 should offer only the 7 rewards the asset declares, got %d", n)
+			}
+		}
+	}
+}
+
+// TestMasteryClaimRoundTrip drives the measured route end to end.
+func TestMasteryClaimRoundTrip(t *testing.T) {
+	t.Setenv("AGS_SERVE_HEROMASTERY", "hero")
+	t.Setenv("AGS_SERVE_MASTERY_REWARDS", "1")
+	s, mux := newTestService()
+	const id = "p-claim"
+	s.SetHeroMastery(id, "reshealer", HeroMasteryProgress{Level: 1})
+
+	before := doJSON(t, mux, "GET", "/progression/players/"+id, "")["Version"].(float64)
+
+	res := doJSON(t, mux, "POST", "/progression/players/"+id+"/hero/rewards/claim",
+		`{"heroId":"Hero:reshealer","claimIds":["hm:reshealer:0","hm:reshealer:99","bogus"]}`)
+	ok, _ := res["successfulClaimIds"].([]any)
+	bad, _ := res["unclaimedClaimIds"].([]any)
+	if len(ok) != 1 || ok[0] != "hm:reshealer:0" {
+		t.Fatalf("successfulClaimIds = %#v, want exactly hm:reshealer:0", ok)
+	}
+	// Level 99 has no reward and "bogus" is not one of our ids — both must come back as
+	// unclaimed rather than being silently dropped; the client has a field for exactly that.
+	if len(bad) != 2 {
+		t.Fatalf("unclaimedClaimIds = %#v, want the 2 unhonoured ids", bad)
+	}
+
+	// The claimed level must disappear from the served map, and level 1 must remain.
+	entries, _ := s.heroMasteryEntries(id)
+	for _, e := range entries {
+		m := e.(map[string]any)
+		if m["HeroId"] != "Hero:reshealer" {
+			continue
+		}
+		u := m["UnclaimedRewards"].(map[string]any)
+		if _, still := u["0"]; still {
+			t.Error("claimed level 0 is still being offered")
+		}
+		if _, ok := u["1"]; !ok {
+			t.Error("unclaimed level 1 vanished")
+		}
+	}
+
+	// A claim MUST move Version — the ingester's gate is a strict `>`, so without this the client
+	// keeps the old document and the reward looks permanently unclaimed.
+	after := doJSON(t, mux, "GET", "/progression/players/"+id, "")["Version"].(float64)
+	if after <= before {
+		t.Fatalf("claim did not advance Version (%v -> %v)", before, after)
+	}
+
+	// Re-claiming an already-claimed level is rejected, not double-granted.
+	res2 := doJSON(t, mux, "POST", "/progression/players/"+id+"/hero/rewards/claim",
+		`{"heroId":"Hero:reshealer","claimIds":["hm:reshealer:0"]}`)
+	if n := len(res2["successfulClaimIds"].([]any)); n != 0 {
+		t.Errorf("re-claim granted %d times, want 0", n)
+	}
+}
+
+// TestMasteryClaimAcceptsBothHeroIdForms: which FPrimaryAssetId the CLIENT puts in the request is
+// [I] — GetHeroIdForHeroMasteryId/GetHeroMasteryIdForHeroId exist precisely because the two ids are
+// distinct and convertible. Accept both rather than betting on one.
+func TestMasteryClaimAcceptsBothHeroIdForms(t *testing.T) {
+	t.Setenv("AGS_SERVE_HEROMASTERY", "hero")
+	t.Setenv("AGS_SERVE_MASTERY_REWARDS", "1")
+	for _, form := range []string{"Hero:reshealer", "HeroMastery:reshealer", "reshealer", "Hero:RESHEALER"} {
+		t.Run(form, func(t *testing.T) {
+			s, mux := newTestService()
+			s.SetHeroMastery("p", "reshealer", HeroMasteryProgress{Level: 0})
+			res := doJSON(t, mux, "POST", "/progression/players/p/hero/rewards/claim",
+				`{"heroId":"`+form+`","claimIds":["hm:reshealer:0"]}`)
+			if n := len(res["successfulClaimIds"].([]any)); n != 1 {
+				t.Fatalf("heroId form %q granted %d, want 1", form, n)
+			}
+		})
 	}
 }
