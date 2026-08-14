@@ -72,6 +72,15 @@ param(
   [switch]$WithMissionsShim, # opt BACK IN to the retired missions_fix.dll (one-flag rollback)
   [switch]$NoLoadout,   # drop loadout_fix.dll from the default set (isolate non-customization surfaces)
   [switch]$NoPasses,    # drop battlepass_adopt_fix.dll (PASSES / Hunter's Journey) from the default set
+  [switch]$NoCrashWatch, # do NOT arm usmapdump crashwatch. Armed by default: it is pure RPM and
+                         # idle until the game CRASHES, at which point it suspends the dying
+                         # process and dumps a full image before it exits. A crash-era image is
+                         # worth ~2,334 .text pages that no healthy dump has bytes for -- 25x a
+                         # tutorial sitting -- and costs zero extra launches because runs die on
+                         # their own anyway. See docs/fk18-fk19-multistate-merge-settled.md 12.2.
+                         # Trade-off, stated: on a real crash it FREEZES the process for the
+                         # duration of the dump. That is free (it is dying), but if a marker ever
+                         # fires spuriously a healthy game would freeze once, then resume.
   [int]$InjectGapSeconds # S109: seconds between successive secondary manual-maps. Injector default is
                          # now 20 (raised from 3 on 2026-08-05). At 3 s the four secondaries were
                          # mapped in a ~13 s burst and EVERY death in the S109 series landed at or
@@ -316,6 +325,30 @@ if ($NoLaunch) { Write-Host "Server + redirect ready. Skipping game launch (-NoL
 # Archiving here is therefore deterministic and cannot lose one -- no watcher needed.
 # See configs/archive-crashdumps.ps1 for the evidence.
 & (Join-Path $PSScriptRoot "archive-crashdumps.ps1") -GameRoot $GameRoot
+
+# ---- arm the crash-capture harness ------------------------------------------------------------
+# A crashing process is the highest-.text-coverage state this project has ever observed (best
+# crash-era process 62.68% vs merged2's 54.95%), and nobody has ever captured one, because the
+# window from the first crash log line to crashpad handoff is ~34 ms -- far shorter than a dump.
+# crashwatch closes that by SUSPENDING the dying process on trigger, which turns an unknown
+# sub-second window into unlimited time; it then dumps and RESUMES so crashpad still writes its
+# own minidump. Pure RPM, no injection, no module-image write. Idle until a crash marker appears.
+if (-not $NoCrashWatch) {
+  $usmapExe = Join-Path $repoRoot "tools\usmapdump\usmapdump.exe"
+  if (Test-Path $usmapExe) {
+    $cwStamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $cwOut   = Join-Path $repoRoot "dumps\crash-$cwStamp"
+    $cwLog   = Join-Path $repoRoot "docs\crashwatch.out.log"
+    $cwArgs  = "crashwatch SUPERVIVE-Win64-Shipping.exe `"$cwOut`" -poll 50"
+    Start-Process -FilePath $usmapExe -ArgumentList $cwArgs `
+        -WindowStyle Minimized `
+        -RedirectStandardOutput $cwLog -RedirectStandardError "$cwLog.err" | Out-Null
+    Write-Host "Crash-capture armed: dumps/crash-$cwStamp (log: docs/crashwatch.out.log)" -ForegroundColor Cyan
+    Write-Host "  idle until the game crashes; then suspends it and dumps before it exits." -ForegroundColor DarkGray
+  } else {
+    Write-Host "  (usmapdump.exe not found - crash capture NOT armed)" -ForegroundColor Yellow
+  }
+}
 
 # ---- AccelByte -ini overrides + launch ----
 $exe = Join-Path $GameRoot "Loki\Binaries\Win64\SUPERVIVE-Win64-Shipping.exe"

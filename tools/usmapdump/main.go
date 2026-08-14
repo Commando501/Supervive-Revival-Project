@@ -337,6 +337,14 @@ func main() {
 		cmdDumpImage(os.Args[2], outDir)
 		return
 	}
+	// crashwatch: <proc> <outDir> [flags] — wait for the process to CRASH, suspend it the
+	// instant a crash marker appears, and dump it before it dies. See crashwatch.go's header:
+	// the window from first log line to crashpad handoff is ~34 ms, so suspending is what makes
+	// the capture possible at all.
+	if len(os.Args) >= 4 && os.Args[1] == "crashwatch" {
+		cmdCrashWatch(os.Args[2:])
+		return
+	}
 	// mergedumps: <outFile> <in...|dir> — union several dumpimage snapshots into one
 	// maximally-covered image (fill each dump's .text gaps from the others).
 	if len(os.Args) >= 4 && os.Args[1] == "mergedumps" {
@@ -467,6 +475,8 @@ func main() {
 	fmt.Println("       usmapdump objects  <proc-name-or-pid>                  (locate GUObjectArray)")
 	fmt.Println("       usmapdump extract  <proc-name-or-pid>                  (extract full schema)")
 	fmt.Println("       usmapdump dumpimage <proc-name-or-pid> [outDir]        (snapshot unpacked image + exec regions to disk)")
+	fmt.Println("       usmapdump crashwatch <proc> <outDir> [-poll ms] [-timeout s] [-nosuspend] [-dumpnow]")
+	fmt.Println("                                                             (wait for a CRASH, suspend, dump before it dies)")
 	fmt.Println("       usmapdump mergedumps <outFile> <in.dump.exe...|dir> [-wholeimage|-samebaseonly|-force]")
 	fmt.Println("                                                             (union .text across snapshots -> max coverage;")
 	fmt.Println("                                                              ImageBase-agnostic since 2026-08-14, FK-19)")
