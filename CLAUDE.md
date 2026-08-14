@@ -276,9 +276,30 @@ still die before the probe is injected, with only `gft`+`fo` resident.
   (thunk `0x5269160` -> impl `0x583F1F0`, fold 1) really does `FindVM` (`0x57AB180`) -> `0x57ABCC0`
   -> walk `VM.Levels` `[VM+0xC8]`/`[VM+0xD0]`. That is what the MANAGER API reads; it was never
   evidence about what the UI can offer, and reading it as a blocker was the over-read.
-  ⚠ Open: **which widget offers the claim is unknown** — no Blueprint references the hero claim
-  (controlled census: hero-claim symbols 0 vs `ClaimReward` 24), so it is native-only;
-  `BulkClaimAllProgressionTrackRewards` (thunk `0x5268FB0`) is the leading unconfirmed candidate.
+  ★★★★★ **NO WIDGET OFFERS IT — THE CLIENT AUTO-CLAIMS (2026-08-14, reproduced on a fresh launch).**
+  **Serve `UnclaimedRewards` and do nothing else**; the player never has to open the mastery page or
+  press anything. MEASURED twice: the lobby tracker activates
+  (`leaf-most node [WBP_UI_ProgressionTrackerBaseV2]`) and the claim POSTs follow **1.5–4 s later**,
+  one per reward. In BOTH sessions `WBP_UI_LobbyRewards` occurs **0** times and `HeroMastery_Screen`
+  **0** times — the second run never opened the mastery page at all.
+  **THE NATIVE CHAIN** (`UClaimableRewardManager::BulkClaimAllProgressionTrackRewards`,
+  thunk `0x5268FB0` → impl `0x58267D0`): `+0x58267EC` FindVM `0x57AB180` · `+0x5826831` `0x57ABCC0`
+  walks `VM.Levels` → `TArray<FClaimableReward>` (stride 0x58) · `+0x5826904` `0x5848A70`
+  (account-pass sibling → builder `0x5827440`) · `+0x582691A` `0x5849790` → `0x5849A68` calls
+  `0x5827DA0` (the `/hero/rewards/claim` URL builder) → `0x57EC800` (POST sender).
+  ★★ **METHOD WORTH REUSING — BEFORE/AFTER DECRYPTED-IMAGE DIFF.** The caller was invisible in the
+  52 %-decrypted image. `dumpimage` before the action and again after; `.text` decryption is MONOTONE
+  within a process lifetime, so pages zero-in-BEFORE and non-zero-in-AFTER are exactly the code that
+  just ran. Here that was **20 pages / 80 KB** — small enough to read directly, and it contained the
+  previously-unfindable call site. (Function starts: find rel32 call TARGETS landing in the page —
+  the int3-padding scan does not work on this build.)
+  ★ **[M] The flow is pure native C++, not a reflected entry point:** a walk of all **35,148** live
+  `UFunction` objects found ZERO whose `Func` lands in any newly-decrypted page — independently
+  corroborating the 69,142-asset census (hero-claim symbols 0 vs controls `ClaimReward` 24).
+  ★ The `0x57EC800` receipt behaved exactly as designed — `never ran` at baseline, `EXECUTED` after,
+  with both negative controls still `never ran` **in the same run** that produced the positive.
+  ⚠ Open (cosmetic): what native code invokes `BulkClaimAllProgressionTrackRewards` on tracker
+  activation is unnamed — its page was already decrypted at baseline, so the diff cannot isolate it.
   `POST /party/parties/{p}/members/{id}/refreshMastery` is called at login and still untraced; there
   is no admin route for per-hero mastery (`SetHeroMastery` exists in code only); mastery XP never
   moves without match results.
