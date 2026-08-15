@@ -212,6 +212,16 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// never called this. See leaderboard.go; the response MUST echo the request or it is parsed
 	// and then silently discarded.
 	mux.HandleFunc("GET /player-stats/leaderboard", s.handleLeaderboard)
+
+	// The RANKED side tab and the per-player career stats — both were also invisible until the
+	// `leaderboards` toggle started binding, and both were landing on the {} catch-all.
+	// ⚠ Different struct from /player-stats/leaderboard, and NO staleness/echo check on either.
+	mux.HandleFunc("GET /mmr/leaderboard", s.handleMMRLeaderboard)
+	// FRIENDS tab. [I] presumed to return the same FLeaderboard; registered so its traffic is
+	// attributable in capture.log rather than silently absorbed by the catch-all.
+	mux.HandleFunc("GET /mmr/leaderboard/friends", s.handleMMRLeaderboard)
+	mux.HandleFunc("POST /mmr/leaderboard/friends", s.handleMMRLeaderboard)
+	mux.HandleFunc("GET /player-stats/players/{id}", s.handlePlayerStats)
 }
 
 // defaultClientProfile is returned (under {"data": ...}) before the client has
