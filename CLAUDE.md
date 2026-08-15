@@ -760,6 +760,33 @@ BACKEND — no shim, no injection, no `.text` write.
   already default `true` (`EmoteSFX`, `KillStreakAsRomanNumeral`, `voicechat`, `ChatLobby`,
   `CustomGameList`, `RankedDisplay`, `mailbox`, `EventHub`, `party.fill`, `XPBoosts`, …) are on
   without us — **sending them could only ever turn something OFF. Never send them.**
+- ★★★★★ **THE DECLARATIVE SWEEP IS COMPLETE (S121) AND THE VOCABULARY CLOSES WITH NO REMAINDER:
+  50 keys = 12 served + 33 `IsEnabledByDefault=true` (NEVER SERVE) + 1 withheld
+  (`BypassTutorialAndOnboarding`, which REMOVES a surface) + 4 candidates, all 4 now flown.**
+  ⚠ **"33 keys remain unswept" is WRONG** — the remainder was **4**; 33 is the *never-serve* count,
+  the same number in a different role. Re-derive counts, never carry them.
+  **Final: 12 of 15 served declarative keys read our value** (`served-value-read=21`).
+  ★ The 3 that do not (`DropScreenTitles`, `ServerSelectRegionRoutes`,
+  `ServerSelectNetworkAcceleration`) have a STRUCTURAL explanation, not a failure: every key that
+  reads our value has **≥2** instances (archetype + live), and all three of these have **exactly 1**
+  — a clean 12/12 vs 3/3 split ⇒ [I] archetype only, no live copy built at the menu. **Not a
+  measured negative.** Re-read with that screen open to settle them.
+- ★★★★★ **CONFIG CHANGES NEED NO RELAUNCH — MEASURED, pre-registered, single-variable.** Restarting
+  **`ags` only**, with the game running continuously (68 min uptime), flipped exactly the 3 treatment
+  keys while **all 43 control keys stayed unchanged**; the client re-adopts within its ~30 s poll.
+  ⇒ **toggle widgets DO re-evaluate on `OnClientConfigUpdated`.** Sweep inside one live session
+  instead of one launch per batch.
+  ⚠ **Predict +1 per KEY, not per instance** — the second instance of each is the archetype and
+  never evaluates. A +6 prediction came back +3 for exactly that reason.
+- ⚠ **`SeasonalBattlepass` is env-only on purpose.** Flown alone: `Error` 8→8, `Fatal` 0, `LogJson` 0,
+  game alive, `served-value-read` +4 — **so the feared hard error did NOT occur AT THE MENU.** But
+  the surface it gates is the **end-of-game** pass, which the menu cannot reach, so that is a much
+  weaker claim than "safe". Keep it out of the default set; opt in with
+  `AGS_UI_TOGGLES_EXTRA=SeasonalBattlepass` and re-test at EoG before promoting.
+- ★ **`AGS_UI_TOGGLES_EXTRA="a,b"` serves extra keys with no rebuild**, for flying a risky key in its
+  own attributable batch. It folds the extras into the eTag automatically — a runtime payload change
+  has no code edit at which to hand-bump it, so without that the knob would silently reproduce the
+  stale-eTag trap.
 - **Vocabulary [M]:** 10 bytecode keys (30 call sites / 26 locals / 21 assets) + **50 declarative
   `FeatureKey` values** (asset properties — a plain JSON scan, invisible to a bytecode census).
   ⚠ **GAME DATA BUG:** four sites declare `"ArmoryItemProgression "` **with a trailing space**. Both
