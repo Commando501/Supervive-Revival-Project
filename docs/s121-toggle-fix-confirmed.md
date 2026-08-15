@@ -323,12 +323,45 @@ env-only opt-in (`AGS_UI_TOGGLES_EXTRA=SeasonalBattlepass`). Re-test it at EoG b
         NeLobbyEventBtn 1/2 · chuseokboostui 1/2 · prisma_boost 1/2 · lobby_survey_menu 1/2
     --  DropScreenTitles 0/1 · ServerSelectRegionRoutes 0/1 · ServerSelectNetworkAcceleration 0/1
 
-★ **The three non-hits have a STRUCTURAL explanation, not a failure:** every key that reads our
-value has **≥2** instances (archetype + live); all three that do not have **exactly 1**. A clean
-12/12 vs 3/3 split on instance count ⇒ [I] that lone instance is the archetype and no live copy is
-constructed at the menu — `DropScreenTitles` is a pre-drop screen and both `ServerSelect*` live on a
-settings sub-screen. **Do not record these as measured negatives on the flag.** To settle them,
-re-read while that screen is open.
+★★ **The three non-hits are NEVER-EVALUATED, and for the `ServerSelect*` pair that is now [M], not
+[I].** The first reading inferred it from an instance-count pattern (12/12 hits have ≥2 instances,
+3/3 misses have exactly 1) — a correct guess from a weak signal. The direct measurement was sitting
+in the same readout:
+
+★ **A row with `IsEnabledByDefault=true` AND `enabled=false` is IMPOSSIBLE for a widget that has
+evaluated** — with default true, both a missing FeatureKey and a missing ConfigKey fall back to true.
+So that state is a free, per-instance **"this gate never ran"** detector.
+
+⇒ **The sibling trick.** `WBP_UI_RegionSelect_Entry` hosts `ServerSelectCheckbox`
+(`IsEnabledByDefault=true`, reads **disabled**) alongside `ServerSelectRegionRoutes` and
+`ServerSelectNetworkAcceleration`. The sibling proves **the region-select screen was never built**,
+so those two are **not** evidence that our served value failed. [M]
+
+⚠⚠ **RESCORING THE WHOLE READOUT: the old `gate-off=78` contained ZERO demonstrated gate-offs.**
+It is **46 provably-never-evaluated + 32 genuinely ambiguous**. `toggle_readout.py` printed
+`GATE OFF` for all of them — my own instrument carrying the exact defect it exists to detect, and a
+reader would have taken 78 measured negatives from a number containing none. Fixed; the tool now
+prints `NEVER EVALUATED` / `off or never-evaluated (AMBIGUOUS)` and explains the sibling trick in its
+own output.
+
+### ⚠ `DropScreenTitles` is MIS-CLASSIFIED as a toggle question — it is blocked on the drop phase
+
+`WBP_UI_PredropScreen_PlayerEntry` has **no default-true sibling**, so the trick cannot settle it.
+But the deeper point is that it is not a toggle problem at all:
+
+[M] The only drop-related lines in a full live session are `LogActorPooling` registering
+`BP_DropPod` / `BP_DropPod_Child` as **poolable at startup** — registered, never instantiated.
+CLAUDE.md's Class-C finding already records that the drop phase **never ran in 842 logs**, and the
+tutorial route cannot produce one (`LVL_Tutorial` spawns the hero directly; there is no drop plane).
+
+⇒ **It is not "expensive to test", it is NOT TESTABLE by any route this project currently has.** Its
+precondition is the deploy/drop route — **FK-1 territory**, the four empty server-authority stubs
+(`SpawnPlayer`, `AuthSetSpawnTeamLeader`, `SetDropLeader`, `OverridePlaneLocations`). It is
+downstream of the largest open problem in the project, not a loose end in this sweep.
+⇒ **Do not re-attempt it as a toggle task.** Retire it from the toggle scope and pick it up free,
+as an observation, if a real match with a drop phase is ever reached.
+⚠ It is **not an FK**: nobody holds a false belief about it. Filing an open unknown in the
+FALSE_KNOWN register would inflate that register with a non-belief.
 
 ### ★ Independent visual corroboration: three new lobby icons
 

@@ -766,11 +766,27 @@ BACKEND — no shim, no injection, no `.text` write.
   ⚠ **"33 keys remain unswept" is WRONG** — the remainder was **4**; 33 is the *never-serve* count,
   the same number in a different role. Re-derive counts, never carry them.
   **Final: 12 of 15 served declarative keys read our value** (`served-value-read=21`).
-  ★ The 3 that do not (`DropScreenTitles`, `ServerSelectRegionRoutes`,
-  `ServerSelectNetworkAcceleration`) have a STRUCTURAL explanation, not a failure: every key that
-  reads our value has **≥2** instances (archetype + live), and all three of these have **exactly 1**
-  — a clean 12/12 vs 3/3 split ⇒ [I] archetype only, no live copy built at the menu. **Not a
-  measured negative.** Re-read with that screen open to settle them.
+  ★★ **The 3 that do not are NEVER-EVALUATED, not "off" — and a row with `IsEnabledByDefault=true`
+  AND `enabled=false` is IMPOSSIBLE for an evaluated widget** (default true means both a missing
+  FeatureKey and a missing ConfigKey fall back to true). That is a **free per-instance "this gate
+  never ran" detector.** ⇒ **THE SIBLING TRICK:** a default-FALSE key reading disabled is ambiguous
+  alone, but if the SAME ASSET hosts a default-TRUE toggle that also reads disabled, the whole asset
+  never evaluated. MEASURED: `WBP_UI_RegionSelect_Entry` hosts `ServerSelectCheckbox` (default true,
+  reads disabled) with `ServerSelectRegionRoutes`/`ServerSelectNetworkAcceleration` ⇒ the
+  region-select screen was never built and those two are **[M] not a negative**.
+  ⚠⚠ **The old `gate-off=78` contained ZERO demonstrated gate-offs** — it is 46 provably-never-
+  evaluated + 32 ambiguous. `toggle_readout.py` used to print `GATE OFF` for all of them (the
+  instrument carrying the defect it exists to detect); it now prints `NEVER EVALUATED` /
+  `AMBIGUOUS`. **Re-read any older "gate off" claim against this split.**
+  ⚠⚠ **`DropScreenTitles` IS NOT A TOGGLE QUESTION — do not re-attempt it as one.** Its widget
+  (`WBP_UI_PredropScreen_PlayerEntry`) has no default-true sibling, and [M] the only drop-related
+  lines in a full live session are `LogActorPooling` registering `BP_DropPod` as **poolable at
+  startup** — registered, never instantiated. The drop phase never ran in 842 logs and the tutorial
+  cannot produce one (`LVL_Tutorial` spawns the hero directly, no drop plane). ⇒ **not "expensive",
+  NOT TESTABLE by any current route**; its precondition is the deploy/drop route (**FK-1**, the four
+  empty server-authority stubs). Pick it up free if a real match with a drop phase is ever reached.
+  ⚠ It is **not an FK** — nobody holds a false belief about it; an open unknown does not belong in
+  the FALSE_KNOWN register.
 - ★★★★★ **CONFIG CHANGES NEED NO RELAUNCH — MEASURED, pre-registered, single-variable.** Restarting
   **`ags` only**, with the game running continuously (68 min uptime), flipped exactly the 3 treatment
   keys while **all 43 control keys stayed unchanged**; the client re-adopts within its ~30 s poll.
