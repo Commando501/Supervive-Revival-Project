@@ -46,6 +46,60 @@ watch for, because it would mean we are now writing a value that turns things OF
 
 ---
 
+## ⚠ TWO COMMITS FROM A PARALLEL SESSION ARE UNDER YOUR WORK — read this before launching
+
+`b54ebc4` and `444e299` (author ASpence, 2026-08-14 15:56 / 16:09) landed on this branch *during*
+S120, from a session working on FK-18/19. Verified: same author as every other commit, nothing
+rogue. But one of them **changes the launcher you are about to run.**
+
+### `b54ebc4` — `usmapdump crashwatch`, ARMED BY DEFAULT
+
+It adds `tools/usmapdump/crashwatch.go` and wires `configs/launch-redirect.ps1` to arm it on every
+launch (`-NoCrashWatch` disables). It idles on a 50 ms log tail and, **on a crash marker, calls
+`NtSuspendProcess` on the dying game**, dumps a full image, then resumes so crashpad still writes
+its own minidump. Rationale: a crash-era process is the highest-`.text`-coverage state this project
+has observed (62.68 % vs `merged2`'s 54.95 %) and the crash→handoff window is only **34 ms**, so
+racing it is hopeless — suspend instead.
+
+⚠ **Behavioural consequence you must know:** on a trigger the game **freezes** for the duration of
+the dump. That is free when it is genuinely dying, but a spurious marker would freeze a healthy
+game once. If a launch appears to hang, check `docs/crashwatch.out.log` before assuming a game bug.
+★ Its own pre-registered prediction, written into every `CRASHWATCH-INFO.txt`: a crash-era image
+should land near **18,900** non-zero `.text` pages and add ~2,300 to a re-merge. **~15,700 (a healthy
+dump) falsifies the crash-path hypothesis.** Do not quietly revise that after the fact.
+
+[M] It was armed on S120's final launch (`docs/crashwatch.out.log`: pid 81028, 50 ms poll,
+suspend-on-trigger, tail offset 13636007) and **never fired** — no `dumps/crash-*` dir, no trigger
+line.
+
+---
+
+## ⚠⚠ CORRECTION TO WHAT S120 TOLD YOU ABOUT THE GAME EXITS
+
+S120 reported the game "exited unprompted twice with **no crashpad handoff**". **The second half is
+FALSE.** That count was taken on the *live* log after it had already rotated — the crashing run's own
+log was gone. This is precisely the trap `CLAUDE.md` records ("do not read no-UECC-dir as no-dump";
+"the crashpad key is mid-file, never `tail`"), committed anyway.
+
+[M] Both exits left **real, verified minidumps**, preserved by the pre-launch sweep:
+`dumps/crashpad-20260814-155319` and `dumps/crashpad-20260814-155530`.
+
+[M] Triage of `…-155530` (`tools/crashtri/mdctx.py`):
+
+    EXCEPTION 0xC0000005  parms=[0x0, 0x7ff7bff51000]   -> READ fault at SUPERVIVE base + 0x1000
+    rip = 0x1D5D5B419F2   -> PRIVATE memory, not in any of the 220 modules
+    rbx = base   rsi = base+0x1000   rbp = 0x1000   r15 = 0x40000
+
+[I] Code executing from private memory — which is what **manual mapping** produces, since a
+manually-mapped DLL has no module entry — walking the image from base in **0x1000 strides** and
+faulting on a `.text` page. That is one of **our own shims scanning the image and hitting an
+undecrypted page**, matching the recorded `catalog_store_fix` launch-scan fault family
+(`docs/fk8-crash-timing-mined.md` §3.1). ⇒ **These deaths are ours, not the game, and NOT the FK-32
+silent-kill class** — consistent with crashwatch never firing on the later run.
+⚠ The second dump (`…-155319`) is **unanalysed**. Confirm the family before generalising from N=1.
+
+---
+
 ## What S120 established (do not re-derive)
 
 Read `docs/s120-feature-toggles.md` first, then `docs/s120-hero-mastery.md`. Both are current.
