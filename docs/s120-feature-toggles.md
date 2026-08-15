@@ -120,3 +120,63 @@ them changed no observable surface at the menu, cause unresolved."
 3. Build a readout: nothing in this project can currently observe a Blueprint `IsFeatureEnabled`
    result. A shim that logs the call would make every future toggle question a measurement instead
    of an inference.
+
+
+---
+
+## 5. ★★★★★ THE ACTUAL BUG: `ConfigKey` is `"enabled"`, not `"default"`
+
+Serving the five keys changed nothing, and the STORE screenshot showed why. The game gates UI on a
+reusable declarative widget, **`WBP_UI_ClientConfigVisbilityToggleWidget_C`** (the typo is the
+game's), whose ubergraph is:
+
+    cfg   = GetClientConfigManager()->GetClientConfiguration()
+    entry = Map_Find(cfg.FeatureToggles, FeatureKey)   // FeatureKey = ASSET PROPERTY
+        if not found -> use IsEnabledByDefault
+    value = Map_Find(entry.Config,       ConfigKey)    // ConfigKey  = ASSET PROPERTY,
+        if not found -> use IsEnabledByDefault         //   CDO default = "enabled"
+    enabled = ToBool(value)
+
+**We have written `Config["default"]` since S73.** `Map_Find(Config, "enabled")` therefore MISSED on
+every key we have ever sent, and every gate silently fell back to its own `IsEnabledByDefault`.
+That is why this payload has never visibly done anything — including the five added earlier today.
+
+★ **The storefront proved it three-for-three BEFORE the fix — a natural positive control:**
+
+| component | FeatureKey | IsEnabledByDefault | observed |
+|---|---|---|---|
+| `PacksConfigToggle_1` | `supporterpacks` | **true** | SUPPORTER PACKS **visible** |
+| `RedeemConfigToggle_1` | `redeemcode` | **true** | REDEEM **visible** |
+| `StorageConfigToggle_1` | `exchangetokens` | *(absent → false)* | STORAGE **hidden** |
+
+i.e. the two visible tabs were visible *despite* us, and the one that needed us was dark. Three
+predictions, three matches.
+
+**FIX:** serve both sub-keys — `{"config":{"enabled":"<v>","default":"<v>"}}`. `FFeatureToggle.Config`
+is `TMap<FString,FString>`, so the extra entry is inert. ⚠ Do not drop `"enabled"` to tidy up.
+
+### The declarative vocabulary is 5x bigger — 50 keys
+
+Because `FeatureKey`/`ConfigKey`/`IsEnabledByDefault` are asset PROPERTIES, they are a plain JSON
+scan away and were invisible to the bytecode-only census. **MEASURED: 50 distinct declarative
+FeatureKeys** in the catalog, e.g. `leaderboards`, `CustomGameList`, `ChatLobby`, `discord`,
+`mailbox`, `EventHub`, `RankedDisplay`, `storefrontcheats`, `DebugBattlepass`, `mastery`,
+`party.fill`, `ServerSelect*`, `XPBoosts`.
+
+⚠⚠ **GAME DATA BUG:** four sites declare **`"ArmoryItemProgression "` with a TRAILING SPACE**
+(`WBP_UI_Collection_ModalV2`, `WBP_UI_GameItemTooltip`, `WBP_UI_RewardRoll_Base`). A clean key can
+never satisfy them, so both spellings are served. Do not "fix the typo" — it is in the shipped asset.
+
+⚠ SAFETY CHECK RUN BEFORE FLIGHTING: none of the five keys we already served
+(`WinterEvent`/`BonfireUAVs` as **false**, and the three `true` ones) appears as a declarative
+FeatureKey, so making the payload finally bind could not turn an existing surface OFF.
+
+Now served (17 dark keys + the original 5): see `handleClientConfig`. Withheld with reasons:
+`BypassTutorialAndOnboarding` (removes a surface), `SeasonalBattlepass` (no packed
+`LokiDataAsset_Season` — test alone), `chuseokboostui`/`prisma_boost`/`lobby_survey_menu` (no backing
+data), and every `IsEnabledByDefault=true` key (already on; sending them could only turn things off).
+
+★ **PREDICTION, pre-registered:** `WBP_UI_ClientConfigVisbilityToggleWidget` binds
+`OnClientConfigUpdated`, so the STORAGE tab should appear **without a relaunch**. If it does not,
+either the sub-key is still wrong or the widget only evaluates at Construct — and those are
+distinguishable by relaunching once.
