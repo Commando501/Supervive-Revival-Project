@@ -212,15 +212,43 @@ for fk, nm, dflt, en, ck, obj in rows:
         verdict = "*** SERVED VALUE READ ***"
     elif dflt is True and en is True:
         verdict = "on by default (uninformative)"
+    elif dflt is True and en is False:
+        # ⚠ IMPOSSIBLE for a widget that has EVALUATED: with IsEnabledByDefault=true, both a
+        # missing FeatureKey and a missing ConfigKey fall back to TRUE. So this state can only
+        # mean the gate never ran -- an un-constructed screen, or a widget-tree archetype.
+        # This used to print "GATE OFF", which is exactly backwards and would have been read as
+        # a measured negative on the flag.
+        verdict = "NEVER EVALUATED (default=true but disabled)"
     elif en is False:
-        verdict = "GATE OFF"
+        # dflt=false & disabled is GENUINELY AMBIGUOUS: either the gate ran and said no, or it
+        # never ran at all. Resolve it with a default-true SIBLING in the same asset (see below).
+        verdict = "off or never-evaluated (AMBIGUOUS)"
     else:
         verdict = "?"
     print(f"{fk:34} {nm[:46]:46} {str(dflt):5} {str(en):7} {ck:10} {verdict}")
 
 # Summary counts -- parse THESE, never the row count above.
 n_served = sum(1 for r in rows if r[2] is False and r[3] is True)
-n_off = sum(1 for r in rows if r[3] is False)
+n_never = sum(1 for r in rows if r[2] is True and r[3] is False)
+n_amb = sum(1 for r in rows if r[2] is False and r[3] is False)
 n_dflt_on = sum(1 for r in rows if r[2] is True and r[3] is True)
-print(f"\nsummary: total={len(rows)}  served-value-read={n_served}  gate-off={n_off}  "
-      f"on-by-default={n_dflt_on}")
+print(f"\nsummary: total={len(rows)}  served-value-read={n_served}  "
+      f"never-evaluated={n_never}  ambiguous-off={n_amb}  on-by-default={n_dflt_on}")
+print("NOTE: 'never-evaluated' + 'ambiguous-off' together are the old, misleading 'gate-off' count.")
+
+# ---- the sibling trick: turn an AMBIGUOUS row into a measured one ----------------------------
+#
+# A default-FALSE key reading disabled cannot be interpreted on its own. But if the SAME ASSET
+# also hosts a default-TRUE toggle, that sibling is a free evaluated-detector: if the sibling
+# reads disabled, the whole asset never evaluated, so its ambiguous rows are "never evaluated"
+# rather than "gate off".
+#
+# MEASURED EXAMPLE (S121): WBP_UI_RegionSelect_Entry hosts ServerSelectCheckbox (default=true,
+# read DISABLED) alongside ServerSelectRegionRoutes and ServerSelectNetworkAcceleration
+# (default=false, read disabled). The sibling proves the region-select screen was never built,
+# so those two are NOT evidence that our served value failed.
+#
+# ⚠ WBP_UI_PredropScreen_PlayerEntry (DropScreenTitles) has NO default-true sibling, so that key
+# cannot be settled this way -- it needs the pre-drop screen actually open.
+print("\nTo disambiguate an 'ambiguous-off' row: find a default-true toggle in the SAME ASSET.")
+print("If that sibling also reads disabled, the asset never evaluated -- the row is not a negative.")
