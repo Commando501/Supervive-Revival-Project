@@ -330,6 +330,25 @@ constructed at the menu — `DropScreenTitles` is a pre-drop screen and both `Se
 settings sub-screen. **Do not record these as measured negatives on the flag.** To settle them,
 re-read while that screen is open.
 
+### ★ Independent visual corroboration: three new lobby icons
+
+[M] After batches A and B, **three icons appeared stacked at the right edge of the main lobby**,
+where there were none before. One is tooltipped:
+
+    JUICED
+    Battlepass XP gain accelerated. Get in there!
+
+⇒ a **boost UI**, which is what `prisma_boost` / `chuseokboostui` are named for. This matters as
+*method*, not just as a result: the icons were noticed by the operator **independently of the
+readout**, and they agree with it. Two instruments with completely different failure modes — an RPM
+property read and a human looking at the screen — pointing the same way.
+
+⚠ **Per-icon attribution is [I], NOT [M].** Three keys were enabled and three icons appeared, which
+is suggestive and is *not* a measurement: nothing yet ties a specific icon to a specific key. The
+single-variable test is cheap and available — drop one key from `AGS_UI_TOGGLES_EXTRA`, wait the
+~30 s poll, and see which icon leaves. **Do not write "prisma_boost is the JUICED icon" until that
+has been run.**
+
 ### ⚠ A knob that would have been a trap, fixed before use
 
 `AGS_UI_TOGGLES_EXTRA` changes the payload **at runtime**, so there is no code edit at which to

@@ -30,6 +30,8 @@ that isn't true?"*
 >
 > | **FK-36** — S120 Hero Mastery / claim false-knowns (batched) | **S120** | ✅ **NEW + ALL SIX FALSIFIED.** Hero Mastery went from "unlooked-at" to **solved end to end, backend-only** (renders → unlocks → bars move → rewards offer → **the client AUTO-CLAIMS**). The six beliefs that had to die are below; the most expensive was **(c)** — a negative published as "controlled" that was contradicted by data already in hand. `docs/s120-hero-mastery.md` |
 >
+> | **FK-37** — S121 feature-toggle false-knowns (batched) | **S121** | ✅ **NEW + ALL SIX FALSIFIED.** The A-14 payload was inert for **~48 sessions** over one word (`ConfigKey` is `"enabled"`, not `"default"`), and fixing it turned on 12 gates, revealed **three endpoints the client had never been observed to call**, and produced a working LEADERBOARDS page. ★ The session also built the **readout** A-14 said it lacked, so "flag off" and "companion condition unmet" are now distinguishable. ⚠ Five of the six dead beliefs were **the session's own arithmetic and instruments**, not the game. `docs/s121-toggle-fix-confirmed.md` |
+>
 > **The S108 lesson, in one line:** all three of that session's tasks turned out to be about **the
 > project's own instruments**, not the game — and the session then committed three *fresh* instances
 > of the same error while documenting it. See `docs/method-rules.md` §1 (⚠ the old pointer here was
@@ -42,6 +44,24 @@ that isn't true?"*
 > ★ S120's own contribution to the method: **a "fresh" reading of an uncontrolled field is still
 > uncontrolled.** Recency fixes staleness, not validity — demand a positive control for the FIELD,
 > not merely a recent sample of it (FK-36c).
+> **It stands at 54 as of S121**, which added six — **five of them the session's own counts,
+> predictions and tooling**, and all six caught within the session. Two were *carried numbers* that
+> nobody re-derived (a served-key count of 17 that was never reconciled against the 21 entries
+> actually on the wire; a "33 keys remain" that was really 4, with 33 being the *never-serve* count
+> in a different role). One was a **prediction that ignored a rule the same session had written an
+> hour earlier** (+6 instances predicted, +3 correct, because a key's second instance is the
+> never-evaluating archetype). One was a probe whose `.strip()` manufactured a phantom coverage gap.
+> One was `class_props.py` printing `not found (map not loaded yet?)` for a class it can **never**
+> find — it demands class-of-class `== "Class"` and Blueprint classes are `BlueprintGeneratedClass`,
+> making it the **third** member of the class-lookup blind-spot family after `obj_by_class.py` and
+> `cheat_reach_probe.py`.
+> ★ S121's contributions to the method: **(i) a knob that changes the payload at RUNTIME has no code
+> edit at which to hand-bump the eTag** — `AGS_UI_TOGGLES_EXTRA` would have silently reproduced the
+> stale-eTag trap the same file documents, and had to fold the extras into the eTag itself. That one
+> was caught *before* it fired, so it is a near-miss rather than a 55th instance — **the first
+> recorded case of the pattern being anticipated in design rather than found in evidence.**
+> **(ii) Verify a new guard by REINTRODUCING the bug.** The regression test added for the
+> `enabled`/`default` defect was confirmed to fail on the reverted code before being trusted.
 
 **Method.** Eleven ignorance dimensions were probed independently, then each was handed to an
 adversarial challenger who re-ran every negative search against primary artifacts and graded each
@@ -1792,6 +1812,63 @@ else, which is most of what a control is for. **State the unit.**
 
 ---
 
+### FK-37 — S121 feature-toggle false-knowns (batched)
+
+All six died in one session. **Five of the six were the session's own arithmetic, predictions or
+tooling** — not beliefs about the game. That ratio is itself the finding.
+
+**(a) "The payload is applied but no surface appears; cause unresolved." — FALSIFIED, and it was
+ONE WORD.** S120 shipped the toggle payload, measured the client applying it four times, saw nothing
+change, and correctly refused to call it a negative. The cause was `ConfigKey`: the gate widget reads
+`Map_Find(entry.Config, ConfigKey)` with a CDO default of **`"enabled"`**, and this project had
+written `Config["default"]` since S73. Every lookup missed; every gate fell back to its own
+`IsEnabledByDefault`. **~48 sessions of inert payload.** Serving both sub-keys lit 12 gates.
+★ The honesty of the S120 write-up is why this was cheap to fix: it recorded "changed no observable
+surface, cause unresolved" rather than "the toggles do nothing", so nothing had to be un-learned.
+
+**(b) "17 dark keys are served." — FALSE; it is 16.** The number was never reconciled against the
+payload. 16 + the 5 original enum-vocabulary keys = **21**, which is exactly what the wire carries.
+A count that no instrument ever checked, repeated across two documents.
+
+**(c) "33 declarative keys remain unswept." — FALSE; the remainder was 4.** 33 is the
+**never-serve** count (`IsEnabledByDefault=true`), the same number in a different role. The full
+partition closes with no remainder: 50 = 12 served + 33 never-serve + 1 withheld + 4 candidates.
+⇒ **carried numbers must be re-derived, especially when they look familiar.**
+
+**(d) "`mastery` is a dark key." — FALSIFIED by live measurement.** 3 of its 6 widget instances read
+`IsEnabledByDefault=true`: it was **always on without us**. Serving it was a no-op; serving it
+`false` would have REMOVED the S120 hero-mastery surfaces. It is now in the never-serve list and
+pinned by a test.
+
+**(e) "Adding 3 keys will flip 6 instances." — WRONG; it flipped 3.** The second instance of each key
+is the widget-tree **archetype**, which never evaluates. That rule had been written into
+`docs/s121-toggle-fix-confirmed.md` §3b **one hour earlier by the same session**, and was not applied
+to its own prediction. The direction was right and the arithmetic was wrong — record both, because a
+pre-registered prediction that is half wrong is still what caught it.
+
+**(f) `class_props.py` says `not found (map not loaded yet?)` for a class it can NEVER find.** It
+locates a UClass by requiring the class-of-class to be `"Class"`; a Blueprint class's is
+`BlueprintGeneratedClass`. The message invites "the map isn't loaded", which is a statement about the
+*game*; the truth is a statement about the *tool*. **Third member of the class-lookup blind-spot
+family** after `obj_by_class.py` (substring) and `cheat_reach_probe.py` (endswith) — and CLAUDE.md
+already warned that two instruments failing the same way are not corroboration.
+`tools/re/toggle_readout.py` sidesteps it entirely by resolving the class from a **live instance**.
+
+⚠ **A near-miss worth recording as such, not as an instance.** `AGS_UI_TOGGLES_EXTRA` changes the
+served payload at **runtime**, so there is no code edit at which to hand-bump the eTag — the knob
+would have silently reproduced the stale-eTag-over-changed-content failure documented three
+paragraphs above its own definition. It was caught in design and the eTag now folds the extras in
+automatically. **This is the first recorded case of the instrument-artifact pattern being
+anticipated rather than discovered in the evidence**, which is the direction the register should be
+moving.
+
+★ **Method contribution: verify a guard by reintroducing the bug.** `internal/loki` had no test file
+at all, which is *why* one wrong word survived ~48 sessions. The new
+`TestEveryToggleCarriesTheEnabledSubKey` was confirmed to **fail on the reverted code**, naming every
+affected key, before it was trusted. A guard nobody has seen fail is not a guard.
+
+---
+
 ## 3. The UNKNOWN_UNKNOWN Register
 
 Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 366 commits.
@@ -2105,6 +2182,13 @@ Consolidated and deduplicated. `[×N]` = independently found by N dimensions.
 | 11 | **We cannot observe Angelscript execution at all** (F6) | Logic implemented in 78 script modules reads as "native, unreconstructable" — exactly the S74 error |
 | 12 | **We cannot represent a second participant** (§8) | Every multiplayer assumption is untested *by construction* |
 | 13 | **There is no acceptance test at any level** | The project can make continuous measurable progress while moving no closer to any user-recognisable goal |
+| ~~14~~ | ~~**We cannot observe an `IsFeatureEnabled` result.**~~ ✅ **RESOLVED (S121).** A dark surface used to be equally consistent with "flag off" and "companion condition unmet", so every toggle question was inference. `tools/re/toggle_readout.py` reads the gate widget's own stored answer (`Is Content Enabled` @ +0x473) by read-only RPM — no injection, no `.text` write. **`IsEnabledByDefault==false AND enabled==true` is reachable by no path except our served value being read.** It immediately paid: `NeLobbyEventBtn` is measurably ON while invisible ⇒ companion condition, not a flag. ⚠ Residual blindness: it sees only the **declarative** widget family, so the 10 **bytecode** `IsFeatureEnabled` keys (`motd`, `LobbyRewards`, `ArmoryOnboarding`) still have **no readout** — and it can only see widgets whose screen has been constructed |
+
+★ **The general lesson from #14, worth applying to the other rows:** the answer was not a debugger or
+a shim — **the client was already storing the value we wanted, in a reflected property.** Before
+building an instrument, check whether the thing under test persists its own answer somewhere
+readable. Row 8 (front-end regression) has the same shape: the game already photographs itself and
+the output is thrown away.
 
 ---
 
@@ -2307,7 +2391,8 @@ not a pivot.
 | A-11 | Recover `.pdata` from stream 13 | B5 | hours |
 | A-12 | Parse `Binds.Cache` | A3 | hours |
 | A-13 | The `.utoc` chunk census | D1 | hours |
-| **A-14** | ✅ **DONE (S120) — vocabulary SETTLED, payload SHIPPED, surfaces did NOT appear.** ★★ The headline is a correction: **we were serving the wrong vocabulary into the right map.** All five keys we shipped since S73 are `ELokiGameFeatureToggle` ENUM names (that system's readiness is round-gated, S85); the UI calls `IsFeatureEnabled(FString, bool)` with keys that are Blueprint bytecode literals **absent from the exe**. Exhaustive bpdump over all 21 calling assets: **30 call sites / 26 declared locals / 10 distinct keys** — and `bDefault` is the SECOND ARG, so `EmoteSFX`/`KillStreakAsRomanNumeral`/`voicechat` are already ON and must NEVER be sent. Now serving `motd`, `LobbyRewards`, `exchangetokens`, `ArmoryOnboarding`, `ArmoryItemProgression` (knob `AGS_UI_TOGGLES=0`). ⚠ Applied by the client 4x (eTag confirmed) on both a live re-poll and a cold relaunch, and **no new UI surface appeared** — but there is NO readout that any gate evaluated true, so this is NOT a measured negative on the toggles, only on the surfaces. `docs/s120-feature-toggles.md` | FK-36d, A1 | done |
+| **A-14** | ✅✅ **CLOSED (S121) — THE SURFACES DID APPEAR; the S120 verdict below was one word away from working.** `ConfigKey` is **`"enabled"`**, not `"default"`, so every `Map_Find(entry.Config, ConfigKey)` had MISSED since S73 and each gate silently fell back to its own `IsEnabledByDefault`. Serving both sub-keys turned on **12 of 15** served declarative gates. ★ **The declarative vocabulary now CLOSES with no remainder: 50 = 12 served + 33 `IsEnabledByDefault=true` (NEVER SERVE) + 1 withheld (`BypassTutorialAndOnboarding`, which REMOVES a surface) + 4 candidates, all four flown.** Screenshot-confirmed surfaces: STORAGE tab, LEADERBOARDS page, DISCORD button, DEBUG BATTLEPASS rail entry, TOP UP, ARMORY progression header, and three lobby boost icons (one tooltipped `JUICED — Battlepass XP gain accelerated`). ★★ **A-14 also turned out to be an ENDPOINT-DISCOVERY instrument, not just a UI one** — enabling `leaderboards` made the client call `/player-stats/leaderboard`, `/mmr/leaderboard` and `/player-stats/players/{id}`, none of which had *ever* been seen on the wire; the first is now implemented and the page renders real rows. ★★ **The readout the S120 entry said was missing now exists** (`tools/re/toggle_readout.py`, read-only RPM, no injection): the gate widget stores its answer in `Is Content Enabled` @ +0x473, and `IsEnabledByDefault==false AND enabled==true` is reachable only via our served value. 133 live instances, both controls passing in one run. ⇒ **a dark surface is no longer ambiguous** — `NeLobbyEventBtn` is measurably ON while invisible, i.e. an unmet companion condition, not a flag problem. ★ **Config changes need NO relaunch** (measured, single-variable: `ags` restart only, 3 treatment keys flipped, all 43 controls unchanged). `docs/s121-toggle-fix-confirmed.md` | FK-36d, FK-37, A1 | **done** |
+| ~~A-14 (S120 verdict)~~ | ~~✅ **DONE (S120) — vocabulary SETTLED, payload SHIPPED, surfaces did NOT appear.**~~ ★★ The headline is a correction: **we were serving the wrong vocabulary into the right map.** All five keys we shipped since S73 are `ELokiGameFeatureToggle` ENUM names (that system's readiness is round-gated, S85); the UI calls `IsFeatureEnabled(FString, bool)` with keys that are Blueprint bytecode literals **absent from the exe**. Exhaustive bpdump over all 21 calling assets: **30 call sites / 26 declared locals / 10 distinct keys** — and `bDefault` is the SECOND ARG, so `EmoteSFX`/`KillStreakAsRomanNumeral`/`voicechat` are already ON and must NEVER be sent. Now serving `motd`, `LobbyRewards`, `exchangetokens`, `ArmoryOnboarding`, `ArmoryItemProgression` (knob `AGS_UI_TOGGLES=0`). ⚠ Applied by the client 4x (eTag confirmed) on both a live re-poll and a cold relaunch, and **no new UI surface appeared** — but there is NO readout that any gate evaluated true, so this is NOT a measured negative on the toggles, only on the surfaces. `docs/s120-feature-toggles.md` | FK-36d, A1 | done |
 | ~~A-14 (original)~~ | ~~**Serve the `LobbyRewards` feature toggle.**~~ `WBP_UI_LobbyRewards::ShouldShowLobbyRewards` = `IsFeatureEnabled(ClientConfigManager, "LobbyRewards") AND Rewards.Num > 0` [M, bpdump]. We serve `featureToggles` from `handleClientConfig` and send **five** toggles; `LobbyRewards` is **not among them**, and that widget has logged **0 activations ever**. One map entry may switch on a whole reward screen nobody has seen — the same shape as the FK-17 banner win. ⚠ Pair it with A-2: 149 toggle names are enumerable and we serve 5 | FK-36d, A1 | **minutes** |
 | **A-15** | Promote the S120 before/after image-diff probes (`diffcallers.py`, `namepages.py`) from scratchpad into `tools/re/`. They are the only working instrument for "which code did this action run", and they currently exist only in a session temp dir | FK-36, §7.2, F7 | minutes |
 
