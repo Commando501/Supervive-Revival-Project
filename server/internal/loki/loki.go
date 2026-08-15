@@ -138,13 +138,41 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 	// real server drives during round-start (round-gated), which the stub doesn't run. Static string-xref RE of
 	// ULokiGameFeatureToggles::Get is packer-blocked (format string uncommitted, same S61 login wall). Next to
 	// crack it = dumpimage the now-committed .text + offline disasm, OR a client-side ready-bool shim (force).
-	ftEnabled := map[string]any{"config": map[string]string{"default": "true"}}
+	// ⚠⚠⚠ THE SUB-KEY IS "enabled", NOT "default" — and getting that wrong made this ENTIRE
+	// payload inert from S73 until S120 (2026-08-15).
+	//
+	// MEASURED from the shipped asset. The game gates UI on a reusable declarative widget,
+	// WBP_UI_ClientConfigVisbilityToggleWidget_C (the typo is the game's), whose ubergraph does:
+	//
+	//     cfg   = GetClientConfigManager()->GetClientConfiguration()
+	//     entry = Map_Find(cfg.FeatureToggles, FeatureKey)   // FeatureKey  = asset property
+	//         if not found -> use IsEnabledByDefault
+	//     value = Map_Find(entry.Config,       ConfigKey)    // ConfigKey   = asset property,
+	//         if not found -> use IsEnabledByDefault         //   CDO default = "enabled"
+	//     enabled = ToBool(value)
+	//
+	// We were writing Config["default"], so Map_Find(Config, "enabled") MISSED on every key we
+	// have ever sent, and every gate silently fell back to its own IsEnabledByDefault.
+	//
+	// ★ THE STOREFRONT PROVED IT, three-for-three, before the fix — a natural positive control:
+	//     PacksConfigToggle_1   FeatureKey "supporterpacks"  IsEnabledByDefault true   -> VISIBLE
+	//     RedeemConfigToggle_1  FeatureKey "redeemcode"      IsEnabledByDefault true   -> VISIBLE
+	//     StorageConfigToggle_1 FeatureKey "exchangetokens"  (no default => false)     -> HIDDEN
+	// i.e. the two visible tabs were visible *despite* us, and the one that needed us was dark.
+	//
+	// Both sub-keys are sent now. FFeatureToggle.Config is TMap<FString,FString>, so an extra
+	// entry is inert — "default" is kept in case any other consumer reads that spelling, and this
+	// costs nothing to hold. ⚠ Do NOT drop "enabled" to "tidy up".
+	ftVal := func(on string) map[string]any {
+		return map[string]any{"config": map[string]string{"enabled": on, "default": on}}
+	}
+	ftEnabled := ftVal("true")
 	featureToggles := map[string]any{
 		"CursorCharacterAim":        ftEnabled,
 		"AttachAudioListenerToHero": ftEnabled,
 		"DeadSpectatorCameraLock":   ftEnabled,
-		"WinterEvent":               map[string]any{"config": map[string]string{"default": "false"}},
-		"BonfireUAVs":               map[string]any{"config": map[string]string{"default": "false"}},
+		"WinterEvent":               ftVal("false"),
+		"BonfireUAVs":               ftVal("false"),
 	}
 
 	// ---- UI FEATURE GATES (S120, 2026-08-15) — ignorance-map A-14 ----------------------------
@@ -184,17 +212,51 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 	// auto-claimed natively without this widget ever activating — see docs/s120-hero-mastery.md.)
 	//
 	// Knob: AGS_UI_TOGGLES=0 restores the pre-S120 payload exactly, without a rebuild.
+	// ★★ THE GATES ARE ALSO DECLARATIVE, and that vocabulary is FOUR TIMES bigger.
+	// Besides the 10 bytecode `IsFeatureEnabled` keys, the game wraps widgets in a reusable
+	// WBP_UI_ClientConfigVisbilityToggleWidget_C whose FeatureKey / ConfigKey / IsEnabledByDefault
+	// are ASSET PROPERTIES — so those keys are a plain JSON property scan away and were invisible
+	// to a bytecode-only census. MEASURED: **50 distinct declarative FeatureKeys** across the
+	// catalog. Only the ones whose IsEnabledByDefault is absent/false are levers; the rest are
+	// already ON and must never be sent false.
+	//
+	// ⚠ GAME DATA BUG, REPRODUCED VERBATIM BELOW: four sites declare `"ArmoryItemProgression "`
+	// WITH A TRAILING SPACE (WBP_UI_Collection_ModalV2, WBP_UI_GameItemTooltip,
+	// WBP_UI_RewardRoll_Base). A clean key can never satisfy them, so both spellings are served.
+	// Do not "fix the typo" — the typo is in the shipped asset.
 	if os.Getenv("AGS_UI_TOGGLES") != "0" {
 		for _, k := range []string{
-			"motd",                  // Message of the Day — 2 independent gates, never seen
-			"LobbyRewards",          // the multi-claim reward screen (see the AND caveat above)
-			"exchangetokens",        // storefront STORAGE nav + the three 2024 supporter packs
-			"ArmoryOnboarding",      // armory FTUE highlight flow
-			"ArmoryItemProgression", // armory star-level display / primer content switch
+			// --- bytecode IsFeatureEnabled keys (bDefault=false) ---
+			"motd",             // Message of the Day
+			"LobbyRewards",     // multi-claim reward screen (AND-ed with Rewards.Num > 0)
+			"ArmoryOnboarding", // armory FTUE highlight flow
+			// --- declarative FeatureKeys with IsEnabledByDefault absent/false ---
+			"exchangetokens",                  // storefront STORAGE nav (StorageConfigToggle_1)
+			"storefrontcheats",                // a storefront cheat surface
+			"leaderboards",                    // WBP_ProfileScreen, 2 sites
+			"discord",                         // account/social/settings panels, 3 sites
+			"mastery",                         // hero portrait / party hero select
+			"ArmoryItemProgression",           // 7 sites
+			"ArmoryItemProgression ",          // 4 sites — the shipped trailing-space key, see above
+			"CosmeticEffectsOverride",         // loadout variant picker
+			"DropScreenTitles",                // pre-drop screen
+			"NeLobbyEventBtn",                 // lobby event button
+			"ServerSelectRegionRoutes",        // region select
+			"ServerSelectNetworkAcceleration", // region select
+			"DebugBattlepass",                 // debug battlepass entry on the main menu
 		} {
 			featureToggles[k] = ftEnabled
 		}
 	}
+	// DELIBERATELY WITHHELD, with reasons:
+	//   BypassTutorialAndOnboarding  would SKIP onboarding — removes a surface, does not reveal one.
+	//   SeasonalBattlepass           4 sites, but CLAUDE.md records no packed LokiDataAsset_Season,
+	//                                so enabling it invites a hard error. Test it ALONE.
+	//   chuseokboostui, prisma_boost, lobby_survey_menu  event/survey surfaces with no backing data.
+	//   EmoteSFX, KillStreakAsRomanNumeral, voicechat, and every IsEnabledByDefault=true key
+	//                                (ChatLobby, CustomGameList, RankedDisplay, mailbox, XPBoosts,
+	//                                EventHub, PlayerArmoryV2, party.fill, …) are ALREADY ON without
+	//                                us — sending them could only ever turn something OFF.
 	writeJSON(w, map[string]any{
 		"serviceHostnames": hostnames,
 		"clientVersions": []string{
@@ -209,7 +271,7 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 		// *apply* a config newer/different than the one it holds; a constant eTag with
 		// changed content is a plausible way to get a silent no-op. Was
 		// "supervive-revival-2" for everything up to the FK-17 banner probe.
-		"eTag":        "supervive-revival-4-uitoggles",
+		"eTag":        "supervive-revival-5-configkey-enabled",
 		"lastUpdated": nowISO(),
 	})
 }
