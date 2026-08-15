@@ -254,6 +254,91 @@ whole run's evidence.
 
 ---
 
+## 3d. ★★★★★ THE DECLARATIVE SWEEP IS COMPLETE — and widgets re-evaluate LIVE
+
+### First: the vocabulary closes exactly, and "33 keys remain" was WRONG
+
+A live census (`toggle_readout.py`) + the catalog scan partition all **50** declarative keys with
+no remainder:
+
+| bucket | count |
+|---|---|
+| served | 12 |
+| `IsEnabledByDefault=true` somewhere ⇒ **NEVER SERVE** | 33 |
+| withheld: `BypassTutorialAndOnboarding` (REMOVES a surface) | 1 |
+| **actual candidates** | **4** |
+| **total** | **50** ✓ |
+
+⚠ **CORRECTION:** an earlier note in this session said "33 declarative keys remain unswept."
+The real number was **4**. 33 is the **never-serve** count — the same number in a different role,
+which is exactly the kind of coincidence that propagates if nobody re-derives it.
+⚠ Also: 46 of the 50 have live instances at the menu. Of the 4 that do not, `KeybindCheats` and
+`lobby_survey` are default-true (never serve), `BypassTutorialAndOnboarding` is withheld, and the
+"fourth" is an artifact of **my own diff** — `.strip()` collapsed the trailing-space
+`"ArmoryItemProgression "` onto the clean key. Both spellings are served; there is no gap.
+
+### ★★★ THE OPEN QUESTION IS ANSWERED: no relaunch is needed
+
+Batch A (`chuseokboostui`, `prisma_boost`, `lobby_survey_menu`) was flown by restarting **`ags` only**,
+with the game running continuously (68 min uptime at the time).
+
+**Pre-registered, then measured:**
+
+| | predicted | observed |
+|---|---|---|
+| treatment keys flip | yes | **yes — exactly the 3, 0→1 each** |
+| control (43 other keys) | unchanged | **all 43 unchanged** |
+| `served-value-read` | 14 → 20 | **14 → 17** |
+
+⇒ **[M] Toggle widgets DO re-evaluate on `OnClientConfigUpdated`. A config change lands in ~30 s
+with no relaunch.** At this project's ~25–30 % per-launch death rate that changes the economics of
+every future toggle question.
+
+⚠ **My count prediction was WRONG and the error is instructive.** I predicted +6 (3 keys × 2
+instances). The answer is **+3** — one per key — because the second instance of each is the
+widget-tree **archetype**, which never evaluates. That is the reading rule recorded in §3b of this
+same document, written an hour earlier and then not applied to my own prediction. **The direction
+was right and the arithmetic was wrong; record both.**
+
+### Batch B — `SeasonalBattlepass`, alone, and the feared hard error did NOT occur
+
+Flown by itself via `AGS_UI_TOGGLES_EXTRA`, with error canaries sampled before and after:
+
+    BASELINE  Error=8  Fatal=0  LogJson-Unable=0
+    AFTER     Error=8  Fatal=0  LogJson-Unable=0     game alive
+
+`served-value-read` 17 → **21**, **+4 exactly as predicted**, and **only `SeasonalBattlepass` moved**
+(45 of 46 keys unchanged).
+
+⚠ **This does NOT clear the key.** CLAUDE.md's concern is that there is no packed
+`LokiDataAsset_Season`, and the surface it gates is the **end-of-game** seasonal pass — a path we
+cannot reach from the menu. So the measurement is "no error AT THE MENU", which is a much weaker
+claim than "safe". **It is therefore deliberately NOT in the default served list** and stays an
+env-only opt-in (`AGS_UI_TOGGLES_EXTRA=SeasonalBattlepass`). Re-test it at EoG before promoting.
+
+### Final state: 12 of 15 served declarative keys read our value
+
+    OK  ArmoryItemProgression 4/12 · CosmeticEffectsOverride 2/3 · discord 2/5 · leaderboards 2/4
+        SeasonalBattlepass 4/8 · DebugBattlepass 1/2 · exchangetokens 1/2 · storefrontcheats 1/2
+        NeLobbyEventBtn 1/2 · chuseokboostui 1/2 · prisma_boost 1/2 · lobby_survey_menu 1/2
+    --  DropScreenTitles 0/1 · ServerSelectRegionRoutes 0/1 · ServerSelectNetworkAcceleration 0/1
+
+★ **The three non-hits have a STRUCTURAL explanation, not a failure:** every key that reads our
+value has **≥2** instances (archetype + live); all three that do not have **exactly 1**. A clean
+12/12 vs 3/3 split on instance count ⇒ [I] that lone instance is the archetype and no live copy is
+constructed at the menu — `DropScreenTitles` is a pre-drop screen and both `ServerSelect*` live on a
+settings sub-screen. **Do not record these as measured negatives on the flag.** To settle them,
+re-read while that screen is open.
+
+### ⚠ A knob that would have been a trap, fixed before use
+
+`AGS_UI_TOGGLES_EXTRA` changes the payload **at runtime**, so there is no code edit at which to
+hand-bump the eTag — it would have silently reproduced the stale-eTag-over-changed-content failure
+this very file documents. The eTag now folds the extras in automatically
+(`…-8-sweep-batchA+x-SeasonalBattlepass`), sorted so map iteration order cannot leak into it.
+
+---
+
 ## 4. ★ A free instrument, already switched on
 
 [M] `LogClientConfig` is pinned to **VeryVerbose** in the user `Engine.ini`, and it emits a matched

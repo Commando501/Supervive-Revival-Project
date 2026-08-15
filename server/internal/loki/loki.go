@@ -22,7 +22,9 @@ import (
 	"image/png"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -176,6 +178,9 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 		return map[string]any{"config": map[string]string{"enabled": on, "default": on}}
 	}
 	ftEnabled := ftVal("true")
+	// Keys added at runtime via AGS_UI_TOGGLES_EXTRA. Tracked so the eTag can reflect them —
+	// see the eTag comment below; a changed payload under an unchanged eTag is a silent no-op.
+	var extras []string
 	featureToggles := map[string]any{
 		"CursorCharacterAim":        ftEnabled,
 		"AttachAudioListenerToHero": ftEnabled,
@@ -251,8 +256,41 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 			"ServerSelectRegionRoutes",        // region select
 			"ServerSelectNetworkAcceleration", // region select
 			"DebugBattlepass",                 // debug battlepass entry on the main menu
+
+			// ---- S121 sweep, batch A: the last low-risk dark keys ----
+			// A LIVE census (tools/re/toggle_readout.py) closed the declarative vocabulary exactly:
+			// 50 catalog keys = 12 served + 33 IsEnabledByDefault=true (never serve) + 1 withheld
+			// (BypassTutorialAndOnboarding, which REMOVES a surface) + 4 candidates. These are 3 of
+			// the 4. S120 withheld them for "no backing data" — but with the readout we can now tell
+			// "flag off" from "companion condition unmet", so serving them is informative rather
+			// than a shot in the dark, and none of them can turn an existing surface off.
+			// The 4th, SeasonalBattlepass, is deliberately NOT here — see below.
+			"chuseokboostui",    // Chuseok event boost UI (2 instances)
+			"prisma_boost",      // Prisma boost (2 instances)
+			"lobby_survey_menu", // in-lobby survey entry (2 instances)
 		} {
 			featureToggles[k] = ftEnabled
+		}
+
+		// ---- ad-hoc extras, no rebuild required ----
+		// AGS_UI_TOGGLES_EXTRA="a,b,c" serves additional keys as enabled. This exists so a risky
+		// key can be flown ALONE, in its own attributable batch, without editing and rebuilding —
+		// which is how SeasonalBattlepass should be tested:
+		//
+		//   SeasonalBattlepass (8 live instances) is the 4th and last candidate and is held back
+		//   because CLAUDE.md records there is no packed LokiDataAsset_Season, so enabling it
+		//   invites a hard error rather than a new surface. Fly it BY ITSELF with the missions
+		//   page, the account pass and the news banner watched as canaries:
+		//       $env:AGS_UI_TOGGLES_EXTRA = "SeasonalBattlepass"
+		//
+		// ⚠ Keys whose IsEnabledByDefault is true must NEVER go here — serving them can only ever
+		// turn a working surface OFF. The measured never-serve list is 33 keys; see
+		// TestNeverServeKeysThatAreOnByDefault.
+		for _, k := range strings.Split(os.Getenv("AGS_UI_TOGGLES_EXTRA"), ",") {
+			if k = strings.TrimSpace(k); k != "" {
+				featureToggles[k] = ftEnabled
+				extras = append(extras, k)
+			}
 		}
 
 		// ---- motd: the toggle ALONE can never work — it needs a MESSAGE BODY (S121) ----
@@ -296,6 +334,17 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 	//                                (ChatLobby, CustomGameList, RankedDisplay, mailbox, XPBoosts,
 	//                                EventHub, PlayerArmoryV2, party.fill, …) are ALREADY ON without
 	//                                us — sending them could only ever turn something OFF.
+	// ⚠ The eTag MUST move whenever the payload moves, or the client can silently keep the old
+	// config. AGS_UI_TOGGLES_EXTRA changes the payload at RUNTIME, with no code edit and therefore
+	// no chance to hand-bump a literal — so fold the extras into the eTag automatically. Without
+	// this the knob would be a trap that quietly reproduces the exact failure mode (a stale eTag
+	// over changed content) that this whole section exists to document.
+	eTag := "supervive-revival-8-sweep-batchA"
+	if len(extras) > 0 {
+		sorted := append([]string(nil), extras...)
+		sort.Strings(sorted) // stable across requests: map iteration order must not leak into the eTag
+		eTag += "+x-" + strings.Join(sorted, "-")
+	}
 	writeJSON(w, map[string]any{
 		"serviceHostnames": hostnames,
 		"clientVersions": []string{
@@ -310,7 +359,7 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 		// *apply* a config newer/different than the one it holds; a constant eTag with
 		// changed content is a plausible way to get a silent no-op. Was
 		// "supervive-revival-2" for everything up to the FK-17 banner probe.
-		"eTag":        "supervive-revival-7-drop-mastery",
+		"eTag":        eTag,
 		"lastUpdated": nowISO(),
 	})
 }
