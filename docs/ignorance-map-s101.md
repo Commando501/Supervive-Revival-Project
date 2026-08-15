@@ -6,7 +6,7 @@
 This one asks *"what don't we know we don't know?"* — and, more dangerously, *"what do we believe
 that isn't true?"*
 
-> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S118
+> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S121
 > Entries are updated in place with dated banners; **a banner always overrides the table beneath it.**
 > The original S101 text is never deleted, because the retraction history is the value.
 >
@@ -28,12 +28,20 @@ that isn't true?"*
 > | **FK-34** — `UECC-C13252F5` "is the last FK-7 survivor" | **S112** | ✅ **NEW + FALSIFIED.** It is the ANIM family (a shim-lifetime bug). ⇒ **zero** FK-7 death records survive a mechanism filter. |
 > | **FK-35** — S118 lobby/notif false-knowns (batched) | **S118** | ✅ **NEW + ALL FOUR FALSIFIED.** (a) the shipped 33-name notif list is **wrong at the tail** — `signalingP2PNotif` IS enum 32, `messageSessionNotif` is absent, caused by **two off-by-one boundary errors that CANCELLED into a plausible 33** (and a unit test asserted the false half); (b) `entries=3` is an **allocation size**, not a subscriber count (single-cast `FDelegateBase`); (c) "16 bound, 46 unbound" — the scan **stepped 0x10 over a structure with members at ≡8 (mod 16)** and the published list was **truncated at 12 with a literal `…`**, which changed the answer from 6 reachable types to 7; (d) presence "both directions" was **published unobserved** — offline needs `activity` OMITTED, because the activity blob **overrides** availability. |
 >
+> | **FK-36** — S120 Hero Mastery / claim false-knowns (batched) | **S120** | ✅ **NEW + ALL SIX FALSIFIED.** Hero Mastery went from "unlooked-at" to **solved end to end, backend-only** (renders → unlocks → bars move → rewards offer → **the client AUTO-CLAIMS**). The six beliefs that had to die are below; the most expensive was **(c)** — a negative published as "controlled" that was contradicted by data already in hand. `docs/s120-hero-mastery.md` |
+>
 > **The S108 lesson, in one line:** all three of that session's tasks turned out to be about **the
 > project's own instruments**, not the game — and the session then committed three *fresh* instances
 > of the same error while documenting it. See `docs/method-rules.md` §1 (⚠ the old pointer here was
 > `memory/supervive-instrument-artifact-pattern.md`, a store **deleted 2026-08-12** — the register
-> lives in the repo now), which S108 grew from five confirmed instances to eight. **It stands at 43
-> as of S118**, which added seven, four of them the analyst's own arithmetic and indexing.
+> lives in the repo now), which S108 grew from five confirmed instances to eight. It stood at 43 as
+> of S118, which added seven, four of them the analyst's own arithmetic and indexing. **It stands at
+> 48 as of S120**, which added five — and, notably, **four of the five were caught by the session
+> itself before or shortly after publication**, three of them by a *pre-registered prediction* the
+> measurement then missed. ⇒ the pattern is not becoming rarer; the **detection latency** is falling.
+> ★ S120's own contribution to the method: **a "fresh" reading of an uncontrolled field is still
+> uncontrolled.** Recency fixes staleness, not validity — demand a positive control for the FIELD,
+> not merely a recent sample of it (FK-36c).
 
 **Method.** Eleven ignorance dimensions were probed independently, then each was handed to an
 adversarial challenger who re-ran every negative search against primary artifacts and graded each
@@ -1745,6 +1753,45 @@ rule — **retracting beat defending.**
 
 ---
 
+### FK-36 — S120 Hero Mastery / reward-claim false-knowns (batched)
+
+**Status: ✅ NEW + ALL SIX FALSIFIED (S120, 2026-08-14).** Primary evidence
+`docs/s120-hero-mastery.md`; live artifacts in `dumps/s120-claim-evidence/` and
+`dumps/claimflow-{BEFORE,AFTER}/`. Net outcome: **Hero Mastery is solved end to end, backend-only,
+no shim and no `.text` write** — it renders, unlocks, its bars move, rewards are offered, and the
+client claims them by itself.
+
+| | belief | verdict |
+|---|---|---|
+| **a** | *"Roughly 293 of the 323 missions we serve are Hero Mastery content"* (asserted in `CLAUDE.md`) | ❌ **225.** The 25 shipped `LokiDataAsset_HeroMastery` name exactly 225 ids (3 sets × 3 tiers × 25); **none of the 75 abstract bases is referenced by any mastery set**, so serving them did nothing for this surface. |
+| **b** | *"The client re-polls `/progression/players/{id}` every ~61 s"* (asserted in `interactive.go`, and the whole bump-every-change design rests on it) | ❌ **Once per messenger connection.** MEASURED: one fetch, then nothing for 8 minutes while the served Version advanced. ★ The working lever is `POST /api/ws/drop/{handle}` — S85's socket drop **generalises to `/progression`**, refetch within ~3 s, no Version guesswork. |
+| **c** | *"`claimableRewards=[]` proves the reward is not claimable"* — published as a **CONTROLLED** negative because the notif was FRESH | ❌❌ **The control was never a control.** That field is `[]` in **30 of 30** occurrences corpus-wide (account pass included) — **no known-good case exists**, so it cannot discriminate "nothing claimable" from "this payload field is never populated". Freshness fixes *staleness*, not *validity*. Counter-evidence was already in hand: the client fetched `/progression` **exactly once**, with **zero relaunches**, so the very document called "not claimable" is the one it claimed from 11 h later. |
+| **d** | *"A widget must offer the claim; the mastery Claim button or the lobby multi-claim is the trigger"* | ❌ **No widget offers it — the client AUTO-CLAIMS.** Reproduced on a fresh launch with **no user interaction**: the lobby tracker activates and the POSTs follow 1.5–4 s later. `WBP_UI_LobbyRewards` — the only asset in **69,178** that can invoke the bulk claim — logged **0 activations** in both sessions where the claim fired, and `WBP_HeroMastery_Mission_v2`'s Claim button is the **mission** claim (`/mission/rewards/claim`), a different route. |
+| **e** | *"Mission progress written by the match-result engine is the progress the client reads"* | ❌ **Two disjoint name spaces.** The fan-out wrote **shim-manifest** composite keys while `missionInfo` reads **catalog** ones — overlap **7 of 187**; 180 writes were unreachable. Separately `objectiveRules` was keyed by the shim's objective names too: **2 of 102** catalog objectives had a rule (`BR_Knocks`→`Knocks`, `a2winarenagames`→`A2_WinArenaGames`, …). Fixed: trackable missions **3 → 22**, objectives mapped **2 → 20**. |
+| **f** | *"A rendered UI surface reflects the current model"* | ❌ **Widgets bind to a STALE model generation.** Pushing progress to an already-open page changes nothing; the ingester rebuilds the model objects on each adoption and older widgets keep pointers to the previous generation. **This mis-diagnosed two separate surfaces in one session.** Rebuild the page (hunter switch / relaunch) before reading anything off it. |
+
+★★ **The instrument that broke the deadlock — BEFORE/AFTER DECRYPTED-IMAGE DIFF.** The native caller
+of the claim builder was invisible (its page was zero in a 52 %-decrypted image). `dumpimage` before
+the action and again after: `.text` decryption is **monotone within a process lifetime** (FK-18/19),
+so pages zero-in-BEFORE and non-zero-in-AFTER are **exactly the code that just ran**. Here: **20
+pages / 80 KB**, containing the previously-unfindable call site `0x5849A68`. Chain recovered:
+`BulkClaimAllProgressionTrackRewards` (thunk `0x5268FB0` → impl `0x58267D0`) → `FindVM 0x57AB180` →
+`0x57ABCC0` (walks `VM.Levels` → `TArray<FClaimableReward>`, stride 0x58) → `0x5849790` →
+`0x5827DA0` (`/hero/rewards/claim` URL builder) → `0x57EC800` (POST sender).
+⚠ Function starts on this build are found by locating rel32 call **targets** landing in the page —
+the int3-padding scan **does not work here**.
+
+★ **Two independent instruments agreed the flow is pure native C++**: 0 of **35,148** live
+`UFunction` objects have a `Func` in any newly-decrypted page, and a full-corpus census over
+**69,178** assets found the hero claim referenced by **no Blueprint at all**.
+
+⚠ **Unit discipline, a fresh sub-instance:** that census's positive control was published as
+*"`ClaimReward` 24"* with no unit — it is **9 files / 24 occurrences**, so it reads as a file count
+and is off by 2.7×. Both numbers were right; the ambiguity made the control uncheckable by anyone
+else, which is most of what a control is for. **State the unit.**
+
+---
+
 ## 3. The UNKNOWN_UNKNOWN Register
 
 Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 366 commits.
@@ -1843,7 +1890,7 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 | F4 | **No per-route hit counter on the Go mux.** 113–115 `HandleFunc` registrations vs 40 distinct observed method+path pairs; 83 routes match nothing in any capture; **`POST /revival/missions/match-result` — the only input to the missions and pass-XP engines — appears zero times.** Also 10 observed paths have no route and fall to the catch-all | Speculative handlers are indistinguishable from working ones; every future state-entry experiment would self-report | hours (15 lines of Go) |
 | F5 | **No probe prints a loaded module's FULL PATH.** `tools/re/dump_modules.py:18` uses a hardcoded name allow-list; `deobfimports` verifies against an exports sidecar keyed by module *name*, so a proxy or hijacked DLL with matching exports would verify clean | Settles the UE4SS-class question permanently; hardens the 1107/1107 import reconstruction | minutes |
 | F6 | **No Angelscript disassembler, and no test of whether the PI hook even observes AS-implemented UFunctions.** `_AS`/`Angelscript` = **0 occurrences across all 63 shim sources**. CLAUDE.md's dispatch rule names exactly two kinds (BP bytecode / native). ⚠ In UnrealEngine-Angelscript, script UFunctions are registered with a VM trampoline, so the direct thunk most likely dispatches *correctly* — the "silently runs the wrong body" fear is speculation, but nothing has measured it | Whether 78 script modules are observable at all | one session |
-| F7 | **No crash-corpus aggregator, no visual/regression harness, no packet/DNS instrument, no page-coverage or state-novelty metric, no widget/view-model tree dumper.** Note the S83 keystone bug *was* a view-model map-key mismatch — precisely the defect class invisible without the last one | See §7 | mixed |
+| F7 | **No crash-corpus aggregator, no visual/regression harness, no packet/DNS instrument, ~~no page-coverage or state-novelty metric~~, no widget/view-model tree dumper.** Note the S83 keystone bug *was* a view-model map-key mismatch — precisely the defect class invisible without the last one. ★★ **The state-novelty metric NOW EXISTS (S120):** a before/after `dumpimage` diff reports exactly which `.text` pages an action decrypted (`scratchpad/diffcallers.py`, `namepages.py` — worth promoting into `tools/re/`). It answers "did this action run any code we have never seen?" quantitatively, and it named a caller no static search could find. ⚠ Still missing from this row: the crash aggregator, the visual harness, the packet instrument, and the widget/view-model dumper — and the last one is still the one that would have caught S83 | See §7 | mixed |
 | F8 | **No re-sampling convention.** 78 of 87 python probes re-implement RPM; only 7 contain any sleep-loop; none records a sample count or stability. ⚠ *Downgraded:* the project documents this failure class extensively in prose (S80o's self-retraction, the CLAUDE.md UProperty warning, the never-bank directive) — the gap is that the discipline lives in prose rather than in a shared helper | The most-repeated error class in the retraction record | hours |
 | F9 | **No external-knowledge lookup, ever.** `wiki`, `datamin`, `reddit`, `prior art`, `patch note`, `discord server` = 0 hits in ~100 sessions, against a game whose tuning layer the audit scores ~37% with *"not one hero's health, not one ability's damage, not one circle timing."* ⚠ A community wiki would describe the *live-service balance patch*, which may not match this 2025-12-17 build — a cross-check and a prior, not ground truth | The entire tuning/design-semantics layer; possibly mod-pak recipes and prior revival attempts | **minutes** |
 
@@ -2046,7 +2093,7 @@ Consolidated and deduplicated. `[×N]` = independently found by N dimensions.
 | # | Blind spot | The silent failure |
 |---|---|---|
 | 1 | **We cannot tell "this code never ran" from "this code ran silently."** The only runtime instrument is `Loki.log` at default verbosity, and one handoff line (FK-11) stopped anyone turning it up | Any subsystem that executes without logging at `Log` level is invisible; a half-working shim looks identical to one that did nothing |
-| 2 | **We cannot observe a state we did not enter — permanently, for static RE too.** 45.7% of `.text` is zero in every snapshot | Every "function X does not exist" / "nothing writes `PlayerState+0x4F8`" is **unfalsifiable**; the code may live in the half we have never run |
+| 2 | **We cannot observe a state we did not enter — permanently, for static RE too.** 45.7% of `.text` is zero in every snapshot. ★★ **PARTIALLY LIFTED (S120):** the **before/after decrypted-image diff** turns this blind spot into a *targeted* instrument — `dumpimage`, perform the action, `dumpimage` again; because `.text` decryption is **monotone within a process lifetime** (FK-18/19), pages zero-in-BEFORE and non-zero-in-AFTER are exactly the code the action ran. First use isolated a claim path to **20 pages / 80 KB** and recovered a call site that was unfindable by any static search. ⚠ Scope: it finds code that *just ran*, so it cannot reach states we still never enter, and it cannot isolate a function whose page was already decrypted by a neighbour | Every "function X does not exist" / "nothing writes `PlayerState+0x4F8`" is **unfalsifiable**; the code may live in the half we have never run. **Now falsifiable for anything we can trigger on demand** |
 | 3 | **We cannot verify that a shim's target was entered** (F3) | Four+ standing walls rest on an observation the instruments cannot disambiguate — and stale DLLs and name-resolved PID injection produce the identical signature |
 | 4 | **We cannot verify that a hardcoded RVA is still correct.** No shim reads back the bytes it patches; none checks a build fingerprint; 179 RVAs are valid against exactly one exe | Silent memory corruption whose symptom is an unattributed crash minutes later — indistinguishable from the postulated integrity check |
 | 5 | **We cannot see our own metric failures.** `mergedumps` reports non-zero bytes; `dumpimage` reports readable bytes; the two are quoted interchangeably | Produced **both** a false structural wall (`.rdata`) and a false absence claim (`.pdata` "0 of 6,283,264 readable" — actually 100% readable and genuinely zeroed). `.data` 36.8%, `_RDATA` 61.5%, `.rodata` 31.3% are suspect for the same reason |
@@ -2260,6 +2307,8 @@ not a pivot.
 | A-11 | Recover `.pdata` from stream 13 | B5 | hours |
 | A-12 | Parse `Binds.Cache` | A3 | hours |
 | A-13 | The `.utoc` chunk census | D1 | hours |
+| **A-14** | ★ **Serve the `LobbyRewards` feature toggle.** `WBP_UI_LobbyRewards::ShouldShowLobbyRewards` = `IsFeatureEnabled(ClientConfigManager, "LobbyRewards") AND Rewards.Num > 0` [M, bpdump]. We serve `featureToggles` from `handleClientConfig` and send **five** toggles; `LobbyRewards` is **not among them**, and that widget has logged **0 activations ever**. One map entry may switch on a whole reward screen nobody has seen — the same shape as the FK-17 banner win. ⚠ Pair it with A-2: 149 toggle names are enumerable and we serve 5 | FK-36d, A1 | **minutes** |
+| **A-15** | Promote the S120 before/after image-diff probes (`diffcallers.py`, `namepages.py`) from scratchpad into `tools/re/`. They are the only working instrument for "which code did this action run", and they currently exist only in a session temp dir | FK-36, §7.2, F7 | minutes |
 
 ### Tier B — One session, on the machine
 
