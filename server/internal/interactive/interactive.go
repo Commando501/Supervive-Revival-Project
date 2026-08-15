@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"supervive-revival/server/internal/pingecho"
 )
 
 // Service holds the interactive (write-back) state for menu actions.
@@ -1097,8 +1099,12 @@ func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) 
 		"IsAccelerator": false,
 		"Host":          "127.0.0.1",
 		"Port":          443,
-		"PingHost":      "127.0.0.1",
-		"PingPort":      443,
+		"PingHost": "127.0.0.1",
+		// ★ Taken from pingecho, NOT hardcoded, so the port we ADVERTISE and the port we
+		// actually LISTEN on cannot drift apart. Advertising a port with no responder is
+		// indistinguishable from a broken payload from the client's side — it just logs
+		// "Could not ping target host" and shows "— ms".
+		"PingPort":      pingecho.PingPort(),
 		"RequiresToken": false,
 	}
 	// ★ `Name` IS THE ST_ServerLocations STRING-TABLE KEY, and that table is keyed by AWS REGION
