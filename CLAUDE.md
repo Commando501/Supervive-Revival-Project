@@ -731,6 +731,110 @@ ZERO injection — and NO menu surface is a web page.**
   `docs/capture.log` and read exactly like client traffic; the game is `Loki/UE5-CL-0`, an
   `ActionType: WebURL` click is `Mozilla/…Chrome/…`. This nearly produced a fabricated headline.
 
+### Before touching anything feature-toggle- / UI-gate- / hidden-surface-shaped
+★★★★★ **A-14 IS SETTLED AND FLOWN (S121, 2026-08-15). Read `docs/s121-toggle-fix-confirmed.md`,
+then `docs/s120-feature-toggles.md`.** The declarative UI-gate channel works end to end from the
+BACKEND — no shim, no injection, no `.text` write.
+- ⚠⚠ **TWO TOGGLE SYSTEMS. Never confuse them.** `ULokiGameFeatureToggles::Get(ELokiGameFeatureToggle)`
+  is **enum**-keyed, names live in the exe, readiness is per-PlayerController at round-start (S85);
+  the 149-member list is `tools/re/out/game_feature_toggle_enum.txt` (**state the unit: 149 toggles,
+  151 enum values** — `Count` and `_MAX` are not features). `UClientConfigManager::IsFeatureEnabled
+  (FString, bool)` is **string**-keyed and read straight from the `featureToggles` map we serve; its
+  keys are Blueprint bytecode literals / asset properties and are **ABSENT from the exe**, which is
+  why no binary scan ever found them. **All five keys served S73→S120 were from the WRONG one.**
+- ★★★★★ **THE BUG WAS ONE WORD: `ConfigKey` is `"enabled"`, not `"default"`.** The gate is a reusable
+  declarative widget `WBP_UI_ClientConfigVisbilityToggleWidget_C` (the typo is the game's):
+  `Map_Find(FeatureToggles, FeatureKey)` → `Map_Find(entry.Config, ConfigKey)` → `ToBool`, each miss
+  falling back to the asset's own `IsEnabledByDefault`. We wrote `Config["default"]` from S73, so
+  **every toggle this project ever sent missed and silently fell back.** Fix = send BOTH sub-keys
+  (`FFeatureToggle.Config` is `TMap<FString,FString>`, so the extra entry is inert).
+  ⚠ **Do NOT drop `"enabled"` to tidy up.**
+- ★★ **CONFIRMED TWICE IN ONE FLIGHT [M]:** `exchangetokens` → the **STORAGE** tab appears in the
+  STORE nav bar (`FEATURED · BUNDLES · SKINS · ACCESSORIES · SUPPORTER PACKS · STORAGE · REDEEM`) and
+  renders a real page; `DebugBattlepass` → **DEBUG BATTLEPASS** appears on the main-menu rail. Two
+  different keys, two different screens, one payload change.
+- ★ **THE SAFETY CONTROL IS BUILT INTO THE STORE NAV BAR — use it every time.** `supporterpacks` and
+  `redeemcode` have `IsEnabledByDefault=true`, so SUPPORTER PACKS and REDEEM must stay visible; if
+  either vanishes you are writing a value that turns things OFF. Both held [M].
+- ⚠ **`bDefault` / `IsEnabledByDefault` decides whether serving a key can do ANYTHING.** Keys that
+  already default `true` (`EmoteSFX`, `KillStreakAsRomanNumeral`, `voicechat`, `ChatLobby`,
+  `CustomGameList`, `RankedDisplay`, `mailbox`, `EventHub`, `party.fill`, `XPBoosts`, …) are on
+  without us — **sending them could only ever turn something OFF. Never send them.**
+- **Vocabulary [M]:** 10 bytecode keys (30 call sites / 26 locals / 21 assets) + **50 declarative
+  `FeatureKey` values** (asset properties — a plain JSON scan, invisible to a bytecode census).
+  ⚠ **GAME DATA BUG:** four sites declare `"ArmoryItemProgression "` **with a trailing space**. Both
+  spellings are served. **Do not "fix" it** — the typo is in the shipped asset.
+- ★★★★★ **AND IT REVEALED HIDDEN *BACKEND* SURFACE, NOT JUST UI — the biggest result of S121.**
+  Enabling `leaderboards` made the client call **`GET /player-stats/leaderboard`**,
+  **`GET /mmr/leaderboard`** and **`GET /player-stats/players/{id}`** — endpoints it had NEVER been
+  observed to call in this project's history, all landing on a `{}` catch-all. ⇒ **treat every dark
+  toggle as a probe for unseen endpoints.** ★ The query string is a **self-describing contract**:
+  every parameter maps 1:1 to a visible dropdown, so changing a dropdown and re-reading
+  `capture.log` enumerates the vocabulary at zero RE cost.
+- ★★★★ **THE LEADERBOARD IS IMPLEMENTED AND RENDERS** (`server/internal/interactive/leaderboard.go`;
+  knob `AGS_LEADERBOARD=0`). Screenshot-confirmed: `#1. · 42 · Reviver#6612`, `RESET IN 01:00:24`.
+  ⚠⚠ **THE RESPONSE MUST ECHO THE REQUEST OR IT IS PARSED AND SILENTLY DISCARDED** —
+  `"Current Leaderboard Is Stale"` tests
+  `HeroName != heroId.PrimaryAssetName || StatCode != statKey || QueueID != queueKey || age > 60s`.
+  **The request sends `heroId=Hero:All` but you must echo the BARE `All`.** A wrong echo is
+  indistinguishable from a parse failure. No envelope (callback `0x5809760` has zero instructions
+  before `JsonObjectStringToUStruct`). Required: `StatCode`, `QueueID`, `HeroName`, non-empty
+  `Entries` (the else-arm IS the "No one has claimed a spot" widget). `Value` is `FCeil`'d; **row
+  order is array index, not `Rank`**; an unresolved `PlayerID` still renders. `HeroCounts` is a
+  `TMap` → **one hero portrait per key** (measured: 2 keys ⇒ exactly 2 icons).
+  `statCode ∈ {kills,wins,damage,healing}`; `period ∈ {daily,weekly}` (FRIENDS/RANKED are a
+  different widget on `/mmr/leaderboard[/friends]`, still `{}`; ⚠ its `Rank` is an **`ERank` enum
+  string** like `"Gold1"`, not an int).
+- ★★ **`motd` IS THE ONE KEY WHOSE `Config` CARRIES MORE THAN THE FLAG** — that is why serving it
+  like the others did nothing. `Try Show MOTD` bails at `Map_Find(Config,"key")` then requires
+  `Config["key"] != GetMessageOfTheDayLastSeen()`; `Get Message of the Day` reads
+  `key`/`title`/`text`. ⇒ **the sub-keys ARE the message; there is no MOTD endpoint to write.**
+  ★ **Bump `key` to re-show it** — an unchanged key shows once per account, ever, so a later launch
+  showing nothing is EXPECTED, not a regression. Knobs: `AGS_MOTD_KEY/_TITLE/_TEXT`, `AGS_MOTD=0`.
+- ⚠ **A SAFETY PROPERTY THE CENSUS MISSED: per-instance `EnabledVisibility`/`DisabledVisibility` can
+  be INVERTED** (Enabled=`Collapsed`), so serving `true` COLLAPSES that site. Three served sites ship
+  it swapped: `ArmoryNoProgression`, `ArmoryHeader`, `ArmoryHJUnlock` (the last two on the
+  trailing-space key). **Any "is this key safe to serve?" check must read all five properties, not
+  three.** [I] two look like intended A/B header swaps; the ARMORY renders normally.
+- ⚠ `LobbyRewards` is AND-ed with `Rewards.Num > 0`; `ArmoryItemProgression` is **INVERTED** in
+  `Comp_PlayerController_ArmoryOnboardingNoProgression` and is a `SelectInt` value picker (not a
+  visibility gate) in four armory widgets. A key can be necessary without being sufficient.
+- Knob: **`AGS_UI_TOGGLES=0`** restores the pre-S120 payload exactly, no rebuild.
+  Served set + reasons: `handleClientConfig`, `server/internal/loki/loki.go`.
+- ★★ **FREE INSTRUMENT, ALREADY ON: `LogClientConfig` is pinned VeryVerbose in the user `Engine.ini`**
+  and emits `Refreshing client configuration` → `Fetched client configuration: ETag <etag>` on a
+  **~30 s poll** [M]. So the client re-reads config WITHOUT a relaunch — iterate inside one live
+  session rather than one launch per batch. ⚠ **BUMP THE eTAG on every payload change.**
+  ⚠ Whether an already-CONSTRUCTED toggle widget re-evaluates on that refresh is **[S], untested** —
+  rebuild the page (navigate away and back) before reading anything off it.
+- ★★★★★ **THE READOUT EXISTS NOW — `tools/re/toggle_readout.py` (read-only RPM, no injection).**
+  `IsFeatureEnabled` itself logs NOTHING (**0** `BasicLog` sites in its 265-byte body, 240/265 bytes
+  decrypted, vs a same-TU control with 1) so no log verbosity can see it — **but the declarative
+  widget STORES its answer** in a reflected UPROPERTY. Live offsets on
+  `WBP_UI_ClientConfigVisbilityToggleWidget_C`: `FeatureKey +0x450`, `ConfigKey +0x460`,
+  `IsEnabledByDefault +0x470`, `EnabledVisibility +0x471`, `DisabledVisibility +0x472`,
+  **`Is Content Enabled` +0x473**.
+  ★ **The decisive predicate: `IsEnabledByDefault==false AND Is Content Enabled==true` is reachable
+  by NO path except FeatureToggles hit → Config[ConfigKey] hit → ToBool true** ⇒ a direct measurement
+  that our served value was read. **[M] 133 instances live; `ConfigKey` reads `"enabled"` on all of
+  them.** Both controls passed in one run: default-true keys read on; the keys we DELIBERATELY
+  WITHHELD read off (`SeasonalBattlepass` 8/8, `chuseokboostui`, `prisma_boost`, `lobby_survey_menu`).
+  ⚠ **Parse the `summary:` line; never count rows.**
+  ⚠⚠ **A False row beside a True row is NOT a failure** — the widget-tree archetype coexists with the
+  live instance and unevaluated objects read false (the CDO reads False/False; that is the control).
+  **Per key, ANY `SERVED VALUE READ` row is the positive signal.**
+  ⚠ **It CANNOT see the 10 bytecode keys** (`motd`, `LobbyRewards`, `ArmoryOnboarding` have 0 widget
+  instances) — that is a coverage limit, not a negative result.
+  ⚠ `class_props.py` cannot resolve this class: it demands class-of-class `=="Class"` and a Blueprint
+  class's is `BlueprintGeneratedClass`, so it prints a misleading `not found (map not loaded yet?)`.
+  `toggle_readout.py` resolves the class from a LIVE INSTANCE (`obj+0x18`). **Third member of the
+  class-lookup blind-spot family** alongside `obj_by_class.py` and `cheat_reach_probe.py`.
+  ★ **It DISAMBIGUATED a real case immediately:** `NeLobbyEventBtn`'s gate is **ON** while its button
+  stays invisible ⇒ companion condition unmet, **not** a flag problem. Pre-readout that would have
+  been recorded as "serving the key did nothing."
+  ★ It also showed **`mastery` was already lit** (`IsEnabledByDefault=true`), so it is a no-op to
+  serve and would REMOVE the S120 mastery surfaces if ever served `false`.
+
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
 and `docs/endpoints.md` (every endpoint the client hits + handler status).

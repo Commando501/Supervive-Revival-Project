@@ -28,6 +28,15 @@ import (
 
 type Service struct{}
 
+// envOr returns the environment variable v, or def when it is unset or empty.
+// Used for the operator-overridable knobs on the client-config payload.
+func envOr(v, def string) string {
+	if s := os.Getenv(v); s != "" {
+		return s
+	}
+	return def
+}
+
 func New() *Service { return &Service{} }
 
 func (s *Service) Register(mux *http.ServeMux) {
@@ -227,7 +236,6 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 	if os.Getenv("AGS_UI_TOGGLES") != "0" {
 		for _, k := range []string{
 			// --- bytecode IsFeatureEnabled keys (bDefault=false) ---
-			"motd",             // Message of the Day
 			"LobbyRewards",     // multi-claim reward screen (AND-ed with Rewards.Num > 0)
 			"ArmoryOnboarding", // armory FTUE highlight flow
 			// --- declarative FeatureKeys with IsEnabledByDefault absent/false ---
@@ -235,7 +243,6 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 			"storefrontcheats",                // a storefront cheat surface
 			"leaderboards",                    // WBP_ProfileScreen, 2 sites
 			"discord",                         // account/social/settings panels, 3 sites
-			"mastery",                         // hero portrait / party hero select
 			"ArmoryItemProgression",           // 7 sites
 			"ArmoryItemProgression ",          // 4 sites — the shipped trailing-space key, see above
 			"CosmeticEffectsOverride",         // loadout variant picker
@@ -247,11 +254,43 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 		} {
 			featureToggles[k] = ftEnabled
 		}
+
+		// ---- motd: the toggle ALONE can never work — it needs a MESSAGE BODY (S121) ----
+		//
+		// ⚠ `motd` is the one served key whose Config carries MORE than the enable flag, which is
+		// why it produced nothing when served like the others. MEASURED from the Blueprint bytecode:
+		//   * `Try Show MOTD`        bails at Map_Find(Config, "key"), then requires
+		//                            Config["key"] != GetMessageOfTheDayLastSeen()
+		//   * `Get Message of the Day` reads Config["key"], Config["title"], Config["text"]
+		//
+		// So the sub-keys ARE the message: there is no separate MOTD endpoint to implement. The
+		// client persists the last-seen "key" in its OWN client profile, so:
+		//   ★ BUMP `key` TO RE-SHOW THE MESSAGE. An unchanged key shows once, ever, per account —
+		//     which means a second launch reading "nothing happened" is EXPECTED, not a regression.
+		//     Do not chase it. Change the key and it shows again.
+		//
+		// Knob: AGS_MOTD_KEY / AGS_MOTD_TITLE / AGS_MOTD_TEXT override the defaults;
+		// AGS_MOTD=0 withholds the whole key (the pre-S121 behaviour).
+		if os.Getenv("AGS_MOTD") != "0" {
+			featureToggles["motd"] = map[string]any{"config": map[string]string{
+				"enabled": "true",
+				"default": "true",
+				"key":     envOr("AGS_MOTD_KEY", "supervive-revival-motd-1"),
+				"title":   envOr("AGS_MOTD_TITLE", "SUPERVIVE REVIVAL"),
+				"text":    envOr("AGS_MOTD_TEXT", "This client is talking to a local community backend. Menus, missions, hunter mastery and leaderboards are served from your own machine."),
+			}}
+		}
 	}
 	// DELIBERATELY WITHHELD, with reasons:
 	//   BypassTutorialAndOnboarding  would SKIP onboarding — removes a surface, does not reveal one.
 	//   SeasonalBattlepass           4 sites, but CLAUDE.md records no packed LokiDataAsset_Season,
 	//                                so enabling it invites a hard error. Test it ALONE.
+	//   mastery                      DROPPED S121 after a LIVE MEASUREMENT. It was listed as a dark
+	//                                key, but tools/re/toggle_readout.py read 3 of its 6 live widget
+	//                                instances as IsEnabledByDefault=true / already enabled -- i.e.
+	//                                it was ALWAYS on without us. Serving it true is a no-op, and
+	//                                serving it false would REMOVE the S120 hero-mastery surfaces.
+	//                                It therefore belongs with the never-send keys below.
 	//   chuseokboostui, prisma_boost, lobby_survey_menu  event/survey surfaces with no backing data.
 	//   EmoteSFX, KillStreakAsRomanNumeral, voicechat, and every IsEnabledByDefault=true key
 	//                                (ChatLobby, CustomGameList, RankedDisplay, mailbox, XPBoosts,
@@ -271,7 +310,7 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 		// *apply* a config newer/different than the one it holds; a constant eTag with
 		// changed content is a plausible way to get a silent no-op. Was
 		// "supervive-revival-2" for everything up to the FK-17 banner probe.
-		"eTag":        "supervive-revival-5-configkey-enabled",
+		"eTag":        "supervive-revival-6-motd-body",
 		"lastUpdated": nowISO(),
 	})
 }
