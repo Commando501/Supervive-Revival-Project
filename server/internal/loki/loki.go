@@ -310,7 +310,7 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 		// *apply* a config newer/different than the one it holds; a constant eTag with
 		// changed content is a plausible way to get a silent no-op. Was
 		// "supervive-revival-2" for everything up to the FK-17 banner probe.
-		"eTag":        "supervive-revival-6-motd-body",
+		"eTag":        "supervive-revival-7-drop-mastery",
 		"lastUpdated": nowISO(),
 	})
 }
