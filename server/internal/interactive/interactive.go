@@ -201,6 +201,13 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// recovered from the exe FName pool: MailboxConfigVersion. Probe a small typed
 	// shape so LogMailbox can fetch a config version; the relaunch confirms the key.
 	mux.HandleFunc("GET /mailbox/config/version", s.handleMailboxConfigVersion)
+
+	// ---- Leaderboards (S121) ----
+	// Only ever observed on the wire AFTER the `leaderboards` UI feature toggle started binding
+	// (the Config["enabled"] fix, 5e40475) — before that the page never rendered, so the client
+	// never called this. See leaderboard.go; the response MUST echo the request or it is parsed
+	// and then silently discarded.
+	mux.HandleFunc("GET /player-stats/leaderboard", s.handleLeaderboard)
 }
 
 // defaultClientProfile is returned (under {"data": ...}) before the client has
