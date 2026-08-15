@@ -1101,8 +1101,21 @@ func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) 
 		"PingPort":      443,
 		"RequiresToken": false,
 	}
+	// ★ `Name` IS THE ST_ServerLocations STRING-TABLE KEY, and that table is keyed by AWS REGION
+	// CODES — not by free text. MEASURED from the shipped asset
+	// (`tools/extractor/out/catalog/st/ST_ServerLocations.json`, TableNamespace ST_ServerLocations,
+	// **38 keys**): us-east-1 "NA East (Virginia)", us-west-2 "NA West (Oregon)",
+	// eu-west-1 "EU West (Ireland)", ap-northeast-2 "Asia Pacific (Seoul)", local-cluster (CJK), …
+	//
+	// Serving "na" got the region all the way to the UI — FK-5's P1 receipt fired
+	// (`LogStringTable … ST_ServerLocations 'na'` instead of the historical '') — but the row then
+	// rendered as **<MISSING STRING TABLE ENTRY>** because no such key exists. ⇒ the name must come
+	// from the table's own vocabulary. Same lesson as the missions `InternalName` fix: the client
+	// looks names up in a registry it already ships, so read the registry instead of inventing a key.
+	//
+	// Knob: AGS_REGION_NAME picks a different one (must be a real key from that asset).
 	region := map[string]any{
-		"Name": "na", // feeds measurer.Region AND the ST_ServerLocations key (was '' live)
+		"Name": envOrDefault("AGS_REGION_NAME", "us-east-1"),
 		"Addr": "127.0.0.1",
 		"Port": 443,
 		// ⚠⚠⚠ MUST BE TRUE. `CanExclude` is NOT advisory — it is a HARD INCLUSION GATE on the

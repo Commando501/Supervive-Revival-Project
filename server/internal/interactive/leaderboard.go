@@ -154,3 +154,11 @@ func atoiOr(s string, def int) int {
 	}
 	return n
 }
+
+// envOrDefault returns env var v, or def when unset/empty. Used for the region knobs.
+func envOrDefault(v, def string) string {
+	if s := os.Getenv(v); s != "" {
+		return s
+	}
+	return def
+}
