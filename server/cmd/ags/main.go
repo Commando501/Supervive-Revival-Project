@@ -30,6 +30,7 @@ import (
 	"supervive-revival/server/internal/lobby"
 	"supervive-revival/server/internal/loki"
 	"supervive-revival/server/internal/menu"
+	"supervive-revival/server/internal/pingecho"
 	"supervive-revival/server/internal/ws"
 	"supervive-revival/server/internal/tlscert"
 	"supervive-revival/server/internal/token"
@@ -68,6 +69,15 @@ func main() {
 	logger, err := capture.NewLogger(*logPath, *logMaxMB<<20)
 	if err != nil {
 		log.Fatalf("capture log: %v", err)
+	}
+
+	// UDP echo responder for region latency (S121). UE's ICMP module pings the PingHost:PingPort
+	// we advertise in GET /core-game/regions; with nothing listening the client logs
+	// "Could not ping target host … Result: 4" five times a cycle and the menu shows "— ms".
+	// Non-fatal by design: a bind failure degrades the ping display, it does not break the backend.
+	// Knobs: AGS_PING_ADDR / AGS_PING_PORT, and AGS_PING_ECHO=0 to disable (the control arm).
+	if pe := pingecho.StartFromEnv(); pe != nil {
+		defer pe.Close()
 	}
 
 	mux := http.NewServeMux()
