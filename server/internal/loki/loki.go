@@ -21,6 +21,7 @@ import (
 	"image/draw"
 	"image/png"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -145,6 +146,55 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 		"WinterEvent":               map[string]any{"config": map[string]string{"default": "false"}},
 		"BonfireUAVs":               map[string]any{"config": map[string]string{"default": "false"}},
 	}
+
+	// ---- UI FEATURE GATES (S120, 2026-08-15) — ignorance-map A-14 ----------------------------
+	//
+	// ⚠⚠ THE FIVE KEYS ABOVE ARE FROM THE WRONG VOCABULARY, and that is why this payload has never
+	// visibly done anything. MEASURED: all five are `ELokiGameFeatureToggle` ENUM MEMBER names
+	// (present in the exe's enum name cluster at .rdata 0x0894B1C8–0x0894BE90; the full 149-member
+	// list is tools/re/out/game_feature_toggle_enum.txt). That enum feeds
+	// `ULokiGameFeatureToggles::Get(ELokiGameFeatureToggle)`, whose readiness S85 measured as
+	// per-PlayerController and set at ROUND-START — not by this document.
+	//
+	// The UI's visibility gates call a DIFFERENT function:
+	//     bool UClientConfigManager::IsFeatureEnabled(FString ToggleKey, bool bDefault)
+	// keyed by STRING, read straight out of this featureToggles map. Its keys are Blueprint bytecode
+	// literals in the paks and are ABSENT from the exe — "LobbyRewards" does not appear in the binary
+	// at all, which is why no amount of binary scanning ever found them.
+	//
+	// MEASURED by exhaustive bpdump over every UFunction of the 21 assets that call it:
+	// **30 bytecode call sites / 26 declared `CallFunc_IsFeatureEnabled_ReturnValue` locals / 10
+	// distinct keys.** (State the unit: a local can back more than one call site.)
+	//
+	// ★ `bDefault` IS THE SECOND ARGUMENT and it decides whether serving a key can do anything:
+	//   - bDefault=false → the surface is DARK today precisely because we omit the key; sending
+	//     "true" turns it on. These are the levers.
+	//   - bDefault=true  → already ON without us. Sending it can only ever turn something OFF, so
+	//     **EmoteSFX, KillStreakAsRomanNumeral and voicechat are deliberately NEVER sent.**
+	//
+	// NOT SENT, and why:
+	//   BypassTutorialAndOnboarding  bDefault=false — would SKIP onboarding. Not a surface to reveal.
+	//   SeasonalBattlepass           bDefault=false — gates the EoG seasonal pass, and CLAUDE.md
+	//                                records there is no packed LokiDataAsset_Season, so switching it
+	//                                on invites a hard error rather than a new surface. Test alone.
+	//
+	// ⚠ `LobbyRewards` is AND-ed with `Array_Length(Rewards) > 0`, so the key is NECESSARY but not
+	// SUFFICIENT — `Rewards` is filled by `BeginMultiClaimRewardFlow`. Serving it is what makes the
+	// screen *possible*; it does not by itself make it appear. (Hero-mastery rewards are currently
+	// auto-claimed natively without this widget ever activating — see docs/s120-hero-mastery.md.)
+	//
+	// Knob: AGS_UI_TOGGLES=0 restores the pre-S120 payload exactly, without a rebuild.
+	if os.Getenv("AGS_UI_TOGGLES") != "0" {
+		for _, k := range []string{
+			"motd",                  // Message of the Day — 2 independent gates, never seen
+			"LobbyRewards",          // the multi-claim reward screen (see the AND caveat above)
+			"exchangetokens",        // storefront STORAGE nav + the three 2024 supporter packs
+			"ArmoryOnboarding",      // armory FTUE highlight flow
+			"ArmoryItemProgression", // armory star-level display / primer content switch
+		} {
+			featureToggles[k] = ftEnabled
+		}
+	}
 	writeJSON(w, map[string]any{
 		"serviceHostnames": hostnames,
 		"clientVersions": []string{
@@ -159,7 +209,7 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 		// *apply* a config newer/different than the one it holds; a constant eTag with
 		// changed content is a plausible way to get a silent no-op. Was
 		// "supervive-revival-2" for everything up to the FK-17 banner probe.
-		"eTag":        "supervive-revival-3-fk17banner",
+		"eTag":        "supervive-revival-4-uitoggles",
 		"lastUpdated": nowISO(),
 	})
 }

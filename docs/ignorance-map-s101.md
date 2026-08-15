@@ -2295,7 +2295,7 @@ not a pivot.
 | # | Action | Ref | Cost |
 |---|---|---|---|
 | A-1 | Write the acceptance predicate for "done" | §9 | minutes |
-| A-2 | Read the 149 toggle names; re-map S88–S90 against them | A1 | minutes |
+| A-2 | ✅ **HALF DONE (S120).** The 149 names are extracted to `tools/re/out/game_feature_toggle_enum.txt` (values 0–148; the declared "151 values" counts two sentinels — **state the unit**). ⚠ But A-14 showed these enum names are **not** what the UI's visibility gates read, so re-mapping S88–S90 against them is still open and is now a *gameplay*-toggle question, not a UI one | A1 | minutes |
 | A-3 | Read the two client `Saved/Config` inis | B1–B3 | minutes |
 | A-4 | Re-measure the Angelscript census; retract S74's generalization | FK-1 | minutes |
 | A-5 | Kill the `.rdata` cap; re-scan in UTF-16 (routes, strings, vtables) | FK-3/4, E5 | minutes |
@@ -2307,7 +2307,8 @@ not a pivot.
 | A-11 | Recover `.pdata` from stream 13 | B5 | hours |
 | A-12 | Parse `Binds.Cache` | A3 | hours |
 | A-13 | The `.utoc` chunk census | D1 | hours |
-| **A-14** | ★ **Serve the `LobbyRewards` feature toggle.** `WBP_UI_LobbyRewards::ShouldShowLobbyRewards` = `IsFeatureEnabled(ClientConfigManager, "LobbyRewards") AND Rewards.Num > 0` [M, bpdump]. We serve `featureToggles` from `handleClientConfig` and send **five** toggles; `LobbyRewards` is **not among them**, and that widget has logged **0 activations ever**. One map entry may switch on a whole reward screen nobody has seen — the same shape as the FK-17 banner win. ⚠ Pair it with A-2: 149 toggle names are enumerable and we serve 5 | FK-36d, A1 | **minutes** |
+| **A-14** | ✅ **DONE (S120) — vocabulary SETTLED, payload SHIPPED, surfaces did NOT appear.** ★★ The headline is a correction: **we were serving the wrong vocabulary into the right map.** All five keys we shipped since S73 are `ELokiGameFeatureToggle` ENUM names (that system's readiness is round-gated, S85); the UI calls `IsFeatureEnabled(FString, bool)` with keys that are Blueprint bytecode literals **absent from the exe**. Exhaustive bpdump over all 21 calling assets: **30 call sites / 26 declared locals / 10 distinct keys** — and `bDefault` is the SECOND ARG, so `EmoteSFX`/`KillStreakAsRomanNumeral`/`voicechat` are already ON and must NEVER be sent. Now serving `motd`, `LobbyRewards`, `exchangetokens`, `ArmoryOnboarding`, `ArmoryItemProgression` (knob `AGS_UI_TOGGLES=0`). ⚠ Applied by the client 4x (eTag confirmed) on both a live re-poll and a cold relaunch, and **no new UI surface appeared** — but there is NO readout that any gate evaluated true, so this is NOT a measured negative on the toggles, only on the surfaces. `docs/s120-feature-toggles.md` | FK-36d, A1 | done |
+| ~~A-14 (original)~~ | ~~**Serve the `LobbyRewards` feature toggle.**~~ `WBP_UI_LobbyRewards::ShouldShowLobbyRewards` = `IsFeatureEnabled(ClientConfigManager, "LobbyRewards") AND Rewards.Num > 0` [M, bpdump]. We serve `featureToggles` from `handleClientConfig` and send **five** toggles; `LobbyRewards` is **not among them**, and that widget has logged **0 activations ever**. One map entry may switch on a whole reward screen nobody has seen — the same shape as the FK-17 banner win. ⚠ Pair it with A-2: 149 toggle names are enumerable and we serve 5 | FK-36d, A1 | **minutes** |
 | **A-15** | Promote the S120 before/after image-diff probes (`diffcallers.py`, `namepages.py`) from scratchpad into `tools/re/`. They are the only working instrument for "which code did this action run", and they currently exist only in a session temp dir | FK-36, §7.2, F7 | minutes |
 
 ### Tier B — One session, on the machine
