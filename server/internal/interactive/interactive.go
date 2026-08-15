@@ -3,6 +3,8 @@ package interactive
 import (
 	"encoding/base64"
 	"encoding/json"
+	"encoding/hex"
+	"crypto/sha256"
 	"fmt"
 	"hash/fnv"
 	"io"
@@ -1100,15 +1102,39 @@ func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) 
 		"RequiresToken": false,
 	}
 	region := map[string]any{
-		"Name":       "na", // feeds measurer.Region AND the ST_ServerLocations key (was '' live)
-		"Addr":       "127.0.0.1",
-		"Port":       443,
-		"CanExclude": false,
+		"Name": "na", // feeds measurer.Region AND the ST_ServerLocations key (was '' live)
+		"Addr": "127.0.0.1",
+		"Port": 443,
+		// ⚠⚠⚠ MUST BE TRUE. `CanExclude` is NOT advisory — it is a HARD INCLUSION GATE on the
+		// measurer-creation loop. FK-5 decoded it at instruction level (`fn 0x57DDCA0`, gate at
+		// `0x57DE016`) and called it "a hard gate nobody had seen":
+		//
+		//     for each FRegionHost R:
+		//         if (R.CanExclude == 0) continue;      <-- skips the ENTIRE region
+		//         for each (RouteName, Rt) in R.Routes: CreateMeasurer(...)
+		//
+		// S121 first served `false` — reading the name as "may the player exclude this region?"
+		// and answering "no, it's our only one". The client reads it as "is this region eligible
+		// for measurement?", so the whole region was skipped: correct payload, fully bound
+		// (Regions.Num=1, Routes.Num=1, our own ETag echoed back), and STILL zero measurers.
+		// ⇒ Another parse-succeeds-populates-nothing failure, and the third distinct one on this
+		// single endpoint after the flat/nested bug. **Nothing in the log says a word about it.**
+		"CanExclude": true,
 		"Routes":     map[string]any{"default": route},
 	}
+	// ⚠⚠ THE ETAG MUST BE DERIVED FROM THE CONTENT, NOT A CONSTANT.
+	// `FRegionHostList` carries its own `FString ETag`, and a constant one means a CHANGED payload
+	// arrives under an UNCHANGED tag — the classic silent no-op. S121 hit this twice in one day:
+	// once on client-config (fixed by folding the served extras into that eTag) and then AGAIN
+	// here, within the hour, by hand-writing "supervive-revival-regions-1" and later editing
+	// CanExclude underneath it. Hashing the body removes the failure mode instead of relying on
+	// remembering to bump a literal.
+	regions := []any{region}
+	body, _ := json.Marshal(regions)
+	sum := sha256.Sum256(body)
 	writeJSON(w, map[string]any{
-		"Regions": []any{region},
-		"ETag":    "supervive-revival-regions-1",
+		"Regions": regions,
+		"ETag":    "supervive-revival-regions-" + hex.EncodeToString(sum[:6]),
 	})
 }
 
