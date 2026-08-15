@@ -1041,19 +1041,74 @@ func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string
 // field name (`Regions`, matching `GetRegions`'s return). If "Regions" is the wrong field
 // name the symptom will flip from Deserialization failure â†’ Invalid response received
 // (predicate fails), which would name the next probe.
+// ★★★★★ 2026-08-15 (S121) — THE PAYLOAD ABOVE WAS FLAT AND THE MODEL IS NESTED. FIXED.
+//
+// FK-5 reverse-engineered this end to end on 2026-07-27 (`docs/fk5-latency-subsystem-re.md`) and
+// the fix was never shipped. From the game's own `Binds.Cache` bind table — real C++ decls, so
+// they settle container types that `schema.txt`/the usmap render wrong:
+//
+//	struct FRegionHostList { TArray<FRegionHost> Regions; FString ETag; };            // 32 B
+//	struct FRegionHost     { FString Name; FString Addr; int Port; bool CanExclude;
+//	                         TMap<FString, FRegionRoute> Routes; };                   // 0x78 B
+//	struct FRegionRoute    { bool Enabled; bool IsAccelerator; FString Host; int Port;
+//	                         FString PingHost; int PingPort; bool RequiresToken; };   // 0x38 B
+//
+// ⚠⚠ **`PingHost`/`PingPort` live inside `FRegionRoute`, which lives inside `FRegionHost.Routes` —
+// a TMap we had NEVER SENT.** Our flat body parsed fine into ONE region with an EMPTY Routes map,
+// and the measurer-creation loop iterates `Routes`. Zero routes ⇒ zero `ULatencyMeasurer`s ⇒ zero
+// pings ⇒ the `??? — ms` row and the `ST_ServerLocations['']` lookup. Confirmed independently in
+// the disassembly: the loop at `fn 0x57DDCA0` advances regions with `add rbx,0x78`
+// (= sizeof FRegionHost) and indexes routes at stride 0x50 (= TPair<FString,FRegionRoute>).
+//
+// ⇒ This is the same failure shape as the old `RegionName`/`RouteName` guesswork: the field names
+// were plausible and the NESTING was wrong, so nothing errored — it just silently produced an
+// empty container. **A parse that succeeds is not a parse that populated anything.**
+//
+// ★ HOW IT RESURFACED, which is the interesting part: the S121 feature-toggle sweep left two keys
+// (`ServerSelectRegionRoutes`, `ServerSelectNetworkAcceleration`) reading "never evaluated". Their
+// widget `WBP_UI_RegionSelect_Entry` is the PER-ROUTE row, and with zero routes no row is ever
+// constructed — so the region-select modal opens EMPTY (screenshot-confirmed) and those gates can
+// never run. The toggle readout pointed straight at a two-session-old unshipped backend fix.
+//
+// ⚠ Scope, stated honestly: creating routes creates MEASURERS, and FK-5 §7 records that "measurers
+// are what the UI and any AllMeasurersReported gate actually read". The ping itself is a **UDP
+// echo** (not ICMP — a port is specified, and UE's own diagnostics say ICMP takes no port) with a
+// 5 s timeout, and we run **no UDP echo responder**, so a real latency NUMBER is NOT expected yet.
+// Rows appearing is the prediction; `??? — ms` becoming a value is NOT.
+//
+// Knob: AGS_REGIONS_FLAT=1 restores the pre-S121 flat payload for a single-variable A/B.
 func (s *Service) handleCoreGameRegions(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("AGS_REGIONS_FLAT") == "1" {
+		// The measured-broken control arm. Kept executable so the fix stays falsifiable.
+		writeJSON(w, map[string]any{"Regions": []any{map[string]any{
+			"RegionName": "na", "RouteName": "na", "DisplayName": "Local",
+			"Host": "127.0.0.1", "PingHost": "127.0.0.1", "Address": "127.0.0.1",
+			"Port": 443, "Enabled": true,
+		}}})
+		return
+	}
+
+	// One route, keyed by route name. The TMap key is what the UI shows as the route and what
+	// GetRegionRoute(Region, Route) looks up; FMemberServerLatency carries Region + Route back.
+	route := map[string]any{
+		"Enabled":       true,
+		"IsAccelerator": false,
+		"Host":          "127.0.0.1",
+		"Port":          443,
+		"PingHost":      "127.0.0.1",
+		"PingPort":      443,
+		"RequiresToken": false,
+	}
 	region := map[string]any{
-		"RegionName":  "na",
-		"RouteName":   "na",
-		"DisplayName": "Local",
-		"Host":        "127.0.0.1",
-		"PingHost":    "127.0.0.1",
-		"Address":     "127.0.0.1",
-		"Port":        443,
-		"Enabled":     true,
+		"Name":       "na", // feeds measurer.Region AND the ST_ServerLocations key (was '' live)
+		"Addr":       "127.0.0.1",
+		"Port":       443,
+		"CanExclude": false,
+		"Routes":     map[string]any{"default": route},
 	}
 	writeJSON(w, map[string]any{
 		"Regions": []any{region},
+		"ETag":    "supervive-revival-regions-1",
 	})
 }
 
