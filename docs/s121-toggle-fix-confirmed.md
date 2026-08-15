@@ -316,7 +316,46 @@ cannot reach from the menu. So the measurement is "no error AT THE MENU", which 
 claim than "safe". **It is therefore deliberately NOT in the default served list** and stays an
 env-only opt-in (`AGS_UI_TOGGLES_EXTRA=SeasonalBattlepass`). Re-test it at EoG before promoting.
 
-### Final state: 12 of 15 served declarative keys read our value
+### ★★★★★ FINAL STATE: 14 of 15 — and the last two were a THREE-WEEK-OLD BACKEND BUG
+
+⚠ **This supersedes the "12 of 15" table below**, which was true only until the region pipeline was
+fixed. `ServerSelectRegionRoutes` and `ServerSelectNetworkAcceleration` now both read
+**`SERVED VALUE READ`**, `ServerSelectCheckbox` reads `on by default`, and `served-value-read` went
+**21 → 23** with the live instance count **133 → 136** (the three row widgets that had never existed).
+Only `DropScreenTitles` remains, blocked behind FK-1.
+
+**The chain, because every link failed SILENTLY:**
+
+    Config["default"] not ["enabled"]     one word, inert since S73
+      -> `leaderboards` gate dark
+        -> readout says ServerSelect* "never evaluated"
+          -> region-select modal opens EMPTY
+            -> FRegionHost.Routes empty       FK-5, diagnosed 2026-07-27, NEVER SHIPPED
+              -> CanExclude = false           "a hard gate nobody had seen" (0x57DE016)
+                -> constant regions ETag      the same trap fixed on client-config an hour earlier
+                  -> Name = "na"              not one of the 38 AWS-code ST_ServerLocations keys
+
+**Six layers. Not one of them logged an error.** Every stage was "the payload parsed and populated
+nothing" — the failure mode `LogJson`, `Deserialization failure` and `Invalid response received` are
+all blind to.
+
+★ **The latency pipeline now runs for the first time in this project's history** [M]:
+
+    LogLatencyManager: Display: Creating new latency measurer for us-east-1 default
+    obj_by_class LatencyMeasurer -> found 1 LIVE   (was 0 in every prior measurement)
+
+★ **FK-5's own P1 success criterion is met.** That doc predicted the receipt would be
+`LogStringTable … ST_ServerLocations 'na'` in place of the historical `''`. It fired. The row then
+read `<MISSING STRING TABLE ENTRY>` because the table is keyed by **AWS region codes** (38 keys);
+switching to `us-east-1` renders **"NA East (Virginia)"** — screenshot-confirmed in both the region
+modal and the pause-menu ping indicator.
+
+⚠ **`— ms` is still not a number, and that was PRE-REGISTERED as expected.** The ping is a UDP echo
+(`Could not ping target host: 127.0.0.1:443. Result: 4`) and we run no responder. Predicting the
+negative is what stops it reading as the fix having failed. **Next task, now well-scoped:** a UDP
+echo responder on `PingHost:PingPort`.
+
+### ⚠ The superseded snapshot: 12 of 15, before the region fix
 
     OK  ArmoryItemProgression 4/12 · CosmeticEffectsOverride 2/3 · discord 2/5 · leaderboards 2/4
         SeasonalBattlepass 4/8 · DebugBattlepass 1/2 · exchangetokens 1/2 · storefrontcheats 1/2

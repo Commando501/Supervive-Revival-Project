@@ -765,7 +765,8 @@ BACKEND — no shim, no injection, no `.text` write.
   (`BypassTutorialAndOnboarding`, which REMOVES a surface) + 4 candidates, all 4 now flown.**
   ⚠ **"33 keys remain unswept" is WRONG** — the remainder was **4**; 33 is the *never-serve* count,
   the same number in a different role. Re-derive counts, never carry them.
-  **Final: 12 of 15 served declarative keys read our value** (`served-value-read=21`).
+  **Final: 14 of 15 served declarative keys read our value** (`served-value-read=23`, instances
+  133→136). The last two (`ServerSelect*`) were NOT a toggle problem — see the region block below.
   ★★ **The 3 that do not are NEVER-EVALUATED, not "off" — and a row with `IsEnabledByDefault=true`
   AND `enabled=false` is IMPOSSIBLE for an evaluated widget** (default true means both a missing
   FeatureKey and a missing ConfigKey fall back to true). That is a **free per-instance "this gate
@@ -877,6 +878,47 @@ BACKEND — no shim, no injection, no `.text` write.
   been recorded as "serving the key did nothing."
   ★ It also showed **`mastery` was already lit** (`IsEnabledByDefault=true`), so it is a no-op to
   serve and would REMOVE the S120 mastery surfaces if ever served `false`.
+
+### Before touching anything region- / latency- / ping- / "??? — ms"-shaped
+★★★★★ **THE LATENCY PIPELINE RUNS (S121, 2026-08-15) — first time in this project's history.**
+Read `docs/fk5-latency-subsystem-re.md` (the RE, 2026-07-27) then
+`docs/s121-toggle-fix-confirmed.md` §3d (the shipping fix). FK-5 decoded this end to end and **the
+fix was never shipped**; S121 shipped it and hit **three more silent failures on the same endpoint.**
+- **The model is NESTED and we served it FLAT for a year.** `FRegionHostList{TArray<FRegionHost>
+  Regions; FString ETag}` · `FRegionHost{FString Name; FString Addr; int Port; bool CanExclude;
+  TMap<FString,FRegionRoute> Routes}` (0x78) · `FRegionRoute{bool Enabled; bool IsAccelerator;
+  FString Host; int Port; FString PingHost; int PingPort; bool RequiresToken}` (0x38).
+  **`PingHost`/`PingPort` live INSIDE `Routes`** — a TMap we had never sent, so the body parsed into
+  one region with an empty map. Zero routes ⇒ zero measurers ⇒ zero pings ⇒ `??? — ms`.
+- ⚠⚠⚠ **`CanExclude` MUST BE `true` — it is a HARD INCLUSION GATE, not advice.**
+  `fn 0x57DDCA0`, gate at `0x57DE016`: `if (R.CanExclude == 0) continue;` skips the ENTIRE region.
+  S121 served `false` (reading it as "may the player exclude this?") and got a fully-bound payload
+  with **zero measurers**.
+- ⚠⚠ **The regions ETag GATES RE-PROCESSING.** A changed payload under an unchanged `ETag` is
+  ignored — measured: `CanExclude=true` did nothing for a minute across two `ags` restarts until the
+  tag moved. It is now a **sha256 of the body** so it cannot go stale. (This was the SECOND
+  stale-eTag bug shipped in one session, an hour after fixing the same class on client-config.)
+- ★ **`Name` IS THE `ST_ServerLocations` STRING-TABLE KEY, and the table is keyed by AWS REGION
+  CODES — 38 of them** (`tools/extractor/out/catalog/st/ST_ServerLocations.json`): `us-east-1`
+  "NA East (Virginia)", `us-west-2` "NA West (Oregon)", `eu-west-1`, `ap-northeast-2`,
+  `local-cluster` (CJK), … Serving `"na"` reached the UI (FK-5's P1 receipt fired:
+  `ST_ServerLocations 'na'` instead of the historical `''`) but rendered
+  **`<MISSING STRING TABLE ENTRY>`**. Default is now `us-east-1` → **"NA East (Virginia)"**,
+  screenshot-confirmed. Knob `AGS_REGION_NAME`. **Same lesson as missions `InternalName`: read the
+  registry the client already ships; do not invent a plausible key.**
+- **Receipts [M]:** `LogLatencyManager: Display: Creating new latency measurer for us-east-1 default`
+  and `obj_by_class LatencyMeasurer` = **1 LIVE** (was 0 in every prior measurement).
+  ★ **Readout: `tools/re/regions_readout.py`** reads the parsed `UCoreGameManager.ValidRegions`
+  (`+0x6F0`, resolved by name) — `Regions.Num`, per-region fields, and **`Routes.Num`**.
+  ★★ **Its `ETag` field is a FREE POSITIVE CONTROL** — compare it to what `ags` served: matching
+  ETag + empty array/map localises the fault INSIDE the struct instead of leaving "empty" ambiguous.
+  That ambiguity is what let this bug survive from 2026-07-27.
+- ⚠ **`— ms` is still not a number and that is EXPECTED, not a regression.** The ping is a **UDP
+  echo** (not ICMP — a port is specified), `Could not ping target host: 127.0.0.1:443. Result: 4`,
+  and we run **no responder**. **Next task: a UDP echo responder on `PingHost:PingPort`.**
+- ⚠⚠ **THE WHOLE CHAIN FAILED SILENTLY AT EVERY LAYER** — six nested defects, zero errors logged.
+  `LogJson`, `Deserialization failure` and `Invalid response received` are all blind to
+  "parsed fine, populated nothing". **On this endpoint, read the parsed struct; do not trust silence.**
 
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
