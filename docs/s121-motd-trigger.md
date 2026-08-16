@@ -57,8 +57,41 @@
 >
 > **MOTD widget → `bIsManagedByGameViewportSubsystem = False` ⇒ `IsInViewport() == false`.**
 >
-> ⇒ The prompt is constructed, `Visible`, enabled — and **never presented**. `PushPrompt` reported
-> `bWasShown=True` without the widget ever reaching the screen.
+> ⇒ The prompt is constructed, `Visible`, enabled — and not added **directly to the viewport**.
+>
+> ### ⚠⚠⚠ AND THAT CONCLUSION IS ALSO WRONG — CORRECTED AGAIN
+>
+> `PushPrompt`'s real body (`WBP_UI_MainMenu_NormalMainMenu::PushPrompt`, reached via
+> `MenuRootV2::PushPrompt` → `MainMenu_NormalV2`) is:
+>
+> ```
+> [0] Active = PromptStack->GetActiveWidget()
+> [2] cond   = ReplacePrompt AND IsValid(Active)      <- ReplacePrompt is the literal `false`
+> [3] JumpIfNot(cond) -> skip
+> [5] PromptStack->RemoveWidget(Active)               (only when replacing)
+> [6] Prompt = PromptStack->BP_AddWidget(WidgetClass) <- ALWAYS runs
+> ```
+>
+> **The widget is added to a `PromptStack`, not to the viewport.** For a container-managed widget,
+> `bIsManagedByGameViewportSubsystem == false` and `Slot == null` are both **expected and normal** —
+> the STACK is the thing in the viewport, its children are not. ⇒ **Neither reading supports "never
+> presented", and the viewport probe answered a question that does not apply here.**
+>
+> ⚠ The probe itself is fine and stays (`tools/re/widget_inviewport.py`, calibrated 2-of-5064). What
+> was wrong is what I concluded from it: *"not added directly to the viewport"* is not *"not on
+> screen"* for a stack child. **A correctly calibrated instrument pointed at the wrong question
+> still yields a false conclusion** — arguably the more dangerous failure, because the calibration
+> makes it feel earned.
+>
+> ★ **The RIGHT measurement, not yet run:** is the MOTD widget the **active** widget of
+> `PromptStack`? A CommonActivatable-style stack presents only its top entry. Read
+> `PromptStack->GetActiveWidget()` on the live `WBP_UI_MainMenu_NormalMainMenu` and compare against
+> `0x2692C618DF0`, and/or enumerate the stack's entry list. That distinguishes "queued behind
+> another prompt" from "on screen but invisible" from "added then immediately removed".
+>
+> ⚠ Also note `bWasShown` is **a hardcoded `EX_True`** written unconditionally after the call
+> (`Try Show MOTD` `[27]`), *not* a result. Earlier text reading it as "the prompt was shown" was
+> over-reading a constant: it proves the code path ran, nothing more.
 >
 > [I] **Working reading:** `PushPrompt(..., false)` enqueues the prompt on the main-menu prompt host
 > and returns "shown", but the host never drains the queue at the lobby — so the MOTD sits built and
