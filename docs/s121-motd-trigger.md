@@ -93,6 +93,23 @@
 > (`Try Show MOTD` `[27]`), *not* a result. Earlier text reading it as "the prompt was shown" was
 > over-reading a constant: it proves the code path ran, nothing more.
 >
+> ### ★ LEAD: there is a SECOND pusher competing for the same slot
+>
+> [M] A catalog-wide scan finds `PushPrompt` referenced in exactly **6** assets. Five are the
+> host/forwarder chain (`WBP_UI_MainMenu_MenuRootV2`, `WBP_UI_MainMenu_NormalMainMenu`,
+> `WBP_UI_HUD_ROOT`, `WBP_UI_HUD_Gameflow_Root`, `WBP_UI_CombatRoot`, `WBP_UI_Login_Screen_Default`).
+> The callers are **`Comp_MainMenu_Onboarding`** (ours) and **`Comp_MainMenu_VersionUpdate`**.
+>
+> [M] `Comp_MainMenu_VersionUpdate_C` has a **real live instance** (`0x269A190A340`, plus its
+> archetype). ⇒ **A second component that pushes prompts to the same stack is active at the lobby**,
+> and MOTD is pushed with `ReplacePrompt = false`, so it will **not** displace an existing active
+> prompt. That is a concrete, testable candidate for "queued behind another prompt".
+> ⚠ **Not established** — nothing yet shows `VersionUpdate` actually pushed anything this session.
+>
+> ⚠ Instrument note: searching live classes for `PromptStack` returns **0**, which is meaningless —
+> `PromptStack` is a **variable name**, not a class (the class is a CommonActivatable-style
+> container). Do not read that zero as "no prompt stack exists".
+>
 > [I] **Working reading:** `PushPrompt(..., false)` enqueues the prompt on the main-menu prompt host
 > and returns "shown", but the host never drains the queue at the lobby — so the MOTD sits built and
 > invisible. The second argument to `PushPrompt` (literal `false` in the bytecode) is the obvious
