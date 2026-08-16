@@ -730,14 +730,32 @@ def contingency(cnt, reach_bit, rootbit=30):
 # perfectly into two of them -- rooted 4915, of which 6 (0%) carry the flag; not rooted 17237, of
 # which 17234 (100%) do. So ROOTED and LIVE are the only normal states, ROOTED+MARK essentially does
 # not occur, and UNMARKED is what a garbage candidate looks like.
+#
+# ⚠⚠ S123: THE SENTENCE ABOVE IS A POOLING ARTIFACT AND ITS CONCLUSION IS WRONG. The counts are real
+# but "rooted" lumped together two populations with opposite behaviour:
+#   * ~39,275 DISREGARD-FOR-GC POOL objects (InternalIndex < GUObjectArray.ObjFirstGCIndex == 39295)
+#     -- never traversed, never marked, never freed. Excluded by INDEX, not by any flag. These are
+#     the "0%", and they are also why native UClasses look rooted-and-never-marked.
+#   * exactly 32 REAL AddToRoot() callers at high index -- ALWAYS marked, every pass. That is S110's
+#     "6 of 4915", and ROOTED+MARK is their normal state, not a rarity.
+# So "ROOTED and LIVE are the only normal states" is false, and a ROOTED+MARK reading is not a
+# warning sign. Use tools/re/rootset_census.py, which splits by index.
+# docs/fk27-successor-gc-rooting-settled.md
 REACH_BITS = 0b111      # measured: the flag rotates through bits 0, 1 and 2
 def obj_state(flags, reach_bit, rootbit=30):
     root = bool(flags & (1 << rootbit))
     mark = bool(flags & (1 << reach_bit)) if reach_bit is not None else False
     stale = bool(flags & REACH_BITS) and not mark     # marked in an EARLIER cycle, not re-marked in this one
-    if root and mark:     return "ROOTED+MARK"   # a CHIMERA -- 0.03% of the natural population. This is what
-                                                 # the shim's GcRoot poke produces: RootSet OR'd onto an
-                                                 # object that already carried a reachability value.
+    if root and mark:     return "ROOTED+MARK"   # ⚠ S123 CORRECTION: this is NOT a chimera and NOT
+                                                 # anomalous. It is the NORMAL, CONTINUOUS state of a
+                                                 # genuinely rooted NON-PERMANENT object -- measured on
+                                                 # all 32 real AddToRoot() callers, every GC pass. Real
+                                                 # roots seed the traversal and ARE marked by it.
+                                                 # The old "0.03% of the natural population" reading
+                                                 # pooled 39,275 disregard-POOL objects (index < 39295,
+                                                 # never traversed at all) with 32 real roots and
+                                                 # reported the pool's property as the root set's.
+                                                 # docs/fk27-successor-gc-rooting-settled.md
     if root and stale:    return "ROOTED+STALE"  # rooted, but still carrying a PREVIOUS cycle's mark and not
                                                  # re-marked in this one -- the traversal did not reach it
     if root:              return "ROOTED"        # normal root-set object: no low bit at all, never marked

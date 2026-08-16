@@ -32,6 +32,7 @@ that isn't true?"*
 >
 > | **FK-37** — S121 feature-toggle false-knowns (batched) | **S121** | ✅ **NEW + ALL SIX FALSIFIED.** The A-14 payload was inert for **~48 sessions** over one word (`ConfigKey` is `"enabled"`, not `"default"`), and fixing it turned on 12 gates, revealed **three endpoints the client had never been observed to call**, and produced a working LEADERBOARDS page. ★ The session also built the **readout** A-14 said it lacked, so "flag off" and "companion condition unmet" are now distinguishable. ⚠ Five of the six dead beliefs were **the session's own arithmetic and instruments**, not the game. `docs/s121-toggle-fix-confirmed.md` |
 > | **FK-38** — S121 late-session RE false-knowns (batched) | **S121** | ✅ **NEW + ALL FALSIFIED, and the batch is large on purpose.** The second half of S121 was continuous live RE (regions/latency, the crash family, the MOTD chain) and produced **~16** wrong-then-corrected claims, **nearly all my own analysis rather than beliefs about the game**. Every one fell to a readout. Detail below; the two that cost the most were **measuring the wrong prompt stack** and **a 22-byte packet gate against a 30-byte reality that left five tests green and the game broken**. `docs/s121-motd-trigger.md`, `docs/s121-menu-crash-family.md` |
+> | **FK-39** — S123 GC/rooting false-knowns (batched) | **S123** | ✅ **NEW + ALL FIVE FALSIFIED, zero launches.** FK-27's verdict is untouched; its *explanation* was wrong. "Root-set objects are excluded from marking" was a **pooling artifact** — ~39,275 disregard-for-GC **pool** objects (index < `ObjFirstGCIndex` = 39295, never traversed) mixed with **32 real `AddToRoot()` callers** that are marked every pass. `AddToRoot` inserts into a **`TSet<int32>` registry at `.data 0x99D3CA0`** and the flag is only a mirror, which is *why* the poke was inert. ⚠⚠ And `KGCROOT` was not harmless dead code — it **blocked its own fix** (`SetRootFlags` early-outs on `Flags & 0x4E100000`); default now 0, rollback hash-verified. `docs/fk27-successor-gc-rooting-settled.md` |
 >
 > **The S108 lesson, in one line:** all three of that session's tasks turned out to be about **the
 > project's own instruments**, not the game — and the session then committed three *fresh* instances
@@ -1577,6 +1578,30 @@ reachable no other way**, incl. character-movement code (`GetMaxJumpHeight`, `Ge
 **Severity: HIGH. Settled 2026-08-05 (S110) → `docs/s110-item-watch-gc-mechanism.md` §4d.**
 **Status: the belief is DEAD, and as of the phase-locked run it is dead in the STRONG form: the bit is INERT, not raced.**
 
+> ★★★★★ **MECHANISM SETTLED 2026-08-15 (S123) → `docs/fk27-successor-gc-rooting-settled.md`.**
+> FK-27 closed on **outcome** and never on **mechanism**; the mechanism is now known and it came with
+> a working rooting recipe. **The belief stays dead — nothing below reopens it.**
+> - **Two unrelated survival mechanisms were being conflated.** (a) The disregard-for-GC pool is
+>   excluded **by index**: `GUObjectArray` at RVA `0x9E38920` has `ObjFirstGCIndex = 39295`, and all
+>   three whole-array sweeps iterate `[ObjFirstGCIndex, NumElements)`. Nothing below 39,295 is ever
+>   traversed, marked or freed. (b) Real roots live in a **`TSet<int32>` registry at `.data
+>   0x99D3CA0`** that `AddToRoot` inserts into *before* it ORs bit 30; the gather `ParallelFor`s over
+>   the **indices** and the mark body has no bit-30 predicate. ⇒ **the flag is a mirror, and an
+>   `InterlockedOr` never enters the gather.** That is the inertness, mechanically.
+> - **[M] set-identity:** the registry's 32 members are exactly the 32 high-index bit-30 objects an
+>   independent 200,475-object flag census finds. Zero symmetric difference.
+> - **The recipe:** `AddToRoot` `.text +0x489F9B0`, `RemoveFromRoot` `+0x48B4BD0`,
+>   `void __fastcall(UObject*)`, fold multiplicity 1 — a plain direct call, no `.text` write.
+>   ⚠⚠ **the old poke POISONS it** (`SetRootFlags` early-outs on `Flags & 0x4E100000`), so `KGCROOT`
+>   now defaults to **0**. Untested in flight.
+> - **This entry's own §"Why weaker" row remains correct.** What is corrected is one sentence in
+>   S110 §4c ("root-set objects are *excluded* from marking") and the `item_watch.py` "CHIMERA"
+>   docstring: `RootSet + current mark` is the **normal** state of a genuinely rooted non-permanent
+>   object, not a 0.03% anomaly. S110 §3/§4d had already recorded rooted objects being re-marked, so
+>   the overturn is narrow.
+> - ⚠ **46th instrument-artifact instance, committed by the session that settled this:** reading a
+>   `TSparseArray`'s `ArrayNum` as its member count. `Num()` is never `ArrayNum`.
+
 | | |
 |---|---|
 | **Belief** | `tutorial_launch.cpp:1209` states it as the fix: *"put every UObject this shim loads … into UE's GC root set, the same thing `UObject::AddToRoot()` does — it sets `EInternalObjectFlags::RootSet` in the object's `FUObjectItem`."* Carried from S106 through S109. |
@@ -1603,6 +1628,7 @@ reachable no other way**, incl. character-movement code (`GetMaxJumpHeight`, `Ge
 | **Steers** | Any future reasoning about GC state, and it retires "we cannot see the GC" — the flip is a **free read-only GC clock**. Measured spacing at rest is **61.1 s**, matching the game's own `gc.TimeBetweenPurgingPendingKillObjects = 61.1`; the tutorial map load shows up as a purge of 125,472 objects. |
 | **Generalisation** | The same error shape as FK-14 and FK-18: a *partially* verified structure treated as fully verified. Two bits were checked; twenty-nine were assumed. **When a layout is confirmed, that confirms the offsets, not the enum.** |
 | **Cheapest experiment** | Already run — `tools/re/item_watch.py`, read-only, at the **menu**, no tutorial window needed. |
+| **★ S123 addendum — the rotation is now explained at CODE level** | `.data 0x99D36A0 / A4 / A8` hold the **Reachable / Unreachable / MaybeUnreachable values**, rotated O(1) per pass (`0x01258F70` at pass start, `0x012398C2` / `0x01239B76` at end) — the population is never rewritten, only the three globals are. Two cold images read `(2,4,1)` and `(1,2,4)`: applying the 3-cycle twice maps one onto the other exactly. Keep mask is `0x4E100000` = `RootSet\|AsyncLoading\|Async\|Native\|LoaderImport`. ⇒ FK-28's "reachability is a value, not a bit" was right, and this is the mechanism. **And stock enum numbering IS in force after all** — bit 24 `ClusterRoot` ⟺ `ClusterRootIndex < 0` at **100.000%** over 200,437 objects (0 FP, 0 FN), which upgrades bit 30 = `RootSet` from a name-guess to a measurement. `docs/fk27-successor-gc-rooting-settled.md` |
 
 ---
 
@@ -1924,6 +1950,35 @@ proxy; the struct had bound perfectly).
 ★ The one trend worth claiming: by the end, caveats were being written **before** the measurement
 rather than after — the last three claims each shipped with the control that would falsify them, and
 two were duly falsified.
+
+---
+
+### FK-39 — S123 GC/rooting false-knowns (batched)
+**Severity: HIGH (one of them silently blocked its own fix for ~17 sessions). Settled 2026-08-15
+(S123) → `docs/fk27-successor-gc-rooting-settled.md`.**
+**Status: all DEAD. FK-27's verdict is UNAFFECTED — these correct its *explanation*, not its outcome.**
+
+| # | Belief | Why it was believed | What is actually true [M] |
+|---|---|---|---|
+| **a** | **"Root-set objects are EXCLUDED from GC marking"** — `s110-item-watch-gc-mechanism.md` §4c, from a contingency table reading `4,915 rooted / 0% marked` | the table is real and was measured over 22,152 sampled objects | **A POOLING ARTIFACT.** That bucket mixed ~39,275 **disregard-for-GC pool** objects (index < `ObjFirstGCIndex` = 39295, never traversed at all — every sweep iterates `[ObjFirstGCIndex, NumElements)`) with exactly **32 real `AddToRoot()` callers**, which are marked **every pass**. S110's "6 of 4915" *is* those 32. **Non-circular proof:** 20 live pool objects that LACK bit 30 are also never marked and never collected — a flag-driven GC would have purged them |
+| **b** | **"`RootSet` + a current mark is a CHIMERA, 0.03% of the natural population"** — `item_watch.py:738`, and the instrument printed this label about the shim's own object | rarity in the pooled census | **It is the NORMAL, CONTINUOUS state of a genuinely rooted non-permanent object** (all 32, always). ⇒ the shim's poked object had the **correct flag word** the whole time, and the instrument's warning was backwards |
+| **c** | **"Setting the RootSet bit is what `AddToRoot` does"** — `tutorial_launch.cpp:1218`, carried S106→S122 | stock-UE semantics, reasoned about | `AddToRoot` **inserts the `InternalIndex` into a `TSet<int32>` registry at `.data 0x99D3CA0`** (under the lock at `.data 0x9E23BF0`) and *then* ORs bit 30. The gather (`0x1259020`) `ParallelFor`s over the **registry indices**; the mark body `0x123E3B0` has **no bit-30 predicate**. **The container is the input; the flag is a mirror.** [M] registry `Num()` = **32**, *set-identical* to the 32 high-index bit-30 objects (zero symmetric difference) |
+| **d** | ⚠⚠ **"`KGCROOT` is harmless dead code"** — implied by leaving it defaulted ON after S110 measured it inert | inert ⇒ assumed to be a no-op | **IT BLOCKS ITS OWN REPLACEMENT.** `SetRootFlags` (`0x129AC90`) early-outs on `if (Flags & 0x4E100000) skip the insert`, so any object the shim already OR'd looks "already a root" and a **correct** `AddToRoot` call silently skips `GRoots.Add`. Default flipped to **0** (S123); `play` `.text` `5151621d2154e454` → `9bc10a4552c596e1`, rollback `-Variant play-gcroot` **verified to reproduce the old hash exactly** |
+| **e** | **"`ObjFirstGCIndex` and friends were unreachable"** — never stated, but nobody had them in ~120 sessions | — | They sit **0x10 BELOW** the constant everything anchors on. `RVA_OBJOBJECTS = 0x9E38930` (in `tutorial_launch.cpp:23`, `item_watch.py:60` and ~20 shim sources) is `FUObjectArray + 0x10`, the *inner* `ObjObjects`. `FUObjectArray` is at **`0x9E38920`**. ⇒ **a correct-but-partial anchor hid an adjacent structure for the project's whole history** |
+
+**Generalisation, and it is the reusable part.** Three of these five are the same shape: **a category
+label applied to a set containing two mechanisms.** "Rooted" meant both "permanent" and "registered",
+and every statistic computed over it was a weighted average of opposite behaviours. ⇒ **before
+computing a rate over a labelled population, ask whether the label is one mechanism or two** — and
+split by an independent axis (here, `InternalIndex`) to find out.
+
+**Cheapest experiment:** already run, and it cost **zero launches** — read-only RPM against a menu
+process that was already up, plus offline disassembly. `tools/re/rootset_census.py`.
+
+⚠ **Three instrument-artifact instances were committed by this session itself** (`TSparseArray.
+ArrayNum` read as `Num()`; a derived boolean recorded instead of the raw flag word; a p-value against
+a refuted null) — tabulated as S123-a/b/c in `docs/method-rules.md`. The first was used to formally
+challenge a subagent's *correct* result.
 
 ---
 

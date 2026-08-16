@@ -1214,15 +1214,51 @@ static uintptr_t FindClassExact(const char* want){
 //   UE's GC: LoadMeshByPath goes through UKismetSystemLibrary::LoadAsset_Blocking, which returns a raw
 //   UObject* and holds no reference, and the result lives only in this DLL's plain C globals.
 //
-// FIX: put every UObject this shim loads (and, optionally, the component + anim instance it drives) into
-// UE's GC root set, the same thing UObject::AddToRoot() does — it sets EInternalObjectFlags::RootSet in
-// the object's FUObjectItem, which lives in GUObjectArray, NOT in the UObject.
+// ⛔⛔ THE "FIX" BELOW IS MEASURED INERT, AND IT IS WORSE THAN INERT — IT BLOCKS ITS OWN REPLACEMENT.
+// DEFAULT FLIPPED TO 0 (S123, 2026-08-15). Read docs/fk27-successor-gc-rooting-settled.md first.
+//
+// The original claim, kept so the correction is legible: "put every UObject this shim loads into UE's
+// GC root set, the same thing UObject::AddToRoot() does — it sets EInternalObjectFlags::RootSet in the
+// object's FUObjectItem, which lives in GUObjectArray, NOT in the UObject."
+//
+// The bit was RIGHT and the model was WRONG. UObject::AddToRoot does TWO things: (1) it inserts the
+// object's InternalIndex into a global TSet<int32> at .data 0x99D3CA0 under the critical section at
+// .data 0x9E23BF0, and only then (2) ORs 0x40000000 into FUObjectItem.Flags. The GC's root gather
+// (.text 0x1259020, "GC.MarkRootObjectsAsReachable") copies that TSet to a TArray<int32> and
+// ParallelFors over the INDICES; the mark body (0x123E3B0) has no bit-30 predicate at all.
+// ⇒ the container is the input and the flag is only bookkeeping, so an InterlockedOr of bit 30
+// writes the mirror and never enters the gather. That is FK-27's inertness, mechanically.
+// MEASURED live: the registry holds exactly 32 entries, set-identical to the 32 high-index bit-30
+// objects a full flag census finds. Separately, everything below GUObjectArray.ObjFirstGCIndex
+// (= 39295, at .data 0x9E38920) is never swept at all — which is why native UClasses looked "rooted
+// and never marked" and misled S109/S110 into this design.
+//
+// ⚠⚠ AND THE POKE POISONS THE REAL FIX: SetRootFlags (0x129AC90) early-outs on
+//     if (Flags & 0x4E100000) skip the insert
+// so an object this shim has already OR'd looks "already a root" and a subsequent CORRECT AddToRoot
+// call silently skips GRoots.Add and does nothing. Leaving KGCROOT on would make the proper fix
+// untestable. If you re-enable it for an A/B, call RemoveFromRoot (0x48B4BD0) before any AddToRoot.
+//
+// THE REAL RECIPE, offline-derived and live-verified but NOT YET FLOWN:
+//     AddToRoot      .text +0x489F9B0   void __fastcall(UObject*)   fold multiplicity 1
+//     RemoveFromRoot .text +0x48B4BD0   void __fastcall(UObject*)   fold multiplicity 1
+// A plain direct call — no .text write, no PI hook, no native-call primitive; it takes its own lock.
+// Receipt (pure RPM, verified reads 32): *(int32*)(base+0x99D3CA8) - *(int32*)(base+0x99D3CD4)
+// must move +1 per rooted object. Do NOT verify with IsRooted (0x48B2200) — it reads only the flag,
+// so it returns true for exactly the failure being diagnosed.
+//
+// WHAT ACTUALLY KEEPS THE ANIM ALIVE TODAY is KANIMREF (park the asset in a real UPROPERTY so the
+// traversal reaches it). That is not a workaround for a broken mechanism — it is the SAME mechanism
+// real roots use. It stays the default; nothing here changes it.
 //
 // The RootSet bit value is NOT hardcoded blind: GcResolveBit() MEASURES it live (see below) and REFUSES
 // to poke anything unless the measurement corroborates the compile-time constant. A wrong bit could set
 // Unreachable/Garbage and make things worse, so "refuse and log" is the failure mode, never "guess".
+// (That machinery was sound, and KGCROOTBIT was never wrong — bit 30 IS RootSet, confirmed four ways.
+//  It was aimed at the wrong question: the bit was never the thing the GC reads.)
 #ifndef KGCROOT
-#define KGCROOT 1            // -DKGCROOT=0 -> A/B: build with the guard OFF (reproduces the S106 crash)
+#define KGCROOT 0            // S123: DEFAULT OFF — measured inert AND it blocks a correct AddToRoot.
+                             // -DKGCROOT=1 restores the S106..S122 behaviour for A/B.
 #endif
 #ifndef KGCROOTCOMP
 #define KGCROOTCOMP 1        // also root the body SkeletalMeshComponent + its UAnimSingleNodeInstance
