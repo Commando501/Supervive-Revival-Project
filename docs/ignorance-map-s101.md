@@ -31,6 +31,7 @@ that isn't true?"*
 > | **FK-36** — S120 Hero Mastery / claim false-knowns (batched) | **S120** | ✅ **NEW + ALL SIX FALSIFIED.** Hero Mastery went from "unlooked-at" to **solved end to end, backend-only** (renders → unlocks → bars move → rewards offer → **the client AUTO-CLAIMS**). The six beliefs that had to die are below; the most expensive was **(c)** — a negative published as "controlled" that was contradicted by data already in hand. `docs/s120-hero-mastery.md` |
 >
 > | **FK-37** — S121 feature-toggle false-knowns (batched) | **S121** | ✅ **NEW + ALL SIX FALSIFIED.** The A-14 payload was inert for **~48 sessions** over one word (`ConfigKey` is `"enabled"`, not `"default"`), and fixing it turned on 12 gates, revealed **three endpoints the client had never been observed to call**, and produced a working LEADERBOARDS page. ★ The session also built the **readout** A-14 said it lacked, so "flag off" and "companion condition unmet" are now distinguishable. ⚠ Five of the six dead beliefs were **the session's own arithmetic and instruments**, not the game. `docs/s121-toggle-fix-confirmed.md` |
+> | **FK-38** — S121 late-session RE false-knowns (batched) | **S121** | ✅ **NEW + ALL FALSIFIED, and the batch is large on purpose.** The second half of S121 was continuous live RE (regions/latency, the crash family, the MOTD chain) and produced **~16** wrong-then-corrected claims, **nearly all my own analysis rather than beliefs about the game**. Every one fell to a readout. Detail below; the two that cost the most were **measuring the wrong prompt stack** and **a 22-byte packet gate against a 30-byte reality that left five tests green and the game broken**. `docs/s121-motd-trigger.md`, `docs/s121-menu-crash-family.md` |
 >
 > **The S108 lesson, in one line:** all three of that session's tasks turned out to be about **the
 > project's own instruments**, not the game — and the session then committed three *fresh* instances
@@ -44,7 +45,7 @@ that isn't true?"*
 > ★ S120's own contribution to the method: **a "fresh" reading of an uncontrolled field is still
 > uncontrolled.** Recency fixes staleness, not validity — demand a positive control for the FIELD,
 > not merely a recent sample of it (FK-36c).
-> **It stands at 54 as of S121**, which added six — **five of them the session's own counts,
+> **It stands at ~70 as of S121**, which added roughly sixteen more in its second half (FK-38) on top of the six — **five of them the session's own counts,
 > predictions and tooling**, and all six caught within the session. Two were *carried numbers* that
 > nobody re-derived (a served-key count of 17 that was never reconciled against the 21 entries
 > actually on the wire; a "33 keys remain" that was really 4, with 33 being the *never-serve* count
@@ -1866,6 +1867,63 @@ moving.
 at all, which is *why* one wrong word survived ~48 sessions. The new
 `TestEveryToggleCarriesTheEnabledSubKey` was confirmed to **fail on the reverted code**, naming every
 affected key, before it was trusted. A guard nobody has seen fail is not a guard.
+
+---
+
+### FK-38 — S121 late-session RE false-knowns (batched)
+
+The second half of S121 was continuous live RE. It produced **~16 wrong-then-corrected claims, and
+about fourteen of them were the analyst's own reasoning or tooling, not beliefs about the game.**
+All were caught in-session, most within minutes, every one by a readout rather than by more thought.
+
+**The two expensive ones**
+
+**(a) The wrong prompt stack.** Chasing why the MOTD prompt never displayed, I measured
+`MainMenu_NormalV2.PromptStack` (`WidgetList Num=0`) across several steps and built conclusions on
+it. **Two `PushPrompt` implementations exist**; the call actually routes RootV2 → (inherited)
+`BP_LokiHUDWidget_C` → **native `ULokiHUDLayout`** → `CommonActivatableWidgetStack_Prompts`, which
+holds the widget. ⇒ **I had the address of the true target object three commits before I dumped its
+properties.** Tracing call graphs substituted for dumping an object already in hand.
+
+**(b) A green test suite over a wrong spec.** The UDP echo responder gated on UE 5.4's stock 22-byte
+ping. **The shipping client sends 30.** Five tests passed — including one running the client's own
+validation — while every real ping was silently dropped, because the tests built the same 22-byte
+packet the gate expected. ⇒ **read the source for a protocol's SHAPE; let the wire tell you its
+SIZE.** Caught only by a dropped-datagram counter added "just in case".
+
+**The rest, compressed** — each was stated, then measured false:
+`motd`'s payload is wrong · `Try Show MOTD` is never called · the widget is not presented ·
+`PushPrompt` ran against a null stack · RootV2 does not implement `PushPrompt` (an asset-only
+`bpdump`; it inherits it) · `Try Start Onboarding Flow` is not the caller (too strong from a partial
+measurement) · the gated array is `Matches` (it is `MissionInfo.MissionData`) · `Slot == null` means
+not displayed (legitimate for a container child) · the fault page is unmapped (dump *coverage*, not
+mapping — the control refuted it) · zero measurers means the payload did not bind (a confounded
+proxy; the struct had bound perfectly).
+
+★★ **Two NEW failure modes this register had not recorded before:**
+
+1. **A correctly calibrated instrument aimed at the WRONG QUESTION.** The viewport probe was
+   validated to 2-of-5064 and still produced a false conclusion, because "not added directly to the
+   viewport" is not "not on screen" for a container child. **Calibration makes a wrong answer feel
+   earned** — arguably worse than an uncalibrated one.
+2. **OVER-correction.** After several retractions I began discounting evidence that was in fact
+   sound (doubting `Try_Show_MOTD_Widget`, which really was the live widget). Distrust that is
+   calibrated to one's recent error rate rather than to the evidence is its own bias.
+
+⚠ **And the repeat offenders, which is the uncomfortable part:**
+- **A stale constant eTag shipped on `/core-game/regions` ONE HOUR after fixing that exact bug class
+  on client-config and writing it up.** Both are content-derived now — the fix that removes the
+  failure mode instead of relying on memory.
+- **My own probes filtered out nulls and empty arrays TWICE**, making "empty" indistinguishable from
+  "absent" — absence-is-not-evidence, inside instruments written to defeat exactly that.
+- **A grep narrowed for speed** (`catalog/wbp/` only) silently narrowed the answer and missed both
+  `PushPrompt` callers; the full scan finishing in the background is the only reason it was caught.
+- **"Not in the asset I dumped" ⇒ "does not exist"** was warned about in one commit message and
+  committed one step later.
+
+★ The one trend worth claiming: by the end, caveats were being written **before** the measurement
+rather than after — the last three claims each shipped with the control that would falsify them, and
+two were duly falsified.
 
 ---
 
