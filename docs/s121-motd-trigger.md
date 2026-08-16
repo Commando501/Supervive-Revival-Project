@@ -1,4 +1,41 @@
-# S121 — the MOTD chain, traced ⇒ ⚠⚠ **HEADLINE RETRACTED: IT DOES FIRE**
+# S121 — the MOTD chain ⇒ ✅ **SOLVED: the widget is QUEUED IN THE PROMPT STACK, never activated**
+
+> ## ✅✅ FINAL ANSWER [M] — read the top of this file, then stop
+>
+> ```
+> WBP_UI_MainMenu_RootV2_C 0x269A2B3A300
+>   CommonActivatableWidgetStack_Prompts  +0x470 -> 0x26A17EB1F00 (CommonActivatableWidgetStack)
+>       Slot            = OverlaySlot          (the stack IS parented)
+>       WidgetList      Num = 1
+>         [0] 0x2692C618DF0  WBP_UI_Menus_MessageOfTheDay_C   <-- OUR MOTD WIDGET
+>       DisplayedWidget = NULL                 <-- ★ NEVER ACTIVATED
+> ```
+>
+> **The whole pipeline works and the widget reaches the right container.** Backend payload → all
+> five `Try Show MOTD` gates → the compound predicate at 4668 → `PushPrompt` → native
+> `ULokiHUDLayout` → **widget added to `CommonActivatableWidgetStack_Prompts`.** The single
+> remaining failure is that the stack's `DisplayedWidget` is NULL: it holds the entry and does not
+> activate it.
+>
+> ⇒ **Nothing here is a backend problem, and nothing more can be fixed from `ags`.** The MOTD
+> payload is correct and delivered. [I] the likely candidates are the stack never being activated at
+> the lobby, or the entry being deactivated immediately (`Try Show MOTD` binds
+> `On MOTD Deactivated`, and the ubergraph frame shows `Temp_bool_IsClosed_Variable = True`).
+>
+> ★ **This VINDICATES a reading I later doubted.** `CallFunc_Try_Show_MOTD_Widget = 0x2692C618DF0`
+> really is a live widget — it is `WidgetList[0]`. The later suspicion that it might be a template
+> (from its bare class-name object name) was **wrong**, and the doubt was itself an over-correction
+> after several retractions. ⚠ Over-correcting is also a failure mode: after being wrong repeatedly
+> I started discounting evidence that was in fact sound.
+>
+> ⚠ **The single most expensive mistake in this trace was measuring the WRONG STACK**
+> (`MainMenu_NormalV2.PromptStack`, Num=0) for several steps. Two `PushPrompt` implementations exist
+> and I followed the Blueprint one that this call never reaches. The right container was one
+> property dump away on the object I already had in hand.
+
+---
+
+# (superseded headline) the MOTD chain, traced ⇒ ⚠⚠ IT DOES FIRE
 
 > ## ⚠⚠⚠ READ THIS FIRST — THE TITLE AND §§1–5 BELOW ARE WRONG ABOUT THE CONCLUSION
 >
