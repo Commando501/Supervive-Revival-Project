@@ -83,6 +83,17 @@ The client has **no missions-list/progress endpoint** (missions are built client
 
 The menu is **broadly populated/alive**. What renders correctly now: nav, party slots, level/rank badges, Vive Points (`vp`=2004), Customization (local cosmetics + emote wheel + "0/331"), **Career→Stats** (authentic 0s), **Career→Ranked** (full Season-2 ladder, Bronze IV 0/200 RP), **Career→History** (empty = correct for new account), lobby/friends/voice.
 
+> ⚠⚠ **CORRECTION (S123, 2026-08-15) — THE THREE CAREER PARENTHETICALS ABOVE ARE FALSE, AND THIS
+> LINE IS THE HOME OF THE BELIEF FK-21 WAS OPENED AGAINST.** None of those panels was authentically
+> empty; all three were empty because **we served nothing**, and each renders the moment it is fed:
+> **Stats** S121 (`GET /player-stats/players/{id}` → MATCHES 12 / KILLS 40 / …), **Ranked** S122
+> (`GET /mmr/player-ratings/{id}/rank` → `GOLD I`, `1,850 RP`), **History** S123
+> (`GET /match-history/players/{id}` with a populated `Matches` → `VICTORY · Basic Training · 1/16`,
+> hero portrait, ALLY row, full expanded stat panel — screenshot-confirmed). All backend-only, no
+> shim. ⇒ **"authentic empty" was never measured here — it was inferred from "a new account has no
+> history", and this account is not new.** See `docs/ignorance-map-s101.md` FK-21 and
+> `server/internal/interactive/matchhistory.go`.
+
 **Confirmed NOT backend-fixable** (need IoStore `.pak`/`.ucas` extraction, separate workstream):
 - `<MISSING STRING TABLE ENTRY>`, "ITEM NAME", "TEXT BLOCK" placeholders = packed UI **string tables** failing to resolve (`LogStringTable: Failed to find ST_Cosmetics_Categories…`).
 - HUNTERS "ALL HUNTERS" grid, STORE offers, owned cosmetics, PASSES tier detail = all keyed off **packed item/hero SKUs**.

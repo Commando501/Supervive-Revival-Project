@@ -1,0 +1,27 @@
+﻿Auto-hook: store/roster (catalog_store_fix) + pick/refresh + pick-commit + customization. Missions render natively (no 
+shim). Use -NoHook (clean RE), -NoLoadout to trim, -WithMissionsShim to restore the retired missions_fix.
+Building community backend...
+Starting community backend (:8080 HTTP + :443 HTTPS)...
+Server up; cert chain generated.
+Backend serving HTTP (probe http://127.0.0.1:8080/revival/missions/progress -> 200).
+Appending Root CA to game cacert.pem...
+Hosts entries added:
+  127.0.0.1  accounts.projectloki.theorycraftgames.com
+  127.0.0.1  client-config-jx-prod.prodcluster.awsinfra.theorycraftgames.com
+bVerifyPeer override already present.
+  (Engine.ini set read-only)
+
+[crashdump] 2 pending crash report(s) found -- archiving before launch.
+             d5ac2037-1e6a-4f2d-b5d4-4a8e2e8c65e9.dmp  41,271,200 bytes  8/15/2026 8:06:34 PM
+             e8ad47c2-811e-4662-9893-c500041c5079.dmp  7,773,712 bytes  8/15/2026 4:09:23 PM
+[crashdump]   session log captured  315,320 bytes (authoritative; bundled copy is truncated)
+[crashdump]   verified d5ac2037-1e6a-4f2d-b5d4-4a8e2e8c65e9.dmp  sha256=8645E9D630E2DB25
+[crashdump]   verified e8ad47c2-811e-4662-9893-c500041c5079.dmp  sha256=F2A7B4354FFA6AAA
+[crashdump] archived to dumps\crashpad-20260815-201428  (2 verified)
+
+Crash-capture armed: dumps/crash-20260815-201428 (log: docs/crashwatch.out.log)
+  idle until the game crashes; then suspends it and dumps before it exits.
+Spawning inject watch-now to catch the game on launch...
+  DLL: G:\git\Supervive Revival Project\tools\sigbypass-mod\catalog_store_fix.dll
+  Secondary shims (pi8 + catalog_pick_fix + loadout_fix) will inject once the store/roster hook settles.
+Launching SUPERVIVE (PostAuth -> http://localhost:8080)...

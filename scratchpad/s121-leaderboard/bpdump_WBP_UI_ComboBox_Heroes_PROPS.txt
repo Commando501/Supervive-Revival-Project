@@ -1,0 +1,24 @@
+# Asset: Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/HeroComboBox/WBP_UI_ComboBox_Heroes.uasset
+# 8 exports total
+
+## [UFunction] Construct  (ExportType=Function)
+   (no properties)
+## [UFunction] ExecuteUbergraph_WBP_UI_ComboBox_Heroes  (ExportType=Function)
+   (no properties)
+## [UFunction] GetDisplayTextForSelectedOption  (ExportType=Function)
+   (no properties)
+## [UFunction] On Catalog Updated  (ExportType=Function)
+   (no properties)
+## [UFunction] OnInitialized  (ExportType=Function)
+   (no properties)
+## [UObject] Default__WBP_UI_ComboBox_Heroes_C  (ExportType=WBP_UI_ComboBox_Heroes_C)
+   - UberGraphFrame (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - bEnableAllHunters (BoolProperty) = True (BoolProperty)
+   - ItemWidgetClass (ClassProperty) = WidgetBlueprintGeneratedClass'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/HeroComboBox/WBP_UI_ComboBox_HeroItem.WBP_UI_ComboBox_HeroItem_C' (ClassProperty)
+
+## [UWidgetBlueprintGeneratedClass] WBP_UI_ComboBox_Heroes_C  (ExportType=WidgetBlueprintGeneratedClass)
+   - WidgetTree (ObjectProperty) = WidgetTree'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/HeroComboBox/WBP_UI_ComboBox_Heroes.WBP_UI_ComboBox_Heroes_C:WidgetTree' (ObjectProperty)
+   - UberGraphFunction (ObjectProperty) = Function'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/HeroComboBox/WBP_UI_ComboBox_Heroes.WBP_UI_ComboBox_Heroes_C:ExecuteUbergraph_WBP_UI_ComboBox_Heroes' (ObjectProperty)
+
+## [UObject] WidgetTree  (ExportType=WidgetTree)
+   (no properties)

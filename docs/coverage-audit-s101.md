@@ -150,6 +150,13 @@ The keystone technique is excellent and well-documented: hook `ProcessInternal`,
 
 **LIVE (24 of 44):** login/Steam auth, main-menu nav, party panel, avatar card + callsign (~1.5 s switching), ALL HUNTERS grid (25), hero pick → center refresh, hero 3D preview, STORE featured / supporter / bundles / skins / accessories, COSMETICS browser, CUSTOMIZATION skin switch + persistence, slot cosmetics + titles, MISSIONS page (4 tabs, real progress bars), missions backend engine, PASSES / Hunter's Journey 85-tier ladder, pass progress + match XP, Vive Points wallet, CAREER stats/ranked/history (authentic empties), client-profile "NEW" badges, Discord client connection, admin panel, string tables.
 
+> ⚠ **CORRECTION (S123, 2026-08-15):** *"CAREER stats/ranked/history (authentic empties)"* is
+> **false** — this is the audit's copy of the belief FK-21 was opened against (its **Belief** row
+> cites this list). The three panels were empty because the backend served nothing, not because the
+> account has no history; all three now render real data (Stats S121, Ranked S122, History S123),
+> backend-only. They belong in LIVE **as populated surfaces**, which strengthens rather than
+> weakens this count. See `docs/ignorance-map-s101.md` FK-21.
+
 **PARTIAL / DEFECTIVE (13):** store prices (`UNAVAILABLE` — cost comes from packed `CatalogEntry.GetOffers()`, a live probe proved backend `Costs` is inert); Theorycraft Coins (91 wallet keys tested, none moves it); hero-token counter (3 warnings/run, comes from battlepass claim state nothing populates); PASSES reward **claiming** (`TrackIDToClaimableRewards` is served as `{}`); seasonal pass tab (VM builds, tab never appears — driver unknown); region latency (`??? — ms`); emote/title/lobby-platform persistence (the HTTP readback route was **falsified**; `loadout_fix` replays only bundles/slots/chromas — emotes and titles have **no** application path); friends panel (permanently empty); PLAY tiles.
 
 **NEVER OPENED (7):** ARMORY, Leaderboard, News/Announcements, Event Hub, Referral, Capsules/RewardRoll, Top-Up modal.

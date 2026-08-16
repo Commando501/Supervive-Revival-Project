@@ -1,0 +1,47 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardScreen.uasset
+# UFunction:     Set Filters
+# FunctionFlags: FUNC_BlueprintCallable, FUNC_BlueprintEvent
+# Outer class:   WBP_UI_LeaderboardScreen_C
+# ScriptBytecode entries: 6
+# ChildProperties: 3
+# --- Parameters / locals (FField chain) ---
+#   [0] FStrProperty  ?
+#   [1] FStrProperty  ?
+#   [2] FStrProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_LetValueOnPersistentFrame
+  DestinationProperty: K2Node_CustomEvent_Hero
+  AssignmentExpression:
+    EX_LocalVariable
+      Variable: Hero
+      StatementIndex: 9
+  StatementIndex: 0
+[  1] EX_LetValueOnPersistentFrame
+  DestinationProperty: K2Node_CustomEvent_Stat
+  AssignmentExpression:
+    EX_LocalVariable
+      Variable: Stat
+      StatementIndex: 27
+  StatementIndex: 18
+[  2] EX_LetValueOnPersistentFrame
+  DestinationProperty: K2Node_CustomEvent_Queue
+  AssignmentExpression:
+    EX_LocalVariable
+      Variable: Queue
+      StatementIndex: 45
+  StatementIndex: 36
+[  3] EX_LocalFinalFunction
+  StackNode: ExecuteUbergraph_WBP_UI_LeaderboardScreen
+  Parameters: [1]
+    [  0] EX_IntConst
+      Value: 1479
+      StatementIndex: 63
+  StatementIndex: 54
+[  4] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 70
+  StatementIndex: 69
+[  5] EX_EndOfScript
+  StatementIndex: 71

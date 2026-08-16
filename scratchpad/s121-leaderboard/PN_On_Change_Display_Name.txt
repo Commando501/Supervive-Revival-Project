@@ -1,0 +1,22 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.uasset
+# UFunction:     On Change Display Name
+# FunctionFlags: FUNC_BlueprintCallable, FUNC_BlueprintEvent
+# Outer class:   WBP_UI_LeaderboardEntry_PlayerName_C
+# ScriptBytecode entries: 3
+# ChildProperties: 0
+
+# --- ScriptBytecode tree ---
+[  0] EX_LocalFinalFunction
+  StackNode: ExecuteUbergraph_WBP_UI_LeaderboardEntry_PlayerName
+  Parameters: [1]
+    [  0] EX_IntConst
+      Value: 1984
+      StatementIndex: 9
+  StatementIndex: 0
+[  1] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 16
+  StatementIndex: 15
+[  2] EX_EndOfScript
+  StatementIndex: 17

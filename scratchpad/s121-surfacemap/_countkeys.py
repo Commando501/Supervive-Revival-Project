@@ -1,0 +1,10 @@
+import re
+src=open('server/internal/loki/loki.go',encoding='utf-8').read()
+m=re.search(r'AGS_UI_TOGGLES.*?for _, k := range \[\]string\{(.*?)\n\t\t\} \{', src, re.S)
+keys=re.findall(r'"([^"]*)"', m.group(1))
+print('UNIT: keys in the AGS_UI_TOGGLES loop =', len(keys))
+for i,k in enumerate(keys,1): print(f'{i:3} {k!r}')
+m2=re.search(r'featureToggles := map\[string\]any\{(.*?)\n\t\}', src, re.S)
+base=re.findall(r'"([^"]*)":', m2.group(1))
+print('base map keys =', len(base), base)
+print('TOTAL map entries served =', len(keys)+len(base))

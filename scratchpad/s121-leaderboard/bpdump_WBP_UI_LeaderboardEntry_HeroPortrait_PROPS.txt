@@ -1,0 +1,37 @@
+# Asset: Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_HeroPortrait.uasset
+# 9 exports total
+
+## [UFunction] ExecuteUbergraph_WBP_UI_LeaderboardEntry_HeroPortrait  (ExportType=Function)
+   (no properties)
+## [UFunction] OnLoaded_883DD344490D254988662F9479724FDD  (ExportType=Function)
+   (no properties)
+## [UFunction] PreConstruct  (ExportType=Function)
+   (no properties)
+## [UObject] Image_HeroPortrait  (ExportType=Image)
+   - Brush (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - Slot (ObjectProperty) = SizeBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_HeroPortrait.WBP_UI_LeaderboardEntry_HeroPortrait_C:WidgetTree.SizeBox_0.SizeBoxSlot_0' (ObjectProperty)
+
+## [UObject] SizeBox_0  (ExportType=SizeBox)
+   - WidthOverride (FloatProperty) = 48 (FloatProperty)
+   - HeightOverride (FloatProperty) = 48 (FloatProperty)
+   - bOverride_WidthOverride (BoolProperty) = True (BoolProperty)
+   - bOverride_HeightOverride (BoolProperty) = True (BoolProperty)
+   - Slots (ArrayProperty):
+       [0] SizeBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_HeroPortrait.WBP_UI_LeaderboardEntry_HeroPortrait_C:WidgetTree.SizeBox_0.SizeBoxSlot_0' (ObjectProperty)
+
+## [UObject] SizeBoxSlot_0  (ExportType=SizeBoxSlot)
+   - Parent (ObjectProperty) = SizeBox'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_HeroPortrait.WBP_UI_LeaderboardEntry_HeroPortrait_C:WidgetTree.SizeBox_0' (ObjectProperty)
+   - Content (ObjectProperty) = Image'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_HeroPortrait.WBP_UI_LeaderboardEntry_HeroPortrait_C:WidgetTree.Image_HeroPortrait' (ObjectProperty)
+
+## [UObject] Default__WBP_UI_LeaderboardEntry_HeroPortrait_C  (ExportType=WBP_UI_LeaderboardEntry_HeroPortrait_C)
+   - UberGraphFrame (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - bHasScriptImplementedTick (BoolProperty) = False (BoolProperty)
+   - bHasScriptImplementedPaint (BoolProperty) = False (BoolProperty)
+
+## [UWidgetBlueprintGeneratedClass] WBP_UI_LeaderboardEntry_HeroPortrait_C  (ExportType=WidgetBlueprintGeneratedClass)
+   - WidgetTree (ObjectProperty) = WidgetTree'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_HeroPortrait.WBP_UI_LeaderboardEntry_HeroPortrait_C:WidgetTree' (ObjectProperty)
+   - UberGraphFunction (ObjectProperty) = Function'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_HeroPortrait.WBP_UI_LeaderboardEntry_HeroPortrait_C:ExecuteUbergraph_WBP_UI_LeaderboardEntry_HeroPortrait' (ObjectProperty)
+
+## [UObject] WidgetTree  (ExportType=WidgetTree)
+   - RootWidget (ObjectProperty) = SizeBox'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_HeroPortrait.WBP_UI_LeaderboardEntry_HeroPortrait_C:WidgetTree.SizeBox_0' (ObjectProperty)
+

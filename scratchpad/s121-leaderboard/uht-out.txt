@@ -1,0 +1,79 @@
+########## CALIBRATION (known-measured offsets) ##########
+=== PlayerProgression   (1 FStructParams candidates)
+   params@09c421d0  name@08ad7a38  NumProperties=13  SizeOf=0x178  AlignOf=8  StructFlags=0x45
+      +0x000  ID                         Str          dim=1 flags=0x0010000000000014 gen=0x00000015 @08ad5a50
+      +0x010  Version                    Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad5a88
+      +0x001  Matches                    Struct       dim=1 flags=0x0000000000000000 gen=0x00000019 @08ad5ac0
+      +0x000  Matches_Key                Str          dim=1 flags=0x0000000000000000 gen=0x00000015 @08ad5b00
+      +0x018  Matches                    Map          dim=1 flags=0x0010000000000004 gen=0x00000017 @08ad5b38
+      +0x068  MissionInfo                Struct       dim=1 flags=0x0010000000000004 gen=0x00000019 @08ad5b70
+      +0x0e8  AccountPass                Struct       dim=1 flags=0x0010000000000014 gen=0x00000019 @08ad5bb0
+      +0x000  HeroMastery                Struct       dim=1 flags=0x0000000000000000 gen=0x00000019 @08ad5bf0
+      +0x148  HeroMastery                Array        dim=1 flags=0x0010000000000004 gen=0x00000016 @08ad5c30
+      +0x000  LoginReward                Struct       dim=1 flags=0x0000000000000000 gen=0x00000019 @08ad5c70
+      +0x158  LoginReward                Array        dim=1 flags=0x0010000000000004 gen=0x00000016 @08ad5cb0
+      +0x000  EventProgression           Struct       dim=1 flags=0x0000000000000000 gen=0x00000019 @08ad5cf0
+      +0x168  EventProgression           Array        dim=1 flags=0x0010000000000004 gen=0x00000016 @08ad5d30
+   >>> CALIBRATION PASS
+=== HeroMasteryProgress   (1 FStructParams candidates)
+   params@09c42128  name@08ad5598  NumProperties=1  SizeOf=0x70  AlignOf=8  StructFlags=0x45
+      +0x060  HeroId                     Struct       dim=1 flags=0x0010000000000004 gen=0x00000019 @08ad54a0
+   >>> CALIBRATION PASS
+=== ProgressionTrackLevel   (1 FStructParams candidates)
+   params@09c420f0  name@08ad5460  NumProperties=6  SizeOf=0x60  AlignOf=8  StructFlags=0x45
+      +0x004  Level                      Int          dim=1 flags=0x0010000000000004 gen=0x00000003 @08ad51e8
+      +0x008  XP                         Int          dim=1 flags=0x0010000000000004 gen=0x00000003 @08ad5220
+      +0x001  Cleared                    0x4c         dim=1 flags=0x0010000000000004 gen=0x0000004c @08ad5260
+      +0x001  UnclaimedRewards           Struct       dim=1 flags=0x0000000000000000 gen=0x00000019 @08ad52a0
+      +0x000  UnclaimedRewards_Key       Int          dim=1 flags=0x0000000000000000 gen=0x00000003 @08ad52e0
+      +0x010  UnclaimedRewards           Map          dim=1 flags=0x0010000000000004 gen=0x00000017 @08ad5318
+   >>> CALIBRATION FAIL  [('Cleared', '0xc', '0x1')]
+
+########## TARGETS ##########
+=== LokiPlayerStatsLeaderboard   (1 FStructParams candidates)
+   params@09c41600  name@08ad89d8  NumProperties=9  SizeOf=0x60  AlignOf=8  StructFlags=0x45
+      +0x000  Period                     Str          dim=1 flags=0x0010000000000014 gen=0x00000015 @08ad8488
+      +0x010  StatCode                   Str          dim=1 flags=0x0010000000000014 gen=0x00000015 @08ad84c0
+      +0x020  HeroName                   Name         dim=1 flags=0x0010000000000014 gen=0x00000014 @08ad84f8
+      +0x028  QueueID                    Str          dim=1 flags=0x0010000000000014 gen=0x00000015 @08ad8530
+      +0x000  Entries                    Struct       dim=1 flags=0x0000000000000000 gen=0x00000019 @08ad8570
+      +0x038  Entries                    Array        dim=1 flags=0x0010000000000014 gen=0x00000016 @08ad85b0
+      +0x048  Start                      Int64        dim=1 flags=0x0010000000000014 gen=0x00000004 @08ad85e8
+      +0x050  End                        Int64        dim=1 flags=0x0010000000000014 gen=0x00000004 @08ad8620
+      +0x058  ExpirationTimeSeconds      Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad8658
+=== LokiPlayerStatsLeaderboardEntry   (1 FStructParams candidates)
+   params@09c415c8  name@08ad8430  NumProperties=7  SizeOf=0x70  AlignOf=8  StructFlags=0x45
+      +0x000  PlayerID                   Str          dim=1 flags=0x0010000000000014 gen=0x00000015 @08ad8130
+      +0x010  Rank                       Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad8168
+      +0x014  Value                      Float        dim=1 flags=0x0010000000000014 gen=0x0000000a @08ad81a0
+      +0x018  HeroName                   Name         dim=1 flags=0x0010000000000014 gen=0x00000014 @08ad81d8
+      +0x001  HeroCounts                 Int          dim=1 flags=0x0000000000000000 gen=0x00000003 @08ad8210
+      +0x000  HeroCounts_Key             Name         dim=1 flags=0x0000000000000000 gen=0x00000014 @08ad8248
+      +0x020  HeroCounts                 Map          dim=1 flags=0x0010000000000014 gen=0x00000017 @08ad8280
+=== Leaderboard   (1 FStructParams candidates)
+   params@09c377c8  name@08ab1c00  NumProperties=7  SizeOf=0x68  AlignOf=8  StructFlags=0x45
+      +0x000  Start                      Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08aae290
+      +0x004  End                        Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08aae2c8
+      +0x008  QueueID                    Str          dim=1 flags=0x0010000000000014 gen=0x00000015 @08aae300
+      +0x018  Role                       Str          dim=1 flags=0x0010000000000014 gen=0x00000015 @08aae338
+      +0x000  Entries                    Struct       dim=1 flags=0x0000000000000000 gen=0x00000019 @08aae370
+      +0x028  Entries                    Array        dim=1 flags=0x0010000000000014 gen=0x00000016 @08aae3b0
+      +0x038  SelfEntry                  Struct       dim=1 flags=0x0010000000000014 gen=0x00000019 @08aae3f0
+=== LeaderboardEntry   (1 FStructParams candidates)
+   params@09c37790  name@08aae260  NumProperties=7  SizeOf=0x30  AlignOf=8  StructFlags=0x45
+      +0x000  PlayerID                   Str          dim=1 flags=0x0010000000000014 gen=0x00000015 @08ab4878
+      +0x000  UnderlyingType             Byte         dim=1 flags=0x0000000000000000 gen=0x00000000 @08ab48b0
+      +0x010  Rank                       Enum         dim=1 flags=0x0010000000000014 gen=0x0000001e @08ab48f0
+      +0x014  Rating                     Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ab4930
+      +0x018  Placement                  Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ab4968
+      +0x01c  Percentile                 Float        dim=1 flags=0x0010000000000014 gen=0x0000000a @08ab49a0
+      +0x020  AvatarID                   Struct       dim=1 flags=0x0010000000000014 gen=0x00000019 @08ab49e0
+=== PlayerStats   (1 FStructParams candidates)
+   params@09c41590  name@08a35d70  NumProperties=5  SizeOf=0x68  AlignOf=8  StructFlags=0x45
+      +0x000  ID                         Str          dim=1 flags=0x0010000000000014 gen=0x00000015 @08ad7d98
+      +0x010  Version                    Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad7dd0
+      +0x001  StatsByQueue               Struct       dim=1 flags=0x0000000000000000 gen=0x00000019 @08ad7e10
+      +0x000  StatsByQueue_Key           Str          dim=1 flags=0x0000000000000000 gen=0x00000015 @08ad7e50
+      +0x018  StatsByQueue               Map          dim=1 flags=0x0010000000000014 gen=0x00000017 @08ad7e88
+
+CALIBRATION SUMMARY: PlayerProgression=True  HeroMasteryProgress=True
