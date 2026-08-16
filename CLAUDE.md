@@ -841,9 +841,13 @@ BACKEND — no shim, no injection, no `.text` write.
   ⚠ `SelfEntry` is an **object**, not an array. `AvatarID` is an `FPrimaryAssetId` — **omitted**
   rather than guessed; omitting a field is always safe, an unresolvable id is not.
   Knob: `AGS_MMR_LEADERBOARD=0`.
-- ⚠ **`GET /player-stats/players/{id}` is implemented but NOT confirmed live** — it is a
-  **login-time** fetch and an admin socket drop does **not** trigger a refetch, so it needs a
-  relaunch. `FPlayerStats{ID, Version int32, StatsByQueue TMap}` → `FPlayerQueueStats{ID,
+- ★★ **`GET /player-stats/players/{id}` — FETCHED AND ACCEPTED on a cold boot (S121)** [M]:
+  requested by `Loki/UE5-CL-0` at login with **0** `LogJson Unable`, **0** `Deserialization
+  failure` and **0** `Invalid response received` (that last one means "a required top-level field
+  is absent", so a zero is a real statement about our shape). ⚠ **Accepted ≠ rendered** — the
+  CAREER → STATS surface has not been eyeballed, so treat rendering as unconfirmed.
+  It is a **login-time** fetch and an admin socket drop does **not** trigger a refetch, so
+  iterating on it needs a relaunch. `FPlayerStats{ID, Version int32, StatsByQueue TMap}` → `FPlayerQueueStats{ID,
   StatsByHero TMap}` → `FPlayerHeroStats` (22 int32s + `Placements TMap<int32,int32>`, SizeOf
   0xa8, names [M] from the UHT oracle). **All three maps are JSON OBJECTS**; `Placements` needs
   int-parsable STRING keys (the S120 `UnclaimedRewards` shape).
