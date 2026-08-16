@@ -271,11 +271,90 @@ stops being a constant in the same edit — not in a follow-up.**
 ⚠ **BLAST RADIUS, unretired:** this array also feeds the PLAY screen's activity picker, and
 `IsRanked` may gate matchmaking behaviour rather than only a label. `AGS_RANKED_QUEUES` therefore
 defaults **empty** (byte-identical to pre-S122) and is opt-in.
-★ **A live lead:** `queueIDs` was trimmed to four by an **S60 diagnostic** because level-gated queues
-broke `CanControlQueue` at account level 0 — and that comment's own stated fix ("serve a high account
-level") has since shipped (S120 serves `AccountPass.Level = 10`). The full shipped vocabulary is
-[M] recorded in `interactive.go:1300`: `default deathmatch practice dropin customgame bots
-tutorialNew training armorydeathmath tournament`. **The trim may now be obsolete — untested.**
+★ **A live lead:** `queueIDs` was trimmed to four by an **S60 diagnostic**. Followed up in §10.
+
+---
+
+## 10. ★★★★★ The S60 queue trim is RETIRED — and the workaround was hiding the real defect
+
+**Asked:** "is the queue trim obsolete now?" **Answer: yes, but removing it alone was not enough**,
+and the reason is the most reusable thing in this document.
+
+### The trim's stated mechanism does not exist [M]
+
+    "CanControlQueue loops over the current queues calling GetLevelGameFeatureUnlocked; with the
+     served account level = 0, any level-gated queue fails that loop -> every activity click errors
+     'Unable to modify activity'."
+
+From the shipped bytecode (`bpdump_CanControlQueue.txt`, statements 181-185):
+`GetLevelGameFeatureUnlocked` is called **exactly once**, with a **hardcoded**
+`PrimaryAssetId{GameFeature, "Ranked"}`, behind `EX_PopExecutionFlowIfNot(Not(bIsRankedEligible))`,
+and only to format the "you need level N" Text. **There is no loop and no per-queue feature lookup.**
+
+⚠ **And the other half of the premise was mine and also false.** I wrote that the trim's precondition
+was gone because "S120 serves `AccountPass.Level = 10`". [M] The live server serves **Level 0**.
+S120 *measured* that serving 10 removed the mastery lock; it never became the default (it comes from
+persisted per-player state). ⇒ **Read a remembered measurement as a measurement, not as a default.
+Check the wire.**
+
+### THREE separate causes wore one symptom
+
+| symptom | cause | fix |
+|---|---|---|
+| only 4 tiles | the S60 trim | full 10 restored; `UPartyModel.Queues` **4 → 10** [M] |
+| selection snapped back to BASIC TRAINING | **`POST setTargetQueues` had no handler** | implemented |
+| ARENA `LEVEL 13 🔒` | `AccountPass.Level = 0` | identified, two levers, neither pulled |
+| BASIC TRAINING pre-selected | onboarding: `Get_Number_of_Games_Played = 0` | not a bug |
+
+### ★★★★★ THE WORKAROUND WAS HIDING THE DEFECT THAT MADE IT LOOK NECESSARY
+
+`POST /party/parties/{p}/setTargetQueues {"queueIds":["deathmatch"]}` fell to the `/` catch-all, so
+the next `/party` poll re-served the old `targetQueueId` and the selection reverted — the observed
+grey/un-grey snap-back. **Under the trim this was invisible: with one selectable activity there was
+nothing to switch to.** So S60 saw "activities don't work with the full list", trimmed the list, and
+the trim removed the *evidence* rather than the cause.
+
+⇒ ★ **When a workaround is in place, the bug it hides cannot be observed — which makes the
+workaround look correct forever. Removing it is how you find out.** Operator-confirmed after the fix:
+*"it will select that correctly with the border showing, and it keeps whatever i last selected."*
+
+### ⚠⚠ THE SWEEP METHOD'S BLIND SPOT, named by its own miss
+
+§1's sweep reported **"56 client routes, 8 unserved"** — and `setTargetQueues` was **not among them**,
+because nobody clicked an activity tile during that 74-minute capture. A capture-diff enumerates the
+endpoints the client *happened to exercise*, not the ones it *can call*.
+⇒ **A passive capture-diff is a LOWER BOUND on unserved surface, never a map.** Drive the UI through
+the interactions you care about, then re-run the diff.
+
+### ★★★★★ A THIRD CATEGORY OF FEATURE-TOGGLE KEY: dynamically constructed
+
+Tracing the ARENA lock found a toggle key family that **no static census could have found**
+(`bpdump_IsQueueIDPremadeOrOverQueueLevel.txt`, statements 6-11):
+
+    [6]  Concat_StrStr("queue.restrictions.", QueueID)   -> FeatureKey
+    [7]  Temp_string_Variable = "Level"                  -> ConfigKey
+    [9]  GetFeatureToggle(key, out bHasToggle, bEnabled, out FeatureToggle)
+    [10] Map_Find(FeatureToggle.Config, "Level", out Value)
+    [11] Conv_StringToInt(Value)  -> [12] SelectInt(parsed, fallback)
+
+⇒ **`featureToggles["queue.restrictions.<queueId>"].Config["Level"] = "<int>"`** sets a queue's
+required level from the backend. ⚠ **[S] — measured from bytecode, NOT flown.**
+⚠ `FFeatureToggle.Config` is `TMap<FString,FString>`, whose `Map_Find` is case-**sensitive**, so
+`"Level"` must be exact. The lowercase `level` seen nearby is the format-arg name in ST_Parties'
+`"Requires Hunter's Journey level {level}"` — a different role, not a case ambiguity.
+⚠⚠ **S121 declared the toggle vocabulary closed "with no remainder" at 50 declarative + 10 bytecode
+keys. It is not closed.** Keys built at runtime by string concatenation are invisible to both
+censuses, and there may be other parameterized families. **The vocabulary is open again.**
+
+### Unrelated but now measured: the BASIC TRAINING pre-selection is onboarding, not a stuck queue
+
+[M] live on `Comp_MainMenu_Onboarding` (has-run 59): `IsMatchHistoryLoaded = True`,
+`Get_Number_of_Games_Played = **0**`, `Should_Launch_Tutorial_Match_bPlayMatch = **True**`. The
+client recommends the first tutorial module because we report zero games played — correct behaviour,
+not a defect. ★ The proof it is not the queue selection: on opening the page the client POSTs
+`{"queueIds":["default"]}` (= BREACH) while the UI highlights BASIC TRAINING. Two different things.
+Exiting onboarding needs a non-empty `FMatchHistory.Matches`, which FK-17 deliberately avoided
+because `FMatchHistoryEntry` is 15 fields and a wrong-typed matched key sinks the document.
 
 ## 8. Knobs
 

@@ -157,6 +157,11 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// the (local) tutorial match, and echo the party as a clean success body.
 	mux.HandleFunc("POST /party/parties/{partyId}/startSoloMode", s.handleStartSoloMode)
 
+	// The activity-tile selection call. Was landing on the "/" catch-all, so every tile except the
+	// already-selected one snapped back — see handleSetTargetQueues for the wire evidence and for
+	// the blind spot this exposes in the capture-diff sweep.
+	mux.HandleFunc("POST /party/parties/{partyId}/setTargetQueues", s.handleSetTargetQueues)
+
 	// ---- Party: matchmaking (available queues â€” unlocks the ActivityPicker tiles) ----
 	// The play menu is WBP_ActivityPickerScreen; its InitializeQueues builds each activity
 	// tile ONLY if the tile's queue id is present in PartyModel.GetQueues() (traced from
@@ -550,7 +555,10 @@ func (s *Service) handleMatchHistory(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"ID":      id,
 		"Version": MatchHistoryVersion(id),
-		"Matches": []any{},
+		// S123: no longer unconditionally empty. matchhistory.go builds a synthetic row when
+		// AGS_MATCH_HISTORY is set — the FK-21 test. Default (unset) still returns [], so the
+		// pre-S123 payload is byte-identical and this comment block's reasoning still holds.
+		"Matches": matchHistoryMatches(id),
 	})
 }
 
@@ -559,7 +567,11 @@ func (s *Service) handleMatchHistory(w http.ResponseWriter, r *http.Request) {
 func MatchHistoryVersion(id string) int64 {
 	// Namespaced key: progressionVersionFor is keyed by id, so "mh:"+id gives this
 	// resource its own independent counter without a second map.
-	return progressionVersionFor("mh:"+id, "mh1-empty")
+	// S123: the tag is now MODE-DERIVED, so switching AGS_MATCH_HISTORY advances the Version.
+	// Serving a changed document under an unchanged version is the silent-staleness family that has
+	// now bitten this project four times (FPlayerRank's gate, client-config, regions, matchmaking).
+	// matchHistoryPayloadTag() returns the original "mh1-empty" literal when the knob is off.
+	return progressionVersionFor("mh:"+id, matchHistoryPayloadTag())
 }
 
 // missionInfo builds FPlayerProgression.MissionInfo — the native mission payload.
@@ -1296,20 +1308,119 @@ func (s *Service) handleStartSoloMode(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
 }
 
+// handleSetTargetQueues answers POST /party/parties/{partyId}/setTargetQueues with body
+// {"queueIds":["<id>"]} — THE ACTIVITY-TILE SELECTION CALL (S122, 2026-08-15).
+//
+// [M] THE SYMPTOM IT FIXES: clicking any activity tile made the START button grey out and then
+// un-grey, with the selection snapping back to BASIC TRAINING; only BASIC TRAINING could hold the
+// selected-border visual. Every other tile — including UNGATED tutorial tiles like TRAVERSAL
+// CHALLENGE — behaved that way.
+//
+// [M] THE CAUSE, straight off the wire (docs/capture-s122e.log, User-Agent Loki/UE5-CL-0):
+//
+//	POST /party/parties/party-<id>/setTargetQueues   {"queueIds":["default"]}      <- BREACH
+//	POST /party/parties/party-<id>/setTargetQueues   {"queueIds":["deathmatch"]}   <- ARENA
+//	POST /party/parties/party-<id>/setTargetQueues   {"queueIds":["training"]}     <- a tutorial
+//
+// There was NO handler, so it fell to main.go's "/" catch-all and returned 200 {} — not a party
+// document. The client's next /party poll then re-read buildSoloParty's UNCHANGED targetQueueId and
+// the selection reverted. The grey/un-grey is exactly that round trip: optimistic local change,
+// then the authoritative poll overwriting it.
+//
+// ⇒ The fix is to PERSIST the choice and echo the updated party, which is the same shape
+// handleSetPartyMember and handleStartSoloMode already use.
+//
+// ★ `store.update` bumps `partyVer`, which matters: `UPartyModel::SetParty` gates the whole party
+// document on a strict monotonic `FParty.Version` (`cmp [PartyModel+0x568]; jge bail`, S85). A
+// persisted change served under a non-advancing version would be accepted by us and DISCARDED by
+// the client — the same class of silent staleness as FPlayerRank.Version (playerrank.go) and the
+// client-config/regions eTags. Reusing update() means it cannot be forgotten here.
+//
+// ⚠⚠ THIS ENDPOINT IS A CORRECTION TO THE S122 UNSERVED-ROUTE SWEEP, AND NAMES ITS BLIND SPOT.
+// That sweep parsed a 74-minute capture and reported "56 client routes, 8 unserved" — and this was
+// not among them, because **nobody clicked an activity tile during that session**. The method
+// enumerates the endpoints the client HAPPENED TO EXERCISE, not the endpoints it can call.
+// ⇒ **A capture-diff is a lower bound on unserved surface, never a complete map.** Drive the UI
+// through the interactions you care about first, then re-run the diff. Interaction-triggered
+// endpoints are invisible to a passive capture no matter how long it runs.
+//
+// ⚠ We store ONE queue (playerState.SelectedQueueID) because this backend only ever serves a solo
+// party; `FParty` carries both `TargetQueueID` (scalar) and `TargetQueueIDs` (array) and
+// buildSoloParty serves both from that single value. A real multi-queue selection would need the
+// array to be stored whole.
+// ⚠ The requested id is NOT validated against activeQueueIDs(): the client can only offer what we
+// advertised, and rejecting an unexpected id would fail in exactly the silent way this handler
+// exists to remove.
+func (s *Service) handleSetTargetQueues(w http.ResponseWriter, r *http.Request) {
+	partyID := r.PathValue("partyId")
+	id := strings.TrimPrefix(partyID, "party-")
+	if id == partyID { // not our prefix — fall back to the JWT subject
+		if sub := subjectFromBearer(r.Header.Get("Authorization")); sub != "" {
+			id = sub
+		}
+	}
+	var body struct {
+		QueueIDs []string `json:"queueIds"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+	if len(body.QueueIDs) > 0 && body.QueueIDs[0] != "" {
+		q := body.QueueIDs[0]
+		log.Printf("interactive: setTargetQueues player=%s queue=%q (was %q)", id, q, s.selectedQueue(id))
+		s.store.update(id, func(st *playerState) { st.SelectedQueueID = q })
+	}
+	display := displayNameFromBearer(r.Header.Get("Authorization"))
+	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
+}
+
 // queueIDs is the set of matchmaking queue ids we advertise to the client. The full known
 // set (from WBP_ActivityPickerScreen.InitializeQueues' string constants) is:
 //
 //	default deathmatch practice dropin customgame bots tutorialNew training
 //	armorydeathmath tournament
 //
-// DIAGNOSTIC TRIM (S60): Comp_MainMenu_QueueController.CanControlQueue loops over the current
-// queues calling GetLevelGameFeatureUnlocked; with the served account level = 0, any level-gated
-// queue (tournament/deathmatch/ranked) fails that loop -> CanControlQueue false -> every activity
-// click errors "Unable to modify activity". Trim to the new-player / level-0 set (tutorials +
-// practice + co-op) to test whether removing gated queues clears the modify block. If it does,
-// the real fix is serving a high account level (unlocks all features) so the full set can return.
+// ★★ THE S60 DIAGNOSTIC TRIM IS RETIRED (S122, 2026-08-15). The full set is served again.
+//
+// The trim was: `{"tutorialNew", "training", "practice", "bots"}`, justified as —
+//
+//	"CanControlQueue loops over the current queues calling GetLevelGameFeatureUnlocked; with the
+//	 served account level = 0, any level-gated queue fails that loop -> CanControlQueue false ->
+//	 every activity click errors 'Unable to modify activity'."
+//
+// ⚠⚠ THAT MECHANISM DOES NOT EXIST. [M] from the shipped bytecode
+// (tools/extractor/out/bpdump_CanControlQueue.txt, statements 181-185): GetLevelGameFeatureUnlocked
+// is called EXACTLY ONCE, with a HARDCODED `PrimaryAssetId{GameFeature, "Ranked"}`, behind
+// `EX_PopExecutionFlowIfNot(Not(PartyModel->bIsRankedEligible))`, and only to format the
+// "you need level N" Text. There is no loop over queues and no per-queue feature lookup.
+//
+// [M] FLOWN on a live client: all ten advertised, `UPartyModel.Queues` went **4 -> 10**
+// (`Members` unchanged at 1 as the control), zero `Unable to import` / `Deserialization failure` /
+// Fatal. The tiles appear and hold their selection.
+//
+// ⚠⚠ BUT REMOVING THE TRIM ALONE WAS NOT SUFFICIENT, AND THAT IS THE INTERESTING PART.
+// With ten queues the real defect finally became visible: clicking any tile POSTs
+// `/party/parties/{p}/setTargetQueues`, which had NO HANDLER and fell to the "/" catch-all, so the
+// next /party poll re-served the old targetQueueId and the selection snapped back. **That bug was
+// INVISIBLE under the trim** — with only one selectable activity there was nothing to switch to.
+// ⇒ A workaround can hide the defect that makes it look necessary. See handleSetTargetQueues.
+//
+// ⚠ STILL GATED, and correctly so: ARENA (`deathmatch`) renders `Requires Hunter's Journey level 13`
+// because `FPlayerProgression.AccountPass.Level` is 0. [M] the tile
+// (WBP_UI_PartyQueue_DropdownItem) reads `IsQueueIDPremadeOrOverQueueLevel` -> {CanQueue,
+// UnlockLevel, Reason} against `GetAccountPassViewModel`, and the string table ST_Parties holds
+// "Requires Hunter's Journey level {level}". Two independent levers exist and NEITHER is applied
+// here: raise AccountPass.Level, or serve the dynamic toggle key
+// `queue.restrictions.<queueId>` with `Config["Level"]` (see rankedQueueSet's neighbours).
+// Serving a locked queue is harmless — the client renders the lock itself.
+//
+// ⚠ An S122 note claimed the trim's precondition was gone because "S120 serves AccountPass.Level =
+// 10". [M] FALSE — the live server serves Level 0. S120 MEASURED that serving 10 removed the
+// mastery lock; it never became the default. Read a remembered measurement as a measurement.
+//
+// Knob: AGS_QUEUE_IDS overrides this list (see activeQueueIDs) — now useful for NARROWING back to
+// the S60 four if a regression is ever suspected, which is the reverse of why it was added.
 var queueIDs = []string{
-	"tutorialNew", "training", "practice", "bots",
+	"default", "deathmatch", "practice", "dropin", "customgame",
+	"bots", "tutorialNew", "training", "armorydeathmath", "tournament",
 }
 
 // matchmakingLastUpdated is a fixed, valid ISO8601 timestamp for the QueueInfo
@@ -1363,10 +1474,60 @@ func rankedQueueSet() map[string]bool {
 	return s
 }
 
+// ★ AGS_QUEUE_IDS="a,b,c" overrides the advertised queue list (S122). Unset = the trimmed four,
+// byte-identical to before.
+//
+// WHY: `queueIDs` above was trimmed to four by an S60 DIAGNOSTIC, whose stated reason is
+// "CanControlQueue loops over the current queues calling GetLevelGameFeatureUnlocked; with the
+// served account level = 0, any level-gated queue fails that loop". This knob restores the full
+// shipped vocabulary so that claim can be tested rather than inherited.
+//
+// ⚠⚠ THAT STATED MECHANISM IS WRONG — [M] from the shipped bytecode
+// (tools/extractor/out/bpdump_CanControlQueue.txt, statements 181-185):
+//
+//	[181] Not_PreBool( PartyModel->bIsRankedEligible )
+//	[182] EX_PopExecutionFlowIfNot            <- continues ONLY when NOT ranked-eligible
+//	[183] GetLevelGameFeatureUnlocked( PrimaryAssetId{ GameFeature, "Ranked" } )
+//	[184] Conv_IntToInt64 -> [185] ArgumentName ...   (formats a Text)
+//
+// `GetLevelGameFeatureUnlocked` is called **exactly once**, with a HARDCODED `GameFeature:Ranked`,
+// and only to build the "you need level N" MESSAGE. It does not loop over queues and it does not
+// consult a per-queue feature. ⇒ adding queues cannot fail *that* loop, because there is no loop.
+// ⚠ The trim may still have been empirically necessary for some other reason, which is exactly why
+// this is a knob and not a deletion. **Do not remove `queueIDs`' trim until this has been flown.**
+//
+// ⚠⚠ AND THE OTHER HALF OF THE PREMISE IS ALSO FALSE. A note added earlier in S122 claimed the S60
+// precondition was gone because "S120 serves AccountPass.Level = 10". [M] The live server serves
+// **`AccountPass{Level:0, XP:0}`** — effective level 1 under S120's `(Level+1) >= required` form.
+// S120 *measured* that serving 10 removed the mastery lock; it did not make 10 the default, which
+// comes from persisted per-player state and is 0. **The S60 precondition still holds.**
+// ⇒ Read a remembered measurement as a measurement, not as the shipped default. Check the wire.
+//
+// ★ The real ranked gate is `FPartyMember.IsRankedEligible` (oracle property 13; also
+// `UPartyModel.bIsRankedEligible`, live at PartyModel+0x0528, MEASURED **False**), which
+// buildSoloParty has never served — the same shape as the S85 PersonalizationLoadout fix.
+// `FPartyMember` also carries `AccountLevel` (14) and `MasteryLevel` (15), likewise unserved.
+// Those are separate levers and deliberately NOT bundled into this arm.
+func activeQueueIDs() []string {
+	if v := strings.TrimSpace(os.Getenv("AGS_QUEUE_IDS")); v != "" {
+		out := make([]string, 0, 12)
+		for _, q := range strings.Split(v, ",") {
+			if q = strings.TrimSpace(q); q != "" {
+				out = append(out, q)
+			}
+		}
+		if len(out) > 0 {
+			return out
+		}
+	}
+	return queueIDs
+}
+
 func buildQueueDetails() []map[string]any {
 	ranked := rankedQueueSet()
-	out := make([]map[string]any, 0, len(queueIDs))
-	for _, id := range queueIDs {
+	ids := activeQueueIDs()
+	out := make([]map[string]any, 0, len(ids))
+	for _, id := range ids {
 		out = append(out, map[string]any{
 			"ID":        id,
 			"IsRanked":  ranked[id],
