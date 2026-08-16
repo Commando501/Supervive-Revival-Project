@@ -318,7 +318,21 @@ func heroStats() map[string]any {
 		"MaxHeroDamageTaken": 19800,
 		"HealingGiven":       26400,
 		"MaxHealingGiven":    5100,
-		// int-keyed TMap -> JSON object with int-parsable STRING keys
-		"Placements": map[string]any{"1": 3, "2": 5, "3": 4},
+		// int-keyed TMap -> JSON object with int-parsable STRING keys.
+		//
+		// ★★ `Placements` IS ZERO-INDEXED: key 0 == 1st place. [I], but strongly so — it is the
+		// only reading that explains BOTH numbers the STATS page derives rather than echoes.
+		// Serving {1:3, 2:5, 3:4} rendered `WINS 0` and `TOP 3 8`:
+		//     1-indexed: WINS = P[1] = 3        (UI showed 0)  ✗
+		//                TOP3 = P[1]+P[2]+P[3] = 12 (UI showed 8)  ✗   -- explains neither
+		//     0-indexed: WINS = P[0] = absent = 0 (UI showed 0)  ✓
+		//                TOP3 = P[0]+P[1]+P[2] = 0+3+5 = 8 (UI showed 8)  ✓ -- explains both
+		// One rule, two independent matches, and the rival rule matches nothing.
+		//
+		// ★ PRE-REGISTERED PREDICTION for the next relaunch (this route is a LOGIN-TIME fetch, so
+		// it cannot be tested without one): with the 0-indexed keys below, CAREER → STATS should
+		// show **WINS 3** and **TOP 3 12**. If WINS stays 0, the hypothesis is wrong and the real
+		// rule is something else — do not quietly re-explain it after the fact.
+		"Placements": map[string]any{"0": 3, "1": 5, "2": 4},
 	}
 }
