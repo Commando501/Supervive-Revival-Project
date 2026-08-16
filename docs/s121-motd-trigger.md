@@ -67,27 +67,61 @@ onboarding **widget-highlight** flow (`Highlight Widget` / `Hide Highlight`).
 fires at the end of a first-run flow this account has presumably already passed or never qualified
 for — which is why a perfectly-formed payload produces nothing.
 
-⚠ **`Try Start Onboarding Flow` is NOT that entry point.** [M] It is 3 bytecodes long and jumps to
-`ExecuteUbergraph(3358)`; the MOTD chain lives around statement **1220–1440**. Different region.
-**Do not assume the obviously-named function is the caller** — it is measurably not.
+## 4. THE 34-FUNCTION SWEEP — and the gate it found
 
-## 4. What would settle it
+All 34 UFunctions were dumped and their `ExecuteUbergraph(N)` entry constants recorded. **Twenty
+have one; twelve are leaf helpers with none** (`Should*`, `Is*Ready`, `Try Show MOTD` itself, …).
 
-The ubergraph is entered by `EX_ComputedJump` on an offset each event passes to
-`ExecuteUbergraph(N)`. The component binds **`On HUD Created`, `On Match History Updated`,
-`On Client Config Updated`, `On Core Game Match Info Updated`, `On Party Is Valid Updated`,
-`On Party Excluded Regions Updated`** [M].
+★ **No entry offset lands in 1220–1440** — the lowest is `ReceiveBeginPlay` at **1491**, *above* the
+whole MOTD chain. A clean negative, and the informative kind: it proves the chain is **not a jump
+target at all**. Max `StatementIndex` is **6955**, so entry offsets and statement indices share one
+numbering space and the comparison is valid.
 
-**Next step, well-scoped:** dump each of the component's **34** UFunctions and record its
-`ExecuteUbergraph(N)` constant; the one whose `N` lands in **1220–1440** is the event that enters the
-MOTD chain. That is a mechanical pass, entirely offline, and it converts "why doesn't it fire" into
-"which precondition is unmet".
+⇒ The chain is a **queued continuation**. [M] `[41] EX_PushExecutionFlow → PushingAddress 1303`
+(itself at statement 1455) is what arms it, and the only things that reach 1455 are:
 
-⚠ Note `On Client Config Updated` is among the bound delegates, so a config push *can* drive this
-component — which is consistent with the chain being live but entered at a different offset.
+| jump | at statement | meaning |
+|---|---|---|
+| `[158] EX_Jump → 1455` | **4677** | **starts the chain** |
+| `[159] EX_Jump → 1440` | 4682 | = `On MOTD Deactivated`'s entry — the chain advancing itself |
 
-## 5. Honest status
+★★ **THE GATE, immediately before the start jump** [M]:
 
-**Not** "serving MOTD does nothing." What is measured: the payload is complete, every documented
-gate would pass, both objects exist, and the function is not reached because it is the tail of an
-onboarding sequence. The entry condition is **identified as findable but not yet found.**
+```
+[154] BooleanOR_1  = BooleanAND_8 OR NOT PreBool_3
+[155] BooleanOR_2  = BooleanOR_1  OR NOT PreBool_1
+[156] BooleanAND_9 = BooleanAND_5 AND BooleanOR_2
+[157] EX_PopExecutionFlowIfNot(BooleanAND_9)     stmt 4668  <- FALSE here ABORTS
+[158] EX_Jump -> 1455                            stmt 4677  <- starts the MOTD chain
+```
+
+**`Try Show MOTD` runs iff `BooleanAND_9` is true.** That is the precondition, and it is a compound
+of four earlier booleans computed in the same block.
+
+⚠⚠ **CORRECTION TO §3 OF THIS FILE, written an hour earlier.** It said *"`Try Start Onboarding Flow`
+is NOT that entry point … Do not assume the obviously-named function is the caller — it is
+measurably not."* **That was too strong.** What was measured is only that it does not enter at the
+chain's own offset. Its entry (**3358**) and `On Client Config Updated`'s (**3353**) are the two
+nearest below the predicate block at 4553–4677, so [I] that block is very likely their tail — i.e.
+the obviously-named function probably *is* the origin, reaching the chain by falling through a long
+predicate and then jumping. **The narrow claim (not a direct jump target) stands; the broad one
+(not the caller) was unsupported and is withdrawn.**
+
+## 5. What is left
+
+Resolve `BooleanAND_5`, `BooleanAND_8`, `Not_PreBool_1`, `Not_PreBool_3` back to the function calls
+that produce them (all in statements < 4553 of the same block). The component's leaf helpers are the
+obvious candidates and are already dumped: `ShouldRunPlayMenuOnboarding`,
+`ShouldRedirectToOnboardingScreen`, `ShouldBypassNewTutorialAndOnboardingScreen`,
+`Should Show Returning Player Modal`, `Should Launch Tutorial Match`, `Get Number of Games Played`.
+[S] A "games played == 0 / new account" style condition would explain everything observed.
+⚠ Note `BypassTutorialAndOnboarding` is a served-toggle name we deliberately WITHHOLD — if it feeds
+this predicate, the withholding is load-bearing and must not be casually changed.
+
+## 6. Honest status
+
+**Not** "serving MOTD does nothing." Measured: the payload is complete, every documented gate in
+`Try Show MOTD` would pass (including `key != lastSeen`, since `lastSeen` is empty), both objects
+exist, and the function is not reached because a **named compound predicate at statement 4668 gates
+the jump that starts its chain**. The question has moved from "why doesn't it fire" to "which of
+four booleans is false" — fully offline from here.
