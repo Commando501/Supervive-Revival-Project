@@ -121,12 +121,30 @@
 > ⇒ **The MOTD widget is NOT in the prompt stack, and the stack has never held anything.** The stack
 > itself is real and parented, so "there is no prompt host" is excluded.
 >
-> ★★ **AND THERE ARE TWO `MainMenu_NormalV2` INSTANCES — one with a NULL `PromptStack`.**
-> `MenuRootV2::PushPrompt` forwards to its own `MainMenu_NormalV2` variable; if that reference is
-> the NULL-stack instance, then `PromptStack->GetActiveWidget()` and `PromptStack->BP_AddWidget()`
-> are both **Blueprint no-ops on a null object** and the prompt is silently never created.
-> **That is the leading hypothesis and it is testable:** read `MenuRootV2`'s `MainMenu_NormalV2`
-> property and see which of the two addresses it holds.
+> ★★ There are TWO `MainMenu_NormalV2` instances, one with a NULL `PromptStack`, which suggested
+> `PushPrompt` might be running against the null one.
+>
+> ### ⛔ THAT HYPOTHESIS IS REFUTED [M] (`tools/re/motd_chain_readout.py`)
+>
+> ```
+> Comp_MainMenu_Onboarding 0x2692875CE80
+>     Main Menu Widget  ->  0x269A2B3A300   WBP_UI_MainMenu_RootV2_C     <- RootV2, NOT MenuRootV2
+> WBP_UI_MainMenu_MenuRootV2 0x26A669E0610  (the live one)
+>     MainMenu_NormalV2 ->  0x26A6835C870   PromptStack -> VALID (CommonActivatableWidgetStack)
+> ```
+>
+> **The live `MenuRootV2` holds the GOOD `NormalMainMenu`** — the one whose stack is valid. Both
+> null-stack objects are archetypes/duplicates. So "PushPrompt ran against a null stack" is dead.
+>
+> ★ **What the same read surfaced instead:** the onboarding component's `Main Menu Widget` interface
+> reference points at **`WBP_UI_MainMenu_RootV2_C`**, not `MenuRootV2` — and a `bpdump` of the
+> `WBP_UI_MainMenu_RootV2` asset lists **10 UFunctions with no `PushPrompt`**; `PushPrompt` is
+> declared on `WBP_UI_MainMenu_MenuRootV2`. [M for both dumps]
+> ⚠ **NOT a conclusion.** Blueprint interface calls resolve through the class hierarchy, and that
+> `bpdump` shows only the asset's OWN functions — an inherited or C++-side implementation would not
+> appear. **Check the class-derivation chain of `WBP_UI_MainMenu_RootV2_C` for `MenuRootV2` (or a
+> shared parent) before concluding anything.** This project has burned sessions on exactly this:
+> treating "not in the asset I dumped" as "does not exist".
 >
 > ⚠ It also casts doubt on an earlier reading: `CallFunc_Try_Show_MOTD_Widget = 0x2692C618DF0` was
 > taken as "a widget was created". That object's NAME is exactly `WBP_UI_Menus_MessageOfTheDay_C` —
