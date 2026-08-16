@@ -827,8 +827,29 @@ BACKEND — no shim, no injection, no `.text` write.
   order is array index, not `Rank`**; an unresolved `PlayerID` still renders. `HeroCounts` is a
   `TMap` → **one hero portrait per key** (measured: 2 keys ⇒ exactly 2 icons).
   `statCode ∈ {kills,wins,damage,healing}`; `period ∈ {daily,weekly}` (FRIENDS/RANKED are a
-  different widget on `/mmr/leaderboard[/friends]`, still `{}`; ⚠ its `Rank` is an **`ERank` enum
-  string** like `"Gold1"`, not an int).
+  different widget on `/mmr/leaderboard[/friends]`).
+- ★★★★ **`GET /mmr/leaderboard` IS ALSO IMPLEMENTED AND CONFIRMED LIVE (S121)** — the RANKED side
+  tab renders `#1. · Reviver#6612 · 1,850 RP` from our `Placement`/`PlayerID`/`Rating`.
+  Verified with UA discipline (`Loki/UE5-CL-0`, not our own probe), 0 `LogJson`, 0
+  `Deserialization failure`. **A DIFFERENT struct from the daily/weekly board:** `FLeaderboard`
+  (0x68) `Start·End·QueueID·Role·Entries[]·SelfEntry`, entries
+  `PlayerID·Rank·Rating·Placement·Percentile·AvatarID`. Top-level, **no envelope and NO
+  staleness/echo check** — unlike `/player-stats/leaderboard`. Paging is **1..50**, not 1..25.
+  ⚠ **`Rank` is an `ERank` ENUM STRING** (`Unranked, Bronze4..1, Silver4..1, Gold4..1,
+  Platinum4..1, Diamond4..1, Master4..1, GrandMaster, Legend`) — a wrong value is the S118
+  `ELokiActivityState` failure and sinks the whole struct. `"Gold1"` is verified accepted.
+  ⚠ `SelfEntry` is an **object**, not an array. `AvatarID` is an `FPrimaryAssetId` — **omitted**
+  rather than guessed; omitting a field is always safe, an unresolvable id is not.
+  Knob: `AGS_MMR_LEADERBOARD=0`.
+- ⚠ **`GET /player-stats/players/{id}` is implemented but NOT confirmed live** — it is a
+  **login-time** fetch and an admin socket drop does **not** trigger a refetch, so it needs a
+  relaunch. `FPlayerStats{ID, Version int32, StatsByQueue TMap}` → `FPlayerQueueStats{ID,
+  StatsByHero TMap}` → `FPlayerHeroStats` (22 int32s + `Placements TMap<int32,int32>`, SizeOf
+  0xa8, names [M] from the UHT oracle). **All three maps are JSON OBJECTS**; `Placements` needs
+  int-parsable STRING keys (the S120 `UnclaimedRewards` shape).
+  ⚠⚠ **`Version` is int32.** A first cut passed `partyVersion()` — a millisecond timestamp
+  (~1.79e12) against a 2.147e9 ceiling — which would have rejected the entire struct. Caught by
+  reading the served JSON, not by a test. Knob: `AGS_PLAYER_STATS=0`.
 - ★★ **`motd` IS THE ONE KEY WHOSE `Config` CARRIES MORE THAN THE FLAG** — that is why serving it
   like the others did nothing. `Try Show MOTD` bails at `Map_Find(Config,"key")` then requires
   `Config["key"] != GetMessageOfTheDayLastSeen()`; `Get Message of the Day` reads
