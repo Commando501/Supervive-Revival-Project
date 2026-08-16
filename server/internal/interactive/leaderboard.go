@@ -194,6 +194,14 @@ func envOrDefault(v, def string) string {
 // for this struct image-wide plus exact field/query-param correspondence. The MEMBER LIST is [M]
 // from the UHT oracle. If this renders nothing, suspect the join before the members.
 //
+// ★★ CONFIRMED LIVE (S121): the RANKED tab renders `#1. · Reviver#6612 · 1,850 RP` from the
+// Placement / PlayerID / Rating below. Verified with User-Agent discipline — the request came
+// from `Loki/UE5-CL-0`, not from our own probe — with 0 LogJson complaints and 0
+// "Deserialization failure". That also validates the riskiest field: `Rank: "Gold1"` was accepted
+// as an ERank enum string, and a wrong enum would have sunk the whole struct.
+// ⚠ The UI shows QUEUE "BREACH" while the request carries `queueId=tutorialNew` — the dropdown
+// renders a display NAME for the id. Do not "fix" the served queue id to match the label.
+//
 // Knob: AGS_MMR_LEADERBOARD=0 falls through to the {} catch-all.
 func (s *Service) handleMMRLeaderboard(w http.ResponseWriter, r *http.Request) {
 	if os.Getenv("AGS_MMR_LEADERBOARD") == "0" {
