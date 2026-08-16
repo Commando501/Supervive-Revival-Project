@@ -1228,9 +1228,61 @@ embedded quotes. ★ **What caught it was a second, independent instrument**: `L
 view.** ⚠ Also: `ags` **APPENDED** to `capture.log` here, contradicting this file's "truncates on
 restart" — back it up regardless, the recorded behaviour is unreliable in both directions.
 
+### Before touching anything CAREER- / match-history- / "authentic empty"-shaped
+★★★★★ **FK-21 IS SETTLED (S123, 2026-08-15) — read `docs/fk21-career-panels-settled.md`.** All three
+CAREER panels are LIVE and backend-driven; **none of them was ever an "authentic empty"**. Each was
+empty because we served nothing, and each renders the moment it is fed:
+**Stats** S121 · **Ranked** S122 · **History** S123. Backend-only — no shim, no injection, no
+`.text` write; four arms on ONE client up 3h15m with **no relaunch**, canaries 0/0/0/0.
+- ⚠ **Be precise about which half was wrong.** S119 had ALREADY excluded "broken deserialization"
+  for History (`MatchHistoryManager+0x68` reads back our exact served `Version`), and that stands —
+  at baseline the manager held our player id with the gate open. **What was never shown for any of
+  the three is that the panel is LIVE.** An empty panel fed by a parsing document is still
+  consistent with "this surface is dead."
+- ★ **Knob `AGS_MATCH_HISTORY=off|minimal|full`** (`server/internal/interactive/matchhistory.go`),
+  default OFF and OFF is byte-identical to pre-S123 (`Matches: []`). Plus `_COUNT`, `_HERO`.
+  ⚠ **Fly `minimal` before `full`** — minimal is scalars/strings/FDateTime only, so a blank panel is
+  localisable; if `full` goes first a null cannot separate "does not render" from "one of the five
+  risky fields sank the document", and this endpoint fails SILENTLY.
+- ★★ **READOUT: `tools/re/matchhistory_readout.py`** (read-only RPM) reads the PARSED
+  `FMatchHistory` off the live manager — `ID +0x58`, `Version +0x68`, `Matches +0x70`, and each
+  entry's fields. It separates the four outcomes a screenshot cannot: rejected (`Version -2`),
+  parsed-but-element-dropped (`Num 0`), parsed-and-landed (`Num N`), and instrument fault.
+- ⚠⚠ **`TeamInfo.Placement` IS 1-INDEXED — THE OPPOSITE OF ITS SIBLING.** It renders `1/16` from
+  `Placement: 1`, while `FPlayerHeroStats.Placements` on `/player-stats/players/{id}` is
+  **ZERO**-indexed (S121, confirmed by prediction). **Two placement fields, one backend, opposite
+  conventions — carry neither across.** Only discriminating because the flight served 1-of-**16**;
+  1-of-1 renders identically under both.
+- ★★ **THE DAMAGE TILES READ `Effective*`, NEVER THE RAW `Damage*` — 5/5 [M]** with deliberately
+  distinct values (`TOTAL DAMAGE DEALT` 18,000 from `EffectiveDamageDone`, not 21,400 from
+  `DamageDone`; same for both `HeroEffective*` and `ShieldMitigatedDamage`). The four raw fields have
+  **no known consumer on this panel**. ★ The clue was that **healing rendered while damage read 0** —
+  same struct, same float type — because healing is the one stat with no `Effective` variant.
+  ⚠ Label ≠ field twice: `MINIONS KILLED`←`CreepKills`, `GOLD FROM MINIONS`←`GoldFromMonsters`.
+- ⚠ **BLAST RADIUS: `Matches.Num()` is also `Comp_MainMenu_Onboarding`'s games-played count** [M]
+  (`bpdump_Get Number of Games Played.txt`: a `Cheat.Onboarding.MatchHistoryCount` cvar override,
+  else `GetMatchHistory().Matches.Num()`), and that component owns `Should Show Returning Player
+  Modal`. Serving N rows makes the client believe it has played N games.
+- ⚠⚠ **`push.go`'s "any positive value works" for this resource is STALE** — true when
+  `/match-history` was an empty catch-all, false since `handleMatchHistory` gave it a wall-clock
+  `Version` (~1.79e9). A push of `Version 7` is now the documented TOO-LOW case, silently ignored.
+  Pass `interactive.MatchHistoryVersion(id)`.
+- ⚠ **The usmap cannot answer this struct's array inner or its enum** (FK-14 reads both at
+  `FField+0x80`, past the object). Read them live: `tools/re/struct_layout.py` +
+  `scratchpad/enum_of_prop.py`. `StartingRank` is **`ERank`** [M], `Gold1` = index 12.
+- ⚠ **Two instrument traps fired here, one NEW.** (a) the **archetype trap** — one live
+  `WBP_UI_MatchHistoryEntry_C` with `Visibility = 4` was the widget-tree TEMPLATE, caught only by
+  `MatchHistoryScreen` having **0** activations in the log ⇒ *prove the screen was ever built before
+  reading a widget's state* (5th member of the class-lookup blind-spot family). (b) ★ **THE GREP
+  WINDOW IS PART OF THE INSTRUMENT** — `grep -B2 -A3` paired a request with a NEIGHBOURING request's
+  `User-Agent` and read as "the game never refetched"; `-A 12` gave the truth. **Pair each request
+  with its OWN header block.** ★ Give verification curls an absurd UA (`fk21-verify-NOT-THE-GAME`).
+
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
 and `docs/endpoints.md` (every endpoint the client hits + handler status).
+⚠ Its CAREER rows were `❓`/`🟡` long after those endpoints were served — **check the session number
+on a row before trusting its status marker.**
 
 ### Before touching anything extraction-shaped
 Skim `docs/findings.md` and `docs/r2-findings.md` (IoStore catalog + usmap RE +
@@ -1245,6 +1297,250 @@ Read `docs/trackb-assetregistry-route.md`. The `assetregistry apply-patch`
 extractor subcommand works end-to-end; loose-file AR.bin deployment has been
 proven INERT in this IoStore build (UE ignores the loose file even when valid).
 Deployment requires an IoStore mod-pak overlay — non-trivial.
+
+### Before touching anything round-phase- / GoToPhase- / "the round never starts"-shaped
+★★★★★ **THE ROUND PHASE IS DRIVABLE AND IT SELF-DRIVES TO `EGP_Combat` (S124, 2026-08-16, FLOWN).
+Read `docs/fk22-dropphase-reachability.md` §14-§15.** Two flights on one staged tutorial world, **zero
+`.text` writes, zero PI hooks, zero crashpad handoffs**, no relaunch between them.
+- **[M] ONE CALL STARTS A CASCADE.** The shim called `GoToPhase` **exactly twice** (args 1 then 4) via
+  the S55 direct-thunk primitive. The log shows **six** transitions: our `1` (the A1 control), our `4`,
+  then **`5 (SpawnReveal)`, `6 (Lineup)`, `7 (Combat)` ~100 ms apart that we never called** — the game's
+  own timer ladder, exactly as predicted offline from the four tail-jmp callers
+  (`0x560A104/174/1A2/AA72`, constants 9/2/3/6) reached through `[vtable+0xB08] = OnNewPhase`.
+  The game then printed **`Took 414.264048 seconds to go from EGP_Pre to EGP_Combat`** and, ~49 s later,
+  began **mass navmesh generation** across `LVL_Tutorial`. ⇒ `GoToPhase` is **reachable and unguarded**.
+- **[M] THE STORE IS DEAD — [I] → [M].** All six `Transitioning` lines read `from phase
+  (EGP_ServerStartup)`, and a post-run RPM read gives `GameState+0xA44 = 0`. `GoToPhase`'s phase write
+  really does land on the stripped `ret 0` fold `0xF7EC20`; **the stored byte never moves.**
+- ★ **THE POSITIVE CONTROL IS THE WHOLE SITTING.** `GoToPhase` logs its ARGUMENT before the old==new
+  test, so a reachable thunk **cannot** be silent. Baseline is **exactly one** `Setting Phase to 1
+  (BeginInit)` per file across 193 files ⇒ **a SECOND occurrence in one file cannot come from the game.**
+  A silent A1 means the sitting is VOID and nothing else may be interpreted.
+  ⚠⚠ **AND THE RECEIPT SELF-CONTAMINATES:** once the cascade has run, `Setting Phase to 7 (Combat)` is
+  already in the log, so **presence stops discriminating and only the COUNT does.** Record baseline
+  counts BEFORE injecting anything on a second flight into the same process.
+- ⚠⚠ **`GameState` IS AT `GameMode+0x418`, NOT `+0x258` — the docs' offset is REFUTED, measured.**
+  On the live `BP_LokiGameMode_Tutorial_C` (`0x1B3857EA4C0`), `[+0x258] = 0x1B405BE1000` is **not a
+  UObject** (heap "vtable" `0x1B2C4323C00`; a real one is in-module, this GameMode's is
+  `0x7FF7A4A54C48`; bytes are a repeating `{ptr,0xFFFFFFFF,int}` array). A scan of the GameMode's first
+  `0x1000` bytes finds the real GameState (`0x1B4021B60A0 BP_LokiGameState_Tutorial_C`) at **exactly one**
+  offset: **`+0x418`**. The shim's `GcAlive` guard caught this and **aborted twice rather than poking a
+  stranger.** ★ `+0x7C0 = 4` is also now confirmed LIVE ⇒ **the 3→4 gate is one term short
+  (`CurrentPhase == 3`)**, exactly as predicted.
+- **Builds:** `build.ps1 -Name tutorial_launch -Variant phaseladder|-any|-readonly|-nopoke|-a5`
+  (`RM_PHASELADDER`, enum 24). ⚠⚠ **`-Variant X` WITHOUT `-Name tutorial_launch` SILENTLY BUILDS THE
+  DEFAULT SET** and reports `11 built, 0 failed`, which reads like success — caught only by diffing
+  `.text`. ⚠ `RM_GOTOPHASE` (enum 2) is **untouched and UNSAFE** — it arms with `InstallHook()`, a
+  standing `ProcessInternal` `.text` patch (the 10/10-vs-3/36 hazard). Use `RM_PHASELADDER`.
+- ⚠ The first flight's ladder **starved after A2** when `ReceiveTickClient` stopped being dispatched;
+  `KFSNAME=""` (`-any`) fixed it (**508 game-thread hits**). Budget arms accordingly.
+
+### Before touching anything drop- / deploy- / DropPlane- / DropPod- / "SpawnPlane faults" shaped
+★★★★★ **THE BLOCKER MOVED TWICE ON 2026-08-16 AND BOTH MOVES ARE MEASURED. It is NOT the markers
+(refuted) and NOT the phase (solved) — it is THE SUBSCRIPTION.** `docs/fk22-dropphase-reachability.md` §15.
+- **[M] Reaching `EGP_Lineup(6)` is NOT sufficient.** The round drove all the way to `Combat` and the
+  drop phase never fired: the only drop lines in the whole session are three **startup**
+  `LogActorPooling` registrations (`BP_DropPod_Tutorial_C`, `BP_DropPod_C`, `BP_DropPod_Child_C`).
+- **[M] `BP_AuthSetCurrentPhase(6)` broadcast into a 7-subscriber list and produced ZERO effect** —
+  `Setting Phase to 7 (Combat)` stayed at **1**, `DropPod` at 3, `DropPlane` at 2. `Num=7` was re-read
+  immediately before the call, so the "hard no-op" gate did not apply and the call really did run.
+- ★★★★★ **AND THE REASON IS MEASURED, NOT INFERRED: the DropPlane component IS NOT SUBSCRIBED.**
+  A read-only walk of the `FMulticastScriptDelegate` at `GS+0x590` (`Data=0x1B408640880`, `Num=7`,
+  `FScriptDelegate` stride 16, indices resolved through `GUObjectArray`) lists 7 real objects —
+  `[0] 0x1B361978F80 Comp_GameMode_ShopKeepers`, `[1] 0x1B3857EA4C0` **the GameMode itself**, and five
+  others. **`Comp_GameMode_DropPlane_Tutorial` is `0x1B3771413C0` and is NOT among them.**
+  ⇒ **A5's null is NOT a statement about the handler's behaviour** — it was never reachable.
+  Recording it as "phase 6 does not drive the drop phase" would have been a textbook instrument artifact.
+  ⇒ ★ This gives `§10.3`'s `ServerOnly` hypothesis its first live support: the *consequence* it predicts
+  (no subscription on the client route) is measured.
+- ⚠⚠ **A BROADCAST'S NULL IS UNINTERPRETABLE UNTIL YOU ENUMERATE THE SUBSCRIBERS.** `Num > 0` proves the
+  list is non-empty, **not** that your target is in it. Walk the invocation list — it is one read-only RPM.
+- **Next levers, ranked:** (1) make the bind happen — grade `ULokiBlueprintLibrary::ServerOnly`'s impl and
+  read what it tests; if it reads a role/NetMode byte on a client-resident object, that is a DATA poke.
+  (2) **Call the handler DIRECTLY** on the live component `0x1B3771413C0` (reflected UFunction, byte arg,
+  S55 primitive) — separates "not subscribed" from "subscribed but inert". (3) **Call `SpawnPlane`
+  directly**: §2.1 measured it branchless and §0/§7 measured its three markers PRESENT in `LVL_Tutorial`,
+  so the S93 fault should not reproduce — and it needs no phase at all.
+★★★★★ **FK-22 IS RESOLVED (S124, 2026-08-16) — read `docs/fk22-dropphase-reachability.md`.** Offline:
+**zero launches, zero injections, zero `.text` writes.** The belief at `coverage-audit-s101.md:269`
+(*"Drop-in / DropPlane — **FALSIFIED as reachable** — `SpawnPlane` faults on absent level markers"*)
+is **FALSE AS WRITTEN**. ⚠ It does **NOT** flip to "reachable" — it becomes **OPEN with two measured
+blockers, neither about markers.**
+- ⚠⚠ **`SpawnPlane` IS NOT ONE FUNCTION. [M] The three `Comp_GameMode_DropPlane*` classes are
+  SIBLINGS** — all three print `SuperStruct -> /Script/Loki.LokiGameModeDropPlaneComponent`, each
+  defines its **own** `SpawnPlane` override, and there is **no BP-to-BP inheritance in the family.**
+  ⇒ an S93 measurement on the `_Tutorial` override **cannot transfer to the general component by any
+  mechanism.** This is the load-bearing structural fact and it is independent of reachability.
+- ★★ **[M] The GENERAL variant queries no markers at all** — `Comp_GameMode_DropPlane_C::SpawnPlane`
+  is **9 bytecode entries, 0 `GetAllActorsWithTag`**; the real spawn lives in **`OnDeathCircleSet`**
+  (125 entries), which derives the plane path **procedurally from the death-circle radius** and also
+  has 0 `GetAllActorsWithTag`. It does not even *have* `GetAutoDropLocation` — S93's second
+  observation is about a function the general component does not own.
+  ⚠ But **2 of 3 variants DO read markers**: `_PvE_Holdout`'s `SpawnPlane` is a **byte-twin** of
+  `_Tutorial`'s (49 entries, same six `EX_NameConst`, differing in 2 diff hunks). The *general* one
+  is the odd one out — do not restate this as "tutorial-only".
+- ★★★★★ **[M] THE MARKERS EXIST IN `LVL_Tutorial`, AND `Skylands_WP` HAS NONE — the census returned
+  the OPPOSITE of its expected answer.** `TrainingStart` → cell `D0E5AKNE…`, `PlaneStartPoint` →
+  `8MF6M4K4…`, `PlaneEndPoint` → `4WUJ1QA2…`, three **separate** World Partition cells under
+  `Maps/Tutorial/LVL_Tutorial/_Generated_/`, as literal `Actor.Tags` entries. `LVL_Holdout` carries
+  all three; **`Skylands_WP` carries 0 in 2,216/2,216 parsed packages.** Denominator: **7,300 `.umap`
+  packages** (unit: packages), 7,300 parsed / 0 failed. ⇒ **S93's stated reason — "markers that don't
+  exist outside the real deploy" — is refuted on the very map it was measured on.**
+  ⚠ **Present-in-map ≠ streamed-in at call time.** Only the first is established; cell load order was
+  never measured, and that is now the natural successor hypothesis.
+- ★★ **[I, strong] S93's observation is ALSO confounded at the instrument.** Its `FAULTED` is only the
+  boolean returned from a bare SEH `__except` (`tutorial_launch.cpp:955`, `:4146`), and `CallBPGuarded`
+  **memcpys a captured live `FFrame` without reinitialising `0x48..0x78`** (`FlowStack`/`PreviousFrame`).
+  `SpawnPlane` is the **only** one of the three functions S93 compared that uses the flow stack —
+  **3 push / 2 pop, vs 0/0 for both that "ran clean."** The confound tracks the result exactly and was
+  never controlled. ⇒ *"null-deref reading `GetAllActorsWithTag` markers"* is an **attribution laid
+  over an SEH catch**, not a measurement of a fault site.
+- ⚠⚠ **THE TWO REAL BLOCKERS, both [M], neither about markers:**
+  **(a) THE ROUND PHASE NEVER ADVANCES** — `Setting Phase to` occurs **193 times across 564 log files
+  and all 193 read `1 (BeginInit)`**, while the drop needs phase ≥ 4 (`EGP_SpawnSelect`) and the
+  component's handlers act on 5/6/7 (gate value **`EGP_Lineup = 6`**).
+  ⚠⚠ **SHARPENED SAME DAY — do NOT restate this as "the phase machine never leaves BeginInit".**
+  That over-reads the corpus. `Setting Phase to %d (%s)` prints **`GoToPhase`'s ARGUMENT**, emitted
+  *before* the old==new test, and `GoToPhase` is its **sole emitter image-wide** (exactly one `lea`
+  xref to the record at `0x8b20dc8`). ⇒ **193/193 measures that `GoToPhase` was only ever INVOKED
+  with 1 — a fact about its SEVEN CALLERS**, not about the stored byte. Separately [M]: the only
+  compiled store to `CurrentPhase` (`+0xA44`) in the decrypted `.text` is a **constructor init**
+  (`0x56772CF`). ⚠ **Bounded — 45 % of `.text` is undecrypted and `CurrentPhase` is REPLICATED**, so
+  the net serializer writes it by computed-offset memcpy that no literal-displacement scan can see.
+  **The honest form is "no compiled runtime store exists in the decrypted image", never "the byte can
+  never change".** ★ The corpus is therefore evidence about the **call sites** — `0x55f37a4`,
+  `0x56146d5`, `0x560a104`, `0x560a174`, `0x560a1a2`, `0x560aa72`, `0x5613300` — and enumerating them
+  is free and unstarted.
+  **(b) 13 of 100 `(class, func)` keys** over the 8 drop classes are **empty C++ impls** (direct call
+  to the universal fold `0xF7EC20 = c2 00 00 = ret 0`), sitting exactly at the player→plane
+  (`ALokiDropPlane::AddPlayerToPlane`) and pod→hero (`AuthBeginGlideDiveFromDropPod`) handoffs.
+  Full split: REAL 51 · BlueprintImplementableEvent 14 · EMPTY 13 · **COVERAGE-BLOCKED 16** · inlined 4
+  · const-body 2. ⚠ **`ALokiDropPlane::AddPlayerToDropPlane` DOES NOT EXIST** — `AddPlayerToPlane`
+  (plane, EMPTY) and `ULokiGameModeDropPlaneComponent::AddPlayerToDropPlane` (component, REAL) are
+  different functions. S93 called the real one.
+  ⚠⚠ **The 5 `AuthPlayerEnterWorld*` entry points are COVERAGE-BLOCKED, not absent** — all five sit on
+  `.text` page `0x5456000`, never demand-decrypted in any of 18 images, **together with plain getters**
+  ⇒ the blocked/covered split there is a **page boundary, not a semantic one.** "No C++ route exists to
+  put a player on a rideable" is **not-looked-at**, and reading it as absent would be an artifact.
+- ★ **[M] `TeamDropPodClass` is satisfied from shipped data** — `Default__BP_DropPlane_Base_C` sets it
+  to `BP_DropPod_C`, whose SuperStruct is `/Script/Angelscript.LokiDropPod`. And **[M]
+  `SpawnDropPodForTeam` has exactly two bail points and NO marker query of any kind** — its two
+  `FVector` args are the only spatial input. **[M] the dropship can be skipped**: `InitializeDropPod`
+  touches `DropShip` only inside `if (bIsTeamLeaderPod)`, and `QueueCrewForPodSpawn` null-guards first.
+  ★ **`BP_DropPlane_Straight_Tutorial_C` → `BP_DropPlane_Base_C` → `/Script/Angelscript.LokiDropShip`**
+  closes the open question at `docs/angelscript-dropphase.md:961`.
+- ★★★★★ **THE TWO PHASE-WRITE IMPLS ARE GRADED — BOTH REAL, NO AUTHORITY GUARD, AND NEITHER WRITES
+  THE PHASE (S124, same day, `docs/fk22-dropphase-reachability.md` §8-§9).** Offline; two independent
+  graders by disjoint routes, each adversarially verified, then every load-bearing byte re-read by the
+  session lead with both gold polarities reproduced.
+  `ALokiRoundGameMode::GoToPhase` thunk `0x5457200` (**fold 1**) → impl **`0x5601020`** (0x271 B,
+  `40 55 53 56 57 41 57 …`) = **REAL**. `ALokiGameState::AuthSetCurrentPhase` (registered
+  **`BP_AuthSetCurrentPhase`**) thunk `0x53878d0` (fold 1) → impl **`0x567a160`** =
+  `48 81 c1 90 05 00 00 e9 …` = `add rcx,0x590; jmp 0x442B4C0` = **REAL**. Neither equals any fold
+  (`0xF7EC20 c2 00 00` / `0xF7EB50 33 c0 c3` / `0xF7EB60 32 c0 c3`, all re-read in the same pass).
+  Both are `Final|Native|Public|BlueprintCallable` with `FUNC_BlueprintAuthorityOnly` **clear**, and a
+  full disassembly of `GoToPhase`'s 0x271 bytes accounts for every branch with **zero role / NetMode /
+  HasAuthority reads** ⇒ **callable today by the S55 primitive, no `.text` write, no PI hook.**
+  ⚠⚠ **BUT "REAL" IS NOT THE GREEN LIGHT — NEITHER FUNCTION WRITES `CurrentPhase`.** `GoToPhase`'s
+  phase write is `0x56011CA: e8 51 da 97 fb` → **a DIRECT call to `0xF7EC20` = `ret 0`**, the stripped
+  server setter (rel32 machine-resolved). `BP_AuthSetCurrentPhase` is
+  **`OnRoundPhaseChanged.Broadcast(N)` and nothing else** — the `0x590` displacement is visible in the
+  instruction itself, independently pinning the delegate. `GetCurrentPhase` = `movzx eax,[rcx+0xA44];
+  ret` independently pins **`CurrentPhase` @ `ALokiGameState+0xA44`**.
+  ⇒ **What is drivable is the NOTIFICATION half of a phase change, not the value.** Three levers:
+  **(a)** `BP_AuthSetCurrentPhase(6)` broadcasts the delegate the Tutorial mode binds in
+  `ReceiveBeginPlay` (handler tests `NewPhase == 6` → PlayerArray loop → `AddPlayerToDropPlane`);
+  **(b)** `GoToPhase(N)` fires the `[vtable+0xb08]` virtual with `(new, old)` and — because
+  `CurrentPhase` never advances — the `old != new` gate passes for **any** N, so it is **re-firable at
+  will**; **(c)** the stored byte as a **DATA poke** at `+0xA44`, this project's safest write class
+  (nothing 0/22 · bytecode 0/9 vs standing `.text` 7/8), with `GetCurrentPhase` as a free readback.
+  ⚠⚠ **ORDERING IS LOAD-BEARING AND THE OBVIOUS RECIPE IS SELF-DEFEATING.** *"Poke `+0xA44`=N then
+  call `GoToPhase(N)`"* is foreclosed by `GoToPhase`'s own `cmp r14b,dil; je` — with the poke applied
+  it jumps to the epilogue having done **nothing** (no fold call, no logs, no virtual). **Correct
+  order: poke `+0xA44`=N then `BP_AuthSetCurrentPhase(N)`** (no equality test), or `GoToPhase(N)`
+  **first** and poke after.
+- ★★★★★ **THE PHASE LADDER IS NOT A FLAT WALL — IT IS A SELF-DRIVING TIMER LADDER WITH TWO
+  ALREADY-RUNNING NATIVE GATES, AND ONE BYTE IS THE WHOLE DIFFERENCE (S124, `…fk22…md` §10-§11).**
+  `GoToPhase` has **7 non-thunk callers** (rel32 sweep reproduced **set-identical three times**:
+  session lead + 2 agents; `0x545726B` is the exec thunk's own `P_FINISH`, not a caller):
+  | site | containing fn | arg | status |
+  |---|---|---|---|
+  | `0x55F37A4` | `AActor` vtable slot 119 / disp `0x3B8` = **BeginPlay** | **1** BeginInit | **fires today — this IS the 193/193 corpus** |
+  | `0x56146D5` | `0x5614690`, via `0x560AF10` | **2** Pre | **gated** |
+  | `0x5613300` | `AActor` slot 170 / disp `0x550` = **Tick** | **4** SpawnSelect | **runs every frame, ONE condition unmet** |
+  | `0x560A104/174/1A2/AA72` | timer bodies off `OnNewPhase` | 9 / 2 / 3 / 6 | never run |
+  **[M] The two gates and exactly what is unmet:**
+  **1→2** (`0x560AF10`): `MatchStartDetails` non-empty (FString @ **`GameState+0x738`**, RepNotify) ·
+  `+0xA44 == 1` · `+0x790 == 0`. ★ A **REAL, fold-1, BlueprintCallable writer exists** —
+  `ALokiGameState::SetSharedMatchStartDetails` thunk `0x538AB40` → impl **`0x56A0A40`**
+  (`add rcx,0x738; call 0xFA2190`). ⚠ Its flags carry `FUNC_BlueprintAuthorityOnly`, which
+  `ProcessEvent` enforces and a **direct `UFunction.Func` call does not** — [I], untested.
+  **3→4** (Tick `0x5613200`): `GameMode+0x7C0 == 4` · `+0xA44 == 3`. ★★ **The non-phase half ALREADY
+  SUCCEEDS in real runs** — `LogLokiGameModeInitializer` walks `Starting→…→Finished` **189–193 times**
+  corpus-wide. ⇒ **the ONLY unmet condition for `GoToPhase(4)` is `CurrentPhase == 3`.**
+  ⇒ **[M] the single byte at `GameState+0xA44` is the whole difference between a frozen ladder and a
+  self-driving one** — one aligned data poke on a reflected property of a client-resident object, with
+  `GetCurrentPhase` as a free readback.
+  ★ **`ERoundPhase` read out of the binary** (10-dword table at `.text 0x56012B8` → `.rdata 0x8B20CB0`):
+  **0 ServerStartup · 1 BeginInit · 2 Pre · 3 FinishInit · 4 SpawnSelect · 5 SpawnReveal · 6 Lineup ·
+  7 Combat · 8 Post · 9 Shutdown.** ⚠ That table is indexed by phase VALUE; `OnNewPhase`'s own table is
+  indexed by **phase−1**. Do not conflate them.
+  ★ **And the early-out is passable for every `N ≠ 0`**: the ctor sets `+0xA44 = 0` (`0x56772CF`, and
+  `0x5676B01 xor r12d,r12d` is the sole `r12` definition in that chained function), and corpus-wide
+  `Setting Phase to 1 (BeginInit)` **and** `Transitioning from phase (…EGP_ServerStartup) to phase
+  (…EGP_BeginInit).` each occur **193 times over the SAME 193 files, one each** — and **both gate on
+  the same verbosity byte `0xA036D00` at the same threshold**, machine-verified at both sites, which is
+  what makes the pair discriminating rather than a verbosity accident.
+- ★★★★★ **`[vtable+0xB08]` IS `ALokiRoundGameMode::OnNewPhase` — RESOLVED [M], verified by the session
+  lead from the artifact.** `.data` record **`0x9C1F328`** = `{name→"OnNewPhase", thunk `0x5457480`,
+  impl `0x330C56C`}`, and the bytes **at** `0x330C56C` are `48 8b 01 ff a0 08 0b 00 00` =
+  `mov rax,[rcx]; jmp qword ptr [rax+0xB08]`. Record layout validated on a known answer two slots
+  earlier: **`0x9C1F298`** = `{"GoToPhase", 0x5457200, 0x5601020}`. ⇒ **lever (b) dispatches into real
+  phase-handling code and is OPEN.** ⚠ Read these from a **single-state** dump (`dumps/tutorial-hero`),
+  never `merged2` — `.data` is mutable and merged2 splices it.
+  ⚠ Still UNRESOLVED: `[vtable+0xB00]` (called from `OnNewPhase`'s Lineup case when
+  `ModeSupportsDropPlane()` is false) — no reflected UFunction of the class resolves to it.
+- ⚠⚠ **`GoToPhase`'s extent is `0x5601020..0x56012E0` = `0x2C0` B across 3 chained `.pdata` rows.** The
+  `0x271` figure recorded above is the distance to the first bail block, **not** the function size.
+  Cite `tools/strxref/index/pdata_union.csv`; the dumps' own `.pdata` section is all zeros in every image.
+  ⚠ **The rel32 caller sweep is NOT exhaustive** — it covers only the **16,638 of 30,281 `.text` pages
+  (54.95 %)** decrypted in `merged2`. Demonstrated from inside the result: `0x5614690`, *one of the
+  seven callers*, is a **zero page in 15 of the 16 single-state dumps** and survives only because
+  `dumps/toggles` was merged. **For the dark 45 %: COVERAGE-BLOCKED, never ABSENT.**
+  ⚠ **Two things to settle BEFORE spending a launch, both cheaper than one:** read `Num` at
+  **`GameState+0x598`** (zero subscribers ⇒ lever (a) is inert — one read-only RPM), and
+  `bpdump BP_LokiGameMode_Tutorial ExecuteUbergraph_BP_LokiGameMode_Tutorial` **offset 8046** (~40 s) —
+  `ALokiTutorialGameMode` inherits the **base** `OnNewPhase` with **no phase-4 branch** (unlike BR's
+  `cmp dl,4`), so on the tutorial route that Blueprint body **is** the entire payload of `GoToPhase(N)`
+  above the timers, and it is currently unknown. Also **[I], unverified**: whether the Tutorial mode's
+  delegate bind really sits behind `ULokiBlueprintLibrary::ServerOnly`.
+  ★ **Pointer recipe for any of this:** GameMode from `World->AuthorityGameMode`; **GameState from
+  `[GameMode+0x258]`** — the offset `OnNewPhase` itself uses at `0x5608FB8`.
+  ⚠ **The callee at `0x56011CA` is UNIDENTIFIED** — its body is `ret 0` [M], but `0xF7EC20` has
+  **5,095 direct call sites**, so the address identifies nothing, and it is **not** the registered
+  `BP_AuthSetCurrentPhase` (whose impl `0x567a160` has exactly one caller: its own thunk). **Do not
+  write it up as "`AuthSetCurrentPhase` is what `GoToPhase` calls."**
+  ⚠ **This does NOT reopen FK-1** — `SpawnPlayer` and the four server-authority stubs are untouched;
+  reaching `EGP_Lineup` *behaviour* still terminates at those empty impls for the pod/hero handoff.
+  ⚠ `.rdata` ships the refusal `"We're ALokiRoundGameMode but aren't using an ALokiRoundGameMode!"` —
+  verify the live object exists before calling; do not assume.
+  ★ **Free receipts `GoToPhase` emits for you:** `Setting Phase to %d (%s)` and `Transitioning from
+  phase (%s) to phase (%s).` — **no session has ever produced either with a value other than 1.**
+- ⚠⚠ **FK-22's OWN ERROR WAS RE-COMMITTED THREE TIMES BY THE AGENTS AUDITING IT** — "exclusive to the
+  Tutorial variant" (PvE_Holdout is a byte-twin), "those actors exist in `Skylands_WP`" (true of one
+  class, false of the other), "precisely the actor-authority API" (three counter-examples in its own
+  table). **Generalising from the variants you opened to the ones you did not does not stop being the
+  failure mode when you are the one auditing it.** All three were caught by adversarial verification.
+- ⚠ **`docs/angelscript-dropphase.md:895/:901` ALREADY SAID "the plane's path does not need level
+  markers"** and "the S93 wall has a documented bypass" — while `coverage-audit-s101.md:269` still read
+  FALSIFIED. The repo half-contained this answer and never propagated it. ⚠ Do not cite that bypass
+  list unqualified: one entry, `ALokiDropPlane::OverridePlaneLocations`, is one of FK-1's four dead stubs.
+- ⚠ **The ignorance map miscited the belief as `coverage-audit-s101.md:229` for ~23 sessions. It is
+  `:269`.** Fixed 2026-08-16.
+- ★ New instrument artifacts from this work are in `docs/method-rules.md` §1 (S124-a/b/c) — notably
+  **never census a runtime behaviour over a corpus containing the binary that declares its vocabulary**
+  (the enum table guarantees a hit for every value), and **an IoStore `.names.txt` is NOT a presence
+  test for a serialized property — use `bpdump @props`.**
 
 ### Before touching anything Angelscript- / deploy- / respawn- / "the ceiling" shaped
 ★★★ **FK-1 IS SETTLED (S113, 2026-08-09) — read `docs/fk1-angelscript-settled.md`.** S74's

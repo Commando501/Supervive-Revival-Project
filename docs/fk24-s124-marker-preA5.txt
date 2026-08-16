@@ -1,0 +1,58 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[PH] phase-ladder mode (S124/FK-22): GoToPhase(1) control -> GoToPhase(4) treatment ->
+[PH] re-read +0xA44 -> poke 3/hold/poke 4 -> BP_AuthSetCurrentPhase(6) if the delegate has subscribers.
+[PH] Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp -> this). Not meaningful at the menu.
+[PH] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[PH] gm-cand[0] 0x1B2700D0040 'EndOfGameModel'  chain=EndOfGameModel<-Object  [+0x418]=0x0 not-live
+[PH] world 0x1B39ECF6B40 'LVL_Tutorial' AuthorityGameMode@0x250=0x0  GameState@0x258=0x0
+[PH] gm-cand[1] 0x1B37ED25CE0 'Comp_GameMode_EoGFinisher'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x418]=0x3F0000003F000000 not-live
+[PH] gm-cand[2] 0x1B305F6C800 'Comp_GameMode_DeathCircle'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x418]=0x1E4340001E433 not-live
+[PH] gm-cand[3] 0x1B3771413C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x418]=0x1B37E2C9E00 not-live
+[PH] gm-cand[4] 0x1B361978F80 'Comp_GameMode_ShopKeepers'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x1B2E0306600 LIVE-UOBJECT
+[PH] gm-cand[5] 0x1B3857EA4C0 'BP_LokiGameMode_Tutorial_C'  chain=BP_LokiGameMode_Tutorial_C<-LokiTutorialGameMode<-LokiRoundGameMode<-LokiGameMode<-LokiGameModeBase<-GameModeBase<-Info<-LokiActor<-Actor<-Object  [+0x418]=0x1B4021B60A0 LIVE-UOBJECT
+[PH] gm-cand[6] 0x1B406CC9580 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x9600330035000811 not-live
+[PH] gm-cand[7] 0x1B3737CD8A0 'Comp_GameMode_EoGFinisher_GEN_VARIABLE'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x418]=0x1B404B328E0 not-live
+[PH] gm-cand[8] 0x1B40053B5C0 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x418]=0x8A8A8DA2A08C8B8A not-live
+[PH] gm-cand[9] 0x1B382AAAF00 'Comp_GameMode_DeathCircle_GEN_VARIABLE'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x418]=0x100000001 not-live
+[PH] gm-cand[10] 0x1B3735FE380 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x16FFFFFFFF not-live
+[PH] gm-cand[11] 0x1B37B7E0E00 'Comp_GameMode_WipeoutRespawns_GEN_VARIABLE'  chain=Comp_GameMode_WipeoutRespawns_C<-ActorComponent<-Object  [+0x418]=0x1B22DB78D00 LIVE-UOBJECT
+[PH] gm-cand[12] 0x1B37B7E4000 'Comp_GameMode_Vaults_GEN_VARIABLE'  chain=Comp_GameMode_Vaults_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[13] 0x1B388498500 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x1B26DAB8F80 LIVE-UOBJECT
+[PH] gm-cand[14] 0x1B36B0E14E0 'Comp_GameMode_QuestManager_GEN_VARIABLE'  chain=Comp_GameMode_QuestManager_C<-ActorComponent<-Object  [+0x418]=0x6EA7F10200000000 not-live
+[PH] gm-cand[15] 0x1B39438CAE0 'Comp_GameMode_Biomes_GEN_VARIABLE'  chain=Comp_GameMode_Biomes_C<-Comp_GameMode_Biomes_Code_C<-LokiBiomeManagerComponent<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[16] 0x1B3879E1600 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x2ABB20002AB93 not-live
+[PH] gm-cand[17] 0x1B36B0ED300 'Comp_GameMode_RoundReset_GEN_VARIABLE'  chain=Comp_GameMode_RoundReset_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm enumeration: 18 live *GameMode instance(s), 1 deriving from LokiRoundGameMode; world=0x1B39ECF6B40
+[PH] GameMode selection: 0x1B3857EA4C0  reason: the ONLY live instance deriving from LokiRoundGameMode (the class that DECLARES GoToPhase); no World AuthorityGameMode available
+[PH] GoToPhase param[0] NextPhase                  @0x0 flags=0x18001040000280
+[GP] gm=0x1B3857EA4C0 goToPhaseThunk=0x7FF7A1417200 child=0x1B26337B600 NextPhase@0x0
+[PH] GameState = [gm 0x1B3857EA4C0 + 0x418] = 0x1B4021B60A0 class=BP_LokiGameState_Tutorial_C  chain-names-GameState=1
+[PH] cross-check: no World->GameState available -- the check is ABSENT, not passed
+[PH] BP_AuthSetCurrentPhase param[0] NewPhase                   @0x0 flags=0x18001040000280
+[PH] BP_AuthSetCurrentPhase param 'NewPhase' @0x0
+[PH] resolve OK: gm=0x1B3857EA4C0 gs=0x1B4021B60A0 goToPhase=0x7FF7A1417200 authSet=0x7FF7A13478D0
+[FS] cfg KFUNCSWAP=1 max=0 name='ReceiveTickClient' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF79D3054A0 stub=0x1B39B951140 funcCls=0x1B21CC6B000 gameTid=134212
+[PH] ================ RM_PHASELADDER: FK-22 arms A0'..A5 ================
+[PH] cfg arms=0x3F holdMs=2000 holdHits=600 wdGraceMs=5000 stepMs=400 modeHoldMs=90000
+[PH] A0' CurrentPhase   GS+0xA44 = 0 (ServerStartup)      [FK-22 predicts 0]
+[PH] A0' OnRoundPhaseChanged  GS+0x590 Data=0x1B408640880  +0x598 Num=7  +0x59C Max=24   [Num<=0 => Broadcast is a HARD NO-OP; A5 is uninterpretable]
+[PH] A0' MatchStartDetails GS+0x738 Data=0x0 Num=0 Max=0 ''   [gate 1->2 needs Num>1]
+[PH] A0' GameMode  +0x790=0x0 [gate 1->2 needs 0]   +0x7B0=0 [gate 1->2 SETS this to 1]   +0x7C0=4 [gate 3->4 needs 4]
+[PH] --- A1 (POSITIVE CONTROL): GoToPhase(1). Baseline is EXACTLY ONE `Setting Phase to 1 (BeginInit)` per log across 193 files, so a SECOND occurrence in this file cannot have come from the game. ---
+[PH] A1 BEFORE: calling GoToPhase(1=BeginInit)  live +0xA44=0(ServerStartup)  [gate is `cmp arg,[GS+0xA44]; je bail` -- equal would be a SILENT no-op]
+[PH] A1 AFTER:  GoToPhase(1) returned ; +0xA44 0(ServerStartup) -> 0(ServerStartup)  [grep Loki.log for `Setting Phase to 1 (BeginInit)` -- THAT is the receipt, not this line]
+[FS] arm: swapped=2 BP UFunctions  (scan 3922 ms over 154619 objects, 34253 UFunctions total) -- NO .text WRITE
+[PH] --- A2 (TREATMENT): GoToPhase(4). `Setting Phase to 4 (SpawnSelect)` and its Transitioning line exist in ZERO of the 193 corpus logs. ---
+[PH] A2 BEFORE: calling GoToPhase(4=SpawnSelect)  live +0xA44=0(ServerStartup)  [gate is `cmp arg,[GS+0xA44]; je bail` -- equal would be a SILENT no-op]
+[PH] A2 AFTER:  GoToPhase(4) returned ; +0xA44 0(ServerStartup) -> 0(ServerStartup)  [grep Loki.log for `Setting Phase to 4 (SpawnSelect)` -- THAT is the receipt, not this line]
+[FS] hot: 1 distinct UFunction dispatched on the GAME THREAD in the first 4000 ms
+[FS]   hot[00] hits=11      BP_LokiHeroCharacter_C::ReceiveTickClient  (0x1B429F17300)   <- candidate for -DKFSNAME
+[FS] *** ARMED AND LIVE: hitsGT=27 allThreadCalls=27 after 8000 ms (~3 game-thread dispatches/s) ***
+[FS] t=+15s hitsGT=27 called=27 allThreadCalls=27 swapped=2
+[FS] t=+30s hitsGT=27 called=27 allThreadCalls=27 swapped=2
+[FS] t=+45s hitsGT=27 called=27 allThreadCalls=27 swapped=2
+[FS] t=+64s hitsGT=27 called=27 allThreadCalls=27 swapped=2
+[FS] t=+79s hitsGT=27 called=27 allThreadCalls=27 swapped=2
+[FS] disarm: restored=2 of 2 swapped (scan 4672 ms, 34356 UFunctions live)
+[PH] done (step=3 a4Poked=0 a4Restored=0 holdHits=0 called=27 hitsGT=27)
