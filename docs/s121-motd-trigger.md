@@ -162,8 +162,40 @@
 > layout's OWN prompt container, in which case **`MainMenu_NormalV2.PromptStack` being empty is
 > irrelevant: I measured the wrong stack.** The `MenuRootV2 -> MainMenu_NormalV2 -> PromptStack`
 > path documented above is a *different* PushPrompt implementation that this call never reaches.
-> **Next: `bpdump BP_LokiHUDWidget PushPrompt_Instance` and read whichever container IT targets, on
-> the live `0x269A2B3A300`.**
+> ### ✅ THE BLUEPRINT TRAIL ENDS AT A NATIVE BOUNDARY [M]
+>
+> `BP_LokiHUDWidget_C::PushPrompt_Instance` is an **event stub** (`FUNC_Event`): it writes both
+> params to the persistent frame and calls `ExecuteUbergraph_BP_LokiHUDWidget(10)`. That entire
+> ubergraph is **4 bytecodes**:
+>
+> ```
+> [0] EX_ComputedJump(EntryPoint)
+> [1] EX_FinalFunction  StackNode: PushPrompt_Instance     <- the "call parent" pattern
+> [2] EX_Return
+> ```
+>
+> ⇒ **The Blueprint layer is a pure pass-through.** `BP_LokiHUDWidget_C`'s parent is
+> **`LokiHUDLayout`, a NATIVE C++ class** (see the derivation chain above), so the real
+> implementation — and the real prompt container — is native.
+>
+> ★★ **That explains the empty stack completely.** `MainMenu_NormalV2.PromptStack` is the container
+> used by `WBP_UI_MainMenu_NormalMainMenu::PushPrompt`, a *different* Blueprint implementation. The
+> MOTD call goes RootV2 → (inherited) `BP_LokiHUDWidget_C` → **native `LokiHUDLayout`**, and never
+> touches that stack. Measuring it empty was measuring the wrong object — as suspected one entry
+> above, now confirmed.
+>
+> ⚠ Note the signature detail: the interface's `PushPrompt` has an **out-param** (`OutPrompt`), but
+> `PushPrompt_Instance` has only **2** ChildProperties (Object + Bool) — **no out-param**, because
+> `FUNC_Event` implementations cannot return values. So the caller's
+> `CallFunc_PushPrompt_OutPrompt` is **never written by this path**. That independently undermines
+> the earlier reading of `Try_Show_MOTD_Widget = 0x2692C618DF0` as "a widget was created": on this
+> route nothing writes that local at all.
+>
+> **NEXT (native, not Blueprint):** find `ULokiHUDLayout`'s prompt container. Either walk the live
+> `0x269A2B3A300` for a `CommonActivatableWidgetStack`-typed member (its class chain includes
+> `LokiHUDLayout`, so a reflected UPROPERTY would show up in a full property dump), or disassemble
+> `ULokiHUDLayout::PushPrompt`. `tools/re/bpframe_readout.py`'s `props_of()` already does the former
+> for any object.
 >
 > ⚠⚠ **INSTRUMENT CAVEAT ON THE TABLE ABOVE — only the POSITIVE is trustworthy.** The per-class
 > UFunction counts read `3, 3, 3, 0, 3 …`, and `Object` certainly has more than 3, so the walk is
