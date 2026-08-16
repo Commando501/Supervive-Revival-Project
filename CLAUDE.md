@@ -851,11 +851,13 @@ BACKEND — no shim, no injection, no `.text` write.
   `StatsByQueue["tutorialNew"]` lands on **BASIC TRAINING**, and TRAINING MODE / PRACTICE RANGE /
   CO-OP VS. AI render **all zeros** — a free negative control, since we serve only that one queue,
   so the queue keying is confirmed in BOTH directions.
-  ★★ **`Placements` IS ZERO-INDEXED (key 0 == 1st place)** [I], derived from the two numbers the
-  page COMPUTES rather than echoes: serving `{1:3,2:5,3:4}` gave `WINS 0` and `TOP 3 8`.
-  0-indexed predicts both (`WINS=P[0]`=absent=0, `TOP3=P[0]+P[1]+P[2]`=8); 1-indexed predicts
-  neither (3 and 12). Pre-registered test now in the code: `{0:3,1:5,2:4}` should render
-  **WINS 3 / TOP 3 12** on the next relaunch.
+  ★★★ **`Placements` IS ZERO-INDEXED (key 0 == 1st place) — [M], CONFIRMED BY PREDICTION.**
+  Serving `{1:3,2:5,3:4}` gave `WINS 0` / `TOP 3 8`; 0-indexed predicts both
+  (`WINS=P[0]`=absent=0, `TOP3=P[0]+P[1]+P[2]`=8) while 1-indexed predicts neither (3 and 12).
+  The pre-registered test was then flown: `{0:3,1:5,2:4}` rendered **WINS 3 / TOP 3 12**, exactly
+  as written down beforehand, **with all eight echoed tiles unchanged** (MATCHES 12, KILLS 40,
+  STREAK 4, KNOCKS 55, 21,400 / 5,100 / 19,800, 2h 20m 0s) — two derived values moved, nothing
+  else did, from one key edit.
   ⚠ **`FPlayerHeroStats` HAS NO `Wins` FIELD** — which is why WINS must be derived, and which
   independently confirms that those 22 fields are NOT the `statCode` namespace (`wins` is not
   among them; `ST_Leaderboard_Stats` is that vocabulary).
