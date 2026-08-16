@@ -107,6 +107,67 @@ the obviously-named function probably *is* the origin, reaching the chain by fal
 predicate and then jumping. **The narrow claim (not a direct jump target) stands; the broad one
 (not the caller) was unsupported and is withdrawn.**
 
+## 4b. ★★ THE PREDICATE, FULLY TRACED [M]
+
+Every term resolved from the bytecode:
+
+```
+BooleanAND    = IsValid(ClientConfigManager) AND IsConfigurationLoaded
+BooleanAND_1  = BooleanAND   AND IsMatchHistoryLoaded
+BooleanAND_2  = BooleanAND_1 AND NOT GetMatchInfo          (i.e. not already in a match)
+BooleanAND_3  = BooleanAND_2 AND PartyModel->IsPartyValid
+BooleanAND_4  = BooleanAND_3 AND GetCurrentPlayerProgression
+BooleanAND_5  = BooleanAND_4 AND Array_IsNotEmpty(OutPlayer.MissionInfo.MissionData)
+
+BooleanAND_8  = PartyManager->GetInitialExcludedRegionsSet AND (Map_Find_Value_3 == …)
+Not_PreBool_3 = NOT Map_Find(GetFeatureToggle_FeatureToggle, <string>)
+Not_PreBool_1 = NOT ShouldLaunchTutorialMatch
+BooleanOR_1   = BooleanAND_8 OR Not_PreBool_3
+BooleanOR_2   = BooleanOR_1  OR Not_PreBool_1
+BooleanAND_9  = BooleanAND_5 AND BooleanOR_2               <- gates the jump at 4668
+```
+
+⚠ **The array is `MissionInfo.MissionData`, NOT `Matches`.** Reached by nested
+`EX_StructMemberContext` (`MissionData` inside `MissionInfo` inside the progression struct). An
+early guess here was "`Matches`, which we serve empty — that's the bug"; it was **wrong**, and
+reading the two `Property:` names instead of assuming the obvious field is what caught it. We serve
+**330 missions**, so this term is **TRUE**.
+
+★ **This CONFIRMS the §4 retraction.** `[128]` sits at statement ~3400, immediately after the
+entries `On Client Config Updated` (**3353**) and `Try Start Onboarding Flow` (**3358**) — so the
+predicate block really is their tail. The obviously-named function *is* the origin.
+⇒ And since we push client config every ~30 s, **`On Client Config Updated` re-evaluates this
+predicate continuously** — the chain gets many chances, not one.
+
+### ⚠ THE AWKWARD RESULT: every term looks TRUE
+
+| term | expected on our stack |
+|---|---|
+| `IsValid` / `IsConfigurationLoaded` | TRUE — client config is served and adopted (eTag confirmed) |
+| `IsMatchHistoryLoaded` | TRUE — FK-17 opened exactly this gate with `FMatchHistory{…,Matches:[]}` |
+| `NOT GetMatchInfo` | TRUE — sitting at the menu |
+| `IsPartyValid` | TRUE — solo party served since S85 |
+| `GetCurrentPlayerProgression` | TRUE — `/progression` served and ingested |
+| `Array_IsNotEmpty(MissionInfo.MissionData)` | **TRUE — 330 missions** |
+| `BooleanOR_2` | TRUE via `NOT ShouldLaunchTutorialMatch` alone (no tutorial forced) |
+
+**So `BooleanAND_9` should be TRUE and the chain should run — and it does not.** That is a real
+tension, not a resolution, and it is recorded as such rather than smoothed over.
+
+Two candidates, and they are distinguishable:
+1. **One term is false in fact.** `IsConfigurationLoaded` and `IsMatchHistoryLoaded` are the two
+   nobody has ever read directly; both are native getters, both plausible.
+2. **The chain DOES run and `Try Show MOTD` bails at its own gate [1]** —
+   `IsFeatureEnabled("motd", false)`. ⚠ **Which `Config` sub-key the NATIVE
+   `UClientConfigManager::IsFeatureEnabled` reads has never been measured** — it is flagged **[S]**
+   in `SURFACES.md`. The declarative widget's `"enabled"` was measured; the native function's key
+   was only assumed to match. If it reads a third spelling, everything above passes and the very
+   first gate still fails.
+
+★ **Candidate 2 is cheap to settle and would generalise:** it is the same missing readout as A-14,
+but for the *bytecode* keys. `toggle_readout.py` cannot see them (no widget), so the native call
+needs its own probe.
+
 ## 5. What is left
 
 Resolve `BooleanAND_5`, `BooleanAND_8`, `Not_PreBool_1`, `Not_PreBool_3` back to the function calls
