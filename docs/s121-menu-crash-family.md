@@ -19,8 +19,13 @@ shim-image-scan family. Claims are **[M]** measured / **[I]** inferred / **[S]**
 Only `rdx`/`rbx`/`r8`/`r9`/`r10` differ, and those hold high-entropy values consistent with the
 protector's MBA obfuscation (FK-10: `not`/`and`/`imul` ≈ 43 % of its instructions).
 
-★★ **The faulting address is IDENTICAL across two processes despite ASLR.** That makes it
-deterministic, not a wild pointer.
+★★ **The faulting address is IDENTICAL across two processes.** That makes it deterministic rather
+than a wild pointer — the same code path, twice.
+⚠ **But do NOT phrase this as "despite ASLR".** [M] `ntdll` and `kernel32` have the SAME base in
+both dumps, because Windows fixes system-DLL bases per **boot**, not per process, and this address
+sits in that zone. The stability is therefore expected, not remarkable, and carries far less weight
+than it first appears. (An earlier draft of this file leaned on it; see the shim section for the
+discriminator that actually does the work.)
 
 ★★ **`RET = KERNEL32.DLL + 0x17374`** [M] — resolved in the 221-module dump; run 1's 182-module
 dump could not place it. A KERNEL32 frame as the *only* thing under the faulting instruction is the
