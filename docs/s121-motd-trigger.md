@@ -140,11 +140,37 @@
 > reference points at **`WBP_UI_MainMenu_RootV2_C`**, not `MenuRootV2` — and a `bpdump` of the
 > `WBP_UI_MainMenu_RootV2` asset lists **10 UFunctions with no `PushPrompt`**; `PushPrompt` is
 > declared on `WBP_UI_MainMenu_MenuRootV2`. [M for both dumps]
-> ⚠ **NOT a conclusion.** Blueprint interface calls resolve through the class hierarchy, and that
-> `bpdump` shows only the asset's OWN functions — an inherited or C++-side implementation would not
-> appear. **Check the class-derivation chain of `WBP_UI_MainMenu_RootV2_C` for `MenuRootV2` (or a
-> shared parent) before concluding anything.** This project has burned sessions on exactly this:
-> treating "not in the asset I dumped" as "does not exist".
+> ⚠ NOT a conclusion — and the derivation check then refuted it.
+>
+> ### ⛔ REFUTED: RootV2 DOES implement PushPrompt, by inheritance [M] (`tools/re/class_derivation.py`)
+>
+> ```
+> WBP_UI_MainMenu_RootV2_C
+>   -> BP_LokiHUDWidget_C          <<< PushPrompt_Instance
+>   -> LokiHUDLayout -> LokiActivatableWidget -> CommonActivatableWidget
+>   -> CommonUserWidget -> UserWidget -> Widget -> Visual -> Object
+> ```
+>
+> `PushPrompt_Instance` is the Blueprint **interface-implementation** naming convention, so the
+> interface call on RootV2 **resolves normally**. "RootV2 does not implement PushPrompt" was an
+> artifact of a `bpdump` that lists only an asset's OWN functions — exactly the
+> "not in the asset I dumped" ⇒ "does not exist" error the previous entry warned about, committed
+> one step later anyway.
+>
+> ★★ **AND IT REFRAMES THE EMPTY STACK.** The implementation lives on **`BP_LokiHUDWidget_C`**, a
+> HUD widget base — not on `WBP_UI_MainMenu_NormalMainMenu`. [I] It plausibly pushes to the HUD
+> layout's OWN prompt container, in which case **`MainMenu_NormalV2.PromptStack` being empty is
+> irrelevant: I measured the wrong stack.** The `MenuRootV2 -> MainMenu_NormalV2 -> PromptStack`
+> path documented above is a *different* PushPrompt implementation that this call never reaches.
+> **Next: `bpdump BP_LokiHUDWidget PushPrompt_Instance` and read whichever container IT targets, on
+> the live `0x269A2B3A300`.**
+>
+> ⚠⚠ **INSTRUMENT CAVEAT ON THE TABLE ABOVE — only the POSITIVE is trustworthy.** The per-class
+> UFunction counts read `3, 3, 3, 0, 3 …`, and `Object` certainly has more than 3, so the walk is
+> **under-enumerating** (it follows `UStruct::Children`/`UField::Next`, which is not the whole
+> picture — a UClass resolves calls through its FuncMap). ⇒ the `PushPrompt_Instance` **hit** is
+> real and specific, but an **absence** in that listing proves nothing. Do not use this probe to
+> conclude a function is missing.
 >
 > ⚠ It also casts doubt on an earlier reading: `CallFunc_Try_Show_MOTD_Widget = 0x2692C618DF0` was
 > taken as "a widget was created". That object's NAME is exactly `WBP_UI_Menus_MessageOfTheDay_C` —
