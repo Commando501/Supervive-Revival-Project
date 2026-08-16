@@ -356,6 +356,73 @@ not a defect. ★ The proof it is not the queue selection: on opening the page t
 Exiting onboarding needs a non-empty `FMatchHistory.Matches`, which FK-17 deliberately avoided
 because `FMatchHistoryEntry` is 15 fields and a wrong-typed matched key sinks the document.
 
+---
+
+## 11. ★★★★★ FLOWN AND CONFIRMED: `queue.restrictions.<queueId>` unlocks a gated activity
+
+**Status: [S] → [M].** The dynamic toggle key works. Backend-only, no shim, no `.text` write, and
+flown on the same client that had then been up **3h39m**.
+
+### Full A-B-A, operator-observed
+
+| arm | `AGS_QUEUE_UNLOCK` | ARENA tile | FIND MATCH | error |
+|---|---|---|---|---|
+| **B** | `deathmatch` | no lock; real description *"Fast-paced 4v4 in close quarters"*; selectable | **active, reads ARENA** | none |
+| **A′** | *(withdrawn)* | `Requires Hunter's Journey level 13` · `LEVEL 13 🔒` | **greyed out** | **"Unable to modify activity."** |
+
+Both transitions were pre-registered before being observed. The eTag moved automatically in each
+direction (`…-8-sweep-batchA` ⇄ `…+x-queue.restrictions.deathmatch`) and the client's
+`LogClientConfig` receipt confirmed adoption in both arms. Canaries 0 throughout.
+
+⇒ **`featureToggles["queue.restrictions.<id>"].Config["Level"] = "0"` clears a queue's Hunter's
+Journey requirement from the backend.** The capital-`L` `Level` key is correct on the wire.
+⇒ **The toggle vocabulary is formally REOPENED.** S121 closed it at 50 declarative + 10 bytecode
+keys "with no remainder"; this key is built at runtime by `Concat_StrStr` and is invisible to both
+censuses. Other parameterized families may exist — this is now a category, not a one-off.
+
+### ★★★★★ AND IT REPRODUCED THE S60 ERROR STRING ON DEMAND — settling a 60-session misdiagnosis
+
+The reversal arm produced, verbatim:
+
+    Unable to modify activity. Note: You must always have one activity selected.
+
+That is **the exact symptom the S60 trim was created to suppress**. We can now switch it on and off
+at will, and its real trigger is **selecting a LEVEL-LOCKED queue** — not "too many queues in the
+list".
+
+⇒ **S60's diagnosis was a correlation.** Trimming the list did stop the error, but only because it
+deleted the level-gated queues (`deathmatch`, `tournament`) — leaving nothing lockable to click. The
+mechanism was never `CanControlQueue` looping `GetLevelGameFeatureUnlocked` (which §10 shows does
+not exist). **A workaround that removes the trigger looks identical to one that fixes the cause,
+and stays convincing indefinitely.**
+
+⚠ Note the weak control, stated honestly: TOURNAMENT turned out to be *selectable*, so ARENA may
+have been the only level-locked tile — "other locked queues stayed locked" had little content. **The
+temporal A-B-A reversal is what carries this result, not the spatial control.** Designing a spatial
+control and then discovering it was empty is a normal outcome; substituting the reversal is the fix.
+
+### ⚠ The tournament "stuck selection" episode was NOT ours
+
+Operator hit a window where TOURNAMENT could not be deselected. [M] from the handler log: between
+23:47:42 and 23:48:00 the client sent **ten** `setTargetQueues queue="tournament" (was "tournament")`
+— it kept re-asserting the current queue instead of sending the clicked one. **Every request was
+accepted and echoed; nothing was rejected.** It cleared by itself at 23:48:32 and switching has been
+normal since. [I] the gate is `CanSwitchQueue`, statement [1] of `CanControlQueue`, which jumps
+straight to the bail when false. Client-side and self-clearing.
+
+### ⚠ Two instrument notes from this flight
+
+- **A stale log line briefly "confirmed" a reversal that had not happened.** Matching *any*
+  `Fetched client configuration: ETag <base>` line found a pre-treatment entry, because the base
+  eTag also appears before the treatment. `Loki.log` is UTC while the shell is local, which made the
+  timestamp look plausible. ⇒ **Take the LATEST matching line and compare its timestamp against the
+  known treatment time; never accept "a line exists".**
+- **`Start-Process -RedirectStandardOutput` began failing with "Not enough memory resources"** after
+  many spawns, with 6.4 GB of 49 GB free — desktop-heap/handle exhaustion, not RAM. It left a
+  process that existed but never bound its ports, i.e. **a running `ags` that served nothing.**
+  Dropping the redirection fixed it. ⇒ **"The process exists" is not "the service is up" — check the
+  listener.**
+
 ## 8. Knobs
 
     AGS_PLAYER_RANK=0          fall through to the {} catch-all (pre-S122 behaviour, no rebuild).

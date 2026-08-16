@@ -318,6 +318,57 @@ func (s *Service) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 				"text":    envOr("AGS_MOTD_TEXT", "This client is talking to a local community backend. Menus, missions, hunter mastery and leaderboards are served from your own machine."),
 			}}
 		}
+
+		// ---- queue.restrictions.<queueId>: A THIRD KIND OF TOGGLE KEY (S122) ----
+		//
+		// ★★★★★ THIS KEY IS BUILT AT RUNTIME BY STRING CONCATENATION, so it appears in NO static
+		// key list and NEITHER S121 census could have found it. That matters beyond this knob:
+		// S121 declared the toggle vocabulary CLOSED "with no remainder" at 50 declarative + 10
+		// bytecode keys, and this is a counterexample — the vocabulary is open again, and other
+		// parameterized families may exist.
+		//
+		// [M] from the shipped bytecode (bpdump_IsQueueIDPremadeOrOverQueueLevel.txt, stmts 6-12),
+		// which is exactly what the ARENA tile calls:
+		//
+		//	[6]  Concat_StrStr("queue.restrictions.", QueueID)  -> FeatureKey
+		//	[7]  Temp_string_Variable = "Level"                 -> ConfigKey
+		//	[9]  GetFeatureToggle(key, out bHasToggle, bEnabled, out FeatureToggle)
+		//	[10] Map_Find(FeatureToggle.Config, "Level", out Value)
+		//	[11] Conv_StringToInt(Value) -> [12] SelectInt(parsed, fallback)
+		//
+		// The tile (WBP_UI_PartyQueue_DropdownItem) compares that against GetAccountPassViewModel
+		// and renders ST_Parties' "Requires Hunter's Journey level {level}". ARENA (`deathmatch`)
+		// shows 13 because we serve FPlayerProgression.AccountPass.Level = 0.
+		//
+		// ⚠ ConfigKey is "Level" with a CAPITAL L. FFeatureToggle.Config is TMap<FString,FString>
+		// and FString Map_Find is CASE-SENSITIVE (unlike FName). The lowercase `level` nearby is the
+		// FORMAT-ARGUMENT name inside the ST_Parties text — a different role, not a case ambiguity.
+		// Getting it wrong fails silently, like everything else on this path. `enabled`/`default`
+		// ride along harmlessly: extra Config entries are inert, and it is not known whether
+		// GetFeatureToggle's bEnabled out-param gates the Map_Find.
+		//
+		// ⚠ THE OTHER LEVER IS DELIBERATELY NOT THIS ONE. Raising AccountPass.Level >= 13 would also
+		// unlock ARENA, but it moves EVERY level gate at once (PASSES, hero mastery, other queues).
+		// This knob is surgical — one queue's requirement — which is what makes an UNLISTED queue a
+		// usable control in the same flight.
+		//
+		// Knob: AGS_QUEUE_UNLOCK="deathmatch" (comma-separated). Default EMPTY = byte-identical to
+		// pre-S122. ⚠ [S] BYTECODE-MEASURED, NOT FLOWN at the time of writing.
+		for _, q := range strings.Split(os.Getenv("AGS_QUEUE_UNLOCK"), ",") {
+			if q = strings.TrimSpace(q); q != "" {
+				key := "queue.restrictions." + q
+				featureToggles[key] = map[string]any{"config": map[string]string{
+					"enabled": "true",
+					"default": "true",
+					"Level":   "0",
+				}}
+				// Fold into the eTag exactly as AGS_UI_TOGGLES_EXTRA does. A runtime payload change
+				// has no code edit at which to hand-bump a literal, and changed content under an
+				// unchanged eTag is the silent no-op this project has now shipped FOUR times
+				// (client-config, regions, matchmaking, FPlayerRank.Version).
+				extras = append(extras, key)
+			}
+		}
 	}
 	// DELIBERATELY WITHHELD, with reasons:
 	//   BypassTutorialAndOnboarding  would SKIP onboarding — removes a surface, does not reveal one.

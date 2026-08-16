@@ -1174,9 +1174,23 @@ queues are the DEFAULT now; `UPartyModel.Queues` **4 → 10** [M], `Members` unc
   `Concat_StrStr("queue.restrictions.", QueueID)` → `GetFeatureToggle(key)` →
   `Map_Find(Config,"Level")` → `Conv_StringToInt` → `SelectInt(parsed, fallback)`.
   ⇒ **`featureToggles["queue.restrictions.<queueId>"].Config["Level"]="<int>"`** sets a queue's
-  required level from the backend. **[S] — bytecode-measured, NOT flown.** ⚠ `Config` is
+  required level from the backend. ⚠ `Config` is
   `TMap<FString,FString>` ⇒ `Map_Find` is case-**SENSITIVE**; `"Level"` exact. (The lowercase
   `level` nearby is the ST_Parties format-arg name, a different role — not a case ambiguity.)
+  ★★★★★ **FLOWN AND CONFIRMED — [S] → [M], full A-B-A, operator-observed. Knob `AGS_QUEUE_UNLOCK`
+  (default EMPTY).** Serving `Level:"0"` for `deathmatch`: ARENA's lock GONE, real description
+  ("Fast-paced 4v4 in close quarters"), **FIND MATCH active**. Withdrawing it: lock BACK
+  (`Requires Hunter's Journey level 13` · `LEVEL 13 🔒`), **FIND MATCH greyed**. eTag moved
+  automatically both ways; `LogClientConfig` confirmed adoption in both arms; canaries 0.
+  ★★★★★ **AND THE REVERSAL REPRODUCED THE S60 ERROR STRING VERBATIM —
+  `"Unable to modify activity. Note: You must always have one activity selected."`** ⇒ its real
+  trigger is **selecting a LEVEL-LOCKED queue**, NOT queue-list length. **S60's diagnosis was a
+  CORRELATION**: trimming the list stopped the error only because it deleted the gated queues,
+  leaving nothing lockable to click. ⇒ ★ **A workaround that removes the TRIGGER is
+  indistinguishable from one that fixes the CAUSE, and stays convincing indefinitely.**
+  ⚠ **The spatial control was empty** — TOURNAMENT turned out to be selectable, so ARENA may have
+  been the only locked tile. **The temporal A-B-A carries this result, not the sibling control.**
+  Designing a spatial control and finding it empty is normal; substituting the reversal is the fix.
   ⚠⚠ **S121 declared the toggle vocabulary CLOSED "with no remainder" at 50 declarative + 10
   bytecode keys. IT IS NOT CLOSED** — runtime-concatenated keys are invisible to both censuses, and
   other parameterized families may exist.
