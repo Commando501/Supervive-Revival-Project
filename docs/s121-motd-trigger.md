@@ -25,6 +25,32 @@
 > `MessageOfTheDayLastSeen` is still empty (that field is presumably written on acknowledge, not
 > on show).
 >
+> ### The widget is built but never PRESENTED [M]
+>
+> Live read of `WBP_UI_Menus_MessageOfTheDay_C` @ `0x2692C618DF0`:
+>
+> | property | value |
+> |---|---|
+> | `Visibility` | **0 = Visible** |
+> | `bIsEnabled` | True |
+> | `WidgetTree` | valid (`0x2692C5E1BE0`) |
+> | **`Slot`** | **null** |
+>
+> ⇒ constructed, enabled, marked Visible — and **not parented into any panel**. Corroborated by
+> absence: `WBP_UI_Menus_MessageOfTheDay` has **never** appeared in the `leaf-most node` UI-focus
+> log across this session, and the operator confirms a clean lobby by screenshot.
+>
+> ⚠ **`Slot == null` is suggestive, NOT proof.** A `UUserWidget` added straight to the viewport can
+> legitimately have a null `Slot` — that field is for panel children. So this is consistent with
+> "queued but never presented" and does not by itself establish it. **Do not upgrade this to [M]
+> without a viewport-membership check** (`GameViewportSubsystem` widget list, or the underlying
+> `SWidget`), which is the obvious next probe and is cheap with the tooling now in place.
+>
+> [I] **Working reading:** `PushPrompt(..., false)` enqueues the prompt on the main-menu prompt host
+> and returns "shown", but the host never drains the queue at the lobby — so the MOTD sits built and
+> invisible. The second argument to `PushPrompt` (literal `false` in the bytecode) is the obvious
+> suspect and has not been identified.
+>
 > ★ **How the wrong conclusion happened, because it is the instructive part:** §§1–5 reasoned
 > entirely from *static bytecode* plus *absence* (no prompt seen, empty ini) and never read the
 > running state. The predicate trace was correct — every term of it survives — but the verdict
