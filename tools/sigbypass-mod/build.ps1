@@ -247,7 +247,12 @@ $Variants = @{
         #   changes, DELETE the redundant variant rather than leave a second name for one artifact.
         # ------------------------------------------------------------------------------------------
         'play-novtguard'  = @('-DKRUNMODE=RM_PLAY','-DKVTGUARD=0')               # -1 dim: view-target guard OFF
-        'play-nogcroot'   = @('-DKRUNMODE=RM_PLAY','-DKGCROOT=0')                # -1 dim: GC-root guard OFF
+        # S123: KGCROOT's DEFAULT FLIPPED TO 0 (the poke is measured inert AND it blocks a correct
+        #   AddToRoot -- see docs/fk27-successor-gc-rooting-settled.md). So 'play-nogcroot' became a
+        #   byte-identical duplicate of 'play' (both .text 9bc10a4552c596e1, VERIFIED) and is REMOVED
+        #   per this repo's own rule about not leaving same-flag duplicates around to be A/B'd against
+        #   themselves. Its inverse is now the meaningful control and the rollback:
+        'play-gcroot'     = @('-DKRUNMODE=RM_PLAY','-DKGCROOT=1')                # +1 dim: the retired inert RootSet poke, for A/B
         'play-nopimutex'  = @('-DKRUNMODE=RM_PLAY','-DKPIMUTEX=0')               # -1 dim: PI-hook mutex OFF
         'play-noxformfix' = @('-DKRUNMODE=RM_PLAY','-DKXFORMFIX=0')              # -1 dim: spawn-FTransform fix OFF
         'play-testactor'  = @('-DKRUNMODE=RM_PLAY','-DKTESTACTOR=1')             # +1 dim: 2nd skeletal body BACK ON

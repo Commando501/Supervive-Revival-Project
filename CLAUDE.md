@@ -517,6 +517,98 @@ The short version, because it has already cost two sessions:
   `flags=00000004` / "bit 1 on 81% of ordinary objects" actually was, and it gives a free read-only GC
   clock (`tools/re/item_watch.py --marker`, ~61.1 s period).
 
+### Before touching anything GC- / rooting- / "my shim's object got collected"-shaped
+★★★★★ **SETTLED (S123, 2026-08-15) — read `docs/fk27-successor-gc-rooting-settled.md`.** Offline
+disassembly + read-only RPM, **zero launches, zero injections, zero `.text` writes.** FK-27 stays
+closed; what it never had was the MECHANISM, and the mechanism comes with **a working rooting recipe
+the project did not have.**
+- ⚠⚠ **TWO UNRELATED REASONS AN OBJECT SURVIVES GC. Conflating them is the trap, and it is the trap
+  S109/S110 fell into.**
+  **(a) The disregard-for-GC pool — excluded by INDEX, no flag involved.** `GUObjectArray` is at
+  **RVA `0x9E38920`**: `ObjFirstGCIndex@+0x00 = 39295`, `ObjLastNonGCIndex@+0x04 = 39294`,
+  `MaxObjectsNotConsideredByGC@+0x08 = 45000`, `OpenForDisregardForGC@+0x0C = 0`. All three
+  whole-array sweeps iterate `[ObjFirstGCIndex, NumElements)`, never from 0 (`0x01259162` START,
+  `0x0125916D` END). **Nothing below 39,295 is ever traversed, marked, or freed.**
+  **(b) Real roots — a REGISTRY; the flag is only bookkeeping.** `AddToRoot` (1) inserts the
+  `InternalIndex` into a **`TSet<int32>` at `.data 0x99D3CA0`** under the critical section at
+  `.data 0x9E23BF0`, then (2) ORs `0x40000000` into `FUObjectItem.Flags`. The gather
+  (`.text 0x1259020`, `"GC.MarkRootObjectsAsReachable"`) copies that set to a `TArray<int32>` and
+  `ParallelFor`s over the **indices**; the mark body `0x123E3B0` has **no bit-30 predicate**.
+  ⇒ an `InterlockedOr` writes the mirror and never enters the gather. **That is FK-27's inertness,
+  mechanically.** [M] the registry holds exactly **32** entries, **set-identical** (zero symmetric
+  difference) to the 32 high-index bit-30 objects a full 200,475-object flag census finds.
+- ⚠ **`RVA_OBJOBJECTS = 0x9E38930`** — the constant in `tutorial_launch.cpp:23`, `item_watch.py:60`
+  and ~20 shim sources — is `FUObjectArray + 0x10`, the *inner* `ObjObjects`. Correct for its use,
+  but it is **why nobody had the disregard fields: they sit 0x10 BELOW it.**
+- ★★★★★ **AND INSERTING IS *SUFFICIENT*, NOT MERELY NECESSARY — `KeepFlags == 0`, so GC mark body B
+  is DEAD and the registry is the ENTIRE root seed.** `CollectGarbage` parks `KeepFlags` in a static
+  global at **`.data 0x9E25348`** (= `state->KeepFlags`, `state` at `0x9E252C0`, field `+0x88`).
+  Four agreeing measurements: 8/8 `CollectGarbage` + 2/2 `TryCollectGarbage` sites `xor ecx,ecx`
+  (tool control: the same tracer sees 12 distinct arg1 forms elsewhere, so it is not defaulting);
+  zero stored pointers to either entry ⇒ no indirect caller; `0` in both cold images; and **[M] live
+  `*(int32*)(base+0x9E25348) == 0`** with the control that 89/160 bytes of the surrounding state
+  object are non-zero. Body B's inner test is `test [rax], ecx` with `[rax]==0` — dead either way.
+- ★★★★★ **THE RECIPE (offline-derived + live-verified reads; NOT YET FLOWN). TWO LEVELS — do not
+  conflate them:**
+  **`UObject` level (use this):** `AddToRoot` **`.text +0x489F9B0`** · `RemoveFromRoot`
+  **`+0x48B4BD0`** · `void __fastcall(UObject*)`.
+  **`FUObjectItem` level (only if you hold the item):** `SetRootFlags` **`+0x129AC90`** ·
+  `ClearRootFlags` **`+0x1243B50`** · `bool __fastcall(FUObjectItem*, uint32)`, flags in `edx`.
+  All four **fold multiplicity 1**, byte-identical in both dump images; controlled against the
+  91-way-folded `execFoo` thunk `0x5254180` which occurs **907×**.
+  A **plain direct call** from an injected DLL — no `.text` write, no PI hook, no native-call
+  primitive; it takes its own lock. No reflected route exists (18,325-function UHT scan: 1 hit, an
+  unrelated `ALokiCharacter::IsRooted` movement effect).
+- ⚠ **A fourth writer of the registry exists** — `0x0123E0E1`, opposite polarity, domain `[0,N)`
+  including the pool — but it is the `'GC.OnDisregardForGCSetDisabled'` `ParallelFor` body and fires
+  only when disregard-for-GC is DISABLED. This build has it enabled, so it has never run.
+- ⚠⚠ **THE OLD POKE POISONS THE FIX.** `SetRootFlags` (`0x129AC90`) early-outs on
+  `if (Flags & 0x4E100000) skip the insert`, so an object the shim already OR'd looks "already a
+  root" and a subsequent CORRECT `AddToRoot` **silently does nothing**. ⇒ **`KGCROOT` now DEFAULTS
+  TO 0** (S123). `play` `.text` moved `5151621d2154e454` → **`9bc10a4552c596e1`**; rollback is
+  `build.ps1 -Variant play-gcroot`, **verified to reproduce `5151621d2154e454` exactly**, and the
+  new default is byte-identical to the retired `play-nogcroot` control arm. Both directions measured.
+- ★ **FREE RPM RECEIPT — use this, never `IsRooted`:**
+  `*(int32*)(base+0x99D3CA8) - *(int32*)(base+0x99D3CD4)` (`ArrayNum - NumFreeIndices`) reads **32**
+  and must move **+1 per rooted object**. `IsRooted` (`0x48B2200`) reads **only the flag**, so it
+  returns true for exactly the failure being diagnosed.
+- ★ **`KANIMREF` is RE-FRAMED, not replaced** — parking the asset in a real `UPROPERTY` is the *same*
+  mechanism real roots use (be reachable by the traversal). It stays the default.
+- ★ **FK-28's rotating bits 0/1/2 explained:** `.data 0x99D36A0/A4/A8` hold the
+  Reachable/Unreachable/MaybeUnreachable **values**, rotated O(1) per pass (`0x01258F70` start,
+  `0x012398C2`/`0x01239B76` end) — the population is not rewritten. Keep mask `0x4E100000` =
+  `RootSet|AsyncLoading|Async|Native|LoaderImport`. Bit 24 `ClusterRoot` ⟺ `ClusterRootIndex < 0` at
+  **100.000%** over 200,437 objects (0 FP, 0 FN) ⇒ stock `EInternalObjectFlags` numbering IS in
+  force, which is what makes bit 30 = RootSet a measurement rather than a name-guess.
+- **Readout: `tools/re/rootset_census.py`** (read-only RPM). ⚠ It had **10 defects**, found by
+  adversarial review and fixed/annotated in-file. Two generalise:
+  ★★ **recording a DERIVED BOOLEAN instead of the RAW FLAG WORD destroyed the evidence** — the
+  tracker stored "carries the currently-dominant bit", and that comparator is a lagging majority vote
+  whose polarity **inverts** during a mark ramp, so the same objects read 32/32 at a 0.4 s period and
+  **0/32** at 0.5 s. **Record raw; derive afterwards.** And the first sample was counted as a
+  rotation, inflating every run by one.
+- ⛔ **DO NOT recycle two arguments that were REFUTED even though the conclusions held:**
+  "zero free slots below the boundary, P≈1e-676" is **not** valid evidence (5,705 of 7,282 free slots
+  are one contiguous run at the boundary, `[45000..169999]` also has zero holes and is not rooted,
+  and "no holes below the first hole" is circular); and the 32/32-vs-40/40 marking statistic is void
+  as stated. The boundary rests on `ObjFirstGCIndex` read directly plus the **20 live pool objects
+  that lack bit 30 and are still never marked and never collected**.
+- ⚠ **"Roots are marked first" is [I], n = 1 of 9 passes** (8 of 9 complete in under 0.4 s with no
+  observable ramp). The one ramped pass gave roots 32/32 vs index-matched ordinary 17/32,
+  Fisher p = 3.6e-6 — best available, still a single observation.
+- ⚠⚠ **46th instrument-artifact instance, and it was mine — AND IT WILL RECUR ON ANY `TSet` IN THIS
+  IMAGE.** I read the registry's `TSparseArray.ArrayNum` (**49,307**) as its member count, ignoring
+  `NumFreeIndices` (49,275) **in the same hex dump**, derived three false conclusions, and challenged
+  a correct offline result with them. `Num()` is `ArrayNum - NumFreeIndices` — the engine computes it
+  at `0x011D44EE` (`sub edx,[rcx+0x34]`). **Two properties make the wrong read SELF-VALIDATING:** the
+  inline `FF×16` bitmap is dead storage once `NumBits > 128` (`0x011D4533 cmove r10, rax`), so it
+  reads "all allocated"; and a FREED slot passes every field-range check *by construction* (stale
+  `Value`s are real former indices; the free-list link shares bytes with `HashNextId`). So "88% are
+  live indices" and "every `HashIndex` < `HashSize`" both pass on garbage.
+  **Always walk the allocation bitmap; never trust the slot array.**
+- Open: **the recipe has not been flown.** Everything above is disassembly plus live-verified *reads*;
+  the *call* is untested. One armed window with the +1 receipt settles it.
+
 ### Before touching anything WebSocket- / notification- / server-push-shaped
 ★★★★★ **THE `/lobby` ENVELOPE — EVERY FRAME WE EVER SENT THERE WAS SILENTLY DROPPED, NOW FIXED
 (S117, 2026-08-13). Read `docs/fk15-lobby-fragment-defect-20260813.md` FIRST.**
@@ -1048,11 +1140,54 @@ arms, zero launches**, all on one continuously-running client.
   `DT_SeasonalBattlepassRichText` and `LT_ArmoryEquipment_Season2` but **no packed
   `LokiDataAsset_Season`** — the same missing asset this file already records as blocking the
   seasonal battlepass. The cast has nothing to land on.
-- ★ **LIVE LEAD:** `queueIDs` was trimmed to 4 by an **S60 diagnostic** because level-gated queues
-  broke `CanControlQueue` at account level 0 — and that comment's own stated fix ("serve a high
-  account level") HAS since shipped (S120 serves `AccountPass.Level = 10`). Full shipped vocabulary
-  [M] at `interactive.go:1300`: `default deathmatch practice dropin customgame bots tutorialNew
-  training armorydeathmath tournament`. **The trim may be obsolete — untested.**
+★★★★★ **THE S60 QUEUE TRIM IS RETIRED, AND THE WORKAROUND WAS HIDING THE DEFECT (S122).** All 10
+queues are the DEFAULT now; `UPartyModel.Queues` **4 → 10** [M], `Members` unchanged as control,
+0 errors. Read `docs/s122-player-rank-career-badge.md` §10.
+- ⚠⚠ **The trim's stated mechanism DOES NOT EXIST.** [M] `bpdump_CanControlQueue.txt` 181-185:
+  `GetLevelGameFeatureUnlocked` is called **exactly once**, with a **hardcoded**
+  `PrimaryAssetId{GameFeature,"Ranked"}`, behind `EX_PopExecutionFlowIfNot(Not(bIsRankedEligible))`,
+  only to FORMAT the "you need level N" text. **No loop over queues, no per-queue feature lookup.**
+- ⚠⚠ **AND "S120 serves AccountPass.Level = 10" IS FALSE — the live server serves `Level 0`.** S120
+  *measured* that serving 10 removed the mastery lock; it never became the default (it comes from
+  persisted per-player state). This file asserted it earlier in S122 and it was wrong.
+  ⇒ ★ **Read a remembered measurement as a measurement, not as the shipped default. Check the wire.**
+- ★★★★★ **REMOVING THE TRIM ALONE WAS NOT ENOUGH, and that is the reusable part.** Clicking a tile
+  POSTs **`/party/parties/{p}/setTargetQueues {"queueIds":["…"]}`** — which had **NO HANDLER**, fell
+  to the `/` catch-all, and the next `/party` poll re-served the old `targetQueueId`, snapping the
+  selection back (the observed grey/un-grey). **Under the trim this was INVISIBLE — with one
+  selectable activity there was nothing to switch to.** S60 saw "activities don't work", trimmed the
+  list, and the trim removed the EVIDENCE rather than the cause.
+  ⇒ ★ **A workaround makes the bug it hides unobservable, so the workaround looks correct forever.
+  Removing it is how you find out.** Now implemented (persists + echoes the party; `store.update`
+  bumps `partyVer` so the S85 monotonic `SetParty` gate accepts it). Operator-confirmed.
+- ⚠⚠ **THE SWEEP METHOD'S BLIND SPOT, named by its own miss:** the §1 capture-diff reported "8
+  unserved" and **missed `setTargetQueues`, because nobody clicked a tile during that capture.**
+  ⇒ **A passive capture-diff is a LOWER BOUND on unserved surface, never a map.** Drive the UI
+  through the interactions you care about, THEN re-run the diff.
+- ⚠ **ARENA is still `LEVEL 13 🔒` and that is CORRECT** — `AccountPass.Level = 0`. [M] the tile
+  `WBP_UI_PartyQueue_DropdownItem` reads `IsQueueIDPremadeOrOverQueueLevel` → {CanQueue, UnlockLevel,
+  Reason} against `GetAccountPassViewModel`; `ST_Parties` holds
+  `"Requires Hunter's Journey level {level}"`. Serving a locked queue is harmless (the client draws
+  the lock). **Two levers, neither pulled:** raise `AccountPass.Level`, or the toggle key below.
+- ★★★★★ **A THIRD CATEGORY OF FEATURE-TOGGLE KEY — DYNAMICALLY CONSTRUCTED, so NO static census can
+  find it.** [M] `bpdump_IsQueueIDPremadeOrOverQueueLevel.txt` 6-11:
+  `Concat_StrStr("queue.restrictions.", QueueID)` → `GetFeatureToggle(key)` →
+  `Map_Find(Config,"Level")` → `Conv_StringToInt` → `SelectInt(parsed, fallback)`.
+  ⇒ **`featureToggles["queue.restrictions.<queueId>"].Config["Level"]="<int>"`** sets a queue's
+  required level from the backend. **[S] — bytecode-measured, NOT flown.** ⚠ `Config` is
+  `TMap<FString,FString>` ⇒ `Map_Find` is case-**SENSITIVE**; `"Level"` exact. (The lowercase
+  `level` nearby is the ST_Parties format-arg name, a different role — not a case ambiguity.)
+  ⚠⚠ **S121 declared the toggle vocabulary CLOSED "with no remainder" at 50 declarative + 10
+  bytecode keys. IT IS NOT CLOSED** — runtime-concatenated keys are invisible to both censuses, and
+  other parameterized families may exist.
+- ⚠ **"BASIC TRAINING is pre-selected" is ONBOARDING, not a stuck queue.** [M] live on
+  `Comp_MainMenu_Onboarding` (has-run 59): `Get_Number_of_Games_Played = 0`,
+  `Should_Launch_Tutorial_Match_bPlayMatch = True`. ★ Proof it is not the queue: on page open the
+  client POSTs `{"queueIds":["default"]}` (= BREACH) while the UI highlights BASIC TRAINING.
+  Exiting it needs a non-empty `FMatchHistory.Matches` — which FK-17 deliberately avoided, since
+  `FMatchHistoryEntry` is 15 fields and a wrong-typed matched key sinks the document.
+- Knob: `AGS_QUEUE_IDS` still overrides the list — now useful for **narrowing back** to the S60 four
+  if a regression is ever suspected, the reverse of why it was added.
 - ⚠⚠ **FOURTH stale-eTag instance, fixed in the same edit:** `matchmakingETag` was the constant
   `"revival-queues-v1"` while its body became env-dependent. Now `revival-queues-v1-<sha256[:6]>`.
   **When you make a payload env- or state-dependent, its eTag stops being a constant in THAT edit.**
@@ -1962,7 +2097,8 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **43 confirmed instances**, each of which closed a
+   blind spot recorded as a property of the game. **48 known instances** (45 tabulated; ⚠ the tally
+   has itself diverged twice — re-derive from the table, never retype the number), each of which closed a
    technique, each of which fell in minutes. Read it before recording ANY negative result as a
    property of the game. Includes the nine "how to apply" rules — positive controls, naming the
    artifact you measured, and **rule 9: grep for the claim before correcting one instance of it.**

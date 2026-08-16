@@ -24,8 +24,10 @@ a property of the game.
 SUPERVIVE, or a fact about my instrument?"** Every instance below was settled in minutes once the
 right question was asked — and every one had steered sessions, sometimes dozens, before that.
 
-**43 confirmed instances**: 42 tabulated below (S115-a/b is two), plus one caught in prose before it
-was ever written down (see the S114 note).
+**48 known instances**: 45 tabulated below (S115-a/b is two; S123 added three), plus one caught in
+prose before it was ever written down (see the S114 note), plus two cited only in `CLAUDE.md` (the
+"44th" and "45th") that were never tabulated here. ⚠ **See the divergence note under the table —
+the tally has itself been a rule-9 instance twice now. Re-derive from the table; do not retype.**
 
 **★★★ S118 (2026-08-13) added six, and THREE of them are mine — including one committed while
 writing a rule about how to avoid the very error.** The S118 set is worth reading as a group because
@@ -93,10 +95,22 @@ See [fk13-console-exec-settled.md](fk13-console-exec-settled.md).
 | **★★★ S118-g** | **A PENDING QUESTION, read as a result.** Not a blind instrument — *no* instrument. The observation was never made | a two-legged claim (`→ ONLINE`, `→ OFFLINE`) where only leg 1 was confirmed; I asked the operator to confirm leg 2, was given a different task before any answer arrived, and wrote up both | *"Server-driven presence, **on command, in both directions**"* / *"`OFFLINE → ONLINE → OFFLINE`"* — **shipped in a doc, in `CLAUDE.md`, and in the commit message** (`30e44b2`) | leg 2 is **false**: `availability: offline` parses cleanly and the panel **does not change** (×2). The tell was in my own transcript — an unanswered question. ⇒ **When a claim has N legs, count the confirmations before writing "both"/"round trip". An unanswered request for confirmation is a NULL, not a pass.** ⚠ Note the seduction: leg 1 was a genuine, well-controlled success, and its momentum carried the unobserved half along with it |
 | **★★★ S115-e** | **the CORRECTION — committed by me, inside the very fix for S115-d** | I edited `CLAUDE.md` from a read taken **earlier in the session**, before `3b29842` landed a **second** four-stub block 15 lines below the first | commit `5c32a79` shipped a `CLAUDE.md` **corrected at line 291 and still saying "UNDER CHALLENGE — FLAGGED, NOT RESOLVED … do not build on either reading" at line 311.** A file arguing with itself is worse than the original error — the next reader has textual grounds for *either* belief | one `grep`, which **the user had to ask for**, found it in seconds; fixed in `5d9632c`. ⚠⚠ **This is the third time in two sessions that the doc-hygiene error recurred inside the document written to catalogue it** (cf. the S108 header note). The pattern does this to whoever is holding it. ⇒ **rule 9** |
 
+| **★★★ S123-a** | **`TSparseArray.ArrayNum` read as `Num()`** — and the wrong read is **SELF-VALIDATING** | the root-set registry's `ArrayNum` is **49,307**; `Num()` is `ArrayNum - NumFreeIndices` = **32**. `NumFreeIndices` (49,275) was in the *same hex dump I was reading* | *"the registry holds 39,263 disregard-pool objects"*, *"~4,306 members lack bit 30"*, *"the flag-is-a-mirror model is too simple"* — **all three sent to a subagent as a formal challenge to its CORRECT result** | two properties make the error pass every sanity check: the inline `FF×16` bitmap is **dead storage** once `NumBits > 128` (`0x011D4533 cmove r10, rax`), so it reads "all allocated"; and a **freed** slot satisfies every field-range test *by construction* — stale `Value`s are real former indices and the free-list link shares bytes with `HashNextId`. So "88% are live indices" and "every `HashIndex` < `HashSize`" both **passed on garbage**. ⇒ **walk the allocation bitmap; never trust the slot array.** Will recur on any `TSet` in this image |
+| **★★★ S123-b** | **recording a DERIVED BOOLEAN instead of the RAW VALUE** — the instrument threw the evidence away | `rootset_census.py` stored *"does this object carry the bit `dominant_reach_bit()` currently returns"* rather than the flag word. That comparator is a **lagging majority vote (~15 s)** whose polarity **INVERTS** during a mark ramp | *"32/32 rooted vs 40/40 ordinary always carried the current value"* — and the derived metric measured **"was marked LAST"**, not "was re-marked" | at a 0.5 s sample period the same objects read **0/32** — *meeting my own pre-registered refutation criterion* — and at 0.4 s, **32/32**. The prediction failed in **both** directions. The conclusion survived only because a reviewer re-derived it from raw low nibbles (9 rotations, 32/32, 1,417 samples). ⇒ **record raw, derive afterwards** — a stored boolean cannot be re-analysed when its comparator turns out to be wrong |
+| **★★ S123-c** | **a probability computed against a model the data refutes** | *"zero free slots in `[0,39295)`; P ≈ 1e-676 if the 7,282 free slots were uniform"* | offered as the primary evidence for the disregard-pool boundary, in a doc and in a report to the user | the free slots are **not** uniform — 5,705 of 7,282 form **one contiguous run starting at the boundary**. Worse, `[45000..169999]` (125,000 slots, 3.2× the prefix) **also** has zero holes and is not rooted, so the signature is not specific; and "no holes below the first hole" is **circular by definition**. The conclusion was right for entirely different reasons (`ObjFirstGCIndex` read directly). ⇒ **before quoting a p-value, state the null model out loud and check the data does not already refute it** |
+
 **Why:** every one of these is a *true* observation about the instrument paired with a *false*
 generalisation to the target. They are seductive because the measurement really was performed and
 really did return nothing. The failure is never in the measuring — it is in the sentence written
 afterward.
+
+⚠⚠ **THE TALLY ITSELF HAS DIVERGED — a live instance of rule 9, in the document about rule 9.**
+The header above said *"43 confirmed instances"* while `CLAUDE.md` independently cites a **"44th
+instance"** (FK-17's cached banner image, S121) and a **"45th instance"** (the `claimableRewards`
+non-control, S120), **neither of which is tabulated here**. Adding S123-a/b/c gives **45 tabulated
+rows + 1 caught in prose + 2 cited only in `CLAUDE.md` = 48 known instances.** The count is stated
+here as a range rather than silently reconciled, because picking a number would repeat the exact
+error being catalogued. **If you cite a count, cite this line, and re-derive from the table.**
 
 ### How to apply
 
@@ -221,6 +235,25 @@ afterward.
     local, this). The pattern is not ignorance of the rule. It is that harness code feels like
     plumbing rather than instrumentation, so it escapes the scrutiny applied to the measurement it
     produces. **Treat every line of glue as part of the instrument.**
+
+14. **★★★ S123: RECORD THE RAW VALUE, DERIVE AFTERWARDS. A stored derived value cannot be
+    re-analysed when its derivation turns out to be wrong.** `rootset_census.py` sampled 200k objects
+    across three GC passes and stored, per object per sample, a **boolean** — "does it carry the
+    currently-dominant reachability bit". The comparator was a lagging majority vote whose polarity
+    inverts mid-sweep, so the whole run measured something other than what it claimed, **and the flag
+    words needed to re-derive it had already been discarded.** The same run at a 0.4 s period reads
+    32/32 and at 0.5 s reads 0/32.
+    ⇒ Storage is cheap and re-analysis is free; a derivation baked into capture is neither.
+    ⚠ This composes badly with rule 11: the derived metric *did* move, so it looked like a working
+    needle. **A metric that moves is not thereby measuring the thing you named it after.**
+
+15. **★★ S123: STATE THE NULL MODEL BEFORE QUOTING A p-VALUE, AND CHECK THE DATA HASN'T ALREADY
+    REFUTED IT.** "Zero free slots in the prefix, P ≈ 1e-676 if uniform" was reported as decisive.
+    The free slots are not uniform — most form one contiguous run at the boundary — so the null was
+    already false, the number meaningless, and a *different* region with the same property was not
+    rooted at all. The conclusion happened to be right for unrelated reasons, which is the dangerous
+    case: **a correct conclusion resting on a bogus statistic will survive review and then be cited
+    for the statistic.**
 
 Also of a piece: **findings that die in commit messages get re-litigated.** `46d873a` and `b420a69`
 had the input mechanism right on 2026-07-16 and were never promoted to a doc, so four later sessions

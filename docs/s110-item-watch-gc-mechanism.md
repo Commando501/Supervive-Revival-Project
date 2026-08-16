@@ -1,3 +1,27 @@
+> ## ⚠ PARTIAL CORRECTION — 2026-08-15 (S123). Read this first; it governs §3 and §4c.
+> **This document's headline is CORRECT and FK-27 stays closed.** The run anim really is collected,
+> and the poked RootSet bit really is inert. What is corrected is the *explanation* of why, in
+> **one sentence of §4c** and in the reading of §3's contingency table.
+> - ⛔ **"Root-set objects are EXCLUDED from marking" (0% of 4,915) is a POOLING ARTIFACT.** That
+>   bucket mixed two populations with opposite behaviour: ~39,275 **disregard-for-GC pool** objects
+>   (`InternalIndex < GUObjectArray.ObjFirstGCIndex == 39295`) which are never traversed at all
+>   because every sweep iterates `[ObjFirstGCIndex, NumElements)`; and exactly **32 real
+>   `AddToRoot()` callers** at high index which are **marked on every pass**. This document's
+>   "6 of 4915" *is* those 32.
+> - ⛔ **The "CHIMERA" state (`RootSet` + a current mark) is NORMAL, not a 0.03% anomaly.** It is the
+>   continuous state of every genuinely rooted non-permanent object. The shim's poked object had the
+>   **correct flag word** all along.
+> - ★ **The real mechanism:** `AddToRoot` inserts the object's `InternalIndex` into a `TSet<int32>`
+>   registry at `.data 0x99D3CA0` *and then* ORs bit 30. The GC gather iterates the **registry
+>   indices**; the mark body has no bit-30 predicate. **The flag is a mirror**, so an `InterlockedOr`
+>   never enters the gather. And `KeepFlags == 0`, so the registry is the *entire* seed.
+> - ✅ **§3 and §4d's own observations are UNAFFECTED** — including that rooted objects were seen
+>   being re-marked (`40000004 → 40000002`), which is exactly what the corrected model predicts. The
+>   phase-locked experiment, the three lead times, and the INERT verdict all stand.
+>
+> Full account, with the recipe for rooting an object correctly:
+> **`docs/fk27-successor-gc-rooting-settled.md`**.
+
 # S110 §1 — TASK ONE ANSWERED: the run anim is really garbage-collected, and the poked RootSet bit is inert
 
 **2026-08-05.** `docs/next-session-prompt-s110.md` §0 asked one question: when the tutorial hero's run
