@@ -266,7 +266,7 @@ This is the "do we know what the game *is*" question, and it is the weakest laye
 | Enemies / minions | **OPEN** — record self-contradictory, unmeasured since S68 | — |
 | Items / pickups | **OPEN** | — |
 | Tutorial completion | **OPEN** — never reached | — |
-| Drop-in / DropPlane | **FALSIFIED as reachable** — `SpawnPlane` faults on absent level markers | S93 |
+| Drop-in / DropPlane | **OPEN — the S93 falsification does NOT generalise (FK-22, 2026-08-16, `docs/fk22-dropphase-reachability.md`).** `SpawnPlane` is a per-variant BP override: 3 sibling `Comp_GameMode_DropPlane*` classes, all deriving directly from native `ULokiGameModeDropPlaneComponent`, **no BP-to-BP inheritance** — so an S93 measurement on the `_Tutorial` override cannot transfer. The **general** variant queries no markers (9 stmts, 0 `GetAllActorsWithTag`; its spawn lives in `OnDeathCircleSet`, derived procedurally from the death circle). The Tutorial variant's 3 markers **DO exist in `LVL_Tutorial`** (`Tags` arrays, 3 separate WP cells) ⇒ S93's stated reason is refuted on its own map; its `FAULTED` was a bare SEH catch through a primitive with an uninitialised `FFrame.FlowStack`. **Measured blockers are elsewhere:** the round phase never leaves `EGP_BeginInit(1)` (193/193 log files) and the player→plane / pod→hero handoffs are empty C++ impls. | S93 / FK-22 |
 | Stability | **PARTIAL** — `RM_PLAY` holds 10 min; **~2 of 3 launches die on the first shim** | S99b |
 
 > ⚠ **RETRACTED 2026-07-27 (S106) — "~2 of 3 launches die on the first shim" is FALSE as a mechanism.**

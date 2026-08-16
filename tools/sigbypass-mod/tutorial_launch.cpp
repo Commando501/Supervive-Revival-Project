@@ -90,7 +90,11 @@ static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
 static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for SpawnPlayer (96-byte FTransform OUT)
 
 // ---- S68 spawn+possess mode (LEAD B / OPTION 2) ----
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23 };
+// ⚠ RM_GOTOPHASE (2) is the S74 mode and is LEFT EXACTLY AS IT WAS -- it arms with InstallHook(), i.e.
+//   a standing ProcessInternal `.text` patch (the construct S112 measured at 10/10 armed-window deaths).
+//   Several docs reference its behaviour, so it is not changed in place. RM_PHASELADDER (24) is the NEW
+//   mode: same subject (the round-phase ladder), heap-only arming, and the FK-22 A0'..A5 protocol.
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24 };
 #ifndef KRUNMODE
 #define KRUNMODE RM_CHEATSPAWN
 #endif
@@ -316,6 +320,8 @@ static bool ResolveDropIn(); static void DoDropIn();            // S93 RM_DROPIN
 static bool ResolveMakeMesh(); static void DoMakeMesh();        // S93 RM_MAKEMESH: recreate a visible hero body from scratch (AddComponentByClass+SetSkeletalMeshAsset)
 static bool ResolvePlay(); static void DoPlay();               // S94 RM_PLAY: the VISIBLE + MOVABLE hero (ground-teleport + Ronin mesh + top-down cam + WASD puppet, one shim)
 static void DoCheatMgr();                                      // S114 RM_CHEATMGR: "Route B" — construct a UCheatManager and install it on the live PC (42 real exec verbs)
+static void DoPhaseLadder();                                   // S124 RM_PHASELADDER: FK-22 arms A0'..A5 on the round-phase ladder (heap-only; NO module-image write)
+static void PhaseRestore(const char* who);                     //  ...its STOP: re-poke GameState+0xA44 back to 4. Idempotent, callable from any thread.
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
 static void Markerf(const char* f,...){char b[512];va_list a;va_start(a,f);_vsnprintf_s(b,sizeof(b),_TRUNCATE,f,a);va_end(a);Marker(b);}
@@ -1000,6 +1006,9 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     // shim stops taking game-thread callbacks — the opposite of RM_PLAY's 600 s hold, and therefore a
     // much smaller exposure window.
     if(kRunMode==RM_CHEATMGR){ DoCheatMgr(); InterlockedIncrement(&g_called); g_done=1; g_inHook=0; return; }
+    // S124 FK-22 phase ladder. Multi-step: ONE arm per game-thread hit, spaced by KPLSTEPMS. g_done is
+    // set inside DoPhaseLadder when the ladder finishes or aborts -- NOT here.
+    if(kRunMode==RM_PHASELADDER){ DoPhaseLadder(); InterlockedIncrement(&g_called); g_inHook=0; return; }
     if(kRunMode==RM_PLAY){ DoPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done) — camera + WASD each hit
     if(kRunMode==RM_TRAINING){ DoTraining(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoTraining (one step per hit)
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
@@ -4988,6 +4997,719 @@ static void DoCheatMgr(){
 #endif
 }
 
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ RM_PHASELADDER (S124, 2026-08-16) — FK-22 ARMS A0'..A5 ON THE ROUND-PHASE LADDER.
+//        ZERO MODULE-IMAGE WRITES.  Every effect is a DATA write or a UFunction call.
+//
+// WHY A NEW MODE INSTEAD OF EXTENDING RM_GOTOPHASE.  RM_GOTOPHASE (enum 2, S74) arms with
+// `InstallHook()` -- a 5-byte `0xE9` jmp into ProcessInternal, i.e. the module `.text`. S112 MEASURED
+// that construct at **10/10 armed windows dead vs 3/36 with no module-image write, Fisher
+// p = 0.00000008**, and at a matched 600 s hold the heap form was **0/16**. RM_GOTOPHASE is also
+// referenced by name in several docs, so it is left byte-for-byte alone: this is an ADDITIVE enum
+// value (24) with its own Do* function, its own knobs and its own build variants. Nothing that
+// already existed changes behaviour, and every new knob defaults to the SAFE value inside a mode
+// that itself is only reachable via an explicit `-DKRUNMODE=RM_PHASELADDER`.
+//
+// WHAT IS MEASURED AND WHAT IS BEING TESTED (docs/fk22-dropphase-reachability.md §8-§12, all [M]):
+//   * `ALokiRoundGameMode::GoToPhase` exec thunk 0x5457200 (fold 1) -> impl 0x5601020. REAL, no
+//     authority guard, Final|Native|Public|BlueprintCallable. It LOGS `Setting Phase to %d (%s)` --
+//     its ARGUMENT, before the old==new test -- then `Transitioning from phase (%s) to phase (%s).`,
+//     then calls 0xF7EC20 (`ret 0`, the stripped setter, so it does NOT write the phase) and
+//     dispatches [vtable+0xB08] = OnNewPhase.
+//   * `ALokiGameState::BP_AuthSetCurrentPhase` thunk 0x53878d0 -> impl 0x567a160 =
+//     `add rcx,0x590; jmp 0x442B4C0` = OnRoundPhaseChanged.Broadcast(arg) and nothing else.
+//     ⚠ NAME TRAP: the registered UFunction is `BP_AuthSetCurrentPhase`, NOT `AuthSetCurrentPhase`.
+//   * `GetCurrentPhase` impl 0x5384610 = `movzx eax,[rcx+0xA44]; ret`, which is what pins CurrentPhase.
+//   * Two native gates are ALREADY RUNNING and each is one condition short:
+//       1->2  fn 0x560AF10 : MatchStartDetails non-empty (FString @ GS+0x738) AND +0xA44==1 AND [GM+0x790]==0
+//       3->4  Tick 0x5613200, EVERY FRAME : [GM+0x7C0]==4 (already true in 189-193 real runs) AND +0xA44==3
+//   * Pointers: GameState is `[GameMode+0x258]` -- the offset `OnNewPhase` itself uses at 0x5608FB8.
+//
+// ⚠⚠ ORDERING IS LOAD-BEARING. `GoToPhase`'s gate is `cmp <arg>,[GS+0xA44]; je bail`, so poking the
+//     byte to N and THEN calling GoToPhase(N) is SELF-DEFEATING -- the early-out swallows it silently
+//     (no log lines at all). The ladder therefore runs GoToPhase FIRST (A1,A2), reads back (A3), and
+//     only then pokes (A4). Do not reorder.
+//
+// ⚠⚠ THE A4 RUNAWAY, AND THE FOUR INDEPENDENT STOPS.  While +0xA44 == 3 the game's own Tick calls
+//     GoToPhase(4) EVERY FRAME, and because the phase store is dead (0xF7EC20 = `ret 0`) it never
+//     self-clears. The trailing poke back to 4 -- which fails Tick's `cmp al,3` -- is the STOP, and it
+//     is part of the arm. It is bounded FOUR ways, three of which do not depend on the game thread:
+//       (1) elapsed wall clock  >= KPLHOLDMS      (ladder step 5, game thread)
+//       (2) game-thread hits    >= KPLHOLDHITS    (ladder step 5, game thread)
+//       (3) PhWatchdog, a plain worker thread polling every 100 ms, forces the STOP once the byte has
+//           stood at 3 for KPLHOLDMS + KPLWDGRACEMS -- this fires even if the game thread stops
+//           dispatching entirely, which is exactly the case the first two cannot cover;
+//       (4) PhaseRestore is called again from the __except handler around every ladder step, and once
+//           more unconditionally at mode exit after FsDisarm.
+//     PhaseRestore is idempotent, thread-safe, readback-verified, and RETRIES on failure (it only
+//     latches `restored` after a verified readback), so a transient failure cannot strand the byte.
+//     If the GameState has been destroyed it latches immediately -- a dead object cannot run away.
+//
+// ARMING: the heap `UFunction.Func` (+0xE0) swap, verbatim from RM_PLAY (FsArm/FsHold/FsDisarm,
+// KFUNCSWAP/KFSNAME). NO `.text` write of any kind; with KFUNCSWAP=0 this mode REFUSES to run rather
+// than silently falling back to InstallHook().
+// ⚠ The default target is KFSNAME="ReceiveTickClient", profiled at 1549 hits/90 s in a SETTLED
+//   TUTORIAL WORLD -- and MEASURED NOT DISPATCHED AT THE MENU (S114: "NO GAME-THREAD HITS after
+//   8000 ms ... swapped=2"). This mode is meaningless at the menu anyway (no GameMode_Tutorial, and
+//   PhResolve aborts by name), but if you ever need it there, use the `phaseladder-any` variant,
+//   which swaps every BP UFunction. FsHold's own 8 s watchdog line distinguishes "silent no-op" from
+//   "armed and live" either way -- read it before reading anything else.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+
+// Which arms run. bit0 A0' (baseline reads, always on) | bit1 A1 | bit2 A2 | bit3 A3 | bit4 A4 | bit5 A5.
+// 0x3F = the full pre-registered FK-22 ladder, which is the entire point of the mode. Trim it with a
+// build variant, never by editing this default.
+#ifndef KPLARMS
+#define KPLARMS 0x3F
+#endif
+// A4: how long GameState+0xA44 is held at 3 before the STOP poke back to 4. FK-22 pre-registered ~2 s.
+#ifndef KPLHOLDMS
+#define KPLHOLDMS 2000
+#endif
+// A4: hard cap on game-thread callbacks during that hold. Independent of the clock, so a stalled or a
+// racing GetTickCount cannot extend the hold. ~17 dispatches/s measured => 600 is ~35 s of slack.
+#ifndef KPLHOLDHITS
+#define KPLHOLDHITS 600
+#endif
+// A4: how long past KPLHOLDMS the watchdog waits before forcing the STOP itself.
+#ifndef KPLWDGRACEMS
+#define KPLWDGRACEMS 5000
+#endif
+// Minimum spacing between ladder steps, so each arm's effect lands on the game thread (and in the log)
+// before the next one is issued. One arm per hit; the rest of the hits return immediately.
+#ifndef KPLSTEPMS
+#define KPLSTEPMS 400
+#endif
+// Upper bound on the whole sitting. DoPhaseLadder sets g_done when the ladder finishes, and FsHold's
+// loop is `while(!g_done && elapsed<ms)`, so a normal run returns in ~5 s and this is a ceiling only.
+#ifndef KPLMODEHOLDMS
+#define KPLMODEHOLDMS 90000
+#endif
+
+// Offsets, all [M] in docs/fk22-dropphase-reachability.md §9-§12. Named so no bare literal appears below.
+// ⚠⚠ S124, MEASURED LIVE ON THE STAGED TUTORIAL WORLD — the docs' +0x258 is WRONG for this object.
+// docs/fk22 §10-§11 assert "GameState from [GameMode+0x258] (the offset OnNewPhase itself uses at
+// 0x5608FB8)". On the live BP_LokiGameMode_Tutorial_C (0x1B3857EA4C0), [+0x258] = 0x1B405BE1000, and
+// that address is NOT A UOBJECT: its "vtable" 0x1B2C4323C00 is a HEAP pointer (a real UObject's is
+// in-module — this GameMode's is 0x7FF7A4A54C48), and the bytes are a repeating {ptr,0xFFFFFFFF,int}
+// array pattern. A whole-object scan of the first 0x1000 bytes finds the real GameState pointer
+// (0x1B4021B60A0 'BP_LokiGameState_Tutorial_C', vtable in-module) at EXACTLY ONE offset: +0x418.
+// The +0x258 read is what made the first two armed attempts abort with "not a live GameState" — the
+// GcAlive guard was CORRECT and caught a bad offset rather than a dead world.
+// ⇒ 0x418 is [M] for this build/class. Downstream validation still runs, so a wrong value aborts
+//   rather than poking a stranger.
+constexpr uint32_t PH_GS_FROM_GM = 0x418;   // ALokiGameMode -> GameState  [M] S124 live; was 0x258 [REFUTED]
+constexpr uint32_t PH_CURPHASE   = 0xA44;   // ALokiGameState::CurrentPhase, ONE BYTE (GetCurrentPhase = movzx eax,[rcx+0xA44])
+constexpr uint32_t PH_DELEG_DATA = 0x590;   // OnRoundPhaseChanged: FScriptDelegate* Data
+constexpr uint32_t PH_DELEG_NUM  = 0x598;   // ...int32 Num  -- broadcast is a HARD NO-OP when <= 0
+constexpr uint32_t PH_DELEG_MAX  = 0x59C;   // ...int32 Max
+constexpr uint32_t PH_MSD        = 0x738;   // ALokiGameState::MatchStartDetails, FString {Data,Num@+8,Max@+0xC}
+constexpr uint32_t PH_GM_790     = 0x790;   // 1->2 gate: must be 0
+constexpr uint32_t PH_GM_7B0     = 0x7B0;   // 1->2 gate sets this to 1
+constexpr uint32_t PH_GM_7C0     = 0x7C0;   // 3->4 gate: FLokiGameModeInitializer stage, must be 4
+
+static const char* PhName(int p){
+    static const char* n[10]={"ServerStartup","BeginInit","Pre","FinishInit","SpawnSelect",
+                              "SpawnReveal","Lineup","Combat","Post","Shutdown"};
+    return (p>=0&&p<10)?n[p]:"?";
+}
+
+static uintptr_t g_phGm=0, g_phGs=0;
+static void*     g_phAsFn=nullptr; static uintptr_t g_phAsThunk=0, g_phAsChild=0;
+static uint32_t  g_phAsOff=0xFFFFFFFF;          // BP_AuthSetCurrentPhase's byte param offset
+static int32_t   g_phNum0=-1;                   // delegate Num as read at A0' -- the A5 precondition
+static volatile long g_phStep=0;                // ladder position
+static DWORD     g_phLastMs=0;                  // step spacing
+static volatile long g_phPoked3=0;              // A4 poke landed -> a restore is OWED
+static volatile long g_phRestored=0;            // ...and has been made (readback-verified)
+static volatile long g_phRestoreBusy=0;         // one restorer in flight at a time
+static DWORD     g_phPoke3Ms=0;                 // when the byte went to 3 (watchdog reference)
+static long      g_phHoldHits=0;                // game-thread callbacks seen during the A4 hold
+static volatile long g_phWdStop=0;              // watchdog exit flag
+static volatile long g_phRestoreFailed=0;       // a restore was ATTEMPTED and did not verify -> retry now
+static int       g_phA3=-1;                     // A3 readback, for the final summary
+static uint8_t   g_phStopVal=4;                 // the value the STOP poke writes (see the A4 case)
+static uint8_t   g_phPreA4=0xFF;                // the byte's value immediately before the A4 poke
+static bool      g_phNum0Set=false;             // has g_phNum0 been latched? (-1 is a READ FAILURE, not 0)
+static const char* g_phNum0When="(never)";      // WHICH arm the latched sample came from
+static bool      g_phGmAmbiguous=false;         // >1 qualified GameMode, or the World disagreed
+static bool      g_phResolved=false;            // PhResolve() succeeded (normally on the worker thread)
+static uintptr_t g_phWorld=0, g_phWorldAgm=0, g_phWorldGs=0;
+
+// One-byte DATA write to GameState+0xA44 with a readback. Returns true only on a VERIFIED write.
+// This is the only write class this mode performs; there is no `.text` write anywhere in it.
+//
+// ⚠ `attempted` is a SAFETY out-param, not a diagnostic. It distinguishes "the guards refused, so no
+//   store was issued" from "a store WAS issued and the readback did not agree". The caller must keep
+//   owing a restore in the second case and may release the claim only in the first. Without it the
+//   caller has to infer from a bare false, and inferring wrong either strands the byte at 3 or writes
+//   a fabricated 4 into a GameState that was never poked.
+static bool PhPokePhase(uint8_t v,const char* who,bool* attempted=nullptr){
+    if(attempted) *attempted=false;
+    if(!GcAlive(g_phGs)){ Markerf("[PH] %s: GameState 0x%llX is not a live UObject -> NOT poking\r\n",
+                                  who,(unsigned long long)g_phGs); return false; }
+    void* a=(void*)(g_phGs+PH_CURPHASE);
+    if(!SafeWritable(a,1)){ Markerf("[PH] %s: GS+0x%X not writable -> NOT poking\r\n",who,PH_CURPHASE); return false; }
+    uint8_t before=*(volatile uint8_t*)a;
+    if(attempted) *attempted=true;      // ← set BEFORE the store, never after
+    *(volatile uint8_t*)a=v;
+    uint8_t back=*(volatile uint8_t*)a;
+    Markerf("[PH] %s: poke GS+0x%X %u(%s) -> %u(%s)  readback=%u(%s) %s\r\n",
+            who,PH_CURPHASE,before,PhName(before),v,PhName(v),back,PhName(back),
+            (back==v)?"VERIFIED":"*** READBACK MISMATCH ***");
+    return back==v;
+}
+
+// The STOP. Idempotent, safe from ANY thread, and it RETRIES: `g_phRestored` is only latched after a
+// verified readback (or after the GameState is confirmed dead), so a transient failure leaves the
+// watchdog free to try again 100 ms later. This is the __except-safe finally-equivalent -- a real
+// __finally was deliberately not used, because this has to be reachable from the watchdog thread and
+// from mode exit as well as from the fault path.
+static void PhaseRestore(const char* who){
+    if(!InterlockedCompareExchange(&g_phPoked3,0,0)) return;      // never poked -> nothing is owed
+    if(InterlockedCompareExchange(&g_phRestored,0,0)) return;     // already made
+    if(InterlockedCompareExchange(&g_phRestoreBusy,1,0)!=0) return;   // another restorer mid-write
+    if(!GcAlive(g_phGs)){
+        Markerf("[PH] restore(%s): GameState 0x%llX is no longer a live UObject -- nothing can be "
+                "running away; latching restored.\r\n",who,(unsigned long long)g_phGs);
+        g_phRestored=1; g_phRestoreBusy=0; return; }
+    char tag[96]; _snprintf_s(tag,sizeof(tag),_TRUNCATE,"A4-STOP(%s,tid=%lu)",who,GetCurrentThreadId());
+    if(PhPokePhase(g_phStopVal,tag)){
+        g_phRestored=1;
+        Markerf("[PH] *** A4 STOP LANDED (%s) after %lu ms at phase 3, %ld game-thread hits ***\r\n",
+                who,g_phPoke3Ms?(GetTickCount()-g_phPoke3Ms):0,g_phHoldHits);
+    } else {
+        // TRUE AS WRITTEN, and it was not before. The watchdog used to wait for hold+grace (7 s) before
+        // it would act at all, while the ladder restores at 2 s and sets g_done ~1 s later -- so the
+        // advertised "retry every 100 ms" never happened on the normal timeline. g_phRestoreFailed
+        // makes the watchdog retry IMMEDIATELY and unconditionally, and the mode-exit join drains it.
+        InterlockedExchange(&g_phRestoreFailed,1);
+        Markerf("[PH] restore(%s) FAILED -- flagged; the watchdog now retries every 100 ms until it "
+                "lands, and mode exit drains it for up to %d ms before giving up\r\n",
+                who,(int)KPLWDGRACEMS);
+    }
+    g_phRestoreBusy=0;
+}
+
+// Plain worker thread. Deliberately independent of the game thread: if game-thread dispatch stops
+// (world torn down, swap restored, a step faulted) the ladder's own stops cannot fire, and this one can.
+static DWORD WINAPI PhWatchdog(LPVOID){
+    while(!InterlockedCompareExchange(&g_phWdStop,0,0)){
+        Sleep(100);
+        if(!InterlockedCompareExchange(&g_phPoked3,0,0)) continue;
+        if(InterlockedCompareExchange(&g_phRestored,0,0)) continue;
+        // (i) a restore was tried and did not verify -> retry NOW, every 100 ms, no grace period.
+        if(InterlockedCompareExchange(&g_phRestoreFailed,0,0)){
+            PhaseRestore("watchdog-retry");
+            continue;
+        }
+        // (ii) nobody has stopped it at all within hold+grace -> force it. This is the case the
+        //      ladder's own time and hit bounds cannot cover, because it needs the game thread.
+        if(g_phPoke3Ms && (GetTickCount()-g_phPoke3Ms) > (DWORD)KPLHOLDMS+(DWORD)KPLWDGRACEMS){
+            Markerf("[PH] *** WATCHDOG: GS+0x%X has stood at 3 for %lu ms (hold %d + grace %d) and the "
+                    "ladder has not stopped it -- forcing the STOP from the watchdog thread ***\r\n",
+                    PH_CURPHASE,GetTickCount()-g_phPoke3Ms,(int)KPLHOLDMS,(int)KPLWDGRACEMS);
+            PhaseRestore("watchdog");
+        }
+    }
+    // EXIT DRAIN. g_phWdStop is set at mode exit, and mode exit is exactly when a still-owed restore
+    // has to be finished rather than abandoned -- so drain here, bounded, instead of trying once.
+    for(int i=0; i<((int)KPLWDGRACEMS/100)+1; i++){
+        if(!InterlockedCompareExchange(&g_phPoked3,0,0)) break;
+        if(InterlockedCompareExchange(&g_phRestored,0,0)) break;
+        PhaseRestore("watchdog-exit");
+        if(InterlockedCompareExchange(&g_phRestored,0,0)) break;
+        Sleep(100);
+    }
+    return 0;
+}
+
+// Print a UFunction's parameter chain -- name, offset, flags. Cheap, and it is what makes the
+// "which param is the phase byte?" question a measurement rather than a guess.
+static void PhDumpParams(uintptr_t child,const char* tag){
+    uintptr_t f=child; int i=0;
+    while(LooksLikePtr(f)&&i<16){
+        char n[96]="?"; GetFNameStr(NameId(f),n,sizeof(n));
+        uint32_t off=SafeReadable((void*)(f+FPROP_OFFSET),4)?*(uint32_t*)(f+FPROP_OFFSET):0xFFFFFFFF;
+        uint64_t fl=SafeReadable((void*)(f+FPROP_FLAGS),8)?*(uint64_t*)(f+FPROP_FLAGS):0;
+        Markerf("[PH] %s param[%d] %-26s @0x%X flags=0x%llX\r\n",tag,i,n,off,(unsigned long long)fl);
+        uintptr_t nx=0; if(SafeReadable((void*)(f+FIELD_NEXT),8))nx=*(uintptr_t*)(f+FIELD_NEXT); f=nx; i++;
+    }
+    if(i==0) Markerf("[PH] %s: NO child properties\r\n",tag);
+}
+
+// Does cls or any of its supers have a name containing `sub`? Matching on the DERIVATION CHAIN, not
+// the leaf name, is what finds BP_LokiGameMode_Tutorial_C without hardcoding its name.
+static bool PhChainHas(uintptr_t cls,const char* sub,char* chainOut,size_t chainSz){
+    bool hit=false; size_t w=0; if(chainOut&&chainSz) chainOut[0]=0;
+    int g=0;
+    for(uintptr_t c=cls; LooksLikePtr(c)&&g<12; c=(SafeReadable((void*)(c+0x48),8)?*(uintptr_t*)(c+0x48):0), g++){
+        char n[128]; if(!GetFNameStr(NameId(c),n,sizeof(n))) break;
+        if(strstr(n,sub)) hit=true;
+        if(chainOut&&chainSz){ size_t l=strlen(n);
+            if(w+l+5<chainSz){ if(w){ memcpy(chainOut+w,"<-",2); w+=2; } memcpy(chainOut+w,n,l); w+=l; chainOut[w]=0; } }
+    }
+    return hit;
+}
+
+// ★★ ENUMERATE EVERY LIVE GameMode AND SHOW THE WORK — this REPLACES the first-substring-match that
+//    `FindInstByClass` performs, and it is not optional hygiene.
+//
+//    docs/fk22-dropphase-reachability.md:629 prescribes `GameMode from World->AuthorityGameMode`.
+//    `FindInstByClass("GameMode_Tutorial")` instead returns the FIRST non-Default object whose class
+//    name contains that substring, silently. A stale GameMode from a prior world that is still
+//    GcAlive would be selected, its [+0x258] would yield a stale GameState whose chain ALSO names
+//    "GameState" (so PhResolve's own guard cannot separate them), and the ladder would call GoToPhase
+//    and poke +0xA44 on the wrong object while every arm read as a clean null. That is the
+//    class-lookup blind-spot family (obj_by_class substring, cheat_reach_probe endswith, class_props
+//    class-of-class, bpframe_readout first-match) reproduced a fifth time.
+//
+//    So: one sweep, EVERY candidate printed with its chain and its [+0x258], plus the World's own
+//    reflected AuthorityGameMode/GameState. Selection prefers the World's answer; a disagreement or a
+//    tie sets g_phGmAmbiguous, and PhResolve ABORTS on it rather than guessing.
+static uintptr_t PhPickGameMode(const char** whyOut){
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ *whyOut="GUObjectArray unreadable"; return 0; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ *whyOut="GUObjectArray header implausible"; return 0; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+
+    uintptr_t cands[16]; int nc=0; int totalGm=0;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            char chain[256];
+            // The UWorld instance's UClass FName is EXACTLY "World" (UHT strips the U prefix).
+            // Substring matching here would also take WorldSettings / WorldPartition / any
+            // *World* class -- the same substring trap this function exists to remove.
+            char clsn[128]; clsn[0]=0; GetFNameStr(NameId(cls),clsn,sizeof(clsn));
+            if(strcmp(clsn,"World")==0 && strncmp(on,"Default__",9)!=0 && !g_phWorld){
+                g_phWorld=obj;
+                uint32_t oa=PropOffsetSuper(cls,"AuthorityGameMode");
+                uint32_t og=PropOffsetSuper(cls,"GameState");
+                if(oa!=0xFFFFFFFF&&SafeReadable((void*)(obj+oa),8)) g_phWorldAgm=*(uintptr_t*)(obj+oa);
+                if(og!=0xFFFFFFFF&&SafeReadable((void*)(obj+og),8)) g_phWorldGs =*(uintptr_t*)(obj+og);
+                Markerf("[PH] world 0x%llX '%s' AuthorityGameMode@0x%X=0x%llX  GameState@0x%X=0x%llX\r\n",
+                        (unsigned long long)obj,on,oa,(unsigned long long)g_phWorldAgm,
+                        og,(unsigned long long)g_phWorldGs);
+            }
+            if(!PhChainHas(cls,"GameMode",chain,sizeof(chain))) continue;
+            if(strncmp(on,"Default__",9)==0){ continue; }      // archetype/CDO, never a live GameMode
+            totalGm++;
+            uintptr_t link=SafeReadable((void*)(obj+PH_GS_FROM_GM),8)?*(uintptr_t*)(obj+PH_GS_FROM_GM):0;
+            Markerf("[PH] gm-cand[%d] 0x%llX '%s'  chain=%s  [+0x%X]=0x%llX %s\r\n",
+                    totalGm-1,(unsigned long long)obj,on,chain,PH_GS_FROM_GM,
+                    (unsigned long long)link,GcAlive(link)?"LIVE-UOBJECT":"not-live");
+            // ---- S124 FIX (found LIVE, first armed window) --------------------------------------
+            // The old test was `GcAlive([+0x258])`, i.e. "its GameState link points at a live
+            // UObject". MEASURED, that selects the WRONG objects and rejects the right one:
+            //   cand[5]  BP_LokiGameMode_Tutorial_C  <-LokiTutorialGameMode<-LokiRoundGameMode<-...
+            //            [+0x258]=0x1B405BE1000  -> "not-live"      REJECTED  (the REAL game mode)
+            //   cand[9]  Comp_GameMode_DeathCircle_GEN_VARIABLE     ACCEPTED
+            //   cand[17] Comp_GameMode_RoundReset_GEN_VARIABLE      ACCEPTED
+            // Two ActorComponents with pointer-shaped bytes at +0x258 outranked the game mode, and
+            // with World->AuthorityGameMode==0 there was no tie-break, so the mode aborted. Had it
+            // guessed, it would have driven a DeathCircle COMPONENT as the game mode.
+            // ⚠ THE SUBSTRING TRAP, committed inside the function whose own comment warns about it:
+            // a chain "containing GameMode" also matches every `Comp_GameMode_*` component.
+            // The class that DECLARES GoToPhase is ALokiRoundGameMode -- require IT. That is
+            // name-based but it is the DECLARING class, not a leaf-name guess, and it is exactly
+            // what makes the selection unambiguous here (1 of 18 candidates qualifies).
+            // GcAlive(link) is kept as INFORMATIONAL only: the GameState link is validated
+            // separately downstream, and A1/A2 (GoToPhase) need only the GameMode object.
+            char rchain[256];
+            if(nc<16 && PhChainHas(cls,"LokiRoundGameMode",rchain,sizeof(rchain))) cands[nc++]=obj;
+        }
+    }
+    Markerf("[PH] gm enumeration: %d live *GameMode instance(s), %d deriving from LokiRoundGameMode; world=0x%llX\r\n",
+            totalGm,nc,(unsigned long long)g_phWorld);
+
+    // Preference order: the World's own AuthorityGameMode (the doc's derivation) > a unique linked
+    // candidate. Anything else is AMBIGUOUS and the caller aborts.
+    if(g_phWorldAgm && GcAlive(g_phWorldAgm)){
+        bool inSet=false; for(int i=0;i<nc;i++) if(cands[i]==g_phWorldAgm) inSet=true;
+        if(nc>1 && !inSet)
+            Marker("[PH] !! the World names an AuthorityGameMode that is NOT among the linked candidates\r\n");
+        *whyOut="World->AuthorityGameMode (docs/fk22:629's own derivation)";
+        return g_phWorldAgm;
+    }
+    if(nc==1){ *whyOut="the ONLY live instance deriving from LokiRoundGameMode (the class that DECLARES GoToPhase); no World AuthorityGameMode available";
+               return cands[0]; }
+    if(nc>1){ g_phGmAmbiguous=true;
+              Markerf("[PH] !! AMBIGUOUS: %d equally-qualified GameModes and no World AuthorityGameMode "
+                      "to break the tie. REFUSING to guess.\r\n",nc);
+              *whyOut="AMBIGUOUS"; return 0; }
+    *whyOut="no live instance derives from LokiRoundGameMode (a STAGING statement -- the tutorial world may not be up)";
+    return 0;
+}
+
+// Resolve everything the ladder needs, ON THE GAME THREAD. Returns false with a NAMED reason.
+static bool PhResolve(){
+    // ---- 1. THE GAMEMODE: enumerate, cross-check against the World, and refuse to guess. ----------
+    const char* why="?";
+    g_phGm=PhPickGameMode(&why);
+    Markerf("[PH] GameMode selection: 0x%llX  reason: %s\r\n",(unsigned long long)g_phGm,why);
+    if(!g_phGm || g_phGmAmbiguous){
+        Marker("[PH] ABORT: could not select a GameMode unambiguously -- see the enumeration above. "
+               "No arm was run and NOTHING was written. This is a statement about STAGING (or about "
+               "a stale world), not about the phase machine.\r\n");
+        return false; }
+
+    // ---- 2. GoToPhase, resolved on the CHOSEN object's first native ancestor. ---------------------
+    //    NOTE: ResolveGoToPhase() is deliberately NOT called. It re-derives the GameMode with
+    //    FindInstByClass's first-substring-match, which would silently discard the selection above.
+    //    RM_GOTOPHASE keeps using it unchanged; this mode does its own, and mirrors its [GP] line.
+    g_gmPhase=g_phGm;
+    g_gpFn=nullptr; g_gpThunk=0; g_gpChild=0;
+    ResolveFuncNative(ClassOf(g_phGm),"GoToPhase",&g_gpFn,&g_gpThunk,&g_gpChild);
+    if(g_gpChild){ uint32_t o=ParamOffset(g_gpChild,"NextPhase"); if(o!=0xFFFFFFFF) g_offNextPhase=o; }
+    if(g_offNextPhase==0xFFFFFFFF) g_offNextPhase=0;   // single byte param => offset 0
+    if(g_gpChild) PhDumpParams(g_gpChild,"GoToPhase");
+    Markerf("[GP] gm=0x%llX goToPhaseThunk=0x%llX child=0x%llX NextPhase@0x%X\r\n",
+            (unsigned long long)g_phGm,(unsigned long long)g_gpThunk,
+            (unsigned long long)g_gpChild,g_offNextPhase);
+    if(!g_gpThunk){
+        Marker("[PH] ABORT: GoToPhase did not resolve on the chosen GameMode's native ancestor\r\n");
+        return false; }
+    if(g_offNextPhase>=sizeof(g_pbuf)){
+        Markerf("[PH] ABORT: GoToPhase NextPhase offset 0x%X is outside the %u-byte param buffer -- "
+                "a corrupt ChildProperties chain. Refusing to write past it.\r\n",
+                g_offNextPhase,(unsigned)sizeof(g_pbuf));
+        return false; }
+
+    // ---- 3. GameState from [GameMode+0x258], guarded, AND cross-checked against World->GameState. -
+    //    Everything downstream writes a byte into this object and calls a UFunction on it; storing or
+    //    poking the wrong one would be far worse than aborting.
+    g_phGs=SafeReadable((void*)(g_phGm+PH_GS_FROM_GM),8)?*(uintptr_t*)(g_phGm+PH_GS_FROM_GM):0;
+    char gsn[128]="-"; bool gsOk=false;
+    if(GcAlive(g_phGs)){
+        uintptr_t gc=ClassOf(g_phGs); if(LooksLikePtr(gc)) GetFNameStr(NameId(gc),gsn,sizeof(gsn));
+        for(uintptr_t c=gc; LooksLikePtr(c); c=(SafeReadable((void*)(c+0x48),8)?*(uintptr_t*)(c+0x48):0)){
+            char q[128]; if(GetFNameStr(NameId(c),q,sizeof(q)) && strstr(q,"GameState")){ gsOk=true; break; } } }
+    Markerf("[PH] GameState = [gm 0x%llX + 0x%X] = 0x%llX class=%s  chain-names-GameState=%d\r\n",
+            (unsigned long long)g_phGm,PH_GS_FROM_GM,(unsigned long long)g_phGs,gsn,gsOk?1:0);
+    if(!gsOk){ Marker("[PH] ABORT: [GameMode+0x258] is not a live GameState -- refusing to poke or call\r\n"); return false; }
+    // The World's reflected GameState is an INDEPENDENT derivation. If it exists and disagrees, one of
+    // the two objects is stale and we do not know which -- abort rather than pick.
+    if(g_phWorldGs){
+        Markerf("[PH] cross-check: World->GameState=0x%llX vs [GM+0x%X]=0x%llX -> %s\r\n",
+                (unsigned long long)g_phWorldGs,PH_GS_FROM_GM,(unsigned long long)g_phGs,
+                (g_phWorldGs==g_phGs)?"AGREE":"*** DISAGREE ***");
+        if(g_phWorldGs!=g_phGs){
+            Marker("[PH] ABORT: the two independent GameState derivations disagree. One object is "
+                   "stale and this probe cannot tell which. Refusing to poke or call.\r\n");
+            return false; }
+    } else {
+        Marker("[PH] cross-check: no World->GameState available -- the check is ABSENT, not passed\r\n");
+    }
+
+    // BP_AuthSetCurrentPhase. ⚠ NAME TRAP: the C++ declaration is AuthSetCurrentPhase; the REGISTERED
+    // UFunction name carries the BP_ prefix. Resolving the C++ name silently finds nothing.
+    ResolveFuncNative(ClassOf(g_phGs),"BP_AuthSetCurrentPhase",&g_phAsFn,&g_phAsThunk,&g_phAsChild);
+    if(!g_phAsThunk){
+        Marker("[PH] WARN: BP_AuthSetCurrentPhase did not resolve on the GameState's native ancestor. "
+               "A5 will be SKIPPED (arms A0'-A4 are unaffected).\r\n");
+        // Named negative control for the name trap itself: prove the bare name is NOT the registered one.
+        void* f2=nullptr; uintptr_t t2=0,c2=0;
+        ResolveFuncNative(ClassOf(g_phGs),"AuthSetCurrentPhase",&f2,&t2,&c2);
+        Markerf("[PH]   (control) bare 'AuthSetCurrentPhase' thunk=0x%llX -- expected 0, the prefix is the registered name\r\n",
+                (unsigned long long)t2);
+    } else {
+        PhDumpParams(g_phAsChild,"BP_AuthSetCurrentPhase");
+        static const char* kP[]={"NewPhase","InPhase","Phase","NewRoundPhase","CurrentPhase"};
+        for(int i=0;i<5&&g_phAsOff==0xFFFFFFFF;i++){ uint32_t o=ParamOffset(g_phAsChild,kP[i]);
+            if(o!=0xFFFFFFFF){ g_phAsOff=o; Markerf("[PH] BP_AuthSetCurrentPhase param '%s' @0x%X\r\n",kP[i],o); } }
+        if(g_phAsOff==0xFFFFFFFF){ g_phAsOff=0;
+            Marker("[PH] BP_AuthSetCurrentPhase: no param matched the candidate names -> using offset 0 "
+                   "(a single byte-sized param necessarily sits there). See the param dump above.\r\n"); }
+        // BOUNDS. g_phAsOff comes from live reflection (Offset_Internal); a corrupt or mis-walked
+        // ChildProperties chain would index past the 128-byte g_pbuf into g_rbuf and the shim's own
+        // statics, and the resulting fault would present as something unrelated. A5 is disabled, not
+        // clamped -- a clamped write is still a wrong write.
+        if(g_phAsOff>=sizeof(g_pbuf)){
+            Markerf("[PH] BP_AuthSetCurrentPhase param offset 0x%X is outside the %u-byte param buffer "
+                    "-> A5 DISABLED (arms A0'-A4 are unaffected)\r\n",
+                    g_phAsOff,(unsigned)sizeof(g_pbuf));
+            g_phAsThunk=0; }
+    }
+    Markerf("[PH] resolve OK: gm=0x%llX gs=0x%llX goToPhase=0x%llX authSet=0x%llX\r\n",
+            (unsigned long long)g_phGm,(unsigned long long)g_phGs,
+            (unsigned long long)g_gpThunk,(unsigned long long)g_phAsThunk);
+    return true;
+}
+
+// A0' -- the baseline reads. Pure RPM, no calls, no writes. Identical set to artifact 1's A0.
+static void PhBaseline(const char* when){
+    uint8_t ph = SafeReadable((void*)(g_phGs+PH_CURPHASE),1)?*(volatile uint8_t*)(g_phGs+PH_CURPHASE):0xFF;
+    uintptr_t dd= SafeReadable((void*)(g_phGs+PH_DELEG_DATA),8)?*(uintptr_t*)(g_phGs+PH_DELEG_DATA):0;
+    int32_t dn = SafeReadable((void*)(g_phGs+PH_DELEG_NUM),4)?*(int32_t*)(g_phGs+PH_DELEG_NUM):-1;
+    int32_t dm = SafeReadable((void*)(g_phGs+PH_DELEG_MAX),4)?*(int32_t*)(g_phGs+PH_DELEG_MAX):-1;
+    uintptr_t sd= SafeReadable((void*)(g_phGs+PH_MSD),8)?*(uintptr_t*)(g_phGs+PH_MSD):0;
+    int32_t sn = SafeReadable((void*)(g_phGs+PH_MSD+8),4)?*(int32_t*)(g_phGs+PH_MSD+8):-1;
+    int32_t sm = SafeReadable((void*)(g_phGs+PH_MSD+12),4)?*(int32_t*)(g_phGs+PH_MSD+12):-1;
+    uint64_t m790=SafeReadable((void*)(g_phGm+PH_GM_790),8)?*(uint64_t*)(g_phGm+PH_GM_790):0xFFFFFFFFFFFFFFFFULL;
+    uint8_t  m7B0=SafeReadable((void*)(g_phGm+PH_GM_7B0),1)?*(volatile uint8_t*)(g_phGm+PH_GM_7B0):0xFF;
+    uint8_t  m7C0=SafeReadable((void*)(g_phGm+PH_GM_7C0),1)?*(volatile uint8_t*)(g_phGm+PH_GM_7C0):0xFF;
+
+    Markerf("[PH] %s CurrentPhase   GS+0x%X = %u (%s)      [FK-22 predicts 0]\r\n",when,PH_CURPHASE,ph,PhName(ph));
+    Markerf("[PH] %s OnRoundPhaseChanged  GS+0x%X Data=0x%llX  +0x%X Num=%d  +0x%X Max=%d   "
+            "[Num<=0 => Broadcast is a HARD NO-OP; A5 is uninterpretable]\r\n",
+            when,PH_DELEG_DATA,(unsigned long long)dd,PH_DELEG_NUM,dn,PH_DELEG_MAX,dm);
+    // MatchStartDetails: the 1->2 gate tests `cmp dword [rax+8],1; jle` i.e. Num > 1 (an FString Num
+    // counts the null terminator, so Num<=1 IS the empty string).
+    char txt[72]; int k=0;
+    if(LooksLikePtr(sd)&&sn>0&&SafeReadable((void*)sd,(size_t)((sn<35?sn:35)*2))){
+        const wchar_t* w=(const wchar_t*)sd;
+        for(int i=0;i<sn-1&&i<35&&k<(int)sizeof(txt)-1;i++){ wchar_t c=w[i]; txt[k++]=(c>=32&&c<127)?(char)c:'.'; } }
+    txt[k]=0;
+    Markerf("[PH] %s MatchStartDetails GS+0x%X Data=0x%llX Num=%d Max=%d '%s'   [gate 1->2 needs Num>1]\r\n",
+            when,PH_MSD,(unsigned long long)sd,sn,sm,txt);
+    Markerf("[PH] %s GameMode  +0x%X=0x%llX [gate 1->2 needs 0]   +0x%X=%u [gate 1->2 SETS this to 1]   "
+            "+0x%X=%u [gate 3->4 needs 4]\r\n",
+            when,PH_GM_790,(unsigned long long)m790,PH_GM_7B0,m7B0,PH_GM_7C0,m7C0);
+    // Latch the A0' value -- the pre-registered A5 precondition. ⚠ LATCH ON THE FLAG, NOT ON THE
+    // VALUE. `dn` is -1 when the READ FAILED, and the old `if(g_phNum0<0)` test could not tell that
+    // apart from "not yet latched", so a failed A0' read silently let A3' (i.e. a sample taken AFTER
+    // two GoToPhase calls) be attributed to A0'. Record the sample AND its provenance.
+    if(!g_phNum0Set){ g_phNum0=dn; g_phNum0Set=true; g_phNum0When=when; }
+}
+
+// A1/A2 -- GoToPhase(N). Its own log lines ARE the receipt: `Setting Phase to %d (%s)` prints the
+// ARGUMENT before the old==new test, and `Setting Phase to 4 (SpawnSelect)` exists in ZERO of the 193
+// corpus logs. "The call returned ok" is NOT a success criterion; grep Loki.log.
+// Returns TRUE if the call FAULTED. The caller MUST halt the ladder on true -- see the call sites.
+static bool PhGoToPhase(int ph,const char* arm){
+    if(!g_gpThunk){ Markerf("[PH] %s: GoToPhase unresolved -> SKIPPED\r\n",arm); return false; }
+    uint8_t before=SafeReadable((void*)(g_phGs+PH_CURPHASE),1)?*(volatile uint8_t*)(g_phGs+PH_CURPHASE):0xFF;
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    ((uint8_t*)g_pbuf)[g_offNextPhase]=(uint8_t)ph;
+    Markerf("[PH] %s BEFORE: calling GoToPhase(%d=%s)  live +0x%X=%u(%s)  "
+            "[gate is `cmp arg,[GS+0xA44]; je bail` -- equal would be a SILENT no-op]\r\n",
+            arm,ph,PhName(ph),PH_CURPHASE,before,PhName(before));
+    if(before==(uint8_t)ph)
+        Markerf("[PH] %s *** WARNING: arg == live phase, so GoToPhase WILL early-out and log NOTHING. "
+                "This result is uninterpretable, not negative. ***\r\n",arm);
+    bool faulted=CallNativeGuarded(g_gpFn,g_gpThunk,g_gpChild,(void*)g_phGm,g_pbuf,g_rbuf);
+    uint8_t after=SafeReadable((void*)(g_phGs+PH_CURPHASE),1)?*(volatile uint8_t*)(g_phGs+PH_CURPHASE):0xFF;
+    Markerf("[PH] %s AFTER:  GoToPhase(%d) returned%s ; +0x%X %u(%s) -> %u(%s)  "
+            "[grep Loki.log for `Setting Phase to %d (%s)` -- THAT is the receipt, not this line]\r\n",
+            arm,ph,faulted?" [FAULTED - null captured]":"",PH_CURPHASE,
+            before,PhName(before),after,PhName(after),ph,PhName(ph));
+    return faulted;
+}
+
+// The ladder body. ONE arm per game-thread callback. Never loops internally.
+static void PhLadderStep(){
+    DWORD now=GetTickCount();
+    long step=InterlockedCompareExchange(&g_phStep,0,0);
+
+    // Step 5 is the A4 hold: it runs on EVERY hit (that is how the iteration cap is counted) and is
+    // therefore exempt from step spacing.
+    if(step!=5){
+        if(g_phLastMs && now-g_phLastMs<(DWORD)KPLSTEPMS) return;
+        g_phLastMs=now;
+    }
+
+    switch(step){
+    case 0:
+        Marker("[PH] ================ RM_PHASELADDER: FK-22 arms A0'..A5 ================\r\n");
+        Markerf("[PH] cfg arms=0x%02X holdMs=%d holdHits=%d wdGraceMs=%d stepMs=%d modeHoldMs=%d\r\n",
+                (unsigned)KPLARMS,(int)KPLHOLDMS,(int)KPLHOLDHITS,(int)KPLWDGRACEMS,(int)KPLSTEPMS,(int)KPLMODEHOLDMS);
+        // ⚠ Resolution normally happened on the WORKER thread before FsArm (RM_PLAY's pattern), so a
+        //   full GUObjectArray sweep does not become a multi-second frame hitch inside a live tutorial
+        //   world. This branch is the fallback for the case where the worker-thread resolve failed to
+        //   run at all; if it fires, expect one hitch.
+        if(!g_phResolved){
+            Marker("[PH] (resolve had not run on the worker thread -- doing it here; expect a hitch)\r\n");
+            if(!PhResolve()){ Marker("[PH] ladder ABORTED at resolve -- no arm was run, nothing was written\r\n"); g_done=1; return; }
+            g_phResolved=true;
+        }
+        PhBaseline("A0'");
+        g_phStep=1; return;
+
+    case 1:
+        if(!(KPLARMS&0x02)){ Marker("[PH] A1 disabled by KPLARMS -> skipped\r\n"); g_phStep=2; return; }
+        Marker("[PH] --- A1 (POSITIVE CONTROL): GoToPhase(1). Baseline is EXACTLY ONE "
+               "`Setting Phase to 1 (BeginInit)` per log across 193 files, so a SECOND occurrence in "
+               "this file cannot have come from the game. ---\r\n");
+        // ⚠ A FAULTED CALL HALTS THE LADDER. CallNativeGuarded swallows the fault with SEH, but the
+        //   fault happened INSIDE the game's own OnNewPhase dispatch -- continuing would call the same
+        //   handler again with a value no build has ever run (A2), then poke the phase byte of that
+        //   world (A4). Every downstream reading would be uninterpretable and the damage compounds on
+        //   the one armed window this cost. The pre-existing sibling DoGoToPhase does the same.
+        if(PhGoToPhase(1,"A1")){
+            Marker("[PH] *** A1 FAULTED. HALTING THE LADDER: A2/A4 would re-enter the same native path "
+                   "and nothing measured after a swallowed fault is interpretable. ***\r\n");
+            g_phStep=7; return; }
+        g_phStep=2; return;
+
+    case 2:
+        if(!(KPLARMS&0x04)){ Marker("[PH] A2 disabled by KPLARMS -> skipped\r\n"); g_phStep=3; return; }
+        Marker("[PH] --- A2 (TREATMENT): GoToPhase(4). `Setting Phase to 4 (SpawnSelect)` and its "
+               "Transitioning line exist in ZERO of the 193 corpus logs. ---\r\n");
+        if(PhGoToPhase(4,"A2")){
+            Marker("[PH] *** A2 FAULTED. HALTING THE LADDER before A4 -- poking the phase byte of a "
+                   "world whose OnNewPhase just faulted would compound the damage and produce an "
+                   "uninterpretable A4. A3 is still read below via the summary. ***\r\n");
+            g_phStep=7; return; }
+        g_phStep=3; return;
+
+    case 3:
+        if(!(KPLARMS&0x08)){ Marker("[PH] A3 disabled by KPLARMS -> skipped\r\n"); g_phStep=4; return; }
+        {   uint8_t v=SafeReadable((void*)(g_phGs+PH_CURPHASE),1)?*(volatile uint8_t*)(g_phGs+PH_CURPHASE):0xFF;
+            g_phA3=(int)v;
+            Markerf("[PH] --- A3: re-read GS+0x%X = %u (%s). PREDICTED 0 (ServerStartup): GoToPhase's "
+                    "setter is the stripped fold 0xF7EC20 = `ret 0`, so it does NOT write the phase. "
+                    "%s ---\r\n",PH_CURPHASE,v,PhName(v),
+                    (v==0)?"AS PREDICTED -- the store is confirmed dead, [I] -> [M]."
+                          :"*** NOT 0 -- a writer exists outside the decrypted 54.90% of .text. MAJOR RESULT. ***");
+            PhBaseline("A3'");
+        }
+        g_phStep=4; return;
+
+    case 4:
+        if(!(KPLARMS&0x10)){ Marker("[PH] A4 disabled by KPLARMS -> skipped (no poke will be made)\r\n"); g_phStep=6; return; }
+        Markerf("[PH] --- A4: poke GS+0x%X = 3 (FinishInit), hold ~%d ms, then poke = 4 (the STOP). "
+                "Tick 0x5613200 runs EVERY FRAME and its other condition ([GM+0x%X]==4) is already met "
+                "in 189-193 real runs, so it should fire GoToPhase(4) BY ITSELF -- with a DIFFERENT "
+                "Transitioning string (from EGP_FinishInit) than A2's. ---\r\n",
+                PH_CURPHASE,(int)KPLHOLDMS,PH_GM_7C0);
+        Markerf("[PH] A4 RUNAWAY BOUNDS: stop at elapsed>=%d ms OR hits>=%d; watchdog forces it at "
+                "%d ms; mode exit and the SEH handler each force it again. The byte can only stand at "
+                "3 for a bounded time.\r\n",(int)KPLHOLDMS,(int)KPLHOLDHITS,(int)KPLHOLDMS+(int)KPLWDGRACEMS);
+        // ⚠⚠ THE STOP VALUE. Pre-registered as 4, and 4 is correct *given the pre-registered A3
+        //    result* -- A3 predicts the phase byte is 0 because GoToPhase's setter is the stripped
+        //    fold `ret 0`. But if A3 came back NON-ZERO, a live writer exists (the "MAJOR RESULT"
+        //    branch) and a fabricated 4 would be overwriting real state. In that world restore the
+        //    OBSERVED pre-poke value instead: it also fails Tick's `cmp al,3`, so it is an equally
+        //    valid stop, and it does not invent a phase.
+        g_phPreA4 = SafeReadable((void*)(g_phGs+PH_CURPHASE),1)
+                    ? *(volatile uint8_t*)(g_phGs+PH_CURPHASE) : 0xFF;
+        if(g_phA3==0 || g_phPreA4==0xFF || g_phPreA4==3){
+            g_phStopVal=4;
+            Markerf("[PH] A4 stop value = 4 (SpawnSelect), as pre-registered. pre-poke byte = %u(%s)\r\n",
+                    g_phPreA4,PhName(g_phPreA4));
+        } else {
+            g_phStopVal=g_phPreA4;
+            Markerf("[PH] A4 stop value OVERRIDDEN from the pre-registered 4 to the OBSERVED pre-poke "
+                    "value %u(%s), because A3 read %d(%s) != 0 -- i.e. something DOES write the phase, "
+                    "so writing a fabricated 4 would clobber real state. %u also fails Tick's "
+                    "`cmp al,3`, so it is an equally valid STOP.\r\n",
+                    g_phPreA4,PhName(g_phPreA4),g_phA3,PhName(g_phA3),g_phPreA4);
+        }
+        // ⚠⚠ OWNERSHIP IS CLAIMED **BEFORE** THE STORE, AND THIS ORDER IS THE WHOLE SAFETY PROPERTY.
+        //    All four A4 stops (ladder / watchdog / __except / mode-exit) gate on g_phPoked3. An
+        //    earlier draft set it AFTER PhPokePhase returned -- with a Markerf (CreateFileA+WriteFile)
+        //    between the store and the latch -- so a fault or hang in that window left GS+0xA44 at 3
+        //    with NOBODY owing a restore, and the game's Tick calling GoToPhase(4) every frame for the
+        //    rest of the sitting, with no ALERT printed. Claim first; release only if no store was
+        //    ATTEMPTED. A claim that turns out to be spurious costs one idempotent no-op write; a
+        //    missing claim costs the sitting.
+        g_phPoke3Ms=GetTickCount(); if(!g_phPoke3Ms) g_phPoke3Ms=1;   // 0 is the watchdog's "unset" sentinel
+        g_phHoldHits=0;
+        InterlockedExchange(&g_phPoked3,1);      // ← from here a restore is OWED
+        {   bool attempted=false;
+            if(!PhPokePhase(3,"A4-START",&attempted)){
+                if(!attempted){
+                    // The guards refused; no store was issued, so the byte cannot be at 3 because of
+                    // us. Release the claim so no spurious stop-write is made.
+                    InterlockedExchange(&g_phPoked3,0); g_phPoke3Ms=0;
+                    Marker("[PH] A4: the guards refused and NO store was issued -> claim released, "
+                           "nothing is owed, skipping the hold\r\n");
+                } else {
+                    // A store WAS issued and did not verify. The byte may be at 3. THE CLAIM STANDS
+                    // and every stop path will keep trying.
+                    Marker("[PH] A4: a store WAS issued and the readback did NOT verify -> the restore "
+                           "claim STANDS; the watchdog will keep retrying. Skipping the hold.\r\n");
+                    InterlockedExchange(&g_phRestoreFailed,1);
+                }
+                g_phStep=6; return; } }
+        g_phStep=5; return;
+
+    case 5: {
+        g_phHoldHits++;
+        DWORD el=GetTickCount()-g_phPoke3Ms;
+        bool byTime = el>=(DWORD)KPLHOLDMS;
+        bool byHits = g_phHoldHits>=(long)KPLHOLDHITS;
+        if(!byTime && !byHits) return;           // still holding; no work, no loop
+        Markerf("[PH] A4 hold ending: elapsed=%lu ms hits=%ld  (stopped by %s)\r\n",
+                el,g_phHoldHits,byTime?(byHits?"TIME+HITS":"TIME"):"HIT CAP (the clock did not get there first)");
+        PhaseRestore("ladder");
+        g_phStep=6; return; }
+
+    case 6:
+        if(!(KPLARMS&0x20)){ Marker("[PH] A5 disabled by KPLARMS -> skipped\r\n"); g_phStep=7; return; }
+        {   int32_t dnNow=SafeReadable((void*)(g_phGs+PH_DELEG_NUM),4)?*(int32_t*)(g_phGs+PH_DELEG_NUM):-1;
+            Markerf("[PH] --- A5 precondition: OnRoundPhaseChanged Num was %d as sampled at '%s', "
+                    "reads %d now ---\r\n",g_phNum0,g_phNum0When,dnNow);
+            // ⚠ TWO DIFFERENT SKIPS, DELIBERATELY SEPARATE. -1 means the READ FAILED and 0 means the
+            //   list is MEASURED EMPTY. Reporting both as "empty" would write up an unreadable field
+            //   as a measurement, which is the evidence-labelling error this project's method rules
+            //   exist to prevent.
+            if(g_phNum0<0 || dnNow<0){
+                Markerf("[PH] A5 NOT RUN: the delegate Num could NOT BE READ (A0'=%d now=%d). This is an "
+                        "UNREADABLE instrument, NOT a measurement that the list is empty. Do not record "
+                        "it as a negative.\r\n",g_phNum0,dnNow);
+                g_phStep=7; return; }
+            if(g_phNum0==0){
+                Markerf("[PH] A5 NOT RUN: Num was MEASURED 0 at '%s' (now %d). A broadcast into an empty "
+                        "invocation list is a HARD NO-OP at 0x134236C, so silence would be "
+                        "UNINTERPRETABLE, not negative. This is the pre-registered gate, not a failure.\r\n",
+                        g_phNum0When,dnNow);
+                g_phStep=7; return; }
+            if(!g_phAsThunk){ Marker("[PH] A5 NOT RUN: BP_AuthSetCurrentPhase unresolved (see resolve log)\r\n"); g_phStep=7; return; }
+            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            ((uint8_t*)g_pbuf)[g_phAsOff]=6;     // EGP_Lineup
+            Markerf("[PH] A5 BEFORE: BP_AuthSetCurrentPhase(6=Lineup) on GS 0x%llX, param@0x%X. Impl is "
+                    "`add rcx,0x590; jmp Broadcast` -- it passes the ARGUMENT, does NOT write +0x%X, and "
+                    "has no gate and no authority test.\r\n",
+                    (unsigned long long)g_phGs,g_phAsOff,PH_CURPHASE);
+            bool f=CallNativeGuarded(g_phAsFn,g_phAsThunk,g_phAsChild,(void*)g_phGs,g_pbuf,g_rbuf);
+            uint8_t after=SafeReadable((void*)(g_phGs+PH_CURPHASE),1)?*(volatile uint8_t*)(g_phGs+PH_CURPHASE):0xFF;
+            Markerf("[PH] A5 AFTER:  returned%s ; +0x%X=%u(%s) (expected UNCHANGED -- it never stores). "
+                    "Receipt is in Loki.log: on the tutorial DropPlane path the 6-arm calls GoToPhase(7), "
+                    "so look for `Setting Phase to 7 (Combat)` WITH NO GoToPhase call of ours.\r\n",
+                    f?" [FAULTED - null captured]":"",PH_CURPHASE,after,PhName(after));
+        }
+        g_phStep=7; return;
+
+    case 7:
+    default:
+        Marker("[PH] ================ ladder COMPLETE ================\r\n");
+        Markerf("[PH] summary: A3 readback=%d(%s) delegNum=%d(sampled@%s) a4Poked=%ld a4Restored=%ld "
+                "a4RestoreFailed=%ld a4PreVal=%u a4StopVal=%u a4HoldHits=%ld holdMs=%lu gm=0x%llX "
+                "gs=0x%llX world=0x%llX\r\n",
+                g_phA3,PhName(g_phA3),g_phNum0,g_phNum0When,(long)g_phPoked3,(long)g_phRestored,
+                (long)g_phRestoreFailed,g_phPreA4,g_phStopVal,g_phHoldHits,
+                g_phPoke3Ms?(GetTickCount()-g_phPoke3Ms):0,
+                (unsigned long long)g_phGm,(unsigned long long)g_phGs,(unsigned long long)g_phWorld);
+        PhBaseline("FINAL");
+        PhaseRestore("ladder-complete");   // no-op if already restored; belt-and-braces
+        g_done=1;
+        return;
+    }
+}
+
+// SEH wrapper. A fault inside ANY step must still stop A4 -- this is the __except-safe
+// finally-equivalent (a real __finally would not cover the watchdog or mode-exit paths, which is why
+// PhaseRestore is a standalone idempotent function called from all four).
+static void DoPhaseLadder(){
+    __try {
+        PhLadderStep();
+    } __except(SehDump(GetExceptionInformation())){
+        Markerf("[PH] *** FAULT inside ladder step %ld -- forcing the A4 STOP and halting the ladder ***\r\n",
+                (long)g_phStep);
+        PhaseRestore("seh-except");
+        g_done=1;
+    }
+}
+
 // ★★★★ S101 — DRIVE THE GAME'S OWN ABILITY-SYSTEM WIRING CHAIN.
 //
 // S100 measured that the force-open hero has NO ability system: AbilitySystemComponentStorage /
@@ -7076,6 +7798,68 @@ static DWORD WINAPI Worker(LPVOID){
         Markerf("[CHM] done (installed=0x%llX pc=0x%llX called=%ld hitsGT=%ld)\r\n",
                 (unsigned long long)g_chmObj,(unsigned long long)g_chmPC,(long)g_called,(long)g_hitsGT);
         return g_chmObj ? 0 : 8;
+    }
+    // ★★★★★ S124 RM_PHASELADDER — FK-22 arms A0'..A5. Heap-only arming; NO module-image write.
+    //     Multi-shot: one arm per game-thread dispatch, then DoPhaseLadder sets g_done and FsHold
+    //     returns immediately. A normal run is over in ~5 s; KPLMODEHOLDMS is a ceiling, not a hold.
+    if(kRunMode==RM_PHASELADDER){
+        Marker("[PH] phase-ladder mode (S124/FK-22): GoToPhase(1) control -> GoToPhase(4) treatment ->\r\n"
+               "[PH] re-read +0xA44 -> poke 3/hold/poke 4 -> BP_AuthSetCurrentPhase(6) if the delegate has subscribers.\r\n"
+               "[PH] Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp -> this). Not meaningful at the menu.\r\n");
+#if KFUNCSWAP
+        Marker("[PH] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        // ★ RESOLVE ON THE WORKER THREAD, BEFORE ARMING -- RM_PLAY's pattern (ResolvePlay() precedes
+        //   FsArm()). PhResolve does ONE full GUObjectArray sweep; doing it from inside a game-thread
+        //   dispatch would be a multi-second frame hitch in a live tutorial world, and on the abort
+        //   path it would spend that hitch producing a diagnostic. Resolving here also means a failed
+        //   resolve aborts BEFORE anything is armed, so the failure costs nothing at all.
+        if(!PhResolve()){
+            Marker("[PH] ABORT before arming: resolve failed. Nothing was armed, nothing was written, "
+                   "no `.text` was touched, and no game-thread time was spent.\r\n");
+            return 5; }
+        g_phResolved=true;
+        // The watchdog starts BEFORE the arm, so the A4 stop exists before anything can poke.
+        InterlockedExchange(&g_phWdStop,0);
+        HANDLE wd=CreateThread(nullptr,0,PhWatchdog,nullptr,0,nullptr);
+        if(!wd) Marker("[PH] *** WARN: watchdog thread did NOT start -- the A4 stop now rests on the "
+                       "ladder's own time/hit bounds and on mode exit only ***\r\n");
+        if(!FsArm()){
+            Marker("[PH] FAIL funcswap arm -- no arm was run, nothing was written\r\n");
+            InterlockedExchange(&g_phWdStop,1);
+            if(wd){ WaitForSingleObject(wd,5000); CloseHandle(wd); }
+            PhaseRestore("arm-fail");
+            return 6; }
+        FsHold(KPLMODEHOLDMS);       // returns as soon as DoPhaseLadder sets g_done
+        FsDisarm();
+        // ⚠ ORDER: restore BEFORE stopping the watchdog, then let the watchdog's bounded exit drain
+        //   finish the job. Signalling the watchdog first would remove the only retrying stop while a
+        //   restore may still be owed.
+        PhaseRestore("mode-exit");   // 4th stop; idempotent no-op on a clean run
+        InterlockedExchange(&g_phWdStop,1);
+        // The exit drain retries every 100 ms for up to KPLWDGRACEMS, so wait longer than that.
+        if(wd){ WaitForSingleObject(wd,(DWORD)KPLWDGRACEMS+5000); CloseHandle(wd); }
+#else
+        // Deliberate refusal, exactly as RM_CHEATMGR does. The alternative delivery path in this file
+        // is InstallHook() = a standing 5-byte .text patch at ProcessInternal, measured 10/10 lethal
+        // (S112, Fisher p = 7e-8). This mode's whole premise is that its effects are one byte of heap
+        // data and two UFunction calls; taking a .text patch to deliver them would invert the trade.
+        Marker("[PH] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a 5-byte .text patch at\r\n"
+               "[PH] ProcessInternal, measured 10/10 lethal (S112). Rebuild with KFUNCSWAP=1.\r\n");
+        return 7;
+#endif
+        Markerf("[PH] done (step=%ld a4Poked=%ld a4Restored=%ld holdHits=%ld called=%ld hitsGT=%ld)\r\n",
+                (long)g_phStep,(long)g_phPoked3,(long)g_phRestored,g_phHoldHits,(long)g_called,(long)g_hitsGT);
+        // ⚠ THE EXIT CODE MUST AGREE WITH THE ALERT. It did not: g_phStep reaches 7 unconditionally
+        //   (case 7 runs whether or not the restore verified), so the commonest shape of this failure
+        //   -- ladder completed, STOP never verified -- used to return 0 = success while printing the
+        //   ALERT immediately above it. Any harness keying on the return value read a stranded phase
+        //   byte as a clean run.
+        if(g_phPoked3 && !g_phRestored){
+            Marker("[PH] *** ALERT: A4 poke was made and the STOP never verified. GS+0xA44 may still be 3 "
+                   "and the game's Tick may still be calling GoToPhase(4) every frame. Re-inject or "
+                   "restart the client. Returning 10. ***\r\n");
+            return 10; }
+        return (g_phStep>=7)?0:9;
     }
     if(kRunMode==RM_PLAY){
         Marker("[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)\r\n");

@@ -153,7 +153,7 @@ mode switch have one in `$Variants`, mapping a suffix to extra `-D` flags. Outpu
 | Flag | Default | What it does |
 |---|---|---|
 | `KVTGUARD` | 1 | Repairs a corrupt `APlayerCameraManager->ViewTarget.Target` from the game thread. **Symptom** guard. |
-| `KGCROOT` | 1 | `AddToRoot`s the loaded anim assets + body component (the worker-thread UAF). |
+| `KGCROOT` | **0** (was 1 until S123) | `AddToRoot`s the loaded anim assets + body component (the worker-thread UAF). |
 | `KPIMUTEX` | 1 | Serialises the transient `ProcessInternal` hook on `Local\SuperviveMissionsPIHook`. |
 | `KXFORMFIX` | 1 | **S106d, CAUSE fix.** Spawn `FTransform` was copied as `0x50` bytes (truncating exactly at `Scale3D.Z` @ `0x50`) and four sites wrote `Scale3D` at the pre-S98 `0x38/0x40/0x48`. Every actor `SpawnActorCls` produced — *including the top-down `CameraActor` that becomes the view target* — spawned at `Scale3D = (x, y, 0)`. Third instance inside `BuildHeroBody`: `savedXform[0x50]` made the deferred `FinishAddComponent` re-apply `Scale.Z = 0` **at component registration**, silently undoing the S98 `RelativeScale3D = (1,1,1)` fix. |
 | `KTESTACTOR` | **0** *(was 1)* | **S106d.** Leftover S94 diagnostic that built a **second** skeletal-mesh body on a standalone actor, in the same post-build hook hit, from a root scaled `(1,1,0)`. Best candidate for the single `LogChaosCloth` non-uniform-scale warning that appears in 4/4 crashing sessions and 0/5 non-crashing ones. |
@@ -295,6 +295,65 @@ exactly why they survive the ~3–5 min code-integrity check.
 > rate for the camera bug is 1-in-3 … 1-in-2 per launch, so `P(all quiet | 6 launches) ≈ 9 %` —
 > **budget ≥ 6 launches**. Every launch still emits the selftest and the trap census, so a quiet launch
 > is informative *about the instrument* even when it says nothing about the bug.
+
+### FK-22 round-phase ladder artifacts (`tutorial_launch`, **S124, 2026-08-16**)
+
+`RM_PHASELADDER` (enum **24**) runs the pre-registered FK-22 arms **A0'…A5**
+(`docs/fk22-dropphase-reachability.md` §8–§12) with **zero module-image writes**.
+
+⚠ **It is a NEW enum value. `RM_GOTOPHASE` (2) is untouched** — that mode arms with `InstallHook()`,
+a standing `ProcessInternal` `.text` patch (S112: **10/10 armed windows dead vs 3/36**, Fisher
+p = 0.00000008), and several docs reference its behaviour by name. Nothing that already existed
+changed: `play` rebuilds **byte-identically** to `9bc10a4552c596e1` from the modified source
+(measured, before/after).
+
+Arming is RM_PLAY's heap `UFunction.Func` (+0xE0) swap verbatim (`FsArm`/`FsHold`/`FsDisarm`,
+`KFUNCSWAP`/`KFSNAME`). With `KFUNCSWAP=0` the mode **refuses to run** and says why, rather than
+silently falling back to the `.text` hook.
+
+| Knob | Default | What it does |
+|---|---|---|
+| `KPLARMS` | `0x3F` | Which arms run. bit0 A0′ · bit1 A1 · bit2 A2 · bit3 A3 · bit4 A4 · bit5 A5 |
+| `KPLHOLDMS` | `2000` | A4: how long `GameState+0xA44` is held at `3` before the STOP poke to `4` |
+| `KPLHOLDHITS` | `600` | A4: hard cap on game-thread callbacks during that hold (clock-independent) |
+| `KPLWDGRACEMS` | `5000` | How long past `KPLHOLDMS` the watchdog waits before forcing the STOP itself |
+| `KPLSTEPMS` | `400` | Minimum spacing between ladder steps (one arm per game-thread hit) |
+| `KPLMODEHOLDMS` | `90000` | Ceiling on the whole sitting; a normal run sets `g_done` and returns in ~5 s |
+
+**Effects, exhaustively:** two `GoToPhase` calls, one `BP_AuthSetCurrentPhase` call, and **one byte**
+of heap data (`GameState+0xA44`, poked to `3` and back to `4`), readback-verified in both directions.
+
+**The A4 runaway has four independent stops** — while `+0xA44 == 3` the game's own Tick calls
+`GoToPhase(4)` every frame and the phase store is dead (`0xF7EC20 = ret 0`), so it never self-clears:
+(1) elapsed ≥ `KPLHOLDMS`; (2) hits ≥ `KPLHOLDHITS`; (3) `PhWatchdog`, a plain worker thread that does
+**not** depend on game-thread dispatch; (4) the `__except` handler around every step **and** an
+unconditional call at mode exit after `FsDisarm`. `PhaseRestore` is idempotent, thread-safe, and only
+latches *restored* after a **verified readback**, so a transient failure is retried, not stranded.
+
+| variant | `.text` sha256 | use |
+|---|---|---|
+| `phaseladder` | `de08812f6cc173fd` | ★ **CANDIDATE** — full A0′…A5, arms on `ReceiveTickClient` (in-world) |
+| `phaseladder-any` | `18b5d73ef08c02c1` | +1 dim: swaps **every** BP UFunction. Use if the 8 s verdict reads `NO GAME-THREAD HITS` |
+| `phaseladder-readonly` | `39240e4b4a71f559` | −1 dim: **A0′ only** — pure RPM, zero calls, zero writes. The staging positive control |
+| `phaseladder-nopoke` | `9e8a6132ba7bf5b7` | −1 dim: A0′…A3 — both `GoToPhase` calls, **no** poke and **no** broadcast |
+
+⚠ **These four are near-identical in size (177,664 – 184,832 B) and two of them differ by 512 B.**
+Diff `.text`, never size — `tools/sigbypass-mod/verify_dll.py`, or the section-hash snippet in
+`docs/s109-dump-forensics.md` §23.
+
+**No-`.text`-write receipt, with a positive control from the same source file** — `SafeWrite`/`BuildHook`
+are dead-code-eliminated because `kRunMode` is a compile-time constant:
+
+| DLL | `FlushInstructionCache` | `VirtualAlloc` | `VirtualFree` |
+|---|---|---|---|
+| `tutorial_launch_phaseladder.dll` | absent | absent | absent |
+| `tutorial_launch_phaseladder_readonly.dll` | absent | absent | absent |
+| `tutorial_launch_play.dll` (shipping, measured-safe) | absent | absent | absent |
+| **`tutorial_launch_fo.dll`** (does call `InstallHook`) | **PRESENT** | **PRESENT** | **PRESENT** |
+
+⚠ `ReceiveTickClient` is **MEASURED not dispatched at the menu** (S114), so `phaseladder` is a silent
+no-op there — but the mode is meaningless at the menu anyway (no live `GameMode_Tutorial`) and
+`PhResolve` aborts by name with a candidate enumeration. Inject into the **staged tutorial world**.
 
 ---
 

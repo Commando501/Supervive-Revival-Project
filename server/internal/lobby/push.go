@@ -451,6 +451,18 @@ func (s *Service) Sweep(req SweepRequest) ([]PushResult, error) {
 // (Resources served as empty catch-alls carry no version, so their cache stays 0
 // and any positive value works — that is why the /match-history probe succeeded
 // with Version 7.)
+//
+// ⚠⚠ THE PARENTHETICAL ABOVE IS STALE FOR ITS OWN EXAMPLE (S123, 2026-08-15).
+// /match-history STOPPED being a catch-all when interactive.handleMatchHistory was
+// written: it now carries MatchHistoryVersion(id), seeded from wall-clock seconds
+// (~1.79e9). A push of Version 7 today is the TOO-LOW case documented directly
+// above — silently ignored, and indistinguishable from "the client does not handle
+// this resource". Pass interactive.MatchHistoryVersion(id), which is exported for
+// exactly this. The general rule still holds; only the example expired.
+// ⇒ A worked example that names a specific endpoint ROTS when that endpoint is
+// implemented. When you give a resource a real Version, grep for its name in the
+// push/notify docs — the comment that taught you the mechanism is now the comment
+// that will mislead you. See docs/fk21-career-panels-settled.md §7.
 func (s *Service) NotifyResource(playerID, resource string, version int64, label string) error {
 	if s == nil {
 		return errors.New("notify: no lobby service")

@@ -190,6 +190,35 @@ $Variants = @{
         #   shipped image before this variant was flown (wide=1 each, against 3 present controls).
         #   ⚠ NOT "God": measured to emit no log line at all, i.e. a silent instrument.
         'cheatmgr-any-verify' = @('-DKRUNMODE=RM_CHEATMGR','-DKFSNAME=\"\"','-DKCMVERIFY=1')
+        # ★★★★★ S124 RM_PHASELADDER (24) -- FK-22 arms A0'..A5 on the round-phase ladder.
+        #   docs/fk22-dropphase-reachability.md §8-§12. A NEW enum value: RM_GOTOPHASE (2) is untouched
+        #   because it arms with InstallHook() (a standing ProcessInternal .text patch, S112-measured
+        #   10/10 lethal) and several docs reference its behaviour by name.
+        #   Arming is the heap UFunction.Func (+0xE0) swap, inherited from RM_PLAY -- ZERO module-image
+        #   writes; with KFUNCSWAP=0 the mode REFUSES to run rather than falling back to the .text hook.
+        #   Effects: two GoToPhase calls, one BP_AuthSetCurrentPhase call, and ONE BYTE of heap data
+        #   (GameState+0xA44), poked to 3 and back to 4, readback-verified both ways.
+        #   ⚠ Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp -> this). The default KFSNAME is
+        #     ReceiveTickClient, which is MEASURED not dispatched at the menu; the mode aborts by name
+        #     at the menu anyway (no live GameMode_Tutorial).
+        'phaseladder'          = @('-DKRUNMODE=RM_PHASELADDER')                            # ★ CANDIDATE: the full A0'..A5 ladder
+        #   +1 dim: swap every BP UFunction instead of just ReceiveTickClient. Use if the shim's own
+        #   8 s verdict line reads "NO GAME-THREAD HITS ... THE SWAP IS A SILENT NO-OP".
+        'phaseladder-any'      = @('-DKRUNMODE=RM_PHASELADDER','-DKFSNAME=\"\"')
+        #   -1 dim: A0' ONLY. Pure RPM -- zero UFunction calls, zero writes of any kind. This is the
+        #   safety build and the staging positive control: if it does not print a live GameState and a
+        #   plausible baseline, the sitting is wrong and no other arm is worth spending.
+        'phaseladder-readonly' = @('-DKRUNMODE=RM_PHASELADDER','-DKPLARMS=0x01')
+        #   -1 dim: A0'..A3 (both GoToPhase calls + the readback) but NO A4 poke and NO A5 broadcast,
+        #   i.e. the call-only half with no data write at all. Run this first if the poke is unwanted.
+        'phaseladder-nopoke'   = @('-DKRUNMODE=RM_PHASELADDER','-DKPLARMS=0x0F')
+        #   ★ S124 SECOND FLIGHT: A0' + A5 ONLY (0x01|0x20). A1/A2 are already PROVEN live (the round
+        #   self-drove to EGP_Combat, docs/fk22 §14) so re-running them only burns the window and
+        #   contaminates receipts; A3/A4 are dropped to keep this SINGLE-VARIABLE -- the one question
+        #   is whether a BROADCAST alone drives the DropPlane handler, whose gate reads the ARGUMENT
+        #   (`NotEqual_ByteByte(NewPhase,6)`), not the stored byte. KFSNAME="" because the first
+        #   flight's ladder STARVED after A2 when ReceiveTickClient stopped being dispatched.
+        'phaseladder-a5'       = @('-DKRUNMODE=RM_PHASELADDER','-DKFSNAME=\"\"','-DKPLARMS=0x21')
         # ★★ S112 SHIPPED: 'play' now defaults to KFUNCSWAP=1 + KFSNAME="ReceiveTickClient", i.e. the
         #   hook is a 2-pointer HEAP write and the module image is never touched. 'play-textpatch' is
         #   the ROLLBACK, and it is also the A/B's measured control arm (10/10 armed windows died),
