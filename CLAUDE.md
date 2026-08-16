@@ -844,9 +844,22 @@ BACKEND — no shim, no injection, no `.text` write.
 - ★★ **`GET /player-stats/players/{id}` — FETCHED AND ACCEPTED on a cold boot (S121)** [M]:
   requested by `Loki/UE5-CL-0` at login with **0** `LogJson Unable`, **0** `Deserialization
   failure` and **0** `Invalid response received` (that last one means "a required top-level field
-  is absent", so a zero is a real statement about our shape). ⚠ **Accepted ≠ rendered** — the
-  CAREER → STATS surface has not been eyeballed, so treat rendering as unconfirmed.
-  It is a **login-time** fetch and an admin socket drop does **not** trigger a refetch, so
+  is absent", so a zero is a real statement about our shape).
+  ★★ **CONFIRMED RENDERED — CAREER → STATS draws every served field**: MATCHES 12, KILLS 40,
+  MAX KILL STREAK 4, KNOCKS 55, MAX DAMAGE DEALT 21,400, MAX HEALING GIVEN 5,100, MAX DAMAGE
+  TAKEN 19,800, TIME PLAYED 2h 20m 0s (= `TimePlayedSeconds: 8400`).
+  `StatsByQueue["tutorialNew"]` lands on **BASIC TRAINING**, and TRAINING MODE / PRACTICE RANGE /
+  CO-OP VS. AI render **all zeros** — a free negative control, since we serve only that one queue,
+  so the queue keying is confirmed in BOTH directions.
+  ★★ **`Placements` IS ZERO-INDEXED (key 0 == 1st place)** [I], derived from the two numbers the
+  page COMPUTES rather than echoes: serving `{1:3,2:5,3:4}` gave `WINS 0` and `TOP 3 8`.
+  0-indexed predicts both (`WINS=P[0]`=absent=0, `TOP3=P[0]+P[1]+P[2]`=8); 1-indexed predicts
+  neither (3 and 12). Pre-registered test now in the code: `{0:3,1:5,2:4}` should render
+  **WINS 3 / TOP 3 12** on the next relaunch.
+  ⚠ **`FPlayerHeroStats` HAS NO `Wins` FIELD** — which is why WINS must be derived, and which
+  independently confirms that those 22 fields are NOT the `statCode` namespace (`wins` is not
+  among them; `ST_Leaderboard_Stats` is that vocabulary).
+  ⚠ It is a **login-time** fetch and an admin socket drop does **not** trigger a refetch, so
   iterating on it needs a relaunch. `FPlayerStats{ID, Version int32, StatsByQueue TMap}` → `FPlayerQueueStats{ID,
   StatsByHero TMap}` → `FPlayerHeroStats` (22 int32s + `Placements TMap<int32,int32>`, SizeOf
   0xa8, names [M] from the UHT oracle). **All three maps are JSON OBJECTS**; `Placements` needs
