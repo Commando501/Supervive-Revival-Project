@@ -106,6 +106,35 @@
 > prompt. That is a concrete, testable candidate for "queued behind another prompt".
 > ⚠ **Not established** — nothing yet shows `VersionUpdate` actually pushed anything this session.
 >
+> ### ✅ THE ACTIVE-WIDGET READ — THE STACK IS EMPTY [M] (`tools/re/promptstack_readout.py`)
+>
+> ```
+> ALL WBP_UI_MainMenu_NormalMainMenu_C instances:
+>    0x26A8DCF5160  Default__…                (CDO)
+>    0x26A8DCF29B0  MainMenu_NormalV2   PromptStack -> NULL
+>    0x26A6835C870  MainMenu_NormalV2   PromptStack -> 0x26A84B4CD00 CommonActivatableWidgetStack
+>                                         WidgetList      Num = 0
+>                                         DisplayedWidget = NULL
+>                                         Slot            = CanvasPanelSlot   (the stack IS parented)
+> ```
+>
+> ⇒ **The MOTD widget is NOT in the prompt stack, and the stack has never held anything.** The stack
+> itself is real and parented, so "there is no prompt host" is excluded.
+>
+> ★★ **AND THERE ARE TWO `MainMenu_NormalV2` INSTANCES — one with a NULL `PromptStack`.**
+> `MenuRootV2::PushPrompt` forwards to its own `MainMenu_NormalV2` variable; if that reference is
+> the NULL-stack instance, then `PromptStack->GetActiveWidget()` and `PromptStack->BP_AddWidget()`
+> are both **Blueprint no-ops on a null object** and the prompt is silently never created.
+> **That is the leading hypothesis and it is testable:** read `MenuRootV2`'s `MainMenu_NormalV2`
+> property and see which of the two addresses it holds.
+>
+> ⚠ It also casts doubt on an earlier reading: `CallFunc_Try_Show_MOTD_Widget = 0x2692C618DF0` was
+> taken as "a widget was created". That object's NAME is exactly `WBP_UI_Menus_MessageOfTheDay_C` —
+> the bare class name, not the `_C_2147…` form a runtime-spawned widget gets — so it may be a
+> **template/archetype** rather than a live instance. Given `BP_AddWidget` on a null stack returns
+> null, the non-null value in the frame needs re-explaining. **Do not treat "the widget exists" as
+> settled.**
+>
 > ⚠ Instrument note: searching live classes for `PromptStack` returns **0**, which is meaningless —
 > `PromptStack` is a **variable name**, not a class (the class is a CommonActivatable-style
 > container). Do not read that zero as "no prompt stack exists".
