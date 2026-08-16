@@ -1,0 +1,337 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Party/BPFL_Matchmaking.uasset
+# UFunction:     Queue ID to Name
+# FunctionFlags: FUNC_Static, FUNC_Public, FUNC_HasOutParms, FUNC_HasDefaults, FUNC_BlueprintCallable, FUNC_BlueprintEvent, FUNC_BlueprintPure
+# Outer class:   BPFL_Matchmaking_C
+# ScriptBytecode entries: 21
+# ChildProperties: 19
+# --- Parameters / locals (FField chain) ---
+#   [0] FStrProperty  ?
+#   [1] FBoolProperty  ?
+#   [2] FObjectProperty  ?
+#   [3] FTextProperty  ?
+#   [4] FBoolProperty  ?
+#   [5] FStrProperty  ?
+#   [6] FNameProperty  ?
+#   [7] FStrProperty  ?
+#   [8] FBoolProperty  ?
+#   [9] FStrProperty  ?
+#   [10] FTextProperty  ?
+#   [11] FTextProperty  ?
+#   [12] FStructProperty  ?
+#   [13] FArrayProperty  ?
+#   [14] FTextProperty  ?
+#   [15] FStrProperty  ?
+#   [16] FTextProperty  ?
+#   [17] FBoolProperty  ?
+#   [18] FTextProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_Let
+  Property: CallFunc_SelectString_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_SelectString_ReturnValue
+      StatementIndex: 9
+  Assignment:
+    EX_CallMath
+      StackNode: SelectString
+      Parameters: [3]
+        [  0] EX_StringConst
+          Value: -ranked
+          StatementIndex: 27
+        [  1] EX_StringConst
+          Value: 
+          StatementIndex: 36
+        [  2] EX_LocalVariable
+          Variable: IsRanked
+          StatementIndex: 38
+      StatementIndex: 18
+  StatementIndex: 0
+[  1] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_StringTableIdAndKeyFromText_ReturnValue
+      StatementIndex: 49
+  Assignment:
+    EX_CallMath
+      StackNode: StringTableIdAndKeyFromText
+      Parameters: [3]
+        [  0] EX_TextConst
+          Value: CUE4Parse.UE4.Kismet.FScriptText
+          StatementIndex: 67
+        [  1] EX_LocalVariable
+          Variable: CallFunc_StringTableIdAndKeyFromText_OutTableId
+          StatementIndex: 166
+        [  2] EX_LocalVariable
+          Variable: CallFunc_StringTableIdAndKeyFromText_OutKey
+          StatementIndex: 175
+      StatementIndex: 58
+  StatementIndex: 48
+[  2] EX_Let
+  Property: CallFunc_Concat_StrStr_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Concat_StrStr_ReturnValue
+      StatementIndex: 194
+  Assignment:
+    EX_CallMath
+      StackNode: Concat_StrStr
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: QueueID
+          StatementIndex: 212
+        [  1] EX_LocalVariable
+          Variable: CallFunc_SelectString_ReturnValue
+          StatementIndex: 221
+      StatementIndex: 203
+  StatementIndex: 185
+[  3] EX_Let
+  Property: CallFunc_Conv_StringToText_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_StringToText_ReturnValue
+      StatementIndex: 240
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_StringToText
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Concat_StrStr_ReturnValue
+          StatementIndex: 258
+      StatementIndex: 249
+  StatementIndex: 231
+[  4] EX_Let
+  Property: CallFunc_Conv_StringToText_ReturnValue_1
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_StringToText_ReturnValue_1
+      StatementIndex: 277
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_StringToText
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Concat_StrStr_ReturnValue
+          StatementIndex: 295
+      StatementIndex: 286
+  StatementIndex: 268
+[  5] EX_Let
+  Property: ArgumentName
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentName
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 323
+      StatementIndex: 314
+  Assignment:
+    EX_StringConst
+      Value: id
+      StatementIndex: 332
+  StatementIndex: 305
+[  6] EX_Let
+  Property: ArgumentValueType
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueType
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 354
+      StatementIndex: 345
+  Assignment:
+    EX_ByteConst
+      Value: 4
+      StatementIndex: 363
+  StatementIndex: 336
+[  7] EX_Let
+  Property: ArgumentValue
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValue
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 383
+      StatementIndex: 374
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_StringToText_ReturnValue_1
+      StatementIndex: 392
+  StatementIndex: 365
+[  8] EX_Let
+  Property: ArgumentValueInt
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueInt
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 419
+      StatementIndex: 410
+  Assignment:
+    EX_Int64Const
+      Value: 0
+      StatementIndex: 428
+  StatementIndex: 401
+[  9] EX_Let
+  Property: ArgumentValueFloat
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueFloat
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 455
+      StatementIndex: 446
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 464
+  StatementIndex: 437
+[ 10] EX_Let
+  Property: ArgumentValueDouble
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueDouble
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 487
+      StatementIndex: 478
+  Assignment:
+    EX_DoubleConst
+      Value: 0
+      StatementIndex: 496
+  StatementIndex: 469
+[ 11] EX_Let
+  Property: ArgumentValueGender
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueGender
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 523
+      StatementIndex: 514
+  Assignment:
+    EX_ByteConst
+      Value: 0
+      StatementIndex: 532
+  StatementIndex: 505
+[ 12] EX_SetArray
+  AssigningProperty:
+    EX_LocalVariable
+      Variable: K2Node_MakeArray_Array
+      StatementIndex: 535
+  Elements: [1]
+    [  0] EX_LocalVariable
+      Variable: K2Node_MakeStruct_FormatArgumentData
+      StatementIndex: 544
+  StatementIndex: 534
+[ 13] EX_Let
+  Property: CallFunc_Format_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Format_ReturnValue
+      StatementIndex: 563
+  Assignment:
+    EX_CallMath
+      StackNode: Format
+      Parameters: [2]
+        [  0] EX_TextConst
+          Value: CUE4Parse.UE4.Kismet.FScriptText
+          StatementIndex: 581
+        [  1] EX_LocalVariable
+          Variable: K2Node_MakeArray_Array
+          StatementIndex: 600
+      StatementIndex: 572
+  StatementIndex: 554
+[ 14] EX_Let
+  Property: CallFunc_Conv_TextToString_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_TextToString_ReturnValue
+      StatementIndex: 619
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_TextToString
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Format_ReturnValue
+          StatementIndex: 637
+      StatementIndex: 628
+  StatementIndex: 610
+[ 15] EX_Let
+  Property: CallFunc_TextFromStringTable_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_TextFromStringTable_ReturnValue
+      StatementIndex: 656
+  Assignment:
+    EX_CallMath
+      StackNode: TextFromStringTable
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_StringTableIdAndKeyFromText_OutTableId
+          StatementIndex: 674
+        [  1] EX_LocalVariable
+          Variable: CallFunc_Conv_TextToString_ReturnValue
+          StatementIndex: 683
+      StatementIndex: 665
+  StatementIndex: 647
+[ 16] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_IsRegisteredTableEntry_ReturnValue
+      StatementIndex: 694
+  Assignment:
+    EX_CallMath
+      StackNode: IsRegisteredTableEntry
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_StringTableIdAndKeyFromText_OutTableId
+          StatementIndex: 712
+        [  1] EX_LocalVariable
+          Variable: CallFunc_Conv_TextToString_ReturnValue
+          StatementIndex: 721
+      StatementIndex: 703
+  StatementIndex: 693
+[ 17] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_bool_Variable
+      StatementIndex: 732
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_IsRegisteredTableEntry_ReturnValue
+      StatementIndex: 741
+  StatementIndex: 731
+[ 18] EX_Let
+  Property: QueueName
+  Variable:
+    EX_LocalOutVariable
+      Variable: QueueName
+      StatementIndex: 759
+  Assignment:
+    EX_SwitchValue
+      EndGotoOffset: 821
+      IndexTerm:
+        EX_LocalVariable
+          Variable: Temp_bool_Variable
+          StatementIndex: 775
+      DefaultTerm:
+        EX_LocalVariable
+          Variable: K2Node_Select_Default
+          StatementIndex: 812
+      Cases: [CUE4Parse.UE4.Kismet.FKismetSwitchCase, CUE4Parse.UE4.Kismet.FKismetSwitchCase]
+      StatementIndex: 768
+  StatementIndex: 750
+[ 19] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 822
+  StatementIndex: 821
+[ 20] EX_EndOfScript
+  StatementIndex: 823

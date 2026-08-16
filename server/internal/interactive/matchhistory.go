@@ -2,8 +2,88 @@ package interactive
 
 // FMatchHistory.Matches — the synthetic match-history row, and the FK-21 test (S123, 2026-08-15).
 //
-// STATUS: BUILT, NOT YET FLOWN. Default is OFF and OFF is byte-identical to the pre-S123 payload
-// (`"Matches": []`). Nothing here changes behaviour until a knob is set.
+// STATUS: ★★★★★ SOLVED END TO END, FEED **AND** RENDER, SCREENSHOT-CONFIRMED (2026-08-15).
+// CAREER -> HISTORY draws our synthetic match: `VICTORY · Basic Training · 1/16 · 18:00`, the hero
+// portrait, an ALLY row, and the full expanded stat panel. Backend-only — no shim, no injection, no
+// `.text` write. Default is OFF and OFF is byte-identical to the pre-S123 payload (`"Matches": []`).
+//
+// ⇒ **FK-21 IS ANSWERED FOR ITS THIRD PANEL.** Its belief — "Career -> History shows an authentic
+// empty" — is FALSE in the same way Stats (S121) and Ranked (S122) were: the panel was empty
+// because we served it empty, and it renders the moment it is fed. All three of FK-21's panels
+// have now been shown to be broken-by-omission rather than authentically empty, which is exactly
+// what FK-21 predicted and what the register entry should record.
+//
+// ---------------------------------------------------------------------------------------------
+// ★★★★★ THE RESULT — THREE ARMS, ONE LIVE CLIENT (up 3h08m), NO RELAUNCH, NO INJECTION
+// ---------------------------------------------------------------------------------------------
+// Readout: tools/re/matchhistory_readout.py against the live UMatchHistoryManager.
+//
+//	arm            Version      Matches.Num  TeamInfo.Placement  StartingRank    canaries
+//	A  off         1786853586   0            —                   —               0/0/0/0
+//	B  minimal     1786854166   1            0 (unserved)        0 = Unranked    0/0/0/0
+//	C  full        1786854383   1            1 (SERVED)          12 = Gold1      0/0/0/0
+//
+// ★ ARM B — every served field read back VERBATIM out of the client's own parsed struct:
+//   ID 'revival-match-0001' · QueueID 'tutorialNew' · IsRanked 0 · GameVersion '1.0.0' ·
+//   NumTeams 16 · NumParticipants 64 · CharacterLevel 12 · StartingRating 1850.
+//   The fields minimal does NOT serve sat at their defaults, which is the built-in negative
+//   control: it is what distinguishes "our document landed" from "something else wrote here".
+//
+// ★★ ARM B vs C IS A CLEAN SINGLE-VARIABLE PAIR — only the five risky fields differ, and the two
+// observable ones BOTH moved while every other field stayed identical. Because
+// FJsonObjectConverter rejects the WHOLE document on one wrong-typed matched key, the document
+// surviving with Num=1 means all five were accepted:
+//   - `StartingRank: "Gold1"` -> byte 12 [M]. The ERank identity read live off UEnum::Names is
+//     confirmed, and the enum-STRING form is accepted (the S118 ELokiActivityState failure mode
+//     does not fire here).
+//   - `TeamInfo` (nested struct w/ a nested array of structs) -> Placement 1 [M].
+//   - `HeroAssetID: "Hero:reshealer"` (FPrimaryAssetId), `PersonalStats` (24 fields) and
+//     `Teammates[]` accepted [I — implied by the document surviving whole, not read back field by
+//     field; the readout does not print them].
+//
+// ⇒ ★★★★★ FK-21's HISTORY THIRD IS ANSWERED AT THE FEED LAYER: the empty was OURS. It was never a
+// broken deserialization — even at BASELINE the manager held our player id with the gate open, and
+// the array was empty only because we served it empty.
+//
+// ★★★★ AND THE RENDER HALF THEN CONFIRMED IT, FIELD BY FIELD (screenshot):
+//	`VICTORY`                      <- TeamInfo.Placement 1
+//	`1/16`                         <- Placement 1 of NumTeams 16  ⇒ ★★ **1-INDEXED**
+//	`Basic Training`               <- QueueID "tutorialNew" through Queue_ID_to_Name
+//	`Aug 15, 2026, 10:26:21 PM`    <- MatchStart 03:26:21Z converted UTC->LOCAL
+//	`(18:00)`                      <- MatchEnd - MatchStart
+//	hero portrait                  <- HeroAssetID "Hero:reshealer" RESOLVED (directly observed)
+//	`ALLY  Reviver#6612`           <- TeamInfo.Teammates[0], PlayerID resolved to a display name
+//	7 / 11 / 5 / 9 · 38 minions    <- Kills/Knocks/Revives/Assists/CreepKills
+//	gold 1,200 / 2,400 / 900       <- GoldFromTreasure / **GoldFromMonsters** / GoldFromEnemies
+//	HEALING TOTAL 8,400            <- DERIVED, HealingGiven 5,100 + HealingReceived 3,300
+//
+// ⚠⚠ **`TeamInfo.Placement` IS 1-INDEXED, AND THAT IS THE OPPOSITE OF ITS SIBLING.** S121 measured
+// `FPlayerHeroStats.Placements` on /player-stats/players/{id} as **ZERO**-indexed (key 0 == 1st,
+// confirmed by pre-registered prediction). Two placement fields on two endpoints of the same
+// backend, opposite conventions. **Do not carry either convention across.** This was only
+// discriminating because the flight served Placement 1 against NumTeams 16 — 1-of-1 would have
+// rendered identically under both.
+// ⚠ Two labels do NOT match their field names: `MINIONS KILLED` <- `CreepKills`, `GOLD FROM
+// MINIONS` <- `GoldFromMonsters`. Read the label-to-field mapping, never assume it.
+//
+// ⚠ METHOD NOTE — before the screen was opened, the RPM readout showed exactly ONE live
+// `WBP_UI_MatchHistoryEntry_C` with `Visibility = 4`, on a session where `MatchHistoryScreen` had
+// **0** activations. That object was the widget-tree TEMPLATE and its Visibility a design-time
+// value; reading it as "a row rendered" would have been the archetype trap (a fifth member of the
+// class-lookup blind-spot family). The activation count is what caught it.
+//
+// ⚠ The onboarding readout was ATTEMPTED and is UNINTERPRETABLE, not negative:
+// `CallFunc_Get_Number_of_Games_Played_ReturnValue` reads 0 on the live instance (HAS-RUN 59), but
+// it is a per-execution ubergraph scratch slot whose value is ALSO the default, so "re-evaluated
+// and got 0" and "holds a value from a run predating our document" cannot be separated.
+//
+// ⚠⚠ THE User-Agent TRAP FIRED TWICE MORE IN THIS ONE SITTING, AND ONE VARIANT IS NEW.
+// (1) Verification curls land in capture.log reading exactly like client traffic — defused by
+// giving them a deliberately absurd UA (`fk21-verify-NOT-THE-GAME`).
+// (2) ★ NEW WRINKLE: **the grep WINDOW is part of the instrument.** `grep -B2 -A3 match-history`
+// paired a request with a NEIGHBOURING request's User-Agent and read as `supervive-loadout-shim`,
+// i.e. "the game never refetched". Widening to `-A 12` showed the true pairing:
+// `Loki/UE5-CL-0`. **Pair each request with its OWN header block; never trust a narrow window.**
 //
 // ---------------------------------------------------------------------------------------------
 // WHY THIS EXISTS — FK-21, and the two-thirds of it that already fell
@@ -319,6 +399,28 @@ func matchHistoryMatches(playerID string) []any {
 				"GoldFromTreasure": 1200, "GoldFromMonsters": 2400, "GoldFromEnemies": 900,
 				"DamageDone": 21400.0, "HeroDamageDone": 15200.0,
 				"DamageTaken": 19800.0, "HeroDamageTaken": 12600.0,
+				// ★★★★★ THE DAMAGE TILES READ THE `Effective*` FIELDS, NOT THE RAW ONES — [M],
+				// CONFIRMED 5/5 BY A DISCRIMINATING FLIGHT (2026-08-15, screenshot):
+				//	TOTAL DAMAGE DEALT   18,000 <- EffectiveDamageDone      (raw DamageDone 21,400)
+				//	DAMAGE TO HUNTERS    13,100 <- HeroEffectiveDamageDone  (raw 15,200)
+				//	TOTAL DAMAGE TAKEN   16,700 <- EffectiveDamageTaken     (raw 19,800)
+				//	DAMAGE FROM HUNTERS  11,300 <- HeroEffectiveDamageTaken (raw 12,600)
+				//	SHIELDED DAMAGE       2,600 <- ShieldMitigatedDamage
+				// ⇒ the four raw Damage* fields are NOT read by this panel at all. [S] They may
+				// still drive the end-of-game screen; untested. `ArmorMitigatedDamage` is served
+				// and appears nowhere on this panel.
+				// First `full` flight served ONLY the four raw Damage* fields above and every damage
+				// tile rendered 0 — TOTAL DAMAGE DEALT, DAMAGE TO HUNTERS, TOTAL DAMAGE TAKEN,
+				// SHIELDED DAMAGE, DAMAGE FROM HUNTERS — while HEALING GIVEN/RECEIVED (also floats,
+				// same struct) rendered correctly at 5,100/3,300. That asymmetry is the whole clue:
+				// healing has no `Effective` variant, so it is the one stat whose raw field IS what
+				// the UI reads.
+				// ⚠ VALUES ARE DELIBERATELY DISTINCT FROM THE RAW ONES so the tiles DISCRIMINATE:
+				// 18,000 vs 21,400 etc. If a tile shows 18,000 it reads Effective; 21,400 means raw
+				// and the hypothesis is wrong. Equal values would have proven nothing.
+				"EffectiveDamageDone": 18000.0, "HeroEffectiveDamageDone": 13100.0,
+				"EffectiveDamageTaken": 16700.0, "HeroEffectiveDamageTaken": 11300.0,
+				"ShieldMitigatedDamage": 2600.0, "ArmorMitigatedDamage": 3100.0,
 				"HealingGiven": 5100.0, "HealingReceived": 3300.0,
 				"TimeSpentAlive": 1080.0, "TimeSpentKnocked": 42.0, "TimeSpentDead": 60.0,
 			}

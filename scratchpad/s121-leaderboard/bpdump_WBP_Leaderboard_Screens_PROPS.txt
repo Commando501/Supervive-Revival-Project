@@ -1,0 +1,101 @@
+# Asset: Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.uasset
+# 22 exports total
+
+## [UObject] CommonTextBlock_343  (ExportType=CommonTextBlock)
+   - Style (ObjectProperty) = BlueprintGeneratedClass'/Game/Loki/UI/Styles/Text/BP_TextStyle_V2_Header1_XL.BP_TextStyle_V2_Header1_XL_C' (ObjectProperty)
+   - Text (TextProperty) = Leaderboards (TextProperty)
+   - ColorAndOpacity (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - Font (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - ShadowOffset (StructProperty) = X=0.000 Y=0.000 (FVector2D, StructProperty)
+   - TextTransformPolicy (EnumProperty) = ETextTransformPolicy::ETextTransformPolicy::ToUpper (EnumProperty)
+   - Slot (ObjectProperty) = OverlaySlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0.OverlaySlot_3' (ObjectProperty)
+
+## [UFunction] BP_GetDesiredFocusTarget  (ExportType=Function)
+   (no properties)
+## [UFunction] ExecuteUbergraph_WBP_Leaderboard_Screens  (ExportType=Function)
+   (no properties)
+## [UFunction] On Stat Leaderboard Filters Updated  (ExportType=Function)
+   (no properties)
+## [UFunction] OnInitialized  (ExportType=Function)
+   (no properties)
+## [UObject] Switcher  (ExportType=NotifyingWidgetSwitcher)
+   - Slots (ArrayProperty):
+       [0] WidgetSwitcherSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher.WidgetSwitcherSlot_1' (ObjectProperty)
+       [1] WidgetSwitcherSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher.WidgetSwitcherSlot_4' (ObjectProperty)
+       [2] WidgetSwitcherSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher.WidgetSwitcherSlot_2' (ObjectProperty)
+       [3] WidgetSwitcherSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher.WidgetSwitcherSlot_0' (ObjectProperty)
+   - Slot (ObjectProperty) = OverlaySlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0.OverlaySlot_1' (ObjectProperty)
+
+## [UObject] Overlay_0  (ExportType=Overlay)
+   - Slots (ArrayProperty):
+       [0] OverlaySlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0.OverlaySlot_3' (ObjectProperty)
+       [1] OverlaySlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0.OverlaySlot_1' (ObjectProperty)
+       [2] OverlaySlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0.OverlaySlot_4' (ObjectProperty)
+
+## [UObject] OverlaySlot_1  (ExportType=OverlaySlot)
+   - Padding (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - HorizontalAlignment (ByteProperty) = 0 (ByteProperty)
+   - VerticalAlignment (ByteProperty) = 0 (ByteProperty)
+   - Parent (ObjectProperty) = Overlay'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0' (ObjectProperty)
+   - Content (ObjectProperty) = NotifyingWidgetSwitcher'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher' (ObjectProperty)
+
+## [UObject] OverlaySlot_3  (ExportType=OverlaySlot)
+   - Parent (ObjectProperty) = Overlay'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0' (ObjectProperty)
+   - Content (ObjectProperty) = CommonTextBlock'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.CommonTextBlock_343' (ObjectProperty)
+
+## [UObject] OverlaySlot_4  (ExportType=OverlaySlot)
+   - Padding (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - Parent (ObjectProperty) = Overlay'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0' (ObjectProperty)
+   - Content (ObjectProperty) = WBP_UI_NavBar_TertiaryV2_C'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.WBP_UI_NavBar_TertiaryV2' (ObjectProperty)
+
+## [UObject] Default__WBP_Leaderboard_Screens_C  (ExportType=WBP_Leaderboard_Screens_C)
+   - UberGraphFrame (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+
+## [UObject] LeaderboardDaily  (ExportType=WBP_UI_LeaderboardScreen_C)
+   - Slot (ObjectProperty) = WidgetSwitcherSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher.WidgetSwitcherSlot_1' (ObjectProperty)
+
+## [UObject] LeaderboardWeekly  (ExportType=WBP_UI_LeaderboardScreen_C)
+   - Period (StrProperty) = weekly (StrProperty)
+   - Slot (ObjectProperty) = WidgetSwitcherSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher.WidgetSwitcherSlot_4' (ObjectProperty)
+
+## [UObject] WBP_UI_NavBar_TertiaryV2  (ExportType=WBP_UI_NavBar_TertiaryV2_C)
+   - ButtonData (ArrayProperty):
+       [0] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [1] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [2] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [3] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - Switcher (ObjectProperty) = NotifyingWidgetSwitcher'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher' (ObjectProperty)
+   - TopPadding (FloatProperty) = 0 (FloatProperty)
+   - Slot (ObjectProperty) = OverlaySlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0.OverlaySlot_4' (ObjectProperty)
+
+## [UObject] RankedFriends  (ExportType=WBP_UI_RankedLeaderboardScreen_C)
+   - OnlyFriends (BoolProperty) = True (BoolProperty)
+   - Slot (ObjectProperty) = WidgetSwitcherSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher.WidgetSwitcherSlot_0' (ObjectProperty)
+
+## [UObject] RankedScreen  (ExportType=WBP_UI_RankedLeaderboardScreen_C)
+   - HasRegionSelector (BoolProperty) = True (BoolProperty)
+   - Slot (ObjectProperty) = WidgetSwitcherSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher.WidgetSwitcherSlot_2' (ObjectProperty)
+
+## [UWidgetBlueprintGeneratedClass] WBP_Leaderboard_Screens_C  (ExportType=WidgetBlueprintGeneratedClass)
+   - WidgetTree (ObjectProperty) = WidgetTree'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree' (ObjectProperty)
+   - UberGraphFunction (ObjectProperty) = Function'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:ExecuteUbergraph_WBP_Leaderboard_Screens' (ObjectProperty)
+
+## [UObject] WidgetSwitcherSlot_0  (ExportType=WidgetSwitcherSlot)
+   - Parent (ObjectProperty) = NotifyingWidgetSwitcher'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher' (ObjectProperty)
+   - Content (ObjectProperty) = WBP_UI_RankedLeaderboardScreen_C'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.RankedFriends' (ObjectProperty)
+
+## [UObject] WidgetSwitcherSlot_1  (ExportType=WidgetSwitcherSlot)
+   - Parent (ObjectProperty) = NotifyingWidgetSwitcher'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher' (ObjectProperty)
+   - Content (ObjectProperty) = WBP_UI_LeaderboardScreen_C'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.LeaderboardDaily' (ObjectProperty)
+
+## [UObject] WidgetSwitcherSlot_2  (ExportType=WidgetSwitcherSlot)
+   - Parent (ObjectProperty) = NotifyingWidgetSwitcher'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher' (ObjectProperty)
+   - Content (ObjectProperty) = WBP_UI_RankedLeaderboardScreen_C'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.RankedScreen' (ObjectProperty)
+
+## [UObject] WidgetSwitcherSlot_4  (ExportType=WidgetSwitcherSlot)
+   - Parent (ObjectProperty) = NotifyingWidgetSwitcher'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Switcher' (ObjectProperty)
+   - Content (ObjectProperty) = WBP_UI_LeaderboardScreen_C'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.LeaderboardWeekly' (ObjectProperty)
+
+## [UObject] WidgetTree  (ExportType=WidgetTree)
+   - RootWidget (ObjectProperty) = Overlay'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_Leaderboard_Screens.WBP_Leaderboard_Screens_C:WidgetTree.Overlay_0' (ObjectProperty)
+

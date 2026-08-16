@@ -1,0 +1,630 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardScreen.uasset
+# UFunction:     Update Timer
+# FunctionFlags: FUNC_Public, FUNC_HasDefaults, FUNC_BlueprintCallable, FUNC_BlueprintEvent
+# Outer class:   WBP_UI_LeaderboardScreen_C
+# ScriptBytecode entries: 38
+# ChildProperties: 20
+# --- Parameters / locals (FField chain) ---
+#   [0] FStructProperty  ?
+#   [1] FBoolProperty  ?
+#   [2] FIntProperty  ?
+#   [3] FStructProperty  ?
+#   [4] FStructProperty  ?
+#   [5] FIntProperty  ?
+#   [6] FIntProperty  ?
+#   [7] FIntProperty  ?
+#   [8] FIntProperty  ?
+#   [9] FIntProperty  ?
+#   [10] FIntProperty  ?
+#   [11] FTextProperty  ?
+#   [12] FIntProperty  ?
+#   [13] FStructProperty  ?
+#   [14] FTextProperty  ?
+#   [15] FTextProperty  ?
+#   [16] FStructProperty  ?
+#   [17] FStructProperty  ?
+#   [18] FArrayProperty  ?
+#   [19] FTextProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_Let
+  Property: CallFunc_UtcNow_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_UtcNow_ReturnValue
+      StatementIndex: 9
+  Assignment:
+    EX_CallMath
+      StackNode: UtcNow
+      Parameters: [0]
+      StatementIndex: 18
+  StatementIndex: 0
+[  1] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Greater_DateTimeDateTime_ReturnValue
+      StatementIndex: 29
+  Assignment:
+    EX_CallMath
+      StackNode: Greater_DateTimeDateTime
+      Parameters: [2]
+        [  0] EX_InstanceVariable
+          Variable: Reset Time
+          StatementIndex: 47
+        [  1] EX_LocalVariable
+          Variable: CallFunc_UtcNow_ReturnValue
+          StatementIndex: 56
+      StatementIndex: 38
+  StatementIndex: 28
+[  2] EX_Let
+  Property: CallFunc_SelectInt_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_SelectInt_ReturnValue
+      StatementIndex: 75
+  Assignment:
+    EX_CallMath
+      StackNode: SelectInt
+      Parameters: [3]
+        [  0] EX_IntConst
+          Value: 0
+          StatementIndex: 93
+        [  1] EX_IntConst
+          Value: 1
+          StatementIndex: 98
+        [  2] EX_LocalVariable
+          Variable: CallFunc_Greater_DateTimeDateTime_ReturnValue
+          StatementIndex: 103
+      StatementIndex: 84
+  StatementIndex: 66
+[  3] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: WidgetSwitcher_ResetState
+      StatementIndex: 114
+  Offset: 23
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: SetActiveWidgetIndex
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_SelectInt_ReturnValue
+          StatementIndex: 148
+      StatementIndex: 135
+  StatementIndex: 113
+[  4] EX_Let
+  Property: CallFunc_UtcNow_ReturnValue_1
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_UtcNow_ReturnValue_1
+      StatementIndex: 167
+  Assignment:
+    EX_CallMath
+      StackNode: UtcNow
+      Parameters: [0]
+      StatementIndex: 176
+  StatementIndex: 158
+[  5] EX_Let
+  Property: CallFunc_Subtract_DateTimeDateTime_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Subtract_DateTimeDateTime_ReturnValue
+      StatementIndex: 195
+  Assignment:
+    EX_CallMath
+      StackNode: Subtract_DateTimeDateTime
+      Parameters: [2]
+        [  0] EX_InstanceVariable
+          Variable: Reset Time
+          StatementIndex: 213
+        [  1] EX_LocalVariable
+          Variable: CallFunc_UtcNow_ReturnValue_1
+          StatementIndex: 222
+      StatementIndex: 204
+  StatementIndex: 186
+[  6] EX_CallMath
+  StackNode: BreakTimespan2
+  Parameters: [6]
+    [  0] EX_LocalVariable
+      Variable: CallFunc_Subtract_DateTimeDateTime_ReturnValue
+      StatementIndex: 241
+    [  1] EX_LocalVariable
+      Variable: CallFunc_BreakTimespan2_Days
+      StatementIndex: 250
+    [  2] EX_LocalVariable
+      Variable: CallFunc_BreakTimespan2_Hours
+      StatementIndex: 259
+    [  3] EX_LocalVariable
+      Variable: CallFunc_BreakTimespan2_Minutes
+      StatementIndex: 268
+    [  4] EX_LocalVariable
+      Variable: CallFunc_BreakTimespan2_Seconds
+      StatementIndex: 277
+    [  5] EX_LocalVariable
+      Variable: CallFunc_BreakTimespan2_FractionNano
+      StatementIndex: 286
+  StatementIndex: 232
+[  7] EX_Let
+  Property: CallFunc_Multiply_IntInt_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Multiply_IntInt_ReturnValue
+      StatementIndex: 305
+  Assignment:
+    EX_CallMath
+      StackNode: Multiply_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_BreakTimespan2_Days
+          StatementIndex: 323
+        [  1] EX_IntConst
+          Value: 24
+          StatementIndex: 332
+      StatementIndex: 314
+  StatementIndex: 296
+[  8] EX_Let
+  Property: CallFunc_Conv_IntToText_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToText_ReturnValue
+      StatementIndex: 347
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_IntToText
+      Parameters: [5]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_BreakTimespan2_Seconds
+          StatementIndex: 365
+        [  1] EX_False
+          StatementIndex: 374
+        [  2] EX_False
+          StatementIndex: 375
+        [  3] EX_IntConst
+          Value: 2
+          StatementIndex: 376
+        [  4] EX_IntConst
+          Value: 324
+          StatementIndex: 381
+      StatementIndex: 356
+  StatementIndex: 338
+[  9] EX_Let
+  Property: CallFunc_Add_IntInt_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Add_IntInt_ReturnValue
+      StatementIndex: 396
+  Assignment:
+    EX_CallMath
+      StackNode: Add_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Multiply_IntInt_ReturnValue
+          StatementIndex: 414
+        [  1] EX_LocalVariable
+          Variable: CallFunc_BreakTimespan2_Hours
+          StatementIndex: 423
+      StatementIndex: 405
+  StatementIndex: 387
+[ 10] EX_Let
+  Property: ArgumentName
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentName
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 451
+      StatementIndex: 442
+  Assignment:
+    EX_StringConst
+      Value: SS
+      StatementIndex: 460
+  StatementIndex: 433
+[ 11] EX_Let
+  Property: ArgumentValueType
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueType
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 482
+      StatementIndex: 473
+  Assignment:
+    EX_ByteConst
+      Value: 4
+      StatementIndex: 491
+  StatementIndex: 464
+[ 12] EX_Let
+  Property: ArgumentValue
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValue
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 511
+      StatementIndex: 502
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToText_ReturnValue
+      StatementIndex: 520
+  StatementIndex: 493
+[ 13] EX_Let
+  Property: ArgumentValueInt
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueInt
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 547
+      StatementIndex: 538
+  Assignment:
+    EX_Int64Const
+      Value: 0
+      StatementIndex: 556
+  StatementIndex: 529
+[ 14] EX_Let
+  Property: ArgumentValueFloat
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueFloat
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 583
+      StatementIndex: 574
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 592
+  StatementIndex: 565
+[ 15] EX_Let
+  Property: ArgumentValueDouble
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueDouble
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 615
+      StatementIndex: 606
+  Assignment:
+    EX_DoubleConst
+      Value: 0
+      StatementIndex: 624
+  StatementIndex: 597
+[ 16] EX_Let
+  Property: ArgumentValueGender
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueGender
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 651
+      StatementIndex: 642
+  Assignment:
+    EX_ByteConst
+      Value: 0
+      StatementIndex: 660
+  StatementIndex: 633
+[ 17] EX_Let
+  Property: CallFunc_Conv_IntToText_ReturnValue_1
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToText_ReturnValue_1
+      StatementIndex: 671
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_IntToText
+      Parameters: [5]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Add_IntInt_ReturnValue
+          StatementIndex: 689
+        [  1] EX_False
+          StatementIndex: 698
+        [  2] EX_False
+          StatementIndex: 699
+        [  3] EX_IntConst
+          Value: 2
+          StatementIndex: 700
+        [  4] EX_IntConst
+          Value: 324
+          StatementIndex: 705
+      StatementIndex: 680
+  StatementIndex: 662
+[ 18] EX_Let
+  Property: CallFunc_Conv_IntToText_ReturnValue_2
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToText_ReturnValue_2
+      StatementIndex: 720
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_IntToText
+      Parameters: [5]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_BreakTimespan2_Minutes
+          StatementIndex: 738
+        [  1] EX_False
+          StatementIndex: 747
+        [  2] EX_False
+          StatementIndex: 748
+        [  3] EX_IntConst
+          Value: 2
+          StatementIndex: 749
+        [  4] EX_IntConst
+          Value: 324
+          StatementIndex: 754
+      StatementIndex: 729
+  StatementIndex: 711
+[ 19] EX_Let
+  Property: ArgumentName
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentName
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_1
+          StatementIndex: 778
+      StatementIndex: 769
+  Assignment:
+    EX_StringConst
+      Value: HH
+      StatementIndex: 787
+  StatementIndex: 760
+[ 20] EX_Let
+  Property: ArgumentValueType
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueType
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_1
+          StatementIndex: 809
+      StatementIndex: 800
+  Assignment:
+    EX_ByteConst
+      Value: 4
+      StatementIndex: 818
+  StatementIndex: 791
+[ 21] EX_Let
+  Property: ArgumentValue
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValue
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_1
+          StatementIndex: 838
+      StatementIndex: 829
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToText_ReturnValue_1
+      StatementIndex: 847
+  StatementIndex: 820
+[ 22] EX_Let
+  Property: ArgumentValueInt
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueInt
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_1
+          StatementIndex: 874
+      StatementIndex: 865
+  Assignment:
+    EX_Int64Const
+      Value: 0
+      StatementIndex: 883
+  StatementIndex: 856
+[ 23] EX_Let
+  Property: ArgumentValueFloat
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueFloat
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_1
+          StatementIndex: 910
+      StatementIndex: 901
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 919
+  StatementIndex: 892
+[ 24] EX_Let
+  Property: ArgumentValueDouble
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueDouble
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_1
+          StatementIndex: 942
+      StatementIndex: 933
+  Assignment:
+    EX_DoubleConst
+      Value: 0
+      StatementIndex: 951
+  StatementIndex: 924
+[ 25] EX_Let
+  Property: ArgumentValueGender
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueGender
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_1
+          StatementIndex: 978
+      StatementIndex: 969
+  Assignment:
+    EX_ByteConst
+      Value: 0
+      StatementIndex: 987
+  StatementIndex: 960
+[ 26] EX_Let
+  Property: ArgumentName
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentName
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_2
+          StatementIndex: 1007
+      StatementIndex: 998
+  Assignment:
+    EX_StringConst
+      Value: MM
+      StatementIndex: 1016
+  StatementIndex: 989
+[ 27] EX_Let
+  Property: ArgumentValueType
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueType
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_2
+          StatementIndex: 1038
+      StatementIndex: 1029
+  Assignment:
+    EX_ByteConst
+      Value: 4
+      StatementIndex: 1047
+  StatementIndex: 1020
+[ 28] EX_Let
+  Property: ArgumentValue
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValue
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_2
+          StatementIndex: 1067
+      StatementIndex: 1058
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToText_ReturnValue_2
+      StatementIndex: 1076
+  StatementIndex: 1049
+[ 29] EX_Let
+  Property: ArgumentValueInt
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueInt
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_2
+          StatementIndex: 1103
+      StatementIndex: 1094
+  Assignment:
+    EX_Int64Const
+      Value: 0
+      StatementIndex: 1112
+  StatementIndex: 1085
+[ 30] EX_Let
+  Property: ArgumentValueFloat
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueFloat
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_2
+          StatementIndex: 1139
+      StatementIndex: 1130
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 1148
+  StatementIndex: 1121
+[ 31] EX_Let
+  Property: ArgumentValueDouble
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueDouble
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_2
+          StatementIndex: 1171
+      StatementIndex: 1162
+  Assignment:
+    EX_DoubleConst
+      Value: 0
+      StatementIndex: 1180
+  StatementIndex: 1153
+[ 32] EX_Let
+  Property: ArgumentValueGender
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueGender
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData_2
+          StatementIndex: 1207
+      StatementIndex: 1198
+  Assignment:
+    EX_ByteConst
+      Value: 0
+      StatementIndex: 1216
+  StatementIndex: 1189
+[ 33] EX_SetArray
+  AssigningProperty:
+    EX_LocalVariable
+      Variable: K2Node_MakeArray_Array
+      StatementIndex: 1219
+  Elements: [3]
+    [  0] EX_LocalVariable
+      Variable: K2Node_MakeStruct_FormatArgumentData_1
+      StatementIndex: 1228
+    [  1] EX_LocalVariable
+      Variable: K2Node_MakeStruct_FormatArgumentData_2
+      StatementIndex: 1237
+    [  2] EX_LocalVariable
+      Variable: K2Node_MakeStruct_FormatArgumentData
+      StatementIndex: 1246
+  StatementIndex: 1218
+[ 34] EX_Let
+  Property: CallFunc_Format_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Format_ReturnValue
+      StatementIndex: 1265
+  Assignment:
+    EX_CallMath
+      StackNode: Format
+      Parameters: [2]
+        [  0] EX_TextConst
+          Value: CUE4Parse.UE4.Kismet.FScriptText
+          StatementIndex: 1283
+        [  1] EX_LocalVariable
+          Variable: K2Node_MakeArray_Array
+          StatementIndex: 1337
+      StatementIndex: 1274
+  StatementIndex: 1256
+[ 35] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: Text_ResetTimer
+      StatementIndex: 1348
+  Offset: 23
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: SetText
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Format_ReturnValue
+          StatementIndex: 1382
+      StatementIndex: 1369
+  StatementIndex: 1347
+[ 36] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 1393
+  StatementIndex: 1392
+[ 37] EX_EndOfScript
+  StatementIndex: 1394
