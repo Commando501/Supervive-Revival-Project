@@ -1,4 +1,43 @@
-# S121 — why the MOTD never fires: it is the tail of an ONBOARDING prompt chain
+# S121 — the MOTD chain, traced ⇒ ⚠⚠ **HEADLINE RETRACTED: IT DOES FIRE**
+
+> ## ⚠⚠⚠ READ THIS FIRST — THE TITLE AND §§1–5 BELOW ARE WRONG ABOUT THE CONCLUSION
+>
+> This file was written arguing "the MOTD never fires because `Try Show MOTD` is never called."
+> **A live read of the Blueprint's persistent `UberGraphFrame` (`tools/re/bpframe_readout.py`,
+> built after §5) refutes that outright** [M]:
+>
+> ```
+> +0x0C55  CallFunc_BooleanAND_ReturnValue            = True    <- BooleanAND_9, the gate at 4668
+> +0x0970  CallFunc_Try_Show_MOTD_Widget              = 0x2692C618DF0
+> +0x0978  CallFunc_Try_Show_MOTD_bWasShown           = True    <- ★ THE PROMPT WAS SHOWN
+> +0x0000  EntryPoint                                 = 3358    <- Try Start Onboarding Flow
+> ```
+>
+> And every term of the predicate reads TRUE on the live client — `IsValid`,
+> `IsConfigurationLoaded`, `IsMatchHistoryLoaded`, `NOT GetMatchInfo`, `IsPartyValid`,
+> `GetCurrentPlayerProgression`, `Array_IsNotEmpty(MissionInfo.MissionData)` — with
+> `BooleanOR_2` satisfied via `Not_PreBool_3` (the toggle `Map_Find` misses ⇒ NOT ⇒ true).
+> `CallFunc_Try_Show_MOTD_Widget` is the **same address** as the live
+> `WBP_UI_Menus_MessageOfTheDay_C` found independently by `obj_by_class.py`.
+>
+> ⇒ **The backend payload, the gates, the chain and `PushPrompt` all work.** What remains is a
+> DISPLAY question — the prompt was pushed and reported shown, yet the operator never saw it and
+> `MessageOfTheDayLastSeen` is still empty (that field is presumably written on acknowledge, not
+> on show).
+>
+> ★ **How the wrong conclusion happened, because it is the instructive part:** §§1–5 reasoned
+> entirely from *static bytecode* plus *absence* (no prompt seen, empty ini) and never read the
+> running state. The predicate trace was correct — every term of it survives — but the verdict
+> attached to it was an inference, and it was backwards. **The frame was readable the whole time;
+> the readout agent had even reported that the persistent-frame locals exist.** I noted that and
+> then spent an hour inferring instead of reading.
+>
+> §§1–4b are kept because the *mechanism* they document is accurate and hard-won. Only the
+> conclusion is void.
+
+---
+
+# (original, conclusion superseded) why the MOTD never fires: it is the tail of an ONBOARDING prompt chain
 
 Follow-up to `docs/s121-toggle-fix-confirmed.md`. We serve `motd` with the full
 `{enabled, default, key, title, text}` body, the client adopts the config, and **no prompt appears.**
