@@ -40,11 +40,25 @@
 > absence: `WBP_UI_Menus_MessageOfTheDay` has **never** appeared in the `leaf-most node` UI-focus
 > log across this session, and the operator confirms a clean lobby by screenshot.
 >
-> ⚠ **`Slot == null` is suggestive, NOT proof.** A `UUserWidget` added straight to the viewport can
-> legitimately have a null `Slot` — that field is for panel children. So this is consistent with
-> "queued but never presented" and does not by itself establish it. **Do not upgrade this to [M]
-> without a viewport-membership check** (`GameViewportSubsystem` widget list, or the underlying
-> `SWidget`), which is the obvious next probe and is cheap with the tooling now in place.
+> ⚠ `Slot == null` was flagged as suggestive-not-proof, and the viewport check was then RUN.
+>
+> ### ✅ NOT IN THE VIEWPORT — now [M] (`tools/re/widget_inviewport.py`)
+>
+> UE's own rule (`UWidget::IsInViewport`, `Private/Components/Widget.cpp:338`):
+> `if (!bIsManagedByGameViewportSubsystem) return false;` — so that one flag is decisive in the
+> negative. It is a **non-reflected bitfield**, declared immediately after the reflected
+> `bIsVolatile:1`, so it is derivable: `bIsVolatile` resolves to byte **+0xE1 mask 0x10**, making
+> the target **+0xE1 mask 0x20**.
+>
+> ★★ **CALIBRATED BEFORE USE — the bit is set on exactly 2 of 5064 live widgets:**
+> `WBP_UI_MainMenu_RootV2_C` (the menu root) and `WBP_WidgetHighlighter_C` (a full-screen overlay)
+> — precisely the two you would expect to be `AddToViewport`'d. A mis-derived bit would have given
+> 0, thousands, or a random scatter; 2-of-5064 landing on exactly the right widgets is the control.
+>
+> **MOTD widget → `bIsManagedByGameViewportSubsystem = False` ⇒ `IsInViewport() == false`.**
+>
+> ⇒ The prompt is constructed, `Visible`, enabled — and **never presented**. `PushPrompt` reported
+> `bWasShown=True` without the widget ever reaching the screen.
 >
 > [I] **Working reading:** `PushPrompt(..., false)` enqueues the prompt on the main-menu prompt host
 > and returns "shown", but the host never drains the queue at the lobby — so the MOTD sits built and
