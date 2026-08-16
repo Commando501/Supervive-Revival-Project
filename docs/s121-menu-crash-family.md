@@ -44,23 +44,45 @@ no loaded module, and dies immediately.** [I]
 - ⛔ **Not FK-32's `0x0000DEAD` silent kill** — this raises a real access violation and leaves a
   full crashpad minidump.
 
-## ⚠ What is NOT established, and an instrument that cannot answer it
+## ✅ ANSWERED: IT IS **NOT** ONE OF OUR SHIMS [M]
 
-**Whether the faulting page was mapped.** Manual mapping — how this project injects every shim —
-produces exactly this "executing from memory with no module entry" signature, so **"is this one of
-our own shims?" is a live and unanswered question.**
+Manual mapping — how this project injects every shim — produces exactly this "executing from memory
+with no module entry" signature, so this had to be measured, not assumed. It was, three independent
+ways, with `tools/re/exec_regions.py` (read-only `VirtualQueryEx`; pass a faulting address and it
+reports the containing region or none):
 
-⚠⚠ **A dump-capture read CANNOT settle it, and a first pass here got that wrong.** The fault page is
-absent from the minidump, which looks like "unmapped" — but the **positive control refutes that
-reading**: reading the game's own `ImageBase` from the same dump ALSO returns "not captured", and
-that page is certainly mapped. ⇒ **absence from a crashpad dump says nothing about whether an
-address was mapped.** Always control a dump read against an address known to be mapped.
+1. **Our manual maps live in the HEAP range and MOVE with ASLR.** [M] The shim-sized private
+   `RWX` regions (0x2E000 / 0x29000 / 0x26000 / 0x6A000 / 0x8D000 — our DLLs are 135–190 KB) sit at
+   **`0x1A3…`/`0x1A4…`** in the crashed process and at **`0x0269…`/`0x026A…`** in the live one.
+   Different process, different addresses. The fault is at `0x7FFA426…`, a different part of the
+   address space entirely.
+2. **The fault address is in NO committed executable region** — not in the crash dump's 19, not in
+   the live process's 20. Nearest exec region below ends `0x7FFA423ED000`, a **0x213001** gap.
+3. **The injector never unmaps.** No `VirtualFree` / `MEM_RELEASE` / `MEM_DECOMMIT` anywhere in
+   `tools/inject/main.go`, so a mapped shim cannot vanish and leave a dangling thread entry.
 
-**How to actually settle it:** the manual mapper knows where it placed each shim. Log the mapped
-base of every injected DLL (`tools/inject`) and compare against `0x7FFA426xxxxx`. A fixed address
-across two processes is *itself* mild evidence against a heap manual-map [S], since those are
-normally ASLR-scattered — but `NtCreateThreadEx` appears in the protector's own function table
-(FK-10, `packer0 0x1831c0`, 4th entry), so a protector-created thread is at least as plausible.
+⚠ **State the discriminator precisely.** "The address is identical across two processes" is
+explained by `ntdll` and `kernel32` having the **same base in both dumps** — Windows fixes
+system-DLL bases per BOOT, not per process. So address stability is not itself mysterious and is
+*not* the strong part of the argument. The strong part is (1): **our maps demonstrably move and this
+does not, and they are in a different range.**
+
+**Where it actually is:** `ntdll.dll` spans `0x7FFA422D0000 .. 0x7FFA424C9000`; the fault is
+`ntdll_base + 0x330001`, i.e. **0x137000 past ntdll's end** — reserved-but-uncommitted space inside
+the system-DLL region.
+
+[I] **Leading hypothesis: a protector-created thread.** FK-10 measured `NtCreateThreadEx` as the 4th
+entry of a pointer table at `packer0 0x1831c0`, so the protector does create threads; a thread whose
+start address is computed into uncommitted space in that zone produces exactly this fault, on its
+first instruction, with a bare `BaseThreadInitThunk` frame beneath it. **Not established.**
+
+⚠⚠ **THE INSTRUMENT THAT COULD NOT ANSWER IT, recorded because it nearly produced a wrong claim.**
+The fault page is absent from the minidump, which looks like "unmapped" — and a first pass here
+concluded exactly that. The **positive control refutes the reading**: the game's own `ImageBase`
+also returns "not captured" from the same dump, and that page is certainly mapped. ⇒ **absence from
+a crashpad dump says nothing about whether an address was mapped.** Always control a dump read
+against an address you know is mapped. The question was settled instead by live `VirtualQueryEx`
+(`tools/re/exec_regions.py`), which reports actual region state rather than capture coverage.
 
 ## Why this matters
 
