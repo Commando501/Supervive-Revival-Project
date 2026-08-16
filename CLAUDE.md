@@ -731,6 +731,23 @@ ZERO injection — and NO menu surface is a web page.**
   `docs/capture.log` and read exactly like client traffic; the game is `Loki/UE5-CL-0`, an
   `ActionType: WebURL` click is `Mozilla/…Chrome/…`. This nearly produced a fabricated headline.
 
+### Before touching anything READOUT- / "we can't see what the client is doing"-shaped
+★★★★★ **S121 built EIGHT read-only RPM probes, and EVERY ONE contradicted something that had been
+inferred first. Reach for them before reasoning about client state.** All are pure `ReadProcessMemory`
+— no injection, no `.text` writes. Read `docs/next-session-prompt-s122.md` for the table.
+`toggle_readout.py` (declarative gate results) · **`bpframe_readout.py` (ANY Blueprint's live
+ubergraph locals, via the persistent `UberGraphFrame` — this is what finally sees the 10 BYTECODE
+feature-toggle keys)** · `regions_readout.py` · `obj_props_dump.py` (every reflected object/array
+property + target class names) · `promptstack_readout.py` · `motd_chain_readout.py` ·
+`class_derivation.py` · `widget_inviewport.py` · `exec_regions.py`.
+⚠ **Several print warnings about their own blind spots — read the output, not just the numbers.**
+`toggle_readout`'s `never-evaluated` vs `ambiguous-off` split is load-bearing; `class_derivation`
+UNDER-enumerates functions so only its POSITIVES count; a crashpad dump's coverage says nothing
+about whether an address was mapped.
+⚠⚠ **Two failure modes S121 added to the register (`FK-38`):** a **correctly calibrated instrument
+aimed at the WRONG QUESTION** still gives a false answer, and the calibration makes it feel earned;
+and **over-correction** — after a run of retractions, sound evidence starts getting discounted.
+
 ### Before touching anything feature-toggle- / UI-gate- / hidden-surface-shaped
 ★★★★★ **A-14 IS SETTLED AND FLOWN (S121, 2026-08-15). Read `docs/s121-toggle-fix-confirmed.md`,
 then `docs/s120-feature-toggles.md`.** The declarative UI-gate channel works end to end from the
