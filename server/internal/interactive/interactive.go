@@ -222,6 +222,14 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /mmr/leaderboard/friends", s.handleMMRLeaderboard)
 	mux.HandleFunc("POST /mmr/leaderboard/friends", s.handleMMRLeaderboard)
 	mux.HandleFunc("GET /player-stats/players/{id}", s.handlePlayerStats)
+
+	// ---- The player's OWN rank (S122) ----
+	// Found by a different method from the two above: not by flipping a toggle and watching, but by
+	// diffing the client's ENTIRE observed request set in docs/capture.log against this mux's
+	// registered routes. 8 of 56 client routes were unserved and being absorbed by the "/" catch-all.
+	// This one drives the CAREER nav-button badge via UMMRManager::HasRankedRewardsToClaim() —
+	// see playerrank.go, which carries the model, the bytecode evidence and the predictions.
+	mux.HandleFunc("GET /mmr/player-ratings/{id}/rank", s.handlePlayerRank)
 }
 
 // defaultClientProfile is returned (under {"data": ...}) before the client has
@@ -1327,12 +1335,41 @@ const matchmakingETag = "revival-queues-v1"
 // + QueueConfig; RankedSchedule (Map) / RankedRestrictionsSchedule (struct) are omitted and
 // left at UE defaults (unmatched keys are ignored). Uniform config across queues is enough to
 // unlock/select; per-queue tuning (ranked flags, real sizes) can follow if a mode needs it.
+// ★ AGS_RANKED_QUEUES="a,b" marks those queue ids IsRanked=true (S122). Default EMPTY, which is
+// byte-identical to the pre-S122 payload.
+//
+// WHY IT EXISTS: the RANKED page's queue dropdown (`WBP_UI_Leaderboard_ComboBox_Queues_C`) is fed by
+// `GetQueueInfo()` — i.e. THIS handler — and the widget carries a `ShowOnlyRankedQueues` flag. [M]
+// We advertise four queues (tutorialNew/training/practice/bots) and the CAREER→STATS page renders
+// all four, but the RANKED dropdown shows only BASIC TRAINING. [I] the ranked screen sets that flag,
+// filters on IsRanked, gets an empty list because we hardcode `false` on every queue, and falls back
+// to displaying the currently-selected queue with no alternatives.
+//
+// ⚠ That is an INFERENCE, and this knob is how to test it: mark a queue ranked and see whether it
+// joins the dropdown. Predicted: the listed queues appear in the RANKED dropdown; unlisted ones do
+// not. ⚠ Rebuild the page (navigate away and back) before reading the result — a dropdown that is
+// already open will not re-populate, which is this project's standing stale-widget trap.
+//
+// ⚠⚠ BLAST RADIUS: this same array drives the PLAY screen's activity picker, and `IsRanked` may gate
+// matchmaking behaviour, not just a label. Do not promote this to a default without checking the
+// PLAY tiles still behave.
+func rankedQueueSet() map[string]bool {
+	s := map[string]bool{}
+	for _, q := range strings.Split(os.Getenv("AGS_RANKED_QUEUES"), ",") {
+		if q = strings.TrimSpace(q); q != "" {
+			s[q] = true
+		}
+	}
+	return s
+}
+
 func buildQueueDetails() []map[string]any {
+	ranked := rankedQueueSet()
 	out := make([]map[string]any, 0, len(queueIDs))
 	for _, id := range queueIDs {
 		out = append(out, map[string]any{
 			"ID":        id,
-			"IsRanked":  false,
+			"IsRanked":  ranked[id],
 			"IsSpecial": false,
 			"Config": map[string]any{
 				"MaxTeamSize":       3,
@@ -1353,9 +1390,20 @@ func buildQueueDetails() []map[string]any {
 // PartyModel.GetQueues() is built from; without it the ActivityPicker tiles stay locked
 // and clicking a tutorial/mode is a silent no-op. See the route comment for the full trace.
 func (s *Service) handleMatchmakingInfo(w http.ResponseWriter, r *http.Request) {
+	queues := buildQueueDetails()
+	// ⚠⚠ THE ETAG MUST BE DERIVED FROM THE CONTENT (S122). `matchmakingETag` was the hardcoded
+	// constant "revival-queues-v1" while this body is now env-dependent (AGS_RANKED_QUEUES) — a
+	// changed payload arriving under an unchanged tag is the silent no-op this project has shipped
+	// THREE times: client-config and regions (both S121, an hour apart), and FPlayerRank's own
+	// monotonic Version gate (S122, playerrank.go). Hashing the body removes the failure mode
+	// instead of relying on remembering to bump a literal.
+	// ⚠ The constant is retained as the PREFIX so the tag stays recognisable in logs, and the hash
+	// is of the queues array only — LastUpdated is fixed, so the tag still tracks exactly what varies.
+	body, _ := json.Marshal(queues)
+	sum := sha256.Sum256(body)
 	writeJSON(w, map[string]any{
-		"Queues":      buildQueueDetails(),
-		"ETag":        matchmakingETag,
+		"Queues":      queues,
+		"ETag":        matchmakingETag + "-" + hex.EncodeToString(sum[:6]),
 		"LastUpdated": matchmakingLastUpdated,
 	})
 }

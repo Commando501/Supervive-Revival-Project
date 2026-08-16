@@ -977,6 +977,108 @@ fix was never shipped**; S121 shipped it and hit **three more silent failures on
   `LogJson`, `Deserialization failure` and `Invalid response received` are all blind to
   "parsed fine, populated nothing". **On this endpoint, read the parsed struct; do not trust silence.**
 
+### Before touching anything rank- / badge- / "which endpoints don't we serve?"-shaped
+★★★★★ **THE UNSERVED-ENDPOINT SWEEP IS A FREE, OFFLINE, ONE-PASS MAP OF EVERYTHING THE CLIENT WANTS
+AND WE IGNORE (S122, 2026-08-15). Read `docs/s122-player-rank-career-badge.md`.**
+S121's lever was "flip a toggle, watch for new endpoints" — a search, one key at a time. **S122
+inverted it: parse the conversation the client has ALREADY had and diff it against the mux.**
+Tools: `tools/re/endpoint_surface.py` + `tools/re/unserved_routes.py`.
+- **[M] 56 distinct client routes, 8 unserved** (falling to main.go's `/` catch-all `200 {}`). Three
+  are client→server UPLOADS with no surface (party `latencies`, `game-telemetry` events, a Vivox
+  `voice` token for an externally-dead service — `Access Token Service Unavailable`).
+  **Still unserved with real UI behind them: `GET /referral/player/{id}` and `/points`.**
+- ⚠⚠ **THE User-Agent FILTER IS LOAD-BEARING, NOT HYGIENE: 23,050 of 24,767 records were NOT the
+  game** (23,047 = our own `supervive-loadout-shim`). Unfiltered every count is garbage.
+  `endpoint_surface.py` prints the rejected count + UA breakdown so the filter is visible.
+- ⚠ **Never infer cadence from a total.** `progressiontracks` reads "730 calls ⇒ a 6 s poll ⇒ a
+  leak"; the real shape is a **~728-call burst over 54 s at menu init**, then 2 in the next hour.
+★★★★★ **`GET /mmr/player-ratings/{id}/rank` IS IMPLEMENTED AND CONFIRMED LIVE — the CAREER nav-button
+notification badge is now driven from the backend.** No shim, no injection, no `.text` write; **five
+arms, zero launches**, all on one continuously-running client.
+- **Why this target:** it comes with its OWN READOUT. `WBP_UI_MainMenu_NormalMainMenu`'s bytecode
+  (stmts 156-158) does `HasRankedRewardsToClaim()` → `NavButtonMain_Career->ShowBadge(...)` **and the
+  bool is an ubergraph local**, so it is RPM-readable. **A surface you cannot observe is a surface you
+  cannot test — pick targets that carry their own instrument.**
+- **Model [M]** (UHT oracle): `FPlayerRank{ID FString, Version int32, QueueRankRating
+  TMap<FString,FQueueRankRating>, RewardsToClaim TMap<FString,FRankedReward>}` ·
+  `FQueueRankRating{Rating i32, Rank ERank, Cost i32, Updates TArray<FMatchRankedRating>}` ·
+  `FRankedReward{ID FString, Entitlement FPrimaryAssetId}`. Both maps are JSON **OBJECTS**;
+  `Entitlement` **omitted** (unresolvable id = the missions `InternalName` failure); `Rank` reuses
+  the measured-good `"Gold1"`.
+- **[M] Arms** (bool · has-run · badge `Visibility`, 1=Collapsed 4=rendered):
+  A unserved `False·61·—` → **B reward+high ver `True·62·4`** → C empty+higher ver `False·61·1` →
+  **D reward+ver 1 `False·61·1`** → B-repeat `True·62·4`. Three sibling badges stayed `1` throughout;
+  only the LIVE instance ever moved; canaries 0 (`Unable to import`/`Deserialization failure`/
+  `Invalid response received`/`Fatal`).
+  ⇒ **B vs C** (only the map differs) ⇒ `RewardsToClaim` drives the badge. **B vs D** (only `Version`
+  differs) ⇒ ★★ **`FPlayerRank` IS BEHIND A MONOTONIC VERSION GATE [M]** — the same family as
+  `FParty.Version`'s `jge bail`. We serve `int32(time.Now().Unix())`, so it self-advances.
+- ⚠⚠ **`AGS_PLAYER_RANK=0` IS NOT A CONTROL — serving `{}` did NOT reverse the badge.** `{}` changes
+  the document AND the version at once (`Version: 0`), so it is **uninterpretable, not negative**.
+  ⇒ ★ **A revert knob that returns to a CATCH-ALL changes every field at once. Build the controlled
+  negative alongside the feature** — `AGS_PLAYER_RANK_EMPTY=1` (valid struct, advancing version,
+  empty map) is the real one; `AGS_PLAYER_RANK_VERSION=N` isolates the gate.
+- ⚠ **NOT login-only:** an **`ags` restart alone** drops/re-establishes the client's WebSockets and
+  the resync refetches this within ~40 s. (First draft said "probably needs a relaunch" by analogy
+  with `/player-stats/players/{id}` — reasoning by similarity where a measurement was available.)
+- ★ **Serving it revealed another endpoint:** `POST /party/parties/{p}/refreshRanks`, absent from all
+  56 routes before this handler existed. Still unserved.
+- ★★ **BOTH HALVES OF `FPlayerRank` RENDER — screenshot-confirmed.** The RANKED page draws **`GOLD I`**
+  and **`1,850 RP`** from our `Rank`/`Rating`, and `tutorialNew` resolves to the label **BASIC
+  TRAINING**. ⚠ **RETRACTED same session:** this file first said `QueueRankRating` was untested "and
+  the key is likely wrong". Untested was true; *likely wrong* was editorialising an untested item
+  into a prediction. **Record untested as untested.**
+★★★★★ **THE RANKED QUEUE DROPDOWN IS GATED BY `IsRanked`, AND IT IS NOT A SEASON SELECTOR (S122).**
+- ⚠ **Read the widget CLASS before trusting a screen-position reading.** The control beside
+  `SEASON 2` looks like a season picker; it is `WBP_UI_Leaderboard_ComboBox_Queues_C`
+  (`QueueSelector`/`UpdateSelectedQueue`/`InitQueueButtons`) reading
+  `CallFunc_GetQueueInfo_ReturnValue` = our **`GET /party/matchmaking/info`**. `SEASON 2` is a
+  SEPARATE static element (`SeasonHeader`). Two adjacent controls, two unrelated data sources.
+- **[M] `buildQueueDetails` hardcoded `IsRanked:false` on all four queues** (`tutorialNew`,
+  `training`, `practice`, `bots`) while the combobox carries a **`ShowOnlyRankedQueues`** flag — so
+  the filtered list was empty and it fell back to the selected queue. CAREER→STATS renders all four,
+  which is why "we advertise four" and "the dropdown shows one" were both true.
+- **PRE-REGISTERED AND CONFIRMED [M]:** `AGS_RANKED_QUEUES="tutorialNew,training,practice"` with
+  **`bots` deliberately EXCLUDED as the control** → dropdown shows **BASIC TRAINING · TRAINING MODE ·
+  PRACTICE RANGE**, CO-OP VS. AI **absent**. 3 present / 1 absent, exactly as written down first.
+  ★ The excluded queue is what makes it a measurement — "mark all, see all" would prove nothing.
+  Knob defaults **empty** (byte-identical to pre-S122). ⚠ Same array feeds the PLAY activity picker.
+- ⛔ **SEASONS ARE A DEAD END — do not chase a season list from the backend.** `SeasonHeader` casts to
+  **`LokiDataAsset_Season`**, and [M] a 69k-asset catalog search finds seasonal *textures*,
+  `DT_SeasonalBattlepassRichText` and `LT_ArmoryEquipment_Season2` but **no packed
+  `LokiDataAsset_Season`** — the same missing asset this file already records as blocking the
+  seasonal battlepass. The cast has nothing to land on.
+- ★ **LIVE LEAD:** `queueIDs` was trimmed to 4 by an **S60 diagnostic** because level-gated queues
+  broke `CanControlQueue` at account level 0 — and that comment's own stated fix ("serve a high
+  account level") HAS since shipped (S120 serves `AccountPass.Level = 10`). Full shipped vocabulary
+  [M] at `interactive.go:1300`: `default deathmatch practice dropin customgame bots tutorialNew
+  training armorydeathmath tournament`. **The trim may be obsolete — untested.**
+- ⚠⚠ **FOURTH stale-eTag instance, fixed in the same edit:** `matchmakingETag` was the constant
+  `"revival-queues-v1"` while its body became env-dependent. Now `revival-queues-v1-<sha256[:6]>`.
+  **When you make a payload env- or state-dependent, its eTag stops being a constant in THAT edit.**
+⚠⚠ **TWO PROBE DEFECTS FOUND, BOTH FIXED — and both produced a false reading first:**
+- **`bpframe_readout.py` PICKS THE WRONG INSTANCE. FOURTH member of the class-lookup blind-spot
+  family** (after `obj_by_class.py` substring, `cheat_reach_probe.py` endswith, `class_props.py`
+  class-of-class). Three objects share `WBP_UI_MainMenu_NormalMainMenu_C` — the CDO and **TWO both
+  named `MainMenu_NormalV2`** — and it stops at the first non-`Default__`, whose frame is entirely
+  default (**HAS-RUN 0 of 219**). It reported `False` for a graph that had **never run**, on a menu
+  live 74 min, and it looked measured. ⚠ **Same NAME on both, so name matching cannot separate them —
+  only the has-run control can.** ⇒ **use `tools/re/bpframe_all.py`** (enumerates every instance +
+  per-instance has-run). Shared defect = *take the first match*; shared fix = *enumerate and show
+  your work*.
+- **`obj_props_dump.py` is blind to SCALARS and offers a DECOY.** It prints only object/array props,
+  so `Visibility` / `ActiveWidgetIndex` are invisible — while `ActiveSequencePlayers = Num=2` on the
+  badge reads like "animations running ⇒ visible". **The three COLLAPSED siblings read 2, 2, 1.**
+  ⇒ **`tools/re/obj_scalars.py`** is the missing half. **Sibling controls killed the decoy in one
+  call; read alone it would have been written up as confirmation.**
+⚠⚠ **`Start-Process -ArgumentList` DOES NOT QUOTE PATHS WITH SPACES** — `-log "G:\git\Supervive
+Revival Project\…"` truncated to `G:\git\Supervive`, so **`capture.log` went silent while the backend
+was fully healthy** (and a stray `G:\git\Supervive` file appeared). Pass ONE argument string with
+embedded quotes. ★ **What caught it was a second, independent instrument**: `Loki.log`'s
+`LogClientConfig` 30 s receipts proved the client was fine. **Keep a client-side AND a server-side
+view.** ⚠ Also: `ags` **APPENDED** to `capture.log` here, contradicting this file's "truncates on
+restart" — back it up regardless, the recorded behaviour is unreliable in both directions.
+
 ### Before touching anything menu-shaped
 Skim `docs/trackb-notes.md` (Track B endpoint surface + ClientProfileData model)
 and `docs/endpoints.md` (every endpoint the client hits + handler status).

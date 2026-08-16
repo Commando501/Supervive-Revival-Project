@@ -4,6 +4,23 @@
 #   usage: bpframe_readout.py <PID> <BASE-hex> <ClassNameSubstr> [propNameFilter]
 #   e.g.:  bpframe_readout.py 1234 0x7FF7BFF50000 Comp_MainMenu_Onboarding IsFeatureEnabled
 #
+# ⚠⚠ KNOWN BLIND SPOT (S122) -- PREFER `bpframe_all.py` WHEN A CLASS HAS SEVERAL INSTANCES.
+# This script stops at the FIRST object whose name is not `Default__*` and does not contain
+# `GEN_VARIABLE`. That is not sufficient: for WBP_UI_MainMenu_NormalMainMenu there are THREE live
+# objects -- the CDO plus TWO both named `MainMenu_NormalV2` -- and the first non-CDO match has an
+# entirely default frame (HAS-RUN = 0 non-default locals of 219) while the real widget is the third
+# (HAS-RUN = 61). So this script reported `False` for a graph that HAD NEVER RUN, on a menu that had
+# been live for 74 minutes, and the answer looked measured. Both live-looking instances share the
+# same NAME, so name matching cannot separate them either -- only the has-run control can.
+# ⇒ FOURTH member of the class-lookup blind-spot family CLAUDE.md records for obj_by_class.py
+# (substring), cheat_reach_probe.py (endswith) and class_props.py (class-of-class). The shared
+# defect is "take the first match"; the shared fix is "enumerate and show your work".
+# `tools/re/bpframe_all.py` prints EVERY instance with its own has-run control. Use it first.
+#
+# ⚠ And when you need a SCALAR (an int/enum/bool on a normal object rather than an ubergraph local),
+# `tools/re/obj_scalars.py` is the companion to obj_props_dump.py, which prints only object/array
+# properties and is therefore blind to things like WidgetSwitcher.ActiveWidgetIndex and Visibility.
+#
 # WHY THIS EXISTS (S121, 2026-08-15)
 # ---------------------------------
 # `tools/re/toggle_readout.py` answers "did the client read our feature-toggle value?" for the
