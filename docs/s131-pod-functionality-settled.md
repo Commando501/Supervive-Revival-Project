@@ -582,3 +582,42 @@ only because both reported the offset explicitly, and it was settled in one comm
 instrument — live reflection read by name — rather than by preferring the more confident write-up.
 ★ **Ask two agents the same structural question and compare their offsets; a silent agreement is worth
 much less than a caught contradiction.**
+
+## 13.5 ★★★★★ AND THE OTHER LANE HAD THE CLASS RIGHT — CONFIRMED LIVE, WITH A BONUS
+
+A second lane independently attributed `0x55CE140` to **`ULokiGameModeDropPlaneComponent`**, not the
+rideable component. **One live read settles it, and delivers more than the dispute was about:**
+
+```
+Comp_GameMode_DropPlane_Tutorial  0x2BDBAA38680   (the live one, not the _GEN_VARIABLE template)
+  +0xC0 WorldPrivate               = 0x2BCD33540C0  'LVL_Tutorial'
+  World+0x250 AuthorityGameMode    = 0x2BD2D0BC020  'BP_LokiGameMode_Tutorial_C'
+  World+0x258 GameState            = 0x2BDB251D030  'BP_LokiGameState_Tutorial_C'   <= control
+  +0xE0                            = 0x2BD2D0BC020  'BP_LokiGameMode_Tutorial_C'    <= IDENTICAL
+```
+
+**[M] four things at once:**
+
+1. **The class attribution is `ULokiGameModeDropPlaneComponent`.** `+0xE0` on *that* class caches the
+   round game mode; on `ULokiRideableComponent` the same offset is a delegate (§13.1). Two lanes, one
+   offset, opposite answers — arbitrated by a third instrument in one command.
+2. **`UWorld::AuthorityGameMode @ UWorld+0x250` is confirmed live**, with `+0x258 = GameState` as the
+   positive control in the same read, reproducing CLAUDE.md's recorded `UWorld+0x258`.
+3. **The round game mode object EXISTS, is live, and is reachable** — `BP_LokiGameMode_Tutorial_C` at
+   `0x2BD2D0BC020`, the same object S124 flew `GoToPhase` on.
+4. ★★★ **AND `BP_LokiGameMode_Tutorial_C` PASSES `IsA<ALokiRoundGameMode>`** — because the caching
+   code writes `+0xE0` *only* on the success side of that exact check (`0x55CE172 call 0x55C7DD0`,
+   the **same helper** the wall calls at `0x55CD583`), and `+0xE0` is non-null. **That was never
+   measured before.**
+
+⇒ **If the stripped getter had returned this object, the wall's own `IsA` check would also have
+passed.** The obstacle is the getter and nothing else on that stretch: the object is right there, of
+the right type, already resolved by unstripped code on a sibling component.
+
+⛔ It still cannot be *injected* — `0xF7EB50` has zero memory operands (§12.2). What changes is the
+picture: this is not "the round game mode is unavailable on a client", it is "one accessor was
+deleted while the object and the type check survive".
+
+★ **And lane A's proposed free readback is real after all — on the right object.**
+`Comp_GameMode_DropPlane_Tutorial + 0xE0` is a live, verified `ALokiRoundGameMode*`, available for
+any future call site that genuinely consumes one.

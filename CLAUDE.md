@@ -1501,6 +1501,28 @@ The census counts OBJECTS; S131 built the in-arm readout that looks at what the 
   substitute for), **UNBOUNDED for gameplay** (~200 across 40+ classes). ⚠ The census is **blind to
   Angelscript entirely** — 0 records for `ALokiDropShip`/`ALokiDropPod` — so it says nothing about the
   half that actually works.
+- ★★★★★ **THE ROUND GAME MODE EXISTS, IS LIVE, AND PASSES THE WALL'S OWN TYPE CHECK [M]** — measured on
+  the staged client, and it reframes the whole blocker. `Comp_GameMode_DropPlane_Tutorial +0xE0` caches
+  it, written by an UNSTRIPPED lifecycle override (`0x55CE140`, `ULokiGameModeDropPlaneComponent`) that
+  reads `World->AuthorityGameMode` and `IsA<ALokiRoundGameMode>`-checks it with **the same helper
+  `0x55C7DD0` the wall calls**. Live:
+      `+0xC0 WorldPrivate = LVL_Tutorial` · `World+0x250 = BP_LokiGameMode_Tutorial_C` ·
+      `World+0x258 = BP_LokiGameState_Tutorial_C` (control) · `+0xE0 = BP_LokiGameMode_Tutorial_C`
+  ⇒ [M] **`UWorld::AuthorityGameMode @ UWorld+0x250`** (control `+0x258 = GameState` in the same read);
+  the object is the one S124 flew `GoToPhase` on; and **it PASSES `IsA<ALokiRoundGameMode>`** — the
+  cache is written only on that check's success side. **Never measured before.**
+  ⇒ **If the stripped getter had returned it, the wall's own IsA would have passed too.** The framing
+  is not "a client has no round game mode" — it is **"one accessor was deleted while the object and
+  the type check survive"**. ⛔ Still not injectable (`0xF7EB50` has zero memory operands).
+  ★ Free live pointer for any future call site that consumes one: `Comp_GameMode_DropPlane_Tutorial+0xE0`.
+- ⚠⚠ **AND THAT SAME OFFSET WAS A LANE'S REFUTED HEADLINE** — see `docs/s131-pod-functionality-settled.md`
+  §13. One lane claimed `ULokiRideableComponent+0xE0` caches it; **[M] on THAT class `+0xE0` is
+  `OnPlayersInsideCountChanged`, a 16-byte delegate, and reads ZERO on all three live components.** It
+  had the function and the mechanism right and the CLASS wrong, from a vtable walk it flagged in the
+  same paragraph as UNRESOLVED ("3142 slots, which is nonsense") and graded [I, strong] — then stated
+  the consequence as [M]. ★★ **Two agents given the same region disagreed about one offset, and it was
+  only visible because BOTH PRINTED THE OFFSET. Diff their offsets; a silent agreement is worth much
+  less than a caught contradiction.**
   ★ Free corrections: **`GetLandingTeleportLocation` is REAL** (`0x55D89F0`, 963 B, 0 folds — FK-22 §2.5
   has it COVERAGE-BLOCKED); **`UWorld::AuthorityGameMode @ UWorld+0x250`** [M] (control: `GetGameState`
   → `+0x258` in the same pass) — the round game mode object EXISTS, only the accessor was deleted.
