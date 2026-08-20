@@ -1399,6 +1399,24 @@ The census counts OBJECTS; S131 built the in-arm readout that looks at what the 
   stubs, sitting between a fully working pod spawn and a rider ever boarding. Next question is OFFLINE and
   free: what does `0xF7EB50` replace here, and is there any other route to a round game mode on this client?
   Build: `build.ps1 -Name tutorial_launch -Variant rideable` — `.text` **`e221e4e415834067`**.
+- ★★ **AND THE WALL IS SHARED, NOT ONE FUNCTION'S BUG [M]** (`docs/s131-pod-functionality-settled.md` §11).
+  A third injection into the same client called two entry points nothing had ever called.
+  **`AuthPlayerPreSpawnOnAddToPlane` (impl `0x55CD800`, REAL) fails the SAME WAY** — its own distinct bail
+  string (`.rdata 0x8B1CE28`) went **0 → 2**, one per PlayerState. ⇒ two different entry points, valid
+  arguments, one stripped round-game-mode getter. **Fixing "the wall" means fixing ONE GETTER, not one
+  function** — same family as FK-1's four empty server-authority stubs.
+- ⚠ **`AuthPlayerEnterWorld` (impl `0x55CCE70`, REAL) is a NAMED GAP, not a negative.** Called twice with
+  all four slots bound (`PlayerState, Location, EffectClass=null, bRepositionPlayer=1`): **no fault, no log
+  line, hero did not move** (`(0,0,13240)` before and after), `PlayersInsideCount` 0→0, `bCanExit` 0.
+  The pre-registered rule was *"no movement AND no line ⇒ UNINTERPRETABLE"*, and that is the record.
+  ★ What IS established: it dispatched, and **it did NOT hit the round-game-mode wall** — no such line
+  appeared for it while R1's and R3's did in the same run. So it bails at one of its OWN guards, before
+  any logging point. **Transcribing `0x55CCE70`'s prologue guards is the next offline task and it is free.**
+- ⚠⚠ **A CONTROL I REGISTERED WAS FALSIFIED BY MY OWN ARM'S DESIGN.** I predicted the `AttachedToRidable`
+  count would STAY at 2 as a cross-contamination control; it went **2 → 4**, because `KRDARMS` bit 1 was
+  still set and **the arm re-ran R1**. The separation it was meant to test holds anyway (different strings,
+  1.3 s apart). ★ **Check a control against what THIS arm does, not against what the previous arm did.**
+  Build: `.text` **`dd2281adce965add`** (`KRDARMS=0x3F`, `KRDREPOS=1`) — the v3 arm with R3/R4.
 - ⚠⚠ **THE FIFTH WALL WAS *NOT* TESTED, AND THE ZERO THAT LOOKS LIKE A TEST IS A TRAP.** The precondition IS met (the pod ships a `LokiRideable_GEN_VARIABLE`; the rideable census rises **+1 per pod**, 20→21 on E1), so `AuthPlayerEnterWorldAttachedToRidable` WAS called — but its impl `0x55CD510` opens `test rdx,rdx; je` on **`rdx = PlayerState`** and **returns SILENTLY on instruction #1** when it is null. `PilotPlayerState` reads null [M] because `GetTeamDropLeader` returns null because `ALokiTeamState_TeamOnly::SetDropLeader` is one of FK-1's four empty stubs. ⇒ `grep "failed to get the round game mode"` = **0 and UNINTERPRETABLE.** ★ The emit is NOT stripped (dispatches through the live logger `0x106B650`), so the grep would work if the branch were reached.
   ⇒ ★ **NEXT LEVER, ONE DATA POKE:** `ALokiPlayerState::IsSpawnTeamLeader` (impl `0x56C2060`, real) is a **pure read of `[TeamState+0x688]`**. Poke that on a live `ALokiTeamState_TeamOnly` and `GetTeamDropLeader` returns non-null without calling either stub — then the rider handoff runs for real.
 - ★ **[M] A pooled DEFERRED spawn never `FinishSpawningActor`'d has a NULL `RootComponent`** (`root=0x0`), with the same class resolving `RelLoc@0x158` by name on three sibling pods in the same dump — a positive control living inside the negative result.

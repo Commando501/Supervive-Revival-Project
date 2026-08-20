@@ -12937,7 +12937,15 @@ static void DoSpawnPossess(){
 // performs NO `.text` write, NO PI hook and NO heap poke -- it is direct `UFunction.Func` calls
 // through the S55 primitive plus guarded reads.
 #ifndef KRDARMS
-#define KRDARMS 0x0F        // bit0 R0c control | bit1 R1 the wall | bit2 R2 re-read | bit3 final report
+// bit0 R0c control | bit1 R1 the wall | bit2 R2 re-read | bit3 final report
+// bit4 R3 AuthPlayerPreSpawnOnAddToPlane (a CONFIRMATION arm -- it has its own distinct bail string)
+// bit5 R4 AuthPlayerEnterWorld           (REAL, never called, and NO bail string was found for it [I])
+#define KRDARMS 0x3F
+#endif
+#ifndef KRDREPOS
+// R4's `bRepositionPlayer`. 1 => a WORKING call MOVES THE HERO, a physical readout that owes nothing
+// to a log line. 0 leaves R4 observable only through PlayersInsideCount and the log.
+#define KRDREPOS 1
 #endif
 #ifndef KRDSTEPMS
 #define KRDSTEPMS 600
@@ -12948,6 +12956,7 @@ static void DoSpawnPossess(){
 
 static uintptr_t g_rdPod=0, g_rdComp=0, g_rdPS=0;
 static uintptr_t g_rdPSCand[8]; static int g_rdPSCandN=0;   // see the RdResolve comment
+static uintptr_t g_rdHero=0; static char g_rdHeroName[96]={0};   // R4's physical readout
 static char      g_rdPodName[96]={0}, g_rdCompName[96]={0}, g_rdPSName[96]={0}, g_rdWhy[192]={0};
 static uintptr_t g_rdWallFn=0, g_rdWallChild=0; static char g_rdWallOwner[96]={0};
 static uintptr_t g_rdCtlFn=0,  g_rdCtlChild=0;  static char g_rdCtlOwner[96]={0};
@@ -13077,6 +13086,15 @@ static void RdResolve(){
     Markerf("[RD] LandingLocation taken from the pod's own CurrPodDestination = (%.1f, %.1f, %.1f) -- "
             "the value InitializeDropPod stored, so the wall is handed the same vector the game would.\r\n",
             g_rdLanding[0],g_rdLanding[1],g_rdLanding[2]);
+    // The hero, for R4's physical readout. Enumerated, printed, and OPTIONAL: if it does not
+    // resolve the arm still runs and RdState says the readout is UNAVAILABLE rather than printing
+    // a zero. A missing hero must never be able to look like "the hero did not move".
+    g_rdHero=FindInstByClass("BP_HERO_",nullptr);
+    if(g_rdHero){ uintptr_t hc=ClassOf(g_rdHero); if(hc) GetFNameStr(NameId(hc),g_rdHeroName,sizeof(g_rdHeroName));
+        Markerf("[RD] hero for the reposition readout: 0x%llX cls=%s\r\n",
+                (unsigned long long)g_rdHero,g_rdHeroName); }
+    else Marker("[RD] no BP_HERO_* instance found -- R4's hero-movement readout is UNAVAILABLE (a "
+                "coverage limit of the readout, NOT a result about the call)\r\n");
     g_rdResolved = (g_rdPod&&g_rdComp&&g_rdPS&&g_rdWallFn)?1:0;
     if(!g_rdResolved) Marker("[RD] *** NOT FULLY RESOLVED -- no call will be made. This is a resolve "
                              "statement, not a result about the wall. ***\r\n");
@@ -13085,6 +13103,35 @@ static void RdResolve(){
 // R0c: ContainsPlayer(PlayerState) on the SAME component through the SAME primitive.  It is both the
 // positive control (a bool return that is not a fault proves dispatch + object-param marshalling on
 // this object) and the READOUT for R1 (false -> true would mean a rider actually attached).
+// ★★★ S131 v3 — THE PHYSICAL READOUT. `AuthPlayerEnterWorld` declares
+//   `(ALokiPlayerState, const FVector& Location, TSubclassOf<UGameplayEffect>, bool bRepositionPlayer)`
+//   [M, tools/asdump/out/binds_members.csv], so with bRepositionPlayer=true a working call MOVES THE
+//   HERO. That is a third-party-observable effect that owes nothing to a log line or to our own call
+//   returning -- the strongest instrument available on this surface, and the log line and this can
+//   disagree only if one of them is wrong.
+//   `PlayersInsideCount` is a plain reflected int on the component, so it is read BY NAME, no call.
+static void RdState(const char* when){
+    uint32_t po=PropOffsetSuper(ClassOf(g_rdComp),"PlayersInsideCount");
+    int32_t  pv=(po!=0xFFFFFFFF&&SafeReadable((void*)(g_rdComp+po),4))?*(int32_t*)(g_rdComp+po):-999;
+    uint32_t co=PropOffsetSuper(ClassOf(g_rdComp),"bCanExit");
+    int      cv=(co!=0xFFFFFFFF&&SafeReadable((void*)(g_rdComp+co),1))?(int)*(uint8_t*)(g_rdComp+co):-1;
+    if(po==0xFFFFFFFF)
+        Markerf("[RD] state %-22s PlayersInsideCount *** NOT RESOLVED BY NAME -- this is NOT a zero ***\r\n",when);
+    else
+        Markerf("[RD] state %-22s PlayersInsideCount@0x%X=%d  bCanExit=%d\r\n",when,po,pv,cv);
+    if(g_rdHero&&GcAlive(g_rdHero)){
+        uint32_t rc=PropOffsetSuper(ClassOf(g_rdHero),"RootComponent");
+        uintptr_t r=(rc!=0xFFFFFFFF&&SafeReadable((void*)(g_rdHero+rc),8))?*(uintptr_t*)(g_rdHero+rc):0;
+        uint32_t lo=LooksLikePtr(r)?PropOffsetSuper(ClassOf(r),"RelativeLocation"):0xFFFFFFFF;
+        if(lo!=0xFFFFFFFF&&SafeReadable((void*)(r+lo),24)){
+            double* P=(double*)(r+lo);
+            Markerf("[RD] state %-22s HERO '%s' 0x%llX loc=(%.1f, %.1f, %.1f)\r\n",
+                    when,g_rdHeroName,(unsigned long long)g_rdHero,P[0],P[1],P[2]);
+        } else Markerf("[RD] state %-22s HERO location UNREADABLE (root=0x%llX) -- instrument, not a "
+                       "zero\r\n",when,(unsigned long long)r);
+    } else Markerf("[RD] state %-22s no live hero resolved -- the reposition readout is UNAVAILABLE "
+                   "(a coverage limit, not a negative)\r\n",when);
+}
 static int RdContains(const char* tag,int* outVal){
     if(outVal)*outVal=-1;
     if(!g_rdCtlFn){ Markerf("[RD] %s: ContainsPlayer did not resolve on the component's chain -> NOT "
@@ -13199,8 +13246,93 @@ static void RdLadderStep(){
                "attached; false->false is the expected wall outcome and is only interpretable because "
                "R0c proved the call dispatches here. ---\r\n");
         RdContains("R2 ContainsPlayer(after)",&g_rdCtlAfter);
+        RdState("after R1/R2");
         g_rdStep=5; return;
-    case 5:
+    // ---- S131 v3: the two SIBLINGS that have never been called ------------------------------------
+    case 5: {
+        if(!(KRDARMS&0x10)){ Marker("[RD] R3 disabled -> AuthPlayerPreSpawnOnAddToPlane NOT called\r\n"); g_rdStep=6; return; }
+        // R3 is a CONFIRMATION arm, not a hope: S130 graded this sibling as hitting the SAME
+        // round-game-mode wall, and .rdata 0x8B1CE28 carries its own distinct bail string
+        // ("...AuthPlayerPreSpawnOnAddToPlane failed to get the round game mode"). Because the string
+        // is DIFFERENT from the attached variant's, the log tells the two calls apart with no
+        // ambiguity -- which is what makes calling it worth a step rather than an assumption.
+        Marker("[RD] --- R3: AuthPlayerPreSpawnOnAddToPlane(PlayerState). It has its OWN bail string, "
+               "so the log separates it from R1 unambiguously. EXPECTED: the same round-game-mode "
+               "failure, which would show the wall is a SHARED dependency and not one function's bug. ---\r\n");
+        void* fn=nullptr; uintptr_t th=0,ch=0;
+        ResolveFuncNative(ClassOf(g_rdComp),"AuthPlayerPreSpawnOnAddToPlane",&fn,&th,&ch);
+        if(!fn){ Marker("[RD] R3: did not resolve on the component's chain -> NOT CALLED\r\n"); g_rdStep=6; return; }
+        uintptr_t thunk=SafeReadable((void*)((uintptr_t)fn+UFUNC_FUNC),8)?*(uintptr_t*)((uintptr_t)fn+UFUNC_FUNC):0;
+        if(!LooksLikePtr(thunk)){ Marker("[RD] R3: no Func thunk -> NOT CALLED\r\n"); g_rdStep=6; return; }
+        int np=PdWalkParams(ch,"AuthPlayerPreSpawnOnAddToPlane(R3)");
+        int ix=-1; for(int k=0;k<np;k++) if(!g_pdP[k].isRet&&strstr(g_pdP[k].type,"ObjectProperty")){ ix=k; break; }
+        if(ix<0){ Marker("[RD] R3: no ObjectProperty slot -- REFUSING (a zeroed block reproduces the "
+                         "null-PlayerState silence this mode exists to escape)\r\n"); g_rdStep=6; return; }
+        for(int ci=0;ci<g_rdPSCandN;ci++){
+            memset(g_pdparms,0,sizeof(g_pdparms)); memset(g_rbuf,0,sizeof(g_rbuf));
+            *(uintptr_t*)(g_pdparms+g_pdP[ix].off)=g_rdPSCand[ci];
+            bool flt=CallNativeGuarded(fn,thunk,ch,(void*)g_rdComp,g_pdparms,g_rbuf);
+            Markerf("[RD] R3 cand[%d] ps=0x%llX: fault=%s\r\n",ci,(unsigned long long)g_rdPSCand[ci],
+                    flt?"*** YES ***":"no");
+        }
+        RdState("after R3");
+        g_rdStep=6; return; }
+    case 6: {
+        if(!(KRDARMS&0x20)){ Marker("[RD] R4 disabled -> AuthPlayerEnterWorld NOT called\r\n"); g_rdStep=7; return; }
+        // ★★★★★ R4 IS THE ONE THAT MIGHT ACTUALLY WORK. `AuthPlayerEnterWorld` (impl 0x55CCE70) is
+        //   REAL -- a large body with a security cookie -- and NOTHING THIS PROJECT RUNS HAS EVER
+        //   CALLED IT. Crucially, today's .rdata sweep found round-game-mode bail strings for the
+        //   ATTACHED variant and for PreSpawnOnAddToPlane, but NOT for this one. That is [I], not [M]
+        //   (absence of a string near a function is weak evidence), which is exactly why it is worth
+        //   a call rather than an argument.
+        //   Signature [M, binds_members.csv]:
+        //     (ALokiPlayerState, const FVector& Location, TSubclassOf<UGameplayEffect>, bool bRepositionPlayer)
+        //   ⇒ with bRepositionPlayer=true a WORKING call MOVES THE HERO, which is a physical readout
+        //   that owes nothing to a log line. RdState() samples the hero's location either side.
+        Marker("[RD] --- R4 (THE INTERESTING ONE): AuthPlayerEnterWorld(PlayerState, Location, "
+               "EffectClass=null, bRepositionPlayer=1). REAL body, never called by anything this "
+               "project runs, and NO round-game-mode bail string was found for it [I]. If it works, "
+               "THE HERO MOVES -- watch the RdState hero location, not the log. ---\r\n");
+        void* fn=nullptr; uintptr_t th=0,ch=0;
+        ResolveFuncNative(ClassOf(g_rdComp),"AuthPlayerEnterWorld",&fn,&th,&ch);
+        if(!fn){ Marker("[RD] R4: did not resolve -> NOT CALLED\r\n"); g_rdStep=7; return; }
+        uintptr_t thunk=SafeReadable((void*)((uintptr_t)fn+UFUNC_FUNC),8)?*(uintptr_t*)((uintptr_t)fn+UFUNC_FUNC):0;
+        if(!LooksLikePtr(thunk)){ Marker("[RD] R4: no Func thunk -> NOT CALLED\r\n"); g_rdStep=7; return; }
+        int np=PdWalkParams(ch,"AuthPlayerEnterWorld(R4)");
+        int psIx=-1,vecIx=-1,clsIx=-1,boolIx=-1;
+        for(int k=0;k<np;k++){
+            if(g_pdP[k].isRet) continue;
+            if(psIx<0 &&!strcmp(g_pdP[k].type,"ObjectProperty")){ psIx=k; continue; }
+            if(vecIx<0&&strstr(g_pdP[k].type,"StructProperty")) { vecIx=k; continue; }
+            if(clsIx<0&&strstr(g_pdP[k].type,"ClassProperty"))  { clsIx=k; continue; }
+            if(boolIx<0&&strstr(g_pdP[k].type,"BoolProperty"))  { boolIx=k; continue; }
+        }
+        if(psIx<0||vecIx<0){ Markerf("[RD] R4: could not bind the two REQUIRED slots (ps=%d vec=%d) -- "
+                                     "REFUSING to call with a partly-zeroed block\r\n",psIx,vecIx);
+                             g_rdStep=7; return; }
+        if(g_pdP[vecIx].elem!=24&&g_pdP[vecIx].elem!=12){
+            Markerf("[RD] R4: struct slot ElementSize=%u is not an FVector -- REFUSING\r\n",g_pdP[vecIx].elem);
+            g_rdStep=7; return; }
+        Markerf("[RD] R4 BIND: ps=slot[%d]@0x%X vec=slot[%d]@0x%X size=%u cls=slot[%d] bool=slot[%d] "
+                "(the two optionals are written only if they bound; a slot left at 0 IS the declared "
+                "default: nullptr / false)\r\n",psIx,g_pdP[psIx].off,vecIx,g_pdP[vecIx].off,
+                g_pdP[vecIx].elem,clsIx,boolIx);
+        for(int ci=0;ci<g_rdPSCandN;ci++){
+            memset(g_pdparms,0,sizeof(g_pdparms)); memset(g_rbuf,0,sizeof(g_rbuf));
+            *(uintptr_t*)(g_pdparms+g_pdP[psIx].off)=g_rdPSCand[ci];
+            if(g_pdP[vecIx].elem==24){ double* d=(double*)(g_pdparms+g_pdP[vecIx].off);
+                d[0]=g_rdLanding[0]; d[1]=g_rdLanding[1]; d[2]=g_rdLanding[2]; }
+            else { float* f=(float*)(g_pdparms+g_pdP[vecIx].off);
+                f[0]=(float)g_rdLanding[0]; f[1]=(float)g_rdLanding[1]; f[2]=(float)g_rdLanding[2]; }
+            if(boolIx>=0) *(uint8_t*)(g_pdparms+g_pdP[boolIx].off)=(uint8_t)(KRDREPOS?1:0);
+            RdState("R4 BEFORE");
+            bool flt=CallNativeGuarded(fn,thunk,ch,(void*)g_rdComp,g_pdparms,g_rbuf);
+            Markerf("[RD] R4 cand[%d] ps=0x%llX bRepositionPlayer=%d: fault=%s\r\n",ci,
+                    (unsigned long long)g_rdPSCand[ci],(int)KRDREPOS,flt?"*** YES ***":"no");
+            RdState("R4 AFTER");
+        }
+        g_rdStep=7; return; }
+    case 7:
     default:
         Marker("[RD] ============ game-thread arms COMPLETE ============\r\n");
         g_done=1; return;
@@ -14511,7 +14643,7 @@ static DWORD WINAPI Worker(LPVOID){
                 (long)g_rdStep,g_rdResolved,g_rdCtlRan,g_rdWallRan,(long)g_called,(long)g_hitsGT);
         // The exit code must agree with the marker. The ladder has 6 steps (0..5); if it grows one,
         // THIS THRESHOLD MOVES WITH IT (the RM_PHASELADDER lesson).
-        if(g_rdStep<5){
+        if(g_rdStep<7){   // the ladder grew from 6 steps to 8 (R3 at 5, R4 at 6); THIS MOVES WITH IT
             Markerf("[RD] *** ALERT: the ladder did not reach its final step (stopped at %ld). Most "
                     "likely game-thread STARVATION -- read FsHold's own verdict line first, and re-fly "
                     "with KFSNAME=\"\" if the swap took no hits. Returning 9. ***\r\n",(long)g_rdStep);

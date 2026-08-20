@@ -65,3 +65,64 @@ Unchanged predictions P1-P5. **P4 now reads: the log line appears for AT LEAST O
 **Artifact: `tutorial_launch_rideable.dll` .text `e221e4e415834067` (114,688 B).** Baseline `grep -c 'failed to get the round game mode'` re-verified 0.
 
 ? Free finding already banked from the refused run: **pod-cand[3] (the never-finished DEFERRED pooled spawn) has `LokiRideable = 0x0`** -- a second, independent confirmation that such a pod has NO components at all, on a different property from the null RootComponent.
+
+---
+
+## AMENDMENT 2 — R3 and R4, written BEFORE the third injection
+
+The fifth wall is confirmed (§P4 landed). Two siblings on the same component have **never been called
+by anything this project runs**, and the same live client is still up (47 min). Adding them costs no
+launch.
+
+### Baselines, read immediately before injecting
+
+| counter | value |
+|---|---|
+| `AuthPlayerEnterWorldAttachedToRidable failed to get the round game mode` | **2** (R1's two calls) |
+| `AuthPlayerPreSpawnOnAddToPlane failed to get the round game mode` | **0** |
+| `LogLokiRideable` (any) | **2** |
+| hero `BP_HERO_Ronin_C` `0x2BDC2315580` location | **`(0, 0, 13240.0)`** — exactly 1 live hero |
+
+★ The hero's position is nothing like R4's target `(-3206.4, 5070.5, 100.0)`, so "did the hero move"
+is unambiguous.
+
+### R3 — `AuthPlayerPreSpawnOnAddToPlane(PlayerState)`, impl `0x55CD800`, REAL
+
+A **confirmation** arm, not a hope. S130 graded it as hitting the same wall, and `.rdata 0x8B1CE28`
+carries its **own distinct bail string**, so the log separates it from R1 with no ambiguity.
+
+| # | prediction | grade |
+|---|---|---|
+| P6 | `PreSpawnOnAddToPlane failed to get the round game mode` goes **0 → 2** (one per candidate) | [I] |
+| P7 | `AttachedToRidable` stays at **2** — R3 must not be able to masquerade as R1 | [I] — this is the arm's own cross-contamination control |
+
+P6 landing ⇒ **the round-game-mode dependency is SHARED across the family, not one function's bug.**
+
+### R4 — `AuthPlayerEnterWorld(PlayerState, Location, EffectClass=null, bRepositionPlayer=1)`, impl `0x55CCE70`, REAL
+
+**The one that might actually work.** A large body with a security cookie, never called, and today's
+`.rdata` sweep found round-game-mode bail strings for the *attached* variant and for
+*PreSpawnOnAddToPlane* but **not** for this one. ⚠ That is **[I], not [M]** — absence of a string near
+a function is weak evidence, which is exactly why it is worth a call instead of an argument.
+
+| # | prediction | grade |
+|---|---|---|
+| P8 | R4 returns without fault | [I] |
+| **P9** | **either the hero MOVES to ≈`(-3206.4, 5070.5, 100.0)`, or a NEW `LogLokiRideable` line names a different failure** | genuinely **uncertain** — this is the informative one |
+| P10 | `PlayersInsideCount` may change from its pre-call value; it is read BY NAME and printed either side | [S] |
+
+**Reading rule, fixed now:**
+* hero moves ⇒ ★★★★★ `AuthPlayerEnterWorld` **WORKS on this client** and is the route the attached
+  variant is not;
+* hero does not move **and** a new distinct log line appears ⇒ it has its own named blocker — progress,
+  because it is named;
+* hero does not move **and** no new line ⇒ **UNINTERPRETABLE without more work**: it may have bailed
+  through a silent path. Do NOT record it as "R4 does nothing". The `RdState` hero line and the
+  `PlayersInsideCount` line are printed either side precisely so this case is visible as a gap rather
+  than as a result.
+
+⚠ `bRepositionPlayer=1` is deliberate: a *visible physical* effect is a stronger instrument than any
+log, and it cannot be faked by the call merely returning. Knob `KRDREPOS=0` disables it.
+
+**Artifact:** `tutorial_launch_rideable.dll` `.text` **`dd2281adce965add`** (119,808 B), `KRDARMS=0x3F`.
+`play` and `dropplane_b1only` re-verified UNCHANGED.
