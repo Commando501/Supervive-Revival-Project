@@ -3001,3 +3001,101 @@ SpawnDropPodForTeam  ->  RETURNS TRUE, DropPod +2   <-- FIXED S130 §28
   +- AND the rider handoff is still the FIFTH wall
      (AuthPlayerEnterWorldAttachedToRidable, always fails on a stripped fold)
 ```
+
+---
+
+## 29. S131 — THE POD IS FUNCTIONAL. §28.5 ITEM 1 IS ANSWERED.
+
+**2026-08-20, one armed window, zero `.text` writes.** Primary evidence:
+`docs/s131-pod-functionality-settled.md` and `scratchpad/s131/evidence/`. §28.5 said *"the census
+counts objects; nothing shows a pod flies or carries a player."* Half of that is now answered.
+
+### 29.1 `InitializeDropPod` ran — 3/3 discriminators, with a 3-pod within-run control
+
+| field | class default | E1 pod `0x2BDA97A0200` | 3 control pods, same dump |
+|---|---|---|---|
+| `PodTeamIndex` @0x460 | `-1` | **`0`** | `-1` ×3 |
+| `CurrPodDestination` @0x478 | `(0,0,0)` | **`(-3206.4, 5070.5, 100.0)`** | `(0,0,0)` ×3 |
+| `bIsTeamLeaderPod` @0x45D | `False` | **`true`** | `false` ×3 |
+
+The controls are the three pods RM_POOLSPAWN left in the same world, spawned by raw pooled/ordinary
+spawns that never call `InitializeDropPod`. Same class, same instrument, same dumps.
+⛔ `LeaderPod` (null→null) is a TRAP and is not a fourth check.
+
+★★ **`CurrPodDestination` is a payload fingerprint** — the exact `LandingLocation` this arm computed
+and printed in its own `E1 POSITIONS USED` line. No other code path in the process holds that vector.
+**That attributes the pod to our call by CONTENT, which a census delta can never do**, and it is why
+the result survives the standing E0c gap (§29.5).
+
+### 29.2 The pod is ALIVE and FLYING — and every digit is accounted for
+
+`ComponentVelocity = (20000.0, 0.0, 0.0)`; measured 19,862 uu/s over 8.0 s; Y and Z **exactly**
+constant; `attach=none`; the three control pods measured at **0.0 uu/s** in the same pass. Cooked
+asset: `ProjectileMovement_GEN_VARIABLE: InitialSpeed = MaxSpeed = 20000, ProjectileGravityScale = 0`.
+
+⚠⚠ `20000` is **also** this shim's `KPDSPAWNZ`. Attributing the velocity to our own knob would have
+been effortless and wrong. **The cooked asset settles it.**
+
+### 29.3 ⇒ It flies BECAUSE `StartPodGameplay` never ran
+
+`StartPodGameplay`'s **first act on the movement component is `Deactivate()`**. On the E1 pod [M]:
+`bHasStartedGameplay=0` · `PodMeshComponent=null` · `DropPodState=0 (None)` · `bIsLocalPlayerPilot=0`
+· `bSteeringEnabled=0`.
+
+Root cause, [M]: **`Loki::LokiIsServer()` impl `0x0F7EB60` = `xor al,al; ret` — always FALSE**
+(`LokiIsClient` impl `0x0B9E1F0` = `mov al,1; ret` — always TRUE). In
+`ALokiDropPod::LokiBeginPlay_Implementation`, `0x596A3F9 call 0xF7EB60` + `test/jne` skips
+`0x596A495 call 0x56FBCF0` = `LokiTeam::SetTeamForActor` (one caller image-wide). No team index ⇒
+`OnTeamIndexChanged` never fires ⇒ `StartPodGameplay` never called ⇒ nothing ever deactivates the mover.
+
+★ Independent engine receipt: `LogNiagara: Warning: NiagaraComponent(...
+BP_DropPod_Tutorial_C_2147471134.NS_Drop_CloudTunnel ...) required LWC tile recache` ×3 — the pod's
+drop VFX are instantiated and ticking, and UE reports it travelled far enough to re-base its LWC tile.
+
+### 29.4 ⚠⚠ The FIFTH WALL was NOT tested, and the zero that looks like a test is a trap
+
+The precondition **is** met — the pod ships a `LokiRideable_GEN_VARIABLE`, and the in-arm rideable
+census rises **+1 per pod** (20 → 21 on E1) — so `AuthPlayerEnterWorldAttachedToRidable` WAS called.
+But its impl `0x55CD510` opens `test rdx,rdx ; je` on **`rdx = PlayerState`** and **returns silently
+on instruction #1** when it is null.
+
+`PilotPlayerState` reads **null** [M], because `GetTeamDropLeader` returns null, because
+`ALokiTeamState_TeamOnly::SetDropLeader` is one of FK-1's four empty stubs (`0x0F7EC20`), as is
+`ALokiPlayerState::AuthSetSpawnTeamLeader`.
+
+⇒ `grep "failed to get the round game mode"` = **0, and UNINTERPRETABLE.** ★ The emit is **not**
+stripped — it dispatches through `0x106B650`, a live logger with 22 other call sites, two of whose
+messages appear verbatim in the corpus as `LogLokiGameMode: Display: …` — so the grep would have
+worked had the branch been reached. **The blocker is the null argument, not the wall.**
+
+★ **NEXT LEVER, ONE DATA POKE.** `ALokiPlayerState::IsSpawnTeamLeader` (impl `0x56C2060`, real,
+decrypted in all three images) is a **pure read** of `[TeamState+0x688]`. Poking that field on a live
+`ALokiTeamState_TeamOnly` gives `GetTeamDropLeader` a non-null answer **without calling either empty
+stub**, and then `SpawnDropPodForTeam` exercises the rider handoff for real. Same write class as the
+CDO poke: one aligned heap field, readback-verifiable, no module image touched.
+
+### 29.5 What is still open
+
+* **C8/C9 never fired** — unexercised, not excluded (unchanged from §28.5).
+* **E0c** still has no callable candidate on this class chain, so the *dispatch mechanism* remains
+  uncontrolled. **Unchanged from S130, so it cancels in the differential** — and §29.1's payload
+  fingerprint does not depend on it.
+* Whether a *properly managed* pod would descend is untouched: nothing drove `SetDropPodState`, and
+  its own `LokiIsClient` early-return forecloses it on this client [M].
+* §28.5 item 2 stands unchanged: **this is a diagnosis, not a shipping fix.**
+
+### 29.6 New [M] facts worth reusing
+
+1. **The Angelscript `ADDSi`/`LoadThisR` operand is a byte offset from `this`** — [I] → [M]. The AS
+   ctor's 50-op operand sequence and the AOT-compiled x86 ctor's 50 `add rax,imm` sequence are
+   ordered-identical **50/50**, replicated **12/12 classes / 214 pairs**; 9,468 annotated ops over 312
+   files give **784 (typeid,member) pairs with zero conflicts**. Live agreement in-arm: **76 : 0**.
+   ⇒ the `.as.txt` listings are a free offset oracle for every Angelscript member.
+   ⚠ `propscan`/`boolscan` returning 0 on an AS name is **COVERAGE-BLOCKED**: AS member names have
+   **0** byte occurrences in the image.
+2. **A pooled DEFERRED spawn never `FinishSpawningActor`'d has a NULL `RootComponent`** — with the
+   same class resolving `RelLoc@0x158` by name on three sibling pods in the same dump.
+3. `bHasStartedGameplay` has **no UPROPERTY**; the AS offset `0x4B8` is the only route.
+4. **The pooled-spawn NULL is gone**: `Failed to spawn actor of type` = 0 while
+   `PrimePools : Feature is not enabled, skipping` still prints — §25 confirmed live from the
+   opposite direction.
