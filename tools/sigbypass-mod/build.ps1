@@ -554,6 +554,25 @@ $Variants = @{
         # yes, and the dismount can put the hero on real ground. Lands-at-pod => the argument is ignored
         # and the landing point is a property of the component. The prediction is printed BEFORE the call.
         'dismount-landstart'  = @('-DKRUNMODE=RM_DISMOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDXLANDING=2')
+        # S132 -> S133: DOES THE HERO LOCOMOTE *AT THE POINT THE DISMOUNT LANDED IT*?
+        #   RM_PLAY's FIRST act is a hardcoded ground-teleport to (KGROUNDX,KGROUNDY,KGROUNDZ) =
+        #   (-65,-1770,393) -- S75's known-solid ground. S132 injected plain `play` onto a dismounted
+        #   hero and it ran, but the teleport had already MOVED IT OFF the landing point, so that run
+        #   is evidence about the hero's STATE, not about the deploy LOCATION. KNOTELE=1 already
+        #   exists and skips the teleport entirely -- no new code was needed.
+        #   `play` itself is UNTOUCHED: it is the hard regression gate (.text 9bc10a4552c596e1).
+        #
+        #   -atlanding : KNOTELE=1, everything else default. KFLYMODE stays 5 (MOVE_Flying), so the
+        #                hero HOVERS and is driven by XY velocity. Isolates exactly one variable --
+        #                the teleport -- against the arm whose behaviour is already established.
+        'play-atlanding'      = @('-DKRUNMODE=RM_PLAY','-DKNOTELE=1')
+        #   -atlanding-walk : KNOTELE=1 AND KFLYMODE=1 (MOVE_Walking). THIS is the one that tests
+        #                real ground locomotion at the deploy point. WARNING: Walking mode has a
+        #                recorded history of 'FudgeMantling toggles not ready' spam and movement
+        #                crashes on cell-streaming (S75/S81), which is WHY the default is Flying.
+        #                Fly -atlanding first; treat a death here as the known mode hazard, not as a
+        #                statement about the landing point.
+        'play-atlanding-walk' = @('-DKRUNMODE=RM_PLAY','-DKNOTELE=1','-DKFLYMODE=1')
 
         'poolspawn-cdoctrl'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=0')
         'poolspawn-cdopoke'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=1')

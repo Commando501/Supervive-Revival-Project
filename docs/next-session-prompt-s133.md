@@ -60,34 +60,54 @@ point before anything else happened**, so the run says nothing about whether the
 playable. The `[GCW] anim swapping DISABLED` line that follows is the S110 idle-anim GC behaviour
 (`KANIMREF` parks the RUN anim, not the idle one) — pre-existing, unrelated to the dismount.
 
-### 1.2 The experiment that WOULD answer it
+### 1.2 THE EXPERIMENT — and the arm that looks right is DEGENERATE. This is measured, not predicted.
 
-Two arms, one launch, both trivial:
+**The arms are already built and `KNOTELE=1` already existed in `play`, so no new code is needed.**
+S132 flew the control and it settled the design:
 
-```
-# A: land the hero, then let play take over WITHOUT relocating it.
-build.ps1 -Name tutorial_launch -Variant play -DKGROUNDX=-3206.4 -DKGROUNDY=5070.5 -DKGROUNDZ=140
-```
-⚠ `build.ps1` takes variants, not raw `-D`s — **add a `play-atlanding` variant** whose
-`KGROUNDX/Y/Z` are the PlayerStart's coordinates, so `play`'s teleport becomes a no-op *in effect*
-and the hero stays where the dismount put it. Better still, add a **`KPLNOTELE`** knob that skips the
-teleport block entirely; then the arm tests the landing point itself rather than a coordinate that
-happens to match it. **That is the honest version and it is a ~5-line edit.**
-⚠⚠ Changing `play` moves its `.text` hash away from the regression-gated `9bc10a4552c596e1`. Build
-it as a **new variant** and leave `play` untouched — it is the hard regression gate for the whole
-tutorial route.
+| variant | `.text` | what it is |
+|---|---|---|
+| `play-atlanding` | `0e816d359e5d09c5` | `-DKNOTELE=1`. ⛔ **DEGENERATE — do not use it as arm A** |
+| `play-atlanding-walk` | `944a27728053359e` | `-DKNOTELE=1 -DKFLYMODE=1`. **THIS is arm A** |
+| `play` | `9bc10a4552c596e1` | untouched regression gate — **do not edit it** |
 
-```
-# B: the control -- the same play arm on a hero that was never dismounted (sp's parked hero).
-```
-Without B, "the hero walks at the landing point" cannot be separated from "the hero walks anywhere".
+⚠ both new arms share a `.text` size of 237,568 B; only the hash separates them.
+
+★★★★★ **WHY `play-atlanding` IS DEGENERATE, MEASURED.** It was flown on a hero that had NOT
+been dismounted — still at `sp`'s parked spot — and it moved **2,926 uu at CONSTANT Z = 13,240,
+i.e. 13 km in the air with nothing underneath it**, then stopped when the 5 s auto-walk window closed.
+`KFLYMODE` defaults to **5 = MOVE_Flying** (`tutorial_launch.cpp:4906-4909`, chosen in S75/S81 to
+bypass the Walking-mode ground-mantle chain). **It hovers. It passes anywhere.** Had it been flown as
+arm A after a dismount it would have "walked" and meant nothing.
+★ Corroboration: flight 2's plain-`play` run moved **+2,945.7 uu** and this control **+2,926 uu** —
+the distance is a property of the auto-walk driver (~585 uu/s for 5 s), **not of the terrain.**
+
+**⇒ Arm A must be `play-atlanding-walk` (`KFLYMODE=1`, MOVE_Walking).** That is the only arm whose
+motion depends on there being a floor.
+⚠ Walking mode has a recorded history of `FudgeMantling toggles not ready` spam and movement crashes
+on cell-streaming (S75/S81) — which is *why* the default is Flying. **Treat a death in that arm as
+the known mode hazard, not as a statement about the landing point**, and say so in the write-up.
+
+**Arm B, the control, is now cheap and already characterised**: `play-atlanding-walk` on a
+NON-dismounted hero, which sits at `(0, 0, 13240)` in the sky. In Walking mode it should **fall or not
+translate**, where arm A on solid ground should translate. That contrast is the measurement.
 
 **Pre-register the readings:**
-- A walks and B walks ⇒ **the deploy location is playable** — the biggest result on this route.
-- A does not walk, B walks ⇒ something about the landing point (navmesh, streaming, floor) blocks it.
-  Read the movement component's mode and `hero+0x1BE8` before concluding.
-- Neither walks ⇒ the arm did not initialise; read `[PL] *** init complete ***` first. A missing
-  init line makes the whole sitting VOID, not negative.
+- A translates on the ground, B does not ⇒ **the deploy location is playable** — the biggest
+  result on this route.
+- Both translate at constant Z ⇒ you are still in Flying mode; check the `[PL] SetMovementMode(N)`
+  line before reading anything else.
+- Neither runs ⇒ read `[PL] *** init complete ***` first. A missing init line makes the sitting
+  **VOID, not negative**.
+
+⚠⚠ **AND FIX THE DISMOUNT ARM FIRST (one line).** On S132's flight 5 neither PlayerState candidate
+passed GATE 5 (`GetLokiCharacter()` returned null for both — the PS↔hero association had not
+formed that run), and the arm **proceeded anyway** on the reasoning that the detach would take its
+REMOVE-only tail. **It faulted instead** (`0xC0000005 READ 0xFFFFFFFFFFFFFFFF` at `rva 0x54F8C57`):
+**`GetLokiCharacter` FAULTS on a template PlayerState rather than returning null**, so GATE 5 is not a
+clean early-out for a bad argument. **Change the no-candidate branch to REFUSE the call.**
+★ The safety design held — SEH caught it, the client survived 428 s, and `D5` detected and removed
+the entry the aborted call had left in `PlayersAttached`.
 
 ### 1.3 The staging that produced all of this
 

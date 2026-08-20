@@ -1,0 +1,129 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[DX] RM_DISMOUNT (S132): the pod's rider handoff, driven from the OTHER END.
+[DX] The fifth wall dies one TArray append short of attaching a rider. The detach is
+[DX] gated on exactly that array and is otherwise ALL-REAL past its gates -- so the
+[DX] append is performed here and the detach is called directly.
+[DX] Inject into a STAGED TUTORIAL WORLD that already contains an INITIALISED pod
+[DX] (gft -> fo -> sp -> dropplane_b1only -> droppod-pe-cdopoke -> this).
+[DX] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[RD] resolve: 1 pod actor(s), 2 live ALokiPlayerState(s), one GUObjectArray pass, 2735 ms
+[RD] pod-cand[0] 0x21F070BD850 cls=BP_DropPod_Tutorial_C PodTeamIndex@0x460=0 LokiRideable@0x6C8=0x21DA615C000(LokiRideableComponent)
+[RD] ps-cand[0] 0x21FBC057780 'BP_LokiPlayerState_C' cls=BP_LokiPlayerState_C
+[RD] ps-cand[1] 0x21EA29FADE0 'LokiPlayerState_HeroAffiliated' cls=LokiPlayerState_HeroAffiliated
+[RD] 2 PlayerState candidates -> the wall is called ONCE PER CANDIDATE, each labelled.
+[RD] resolve: pod=0x21F070BD850(BP_DropPod_Tutorial_C) comp=0x21DA615C000(LokiRideableComponent) ps=0x21FBC057780(BP_LokiPlayerState_C) | wallFn=0x21DEFCF1EA0 ctlFn=0x21DEFCF2440
+[RD] pod pick reason: the ONLY pod whose PodTeamIndex reads 0 (written by InitializeDropPod) AND has a non-null LokiRideable
+[RD] LandingLocation taken from the pod's own CurrPodDestination = (-3206.4, 5070.5, 100.0) -- the value InitializeDropPod stored, so the wall is handed the same vector the game would.
+[RD] hero for the reposition readout: 0x21F7317D560 cls=BP_HERO_Ronin_C
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7A6D654A0 stub=0x21F1B7B1140 funcCls=0x21DE034B000 gameTid=38432
+[DX] ============ RM_DISMOUNT: GET THE HERO OUT OF THE POD ============
+[DX] cfg arms=0x2F stepMs=600 landing=2 forceOff=0
+[DX] PLAN: append the PlayerState to PlayersAttached with the game's own ResizeGrow,
+[DX] then call AuthPlayerDetachPlayerFromRidable. The detach's ONLY gate we do not
+[DX] already satisfy is that array being non-empty and containing the PlayerState.
+[DX] PlayersAttached by-name @0x130 vs the wall's own `lea rcx,[r14+0x130]` at 0x55CD754 -> AGREE (two independent instruments)
+[DX] [comp+0xB8] (the detach's own default LandingActor) = 0x21F070BD850 cls=BP_DropPod_Tutorial_C
+[FS] arm: swapped=17563 BP UFunctions  (scan 3406 ms over 154909 objects, 34253 UFunctions total) -- NO .text WRITE
+[DX] land-cand[0] 0x21EA539F250 cls=BP_LokiPlayerStart_C               obj=BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02 alive=1 loc=(-3206.4, 5070.5, 100.0)
+[DX] land-scan: 1 candidate(s) matching {LokiPlayerStart,PlayerStart,TrainingStart}, 1 GC-alive, over 154909 objects walked
+[DX] KDXLANDING=2 chose LandingLocationActor = 0x21EA539F250 cls=BP_LokiPlayerStart_C loc=(-3206.4, 5070.5, 100.0)
+[DX] PRE-REGISTERED PREDICTION: if GetLandingTeleportLocation consumes its LandingLocationActor argument, the hero lands NEAR THAT ACTOR, not at the flying pod (which is 10+ million uu away by now, so the two are not confusable). If it lands at the pod anyway, the argument is ignored and the landing point is a property of the component. Both are results.
+[DX] detachFn=0x21DEFCF1CC0 child=0x21E792FC380 | comp=0x21DA615C000(LokiRideableComponent) pod=0x21F070BD850(BP_DropPod_Tutorial_C)
+[DX] --- D0h: GATE 5 (PS->GetLokiCharacter() != null) and GATE 6 (that hero IsA LokiHeroCharacter) read out per candidate, BEFORE any write. ---
+[PD] sig D0h GetLokiCharacter(cand[0]): 1 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig D0h GetLokiCharacter(cand[0]) [0] ReturnValue            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000780  RETURN
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[DX] D0h GetLokiCharacter(cand[0]): fault=no  g_rbuf=0x21F7317D560  paramsRet=0x0  -> hero=0x21F7317D560
+[DX] cand[0] ps=0x21FBC057780 -> hero=0x21F7317D560 cls=BP_HERO_Ronin_C | GATE5 PASS | GATE6 IsA(LokiHeroCharacter) PASS
+[PD] sig D0h GetLokiCharacter(cand[1]): 1 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig D0h GetLokiCharacter(cand[1]) [0] ReturnValue            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000780  RETURN
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[NULL] (via SEH)
+[NULL] fatal 0xC0000005 RIP=0x7FF7AAF18C57 rva=0x54F8C57 access=READ addr=0xFFFFFFFFFFFFFFFF inHook=1
+[NULL] RAX=21DF5311A00 RBX=6F5A4C4843544148 RCX=6F5A4C4843544148 RDX=21F1B7E3470 RSI=21F1B7E35F0 RDI=21EA29FADE0 RBP=1 RSP=38ED5DE530
+[NULL] R8=21F1B7E3440 R9=0 R10=0 R11=38ED5DE528 R12=FFFFFFFF0000 R13=7FFB5664C4E0 R14=38ED5DE5E0 R15=7FF7AAE573A0
+[NULL] cls RAX=Class RBX=- RCX=- RDX=LokiPlayerState_HeroAffiliated RSI=?None RDI=LokiPlayerState_HeroAffiliated R8=- R9=-
+[NULL] code@RIP:    48 8B 7B 18 48 63 58 40 48 8D 70 38 85 DB 79 23 80 3D 32 52 92 04 03 72 
+[NULL] code@RIP-24: 57 48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 20 48 8B D9 E8 89 75 DF FF 
+[FLT] CallNative faulted: code=0xC0000005 READ addr=0xFFFFFFFFFFFFFFFF rip=0x7FF7AAF18C57 rva=0x54F8C57
+[DX] D0h GetLokiCharacter(cand[1]): fault=*** YES ***  g_rbuf=0x0  paramsRet=0x0  -> hero=0x0
+[DX] cand[1] ps=0x21EA29FADE0 -> hero=0x0 cls=- | GATE5 *** FAIL (the detach would take the REMOVE-only tail) *** | GATE6 IsA(LokiHeroCharacter) n/a
+[DX] picked cand[0] ps=0x21FBC057780 hero=0x21F7317D560 'BP_HERO_Ronin_C' -- reason: the ONLY/first candidate passing both GATE 5 and GATE 6
+[RD] PlayerState(picked) 0x21FBC057780 ObjectFlags@+0xC=0x00000048 (>>30 = 0) -> the wall's IsValid test at 0x55CD535 PASSES
+[DX] ---- state @ baseline ----
+[DX] baseline PlayersAttached  @0x130  Data=0x0 Num=0 Max=0 (elements unreadable)
+[DX] baseline PlayersInside    @0x120  Data=0x0 Num=0 Max=0 (elements unreadable)
+[DX] baseline PlayersInsideCount@0x11C=0
+[DX] baseline POD  0x21F070BD850 loc=(1199511.4, 5070.5, 20100.0)
+[DX] baseline LAND 0x21EA539F250 cls=BP_LokiPlayerStart_C loc=(-3206.4, 5070.5, 100.0)  <== the LandingLocationActor being passed
+[DX] baseline HERO 'BP_HERO_Ronin_C' 0x21F7317D560 loc=(0.0, 0.0, 13240.0)
+[DX] baseline HeroPredropHidden by-name@0x1BE8=0 | disasm-derived 0x1BE8=0 | offsets AGREE
+[DX] baseline Tags@0x1F0 Num=1 (disasm expects 0x1F0)
+[DX] --- D0c (DISPATCH POSITIVE CONTROL): ContainsPlayer(PS) on the SAME component through the SAME primitive. ⚠ It scans PlayersInside (+0x120), NOT PlayersAttached (+0x130) -- MEASURED at 0x55D0270 -- so it will read FALSE both before and after the append, and that false is EXPECTED, not a failure. Its job is to prove the call dispatches here at all. ---
+[PD] sig D0c ContainsPlayer(baseline): 2 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig D0c ContainsPlayer(baseline) [0] PlayerState            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig D0c ContainsPlayer(baseline) [1] ReturnValue            @0x8    size=1   BoolProperty     struct=-          flags=0x0018001040000780  RETURN
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] D0c ContainsPlayer(baseline): fault=no  paramsSlot=0  g_rbuf=0  USED=0 (native path reads g_rbuf)
+[DX] --- D1 (NEGATIVE CONTROL, within-run, same object, same primitive): call the detach BEFORE the append, with PlayersAttached EMPTY. PRE-REGISTERED PREDICTION: nothing happens -- GATE 3 bails at 0x55CCD01, the hero does not move, Num stays 0. If the hero DOES move here, the array is not the gate and the whole S131 model is wrong -- which would be the biggest result of the session. ---
+[PD] sig D1 detach(empty array): 2 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig D1 detach(empty array) [0] PlayerState            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig D1 detach(empty array) [1] LandingLocationActor   @0x8    size=8   ObjectProperty   struct=-          flags=0x1018001000000282  IN
+[DX] D1 detach(empty array) CALL: fn=0x21DEFCF1CC0 thunk=0x7FF7AAE76100 obj=0x21DA615C000 'LokiRideableComponent' | PlayerState slot[0]@0x0=0x21FBC057780 | LandingLocationActor slot[1]@0x8=0x21EA539F250 (BP_LokiPlayerStart_C)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[DX] D1 detach(empty array) AFTER: fault=no. ⚠ 'returned without fault' IS NOT A RESULT -- PlayersAttached.Num and the hero's location are.
+[DX] D1 RESULT: hero moved=no (as predicted)  (before=(0.0,0.0,13240.0) after=(0.0,0.0,13240.0))
+[DX] D1-after PlayersAttached  @0x130  Data=0x0 Num=0 Max=0 (elements unreadable)
+[FS] hot: 15 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   hot[00] hits=49      BP_LokiHeroCharacter_C::ReceiveTickClient  (0x21E9CA23B00)   <- candidate for -DKFSNAME
+[FS]   hot[01] hits=48      BP_LokiHeroCharacter_C::ReceiveTickVisible  (0x21E9CA27000)   <- candidate for -DKFSNAME
+[FS]   hot[02] hits=49      Comp_PlayerController_Shop_Skylands_C::OnCharacterMoved  (0x21F0E112600)   <- candidate for -DKFSNAME
+[FS]   hot[03] hits=49      BP_HeroHeightIndicator_C::ReceiveUpdateHeightOffset  (0x21F7ABC9000)   <- candidate for -DKFSNAME
+[FS]   hot[04] hits=49      BP_LineOfSightRendering_Component_C::ReceiveTick  (0x21E963B9500)   <- candidate for -DKFSNAME
+[FS]   hot[05] hits=49      BP_DropPlane_Base_C::ReceiveTick  (0x21FB5FDA900)   <- candidate for -DKFSNAME
+[FS]   hot[06] hits=20      BP_LokiGameMode_Tutorial_C::ReceiveTick  (0x21F74877300)   <- candidate for -DKFSNAME
+[FS]   hot[07] hits=49      Comp_GameMode_EoGFinisher_C::ReceiveTick  (0x21FC0371D00)   <- candidate for -DKFSNAME
+[FS]   hot[08] hits=49      Comp_PlayerController_DamageNumbers_C::ReceiveTick  (0x21E9A16F100)   <- candidate for -DKFSNAME
+[FS]   hot[09] hits=20      Comp_PlayerController_Pings_C::ReceiveTick  (0x21F164AF900)   <- candidate for -DKFSNAME
+[FS]   hot[10] hits=48      BP_LokiPlayerController_C::ReceiveTick  (0x21F16E8A700)   <- candidate for -DKFSNAME
+[FS]   hot[11] hits=48      BP_HERO_Ronin_C::ReceiveTick  (0x21F79ADAE00)   <- candidate for -DKFSNAME
+[FS]   hot[12] hits=2       Comp_PlayerController_Camera_C::ReceiveTick  (0x21F752C1800)   <- candidate for -DKFSNAME
+[FS]   hot[13] hits=8       Comp_PlayerController_Stats_C::ExecuteUbergraph_Comp_PlayerController_Stats  (0x21EA6DE8000)   <- candidate for -DKFSNAME
+[FS]   hot[14] hits=47      ABP_ResBeacon_C::BlueprintUpdateAnimation  (0x21F2F3DB500)   <- candidate for -DKFSNAME
+[DX] --- D2 (THE WRITE): append the PlayerState to PlayersAttached, mirroring the wall's own tail at 0x55CD738..0x55CD76A instruction for instruction, using the GAME'S OWN ResizeGrow so the buffer belongs to the game's allocator. Risk class DATA. ---
+[DX] append: BEFORE Data=0x0 Num=0 Max=0 ; appending PS=0x21FBC057780 at index 0
+[DX] append: (old+1)=1 > Max=0 -> calling the GAME'S OWN ResizeGrow at base+0xF988D0(arr=0x21DA615C130, OldNum=0)
+[DX] append: AFTER Data=0x21E9D6F4220 Num=1 Max=4 ; readback [0]=0x21FBC057780  -> READBACK OK
+[DX] D2-after PlayersAttached  @0x130  Data=0x21E9D6F4220 Num=1 Max=4
+[DX] D2-after   [0] = 0x21FBC057780  BP_LokiPlayerState_C
+[PD] sig D2c ContainsPlayer(after append -- MUST still be false): 2 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig D2c ContainsPlayer(after append -- MUST still be false) [0] PlayerState            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig D2c ContainsPlayer(after append -- MUST still be false) [1] ReturnValue            @0x8    size=1   BoolProperty     struct=-          flags=0x0018001040000780  RETURN
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] D2c ContainsPlayer(after append -- MUST still be false): fault=no  paramsSlot=0  g_rbuf=0  USED=0 (native path reads g_rbuf)
+[DX] D2c: false, as predicted -- the append did NOT touch PlayersInside
+[DX] --- D3 (HEADLINE): AuthPlayerDetachPlayerFromRidable(PlayerState, LandingActor). The body is ALL-REAL past GATE 4 -- SetActorEnableCollision(true), SetPredropHidden(false), GetLokiCharacterMovement, GetLandingTeleportLocation and SetActorLocation are every one a real body; the two 0xF7EC20 folds are void side effects whose returns are never tested. THE HERO'S POSITION IS THE RESULT. ---
+[PD] sig D3 detach(PS in array): 2 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig D3 detach(PS in array) [0] PlayerState            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig D3 detach(PS in array) [1] LandingLocationActor   @0x8    size=8   ObjectProperty   struct=-          flags=0x1018001000000282  IN
+[DX] D3 detach(PS in array) CALL: fn=0x21DEFCF1CC0 thunk=0x7FF7AAE76100 obj=0x21DA615C000 'LokiRideableComponent' | PlayerState slot[0]@0x0=0x21FBC057780 | LandingLocationActor slot[1]@0x8=0x21EA539F250 (BP_LokiPlayerStart_C)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[DX] D3 detach(PS in array) AFTER: fault=no. ⚠ 'returned without fault' IS NOT A RESULT -- PlayersAttached.Num and the hero's location are.
+[DX] ---- state @ after D3 ----
+[DX] after D3 PlayersAttached  @0x130  Data=0x21E9D6F4220 Num=0 Max=4 (elements unreadable)
+[DX] after D3 PlayersInside    @0x120  Data=0x0 Num=0 Max=0 (elements unreadable)
+[DX] after D3 PlayersInsideCount@0x11C=0
+[DX] after D3 POD  0x21F070BD850 loc=(1256845.1, 5070.5, 20100.0)
+[DX] after D3 LAND 0x21EA539F250 cls=BP_LokiPlayerStart_C loc=(-3206.4, 5070.5, 100.0)  <== the LandingLocationActor being passed
+[DX] after D3 HERO 'BP_HERO_Ronin_C' 0x21F7317D560 loc=(-3206.4, 5070.5, 138.0)
+[DX] after D3 HeroPredropHidden by-name@0x1BE8=0 | disasm-derived 0x1BE8=0 | offsets AGREE
+[DX] after D3 Tags@0x1F0 Num=1 (disasm expects 0x1F0)
+[DX] D5 restore: nothing to undo (Num=0, was 0).
+[DX] ============ game-thread arms COMPLETE ============
+[FS] disarm: restored=17563 of 17563 swapped (scan 3203 ms, 34253 UFunctions live)
+[DX] ---------------- RM_DISMOUNT SUMMARY ----------------
+[DX] resolved=1 arrOff=0x130 | GATE5=1 GATE6=1 | D0c=0 D2c=0 | negRan=1 negMoved=0 | append=1 NumBefore=0 NumAfterAppend=1 NumAfterCall=0 | detachRan=1 fault=0 moved=1
+[DX] hero before=(0.0, 0.0, 13240.0)  after=(-3206.4, 5070.5, 138.0)
+[DX] ***** VERDICT: THE HERO MOVED AND PlayersAttached.Num DROPPED TO 0. THE DISMOUNT RAN. The pod's rider handoff is closed from the OTHER END: one data-class append is all that separated a working detach from a dead one. Cross-check the hero location, HeroPredropHidden and Tags lines above, and take a screenshot. *****
+[DX] done (step=7 resolved=1 append=1 detachRan=1 moved=1 called=1603 hitsGT=1603)

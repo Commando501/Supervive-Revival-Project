@@ -366,6 +366,73 @@ variant whose teleport is suppressed or retargeted, plus a never-dismounted cont
 
 ---
 
+## 6a-2. THREE MORE FLIGHTS: A THIRD DISMOUNT, A MEASURED ARM DEFECT, AND A CONTROL THAT KILLED MY OWN EXPERIMENT
+
+Three further launches were spent trying to answer *"is the hero playable AT the landing point?"*.
+**The question is still open** — but the attempts produced four results worth more than a rushed answer.
+
+### 6a-2.1 A THIRD DISMOUNT, reproduced [M]
+Flight 3 staged cleanly and `dismount-landstart` landed the hero at `(-3206.4, 5070.5, 138.0)` — the
+PlayerStart again — with the pod at `X = 1,256,845` at that instant. **Three landings on three
+launches**, plus the four calls of flight 1.
+
+### 6a-2.2 ★★★★★ THE CONTROL KILLED THE EXPERIMENT I HAD JUST BUILT
+`play-atlanding` = `play` + `-DKNOTELE=1` (a knob that **already existed**; no new code was needed).
+It was flown as the **control**, on a hero that had NOT been dismounted:
+
+```
+  +  0s  (      0.0,      0.0,   13240.0)      <- KNOTELE=1 works: sp's parked spot, no teleport
+  +  6s  (    827.5,      0.0,   13240.0)  MOVED
+  +  8s  (   2000.0,      0.0,   13240.0)  MOVED
+  + 10s  (   2926.0,      0.0,   13240.0)  MOVED
+  + 12s..+30s  unchanged                        <- the 5 s auto-walk window closed
+```
+
+**The hero travelled 2,926 uu at CONSTANT Z = 13,240 — in mid-air, with nothing underneath it.**
+That is a **hover**, because `KFLYMODE` defaults to **5 = MOVE_Flying**
+(`tutorial_launch.cpp:4906-4909`, chosen in S75/S81 precisely to bypass the Walking-mode ground-mantle
+chain).
+
+⇒ **`play-atlanding` PASSES 13,240 uu in the air. It is a DEGENERATE control for "is the landing
+point playable" — it would have passed anywhere, and I had built it as arm A.** The control caught
+that before the arm was ever read as a positive.
+⇒ **Only `play-atlanding-walk` (`-DKFLYMODE=1`, MOVE_Walking) can answer the question.**
+★ A second corroboration: flight 2's plain-`play` run moved **+2,945.7 uu** and this one **+2,926 uu**
+— the distance is a property of the auto-walk driver (~585 uu/s for 5 s), **not of the terrain**.
+
+### 6a-2.3 [M] AN ARM DEFECT, MEASURED — the "REMOVE-only tail" fallback FAULTS
+On flight 5 the PlayerState↔hero association had not formed: **both** candidates returned null from
+`GetLokiCharacter`, so `GATE5 = 0, GATE6 = 0`. The arm printed that, then **proceeded with cand[0]
+anyway**, on the reasoning that the detach would take its REMOVE-only tail and still prove GATE 3+4.
+**It did not.** The call faulted:
+
+```
+[FLT] CallNative faulted: code=0xC0000005 READ addr=0xFFFFFFFFFFFFFFFF rip=... rva=0x54F8C57
+```
+
+`0x54F8C57` is inside the same routine that faulted when the arm probed the bogus PlayerState directly
+in flight 1 — i.e. **`GetLokiCharacter` FAULTS on a template PlayerState rather than returning null**,
+so GATE 5 is not a clean early-out for a bad argument. **The fallback reasoning was wrong and the
+measurement says so.** Fix: when no candidate passes GATE 5, **REFUSE to call**.
+★ **The safety design held**: the fault was SEH-caught, the client survived (428 s), and **`D5`
+detected the entry the aborted call had left in `PlayersAttached` and removed it** —
+`"Num is 1 but was 0 before this arm ... it is removed here"`. The arm cleaned up after its own fault.
+
+### 6a-2.4 Two deaths, both in known classes, neither caused by the dismount
+- Flight 3 died during `play-atlanding`'s init with exit code **`0x0000DEAD`** — the protector's own
+  `NtTerminateProcess(0xDEAD)` (**FK-32**, mechanism closed by FK-10 at `runtime.dll` RVA `0x80f7f0`).
+  It was the **7th injection** into that process. The sitting is **VOID for the playability question,
+  not negative** — no `[PL] init complete` was ever printed.
+- Flight 4 died during staging with `0xC0000005`, only `gft`+`fo` resident — the **FK-31 staging
+  hazard**, this project's dominant tutorial-route failure (~27 %). ★ `crashwatch` DID catch it and
+  the launcher archived a 41 MB crashpad minidump to `dumps/crashpad-20260820-143225`.
+  ⚠ Its `dump.exe` reads **`.text` 51.8 %** against a healthy **53.0 %**, which looks like a
+  refutation of the pre-registered *"a crash-era image holds MORE decrypted `.text`"* prediction —
+  **but the comparison is NOT matched**: the crash dump died at 141 s having exercised far less game
+  code than a client that had run the whole dismount chain. **It does not test that hypothesis.**
+
+---
+
 ## 6b. WHAT THE OFFLINE LANES ADDED, INCLUDING ONE CORRECTION TO THIS DOCUMENT
 
 Seven offline recon lanes ran in parallel with the flights, each adversarially verified by an
