@@ -171,9 +171,27 @@ What survives: **[M] some unstripped `UActorComponent` lifecycle override does r
 `World->AuthorityGameMode`, `IsA<ALokiRoundGameMode>`-check it, and cache it.** That corroborates
 `UWorld+0x250` and shows the type check is unstripped. ⛔ It cannot help the wall — a getter with
 **zero memory operands** cannot be fed a cached value from anywhere.
-★ Cheap open follow-up: find which component class it is (live class with an ObjectProperty at
-`+0xE0` whose vtable holds `0x55CE140`); if it is resident, `[that + 0xE0]` is a free live pointer to
-the round game mode — useful for a future call site that actually consumes one.
+★★★★★ **RESOLVED, AND THE ANSWER IS BETTER THAN THE DISPUTE.** A second lane attributed
+`0x55CE140` to **`ULokiGameModeDropPlaneComponent`**, and **one live read confirms it**:
+```
+Comp_GameMode_DropPlane_Tutorial 0x2BDBAA38680
+  +0xC0 WorldPrivate            = 0x2BCD33540C0 'LVL_Tutorial'
+  World+0x250 AuthorityGameMode = 0x2BD2D0BC020 'BP_LokiGameMode_Tutorial_C'
+  World+0x258 GameState         = 0x2BDB251D030 'BP_LokiGameState_Tutorial_C'  <= control
+  +0xE0                         = 0x2BD2D0BC020 'BP_LokiGameMode_Tutorial_C'   <= IDENTICAL
+```
+[M] **(1)** the class is `ULokiGameModeDropPlaneComponent`; **(2)** `UWorld::AuthorityGameMode @
++0x250` confirmed live with `+0x258 = GameState` as the control; **(3)** the round game mode object
+EXISTS and is live (`BP_LokiGameMode_Tutorial_C`, the same object S124 flew `GoToPhase` on);
+**(4) ★★★ it PASSES `IsA<ALokiRoundGameMode>`** — the caching code writes `+0xE0` only on the
+success side of that check, using **the same helper `0x55C7DD0` the wall calls**. That was never
+measured before.
+⇒ **If the stripped getter had returned this object, the wall's own IsA check would have passed
+too.** The obstacle is the accessor and nothing else on that stretch. ⛔ It still cannot be injected
+(zero memory operands), but the framing changes: not "no round game mode on a client", but **"one
+accessor was deleted while the object and the type check survive"**.
+★ So the free readback IS real, on the right object: **`Comp_GameMode_DropPlane_Tutorial + 0xE0`**
+is a live, verified `ALokiRoundGameMode*` for any future call site that consumes one.
 
 ★★ **METHOD, and it generalises:** two lanes were given the same region and disagreed about one
 offset. The disagreement was visible only because **both printed the offset explicitly**, and it was
