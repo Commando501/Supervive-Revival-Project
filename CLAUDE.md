@@ -1417,6 +1417,26 @@ The census counts OBJECTS; S131 built the in-arm readout that looks at what the 
   still set and **the arm re-ran R1**. The separation it was meant to test holds anyway (different strings,
   1.3 s apart). ★ **Check a control against what THIS arm does, not against what the previous arm did.**
   Build: `.text` **`dd2281adce965add`** (`KRDARMS=0x3F`, `KRDREPOS=1`) — the v3 arm with R3/R4.
+- ★★★★★ **AND R4'S GAP WAS CLOSED OFFLINE THE SAME HOUR — IT REMOVES A LEVER (`§12`).** Two blockers, both [M]:
+  **(a)** `AuthPlayerEnterWorld` requires the PlayerState to be ALREADY IN `PlayersInside`:
+  `0x55CCEC2 mov rcx,[rcx+0x120]` / `0x55CCEC9 movsxd rax,[rdi+0x128]` / `0x55CCED7 je <bail>` on an
+  empty array, then a linear `cmp [rcx],r12` search that `jmp`s to the same bail if not found — **both
+  bails SILENT.** Confirmed BY NAME on the live component: `PlayersInsideCount` IntProperty **@0x11C**,
+  `PlayersInside` ArrayProperty **@0x120 size 16**, and live it reads **Data=0, Num=0, Max=0** with
+  neither PlayerState present. ⇒ R4 bailed at `0x55CCED7`; the null is NAMED, not uninterpretable.
+  **(b) ⛔ IT CALLS THE SAME STRIPPED GETTER.** `0x55CCF22 call 0xF7EB50` (RVA recomputed with a machine;
+  `0xF7EB50` re-disassembled as `33 c0 c3`). It differs from the attached variant only in NOT gating on
+  the result — it carries the 0 forward and proceeds to a virtual call through `[PlayerState+0x470]`.
+  ⇒ **`AuthPlayerEnterWorld` is NOT a way round the wall**, and the obvious poke (point
+  `PlayersInside.Data` at a buffer, `Num=1`, call, restore) **was NOT run** — its payoff collapsed once
+  (b) was known, and its risk is real (a `TArray.Data` pointing at non-game-heap memory means any
+  `Empty()`/`RemoveAt()` on the success path frees a foreign pointer).
+  ⇒ **[M] ONE GETTER, THREE CONSUMERS**: `AuthPlayerEnterWorldAttachedToRidable` (gates on it),
+  `AuthPlayerPreSpawnOnAddToPlane` (gates on it), `AuthPlayerEnterWorld` (consumes it un-gated).
+  **There is no sibling left to try** — that was worth checking and it is now checked.
+  ★ **Method note: driving the path is what made this readable.** Those pages entered
+  `dumps/merged4.dump.exe` only because R4 executed them; the analysis that closed the gap was possible
+  BECAUSE the "uninterpretable" call was made.
 - ⚠⚠ **THE FIFTH WALL WAS *NOT* TESTED, AND THE ZERO THAT LOOKS LIKE A TEST IS A TRAP.** The precondition IS met (the pod ships a `LokiRideable_GEN_VARIABLE`; the rideable census rises **+1 per pod**, 20→21 on E1), so `AuthPlayerEnterWorldAttachedToRidable` WAS called — but its impl `0x55CD510` opens `test rdx,rdx; je` on **`rdx = PlayerState`** and **returns SILENTLY on instruction #1** when it is null. `PilotPlayerState` reads null [M] because `GetTeamDropLeader` returns null because `ALokiTeamState_TeamOnly::SetDropLeader` is one of FK-1's four empty stubs. ⇒ `grep "failed to get the round game mode"` = **0 and UNINTERPRETABLE.** ★ The emit is NOT stripped (dispatches through the live logger `0x106B650`), so the grep would work if the branch were reached.
   ⇒ ★ **NEXT LEVER, ONE DATA POKE:** `ALokiPlayerState::IsSpawnTeamLeader` (impl `0x56C2060`, real) is a **pure read of `[TeamState+0x688]`**. Poke that on a live `ALokiTeamState_TeamOnly` and `GetTeamDropLeader` returns non-null without calling either stub — then the rider handoff runs for real.
 - ★ **[M] A pooled DEFERRED spawn never `FinishSpawningActor`'d has a NULL `RootComponent`** (`root=0x0`), with the same class resolving `RelLoc@0x158` by name on three sibling pods in the same dump — a positive control living inside the negative result.

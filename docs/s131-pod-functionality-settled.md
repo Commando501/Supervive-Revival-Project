@@ -446,3 +446,73 @@ fails to resolve — so "the hero did not move" cannot be manufactured by a miss
 
 **Artifact:** `tutorial_launch_rideable.dll` `.text` **`dd2281adce965add`**, `KRDARMS=0x3F`,
 `KRDREPOS=1`. `play` `9bc10a4552c596e1` and `dropplane_b1only` `5b4467b0105dec1a` re-verified UNCHANGED.
+
+---
+
+# 12. §11.2's GAP IS CLOSED — R4's null is NAMED, and `AuthPlayerEnterWorld` is NOT a way round the wall
+
+§11.2 recorded R4 as UNINTERPRETABLE per the pre-registered rule. Ten minutes of offline
+disassembly against `dumps/merged4.dump.exe` — the image that now contains these pages *because*
+R4 executed — plus one read-only pass closed it. **[M], and it removes a lever rather than adding one.**
+
+## 12.1 Blocker (a): R4 bails on an EMPTY `PlayersInside` array
+
+`AuthPlayerEnterWorld` impl `0x55CCE70`, prologue guards transcribed:
+
+```
+0x055CCEA1  mov  eax,[rdx+0xc] ; shr 0x1e ; not al ; test al,1
+0x055CCEBC  je   0x55CD4E7                 ; PlayerState IsValid fail -> SILENT
+0x055CCEC2  mov    rcx,[rcx+0x120]         ; PlayersInside.Data
+0x055CCEC9  movsxd rax,dword [rdi+0x128]   ; PlayersInside.Num
+0x055CCED0  lea    rdx,[rcx+rax*8]
+0x055CCED4  cmp    rcx,rdx
+0x055CCED7  je     0x55CD4E7               ; ARRAY EMPTY   -> SILENT BAIL
+0x055CCEE0  cmp    [rcx],r12               ; *it == PlayerState ?
+0x055CCEE3  je     0x55CCEF3               ; found -> continue
+0x055CCEE5  add    rcx,8 ; cmp rcx,rdx ; jne 0x55CCEE0
+0x055CCEEE  jmp    0x55CD4E7               ; NOT FOUND     -> SILENT BAIL
+```
+
+⇒ **`AuthPlayerEnterWorld` requires the PlayerState to ALREADY BE IN the component's `PlayersInside`
+array.** Confirmed BY NAME against live reflection on the actual component
+(`scratchpad/s131/tools/rideable_state.py`): `PlayersInsideCount` **IntProperty @0x11C**,
+`PlayersInside` **ArrayProperty @0x120 size 16** — exactly the `Data@0x120 / Num@0x128 / Max@0x12C`
+the guard reads. And live: **`Data = 0x0, Num = 0, Max = 0`**, with **neither** PlayerState present.
+
+⇒ **[M] R4 bailed at `0x55CCED7`.** §11.2's null is explained, and the explanation was reachable
+offline for free. ★ The pre-registered "UNINTERPRETABLE" was the right *record*; it was not the right
+*stopping point*.
+
+## 12.2 ⛔ Blocker (b) — and it removes the lever: R4 calls the SAME stripped getter
+
+The obvious next move was a poke: point `PlayersInside.Data` at a buffer holding the PlayerState, set
+`Num=1`, call, restore. **Reading the success path first killed it:**
+
+```
+0x055CCEF3  mov  rax,[rdi+0xc0]        ; cached world (fallback getter 0x35AFC40)
+0x055CCF22  call 0xF7EB50              ; <== THE SAME STRIPPED `xor eax,eax; ret`  (RVA recomputed
+0x055CCF37  mov  rbx,rax               ;     with a machine, and 0xF7EB50 re-disassembled: 33 c0 c3)
+```
+
+**`AuthPlayerEnterWorld` fetches the round game mode from the same stripped getter.** It differs from
+the attached variant only in *not immediately gating on it* — it carries the 0 forward
+(`[rsp+0x50]`, `rbx`) and proceeds to a virtual call through `[PlayerState+0x470]`.
+
+⇒ **It is NOT a way round the wall.** Getting past the array guard would land in code that has
+already received a null round game mode. ★ **The poke was not run, and that is the result of the
+analysis rather than caution:** its payoff collapsed once (b) was known, while its risk was real —
+pointing a `TArray.Data` at a non-game-heap buffer means any `Empty()`/`RemoveAt()` on the success
+path calls the allocator on a foreign pointer.
+
+## 12.3 What this settles
+
+* **[M] The round-game-mode getter is the single shared blocker across all THREE
+  `ULokiRideableComponent` entry points examined** — `AuthPlayerEnterWorldAttachedToRidable`
+  (§10, gates on it), `AuthPlayerPreSpawnOnAddToPlane` (§11.1, gates on it), and
+  `AuthPlayerEnterWorld` (here, consumes it un-gated). One getter, three consumers.
+* ⇒ The next-session task named in §10.5 is now the **only** task on this surface: identify what
+  `0xF7EB50` replaced, and find any other route to a round game mode on this client. There is no
+  sibling to try instead — that was worth checking, and it is now checked.
+* ★ **Method note worth keeping: driving the path is what made this readable.** These pages entered
+  `merged4.dump.exe` only because R4 executed them. The analysis that closed the gap was possible
+  *because* the "uninterpretable" call was made.
