@@ -1373,6 +1373,32 @@ The census counts OBJECTS; S131 built the in-arm readout that looks at what the 
 - ★★★★★ **THE POD FLIES AT EXACTLY 20,000 uu/s AND EVERY DIGIT IS ACCOUNTED FOR.** Live: `ComponentVelocity = (20000.0, 0, 0)`, Y and Z **exactly** constant, `attach=none`, measured 19,862 uu/s over 8.0 s while all three control pods read **0.0**. The cooked asset says `ProjectileMovement_GEN_VARIABLE: InitialSpeed = MaxSpeed = 20000, ProjectileGravityScale = 0`. ⚠⚠ **NEAR-MISS: 20000 is also this shim's `KPDSPAWNZ`.** Blaming our own knob would have been effortless and wrong — **the cooked asset is what settles it.**
 - ★★★★★ **AND IT FLIES *BECAUSE* `StartPodGameplay` NEVER RAN** — whose FIRST act on the movement component is `Deactivate()`. [M] on the pod: `bHasStartedGameplay=0`, `PodMeshComponent=null`, `DropPodState=0(None)`, `bIsLocalPlayerPilot=0`, `bSteeringEnabled=0`. Root cause is a stripped stub: **`Loki::LokiIsServer()` impl `0x0F7EB60` = `xor al,al; ret` — always FALSE** (`LokiIsClient` impl `0x0B9E1F0` = `mov al,1; ret` — always TRUE). In `ALokiDropPod::LokiBeginPlay_Implementation`, `0x596A3F9 call 0xF7EB60` + `test/jne` skips `0x596A495 call 0x56FBCF0` = `LokiTeam::SetTeamForActor` ⇒ no team index ⇒ `OnTeamIndexChanged` never fires ⇒ `StartPodGameplay` never called ⇒ nothing deactivates the mover.
 - ★★ **INDEPENDENT ENGINE RECEIPT:** `LogNiagara: Warning: NiagaraComponent(...BP_DropPod_Tutorial_C_2147471134.NS_Drop_CloudTunnel...) required LWC tile recache` ×3 (CloudTunnel / Clouds / Thruster). The pod's drop VFX are instantiated and TICKING, and UE independently reports it travelled far. Exactly one `BP_DropPod_Tutorial_C_<n>` appears in the whole log — the E1 pod.
+- ★★★★★ **AND THEN THE FIFTH WALL WAS CONFIRMED [M] IN THE SAME SITTING, FOR ZERO EXTRA LAUNCHES.**
+  Read `docs/s131-pod-functionality-settled.md` **§10**. The client was still up at ~40 min with the world
+  staged, so a new mode **`RM_RIDEABLE` (enum 29)** called `AuthPlayerEnterWorldAttachedToRidable`
+  **DIRECTLY** on the pod's own `LokiRideable` component with a **live, valid PlayerState**. Result, against
+  a verified baseline of **0**:
+      `LogLokiRideable: Error: ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable failed to get the round game mode`
+  **count 0 → 2 — exactly one per call.** ⇒ the body REACHES `0x55CD572`, gets 0 from the stripped
+  `0xF7EB50` round-game-mode getter, and takes its failure branch **with valid arguments**. S130's offline
+  "REAL body, ALWAYS-FAIL" grade is now MEASURED.
+  ★ What makes it a measurement: a **positive control on the same object through the same primitive**
+  (`ContainsPlayer`, `fault=no`), **both of the wall's own IsValid preconditions read out and PASSING**,
+  **two independent PlayerStates**, a verified zero baseline, and an exact per-call count.
+  ★ **FREE BY-PRODUCT: the log CATEGORY is now named — `LogLokiRideable`.** S131 lane 4 had it as
+  COVERAGE-BLOCKED (its `FLogCategory` ctor is on a never-decrypted page). **Driving the path named it** —
+  the S118 method again: push the code path, then read what the game says.
+  ⭐ **AND THE OBVIOUS LEVER WAS KILLED BY ONE READ-ONLY COMMAND BEFORE ANY ARM WAS BUILT:**
+  “poke `[TeamState+0x688]`” is dead — **[M] ZERO live instances of any class containing `TeamOnly`**, and the
+  only `TeamState`-named live object is `Comp_TeamState_GlobalShop_GEN_VARIABLE`, a template. **Check a
+  lever's precondition with a read-only pass before building the arm.**
+  ★ A refusal that prints its candidate table is not a wasted run: the first build declined to guess between
+  2 PlayerStates and made no call, but its pod table still showed the never-finished DEFERRED pod has
+  `LokiRideable = 0x0` — a second confirmation of the null-`RootComponent` finding on a different property.
+  ⇒ **The blocker is now precisely stated:** a stripped server-side getter, same family as FK-1's four empty
+  stubs, sitting between a fully working pod spawn and a rider ever boarding. Next question is OFFLINE and
+  free: what does `0xF7EB50` replace here, and is there any other route to a round game mode on this client?
+  Build: `build.ps1 -Name tutorial_launch -Variant rideable` — `.text` **`e221e4e415834067`**.
 - ⚠⚠ **THE FIFTH WALL WAS *NOT* TESTED, AND THE ZERO THAT LOOKS LIKE A TEST IS A TRAP.** The precondition IS met (the pod ships a `LokiRideable_GEN_VARIABLE`; the rideable census rises **+1 per pod**, 20→21 on E1), so `AuthPlayerEnterWorldAttachedToRidable` WAS called — but its impl `0x55CD510` opens `test rdx,rdx; je` on **`rdx = PlayerState`** and **returns SILENTLY on instruction #1** when it is null. `PilotPlayerState` reads null [M] because `GetTeamDropLeader` returns null because `ALokiTeamState_TeamOnly::SetDropLeader` is one of FK-1's four empty stubs. ⇒ `grep "failed to get the round game mode"` = **0 and UNINTERPRETABLE.** ★ The emit is NOT stripped (dispatches through the live logger `0x106B650`), so the grep would work if the branch were reached.
   ⇒ ★ **NEXT LEVER, ONE DATA POKE:** `ALokiPlayerState::IsSpawnTeamLeader` (impl `0x56C2060`, real) is a **pure read of `[TeamState+0x688]`**. Poke that on a live `ALokiTeamState_TeamOnly` and `GetTeamDropLeader` returns non-null without calling either stub — then the rider handoff runs for real.
 - ★ **[M] A pooled DEFERRED spawn never `FinishSpawningActor`'d has a NULL `RootComponent`** (`root=0x0`), with the same class resolving `RelLoc@0x158` by name on three sibling pods in the same dump — a positive control living inside the negative result.

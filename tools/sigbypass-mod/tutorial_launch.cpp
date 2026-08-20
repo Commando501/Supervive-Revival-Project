@@ -166,7 +166,7 @@ static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for Spawn
 //   mode: same subject (the round-phase ladder), heap-only arming, and the FK-22 A0'..A5 protocol.
 //   RM_DROPPLANE (25) is the S125 successor: same FK-22 subject one layer down (the DropPlane
 //   COMPONENT rather than the phase), also heap-only arming, and the B0..B4 protocol.
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28 };
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28, RM_RIDEABLE=29 };
 #ifndef KRUNMODE
 #define KRUNMODE RM_CHEATSPAWN
 #endif
@@ -396,6 +396,7 @@ static void DoPhaseLadder();                                   // S124 RM_PHASEL
 static void DoDropPlane();                                     // S125 RM_DROPPLANE:  FK-22 arms B0..B4 on the DropPlane COMPONENT (heap-only; NO module-image write)
 static void DoDropPod();                                       // S126 RM_DROPPOD:    ROUTE C -- SpawnDropPodForTeam on the live LokiDropShip (heap-only; NO module-image write)
 static void DoDropMarkers();                                    // S126 RM_DROPMARKERS: ROUTE D -- make PlaneStartPoint/PlaneEndPoint resident, then SpawnPlane behind a residency gate
+static void DoRideable();                                      // S131 RM_RIDEABLE:  call the FIFTH WALL directly with a NON-NULL PlayerState (heap-only; NO module-image write)
 static void DoPoolSpawn();                                     // S128 RM_POOLSPAWN:  ROUTE F -- does SpawnPoolableActorFromClassDeferred need the actor pool? (heap-only; NO module-image write)
 static void PhaseRestore(const char* who);                     //  ...its STOP: re-poke GameState+0xA44 back to 4. Idempotent, callable from any thread.
 
@@ -1266,6 +1267,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     if(kRunMode==RM_DROPPOD){ DoDropPod(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S126 Route C
     if(kRunMode==RM_DROPMARKERS){ DoDropMarkers(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S126 Route D
     if(kRunMode==RM_POOLSPAWN){ DoPoolSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S128 Route F
+    if(kRunMode==RM_RIDEABLE){ DoRideable(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S131 the fifth wall
     if(kRunMode==RM_PLAY){ DoPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done) — camera + WASD each hit
     if(kRunMode==RM_TRAINING){ DoTraining(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoTraining (one step per hit)
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
@@ -12893,6 +12895,352 @@ static void DoSpawnPossess(){
     }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ S131 — RM_RIDEABLE: CALL THE FIFTH WALL DIRECTLY, WITH A NON-NULL PlayerState.
+//
+// WHY THIS MODE EXISTS.  S131's Route-E flight spawned a real, live, moving drop pod and then
+// *appeared* to test the rider handoff.  It did not.  `SpawnDropPodForTeam` calls
+//   if (ULokiRideableComponent::Get(pod) != null)
+//        rideable.AuthPlayerEnterWorldAttachedToRidable(v38, LandingLocation);
+// and `v38 = GetTeamDropLeader(TeamIndex)` was **null**, because the only writer of the team-state
+// field it reads (`ALokiTeamState_TeamOnly::SetDropLeader`) is one of FK-1's four EMPTY STUBS.
+// The impl at 0x55CD510 then opens
+//        test rdx,rdx ; je -> bare ret        (rdx = PlayerState)
+// and RETURNS SILENTLY ON INSTRUCTION #1.  So the run produced no log line, and that ZERO IS
+// UNINTERPRETABLE -- it says nothing whatever about the wall.
+//
+// ⚠⚠ AND THE OBVIOUS FIX IS BLOCKED AT ITS PRECONDITION.  The natural lever was "poke
+//    [TeamState+0x688] so GetTeamDropLeader returns non-null".  MEASURED, read-only, this session:
+//    **ZERO live instances of any class containing "TeamOnly", and the only "TeamState"-named live
+//    object is `Comp_TeamState_GlobalShop_GEN_VARIABLE`, a template.**  There is no TeamState in the
+//    staged tutorial world to poke.  Going through GetTeamDropLeader adds a dependency that does not
+//    exist in this world.
+//
+// ⇒ SO CALL THE WALL DIRECTLY.  Both objects it needs are live and resolvable BY NAME:
+//     * the pod's own rideable component -- `BP_DropPod_C.LokiRideable` (an ObjectProperty at
+//       +0x6C8 on the live class; MEASURED non-null on the spawned pod, cls=LokiRideableComponent);
+//     * an `ALokiPlayerState` -- `BP_LokiPlayerState_C` is live in the staged world.
+//   That is a FAIR test of the recorded claim, because the claim is that the failure is
+//   UNCONDITIONAL.  With a valid PlayerState the body runs to
+//        0x55CD572  call 0xF7EB50      (the stripped `xor eax,eax; ret` round-game-mode getter)
+//        0x55CD57A  je   0x55CD7B2     ALWAYS TAKEN -> the logging bail
+//   and emits `... failed to get the round game mode` through a logger MEASURED to be live
+//   (0x106B650, 22 other call sites, two of whose messages appear verbatim in the log corpus).
+//
+// ⇒ ★★ THE LOG LINE BECOMES INTERPRETABLE FOR THE FIRST TIME.  Present => the fifth wall is
+//   CONFIRMED [M] rather than graded offline.  Absent => the call bailed EARLIER (at the IsValid
+//   test at 0x55CD535 or the predicate at 0x55CD54E), which is a statement about our PlayerState,
+//   NOT about the wall -- and this mode reads those preconditions out itself so the two are separable.
+//
+// SAFETY.  Everything between instruction #1 and the bail is reads: an IsValid bit test, one
+// predicate call, a cached-world fetch, and the stripped getter.  Nothing is written.  This mode
+// performs NO `.text` write, NO PI hook and NO heap poke -- it is direct `UFunction.Func` calls
+// through the S55 primitive plus guarded reads.
+#ifndef KRDARMS
+#define KRDARMS 0x0F        // bit0 R0c control | bit1 R1 the wall | bit2 R2 re-read | bit3 final report
+#endif
+#ifndef KRDSTEPMS
+#define KRDSTEPMS 600
+#endif
+#ifndef KRDPODIDX
+#define KRDPODIDX -1        // -1 = auto (prefer the pod whose PodTeamIndex was WRITTEN, i.e. == 0)
+#endif
+
+static uintptr_t g_rdPod=0, g_rdComp=0, g_rdPS=0;
+static uintptr_t g_rdPSCand[8]; static int g_rdPSCandN=0;   // see the RdResolve comment
+static char      g_rdPodName[96]={0}, g_rdCompName[96]={0}, g_rdPSName[96]={0}, g_rdWhy[192]={0};
+static uintptr_t g_rdWallFn=0, g_rdWallChild=0; static char g_rdWallOwner[96]={0};
+static uintptr_t g_rdCtlFn=0,  g_rdCtlChild=0;  static char g_rdCtlOwner[96]={0};
+static int  g_rdNPods=0, g_rdNPS=0;
+static int  g_rdCtlBefore=-1, g_rdCtlAfter=-1, g_rdCtlRan=0, g_rdWallRan=0, g_rdWallFaulted=-1;
+static int  g_rdResolved=0;
+static double g_rdLanding[3]={0,0,0};
+static volatile long g_rdStep=0; static DWORD g_rdLastMs=0;
+
+// UE's IsValid() bits, as the wall itself tests them at 0x55CD535: `mov eax,[obj+0xC]; shr eax,30;
+// not eax; test al,1`.  +0x0C is ObjectFlags in this build [M, S110].  Printed RAW so the decode is
+// auditable rather than asserted.
+static void RdPrintValidity(const char* tag, uintptr_t o){
+    if(!LooksLikePtr(o)||!SafeReadable((void*)(o+0x0C),4)){
+        Markerf("[RD] %s 0x%llX: ObjectFlags@+0xC UNREADABLE -- instrument, not a verdict\r\n",
+                tag,(unsigned long long)o); return; }
+    uint32_t f=*(uint32_t*)(o+0x0C);
+    uint32_t sh=f>>30;
+    int wallPasses = ((~sh) & 1) != 0;      // exactly the wall's own test
+    Markerf("[RD] %s 0x%llX ObjectFlags@+0xC=0x%08X (>>30 = %u) -> the wall's IsValid test at "
+            "0x55CD535 %s\r\n",tag,(unsigned long long)o,f,sh,
+            wallPasses?"PASSES":"*** FAILS -> it would bail SILENTLY at 0x55CD548 ***");
+}
+
+// Enumerate once: pod actors + their LokiRideable component, and every live ALokiPlayerState.
+// Shows the work and refuses to guess, the way every other picker in this file does.
+static void RdResolve(){
+    g_rdResolved=0; g_rdWhy[0]=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ Marker("[RD] resolve: GUObjectArray unreadable -- INSTRUMENT FAILURE\r\n"); return; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ Marker("[RD] resolve: GUObjectArray header implausible\r\n"); return; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    uintptr_t pods[16]; int np=0;
+    uintptr_t pss[16];  int nps=0;
+    DWORD t0=GetTickCount();
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        bool chunkOk=SafeReadable((void*)chunk,(size_t)cnt*ITEMSTRIDE);
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!chunkOk&&!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            if(strncmp(on,"Default__",9)==0||strstr(on,"_GEN_VARIABLE")) continue;   // archetypes never
+            uint32_t v=DpClassVerdict(cls);
+            if((v&DPV_POD)&&(v&DPV_ACTOR)){ if(np<16) pods[np++]=obj; continue; }
+            // PlayerState: exact-ish -- the chain must name LokiPlayerState AND be an Actor.
+            char chain[256];
+            if((v&DPV_ACTOR)&&PhChainHas(cls,"LokiPlayerState",chain,sizeof(chain))){ if(nps<16) pss[nps++]=obj; }
+        }
+    }
+    g_rdNPods=np; g_rdNPS=nps;
+    Markerf("[RD] resolve: %d pod actor(s), %d live ALokiPlayerState(s), one GUObjectArray pass, %lu ms\r\n",
+            np,nps,(unsigned long)(GetTickCount()-t0));
+
+    // --- the pod, and its rideable component, resolved BY NAME off the live class ---
+    int pick=-1;
+    for(int i=0;i<np;i++){
+        uintptr_t cls=ClassOf(pods[i]);
+        uint32_t to=PropOffsetSuper(cls,"PodTeamIndex");
+        int32_t  ti=(to!=0xFFFFFFFF&&SafeReadable((void*)(pods[i]+to),4))?*(int32_t*)(pods[i]+to):-999;
+        uint32_t ro=PropOffsetSuper(cls,"LokiRideable");
+        uintptr_t rc=(ro!=0xFFFFFFFF&&SafeReadable((void*)(pods[i]+ro),8))?*(uintptr_t*)(pods[i]+ro):0;
+        char cn[96]="?"; GetFNameStr(NameId(cls),cn,sizeof(cn));
+        char rcn[96]="-"; if(LooksLikePtr(rc)){ uintptr_t rcc=ClassOf(rc); if(rcc) GetFNameStr(NameId(rcc),rcn,sizeof(rcn)); }
+        Markerf("[RD] pod-cand[%d] 0x%llX cls=%s PodTeamIndex@0x%X=%d LokiRideable@0x%X=0x%llX(%s)\r\n",
+                i,(unsigned long long)pods[i],cn,to,ti,ro,(unsigned long long)rc,rcn);
+        // Prefer the pod InitializeDropPod actually wrote (PodTeamIndex 0, not the class default -1).
+        if(pick<0 && ti==0 && LooksLikePtr(rc)) pick=i;
+    }
+    if(KRDPODIDX>=0){
+        if(KRDPODIDX<np){ pick=KRDPODIDX; strncpy_s(g_rdWhy,sizeof(g_rdWhy),"KRDPODIDX override",_TRUNCATE); }
+        else Markerf("[RD] KRDPODIDX=%d is out of range (%d pods) -- ignored\r\n",(int)KRDPODIDX,np);
+    } else if(pick>=0) strncpy_s(g_rdWhy,sizeof(g_rdWhy),
+        "the ONLY pod whose PodTeamIndex reads 0 (written by InitializeDropPod) AND has a non-null LokiRideable",_TRUNCATE);
+    if(pick<0){
+        Marker("[RD] *** NO POD QUALIFIES: none has both PodTeamIndex==0 and a non-null LokiRideable. "
+               "REFUSING to guess. Run the Route-E arm first so an initialised pod exists, or pass "
+               "-DKRDPODIDX=<n> deliberately. ***\r\n");
+        return; }
+    g_rdPod=pods[pick];
+    { uintptr_t cls=ClassOf(g_rdPod); GetFNameStr(NameId(cls),g_rdPodName,sizeof(g_rdPodName));
+      uint32_t ro=PropOffsetSuper(cls,"LokiRideable");
+      g_rdComp=(ro!=0xFFFFFFFF&&SafeReadable((void*)(g_rdPod+ro),8))?*(uintptr_t*)(g_rdPod+ro):0;
+      uint32_t co=PropOffsetSuper(cls,"CurrPodDestination");
+      if(co!=0xFFFFFFFF&&SafeReadable((void*)(g_rdPod+co),24)){
+          double* P=(double*)(g_rdPod+co); g_rdLanding[0]=P[0]; g_rdLanding[1]=P[1]; g_rdLanding[2]=P[2]; } }
+    if(!LooksLikePtr(g_rdComp)||!GcAlive(g_rdComp)){ Marker("[RD] the picked pod's LokiRideable is not a live UObject -- ABORT\r\n"); g_rdPod=0; return; }
+    { uintptr_t cc=ClassOf(g_rdComp); if(cc) GetFNameStr(NameId(cc),g_rdCompName,sizeof(g_rdCompName)); }
+
+    // --- the PlayerState: refuse on ambiguity, exactly like the ship picker ---
+    for(int i=0;i<nps;i++){
+        char on[96]="?",cn[96]="?"; GetFNameStr(NameId(pss[i]),on,sizeof(on));
+        uintptr_t c=ClassOf(pss[i]); if(c) GetFNameStr(NameId(c),cn,sizeof(cn));
+        Markerf("[RD] ps-cand[%d] 0x%llX '%s' cls=%s\r\n",i,(unsigned long long)pss[i],on,cn);
+    }
+    // ★ S131-FIX, decided IN FLIGHT. The first cut REFUSED when it found 2 live ALokiPlayerStates.
+    //   Refusing to guess is the right default, but here it throws away a live armed window for
+    //   nothing: the question this mode asks is "does this body EVER get past its guards", and
+    //   calling it ONCE PER CANDIDATE answers that for any candidate, while each call stays
+    //   attributable to a NAMED PlayerState. Only a zero-candidate world is a real refusal.
+    if(nps==0){
+        Marker("[RD] *** NO live ALokiPlayerState -- the wall cannot be handed a non-null one, which is "
+               "this mode's whole premise. REFUSING. ***\r\n");
+        g_rdPod=0; return; }
+    g_rdPSCandN=0;
+    for(int i=0;i<nps&&g_rdPSCandN<8;i++) g_rdPSCand[g_rdPSCandN++]=pss[i];
+    g_rdPS=g_rdPSCand[0]; GetFNameStr(NameId(ClassOf(g_rdPS)),g_rdPSName,sizeof(g_rdPSName));
+    if(nps>1) Markerf("[RD] %d PlayerState candidates -> the wall is called ONCE PER CANDIDATE, each "
+                      "labelled.\r\n",nps);
+
+    // --- the two UFunctions, on the component's own class chain ---
+    { void* fn=nullptr; uintptr_t th=0,ch=0;
+      ResolveFuncNative(ClassOf(g_rdComp),"AuthPlayerEnterWorldAttachedToRidable",&fn,&th,&ch);
+      g_rdWallFn=(uintptr_t)fn; g_rdWallChild=ch; }
+    { void* fn=nullptr; uintptr_t th=0,ch=0;
+      ResolveFuncNative(ClassOf(g_rdComp),"ContainsPlayer",&fn,&th,&ch);
+      g_rdCtlFn=(uintptr_t)fn; g_rdCtlChild=ch; }
+    Markerf("[RD] resolve: pod=0x%llX(%s) comp=0x%llX(%s) ps=0x%llX(%s) | wallFn=0x%llX ctlFn=0x%llX\r\n",
+            (unsigned long long)g_rdPod,g_rdPodName,(unsigned long long)g_rdComp,g_rdCompName,
+            (unsigned long long)g_rdPS,g_rdPSName,
+            (unsigned long long)g_rdWallFn,(unsigned long long)g_rdCtlFn);
+    Markerf("[RD] pod pick reason: %s\r\n",g_rdWhy[0]?g_rdWhy:"(none)");
+    Markerf("[RD] LandingLocation taken from the pod's own CurrPodDestination = (%.1f, %.1f, %.1f) -- "
+            "the value InitializeDropPod stored, so the wall is handed the same vector the game would.\r\n",
+            g_rdLanding[0],g_rdLanding[1],g_rdLanding[2]);
+    g_rdResolved = (g_rdPod&&g_rdComp&&g_rdPS&&g_rdWallFn)?1:0;
+    if(!g_rdResolved) Marker("[RD] *** NOT FULLY RESOLVED -- no call will be made. This is a resolve "
+                             "statement, not a result about the wall. ***\r\n");
+}
+
+// R0c: ContainsPlayer(PlayerState) on the SAME component through the SAME primitive.  It is both the
+// positive control (a bool return that is not a fault proves dispatch + object-param marshalling on
+// this object) and the READOUT for R1 (false -> true would mean a rider actually attached).
+static int RdContains(const char* tag,int* outVal){
+    if(outVal)*outVal=-1;
+    if(!g_rdCtlFn){ Markerf("[RD] %s: ContainsPlayer did not resolve on the component's chain -> NOT "
+                            "CALLED. ⚠ Without it R1's silence is not attributable.\r\n",tag); return DPCALL_NOTRUN; }
+    if(!GcAlive(g_rdComp)) return DPCALL_NOTRUN;
+    uintptr_t thunk=SafeReadable((void*)(g_rdCtlFn+UFUNC_FUNC),8)?*(uintptr_t*)(g_rdCtlFn+UFUNC_FUNC):0;
+    if(!LooksLikePtr(thunk)){ Markerf("[RD] %s: ContainsPlayer has no Func thunk -> NOT CALLED\r\n",tag); return DPCALL_NOTRUN; }
+    int np=PdWalkParams(g_rdCtlChild,tag);
+    int inIx=-1,retIx=-1;
+    for(int k=0;k<np;k++){ if(g_pdP[k].isRet) retIx=k; else if(inIx<0&&strstr(g_pdP[k].type,"ObjectProperty")) inIx=k; }
+    memset(g_pdparms,0,sizeof(g_pdparms)); memset(g_rbuf,0,sizeof(g_rbuf));
+    if(inIx>=0&&g_pdP[inIx].off+8<=sizeof(g_pdparms)) *(uintptr_t*)(g_pdparms+g_pdP[inIx].off)=g_rdPS;
+    else Markerf("[RD] %s: no ObjectProperty input slot found -- calling with a ZEROED block, which is "
+                 "NOT the same test\r\n",tag);
+    bool flt=CallNativeGuarded((void*)g_rdCtlFn,thunk,g_rdCtlChild,(void*)g_rdComp,g_pdparms,g_rbuf);
+    // A native exec thunk writes its return through Z_Param__Result == resultBuf, not the params
+    // block (S126). Read both and say which was used, the way PdControl does.
+    int pslot=(retIx>=0&&g_pdP[retIx].off<sizeof(g_pdparms))?(int)g_pdparms[g_pdP[retIx].off]:-1;
+    int rslot=(int)((uint8_t*)g_rbuf)[0];
+    int used=flt?-1:rslot;
+    Markerf("[RD] %s: fault=%s  paramsSlot=%d  g_rbuf=%d  USED=%d (native path reads g_rbuf)\r\n",
+            tag,flt?"*** YES ***":"no",pslot,rslot,used);
+    if(outVal)*outVal=used;
+    return flt?DPCALL_FAULT:DPCALL_OK;
+}
+
+static void RdLadderStep(){
+    DWORD now=GetTickCount();
+    long step=InterlockedCompareExchange(&g_rdStep,0,0);
+    if(g_rdLastMs&&now-g_rdLastMs<(DWORD)KRDSTEPMS) return;
+    g_rdLastMs=now;
+    switch(step){
+    case 0:
+        Marker("[RD] ============ RM_RIDEABLE: the FIFTH WALL, called DIRECTLY ============\r\n");
+        Markerf("[RD] cfg arms=0x%02X stepMs=%d podIdx=%d\r\n",(unsigned)KRDARMS,(int)KRDSTEPMS,(int)KRDPODIDX);
+        Marker("[RD] WHY: S131's Route-E flight handed this function a NULL PlayerState, so it returned "
+               "at instruction #1 and its silence said nothing about the wall. The natural fix (poke "
+               "[TeamState+0x688]) is BLOCKED: zero live TeamState actors in this world. So the wall is "
+               "called directly, with both of its arguments live and resolved BY NAME.\r\n");
+        if(!g_rdResolved){ Marker("[RD] not resolved -> nothing to do.\r\n"); g_done=1; return; }
+        g_rdStep=1; return;
+    case 1:
+        if(!(KRDARMS&0x01)){ Marker("[RD] R0c disabled -> skipped. ⚠ WITHOUT IT, a silent R1 is NOT "
+                                    "attributable: 'the wall bailed' and 'the primitive never dispatched "
+                                    "on this component' read identically.\r\n"); g_rdStep=2; return; }
+        Marker("[RD] --- R0c (POSITIVE CONTROL + BASELINE): ContainsPlayer(PlayerState) on the SAME "
+               "component through the SAME primitive. A non-faulting bool proves dispatch and "
+               "object-param marshalling HERE; the value is R1's before-reading. ---\r\n");
+        RdContains("R0c ContainsPlayer(before)",&g_rdCtlBefore);
+        g_rdCtlRan=1;
+        g_rdStep=2; return;
+    case 2:
+        Marker("[RD] --- pre-call readout: the two preconditions the wall tests before it can reach "
+               "the round-game-mode bail ---\r\n");
+        RdPrintValidity("PlayerState",g_rdPS);
+        RdPrintValidity("component  ",g_rdComp);
+        Marker("[RD] (the third precondition, the predicate call at 0x55CD54E, is not readable from "
+               "here -- if R1 is silent AND both tests above PASS, that predicate is the remaining "
+               "explanation and it is NOT the wall.)\r\n");
+        g_rdStep=3; return;
+    case 3: {
+        if(!(KRDARMS&0x02)){ Marker("[RD] R1 disabled -> the wall is NOT called.\r\n"); g_rdStep=4; return; }
+        Marker("[RD] --- R1 (HEADLINE): AuthPlayerEnterWorldAttachedToRidable(PlayerState, Landing) "
+               "via the S55 direct UFunction.Func thunk. EXPECTED: it reaches 0x55CD572, gets 0 from "
+               "the stripped round-game-mode getter, and logs 'failed to get the round game mode'. "
+               "THAT LOG LINE IS THE RESULT. ---\r\n");
+        uintptr_t thunk=SafeReadable((void*)(g_rdWallFn+UFUNC_FUNC),8)?*(uintptr_t*)(g_rdWallFn+UFUNC_FUNC):0;
+        if(!LooksLikePtr(thunk)){ Marker("[RD] R1: the wall has no Func thunk -> NOT CALLED\r\n"); g_rdStep=4; return; }
+        int np=PdWalkParams(g_rdWallChild,"AuthPlayerEnterWorldAttachedToRidable(R1)");
+        int psIx=-1,vecIx=-1;
+        for(int k=0;k<np;k++){
+            if(g_pdP[k].isRet) continue;
+            if(psIx<0&&strstr(g_pdP[k].type,"ObjectProperty")) { psIx=k; continue; }
+            if(vecIx<0&&strstr(g_pdP[k].type,"StructProperty")) { vecIx=k; continue; }
+        }
+        if(psIx<0){ Marker("[RD] R1: no ObjectProperty parameter slot -- REFUSING to call. Passing a "
+                           "zeroed block would reproduce EXACTLY the null-PlayerState silence this "
+                           "mode exists to escape.\r\n"); g_rdStep=4; return; }
+        if(vecIx>=0&&g_pdP[vecIx].elem!=24&&g_pdP[vecIx].elem!=12){
+            Markerf("[RD] R1: the struct slot's ElementSize=%u is neither 24 nor 12 -- it is not an "
+                    "FVector and will NOT be written.\r\n",g_pdP[vecIx].elem); vecIx=-1; }
+        for(int ci=0;ci<g_rdPSCandN;ci++){
+        g_rdPS=g_rdPSCand[ci];
+        char psn[96]="?"; { uintptr_t pc=ClassOf(g_rdPS); if(pc) GetFNameStr(NameId(pc),psn,sizeof(psn)); }
+        RdPrintValidity("PlayerState(cand)",g_rdPS);
+        memset(g_pdparms,0,sizeof(g_pdparms)); memset(g_rbuf,0,sizeof(g_rbuf));
+        *(uintptr_t*)(g_pdparms+g_pdP[psIx].off)=g_rdPS;
+        if(vecIx>=0){
+            if(g_pdP[vecIx].elem==24){ double* d=(double*)(g_pdparms+g_pdP[vecIx].off);
+                d[0]=g_rdLanding[0]; d[1]=g_rdLanding[1]; d[2]=g_rdLanding[2]; }
+            else { float* f=(float*)(g_pdparms+g_pdP[vecIx].off);
+                f[0]=(float)g_rdLanding[0]; f[1]=(float)g_rdLanding[1]; f[2]=(float)g_rdLanding[2]; }
+        }
+        Markerf("[RD] R1 LAYOUT: PlayerState slot[%d]@0x%X = 0x%llX | Landing slot[%d]@0x%X size=%u = "
+                "(%.1f, %.1f, %.1f)\r\n",psIx,g_pdP[psIx].off,(unsigned long long)g_rdPS,
+                vecIx,(vecIx>=0)?g_pdP[vecIx].off:0,(vecIx>=0)?g_pdP[vecIx].elem:0,
+                g_rdLanding[0],g_rdLanding[1],g_rdLanding[2]);
+        Markerf("[RD] R1 CALL: fn=0x%llX thunk=0x%llX obj=0x%llX '%s'\r\n",
+                (unsigned long long)g_rdWallFn,(unsigned long long)thunk,
+                (unsigned long long)g_rdComp,g_rdCompName);
+        Markerf("[RD] R1 CALL cand[%d] ps=0x%llX cls=%s\r\n",ci,(unsigned long long)g_rdPS,psn);
+        bool flt=CallNativeGuarded((void*)g_rdWallFn,thunk,g_rdWallChild,(void*)g_rdComp,g_pdparms,g_rbuf);
+        if(flt) g_rdWallFaulted=1; else if(g_rdWallFaulted<0) g_rdWallFaulted=0;
+        g_rdWallRan++;
+        Markerf("[RD] R1 AFTER cand[%d] (%s): fault=%s. ⚠ 'returned without fault' IS NOT A RESULT -- "
+                "the Loki.log line is.\r\n",ci,psn,flt?"*** YES ***":"no");
+        }
+        g_rdStep=4; return; }
+    case 4:
+        if(!(KRDARMS&0x04)){ g_rdStep=5; return; }
+        Marker("[RD] --- R2: ContainsPlayer(PlayerState) again. false->true would mean a rider really "
+               "attached; false->false is the expected wall outcome and is only interpretable because "
+               "R0c proved the call dispatches here. ---\r\n");
+        RdContains("R2 ContainsPlayer(after)",&g_rdCtlAfter);
+        g_rdStep=5; return;
+    case 5:
+    default:
+        Marker("[RD] ============ game-thread arms COMPLETE ============\r\n");
+        g_done=1; return;
+    }
+}
+static void DoRideable(){
+    __try { RdLadderStep(); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[RD] *** FAULT inside ladder step %ld -- halting. fault=%s ***\r\n",(long)g_rdStep,DP_FAULT);
+        g_done=1; }
+}
+static void RdFinalReport(){
+    if(!(KRDARMS&0x08)) return;
+    Marker("[RD] ---------------- RM_RIDEABLE SUMMARY ----------------\r\n");
+    Markerf("[RD] resolved=%d pod=0x%llX comp=0x%llX ps=0x%llX | R0c ran=%d before=%d | R1 ran=%d "
+            "fault=%d | R2 after=%d\r\n",g_rdResolved,(unsigned long long)g_rdPod,
+            (unsigned long long)g_rdComp,(unsigned long long)g_rdPS,
+            g_rdCtlRan,g_rdCtlBefore,g_rdWallRan,g_rdWallFaulted,g_rdCtlAfter);
+    if(!g_rdResolved){ Marker("[RD] VERDICT: NOT RESOLVED -- no call was made; nothing here is a "
+                              "statement about the fifth wall.\r\n"); return; }
+    if(g_rdCtlBefore<0)
+        Marker("[RD] *** VERDICT: SITTING VOID for the wall. R0c did not return a value, so the "
+               "primitive is not demonstrated on this component and R1's outcome -- fault, silence or "
+               "log line -- is NOT attributable. ***\r\n");
+    else if(!g_rdWallRan)
+        Marker("[RD] VERDICT: the wall was never called.\r\n");
+    else if(g_rdCtlAfter==1&&g_rdCtlBefore==0)
+        Marker("[RD] ***** VERDICT: ContainsPlayer went FALSE -> TRUE. A RIDER ATTACHED. That would "
+               "REFUTE the always-fail grade of 0x55CD510 and is the biggest possible result here. "
+               "Verify against Loki.log before believing it. *****\r\n");
+    else
+        Marker("[RD] VERDICT: the call dispatched (R0c proves the primitive reaches this component) "
+               "and no rider attached. ⇒ NOW GREP Loki.log:\r\n"
+               "       'AuthPlayerEnterWorldAttachedToRidable failed to get the round game mode'\r\n"
+               "     PRESENT  => the fifth wall is CONFIRMED [M], measured rather than graded offline.\r\n"
+               "     ABSENT   => the body bailed EARLIER (IsValid at 0x55CD548, or the predicate at\r\n"
+               "                 0x55CD54E). Read the two validity lines above: if both PASS, that\r\n"
+               "                 predicate is the remaining explanation and it is NOT the wall.\r\n");
+}
+
 // ---- S74 Path B: resolve the cheat object accessor + target RPC thunks (off-thread, before hooking) ----
 // Thunks are CLASS-level: resolve them off the native LokiPlayerCheats CDO's class (works even though the live
 // object is a BP subclass Comp_PlayerController_Cheats_C). The live `this` comes from GetLocalLokiPlayerCheatsBP
@@ -14126,6 +14474,47 @@ static DWORD WINAPI Worker(LPVOID){
             Markerf("[PS] *** ALERT: the ladder did not reach its final step (stopped at %ld). The most "
                     "likely cause is game-thread STARVATION -- read FsHold's own 8 s verdict line before "
                     "reading anything else. Returning 9. ***\r\n",(long)g_pslStep);
+            return 9; }
+        return 0;
+    }
+    // ★★★★★ S131 RM_RIDEABLE — the FIFTH WALL, called directly with a NON-NULL PlayerState.
+    //   Heap-only: two direct `UFunction.Func` calls through the S55 primitive and guarded reads.
+    //   NO module-image write, NO PI hook, NO memory poke of any kind.
+    if(kRunMode==RM_RIDEABLE){
+        Marker("[RD] RM_RIDEABLE (S131): AuthPlayerEnterWorldAttachedToRidable, called DIRECTLY.\r\n"
+               "[RD] S131's Route-E flight handed it a NULL PlayerState, so it returned at instruction\r\n"
+               "[RD] #1 (`test rdx,rdx; je`) and its silence said NOTHING about the wall. The obvious\r\n"
+               "[RD] fix -- poke [TeamState+0x688] -- is BLOCKED: zero live TeamState actors exist in\r\n"
+               "[RD] this world (MEASURED). So both arguments are resolved live, BY NAME, instead.\r\n"
+               "[RD] Inject into a STAGED TUTORIAL WORLD that already contains an INITIALISED pod\r\n"
+               "[RD] (gft -> fo -> sp -> dropplane_b1only -> droppod-pe-cdopoke -> this).\r\n");
+#if KFUNCSWAP
+        Marker("[RD] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        RdResolve();          // worker thread, before arming; a failed resolve costs no game-thread time
+        if(!g_rdResolved){
+            Marker("[RD] ABORT before arming: resolve failed. Nothing was armed and no call was made -- "
+                   "this is a RESOLVE statement, not a result about the wall.\r\n");
+            RdFinalReport();
+            return 5; }
+        if(!FsArm()){ Marker("[RD] FAIL funcswap arm -- no arm was run, nothing was called\r\n"); return 6; }
+        FsHold(KPDMODEHOLDMS);       // returns as soon as DoRideable sets g_done
+        FsDisarm();
+#else
+        // Same deliberate refusal as RM_DROPPOD / RM_POOLSPAWN: the alternative delivery path is
+        // InstallHook(), a standing 5-byte `.text` patch at ProcessInternal, measured 10/10 lethal
+        // (S112, Fisher p = 0.00000008). This mode's whole premise is that it writes nothing.
+        Marker("[RD] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a standing .text patch.\r\n");
+        return 7;
+#endif
+        RdFinalReport();
+        Markerf("[RD] done (step=%ld resolved=%d r0c=%d r1=%d called=%ld hitsGT=%ld)\r\n",
+                (long)g_rdStep,g_rdResolved,g_rdCtlRan,g_rdWallRan,(long)g_called,(long)g_hitsGT);
+        // The exit code must agree with the marker. The ladder has 6 steps (0..5); if it grows one,
+        // THIS THRESHOLD MOVES WITH IT (the RM_PHASELADDER lesson).
+        if(g_rdStep<5){
+            Markerf("[RD] *** ALERT: the ladder did not reach its final step (stopped at %ld). Most "
+                    "likely game-thread STARVATION -- read FsHold's own verdict line first, and re-fly "
+                    "with KFSNAME=\"\" if the swap took no hits. Returning 9. ***\r\n",(long)g_rdStep);
             return 9; }
         return 0;
     }

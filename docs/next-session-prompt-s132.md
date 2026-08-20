@@ -1,4 +1,4 @@
-# NEXT SESSION (S132) — the pod is alive. The blocker is now a NULL DROP LEADER, and it is one data poke.
+# NEXT SESSION (S132) — the pod is alive, the FIFTH WALL is confirmed, and the blocker is one stripped getter.
 
 **Written 2026-08-20 at the end of S131.** Read `docs/s131-pod-functionality-settled.md`, then
 `docs/fk22-dropphase-reachability.md` §29. Evidence: `scratchpad/s131/evidence/`.
@@ -15,14 +15,57 @@
 3. **[M] The pod is ALIVE and FLYING at its cooked `InitialSpeed` of 20,000 uu/s**, with Niagara drop
    VFX ticking and UE logging LWC tile recaches for it. It flies **because `StartPodGameplay` never
    ran** — and that is because `Loki::LokiIsServer()` is a stripped `return false`.
-4. ⚠⚠ **The fifth wall was NOT tested.** `AuthPlayerEnterWorldAttachedToRidable` was *called*, and
-   returned silently on instruction #1 because its `PlayerState` argument was null.
+4. ⚠⚠ The fifth wall was NOT tested by the Route-E flight (null `PlayerState` -> silent return on
+   instruction #1) — **but it WAS tested afterwards, on the same live client, and CONFIRMED. See §0.5.**
 5. Free side result: **FK-31's kill jumps to one fixed address per boot session**, the same address
    across FK-7 and FK-31 alike — and that hands FK-31 its first cheap experiment (§3).
 
 ---
 
-## 1. START HERE — MAKE `GetTeamDropLeader` RETURN NON-NULL. IT IS ONE FIELD.
+## 0.5 ★★★★★ SUPERSEDED SAME DAY — THE FIFTH WALL IS ALREADY CONFIRMED. §1 BELOW IS DEAD.
+
+**Do not spend a launch on §1.** After writing it, S131 tested the wall directly on the *same live
+client* and confirmed it. Read `docs/s131-pod-functionality-settled.md` §10.
+
+* ⚠⚠ **§1's lever is BLOCKED AT ITS PRECONDITION and was killed by ONE read-only command:**
+  **[M] ZERO live instances of any class containing `TeamOnly`**; the only `TeamState`-named live
+  object is `Comp_TeamState_GlobalShop_GEN_VARIABLE`, a template. **There is no TeamState actor to
+  poke.** ⭐ Check a lever's precondition with a read-only pass *before* building the arm.
+* ★ Instead, **`RM_RIDEABLE` (enum 29)** calls `AuthPlayerEnterWorldAttachedToRidable` **directly**
+  on the pod's own `LokiRideable` component with a live, valid PlayerState. Against a verified
+  baseline of 0, `Loki.log` gained
+  `LogLokiRideable: Error: ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable failed to
+  get the round game mode` — **count 0 → 2, exactly one per call.**
+* ⇒ **[M] the wall REACHES `0x55CD572`, gets 0 from the stripped `0xF7EB50` getter, and fails — with
+  valid arguments.** Controls: `ContainsPlayer` on the same object through the same primitive
+  (`fault=no`), both of the wall's own IsValid preconditions read out and PASSING, two independent
+  PlayerStates, and an exact per-call count.
+* ★ By-product: the log category, recorded COVERAGE-BLOCKED by lane 4, **named itself** the moment
+  the path ran — **`LogLokiRideable`**.
+
+### ⇒ THE REAL §1 FOR S132: what does `0xF7EB50` REPLACE, and is there another route?
+
+The blocker is now precisely one stripped server-side getter, in the same family as FK-1's four empty
+stubs, sitting between a fully working pod spawn and a rider ever boarding. **That is an OFFLINE
+question and it is free:**
+
+1. Identify the call at `0x55CD572` — which round-game-mode accessor was folded to `0xF7EB50`
+   (`xor eax,eax; ret`)? ⚠ `0xF7EB50` is ICF-folded, so the address names a *behaviour*, not a
+   function; identify it from the CALL SITE's surroundings, as lane 1 did for `LokiIsServer`.
+2. Enumerate every other producer of an `ALokiRoundGameMode*` on the client. S124 established the
+   tutorial already RUNS the round mode (`BP_LokiGameMode_Tutorial_C`), so a live round game mode
+   plausibly EXISTS — the question is whether the getter the wall uses is the only route to it.
+   ★ If another accessor is REAL, the wall may be one data poke away rather than a dead end.
+3. Re-run the `.data` record sweep (`scratchpad/s131/tools/rectab.py`) over the round-game-mode
+   accessor family, the way lane 4 did for `ULokiRideableComponent` — it grades REAL vs EMPTY
+   **without the code page being decrypted**.
+
+★ And `merged3.dump.exe` now contains drop-path pages that were never decrypted before, including
+whatever `RM_RIDEABLE` just executed. Re-dump-and-merge after any future armed window.
+
+---
+
+## 1. ⛔ DEAD — KEPT ONLY AS THE RECORD OF A LEVER THAT WAS KILLED. See §0.5. Do not run this.
 
 Everything downstream of the pod now hinges on one null:
 

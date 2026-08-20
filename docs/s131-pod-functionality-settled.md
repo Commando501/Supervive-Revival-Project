@@ -267,3 +267,108 @@ survive" held for the *staging*, not for the armed window.
 ★ **Free bonus:** `usmapdump dumpimage` on the live drop-pod process contributed **+43 `.text` pages
 (157,916 bytes), 0 overlap conflicts** to a new `dumps/merged3.dump.exe` — code the drop path had
 never decrypted before. Driving a path forces decryption; do this every armed window.
+
+---
+
+# 10. ★★★★★ ADDENDUM — THE FIFTH WALL IS NOW CONFIRMED [M]. IT COST ZERO EXTRA LAUNCHES.
+
+§5 closed with "the fifth wall was NOT tested" and named the blocker. Rather than bank that, the
+**same live client** — still up at ~40 min with the world staged and the initialised pod present —
+was used to test it directly. **No new launch, no `.text` write, no PI hook, no memory poke.**
+
+Pre-registration: `scratchpad/s131/evidence/PREREG-rideable-direct-call.md` (+ Amendment 1, both
+written before their injections). Evidence: `RESULT-rideable-s131-live.txt`,
+`Loki-s131-rideable-confirmed.log`.
+
+## 10.1 Why a direct call, and why the obvious lever was abandoned
+
+§5's proposed lever was "poke `[TeamState+0x688]` so `GetTeamDropLeader` returns non-null". A
+read-only enumeration killed it in one call:
+
+> **[M] ZERO live instances of any class containing `TeamOnly`; the only `TeamState`-named live
+> object is `Comp_TeamState_GlobalShop_GEN_VARIABLE`, a template.**
+
+**There is no TeamState actor in the staged tutorial world to poke.** Routing through
+`GetTeamDropLeader` depends on an object this world does not contain. ⇒ ★ **checking a lever's
+precondition with a read-only pass before building the arm cost one command and saved a session.**
+
+So `RM_RIDEABLE` (enum 29) calls the wall **directly**, with both arguments resolved live and BY
+NAME: the pod's own `LokiRideable` component (`BP_DropPod_C.LokiRideable @0x6C8`) and a live
+`ALokiPlayerState`. That is a fair test, because the recorded claim is that the failure is
+*unconditional*.
+
+## 10.2 The result — every pre-registered prediction landed
+
+| # | prediction | outcome |
+|---|---|---|
+| P1 | `R0c ContainsPlayer(PlayerState)` returns false, no fault | **`fault=no USED=0`** ✓ — the primitive demonstrably reaches this component |
+| P2 | the wall's own `IsValid` test passes | **PASSES** on both PlayerStates and on the component ✓ |
+| P3 | `R1` returns without fault | **`fault=no`**, both candidates ✓ |
+| **P4** | **the log line appears** (baseline **0**) | ★★★★★ **APPEARED, count 0 → 2 — exactly one per call** ✓ |
+| P5 | `R2 ContainsPlayer` still false | **still 0** — no rider attached ✓ |
+
+```
+[2026.08.20-07.56.47:371][874]LogLokiRideable: Error: ULokiRideableComponent::
+      AuthPlayerEnterWorldAttachedToRidable failed to get the round game mode
+[2026.08.20-07.56.47:372][874]  (identical, 1 ms later)
+```
+
+⇒ **[M] `AuthPlayerEnterWorldAttachedToRidable` reaches `0x55CD572`, gets 0 from the stripped
+round-game-mode getter (`0xF7EB50`), and takes its failure branch — with a VALID, non-null
+PlayerState and a valid component.** The S130/§lane-4 offline grade "REAL body, ALWAYS-FAIL" is now
+**measured**, not inferred.
+
+**What makes it a measurement and not a look:**
+* a **positive control on the same object through the same primitive** (`R0c`), so a silent R1 could
+  not have been confused with "the primitive never dispatched here";
+* **both IsValid preconditions read out and PASSING**, so an absent log line would have been
+  attributable to a named earlier bail instead of to the wall;
+* **two independent PlayerStates** (`LokiPlayerState_HeroAffiliated`, `BP_LokiPlayerState_C`) — the
+  arm refused to guess between them on its first build, and was changed to call once per candidate
+  rather than pick;
+* a **verified baseline of 0** and an exact per-call count (2 calls → 2 lines).
+
+## 10.3 ★ A free by-product: the log category is now NAMED
+
+S131 lane 4 recorded this Error's category `0x0A035E80` as **COVERAGE-BLOCKED / unnamed** — its
+`FLogCategory` constructor sits on a page that has never been demand-decrypted, so the name could not
+be read statically. Driving the path printed it: **`LogLokiRideable`**.
+
+⇒ the S118 method pays out again — **push the code path, then read what the game says**. A category
+that static analysis cannot name will name itself the moment its first message is emitted.
+
+## 10.4 A second free by-product, from the run that REFUSED
+
+The first build declined to guess between two PlayerStates and made no call. That "failed" run still
+produced a measurement: its pod table shows
+
+```
+pod-cand[3] 0x2BD2B2DA8B0 ... PodTeamIndex=-1  LokiRideable@0x6C8 = 0x0 (-)
+```
+
+⇒ the never-finished DEFERRED pooled pod has **no rideable component either** — a second, independent
+confirmation of §4's null-`RootComponent` finding, on a different property. ★ **A refusal that prints
+its candidate table is not a wasted run.**
+
+## 10.5 Where the drop path now stands
+
+```
+SpawnDropPodForTeam           RETURNS TRUE, pod spawns              S130
+  InitializeDropPod           RAN, 3/3 writes landed                S131 §0
+  FinishSpawningActor         components instantiated, VFX ticking  S131 §3
+  the pod                     ALIVE and FLYING at 20,000 uu/s       S131 §1-2
+  RemovePlayerFromPlane       empty stub                            FK-1
+  AuthPlayerEnterWorld...     ** REACHED, AND FAILS ** [M]          S131 §10   <-- CONFIRMED
+       -> the round-game-mode getter is a stripped `xor eax,eax; ret`
+  MulticastOnDropPodLaunched  never reached (guarded on the drop leader)
+```
+
+**The wall is no longer a suspicion.** The blocker is now precisely stated: a *stripped server-side
+getter*, in the same family as FK-1's four empty stubs, sitting between a fully working pod spawn and
+a rider ever boarding it. ⇒ the next question is not "does the handoff work" but **"what does
+`0xF7EB50` replace, and is there any other route to a round game mode object on this client"** —
+which is an offline question, and free.
+
+**Artifacts:** `tutorial_launch_rideable.dll` `.text` **`e221e4e415834067`** (the flown build;
+`3cba72ec28e769b6` was the refusing first build). `play` re-verified **UNCHANGED** at
+`9bc10a4552c596e1`. Build with `build.ps1 -Name tutorial_launch -Variant rideable`.
