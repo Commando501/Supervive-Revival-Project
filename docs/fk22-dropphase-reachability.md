@@ -3052,7 +3052,7 @@ Root cause, [M]: **`Loki::LokiIsServer()` impl `0x0F7EB60` = `xor al,al; ret` �
 BP_DropPod_Tutorial_C_2147471134.NS_Drop_CloudTunnel ...) required LWC tile recache` ×3 — the pod's
 drop VFX are instantiated and ticking, and UE reports it travelled far enough to re-base its LWC tile.
 
-### 29.4 ⚠⚠ The FIFTH WALL was NOT tested, and the zero that looks like a test is a trap
+### 29.4 The FIFTH WALL — not tested by the Route-E flight, then CONFIRMED [M] the same day (see 29.7)
 
 The precondition **is** met — the pod ships a `LokiRideable_GEN_VARIABLE`, and the in-arm rideable
 census rises **+1 per pod** (20 → 21 on E1) — so `AuthPlayerEnterWorldAttachedToRidable` WAS called.
@@ -3099,3 +3099,39 @@ CDO poke: one aligned heap field, readback-verifiable, no module image touched.
 4. **The pooled-spawn NULL is gone**: `Failed to spawn actor of type` = 0 while
    `PrimePools : Feature is not enabled, skipping` still prints — §25 confirmed live from the
    opposite direction.
+
+### 29.7 ★★★★★ THE FIFTH WALL IS CONFIRMED [M] — same client, zero extra launches
+
+§29.4 named the blocker instead of banking it, and the blocker was then removed **in the same
+sitting**. Full account: `docs/s131-pod-functionality-settled.md` §10.
+
+⚠⚠ **§29.4's own proposed lever died first, to ONE read-only command.** "Poke `[TeamState+0x688]`" is
+impossible here: **[M] ZERO live instances of any class containing `TeamOnly`**, and the only
+`TeamState`-named live object is `Comp_TeamState_GlobalShop_GEN_VARIABLE`, a template. ⇒ ★ **check a
+lever's precondition with a read-only pass before building the arm.**
+
+So `RM_RIDEABLE` (enum 29) calls `AuthPlayerEnterWorldAttachedToRidable` **directly** on the pod's own
+`LokiRideable` component with a live, valid PlayerState. Against a verified baseline of **0**:
+
+```
+LogLokiRideable: Error: ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable
+                        failed to get the round game mode        x2  (one per call)
+```
+
+⇒ **[M] the body REACHES `0x55CD572`, gets 0 from the stripped `0xF7EB50` round-game-mode getter, and
+takes its failure branch — with valid arguments.** The offline "REAL body, ALWAYS-FAIL" grade is now
+measured.
+
+Controls that make it a measurement: `ContainsPlayer` on the **same object through the same
+primitive** (`fault=no`, so a silent R1 could not be confused with "the primitive never dispatched
+here"); **both of the wall's own IsValid preconditions read out and PASSING**; **two independent
+PlayerStates**; a verified zero baseline; and an exact per-call count.
+
+★ **By-product:** the Error's category — recorded COVERAGE-BLOCKED by the lane-4 sweep because its
+`FLogCategory` ctor sits on a never-decrypted page — **named itself**: `LogLokiRideable`. Driving the
+path is how you name a category static analysis cannot reach.
+
+⇒ **The next question is OFFLINE and free:** what did `0xF7EB50` replace at `0x55CD572`, and is there
+any other route to a round game mode on this client? S124 established the tutorial already RUNS the
+round mode, so one plausibly exists — if a different accessor is REAL, the wall may be one data poke
+away rather than a dead end.

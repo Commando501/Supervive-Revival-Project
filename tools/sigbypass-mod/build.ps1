@@ -508,6 +508,25 @@ $Variants = @{
         #     marshalling -- three preconditions that are irrelevant to the question being asked.
         #   ⚠ `poolspawn-cdoctrl` is byte-for-byte the S128 experiment plus a read-only CDO print, so
         #     it is a genuine reproduction arm, not just a control.
+        # ★★★★★ S131 RM_RIDEABLE (enum 29) -- THE FIFTH WALL, CALLED DIRECTLY.
+        #   S131's Route-E flight handed AuthPlayerEnterWorldAttachedToRidable a NULL PlayerState, so
+        #   impl 0x55CD510 returned at instruction #1 (`test rdx,rdx; je`) and its SILENCE said nothing
+        #   about the wall. The obvious fix -- poke [TeamState+0x688] so GetTeamDropLeader returns
+        #   non-null -- is BLOCKED at its precondition: MEASURED zero live TeamState actors in the
+        #   staged tutorial world. So this mode resolves BOTH arguments live, BY NAME, and calls the
+        #   wall directly: the pod's own `LokiRideable` component and the live BP_LokiPlayerState_C.
+        #   ⇒ the Loki.log line `... failed to get the round game mode` becomes INTERPRETABLE for the
+        #   first time. Present => the fifth wall is CONFIRMED [M]. Absent => it bailed EARLIER, which
+        #   is a statement about our PlayerState and NOT about the wall -- and the arm reads those
+        #   preconditions out itself so the two are separable.
+        #   Requires a staged world that ALREADY contains an INITIALISED pod (PodTeamIndex == 0):
+        #     gft -> fo -> sp -> dropplane_b1only -> droppod-pe-cdopoke -> THIS.
+        #   Heap-only: two direct UFunction.Func calls + guarded reads. NO .text write, NO poke.
+        'rideable'            = @('-DKRUNMODE=RM_RIDEABLE','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        # Control arm: resolve + the R0c ContainsPlayer control + the precondition readout, and then
+        # DO NOT call the wall. Its ContainsPlayer value is the before-reading the real arm needs, and
+        # a non-zero effect from THIS build would mean the readout itself is not read-only.
+        'rideable-readonly'   = @('-DKRUNMODE=RM_RIDEABLE','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKRDARMS=0x0D')
         'poolspawn-cdoctrl'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=0')
         'poolspawn-cdopoke'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=1')
         #   +1 dim, THE CONFOUND-REMOVAL ARM. `SpawnActorCls` (P3) hardcodes CollisionHandlingOverride=2
