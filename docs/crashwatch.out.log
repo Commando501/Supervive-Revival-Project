@@ -1,6 +1,0 @@
-crashwatch: pid 17736 (SUPERVIVE-Win64-Shipping.exe)
-  log     : C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log
-  outDir  : G:\git\Supervive Revival Project\dumps\crash-20260820-002309
-  poll    : 50 ms   suspend-on-trigger: true
-  log tail starts at offset 444089 (older markers ignored)
-
