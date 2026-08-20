@@ -2,7 +2,7 @@
 
 **One line: `AuthPlayerDetachPlayerFromRidable`'s only GATE is the single `TArray` append the wall
 dies just before performing — so the dismount is one append away. ⚠ It is NOT fold-free (2 ×
-`0xF7EC20`, see §B), so expect a PARTIAL dismount. Read §"THE REAL §1" first.**
+`0xF7EC20`, see §B), so expect a PARTIAL dismount. Read §1 first — §1C is the experiment.**
 
 **Written 2026-08-20 at the end of S131.** Read `docs/s131-pod-functionality-settled.md`, then
 `docs/fk22-dropphase-reachability.md` §29. Evidence: `scratchpad/s131/evidence/`.
@@ -26,12 +26,12 @@ dies just before performing — so the dismount is one append away. ⚠ It is NO
 
 ---
 
-## 0.5 ★★★★★ SUPERSEDED SAME DAY — THE FIFTH WALL IS ALREADY CONFIRMED. §1 BELOW IS DEAD.
+## 0.5 ★★★★★ SUPERSEDED SAME DAY — THE FIFTH WALL IS ALREADY CONFIRMED. §A1 BELOW IS DEAD.
 
-**Do not spend a launch on §1.** After writing it, S131 tested the wall directly on the *same live
+**Do not spend a launch on §A1.** After writing it, S131 tested the wall directly on the *same live
 client* and confirmed it. Read `docs/s131-pod-functionality-settled.md` §10.
 
-* ⚠⚠ **§1's lever is BLOCKED AT ITS PRECONDITION and was killed by ONE read-only command:**
+* ⚠⚠ **§A1's lever is BLOCKED AT ITS PRECONDITION and was killed by ONE read-only command:**
   **[M] ZERO live instances of any class containing `TeamOnly`**; the only `TeamState`-named live
   object is `Comp_TeamState_GlobalShop_GEN_VARIABLE`, a template. **There is no TeamState actor to
   poke.** ⭐ Check a lever's precondition with a read-only pass *before* building the arm.
@@ -47,7 +47,7 @@ client* and confirmed it. Read `docs/s131-pod-functionality-settled.md` §10.
 * ★ By-product: the log category, recorded COVERAGE-BLOCKED by lane 4, **named itself** the moment
   the path ran — **`LogLokiRideable`**.
 
-## ★★★★★ THE REAL §1 FOR S132 — IT IS ANSWERED, AND THERE IS A DATA-CLASS LEVER
+## 1. ★★★★★ THE QUESTION IS ANSWERED, AND THERE IS A DATA-CLASS LEVER — START HERE
 
 **The offline follow-up ran and the wall is FULLY CHARACTERISED.** Two independent lanes agree on the
 load-bearing claim. Reports: `scratchpad/s131/lanes2/`. Read them before building anything.
@@ -101,9 +101,15 @@ just before doing.**
 2. **Append PS to `PlayersAttached`, mirroring the wall's own tail exactly:**
    `old=[c+0x138]; [c+0x138]=old+1; if (old+1 > [c+0x13C]) call 0xF988D0(rcx=c+0x130, edx=old);`
    `[[c+0x130] + old*8] = PS`
-   ★ `0xF988D0` is **the game's own `ResizeGrow`** — the same call the real function makes — so the
-   buffer comes from the GAME's allocator. That removes the foreign-pointer hazard that would make a
-   hand-supplied buffer unsafe (any later `Empty()`/`RemoveAt()` would free it).
+   ★★ **`0xF988D0` IS THE EXACT FUNCTION THE WALL'S OWN TAIL CALLS — verified: `0x55CD75B call
+   0x0F988D0`, the only rel32 call in `0x55CD730..0x55CD7A0`.** So the buffer comes from the GAME's
+   allocator and **the ABI and element size are correct BY CONSTRUCTION** — same function, same array,
+   same element type. That removes the foreign-pointer hazard a hand-supplied buffer would carry
+   (any later `Empty()`/`RemoveAt()` would free it).
+   ★ Independently corroborated by disassembly: `0xF988D0` reads `[rcx+8]`=Num and `[rcx+0xC]`=Max,
+   with `Max==0 -> 4` then geometric growth (`lea rax,[rbx+rbx*2]; shr rax,3`) — i.e. UE's
+   `TArray::ResizeGrow(SizeType OldNum)` with `rcx` = the array. Matches the `{Data@0, Num@8, Max@0xC}`
+   layout of `PlayersAttached` at `+0x130`/`+0x138`/`+0x13C` exactly.
    ⚠ **MEASURED LIVE, S131: `PlayersAttached` reads `Data=0, Num=0, Max=0`** — so `ResizeGrow` WILL be
    needed; this is not a pure RPM write and it needs an arm. `0xF988D0` is **not a UFunction**, so the
    S55 thunk primitive does not apply — it is a raw direct call and its ABI must be graded first.
@@ -230,7 +236,7 @@ the more confident write-up. **Ask two agents the same structural question and d
 
 ---
 
-## 1. ⛔ DEAD — KEPT ONLY AS THE RECORD OF A LEVER THAT WAS KILLED. See §0.5. Do not run this.
+## A1 (ARCHIVE). ⛔ DEAD — the record of a lever that was killed. See §0.5. Do not run this.
 
 Everything downstream of the pod now hinges on one null:
 
