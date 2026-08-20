@@ -160,7 +160,26 @@ and at that base: **`4d 5a` = `MZ`**, `e_lfanew = 0x78`, a valid `PE\0\0`, `mach
 .pdata  .rwx  packer0  packer1  packer2  .rsrc  .reloc  packer30  packer40  packer31  packer42
 ```
 
-⇒ **[M] That is `runtime.dll` — the protector.** Those `packer*` section names are exactly the ones
+⇒ **[M] That is `runtime.dll` — the protector.**
+
+### ★ CONFIRMED AGAINST THE SHIPPED FILE, not just against FK-10's prose [M]
+
+`G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64untime.dll` on disk:
+
+```
+  sections = 11   SizeOfImage = 0x4066000
+  names = ['.pdata','.rwx','packer0','packer1','packer2','.rsrc','.reloc',
+           'packer30','packer40','packer31','packer42']
+```
+
+**Identical to what was read at `0x7FFB57400000` in the live process** — same `SizeOfImage`, same
+11 sections, same order. So the identification does not rest on recognising section-name prefixes
+from a doc; it is a match against the shipped binary.
+
+And the loaded-module list for the same process shows **`preloader.dll` present and normal**
+(`0x7FFB20F80000`, 36,864 B) while `runtime.dll` is **absent** — the positive control for "absent
+means manually mapped, not missing".
+ Those `packer*` section names are exactly the ones
 FK-10 records for it (`docs/fk10-protector-identified.md`: `packer0` is 94.8 % of its pages,
 `packer30` is the 2.2 MB call-structured region holding the entry function). And
 `(Get-Process).Modules` reports **no module at that base** ⇒ it is **MANUALLY MAPPED and hidden from
