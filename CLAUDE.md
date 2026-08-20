@@ -1487,6 +1487,18 @@ from commit `c2cdc56`; HEAD is `53483e6181bb3583` after the DxState pod-location
   terminal actions are direct calls to the stripped `0xF7EB50`, and it performs **zero writes to any
   actor or component transform**. Satisfying its `PlayersInside` guard with a poke would move execution
   past the guards and change nothing about where the hero is.
+- ★★ **AND THE DISMOUNTED HERO RUNS [M]** — `play` (`9bc10a4552c596e1`) injected onto the
+  flight-2 client: `*** init complete: body=BUILT; camera + WASD active ***`, `self-driven walk
+  START`, `PlayAnimation(run, loop) ok`, and RPM found the hero **+2,945.7 uu** from where the arm
+  put it. ⇒ **the dismount leaves the hero in a state `play` handles normally; it costs nothing
+  downstream.**
+  ⚠⚠ **BUT THIS DOES *NOT* SHOW PLAYABILITY AT THE LANDING POINT, and that was the first reading
+  of it.** `RM_PLAY`'s FIRST act is a hardcoded ground-teleport to `(KGROUNDX,KGROUNDY,KGROUNDZ) =
+  (-65,-1770,393)` (`tutorial_launch.cpp:4822-4830`, applied at `:12315`) — **it moves the hero off
+  the landing point before anything else happens.** The real experiment needs a `play` variant whose
+  teleport is suppressed or retargeted **plus a never-dismounted control**; it is specified in
+  `docs/next-session-prompt-s133.md` §1. ⚠ Do not edit `play` itself — it is the hard regression
+  gate for the whole tutorial route.
 - ⛔ **THIS IS A DIAGNOSIS, NOT A SHIPPING FIX.** It writes a live component's state array by hand
   and drives an authority-only entry point. **Do not add it to the default shim set.**
 - ★ **What seven adversarially-verified offline lanes added** (`scratchpad/s132/lanes/`), agreeing

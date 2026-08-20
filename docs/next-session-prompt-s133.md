@@ -22,18 +22,74 @@ Written 2026-08-20 at the end of S132. Everything below is reproducible from com
 4. **A within-run negative control ran before every one of the five calls** — same detach, same
    component, same primitive, `PlayersAttached` EMPTY — and never moved the hero.
 5. Seven adversarially-verified offline lanes, which agreed with the lead's independent transcription
-   and added five corrections (`scratchpad/s132/lanes/`, doc §6b).
+   and added five corrections (`scratchpad/s132/lanes/`, doc §6b) — including one that **refuted a
+   claim the lead had already propagated into `CLAUDE.md`** (§1 of `docs/method-rules.md`, S132-f).
+6. Injected `play` onto the dismounted hero: **it initialises, builds the body and the hero RUNS with
+   real locomotion animation** — but `play` relocates the hero first, so this does **not** test the
+   landing point. See §1, which is written to stop a successor misreading it the way I first did.
 
 ---
 
-## 1. ★★★★★ START HERE — CAN THE HERO PLAY FROM WHERE IT LANDS?
+## 1. ★★★★ START HERE — CAN THE HERO PLAY *AT THE POINT THE DISMOUNT LANDS IT*?
 
-**This is the natural next question and it costs one launch with arms that already exist and are
-already measured.** Nothing new has to be built to run it.
+⚠⚠ **THE OBVIOUS VERSION OF THIS EXPERIMENT WAS ALREADY RUN, AND IT DOES NOT ANSWER THE QUESTION.
+Read this whole section before designing it, or you will repeat the mistake.**
 
-The dismount is a **deploy primitive**: it puts a possessed hero, un-hidden, collided and
-gravity-affected, at a chosen point on real terrain. That is the thing FK-22 and FK-1 have been
-chasing from the other end. What is NOT known is whether the hero is *playable* there.
+### 1.1 What was already measured, and what it does and does not show
+
+At the end of S132 the flight-2 client was still up (1,168 s) with the hero standing at the
+PlayerStart, so `tutorial_launch_play.dll` was injected onto it. Result:
+
+```
+[PL] teleport hero -> ground (-65,-1770,393)          <-- !!! RM_PLAY's OWN hardcoded teleport
+[PL] *** init complete: body=BUILT; camera + WASD active ***
+[ANIM] self-driven walk START (so the run anim can be captured with no human at the keyboard)
+[ANIM] PlayAnimation(run, loop) ok
+```
+and RPM sampling then found the hero at `(2880.7, -1770.0, 441.2)` — **+2,945.7 uu in +X from
+`play`'s own teleport target**, i.e. it really walked, then stopped when the auto-walk window closed.
+
+**✅ WHAT THIS DOES SHOW [M]: a hero that has been through the full dismount is not left in a broken
+state.** `play` initialises on it, builds the body, takes the camera, and the hero **runs with real
+locomotion animation**. The dismount costs nothing downstream.
+
+**❌ WHAT IT DOES NOT SHOW: playability AT THE LANDING POINT.** `RM_PLAY`'s first act is a hardcoded
+ground-teleport to `(KGROUNDX, KGROUNDY, KGROUNDZ) = (-65, -1770, 393)` — S75's known-solid tutorial
+ground (`tutorial_launch.cpp:4822-4830`, applied at `:12315`). **It moved the hero off the landing
+point before anything else happened**, so the run says nothing about whether the deploy location is
+playable. The `[GCW] anim swapping DISABLED` line that follows is the S110 idle-anim GC behaviour
+(`KANIMREF` parks the RUN anim, not the idle one) — pre-existing, unrelated to the dismount.
+
+### 1.2 The experiment that WOULD answer it
+
+Two arms, one launch, both trivial:
+
+```
+# A: land the hero, then let play take over WITHOUT relocating it.
+build.ps1 -Name tutorial_launch -Variant play -DKGROUNDX=-3206.4 -DKGROUNDY=5070.5 -DKGROUNDZ=140
+```
+⚠ `build.ps1` takes variants, not raw `-D`s — **add a `play-atlanding` variant** whose
+`KGROUNDX/Y/Z` are the PlayerStart's coordinates, so `play`'s teleport becomes a no-op *in effect*
+and the hero stays where the dismount put it. Better still, add a **`KPLNOTELE`** knob that skips the
+teleport block entirely; then the arm tests the landing point itself rather than a coordinate that
+happens to match it. **That is the honest version and it is a ~5-line edit.**
+⚠⚠ Changing `play` moves its `.text` hash away from the regression-gated `9bc10a4552c596e1`. Build
+it as a **new variant** and leave `play` untouched — it is the hard regression gate for the whole
+tutorial route.
+
+```
+# B: the control -- the same play arm on a hero that was never dismounted (sp's parked hero).
+```
+Without B, "the hero walks at the landing point" cannot be separated from "the hero walks anywhere".
+
+**Pre-register the readings:**
+- A walks and B walks ⇒ **the deploy location is playable** — the biggest result on this route.
+- A does not walk, B walks ⇒ something about the landing point (navmesh, streaming, floor) blocks it.
+  Read the movement component's mode and `hero+0x1BE8` before concluding.
+- Neither walks ⇒ the arm did not initialise; read `[PL] *** init complete ***` first. A missing
+  init line makes the whole sitting VOID, not negative.
+
+### 1.3 The staging that produced all of this
 
 ```
 forceTutorialMatch = true ; go build -C server -o ags.exe ./cmd/ags      (set back to false after)
@@ -41,29 +97,14 @@ forceTutorialMatch = true ; go build -C server -o ags.exe ./cmd/ags      (set ba
 .\configs\fk24-stage.ps1 -Probe "tools\sigbypass-mod\build\tutorial_launch_dropplane_b1only.dll" -Label s133 -AllowStale
 tools\inject\inject.exe mmap <pid> tools\sigbypass-mod\build\tutorial_launch_droppod_pe_cdopoke.dll
 tools\inject\inject.exe mmap <pid> tools\sigbypass-mod\build\tutorial_launch_dismount_landstart.dll
-tools\inject\inject.exe mmap <pid> tools\sigbypass-mod\build\tutorial_launch_play.dll        <-- THE NEW STEP
+tools\inject\inject.exe mmap <pid> <the play-at-landing arm>
 ```
 
-`play` (`.text 9bc10a4552c596e1`, the deployed, regression-gated arm) builds the body, takes the
-camera and drives WASD. **Its whole S108b result — "the hero walks and runs with real locomotion
-animation" — was measured on a hero parked at `(0, 0, 13240)` by `sp`. It has never been run on a
-hero the game's own deploy path placed on the ground.**
-
-**Pre-register the readings before flying:**
-- hero location moves under WASD ⇒ **the deployed hero is playable** — the single biggest result
-  available on this route.
-- hero does not move but `[PL] *** init complete ***` prints ⇒ the arm is fine and something about the
-  deployed state blocks movement. Read `SetPredropHidden` (`hero+0x1BE8`), collision, and the movement
-  component's mode.
-- `[PL] ResolveWakeMove failed -> abort` ⇒ a resolve failure, **not** a statement about playability.
-- ⚠ `play` and `dismount` both take game-thread callbacks by `Func` swap. They are separate
-  injections and each arms and disarms its own swap, so they do not race — but **inject them ≥20 s
-  apart** like everything else (S109).
-
-⚠ **Land the hero EARLY.** Flight 1 called the detach with the pod already 1.45 M uu off the island
-and the hero fell through the world. Use `dismount-landstart` (`KDXLANDING=2`) and inject it right
-after Route E, while the tutorial-start cell is still resident — flight 2 found the `LokiPlayerStart`
-at uptime ~390 s and flight 1 found **nothing** at ~860 s.
+⚠ **Land the hero EARLY.** Use `dismount-landstart` (`KDXLANDING=2`) and inject it right after
+Route E, while the tutorial-start cell is still resident — flight 2 found the `LokiPlayerStart` at
+uptime ~390 s and flight 1 found **nothing** at ~860 s.
+⚠ Inject everything ≥ 20 s apart (S109). Both `play` and `dismount` take game-thread callbacks by
+`Func` swap, and each arms and disarms its own, so they do not race — but keep the gap.
 
 ---
 
