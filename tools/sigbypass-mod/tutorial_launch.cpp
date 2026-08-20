@@ -10933,12 +10933,19 @@ static void SpLadderStep(){
                    "attributable: 'the pooled spawn returned null' and 'the primitive never dispatched on "
                    "this thread' read identically.\r\n");
             g_pslStep=2; return; }
+        PdCdoFlags("poolspawn P0c, BEFORE any poke", false);   // baseline read; never writes here
         Marker("[PS] --- P0c (POSITIVE CONTROL): K2_GetActorLocation() on a NON-ORIGIN actor, cross-checked "
                "against a pure-RPM read of the same actor's RootComponent->RelativeLocation. ---\r\n");
         SpControl();
         g_pslStep=2; return;
     case 2:
         if(!(KSPARMS&0x02)){ Marker("[PS] P1 disabled by KSPARMS bit1 -> skipped (no deferred pooled spawn attempted)\r\n"); g_pslStep=4; return; }
+        // ★★★★★ S130 C7: clear AActor::bCanEverReplicate on the pod CDOs immediately before the
+        //   pooled spawn.  This is the WHOLE experiment: the acquire does
+        //   `cmp byte [CDO+0x6C],0 ; jne -> return NULL` (.text 0x0564820C), and BP_DropPod_Tutorial_C
+        //   reads 1.  S128 measured P1/P2 returning NULL with it set; this arm is the same probe,
+        //   same class, same params, with ONE BYTE different.  KPDCDOPOKE=0 reproduces S128 exactly.
+        PdCdoFlags("poolspawn, immediately before P1", KPDCDOPOKE!=0);
         Marker("[PS] --- P1 (HEADLINE): ULokiGameplayStatics::SpawnPoolableActorFromClassDeferred. This is "
                "the FIRST LINK of the [I] chain 'PrimePools is disabled => the pooled spawn returns null "
                "=> SpawnDropPodForTeam bail 2'. Nobody has ever shown that link holds. ---\r\n");
