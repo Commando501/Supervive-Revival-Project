@@ -414,6 +414,7 @@ replacement of existing shims.
 **Dead ends, recorded so nobody re-walks them:** no loose ini in the install (§0.3);
 `QosManagerServerUrl` empty in all 13 AccelByte blocks so QoS never needs serving;
 `DefaultActorPoolManager.ini` is `[Staging]`-allowed but not actually shipped.
+★ **S130 (2026-08-20) turned that dead end into a confirmed one from the other side:** the actor-pool feature is gated by `ALokiGameState::bSupportsActorPoolPriming` (a `bool` at `+0x898`) whose `CPF_Config` bit is **clear**, and **0 of that class's 155 reflected properties carry `CPF_Config`** — so even a shipped `DefaultActorPoolManager.ini` would have had nothing to bind. ⇒ **there is no ini route to actor pooling, measured two independent ways.** `docs/s130-actor-pool-gate-settled.md` §5.
 
 ---
 
