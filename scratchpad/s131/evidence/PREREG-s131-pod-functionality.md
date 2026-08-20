@@ -239,3 +239,69 @@ only because the hash was actually compared. Both new latches and the strstr are
 
 ⚠ Budget: S130 spent **4 launches for 1 armed result**, and **3 of 3 armed windows died
 artifact-less**. Assume the client will not survive.
+
+---
+
+# AMENDMENT 1 — 2026-08-20 02:2x, written BEFORE the probe armed (the stager is still on its
+# 110 s minimum-uptime gate; no pod dump has been produced)
+
+## A1.1 THE RIDEABLE COMPONENT EXISTS. The fifth wall IS reachable. [M]
+
+`scratchpad/s130/evidence/bpdump_BP_DropPod_PROPS.txt` (already on disk from S130, never read for
+this question) contains:
+
+```
+## [UActorComponent] LokiRideable_GEN_VARIABLE  (ExportType=LokiRideableComponent)
+   - ComponentClass (ObjectProperty) = Class'/Script/Loki.LokiRideableComponent'
+   - ComponentTemplate (ObjectProperty) = .../BP_DropPod.BP_DropPod_C:LokiRideable_GEN_VARIABLE'
+   - InternalVariableName (NameProperty) = LokiRideable
+```
+
+and `BP_DropPod_Tutorial_C` inherits it (its own dump lists `LokiRideable_GEN_VARIABLE` too).
+
+⇒ **§2.6's "if zero, the run says nothing" branch is now the UNEXPECTED one.** Revised prediction:
+**≥1 live `LokiRideableComponent` per pod whose components were instantiated**, the rider branch
+runs, and `AuthPlayerEnterWorldAttachedToRidable` takes its failure path. [I]
+
+★ Independently corroborated by S131 lane 4 (offline `.data` record sweep, 7/7 non-degenerate
+controls passing): `ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable` impl is
+**`0x55CD510` and REAL** — reached by a completely different route from S130's, and it also newly
+resolves `AuthPlayerEnterWorldNew` as **EMPTY** (`0xf7ec20`), which S130 had as coverage-blocked.
+
+## A1.2 A SECOND, UNPLANNED DISCRIMINATOR FALLS OUT OF THIS — component instantiation
+
+`BP_DropPod_C` also ships a **`ProjectileMovementComponent`** (`ProjectileMovement_GEN_VARIABLE`).
+Together with the rideable component that gives a rising, countable population.
+
+For a **deferred** spawn, UE runs the construction script at `FinishSpawningActor`, not at
+`SpawnActorDeferred`. So [I]:
+
+| pod | FinishSpawningActor called? | predicted components |
+|---|---|---|
+| P1 (poolspawn, DEFERRED) | **no** — RM_POOLSPAWN never finishes it | possibly none |
+| P2 (poolspawn, non-deferred) | n/a — spawned complete | full set |
+| P3 (ordinary spawn) | n/a | full set |
+| **E1 (SpawnDropPodForTeam)** | **yes** — `FinishSpawningActor(v6, v32)` on the AS path | **full set** |
+
+⇒ **The rideable-component count is an independent receipt for `FinishSpawningActor`**, which none of
+§2.1's three fields covers (they are all written by `InitializeDropPod`, which runs *before* it).
+
+⚠ Grade it [I], not [M]: nothing here measures this build's pooled-spawn component behaviour, and the
+pooled path may differ from a stock `SpawnActorDeferred`. A surprise here is informative, not a probe
+failure.
+
+## A1.3 What the movement prediction now rests on
+
+§2.4 predicted stationary. The named mechanism is now concrete: the mover is the
+`ProjectileMovementComponent`, and `StartPodGameplay` (`LokiDropPod.as:896`) is what configures it
+(`v10 = UProjectileMovementComponent...`). Nothing on the `SpawnDropPodForTeam` path calls
+`StartPodGameplay`. **Prediction unchanged: stationary.** [I]
+
+★ If a pod DOES move, that falsifies §2.3 *and* names the mechanism to look at first.
+
+## A1.4 Status of the other recon lanes at the time of writing
+
+Lane 4 (the `.data` record sweep) has landed and is summarised in
+`scratchpad/s131/lane4-record-sweep.md`. Lanes 1/2/3/5/6 are still running; **nothing from them has
+been used to write any prediction above.** Anything they contribute after the flight will be labelled
+as post-hoc.
