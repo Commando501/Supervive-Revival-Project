@@ -8,6 +8,21 @@ Read `docs/next-session-prompt-s131.md` for the question, then this. Primary evi
 `RESULT-poolspawn-s131-live.txt`, `RESULT-routeE-E1-s131-live.txt`,
 `RESULT-dropplane-b1only-s131.txt`, `Loki-s131-armed-window.log`.
 
+★★★★★ **FORWARD POINTER — THE RECIPE §14.1/§14.3 PROPOSED WAS FLOWN THE SAME DAY, AND IT WORKS.
+THE DROP-POD DISMOUNT RUNS AND IS USABLE. Read `docs/s132-dismount-settled.md`.**
+Appending the PlayerState to `ULokiRideableComponent::PlayersAttached` (`+0x130` Data / `+0x138` Num /
+`+0x13C` Max) using the game's own `ResizeGrow` at **`0x00F988D0`** — the exact function the fifth
+wall's own tail calls at `0x55CD75B` — and then calling `AuthPlayerDetachPlayerFromRidable`
+(impl **`0x55CCCB0`**, exec thunk `0x5456100`) through the S55 direct `UFunction.Func` thunk takes the
+hero **out of the pod**, un-hides it, restores its collision and movement, and places it at a chosen
+landing actor. **Risk class DATA; zero `.text` writes, zero PI hooks, zero CDO pokes.** Four dismounts
+in one armed window, then two further flights that landed the hero at a chosen `LokiPlayerStart`, each
+against a within-run negative control (same detach, same component, same primitive, `PlayersAttached`
+EMPTY) that never moved the hero.
+⇒ **Three things in this file are annotated in place by that flight** — §10.2 P5 (`ContainsPlayer`
+reads the WRONG array), §12.1 (why both player arrays are empty), and §14.1 ("expect a partial
+dismount" was too pessimistic). Everything else here stands.
+
 ---
 
 ## 0. THE ANSWER
@@ -307,6 +322,19 @@ NAME: the pod's own `LokiRideable` component (`BP_DropPod_C.LokiRideable @0x6C8`
 | **P4** | **the log line appears** (baseline **0**) | ★★★★★ **APPEARED, count 0 → 2 — exactly one per call** ✓ |
 | P5 | `R2 ContainsPlayer` still false | **still 0** — no rider attached ✓ |
 
+⚠⚠ **P5 IS WEAKER THAN IT LOOKS — S132 CORRECTION (2026-08-20).** **[M] `ContainsPlayer`
+(impl `0x55D0270`) scans `PlayersInside` (`+0x120`), NOT `PlayersAttached` (`+0x130`).** So it only
+ever tested one of this component's two player arrays, and a rider attached the way the wall's own
+success tail attaches one — by appending to `PlayersAttached` — would leave it reading **false**.
+P5's *conclusion* is still true here (the wall bailed before any attach, so nothing was in either
+array), but the **reasoning does not generalise**: ⚠ **using `ContainsPlayer` as the receipt for an
+append to `PlayersAttached` manufactures a false negative on a working append.** S132 hit exactly
+that and had to switch receipts. ★ The receipt that does work is free and log-independent:
+`PlayersAttached.Remove(PS)` (`0x55CCE23`) runs on every path past the detach's GATE 4, so `Num`
+staying 1 vs dropping to 0 separates "bailed at a gate" from "ran past GATE 4" with no log
+dependence — which matters, because the detach has ZERO log strings in its 440-byte extent.
+⇒ `docs/s132-dismount-settled.md`.
+
 ```
 [2026.08.20-07.56.47:371][874]LogLokiRideable: Error: ULokiRideableComponent::
       AuthPlayerEnterWorldAttachedToRidable failed to get the round game mode
@@ -478,6 +506,20 @@ array.** Confirmed BY NAME against live reflection on the actual component
 (`scratchpad/s131/tools/rideable_state.py`): `PlayersInsideCount` **IntProperty @0x11C**,
 `PlayersInside` **ArrayProperty @0x120 size 16** — exactly the `Data@0x120 / Num@0x128 / Max@0x12C`
 the guard reads. And live: **`Data = 0x0, Num = 0, Max = 0`**, with **neither** PlayerState present.
+
+★ **S132 NAMED THE CAUSE OF THAT EMPTY ARRAY — [M, strong]: the only reflected writers of EITHER
+player array are EMPTY STUBS in this client.** `AuthAddPlayer` (thunk `0x2C2CE30` ⚠ **23-way ICF, NON-IDENTIFYING**, impl `0x0F7EC20`),
+`AuthRemovePlayer` (same thunk, same impl) and `AuthSetCanJump` (thunk `0x5296F30`, impl `0x0F7EC20`) join the
+already-known `AuthPlayerEnterWorldNew` — **four empty `Auth*` stubs on `ULokiRideableComponent`, not
+one.** ⇒ both `PlayersInside` (`+0x120`) and `PlayersAttached` (`+0x130`) read `Data=0 Num=0 Max=0`
+in a fully staged world **BY CONSTRUCTION**, and a data poke is the only route to populating either.
+★ The obvious shortcut — "just call `AuthAddPlayer` instead of poking" — was CHECKED, not assumed.
+REAL on the same class, for contrast: `AuthPlayerDetachPlayerFromRidable` `0x55CCCB0` ·
+`AuthPlayerEnterWorld` `0x55CCE70` · `AuthPlayerEnterWorldAttachedToRidable` `0x55CD510` (REAL but
+ALWAYS-FAILS — §10) ·
+`AuthPlayerPreSpawnOnAddToPlane` `0x55CD800` · `ContainsPlayer` `0x55D0270` ·
+`GetLandingTeleportLocation` `0x55D89F0` · `HasEverContainedPlayer` `0x55DCAA0` ·
+`GetRidePosition` `0x55DAB50`. ⇒ `docs/s132-dismount-settled.md`.
 
 ⇒ **[M] R4 bailed at `0x55CCED7`.** §11.2's null is explained, and the explanation was reachable
 offline for free. ★ The pre-registered "UNINTERPRETABLE" was the right *record*; it was not the right
@@ -653,6 +695,23 @@ Lever #1 (append to `PlayersAttached`, then call the detach) is still the best r
 they were supposed to do on the hero is unknown. Expect a partial dismount, and treat any null as
 locating one of those two rather than as a failure of the append.
 
+⚠⚠ **SUPERSEDED IN PART, 2026-08-20 (S132) — THE TWO-FOLD *FINDING* STANDS; THE *CONSEQUENCE* DRAWN
+FROM IT DOES NOT.** The count above is correct and was re-confirmed in flight. What was wrong is
+"expect a partial dismount": **[M] both folds are `0xF7EC20`, and their return values are NEVER TESTED
+by the surrounding code, so neither gates anything.** Everything the detach does past its six gates is
+a REAL body — `SetActorEnableCollision(true)` `0x339A550`, `SetPredropHidden(false)` `0x5599040`,
+`GetLokiCharacterMovement` `0x55AC8E0` then `vt[+0x3E0](true)` and `[mv+0x1A0]=1.0f`,
+`GetLandingTeleportLocation` `0x55D89F0` (963 B, REAL), the `SetActorLocation` teleport,
+`MulticastOnPlayerEnteredWorld` `0x54537C0`, and `PlayersAttached.Remove` `0x11F3860`.
+**Flown: the hero leaves the pod, un-hides, regains collision and movement, and lands where told.**
+⇒ Lever #1 was the right route and the dismount is **usable, not partial**.
+★ The forecast that DID hold: "treat any null as locating one of those two rather than as a failure
+of the append" is still the right reading discipline — there was simply no null to locate.
+⚠ Correct the shorthand while you are here: **`0xF7EC20` is `c2 00 00` = `ret imm16 0`, a VOID
+return — it does NOT zero `eax`.** This repo's long-standing "ret 0" gloss reads as "returns zero",
+which is a different claim, and it is part of what made these two calls look like they might gate
+something. ⇒ `docs/s132-dismount-settled.md`.
+
 ★ A sibling lane had already flagged this and the final report dropped it. **When two lanes disagree,
 the one that reports MORE stripped calls is the one to check first.**
 
@@ -686,6 +745,21 @@ print the extent next to any count derived from it, so a disagreement is visible
   (`0x56680F0`) then `SpawnAndMoveLokiCharacter_MoveStep` (`0x55C1B20`), with collision toggled on and
   off around them. **Actor position is not transient.** The append is the only *component*-state
   output; the rest is real world state.
+  ★ **S132 FLEW IT, AND THE APPEND ALONE IS SUFFICIENT [M]:** poking only `PlayersAttached`
+  (`+0x130` Data / `+0x138` Num / `+0x13C` Max) — none of the other outputs above — passes the
+  detach's GATE 3 (array non-empty) and GATE 4 (PlayerState present), and the dismount runs. The
+  append must use the game's own `ResizeGrow` `0x00F988D0` so the buffer belongs to the game's
+  allocator; the predicted `NewMax = 4` is exactly what the arm logged (`AFTER … Num=1 Max=4`).
+  ⚠ The **32-byte** request size is the offline derivation (`NewMax * 8`), NOT a logged value.
+  It is an ARM, not
+  an RPM write — `0x00F988D0` is not a UFunction, so the S55 primitive does not apply to it.
+  ⚠ `TArray::Remove` (`0x11F3860`) writes ONLY `Num` — no free, no realloc — so a poked buffer is
+  never freed by the detach and survives across repeated calls.
+  ⚠ `PlayersAttached` is **NOT replicated** (no `CPF_Net`) [M, two disjoint instruments], which makes
+  this write SAFER than an early S132 draft described, not riskier.
+  ⚠⚠ **ORDERING TRAP:** do NOT also poke `PlayersInside` (`+0x120`). It makes `HasEverContainedPlayer`
+  true, which turns the fifth wall itself into a SILENT no-op and destroys the error-line receipt.
+  ⇒ `docs/s132-dismount-settled.md`.
 * ⚠ **`SpawnAndMoveLokiCharacter_MoveStep` has NO record and NO exec thunk** — it is a raw native
   address, a different dispatch and risk class from the three reflected calls beside it, and it
   carries 2 `0xF7EC20` calls of its own.

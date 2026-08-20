@@ -6135,6 +6135,10 @@ constexpr uintptr_t DP_ACTOR_TAGS_MAXNUM = 64;  // sanity bound when walking an 
 // != null)`, so if NO rideable component exists on the pod the FIFTH WALL
 // (AuthPlayerEnterWorldAttachedToRidable) is never reached and the run says NOTHING about it.
 // Without this, "the rider handoff failed" and "the rider handoff never ran" read identically.
+// ★ STILL THE RIGHT INSTRUMENT, and the census answered it: the rideable population rises +1 per pod
+//   (20 -> 21 on E1), so the branch IS reachable. S131 then called the wall DIRECTLY and CONFIRMED
+//   its bail [M]; S132 routed around it entirely (RM_DISMOUNT). Keep this latch -- it is what makes
+//   a null here a PRECONDITION statement instead of a fabricated failure.
 enum { DPV_KNOWN=1, DPV_PLANE=2, DPV_POD=4, DPV_SHIP=8, DPV_ACTOR=16, DPV_RIDE=32 };
 
 // ⚠⚠ `arche` IS A SEPARATE BUCKET AND IT IS NOT IN `hits`. Archetypes (`Default__*`) and
@@ -12938,15 +12942,46 @@ static void DoSpawnPossess(){
 // predicate call, a cached-world fetch, and the stripped getter.  Nothing is written.  This mode
 // performs NO `.text` write, NO PI hook and NO heap poke -- it is direct `UFunction.Func` calls
 // through the S55 primitive plus guarded reads.
+//
+// ★★★★★ OUTCOME (S131 flown, then S132) -- READ THIS BEFORE RE-RUNNING THIS MODE.
+//   R1 WORKED AS DESIGNED and the wall is now [M]: `... AuthPlayerEnterWorldAttachedToRidable failed
+//   to get the round game mode` went 0 -> 2, exactly one per call, against a verified zero baseline.
+//   R3 confirmed it on a SECOND entry point with its own distinct bail string (0 -> 2 likewise), so
+//   the wall is ONE STRIPPED GETTER shared by several consumers, not one function's bug.
+//   ⇒ THIS MODE HAS DONE ITS JOB. It is now a CONTROL, not a lever -- re-running it can only
+//   reproduce a bail. The wall cannot be poked open: `0xF7EB50` is `33 c0 c3`, three bytes with ZERO
+//   memory operands, and its thunk `0x5456380` has 0 direct callers.
+//   ⇒ ★★ AND IT DOES NOT MATTER, because S132 went round it from the other end. The wall's only
+//   persistent component-state output is `PlayersAttached.Add(PS)` (+0x130), and
+//   `AuthPlayerDetachPlayerFromRidable` is gated on exactly that array. Append it ourselves with the
+//   game's own ResizeGrow and the detach runs: the hero LEAVES THE POD, is un-hidden, re-collided,
+//   re-gravitied and teleported to a chosen landing actor. TALLY: **7 detach calls across 4 launches,
+//   6 of which moved the hero**, 1 faulted at GATE 5 on a template PlayerState without moving it.
+//   ⚠ RE-DERIVE that tally from the seven canonical markers in `scratchpad/s132/evidence/`; do NOT
+//   carry it. An early S132 draft said "five calls across two launches" and it was true when written.
+//   ⇒ USE RM_DISMOUNT (below). See `docs/s132-dismount-settled.md`.
 #ifndef KRDARMS
 // bit0 R0c control | bit1 R1 the wall | bit2 R2 re-read | bit3 final report
 // bit4 R3 AuthPlayerPreSpawnOnAddToPlane (a CONFIRMATION arm -- it has its own distinct bail string)
 // bit5 R4 AuthPlayerEnterWorld           (REAL, never called, and NO bail string was found for it [I])
+// ⛔ SUPERSEDED for bit5 (S131 §12 offline, then S132) -- R4 WAS called, twice, with all four slots
+//    bound: no fault, no log line, hero did not move. The null is now NAMED, not uninterpretable:
+//    `AuthPlayerEnterWorld` (impl 0x55CCE70) requires the PlayerState to ALREADY be in `PlayersInside`
+//    (+0x120) -- `0x55CCED7 je <bail>` on an empty array, both bails SILENT -- and it then calls the
+//    SAME stripped round-game-mode getter 0xF7EB50 at 0x55CCF22, un-gated. S132 measured its two
+//    terminal actions as direct calls to that fold and found it writes NO actor or component
+//    transform. ⇒ R4 IS FORECLOSED as a route; keep it only as a control. The route that WORKS is
+//    the OTHER end -- RM_DISMOUNT below. See `docs/s132-dismount-settled.md`.
 #define KRDARMS 0x3F
 #endif
 #ifndef KRDREPOS
 // R4's `bRepositionPlayer`. 1 => a WORKING call MOVES THE HERO, a physical readout that owes nothing
 // to a log line. 0 leaves R4 observable only through PlayersInsideCount and the log.
+// ⚠ MEASURED (S131 v3): it did NOT move the hero -- (0,0,13240) before and after -- because R4 bails
+//   at its PlayersInside membership gate long before `bRepositionPlayer` is consulted. This knob
+//   cannot become a positive readout until that array is populated, and populating it is the ONE thing
+//   you must not do -- it makes `HasEverContainedPlayer` true, which turns the wall itself into a
+//   SILENT no-op. ⚠ ATTRIBUTION: that ordering trap is **S131 §14.1**, not S132; S132 only obeyed it.
 #define KRDREPOS 1
 #endif
 #ifndef KRDSTEPMS
@@ -13457,6 +13492,16 @@ static void RdFinalReport(){
 //       GetLandingTeleportLocation really does consume its `LandingLocationActor` argument -- and the
 //       dismount can put the hero on real ground. If it lands at the pod ANYWAY, the argument is
 //       ignored and the landing point is a property of the component. Both outcomes are results.
+//     * ★★★★★ ANSWERED, and the pre-registration was met (S132 flights 2 and 3, `dismount-landstart`,
+//       `.text 0d5fa554edac53c5`). With a `LokiPlayerStart` 1,488,146 uu from the pod at that instant,
+//       the hero landed AT THE PLAYERSTART -- (-3206.4, 5070.5, 138.0), settling to Z = 90.15 and
+//       holding position BIT-FOR-BIT across 9 s while the pod flew another 180,000 uu. Flight 3
+//       reproduced it. ⇒ [M] `GetLandingTeleportLocation` (0x55D89F0, REAL, 963 B) CONSUMES its
+//       `LandingLocationActor` argument, and the dismount puts the hero on real ground, un-hidden,
+//       collided and gravity-affected. ⇒ PREFER `dismount-landstart` over the default for any run
+//       whose point is a USABLE deploy; the default (0) is now the *pod-relative* control arm.
+//       ⚠ HOW the 963-byte body derives the point is still untranscribed -- "it consumes the actor"
+//       is [M], the derivation is not. See `docs/s132-dismount-settled.md`.
 #define KDXLANDING 0
 #endif
 #ifndef KDXLANDCLASS

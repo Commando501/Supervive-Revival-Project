@@ -34,6 +34,40 @@ Deploy = the server-authoritative drop-in that normally activates the hero visua
 - **Drop-in descent (DropPlane)** — `Comp_GameMode_DropPlane_Tutorial.SpawnPlane` (BP event) **FAULTS** (null-deref
   reading `GetAllActorsWithTag` drop-path markers that don't exist outside the real deploy). `AddPlayerToDropPlane`
   (native) + `GetAutoDropLocation` run clean but no-op. The full descent needs the server round context. (RM_DROPIN=20)
+
+  > ⚠⚠⚠ **THIS BULLET IS THE MOST-CITED REFUTED CLAIM IN THE PROJECT. It is preserved exactly as written and
+  > must NOT be quoted as current** (banner added by the S132 sweep, 2026-08-20 — FK-22 refuted it on
+  > 2026-08-16 and the correction reached `coverage-audit-s101.md:269` but never reached this, its SOURCE).
+  > Read `docs/fk22-dropphase-reachability.md` first, then `docs/s130-actor-pool-gate-settled.md`,
+  > `docs/s131-pod-functionality-settled.md`, `docs/s132-dismount-settled.md`.
+  > - ⛔ **"markers that don't exist outside the real deploy" is FALSE [M]** — `TrainingStart`,
+  >   `PlaneStartPoint` and `PlaneEndPoint` all ship **in `LVL_Tutorial`**, as literal `Actor.Tags` in three
+  >   separate World Partition cells, and **`Skylands_WP` — the real-deploy map — carries 0 of them in
+  >   2,216/2,216 parsed packages.** The census returned the exact opposite of its expected answer.
+  >   ⚠ *present-in-map* ≠ *streamed-in at call time*; only the first is settled, and cell load order is the
+  >   natural successor hypothesis.
+  > - ⚠ **`SpawnPlane` is not one function [M]** — three sibling `Comp_GameMode_DropPlane*` classes, each with
+  >   its own override, no BP-to-BP inheritance, so this measurement on `_Tutorial` never transferred. The
+  >   **general** variant queries no markers at all (its spawn lives in `OnDeathCircleSet`, derived
+  >   procedurally from the death-circle radius). ⚠ `_PvE_Holdout`'s override IS a byte-twin of `_Tutorial`'s,
+  >   so do not restate this as "tutorial-only" either.
+  > - ⚠ **The word `FAULTS` is an instrument reading, not a fault site [I, strong].** It is only the boolean
+  >   from a bare SEH `__except`, and `CallBPGuarded` memcpys a captured `FFrame` without reinitialising
+  >   `FlowStack`/`PreviousFrame`. `SpawnPlane` is the **only** one of the three functions compared here that
+  >   uses the flow stack — **3 push / 2 pop, vs 0/0 for both that "ran clean."** The confound tracks the
+  >   result exactly and was never controlled. ⇒ *"null-deref reading the markers"* is an **attribution laid
+  >   over an SEH catch.**
+  > - ★★★★★ **AND THE DROP HAS SINCE BEEN DRIVEN WITHOUT `SpawnPlane` AT ALL.** The round phase self-drives
+  >   to `EGP_Combat` from one `GoToPhase` call (S124); the drop pod **spawns** once `bCanEverReplicate`
+  >   (`AActor+0x6C`) is cleared on its CDO (S130 — that byte, not the actor pool, was the NULL); the pod is
+  >   **initialised, alive and flying** at the cooked 20,000 uu/s (S131); and the rider handoff is closed from
+  >   the **other end** — `AuthPlayerDetachPlayerFromRidable` puts an un-hidden, collided,
+  >   gravity-affected hero on real ground at a chosen actor (S132, DATA-class writes only).
+  > - ⚠ **What survives of "needs the server round context" is ONE deleted accessor, not a missing context**
+  >   [M]: `Loki::LokiIsServer()` is `xor al,al; ret` and the round-game-mode getter `0xF7EB50` is
+  >   `33 c0 c3` — while the round game mode **object itself exists, is live, and passes the wall's own
+  >   `IsA<ALokiRoundGameMode>` check**. ⇒ the honest 2026 form is *"one accessor was stripped"*, not
+  >   *"the client has no round context"*.
 - **Game's cosmetics cascade** — 0 `LokiCosmeticsController` instances exist anywhere; `GetBaseCosmeticsController`
   returns null; the S79 orchestrators (`ReceiveRestarted`/`OnLocalPlayer_CharacterSpawned`/`RefreshLocalControl`/
   `TryLocalControlSetup`) and this session's `ClientInitialComponentSetup`/`BP_PostSetupCosmetics`/`RefreshCosmetics`

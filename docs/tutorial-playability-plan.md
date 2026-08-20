@@ -41,8 +41,32 @@ GOAL: start the tutorial from the menu -> load in -> PLAY it, completing objecti
 >   created a real SkeletalMeshComponent on the hero + `SetSkeletalMeshAsset` assigned a body mesh — the game's
 >   cosmetics controller is bypassed. Mechanism PROVEN; a clean on-screen body is a refinement (Ronin's actual mesh +
 >   hero on the ground + stable game). NEW reusable primitive: the Blueprint-function-call primitive (`CallBPGuarded`).
-> - Deploy walls that ARE real: the DropPlane `SpawnPlane` descent (faults on absent level markers) + the game's own
+> - Deploy walls that ARE real: ~~the DropPlane `SpawnPlane` descent (faults on absent level markers)~~ + the game's own
 >   cosmetics cascade (0 controllers, never created outside real deploy). Full detail + refinement plan in the S93 doc.
+>
+> ### ⚠⚠ S124 / S130 / S131 / S132 CORRECTION to the line immediately above — the FIRST of those two "real
+> ### deploy walls" IS FALSE AS WRITTEN, and the whole drop route has moved a long way since (added by the
+> ### S132 sweep, 2026-08-20). Read `docs/fk22-dropphase-reachability.md`, then `docs/s130-actor-pool-gate-settled.md`,
+> ### `docs/s131-pod-functionality-settled.md`, `docs/s132-dismount-settled.md`.
+> - **The markers are NOT absent [M].** `TrainingStart`, `PlaneStartPoint` and `PlaneEndPoint` all exist in
+>   `LVL_Tutorial`, in three separate World Partition cells, as literal `Actor.Tags` — and `Skylands_WP`,
+>   the "real deploy" map, carries **0 of them in 2,216/2,216 parsed packages**. The census returned the
+>   OPPOSITE of its expected answer. (⚠ *present-in-map* ≠ *streamed-in at call time*; only the first is settled.)
+> - **`SpawnPlane` is not one function [M]** — the three `Comp_GameMode_DropPlane*` classes are SIBLINGS, each
+>   with its own override, so an S93 measurement on `_Tutorial` cannot transfer to the general component; the
+>   GENERAL variant queries **no markers at all** and derives the plane path procedurally.
+> - **The `FAULTED` reading is confounded at the instrument [I, strong]** — it is only the boolean from a bare
+>   SEH `__except`, and `CallBPGuarded` memcpys a captured `FFrame` without reinitialising `FlowStack`/
+>   `PreviousFrame`. `SpawnPlane` is the ONLY one of the three functions S93 compared that uses the flow stack
+>   (3 push / 2 pop vs 0/0 for both that "ran clean"). The confound tracks the result exactly and was never controlled.
+> - ★★★★★ **AND THE ROUTE HAS SINCE BEEN DRIVEN WITHOUT `SpawnPlane` AT ALL.** The round phase self-drives to
+>   `EGP_Combat` (S124); the drop pod **spawns** once `CDO->bCanEverReplicate` is cleared (S130); it is
+>   **initialised, alive and flying** at a cooked 20,000 uu/s (S131); and the rider handoff is **closed from the
+>   other end** — `AuthPlayerDetachPlayerFromRidable` puts an un-hidden, collided, gravity-affected hero
+>   on real ground at a chosen actor (S132, DATA-class writes only, zero `.text` writes).
+> - ⚠ **The SECOND half of the original line is untouched by any of this** — the cosmetics cascade claim
+>   ("0 controllers, never created outside real deploy") was not re-tested and is neither confirmed nor refuted here.
+> - ⚠ **Still open**: whether the hero is *playable* where the dismount lands it (`play-atlanding-walk`, unflown).
 
 ## ★★★ THE ROUTE IS DECIDED BY A BLUEPRINT FLAG — force-open, not the DS stub
 
@@ -179,8 +203,19 @@ ITER2 (arg fixes applied): `PC->PlayerState@0x3C0 = BP_LokiPlayerState_C`. ALL c
   DIFFERENT TYPE from a skill (live census: only `WBP_UI_GameAugment*` / `Comp_GameState_GameAugments_C` exist).
   Feeding a `BP_TrainingSkill_*` there silently no-ops. The augment list is NOT the lesson-activation path.
 - `GetAutoDropLocation(**DropPlane**@0x0, RandomLocation@0x8 OUT, MaxRetries@0x20, NumRetries@0x24, …)` needs a
-  DROP-PLANE ACTOR — and a live census shows **0 `BP_DropPlane*` actors exist**. That is why the drop never commits:
-  there is no plane. `SpawnPlane` must create one first (it is the BP fn that faults on an empty param buffer).
+  DROP-PLANE ACTOR — and a live census shows **0 `BP_DropPlane*` actors exist**. ~~That is why the drop never commits:
+  there is no plane.~~ `SpawnPlane` must create one first (it is the BP fn that faults on an empty param buffer).
+  ⚠⚠ **CORRECTED (S127→S132; added by the S132 sweep, 2026-08-20). "0 planes exist" was a fact about THAT
+  world, not a structural wall, and reading it as the reason "the drop never commits" is the diagnosis that
+  aged worst here.** A plane/ship IS present in the staged tutorial world after the `dropplane_b1only`
+  injection step [M, **S127's** census reads `DropShip=1` — `docs/s130-actor-pool-gate-settled.md`:835;
+  the S131 doc contains no `DropShip` line at all], and the standing staging recipe is
+  `gft → fo → sp → dropplane_b1only → droppod-pe-cdopoke`. **The drop POD then spawns** once one CDO byte is
+  cleared (`bCanEverReplicate` at `AActor+0x6C`, S130 — that byte, not the actor pool, was Bail 2), it is
+  **initialised, alive and flying** at a cooked 20,000 uu/s (S131), and the rider handoff is closed from the
+  **other end** by `AuthPlayerDetachPlayerFromRidable` (S132). ⇒ **do not re-derive a wall from this line.**
+  Read `docs/s130-actor-pool-gate-settled.md`, `docs/s131-pod-functionality-settled.md`,
+  `docs/s132-dismount-settled.md`.
 
 ## ★★★ THE LESSON LIFECYCLE API — native `LokiTrainingSkill` (live-enumerated, S90 iter2). THIS is the real path.
 Activation is PER-SKILL on the skill object, NOT on the manager:
@@ -264,6 +299,21 @@ calling SpawnPlayer...  ->  hero=0x0     <-- NULL
 Retried after GoToPhase -> 4 (SpawnSelect): **still hero=0x0**, 0 live BP_HERO_ instances. Game survived both.
 ⇒ `LokiGameMode::SpawnPlayer` refuses regardless of round phase, even with PlayerState.HeroClass correctly set.
 So the canonical-spawn route does not open the gate by itself either.
+
+> ★★★★★ **THE MECHANISM WAS FOUND IN S113 AND IT MAKES THIS OBSERVATION EXACT, NOT MYSTERIOUS** (FK-1;
+> propagated here by the S132 sweep, 2026-08-20 — this doc still read as an unexplained refusal).
+> **`ALokiGameMode::SpawnPlayer`'s IMPLEMENTATION IS EMPTY in the shipping client [M, both dumps]:**
+> exec thunk `0x534C070` (real code) → **impl `0x0F7EB50` = `33 c0 c3` = `xor eax,eax; ret`** ⇒ it returns
+> `nullptr` **unconditionally**, on every machine, in every phase, with any arguments. ⚠ **Print the IMPL, not
+> the thunk** — the thunk is a large real function and reading it is what made this look re-testable for
+> ~40 sessions. Empty impls are **not** ambient: **515 EMPTY records / 16,277** (3.16 %, S131 census), and the
+> `Auth*` naming family is enriched to **42.4 %**, Fisher p = 1.6e-28 — i.e. **one decision to strip server
+> authority**, not a per-function bug. ⇒ **`hero=0x0` here is a CLOSED question. Do not spend another launch
+> on `RM_SPAWNPLAYER`, and do not read it as a phase/HeroClass problem.** It also CLOSES this doc's
+> `AvatarActor = NULL`: the design routes the whole GAS bind through `SpawnPlayer`.
+> ⇒ The spawn that DOES work is the one this project already uses (`RM_SPAWNPOSSESS` / GameplayStatics), and
+> the *deploy* half now has its own route — see the S124/S130/S131/S132 correction in the header.
+> `docs/fk1-angelscript-settled.md`, `docs/fk1-stub-claim-recheck.md`.
 
 ### ★★★ ITER6 — THE FULL `CanTestSkill` GATE CHAIN, DISASSEMBLED (rva 0x58CE1B0; 0x58CE2DA = return FALSE)
 ```

@@ -553,6 +553,14 @@ $Variants = @{
         # whether GetLandingTeleportLocation actually CONSUMES that argument. Lands-at-PlayerStart =>
         # yes, and the dismount can put the hero on real ground. Lands-at-pod => the argument is ignored
         # and the landing point is a property of the component. The prediction is printed BEFORE the call.
+        # ★★★★★ ANSWERED -- IT CONSUMES IT (S132 flights 2 and 3, artifact .text 0d5fa554edac53c5).
+        #   With a LokiPlayerStart 1,488,146 uu from the pod at that instant, the hero landed AT THE
+        #   PLAYERSTART -- (-3206.4, 5070.5, 138.0), settling to Z = 90.15 and holding position
+        #   BIT-FOR-BIT across 9 s while the pod flew another 180,000 uu. Flight 3 reproduced it.
+        #   ⇒ [M] GetLandingTeleportLocation (0x55D89F0, REAL, 963 B) consumes LandingLocationActor,
+        #     and the dismount puts the hero on real ground -- un-hidden, collided, gravity-affected.
+        #   ⇒ THIS IS NOW THE ARM TO FLY for any run whose point is a USABLE deploy. Plain `dismount`
+        #     (KDXLANDING=0) becomes the pod-relative CONTROL, not the default of choice.
         'dismount-landstart'  = @('-DKRUNMODE=RM_DISMOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDXLANDING=2')
         # S132 -> S133: DOES THE HERO LOCOMOTE *AT THE POINT THE DISMOUNT LANDED IT*?
         #   RM_PLAY's FIRST act is a hardcoded ground-teleport to (KGROUNDX,KGROUNDY,KGROUNDZ) =
@@ -565,6 +573,15 @@ $Variants = @{
         #   -atlanding : KNOTELE=1, everything else default. KFLYMODE stays 5 (MOVE_Flying), so the
         #                hero HOVERS and is driven by XY velocity. Isolates exactly one variable --
         #                the teleport -- against the arm whose behaviour is already established.
+        #   ⚠⚠ SUPERSEDED AS THE FIRST ARM TO FLY (S132) -- IT IS DEGENERATE FOR THE QUESTION IT WAS
+        #      BUILT FOR. With KFLYMODE=5 the hero hovers, so "it moved" cannot distinguish ground
+        #      locomotion from flight: MEASURED, a flying-mode RM_PLAY hero moved 2,926 uu at CONSTANT
+        #      Z = 13,240 -- 13 km through mid-air, which is a PASS under any movement test and says
+        #      nothing about whether the landing point is standable. Only `play-atlanding-walk`
+        #      (KFLYMODE=1) can answer it.
+        #      ⚠ S132's one attempt at this arm ALSO died: a 0x0000DEAD protector kill (FK-32) during
+        #      init, on the 7th injection into one process. That sitting is VOID for the playability
+        #      question, NOT a negative result. Keep -atlanding only as the flight-mode control.
         'play-atlanding'      = @('-DKRUNMODE=RM_PLAY','-DKNOTELE=1')
         #   -atlanding-walk : KNOTELE=1 AND KFLYMODE=1 (MOVE_Walking). THIS is the one that tests
         #                real ground locomotion at the deploy point. WARNING: Walking mode has a
@@ -572,6 +589,12 @@ $Variants = @{
         #                crashes on cell-streaming (S75/S81), which is WHY the default is Flying.
         #                Fly -atlanding first; treat a death here as the known mode hazard, not as a
         #                statement about the landing point.
+        #   ⚠ AMENDED (S132): "fly -atlanding first" no longer buys a result -- see the DEGENERATE
+        #     note above; flying-mode movement is not evidence about standable ground. Fly it only if
+        #     you want the flight-mode control in the same sitting. THIS arm is the one that answers
+        #     the open question, and the question IS still open: whether the hero is PLAYABLE at the
+        #     point the dismount landed it has never been measured. Stage it on a `dismount-landstart`
+        #     hero (real ground at the PlayerStart), not on a pod-relative one over open air.
         'play-atlanding-walk' = @('-DKRUNMODE=RM_PLAY','-DKNOTELE=1','-DKFLYMODE=1')
 
         'poolspawn-cdoctrl'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=0')

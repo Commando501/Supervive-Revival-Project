@@ -23,7 +23,7 @@ entirely, and it is now named for the first time.
 | Is the script layer interpreted? | **No — it is AOT-transpiled to C++ and compiled into the exe** ("StaticJIT"). 1,459-row symbol table recovered |
 | Is script callable? | **Yes, by the existing S55 recipe unchanged.** ⚠ `Func != ProcessInternal`, so the PI hook never fires for a script UFunction |
 | Can we read AS-derived Blueprint data? | **Yes, now.** usmap supplement shipped; **263 property values newly decoded** |
-| **So what is the real wall?** | ★ **Four server-authority C++ functions are EMPTY STUBS in the shipping client** — §5 |
+| **So what is the real wall?** | ★ **Four server-authority C++ functions are EMPTY STUBS in the shipping client** — §5. ⚠ **"Four" is that section's table, not the image:** S132 adds **three more**, on `ULokiRideableComponent` (**§5.1**), and S131's census grades **515 EMPTY records** image-wide, concentrated in `Auth*` (**42.4 % vs 8.30 %, Fisher p = 1.6e-28**) ⇒ one decision to remove *server authority*, not one to remove *deploy* |
 
 ---
 
@@ -159,6 +159,10 @@ script functions run locally regardless of authority.**
 
 ## 5. ★★★ The REAL wall, named for the first time: four server-authority functions are empty stubs
 
+> ⚠ **"four" is the count IN THIS TABLE, not in the image.** S132 (2026-08-20) adds **three more**
+> empty `Auth*` stubs, on `ULokiRideableComponent` — see **§5.1** below and
+> `docs/s132-dismount-settled.md`. S131's census puts the whole population at **515 EMPTY records**.
+
 > ⚠ **S115 CORRECTION — column 2 is the exec THUNK (real code). The bytes below are the IMPL, at a
 > different RVA that the original table never printed.** Re-measured in **both** dumps —
 > see `docs/fk1-stub-claim-recheck.md`. **The finding STANDS**; only the address bookkeeping was
@@ -177,15 +181,99 @@ history; the S115 re-measurement instruments are `scratchpad/stub_recheck{,2,3,4
 | `ALokiTeamState_TeamOnly::SetDropLeader` | `0x2C2CE30` ⚠ **23-way ICF** (133 B, 34 insn) | **`0x0F7EC20`** | **`ret 0`** |
 | `ALokiDropPlane::OverridePlaneLocations` | `0x53372A0` (238 B, 53 insn) | **`0x0F7EC20`** | **`ret 0`** |
 
+> ⚠⚠ **S132 SHORTHAND CORRECTION — `ret 0` reads as "returns zero" and that is a DIFFERENT CLAIM.**
+> `0x0F7EC20` is `c2 00 00` = **`ret imm16 0`**, i.e. a **VOID no-op that pops 0 bytes of stack args**.
+> It does **not** zero `eax`, so a caller reading a return value from one of these gets whatever was
+> already in `eax`. (`0x0F7EB50` = `33 c0 c3` = `xor eax,eax; ret` genuinely *does* return zero — the
+> two folds are not interchangeable, and the `SpawnPlayer` row above is the one that really returns
+> `nullptr`.) The rows' findings are unaffected; only the shorthand was doing extra work.
+
 ⚠ The original table's *"58 callers"* / *"4,784 callers"* counts were real census quantities but
 attributed to the wrong rows. Measured S115: **58** exec thunks fold to `0x0F7EC20`, **15** to
 `0x0F7EB60`, **5** to `0x0F7EB50`. The empty-impl **base rate is 1.2 % (78 / 6,669)**, so this is
 informative, not ambient — which is the load-bearing part of the claim.
 
+> ⚠⚠ **S131 UNIT CORRECTION (2026-08-20) — the CONCLUSION STANDS; the NUMBER is understated and its
+> UNIT was never stated.** "78 / 6,669" counts **distinct exec thunks**, which are heavily ICF-folded
+> (`0x5254180` alone is the registered thunk of **91** UFunctions), so it counts fold *representatives*
+> rather than functions. S131's census over **16,277 records**, 12/12 controls passing, grades
+> **REAL 11,517 (70.8 %) · DARK 3,092 (19.0 %) · FORWARDER 1,153 (7.1 %) · EMPTY 515 (3.16 % of all
+> records, 4.28 % of gradeable)** — and re-expressed in FK-1's *own* unit the figure is **170**, not
+> 78. ⇒ **"informative, not ambient" holds either way, and holds more strongly than this paragraph
+> claims.** ★ The same census found a **FIFTH fold** this table does not list: `0x00FC6CF0` =
+> `0f 57 c0 c3` = `xorps xmm0,xmm0; ret` → `0.0f`, 13 records including six `ALokiPlayerState` float
+> getters — ⇒ **a census graded against only the four known folds under-counts.**
+> ★★ It also measured *where* the stripping is concentrated: **`Auth*` gradeable 67/158 = 42.4 %**
+> vs non-`Auth` Loki **8.30 %**, Fisher **p = 1.6e-28**, across 41 classes — and it tracks the
+> **naming convention**, not the reflection flag or the drop classes (the drop-8 classes against the
+> fair control are 14.6 % vs 9.83 %, **p = 0.11, NOT significant**). ⇒ **there was one decision to
+> remove *server authority*; deploy is inside it like everything else.**
+> ⚠ The census is **blind to Angelscript entirely** (0 records for `ALokiDropShip` / `ALokiDropPod`),
+> so it says nothing about the half of the drop path that actually works.
+> Source: `scratchpad/s131/lane-d-empty-impl-census.tsv`, `docs/s131-pod-functionality-settled.md`.
+
 All four are server-authority functions — most likely **`WITH_SERVER_CODE`-stripped**. This gives
 the project's long-standing "server-authoritative deploy" wall a **mechanism** instead of a
 hypothesis, and explains why ~7 spawn attempts across S68/S74 failed for apparently different
 reasons.
+
+### 5.1 ★★★ S132 adds THREE MORE empty `Auth*` stubs — on `ULokiRideableComponent`
+
+**S132, 2026-08-20 — `docs/s132-dismount-settled.md`.** Same instrument as §5 (the `.data`
+`{name_ptr, exec_thunk, impl}` record table, which gives a REAL/EMPTY verdict **without the code page
+being decrypted**, because the fold addresses are known constants), read in **two independent
+single-state dumps that agree on every row**:
+
+| function | exec thunk | **IMPL** | impl body |
+|---|---|---|---|
+| `ULokiRideableComponent::AuthAddPlayer` | `0x2C2CE30` ⚠ **23-way ICF** | **`0x0F7EC20`** | void no-op |
+| `ULokiRideableComponent::AuthRemovePlayer` | `0x2C2CE30` ⚠ **23-way ICF** | **`0x0F7EC20`** | void no-op |
+| `ULokiRideableComponent::AuthSetCanJump` | `0x5296F30` | **`0x0F7EC20`** | void no-op |
+| `ULokiRideableComponent::AuthPlayerEnterWorldNew` | `0x5456460` | **`0x0F7EC20`** | void no-op — **already known (S130)**, listed for completeness |
+
+⚠ The shared `0x2C2CE30` is the *same* 23-way-folded thunk as `ALokiTeamState_TeamOnly::SetDropLeader`
+in §5's table — that is ordinary ICF on a one-object-parameter thunk, and it is **NON-IDENTIFYING**,
+exactly as that table already warns. The IMPL column is what carries the finding.
+
+**Grade: [M, strong] — and the reason it is not plain [M] is this and nothing else.** The record
+table has **no class column**, so these are matched **by NAME**. What makes the match safe: each name
+occurs **exactly once** in the whole table, and `ULokiRideableComponent` is the **only** class in
+`binds_members.csv` declaring `AuthAddPlayer` / `AuthRemovePlayer`. A hidden second declarer on
+another class is the only construction that would break it, and nothing in the table suggests one.
+★ **Structural corroboration — and note which way round it runs.** The class's exec thunks are
+emitted **alphabetically in one contiguous UHT block** (`0x5455F40 AddGameplayEffect` …
+`0x5457940 SetPlayerDisassociationFromPhase`), in which `AuthAddPlayer` would sort at ~`0x5456050`
+— where the bytes are **real code, not a thunk**. ⚠ **Its thunk is ABSENT from that block, and the
+ABSENCE is the corroboration**: it was ICF-folded onto the shared one-object-param stub `0x2C2CE30`,
+which is exactly what a stripped impl does. **Do not restate this as "the rows sit inside the
+block"** — that inverts the evidence (`docs/s132-dismount-settled.md` §3).
+
+★★★ **THE CONSEQUENCE, and it is why this matters more than the count:** `AuthAddPlayer` /
+`AuthRemovePlayer` are **the only reflected writers of either player array** on this component —
+`PlayersInside` (`+0x120`) and `PlayersAttached` (`+0x130`). Both do nothing in this client. ⇒ **that
+is why both arrays read `Data=0 Num=0 Max=0` in a fully staged world with a live pod**, and ⇒ **a
+data poke is the only route BY CONSTRUCTION, not by preference.** ★ The obvious shortcut — *"just
+call `AuthAddPlayer` instead of poking the array"* — was **CHECKED, not assumed**, and this is the
+check.
+
+★★ **The class is a MIX, so do not generalise it to "`Auth*` on this class is stripped."** REAL
+bodies on the same component, all [M]: `AuthPlayerDetachPlayerFromRidable` **`0x55CCCB0`** (440 B —
+**the S132 dismount, which RUNS**), `AuthPlayerEnterWorld` `0x55CCE70`,
+`AuthPlayerEnterWorldAttachedToRidable` `0x55CD510` (real body, **always fails** on the stripped
+round-game-mode getter `0x0F7EB50` — FK-22's fifth wall), `AuthPlayerPreSpawnOnAddToPlane`
+`0x55CD800` (fails the **same** way, on its own distinct string), `ContainsPlayer` `0x55D0270`,
+`GetLandingTeleportLocation` `0x55D89F0`, `HasEverContainedPlayer` `0x55DCAA0`, `GetRidePosition`
+`0x55DAB50`. ⇒ the wall on the ENTER path is **one deleted accessor shared by two entry points**,
+not a per-function bug — the same shape as §5's four stubs, and the same fix would clear both
+entry points at once.
+
+⚠ **`ContainsPlayer` scans `PlayersInside` (`+0x120`), NOT `PlayersAttached` (`+0x130`)** [M, at
+`0x55D0270`]. After a correct append to `PlayersAttached` it still reads FALSE, and that FALSE is
+**expected** — using it as the append receipt manufactures a false negative on a working append.
+
+⚠ **`PlayersAttached` is NOT replicated** (no `CPF_Net`) [M, two disjoint instruments]. An earlier
+S132 write-up called it "a replicated array"; that was wrong, and the correction makes the poke
+**safer** than it was described, not riskier.
 
 ### It also closes the `AvatarActor = NULL` question
 Disassembly-verified in `FFA/LokiRespawnComponent::Respawn`:
@@ -223,6 +311,26 @@ second loop provably stores nothing; the consumer passes it on unchecked). **But
 `AuthSetSpawnTeamLeader()` has no body, and neither does its fallback `SetDropLeader`.** It was also
 never the binding constraint: `SpawnDropPodForTeam` bails on `TeamDropPodClass == nullptr` *before*
 ever calling `GetTeamDropLeader`. **This is a live session the project would otherwise have spent.**
+
+> ⚠⚠ **SUPERSEDED IN PART (S124 → S132) — "never the binding constraint" NO LONGER HOLDS; the leader
+> path is REACHED now.** [M] `TeamDropPodClass` is **satisfied from shipped data**
+> (`Default__BP_DropPlane_Base_C` sets it to `BP_DropPod_C`, S124), so that first bail never fires.
+> The bail that actually fired was the pooled spawn returning NULL — and **S130 fixed it**: with
+> `CDO->bCanEverReplicate = 0` on the drop-pod CDOs, `SpawnDropPodForTeam` returns **`true`** and the
+> pods spawn (census **+2**). ⇒ `GetTeamDropLeader` **is** called, its null path **is** taken, and
+> that is exactly why the spawned pod's `PilotPlayerState` reads null [M, S131] — so the pod's own
+> call to `AuthPlayerEnterWorldAttachedToRidable` returns **silently on instruction #1**
+> (`test rdx,rdx; je`), while S131's **direct** call with a live valid PlayerState reached the real
+> wall and logged it (**0 → 2**, one per call). **Both halves of the paragraph above have therefore
+> inverted: the proposed fix is still dead for the same reason (no body), but the constraint it
+> targets is now live.**
+> ⛔ **And the obvious way round is dead too, killed BEFORE an arm was built:**
+> *"poke `[TeamState+0x688]` so `ALokiPlayerState::IsSpawnTeamLeader` (impl `0x56C2060`, a real body
+> that is a pure read of that byte) returns true without calling either stub"* — [M] **ZERO live
+> instances of any class containing `TeamOnly`**; the only `TeamState`-named live object is
+> `Comp_TeamState_GlobalShop_GEN_VARIABLE`, a template. ★ **Checking a lever's precondition with one
+> read-only pass, before building the arm, is what saved that launch.**
+> `docs/s131-pod-functionality-settled.md`, `docs/s132-dismount-settled.md`.
 
 One genuine escape hatch: **`ALokiCharacter::SpawnAndMoveLokiCharacter_BP`** — static, takes an
 explicit hero class, undocumented anywhere in `docs/`, body in a decrypt gap ⇒ **unknown, not dead.**
@@ -319,7 +427,7 @@ probe are in `tools/asdump/out/usmap/as_schema_full.csv`, column `ue_name` (66 A
 | "decide whether an AS disassembler is worth building (none exists)" | FK-1 "Cheapest experiment" | **Stale** — `tools/asdump/` shipped in S101 |
 | "print the owning class of every PI-dispatched UFunction for 5 s" | register §4.2 item 8 | **A TRAP** — returns 0 AS classes even when they are perfectly callable, because `Func != ProcessInternal`. Negative control only |
 | "every step of the drop phase is a `BlueprintCallable` UFUNCTION" | `memory/supervive-angelscript-layer` | **False** — `InitializeDropPod` is not a UFUNCTION at all; 3 of 10 listed are not `BlueprintCallable`. The "skip the plane" two-call recipe is **not executable**. Conversely **zero `BlueprintAuthorityOnly` anywhere** — the S90 gotcha does not recur |
-| fix = `AuthSetSpawnTeamLeader()` before spawning | `memory/supervive-angelscript-layer` | **Dead** — that function has **no body**, nor does `SetDropLeader`; and `SpawnDropPodForTeam` bails on `TeamDropPodClass == nullptr` first |
+| fix = `AuthSetSpawnTeamLeader()` before spawning | `memory/supervive-angelscript-layer` | **Dead** — that function has **no body**, nor does `SetDropLeader`; and `SpawnDropPodForTeam` bails on `TeamDropPodClass == nullptr` first. ⚠⚠ **Last clause SUPERSEDED (S124→S130): `TeamDropPodClass` is satisfied from shipped data, that bail never fires, and since S130's CDO poke `SpawnDropPodForTeam` returns `true` and spawns pods** — so `GetTeamDropLeader` IS reached and its null IS now the live constraint. The *"Dead"* verdict on the proposed fix is unaffected (still no body). See §5.1 and the note under "Leader hypothesis" |
 | "`AFFAGameMode` inherits the drop-in round-phase machine" | `docs/angelscript-layer.md` | **Wrong premise** — DropIn descends from `LokiGameMode`, not `LokiRoundGameMode`. Practical conclusion survives via the GameState |
 | S74 "CallNative(SpawnPlayer) CRASHED (AV)" vs S91 "returns NULL" vs `fk3-fk4-settled.md:469` "body is `xor eax,eax; ret`" | 3 docs | **Resolved:** the `xor eax,eax; ret` reading is correct and S91's NULL is exactly what it returns. Only S74's AV is unexplained |
 | "script UClasses are generated at engine init" | Track C, this session | **Corrected by live RPM (§7)** — enums/structs yes, UClasses **no**, at least at menu |
@@ -347,6 +455,14 @@ probe are in `tools/asdump/out/usmap/as_schema_full.csv`, column `ue_name` (66 A
 3. **Probe the script door that §5's synthesis opens:** `ULokiRespawnComponent::Respawn`,
    `ALokiDropShip::SpawnDropPodForTeam`, `UFFABotSpawnerComponent::BeginPlay` — script, AOT-compiled
    into the client, and callable with net routing bypassed.
+   ✅ **DONE for `SpawnDropPodForTeam`, and the door was real (S127 → S132).** It was called on the
+   tutorial route: **S127** returned `false` (pod census +0), **S130** returned **`true`** with a
+   DropPod census delta of **+2** once `CDO->bCanEverReplicate = 0` cleared the pooled-spawn NULL,
+   **S131** showed the spawned pod is **initialised, alive and flying** (cooked 20,000 uu/s), and
+   **S132** got the hero **out of it** — `AuthPlayerDetachPlayerFromRidable`, teleport included.
+   ⇒ the script layer really is callable with authority bypassed; what stops the ENTER half is a
+   stripped **C++** getter, not the script door. `docs/s132-dismount-settled.md`.
+   ⚠ `ULokiRespawnComponent::Respawn` and `UFFABotSpawnerComponent::BeginPlay` are **still unprobed**.
 4. **`ALokiCharacter::SpawnAndMoveLokiCharacter_BP`** — the one undocumented escape hatch; body in a
    decrypt gap, so re-dump from a map-loaded state first.
 5. Re-run the extractor over all 68k assets with `mappings+as.usmap` to quantify the total gain

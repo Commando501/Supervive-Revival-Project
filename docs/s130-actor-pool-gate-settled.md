@@ -47,6 +47,11 @@ Raw lane + verdict JSON preserved in `scratchpad/s130/lanes/`; the session-lead 
 5. **The hand-spawn bypass hits a FIFTH, previously unrecorded wall [M]** —
    `ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable` (impl `0x55CD510`) is a real body
    that **always** takes its failure branch.
+   ★★★★★ **STILL TRUE, AND NO LONGER A DEAD END (2026-08-20).** S131 confirmed the bail LIVE (its
+   error line went 0 → 2, one per call); **S132 then went round it from the other end and got the
+   hero OUT of the pod and onto real ground** — one `TArray` append plus
+   `AuthPlayerDetachPlayerFromRidable`, risk class DATA, zero `.text` writes. See §6 and
+   `docs/s132-dismount-settled.md`. **Do not read this row as "the rider handoff is unreachable."**
 6. **There is no injection-free ini fix [M].** `ActorPoolManagerPrimingConfig` is a **USTRUCT with
    zero reflected properties and no UHT consumer**; neither pool-manager class is a config class; and
    **0 of `ALokiGameState`'s 155 reflected properties carry `CPF_Config`.**
@@ -248,7 +253,41 @@ The same wall hits `AuthPlayerPreSpawnOnAddToPlane` (`0x55CD800`); `AuthPlayerEn
 outright empty fold. Only `AuthPlayerEnterWorld` (`0x55CCE70`) and
 `AuthPlayerDetachPlayerFromRidable` (`0x55CCCB0`) survive without a round-game-mode hard bail.
 
-⇒ **hand-spawning a pod gets a pod into the world and no rider.** Worth doing only as a *diagnostic*.
+★★★★★ **CONFIRMED LIVE, THEN ROUTED AROUND — the two halves of this paragraph aged in opposite
+directions (S131 flown 2026-08-20, S132 same day). Read `docs/s132-dismount-settled.md`.**
+- The wall itself is now **[M], not an offline grade**: called directly with a valid PlayerState, the
+  bail line went **0 → 2, exactly one per call**, and `AuthPlayerPreSpawnOnAddToPlane` reproduced it
+  on its own distinct string ⇒ **one stripped getter, several consumers**, not one function's bug.
+- ⚠⚠ **`AuthPlayerEnterWorld` (`0x55CCE70`) does NOT "survive without a round-game-mode hard bail" —
+  that half is REFUTED.** It calls the same stripped `0xF7EB50` at `0x55CCF22`, merely **un-gated**
+  (it carries the 0 forward instead of bailing on it), and it additionally requires the PlayerState to
+  be **already present in `PlayersInside`** (`0x55CCED7 je <bail>` on an empty array — silent). S132
+  measured its two terminal actions as direct calls to that fold, writing **no** actor or component
+  transform. ⇒ **FORECLOSED as a route.** *(The original sentence's claim about the DETACH stands.)*
+- ★★★★★ **And `AuthPlayerDetachPlayerFromRidable` (`0x55CCCB0`) is no longer just "surviving" — IT
+  HAS BEEN FLOWN: 7 detach calls across 4 launches, 6 of which moved the hero** (the remaining call
+  faulted without moving it — a measured *arm* defect: `GetLokiCharacter` faults on a **template**
+  PlayerState rather than returning null, so GATE 5 is not a clean early-out for a bad argument).
+  ⚠ **Re-derive that tally from the seven canonical markers in
+  `scratchpad/s132/evidence/`, never carry it** — an early S132 draft said *"five calls across two
+  launches"* and it was correct when written. Append the PlayerState to
+  `ULokiRideableComponent::PlayersAttached` (`+0x130`/`+0x138`/`+0x13C`) using the game's own
+  `ResizeGrow` at **`0x00F988D0`** — the same function the wall's own tail calls at `0x55CD75B`, so
+  the ABI is right **by construction** — then call the detach through the S55 direct `UFunction.Func`
+  thunk (`0x5456100`). The hero leaves the pod, is un-hidden, re-collided, gravity-restored and
+  teleported to a chosen landing actor. Risk class **DATA**; zero `.text` writes, zero PI hooks.
+
+⇒ ~~**hand-spawning a pod gets a pod into the world and no rider.** Worth doing only as a
+*diagnostic*.~~ **HALF-SUPERSEDED 2026-08-20.** The *attach* direction is still walled — nothing can
+put a rider **into** a flying pod, because that component's four reflected `Auth*` mutators
+(`AuthAddPlayer`, `AuthRemovePlayer`, `AuthSetCanJump`, `AuthPlayerEnterWorldNew`) are **all four
+stripped `0x0F7EC20` folds [M, strong]** ⇒ **the only reflected writers of either player array do
+nothing in this client**, which is *why* a hand-built data poke is the only route.
+But the *detach* direction — pod → hero on the ground — **runs today**. ⇒ **the deploy handoff is
+closed from the OTHER END, and it is more than a diagnostic**: with a `LokiPlayerStart` passed as
+`LandingLocationActor` the hero landed at that actor and **held position bit-for-bit for 9 s** while
+the pod flew on ⇒ `GetLandingTeleportLocation` **consumes** its argument [M].
+⚠ Still open: whether the hero is **playable** where it lands (`play-atlanding-walk`, unflown).
 
 ★★★★★ **AND THE LANE BUILT A NEW GENERAL INSTRUMENT WORTH MORE THAN THE FINDING: the `.data`
 `{name_ptr, exec_thunk, impl}` record table routes AROUND coverage-blocked `.text` pages.** Because
@@ -257,6 +296,14 @@ the four fold addresses are known constants, the record's third field yields a R
 as COVERAGE-BLOCKED; this shows that verdict is an instrument limit for at least 6 of them (the five
 `AuthPlayer*` entry points plus `GetLandingTeleportLocation`, all on page `0x5456000`).
 **Re-running it over all 100 keys is free, offline, and unstarted.**
+★★ **AND THE INSTRUMENT WAS VINDICATED ON EXACTLY THOSE SIX (S131 §13, S132).**
+`GetLandingTeleportLocation` graded REAL and is now **`0x55D89F0`, 963 B, 0 folds** — and it was then
+**executed**, consuming its `LandingLocationActor` argument to land a hero on real ground.
+`AuthPlayerDetachPlayerFromRidable` graded REAL and has been **called 7 times across 4 launches**.
+Two of the six went from "not-looked-at" to **flown** without the page ever being
+decrypted first. ⇒ **treat a COVERAGE-BLOCKED verdict as a to-do for this instrument, never as a
+negative.** ★ The same driving-the-path trick then decrypted the pages for free: S131/S132's calls
+are why `dumps/merged4.dump.exe` and `dumps/merged5.dump.exe` contain them at all.
 ⚠ Validated in both directions on gold values (4/4 FK-1 stub records, 2 thunk-tail derivations, S124's
 2 phase records reproduce byte-identically) — **but its negative control is degenerate**: Angelscript
 names have **zero byte occurrences** in the image (measured: `SpawnDropPodForTeam`, `StartPodGameplay`,

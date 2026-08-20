@@ -393,6 +393,27 @@ executable region covers it**. A corrupted pointer does not reproduce to the bit
   (46.6 MB of plaintext x86-64, loader function table at RVA `0x14D8758`). **Search it for code that
   computes its own image base + 1 and jumps there** — that lands on the routine that decides to kill,
   which is what FK-10's Wall #7 has been hunting. Start in `packer30`.
+  ⚠⚠ **RUN, AND LARGELY A DEAD END — S132, and BOTH halves of that instruction are refuted.**
+  **(a) "Start in `packer30`" is wrong:** `packer30` holds **0 of the 4,769 computed tail jumps**. The
+  protector's dispatch is a computed tail — `jmp <reg>` with the target carried as
+  `movabs reg, -(ImageBase + RVA)` inside an MBA polynomial — and those live elsewhere.
+  **(b) "search for the image-base + 1 constant" is confounded AT THE TARGET, not at the tool:**
+  `ImageBase == 0x200000000 == 2^33`, so every such test is aliased with ordinary MBA arithmetic on
+  bit 33. ⚠ Do NOT restate that as *"a constant search cannot be decisive"* — **that stronger form
+  was itself REFUTED by adversarial verification**: the hits are individually adjudicable and the
+  search **was** decisive.
+  ★★ **IT PRODUCED A CONCRETE SUCCESSOR LEAD: `packer31 0x03C8EDF2` computes
+  `variable + ImageBase + 1`, and the result is DEREFERENCED at `0x03C8EFF3`. READ IT.**
+  ⚠ [S] on its role — it matches an MSVC inline-buffer idiom, so a biased pointer is likelier than
+  the kill; that is a reason to read it, not to skip it.
+  ★ Separately [M]: FK-10's kill primitive at RVA `0x80F7F0` has its **owning vtable at
+  `packer0 RVA 0x1831C0`** and the **constructor that installs it at RVA `0x7F86F0`** — that table's
+  only xref image-wide, and the next thing to read after `0x03C8EDF2`.
+  ⚠⚠ **AND ONE GRADE CORRECTION THAT MATTERS: *"`0x80F7F0` IS `NtTerminateProcess(h, 0xDEAD)`"* is
+  [I], NOT [M]** — the syscall number is computed at runtime and on disk evaluates to `0xFFFFFFFF`,
+  which is not a valid service number. **The `0x0000DEAD` EXIT CODE is measured; the identity of the
+  syscall that produces it is inferred.** This file and `docs/fk10-protector-identified.md` both
+  carried it as [M].
   ⚠⚠ **AND THIS WAS A SELF-CORRECTION WITHIN THE SESSION.** The §1–§6 write-up said "no module covers it",
   from minidumps alone — an instrument blind to manually-mapped images BY DESIGN. **One query from a
   different instrument refuted it inside the hour**, and it was only run because a lever's precondition
@@ -1390,9 +1411,10 @@ Read `docs/fk22-dropphase-reachability.md` §14-§15.** Two flights on one stage
 
 ### Before touching anything drop- / deploy- / DropPlane- / DropPod- / dismount- / "SpawnPlane faults" shaped
 ★★★★★ **S132 (2026-08-20) — THE DISMOUNT RUNS. THE HERO LEAVES THE POD AND IS PLACED ON THE GROUND.
-Read `docs/s132-dismount-settled.md`.** **FIVE detach calls across TWO launches** — four in flight 1
-against a target moving at 20,000 uu/s, one in flight 2 onto a chosen landing actor where the hero
-**stands still on real terrain**. Both clients alive throughout, 0 crashpad handoffs, 0 `Fatal`. Risk class **DATA** — two aligned `TArray`-header
+Read `docs/s132-dismount-settled.md`, then `docs/fk22-dropphase-reachability.md` §30.**
+**SEVEN detach calls across FOUR launches; SIX moved the hero** (flight 1 ×4, flights 2 and 3 ×1 each)
+— four of them against a target moving at 20,000 uu/s, one in flight 2 onto a chosen landing actor
+where the hero **stands still on real terrain**. ⚠ **Scope the health claim:** the three clients that produced the six landings were alive throughout with **0 crashpad handoffs and 0 `Fatal`** — but a **fourth** launch died in staging (`0xC0000005`, FK-31, and it DID leave a 41 MB minidump at `dumps/crashpad-20260820-143225`) and a **fifth** was killed by the protector (`0x0000DEAD`, FK-32) during an unrelated `play-atlanding` init. Neither death was caused by the dismount; neither is a clean sheet either. Risk class **DATA** — two aligned `TArray`-header
 writes plus one element store inside the game's own allocation. **Zero `.text` writes, zero PI hooks,
 zero CDO pokes.** Builds: `-Variant dismount` (FLIGHT-1 artifact `.text 03d807ab6d397537`, reproduce
 from commit `c2cdc56`; HEAD is `53483e6181bb3583` after the DxState pod-location print) and
@@ -1542,7 +1564,7 @@ from commit `c2cdc56`; HEAD is `53483e6181bb3583` after the DxState pod-location
   ★ **`TArray::Remove` (`0x11F3860`) writes ONLY `Num`** — no free, no realloc — which is why
   runs 2–4 print `Max already covers it` and why a poked buffer is never freed by this function ·
   ⚠ **an unfired crash hazard**: `0x5586530`, called unconditionally on the hero, dereferences
-  `hero+0x460 / +0x1978 / +0x1980` with **no null checks** (survived all five calls on the staged
+  `hero+0x460 / +0x1978 / +0x1980` with **no null checks** (survived all seven calls on the staged
   `BP_HERO_Ronin_C`; read them first for any other hero) ·
   ⚠ the detach carries `FUNC_BlueprintAuthorityOnly` but its **exec thunk contains no authority
   check**, which is why the S55 thunk route works.
@@ -1796,6 +1818,11 @@ Offline; zero launches, zero injections, zero `.text` writes. Six adversarially-
   *"failed to get the round game mode"*; its dead tail has **zero** external rel32 entries in three
   images. Same wall on `AuthPlayerPreSpawnOnAddToPlane` (`0x55CD800`); `AuthPlayerEnterWorldNew` is an
   empty fold. ⇒ **a hand-spawned pod gets a pod and no rider.**
+  ⚠⚠ **STILL TRUE OF THE MOUNT, AND NO LONGER THE WHOLE STORY — S132.** The wall blocks getting a
+  rider ON. It does **not** block getting one OFF: `AuthPlayerDetachPlayerFromRidable` (impl
+  `0x55CCCB0`) is REAL, references no round game mode at all, and was **flown six times** — hero out of
+  the pod, un-hidden, collision and movement restored, placed at a chosen landing actor on real terrain.
+  ⇒ read this line as *"a pod and no rider **through the mount**"*. `docs/s132-dismount-settled.md`.
 - ★★★ **FREE NEW INSTRUMENT, WORTH MORE THAN THE FINDING: the `.data` `{name_ptr, exec_thunk, impl}`
   record table gives a REAL/EMPTY verdict WITHOUT the code page being decrypted** (the fold addresses
   are known constants). ⇒ **§2.5's 16 COVERAGE-BLOCKED `(class,func)` keys are an instrument limit,
@@ -2367,7 +2394,7 @@ with another is the exact error FK-10 exists to correct.
 - ★★ **FK-32 (`0x0000DEAD`) is CLOSED on mechanism:** `runtime.dll` RVA `0x80f7f0` is
   `mov edx,0xDEAD; syscall` = **`NtTerminateProcess(h, 0xDEAD)`** — the protector deliberately kills
   the process. Reached via a NULL-bounded 5-entry pointer table at `packer0 0x1831c0` whose 4th entry
-  is `NtCreateThreadEx`. `preloader.dll` is ELIMINATED (0 occurrences; control: 2 in runtime.dll).
+  is `NtCreateThreadEx`. ⚠ **INDEX-BASE AMBIGUITY, FLAGGED NOT RESOLVED (S132):** FK-10 describes the **4th entry** of the `packer0 0x1831C0` table as `NtCreateThreadEx`, while S132 describes the `0xDEAD` kill primitive as **slot 4** of the same 5-method table. Those reconcile only if one is 0-indexed and the other 1-indexed. **Neither source states its convention**, so do not build on either index until one is re-read from the bytes. Caught by an independent verifier, not by either author. `preloader.dll` is ELIMINATED (0 occurrences; control: 2 in runtime.dll).
 - ⚠ **The game exe's `IMAGE_DIRECTORY_ENTRY_EXCEPTION` is RVA=0 / size=0** while it ships a 6.28 MB
   *encrypted* `.pdata` (controls: runtime/tbb/steam_api64/preloader all read fine). So
   `RtlLookupFunctionEntry` finds nothing for the main image. **The "no C++-exception payloads" rule
@@ -2883,7 +2910,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **77 tabulated instances as of S132** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **78 tabulated instances as of S132** — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
