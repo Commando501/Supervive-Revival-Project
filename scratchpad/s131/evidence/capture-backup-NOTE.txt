@@ -1,0 +1,9 @@
+capture-PRE-S131-backup.log
+
+The pre-S131 docs/capture.log (18.7 MB) is backed up OUTSIDE the repo, at:
+  C:/Users/eastr/AppData/Local/Temp/claude/G--git-Supervive-Revival-Project/ebf415c7-cbe0-46bc-b5aa-e6c7a4315902/scratchpad/capture-PRE-S131-backup.log
+
+It is deliberately not committed -- S130's evidence files are 40-50 KB and a multi-MB raw
+capture does not belong in history. Back capture.log up before restarting ags regardless:
+the recorded behaviour is 'truncates on restart' in one place and 'appends' in another, i.e.
+unreliable in both directions.
