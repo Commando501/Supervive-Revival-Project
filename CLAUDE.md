@@ -1495,9 +1495,18 @@ from commit `c2cdc56`; HEAD is `53483e6181bb3583` after the DxState pod-location
   draft and makes the write safer than described, not riskier ·
   ★★ **`0xF7EC20` is `c2 00 00` = `ret imm16 0`, a VOID no-op — it does NOT zero `eax`**; the
   repo's "ret 0" shorthand reads as "returns zero" and will mislead a future grader ·
-  ★★★ **the detach has exactly ONE game caller and it is DEAD** (`KickPlayersFromPod`, behind
-  `if (LokiIsClient) return;` with `LokiIsClient` hardcoded TRUE) ⇒ **every observable is at a
-  structural baseline of 0**, so nothing measured here can be background activity ·
+  ★★★ **the game cannot produce a dismount on its own ⇒ every observable is at a structural
+  baseline of 0**, so nothing measured here can be background activity. Its only caller is
+  `ALokiDropPod::KickPlayersFromPod`, whose whole body is behind `if (LokiIsClient) return;` with
+  `LokiIsClient` hardcoded TRUE. ⚠⚠ **Grade [M, bounded], NOT [M] — the lane's "exactly ONE
+  caller" was REFUTED by its own verifier**: `KickPlayersFromPod`'s bytecode carries **TWO**
+  `CALLSYS` sites and the rel32 scan found only the second, because the first sits on a page that
+  is **all-zero in 30 of 30 images**. ★★ **A rel32 scan over a 55 %-decrypted `.text` is a
+  FLOOR, always** — demonstrated here from INSIDE the result. What carries the baseline instead:
+  a full-image qword scan finds **exactly one** stored pointer to the impl and one to the thunk
+  (so no statically-stored indirect call), and a 69k-asset corpus grep for the name returns
+  **zero** files against a **passing positive control**. Both extra callers are in the same dead
+  function, so the conclusion survives — only its support changed ·
   ★ **`TArray::Remove` (`0x11F3860`) writes ONLY `Num`** — no free, no realloc — which is why
   runs 2–4 print `Max already covers it` and why a poked buffer is never freed by this function ·
   ⚠ **an unfired crash hazard**: `0x5586530`, called unconditionally on the hero, dereferences
@@ -2842,7 +2851,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **75 tabulated instances as of S132** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **76 tabulated instances as of S132** — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
