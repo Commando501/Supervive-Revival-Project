@@ -60,8 +60,11 @@ question and it is free:**
    accessor family, the way lane 4 did for `ULokiRideableComponent` — it grades REAL vs EMPTY
    **without the code page being decrypted**.
 
-★ And `merged3.dump.exe` now contains drop-path pages that were never decrypted before, including
-whatever `RM_RIDEABLE` just executed. Re-dump-and-merge after any future armed window.
+★ **THE CANONICAL COLD IMAGE IS NOW `dumps/merged4.dump.exe`.** Chain, all with 0 overlap conflicts:
+`merged2` → **`merged3`** (+43 `.text` pages / 157,916 B, from the live drop-pod process) →
+**`merged4`** (+2 more pages, from the image taken immediately AFTER `RM_RIDEABLE` ran — so the
+wall's own bail block is decrypted in it, which is exactly the code S132 needs to read).
+★ Driving a path forces `.text` decryption. **Dump and merge after every armed window.**
 
 ---
 
