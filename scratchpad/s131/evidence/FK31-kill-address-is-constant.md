@@ -1,4 +1,13 @@
-# FK-31 / FK-7 — THE KILL JUMPS TO ONE FIXED ADDRESS, AND IT IS THE SAME ADDRESS EVERY LAUNCH
+# FK-31 / FK-7 — THE KILL JUMPS TO `runtime.dll + 1`, THE SAME ADDRESS EVERY LAUNCH IN A BOOT SESSION
+
+> ⚠⚠⚠ **READ §7 FIRST — IT GOVERNS.** §1–§6 were written from minidumps alone and §7 refutes two of
+> their claims with a live `VirtualQueryEx`. In particular: **§2's "no module covers it" is WRONG**
+> (it is `runtime.dll`'s own image base, manually mapped and therefore invisible to a minidump
+> module list), and **§6's "map an executable page there" experiment is DEAD** (the page is already
+> committed as part of runtime.dll's PE headers). §5's conclusion is half wrong. The
+> per-boot-constant address, the unification of the death classes in §3, and §4's honest limits all
+> STAND. §7 also names a better replacement lead.
+
 
 **S131, 2026-08-20. Offline, from crash minidumps already on disk. Zero launches spent on it** — it
 fell out of triaging S131's own launch-1 staging death.
@@ -125,3 +134,79 @@ present state, which is a silent process death.**
 
 ★ It needs no `.text` write, no PI hook, and no game knowledge — one `VirtualAlloc` in an injected
 DLL. On this project's measured hazard ladder that is the safest class of change there is.
+
+---
+
+# 7. ⚠⚠⚠ SELF-CORRECTION, SAME SESSION — §2 AND §5 WERE PARTLY WRONG. THE ADDRESS IS `runtime.dll + 1`.
+
+**Everything above was derived from minidumps. One live `VirtualQueryEx` refuted two of its claims.**
+Tool: `scratchpad/s131/tools/fk31_map_kill_page.py` (read-only by default), run against the live
+client at PID 34348.
+
+```
+kill address : 0x00007FFB57400001   (page 0x00007FFB57400000)
+  BaseAddress    0x7FFB57400000
+  AllocationBase 0x7FFB57400000
+  RegionSize     0x7000
+  State          MEM_COMMIT
+  Protect        READONLY
+  Type           MEM_IMAGE
+```
+
+and at that base: **`4d 5a` = `MZ`**, `e_lfanew = 0x78`, a valid `PE\0\0`, `machine 0x8664`,
+**`SizeOfImage 0x4066000`**, 11 sections:
+
+```
+.pdata  .rwx  packer0  packer1  packer2  .rsrc  .reloc  packer30  packer40  packer31  packer42
+```
+
+⇒ **[M] That is `runtime.dll` — the protector.** Those `packer*` section names are exactly the ones
+FK-10 records for it (`docs/fk10-protector-identified.md`: `packer0` is 94.8 % of its pages,
+`packer30` is the 2.2 MB call-structured region holding the entry function). And
+`(Get-Process).Modules` reports **no module at that base** ⇒ it is **MANUALLY MAPPED and hidden from
+the module list**, which is precisely why it never appears in a minidump.
+
+## 7.1 What was wrong
+
+| §  | claim | verdict |
+|---|---|---|
+| §2 | *"no module covers it"* | **REFUTED.** It is `runtime.dll`'s own image base. The minidump module list is blind to it because the protector maps itself manually. |
+| §2 | *"the process jumps to an address that is not mapped executable"* | **CONFIRMED** — the page is `MEM_COMMIT / READONLY / MEM_IMAGE`, i.e. the PE-header page. Executing there is exactly an EXECUTE violation, which is why `ExceptionInformation[0] == 8`. |
+| §5 | *"`RIP == runtime.dll base + 1` cannot be applied as written"* | **HALF WRONG, and the wrong half is the conclusion.** It cannot be evaluated **from a minidump module list** — that part stands, and is worth keeping. But it is entirely checkable **live**, via `VirtualQueryEx`'s `AllocationBase` plus an `MZ` + section-name test. **CLAUDE.md's rule is CORRECT and is now MEASURED for the first time.** |
+| §6 | *"map an executable page there"* | **DEAD.** The page is already committed as part of `runtime.dll`'s headers; there is nothing to allocate. The tool refuses to `--commit` and says so. |
+
+★ **The per-boot constancy now has a mechanism.** `runtime.dll` is manually mapped by `preloader.dll`
+at a base that is stable within a boot session — unlike `preloader.dll` and the game exe, which the
+loader re-bases every launch. That is why the kill address is bit-identical across launches and
+changes only across the three date-separated eras.
+
+## 7.2 ★ AND THE REPLACEMENT LEAD IS BETTER THAN THE ONE IT KILLS
+
+The kill is a **jump to `runtime.dll + 1`** — a deliberate crash primitive: jump into your own
+read-only DOS header. That is not a bug, it is a chosen way to die (the sibling of FK-10's measured
+`NtTerminateProcess(h, 0xDEAD)` at `runtime.dll` RVA `0x80f7f0`).
+
+⇒ **The caller is findable OFFLINE.** FK-10 established that `runtime.dll` **is not packed** — its
+46.6 MB of protector code is plaintext x86-64 and disassemblable today, given the loader's function
+table at RVA `0x14D8758` (18,580 entries). So:
+
+**Search `runtime.dll` for code that computes its own image base + 1 and jumps to it.** That is a
+bounded, purely static task on plaintext code, and it lands directly on the routine that decides to
+kill — which is what FK-10's Wall #7 has been hunting. Start in `packer30`, which FK-10 identifies as
+the `call`-structured region containing the entry function and the four largest functions.
+
+⚠ Grade: the *jump* is [M] (the fault address and the target's identity are both measured). That the
+jump is *deliberate* rather than a corrupted pointer is **[I, strong]** — it reproduces bit-identically
+across 13 launches in one era, which a corrupted pointer does not do.
+
+## 7.3 The method note, and it is the important part
+
+**Every claim in §1–§6 came from one instrument (minidumps). A single query from a different
+instrument (live `VirtualQueryEx`) refuted two of them within the hour.** The minidump module list is
+blind to manually-mapped images *by design* — a protector-specific blind spot — and I wrote its
+silence up as a property of the address. That is the instrument-artifact pattern, committed in a
+document whose own §5 warns about exactly this failure mode, in the same session.
+
+★ **The check that caught it cost one command, and I only ran it because I was testing a lever's
+precondition before building an arm** — the same habit that had already killed the `[TeamState+0x688]`
+lever an hour earlier.

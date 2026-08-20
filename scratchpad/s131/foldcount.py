@@ -44,3 +44,10 @@ for fn,label in [(0x55CD510,'ULokiRideableComponent::AuthPlayerEnterWorldAttache
                  (0x55CBB60,'ULokiGameModeDropPlaneComponent::AddPlayerToDropPlane'),
                  (0x597E730,'ALokiDropShip::SpawnDropPodForTeam(AS)')]:
     scan(fn,label)
+print()
+for fn,label in [(0x55CCCB0,'ULokiRideableComponent::AuthPlayerDetachPlayerFromRidable'),
+                 (0x55D89F0,'ULokiRideableComponent::GetLandingTeleportLocation'),
+                 (0x55DAB50,'ULokiRideableComponent::GetRidePosition'),
+                 (0x54537C0,'MulticastOnPlayerEnteredWorld'),
+                 (0x5453780,'MulticastOnPlayerEntered')]:
+    scan(fn,label)
