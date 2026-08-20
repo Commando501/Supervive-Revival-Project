@@ -1,7 +1,8 @@
 # NEXT SESSION (S132) — the pod is alive, the wall is fully characterised, and there is a DATA-CLASS lever.
 
-**One line: `AuthPlayerDetachPlayerFromRidable` is fully implemented and unstripped, and its only
-gate is the single `TArray` append the wall dies just before performing. Read §"THE REAL §1" first.**
+**One line: `AuthPlayerDetachPlayerFromRidable`'s only GATE is the single `TArray` append the wall
+dies just before performing — so the dismount is one append away. ⚠ It is NOT fold-free (2 ×
+`0xF7EC20`, see §B), so expect a PARTIAL dismount. Read §"THE REAL §1" first.**
 
 **Written 2026-08-20 at the end of S131.** Read `docs/s131-pod-functionality-settled.md`, then
 `docs/fk22-dropphase-reachability.md` §29. Evidence: `scratchpad/s131/evidence/`.
@@ -67,10 +68,16 @@ load-bearing claim. Reports: `scratchpad/s131/lanes2/`. Read them before buildin
   the **impl by rel32**, bypassing `Func` entirely. Removing an internal `call` needs a standing
   `.text` write — measured **10/10 lethal**. Not an option.
 
-### B. ★ THE ROUTE: the wall's ONLY persistent output is one TArray append, and its consumer is REAL
+### B. ★ THE ROUTE: the wall's only persistent COMPONENT-state output is one TArray append
 
 The transcribed success path ends with **`this->PlayersAttached.Add(PS)`** (`+0x130` Data / `+0x138`
-Num / `+0x13C` Max). Everything before it is transient (teleport, collision toggles, a timestamp).
+Num / `+0x13C` Max) — the only thing it writes on the COMPONENT.
+⚠ **Corrected:** the rest is not merely "transient". It **moves the character** (`LokiTeleportActor`
+`0x56680F0`, then `SpawnAndMoveLokiCharacter_MoveStep` `0x55C1B20`, collision toggled around them) and
+stamps `[hero+0x1C10]` with `GetServerTime`. **Actor position is not transient.** ⚠ `LokiTeleportActor`
+is **COVERAGE-BLOCKED** (all-zero page in `merged4`) — not a fold, but its body is unread; and
+`SpawnAndMoveLokiCharacter_MoveStep` has **no record and no exec thunk** (a raw native address, a
+different risk class, with 2 folds of its own).
 
 And **`ULokiRideableComponent::AuthPlayerDetachPlayerFromRidable`** — impl **`0x55CCCB0`**, thunk
 **`0x5456100`**, 440 B, 15 direct calls, **no round-game-mode reference of any kind** — has as **its
@@ -418,7 +425,7 @@ SpawnDropPodForTeam  ->  RETURNS TRUE, pod spawns                       FIXED   
   +- the RIDER HANDOFF fails, and the wall is CONFIRMED live            MEASURED S131
   |    one shared stripped round-game-mode getter, three consumers
   +- BUT the value it fetches is DEAD (zero RAX reads downstream), and
-  |    the wall's ONLY persistent output is one TArray append           MEASURED S131
+  |    its only persistent COMPONENT-state output is one TArray append  MEASURED S131
   +- NEXT: append PS to PlayersAttached (+0x130) with the game's own
   |    ResizeGrow, then call AuthPlayerDetachPlayerFromRidable          <-- YOU ARE HERE
   |    (0x55CCCB0 / thunk 0x5456100) -- REAL, 0 folds, gate = that array
