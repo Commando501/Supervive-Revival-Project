@@ -9526,6 +9526,105 @@ static bool PdResolve(){
     return true;
 }
 
+
+// ================= S130 — C7: THE bCanEverReplicate CDO GATE ==================================
+// MEASURED (S130, docs/s130-actor-pool-gate-settled.md §11/§12, fk22 §26/§27):
+//   The pooled acquire refuses ANY class whose CDO can replicate:
+//       .text 0x0564820C  44 38 70 6c        cmp byte ptr [rax + 0x6c], r14b   (r14b = 0)
+//       .text 0x05648210  0f 85 8b 0c 00 00  jne 0x5648EA1                     (the NULL epilogue)
+//   rax = UClass[0x178] = ClassDefaultObject  [M, via UGameplayStatics::GetClassDefaultObject
+//   impl 0x589BB40];  +0x6C = AActor::bCanEverReplicate  [M, walked AActor's own 114-entry
+//   PropPointers array, 3 controls passing];  AActor::AActor sets it 1 at 0x03371841  [M].
+//   Live at the menu: Default__Actor / LokiDropPodBase / LokiDropPod / BP_DropPod_C all read 1;
+//   LokiHeroHeightIndicator / BP_HeroHeightIndicator_C read 0.  8/8 predictions, and the
+//   cooked->runtime mapping is 30/30 over every joinable live CDO, both polarities.
+//   => SpawnDropPodForTeam's pooled spawn returns NULL, and its caller wraps the entire body in
+//      `if (v6 != null)` with NO else (LokiDropShip.as:153).  That is S127's bail 2.
+//
+// THIS ARM writes ONE BYTE on a heap Class Default Object.  It is NOT a module-image write:
+// no VirtualProtect, no SafeWrite (the .text writer), nothing in .text/.rdata/.data is touched.
+// On this project's measured hazard ladder that is the safest class there is
+// (nothing 0/22 · bytecode 0/9 vs transient .text 4/12 · standing .text 7/8).
+//
+// ⚠ IT MUTATES A CLASS DEFAULT.  Every actor of that class spawned afterwards inherits it, for the
+//   process lifetime, and it may break the pod's replication.  That is why it is OFF by default and
+//   why the control arm runs the identical code path with the write suppressed.
+//
+// ⚠ THE CONTROL ARM IS NOT "do nothing" -- it still READS and PRINTS every flag.  That matters
+//   independently: Default__BP_DropPod_Tutorial_C is NOT loaded at the menu, so S130 could only
+//   infer its value from its ancestors.  Reading it in a STAGED TUTORIAL WORLD closes the last
+//   inference in the chain, and the control arm does that for free.
+#ifndef KPDCDOPOKE
+#define KPDCDOPOKE 0        // 0 = read only (CONTROL) | 1 = also write bCanEverReplicate = 0
+#endif
+#ifndef KPDCDOOFF
+#define KPDCDOOFF 0x6C      // AActor::bCanEverReplicate [M]
+#endif
+#ifndef KPDPOOLOFF
+#define KPDPOOLOFF 0x2D3    // AActor::bEnablePooling    [M]
+#endif
+
+static int g_pdPoked = 0;       // how many CDOs we actually wrote
+static int g_pdPokeVerified = 0;
+
+// Read (and optionally clear) the two flags on one CDO.  Returns 1 if the object was found.
+static int PdCdoOne(const char* name, bool doPoke){
+    uintptr_t o = FindObjExact(name);
+    if(!o){
+        Markerf("[PD] CDO %-34s NOT LOADED -- this is NOT a zero. That class simply has no CDO in "
+                "this process; do not read it as a flag value.\r\n", name);
+        return 0; }
+    if(!SafeReadable((void*)(o+KPDCDOOFF),1) || !SafeReadable((void*)(o+KPDPOOLOFF),1)){
+        Markerf("[PD] CDO %-34s @0x%llX UNREADABLE at +0x%X/+0x%X -- INSTRUMENT FAILURE, not a zero\r\n",
+                name,(unsigned long long)o,(unsigned)KPDCDOOFF,(unsigned)KPDPOOLOFF);
+        return 0; }
+    uint8_t repl = *(uint8_t*)(o+KPDCDOOFF);
+    uint8_t pool = *(uint8_t*)(o+KPDPOOLOFF);
+    Markerf("[PD] CDO %-34s @0x%llX  bCanEverReplicate(+0x%X)=%u  bEnablePooling(+0x%X)=%u%s\r\n",
+            name,(unsigned long long)o,(unsigned)KPDCDOOFF,(unsigned)repl,
+            (unsigned)KPDPOOLOFF,(unsigned)pool,
+            repl?"   <== C7 REJECTS this class":"   <== C7 would ACCEPT this class");
+    if(!doPoke) return 1;
+    if(repl==0){
+        Markerf("[PD] CDO %-34s already 0 -- NOT written (nothing to do, and writing would make the "
+                "poke unattributable)\r\n",name);
+        return 1; }
+    *(uint8_t*)(o+KPDCDOOFF) = 0;                       // <-- the whole write: one heap byte
+    uint8_t back = *(uint8_t*)(o+KPDCDOOFF);            // readback on the same address
+    g_pdPoked++;
+    if(back==0){ g_pdPokeVerified++;
+        Markerf("[PD] *** POKE %-30s +0x%X : 1 -> 0, READBACK VERIFIED. C7 should now ACCEPT this "
+                "class. ***\r\n",name,(unsigned)KPDCDOOFF); }
+    else
+        Markerf("[PD] *** POKE %-30s +0x%X FAILED: readback=%u (write did not stick). Treat any "
+                "downstream result as UNATTRIBUTABLE. ***\r\n",name,(unsigned)KPDCDOOFF,(unsigned)back);
+    return 1;
+}
+
+// The four CDOs on the drop pod's inheritance chain, leaf first.  BP_DropPod_C is the one that
+// matters for SpawnDropPodForTeam: TeamDropPodClass is BP_DropPod_C [M, Default__BP_DropPlane_Base_C].
+static void PdCdoFlags(const char* when, bool doPoke){
+    // ⚠ `doPoke` is a PER-CALL argument: the step-3 call passes false even in the poke build,
+    //   because that read is the baseline. Labelling it "KPDCDOPOKE=0 / CONTROL arm" would state
+    //   something FALSE about the build. Print the build constant and the per-call behaviour as
+    //   two separate facts, so the marker can never be misread as identifying the arm.
+    Markerf("[PD] --- CDO FLAGS (%s) | build KPDCDOPOKE=%d (%s arm) | THIS call: %s ---\r\n",
+            when, (int)KPDCDOPOKE, (KPDCDOPOKE!=0) ? "POKE" : "CONTROL",
+            doPoke ? "*** WRITES bCanEverReplicate = 0 ***" : "read-only");
+    int found = 0;
+    found += PdCdoOne("Default__BP_DropPod_Tutorial_C", doPoke);
+    found += PdCdoOne("Default__BP_DropPod_C",          doPoke);
+    found += PdCdoOne("Default__LokiDropPod",           doPoke);
+    found += PdCdoOne("Default__Actor",                 false);   // ROOT CONTROL: never poked.
+    Markerf("[PD] CDO flags: %d of 4 objects found. Default__Actor is the ROOT CONTROL and is NEVER "
+            "written -- if it ever reads 0, something other than this arm is mutating AActor.\r\n",found);
+    if(doPoke)
+        Markerf("[PD] poke summary: %d written, %d readback-verified.%s\r\n",
+                g_pdPoked,g_pdPokeVerified,
+                (g_pdPoked && g_pdPoked==g_pdPokeVerified) ? "" :
+                "  ⚠ MISMATCH -- do not attribute any spawn result to the poke.");
+}
+
 // ---- the ladder --------------------------------------------------------------------------------------
 static void PdLadderStep(){
     DWORD now=GetTickCount();
@@ -9588,6 +9687,7 @@ static void PdLadderStep(){
     case 3:
         Marker("[PD] --- pre-call bail-point readout (so a null result is attributable to a NAMED bail) ---\r\n");
         PdReadTdpc("pre-call");                    // pure RPM, no call
+        PdCdoFlags("pre-call, BEFORE any poke", false);   // always read-only here: the baseline
         if(KPDARMS&0x40) PdProbeLeader();          // ★ S126 fix: this IS a UFunction call, so it is gated
         else Marker("[PD] C2b GetTeamDropLeader probe disabled by KPDARMS bit6 -> NOT CALLED. This arm "
                     "issues no UFunction call at this step (that is what makes a read-only arm read-only).\r\n");
@@ -9610,6 +9710,7 @@ static void PdLadderStep(){
         if(!(KPDARMS&0x100)){ Marker("[PD] E1 ProcessEvent call disabled by KPDARMS bit8 -> skipped (no "
                                      "script dispatch attempted). This is the staging/control arm.\r\n");
                               g_pdStep=8; return; }
+        PdCdoFlags("immediately before E1", KPDCDOPOKE!=0);
         Marker("[PD] --- E1 (HEADLINE, ROUTE E): SpawnDropPodForTeam through ProcessEvent with a FLAT "
                "PARAMS BLOCK -- the contract FK-1 says _ParmsEntry implements. Every offset and size is "
                "re-read from the live FProperty chain immediately before the write, and the live "

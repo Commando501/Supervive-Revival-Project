@@ -367,6 +367,18 @@ $Variants = @{
         #   is the two routes' shared control and pins the premise on THIS process rather than on a
         #   remembered measurement from PID 138796.
         'droppod-pe'          = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDARMS=0x1FF')
+        # ★★★★★ S130 — C7: THE bCanEverReplicate CDO GATE. The pooled acquire refuses any class
+        #   whose CDO can replicate (`cmp byte [CDO+0x6C],0 ; jne -> NULL` at .text 0x0564820C), and
+        #   BP_DropPod_C's CDO reads 1 -- MEASURED live, 8/8 predictions, cooked->runtime mapping 30/30.
+        #   That is why SpawnDropPodForTeam returns false: LokiDropShip.as:153 wraps its whole body in
+        #   `if (spawn != null)` with NO else.  These two arms differ in ONE BYTE and nothing else.
+        #   ⚠ Both arms READ and PRINT the flags at step 3 and again before E1 -- so the CONTROL arm
+        #     is NOT "do nothing": it closes S130's last inference by reading
+        #     Default__BP_DropPod_Tutorial_C in a STAGED world, where (unlike the menu) it is loaded.
+        #   ⚠ The poke mutates a CLASS DEFAULT for the process lifetime and may break the pod's
+        #     replication. It is a HEAP byte: no VirtualProtect, no SafeWrite, no module image touched.
+        'droppod-pe-cdoctrl'  = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDARMS=0x1FF','-DKPDCDOPOKE=0')
+        'droppod-pe-cdopoke'  = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDARMS=0x1FF','-DKPDCDOPOKE=1')
         #   +1 dim, DELIBERATE ESCALATION. Calls through ProcessEvent even when the live grade says
         #   WILL-FAULT (`call [0]` inside UFunction::Invoke). Use ONLY after 'droppod-pe' has printed the
         #   WILL-FAULT refusal, and only if the AV itself is wanted as evidence: the fault address should
