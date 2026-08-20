@@ -24,28 +24,91 @@ then `docs/fk22-dropphase-reachability.md` §25–§28.
 
 ## 1. START HERE — the pods exist; nobody has looked at what they ARE
 
-`SpawnDropPodForTeam` succeeding means its caller's `if (spawn != null)` body ran **for the first
-time**: `GetTeamDropLeader`, `InitializeDropPod`, `FinishSpawningActor`, `RemovePlayerFromPlane`,
-`AuthPlayerEnterWorldAttachedToRidable`, `MulticastOnDropPodLaunched`, `AddTeamDropEvent`.
+`SpawnDropPodForTeam` returning `true` means its caller's `if (v6 != null)` body ran **for the first
+time in this project's history** (`LokiDropShip.as:153`):
+
+```
+v38 = this.GetTeamDropLeader(TeamIndex);
+v6.InitializeDropPod(TeamIndex, v38, LandingLocation, true, this, null);
+FinishSpawningActor(v6, v32);
+this.RemovePlayerFromPlane(v38);
+v42 = ULokiRideableComponent::Get(v6, NAME_None);
+if (v42 != null) v42.AuthPlayerEnterWorldAttachedToRidable(v38, LandingLocation);
+if (v38 != null) { v46 = ULokiPlayerDropPlaneComponent::Get(v38, NAME_None);
+                   if (v46 != null) v46.MulticastOnDropPodLaunched(v6); }
+v50 = ALokiServerAnalyticsManager::GetFromContext(__WorldContext);
+if (v50 != null) v50.AddTeamDropEvent(TeamIndex, LandingLocation, v38);
+```
+
 **Nothing has inspected any of it.** The census counts objects, not behaviour.
 
-Cheapest first reads on the two spawned pods (read-only RPM, and the probe already prints their
-addresses):
-* is `PodTeamIndex` set (registry default is `-1`)? is `LeaderPod` non-null? `bIsTeamLeaderPod`?
-* did `AuthPlayerEnterWorldAttachedToRidable` do anything — or did it hit the **FIFTH wall**
-  (`0x55CD510`, a real body that always bails on a stripped fold)? That is the *expected* stopping
-  point and confirming it is a result.
-* is the hero attached to a pod? does `RemovePlayerFromPlane` show in the log?
+### 1.1 ★★★★★ THE TEST DESIGNS ITSELF — every field `InitializeDropPod` writes has a DIFFERENT default
 
-⚠⚠ **TAKE THESE READS THE INSTANT THE ARM REPORTS, NOT AFTER.** S130's attempt 4 delivered every
-result and then died artifact-less minutes later, taking its two spawned pods with it — the questions
-above were free at the time and are now gone. **All 3 armed windows in S130 ended in artifact-less
-deaths** (`s130-actor-pool-gate-settled.md` §13.7) against a recorded base rate of 3/36; n=3, so that
-is suggestive rather than established, but **budget one armed window per result and write everything
-to disk as it is produced.**
+`InitializeDropPod` (`GameMode.DropPhase.LokiDropPod.as`, 30 instr) is exactly:
 
-⚠ **C8 and C9 never fired.** They are **unexercised, not excluded** — if a later run produces a null
-again, they are still the branches to read.
+```
+this.CurrPodDestination = LandingLocation;
+this.SetPilotPlayerState(PlayerState);
+this.bIsTeamLeaderPod   = bIsTeamLeader;      // SpawnDropPodForTeam passes TRUE
+this.PodTeamIndex       = TeamIndex;          // our call passes 0
+this.LeaderPod          = ParentPod;          // SpawnDropPodForTeam passes null
+this.SetOwner(this.GetPilotPlayerState());
+if (this.bIsTeamLeaderPod) this.QueueCrewForPodSpawn(DropShip);
+```
+
+And the **cooked class defaults** for `BP_DropPod_Tutorial` (measured, `ar_query.py --name`):
+
+| field | class default | what our call writes | discriminates? |
+|---|---|---|---|
+| **`PodTeamIndex`** | **`-1`** | **`0`** | ★★ **YES — the cleanest one** |
+| **`CurrPodDestination`** | **`(0,0,0)`** | **`(-3206.4, 5070.5, 100.0)`** | ★★ **YES, and it is a 3-double value that cannot be hit by accident** |
+| **`bIsTeamLeaderPod`** | **`False`** | **`true`** | ★ **YES** |
+| `LeaderPod` | `None` | `null` | ⛔ no — identical, do not use it |
+| `PodMeshComponent` | `None` | (not written here) | — |
+
+⇒ **THREE INDEPENDENT POSITIVE DISCRIMINATORS, each with a known default that differs from the
+written value.** That is what makes this a measurement rather than a look. Read all three:
+* all three changed ⇒ **`InitializeDropPod` ran and its writes landed** [M];
+* all three still at defaults ⇒ **the body did NOT run**, and `SpawnDropPodForTeam`'s `true` return
+  came from somewhere else — which would be a major correction to §28;
+* a **mixture** ⇒ read the order in the listing above; it tells you where it stopped.
+⚠ `LeaderPod` is a **trap**: default and written value are both null, so it can only ever agree.
+Do not count it as a fourth check.
+
+### 1.2 ⚠⚠ THE ENGINEERING CONSTRAINT THAT DECIDES THE WHOLE SESSION
+
+**The probe must print the pod state ITSELF, inside the arm, immediately after the E1 call.**
+
+S130's attempt 4 delivered every result and then died artifact-less minutes later, taking its two
+pods with it. **All 3 armed windows in S130 ended in artifact-less deaths** (§13.7). An external
+`tools/re/*.py` RPM pass afterwards is **not a plan** — the process will very likely not be there.
+
+⇒ Extend `RM_DROPPOD` with an `after-E1` pod dump: walk the DropPod bucket the census already
+enumerates, and for each pod resolve **BY NAME** (`PropOffsetSuper`, the pattern the mode already
+uses for `TeamDropPodClass`) and print `PodTeamIndex`, `CurrPodDestination`, `bIsTeamLeaderPod`,
+`LeaderPod`, `PodMeshComponent`, plus the actor's root location.
+⚠ Resolve by name; do not hardcode offsets — that is this project's standing rule and `PodTeamIndex`
+has no measured offset yet.
+⚠ Print `NOT RESOLVED` distinctly from a zero value. A missing property and a `0` look identical at
+the byte level, and that exact confusion already cost this project one false result (S130 §12.4).
+
+### 1.3 The expected stopping point, and why confirming it is a result
+
+`AuthPlayerEnterWorldAttachedToRidable` (impl **`0x55CD510`**) is a REAL body that **always** takes
+its failure branch: at `0x55CD572` it calls the stripped fold `0xF7EB50` (`xor eax,eax; ret`) and
+bails into *"failed to get the round game mode"* (S130 §26/§6, the **FIFTH wall**).
+⇒ **Expect the rider handoff to fail.** A pod with its three fields set and **no rider attached** is
+the predicted outcome, and confirming it converts the fifth wall from an offline grade into a
+measured one. **Grep `Loki.log` for the round-game-mode bail string in the same run.**
+
+### 1.4 Also cheap, same arm
+* Does the hero's `ULokiPlayerDropPlaneComponent` show `MulticastOnDropPodLaunched` effects?
+* Did `RemovePlayerFromPlane` leave anything in the log?
+* Do the pods **tick / move**? Two location reads a few seconds apart answers it, and a moving pod
+  would be the strongest possible evidence of "functional".
+
+⚠ **C8 and C9 never fired.** They are **unexercised, not excluded** — if a run produces a null again,
+they are still the branches to read (`0x5648D97`, `0x5648E6F`).
 
 ---
 
@@ -121,18 +184,41 @@ one-byte change with a built-in positive control**, and it settles what the pool
 
 ---
 
-## 6. REPO STATE
+## 6. REPO STATE — verified at the end of S130
 
-- ✅ Everything from S130 is committed, **including the C7 result (§11 / §26) and a fix to `tools/extractor/extractor/Program.cs`**: `docs/s130-actor-pool-gate-settled.md`,
-  `docs/fk22-dropphase-reachability.md` §25 (+ a REFUTED banner on §23.3), the CLAUDE.md drop block,
-  five new rows in `docs/method-rules.md` §1, `scratchpad/s130/` (session-lead thread + the six raw
-  lane reports and six verifier verdicts as JSON), and the `s129` alias in `scratchpad/fk27/fkdis.py`.
-- ✅ `forceTutorialMatch` remains committed as **`false`** (the safe baseline). **Flip it to `true` and
-  rebuild `ags` before any tutorial sitting**, then set it back.
-- Built `.dll`s under `tools/sigbypass-mod/build/` are git-ignored; the `.text` hashes in
-  `docs/next-session-prompt-s130.md` §4 are the record. **Rebuild and diff `.text` before flying one.**
-- The staging recipe is unchanged: `next-session-prompt-s130.md` §3 (`-AllowStale` is required, and
-  **stage promptly after park** — both S127/S128 successes staged near 110 s uptime).
+- ✅ **Tree is clean and everything is committed.** Last commits:
+  `4608ea7` (armed-window death rate) · `c0cf8f9` (**bail 2 fixed**) · `017297e` (poolspawn poke arms)
+  · `f9ec3ed` (one-walk fix) · `5669e96` (the CDO poke arm) · `433ca42` (runtime CDO read)
+  · `e8bbcd5` (C7 settled offline).
+- ✅ **`forceTutorialMatch` is committed as `false`** (the safe baseline) and `ags` is built from it.
+  **Flip it to `true`, rebuild `ags`, and set it back when done** — otherwise a normal launch parks
+  into the tutorial loading screen and looks broken.
+- ⚠ **Built `.dll`s under `tools/sigbypass-mod/build/` are git-ignored.** The hashes below are the
+  record; **rebuild and diff `.text` before flying anything** (several arms share a `.text` SIZE and
+  only the hash separates them).
+
+| variant | `.text` | what it is |
+|---|---|---|
+| `poolspawn-cdopoke` | `8d4a81045820ebec` | **the arm that proved C7** — pooled spawn with the poke |
+| `poolspawn-cdoctrl` | `4e9c12ae866f5359` | the S128 experiment + a read-only CDO print (within-session control) |
+| `droppod-pe-cdopoke` | `bc1c1a5b1e66b54a` | Route E with the poke |
+| `droppod-pe-cdoctrl` | `780da72fbf4d34e7` | **Route E, read-only CDOs** — what S130 actually flew for E1 |
+| `dropplane_b1only` | `5b4467b0105dec1a` | **creates the live `LokiDropShip`** — Route E's precondition |
+
+- ★ **The S130 sequence that worked, and it is the one to repeat** (one staged world, PID 20024):
+  1. `launch-redirect.ps1 -NoHook` (elevated; Steam already running)
+  2. `fk24-stage.ps1 -Probe <arm> -Label <tag> -AllowStale` — **`-AllowStale` is REQUIRED**; the
+     deployed `fo fa184b20934cc4b0` / `sp 4285c0dd22ae9976` in `tools/sigbypass-mod/` (NOT `build/`)
+     are the known-good staging pair and were verified to match this session.
+  3. then, into the SAME live process, `tools/inject/inject.exe mmap <pid> <dll>` — S130 injected
+     `dropplane_b1only` (→ `DropShip=1`) and then `droppod-pe-cdoctrl`, and the client survived both.
+     **Keep ≥20 s between manual-maps.**
+- ★★ **Evidence to read before re-measuring anything:** `scratchpad/s130/evidence/` —
+  `PREREG-cdopoke-flight.md` (pre-registration + 2 amendments, all written before their flights),
+  `RESULT-poolspawn-cdopoke-s130.txt`, `RESULT-routeE-after-poke-s130.txt`.
+- ⚠ **Budget:** S130 spent **4 launches for 1 armed result**, and **all 3 armed windows died
+  artifact-less** (§13.7). Assume the client will not survive; write results to disk as they are
+  produced, and **take live reads in-arm, not afterwards** (§1.2).
 
 ---
 
