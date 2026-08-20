@@ -1,5 +1,12 @@
 # S130 — THE ACTOR-POOL GATE IS NAMED, AND THE ACTOR POOL IS **NOT** FK-22's BLOCKER
 
+> ★★★★★ **UPDATE, SAME DAY — §11 SETTLES C7 OFFLINE AND IT IS THE ANSWER.**
+> The pooled spawn returns NULL because **`AActor::bCanEverReplicate` is `true` on the drop pod's
+> CDO** and the acquire refuses any replicating class (`C7 @ 0x564820C`). `AActor`'s C++ ctor sets
+> that byte to 1 (`0x03371841`), neither Blueprint overrides it, and `SpawnDropPodForTeam` bails on
+> the null **with no fallback** — which is exactly S127's bail 2. **§8's Phase A4 was pre-registered
+> as a live read and did not need one.** Read §11 first; §4's C7 row is superseded by it.
+
 **Date:** 2026-08-19/20. **Offline: zero launches, zero injections, zero `.text` writes.**
 Images: `dumps/s129-poolgate/SUPERVIVE-Win64-Shipping.dump.exe` (ImageBase `0x7FF7B86D0000`, `.text`
 52.9 % decrypted), cross-checked against `dumps/merged2.dump.exe` and `dumps/tutorial-hero/`, plus the
@@ -176,7 +183,7 @@ calls to `ALokiGameState::StaticClass` and has **zero** `lea [+0x258]`; both poo
 | C3/C4 | `0x56480FE` / `0x564810C` | `!Class->IsChildOf(AActor)` | excluded |
 | C5 | `0x5648119` | `Class == null` re-read | excluded |
 | C6 | `0x564817A` | `test byte [Class+0xdc],1` — [I] `CLASS_Abstract` | excluded by control (the ordinary path also rejects abstract) |
-| **C7** | `0x5648210` | **`CDO->byte@0x6C != 0`** | **LIVE CANDIDATE — the only class-level hard NULL that survives the control** |
+| **C7** | `0x5648210` | **`CDO->bCanEverReplicate != 0`** | ✅ **SETTLED — THIS IS THE NULL (§11).** `AActor+0x6C` = `bCanEverReplicate` [M]; `AActor`'s ctor sets it **1** at `0x03371841` [M]; neither Blueprint overrides it [M]; cooked effective value `true` [M]. ⚠ [M] for the COOKED value, [I, strong] for the RUNTIME CDO byte — see §11.5 |
 | **C8** | `0x5648D97` | **`PoolMgr->GetWorld() == null`** | **LIVE CANDIDATE** |
 | **C9** | `0x5648E6F` | **`UWorld::SpawnActor` returned null, OR was never invoked because `rbx == 0` at `0x5648E34`** (verifier correction) | **LIVE CANDIDATE** |
 
@@ -395,10 +402,13 @@ the fallback has a precondition not yet read. Either way the NULL's true cause i
 
 ## 10. OPEN
 
-1. **Which of C7 / C8 / C9 fired live.** Phase A4 settles C7 for free.
-2. **What is `AActor` CDO `+0x6C`?** Not named offline; the only class-level hard NULL that survives
-   the "ordinary spawn works" control.
-   → an offline attempt was made and abandoned; see item 9 below for why, so it is not repeated.
+1. ✅ **C7 is settled offline (§11).** ⚠ C8 and C9 are now **untested rather than excluded** — C7
+   returns first, so nothing downstream of it has ever been reached.
+   ★ **The one remaining read: `byte[CDO(BP_GemV2_C)+0x6C]` on any live client** — it discriminates
+   "the cooked value IS the runtime value" from "something clears it at class load" (§11.5).
+2. ✅ **ANSWERED — `AActor` CDO `+0x6C` is `bCanEverReplicate`, and C7 fires. See §11.**
+   (Item 9 below records the abandoned FIRST attempt; §11 is the one that worked, by walking
+   `AActor`'s own `PropPointers` array with per-type decoding instead of scanning globally.)
 3. **Is `this` in `0x5648050` really a `ULokiActorPoolManager`?** Strong circumstantial evidence
    (a `TMap` at `this+0x38`, slot-49 `GetWorld`, the same TU as the ActorPool strings) — **[I]; its
    class was never read.** One RPM read.
@@ -427,5 +437,134 @@ the fallback has a precondition not yet read. Either way the NULL's true cause i
    uses for `SetBitFunc`. ⇒ **doing this properly needs a per-class walk of `AActor`'s `PropPointers`
    array with correct per-type record decoding**, which is real work and exactly the shape that
    produces a confident wrong answer if rushed. **One read-only RPM read of the live CDO settles it
-   instead, and that is what §8 Phase A4 pre-registers.** Do not re-attempt the offline route without
-   first fixing the per-type decode and validating it on a gold value.
+   instead.** ✅ **AND THEN THE OFFLINE ROUTE WAS RE-ATTEMPTED AND IT WORKED — see §11.**
+   The guidance in this item was right and was followed to the letter: the per-type decode was
+   fixed (pick the class first, walk ITS `PropPointers` array) and validated on three gold values
+   (`bAlwaysRelevant`/`bHidden` `0x68`, `bEnablePooling` `0x2D3`) before the answer was read off.
+   ★ **The lesson is not “the offline route is dead” but “a global scan cannot answer a
+   class-scoped question”** — tool: `scratchpad/s130/tools/classprops_uht.py`.
+
+---
+
+## 11. C7 IS SETTLED — OFFLINE, WITH NO LAUNCH. THE NULL IS `bCanEverReplicate`.
+
+**Date:** 2026-08-20, same session. §8 pre-registered C7 as a live RPM read (Phase A4); it turned out
+to be answerable entirely offline. **Zero launches, zero injections, zero `.text` writes.**
+
+### 11.1 The answer
+
+```
+C7  @ .text 0x0564820C   44 38 70 6c        cmp byte ptr [rax + 0x6c], r14b   (r14b = 0)
+    @ .text 0x05648210   0f 85 8b 0c 00 00  jne 0x5648EA1                     (the NULL epilogue)
+                                            0x5648210 + 6 + 0xC8B = 0x5648EA1  [M, arithmetic]
+
+    rax   = UClass[0x178]                = ClassDefaultObject
+    +0x6C = AActor::bCanEverReplicate
+```
+
+⇒ **`SpawnPoolableActorFromClass{,Deferred}` refuses any class whose CDO can ever replicate.**
+⇒ **`BP_DropPod_Tutorial_C` has `bCanEverReplicate = 1`, so the call returns NULL deterministically —
+on any machine, in any world, primed or unprimed.** That is the whole of FK-22's bail 2.
+
+### 11.2 Every link, and how it was measured
+
+| link | evidence | grade |
+|---|---|---|
+| `UClass + 0x178` = `ClassDefaultObject` | `UGameplayStatics::GetClassDefaultObject` impl `0x589BB40`: `mov rbx,[rcx]` → `cmp qword [rbx+0x178],0` → `jne` return it, else create then `mov rax,[rbx+0x178]; ret`. **An entirely independent function from the acquire.** | **[M]** |
+| `AActor + 0x6C` = `bCanEverReplicate` | walked **`AActor`'s own 114-entry `PropPointers` array** (`FClassParams 0x07F227E0`, array `0x07F21540`), decoding each record by its **variant** layout — 114/114 decoded. Owner pinned: the array's `ClassNoRegisterFunc` is `0x2BE1050` = `jmp 0x338BD10`, and `0x338BD10`'s own literals are `'AActor'` / `'/Script/Engine'` / `'Engine'` | **[M]** |
+| …with three positive controls | `bAlwaysRelevant`→`0x68` PASS · `bHidden`→`0x68` PASS · `bEnablePooling`→`0x2D3` PASS | **[M]** |
+| …and an independent second instrument | `tools/asdump/out/binds_members.csv:21044` — `class,288,AActor,/Script/Engine.Actor,property,20,bool bCanEverReplicate` | **[M]** |
+| the C++ default is **TRUE** | `AActor::AActor` = **`0x3371800`** (723 B), reached as `InClassConstructor` = `0x33703A0` (stack arg `[rsp+0x48]` of `GetPrivateStaticClassBody`) → tail-jmp. At **`0x03371841`: `mov byte ptr [rdi + 0x6c], 1`** — the only store to `+0x6C` in the whole ctor | **[M]** |
+| neither Blueprint overrides it | `bpdump BP_DropPod_Tutorial @props` (83 lines, 23 exports — a **populated** dump, so the absence is a real inherit) and `bpdump DropPod/BP_DropPod.uasset @props`: the CDO overrides only `MaxSteerDistance` / `MaxNonLeaderSteerDistance` | **[M]** |
+| the cooked **effective** value is `true` | AssetRegistry tag on `BP_DropPod_Tutorial`: `bCanEverReplicate = true`, `bEnablePooling = True` | **[M]** |
+| the chain | `BP_DropPod_Tutorial_C` → `BP_DropPod_C` → `/Script/Angelscript.LokiDropPod`; `NativeParentClass = /Script/AngelscriptCode.ASClass'/Script/Angelscript.LokiDropPod'` | **[M]** |
+| `bCanEverReplicate` is never assigned in Angelscript | a full sweep of `tools/asdump/out` finds it **only** as a `binds_members.csv` declaration; the only pooling-flag assignment anywhere in script is `LokiGem.as:1129 this.bEnablePooling = true` | **[M]** |
+
+### 11.3 ★★ THE CONTROL THAT BROKE THE FIRST READING — and then confirmed it
+
+The moment `bCanEverReplicate = true` came back for the drop pod, the obvious move was to publish
+"C7 fires, done." **A control killed it:** `BP_GemV2` — a class the log shows being registered as
+poolable, and the one class Angelscript explicitly opts into pooling — **also has
+`bCanEverReplicate = true`.** If C7 were as read, gems could not be pooled either, which would make
+the whole pooling subsystem inert. That is a far stronger claim than the evidence supported.
+
+The joint distribution over the cooked registry settled it (unit: Blueprint assets, 36,625 scanned):
+
+| `bEnablePooling` | `bCanEverReplicate` | count |
+|---|---|---|
+| false | *absent* | 5,362 |
+| **true** | **true** | **96** |
+| **true** | **false** | **80** |
+| false | true | 23 |
+
+⇒ **80 classes carry exactly the combination C7 requires**, so the gate is real and *satisfiable*,
+not a universal killer. And the 80 are semantically coherent: **every one sampled is a cosmetic
+projectile visual** — `BP_Assault_AssaultRifle_ProjectileCosmetics`,
+`BP_Freeze_IceDart_ProjectileCosmetics_*`, `BP_Flex_Blaster_ProjectileCosmetics_*`, … — i.e. exactly
+the client-side, non-replicated actors a pool is for. `ALokiHeroHeightIndicator`'s C++ ctor
+independently shows the same pattern: `mov byte [rbx+0x6c], dl` (dl = 0) **and**
+`mov byte [rbx+0x2d3], 1` — *clear replicate, set pooling*, in one constructor.
+
+⇒ **the pooled-spawn API is for non-replicated cosmetics, and a drop pod is not a legal argument to it.**
+
+### 11.4 And the caller bails on the null with no fallback — bail 2, fully explained
+
+`tools/asdump/out/a/GameMode.DropPhase.LokiDropShip.as.txt:153`, inside `SpawnDropPodForTeam`:
+
+```
+v6 = LokiGameplay::SpawnPoolableActorFromClassDeferred(__WorldContext, this.TeamDropPodClass, v32, null, null, false, true);
+if (v6 != null) {
+    ... GetTeamDropLeader / InitializeDropPod / FinishSpawningActor / AddPlayerToPlane ...
+}
+```
+
+Everything the drop depends on is inside `if (v6 != null)`. There is **no else**. `TeamDropPodClass`
+is `BP_DropPod_C` (`Default__BP_DropPlane_Base_C`, [M] prior), which is replicated.
+⇒ **C7 → NULL → the whole body is skipped → `SpawnDropPodForTeam` returns false.** That is precisely
+S127's measured bail 2, and it is now explained end to end without any reference to the actor pool.
+
+⚠ **`LokiGem.as:181` has the identical shape** (`if (v30 != null) {...} else {}` — an *empty* else),
+so this is **not drop-pod-specific**. Which raises a real question, stated rather than resolved:
+**§11.5.**
+
+### 11.5 ⚠ WHAT THIS DOES *NOT* ESTABLISH — the open question it creates
+
+If the cooked value equals the runtime CDO byte, then **gems fail this gate too**, and the pooled
+spawn path is inert for every replicated class in this build. The game shipped and presumably
+worked, so one of these is true and **none of them is measured**:
+
+1. the runtime CDO byte differs from the cooked class default (something clears it during class
+   loading / `PostInitProperties`) — plausible and **completely untested**;
+2. gems and pods genuinely never spawn through this path in real matches, and some other route does
+   the work;
+3. the path really is broken for replicated actors in this build.
+
+★ **One read settles it, and it is the cheapest thing on the board:** on any live client with a
+world, read `byte[CDO(BP_GemV2_C) + 0x6C]`. If it reads **1**, the cooked value is the runtime value
+and (2)/(3) are the live options. If it reads **0**, hypothesis (1) is right and the *cooked* value
+is not what C7 sees — in which case the drop pod's runtime byte must be read too, and C7 may not
+fire after all.
+⚠ **Until that read exists, "C7 fires on the live drop pod CDO" is [M] for the COOKED value and
+[I, strong] for the RUNTIME value.** Say it that way; do not collapse the two.
+
+### 11.6 The repair this implies — and it is one byte, on the safest write class
+
+If the runtime read confirms `1`, the lever is **`CDO(BP_DropPod_Tutorial_C) + 0x6C = 0`**: a single
+aligned byte on a **class default object**, this project's safest measured write class (nothing 0/22
+· bytecode 0/9 vs transient `.text` 4/12 · standing `.text` 7/8), with a free readback. Then dispatch
+`SpawnDropPodForTeam` by the existing Route E (ProcessEvent slot 78).
+⚠ It changes a **class default**, so it affects every drop pod for the process lifetime and may
+break the pod's replication — which is exactly why it belongs in an A→B→A arm with the census as the
+readout, not in the default shim set.
+⚠ And it is **upstream of nothing else that was blocking**: C8/C9 have never been reached, so they
+remain untested rather than excluded.
+
+### 11.7 An instrument defect found and fixed in the shared toolchain
+
+`extractor bpdump <asset> @props` was **gated behind the asset having UFunction exports**
+(`Program.cs:1137`, `if (ufuncs.Count == 0 && !wantImports) continue;`). A **data-only Blueprint** —
+which is exactly what `BP_DropPod_Tutorial` is (0 UFunction exports) — fell through that `continue`,
+and the command printed **`No matching UFunction '@props' found`**, which reads exactly like *"the
+asset has no such property"* and is not. `@props` wants a UObject export, not a UFunction, precisely
+like `@imports` next to it. **Fixed**; validated by re-dumping `BP_LokiGameState_Tutorial` first and
+reproducing its known `bSupportsActorPoolPriming = False` before trusting the new dumps.

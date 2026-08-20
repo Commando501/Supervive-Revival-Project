@@ -1134,7 +1134,13 @@ if (args.Length >= 3 && args[0] == "bpdump")
         // @imports needs the package's class/import shape, NOT a UFunction — handle it
         // before the ufuncs gate (a BP class asset may have 0 UFunction exports of its own).
         bool wantImports = fnNeedle == "@imports";
-        if (ufuncs.Count == 0 && !wantImports) continue;
+        // S130 FIX: '@props' was gated behind having UFunction exports, so a DATA-ONLY
+        // Blueprint (no functions of its own -- e.g. BP_DropPod_Tutorial) fell through
+        // this `continue` and the command reported "No matching UFunction '@props' found",
+        // which reads exactly like "the asset has no such property" and is not. Same
+        // treatment as '@imports': neither needle wants a UFunction at all.
+        bool wantProps = fnNeedle == "@props";
+        if (ufuncs.Count == 0 && !wantImports && !wantProps) continue;
         Console.WriteLine($"  {assetPath}: {ufuncs.Count} UFunction export(s)");
         // Special needle '@props' = dump every UObject export's serialized property
         // values to a text file. Per-instance overrides (e.g. which mission pool a

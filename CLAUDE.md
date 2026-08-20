@@ -1337,7 +1337,16 @@ Read `docs/fk22-dropphase-reachability.md` §14-§15.** Two flights on one stage
 
 ### Before touching anything drop- / deploy- / DropPlane- / DropPod- / "SpawnPlane faults" shaped
 ★★★★★ **S130 (2026-08-20) — THE ACTOR POOL IS ***NOT*** THE BLOCKER, AND THE POOL GATE IS NAMED.
-Read `docs/s130-actor-pool-gate-settled.md`, then `docs/fk22-dropphase-reachability.md` §25.**
+Read `docs/s130-actor-pool-gate-settled.md`, then `docs/fk22-dropphase-reachability.md` §25 — and §26, which SETTLES the NULL.**
+★★★★★ **AND C7 IS SETTLED — OFFLINE, NO LAUNCH. THE NULL IS `bCanEverReplicate` (`docs/s130-...md` §11, `fk22-...md` §26).**
+- **[M] `C7 @ 0x564820C`: `cmp byte ptr [CDO + 0x6C], 0 ; jne -> NULL`.** `UClass+0x178` = `ClassDefaultObject` [M, via `UGameplayStatics::GetClassDefaultObject` impl `0x589BB40`, an independent function]; **`AActor+0x6C` = `AActor::bCanEverReplicate`** [M, walked `AActor`'s own **114-entry** `PropPointers` array at `FClassParams 0x07F227E0` with per-type decoding, three controls passing — `bAlwaysRelevant`/`bHidden` `0x68`, `bEnablePooling` `0x2D3` — plus `binds_members.csv:21044` as a second instrument].
+- **[M] `AActor::AActor` (`0x3371800`) sets it TRUE: `0x03371841 mov byte ptr [rdi+0x6c], 1`.** Neither `BP_DropPod_Tutorial` nor `BP_DropPod` overrides it (`bpdump @props`, populated dumps), and the cooked AssetRegistry effective value is `true`. ⇒ **the pooled spawn refuses the drop pod deterministically — primed or not, any machine, any world.**
+- ★★ **AND THAT IS BAIL 2, END TO END:** `LokiDropShip.as:153` calls `SpawnPoolableActorFromClassDeferred(TeamDropPodClass, ...)` and wraps EVERYTHING in `if (v6 != null)` with **no else** ⇒ null → whole body skipped → `SpawnDropPodForTeam` returns false. **No reference to the actor pool is needed anywhere in the explanation.**
+- ★★ **THE CONTROL THAT BROKE THE FIRST READING AND THEN CONFIRMED IT:** `BP_GemV2` — pooled in the log, and the ONE class Angelscript opts into pooling — **also reads `true`**, which would make pooling inert. The joint distribution over 36,625 Blueprints settled it: **pooling∧¬replicate = 80** · pooling∧replicate = 96 · ¬pooling∧replicate = 23. **The 80 are ALL cosmetic projectile visuals** (`*_ProjectileCosmetics`, `BP_Freeze_IceDart_*`, …), and `ALokiHeroHeightIndicator`'s ctor shows the idiom in one place: `mov byte [rbx+0x6c], dl` (dl=0) **and** `mov byte [rbx+0x2d3], 1`. ⇒ **the pooled API is for non-replicated cosmetics; a drop pod is not a legal argument to it.**
+- ⚠⚠ **[M] for the COOKED class default, [I, strong] for the RUNTIME CDO byte — do not collapse them.** `LokiGem.as:181` has the identical no-fallback shape, so on cooked values **gems fail too**, which the shipped game seems to contradict. ★ **ONE read discriminates: `byte[CDO(BP_GemV2_C)+0x6C]` on any live client.**
+- ★ **REPAIR (if the runtime read confirms 1): poke `CDO(BP_DropPod_Tutorial_C)+0x6C = 0`** — one aligned byte on a CDO, the safest measured write class, free readback — then Route E `SpawnDropPodForTeam`. ⚠ It is a CLASS DEFAULT: it affects every pod for the process lifetime and may break replication. A→B→A with the DropPod census as readout; **not** a default-set shim.
+- ⚠ **C8/C9 are now UNTESTED, not excluded** — C7 returns before either is reached. Expect the next wall there.
+- ⚠ **`extractor bpdump <asset> @props` was gated behind the asset having UFunction exports**, so a DATA-ONLY Blueprint (exactly what `BP_DropPod_Tutorial` is) printed `No matching UFunction '@props' found` — which reads as “the asset has no such property” and is not. **Fixed** (`Program.cs:1137`); validated by re-dumping a known-good asset first.
 Offline; zero launches, zero injections, zero `.text` writes. Six adversarially-verified lanes.
 - ⚠⚠⚠ **§23.3's suspicion is REFUTED — an unprimed pool CANNOT return NULL [M].** The acquire's
   lookup `0x334E7A0` is a **`TMap::FindOrAdd`** (one `ret`, inserts on a miss, never null), and a pool
@@ -2474,7 +2483,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **68 tabulated instances as of S130** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **69 tabulated instances as of S130** — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies

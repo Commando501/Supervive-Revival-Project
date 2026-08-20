@@ -2768,5 +2768,108 @@ already recorded against a previous agent **on this exact function family**; it 
 markers (**refuted**) → phase (**solved**) → subscription (**dead by construction**) →
 `SpawnPlane` (**faults on unstreamed markers**) → `SpawnDropPodForTeam` (**runs, returns false**) →
 bail 2 = the pooled spawn returns NULL → **⚠ NOT because the pool is disabled (refuted here)** →
-**C7 / C8 / C9 inside the acquire `0x5648050`** ← **YOU ARE HERE**, and C7 is settleable by a single
-read-only RPM read of `CDO(BP_DropPod_Tutorial_C) + 0x6C` with no launch at all.
+**C7 / C8 / C9 inside the acquire `0x5648050`** → ✅ **C7 IS SETTLED — SEE §26.** It is
+`AActor::bCanEverReplicate`, true on the drop pod, and it needed **no launch at all**. C8/C9 are now
+**untested rather than excluded** — C7 returns before either is reached.
+
+---
+
+## 26. C7 IS SETTLED — THE NULL IS `bCanEverReplicate`, AND BAIL 2 IS EXPLAINED END TO END
+
+**Date:** 2026-08-20. Offline; zero launches, zero injections, zero `.text` writes.
+**Primary evidence: `docs/s130-actor-pool-gate-settled.md` §11** — that section governs.
+
+§25.5 left three candidates (C7/C8/C9) and said C7 would cost one read-only RPM read. **It cost none.**
+
+### 26.1 The answer, in one block [M]
+
+```
+C7  .text 0x0564820C   44 38 70 6c        cmp byte ptr [rax + 0x6c], r14b   (r14b = 0)
+    .text 0x05648210   0f 85 8b 0c 00 00  jne 0x5648EA1                     (NULL epilogue)
+                                          0x5648210 + 6 + 0xC8B = 0x5648EA1
+
+  rax   = UClass[0x178] = ClassDefaultObject   [M] via UGameplayStatics::GetClassDefaultObject
+                                                   impl 0x589BB40 -- an INDEPENDENT function
+  +0x6C = AActor::bCanEverReplicate            [M] via AActor's own 114-entry PropPointers array
+                                                   (FClassParams 0x07F227E0), 3 controls passing:
+                                                   bAlwaysRelevant 0x68 / bHidden 0x68 / bEnablePooling 0x2D3
+                                                   + independent confirmation in binds_members.csv:21044
+  default = TRUE                               [M] AActor::AActor (0x3371800, 723 B, reached as
+                                                   InClassConstructor 0x33703A0) does
+                                                   0x03371841  mov byte ptr [rdi + 0x6c], 1
+```
+
+**Neither `BP_DropPod_Tutorial` nor `BP_DropPod` overrides it** (`bpdump @props`, populated dumps of
+83 and N lines, so the absences are real inherits), and the cooked AssetRegistry effective value is
+`bCanEverReplicate = true`.
+
+⇒ **`SpawnPoolableActorFromClass{,Deferred}` refuses any class that can replicate, and the drop pod
+can. The NULL is deterministic — primed or unprimed, on any machine, in any world.**
+
+### 26.2 And the caller has no fallback — this IS bail 2
+
+`tools/asdump/out/a/GameMode.DropPhase.LokiDropShip.as.txt:153`, inside `SpawnDropPodForTeam`:
+
+```
+v6 = LokiGameplay::SpawnPoolableActorFromClassDeferred(__WorldContext, this.TeamDropPodClass, ...);
+if (v6 != null) {
+    GetTeamDropLeader / InitializeDropPod / FinishSpawningActor / RemovePlayerFromPlane
+    / AuthPlayerEnterWorldAttachedToRidable / MulticastOnDropPodLaunched / AddTeamDropEvent
+}
+```
+
+There is **no else**. `TeamDropPodClass` is `BP_DropPod_C` (replicated).
+⇒ **C7 → NULL → the entire body is skipped → `SpawnDropPodForTeam` returns false.** That is exactly
+S127's measured bail 2, now explained **with no reference to the actor pool at all**.
+
+### 26.3 ★★ The control that broke the first reading, then confirmed it
+
+`bCanEverReplicate = true` on the drop pod looked like an immediate answer. **A control killed it:**
+`BP_GemV2` — registered as poolable in the log, and the one class Angelscript explicitly opts into
+pooling (`LokiGem.as:1129 this.bEnablePooling = true`) — **also reads `true`**. If C7 were as read,
+gems could not be pooled either, which would make the subsystem inert: a far stronger claim than the
+evidence supported.
+
+The joint distribution over the cooked registry settled it (36,625 Blueprint assets scanned):
+**pooling∧¬replicate = 80 · pooling∧replicate = 96 · ¬pooling∧replicate = 23 · rest untagged 5,362.**
+⇒ **80 classes carry exactly the combination C7 requires**, so the gate is real *and satisfiable* —
+and **every one of the 80 sampled is a cosmetic projectile visual** (`*_ProjectileCosmetics`,
+`BP_Freeze_IceDart_*`, `BP_Flex_Blaster_*`, …). `ALokiHeroHeightIndicator`'s ctor shows the same
+idiom in one place: `mov byte [rbx+0x6c], dl` (dl=0) **and** `mov byte [rbx+0x2d3], 1`.
+⇒ **the pooled-spawn API is for non-replicated cosmetics; a drop pod is not a legal argument to it.**
+
+### 26.4 ⚠ WHAT THIS DOES NOT ESTABLISH — and the one read that would
+
+`LokiGem.as:181` has the **identical** `if (x != null) {...} else {}` shape, so this is not
+drop-pod-specific: on the cooked values, gems fail the same gate. The game shipped, so one of these
+is true and **none is measured**: (1) the runtime CDO byte differs from the cooked class default;
+(2) gems/pods never spawn through this path in real matches; (3) the path is genuinely inert for
+replicated actors in this build.
+★ **One read discriminates:** `byte[CDO(BP_GemV2_C) + 0x6C]` on any live client with a world.
+⚠ Until then: **[M] for the COOKED value, [I, strong] for the RUNTIME value. Do not collapse them.**
+
+### 26.5 The repair, and what it costs
+
+If the runtime read confirms `1`: poke **`CDO(BP_DropPod_Tutorial_C) + 0x6C = 0`** — one aligned byte
+on a class default object, the safest measured write class (nothing 0/22 · bytecode 0/9 vs transient
+`.text` 4/12 · standing `.text` 7/8), with a free readback — then dispatch `SpawnDropPodForTeam` via
+the existing Route E (ProcessEvent slot 78).
+⚠ It mutates a **class default**, so it affects every drop pod for the process lifetime and may break
+the pod's replication. A→B→A with the DropPod census as the readout; not a default-set shim.
+⚠ **C8 and C9 are now untested rather than excluded** — C7 returns before either, so nothing
+downstream has ever been reached. Expect the next wall there.
+
+### 26.6 Blocker chain, current
+
+```
+markers        REFUTED   (S124)
+phase          SOLVED    (S124 -- one GoToPhase call self-drives to EGP_Combat)
+subscription   DEAD      (S124 -- ServerOnly; the component is not in the invocation list)
+SpawnPlane     FAULTS    (S124/S17 -- unstreamed markers)
+SpawnDropPodForTeam runs, returns false  = bail 2
+  └─ the pooled spawn returns NULL
+       └─ NOT because the pool is disabled          <-- REFUTED S130 §25
+       └─ because C7 rejects bCanEverReplicate=true <-- SETTLED S130 §26  ** YOU ARE HERE **
+            └─ next: one live read of byte[CDO(BP_GemV2_C)+0x6C], then the one-byte CDO poke
+            └─ then C8/C9, which have never been reached
+```
