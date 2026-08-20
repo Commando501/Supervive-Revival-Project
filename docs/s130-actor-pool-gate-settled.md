@@ -793,3 +793,39 @@ more launches.
 ship, no plane and no ProcessEvent. The cheapest experiment was available the whole time.
 ⚠ `PdCdoFlags`' single GUObjectArray pass still costs **~2,000–2,300 ms on the game thread** (measured
 and printed). That is a real hitch; it ran twice per arm. Budget for it, or move the read off-thread.
+
+### 13.7 ⚠⚠ ADDENDUM — the armed-window death rate this session was 3 of 3, not 3 of 36
+
+Attempt 4 **also died artifact-less** — no crashpad report, no handoff — but only **after running every
+arm to completion and writing the full result to disk**. Nothing was lost; the pods it created were
+gone before they could be inspected, which is the one thing that was.
+
+Session tally, by **armed window** (the unit that matters, not launches):
+
+| attempt | staged? | armed? | outcome |
+|---|---|---|---|
+| 1 | ❌ died 9 s after `fo` | — | FK-31 staging hazard |
+| 2 | ✅ | ✅ | died **silently mid-ladder**, before the CDO arm — no dump |
+| 3 | ✅ | ✅ | died **silently mid-ladder**, same position — no dump |
+| 4 | ✅ | ✅ | **completed every arm**, absorbed 2 further manual-maps, then died silently — no dump |
+
+**3 of 3 armed windows ended in artifact-less deaths.** `CLAUDE.md` records that class at **3/36
+(≈8 %)** of armed windows. Three for three against an 8 % base rate is p ≈ 0.0005 if the recorded rate
+still applies.
+
+⚠⚠ **n = 3. This is SUGGESTIVE, NOT ESTABLISHED**, and I am deliberately not naming a mechanism:
+* the three are **not homogeneous** — 2 and 3 died before their arms ran, 4 died after everything;
+* attempt 4 had absorbed **two extra manual-maps** (`dropplane_b1only`, then the Route E arm) that
+  2 and 3 did not, so it is not the same exposure;
+* the ~2,000–2,300 ms game-thread stall the CDO walk introduces **cannot** explain 2 or 3, because
+  the arm never ran in either.
+* and the recorded 3/36 comes from a different shim family (`play`), so the base rate may simply not
+  transfer to the `droppod`/`poolspawn` family at all.
+
+⇒ **What to do with this: budget the drop-pod route at roughly ONE armed window per result and expect
+the client not to survive it.** Write results to disk as they are produced — attempt 4 is the case
+that proves the point: it delivered everything and then died, and only the fact that the marker is
+flushed continuously made that a full success rather than a total loss.
+⇒ **And take any read you want off the live process IMMEDIATELY.** The pods existed for minutes and
+the chance to inspect them is gone. `docs/next-session-prompt-s131.md` §1 asks exactly the questions
+that window could have answered for free.
