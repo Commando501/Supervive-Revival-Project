@@ -62,7 +62,12 @@ Also free and unstarted:
   referencing the same fallback string at `+0x6C`). **If `SpawnDropPodForTeam` inlines one, it
   inherits the identical fallback-not-null behaviour** — which would independently confirm that
   FK-22's bail 2 is nowhere near pooling.
-* **Name `AActor` CDO `+0x6C`** via the UHT `FPropertyParams` oracle (the same route that named
+* **Name `AActor` CDO `+0x6C`** — ⚠ **S130 tried this offline and it did NOT work; read
+  `s130-actor-pool-gate-settled.md` §10 item 9 first.** A bool record's `SetBitFunc` displacement is an
+  offset within its OWN outer, and the generic `propscan.py` decoder is misaligned for variant record
+  types. It needs a per-class walk of `AActor`'s `PropPointers` with correct per-type decoding,
+  validated on a gold value. **The one live RPM read in §1 is strictly cheaper and unambiguous.**
+  (Original idea, for reference: via the UHT `FPropertyParams` oracle (the same route that named
   `bSupportsActorPoolPriming`: find the record whose `SetBitFunc`/offset is `0x6C` on an `AActor`-
   rooted `FClassParams`, and require `findptr` multiplicity 1).
 
