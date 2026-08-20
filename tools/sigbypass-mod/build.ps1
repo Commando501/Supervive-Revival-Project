@@ -497,6 +497,19 @@ $Variants = @{
         #   mini-censuses + P4. P3 runs LAST so it cannot contaminate P1/P2's deltas, and each stage has
         #   its own census column so the three are separable in one sitting.
         'poolspawn'           = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        # ★★★★★ S130 — THE C7 TEST, AND IT IS THE CHEAPEST ONE AVAILABLE.
+        #   S128 flew `poolspawn` and measured P1 and P2 both returning NULL on BP_DropPod_Tutorial_C
+        #   while the ordinary path (P3) spawned the same class fine.  S130 then MEASURED why: the
+        #   acquire does `cmp byte [CDO+0x6C],0 ; jne -> return NULL` and +0x6C is
+        #   AActor::bCanEverReplicate, which reads 1 on the whole drop-pod chain.
+        #   These two arms are the SAME probe as S128 with ONE BYTE different.
+        #   ⚠ Prefer this over the droppod Route-E arms for testing C7: it calls the pooled spawn
+        #     DIRECTLY, so it needs no live LokiDropShip, no pre-spawned plane and no ProcessEvent
+        #     marshalling -- three preconditions that are irrelevant to the question being asked.
+        #   ⚠ `poolspawn-cdoctrl` is byte-for-byte the S128 experiment plus a read-only CDO print, so
+        #     it is a genuine reproduction arm, not just a control.
+        'poolspawn-cdoctrl'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=0')
+        'poolspawn-cdopoke'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=1')
         #   +1 dim, THE CONFOUND-REMOVAL ARM. `SpawnActorCls` (P3) hardcodes CollisionHandlingOverride=2
         #   (AdjustIfPossibleButAlwaysSpawn) and is shared code compiled into `play`, so it is NOT edited;
         #   P1/P2 pass the functions' declared default 0 (Undefined). If the full ladder shows P1/P2 null

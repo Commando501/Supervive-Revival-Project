@@ -99,3 +99,49 @@ The amended builds also carry the step-3 label fix, so the arm is now identifiab
 text itself as well as from the hash.
 
 **Predictions are unchanged.** Nothing about P1/P2/P3 depends on the walk shape.
+
+---
+
+## Amendment 2 — attempt 3 died the same way, and the EXPERIMENT IS CHANGED (written before attempt 4)
+
+**Attempt 3:** staged cleanly again (hero spawned + possessed, probe injected, armed window opened),
+then died **silently during the ship-candidate enumeration** — further along than attempt 2 (11
+candidates listed vs 1) but still **before the CDO arm ran**. No dump, no handoff. **Void for C7.**
+
+⚠ Two consecutive deaths at the same ladder position is not obviously random (the recorded
+artifact-less rate is ~3/36 armed windows, so two in a row is ~0.7%). I am NOT claiming a mechanism
+for it — but it is enough to stop repeating the same setup.
+
+### ★ The setup was wrong, and checking S127 is what showed it
+S127 flew Route E successfully, and its census reads **`DropShip=1`** — because it injected
+`dropplane_b1only` FIRST, which creates a live `LokiDropShip`. **Both of my runs read `DropShip=0`:**
+only archetypes exist, so `PdResolve` enumerates every `Default__BP_DropPlane_*` candidate and E1 has
+no ship to call on. **I omitted a precondition S127 had.**
+
+### ⇒ Switching to the cheapest test of C7, which needs none of that
+`RM_POOLSPAWN` calls `SpawnPoolableActorFromClass{,Deferred}` **directly** on
+`BP_DropPod_Tutorial_C`. It needs **no live DropShip, no pre-spawned plane, and no ProcessEvent** —
+three preconditions that are irrelevant to the question "does clearing bCanEverReplicate make the
+pooled spawn return an actor?". S128 flew this exact probe to completion and measured **P1 and P2
+both NULL** while the ordinary path (P3) spawned the same class fine.
+
+**So S128 is the historical control and these arms are the same probe with ONE BYTE different.**
+
+| arm | `.text` sha256 | size | KPDCDOPOKE |
+|---|---|---|---|
+| treatment | **`8d4a81045820ebec`** | 151,040 | 1 |
+| control / S128 reproduction | **`4e9c12ae866f5359`** | 151,040 | 0 |
+
+S128 flown baseline for reference: `poolspawn d3e1ffb9623f6352`.
+
+### Amended predictions
+**P1 (baseline, at P0c, read-only):** all four CDOs print; `BP_DropPod_Tutorial_C` = **1**.
+**P2 (poke, immediately before the pooled spawn):** `1 -> 0`, readback verified, `Default__Actor`
+untouched at 1.
+**P3 (the headline):** with C7 satisfied, `SpawnPoolableActorFromClassDeferred` / `...FromClass`
+should return a NON-NULL actor and the DropPod census should move (S128 measured `dP1 = dP2 = +0`).
+⇒ **PASS = a non-null return AND a census delta > 0.**
+⚠ A null return with the readback verified at 0 would mean C7 is NOT the only gate on that path —
+which is a real result, and points at the remaining branches inside `0x5648050`.
+⚠ The `0xA5` return sentinel still distinguishes "nothing wrote a return" from "wrote null"; do not
+read a null without checking it.
