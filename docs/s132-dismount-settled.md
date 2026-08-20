@@ -351,11 +351,24 @@ load-bearing claim. Five things they added:
    [M, lane 1] The repo's long-standing shorthand *"ret 0"* reads as *"returns zero"*, which is a
    different claim. It is irrelevant here (neither fold's return is tested) but it will mislead a
    future grader reading the fold table.
-3. ★★★ **The detach has exactly ONE game caller, and it is dead** [M, lane 1]:
-   `ALokiDropPod::KickPlayersFromPod`, whose entire body sits behind `if (LokiIsClient) return;`
-   with `LokiIsClient` hardcoded TRUE on this client. ⇒ **every observable this arm reads is at a
-   structural baseline of 0** — the game cannot produce a dismount on its own, so nothing measured
-   here can be background activity.
+3. ★★★ **The game cannot produce a dismount on its own ⇒ every observable this arm reads is at
+   a structural baseline of 0**, so nothing measured here can be background activity. The detach's
+   caller is `ALokiDropPod::KickPlayersFromPod`, whose entire body sits behind
+   `if (LokiIsClient) return;` with `LokiIsClient` hardcoded TRUE on this client.
+   ⚠⚠ **Grade [M, bounded], not [M].** Lane 1 stated *"exactly ONE game caller"* as [M] and its
+   own adversarial verifier **REFUTED that**: `KickPlayersFromPod`'s bytecode carries **TWO**
+   `CALLSYS AuthPlayerDetachPlayerFromRidable` sites (`0x01D8`, `0x02EC`) and the uncapped rel32 scan
+   found only the second — because the first sits in an AOT body on page `0x5969000`, which is
+   **all-zero in 30 of 30 same-size images on disk**.
+   ★★ **The general rule, demonstrated from INSIDE the result: a rel32 scan over a 55 %-decrypted
+   `.text` is a FLOOR, always** — and it cannot see a reflected/Blueprint caller at all, since that
+   route reaches the thunk through `UFunction.Func` at runtime.
+   ★ **What actually carries the baseline claim** (added by the verifier, not the lane): a
+   full-image qword scan finds **exactly one** stored pointer to the impl and one to the thunk, ruling
+   out statically-stored indirect calls; and a corpus grep for the name over the shipped assets returns
+   **zero** files **with a passing positive control** (`BulkClaimAllProgressionTrackRewards` →
+   `WBP_UI_LobbyRewards`). Both bytecode sites are inside the same dead function, so the conclusion
+   stands — only its support changed.
 4. ★ **`TArray::Remove` (`0x11F3860`) writes ONLY `Num`** [M, lane 1] — it does not touch `Data`
    or `Max`, does not free and does not realloc. That is the mechanism behind the flight observation
    that runs 2–4 printed `Max already covers it -> no ResizeGrow needed`: the run-1 buffer survives
