@@ -1,0 +1,286 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[PD] drop-pod mode (S126/FK-22 Route C): enumerate live LokiDropShip actors -> BEFORE census ->
+[PD] C0c POSITIVE CONTROL (K2_GetActorLocation cross-checked against RPM) -> read both graded
+[PD] bail points -> SpawnDropPodForTeam(team, spawnLoc, landLoc) -> AFTER census + delta table.
+[PD] It needs NO level markers and NO round phase. Inject into the STAGED TUTORIAL WORLD
+[PD] (gft -> fo -> sp -> this). Not meaningful at the menu -- FK-1 measured AS UClasses
+[PD] unregistered there, and there is no ship to call on.
+[PD] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[DP] C0-BEFORE      0x1DBB9CFA020 'Default__LokiDropPlane' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBB9CFA860 'Default__LokiDropPodBase' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBB9D02FA0 'Default__LokiGameModeDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBB9D3D710 'Default__LokiPlayerControllerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBB9D3D7F0 'Default__LokiPlayerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBB9E3B250 'Default__LokiDropPhase_PlayerStateComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBB9E3B4F0 'Default__LokiDropPod' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBB9E3BB50 'Default__LokiDropPodImpactIndicator' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBB9E3BF30 'Default__LokiDropPodLaser' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBB9E3C2F0 'Default__LokiDropShip' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DB8A9DA300 'Default__BP_Avatar_DropPod2_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DBFF279400 'Default__BP_Avatar_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DB8A6DCD00 'Default__BP_Avatar_DropPod3_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE       0x1DCFCCA52C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] C0-BEFORE      0x1DD7360A3C0 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE       0x1DCD113A4C0 'WBP_UI_DropPodControls'  chain=WBP_UI_DropPodControls_C<-UserWidget<-Widget<-Visual<-Object
+[DP] C0-BEFORE      0x1DD81920640 'Default__Comp_GameMode_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE       0x1DD01ABADE0 'WBP_UI_DropPlane_Slice'  chain=WBP_UI_DropPlane_Slices_C<-UserWidget<-Widget<-Visual<-Object
+[DP] C0-BEFORE       0x1DD85AD0700 'WBP_UI_DropPlane_SpinningDonut'  chain=WBP_UI_DropPlane_SpinningDonut_C<-UserWidget<-Widget<-Visual<-Object
+[DP] C0-BEFORE      0x1DD85ADAC00 'Default__Comp_PlayerState_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD85ADD600 'Default__Comp_PlayerState_DropPlane_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCED14DB80 'Default__GIE_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE       0x1DCF01FD980 'WBP_UI_DropPodIndicator_Animated'  chain=WBP_UI_DropPodIndicator_Animated_C<-UserWidget<-Widget<-Visual<-Object
+[DP] C0-BEFORE      0x1DCED142990 'Default__WBP_Minimap_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD85ADEB00 'Default__WBP_UI_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF5E00DC0 'Default__BP_DropPlane_MultiStationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD104AB890 'Default__BP_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF0C26D60 'Default__BP_DropPlane_Straight_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD104AE040 'Default__BP_DropPod_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF0C24720 'Default__BP_DropPlane_Shrinking_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF0C240C0 'Default__BP_DropPlane_Expanding_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF0C2D360 'Default__BP_DropPlane_Straight_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF0C2E680 'Default__BP_DropPlane_PieSlices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF0C26700 'Default__BP_DropPlane_Stationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF0C260A0 'Default__BP_DropPlane_Flop_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF0C253E0 'Default__BP_DropPlane_Base_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD10454970 'Default__BP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD7D9419D0 'Default__BP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DB8428EDC0 'Default__ABP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DB8A560510 'Default__GIE_DropPod_Impact_WASDIndicator_Baby_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DB8A560080 'Default__GIE_DropPod_Impact_WASDIndicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF0B013C0 'Default__BP_DropPodLaser_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF04A8080 'Default__ABP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD7E9BF580 'Default__WBP_UI_DropPodIndicator_Animated_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DCF32D7720 'Default__WBP_UI_DropPodControls_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD7F619280 'Default__WBP_UI_DropPlane_Slices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD17D2E470 'Default__BP_DropPlane_PlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD86395D40 'Default__DropPlaneCameraPawn_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD74C0A4C0 'Default__GIE_DropPod_Aim_Indicator_Live_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DC84EE4980 'Default__BP_SkyVisual_DropPlaneIcon_HotZone_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE      0x1DD82B89280 'Default__BP_SkyVisual_DropPlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C0-BEFORE       0x1DC8E5CA060 'BP_DropPlane_Straight_Tutorial_C'  chain=BP_DropPlane_Straight_Tutorial_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] C0-BEFORE CENSUS summary: DropPlane=4 DropPod=2 DropShip=1 objects=6 new=0 gone=0 archetypesExcluded=46 (memo classes=10115 overflow=1235) elapsed=1469 ms
+[PD] ship-cand[00] 0x1DBB9E3C2F0 'Default__LokiDropShip' cls=LokiDropShip idx=39260 TeamDropPodClass@0x478=0x0(NULL) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[01] 0x1DCF5E00DC0 'Default__BP_DropPlane_MultiStationary_C' cls=BP_DropPlane_MultiStationary_C idx=129225 TeamDropPodClass@0x478=0x1DCF074E470(BP_DropPod_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_MultiStationary_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[02] 0x1DD104AB890 'Default__BP_DropPlane_SpinningDonut_C' cls=BP_DropPlane_SpinningDonut_C idx=129256 TeamDropPodClass@0x478=0x1DCF074E470(BP_DropPod_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_SpinningDonut_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[03] 0x1DCF0C26D60 'Default__BP_DropPlane_Straight_Tutorial_C' cls=BP_DropPlane_Straight_Tutorial_C idx=129294 TeamDropPodClass@0x478=0x1DCF074B140(BP_DropPod_Tutorial_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Straight_Tutorial_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[04] 0x1DCF0C24720 'Default__BP_DropPlane_Shrinking_C' cls=BP_DropPlane_Shrinking_C idx=129374 TeamDropPodClass@0x478=0x1DCF074E470(BP_DropPod_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Shrinking_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[05] 0x1DCF0C240C0 'Default__BP_DropPlane_Expanding_C' cls=BP_DropPlane_Expanding_C idx=129390 TeamDropPodClass@0x478=0x1DCF074E470(BP_DropPod_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Expanding_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[06] 0x1DCF0C2D360 'Default__BP_DropPlane_Straight_C' cls=BP_DropPlane_Straight_C idx=129406 TeamDropPodClass@0x478=0x1DCF074E470(BP_DropPod_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Straight_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[07] 0x1DCF0C2E680 'Default__BP_DropPlane_PieSlices_C' cls=BP_DropPlane_PieSlices_C idx=129421 TeamDropPodClass@0x478=0x1DCF074E470(BP_DropPod_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_PieSlices_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[08] 0x1DCF0C26700 'Default__BP_DropPlane_Stationary_C' cls=BP_DropPlane_Stationary_C idx=129446 TeamDropPodClass@0x478=0x1DCF074E470(BP_DropPod_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Stationary_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[09] 0x1DCF0C260A0 'Default__BP_DropPlane_Flop_C' cls=BP_DropPlane_Flop_C idx=129461 TeamDropPodClass@0x478=0x1DCF074E470(BP_DropPod_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Flop_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[10] 0x1DCF0C253E0 'Default__BP_DropPlane_Base_C' cls=BP_DropPlane_Base_C idx=129475 TeamDropPodClass@0x478=0x1DCF074E470(BP_DropPod_C) Root=0x0 loc=UNREADABLE(0,0,0)  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship-cand[11] 0x1DC8E5CA060 'BP_DropPlane_Straight_Tutorial_C' cls=BP_DropPlane_Straight_Tutorial_C idx=189572 TeamDropPodClass@0x478=0x1DCF074B140(BP_DropPod_Tutorial_C) Root=0x1DD0373FD80 loc=(0,0,0)  chain=BP_DropPlane_Straight_Tutorial_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] ship enumeration: 12 object(s) whose chain declares LokiDropShip (11 excluded as archetype/_GEN_VARIABLE), 1 live candidate(s)
+[PD] ship selection: 0x1DC8E5CA060  reason: the ONLY live actor deriving from LokiDropShip (the class that DECLARES SpawnDropPodForTeam)
+[PD] ship 0x1DC8E5CA060 'BP_DropPlane_Straight_Tutorial_C'  chain=BP_DropPlane_Straight_Tutorial_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[PD] resolve: SpawnDropPodForTeam=0x1DBB9E0DFD0(owner LokiDropShip)  K2_GetActorLocation=0x1DBB9612F80(owner Actor)  GetTeamDropLeader=0x0(owner -)
+[PD] Angelscript registration reading: the ship's class chain resolved (BP_DropPlane_Straight_Tutorial_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object) and SpawnDropPodForTeam RESOLVED on the live class. FK-1 measured AS UClasses NOT registered at the menu; this is the in-world counterpart.
+[PD] sig SpawnDropPodForTeam: 4 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig SpawnDropPodForTeam [0] None                   @0x0    size=4   IntProperty      struct=-          flags=0x0008011040000280  IN
+[PD] sig SpawnDropPodForTeam [1] None                   @0x8    size=24  StructProperty   struct=Vector     flags=0x0008011040000280  IN
+[PD] sig SpawnDropPodForTeam [2] None                   @0x20   size=24  StructProperty   struct=Vector     flags=0x0008011040000280  IN
+[PD] sig SpawnDropPodForTeam [3] ReturnValue            @0x38   size=1   BoolProperty     struct=-          flags=0x0008011040000780  RETURN
+[PD] bind TeamIndex        -> slot[0] 'None' @0x0 size=4 IntProperty  (POSITIONAL fallback (1st IntProperty))
+[PD] bind SpawnLocation    -> slot[1] 'None' @0x8 size=24 StructProperty  (POSITIONAL fallback (1st StructProperty))
+[PD] bind LandingLocation  -> slot[2] 'None' @0x20 size=24 StructProperty  (POSITIONAL fallback (2nd StructProperty))
+[PD] bind ReturnValue     -> slot[3] 'ReturnValue' @0x38 size=1 BoolProperty
+[PD] start-cand[0] 0x1DD74751750 'BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02' loc=(-3206,5070,100)
+[PD] hero-cand[0] 0x1DD3993BB90 'LokiHeroCharacterGrid' (LokiHeroCharacterGrid) loc=UNREADABLE(0,0,0)
+[PD] hero-cand[1] 0x1DD5BDD5580 'BP_HERO_Ronin_C' (BP_HERO_Ronin_C) loc=(0,0,13240)
+[PD] origin scan: 2 LokiHeroCharacter, 1 TrainingStart-tagged actor(s)  ⚠ >1 hero: the FIRST is used; its address is printed above so a wrong pick is visible
+[PD] positions DERIVED from the TrainingStart-tagged actor (auto: 2nd choice) (0x1DD74751750)
+[PD]   LandingLocation = (-3206.4, 5070.5, 100.0)
+[PD]   SpawnLocation   = (-3206.4, 5070.5, 20100.0)   [landing + KPDSPAWNZ=20000 uu on Z]
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7B9A154A0 stub=0x1DC5B1B1140 funcCls=0x1DBAA00B000 gameTid=23428
+[PD] ================ RM_DROPPOD: ROUTE C — SpawnDropPodForTeam ================
+[PD] cfg arms=0x1FF team=0 spawnZ=20000 origin=0 shipPick=0 force=0 prespawn=1 stepMs=500 settleMs=4000 miniCensus=1 frameInit=1 faultInfo=1 | ROUTE E: peDisp=0x270 (slot 78) peForce=0 oldDisp=0x1C0
+[PD] cfg (Route E controls): altCtrl(E0c)=1  retSentinel=0xA5
+[PD] NOTE on arming: if [FS] printed 'ZERO TARGETS SWAPPED', ignore its RM_PLAY wording and its tutorial_launch_play_hold300.dll suggestion -- for RM_DROPPOD it means THIS ladder will never advance and the sitting is VOID. Re-fly the same variant; all droppod variants already build with KFSNAME="" (every BP UFunction is a target).
+[PD] target: ship 0x1DC8E5CA060 'BP_DropPlane_Straight_Tutorial_C'
+[FS] arm: swapped=17563 BP UFunctions  (scan 3532 ms over 154764 objects, 34253 UFunctions total) -- NO .text WRITE
+[PD] --- C0c (POSITIVE CONTROL): K2_GetActorLocation() on the SHIP, cross-checked against a pure-RPM read of the same actor's RootComponent->RelativeLocation. Agreement proves the call reached THIS object and the struct return marshalled correctly. ---
+[PD] sig K2_GetActorLocation(C0c CONTROL): 1 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig K2_GetActorLocation(C0c CONTROL) [0] ReturnValue            @0x0    size=24  StructProperty   struct=Vector     flags=0x0018001040000780  RETURN
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[PD] C0c return sources: dispatch=NATIVE retElem=24  paramsSlot=(0.0,0.0,0.0)  g_rbuf=(0.0,0.0,0.0)  USED=g_rbuf/RESULT_DECL (native path: the exec thunk's Z_Param__Result)
+[PD] C0c K2_GetActorLocation -> (0.0,0.0,0.0)  RPM RootComponent->RelativeLocation -> (0.0,0.0,0.0)
+[PD] C0c AGREEMENT: |delta| = 0.000 uu -> MATCH. The primitive dispatched a real call ON THIS SHIP and marshalled a struct return correctly. C1's outcome is attributable.
+[PD] --- E0 (ROUTE-E POSITIVE CONTROL): K2_GetActorLocation through ProcessEvent, read back OUT OF THE PARAMS BLOCK and cross-checked against a pure-RPM read of the same actor's RootComponent->RelativeLocation. A NON-ZERO reference is required for a strong pass -- S126's C0c 'AGREED' at (0,0,0), which is two zeros agreeing. ---
+[PD] E: ProcessEvent RESOLVED FROM THE LIVE VTABLE (nothing hardcoded):
+[PD] E:   object   = 0x1DC8E5CA060  (the ship)
+[PD] E:   vtable   = 0x7FF7C1008168  rva 0x8938168
+[PD] E:   disp     = 0x270  =>  SLOT 78   (slot index = disp/8)
+[PD] E:   target   = 0x7FF7BBA66280  rva 0x3396280
+[PD] E:   provenance [M, offline, dumps/merged2.dump.exe]: disp 0x270 is the ProcessEvent slot -- 3,651 .rdata vtables hold UObject::ProcessEvent (rva 0x1344E10) at exactly that displacement; the UHT ProcessEvent stub at rva 0x54532B0 does mov rbx,[[rcx]+0x270] -> FindFunctionChecked(0x1344150) -> call rbx; and ProcessEvent's own body reads the neighbouring slots 0x278/0x280 as GetFunctionCallspace/CallRemoteFunction. AActor::ProcessEvent (rva 0x3396280) overrides the slot and tail-calls 0x1344E10.
+[PD] E:   FOR THE RECORD ONLY, NOT USED: disp 0x1C0 (slot 56, the S80 candidate) holds 0x7FF7B9995A10 rva 0x12C5A10. docs/next-session-prompt-s80.md calls base+0x12C5A10 ProcessEvent; that address opens mov rax,gs:[0x58] and is not it. tutorial_launch.cpp already records 'S80 falsified our ProcessEvent RVA'.
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): fn=0x1DBB9612F80 FunctionFlags=0x54820403 Script.Num(+0x70)=0 PropertiesSize=24 NumParms=1 ParmsSize=24 ReturnValueOffset=0x0000 Func(+0xE0)=0x7FF7BBA7AE10
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): UFunction vtable=0x7FF7BFDCEB60 rva 0x76FEB60  [+0x378]=0x7FF7B964EC20 rva 0xF7EC20   <== UNIVERSAL FOLD 0xF7EC20 (ret 0) -- a STRIPPED body  [+0x380]=0x7FF7B964EB50 rva 0xF7EB50   <== UNIVERSAL FOLD 0xF7EB50 (xor eax,eax; ret) -- a STRIPPED body
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): bit0x10(ALT-DISPATCH)=0  rejectGate(flags&0x410)=0x400  FUNC_NetValidate(sign)=0
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): script members: asCScriptFunction*(+0xE8)=0x0  companionFn(+0xF0)=0x7FF7BFDCEB60  paramDesc(+0x108)=0x1DBAA00B000 Num(+0x110)=158156  |  slot111 rva 0xF7EC20 in the measured AS-dispatch band [0x48E6000,0x48E9000)? no  *** slot111 IS A UNIVERSAL FOLD -> this is a PLAIN UFunction, i.e. NOT a script function ***
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): MARSHALLER TABLE -- what slot 111 ACTUALLY reads (rva 0x048E6627 for the args, 0x048E6782 for the return). It is NOT the FProperty chain and NOT ReturnValueOffset(+0xC0), which the generator hardwires to 0xFFFF at 0x048AAEE8: desc=0x1DBAA00B000 Num=158156 stride 0x48 -> (none read) | return NONE ([fn+0x130]==0)@0xFFFFFFFF tag0
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): !! THE CALLSPACE GATE IS TRAVERSED (flags&0x410=0x400 != 0, and bit 0x10 is INSIDE that mask). Before the alt-dispatch branch ProcessEvent calls [objVtable+0x278] GetFunctionCallspace = 0x7FF7BBA58E40 rva 0x3388E40, and on the Remote arm calls [objVtable+0x280] CallRemoteFunction = 0x7FF7BBA49DD0 rva 0x3379DD0 -- a REAL SIDE EFFECT on the game thread. If the result lacks bit 2 (Local) ProcessEvent RETURNS at rva 0x1344EAE having dispatched NOTHING: no log, no f[PD] E-grade K2_GetActorLocation(E0 CONTROL): VERDICT SAFE-INVOKE. Func is NON-NULL, so ProcessEvent's normal path reaches UFunction::Invoke (rva 0x1225F30) whose last act is call [Fn+0xE0] -- a real target. (For this function the S55 direct-thunk primitive would work too.)
+[PD] sig K2_GetActorLocation(E0 CONTROL): 1 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig K2_GetActorLocation(E0 CONTROL) [0] ReturnValue            @0x0    size=24  StructProperty   struct=Vector     flags=0x0018001040000780  RETURN
+[PD] E0 ship: ReturnValueOffset cross-check -- FProperty.Offset_Internal=0x0 vs UFunction[+0xC0]=0x0000 -> AGREE. ProcessEvent writes a native return at Parms+[Fn+0xC0] (rva 0x134537B), NOT into RESULT_DECL, which is the whole difference from CallNative.
+[PD] E0 ship: RPM reference provenance -- RelativeLocation offset resolved BY NAME; root AttachParent = 0x0
+[PD] E0 ship: calling ProcessEvent(0x7FF7BBA66280)(obj=0x1DC8E5CA060, fn=0x1DBB9612F80, parms=0x1DC5B1F0F50) with a 24-byte ZEROED flat block
+[PD] E0 ship: PE-returned (params block @0x0) = (0.0,0.0,0.0)   RPM RootComponent->RelativeLocation = (0.0,0.0,0.0)   fault=no
+[PD] E0 ship: WEAK CONTROL (origin) -- |delta|=0.000 but the REFERENCE ITSELF is (0.0,0.0,0.0), magnitude 0.000. Two zeros agree perfectly and prove nothing. This is NOT a MATCH.
+[PD] E0b: the ship is at the origin, so its control is WEAK. Re-running the SAME ProcessEvent route on the TrainingStart marker -- this proves the ROUTE (not the ship) and is reported separately so the two are never conflated.
+[PD] E: ProcessEvent RESOLVED FROM THE LIVE VTABLE (nothing hardcoded):
+[PD] E:   object   = 0x1DD74751750  (TrainingStart marker)
+[PD] E:   vtable   = 0x7FF7C10FCEB8  rva 0x8A2CEB8
+[PD] E:   disp     = 0x270  =>  SLOT 78   (slot index = disp/8)
+[PD] E:   target   = 0x7FF7BBA66280  rva 0x3396280
+[PD] E:   provenance [M, offline, dumps/merged2.dump.exe]: disp 0x270 is the ProcessEvent slot -- 3,651 .rdata vtables hold UObject::ProcessEvent (rva 0x1344E10) at exactly that displacement; the UHT ProcessEvent stub at rva 0x54532B0 does mov rbx,[[rcx]+0x270] -> FindFunctionChecked(0x1344150) -> call rbx; and ProcessEvent's own body reads the neighbouring slots 0x278/0x280 as GetFunctionCallspace/CallRemoteFunction. AActor::ProcessEvent (rva 0x3396280) overrides the slot and tail-calls 0x1344E10.
+[PD] E:   FOR THE RECORD ONLY, NOT USED: disp 0x1C0 (slot 56, the S80 candidate) holds 0x7FF7B9995A10 rva 0x12C5A10. docs/next-session-prompt-s80.md calls base+0x12C5A10 ProcessEvent; that address opens mov rax,gs:[0x58] and is not it. tutorial_launch.cpp already records 'S80 falsified our ProcessEvent RVA'.
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): fn=0x1DBB9612F80 FunctionFlags=0x54820403 Script.Num(+0x70)=0 PropertiesSize=24 NumParms=1 ParmsSize=24 ReturnValueOffset=0x0000 Func(+0xE0)=0x7FF7BBA7AE10
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): UFunction vtable=0x7FF7BFDCEB60 rva 0x76FEB60  [+0x378]=0x7FF7B964EC20 rva 0xF7EC20   <== UNIVERSAL FOLD 0xF7EC20 (ret 0) -- a STRIPPED body  [+0x380]=0x7FF7B964EB50 rva 0xF7EB50   <== UNIVERSAL FOLD 0xF7EB50 (xor eax,eax; ret) -- a STRIPPED body
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): bit0x10(ALT-DISPATCH)=0  rejectGate(flags&0x410)=0x400  FUNC_NetValidate(sign)=0
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): script members: asCScriptFunction*(+0xE8)=0x0  companionFn(+0xF0)=0x7FF7BFDCEB60  paramDesc(+0x108)=0x1DBAA00B000 Num(+0x110)=158156  |  slot111 rva 0xF7EC20 in the measured AS-dispatch band [0x48E6000,0x48E9000)? no  *** slot111 IS A UNIVERSAL FOLD -> this is a PLAIN UFunction, i.e. NOT a script function ***
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): MARSHALLER TABLE -- what slot 111 ACTUALLY reads (rva 0x048E6627 for the args, 0x048E6782 for the return). It is NOT the FProperty chain and NOT ReturnValueOffset(+0xC0), which the generator hardwires to 0xFFFF at 0x048AAEE8: desc=0x1DBAA00B000 Num=158156 stride 0x48 -> (none read) | return NONE ([fn+0x130]==0)@0xFFFFFFFF tag0
+[PD] E-grade K2_GetActorLocation(E0 CONTROL): !! THE CALLSPACE GATE IS TRAVERSED (flags&0x410=0x400 != 0, and bit 0x10 is INSIDE that mask). Before the alt-dispatch branch ProcessEvent calls [objVtable+0x278] GetFunctionCallspace = 0x7FF7BBA58E40 rva 0x3388E40, and on the Remote arm calls [objVtable+0x280] CallRemoteFunction = 0x7FF7BBA49DD0 rva 0x3379DD0 -- a REAL SIDE EFFECT on the game thread. If the result lacks bit 2 (Local) ProcessEvent RETURNS at rva 0x1344EAE having dispatched NOTHING: no log, no f[PD] E-grade K2_GetActorLocation(E0 CONTROL): VERDICT SAFE-INVOKE. Func is NON-NULL, so ProcessEvent's normal path reaches UFunction::Invoke (rva 0x1225F30) whose last act is call [Fn+0xE0] -- a real target. (For this function the S55 direct-thunk primitive would work too.)
+[PD] sig K2_GetActorLocation(E0 CONTROL): 1 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig K2_GetActorLocation(E0 CONTROL) [0] ReturnValue            @0x0    size=24  StructProperty   struct=Vector     flags=0x0018001040000780  RETURN
+[PD] E0 TrainingStart marker: ReturnValueOffset cross-check -- FProperty.Offset_Internal=0x0 vs UFunction[+0xC0]=0x0000 -> AGREE. ProcessEvent writes a native return at Parms+[Fn+0xC0] (rva 0x134537B), NOT into RESULT_DECL, which is the whole difference from CallNative.
+[PD] E0 TrainingStart marker: RPM reference provenance -- RelativeLocation offset resolved BY NAME; root AttachParent = 0x0
+[PD] E0 TrainingStart marker: calling ProcessEvent(0x7FF7BBA66280)(obj=0x1DD74751750, fn=0x1DBB9612F80, parms=0x1DC5B1F0F50) with a 24-byte ZEROED flat block
+[PD] E0 TrainingStart marker: PE-returned (params block @0x0) = (-3206.4,5070.5,100.0)   RPM RootComponent->RelativeLocation = (-3206.4,5070.5,100.0)   fault=no
+[PD] E0 TrainingStart marker: STRONG PASS -- |delta|=0.000 uu against a NON-ZERO reference (magnitude 8376.8). ProcessEvent dispatched a real call ON THIS OBJECT and marshalled a struct return into the params block. The ROUTE is proven.
+[PD] E: ProcessEvent RESOLVED FROM THE LIVE VTABLE (nothing hardcoded):
+[PD] E:   object   = 0x1DC8E5CA060  (the ship (restored for E1))
+[PD] E:   vtable   = 0x7FF7C1008168  rva 0x8938168
+[PD] E:   disp     = 0x270  =>  SLOT 78   (slot index = disp/8)
+[PD] E:   target   = 0x7FF7BBA66280  rva 0x3396280
+[PD] E:   provenance [M, offline, dumps/merged2.dump.exe]: disp 0x270 is the ProcessEvent slot -- 3,651 .rdata vtables hold UObject::ProcessEvent (rva 0x1344E10) at exactly that displacement; the UHT ProcessEvent stub at rva 0x54532B0 does mov rbx,[[rcx]+0x270] -> FindFunctionChecked(0x1344150) -> call rbx; and ProcessEvent's own body reads the neighbouring slots 0x278/0x280 as GetFunctionCallspace/CallRemoteFunction. AActor::ProcessEvent (rva 0x3396280) overrides the slot and tail-calls 0x1344E10.
+[PD] E:   FOR THE RECORD ONLY, NOT USED: disp 0x1C0 (slot 56, the S80 candidate) holds 0x7FF7B9995A10 rva 0x12C5A10. docs/next-session-prompt-s80.md calls base+0x12C5A10 ProcessEvent; that address opens mov rax,gs:[0x58] and is not it. tutorial_launch.cpp already records 'S80 falsified our ProcessEvent RVA'.
+[PD] --- E0c (ALT-DISPATCH CONTROL): a zero-input, ReturnValue-bearing script UFunction on the ship's own class chain, called through the SAME ProcessEvent. E0 above proves the SAFE-INVOKE exit; this proves the [UFunctionVtable+0x378] marshaller. ---
+[PD] E0c: NO CANDIDATE. Scanned 206 UFunctions on the ship's class chain; 1 take the alt-dispatch exit (bit 0x10 set, Func == 0) but none is zero-input + has a ReturnValue + has a read-only-shaped name. WARNING: THE ALT-DISPATCH BRANCH THEREFORE HAS NO POSITIVE CONTROL THIS SITTING -- E0's STRONG PASS covers the SAFE-INVOKE exit ONLY, and E1's outcome is NOT attributable to the marshaller.
+[PD] --- pre-call bail-point readout (so a null result is attributable to a NAMED bail) ---
+[PD] bail-point 1 pre-call: ship.TeamDropPodClass @0x478 = 0x1DCF074B140 (BP_DropPod_Tutorial_C)
+[PD] GetTeamDropLeader: not on the ship's class chain -> NOT CALLED (a resolve statement)
+[PD] --- C1 (ROUTE C): SpawnDropPodForTeam via the S55 direct UFunction.Func thunk. It queries NO level markers and needs NO round phase -- FK-22 §3 graded exactly two bail points, both read out above. ★ S126 MEASURED Func == 0x0 on this UFunction, so this arm is EXPECTED to print 'has no Func thunk -> NOT CALLED'; that refusal is Route E's whole premise, and its presence in the same run is the two routes' shared control. ---
+[PD] C1: SpawnDropPodForTeam has no Func thunk -> NOT CALLED
+[PD] after-C1 census SKIPPED: C1 never dispatched, nothing to attribute
+[PD] --- E1 (HEADLINE, ROUTE E): SpawnDropPodForTeam through ProcessEvent with a FLAT PARAMS BLOCK -- the contract FK-1 says _ParmsEntry implements. Every offset and size is re-read from the live FProperty chain immediately before the write, and the live UFunction is GRADED against ProcessEvent's three exits before anything is called. ---
+[PD] E-grade SpawnDropPodForTeam(E1): fn=0x1DBB9E0DFD0 FunctionFlags=0x04000010 Script.Num(+0x70)=0 PropertiesSize=57 NumParms=4 ParmsSize=56 ReturnValueOffset=0x0038 Func(+0xE0)=0x0
+[PD] E-grade SpawnDropPodForTeam(E1): UFunction vtable=0x7FF7C0B5DD48 rva 0x848DD48  [+0x378]=0x7FF7BCFB84E0 rva 0x48E84E0  [+0x380]=0x7FF7BA40B890 rva 0x1D3B890
+[PD] E-grade SpawnDropPodForTeam(E1): bit0x10(ALT-DISPATCH)=1  rejectGate(flags&0x410)=0x10  FUNC_NetValidate(sign)=0
+[PD] E-grade SpawnDropPodForTeam(E1): script members: asCScriptFunction*(+0xE8)=0x1DB8317ADC0  companionFn(+0xF0)=0x0  paramDesc(+0x108)=0x1DC6BAA01C0 Num(+0x110)=3  |  slot111 rva 0x48E84E0 in the measured AS-dispatch band [0x48E6000,0x48E9000)? YES
+[PD] E-grade SpawnDropPodForTeam(E1): MARSHALLER TABLE -- what slot 111 ACTUALLY reads (rva 0x048E6627 for the args, 0x048E6782 for the return). It is NOT the FProperty chain and NOT ReturnValueOffset(+0xC0), which the generator hardwires to 0xFFFF at 0x048AAEE8: desc=0x1DC6BAA01C0 Num=3 stride 0x48 -> [0]@0x0 tag4 [1]@0x8 tag0 [2]@0x20 tag0 | return PRESENT@0x38 tag2
+[PD] E-grade SpawnDropPodForTeam(E1): !! THE CALLSPACE GATE IS TRAVERSED (flags&0x410=0x10 != 0, and bit 0x10 is INSIDE that mask). Before the alt-dispatch branch ProcessEvent calls [objVtable+0x278] GetFunctionCallspace = 0x7FF7BBA58E40 rva 0x3388E40, and on the Remote arm calls [objVtable+0x280] CallRemoteFunction = 0x7FF7BBA49DD0 rva 0x3379DD0 -- a REAL SIDE EFFECT on the game thread. If the result lacks bit 2 (Local) ProcessEvent RETURNS at rva 0x1344EAE having dispatched NOTHING: no log, no fault, no [PD] E-grade SpawnDropPodForTeam(E1): VERDICT SAFE-VIRTUAL. Func is NULL but FunctionFlags bit 0x10 is SET, so ProcessEvent branches at rva 0x1344EB4 to call [UFunctionVtable+0x378](Fn,Obj,Parms) and NEVER READS Func. S127 upgraded this from [I,strong] to [M]: slot 111 is a FOLD on the plain UFunction vtable (.rdata 0x076FEB60) and a real AngelScript context marshaller on all 32 script-UFunction vtables (.rdata 0x0848A140..0x08490EB8); the generator at .text 0x048AAEF2 sets exactly this bit, stores the asC[PD] sig SpawnDropPodForTeam(E1 RE-READ): 4 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig SpawnDropPodForTeam(E1 RE-READ) [0] None                   @0x0    size=4   IntProperty      struct=-          flags=0x0008011040000280  IN
+[PD] sig SpawnDropPodForTeam(E1 RE-READ) [1] None                   @0x8    size=24  StructProperty   struct=Vector     flags=0x0008011040000280  IN
+[PD] sig SpawnDropPodForTeam(E1 RE-READ) [2] None                   @0x20   size=24  StructProperty   struct=Vector     flags=0x0008011040000280  IN
+[PD] sig SpawnDropPodForTeam(E1 RE-READ) [3] ReturnValue            @0x38   size=1   BoolProperty     struct=-          flags=0x0008011040000780  RETURN
+[PD] E1: positional bind cross-check: Spawn@0x8 < Landing@0x20, ascending. The ABI recovered offline from _ParmsEntry (rva 0x0597F670) is TeamIndex@0x00, SpawnLocation@0x08, LandingLocation@0x20, bool return@0x38 -- and the live chain MATCHES it exactly.
+[PD] E1: MARSHALLER-vs-FProperty offsets: AGREE -- one layout, no ambiguity (marshaller Num=3, FProperty inputs=3)
+[PD] E1 LAYOUT USED (all of it re-read from the live FProperty chain): TeamIndex slot[0]@0x0 size4 | SpawnLocation slot[1]@0x8 size24 | LandingLocation slot[2]@0x20 size24 | ReturnValue slot[3]@0x38 size1 | PropertiesSize=57 | UFunction[+0xC0]=0x0038
+[PD] E1 POSITIONS USED: Spawn=(-3206.4,5070.5,20100.0) Landing=(-3206.4,5070.5,100.0) written as 3x double (LWC); origin=the TrainingStart-tagged actor (auto: 2nd choice) (0x1DD74751750); TeamIndex=0
+[PD] bail-point 1 E1 BEFORE: ship.TeamDropPodClass @0x478 = 0x1DCF074B140 (BP_DropPod_Tutorial_C)
+[PD] E1 CALL: ProcessEvent(0x7FF7BBA66280)(obj=0x1DC8E5CA060 'BP_DropPlane_Straight_Tutorial_C', fn=0x1DBB9E0DFD0, parms=0x1DC5B1F0F50)
+[PD] E1 AFTER: fault=returned without fault  -  |  return slot @0x38 (read at the MARSHALLER's own return offset [fn+0x170]) raw byte = 0x00 -> false (0) -- the marshaller wrote a real return, and it is FALSE
+[PD] E1 AFTER: asCScriptFunction*(+0xE8) re-read = 0x1DB8317ADC0
+[PD] bail-point 1 E1 AFTER: ship.TeamDropPodClass @0x478 = 0x1DCF074B140 (BP_DropPod_Tutorial_C)
+[PD] E1: 'returned without fault' IS NOT A RESULT and neither is the ReturnValue. Only the DropPod census delta is.
+[FS] hot: 16 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   hot[00] hits=91      ABP_ResBeacon_C::BlueprintUpdateAnimation  (0x1DD7AC13400)   <- candidate for -DKFSNAME
+[FS]   hot[01] hits=90      BP_LokiPlayerController_C::ReceiveTick  (0x1DD7E13F400)   <- candidate for -DKFSNAME
+[FS]   hot[02] hits=90      BP_HERO_Ronin_C::ReceiveTick  (0x1DD7229D800)   <- candidate for -DKFSNAME
+[FS]   hot[03] hits=90      BP_LokiHeroCharacter_C::ReceiveTickClient  (0x1DD7E063D00)   <- candidate for -DKFSNAME
+[FS]   hot[04] hits=90      BP_LokiHeroCharacter_C::ReceiveTickVisible  (0x1DD7E063E00)   <- candidate for -DKFSNAME
+[FS]   hot[05] hits=90      Comp_PlayerController_Shop_Skylands_C::OnCharacterMoved  (0x1DD8000E700)   <- candidate for -DKFSNAME
+[FS]   hot[06] hits=90      BP_HeroHeightIndicator_C::ReceiveUpdateHeightOffset  (0x1DB89613600)   <- candidate for -DKFSNAME
+[FS]   hot[07] hits=90      BP_LineOfSightRendering_Component_C::ReceiveTick  (0x1DD84EE7600)   <- candidate for -DKFSNAME
+[FS]   hot[08] hits=90      BP_DropPlane_Base_C::ReceiveTick  (0x1DD7C572400)   <- candidate for -DKFSNAME
+[FS]   hot[09] hits=90      Comp_GameMode_EoGFinisher_C::ReceiveTick  (0x1DD815A5E00)   <- candidate for -DKFSNAME
+[FS]   hot[10] hits=90      Comp_PlayerController_DamageNumbers_C::ReceiveTick  (0x1DD805FA300)   <- candidate for -DKFSNAME
+[FS]   hot[11] hits=30      BP_LokiGameMode_Tutorial_C::ReceiveTick  (0x1DCF4C1C000)   <- candidate for -DKFSNAME
+[FS]   hot[12] hits=30      Comp_PlayerController_Pings_C::ReceiveTick  (0x1DD7CF63E00)   <- candidate for -DKFSNAME
+[FS]   hot[13] hits=15      Comp_PlayerController_Stats_C::ExecuteUbergraph_Comp_PlayerController_Stats  (0x1DB8A4B2100)   <- candidate for -DKFSNAME
+[FS]   hot[14] hits=3       Comp_PlayerController_Camera_C::ReceiveTick  (0x1DD85CBA100)   <- candidate for -DKFSNAME
+[FS]   hot[15] hits=1       BP_CapturePoint_C::ExecuteUbergraph_BP_CapturePoint  (0x1DBBA363700)   <- candidate for -DKFSNAME
+[DP] after-E1 CENSUS summary: DropPlane=4 DropPod=2 DropShip=1 objects=6 new=0 gone=0 archetypesExcluded=46 (memo classes=10115 overflow=2845) elapsed=1234 ms
+[PD] ================ game-thread arms COMPLETE (C4 runs on the worker after a settle) ================
+[FS] disarm: restored=17563 of 17563 swapped (scan 3453 ms, 34253 UFunctions live)
+[PD] settling 4000 ms before the AFTER census...
+[DP] C4-AFTER      0x1DBB9CFA020 'Default__LokiDropPlane' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBB9CFA860 'Default__LokiDropPodBase' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBB9D02FA0 'Default__LokiGameModeDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBB9D3D710 'Default__LokiPlayerControllerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBB9D3D7F0 'Default__LokiPlayerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBB9E3B250 'Default__LokiDropPhase_PlayerStateComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBB9E3B4F0 'Default__LokiDropPod' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBB9E3BB50 'Default__LokiDropPodImpactIndicator' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBB9E3BF30 'Default__LokiDropPodLaser' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBB9E3C2F0 'Default__LokiDropShip' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DB8A9DA300 'Default__BP_Avatar_DropPod2_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DBFF279400 'Default__BP_Avatar_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DB8A6DCD00 'Default__BP_Avatar_DropPod3_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER       0x1DCFCCA52C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] C4-AFTER      0x1DD7360A3C0 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER       0x1DCD113A4C0 'WBP_UI_DropPodControls'  chain=WBP_UI_DropPodControls_C<-UserWidget<-Widget<-Visual<-Object
+[DP] C4-AFTER      0x1DD81920640 'Default__Comp_GameMode_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER       0x1DD01ABADE0 'WBP_UI_DropPlane_Slice'  chain=WBP_UI_DropPlane_Slices_C<-UserWidget<-Widget<-Visual<-Object
+[DP] C4-AFTER       0x1DD85AD0700 'WBP_UI_DropPlane_SpinningDonut'  chain=WBP_UI_DropPlane_SpinningDonut_C<-UserWidget<-Widget<-Visual<-Object
+[DP] C4-AFTER      0x1DD85ADAC00 'Default__Comp_PlayerState_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD85ADD600 'Default__Comp_PlayerState_DropPlane_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCED14DB80 'Default__GIE_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER       0x1DCF01FD980 'WBP_UI_DropPodIndicator_Animated'  chain=WBP_UI_DropPodIndicator_Animated_C<-UserWidget<-Widget<-Visual<-Object
+[DP] C4-AFTER      0x1DCED142990 'Default__WBP_Minimap_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD85ADEB00 'Default__WBP_UI_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF5E00DC0 'Default__BP_DropPlane_MultiStationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD104AB890 'Default__BP_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF0C26D60 'Default__BP_DropPlane_Straight_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD104AE040 'Default__BP_DropPod_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF0C24720 'Default__BP_DropPlane_Shrinking_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF0C240C0 'Default__BP_DropPlane_Expanding_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF0C2D360 'Default__BP_DropPlane_Straight_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF0C2E680 'Default__BP_DropPlane_PieSlices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF0C26700 'Default__BP_DropPlane_Stationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF0C260A0 'Default__BP_DropPlane_Flop_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF0C253E0 'Default__BP_DropPlane_Base_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD10454970 'Default__BP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD7D9419D0 'Default__BP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DB8428EDC0 'Default__ABP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DB8A560510 'Default__GIE_DropPod_Impact_WASDIndicator_Baby_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DB8A560080 'Default__GIE_DropPod_Impact_WASDIndicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF0B013C0 'Default__BP_DropPodLaser_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF04A8080 'Default__ABP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD7E9BF580 'Default__WBP_UI_DropPodIndicator_Animated_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DCF32D7720 'Default__WBP_UI_DropPodControls_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD7F619280 'Default__WBP_UI_DropPlane_Slices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD17D2E470 'Default__BP_DropPlane_PlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD86395D40 'Default__DropPlaneCameraPawn_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD74C0A4C0 'Default__GIE_DropPod_Aim_Indicator_Live_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DC84EE4980 'Default__BP_SkyVisual_DropPlaneIcon_HotZone_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER      0x1DD82B89280 'Default__BP_SkyVisual_DropPlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] C4-AFTER       0x1DC8E5CA060 'BP_DropPlane_Straight_Tutorial_C'  chain=BP_DropPlane_Straight_Tutorial_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] C4-AFTER CENSUS summary: DropPlane=4 DropPod=2 DropShip=1 objects=6 new=0 gone=0 archetypesExcluded=46 (memo classes=10115 overflow=4080) elapsed=1313 ms
+[PD] ---------------- DELTA TABLE (the DropPod row is the Route C result) ----------------
+[PD]   bucket      BEFORE   afterC1    AFTER   delta
+[PD]   DropPod          2         0        2      +0   <== ROUTE C
+[PD]   DropPlane        4         0        4      +0   (moved by C3's pre-spawn, if it ran)
+[PD]   DropShip         1         0        1      +0   (moved by C3's pre-spawn, if it ran)
+[PD]   objects          6         0        6      +0   (new=0 gone=0)
+[PD]   archetypes      46         0       46      +0   (EXCLUDED from the rows above)
+[PD] call status codes: -1 = NOT CALLED | 0 = called, no fault | 1 = called and FAULTED. -1 is NOT a clean run.
+[PD] ran: C0c=1(status=0 agree=1) C1=0(status=-1) preSpawned=0  retSlot=0x0  TeamDropPodClass before=0x1DCF074B140 after=0x1DCF074B140  ship=0x1DC8E5CA060 'BP_DropPlane_Straight_Tutorial_C'  origin=the TrainingStart-tagged actor (auto: 2nd choice) (0x1DD74751750)
+[PD] VERDICT: control AGREED, so C1 (status -1, DropPod delta +0) is attributable to SpawnDropPodForTeam.
+[PD] ================================ ROUTE E (ProcessEvent) ================================
+[PD] E-SUMMARY 1/7  ProcessEvent = 0x7FF7BBA66280 (rva 0x3396280) from vtable 0x7FF7C1008168 (rva 0x8938168) at disp 0x270 = SLOT 78.  Historical S80 disp 0x1C0 holds 0x7FF7B9995A10 (rva 0x12C5A10), NOT USED.
+[PD] E-SUMMARY 2/7  params layout used: TeamIndex slot[0]@0x0 size4 | SpawnLocation slot[1]@0x8 size24 | LandingLocation slot[2]@0x20 size24 | ReturnValue slot[3]@0x38 size1 | PropertiesSize=57 | UFunction[+0xC0]=0x0038
+[PD] E-SUMMARY 3/7  positions used: Spawn=(-3206.4,5070.5,20100.0) Landing=(-3206.4,5070.5,100.0) spawnZ=+20000 uu; origin=the TrainingStart-tagged actor (auto: 2nd choice) (0x1DD74751750)
+[PD] E-SUMMARY 4/7  control: E0(ship, SAFE-INVOKE exit) = WEAK CONTROL (origin) -- WEAK CONTROL (origin) on ship: reference magnitude 0.000 | E0b(non-origin actor, SAFE-INVOKE exit) = STRONG PASS -- STRONG PASS on TrainingStart marker (|delta|=0.000, reference magnitude 8376.8) | E0c(ALT-DISPATCH exit, the one E1 takes) = INCONCLUSIVE -- NO CANDIDATE (206 scanned, 1 alt-dispatch, none callable blind)
+[PD] E-SUMMARY 4/7  READ THIS PAIRING: E0/E0b prove ProcessEvent can resolve, gate and marshal on the NORMAL path (Func non-null -> UFunction::Invoke). They do NOT touch the [UFunctionVtable+0x378] marshaller. ONLY E0c does.
+[PD] E-SUMMARY 5/7  E1 grade=SAFE-VIRTUAL (bit 0x10, Func-free)  ran=1  refused=0 (-)  fault=no  detail=-
+[PD] E-SUMMARY 5/7b DISCRIMINATORS: asCScriptFunction*(+0xE8)=0x1DB8317ADC0 | marshaller desc=0x1DC6BAA01C0 Num=3 readSlots=3 | offsets vs FProperty: AGREE | return slot read @0x38 | callspace inputs: role(obj+0x160)=3 (Authority==3) BlueprintAuthorityOnly(0x4)=0 Static(0x2000)=0 absorbRisk=0
+[PD] E-SUMMARY 5/7c RETURN-SLOT SENTINEL: raw=0x00 -> overwritten -- the marshaller really did write a return value
+[PD] E-SUMMARY 6/7  ReturnValue read back from the params block @0x38 (size 1) = false (0)
+[PD] E-SUMMARY 7/7  DropPod census: BEFORE=2 afterC1=n/a afterE1=2 AFTER=2  ==> E1-ATTRIBUTABLE DELTA (afterE1 - BEFORE) = +0
+[PD]              DropPlane 4/n/a/4/4  DropShip 1/n/a/1/1  (BEFORE/afterC1/afterE1/AFTER)
+[PD] *** E-VERDICT: E1 RAN BUT IS NOT ATTRIBUTABLE. E0/E0b passed on the SAFE-INVOKE exit, but E0c -- the only control for the [UFunctionVtable+0x378] marshaller, which is the branch E1 takes -- is INCONCLUSIVE (no candidate). E0 and E1 share only ProcessEvent's prologue, so a pass on one says nothing about the other. Record E1 (fault=0, return-slot written=1, DropPod delta +0) as UNATTRIBUTABLE, not as a game statement. ***
+[PD] ⚠ NOTHING IS UNDONE. Any pod (or pre-spawned plane) is still in the world. Recovery = restart the client.
+[PD] done (step=8 resolved=1 c0c=1 c1=0 preSpawn=0 called=1177 hitsGT=1177)

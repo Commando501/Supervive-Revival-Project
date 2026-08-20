@@ -74,6 +74,14 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 
+# ⚠⚠ S125 GUARD. `-Variant X` WITHOUT `-Name` used to be SILENTLY IGNORED: the script fell through to
+#    the default injection set, built 11 shims and printed "11 built, 0 failed" -- which reads exactly
+#    like success, and the only way to notice was to diff a `.text` hash afterwards. CLAUDE.md records
+#    this as a trap; a trap that is cheaper to remove than to document is a defect, so it now refuses.
+if ($Variant -and -not $Name -and -not $All) {
+    throw "-Variant '$Variant' requires -Name (e.g. -Name tutorial_launch -Variant $Variant). Without -Name this used to silently build the DEFAULT SET and report success."
+}
+
 # Default output is build\ so a build NEVER clobbers a committed / known-good .dll by accident.
 # -InPlace writes beside the sources (where launch-redirect.ps1 + inject-secondaries.ps1 load them).
 if (-not $OutDir) {
@@ -219,6 +227,303 @@ $Variants = @{
         #   (`NotEqual_ByteByte(NewPhase,6)`), not the stored byte. KFSNAME="" because the first
         #   flight's ladder STARVED after A2 when ReceiveTickClient stopped being dispatched.
         'phaseladder-a5'       = @('-DKRUNMODE=RM_PHASELADDER','-DKFSNAME=\"\"','-DKPLARMS=0x21')
+        # ══════════════════════════════════════════════════════════════════════════════════════════
+        # ★★★★★ S125 RM_DROPPLANE (enum 25) — FK-22 arms B0..B4 ON THE DROPPLANE COMPONENT.
+        #   Same safety shape as phaseladder: heap UFunction.Func swap only, ZERO module-image writes,
+        #   and with KFUNCSWAP=0 the mode REFUSES to run rather than falling back to InstallHook().
+        #   This one pokes NOTHING at all -- its only effects are UFunction calls.
+        #   ⚠ KFSNAME="" on EVERY variant: S124's first flight STARVED after two arms when
+        #     ReceiveTickClient stopped being dispatched; KFSNAME="" gave 508 game-thread hits.
+        #   ⚠ KFAULTINFO=1 on EVERY variant, INCLUDING the reproduction arm -- the A/B is void unless
+        #     both arms report faults identically. That is the whole reason S93's `FAULTED` could not
+        #     be interpreted.
+        #   ⚠ It SPAWNS A REAL ACTOR into a live world and does not undo it. Recovery = restart the client.
+        #
+        #   DEFAULT = KFRAMEINIT=1 (ZEROONLY), NOT the flown KFRAMEINIT=2. Deliberate: level 1 writes
+        #   zeroes ONLY and strictly inside the [M]-bracketed 0x48..0x80 window, while level 2 also
+        #   writes FF_CURNATIVEFN=0x90, which the source itself flags as "the weakest offset here"
+        #   (it is PAST the last verified field). In an arm where A FAULT IS THE THING UNDER TEST, the
+        #   default must make the fewest unverified assumptions, so a fault is attributable to
+        #   SpawnPlane and not to our frame preparation. 'dropplane-s80frame' is one flag away.
+        'dropplane'           = @('-DKRUNMODE=RM_DROPPLANE','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1')
+        #   -1 dim: B0 + B4 ONLY (0x01|0x10). ZERO UFunction calls, zero writes, nothing spawned.
+        #   This is the staging positive control AND the census's own null-delta control: if it reports
+        #   a non-zero delta the instrument is noisy and no other variant's delta means anything.
+        #   FLY THIS FIRST.
+        'dropplane-readonly'  = @('-DKRUNMODE=RM_DROPPLANE','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKDPARMS=0x11')
+        #   ★ THE S93 REPRODUCTION / CONFOUND A/B (this is the '-oldframe' arm; ONE name, ONE artifact,
+        #     because two names for one binary is how an A/B gets run against a copy of itself).
+        #     B0 + B0c(control) + B1 + B4 = 0x01|0x20|0x02|0x10 = 0x33, on the UNFIXED primitive --
+        #     everything else held constant.
+        #     If B1 faults here and NOT in 'dropplane-b1only', S93's FAULTED was the FFrame confound:
+        #     [I] -> [M]. ⚠ THE CONTROL BIT 0x20 IS MANDATORY IN BOTH ARMS. B0c is GetAutoDropLocation,
+        #     0 push / 0 pop, so it cannot be affected by the flow-stack window; if it faults in either
+        #     arm, THAT arm is void and B1 says nothing.
+        'dropplane-s93frame'  = @('-DKRUNMODE=RM_DROPPLANE','-DKFSNAME=\"\"','-DKFRAMEINIT=0','-DKFAULTINFO=1','-DKDPARMS=0x33')
+        #   ★ THE MATCHED FIXED ARM FOR THE ABOVE. Identical KDPARMS (0x33), identical everything, with
+        #     KFRAMEINIT=1 as the ONLY variable. Use THIS against 'dropplane-s93frame', not the plain
+        #     'dropplane' build -- 'dropplane' is 0x3F (it also runs B3a/B3b), so a bottom-line delta
+        #     table from it is a 4-call run being compared with a 2-call run. Only B0c/B1 status and the
+        #     after-B1 mini-census are comparable across those two; here EVERYTHING is.
+        'dropplane-b1only'    = @('-DKRUNMODE=RM_DROPPLANE','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKDPARMS=0x33')
+        #   -1 dim: B0 + B3a + B3b + B4 (0x01|0x04|0x08|0x10). The handler question with NOTHING spawned,
+        #   so its census delta is attributable to the handler alone. In the default build B3 runs AFTER
+        #   B1 and is therefore confounded by it -- THIS is the arm that answers "subscribed but inert?".
+        'dropplane-handler'   = @('-DKRUNMODE=RM_DROPPLANE','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKDPARMS=0x3D')
+        #   +1 dim on the frame fix: the ds_hybrid.cpp:2151 recipe (FlowStack empty + Max=8,
+        #   PreviousFrame=0, CurrentNativeFunction=0) -- the only form of this fix that has ever run in
+        #   this game. Use it if 'dropplane' faults, to separate "SpawnPlane really faults" from
+        #   "zeroing alone was not enough frame preparation".
+        'dropplane-s80frame'  = @('-DKRUNMODE=RM_DROPPLANE','-DKFSNAME=\"\"','-DKFRAMEINIT=2','-DKFAULTINFO=1','-DKDPARMS=0x33')
+        # ══════════════════════════════════════════════════════════════════════════════════════════
+        # ★★★★★ S126 RM_DROPPOD (enum 26) — ROUTE C: SpawnDropPodForTeam on the live LokiDropShip.
+        #   Same safety shape as dropplane/phaseladder: heap UFunction.Func swap ONLY, ZERO
+        #   module-image writes, ZERO memory pokes, and with KFUNCSWAP=0 the mode REFUSES to run rather
+        #   than falling back to InstallHook(). Its only effects are UFunction calls.
+        #   ⚠ KFSNAME="" on EVERY variant: S124's first flight STARVED after two arms when
+        #     ReceiveTickClient stopped being dispatched; KFSNAME="" gave 508 game-thread hits.
+        #   ⚠ KFRAMEINIT=1 + KFAULTINFO=1 on EVERY variant, matching the S125 arm that produced the
+        #     measurement this route is built on. A fault must be attributable or it is S93 again.
+        #   ⚠ It SPAWNS REAL ACTORS into a live world and does not undo it. Recovery = restart the client.
+        #
+        #   WHY THIS ROUTE: SpawnDropPodForTeam takes its positions AS PARAMETERS, queries NO markers
+        #   (FK-22 §3, [M]: exactly two bail points) and needs NO round phase. S125's B1 left a live
+        #   BP_DropPlane_Straight_Tutorial_C -- chain ... <- LokiDropShip -- so the receiver exists.
+        #   The measured marker failure (PlaneStartPoint=0 PlaneEndPoint=0 over 2,881 actors) is
+        #   IRRELEVANT here.
+        #
+        #   -1 dim: C0 + C4 ONLY (0x01|0x10). ZERO UFunction calls, zero writes, nothing spawned. The
+        #   staging positive control AND the census's own null-delta control. FLY THIS FIRST -- if it
+        #   reports a non-zero DropPod delta the instrument is noisy and no other variant means anything.
+        #   ★★ S126 FINALIZER: KPDARMS bit6 = the GetTeamDropLeader probe, which is a REAL UFunction
+        #      call and used to run UNGATED. This arm (0x11) now genuinely makes zero calls, which is
+        #      what build.ps1 and the shim's own marker both already claimed.
+        #   ★★ AND EVERY droppod VARIANT NOW CARRIES -DKOUTPARMRET=1. C3's pre-spawn calls SpawnPlane
+        #      through the BP path, and BuildOutParms excluding CPF_ReturnParm is the MEASURED cause of
+        #      S125's 0xC0000005 at rva 0x13495DD. Without it the default candidate deliberately
+        #      reproduces a game-thread AV and then runs C0c and C1 on that same thread. For the three
+        #      NATIVE callees in this mode (SpawnDropPodForTeam, K2_GetActorLocation, GetTeamDropLeader)
+        #      the extra FOutParmRec is inert -- an exec thunk reads its return through RESULT_DECL and
+        #      never walks OutParms -- so this is a fix for C3 and a no-op for C0c/C1/C2b.
+        'droppod-readonly'    = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDARMS=0x11','-DKPDPRESPAWN=0')
+        #   ★ THE CANDIDATE. Full ladder 0x7F = C0 + C1 + C2(mini-census) + C3(pre-spawn if needed) + C4 +
+        #   C0c(control) + C2b(GetTeamDropLeader probe).
+        #   + C4. C3 only fires when NO live ship exists, and it moves the DropPlane/DropShip rows, never
+        #   the DropPod row that answers Route C.
+        'droppod'             = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        #   -1 dim: NEVER pre-spawn. If no LokiDropShip actor is live the mode reports Route C
+        #   NOT-APPLICABLE and makes no calls at all. Use this when the sitting must contain exactly one
+        #   variable, or when S125's half-constructed plane is known to still be resident.
+        'droppod-noprespawn'  = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDARMS=0x77','-DKPDPRESPAWN=0')
+        #   +1 dim: disambiguation arm. If 'droppod' printed ">1 live LokiDropShip actors ... REFUSING",
+        #   this takes the HIGHEST InternalIndex (the most recently created) by a STATED rule. Prefer
+        #   -DKPDSHIPCLASS="<exact class FName>" when the enumeration names the one you want.
+        'droppod-newest'      = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDSHIPPICK=1')
+        # ═══════════════════════════════════════════════════════════════════════════════════════
+        # ★★★★★ S126 ROUTE E -- DISPATCH SpawnDropPodForTeam THROUGH ProcessEvent (KPDARMS bits 7-8).
+        #   WHY: Route C resolved everything and then could not call -- the live UFunction's
+        #   `Func` (+0xE0) READ BACK 0x0 while K2_GetActorLocation on the SAME object read a real thunk
+        #   and dispatched. FK-1 §4 names the successor (`_ParmsEntry` implements ProcessEvent's flat-params
+        #   contract; the script corpus itself dispatches script UFUNCTIONs via FindFunctionChecked +
+        #   ProcessEvent) and FK-1's own "callable by the S55 recipe unchanged" carries the parenthetical
+        #   "(mechanism named; the `Func` value itself is INFERRED)" -- i.e. FK-1 flagged the exact thing
+        #   S126 measured false. These arms are that successor, not a correction of FK-1.
+        #
+        #   ⚠⚠ ProcessEvent is NOT automatically a Func-free route, and the shim GRADES the live
+        #   UFunction before calling. Offline, from dumps/merged2.dump.exe, all [M]:
+        #     * ProcessEvent's normal path ends at UFunction::Invoke (rva 0x1225F30) whose last act is
+        #       `call qword ptr [r14+0xE0]` with NO null test -> a null Func is `call [0]`.
+        #     * but at rva 0x1344EB4 ProcessEvent tests FunctionFlags bit 0x10 and, when set, dispatches
+        #       `call [UFunctionVtable+0x378](Fn,Obj,Parms)` and never reads Func. Bit 0x10 is UNUSED in
+        #       stock EFunctionFlags. [I, strong] that is this build's AOT-script entry.
+        #     * third exit: Func==0, bit 0x10 clear, (flags&0x410)==0 and Script.Num==0 -> the reject gate
+        #       returns at once. Safe, and a GUARANTEED no-op.
+        #   The shim prints which of the four it sees and REFUSES the WILL-FAULT combination by default.
+        #   A refusal is a RESULT (the offline grade confirmed on the live object), not a failure.
+        #
+        #   ⚠ The vtable displacement is 0x270 (SLOT 78), resolved from the SHIP's OWN vtable at runtime;
+        #   nothing is hardcoded. docs/next-session-prompt-s80.md's "base+0x12C5A10, vtable slot 56" is
+        #   disp 0x1C0 and is not ProcessEvent -- the shim prints that slot's occupant beside the real one
+        #   and never calls it. Override with -DKPDPEDISP=0x<disp> if a future build moves it.
+        #
+        #   ⚠ Same safety shape as every other droppod arm: heap UFunction.Func swap ONLY (KFSNAME=""),
+        #   ZERO module-image writes, ZERO memory pokes, and KFUNCSWAP=0 makes the mode REFUSE rather than
+        #   fall back to InstallHook(). Verify with verify_dll.py: FlushInstructionCache / VirtualAlloc /
+        #   VirtualFree must be ABSENT from the import table (positive control: tutorial_launch_fo.dll has
+        #   all three PRESENT).
+        #
+        #   -1 dim: THE STAGING CHECK AND THE ROUTE'S OWN POSITIVE CONTROL. 0xB9 = C0 census + C3
+        #   pre-spawn-if-needed + C0c + E0 + C4. It makes NO script call at all: it answers only
+        #   "can ProcessEvent dispatch a known-good NATIVE UFunction in this build, on this object, with
+        #   the return marshalled into the params block". FLY THIS FIRST -- if E0 cannot reach STRONG
+        #   PASS, a null from E1 is uninterpretable and the sitting is void for Route E.
+        #   ★★ It REQUIRES A NON-ZERO REFERENCE. S126's C0c "AGREED" at (0,0,0) because the ship was
+        #      S125's half-constructed plane; two zeros agree perfectly and prove nothing. E0 prints
+        #      `WEAK CONTROL (origin)` in that case and re-runs the same route on the hero / TrainingStart
+        #      marker so the ROUTE still gets a real positive.
+        'droppod-pe-ctrl'     = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDARMS=0xB9')
+        #   ★ THE CANDIDATE. 0x1FF = the full C ladder (C0/C1/C2/C2b/C3/C4/C0c) PLUS E0 + E1. C1 is kept
+        #   deliberately: with Func==0 it prints "has no Func thunk -> NOT CALLED" in the same run, which
+        #   is the two routes' shared control and pins the premise on THIS process rather than on a
+        #   remembered measurement from PID 138796.
+        'droppod-pe'          = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDARMS=0x1FF')
+        #   +1 dim, DELIBERATE ESCALATION. Calls through ProcessEvent even when the live grade says
+        #   WILL-FAULT (`call [0]` inside UFunction::Invoke). Use ONLY after 'droppod-pe' has printed the
+        #   WILL-FAULT refusal, and only if the AV itself is wanted as evidence: the fault address should
+        #   read 0x0 with rip inside rva 0x1225F30. It spends the game thread.
+        'droppod-pe-force'    = @('-DKRUNMODE=RM_DROPPOD','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDARMS=0x1FF','-DKPDPEFORCE=1')
+        # ══════════════════════════════════════════════════════════════════════════════════════════
+        # ★★★★★ S126 RM_DROPMARKERS (enum 27) — ROUTE D: MAKE THE TWO PLANE MARKERS RESIDENT, THEN
+        #   CALL SpawnPlane BEHIND A RESIDENCY GATE. Same safety shape as dropplane/droppod: heap
+        #   UFunction.Func swap only, and with KFUNCSWAP=0 the mode REFUSES rather than falling back to
+        #   InstallHook(). The ONLY memory written is TWO 4-byte FName ids inside an already-allocated,
+        #   engine-owned `AActor.Tags` buffer -- readback-verified and RESTORED on every exit path
+        #   including the SEH fault path. No allocation, no Num/Max change, no module image.
+        #
+        #   ⚠⚠ READ THIS BEFORE PICKING A VARIANT. S125's `SpawnPlane FAULTED` was NOT the missing
+        #   markers. The fault is `execLocalOutVariable` at rva 0x13495DD dereferencing a NULL
+        #   `FFrame.OutParms`, because `BuildOutParms` excluded CPF_ReturnParm and `SpawnPlane`'s ONLY
+        #   CPF_Parm is its `ReturnValue`. `UObject::ProcessEvent` DOES include the return param
+        #   (its loop tests `(flags & CPF_Parm) == CPF_Parm`), and the same S125 run SPAWNED A REAL
+        #   PLANE before dying -- i.e. execution had already passed all three GetAllActorsWithTag +
+        #   Array_Get(...,0) sites. => the empty marker arrays produced (0,0,0) COORDINATES, not a
+        #   crash. KOUTPARMRET=1 is the fix and it is a `#if`, defaulting to 0, so every existing
+        #   artifact's `.text` is unchanged.
+        #
+        #   FLY IN THIS ORDER. Each step turns ONE variable.
+        #   1) 'dropmarkers-readonly'  -- ZERO WRITES and no SpawnPlane. (It is NOT call-free: GATE-2
+        #      calls UGameplayStatics::GetAllActorsWithTag, which is a read-only query but IS a call --
+        #      say what it does, not what sounds cleaner.) Proves staging, proves the two FName
+        #      instruments agree, proves the negative control fails to resolve, and reports the live
+        #      GetAllActorsWithTag counts for all three tags. If this does not print AGREE for both
+        #      markers, STOP -- everything downstream writes a guessed FName otherwise.
+        'dropmarkers-readonly' = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDMARMS=0x23')
+        #   2) 'dropmarkers-gateonly'  -- write the two tags, run BOTH gates, RESTORE, and never call
+        #      SpawnPlane. This is the arm that measures the MECHANISM on its own: a 0 -> 1 transition
+        #      on GetAllActorsWithTag for both markers, with TrainingStart pinned as the in-run control.
+        #      It leaves the world exactly as it found it.
+        'dropmarkers-gateonly' = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDMARMS=0x27')
+        #   3) 'dropmarkers-outparm'  ⚠⚠ THIS ARM SETS KDMFORCE=1 AND THEREFORE CALLS SpawnPlane WITH
+        #      THE RESIDENCY GATE FAILED. That is deliberate and it is the point of the arm, but the
+        #      variant NAME does not say so -- read this line before flying it.
+        #      -- THE SINGLE-VARIABLE FAULT FIX, WITH NO MARKER WRITE AT ALL
+        #      (KDMARMS clears bit2, so the gate FAILS by construction and D4 is skipped)... which is
+        #      useless on its own, so this arm sets KDMFORCE=1 deliberately: call SpawnPlane with the
+        #      markers still ABSENT and only KOUTPARMRET changed from the S125 flight. PREDICTION: no
+        #      fault, a non-null plane, and its location (0,0,0). That prediction is what separates
+        #      "the OutParms defect was the crash" from "the markers were the crash".
+        'dropmarkers-outparm'  = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDMARMS=0x3B','-DKDMFORCE=1')
+        #   4) 'dropmarkers'          -- THE HEADLINE ARM. Markers resident + OutParms fixed + the gate
+        #      enforced. PREDICTION: no fault, a non-null BP_DropPlane_Straight_Tutorial_C, and a plane
+        #      location that matches victim[0] rather than (0,0,0).
+        'dropmarkers'          = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        #   5) 'dropmarkers-s125repro' -- THE CONTROLLED REPRODUCTION. Identical to (4) except
+        #      KOUTPARMRET=0. PREDICTION: faults at rva 0x13495DD, addr=0x0, AFTER spawning a plane --
+        #      i.e. the markers being resident does NOT prevent the fault, which is the claim.
+        #      ⚠ Fly this ONLY after (4); it spawns a second plane into the same world.
+        'dropmarkers-s125repro'= @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=0')
+        #   +1 dim: keep the tags written (no restore). Only for chaining another probe that needs the
+        #   markers resident; it CONTAMINATES anything that reads Tags afterwards, so it is not a default.
+        'dropmarkers-norestore'= @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDMRESTORE=0')
+        #   -1 dim: drop GATE-2 (the GetAllActorsWithTag probe) and gate on the READBACK alone. Use only
+        #   if GATE-2 itself faults; the gate is materially weaker and the mode says so in the marker.
+        'dropmarkers-nogat'    = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDMGAT=0')
+        # ══════════════════════════════════════════════════════════════════════════════════════════
+        # ★★★★★ S128 RM_POOLSPAWN (enum 28) — ROUTE F: DOES `SpawnPoolableActorFromClassDeferred`
+        #   ACTUALLY REQUIRE THE ACTOR POOL?
+        #
+        #   WHY: S127 measured that `SpawnDropPodForTeam` RAN (the 0xA5 return sentinel was overwritten,
+        #   readSlots=3, offsets agreed with the FProperty chain) and RETURNED **false**, DropPod delta
+        #   +0. Bail 1 (`TeamDropPodClass == nullptr`) is [M] EXCLUDED -- the field re-read AFTER the call
+        #   still held BP_DropPod_Tutorial_C -- so by elimination it is bail 2, the null from
+        #   `LokiGameplay::SpawnPoolableActorFromClassDeferred`. The session log names a suspect
+        #   (`UActorPoolManager::PrimePools : Feature is not enabled, skipping.`) but **that chain is [I]
+        #   AND UNPROVEN AT ITS FIRST LINK**: nobody has shown the helper NEEDS the pool. A sane helper
+        #   falls back to a normal SpawnActor when pooling is off, in which case the disabled pool is a
+        #   red herring. These arms settle that one link and nothing else.
+        #
+        #   ⚠ THE TARGET IS A NATIVE STATIC on `ULokiGameplayStatics` (a UBlueprintFunctionLibrary), so
+        #   its "object" is the CLASS DEFAULT OBJECT and it should carry a non-null `Func` -- unlike
+        #   S127's Angelscript UFunction, whose Func read 0x0 and closed Route C. The shim GRADES the
+        #   live UFunction (native thunk / ProcessInternal / universal fold / null) and dispatches on what
+        #   it READ, printing which and why. It never assumes.
+        #   ⚠⚠ THE TWO METHODS DECLARE Owner/Instigator IN DIFFERENT POSITIONS, so every slot is bound
+        #   BY NAME from the live FProperty chain, PER FUNCTION, with NO positional fallback.
+        #   ⚠ The FTransform slot is zeroed and written AT THE SIZE THE FProperty DECLARES -- never a
+        #   hardcoded 0x50 (the S93/S106d truncation that clipped Scale3D.Z on every actor this project
+        #   ever spawned).
+        #   ★ Both the params ReturnValue slot and RESULT_DECL are pre-filled with 0xA5, so "nothing
+        #   wrote a return" is distinguishable from "wrote null" -- the distinction that carried S127.
+        #
+        #   Same safety shape as every dropplane/droppod arm: heap `UFunction.Func` swap ONLY
+        #   (KFSNAME=""), ZERO module-image writes, ZERO memory pokes, and with KFUNCSWAP=0 the mode
+        #   REFUSES rather than falling back to InstallHook(). Verify with verify_dll.py:
+        #   FlushInstructionCache / VirtualAlloc / VirtualFree must be ABSENT from the import table
+        #   (positive control: tutorial_launch_fo.dll has all three PRESENT).
+        #
+        #   -1 dim: ZERO UFunction calls. P0 resolve + BEFORE census + P4 AFTER census, nothing else.
+        #   The staging positive control AND the census's own null-delta control. FLY THIS FIRST -- if it
+        #   reports a non-zero DropPod delta the instrument is noisy and no other variant means anything.
+        'poolspawn-readonly'  = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKSPARMS=0x81')
+        #   -1 dim: adds ONLY the P0c primitive control (K2_GetActorLocation cross-checked against RPM).
+        #   It answers "can this shim dispatch a known-good native UFunction on this thread, on a
+        #   NON-ORIGIN actor, and marshal a struct return" and NOTHING about the pool. Fly it if a
+        #   previous sitting's P0c did not reach STRONG PASS.
+        'poolspawn-ctrl'      = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKSPARMS=0x181')
+        #   ★ THE HEADLINE, ALONE. P0 + P0c + P1(Deferred) + after-P1 census + P4. No sibling, no
+        #   reference spawn -- so the DropPod delta, if any, belongs to the deferred pooled spawn and to
+        #   nothing else. Use when the sitting must contain exactly one payload call.
+        'poolspawn-deferred'  = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKSPARMS=0x187')
+        #   +1 dim: the NON-deferred sibling alone (P2). Its whole job is to localise a P1 null to the
+        #   DEFERRED path; flown separately when P1 and P2 must not share a sitting.
+        'poolspawn-nondef'    = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKSPARMS=0x199')
+        #   +1 dim: the NON-POOLED REFERENCE alone (P3). Establishes that BP_DropPod_Tutorial_C is
+        #   spawnable in this world at all. ⚠ WITHOUT THIS ESTABLISHED, a null from P1 could just mean
+        #   "this class cannot spawn here" and the pool would be exonerated -- or blamed -- wrongly.
+        'poolspawn-ref'       = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKSPARMS=0x1E1')
+        #   ★ THE CANDIDATE. The full pre-registered ladder 0x1FF = P0 + P0c + P1 + P2 + P3 + all three
+        #   mini-censuses + P4. P3 runs LAST so it cannot contaminate P1/P2's deltas, and each stage has
+        #   its own census column so the three are separable in one sitting.
+        'poolspawn'           = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        #   +1 dim, THE CONFOUND-REMOVAL ARM. `SpawnActorCls` (P3) hardcodes CollisionHandlingOverride=2
+        #   (AdjustIfPossibleButAlwaysSpawn) and is shared code compiled into `play`, so it is NOT edited;
+        #   P1/P2 pass the functions' declared default 0 (Undefined). If the full ladder shows P1/P2 null
+        #   and P3 spawning, RE-FLY THIS BEFORE BLAMING THE POOL -- it makes P1/P2 pass 2 as well, so
+        #   collision handling stops being a difference between the arms.
+        'poolspawn-collmatch' = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKSPCOLLISION=2')
+        #   +1 dim: WorldContextObject = the DropPlane COMPONENT instead of the GameMode. Only useful if
+        #   the GameMode enumeration comes back ambiguous or the component is the only live candidate.
+        #   ⚠⚠ ON THIS VARIANT P3's WorldContextObject DIFFERS FROM P1/P2's BY CONSTRUCTION: `SpawnActorCls`
+        #   always passes its own `g_gm2` (a GameMode) and cannot be edited (shared code compiled into
+        #   `play`). The shim MEASURES and PRINTS the comparison, and every verdict that leans on P3
+        #   carries a QUALIFIED marker here -- so a P1-null/P3-spawns reading off THIS variant is a
+        #   two-variable comparison, not a one-variable one. Prefer the default (KSPWCO=0) for the
+        #   headline; use this one only to answer "does the component work as a WCO at all".
+        'poolspawn-compwco'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKSPWCO=2')
+        # ══════════════════════════════════════════════════════════════════════════════════════════
+        # ★★★★★ S125 KFRAMEINIT — the FFrame A/B arms (tutorial_launch.cpp, the KFRAMEINIT block).
+        #   `OnPI` snapshots a LIVE FFrame and CallNative/CallBPGuarded overwrite only ~9 fields, so the
+        #   window `0x48..0x80` (stock UE5: FlowStack + PreviousFrame) is inherited from a foreign,
+        #   already-returned frame. A callee that pushes/pops the execution flow stack therefore pops a
+        #   STALE offset. That is the confound under FK-22's founding `SpawnPlane FAULTED` — SpawnPlane
+        #   is 3 push / 2 pop and BOTH functions S93 compared against it are 0/0.
+        #
+        #   KFRAMEINIT: 0 = UNFIXED (historical, and THE S93 REPRODUCTION ARM) | 1 = ZEROONLY
+        #   (memset 0x48..0x80; fewest assumptions) | 2 = S80 (the ds_hybrid.cpp:2151 recipe, the only
+        #   form of this fix that has ever run in this game). KFAULTINFO=1 makes a fault attributable
+        #   (code/access/addr/rip/rva) instead of a bare bool, and MUST be on in BOTH arms or the
+        #   reproduction arm's fault is exactly as uninterpretable as the measurement being retested.
+        #
+        #   ⚠⚠ THESE THREE ARE A COMPILE/VERIFY PROOF THAT BOTH PATHS BUILD, NOT THE FK-22 FLIGHT.
+        #   RM_PHASELADDER is used only because it is heap-armed (FsArm) and therefore safe to have on
+        #   disk. The real arms belong on the new DropPlane mode.
+        #   ⛔ DO NOT register the arms on RM_DROPIN (20) even though it IS the S93 mode. It arms with
+        #      InstallHook() -- a standing ProcessInternal `.text` patch held up to 40 s, i.e. the
+        #      construct S112 measured at 10/10 armed windows dead vs 3/36 (Fisher p = 0.00000008).
+        #      Re-flying S93's own mode to correct S93's confound would re-commit a worse one.
+        'phaseladder-frames80'    = @('-DKRUNMODE=RM_PHASELADDER','-DKFRAMEINIT=2','-DKFAULTINFO=1')
+        'phaseladder-framezero'   = @('-DKRUNMODE=RM_PHASELADDER','-DKFRAMEINIT=1','-DKFAULTINFO=1')
+        'phaseladder-frameunfix'  = @('-DKRUNMODE=RM_PHASELADDER','-DKFRAMEINIT=0','-DKFAULTINFO=1')
         # ★★ S112 SHIPPED: 'play' now defaults to KFUNCSWAP=1 + KFSNAME="ReceiveTickClient", i.e. the
         #   hook is a 2-pointer HEAP write and the module image is never touched. 'play-textpatch' is
         #   the ROLLBACK, and it is also the A/B's measured control arm (10/10 armed windows died),
