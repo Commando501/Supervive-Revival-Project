@@ -1487,18 +1487,38 @@ from commit `c2cdc56`; HEAD is `53483e6181bb3583` after the DxState pod-location
   terminal actions are direct calls to the stripped `0xF7EB50`, and it performs **zero writes to any
   actor or component transform**. Satisfying its `PlayersInside` guard with a poke would move execution
   past the guards and change nothing about where the hero is.
-- ★★ **AND THE DISMOUNTED HERO RUNS [M]** — `play` (`9bc10a4552c596e1`) injected onto the
-  flight-2 client: `*** init complete: body=BUILT; camera + WASD active ***`, `self-driven walk
-  START`, `PlayAnimation(run, loop) ok`, and RPM found the hero **+2,945.7 uu** from where the arm
-  put it. ⇒ **the dismount leaves the hero in a state `play` handles normally; it costs nothing
-  downstream.**
-  ⚠⚠ **BUT THIS DOES *NOT* SHOW PLAYABILITY AT THE LANDING POINT, and that was the first reading
-  of it.** `RM_PLAY`'s FIRST act is a hardcoded ground-teleport to `(KGROUNDX,KGROUNDY,KGROUNDZ) =
-  (-65,-1770,393)` (`tutorial_launch.cpp:4822-4830`, applied at `:12315`) — **it moves the hero off
-  the landing point before anything else happens.** The real experiment needs a `play` variant whose
-  teleport is suppressed or retargeted **plus a never-dismounted control**; it is specified in
-  `docs/next-session-prompt-s133.md` §1. ⚠ Do not edit `play` itself — it is the hard regression
-  gate for the whole tutorial route.
+- ★★ **AND THE DISMOUNTED HERO RUNS [M]** — `play` injected onto the flight-2 client:
+  `*** init complete: body=BUILT; camera + WASD active ***`, `PlayAnimation(run, loop) ok`, hero
+  **+2,945.7 uu**. ⇒ **the dismount leaves the hero in a state `play` handles normally.**
+- ⚠⚠⚠ **BUT "IS THE HERO PLAYABLE *AT THE LANDING POINT*?" IS STILL OPEN, AND THE ARM THAT LOOKS
+  LIKE IT ANSWERS IT IS DEGENERATE — MEASURED, NOT PREDICTED.** Two traps, both now closed:
+  **(a)** `RM_PLAY`'s FIRST act is a hardcoded ground-teleport to `(-65,-1770,393)`
+  (`tutorial_launch.cpp:4822-4830`, applied `:12315`) — **it moves the hero off the landing point
+  before anything else happens.** `KNOTELE=1` already existed and skips it.
+  **(b) ★★★★★ With the teleport skipped, `play-atlanding` (`0e816d359e5d09c5`) was flown as
+  the CONTROL on a hero that had NOT been dismounted — and it moved 2,926 uu at CONSTANT
+  Z = 13,240, i.e. 13 km IN THE AIR with nothing underneath it**, because `KFLYMODE` defaults to
+  **5 = MOVE_Flying** (S75/S81, to bypass the Walking-mode ground-mantle chain). **It hovers; it
+  passes anywhere.** Had it been flown as the treatment after a dismount it would have "walked" and
+  meant nothing. ★ Corroboration: plain `play` moved +2,945.7 uu and this control +2,926 uu — the
+  distance is a property of the auto-walk driver (~585 uu/s x 5 s), **not of the terrain**.
+  ⇒ **only `play-atlanding-walk` (`944a27728053359e`, `-DKFLYMODE=1`) can answer it.** Design,
+  pre-registration and the Walking-mode crash caveat: `docs/next-session-prompt-s133.md` §1.2.
+- ⚠⚠ **AND A MEASURED DEFECT IN THE DISMOUNT ARM, TO FIX FIRST (one line).** When no PlayerState
+  candidate passes GATE 5 the arm currently **proceeds anyway**, on the reasoning that the detach
+  takes its REMOVE-only tail. **It faults instead** — `0xC0000005 READ 0xFFFFFFFFFFFFFFFF` at
+  `rva 0x54F8C57`: **`GetLokiCharacter` FAULTS on a template PlayerState rather than returning null**,
+  so GATE 5 is not a clean early-out for a bad argument. **Make the no-candidate branch REFUSE.**
+  ★ The safety design held: SEH caught it, the client survived 428 s, and `D5` detected and removed
+  the entry the aborted call had left in `PlayersAttached`.
+- ★ **Three dismounts on three separate launches**, plus the four calls of flight 1. Two further
+  deaths, both in known classes and neither caused by the dismount: one `0x0000DEAD` protector kill
+  (**FK-32**) on the 7th injection into one process, one `0xC0000005` **FK-31 staging** death with only
+  `gft`+`fo` resident — the latter DID yield a 41 MB crashpad minidump
+  (`dumps/crashpad-20260820-143225`). ⚠ Its image reads `.text` **51.8 %** vs a healthy **53.0 %**,
+  which looks like a refutation of *"a crash-era image holds MORE decrypted `.text`"* — **but the
+  comparison is NOT matched** (it died at 141 s having exercised far less game code). It does not test
+  that hypothesis.
 - ⛔ **THIS IS A DIAGNOSIS, NOT A SHIPPING FIX.** It writes a live component's state array by hand
   and drives an authority-only entry point. **Do not add it to the default shim set.**
 - ★ **What seven adversarially-verified offline lanes added** (`scratchpad/s132/lanes/`), agreeing
@@ -2863,7 +2883,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **76 tabulated instances as of S132** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **77 tabulated instances as of S132** — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
