@@ -1388,7 +1388,102 @@ Read `docs/fk22-dropphase-reachability.md` §14-§15.** Two flights on one stage
 - ⚠ The first flight's ladder **starved after A2** when `ReceiveTickClient` stopped being dispatched;
   `KFSNAME=""` (`-any`) fixed it (**508 game-thread hits**). Budget arms accordingly.
 
-### Before touching anything drop- / deploy- / DropPlane- / DropPod- / "SpawnPlane faults" shaped
+### Before touching anything drop- / deploy- / DropPlane- / DropPod- / dismount- / "SpawnPlane faults" shaped
+★★★★★ **S132 (2026-08-20) — THE DISMOUNT RUNS. THE HERO LEAVES THE POD AND IS PLACED ON THE GROUND.
+Read `docs/s132-dismount-settled.md`.** One launch, one armed window, **four dismounts**, client alive
+throughout (>1,110 s), 0 crashpad handoffs, 0 `Fatal`. Risk class **DATA** — two aligned `TArray`-header
+writes plus one element store inside the game's own allocation. **Zero `.text` writes, zero PI hooks,
+zero CDO pokes.** Build: `build.ps1 -Name tutorial_launch -Variant dismount`, `.text 03d807ab6d397537`.
+- **THE RECIPE, and it is exactly what S131 predicted:** append the PlayerState to `PlayersAttached`
+  (`+0x130` Data / `+0x138` Num / `+0x13C` Max) using the GAME'S OWN `ResizeGrow` at **`0x00F988D0`**,
+  then call **`AuthPlayerDetachPlayerFromRidable`** (impl `0x55CCCB0`, thunk `0x5456100`) through the
+  S55 direct `UFunction.Func` thunk with `(PlayerState, LandingLocationActor)`.
+- ★★★★★ **[M] THE LANDING POINT IS A PAYLOAD FINGERPRINT.** The pod flies at a cooked 20,000 uu/s in
+  +X with Y and Z exactly constant. Four calls landed the hero at X = **1,453,041.8 → 4,859,800.1 →
+  11,648,502.8 → 14,428,083.3** — the target moved **12.98 million uu** across the four — each matching
+  the pod's X at *its own* call time, and **run 2's hero Y is BIT-IDENTICAL to the pod's Y**
+  (`5070.4768061953482`, verified by `==` on the raw doubles in a live read, not by a formatted print;
+  run 1 is 1 ULP off). Z is **250.0** every time — the ground plane under a pod flying at Z = 20,100.
+  **No static explanation survives.**
+- ★★★★★ **THE NEGATIVE CONTROL RAN BEFORE EVERY ONE OF THE FOUR AND NEVER MOVED THE HERO** — the same
+  detach, same component, same primitive, with `PlayersAttached` EMPTY. The prediction is printed by
+  the shim *before* the call, so it cannot be reinterpreted after.
+- ★★★ **[M] THE HERO IS HANDED BACK TO PHYSICS.** Before: motionless at `(0,0,13240)`. After:
+  consecutive live reads 4.0 s apart give Z `-117,462.8` → `-121,560.9` with X and Y **frozen** — free
+  fall, accelerating, no lateral drift. ⇒ `SetActorEnableCollision(true)`, `SetPredropHidden(false)`
+  and the `GetLokiCharacterMovement` restore all took effect. ⚠ It falls because the pod had flown
+  1.45 M uu off the island by then — a consequence of *when* we called, not a defect.
+- ⚠⚠ **THE HANDOFF'S "expect a PARTIAL dismount" WAS TOO PESSIMISTIC.** The teleport
+  (`GetLandingTeleportLocation` `0x55D89F0` REAL 963 B → `SetActorLocation`), the un-hide
+  (`SetPredropHidden` `0x5599040`, byte `hero+0x1BE8`), the collision restore
+  (`SetActorEnableCollision` `0x339A550`) and the movement restore (`GetLokiCharacterMovement`
+  `0x55AC8E0`, `vt[+0x3E0](true)`, `[mv+0x1A0]=1.0f`) are **every one a real body**. The two `0xF7EC20`
+  folds at `0x55CCD5B` (hero) and `0x55CCE4E` (PlayerState) are **void side effects whose returns are
+  never tested**, so neither gates anything.
+- **SIX GATES, ALL SILENT, ALL READ OUT BEFORE THE CALL:** 1 `PS != null` · 2 PS not garbage
+  (`[PS+0xC]>>30`) · 3 `PlayersAttached` non-empty · 4 PS present in it · 5
+  `PS->GetLokiCharacter() != null` · 6 that hero **`IsA(ALokiHeroCharacter)`** (`0x54F8DC0` is
+  `IsChildOfUsingStructArray`; the class literal is `LokiHeroCharacter` at `.rdata 0x899A832`).
+  The arm calls the reflected `GetLokiCharacter` read-only to measure 5 and walks the class chain for 6.
+- ★★★★★ **FREE, LOG-FREE, THREE-WAY RECEIPT: `PlayersAttached.Num`.** `Remove(PS)` at `0x55CCE23` runs
+  on **every** path past GATE 4, including the two that skip the hero body. Stays 1 ⇒ bailed at gate
+  1/2/3/4. Drops to 0 ⇒ **the body definitively ran past GATE 4.** 0 + hero moved ⇒ full dismount.
+  0 + hero did not move ⇒ gate 5 or 6 failed. **Observed 1 → 0 on all four runs.**
+- ⚠⚠ **`ContainsPlayer` READS `PlayersInside` (+0x120), NOT `PlayersAttached` (+0x130)** — measured at
+  `0x55D0270`. After a correct append it still reads **false**, and that false is EXPECTED. Using it as
+  the append receipt manufactures a false negative on a working append. It is a *dispatch* control and
+  nothing more; the shim turns the fact into the pre-registered prediction `D2c … MUST still be false`.
+- ★★★★★ **THE OBVIOUS SHORTCUT IS DEAD, AND IT WAS CHECKED RATHER THAN ASSUMED [M, strong]:**
+  `ULokiRideableComponent::AuthAddPlayer` (member 0) — which would replace the whole append — has impl
+  **`0x0F7EC20`**, as do **`AuthRemovePlayer`** and **`AuthSetCanJump`** (plus the already-known
+  `AuthPlayerEnterWorldNew`). ⇒ **the component has FOUR empty `Auth*` stubs, not one**, and **the only
+  reflected writers of either player array do nothing in this client** — which is why both read
+  `Data=0 Num=0 Max=0` in a fully staged world and why a data poke is the only route *by construction*.
+  Found independently by the session lead and by an offline recon lane.
+- ★ **BONUS [M]:** runs 1–2 passed `nullptr` (detach substitutes `[comp+0xB8]` at `0x55CCCE5`); runs
+  3–4 passed the pod EXPLICITLY; all four behaved identically and the arm printed
+  `[comp+0xB8] = 0x…870 cls=BP_DropPod_Tutorial_C` ⇒ **`UActorComponent`'s owner is at `+0xB8`** and
+  the null-substitution works.
+- ★ **The `ResizeGrow` prediction was written offline and confirmed in flight**: `Data=0 Num=0 Max=0`
+  ⇒ the `Max==0` branch gives `eax=4`, `cmova` does not fire, `NewMax = 4`, 32 bytes. Logged as
+  `AFTER Data=0x… Num=1 Max=4`. On runs 2–4 the arm prints **`Max already covers it -> no ResizeGrow
+  needed`** — the run-1 buffer is still live and reused, an incidental confirmation that the allocation
+  is the game's own and survives the detach's `Remove`.
+  ⚠ Two recon lanes DISAGREED on the ordering (defer the `Num` publish vs increment-first-is-mandatory);
+  the adversarial verifier and the session lead independently **refuted the "mandatory" grade** —
+  `ResizeGrow` allocates `max(4,Num)` or `Num + 16 + 3*Num/8`, never exactly `Num`, so the +16 slack
+  covers either order. **Both work; the shim mirrors the game's order, which is what makes "the ABI is
+  correct by construction" an argument rather than an assumption.**
+- ⚠ **The detach is SILENT — 0 log strings in its 440-byte extent**, and the flight confirms 0
+  occurrences of its name, 0 `failed to get the round game mode`, 0 crashpad handoffs, 0 `Fatal`, and 7
+  benign startup `Error`s. ⚠ But `LogLokiRideable` occurs **0** times all session, so the log has **no
+  positive control for that category** — the silence is *predicted by the disassembly* and *consistent
+  with* the log; the log alone cannot discriminate silent from suppressed.
+- ⛔ **OPEN, and UNAVAILABLE rather than negative: does `GetLandingTeleportLocation` consume its
+  `LandingLocationActor` argument?** A `KDXLANDING=2` arm was built to pass a `LokiPlayerStart` instead
+  of the pod. By the time it flew, an enumerating scan reported **`0 candidates matching
+  {LokiPlayerStart,PlayerStart,TrainingStart}, 0 GC-alive, over 143,130 objects walked`** — the
+  tutorial-start cell had streamed out (the `b1only` marker scan HAD found
+  `BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02` at uptime ~250 s). **The arm refused to substitute
+  silently and said so.** ★ **The better experiment is simply to call the detach IMMEDIATELY after
+  Route E, while the pod is still over the island** — then the hero should land on real terrain and
+  stay there.
+- ⛔ **`AuthPlayerEnterWorld` (`0x55CCE70`) is FORECLOSED as an alternative route [M]** — its two
+  terminal actions are direct calls to the stripped `0xF7EB50`, and it performs **zero writes to any
+  actor or component transform**. Satisfying its `PlayersInside` guard with a poke would move execution
+  past the guards and change nothing about where the hero is.
+- ⛔ **THIS IS A DIAGNOSIS, NOT A SHIPPING FIX.** It writes a live component's replicated array by hand
+  and drives an authority-only entry point. **Do not add it to the default shim set.**
+- **Regression gates, verified after every edit:** `play` `9bc10a4552c596e1` · `dropplane_b1only`
+  `5b4467b0105dec1a` · `droppod-pe-cdopoke` `249a3cd2190eb334`, and **`dismount` is byte-identical to
+  the artifact that produced all four results** even after the `KDXLANDING=2` code was added.
+  ⚠ `dismount` and `dismount-podland` share a `.text` **size** (126,976 B) — **diff the hash, never the size.**
+- ⚠⚠ **`usmapdump dumpimage` NEEDS THE `.exe` SUFFIX.** Given `SUPERVIVE-Win64-Shipping` it prints
+  `ERROR: process … not found (is the game running?)` **while the client is alive**; given a bare PID it
+  prints `module "<pid>" not found in PID <pid>`. Both read as *the game is dead*. **Check
+  `Get-Process` before believing either.**
+- ⚠ **The stager's `-Probe` path is `tools\sigbypass-mod\build\…`, not `build\…`**, and `-AllowStale`
+  is required for the deployed `fo`/`sp` pair.
 ★★★★★ **S131 (2026-08-20) — THE POD IS FUNCTIONAL. IT IS INITIALISED, ALIVE, AND FLYING — IN THE WRONG DIRECTION. Read `docs/s131-pod-functionality-settled.md`.**
 The census counts OBJECTS; S131 built the in-arm readout that looks at what the object IS. One armed window, **zero `.text` writes**.
 - ★★★★★ **[M] `InitializeDropPod` RAN and all three discriminating writes LANDED**, against a **within-run, same-class, same-instrument negative control of three other pods** that all read class defaults in the same dump: `PodTeamIndex` **-1 → 0** · `CurrPodDestination` **(0,0,0) → (-3206.4, 5070.5, 100.0)** · `bIsTeamLeaderPod` **False → true**. ⛔ `LeaderPod` is a TRAP (null→null) and is not a fourth check.

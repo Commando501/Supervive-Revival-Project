@@ -1,0 +1,106 @@
+0x55CCCB0  48 85 d2                           test     rdx, rdx                           ; GATE 1a: PlayerState (arg2) != nullptr?
+0x55CCCB3  0f 84 ae 01 00 00                  je       0x55cce67                          ;   -> SILENT return (no prologue executed at all)
+0x55CCCB9  48 89 54 24 10                     mov      qword ptr [rsp + 0x10], rdx        ; home-slot spill: [entry_rsp+0x10] = PlayerState  (== [rsp+0x88] after prologue)
+0x55CCCBE  55                                 push     rbp                                ; prologue
+0x55CCCBF  41 57                              push     r15                                ; prologue
+0x55CCCC1  48 83 ec 68                        sub      rsp, 0x68                          ; prologue: frame = 0x78 total (2 pushes + 0x68)
+0x55CCCC5  8b 42 0c                           mov      eax, dword ptr [rdx + 0xc]         ; eax = PlayerState->ObjectFlags   (UObject::ObjectFlags @ +0x0C in this build)
+0x55CCCC8  4d 8b f8                           mov      r15, r8                            ; r15 = LandingLocationActor (arg3)
+0x55CCCCB  c1 e8 1e                           shr      eax, 0x1e                          ; isolate bits 30..31
+0x55CCCCE  48 8b e9                           mov      rbp, rcx                           ; rbp = this  (ULokiRideableComponent*)
+0x55CCCD1  f6 d0                              not      al
+0x55CCCD3  a8 01                              test     al, 1                              ; GATE 1b: RF_MirroredGarbage (bit 30) must be CLEAR  ==  ::IsValid(PlayerState)
+0x55CCCD5  0f 84 85 01 00 00                  je       0x55cce60                          ;   -> SILENT return
+0x55CCCDB  48 89 74 24 60                     mov      qword ptr [rsp + 0x60], rsi        ; spill rsi (never actually used in the body - dead save/restore pair)
+0x55CCCE0  4d 85 c0                           test     r8, r8                             ; is LandingLocationActor null?
+0x55CCCE3  75 07                              jne      0x55cccec                          ;   no -> keep it
+0x55CCCE5  4c 8b b9 b8 00 00 00               mov      r15, qword ptr [rcx + 0xb8]        ;   yes -> r15 = this->GetOwner()   [UActorComponent::OwnerPrivate @ +0xB8, proven by UActorComponent::GetOwner impl 0x3215D20]
+0x55CCCEC  48 8b 89 30 01 00 00               mov      rcx, qword ptr [rcx + 0x130]       ; rcx = this->PlayersAttached.Data   (+0x130)
+0x55CCCF3  48 63 85 38 01 00 00               movsxd   rax, dword ptr [rbp + 0x138]       ; rax = this->PlayersAttached.Num    (+0x138)
+0x55CCCFA  48 8d 14 c1                        lea      rdx, [rcx + rax*8]                 ; rdx = Data + Num*8  (one-past-end)
+0x55CCCFE  48 3b ca                           cmp      rcx, rdx                           ; GATE 2: PlayersAttached must be NON-EMPTY
+0x55CCD01  0f 84 54 01 00 00                  je       0x55cce5b                          ;   -> SILENT return   *** THIS IS THE GATE THE ARM MUST DEFEAT ***
+0x55CCD07  48 89 9c 24 80 00 00 00            mov      qword ptr [rsp + 0x80], rbx        ; spill rbx
+0x55CCD0F  48 8b 9c 24 88 00 00 00            mov      rbx, qword ptr [rsp + 0x88]        ; rbx = PlayerState (reload from its home slot)
+0x55CCD17  48 39 19                           cmp      qword ptr [rcx], rbx               ; linear search: *it == PlayerState ?
+0x55CCD1A  74 0e                              je       0x55ccd2a                          ;   found
+0x55CCD1C  48 83 c1 08                        add      rcx, 8                             ; ++it
+0x55CCD20  48 3b ca                           cmp      rcx, rdx
+0x55CCD23  75 f2                              jne      0x55ccd17                          ; loop
+0x55CCD25  e9 29 01 00 00                     jmp      0x55cce53                          ; GATE 3: NOT FOUND -> jump to epilogue.  SILENT.  No Remove, no fold#2, nothing.
+0x55CCD2A  48 8b cb                           mov      rcx, rbx                           ; rcx = PlayerState
+0x55CCD2D  48 89 7c 24 58                     mov      qword ptr [rsp + 0x58], rdi        ; spill rdi
+0x55CCD32  e8 99 13 0f 00                     call     0x56be0d0                          ; rax = ALokiPlayerState::GetLokiCharacter()      [record: thunk 0x54373A0 -> impl 0x56BE0D0]
+0x55CCD37  48 8b f8                           mov      rdi, rax                           ; rdi = the character
+0x55CCD3A  48 85 c0                           test     rax, rax                           ; GATE 4: character must be non-null
+0x55CCD3D  0f 84 e0 00 00 00                  je       0x55cce23                          ;   -> skip ALL hero work, but still Remove + fold#2
+0x55CCD43  48 8b c8                           mov      rcx, rax
+0x55CCD46  e8 75 c0 f2 ff                     call     0x54f8dc0                          ; al = IsA<ALokiHeroCharacter>(character)   [0x54F8DC0 = inlined FStructBaseChain::IsDerivedFrom against LokiHeroCharacter::GetPrivateStaticClass 0x5395720]
+0x55CCD4B  84 c0                              test     al, al
+0x55CCD4D  0f 84 d0 00 00 00                  je       0x55cce23                          ; GATE 5: must be an ALokiHeroCharacter -> else skip ALL hero work (still Remove + fold#2)
+0x55CCD53  48 8b cf                           mov      rcx, rdi                           ; rcx = hero
+0x55CCD56  4c 89 74 24 50                     mov      qword ptr [rsp + 0x50], r14        ; spill r14
+0x55CCD5B  e8 c0 1e 9b fb                     call     0xf7ec20                           ; ### FOLD #1 ###  hero->UNNAMED()  -- STRIPPED (0xF7EC20 = `ret 0`, i.e. a void no-op). 1 arg (this). Return value NOT tested.
+0x55CCD60  41 b8 01 00 00 00                  mov      r8d, 1                             ; r8d = 1  (EFindName::FNAME_Add)
+0x55CCD66  48 8d 15 83 e8 54 03               lea      rdx, [rip + 0x354e883]             ; rdx = ANSI literal "MinionIgnore" @ .rdata 0x8B1B5F0
+0x55CCD6D  48 8d 8c 24 98 00 00 00            lea      rcx, [rsp + 0x98]                  ; rcx = &local FName (reuses the r9 home slot at [rsp+0x98])
+0x55CCD75  e8 56 c0 b6 fb                     call     0x1138dd0                          ; FName::FName(&tmp, "MinionIgnore", FNAME_Add)   [0x1138DD0, ANSICHAR overload]
+0x55CCD7A  48 8d 8f f0 01 00 00               lea      rcx, [rdi + 0x1f0]                 ; rcx = &hero->Tags   (AActor::Tags @ +0x1F0, TArray<FName>)
+0x55CCD81  48 8d 94 24 98 00 00 00            lea      rdx, [rsp + 0x98]                  ; rdx = &tmp FName
+0x55CCD89  e8 82 2b b3 fb                     call     0x10ff910                          ; ### WRITE ###  hero->Tags.Remove(FName("MinionIgnore"))   [0x10FF910 = TArray<FName>::Remove run-compaction; writes Tags.Num]
+0x55CCD8E  b2 01                              mov      dl, 1                              ; dl = true
+0x55CCD90  48 8b cf                           mov      rcx, rdi                           ; rcx = hero
+0x55CCD93  e8 b8 d7 dc fd                     call     0x339a550                          ; ### WRITE ###  hero->SetActorEnableCollision(true)   [AActor, impl 0x339A550]
+0x55CCD98  33 d2                              xor      edx, edx                           ; edx = false
+0x55CCD9A  48 8b cf                           mov      rcx, rdi                           ; rcx = hero
+0x55CCD9D  e8 9e c2 fc ff                     call     0x5599040                          ; ### WRITE ###  hero->SetPredropHidden(false)  [ALokiHeroCharacter, impl 0x5599040; writes byte hero+0x1BE8 then refreshes visibility; EARLY-OUTS if already false]
+0x55CCDA2  48 8b cf                           mov      rcx, rdi                           ; rcx = hero
+0x55CCDA5  e8 86 97 fb ff                     call     0x5586530                          ; ### WRITE ###  hero->UNNAMED_UpdateVisionGranters()  [0x5586530]:  PracticallyTouchingVisionGranter(+0x1978)->ViewDistance(+0xE8) = GetScaledCapsuleRadius() + PracticallyTouchingVisionRadiusOffset(+0x196C);  PeripheralVisionGranter(+0x1980)->ViewDistance = PeripheralVisionRadius(+0x1970);  then tail-jmp [hero_vtable+0xC68]
+0x55CCDAA  48 8b cf                           mov      rcx, rdi                           ; rcx = hero
+0x55CCDAD  e8 2e fb fd ff                     call     0x55ac8e0                          ; rax = hero->GetLokiCharacterMovement()   [ALokiCharacter, impl 0x55AC8E0]
+0x55CCDB2  4c 8b f0                           mov      r14, rax                           ; r14 = movement component
+0x55CCDB5  48 85 c0                           test     rax, rax
+0x55CCDB8  74 1a                              je       0x55ccdd4                          ; GATE 6: movement component non-null -> else skip the next two writes
+0x55CCDBA  4c 8b 00                           mov      r8, qword ptr [rax]                ; r8 = mc->vtable
+0x55CCDBD  b2 01                              mov      dl, 1                              ; dl = true
+0x55CCDBF  48 8b c8                           mov      rcx, rax                           ; rcx = mc
+0x55CCDC2  41 ff 90 e0 03 00 00               call     qword ptr [r8 + 0x3e0]             ; ### WRITE ###  mc->SetComponentTickEnabled(true)   [vtable disp 0x3E0; identified from UActorComponent::SetComponentTickEnabled whose registered impl 0x3599B24 IS `mov rax,[rcx]; jmp [rax+0x3E0]`. 3-way ICF fold - the other two are ULokiAttributeSet::OnRep_Glide and UCheatManager::DumpOnlineSessionState, neither of which a movement component IS-A]
+0x55CCDC9  41 c7 86 a0 01 00 00 00 00 80 3f   mov      dword ptr [r14 + 0x1a0], 0x3f800000 ; ### WRITE ###  mc->GravityScale = 1.0f   [UCharacterMovementComponent::GravityScale @ +0x1A0]
+0x55CCDD4  4d 8b cf                           mov      r9, r15                            ; r9 = LandingLocationActor
+0x55CCDD7  48 8d 54 24 30                     lea      rdx, [rsp + 0x30]                  ; rdx = &out FVector (hidden return pointer, [rsp+0x30])
+0x55CCDDC  4c 8b c7                           mov      r8, rdi                            ; r8 = hero
+0x55CCDDF  48 8b cd                           mov      rcx, rbp                           ; rcx = this
+0x55CCDE2  e8 09 bc 00 00                     call     0x55d89f0                          ; loc = this->GetLandingTeleportLocation(hero, LandingLocationActor)  [ULokiRideableComponent, impl 0x55D89F0, 963 B chained, 0 folds, fully decrypted]
+0x55CCDE7  45 33 c9                           xor      r9d, r9d                           ; r9 = OutSweepHitResult = nullptr
+0x55CCDEA  c6 44 24 20 00                     mov      byte ptr [rsp + 0x20], 0           ; [rsp+0x20] = Teleport = ETeleportType::None
+0x55CCDEF  45 33 c0                           xor      r8d, r8d                           ; r8b = bSweep = false
+0x55CCDF2  48 8d 54 24 30                     lea      rdx, [rsp + 0x30]                  ; rdx = &loc
+0x55CCDF7  48 8b cf                           mov      rcx, rdi                           ; rcx = hero
+0x55CCDFA  e8 a1 d9 dc fd                     call     0x339a7a0                          ; ### WRITE ###  hero->SetActorLocation(loc, bSweep=false, nullptr, ETeleportType::None)   [AActor, 0x339A7A0; moves RootComponent (+0x1B0) by delta from ComponentToWorld.Translation (+0x220)]
+0x55CCDFF  48 8b d3                           mov      rdx, rbx                           ; rdx = PlayerState
+0x55CCE02  48 8b cd                           mov      rcx, rbp                           ; rcx = this
+0x55CCE05  e8 b6 69 e8 ff                     call     0x54537c0                          ; ### RPC ###  this->MulticastOnPlayerEnteredWorld(PlayerState)  [ULokiRideableComponent, impl 0x54537C0 = the UHT RPC-send stub: FindFunction + ProcessEvent via vtable+0x270]
+0x55CCE0A  48 8b cb                           mov      rcx, rbx                           ; rcx = PlayerState
+0x55CCE0D  e8 6e a0 ff ff                     call     0x55c6e80                          ; rax = PlayerState->GetComponentByClass(ULokiPlayerDropPlaneComponent::StaticClass())  [0x55C6E80; virtual [PS_vtable+0x760]; class accessor 0x5429740]
+0x55CCE12  4c 8b 74 24 50                     mov      r14, qword ptr [rsp + 0x50]        ; restore r14
+0x55CCE17  48 85 c0                           test     rax, rax                           ; GATE 7: component found?
+0x55CCE1A  74 07                              je       0x55cce23                          ;   -> skip
+0x55CCE1C  c6 80 d0 00 00 00 01               mov      byte ptr [rax + 0xd0], 1           ; ### WRITE ###  dropPlaneComp->bDropComplete = true   [ULokiPlayerDropPlaneComponent, property index 0, @ +0xD0]
+0x55CCE23  48 8d 94 24 88 00 00 00            lea      rdx, [rsp + 0x88]                  ; rdx = &PlayerState (its home slot, read-only to the callee)
+0x55CCE2B  48 8d 8d 30 01 00 00               lea      rcx, [rbp + 0x130]                 ; rcx = &this->PlayersAttached  (+0x130)
+0x55CCE32  e8 29 6a c2 fb                     call     0x11f3860                          ; ### WRITE ###  this->PlayersAttached.Remove(PlayerState)  [0x11F3860 = TArray<T*>::Remove run-compaction. Writes ONLY Num (+0x138). Does NOT touch Data(+0x130) or Max(+0x13C); does NOT free or realloc; with Num==1 and a match it does not even call memmove]
+0x55CCE37  48 8b 8c 24 88 00 00 00            mov      rcx, qword ptr [rsp + 0x88]        ; rcx = PlayerState
+0x55CCE3F  48 8b 7c 24 58                     mov      rdi, qword ptr [rsp + 0x58]        ; restore rdi
+0x55CCE44  48 85 c9                           test     rcx, rcx                           ; GATE 8: PlayerState non-null (redundant re-check)
+0x55CCE47  74 0a                              je       0x55cce53                          ;   -> skip fold #2
+0x55CCE49  45 33 c0                           xor      r8d, r8d                           ; r8 = nullptr
+0x55CCE4C  b2 03                              mov      dl, 3                              ; dl = 3
+0x55CCE4E  e8 cd 1d 9b fb                     call     0xf7ec20                           ; ### FOLD #2 ###  PlayerState->UNNAMED(3, nullptr)  -- STRIPPED (0xF7EC20 = `ret 0`). Return value NOT tested (function is void).  [I] most likely Auth*BattleRoyalePlayerPhase(EBattleRoyalePlayerPhase::Combat==3, nullptr) - see report S7
+0x55CCE53  48 8b 9c 24 80 00 00 00            mov      rbx, qword ptr [rsp + 0x80]        ; epilogue (restore rbx) - GATE 3 lands here
+0x55CCE5B  48 8b 74 24 60                     mov      rsi, qword ptr [rsp + 0x60]        ; epilogue (restore rsi) - GATE 2 lands here
+0x55CCE60  48 83 c4 68                        add      rsp, 0x68                          ; epilogue - GATE 1b lands here
+0x55CCE64  41 5f                              pop      r15
+0x55CCE66  5d                                 pop      rbp
+0x55CCE67  c3                                 ret                                         ; return - GATE 1a lands here
+
+; 104 instructions, 0x55CCCB0..0x55CCE68 (440 bytes)

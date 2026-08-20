@@ -409,22 +409,22 @@ $Variants = @{
         #      instruments agree, proves the negative control fails to resolve, and reports the live
         #      GetAllActorsWithTag counts for all three tags. If this does not print AGREE for both
         #      markers, STOP -- everything downstream writes a guessed FName otherwise.
-        'dropmarkers-readonly' = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDMARMS=0x23')
+        'dropmarkers-readonly' = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDXARMS=0x23')
         #   2) 'dropmarkers-gateonly'  -- write the two tags, run BOTH gates, RESTORE, and never call
         #      SpawnPlane. This is the arm that measures the MECHANISM on its own: a 0 -> 1 transition
         #      on GetAllActorsWithTag for both markers, with TrainingStart pinned as the in-run control.
         #      It leaves the world exactly as it found it.
-        'dropmarkers-gateonly' = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDMARMS=0x27')
+        'dropmarkers-gateonly' = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDXARMS=0x27')
         #   3) 'dropmarkers-outparm'  ⚠⚠ THIS ARM SETS KDMFORCE=1 AND THEREFORE CALLS SpawnPlane WITH
         #      THE RESIDENCY GATE FAILED. That is deliberate and it is the point of the arm, but the
         #      variant NAME does not say so -- read this line before flying it.
         #      -- THE SINGLE-VARIABLE FAULT FIX, WITH NO MARKER WRITE AT ALL
-        #      (KDMARMS clears bit2, so the gate FAILS by construction and D4 is skipped)... which is
+        #      (KDXARMS clears bit2, so the gate FAILS by construction and D4 is skipped)... which is
         #      useless on its own, so this arm sets KDMFORCE=1 deliberately: call SpawnPlane with the
         #      markers still ABSENT and only KOUTPARMRET changed from the S125 flight. PREDICTION: no
         #      fault, a non-null plane, and its location (0,0,0). That prediction is what separates
         #      "the OutParms defect was the crash" from "the markers were the crash".
-        'dropmarkers-outparm'  = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDMARMS=0x3B','-DKDMFORCE=1')
+        'dropmarkers-outparm'  = @('-DKRUNMODE=RM_DROPMARKERS','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDXARMS=0x3B','-DKDMFORCE=1')
         #   4) 'dropmarkers'          -- THE HEADLINE ARM. Markers resident + OutParms fixed + the gate
         #      enforced. PREDICTION: no fault, a non-null BP_DropPlane_Straight_Tutorial_C, and a plane
         #      location that matches victim[0] rather than (0,0,0).
@@ -527,6 +527,34 @@ $Variants = @{
         # DO NOT call the wall. Its ContainsPlayer value is the before-reading the real arm needs, and
         # a non-zero effect from THIS build would mean the readout itself is not read-only.
         'rideable-readonly'   = @('-DKRUNMODE=RM_RIDEABLE','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKRDARMS=0x0D')
+        # ★★★★★ S132 RM_DISMOUNT -- GET THE HERO OUT OF THE POD.
+        #   Appends the PlayerState to the rideable component's PlayersAttached with the GAME'S OWN
+        #   ResizeGrow (0x00F988D0 -- the exact function the wall's own tail calls at 0x55CD75B), then
+        #   calls AuthPlayerDetachPlayerFromRidable (impl 0x55CCCB0, thunk 0x5456100) through the S55
+        #   direct UFunction.Func thunk. Risk class DATA: two aligned TArray-header writes plus one
+        #   element store inside the game's own allocation. NO .text write, NO PI hook, NO CDO poke.
+        #   Same staging as `rideable`: gft -> fo -> sp -> dropplane_b1only -> droppod-pe-cdopoke -> this.
+        #   KDXARMS bits: 0 D0c ContainsPlayer dispatch control | 1 D1 pre-append NEGATIVE control |
+        #                 2 D2 the append | 3 D3 the detach | 4 D4 second cycle | 5 D5 restore on bail
+        'dismount'            = @('-DKRUNMODE=RM_DISMOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        # READ-ONLY control arm: resolve, read out all six gates, run the D0c dispatch control and the
+        # D1 pre-append negative control -- and then WRITE NOTHING and call no detach on a non-empty
+        # array. Any physical change from THIS build would mean the readout is not read-only.
+        'dismount-readonly'   = @('-DKRUNMODE=RM_DISMOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDXARMS=0x03')
+        # Append but DO NOT call the detach: isolates "can we write the array at all" from "does the
+        # detach then run". Use only if the full arm's append readback fails and needs localising.
+        'dismount-appendonly' = @('-DKRUNMODE=RM_DISMOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDXARMS=0x27')
+        # Pass the POD explicitly as LandingLocationActor instead of letting the detach substitute
+        # [comp+0xB8]. Use if the default lands the hero somewhere uninterpretable.
+        'dismount-podland'    = @('-DKRUNMODE=RM_DISMOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDXLANDING=1')
+        # THE DISCRIMINATING ARM: pass a LokiPlayerStart actor as LandingLocationActor instead of the
+        # pod. S132's first two flights landed the hero at the FLYING pod's live X/Y (Y bit-identical to
+        # the pod's over 17 significant figures) at Z=250 -- over open air, so it fell. This arm asks
+        # whether GetLandingTeleportLocation actually CONSUMES that argument. Lands-at-PlayerStart =>
+        # yes, and the dismount can put the hero on real ground. Lands-at-pod => the argument is ignored
+        # and the landing point is a property of the component. The prediction is printed BEFORE the call.
+        'dismount-landstart'  = @('-DKRUNMODE=RM_DISMOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDXLANDING=2')
+
         'poolspawn-cdoctrl'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=0')
         'poolspawn-cdopoke'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=1')
         #   +1 dim, THE CONFOUND-REMOVAL ARM. `SpawnActorCls` (P3) hardcodes CollisionHandlingOverride=2

@@ -166,7 +166,7 @@ static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for Spawn
 //   mode: same subject (the round-phase ladder), heap-only arming, and the FK-22 A0'..A5 protocol.
 //   RM_DROPPLANE (25) is the S125 successor: same FK-22 subject one layer down (the DropPlane
 //   COMPONENT rather than the phase), also heap-only arming, and the B0..B4 protocol.
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28, RM_RIDEABLE=29 };
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28, RM_RIDEABLE=29, RM_DISMOUNT=30 };
 #ifndef KRUNMODE
 #define KRUNMODE RM_CHEATSPAWN
 #endif
@@ -397,6 +397,7 @@ static void DoDropPlane();                                     // S125 RM_DROPPL
 static void DoDropPod();                                       // S126 RM_DROPPOD:    ROUTE C -- SpawnDropPodForTeam on the live LokiDropShip (heap-only; NO module-image write)
 static void DoDropMarkers();                                    // S126 RM_DROPMARKERS: ROUTE D -- make PlaneStartPoint/PlaneEndPoint resident, then SpawnPlane behind a residency gate
 static void DoRideable();                                      // S131 RM_RIDEABLE:  call the FIFTH WALL directly with a NON-NULL PlayerState (heap-only; NO module-image write)
+static void DoDismount();                                      // S132 RM_DISMOUNT: append the PlayerState to PlayersAttached, then call AuthPlayerDetachPlayerFromRidable (DATA-class write; NO module-image write)
 static void DoPoolSpawn();                                     // S128 RM_POOLSPAWN:  ROUTE F -- does SpawnPoolableActorFromClassDeferred need the actor pool? (heap-only; NO module-image write)
 static void PhaseRestore(const char* who);                     //  ...its STOP: re-poke GameState+0xA44 back to 4. Idempotent, callable from any thread.
 
@@ -1268,6 +1269,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     if(kRunMode==RM_DROPMARKERS){ DoDropMarkers(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S126 Route D
     if(kRunMode==RM_POOLSPAWN){ DoPoolSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S128 Route F
     if(kRunMode==RM_RIDEABLE){ DoRideable(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S131 the fifth wall
+    if(kRunMode==RM_DISMOUNT){ DoDismount(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S132 the dismount
     if(kRunMode==RM_PLAY){ DoPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done) — camera + WASD each hit
     if(kRunMode==RM_TRAINING){ DoTraining(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoTraining (one step per hit)
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
@@ -13373,6 +13375,618 @@ static void RdFinalReport(){
                "                 predicate is the remaining explanation and it is NOT the wall.\r\n");
 }
 
+// ===================================================================================================
+// ★★★★★ RM_DISMOUNT (S132, 2026-08-20) — GET THE HERO OUT OF THE POD.
+//
+// WHY THIS EXISTS.  S131 confirmed the fifth wall live: `AuthPlayerEnterWorldAttachedToRidable`
+// reaches 0x55CD572, gets 0 from the stripped round-game-mode getter `0xF7EB50`, and bails.  The
+// offline follow-up then found the value it fetches is a DEAD GUARD -- zero reads of RAX downstream --
+// and that the wall's only persistent COMPONENT-state output is a single TArray append it dies just
+// before performing.  `AuthPlayerDetachPlayerFromRidable` is gated on exactly that array.
+//
+// ⇒ APPEND THE PLAYERSTATE OURSELVES, THEN CALL THE DETACH.
+//
+// WHAT THE DETACH ACTUALLY DOES (S132 transcription, `scratchpad/s132/evidence/`; every name below
+// read from the `.data` {name_ptr, exec_thunk, impl} record table in TWO independent single-state
+// dumps, which agree on every row):
+//
+//   0x55CCCB0  test rdx,rdx / je                GATE 1  PlayerState != null                 SILENT
+//   0x55CCCC5  [PS+0xC]>>30, not, test 1        GATE 2  PS not garbage (ObjectFlags)         SILENT
+//   0x55CCCE0  if (arg2 == null) arg2 = [this+0xB8]      LandingActor defaults to the owner
+//   0x55CCCEC  Data=[this+0x130] Num=[this+0x138]        PlayersAttached, element size 8
+//   0x55CCCFE  cmp Data,Data+Num*8 / je         GATE 3  PlayersAttached NON-EMPTY            SILENT
+//   0x55CCD17  linear scan                      GATE 4  PS PRESENT in PlayersAttached        SILENT
+//   0x55CCD32  hero = PS->GetLokiCharacter()
+//   0x55CCD3A  test / je                        GATE 5  hero != null      -> REMOVE-only tail
+//   0x55CCD46  IsChildOf(hero, LokiHeroCharacter)
+//   0x55CCD4D  test / je                        GATE 6  hero IS a LokiHeroCharacter -> REMOVE-only
+//   0x55CCD5B  call 0x0F7EC20(hero)             FOLD 1 -- stripped, void, return NEVER tested
+//   0x55CCD75  FName("MinionIgnore") -> op on AActor::Tags at hero+0x1F0
+//   0x55CCD93  hero->SetActorEnableCollision(true)
+//   0x55CCD9D  hero->SetPredropHidden(false)              writes the byte at hero+0x1BE8
+//   0x55CCDAD  mv = hero->GetLokiCharacterMovement(); if (mv) { mv->vt[+0x3E0](true); mv[+0x1A0]=1.0f }
+//   0x55CCDE2  this->GetLandingTeleportLocation(&out, hero, LandingActor)     REAL, 963 B, 0 folds
+//   0x55CCDFA  hero->SetActorLocation(&out, false, nullptr, None)             *** THE TELEPORT ***
+//   0x55CCE05  this->MulticastOnPlayerEnteredWorld(PS)
+//   0x55CCE23  PlayersAttached.Remove(PS)       ← runs on EVERY path past GATE 4
+//   0x55CCE4E  if (PS) call 0x0F7EC20(PS,3,0)   FOLD 2 -- stripped, void
+//
+// ⇒ THE HANDOFF'S "expect a PARTIAL dismount" IS TOO PESSIMISTIC.  The teleport, the un-hide, the
+//   collision restore and the movement restore are EVERY ONE a real body.  The two folds are void
+//   side effects whose returns are never tested, so neither of them gates anything.
+//
+// ⛔ AND THE OBVIOUS SHORTCUT IS DEAD, CHECKED RATHER THAN ASSUMED.  `ULokiRideableComponent` declares
+//   `AuthAddPlayer(ALokiPlayerState)` -- which would replace this whole append.  Its impl is
+//   **0x0F7EC20**, the ret-0 fold, as are `AuthRemovePlayer` and `AuthSetCanJump`.  Four of the
+//   component's own `Auth*` mutators are stripped.  The hand-built append is REQUIRED.
+//
+// THE FREE, LOG-FREE, THREE-WAY RECEIPT.  There is NO log line anywhere in the detach's 440 bytes, so
+// the physical state is the instrument.  `PlayersAttached.Remove(PS)` executes on every path that
+// passes GATE 4, so `Num` after the call discriminates three outcomes with no ambiguity:
+//     stays 1  -> bailed at GATE 1/2/3/4: the append did not take, or the PS failed its validity test
+//     drops 0  -> the body DEFINITIVELY ran past GATE 4
+//     drops 0 AND the hero moved -> full dismount
+//     drops 0 AND the hero did not move -> GATE 5 or 6 failed; both are read out BEFORE the call.
+//
+// RISK CLASS: DATA.  Two aligned heap writes to a TArray header plus one element store, all inside the
+// game's OWN allocation obtained from the game's OWN `ResizeGrow` -- which removes the foreign-pointer
+// hazard a hand-supplied buffer would carry.  NO module-image write, NO PI hook, NO CDO poke.
+// On this project's measured hazard ladder: nothing 0/22 · bytecode 0/9 · standing `.text` 10/10.
+//
+// ⚠⚠ ORDERING TRAP, obeyed: this NEVER touches `PlayersInside` (+0x120).  Poking that would make
+//   `HasEverContainedPlayer` true and turn the wall itself into a silent no-op.
+// ===================================================================================================
+
+#ifndef KDXARMS
+// bit0 D0c ContainsPlayer dispatch control · bit1 D1 pre-append NEGATIVE control (detach on an EMPTY
+// array) · bit2 D2 the append · bit3 D3 the detach · bit4 D4 second cycle on the next PlayerState ·
+// bit5 D5 restore Num if the detach bailed
+#define KDXARMS 0x2F
+#endif
+#ifndef KDXSTEPMS
+#define KDXSTEPMS 600
+#endif
+#ifndef KDXLANDING
+// 0 = pass nullptr and let the detach use its own default ([comp+0xB8], the component's owner).
+// 1 = pass the pod actor explicitly.  The arm falls back to 1 by itself, loudly, if [comp+0xB8] is
+//     not a live UObject -- handing a 963-byte GetLandingTeleportLocation a null is a fault risk.
+// 2 = pass a LokiPlayerStart actor (the tutorial spawn point) instead of the pod.
+//     * THIS IS A DISCRIMINATING EXPERIMENT, not a convenience. S132's first two flights landed the
+//       hero at the FLYING pod's live X/Y (Y bit-identical to the pod's, 17 significant figures) over
+//       open air, and it fell. If mode 2 lands the hero at the PlayerStart instead, then
+//       GetLandingTeleportLocation really does consume its `LandingLocationActor` argument -- and the
+//       dismount can put the hero on real ground. If it lands at the pod ANYWAY, the argument is
+//       ignored and the landing point is a property of the component. Both outcomes are results.
+#define KDXLANDING 0
+#endif
+#ifndef KDXLANDCLASS
+#define KDXLANDCLASS "LokiPlayerStart"     // class-name substring used when KDXLANDING==2
+#endif
+#ifndef KDXFORCEOFF
+// 0 = REFUSE if `PlayersAttached`'s by-name offset disagrees with the disassembly's 0x130.
+#define KDXFORCEOFF 0
+#endif
+
+constexpr uintptr_t kResizeGrowRva = 0x00F988D0;   // TArray::ResizeGrow(OldNum), element+align 8
+constexpr uint32_t  kPlayersAttachedExpected = 0x130;   // from the wall's own tail, 0x55CD754
+typedef void (__fastcall *ResizeGrow_t)(void* arr, int32_t oldNum);
+
+static volatile long g_dxStep=0; static DWORD g_dxLastMs=0;
+static uint32_t  g_dxArrOff=0xFFFFFFFF;              // PlayersAttached, resolved BY NAME
+static uintptr_t g_dxDetachFn=0, g_dxDetachChild=0;
+static uintptr_t g_dxGlcFn=0,    g_dxGlcChild=0;     // ALokiPlayerState::GetLokiCharacter (GATE 5 readout)
+static uintptr_t g_dxPS=0, g_dxHero=0; static char g_dxHeroName[96]={0};
+static uintptr_t g_dxLandingActor=0; static char g_dxLandingName[96]={0};
+static uintptr_t g_dxAltLanding=0;   // KDXLANDING==2 target, resolved by class
+static int  g_dxPSIx=-1, g_dxCycle=0;
+static int  g_dxAppendOK=0, g_dxDetachRan=0, g_dxDetachFaulted=-1;
+static int  g_dxGate5=-1, g_dxGate6=-1;
+static int32_t g_dxNumBefore=-1, g_dxNumAfterAppend=-1, g_dxNumAfterCall=-1;
+static double  g_dxLocBefore[3]={0,0,0}, g_dxLocAfter[3]={0,0,0};
+static int  g_dxLocBeforeOK=0, g_dxLocAfterOK=0;
+static int  g_dxCtlBefore=-1, g_dxCtlAfterAppend=-1;
+static int  g_dxNegRan=0, g_dxNegMoved=-1;
+static int  g_dxMovedFlag=-1;
+
+// ---- readouts ------------------------------------------------------------------------------------
+// Everything here is a guarded READ. A field that does not resolve prints NOT RESOLVED as a distinct
+// state and NEVER a zero -- an unresolved offset must never be able to look like "the value is 0".
+static int DxNameEq(const char* a,const char* b){   // ASCII case-fold; <cctype> is not included by this TU
+    if(!a||!b) return 0;
+    for(;;){ char x=*a++, y=*b++;
+        if(x>='A'&&x<='Z') x=(char)(x-'A'+'a');
+        if(y>='A'&&y<='Z') y=(char)(y-'A'+'a');
+        if(x!=y) return 0;
+        if(!x) return 1; }
+}
+static int DxHeroLoc(uintptr_t hero,double* out){
+    if(!hero||!GcAlive(hero)) return 0;
+    uint32_t rc=PropOffsetSuper(ClassOf(hero),"RootComponent");
+    if(rc==0xFFFFFFFF||!SafeReadable((void*)(hero+rc),8)) return 0;
+    uintptr_t r=*(uintptr_t*)(hero+rc); if(!LooksLikePtr(r)||!GcAlive(r)) return 0;
+    uint32_t lo=PropOffsetSuper(ClassOf(r),"RelativeLocation");
+    if(lo==0xFFFFFFFF||!SafeReadable((void*)(r+lo),24)) return 0;
+    double* P=(double*)(r+lo); out[0]=P[0]; out[1]=P[1]; out[2]=P[2]; return 1;
+}
+static void DxArr(const char* tag,uintptr_t comp,uint32_t off,const char* nm){
+    if(off==0xFFFFFFFF){ Markerf("[DX] %s %-16s *** NOT RESOLVED BY NAME -- this is NOT an empty array ***\r\n",tag,nm); return; }
+    if(!SafeReadable((void*)(comp+off),16)){ Markerf("[DX] %s %-16s @0x%-4X UNREADABLE -- instrument, not a zero\r\n",tag,nm,off); return; }
+    uintptr_t d=*(uintptr_t*)(comp+off); int32_t n=*(int32_t*)(comp+off+8), m=*(int32_t*)(comp+off+12);
+    Markerf("[DX] %s %-16s @0x%-4X Data=0x%llX Num=%d Max=%d%s\r\n",tag,nm,off,(unsigned long long)d,n,m,
+            (n>0&&LooksLikePtr(d)&&SafeReadable((void*)d,8))?"":" (elements unreadable)");
+    if(n>0&&LooksLikePtr(d)&&SafeReadable((void*)d,(size_t)(n<8?n:8)*8)){
+        for(int i=0;i<n&&i<8;i++){ uintptr_t e=*(uintptr_t*)(d+(size_t)i*8); char cn[96]="?";
+            if(LooksLikePtr(e)&&GcAlive(e)){ uintptr_t c=ClassOf(e); if(c) GetFNameStr(NameId(c),cn,sizeof(cn)); }
+            else strncpy_s(cn,sizeof(cn),LooksLikePtr(e)?"(not a live UObject)":"(null/garbage)",_TRUNCATE);
+            Markerf("[DX] %s   [%d] = 0x%llX  %s\r\n",tag,i,(unsigned long long)e,cn); }
+    }
+}
+static void DxState(const char* when){
+    uintptr_t comp=g_rdComp;
+    Markerf("[DX] ---- state @ %s ----\r\n",when);
+    DxArr(when,comp,g_dxArrOff,"PlayersAttached");
+    { uint32_t o=PropOffsetSuper(ClassOf(comp),"PlayersInside"); DxArr(when,comp,o,"PlayersInside"); }
+    { uint32_t o=PropOffsetSuper(ClassOf(comp),"PlayersInsideCount");
+      if(o==0xFFFFFFFF) Markerf("[DX] %s PlayersInsideCount *** NOT RESOLVED BY NAME ***\r\n",when);
+      else Markerf("[DX] %s PlayersInsideCount@0x%X=%d\r\n",when,o,
+                   SafeReadable((void*)(comp+o),4)?*(int32_t*)(comp+o):-999); }
+    if(g_dxHero&&GcAlive(g_dxHero)){
+        double L[3]={0,0,0}; int ok=DxHeroLoc(g_dxHero,L);
+        if(ok) Markerf("[DX] %s HERO '%s' 0x%llX loc=(%.1f, %.1f, %.1f)\r\n",when,g_dxHeroName,
+                       (unsigned long long)g_dxHero,L[0],L[1],L[2]);
+        else   Markerf("[DX] %s HERO location UNREADABLE -- instrument limit, NOT a zero\r\n",when);
+        // HeroPredropHidden: reflected on ALokiHeroCharacter, and SetPredropHidden (0x5599040) writes
+        // the byte at hero+0x1BE8.  Print BOTH so the by-name offset and the disassembly cross-check.
+        uint32_t ph=PropOffsetSuper(ClassOf(g_dxHero),"HeroPredropHidden");
+        int phv=(ph!=0xFFFFFFFF&&SafeReadable((void*)(g_dxHero+ph),1))?(int)*(uint8_t*)(g_dxHero+ph):-1;
+        int raw=SafeReadable((void*)(g_dxHero+0x1BE8),1)?(int)*(uint8_t*)(g_dxHero+0x1BE8):-1;
+        Markerf("[DX] %s HeroPredropHidden by-name@0x%X=%d | disasm-derived 0x1BE8=%d | offsets %s\r\n",
+                when,ph,phv,raw,(ph==0x1BE8)?"AGREE":"*** DISAGREE -- trust the by-name one ***");
+        uint32_t tg=PropOffsetSuper(ClassOf(g_dxHero),"Tags");
+        if(tg!=0xFFFFFFFF&&SafeReadable((void*)(g_dxHero+tg),16))
+            Markerf("[DX] %s Tags@0x%X Num=%d (disasm expects 0x1F0)\r\n",when,tg,*(int32_t*)(g_dxHero+tg+8));
+    } else Markerf("[DX] %s no live hero -- the movement readout is UNAVAILABLE (a coverage limit of "
+                   "the readout, NOT a result about the call)\r\n",when);
+}
+
+// ---- the APPEND -----------------------------------------------------------------------------------
+// Mirrors AuthPlayerEnterWorldAttachedToRidable's own tail at 0x55CD738..0x55CD76A, instruction for
+// instruction.  Because it calls the SAME ResizeGrow on the SAME array with the SAME element type, the
+// ABI and element size are correct BY CONSTRUCTION, and the buffer belongs to the game's allocator --
+// so a later Empty()/RemoveAt() frees a game pointer, not ours.
+//
+//   0x55CD738  movsxd rbx,[c+0x138]      old = Num
+//   0x55CD73F  lea    eax,[rbx+1]
+//   0x55CD742  mov    [c+0x138],eax      Num = old+1        (INCREMENT FIRST -- ResizeGrow asserts
+//                                                            Num >= OldNum: `cmp ebx,edx; jl <int3>`)
+//   0x55CD749  cmp    eax,[c+0x13c]
+//   0x55CD750  jbe    skip               unsigned (old+1) <= Max  ->  no grow
+//   0x55CD754  lea    rcx,[c+0x130] ; mov edx,ebx ; call 0x00F988D0
+//   0x55CD760  mov    rax,[c+0x130]      RE-READ Data (it moved)
+//   0x55CD767  mov    [rax+rbx*8],rdi    Data[old] = PlayerState
+static int DxAppendGuarded(uintptr_t comp,uint32_t off,uintptr_t ps){
+    uintptr_t arr=comp+off;
+    if(!SafeReadable((void*)arr,16)){ Marker("[DX] append: the array header is UNREADABLE -> REFUSING\r\n"); return 0; }
+    uintptr_t d0=*(uintptr_t*)(arr+0); int32_t n0=*(int32_t*)(arr+8), m0=*(int32_t*)(arr+12);
+    // Refuse on anything implausible rather than corrupt a live TArray.
+    if(n0<0||n0>64||m0<0||m0>4096||n0>m0){
+        Markerf("[DX] append: implausible header (Num=%d Max=%d) -> REFUSING. Nothing was written.\r\n",n0,m0); return 0; }
+    if(n0>0&&(!LooksLikePtr(d0)||!SafeReadable((void*)d0,(size_t)n0*8))){
+        Marker("[DX] append: Num>0 but Data is not a readable buffer -> REFUSING\r\n"); return 0; }
+    if(d0!=0&&!LooksLikePtr(d0)){ Marker("[DX] append: Data is neither null nor a plausible pointer -> REFUSING\r\n"); return 0; }
+    g_dxNumBefore=n0;
+    Markerf("[DX] append: BEFORE Data=0x%llX Num=%d Max=%d ; appending PS=0x%llX at index %d\r\n",
+            (unsigned long long)d0,n0,m0,(unsigned long long)ps,n0);
+    int32_t old=n0;
+    *(int32_t*)(arr+8)=old+1;                                   // 0x55CD742
+    if((uint32_t)(old+1) > (uint32_t)m0){                       // 0x55CD749/50, unsigned, jbe skips
+        ResizeGrow_t f=(ResizeGrow_t)(g_modBase+kResizeGrowRva);
+        Markerf("[DX] append: (old+1)=%d > Max=%d -> calling the GAME'S OWN ResizeGrow at "
+                "base+0x%llX(arr=0x%llX, OldNum=%d)\r\n",old+1,m0,
+                (unsigned long long)kResizeGrowRva,(unsigned long long)arr,old);
+        f((void*)arr,old);                                      // 0x55CD75B
+    } else Marker("[DX] append: Max already covers it -> no ResizeGrow needed\r\n");
+    uintptr_t d1=*(uintptr_t*)(arr+0); int32_t m1=*(int32_t*)(arr+12);
+    if(!LooksLikePtr(d1)||!SafeReadable((void*)(d1+(size_t)old*8),8)){
+        *(int32_t*)(arr+8)=n0;                                  // undo: leave the array as we found it
+        Markerf("[DX] append: *** ResizeGrow did not produce a writable slot (Data=0x%llX Max=%d). Num "
+                "RESTORED to %d, element NOT written, detach will NOT be called. ***\r\n",
+                (unsigned long long)d1,m1,n0);
+        return 0; }
+    *(uintptr_t*)(d1+(size_t)old*8)=ps;                         // 0x55CD767
+    int32_t n1=*(int32_t*)(arr+8);
+    uintptr_t rb=*(uintptr_t*)(d1+(size_t)old*8);
+    g_dxNumAfterAppend=n1;
+    Markerf("[DX] append: AFTER Data=0x%llX Num=%d Max=%d ; readback [%d]=0x%llX  -> %s\r\n",
+            (unsigned long long)d1,n1,m1,old,(unsigned long long)rb,
+            (n1==old+1&&rb==ps)?"READBACK OK":"*** READBACK FAILED ***");
+    return (n1==old+1&&rb==ps)?1:0;
+}
+static int DxAppend(uintptr_t comp,uint32_t off,uintptr_t ps){
+    int r=0;
+    __try { r=DxAppendGuarded(comp,off,ps); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[DX] *** FAULT inside the append -- fault=%s. The array may be in a partially "
+                "modified state; the detach will NOT be called. ***\r\n",DP_FAULT);
+        r=0; }
+    return r;
+}
+
+// ---- the reflected calls --------------------------------------------------------------------------
+// GATE 5, read out directly: ALokiPlayerState::GetLokiCharacter() is a real reflected getter (impl
+// 0x56BE0D0, [M] record table) and it is EXACTLY what the detach calls at 0x55CCD32.
+static uintptr_t DxGetHeroOf(uintptr_t ps,const char* tag){
+    if(!g_dxGlcFn||!LooksLikePtr(ps)||!GcAlive(ps)) return 0;
+    uintptr_t th=SafeReadable((void*)(g_dxGlcFn+UFUNC_FUNC),8)?*(uintptr_t*)(g_dxGlcFn+UFUNC_FUNC):0;
+    if(!LooksLikePtr(th)) return 0;
+    int np=PdWalkParams(g_dxGlcChild,tag);
+    int retIx=-1; for(int k=0;k<np;k++) if(g_pdP[k].isRet) retIx=k;
+    memset(g_pdparms,0,sizeof(g_pdparms)); memset(g_rbuf,0,sizeof(g_rbuf));
+    bool flt=CallNativeGuarded((void*)g_dxGlcFn,th,g_dxGlcChild,(void*)ps,g_pdparms,g_rbuf);
+    uintptr_t viaR=(uintptr_t)g_rbuf[0];
+    uintptr_t viaP=(retIx>=0&&g_pdP[retIx].off+8<=sizeof(g_pdparms))?*(uintptr_t*)(g_pdparms+g_pdP[retIx].off):0;
+    uintptr_t h=LooksLikePtr(viaR)?viaR:viaP;
+    Markerf("[DX] %s: fault=%s  g_rbuf=0x%llX  paramsRet=0x%llX  -> hero=0x%llX\r\n",tag,
+            flt?"*** YES ***":"no",(unsigned long long)viaR,(unsigned long long)viaP,(unsigned long long)h);
+    if(flt) return 0;
+    return (LooksLikePtr(h)&&GcAlive(h))?h:0;
+}
+// One place decides which actor goes into LandingLocationActor, so the three call sites cannot drift.
+//   KDXLANDING 0 -> nullptr (the detach substitutes [comp+0xB8], its owner, itself)
+//   KDXLANDING 1 -> the pod, explicitly
+//   KDXLANDING 2 -> the alternate actor resolved by class; the POD if that did not resolve, which is
+//                   a DIFFERENT experiment and is declared loudly at resolve time rather than silently.
+// A null [comp+0xB8] also forces the pod: handing a 963-byte GetLandingTeleportLocation a null actor
+// is a fault risk this arm declines to take.
+static uintptr_t DxLandingArg(){
+    if(KDXLANDING==2) return g_dxAltLanding ? g_dxAltLanding : g_rdPod;
+    if(KDXLANDING==1) return g_rdPod;
+    return g_dxLandingActor ? 0 : g_rdPod;
+}
+static int DxCallDetach(uintptr_t ps,uintptr_t landing,const char* tag){
+    if(!g_dxDetachFn){ Markerf("[DX] %s: AuthPlayerDetachPlayerFromRidable did not resolve -> NOT "
+                               "CALLED (a resolve statement, not a null result)\r\n",tag); return DPCALL_NOTRUN; }
+    if(!GcAlive(g_rdComp)){ Markerf("[DX] %s: the component is not a live UObject -> NOT CALLED\r\n",tag); return DPCALL_NOTRUN; }
+    uintptr_t th=SafeReadable((void*)(g_dxDetachFn+UFUNC_FUNC),8)?*(uintptr_t*)(g_dxDetachFn+UFUNC_FUNC):0;
+    if(!LooksLikePtr(th)){ Markerf("[DX] %s: no Func thunk -> NOT CALLED\r\n",tag); return DPCALL_NOTRUN; }
+    int np=PdWalkParams(g_dxDetachChild,tag);
+    // BIND BY NAME. Both parameters are ObjectProperty, so "first ObjectProperty" -- the binding
+    // RM_RIDEABLE's single-object arms could get away with -- would be a coin flip here.
+    int psIx=-1,laIx=-1;
+    for(int k=0;k<np;k++){
+        if(g_pdP[k].isRet) continue;
+        if(DxNameEq(g_pdP[k].name,"PlayerState")) psIx=k;
+        else if(DxNameEq(g_pdP[k].name,"LandingLocationActor")) laIx=k;
+    }
+    if(psIx<0||laIx<0){   // positional fallback, declared loudly
+        int o=0; for(int k=0;k<np&&o<2;k++){ if(g_pdP[k].isRet) continue;
+            if(strstr(g_pdP[k].type,"ObjectProperty")){ if(o==0&&psIx<0)psIx=k; else if(o==1&&laIx<0)laIx=k; o++; } }
+        Markerf("[DX] %s: name binding INCOMPLETE (ps=%d land=%d) -> fell back to declaration order. "
+                "The UHT oracle says (ALokiPlayerState PlayerState, const AActor LandingLocationActor).\r\n",
+                tag,psIx,laIx);
+    }
+    if(psIx<0){ Markerf("[DX] %s: no PlayerState slot bound -- REFUSING to call with a zeroed block, "
+                        "which would reproduce exactly the GATE-1 silence this mode exists to escape\r\n",tag);
+                return DPCALL_NOTRUN; }
+    memset(g_pdparms,0,sizeof(g_pdparms)); memset(g_rbuf,0,sizeof(g_rbuf));
+    *(uintptr_t*)(g_pdparms+g_pdP[psIx].off)=ps;
+    if(laIx>=0) *(uintptr_t*)(g_pdparms+g_pdP[laIx].off)=landing;   // 0 => the detach uses [comp+0xB8]
+    Markerf("[DX] %s CALL: fn=0x%llX thunk=0x%llX obj=0x%llX '%s' | PlayerState slot[%d]@0x%X=0x%llX | "
+            "LandingLocationActor slot[%d]@0x%X=0x%llX (%s)\r\n",tag,
+            (unsigned long long)g_dxDetachFn,(unsigned long long)th,(unsigned long long)g_rdComp,
+            g_rdCompName,psIx,g_pdP[psIx].off,(unsigned long long)ps,
+            laIx,(laIx>=0)?g_pdP[laIx].off:0,(unsigned long long)landing,
+            landing?g_dxLandingName:"null -> the detach substitutes [comp+0xB8] itself");
+    bool flt=CallNativeGuarded((void*)g_dxDetachFn,th,g_dxDetachChild,(void*)g_rdComp,g_pdparms,g_rbuf);
+    Markerf("[DX] %s AFTER: fault=%s. ⚠ 'returned without fault' IS NOT A RESULT -- PlayersAttached.Num "
+            "and the hero's location are.\r\n",tag,flt?"*** YES ***":"no");
+    return flt?DPCALL_FAULT:DPCALL_OK;
+}
+static int DxMoved(const double* a,const double* b){
+    double dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];
+    double d2=dx*dx+dy*dy+dz*dz;
+    return d2>1.0 ? 1 : 0;    // 1 uu -- far below anything a teleport produces, far above float noise
+}
+
+// ---- the ladder ------------------------------------------------------------------------------------
+static void DxLadderStep(){
+    DWORD now=GetTickCount();
+    long step=InterlockedCompareExchange(&g_dxStep,0,0);
+    if(g_dxLastMs&&now-g_dxLastMs<(DWORD)KDXSTEPMS) return;
+    g_dxLastMs=now;
+    switch(step){
+    case 0: {
+        Marker("[DX] ============ RM_DISMOUNT: GET THE HERO OUT OF THE POD ============\r\n");
+        Markerf("[DX] cfg arms=0x%02X stepMs=%d landing=%d forceOff=%d\r\n",
+                (unsigned)KDXARMS,(int)KDXSTEPMS,(int)KDXLANDING,(int)KDXFORCEOFF);
+        Marker("[DX] PLAN: append the PlayerState to PlayersAttached with the game's own ResizeGrow,\r\n"
+               "[DX] then call AuthPlayerDetachPlayerFromRidable. The detach's ONLY gate we do not\r\n"
+               "[DX] already satisfy is that array being non-empty and containing the PlayerState.\r\n");
+        if(!g_rdResolved){ Marker("[DX] resolve failed -> nothing to do. This is a RESOLVE statement, "
+                                  "not a result about the dismount.\r\n"); g_done=1; return; }
+        // PlayersAttached, BY NAME, cross-checked against the disassembly.
+        g_dxArrOff=PropOffsetSuper(ClassOf(g_rdComp),"PlayersAttached");
+        if(g_dxArrOff==0xFFFFFFFF){
+            Marker("[DX] *** PlayersAttached did NOT resolve by name on the live class. REFUSING to "
+                   "write at a hardcoded offset. ***\r\n"); g_done=1; return; }
+        Markerf("[DX] PlayersAttached by-name @0x%X vs the wall's own `lea rcx,[r14+0x130]` at "
+                "0x55CD754 -> %s\r\n",g_dxArrOff,
+                (g_dxArrOff==kPlayersAttachedExpected)?"AGREE (two independent instruments)":
+                                                       "*** DISAGREE ***");
+        if(g_dxArrOff!=kPlayersAttachedExpected&&!KDXFORCEOFF){
+            Marker("[DX] *** the two instruments disagree on the offset -> REFUSING to write. Rebuild "
+                   "with -DKDXFORCEOFF=1 only after deciding which is right. ***\r\n"); g_done=1; return; }
+        { void* fn=nullptr; uintptr_t th=0,ch=0;
+          ResolveFuncNative(ClassOf(g_rdComp),"AuthPlayerDetachPlayerFromRidable",&fn,&th,&ch);
+          g_dxDetachFn=(uintptr_t)fn; g_dxDetachChild=ch; }
+        if(!g_dxDetachFn){ Marker("[DX] *** AuthPlayerDetachPlayerFromRidable did not resolve on the "
+                                  "component's class chain -> ABORT ***\r\n"); g_done=1; return; }
+        // The landing actor the detach would pick for itself, printed so the log says what it will use.
+        if(SafeReadable((void*)(g_rdComp+0xB8),8)){
+            uintptr_t o=*(uintptr_t*)(g_rdComp+0xB8);
+            if(LooksLikePtr(o)&&GcAlive(o)){ uintptr_t c=ClassOf(o); if(c) GetFNameStr(NameId(c),g_dxLandingName,sizeof(g_dxLandingName));
+                Markerf("[DX] [comp+0xB8] (the detach's own default LandingActor) = 0x%llX cls=%s\r\n",
+                        (unsigned long long)o,g_dxLandingName); g_dxLandingActor=o; }
+            else Markerf("[DX] [comp+0xB8] = 0x%llX is NOT a live UObject -- passing null would hand a "
+                         "963-byte GetLandingTeleportLocation a null actor, so the POD is passed "
+                         "explicitly instead.\r\n",(unsigned long long)o);
+        }
+        // KDXLANDING==2: an ALTERNATE landing actor, resolved BY CLASS off the live world. The
+        // prediction is registered here, BEFORE the call, so the outcome cannot be reinterpreted after.
+        // KDXLANDING==2: an ALTERNATE landing actor, ENUMERATED and PRINTED rather than picked
+        // silently. The first cut used FindInstByClass and returned nothing, and its single message
+        // could not separate "no such actor" from "found one but it failed GcAlive" -- the
+        // class-lookup blind spot this project has now recorded five times. So this shows its work.
+        if(KDXLANDING==2){
+            static const char* kWant[] = { "LokiPlayerStart", "PlayerStart", "TrainingStart" };
+            uintptr_t oo=g_modBase+kObjObjectsRva; int nfound=0, nalive=0, nscanned=0;
+            if(SafeReadable((void*)oo,0x18)){
+                uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+                if(LooksLikePtr(objectsPtr)&&numEl>0&&numEl<8000000){
+                    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+                    for(int ci=0;ci<numChunks&&nfound<12;ci++){
+                        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+                        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+                        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+                        for(int k2=0;k2<cnt&&nfound<12;k2++){
+                            uintptr_t item=chunk+(uintptr_t)k2*ITEMSTRIDE;
+                            if(!SafeReadable((void*)item,8))continue;
+                            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+                            nscanned++;
+                            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+                            char cn[128]; if(!GetFNameStr(NameId(cls),cn,sizeof(cn)))continue;
+                            int hit=0; for(int q=0;q<3;q++) if(strstr(cn,kWant[q])){ hit=1; break; }
+                            if(!hit)continue;
+                            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+                            if(strncmp(on,"Default__",9)==0)continue;
+                            nfound++;
+                            int alive=GcAlive(obj)?1:0; if(alive)nalive++;
+                            double L[3]={0,0,0}; int ok=DxHeroLoc(obj,L);
+                            Markerf("[DX] land-cand[%d] 0x%llX cls=%-34s obj=%-40s alive=%d loc=%s(%.1f, %.1f, %.1f)\r\n",
+                                    nfound-1,(unsigned long long)obj,cn,on,alive,ok?"":"UNREADABLE ",L[0],L[1],L[2]);
+                            if(alive&&!g_dxAltLanding){ g_dxAltLanding=obj;
+                                GetFNameStr(NameId(cls),g_dxLandingName,sizeof(g_dxLandingName)); }
+                        }
+                    }
+                }
+            }
+            Markerf("[DX] land-scan: %d candidate(s) matching {LokiPlayerStart,PlayerStart,TrainingStart}, %d GC-alive, over %d objects walked\r\n",nfound,nalive,nscanned);
+            if(!g_dxAltLanding)
+                Marker("[DX] *** KDXLANDING=2 found NO live alternate actor -> the arm passes the POD, which is a DIFFERENT experiment. Do NOT read the result as a test of the LandingLocationActor argument. ***\r\n");
+            else {
+                double L[3]={0,0,0}; int ok=DxHeroLoc(g_dxAltLanding,L);
+                Markerf("[DX] KDXLANDING=2 chose LandingLocationActor = 0x%llX cls=%s loc=%s(%.1f, %.1f, %.1f)\r\n",
+                        (unsigned long long)g_dxAltLanding,g_dxLandingName,ok?"":"UNREADABLE ",L[0],L[1],L[2]);
+                Marker("[DX] PRE-REGISTERED PREDICTION: if GetLandingTeleportLocation consumes its "
+                       "LandingLocationActor argument, the hero lands NEAR THAT ACTOR, not at the flying "
+                       "pod (which is 10+ million uu away by now, so the two are not confusable). If it "
+                       "lands at the pod anyway, the argument is ignored and the landing point is a "
+                       "property of the component. Both are results.\r\n");
+            }
+        }
+        Markerf("[DX] detachFn=0x%llX child=0x%llX | comp=0x%llX(%s) pod=0x%llX(%s)\r\n",
+                (unsigned long long)g_dxDetachFn,(unsigned long long)g_dxDetachChild,
+                (unsigned long long)g_rdComp,g_rdCompName,(unsigned long long)g_rdPod,g_rdPodName);
+        g_dxStep=1; return; }
+    case 1: {
+        // GATE 5 + GATE 6, read out per candidate BEFORE anything is written. Both are silent bails in
+        // the detach, so measuring them here is what makes a null attributable.
+        Marker("[DX] --- D0h: GATE 5 (PS->GetLokiCharacter() != null) and GATE 6 (that hero IsA "
+               "LokiHeroCharacter) read out per candidate, BEFORE any write. ---\r\n");
+        { void* fn=nullptr; uintptr_t th=0,ch=0;
+          ResolveFuncNative(ClassOf(g_rdPSCand[0]),"GetLokiCharacter",&fn,&th,&ch);
+          g_dxGlcFn=(uintptr_t)fn; g_dxGlcChild=ch; }
+        if(!g_dxGlcFn) Marker("[DX] GetLokiCharacter did not resolve -> GATE 5 is UNMEASURED here (a "
+                              "coverage limit; the detach still tests it).\r\n");
+        int pick=-1;
+        for(int i=0;i<g_rdPSCandN;i++){
+            char tag[64]; _snprintf_s(tag,sizeof(tag),_TRUNCATE,"D0h GetLokiCharacter(cand[%d])",i);
+            uintptr_t h=DxGetHeroOf(g_rdPSCand[i],tag);
+            char chain[256]; int isHero = h?(PhChainHas(ClassOf(h),"LokiHeroCharacter",chain,sizeof(chain))?1:0):-1;
+            char hn[96]="-"; if(h){ uintptr_t c=ClassOf(h); if(c) GetFNameStr(NameId(c),hn,sizeof(hn)); }
+            Markerf("[DX] cand[%d] ps=0x%llX -> hero=0x%llX cls=%s | GATE5 %s | GATE6 IsA(LokiHeroCharacter) %s\r\n",
+                    i,(unsigned long long)g_rdPSCand[i],(unsigned long long)h,hn,
+                    h?"PASS":"*** FAIL (the detach would take the REMOVE-only tail) ***",
+                    (isHero<0)?"n/a":(isHero?"PASS":"*** FAIL (REMOVE-only tail) ***"));
+            if(h&&isHero==1&&pick<0){ pick=i; g_dxHero=h; strncpy_s(g_dxHeroName,sizeof(g_dxHeroName),hn,_TRUNCATE);
+                                      g_dxGate5=1; g_dxGate6=1; }
+        }
+        if(pick<0){
+            pick=0; g_dxGate5=0; g_dxGate6=0;
+            g_dxHero=g_rdHero; if(g_rdHero) strncpy_s(g_dxHeroName,sizeof(g_dxHeroName),g_rdHeroName,_TRUNCATE);
+            Marker("[DX] *** NO candidate passes both GATE 5 and GATE 6. Proceeding with cand[0] anyway: "
+                   "the detach will then take the REMOVE-only tail, which STILL proves GATE 3+4 were "
+                   "passed (PlayersAttached.Num 1 -> 0) even though the hero cannot move. Read the "
+                   "result that way and NOT as 'the dismount failed'. ***\r\n");
+        }
+        g_dxPSIx=pick; g_dxPS=g_rdPSCand[pick];
+        Markerf("[DX] picked cand[%d] ps=0x%llX hero=0x%llX '%s' -- reason: %s\r\n",pick,
+                (unsigned long long)g_dxPS,(unsigned long long)g_dxHero,g_dxHeroName,
+                (g_dxGate5==1)?"the ONLY/first candidate passing both GATE 5 and GATE 6":
+                               "no candidate qualified; cand[0] by default");
+        RdPrintValidity("PlayerState(picked)",g_dxPS);   // GATE 2, the detach's own test
+        DxState("baseline");
+        g_dxLocBeforeOK=DxHeroLoc(g_dxHero,g_dxLocBefore);
+        g_dxStep=2; return; }
+    case 2:
+        if(!(KDXARMS&0x01)){ Marker("[DX] D0c disabled -> skipped. ⚠ Without it a silent detach is not "
+                                    "attributable: 'it bailed' and 'the primitive never dispatched on "
+                                    "this component' read identically.\r\n"); g_dxStep=3; return; }
+        Marker("[DX] --- D0c (DISPATCH POSITIVE CONTROL): ContainsPlayer(PS) on the SAME component "
+               "through the SAME primitive. ⚠ It scans PlayersInside (+0x120), NOT PlayersAttached "
+               "(+0x130) -- MEASURED at 0x55D0270 -- so it will read FALSE both before and after the "
+               "append, and that false is EXPECTED, not a failure. Its job is to prove the call "
+               "dispatches here at all. ---\r\n");
+        RdContains("D0c ContainsPlayer(baseline)",&g_dxCtlBefore);
+        g_rdCtlRan=1;
+        g_dxStep=3; return;
+    case 3: {
+        if(!(KDXARMS&0x02)){ Marker("[DX] D1 disabled -> the pre-append NEGATIVE CONTROL is SKIPPED. "
+                                    "D3's result is then not separable from 'the detach works on an "
+                                    "empty array too'.\r\n"); g_dxStep=4; return; }
+        Marker("[DX] --- D1 (NEGATIVE CONTROL, within-run, same object, same primitive): call the "
+               "detach BEFORE the append, with PlayersAttached EMPTY. PRE-REGISTERED PREDICTION: "
+               "nothing happens -- GATE 3 bails at 0x55CCD01, the hero does not move, Num stays 0. "
+               "If the hero DOES move here, the array is not the gate and the whole S131 model is "
+               "wrong -- which would be the biggest result of the session. ---\r\n");
+        double a[3]={0,0,0},b[3]={0,0,0}; int oka=DxHeroLoc(g_dxHero,a);
+        int r=DxCallDetach(g_dxPS,DxLandingArg(),"D1 detach(empty array)");
+        g_dxNegRan=(r==DPCALL_OK)?1:0;
+        int okb=DxHeroLoc(g_dxHero,b);
+        g_dxNegMoved=(oka&&okb)?DxMoved(a,b):-1;
+        Markerf("[DX] D1 RESULT: hero moved=%s  (before=(%.1f,%.1f,%.1f) after=(%.1f,%.1f,%.1f))\r\n",
+                (g_dxNegMoved<0)?"UNREADABLE":(g_dxNegMoved?"*** YES -- MODEL REFUTED ***":"no (as predicted)"),
+                a[0],a[1],a[2],b[0],b[1],b[2]);
+        DxArr("D1-after",g_rdComp,g_dxArrOff,"PlayersAttached");
+        g_dxStep=4; return; }
+    case 4: {
+        if(!(KDXARMS&0x04)){ Marker("[DX] D2 disabled -> NO append is performed and D3 cannot succeed.\r\n"); g_dxStep=5; return; }
+        Marker("[DX] --- D2 (THE WRITE): append the PlayerState to PlayersAttached, mirroring the "
+               "wall's own tail at 0x55CD738..0x55CD76A instruction for instruction, using the GAME'S "
+               "OWN ResizeGrow so the buffer belongs to the game's allocator. Risk class DATA. ---\r\n");
+        g_dxAppendOK=DxAppend(g_rdComp,g_dxArrOff,g_dxPS);
+        DxArr("D2-after",g_rdComp,g_dxArrOff,"PlayersAttached");
+        if(!g_dxAppendOK) Marker("[DX] *** the append did not read back -> D3 will NOT be called. This "
+                                 "is an APPEND failure, not a statement about the detach. ***\r\n");
+        // Pre-registered: ContainsPlayer must STILL read false. It scans a different array, so a
+        // true here would mean the append landed in PlayersInside -- the one place it must not.
+        if(KDXARMS&0x01){ RdContains("D2c ContainsPlayer(after append -- MUST still be false)",&g_dxCtlAfterAppend);
+            Markerf("[DX] D2c: %s\r\n",(g_dxCtlAfterAppend==0)?"false, as predicted -- the append did NOT "
+                    "touch PlayersInside":"*** NOT false -- the append landed in the WRONG array, or "
+                    "ContainsPlayer does not read what the disassembly says ***"); }
+        g_dxStep=5; return; }
+    case 5: {
+        if(!(KDXARMS&0x08)){ Marker("[DX] D3 disabled -> the detach is NOT called.\r\n"); g_dxStep=6; return; }
+        if(!g_dxAppendOK){ Marker("[DX] D3 skipped: the append did not read back.\r\n"); g_dxStep=6; return; }
+        Marker("[DX] --- D3 (HEADLINE): AuthPlayerDetachPlayerFromRidable(PlayerState, LandingActor). "
+               "The body is ALL-REAL past GATE 4 -- SetActorEnableCollision(true), "
+               "SetPredropHidden(false), GetLokiCharacterMovement, GetLandingTeleportLocation and "
+               "SetActorLocation are every one a real body; the two 0xF7EC20 folds are void side "
+               "effects whose returns are never tested. THE HERO'S POSITION IS THE RESULT. ---\r\n");
+        g_dxLocBeforeOK=DxHeroLoc(g_dxHero,g_dxLocBefore);
+        int r=DxCallDetach(g_dxPS,DxLandingArg(),"D3 detach(PS in array)");
+        g_dxDetachRan=(r!=DPCALL_NOTRUN)?1:0; g_dxDetachFaulted=(r==DPCALL_FAULT)?1:0;
+        g_dxLocAfterOK=DxHeroLoc(g_dxHero,g_dxLocAfter);
+        g_dxMovedFlag=(g_dxLocBeforeOK&&g_dxLocAfterOK)?DxMoved(g_dxLocBefore,g_dxLocAfter):-1;
+        if(SafeReadable((void*)(g_rdComp+g_dxArrOff+8),4)) g_dxNumAfterCall=*(int32_t*)(g_rdComp+g_dxArrOff+8);
+        DxState("after D3");
+        g_dxStep=6; return; }
+    case 6: {
+        if(!(KDXARMS&0x10)){ g_dxStep=7; return; }
+        // A second cycle on the NEXT PlayerState candidate, if one exists. Cheap, and it turns a
+        // single observation into two independent ones on different arguments.
+        int next=-1; for(int i=0;i<g_rdPSCandN;i++) if(i!=g_dxPSIx){ next=i; break; }
+        if(next<0){ Marker("[DX] D4: only one PlayerState candidate -> no second cycle (a coverage "
+                           "statement, not a result).\r\n"); g_dxStep=7; return; }
+        Markerf("[DX] --- D4: a SECOND full cycle on cand[%d], a different PlayerState. ---\r\n",next);
+        uintptr_t ps2=g_rdPSCand[next];
+        if(DxAppend(g_rdComp,g_dxArrOff,ps2)){
+            double a[3]={0,0,0},b[3]={0,0,0}; int oka=DxHeroLoc(g_dxHero,a);
+            DxCallDetach(ps2,DxLandingArg(),"D4 detach(cand2)");
+            int okb=DxHeroLoc(g_dxHero,b);
+            Markerf("[DX] D4 RESULT: Num=%d hero moved=%s\r\n",
+                    SafeReadable((void*)(g_rdComp+g_dxArrOff+8),4)?*(int32_t*)(g_rdComp+g_dxArrOff+8):-999,
+                    (oka&&okb)?(DxMoved(a,b)?"YES":"no"):"UNREADABLE");
+        }
+        g_dxCycle=2;
+        g_dxStep=7; return; }
+    case 7:
+    default: {
+        if(KDXARMS&0x20){
+            // If the detach bailed, OUR entry is still in the game's array. Take it back out -- the
+            // game's own Remove already ran on every path that got past GATE 4, so a Num that is still
+            // 1 means the entry is ours and nothing else will ever clear it (KickPlayersFromPod is
+            // dead on this client: LokiIsServer is a hardcoded `return false`).
+            if(g_dxArrOff!=0xFFFFFFFF&&GcAlive(g_rdComp)&&SafeReadable((void*)(g_rdComp+g_dxArrOff),16)){
+                int32_t n=*(int32_t*)(g_rdComp+g_dxArrOff+8);
+                if(n>0&&g_dxNumBefore>=0&&n!=g_dxNumBefore){
+                    Markerf("[DX] D5 restore: PlayersAttached.Num is %d but was %d before this arm -- the "
+                            "detach did NOT remove our entry, so it is removed here. (Values above were "
+                            "printed BEFORE this restore.)\r\n",n,g_dxNumBefore);
+                    *(int32_t*)(g_rdComp+g_dxArrOff+8)=g_dxNumBefore;
+                } else Markerf("[DX] D5 restore: nothing to undo (Num=%d, was %d).\r\n",n,g_dxNumBefore);
+            }
+        }
+        Marker("[DX] ============ game-thread arms COMPLETE ============\r\n");
+        g_done=1; return; }
+    }
+}
+static void DoDismount(){
+    __try { DxLadderStep(); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[DX] *** FAULT inside ladder step %ld -- halting. fault=%s ***\r\n",(long)g_dxStep,DP_FAULT);
+        g_done=1; }
+}
+static void DxFinalReport(){
+    Marker("[DX] ---------------- RM_DISMOUNT SUMMARY ----------------\r\n");
+    Markerf("[DX] resolved=%d arrOff=0x%X | GATE5=%d GATE6=%d | D0c=%d D2c=%d | negRan=%d negMoved=%d | "
+            "append=%d NumBefore=%d NumAfterAppend=%d NumAfterCall=%d | detachRan=%d fault=%d moved=%d\r\n",
+            g_rdResolved,g_dxArrOff,g_dxGate5,g_dxGate6,g_dxCtlBefore,g_dxCtlAfterAppend,
+            g_dxNegRan,g_dxNegMoved,g_dxAppendOK,g_dxNumBefore,g_dxNumAfterAppend,g_dxNumAfterCall,
+            g_dxDetachRan,g_dxDetachFaulted,g_dxMovedFlag);
+    if(g_dxLocBeforeOK&&g_dxLocAfterOK)
+        Markerf("[DX] hero before=(%.1f, %.1f, %.1f)  after=(%.1f, %.1f, %.1f)\r\n",
+                g_dxLocBefore[0],g_dxLocBefore[1],g_dxLocBefore[2],
+                g_dxLocAfter[0],g_dxLocAfter[1],g_dxLocAfter[2]);
+    if(!g_rdResolved){ Marker("[DX] VERDICT: NOT RESOLVED -- nothing was written and nothing was "
+                              "called. Not a statement about the dismount.\r\n"); return; }
+    if(g_dxCtlBefore<0){
+        Marker("[DX] *** VERDICT: SITTING VOID. D0c did not return a value, so the primitive is not "
+               "demonstrated on this component and D3's outcome is NOT attributable. ***\r\n"); return; }
+    if(g_dxNegMoved==1){
+        Marker("[DX] ***** VERDICT: THE NEGATIVE CONTROL MOVED THE HERO. The empty-array detach did "
+               "something, so PlayersAttached is NOT the gate and the S131 model is REFUTED. Do not "
+               "read D3 as a success -- re-derive the gate before anything else. *****\r\n"); return; }
+    if(!g_dxAppendOK){
+        Marker("[DX] VERDICT: THE APPEND FAILED -- the detach was not called. This localises to the "
+               "append/ResizeGrow, and says nothing about the detach.\r\n"); return; }
+    if(!g_dxDetachRan){ Marker("[DX] VERDICT: the detach was never called.\r\n"); return; }
+    if(g_dxDetachFaulted==1){ Markerf("[DX] VERDICT: the detach FAULTED (%s). That is a real result and "
+                                      "it localises inside the body, past GATE 4.\r\n",DP_FAULT); return; }
+    if(g_dxNumAfterCall==g_dxNumAfterAppend){
+        Marker("[DX] VERDICT: PlayersAttached.Num did NOT drop, so the body bailed at GATE 1/2/3/4 and "
+               "never reached its own Remove. Read the validity line for the PlayerState above: if it "
+               "PASSES, then GATE 3/4 is the remaining explanation -- i.e. the element we wrote is not "
+               "the pointer the scan compares against. Check the readback line.\r\n"); return; }
+    if(g_dxMovedFlag==1){
+        Marker("[DX] ***** VERDICT: THE HERO MOVED AND PlayersAttached.Num DROPPED TO 0. THE DISMOUNT "
+               "RAN. The pod's rider handoff is closed from the OTHER END: one data-class append is "
+               "all that separated a working detach from a dead one. Cross-check the hero location, "
+               "HeroPredropHidden and Tags lines above, and take a screenshot. *****\r\n"); return; }
+    if(g_dxMovedFlag==0&&(g_dxGate5!=1||g_dxGate6!=1)){
+        Marker("[DX] VERDICT: Num dropped to 0 (so the body ran PAST GATE 4 -- the append worked and "
+               "the array really is the gate) but the hero did not move, WHICH IS PREDICTED: GATE 5 or "
+               "GATE 6 was measured FAILING before the call, so the body took its REMOVE-only tail. "
+               "That is a positive result about the gate and a coverage limit on the hero, not a "
+               "failure of the dismount.\r\n"); return; }
+    Marker("[DX] VERDICT: Num dropped to 0 -- the body ran past GATE 4 -- but the hero did not move "
+           "even though GATE 5 and GATE 6 both read PASS before the call. That combination is NOT "
+           "predicted by the transcription and is the interesting case: it localises to "
+           "GetLandingTeleportLocation returning the hero's current position, or to SetActorLocation "
+           "refusing (it bails when RootComponent is null). Read the hero's RootComponent.\r\n");
+}
+
+
 // ---- S74 Path B: resolve the cheat object accessor + target RPC thunks (off-thread, before hooking) ----
 // Thunks are CLASS-level: resolve them off the native LokiPlayerCheats CDO's class (works even though the live
 // object is a BP subclass Comp_PlayerController_Cheats_C). The live `this` comes from GetLocalLokiPlayerCheatsBP
@@ -14650,6 +15264,52 @@ static DWORD WINAPI Worker(LPVOID){
             return 9; }
         return 0;
     }
+    // ★★★★★ S132 RM_DISMOUNT -- GET THE HERO OUT OF THE POD.
+    //   Appends the PlayerState to the rideable component's `PlayersAttached` using the GAME'S OWN
+    //   ResizeGrow, then calls `AuthPlayerDetachPlayerFromRidable` through the S55 direct
+    //   `UFunction.Func` thunk. Risk class DATA: two aligned TArray-header writes plus one element
+    //   store inside the game's own allocation. NO module-image write, NO PI hook, NO CDO poke.
+    //   Reuses RM_RIDEABLE's resolver verbatim (same pod, same component, same PlayerState set), so
+    //   the SAME staging is required: gft -> fo -> sp -> dropplane_b1only -> droppod-pe-cdopoke -> this.
+    if(kRunMode==RM_DISMOUNT){
+        Marker("[DX] RM_DISMOUNT (S132): the pod's rider handoff, driven from the OTHER END.\r\n"
+               "[DX] The fifth wall dies one TArray append short of attaching a rider. The detach is\r\n"
+               "[DX] gated on exactly that array and is otherwise ALL-REAL past its gates -- so the\r\n"
+               "[DX] append is performed here and the detach is called directly.\r\n"
+               "[DX] Inject into a STAGED TUTORIAL WORLD that already contains an INITIALISED pod\r\n"
+               "[DX] (gft -> fo -> sp -> dropplane_b1only -> droppod-pe-cdopoke -> this).\r\n");
+#if KFUNCSWAP
+        Marker("[DX] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        RdResolve();          // worker thread, before arming -- RM_RIDEABLE's resolver, unchanged
+        if(!g_rdResolved){
+            Marker("[DX] ABORT before arming: resolve failed. Nothing was written and nothing was "
+                   "called -- a RESOLVE statement, not a result about the dismount.\r\n");
+            DxFinalReport();
+            return 5; }
+        if(!FsArm()){ Marker("[DX] FAIL funcswap arm -- nothing was armed, nothing was written\r\n"); return 6; }
+        FsHold(KPDMODEHOLDMS);       // returns as soon as DoDismount sets g_done
+        FsDisarm();
+#else
+        // Same refusal as RM_RIDEABLE / RM_DROPPOD / RM_POOLSPAWN: the alternative delivery path is
+        // InstallHook(), a standing 5-byte `.text` patch at ProcessInternal, measured 10/10 lethal
+        // (S112, Fisher p = 0.00000008). This mode's whole premise is that it writes no module image.
+        Marker("[DX] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a standing .text patch.\r\n");
+        return 7;
+#endif
+        DxFinalReport();
+        Markerf("[DX] done (step=%ld resolved=%d append=%d detachRan=%d moved=%d called=%ld hitsGT=%ld)\r\n",
+                (long)g_dxStep,g_rdResolved,g_dxAppendOK,g_dxDetachRan,g_dxMovedFlag,
+                (long)g_called,(long)g_hitsGT);
+        // The exit code must agree with the marker. The ladder has 8 steps (0..7); IF IT GROWS ONE,
+        // THIS THRESHOLD MOVES WITH IT (the RM_PHASELADDER lesson, re-learned by RM_RIDEABLE).
+        if(g_dxStep<7){
+            Markerf("[DX] *** ALERT: the ladder did not reach its final step (stopped at %ld). Most "
+                    "likely game-thread STARVATION -- read FsHold's own verdict line first, and re-fly "
+                    "with KFSNAME=\"\" if the swap took no hits. Returning 9. ***\r\n",(long)g_dxStep);
+            return 9; }
+        return 0;
+    }
+
     if(kRunMode==RM_PLAY){
         Marker("[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)\r\n");
         if(!ResolvePlay()){ Marker("[PL] resolve failed -> abort\r\n"); return 0; }
