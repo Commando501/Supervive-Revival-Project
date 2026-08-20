@@ -2873,3 +2873,52 @@ SpawnDropPodForTeam runs, returns false  = bail 2
             └─ next: one live read of byte[CDO(BP_GemV2_C)+0x6C], then the one-byte CDO poke
             └─ then C8/C9, which have never been reached
 ```
+
+---
+
+## 27. FLOWN — THE RUNTIME CDO EQUALS THE COOKED DEFAULT. C7 IS [M] END TO END.
+
+**Date:** 2026-08-20. **One clean `-NoHook` MENU launch, read-only RPM, zero injection, zero writes,
+no tutorial staging.** PID 17736, base `0x7FF7C4050000`, 190,085 UObjects / 10,371 CDOs.
+Probe `tools/re/cdo_flag_readout.py` (predictions written in before the run); raw output preserved at
+`scratchpad/s130/evidence/cdo_flag_readout-s130-live.txt`.
+**Primary evidence: `docs/s130-actor-pool-gate-settled.md` §12.**
+
+**8/8 pre-registered predictions passed, 0 failures:**
+`Default__Actor` **1** · `Default__LokiDropPodBase` **1** · `Default__LokiDropPod` **1** ·
+`Default__BP_DropPod_C` **1** · `Default__LokiGem` **1** · `Default__BP_GemV2_C` **1** ·
+`Default__LokiHeroHeightIndicator` **0** · `Default__BP_HeroHeightIndicator_C` **0**.
+
+★★ **Two-sided control on `+0x6C`** (six read 1, two read 0, split exactly along the cooked value —
+the probe's own check prints *"targets differ"*, and would have declared the run VOID had they all
+matched). ★★ **`Default__Actor+0x6C = 1` is the disassembly and the live process meeting on one
+byte** (`AActor::AActor 0x03371841 mov byte ptr [rdi+0x6c],1` predicted it). ★★ **An unpredicted
+SECOND two-sided control appeared:** `Default__Actor+0x2D3 = 0` while every poolable class reads 1,
+independently confirming `+0x2D3` is `bEnablePooling`.
+
+⇒ **§26.4's hypothesis (1) — "something clears the byte at class load" — is REFUTED. The runtime
+CDO byte IS the cooked class default. C7 FIRES, and the last [I] in FK-22's chain is now [M].**
+
+⚠ **The leaf class was not read directly:** `Default__BP_DropPod_Tutorial_C` is **not loaded at the
+menu**. Its value rests on (a) all three ancestors reading 1 live, (b) [M] it overrides neither flag
+(`bpdump @props`, populated dump), (c) the cooked→runtime mapping now validated **3/3 in both
+polarities**. **[M] for the ancestors and the mapping; the leaf is one inheritance hop of inference,**
+and only staging a tutorial world would close it outright.
+
+★ **A finding from the failed first attempt:** none of the four Blueprint CDOs was found on the first
+run, against 10,371 live CDOs ⇒ **`LogActorPooling: Adding <X> to list of poolable actors` does NOT
+load the class** — it is an AssetRegistry query against cooked tags. **"Registered as poolable" is not
+evidence a class is loaded.** The probe printed `NOT LOADED (this is NOT a zero)` instead of reading
+offset `0x6C` of a null, which is the only reason this surfaced as a finding rather than as four
+confident zeros.
+
+⚠ **Sharper, not solved:** gems read **1** too, so `SpawnPoolableActorFromClassDeferred` returns NULL
+for them as well. The gem call site is `LokiGem.as:168 SpawnExtraGemWithTeam` — an ***extra***-gem
+spawner — but **whether the game's primary gem path uses it is UNESTABLISHED** (no survey was done;
+the name is suggestive, not evidence). For FK-22 it is moot: the pod's only route is
+`SpawnDropPodForTeam`, which bails on the null with no else.
+
+★ **Repair, now measurement-backed:** poke `CDO(BP_DropPod_C) + 0x6C = 0` (live at `0x241BA0290E0`
+this run — ASLR-dependent, re-derive per launch; prefer it over the leaf, which may not be loaded when
+a shim runs), then dispatch `SpawnDropPodForTeam` via Route E. ⚠ It mutates a **class default**, and
+**C8/C9 have still never been reached.**

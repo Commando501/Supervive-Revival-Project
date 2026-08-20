@@ -1,0 +1,14 @@
+cooked bCanEverReplicate tags available: 199 (unit: Blueprint assets)
+GUObjectArray ObjObjects=0x240597B99A0 NumElements=190085
+live CDOs: 10025 ; of those, joinable against a cooked tag: 30
+
+--- cooked vs runtime, AActor::bCanEverReplicate (+0x6C) ---
+  agree    : 30
+  DISAGREE : 0
+  unreadable: 0
+  by cooked value:  true -> 16 agree / 0 disagree ;  false -> 14 agree / 0 disagree
+
+both cooked polarities are represented, so agreement is discriminating.
+PID 17736 base 0x7FF7C4050000, clean -NoHook menu launch
+PID 17736 base 0x7FF7C4050000, clean -NoHook MENU launch (no tutorial staging), read-only RPM.
+S130, 2026-08-20.
