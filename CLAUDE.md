@@ -1336,6 +1336,73 @@ Read `docs/fk22-dropphase-reachability.md` §14-§15.** Two flights on one stage
   `KFSNAME=""` (`-any`) fixed it (**508 game-thread hits**). Budget arms accordingly.
 
 ### Before touching anything drop- / deploy- / DropPlane- / DropPod- / "SpawnPlane faults" shaped
+★★★★★ **S130 (2026-08-20) — THE ACTOR POOL IS ***NOT*** THE BLOCKER, AND THE POOL GATE IS NAMED.
+Read `docs/s130-actor-pool-gate-settled.md`, then `docs/fk22-dropphase-reachability.md` §25.**
+Offline; zero launches, zero injections, zero `.text` writes. Six adversarially-verified lanes.
+- ⚠⚠⚠ **§23.3's suspicion is REFUTED — an unprimed pool CANNOT return NULL [M].** The acquire's
+  lookup `0x334E7A0` is a **`TMap::FindOrAdd`** (one `ret`, inserts on a miss, never null), and a pool
+  miss falls to a **shipped fallback** — `.rdata 0x08B06440 'Failed to find an actor in the pool for
+  %s, spawning a new instance from scratch.'` — then `0x5648E48 call 0x39C3DB0` = `UWorld::SpawnActor`
+  and returns the fresh actor. ⚠ **That message's emit is STRIPPED** (`0x5648D6F` → the `ret 0` fold
+  `0x00F7EC20`, 4,972 call sites), so **its absence from the logs is uninterpretable**, not negative.
+- ★★ **THE GATE IS `ALokiGameState::bSupportsActorPoolPriming`, a `bool` at `ALokiGameState+0x898`
+  [M].** `ULokiActorPoolManager` vtable slot 90 (`0x08877A80+0x2D0 → 0x56363F0`, multiplicity 1)
+  returns `Cast<ALokiGameState>(GetWorld()->GameState)->bSupportsActorPoolPriming`. Named from the UHT
+  `FBoolPropertyParams` at `.rdata 0x08983A50` whose **`SetBitFunc 0x053800D0` = `mov byte
+  [rcx+0x898],1; ret`** (multiplicity 1); the **only** bool UPROPERTY at that offset image-wide
+  (13,156 Bool records swept). **`UWorld+0x258 = UWorld::GameState` [M]** — confirmed by
+  `UGameplayStatics::GetGameState` (`0x38047F0`), a third unrelated function.
+- ★★ **AND THE CAUSE IS A SHIPPED ASSET, NOT CODE [M]:** the C++ ctor sets it TRUE
+  (`0x05676F10 c6 87 98 08 00 00 01`), and `bpdump_BP_LokiGameState_Tutorial_PROPS.txt:52` serializes
+  **`bSupportsActorPoolPriming = False`**. 3 of 6 GameState BPs override it and **all three to False**
+  (`_Tutorial`, `_PvE_Holdout`, `_FFA`). ⇒ the pool is off in the tutorial **by design, in data**.
+- ⛔ **NO INI ROUTE [M].** `CPF_Config` clear; **0 of 155** `ALokiGameState` properties are config;
+  **`ActorPoolManagerPrimingConfig` is a USTRUCT with ZERO reflected properties and no UHT consumer**
+  (the S129 handoff's “strongest lead” is INERT); neither pool-manager UCLASS is a config class.
+  Turning pooling on = **DATA poke `GS+0x898=1` + raw direct call `PrimePools` (`0x3356000`)**, which
+  is **not reflected**, has **one caller** (`ALokiGameState::BeginPlay`, vtable slot 119 — already run
+  and skipped) and performs **zero module-image writes**. Handles: `GS+0x428` = cached manager,
+  `+0x430` = its class. ⚠ **But that is not known to fix FK-22.**
+- ★ **The pooled spawn never reads the gate [M]** (3 disjoint methods). Thunk `0x537EEE0` → impl
+  **`0x566FF50`** → `0x5647F00` → acquire **`0x5648050`** (real extent `..0x5648EC6` = **3,702 B**, 3
+  chained `.pdata` rows — ⚠ `strxref func` reports **per-ROW** extents, never function size).
+  Deferred thunk `0x537F1A0` → impl `0x5670090` → acquire **directly**.
+- ★★ **THE SURVIVING NULL CAUSES ARE C7/C8/C9, and a FREE RECEIPT already narrowed it [M]:** the
+  non-deferred wrapper logs `Failed to spawn actor of type %s.` (`.rdata 0x08B06390`) on NULL, and it
+  fired **twice** in S128 naming `BP_DropPod_Tutorial_C`. It is emitted strictly downstream of the
+  outer preconditions ⇒ **World, GameState, `IsA(ALokiGameState)` and the manager fetch ALL PASSED.**
+  Remaining: **C7 `CDO->byte@0x6C != 0`** (`0x5648210`) · **C8 `PoolMgr->GetWorld()==null`**
+  (`0x5648D97`) · **C9 `SpawnActor` null / skipped at `0x5648E34`** (`0x5648E6F`).
+  ★ **C7 is settleable with ONE read-only RPM read** of `CDO(BP_DropPod_Tutorial_C)+0x6C` — no launch.
+  ⚠ [I] the **deferred** arm's null is **SILENT** (it bypasses the wrapper): 2 warnings ≈89 s apart =
+  **one per injection**. Do not read "no warning" as a deferred-arm result.
+  ★ **Grep `Failed to spawn actor of type` before any inference here** — `Feature is not enabled` is
+  ambient (68 occurrences / 69 files); this one is per-attempt.
+- ★ **S128's collision-confound elimination STANDS [M]** — the result files print `Collision=2
+  (declared enum 'ESpawnActorCollisionHandlingMethod')`, `NumParms=8`, enum name read live off the
+  FProperty. (A lane's inferred signature omitting a collision param is [I] and wrong.)
+- ⚠⚠ **THE HAND-SPAWN BYPASS HAS A FIFTH WALL [M]:**
+  `ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable` (impl **`0x55CD510`**) is a REAL body
+  that ALWAYS fails — `0x55CD572` calls the stripped fold `0xF7EB50` (`33 c0 c3`) and bails into
+  *"failed to get the round game mode"*; its dead tail has **zero** external rel32 entries in three
+  images. Same wall on `AuthPlayerPreSpawnOnAddToPlane` (`0x55CD800`); `AuthPlayerEnterWorldNew` is an
+  empty fold. ⇒ **a hand-spawned pod gets a pod and no rider.**
+- ★★★ **FREE NEW INSTRUMENT, WORTH MORE THAN THE FINDING: the `.data` `{name_ptr, exec_thunk, impl}`
+  record table gives a REAL/EMPTY verdict WITHOUT the code page being decrypted** (the fold addresses
+  are known constants). ⇒ **§2.5's 16 COVERAGE-BLOCKED `(class,func)` keys are an instrument limit,
+  not a fact**, for at least 6 of them (the five `AuthPlayer*` + `GetLandingTeleportLocation`, all on
+  page `0x5456000`). Re-running it over all 100 keys is **free, offline and unstarted**.
+  ⚠ Its negative control is **degenerate** — Angelscript names have **zero byte occurrences** in the
+  image, so "AS functions have no record" is a fact about name storage, not about the record table.
+- ⚠⚠ **REFUTED sub-claim:** `AuthSetSpawnTeamLeader`'s flag feeds **three** Angelscript readers, not
+  one; one (`QueueCrewForPodSpawn`) is on the leader-pod path. "The bypass avoids FK-1's stubs" holds
+  **only under `bIsTeamLeaderPod == false`** — and the route transcribed from `SpawnDropPodForTeam`
+  passes `true`. Same incomplete-enumeration failure `fk22` already recorded **on this exact family**.
+- ⚠ **`fkdis.py findptr` CAPS AT 200 ROWS** — a row count from it is a **floor, never a count**.
+  Uncapped this session: `0x0F7EC20` **165,789** · `0x0B9E1F0` **26,444** · `0x0F7EB50` **27,217** ·
+  `0x12C7260` **2,823**. And **`fkdis.py d` prints a BLANK result on a non-instruction-boundary rva**,
+  which reads exactly like an undecrypted page and is not.
+
 ★★★★★ **THE BLOCKER MOVED TWICE ON 2026-08-16 AND BOTH MOVES ARE MEASURED. It is NOT the markers
 (refuted) and NOT the phase (solved) — it is THE SUBSCRIPTION.** `docs/fk22-dropphase-reachability.md` §15.
 - **[M] Reaching `EGP_Lineup(6)` is NOT sufficient.** The round drove all the way to `Combat` and the

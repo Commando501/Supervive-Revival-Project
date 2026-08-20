@@ -1,0 +1,94 @@
+{
+ "lane": "Grade the independent lever: hand-spawn the drop pod and wire it, bypassing the actor pool entirely (FK-22, offline static RE only)",
+ "headline": "The hand-spawn bypass gets a self-driving pod into the world and avoids all four FK-1 stubs, but the player→pod attach terminates at a FIFTH, previously unrecorded wall: `ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable` (impl `0x55CD510`) is a REAL body that ALWAYS takes its failure branch, because at `0x55CD572` it directly calls the stripped fold `0xF7EB50` (`33 c0 c3` = `xor eax,eax; ret`) and immediately bails on the zero with the log `\"…failed to get the round game mode\"` — and the same wall is replicable step-for-step by the shim, because every instruction in its dead tail is an individually-callable reflected native.",
+ "claims": [
+  {
+   "claim": "The `.data` {name_ptr, exec_thunk, impl} record instrument routes AROUND the coverage-blocked `.text` page 0x5456000 and answers the question §2.5 recorded as unanswerable. FK-22 §2.5's verdict `AuthPlayerEnterWorldAttachedToRidable is COVERAGE-BLOCKED` is correct about the THUNK and wrong as a limit on knowledge: the IMPL lives on a fully decrypted page.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`fkdis.py cov 0x5456000 0x1000` = `page 0x05456000  ZERO` in s129 AND merged2 AND tuthero (the s129 dump was taken while pooling code had run, so it is not a stale image). strxref `native AuthPlayerEnterWorldAttachedToRidable` -> `FNameNativePtrPair slot 0x09C1E5B8 -> exec thunk 0x5456380`. Raw record bytes at 0x9C1E5B8 (24 B): `28e411c1f77f0000 8063b2bdf77f0000 10d5c9bdf77f0000` => name=0x7FF7C111E428 (rva 0x8A4E428, ASCII \"AuthPlayerEnterWorldAttachedToRidable\" — exact match to the name strxref found), thunk=rva 0x5456380 (exact match to strxref), impl=rva **0x55CD510**. `cov 0x55CD510` = `present` in ALL THREE images."
+  },
+  {
+   "claim": "The record instrument is validated in both directions on gold values: 4/4 of FK-1's recorded stub records reproduce exactly, 2 independent thunk-tail derivations agree with it, S124's two phase records reproduce exactly, and Angelscript UFUNCTIONs have NO record (the negative control).",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`recs.py` output: SpawnPlayer rec=0x9bdb230 thunk=0x534c070 impl=0xf7eb50 | OverridePlaneLocations rec=0x9bd4b08 | AuthSetSpawnTeamLeader rec=0x9c14fa0 | SetDropLeader rec=0x9c29f50 — all four identical to fk1-stub-claim-recheck.md:271-277. GoToPhase rec=0x9c1f298 thunk=0x5457200 impl=0x5601020 and BP_AuthSetCurrentPhase thunk=0x53878d0 impl=0x567a160 — identical to S124. Independent thunk-tail derivations: SetPilotPlayerState thunk 0x53375E0 last direct call at 0x5337650 -> 0x55E59E0 == record impl; AddTeamDropEvent -> 0x557EAE0 == record impl == §2.5's stated value. NEGATIVE CONTROL: SpawnDropPodForTeam / LokiBeginPlay / StartPodGameplay / QueueCrewForPodSpawn / SetDropPodState / OnIntroSequenceFinished / PreparePodForAttach / SpawnImpactIndicator / GetTeamDropLeader = `NO RECORD` (all Angelscript)."
+  },
+  {
+   "claim": "`ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable` (impl 0x55CD510) is a REAL, substantial body that can NEVER complete: at 0x55CD572 it makes a direct rel32 call to rva 0xF7EB50 whose bytes are `33 c0 c3` (xor eax,eax; ret), then at 0x55CD577/0x55CD57A does `test rax,rax; je 0x55CD7B2`. rax is provably 0, so the branch is always taken.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Bytes 0x55CD56F..0x55CD586 = `488bc8 e8d9159bfb 4885c0 0f8432020000 488bc8 e848a8`. Machine-recomputed (not retyped): E8 rel32 = -73722407 = -0x464EA27, target rva 0xF7EB50; bytes at 0xF7EB50 = `33c0c3`. `0f 84 32 02 00 00` rel = +562, target = 0x55CD580+562 = 0x55CD7B2. The block at 0x55CD7B2 does `lea rdx,[rip+0x354f746]` -> pointer slot 0x8B1CF08 -> 0x8B1CF30 = UTF-16 `\"ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable failed to get the round game mode\"` (strxref find \"round game mode\" -> 0x08B1CF30 U len=95 refs=2)."
+  },
+  {
+   "claim": "That dead region is genuinely unreachable — no other branch enters it. It is not a partially-blocked read.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Capstone sweep of [0x55CD510,0x55CD794): the only intra-function branch targets are 0x55cd56f (from 0x55cd565), 0x55cd66a/0x55cd684/0x55cd6a0/0x55cd760 (all from sources >= 0x55CD5F1, i.e. inside the dead region itself), 0x55cd77b (epilogue) and 0x55cd793 (ret). Full-.text E8/E9 rel32 scan for targets in [0x55CD580,0x55CD794) from outside the function: **count 0**. Also `implof.multiplicity(0x55CD510)` = **1** qword occurrence image-wide (its own .data record) => not in any vtable => non-virtual => no derived override; `vtables.py classes Rideable` finds exactly 2 classes (ULokiRideableComponent, ULokiRideableInterface)."
+  },
+  {
+   "claim": "The same wall hits `AuthPlayerPreSpawnOnAddToPlane` (impl 0x55CD800), and `AuthPlayerEnterWorldNew` is an outright EMPTY fold. Only `AuthPlayerEnterWorld` (0x55CCE70) and `AuthPlayerDetachPlayerFromRidable` (0x55CCCB0) survive without a round-game-mode hard bail.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "0x55CD842 bytes `e809139bfb 488bf0 4885c0 0f84…` = call 0xF7EB50; rax->rsi; test; je 0x55CD99A, whose block leas pointer 0x8B1CE50 = `\"ULokiRideableComponent::AuthPlayerPreSpawnOnAddToPlane failed to get the round game mode\"`. Record table: AuthPlayerEnterWorldNew thunk=0x5456460 impl=**0xf7ec20** EMPTY. AuthPlayerEnterWorld (0x55CCE70) makes the same 0xF7EB50 call at 0x55CCF22 (rel32 machine-verified) but stores the result and continues — it carries neither of the two \"round game mode\" strings; whether it later derefs the null is UNVERIFIED."
+  },
+  {
+   "claim": "The stripped callee at 0xF7EB50 is a genuinely rare fold, so \"this call site is stripped\" is informative rather than ambient — and the address is NON-IDENTIFYING, so I do not name the callee.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "Full unaligned .text byte-scan for E8/E9 rel32 landing on each fold: s129 0xF7EB50 = 71 call + 3 jmp = 74; merged2 = 80+3 = 83. Contrast 0xF7EC20 = 4979+73 = 5052 (s129) / **5095**+77 (merged2). qword-pointer occurrences: 0xF7EC20 = 165,789; 0xF7EB50 = 27,217; control 0x1234567 = 0; a real single function (0x5601020 GoToPhase impl) = 1."
+  },
+  {
+   "claim": "`InitializeDropPod` is NOT a reflected UFUNCTION and cannot be called by name at all — but its entire body is replicable as 4 UPROPERTY writes + 2 reflected native calls.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "asdump LokiDropPod.as.txt:843 declares `void InitializeDropPod(...)  // traits=0x20` with NO `UFUNCTION(...)` line, while its immediate neighbours at :895 (StartPodGameplay) and :3727 (QueueCrewForPodSpawn) both carry `UFUNCTION(BlueprintCallable, CanOverrideEvent)`. `recs.py InitializeDropPod` = NO RECORD. Body = CurrPodDestination=LandingLocation; SetPilotPlayerState(PS); bIsTeamLeaderPod=b; PodTeamIndex=n; LeaderPod=ParentPod; SetOwner(GetPilotPlayerState()); if(leader) QueueCrewForPodSpawn(DropShip). `SetPilotPlayerState` impl 0x55E59E0 (merged2) = `mov [rcx+0x3C0],rdx; mov r8d,0xB; mov rdx,[rcx+0x30]; jmp 0x1E3CCD0` => PilotPlayerState is at pod+0x3C0 and the call also marks it net-dirty."
+  },
+  {
+   "claim": "NONE of FK-1's four empty server-authority stubs is on the hand-spawn route. The bypass really does avoid them.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "(1) `ALokiGameMode::SpawnPlayer` (0xF7EB50): the pod route never spawns a character — the dead tail of 0x55CD510 calls `ALokiPlayerState::GetLokiCharacter` (record: thunk 0x54373A0 impl 0x56BE0D0, body = `push rbx; sub rsp,0x20; mov rbx,[rcx+0x430]; …; if valid return it else null`), a pure GETTER; the hero is already spawned+possessed in the staged tutorial. (2) `AuthSetSpawnTeamLeader` (0xF7EC20) only feeds `ALokiDropShip::GetTeamDropLeader`, whose whole body is `for PS in GetPlayerStatesOnTeam: if PS.IsSpawnTeamLeader() return PS` — the shim supplies the PlayerState directly and never calls it. (3) `SetDropLeader` and (4) `OverridePlaneLocations` are plane/team-state path only; the hand route spawns no plane. Confirmed against the AS source of SpawnDropPodForTeam (LokiDropShip.as.txt:130-170), which is the exact sequence being replicated."
+  },
+  {
+   "claim": "The route DOES hit other empty folds, but they are all skippable or non-fatal in the hand-spawn form.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "Record table verdicts: AddPlayerToPlane / RemovePlayerFromPlane / AuthAddPlayer / AuthRemovePlayer / AuthSetCanJump / AuthSetCurrentRideable / OnPlayerExitedDropPod / AuthStart / AuthBeginGlideDive / AuthBeginGlideDiveFromDropPod = impl **0xF7EC20** EMPTY. `AuthBeginGlideDive*` is off-route: `GlideDive` occurs **0 times in every Angelscript body** (only 18 declaration rows in binds_members.csv and one usmap hit). `RemovePlayerFromPlane` is skippable (the player was never on a plane). `AuthAddPlayer` being empty means `PlayersInside` (rideable+0x120) is never populated, which breaks the DESIGNED landing hand-off (`KickPlayersFromPod` -> `AuthPlayerEnterWorld` bails at 0x55CCEEE when the PS is not found in +0x120) — the shim must teleport the hero itself."
+  },
+  {
+   "claim": "Everything up to the attach is REAL and two of the steps are already MEASURED working in this exact world.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Records: BeginDeferredActorSpawnFromClass thunk 0x37FEEC0 impl 0x37C5CB0 REAL; UGameplayStatics::FinishSpawningActor thunk 0x3802CC0 impl 0x37D4470 REAL — S23 arm P3 measured this exact pair creating a real `BP_DropPod_Tutorial_C` (census delta +2) with the pooled arms at +0. SetOwner thunk 0x33ACD80 impl 0x3375780 REAL. SetTeamForActor thunk 0x5485920 impl 0x56FBCF0 REAL. MulticastOnDropPodLaunched: record impl 0x542B2B0 (the RPC stub) and the exec thunk's tail is `mov rax,[rsi]; call [rax+0x4D0]` -> vtable 0x8A22520+0x4D0 = **0x56F26A0**, a REAL 100-byte body (present in merged2). BP_DropPod_C ships every component StartPodGameplay needs: extractor/out/BP_DropPod.json contains Class'LokiRideableComponent', Class'LokiTeamComponent', Class'CapsuleComponent', Class'SkeletalMeshComponent', Class'ProjectileMovementComponent'."
+  },
+  {
+   "claim": "The attach is REPLICABLE: every instruction of the unreachable tail resolves to a reflected native the S55 primitive can already call, plus one raw TArray append.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Reverse-map naming of the tail's call targets (revmap.py, impl->name over 14,414 .data records): 0x56BE0D0=GetLokiCharacter, 0x56680F0=**LokiTeleportActor**, 0x339A550=**SetActorEnableCollision**, 0x37D9D40=GetServerTime, 0x55DCAA0=HasEverContainedPlayer, 0x55D89F0=GetLandingTeleportLocation. Tail ends at 0x55CD738-0x55CD767: `rbx=[r14+0x138]; [r14+0x138]=rbx+1; if(>[r14+0x13c]) ResizeGrow(0xF988D0); [r14+0x130][rbx]=PS` => **PlayersAttached TArray{Data@+0x130, Num@+0x138, Max@+0x13C}.Add(PS)**. Callable substitutes with records: K2_TeleportTo thunk 0x33ABEF0 impl 0x3390F40 REAL; K2_SetActorLocation 0x33AB0C0/0x3390990 REAL; K2_AttachToActor 0x33AA850/0x3390560 REAL; SetActorEnableCollision 0x33AC820/0x339A550 REAL. LokiTeleportActor thunk 0x537B570 impl 0x56680F0: both pages ZERO in all 3 images, but impl != any known fold => NOT stripped [M via record, body unread]."
+  },
+  {
+   "claim": "Angelscript vs native is cleanly separable offline by record presence, which tells the shim which dispatch route each step needs.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "Every native in the chain has a .data record; every AS UFUNCTION has none (StartPodGameplay, QueueCrewForPodSpawn, SetDropPodState, LokiBeginPlay, SpawnDropPodForTeam, OnIntroSequenceFinished, PreparePodForAttach, SpawnImpactIndicator, GetPilotPlayerState). This matches S19's live measurement that `SpawnDropPodForTeam`'s UFunction.Func == 0 while native K2_GetActorLocation's was non-null, and S21's measurement that ProcessEvent slot 78 dispatches such a function. NOTE the scope limit S19 itself stated: Func==0 is MEASURED on one AS function only — I did not upgrade it."
+  },
+  {
+   "claim": "Patching the stripped getter is categorically ruled out as a repair.",
+   "grade": "I",
+   "load_bearing": true,
+   "evidence": "0xF7EB50 is a shared ICF fold with 74 (s129) / 83 (merged2) direct rel32 call sites in .text, so patching it would alter 70+ unrelated call sites; and it is a `.text` write, the project's measured-lethal class (standing .text 10/10 armed windows died vs 3/36 without, Fisher p=0.00000008). Graded [I] because I did not enumerate what the other 73 sites are."
+  }
+ ],
+ "open_questions": [
+  "What function is the stripped round-game-mode getter? Its call target 0xF7EB50 is a 74-way-shared fold, so the address cannot name it, and it is NOT a reflected UFUNCTION (no .data record with impl==0xF7EB50 has a GameMode/Round-ish name; 40 distinct names map there and none matches). Identifying it would say whether it is `WITH_SERVER_CODE`-stripped or something else — and whether any other route to the same object exists.",
+  "Does `AuthPlayerEnterWorld` (0x55CCE70) dereference the null round-game-mode it stores at [rsp+0x50]/reloads into rbx at 0x55CD063? I traced far enough to see rbx reassigned before any deref and no bail string, but did NOT trace the 999-byte fragment 0x55CD07D..0x55CD464. If it derefs, the landing path faults rather than no-ops.",
+  "Can a shim legally grow `PlayersAttached` (rideable+0x130/+0x138/+0x13C)? The engine's own grow helper is at 0xF988D0 (called from the dead tail). Calling an ungraded allocator is the same trade §18.0 refused for `GetAllActorsWithTag`. Alternative: pre-size the array via a reflected TArray property setter, or skip registration entirely and accept that Detach/KickPlayers never fires.",
+  "Is `LokiIsServer(WorldContext)` true in the staged tutorial world? `ALokiDropPod::LokiBeginPlay` gates `SetTeamForActor` on it, and `StartPodGameplay` only runs if `ULokiTeamComponent::GetTeamIndex() >= 0` afterwards. S127 measured `role(obj+0x160)=3 (Authority)` on a different object, which is suggestive, not the same predicate. If it is false, the pod spawns inert and `StartPodGameplay` must be dispatched directly via ProcessEvent.",
+  "Do `SpawnPoolableActorFromClass{,Deferred}` (impls 0x566FF50 / 0x5670090, both REAL) consult the same `vtable+0x2D0` gate that `PrimePools` tests, or do they merely fail for want of a primed pool? S24.4 item 3 flagged this and it is still unanswered — it decides whether the OTHER lane's fix (enable the pool) would even help.",
+  "Is `LokiTeleportActor` (impl 0x56680F0) a full teleport or a thin wrapper? Both its thunk page (0x537B000) and impl page (0x5668000) are ZERO in all three images. The record proves it is not stripped; nothing proves what it does."
+ ],
+ "next_experiment": "Offline and free, before any launch: re-run the `.data` record instrument over ALL 100 (class, func) keys of FK-22 §2.5's drop-class audit. §2.5 classified 16 of 100 as COVERAGE-BLOCKED (11 thunk + 5 impl) — this session showed that verdict is an instrument limit, not a fact, for at least 6 of them (the five `AuthPlayer*` entry points plus `GetLandingTeleportLocation`, all on page 0x5456000). The record's third field gives a REAL/EMPTY verdict without needing the code page, because the four fold addresses are known constants. Expected yield: the COVERAGE-BLOCKED bucket collapses to near zero and the true empty-stub count for the drop path becomes exact for the first time. Then, second and still offline: disassemble every one of the 74 direct call sites of 0xF7EB50 in s129 and check how many sit immediately before a `test rax,rax; je <log block>` — that measures how much of the drop/round surface is dead-by-construction in the same way, and it is the cheapest available estimate of whether this fifth wall is isolated or systemic. Only after that spend a launch: the flyable arm is hand-spawn (BeginDeferred + property writes + FinishSpawning) with the attach REPLACED by GetLokiCharacter -> K2_TeleportTo -> K2_AttachToActor, with the pre-registered receipts being (a) DropPod census delta +2 (already the measured P3 signature), (b) `Loki.log` MUST NOT contain \"failed to get the round game mode\" — if the shim calls the real function that string is the positive control that it bailed, and (c) the hero's actor location tracking the pod across the 6.5 s intro timer.",
+ "traps_hit": "Three, two of them mine. (1) I nearly recorded `AuthPlayerEnterWorldAttachedToRidable` as \"COVERAGE-BLOCKED, unknowable\" — which is exactly what FK-22 §2.5 concluded and called \"the correctly-refused negative of the whole investigation\". It is refused for the wrong reason: the blocked page 0x5456000 holds only exec THUNKS, and the .data record hands you the impl address on a fully decrypted page. The page boundary was never a semantic boundary and it was never a knowledge boundary either. (2) `scratchpad/fk27/fkdis.py callxref` UNDER-REPORTS: `find_call` has `limit=200`, and for target 0xF7EC20 it printed 183 \"call site\" lines. My first read of that was \"only 183 direct callers, so CLAUDE.md's 5,095 is wrong\" — I was one sentence from writing up a false correction to a correct repo figure. An independent full unaligned byte-scan of .text gives merged2 E8=**5,095**, reproducing CLAUDE.md exactly. Do not use `fkdis.py callxref` for counts; it is a locator, not a census. (3) Guarded against, not hit: the prompt's trap #1 (interior-offset string search). I searched via `strxref.py find \"round game mode\"` — a substring query answered with the two ENCLOSING string starts (0x08B1CE50, 0x08B1CF30, refs=2 each) — and resolved every `lea` through its pointer-table SLOT rather than assuming a direct string reference, which is the reference class S24.2(b)'s hand-rolled scan could not see."
+}
