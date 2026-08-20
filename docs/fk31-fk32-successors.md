@@ -44,6 +44,44 @@ question is different.
 - It is **arm-neutral** — it occurred at statistically indistinguishable rates across every probe and
   every hold length tested, which is why it could never explain any A/B result.
 
+### S132 (2026-08-20) — one more instance, and ★ **it DID leave a dump**
+
+**[M] One FK-31 staging death in five launches this session** (flight 4). Exit `0xC0000005`, only
+`gft_ready_fix` + `tutorial_launch_fo` resident, probe never injected — the canonical shape.
+Primary record: `docs/s132-dismount-settled.md` §6a-2.4.
+
+★ **`crashwatch` caught it and `launch-redirect.ps1` archived a 41 MB crashpad minidump to
+`dumps\crashpad-20260820-143225`.** Worth stating plainly because the *sibling* class (FK-32,
+below) is the artifact-less one and the two get conflated: **FK-31 deaths are dumped**, which is
+already what "What is known" records above, and this is one more confirmation rather than a new
+property.
+
+⚠⚠ **A pre-registered prediction that this run CANNOT test, recorded so nobody scores it.** The
+crash-era `dump.exe` reads **`.text` 51.8 %** against a healthy client's **53.0 %**, which *looks
+like* a refutation of *"a crash-era image holds MORE decrypted `.text`"*. **The comparison is NOT
+matched:** it died at **141 s** having exercised far less game code than a client that had run the
+whole staging + Route E + dismount chain. ⇒ **UNINTERPRETABLE for that hypothesis, not a
+refutation.** A matched test needs two images taken at comparable uptime and comparable code
+coverage.
+
+⚠ **Denominator discipline — do not silently re-fit the headline.** S132's five launches were a
+dismount campaign, not an FK-31 rate campaign, so pooling them into the 22/82 is not a controlled
+statistic. The raw addition is 23/87 = 26 %, i.e. **materially unchanged**, and that is all it is
+worth as an observation. The 27 % figure above stays as measured over the S112 corpus.
+
+★ **And an offline lane the same day gave the `runtime.dll base + 1` fault a MECHANISM CLASS.**
+S131 measured the kill address as constant per boot and named the target as `runtime.dll + 1`;
+S132 read `runtime.dll` itself and found that **4,769 of its 18,580 functions end in a computed
+`jmp <reg>`**, with targets carried as `movabs reg, -(ImageBase + target_RVA)` inside an MBA
+polynomial. **[I] `live_base + 1` is the native output shape of that dispatch when the resolved
+target RVA is 1 — or is 0 with the tail's `inc` applied.** ⇒ the kill need not be a bespoke crash
+primitive at all; it is consistent with the protector's **ordinary flattened dispatch being handed
+a null/poisoned target**, landing on its own read-only DOS header and faulting EXECUTE. That
+matches every S131 measurement (`ExceptionInformation[0]==8`, READONLY/MEM_IMAGE page, per-boot
+constancy). **Grade [I]** — the runtime `delta` term's storage is not identified, and a custom
+fixup table in the encrypted `packer0` is an equally consistent alternative. Full record and
+denominators: `docs/fk10-protector-identified.md` §6b.
+
 ## The mechanism is CONFOUNDED and that is the whole problem
 
 `fo` makes **two** module-image writes, and they are inseparable in every run ever flown:
@@ -97,8 +135,9 @@ That is now a proven, worked pattern in this codebase.
 |---|---|---|
 | exit code | **`0xC0000005`** (access violation) | **`0x0000DEAD`** |
 | artifact | crashpad minidump, `runtime.dll+1`, EXECUTE | **none at all** — no dump, no UECC, no `handing control over to crashpad` |
-| corpus count | 27 deaths | 2 instrumented (`s112c-trt-10`, `s112ship-06`) + 1 uninstrumented |
+| corpus count | 27 deaths | 2 instrumented (`s112c-trt-10`, `s112ship-06`) + 1 uninstrumented — **+1 in S132 ⇒ 3 instrumented** (see below) |
 | trigger | a standing `.text` write | unknown |
+| mechanism | ⚠ **OPEN** — what is [M] is the *fault signature* (`runtime.dll+1`, EXECUTE, `ExceptionInformation[0]==8`), not the mechanism. S132 gives it a **mechanism CLASS** only, graded **[I]** (see the S132 entry above). This row must not be read as "FK-31's mechanism is known" — the header above says the mechanism is exactly what is open | ★ **CLOSED S113 (FK-10)** — the protector calling `NtTerminateProcess(h, 0xDEAD)` at `runtime.dll` RVA `0x80f7f0`; see `docs/fk10-protector-identified.md` §6 and §6b. ⚠ the `NtTerminateProcess` *identity* is [I], not [M] — FK-10 §6b |
 
 ## `0xDEAD` is not ours, and that is measured, not assumed
 
@@ -118,10 +157,46 @@ artifact-less death class to **hangs**. That attribution rested on `CrashReportC
 `Stall.RecordDump=false`, i.e. hangs being *configured* to leave nothing. At least some of those
 deaths are not hangs at all — they are silent kills, and the exit code recovers them for free.
 
+## S132 (2026-08-20) — a third instrumented instance, harvested exactly as prescribed
+
+**[M] Flight 3 died with exit code `0x0000DEAD` during `play-atlanding`'s init**, on the **7th
+injection into that one process**, at **395.3 s** elapsed. `crashwatch` was attached and polling at
+50 ms and reports `MISSED: process exited before any crash marker was seen` —
+**no dump, no UECC, no `handing control over to crashpad`**, i.e. the artifact-less signature above
+reproduces exactly. Raw: `scratchpad/s132/evidence/f3-crashwatch-0xDEAD.log`. Context:
+`docs/s132-dismount-settled.md` §6a-2.4.
+
+⇒ **N = 3 instrumented, across three different builds and two sessions** (`s112c-trt-10` and
+`s112ship-06` are both S112; this is the first outside it). Consequence for that
+sitting: it is **VOID for the question it was flying** (hero playability at the landing point — no
+`[PL] init complete` was ever printed), **not a negative result**.
+
+★ **This cost nothing.** It is the "harvest it, don't spend launches on it" plan below working as
+designed — the exit code came free from an instrument that was already permanent.
+
+⚠ **Not established, and not tested here:** whether the 7-injections-into-one-process depth is
+causal. It is a plausible dose variable (this project's whole hazard ladder is dose-shaped) but
+S132 ran one such sitting, so it is **[S]**. Record injection depth on every future death; it is
+free and it is the cheapest way this variable ever becomes testable.
+
 ## What is NOT established
 
-⚠ **N = 2.** Reproducible across two different builds, non-random value, but two observations.
-The claim "the two kill modes are mechanistically distinct" is **suggestive, not established.**
+⚠ **N = 2** *(as written 2026-08-08; **now N = 3** — see the S132 entry above, which does not change
+the reasoning below)*. Reproducible across two different builds, non-random value, but two
+observations. The claim "the two kill modes are mechanistically distinct" is **suggestive, not
+established.**
+
+★ **What HAS since been established is the MECHANISM, not the trigger** (S113, FK-10): the kill is
+the protector executing `NtTerminateProcess(<handle from [this+0x10]>, 0xDEAD)` at `runtime.dll`
+RVA `0x80f7f0`. S132 re-verified those bytes offline and found the **owning object** — that stub is
+slot 4 of a 5-method vtable at `packer0` RVA `0x1831C0`, installed by a constructor at RVA
+`0x7F86F0` which is the table's **only xref image-wide**. ⇒ **the constructor's call site is the
+next thing to read, and it is the closest anything has come to FK-32's trigger.** See
+`docs/fk10-protector-identified.md` §6b.
+⚠ Grade honestly: the **bytes** are [M]; the **`NtTerminateProcess` identity** is inherited
+annotation, not an offline measurement — the syscall number is decrypted at runtime and evaluates
+to `0xFFFFFFFF` on disk, so the file alone only supports `Nt???(HANDLE, 0xDEAD)`. FK-10 §6b carries
+the detail.
 
 ## How to make progress cheaply
 

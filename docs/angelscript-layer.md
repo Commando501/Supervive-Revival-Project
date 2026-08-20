@@ -504,6 +504,23 @@ the sequence can be fired whole or **stepped one call at a time** (`SetDropPodSt
 `SpawnImpactIndicator`, `SpawnLaserIndicator`, `SpawnCrewPodQueue`, `QueueCrewForPodSpawn`,
 `FinishDestroyPod`). **No backend is involved at any point.**
 
+⚠⚠ **THE CHAIN HAS SINCE BEEN FLOWN, AND ONE LINK IN IT IS DEAD.** "Every step is a
+`BlueprintCallable` `UFUNCTION`" stands; "therefore the chain runs" does not. Detail in
+`docs/angelscript-dropphase.md` §5.1/§6.2, `docs/fk22-dropphase-reachability.md`,
+`docs/s131-pod-functionality-settled.md`, `docs/s132-dismount-settled.md`:
+- ★★★★★ `SpawnDropPodForTeam` **WORKS** — it returns `true` and spawns a live, initialised,
+  flying pod, once `CDO(BP_DropPod_C)->bCanEverReplicate` is cleared (a one-byte diagnosis poke;
+  the pooled spawn refuses a replicating class deterministically) [M, S130/S131].
+- ⚠⚠ **`AuthPlayerEnterWorldAttachedToRidable` is a REAL body that ALWAYS FAILS** [M, S131]: it
+  calls the stripped round-game-mode getter `0xF7EB50` (`33 c0 c3`), gets 0, and bails with its own
+  log string — driven directly with valid PlayerStates, that string went **0 → 2, one per call**.
+  The same getter blocks `AuthPlayerPreSpawnOnAddToPlane` and is consumed un-gated by
+  `AuthPlayerEnterWorld`. ⇒ **one stripped getter, three consumers — the chain yields a pod and no
+  rider.** ⛔ Not injectable: `0xF7EB50` has zero memory operands.
+- ★★★★★ **But the DISMOUNT half is drivable and was flown six times (S132)** —
+  `AuthPlayerDetachPlayerFromRidable` (impl `0x55CCCB0`, REAL, 440 B) un-hides the hero, restores
+  collision and movement, and teleports it to a chosen landing actor. Zero `.text` writes.
+
 ### The overlay is not the drop script
 
 The seven drop-phase modules contain **no widget code at all**. Nothing there draws, holds or
@@ -532,6 +549,15 @@ property on `ALokiPlayerController`, and `ULokiTransitionWidgetManager::ClearMat
    component reports as `PlayersInside`**. A hero teleported into the world without going through
    `AuthPlayerEnterWorldAttachedToRidable` is never un-hidden. `FinishDropPhaseHiding()` is a direct
    no-argument `UFUNCTION`; a shim can call it and skip the whole chain.
+   ★★ **COMPLETED 2026-08-20 — there is a SECOND un-hide route, and it is the one that works here.**
+   This Tick path has never fired in this project (`bHasStartedGameplay` reads **0** on the live pod,
+   so `Tick` early-outs) [M, S131]. But **`AuthPlayerDetachPlayerFromRidable` calls
+   `SetPredropHidden(false)` itself** (`0x5599040`, byte `hero+0x1BE8`), unconditionally, with no
+   camera-height test and no `PlayersInside` dependency [M, S132] ⇒ driving the dismount un-hides the
+   hero as a side effect. ⚠⚠ And the two arrays are **not interchangeable**: the detach reads
+   `PlayersAttached` (`+0x130`) while this path and `ContainsPlayer` read `PlayersInside` (`+0x120`),
+   so a hero dismounted the S132 way is never in `PlayersInside` — **do not read that absence as
+   "still hidden"**. `docs/s132-dismount-settled.md`.
 4. **A plain `SpawnActor` of the pod class skips the deferred-init window** that `InitializeDropPod`
    depends on. The game uses `SpawnPoolableActorFromClassDeferred` + explicit `FinishSpawningActor`.
 
@@ -540,10 +566,19 @@ property on `ALokiPlayerController`, and `ULokiTransitionWidgetManager::ClearMat
 - **There is a drop-phase camera pawn**: `ULokiGameModeDropPlaneComponent::CameraPawnClass`
   (`TSubclassOf<APawn>`). During the drop the player is expected to possess a *camera pawn*, not the
   hero — directly relevant to S71/S90. (Property exists; its use is native and unproven here.)
-- **Exiting the pod is a movement-mode handoff, not a spawn**:
+- ~~**Exiting the pod is a movement-mode handoff, not a spawn**:
   `ULokiCharacterMovementComponent::AuthBeginGlideDiveFromDropPod(DropPodDirection, RiderIndex = -1,
   LaunchOverrideSpeed = -1)`, with a dedicated custom movement mode. That is the function that turns
-  a pod passenger into a falling, controllable hero.
+  a pod passenger into a falling, controllable hero.~~
+  ⚠⚠ **CORRECTED 2026-08-20 — true of the DESIGN, false of this client.**
+  `AuthBeginGlideDiveFromDropPod` is one of FK-22's **EMPTY C++ impls** (direct call to the fold
+  `0xF7EC20`), sitting exactly at the pod→hero handoff [M]. ★★★★★ **The exit that RUNS is
+  `ULokiRideableComponent::AuthPlayerDetachPlayerFromRidable`** — a **teleport-and-restore**, not a
+  glide-dive: it un-hides the hero, restores collision and movement, resolves a point through
+  `GetLandingTeleportLocation` and `SetActorLocation`s the hero there. Flown six times, hero handed
+  back to physics each time; **expect no dive movement mode and no launch impulse**.
+  ⚠ Whether the dismounted hero is *playable* at the landing point is **untested, not negative**.
+  `docs/s132-dismount-settled.md`.
 
 ### And the largest single finding about the drop
 
@@ -607,9 +642,10 @@ tick**, so spawning one tagged actor into a live world satisfies it at runtime.
 
 **For:** every server-authoritative rule is readable source now, not packed native code. It needs no
 drop plane, no drop pod, no DropPhase — both walls that ate multiple sessions are simply not on this
-path. It is listen-server-friendly in exactly the way the project already exploits (`Loki::LokiIsServer`
-+ `EGP_Combat`). The loop is self-sustaining with zero backend: spawners tick, creeps path, towers
-shoot, gold and XP flow. **726 Barracuda assets ship in the retail paks** —
+path. ~~It is listen-server-friendly in exactly the way the project already exploits
+(`Loki::LokiIsServer` + `EGP_Combat`).~~ **[REFUTED 2026-08-20 — see the last "Against" bullet.]**
+The loop is self-sustaining with zero backend: spawners
+tick, creeps path, towers shoot, gold and XP flow. **726 Barracuda assets ship in the retail paks** —
 `BP_GameMode_Barracuda`, `BP_LokiTower_Nexus`, 9 shop loot tables, 51 DOTA-derived recipe folders,
 17 per-hero recommended builds, a Favela architecture kit, and 40 announcer VO events including
 "citadel under attack". Five shipped cheat commands drive the whole machine. The C++ side carries 34
@@ -627,6 +663,24 @@ set for a prototype.
 - The win condition and tower-destruction bookkeeping are Blueprint bytecode — a separate decompile.
 - It is late-prototype code: `SplitBetweenLastHitterTeam` unimplemented, `LastHitGoldBonus` unread,
   three inverted-branch bugs, a suspect `Lerp` argument order.
+- ⚠⚠ **ADDED 2026-08-20 — the "listen-server-friendly" FOR above is REFUTED, and it inverts.**
+  `Loki::LokiIsServer` impl `0x0F7EB60` is `xor al,al; ret` — **hardcoded FALSE** — and
+  `Loki::LokiIsClient` impl `0x0B9E1F0` is `mov al,1; ret` — **hardcoded TRUE** [M, S131]. Neither
+  has a memory operand or a world lookup, so **neither is pokeable.** ⇒ **every script body behind
+  `if (LokiIsServer)` is unreachable on this client, and every one short-circuited by
+  `if (LokiIsClient) return;` returns immediately.** The project does not "exploit" listen-server
+  behaviour — it has never had any. Worked instance: `ALokiDropPod::KickPlayersFromPod`, the pod's
+  own exit driver, is dead for exactly this reason [M, S132], which is *why* the dismount had to be
+  driven by hand (`docs/s132-dismount-settled.md`; `docs/angelscript-dropphase.md` §3.2 step 21
+  and §3.5).
+  ⇒ **This does not sink Route C** — the server rules are still readable source and still callable
+  one at a time through the S55 native-call primitive. ⚠ **State the mechanism precisely: the
+  primitive does NOT bypass an in-body guard** (nothing does — `if (LokiIsClient) return;` is inside
+  the callee's own body). What it buys you is starting *below* the guard: call the guarded
+  wrapper's callees directly. That is exactly what S132 did — `KickPlayersFromPod` is dead, so the
+  detach it would have called was called directly instead. But **"the server half runs itself once a mode is loaded" is false**, so a Route C
+  costing must budget for driving every server-side step explicitly. Re-cost before choosing Route C
+  on the strength of that line.
 
 ### Recommendation
 

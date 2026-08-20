@@ -14,6 +14,14 @@ disassemblable offline today**.
 Everything below is offline file analysis of shipped artifacts. Method: every negative is
 paired with a positive control, per `supervive-instrument-artifact-pattern`.
 
+> ★ **ADDENDUM — S132, 2026-08-20. Read §6b.** A second fully-offline pass (zero launches, zero
+> injections) re-verified this file's core structural claims against the on-disk `runtime.dll`,
+> **found the kill primitive's owning object and its constructor**, and mapped the protector's
+> **computed-tail dispatch architecture** — which hands FK-31's `runtime.dll base + 1` fault a
+> mechanism class. It also **sharpens two grades in this file** (§5's poison-jump negative and §6's
+> `NtTerminateProcess` identity). Nothing in §1–§4 is disturbed. Raw:
+> `scratchpad/s132/lanes/L6-fk31-runtime-selfbase.md` + its `-VERIFY.md`.
+
 ---
 
 ## 0. TL;DR for the next session
@@ -25,8 +33,9 @@ paired with a positive control, per `supervive-instrument-artifact-pattern`.
 | Is `runtime.dll` packed/encrypted? | **No.** 46.6 MB of **plaintext obfuscated x86-64**. Its *data* and *resources* are encrypted; its *instructions* never are |
 | Can we disassemble the protector? | **YES, today, offline.** Use the loader function table at RVA `0x14D8758` (18,580 entries) — **not** the vestigial `.pdata` section |
 | Is the *game exe* packed? | Not in the wrapper sense — **stock section layout, selectively encrypted in place**. `.text` 100 % ciphertext at rest |
-| Wall #7 (the integrity check) | **Not located, but the search is now narrowed to a 251 KB address range** and the old xxHash lead is spent (§5) |
-| FK-32 (`0x0000DEAD` deaths) | **CLOSED on mechanism** — it is the protector deliberately calling `NtTerminateProcess(h, 0xDEAD)` (§6) |
+| Wall #7 (the integrity check) | **Not located, but the search is now narrowed to a 251 KB address range** and the old xxHash lead is spent (§5). ★ **S132: stop xref-hunting it** — decode the computed tails instead (§6b.4, §6b.6, §8 step 0) |
+| FK-32 (`0x0000DEAD` deaths) | **CLOSED on mechanism** — it is the protector deliberately calling `NtTerminateProcess(h, 0xDEAD)` (§6). ★ **S132 found the OWNING object + its constructor `0x7F86F0`** (§6b.6) — the closest lead yet to the *trigger*. ⚠ the `NtTerminateProcess` *identity* is [I], not [M] (§6b) |
+| FK-31 (`runtime.dll base + 1` deaths) | **S132 gives it a MECHANISM CLASS** — `live_base + 1` is the native output of the protector's computed-tail dispatch on a null target RVA (§6b.4–§6b.5). **[I]** |
 
 ---
 
@@ -364,6 +373,20 @@ a gadget selector fused with an MZ-tamper check. `base+0` is `lea`'d 38× (`__Im
 routine is still unidentified. `HMODULE|1` (the `LOAD_LIBRARY_AS_DATAFILE` tag) remains the best
 hypothesis and is **untested**.
 
+⚠⚠ **"No instruction anywhere forms `base+1` as an address" is TOO STRONG AS WRITTEN — sharpened
+S132, 2026-08-20 (§6b).** An independent offline re-scan of all **48,129,536 executable bytes** of
+`runtime.dll` reached the same conclusion for **64-bit literal immediates**, and then its own
+adversarial verifier **refuted the general form**: at `packer31` RVA **`0x03C8EDF2`** an MBA block
+computes **`[rsp+0x158] + ImageBase + 1`** (verified by concrete evaluation over 2,000 random
+inputs, 2000/2000) and the result **is dereferenced** at `0x03C8EFF3 movzx r12d, byte ptr [r9]`.
+The `+1` there is produced *by the polynomial*, not by an immediate, which is exactly the blind
+spot a literal-constant scan has. ⇒ **The defensible negative is: "no 64-bit literal immediate
+equal to ±(ImageBase+1) survives adjudication as an operative address constant."** The open
+question — *what supplies `base+1`* — is unchanged, but §6b gives it a **mechanism class** for the
+first time. ⚠ The role of the `0x03C8EDF2` site is **[S]**, not the kill: its surrounding
+`test byte ptr [rsp+0x28],1` / `cmove` shape is the MSVC inline-buffer idiom, so a biased pointer
+(`stored = ptr − IB − 1`) is the likelier reading.
+
 Supporting context (S109, MEASURED across 3 dumps / 3 launches / 2 dumpers / 4 ASLR bases):
 the fault is a **thread entry**, not an inline jump — `ExceptionInformation = [0x8, addr]`
 (DEP/execute), `rax rcx rsi r12 r13 r14 r15` all zero, `rbx == r10`, `rdi == rsp`,
@@ -395,6 +418,254 @@ codes (`0xE1110000`, `0xC00004C2`, `0xC0000017`, `0xC000003A`) and **always Mess
 process**, not a hang and not our code. This resolves the FK-32 mechanism; what *triggers* it
 remains open, and the 5-entry table plus `NtCreateThreadEx` neighbour is the thread to pull.
 
+⚠ **GRADE SHARPENED S132 (see §6b): the BYTES are [M]; the `NtTerminateProcess` IDENTITY is not
+derivable from this file.** The syscall *number* is `ROL32(0x618E77BF XOR *(dword*)0x94A800, 7) +
+0x6710C747`, and the on-disk `packer2` cookie is `0x10BFA9CE`, which evaluates to **`0xFFFFFFFF`** —
+not a valid service number. `packer2` is `RW`, so the cookie is patched at runtime. **All the file
+supports is `Nt???(HANDLE from [this+0x10], 0xDEAD)`** — a shape `NtTerminateThread` also has.
+The `NtTerminateProcess` reading is an annotation inside a MEASURED block, not a measurement; it is
+almost certainly right (a thread kill would not end the process) but it should be graded **[I]** and
+settled by the live read already listed at §8 step 3. ★ Useful side effect: that `0xFFFFFFFF` is
+**positive evidence** the number really is computed at runtime — which is why no syscall-number scan
+ever found these stubs.
+
+---
+
+## 6b. ★★ S132 (2026-08-20) — the kill primitive's OWNER, and the protector's dispatch architecture
+
+**Fully offline. Zero launches, zero injections, zero `.text` writes.** Two independent agents: a
+recon lane and an adversarial verifier that re-derived every number with its own PE parser and its
+own scanners rather than re-running the lane's. Raw:
+`scratchpad/s132/lanes/L6-fk31-runtime-selfbase.md` and `…-VERIFY.md`
+(scripts in `scratchpad/s132/l6/` and `scratchpad/s132/verify/l6/`).
+Verifier scoreboard: **20 load-bearing claims CONFIRMED · 7 REFUTED · 3 UNSUPPORTED · 1
+degenerate control.** Both the refutations and the confirmations are recorded below.
+
+### 6b.1 The target, located and identity-confirmed [M]
+
+```
+G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\runtime.dll
+67,511,496 B   md5 5e73e00ab52bc8f30574d8c023a84171
+ImageBase 0x200000000   SizeOfImage 0x4066000   AddressOfEntryPoint 0x855440
+EXCEPTION dir RVA 0x14D8758 size 0x366F0 = 222,960 B = 18,580 x 12
+```
+
+Found via `configs/launch-redirect.ps1:46` (`$GameRoot`), i.e. **the file the launcher actually
+uses**. Identity probe: the `packer/3.3.1` Sentry DSN is **byte-identical at file offset
+`0x7C1BEC`** — the exact offset §1/R5 recorded. ⇒ **this file is the one §3 measured**, so every
+structural claim in §3 now has a second, independent confirmation: the 11-section map, the
+vestigial `.pdata` vs the 18,580-entry loader table (`Begin` strictly increasing, 0 all-zero,
+split `packer1` 1,774 / `packer30` 9,609 / `packer31` 7,197), the all-zero 4,096-byte `.rwx`, and
+the entry point `0x855440 → jmp 0x139238F` into a 54,233-byte flattened function.
+
+**Executable total scanned = 48,129,536 bytes** (`.rwx` + `packer1` + `packer30` + `packer31`).
+★ **That is the denominator for every negative in this section — quote it whenever one is cited.**
+
+### 6b.2 ⚠⚠ THE INSTRUMENT LIMIT THAT GOVERNS ALL CONSTANT WORK IN THIS BINARY [M]
+
+```
+ImageBase == 0x200000000 == 2^33
+```
+
+The obfuscator is MBA-based and does heavy **bit-33** arithmetic — `shl reg,0x21`, masks of
+`0x200000001`, constants `0xFFFFFFFE00000000 = -2^33`. **Every one of those aliases exactly with
+`± ImageBase`.** ⇒ *"is this constant the ImageBase?"* is **not a decidable test in this binary**;
+each hit must be adjudicated by its **consuming instruction**, never by its value.
+★ **This is a property of the TARGET, not of the tool** — no better scanner fixes it.
+
+⚠⚠ **But do NOT restate that as "the constant-search method is defeated."** The lane wrote exactly
+that and its verifier **REFUTED it with a count**: over the same 48,129,536 bytes the bit-33
+population is `movabs r64, 0x200000001` **×10**, `movabs r64, −(0x200000001)` **×3**,
+`movabs r64` within ±4 of `−2^33` **×10**, `shl r64,0x21` **×9**. **A few dozen sites — every one
+individually adjudicable, which is what the lane then did.** Nothing swamps anything. And the
+search *was* decisive: it produced the `0x03C8EDF2` hit (§5, poison-jump annotation) that the
+adjudication then mis-scored. ⇒ **The correct rule is "each bit-33 hit needs individual
+adjudication", not "the method does not work."** *(Recorded because "the method is defeated" is
+precisely the shape of a foreclosed technique — `docs/method-rules.md` §1.)*
+
+### 6b.3 What was refuted as the `base+1` source, each with its own evidence [M]
+
+| candidate | verdict | evidence |
+|---|---|---|
+| a relocated qword equal to `ImageBase+1` | **REFUTED** | full `.reloc` parse, 4,268/4,268 bytes consumed → 2,020 `DIR64` + 10 `ABSOLUTE`; **0** DIR64 values anywhere in `[IB, IB+0x1000)` |
+| a literal `0x0000000200000001` qword in data | **REFUTED** | 17 file-wide; the one 8-aligned writable instance (`packer2 0x941900`) is a `{1,2}` dword pair inside **MSVC CRT `__isa_available`** CPU detection (`cpuid` ×3, `xgetbv`, all three `GenuineIntel` dwords at `packer1 0x84B030..0x84B1DC`) |
+| a poisoned loader-table entry (`RVA == 1`) | **REFUTED** | all 18,580 `RUNTIME_FUNCTION`s: **0** with any field `== 0` or `== 1` |
+| an MZ/PE self-locate walking back to the DOS header | **REFUTED**, controlled | `imm32 4d5a0000` **0** · `50450000` **0** · targeted `cmp word [reg],0x5A4D` **0** · **positive control** `imm32 0000ffff` **123**. Strengthened by the verifier: all **60** raw `4d 5a` byte pairs in exec sections sit inside `movabs` immediates |
+| the 13 `movabs ±(ImageBase+1)` sites | **refuted as literal constants** | 9 of the 10 positives are consumed by `and reg,<just-shifted value>` — a **two-bit mask** (bits 0 and 33), always preceded by a `shr`; the 10th is an `add` inside an MBA chain. ⚠ **See §5's annotation: one of the three negatives, `0x03C8EDF2`, is a real `x + IB + 1` computation whose result is dereferenced — the `+1` is produced by the polynomial, not the immediate.** |
+| a generic "`+1` then `jmp reg`" marker | **REFUTED** | 4,749 `+1` sites × 22,877 register-indirect transfers → **406 paired hits, all in `packer31`**, all the `not`/`inc` two's-complement identity at the end of an MBA polynomial. Corroborator: only **244 of 4,769 (5.1 %)** computed-tail functions carry a same-register `+1` — a universal marker would be ~100 % |
+
+⚠ **Two verifier corrections inside that table, both worth keeping.** (a) The lane wrote that all
+three `−(IB+1)` sites have *"a `shl reg,0x21` in the immediately preceding instructions"* — **false
+for `0x019DC131`**, whose preceding eight instructions contain no `shl` at all and whose constant is
+adjusted by `add r9,2`. The generalisation was made from the two sites that were opened to the one
+that was not. (b) The lane claimed the `+1→jmp` distance histogram **saturates** at its 40-byte
+window, implying uncounted longer pairs — **it peaks at +29 and decays**, and re-running at `W=60`
+moves 406 → 435. ⇒ that stated blind spot was **over**-stated, not under-stated.
+
+### 6b.4 ★★★ THE POSITIVE FINDING — a computed-tail dispatch, with the address encoding decoded [M]
+
+Classifying the **final** instruction of all 18,580 functions at exact `.pdata` extents:
+
+| function ends in | count |
+|---|---:|
+| computed `jmp <reg>` | **4,769** |
+| `ret` | 406 |
+| `int3` | 97 |
+| non-terminal / mid-stream byte | 13,308 |
+
+By section: `packer1` **1,111** · `packer31` **3,658** · `packer30` **0**.
+⚠ The lane's *register* split ("`jmp rax..rdi` 4,251 / `jmp r8..r15` 518") is **REFUTED** — 1,108 of
+the 4,251 carry a `0x49` REX.B prefix; the true split is ≈3,143 / 1,626. The totals and the section
+split reproduce exactly.
+
+**Targets are carried as `movabs reg, −(ImageBase + target_RVA)` folded into an MBA polynomial.**
+Worked example, function `0x0166E230..0x0166E50C`:
+
+```asm
+0166e3a2  mov    rax, rdi
+0166e3a5  not    rax                            ; ~rdi
+0166e3a8  movabs r8, 0xfffffffdfe995585         ; C
+0166e3b2  imul   rax, r8
+0166e3b6  inc    r8                             ; C+1
+0166e3b9  imul   r8, rdi
+0166e3bd  add    r8, rax                        ; (~x)*C + (C+1)*x  ==  x - C
+...
+0166e509  jmp    r8
+```
+
+`−C = ImageBase + 0x166AA7B`. **Prediction registered from the algebra, then tested: `0x166AA7B`
+should be a real function start.** It is — an *exact* `.pdata` start carrying `packer31`'s
+universal prologue. The identity `(~x)*C + (C+1)*x == x − C` was verified over 2,000 random `x` and
+50 random `C`; the verifier independently confirmed `r8` has **no intervening write** between the
+`add` and the `jmp`.
+
+**At scale**, over every `movabs r64, imm64` in exec sections whose *negation* lands in
+`[ImageBase, ImageBase+SizeOfImage)`: **940 constants, all in `packer31`** — **335 (35.6 %) are
+exact `.pdata` function starts**, 353 land inside some function, 614 sit inside a computed-tail
+function.
+
+⚠⚠ **The lane's stated negative control was DEGENERATE and the finding survives anyway** — worth
+recording as a method note. *"940 random qwords, same test → 0/940"* tests only the range filter
+(a random qword passes it with p ≈ 3.7e-12), so it returns 0 whether or not the hypothesis is
+true. **Replacement controls, all against the same 940-item hit set:** uniform random RVA in the
+image → **0/940**; uniform random RVA within `packer31` → **0/940**; the same 940 targets shifted
+`+0x4 / +0x10 / +0x1000` → **0 / 1 / 2**; shifted `+0x1` → 13. Against a 0.0275 % base rate,
+**35.6 % is far above chance.** ⇒ finding **[M]**, its stated control worthless.
+
+⚠ **Grade the population claim narrowly.** *"**The** jump target is carried as
+`movabs −(IB+RVA)`"* is **[M] for one function** and **[I] at population scale**: only **168 of the
+614** in-tail constants are materialised into the *same register the tail jumps through* (446 into a
+different one; chance baseline ≈38 — a 4.4× enrichment, consistent with MBA register shuffling).
+What is **[M] at scale** is the weaker and still-valuable claim: **these constants are addresses of
+real functions.** ⚠ Also refuted: the lane's section split of the 605 non-exact targets omitted
+`packer31`, which is the 4th largest bucket (`packer2` 213 · `packer1` 117 · `packer30` 112 ·
+**`packer31` 85** · `packer40` 33 · `packer0` 34 · `.rsrc` 1 · unmapped 10).
+
+**And the runtime `+ ImageBase` step is compiled in too** [M on the identity, [I] on its role]: the
+`movabs reg, 0xFFFFFFFE00000000` (`−2^33`) sites are the same MBA identity computing
+`variable + 2^33` = `variable + ImageBase`. Leads: `0x01DB0940`, `0x020DBB99`, `0x02C779CE`.
+⚠ *"at 3 sites"* is a **literal-immediate floor**, not a count — at least 5, with 10 `movabs`
+sitting within ±4 of `−2^33`.
+
+### 6b.5 ⇒ What this hands FK-31 [I]
+
+`packer31`'s constants encode **preferred** VAs (`ImageBase + RVA`) and carry **no relocation
+entries** (all 2,020 `DIR64` relocs live in `packer0`/`packer2`), yet S131 measured the module live
+at `0x7FFD3B400000`. So a runtime term supplies the delta:
+
+```
+jump_target = delta + (ImageBase + target_RVA) = live_base + target_RVA
+```
+
+⇒ **`live_base + 1` is the native output shape of this dispatch when `target_RVA` resolves to 1** —
+or resolves to 0 with the tail's `inc` applied. That reframes FK-31: **the kill need not be a
+bespoke crash primitive at all**; it is consistent with the protector's ordinary flattened dispatch
+being handed a null/poisoned target, landing on its own read-only DOS header and faulting EXECUTE.
+Matches every S131 measurement — `ExceptionInformation[0]==8`, the READONLY/MEM_IMAGE page, and the
+per-boot constancy (the base is per-boot stable; the *offset 1* is constant because a null RVA is).
+
+⚠ **[I], and the alternative is equally consistent:** the delta's storage is **not identified**, and
+the protector's own manual mapper may instead apply a **custom fixup table** to these constants from
+the encrypted `packer0`. Both routes predict the same output shape, so the FK-31 *consequence* is
+robust to which is true — **the repair is not.**
+
+### 6b.6 ★★★★ THE KILL PRIMITIVE'S OWNER — the concrete new lead [M]
+
+§6's stub reproduced byte-for-byte, `0x80F804 + 0x13AFFC = 0x94A800` recomputed by machine, and the
+`packer0 0x1831C0` table re-read as 5 pointers + NULL:
+
+```
+[0] 0x1831C0 -> RVA 0x871030   (reads [rcx+0x34])
+[1] 0x1831C8 -> RVA 0x8D9480
+[2] 0x1831D0 -> RVA 0x8B8B60   (large; saves xmm10.., 0x7C8 frame)
+[3] 0x1831D8 -> RVA 0x8131D0   (writes [rcx+0x30]; same syscall-number decrypt idiom)
+[4] 0x1831E0 -> RVA 0x80F7F0   <-- Nt???(handle@[this+0x10], 0xDEAD)   == §6's killer
+```
+
+**Exactly one** qword in the whole file equals `ImageBase + 0x80F7F0`, and it is slot 4 — which
+independently validates the RVA↔file-offset mapping against §6's prior work. ⚠ Slot 3's identity
+(§6 calls the 4th entry `NtCreateThreadEx`) rests on the **same runtime-decrypted syscall number**
+and therefore carries the **same [I] caveat** as §6's annotation above.
+
+★★ **NEW — the table's SOLE xref image-wide is a constructor at RVA `0x7F86F0`:**
+
+```asm
+007f86f0  push   rsi
+007f86f1  sub    rsp, 0x20
+007f86f5  mov    rsi, rcx                  ; ctor arg
+007f86f8  mov    ecx, 0x38                 ; sizeof(object) = 56
+007f86fd  call   0x896e00                  ; allocator
+007f8702  lea    rcx, [rip - 0x675549]     ; -> 0x1831C0   <<< THE VTABLE
+007f8709  mov    qword ptr [rax], rcx      ; obj->vtbl = table
+007f870c  xorps  xmm0, xmm0
+007f870f  movups xmmword ptr [rax+8], xmm0
+007f8713  mov    qword ptr [rax+0x18], 0
+007f871b  mov    qword ptr [rax+0x20], rsi
+007f871f  mov    qword ptr [rax+0x28], 0
+007f8727  mov    dword ptr [rax+0x30], 0
+007f872e  mov    word  ptr [rax+0x34], 0
+007f8739  ret
+```
+
+A **0x38-byte object wrapping a process handle at `+0x10`** (zeroed here, filled later) whose
+vtable's last method terminates that process with `0xDEAD`.
+⇒ ★★ **This is the object Wall #7 should be hunting the users of, and it is the closest anything has
+come to FK-32's TRIGGER.**
+
+⚠⚠ **AND IT EXPLAINS WHY DIRECT XREF HUNTING HAS FAILED FOR FK-10 ACROSS MANY SESSIONS:** the
+constructor has **0 rel32 callers and 0 stored pointers**. It is reached **only through the
+flattened dispatch of §6b.4.** The verifier extended the `disp32` sweep to three variants the lane
+did not run (disp32 followed by imm8 / imm16 / imm32) and still found **exactly one** reference, so
+the "sole xref" claim is *stronger* than reported. ⇒ **xref hunting is the wrong instrument on this
+binary; decoding the computed tails is the right one.**
+
+### 6b.7 ⚠ What this scan is structurally blind to — read before trusting any negative above
+
+1. **`.rwx` (RVA `0x7000`, 4,096 B, `IMAGE_SCN 0xE0000060` = CODE|EXEC|READ|WRITE) is 100 % zero on
+   disk**, and a `DIR64` reloc at `packer2 0x941908` points at it. **Any code the protector
+   *generates* there at runtime is invisible offline, by construction** — and a generated kill stub
+   is fully consistent with every negative in §6b.3. **This is the single largest blind spot.**
+2. `packer0` (8.15 MB) and `.rsrc` (9.6 MB) are the protector's **encrypted data**. A dispatch
+   table, custom fixup table or target-RVA array living there is unreadable — which is exactly where
+   §6b.5's alternative sits.
+3. **MBA expression of the `+1`.** The scanner sees `inc r64`, `add r64,1`, `sub r64,-1`,
+   `add r64,imm32=1`, `lea r64,[r64+1]`. It **cannot** see a `1` carried in a register, a `1`
+   produced by the polynomial, or `neg`/`not` pairs that net +1 across intervening instructions.
+   With ~43 % of instructions being MBA this is a **real recall gap** — and it is the gap the
+   `0x03C8EDF2` counter-example fell into.
+4. **The rip-relative `disp32` sweep is a candidate GENERATOR, not an xref engine.** Measured
+   false-positive rate: **712 candidates for 27 real `ff 15` uses** of IAT slot `0x8148` (~96 % FP).
+   Over a zero-filled region it produces one hit per byte and is useless.
+5. **`call`/`ret`-based transfers were not searched.** A kill implemented as a poisoned return
+   address, or an indirect `call [reg+disp]` through a heap object, leaves no signature here.
+6. **`packer30`'s 54 KB entry function was not decoded**, and linear disassembly of it is **not
+   trustworthy** — it carries deliberate overlapping-instruction obfuscation (`test`-then-`jae`,
+   where `test` always clears CF, jumping into the middle of a preceding instruction).
+
+⇒ ★ **The honest headline is: the kill ROUTINE was not found, over a stated 48,129,536-byte
+denominator, with the blind spots above enumerated.** What *was* found is the object it hangs off
+and the dispatch mechanism that reaches it.
+
 ---
 
 ## 7. What to call it now — and what NOT to do
@@ -421,8 +692,30 @@ exact failure FK-10 exists to correct. "Vendor unidentified" is the accurate sta
 
 ## 8. Cheapest next steps, ranked
 
+★★ **RE-RANKED S132 — the new #0, and a warning that changes how #1 must be attempted.**
+
+0. **Offline, free — symbolically decode the 3,658 `packer31` computed tails (§6b.4).** The MBA is a
+   fixed polynomial family (`Σ imul(const_i, term_i)` then a final add), machine-decodable with
+   capstone `regs_access`, and §6b.4 shows the target constant falls straight out. That yields the
+   protector's **control-flow graph**, which turns *"find the block that decides to kill"* into a
+   **graph query instead of a needle hunt** — and it is the only route to the users of the
+   `0x1831C0` vtable and its constructor `0x7F86F0` (§6b.6), both of which have **zero** direct
+   callers. Two cheap sub-tasks fall out: grade the 605 unclassified negated constants against the
+   2^33-MBA signature (`shl 0x21` / `or reg,1` / nearby mask-`and`) to sharpen the 335 floor, and
+   look for a **custom fixup table** in the plaintext 1.4 % of `packer0` (§6b.5's alternative) —
+   a run of dwords whose values are `packer31` RVAs of `movabs` immediates.
+   ★ **One offline check nobody has run, against minidumps ALREADY ON DISK** (`scratchpad/s131/
+   evidence/`, `dumps/crashpad-*`): if the FK-31 fault really is this dispatch, the faulting `jmp`
+   is the **last instruction of a `packer31` function**, so the return-address chain should be intact
+   and the stack should carry a `packer31`-range frame at a `.pdata` function boundary. **Zero
+   launches.**
+
 1. **Offline, no game needed — disassemble `0x8ffcd4–0x93e886`** (251 KB) and find its callers.
    That should yield the page-feed loop and the comparator, i.e. Wall #7's mechanism.
+   ⚠⚠ **"find its callers" is the part that will fail as stated (S132, §6b.6).** Direct xref hunting
+   does not work on this binary — the kill primitive's own constructor has **0 rel32 callers and 0
+   stored pointers**, and the `disp32` sweep runs ~96 % false positives. **Do step 0 first**; callers
+   here are reached through the flattened dispatch, not through call edges.
 2. **Offline — disassemble `packer30` first** (2.2 MB; holds the entry function and the four
    largest functions; `call`-structured rather than MBA-saturated). Feed the disassembler the
    loader table at **RVA `0x14D8758`**, *not* the stale `.pdata` section. All sampled
@@ -431,6 +724,9 @@ exact failure FK-10 exists to correct. "Vendor unidentified" is the accurate sta
    stubs compute `sysno = ROL32(K1^key,7)+K2` and **all decode to `0xFFFFFFFF` on disk** — they
    are runtime-patched. Reading them live names every syscall the protector makes and confirms
    `0x80f7f0`.
+   ★ **PROMOTED by S132 — this is now the ONLY way to settle §6's `NtTerminateProcess` identity**,
+   which §6b downgrades to [I] precisely because that `0xFFFFFFFF` is unknowable from the file.
+   The relevant cookie for the killer is the dword at `packer2` RVA **`0x94A800`**.
 4. **One shim probe:** call `RtlLookupFunctionEntry` on a known game `.text` address and log
    whether it resolves — settles §4's exception-directory mechanism.
 5. **Two free instruments nobody is using:** `%TEMP%\SUPERVIVE_SUPERCODE.DAT` (exists, 0 bytes)
@@ -500,3 +796,7 @@ exact failure FK-10 exists to correct. "Vendor unidentified" is the accurate sta
 | "no string names the integrity check — CLEAN NEGATIVE, not coverage-blocked" | `fk3-fk4-settled.md:513`, `strxref-open-questions.md:321` | **Scope error — 20th instrument-artifact instance.** `strxref.py:63` hardcodes `merged.dump.exe` (the *game exe*); `runtime.dll` appears 0 times in either doc. The negative structurally excluded the protector |
 | "the packer's VEH kills exception-using payloads" | `CLAUDE.md` | ⚠⚠ **BOTH halves of the mechanism are now REFUTED (S121, 2026-08-14).** (a) **There is no protector VEH.** `LdrpVectorHandlerList` decoded with the live cookie holds **exactly one** entry — the exe's own `cmp [rax],0xC0000374` heap-corruption handler. The protector hooks `KiUserExceptionDispatcher` via a **ProcessInstrumentationCallback** instead, leaving ntdll byte-identical to disk. (b) **`RtlLookupFunctionEntry` DOES resolve for the main image.** The static `EXCEPTION` dir is RVA=0/size=0, but the protector registers a **dynamic function table of 524,439 `RUNTIME_FUNCTION`s** covering `.text 0x8a00–0x7649f39` (sorted, 0 out of order), with **29,688 language handlers across 48 distinct handlers, all inside the exe** (top: `__C_specific_handler` ×26,219). ⇒ the rule *"no C++-exception payloads"* **STANDS empirically but now has NO known mechanism.** Do not cite the missing-function-table explanation. |
 | FK-32 `0x0000DEAD` unattributed | `fk31-fk32-successors.md` | **Mechanism CLOSED** — `NtTerminateProcess(h, 0xDEAD)` at `runtime.dll 0x80f7f0` |
+| "`0x80f7f0` **is** `NtTerminateProcess(h, 0xDEAD)`", stated inside a MEASURED block | **this file, §6** | ⚠ **GRADE SHARPENED S132 (§6b)** — the *bytes* are [M]; the *identity* is **[I]**. The syscall number is `ROL32(0x618E77BF ^ *(dword*)0x94A800, 7) + 0x6710C747` and the on-disk cookie yields `0xFFFFFFFF`. The file supports only `Nt???(HANDLE, 0xDEAD)`. Settle it with §8 step 3 |
+| "**No instruction anywhere** forms `base+1` as an address" | **this file, §5** | ⚠⚠ **TOO STRONG — sharpened S132 (§5 annotation, §6b.2–§6b.3).** True for 64-bit literal immediates over 48,129,536 exec bytes; **false in general** — `packer31 0x03C8EDF2` computes `[rsp+0x158] + ImageBase + 1` via MBA and **dereferences it**. Defensible form: *"no 64-bit literal immediate equal to ±(ImageBase+1) survives adjudication as an operative address constant."* |
+| "the protector's kill code should be findable by xrefs" | implicit throughout Wall #7 | ⚠⚠ **REFUTED S132 (§6b.6)** — the killer's own constructor has **0 rel32 callers and 0 stored pointers**, and the `disp32` sweep is ~96 % FP. It is reached only through the flattened computed-tail dispatch. **Xref hunting is the wrong instrument on this binary** |
+| `runtime.dll`'s on-disk location was never recorded | this file | ★ **S132**: `G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\runtime.dll`, 67,511,496 B, md5 `5e73e00ab52bc8f30574d8c023a84171`, resolved from `configs/launch-redirect.ps1:46`. DSN identity-confirmed byte-identical at file offset `0x7C1BEC` (§6b.1) |

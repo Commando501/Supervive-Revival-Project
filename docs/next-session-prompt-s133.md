@@ -19,7 +19,7 @@ Written 2026-08-20 at the end of S132. Everything below is reproducible from com
 3. **Flight 2 — the dismount is USABLE**: with a `LokiPlayerStart` passed as `LandingLocationActor`
    (1,488,146 uu from the pod at that instant) the hero landed **at the PlayerStart**, settled onto the
    floor and held position bit-for-bit for 9 s. ⇒ `GetLandingTeleportLocation` consumes its actor argument.
-4. **A within-run negative control ran before every one of the five calls** — same detach, same
+4. **A within-run negative control ran before every one of the SEVEN calls** — same detach, same
    component, same primitive, `PlayersAttached` EMPTY — and never moved the hero.
 5. Seven adversarially-verified offline lanes, which agreed with the lead's independent transcription
    and added five corrections (`scratchpad/s132/lanes/`, doc §6b) — including one that **refuted a
@@ -195,12 +195,36 @@ first thing next session, when nothing is staged.
   bit 33. **That defeats the constant-search method the lead proposed**, and it is a property of the
   target, not of the tool. All 13 candidate `movabs ±(ImageBase+1)` sites are individually refuted by
   their consuming instruction — they are bit-masks and 2^33 MBA.
+  ⚠⚠ **BOTH SENTENCES ABOVE WERE REFUTED BY THE LANE'S OWN ADVERSARIAL VERIFIER AND MUST NOT BE
+  CARRIED FORWARD AT [M]** (`scratchpad/s132/lanes/L6-fk31-runtime-selfbase-VERIFY.md`, verdict rows
+  **H2b REFUTED** and **H3 REFUTED**; absorbed into `docs/fk10-protector-identified.md` §5 and §6b.2).
+  (a) *"defeats the constant-search method"* — **REFUTED with a count**: over the same 48,129,536
+  bytes the bit-33 population is **a few dozen sites** (`movabs 0x200000001` ×10, `−(0x200000001)`
+  ×3, `movabs` within ±4 of `−2^33` ×10, `shl r64,0x21` ×9 — ⚠ the ×3 is a subset of the ×10, so do
+  not sum these into a total). Nothing swamps; every hit is individually
+  adjudicable, the search **was** run, and it **was** decisive. The correct rule is *"each bit-33 hit
+  needs individual adjudication"*, **not** *"the method does not work"* — recording it the other way
+  forecloses a working technique (`docs/method-rules.md` §1).
+  (b) *"all 13 … refuted"* — **REFUTED**: `packer31` RVA **`0x03C8EDF2`** computes
+  `[rsp+0x158] + ImageBase + 1` (concrete evaluation, 2000/2000) and the result **is dereferenced**
+  at `0x03C8EFF3 movzx r12d, byte ptr [r9]`. The `+1` comes from the polynomial, not the immediate —
+  the exact blind spot a literal-constant scan has. ⚠ Its role is **[S]**, *not* the kill: the
+  surrounding `test byte ptr [rsp+0x28],1` / `cmove` is the MSVC inline-buffer idiom, so a biased
+  pointer (`stored = ptr − IB − 1`) is the likelier reading. **Defensible negative:** *"no 64-bit
+  literal immediate equal to ±(ImageBase+1) survives adjudication as an operative address constant."*
 - **[M] The protector uses a computed-tail-jump architecture**: 4,769 of 18,580 functions end in
   `jmp <reg>`, with targets carried as `movabs reg, -(ImageBase + RVA)` folded into an MBA polynomial.
   **[I] ⇒ a jump to `base + 1` is the NATIVE OUTPUT SHAPE of that dispatch when the resolved target
   RVA is 1** — FK-31 now has a mechanism class rather than a mystery.
 - **[M] FK-10's kill primitive re-verified byte-exact, and its OWNER found**: RVA `0x80F7F0` is
-  `NtTerminateProcess([this+0x10], 0xDEAD)`, and it is **slot 4 of a 5-method vtable at
+  `NtTerminateProcess([this+0x10], 0xDEAD)`
+  — ⚠ **GRADE: the BYTES are [M]; the `NtTerminateProcess` IDENTITY is [I], not [M]** (verifier row
+  **H7c UNSUPPORTED at [M]**). The syscall number is `ROL32(0x618E77BF ^ *(dword*)0x94A800, 7) +
+  0x6710C747` and the on-disk `packer2` cookie evaluates to `0xFFFFFFFF`, so the file alone supports
+  only `Nt???(HANDLE from [this+0x10], 0xDEAD)` — a shape `NtTerminateThread` also has. Settle it
+  with a live read of the cookie (FK-10 §8 step 3). Slot 3's `NtCreateThreadEx` label carries the
+  same caveat —
+  and it is **slot 4 of a 5-method vtable at
   `packer0 RVA 0x1831C0`**, installed by a **constructor at RVA `0x7F86F0`** — that table's only xref
   image-wide. **That constructor is the next thing to read.**
 - **[M] The kill routine itself was NOT found**, reported with its coverage denominator:
@@ -220,7 +244,7 @@ first thing next session, when nothing is staged.
   and the repo's "ret 0" shorthand reads as though it does.
 - **`0x5586530(hero)` is REAL and unnamed** (reads `hero+0x460`, then `minsd`/`cvtsd2ss` on a vector
   at `+0x240`). ⚠ It dereferences `hero+0x460 / +0x1978 / +0x1980` with **no null checks** — it
-  survived all five S132 calls on `BP_HERO_Ronin_C`, but read those three before arming on any other hero.
+  survived all seven S132 calls on `BP_HERO_Ronin_C`, but read those three before arming on any other hero.
 - ⛔ **`AuthPlayerEnterWorld` (`0x55CCE70`) is FORECLOSED** [M, lane 7] — its two terminal actions are
   direct calls to the stripped `0xF7EB50` and it writes **no** actor or component transform.
 - **`C8`/`C9` in the pooled-spawn chain are still unexercised, not excluded** (S130).

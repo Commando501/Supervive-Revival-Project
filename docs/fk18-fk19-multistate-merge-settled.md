@@ -17,6 +17,24 @@ Named-import build: **`dumps/merged2.dump.iat.exe`** (1,107/1,107 slots resolved
 later the same day and folded in (§11), taking the artifact to **16,638 / 54.95 %**. The +13 does not
 change any conclusion here and the body is deliberately left at the state it was measured against.
 
+⚠⚠ **`merged2` IS NO LONGER THE NEWEST IMAGE — the ladder has three more rungs (added by the S132
+sweep, 2026-08-20; neither S131 nor S132 propagated them here).** `merged2` is still the *reference*
+this document's numbers are measured against, and every method conclusion below stands unchanged —
+but a successor grepping for "the canonical cold image" must not stop here:
+| image | added by | how it was grown |
+|---|---|---|
+| `dumps/merged2.dump.exe` | S121 | all 11 state dumps — **this document's subject** |
+| `dumps/merged3.dump.exe` | S131 | + a >25 min armed drop-pod window — **+43 `.text` pages / 157,916 B, 0 conflicts** (drop-path code never decrypted before) |
+| `dumps/merged4.dump.exe` | S131 | + the RM_RIDEABLE / R4 injections — the image in which the `AuthPlayer*` bodies became readable |
+| `dumps/merged5.dump.exe` | S132 | `merged4` + two live S132 dumps — **+6 `.text` pages, 0 conflicts** |
+★★ **The growth mechanism is the one §12.4 was groping for and it is now settled by use: DRIVE THE
+CODE PATH, THEN `dumpimage`.** Every rung above was bought by *calling* previously-unreached
+functions, not by visiting more menu screens — which is exactly §4's finding (five menu substates of
+one process lifetime contributed **0 pages**) read forwards instead of backwards. ⚠ Diminishing
+returns are real and visible in the table: +43 pages for a whole armed drop window, +6 for two more.
+⇒ **for `.text`-shaped work prefer `merged5`; `merged2`'s `.rdata`/`.data` coherence property (§5)
+is unaffected and still the reason not to read mutable globals out of any merged image.**
+
 ---
 
 ## 0. The two-sentence version
@@ -628,6 +646,26 @@ into. The exit code is still captured, which is exactly how you tell that class 
 `.text` pages** and contribute **≈2,300** to a re-merge. If it lands near 15,700 like every healthy
 dump, the crash-path hypothesis is **wrong** — and that is the more interesting outcome. The
 prediction is written into every `CRASHWATCH-INFO.txt` so it cannot be quietly revised afterwards.
+
+> ### ⚠⚠ FIRST REAL FIRE — 2026-08-20 (S132). THE NUMBER LANDED IN THE FALSIFYING REGION AND IT DOES
+> ### **NOT** SCORE THIS PREDICTION. Do not read it as a refutation (recorded by the S132 sweep).
+> The harness caught a genuine death for the first time — an **FK-31 staging death**, `0xC0000005`,
+> with only `gft`+`fo` resident — and archived a 41 MB crashpad minidump to
+> `dumps/crashpad-20260820-143225`. **Its image reads `.text` 51.8 % against a healthy 53.0 %** —
+> i.e. ≈15,690 pages, essentially the *"near 15,700"* value written above as the falsifying outcome.
+> ⛔ **But the comparison is NOT MATCHED, so the pre-registration remains UNSCORED.** That process
+> **died at 141 s, during staging**, before the tutorial world was up — it had executed far less game
+> code than any of the fully-staged dumps the 53.0 % baseline is drawn from, so its low figure is
+> explained without the crash path being involved at all.
+> ★ **[I] There is a mechanism that makes this confound structural, and it comes from this document's
+> own §4/§5:** `.text` decryption is **monotone within a process lifetime**, so a short-lived process
+> **cannot** reach a high page count however it dies. ⇒ **a crash-era coverage test is only
+> interpretable against a control matched on how much of the game the process actually ran** — ideally
+> the same staged state, one arm dying and one arm dumped alive.
+> ⇒ **Action for a successor: add the elapsed-time and staging-state fields to `CRASHWATCH-INFO.txt`
+> and require a matched control before the prediction is scored.** A crash caught during staging can
+> never test it. ⚠ And note the *class* that fired: FK-31 staging deaths are ~27 % of launches on the
+> tutorial route, so **the harness's most likely catch is precisely the one that cannot score this.**
 
 **Fold a capture in with:** `usmapdump mergedumps dumps/merged2.dump.exe dumps`
 

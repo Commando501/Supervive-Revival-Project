@@ -209,6 +209,21 @@ this image and the distinction matters when grading by byte pattern.
 None of the three is itself a registered native (0 names point at them directly) — they are only ever
 *impl targets*, which is what a folded stub should look like.
 
+⚠⚠ **READ `ret 0` AS AN OPCODE, NOT AS A RETURN VALUE (sharpened S132, 2026-08-20).** `c2 00 00` is
+`retn imm16 = 0` — it pops **zero bytes** of stack and is a **VOID no-op**; it does **not** zero
+`eax`, and it leaves the return register **undefined**. §3's note already said this precisely
+(`retn imm16=0`), but the compressed `ret 0` shorthand has propagated across ~50 files where it sits
+one table row away from `0x00F7EB50` ("returns null/0"), and the two read as the same claim. They are
+not: **`0xF7EC20` tells you nothing about a return value, `0xF7EB50` guarantees one.** Practical
+consequence, measured: in `AuthPlayerDetachPlayerFromRidable` the two `0xF7EC20` calls
+(`0x55CCD5B`, `0x55CCE4E`) are void side effects whose returns are **never tested**, so neither gates
+anything — which is exactly why that function's dismount runs end to end despite carrying two folds.
+Grading a fold-bearing function as "returns 0 ⇒ probably bails" would have predicted the opposite of
+what was measured. See `docs/s132-dismount-settled.md`.
+★ **A fifth fold exists and a census graded against only these three (or the usual four) under-counts:
+`0x00FC6CF0` = `0f 57 c0 c3` = `xorps xmm0,xmm0; ret` → `0.0f`** (S131 lane D, 13 records). Add it to
+the fold table before grading anything by byte pattern.
+
 ### 4.2 Positive controls — known real bodies, must grade REAL and must yield a real impl
 
 | function | thunk | thunk body [M] | impl(s) [M] |
@@ -239,6 +254,27 @@ server-code stripping. Measured over all 31,723 registered `.text` pointers [M]:
 | — impl coverage-blocked / inlined | 932 / 2,509 |
 
 > **Empty-impl base rate = 78 / 6,669 = 1.2 %** [M].
+
+⚠⚠ **THE UNIT IS `exec thunks`, AND IT MATTERS — quote it every time this number is reused (S131 lane
+D census; propagated here by the S132 sweep, 2026-08-20, because 5 places in this file and several
+others carry the bare "1.2 %").** The table above declares the unit honestly, so this is a **unit
+artifact, not an error** — but exec thunks are heavily ICF-folded (`0x5254180` is the registered thunk
+of **92** records), so the per-*record* population is a different quantity. Measured over **16,277
+records, 12/12 controls passing** (`scratchpad/s131/lane-d-empty-impl-census.tsv`):
+**REAL 11,517 (70.8 %) · DARK 3,092 (19.0 %) · FORWARDER 1,153 (7.1 %) · EMPTY 515 (3.16 %, or
+4.28 % of gradeable)** — and in *this file's own* unit the count is **170**, not 78.
+⇒ **FK-1's conclusion is UNCHANGED and this file's argument is unchanged**: at 3.16 % an empty impl
+is still informative rather than ambient. Only the headline percentage moves, and only because the
+denominator does. **Never carry "1.2 %" without "of exec thunks".**
+★ **A FIFTH FOLD exists and is missing from the table below: `0x00FC6CF0` = `0f 57 c0 c3` =
+`xorps xmm0,xmm0; ret` → `0.0f`** (13 records, six of them `ALokiPlayerState` float getters).
+**A census graded against only the four known folds under-counts.**
+★ **The enriched category is `Auth*`, not "drop"** — gradeable `Auth*` **67/158 = 42.4 %** vs
+non-`Auth` Loki **8.30 %**, Fisher **p = 1.6e-28** over 41 classes, and it tracks the **naming
+convention**, not the reflection flag. ⇒ there was **one decision to remove server authority**, and
+every "why is *this* subsystem stubbed" question is downstream of that single decision.
+⚠ The census is **blind to Angelscript entirely** (AS names have zero byte occurrences in the image),
+so it says nothing about the half of the drop path that actually works.
 
 Fold popularity: `0x0F7EC20` **58** thunks · `0x0F7EB60` 15 · `0x0F7EB50` 5.
 
@@ -351,6 +387,21 @@ Replace `CLAUDE.md:291-295`. The substance is unchanged; only the addresses are 
   (disassembly-verified in `FFA/LokiRespawnComponent::Respawn`, which null-checks the character but
   NOT the ASC) and the client's `SpawnPlayer` returns nullptr.
 ```
+
+⚠ **"FOUR" IS THE COUNT FK-1 ENUMERATED, NOT THE POPULATION — do not read it as a closed set (added
+by the S132 sweep, 2026-08-20).** The block above is a faithful record of what FK-1 established and
+none of it is retracted; but three sessions have each found *more* empty server-authority impls on
+the same route, all at the same fold `0x0F7EC20`:
+`ULokiRideableComponent::AuthPlayerEnterWorldNew` (S130) · **`AuthAddPlayer`** (thunk `0x2C2CE30`) ·
+**`AuthRemovePlayer`** (same thunk) · **`AuthSetCanJump`** (thunk `0x5296F30`) — the last three
+graded S132 [M, strong]. ⇒ that component alone carries **four** stripped `Auth*` mutators, and
+**the only reflected writers of either of its player arrays do nothing in this client**, which is
+precisely why the S132 dismount had to hand-build a `TArray` append instead of calling `AuthAddPlayer`.
+★ **The obvious shortcut was CHECKED, not assumed** — grading the API you are about to call is
+cheaper than a launch. ⇒ **before concluding "there is no API for X", grade every `Auth*` on the
+owning class**; the S131 census puts the whole population at **515 EMPTY records** and the `Auth*`
+enrichment at **42.4 % gradeable**, so on this route a stripped mutator is the *expected* case.
+See `docs/s132-dismount-settled.md`.
 
 Also worth adding to `docs/fk1-angelscript-settled.md:167` — an IMPL column and this banner:
 

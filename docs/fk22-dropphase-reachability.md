@@ -2753,6 +2753,10 @@ that always fails: `0x55CD572` calls the stripped fold `0xF7EB50` (`33 c0 c3`) a
 *"failed to get the round game mode"* log; its dead tail has **zero** external rel32 entries in three
 images. Same wall on `AuthPlayerPreSpawnOnAddToPlane` (`0x55CD800`); `AuthPlayerEnterWorldNew` is an
 empty fold. ⇒ **hand-spawning a pod yields a pod and no rider.**
+⚠⚠ **SCOPE CORRECTION — §30 (S132): this is a statement about the MOUNT, not about the ride.**
+The same component's `AuthPlayerDetachPlayerFromRidable` (impl `0x55CCCB0`) is REAL, touches no round
+game mode, and was flown **six times**: hero out of the pod, un-hidden, collision and movement restored,
+teleported to a chosen landing actor. **The exit half of the ride is drivable today.** See §30.
 ★★ **NEW GENERAL INSTRUMENT:** the `.data` `{name_ptr, exec_thunk, impl}` record table gives a
 REAL/EMPTY verdict **without the code page being decrypted**, because the fold addresses are known
 constants. **§2.5's 16 COVERAGE-BLOCKED keys are an instrument limit, not a fact, for at least 6 of
@@ -3135,3 +3139,187 @@ path is how you name a category static analysis cannot reach.
 any other route to a round game mode on this client? S124 established the tutorial already RUNS the
 round mode, so one plausibly exists — if a different accessor is REAL, the wall may be one data poke
 away rather than a dead end.
+
+---
+
+## 30. S132 (2026-08-20) — THE DISMOUNT RUNS, AND IT IS USABLE. THE BLOCKER CHAIN MOVES AGAIN.
+
+**Primary evidence: `docs/s132-dismount-settled.md`. Raw: `scratchpad/s132/evidence/`, offline recon
+and its adversarial verification: `scratchpad/s132/lanes/`.**
+
+§29 ended by pointing at the wall's stripped round-game-mode getter and asking whether another route
+to it exists. **S132 did not answer that. It went round it instead** — from the other end of the ride.
+
+### 30.1 The result
+
+Appending the PlayerState to `ULokiRideableComponent::PlayersAttached` (`+0x130` Data / `+0x138` Num /
+`+0x13C` Max) with the **game's own `ResizeGrow` at `0x00F988D0`** — the exact function the fifth
+wall's own tail calls at `0x55CD75B`, so the ABI and element size are correct *by construction* — and
+then calling **`AuthPlayerDetachPlayerFromRidable`** (impl `0x55CCCB0`, exec thunk `0x5456100`)
+through the S55 direct `UFunction.Func` thunk **takes the hero out of the pod, un-hides it, restores
+its collision and movement, and places it at a chosen landing actor.**
+
+Risk class **DATA**: two aligned `TArray`-header writes plus one element store, inside the game's own
+allocation. **Zero `.text` writes, zero PI hooks, zero CDO pokes.**
+
+| flight | calls | outcome |
+|---|---|---|
+| 1 | 4 | hero X = 1,453,041.8 → 4,859,800.1 → 11,648,502.8 → 14,428,083.3, each matching the flying pod's X at its **own** call time; run 2's hero Y **bit-identical** to the pod's (`==` on raw doubles, live); Z = 250.0 every time under a pod at Z = 20,100 |
+| 2 | 1 | `LokiPlayerStart` as `LandingLocationActor`, **1,488,146 uu** from the pod → hero landed **at the PlayerStart** `(-3206.4, 5070.5, 138.0)`, settled to Z = 90.15 and held **bit-for-bit for 9 s** |
+| 3 | 1 | reproduced flight 2 exactly; pod at X = 1,256,845 |
+| 5 | 1 | ⚠ **FAULTED, no move** — see §30.5. Not a failure of the recipe: no PlayerState candidate passed GATE 5 that run, and the arm proceeded anyway. |
+
+**Tally, re-derived from the seven canonical markers in `scratchpad/s132/evidence/` rather than carried forward: SEVEN detach calls across FOUR launches, SIX of which moved the hero.**
+
+**A within-run NEGATIVE CONTROL ran before every call** — the same detach, same component, same
+primitive, with `PlayersAttached` **empty** — and never moved the hero. The prediction is printed by
+the shim *before* each call, so it cannot be reinterpreted after.
+
+⇒ **[M] `GetLandingTeleportLocation` CONSUMES its `LandingLocationActor` argument**, which is what
+makes this a *deploy primitive* rather than a curiosity: the landing point is ours to choose.
+
+### 30.2 ⚠⚠ §29's "expect a PARTIAL dismount" was TOO PESSIMISTIC
+
+§29 and the S132 handoff both warned that `AuthPlayerDetachPlayerFromRidable` is **not fold-free** —
+it carries two `0xF7EC20` calls at `0x55CCD5B` and `0x55CCE4E` — and told the successor to expect a
+partial result and to read any null as locating one of them. **The fold observation is correct and
+stands. The consequence drawn from it was wrong.**
+
+Full transcription (§30.5): **neither fold's return is ever tested.** Fold 1 is followed by
+`mov r8d, 1` with `eax` dead; fold 2 is followed by the epilogue of a `void` function. **No branch
+depends on either.** Everything that matters — `SetActorEnableCollision(true)` (`0x339A550`),
+`SetPredropHidden(false)` (`0x5599040`, byte `hero+0x1BE8`), `GetLokiCharacterMovement` (`0x55AC8E0`)
+with `vt[+0x3E0](true)` and `[mv+0x1A0] = 1.0f`, `GetLandingTeleportLocation` (`0x55D89F0`, REAL,
+963 B) and the `SetActorLocation` teleport — is **a real body**. The partiality is confined to two
+unnamed void state-changes.
+
+⇒ **the general lesson: a fold in a function body is only a blocker if its RETURN is consumed.**
+Grading a function "not fold-free" is not the same as grading it partial.
+
+### 30.3 ★★★★★ FOUR EMPTY `Auth*` STUBS ON THIS COMPONENT, NOT ONE — and it explains the empty arrays
+
+`ULokiRideableComponent` declares `void AuthAddPlayer(ALokiPlayerState)` as member index 0. **If it
+were real it would replace S132's entire hand-built append.** It is not:
+
+| method | exec thunk | impl | verdict |
+|---|---|---|---|
+| `AuthAddPlayer` | `0x2C2CE30` (23-way ICF) | **`0x0F7EC20`** | **EMPTY** |
+| `AuthRemovePlayer` | `0x2C2CE30` | **`0x0F7EC20`** | **EMPTY** |
+| `AuthSetCanJump` | `0x5296F30` | **`0x0F7EC20`** | **EMPTY** |
+| `AuthPlayerEnterWorldNew` | `0x5456460` | **`0x0F7EC20`** | EMPTY (already known, §26) |
+
+⇒ **[M, strong] the ONLY reflected writers of `PlayersInside` and `PlayersAttached` do nothing in this
+client.** That is *why* both arrays read `Data=0 Num=0 Max=0` in a fully staged world, and why a data
+poke is the only route to a rider **by construction**, not by preference.
+⚠ Grade note: the `.data` record table has no class column, so the rows are matched by name — but each
+name occurs **exactly once** in the whole 16,277-record table, `ULokiRideableComponent` is the only
+class declaring either, and the class's exec thunks are emitted **alphabetically** in one contiguous
+UHT block (`0x5455F40` … `0x5457940`) where `AuthAddPlayer` would sort at ~`0x5456050` — real code,
+not a thunk. Its thunk is absent from the block **because it was ICF-folded onto the shared
+one-object-param stub `0x2C2CE30`**, which is exactly what a stripped impl does.
+★ The shortcut was **checked, not assumed**, before a launch was spent on it.
+
+### 30.4 ⚠⚠ THE TRAP ON THIS SURFACE: `ContainsPlayer` READS THE WRONG ARRAY
+
+```
+0x55D0270  mov rax,[rcx+0x120]      ; PlayersInside.Data
+0x55D0277  movsxd rcx,[rcx+0x128]   ; PlayersInside.Num
+```
+
+It scans **`PlayersInside` (`+0x120`)**, not `PlayersAttached` (`+0x130`). After a *correct* append it
+still reads **false**, and that false is EXPECTED. **Using it as the append receipt manufactures a
+false negative on a working append.** It was disassembled before being trusted and turned into a
+pre-registered prediction instead — `D2c ContainsPlayer(after append — MUST still be false)` — which
+then confirmed the append had not landed in the wrong array.
+
+★★ **And the receipt that DOES work is free and log-independent:** `PlayersAttached.Remove(PS)` at
+`0x55CCE23` executes on **every** path past GATE 4, including the two that skip the hero body. So
+`Num` staying 1 vs dropping to 0 separates "bailed at a gate" from "ran past GATE 4" with no log
+dependence at all — on a function with **zero log strings in its 440-byte extent**. Observed
+**1 → 0** on every successful run.
+
+### 30.5 The six gates, all silent, all read out before the call
+
+`0x55CCCB0..0x55CCE68`, 440 bytes, 9 chained `.pdata` rows, page `0x055CC000` decrypted.
+Signature [M, UHT oracle]: `void AuthPlayerDetachPlayerFromRidable(ALokiPlayerState PlayerState,
+const AActor LandingLocationActor)`.
+
+1. `PlayerState != null` · 2. PS not garbage (`[PS+0xC] >> 30`) · 3. `PlayersAttached` non-empty ·
+4. PS present in it · 5. `PS->GetLokiCharacter() != null` · 6. that hero `IsA(ALokiHeroCharacter)`
+(`0x54F8DC0` is `IsChildOfUsingStructArray`; the class literal is `LokiHeroCharacter` at
+`.rdata 0x899A832`).
+
+The arm measures 5 by *calling* the reflected `GetLokiCharacter` read-only and 6 by walking the live
+class chain, **before** it writes anything — which is what makes a null attributable.
+⚠ **MEASURED DEFECT, worth carrying forward:** when *no* candidate passes GATE 5, proceeding anyway
+**faults** — `GetLokiCharacter` faults on a template PlayerState (`0xC0000005 READ 0xFFFFFFFFFFFFFFFF`
+at `rva 0x54F8C57`) rather than returning null. **GATE 5 is not a clean early-out for a bad
+argument.** The no-candidate branch must REFUSE. ★ The safety design held: SEH caught it, the client
+survived 428 s, and the arm's own restore step detected and removed the entry the aborted call had
+left in `PlayersAttached`.
+
+### 30.6 Other [M] facts worth reusing
+
+- **`UActorComponent`'s owner is at `+0xB8`**: runs 1–2 passed `nullptr` (the detach substitutes
+  `[comp+0xB8]` itself at `0x55CCCE5`) and runs 3–4 passed the pod **explicitly**; all four behaved
+  identically, and the arm printed `[comp+0xB8] … cls=BP_DropPod_Tutorial_C`.
+- **`PlayersAttached` is NOT replicated** (no `CPF_Net`), by two disjoint instruments. An earlier
+  S132 write-up called it "a replicated array"; the correction makes the write **safer** than
+  described, not riskier.
+- **`TArray::Remove` (`0x11F3860`) writes ONLY `Num`** — no free, no realloc. So the run-1 allocation
+  survived into runs 2–4 (`Max already covers it -> no ResizeGrow needed`), and **a poked buffer is
+  never freed by this function.**
+- **`0xF7EC20` is `c2 00 00` = `ret imm16 0`, a VOID no-op — it does NOT zero `eax`.** The repo's
+  long-standing "ret 0" shorthand reads as "returns zero", which is a different claim.
+- ⛔ **`AuthPlayerEnterWorld` (`0x55CCE70`) is FORECLOSED as an alternative route**: its two terminal
+  actions are direct calls to the stripped `0xF7EB50` and it writes **no** actor or component
+  transform. Satisfying its `PlayersInside` guard with a poke would move execution past the guards and
+  change nothing about where the hero is.
+- ⚠⚠ **A rel32 caller scan over `merged4` is a FLOOR even when uncapped** — 44.91 % of `.text` is
+  all-zero and it cannot see a reflected/Blueprint caller at all. Demonstrated from inside the result:
+  `KickPlayersFromPod`'s bytecode carries **two** `CALLSYS` sites and the scan found one, because the
+  other's AOT body is on a page all-zero in 30 of 30 images.
+
+### 30.7 Blocker chain, current
+
+```
+markers        REFUTED  (S124)
+phase          SOLVED   (S124)
+subscription   DEAD     (S124)
+SpawnPlane     FAULTS   (S124/S17) -- b1only still creates a live LokiDropShip
+SpawnDropPodForTeam -> RETURNS TRUE, pod spawns                        FIXED    S130
+  |
+  +- InitializeDropPod RAN, 3/3 discriminating writes landed           MEASURED S131
+  +- the pod is ALIVE and FLYING at its cooked 20,000 uu/s             MEASURED S131
+  +- the RIDER HANDOFF (mount) fails: one stripped round-game-mode
+  |    getter, three consumers, no sibling left to try                 MEASURED S131
+  +- THE DISMOUNT RUNS, AND IS USABLE: hero out of the pod, un-hidden,
+  |    collided, gravity-affected, placed at a CHOSEN actor on real
+  |    terrain, standing                                               MEASURED S132  <-- HERE
+  +- NEXT (offline, free): transcribe SpawnAndMoveLokiCharacter_MoveStep
+  |    (0x55C1B20) and hand-assemble the MOUNT the same way -- the
+  |    wall's whole success tail is real and named except that one
+  +- NEXT (one launch): is the hero PLAYABLE at the landing point?
+  |    -> play-atlanding-walk (-DKFLYMODE=1). The flying-mode arm is
+  |       DEGENERATE: its control moved 2,926 uu at constant Z=13,240
+  +- C8 / C9 still never fired: unexercised, NOT excluded
+```
+
+### 30.8 What is still open here
+
+- **Is the hero playable at the landing point?** Open. See `docs/next-session-prompt-s133.md` §1.2 —
+  the arm is built and the readings are pre-registered, and the obvious arm is measured DEGENERATE.
+- **The mount.** The wall's success tail is `LokiTeleportActor` (reflected) →
+  `SetActorEnableCollision(true)` → `SpawnAndMoveLokiCharacter_MoveStep` →
+  `SetActorEnableCollision(false)` → a `GetServerTime` stamp into `hero+0x1C10` → the append. S132
+  proved the append; the rest is real and named **except** `MoveStep` (`0x55C1B20`), which is not
+  reflected and carries two folds of its own. **Transcribe it before designing the arm.** Free.
+- **`GetLandingTeleportLocation` (963 B) is untranscribed.** That it consumes the actor is [M]; *how*
+  it derives the point is not — the −9.85 uu rest offset observed in flight 2 is the hero's own
+  capsule settling, not necessarily the function's output.
+- The two `0xF7EC20` folds are **unnamed** (`0xF7EC20` has ~165,789 call sites, so the address
+  identifies nothing), and `0x5586530(hero)` is REAL and unnamed — ⚠ it dereferences `hero+0x460`,
+  `hero+0x1978` and `hero+0x1980` with **no null checks**. It survived every S132 call on
+  `BP_HERO_Ronin_C`; read the three pointers before arming on a differently-configured hero.
+- ⛔ **None of this is a shipping fix.** It writes a live component's state array by hand and drives
+  an authority-only entry point. Do not add it to the default shim set.

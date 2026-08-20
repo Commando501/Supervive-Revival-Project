@@ -3,7 +3,8 @@
 **One line: appending the PlayerState to `PlayersAttached` with the game's own `ResizeGrow` and then
 calling `AuthPlayerDetachPlayerFromRidable` takes the hero out of the pod, un-hides it, restores its
 collision and movement, and places it at a chosen landing actor on real terrain, where it stands —
-**five calls across two launches**, four of them against a target moving at 20,000 uu/s, each preceded
+**seven calls across four launches, six of which moved the hero**, four of those against a target moving
+at 20,000 uu/s, each preceded
 by a within-run negative control that never moved it.**
 
 ★ **Flight 1 (§1) established that it RUNS. Flight 2 (§6) established that it is USABLE**: with a
@@ -20,6 +21,20 @@ Offline recon + adversarial verification: `scratchpad/s132/lanes/`.
 ---
 
 ## 1. THE RESULT
+
+★ **THE TALLY, AND HOW TO RE-DERIVE IT RATHER THAN CARRY IT.** Seven canonical markers sit in
+`scratchpad/s132/evidence/` (`marker-6..9-DISMOUNT*`, `f2-`, `f3-`, `f5-`). Each records exactly one
+detach call and exactly one negative control:
+
+```
+grep -o "detachRan=[01] fault=[-01]* moved=[-01]*" scratchpad/s132/evidence/*DISMOUNT*.txt
+grep -c "D1 RESULT: hero moved=no"                  scratchpad/s132/evidence/*DISMOUNT*.txt
+```
+
+**7 detach calls across 4 launches · 6 moved the hero · 1 faulted without moving it (§6a-2.3)
+· 7 negative controls, ALL `moved=no (as predicted)`.**
+⚠ An earlier draft of this document said *"five calls across two launches"*; that was true when it
+was written and went stale within the session. **Re-derive counts from the artifacts; never carry them.**
 
 | run | `LandingLocationActor` passed | hero X after | Y | Z | `PlayersAttached.Num` |
 |---:|---|---:|---:|---:|---|
@@ -253,7 +268,7 @@ be false)` — which then confirmed the append had not landed in the wrong array
 
 ### 5.3 The detach is SILENT, and that was predicted from the bytes
 
-**0 log strings in the whole 440-byte extent.** `Loki.log` after four dismounts contains **0**
+**0 log strings in the whole 440-byte extent.** `Loki.log` after flight 1's four dismounts contains **0**
 occurrences of `AuthPlayerDetachPlayerFromRidable`, **0** `failed to get the round game mode`
 (we never called the wall), **0** `handing control over to crashpad`, **0** `Fatal`, and 7 `Error`s —
 all `LogLibrary: failed to load avatar` / `LogTexture: non-streamed mips`, all at startup line numbers,
@@ -373,8 +388,11 @@ Three further launches were spent trying to answer *"is the hero playable AT the
 
 ### 6a-2.1 A THIRD DISMOUNT, reproduced [M]
 Flight 3 staged cleanly and `dismount-landstart` landed the hero at `(-3206.4, 5070.5, 138.0)` — the
-PlayerStart again — with the pod at `X = 1,256,845` at that instant. **Three landings on three
-launches**, plus the four calls of flight 1.
+PlayerStart again — with the pod at `X = 1,256,845` at that instant. **That makes SIX landings across THREE
+launches** — four in flight 1, one each in flights 2 and 3 — out of **seven detach calls across
+four launches** (§1). ⚠ An earlier phrasing here read *"three landings on three launches, plus the
+four calls of flight 1"*, which does not reconcile with §1 and was caught by an independent verifier,
+not by me. **§1 governs, and it prints the command that re-derives the tally.**
 
 ### 6a-2.2 ★★★★★ THE CONTROL KILLED THE EXPERIMENT I HAD JUST BUILT
 `play-atlanding` = `play` + `-DKNOTELE=1` (a knob that **already existed**; no new code was needed).
@@ -474,7 +492,7 @@ load-bearing claim. Five things they added:
    the detach untouched. It also means **a poked buffer is never freed by this function.**
 5. ⚠ **A crash hazard that did not fire, and is still worth recording** [M, lane 1]: `0x5586530`
    — called unconditionally on the hero — dereferences `hero+0x460`, `hero+0x1978` and
-   `hero+0x1980` with **no null checks**. It survived all five calls on the staged `BP_HERO_Ronin_C`,
+   `hero+0x1980` with **no null checks**. It survived all seven calls on the staged `BP_HERO_Ronin_C`,
    so it is empirically safe on that hero; a differently-configured hero could fault. Read the three
    pointers before arming if the hero is not the standard staged one.
 
@@ -538,7 +556,9 @@ in `tools/sigbypass-mod/` is intentionally older than `build/`).
 
 **Staging worked on launch 1**: world loaded 9 s after `fo`, `[SP] done step=4` 12 s after `sp`,
 `DropShip 0 → 1`, `DropPod 2 → 4`, `SpawnDropPodForTeam` returned **true**. One launch, one armed
-window, four dismounts.
+window, four dismounts. (Flights 2 and 3 each added one more; the full tally is seven calls across four
+launches, six of which moved the hero — re-derived from the seven canonical markers in
+`scratchpad/s132/evidence/`, not carried forward.)
 
 ### Builds (`.text` sha256 — diff the hash, never the size)
 

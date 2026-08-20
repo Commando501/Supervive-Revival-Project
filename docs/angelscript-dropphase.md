@@ -455,6 +455,30 @@ Steps marked **[native]** are C++ (declaration proven from `Binds.Cache`, body n
 `OnDropPodHit` (capsule hit) short-circuits straight to `StartDestroyPod()` at any point — that is
 how a pod that reaches the ground early ends.
 
+⚠⚠ **STEP 21 CAN NEVER RUN ON THIS CLIENT — and S132 (2026-08-20) drove its payload by hand anyway.**
+Read `docs/s132-dismount-settled.md`. Three things this transcription cannot tell you:
+- ★ **`KickPlayersFromPod`'s entire body sits behind `if (Loki::LokiIsClient(__WorldContext)) return;`**
+  (`LokiDropPod.as` bytecode `0x0000 PshGPtr __WorldContext ; 0x000C CALLSYS LokiIsClient ; 0x0018 JLowZ 2 → L0028 ; 0x0020 JMP 192 → L0328` = immediate return), and
+  **`LokiIsClient` impl `0x0B9E1F0` is `mov al,1; ret` — hardcoded TRUE** (its twin `LokiIsServer`
+  impl `0x0F7EB60` is `xor al,al; ret`, hardcoded FALSE) [M, S131]. ⇒ **the pod's own exit driver
+  returns immediately, always.** ⇒ **every observable downstream of the dismount sits at a structural
+  baseline of 0**, which is exactly what makes a hand-driven detach attributable.
+  ⚠ Grade **[M, bounded]**: an uncapped rel32 scan over a 55 %-decrypted `.text` found only ONE of
+  this function's **two** `CALLSYS AuthPlayerDetachPlayerFromRidable` sites (`0x01D8`, `0x02EC`) —
+  the first sits in an AOT body on a page all-zero in 30 of 30 images. What carries "no other caller"
+  is a full-image qword scan (exactly one stored pointer to the impl, one to the thunk) plus a
+  69k-asset corpus grep with a passing positive control. **A rel32 scan is always a FLOOR.**
+- ★★★★★ **The `if in PlayersAttached` branch WORKS, and it is now flown.** Appending the PlayerState
+  to `PlayersAttached` by hand and calling `AuthPlayerDetachPlayerFromRidable` through the S55 direct
+  thunk takes the hero out of the pod, un-hides it, restores collision and movement, and places it at
+  the chosen `landingActor` — six dismounts over three flights (seven calls over four; the seventh faulted at GATE 5 without moving the hero), DATA-class writes only. See §5's
+  rideable block and §6.4/§6.5 below.
+- ⛔ **The `else` branch is FORECLOSED.** `AuthPlayerEnterWorld` (impl `0x55CCE70`) is a REAL body
+  whose two terminal actions are direct calls to the stripped fold `0xF7EB50`, and it performs **zero
+  writes to any actor or component transform** [M, S132 lane 7]. Satisfying its `PlayersInside` guard
+  with a poke moves execution past the guards and changes nothing about where the hero is. It is not
+  a way round the wall and it is not a second landing route.
+
 ### 3.3 Steering / movement (`ALokiDropPod::UpdatePodMovement`)
 
 ```
@@ -638,6 +662,19 @@ client-authored half is **local only** (no RPC carries it) and exists to drive l
 
 `SetLeaderPodDetachState` has no such gate but is only ever called from server-side paths.
 
+⚠⚠ **ON THIS CLIENT THE GATE IS NOT A GATE — IT IS A CONSTANT.** `Loki::LokiIsClient` impl
+`0x0B9E1F0` is `mov al,1; ret` and its twin `Loki::LokiIsServer` impl `0x0F7EB60` is
+`xor al,al; ret` — **both hardcoded, no memory operand, no world lookup** [M, S131]. ⇒ every
+`isClient` above evaluates TRUE, so **`SetCrewPodDetachState` accepts only the four input/arming
+states and silently bails on Attached / StartDetaching / FinishDetaching**, and
+~~`SetLeaderPodDetachState`'s "server-side paths" can never be entered.~~ ⇒ ★ **Any script body guarded
+⚠⚠ **HEDGED (S132) — that half over-claims against §3.4 seven lines up**, which documents a client-side entry (*"on the server, **or on a client whose `LeaderPod` handle is null**"*). **Whether that null-`LeaderPod` branch is reachable has never been measured.** Defensible form: *the server-authored half of `SetCrewPodDetachState` can never be entered; `SetLeaderPodDetachState`'s null-`LeaderPod` client branch is UNMEASURED.* Caught by an independent verifier.
+by `LokiIsServer`, or short-circuited by `if (LokiIsClient) return;`, is DEAD CODE in the shipping
+client** — the worked instance is `KickPlayersFromPod` (§3.2 step 21), and the same reasoning
+forecloses `ALokiDropPod::SetDropPodState`'s own client early-return. **Check for these two binds
+before costing any script-driven lever**; they are the cheapest possible refutation and neither can
+be poked. `docs/s131-pod-functionality-settled.md`, `docs/s132-dismount-settled.md`.
+
 ---
 
 ## 4. Replicated vs local — the exact list
@@ -789,6 +826,81 @@ ALokiRoundGameMode : bool ModeSupportsDropPlane(); void GoToPhase(ERoundPhase); 
 ALokiGameState     : void AuthSetCurrentPhase(ERoundPhase); ERoundPhase GetCurrentPhase() const; void OnRep_CurrentPhase()
 ```
 
+### 5.1 ★★★★★ THE BODIES *ARE* AVAILABLE NOW — `ULokiRideableComponent` GRADED (S132, 2026-08-20)
+
+This section's standing caveat — *"bodies are not available"* — is **no longer true for the rideable
+component.** The `.data` `{name_ptr, exec_thunk, impl}` record table gives a REAL/EMPTY verdict per
+`UFUNCTION` without the code page being decrypted (the fold addresses are known constants). Read in
+**two independent single-state dumps that agree on every row**; each function's own impl resolving to
+its own name is the positive control. Primary evidence `docs/s132-dismount-settled.md` §2-§3.
+
+| rideable method | exec thunk | impl | verdict |
+|---|---|---|---|
+| `AuthAddPlayer` | `0x2C2CE30` (23-way ICF) | **`0x0F7EC20`** | **EMPTY** |
+| `AuthRemovePlayer` | `0x2C2CE30` | **`0x0F7EC20`** | **EMPTY** |
+| `AuthSetCanJump` | `0x5296F30` | **`0x0F7EC20`** | **EMPTY** |
+| `AuthPlayerEnterWorldNew` | `0x5456460` | **`0x0F7EC20`** | **EMPTY** |
+| `AuthPlayerDetachPlayerFromRidable` | `0x5456100` | `0x55CCCB0` | **REAL — flown, see below** |
+| `AuthPlayerEnterWorld` | `0x54561D0` | `0x55CCE70` | REAL, but FORECLOSED (§3.2 step 21) |
+| `AuthPlayerEnterWorldAttachedToRidable` | `0x5456380` | `0x55CD510` | REAL, **always-fail** |
+| `AuthPlayerPreSpawnOnAddToPlane` | `0x5456540` | `0x55CD800` | REAL, **always-fail** |
+| `ContainsPlayer` | `0x5456700` | `0x55D0270` | REAL |
+| `GetLandingTeleportLocation` | `0x5456C80` | `0x55D89F0` | REAL, 963 B |
+| `HasEverContainedPlayer` | `0x5457280` | `0x55DCAA0` | REAL |
+| `GetRidePosition` | `0x5457070` | `0x55DAB50` | REAL |
+
+⚠⚠ **FOUR of this component's `Auth*` mutators are empty stubs, not one** — and they are **the only
+reflected writers of `PlayersInside` and `PlayersAttached`.** That is *why* both arrays read
+`Data=0 Num=0 Max=0` in a fully staged world [M], and why a data poke is the only route to populate
+them **by construction**. ⇒ **do not reach for `AuthAddPlayer` as a lever; it was checked, not
+assumed.** This is exactly the `Auth*`-enriched stripping pattern S131's 16,277-record census measured
+(gradeable `Auth*` 42.4 % EMPTY vs non-`Auth` Loki 8.30 %, Fisher p = 1.6e-28) — **one decision to
+remove server authority, not a decision about the drop phase.**
+⚠ Grade the two ICF-folded rows **[M, strong]**, not [M]: the record table has no class column, so
+`AuthAddPlayer`/`AuthRemovePlayer` are matched by NAME (each occurs exactly once table-wide, and
+`ULokiRideableComponent` is the only class in `binds_members.csv` declaring either).
+
+★★ **"always-fail" is MEASURED, not inferred** [M, S131]: both `AuthPlayerEnterWorldAttachedToRidable`
+and `AuthPlayerPreSpawnOnAddToPlane` reach a call to the stripped round-game-mode getter
+`0xF7EB50` (`33 c0 c3`), get 0, and take a bail branch that logs its own distinct string. Called
+directly with valid PlayerStates, each string went **0 → 2, one per call**. ⇒ **the wall is ONE
+STRIPPED GETTER with three consumers, not one function's bug.** ⛔ It is not injectable —
+`0xF7EB50` has **zero memory operands**.
+
+★★★★★ **AND `AuthPlayerDetachPlayerFromRidable` RUNS — THE DISMOUNT IS DRIVABLE (S132).** Impl
+`0x55CCCB0`, **440 B over 9 chained `.pdata` rows**. Signature [M, UHT oracle]. Six gates, **all
+silent**: PS non-null · PS not garbage · `PlayersAttached` non-empty · PS present in it ·
+`PS->GetLokiCharacter() != null` · that hero `IsA(ALokiHeroCharacter)`. Then, in order: fold ·
+`FName("MinionIgnore")` onto `AActor::Tags` (`hero+0x1F0`) · `SetActorEnableCollision(true)` ·
+**`SetPredropHidden(false)`** (byte `hero+0x1BE8`) · an unnamed REAL `0x5586530(hero)` ·
+`GetLokiCharacterMovement` then `mv->vt[+0x3E0](true)` and `[mv+0x1A0] = 1.0f` ·
+**`GetLandingTeleportLocation(hero, LandingActor)`** · **`SetActorLocation` — the teleport** ·
+`MulticastOnPlayerEnteredWorld(PS)` · `PlayersAttached.Remove(PS)` · fold.
+⇒ **the teleport, the un-hide, the collision restore and the movement restore are every one a REAL
+body**; the two `0xF7EC20` folds are void side effects whose returns are never tested, so neither
+gates anything. Flown six times over three flights by appending the PlayerState to `PlayersAttached`
+with the game's own `ResizeGrow` (`0x00F988D0`) and calling the thunk through the S55 primitive —
+**risk class DATA, zero `.text` writes.** A within-run negative control (same call, empty array) ran
+before every one and never moved the hero.
+⚠ **`PlayersAttached` carries no `CPF_Net` — it is NOT replicated** [M, two disjoint instruments].
+An early S132 write-up called it replicated; that was wrong, and the correction makes the write
+**safer** than described (no RepNotify or dirty-marking to skip). It is still live component state
+driven through an authority-only entry point ⇒ **a diagnosis, not a shipping shim.**
+⚠⚠ **`ContainsPlayer` scans `PlayersInside` (`+0x120`), NOT `PlayersAttached` (`+0x130`)** [M,
+`0x55D0270`]. After a correct append it still reads FALSE, and **that FALSE is expected** — using it
+as the append receipt manufactures a false negative on a working append. The free receipt is
+`PlayersAttached.Num` itself: `Remove(PS)` at `0x55CCE23` runs on **every** path past gate 4, so
+`Num` staying 1 vs dropping to 0 separates "bailed at a gate" from "ran past gate 4" with no log
+dependence — and the detach emits **zero log strings** in its whole 440-byte extent.
+★ `TArray::Remove` (`0x11F3860`) writes **only `Num`** — no free, no realloc ⇒ a poked buffer is
+never freed by this function and survives across repeated calls.
+⚠ **Live offsets [M]:** `bCanExit @0x118` · `PlayersInsideCount @0x11C` · `PlayersInside @0x120` ·
+`PlayersAttached @0x130 Data / 0x138 Num / 0x13C Max`, inner `ObjectProperty`, element size 8 ·
+`UActorComponent`'s owner `@0xB8` (the detach substitutes it when `LandingLocationActor` is null).
+⚠ `ALokiDropPod::LokiRideable @0x6C8` is a **Blueprint-generated component property** — neither UHT
+nor Angelscript — so **no offline instrument can produce its offset**; resolve it by name on the live
+class.
+
 ---
 
 ## 6. What this means for the project
@@ -844,6 +956,25 @@ sequence on its own. `SetDropPodState`, `OnIntroSequenceFinished`, `OnOutroSeque
 `SpawnLaserIndicator`, `FinishDestroyPod`, `SpawnCrewPodQueue`, `QueueCrewForPodSpawn` are all
 `UFUNCTION(BlueprintCallable)` too — the sequence can be *stepped manually* one call at a time.
 
+⚠⚠ **THIS HEADING IS TOO STRONG AS WRITTEN — three of the calls listed above are stubs or
+always-fail on the shipping client, and that was not knowable when this was written.** "Every step
+is a `UFUNCTION` on an actor in the level" is true; "therefore the chain is drivable" is not. Graded
+since (read `docs/fk22-dropphase-reachability.md`, `docs/s131-pod-functionality-settled.md`,
+`docs/s132-dismount-settled.md`; the last governs the rider half):
+- `ALokiPlayerState::AuthSetSpawnTeamLeader()` — **EMPTY impl** (`0x0F7EC20`), one of FK-1's four
+  server-authority stubs. ⇒ the "← REQUIRED, see 6.3" recipe line **cannot be executed**, and §6.3's
+  fix sentence is unrunnable as stated.
+- `ALokiDropShip::SpawnDropPodForTeam` — ★★★★★ **WORKS.** It returned `true` and the pod census moved
+  once `CDO(BP_DropPod_C)->bCanEverReplicate` was cleared (S130); the pod is initialised, alive and
+  flying (S131).
+- `ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable` — **REAL body, ALWAYS FAILS** [M].
+  ⇒ the chain as written yields **a pod and no rider**, which is exactly what was observed.
+- ★★★★★ **But the RIDER HALF IS NO LONGER A WALL — it is just not reachable through THAT call.**
+  `AuthPlayerDetachPlayerFromRidable` is REAL and was flown six times (§5.1), so the *dismount* end
+  of the ride is drivable today from outside, by hand, with **zero `.text` writes**. What is still
+  missing is the *mount*: a working `AuthPlayer…AttachedToRidable`, blocked on one stripped
+  round-game-mode getter.
+
 ### 6.3 The single most likely private-server failure mode, and it is one function call
 
 `ALokiDropShip::GetTeamDropLeader(TeamIndex)` returns the first player state on the team with
@@ -856,14 +987,30 @@ sequence on its own. `SetDropPodState`, `OnIntroSequenceFinished`, `OnOutroSeque
   radius, no `ULokiTrainingManager::SetActive(false)`**;
 - `UpdateCharacterLocations()` finds no pilot character → **the hero is never teleported to the
   landing point**;
-- `KickPlayersFromPod()` still runs, but `AuthPlayerDetachPlayerFromRidable` has nothing to release.
+- ~~`KickPlayersFromPod()` still runs, but `AuthPlayerDetachPlayerFromRidable` has nothing to
+  release.~~ ⚠⚠ **REFUTED 2026-08-20 (S132), and the first half is wrong for a reason that has
+  nothing to do with the drop leader: `KickPlayersFromPod()` NEVER runs on this client at all** —
+  its whole body is behind `if (LokiIsClient) return;` and `LokiIsClient` is hardcoded TRUE
+  (see the ⚠⚠ note under §3.2 step 21). ⇒ this bullet is not a consequence of "no drop leader";
+  it holds unconditionally. The second half is also too weak: `AuthPlayerDetachPlayerFromRidable`
+  is a **REAL 440-byte body** that teleports, un-hides, restores collision and restores movement,
+  and S132 flew it six times by appending to `PlayersAttached` by hand. `docs/s132-dismount-settled.md`.
 
 The drop leader is set by **`ALokiPlayerState::AuthSetSpawnTeamLeader()`** (server), mirrored on
 `ALokiTeamState_TeamOnly::SetDropLeader/GetDropLeader` and passed around by
 `ULokiPlayerDropPlaneComponent::ServerPassDropLeader()` / `UCoreGameManager::TryPassDropLeader`.
 If the revival's game mode never elects one, the drop visually "half-works" in exactly the way a
-loading-screen bug looks. **Call `AuthSetSpawnTeamLeader()` on the local player state before
-spawning the pod.**
+loading-screen bug looks. ~~**Call `AuthSetSpawnTeamLeader()` on the local player state before
+spawning the pod.**~~
+⚠⚠ **THAT FIX IS UNRUNNABLE — `ALokiPlayerState::AuthSetSpawnTeamLeader` has an EMPTY impl**
+(`0x0F7EC20`), one of FK-1's four server-authority stubs, as is its mirror
+`ALokiTeamState_TeamOnly::SetDropLeader` [M, `docs/fk1-angelscript-settled.md`]. The *diagnosis*
+in this section is confirmed — `PilotPlayerState` reads null on the live pod [M, S131] — but the
+prescription is not executable. ★ The known lever is a **data poke**:
+`ALokiPlayerState::IsSpawnTeamLeader` (impl `0x56C2060`, REAL) is a pure read of `[TeamState+0x688]`,
+so writing that byte makes `GetTeamDropLeader` return non-null without calling either stub.
+⚠ Its precondition failed on the one client checked: **zero live instances of any class containing
+`TeamOnly`** [M, S131]. Check that before building an arm.
 
 ### 6.4 Why the world/hero is invisible during a drop, and what un-hides it
 
@@ -890,6 +1037,20 @@ says are `PlayersInside` — so a hero that was teleported into the world withou
 `AuthPlayerEnterWorldAttachedToRidable` is never un-hidden. **`ALokiPlayerController::FinishDropPhaseHiding()`
 is a direct, no-argument `UFUNCTION`** — a shim can call it on the local PC and skip the whole chain.
 
+★★ **THERE IS A SECOND UN-HIDE ROUTE, AND IT IS THE ONE THAT WORKS ON THIS CLIENT (S132).** All three
+failure modes above are live here — `bHasStartedGameplay` reads **0** on the S131 pod because
+`StartPodGameplay` never runs [M] — so this Tick path has never fired in this project. But
+**`AuthPlayerDetachPlayerFromRidable` calls `SetPredropHidden(false)` itself** (`0x5599040`, byte
+`hero+0x1BE8`) at `0x55CCD9D`, unconditionally, with no camera-height test and no `PlayersInside`
+dependency [M, §5.1]. ⇒ **driving the detach un-hides the hero as a side effect of dismounting it**,
+and S132 measured the hero fully physical afterwards (free fall over open air; standing on terrain
+when given a landing actor).
+⚠⚠ **The two arrays are NOT interchangeable and this is where that bites.** The detach reads
+`PlayersAttached` (`+0x130`); `UpdateDropPhaseHiddenActors` above reads `PlayersInside` (`+0x120`);
+`ContainsPlayer` reads `PlayersInside` too. **A hero dismounted the S132 way is never in
+`PlayersInside`**, so this script path could not un-hide it even if it ran — the detach's own
+`SetPredropHidden` is what covers it. Do not read "not in `PlayersInside`" as "still hidden".
+
 ### 6.5 Other immediately usable facts
 
 - **The plane's path does not need level markers.** `ULokiGameModeDropPlaneComponent` carries
@@ -907,11 +1068,24 @@ is a direct, no-argument `UFUNCTION`** — a shim can call it on the local PC an
   (`TSubclassOf<APawn>`). During the drop the player is expected to possess a *camera pawn*, not the
   hero — relevant to the long-running possession wall (S71/S90). (Property exists; its use is native
   and unproven here.)
-- **The hero's exit from the pod is a movement-mode handoff**, not a spawn:
+- ~~**The hero's exit from the pod is a movement-mode handoff**, not a spawn:
   `ULokiCharacterMovementComponent::AuthBeginGlideDiveFromDropPod(DropPodDirection, RiderIndex = -1,
   LaunchOverrideSpeed = -1)`, with a dedicated custom movement mode
   (`GetDropPlaneCustomMovementMode()`). That is the function that turns a pod passenger into a
-  falling, controllable hero.
+  falling, controllable hero.~~
+  ⚠⚠ **CORRECTED 2026-08-20 — true of the DESIGN, false of this client, and the working exit is a
+  different function.** `AuthBeginGlideDiveFromDropPod` is one of FK-22's **EMPTY C++ impls**
+  (direct call to the universal fold `0xF7EC20`) — it sits exactly at the pod→hero handoff and does
+  nothing here [M, FK-22 §2.5]. ★★★★★ **The exit that RUNS is
+  `ULokiRideableComponent::AuthPlayerDetachPlayerFromRidable`** (§5.1): it un-hides the hero,
+  restores collision, restores movement (`mv->vt[+0x3E0](true)`, `[mv+0x1A0] = 1.0f`), resolves a
+  landing point through `GetLandingTeleportLocation` and **teleports the hero there** — flown six
+  times, hero handed back to physics each time. **It is a teleport-and-restore, not a glide-dive**,
+  so expect no dive movement mode and no launch impulse. `docs/s132-dismount-settled.md`.
+  ⚠ Open: whether the dismounted hero is *playable* at the landing point is **untested** — the one
+  arm built to answer it was degenerate (it left the hero in `MOVE_Flying`), and that sitting then died
+  to an unrelated protector kill (`0x0000DEAD`, FK-32) during its own init. The corrected arm
+  (`play-atlanding-walk`, `-DKFLYMODE=1`) is built but **has never flown**. Untested, not negative.
 - **A pod is a pooled actor.** `LokiGameplay::SpawnPoolableActorFromClassDeferred` + explicit
   `FinishSpawningActor` — a shim that plain-`SpawnActor`s a pod class skips the deferred-init window
   that `InitializeDropPod` relies on.
