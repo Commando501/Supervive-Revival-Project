@@ -6124,7 +6124,14 @@ constexpr uintptr_t DP_ACTOR_TAGS_MAXNUM = 64;  // sanity bound when walking an 
 
 // Census buckets. An object may land in more than one (BP_DropPlane_Base_C derives from LokiDropShip,
 // so it is BOTH a plane and a ship) -- deliberately, because a delta is easier to read than a taxonomy.
-enum { DPV_KNOWN=1, DPV_PLANE=2, DPV_POD=4, DPV_SHIP=8, DPV_ACTOR=16 };
+// DPV_RIDE (S131) is NOT a census bucket -- it never enters plane/pod/ship/hits and cannot move any
+// delta.  It exists so the census, which already classifies every object, can latch the live
+// ULokiRideableComponent population for free.  That answers a question the S131 flight otherwise
+// cannot: `SpawnDropPodForTeam` guards the rider handoff with `if (ULokiRideableComponent::Get(pod)
+// != null)`, so if NO rideable component exists on the pod the FIFTH WALL
+// (AuthPlayerEnterWorldAttachedToRidable) is never reached and the run says NOTHING about it.
+// Without this, "the rider handoff failed" and "the rider handoff never ran" read identically.
+enum { DPV_KNOWN=1, DPV_PLANE=2, DPV_POD=4, DPV_SHIP=8, DPV_ACTOR=16, DPV_RIDE=32 };
 
 // ⚠⚠ `arche` IS A SEPARATE BUCKET AND IT IS NOT IN `hits`. Archetypes (`Default__*`) and
 //    `_GEN_VARIABLE` template subobjects used to be counted in plane/pod/ship/hits while only being
@@ -6155,6 +6162,24 @@ static uint32_t  g_dpSpawnRetOff=0xFFFFFFFF;
 static int       g_dpSpawnInputs=-1;             // >0 => B1 refuses unless KDPFORCEPARAMS
 static uintptr_t g_dpAnyActorCls=0;              // any AActor-derived class, for resolving Tags once
 static uintptr_t g_dpBefore[768]; static int g_dpBeforeN=0; static bool g_dpBeforeOverflow=false;
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// S131 — THE POD-ACTOR LATCH.  DpCensus already sweeps all ~190k objects and already classifies each
+// one; it costs 1.2-2.6 s of GAME THREAD every time it runs (S130 evidence).  The S131 readout needs
+// the set of live drop-pod ACTORS, which is exactly a subset the census computes and then throws
+// away.  So it is latched here rather than re-swept: adding a second full sweep for the readout would
+// double a cost this file's own comments already call a self-inflicted risk.
+//
+// ⚠ ACTORS ONLY.  The census `pod` bucket is a SUBSTRING test on the derivation chain, so it also
+//   counts `ABP_DropPod_C` (an AnimInstance) and `WBP_UI_DropPod*` (widgets).  In the S130 evidence
+//   the headline "DropPod +2" is 1 actor + 1 AnimInstance, NOT 2 actors.  The latch requires
+//   DPV_ACTOR as well, which is an EXACT strcmp for the leaf class FName "Actor" (UHT strips the A).
+// ⚠ The latch is REBUILT on every census, so it always describes the world as of the LAST census.
+//   A movement sample taken between censuses reads the same set -- which is what makes samples
+//   comparable -- and every read is GcAlive()-guarded because a pod could be destroyed under us.
+static uintptr_t g_dpPodAct[64]; static int g_dpPodActN=0; static bool g_dpPodActOverflow=false;
+static const char* g_dpPodLatchWhen="(no census has run)";
+// S131: the live ULokiRideableComponent population, latched by the same census pass.  See DPV_RIDE.
+static uintptr_t g_dpRide[16]; static int g_dpRideN=0; static long g_dpRideTotal=0;
 static DpCounts  g_dpC0={0,0,0,0,0,0,0}, g_dpC1={0,0,0,0,0,0,0}, g_dpC2={0,0,0,0,0,0,0},
                  g_dpC3={0,0,0,0,0,0,0}, g_dpC4={0,0,0,0,0,0,0};
 static volatile long g_dpStep=0; static DWORD g_dpLastMs=0;
@@ -6182,6 +6207,13 @@ static uint32_t DpEvalClass(uintptr_t cls){
         if(strstr(n,"DropPlane")) v|=DPV_PLANE;
         if(strstr(n,"DropPod"))   v|=DPV_POD;
         if(strstr(n,"DropShip"))  v|=DPV_SHIP;
+        // S131: latched, never counted -- see the enum. Mode-gated like the two latches in DpCensus,
+        // and for a reason worth stating: WITHOUT the gate this one extra strstr moved
+        // `dropplane_b1only`'s `.text` hash while leaving its `.text` SIZE identical (120,832 B both
+        // ways, because the addition fitted inside the section's 512-byte padding). That is exactly
+        // the case this project's build table warns about -- "several arms share a `.text` SIZE and
+        // only the hash separates them" -- caught here only because the hash was actually compared.
+        if(strstr(n,"Rideable")&&(kRunMode==RM_DROPPOD||kRunMode==RM_POOLSPAWN)) v|=DPV_RIDE;
         // EXACT, not substring: "Actor" as a leaf class FName is AActor itself (UHT strips the A).
         // A substring test here would take ActorComponent, WorldSettings' peers, etc., and the Tags
         // read below would then be issued at an AActor offset on a non-actor. Same trap this project
@@ -6217,6 +6249,18 @@ static void DpCensus(const char* when,bool verbose,bool record,DpCounts* out){
     int printed=0, suppressed=0;
     DWORD t0=GetTickCount();
     if(record){ g_dpBeforeN=0; g_dpBeforeOverflow=false; }
+    // S131: rebuild the pod-actor latch on EVERY census, record or not.  See the declaration.
+    // ⚠ GATED ON THE RUN MODE ON PURPOSE. `kRunMode` is a compile-time constant, so in every OTHER
+    //   mode this and the two latches below are dead-code-eliminated and that variant's `.text` is
+    //   BYTE-IDENTICAL to its pre-S131 build. That matters concretely: `dropplane_b1only`
+    //   (`.text 5b4467b0105dec1a`) is the known-good artifact that creates the live LokiDropShip --
+    //   Route E's precondition -- and RM_PLAY's `9bc10a4552c596e1` is a hard regression gate. Both
+    //   compile DpCensus. An ungated latch moved b1only's hash, which is exactly the kind of silent
+    //   drift this file's own build table exists to catch.
+    if(kRunMode==RM_DROPPOD||kRunMode==RM_POOLSPAWN){
+        g_dpPodActN=0; g_dpPodActOverflow=false; g_dpPodLatchWhen=when;
+        g_dpRideN=0; g_dpRideTotal=0;
+    }
     for(int ci=0;ci<numChunks;ci++){
         if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
         uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
@@ -6232,6 +6276,14 @@ static void DpCensus(const char* when,bool verbose,bool record,DpCounts* out){
             uintptr_t cls=ClassOf(obj); if(!cls)continue;
             uint32_t v=DpClassVerdict(cls);
             if(v&DPV_ACTOR && !g_dpAnyActorCls) g_dpAnyActorCls=cls;
+            // S131: latch rideable components BEFORE the bucket filter, because they are neither
+            // plane, pod nor ship and the next line would drop them. Archetypes are counted here on
+            // purpose and labelled at print time -- a CDO existing at all is itself informative about
+            // whether the class is loaded.
+            if((v&DPV_RIDE)&&(kRunMode==RM_DROPPOD||kRunMode==RM_POOLSPAWN)){
+                g_dpRideTotal++;
+                if(g_dpRideN<(int)(sizeof(g_dpRide)/sizeof(g_dpRide[0]))) g_dpRide[g_dpRideN++]=obj;
+            }
             if(!(v&(DPV_PLANE|DPV_POD|DPV_SHIP))) continue;
             char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
             bool arche = (strncmp(on,"Default__",9)==0) || (strstr(on,"_GEN_VARIABLE")!=nullptr);
@@ -6247,6 +6299,12 @@ static void DpCensus(const char* when,bool verbose,bool record,DpCounts* out){
             if(v&DPV_POD)   c.pod++;
             if(v&DPV_SHIP)  c.ship++;
             c.hits++;
+            // S131 latch: pod ACTORS only (see g_dpPodAct). Archetypes already `continue`d above.
+            // Mode-gated for the same reason as the reset above: other variants stay byte-identical.
+            if((v&DPV_POD)&&(v&DPV_ACTOR)&&(kRunMode==RM_DROPPOD||kRunMode==RM_POOLSPAWN)){
+                if(g_dpPodActN<(int)(sizeof(g_dpPodAct)/sizeof(g_dpPodAct[0]))) g_dpPodAct[g_dpPodActN++]=obj;
+                else g_dpPodActOverflow=true;
+            }
             bool isNew=false;
             if(record){
                 if(g_dpBeforeN<(int)(sizeof(g_dpBefore)/sizeof(g_dpBefore[0]))) g_dpBefore[g_dpBeforeN++]=obj;
@@ -9663,6 +9721,472 @@ static void PdCdoFlags(const char* when, bool doPoke){
                 "  \xE2\x9A\xA0 MISMATCH -- do not attribute any spawn result to the poke.");
 }
 
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ S131 — THE IN-ARM POD-STATE READOUT.  "The census counts objects; nobody has looked at what
+//   the pod IS."
+//
+// WHY IT IS IN THE ARM AND NOT AN EXTERNAL RPM PASS.  All three armed windows in S130 ended in
+// artifact-less deaths, and the one attempt that delivered results died minutes later taking its two
+// pods with it (docs/s130-actor-pool-gate-settled.md §13.7).  A tools/re/*.py pass "afterwards" has
+// no process to attach to.  So the probe prints the pod state ITSELF, immediately after the call.
+//
+// WHAT MAKES THIS A MEASUREMENT RATHER THAN A LOOK.  `ALokiDropPod::InitializeDropPod`
+// (GameMode.DropPhase.LokiDropPod.as:843, 30 instructions) writes exactly five members, and THREE of
+// them have a cooked class default that DIFFERS from the value SpawnDropPodForTeam passes:
+//
+//     member              class default            our call writes       discriminates?
+//     PodTeamIndex        -1                       0                     YES  (cleanest)
+//     CurrPodDestination  (0,0,0)                  the landing FVector   YES  (3 doubles; not hittable by accident)
+//     bIsTeamLeaderPod    False                    true                  YES
+//     LeaderPod           None                     null                  NO  <-- identical; a TRAP
+//     PilotPlayerState    None                     GetTeamDropLeader()   only if a drop leader exists
+//
+// ⚠ `LeaderPod` can only ever AGREE, so it is printed and explicitly labelled NON-DISCRIMINATING.
+//   Counting it as a fourth check would manufacture a pass.
+//
+// TWO INDEPENDENT INSTRUMENTS, PRINTED SIDE BY SIDE.
+//   (1) BY NAME off the LIVE FProperty chain -- the standing rule in this project, and the only one
+//       that stays valid if the build ever changes.
+//   (2) The byte offset the SHIPPED ANGELSCRIPT BYTECODE uses for the same member, read offline out
+//       of tools/asdump/out/GameMode/DropPhase/LokiDropPod.as.txt:
+//           ADDSi     1144 -> CurrPodDestination   0x478
+//           LoadThisR 1117 -> bIsTeamLeaderPod     0x45D   (WRTV1: a whole byte, not a bitfield)
+//           LoadThisR 1120 -> PodTeamIndex         0x460   (WRTV4)
+//           ADDSi     1200 -> LeaderPod            0x4B0
+//           LoadThisR 1208 -> bHasStartedGameplay  0x4B8
+//       That operand is a byte offset from `this`.  FOUR independent reasons, not one:
+//         a) LokiDropShip's own `.TeamDropPodClass` is `ADDSi 1144` and 0x478 is the offset RM_DROPPOD
+//            has been reading it at LIVE for four sessions;
+//         b) the five numbers above are in the SAME ORDER as the members are declared
+//            (LokiDropPod.as:193-216) -- a type id would not be;
+//         c) they fit one self-consistent C++ layout with correct natural alignment and NO overlap,
+//            filling the declared gaps exactly:
+//              bIsTeamLeaderPod 0x45D(1) | PodTeamIndex 0x460(4) | bIsLocalPlayerPilot 0x464(1)
+//              ImpactIndicator 0x468(8)  | GroundLaserIndicator 0x470(8)
+//              CurrPodDestination 0x478(24) | AttachedCrewPods 0x490(16) | bSteeringEnabled 0x4A0(1)
+//              SteeringStartTime 0x4A8(8) | LeaderPod 0x4B0(8) | bHasStartedGameplay 0x4B8(1)
+//            Every declared member between two known offsets is accounted for with nothing left over;
+//         d) the SECOND operand (134230872 / 134230881) differs between the two CLASSES and is
+//            constant within each -- so THAT is the type id, and the first operand is not.
+//       ⚠ This is still [I], not [M]: it is a structural argument, not a live read.  Which is exactly
+//         why it is printed BESIDE the by-name read instead of replacing it.
+//   The two are printed together with an AGREE / DISAGREE verdict.  Agreement is a strong receipt;
+//   disagreement is loud and makes the field UNINTERPRETABLE rather than silently wrong.
+//   ⚠ The AS offset is a CROSS-CHECK, never the primary source.  If name resolution fails the value
+//     is still read at the AS offset, but the line says so in words -- because "resolved to 0" and
+//     "never resolved" are the same bytes, and confusing them already cost this project a result
+//     (docs/s130-actor-pool-gate-settled.md §12.4).
+//
+// AND THE CONTROL IS FREE.  RM_POOLSPAWN's P1/P2/P3 leave live BP_DropPod_Tutorial_C actors that were
+// spawned by a RAW pooled/ordinary spawn and NEVER went through InitializeDropPod.  If both modes are
+// flown into one process, the readout sees both populations at once: the poolspawn pods must read
+// CLASS DEFAULTS and the E1 pod must read the WRITTEN values.  That is a within-run, same-instrument,
+// spatial negative control that costs nothing -- and it is why the dump also runs in RM_POOLSPAWN.
+//
+// NOTHING HERE WRITES.  Every access is a guarded read.  No .text, no heap write, no UFunction call.
+#ifndef KPDPODDUMP
+#define KPDPODDUMP 1          // 0 = compile the readout out entirely
+#endif
+#ifndef KPDPODASOFF
+#define KPDPODASOFF 1         // 0 = do not read at the offline Angelscript-bytecode offsets at all
+#endif
+#ifndef KPDPODSAMPLEMS
+#define KPDPODSAMPLEMS 4000   // gap between movement samples (see the ladder's sample steps)
+#endif
+#ifndef KPDPODSWEEPCAP
+#define KPDPODSWEEPCAP 40     // max properties printed per pod in the DETAILED sweep
+#endif
+
+// The offline Angelscript-bytecode offsets, in the order InitializeDropPod writes them.
+constexpr uint32_t PDPOD_OFF_CURRDEST = 0x478;   // ADDSi     1144
+constexpr uint32_t PDPOD_OFF_LEADERB  = 0x45D;   // LoadThisR 1117
+constexpr uint32_t PDPOD_OFF_TEAMIDX  = 0x460;   // LoadThisR 1120
+constexpr uint32_t PDPOD_OFF_LEADPOD  = 0x4B0;   // ADDSi     1200
+constexpr uint32_t PDPOD_OFF_STARTED  = 0x4B8;   // LoadThisR 1208
+
+// FBoolProperty's four extra bytes.  FK-14 measured sizeof(FProperty) == 0x70 in this build and that
+// +0x70 is uniformly the derived class's first member, so these are [I] from that plus stock UE
+// layout -- NOT [M].  They are therefore PRINTED RAW on every bool line so a successor can audit the
+// decode, and the code falls back to "raw byte != 0" (with a stated reason) whenever they look wrong.
+constexpr uintptr_t FBOOLPROP_FIELDSIZE  = 0x70;
+constexpr uintptr_t FBOOLPROP_BYTEOFFSET = 0x71;
+constexpr uintptr_t FBOOLPROP_BYTEMASK   = 0x72;
+constexpr uintptr_t FBOOLPROP_FIELDMASK  = 0x73;
+
+struct PdPodSample { uintptr_t obj; double L[3]; int have; DWORD ms; };
+static PdPodSample g_pdPodS0[64]; static int g_pdPodS0N=0;      // the FIRST location sample per pod
+static DWORD g_pdPodSampleAnchor=0;                             // gate for the movement-sample steps
+static int  g_pdPodDumps=0;                                     // how many dumps have run
+static int  g_pdPodMoved=0;                                     // pods observed to have moved > 1 uu
+static int  g_pdPodCalOk=-1, g_pdPodCalRepl=-1, g_pdPodCalPool=-1;   // by-name calibration result
+static int  g_pdPodAgree=0, g_pdPodDisagree=0, g_pdPodNameFail=0;    // AS-vs-live offset tally
+
+// Resolve a named property on cls + its supers, returning the FProperty POINTER (0 = NOT RESOLVED)
+// plus offset / element size / type / struct name / owning class.  PropOffsetSuper() next door
+// returns only the offset, and this readout needs the TYPE to decide how to read the bytes at all.
+// ⚠ NameIs() is a strcmp, i.e. CASE-SENSITIVE, while FName matching in the engine is not.  Every name
+//   passed here comes verbatim out of the shipped Angelscript declaration, so the case is the game's.
+static uintptr_t PdFindPropOn(uintptr_t cls,const char* name,uint32_t* offOut,uint32_t* elemOut,
+                              char* type,size_t tsz,char* sname,size_t ssz,char* owner,size_t osz){
+    if(offOut)*offOut=0xFFFFFFFF;
+    if(elemOut)*elemOut=0;
+    if(type&&tsz) strncpy_s(type,tsz,"?",_TRUNCATE);
+    if(sname&&ssz) strncpy_s(sname,ssz,"-",_TRUNCATE);
+    if(owner&&osz) owner[0]=0;
+    int g=0;
+    for(uintptr_t c=cls; LooksLikePtr(c)&&g<12;
+        c=(SafeReadable((void*)(c+0x48),8)?*(uintptr_t*)(c+0x48):0), g++){
+        uintptr_t f=SafeReadable((void*)(c+UFUNC_CHILDPROPS),8)?*(uintptr_t*)(c+UFUNC_CHILDPROPS):0;
+        int i=0;
+        while(LooksLikePtr(f)&&i<400){
+            if(NameIs(f,name)){
+                if(offOut &&SafeReadable((void*)(f+FPROP_OFFSET),4))   *offOut =*(uint32_t*)(f+FPROP_OFFSET);
+                if(elemOut&&SafeReadable((void*)(f+FPROP_ELEMSIZE),4)) *elemOut=*(uint32_t*)(f+FPROP_ELEMSIZE);
+                PdTypeOf(f,type,tsz,sname,ssz);
+                if(owner&&osz) GetFNameStr(NameId(c),owner,(int)osz);
+                return f;
+            }
+            uintptr_t nx=SafeReadable((void*)(f+FIELD_NEXT),8)?*(uintptr_t*)(f+FIELD_NEXT):0; f=nx; i++;
+        }
+    }
+    return 0;
+}
+
+// Format the value at obj+off according to `type`.  `why` receives a short note when the decode is
+// anything other than a plain read, so no number is ever printed without its provenance.
+static void PdFmtValue(uintptr_t obj,uint32_t off,uint32_t elem,const char* type,uintptr_t prop,
+                       char* out,size_t osz,char* why,size_t wsz){
+    if(out&&osz) strncpy_s(out,osz,"?",_TRUNCATE);
+    if(why&&wsz) why[0]=0;
+    if(off==0xFFFFFFFF){ strncpy_s(out,osz,"NOT RESOLVED",_TRUNCATE); return; }
+    uintptr_t a=obj+off;
+    if(!strcmp(type,"BoolProperty")){
+        uint8_t fs=0,bo=0,bm=0,fm=0; int haveMeta=0;
+        if(LooksLikePtr(prop)&&SafeReadable((void*)(prop+FBOOLPROP_FIELDSIZE),4)){
+            fs=*(uint8_t*)(prop+FBOOLPROP_FIELDSIZE); bo=*(uint8_t*)(prop+FBOOLPROP_BYTEOFFSET);
+            bm=*(uint8_t*)(prop+FBOOLPROP_BYTEMASK);  fm=*(uint8_t*)(prop+FBOOLPROP_FIELDMASK);
+            haveMeta=1;
+        }
+        int plausible = haveMeta && fs>=1 && fs<=8 && bm!=0 && fm!=0 && bo<=8;
+        uintptr_t ba = plausible ? (a+bo) : a;
+        if(!SafeReadable((void*)ba,1)){ strncpy_s(out,osz,"UNREADABLE",_TRUNCATE); return; }
+        uint8_t raw=*(uint8_t*)ba;
+        int v = plausible ? ((raw & fm)!=0) : (raw!=0);
+        _snprintf_s(out,osz,_TRUNCATE,"%s (raw 0x%02X)",v?"true":"false",(unsigned)raw);
+        // ⚠ If ByteOffset is non-zero the value did NOT come from obj+Offset_Internal, and the
+        //   FBOOLPROP_* layout above is [I].  Print the byte at the PLAIN offset too, so the whole
+        //   decode is auditable from the log instead of resting on an unverified layout.
+        if(plausible&&bo!=0&&SafeReadable((void*)a,1))
+            _snprintf_s(why,wsz,_TRUNCATE,"bool meta fs=%u bo=%u bm=0x%02X fm=0x%02X | byte at the "
+                        "PLAIN offset (bo=0) would be 0x%02X",(unsigned)fs,(unsigned)bo,(unsigned)bm,
+                        (unsigned)fm,(unsigned)*(uint8_t*)a);
+        else if(plausible) _snprintf_s(why,wsz,_TRUNCATE,"bool meta fs=%u bo=%u bm=0x%02X fm=0x%02X",
+                                  (unsigned)fs,(unsigned)bo,(unsigned)bm,(unsigned)fm);
+        else strncpy_s(why,wsz,"bool meta IMPLAUSIBLE -> decoded as (raw!=0); audit FBOOLPROP_* offsets",_TRUNCATE);
+        return;
+    }
+    if(!strcmp(type,"IntProperty")||!strcmp(type,"Int32Property")){
+        if(!SafeReadable((void*)a,4)){ strncpy_s(out,osz,"UNREADABLE",_TRUNCATE); return; }
+        _snprintf_s(out,osz,_TRUNCATE,"%d",*(int32_t*)a); return;
+    }
+    if(!strcmp(type,"ByteProperty")||!strcmp(type,"EnumProperty")){
+        if(!SafeReadable((void*)a,1)){ strncpy_s(out,osz,"UNREADABLE",_TRUNCATE); return; }
+        _snprintf_s(out,osz,_TRUNCATE,"%u",(unsigned)*(uint8_t*)a); return;
+    }
+    if(!strcmp(type,"FloatProperty")){
+        if(!SafeReadable((void*)a,4)){ strncpy_s(out,osz,"UNREADABLE",_TRUNCATE); return; }
+        _snprintf_s(out,osz,_TRUNCATE,"%.3f",(double)*(float*)a); return;
+    }
+    if(!strcmp(type,"DoubleProperty")){
+        if(!SafeReadable((void*)a,8)){ strncpy_s(out,osz,"UNREADABLE",_TRUNCATE); return; }
+        _snprintf_s(out,osz,_TRUNCATE,"%.3f",*(double*)a); return;
+    }
+    if(!strcmp(type,"StructProperty")){
+        // Only FVector-shaped structs are decoded; anything else prints its size, never a fabricated
+        // triple.  24 = 3x double (LWC), 12 = 3x float.  The size is CHECKED, not assumed -- the same
+        // discipline PdBindParams() applies to the call's own parameter block.
+        if(elem==24&&SafeReadable((void*)a,24)){ double* P=(double*)a;
+            _snprintf_s(out,osz,_TRUNCATE,"(%.1f, %.1f, %.1f)",P[0],P[1],P[2]);
+            strncpy_s(why,wsz,"3x double (LWC), ElementSize=24",_TRUNCATE); return; }
+        if(elem==12&&SafeReadable((void*)a,12)){ float* P=(float*)a;
+            _snprintf_s(out,osz,_TRUNCATE,"(%.1f, %.1f, %.1f)",(double)P[0],(double)P[1],(double)P[2]);
+            strncpy_s(why,wsz,"3x float, ElementSize=12",_TRUNCATE); return; }
+        _snprintf_s(out,osz,_TRUNCATE,"<struct, ElementSize=%u -- NOT decoded>",elem); return;
+    }
+    if(!strcmp(type,"ObjectProperty")||!strcmp(type,"ClassProperty")||
+       !strcmp(type,"ObjectPtrProperty")||!strcmp(type,"WeakObjectProperty")||
+       !strcmp(type,"SoftObjectProperty")||!strcmp(type,"InterfaceProperty")){
+        if(!SafeReadable((void*)a,8)){ strncpy_s(out,osz,"UNREADABLE",_TRUNCATE); return; }
+        uintptr_t p=*(uintptr_t*)a;
+        if(!p){ strncpy_s(out,osz,"null",_TRUNCATE); return; }
+        if(!LooksLikePtr(p)){ _snprintf_s(out,osz,_TRUNCATE,"0x%llX (NOT a plausible pointer)",(unsigned long long)p); return; }
+        char cn[96]="?"; uintptr_t c=ClassOf(p); if(c) GetFNameStr(NameId(c),cn,sizeof(cn));
+        char on[96]="?"; GetFNameStr(NameId(p),on,sizeof(on));
+        _snprintf_s(out,osz,_TRUNCATE,"0x%llX '%s' cls=%s",(unsigned long long)p,on,cn); return;
+    }
+    _snprintf_s(out,osz,_TRUNCATE,"<%s, size=%u -- no decoder>",type,elem);
+}
+
+// One field of one pod: resolved BY NAME, cross-checked against the offline Angelscript offset.
+static void PdPodField(uintptr_t pod,uintptr_t cls,const char* name,uint32_t asOff,const char* expect){
+    uint32_t off=0xFFFFFFFF, elem=0; char type[48], sname[48], owner[96];
+    uintptr_t prop=PdFindPropOn(cls,name,&off,&elem,type,sizeof(type),sname,sizeof(sname),owner,sizeof(owner));
+    char val[192]="", why[128]="";
+    if(prop) PdFmtValue(pod,off,elem,type,prop,val,sizeof(val),why,sizeof(why));
+
+    char cross[128];
+    if(!KPDPODASOFF || asOff==0xFFFFFFFF) strncpy_s(cross,sizeof(cross),"",_TRUNCATE);
+    else if(!prop)      _snprintf_s(cross,sizeof(cross),_TRUNCATE," | AS offset 0x%X (name resolution FAILED)",asOff);
+    else if(off==asOff) _snprintf_s(cross,sizeof(cross),_TRUNCATE," | AS 0x%X AGREE",asOff);
+    else                _snprintf_s(cross,sizeof(cross),_TRUNCATE," | AS 0x%X *** DISAGREE ***",asOff);
+
+    if(prop){
+        if(KPDPODASOFF&&asOff!=0xFFFFFFFF){ if(off==asOff) g_pdPodAgree++; else g_pdPodDisagree++; }
+        Markerf("[PD]   %-20s @0x%-4X %-16s size=%-3u = %s%s\r\n",name,off,type,elem,val,cross);
+        if(why[0]) Markerf("[PD]   %-20s   decode: %s\r\n",name,why);
+    } else {
+        g_pdPodNameFail++;
+        Markerf("[PD]   %-20s *** NOT RESOLVED BY NAME on this class chain -- this is NOT a zero and NOT "
+                "a default; it means the readout could not find the property. ***%s\r\n",name,cross);
+    }
+    // If the name failed but the offline offset exists, still read there -- clearly labelled, so a
+    // successor can tell a real value from an instrument failure at a glance.
+    if(!prop&&KPDPODASOFF&&asOff!=0xFFFFFFFF){
+        if(SafeReadable((void*)(pod+asOff),8))
+            Markerf("[PD]   %-20s   [AS-OFFSET FALLBACK, not a by-name read] bytes@0x%X: i32=%d u8=%u "
+                    "ptr=0x%llX\r\n",name,asOff,
+                    *(int32_t*)(pod+asOff),(unsigned)*(uint8_t*)(pod+asOff),
+                    (unsigned long long)*(uintptr_t*)(pod+asOff));
+        else Markerf("[PD]   %-20s   [AS-OFFSET FALLBACK] 0x%X UNREADABLE\r\n",name,asOff);
+    }
+    if(expect&&expect[0]) Markerf("[PD]   %-20s   expect: %s\r\n",name,expect);
+}
+
+// Read a pod's root-component location + attachment, without touching the regression-gated ActorLoc().
+static int PdPodLoc(uintptr_t pod,double* out3,uintptr_t* rootOut,uintptr_t* attachOut,uint32_t* locOffOut){
+    if(rootOut)*rootOut=0; if(attachOut)*attachOut=0; if(locOffOut)*locOffOut=0xFFFFFFFF;
+    out3[0]=out3[1]=out3[2]=0;
+    if(!LooksLikePtr(pod)) return 0;
+    uint32_t rc=PropOffsetSuper(ClassOf(pod),"RootComponent");
+    if(rc==0xFFFFFFFF||!SafeReadable((void*)(pod+rc),8)) return 0;
+    uintptr_t r=*(uintptr_t*)(pod+rc); if(!LooksLikePtr(r)) return 0;
+    if(rootOut)*rootOut=r;
+    uint32_t ap=PropOffsetSuper(ClassOf(r),"AttachParent");
+    if(ap!=0xFFFFFFFF&&SafeReadable((void*)(r+ap),8)&&attachOut) *attachOut=*(uintptr_t*)(r+ap);
+    uint32_t lo=PropOffsetSuper(ClassOf(r),"RelativeLocation");
+    // ⚠ 0x158 is ActorLoc()'s historical fallback. It is used here ONLY when the by-name lookup fails,
+    //   and the caller is told which one produced the number (return 2 = fallback), because a guessed
+    //   offset that prints a plausible triple is worse than printing nothing.
+    int byName = (lo!=0xFFFFFFFF);
+    if(!byName) lo=0x158;
+    if(locOffOut)*locOffOut=lo;
+    if(!SafeReadable((void*)(r+lo),24)) return 0;
+    double* P=(double*)(r+lo); out3[0]=P[0]; out3[1]=P[1]; out3[2]=P[2];
+    return byName?1:2;
+}
+
+// The DETAILED sweep: every property on the pod's own class chain, with its live value.  Bounded by
+// KPDPODSWEEPCAP and printed only where the caller asks for it, because a 512-byte Markerf line and a
+// 4-pod population make an unbounded sweep the thing that buries the headline.
+static void PdPodSweep(uintptr_t pod,uintptr_t cls){
+    int printed=0, g=0;
+    for(uintptr_t c=cls; LooksLikePtr(c)&&g<12&&printed<KPDPODSWEEPCAP;
+        c=(SafeReadable((void*)(c+0x48),8)?*(uintptr_t*)(c+0x48):0), g++){
+        char ccn[96]="?"; GetFNameStr(NameId(c),ccn,sizeof(ccn));
+        uintptr_t f=SafeReadable((void*)(c+UFUNC_CHILDPROPS),8)?*(uintptr_t*)(c+UFUNC_CHILDPROPS):0;
+        int i=0;
+        while(LooksLikePtr(f)&&i<400&&printed<KPDPODSWEEPCAP){
+            char n[96]="?"; GetFNameStr(NameId(f),n,sizeof(n));
+            uint32_t off =SafeReadable((void*)(f+FPROP_OFFSET),4)?*(uint32_t*)(f+FPROP_OFFSET):0xFFFFFFFF;
+            uint32_t elem=SafeReadable((void*)(f+FPROP_ELEMSIZE),4)?*(uint32_t*)(f+FPROP_ELEMSIZE):0;
+            char type[48],sn[48]; PdTypeOf(f,type,sizeof(type),sn,sizeof(sn));
+            char val[192]="",why[128]=""; PdFmtValue(pod,off,elem,type,f,val,sizeof(val),why,sizeof(why));
+            // Skip the uninformative bulk: nulls and plain zeros. Non-zero scalars and every live
+            // object reference are what say whether the pod was wired up.
+            int boring = (!strcmp(val,"null")) || (!strcmp(val,"0")) || (!strcmp(val,"0.000")) ||
+                         (!strncmp(val,"false",5)) || (!strncmp(val,"(0.0, 0.0, 0.0)",15));
+            // A type with no decoder (TArray/TMap/FString/...) prints its size only, which would eat
+            // the cap with noise. Keep it ONLY when its first 8 bytes are non-zero -- that separates
+            // an empty container from a populated one without asserting anything about its layout.
+            if(!boring && !strncmp(val,"<",1) && strstr(val,"no decoder") && off!=0xFFFFFFFF){
+                if(!SafeReadable((void*)(pod+off),8) || *(uint64_t*)(pod+off)==0) boring=1;
+            }
+            if(!boring){
+                Markerf("[PD]   sweep %-28s @0x%-4X %-16s = %s   [%s]\r\n",n,off,type,val,ccn);
+                printed++;
+            }
+            uintptr_t nx=SafeReadable((void*)(f+FIELD_NEXT),8)?*(uintptr_t*)(f+FIELD_NEXT):0; f=nx; i++;
+        }
+    }
+    Markerf("[PD]   sweep: %d non-default propert%s printed (cap %d). Nulls/zeros/false are SUPPRESSED, "
+            "so an absent line means default-looking, NOT missing.\r\n",
+            printed,printed==1?"y":"ies",(int)KPDPODSWEEPCAP);
+}
+
+// The by-name instrument's CALIBRATION.  `AActor::bCanEverReplicate` is [M] at 0x6C and
+// `AActor::bEnablePooling` is [M] at 0x2D3 (docs/s130-actor-pool-gate-settled.md §11, walked out of
+// AActor's own 114-entry UHT PropPointers array, three controls passing).  If by-name resolution on a
+// LIVE pod class returns those two numbers, the whole by-name path is calibrated against values
+// measured by a completely different instrument.  If it does not, every field below is suspect and
+// the line says so.
+// ⚠ A FAILURE HERE IS NOT NECESSARILY A BUG: those two are native UHT properties and it is [I], not
+//   [M], that they appear in the FField ChildProperties chain at all.  The line distinguishes
+//   "resolved to the WRONG offset" (a real problem) from "did not resolve" (a coverage limit).
+static void PdPodCalibrate(uintptr_t cls,const char* clsName){
+    uint32_t o1=0xFFFFFFFF,o2=0xFFFFFFFF,e=0; char t[48],s[48],ow[96];
+    uintptr_t p1=PdFindPropOn(cls,"bCanEverReplicate",&o1,&e,t,sizeof(t),s,sizeof(s),ow,sizeof(ow));
+    uintptr_t p2=PdFindPropOn(cls,"bEnablePooling",   &o2,&e,t,sizeof(t),s,sizeof(s),ow,sizeof(ow));
+    g_pdPodCalRepl = !p1 ? -1 : (o1==(uint32_t)KPDCDOOFF  ? 1 : 0);
+    g_pdPodCalPool = !p2 ? -1 : (o2==(uint32_t)KPDPOOLOFF ? 1 : 0);
+    const char* r = (g_pdPodCalRepl<0)?"DID NOT RESOLVE":(g_pdPodCalRepl?"MATCH":"*** MISMATCH ***");
+    const char* q = (g_pdPodCalPool<0)?"DID NOT RESOLVE":(g_pdPodCalPool?"MATCH":"*** MISMATCH ***");
+    Markerf("[PD] by-name CALIBRATION on %s: bCanEverReplicate -> 0x%X vs [M] 0x%X = %s | "
+            "bEnablePooling -> 0x%X vs [M] 0x%X = %s\r\n",
+            clsName,o1,(unsigned)KPDCDOOFF,r,o2,(unsigned)KPDPOOLOFF,q);
+    if(g_pdPodCalRepl==0||g_pdPodCalPool==0){
+        g_pdPodCalOk=0;
+        Marker("[PD] *** CALIBRATION MISMATCH: by-name resolution returned an offset that CONTRADICTS an "
+               "independently measured one. Treat every field value below as UNINTERPRETABLE until this "
+               "is explained -- a wrong offset prints a real-looking number. ***\r\n");
+    } else if(g_pdPodCalRepl==1||g_pdPodCalPool==1){
+        g_pdPodCalOk=1;
+        Marker("[PD] calibration PASS: the by-name path agrees with an offset measured by a different "
+               "instrument, so a value printed below is being read where it lives.\r\n");
+    } else {
+        g_pdPodCalOk=-1;
+        Marker("[PD] calibration UNAVAILABLE: neither native flag resolved by name (they may be UHT "
+               "PropPointers-only and absent from ChildProperties). That is a COVERAGE limit of this "
+               "control, NOT a failure of the readout -- the AS-offset cross-check below still applies.\r\n");
+    }
+}
+
+// One pod, fully.  `detail` turns on the property sweep.
+static void PdPodOne(uintptr_t pod,int idx,int isNew,int detail,int doCalibrate){
+    if(!GcAlive(pod)){
+        Markerf("[PD] pod[%d] 0x%llX is NOT GcAlive -- destroyed or never valid; NOT READ (this is not a "
+                "field result)\r\n",idx,(unsigned long long)pod);
+        return; }
+    uintptr_t cls=ClassOf(pod);
+    char on[96]="?",cn[96]="?"; GetFNameStr(NameId(pod),on,sizeof(on));
+    if(cls) GetFNameStr(NameId(cls),cn,sizeof(cn));
+    Markerf("[PD] pod[%d] 0x%llX '%s' cls=%s %s\r\n",idx,(unsigned long long)pod,on,cn,
+            isNew?"  *** NEW since the BEFORE census ***":"  (present in the BEFORE census)");
+    if(doCalibrate) PdPodCalibrate(cls,cn);
+
+    // The three positive discriminators, then the trap, then the two that depend on a drop leader.
+    PdPodField(pod,cls,"PodTeamIndex",      PDPOD_OFF_TEAMIDX,
+               "0 if InitializeDropPod ran; -1 is the cooked class default");
+    PdPodField(pod,cls,"CurrPodDestination",PDPOD_OFF_CURRDEST,
+               "the LandingLocation this arm passed; (0,0,0) is the cooked class default");
+    PdPodField(pod,cls,"bIsTeamLeaderPod",  PDPOD_OFF_LEADERB,
+               "true if InitializeDropPod ran; False is the cooked class default");
+    PdPodField(pod,cls,"LeaderPod",         PDPOD_OFF_LEADPOD,
+               "NON-DISCRIMINATING -- the default None and the written value are BOTH null, so this "
+               "line can only ever agree. Do not count it as a check.");
+    PdPodField(pod,cls,"PilotPlayerState",  0xFFFFFFFF,
+               "GetTeamDropLeader()'s return. null here means either 'no drop leader in this world' or "
+               "'SetPilotPlayerState never ran' -- it does NOT separate them on its own.");
+    PdPodField(pod,cls,"Owner",             0xFFFFFFFF,
+               "SetOwner(GetPilotPlayerState()); tracks PilotPlayerState, so it is not independent of it");
+    PdPodField(pod,cls,"bCanEverReplicate", 0xFFFFFFFF,
+               "0 => this instance was constructed AFTER the CDO poke (it inherits the class default)");
+    // ---- Did the pod ever go LIVE?  These are on a DIFFERENT function's path (StartPodGameplay,
+    //      LokiDropPod.as:896), which nothing on SpawnDropPodForTeam calls -- so the pre-registered
+    //      prediction is that both stay at their defaults even in a fully successful spawn.  They are
+    //      here to make "InitializeDropPod ran but the pod is inert" DISTINGUISHABLE from
+    //      "the pod is running", instead of both looking like a bare census delta.
+    PdPodField(pod,cls,"bHasStartedGameplay",PDPOD_OFF_STARTED,
+               "StartPodGameplay's own guard. false is EXPECTED: nothing on the SpawnDropPodForTeam "
+               "path calls it. true would mean something else started the pod.");
+    PdPodField(pod,cls,"PodMeshComponent",  0xFFFFFFFF,
+               "assigned INSIDE StartPodGameplay (LokiDropPod.as:937), so null is the expected "
+               "companion of bHasStartedGameplay=false");
+    PdPodField(pod,cls,"bIsLocalPlayerPilot",0xFFFFFFFF,"also set only inside StartPodGameplay");
+    PdPodField(pod,cls,"bPilotHasPodControl",0xFFFFFFFF,"pod steering; expected false without gameplay");
+
+    // Location, and movement against the FIRST sample taken for this pod.
+    double L[3]; uintptr_t root=0,att=0; uint32_t lo=0xFFFFFFFF;
+    int ok=PdPodLoc(pod,L,&root,&att,&lo);
+    if(!ok){
+        Markerf("[PD]   location: UNREADABLE (root=0x%llX RelativeLocation@0x%X) -- instrument, not a zero\r\n",
+                (unsigned long long)root,lo);
+    } else {
+        int si=-1;
+        for(int k=0;k<g_pdPodS0N;k++) if(g_pdPodS0[k].obj==pod){ si=k; break; }
+        if(si<0&&g_pdPodS0N<(int)(sizeof(g_pdPodS0)/sizeof(g_pdPodS0[0]))){
+            si=g_pdPodS0N++; g_pdPodS0[si].obj=pod; g_pdPodS0[si].have=1; g_pdPodS0[si].ms=GetTickCount();
+            g_pdPodS0[si].L[0]=L[0]; g_pdPodS0[si].L[1]=L[1]; g_pdPodS0[si].L[2]=L[2];
+            Markerf("[PD]   location: (%.1f, %.1f, %.1f)  root=0x%llX RelLoc@0x%X (%s) attach=%s  [FIRST "
+                    "SAMPLE for this pod]\r\n",L[0],L[1],L[2],(unsigned long long)root,lo,
+                    (ok==1)?"by name":"*** 0x158 FALLBACK, name lookup failed ***",
+                    LooksLikePtr(att)?"YES":"none");
+        } else if(si>=0){
+            double dx=L[0]-g_pdPodS0[si].L[0], dy=L[1]-g_pdPodS0[si].L[1], dz=L[2]-g_pdPodS0[si].L[2];
+            double d2=dx*dx+dy*dy+dz*dz;
+            int moved = d2 > 1.0;                 // 1 uu^2 -- far below any real descent
+            if(moved) g_pdPodMoved++;
+            Markerf("[PD]   location: (%.1f, %.1f, %.1f)  delta vs first sample (%+.1f, %+.1f, %+.1f) after "
+                    "%lu ms -> %s\r\n",L[0],L[1],L[2],dx,dy,dz,
+                    (unsigned long)(GetTickCount()-g_pdPodS0[si].ms),
+                    moved?"*** MOVED ***":"stationary");
+        } else {
+            Markerf("[PD]   location: (%.1f, %.1f, %.1f)  [sample table FULL -- no movement delta]\r\n",
+                    L[0],L[1],L[2]);
+        }
+    }
+    if(detail) PdPodSweep(pod,cls);
+}
+
+// The readout.  Works entirely off the pod-actor set the LAST census latched -- it issues NO
+// GUObjectArray sweep of its own, because one sweep costs 1.2-2.6 s of game thread here.
+static void PdPodDump(const char* when,int detail){
+#if !KPDPODDUMP
+    (void)when; (void)detail; return;
+#else
+    g_pdPodDumps++;
+    Markerf("[PD] ===== POD STATE (%s) -- %d pod ACTOR(s), latched by the '%s' census%s =====\r\n",
+            when,g_dpPodActN,g_dpPodLatchWhen,
+            g_dpPodActOverflow?"  ** LATCH OVERFLOWED: the list is a SUBSET **":"");
+    // The FIFTH-WALL PRECONDITION, printed before anything else because it decides how the rest of
+    // this dump may be read.  `SpawnDropPodForTeam` calls AuthPlayerEnterWorldAttachedToRidable ONLY
+    // inside `if (ULokiRideableComponent::Get(pod, NAME_None) != null)`.  Zero live rideable
+    // components => that branch cannot have run => the run says NOTHING about the fifth wall, and
+    // recording it as "the rider handoff failed" would be an instrument artifact.
+    Markerf("[PD] rideable-component census: %ld object(s) whose class chain names 'Rideable' "
+            "(archetypes INCLUDED; showing %d)\r\n",g_dpRideTotal,g_dpRideN);
+    for(int k=0;k<g_dpRideN;k++){
+        char rn[96]="?",rc[96]="?"; GetFNameStr(NameId(g_dpRide[k]),rn,sizeof(rn));
+        uintptr_t c=ClassOf(g_dpRide[k]); if(c) GetFNameStr(NameId(c),rc,sizeof(rc));
+        Markerf("[PD]   rideable[%d] 0x%llX '%s' cls=%s%s\r\n",k,(unsigned long long)g_dpRide[k],rn,rc,
+                (strncmp(rn,"Default__",9)==0)?"  [ARCHETYPE -- a CDO, not a live component]":"");
+    }
+    if(g_dpRideTotal==0)
+        Marker("[PD]   => NO rideable component exists in this world at all, archetype included. The "
+               "rider-handoff branch is UNREACHABLE, so this run cannot say anything about the fifth "
+               "wall (AuthPlayerEnterWorldAttachedToRidable). That is a PRECONDITION result, not a "
+               "failure of the handoff.\r\n");
+    if(g_dpPodActN==0){
+        Marker("[PD] no pod ACTORS latched. If no census has run since the spawn this is an INSTRUMENT "
+               "statement, not a world statement -- the census must run first. If a census DID run, then "
+               "zero pod actors exist and the spawn produced nothing.\r\n");
+        return; }
+    for(int i=0;i<g_dpPodActN;i++){
+        uintptr_t pod=g_dpPodAct[i];
+        int isNew=1; for(int k=0;k<g_dpBeforeN;k++) if(g_dpBefore[k]==pod){ isNew=0; break; }
+        if(g_dpBeforeN==0) isNew=0;      // no BEFORE set latched => "new" would be meaningless
+        // The DETAILED sweep costs ~40 lines per pod and is redundant across a population of
+        // identical-looking controls, so it runs for the NEW pod (the one under test) and for
+        // pod[0] (a default-value reference, read with the same instrument) only.
+        PdPodOne(pod,i,isNew,detail&&(isNew||i==0),i==0);
+    }
+    Markerf("[PD] ===== POD STATE (%s) end. AS-vs-live offsets: %d agree, %d DISAGREE, %d name lookups "
+            "failed | calibration=%s | dumps=%d, pod-samples that MOVED so far=%d =====\r\n",
+            when,g_pdPodAgree,g_pdPodDisagree,g_pdPodNameFail,
+            (g_pdPodCalOk==1)?"PASS":(g_pdPodCalOk==0)?"MISMATCH":"unavailable",
+            g_pdPodDumps,g_pdPodMoved);
+#endif
+}
+
 // ---- the ladder --------------------------------------------------------------------------------------
 static void PdLadderStep(){
     DWORD now=GetTickCount();
@@ -9725,6 +10249,11 @@ static void PdLadderStep(){
     case 3:
         Marker("[PD] --- pre-call bail-point readout (so a null result is attributable to a NAMED bail) ---\r\n");
         PdReadTdpc("pre-call");                    // pure RPM, no call
+        // ★ S131 BASELINE. Read off the C0-BEFORE census's latch, so it describes the pod population
+        //   BEFORE this arm touches anything. If RM_POOLSPAWN was injected into this process first,
+        //   its pods appear HERE reading class defaults -- which is the within-run negative control
+        //   for the after-E1 dump, taken with the same instrument on the same objects.
+        PdPodDump("pre-call baseline", 1);
         PdCdoFlags("pre-call, BEFORE any poke", false);   // always read-only here: the baseline
         if(KPDARMS&0x40) PdProbeLeader();          // ★ S126 fix: this IS a UFunction call, so it is gated
         else Marker("[PD] C2b GetTeamDropLeader probe disabled by KPDARMS bit6 -> NOT CALLED. This arm "
@@ -9759,8 +10288,35 @@ static void PdLadderStep(){
         if(!g_pdE1Ran) Marker("[PD] after-E1 census SKIPPED: E1 never dispatched, nothing to attribute\r\n");
         else if(KPDMINICENSUS) DpCensus("after-E1",false,false,&g_pdE);
         else Marker("[PD] after-E1 mini-census disabled -> the E1 delta is not separable from the run\r\n");
+        // ★★★★★ S131 HEADLINE. The census counts objects; THIS is what the object IS. It runs
+        //   IMMEDIATELY after the after-E1 census (which is what refreshes the pod-actor latch) and
+        //   inside the same armed window, because every armed window in S130 died artifact-less and
+        //   an external RPM pass afterwards has no process to read.
+        //   ⚠ If the mini-census is disabled the latch is STALE (it still describes the pre-call
+        //     world), so the dump would silently miss the new pod. Say so rather than print it.
+        if(!g_pdE1Ran) Marker("[PD] after-E1 POD DUMP skipped: E1 never dispatched.\r\n");
+        else if(!KPDMINICENSUS) Marker("[PD] after-E1 POD DUMP skipped: KPDMINICENSUS=0, so no census has "
+                                       "refreshed the pod-actor latch since the call and any dump would "
+                                       "describe the PRE-CALL world. This is an instrument limit.\r\n");
+        else { PdPodDump("after-E1", 1); g_pdPodSampleAnchor=GetTickCount(); }
         g_pdStep=8; return;
     case 8:
+    case 9:
+        // ★ S131 MOVEMENT SAMPLES. Two further location reads, KPDPODSAMPLEMS apart, off the SAME
+        //   latch -- no census, so they cost no game-thread sweep. A pod that descends is the
+        //   strongest available evidence of "functional"; a stationary pod is only informative
+        //   against a named reason it should have moved, which is why the samples are cheap and the
+        //   reason is documented rather than the samples being skipped.
+        if(!g_pdE1Ran||!KPDMINICENSUS){ g_pdStep=10; return; }
+        if(g_pdPodSampleAnchor && GetTickCount()-g_pdPodSampleAnchor < (DWORD)KPDPODSAMPLEMS) return;
+        // The label carries only the sample INDEX. The real elapsed time is printed per pod on the
+        // location line, measured from that pod's own first sample -- a nominal "+N ms" here would be
+        // a number the ladder cannot actually guarantee (each step polls at KPDSTEPMS granularity).
+        { char w[64]; _snprintf_s(w,sizeof(w),_TRUNCATE,"movement sample %ld",(long)(step-7));
+          PdPodDump(w, 0); }
+        g_pdPodSampleAnchor=GetTickCount();
+        g_pdStep=step+1; return;
+    case 10:
     default:
         Marker("[PD] ================ game-thread arms COMPLETE (C4 runs on the worker after a settle) ================\r\n");
         g_done=1; return;
@@ -9780,6 +10336,9 @@ static void PdFinalReport(){
     Markerf("[PD] settling %d ms before the AFTER census...\r\n",(int)KPDSETTLEMS);
     Sleep((DWORD)KPDSETTLEMS);
     DpCensus("C4-AFTER",true,false,&g_pdA);
+    // S131: the LAST location sample, on the worker thread after the settle. It is the widest
+    // separation from the first sample this arm can produce without holding the game thread.
+    PdPodDump("C4-AFTER (worker, post-settle)", 0);
     Marker("[PD] ---------------- DELTA TABLE (the DropPod row is the Route C result) ----------------\r\n");
     Markerf("[PD]   bucket      BEFORE   afterC1    AFTER   delta\r\n");
     Markerf("[PD]   DropPod     %6ld   %7ld   %6ld  %+6ld   <== ROUTE C\r\n",g_pdB.pod,g_pdM.pod,g_pdA.pod,g_pdA.pod-g_pdB.pod);
@@ -10954,7 +11513,13 @@ static void SpLadderStep(){
         g_pslStep=3; return;
     case 3:
         if(!g_spP1Ran) Marker("[PS] after-P1 census SKIPPED: P1 never dispatched, nothing to attribute\r\n");
-        else if(KSPMINICENSUS&&(KSPARMS&0x04)) DpCensus("after-P1",false,false,&g_spM1);
+        else if(KSPMINICENSUS&&(KSPARMS&0x04)){ DpCensus("after-P1",false,false,&g_spM1);
+            // ★ S131. RM_POOLSPAWN's pods never go through InitializeDropPod, so this dump is the
+            //   NEGATIVE arm of the S131 readout: every field that call writes must read the CLASS
+            //   DEFAULT here. Flown into the same process as RM_DROPPOD it becomes a within-run
+            //   control; flown alone it still establishes the default baseline with the SAME
+            //   instrument, which is what makes the two comparable at all.
+            PdPodDump("after-P1 (pooled DEFERRED spawn -- no InitializeDropPod)", 1); }
         else Marker("[PS] after-P1 mini-census disabled -> P1's delta is not separable from the rest of the run\r\n");
         g_pslStep=4; return;
     case 4:
@@ -10968,7 +11533,8 @@ static void SpLadderStep(){
         g_pslStep=5; return;
     case 5:
         if(!g_spP2Ran) Marker("[PS] after-P2 census SKIPPED: P2 never dispatched, nothing to attribute\r\n");
-        else if(KSPMINICENSUS&&(KSPARMS&0x10)) DpCensus("after-P2",false,false,&g_spM2);
+        else if(KSPMINICENSUS&&(KSPARMS&0x10)){ DpCensus("after-P2",false,false,&g_spM2);
+            PdPodDump("after-P2 (pooled NON-deferred spawn -- no InitializeDropPod)", 0); }
         else Marker("[PS] after-P2 mini-census disabled -> P2's delta is not separable\r\n");
         g_pslStep=6; return;
     case 6:
@@ -10982,7 +11548,8 @@ static void SpLadderStep(){
         g_pslStep=7; return;
     case 7:
         if(!g_spP3Ran) Marker("[PS] after-P3 census SKIPPED: P3 never dispatched\r\n");
-        else if(KSPMINICENSUS&&(KSPARMS&0x40)) DpCensus("after-P3",false,false,&g_spM3);
+        else if(KSPMINICENSUS&&(KSPARMS&0x40)){ DpCensus("after-P3",false,false,&g_spM3);
+            PdPodDump("after-P3 (ORDINARY non-pooled spawn -- no InitializeDropPod)", 0); }
         else Marker("[PS] after-P3 mini-census disabled -> P3's delta is not separable\r\n");
         g_pslStep=8; return;
     case 8:
@@ -11007,6 +11574,7 @@ static void SpFinalReport(){
     Markerf("[PS] settling %d ms before the AFTER census...\r\n",(int)KSPSETTLEMS);
     Sleep((DWORD)KSPSETTLEMS);
     DpCensus("P4-AFTER",true,false,&g_spA);
+    PdPodDump("P4-AFTER (worker, post-settle)", 0);
 
     // ⚠ A census that never ran must print `n/a`, never a zero. S127's RM_DROPPOD published fabricated
     //   zeros beside two real counts, which reads as "pods disappeared and came back".
