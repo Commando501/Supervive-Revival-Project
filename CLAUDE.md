@@ -1469,7 +1469,9 @@ The census counts OBJECTS; S131 built the in-arm readout that looks at what the 
   ⛔ **No poke can ever satisfy the getter**: `0xF7EB50` is `33 c0 c3`, three bytes, **zero memory
   operands**. ⛔ A `Func` swap is dead too — thunk `0x5456380` has **0 direct callers** and the game's own
   AS callers reach the **impl by rel32**.
-  ★★★ **THE ROUTE: the wall's ONLY persistent output is `PlayersAttached.Add(PS)`** (`+0x130`/`+0x138`/
+  ★★★ **THE ROUTE: the wall's only persistent COMPONENT-state output is `PlayersAttached.Add(PS)`**
+  (⚠ corrected — it ALSO moves the character via `LokiTeleportActor` + `SpawnAndMoveLokiCharacter_
+  MoveStep` and stamps `[hero+0x1C10]`; **actor position is not transient**) (`+0x130`/`+0x138`/
   `+0x13C`), and **`AuthPlayerDetachPlayerFromRidable` (impl `0x55CCCB0`, thunk `0x5456100`, 440 B) is gated ONLY
   on that array being non-empty.** ⚠⚠ **CORRECTED (§14.1): it is NOT fold-free — it carries TWO
   `0xF7EC20` (`ret 0`) calls at `0x55CCD5B` and `0x55CCE4E`**, the first on the HERO immediately after
