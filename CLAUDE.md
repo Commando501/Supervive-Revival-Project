@@ -2474,8 +2474,12 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **48 known instances** (45 tabulated; ⚠ the tally
-   has itself diverged twice — re-derive from the table, never retype the number), each of which closed a
+   blind spot recorded as a property of the game. **68 tabulated instances as of S130** — ⚠ **re-derived by
+   COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
+   again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
+   defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
+   the last BYTE of a multi-byte character. **Run it, do not just read it.**),
+   each of which closed a
    technique, each of which fell in minutes. Read it before recording ANY negative result as a
    property of the game. Includes the nine "how to apply" rules — positive controls, naming the
    artifact you measured, and **rule 9: grep for the claim before correcting one instance of it.**
