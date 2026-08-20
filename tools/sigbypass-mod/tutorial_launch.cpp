@@ -13530,6 +13530,21 @@ static void DxState(const char* when){
       if(o==0xFFFFFFFF) Markerf("[DX] %s PlayersInsideCount *** NOT RESOLVED BY NAME ***\r\n",when);
       else Markerf("[DX] %s PlayersInsideCount@0x%X=%d\r\n",when,o,
                    SafeReadable((void*)(comp+o),4)?*(int32_t*)(comp+o):-999); }
+    // The POD moves at 20,000 uu/s, so "where the hero landed" is only interpretable beside "where
+    // the pod was at that instant". Printing both here makes the marker self-contained -- S132 flight 1
+    // needed an external RPM read to establish the fingerprint.
+    if(g_rdPod&&GcAlive(g_rdPod)){
+        double P[3]={0,0,0};
+        if(DxHeroLoc(g_rdPod,P))
+            Markerf("[DX] %s POD  0x%llX loc=(%.1f, %.1f, %.1f)\r\n",when,(unsigned long long)g_rdPod,P[0],P[1],P[2]);
+        else Markerf("[DX] %s POD location UNREADABLE -- instrument limit, NOT a zero\r\n",when);
+    }
+    if(g_dxAltLanding&&GcAlive(g_dxAltLanding)){
+        double A[3]={0,0,0};
+        if(DxHeroLoc(g_dxAltLanding,A))
+            Markerf("[DX] %s LAND 0x%llX cls=%s loc=(%.1f, %.1f, %.1f)  <== the LandingLocationActor being passed\r\n",
+                    when,(unsigned long long)g_dxAltLanding,g_dxLandingName,A[0],A[1],A[2]);
+    }
     if(g_dxHero&&GcAlive(g_dxHero)){
         double L[3]={0,0,0}; int ok=DxHeroLoc(g_dxHero,L);
         if(ok) Markerf("[DX] %s HERO '%s' 0x%llX loc=(%.1f, %.1f, %.1f)\r\n",when,g_dxHeroName,

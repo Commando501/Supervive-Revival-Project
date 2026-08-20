@@ -1390,10 +1390,13 @@ Read `docs/fk22-dropphase-reachability.md` §14-§15.** Two flights on one stage
 
 ### Before touching anything drop- / deploy- / DropPlane- / DropPod- / dismount- / "SpawnPlane faults" shaped
 ★★★★★ **S132 (2026-08-20) — THE DISMOUNT RUNS. THE HERO LEAVES THE POD AND IS PLACED ON THE GROUND.
-Read `docs/s132-dismount-settled.md`.** One launch, one armed window, **four dismounts**, client alive
-throughout (>1,110 s), 0 crashpad handoffs, 0 `Fatal`. Risk class **DATA** — two aligned `TArray`-header
+Read `docs/s132-dismount-settled.md`.** **FIVE detach calls across TWO launches** — four in flight 1
+against a target moving at 20,000 uu/s, one in flight 2 onto a chosen landing actor where the hero
+**stands still on real terrain**. Both clients alive throughout, 0 crashpad handoffs, 0 `Fatal`. Risk class **DATA** — two aligned `TArray`-header
 writes plus one element store inside the game's own allocation. **Zero `.text` writes, zero PI hooks,
-zero CDO pokes.** Build: `build.ps1 -Name tutorial_launch -Variant dismount`, `.text 03d807ab6d397537`.
+zero CDO pokes.** Builds: `-Variant dismount` (FLIGHT-1 artifact `.text 03d807ab6d397537`, reproduce
+from commit `c2cdc56`; HEAD is `53483e6181bb3583` after the DxState pod-location print) and
+`-Variant dismount-landstart` (FLIGHT-2 artifact `0d5fa554edac53c5`). Diff the hash, never the size.
 - **THE RECIPE, and it is exactly what S131 predicted:** append the PlayerState to `PlayersAttached`
   (`+0x130` Data / `+0x138` Num / `+0x13C` Max) using the GAME'S OWN `ResizeGrow` at **`0x00F988D0`**,
   then call **`AuthPlayerDetachPlayerFromRidable`** (impl `0x55CCCB0`, thunk `0x5456100`) through the
@@ -1459,15 +1462,27 @@ zero CDO pokes.** Build: `build.ps1 -Name tutorial_launch -Variant dismount`, `.
   benign startup `Error`s. ⚠ But `LogLokiRideable` occurs **0** times all session, so the log has **no
   positive control for that category** — the silence is *predicted by the disassembly* and *consistent
   with* the log; the log alone cannot discriminate silent from suppressed.
-- ⛔ **OPEN, and UNAVAILABLE rather than negative: does `GetLandingTeleportLocation` consume its
-  `LandingLocationActor` argument?** A `KDXLANDING=2` arm was built to pass a `LokiPlayerStart` instead
-  of the pod. By the time it flew, an enumerating scan reported **`0 candidates matching
-  {LokiPlayerStart,PlayerStart,TrainingStart}, 0 GC-alive, over 143,130 objects walked`** — the
-  tutorial-start cell had streamed out (the `b1only` marker scan HAD found
-  `BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02` at uptime ~250 s). **The arm refused to substitute
-  silently and said so.** ★ **The better experiment is simply to call the detach IMMEDIATELY after
-  Route E, while the pod is still over the island** — then the hero should land on real terrain and
-  stay there.
+- ★★★★★ **FLIGHT 2 CLOSED THE ONE OPEN QUESTION AND MADE THE DISMOUNT *USABLE* [M].**
+  `GetLandingTeleportLocation` **DOES consume its `LandingLocationActor` argument**. A second launch,
+  staged identically, injected `dismount-landstart` (`KDXLANDING=2`) right after Route E while the
+  tutorial-start cell was still resident. The arm enumerated **1 candidate over 154,919 objects walked**
+  (`BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02` at `(-3206.4, 5070.5, 100.0)`) and printed its
+  prediction before calling. At that instant the two hypotheses were **1,488,146 uu apart** — the pod
+  was at `(1428272.5, 5070.5, 20100.0)`. **The hero landed at `(-3206.4, 5070.5, 138.0)`: the
+  PlayerStart, not the pod.**
+  ★★ **AND IT STAYS THERE.** It settled to `Z = 90.15` (a capsule dropping onto the floor) and held
+  `(-3206.4, 5070.5, 90.15)` **bit-for-bit across four samples over 9 s** while the pod flew another
+  180,000 uu. `dX = 0.00 uu`, `dY = 1 ULP`, `dZ = -9.85 uu` from the marker. Contrast flight 1, where
+  the same hero fell `-117,462 → -121,560` in 4 s because the landing point was over open air.
+  ⇒ **the hero exits the pod, is un-hidden, gets collision and movement back, is placed at a chosen
+  point on real terrain, and stands there.**
+  ★ **Method: when the reference is MOVING, print the reference.** The discriminator exists only
+  because the arm prints the pod's live position beside the hero's in every state sample; flight 1
+  needed an external RPM read to establish the same thing after the fact.
+  ⚠ *How* `GetLandingTeleportLocation` derives Z is still untranscribed (963 bytes); that it consumes
+  the actor is measured, the -9.85 uu rest offset is the hero's own capsule settling.
+  ⚠ Flight 1's attempt at this found **0 candidates over 143,130 objects** — the cell had streamed out
+  by uptime ~860 s — and the arm **refused to substitute the pod silently**. Run this EARLY.
 - ⛔ **`AuthPlayerEnterWorld` (`0x55CCE70`) is FORECLOSED as an alternative route [M]** — its two
   terminal actions are direct calls to the stripped `0xF7EB50`, and it performs **zero writes to any
   actor or component transform**. Satisfying its `PlayersInside` guard with a poke would move execution
@@ -2800,7 +2815,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **70 tabulated instances as of S130** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **75 tabulated instances as of S132** — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
