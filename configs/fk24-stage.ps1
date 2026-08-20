@@ -128,6 +128,25 @@ function Read-Locked([string]$path,[int]$tailBytes = 400000){
   } catch { return '' }
 }
 
+# S127 FIX. `Read-Locked` SEEKS FROM THE END, so every caller is a TAIL window and any
+# "is this token present anywhere?" test silently becomes "is it present recently?".
+# This bit TWICE on the same gate: S114 raised the capture window 200 KB -> 40 MB when logs were
+# ~2 MB (i.e. "the whole file" in practice), and S127 hit it again at 79 MB -- the ONE early
+# /core-game/matches fetch sat at byte 44,791 while the 40 MB window started at 39,042,477, so the
+# gate could never pass and the stager aborted a perfectly good, already-parked client.
+# ⇒ A SIZE-DEPENDENT CONSTANT IS THE DEFECT. This streams the whole file and cannot be outgrown.
+function Test-FileContains([string]$path,[string]$needle){
+  if(-not (Test-Path $path)){ return $false }
+  try{
+    $fs = [IO.File]::Open($path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite)
+    try{
+      $sr = New-Object IO.StreamReader($fs)
+      while(($line = $sr.ReadLine()) -ne $null){ if($line.Contains($needle)){ return $true } }
+      return $false
+    } finally { $fs.Dispose() }
+  } catch { return $false }
+}
+
 function Wait-For([string]$what,[int]$timeoutSec,[scriptblock]$test){
   $t0 = Get-Date
   while(((Get-Date) - $t0).TotalSeconds -lt $timeoutSec){
@@ -196,8 +215,16 @@ Say "game PID=$gamePid started=$start"
 $parked = Wait-For 'parked match model (uiready + match fetched + uptime)' $WaitParkedSec {
   $up = ((Get-Date) - $start).TotalSeconds
   if($up -lt $MinUptimeSec){ return $false }
-  $log = Read-Locked $lokiLog
-  if($log -notmatch 'TryUIReady SUCCESS'){ return $false }
+  # S127: `TryUIReady SUCCESS` is a ONE-SHOT STARTUP event, so this is a PRESENCE test and must scan
+  # the WHOLE file. The 400 KB default tail window broke it exactly as the 40 MB capture window broke
+  # the check below: MEASURED this session, Loki.log was 1,292,760 B with the two occurrences at
+  # offsets 188,609 and 254,995 while the window started at 892,760 -- both outside, so the gate could
+  # never pass and aborted an already-parked client twice (420 s each).
+  # ⚠⚠ DO NOT "fix" the other two Read-Locked callers the same way. They are RECENCY tests, not
+  # presence tests: `Load map complete .../LVL_Tutorial` must be THIS force-open's, and a whole-file
+  # scan would happily match a STALE load from an earlier run in the same log. The window is
+  # load-bearing there. Presence -> whole file; recency -> window. They are different questions.
+  if(-not (Test-FileContains $lokiLog 'TryUIReady SUCCESS')){ return $false }
   if(Test-Path $capture){
     # S114 FIX (2026-08-12): was `Read-Locked $capture 200000`, i.e. only the last
     # 200 KB of capture.log. That is a TAIL window, and the client fetches
@@ -210,8 +237,8 @@ $parked = Wait-For 'parked match model (uiready + match fetched + uptime)' $Wait
     # FK-11's [Core.Log] verbosity work inflated per-run HTTP traffic enough to
     # make the old window fail routinely. capture.log is recreated per ags start,
     # so reading it whole is correct and cheap.
-    $cap = Read-Locked $capture 40000000
-    if($cap -notmatch 'core-game/matches'){ return $false }
+    # S127: whole-file streaming scan -- see Test-FileContains. NEVER reintroduce a byte cap here.
+    if(-not (Test-FileContains $capture 'core-game/matches')){ return $false }
   }
   return $true
 }

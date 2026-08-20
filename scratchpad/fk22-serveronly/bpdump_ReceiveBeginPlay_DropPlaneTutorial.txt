@@ -1,0 +1,22 @@
+# Asset:         Loki/Content/Loki/Core/GameModes/Components/Comp_GameMode_DropPlane_Tutorial.uasset
+# UFunction:     ReceiveBeginPlay
+# FunctionFlags: FUNC_Event, FUNC_Public, FUNC_BlueprintEvent
+# Outer class:   Comp_GameMode_DropPlane_Tutorial_C
+# ScriptBytecode entries: 3
+# ChildProperties: 0
+
+# --- ScriptBytecode tree ---
+[  0] EX_LocalFinalFunction
+  StackNode: ExecuteUbergraph_Comp_GameMode_DropPlane_Tutorial
+  Parameters: [1]
+    [  0] EX_IntConst
+      Value: 2119
+      StatementIndex: 9
+  StatementIndex: 0
+[  1] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 16
+  StatementIndex: 15
+[  2] EX_EndOfScript
+  StatementIndex: 17

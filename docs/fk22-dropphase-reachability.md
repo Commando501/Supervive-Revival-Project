@@ -1246,3 +1246,1424 @@ ServerOnly hypothesis (no subscription) is measured.
 3. **`SpawnPlane` directly.** S2.1 measured it branchless with 3 unguarded `Array_Get(...,0)` and the
    markers PRESENT in `LVL_Tutorial` (S0/S7) -- so the S93 fault should not reproduce. That is the most
    direct test of FK-22's original question and it no longer depends on the phase at all.
+
+---
+
+## 17. FLOWN — `SpawnPlane` FAULTED **and** spawned a plane. The cause is measured: the markers are NOT STREAMED IN.
+
+**Date:** 2026-08-17, PID 138796, staged `LVL_Tutorial`, build `tutorial_launch_dropplane_b1only.dll`
+(`.text 5b4467b0105dec1a`, `KDPARMS=0x33`, `KFRAMEINIT=1`). Zero `.text` writes, zero PI hooks,
+**zero crashpad handoffs** — the process survived the fault. Evidence:
+`docs/fk24-s125-b1only-RESULT.txt`, `docs/Loki-s125-b1only.log`.
+
+### 17.1 The control passed first, which is what makes the rest attributable
+
+```
+B0c  GetAutoDropLocation()  -> returned without fault   fault=-  res0=0x0
+     VERDICT: control PASSED (B0c status 0), so B1's status 1 is attributable to SpawnPlane
+```
+`GetAutoDropLocation` is **0 push / 0 pop**, so it cannot be affected by the FFrame flow-stack window,
+and it is **the exact call S93 recorded as "ran clean"**. Its success establishes that the BP-call
+primitive dispatches correctly in this build — without it, B1's fault would be uninterpretable.
+
+### 17.2 The headline: BOTH outcomes, simultaneously
+
+```
+B1  SpawnPlane()  ->  *** FAULTED (SEH-captured) ***
+                      code=0xC0000005 READ addr=0x0  rip rva=0x13495DD   res0=0x0
+census BEFORE  DropPlane=3 DropPod=2 DropShip=0  objects=5
+census AFTER   DropPlane=4 DropPod=2 DropShip=1  objects=6   new=1
+NEW: 0x2AD6F1F20E0 'BP_DropPlane_Straight_Tutorial_C'
+     chain = BP_DropPlane_Straight_Tutorial_C <- BP_DropPlane_Base_C <- LokiDropShip <- LokiDropPlane <- Actor
+```
+
+- **[M] It faulted** — a null dereference (`READ addr=0x0`) at RVA `0x13495DD`, inside the script-VM
+  region (`ProcessInternal` is `0x13454A0`). Exactly the shape of `Array_Get(empty,0)` -> null actor ->
+  `K2_GetActorLocation`. ★ This fault report is ATTRIBUTABLE — code and faulting address — where S93
+  had only a bare boolean. That is what `KFAULTINFO` was built for.
+- **[M] AND A REAL DROP PLANE EXISTS THAT DID NOT BEFORE.** The deferred spawn ran. `B1 return
+  value = 0x0` and `SetDropPlane` never executed, so the component never took ownership ⇒ the actor is
+  **half-constructed**. The spawn machinery WORKS; what failed is the position computation feeding it.
+
+### 17.3 ★★★★★ THE CAUSE, MEASURED: present-in-package ≠ streamed-in
+
+```
+marker scan: AActor.Tags @0x1F0 (resolved by name off a live actor class)
+MARKER 'TrainingStart' FOUND on 0x2ADA4928040 'BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02'
+summary: TrainingStart=1  PlaneStartPoint=0  PlaneEndPoint=0
+         (actors scanned=2881, of which tagged=676)
+```
+**[M] Two of the three markers are not resident.** All three exist in `LVL_Tutorial`'s shipped packages
+(S124, offline, three separate World Partition cells) — they are simply **not streamed in at call
+time**. The first lookup (`TrainingStart`) succeeds; the second hits an empty array and derefs null.
+★ The `676 tagged` figure is the built-in control: the scan CAN see tags, so the two zeros are a real
+absence in the live world, not a broken instrument.
+
+### 17.4 What this does to the FK-22 story — a correction to §0 and §14
+
+⚠⚠ **RETRACTED, my own wording:** §0 said S93's stated reason was *"refuted on the very map it was
+measured on"*. **That was too strong.** Sharper, and now measured in both directions:
+
+| claim | verdict |
+|---|---|
+| S93's OBSERVATION — "`SpawnPlane` faults" | **CORRECT [M].** It reproduces on a repaired frame, with the control passing in the same run. |
+| S93's stated REASON — "markers that don't exist outside the real deploy" | **HALF RIGHT.** They DO exist in the map (S124 [M]) — but they are **NOT STREAMED IN**, which produces the identical failure. The mechanism S93 named (unguarded empty-array deref) is exactly right. |
+| The FFrame-confound hypothesis (§14.3, [I, strong]) | **REFUTED as the explanation [M].** The fault reproduces through a repaired frame; the 0-push/0-pop control passed. The confound was a REAL DEFECT in the primitive, but it was not what produced S93's result. |
+
+⇒ ★ **The successor hypothesis flagged in §4 — "Present-in-map ≠ streamed-in at call time. Only the
+first is established" — was the right one, and it is now the measured answer.** That line was written
+before any of this was known; it is the single most load-bearing sentence in the document.
+
+⚠ **Do not now over-correct into "S93 was right all along."** Its *generalisation* remains refuted:
+the belief said the DROP PHASE is falsified as reachable, and what is measured is that ONE variant's
+position-computation faults on a streaming condition, while the spawn machinery itself demonstrably
+works. Three of FK-22's structural findings are untouched: the three sibling overrides, the general
+variant's zero marker queries, and `OnDeathCircleSet`'s procedural path.
+
+### 17.5 Where the blocker is now
+
+Not the phase (solved, §14). Not the subscription alone (§15) — and note `ServerOnly` (§16) is real
+code that unconditionally writes 0, so that bind is dead by construction. It is now **two positions**:
+`SpawnPlane` needs `PlaneStartPoint`/`PlaneEndPoint` resident, and the pod route needs none of it.
+
+★ **The most direct remaining route does not involve markers at all.** We now hold a live
+`LokiDropShip`-derived actor, and `ALokiDropShip::SpawnDropPodForTeam(TeamIndex, SpawnLocation,
+LandingLocation)` takes its positions **as parameters** with **no marker query** and exactly two bail
+points, both of which §3 grades satisfiable. That is Route C in §18.
+
+⚠ **State left behind:** a half-constructed `BP_DropPlane_Straight_Tutorial_C` is in that world, owned
+by nobody. The process tolerated it (0 crashpad handoffs), but any later census in that same world must
+account for it rather than assuming a clean baseline.
+
+---
+
+## 18. Route C and Route D — the two paths to a drop pod
+
+*Written S126, 2026-08-17, by the finalizer, after adversarial review of both routes. Everything below
+is **offline work plus a clean build**. **NOTHING IN THIS SECTION HAS BEEN FLOWN.** The predictions in
+§18.4 are pre-registered; that is the whole point of writing them down before the launch.*
+
+### 18.0 What the review changed, before anything else
+
+Both routes came back **FIX-FIRST**, and the fixes were applied, rebuilt and re-verified — not merely
+reported. One BLOCKER, two HIGH and six MEDIUM/LOW defects were repaired in
+`tools/sigbypass-mod/tutorial_launch.cpp` and `tools/sigbypass-mod/build.ps1`.
+
+| sev | defect | why it mattered |
+|---|---|---|
+| **BLOCKER** | `PdControl` (C0c) read `K2_GetActorLocation`'s `FVector` return **only from the params block**. `CallNative` passes `g_rbuf` as the thunk's third argument (`RESULT_DECL`); a native exec thunk writes `*(FVector*)Z_Param__Result`, never the params block. | The control would have read `(0,0,0)`, making `err` the ship's whole distance from the origin ⇒ **`SITTING VOID for Route C` on every run**, on a call that worked. The inverse is worse: a ship near the origin reads `MATCH` for a return never read. Fixed: read **both** sources, prefer the one the dispatch path actually writes, and **print which was used**. |
+| **HIGH** | Same wrong-buffer read for the headline: `g_pdRetRaw` came only from the params slot, while the attribution branch keyed on it. | On a **successful** spawn the log would have asserted *"the return slot is 0 → the pooled spawn returned null"* — a fabricated negative narrative contradicting the census. Fixed: fold `g_rbuf[0]`, print the source, and decode the return as a live UObject + class name. |
+| **HIGH** | `PdProbeLeader()` — a real `GetTeamDropLeader` UFunction call — ran **ungated**, so `droppod-readonly` made a call while `build.ps1` **and the shim's own marker line** both claimed *"ZERO UFunction calls"*. | A control that does the thing it is controlling for is not a control, and a log asserting a property the code does not have is this project's recorded failure mode. Fixed: new `KPDARMS` **bit6**; default `0x3F → 0x7F`; both read-only assertions now test `0x6A`, not `0x2A`. |
+| MEDIUM | `DmRestore` stamped `v.oldId` into **both** victims unconditionally, but `DmApplyWrites` has five `continue` paths and only an aggregate `g_dmWritten = (okn>0)`. | If victim[0] wrote and victim[1] was skipped, restore wrote our stale id over a slot **the game owns** — the one write in Route D that is neither reversible nor attributable, on the path whose entire purpose is to leave the world as found. Fixed: per-victim `wrote` flag, **plus** a check that the slot still holds *our* value before putting the old one back. |
+| MEDIUM | `DmGat` wrote three FProperty offsets into the 128-byte `g_pbuf` with no bounds check, while `DpCallBP` in the same file refuses out-of-range offsets on the stated grounds that *"a clamped write is still a wrong write"*. | A wrong offset would corrupt `g_rbuf` and the adjacent globals, and the resulting fault would be attributed to `GetAllActorsWithTag`. Fixed: refuse. |
+| MEDIUM | `KPDSHIPCLASS` assigned `forced=obj` inside the enumeration loop, then claimed *"matched exactly one candidate class"* without checking. | S125's leftover plane and a fresh pre-spawn are the **same class** — exactly the shape that makes last-writer-wins fire, on the path added to disambiguate. Fixed: count matches; `>1` **REFUSES**; `0` says so and falls through to the normal rules. |
+| MEDIUM | C3's pre-spawn calls `SpawnPlane` through the BP path, and the droppod variants did **not** set `KOUTPARMRET=1` — deliberately reproducing S125's `0xC0000005` at `rva 0x13495DD` and then running C0c and C1 on that same game thread. | Fixed: `-DKOUTPARMRET=1` on **all four** droppod variants. For this mode's three native callees the extra `FOutParmRec` is inert (an exec thunk reads its return through `RESULT_DECL` and never walks `OutParms`), so it is a fix for C3 and a no-op for C0c/C1/C2b. |
+| MEDIUM | `droppod-readonly` (`KPDPRESPAWN=0`) returned **before** `PdFinalReport` when no `LokiDropShip` existed. | The arm whose entire job is the census's null-delta baseline could not produce one on a **freshly staged world** — the exact state it is meant to be flown in. Fixed: the AFTER census needs no ship, so C4 runs anyway and Route C is reported NOT-APPLICABLE. |
+| LOW | Route D's gate was documented as a `0 → 1` **transition** and implemented as a **level** test (`post >= 1`). | If the World Partition cells carrying the real markers streamed in during the sitting, the gate would PASS and the mode would attribute **their** residency to our write. Fixed: GATE-1 and GATE-2 both require a **rise**, with an explicit warning line if `pre` was already non-zero, and an announced level-test fallback when `pre` was not measurable. |
+| LOW | A comment claimed `PhChainHas` was an *"EXACT declaring base, not the substring"* test. It is `strstr`. | The `obj_by_class.py` substring blind spot restated as its opposite, in a comment that would defend a wrong pick. Fixed: the comment now says what the code does and names the full enumeration + refusal as what actually carries the pick. |
+
+**Two review findings I deliberately did NOT change.** (a) The 16-slot candidate array still caps ship
+enumeration — it now prints `⚠ MORE CANDIDATES THAN THE 16-SLOT ARRAY … LOWER BOUND`, and it still
+refuses on ambiguity, so the cap is a reporting limit and can never produce a wrong pick. (b) Route D's
+`GetAllActorsWithTag` leaks one small `OutActors` allocation per call (≤6 per sitting); freeing it means
+calling an allocator we have not graded, which is a worse trade than the leak.
+
+### 18.1 What was built
+
+Source (both files are **uncommitted working-tree changes** — see §18.7):
+
+- `tools/sigbypass-mod/tutorial_launch.cpp` — `RM_DROPPOD` (enum **26**, Route C) and `RM_DROPMARKERS`
+  (enum **27**, Route D), plus the shared `KOUTPARMRET` `#if` in `BuildOutParms`.
+- `tools/sigbypass-mod/build.ps1` — 11 new variants. `-Variant` without `-Name` still refuses.
+
+`.text` sha256[:16], computed from the PE section table after the final rebuild. **58 built, 0 failed.
+All 17 below are DISTINCT — no A/B can be run against a copy of itself.**
+
+| variant | `.text` sha256 | `.text` B | file B | role |
+|---|---|---:|---:|---|
+| `play` | `9bc10a4552c596e1` | 163,328 | 238,080 | **REGRESSION GATE — unchanged** |
+| `dropplane` | `a0f6f2e54b5ac01e` | 121,344 | 193,024 | unchanged |
+| `dropplane_handler` | `f88918f0935d3f44` | 119,808 | 189,952 | unchanged — **B3a/B3b, still never flown** |
+| `dropplane_b1only` | `5b4467b0105dec1a` | 120,832 | 191,488 | the S125 probe |
+| `phaseladder` | `8d1821f8c0ddbd63` | 115,712 | 184,320 | unchanged |
+| `cheatmgr` | `7f89f671592824ac` | 106,496 | 167,424 | unchanged |
+| **`droppod`** | `76c86fe5c8843c9a` | 137,216 | 215,040 | **Route C candidate** (`KPDARMS=0x7F`) |
+| `droppod-readonly` | `93495bb576dff9f8` | 119,296 | 187,392 | Route C null-delta control (`0x11`, zero calls) |
+| `droppod-noprespawn` | `32fa55a033796213` | 128,512 | 200,704 | Route C, never pre-spawn (`0x77`) |
+| `droppod-newest` | `091a7e657ef43cc9` | 137,216 | 215,040 | Route C, highest `InternalIndex` on ambiguity |
+| **`dropmarkers`** | `d3c07c32f7a699eb` | 139,264 | 216,576 | **Route D headline** |
+| `dropmarkers-readonly` | `74857749ef264d1e` | 124,416 | 195,072 | Route D staging + FName agreement, zero writes |
+| `dropmarkers-gateonly` | `778990b2e3379ade` | 135,168 | 209,408 | Route D mechanism alone, no `SpawnPlane` |
+| `dropmarkers-outparm` | `b80c7455acd8df51` | 130,048 | 203,264 | `KOUTPARMRET` alone — ⚠ **`KDMFORCE=1`, gate BYPASSED** |
+| `dropmarkers-s125repro` | `3c00d10be6369382` | 139,264 | 216,576 | controlled reproduction (`KOUTPARMRET=0`) |
+| `dropmarkers-norestore` | `7ac4bf24298c53d9` | 138,240 | 215,040 | leaves the tags in the world — contaminating |
+| `dropmarkers-nogat` | `25ca6075bf015e84` | 135,168 | 210,432 | GATE-2 disabled |
+
+⚠ **Route D's hashes moved from the values its designer reported** (`9669759b723a40b0` →
+`d3c07c32f7a699eb`, and so on), and **Route C's moved twice**, because of the fixes above. Use the table
+in this section; the design write-ups' hashes are stale. **Diff `.text`, never size** —
+`droppod` and `droppod-newest` share a `.text` SIZE of 137,216 and differ only by hash.
+
+### 18.2 Safety statement — checked mechanically, not asserted
+
+- **No module-image write.** Both modes arm exclusively on the heap `UFunction.Func` (+0xE0) swap
+  (`FsArm`/`FsHold`/`FsDisarm`). With `KFUNCSWAP=0` each **REFUSES to run** and prints the S112
+  measurement (standing `.text` **10/10** armed windows died vs **3/36**, Fisher p = 0.00000008) rather
+  than falling back to `InstallHook()`.
+  **Import-table evidence, parsed from the PE import descriptors of the final artifacts:**
+  `VirtualAlloc`, `VirtualFree` and `FlushInstructionCache` are **ABSENT from all 11 new DLLs and from
+  `play`**. **Positive control: `tutorial_launch_fo.dll` has all three PRESENT**, because it calls
+  `InstallHook` — so the check discriminates rather than always passing. `VirtualProtect` is imported by
+  every DLL including the deployed `play`: baseline, not a regression.
+  ⚠ The no-`.text`-write property rests on **source reading plus these three absences**, not on a
+  complete import audit: all 11 import 82 KERNEL32 functions including `HeapAlloc`, `RaiseException`,
+  `RtlUnwindEx` and `TerminateProcess`, identical to the already-flown `dropplane_b1only`. Do not
+  re-derive FK-32 from an import scan.
+- **No hardcoded ASLR addresses.** `0x2AD6F1F20E0`, `0x2ACBA707D80`, `0x1B3771413C0`, `0x1B3857EA4C0`
+  and `0x1B4021B60A0` appear **only inside comments that say they are dead** (3 lines total). Zero code
+  uses. Objects resolve through `GUObjectArray` + class chain; properties (`TeamDropPodClass`,
+  `RootComponent`, `RelativeLocation`, `Tags`, and all three `GetAllActorsWithTag` params) by **name**;
+  functions by exact `UFunction` name over the class+super chain; parameter offsets and element sizes
+  from the live `FProperty` chain. Where a name lookup fails the mode prints **INSTRUMENT UNAVAILABLE**
+  and refuses — there is no fallback constant anywhere in either mode.
+- **No C++ exceptions.** SEH only. `python verify_dll.py` → **VERDICT: PASS on all 11** (no
+  `__CxxFrameHandler3/4`, no `_CxxThrowException`, no `_Unwind_Resume`, no CRT import).
+- **Runaway bounds.** Every loop is iteration-bounded: FName pool sweep `blocks<8192`, `off<0x20000`,
+  entries `<4,000,000`, advance `>=4` per entry; script-blob harvest `snum<=0x40000`; victim enumeration
+  `nc<256`; ship enumeration `nc<16` with an over-cap warning; `GetAllActorsWithTag` refuses
+  `Num<0 || Num>65536`; every parameter write is bounds-checked against its buffer and **refuses rather
+  than clamping**.
+- **Knob defaults, all safe.** `KOUTPARMRET`=0 (a `#if`, not an `if`), `KDMRESTORE`=1, `KDMFORCE`=0,
+  `KDMGAT`=1, `KPDPRESPAWN`=1 (Route C only), `KPDSHIPPICK`=0, `KPDFORCE`=0, `KPDARMS`=0x7F.
+- **Proof `play` is byte-unchanged: `.text` sha256[:16] = `9bc10a4552c596e1`, the CLAUDE.md pin,
+  reproduced after every edit round.** `dropplane` = `a0f6f2e54b5ac01e` and `dropplane_handler` =
+  `f88918f0935d3f44` likewise. Since `kRunMode` is a compile-time `static const int`, an un-eliminated
+  new code path — or its `.rdata` literals, which move RIP-relative displacements — would necessarily
+  change `play`'s `.text`. It did not ⇒ **`RM_GOTOPHASE`(2), `RM_PHASELADDER`(24) and `RM_DROPPLANE`(25)
+  are behaviourally untouched.**
+
+### 18.3 Which route to fly FIRST — ranked, not hedged
+
+**1. Route C (`droppod`). Fly it first.** It is the only route that can produce the thing the goal names
+— a **drop pod**. It needs no level markers, no round phase, no subscription and no delegate: §3 graded
+`SpawnDropPodForTeam` with exactly **two** bail points and **zero** marker queries, and both bail points
+are read out before and after the call. If a `LokiDropShip` is resident it never touches `SpawnPlane` at
+all, so it does not inherit the untested `KOUTPARMRET` hypothesis. And it carries the strongest control
+built here: C0c does not merely "not fault" — it **cross-checks a struct return against a pure-RPM read
+of the same actor**.
+
+**2. Route D (`dropmarkers`).** Second, and it is not a competitor: it fixes a **correctness** defect on
+a different actor. Its ceiling is a plane at real coordinates. **A plane is not a pod**, and the
+plane→player handoff (`ALokiDropPlane::AddPlayerToPlane`) is one of FK-1's four empty impls, so Route D
+cannot reach the goal on its own. Its real value is (a) `dropmarkers-outparm` settles whether S125's
+fault was our own `BuildOutParms` — the single most load-bearing untested belief in this section — and
+(b) `dropmarkers-gateonly` proves the tag-residency mechanism while leaving the world exactly as found.
+
+**3. `dropplane-handler` (B3a/B3b).** Free — already built, `f88918f0935d3f44`, never flown. It is the
+arm that separates *"not subscribed"* from *"subscribed but inert"* for §15. Fly it whenever a staged
+world is going spare.
+
+⚠ **Route C's FALLBACK path does inherit Route D's hypothesis.** If no ship is resident, C3 pre-spawns
+one via `SpawnPlane`. That is now `KOUTPARMRET=1` so it should not fault — but *should not* is a
+prediction, not a measurement. For Route C with **zero** untested dependencies, fly `droppod-noprespawn`
+into a world that still holds S125's plane.
+
+### 18.4 Pre-registered predictions, per arm
+
+Read these as written. A result that is not on this list is a **new** finding and must be recorded as
+one, not folded into whichever row it resembles.
+
+**In every arm: "returned without fault" IS NOT A RESULT. Only the census delta is.** Call status is a
+tristate: `-1` NOT CALLED, `0` called and no fault, `1` called and FAULTED. `-1` is never a clean run.
+
+#### Arm 1 — `droppod-readonly` (Route C null-delta control)
+
+- **Positive control that proves the arm ran:** `[PD] C0-BEFORE CENSUS summary:` **and** the C4 delta
+  table both present, together with `[PD] KPDARMS selects NO calls -- this is the READ-ONLY ARM`.
+- **Predicts:** every delta row **+0**; `ran: C0c=0 … C1=0`; no `[FLT]` line anywhere.
+- **Confirms:** the census instrument is quiet, so any later variant's delta is real.
+- **Falsifies / VOID:** a **non-zero DropPod delta** ⇒ the instrument is noisy and it **voids every
+  other variant's delta this sitting**. Also VOID: no delta table at all (the ladder starved — read
+  `FsHold`'s own 8 s verdict line before anything else, and re-fly with `KFSNAME=""`).
+
+#### Arm 2 — `droppod` (**THE HEADLINE**)
+
+- **Positive control:** `[PD] C0c AGREEMENT: |delta| = … -> MATCH`, i.e. `K2_GetActorLocation`'s return
+  agrees with a pure-RPM read of the same ship's `RootComponent->RelativeLocation` to under 1.0 uu. The
+  new `[PD] C0c return sources:` line must name a source that is not `none`.
+- **Predicts:** ship enumeration finds **exactly one** live `LokiDropShip` candidate; C0c **MATCH**;
+  `bail-point 1 pre-call` reads `TeamDropPodClass = <non-null> (BP_DropPod_C)`; `GetTeamDropLeader -> 0x0
+  (NULL)`, **which is the expected reading**, not a failure; C1 dispatches **NATIVE**; **`DropPod` delta
+  `+1`** with a `*** NEW ***` line naming a `BP_DropPod*_C`; `retUSED` decodes as a **live UObject**.
+- **Confirms Route C:** DropPod delta ≥ +1. That is the result; the return value is corroboration.
+- **Falsifies Route C:** delta **+0** *with* C0c MATCH *and* a non-null `TeamDropPodClass` *and* no
+  fault ⇒ the pooled spawn refused, and the remaining graded bail is the only survivor. Record it as
+  that, not as "the call did nothing".
+- **VOID (do not interpret C1 at all):** C0c prints `MISMATCH`, `INCONCLUSIVE` or `NOT CALLED`; or the
+  ship enumeration printed `AMBIGUOUS … REFUSING`; or the ladder did not reach step 5 (exit 9).
+- ⚠ **Known instrument risk:** the 1.0 uu agreement threshold assumes the ship's root is not attached to
+  a parent. If it is, `RelativeLocation` is not world location and C0c reads MISMATCH **for a benign
+  reason**. That is the *control* being wrong, not the call — re-derive with a world transform, and
+  conclude nothing about C1 from it.
+
+#### Arm 3 — `dropmarkers-readonly` (Route D staging gate)
+
+- **Positive control:** the negative control `ZZZ_NOT_A_REAL_TAG` must be **NOT FOUND by both**
+  instruments (if it resolves, the mode aborts before arming and writes nothing); and
+  `GATE-2 pre TrainingStart` must read **> 0**.
+- **Predicts:** both markers print **AGREE** between instrument (A), a scan of `SpawnPlane`'s own
+  `Script` blob, and instrument (B), the `FNamePool` sweep; `GATE-2 pre PlaneStartPoint = 0` and
+  `PlaneEndPoint = 0`; zero writes; no `SpawnPlane`.
+- **Confirms:** the FName ids are real and the world genuinely lacks the markers.
+- **Falsifies / STOP:** anything other than AGREE for both. **Do not fly arms 4–7** — every one of them
+  would then write a guessed FName, which finds nothing and reads exactly like the bug being fixed.
+- ⚠ If `GATE-2 pre` is already non-zero for either marker, the new warning line fires: the cells
+  streamed in on their own and Route D's premise has changed this sitting.
+
+#### Arm 4 — `dropmarkers-outparm` (⚠ **KDMFORCE=1 — the gate is BYPASSED by design**)
+
+- **Positive control:** `D3 GetAutoDropLocation` must not fault. ⚠ **It cannot detect a `KOUTPARMRET`
+  regression** — it has an OutParm but **no ReturnValue**, so `BuildOutParms` emits a byte-identical
+  chain in both arms. The control is invariant under the very variable it sits beside. What
+  discriminates is the **pair** arm 4 vs arm 7.
+- **Predicts:** **no fault**, a non-null `BP_DropPlane_Straight_Tutorial_C`, and a plane location of
+  **(0,0,0)**.
+- **Confirms:** S125's fault was **our own `BuildOutParms`**, not the missing markers ⇒ §17's stated
+  cause is half wrong in the same way S93's was, and the missing markers cost coordinates, not a crash.
+- **Falsifies:** a fault at `rva 0x13495DD, addr=0x0` again ⇒ `KOUTPARMRET` is not the mechanism. A
+  fault at a **different** rva is informative and is a new finding, not a repeat.
+
+#### Arm 5 — `dropmarkers-gateonly` (the mechanism, world left as found)
+
+- **Positive control:** `GATE-2 control TrainingStart` **unchanged** across the write.
+- **Predicts:** GATE-1 and GATE-2 both show `PlaneStartPoint 0 -> 1` and `PlaneEndPoint 0 -> 1`;
+  `RESIDENCY GATE: PASS`; restore VERIFIED for both victims; **no `SpawnPlane`**; every census delta +0.
+- **Confirms:** an in-place 4-byte FName overwrite makes a tag visible to the exact predicate
+  `SpawnPlane` uses.
+- **Falsifies:** GATE-1 passes and GATE-2 does not ⇒ the victim actors are not in the world's actor
+  list; the readback is the weaker instrument and it is telling you so.
+- **VOID:** the TrainingStart control moves ⇒ GATE-2 is unstable, treat it as UNAVAILABLE.
+
+#### Arms 6 and 7 — `dropmarkers` (Route D headline) and `dropmarkers-s125repro`
+
+- **6 predicts:** no fault, a non-null plane, and a plane location matching **victim[0]**, not (0,0,0).
+- **7 predicts (fly LAST — it spawns a second plane):** a fault at `rva 0x13495DD, addr=0x0`, **after**
+  spawning a plane, *with the markers resident* — i.e. residency does **not** prevent the fault. **That
+  is the claim.** If arm 7 does not fault, the whole `KOUTPARMRET` story is wrong and arms 4 and 6 were
+  measuring something else.
+
+### 18.5 What each route leaves in the world, and what needs undoing
+
+| arm | leaves behind | reversible? |
+|---|---|---|
+| `droppod-readonly` | nothing | n/a |
+| `droppod` / `droppod-newest` | **a real `BP_DropPod*_C` actor**, plus a `BP_DropPlane_Straight_Tutorial_C` **if C3 pre-spawned** | **NO. Nothing is undone.** Recovery = restart the client. The shim says so in its own final line. |
+| `droppod-noprespawn` | a drop pod only | NO |
+| `dropmarkers-readonly` | nothing | n/a |
+| `dropmarkers-gateonly` | **nothing** — both tags restored on the normal path, the SEH fault path and the final report, each readback-verified, and (new) only for victims we actually wrote whose slot still holds our value | yes, automatically |
+| `dropmarkers` / `-outparm` / `-s125repro` | a plane; tags restored | plane: **NO**; tags: yes |
+| `dropmarkers-norestore` | a plane **and two contaminated `Tags` arrays** | **NO — do not use it unless you are chaining a probe that needs the markers resident** |
+| `dropplane-handler` | nothing (no `SpawnPlane`) | n/a |
+
+⚠ **Any census in a world that has already taken one of these arms must tolerate the leftovers.** All
+three modes latch a BEFORE set, diff against it, and exclude archetypes from every bucket, so a
+pre-existing plane cannot be counted as new — but a **half-constructed** S125 plane is also a plausible
+`AMBIGUOUS` trigger for Route C's ship enumeration. That is by design: it refuses rather than guessing.
+
+### 18.6 The exact operator sequence
+
+**Requires an ELEVATED PowerShell. Steam must already be running** — without it, login dies with
+`Auth Failure 14005` and the sitting is wasted before it starts.
+
+```powershell
+# 0. Preconditions, once.
+#    server/internal/interactive/interactive.go -> const forceTutorialMatch = true
+& "$env:ProgramFiles\Go\bin\go.exe" build -C server -o server\ags.exe ./cmd/ags
+
+# 1. ELEVATED PowerShell, from the repo root. Steam already running.
+cd "G:\git\Supervive Revival Project"
+.\configs\launch-redirect.ps1 -NoHook          # returns after launching; the game keeps running
+
+# 2. Stage the world and inject ONE arm. One arm per staged world.
+#    Expect only ~2 of 4 launches to reach an armed window -- budget on ARMED WINDOWS, not launches.
+.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_droppod_readonly.dll -Label s126-c0
+# ... re-stage ...
+.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_droppod.dll          -Label s126-c1
+
+# 3. Read the marker. fk24-stage copies it off after every step; the probe's own copy is
+#    docs\fk24-stage-<label>-4-probe-<dll>.txt        ([PD] / [DM] lines)
+#    Loki.log is at %LOCALAPPDATA%\SUPERVIVE\Saved\Logs\Loki.log
+```
+
+Recommended order across sittings, one variable per sitting:
+
+1. `tutorial_launch_droppod_readonly.dll` — instrument check. Non-zero DropPod delta ⇒ **stop**.
+2. `tutorial_launch_droppod.dll` — **the headline**.
+3. `tutorial_launch_dropmarkers_readonly.dll` — Route D staging gate. No AGREE for both markers ⇒
+   **stop**; nothing downstream is interpretable.
+4. `tutorial_launch_dropmarkers_outparm.dll` — ⚠ calls `SpawnPlane` with the gate **deliberately failed**.
+5. `tutorial_launch_dropmarkers_gateonly.dll` — the mechanism, world left as found.
+6. `tutorial_launch_dropmarkers.dll` — Route D headline.
+7. `tutorial_launch_dropmarkers_s125repro.dll` — the controlled reproduction. **Last**; second plane.
+8. `tutorial_launch_dropplane_handler.dll` — B3a/B3b, free, whenever a world is going spare.
+
+⚠ Do **not** use `-Hook <dll>` for any of these. Both are continuation modes and need the staged world
+(`gft_ready_fix` → `tutorial_launch_fo` → `tutorial_launch_sp` → probe); a lone `-Hook` cannot work.
+⚠ **Re-verify the `.text` sha256 and the import table against §18.1 immediately before each flight.**
+The `build/` directory changed under the reviewer mid-review — another agent was building concurrently —
+so a stale or foreign artifact is a live risk, and an A/B against a copy of itself burns a launch.
+
+### 18.7 What is NOT ready — read this before claiming anything
+
+- **Nothing here has been flown.** Every claim in §18.1–§18.2 is a build-time or offline measurement.
+  Every claim in §18.4 is a **prediction**.
+- **Route C's premise has four untested links**, all knowable from the first log, which is exactly why
+  the signature dump and both bail-point readbacks are printed: (i) whether `SpawnDropPodForTeam`
+  resolves at all on a live ship's chain — FK-1 measured AS UClasses unregistered **at the menu** (0/15)
+  and nothing has ever measured a loaded map; (ii) whether its parameters really are
+  `(int, FVector&, FVector&)` in declaration order, and whether the `const FVector&` flag set classifies
+  as I predicted; (iii) whether `FVector` is 24 bytes here — the mode **measures** it and refuses any
+  other width, but the measurement has not been taken; (iv) whether the chosen ship's
+  `TeamDropPodClass` is non-null. If S125's actor really is half-constructed, that is the most likely
+  null, and the log will name it.
+- **`KOUTPARMRET=1` has never executed.** It is correct against `ProcessEvent`'s documented parameter
+  loop and it is the only thing that explains the measured fault, but the first arm that turns it on is
+  the first arm that exercises it — and it is now on **every** droppod variant as well.
+- **A null drop leader is graded [I], not [M].** §3 grades it survivable at 3 of ≥4 known consumer
+  sites. `GetTeamDropLeader` will return null (`AuthSetSpawnTeamLeader` is an empty fold); whether
+  `SpawnDropPodForTeam` survives it is precisely what this arm tests. Log it; do not assume it.
+- **Neither route delivers "a hero in a pod".** Route C delivers a pod. The pod→hero handoff
+  (`AuthBeginGlideDiveFromDropPod`) and the plane→player handoff (`ALokiDropPlane::AddPlayerToPlane`)
+  are both **FK-1 empty impls**, and nothing in this section touches them. **Say "a pod exists", never
+  "the drop works".**
+- **The DropPlane component is still not subscribed** to `GameState.OnRoundPhaseChanged` (§15). Route
+  D's `SpawnPlane` reaching its node [40] `EX_AddMulticastDelegate` is the one plausible route to that
+  subscription, and **the delegate receipt is resolved but not sampled around D4** — so this sitting
+  cannot answer it. Wire `DpDelegateReport` into the Route D ladder before treating it as a test.
+- **Route D option (iii) — forcing World Partition cells to stream in — is the mechanically correct fix
+  and it is NOT implemented**, because no graded runtime mechanism could be named.
+  `UWorldPartitionBlueprintLibrary::LoadActors` is editor-only. Route D makes the **tags** resident, not
+  the **cells**; those are not the same thing, and the shim says so in its own output.
+- **`RM_DROPPLANE` (S125), `RM_DROPPOD` and `RM_DROPMARKERS` are ALL uncommitted working-tree changes on
+  `dedicated-server-stub` (HEAD `2c72d0e`, whose message covers only the phase ladder).** A `git stash`,
+  `git checkout` or `git clean` destroys three sessions of shim work. **Commit before doing anything
+  git-shaped.**
+
+---
+
+## 19. FLOWN — Route C is blocked by a NULL `UFunction.Func`, and that corrects FK-1
+
+**Date:** 2026-08-17, PID 138796, the S125 world reused (no relaunch). Builds
+`tutorial_launch_droppod_noprespawn.dll` `.text 32fa55a033796213` then, after a fix, `78629ae06c831d20`.
+Zero `.text` writes, zero crashpad handoffs. Evidence: `docs/fk24-s126-routeC-RESULT.txt`,
+`docs/fk24-s126-ABORT-elemsize.txt`.
+
+### 19.1 The ship resolved, and the two bail points read clean
+
+```
+ship enumeration: 12 objects whose chain declares LokiDropShip (11 excluded as archetype/_GEN_VARIABLE),
+                  1 live candidate
+ship selection:   0x2AD6F1F20E0  reason: the ONLY live actor deriving from LokiDropShip
+                  chain = BP_DropPlane_Straight_Tutorial_C <- BP_DropPlane_Base_C <- LokiDropShip <- ...
+                  TeamDropPodClass@0x478 = BP_DropPod_Tutorial_C     <- bail point 1 SATISFIED [M]
+```
+★ The ship is S125's half-constructed plane — the artifact of the previous flight became the target of
+this one. ★ **[M] Angelscript UClasses ARE registered in a loaded map**: `SpawnDropPodForTeam` resolved
+on the live class with a full parameter chain. FK-1 measured 0 of 15 AS classes registered **at the
+menu**; this is the in-world counterpart it called for, and it is positive.
+
+### 19.2 ★★★★★ THE WALL: `UFunction.Func` IS NULL
+
+```
+C1: SpawnDropPodForTeam has no Func thunk -> NOT CALLED
+```
+Verified directly by RPM, with a control in the same read:
+```
+SpawnDropPodForTeam   UFunction 0x2ACBD0EDFD0   Func @+0xE0 = 0x0              *** NULL ***
+K2_GetActorLocation   UFunction 0x2ACBC8F2F80   Func @+0xE0 = 0x7FF78664AE10   non-null
+```
+`K2_GetActorLocation` is not a hypothetical control — **it dispatched successfully in this very run**
+(arm C0c). So `+0xE0` is the right field, a callable function has a non-null `Func`, and this one's is
+genuinely empty.
+
+⇒ **[M] THE S55 DIRECT-THUNK PRIMITIVE CANNOT CALL `SpawnDropPodForTeam`.** The primitive's whole
+mechanism is "call `UFunction.Func` directly"; there is nothing to call.
+
+⚠⚠ **THIS QUALIFIES FK-1 — and FK-1 flagged it first.** `docs/fk1-angelscript-settled.md` §4
+concludes *"Callable by the existing S55 recipe unchanged"*, which **is false as stated** for this
+function. But the very same sentence carries the hedge **"(mechanism named; the `Func` value itself
+is INFERRED)"** — i.e. FK-1 named the exact quantity that S126 measured null. ★ **The headline
+over-claimed; the parenthetical was right.** An earlier draft of this section said flatly "THIS
+CORRECTS FK-1" without quoting the hedge, which is the kind of compression this project's own
+S115-d artifact exists to prevent — a correct measurement flattened into prose that asserts more
+than the source did. **Cite the hedge whenever citing this correction.** FK-1's underlying finding stands — AS is AOT-transpiled and the compiled bodies exist at
+`.text 0x059128B0–0x05A7F070`, with a recovered **1,459-row symbol table** (script fn → raw /
+`_VMEntry` / `_ParmsEntry` RVAs) — but **the reflected `UFunction` is not wired to that body.** The
+code is compiled in; the reflection entry is a shell.
+⚠ Scope honestly: measured on **one** AS function. Whether every AS `UFunction` has a null `Func`, or
+only `CanOverrideEvent`/BlueprintCallable ones, or only this one, is **NOT established** — and it is a
+cheap census (walk AS-owned UFunctions, read `+0xE0`, histogram).
+
+### 19.3 The route that survives
+
+The compiled body still exists and FK-1 already recovered its address. **Call the AOT body DIRECTLY**
+at its raw RVA from `tools/asdump/out/` rather than through the UFunction — no reflection, no
+`ProcessEvent`. That needs the calling convention worked out (`_ParmsEntry` suggests a params-struct
+ABI), which is exactly what the symbol table's three columns are for.
+Second option: `ProcessEvent` (slot 56), which for a script function may dispatch by a path that does
+not read `Func`. ⚠ CLAUDE.md records slot-56 `ProcessEvent` **no-ops for native functions** — that is
+about NATIVE functions and says nothing about this case; do not read it as a refusal.
+
+### 19.4 ⚠ Two instrument defects found in this flight, one fixed mid-flight
+
+**(a) `FPROP_ELEMSIZE` was `ArrayDim`, off by one field — FIXED.** The first injection printed
+**`size=1` for EVERY parameter slot** (`IntProperty` 1, two `Vector` StructProperties 1,
+`BoolProperty` 1) and the mode **REFUSED to call** ("ElementSize=1 is neither 24 nor 12"). `0x30` is
+`ArrayDim`, which is 1 for every property that is not a C-array. Corrected to `0x34` — forced by
+arithmetic from two long-proven constants (`FPROP_FLAGS=0x38` is a uint64 preceded by exactly two
+int32s; `FPROP_OFFSET=0x44` closes the far side). After the fix: **`Int=4`, `Vector=24`, `Bool=1`.**
+★ That also MEASURES what the mode was built to measure: **`FVector` in this build is 3 × double
+(24 B, LWC)**, not floats. ★★ **The refusal is what made this diagnosable** — a mode that called with
+a fabricated zero would have produced a fault or a null and blamed `SpawnDropPodForTeam`.
+
+**(b) The C0c control "AGREED" at the ORIGIN, which is a weak pass — flagged, not fixed.**
+`K2_GetActorLocation` returned `(0,0,0)` and the RPM cross-read of `RootComponent->RelativeLocation`
+also returned `(0,0,0)`, so `|delta| = 0 -> MATCH`. But the ship is S125's half-constructed plane,
+which never received a position — so **the agreement is between two zeros.** The reviewer named this
+exact hazard before the flight ("a ship near the origin reads MATCH for a return never read"); the
+mitigation shipped (read both sources, print which was used — it printed
+`USED=g_rbuf/RESULT_DECL`) proves the right *buffer* was read, but the *value* cannot discriminate.
+⇒ **On a ship at the origin, C0c proves the dispatch path and NOT the marshalling of a non-zero
+struct.** Fly it against a positioned actor before treating a MATCH as a strong control.
+
+**(c) The verdict line over-claims.** It printed *"control AGREED, so C1 (status -1, DropPod delta +0)
+is attributable"* — but the same log defines `-1 = NOT CALLED` and adds *"-1 is NOT a clean run"*.
+A never-dispatched call has nothing to attribute. The delta table is honest (`after-C1 census SKIPPED:
+C1 never dispatched`); only the summary sentence is wrong. **Do not cite that line.**
+
+## 20. Route E — dispatching a null-`Func` script UFunction
+
+**Status: OFFLINE WORK COMPLETE, CODE BUILT AND VERIFIED, NOT FLOWN.** Zero launches, zero
+injections, zero `.text` writes. Everything below the "what was built" heading is disassembly of
+`dumps/merged2.dump.exe` (file offset == RVA) plus the on-disk `PrecompiledScript.Cache`. Not one
+instruction of the new arm has executed against the game.
+
+---
+
+### 20.1 The offline answer: a null `Func` is **not** an accident, and `ProcessEvent` is the designed route
+
+S126 measured `SpawnDropPodForTeam`'s `UFunction.Func` (`+0xE0`) as `0x0` while a native control
+(`K2_GetActorLocation`) held a real thunk. The question this section answers is *what dispatches such
+a function*, and the answer is a specific branch inside `ProcessEvent` that never reads `Func` at all.
+
+**`UObject::ProcessEvent` = rva `0x1344E10`. Its vtable displacement is `0x270` = SLOT 78** — not the
+"slot 56"/disp `0x1C0` recorded in `docs/next-session-prompt-s80.md`. Three independent instruments
+agree: 3,651 `.rdata` vtables hold `0x1344E10` at exactly `+0x270`; the UHT stub at `0x54532B0` is
+`mov rax,[rcx]; mov rbx,[rax+0x270]; call 0x1344150 (FindFunctionChecked); … call rbx`; and
+ProcessEvent's own body reads the neighbouring slots `+0x278`/`+0x280` as
+`GetFunctionCallspace`/`CallRemoteFunction`, the stock consecutive triple. The occupant of disp
+`0x1C0` opens `mov rax, gs:[0x58]` and is not a dispatcher — which retro-explains
+`tutorial_launch.cpp:3616` ("S80 falsified our ProcessEvent RVA").
+
+**ProcessEvent has FOUR exits, and only one of them skips `Func`:**
+
+| # | condition | what happens |
+|---|---|---|
+| A | `Func != 0`, bit 0x10 clear | normal path → `UFunction::Invoke` (`0x1225F30`) → `0x1225FCF call qword ptr [r14+0xE0]`. **There is no null test anywhere in `Invoke`** — for `Func == 0` this is an unconditional `call [0]`. |
+| B | `(flags & 0x410) == 0` **and** `Script.Num (+0x70) == 0` | reject gate at `0x1344E69`/`0x1344EAA` returns immediately. Safe, and a **guaranteed silent no-op**. |
+| C | **bit 0x10 SET** | `0x1344EB4 mov ecx,[rdi+0xB8]; test cl,0x10` → `0x1345089 call qword ptr [rax+0x378]` (Fn, Obj, Parms) and return. **`Func` is never read.** (With the sign bit / `FUNC_NetValidate` also set it first calls `[+0x380]` for a companion UFunction.) |
+| D | the **callspace gate** — see §20.2 | returns having dispatched nothing, with no log and no fault. |
+
+⇒ **Route E is the *designed* path for this function, not a workaround** — provided the live
+UFunction carries bit 0x10. That is one dword, and it has never been read live. The shim's grade
+prints it in the first three lines of `E-grade SpawnDropPodForTeam(E1)`.
+
+**Bit 0x10 is this build's AngelScript marker — [M], four ways.**
+1. `UFunction`'s own vtable is `.rdata 0x076FEB60`, 113 slots; **slot 111 (`+0x378`) = `0x0F7EC20`
+   (`ret 0`) and slot 112 (`+0x380`) = `0x0F7EB50`** — both universal folds, and both the *last two*
+   slots, the shape of fork-added virtuals. A non-fold occupant therefore *proves* the live object is
+   a UFunction **subclass**.
+2. 32 further 113-slot vtables sit back-to-back at `.rdata 0x0848A140..0x08490EB8` (stride `0x388`),
+   installed from `.text 0x0469C2B9..0x0469C859`. Each matches `UFunction`'s vtable in 109 of 111 of
+   slots 0..110 and all 32 carry slot 78 == `0x1344E10`. All 32 have distinct real slot-111 bodies in
+   `0x048E6570..0x048E8D70`; all share slot 112 = `0x01D3B890` = `mov rax,[rcx+0xF0]; ret`.
+3. Slot 111 (read at `0x048E6570`) is the **AngelScript context marshaller**: loads `[Fn+0xE8]`
+   (`asCScriptFunction*`), **bails to a null return at `0x048E658E` if it is 0**, optionally
+   re-resolves a virtual override via `[[Obj+0x18]+0x140]+0x1D8][idx]`, walks a parameter-descriptor
+   array, calls `SetArg*`, tests `FunctionFlags & 0x2000` (`FUNC_Static`) before `SetObject`
+   (`0x47E5CD0`), then `Execute` (`0x47814C0`). **No authority test, no net test, no `Func` read.**
+4. The generator at `.text 0x048AA930..0x048ABAB8` does `0x048AAEF2 or dword [r14+0xB8],0x10`, sets
+   `ReturnValueOffset(+0xC0) = 0xFFFF`, stores the script fn at `[r14+0xE8]`, and **never writes
+   `+0xE0` (`Func`) nor `Script` (`+0x68`/`+0x70`)**.
+   *Control:* bit 0x10 (and 0x20) occur in **0 of 18,325** UHT-registered native UFunctions
+   (`tools/re/out/uht_funcflags_tuthero.csv`).
+
+**The "3 `Script` bytes" question is void — the premise was wrong.** `UStruct::Script` is
+`Data@+0x68 / Num@+0x70 / Max@+0x74` (ProcessEvent tests `[Fn+0x70]` as the reject-gate counter and
+reads `[rdi+0x68]` as `FFrame.Code`). Script UFunctions have `Script.Num == 0`, which is *why* bit
+0x10 had to be OR'd into the `0x410` reject mask. **There are no script bytes to decode.**
+The `+0x108` "TArray Num=3 Max=4" observed live is **not** `Script` and **not** a read-past-the-object
+artifact: it is a real member of the script-UFunction subclass — a `TArray` of **0x48-byte parameter
+descriptors**, `Num` at `+0x110`, read as such by two independent sites (generator `0x048AB7A0`,
+dispatcher `0x048E6620`). `Num = 3` is the three *inputs*; the ReturnValue FProperty is held
+separately at `+0x130`.
+
+**StaticJIT registration for this exact function, recovered from scratch.** FK-1's 1,459-row symbol
+table is **not on disk** (`tools/asdump/out/symbols.csv` is 2,674 rows of a different thing and does
+not contain `SpawnDropPodForTeam`). Recovered directly: cache **Id `0x01818A81`** via
+`asdump.load_cache(...)` (`bIsUFunction=1`, `BlueprintCallable=1`, `BlueprintAuthorityOnly=0`,
+3 params); that Id appears **exactly once** in `.text` as `mov edx,0x1818A81` inside the registration
+stub at **rva `0x00F2D810`**, whose three rip-relative LEAs and stack arg resolve to:
+
+| | RVA |
+|---|---|
+| **RAW** | `0x0597E730` |
+| **`_ParmsEntry`** | `0x0597F670` |
+| **`_VMEntry`** | `0x0597F7B0` |
+
+All three lie inside FK-1's measured body range `0x059128B0..0x05A7F070`; the stub calls
+`FStaticJITFunction::ctor` (`0x048FE510`).
+
+`_ParmsEntry` yields the ABI `bool __fastcall RAW(FScriptExecution&, UObject*, int32 TeamIndex,
+const FVector* SpawnLocation, const FVector* LandingLocation)` with flat-block offsets
+**`0x00` / `0x08` / `0x20`, bool return at `0x38`** — **byte-identical to the live FProperty offsets
+Route C read off the UFunction**, an independent confirmation of both readings and of
+`FVector == 3 doubles (LWC)`.
+
+**Route F (call RAW/`_VMEntry` directly) is deliberately NOT implemented.** `0x0597E730` reads as
+16 zero bytes in **all 18 dump images on disk** — *COVERAGE-BLOCKED, never ABSENT*; its first
+argument is a live VM object the shim cannot legitimately fabricate; and Route E reaches the same
+compiled body *through* the engine. The RVAs are recorded as the named successor if Route E is ever
+measured inert.
+
+---
+
+### 20.2 What the review caught, and what changed because of it
+
+Three findings were load-bearing and each is now instrumented rather than assumed.
+
+**(a) The callspace gate sits IN FRONT of the alt-dispatch branch — a fourth silent exit.**
+Bit 0x10 is *inside* the `0x410` mask, so a script UFunction does **not** take the `je` at
+`0x1344E73`. It falls into the net-routing block:
+
+```
+0x1344E69  test dword [rdx+0xB8], 0x410
+0x1344E73  je   0x1344EAA                 ; NOT taken when bit 0x10 is set
+0x1344E7B  call qword [rax+0x278]         ; GetFunctionCallspace
+0x1344E83  test al, 1                     ; Remote -> CallRemoteFunction [rcx+0x280]  (a REAL side effect)
+0x1344EA5  test bl, 2                     ; Local?
+0x1344EAE  je   0x1345468                 ; RETURNS. No dispatch, no log, no fault.
+0x1344EB4  ...                            ; only now the bit-0x10 branch
+```
+
+`AActor::GetFunctionCallspace` (`0x3388E40`) returns **Absorbed (0)** when
+`byte[actor+0x160] (Role) < 3` **and** `FunctionFlags & 0x4` (`BlueprintAuthorityOnly`). The grade
+now reads both inputs, prints the two vtable occupants with RVAs, and — when the Absorbed condition
+holds — prints `PREDICTED **ABSORBED**` *before* the call. It does **not** call
+`GetFunctionCallspace` itself; that would be an extra virtual call purely to instrument, and the
+inputs are free.
+
+**(b) The marshaller uses its OWN offset table, not the FProperty chain.**
+
+```
+0x048E6620  mov    rax, [rdi+0x108]           ; descriptor array
+0x048E6627  movsxd rdx, dword [r14+rax+0x40]  ; <- the offset into Parms
+0x048E662C  movzx  eax, byte  [r14+rax+0x44]  ; <- type tag
+0x048E66B6  add    r14, 0x48                  ; stride
+0x048E676A  cmp    qword [rdi+0x130], 0       ; return FProperty; 0 => no return written
+0x048E6782  movsxd rbx, dword [rdi+0x170]     ; <- the RETURN's offset into Parms
+```
+
+They are *expected* to equal the FProperty offsets — the offline `_ParmsEntry` ABI matches the live
+chain exactly — but "expected" is not measured. E1 now reads the marshaller table, prints it, and
+**refuses** if the two tables disagree (`PDER_MARSHAL`), and reads the return from `[fn+0x170]`
+rather than `Offset_Internal` when the SAFE-VIRTUAL path is the one being taken.
+
+**(c) `ReturnValue == false` had three causes and one reading.** `Execute`'s result is *not* checked
+at `0x048E6765`, so "the script ran and returned false", "`[fn+0xE8]` was null so slot 111 returned
+at `0x048E658E` without executing anything", and "Prepare/Execute failed" all produced a zero byte.
+The return slot is now pre-filled with the sentinel **`0xA5`**. An intact sentinel means **nothing
+ever wrote a return**, and the marker says so in those words.
+
+**(d) E0 was not a control for the path E1 takes.** `K2_GetActorLocation` has a non-null `Func`, so
+it exercises exit **A**; E1 takes exit **C**. They share only ProcessEvent's prologue. A new control
+**E0c** closes this: it scans the ship's own class chain for a UFunction with **bit 0x10 set,
+`Func == 0`, zero non-return parameters, a declared ReturnValue, and a read-only-shaped name**
+(`Get*`/`Is*`/`Has*`/`Can*`), calls it through the same ProcessEvent with the sentinel, and reports
+**STRONG PASS iff the sentinel is overwritten**. Nothing is fabricated and nothing in the world is
+mutated. If no candidate exists, it says so and declares E1 unattributable.
+
+**(e) The verdict chain published an instrument statement as the project's conclusion.**
+`g_pdE1Refused` was set by four unrelated causes and the headline printed *"ProcessEvent is not a
+Func-free route for this UFunction … Route E dies on the same null Func that closed Route C"* for
+**all** of them — including a live-FProperty read defect, exactly the class that made every slot read
+`size=1` until `FPROP_ELEMSIZE` was corrected `0x30 → 0x34`. The refusal reason is now explicit
+(`PDER_GRADE` / `PDER_LAYOUT` / `PDER_MARSHAL` / `PDER_PRECOND`) and only `PDER_GRADE` prints a
+finding. Five abort paths that used to set neither `ran` nor `refused` — leaving the run's headline
+section with **no verdict line at all** — now record a reason, and a terminal `else` declares the
+section VOID if the combination is ever still reachable.
+
+---
+
+### 20.3 What was built
+
+**File changed:** `G:\git\Supervive Revival Project\tools\sigbypass-mod\tutorial_launch.cpp`
+(+ the three `droppod-pe*` variant rows already present in `tools\sigbypass-mod\build.ps1`).
+New knob: `KPDPEALTCTRL` (default **1**, E0c on). Existing knobs `KPDPEDISP=0x270`,
+`KPDPEDISPOLD=0x1C0`, `KPDPEFORCE=0`, `KPDARMS` bit7 = E0/E0c, bit8 = E1 — all defaults unchanged.
+
+Build with `build.ps1 -Name tutorial_launch -Variant <v>` (it refuses `-Variant` without `-Name`; a
+bare `-Variant` silently builds the default set and reports "11 built, 0 failed", which reads like
+success).
+
+| variant | `.text` sha256[:16] | bytes |
+|---|---|---|
+| **`play`** (regression gate) | **`9bc10a4552c596e1`** | 163,328 |
+| `droppod` | `9e8148635b2ddcf5` | 137,728 |
+| `droppod-readonly` | `9fd364cbc16f9aaf` | 119,808 |
+| `droppod-noprespawn` | `a08f99d8632a88dd` | 129,536 |
+| `droppod-newest` | `54445f1330ed2b4a` | 137,728 |
+| **`droppod-pe-ctrl`** | **`ac5b4584066cd927`** | 148,480 |
+| **`droppod-pe`** | **`e7771c1705141656`** | 159,744 |
+| **`droppod-pe-force`** | **`d895bccb2ab8ba36`** | 159,744 |
+
+**All eight distinct.** ⚠ `droppod`/`droppod-newest` share a `.text` *size*, and so do
+`droppod-pe`/`droppod-pe-force` — only the hash separates them. **Diff `.text`, never size.**
+⚠ These hashes **supersede** every earlier droppod figure in this session's notes; the whole family
+was rebuilt after the fixes.
+
+**Safety statement, checked rather than asserted.**
+* **No module-image writes.** No `.text` write of any kind is added; arming is the heap
+  `UFunction.Func` swap (`FsArm`/`FsHold`/`FsDisarm`), and the mode still *refuses* to run under
+  `KFUNCSWAP=0` rather than falling back to `InstallHook()`.
+  **Import-table evidence:** `FlushInstructionCache` / `VirtualAlloc` / `VirtualFree` are **ABSENT**
+  from all three `droppod-pe*` DLLs (and from `play`), while the mandated positive control
+  `tools\sigbypass-mod\build\tutorial_launch_fo.dll` has **all three PRESENT**. With
+  `FlushInstructionCache` gone, `SafeWrite`/`InstallHook` are linker-eliminated, so the property
+  holds at the artifact level.
+  ⚠ `VirtualProtect` is present in **both** arms *and* in `fo.dll` — it backs `SafeWritable`
+  probing and **does not discriminate**; it is not part of the signature.
+* **No C++ exceptions.** SEH only. `verify_dll.py` **VERDICT: PASS** on all three (no
+  `__CxxFrameHandler3/4`, no `_CxxThrowException`, no `_Unwind_Resume`, no CRT import, bare DllMain,
+  82 KERNEL32 imports).
+* **No hardcoded ASLR addresses.** ProcessEvent is read from the *target object's own vtable* at a
+  knobbed displacement, with refusals for a heap "vtable" (the S124 `GameState+0x258` guard), an
+  out-of-image target, and a universal-fold occupant. Every RVA in this section appears in comments
+  and log strings only; the one numeric band (`PDPE_ASDISP_LO/HI`) is used to *classify* a printed
+  RVA and is never dereferenced.
+* **No memory pokes.** The only writes are into the shim's own 16-byte-aligned `g_pdpeparms[0x400]`,
+  every one bounds-checked at the write site — so even `-DKPDFORCE=1` cannot write outside it.
+* **Defaults unchanged; `play` is byte-identical.** During this work two edits to *shared* functions
+  (`ActorLoc`, `FsArm`) moved `play` to `415386c1480eb870`. **The gate caught it and both were
+  reverted.** `ActorLoc`'s diagnostic now lives in `PdActorLocProvenance()`, reachable only from
+  RM_DROPPOD and therefore dead-code-eliminated out of every other variant; `FsArm`'s RM_PLAY-worded
+  warning is **deliberately left wrong** and RM_DROPPOD prints its own mode-correct version in ladder
+  step 0. A wrong log string is a smaller cost than re-qualifying the DLL that carries the measured
+  0/16-vs-10/10 FK-7 result — and that trade is recorded here rather than hidden.
+
+---
+
+### 20.4 PRE-REGISTERED PREDICTIONS, per arm
+
+Written before the flight. **The census delta is the result** — never a return value, never
+"the call returned ok".
+
+#### Arm 1 — `droppod-pe-ctrl` (`KPDARMS=0xB9`) — controls only, no script dispatch of the target
+
+⚠ **This is not a call-free arm.** `0xB9` sets bit3 (C3 pre-spawn, which calls `SpawnPlane` and
+**creates an actor**), bit5 (C0c direct-thunk `K2_GetActorLocation`) and bit7 (E0/E0c). It makes at
+least three real UFunction calls and mutates the world. The call-free arm is `droppod-readonly`
+(`0x11`, `KPDPRESPAWN=0`).
+
+* **Positive control that proves the arm ran:** the marker reaches `[PD] done (step=8 …)`.
+  Any `step < 8` means the ladder starved — read `FsHold`'s 8 s verdict first.
+* **CONFIRMS the SAFE-INVOKE exit:** `E0 … STRONG PASS` against a **non-zero** reference.
+* **CONFIRMS the ALT-DISPATCH exit:** `E0c: STRONG PASS -- the sentinel 0xA5 was overwritten`.
+  This is the only line in the whole arm that says the marshaller can execute.
+* **FALSIFIES the route:** `E0 … FAIL` (fault or MISMATCH against a sound reference), or
+  `E0c: FAIL -- the sentinel is INTACT`.
+* **VOID:** `E0 … WEAK CONTROL (origin)` **and** `E0b` unavailable — two zeros agreeing prove
+  nothing (the S126 C0c lesson). Also VOID if `[FS] ZERO TARGETS SWAPPED` appears.
+* **Uninterpretable, not negative:** `E0 … MISMATCH` where the same line reports
+  `AttachParent = 0x…` non-zero or the RelativeLocation offset `GUESSED (0x158)` — the reference is
+  not comparable and the arm says so.
+* **`E0c: NO CANDIDATE`** is not a failure of the route; it means the alt-dispatch branch has **no
+  positive control this sitting**, and E1 must therefore not be read as a game statement.
+
+#### Arm 2 — `droppod-pe` (`KPDARMS=0x1FF`) — the headline
+
+Fly **only** if arm 1 reached `E0 STRONG PASS` **and** `E0c STRONG PASS`.
+
+* **Positive control:** the same `E0`/`E0c` lines re-run inside this arm, plus `done (step=8 …)`.
+* **The three outcomes point at three different conclusions — this is the whole point of the arm:**
+
+| observation | conclusion |
+|---|---|
+| **FAULT** (`E1 AFTER: fault=*** FAULTED ***`) with grade **WILL-FAULT** | the predicted `call [0]`. **Route E is closed for this function** and the successor is the StaticJIT triple in §20.1 or writing `Func` itself. |
+| **FAULT** with grade **SAFE-VIRTUAL** | a fault *inside* the marshaller or the script body — a **new fact**, and the first one. Preserve the marker; this is not the predicted outcome. |
+| **NO-OP** — no fault, sentinel `0xA5` **INTACT**, delta `+0` | **the script body did not complete.** Read `E-SUMMARY 5/7b`: `[fn+0xE8] == 0`, or the callspace gate absorbed the call (`absorbRisk=1`), or Prepare/Execute failed. **This is an INSTRUMENT reading, not "the pod did not spawn".** |
+| **`ReturnValue == false`** — sentinel **overwritten**, byte 0, delta `+0` | the marshaller really executed and the script really returned false. **This IS a game statement**: `SpawnDropPodForTeam` ran and declined. Next question becomes *why it declined*, and the pre-call bail-point readout (`TeamDropPodClass`) is already in the marker. |
+| **`ReturnValue == true`** with **DropPod delta `+1`** | Route E works and the drop pod exists. |
+| **`ReturnValue == true`** with delta `+0` | contradiction — the function claims success and the census disagrees. Do not resolve it in favour of either; report both. |
+
+* **VOID:** any of arm 1's VOID conditions, or `E-VERDICT: … NOT ATTRIBUTABLE` (E0c did not pass), or
+  `E-VERDICT: … NO VERDICT REACHABLE` (an abort path returned without recording why — an instrument
+  defect in this shim, and the run must be reported as such).
+* **Explicitly NOT a result:** `refused=1` with reason `LAYOUT` / `MARSHALLER … DISAGREEMENT` /
+  `PRECONDITION`. Those print *"THIS IS NOT A RESULT ABOUT ProcessEvent AND NOT A RESULT ABOUT THE
+  DROP POD"*, and Route E is neither confirmed nor closed by such a run.
+
+#### Arm 3 — `droppod-pe-force` (`KPDPEFORCE=1`) — last resort only
+
+Fly **only** if arm 2 printed the `WILL-FAULT` refusal *and* the access violation is wanted as
+evidence. It deliberately spends the game thread on a near-certain AV. An AV here is the
+**predicted** outcome and therefore not a new fact; the only informative result is the *absence* of
+one.
+
+---
+
+### 20.5 What the probe leaves in the world
+
+* **Nothing is undone**, and the marker says so. Any DropPod that E1 spawns and any plane that C3
+  pre-spawns stay in the world. **Recovery is a client restart.**
+* The heap `UFunction.Func` swap is disarmed by `FsDisarm` on the way out (`restored N/N` in the
+  marker); a mismatch there is itself a finding.
+* No module image, no `.text`, no game data is modified. `g_pdpeparms` is shim-private.
+* ⚠ A **half-constructed plane** may already exist from the S125 artifact. The census is taken
+  before anything runs and re-baselined if C3 pre-spawns, so a pre-existing drop actor is tolerated
+  rather than assumed away — but read `BEFORE=` before reading any delta.
+* ⚠ Every injection truncates `docs\tutorial-launch-marker.txt` (FK-25); `fk24-stage.ps1` copies
+  each stage off to `docs\fk24-stage-<label>-<n>-<shim>.txt`.
+
+---
+
+### 20.6 Correction note — what this does and does not say about FK-1
+
+S19 of this document said the null `Func` "corrects FK-1". **That is too strong, and the softening
+matters more than the headline.**
+
+FK-1's *conclusion sentence* — that script UFunctions are "callable by the existing S55 recipe
+unchanged" — did over-claim: the S55 direct-thunk primitive calls `UFunction.Func`, and for this
+function that pointer is null, so the recipe as stated cannot work. But **FK-1 carried the hedge that
+named exactly what was later measured false**, in the same breath:
+
+> "(mechanism named; **the `Func` value itself is INFERRED**)"
+
+It also recorded, correctly, that `_ParmsEntry` "reads args from a flat block using UE's
+`Align(off, alignof(T)); off += sizeof(T)` packing and writes the return at `ReturnParmOffset` —
+that is `ProcessEvent`'s contract and nothing else in UE has that shape", and that "the script corpus
+itself dispatches a script UFUNCTION via `FindFunctionChecked` + `ProcessEvent`."
+
+⇒ **FK-1 identified the correct dispatch mechanism and flagged its own weakest link.** What S126
+measured is the flagged inference, not the analysis. The honest form is: *FK-1's mechanism stands and
+its `Func` inference is refuted; the route it named — `ProcessEvent` with a flat params block — is
+the one Route E takes.* Recording this as "FK-1 was wrong" would discard a correct hedge and the
+correct successor it pointed to.
+
+Two further corrections that fall out of the same read, both **[M]**:
+
+* **`docs/next-session-prompt-s80.md` and `docs/coverage-audit-s101.md:529`** still give ProcessEvent
+  as `base+0x12C5A10` / "slot 56" and describe it as a "uniform no-op for injected calls". The
+  address is refuted (see §20.1), and the "ProcessEvent is neutered" corpus behind that claim was
+  collected against a virtual that **is not ProcessEvent**. Those docs were deliberately **not**
+  edited here — rewriting them belongs in a pass with the FK register open, not as a side effect of a
+  code task.
+* CLAUDE.md's *"the direct call has no guards, so it works where slot-56 `ProcessEvent` no-ops for
+  native functions"* is about **native** functions and says nothing about a script function with a
+  null `Func`. It is not a refusal of Route E — and it is not an endorsement either.
+
+---
+
+### 20.7 Operator sequence
+
+The client is already booting, `forceTutorialMatch` is already `true`, and `ags` is rebuilt. So it is
+just the stage-and-inject call, from an **ELEVATED PowerShell**:
+
+```powershell
+cd "G:\git\Supervive Revival Project"
+
+# 1. CONTROLS FIRST -- no script dispatch of SpawnDropPodForTeam is attempted.
+.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_droppod_pe_ctrl.dll -Label s127-pe-ctrl
+
+# 2. THE HEADLINE -- only if step 1 printed BOTH `E0 ... STRONG PASS` and `E0c: STRONG PASS`.
+.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_droppod_pe.dll -Label s127-pe
+
+# 3. LAST RESORT -- only if step 2 printed the WILL-FAULT refusal and the AV is wanted as evidence.
+.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_droppod_pe_force.dll -Label s127-pe-force
+```
+
+Re-hash the three DLLs immediately before injecting (`.text`, not size) and do not build into
+`tools\sigbypass-mod\build` while an arm is staged — during this session an artifact was rebuilt
+underneath a review, and only a hash refuted the mtimes.
+
+Expect roughly **2 of 4 launches** to reach the armed window; budget on *armed windows reached*,
+never on launches.
+
+---
+
+### 20.8 Is it ready to fly? — blunt assessment
+
+**Yes for arm 1 and arm 2, with two named caveats. No for arm 3 until arm 2 has spoken.**
+
+What is genuinely settled: the dispatch mechanism, the vtable slot, the four exits, the marshaller's
+offset table, the StaticJIT triple, and the artifact-level safety properties. The code builds, passes
+`verify_dll.py`, holds the `play` regression gate byte-identically, and its import table matches the
+no-module-image-write signature against a working positive control.
+
+What is **not** settled, and could still make a sitting worthless:
+
+1. **Nobody has read bit 0x10 on this UFunction.** The entire viability of Route E turns on one
+   dword. The arm prints it and refuses if it is clear — so the sitting is not *wasted*, but the
+   optimistic outcome is unproven.
+2. **The callspace gate has never been observed on this object.** `Role` at `+0x160` and
+   `BlueprintAuthorityOnly` are both free RPM reads and neither has been taken. If the ship is
+   non-authority and the function is authority-only, **every arm returns a silent null** and the
+   sitting produces nothing but an instrument reading. *This is one read-only RPM and it is cheaper
+   than a launch — take it first if a readout probe is available.*
+3. **`E0c` may find no candidate.** If the ship's class chain has no zero-input, ReturnValue-bearing,
+   read-only-shaped script function, the alt-dispatch branch has no positive control and arm 2's
+   result is unattributable by construction. The arm detects and announces this, but it cannot fix it.
+4. **The `AActor::ProcessEvent` world gate** (`GetWorld()` + `AreActorsInitialized`, `0x3F4FFB0`) is
+   `[I, strong]` from field shape only and has never been read on a staged tutorial world. A failure
+   there is a fifth silent null. `E0` passing on the same object rules it out — which is why E0 must
+   pass before E1 is read at all.
+
+The single most valuable thing that can still be done *before* spending an armed window is item 2:
+read `byte[ship+0x160]` and `FunctionFlags & 0x4`. It costs one `ReadProcessMemory` and it decides
+whether arms 1 and 2 can produce anything at all.
+
+---
+
+## 21. FLOWN — Route E DISPATCHED. `SpawnDropPodForTeam` ran and returned **false**, and the prime suspect is that ACTOR POOLING IS DISABLED
+
+**Date:** 2026-08-19/20, PID 13484 (fresh launch; the S125/S126 world was gone). Builds
+`dropplane_b1only` then `droppod_pe_ctrl` then `droppod_pe`. Zero `.text` writes, zero crashpad
+handoffs on this client. Evidence: `docs/fk24-s127-E1-RESULT.txt`, `docs/fk24-s127-E-controls.txt`,
+`docs/fk24-s127-b1-shipcreated.txt`, `docs/Loki-s127-routeE.log`.
+
+### 21.1 ★ S125 REPLICATED EXACTLY on an independent launch
+
+Injecting `dropplane_b1only` into the fresh world reproduced S125 line for line:
+```
+marker scan: TrainingStart=1  PlaneStartPoint=0  PlaneEndPoint=0   (2,878 actors, 676 tagged)
+B1 SpawnPlane AFTER: *** FAULTED *** 0xC0000005 READ addr=0x0  rva=0x13495DD     <- IDENTICAL RVA
+after-B1 *** NEW *** BP_DropPlane_Straight_Tutorial_C  ... <- LokiDropShip <- LokiDropPlane <- Actor
+census: DropPlane=4 DropPod=2 DropShip=1  new=1
+```
+⇒ **[M] the marker-residency finding is REPRODUCIBLE, not a one-off**: same two markers unstreamed,
+same fault address, same plane created. (S125 tagged-actor count 676 = this run's 676.)
+
+### 21.2 [M] `ProcessEvent` DISPATCHES A NULL-`Func` SCRIPT UFUNCTION — the mechanism question is answered
+
+```
+ProcessEvent = 0x7FF7BBA66280 (rva 0x3396280), vtable disp 0x270 = SLOT 78
+E1 CALL:  ProcessEvent(obj=BP_DropPlane_Straight_Tutorial_C, fn=SpawnDropPodForTeam, parms=...)
+E1 AFTER: fault = returned without fault
+          grade = SAFE-VIRTUAL (bit 0x10, Func-free)
+          marshaller desc Num=3  readSlots=3   offsets vs FProperty: AGREE
+          RETURN-SLOT SENTINEL 0xA5 -> raw 0x00 : OVERWRITTEN, the marshaller wrote a real return
+          ReturnValue @0x38 = false (0)
+          DropPod census BEFORE=2  afterE1=2  ==> delta +0
+params: TeamIndex@0x0 size4 | SpawnLocation@0x8 size24 | LandingLocation@0x20 size24 | Return@0x38 size1
+positions: Spawn=(-3206.4,5070.5,20100.0)  Landing=(-3206.4,5070.5,100.0)  (origin = the TrainingStart actor)
+```
+⇒ **The S55 direct-thunk route is dead for AS functions (S19, `Func == 0`), but `ProcessEvent` slot 78
+→ `[UFunctionVtable+0x378]` is a working call route.** The `0xA5` sentinel is what makes this a
+measurement rather than a guess: something wrote that byte, and `readSlots=3` with offsets agreeing
+against the independent FProperty chain is not reachable by a path that never marshalled.
+★ **[M] THE CALLSPACE GATE IS OPEN** — `role(obj+0x160)=3 (Authority)`, `BlueprintAuthorityOnly=0`,
+`Static=0`, `absorbRisk=0`. The pre-flight worry that every arm would be silently absorbed is
+measured away.
+
+⚠⚠ **THE PROBE REFUSES TO CALL THIS A GAME FINDING, AND THAT VERDICT IS RECORDED AS IT STANDS:**
+*"E0/E0b passed on the SAFE-INVOKE exit, but E0c — the only control for the `[+0x378]` marshaller,
+which is the branch E1 takes — is INCONCLUSIVE (no candidate). E0 and E1 share only ProcessEvent's
+prologue, so a pass on one says nothing about the other. Record E1 as UNATTRIBUTABLE."*
+**E0c is UNSATISFIABLE on this class chain** — of **206** UFunctions scanned, exactly **1** takes the
+alt-dispatch exit and it is not blind-callable. So "wait for E0c" is waiting for something that cannot
+arrive. The flight went ahead with that stated in advance: **a positive would be self-attributing via
+the census delta; a null is weak.** We got a null. ⇒ **treat S21.2's mechanism claim as [M] on the
+instrumentation (sentinel + readSlots + offset agreement) and [I] on "the marshaller genuinely
+executed the script body".**
+
+★ The controls did their job: **E0 on the ship was correctly refused as `WEAK CONTROL (origin)`**
+("two zeros agree perfectly and prove nothing") — the S126 lesson encoded and honoured — and **E0b
+STRONG PASS** on the `TrainingStart` actor with a reference magnitude of **8376.8**.
+
+### 21.3 ★★ WHY `false` — the prime suspect, named and evidenced
+
+The AS decompile gives `SpawnDropPodForTeam` exactly two bail points:
+```
+if (TeamDropPodClass == nullptr) return false;                       <- bail 1
+pod = LokiGameplay::SpawnPoolableActorFromClassDeferred(...);
+if (pod == nullptr) return false;                                    <- bail 2
+```
+**[M] Bail 1 is RULED OUT** — `ship.TeamDropPodClass @0x478` re-read *after* the call still holds
+`BP_DropPod_Tutorial_C`. ⇒ by elimination the return came from **bail 2: the pooled spawn returned
+null.**
+
+★★ And the session log names a cause:
+```
+[00.37.23] LogActorPooling: Display: Adding .../BP_DropPod_Tutorial_C to list of poolable actors.   (x3 drop classes)
+[00.39.36] LogActorPooling: Display: UActorPoolManager::PrimePools : Feature is not enabled, skipping.
+```
+⇒ **[M] the drop-pod classes ARE registered as poolable, and the pool manager's priming is SKIPPED
+because the feature is not enabled.** Registration happened; priming did not.
+
+⚠⚠ **GRADE THIS HONESTLY — IT IS A LEAD, NOT A CONCLUSION. [I], and the gap is specific:** nobody has
+shown that `SpawnPoolableActorFromClassDeferred` *requires* the pool feature to be enabled. A
+well-written helper falls back to a normal `SpawnActor` when pooling is off, in which case the
+disabled pool is a red herring and bail 2 has some other cause. **The chain
+"pooling disabled -> pooled spawn returns null -> SpawnDropPodForTeam returns false" is plausible and
+unproven at its FIRST link.**
+
+⚠ Also unmeasured: `GetTeamDropLeader` returns nullptr here (expected — `AuthSetSpawnTeamLeader` is an
+empty fold), but that is read AFTER bail 2 in the decompile, so it cannot explain a `false`.
+
+### 21.4 The cheapest next step, and it needs no launch if the world survives
+
+**Call `LokiGameplay::SpawnPoolableActorFromClassDeferred` DIRECTLY** through the same ProcessEvent
+route, with the same class (`BP_DropPod_Tutorial_C`) and transform, and read whether it returns null.
+That converts S21.3's first link from [I] to [M] in one arm and localises the wall precisely:
+ - **returns an actor** ⇒ pooling is a red herring; bail 2 has another cause; re-examine.
+ - **returns null** ⇒ the pooled-spawn path is the wall, and the question becomes what enables the
+   pool feature. Then chase the gate: it is **not** in the 44-entry `loki.*` cvar inventory
+   (`tools/re/out/cvar_census_tuthero.txt`, 95 rows, **0** pooling entries) and **not** in the
+   enum-toggle list (`game_feature_toggle_enum.txt`, 0 pooling hits), so it is something else —
+   a config value, an ini, or a native default.
+⚠ The static hunt for the gate stalled on coverage: the `PrimePools` / `Feature is not enabled`
+UTF-16 literals exist at `.rdata 0x7F14B66` / `0x7F14B80` but have **zero `lea` xrefs and zero
+pointer references** in `merged2` ⇒ **COVERAGE-BLOCKED, not absent.** Driving the path and re-dumping
+(the S117 method) would decrypt it.
+
+## 22. The pooled-spawn probe — is the disabled actor pool the wall?
+
+**Date:** 2026-08-19. **BUILT, NOT FLOWN.** A client is booting for this experiment; nothing in this
+section has touched a live process. Everything below is either a build fact (measured off the
+artifacts) or a **pre-registered prediction**, and it is labelled as one or the other.
+
+§21.4 asked for exactly one thing: convert §21.3's first link from [I] to [M] by calling
+`ULokiGameplayStatics::SpawnPoolableActorFromClassDeferred` directly and reading whether it returns
+null. This is that probe. **It answers one question and deliberately nothing else** — it does not
+touch the phase, the plane, the ship, or any delegate, and it does not try to spawn a drop pod "for
+real".
+
+### 22.1 What was built
+
+New run mode **`RM_POOLSPAWN` (enum 28)** in `tools/sigbypass-mod/tutorial_launch.cpp`, marker tag
+**`[PS]`**. Variant table in `tools/sigbypass-mod/build.ps1`. Build with
+`.\build.ps1 -Name tutorial_launch -Variant <v>` (the script refuses `-Variant` without `-Name`, and
+a `-Variant` without it silently builds the default set while reporting success — S124's trap).
+
+| variant | `.text` sha256 | `.text` size | `KSPARMS` | what it is |
+|---|---|---|---|---|
+| `poolspawn-readonly` | `68a369686870185a` | 129024 | 0x81 | **ZERO UFunction calls.** P0 resolve + BEFORE census + P4 AFTER census. The census's own null-delta control. **FLY FIRST.** |
+| `poolspawn-ctrl` | `87e5fa023e0ec999` | 134656 | 0x181 | + P0c only. Answers "can this primitive dispatch on this thread and marshal a struct return", nothing about the pool. |
+| `poolspawn-deferred` | `545cb94912e8c8fa` | 138752 | 0x187 | P1 alone (the headline) + control + censuses. One payload call. |
+| `poolspawn-nondef` | `8f1e776f8e78558c` | 138240 | 0x199 | P2 alone (the non-deferred sibling). |
+| `poolspawn-ref` | `151af52792cf9de8` | 144896 | 0x1E1 | P3 alone — establishes the class is spawnable in this world at all. |
+| **`poolspawn`** | **`d3e1ffb9623f6352`** | 148992 | 0x1FF | **THE CANDIDATE.** Full ladder P0 + P0c + P1 + P2 + P3 + three mini-censuses + P4. |
+| `poolspawn-collmatch` | `365fce2091dbddb0` | 148992 | 0x1FF, `KSPCOLLISION=2` | Confound-removal arm (see §22.5). |
+| `poolspawn-compwco` | `6ed1a3c3d0165e13` | 148992 | 0x1FF, `KSPWCO=2` | WorldContextObject = the DropPlane component. ⚠ two-variable against P3 by construction. |
+
+**All 8 `.text` hashes are DISTINCT.** ⚠ **Three of them (`poolspawn`, `-collmatch`, `-compwco`)
+share the byte-identical `.text` SIZE 148992** — across the 14 artifacts rebuilt this session there
+are **14 distinct hashes but only 12 distinct sizes.** A size comparison would have declared three of
+these arms the same build. *Diff `.text`, never size.*
+
+**Regression gate and neighbours, all rebuilt from the edited source and all reproducing their
+pre-edit hashes byte for byte:**
+
+| variant | `.text` sha256 | |
+|---|---|---|
+| `play` | `9bc10a4552c596e1` | **THE GATE — unchanged** |
+| `droppod` | `9e8148635b2ddcf5` | unchanged |
+| `dropmarkers` | `d3c07c32f7a699eb` | unchanged |
+| `cheatmgr` | `7f89f671592824ac` | unchanged |
+| `phaseladder` | `8d1821f8c0ddbd63` | unchanged |
+| `dropplane` | `a0f6f2e54b5ac01e` | unchanged |
+
+That `play` is byte-identical is also the empirical proof that the four insertions into shared
+surfaces (the enum, the forward declaration, the `OnPI` branch and the Worker branch) are
+dead-code-eliminated for every other mode.
+
+Every variant carries `-DKFSNAME=\"\"` (swap **every** BP UFunction — `ReceiveTickClient` is not
+dispatched everywhere; the first RM_PHASELADDER flight starved on exactly that), plus
+`-DKFRAMEINIT=1 -DKFAULTINFO=1 -DKOUTPARMRET=1`. Other knobs: `KSPPODCLASS` (default
+`BP_DropPod_Tutorial_C`), `KSPORIGIN`, `KSPWCO`, `KSPCOLLISION`, `KSPSCALEMETHOD`, `KSPFORCE`,
+`KSPSTEPMS` / `KSPSETTLEMS` / `KSPMODEHOLDMS` / `KSPMINICENSUS`.
+
+### 22.2 Safety statement — measured off the artifacts, not asserted
+
+- **NO module-image write is reachable from this mode.** It arms exclusively on the heap
+  `UFunction.Func` swap (`FsArm` / `FsHold` / `FsDisarm`). With `KFUNCSWAP=0` it prints a refusal and
+  returns 7 rather than falling back to `InstallHook()` — the standing 5-byte `ProcessInternal`
+  `.text` patch measured at **10/10 armed-window deaths vs 3/36 with no module-image write**
+  (S112, Fisher p = 0.00000008).
+- **Import-table evidence [M]:** `FlushInstructionCache`, `VirtualAlloc`, `VirtualFree` and
+  `WriteProcessMemory` are **ABSENT from all 8 artifacts' import tables** ⇒ `SafeWrite` / `BuildHook`
+  / `InstallHook` are linker-eliminated. **Positive control: `tools/sigbypass-mod/tutorial_launch_fo.dll`
+  imports all three (`FlushInstructionCache`, `VirtualAlloc`, `VirtualFree`) — PRESENT.** So the
+  absence is a property of these builds, not of the check.
+  ⚠ `VirtualProtect` survives in all of them (it is reachable only from `PatchLoginVtables`, which has
+  zero call sites file-wide, and from `KWPROBE`); it is present in the already-flown `droppod` and
+  `dropplane` artifacts too, so the import profile is **byte-for-byte the same set** as builds this
+  project has already flown safely — no new capability is introduced.
+- **`verify_dll.py` PASS on all 8**: no `__CxxFrameHandler3/4`, no `_CxxThrowException`, no dynamic
+  CRT. SEH only.
+- **No memory pokes of any kind.** Every effect is a UFunction call.
+- **No hardcoded ASLR addresses.** Class, CDO, both UFunctions, the pod UClass, the GameMode, the
+  DropPlane component, the hero, the `TrainingStart`-tagged actor, `RootComponent`, `AttachParent`,
+  `Tags`, and **every parameter offset, size and type** are resolved by name at runtime. Each
+  resolver enumerates, prints every candidate, and **refuses on ambiguity** rather than taking the
+  first match.
+- **`poolspawn-readonly` genuinely makes ZERO UFunction calls**, re-verified after the fixes below:
+  the only three call sites in the whole mode are P0c (`KSPARMS` bit 8), `SpCallPooled` (bits 1 and 3)
+  and `SpawnActorCls` (bit 5) — mask **0x12A**, which is what the readonly build clears. Everything
+  else on its path (`SpFindUnique`, `SpGradeFn`, `PdWalkParams`, `ParamOffset`, `PhPickGameMode`,
+  `SpPickComp`, `PdFindOrigins`, `ActorLoc`, `SpRootAttached`, `GcAlive`) is pure `ReadProcessMemory`.
+  ⚠ This is the claim S126 shipped falsely for `droppod-readonly` (bit 6 ran ungated while both the
+  build script and the marker advertised zero calls), so it is re-derived here rather than inherited.
+
+### 22.3 Fixes applied by the finalizer before any of this shipped
+
+Seven defects were found in review and **all seven are fixed in the artifacts above** — the hashes in
+§22.1 are post-fix. Two mattered:
+
+1. **P3 asserted a property the code never checked.** `SpawnActorCls` passes its own `g_gm2`
+   (`FindInstByClass("GameMode_Tutorial", …)` — a **substring** match that takes the **first** hit
+   with no enumeration and no refusal: the class-lookup blind-spot family, sixth member) while P1/P2
+   pass `g_spWco` (`PhPickGameMode`, enumerate-and-refuse). The two were never compared, yet the log
+   printed *"the SAME object P1/P2 used"* — and on `poolspawn-compwco` that sentence is **false by
+   construction**, because there `g_spWco` is the DropPlane *component*. Now: the two are compared,
+   the result is printed as `sameWCOasP1P2=1|0|-1`, and **every verdict that leans on P3 carries an
+   explicit QUALIFIED marker when they differ.**
+2. **P3's parameter offsets were unverified hardcoded fallbacks.** `ResolveSpawnSeq` overwrites
+   `g_oBWorld/g_oBClass/g_oBXform/g_oBColl/g_oBRet` and `g_oFActor/g_oFXform/g_oFRet` **only when
+   `ParamOffset` succeeds**, so a *partial* resolve failure leaves stale constants and the arguments
+   land at the wrong offsets. P3 would then produce nothing **for an instrument reason**, and the
+   verdict chain would have read that as *"this class cannot spawn in this world"* — sending a
+   successor to re-stage a world that was never the problem. All 8 borrowed offsets are now
+   **re-derived by name and printed in a table**, and the arm **refuses** on any mismatch. (P1/P2
+   already had the equivalent guard; P3 had none.)
+
+The other five: the **abort reason is now latched** (five different `SpResolve` failures previously
+collapsed into one generic verdict that named the wrong cause); a **P0c disagreement on an
+attached root is reported as an instrument mismatch, not a control failure** (`K2_GetActorLocation`
+returns the *world* location while the RPM reference reads `RelativeLocation` — equal only for an
+unattached root — and the control-actor picker now *prefers* an unattached, non-origin actor and
+prints `rootAttached` for whatever it picks); the **SANITY check uses one threshold** quoted in both
+places (it tested `0x50`, claimed `0x60`, and refused at `0x58`); the **census-cost comment** now
+states that three of the five ~200k-object sweeps run on the **game thread**, not just the two
+worker-thread ones; and the mode was **retagged `[SP]` → `[PS]`** because `[SP]` already belongs to
+`RM_SPAWNPOSSESS`, which is *step 3 of the very staging recipe this probe is injected into*.
+
+### 22.4 PRE-REGISTERED PREDICTIONS — four outcomes, four different meanings
+
+Written down before the flight. **The census delta is the result; a returned pointer is
+corroboration.** "The call returned ok" is never a result (S114 got `console 'LogLoc' ok` from a call
+that never reached a PlayerController).
+
+| # | observation | what it means |
+|---|---|---|
+| **(a)** | **P1 returns a LIVE ACTOR** | **Pooling is a RED HERRING.** `SpawnPoolableActorFromClassDeferred` does **not** require the pool feature; `PrimePools : Feature is not enabled` does **not** explain S127's bail 2; **§21.3's chain is REFUTED at its first link** and bail 2 has another cause entirely. Re-open §21.3. |
+| **(b)** | **P1 null + P2 (non-deferred) returns an actor** | The **DEFERRED PATH SPECIFICALLY** is the wall — same world, same class, same transform, same WorldContextObject. A pool that could serve neither would have sunk P2 too. The gate is not "the pool" as such. |
+| **(c)** | **P1 and P2 both null + P3 spawns fine** | **THE POOL IS THE WALL.** The class *is* spawnable here, so the null belongs to the pooled path, and §21.3's chain is **SUPPORTED at its first link for the first time.** The target becomes *what enables the pool feature* — not a `loki.*` cvar (0 of 44) and not a `ELokiGameFeatureToggle` (0 hits), so a config value, an ini, or a native default. |
+| **(d)** | **P3 also fails** | **NOTHING here is about pooling.** The class cannot spawn in this world at all right now; the pool is **neither implicated nor exonerated**. That is a STAGING statement — ⚠ *and only after* the P3 offset table and the P3 WorldContextObject line are read, because if P3 failed for an instrument reason it is not a statement about the world either. |
+
+A fifth reading exists and is **not** in the table because it is not an outcome about the pool:
+
+- **P1's return SENTINEL SURVIVES (`0xA5` intact in both the params slot and `RESULT_DECL`)** ⇒
+  **nothing wrote a return; the callee did not complete.** This is NOT "the pooled spawn returned
+  null" and says nothing about the pool. That distinction is what carried the entire S127 result, and
+  both slots are pre-filled so it stays available here.
+
+**THE POSITIVE CONTROL THAT PROVES THE ARM RAN: P0c must reach `STRONG PASS`.**
+`K2_GetActorLocation()` on a **non-origin, unattached** actor, cross-checked against a pure-RPM read
+of the same actor's `RootComponent->RelativeLocation`. Without it, *"the pooled spawn returned null"*
+and *"the primitive never dispatched on this thread"* read identically.
+⚠ **A `WEAK CONTROL (origin)` is NOT a pass** — two zeros agreeing prove nothing (S126's C0c made
+exactly that error and printed AGREED for a call it never read).
+
+**THE SITTING IS VOID IF:**
+- `[FS]` prints **`ZERO TARGETS SWAPPED`** — the ladder never advances (ignore its RM_PLAY wording and
+  its `play_hold300.dll` suggestion; for this mode it means nothing ran);
+- **P0c does not reach `STRONG PASS`** (`verdict != 1`) — the mode says so itself and refuses to
+  interpret P1;
+- the **live-FProperty SANITY check fails** — an `ObjectProperty`/`ClassProperty` must read
+  `ElementSize == 8` and the `FTransform` slot at least `0x58`. If a pointer reads **1**, `FPROP_ELEMSIZE`
+  is reading `ArrayDim` again (the S126 defect) and **no arm dispatches**;
+- **`poolspawn-readonly` reports a non-zero DropPod delta** — the instrument is noisy and **no other
+  variant's delta means anything**;
+- the ladder does not reach step 8 (**exit code 9**, and the marker says so).
+
+### 22.5 Two STATED confounds — read these before blaming the pool
+
+1. **Collision handling.** `SpawnActorCls` (P3) hardcodes `CollisionHandlingOverride = 2`
+   (`AdjustIfPossibleButAlwaysSpawn`) and is **shared code compiled into `play`**, whose `.text` hash
+   is a hard regression gate — so it is *not* edited. P1/P2 pass the functions' **declared default 0**
+   (`Undefined`). ⇒ if outcome **(c)** appears, **re-fly `poolspawn-collmatch` (`KSPCOLLISION=2`)
+   BEFORE concluding anything about the pool.** That arm removes the confound instead of arguing
+   about it.
+2. **WorldContextObject.** As above (§22.3 item 1). On the default `KSPWCO=0` the auto pick is the
+   GameMode, so the two *should* agree — and if the log says they do not, then `PhPickGameMode` and
+   `FindInstByClass` disagree about which GameMode is live, **which is itself the finding.** On
+   `poolspawn-compwco` they differ by construction and the qualifier always fires.
+
+### 22.6 What this probe leaves in the world — nothing is undone
+
+⚠⚠ **This mode SPAWNS REAL ACTORS and does not clean up. There is no undo.** Each of P1, P2 and P3
+can leave a live `BP_DropPod_Tutorial_C` in `LVL_Tutorial`; the full `poolspawn` ladder can leave up
+to three. The marker says so on **every** exit path, including the abort paths. **Recovery = restart
+the client.** No memory was poked and no module image was written, so there is nothing else to revert.
+
+⚠ The staged world may **already** contain drop actors — a half-constructed
+`BP_DropPlane_Straight_Tutorial_C` from a plane-creating probe (S125/S127 both produced one),
+plus the pooled-actor registrations. `DpCensus` latches the BEFORE set and marks NEW objects, so a
+non-zero baseline is **expected and tolerated**; only the DELTA is read. P3 runs **last** so it cannot
+contaminate P1/P2's columns, and its census column is labelled separately.
+
+⚠ P3 also makes the client believe an actor exists that the game did not create. That is inherent to
+having a non-pooled reference at all, and it is why P3 is the last thing the ladder does.
+
+### 22.7 Operator sequence
+
+The client is already booting and `forceTutorialMatch` is `true`, so the world stages itself. From an
+**ELEVATED PowerShell**:
+
+```powershell
+cd "G:\git\Supervive Revival Project"
+.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_poolspawn_readonly.dll -Label s128-F0 -AllowStale
+# then, on a fresh staged world:
+.\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_poolspawn.dll          -Label s128-F1 -AllowStale
+```
+
+⚠⚠ **`-AllowStale` IS REQUIRED, and it is not a shortcut.** Editing `tutorial_launch.cpp` moves
+`fo`'s and `sp`'s `.text` too, because they are built from the same file. The **deployed** copies
+(`tools/sigbypass-mod/tutorial_launch_fo.dll`, `tutorial_launch_sp.dll`) are the known-good ones that
+have staged successfully all session. **Do NOT swap staging infrastructure mid-experiment** — the
+staging chain is the control, and re-building it is a second variable in an experiment that is
+supposed to have one.
+
+⚠ Expected yield is **~2 armed windows per 4 launches** (FK-31: ~25 % of launches die during staging
+with only `gft`+`fo` resident). **Budget on armed windows reached, never on launches.**
+
+Read the marker at `docs/tutorial-launch-marker.txt` — but note that `Marker()` opens `CREATE_ALWAYS`,
+so **every injection truncates it** (FK-25). `fk24-stage.ps1` copies it off after each stage into
+`docs/fk24-stage-<label>-<n>-<shim>.txt`; the probe's own output is the `-4-probe-*` file.
+
+### 22.8 Honest status
+
+**READY TO FLY, NOT FLOWN.** The single most likely surprise is the one that closed Route C in S127:
+`Func@+0xE0` reading `0x0`. This is a **native static**, so a real thunk is expected — but that is an
+expectation, not a measurement. The mode **grades** the live `UFunction` and dispatches on what it
+read (real native thunk → `CallNativeGuarded`; `Func == ProcessInternal` → `CallBPGuarded`; a
+universal fold or NULL → **REFUSE**, with the reason named), so a null `Func` produces a clean
+measurement rather than a fault — **and that refusal would itself be the headline.**
+
+Known-unmeasured, carried forward:
+- **`ESpawnActorScaleMethod == 1` (MultiplyWithRoot) is [I]**, from stock UE5 numbering. What is read
+  *live* is the property's UEnum **name**, printed beside the value; a `-` there is an **instrument
+  gap**, not agreement. A wrong byte cannot sink the call (flat params block, not a JSON enum string,
+  so the S118 `ELokiActivityState` failure mode does not apply) but could change spawn scaling.
+- **Parameter names are assumed to match `binds_members.csv`** (`WorldContextObject`, `ActorClass`,
+  `SpawnTransform`, plus a name containing `collision` / `scalemethod`). A mismatch prints UNBOUND and
+  the arm refuses — visible, not silent, but it costs the sitting. The bind lines are the readout.
+- **P0c proves the primitive dispatches on an ACTOR instance, not on a CDO.** A static UFunction
+  called on a CDO is a slightly different shape and there is no known-safe zero-input static on
+  `ULokiGameplayStatics` to control it with. The return sentinel partially covers the gap.
+- **A pooled spawn returning an actor does not by itself prove the pool was bypassed** — it could be
+  serving from a pool populated some other way. Outcome (a)'s claim is deliberately scoped to *the
+  first link*, nothing wider.
+
+---
+
+## 23. FLOWN — THE ACTOR POOL IS THE WALL. `SpawnPoolableActorFromClass{,Deferred}` return NULL while the SAME class spawns fine unpooled
+
+**Date:** 2026-08-19/20, PID 32420, staged `LVL_Tutorial`. Builds `poolspawn` (`.text d3e1ffb9623f6352`)
+then `poolspawn-collmatch` (`365fce2091dbddb0`). Zero `.text` writes, zero crashpad handoffs on this
+client. Evidence: `docs/fk24-s128-poolspawn-RESULT.txt`, `docs/fk24-s128-collmatch-RESULT.txt`,
+`docs/Loki-s128-poolspawn.log`.
+
+### 23.1 The result
+
+Both pooled entry points are **native statics with real thunks** — unlike the Angelscript
+`SpawnDropPodForTeam` (S19, `Func == 0`), these dispatch through the S55 direct-`Func` primitive:
+```
+SpawnPoolableActorFromClass          Func@+0xE0 = 0x7FF7BDA4EEE0 (rva 0x537EEE0)  NATIVE
+   FunctionFlags 0x04C22401 Static | PropertiesSize 144 | NumParms 8 | ReturnValueOffset 0x88
+```
+| arm | call | return | DropPod delta |
+|---|---|---|---|
+| **P0c** | `K2_GetActorLocation` on a NON-ORIGIN actor | `(-3206.4,5070.5,100.0)`, RPM ref identical | **STRONG PASS**, 0.00 uu on \|ref\|=8377 |
+| **P1** | `SpawnPoolableActorFromClassDeferred` | **NULL** | **+0** |
+| **P2** | `SpawnPoolableActorFromClass` (non-deferred) | **NULL** | **+0** |
+| **P3** | ordinary `BeginDeferredActorSpawnFromClass` + `FinishSpawningActor`, SAME class | **actor `0x1EB8530C080` `BP_DropPod_Tutorial_C`** | **+2** |
+```
+bucket    BEFORE afterP1 afterP2 afterP3   AFTER     dP1     dP2     dP3
+DropPod        2       2       2       4       4      +0      +0      +2
+```
+★ **The `0xA5` sentinel is what makes the nulls readable**: `paramsSlot 0xA5 INTACT, RESULT_DECL
+OVERWRITTEN` ⇒ **a return really was written, and it is NULL** — not "nothing ran", not a fault.
+
+### 23.2 ★ The pre-registered confound was flown and ELIMINATED
+
+The probe declared its own confound *before* the flight: `SpawnActorCls` (P3) hardcodes
+`CollisionHandlingOverride = 2 (AdjustIfPossibleButAlwaysSpawn)` while P1/P2 passed `0 (Undefined)`,
+so "pooled vs unpooled" was confounded with "collision 0 vs 2", and it instructed:
+*"re-fly `poolspawn-collmatch` (KSPCOLLISION=2) BEFORE blaming the pool."*
+**Flown. With `collision=2` on P1/P2 — byte-identical to the value the working path uses — BOTH
+POOLED SPAWNS STILL RETURN NULL.**
+⇒ **[M] the only surviving difference between "spawns an actor" and "returns null" is POOLED vs NOT.**
+
+### 23.3 What this settles, and what it does not
+
+**[M] SETTLED — the first link of S21.3's chain, which was explicitly unproven:**
+*"`SpawnPoolableActorFromClassDeferred` returns null in this world, while the same class spawns
+normally."* S21.3 recorded that link as [I] and named it as the gap; it is now measured, with the
+class-spawnability precondition (P3) and the collision confound both closed.
+⇒ **`SpawnDropPodForTeam`'s `false` (S127) is bail 2, caused by the pooled spawn declining.**
+
+**[I] STILL INFERRED — that `PrimePools : Feature is not enabled` is WHY.** The log line and the null
+are consistent and no other cause is in evidence, but nothing yet reads the pool manager's gate and
+shows it is the branch taken. Two facts could still break it: the helper might decline for an
+unrelated reason (no free pooled instance, a subsystem not initialised on a client), and the
+`PrimePools` / `Feature is not enabled` UTF-16 literals at `.rdata 0x7F14B66`/`0x7F14B80` have **zero
+`lea` xrefs and zero pointer references** in `merged2` ⇒ **COVERAGE-BLOCKED, not absent** — the gate
+has not been read, only named.
+
+**⇒ FK-22's blocker chain, current state:**
+markers (refuted, S0-S3) → phase (solved, S14) → subscription (measured dead, S15/S16) →
+`SpawnPlane` position computation (faults on unstreamed markers, S17/S21.1) →
+**pooled spawn declines (MEASURED, here)** → *why the pool declines* (**the live frontier**).
+
+### 23.4 Next
+
+**Read the pool manager's gate.** `UActorPoolManager` is a live subsystem in this world; find its
+instance, read the flag `PrimePools` tested, and identify what sets it. The gate is **not** in the
+44-entry `loki.*` cvar inventory (`cvar_census_tuthero.txt`, 95 rows, 0 pooling hits) and **not** in
+the enum-toggle list (`game_feature_toggle_enum.txt`, 0 pooling hits), so it is config, ini, or a
+native default — and if it is any of the first two it is **backend/ini-drivable with no injection at
+all**, which is this project's cheapest class of fix.
+★ The literals are coverage-blocked, so **drive the path and re-dump** (the S117 method: executing code
+forces `.text` decryption) to make the gate readable offline.
+⚠ And keep P3 in mind as an independent lever: **the ordinary spawn path WORKS on this exact class**
+(`dP3 = +2`). If the pool cannot be enabled, hand-spawning the pod and wiring it may bypass the pool
+entirely — `InitializeDropPod` is a separate, already-graded call.
+
+### 23.5 State left behind
+
+The world contains **2 extra `BP_DropPod_Tutorial_C` actors** created by P3, plus whatever the
+collmatch re-run added. There is **no undo**; recovery is a client restart. Any later census in that
+world must not assume a clean baseline.
+
+---
+
+## 24. THE POOL GATE IS LOCATED — a virtual on `UActorPoolManager`, slot `0x2D0`
+
+**Date:** 2026-08-20. Offline, against a fresh live dump (`dumps/s129-poolgate/`, `.text` 52.9 %
+readable) taken from PID 32420 **while the pooling code was decrypted** — the S117 lever: driving a
+path forces `.text` decryption, and `PrimePools` had run in that process at `01:59:37`.
+
+### 24.1 The gate, machine-verified
+
+`UActorPoolManager::PrimePools` = **`0x3356000`**, 1,284 B (extent from the recovered `.pdata`).
+The disabled-path bytes, decoded from a known instruction boundary:
+```
+0x33560C5   49 8b 06              mov  rax,[r14]              ; r14 = this (UActorPoolManager)
+            49 8b ce              mov  rcx,r14
+            ff 90 d0 02 00 00     call qword ptr [rax+0x2D0]  ; <== THE GATE. virtual, slot 0x2D0 (index 90)
+0x33560CB   84 c0                 test al,al
+            75 25                 jne  +0x25                  ; TRUE  -> proceed with priming
+            80 3d .. .. .. .. 04  cmp  byte ptr [rip+..],4     ; log verbosity
+0x33560DC   48 8d 15 3d ea bb 04  lea  rdx,[rip+0x4BBEA3D]     -> 0x7F14B20
+                                  [0x7F14B20] = 0x7FF7C05E4B40 -> rva 0x7F14B40
+                                  = 'UActorPoolManager::PrimePools : Feature is not enabled, skipping.'
+```
+**[M] Every link machine-verified**: the `lea` displacement resolves to the pointer SLOT the xref
+named, the slot dereferences to the string RVA, and that string is byte-for-byte the log line observed
+live. ⇒ **the branch that produced our log line is `if (!this->vtable[0x2D0]()) { log; return; }`.**
+
+⇒ **The pool feature is gated by a BOOLEAN VIRTUAL on `UActorPoolManager`, not by a cvar and not by a
+feature-toggle key.** That is consistent with, and explains, the two earlier negatives: 0 pooling hits
+in the 44-entry `loki.*` cvar inventory and 0 in the 149-member enum-toggle list.
+
+### 24.2 ⚠ Two instrument artifacts, both MINE, both in this one hunt
+
+**(a) I searched for the SUBSTRING's address instead of the enclosing STRING's start.** The literal
+begins at `0x7F14B40`; I repeatedly scanned for `0x7F14B66`, where the word "PrimePools" happens to
+start inside it, and got **zero xrefs three times** — from `merged2`, then from a fresh live dump, then
+from a widened scan. I was one keystroke from recording "COVERAGE-BLOCKED" as a property of the game.
+★★ **`strxref.py`'s own output had warned about the mirror-image of this defect in the same session**
+(*"the 'feature toggles were not ready' RVA is 88 bytes INTO a longer string; an exact-start-only
+lookup reports 0 refs, the enclosing-string lookup reports 4"*). I read that block, then committed the
+inverse error. ⇒ **A reference points at a string's START. Search the enclosing string, never an
+interior offset — and when a scan returns 0, suspect the QUERY before the coverage.**
+
+**(b) My hand-rolled `lea` scan matched only `48 8D` (REX.W).** `UE_LOG` passes arguments in
+`rcx/rdx/r8/r9`, and `lea r8,[rip+…]` encodes as **`4C 8D`**. Widening to `48/49/4C/4D` was necessary
+but NOT sufficient — defect (a) was masking it — so **the widened scan still returned zero and looked
+like confirmation of the wrong conclusion.** ⇒ **two independent blind spots in one instrument produce
+a null that survives one fix and reads as corroboration.**
+★ Both fell instantly to the project's OWN tool (`tools/strxref/strxref.py`, `--dump <new image>`,
+`find` then `xref`), which found it as `refs=1` via a `ptr-tbl` slot — a reference class my byte scan
+was never going to see, since the code `lea`s the SLOT, not the string.
+⇒ **Use `strxref.py` for string→code work in this image. Hand-rolled scans have now failed on: interior
+offsets, REX encodings, and pointer-table indirection.**
+
+### 24.3 Where this leaves FK-22
+
+markers (refuted) → phase (solved) → subscription (dead) → `SpawnPlane` position computation (faults
+on unstreamed markers) → pooled spawn declines (measured, S23) → **the pool gate is a bool virtual at
+`UActorPoolManager` vtable+0x2D0 (located, NOT yet read)**.
+
+**Next, and it is now a small, bounded job:**
+1. **Resolve slot `0x2D0`** on the live `UActorPoolManager`'s vtable and disassemble the target. It is
+   a `bool(void)` — expect it to read a config value, a subsystem flag, or a member byte.
+2. If it reads a **member byte**, that is a DATA poke on a live object — this project's safest measured
+   write class (nothing 0/22 · bytecode 0/9 vs standing `.text` 7/8) — and `PrimePools` can then be
+   called directly to prime the pools.
+3. If it reads **config/ini**, it is drivable with **no injection at all**.
+4. ⚠ Either way, priming is not obviously required for a *single* spawn: S23 measured the pooled
+   helpers returning null, but nothing yet shows they consult the same gate. **Check whether the pooled
+   spawn path calls slot `0x2D0` too**, or fails for want of a primed pool — those are different fixes.
+★ And the independent lever from S23 still stands: **the ordinary spawn path WORKS on this exact class**
+(`dP3 = +2`), so bypassing the pool entirely remains open.
+
+### 24.4 Slot `0x2D0` — ATTEMPTED, NOT RESOLVED (be precise about which)
+
+**What was established [M]:**
+- **`PrimePools` is NOT virtual** — a full-image scan for qword pointers to `IB+0x3356000` returns
+  **0**, so no vtable contains it. It is an ordinary method that calls a virtual on its own `this`.
+  ⇒ the vtable cannot be recovered "for free" by finding PrimePools inside one.
+- **There is a Loki subclass: `ULokiActorPoolManager`** (`.rdata 0x0886F320`, refs=1, registrar
+  `0x52975D0`, 174 B), alongside engine `UActorPoolManager` (`0x07DDDB60`, registrar `0x32A8570`).
+  ⇒ **slot `0x2D0` on the LIVE object is probably the Loki OVERRIDE, not the engine base.** Resolving
+  the engine class's vtable and reading its slot 90 would answer the wrong question.
+- ★★ **`ActorPoolManagerPrimingConfig`** exists (`.rdata 0x07DDCB20`, refs=1, registrar `0x32A7AC0`,
+  55 B) — **a config class in the pooling module.** This is the strongest lead for what the gate reads:
+  if it is a `UDeveloperSettings`-style config, the feature is **ini-drivable with no injection at all**,
+  which is this project's cheapest fix class. **It has not been read.**
+- The source path is in the image: `…\Engine\Source\Runtime\Engine\Classes\ActorPooling\ActorPoolManager.cpp`
+  (`.rdata 0x07F14A40`) ⇒ pooling is **engine-layer with a Loki subclass**, not pure Loki.
+
+**What FAILED, and why it is not a negative result:** the offline
+class-name → `GetPrivateStaticClass` → `InternalConstructor` → `lea rax,[rip -> vtable]` route (the
+S106b technique) did not land. `0x52975D0`'s code-`lea` targets are `0xF7EC20` (a universal fold, ×2),
+`0x11A5FA0`, `0x32A8570` (the engine registrar) and `0x5299D00`; disassembling `0x5299D00` shows
+`mov rcx,[rcx]; test rcx,rcx; jne …` repeated — a **thunk region containing several small functions**,
+not a single constructor, so the expected vtable `lea` is not at its head. **This is a route not yet
+walked correctly, NOT evidence that the vtable is unfindable.**
+⚠ The live route — read `[obj]` off a live `ULokiActorPoolManager` and take `+0x2D0` — is unambiguous
+and was prepared, but the client had **exited cleanly (0 crashpad handoffs)** before it could run.
+**It needs one relaunch and about a minute.**
+
+**Next, in order of cost:**
+1. **Relaunch, stage, and read the vtable off the live object** (RPM only; identify the instance by
+   walking `GUObjectArray` and matching the class name, or by any object whose vtable slot `0x2D0`
+   is a short `bool()` in the pooling code band). Then disassemble that target — that IS the gate.
+2. **In parallel, offline: read `ActorPoolManagerPrimingConfig`** (registrar `0x32A7AC0`). If it is a
+   config object the gate consults, the enabling lever may need no injection at all.
+3. ⚠ Still unchecked and it changes the fix: **does the pooled SPAWN path consult the same gate**, or
+   does it merely fail for want of a primed pool? S23 measured the helpers returning null; nothing yet
+   ties that to slot `0x2D0`. "Priming never ran" and "the helper declines" are different repairs.

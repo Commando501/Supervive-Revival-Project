@@ -25,6 +25,76 @@ constexpr int PERCHUNK=65536, ITEMSTRIDE=0x18;
 constexpr uintptr_t CLASS_OFF=0x18, NAME_OFF=0x20, UFUNC_FUNC=0xE0, UFUNC_CHILDPROPS=0x58;
 constexpr uintptr_t FF_NODE=0x10, FF_OBJECT=0x18, FF_CODE=0x20, FF_LOCALS=0x28, FF_MRP=0x30, FF_MRPA=0x38, FF_MRPC=0x40, FF_OUTPARMS=0x80, FF_PROPCHAIN=0x88;
 constexpr uintptr_t FIELD_NEXT=0x18, FPROP_OFFSET=0x44, FPROP_FLAGS=0x38;   // FField.Next, FProperty.Offset_Internal, FProperty.FlagsPrivate
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ S125 (2026-08-16) — KFRAMEINIT: THE CAPTURED-FFrame WINDOW `0x48..0x80` WAS NEVER RESET.
+//
+//   THE DEFECT.  `OnPI` does `memcpy(g_template, frame, 0x180)` on a LIVE FFrame belonging to whatever
+//   UFunction the game happened to be dispatching, and `CallNative`/`CallBPGuarded` then copy that
+//   template and overwrite only ~9 fields (`Node, Object, Code, Locals, MRP, MRPA, MRPC, PropChain`,
+//   plus `OutParms` via BuildOutParms).  EVERYTHING ELSE IS INHERITED VERBATIM FROM A FOREIGN,
+//   ALREADY-RETURNED FRAME — including the whole of `0x48..0x80`.
+//   A callee that PUSHES/POPS the execution flow stack therefore pops a STALE offset and jumps into
+//   arbitrary bytecode, while the SEH guard still reports a plain boolean.  That is FK-22's confound:
+//   `Comp_GameMode_DropPlane_Tutorial::SpawnPlane` is 3 push / 2 pop, and BOTH functions S93 compared
+//   against it ("ran clean") are 0 push / 0 pop.
+//
+//   ⚠⚠ THE REPO ALREADY HELD THIS FIX AND IT WAS NEVER PROPAGATED.  `ds_hybrid.cpp:2151-2158`
+//   (S80d, docs/session-79-moonshot-plan.md §520 "BUG 5 (MINE)") does exactly this reset and was FLOWN
+//   LIVE (PID 48788, four BP deploy functions, no crash).  `tutorial_launch.cpp` — the file every
+//   tutorial-route sitting since S91 has used — never got it.  So the S93 measurement was taken with a
+//   primitive whose sibling in the same directory had already been repaired for this exact reason.
+//
+//   LAYOUT EVIDENCE — GRADE THE TWO HALVES SEPARATELY, THEY ARE NOT THE SAME GRADE:
+//     * THE WINDOW BOUNDARIES ARE [M] BY ARITHMETIC, from constants this project independently
+//       established in THIS build and has used in dozens of working calls: `FF_MRPC=0x40` (8 bytes,
+//       so the window opens at 0x48) and `FF_OUTPARMS=0x80` (so it closes at 0x80).  That is exactly
+//       0x38 = 56 bytes of never-initialised frame, bracketed on both sides by verified fields.
+//     * THE FIELD IDENTITY INSIDE THE WINDOW IS [I] — stock-UE5.4 `FFrame`, NOT decoded from this
+//       binary.  Stock says `FlowStack` (TArray<CodeSkipSizeType=uint32, TInlineAllocator<8>> =
+//       Inline[8*4=32]@+0x00, Secondary@+0x20, Num@+0x28, Max@+0x2C = 0x30 bytes) then
+//       `PreviousFrame`@0x78 — 0x30 + 8 = 0x38, an EXACT fit for the bracketed gap, which is
+//       corroboration but not a measurement.  `CurrentNativeFunction`@0x90 is OUTSIDE the bracket
+//       (past the last verified field, `FF_PROPCHAIN=0x88`) and is therefore the weakest offset here.
+//
+//   ⚠ HOW A WRONG LAYOUT GUESS DEGRADES.  Every byte written below lands in `g_myframe`, a static
+//   buffer THIS DLL OWNS.  A wrong offset can only produce a wrong-behaving call; it can never write
+//   the game heap, a UObject, or the module image.  Level 1 additionally writes ONLY ZEROES, and only
+//   strictly inside the [M] bracket — for any plausible field type in that window (pointer, count,
+//   flag) zero is the benign value, and it is unambiguously better-defined than "whatever the last
+//   unrelated UFunction left there".  Level 2 adds the three writes that rest on the [I] half.
+//
+//   THE KNOB.  KFRAMEINIT selects the frame-preparation path and DEFAULTS TO 0 = UNFIXED, so that
+//   every pre-existing variant is byte-identical to its committed build (verified: `play` .text stays
+//   9bc10a4552c596e1).  It is deliberately compile-time so the OFF build has no extra load, branch or
+//   call — a runtime-only knob would have moved every existing artifact's hash.
+//     0 = UNFIXED  — historical behaviour, bit-for-bit.  THIS IS THE S93 REPRODUCTION ARM.
+//     1 = ZEROONLY — memset(frame+0x48, 0, 0x38).  Fewest assumptions; stays inside the [M] bracket.
+//     2 = S80      — the flown ds_hybrid recipe: memset(frame+0x48,0,0x30); FlowStack.Max=8;
+//                    PreviousFrame=0; CurrentNativeFunction=0.  Faithful default-constructed TArray.
+//   When KFRAMEINIT != 0 the compiled-in value seeds the RUNTIME variable `g_frameInit`, so a mode may
+//   still flip arms in-process if it ever needs to; the A/B this exists for is flown as two BUILDS
+//   because once SpawnPlane has spawned a plane a second call is a different experiment.
+//   Registered today (build.ps1, `tutorial_launch`): `phaseladder-frames80` / `-framezero` /
+//   `-frameunfix` — a COMPILE+VERIFY proof that all three paths build and pass the artifact gate.
+//   ⛔ The FK-22 flight arms must be registered on the NEW heap-armed DropPlane mode, NOT on RM_DROPIN
+//   (20), which is S93's own mode and arms with `InstallHook()` — a standing ProcessInternal `.text`
+//   patch held up to 40 s. Re-flying it to correct S93's confound would introduce a worse one.
+#ifndef KFRAMEINIT
+#define KFRAMEINIT 0
+#endif
+constexpr uintptr_t FF_FLOWSTACK=0x48, FF_FLOW_MAX=0x74, FF_PREVFRAME=0x78, FF_CURNATIVEFN=0x90;
+constexpr uintptr_t FF_UNINIT_LEN=FF_OUTPARMS-FF_FLOWSTACK;   // 0x38: the whole bracketed never-init window
+enum FrameInitMode { FI_UNFIXED=0, FI_ZEROONLY=1, FI_S80=2 };
+#if KFRAMEINIT
+static int g_frameInit = KFRAMEINIT;   // seeded from the build knob; runtime-overridable in a fixed build
+#endif
+// KFAULTINFO: make a guarded call's fault ATTRIBUTABLE instead of a bare bool. Separate knob because the
+// A/B above needs identical fault reporting in BOTH arms — otherwise the reproduction arm's fault is
+// exactly as uninterpretable as the 2026 measurement that started this. Defaults 0 => zero codegen.
+// SEH only: the filter reads EXCEPTION_POINTERS and stores scalars. No C++ EH anywhere.
+#ifndef KFAULTINFO
+#define KFAULTINFO 0
+#endif
 // S91 BP-CALL: UStruct tail in this build (stock UE5 order, shifted +0x18 like SuperStruct@0x48/Children@0x50/
 // ChildProperties@0x58): PropertiesSize(int32)@0x60, MinAlignment@0x64, Script TArray{Data@0x68,Num@0x70}.
 constexpr uintptr_t USTRUCT_PROPSIZE=0x60, USTRUCT_SCRIPT=0x68, USTRUCT_SCRIPTNUM=0x70;
@@ -94,7 +164,9 @@ static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for Spawn
 //   a standing ProcessInternal `.text` patch (the construct S112 measured at 10/10 armed-window deaths).
 //   Several docs reference its behaviour, so it is not changed in place. RM_PHASELADDER (24) is the NEW
 //   mode: same subject (the round-phase ladder), heap-only arming, and the FK-22 A0'..A5 protocol.
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24 };
+//   RM_DROPPLANE (25) is the S125 successor: same FK-22 subject one layer down (the DropPlane
+//   COMPONENT rather than the phase), also heap-only arming, and the B0..B4 protocol.
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28 };
 #ifndef KRUNMODE
 #define KRUNMODE RM_CHEATSPAWN
 #endif
@@ -321,6 +393,10 @@ static bool ResolveMakeMesh(); static void DoMakeMesh();        // S93 RM_MAKEME
 static bool ResolvePlay(); static void DoPlay();               // S94 RM_PLAY: the VISIBLE + MOVABLE hero (ground-teleport + Ronin mesh + top-down cam + WASD puppet, one shim)
 static void DoCheatMgr();                                      // S114 RM_CHEATMGR: "Route B" — construct a UCheatManager and install it on the live PC (42 real exec verbs)
 static void DoPhaseLadder();                                   // S124 RM_PHASELADDER: FK-22 arms A0'..A5 on the round-phase ladder (heap-only; NO module-image write)
+static void DoDropPlane();                                     // S125 RM_DROPPLANE:  FK-22 arms B0..B4 on the DropPlane COMPONENT (heap-only; NO module-image write)
+static void DoDropPod();                                       // S126 RM_DROPPOD:    ROUTE C -- SpawnDropPodForTeam on the live LokiDropShip (heap-only; NO module-image write)
+static void DoDropMarkers();                                    // S126 RM_DROPMARKERS: ROUTE D -- make PlaneStartPoint/PlaneEndPoint resident, then SpawnPlane behind a residency gate
+static void DoPoolSpawn();                                     // S128 RM_POOLSPAWN:  ROUTE F -- does SpawnPoolableActorFromClassDeferred need the actor pool? (heap-only; NO module-image write)
 static void PhaseRestore(const char* who);                     //  ...its STOP: re-poke GameState+0xA44 back to 4. Idempotent, callable from any thread.
 
 static void Marker(const char* m){HANDLE h=CreateFileA(kMarkerPath,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);if(h==INVALID_HANDLE_VALUE)return;DWORD w=0;WriteFile(h,m,(DWORD)strlen(m),&w,nullptr);CloseHandle(h);}
@@ -888,10 +964,98 @@ static LONG CALLBACK CrashVEH(EXCEPTION_POINTERS* ep){
 // SEH filter: reliably catches the AV at the exact CallNative site (VEH ordering is unreliable under the packer).
 // EXCEPTION_EXECUTE_HANDLER = handle it (game thread corrupt after, but we have the null data).
 static int SehDump(EXCEPTION_POINTERS* ep){ long s=InterlockedIncrement(&g_crashSeq); if(s<=4){ Markerf("[NULL] (via SEH)\r\n"); DumpCrashCtx(ep); } return EXCEPTION_EXECUTE_HANDLER; }
+// ── S125 KFAULTINFO: attributable faults ───────────────────────────────────────────────────────────
+// `DumpCrashCtx` already prints a full context, but ONLY for the first 4 faults of the whole session
+// (g_crashSeq budget) and only into the marker as free text — a caller cannot say anything about its
+// OWN fault. These globals are recorded on EVERY guarded fault, unbudgeted, so each call site can
+// print WHY it faulted next to WHAT it was calling. Scalars only, written from an SEH filter.
+#if KFAULTINFO
+static volatile long g_fltHave=0;                       // 0 until a fault is recorded (reset per call)
+static uint64_t g_fltCode=0,g_fltRip=0,g_fltRva=0,g_fltAddr=0,g_fltAccess=0;
+// ★★ S125 BLOCKER FIX — REFUSED IS NOT FAULTED. `CallBPGuarded` has two validity REFUSAL paths that
+//    `return true`, which is the SAME value its `__except` path returns. A caller therefore printed
+//    "*** FAULTED (SEH-captured) ***" for a call that was never dispatched, decorated with the
+//    PREVIOUS guarded call's exception record (because FaultReset used to run BELOW the refusals).
+//    That is S93's own uninterpretable-FAULTED failure reproduced inside the probe built to undo it.
+//    Fixed two ways, both compiled ONLY under KFAULTINFO so every KFAULTINFO=0 artifact stays
+//    byte-identical: FaultReset now runs FIRST, and this flag lets a caller separate the two without
+//    changing the return type of a primitive with ~60 existing call sites.
+static volatile long g_bpcRefused=0;
+static void FaultReset(){ InterlockedExchange(&g_fltHave,0); g_fltCode=g_fltRip=g_fltRva=g_fltAddr=g_fltAccess=0; }
+static int SehCap(EXCEPTION_POINTERS* ep){
+    // Read the record defensively: this runs on a faulting thread and must not fault again.
+    __try{
+        g_fltCode=ep->ExceptionRecord->ExceptionCode;
+        g_fltRip =(uint64_t)ep->ContextRecord->Rip;
+        g_fltRva =(g_fltRip>g_modBase&&g_fltRip<g_modBase+0xC000000)?g_fltRip-g_modBase:0;
+        if(ep->ExceptionRecord->NumberParameters>=2){
+            g_fltAccess=ep->ExceptionRecord->ExceptionInformation[0];
+            g_fltAddr  =ep->ExceptionRecord->ExceptionInformation[1];
+        }
+        InterlockedExchange(&g_fltHave,1);
+    } __except(EXCEPTION_EXECUTE_HANDLER){ }
+    return SehDump(ep);   // unchanged behaviour on top: the first 4 still get the full register dump
+}
+// One-line, marker-safe description of the last guarded fault. "-" when the call did not fault, so a
+// call site can print it unconditionally. NOT a success criterion: "no fault" is not "it worked".
+static const char* FaultStr(){
+    static char b[160];
+    if(!InterlockedCompareExchange(&g_fltHave,0,0)) return "-";
+    _snprintf_s(b,sizeof(b),_TRUNCATE,"code=0x%08llX %s addr=0x%llX rip=0x%llX rva=0x%llX",
+        (unsigned long long)g_fltCode,
+        g_fltAccess==1?"WRITE":(g_fltAccess==8?"EXEC":"READ"),
+        (unsigned long long)g_fltAddr,(unsigned long long)g_fltRip,(unsigned long long)g_fltRva);
+    return b;
+}
+#define SEH_FILTER(ep) SehCap(ep)
+#else
+#define SEH_FILTER(ep) SehDump(ep)
+#endif
+// ── S125 KFRAMEINIT: reset the never-initialised FFrame window (see the block at the top of the file).
+// No-op, and NOT COMPILED AT ALL, when KFRAMEINIT==0 — that is what keeps every existing variant's
+// .text byte-identical. Every write below targets g_myframe, a buffer this DLL owns.
+// ⚠ It is a MACRO, not an empty inlined function, in the OFF build. MEASURED: an empty
+// `FrameInitApply(g_myframe,"CallNative")` still emitted its two string literals, which moved `.rdata`
+// and therefore every RIP-relative displacement into it — `play`'s `.text` changed 9bc10a4552c596e1 ->
+// 5dc37f819e641fdd at IDENTICAL size. Byte-identity of the OFF build is the whole safety argument for
+// this change, so the call site itself has to vanish, not just its body.
+#if KFRAMEINIT
+static void FrameInitApply(uint8_t* fr, const char* who){
+    if(g_frameInit==FI_UNFIXED){
+        // Deliberate arm, not an accident: reproduce the historical inherited-frame behaviour.
+        Markerf("[FF] %s frame=UNFIXED (inherits template 0x48..0x80)\r\n",who?who:"?");
+        return;
+    }
+    if(g_frameInit==FI_ZEROONLY){
+        memset(fr+FF_FLOWSTACK,0,FF_UNINIT_LEN);          // 0x48..0x80, strictly inside the [M] bracket
+        Markerf("[FF] %s frame=ZEROONLY (0x48..0x80 zeroed)\r\n",who?who:"?");
+        return;
+    }
+    // FI_S80 — the ds_hybrid.cpp:2151 recipe, the only form of this fix that has ever run in this game.
+    memset(fr+FF_FLOWSTACK,0,0x30);                        // FlowStack: inline data, secondary ptr, Num, Max
+    *(uint32_t*)(fr+FF_FLOW_MAX)=8;                        // [I] TInlineAllocator<8> initial capacity
+    *(uint64_t*)(fr+FF_PREVFRAME)=0;                       // [I] we are a ROOT call, not nested under the template
+    *(uint64_t*)(fr+FF_CURNATIVEFN)=0;                     // [I] weakest offset here: past the last verified field
+    Markerf("[FF] %s frame=S80 (FlowStack empty/Max=8, PrevFrame=0, CurNativeFn=0)\r\n",who?who:"?");
+}
+#define FRAME_INIT(fr,who) FrameInitApply((fr),(who))
+#else
+#define FRAME_INIT(fr,who) ((void)0)
+#endif
 // Call a native UFunction under SEH so an AV inside it is captured (not just crashed). Returns true if it faulted.
 static bool CallNativeGuarded(void* func, uintptr_t thunk, uintptr_t childProps, void* context, void* paramsBuf, void* resultBuf){
+#if KFAULTINFO
+    FaultReset();
+#endif
     __try { CallNative(func,thunk,childProps,context,paramsBuf,resultBuf); return false; }
-    __except(SehDump(GetExceptionInformation())){ return true; }
+    __except(SEH_FILTER(GetExceptionInformation())){
+#if KFAULTINFO
+        // ★ Every one of the ~60 existing `Markerf("... %s", f?"FAULTED":"")` sites in this file now
+        //   gets a companion line naming the exception code, access kind, faulting address and module
+        //   RVA -- with no call-site edits. A bare "FAULTED" is what made S93's result unusable.
+        Markerf("[FLT] CallNative faulted: %s\r\n",FaultStr());
+#endif
+        return true; }
 }
 
 // S58 OUT/ref-param marshalling (ported from missions_fix.cpp): for each param flagged CPF_OutParm (and not the
@@ -899,13 +1063,73 @@ static bool CallNativeGuarded(void* func, uintptr_t thunk, uintptr_t childProps,
 // Locals(params) buffer, chain them, and set FFrame.OutParms@+0x80 to the head. The exec thunk walks this chain for
 // by-ref/out params (e.g. const FTransform& SpawnTransform in BeginDeferredActorSpawnFromClass) — without it the
 // walk derefs a null/stale OutParms and crashes at ProcessInternal+0xB58.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ S126 (2026-08-17) — KOUTPARMRET: `!(flags & CPF_ReturnParm)` IS WHY S125's `SpawnPlane`
+//        FAULTED, AND IT IS *NOT* THE MISSING LEVEL MARKERS.
+//
+// S125 read the B1 fault as "GetAllActorsWithTag returned empty, the unguarded `Array_Get(arr,0)`
+// dereferenced null". THE REGISTER DUMP THE SAME RUN PRINTED REFUTES THAT, and the refutation is
+// reproducible OFFLINE from the cold image with zero launches:
+//
+//   [NULL] fatal 0xC0000005 RIP=... rva=0x13495DD access=READ addr=0x0
+//   [NULL] code@RIP-24: 8B C8 48 8B 08 48 83 C0 08 48 89 42 20 48 8B 82 80 00 00 00 48 89 4A 30
+//   [NULL] code@RIP:    48 39 08 74 09 48 8B 40 10 48 39 08 75 F7 4C 8B 40 08 4C 89 42 38 4D 85
+//
+// `dumps/merged2.dump.exe` @0x13495B9 is BYTE-IDENTICAL and disassembles to stock
+// `UObject::execLocalOutVariable`:
+//     mov rcx,[rax]              ; VarProperty = Stack.ReadProperty()
+//     add rax,8 / mov [rdx+0x20],rax
+//     mov rax,[rdx+0x80]         ; Out = Stack.OutParms         <-- FF_OUTPARMS, our field
+//     mov [rdx+0x30],rcx         ; Stack.MostRecentProperty = VarProperty
+//   L: cmp [rax],rcx             ; while (Out->Property != VarProperty)   <-- FAULTED, rax == 0
+//     je done / mov rax,[rax+0x10] / cmp [rax],rcx / jne L
+//   done: mov r8,[rax+8] / mov [rdx+0x38],r8 ; MostRecentPropertyAddress = Out->PropAddr
+//     test r9,r9 / cmp r9,r8 / jmp [rax+0x108]   ; VarProperty->CopyCompleteValue(RESULT_DECL, ...)
+//
+// ⇒ THE FAULT IS `Stack.OutParms == nullptr`, at rva 0x13495DD, in the VM's out-variable opcode.
+//   `RCX` in that dump is the FProperty whose `Next` (FIELD_NEXT=0x18, which `ClassOf` reads for an
+//   FField) decodes as `PlaneCenteredLocation` — i.e. `SpawnPlane`'s child [00] `ReturnValue`. And the
+//   same run's own signature dump shows `ReturnValue` is `SpawnPlane`'s ONLY CPF_Parm; every other
+//   child is a plain local. So the head of the chain this loop wants is the RETURN PARAM, and the
+//   line below is what refuses to build it.
+//
+// ★★ `UObject::ProcessEvent` DOES include it. Its loop condition is
+//    `(Property->PropertyFlags & CPF_Parm) == CPF_Parm` — the ReturnParm carries CPF_Parm, so it is
+//    visited, and it carries CPF_OutParm, so an FOutParmRec IS pushed for it. The Blueprint VM
+//    backend emits `EX_LocalOutVariable` (not `EX_LocalVariable`) for any local whose FProperty has
+//    CPF_OutParm, which is exactly the ReturnValue local. ⇒ excluding it makes EVERY Blueprint
+//    function with a return value fault the moment it assigns that return value.
+//
+// ★★★ AND THE CENSUS AGREES: the S125 run SPAWNED A REAL `BP_DropPlane_Straight_Tutorial_C` before
+//   it faulted. Execution therefore passed all three `GetAllActorsWithTag`/`Array_Get(...,0)` sites,
+//   `MakeTransform`, `BeginDeferredActorSpawnFromClass` AND `FinishSpawningActor`, and died at the
+//   tail assignment. **The empty marker arrays did NOT fault — they produced (0,0,0) coordinates.**
+//   ⇒ the markers are a CORRECTNESS problem (a plane at the world origin on a degenerate path), not
+//   the fault; and S93's founding "SpawnPlane faults on absent markers" is wrong about the site TWICE
+//   over (once for the FFrame flow-stack confound, once for this).
+//
+// ⚠⚠ DEFAULT IS 0 — BYTE-FOR-BYTE THE PRE-S126 BEHAVIOUR, AND IT IS A `#if`, NOT AN `if`, so a build
+//   with KOUTPARMRET=0 emits IDENTICAL code and every existing artifact's `.text` sha256 is
+//   unchanged (`play` must still be 9bc10a4552c596e1 — verified after this edit). This is shared
+//   code on the path of every mode in the file; turning it on globally would change the behaviour of
+//   RM_PLAY, RM_CHEATMGR, RM_PHASELADDER and RM_DROPPLANE in one edit, which is the opposite of
+//   single-variable. Opt in per variant.
+// ⚠ For a NATIVE callee the extra record is inert (an `execFoo` thunk reads its return through
+//   RESULT_DECL, never through OutParms), so the knob is safe to enable on a mixed-call mode.
+#ifndef KOUTPARMRET
+#define KOUTPARMRET 0
+#endif
 static uint8_t g_outparms[8*24]={0};
 static void BuildOutParms(uintptr_t childProps, uint8_t* locals){
     memset(g_outparms,0,sizeof(g_outparms)); *(uint64_t*)(g_myframe+FF_OUTPARMS)=0;
     uintptr_t f=childProps; int n=0; uint8_t* prev=nullptr; uint8_t* head=nullptr;
     while(LooksLikePtr(f) && n<8){
         uint64_t flags=0; if(SafeReadable((void*)(f+FPROP_FLAGS),8)) flags=*(uint64_t*)(f+FPROP_FLAGS);
+#if KOUTPARMRET
+        if(flags&CPF_OutParm){
+#else
         if((flags&CPF_OutParm) && !(flags&CPF_ReturnParm)){
+#endif
             int32_t off=0; if(SafeReadable((void*)(f+FPROP_OFFSET),4)) off=*(int32_t*)(f+FPROP_OFFSET);
             uint8_t* rec=g_outparms+n*24; *(uintptr_t*)(rec+0)=f; *(uintptr_t*)(rec+8)=(uintptr_t)(locals+off); *(uintptr_t*)(rec+16)=0;
             if(prev) *(uintptr_t*)(prev+16)=(uintptr_t)rec; else head=rec;
@@ -924,6 +1148,7 @@ static void CallNative(void* func, uintptr_t thunk, uintptr_t childProps, void* 
     *(void**)(g_myframe+FF_LOCALS)=paramsBuf;
     *(uint64_t*)(g_myframe+FF_MRP)=0; *(uint64_t*)(g_myframe+FF_MRPA)=0; *(uint64_t*)(g_myframe+FF_MRPC)=0;
     *(uint64_t*)(g_myframe+FF_PROPCHAIN)=(uint64_t)childProps;
+    FRAME_INIT(g_myframe,"CallNative");              // S125: reset the never-initialised 0x48..0x80 window
     BuildOutParms(childProps,(uint8_t*)paramsBuf);   // S58: FFrame.OutParms chain for by-ref/out params
     ((PFN_THUNK)thunk)(context, g_myframe, resultBuf);
 }
@@ -938,7 +1163,18 @@ static void CallNative(void* func, uintptr_t thunk, uintptr_t childProps, void* 
 // falsified. Params are written into the locals blob at each FProperty's Offset_Internal, exactly as for natives.
 static uint8_t g_bplocals[0x800]={0};
 static bool CallBPGuarded(uintptr_t func, void* context, void* resultBuf){
-    if(!LooksLikePtr(func)||!SafeReadable((void*)(func+USTRUCT_SCRIPT),8)) return true;
+#if KFAULTINFO
+    // ⚠ MUST be first: both REFUSAL paths below `return true` like the __except path does, so a stale
+    //   fault record left by an EARLIER call would be printed under THIS call's tag. See g_bpcRefused.
+    FaultReset(); InterlockedExchange(&g_bpcRefused,0);
+#endif
+    if(!LooksLikePtr(func)||!SafeReadable((void*)(func+USTRUCT_SCRIPT),8)){
+#if KFAULTINFO
+        Markerf("[BPC] refuse: fn=0x%llX is not a readable UStruct -> NOT DISPATCHED (this is a refusal, "
+                "NOT a fault)\r\n",(unsigned long long)func);
+        InterlockedExchange(&g_bpcRefused,1);
+#endif
+        return true; }
     uintptr_t script=*(uintptr_t*)(func+USTRUCT_SCRIPT);
     uint32_t  snum  =SafeReadable((void*)(func+USTRUCT_SCRIPTNUM),4)?*(uint32_t*)(func+USTRUCT_SCRIPTNUM):0;
     uint32_t  psize =SafeReadable((void*)(func+USTRUCT_PROPSIZE),4)?*(uint32_t*)(func+USTRUCT_PROPSIZE):0;
@@ -946,7 +1182,11 @@ static bool CallBPGuarded(uintptr_t func, void* context, void* resultBuf){
     uintptr_t child =SafeReadable((void*)(func+UFUNC_CHILDPROPS),8)?*(uintptr_t*)(func+UFUNC_CHILDPROPS):0;
     if(!LooksLikePtr(script)||!snum||!LooksLikePtr(thunk)||psize>sizeof(g_bplocals)){
         Markerf("[BPC] refuse: script=0x%llX num=%u propsSize=%u thunk=0x%llX\r\n",
-            (unsigned long long)script,snum,psize,(unsigned long long)thunk); return true; }
+            (unsigned long long)script,snum,psize,(unsigned long long)thunk);
+#if KFAULTINFO
+        InterlockedExchange(&g_bpcRefused,1);
+#endif
+        return true; }
     __try{
         memcpy(g_myframe,g_template,sizeof(g_myframe));
         *(void**)(g_myframe+FF_NODE)=(void*)func;
@@ -955,10 +1195,20 @@ static bool CallBPGuarded(uintptr_t func, void* context, void* resultBuf){
         *(void**)(g_myframe+FF_LOCALS)=g_bplocals;
         *(uint64_t*)(g_myframe+FF_MRP)=0; *(uint64_t*)(g_myframe+FF_MRPA)=0; *(uint64_t*)(g_myframe+FF_MRPC)=0;
         *(uint64_t*)(g_myframe+FF_PROPCHAIN)=(uint64_t)child;
+        // ★ S125: the FK-22 correctness fix. A BP body's EX_PopExecutionFlow bail paths rely on
+        //   "empty FlowStack == return"; inheriting the template's stale stack makes them pop a
+        //   garbage offset and execute arbitrary bytecode — which is the confound underneath S93's
+        //   `SpawnPlane FAULTED`. Placed AFTER the 9 field writes and BEFORE BuildOutParms so it can
+        //   never clobber OutParms@0x80 (the window it touches ENDS at 0x80).
+        FRAME_INIT(g_myframe,"CallBP");
         BuildOutParms(child,g_bplocals);
         ((PFN_THUNK)thunk)(context,g_myframe,resultBuf);
         return false;
-    } __except(SehDump(GetExceptionInformation())){ return true; }
+    } __except(SEH_FILTER(GetExceptionInformation())){
+#if KFAULTINFO
+        Markerf("[FLT] CallBP faulted: %s\r\n",FaultStr());
+#endif
+        return true; }
 }
 // Resolve a BP UFunction by name over the class + super chain (BP overrides included — the opposite of
 // ResolveFuncNative, which deliberately skips BP_* classes).
@@ -1009,6 +1259,13 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     // S124 FK-22 phase ladder. Multi-step: ONE arm per game-thread hit, spaced by KPLSTEPMS. g_done is
     // set inside DoPhaseLadder when the ladder finishes or aborts -- NOT here.
     if(kRunMode==RM_PHASELADDER){ DoPhaseLadder(); InterlockedIncrement(&g_called); g_inHook=0; return; }
+    // S125 FK-22 DropPlane arms. Multi-step: ONE arm per game-thread hit, spaced by KDPSTEPMS. g_done is
+    // set inside DoDropPlane when the game-thread arms finish or a step faults -- NOT here. B4's census
+    // then runs on the worker thread after FsDisarm.
+    if(kRunMode==RM_DROPPLANE){ DoDropPlane(); InterlockedIncrement(&g_called); g_inHook=0; return; }
+    if(kRunMode==RM_DROPPOD){ DoDropPod(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S126 Route C
+    if(kRunMode==RM_DROPMARKERS){ DoDropMarkers(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S126 Route D
+    if(kRunMode==RM_POOLSPAWN){ DoPoolSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S128 Route F
     if(kRunMode==RM_PLAY){ DoPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done) — camera + WASD each hit
     if(kRunMode==RM_TRAINING){ DoTraining(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoTraining (one step per hit)
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
@@ -1523,6 +1780,13 @@ static bool FsArm(){
     Markerf("[FS] arm: swapped=%ld BP UFunctions  (scan %lu ms over %ld objects, %ld UFunctions total) -- NO .text WRITE\r\n",
             g_fsSwapped,GetTickCount()-ts,objs,ufn);
     if(g_fsSwapped<=0){
+        // !! S127: the review is RIGHT that this text hardcodes RM_PLAY and points a failed droppod
+        //    sitting at the wrong DLL -- and it is DELIBERATELY LEFT AS IS. FsArm is compiled into
+        //    `play`, and `play`'s `.text` sha256 9bc10a4552c596e1 is a hard regression gate; any edit
+        //    here, including a purely cosmetic one, moves the shipped artifact. A wrong log string is
+        //    a smaller cost than re-qualifying the DLL that carries the measured 0/16-vs-10/10 FK-7
+        //    result. RM_DROPPOD prints its own mode-correct version of this warning (see PdLadderStep
+        //    step 0), which is reachable only from RM_DROPPOD and costs `play` nothing.
         Marker("[FS] *** ZERO TARGETS SWAPPED -- RM_PLAY WOULD GET NO GAME-THREAD CALLBACKS AT ALL. ***\r\n");
         Marker("[FS] *** Either no BP UFunction dispatches through this ProcessInternal, or the world is not loaded. ***\r\n");
         Marker("[FS] *** Do NOT read a quiet run as an FK-7 result: use tutorial_launch_play_hold300.dll instead. ***\r\n");
@@ -2828,6 +3092,11 @@ static const double kVolZLift = 150.0;   // drop the hero slightly ABOVE the vol
 static DWORD g_tmTeleMs=0;               // wall-clock of the teleport (the hook fires many times per frame, so the
                                          // post-teleport check must gate on REAL time, not on step count)
 // Read an actor's world location via RootComponent->RelativeLocation (the RM_WAKEMOVE pattern).
+// !! DO NOT EDIT THIS FUNCTION TO ADD DIAGNOSTICS. It is compiled into `play`, whose `.text` sha256
+//    9bc10a4552c596e1 is a hard regression gate, and it is shared by every mode. S127 first added an
+//    AttachParent/offset-provenance readout HERE and it moved `play` -- the gate caught it. The
+//    Route-E diagnostic lives in PdActorLocProvenance() instead, which is reachable only from
+//    RM_DROPPOD and is therefore dead-code-eliminated out of every other variant.
 static bool ActorLoc(uintptr_t actor,double* out){
     if(!LooksLikePtr(actor)) return false;
     uint32_t rc=PropOffsetSuper(ClassOf(actor),"RootComponent");
@@ -5710,6 +5979,5037 @@ static void DoPhaseLadder(){
     }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ RM_DROPPLANE (S125, 2026-08-16) — FK-22 ARMS B0..B4 ON THE DROPPLANE COMPONENT.
+//        ZERO MODULE-IMAGE WRITES.  Every effect is a UFunction call; this mode pokes NO memory at all.
+//
+// WHERE FK-22 STANDS, AND WHY THIS MODE EXISTS (docs/fk22-dropphase-reachability.md §14-§15, all [M]):
+//   * The phase machine is SOLVED. ONE GoToPhase call self-drives the round to EGP_Combat.
+//   * Reaching EGP_Lineup(6) did NOT fire the drop phase, and `BP_AuthSetCurrentPhase(6)` broadcast
+//     into a 7-subscriber list with zero effect -- because a read-only walk of that invocation list
+//     showed `Comp_GameMode_DropPlane_Tutorial` IS NOT IN IT. A5's null was about REACHABILITY, not
+//     behaviour. => the blocker is THE SUBSCRIPTION.
+//   * S125 offline grading closes WHY, and it closes the "poke a role byte" lever with it:
+//       `ULokiBlueprintLibrary::ServerOnly` exec thunk 0x52E12B0 (4-way ICF: ClientOnly /
+//       ClientServerSplit / ClientServerPreviewSplit / ServerOnly) -> impl **0x1311870**, whose whole
+//       body is `c6 02 00 c3` = `mov byte ptr [rdx],0 ; ret`. It READS NOTHING -- not rcx, not a
+//       NetMode, not a role. `EServerOnlyExecPins::Hidden = 0`, `::Server = 1` (decoded from the
+//       FEnumeratorParam array at .rdata 0x88BF3E8). And the tutorial component's ubergraph does
+//       `NotEqual_ByteByte(CallFunc_ServerOnly_OutputExecs, 1)` -> `EX_JumpIfNot` -> the
+//       `EX_BindDelegate OnRoundPhaseChanged` + `EX_AddMulticastDelegate` pair.
+//       => THE BIND IS UNREACHABLE IN THIS BINARY BY CONSTRUCTION. There is no byte to poke.
+//   => The two remaining levers are exactly this mode's arms: CALL THE HANDLER DIRECTLY (bypassing the
+//      subscription entirely), and CALL `SpawnPlane` DIRECTLY (which needs no phase at all).
+//   ★★ AND THE GRADE HANDS B1 A SECOND JOB. `SpawnPlane` node [38] `EX_BindDelegate "On Round Phase
+//      Changed"` -> [40] `EX_AddMulticastDelegate` binds THE SAME handler onto THE SAME
+//      `GameState->OnRoundPhaseChanged`, with ZERO `ServerOnly` occurrences anywhere in the function.
+//      So a successful B1 SUBSCRIBES the component as a side effect of spawning -- which is the one
+//      route to the missing subscription that survives the grade. Pre-registered receipt: the
+//      subscriber `Num` goes 7 -> 8 (`DpDelegateReport`).
+//      ⚠⚠ IT IS NOT INDEPENDENT OF THE SPAWN. Node [40] is at StatementIndex 1348, i.e. AFTER all
+//      three GetAllActorsWithTag marker reads and AFTER [33] FinishSpawningActor at 1157. `Num` still
+//      7 is therefore UNINTERPRETABLE on its own; `Num` == 8 is a strong positive.
+//
+// ⚠⚠ THE ONE THING THIS MODE EXISTS TO GET RIGHT — THE S93 CONFOUND.
+//   FK-22's founding claim is "Comp_GameMode_DropPlane_Tutorial::SpawnPlane FAULTS (null-deref reading
+//   GetAllActorsWithTag markers)". S125 established (a) the three markers DO exist in LVL_Tutorial, and
+//   (b) that `FAULTED` was only the boolean from a bare SEH `__except`, taken through a primitive that
+//   memcpy'd a captured live FFrame WITHOUT reinitialising 0x48..0x80. `SpawnPlane` is the ONLY one of
+//   the three functions S93 compared that uses the flow stack (3 push / 2 pop vs 0/0 for both that
+//   "ran clean"), so the confound tracks the result exactly and was never controlled.
+//   => Calling SpawnPlane through the UNFIXED primitive reproduces the confound and measures NOTHING.
+//   This mode therefore runs on the KFRAMEINIT-repaired primitive (see the block at the top of this
+//   file) and ships the unfixed path as a SEPARATE BUILD (`dropplane-s93frame`) so the confound claim
+//   itself moves [I] -> [M]. It is a separate BUILD and not a later step of one run on purpose: once
+//   B1 has spawned a plane, a second SpawnPlane call is a different experiment.
+//   ⚠ "FlowStack occupies 0x48..0x78" is stock-UE5 layout INFERENCE, unverified in this build. The
+//     WINDOW is [M] (bracketed by FF_MRPC=0x40 and FF_OUTPARMS=0x80); the FIELD NAMES inside it are
+//     [I]. The default arm writes ZEROES ONLY and strictly inside that bracket for exactly that reason.
+//
+// ⚠⚠ THE RESULT IS THE CENSUS DELTA. Not a return value, and never "the call returned ok" -- S114 got
+//   `console 'LogLoc' ok` from a call that never reached a PlayerController. B0 counts every live
+//   *DropPlane* / *DropPod* / *DropShip* object BEFORE, B4 counts them again AFTER, and the mode prints
+//   an explicit delta with per-object NEW markers. `dropplane-readonly` runs B0+B4 with ZERO calls and
+//   is therefore also the instrument's own null-delta control: if IT shows a delta, no other arm's
+//   delta means anything.
+//
+// ⚠ ADDRESSES FROM THE S124 FLIGHTS ARE DEAD. 0x1B3771413C0 (the component), 0x1B3857EA4C0 (GameMode)
+//   and 0x1B4021B60A0 (GameState) were valid in PID 191748 ONLY. NOTHING is hardcoded here; every
+//   object is resolved by CLASS at runtime, and the resolver ENUMERATES and ABORTS rather than guessing.
+//
+// ARMING: the heap `UFunction.Func` (+0xE0) swap (FsArm/FsHold/FsDisarm, KFUNCSWAP/KFSNAME), verbatim
+// from RM_PLAY/RM_PHASELADDER. NO `.text` write of any kind; with KFUNCSWAP=0 this mode REFUSES to run
+// rather than silently falling back to InstallHook(). KFSNAME defaults to "" (swap every BP UFunction)
+// because S124's first flight STARVED after two arms when `ReceiveTickClient` stopped being dispatched,
+// and `KFSNAME=""` produced 508 game-thread hits and fixed it.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+
+// Which arms run.  bit0 B0 resolve+BEFORE census (always meaningful) | bit1 B1 SpawnPlane |
+// bit2 B3a OnRoundPhaseChanged | bit3 B3b "On Round Phase Changed" | bit4 B4 AFTER census + delta |
+// bit5 B0c THE POSITIVE CONTROL (GetAutoDropLocation, 0 push / 0 pop).
+// 0x3F = the full pre-registered ladder. Trim it with a build variant, never by editing this default.
+//
+// ★★ B0c IS NOT OPTIONAL AND IT MUST BE IN BOTH A/B ARMS. The pre-registered control for the S93
+//    confound test is: a 0-push/0-pop BP callee must behave IDENTICALLY through the fixed and the
+//    unfixed primitive. Without it, the single most likely outcome -- B1 faults in BOTH arms -- cannot
+//    separate "SpawnPlane genuinely faults" from "the 0x48..0x80 reset is wrong in this build" from
+//    "CallBPGuarded is broken here for an unrelated reason", and the null is exactly as unattributable
+//    as the 2026 measurement this mode exists to correct. `GetAutoDropLocation` is the control S93
+//    itself called (RM_DROPIN case 4, zeroed locals, "ran clean"), and its bpdump is 36 entries with
+//    0 EX_PushExecutionFlow / 0 EX_PopExecutionFlow -- i.e. it cannot be affected by the flow stack.
+#ifndef KDPARMS
+#define KDPARMS 0x3F
+#endif
+// The ERoundPhase byte handed to the two B3 handlers. 6 = EGP_Lineup, the value §10.3 measured the
+// tutorial handler's gate testing (`NotEqual_ByteByte(NewPhase,6)`).
+#ifndef KDPPHASE
+#define KDPPHASE 6
+#endif
+// Minimum spacing between steps, so each call's effect lands (and reaches Loki.log) before the next.
+#ifndef KDPSTEPMS
+#define KDPSTEPMS 500
+#endif
+// How long the worker waits after the last call before the AFTER census, so a deferred spawn or a
+// timer-driven consequence has a chance to exist. Pure wall-clock; nothing depends on it being exact.
+#ifndef KDPSETTLEMS
+#define KDPSETTLEMS 4000
+#endif
+// Upper bound on the whole armed window. DoDropPlane sets g_done when the ladder finishes and FsHold's
+// loop is `while(!g_done && elapsed<ms)`, so a normal run returns in ~5 s; this is a ceiling only.
+#ifndef KDPMODEHOLDMS
+#define KDPMODEHOLDMS 120000
+#endif
+// Per-call census, so a delta is attributable to ONE call instead of to the run.
+// ⚠⚠ HONEST COST STATEMENT (this comment used to be wrong by omission): the BEFORE/AFTER pair runs on
+//    the WORKER thread, but every MINI-census runs ON THE GAME THREAD inside a dispatch. Each is one
+//    GUObjectArray sweep; the class verdict is memoised by UClass pointer, but the per-object
+//    readability probe is not free. Each census now PRINTS ITS OWN ELAPSED MILLISECONDS so the hitch
+//    is measured rather than argued about, and the sweep takes one VirtualQuery per CHUNK instead of
+//    one per item where the chunk is a single committed region.
+//    0 = only the BEFORE/AFTER pair -> no game-thread sweep at all, and strictly less attribution.
+//    Attribution is ALSO available without this knob, from the `dropplane-handler` variant (B3 with
+//    no SpawnPlane call at all), which is the cleaner separation anyway.
+#ifndef KDPMINICENSUS
+#define KDPMINICENSUS 1
+#endif
+// Scan every live actor's `Tags` for the three drop-path markers. Read-only, best-effort, and it
+// prints an explicit "instrument unavailable" if the Tags offset cannot be resolved -- a failure to
+// scan must never read as "the markers are absent".
+#ifndef KDPMARKERS
+#define KDPMARKERS 1
+#endif
+// Disambiguation escape hatch. "" = require the enumeration to be UNAMBIGUOUS and abort otherwise.
+// Set to an exact UClass FName only if the enumeration prints more than one qualified candidate.
+#ifndef KDPCLASS
+#define KDPCLASS ""
+#endif
+// SpawnPlane's signature is READ AT RUNTIME, never assumed. If it declares an INPUT parameter we do not
+// know a value for, B1 REFUSES by default rather than passing a fabricated zero -- a zeroed
+// FObjectProperty/FStructProperty input is exactly how a "SpawnPlane faults" result gets manufactured.
+// 1 = call anyway with a zeroed parameter block (and say so, loudly, in the marker).
+#ifndef KDPFORCEPARAMS
+#define KDPFORCEPARAMS 0
+#endif
+
+#if KFAULTINFO
+#define DP_FAULT FaultStr()
+#else
+#define DP_FAULT "(KFAULTINFO=0 -- fault detail not compiled in)"
+#endif
+
+constexpr uint64_t DP_CPF_PARM = 0x80;          // CPF_Parm -- separates PARAMETERS from LOCALS in the
+                                                // FField chain. A BP event's locals live in the SAME
+                                                // chain, so `ChildProperties: 26` is NOT 26 params.
+constexpr uintptr_t DP_ACTOR_TAGS_MAXNUM = 64;  // sanity bound when walking an actor's Tags TArray
+
+// Census buckets. An object may land in more than one (BP_DropPlane_Base_C derives from LokiDropShip,
+// so it is BOTH a plane and a ship) -- deliberately, because a delta is easier to read than a taxonomy.
+enum { DPV_KNOWN=1, DPV_PLANE=2, DPV_POD=4, DPV_SHIP=8, DPV_ACTOR=16 };
+
+// ⚠⚠ `arche` IS A SEPARATE BUCKET AND IT IS NOT IN `hits`. Archetypes (`Default__*`) and
+//    `_GEN_VARIABLE` template subobjects used to be counted in plane/pod/ship/hits while only being
+//    LABELLED in the per-object line. A class demand-loaded by our own SpawnPlane call contributes its
+//    CDO, so the DELTA TABLE -- the thing this mode declares to be "the result" -- could read +1 with
+//    ZERO actors spawned. Excluding them makes a non-zero delta mean what it says; counting them
+//    separately keeps "a new class got loaded" visible, which is itself informative.
+struct DpCounts { long plane, pod, ship, hits, fresh, gone, arche; };
+
+// UClass-keyed memo. The census runs up to five times; without this each run would FName-decode a
+// 12-deep derivation chain for all ~197k objects. With it, only genuinely NEW classes cost anything --
+// which is also what lets a mid-run census see a class that was demand-loaded by our own call.
+struct DpMemoEnt { uintptr_t cls; uint32_t v; };
+static DpMemoEnt g_dpMemo[16384];
+static long      g_dpMemoUsed=0, g_dpMemoFull=0;
+
+static uintptr_t g_dpComp=0;                    // the selected Comp_GameMode_DropPlane_* instance
+static char      g_dpCompName[128]={0}, g_dpCompChain[256]={0};
+static bool      g_dpAmbiguous=false;
+static bool      g_dpResolved=false;
+static uintptr_t g_dpSpawnFn=0, g_dpSpawnChild=0; static char g_dpSpawnOwner[96]={0};
+static uintptr_t g_dpH1Fn=0,    g_dpH1Child=0;   static char g_dpH1Owner[96]={0};    // "OnRoundPhaseChanged"
+static uintptr_t g_dpH2Fn=0,    g_dpH2Child=0;   static char g_dpH2Owner[96]={0};    // "On Round Phase Changed"
+static uintptr_t g_dpCtlFn=0,   g_dpCtlChild=0;  static char g_dpCtlOwner[96]={0};   // B0c control: GetAutoDropLocation
+static int       g_dpCtlInputs=-1;
+static uint32_t  g_dpH1ParmOff=0xFFFFFFFF, g_dpH2ParmOff=0xFFFFFFFF;
+static uint32_t  g_dpSpawnRetOff=0xFFFFFFFF;
+static int       g_dpSpawnInputs=-1;             // >0 => B1 refuses unless KDPFORCEPARAMS
+static uintptr_t g_dpAnyActorCls=0;              // any AActor-derived class, for resolving Tags once
+static uintptr_t g_dpBefore[768]; static int g_dpBeforeN=0; static bool g_dpBeforeOverflow=false;
+static DpCounts  g_dpC0={0,0,0,0,0,0,0}, g_dpC1={0,0,0,0,0,0,0}, g_dpC2={0,0,0,0,0,0,0},
+                 g_dpC3={0,0,0,0,0,0,0}, g_dpC4={0,0,0,0,0,0,0};
+static volatile long g_dpStep=0; static DWORD g_dpLastMs=0;
+// *Faulted are the TRISTATE from DpCallBP: -1 NOT CALLED / 0 called-no-fault / 1 called-and-faulted.
+static int  g_dpB1Ran=0, g_dpB1Faulted=-1, g_dpH1Ran=0, g_dpH1Faulted=-1, g_dpH2Ran=0, g_dpH2Faulted=-1;
+static int  g_dpCtlRan=0, g_dpCtlFaulted=-1;
+static uintptr_t g_dpB1Ret=0;
+static int  g_dpMarkersFound=0, g_dpMarkerScanOk=0;
+// ── The delegate-subscriber receipt (S125 line-1 prediction, pre-registered) ────────────────────────
+// `SpawnPlane` node [38]/[40] does EX_BindDelegate "On Round Phase Changed" -> EX_AddMulticastDelegate
+// onto GameState->OnRoundPhaseChanged -- the SAME delegate whose ReceiveBeginPlay bind is dead behind
+// `ServerOnly`. S15.3 measured Num=7 with this component ABSENT. So B1 reaching node 40 predicts 7->8.
+// ⚠⚠ IT IS NOT INDEPENDENT OF THE SPAWN. Node [40] is at StatementIndex 1348, i.e. AFTER all three
+//    GetAllActorsWithTag marker reads AND after [33] FinishSpawningActor at 1157. `Num` still 7 is
+//    therefore UNINTERPRETABLE on its own -- it reads the same for "never dispatched", "faulted at the
+//    markers" (exactly S93's alleged site), "faulted at SpawnActor", and "GetLokiGameState was null".
+//    Num == 8 is a strong POSITIVE and proves the marker reads and FinishSpawningActor both succeeded.
+static uintptr_t g_dpGs=0; static uint32_t g_dpDlgOff=0xFFFFFFFF; static long g_dpDlgBase=-1;
+
+// ---- the memo -------------------------------------------------------------------------------------
+static uint32_t DpEvalClass(uintptr_t cls){
+    uint32_t v=DPV_KNOWN; int g=0;
+    for(uintptr_t c=cls; LooksLikePtr(c)&&g<12; c=(SafeReadable((void*)(c+0x48),8)?*(uintptr_t*)(c+0x48):0), g++){
+        char n[128]; if(!GetFNameStr(NameId(c),n,sizeof(n))) break;
+        if(strstr(n,"DropPlane")) v|=DPV_PLANE;
+        if(strstr(n,"DropPod"))   v|=DPV_POD;
+        if(strstr(n,"DropShip"))  v|=DPV_SHIP;
+        // EXACT, not substring: "Actor" as a leaf class FName is AActor itself (UHT strips the A).
+        // A substring test here would take ActorComponent, WorldSettings' peers, etc., and the Tags
+        // read below would then be issued at an AActor offset on a non-actor. Same trap this project
+        // has now recorded six times; refusing to repeat it costs one strcmp.
+        if(strcmp(n,"Actor")==0)  v|=DPV_ACTOR;
+    }
+    return v;
+}
+static uint32_t DpClassVerdict(uintptr_t cls){
+    if(!LooksLikePtr(cls)) return DPV_KNOWN;
+    uint32_t h=(uint32_t)(((uint64_t)cls>>4)*2654435761u) & 16383u;
+    for(int p=0;p<64;p++){
+        DpMemoEnt& e=g_dpMemo[(h+p)&16383u];
+        if(e.cls==cls) return e.v;
+        if(e.cls==0){ uint32_t v=DpEvalClass(cls); e.cls=cls; e.v=v; g_dpMemoUsed++; return v; }
+    }
+    g_dpMemoFull++;                  // table pressure: correct, just uncached
+    return DpEvalClass(cls);
+}
+
+// ---- the census -----------------------------------------------------------------------------------
+// `record` latches the BEFORE set; every later call diffs against it and marks NEW objects.
+// ⚠ A mid-run census can only see what a full sweep can see; it is NOT restricted to cached classes
+//   (DpClassVerdict evaluates misses lazily), so a class demand-loaded by our own SpawnPlane call
+//   IS counted. That property is why the mini-censuses are worth their sweep.
+static void DpCensus(const char* when,bool verbose,bool record,DpCounts* out){
+    DpCounts c={0,0,0,0,0,0,0};
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ Markerf("[DP] %s census: GUObjectArray unreadable -- INSTRUMENT FAILURE, not a zero\r\n",when); if(out)*out=c; return; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ Markerf("[DP] %s census: GUObjectArray header implausible (num=%d) -- INSTRUMENT FAILURE\r\n",when,numEl); if(out)*out=c; return; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    int printed=0, suppressed=0;
+    DWORD t0=GetTickCount();
+    if(record){ g_dpBeforeN=0; g_dpBeforeOverflow=false; }
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        // One VirtualQuery for the whole chunk instead of one per item, WHEN the chunk is a single
+        // committed readable region. Purely a cost reduction on the game thread; if the whole-chunk
+        // test fails we fall back to the per-item probe, so the safety property is unchanged and
+        // nothing is cached across calls (a cached region could be freed and re-protected under us).
+        bool chunkOk=SafeReadable((void*)chunk,(size_t)cnt*ITEMSTRIDE);
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!chunkOk&&!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            uint32_t v=DpClassVerdict(cls);
+            if(v&DPV_ACTOR && !g_dpAnyActorCls) g_dpAnyActorCls=cls;
+            if(!(v&(DPV_PLANE|DPV_POD|DPV_SHIP))) continue;
+            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            bool arche = (strncmp(on,"Default__",9)==0) || (strstr(on,"_GEN_VARIABLE")!=nullptr);
+            // ⚠ EXCLUDED FROM EVERY BUCKET, counted on its own. See the DpCounts comment: a CDO
+            //   materialising because our own call demand-loaded its class is not a spawned actor,
+            //   and letting it into `hits` would put a false +1 in the headline delta.
+            if(arche){ c.arche++;
+                if(verbose&&printed<96){
+                    Markerf("[DP] %s      0x%llX '%s' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]\r\n",
+                            when,(unsigned long long)obj,on); printed++; }
+                continue; }
+            if(v&DPV_PLANE) c.plane++;
+            if(v&DPV_POD)   c.pod++;
+            if(v&DPV_SHIP)  c.ship++;
+            c.hits++;
+            bool isNew=false;
+            if(record){
+                if(g_dpBeforeN<(int)(sizeof(g_dpBefore)/sizeof(g_dpBefore[0]))) g_dpBefore[g_dpBeforeN++]=obj;
+                else g_dpBeforeOverflow=true;
+            } else {
+                isNew=true;
+                for(int k=0;k<g_dpBeforeN;k++) if(g_dpBefore[k]==obj){ isNew=false; break; }
+                if(isNew) c.fresh++;
+            }
+            if(verbose||isNew){
+                if(printed<96){
+                    char chain[256]; PhChainHas(cls,"@never@",chain,sizeof(chain));
+                    Markerf("[DP] %s %s 0x%llX '%s'  chain=%s\r\n",when,isNew?"*** NEW ***":"     ",
+                            (unsigned long long)obj,on,chain);
+                    printed++;
+                } else suppressed++;
+            }
+        }
+    }
+    if(suppressed) Markerf("[DP] %s ... %d more not shown (DO NOT COUNT THESE LINES -- parse the summary)\r\n",when,suppressed);
+    if(!record){
+        for(int k=0;k<g_dpBeforeN;k++) if(!GcAlive(g_dpBefore[k])) c.gone++;
+    }
+    Markerf("[DP] %s CENSUS summary: DropPlane=%ld DropPod=%ld DropShip=%ld objects=%ld new=%ld gone=%ld "
+            "archetypesExcluded=%ld (memo classes=%ld overflow=%ld) elapsed=%lu ms%s\r\n",
+            when,c.plane,c.pod,c.ship,c.hits,c.fresh,c.gone,c.arche,g_dpMemoUsed,g_dpMemoFull,
+            (unsigned long)(GetTickCount()-t0),
+            g_dpBeforeOverflow?"  ** BEFORE-SET OVERFLOWED: 'new' is an UPPER bound **":"");
+    if(out)*out=c;
+}
+
+// ---- the three drop-path markers ------------------------------------------------------------------
+// S125 established OFFLINE that `TrainingStart` / `PlaneStartPoint` / `PlaneEndPoint` exist in
+// LVL_Tutorial as literal Actor.Tags in three separate World Partition cells. PRESENT-IN-MAP is NOT
+// STREAMED-IN-AT-CALL-TIME, and only the first was ever established -- this is the live half.
+static void DpMarkerScan(){
+#if !KDPMARKERS
+    Marker("[DP] marker scan DISABLED by KDPMARKERS=0 (this is a knob, not a measurement)\r\n");
+#else
+    if(!g_dpAnyActorCls){ Marker("[DP] marker scan: no AActor-derived class was seen -- INSTRUMENT UNAVAILABLE, "
+                                 "NOT a statement that the markers are absent\r\n"); return; }
+    uint32_t tagsOff=PropOffsetSuper(g_dpAnyActorCls,"Tags");
+    if(tagsOff==0xFFFFFFFF){ Marker("[DP] marker scan: AActor.Tags did not resolve by name -- INSTRUMENT "
+                                    "UNAVAILABLE, NOT a statement that the markers are absent\r\n"); return; }
+    Markerf("[DP] marker scan: AActor.Tags @0x%X (resolved by name off a live actor class)\r\n",tagsOff);
+    static const char* kWant[3]={"TrainingStart","PlaneStartPoint","PlaneEndPoint"};
+    int found[3]={0,0,0}; long actors=0, tagged=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ Marker("[DP] marker scan: GUObjectArray unreadable -- INSTRUMENT UNAVAILABLE\r\n"); return; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ Marker("[DP] marker scan: GUObjectArray header implausible -- INSTRUMENT UNAVAILABLE\r\n"); return; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            if(!(DpClassVerdict(cls)&DPV_ACTOR)) continue;
+            actors++;
+            if(!SafeReadable((void*)(obj+tagsOff),16)) continue;
+            uintptr_t data=*(uintptr_t*)(obj+tagsOff); int32_t num=*(int32_t*)(obj+tagsOff+8);
+            if(!LooksLikePtr(data)||num<=0||num>(int32_t)DP_ACTOR_TAGS_MAXNUM) continue;
+            tagged++;
+            for(int t=0;t<num;t++){
+                if(!SafeReadable((void*)(data+(uintptr_t)t*8),8)) break;
+                uint32_t id =*(uint32_t*)(data+(uintptr_t)t*8);
+                // ⚠ An FName is {ComparisonIndex, Number}. Reading only the index makes
+                //   `PlaneStartPoint_1` decode as `PlaneStartPoint` and count as a hit -- a false
+                //   positive in the one direction this scan is NOT already hedged in (its zero is
+                //   explicitly declared non-negative; its non-zero was not).
+                uint32_t nmb=*(uint32_t*)(data+(uintptr_t)t*8+4);
+                char tn[128]; if(!GetFNameStr(id,tn,sizeof(tn))) continue;
+                for(int w=0;w<3;w++) if(strcmp(tn,kWant[w])==0){
+                    if(nmb!=0){
+                        Markerf("[DP] MARKER near-miss: tag decodes '%s' but FName.Number=%u (i.e. '%s_%u') "
+                                "-- NOT counted\r\n",tn,nmb,tn,nmb?nmb-1:0);
+                        continue; }
+                    found[w]++;
+                    char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+                    char cn[128]; cn[0]=0; GetFNameStr(NameId(cls),cn,sizeof(cn));
+                    Markerf("[DP] MARKER '%s' FOUND on 0x%llX '%s' (%s)\r\n",tn,(unsigned long long)obj,on,cn);
+                }
+            }
+        }
+    }
+    g_dpMarkerScanOk=1; g_dpMarkersFound=found[0]+found[1]+found[2];
+    Markerf("[DP] marker scan summary: TrainingStart=%d PlaneStartPoint=%d PlaneEndPoint=%d "
+            "(actors scanned=%ld, of which tagged=%ld). A ZERO here means NOT STREAMED IN RIGHT NOW; "
+            "S125 established offline that all three exist in LVL_Tutorial's packages.\r\n",
+            found[0],found[1],found[2],actors,tagged);
+#endif
+}
+
+// ---- resolution: enumerate, show the work per candidate, refuse to guess ---------------------------
+// ⚠ THE CLASS-LOOKUP BLIND-SPOT FAMILY NOW HAS SIX RECORDED MEMBERS (obj_by_class substring,
+//   cheat_reach_probe endswith, class_props class-of-class, bpframe_readout first-match, the
+//   widget-archetype trap, and S124's "chain contains GameMode" accepting Comp_GameMode_DeathCircle
+//   while REJECTING the one true LokiRoundGameMode). All six share one defect: TAKE THE FIRST MATCH.
+//   The shared fix is: enumerate everything, print each candidate with its chain, qualify on the class
+//   that DECLARES what you are about to call, and ABORT on ambiguity. Three aborts in S124 cost about
+//   two minutes and ZERO launches, and one of them caught a wrong DOCUMENTED offset.
+static uintptr_t DpPickComponent(const char** whyOut){
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ *whyOut="GUObjectArray unreadable"; return 0; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ *whyOut="GUObjectArray header implausible"; return 0; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+
+    uintptr_t cands[16]; int nc=0; int seen=0, skippedArche=0;
+    uintptr_t forced=0; const char* kForce=KDPCLASS;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            char chain[256];
+            if(!PhChainHas(cls,"DropPlane",chain,sizeof(chain))) continue;
+            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            char cn[128]; cn[0]=0; GetFNameStr(NameId(cls),cn,sizeof(cn));
+            bool arche = (strncmp(on,"Default__",9)==0) || (strstr(on,"_GEN_VARIABLE")!=nullptr);
+            // The DECLARING native base of SpawnPlane for all three sibling overrides. Requiring it is
+            // what separates the game-mode COMPONENT from BP_DropPlane_* actors, Comp_PlayerState_
+            // DropPlane, and every other object whose chain merely contains the substring.
+            bool qual = PhChainHas(cls,"LokiGameModeDropPlaneComponent",nullptr,0) && !arche;
+            seen++;
+            if(arche) skippedArche++;
+            if(seen<=40)
+                Markerf("[DP] dp-cand[%02d] 0x%llX '%s' cls=%s%s%s  chain=%s\r\n",
+                        seen-1,(unsigned long long)obj,on,cn,
+                        arche?"  [EXCLUDED: archetype/_GEN_VARIABLE]":"",
+                        qual?"  <== QUALIFIES (chain declares LokiGameModeDropPlaneComponent)":"",chain);
+            if(qual && nc<16) cands[nc++]=obj;
+            if(qual && kForce && kForce[0] && strcmp(cn,kForce)==0) forced=obj;
+        }
+    }
+    Markerf("[DP] dp enumeration: %d object(s) whose chain names DropPlane (%d excluded as archetype/"
+            "_GEN_VARIABLE), %d qualify as a LokiGameModeDropPlaneComponent instance\r\n",
+            seen,skippedArche,nc);
+    if(forced){ *whyOut="KDPCLASS override matched exactly one qualified candidate"; return forced; }
+    if(nc==1){ *whyOut="the ONLY live instance deriving from LokiGameModeDropPlaneComponent (the class that DECLARES SpawnPlane)"; return cands[0]; }
+    if(nc>1){ g_dpAmbiguous=true;
+        Markerf("[DP] !! AMBIGUOUS: %d equally-qualified DropPlane components and no KDPCLASS override. "
+                "REFUSING to guess -- rebuild with -DKDPCLASS=\\\"<exact class FName from the list above>\\\".\r\n",nc);
+        *whyOut="AMBIGUOUS"; return 0; }
+    *whyOut="no live LokiGameModeDropPlaneComponent instance (a STAGING statement -- the tutorial world may not be up)";
+    return 0;
+}
+
+// Resolve a UFunction by EXACT name over cls + supers, reporting WHICH class owns it. Exact-name, not
+// substring: `OnRoundPhaseChanged` and `On Round Phase Changed` differ only by spaces and are two
+// DISTINCT UFunctions, so a fuzzy match here would silently merge the two arms into one.
+static uintptr_t DpResolveOwned(uintptr_t cls,const char* name,uintptr_t* childOut,char* ownerOut,size_t osz){
+    if(ownerOut&&osz) ownerOut[0]=0;
+    if(childOut) *childOut=0;
+    int g=0;
+    for(uintptr_t c=cls; LooksLikePtr(c)&&g<12; c=(SafeReadable((void*)(c+0x48),8)?*(uintptr_t*)(c+0x48):0), g++){
+        void* fn=nullptr; uintptr_t th=0,ch=0;
+        ResolveFuncOnClass(c,name,&fn,&th,&ch);
+        if(fn){ if(ownerOut&&osz) GetFNameStr(NameId(c),ownerOut,(int)osz); if(childOut)*childOut=ch; return (uintptr_t)fn; }
+    }
+    return 0;
+}
+
+// Print a UFunction's FULL child chain with the PARAM/LOCAL split made explicit, and hand back the
+// counts a call site needs to decide whether calling it is defensible.
+static void DpDumpSig(uintptr_t fn,uintptr_t child,const char* tag,
+                      int* nIn,int* nOut,uint32_t* retOff,uint32_t* firstInOff){
+    if(nIn)*nIn=0; if(nOut)*nOut=0; if(retOff)*retOff=0xFFFFFFFF; if(firstInOff)*firstInOff=0xFFFFFFFF;
+    uint32_t psize=(LooksLikePtr(fn)&&SafeReadable((void*)(fn+USTRUCT_PROPSIZE),4))?*(uint32_t*)(fn+USTRUCT_PROPSIZE):0;
+    uint32_t snum =(LooksLikePtr(fn)&&SafeReadable((void*)(fn+USTRUCT_SCRIPTNUM),4))?*(uint32_t*)(fn+USTRUCT_SCRIPTNUM):0;
+    uintptr_t thunk=(LooksLikePtr(fn)&&SafeReadable((void*)(fn+UFUNC_FUNC),8))?*(uintptr_t*)(fn+UFUNC_FUNC):0;
+    Markerf("[DP] sig %s: fn=0x%llX thunk=0x%llX(%s) PropertiesSize=%u ScriptNum=%u localsBuf=%u\r\n",
+            tag,(unsigned long long)fn,(unsigned long long)thunk,
+            (thunk==(uintptr_t)(g_modBase+kPiRva))?"ProcessInternal => BYTECODE":"native-or-swapped",
+            psize,snum,(unsigned)sizeof(g_bplocals));
+    if(psize>sizeof(g_bplocals))
+        Markerf("[DP] sig %s: *** PropertiesSize %u EXCEEDS the %u-byte locals buffer -- CallBPGuarded will "
+                "REFUSE this call. That is a shim limit, not a game fact. ***\r\n",tag,psize,(unsigned)sizeof(g_bplocals));
+    uintptr_t f=child; int i=0;
+    while(LooksLikePtr(f)&&i<64){
+        char n[96]="?"; GetFNameStr(NameId(f),n,sizeof(n));
+        uint32_t off=SafeReadable((void*)(f+FPROP_OFFSET),4)?*(uint32_t*)(f+FPROP_OFFSET):0xFFFFFFFF;
+        uint64_t fl =SafeReadable((void*)(f+FPROP_FLAGS),8)?*(uint64_t*)(f+FPROP_FLAGS):0;
+        const char* kind="local";
+        if(fl&DP_CPF_PARM){
+            if(fl&CPF_ReturnParm){ kind="RETURN"; if(retOff)*retOff=off; }
+            else if(fl&CPF_OutParm){ kind="PARAM-OUT"; if(nOut)(*nOut)++; }
+            else { kind="PARAM-IN"; if(nIn)(*nIn)++; if(firstInOff&&*firstInOff==0xFFFFFFFF)*firstInOff=off; }
+        }
+        Markerf("[DP] sig %s [%02d] %-30s @0x%-4X flags=0x%016llX  %s\r\n",tag,i,n,off,(unsigned long long)fl,kind);
+        uintptr_t nx=SafeReadable((void*)(f+FIELD_NEXT),8)?*(uintptr_t*)(f+FIELD_NEXT):0; f=nx; i++;
+    }
+    if(i==0) Markerf("[DP] sig %s: NO child properties (no params, no locals)\r\n",tag);
+}
+
+// ---- the delegate-subscriber receipt (read-only) ---------------------------------------------------
+// Resolve the live GameState the same way the component picker works: enumerate, show the work, refuse
+// on ambiguity. This is an AUXILIARY instrument -- a failure here disables the receipt and says so; it
+// must never abort the run, because the census delta does not depend on it.
+static void DpResolveDelegate(){
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ Marker("[DP] delegate receipt: GUObjectArray unreadable -- INSTRUMENT UNAVAILABLE\r\n"); return; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ Marker("[DP] delegate receipt: GUObjectArray header implausible -- INSTRUMENT UNAVAILABLE\r\n"); return; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    uintptr_t cands[8]; int nc=0, seen=0;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        bool chunkOk=SafeReadable((void*)chunk,(size_t)cnt*ITEMSTRIDE);
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!chunkOk&&!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            char chain[256];
+            if(!PhChainHas(cls,"LokiGameState",chain,sizeof(chain))) continue;
+            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            if(strncmp(on,"Default__",9)==0 || strstr(on,"_GEN_VARIABLE")) continue;
+            seen++;
+            if(seen<=8) Markerf("[DP] gs-cand[%d] 0x%llX '%s' chain=%s\r\n",seen-1,(unsigned long long)obj,on,chain);
+            if(nc<8) cands[nc++]=obj;
+        }
+    }
+    if(nc!=1){ Markerf("[DP] delegate receipt: %d live LokiGameState candidates -- REFUSING to guess. "
+                       "INSTRUMENT UNAVAILABLE (this does not affect any arm).\r\n",nc); return; }
+    g_dpGs=cands[0];
+    g_dpDlgOff=PropOffsetSuper(ClassOf(g_dpGs),"OnRoundPhaseChanged");
+    if(g_dpDlgOff==0xFFFFFFFF){
+        Marker("[DP] delegate receipt: GameState.OnRoundPhaseChanged did not resolve BY NAME -- "
+               "INSTRUMENT UNAVAILABLE. (S124 read it at +0x590 in one process; a hardcoded offset is "
+               "exactly what this mode refuses to do.)\r\n");
+        g_dpGs=0; return; }
+    Markerf("[DP] delegate receipt: GameState 0x%llX  OnRoundPhaseChanged @0x%X (resolved BY NAME)\r\n",
+            (unsigned long long)g_dpGs,g_dpDlgOff);
+}
+// FMulticastScriptDelegate's invocation list is a TArray{Data@0, Num@8, Max@0xC}. Returns -1 = unknown.
+static long DpDelegateNum(){
+    if(!g_dpGs||g_dpDlgOff==0xFFFFFFFF) return -1;
+    if(!GcAlive(g_dpGs)) return -1;
+    if(!SafeReadable((void*)(g_dpGs+g_dpDlgOff),16)) return -1;
+    uintptr_t data=*(uintptr_t*)(g_dpGs+g_dpDlgOff);
+    int32_t   num =*(int32_t*)(g_dpGs+g_dpDlgOff+8);
+    if(num<0||num>4096) return -1;
+    if(num>0 && !LooksLikePtr(data)) return -1;
+    return (long)num;
+}
+static void DpDelegateReport(const char* when){
+    long n=DpDelegateNum();
+    if(n<0){ Markerf("[DP] delegate %s: UNAVAILABLE (not a measurement)\r\n",when); return; }
+    if(g_dpDlgBase<0){ g_dpDlgBase=n; Markerf("[DP] delegate %s: OnRoundPhaseChanged subscribers Num=%ld (BASELINE)\r\n",when,n); return; }
+    Markerf("[DP] delegate %s: OnRoundPhaseChanged subscribers Num=%ld (baseline %ld, delta %+ld)%s\r\n",
+            when,n,g_dpDlgBase,n-g_dpDlgBase,
+            (n>g_dpDlgBase)?"  <== A NEW SUBSCRIBER APPEARED":"");
+}
+
+// ---- refusal is not a fault: mirror CallBPGuarded's validity predicates HERE ------------------------
+// ⚠⚠ BLOCKER-CLASS. `CallBPGuarded` returns the SAME `true` for "I refused to dispatch" and "it
+//    faulted". Evaluating the identical predicates before the call means that by the time we call it,
+//    its refusal paths are unreachable, so `true` can only mean FAULT. It also PRINTS the five values,
+//    which is a free receipt: the likeliest refusal by far is `PropertiesSize > sizeof(g_bplocals)`
+//    (SpawnPlane has 26 ChildProperties), and that is a SHIM LIMIT, not a game fact.
+//    ⚠ Keep in lockstep with CallBPGuarded. If that predicate changes and this one does not, the
+//      BLOCKER returns -- which is why the values are printed rather than just tested.
+static bool DpBpCallable(uintptr_t fn,const char* tag){
+    if(!LooksLikePtr(fn)||!SafeReadable((void*)(fn+USTRUCT_SCRIPT),8)){
+        Markerf("[DP] %s: fn=0x%llX is not a readable UStruct -> NOT CALLED (a refusal, not a fault)\r\n",
+                tag,(unsigned long long)fn); return false; }
+    uintptr_t script=*(uintptr_t*)(fn+USTRUCT_SCRIPT);
+    uint32_t  snum  =SafeReadable((void*)(fn+USTRUCT_SCRIPTNUM),4)?*(uint32_t*)(fn+USTRUCT_SCRIPTNUM):0;
+    uint32_t  psize =SafeReadable((void*)(fn+USTRUCT_PROPSIZE),4)?*(uint32_t*)(fn+USTRUCT_PROPSIZE):0;
+    uintptr_t thunk =SafeReadable((void*)(fn+UFUNC_FUNC),8)?*(uintptr_t*)(fn+UFUNC_FUNC):0;
+    bool ok=LooksLikePtr(script)&&snum&&LooksLikePtr(thunk)&&psize<=sizeof(g_bplocals);
+    Markerf("[DP] %s dispatchability: script=0x%llX scriptNum=%u propsSize=%u localsBuf=%u thunk=0x%llX -> %s\r\n",
+            tag,(unsigned long long)script,snum,psize,(unsigned)sizeof(g_bplocals),
+            (unsigned long long)thunk,ok?"DISPATCHABLE":"REFUSED (NOT CALLED -- this is a shim limit, not a game fact)");
+    return ok;
+}
+
+// Everything the mode needs, resolved before anything is armed. Returns false with a NAMED reason.
+static bool DpResolve(){
+    const char* why="?";
+    g_dpComp=DpPickComponent(&why);
+    Markerf("[DP] component selection: 0x%llX  reason: %s\r\n",(unsigned long long)g_dpComp,why);
+    if(!g_dpComp||g_dpAmbiguous){
+        Marker("[DP] ABORT: could not select a DropPlane component unambiguously -- see the enumeration "
+               "above. NO arm was run, NOTHING was called and NOTHING was written. This is a statement "
+               "about STAGING, not about the drop phase.\r\n");
+        return false; }
+    if(!GcAlive(g_dpComp)){ Marker("[DP] ABORT: the selected component is not a live UObject\r\n"); return false; }
+    uintptr_t cls=ClassOf(g_dpComp);
+    GetFNameStr(NameId(g_dpComp),g_dpCompName,sizeof(g_dpCompName));
+    PhChainHas(cls,"@never@",g_dpCompChain,sizeof(g_dpCompChain));
+    Markerf("[DP] component 0x%llX '%s'  chain=%s\r\n",(unsigned long long)g_dpComp,g_dpCompName,g_dpCompChain);
+
+    g_dpSpawnFn=DpResolveOwned(cls,"SpawnPlane",&g_dpSpawnChild,g_dpSpawnOwner,sizeof(g_dpSpawnOwner));
+    g_dpH1Fn   =DpResolveOwned(cls,"OnRoundPhaseChanged",&g_dpH1Child,g_dpH1Owner,sizeof(g_dpH1Owner));
+    g_dpH2Fn   =DpResolveOwned(cls,"On Round Phase Changed",&g_dpH2Child,g_dpH2Owner,sizeof(g_dpH2Owner));
+    g_dpCtlFn  =DpResolveOwned(cls,"GetAutoDropLocation",&g_dpCtlChild,g_dpCtlOwner,sizeof(g_dpCtlOwner));
+    Markerf("[DP] resolve: SpawnPlane=0x%llX(owner %s)  OnRoundPhaseChanged=0x%llX(owner %s)  "
+            "'On Round Phase Changed'=0x%llX(owner %s)  GetAutoDropLocation=0x%llX(owner %s)\r\n",
+            (unsigned long long)g_dpSpawnFn,g_dpSpawnOwner[0]?g_dpSpawnOwner:"-",
+            (unsigned long long)g_dpH1Fn,g_dpH1Owner[0]?g_dpH1Owner:"-",
+            (unsigned long long)g_dpH2Fn,g_dpH2Owner[0]?g_dpH2Owner:"-",
+            (unsigned long long)g_dpCtlFn,g_dpCtlOwner[0]?g_dpCtlOwner:"-");
+    if(!g_dpCtlFn && (KDPARMS&0x20))
+        Marker("[DP] !! B0c CONTROL UNRESOLVED: GetAutoDropLocation is not on this component's class "
+               "chain. The general Comp_GameMode_DropPlane_C does not own it -- only the _Tutorial and "
+               "_PvE_Holdout overrides do. WITHOUT THE CONTROL, A FAULT IN B1 IS NOT ATTRIBUTABLE and "
+               "the S93 A/B cannot be read. Treat such a sitting as VOID for the confound question.\r\n");
+    if(g_dpH1Fn && g_dpH2Fn && g_dpH1Fn==g_dpH2Fn)
+        Marker("[DP] !! the two handler names resolved to the SAME UFunction -- B3a and B3b are then ONE "
+               "arm, not two. Read the B3b result as a repeat, not as a second function.\r\n");
+
+    int nIn=0,nOut=0; uint32_t retOff=0xFFFFFFFF, firstIn=0xFFFFFFFF;
+    if(g_dpSpawnFn){
+        DpDumpSig(g_dpSpawnFn,g_dpSpawnChild,"SpawnPlane",&nIn,&nOut,&retOff,&firstIn);
+        g_dpSpawnInputs=nIn; g_dpSpawnRetOff=retOff;
+        Markerf("[DP] SpawnPlane signature READ AT RUNTIME: inputs=%d outParams=%d return@0x%X "
+                "(NOT assumed no-arg)\r\n",nIn,nOut,retOff);
+    } else {
+        Marker("[DP] WARN: SpawnPlane did not resolve on the component's class chain -> B1 will be SKIPPED\r\n");
+    }
+    if(g_dpH1Fn){ int a=0,b=0; uint32_t r=0xFFFFFFFF,fi=0xFFFFFFFF;
+        DpDumpSig(g_dpH1Fn,g_dpH1Child,"OnRoundPhaseChanged",&a,&b,&r,&fi);
+        g_dpH1ParmOff=fi;
+        if(a!=1) Markerf("[DP] !! OnRoundPhaseChanged declares %d input params, expected 1 (an FEnumProperty)\r\n",a); }
+    if(g_dpH2Fn){ int a=0,b=0; uint32_t r=0xFFFFFFFF,fi=0xFFFFFFFF;
+        DpDumpSig(g_dpH2Fn,g_dpH2Child,"On Round Phase Changed",&a,&b,&r,&fi);
+        g_dpH2ParmOff=fi;
+        if(a!=1) Markerf("[DP] !! 'On Round Phase Changed' declares %d input params, expected 1 (an FEnumProperty)\r\n",a); }
+    if(g_dpCtlFn){ int a=0,b=0; uint32_t r=0xFFFFFFFF,fi=0xFFFFFFFF;
+        DpDumpSig(g_dpCtlFn,g_dpCtlChild,"GetAutoDropLocation(B0c CONTROL)",&a,&b,&r,&fi);
+        g_dpCtlInputs=a; }
+    DpResolveDelegate();
+    return true;
+}
+
+// One guarded Blueprint call with a single optional byte parameter, fully bracketed in the marker so a
+// crash localises to a step. `parmOff==0xFFFFFFFF` => no parameter is written at all.
+//
+// ⚠ RETURNS A TRISTATE ON PURPOSE: -1 = NOT CALLED, 0 = called and did not fault, 1 = called and
+//   faulted. A plain bool would report a call that never happened as "ran=1 fault=0" -- a fabricated
+//   receipt, and exactly the class of false positive this project keeps cataloguing. The summary line
+//   prints the tristate verbatim so "never called" can never be read as "called cleanly".
+enum { DPCALL_NOTRUN=-1, DPCALL_OK=0, DPCALL_FAULT=1 };
+static int DpCallBP(uintptr_t fn,const char* tag,uint32_t parmOff,uint8_t parmVal){
+    if(!fn){ Markerf("[DP] %s: unresolved -> NOT CALLED (this is a resolve statement, not a null result)\r\n",tag); return DPCALL_NOTRUN; }
+    if(!GcAlive(g_dpComp)){ Markerf("[DP] %s: the component is no longer a live UObject -> NOT CALLED\r\n",tag); return DPCALL_NOTRUN; }
+    // ★ BLOCKER FIX: evaluate CallBPGuarded's own refusal predicates HERE, so that once we do call it,
+    //   `true` can only mean FAULT. Without this, a refusal returned `true` and was printed as
+    //   "*** FAULTED ***" with a stale exception record from a previous call.
+    if(!DpBpCallable(fn,tag)) return DPCALL_NOTRUN;
+    memset(g_bplocals,0,sizeof(g_bplocals));
+    memset(g_rbuf,0,sizeof(g_rbuf));
+    if(parmOff!=0xFFFFFFFF){
+        if(parmOff>=sizeof(g_bplocals)){
+            Markerf("[DP] %s: param offset 0x%X is outside the %u-byte locals buffer -> REFUSING (a clamped "
+                    "write is still a wrong write). NOT CALLED.\r\n",tag,parmOff,(unsigned)sizeof(g_bplocals));
+            return DPCALL_NOTRUN; }
+        g_bplocals[parmOff]=parmVal;
+    }
+    Markerf("[DP] %s BEFORE: calling on component 0x%llX, fn=0x%llX\r\n",
+            tag,(unsigned long long)g_dpComp,(unsigned long long)fn);
+    if(parmOff!=0xFFFFFFFF)
+        Markerf("[DP] %s BEFORE: param byte @0x%X = %u\r\n",tag,parmOff,(unsigned)parmVal);
+    else
+        Markerf("[DP] %s BEFORE: no parameter written (signature declares none)\r\n",tag);
+    bool faulted=CallBPGuarded(fn,(void*)g_dpComp,g_rbuf);
+#if KFAULTINFO
+    // Belt-and-braces second detector, independent of the preflight above. If the primitive refused
+    // anyway (its predicate and DpBpCallable's drifted apart), say NOT CALLED -- never FAULTED.
+    if(InterlockedCompareExchange(&g_bpcRefused,0,0)){
+        Markerf("[DP] %s AFTER:  the primitive REFUSED to dispatch (see the [BPC] line above) -> NOT CALLED. "
+                "NOT a fault. The preflight and CallBPGuarded's predicate have drifted -- fix that.\r\n",tag);
+        return DPCALL_NOTRUN; }
+#endif
+    Markerf("[DP] %s AFTER:  %s  fault=%s  res0=0x%llX\r\n",
+            tag,faulted?"*** FAULTED (SEH-captured) ***":"returned without fault",
+            DP_FAULT,(unsigned long long)g_rbuf[0]);
+    Marker("[DP]        ^ 'returned without fault' IS NOT A RESULT. Only the census delta below is.\r\n");
+    return faulted?DPCALL_FAULT:DPCALL_OK;
+}
+
+// The ladder body. ONE arm per game-thread callback; never loops internally.
+static void DpLadderStep(){
+    DWORD now=GetTickCount();
+    long step=InterlockedCompareExchange(&g_dpStep,0,0);
+    if(g_dpLastMs && now-g_dpLastMs<(DWORD)KDPSTEPMS) return;
+    g_dpLastMs=now;
+
+    switch(step){
+    case 0:
+        Marker("[DP] ================ RM_DROPPLANE: FK-22 arms B0/B0c/B1/B3a/B3b/B4 ================\r\n");
+        Markerf("[DP] cfg arms=0x%02X phase=%d stepMs=%d settleMs=%d modeHoldMs=%d miniCensus=%d markers=%d "
+                "frameInit=%d faultInfo=%d forceParams=%d\r\n",
+                (unsigned)KDPARMS,(int)KDPPHASE,(int)KDPSTEPMS,(int)KDPSETTLEMS,(int)KDPMODEHOLDMS,
+                (int)KDPMINICENSUS,(int)KDPMARKERS,(int)KFRAMEINIT,(int)KFAULTINFO,(int)KDPFORCEPARAMS);
+        Markerf("[DP] target: component 0x%llX '%s'\r\n",(unsigned long long)g_dpComp,g_dpCompName);
+        DpDelegateReport("baseline");
+        g_dpStep=1; return;
+
+    case 1:   // ---- B0c: THE POSITIVE CONTROL, and it runs BEFORE B1 on purpose ---------------------
+        if(!(KDPARMS&0x20)){
+            Marker("[DP] B0c CONTROL disabled by KDPARMS -> skipped. ⚠ WITHOUT IT A FAULT IN B1 IS NOT "
+                   "ATTRIBUTABLE: 'SpawnPlane faults' and 'this primitive is broken in this build' read "
+                   "identically. Only the readonly arm may legitimately omit it (it makes no calls).\r\n");
+            g_dpStep=2; return; }
+        Markerf("[DP] --- B0c (POSITIVE CONTROL): GetAutoDropLocation() -- 36 bytecode entries, "
+                "0 EX_PushExecutionFlow / 0 EX_PopExecutionFlow, so it CANNOT be affected by the FFrame "
+                "flow-stack window. It is also the exact call S93 made (RM_DROPIN case 4, zeroed locals) "
+                "and recorded as 'ran clean'. IT MUST BEHAVE IDENTICALLY IN THE FIXED AND UNFIXED ARMS. "
+                "If it faults, the primitive is broken in this build and B1's result is VOID. "
+                "declaredInputs=%d (a fault WITH inputs>0 is not attributable to the callee). ---\r\n",
+                g_dpCtlInputs);
+        g_dpCtlFaulted = DpCallBP(g_dpCtlFn,"B0c GetAutoDropLocation",0xFFFFFFFF,0);
+        g_dpCtlRan = (g_dpCtlFaulted!=DPCALL_NOTRUN)?1:0;
+        if(g_dpCtlFaulted==DPCALL_FAULT)
+            Marker("[DP] *** B0c CONTROL FAULTED. THE SITTING IS VOID for the S93 confound question: a "
+                   "0-push/0-pop callee cannot be affected by the flow-stack window, so this is the "
+                   "PRIMITIVE failing, not SpawnPlane. Do not interpret B1 either way. ***\r\n");
+        else if(g_dpCtlFaulted==DPCALL_OK)
+            Marker("[DP] B0c control passed: the BP-call primitive dispatches and returns cleanly in this "
+                   "build. B1's outcome is now attributable to SpawnPlane.\r\n");
+        g_dpStep=2; return;
+
+    case 2:   // ---- B1: SpawnPlane ---------------------------------------------------------------
+        if(!(KDPARMS&0x02)){ Marker("[DP] B1 disabled by KDPARMS -> skipped (no plane will be spawned)\r\n"); g_dpStep=3; return; }
+        if(!g_dpSpawnFn){ Marker("[DP] B1 NOT RUN: SpawnPlane unresolved (see the resolve log)\r\n"); g_dpStep=3; return; }
+        if(g_dpSpawnInputs>0 && !KDPFORCEPARAMS){
+            Markerf("[DP] B1 NOT RUN: SpawnPlane declares %d INPUT parameter(s) and this probe has no value "
+                    "for them. Passing a fabricated zero into an FObjectProperty/FStructProperty input is "
+                    "exactly how a 'SpawnPlane faults' result gets MANUFACTURED -- which is the error this "
+                    "whole mode exists to undo. Rebuild with -DKDPFORCEPARAMS=1 to call it anyway, "
+                    "knowing that.\r\n",g_dpSpawnInputs);
+            g_dpStep=3; return; }
+        if(g_dpSpawnInputs>0)
+            Markerf("[DP] B1 *** KDPFORCEPARAMS=1: calling SpawnPlane with %d ZEROED input param(s). A fault "
+                    "from this call is NOT attributable to SpawnPlane. ***\r\n",g_dpSpawnInputs);
+#if KFRAMEINIT
+        Marker("[DP] --- B1 (HEADLINE): SpawnPlane() on the FFrame-REPAIRED primitive. S2.1 measured this "
+               "body BRANCHLESS with 3 unguarded Array_Get(...,0) after 3 GetAllActorsWithTag, and S125 "
+               "measured all three markers PRESENT in LVL_Tutorial's packages -- so the S93 fault should "
+               "NOT reproduce here. ---\r\n");
+#else
+        Marker("[DP] --- B1 (HEADLINE, S93 REPRODUCTION ARM): SpawnPlane() on the UNFIXED primitive -- "
+               "KFRAMEINIT=0, so the FFrame 0x48..0x80 window is inherited verbatim from a foreign, "
+               "already-returned frame, exactly as in 2026. A FAULT HERE IS THE EXPECTED RESULT AND IS "
+               "NOT ATTRIBUTABLE TO SpawnPlane; it is only meaningful against the repaired arm. ---\r\n");
+#endif
+        g_dpB1Faulted = DpCallBP(g_dpSpawnFn,"B1 SpawnPlane",0xFFFFFFFF,0);
+        g_dpB1Ran = (g_dpB1Faulted!=DPCALL_NOTRUN)?1:0;
+        // ⚠ Only read the return slot if the call actually DISPATCHED. On the NOTRUN paths g_bplocals
+        //   is not necessarily zeroed for this call, so the "return value" would be another call's
+        //   leftovers -- printed next to real results.
+        if(g_dpB1Faulted!=DPCALL_NOTRUN && g_dpSpawnRetOff!=0xFFFFFFFF && g_dpSpawnRetOff+8<=sizeof(g_bplocals)){
+            g_dpB1Ret=*(uintptr_t*)(g_bplocals+g_dpSpawnRetOff);
+            char rn[128]="-"; char rc[128]="-";
+            if(GcAlive(g_dpB1Ret)){ GetFNameStr(NameId(g_dpB1Ret),rn,sizeof(rn));
+                                    uintptr_t rcl=ClassOf(g_dpB1Ret); if(LooksLikePtr(rcl)) GetFNameStr(NameId(rcl),rc,sizeof(rc)); }
+            Markerf("[DP] B1 return value @0x%X = 0x%llX  live=%d name='%s' class=%s\r\n",
+                    g_dpSpawnRetOff,(unsigned long long)g_dpB1Ret,GcAlive(g_dpB1Ret)?1:0,rn,rc);
+        } else if(g_dpSpawnRetOff==0xFFFFFFFF){
+            Marker("[DP] B1: SpawnPlane declares NO return parameter, so there is no pointer to read. "
+                   "The census delta is the only evidence either way.\r\n");
+        }
+        g_dpStep=3; return;
+
+    case 3:   // ---- attribution census immediately after B1 ------------------------------------------
+        // NO SWEEP IF NOTHING RAN. Each mini-census is a full GUObjectArray pass ON THE GAME
+        //   THREAD; spending one after an arm that never dispatched buys a frame hitch for nothing
+        //   and prints a column that is unchanged by construction.
+        if(!g_dpB1Ran) Marker("[DP] after-B1 census SKIPPED: B1 never dispatched, nothing to attribute\r\n");
+        else if(KDPMINICENSUS) DpCensus("after-B1",false,false,&g_dpC1);
+        else Marker("[DP] mini-census disabled by KDPMINICENSUS=0 -> the B1 delta is not separable from B3's\r\n");
+        DpDelegateReport("after-B1");
+        g_dpStep=4; return;
+
+    case 4:   // ---- B3a: OnRoundPhaseChanged(KDPPHASE) -------------------------------------------------
+        if(!(KDPARMS&0x04)){ Marker("[DP] B3a disabled by KDPARMS -> skipped\r\n"); g_dpStep=5; return; }
+        if(KDPARMS&0x02)
+            Marker("[DP] !! B3a runs AFTER B1 in this build, so its delta is CONFOUNDED by whatever B1 did. "
+                   "The attributable handler measurement is the 'dropplane-handler' variant, which runs B3 "
+                   "with no SpawnPlane call at all.\r\n");
+        Markerf("[DP] --- B3a: call the component's OWN `OnRoundPhaseChanged`(%d) DIRECTLY, bypassing the "
+                "delegate. S15.3 measured that this component is NOT in the GameState's 7-subscriber list, "
+                "and S125 graded ULokiBlueprintLibrary::ServerOnly as `mov byte[rdx],0; ret` with "
+                "EServerOnlyExecPins::Hidden=0 -- so the bind can never execute and the subscription can "
+                "never happen. This call separates 'not subscribed' from 'subscribed but inert'. ---\r\n",
+                (int)KDPPHASE);
+        g_dpH1Faulted = DpCallBP(g_dpH1Fn,"B3a OnRoundPhaseChanged",g_dpH1ParmOff,(uint8_t)KDPPHASE);
+        g_dpH1Ran = (g_dpH1Faulted!=DPCALL_NOTRUN)?1:0;
+        g_dpStep=5; return;
+
+    case 5:
+        if(!g_dpH1Ran) Marker("[DP] after-B3a census SKIPPED: B3a never dispatched\r\n");
+        else if(KDPMINICENSUS) DpCensus("after-B3a",false,false,&g_dpC2);
+        DpDelegateReport("after-B3a");
+        g_dpStep=6; return;
+
+    case 6:   // ---- B3b: "On Round Phase Changed"(KDPPHASE) --------------------------------------------
+        if(!(KDPARMS&0x08)){ Marker("[DP] B3b disabled by KDPARMS -> skipped\r\n"); g_dpStep=7; return; }
+        Markerf("[DP] --- B3b: call `On Round Phase Changed`(%d) -- the SPACED name. This is a DIFFERENT "
+                "UFunction from B3a's; the class exports both, each 4 bytecode entries taking one "
+                "FEnumProperty. Logged separately so a null is attributable to the right one. ---\r\n",
+                (int)KDPPHASE);
+        g_dpH2Faulted = DpCallBP(g_dpH2Fn,"B3b On Round Phase Changed",g_dpH2ParmOff,(uint8_t)KDPPHASE);
+        g_dpH2Ran = (g_dpH2Faulted!=DPCALL_NOTRUN)?1:0;
+        g_dpStep=7; return;
+
+    case 7:
+        if(!g_dpH2Ran) Marker("[DP] after-B3b census SKIPPED: B3b never dispatched\r\n");
+        else if(KDPMINICENSUS) DpCensus("after-B3b",false,false,&g_dpC3);
+        DpDelegateReport("after-B3b");
+        g_dpStep=8; return;
+
+    case 8:
+    default:
+        Marker("[DP] ================ game-thread arms COMPLETE (B4 runs on the worker after a settle) "
+               "================\r\n");
+        g_done=1;
+        return;
+    }
+}
+
+// SEH wrapper. A fault inside any step must halt the ladder rather than re-entering the same native
+// path with the world in an unknown state -- the same rule RM_PHASELADDER applies to A1/A2.
+static void DoDropPlane(){
+    __try {
+        DpLadderStep();
+    } __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[DP] *** FAULT inside ladder step %ld -- halting the game-thread arms. B4's census still "
+                "runs, which is how we learn whether a PARTIAL spawn happened. fault=%s ***\r\n",
+                (long)g_dpStep,DP_FAULT);
+        g_done=1;
+    }
+}
+
+// The B4 delta table. Runs on the WORKER thread after FsDisarm + a settle, so neither heavy sweep is a
+// game-thread frame hitch, and so a deferred spawn has time to exist.
+static void DpFinalReport(){
+    if(!(KDPARMS&0x10)){
+        Marker("[DP] B4 disabled by KDPARMS -> NO after-census. Without it this run produced no result, "
+               "only calls.\r\n");
+        return; }
+    Markerf("[DP] settling %d ms before the AFTER census...\r\n",(int)KDPSETTLEMS);
+    Sleep((DWORD)KDPSETTLEMS);
+    DpCensus("B4-AFTER",true,false,&g_dpC4);
+    Marker("[DP] ---------------- DELTA TABLE (this is the result) ----------------\r\n");
+    Markerf("[DP]   bucket      BEFORE   afterB1   afterB3a  afterB3b   AFTER   delta\r\n");
+    Markerf("[DP]   DropPlane   %6ld   %7ld   %8ld  %8ld  %6ld  %+6ld\r\n",
+            g_dpC0.plane,g_dpC1.plane,g_dpC2.plane,g_dpC3.plane,g_dpC4.plane,g_dpC4.plane-g_dpC0.plane);
+    Markerf("[DP]   DropPod     %6ld   %7ld   %8ld  %8ld  %6ld  %+6ld\r\n",
+            g_dpC0.pod,g_dpC1.pod,g_dpC2.pod,g_dpC3.pod,g_dpC4.pod,g_dpC4.pod-g_dpC0.pod);
+    Markerf("[DP]   DropShip    %6ld   %7ld   %8ld  %8ld  %6ld  %+6ld\r\n",
+            g_dpC0.ship,g_dpC1.ship,g_dpC2.ship,g_dpC3.ship,g_dpC4.ship,g_dpC4.ship-g_dpC0.ship);
+    Markerf("[DP]   objects     %6ld   %7ld   %8ld  %8ld  %6ld  %+6ld   (new=%ld gone=%ld)\r\n",
+            g_dpC0.hits,g_dpC1.hits,g_dpC2.hits,g_dpC3.hits,g_dpC4.hits,g_dpC4.hits-g_dpC0.hits,
+            g_dpC4.fresh,g_dpC4.gone);
+    // Archetypes are EXCLUDED from every row above. This row exists so "a class got demand-loaded"
+    // stays visible without ever being mistaken for a spawned actor.
+    Markerf("[DP]   archetypes  %6ld   %7ld   %8ld  %8ld  %6ld  %+6ld   (EXCLUDED from the rows above)\r\n",
+            g_dpC0.arche,g_dpC1.arche,g_dpC2.arche,g_dpC3.arche,g_dpC4.arche,g_dpC4.arche-g_dpC0.arche);
+    DpDelegateReport("B4-AFTER");
+    Marker("[DP] call status codes: -1 = NOT CALLED (never dispatched) | 0 = called, no fault | "
+           "1 = called and FAULTED. -1 is NOT a clean run.\r\n");
+    Markerf("[DP] ran: B0c=%d(status=%d) B1=%d(status=%d) B3a=%d(status=%d) B3b=%d(status=%d)  "
+            "b1Ret=0x%llX  markerScanOk=%d markersFound=%d  component=0x%llX '%s'\r\n",
+            g_dpCtlRan,g_dpCtlFaulted,g_dpB1Ran,g_dpB1Faulted,g_dpH1Ran,g_dpH1Faulted,g_dpH2Ran,g_dpH2Faulted,
+            (unsigned long long)g_dpB1Ret,g_dpMarkerScanOk,g_dpMarkersFound,
+            (unsigned long long)g_dpComp,g_dpCompName);
+    // ★ THE VOID TEST, printed as a verdict rather than left to the reader.
+    if((KDPARMS&0x20) && g_dpCtlFaulted==DPCALL_FAULT)
+        Marker("[DP] *** VERDICT: SITTING VOID for the S93 confound question. The 0-push/0-pop CONTROL "
+               "faulted, so the BP-call primitive itself is failing in this build and B1's outcome -- "
+               "fault or no fault -- says nothing about SpawnPlane. ***\r\n");
+    else if((KDPARMS&0x22)==0x22 && g_dpCtlFaulted==DPCALL_OK)
+        Markerf("[DP] VERDICT: control PASSED (B0c status 0), so B1's status %d is attributable to "
+                "SpawnPlane under this build's KFRAMEINIT=%d.\r\n",g_dpB1Faulted,(int)KFRAMEINIT);
+    else if((KDPARMS&0x20)==0 && (KDPARMS&0x02))
+        Marker("[DP] *** VERDICT: B1 ran WITHOUT the positive control. Its result is NOT attributable. ***\r\n");
+    if(!(KDPARMS&0x2E))
+        Marker("[DP] NOTE: this build made ZERO calls (readonly arm). A NON-ZERO delta here is an "
+               "INSTRUMENT FAULT, and it voids the delta of every other variant. A zero delta is the "
+               "control passing.\r\n");
+    Marker("[DP] ⚠ NOTHING IS UNDONE. If B1 spawned a plane it is still in the world, still ticking, "
+           "with its delegates bound and whatever SetDropPlane stored on the component still stored. "
+           "This probe deliberately does not destroy it (a destroy is another call into an object we "
+           "have not graded). Recovery = restart the client.\r\n");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ RM_DROPMARKERS (S126, 2026-08-17) — ROUTE D: MAKE `PlaneStartPoint` / `PlaneEndPoint`
+//        RESIDENT, THEN CALL `SpawnPlane` BEHIND A RESIDENCY GATE.
+//        ZERO MODULE-IMAGE WRITES.  The only writes are 4-byte FName ids inside an already-allocated,
+//        engine-owned `AActor.Tags` buffer, readback-verified and RESTORED.
+//
+// ⚠⚠⚠ THE BRIEF THIS MODE WAS WRITTEN AGAINST IS HALF WRONG, AND SAYING SO IS THE FIRST DELIVERABLE.
+//   The task statement reads: "S125 measured the fault cause exactly: GetAllActorsWithTag returns
+//   EMPTY ... and the unguarded Array_Get(arr,0) then dereferences null." THAT IS REFUTED BY S125's
+//   OWN OUTPUT, and the refutation is reproducible offline (see the KOUTPARMRET block above):
+//     * the fault is `execLocalOutVariable` at rva 0x13495DD dereferencing a NULL `FFrame.OutParms`,
+//       byte-confirmed against `dumps/merged2.dump.exe`;
+//     * the property being resolved is `SpawnPlane`'s `ReturnValue`, the ONLY CPF_Parm it declares;
+//     * `BuildOutParms` excluded CPF_ReturnParm by construction, so OutParms was nullptr;
+//     * and the run's own census shows a REAL `BP_DropPlane_Straight_Tutorial_C` was created, i.e.
+//       execution had already passed all three `GetAllActorsWithTag` + `Array_Get(...,0)` sites,
+//       `MakeTransform`, `BeginDeferredActorSpawnFromClass` AND `FinishSpawningActor`.
+//   ⇒ THE MISSING MARKERS DID NOT FAULT. They produced `StartPos = EndPos = (0,0,0)` — a plane at the
+//     world origin on a zero-length path. That is a CORRECTNESS defect, and it is exactly what this
+//     mode fixes; it is not the crash, and a build that only fixed the markers would have faulted at
+//     the identical rva and the identical `addr=0x0`, which would then have been written up as
+//     "markers weren't the problem either".
+//   ★ So Route D is still worth flying — it is the difference between a plane at (0,0,0) and a plane
+//     on a real path — but it MUST be flown with KOUTPARMRET=1, and the two are separable arms.
+//
+// ── THE FName RESOLUTION ROUTE (the crux: a wrong FName finds nothing and looks like the same null)
+//   TWO INDEPENDENT INSTRUMENTS, both read-only, and they must AGREE:
+//   (A) BYTECODE HARVEST — read `SpawnPlane`'s own `UStruct.Script` buffer and find the 4-byte
+//       FNameEntryId that decodes to the wanted string. This is the AUTHORITATIVE route: it is
+//       literally the value the callee will compare `AActor.Tags` against, so it cannot be a
+//       plausible-looking guess of the kind that has cost this project whole sessions (the missions
+//       `InternalName` trap, the regions `ST_ServerLocations` key trap). Corroborated per hit by
+//       whether the preceding byte is `EX_NameConst` (0x21), and the following 8 bytes are PRINTED so
+//       the FScriptName layout (8- vs 12-byte) is MEASURED rather than assumed.
+//   (B) FNamePool SWEEP — walk `FNamePool.Blocks` (the same array `GetFNameStr` decodes through) and
+//       find the entry whose string matches CASE-INSENSITIVELY. FName comparison in this build is
+//       case-insensitive (documented for missions and heroes), and the pool is deduplicated on the
+//       comparison key, so at most one id can match.
+//   NEGATIVE CONTROL: `ZZZ_NOT_A_REAL_TAG` is run through BOTH instruments and MUST come back NOT
+//   FOUND in both. Without it, "resolved" is a claim with no failure mode. A second, DISCRIMINATING
+//   control (`Tags`) is expected FOUND by (B) and NOT FOUND by (A) — if (A) finds it too, (A) is
+//   matching noise rather than the function's literals.
+//   GROUND-TRUTH POSITIVE CONTROL: `TrainingStart` is resolved by the same two routes AND compared
+//   against the id actually stored in the live actor's Tags array (S125 found it on
+//   `BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02`). Three-way agreement validates the route for the
+//   two names that have no live instance to check against — which is the whole difficulty.
+//
+// ── THE MECHANISM (all three options evaluated; the pick is justified, not asserted)
+//   (i)   SPAWN two tagged actors. Rejected. It needs `BeginDeferredActorSpawnFromClass` +
+//         `FinishSpawningActor` with an FTransform param, then a `Tags` array we still have to
+//         allocate — i.e. it contains option (ii)'s hard part AND adds two more graded calls and two
+//         more permanent actors to a live world.
+//   (ii)  MUTATE an existing actor's `Tags`. PICKED, but NOT in the form the brief suggests. Appending
+//         needs `Max > Num`, and a cooked/serialised TArray is exactly sized, so in practice it never
+//         holds. Repointing `Data` at a static buffer inside our DLL WOULD avoid `VirtualAllocEx` (the
+//         import gate forbids VirtualAlloc/VirtualFree/FlushInstructionCache and this mode must have
+//         none of them) — but `TArray`'s destructor calls `FMemory::Free(Data)` unconditionally on a
+//         non-null pointer, so the first time that actor is destroyed the engine allocator is handed a
+//         pointer it never allocated. That is a latent heap-corruption bomb planted in a live world.
+//         ⇒ WE OVERWRITE AN EXISTING FName IN PLACE: one aligned 4-byte store into a buffer the
+//           engine already owns and will free correctly. `Num`/`Max`/`Data` are untouched, the
+//           allocator is never involved, and the write is EXACTLY reversible — we save the old
+//           {ComparisonIndex, Number} and put it back. This is the project's safest write class
+//           (data poke: 0/22 deaths, vs standing `.text` 7/8) and it is strictly smaller than the
+//           S124 phase poke that already flew.
+//   (iii) FORCE WORLD-PARTITION CELL STREAMING. Not proposed, deliberately: the honest position is
+//         that no mechanism has been identified. `UWorldPartitionBlueprintLibrary::LoadActors` is
+//         editor-only; runtime cell residency is driven by streaming SOURCES, and the only lever we
+//         hold is moving the player, which is imprecise and cannot be gated. Naming a mechanism we
+//         have not graded is how `SpawnPlane` got its founding false attribution in the first place.
+//   ⚠ CONSEQUENCE, AND IT IS THE POINT OF STEP 5 BELOW: the victims' WORLD LOCATIONS become the
+//     plane's `StartPos`/`EndPos`. They are read (RootComponent -> RelativeLocation, both resolved BY
+//     NAME) and PRINTED, and the pair is chosen to MAXIMISE separation so the path is not degenerate.
+//
+// ── THE RESIDENCY GATE (the whole point — an ungated call cannot be attributed)
+//   Two levels, and they are not the same claim:
+//     GATE-1 READBACK (mandatory): re-run the full `AActor.Tags` sweep. ⚠ This reads the same memory
+//       we just wrote, so it is a READBACK, not an independent measurement. It can only fail open.
+//     GATE-2 `GetAllActorsWithTag` (independent, and it is the real predicate): call
+//       `UGameplayStatics::GetAllActorsWithTag` ourselves, BEFORE and AFTER the write, for all three
+//       tags. This is precisely what `SpawnPlane` calls, so a 0 -> 1 transition on the two markers,
+//       with `TrainingStart` pinned at its pre-existing value as an in-run control, measures the
+//       thing the gate exists to measure. If it is unavailable it degrades LOUDLY and the mode says
+//       the gate is weaker; it never silently upgrades a readback into a measurement.
+//   IF THE GATE FAILS, `SpawnPlane` IS NOT CALLED. The marker prints "precondition unmet" and the
+//   ladder skips to restore. A fault behind a failed gate would be unattributable, which is the
+//   entire class of result this mode exists to stop producing.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+
+// bit0 D0 resolve + BEFORE census + marker scan (always on; it is the staging statement)
+// bit1 D1 FName resolution + the three controls          bit2 D2 apply the two marker writes
+// bit3 D3 B0c positive control (GetAutoDropLocation)     bit4 D4 SpawnPlane (gated)
+// bit5 D5 AFTER census + delta table
+#ifndef KDMARMS
+#define KDMARMS 0x3F
+#endif
+// Restore the victims' original FName ids after the call. Default ON: the write is a diagnostic, not
+// a state change we want to leave behind, and leaving it behind would silently contaminate any later
+// probe that reads tags (including this mode re-flown into the same process).
+#ifndef KDMRESTORE
+#define KDMRESTORE 1
+#endif
+// Call SpawnPlane even if the residency gate FAILED. Default 0 = the gate is real. 1 exists only so a
+// deliberate negative arm can be built; it prints a loud non-attributability banner.
+#ifndef KDMFORCE
+#define KDMFORCE 0
+#endif
+// Use UGameplayStatics::GetAllActorsWithTag as the independent half of the gate.
+#ifndef KDMGAT
+#define KDMGAT 1
+#endif
+// Minimum separation (Unreal units, cm) we would LIKE between the two victims. Not a hard gate -- if
+// the best available pair is closer, we take it and say so, because a short path still beats (0,0,0).
+#ifndef KDMMINSEP
+#define KDMMINSEP 20000
+#endif
+#ifndef KDMSTEPMS
+#define KDMSTEPMS 500
+#endif
+#ifndef KDMSETTLEMS
+#define KDMSETTLEMS 4000
+#endif
+#ifndef KDMMODEHOLDMS
+#define KDMMODEHOLDMS 120000
+#endif
+// Exact victim overrides, by actor FName. "" = choose by the documented policy below.
+#ifndef KDMSTARTNAME
+#define KDMSTARTNAME ""
+#endif
+#ifndef KDMENDNAME
+#define KDMENDNAME ""
+#endif
+
+#if KFAULTINFO
+#define DM_FAULT FaultStr()
+#else
+#define DM_FAULT "(KFAULTINFO=0 -- fault detail not compiled in)"
+#endif
+
+// The three real markers + the two controls. Order is load-bearing: [0..2] are the markers, [3] is the
+// pure negative control and [4] is the discriminating control.
+enum { DM_TRAIN=0, DM_START=1, DM_END=2, DM_NEG=3, DM_DISC=4, DM_NAMES=5 };
+static const char* kDmWant[DM_NAMES] = {
+    "TrainingStart", "PlaneStartPoint", "PlaneEndPoint", "ZZZ_NOT_A_REAL_TAG", "Tags" };
+struct DmNameRes {
+    uint32_t idScript;  int  nScript;   int nameConstHits;  // instrument (A)
+    uint32_t idPool;    int  nPool;                         // instrument (B)
+    uint32_t idLive;    int  nLive;                         // ground truth from a live Tags array
+};
+static DmNameRes g_dmN[DM_NAMES];
+static bool g_dmNamesOk=false;
+
+// ---- case-insensitive compare, hand-rolled so no CRT locale behaviour can vary under us ------------
+static bool DmIEq(const char* a,const char* b){
+    for(;;){ char x=*a++,y=*b++;
+        if(x>='A'&&x<='Z') x=(char)(x-'A'+'a');
+        if(y>='A'&&y<='Z') y=(char)(y-'A'+'a');
+        if(x!=y) return false; if(!x) return true; }
+}
+
+// ---- instrument (A): harvest the FName ids out of SpawnPlane's OWN bytecode -----------------------
+// Every offset is tried, not just the ones following an EX_NameConst byte, because the operand layout
+// (FScriptName = 8 or 12 bytes depending on WITH_CASE_PRESERVING_NAME) is NOT established for this
+// build and assuming it is how you get a confident wrong answer. A hit is accepted purely on STRING
+// EQUALITY of the decoded entry, which cannot be satisfied by an unrelated id: the pool is
+// deduplicated on the comparison key, so exactly one id decodes to a given string.
+static void DmHarvestScript(uintptr_t fn){
+    for(int k=0;k<DM_NAMES;k++){ g_dmN[k].idScript=0; g_dmN[k].nScript=0; g_dmN[k].nameConstHits=0; }
+    if(!LooksLikePtr(fn)||!SafeReadable((void*)(fn+USTRUCT_SCRIPT),8)){
+        Marker("[DM] (A) bytecode harvest: SpawnPlane is not a readable UStruct -- INSTRUMENT "
+               "UNAVAILABLE, NOT a statement that the names are absent\r\n"); return; }
+    uintptr_t script=*(uintptr_t*)(fn+USTRUCT_SCRIPT);
+    uint32_t  snum  =SafeReadable((void*)(fn+USTRUCT_SCRIPTNUM),4)?*(uint32_t*)(fn+USTRUCT_SCRIPTNUM):0;
+    if(!LooksLikePtr(script)||!snum||snum>0x40000||!SafeReadable((void*)script,snum)){
+        Markerf("[DM] (A) bytecode harvest: Script=0x%llX num=%u unreadable -- INSTRUMENT UNAVAILABLE\r\n",
+                (unsigned long long)script,snum); return; }
+    Markerf("[DM] (A) bytecode harvest over SpawnPlane's OWN Script buffer: 0x%llX, %u bytes\r\n",
+            (unsigned long long)script,snum);
+    for(uint32_t i=0;i+4<=snum;i++){
+        uint32_t id=*(uint32_t*)(script+i); if(!id) continue;
+        char n[128]; if(!GetFNameStr(id,n,sizeof(n))) continue;
+        for(int k=0;k<DM_NAMES;k++){
+            if(!DmIEq(n,kDmWant[k])) continue;
+            bool nc = (i>=1) && (*(uint8_t*)(script+i-1)==0x21);      // EX_NameConst
+            if(g_dmN[k].nScript==0) g_dmN[k].idScript=id;
+            g_dmN[k].nScript++; if(nc) g_dmN[k].nameConstHits++;
+            if(g_dmN[k].nScript<=2){
+                // PRINT the 8 bytes that follow the id so the FScriptName layout is MEASURED. If this
+                // is a 12-byte FScriptName the next dword is DisplayIndex and the one after is Number;
+                // if it is 8-byte, the next dword IS Number. Either way Number==0 is what we require.
+                uint32_t w1 = (i+8<=snum)?*(uint32_t*)(script+i+4):0xFFFFFFFF;
+                uint32_t w2 = (i+12<=snum)?*(uint32_t*)(script+i+8):0xFFFFFFFF;
+                char d1[128]="?"; if(w1!=0xFFFFFFFF&&!GetFNameStr(w1,d1,sizeof(d1))) { d1[0]='-'; d1[1]=0; }
+                Markerf("[DM] (A)   '%s' id=0x%08X @script+0x%X  prevByte=0x%02X%s  next2dw=0x%08X('%s') "
+                        "0x%08X\r\n",kDmWant[k],id,i,(i>=1)?*(uint8_t*)(script+i-1):0,
+                        nc?" == EX_NameConst":"",w1,d1,w2);
+            }
+            if(g_dmN[k].idScript!=id)
+                Markerf("[DM] (A) !! '%s' matched TWO DIFFERENT ids (0x%08X and 0x%08X). The pool is "
+                        "supposed to be deduplicated -- treat this name as UNRESOLVED.\r\n",
+                        kDmWant[k],g_dmN[k].idScript,id);
+        }
+    }
+}
+
+// ---- instrument (B): sweep FNamePool.Blocks ---------------------------------------------------------
+// `kNamePoolRva` is the Blocks array itself (GetFNameStr indexes it directly). An entry header is
+// uint16 { bIsWide:1, LowercaseProbeHash:5, Len:10 }, entries are 2-byte aligned, and an id is
+// (block << 16) | (byteOffset >> 1) -- all four facts are already encoded in GetFNameStr and are
+// therefore not new assumptions.
+static void DmSweepPool(){
+    for(int k=0;k<DM_NAMES;k++){ g_dmN[k].idPool=0; g_dmN[k].nPool=0; }
+    uintptr_t* blocks=(uintptr_t*)(g_modBase+kNamePoolRva);
+    long nb=0, ne=0, nullRun=0;
+    for(uint32_t b=0;b<8192;b++){
+        if(!SafeReadable(blocks+b,8)) break;
+        uintptr_t bp=blocks[b];
+        if(!LooksLikePtr(bp)){ if(++nullRun>=4) break; continue; }
+        nullRun=0; nb++;
+        for(uint32_t off=0; off<0x20000; ){
+            if(!SafeReadable((void*)(bp+off),2)) break;
+            uint16_t hdr=*(uint16_t*)(bp+off);
+            if(hdr==0) break;                                  // zeroed tail => end of this block
+            int len=hdr>>6; bool wide=(hdr&1)!=0;
+            if(len<=0||len>1023) break;
+            uint32_t bytes=2+(uint32_t)len*(wide?2:1);
+            if(!SafeReadable((void*)(bp+off),bytes)) break;
+            ne++;
+            if(len<128){
+                char s[128];
+                if(wide){ for(int i=0;i<len;i++) s[i]=(char)*(uint16_t*)(bp+off+2+i*2); }
+                else    { for(int i=0;i<len;i++) s[i]=((char*)(bp+off+2))[i]; }
+                s[len]=0;
+                for(int k=0;k<DM_NAMES;k++) if(DmIEq(s,kDmWant[k])){
+                    uint32_t id=(b<<16)|(off>>1);
+                    if(g_dmN[k].nPool==0) g_dmN[k].idPool=id;
+                    g_dmN[k].nPool++;
+                    Markerf("[DM] (B)   '%s' -> id=0x%08X (block %u, off 0x%X, len %d, wide=%d, exact "
+                            "text '%s')\r\n",kDmWant[k],id,b,off,len,wide?1:0,s);
+                }
+            }
+            off += (bytes+1)&~1u;
+            if(ne>4000000) { Marker("[DM] (B) !! entry cap hit -- sweep TRUNCATED, a NOT-FOUND from it is not a negative\r\n"); return; }
+        }
+    }
+    Markerf("[DM] (B) FNamePool sweep: %ld blocks, %ld entries decoded\r\n",nb,ne);
+}
+
+// ---- the verdict, with every control stated -------------------------------------------------------
+static bool DmResolveNames(){
+    Marker("[DM] ---------------- D1: FName resolution (two independent instruments) ----------------\r\n");
+    DmHarvestScript(g_dpSpawnFn);
+    DmSweepPool();
+    bool ok=true;
+    for(int k=0;k<DM_NAMES;k++){
+        const DmNameRes& r=g_dmN[k];
+        Markerf("[DM] name '%-18s'  (A)script id=0x%08X hits=%d nameConst=%d   (B)pool id=0x%08X hits=%d   %s\r\n",
+                kDmWant[k],r.idScript,r.nScript,r.nameConstHits,r.idPool,r.nPool,
+                (r.nScript&&r.nPool&&r.idScript==r.idPool)?"AGREE"
+                :(!r.nScript&&!r.nPool)?"absent from both"
+                :(!r.nScript)?"pool only"
+                :(!r.nPool)?"script only":"*** DISAGREE ***");
+    }
+    // ── the controls, evaluated as pass/fail rather than left for a reader to notice ──
+    if(g_dmN[DM_NEG].nScript==0 && g_dmN[DM_NEG].nPool==0)
+        Marker("[DM] CONTROL (negative) PASS: 'ZZZ_NOT_A_REAL_TAG' was NOT FOUND by either instrument. "
+               "Both therefore have a failure mode, so a FOUND is a result.\r\n");
+    else {
+        Markerf("[DM] *** CONTROL (negative) FAILED: 'ZZZ_NOT_A_REAL_TAG' resolved (A=%d B=%d). An "
+                "instrument that finds a name that cannot exist is matching noise; EVERY id below is "
+                "void. ABORTING.\r\n",g_dmN[DM_NEG].nScript,g_dmN[DM_NEG].nPool);
+        return false; }
+    if(g_dmN[DM_DISC].nPool>0 && g_dmN[DM_DISC].nScript==0)
+        Marker("[DM] CONTROL (discriminating) PASS: 'Tags' is in the pool but NOT in SpawnPlane's "
+               "bytecode -- so (A) is reading THIS FUNCTION'S literals, not the pool.\r\n");
+    else
+        Markerf("[DM] CONTROL (discriminating) inconclusive: 'Tags' A=%d B=%d. Not fatal -- a 4-byte "
+                "window can coincide anywhere in a 1.5 KB buffer -- but (A)'s specificity is then "
+                "unproven and only the (A)==(B) agreement carries the ids.\r\n",
+                g_dmN[DM_DISC].nScript,g_dmN[DM_DISC].nPool);
+    for(int k=DM_START;k<=DM_END;k++){
+        if(!g_dmN[k].nScript || !g_dmN[k].nPool || g_dmN[k].idScript!=g_dmN[k].idPool){
+            Markerf("[DM] *** '%s' did NOT resolve to one agreed id -- REFUSING to write a guessed "
+                    "FName. A wrong FName finds nothing and is indistinguishable from the failure this "
+                    "whole mode exists to fix. ***\r\n",kDmWant[k]);
+            ok=false; }
+    }
+    g_dmNamesOk=ok;
+    return ok;
+}
+
+// ══ victim selection ═══════════════════════════════════════════════════════════════════════════════
+// UObject.Outer is NOT a constant this file has ever verified. It is derived here and VALIDATED
+// against a known answer (the actor that already carries TrainingStart must have a ULevel outer whose
+// own outer is a UWorld); if that fails, the world-membership filter is DISABLED and said so, rather
+// than silently applying an unvalidated offset.
+constexpr uintptr_t DM_OUTER_OFF=0x28;
+// ★ S126 finalizer fix (MEDIUM, review): `wrote` is per-victim. `g_dmWritten` is an AGGREGATE
+//   (`okn>0`), and DmApplyWrites has FIVE `continue` paths that skip an individual victim. Restoring
+//   unconditionally therefore stamped our stale `oldId` over a slot we never wrote -- i.e. a poke into
+//   the live world that is neither reversible nor attributable, on the one code path whose entire
+//   purpose is to leave the world as it was found.
+struct DmVictim { uintptr_t actor; int tagIdx; uint32_t oldId, oldNum; double x,y,z; int haveLoc; int wrote; char name[96]; char cls[96]; };
+static DmVictim g_dmV[2];
+static int  g_dmVN=0;
+static bool g_dmWritten=false, g_dmRestored=false;
+static uint32_t g_dmTagsOff=0xFFFFFFFF;
+static uintptr_t g_dmWorld=0;       // 0 => membership filter unavailable
+static uintptr_t g_dmTrainActor=0;
+static int  g_dmGateOk=-1;          // -1 not evaluated, 0 failed, 1 passed
+static int  g_dmB1Ran=0, g_dmB1Faulted=-1, g_dmCtlRan=0, g_dmCtlFaulted=-1;
+static uintptr_t g_dmB1Ret=0;
+static long g_dmStep=0; static DWORD g_dmLastMs=0;
+static int  g_dmScanPre[3]={-1,-1,-1}, g_dmScanPost[3]={-1,-1,-1};
+static int  g_dmGatPre[3]={-1,-1,-1}, g_dmGatPost[3]={-1,-1,-1};
+
+static uintptr_t DmOuterOf(uintptr_t o){
+    if(!GcAlive(o)||!SafeReadable((void*)(o+DM_OUTER_OFF),8)) return 0;
+    uintptr_t out=*(uintptr_t*)(o+DM_OUTER_OFF);
+    return GcAlive(out)?out:0;
+}
+// Read an actor's world location through RootComponent -> RelativeLocation, both resolved BY NAME.
+// For a root component with no parent, relative == world.
+static bool DmActorLoc(uintptr_t a,double* x,double* y,double* z){
+    uint32_t rc=PropOffsetSuper(ClassOf(a),"RootComponent"); if(rc==0xFFFFFFFF) return false;
+    if(!SafeReadable((void*)(a+rc),8)) return false;
+    uintptr_t comp=*(uintptr_t*)(a+rc); if(!GcAlive(comp)) return false;
+    uint32_t lo=PropOffsetSuper(ClassOf(comp),"RelativeLocation"); if(lo==0xFFFFFFFF) return false;
+    if(!SafeReadable((void*)(comp+lo),24)) return false;
+    double* v=(double*)(comp+lo); *x=v[0]; *y=v[1]; *z=v[2];
+    return true;
+}
+static bool DmWritable(const void* a,size_t sz){
+    MEMORY_BASIC_INFORMATION m{}; if(!VirtualQuery(a,&m,sizeof(m))) return false;
+    if(!(m.State&MEM_COMMIT)) return false;
+    if(m.Protect&(PAGE_NOACCESS|PAGE_GUARD)) return false;
+    if(!(m.Protect&(PAGE_READWRITE|PAGE_WRITECOPY|PAGE_EXECUTE_READWRITE|PAGE_EXECUTE_WRITECOPY))) return false;
+    return (uintptr_t)a+sz<=(uintptr_t)m.BaseAddress+m.RegionSize;
+}
+// A class we refuse to touch. Not squeamishness: a tag on a gameplay actor can be read by code we have
+// not graded, and the whole point of this mode is that its one write is attributable.
+static bool DmForbiddenClass(uintptr_t cls){
+    static const char* kNo[]={"DropPlane","DropPod","DropShip","GameMode","GameState","PlayerController",
+                              "PlayerState","Character","Pawn","Controller","HUD","Manager","GameSession",
+                              "WorldSettings","Camera","LokiPlayerStart"};
+    for(int i=0;i<(int)(sizeof(kNo)/sizeof(kNo[0]));i++) if(PhChainHas(cls,kNo[i],nullptr,0)) return true;
+    return false;
+}
+
+// Full `AActor.Tags` sweep. Returns per-marker counts. Used three times: BEFORE (the staging
+// statement), AFTER the write (GATE-1 READBACK -- see the header: this is NOT independent) and in the
+// final report.
+static void DmScanMarkers(const char* when,int out3[3],bool verbose){
+    out3[0]=out3[1]=out3[2]=0;
+    // (WARNING) ORDERING BUG FOUND IN SELF-REVIEW BEFORE THE FIRST FLIGHT, AND IT WOULD HAVE BEEN
+    //   SILENT: the D0-BEFORE scan runs before DmPickVictims, which is where this offset used to be
+    //   resolved. The scan would have printed "INSTRUMENT UNAVAILABLE", g_dmTrainActor would never
+    //   have been latched, and BOTH the ground-truth FName control AND the world-membership filter
+    //   would have been disabled -- while the run carried on and wrote tags anyway. Resolve lazily.
+    if(g_dmTagsOff==0xFFFFFFFF && g_dpAnyActorCls){
+        g_dmTagsOff=PropOffsetSuper(g_dpAnyActorCls,"Tags");
+        if(g_dmTagsOff!=0xFFFFFFFF)
+            Markerf("[DM] AActor.Tags @0x%X (resolved BY NAME off a live actor class)\r\n",g_dmTagsOff);
+    }
+    if(g_dmTagsOff==0xFFFFFFFF){ Markerf("[DM] %s scan: AActor.Tags offset unresolved -- INSTRUMENT UNAVAILABLE, "
+                                         "NOT a statement that the markers are absent\r\n",when); out3[0]=out3[1]=out3[2]=-1; return; }
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ Markerf("[DM] %s scan: GUObjectArray unreadable -- INSTRUMENT UNAVAILABLE\r\n",when); out3[0]=out3[1]=out3[2]=-1; return; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ Markerf("[DM] %s scan: GUObjectArray header implausible -- INSTRUMENT UNAVAILABLE\r\n",when); out3[0]=out3[1]=out3[2]=-1; return; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK; long actors=0,tagged=0;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        bool chunkOk=SafeReadable((void*)chunk,(size_t)cnt*ITEMSTRIDE);
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!chunkOk&&!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            if(!(DpClassVerdict(cls)&DPV_ACTOR)) continue;
+            actors++;
+            if(!SafeReadable((void*)(obj+g_dmTagsOff),16)) continue;
+            uintptr_t data=*(uintptr_t*)(obj+g_dmTagsOff); int32_t num=*(int32_t*)(obj+g_dmTagsOff+8);
+            if(!LooksLikePtr(data)||num<=0||num>(int32_t)DP_ACTOR_TAGS_MAXNUM) continue;
+            tagged++;
+            for(int t=0;t<num;t++){
+                if(!SafeReadable((void*)(data+(uintptr_t)t*8),8)) break;
+                uint32_t id=*(uint32_t*)(data+(uintptr_t)t*8), nmb=*(uint32_t*)(data+(uintptr_t)t*8+4);
+                if(nmb!=0) continue;                       // '<name>_N' is a DIFFERENT FName
+                for(int w=0;w<3;w++){
+                    // Compare by ID where we have one (exact, and immune to a decode failure); fall
+                    // back to the string only when the id was never resolved.
+                    bool hit = g_dmN[w].idPool ? (id==g_dmN[w].idPool) : false;
+                    if(!hit && !g_dmN[w].idPool){ char tn[128]; if(GetFNameStr(id,tn,sizeof(tn))) hit=DmIEq(tn,kDmWant[w]); }
+                    if(!hit) continue;
+                    out3[w]++;
+                    if(w==DM_TRAIN && !g_dmTrainActor) g_dmTrainActor=obj;
+                    if(w==DM_TRAIN && g_dmN[w].nLive==0){ g_dmN[w].idLive=id; g_dmN[w].nLive=1; }
+                    if(verbose){ char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+                        char cn[128]; cn[0]=0; GetFNameStr(NameId(cls),cn,sizeof(cn));
+                        Markerf("[DM] %s MARKER '%s' on 0x%llX '%s' (%s) tag[%d] id=0x%08X\r\n",
+                                when,kDmWant[w],(unsigned long long)obj,on,cn,t,id); }
+                }
+            }
+        }
+    }
+    Markerf("[DM] %s scan summary: TrainingStart=%d PlaneStartPoint=%d PlaneEndPoint=%d "
+            "(actors=%ld tagged=%ld)\r\n",when,out3[0],out3[1],out3[2],actors,tagged);
+}
+
+// ══ GATE-2: UGameplayStatics::GetAllActorsWithTag, the predicate SpawnPlane itself uses ═════════════
+static uintptr_t g_dmGsCdo=0, g_dmGatFn=0, g_dmGatThunk=0, g_dmGatChild=0;
+static uint32_t  g_dmGatCtxOff=0xFFFFFFFF, g_dmGatTagOff=0xFFFFFFFF, g_dmGatOutOff=0xFFFFFFFF;
+static bool DmResolveGat(){
+#if !KDMGAT
+    Marker("[DM] GATE-2 disabled by KDMGAT=0 -- the gate is then a READBACK ONLY and is materially weaker\r\n");
+    return false;
+#else
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)) return false;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000) return false;
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK; int seen=0;
+    for(int ci=0;ci<numChunks&&!g_dmGsCdo;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            char on[128]; if(!GetFNameStr(NameId(obj),on,sizeof(on))) continue;
+            if(strcmp(on,"Default__GameplayStatics")!=0) continue;
+            seen++; if(seen==1) g_dmGsCdo=obj;
+        }
+    }
+    if(seen!=1){ Markerf("[DM] GATE-2: %d 'Default__GameplayStatics' objects -- REFUSING to guess. "
+                         "INSTRUMENT UNAVAILABLE.\r\n",seen); g_dmGsCdo=0; return false; }
+    void* fn=nullptr; ResolveFuncSuper(ClassOf(g_dmGsCdo),"GetAllActorsWithTag",&fn,&g_dmGatThunk,&g_dmGatChild);
+    g_dmGatFn=(uintptr_t)fn;
+    if(!g_dmGatFn||!g_dmGatThunk||!g_dmGatChild){ Marker("[DM] GATE-2: GetAllActorsWithTag did not resolve -- INSTRUMENT UNAVAILABLE\r\n"); return false; }
+    g_dmGatCtxOff=ParamOffset(g_dmGatChild,"WorldContextObject");
+    g_dmGatTagOff=ParamOffset(g_dmGatChild,"Tag");
+    g_dmGatOutOff=ParamOffset(g_dmGatChild,"OutActors");
+    Markerf("[DM] GATE-2: CDO=0x%llX fn=0x%llX thunk=0x%llX  WorldContextObject@0x%X Tag@0x%X OutActors@0x%X\r\n",
+            (unsigned long long)g_dmGsCdo,(unsigned long long)g_dmGatFn,(unsigned long long)g_dmGatThunk,
+            g_dmGatCtxOff,g_dmGatTagOff,g_dmGatOutOff);
+    if(g_dmGatCtxOff==0xFFFFFFFF||g_dmGatTagOff==0xFFFFFFFF||g_dmGatOutOff==0xFFFFFFFF){
+        Marker("[DM] GATE-2: a parameter did not resolve BY NAME -- INSTRUMENT UNAVAILABLE (no offset is guessed)\r\n");
+        g_dmGatFn=0; return false; }
+    return true;
+#endif
+}
+// Returns the OutActors count, or -1 for "not measured". ⚠ The engine allocates OutActors' storage;
+// we never destruct the TArray, so each call leaks one small allocation. Four calls per sitting.
+static int DmGat(uint32_t nameId,const char* label){
+    if(!g_dmGatFn||!nameId) return -1;
+    // ★ S126 fix (MEDIUM, review): BOUNDS-CHECK the three FProperty offsets against g_pbuf before
+    //   writing. DpCallBP already refuses an out-of-range param offset with the note that "a clamped
+    //   write is still a wrong write"; this call site did not, so a wrong/oversized offset would have
+    //   written past g_pbuf into g_rbuf and the adjacent globals, and the resulting fault would have
+    //   been attributed to GetAllActorsWithTag.
+    const size_t kPB=sizeof(g_pbuf);
+    if(g_dmGatCtxOff+8>kPB || g_dmGatTagOff+8>kPB || g_dmGatOutOff+16>kPB){
+        Markerf("[DM] GATE-2 %s: param offsets (ctx=0x%X tag=0x%X out=0x%X) exceed the %u-byte param "
+                "buffer -> NOT CALLED. A shim limit, not a game fact.\r\n",label,
+                g_dmGatCtxOff,g_dmGatTagOff,g_dmGatOutOff,(unsigned)kPB);
+        return -1; }
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    uint8_t* pb=(uint8_t*)g_pbuf;
+    *(uintptr_t*)(pb+g_dmGatCtxOff)=g_dpComp;             // a UObject that IS in the world
+    *(uint32_t*)(pb+g_dmGatTagOff)=nameId; *(uint32_t*)(pb+g_dmGatTagOff+4)=0;
+    bool flt=CallNativeGuarded((void*)g_dmGatFn,g_dmGatThunk,g_dmGatChild,(void*)g_dmGsCdo,g_pbuf,g_rbuf);
+    if(flt){ Markerf("[DM] GATE-2 %s: FAULTED (%s) -> NOT MEASURED\r\n",label,DM_FAULT); return -1; }
+    int32_t num=*(int32_t*)(pb+g_dmGatOutOff+8);
+    if(num<0||num>65536){ Markerf("[DM] GATE-2 %s: implausible OutActors.Num=%d -> NOT MEASURED\r\n",label,num); return -1; }
+    Markerf("[DM] GATE-2 %s: GetAllActorsWithTag(id=0x%08X) -> OutActors.Num = %d\r\n",label,nameId,num);
+    return (int)num;
+}
+
+// ══ pick the two victims ═══════════════════════════════════════════════════════════════════════════
+static bool DmPickVictims(){
+    Marker("[DM] ---------------- D2a: victim selection (enumerate, show the work, refuse to guess) ----------------\r\n");
+    if(!g_dpAnyActorCls){ Marker("[DM] ABORT: no AActor-derived class was seen -- staging statement, not a result\r\n"); return false; }
+    if(g_dmTagsOff==0xFFFFFFFF) g_dmTagsOff=PropOffsetSuper(g_dpAnyActorCls,"Tags");
+    if(g_dmTagsOff==0xFFFFFFFF){ Marker("[DM] ABORT: AActor.Tags did not resolve BY NAME (no offset is hardcoded)\r\n"); return false; }
+    Markerf("[DM] using AActor.Tags @0x%X\r\n",g_dmTagsOff);
+
+    // Validate DM_OUTER_OFF against a known answer before using it to filter anything.
+    if(g_dmTrainActor){
+        uintptr_t lvl=DmOuterOf(g_dmTrainActor);
+        char ln[96]="-"; if(lvl) GetFNameStr(NameId(ClassOf(lvl)),ln,sizeof(ln));
+        if(lvl && PhChainHas(ClassOf(lvl),"Level",nullptr,0)){
+            uintptr_t wld=DmOuterOf(lvl);
+            char wn[96]="-"; if(wld) GetFNameStr(NameId(ClassOf(wld)),wn,sizeof(wn));
+            if(wld && PhChainHas(ClassOf(wld),"World",nullptr,0)){
+                g_dmWorld=wld;
+                Markerf("[DM] world-membership filter VALIDATED on a known answer: TrainingStart actor "
+                        "-> Outer 0x%llX (%s) -> Outer 0x%llX (%s). Using UObject.Outer@0x%X.\r\n",
+                        (unsigned long long)lvl,ln,(unsigned long long)wld,wn,(unsigned)DM_OUTER_OFF);
+            } else Markerf("[DM] world-membership filter DISABLED: level's outer is 0x%llX (%s), not a UWorld\r\n",(unsigned long long)wld,wn);
+        } else Markerf("[DM] world-membership filter DISABLED: TrainingStart actor's outer is 0x%llX (%s), not a ULevel\r\n",(unsigned long long)lvl,ln);
+    } else Marker("[DM] world-membership filter DISABLED: no TrainingStart actor was found to validate it against\r\n");
+    if(!g_dmWorld)
+        Marker("[DM] ⚠ WITHOUT THE FILTER a victim could be an actor outside the live world, which "
+               "GetAllActorsWithTag would never see. GATE-2 is then the only thing standing between "
+               "that and a false 'resident'. Read GATE-2's numbers, not GATE-1's.\r\n");
+
+    // ---- enumerate ----------------------------------------------------------------------------
+    struct Cand { uintptr_t a; int tagIdx; uint32_t oldId,oldNum; double x,y,z; int haveLoc; };
+    static Cand cands[256]; int nc=0; long scanned=0, rejClass=0, rejWorld=0, rejMarker=0, rejWrite=0, rejLoc=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ Marker("[DM] ABORT: GUObjectArray unreadable\r\n"); return false; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ Marker("[DM] ABORT: GUObjectArray header implausible\r\n"); return false; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    const char* kFStart=KDMSTARTNAME; const char* kFEnd=KDMENDNAME;
+    int forcedS=-1, forcedE=-1;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        bool chunkOk=SafeReadable((void*)chunk,(size_t)cnt*ITEMSTRIDE);
+        for(int j=0;j<cnt&&nc<256;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!chunkOk&&!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            if(!(DpClassVerdict(cls)&DPV_ACTOR)) continue;
+            if(!GcAlive(obj)) continue;
+            char on[128]; on[0]=0; if(!GetFNameStr(NameId(obj),on,sizeof(on))) continue;
+            if(strncmp(on,"Default__",9)==0||strstr(on,"_GEN_VARIABLE")) continue;
+            if(!SafeReadable((void*)(obj+g_dmTagsOff),16)) continue;
+            uintptr_t data=*(uintptr_t*)(obj+g_dmTagsOff); int32_t num=*(int32_t*)(obj+g_dmTagsOff+8);
+            if(!LooksLikePtr(data)||num<=0||num>(int32_t)DP_ACTOR_TAGS_MAXNUM) continue;
+            scanned++;
+            if(DmForbiddenClass(cls)){ rejClass++; continue; }
+            if(g_dmWorld){ uintptr_t l=DmOuterOf(obj); uintptr_t w=l?DmOuterOf(l):0; if(w!=g_dmWorld){ rejWorld++; continue; } }
+            // never clobber a marker we depend on, and never clobber a tag we cannot read back
+            bool carriesMarker=false; int useIdx=-1; uint32_t oid=0,onum=0;
+            for(int t=0;t<num;t++){
+                if(!SafeReadable((void*)(data+(uintptr_t)t*8),8)){ useIdx=-1; break; }
+                uint32_t id=*(uint32_t*)(data+(uintptr_t)t*8), nm=*(uint32_t*)(data+(uintptr_t)t*8+4);
+                for(int w=0;w<3;w++) if(g_dmN[w].idPool && id==g_dmN[w].idPool) carriesMarker=true;
+                if(useIdx<0){ useIdx=t; oid=id; onum=nm; }
+            }
+            if(carriesMarker){ rejMarker++; continue; }
+            if(useIdx<0) continue;
+            if(!DmWritable((void*)(data+(uintptr_t)useIdx*8),8)){ rejWrite++; continue; }
+            Cand c{}; c.a=obj; c.tagIdx=useIdx; c.oldId=oid; c.oldNum=onum;
+            c.haveLoc = DmActorLoc(obj,&c.x,&c.y,&c.z)?1:0;
+            if(!c.haveLoc){ rejLoc++; continue; }          // a victim with no location is a plane path we cannot report
+            if(kFStart&&kFStart[0]&&strcmp(on,kFStart)==0) forcedS=nc;
+            if(kFEnd  &&kFEnd[0]  &&strcmp(on,kFEnd)==0)   forcedE=nc;
+            cands[nc++]=c;
+        }
+    }
+    Markerf("[DM] victim enumeration: %ld tagged actors examined -> %d candidates "
+            "(rejected: forbidden class %ld, wrong world %ld, carries a marker %ld, tag not writable %ld, no location %ld)\r\n",
+            scanned,nc,rejClass,rejWorld,rejMarker,rejWrite,rejLoc);
+    if(nc<2){ Marker("[DM] ABORT: fewer than 2 usable victims. This is a STAGING statement (the world "
+                     "may not be up), not a statement about SpawnPlane. Nothing was written.\r\n"); return false; }
+
+    // ---- pick: the pair with the greatest separation, so the plane path is not degenerate --------
+    int bi=0,bj=1; double best=-1.0;
+    for(int i=0;i<nc;i++) for(int j=i+1;j<nc;j++){
+        double dx=cands[i].x-cands[j].x, dy=cands[i].y-cands[j].y, dz=cands[i].z-cands[j].z;
+        double d2=dx*dx+dy*dy+dz*dz;
+        if(d2>best){ best=d2; bi=i; bj=j; }
+    }
+    if(forcedS>=0&&forcedE>=0&&forcedS!=forcedE){ bi=forcedS; bj=forcedE;
+        Marker("[DM] KDMSTARTNAME/KDMENDNAME override in force -- the max-separation policy was NOT used\r\n"); }
+    double dx=cands[bi].x-cands[bj].x, dy=cands[bi].y-cands[bj].y, dz=cands[bi].z-cands[bj].z;
+    double sep=dx*dx+dy*dy+dz*dz; double sepu=0; { double s=sep; double r=s>0?s:0; double g=r>1?r:1; for(int k=0;k<40;k++) g=0.5*(g+r/g); sepu=(r>0)?g:0; }
+    g_dmVN=0;
+    const Cand* pick[2]={&cands[bi],&cands[bj]};
+    for(int k=0;k<2;k++){
+        DmVictim& v=g_dmV[k]; v.actor=pick[k]->a; v.tagIdx=pick[k]->tagIdx; v.oldId=pick[k]->oldId;
+        v.oldNum=pick[k]->oldNum; v.x=pick[k]->x; v.y=pick[k]->y; v.z=pick[k]->z; v.haveLoc=pick[k]->haveLoc;
+        v.wrote=0;
+        v.name[0]=0; GetFNameStr(NameId(v.actor),v.name,sizeof(v.name));
+        v.cls[0]=0;  GetFNameStr(NameId(ClassOf(v.actor)),v.cls,sizeof(v.cls));
+        char oldn[128]="?"; GetFNameStr(v.oldId,oldn,sizeof(oldn));
+        Markerf("[DM] victim[%d] (%s) 0x%llX '%s' (%s)  tag[%d] currently '%s'(id=0x%08X,num=%u)  "
+                "loc=(%.1f, %.1f, %.1f)\r\n",k,k?"PlaneEndPoint":"PlaneStartPoint",
+                (unsigned long long)v.actor,v.name,v.cls,v.tagIdx,oldn,v.oldId,v.oldNum,v.x,v.y,v.z);
+        g_dmVN++;
+    }
+    Markerf("[DM] plane path will be victim[0] -> victim[1], separation = %.1f uu (%.1f m). %s\r\n",
+            sepu,sepu/100.0,(sepu<(double)KDMMINSEP)?"⚠ BELOW KDMMINSEP -- short, but still a real path rather than (0,0,0)":"OK");
+    Marker("[DM] ⚠ THESE LOCATIONS ARE THE RESULT OF THE MECHANISM, NOT A DESIGN CHOICE. The engine's "
+           "own procedural generator ULokiGameModeDropPlaneComponent::GeneratePlanePoints(OutStartPos, "
+           "OutEndPos, CircleRadius, Height, MaxEndOffsetDeg) is the successor lever if the path "
+           "quality matters -- it is marker-free and all-scalar. Not used here: it cannot inject into "
+           "SpawnPlane's LOCALS, so it is a different call, not a knob on this one.\r\n");
+    return true;
+}
+
+// ══ apply / restore ════════════════════════════════════════════════════════════════════════════════
+static bool DmApplyWrites(){
+    if(g_dmVN<2||!g_dmNamesOk){ Marker("[DM] D2 NOT RUN: victims or names unresolved\r\n"); return false; }
+    int okn=0;
+    for(int k=0;k<2;k++){
+        DmVictim& v=g_dmV[k]; uint32_t want=g_dmN[k==0?DM_START:DM_END].idPool;
+        if(!GcAlive(v.actor)){ Markerf("[DM] D2 victim[%d] is no longer live -> NOT WRITTEN\r\n",k); continue; }
+        if(!SafeReadable((void*)(v.actor+g_dmTagsOff),16)){ Markerf("[DM] D2 victim[%d] Tags unreadable -> NOT WRITTEN\r\n",k); continue; }
+        uintptr_t data=*(uintptr_t*)(v.actor+g_dmTagsOff); int32_t num=*(int32_t*)(v.actor+g_dmTagsOff+8);
+        if(!LooksLikePtr(data)||v.tagIdx>=num){ Markerf("[DM] D2 victim[%d] Tags moved under us (data=0x%llX num=%d) -> NOT WRITTEN\r\n",k,(unsigned long long)data,num); continue; }
+        uintptr_t slot=data+(uintptr_t)v.tagIdx*8;
+        if(!DmWritable((void*)slot,8)){ Markerf("[DM] D2 victim[%d] tag slot not writable -> NOT WRITTEN\r\n",k); continue; }
+        if(*(uint32_t*)slot!=v.oldId){ Markerf("[DM] D2 victim[%d] tag changed since selection (0x%08X != 0x%08X) -> NOT WRITTEN\r\n",k,*(uint32_t*)slot,v.oldId); continue; }
+        *(uint32_t*)slot=want; *(uint32_t*)(slot+4)=0;
+        uint32_t rb=*(uint32_t*)slot, rbn=*(uint32_t*)(slot+4);
+        char dec[128]="?"; GetFNameStr(rb,dec,sizeof(dec));
+        bool good=(rb==want&&rbn==0&&DmIEq(dec,kDmWant[k==0?DM_START:DM_END]));
+        Markerf("[DM] D2 victim[%d] tag[%d] @0x%llX  0x%08X -> 0x%08X  readback=0x%08X num=%u decodes '%s'  %s\r\n",
+                k,v.tagIdx,(unsigned long long)slot,v.oldId,want,rb,rbn,dec,good?"VERIFIED":"*** READBACK MISMATCH ***");
+        // ★ S126 fix: the store LANDED (verified or not), so this slot is ours to put back. Set the
+        //   per-victim flag on the write, not on the verification -- a readback mismatch still means
+        //   we wrote, and NOT restoring it would leave contamination behind.
+        v.wrote=1;
+        if(good) okn++;
+    }
+    g_dmWritten=(okn>0);
+    Markerf("[DM] D2: %d of 2 marker writes verified. Each is ONE aligned 4-byte store inside an "
+            "engine-owned buffer -- no allocation, no Num/Max change, no module image.\r\n",okn);
+    return okn==2;
+}
+static void DmRestore(const char* why){
+    if(!g_dmWritten||g_dmRestored) return;
+#if !KDMRESTORE
+    Markerf("[DM] RESTORE SKIPPED by KDMRESTORE=0 (%s). The two victim actors are STILL carrying our "
+            "marker tags; anything that reads Tags from here on is contaminated.\r\n",why); return;
+#else
+    for(int k=0;k<2;k++){
+        DmVictim& v=g_dmV[k];
+        // ★★ S126 fix (MEDIUM, review): NEVER restore a victim we did not write. `g_dmWritten` is the
+        //    aggregate `okn>0`; if victim[0] wrote and victim[1] was skipped, the old code stamped our
+        //    stale oldId over a slot the GAME owns.
+        if(!v.wrote){ Markerf("[DM] restore victim[%d]: NEVER WRITTEN -> left untouched (restoring a slot "
+                              "we did not write would be a poke, not a restore)\r\n",k); continue; }
+        if(!GcAlive(v.actor)) { Markerf("[DM] restore victim[%d]: actor gone -- nothing to restore\r\n",k); continue; }
+        if(!SafeReadable((void*)(v.actor+g_dmTagsOff),16)) continue;
+        uintptr_t data=*(uintptr_t*)(v.actor+g_dmTagsOff); int32_t num=*(int32_t*)(v.actor+g_dmTagsOff+8);
+        if(!LooksLikePtr(data)||v.tagIdx>=num) { Markerf("[DM] restore victim[%d]: Tags moved -- NOT restored\r\n",k); continue; }
+        uintptr_t slot=data+(uintptr_t)v.tagIdx*8;
+        if(!DmWritable((void*)slot,8)) { Markerf("[DM] restore victim[%d]: slot not writable -- NOT restored\r\n",k); continue; }
+        // ★ and only if the slot still holds WHAT WE PUT THERE. If the game changed it under us,
+        //   overwriting is a fresh poke on a value we never measured.
+        uint32_t want=g_dmN[k==0?DM_START:DM_END].idPool;
+        if(*(uint32_t*)slot!=want){ Markerf("[DM] restore victim[%d]: slot holds 0x%08X, not our 0x%08X -- "
+                                            "the game changed it. NOT restored (that would be a poke).\r\n",
+                                            k,*(uint32_t*)slot,want); continue; }
+        *(uint32_t*)slot=v.oldId; *(uint32_t*)(slot+4)=v.oldNum;
+        char dec[128]="?"; GetFNameStr(*(uint32_t*)slot,dec,sizeof(dec));
+        Markerf("[DM] restore victim[%d] tag[%d] -> 0x%08X num=%u ('%s')  %s\r\n",k,v.tagIdx,
+                *(uint32_t*)slot,*(uint32_t*)(slot+4),dec,(*(uint32_t*)slot==v.oldId)?"VERIFIED":"*** MISMATCH ***");
+    }
+    g_dmRestored=true;
+    Markerf("[DM] restore complete (%s). The world's Tags are back to what they were.\r\n",why);
+#endif
+}
+
+// ══ the ladder ═════════════════════════════════════════════════════════════════════════════════════
+static void DmLadderStep(){
+    DWORD now=GetTickCount();
+    if(g_dmLastMs && now-g_dmLastMs<(DWORD)KDMSTEPMS) return;
+    g_dmLastMs=now;
+    switch(g_dmStep){
+    case 0:
+        Marker("[DM] ================ RM_DROPMARKERS: ROUTE D — marker residency then SpawnPlane ================\r\n");
+        Markerf("[DM] cfg arms=0x%02X restore=%d force=%d gate2=%d minSep=%d outParmRet=%d frameInit=%d faultInfo=%d\r\n",
+                (unsigned)KDMARMS,(int)KDMRESTORE,(int)KDMFORCE,(int)KDMGAT,(int)KDMMINSEP,
+                (int)KOUTPARMRET,(int)KFRAMEINIT,(int)KFAULTINFO);
+#if KOUTPARMRET
+        Marker("[DM] PRE-REGISTERED PREDICTION (written before the call, per the project's own rule):\r\n"
+               "[DM]   KOUTPARMRET=1 removes the NULL FFrame.OutParms that faulted S125's B1 at rva\r\n"
+               "[DM]   0x13495DD (execLocalOutVariable resolving SpawnPlane's ReturnValue). If the\r\n"
+               "[DM]   residency gate also passes, SpawnPlane completes WITHOUT FAULT and returns a\r\n"
+               "[DM]   NON-NULL BP_DropPlane_Straight_Tutorial_C whose StartPos/EndPos are the two\r\n"
+               "[DM]   victim locations printed above -- not (0,0,0).\r\n");
+#else
+        Marker("[DM] ⚠ KOUTPARMRET=0: this build KEEPS the defect that faulted S125's B1. If D4 runs it\r\n"
+               "[DM]   is PREDICTED to fault at rva 0x13495DD, addr=0x0, AFTER spawning a plane -- which\r\n"
+               "[DM]   is the controlled reproduction, not a marker result.\r\n");
+#endif
+        g_dmStep=1; return;
+
+    case 1:   // ---- GATE-2 BEFORE: the independent measurement, taken while the world is untouched --
+        if(g_dmGatFn){
+            for(int w=0;w<3;w++) g_dmGatPre[w]=DmGat(g_dmN[w].idPool,(w==0)?"pre TrainingStart":(w==1)?"pre PlaneStartPoint":"pre PlaneEndPoint");
+            Markerf("[DM] GATE-2 BEFORE: TrainingStart=%d PlaneStartPoint=%d PlaneEndPoint=%d "
+                    "(TrainingStart is the in-run POSITIVE control -- it must be >0 here and UNCHANGED "
+                    "after our write; if it is 0 the probe is not seeing the world at all)\r\n",
+                    g_dmGatPre[0],g_dmGatPre[1],g_dmGatPre[2]);
+        } else Marker("[DM] GATE-2 BEFORE: unavailable\r\n");
+        g_dmStep=2; return;
+
+    case 2:   // ---- D2: the two writes -------------------------------------------------------------
+        if(!(KDMARMS&0x04)){ Marker("[DM] D2 disabled by KDMARMS -> NO write. This is the read-only arm.\r\n"); g_dmStep=3; return; }
+        DmApplyWrites();
+        g_dmStep=3; return;
+
+    case 3:   // ---- THE GATE ------------------------------------------------------------------------
+        DmScanMarkers("post-write",g_dmScanPost,true);
+        if(g_dmGatFn){
+            for(int w=0;w<3;w++) g_dmGatPost[w]=DmGat(g_dmN[w].idPool,(w==0)?"post TrainingStart":(w==1)?"post PlaneStartPoint":"post PlaneEndPoint");
+        }
+        {
+            // ★ S126 fix (review): require a TRANSITION, not a LEVEL. The header, the log line and the
+            //   whole claim are "0 -> 1"; a level test would PASS if the World Partition cells carrying
+            //   the real PlaneStartPoint/PlaneEndPoint actors happened to stream in during the sitting,
+            //   and the mode would then attribute THEIR residency to our write. `pre<0` means the probe
+            //   did not measure, in which case fall back to the level test and say so.
+            bool readback = (g_dmScanPre[1]>=0 && g_dmScanPre[2]>=0)
+                          ? (g_dmScanPost[1]>g_dmScanPre[1] && g_dmScanPost[2]>g_dmScanPre[2])
+                          : (g_dmScanPost[1]>=1 && g_dmScanPost[2]>=1);
+            bool gat2rose = (g_dmGatPre[1]>=0 && g_dmGatPre[2]>=0)
+                          ? (g_dmGatPost[1]>g_dmGatPre[1] && g_dmGatPost[2]>g_dmGatPre[2])
+                          : (g_dmGatPost[1]>=1 && g_dmGatPost[2]>=1);
+            bool gat2ok   = gat2rose;
+            bool gat2ctl  = (g_dmGatPre[0]<0) || (g_dmGatPost[0]==g_dmGatPre[0]);
+            if((g_dmGatPre[1]>0||g_dmGatPre[2]>0))
+                Markerf("[DM] ⚠ GATE-2 BEFORE was already NON-ZERO (start=%d end=%d). Something other than "
+                        "our write already makes those tags resident -- most likely a streamed-in World "
+                        "Partition cell. The gate now requires a RISE, so this is reported, not absorbed.\r\n",
+                        g_dmGatPre[1],g_dmGatPre[2]);
+            Markerf("[DM] GATE-1 (READBACK, not independent): PlaneStartPoint %d -> %d, PlaneEndPoint "
+                    "%d -> %d (a RISE is required, not a level) -> %s\r\n",
+                    g_dmScanPre[1],g_dmScanPost[1],g_dmScanPre[2],g_dmScanPost[2],readback?"pass":"FAIL");
+            if(g_dmGatFn){
+                Markerf("[DM] GATE-2 (INDEPENDENT -- the exact predicate SpawnPlane uses): "
+                        "PlaneStartPoint %d -> %d, PlaneEndPoint %d -> %d, control TrainingStart %d -> %d -> %s%s\r\n",
+                        g_dmGatPre[1],g_dmGatPost[1],g_dmGatPre[2],g_dmGatPost[2],g_dmGatPre[0],g_dmGatPost[0],
+                        gat2ok?"pass":"FAIL", gat2ctl?"":"  *** CONTROL MOVED -- the probe is unstable, treat GATE-2 as UNAVAILABLE ***");
+                g_dmGateOk = (readback && gat2ok && gat2ctl) ? 1 : 0;
+            } else {
+                Marker("[DM] GATE-2 UNAVAILABLE -- proceeding on the READBACK ALONE, which is materially "
+                       "weaker: it reads the same bytes we wrote and cannot see whether the actor is in "
+                       "the world's actor list at all.\r\n");
+                g_dmGateOk = readback?1:0;
+            }
+            if(!(KDMARMS&0x04)) { g_dmGateOk=0; Marker("[DM] (no write was attempted, so the gate is FAIL by construction)\r\n"); }
+            Markerf("[DM] *** RESIDENCY GATE: %s ***\r\n",g_dmGateOk==1?"PASS":"FAIL");
+        }
+        g_dmStep=4; return;
+
+    case 4:   // ---- D3: the positive control, before anything is interpreted ----------------------
+        if(!(KDMARMS&0x08)){ Marker("[DM] D3 control disabled by KDMARMS -> skipped. ⚠ A fault in D4 is then NOT ATTRIBUTABLE.\r\n"); g_dmStep=5; return; }
+        Marker("[DM] --- D3 (POSITIVE CONTROL): GetAutoDropLocation() -- 0 push / 0 pop, so it is immune "
+               "to the FFrame flow-stack window, and it declares no return-by-reference use that the "
+               "OutParms change could alter. It must behave the same in every arm. ---\r\n");
+        g_dmCtlFaulted=DpCallBP(g_dpCtlFn,"D3 GetAutoDropLocation",0xFFFFFFFF,0);
+        g_dmCtlRan=(g_dmCtlFaulted!=DPCALL_NOTRUN)?1:0;
+        if(g_dmCtlFaulted==DPCALL_FAULT)
+            Marker("[DM] *** D3 CONTROL FAULTED -> THE SITTING IS VOID. The BP-call primitive is failing "
+                   "in this build; nothing D4 does can be attributed to SpawnPlane. ***\r\n");
+        g_dmStep=5; return;
+
+    case 5:   // ---- D4: SpawnPlane, BEHIND THE GATE -------------------------------------------------
+        if(!(KDMARMS&0x10)){ Marker("[DM] D4 disabled by KDMARMS -> SpawnPlane NOT called (gate-only arm)\r\n"); g_dmStep=6; return; }
+        if(g_dmCtlFaulted==DPCALL_FAULT && !KDMFORCE){ Marker("[DM] D4 NOT CALLED: the positive control faulted, so the run is void\r\n"); g_dmStep=6; return; }
+        if(g_dmGateOk!=1 && !KDMFORCE){
+            Markerf("[DM] *** D4 NOT CALLED -- PRECONDITION UNMET. The residency gate FAILED "
+                    "(readback start=%d end=%d, GATE-2 start=%d end=%d). Calling SpawnPlane now would "
+                    "produce a result that could not be attributed to the markers, which is exactly the "
+                    "class of measurement this mode exists to stop making. Rebuild with -DKDMFORCE=1 "
+                    "only if an ungated call is deliberately what you want. ***\r\n",
+                    g_dmScanPost[1],g_dmScanPost[2],g_dmGatPost[1],g_dmGatPost[2]);
+            g_dmStep=6; return; }
+        if(g_dmGateOk!=1)
+            Marker("[DM] *** KDMFORCE=1: calling SpawnPlane WITH A FAILED GATE. Its outcome is NOT "
+                   "attributable to marker residency. ***\r\n");
+        Marker("[DM] --- D4: SpawnPlane() with both markers RESIDENT. ---\r\n");
+        g_dmB1Faulted=DpCallBP(g_dpSpawnFn,"D4 SpawnPlane",0xFFFFFFFF,0);
+        g_dmB1Ran=(g_dmB1Faulted!=DPCALL_NOTRUN)?1:0;
+        if(g_dmB1Faulted!=DPCALL_NOTRUN && g_dpSpawnRetOff!=0xFFFFFFFF && g_dpSpawnRetOff+8<=sizeof(g_bplocals)){
+            g_dmB1Ret=*(uintptr_t*)(g_bplocals+g_dpSpawnRetOff);
+            char rn[128]="-",rc[128]="-";
+            if(GcAlive(g_dmB1Ret)){ GetFNameStr(NameId(g_dmB1Ret),rn,sizeof(rn));
+                uintptr_t rcl=ClassOf(g_dmB1Ret); if(LooksLikePtr(rcl)) GetFNameStr(NameId(rcl),rc,sizeof(rc)); }
+            Markerf("[DM] D4 return value @0x%X = 0x%llX live=%d name='%s' class=%s\r\n",
+                    g_dpSpawnRetOff,(unsigned long long)g_dmB1Ret,GcAlive(g_dmB1Ret)?1:0,rn,rc);
+            if(GcAlive(g_dmB1Ret)){
+                double x,y,z; if(DmActorLoc(g_dmB1Ret,&x,&y,&z))
+                    Markerf("[DM] D4 spawned plane location = (%.1f, %.1f, %.1f)  -- compare with victim[0] "
+                            "(%.1f, %.1f, %.1f). A plane at (0,0,0) means the marker reads still came back "
+                            "empty regardless of what the gate said.\r\n",x,y,z,g_dmV[0].x,g_dmV[0].y,g_dmV[0].z);
+            }
+        }
+        g_dmStep=6; return;
+
+    case 6:
+        DmRestore("ladder complete");
+        g_dmStep=7; return;
+
+    case 7:
+    default:
+        Marker("[DM] ================ game-thread arms COMPLETE ================\r\n");
+        g_done=1; return;
+    }
+}
+static void DoDropMarkers(){
+    __try { DmLadderStep(); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[DM] *** FAULT inside ladder step %ld -- halting. fault=%s ***\r\n",(long)g_dmStep,DM_FAULT);
+        DmRestore("fault path");        // the world must not keep our tags because we crashed
+        g_done=1;
+    }
+}
+static void DmFinalReport(){
+    DmRestore("final report");          // belt and braces: the ladder may never have reached step 6
+    if(!(KDMARMS&0x20)){ Marker("[DM] D5 disabled -> no AFTER census, so this run produced no delta\r\n"); return; }
+    Markerf("[DM] settling %d ms before the AFTER census...\r\n",(int)KDMSETTLEMS);
+    Sleep((DWORD)KDMSETTLEMS);
+    DpCensus("D5-AFTER",true,false,&g_dpC4);
+    Marker("[DM] ---------------- DELTA TABLE (this is the result) ----------------\r\n");
+    Markerf("[DM]   DropPlane  %ld -> %ld  (%+ld)\r\n",g_dpC0.plane,g_dpC4.plane,g_dpC4.plane-g_dpC0.plane);
+    Markerf("[DM]   DropPod    %ld -> %ld  (%+ld)\r\n",g_dpC0.pod,  g_dpC4.pod,  g_dpC4.pod-g_dpC0.pod);
+    Markerf("[DM]   DropShip   %ld -> %ld  (%+ld)\r\n",g_dpC0.ship, g_dpC4.ship, g_dpC4.ship-g_dpC0.ship);
+    Markerf("[DM]   objects    %ld -> %ld  (%+ld)  new=%ld gone=%ld\r\n",
+            g_dpC0.hits,g_dpC4.hits,g_dpC4.hits-g_dpC0.hits,g_dpC4.fresh,g_dpC4.gone);
+    Markerf("[DM] names: PlaneStartPoint id=0x%08X  PlaneEndPoint id=0x%08X  TrainingStart id=0x%08X "
+            "(live TrainingStart id=0x%08X, %s)\r\n",
+            g_dmN[DM_START].idPool,g_dmN[DM_END].idPool,g_dmN[DM_TRAIN].idPool,g_dmN[DM_TRAIN].idLive,
+            (g_dmN[DM_TRAIN].nLive && g_dmN[DM_TRAIN].idLive==g_dmN[DM_TRAIN].idPool)
+              ? "GROUND-TRUTH AGREEMENT -- the resolution route is validated against the world"
+              : "no live TrainingStart to validate against (the route rests on (A)==(B) alone)");
+    Markerf("[DM] gate: readback start=%d end=%d | GATE-2 pre(%d,%d,%d) post(%d,%d,%d) | verdict %s\r\n",
+            g_dmScanPost[1],g_dmScanPost[2],g_dmGatPre[0],g_dmGatPre[1],g_dmGatPre[2],
+            g_dmGatPost[0],g_dmGatPost[1],g_dmGatPost[2],g_dmGateOk==1?"PASS":"FAIL");
+    Marker("[DM] call status codes: -1 = NOT CALLED | 0 = called, no fault | 1 = called and FAULTED. "
+           "-1 is NOT a clean run.\r\n");
+    Markerf("[DM] ran: D3ctl=%d(status=%d) D4=%d(status=%d) ret=0x%llX  written=%d restored=%d\r\n",
+            g_dmCtlRan,g_dmCtlFaulted,g_dmB1Ran,g_dmB1Faulted,(unsigned long long)g_dmB1Ret,
+            g_dmWritten?1:0,g_dmRestored?1:0);
+    if(g_dmCtlFaulted==DPCALL_FAULT)
+        Marker("[DM] *** VERDICT: VOID. The positive control faulted. ***\r\n");
+    else if(g_dmB1Faulted==DPCALL_OK && GcAlive(g_dmB1Ret))
+        Marker("[DM] VERDICT: SpawnPlane RETURNED A LIVE PLANE WITHOUT FAULTING. Read the plane's "
+               "location above -- that, not the absence of a fault, is whether Route D worked.\r\n");
+    else if(g_dmB1Faulted==DPCALL_FAULT)
+        Markerf("[DM] VERDICT: SpawnPlane still faulted (%s). If rva is 0x13495DD and KOUTPARMRET=%d "
+                "is 0, that is the PREDICTED reproduction and not a marker result.\r\n",DM_FAULT,(int)KOUTPARMRET);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ RM_DROPPOD (S126, 2026-08-17) — ROUTE C: SPAWN A DROP POD DIRECTLY.
+//        ZERO MODULE-IMAGE WRITES.  ZERO memory pokes.  Every effect is a UFunction call.
+//
+// WHY THIS ROUTE, AND WHY IT IS THE ONE EXPECTED TO WORK (FK-22 §3, all [M]):
+//   `ALokiDropShip::SpawnDropPodForTeam(int TeamIndex, const FVector& SpawnLocation,
+//    const FVector& LandingLocation)` takes its positions AS PARAMETERS and queries NO markers —
+//   exactly two bail points were graded offline (`TeamDropPodClass == nullptr`, and a null result
+//   from the pooled spawn).  `Default__BP_DropPlane_Base_C` sets `TeamDropPodClass = BP_DropPod_C`,
+//   whose SuperStruct is `/Script/Angelscript.LokiDropPod`.
+//   S125 THEN HANDED US THE MISSING PIECE: B1's `SpawnPlane` faulted but A PLANE SPAWNED ANYWAY —
+//   `BP_DropPlane_Straight_Tutorial_C`, chain `... <- BP_DropPlane_Base_C <- LokiDropShip <-
+//   LokiDropPlane <- Actor`.  So a LIVE `LokiDropShip`-derived actor now exists to call this on, and
+//   THE MARKER PROBLEM (PlaneStartPoint / PlaneEndPoint measured NOT STREAMED IN, 0 and 0 over 2,881
+//   actors) IS IRRELEVANT TO THIS ROUTE.  No phase is needed either.
+//
+// ⚠⚠ THE S125 ACTOR IS ALMOST CERTAINLY HALF-CONSTRUCTED.  B1 returned 0x0 and faulted at
+//    rva 0x13495DD, i.e. BEFORE `FinishSpawningActor` / `SetDropPlane`, so the component never took
+//    ownership.  This mode therefore (a) PRINTS the full per-candidate state rather than assuming a
+//    clean world, (b) reads and reports `TeamDropPodClass` on the chosen ship BEFORE calling — which
+//    is the ONE field bail point 1 tests and the one a half-built actor is most likely to be missing,
+//    and (c) re-reads it AFTER, so a `false` return is attributable to a NAMED bail point instead of
+//    to "it didn't work".
+//
+// ⚠⚠ ANGELSCRIPT.  `ALokiDropShip` is Angelscript, AOT-transpiled to C++ and compiled into the exe
+//    (FK-1) — so its UFunction has a REAL compiled `Func` thunk, not `ProcessInternal`.  This mode
+//    therefore DISPATCHES ON THE THUNK IT READS, never on an assumption: if `Func == ProcessInternal`
+//    it goes through `CallBPGuarded` (bytecode), otherwise through `CallNativeGuarded` (native), and
+//    it PRINTS which it chose.  FK-1 also measured that AS UClasses are NOT REGISTERED AT THE MENU
+//    (0 of 15 sampled) — in a LOADED MAP they should be, and this mode REPORTS that registration as a
+//    measurement (did the class resolve? did the UFunction resolve? on which owner class?) rather
+//    than assuming either way.
+//
+// ⚠ `GetTeamDropLeader` returns the first PlayerState with `IsSpawnTeamLeader()==true`, else nullptr,
+//   and `ALokiPlayerState::AuthSetSpawnTeamLeader` is an EMPTY fold (`ret 0`) — so the leader WILL be
+//   null.  FK-22 §3 grades a null leader [I] survivable at 3 of ≥4 known consumer sites.  That is [I],
+//   not [M]: this mode CALLS the getter (when its signature permits) and LOGS what came back, and a
+//   null is recorded as EXPECTED, not as a failure.
+//
+// ⚠⚠ THE RESULT IS THE CENSUS DELTA — the `DropPod` row.  Never a return value, and never "the call
+//    returned ok" (S114 got `console 'LogLoc' ok` from a call that never reached a PlayerController).
+//    `droppod-readonly` runs the censuses with ZERO calls and is the instrument's own null-delta
+//    control: if IT shows a DropPod delta, no other arm's delta means anything.
+//
+// ⚠ NOTHING IS HARDCODED.  0x2AD6F1F20E0 / 0x2ACBA707D80 were valid in PID 138796 ONLY.  Every object
+//   is resolved by CLASS at runtime; every property offset by NAME; every parameter offset AND SIZE
+//   AND TYPE is read out of the live `FProperty` chain.  The resolvers ENUMERATE and print each
+//   candidate, and REFUSE on ambiguity rather than taking the first match (the class-lookup blind-spot
+//   family now has six recorded members, all of which share the defect `take the first match`).
+//
+// ARMING: the heap `UFunction.Func` (+0xE0) swap (FsArm/FsHold/FsDisarm, KFUNCSWAP/KFSNAME), verbatim
+// from RM_PLAY / RM_PHASELADDER / RM_DROPPLANE.  NO `.text` write of any kind; with KFUNCSWAP=0 this
+// mode REFUSES to run rather than silently falling back to InstallHook().
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+
+// Which arms run.  bit0 C0 resolve + BEFORE census (always meaningful) | bit1 C1 SpawnDropPodForTeam |
+// bit2 C2 after-C1 mini-census | bit3 C3 pre-spawn a plane via SpawnPlane IF AND ONLY IF no live ship
+// exists | bit4 C4 AFTER census + delta table | bit5 C0c THE POSITIVE CONTROL |
+// ★ bit6 C2b THE GetTeamDropLeader PROBE, which is a REAL UFunction call.
+// ★★ bit7 E0 THE ROUTE-E POSITIVE CONTROL (K2_GetActorLocation through ProcessEvent) |
+// ★★ bit8 E1 SpawnDropPodForTeam through ProcessEvent -- ROUTE E's headline.
+// 0x7F = the full pre-registered ladder.  Trim it with a build variant, never by editing this default.
+// ⚠ THE DEFAULT STAYS 0x7F, so bits 7-8 are OFF unless a variant asks for them: adding Route E must
+//   not change what any existing droppod variant does. 0x1FF is the full C+E ladder (variant
+//   `droppod-pe`); 0xB9 is control-only (variant `droppod-pe-ctrl`).
+// ⚠ EVERY "this arm makes zero calls" test in this mode masks 0x1EA -- bits 1,3,5,6,7,8. It was 0x2A,
+//   then 0x6A when the leader probe was gated, and 0x1EA now that E0 and E1 exist. A stale mask there
+//   is a log asserting a property the code does not have, which is this project's recorded failure mode.
+//
+// ★★★★ S126 FINALIZER FIX (HIGH, caught in review before flight).  bit6 DID NOT EXIST: `PdProbeLeader`
+//   ran unconditionally in ladder step 2, so `droppod-readonly` -- the arm whose whole job is to be the
+//   census's own null-delta control, and which build.ps1 and the runtime marker BOTH advertised as
+//   "ZERO UFunction calls" -- made one real call into the game through the native-call primitive.  A
+//   control that does the thing it is controlling for is not a control, and the log asserting otherwise
+//   is this project's recorded failure mode (the claim the code does not have).  The probe is now
+//   gated, the readonly test below counts bit6 as a call (0x2A -> 0x6A), and `droppod-readonly` really
+//   is call-free.
+//
+// ★★ C0c IS NOT OPTIONAL.  It is `K2_GetActorLocation()` on THE SHIP ITSELF, and it is a stronger
+//    control than "did not fault": the returned FVector is COMPARED against a pure-RPM read of
+//    RootComponent->RelativeLocation on the same actor.  Agreement proves the primitive dispatched a
+//    real call ON THIS OBJECT and marshalled a struct return correctly.  Disagreement (or a fault)
+//    means C1's outcome is NOT attributable and the sitting is VOID for Route C.
+#ifndef KPDARMS
+#define KPDARMS 0x7F
+#endif
+// TeamIndex handed to SpawnDropPodForTeam.  0 = the first team.  A wrong team index is a plausible
+// bail path inside the pooled spawn, so it is a knob rather than a constant.
+#ifndef KPDTEAM
+#define KPDTEAM 0
+#endif
+// How far ABOVE the landing point the pod is asked to spawn, in Unreal units (1 uu = 1 cm), so the pod
+// has somewhere to descend from.  20000 = 200 m.  Purely a parameter value; nothing depends on it.
+#ifndef KPDSPAWNZ
+#define KPDSPAWNZ 20000
+#endif
+// Where the LANDING position comes from.  0 = auto (hero -> TrainingStart marker actor -> the ship
+// itself, first that resolves) | 1 = the live hero only | 2 = the TrainingStart-tagged actor only |
+// 3 = the ship's own location only.  ⚠ Coordinates are NEVER invented: if none of these resolves the
+// arm REFUSES rather than passing (0,0,0), because a fabricated position is exactly how a "the spawn
+// silently did nothing" result gets manufactured.
+#ifndef KPDORIGIN
+#define KPDORIGIN 0
+#endif
+// Tie-break when more than one live LokiDropShip-derived actor exists (S125 may have left a
+// half-constructed one behind).  0 = REFUSE and print the enumeration (default) | 1 = take the one
+// with the HIGHEST FUObjectArray InternalIndex, i.e. the most recently created.  The rule is stated
+// so the choice is reproducible; it is not on by default because "pick one" is how a probe ends up
+// measuring the wrong object.
+#ifndef KPDSHIPPICK
+#define KPDSHIPPICK 0
+#endif
+// Exact ship UClass FName override.  "" = use the enumeration rules above.
+#ifndef KPDSHIPCLASS
+#define KPDSHIPCLASS ""
+#endif
+// Call SpawnDropPodForTeam even if a parameter slot could not be bound by name OR by position.
+// DEFAULT 0 = REFUSE.  Passing a fabricated zero into an unbound FStructProperty is exactly how a
+// "SpawnDropPodForTeam faults" result gets manufactured — the error class this whole family of modes
+// exists to undo.
+#ifndef KPDFORCE
+#define KPDFORCE 0
+#endif
+// Whether C3 may pre-spawn a plane (by calling SpawnPlane on the DropPlane component) when NO live
+// LokiDropShip exists.  1 = yes, and say so loudly; 0 = report NOT-APPLICABLE and run no calls.
+// ★ DEFAULT 1, and this is a deliberate, stated choice: S125 MEASURED that SpawnPlane creates the
+//   actor even though it faults, so without this the arm is unflyable from a freshly staged world and
+//   the launch is wasted.  It cannot contaminate the headline: the delta row that answers Route C is
+//   `DropPod`, and SpawnPlane produces a PLANE.  The `DropPlane`/`DropShip` rows move and are labelled
+//   as C3's doing.  `droppod-noprespawn` is the arm that refuses instead.
+#ifndef KPDPRESPAWN
+#define KPDPRESPAWN 1
+#endif
+#ifndef KPDSTEPMS
+#define KPDSTEPMS 500
+#endif
+#ifndef KPDSETTLEMS
+#define KPDSETTLEMS 4000
+#endif
+#ifndef KPDMODEHOLDMS
+#define KPDMODEHOLDMS 120000
+#endif
+#ifndef KPDMINICENSUS
+#define KPDMINICENSUS 1
+#endif
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ ROUTE E (S126, 2026-08-19) — DISPATCH `SpawnDropPodForTeam` THROUGH `ProcessEvent`.
+//
+// WHY IT EXISTS. Route C resolved everything and then could not call: the live UFunction's
+// `Func` (+0xE0) READ BACK 0x0, while `K2_GetActorLocation` on the SAME object read a real thunk and
+// dispatched. The S55 direct-thunk primitive has nothing to jump to. FK-1 §4 names the successor —
+// `_ParmsEntry` implements `ProcessEvent`'s flat-params contract, and the script corpus itself
+// dispatches script UFUNCTIONs via `FindFunctionChecked` + `ProcessEvent` — and FK-1's own
+// conclusion ("callable by the existing S55 recipe unchanged") carries the parenthetical
+// "(mechanism named; **the `Func` value itself is INFERRED**)". FK-1 flagged the exact thing S126
+// measured false; this arm is the successor FK-1 pointed at, not a correction of it.
+//
+// ⚠⚠ AND THE OFFLINE GRADE SAYS `ProcessEvent` IS NOT AUTOMATICALLY A `Func`-FREE ROUTE.
+//    Read from `dumps/merged2.dump.exe`, all [M]:
+//      * `UObject::ProcessEvent`  = rva 0x1344E10 ; `AActor::ProcessEvent` = rva 0x3396280 (tail-calls it)
+//      * the NORMAL path ends at `UFunction::Invoke` = rva 0x1225F30, whose last act is
+//            0x1225FCF  call qword ptr [r14+0xE0]      ; r14 = the UFunction
+//        with **NO null test anywhere in the function**. ⇒ for a null `Func`, ProcessEvent is a
+//        LONGER PATH TO THE SAME POINTER and the call is an unconditional `call [0]`.
+//      * BUT at 0x1344EB4 ProcessEvent reads `FunctionFlags` (+0xB8) and does `test cl,0x10`; when
+//        that bit is SET it dispatches `call qword ptr [FunctionVtable+0x378](Fn, Obj, Parms)` and
+//        RETURNS — never reading `Func` at all. (With `FUNC_NetValidate` (0x80000000) also set it
+//        first calls `[FunctionVtable+0x380]` to fetch a companion UFunction.) Bit 0x10 is UNUSED in
+//        stock `EFunctionFlags`, and the same bit is OR'd into ProcessEvent's net/reject gate at
+//        0x1344E69 (`test dword [Fn+0xB8], 0x410`). Stock numbering is otherwise confirmed IN THE
+//        SAME FUNCTION (0x8000 = FUNC_UbergraphFunction -> GetPersistentUberGraphFrame via
+//        `[Outer vtable+0x3C8]`; 0x400000 = FUNC_HasOutParms -> the FOutParmRec chain).
+//        ⇒ [I, strong] bit 0x10 is this build's ALTERNATE-DISPATCH (script) flag and
+//          `[UFunction vtable + 0x378]` is the `_VMEntry` FK-1 recovered. [S] the slot is UNNAMED.
+//      * third outcome: if `Func == 0`, bit 0x10 is clear, `(flags & 0x410) == 0` AND `Script.Num`
+//        (+0x70) is 0, ProcessEvent's reject gate returns at once — a SAFE but GUARANTEED no-op.
+//    ⇒ THIS ARM GRADES THE LIVE UFUNCTION BEFORE CALLING and REFUSES the one combination that is a
+//      certain access violation. A refusal here is a RESULT (it is LINE 1's prediction confirmed on
+//      the live object), not a failure; `-DKPDPEFORCE=1` escalates deliberately.
+//
+// ⚠⚠ S127 — A FOURTH SILENT EXIT, AND IT IS THE ONE THIS ARM ACTUALLY ENTERS. The ship is an
+//    ACTOR, so its vtable slot 78 holds **`AActor::ProcessEvent` (rva 0x3396280)**, not
+//    `UObject::ProcessEvent` (rva 0x1344E10) — resolving out of the target's own vtable, which this
+//    arm correctly does, therefore lands on the OVERRIDE. Read byte for byte, that override is:
+//        test dword [Fn+0xB8],0x410 ; jne on          ; the same reject gate (bit 0x10 passes it)
+//        cmp  dword [Fn+0x70],0     ; je  RETURN      ; ...else Script.Num must be non-zero
+//        call 0x338C990             ; AActor::GetWorld
+//        call 0x3F4FFB0             ; [I,strong] UWorld::AreActorsInitialized --
+//                                   ;   `bActorsInitialized` @World+0x234, PersistentLevel @+0x38,
+//                                   ;   Actors.Num @+0xB0 -- the stock triple
+//        (or a global byte, or RF_ClassDefaultObject at [obj+0x0C]>>4)
+//        cmp  byte [rip+...],0 ; jne RETURN            ; [I] GIntraFrameDebuggingGameThread
+//        call 0x1344E10                                ; -> UObject::ProcessEvent
+//    ⇒ **if the world's actors are not initialised, `AActor::ProcessEvent` RETURNS HAVING DONE
+//      NOTHING, with no log and no fault.** That is a fourth way to get a null out of Route E, it is
+//      invisible in the marker, and it is NOT a statement about the drop pod. On a staged tutorial
+//      world that has reached `EGP_Combat` it should pass — but "should" is not "measured".
+//      The `rva 0x…` this arm prints beside the resolved ProcessEvent is the discriminator:
+//      0x3396280 = the actor override (this gate applies) · 0x1344E10 = the UObject one (it does not).
+//
+// ⚠ THE VTABLE DISPLACEMENT IS 0x270 (slot 78), NOT 0x1C0 (slot 56). [M], three ways:
+//     (a) 3,651 `.rdata` vtables hold `UObject::ProcessEvent` (0x1344E10) at exactly disp 0x270;
+//     (b) the UHT ProcessEvent stub at rva 0x54532B0 is
+//         `mov rax,[rcx]; mov rbx,[rax+0x270]; call FindFunctionChecked(0x1344150); call rbx`;
+//     (c) ProcessEvent's own body reads the two NEIGHBOURING slots of the object it was handed —
+//         `call [objVt+0x278]` returning a FunctionCallspace bitfield tested `&1` then `&2`, and
+//         `call [objVt+0x280]` on the `&1` arm ⇒ 0x270/0x278/0x280 = ProcessEvent /
+//         GetFunctionCallspace / CallRemoteFunction, the stock consecutive triple.
+//   `docs/next-session-prompt-s80.md`'s `base+0x12C5A10, vtable slot 56` IS at disp 0x1C0 on the
+//   AGameModeBase vtable, and that function opens `mov rax, gs:[0x58]` (TLS) — it is not
+//   ProcessEvent. This arm PRINTS the disp-0x1C0 occupant beside the real one, for the record, and
+//   never calls it. `tutorial_launch.cpp:3616` already says "S80 falsified our ProcessEvent RVA".
+//
+// ⚠ `+0x108` IS NOT `Script`. `sizeof(UFunction) == 0xE8` here — ProcessEvent's own body reads
+//   `NumParms@0xBC`, `ParmsSize@0xBE`, `ReturnValueOffset@0xC0`, `FirstPropertyToInit@0xC8`,
+//   `EventGraphFunction@0xD0`, `EventGraphCallOffset@0xD8`, and this file's long-proven
+//   `UFUNC_FUNC=0xE0` closes it; `Script` is `Data@0x68 / Num@0x70 / Max@0x74` (this file's own
+//   `USTRUCT_SCRIPT`/`USTRUCT_SCRIPTNUM`, and ProcessEvent tests `Script.Num` at `[Fn+0x70]`).
+//   ⚠⚠ S127 RETRACTION — the rest of this paragraph was WRONG AND IT WOULD HAVE FORECLOSED THE
+//   ANSWER. It read: 'the "plausible TArray at +0x108, Num=3 Max=4" seen live is 0x20 PAST THE END
+//   OF THE OBJECT -- the FK-14 read-past-the-object artifact, i.e. a neighbouring heap allocation.'
+//   `sizeof(UFunction) == 0xE8` is true of the BASE class, and the live object is NOT a base
+//   UFunction: it is the Angelscript SUBCLASS (see the S127 block above PDPE_FN_SCRIPTFN). Two
+//   independent code sites read `+0x108` as a real member of the same object -- the generator at
+//   `.text 0x048AB7A0` (`mov rax,[r14+0x108]` with Num at `[r14+0x110]`, r14 = the UFunction it
+//   just built) and the alt-dispatch body at `.text 0x048E6620` (`mov rax,[rdi+0x108]`, rdi = the
+//   UFunction ProcessEvent handed it). It is the **parameter-descriptor TArray**, stride 0x48,
+//   Num == the INPUT-parameter count; Num=3 is exactly SpawnDropPodForTeam's three inputs, and the
+//   ReturnValue property is held separately at `+0x130`.
+//   ★ GENERAL RULE THIS COST: 'a plausible structure past sizeof(BaseClass)' is NOT evidence of
+//     heap adjacency when the object may be a SUBCLASS. Establish the class before calling a field
+//     an artifact. This arm now reads and prints +0xE8/+0xF0/+0x108/+0x110 for exactly that reason.
+//   This arm still reads `Script.Num` at +0x70 and PRINTS it, because 0 there is one of the three
+//   ways to get a silent null out of ProcessEvent.
+//
+// ⚠⚠ THE RETURN LANDS SOMEWHERE ELSE THAN ON THE DIRECT PATH, AND THAT IS THE E0 CONTROL'S POINT.
+//    ProcessEvent computes `ReturnValueAddress = Parms + [Fn+0xC0]` (0x1344537B: `movzx eax,[rdi+0xC0];
+//    cmp ax,0xFFFF; jne -> lea r14,[rax+r13]`, r13 = Parms) — so a native callee's return is written
+//    INTO THE PARAMS BLOCK, whereas `CallNative` puts it in RESULT_DECL (`g_rbuf`). C0c had to be
+//    fixed twice for exactly that distinction. E0 therefore reads the params block AND cross-checks
+//    `[Fn+0xC0]` against the ReturnValue FProperty's own `Offset_Internal`.
+//
+// ⚠⚠ AND THE CONTROL MUST NOT COMPARE TWO ZEROS. S126's C0c "AGREED" at (0,0,0) because the ship was
+//    S125's half-constructed plane with no position — two zeros agree perfectly and prove nothing.
+//    E0 requires a NON-ZERO reference for a strong pass, prints `WEAK CONTROL (origin)` otherwise,
+//    and in that case RE-RUNS the same ProcessEvent route on a non-origin actor (hero / TrainingStart)
+//    so the ROUTE still gets a real positive even when the ship sits at the origin.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+
+// The ProcessEvent vtable DISPLACEMENT in bytes (slot index = disp/8). 0x270 => slot 78. It is a knob
+// only so a future build can be probed without an edit; the default is the measured value.
+#ifndef KPDPEDISP
+#define KPDPEDISP 0x270
+#endif
+// Call the script UFunction through ProcessEvent even when the runtime grade says the path will reach
+// `UFunction::Invoke` with `Func == 0` (an unconditional `call [0]`). DEFAULT 0 = REFUSE. A refusal is
+// the honest reading of LINE 1's offline grade; forcing it deliberately spends the game thread.
+#ifndef KPDPEFORCE
+#define KPDPEFORCE 0
+#endif
+// S127-FIX: E0c, the positive control for the ALT-DISPATCH branch specifically (see PdPEAltControl).
+// Default ON, because without it Route E has no control for the branch it actually takes. Setting it
+// to 0 does not make the arm safer -- it makes the arm's result unattributable, and it says so.
+#ifndef KPDPEALTCTRL
+#define KPDPEALTCTRL 1
+#endif
+// Historical S80 candidate displacement, printed beside the real one for the record. NEVER called.
+#ifndef KPDPEDISPOLD
+#define KPDPEDISPOLD 0x1C0
+#endif
+
+// FField/FProperty layout used by the runtime signature reader.  `FPROP_OFFSET=0x44` and
+// `FPROP_FLAGS=0x38` are already established at the top of this file; these two complete the set and
+// are the stock UE5 positions that those two imply (FField: Class@0x08 Next@0x18 Name@0x20 Flags@0x28;
+// FProperty: ArrayDim@0x30 ElementSize@0x34 PropertyFlags@0x38 Offset_Internal@0x44).
+// ★ Reading ElementSize is what makes "FVector is 3 doubles in this build" a MEASUREMENT rather than
+//   an assumption: 24 => double (LWC), 12 => float.  The mode branches on the value it reads.
+//
+// ⚠⚠ S126 CORRECTION, FOUND LIVE. This was `0x30`, and the comment placed `ArrayDim@0x2C
+//    ElementSize@0x30`. BOTH were off by one field, and the symptom was pathognomonic: the live
+//    signature of `SpawnDropPodForTeam` printed **size=1 for EVERY slot** --
+//      [0] IntProperty size=1 (must be 4) · [1]/[2] StructProperty struct=Vector size=1 (must be 24
+//      or 12) · [3] BoolProperty size=1 (correct only by coincidence)
+//    -- because `0x30` is **ArrayDim**, which is 1 for every property that is not a C-array. The mode
+//    then correctly REFUSED to call ("ElementSize=1 is neither 24 nor 12"), so the defect cost an arm
+//    rather than producing a fabricated result. ★ The refusal is what made it diagnosable.
+//    The corrected positions are FORCED by a constant this file already proves in daily use:
+//    `FPROP_FLAGS=0x38` is a uint64, and stock layout places exactly two int32s immediately before it
+//    => ArrayDim@0x30, ElementSize@0x34. `FPROP_OFFSET=0x44` (also long-proven) closes the far side.
+//    ⇒ [I] by arithmetic from two [M] constants, and the next flight's printed sizes are the test:
+//      expect Int=4, Vector=24 (LWC doubles) or 12, Bool=1. If they still read 1, this is wrong again.
+constexpr uintptr_t FFIELD_CLASS=0x08;        // FField::ClassPrivate -> FFieldClass
+constexpr uintptr_t FFIELDCLASS_NAME=0x00;    // FFieldClass::Name (FName)
+constexpr uintptr_t FPROP_ARRAYDIM=0x30;      // FProperty::ArrayDim   (1 unless a C-array)
+constexpr uintptr_t FPROP_ELEMSIZE=0x34;      // FProperty::ElementSize  [S126: was 0x30 = ArrayDim]
+// FK-14 [M]: the type-carrying property families keep their payload pointer at +0x70 (Struct/Object/
+// Class/Soft*/Weak/Lazy/Interface/Byte).  FArrayProperty is the ONE deviant (hole at +0x70, Inner at
+// +0x78) and is not used here.
+constexpr uintptr_t FSTRUCTPROP_STRUCT=0x70;
+// ⚠ CPF_ConstParm/CPF_ReferenceParm matter here and NOWHERE ELSE in this file.  A `const FVector&`
+//   parameter carries CPF_Parm|CPF_OutParm|CPF_ConstParm|CPF_ReferenceParm, so the existing
+//   `DpDumpSig` classifier — which calls anything with CPF_OutParm a "PARAM-OUT" — would report
+//   SpawnDropPodForTeam's two positions as OUTPUTS and its input count as 1.  That misreading would
+//   make this mode refuse to bind the very parameters it exists to pass.  This walker classifies
+//   IN = Parm && !ReturnParm && (!OutParm || ConstParm), and prints the raw flags either way.
+constexpr uint64_t CPF_ConstParm=0x2, CPF_ReferenceParm=0x8000000, CPF_Parm=0x80;
+
+// One parameter slot, read entirely from the live FProperty chain.  Nothing here is assumed.
+struct PdParm {
+    uintptr_t prop;
+    char      name[64];
+    char      type[48];      // FFieldClass name: IntProperty / StructProperty / BoolProperty / ...
+    char      sname[48];     // for StructProperty: the UScriptStruct's FName ("Vector", "Rotator", ...)
+    uint32_t  off;
+    uint32_t  elem;          // ElementSize -- 24 => FVector is 3 doubles, 12 => 3 floats
+    uint64_t  flags;
+    int       isIn, isOut, isRet, isConstRef;
+};
+
+static uintptr_t g_pdShip=0;   static char g_pdShipName[128]={0}, g_pdShipChain[256]={0};
+static uintptr_t g_pdFn=0,   g_pdFnChild=0;   static char g_pdFnOwner[96]={0};
+static uintptr_t g_pdCtlFn=0,g_pdCtlChild=0;  static char g_pdCtlOwner[96]={0};   // K2_GetActorLocation
+static uintptr_t g_pdLdrFn=0,g_pdLdrChild=0;  static char g_pdLdrOwner[96]={0};   // GetTeamDropLeader
+static PdParm    g_pdP[16]; static int g_pdNP=0;      // SCRATCH -- overwritten by every PdWalkParams call
+// (!!) THE SCRATCH ARRAY IS NOT THE BINDING. `PdWalkParams` writes g_pdP, and it is called THREE
+//    times (SpawnDropPodForTeam at resolve time, then K2_GetActorLocation in C0c and
+//    GetTeamDropLeader in the pre-call readout -- BOTH of which run BEFORE C1). Binding indices
+//    into a shared scratch buffer would therefore point into a DIFFERENT function's parameter
+//    table by the time C1 wrote its arguments, and the resulting fault or null would have been
+//    blamed on SpawnDropPodForTeam. That is S114's borrowed-helper trap verbatim (`RunConsole`
+//    read globals populated by another run mode and printed `console 'LogLoc' ok` for a call that
+//    never happened). SpawnDropPodForTeam's own slots are SNAPSHOTTED at resolve time into g_pdSP
+//    and are never touched again.
+static PdParm    g_pdSP[16]; static int g_pdNSP=0;     // SpawnDropPodForTeam's OWN parameter slots
+static int  g_pdIxTeam=-1, g_pdIxSpawn=-1, g_pdIxLand=-1, g_pdIxRet=-1;
+static char g_pdBindWhy[3][80]={{0},{0},{0}};
+static uint32_t g_pdTdpcOff=0xFFFFFFFF;         // ship.TeamDropPodClass, resolved BY NAME
+static uintptr_t g_pdTdpcBefore=0, g_pdTdpcAfter=0;
+static double g_pdLand[3]={0,0,0}, g_pdSpawn[3]={0,0,0};
+static char   g_pdOriginWhy[128]={0};
+static bool   g_pdHavePos=false;
+static uint8_t g_pdparms[0x400]={0};
+static int  g_pdC1Ran=0, g_pdC1Faulted=-1, g_pdCtlRan=0, g_pdCtlFaulted=-1;
+static int  g_pdCtlAgree=-1;                    // 1 = K2_GetActorLocation matched the RPM read
+static uint64_t g_pdRetRaw=0;                   // whatever landed in the return slot
+static int  g_pdPreSpawned=0;
+static volatile long g_pdStep=0; static DWORD g_pdLastMs=0;
+static bool g_pdResolved=false;
+static DpCounts g_pdB={0,0,0,0,0,0,0}, g_pdM={0,0,0,0,0,0,0}, g_pdA={0,0,0,0,0,0,0};
+static uintptr_t g_pdHero=0, g_pdStart=0;       // location sources, resolved by enumeration
+
+// ---- ROUTE E state (all resolved at runtime; nothing here is a hardcoded address) ------------------
+// UFunction fields ProcessEvent itself reads. Every one of these was re-derived from the disassembly
+// of `UObject::ProcessEvent` (rva 0x1344E10) in this pass; `UFUNC_FUNC=0xE0` (long-proven, top of
+// file) and `USTRUCT_SCRIPT/SCRIPTNUM=0x68/0x70` close the layout at sizeof(UFunction)==0xE8.
+constexpr uintptr_t PDPE_FN_FLAGS   =0xB8;   // uint32 FunctionFlags   (0x1344E69 / 0x1344EB4 read it)
+constexpr uintptr_t PDPE_FN_NUMPARMS=0xBC;   // uint8  NumParms        (0x1344F3F)
+constexpr uintptr_t PDPE_FN_PARMSIZE=0xBE;   // uint16 ParmsSize       (0x13451AC)
+constexpr uintptr_t PDPE_FN_RETOFF  =0xC0;   // uint16 ReturnValueOffset, 0xFFFF = none (0x134537B)
+// FunctionFlags bit 4. UNUSED in stock EFunctionFlags; in this build it selects the Func-free
+// dispatch `[UFunction vtable + 0x378]` at 0x1344EB4 and is OR'd into the reject gate's 0x410 mask.
+constexpr uint32_t   PDPE_FLAG_ALTDISPATCH=0x10;
+constexpr uint32_t   PDPE_REJECT_MASK     =0x410;      // `test dword [Fn+0xB8],0x410` @0x1344E69
+constexpr uint32_t   PDPE_FLAG_NETVALIDATE=0x80000000; // sign bit; selects the [+0x380] pre-step
+constexpr uintptr_t  PDPE_UFVT_ALT   =0x378;           // called as (UFunction*, UObject*, void* Parms)
+constexpr uintptr_t  PDPE_UFVT_ALTVAL=0x380;           // returns a companion UFunction*
+// The three universal folds this image uses for stripped bodies (FK-1). A ProcessEvent slot or an
+// alt-dispatch slot landing on one of these is a STUB, and saying so is cheaper than a flight.
+constexpr uintptr_t  PDPE_FOLD_RET0A =0x0F7EC20;   // c2 00 00        ret 0
+constexpr uintptr_t  PDPE_FOLD_RET0B =0x0F7EB50;   // 33 c0 c3        xor eax,eax; ret
+constexpr uintptr_t  PDPE_FOLD_RET0C =0x0F7EB60;   // 32 c0 c3        xor al,al;  ret
+
+// ══ S127 (2026-08-19) — THE ALT-DISPATCH PATH IS NOW [M], AND THE LIVE UFunction IS A SUBCLASS ══
+// Offline, `dumps/merged2.dump.exe`, zero launches. Four independent measurements, each with a
+// control, upgrade S126's "[I, strong] bit 0x10 is the script flag / [S] the slot is unnamed":
+//
+//  (1) `UFunction`'s OWN vtable is `.rdata 0x076FEB60`, 113 slots (`tools/strxref/vtables.py`
+//      names it HIGH from UE's IMPLEMENT_CLASS boilerplate).  Slot 111 (disp 0x378) is
+//      **0x0F7EC20 = ret 0** and slot 112 (disp 0x380) is **0x0F7EB50 = xor eax,eax; ret** — i.e.
+//      on a PLAIN UFunction both are the universal folds.  They are the LAST TWO slots of the
+//      class, which is what a fork-added pair of virtuals looks like.  ⇒ a non-fold occupant is
+//      proof the live object is a DERIVED class, and that test is now in the grade below.
+//  (2) 32 further 113-slot vtables sit back-to-back at `.rdata 0x0848A140..0x08490EB8` (stride
+//      0x388), all installed from one stretch of code at `.text 0x0469C2B9..0x0469C859`.  All 32
+//      carry **distinct, real** slot-111 bodies in `0x048E6570..0x048E8D70` and all 32 share
+//      slot 112 = `0x01D3B890` = `mov rax,[rcx+0xF0]; ret` — a two-instruction GETTER for a
+//      UFunction field, exactly the "fetch the companion UFunction" step ProcessEvent takes on
+//      the sign-bit arm.  ⇒ `+0xF0` is that companion pointer, read out of the object.
+//  (3) slot 111's body (read at 0x048E6570) is **the AngelScript context marshaller**: it loads
+//      `[UFunction+0xE8]`, bails to a null return if that is 0 (0x048E658E), optionally re-resolves
+//      a virtual override through `[[Obj+0x18]+0x140]+0x1D8][idx]` when `[scriptfn+0x160] != -1`,
+//      then walks a **parameter-descriptor array at `[UFunction+0x108]` with `Num` at `+0x110`,
+//      stride 0x48**, reading each entry's params-block offset at `+0x40` and a type tag at `+0x44`
+//      and dispatching through a jump table into asIScriptContext `SetArg*` calls, tests
+//      `FunctionFlags & 0x2000` (FUNC_Static) to decide whether to `SetObject`, and Executes.
+//      NO authority test, NO net test, NO read of `Func`.
+//  (4) the CREATOR is `.text 0x048AA930..0x048ABAB8` (the Angelscript module region; its .cpp path
+//      (its source path 'Plugins/Angelscript/Source/AngelscriptCode/Private/ClassGenerator/
+//      AngelscriptClassGenerator.cpp' is plaintext at `.rdata 0x084DB300`). At 0x048AAEF2 it does
+//      `or dword ptr [r14+0xB8], 0x10` on the freshly allocated UFunction, sets
+//      `ReturnValueOffset=0xFFFF`, stores the script-function pointer into `[r14+0xE8]`, and
+//      **never writes `+0xE0` (Func) and never writes `Script` (+0x68/+0x70)** — which is exactly
+//      why the live `Func` reads 0 and why bit 0x10 had to be added to ProcessEvent's reject mask.
+//      CONTROL: bit 0x10 (and bit 0x20) occur in **0 of 18,325** UHT-registered native UFunctions
+//      (`tools/re/out/uht_funcflags_tuthero.csv`), so neither bit is a compile-time flag.
+//
+// ⇒ [M] `FunctionFlags & 0x10` == "this is an AOT-compiled Angelscript UFunction", `+0xE8` is its
+//   `asCScriptFunction*`, `+0x108/+0x110` is its parameter-descriptor TArray, and ProcessEvent
+//   dispatches it through vtable slot 111 WITHOUT EVER READING `Func`.  Route E is the DESIGNED
+//   path for this function, not a workaround.
+// ⚠ `[fn+0xE8] == 0` is the one remaining silent-null exit on this route (0x048E658E) — the grade
+//   below reads it, because a null there is indistinguishable on screen from "the drop pod did not
+//   spawn".
+constexpr uintptr_t PDPE_FN_SCRIPTFN =0xE8;   // asCScriptFunction*  (written by the generator; read by slot 111)
+constexpr uintptr_t PDPE_FN_ALTFN    =0xF0;   // companion UFunction* returned by vtable slot 112
+constexpr uintptr_t PDPE_FN_PARMDESC =0x108;  // TArray<0x48-byte param descriptor>::Data
+constexpr uintptr_t PDPE_FN_PARMDESCN=0x110;  // ...::Num   (== the INPUT parameter count; the return
+                                              //     value lives separately at +0x130)
+// The measured band the 32 alt-dispatch bodies occupy. A slot-111 occupant inside it is the
+// AngelScript marshaller; one outside it is something this grade has never seen and says so.
+constexpr uintptr_t PDPE_ASDISP_LO   =0x048E6000;
+constexpr uintptr_t PDPE_ASDISP_HI   =0x048E9000;
+
+// ══ S127-FIX — THE MARSHALLER'S OWN OFFSET TABLE. IT IS *NOT* THE FProperty CHAIN. ═══════════════
+// The review caught this and it is load-bearing: on the alt-dispatch path the arguments are NOT read
+// at each FProperty's Offset_Internal. Slot 111's parameter loop is, verbatim (merged2, rva shown):
+//     0x048E6620  mov     rax, [rdi+0x108]              ; descriptor array base
+//     0x048E6627  movsxd  rdx, dword [r14+rax+0x40]     ; <- the OFFSET INTO Parms, per descriptor
+//     0x048E662C  movzx   eax, byte  [r14+rax+0x44]     ; <- a TYPE TAG, selecting the SetArg* case
+//     0x048E6632  add     rdx, r12                      ; r12 = Parms
+//     0x048E66B6  add     r14, 0x48                     ; <- STRIDE 0x48
+// and the return is written at a THIRD place, not ReturnValueOffset(+0xC0) — which the generator
+// explicitly sets to 0xFFFF at 0x048AAEE8:
+//     0x048E676A  cmp     qword [rdi+0x130], 0          ; return FProperty; 0 => no return written
+//     0x048E6772  je      <skip>
+//     0x048E6774  movzx   eax, byte  [rdi+0x174]        ; return type tag
+//     0x048E6782  movsxd  rbx, dword [rdi+0x170]        ; <- the RETURN's offset into Parms
+//     0x048E6789  add     rbx, r12
+// ⇒ E1 reads these live, PRINTS them, and CROSS-CHECKS them against the FProperty offsets. They may
+//   well agree (the ABI recovered offline from `_ParmsEntry` — 0x00 / 0x08 / 0x20, bool at 0x38 —
+//   equals the live FProperty layout Route C measured), but "may well agree" is not a measurement,
+//   and a silent disagreement would feed the script three uninitialised zeros and blame the game.
+constexpr uintptr_t PDPE_PD_OFF      =0x40;   // int32  offset-into-Parms                (0x048E6627)
+constexpr uintptr_t PDPE_PD_TAG      =0x44;   // uint8  type tag -> SetArg* case         (0x048E662C)
+constexpr uintptr_t PDPE_PD_STRIDE   =0x48;   //                                          (0x048E66B6)
+constexpr uintptr_t PDPE_FN_RETPROP  =0x130;  // return FProperty*; NULL => no return     (0x048E676A)
+constexpr uintptr_t PDPE_FN_RETMOFF  =0x170;  // int32  the return's offset into Parms    (0x048E6782)
+constexpr uintptr_t PDPE_FN_RETMTAG  =0x174;  // uint8  return type tag                   (0x048E6774)
+
+// ══ S127-FIX — THE CALLSPACE GATE, WHICH SITS *IN FRONT OF* THE ALT-DISPATCH BRANCH. ════════════
+// The second thing the review caught, and the more dangerous one. Bit 0x10 is INSIDE the 0x410 mask,
+// so a script UFunction does NOT take the je at 0x1344E73 — it falls into the net-routing block:
+//     0x1344E69  test    dword [rdx+0xB8], 0x410
+//     0x1344E73  je      0x1344EAA                     ; <- NOT taken when bit 0x10 is set
+//     0x1344E7B  call    qword [rax+0x278]             ; UObject::GetFunctionCallspace(Fn, Parms, 0)
+//     0x1344E83  test    al, 1                         ; Remote  -> CallRemoteFunction
+//     0x1344E98  mov     r10, [rcx+0x280]  / call r10  ; <- A REAL SIDE EFFECT, on the game thread
+//     0x1344EA5  test    bl, 2                         ; Local?
+//     0x1344EAE  je      0x1345468                     ; <- RETURNS. No dispatch. No log. No fault.
+//     0x1344EB4  ... only now the bit-0x10 branch
+// AActor::GetFunctionCallspace (rva 0x3388E40) can return Absorbed(0) — no bit 1, no bit 2 — when
+//     0x3388E88  movzx   r14d, byte [rbx+0x160]        ; Role
+//     0x3388E92  cmp     r14b, 3                       ; < ROLE_Authority
+//     0x3388EA1  shr eax,2 / test al,1                 ; FunctionFlags & 0x4 (BlueprintAuthorityOnly)
+// ⇒ A NON-AUTHORITY actor calling a BlueprintAuthorityOnly function is ABSORBED: ProcessEvent
+//   returns having done nothing. That is a FOURTH silent-null exit and it is invisible on screen.
+//   The grade below reads both inputs and says so BEFORE the call, so a null is never mistaken for
+//   "the drop pod did not spawn". (It does NOT call GetFunctionCallspace itself — that would be an
+//   extra virtual call on the game thread purely to instrument, and the inputs are free to read.)
+constexpr uintptr_t PDPE_OBJVT_CALLSPACE=0x278;
+constexpr uintptr_t PDPE_OBJVT_REMOTEFN =0x280;
+constexpr uintptr_t PDPE_ACTOR_ROLE     =0x160;   // AActor::Role (byte); ROLE_Authority == 3
+constexpr uint32_t  PDPE_FLAG_BPAUTHONLY=0x4;
+constexpr uint32_t  PDPE_FLAG_STATIC    =0x2000;
+// A return slot pre-filled with this byte separates "the marshaller wrote false" from "nothing ever
+// wrote here". Without it, Execute() failing inside the context and the script genuinely returning
+// false are the SAME reading -- and Execute's result is not checked at 0x048E6765.
+constexpr uint8_t   PDPE_RET_SENTINEL   =0xA5;
+
+// ══ S127 — THE StaticJIT REGISTRATION FOR THIS EXACT FUNCTION, RECOVERED. "ROUTE F", NOT TAKEN. ══
+// FK-1 says a 1,459-row symbol table (script fn -> raw / _VMEntry / _ParmsEntry RVAs) was recovered.
+// ⚠ IT IS NOT ON DISK. `tools/asdump/out/symbols.csv` is 2,674 rows of a DIFFERENT thing (bound C++
+//   symbols; `SpawnDropPodForTeam` does not appear in it), and nothing under `tools/asdump/` holds
+//   the JIT table. It was never persisted. The recovery recipe below is cheap and reproducible, and
+//   it was re-run from scratch for this function:
+//     1. `tools/asdump/asdump.py`'s own loader gives every script function's cache **Id**:
+//          load_cache(<GameRoot>/Loki/Script/PrecompiledScript.Cache).functions -> (module, fn)
+//          fn.id for ALokiDropShip::SpawnDropPodForTeam == 0x01818A81 (25,266,817), bIsUFunction=1,
+//          BlueprintCallable=1, BlueprintAuthorityOnly=0, 3 params, 150 bytecode dwords.
+//     2. that Id appears in .text exactly once as `mov edx, imm32` inside a registration stub that
+//        tail-calls `FStaticJITFunction::ctor` (rva 0x048FE510). For this Id the stub is at
+//        **rva 0x00F2D810** and is, verbatim:
+//              sub  rsp,0x38
+//              lea  rax,[rip+...]        -> 0x0597E730   ; 5th arg  = RAW
+//              mov  [rsp+0x20],rax
+//              lea  r9 ,[rip+...]        -> 0x0597F670   ; 4th arg  = _ParmsEntry
+//              lea  r8 ,[rip+...]        -> 0x0597F7B0   ; 3rd arg  = _VMEntry
+//              mov  edx,0x1818A81                        ; 2nd arg  = cache Id
+//              lea  rcx,[rip+...]        -> .data 0x0A03D2F9   ; the static FStaticJITFunction
+//              call 0x048FE510
+//        (arg order confirmed against the codegen template at .rdata 0x084EB7E0 AND against the two
+//        bodies' own shapes, which cannot be swapped without contradicting the disassembly.)
+//  ⇒ [M] SpawnDropPodForTeam: RAW = rva 0x0597E730 · _ParmsEntry = 0x0597F670 · _VMEntry = 0x0597F7B0
+//        (all three inside FK-1's measured StaticJIT body range 0x059128B0..0x05A7F070).
+//
+// THE RAW BODY'S ABI, read from its two CALLERS (which is why RAW's own bytes are not needed):
+//     bool __fastcall RAW(void* /*FScriptExecution&*/, UObject* Object,
+//                         int32 TeamIndex, const FVector* SpawnLocation, const FVector* LandingLocation)
+//   * `_ParmsEntry` (0x0597F670) walks a FLAT block with UE's Align/advance packing and produces
+//     offsets 0x00 (int32), 0x08 (24 B), 0x20 (24 B), return bool at 0x38 — **byte-identical to the
+//     live FProperty offsets Route C read off the UFunction**, which is an independent confirmation
+//     of both readings and of FVector == 3 doubles (LWC) in this build.
+//     It passes rcx/rdx straight through, `r8d = *(int32*)(Parms+0x00)`, `r9 = Parms+0x08`,
+//     `[rsp+0x20] = Parms+0x20`, then stores `al` to `*(uint8*)(Parms+0x38)`.
+//   * `_VMEntry` (0x0597F7B0) does the same from the AngelScript VM stack frame instead
+//     (`Object@+0x00, TeamIndex@+0x08, SpawnLocation@+0x0C, LandingLocation@+0x14` — dword-granular,
+//     hence the unaligned 0x0C/0x14) and writes the bool through its 3rd argument.
+//
+// ⛔ ROUTE F IS DELIBERATELY NOT IMPLEMENTED, for two reasons, and neither is squeamishness:
+//   (a) **RAW's page has never been decrypted.** `0x0597E730` reads as 16 zero bytes in ALL 18
+//       images on disk (11 single-state dumps + merged + merged2 + the crash captures). That is
+//       COVERAGE-BLOCKED, not absent — but it means the first instruction of the thing we would be
+//       calling has never been seen, and its first argument (`FScriptExecution&`) is a live VM
+//       object this shim has no legitimate way to fabricate. Passing a fabricated one is exactly the
+//       class of "call it anyway" that produces an AV misattributed to the game.
+//   (b) Route E reaches the same compiled body THROUGH the engine: ProcessEvent -> vtable slot 111
+//       -> asIScriptContext::Prepare/SetArg*/Execute -> the script function's `jitFunction`, which
+//       `PrecompiledData_master.cpp` assigns as `Function->jitFunction = JITFunctions->VMEntry`.
+//       The engine builds the FScriptExecution/context for us. ⇒ Route F is strictly more dangerous
+//       for the same destination.
+//   Keep these RVAs recorded anyway: if Route E is ever measured inert, RAW/_VMEntry are the named
+//   successors rather than a fresh RE pass.
+
+enum { PDPE_SAFE_INVOKE=0, PDPE_SAFE_VIRTUAL=1, PDPE_SAFE_NOOP=2, PDPE_WILL_FAULT=3, PDPE_UNREADABLE=4 };
+static uintptr_t g_pdPe=0;            // the resolved ProcessEvent, read out of the SHIP's own vtable
+static uintptr_t g_pdPeVt=0, g_pdPeOld=0;
+static int       g_pdPeSlot=-1;
+static PdParm    g_pdEP[16]; static int g_pdNEP=0;   // E1's OWN re-read of SpawnDropPodForTeam's slots
+static int  g_pdIxETeam=-1, g_pdIxESpawn=-1, g_pdIxELand=-1, g_pdIxERet=-1;
+static int  g_pdE0Ran=0, g_pdE0Faulted=-1, g_pdE0Verdict=-1;   // -1 n/a  0 FAIL  1 STRONG  2 WEAK  3 INCONCLUSIVE
+static int  g_pdE0bRan=0, g_pdE0bVerdict=-1;
+static char g_pdE0Why[192]={0}, g_pdE0bWhy[192]={0};
+static int  g_pdE1Ran=0, g_pdE1Faulted=-1, g_pdE1Grade=-1, g_pdE1Refused=0;
+// ★ S127-FIX (review BLOCKER): g_pdE1Refused was set by FOUR unrelated causes and the headline
+//   E-VERDICT then printed "ProcessEvent is not a Func-free route" for ALL of them -- including a
+//   live-FProperty-read defect, i.e. an INSTRUMENT statement published as the project's conclusion.
+//   The reason is now carried explicitly and the verdict switches on it.
+enum { PDER_NONE=0, PDER_GRADE=1, PDER_LAYOUT=2, PDER_MARSHAL=3, PDER_PRECOND=4 };
+static int  g_pdE1RefWhy=PDER_NONE;
+static int  g_pdE1Ret=-1;             // the ReturnValue bool read back OUT OF THE PARAMS BLOCK, -1 = unread
+static int  g_pdE1RetRaw=-1;          // ...the RAW byte, so the 0xA5 sentinel is visible
+static int  g_pdE1RetWritten=-1;      // 1 = something overwrote the sentinel, 0 = nothing ever did
+static uint32_t g_pdE1RetOff=0xFFFFFFFF, g_pdE1RetElem=0;
+static char g_pdE1Layout[256]={0};
+// ---- S127-FIX: the marshaller's OWN table, read live in PdGradeForPE and consumed by E1 ----------
+static uintptr_t g_pdMDesc=0; static uint32_t g_pdMDescN=0;
+static uint32_t  g_pdMOff[16]; static uint8_t g_pdMTag[16]; static int g_pdMN=0;
+static int       g_pdMHaveRet=0; static uint32_t g_pdMRetOff=0xFFFFFFFF; static uint8_t g_pdMRetTag=0;
+static int       g_pdMAgree=-1;   // -1 not checked | 1 marshaller offsets == FProperty offsets | 0 differ
+// ---- S127-FIX: the callspace readout (see PDPE_OBJVT_CALLSPACE) ---------------------------------
+static char g_pdCsWhy[288]={0};
+static int  g_pdCsAbsorbRisk=0;   // 1 = non-authority AND BlueprintAuthorityOnly => ABSORBED, silent
+// ---- S127-FIX: E0c, the control for the ALT-DISPATCH path specifically --------------------------
+static int  g_pdE0cRan=0, g_pdE0cVerdict=-1; static char g_pdE0cWhy[224]={0};
+// E1's OWN fault record, snapshotted the instant the call returns. DP_FAULT/FaultStr() is a PROCESS-WIDE
+// last-fault view, so printing it in a summary written minutes later would decorate E1 with another
+// call's exception record -- the S125 "REFUSED IS NOT FAULTED" defect in a new place.
+static char g_pdE1Flt[176]="-";
+static DpCounts g_pdE={0,0,0,0,0,0,0};
+// ProcessEvent writes a native callee's return INTO THIS BLOCK at Parms+ReturnValueOffset, so it must
+// be at least PropertiesSize bytes and 16-byte aligned (an FVector here is 3 doubles).
+__declspec(align(16)) static uint8_t g_pdpeparms[0x400]={0};
+
+// ---- runtime type reading -------------------------------------------------------------------------
+static void PdTypeOf(uintptr_t prop,char* type,size_t tsz,char* sname,size_t ssz){
+    if(type&&tsz) strncpy_s(type,tsz,"?",_TRUNCATE);
+    if(sname&&ssz) strncpy_s(sname,ssz,"-",_TRUNCATE);
+    if(!LooksLikePtr(prop)||!SafeReadable((void*)(prop+FFIELD_CLASS),8)) return;
+    uintptr_t fc=*(uintptr_t*)(prop+FFIELD_CLASS);
+    if(LooksLikePtr(fc)&&SafeReadable((void*)(fc+FFIELDCLASS_NAME),4)&&type&&tsz)
+        GetFNameStr(*(uint32_t*)(fc+FFIELDCLASS_NAME),type,(int)tsz);
+    if(type&&strcmp(type,"StructProperty")==0&&SafeReadable((void*)(prop+FSTRUCTPROP_STRUCT),8)){
+        uintptr_t ss=*(uintptr_t*)(prop+FSTRUCTPROP_STRUCT);
+        if(LooksLikePtr(ss)&&sname&&ssz) GetFNameStr(NameId(ss),sname,(int)ssz);
+    }
+}
+// Walk a UFunction's child chain and record EVERY parameter slot in declaration order.  Locals are
+// skipped (a BP event's locals share this chain, so `ChildProperties: N` is not N params).
+static int PdWalkParams(uintptr_t child,const char* tag){
+    g_pdNP=0;
+    uintptr_t f=child; int i=0;
+    while(LooksLikePtr(f)&&i<64&&g_pdNP<16){
+        uint64_t fl=SafeReadable((void*)(f+FPROP_FLAGS),8)?*(uint64_t*)(f+FPROP_FLAGS):0;
+        if(fl&CPF_Parm){
+            PdParm& p=g_pdP[g_pdNP];
+            p.prop=f; p.name[0]=0; GetFNameStr(NameId(f),p.name,sizeof(p.name));
+            p.off =SafeReadable((void*)(f+FPROP_OFFSET),4)?*(uint32_t*)(f+FPROP_OFFSET):0xFFFFFFFF;
+            p.elem=SafeReadable((void*)(f+FPROP_ELEMSIZE),4)?*(uint32_t*)(f+FPROP_ELEMSIZE):0;
+            p.flags=fl;
+            PdTypeOf(f,p.type,sizeof(p.type),p.sname,sizeof(p.sname));
+            p.isRet=(fl&CPF_ReturnParm)?1:0;
+            p.isConstRef=((fl&CPF_ConstParm)&&(fl&CPF_ReferenceParm))?1:0;
+            p.isOut=(!p.isRet&&(fl&CPF_OutParm)&&!(fl&CPF_ConstParm))?1:0;
+            p.isIn =(!p.isRet&&!p.isOut)?1:0;
+            g_pdNP++;
+        }
+        uintptr_t nx=SafeReadable((void*)(f+FIELD_NEXT),8)?*(uintptr_t*)(f+FIELD_NEXT):0; f=nx; i++;
+    }
+    Markerf("[PD] sig %s: %d parameter slot(s) read from the LIVE FProperty chain (declaration order)\r\n",tag,g_pdNP);
+    for(int k=0;k<g_pdNP;k++){
+        PdParm& p=g_pdP[k];
+        Markerf("[PD] sig %s [%d] %-22s @0x%-4X size=%-3u %-16s struct=%-10s flags=0x%016llX  %s%s\r\n",
+                tag,k,p.name,p.off,p.elem,p.type,p.sname,(unsigned long long)p.flags,
+                p.isRet?"RETURN":(p.isOut?"OUT":"IN"),p.isConstRef?" (const-ref: value lives INLINE in the param block)":"");
+    }
+    return g_pdNP;
+}
+// Bind the three slots.  NAME first, POSITION as the fallback, and the reason is printed for each so a
+// wrong binding is visible in the log instead of being inferred from a null.
+// Binds against g_pdSP -- the SNAPSHOT -- never the shared scratch. See the comment on g_pdSP.
+static bool PdBindParams(){
+    g_pdIxTeam=g_pdIxSpawn=g_pdIxLand=g_pdIxRet=-1;
+    for(int k=0;k<3;k++) g_pdBindWhy[k][0]=0;
+    for(int k=0;k<g_pdNSP;k++){
+        PdParm& p=g_pdSP[k];
+        if(p.isRet){ g_pdIxRet=k; continue; }
+        // Own lowercase: <cctype> is not included by this TU and adding an include to a 9k-line file
+        // that ships eleven variants is a bigger change than four lines of ASCII folding.
+        char lc[64]; size_t n=strlen(p.name); if(n>=sizeof(lc))n=sizeof(lc)-1;
+        for(size_t i=0;i<n;i++){ char c=p.name[i]; lc[i]=(c>='A'&&c<='Z')?(char)(c+32):c; } lc[n]=0;
+        if(g_pdIxTeam<0 && strstr(lc,"team") && strstr(p.type,"IntProperty")){
+            g_pdIxTeam=k; strncpy_s(g_pdBindWhy[0],sizeof(g_pdBindWhy[0]),"by NAME (contains 'team') + IntProperty",_TRUNCATE); continue; }
+        if(g_pdIxSpawn<0 && strstr(lc,"spawn") && strstr(p.type,"StructProperty")){
+            g_pdIxSpawn=k; strncpy_s(g_pdBindWhy[1],sizeof(g_pdBindWhy[1]),"by NAME (contains 'spawn') + StructProperty",_TRUNCATE); continue; }
+        if(g_pdIxLand<0 && (strstr(lc,"land")||strstr(lc,"target")||strstr(lc,"end")) && strstr(p.type,"StructProperty")){
+            g_pdIxLand=k; strncpy_s(g_pdBindWhy[2],sizeof(g_pdBindWhy[2]),"by NAME (contains 'land'/'target'/'end') + StructProperty",_TRUNCATE); continue; }
+    }
+    // Positional fallback -- FK-22 §3's decompiled order (int, FVector&, FVector&), used ONLY for a
+    // slot that name matching left unbound, and labelled as such.
+    for(int k=0;k<g_pdNSP;k++){
+        PdParm& p=g_pdSP[k]; if(p.isRet) continue;
+        if(g_pdIxTeam<0 && strstr(p.type,"IntProperty")){
+            g_pdIxTeam=k; strncpy_s(g_pdBindWhy[0],sizeof(g_pdBindWhy[0]),"POSITIONAL fallback (1st IntProperty)",_TRUNCATE); continue; }
+        if(strstr(p.type,"StructProperty")){
+            if(g_pdIxSpawn<0&&k!=g_pdIxLand){ g_pdIxSpawn=k; strncpy_s(g_pdBindWhy[1],sizeof(g_pdBindWhy[1]),"POSITIONAL fallback (1st StructProperty)",_TRUNCATE); continue; }
+            if(g_pdIxLand<0&&k!=g_pdIxSpawn){ g_pdIxLand=k;  strncpy_s(g_pdBindWhy[2],sizeof(g_pdBindWhy[2]),"POSITIONAL fallback (2nd StructProperty)",_TRUNCATE); continue; }
+        }
+    }
+    const char* nm[3]={"TeamIndex","SpawnLocation","LandingLocation"};
+    int ix[3]={g_pdIxTeam,g_pdIxSpawn,g_pdIxLand};
+    bool ok=true;
+    for(int k=0;k<3;k++){
+        if(ix[k]<0){ Markerf("[PD] bind %-16s -> UNBOUND. No parameter slot matched by name or by position.\r\n",nm[k]); ok=false; continue; }
+        PdParm& p=g_pdSP[ix[k]];
+        Markerf("[PD] bind %-16s -> slot[%d] '%s' @0x%X size=%u %s  (%s)\r\n",
+                nm[k],ix[k],p.name,p.off,p.elem,p.type,g_pdBindWhy[k]);
+    }
+    // ⚠ SIZE IS CHECKED, NOT ASSUMED.  A 24-byte struct is 3 doubles (LWC); 12 is 3 floats.  Anything
+    //   else means the slot is not an FVector and writing 24 bytes into it would corrupt its neighbour.
+    for(int k=1;k<3;k++){
+        if(ix[k]<0) continue;
+        uint32_t e=g_pdSP[ix[k]].elem;
+        if(e!=24&&e!=12){
+            Markerf("[PD] bind %s: ElementSize=%u is neither 24 (3x double) nor 12 (3x float) -- this slot "
+                    "is NOT an FVector and will NOT be written.\r\n",nm[k],e);
+            ok=false; }
+        else if(strcmp(g_pdSP[ix[k]].sname,"Vector")!=0)
+            Markerf("[PD] bind %s: NOTE its UScriptStruct is '%s', not 'Vector'. Size %u is still the "
+                    "thing that governs the write.\r\n",nm[k],g_pdSP[ix[k]].sname,e);
+    }
+    if(g_pdIxRet>=0) Markerf("[PD] bind ReturnValue     -> slot[%d] '%s' @0x%X size=%u %s\r\n",
+                             g_pdIxRet,g_pdSP[g_pdIxRet].name,g_pdSP[g_pdIxRet].off,g_pdSP[g_pdIxRet].elem,g_pdSP[g_pdIxRet].type);
+    else Marker("[PD] bind ReturnValue     -> NONE declared. The census delta is then the ONLY evidence.\r\n");
+    return ok;
+}
+// ---- ship enumeration: show the work, refuse to guess ---------------------------------------------
+static uintptr_t PdPickShip(const char** whyOut,int* nOut){
+    if(nOut)*nOut=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ *whyOut="GUObjectArray unreadable"; return 0; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ *whyOut="GUObjectArray header implausible"; return 0; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    uintptr_t cands[16]; int nc=0, seen=0, skippedArche=0, nForced=0, nOver=0; uintptr_t forced=0;
+    const char* kForce=KPDSHIPCLASS;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            char chain[256];
+            // Require "LokiDropShip" -- the class that DECLARES SpawnDropPodForTeam -- somewhere on the
+            // chain, which separates the ACTOR from every component/CDO that merely mentions a ship.
+            // ⚠ S126 correction (review): `PhChainHas` matches by SUBSTRING, so this is NOT an exact
+            //   base-class test and an earlier comment here claiming so was wrong -- that is the
+            //   obj_by_class.py substring blind spot restated as its opposite. What carries the pick is
+            //   the FULL ENUMERATION printed below plus the refusal on ambiguity, not this predicate.
+            if(!PhChainHas(cls,"LokiDropShip",chain,sizeof(chain))) continue;
+            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            char cn[128]; cn[0]=0; GetFNameStr(NameId(cls),cn,sizeof(cn));
+            bool arche=(strncmp(on,"Default__",9)==0)||(strstr(on,"_GEN_VARIABLE")!=nullptr);
+            seen++; if(arche){ skippedArche++; }
+            // Per-candidate STATE, because S125 may have left a half-constructed one behind and
+            // "which one is real" has to be readable from the log, not guessed at afterwards.
+            uint32_t tdpc=PropOffsetSuper(cls,"TeamDropPodClass");
+            uintptr_t podcls=(tdpc!=0xFFFFFFFF&&SafeReadable((void*)(obj+tdpc),8))?*(uintptr_t*)(obj+tdpc):0;
+            char pcn[96]="NULL"; if(LooksLikePtr(podcls)) GetFNameStr(NameId(podcls),pcn,sizeof(pcn));
+            uint32_t rco=PropOffsetSuper(cls,"RootComponent");
+            uintptr_t rc=(rco!=0xFFFFFFFF&&SafeReadable((void*)(obj+rco),8))?*(uintptr_t*)(obj+rco):0;
+            int32_t idx=SafeReadable((void*)(obj+0x10),4)?*(int32_t*)(obj+0x10):-1;
+            double L[3]={0,0,0}; bool haveL=ActorLoc(obj,L);
+            if(seen<=32)
+                Markerf("[PD] ship-cand[%02d] 0x%llX '%s' cls=%s idx=%d TeamDropPodClass@0x%X=0x%llX(%s) "
+                        "Root=0x%llX loc=%s(%.0f,%.0f,%.0f)%s  chain=%s\r\n",
+                        seen-1,(unsigned long long)obj,on,cn,idx,tdpc,(unsigned long long)podcls,pcn,
+                        (unsigned long long)rc,haveL?"":"UNREADABLE",L[0],L[1],L[2],
+                        arche?"  [EXCLUDED: archetype/_GEN_VARIABLE]":"",chain);
+            if(arche) continue;
+            if(nc<16) cands[nc++]=obj; else nOver++;
+            // ★ S126 fix (MEDIUM, review): COUNT the override matches, never `forced=obj` in a loop.
+            //   A silent last-writer-wins here bypasses the enumerate-and-refuse discipline on the very
+            //   path that exists to disambiguate -- and S125's leftover plane plus a fresh pre-spawn
+            //   are the SAME class, which is exactly the shape that makes it fire.
+            if(kForce&&kForce[0]&&strcmp(cn,kForce)==0){ nForced++; if(!forced) forced=obj; }
+        }
+    }
+    if(nOut)*nOut=nc;
+    Markerf("[PD] ship enumeration: %d object(s) whose chain declares LokiDropShip (%d excluded as "
+            "archetype/_GEN_VARIABLE), %d live candidate(s)%s\r\n",seen,skippedArche,nc,
+            nOver?"  ⚠ MORE CANDIDATES THAN THE 16-SLOT ARRAY -- the count is a LOWER BOUND":"");
+    if(nForced==1){ *whyOut="KPDSHIPCLASS override matched EXACTLY ONE candidate class (verified by count)"; return forced; }
+    if(nForced>1){
+        Markerf("[PD] !! KPDSHIPCLASS='%s' matched %d candidates, not one. REFUSING -- a class-name "
+                "override that is not unique is a first-match pick wearing a justification. Use "
+                "-DKPDSHIPPICK=1 (stated rule: highest InternalIndex) if you want the newest.\r\n",kForce,nForced);
+        *whyOut="AMBIGUOUS (KPDSHIPCLASS matched >1)"; return 0; }
+    if(kForce&&kForce[0]&&nForced==0)
+        Markerf("[PD] KPDSHIPCLASS='%s' matched NO candidate -- falling through to the normal rules\r\n",kForce);
+    if(nc==1){ *whyOut="the ONLY live actor deriving from LokiDropShip (the class that DECLARES SpawnDropPodForTeam)"; return cands[0]; }
+    if(nc>1){
+#if KPDSHIPPICK
+        uintptr_t best=0; int32_t bi=-1;
+        for(int k=0;k<nc;k++){ int32_t idx=SafeReadable((void*)(cands[k]+0x10),4)?*(int32_t*)(cands[k]+0x10):-1;
+                               if(idx>bi){ bi=idx; best=cands[k]; } }
+        Markerf("[PD] !! %d candidates. KPDSHIPPICK=1 -> taking the HIGHEST InternalIndex (%d), i.e. the "
+                "most recently created. THE RULE IS STATED; the other candidates are printed above.\r\n",nc,bi);
+        *whyOut="KPDSHIPPICK=1: highest InternalIndex among several candidates"; return best;
+#else
+        Markerf("[PD] !! AMBIGUOUS: %d live LokiDropShip actors and no override. REFUSING to guess -- "
+                "S125 may have left a HALF-CONSTRUCTED plane behind (B1 faulted before FinishSpawningActor "
+                "and returned 0x0), and calling on the wrong one measures nothing. Rebuild with "
+                "-DKPDSHIPCLASS=\\\"<exact class FName above>\\\" or -DKPDSHIPPICK=1.\r\n",nc);
+        *whyOut="AMBIGUOUS"; return 0;
+#endif
+    }
+    *whyOut="NO live LokiDropShip actor exists";
+    return 0;
+}
+
+// ---- location sources ------------------------------------------------------------------------------
+// Enumerate the hero and the TrainingStart-tagged actor.  Both are BEST-EFFORT auxiliaries: a failure
+// here narrows the origin options, it never aborts, and it is never silently replaced by (0,0,0).
+static void PdFindOrigins(){
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ Marker("[PD] origin scan: GUObjectArray unreadable -- INSTRUMENT UNAVAILABLE\r\n"); return; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ Marker("[PD] origin scan: header implausible -- INSTRUMENT UNAVAILABLE\r\n"); return; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    uint32_t tagsOff=g_dpAnyActorCls?PropOffsetSuper(g_dpAnyActorCls,"Tags"):0xFFFFFFFF;
+    int nHero=0,nStart=0;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            if(strncmp(on,"Default__",9)==0||strstr(on,"_GEN_VARIABLE")) continue;
+            if(PhChainHas(cls,"LokiHeroCharacter",nullptr,0)){
+                nHero++; if(!g_pdHero) g_pdHero=obj;
+                if(nHero<=4){ double L[3]={0,0,0}; bool h=ActorLoc(obj,L); char cn[96]; cn[0]=0; GetFNameStr(NameId(cls),cn,sizeof(cn));
+                    Markerf("[PD] hero-cand[%d] 0x%llX '%s' (%s) loc=%s(%.0f,%.0f,%.0f)\r\n",
+                            nHero-1,(unsigned long long)obj,on,cn,h?"":"UNREADABLE",L[0],L[1],L[2]); }
+            }
+            if(tagsOff!=0xFFFFFFFF && (DpClassVerdict(cls)&DPV_ACTOR) && SafeReadable((void*)(obj+tagsOff),16)){
+                uintptr_t data=*(uintptr_t*)(obj+tagsOff); int32_t num=*(int32_t*)(obj+tagsOff+8);
+                if(LooksLikePtr(data)&&num>0&&num<=(int32_t)DP_ACTOR_TAGS_MAXNUM){
+                    for(int t=0;t<num;t++){
+                        if(!SafeReadable((void*)(data+(uintptr_t)t*8),8))break;
+                        uint32_t id=*(uint32_t*)(data+(uintptr_t)t*8), nmb=*(uint32_t*)(data+(uintptr_t)t*8+4);
+                        char tn[96]; if(!GetFNameStr(id,tn,sizeof(tn)))continue;
+                        if(nmb==0&&strcmp(tn,"TrainingStart")==0){
+                            nStart++; if(!g_pdStart) g_pdStart=obj;
+                            double L[3]={0,0,0}; bool h=ActorLoc(obj,L);
+                            Markerf("[PD] start-cand[%d] 0x%llX '%s' loc=%s(%.0f,%.0f,%.0f)\r\n",
+                                    nStart-1,(unsigned long long)obj,on,h?"":"UNREADABLE",L[0],L[1],L[2]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Markerf("[PD] origin scan: %d LokiHeroCharacter, %d TrainingStart-tagged actor(s)%s\r\n",nHero,nStart,
+            (nHero>1)?"  ⚠ >1 hero: the FIRST is used; its address is printed above so a wrong pick is visible":"");
+    if(tagsOff==0xFFFFFFFF)
+        Marker("[PD] origin scan: AActor.Tags did not resolve -- the TrainingStart source is UNAVAILABLE "
+               "(an instrument statement, NOT 'the marker is absent')\r\n");
+}
+static bool PdDerivePositions(){
+    struct { uintptr_t o; const char* w; } order[3];
+    int n=0;
+#if KPDORIGIN==1
+    order[n].o=g_pdHero;  order[n].w="the live hero (KPDORIGIN=1)"; n++;
+#elif KPDORIGIN==2
+    order[n].o=g_pdStart; order[n].w="the TrainingStart-tagged actor (KPDORIGIN=2)"; n++;
+#elif KPDORIGIN==3
+    order[n].o=g_pdShip;  order[n].w="the ship itself (KPDORIGIN=3)"; n++;
+#else
+    order[n].o=g_pdHero;  order[n].w="the live hero (auto: 1st choice)"; n++;
+    order[n].o=g_pdStart; order[n].w="the TrainingStart-tagged actor (auto: 2nd choice)"; n++;
+    order[n].o=g_pdShip;  order[n].w="the ship itself (auto: 3rd choice)"; n++;
+#endif
+    for(int k=0;k<n;k++){
+        if(!order[k].o||!GcAlive(order[k].o)) continue;
+        double L[3]={0,0,0};
+        if(!ActorLoc(order[k].o,L)) continue;
+        g_pdLand[0]=L[0]; g_pdLand[1]=L[1]; g_pdLand[2]=L[2];
+        g_pdSpawn[0]=L[0]; g_pdSpawn[1]=L[1]; g_pdSpawn[2]=L[2]+(double)KPDSPAWNZ;
+        _snprintf_s(g_pdOriginWhy,sizeof(g_pdOriginWhy),_TRUNCATE,"%s (0x%llX)",order[k].w,(unsigned long long)order[k].o);
+        g_pdHavePos=true;
+        Markerf("[PD] positions DERIVED from %s\r\n",g_pdOriginWhy);
+        Markerf("[PD]   LandingLocation = (%.1f, %.1f, %.1f)\r\n",g_pdLand[0],g_pdLand[1],g_pdLand[2]);
+        Markerf("[PD]   SpawnLocation   = (%.1f, %.1f, %.1f)   [landing + KPDSPAWNZ=%d uu on Z]\r\n",
+                g_pdSpawn[0],g_pdSpawn[1],g_pdSpawn[2],(int)KPDSPAWNZ);
+        return true;
+    }
+    Marker("[PD] *** NO POSITION SOURCE RESOLVED. REFUSING to pass (0,0,0): a fabricated coordinate is "
+           "how a 'the spawn silently did nothing' result gets manufactured. C1 will NOT run. ***\r\n");
+    return false;
+}
+
+// ---- bail-point readback ---------------------------------------------------------------------------
+static uintptr_t PdReadTdpc(const char* when){
+    if(g_pdTdpcOff==0xFFFFFFFF||!g_pdShip||!GcAlive(g_pdShip)){
+        Markerf("[PD] bail-point 1 %s: TeamDropPodClass UNREADABLE (offset %s, ship %s) -- an instrument "
+                "statement, not a value\r\n",when,
+                (g_pdTdpcOff==0xFFFFFFFF)?"unresolved":"ok",(g_pdShip&&GcAlive(g_pdShip))?"live":"dead");
+        return 0; }
+    if(!SafeReadable((void*)(g_pdShip+g_pdTdpcOff),8)) return 0;
+    uintptr_t v=*(uintptr_t*)(g_pdShip+g_pdTdpcOff);
+    char cn[96]="NULL"; if(LooksLikePtr(v)) GetFNameStr(NameId(v),cn,sizeof(cn));
+    Markerf("[PD] bail-point 1 %s: ship.TeamDropPodClass @0x%X = 0x%llX (%s)%s\r\n",
+            when,g_pdTdpcOff,(unsigned long long)v,cn,
+            LooksLikePtr(v)?"":"  <== NULL: SpawnDropPodForTeam's FIRST bail point WILL trigger");
+    return v;
+}
+// GetTeamDropLeader: resolve, and CALL it only if its signature permits (<=1 input we can supply).
+// FK-22 predicts nullptr (AuthSetSpawnTeamLeader is an empty fold), and nullptr is recorded as the
+// EXPECTED reading, not as a failure.
+static void PdProbeLeader(){
+    if(!g_pdLdrFn){ Marker("[PD] GetTeamDropLeader: not on the ship's class chain -> NOT CALLED (a resolve statement)\r\n"); return; }
+    int np=PdWalkParams(g_pdLdrChild,"GetTeamDropLeader");
+    int nin=0,ret=-1;
+    for(int k=0;k<np;k++){ if(g_pdP[k].isRet) ret=k; else if(g_pdP[k].isIn) nin++; }
+    if(nin>1){ Markerf("[PD] GetTeamDropLeader declares %d inputs -> NOT CALLED (no values to supply; a "
+                       "fabricated argument would make its result unattributable)\r\n",nin); return; }
+    uintptr_t thunk=SafeReadable((void*)(g_pdLdrFn+UFUNC_FUNC),8)?*(uintptr_t*)(g_pdLdrFn+UFUNC_FUNC):0;
+    if(!LooksLikePtr(thunk)){ Marker("[PD] GetTeamDropLeader: no thunk -> NOT CALLED\r\n"); return; }
+    // (!!) THE PARAM BUFFER DIFFERS BY DISPATCH PATH. CallBPGuarded sets FFrame.Locals to g_bplocals
+    //      and ignores any buffer we hand it; CallNative uses the one we pass. Writing the argument
+    //      into g_pdparms and then dispatching through the BP path would silently pass a ZERO -- the
+    //      same shape of defect as S114's borrowed helper. Choose the buffer FIRST, then write.
+    bool bp=(thunk==(uintptr_t)(g_modBase+kPiRva));
+    uint8_t* lbuf = bp ? g_bplocals : g_pdparms;
+    size_t   lcap = bp ? sizeof(g_bplocals) : sizeof(g_pdparms);
+    memset(lbuf,0,lcap); memset(g_rbuf,0,sizeof(g_rbuf));
+    if(nin==1) for(int k=0;k<np;k++) if(g_pdP[k].isIn&&g_pdP[k].off+4<=lcap)
+        *(int32_t*)(lbuf+g_pdP[k].off)=(int32_t)KPDTEAM;
+    bool flt = bp ? CallBPGuarded(g_pdLdrFn,(void*)g_pdShip,g_rbuf)
+                  : CallNativeGuarded((void*)g_pdLdrFn,thunk,g_pdLdrChild,(void*)g_pdShip,g_pdparms,g_rbuf);
+    uintptr_t v=0;
+    if(ret>=0&&g_pdP[ret].off+8<=lcap) v=*(uintptr_t*)(lbuf+g_pdP[ret].off);
+    if(!v) v=(uintptr_t)g_rbuf[0];
+    char cn[96]="-"; if(GcAlive(v)&&ClassOf(v)) GetFNameStr(NameId(ClassOf(v)),cn,sizeof(cn));
+    Markerf("[PD] GetTeamDropLeader -> 0x%llX (%s)%s%s\r\n",(unsigned long long)v,GcAlive(v)?cn:"NULL",
+            flt?"  *** FAULTED ***":"",
+            v?"":"   <== NULL, WHICH IS THE EXPECTED READING: AuthSetSpawnTeamLeader is an EMPTY fold "
+                 "(ret 0), so no PlayerState can ever be marked the spawn team leader. FK-22 §3 grades a "
+                 "null leader [I] survivable at 3 of >=4 known consumer sites -- [I], not [M].");
+}
+
+// ---- the call ---------------------------------------------------------------------------------------
+static int PdCallSpawn(){
+    if(!g_pdFn){ Marker("[PD] C1: SpawnDropPodForTeam unresolved -> NOT CALLED\r\n"); return DPCALL_NOTRUN; }
+    if(!g_pdShip||!GcAlive(g_pdShip)){ Marker("[PD] C1: the ship is no longer a live UObject -> NOT CALLED\r\n"); return DPCALL_NOTRUN; }
+    if(!g_pdHavePos){ Marker("[PD] C1: no derived positions -> NOT CALLED (see the refusal above)\r\n"); return DPCALL_NOTRUN; }
+    uintptr_t thunk=SafeReadable((void*)(g_pdFn+UFUNC_FUNC),8)?*(uintptr_t*)(g_pdFn+UFUNC_FUNC):0;
+    if(!LooksLikePtr(thunk)){ Marker("[PD] C1: SpawnDropPodForTeam has no Func thunk -> NOT CALLED\r\n"); return DPCALL_NOTRUN; }
+    bool bp=(thunk==(uintptr_t)(g_modBase+kPiRva));
+    // ★ DISPATCH ON THE THUNK WE READ, never on an assumption about Angelscript.  FK-1 measured that
+    //   script functions are AOT-compiled with real native bodies -- so `Func != ProcessInternal` and
+    //   the S55 native path is correct.  If this build ever registers it as bytecode instead, the BP
+    //   path is taken automatically and the marker says so.
+    Markerf("[PD] C1 dispatch: thunk=0x%llX -> %s (ProcessInternal is 0x%llX). Angelscript is AOT-compiled "
+            "(FK-1), so 'native' is the expected reading.\r\n",
+            (unsigned long long)thunk,bp?"BYTECODE via CallBPGuarded":"NATIVE via CallNativeGuarded",
+            (unsigned long long)(g_modBase+kPiRva));
+    uint8_t* buf = bp ? g_bplocals : g_pdparms;
+    size_t   cap = bp ? sizeof(g_bplocals) : sizeof(g_pdparms);
+    uint32_t psize=SafeReadable((void*)(g_pdFn+USTRUCT_PROPSIZE),4)?*(uint32_t*)(g_pdFn+USTRUCT_PROPSIZE):0;
+    if(psize>cap){ Markerf("[PD] C1: PropertiesSize %u exceeds the %u-byte param buffer -> NOT CALLED "
+                           "(a shim limit, not a game fact)\r\n",psize,(unsigned)cap); return DPCALL_NOTRUN; }
+    memset(buf,0,cap); memset(g_rbuf,0,sizeof(g_rbuf));
+    if(g_pdIxTeam>=0&&g_pdSP[g_pdIxTeam].off+4<=cap) *(int32_t*)(buf+g_pdSP[g_pdIxTeam].off)=(int32_t)KPDTEAM;
+    // Write each FVector at the size the FProperty DECLARES (24 => 3 doubles, 12 => 3 floats). The
+    // buffer differs between the two dispatch paths (CallBPGuarded uses g_bplocals as Locals), so the
+    // write targets `buf`, never a fixed global.
+    for(int pass=0;pass<2;pass++){
+        int ix = pass?g_pdIxLand:g_pdIxSpawn; const double* v = pass?g_pdLand:g_pdSpawn;
+        if(ix<0) continue; PdParm& p=g_pdSP[ix];
+        if(p.off==0xFFFFFFFF||p.off+p.elem>cap) continue;
+        if(p.elem==24){ double* d=(double*)(buf+p.off); d[0]=v[0]; d[1]=v[1]; d[2]=v[2]; }
+        else if(p.elem==12){ float* f=(float*)(buf+p.off); f[0]=(float)v[0]; f[1]=(float)v[1]; f[2]=(float)v[2]; }
+    }
+    Markerf("[PD] C1 BEFORE: ship=0x%llX '%s'  fn=0x%llX (owner %s)  TeamIndex=%d\r\n",
+            (unsigned long long)g_pdShip,g_pdShipName,(unsigned long long)g_pdFn,g_pdFnOwner[0]?g_pdFnOwner:"-",(int)KPDTEAM);
+    Markerf("[PD] C1 BEFORE: Spawn=(%.1f,%.1f,%.1f) Landing=(%.1f,%.1f,%.1f) written as %s\r\n",
+            g_pdSpawn[0],g_pdSpawn[1],g_pdSpawn[2],g_pdLand[0],g_pdLand[1],g_pdLand[2],
+            (g_pdIxSpawn>=0&&g_pdSP[g_pdIxSpawn].elem==24)?"3x double (LWC)":"3x float");
+    g_pdTdpcBefore=PdReadTdpc("BEFORE");
+#if KFAULTINFO
+    InterlockedExchange(&g_bpcRefused,0);
+#endif
+    bool flt = bp ? CallBPGuarded(g_pdFn,(void*)g_pdShip,g_rbuf)
+                  : CallNativeGuarded((void*)g_pdFn,thunk,g_pdFnChild,(void*)g_pdShip,g_pdparms,g_rbuf);
+#if KFAULTINFO
+    if(bp&&InterlockedCompareExchange(&g_bpcRefused,0,0)){
+        Marker("[PD] C1 AFTER: the primitive REFUSED to dispatch -> NOT CALLED. NOT a fault.\r\n");
+        return DPCALL_NOTRUN; }
+#endif
+    // ★★★★ S126 FINALIZER FIX (HIGH, caught in review before flight). Same defect as C0c: for a
+    //   NATIVE callee -- which FK-1 says an AOT-compiled Angelscript UFunction is -- the
+    //   `ALokiDropPod*` return lands in RESULT_DECL (g_rbuf[0]), NOT in the params block. Reading only
+    //   the params slot made the ATTRIBUTION branch below assert "the return slot is 0 -> the pooled
+    //   spawn returned null" for a call that returned a real pod. Fold both, and PRINT the source, so
+    //   the narrative can never contradict the census delta.
+    uintptr_t retP=0, retR=(uintptr_t)g_rbuf[0];
+    if(g_pdIxRet>=0&&g_pdSP[g_pdIxRet].off+8<=cap) memcpy(&retP,buf+g_pdSP[g_pdIxRet].off,8);
+    const char* retSrc = bp ? (retP?"params slot (BP path)":(retR?"g_rbuf (BP path FALLBACK)":"both zero"))
+                            : (retR?"g_rbuf/RESULT_DECL (native path)":(retP?"params slot (native FALLBACK)":"both zero"));
+    g_pdRetRaw = bp ? (retP?retP:retR) : (retR?retR:retP);
+    Markerf("[PD] C1 AFTER:  %s  fault=%s  retUSED=0x%llX (source: %s)  retSlot=0x%llX  res0=0x%llX\r\n",
+            flt?"*** FAULTED (SEH-captured) ***":"returned without fault",DP_FAULT,
+            (unsigned long long)g_pdRetRaw,retSrc,(unsigned long long)retP,(unsigned long long)retR);
+    { char rc[96]="-"; if(GcAlive(g_pdRetRaw)&&ClassOf(g_pdRetRaw)) GetFNameStr(NameId(ClassOf(g_pdRetRaw)),rc,sizeof(rc));
+      Markerf("[PD] C1 AFTER:  return decodes as %s '%s'\r\n",GcAlive(g_pdRetRaw)?"a LIVE UObject":"NOT a live UObject",rc); }
+    // Re-read the bail point so a false/null return is attributable to a NAMED cause.
+    g_pdTdpcAfter=PdReadTdpc("AFTER");
+    if(!g_pdTdpcAfter)
+        Marker("[PD] C1: TeamDropPodClass is NULL after the call -> bail point 1 is the attributable cause "
+               "of any null result. Default__BP_DropPlane_Base_C sets it to BP_DropPod_C in shipped data, "
+               "so a null here says the CHOSEN SHIP is not a fully-constructed BP_DropPlane_Base_C -- "
+               "consistent with S125's half-constructed actor.\r\n");
+    else if(g_pdRetRaw==0)
+        Marker("[PD] C1: TeamDropPodClass is NON-NULL and the return slot is 0 -> bail point 1 is EXCLUDED; "
+               "the remaining graded bail is a null result from the pooled spawn. Read the DropPod row.\r\n");
+    Marker("[PD]        ^ 'returned without fault' IS NOT A RESULT. Only the DropPod census delta is.\r\n");
+    return flt?DPCALL_FAULT:DPCALL_OK;
+}
+
+// ---- C0c: the positive control, and it validates itself ---------------------------------------------
+static int PdControl(){
+    if(!g_pdCtlFn){ Marker("[PD] C0c: K2_GetActorLocation did not resolve on the ship's chain -> NOT CALLED. "
+                           "⚠ WITHOUT THE CONTROL, C1's outcome is NOT attributable.\r\n"); return DPCALL_NOTRUN; }
+    if(!g_pdShip||!GcAlive(g_pdShip)) return DPCALL_NOTRUN;
+    uintptr_t thunk=SafeReadable((void*)(g_pdCtlFn+UFUNC_FUNC),8)?*(uintptr_t*)(g_pdCtlFn+UFUNC_FUNC):0;
+    if(!LooksLikePtr(thunk)) return DPCALL_NOTRUN;
+    int np=PdWalkParams(g_pdCtlChild,"K2_GetActorLocation(C0c CONTROL)");
+    int ret=-1; for(int k=0;k<np;k++) if(g_pdP[k].isRet) ret=k;
+    bool bp=(thunk==(uintptr_t)(g_modBase+kPiRva));
+    uint8_t* buf=bp?g_bplocals:g_pdparms; size_t cap=bp?sizeof(g_bplocals):sizeof(g_pdparms);
+    memset(buf,0,cap); memset(g_rbuf,0,sizeof(g_rbuf));
+    bool flt = bp ? CallBPGuarded(g_pdCtlFn,(void*)g_pdShip,g_rbuf)
+                  : CallNativeGuarded((void*)g_pdCtlFn,thunk,g_pdCtlChild,(void*)g_pdShip,g_pdparms,g_rbuf);
+    // ★★★★★ S126 FINALIZER FIX (BLOCKER, caught in adversarial review before flight).
+    //   A NATIVE UFunction does NOT write its return into the params block. UHT's exec thunk does
+    //   `*(FVector*)Z_Param__Result = ...`, and `Z_Param__Result` is the thunk's THIRD argument --
+    //   which `CallNative` sets to `resultBuf` (g_rbuf), never to `paramsBuf`. This file already
+    //   proves it for THIS EXACT FUNCTION elsewhere:
+    //       CallNative(g_locFn,...,g_pbuf,g_rbuf);  double* L=(double*)g_rbuf;
+    //   and `PdProbeLeader` already carries the `if(!v) v=(uintptr_t)g_rbuf[0];` fallback.
+    //   Reading ONLY the params slot made the control read (0,0,0), which makes `err` the ship's whole
+    //   distance from the origin => `SITTING VOID for Route C` printed on EVERY run, on a call that
+    //   worked. The inverse is worse: a ship near the origin would read MATCH for a return we never
+    //   read. ⇒ read BOTH sources, PREFER the one the dispatch path actually writes, and PRINT which.
+    double pslot[3]={0,0,0}; bool havePslot=false;
+    uint32_t rel=(ret>=0)?g_pdP[ret].elem:24;
+    if(ret>=0&&g_pdP[ret].off+g_pdP[ret].elem<=cap){
+        if(rel==24){ double* d=(double*)(buf+g_pdP[ret].off); pslot[0]=d[0];pslot[1]=d[1];pslot[2]=d[2]; havePslot=true; }
+        else if(rel==12){ float* f=(float*)(buf+g_pdP[ret].off); pslot[0]=f[0];pslot[1]=f[1];pslot[2]=f[2]; havePslot=true; }
+    }
+    double rslot[3]={0,0,0}; bool haveRslot=false;
+    if(rel==24&&sizeof(g_rbuf)>=24){ double* d=(double*)g_rbuf; rslot[0]=d[0];rslot[1]=d[1];rslot[2]=d[2]; haveRslot=true; }
+    else if(rel==12&&sizeof(g_rbuf)>=12){ float* f=(float*)g_rbuf; rslot[0]=f[0];rslot[1]=f[1];rslot[2]=f[2]; haveRslot=true; }
+    double got[3]={0,0,0}; bool haveGot=false; const char* gotSrc="none";
+    if(bp){ if(havePslot){ got[0]=pslot[0];got[1]=pslot[1];got[2]=pslot[2]; haveGot=true; gotSrc="params slot (BP path: the VM writes the ReturnValue local)"; }
+            else if(haveRslot){ got[0]=rslot[0];got[1]=rslot[1];got[2]=rslot[2]; haveGot=true; gotSrc="g_rbuf/RESULT_DECL (BP path FALLBACK)"; } }
+    else  { if(haveRslot){ got[0]=rslot[0];got[1]=rslot[1];got[2]=rslot[2]; haveGot=true; gotSrc="g_rbuf/RESULT_DECL (native path: the exec thunk's Z_Param__Result)"; }
+            else if(havePslot){ got[0]=pslot[0];got[1]=pslot[1];got[2]=pslot[2]; haveGot=true; gotSrc="params slot (native path FALLBACK)"; } }
+    Markerf("[PD] C0c return sources: dispatch=%s retElem=%u  paramsSlot=%s(%.1f,%.1f,%.1f)  "
+            "g_rbuf=%s(%.1f,%.1f,%.1f)  USED=%s\r\n",bp?"BYTECODE":"NATIVE",rel,
+            havePslot?"":"UNREAD ",pslot[0],pslot[1],pslot[2],
+            haveRslot?"":"UNREAD ",rslot[0],rslot[1],rslot[2],gotSrc);
+    double rpm[3]={0,0,0}; bool haveRpm=ActorLoc(g_pdShip,rpm);
+    Markerf("[PD] C0c K2_GetActorLocation -> %s(%.1f,%.1f,%.1f)  RPM RootComponent->RelativeLocation -> "
+            "%s(%.1f,%.1f,%.1f)%s\r\n",haveGot?"":"UNREAD ",got[0],got[1],got[2],
+            haveRpm?"":"UNREAD ",rpm[0],rpm[1],rpm[2],flt?"  *** FAULTED ***":"");
+    if(flt) return DPCALL_FAULT;
+    if(haveGot&&haveRpm){
+        double d0=got[0]-rpm[0],d1=got[1]-rpm[1],d2=got[2]-rpm[2];
+        double err=(d0<0?-d0:d0)+(d1<0?-d1:d1)+(d2<0?-d2:d2);
+        g_pdCtlAgree=(err<1.0)?1:0;
+        Markerf("[PD] C0c AGREEMENT: |delta| = %.3f uu -> %s\r\n",err,
+                g_pdCtlAgree?"MATCH. The primitive dispatched a real call ON THIS SHIP and marshalled a "
+                             "struct return correctly. C1's outcome is attributable."
+                            :"MISMATCH. This is NOT 'no fault means it worked' -- the two readings "
+                             "disagree, so either the call did not run on this object or the return "
+                             "marshalling is wrong. TREAT C1 AS VOID.");
+    } else {
+        Marker("[PD] C0c: could not obtain BOTH readings, so the control is INCONCLUSIVE (not passed). "
+               "A no-fault call proves nothing on its own -- S114 got 'console ok' from a call that "
+               "never reached its target.\r\n");
+    }
+    return DPCALL_OK;
+}
+
+// ---- ROUTE E: dispatch through ProcessEvent ---------------------------------------------------------
+// Everything below resolves at runtime from the LIVE object and the LIVE FProperty chain. The only
+// build-time numbers are the vtable DISPLACEMENT (a knob, defaulting to the measured 0x270) and the
+// UFunction field offsets, each of which is re-derived in the header block above from ProcessEvent's
+// own disassembly. No `.text` is written; no memory is poked; the only effect is a UFunction call.
+static bool PdInImage(uintptr_t v){ return v>g_modBase && (v-g_modBase)<0xC000000ULL; }
+static const char* PdFoldNote(uintptr_t v){
+    if(!PdInImage(v)) return "";
+    uintptr_t r=v-g_modBase;
+    if(r==PDPE_FOLD_RET0A) return "   <== UNIVERSAL FOLD 0xF7EC20 (ret 0) -- a STRIPPED body";
+    if(r==PDPE_FOLD_RET0B) return "   <== UNIVERSAL FOLD 0xF7EB50 (xor eax,eax; ret) -- a STRIPPED body";
+    if(r==PDPE_FOLD_RET0C) return "   <== UNIVERSAL FOLD 0xF7EB60 (xor al,al; ret) -- a STRIPPED body";
+    return "";
+}
+// Resolve ProcessEvent OUT OF THE TARGET OBJECT'S OWN VTABLE, and show the work: the object, its
+// vtable (with RVA so it can be looked up offline), the displacement, the derived slot index, the
+// target (with RVA), and -- for the record only -- the occupant of the historical S80 displacement.
+static bool PdResolvePE(uintptr_t obj,const char* who){
+    g_pdPe=0; g_pdPeVt=0; g_pdPeOld=0; g_pdPeSlot=-1;
+    if(!obj||!GcAlive(obj)){
+        Markerf("[PD] E: ProcessEvent NOT RESOLVED -- %s is not a live UObject. This is a target "
+                "statement, not a statement about ProcessEvent.\r\n",who); return false; }
+    if(!SafeReadable((void*)obj,8)){ Markerf("[PD] E: ProcessEvent NOT RESOLVED -- %s is unreadable\r\n",who); return false; }
+    uintptr_t vt=*(uintptr_t*)obj;
+    if(!PdInImage(vt)){
+        // S124's GameState+0x258 lesson, applied as a guard: a HEAP "vtable" means the thing is not a
+        // UObject at all, and dispatching through it would execute a stranger.
+        Markerf("[PD] E: REFUSING -- %s's [obj+0x00] = 0x%llX is NOT an in-module vtable (a real "
+                "UObject's is inside the image). Dispatching through it would call a stranger.\r\n",
+                who,(unsigned long long)vt); return false; }
+    g_pdPeVt=vt; g_pdPeSlot=(int)(((uintptr_t)KPDPEDISP)/8);
+    if(!SafeReadable((void*)(vt+(uintptr_t)KPDPEDISP),8)){
+        Markerf("[PD] E: REFUSING -- vtable 0x%llX + disp 0x%X is unreadable\r\n",
+                (unsigned long long)vt,(unsigned)KPDPEDISP); return false; }
+    uintptr_t pe=*(uintptr_t*)(vt+(uintptr_t)KPDPEDISP);
+    if(SafeReadable((void*)(vt+(uintptr_t)KPDPEDISPOLD),8)) g_pdPeOld=*(uintptr_t*)(vt+(uintptr_t)KPDPEDISPOLD);
+    Markerf("[PD] E: ProcessEvent RESOLVED FROM THE LIVE VTABLE (nothing hardcoded):\r\n"
+            "[PD] E:   object   = 0x%llX  (%s)\r\n"
+            "[PD] E:   vtable   = 0x%llX  rva 0x%llX\r\n"
+            "[PD] E:   disp     = 0x%X  =>  SLOT %d   (slot index = disp/8)\r\n"
+            "[PD] E:   target   = 0x%llX  rva 0x%llX%s\r\n",
+            (unsigned long long)obj,who,
+            (unsigned long long)vt,(unsigned long long)(PdInImage(vt)?vt-g_modBase:0),
+            (unsigned)KPDPEDISP,g_pdPeSlot,
+            (unsigned long long)pe,(unsigned long long)(PdInImage(pe)?pe-g_modBase:0),PdFoldNote(pe));
+    Markerf("[PD] E:   provenance [M, offline, dumps/merged2.dump.exe]: disp 0x270 is the ProcessEvent "
+            "slot -- 3,651 .rdata vtables hold UObject::ProcessEvent (rva 0x1344E10) at exactly that "
+            "displacement; the UHT ProcessEvent stub at rva 0x54532B0 does mov rbx,[[rcx]+0x270] -> "
+            "FindFunctionChecked(0x1344150) -> call rbx; and ProcessEvent's own body reads the "
+            "neighbouring slots 0x278/0x280 as GetFunctionCallspace/CallRemoteFunction. "
+            "AActor::ProcessEvent (rva 0x3396280) overrides the slot and tail-calls 0x1344E10.\r\n");
+    Markerf("[PD] E:   FOR THE RECORD ONLY, NOT USED: disp 0x%X (slot %d, the S80 candidate) holds "
+            "0x%llX rva 0x%llX. docs/next-session-prompt-s80.md calls base+0x12C5A10 ProcessEvent; that "
+            "address opens mov rax,gs:[0x58] and is not it. tutorial_launch.cpp already records "
+            "'S80 falsified our ProcessEvent RVA'.\r\n",
+            (unsigned)KPDPEDISPOLD,(int)(((uintptr_t)KPDPEDISPOLD)/8),
+            (unsigned long long)g_pdPeOld,(unsigned long long)(PdInImage(g_pdPeOld)?g_pdPeOld-g_modBase:0));
+    if(!PdInImage(pe)){
+        Markerf("[PD] E: REFUSING -- the resolved ProcessEvent 0x%llX is not inside the image.\r\n",(unsigned long long)pe);
+        return false; }
+    if(PdFoldNote(pe)[0]){
+        Marker("[PD] E: REFUSING -- the ProcessEvent slot holds a UNIVERSAL FOLD (a stripped body). "
+               "Calling it could not do anything and a null from it would be uninterpretable.\r\n");
+        return false; }
+    g_pdPe=pe; return true;
+}
+// Grade a LIVE UFunction against ProcessEvent's own three exits. Prints every field it reads, so the
+// verdict can be re-derived from the marker without the source.
+static int PdGradeForPE(uintptr_t obj,uintptr_t fn,const char* tag){
+    g_pdMDesc=0; g_pdMDescN=0; g_pdMN=0; g_pdMHaveRet=0; g_pdMRetOff=0xFFFFFFFF; g_pdMRetTag=0;
+    g_pdMAgree=-1; g_pdCsWhy[0]=0; g_pdCsAbsorbRisk=0;
+    // ★ S127-FIX (review LOW): +0xB8 was dereferenced unguarded after probing only +0xC0 and +0xE0.
+    //   SafeReadable is a single VirtualQuery region test, so a UFunction whose +0xC0 lands at a
+    //   region base leaves +0xB8 unprobed -- an AV inside the one function whose job is to prevent
+    //   unattributable faults.
+    if(!fn||!SafeReadable((void*)(fn+PDPE_FN_FLAGS),4)||!SafeReadable((void*)(fn+PDPE_FN_RETOFF),2)
+          ||!SafeReadable((void*)(fn+UFUNC_FUNC),8)){
+        Markerf("[PD] E-grade %s: UNREADABLE UFunction -> no verdict (instrument statement)\r\n",tag);
+        return PDPE_UNREADABLE; }
+    uint32_t  fl   =*(uint32_t*)(fn+PDPE_FN_FLAGS);
+    uint32_t  snum =SafeReadable((void*)(fn+USTRUCT_SCRIPTNUM),4)?*(uint32_t*)(fn+USTRUCT_SCRIPTNUM):0;
+    uint32_t  psize=SafeReadable((void*)(fn+USTRUCT_PROPSIZE),4)?*(uint32_t*)(fn+USTRUCT_PROPSIZE):0;
+    uintptr_t func =*(uintptr_t*)(fn+UFUNC_FUNC);
+    uint8_t   nparm=*(uint8_t*)(fn+PDPE_FN_NUMPARMS);
+    uint16_t  psz  =*(uint16_t*)(fn+PDPE_FN_PARMSIZE);
+    uint16_t  roff =*(uint16_t*)(fn+PDPE_FN_RETOFF);
+    uintptr_t fvt  =SafeReadable((void*)fn,8)?*(uintptr_t*)fn:0;
+    uintptr_t alt=0,altv=0;
+    if(PdInImage(fvt)){
+        if(SafeReadable((void*)(fvt+PDPE_UFVT_ALT),8))    alt =*(uintptr_t*)(fvt+PDPE_UFVT_ALT);
+        if(SafeReadable((void*)(fvt+PDPE_UFVT_ALTVAL),8)) altv=*(uintptr_t*)(fvt+PDPE_UFVT_ALTVAL);
+    }
+    Markerf("[PD] E-grade %s: fn=0x%llX FunctionFlags=0x%08X Script.Num(+0x70)=%u PropertiesSize=%u "
+            "NumParms=%u ParmsSize=%u ReturnValueOffset=0x%04X Func(+0xE0)=0x%llX\r\n",
+            tag,(unsigned long long)fn,fl,snum,psize,(unsigned)nparm,(unsigned)psz,(unsigned)roff,
+            (unsigned long long)func);
+    Markerf("[PD] E-grade %s: UFunction vtable=0x%llX rva 0x%llX  [+0x378]=0x%llX rva 0x%llX%s  "
+            "[+0x380]=0x%llX rva 0x%llX%s\r\n",tag,
+            (unsigned long long)fvt,(unsigned long long)(PdInImage(fvt)?fvt-g_modBase:0),
+            (unsigned long long)alt ,(unsigned long long)(PdInImage(alt) ?alt -g_modBase:0),PdFoldNote(alt),
+            (unsigned long long)altv,(unsigned long long)(PdInImage(altv)?altv-g_modBase:0),PdFoldNote(altv));
+    Markerf("[PD] E-grade %s: bit0x10(ALT-DISPATCH)=%d  rejectGate(flags&0x410)=0x%X  "
+            "FUNC_NetValidate(sign)=%d\r\n",tag,
+            (fl&PDPE_FLAG_ALTDISPATCH)?1:0,(unsigned)(fl&PDPE_REJECT_MASK),(fl&PDPE_FLAG_NETVALIDATE)?1:0);
+    // ---- S127: the Angelscript-SUBCLASS members. These turn the SAFE-VIRTUAL verdict into a
+    //      measurement of THIS object rather than an inference from one flag bit.
+    uintptr_t sfn=0,altfn=0,pdesc=0; uint32_t pdn=0;
+    if(SafeReadable((void*)(fn+PDPE_FN_SCRIPTFN),8))  sfn  =*(uintptr_t*)(fn+PDPE_FN_SCRIPTFN);
+    if(SafeReadable((void*)(fn+PDPE_FN_ALTFN),8))     altfn=*(uintptr_t*)(fn+PDPE_FN_ALTFN);
+    if(SafeReadable((void*)(fn+PDPE_FN_PARMDESC),8))  pdesc=*(uintptr_t*)(fn+PDPE_FN_PARMDESC);
+    if(SafeReadable((void*)(fn+PDPE_FN_PARMDESCN),4)) pdn  =*(uint32_t*)(fn+PDPE_FN_PARMDESCN);
+    uintptr_t altr=PdInImage(alt)?alt-g_modBase:0;
+    bool altBand=(altr>=PDPE_ASDISP_LO&&altr<PDPE_ASDISP_HI);
+    bool altFold=(PdFoldNote(alt)[0]!=0);
+    Markerf("[PD] E-grade %s: script members: asCScriptFunction*(+0xE8)=0x%llX  companionFn(+0xF0)=0x%llX"
+            "  paramDesc(+0x108)=0x%llX Num(+0x110)=%u  |  slot111 rva 0x%llX in the measured "
+            "AS-dispatch band [0x%llX,0x%llX)? %s%s\r\n",tag,
+            (unsigned long long)sfn,(unsigned long long)altfn,(unsigned long long)pdesc,(unsigned)pdn,
+            (unsigned long long)altr,(unsigned long long)PDPE_ASDISP_LO,(unsigned long long)PDPE_ASDISP_HI,
+            altBand?"YES":"no",
+            altFold?"  *** slot111 IS A UNIVERSAL FOLD -> this is a PLAIN UFunction, i.e. NOT a script "
+                    "function ***":"");
+    // ---- S127-FIX: read the MARSHALLER'S OWN offset table (it is NOT the FProperty chain) --------
+    g_pdMDesc=pdesc; g_pdMDescN=pdn;
+    if(pdesc&&pdn&&pdn<=16u){
+        for(uint32_t i=0;i<pdn;i++){
+            uintptr_t e=pdesc+(uintptr_t)i*PDPE_PD_STRIDE;
+            if(!SafeReadable((void*)(e+PDPE_PD_OFF),8)) break;
+            g_pdMOff[g_pdMN]=(uint32_t)*(int32_t*)(e+PDPE_PD_OFF);
+            g_pdMTag[g_pdMN]=*(uint8_t*)(e+PDPE_PD_TAG);
+            g_pdMN++;
+        }
+    }
+    if(SafeReadable((void*)(fn+PDPE_FN_RETPROP),8)&&*(uintptr_t*)(fn+PDPE_FN_RETPROP)
+       &&SafeReadable((void*)(fn+PDPE_FN_RETMOFF),8)){
+        g_pdMHaveRet=1; g_pdMRetOff=(uint32_t)*(int32_t*)(fn+PDPE_FN_RETMOFF);
+        g_pdMRetTag=*(uint8_t*)(fn+PDPE_FN_RETMTAG);
+    }
+    {   char mb[256]; int mn=0; mb[0]=0;
+        for(int i=0;i<g_pdMN&&mn<200;i++)
+            mn+=_snprintf_s(mb+mn,sizeof(mb)-mn,_TRUNCATE,"%s[%d]@0x%X tag%u",i?" ":"",i,g_pdMOff[i],(unsigned)g_pdMTag[i]);
+        Markerf("[PD] E-grade %s: MARSHALLER TABLE -- what slot 111 ACTUALLY reads (rva 0x048E6627 for "
+                "the args, 0x048E6782 for the return). It is NOT the FProperty chain and NOT "
+                "ReturnValueOffset(+0xC0), which the generator hardwires to 0xFFFF at 0x048AAEE8: "
+                "desc=0x%llX Num=%u stride 0x48 -> %s | return %s@0x%X tag%u\r\n",tag,
+                (unsigned long long)pdesc,(unsigned)pdn,g_pdMN?mb:"(none read)",
+                g_pdMHaveRet?"PRESENT":"NONE ([fn+0x130]==0)",g_pdMRetOff,(unsigned)g_pdMRetTag);
+    }
+    // ---- S127-FIX: the CALLSPACE gate, which sits IN FRONT of the alt-dispatch branch ------------
+    if(fl&PDPE_REJECT_MASK){
+        uintptr_t ovt=(obj&&SafeReadable((void*)obj,8))?*(uintptr_t*)obj:0;
+        uintptr_t csf=(PdInImage(ovt)&&SafeReadable((void*)(ovt+PDPE_OBJVT_CALLSPACE),8))?*(uintptr_t*)(ovt+PDPE_OBJVT_CALLSPACE):0;
+        uintptr_t rmf=(PdInImage(ovt)&&SafeReadable((void*)(ovt+PDPE_OBJVT_REMOTEFN),8))?*(uintptr_t*)(ovt+PDPE_OBJVT_REMOTEFN):0;
+        int role=(obj&&SafeReadable((void*)(obj+PDPE_ACTOR_ROLE),1))?(int)*(uint8_t*)(obj+PDPE_ACTOR_ROLE):-1;
+        bool bpAuth=(fl&PDPE_FLAG_BPAUTHONLY)!=0, isStatic=(fl&PDPE_FLAG_STATIC)!=0;
+        g_pdCsAbsorbRisk=(!isStatic && role>=0 && role<3 && bpAuth)?1:0;
+        _snprintf_s(g_pdCsWhy,sizeof(g_pdCsWhy),_TRUNCATE,
+            "role(obj+0x160)=%d (Authority==3) BlueprintAuthorityOnly(0x4)=%d Static(0x2000)=%d absorbRisk=%d",
+            role,bpAuth?1:0,isStatic?1:0,g_pdCsAbsorbRisk);
+        Markerf("[PD] E-grade %s: !! THE CALLSPACE GATE IS TRAVERSED (flags&0x410=0x%X != 0, and bit 0x10 "
+                "is INSIDE that mask). Before the alt-dispatch branch ProcessEvent calls "
+                "[objVtable+0x278] GetFunctionCallspace = 0x%llX rva 0x%llX, and on the Remote arm calls "
+                "[objVtable+0x280] CallRemoteFunction = 0x%llX rva 0x%llX -- a REAL SIDE EFFECT on the "
+                "game thread. If the result lacks bit 2 (Local) ProcessEvent RETURNS at rva 0x1344EAE "
+                "having dispatched NOTHING: no log, no fault, no delta. Inputs: %s\r\n",
+                tag,(unsigned)(fl&PDPE_REJECT_MASK),
+                (unsigned long long)csf,(unsigned long long)(PdInImage(csf)?csf-g_modBase:0),
+                (unsigned long long)rmf,(unsigned long long)(PdInImage(rmf)?rmf-g_modBase:0),g_pdCsWhy);
+        if(g_pdCsAbsorbRisk)
+            Markerf("[PD] E-grade %s: !!! PREDICTED **ABSORBED**. AActor::GetFunctionCallspace (rva "
+                    "0x3388E40) returns 0 when Role < ROLE_Authority (3) AND FunctionFlags & 0x4. Both "
+                    "hold here. A NULL FROM THIS CALL WOULD BE THE CALLSPACE GATE, NOT THE DROP POD. "
+                    "Read this line BEFORE the census delta.\r\n",tag);
+    }
+    if(func){
+        Markerf("[PD] E-grade %s: VERDICT SAFE-INVOKE. Func is NON-NULL, so ProcessEvent's normal path "
+                "reaches UFunction::Invoke (rva 0x1225F30) whose last act is call [Fn+0xE0] -- a real "
+                "target. (For this function the S55 direct-thunk primitive would work too.)\r\n",tag);
+        return PDPE_SAFE_INVOKE; }
+    if(fl&PDPE_FLAG_ALTDISPATCH){
+        Markerf("[PD] E-grade %s: VERDICT SAFE-VIRTUAL. Func is NULL but FunctionFlags bit 0x10 is SET, "
+                "so ProcessEvent branches at rva 0x1344EB4 to call [UFunctionVtable+0x378](Fn,Obj,Parms) "
+                "and NEVER READS Func. S127 upgraded this from [I,strong] to [M]: slot 111 is a "
+                "FOLD on the plain UFunction vtable (.rdata 0x076FEB60) and a real AngelScript "
+                "context marshaller on all 32 script-UFunction vtables (.rdata 0x0848A140.."
+                "0x08490EB8); the generator at .text 0x048AAEF2 sets exactly this bit, stores the "
+                "asCScriptFunction* at +0xE8, and never writes Func or Script; and the bit is "
+                "absent from 18,325 of 18,325 UHT native UFunctions. THIS IS THE DESIGNED ROUTE "
+                "FOR THIS FUNCTION.\r\n",tag);
+        if(!altBand||altFold)
+            Markerf("[PD] E-grade %s: !! slot111 rva 0x%llX is OUTSIDE the measured AngelScript-"
+                    "dispatch band. The flag bit says script; the slot says otherwise. Treat E1's "
+                    "outcome as UNATTRIBUTABLE until that is reconciled.\r\n",tag,(unsigned long long)altr);
+        if(!sfn)
+            Markerf("[PD] E-grade %s: !! asCScriptFunction*(+0xE8) is NULL. The alt-dispatch body "
+                    "tests exactly this at rva 0x048E658E and returns a NULL RESULT without "
+                    "executing anything. A null from E1 would then be an INSTRUMENT statement, not "
+                    "a statement about the drop pod -- read this line before the census delta.\r\n",tag);
+        if(pdn && pdn!=3u)
+            Markerf("[PD] E-grade %s: !! paramDesc Num=%u, but SpawnDropPodForTeam declares 3 "
+                    "inputs (TeamIndex, SpawnLocation, LandingLocation). Either the resolved "
+                    "UFunction is not the one this arm believes it is, or +0x110 is not Num on "
+                    "this build.\r\n",tag,(unsigned)pdn);
+        return PDPE_SAFE_VIRTUAL; }
+    if((fl&PDPE_REJECT_MASK)==0 && snum==0){
+        Markerf("[PD] E-grade %s: VERDICT SAFE-NO-OP. Func is NULL, bit 0x10 is clear, (flags&0x410)==0 "
+                "and Script.Num==0, so ProcessEvent's reject gate at rva 0x1344E69/0x1344EAA returns "
+                "immediately. The call is SAFE and is a GUARANTEED no-op -- a null from it says NOTHING "
+                "about the drop pod.\r\n",tag);
+        return PDPE_SAFE_NOOP; }
+    Markerf("[PD] E-grade %s: VERDICT WILL-FAULT. Func is NULL, bit 0x10 is clear, and the reject gate "
+            "PASSES (flags&0x410=0x%X, Script.Num=%u), so ProcessEvent will reach UFunction::Invoke and "
+            "execute call qword ptr [r14+0xE0] with r14->Func == 0 -- an unconditional call [0]. There "
+            "is NO null test anywhere in UFunction::Invoke (rva 0x1225F30, read byte for byte).\r\n",
+            tag,(unsigned)(fl&PDPE_REJECT_MASK),snum);
+    return PDPE_WILL_FAULT;
+}
+// ProcessEvent's own signature. Win64 has one calling convention, so this is (rcx,rdx,r8).
+typedef void (*PDPE_PFN)(void* obj,void* fn,void* parms);
+static bool CallPEGuarded(uintptr_t pe,uintptr_t obj,uintptr_t fn,void* parms){
+#if KFAULTINFO
+    FaultReset();
+#endif
+    __try { ((PDPE_PFN)pe)((void*)obj,(void*)fn,parms); return false; }
+    __except(SEH_FILTER(GetExceptionInformation())){
+#if KFAULTINFO
+        Markerf("[FLT] ProcessEvent faulted: %s\r\n",FaultStr());
+#endif
+        return true; }
+}
+// S127-FIX (review MEDIUM/LOW), placed HERE rather than inside ActorLoc so `play` is untouched.
+// Two things a caller that COMPARES ActorLoc's output against a UFunction return has to know:
+//   (a) ActorLoc falls back to a HARDCODED RelativeLocation offset (0x158) when the by-name resolve
+//       fails, so the "pure-RPM reference" can silently be a guess; and
+//   (b) RelativeLocation is the WORLD location only when the root component has NO AttachParent --
+//       K2_GetActorLocation returns the world transform, so an attached root makes a MISMATCH the
+//       EXPECTED result and an instrument artifact rather than a ProcessEvent failure.
+static void PdActorLocProvenance(uintptr_t actor,int* guessedOut,uintptr_t* attachOut){
+    if(guessedOut) *guessedOut=0;
+    if(attachOut)  *attachOut=0;
+    if(!LooksLikePtr(actor)) return;
+    uint32_t rc=PropOffsetSuper(ClassOf(actor),"RootComponent");
+    if(rc==0xFFFFFFFF||!SafeReadable((void*)(actor+rc),8)) return;
+    uintptr_t r=*(uintptr_t*)(actor+rc); if(!LooksLikePtr(r)) return;
+    if(guessedOut&&PropOffsetSuper(ClassOf(r),"RelativeLocation")==0xFFFFFFFF) *guessedOut=1;
+    uint32_t ap=PropOffsetSuper(ClassOf(r),"AttachParent");
+    if(attachOut&&ap!=0xFFFFFFFF&&SafeReadable((void*)(r+ap),8)){
+        uintptr_t v=*(uintptr_t*)(r+ap); if(LooksLikePtr(v)) *attachOut=v; }
+}
+// E0 -- THE POSITIVE CONTROL FOR THE ROUTE ITSELF, on one actor. Calls K2_GetActorLocation through
+// ProcessEvent and compares the FVector ProcessEvent wrote into the PARAMS BLOCK against a pure-RPM
+// read of the same actor's RootComponent->RelativeLocation.
+// Verdict: 0 FAIL | 1 STRONG PASS | 2 WEAK CONTROL (origin) | 3 INCONCLUSIVE.
+static int PdPEControlOn(uintptr_t actor,const char* label,char* whyOut,size_t whySz){
+    if(whyOut&&whySz) whyOut[0]=0;
+    if(!actor||!GcAlive(actor)){ Markerf("[PD] E0 %s: not a live UObject -> NOT CALLED\r\n",label); return 3; }
+    uintptr_t cls=ClassOf(actor); if(!cls){ Markerf("[PD] E0 %s: no class -> NOT CALLED\r\n",label); return 3; }
+    char owner[96]; uintptr_t child=0;
+    uintptr_t fn=DpResolveOwned(cls,"K2_GetActorLocation",&child,owner,sizeof(owner));
+    if(!fn){ Markerf("[PD] E0 %s: K2_GetActorLocation is not on this object's class chain -> NOT CALLED. "
+                     "Without it the ROUTE is unproven and E1's outcome is NOT attributable.\r\n",label); return 3; }
+    int grade=PdGradeForPE(actor,fn,"K2_GetActorLocation(E0 CONTROL)");
+    if(grade==PDPE_WILL_FAULT||grade==PDPE_UNREADABLE){
+        Markerf("[PD] E0 %s: the CONTROL itself grades unsafe -> NOT CALLED. That is an instrument "
+                "statement about ProcessEvent, and it makes E1 unflyable this sitting.\r\n",label); return 3; }
+    // Re-read the signature from the LIVE chain for THIS function. PdWalkParams writes the shared
+    // scratch g_pdP; everything used below is consumed before the next PdWalkParams call, and E1 keeps
+    // its own private copy (g_pdEP) for exactly the reason recorded on g_pdSP.
+    int np=PdWalkParams(child,"K2_GetActorLocation(E0 CONTROL)");
+    int ret=-1; for(int k=0;k<np;k++) if(g_pdP[k].isRet) ret=k;
+    if(ret<0){ Markerf("[PD] E0 %s: no ReturnValue slot declared -> the control cannot read anything back\r\n",label); return 3; }
+    uint32_t rel=g_pdP[ret].elem, roffProp=g_pdP[ret].off;
+    uint16_t roffFn=SafeReadable((void*)(fn+PDPE_FN_RETOFF),2)?*(uint16_t*)(fn+PDPE_FN_RETOFF):0xFFFF;
+    Markerf("[PD] E0 %s: ReturnValueOffset cross-check -- FProperty.Offset_Internal=0x%X vs "
+            "UFunction[+0xC0]=0x%04X -> %s. ProcessEvent writes a native return at Parms+[Fn+0xC0] "
+            "(rva 0x134537B), NOT into RESULT_DECL, which is the whole difference from CallNative.\r\n",
+            label,roffProp,(unsigned)roffFn,(roffFn!=0xFFFF&&roffFn==roffProp)?"AGREE":"DISAGREE (read both below)");
+    if(rel!=24&&rel!=12){ Markerf("[PD] E0 %s: ReturnValue ElementSize=%u is neither 24 nor 12 -> not an "
+                                  "FVector; REFUSING to read it\r\n",label,rel); return 3; }
+    uint32_t psize=SafeReadable((void*)(fn+USTRUCT_PROPSIZE),4)?*(uint32_t*)(fn+USTRUCT_PROPSIZE):0;
+    if(psize>sizeof(g_pdpeparms)||roffProp+rel>sizeof(g_pdpeparms)){
+        Markerf("[PD] E0 %s: PropertiesSize %u exceeds the %u-byte params block -> NOT CALLED (a shim "
+                "limit, not a game fact)\r\n",label,psize,(unsigned)sizeof(g_pdpeparms)); return 3; }
+    memset(g_pdpeparms,0,sizeof(g_pdpeparms));
+    double rpm[3]={0,0,0}; bool haveRpm=ActorLoc(actor,rpm);
+    int rpmGuessed=0; uintptr_t rpmAttach=0; PdActorLocProvenance(actor,&rpmGuessed,&rpmAttach);
+    Markerf("[PD] E0 %s: RPM reference provenance -- RelativeLocation offset resolved %s; root "
+            "AttachParent = 0x%llX%s\r\n",label,
+            rpmGuessed?"*** BY THE HARDCODED 0x158 FALLBACK (the by-name resolve FAILED, so this "
+                       "reference is a GUESS and any comparison against it is uninterpretable) ***":
+                       "BY NAME",
+            (unsigned long long)rpmAttach,
+            rpmAttach?"   <== ATTACHED: RelativeLocation is NOT the world location, so a MISMATCH "
+                      "below is EXPECTED and is an instrument artifact, not a ProcessEvent failure":"");
+    Markerf("[PD] E0 %s: calling ProcessEvent(0x%llX)(obj=0x%llX, fn=0x%llX, parms=0x%llX) with a "
+            "%u-byte ZEROED flat block\r\n",label,(unsigned long long)g_pdPe,(unsigned long long)actor,
+            (unsigned long long)fn,(unsigned long long)(uintptr_t)g_pdpeparms,psize);
+    bool flt=CallPEGuarded(g_pdPe,actor,fn,g_pdpeparms);
+    double got[3]={0,0,0};
+    if(rel==24){ double* d=(double*)(g_pdpeparms+roffProp); got[0]=d[0]; got[1]=d[1]; got[2]=d[2]; }
+    else       { float*  f=(float*) (g_pdpeparms+roffProp); got[0]=f[0]; got[1]=f[1]; got[2]=f[2]; }
+    Markerf("[PD] E0 %s: PE-returned (params block @0x%X) = (%.1f,%.1f,%.1f)   RPM "
+            "RootComponent->RelativeLocation = %s(%.1f,%.1f,%.1f)   fault=%s%s\r\n",
+            label,roffProp,got[0],got[1],got[2],haveRpm?"":"UNREAD ",rpm[0],rpm[1],rpm[2],
+            flt?"YES":"no",flt?"  *** FAULTED (SEH-captured) ***":"");
+#if KFAULTINFO
+    if(flt) Markerf("[PD] E0 %s: fault detail %s\r\n",label,DP_FAULT);
+#endif
+    if(flt){ if(whyOut) _snprintf_s(whyOut,whySz,_TRUNCATE,"FAIL (ProcessEvent FAULTED on %s)",label); return 0; }
+    if(!haveRpm){ if(whyOut) _snprintf_s(whyOut,whySz,_TRUNCATE,"INCONCLUSIVE (no RPM reference for %s)",label);
+        Markerf("[PD] E0 %s: INCONCLUSIVE -- no RPM reference, so 'no fault' proves nothing (S114's "
+                "console-ok from a call that never reached its target).\r\n",label); return 3; }
+    double d0=got[0]-rpm[0],d1=got[1]-rpm[1],d2=got[2]-rpm[2];
+    double err=(d0<0?-d0:d0)+(d1<0?-d1:d1)+(d2<0?-d2:d2);
+    double mag=(rpm[0]<0?-rpm[0]:rpm[0])+(rpm[1]<0?-rpm[1]:rpm[1])+(rpm[2]<0?-rpm[2]:rpm[2]);
+    if(err>=1.0){
+        Markerf("[PD] E0 %s: MISMATCH |delta|=%.3f uu -- the two readings disagree, so either the call "
+                "did not run on this object, or the return marshalling is wrong, OR the reference "
+                "itself is not comparable. Reference: offset %s, AttachParent=0x%llX. %sNOT a pass.\r\n",
+                label,err,rpmGuessed?"GUESSED (0x158)":"by name",(unsigned long long)rpmAttach,
+                (rpmAttach||rpmGuessed)?"*** THE REFERENCE IS SUSPECT -- treat this as INSTRUMENT, not "
+                                        "as evidence about ProcessEvent. *** ":"");
+        if(whyOut) _snprintf_s(whyOut,whySz,_TRUNCATE,"FAIL (MISMATCH |delta|=%.3f on %s)",err,label);
+        return 0; }
+    if(mag<1.0){
+        // (!!) THE S126 LESSON, ENFORCED. C0c "AGREED" at (0,0,0) because the ship was S125's
+        //      half-constructed plane with no position -- it compared two zeros and called it a MATCH.
+        Markerf("[PD] E0 %s: WEAK CONTROL (origin) -- |delta|=%.3f but the REFERENCE ITSELF is "
+                "(%.1f,%.1f,%.1f), magnitude %.3f. Two zeros agree perfectly and prove nothing. This is "
+                "NOT a MATCH.\r\n",label,err,rpm[0],rpm[1],rpm[2],mag);
+        if(whyOut) _snprintf_s(whyOut,whySz,_TRUNCATE,"WEAK CONTROL (origin) on %s: reference magnitude %.3f",label,mag);
+        return 2; }
+    Markerf("[PD] E0 %s: STRONG PASS -- |delta|=%.3f uu against a NON-ZERO reference (magnitude %.1f). "
+            "ProcessEvent dispatched a real call ON THIS OBJECT and marshalled a struct return into the "
+            "params block. The ROUTE is proven.\r\n",label,err,mag);
+    if(whyOut) _snprintf_s(whyOut,whySz,_TRUNCATE,"STRONG PASS on %s (|delta|=%.3f, reference magnitude %.1f)",label,err,mag);
+    return 1;
+}
+// E0 driver: control on the SHIP (the object E1 will call on), and -- only if the ship sits at the
+// origin, which is the exact case that made C0c uninterpretable -- a second run on a non-origin actor
+// so the ROUTE still gets a real positive.
+static void PdPEControl(){
+    if(!PdResolvePE(g_pdShip,"the ship")){ g_pdE0Verdict=3;
+        Marker("[PD] E0: ProcessEvent did not resolve -> NOT CALLED. E1 is unflyable this sitting.\r\n"); return; }
+    g_pdE0Verdict=PdPEControlOn(g_pdShip,"ship",g_pdE0Why,sizeof(g_pdE0Why));
+    g_pdE0Ran=(g_pdE0Verdict!=3)?1:0; g_pdE0Faulted=(g_pdE0Verdict==0)?1:0;
+    if(g_pdE0Verdict!=2) return;
+    uintptr_t alt=0; const char* an=0;
+    double L[3];
+    if(g_pdHero&&GcAlive(g_pdHero)&&ActorLoc(g_pdHero,L)&&((L[0]<0?-L[0]:L[0])+(L[1]<0?-L[1]:L[1])+(L[2]<0?-L[2]:L[2]))>=1.0){ alt=g_pdHero; an="hero"; }
+    else if(g_pdStart&&GcAlive(g_pdStart)&&ActorLoc(g_pdStart,L)&&((L[0]<0?-L[0]:L[0])+(L[1]<0?-L[1]:L[1])+(L[2]<0?-L[2]:L[2]))>=1.0){ alt=g_pdStart; an="TrainingStart marker"; }
+    if(!alt){ Marker("[PD] E0b: no non-origin actor is available, so the route cannot be given a strong "
+                     "control this sitting. The ship's WEAK CONTROL (origin) stands as the only reading.\r\n"); return; }
+    Markerf("[PD] E0b: the ship is at the origin, so its control is WEAK. Re-running the SAME "
+            "ProcessEvent route on the %s -- this proves the ROUTE (not the ship) and is reported "
+            "separately so the two are never conflated.\r\n",an);
+    // The alt actor may be a different UClass, so re-resolve ProcessEvent from ITS vtable.
+    uintptr_t savePe=g_pdPe, saveVt=g_pdPeVt, saveOld=g_pdPeOld; int saveSlot=g_pdPeSlot;
+    if(PdResolvePE(alt,an)){ g_pdE0bVerdict=PdPEControlOn(alt,an,g_pdE0bWhy,sizeof(g_pdE0bWhy)); g_pdE0bRan=1; }
+    // * S127-FIX (review LOW): PdResolvePE zeroes vt/slot/old on ENTRY and only repopulates them on
+    //   success. Restoring g_pdPe alone left E-SUMMARY 1/7 printing the SHIP's ProcessEvent next to
+    //   the ALT actor's vtable -- a pair that never went together (the S115-d shape).
+    g_pdPe=savePe;   // E1 must dispatch through the SHIP's own ProcessEvent, not the alt actor's
+    if(!PdResolvePE(g_pdShip,"the ship (restored for E1)")){
+        g_pdPe=savePe; g_pdPeVt=saveVt; g_pdPeOld=saveOld; g_pdPeSlot=saveSlot;
+        Marker("[PD] E0b: the re-resolve on the ship FAILED; the ship's own resolve values are restored "
+               "from the snapshot taken before E0b, so nothing below prints a mismatched pair.\r\n"); }
+}
+// == E0c -- THE CONTROL FOR THE ALT-DISPATCH PATH ITSELF (S127-FIX, review HIGH) =================
+// E0 is NOT a control for the path E1 takes. K2_GetActorLocation has a non-null Func, so it grades
+// SAFE-INVOKE and runs ProcessEvent's NORMAL path: reject gate -> callspace -> UFunction::Invoke ->
+// call [Fn+0xE0]. E1's target grades SAFE-VIRTUAL and DIVERGES at rva 0x1344EB4 into
+// call [UFunctionVtable+0x378] -- the AngelScript marshaller. The two share only the prologue.
+// Reporting "control reached STRONG PASS, so E1 is attributable" on the strength of E0 alone would
+// be a fabricated attribution of exactly the class this project keeps recording.
+//
+// E0c closes that gap without mutating the world: find a UFunction ON THE SHIP'S OWN CLASS CHAIN
+// that takes the SAME exit as E1 -- bit 0x10 set, Func == 0 -- and that is safe to call blind:
+//   * ZERO non-return parameters  (nothing to fabricate; the S126 failure mode cannot occur), and
+//   * a declared ReturnValue      (so the 0xA5 sentinel gives a positive signal), and
+//   * a read-only-shaped name     (Get*/Is*/Has*/Can*).
+// POSITIVE = the sentinel is overwritten. That is the marshaller demonstrably executing a script
+// body on this object, through this ProcessEvent, on the exact branch E1 needs -- and it is the
+// only thing in this arm that can say so.
+static void PdPEAltControl(){
+    g_pdE0cRan=0; g_pdE0cVerdict=-1; g_pdE0cWhy[0]=0;
+#if !KPDPEALTCTRL
+    Marker("[PD] E0c: disabled by -DKPDPEALTCTRL=0. WARNING: Route E's alt-dispatch branch then has NO "
+           "positive control this sitting and E1's outcome is NOT attributable.\r\n");
+    return;
+#else
+    if(!g_pdPe||!g_pdShip||!GcAlive(g_pdShip)){ Marker("[PD] E0c: no ProcessEvent or no live ship -> NOT RUN\r\n"); return; }
+    uintptr_t cls=ClassOf(g_pdShip); if(!cls){ Marker("[PD] E0c: the ship has no class -> NOT RUN\r\n"); return; }
+    uintptr_t pick=0; char pickName[96]={0}, pickOwner[96]={0};
+    uint32_t pickRetOff=0xFFFFFFFF; int scanned=0,altSeen=0,g=0;
+    for(uintptr_t c=cls; LooksLikePtr(c)&&g<12&&!pick; c=(SafeReadable((void*)(c+0x48),8)?*(uintptr_t*)(c+0x48):0), g++){
+        uintptr_t f=SafeReadable((void*)(c+0x50),8)?*(uintptr_t*)(c+0x50):0; int i=0;
+        while(LooksLikePtr(f)&&i<600&&!pick){
+            scanned++;
+            uint32_t fl=SafeReadable((void*)(f+PDPE_FN_FLAGS),4)?*(uint32_t*)(f+PDPE_FN_FLAGS):0;
+            uintptr_t fu=SafeReadable((void*)(f+UFUNC_FUNC),8)?*(uintptr_t*)(f+UFUNC_FUNC):1;
+            if((fl&PDPE_FLAG_ALTDISPATCH)&&fu==0){
+                altSeen++;
+                char nm[96]; nm[0]=0; GetFNameStr(NameId(f),nm,sizeof(nm));
+                bool readonlyShape = (strncmp(nm,"Get",3)==0||strncmp(nm,"Is",2)==0||
+                                      strncmp(nm,"Has",3)==0||strncmp(nm,"Can",3)==0);
+                if(readonlyShape){
+                    uintptr_t ch=SafeReadable((void*)(f+UFUNC_CHILDPROPS),8)?*(uintptr_t*)(f+UFUNC_CHILDPROPS):0;
+                    if(LooksLikePtr(ch)){
+                        // !! A QUIET INLINE WALK ON PURPOSE. PdWalkParams prints a marker line per slot
+                        //    and per call, and it dereferences its `tag` through a %s -- so calling it
+                        //    from inside a scan over hundreds of UFunctions would both null-deref and
+                        //    bury the run's real evidence under scan noise. It also writes the SHARED
+                        //    g_pdP scratch, which E1 later re-reads (the g_pdSP lesson). Neither is
+                        //    acceptable here, so this loop touches nothing global.
+                        int nin=0; uint32_t retOff=0xFFFFFFFF,retElem=0; int haveRet=0,bad=0,i2=0;
+                        for(uintptr_t q=ch; LooksLikePtr(q)&&i2<64; i2++){
+                            uint64_t pf=SafeReadable((void*)(q+FPROP_FLAGS),8)?*(uint64_t*)(q+FPROP_FLAGS):0;
+                            if(pf&CPF_Parm){
+                                if(pf&CPF_ReturnParm){
+                                    if(!haveRet){ haveRet=1;
+                                        retOff =SafeReadable((void*)(q+FPROP_OFFSET),4)?*(uint32_t*)(q+FPROP_OFFSET):0xFFFFFFFF;
+                                        retElem=SafeReadable((void*)(q+FPROP_ELEMSIZE),4)?*(uint32_t*)(q+FPROP_ELEMSIZE):0; }
+                                    else bad=1;   // two return slots: not a shape this control understands
+                                } else nin++;
+                            }
+                            q=SafeReadable((void*)(q+FIELD_NEXT),8)?*(uintptr_t*)(q+FIELD_NEXT):0;
+                        }
+                        uint32_t ps=SafeReadable((void*)(f+USTRUCT_PROPSIZE),4)?*(uint32_t*)(f+USTRUCT_PROPSIZE):0;
+                        if(!bad&&nin==0&&haveRet&&retElem>=1&&ps&&ps<=sizeof(g_pdpeparms)
+                           &&retOff!=0xFFFFFFFF&&retOff+1<=sizeof(g_pdpeparms)){
+                            pick=f; pickRetOff=retOff;
+                            strncpy_s(pickName,sizeof(pickName),nm,_TRUNCATE);
+                            GetFNameStr(NameId(c),pickOwner,sizeof(pickOwner));
+                        }
+                    }
+                }
+            }
+            uintptr_t nx=SafeReadable((void*)(f+0x30),8)?*(uintptr_t*)(f+0x30):0; f=nx; i++;
+        }
+    }
+    if(!pick){
+        Markerf("[PD] E0c: NO CANDIDATE. Scanned %d UFunctions on the ship's class chain; %d take the "
+                "alt-dispatch exit (bit 0x10 set, Func == 0) but none is zero-input + has a ReturnValue "
+                "+ has a read-only-shaped name. WARNING: THE ALT-DISPATCH BRANCH THEREFORE HAS NO "
+                "POSITIVE CONTROL THIS SITTING -- E0's STRONG PASS covers the SAFE-INVOKE exit ONLY, "
+                "and E1's outcome is NOT attributable to the marshaller.\r\n",scanned,altSeen);
+        _snprintf_s(g_pdE0cWhy,sizeof(g_pdE0cWhy),_TRUNCATE,
+                    "NO CANDIDATE (%d scanned, %d alt-dispatch, none callable blind)",scanned,altSeen);
+        g_pdE0cVerdict=3; return; }
+    Markerf("[PD] E0c: candidate '%s::%s' fn=0x%llX -- bit 0x10 SET, Func == 0, ZERO inputs, "
+            "ReturnValue@0x%X. This is the SAME ProcessEvent exit E1 needs, on the SAME object, with "
+            "nothing to fabricate. (%d UFunctions scanned, %d alt-dispatch.)\r\n",
+            pickOwner,pickName,(unsigned long long)pick,pickRetOff,scanned,altSeen);
+    int grade=PdGradeForPE(g_pdShip,pick,"E0c ALT-DISPATCH CONTROL");
+    if(grade!=PDPE_SAFE_VIRTUAL){
+        Markerf("[PD] E0c: the candidate graded %d, not SAFE-VIRTUAL -> NOT CALLED (it would not take "
+                "the branch under test).\r\n",grade);
+        _snprintf_s(g_pdE0cWhy,sizeof(g_pdE0cWhy),_TRUNCATE,"candidate graded %d, not SAFE-VIRTUAL",grade);
+        g_pdE0cVerdict=3; return; }
+    uint32_t ro=pickRetOff;
+    if(g_pdMHaveRet&&g_pdMRetOff!=0xFFFFFFFF&&g_pdMRetOff+1<=sizeof(g_pdpeparms)) ro=g_pdMRetOff;
+    memset(g_pdpeparms,0,sizeof(g_pdpeparms));
+    g_pdpeparms[pickRetOff]=PDPE_RET_SENTINEL; g_pdpeparms[ro]=PDPE_RET_SENTINEL;
+    Markerf("[PD] E0c: calling ProcessEvent(0x%llX)(obj=0x%llX, fn=0x%llX, parms=0x%llX); return slot "
+            "@0x%X pre-filled with the 0x%02X sentinel.\r\n",(unsigned long long)g_pdPe,
+            (unsigned long long)g_pdShip,(unsigned long long)pick,
+            (unsigned long long)(uintptr_t)g_pdpeparms,ro,(unsigned)PDPE_RET_SENTINEL);
+    bool flt=CallPEGuarded(g_pdPe,g_pdShip,pick,g_pdpeparms);
+    unsigned raw=g_pdpeparms[ro];
+    g_pdE0cRan=1;
+    if(flt){ g_pdE0cVerdict=0;
+        _snprintf_s(g_pdE0cWhy,sizeof(g_pdE0cWhy),_TRUNCATE,"FAIL (FAULTED on %s)",pickName);
+        Markerf("[PD] E0c: *** FAULTED (SEH-captured) *** on '%s'. The alt-dispatch branch is not "
+                "safely callable on this object, so E1 must not be read as a game statement.\r\n",pickName);
+        return; }
+    if(raw==(unsigned)PDPE_RET_SENTINEL){ g_pdE0cVerdict=0;
+        _snprintf_s(g_pdE0cWhy,sizeof(g_pdE0cWhy),_TRUNCATE,"FAIL (sentinel intact on %s)",pickName);
+        Markerf("[PD] E0c: FAIL -- the 0x%02X sentinel is INTACT after calling '%s'. ProcessEvent "
+                "returned without fault and WITHOUT dispatching: the callspace gate absorbed it, or "
+                "[fn+0xE8] is null, or Execute failed. ==> THE ALT-DISPATCH BRANCH IS NOT DEMONSTRATED, "
+                "and E1's null would be this same silence rather than the drop pod.\r\n",
+                (unsigned)PDPE_RET_SENTINEL,pickName);
+        return; }
+    g_pdE0cVerdict=1;
+    _snprintf_s(g_pdE0cWhy,sizeof(g_pdE0cWhy),_TRUNCATE,
+                "STRONG PASS on %s::%s (sentinel 0x%02X -> 0x%02X)",pickOwner,pickName,
+                (unsigned)PDPE_RET_SENTINEL,raw);
+    Markerf("[PD] E0c: STRONG PASS -- the sentinel 0x%02X was overwritten with 0x%02X. The AngelScript "
+            "marshaller at [UFunctionVtable+0x378] EXECUTED a script body on this object, through this "
+            "ProcessEvent, on the exact branch E1 takes. THE ALT-DISPATCH ROUTE IS PROVEN.\r\n",
+            (unsigned)PDPE_RET_SENTINEL,raw);
+#endif
+}
+
+// E1 -- THE HEADLINE: SpawnDropPodForTeam through ProcessEvent, with a flat params block.
+static void PdCallSpawnViaPE(){
+    g_pdE1Ran=0; g_pdE1Faulted=-1; g_pdE1Ret=-1; g_pdE1RetRaw=-1; g_pdE1RetWritten=-1;
+    g_pdE1Refused=0; g_pdE1RefWhy=PDER_NONE;
+    // ★ S127-FIX (review MEDIUM): these five paths used to set NEITHER ran NOR refused, so the
+    //   verdict chain fell through every branch and the run's headline section ended with NO
+    //   E-VERDICT line at all -- silence a reader is free to fill in. They are PRECONDITION
+    //   refusals now, and the verdict says so in those words.
+    if(!g_pdPe){ g_pdE1Refused=1; g_pdE1RefWhy=PDER_PRECOND;
+        Marker("[PD] E1: ProcessEvent unresolved -> NOT CALLED (precondition)\r\n"); return; }
+    if(!g_pdFn){ g_pdE1Refused=1; g_pdE1RefWhy=PDER_PRECOND;
+        Marker("[PD] E1: SpawnDropPodForTeam unresolved -> NOT CALLED (precondition)\r\n"); return; }
+    if(!g_pdShip||!GcAlive(g_pdShip)){ g_pdE1Refused=1; g_pdE1RefWhy=PDER_PRECOND;
+        Marker("[PD] E1: the ship is no longer a live UObject -> NOT CALLED (precondition)\r\n"); return; }
+    if(!g_pdHavePos){ g_pdE1Refused=1; g_pdE1RefWhy=PDER_PRECOND;
+        Marker("[PD] E1: no derived positions -> NOT CALLED (see PdDerivePositions' refusal; "
+                             "a fabricated coordinate is how a 'the spawn silently did nothing' result gets "
+                             "manufactured)\r\n"); return; }
+    g_pdE1Grade=PdGradeForPE(g_pdShip,g_pdFn,"SpawnDropPodForTeam(E1)");
+    if(g_pdE1Grade==PDPE_UNREADABLE){ g_pdE1Refused=1; g_pdE1RefWhy=PDER_PRECOND;
+        Marker("[PD] E1: the UFunction is unreadable -> NOT CALLED (precondition/instrument)\r\n"); return; }
+    if(g_pdE1Grade==PDPE_WILL_FAULT&&!KPDPEFORCE){
+        g_pdE1Refused=1; g_pdE1RefWhy=PDER_GRADE;
+        Marker("[PD] E1: *** REFUSING TO CALL. *** The live grade is WILL-FAULT: ProcessEvent would "
+               "reach UFunction::Invoke and execute call [0]. THIS REFUSAL IS THE RESULT -- it is the "
+               "offline grade confirmed on the live object, i.e. ProcessEvent is NOT a Func-free route "
+               "for THIS function, and Route E is closed by the same null that closed Route C. Escalate "
+               "deliberately with -DKPDPEFORCE=1 (build variant droppod-pe-force), knowing it spends the "
+               "game thread on a near-certain access violation.\r\n");
+        return; }
+    if(g_pdE1Grade==PDPE_WILL_FAULT)
+        Marker("[PD] E1: *** KPDPEFORCE=1: calling a WILL-FAULT function on purpose. An AV here is the "
+               "PREDICTED outcome, not a new fact. ***\r\n");
+    if(g_pdE1Grade==PDPE_SAFE_NOOP)
+        Marker("[PD] E1: NOTE the grade is SAFE-NO-OP -- ProcessEvent will return before dispatching "
+               "anything. The call is made anyway (it is free and it confirms the gate), but a zero "
+               "DropPod delta from it is EXPECTED and says nothing about the drop pod.\r\n");
+    // ---- re-read the signature from the LIVE chain, then keep a PRIVATE copy --------------------
+    int np=PdWalkParams(g_pdFnChild,"SpawnDropPodForTeam(E1 RE-READ)");
+    if(np<=0){ g_pdE1Refused=1; g_pdE1RefWhy=PDER_PRECOND;
+        Marker("[PD] E1: the re-read returned no parameter slots -> NOT CALLED. That is an INSTRUMENT "
+               "statement about the FProperty walk, not a statement about ProcessEvent.\r\n"); return; }
+    memcpy(g_pdEP,g_pdP,sizeof(g_pdEP)); g_pdNEP=np;   // (*) see the g_pdSP comment: never bind into scratch
+    // Cross-check the re-read against the resolve-time snapshot. A drift means the layout moved under
+    // us and every offset below is suspect.
+    if(g_pdNEP!=g_pdNSP) Markerf("[PD] E1: *** slot COUNT drifted since resolve (%d -> %d) ***\r\n",g_pdNSP,g_pdNEP);
+    else for(int k=0;k<g_pdNEP;k++)
+        if(g_pdEP[k].off!=g_pdSP[k].off||g_pdEP[k].elem!=g_pdSP[k].elem)
+            Markerf("[PD] E1: *** slot[%d] '%s' drifted since resolve: off 0x%X->0x%X size %u->%u ***\r\n",
+                    k,g_pdEP[k].name,g_pdSP[k].off,g_pdEP[k].off,g_pdSP[k].elem,g_pdEP[k].elem);
+    // Bind by TYPE+POSITION over the private copy. Same rules as PdBindParams, restated here so E1
+    // never depends on indices computed against a different array.
+    g_pdIxETeam=g_pdIxESpawn=g_pdIxELand=g_pdIxERet=-1;
+    for(int k=0;k<g_pdNEP;k++){
+        PdParm& p=g_pdEP[k];
+        if(p.isRet){ if(g_pdIxERet<0) g_pdIxERet=k; continue; }
+        if(g_pdIxETeam<0&&strstr(p.type,"IntProperty")){ g_pdIxETeam=k; continue; }
+        if(strstr(p.type,"StructProperty")){
+            if(g_pdIxESpawn<0){ g_pdIxESpawn=k; continue; }
+            if(g_pdIxELand <0){ g_pdIxELand =k; continue; } }
+    }
+    // ---- SANITY CHECKS. Any failure REFUSES; a wrong-sized write would corrupt a neighbouring slot.
+    bool ok=true;
+    if(g_pdIxETeam<0){ Marker("[PD] E1: no IntProperty slot for TeamIndex -> REFUSING\r\n"); ok=false; }
+    else if(g_pdEP[g_pdIxETeam].elem!=4){
+        Markerf("[PD] E1: TeamIndex slot ElementSize=%u, must be 4 -> REFUSING (the layout moved; "
+                "FPROP_ELEMSIZE=0x34 is what makes this readable at all -- 0x30 is ArrayDim and reads 1 "
+                "for every slot)\r\n",g_pdEP[g_pdIxETeam].elem); ok=false; }
+    for(int pass=0;pass<2&&ok;pass++){
+        int ix=pass?g_pdIxELand:g_pdIxESpawn; const char* nm=pass?"LandingLocation":"SpawnLocation";
+        if(ix<0){ Markerf("[PD] E1: no StructProperty slot for %s -> REFUSING\r\n",nm); ok=false; break; }
+        uint32_t e=g_pdEP[ix].elem;
+        if(e!=24&&e!=12){ Markerf("[PD] E1: %s slot ElementSize=%u is neither 24 (3x double, LWC) nor 12 "
+                                  "(3x float) -> REFUSING\r\n",nm,e); ok=false; }
+        // ★ S127-FIX (review MEDIUM): C1's binder checked the struct NAME and E1 had dropped it.
+        //   FRotator is ALSO 3 doubles, so size alone cannot separate them.
+        if(strcmp(g_pdEP[ix].sname,"Vector")!=0)
+            Markerf("[PD] E1: !! %s slot struct name is '%s', not 'Vector'. Size alone cannot separate "
+                    "an FVector from an FRotator (both 3 doubles). Treat the result as UNATTRIBUTABLE "
+                    "unless this is explained.\r\n",nm,g_pdEP[ix].sname);
+    }
+    // ★ S127-FIX (review MEDIUM): the two FVectors are bound purely POSITIONALLY (every parameter
+    //   name reads 'None' live, so no name rule can fire). Nothing asserted that the chain walk is
+    //   offset-ascending. If it ever reverses, Spawn and Landing swap SILENTLY -- the pod is told to
+    //   spawn at ground level and land 200 m up, and the resulting null gets blamed on the game.
+    if(ok&&g_pdIxESpawn>=0&&g_pdIxELand>=0){
+        if(g_pdEP[g_pdIxESpawn].off>=g_pdEP[g_pdIxELand].off){
+            Markerf("[PD] E1: *** POSITIONAL BIND IS NOT OFFSET-ASCENDING: SpawnLocation slot[%d]@0x%X "
+                    "is NOT below LandingLocation slot[%d]@0x%X. The chain walk order and the ABI "
+                    "disagree, so the two FVectors would be swapped -> REFUSING.\r\n",
+                    g_pdIxESpawn,g_pdEP[g_pdIxESpawn].off,g_pdIxELand,g_pdEP[g_pdIxELand].off); ok=false; }
+        else
+            Markerf("[PD] E1: positional bind cross-check: Spawn@0x%X < Landing@0x%X, ascending. The ABI "
+                    "recovered offline from _ParmsEntry (rva 0x0597F670) is TeamIndex@0x00, "
+                    "SpawnLocation@0x08, LandingLocation@0x20, bool return@0x38 -- %s.\r\n",
+                    g_pdEP[g_pdIxESpawn].off,g_pdEP[g_pdIxELand].off,
+                    (g_pdEP[g_pdIxESpawn].off==0x08&&g_pdEP[g_pdIxELand].off==0x20)?
+                        "and the live chain MATCHES it exactly":
+                        "and the live chain DIFFERS from it -- read both before trusting either");
+    }
+    uint32_t psize=SafeReadable((void*)(g_pdFn+USTRUCT_PROPSIZE),4)?*(uint32_t*)(g_pdFn+USTRUCT_PROPSIZE):0;
+    if(ok&&psize>sizeof(g_pdpeparms)){
+        Markerf("[PD] E1: PropertiesSize %u exceeds the %u-byte params block -> REFUSING (a shim limit, "
+                "not a game fact)\r\n",psize,(unsigned)sizeof(g_pdpeparms)); ok=false; }
+    if(ok) for(int k=0;k<g_pdNEP;k++)
+        if(g_pdEP[k].off==0xFFFFFFFF||g_pdEP[k].off+g_pdEP[k].elem>sizeof(g_pdpeparms)){
+            Markerf("[PD] E1: slot[%d] '%s' @0x%X size %u falls outside the params block -> REFUSING\r\n",
+                    k,g_pdEP[k].name,g_pdEP[k].off,g_pdEP[k].elem); ok=false; }
+    if(!ok&&!KPDFORCE){ g_pdE1Refused=1; g_pdE1RefWhy=PDER_LAYOUT;
+        Marker("[PD] E1: NOT CALLED. Passing a fabricated or wrong-sized argument is exactly how an "
+               "unattributable fault gets manufactured. ⚠ THIS IS A LAYOUT/INSTRUMENT REFUSAL, NOT a "
+               "statement about ProcessEvent -- see the E-VERDICT, which distinguishes them.\r\n"); return; }
+    // ---- S127-FIX: cross-check the FProperty offsets against the MARSHALLER'S OWN table ----------
+    //   On the alt-dispatch path slot 111 reads each argument at descriptor[i]+0x40, not at the
+    //   FProperty's Offset_Internal. If those disagree the script is handed uninitialised zeros and
+    //   the resulting null is blamed on SpawnDropPodForTeam -- the exact error class this arm exists
+    //   to prevent. They are expected to agree; "expected" is not measured, so it is checked.
+    if(g_pdE1Grade==PDPE_SAFE_VIRTUAL){
+        if(g_pdMN<=0){
+            Marker("[PD] E1: !! the marshaller's descriptor table could not be read, so the argument "
+                   "offsets it will use are UNKNOWN. The FProperty offsets are used and the outcome is "
+                   "UNATTRIBUTABLE either way.\r\n");
+        } else {
+            int nIn=0; for(int k=0;k<g_pdNEP;k++) if(!g_pdEP[k].isRet) nIn++;
+            bool agree=(g_pdMN==nIn); int j=0;
+            if(agree) for(int k=0;k<g_pdNEP&&agree;k++){ if(g_pdEP[k].isRet) continue;
+                if(g_pdMOff[j]!=g_pdEP[k].off) agree=false; j++; }
+            g_pdMAgree=agree?1:0;
+            Markerf("[PD] E1: MARSHALLER-vs-FProperty offsets: %s (marshaller Num=%d, FProperty inputs=%d)\r\n",
+                    agree?"AGREE -- one layout, no ambiguity":"*** DISAGREE ***",g_pdMN,nIn);
+            if(!agree&&!KPDFORCE){ g_pdE1Refused=1; g_pdE1RefWhy=PDER_MARSHAL;
+                Marker("[PD] E1: NOT CALLED -- the two offset tables disagree, so writing at either one "
+                       "hands the script at least one uninitialised argument. THIS IS AN INSTRUMENT "
+                       "REFUSAL and says nothing about whether the pod can spawn. Fix: write at the "
+                       "MARSHALLER offsets (they are printed above) and re-fly.\r\n"); return; }
+        }
+    }
+    // ---- build the flat block -------------------------------------------------------------------
+    memset(g_pdpeparms,0,sizeof(g_pdpeparms));
+    // (!!) EVERY write is bounds-checked AT THE WRITE SITE, not only by the validation pass above.
+    //      With -DKPDFORCE=1 the validation is allowed to fail and execution continues, and a shim that
+    //      can then write past its own buffer is a worse hazard than the call it is forcing.
+    if(g_pdIxETeam>=0&&g_pdEP[g_pdIxETeam].off!=0xFFFFFFFF&&g_pdEP[g_pdIxETeam].off+4<=sizeof(g_pdpeparms))
+        *(int32_t*)(g_pdpeparms+g_pdEP[g_pdIxETeam].off)=(int32_t)KPDTEAM;
+    for(int pass=0;pass<2;pass++){
+        int ix=pass?g_pdIxELand:g_pdIxESpawn; const double* v=pass?g_pdLand:g_pdSpawn;
+        if(ix<0) continue; PdParm& p=g_pdEP[ix];
+        if(p.off==0xFFFFFFFF||p.off+p.elem>sizeof(g_pdpeparms)){
+            Markerf("[PD] E1: slot[%d] '%s' @0x%X size %u is out of the block -- NOT WRITTEN (it will be "
+                    "passed as the zero the memset left)\r\n",ix,p.name,p.off,p.elem); continue; }
+        if(p.elem==24){ double* d=(double*)(g_pdpeparms+p.off); d[0]=v[0]; d[1]=v[1]; d[2]=v[2]; }
+        else if(p.elem==12){ float* f=(float*)(g_pdpeparms+p.off); f[0]=(float)v[0]; f[1]=(float)v[1]; f[2]=(float)v[2]; }
+        else Markerf("[PD] E1: slot[%d] '%s' has ElementSize %u -- NOT WRITTEN\r\n",ix,p.name,p.elem);
+    }
+    if(g_pdIxERet>=0){ g_pdE1RetOff=g_pdEP[g_pdIxERet].off; g_pdE1RetElem=g_pdEP[g_pdIxERet].elem; }
+    // ★ S127-FIX (review HIGH): on the alt-dispatch path the return is written at Parms+[fn+0x170]
+    //   (rva 0x048E6782), NOT at the FProperty offset and NOT at ReturnValueOffset(+0xC0). Prefer the
+    //   marshaller's own offset when that is the path being taken.
+    uint32_t retReadOff=g_pdE1RetOff; const char* retReadWhy="FProperty.Offset_Internal";
+    if(g_pdE1Grade==PDPE_SAFE_VIRTUAL&&g_pdMHaveRet&&g_pdMRetOff!=0xFFFFFFFF&&g_pdMRetOff+1<=sizeof(g_pdpeparms)){
+        retReadOff=g_pdMRetOff; retReadWhy="the MARSHALLER's own return offset [fn+0x170]";
+    }
+    // ★ S127-FIX (review HIGH): three different failures produced the identical reading
+    //   "no fault, ReturnValue = 0, delta +0" -- (a) the script ran and bailed, (b) [fn+0xE8] was
+    //   null so slot 111 returned at rva 0x048E658E without executing anything, (c) Prepare/Execute
+    //   failed inside the context (its result is NOT checked at rva 0x048E6765). A SENTINEL splits
+    //   (a) from (b)/(c): if the byte is still 0xA5 afterwards, NOTHING ever wrote a return.
+    if(g_pdE1RetOff!=0xFFFFFFFF&&g_pdE1RetOff+1<=sizeof(g_pdpeparms)) g_pdpeparms[g_pdE1RetOff]=PDPE_RET_SENTINEL;
+    if(retReadOff!=0xFFFFFFFF&&retReadOff+1<=sizeof(g_pdpeparms))     g_pdpeparms[retReadOff]=PDPE_RET_SENTINEL;
+    uint16_t roffFn=SafeReadable((void*)(g_pdFn+PDPE_FN_RETOFF),2)?*(uint16_t*)(g_pdFn+PDPE_FN_RETOFF):0xFFFF;
+    _snprintf_s(g_pdE1Layout,sizeof(g_pdE1Layout),_TRUNCATE,
+        "TeamIndex slot[%d]@0x%X size4 | SpawnLocation slot[%d]@0x%X size%u | LandingLocation slot[%d]@0x%X size%u "
+        "| ReturnValue slot[%d]@0x%X size%u | PropertiesSize=%u | UFunction[+0xC0]=0x%04X",
+        g_pdIxETeam,g_pdIxETeam>=0?g_pdEP[g_pdIxETeam].off:0xFFFFFFFF,
+        g_pdIxESpawn,g_pdIxESpawn>=0?g_pdEP[g_pdIxESpawn].off:0xFFFFFFFF,g_pdIxESpawn>=0?g_pdEP[g_pdIxESpawn].elem:0,
+        g_pdIxELand ,g_pdIxELand >=0?g_pdEP[g_pdIxELand ].off:0xFFFFFFFF,g_pdIxELand >=0?g_pdEP[g_pdIxELand ].elem:0,
+        g_pdIxERet  ,g_pdE1RetOff,g_pdE1RetElem,psize,(unsigned)roffFn);
+    Markerf("[PD] E1 LAYOUT USED (all of it re-read from the live FProperty chain): %s\r\n",g_pdE1Layout);
+    Markerf("[PD] E1 POSITIONS USED: Spawn=(%.1f,%.1f,%.1f) Landing=(%.1f,%.1f,%.1f) written as %s; "
+            "origin=%s; TeamIndex=%d\r\n",
+            g_pdSpawn[0],g_pdSpawn[1],g_pdSpawn[2],g_pdLand[0],g_pdLand[1],g_pdLand[2],
+            (g_pdIxESpawn>=0&&g_pdEP[g_pdIxESpawn].elem==24)?"3x double (LWC)":"3x float",
+            g_pdOriginWhy[0]?g_pdOriginWhy:"-",(int)KPDTEAM);
+    g_pdTdpcBefore=PdReadTdpc("E1 BEFORE");
+    Markerf("[PD] E1 CALL: ProcessEvent(0x%llX)(obj=0x%llX '%s', fn=0x%llX, parms=0x%llX)\r\n",
+            (unsigned long long)g_pdPe,(unsigned long long)g_pdShip,g_pdShipName,
+            (unsigned long long)g_pdFn,(unsigned long long)(uintptr_t)g_pdpeparms);
+    bool flt=CallPEGuarded(g_pdPe,g_pdShip,g_pdFn,g_pdpeparms);
+    g_pdE1Ran=1; g_pdE1Faulted=flt?1:0;
+    _snprintf_s(g_pdE1Flt,sizeof(g_pdE1Flt),_TRUNCATE,"%s",flt?DP_FAULT:"-");
+    if(retReadOff!=0xFFFFFFFF&&retReadOff+1<=sizeof(g_pdpeparms)){
+        g_pdE1RetRaw=(int)g_pdpeparms[retReadOff];
+        g_pdE1RetWritten=(g_pdE1RetRaw==(int)PDPE_RET_SENTINEL)?0:1;
+        g_pdE1Ret=g_pdE1RetWritten?(g_pdE1RetRaw?1:0):-1;
+    }
+    g_pdE1RetOff=retReadOff;   // report the offset actually READ, never one it did not come from
+    Markerf("[PD] E1 AFTER: fault=%s  %s  |  return slot @0x%X (read at %s) raw byte = 0x%02X -> %s\r\n",
+            flt?"*** FAULTED (SEH-captured) ***":"returned without fault",g_pdE1Flt,
+            retReadOff,retReadWhy,(unsigned)(g_pdE1RetRaw<0?0:g_pdE1RetRaw),
+            (g_pdE1RetRaw<0)?"UNREAD (no return slot bound)":
+            (g_pdE1RetWritten==0)?"*** SENTINEL 0xA5 INTACT -- NOTHING EVER WROTE A RETURN. The script "
+                                  "body did not run to completion: either asCScriptFunction*(+0xE8) was "
+                                  "null, or Prepare/Execute failed inside the context (its result is not "
+                                  "checked at rva 0x048E6765), or the callspace gate absorbed the call. "
+                                  "THIS IS AN INSTRUMENT READING, NOT 'the pod did not spawn'. ***":
+            (g_pdE1Ret?"true (1) -- the marshaller wrote a real return":
+                       "false (0) -- the marshaller wrote a real return, and it is FALSE"));
+    // ★ S127-FIX: re-read the script-function pointer AFTER the call, so a null is attributable
+    //   rather than inferred from a line printed minutes earlier.
+    if(SafeReadable((void*)(g_pdFn+PDPE_FN_SCRIPTFN),8))
+        Markerf("[PD] E1 AFTER: asCScriptFunction*(+0xE8) re-read = 0x%llX%s\r\n",
+                (unsigned long long)*(uintptr_t*)(g_pdFn+PDPE_FN_SCRIPTFN),
+                (*(uintptr_t*)(g_pdFn+PDPE_FN_SCRIPTFN))?"":
+                "   <== NULL: slot 111 returns at rva 0x048E658E without executing ANYTHING");
+    g_pdTdpcAfter=PdReadTdpc("E1 AFTER");
+    Marker("[PD] E1: 'returned without fault' IS NOT A RESULT and neither is the ReturnValue. Only the "
+           "DropPod census delta is.\r\n");
+}
+
+// ---- resolve everything, on the worker thread, before anything is armed -----------------------------
+static bool PdResolve(){
+    const char* why="?"; int nships=0;
+    g_pdShip=PdPickShip(&why,&nships);
+    Markerf("[PD] ship selection: 0x%llX  reason: %s\r\n",(unsigned long long)g_pdShip,why);
+    if(!g_pdShip&&nships==0){
+#if KPDPRESPAWN
+        if(KPDARMS&0x08){
+            Marker("[PD] --- C3 PRE-SPAWN: no live LokiDropShip exists, so Route C has no target. "
+                   "KPDPRESPAWN=1 -> calling SpawnPlane on the DropPlane component FIRST to create one. "
+                   "S125 MEASURED that SpawnPlane creates BP_DropPlane_Straight_Tutorial_C (chain "
+                   "... <- LokiDropShip) even though it faults at rva 0x13495DD, so this is a measured "
+                   "route, not a hope. ⚠ It moves the DropPlane/DropShip census rows; the row that "
+                   "answers Route C is DropPod, which it cannot move. ---\r\n");
+            if(!DpResolve()){ Marker("[PD] C3: the DropPlane component did not resolve -> cannot pre-spawn. "
+                                     "Route C is NOT-APPLICABLE this sitting.\r\n"); return false; }
+            g_pdPreSpawned=(DpCallBP(g_dpSpawnFn,"C3 SpawnPlane(pre-spawn)",0xFFFFFFFF,0)!=DPCALL_NOTRUN)?1:0;
+            Sleep(1000);
+            g_pdShip=PdPickShip(&why,&nships);
+            Markerf("[PD] C3 re-enumeration after pre-spawn: ship=0x%llX reason: %s\r\n",(unsigned long long)g_pdShip,why);
+        } else {
+            Marker("[PD] C3 disabled by KPDARMS -> no pre-spawn attempted.\r\n");
+        }
+#else
+        Marker("[PD] KPDPRESPAWN=0 -> NOT pre-spawning. Route C is NOT-APPLICABLE this sitting: there is "
+               "no LokiDropShip actor to call SpawnDropPodForTeam on. This is a STAGING statement, not a "
+               "statement about the drop pod.\r\n");
+#endif
+    }
+    if(!g_pdShip){
+        Marker("[PD] ABORT: no unambiguous LokiDropShip target. NOTHING was called and NOTHING was "
+               "written. See the enumeration above.\r\n");
+        return false; }
+    if(!GcAlive(g_pdShip)){ Marker("[PD] ABORT: the selected ship is not a live UObject\r\n"); return false; }
+    uintptr_t cls=ClassOf(g_pdShip);
+    GetFNameStr(NameId(g_pdShip),g_pdShipName,sizeof(g_pdShipName));
+    PhChainHas(cls,"@never@",g_pdShipChain,sizeof(g_pdShipChain));
+    Markerf("[PD] ship 0x%llX '%s'  chain=%s\r\n",(unsigned long long)g_pdShip,g_pdShipName,g_pdShipChain);
+
+    g_pdFn   =DpResolveOwned(cls,"SpawnDropPodForTeam",&g_pdFnChild,g_pdFnOwner,sizeof(g_pdFnOwner));
+    g_pdCtlFn=DpResolveOwned(cls,"K2_GetActorLocation",&g_pdCtlChild,g_pdCtlOwner,sizeof(g_pdCtlOwner));
+    g_pdLdrFn=DpResolveOwned(cls,"GetTeamDropLeader",&g_pdLdrChild,g_pdLdrOwner,sizeof(g_pdLdrOwner));
+    Markerf("[PD] resolve: SpawnDropPodForTeam=0x%llX(owner %s)  K2_GetActorLocation=0x%llX(owner %s)  "
+            "GetTeamDropLeader=0x%llX(owner %s)\r\n",
+            (unsigned long long)g_pdFn,g_pdFnOwner[0]?g_pdFnOwner:"-",
+            (unsigned long long)g_pdCtlFn,g_pdCtlOwner[0]?g_pdCtlOwner:"-",
+            (unsigned long long)g_pdLdrFn,g_pdLdrOwner[0]?g_pdLdrOwner:"-");
+    // ★ AS-REGISTRATION AS A MEASUREMENT, not an assumption. FK-1 measured 0 of 15 AS UClasses
+    //   registered AT THE MENU; in a loaded map they should be. This line is that reading.
+    Markerf("[PD] Angelscript registration reading: the ship's class chain resolved (%s) and "
+            "SpawnDropPodForTeam %s. FK-1 measured AS UClasses NOT registered at the menu; this is the "
+            "in-world counterpart.\r\n",g_pdShipChain,g_pdFn?"RESOLVED on the live class":"DID NOT RESOLVE");
+    if(!g_pdFn){
+        Marker("[PD] ABORT: SpawnDropPodForTeam is not on this ship's class chain. NOTHING was called. "
+               "⚠ This is a REFLECTION statement (the UFunction is not registered / not on this chain), "
+               "NOT evidence that the function is absent from the image -- FK-1 measured it as an AOT "
+               "compiled body at 0x597E730.\r\n");
+        return false; }
+    PdWalkParams(g_pdFnChild,"SpawnDropPodForTeam");
+    // (*) SNAPSHOT IMMEDIATELY -- see the g_pdSP comment. C0c and the GetTeamDropLeader probe both
+    //     call PdWalkParams before C1 and would otherwise leave THEIR parameters under this
+    //     function's binding indices.
+    memcpy(g_pdSP,g_pdP,sizeof(g_pdSP)); g_pdNSP=g_pdNP;
+    bool bound=PdBindParams();
+    if(!bound&&!KPDFORCE){
+        Marker("[PD] ABORT: at least one parameter slot could not be bound. REFUSING to call with a "
+               "fabricated zero -- rebuild with -DKPDFORCE=1 to call anyway, knowing that a fault or a "
+               "null would then NOT be attributable to SpawnDropPodForTeam.\r\n");
+        return false; }
+    if(!bound) Marker("[PD] *** KPDFORCE=1: calling with an UNBOUND parameter slot. C1's result is NOT "
+                      "attributable to SpawnDropPodForTeam. ***\r\n");
+    g_pdTdpcOff=PropOffsetSuper(cls,"TeamDropPodClass");
+    if(g_pdTdpcOff==0xFFFFFFFF)
+        Marker("[PD] ⚠ TeamDropPodClass did not resolve BY NAME on the ship's class -- bail point 1 "
+               "cannot be read. That is an instrument gap; a hardcoded offset is exactly what this mode "
+               "refuses to use.\r\n");
+    PdFindOrigins();
+    if(!PdDerivePositions()) return false;
+    return true;
+}
+
+// ---- the ladder --------------------------------------------------------------------------------------
+static void PdLadderStep(){
+    DWORD now=GetTickCount();
+    long step=InterlockedCompareExchange(&g_pdStep,0,0);
+    if(g_pdLastMs&&now-g_pdLastMs<(DWORD)KPDSTEPMS) return;
+    g_pdLastMs=now;
+    switch(step){
+    case 0:
+        Marker("[PD] ================ RM_DROPPOD: ROUTE C — SpawnDropPodForTeam ================\r\n");
+        Markerf("[PD] cfg arms=0x%03X team=%d spawnZ=%d origin=%d shipPick=%d force=%d prespawn=%d "
+                "stepMs=%d settleMs=%d miniCensus=%d frameInit=%d faultInfo=%d | ROUTE E: peDisp=0x%X "
+                "(slot %d) peForce=%d oldDisp=0x%X\r\n",
+                (unsigned)KPDARMS,(int)KPDTEAM,(int)KPDSPAWNZ,(int)KPDORIGIN,(int)KPDSHIPPICK,(int)KPDFORCE,
+                (int)KPDPRESPAWN,(int)KPDSTEPMS,(int)KPDSETTLEMS,(int)KPDMINICENSUS,(int)KFRAMEINIT,(int)KFAULTINFO,
+                (unsigned)KPDPEDISP,(int)(((uintptr_t)KPDPEDISP)/8),(int)KPDPEFORCE,(unsigned)KPDPEDISPOLD);
+        Markerf("[PD] cfg (Route E controls): altCtrl(E0c)=%d  retSentinel=0x%02X\r\n",
+                (int)KPDPEALTCTRL,(unsigned)PDPE_RET_SENTINEL);
+        // S127-FIX: FsArm's zero-swap warning is worded for RM_PLAY and names the wrong DLL; it is
+        // shared code compiled into `play`, whose `.text` is a regression gate, so it is not edited.
+        // RM_DROPPOD states the mode-correct version here instead -- this line is reachable only
+        // from RM_DROPPOD and is dead-code-eliminated out of every other variant.
+        Marker("[PD] NOTE on arming: if [FS] printed 'ZERO TARGETS SWAPPED', ignore its RM_PLAY wording "
+               "and its tutorial_launch_play_hold300.dll suggestion -- for RM_DROPPOD it means THIS "
+               "ladder will never advance and the sitting is VOID. Re-fly the same variant; all droppod "
+               "variants already build with KFSNAME=\"\" (every BP UFunction is a target).\r\n");
+        Markerf("[PD] target: ship 0x%llX '%s'\r\n",(unsigned long long)g_pdShip,g_pdShipName);
+        g_pdStep=1; return;
+    case 1:
+        if(!(KPDARMS&0x20)){
+            Marker("[PD] C0c CONTROL disabled by KPDARMS -> skipped. ⚠ WITHOUT IT, C1's outcome is NOT "
+                   "attributable: 'the pod spawn did nothing' and 'the primitive never reached this "
+                   "object' read identically.\r\n");
+            g_pdStep=2; return; }
+        Marker("[PD] --- C0c (POSITIVE CONTROL): K2_GetActorLocation() on the SHIP, cross-checked against "
+               "a pure-RPM read of the same actor's RootComponent->RelativeLocation. Agreement proves the "
+               "call reached THIS object and the struct return marshalled correctly. ---\r\n");
+        g_pdCtlFaulted=PdControl(); g_pdCtlRan=(g_pdCtlFaulted!=DPCALL_NOTRUN)?1:0;
+        g_pdStep=2; return;
+    case 2:
+        // ★★★★★ ROUTE E CONTROL. It runs HERE -- before the pre-call readout and before any payload
+        //   -- because a control that runs after the thing it controls for is not a control.
+        if(!(KPDARMS&0x80)){
+            Marker("[PD] E0 ProcessEvent CONTROL disabled by KPDARMS bit7 -> skipped. WITHOUT IT, E1's "
+                   "outcome is NOT attributable: 'the script function did nothing' and 'ProcessEvent "
+                   "cannot dispatch in this build at all' read identically.\r\n");
+            g_pdStep=3; return; }
+        Marker("[PD] --- E0 (ROUTE-E POSITIVE CONTROL): K2_GetActorLocation through ProcessEvent, read "
+               "back OUT OF THE PARAMS BLOCK and cross-checked against a pure-RPM read of the same "
+               "actor's RootComponent->RelativeLocation. A NON-ZERO reference is required for a strong "
+               "pass -- S126's C0c 'AGREED' at (0,0,0), which is two zeros agreeing. ---\r\n");
+        PdPEControl();
+        // * S127-FIX (review HIGH): E0 exercises the SAFE-INVOKE exit only. E0c exercises the
+        //   alt-dispatch branch E1 actually takes, on the same object, through the same
+        //   ProcessEvent -- and it is the ONLY control in this arm that can do so.
+        Marker("[PD] --- E0c (ALT-DISPATCH CONTROL): a zero-input, ReturnValue-bearing script UFunction "
+               "on the ship's own class chain, called through the SAME ProcessEvent. E0 above proves "
+               "the SAFE-INVOKE exit; this proves the [UFunctionVtable+0x378] marshaller. ---\r\n");
+        PdPEAltControl();
+        g_pdStep=3; return;
+    case 3:
+        Marker("[PD] --- pre-call bail-point readout (so a null result is attributable to a NAMED bail) ---\r\n");
+        PdReadTdpc("pre-call");                    // pure RPM, no call
+        if(KPDARMS&0x40) PdProbeLeader();          // ★ S126 fix: this IS a UFunction call, so it is gated
+        else Marker("[PD] C2b GetTeamDropLeader probe disabled by KPDARMS bit6 -> NOT CALLED. This arm "
+                    "issues no UFunction call at this step (that is what makes a read-only arm read-only).\r\n");
+        g_pdStep=4; return;
+    case 4:
+        if(!(KPDARMS&0x02)){ Marker("[PD] C1 disabled by KPDARMS -> skipped (no pod will be spawned)\r\n"); g_pdStep=6; return; }
+        Marker("[PD] --- C1 (ROUTE C): SpawnDropPodForTeam via the S55 direct UFunction.Func thunk. "
+               "It queries NO level markers and needs NO round phase -- FK-22 §3 graded exactly two bail "
+               "points, both read out above. ★ S126 MEASURED Func == 0x0 on this UFunction, so this arm "
+               "is EXPECTED to print 'has no Func thunk -> NOT CALLED'; that refusal is Route E's whole "
+               "premise, and its presence in the same run is the two routes' shared control. ---\r\n");
+        g_pdC1Faulted=PdCallSpawn(); g_pdC1Ran=(g_pdC1Faulted!=DPCALL_NOTRUN)?1:0;
+        g_pdStep=5; return;
+    case 5:
+        if(!g_pdC1Ran) Marker("[PD] after-C1 census SKIPPED: C1 never dispatched, nothing to attribute\r\n");
+        else if(KPDMINICENSUS&&(KPDARMS&0x04)) DpCensus("after-C1",false,false,&g_pdM);
+        else Marker("[PD] after-C1 mini-census disabled -> the C1 delta is not separable from the run\r\n");
+        g_pdStep=6; return;
+    case 6:
+        if(!(KPDARMS&0x100)){ Marker("[PD] E1 ProcessEvent call disabled by KPDARMS bit8 -> skipped (no "
+                                     "script dispatch attempted). This is the staging/control arm.\r\n");
+                              g_pdStep=8; return; }
+        Marker("[PD] --- E1 (HEADLINE, ROUTE E): SpawnDropPodForTeam through ProcessEvent with a FLAT "
+               "PARAMS BLOCK -- the contract FK-1 says _ParmsEntry implements. Every offset and size is "
+               "re-read from the live FProperty chain immediately before the write, and the live "
+               "UFunction is GRADED against ProcessEvent's three exits before anything is called. ---\r\n");
+        PdCallSpawnViaPE();
+        g_pdStep=7; return;
+    case 7:
+        if(!g_pdE1Ran) Marker("[PD] after-E1 census SKIPPED: E1 never dispatched, nothing to attribute\r\n");
+        else if(KPDMINICENSUS) DpCensus("after-E1",false,false,&g_pdE);
+        else Marker("[PD] after-E1 mini-census disabled -> the E1 delta is not separable from the run\r\n");
+        g_pdStep=8; return;
+    case 8:
+    default:
+        Marker("[PD] ================ game-thread arms COMPLETE (C4 runs on the worker after a settle) ================\r\n");
+        g_done=1; return;
+    }
+}
+static void DoDropPod(){
+    __try { PdLadderStep(); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[PD] *** FAULT inside ladder step %ld -- halting the game-thread arms. C4's census still "
+                "runs, which is how we learn whether a PARTIAL spawn happened. fault=%s ***\r\n",
+                (long)g_pdStep,DP_FAULT);
+        g_done=1; }
+}
+static void PdFinalReport(){
+    if(!(KPDARMS&0x10)){ Marker("[PD] C4 disabled by KPDARMS -> NO after-census. Without it this run "
+                                "produced no result, only calls.\r\n"); return; }
+    Markerf("[PD] settling %d ms before the AFTER census...\r\n",(int)KPDSETTLEMS);
+    Sleep((DWORD)KPDSETTLEMS);
+    DpCensus("C4-AFTER",true,false,&g_pdA);
+    Marker("[PD] ---------------- DELTA TABLE (the DropPod row is the Route C result) ----------------\r\n");
+    Markerf("[PD]   bucket      BEFORE   afterC1    AFTER   delta\r\n");
+    Markerf("[PD]   DropPod     %6ld   %7ld   %6ld  %+6ld   <== ROUTE C\r\n",g_pdB.pod,g_pdM.pod,g_pdA.pod,g_pdA.pod-g_pdB.pod);
+    Markerf("[PD]   DropPlane   %6ld   %7ld   %6ld  %+6ld   (moved by C3's pre-spawn, if it ran)\r\n",g_pdB.plane,g_pdM.plane,g_pdA.plane,g_pdA.plane-g_pdB.plane);
+    Markerf("[PD]   DropShip    %6ld   %7ld   %6ld  %+6ld   (moved by C3's pre-spawn, if it ran)\r\n",g_pdB.ship,g_pdM.ship,g_pdA.ship,g_pdA.ship-g_pdB.ship);
+    Markerf("[PD]   objects     %6ld   %7ld   %6ld  %+6ld   (new=%ld gone=%ld)\r\n",g_pdB.hits,g_pdM.hits,g_pdA.hits,g_pdA.hits-g_pdB.hits,g_pdA.fresh,g_pdA.gone);
+    Markerf("[PD]   archetypes  %6ld   %7ld   %6ld  %+6ld   (EXCLUDED from the rows above)\r\n",g_pdB.arche,g_pdM.arche,g_pdA.arche,g_pdA.arche-g_pdB.arche);
+    Marker("[PD] call status codes: -1 = NOT CALLED | 0 = called, no fault | 1 = called and FAULTED. "
+           "-1 is NOT a clean run.\r\n");
+    Markerf("[PD] ran: C0c=%d(status=%d agree=%d) C1=%d(status=%d) preSpawned=%d  retSlot=0x%llX  "
+            "TeamDropPodClass before=0x%llX after=0x%llX  ship=0x%llX '%s'  origin=%s\r\n",
+            g_pdCtlRan,g_pdCtlFaulted,g_pdCtlAgree,g_pdC1Ran,g_pdC1Faulted,g_pdPreSpawned,
+            (unsigned long long)g_pdRetRaw,(unsigned long long)g_pdTdpcBefore,(unsigned long long)g_pdTdpcAfter,
+            (unsigned long long)g_pdShip,g_pdShipName,g_pdOriginWhy[0]?g_pdOriginWhy:"-");
+    if((KPDARMS&0x20)&&g_pdCtlAgree!=1)
+        Marker("[PD] *** VERDICT: SITTING VOID for Route C. The C0c control did not AGREE, so a call on "
+               "this ship is not demonstrated and C1's outcome -- fault, null or delta -- is not "
+               "attributable. ***\r\n");
+    else if((KPDARMS&0x22)==0x22)
+        Markerf("[PD] VERDICT: control AGREED, so C1 (status %d, DropPod delta %+ld) is attributable to "
+                "SpawnDropPodForTeam.\r\n",g_pdC1Faulted,g_pdA.pod-g_pdB.pod);
+    if(!(KPDARMS&0x1EA))  // ★ S126: bit6 (leader probe), bit7 (E0 control) and bit8 (E1) are ALL real
+                          //   UFunction calls, so a "zero calls" claim has to count them. 0x6A -> 0x1EA.
+        Marker("[PD] NOTE: this build made ZERO calls (readonly arm). A NON-ZERO DropPod delta here is an "
+               "INSTRUMENT FAULT and voids every other variant's delta. A zero delta is the control passing.\r\n");
+    // ================= ROUTE E SUMMARY, IN THE ORDER THE EVIDENCE HAS TO BE READ =================
+    // 1 ProcessEvent + slot | 2 params layout used | 3 positions used | 4 control | 5 fault status
+    // | 6 ReturnValue read back out of the params block | 7 the census delta, which is the result.
+    if((KPDARMS&0x180)){
+        Marker("[PD] ================================ ROUTE E (ProcessEvent) ================================\r\n");
+        Markerf("[PD] E-SUMMARY 1/7  ProcessEvent = 0x%llX (rva 0x%llX) from vtable 0x%llX (rva 0x%llX) at "
+                "disp 0x%X = SLOT %d.  Historical S80 disp 0x%X holds 0x%llX (rva 0x%llX), NOT USED.\r\n",
+                (unsigned long long)g_pdPe,(unsigned long long)(PdInImage(g_pdPe)?g_pdPe-g_modBase:0),
+                (unsigned long long)g_pdPeVt,(unsigned long long)(PdInImage(g_pdPeVt)?g_pdPeVt-g_modBase:0),
+                (unsigned)KPDPEDISP,g_pdPeSlot,(unsigned)KPDPEDISPOLD,
+                (unsigned long long)g_pdPeOld,(unsigned long long)(PdInImage(g_pdPeOld)?g_pdPeOld-g_modBase:0));
+        Markerf("[PD] E-SUMMARY 2/7  params layout used: %s\r\n",g_pdE1Layout[0]?g_pdE1Layout:"(none -- E1 never built a block)");
+        Markerf("[PD] E-SUMMARY 3/7  positions used: Spawn=(%.1f,%.1f,%.1f) Landing=(%.1f,%.1f,%.1f) "
+                "spawnZ=+%d uu; origin=%s%s\r\n",
+                g_pdSpawn[0],g_pdSpawn[1],g_pdSpawn[2],g_pdLand[0],g_pdLand[1],g_pdLand[2],(int)KPDSPAWNZ,
+                g_pdOriginWhy[0]?g_pdOriginWhy:"NONE",
+                g_pdHavePos?"":"   <== NO POSITION SOURCE RESOLVED; these are not real coordinates and E1 refused");
+        {   const char* v0 = (g_pdE0Verdict==1)?"STRONG PASS":(g_pdE0Verdict==2)?"WEAK CONTROL (origin)":
+                             (g_pdE0Verdict==0)?"FAIL":(g_pdE0Verdict==3)?"INCONCLUSIVE":"NOT RUN";
+            const char* vb = (g_pdE0bVerdict==1)?"STRONG PASS":(g_pdE0bVerdict==2)?"WEAK CONTROL (origin)":
+                             (g_pdE0bVerdict==0)?"FAIL":(g_pdE0bVerdict==3)?"INCONCLUSIVE":"NOT RUN";
+            const char* vc = (g_pdE0cVerdict==1)?"STRONG PASS":(g_pdE0cVerdict==0)?"FAIL":
+                             (g_pdE0cVerdict==3)?"INCONCLUSIVE":"NOT RUN";
+            Markerf("[PD] E-SUMMARY 4/7  control: E0(ship, SAFE-INVOKE exit) = %s -- %s | E0b(non-origin "
+                    "actor, SAFE-INVOKE exit) = %s -- %s | E0c(ALT-DISPATCH exit, the one E1 takes) = %s "
+                    "-- %s\r\n",
+                    v0,g_pdE0Why[0]?g_pdE0Why:"-",vb,g_pdE0bWhy[0]?g_pdE0bWhy:"-",
+                    vc,g_pdE0cWhy[0]?g_pdE0cWhy:"-");
+            Marker("[PD] E-SUMMARY 4/7  READ THIS PAIRING: E0/E0b prove ProcessEvent can resolve, gate "
+                   "and marshal on the NORMAL path (Func non-null -> UFunction::Invoke). They do NOT "
+                   "touch the [UFunctionVtable+0x378] marshaller. ONLY E0c does.\r\n");
+        }
+        {   const char* g = (g_pdE1Grade==PDPE_SAFE_INVOKE)?"SAFE-INVOKE":(g_pdE1Grade==PDPE_SAFE_VIRTUAL)?"SAFE-VIRTUAL (bit 0x10, Func-free)":
+                            (g_pdE1Grade==PDPE_SAFE_NOOP)?"SAFE-NO-OP (reject gate returns at once)":
+                            (g_pdE1Grade==PDPE_WILL_FAULT)?"WILL-FAULT (call [0] inside UFunction::Invoke)":"NOT GRADED";
+            const char* rw = (g_pdE1RefWhy==PDER_GRADE)?"LIVE GRADE (WILL-FAULT)":
+                             (g_pdE1RefWhy==PDER_LAYOUT)?"LAYOUT/INSTRUMENT (an FProperty read, NOT ProcessEvent)":
+                             (g_pdE1RefWhy==PDER_MARSHAL)?"MARSHALLER-vs-FProperty OFFSET DISAGREEMENT (instrument)":
+                             (g_pdE1RefWhy==PDER_PRECOND)?"PRECONDITION (nothing about ProcessEvent)":"-";
+            Markerf("[PD] E-SUMMARY 5/7  E1 grade=%s  ran=%d  refused=%d (%s)  fault=%s  detail=%s\r\n",
+                    g,g_pdE1Ran,g_pdE1Refused,rw,
+                    (g_pdE1Faulted<0)?"NOT CALLED":(g_pdE1Faulted?"YES":"no"),g_pdE1Flt);
+            // * S127-FIX (review HIGH): three unrelated failures used to collapse into one line, and
+            //   the summary block -- which is what a successor reads -- carried none of the fields
+            //   that separate them. They are hoisted here so nobody has to scroll back.
+            uintptr_t sfn=(g_pdFn&&SafeReadable((void*)(g_pdFn+PDPE_FN_SCRIPTFN),8))?*(uintptr_t*)(g_pdFn+PDPE_FN_SCRIPTFN):0;
+            Markerf("[PD] E-SUMMARY 5/7b DISCRIMINATORS: asCScriptFunction*(+0xE8)=0x%llX%s | marshaller "
+                    "desc=0x%llX Num=%u readSlots=%d | offsets vs FProperty: %s | return slot read "
+                    "@0x%X | callspace inputs: %s%s\r\n",
+                    (unsigned long long)sfn,sfn?"":" <== NULL: slot 111 returns at rva 0x048E658E "
+                    "WITHOUT EXECUTING ANYTHING, so any null below is an INSTRUMENT reading",
+                    (unsigned long long)g_pdMDesc,(unsigned)g_pdMDescN,g_pdMN,
+                    (g_pdMAgree<0)?"not checked":(g_pdMAgree?"AGREE":"*** DISAGREE ***"),
+                    g_pdE1RetOff,g_pdCsWhy[0]?g_pdCsWhy:"(gate not traversed)",
+                    g_pdCsAbsorbRisk?"   <== ABSORBED PREDICTED: a null here is the callspace gate, "
+                                     "NOT the drop pod":"");
+            Markerf("[PD] E-SUMMARY 5/7c RETURN-SLOT SENTINEL: raw=0x%02X -> %s\r\n",
+                    (unsigned)(g_pdE1RetRaw<0?0:g_pdE1RetRaw),
+                    (g_pdE1RetRaw<0)?"UNREAD (E1 never called)":
+                    (g_pdE1RetWritten==0)?"*** 0xA5 INTACT: NOTHING wrote a return. The script body did "
+                                          "not complete. This is NOT 'the pod did not spawn'. ***":
+                    "overwritten -- the marshaller really did write a return value");
+        }
+        Markerf("[PD] E-SUMMARY 6/7  ReturnValue read back from the params block @0x%X (size %u) = %s\r\n",
+                g_pdE1RetOff,g_pdE1RetElem,
+                (g_pdE1Ret<0)?((g_pdE1RetWritten==0)?"NOT WRITTEN (sentinel intact) -- an INSTRUMENT "
+                               "reading, not a false":"UNREAD (E1 never called, or no ReturnValue slot bound)")
+                             :(g_pdE1Ret?"true (1)":"false (0)"));
+        {   // * S127-FIX (review MEDIUM + LOW): g_pdM / g_pdE are zero-initialised and were printed
+            //   unconditionally, so an arm where C1 or E1 never dispatched published fabricated zeros
+            //   beside two real counts -- readable as "pods disappeared and came back". And the
+            //   baseline picked g_pdM even when the mini-census that fills it was compiled out, which
+            //   would attribute the WHOLE standing population to E1.
+            bool haveM = (g_pdC1Ran && KPDMINICENSUS && (KPDARMS&0x04));
+            bool haveE = (g_pdE1Ran && KPDMINICENSUS);
+            long base  = haveM ? g_pdM.pod : g_pdB.pod;
+            const char* bn = haveM ? "afterC1" : "BEFORE";
+            char mB[24],eB[24],mP[24],eP[24],mS[24],eS[24],dB[32];
+            if(haveM){ _snprintf_s(mB,sizeof(mB),_TRUNCATE,"%ld",g_pdM.pod);
+                       _snprintf_s(mP,sizeof(mP),_TRUNCATE,"%ld",g_pdM.plane);
+                       _snprintf_s(mS,sizeof(mS),_TRUNCATE,"%ld",g_pdM.ship); }
+            else     { strcpy_s(mB,"n/a"); strcpy_s(mP,"n/a"); strcpy_s(mS,"n/a"); }
+            if(haveE){ _snprintf_s(eB,sizeof(eB),_TRUNCATE,"%ld",g_pdE.pod);
+                       _snprintf_s(eP,sizeof(eP),_TRUNCATE,"%ld",g_pdE.plane);
+                       _snprintf_s(eS,sizeof(eS),_TRUNCATE,"%ld",g_pdE.ship); }
+            else     { strcpy_s(eB,"n/a"); strcpy_s(eP,"n/a"); strcpy_s(eS,"n/a"); }
+            if(haveE) _snprintf_s(dB,sizeof(dB),_TRUNCATE,"%+ld",g_pdE.pod-base);
+            else      strcpy_s(dB,"n/a (E1 never dispatched)");
+            Markerf("[PD] E-SUMMARY 7/7  DropPod census: BEFORE=%ld afterC1=%s afterE1=%s AFTER=%ld  "
+                    "==> E1-ATTRIBUTABLE DELTA (afterE1 - %s) = %s\r\n",
+                    g_pdB.pod,mB,eB,g_pdA.pod,bn,dB);
+            Markerf("[PD]              DropPlane %ld/%s/%s/%ld  DropShip %ld/%s/%s/%ld  (BEFORE/afterC1/afterE1/AFTER)\r\n",
+                    g_pdB.plane,mP,eP,g_pdA.plane,g_pdB.ship,mS,eS,g_pdA.ship);
+        }
+        // == THE VERDICT CHAIN. ============================================================
+        // * S127-FIX (review BLOCKER/HIGH). Three things were wrong here and each of them could
+        //   publish a false headline:
+        //   (1) `g_pdE1Refused` was set by FOUR unrelated causes and this block printed "ProcessEvent
+        //       is not a Func-free route" for ALL of them -- so a defect in the live FProperty read
+        //       (exactly the class that made every slot read size=1 until FPROP_ELEMSIZE was fixed
+        //       from 0x30 to 0x34) would have been recorded as the project's conclusion about
+        //       ProcessEvent. It now switches on the REASON.
+        //   (2) the attribution sentence cited E0, which exercises a DIFFERENT ProcessEvent exit
+        //       from the one E1 takes. It now requires E0c.
+        //   (3) five abort paths set neither flag, so the chain fell through and emitted NO verdict
+        //       at all. There is now a terminal else.
+        if(!g_pdE1Ran&&g_pdE1Refused&&g_pdE1RefWhy==PDER_GRADE)
+            Marker("[PD] E-VERDICT: E1 REFUSED on its own LIVE GRADE (WILL-FAULT). That IS the finding, and "
+                   "it is a statement about the game: Func is null, bit 0x10 is CLEAR, and the reject gate "
+                   "passes, so ProcessEvent would reach UFunction::Invoke and execute call [0]. ==> "
+                   "ProcessEvent is NOT a Func-free route for this UFunction and Route E dies on the same "
+                   "null Func that closed Route C. Successors: the AOT symbol table (RAW 0x0597E730 / "
+                   "_ParmsEntry 0x0597F670 / _VMEntry 0x0597F7B0, recorded in this file) or writing Func "
+                   "itself as an aligned heap qword.\r\n");
+        else if(!g_pdE1Ran&&g_pdE1Refused)
+            Markerf("[PD] E-VERDICT: E1 REFUSED, and the reason is %s -- an INSTRUMENT / PRECONDITION "
+                    "statement. *** THIS IS NOT A RESULT ABOUT ProcessEvent AND NOT A RESULT ABOUT THE "
+                    "DROP POD. *** Route E is neither confirmed nor closed by this run; fix the named "
+                    "instrument and re-fly. (The grade-based refusal, which WOULD be a finding, prints a "
+                    "different line and did not fire.)\r\n",
+                    (g_pdE1RefWhy==PDER_LAYOUT)?"a LAYOUT/FProperty sanity failure":
+                    (g_pdE1RefWhy==PDER_MARSHAL)?"a MARSHALLER-vs-FProperty offset disagreement":
+                    "a PRECONDITION failure (no ProcessEvent / no UFunction / no live ship / no "
+                    "positions / empty parameter walk)");
+        else if(!(KPDARMS&0x100))
+            Markerf("[PD] E-VERDICT: this is the CONTROL-ONLY arm (bit8 clear). It answers exactly two "
+                    "questions -- can ProcessEvent dispatch on the normal path (E0: %s) and can it "
+                    "dispatch through the AngelScript marshaller (E0c: %s) -- and NOTHING about the pod. "
+                    "No script dispatch of SpawnDropPodForTeam was attempted.\r\n",
+                    (g_pdE0Verdict==1)?"STRONG PASS":(g_pdE0Verdict==2)?"WEAK (origin)":
+                    (g_pdE0Verdict==0)?"FAIL":"not run",
+                    (g_pdE0cVerdict==1)?"STRONG PASS":(g_pdE0cVerdict==0)?"FAIL":"not run");
+        else if((KPDARMS&0x80)&&g_pdE0Verdict!=1&&g_pdE0bVerdict!=1)
+            Marker("[PD] *** E-VERDICT: SITTING VOID for Route E. Neither E0 nor E0b reached STRONG PASS, so "
+                   "ProcessEvent dispatch is not demonstrated on a NON-ZERO reference and E1's outcome -- "
+                   "fault, null or delta -- is not attributable. A WEAK CONTROL (origin) is not a pass. ***\r\n");
+        else if(g_pdE1Ran&&g_pdE0cVerdict!=1)
+            Markerf("[PD] *** E-VERDICT: E1 RAN BUT IS NOT ATTRIBUTABLE. E0/E0b passed on the SAFE-INVOKE "
+                    "exit, but E0c -- the only control for the [UFunctionVtable+0x378] marshaller, which "
+                    "is the branch E1 takes -- is %s. E0 and E1 share only ProcessEvent's prologue, so a "
+                    "pass on one says nothing about the other. Record E1 (fault=%d, return-slot written=%d, "
+                    "DropPod delta %+ld) as UNATTRIBUTABLE, not as a game statement. ***\r\n",
+                    (g_pdE0cVerdict==0)?"a FAIL":(g_pdE0cVerdict==3)?"INCONCLUSIVE (no candidate)":"NOT RUN",
+                    g_pdE1Faulted,g_pdE1RetWritten,
+                    g_pdE.pod-((g_pdC1Ran&&KPDMINICENSUS&&(KPDARMS&0x04))?g_pdM.pod:g_pdB.pod));
+        else if(g_pdE1Ran)
+            Markerf("[PD] E-VERDICT: BOTH controls passed -- E0 on the SAFE-INVOKE exit and E0c on the "
+                    "ALT-DISPATCH marshaller, the branch E1 takes -- so E1 (fault=%d, return slot "
+                    "written=%d, ReturnValue=%d, DropPod delta %+ld) is attributable to "
+                    "SpawnDropPodForTeam dispatched through ProcessEvent.%s\r\n",
+                    g_pdE1Faulted,g_pdE1RetWritten,g_pdE1Ret,
+                    g_pdE.pod-((g_pdC1Ran&&KPDMINICENSUS&&(KPDARMS&0x04))?g_pdM.pod:g_pdB.pod),
+                    (g_pdE1RetWritten==0)?"  *** EXCEPT: the return sentinel is INTACT, so the script "
+                    "body did not complete. Read 5/7b/5/7c before concluding anything about the pod. ***":"");
+        else
+            Markerf("[PD] *** E-VERDICT: NO VERDICT REACHABLE -- E1 neither ran (ran=%d) nor refused "
+                    "(refused=%d). That combination means an abort path returned without recording why, "
+                    "which is an instrument defect in THIS shim. Treat the whole Route E section as VOID "
+                    "and report the missing path. ***\r\n",g_pdE1Ran,g_pdE1Refused);
+    }
+    Marker("[PD] ⚠ NOTHING IS UNDONE. Any pod (or pre-spawned plane) is still in the world. Recovery = "
+           "restart the client.\r\n");
+}
+
+
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ RM_POOLSPAWN (S128, 2026-08-19) — ROUTE F: **DOES `SpawnPoolableActorFromClassDeferred`
+//        REQUIRE THE ACTOR POOL?**   ZERO MODULE-IMAGE WRITES. ZERO memory pokes. Every effect is a
+//        UFunction call, delivered on the heap `UFunction.Func` swap (FsArm/FsHold/FsDisarm).
+//
+// THE ONE QUESTION.  S127 measured that `ALokiDropShip::SpawnDropPodForTeam` RAN (ProcessEvent slot
+// 78 -> the Angelscript marshaller at [UFunctionVtable+0x378]; the 0xA5 return sentinel was
+// OVERWRITTEN, readSlots=3, offsets agreed with the FProperty chain) and RETURNED **false**, with a
+// DropPod census delta of **+0**.  Its AS decompile has exactly two bail points:
+//        if (TeamDropPodClass == nullptr) return false;                 <- bail 1: RULED OUT [M]
+//        pod = LokiGameplay::SpawnPoolableActorFromClassDeferred(...);
+//        if (pod == nullptr) return false;                              <- bail 2: by elimination
+// Bail 1 is [M] excluded: `ship.TeamDropPodClass @0x478` re-read AFTER the call still held
+// `BP_DropPod_Tutorial_C`.  The session log then names a suspect:
+//        LogActorPooling: Adding .../BP_DropPod_Tutorial_C to list of poolable actors.   (x3)
+//        LogActorPooling: UActorPoolManager::PrimePools : Feature is not enabled, skipping.
+//
+// ⚠⚠ THAT CHAIN IS [I] AND UNPROVEN AT ITS FIRST LINK.  Nobody has shown that
+//    `SpawnPoolableActorFromClassDeferred` REQUIRES the pool feature.  A sane helper falls back to a
+//    normal `SpawnActor` when pooling is off, in which case the disabled pool is a red herring and
+//    bail 2 has some other cause entirely.  **THIS MODE EXISTS TO SETTLE THAT ONE LINK** and nothing
+//    else.  It does NOT try to spawn a drop pod "for real"; it does not touch the phase, the plane,
+//    the ship, or any delegate.
+//
+// THE TARGET IS A **NATIVE STATIC**, NOT ANGELSCRIPT (tools/asdump/out/binds_members.csv):
+//   class ULokiGameplayStatics  (/Script/Loki.LokiGameplayStatics)   [script alias: LokiGameplay]
+//    145: AActor SpawnPoolableActorFromClass(UObject WorldContextObject, TSubclassOf<AActor> ActorClass,
+//         const FTransform& SpawnTransform, ESpawnActorCollisionHandlingMethod = Undefined,
+//         ESpawnActorScaleMethod = MultiplyWithRoot, AActor Owner = nullptr, APawn Instigator = nullptr)
+//    146: AActor SpawnPoolableActorFromClassDeferred(UObject WorldContextObject, TSubclassOf<AActor> ActorClass,
+//         const FTransform& SpawnTransform, AActor Owner = nullptr, APawn Instigator = nullptr,
+//         ESpawnActorCollisionHandlingMethod = Undefined, ESpawnActorScaleMethod = MultiplyWithRoot)
+// ⚠⚠ **THE PARAMETER ORDER DIFFERS BETWEEN THE TWO** (Owner/Instigator are 4th/5th on the Deferred
+//    one and 6th/7th on the other).  So every slot here is bound BY NAME out of the LIVE FProperty
+//    chain, per function, with the reason printed; there is NO positional fallback at all.  A CSV read
+//    off disk is a documentation artifact, and this project has recorded what happens when one is
+//    treated as a layout.
+// ⚠ Being a NATIVE static it should carry a non-null `Func` — i.e. BOTH the S55 direct-thunk
+//   primitive and ProcessEvent should work, unlike S127's script UFunction whose `Func` read 0x0.
+//   This mode GRADES the live UFunction and dispatches on what it READ (native thunk -> CallNative;
+//   `Func == ProcessInternal` -> CallBP; a universal fold or null -> REFUSE and say so).  It prints
+//   which it chose and why.  Route E (ProcessEvent) is deliberately NOT used here: if the direct
+//   thunk is real it is the shorter and better-controlled path, and if it is NOT real that fact is
+//   itself the headline and is worth more than a forced call.
+// ⚠ `ULokiGameplayStatics` is a `UBlueprintFunctionLibrary`: a STATIC UFunction's "object" is the
+//   CLASS DEFAULT OBJECT.  This mode resolves `Default__LokiGameplayStatics` by enumeration and
+//   cross-checks `ClassOf(CDO) == the resolved UClass`.  It never passes a random instance.
+//   ⚠ UHT strips the leading `U`, so the reflected FName is `LokiGameplayStatics`; probing
+//     `ULokiGameplayStatics` produces a false ABSENT (the FK-13 lesson about `FKeyBind`/`UConsole`).
+//
+// ⚠ MARKER TAG IS **[PS]**, NOT [SP].  [SP] belongs to RM_SPA⚠NPOSSESS, which is STEP 3 of the very
+//   staging recipe this probe is injected into (docs/fk24-stage-<label>-3-sp.txt).  The stager's own
+//   gate cannot cross-match (it wants  [SP] done step=4  AND  spawnedPawn=0x..  , and this mode prints
+//   "done (step=N" with a parenthesis and no spawnedPawn), but a cross-file grep of one sitting's
+//   markers would conflate two different shims' output under one tag -- which is how a borrowed-context
+//   misreading starts (S114's RunConsole read globals populated by a DIFFERENT run mode and printed
+//   `console 'LogLoc' ok` for a call that never happened).
+//
+// THE ARMS (and the reason each exists):
+//   P0  RESOLVE + BEFORE CENSUS.  Class, CDO, BOTH methods; per method the `Func` (+0xE0),
+//       `FunctionFlags` (+0xB8), `PropertiesSize` (+0x60), `Script.Num` (+0x70), NumParms/ParmsSize/
+//       ReturnValueOffset, and the FULL live FProperty chain (name / offset / **ElementSize** / type /
+//       struct name / flags / IN-OUT-RETURN).
+//   P0c THE PRIMITIVE'S POSITIVE CONTROL.  `K2_GetActorLocation()` on a NON-ORIGIN actor, the
+//       returned FVector cross-checked against a pure-RPM read of RootComponent->RelativeLocation.
+//       Without it, "the pooled spawn returned null" and "the primitive never dispatched at all" read
+//       identically.  ⚠ A match at (0,0,0) is TWO ZEROS AGREEING and is reported as WEAK, not a pass
+//       (S126's C0c made exactly that error and printed AGREED for a call it never read).
+//   P1  THE HEADLINE: `SpawnPoolableActorFromClassDeferred`.
+//   P2  THE CONTROL THAT MAKES P1 INTERPRETABLE: `SpawnPoolableActorFromClass` (the NON-deferred
+//       sibling).  Deferred null + non-deferred actor => the fault is in the DEFERRED path.  Both
+//       null => the pool itself.
+//   P3  A NON-POOLED REFERENCE: the same class through `BeginDeferredActorSpawnFromClass` +
+//       `FinishSpawningActor` (this file's long-proven `SpawnActorCls`).  ⚠⚠ WITHOUT THIS, a null
+//       from P1 could just mean "this class cannot spawn in this world" and the pool would be
+//       exonerated — or blamed — wrongly.  It runs LAST so it cannot contaminate P1/P2's deltas.
+//   P4  AFTER CENSUS + DELTA TABLE.
+//
+// ⚠⚠ **THE CENSUS DELTA IS THE RESULT.**  A returned pointer is CORROBORATION.  "The call returned
+//    ok" is never a result (S114 got `console 'LogLoc' ok` from a call that never reached a
+//    PlayerController).  `poolspawn-readonly` makes ZERO UFunction calls and is the instrument's own
+//    null-delta control: if IT reports a DropPod delta, no other arm's delta means anything.
+// ★ THE RETURN SENTINEL IS PART OF THE MEASUREMENT.  Both the params ReturnValue slot and RESULT_DECL
+//   are pre-filled with 0xA5 before every call, so **"nothing wrote a return"** is distinguishable
+//   from **"wrote null"**.  That distinction carried the entire S127 result, and here it separates
+//   "the pooled spawn declined" (which is about the pool) from "the callee never completed" (which is
+//   not).
+// ⚠ The staged world may already contain drop actors (a half-constructed
+//   `BP_DropPlane_Straight_Tutorial_C` from a plane-creating probe, pooled-actor registrations, ...).
+//   `DpCensus` latches the BEFORE SET and marks NEW objects, so a non-zero baseline is expected and
+//   tolerated; only the DELTA is read.
+// ⚠ NOTHING IS HARDCODED.  Every S125-S127 address in the docs is dead (ASLR).  Class, CDO, both
+//   UFunctions, every parameter offset AND SIZE AND TYPE, `RootComponent`, `Tags` — all resolved by
+//   name at runtime, with the enumeration printed and ambiguity REFUSED.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+
+// Which arms run.
+//   bit0 0x001  P0  resolve + BEFORE census                    (always meaningful; makes no calls)
+//   bit1 0x002  P1  SpawnPoolableActorFromClassDeferred        *** a UFunction call ***
+//   bit2 0x004  after-P1 mini-census
+//   bit3 0x008  P2  SpawnPoolableActorFromClass                *** a UFunction call ***
+//   bit4 0x010  after-P2 mini-census
+//   bit5 0x020  P3  non-pooled reference spawn                 *** UFunction calls ***
+//   bit6 0x040  after-P3 mini-census
+//   bit7 0x080  P4  AFTER census + delta table
+//   bit8 0x100  P0c K2_GetActorLocation positive control       *** a UFunction call ***
+// 0x1FF = the full pre-registered ladder. Trim with a build variant, never by editing this default.
+// ⚠ EVERY "this arm makes zero calls" test in this mode masks **0x12A** (bits 1,3,5,8). A stale mask
+//   there is a log asserting a property the code does not have -- this project's recorded failure
+//   mode, and precisely the defect S126 shipped in RM_DROPPOD's readonly arm (bit6 ran ungated while
+//   build.ps1 and the marker both advertised "ZERO UFunction calls").
+#ifndef KSPARMS
+#define KSPARMS 0x1FF
+#endif
+// The actor class handed to both pooled spawns AND to the P3 reference. `BP_DropPod_Tutorial_C`
+// because that is what S127 MEASURED in `ship.TeamDropPodClass` after the call -- i.e. the exact class
+// SpawnDropPodForTeam itself passes into the helper. Resolved BY NAME at runtime.
+#ifndef KSPPODCLASS
+#define KSPPODCLASS "BP_DropPod_Tutorial_C"
+#endif
+// WorldContextObject source. 0 = auto (the live GameMode first, then the DropPlane component) |
+// 1 = the GameMode only | 2 = the DropPlane component only. Whichever is used is NAMED in the log.
+// ★ The GameMode is the default because `SpawnActorCls` (the P3 reference) already passes it, so all
+//   three arms then share one WorldContextObject and that variable is held constant across them.
+#ifndef KSPWCO
+#define KSPWCO 0
+#endif
+// Where the spawn location comes from. 0 = auto (hero -> TrainingStart-tagged actor -> the
+// WorldContextObject) | 1 = hero only | 2 = TrainingStart only | 3 = the WCO only.
+// ⚠ If none resolves the spawn arms REFUSE rather than passing (0,0,0): a fabricated coordinate is
+//   how a "the spawn silently did nothing" result gets manufactured.
+#ifndef KSPORIGIN
+#define KSPORIGIN 0
+#endif
+// ESpawnActorCollisionHandlingMethod passed to BOTH pooled spawns. 0 = Undefined = the DECLARED
+// DEFAULT of both functions, which is why it is the default here.
+// ⚠⚠ `SpawnActorCls` -- the P3 reference -- hardcodes **2 (AdjustIfPossibleButAlwaysSpawn)** and is
+//    shared code compiled into `play` (whose `.text` sha256 is a hard regression gate), so it is NOT
+//    edited. That makes collision handling a KNOWN, STATED difference between P1/P2 and P3. If P1/P2
+//    return null and P3 spawns, re-fly `poolspawn-collmatch` (KSPCOLLISION=2) BEFORE concluding
+//    anything about the pool -- that arm removes the confound instead of arguing about it.
+#ifndef KSPCOLLISION
+#define KSPCOLLISION 0
+#endif
+// ESpawnActorScaleMethod. 1 = MultiplyWithRoot in stock UE5 numbering, which is the declared default
+// of both functions. ⚠ [I]: the VALUE is stock-numbering arithmetic, not a live decode of the enum's
+// value table. What IS read live is the property's UEnum **NAME** (`SpEnumName`, FEnumProperty::Enum
+// @+0x78 / FByteProperty::Enum @+0x70, FK-14 [M]), and it is printed beside the value on both the bind
+// line and the args line -- if that reads `ESpawnActorScaleMethod`, stock numbering is the same class
+// of evidence this project already relies on for `EInternalObjectFlags` and `ERoundPhase`. A `-` there
+// means the name could not be read, i.e. an INSTRUMENT GAP, and the log says so rather than implying
+// agreement. A wrong value cannot sink the call either way: it is one byte in a flat params block, not
+// a JSON enum string, so the S118 `ELokiActivityState` failure mode does not apply here.
+#ifndef KSPSCALEMETHOD
+#define KSPSCALEMETHOD 1
+#endif
+// Call even if a REQUIRED slot (WorldContextObject / ActorClass / SpawnTransform) could not be bound
+// by name. DEFAULT 0 = REFUSE. Passing a fabricated zero into an unbound slot is exactly how a
+// "SpawnPoolableActorFromClassDeferred faults" result gets manufactured -- the error class this whole
+// family of modes exists to undo.
+#ifndef KSPFORCE
+#define KSPFORCE 0
+#endif
+#ifndef KSPSTEPMS
+#define KSPSTEPMS 500
+#endif
+#ifndef KSPSETTLEMS
+#define KSPSETTLEMS 4000
+#endif
+#ifndef KSPMODEHOLDMS
+#define KSPMODEHOLDMS 120000
+#endif
+#ifndef KSPMINICENSUS
+#define KSPMINICENSUS 1
+#endif
+// The return sentinel. Pre-filled into BOTH the params ReturnValue slot and RESULT_DECL so that
+// "nothing wrote a return" and "wrote null" are different readings rather than the same zero.
+constexpr uint8_t  SP_SENTINEL   = 0xA5;
+constexpr uint64_t SP_SENTINEL64 = 0xA5A5A5A5A5A5A5A5ULL;
+
+enum { SPG_UNRESOLVED=0, SPG_NATIVE=1, SPG_BYTECODE=2, SPG_FOLD=3, SPG_NULLFUNC=4 };
+
+// One resolved+graded UFunction, with its OWN snapshot of the live parameter chain.
+// (!!) THE SNAPSHOT IS THE POINT. `PdWalkParams` writes the shared scratch `g_pdP`, and this mode
+//      calls it FOUR times (both pooled spawns at resolve time, K2_GetActorLocation in P0c, and
+//      whatever `SpawnActorCls` touches in P3). Binding indices into shared scratch would point into
+//      a DIFFERENT function's parameter table by the time a call wrote its arguments, and the
+//      resulting fault or null would have been blamed on the pooled spawn. That is S114's
+//      borrowed-helper trap verbatim (`RunConsole` read globals populated by another run mode and
+//      printed `console 'LogLoc' ok` for a call that never happened), and S126 hit it in RM_DROPPOD.
+struct SpFn {
+    uintptr_t fn, child, thunk;
+    char      owner[96];
+    uint32_t  flags, psize, snum;
+    uint8_t   numParms; uint16_t parmSize, retOff;
+    int       grade;
+    PdParm    p[16]; int np;
+    int       ixWco, ixCls, ixXf, ixColl, ixScale, ixOwner, ixInst, ixRet;
+    int       bound;
+};
+static SpFn g_spDef;     // SpawnPoolableActorFromClassDeferred   (the headline, P1)
+static SpFn g_spImm;     // SpawnPoolableActorFromClass           (the sibling control, P2)
+
+static uintptr_t g_spCls=0, g_spCDO=0;              static char g_spClsName[96]={0};
+static uintptr_t g_spPodCls=0;                      static char g_spPodChain[256]={0};
+static uintptr_t g_spWco=0;                         static char g_spWcoWhy[192]={0}, g_spWcoName[128]={0};
+static uintptr_t g_spCtlActor=0;                    static char g_spCtlWhy[160]={0};
+static uintptr_t g_spGm=0, g_spComp=0;
+static double    g_spLoc[3]={0,0,0}; static bool g_spHavePos=false; static char g_spOriginWhy[192]={0};
+static uint8_t   g_spparms[0x400]={0};
+static int       g_spSane=-1;                       // 1 = the live FProperty reads are self-consistent
+static DpCounts  g_spB={0,0,0,0,0,0,0}, g_spM1={0,0,0,0,0,0,0}, g_spM2={0,0,0,0,0,0,0},
+                 g_spM3={0,0,0,0,0,0,0}, g_spA={0,0,0,0,0,0,0};
+static int       g_spCtlRan=0, g_spCtlFaulted=-1, g_spCtlVerdict=-1;  // 1 STRONG 2 WEAK 0 FAIL 3 INCONCLUSIVE
+static char      g_spCtlDetail[192]={0};
+static int       g_spP1Ran=0, g_spP1Faulted=-1, g_spP1Written=-1;
+static int       g_spP2Ran=0, g_spP2Faulted=-1, g_spP2Written=-1;
+static int       g_spP3Ran=0;
+static int       g_spP3SameWco=-1;   // 1 = P3's WorldContextObject IS the one P1/P2 used | 0 = different | -1 not evaluated
+static int       g_spP3OffOk=-1;     // 1 = every parameter offset P3 BORROWS re-derived BY NAME | 0 = did not
+// ⚠ WHY THE ABORT LATCH EXISTS. `SpResolve` has five independent `return false` paths and they demand
+//   five DIFFERENT successors. Without recording which one fired, `SpFinalReport` prints one generic
+//   verdict and names the wrong cause -- e.g. "NEITHER pooled-spawn UFunction is on the class chain" for
+//   a run that aborted on the CDO lookup and never attempted a function resolve at all. That is a log
+//   asserting a property the code does not have, i.e. this project's recorded failure mode.
+static char      g_spAbortWhy[288]={0};
+static uintptr_t g_spP1Ret=0, g_spP2Ret=0, g_spP3Ret=0;
+static char      g_spP1Src[56]={0}, g_spP2Src[56]={0};
+static volatile long g_pslStep=0; static DWORD g_pslLastMs=0;
+static bool      g_spResolved=false;
+
+// ---- enumerate-and-refuse object lookup ------------------------------------------------------------
+// `wantClass` 1 => the object must itself BE a UClass (its own class FName contains "Class"), which is
+// what separates the UClass `BP_DropPod_Tutorial_C` from spawned INSTANCES named the same. 0 => the
+// object must NOT be a UClass (used for the CDO).
+// ⚠ This REPLACES `FindObjExact`/`FindClassExact`, which take the FIRST match silently. The
+//   class-lookup blind-spot family has six recorded members and every one shares the defect
+//   `take the first match`; the fix every time is `enumerate and show your work`.
+static uintptr_t SpFindUnique(const char* want,int wantClass,const char* tag,int* nOut){
+    if(nOut)*nOut=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){ Markerf("[PS] %s: GUObjectArray unreadable -- INSTRUMENT UNAVAILABLE, not a zero\r\n",tag); return 0; }
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000){ Markerf("[PS] %s: GUObjectArray header implausible (num=%d)\r\n",tag,numEl); return 0; }
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    uintptr_t hits[8]; int n=0,over=0,rejected=0;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        bool chunkOk=SafeReadable((void*)chunk,(size_t)cnt*ITEMSTRIDE);
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!chunkOk&&!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            if(!NameIs(obj,want))continue;
+            uintptr_t c=ClassOf(obj); char cn[128]="?"; if(LooksLikePtr(c)) GetFNameStr(NameId(c),cn,sizeof(cn));
+            int isCls=(LooksLikePtr(c)&&strstr(cn,"Class"))?1:0;
+            int32_t idx=SafeReadable((void*)(obj+0x10),4)?*(int32_t*)(obj+0x10):-1;
+            if(isCls!=wantClass){
+                rejected++;
+                Markerf("[PS] %s reject 0x%llX cls=%s idx=%d (wanted %s)\r\n",tag,(unsigned long long)obj,cn,idx,
+                        wantClass?"a UClass":"a NON-class object");
+                continue; }
+            if(n<8) hits[n]=obj; else over++;
+            Markerf("[PS] %s cand[%d] 0x%llX cls=%s idx=%d\r\n",tag,n,(unsigned long long)obj,cn,idx);
+            n++;
+        }
+    }
+    if(nOut)*nOut=n;
+    Markerf("[PS] %s enumeration: %d match(es)%s%s\r\n",tag,n,
+            rejected?"  (some rejected on class-ness, printed above)":"",
+            over?"  ** MORE THAN THE 8-SLOT ARRAY -- the count is a LOWER BOUND **":"");
+    if(n==1) return hits[0];
+    if(n==0) Markerf("[PS] %s: NOT FOUND. A REFLECTION statement (not registered in GUObjectArray right "
+                     "now), NOT evidence that it is absent from the image.\r\n",tag);
+    else     Markerf("[PS] %s: AMBIGUOUS (%d matches). REFUSING to guess -- taking the first match is the "
+                     "defect shared by every member of this project's class-lookup blind-spot family.\r\n",tag,n);
+    return 0;
+}
+
+// ---- grade one UFunction, then snapshot its live parameter chain -----------------------------------
+static void SpGradeFn(SpFn* F,const char* name){
+    memset(F,0,sizeof(*F));
+    F->ixWco=F->ixCls=F->ixXf=F->ixColl=F->ixScale=F->ixOwner=F->ixInst=F->ixRet=-1;
+    F->fn=DpResolveOwned(g_spCls,name,&F->child,F->owner,sizeof(F->owner));
+    if(!F->fn){
+        F->grade=SPG_UNRESOLVED;
+        Markerf("[PS] resolve %s: NOT on the class chain of %s. This is a REFLECTION statement, NOT "
+                "evidence that the function is absent from the image.\r\n",name,g_spClsName);
+        return; }
+    F->thunk=SafeReadable((void*)(F->fn+UFUNC_FUNC),8)?*(uintptr_t*)(F->fn+UFUNC_FUNC):0;
+    F->flags=SafeReadable((void*)(F->fn+PDPE_FN_FLAGS),4)?*(uint32_t*)(F->fn+PDPE_FN_FLAGS):0;
+    F->psize=SafeReadable((void*)(F->fn+USTRUCT_PROPSIZE),4)?*(uint32_t*)(F->fn+USTRUCT_PROPSIZE):0;
+    F->snum =SafeReadable((void*)(F->fn+USTRUCT_SCRIPTNUM),4)?*(uint32_t*)(F->fn+USTRUCT_SCRIPTNUM):0;
+    F->numParms=SafeReadable((void*)(F->fn+PDPE_FN_NUMPARMS),1)?*(uint8_t*)(F->fn+PDPE_FN_NUMPARMS):0;
+    F->parmSize=SafeReadable((void*)(F->fn+PDPE_FN_PARMSIZE),2)?*(uint16_t*)(F->fn+PDPE_FN_PARMSIZE):0;
+    F->retOff  =SafeReadable((void*)(F->fn+PDPE_FN_RETOFF),2)?*(uint16_t*)(F->fn+PDPE_FN_RETOFF):0xFFFF;
+    uintptr_t rva=(F->thunk>g_modBase&&F->thunk-g_modBase<0x10000000ULL)?F->thunk-g_modBase:0;
+    if(!LooksLikePtr(F->thunk))                                              F->grade=SPG_NULLFUNC;
+    else if(F->thunk==(uintptr_t)(g_modBase+kPiRva))                         F->grade=SPG_BYTECODE;
+    else if(rva==PDPE_FOLD_RET0A||rva==PDPE_FOLD_RET0B||rva==PDPE_FOLD_RET0C) F->grade=SPG_FOLD;
+    else                                                                     F->grade=SPG_NATIVE;
+    const char* g=(F->grade==SPG_NATIVE)?"NATIVE exec thunk -> the S55 direct-Func primitive":
+                  (F->grade==SPG_BYTECODE)?"Func == ProcessInternal -> BYTECODE, dispatch via CallBPGuarded":
+                  (F->grade==SPG_FOLD)?"*** Func is a UNIVERSAL FOLD (ret 0) -- a STRIPPED body ***":
+                  "*** Func is NULL -- nothing to jump to (this is what closed Route C in S127) ***";
+    Markerf("[PS] grade %s: fn=0x%llX owner=%s child=0x%llX\r\n",name,(unsigned long long)F->fn,
+            F->owner[0]?F->owner:"-",(unsigned long long)F->child);
+    Markerf("[PS] grade %s: Func@+0xE0=0x%llX (rva 0x%llX) => %s\r\n",name,
+            (unsigned long long)F->thunk,(unsigned long long)rva,g);
+    Markerf("[PS] grade %s: FunctionFlags@+0xB8=0x%08X%s%s%s  PropertiesSize@+0x60=%u  Script.Num@+0x70=%u  "
+            "NumParms@+0xBC=%u  ParmsSize@+0xBE=%u  ReturnValueOffset@+0xC0=0x%X\r\n",
+            name,F->flags,
+            (F->flags&0x04)?" Native":"",(F->flags&0x2000)?" Static":"",
+            (F->flags&PDPE_FLAG_ALTDISPATCH)?" ALT-DISPATCH(0x10)":"",
+            F->psize,F->snum,(unsigned)F->numParms,(unsigned)F->parmSize,(unsigned)F->retOff);
+    F->np=PdWalkParams(F->child,name);
+    memcpy(F->p,g_pdP,sizeof(F->p));      // (*) SNAPSHOT IMMEDIATELY -- see the SpFn comment
+    if(F->np>16) F->np=16;
+}
+
+// ---- read the UEnum FName behind an enum-typed parameter --------------------------------------------
+// FK-14 [M], per-family offsets: `FEnumProperty::Enum` is at **+0x78** (UnderlyingProp at +0x70), and
+// `FByteProperty::Enum` -- like every other type-carrying family -- is at **+0x70**. `PdTypeOf` only
+// fills PdParm::sname for StructProperty, so without this the enum slots printed "-" while the log
+// claimed the enum name was checked. ★ THIS IS WHAT MAKES `KSPSCALEMETHOD=1` HONEST: it turns
+// "MultiplyWithRoot == 1 in stock numbering" from a bare assumption into stock numbering read against
+// the DECLARED ENUM NAME on this build -- the same class of evidence CLAUDE.md already relies on for
+// `EInternalObjectFlags` and `ERoundPhase`. A "-" here means the name could NOT be read, which is an
+// instrument gap and is printed as such rather than silently implying agreement.
+static void SpEnumName(const PdParm& p,char* out,size_t sz){
+    if(out&&sz) strncpy_s(out,sz,"-",_TRUNCATE);
+    uintptr_t e=0;
+    if(strstr(p.type,"EnumProperty"))      e=SafeReadable((void*)(p.prop+0x78),8)?*(uintptr_t*)(p.prop+0x78):0;
+    else if(strstr(p.type,"ByteProperty")) e=SafeReadable((void*)(p.prop+0x70),8)?*(uintptr_t*)(p.prop+0x70):0;
+    else return;
+    if(LooksLikePtr(e)&&out&&sz) GetFNameStr(NameId(e),out,(int)sz);
+}
+
+// ---- bind every slot BY NAME out of THIS function's own snapshot -----------------------------------
+// ⚠ NO POSITIONAL FALLBACK. The two functions genuinely declare Owner/Instigator in different
+//   positions, so a positional rule is not a fallback here -- it is a way to silently pass an actor
+//   pointer where an enum byte belongs. An unbound REQUIRED slot makes the arm refuse.
+static void SpBind(SpFn* F,const char* tag){
+    for(int k=0;k<F->np;k++){
+        PdParm& p=F->p[k];
+        if(p.isRet){ F->ixRet=k; continue; }
+        char lc[64]; size_t n=strlen(p.name); if(n>=sizeof(lc))n=sizeof(lc)-1;
+        for(size_t i=0;i<n;i++){ char c=p.name[i]; lc[i]=(c>='A'&&c<='Z')?(char)(c+32):c; } lc[n]=0;
+        if(F->ixWco  <0 && strstr(lc,"worldcontext") && strstr(p.type,"ObjectProperty")){ F->ixWco=k;   continue; }
+        if(F->ixCls  <0 && strstr(lc,"actorclass")   && strstr(p.type,"ClassProperty")) { F->ixCls=k;   continue; }
+        if(F->ixXf   <0 && strstr(lc,"transform")    && strstr(p.type,"StructProperty")){ F->ixXf=k;    continue; }
+        if(F->ixColl <0 && strstr(lc,"collision"))                                      { F->ixColl=k;  continue; }
+        if(F->ixScale<0 && strstr(lc,"scalemethod"))                                    { F->ixScale=k; continue; }
+        if(F->ixInst <0 && strstr(lc,"instigator"))                                     { F->ixInst=k;  continue; }
+        if(F->ixOwner<0 && strstr(lc,"owner"))                                          { F->ixOwner=k; continue; }
+    }
+    struct { const char* n; int ix; int req; } S[7]={
+        {"WorldContextObject",F->ixWco,1},{"ActorClass",F->ixCls,1},{"SpawnTransform",F->ixXf,1},
+        {"CollisionHandling",F->ixColl,0},{"ScaleMethod",F->ixScale,0},
+        {"Owner",F->ixOwner,0},{"Instigator",F->ixInst,0}};
+    int ok=1;
+    for(int k=0;k<7;k++){
+        if(S[k].ix<0){
+            Markerf("[PS] bind %-16s %-18s -> UNBOUND (%s)\r\n",tag,S[k].n,
+                    S[k].req?"*** REQUIRED -- the arm will REFUSE ***"
+                            :"optional; the slot stays ZERO, which is its declared default");
+            if(S[k].req) ok=0;
+            continue; }
+        PdParm& p=F->p[S[k].ix];
+        char en[64]; SpEnumName(p,en,sizeof(en));
+        Markerf("[PS] bind %-16s %-18s -> slot[%d] '%s' @0x%-4X size=%-3u %s struct=%s enum=%s\r\n",
+                tag,S[k].n,S[k].ix,p.name,p.off,p.elem,p.type,p.sname,en);
+    }
+    if(F->ixRet>=0) Markerf("[PS] bind %-16s %-18s -> slot[%d] '%s' @0x%X size=%u %s\r\n",tag,"ReturnValue",
+                            F->ixRet,F->p[F->ixRet].name,F->p[F->ixRet].off,F->p[F->ixRet].elem,F->p[F->ixRet].type);
+    else Markerf("[PS] bind %-16s %-18s -> NONE declared. The census delta is then the ONLY evidence.\r\n",tag,"ReturnValue");
+    F->bound=ok;
+}
+
+// ---- the instrument's self-check on the live FProperty reads ---------------------------------------
+// ⚠⚠ THIS EXISTS BECAUSE `FPROP_ELEMSIZE` WAS WRONG UNTIL S126. It read 0x30 = **ArrayDim**, which is
+//    1 for every property that is not a C-array, so EVERY slot of SpawnDropPodForTeam printed
+//    `size=1`. The symptom is pathognomonic and cheap to test for: in these two signatures an
+//    ObjectProperty / ClassProperty MUST read 8 and the FTransform MUST read at least 0x50. If an
+//    object pointer reads 1, the field being read is ArrayDim again and NOTHING in this mode may be
+//    believed -- so the arms refuse rather than fabricate. ★ S126's refusal is what made that defect
+//    diagnosable instead of producing a false result; this is that refusal, generalised.
+static void SpSanity(){
+    int bad=0, objOk=0, xfOk=0, seen=0;
+    SpFn* F[2]={&g_spDef,&g_spImm};
+    const char* FN[2]={"Deferred","NonDeferred"};
+    for(int f=0;f<2;f++){
+        for(int k=0;k<F[f]->np;k++){
+            PdParm& p=F[f]->p[k]; seen++;
+            bool isptr = (strstr(p.type,"ObjectProperty")!=nullptr)||(strstr(p.type,"ClassProperty")!=nullptr);
+            if(isptr){
+                if(p.elem!=8){ bad++; Markerf("[PS] SANITY FAIL %s slot[%d] '%s' is %s but ElementSize reads "
+                                              "%u, not 8.\r\n",FN[f],k,p.name,p.type,p.elem); }
+                else objOk++; }
+            // ⚠ NAME-INDEPENDENT ON PURPOSE. These two signatures declare exactly ONE struct parameter
+            //   each (the FTransform), so "a StructProperty smaller than 0x50" is the ArrayDim symptom
+            //   whatever its FName decodes to -- and requiring the literal name "Transform" would turn a
+            //   failed FName decode into a refusal, i.e. an instrument gap dressed up as a result about
+            //   the game. The decoded struct name is still PRINTED, on the bind line and here.
+            if(strstr(p.type,"StructProperty")){
+                // ⚠ ONE THRESHOLD, QUOTED IN BOTH PLACES. `SpCallPooled`'s write guard needs
+                //   kXfScaleOff+0x18 bytes (Scale3D.Z is the last field it writes), so SANITY tests the
+                //   SAME number. An earlier draft tested 0x50 while its message claimed 0x60 and the
+                //   actual refusal happened at 0x58 -- three numbers in the one check whose entire job
+                //   is to be unambiguous about the S126 ArrayDim defect.
+                if(p.elem<(uint32_t)(kXfScaleOff+0x18)){ bad++;
+                    Markerf("[PS] SANITY FAIL %s slot[%d] '%s' is a StructProperty (struct '%s') but "
+                            "ElementSize reads %u, smaller than the %u bytes this build's FTransform "
+                            "needs (Scale3D@0x%X plus 0x18). That is the ArrayDim symptom.\r\n",
+                            FN[f],k,p.name,p.sname,p.elem,(unsigned)(kXfScaleOff+0x18),kXfScaleOff); }
+                else xfOk++; }
+        }
+    }
+    g_spSane=(bad==0&&objOk>0&&xfOk>0)?1:0;
+    Markerf("[PS] SANITY on the live FProperty reads: %d slot(s) inspected, pointer-sized OK=%d, "
+            "FTransform OK=%d, FAILURES=%d => %s\r\n",seen,objOk,xfOk,bad,
+            g_spSane?"PASS (FPROP_ELEMSIZE=0x34 really is reading ElementSize, not ArrayDim)":"*** FAIL ***");
+    // ⚠ SEPARATE THE TWO WAYS THIS FAILS. `seen == 0` means NEITHER UFunction resolved, so there were
+    //   no slots to inspect at all -- printing "fix FPROP_ELEMSIZE" there would blame the wrong thing
+    //   and send a successor to a working constant. Say which one it is.
+    if(!g_spSane&&seen==0)
+        Marker("[PS] *** SANITY UNAVAILABLE: NEITHER pooled-spawn UFunction resolved, so there were ZERO "
+               "parameter slots to inspect. This is a REFLECTION statement (see the two 'resolve ... NOT "
+               "on the class chain' lines above), NOT a statement about FPROP_ELEMSIZE and NOT a result "
+               "about the actor pool. No call will be made. ***\r\n");
+    else if(!g_spSane)
+        Marker("[PS] *** SANITY FAILED: every slot size this mode would write is suspect. NO CALL WILL BE "
+               "MADE. This is an INSTRUMENT statement about the shim, NOT a result about the actor pool. "
+               "Fix FPROP_ELEMSIZE (S126: 0x30 was ArrayDim; 0x34 is ElementSize) and re-fly. ***\r\n");
+}
+
+// ---- is this actor's ROOT COMPONENT attached to something? ------------------------------------------
+// ⚠⚠ P0c CROSS-CHECKS `K2_GetActorLocation` (which returns the **WORLD** location) AGAINST `ActorLoc`
+//    (which reads `RootComponent->RelativeLocation`). Those two are equal ONLY for an UNATTACHED root.
+//    An ATTACHED root makes them legitimately differ -- and calling that DISAGREEMENT a control FAILURE
+//    would declare the sitting VOID for an INSTRUMENT mismatch, throwing away a launch on a control that
+//    was actually working. So: prefer a control actor whose root is unattached, and if one has to be
+//    used anyway, report the disagreement as INCONCLUSIVE-BY-INSTRUMENT and name the reason.
+//    Returns 1 attached, 0 unattached, -1 unknown (which is itself printed, never silently folded into 0).
+static int SpRootAttached(uintptr_t actor){
+    if(!LooksLikePtr(actor)) return -1;
+    uint32_t rc=PropOffsetSuper(ClassOf(actor),"RootComponent");
+    if(rc==0xFFFFFFFF||!SafeReadable((void*)(actor+rc),8)) return -1;
+    uintptr_t r=*(uintptr_t*)(actor+rc); if(!LooksLikePtr(r)) return -1;
+    uint32_t ap=PropOffsetSuper(ClassOf(r),"AttachParent");
+    if(ap==0xFFFFFFFF||!SafeReadable((void*)(r+ap),8)) return -1;
+    return LooksLikePtr(*(uintptr_t*)(r+ap))?1:0;
+}
+// A control actor is usable only if it is live, has a readable location, that location is NON-ZERO
+// (otherwise the "cross-check" is two zeros agreeing -- S126's C0c made exactly that error), and its
+// root is not attached (otherwise the RPM reference is not the world location at all).
+static bool SpCtlUsable(uintptr_t o){
+    if(!o||!GcAlive(o)) return false;
+    double L[3]; if(!ActorLoc(o,L)) return false;
+    if(!(L[0]||L[1]||L[2])) return false;
+    return SpRootAttached(o)!=1;
+}
+
+// ---- the DropPlane component, enumerated (an optional WorldContextObject source) --------------------
+static uintptr_t SpPickComp(int* nOut){
+    if(nOut)*nOut=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18)) return 0;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000) return 0;
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    uintptr_t cands[8]; int nc=0,seen=0;
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        bool chunkOk=SafeReadable((void*)chunk,(size_t)cnt*ITEMSTRIDE);
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!chunkOk&&!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            uintptr_t cls=ClassOf(obj); if(!cls)continue;
+            char chain[256];
+            if(!PhChainHas(cls,"LokiGameModeDropPlaneComponent",chain,sizeof(chain)))continue;
+            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            bool arche=(strncmp(on,"Default__",9)==0)||(strstr(on,"_GEN_VARIABLE")!=nullptr);
+            seen++;
+            Markerf("[PS] comp-cand[%d] 0x%llX '%s'%s chain=%s\r\n",seen-1,(unsigned long long)obj,on,
+                    arche?"  [EXCLUDED: archetype/_GEN_VARIABLE]":"",chain);
+            if(arche) continue;
+            if(nc<8) cands[nc++]=obj;
+        }
+    }
+    if(nOut)*nOut=nc;
+    Markerf("[PS] DropPlane component enumeration: %d seen, %d live candidate(s)\r\n",seen,nc);
+    if(nc==1) return cands[0];
+    if(nc>1) Marker("[PS] DropPlane component: AMBIGUOUS -> REFUSING to guess.\r\n");
+    return 0;
+}
+
+// ---- resolve everything (worker thread; NO calls are made here) --------------------------------------
+static bool SpResolve(){
+    int n=0;
+    g_spAbortWhy[0]=0;
+    g_spCls=SpFindUnique("LokiGameplayStatics",1,"class LokiGameplayStatics",&n);
+    if(!g_spCls){
+        strncpy_s(g_spAbortWhy,sizeof(g_spAbortWhy),
+            "the ULokiGameplayStatics UClass did not resolve uniquely (reflected FName 'LokiGameplayStatics'). "
+            "NO function resolve was attempted, so this run says NOTHING about either pooled spawn.",_TRUNCATE);
+        Marker("[PS] ABORT: the ULokiGameplayStatics UClass did not resolve uniquely. NOTHING was called "
+               "and NOTHING was written. ⚠ UHT strips the leading U, so the reflected FName is\r\n"
+               "[PS]        'LokiGameplayStatics'; probing 'ULokiGameplayStatics' produces a false ABSENT.\r\n");
+        return false; }
+    GetFNameStr(NameId(g_spCls),g_spClsName,sizeof(g_spClsName));
+    { char chain[256]; PhChainHas(g_spCls,"@never@",chain,sizeof(chain));
+      Markerf("[PS] class 0x%llX '%s' chain=%s\r\n",(unsigned long long)g_spCls,g_spClsName,chain); }
+
+    g_spCDO=SpFindUnique("Default__LokiGameplayStatics",0,"CDO Default__LokiGameplayStatics",&n);
+    if(!g_spCDO){
+        strncpy_s(g_spAbortWhy,sizeof(g_spAbortWhy),
+            "the CLASS DEFAULT OBJECT 'Default__LokiGameplayStatics' did not resolve uniquely. The CLASS "
+            "itself WAS found; NO function resolve was attempted.",_TRUNCATE);
+        Marker("[PS] ABORT: the CLASS DEFAULT OBJECT did not resolve uniquely. A static UFunction on a "
+               "UBlueprintFunctionLibrary is called ON THE CDO; this mode will NOT substitute a random "
+               "instance, which is how a call ends up measuring the wrong object.\r\n");
+        return false; }
+    // Cross-check: the CDO's own class must BE the class we resolved. Free, and the only thing that
+    // separates "found an object with the right name" from "found the right object".
+    if(ClassOf(g_spCDO)!=g_spCls){
+        char cn[96]="?"; if(ClassOf(g_spCDO)) GetFNameStr(NameId(ClassOf(g_spCDO)),cn,sizeof(cn));
+        strncpy_s(g_spAbortWhy,sizeof(g_spAbortWhy),
+            "the CDO's own class is NOT the resolved class (name agreement is not identity). NO function "
+            "resolve was attempted.",_TRUNCATE);
+        Markerf("[PS] ABORT: CDO 0x%llX has class 0x%llX ('%s'), which is NOT the resolved class 0x%llX. "
+                "REFUSING -- name agreement is not identity.\r\n",
+                (unsigned long long)g_spCDO,(unsigned long long)ClassOf(g_spCDO),cn,(unsigned long long)g_spCls);
+        return false; }
+    Markerf("[PS] CDO 0x%llX  (ClassOf(CDO) == the resolved class: cross-check PASSED)\r\n",(unsigned long long)g_spCDO);
+
+    SpGradeFn(&g_spDef,"SpawnPoolableActorFromClassDeferred");
+    SpGradeFn(&g_spImm,"SpawnPoolableActorFromClass");
+    SpBind(&g_spDef,"Deferred(P1)");
+    SpBind(&g_spImm,"NonDeferred(P2)");
+    SpSanity();
+
+    // The actor class. BY NAME, enumerated, and it must be a UClass.
+    g_spPodCls=SpFindUnique(KSPPODCLASS,1,"pod class " KSPPODCLASS,&n);
+    if(!g_spPodCls){
+        strncpy_s(g_spAbortWhy,sizeof(g_spAbortWhy),
+            "the pod UClass " KSPPODCLASS " did not resolve uniquely. Both pooled spawns WERE resolved and "
+            "graded (read their grade codes above) -- this abort is about the ACTOR CLASS, not about the "
+            "functions and not about the pool.",_TRUNCATE);
+        Marker("[PS] ABORT: the pod UClass did not resolve uniquely -- every spawn arm needs it. Rebuild "
+               "with -DKSPPODCLASS=\\\"<exact class FName>\\\" if the enumeration above names a different "
+               "one.\r\n");
+        return false; }
+    PhChainHas(g_spPodCls,"@never@",g_spPodChain,sizeof(g_spPodChain));
+    Markerf("[PS] pod class 0x%llX '%s' chain=%s\r\n",(unsigned long long)g_spPodCls,KSPPODCLASS,g_spPodChain);
+
+    // WorldContextObject. PhPickGameMode ENUMERATES every live GameMode and refuses on ambiguity.
+    { const char* why="?"; g_spGm=PhPickGameMode(&why);
+      Markerf("[PS] GameMode pick: 0x%llX  reason: %s\r\n",(unsigned long long)g_spGm,why); }
+    int ncomp=0; g_spComp=SpPickComp(&ncomp);
+#if KSPWCO==1
+    g_spWco=g_spGm; strncpy_s(g_spWcoWhy,sizeof(g_spWcoWhy),"the live GameMode (KSPWCO=1)",_TRUNCATE);
+#elif KSPWCO==2
+    g_spWco=g_spComp; strncpy_s(g_spWcoWhy,sizeof(g_spWcoWhy),"the DropPlane component (KSPWCO=2)",_TRUNCATE);
+#else
+    if(g_spGm){ g_spWco=g_spGm; strncpy_s(g_spWcoWhy,sizeof(g_spWcoWhy),
+        "the live GameMode (auto 1st choice -- the SAME object SpawnActorCls passes in P3, so the "
+        "WorldContextObject is held constant across all three spawn arms)",_TRUNCATE); }
+    else if(g_spComp){ g_spWco=g_spComp; strncpy_s(g_spWcoWhy,sizeof(g_spWcoWhy),
+        "the DropPlane component (auto 2nd choice -- no unambiguous GameMode)",_TRUNCATE); }
+#endif
+    if(!g_spWco){
+        strncpy_s(g_spAbortWhy,sizeof(g_spAbortWhy),
+            "no WorldContextObject resolved (no unambiguous GameMode and no unambiguous DropPlane "
+            "component). Both pooled spawns WERE resolved and graded; this abort is about the WORLD.",_TRUNCATE);
+        Marker("[PS] ABORT: no WorldContextObject resolved. REFUSING to pass null -- "
+               "GetWorldFromContextObject would return null and every arm would report a meaningless "
+               "zero that reads exactly like 'the pool declined'.\r\n");
+        return false; }
+    GetFNameStr(NameId(g_spWco),g_spWcoName,sizeof(g_spWcoName));
+    { char cn[96]="?"; if(ClassOf(g_spWco)) GetFNameStr(NameId(ClassOf(g_spWco)),cn,sizeof(cn));
+      Markerf("[PS] WorldContextObject = 0x%llX '%s' (%s)\r\n[PS]        chosen because: %s\r\n",
+              (unsigned long long)g_spWco,g_spWcoName,cn,g_spWcoWhy); }
+
+    // Location sources. PdFindOrigins enumerates the hero and every TrainingStart-tagged actor and
+    // prints each one; it makes no calls.
+    PdFindOrigins();
+    { struct { uintptr_t o; const char* w; } order[3]; int k=0;
+#if KSPORIGIN==1
+      order[k].o=g_pdHero;  order[k].w="the live hero (KSPORIGIN=1)"; k++;
+#elif KSPORIGIN==2
+      order[k].o=g_pdStart; order[k].w="the TrainingStart-tagged actor (KSPORIGIN=2)"; k++;
+#elif KSPORIGIN==3
+      order[k].o=g_spWco;   order[k].w="the WorldContextObject (KSPORIGIN=3)"; k++;
+#else
+      order[k].o=g_pdHero;  order[k].w="the live hero (auto 1st choice)"; k++;
+      order[k].o=g_pdStart; order[k].w="the TrainingStart-tagged actor (auto 2nd choice)"; k++;
+      order[k].o=g_spWco;   order[k].w="the WorldContextObject (auto 3rd choice)"; k++;
+#endif
+      for(int i=0;i<k;i++){
+          double L[3]={0,0,0};
+          if(!order[i].o||!GcAlive(order[i].o))continue;
+          if(!ActorLoc(order[i].o,L))continue;
+          g_spLoc[0]=L[0]; g_spLoc[1]=L[1]; g_spLoc[2]=L[2]; g_spHavePos=true;
+          _snprintf_s(g_spOriginWhy,sizeof(g_spOriginWhy),_TRUNCATE,"%s (0x%llX)",order[i].w,(unsigned long long)order[i].o);
+          Markerf("[PS] SpawnTransform.Translation DERIVED from %s = (%.1f, %.1f, %.1f)\r\n",
+                  g_spOriginWhy,g_spLoc[0],g_spLoc[1],g_spLoc[2]);
+          break; }
+    }
+    if(!g_spHavePos)
+        Marker("[PS] *** NO POSITION SOURCE RESOLVED. REFUSING to pass (0,0,0): a fabricated coordinate is "
+               "how a 'the spawn silently did nothing' result gets manufactured. NO SPAWN ARM WILL RUN. ***\r\n");
+
+    // The control actor must have a NON-ZERO location, or the control is two zeros agreeing.
+    { if(SpCtlUsable(g_pdHero)){
+          g_spCtlActor=g_pdHero; strncpy_s(g_spCtlWhy,sizeof(g_spCtlWhy),
+              "the live hero (non-origin, root NOT attached)",_TRUNCATE); }
+      else if(SpCtlUsable(g_pdStart)){
+          g_spCtlActor=g_pdStart; strncpy_s(g_spCtlWhy,sizeof(g_spCtlWhy),
+              "the TrainingStart-tagged actor (non-origin, root NOT attached)",_TRUNCATE); }
+      else if(g_spGm&&GcAlive(g_spGm)){
+          g_spCtlActor=g_spGm; strncpy_s(g_spCtlWhy,sizeof(g_spCtlWhy),
+              "the GameMode -- ⚠ FALLBACK: neither preferred actor passed the usable-control test "
+              "(live + readable + NON-ZERO location + root NOT attached). A GameMode is usually AT THE "
+              "ORIGIN, so expect WEAK CONTROL, which is not a pass",_TRUNCATE); }
+      { double L[3]={0,0,0}; bool hl=g_spCtlActor?ActorLoc(g_spCtlActor,L):false;
+        Markerf("[PS] control actor = 0x%llX loc=(%.1f,%.1f,%.1f)%s rootAttached=%d (1 yes / 0 no / -1 "
+                "unknown) -- %s\r\n",(unsigned long long)g_spCtlActor,L[0],L[1],L[2],
+                hl?"":" (RPM read FAILED)",SpRootAttached(g_spCtlActor),g_spCtlWhy[0]?g_spCtlWhy:"NONE"); }
+      Markerf("[PS] control-actor candidates: hero 0x%llX usable=%d | TrainingStart 0x%llX usable=%d "
+              "(usable = live + readable + NON-ZERO location + root NOT attached)\r\n",
+              (unsigned long long)g_pdHero,SpCtlUsable(g_pdHero)?1:0,
+              (unsigned long long)g_pdStart,SpCtlUsable(g_pdStart)?1:0); }
+    return true;
+}
+
+// ---- P0c: the primitive's positive control ----------------------------------------------------------
+static void SpControl(){
+    g_spCtlVerdict=3;
+    if(!g_spCtlActor||!GcAlive(g_spCtlActor)){
+        strncpy_s(g_spCtlDetail,sizeof(g_spCtlDetail),"no live control actor resolved",_TRUNCATE);
+        Marker("[PS] P0c: no live control actor -> NOT CALLED. ⚠ WITHOUT THE CONTROL, P1's outcome is NOT "
+               "attributable: 'the pooled spawn returned null' and 'the primitive never dispatched' read "
+               "identically.\r\n");
+        return; }
+    uintptr_t child=0; char owner[96]={0};
+    uintptr_t fn=DpResolveOwned(ClassOf(g_spCtlActor),"K2_GetActorLocation",&child,owner,sizeof(owner));
+    if(!fn){ strncpy_s(g_spCtlDetail,sizeof(g_spCtlDetail),"K2_GetActorLocation did not resolve",_TRUNCATE);
+             Marker("[PS] P0c: K2_GetActorLocation is not on the control actor's chain -> NOT CALLED\r\n"); return; }
+    uintptr_t thunk=SafeReadable((void*)(fn+UFUNC_FUNC),8)?*(uintptr_t*)(fn+UFUNC_FUNC):0;
+    if(!LooksLikePtr(thunk)){ strncpy_s(g_spCtlDetail,sizeof(g_spCtlDetail),"K2_GetActorLocation has no Func",_TRUNCATE);
+                              Marker("[PS] P0c: K2_GetActorLocation has no Func thunk -> NOT CALLED\r\n"); return; }
+    int np=PdWalkParams(child,"K2_GetActorLocation(P0c CONTROL)");
+    int ret=-1; for(int k=0;k<np;k++) if(g_pdP[k].isRet) ret=k;
+    uint32_t rel=(ret>=0)?g_pdP[ret].elem:24;
+    bool bp=(thunk==(uintptr_t)(g_modBase+kPiRva));
+    uint8_t* buf=bp?g_bplocals:g_spparms; size_t cap=bp?sizeof(g_bplocals):sizeof(g_spparms);
+    memset(buf,0,cap); memset(g_rbuf,0,sizeof(g_rbuf));
+    bool flt = bp ? CallBPGuarded(fn,(void*)g_spCtlActor,g_rbuf)
+                  : CallNativeGuarded((void*)fn,thunk,child,(void*)g_spCtlActor,g_spparms,g_rbuf);
+    g_spCtlRan=1; g_spCtlFaulted=flt?DPCALL_FAULT:DPCALL_OK;
+    // ★ A NATIVE callee writes its return into RESULT_DECL, NOT the params block (S126 had to fix this
+    //   twice, in both directions). Read BOTH, prefer the one this dispatch path writes, PRINT which.
+    double ps[3]={0,0,0}, rs[3]={0,0,0}; bool haveP=false, haveR=false;
+    if(ret>=0&&g_pdP[ret].off+rel<=cap){
+        if(rel==24){ double* d=(double*)(buf+g_pdP[ret].off); ps[0]=d[0];ps[1]=d[1];ps[2]=d[2]; haveP=true; }
+        else if(rel==12){ float* f=(float*)(buf+g_pdP[ret].off); ps[0]=f[0];ps[1]=f[1];ps[2]=f[2]; haveP=true; } }
+    if(rel==24&&sizeof(g_rbuf)>=24){ double* d=(double*)g_rbuf; rs[0]=d[0];rs[1]=d[1];rs[2]=d[2]; haveR=true; }
+    else if(rel==12&&sizeof(g_rbuf)>=12){ float* f=(float*)g_rbuf; rs[0]=f[0];rs[1]=f[1];rs[2]=f[2]; haveR=true; }
+    const double* got=nullptr; const char* src="none";
+    if(!bp&&haveR&&(rs[0]||rs[1]||rs[2])){ got=rs; src="RESULT_DECL (native path)"; }
+    else if(haveP&&(ps[0]||ps[1]||ps[2])){ got=ps; src="params ReturnValue slot"; }
+    else if(haveR){ got=rs; src="RESULT_DECL (all zero)"; }
+    else if(haveP){ got=ps; src="params slot (all zero)"; }
+    double ref[3]={0,0,0}; bool haveRef=ActorLoc(g_spCtlActor,ref);
+    double err=1e18;
+    if(got&&haveRef){ err=0; for(int i=0;i<3;i++){ double d=got[i]-ref[i]; err+=(d<0?-d:d); } }
+    double mag=haveRef?((ref[0]<0?-ref[0]:ref[0])+(ref[1]<0?-ref[1]:ref[1])+(ref[2]<0?-ref[2]:ref[2])):0;
+    Markerf("[PS] P0c %s  dispatch=%s  retElem=%u  got=(%.1f,%.1f,%.1f) via %s | RPM ref=(%.1f,%.1f,%.1f)%s\r\n",
+            flt?"*** FAULTED ***":"returned without fault",bp?"CallBPGuarded":"CallNativeGuarded",rel,
+            got?got[0]:0.0,got?got[1]:0.0,got?got[2]:0.0,src,ref[0],ref[1],ref[2],haveRef?"":"  (RPM read FAILED)");
+    if(flt||!got||!haveRef){ g_spCtlVerdict=0;
+        strncpy_s(g_spCtlDetail,sizeof(g_spCtlDetail),"faulted, or no return / no RPM reference to compare",_TRUNCATE); }
+    else if(err>1.0){
+        // ⚠ SEPARATE "the call is wrong" from "the two instruments measure different quantities".
+        //   `K2_GetActorLocation` returns the WORLD location; `ActorLoc` reads `RelativeLocation`. On an
+        //   ATTACHED root those differ BY DESIGN, and recording that as a control FAILURE voids a sitting
+        //   whose control was in fact fine.
+        int att=SpRootAttached(g_spCtlActor);
+        if(att==1){ g_spCtlVerdict=3;
+            _snprintf_s(g_spCtlDetail,sizeof(g_spCtlDetail),_TRUNCATE,
+                "DISAGREED by %.1f uu, but the control actor's ROOT IS ATTACHED, so the RPM reference "
+                "(RelativeLocation) is not the world location -- an INSTRUMENT MISMATCH, not a failed "
+                "call. Re-fly once an unattached non-origin actor exists (the hero normally is one)",err); }
+        else { g_spCtlVerdict=0;
+            _snprintf_s(g_spCtlDetail,sizeof(g_spCtlDetail),_TRUNCATE,
+                "DISAGREED by %.1f uu with rootAttached=%d (0 = unattached, so the two SHOULD agree; "
+                "-1 = could not be read)",err,att); } }
+    else if(mag<1.0){ g_spCtlVerdict=2;
+        strncpy_s(g_spCtlDetail,sizeof(g_spCtlDetail),
+                  "agreed AT THE ORIGIN -- two zeros agreeing, which proves nothing",_TRUNCATE); }
+    else { g_spCtlVerdict=1;
+        _snprintf_s(g_spCtlDetail,sizeof(g_spCtlDetail),_TRUNCATE,
+                    "agreed to %.2f uu on a non-zero reference (|ref|=%.0f)",err,mag); }
+    Markerf("[PS] P0c VERDICT: %s -- %s\r\n",
+            (g_spCtlVerdict==1)?"STRONG PASS":(g_spCtlVerdict==2)?"WEAK CONTROL (origin)":
+            (g_spCtlVerdict==0)?"FAIL":"INCONCLUSIVE",g_spCtlDetail);
+}
+
+// ---- P1 / P2: the pooled spawns ---------------------------------------------------------------------
+static int SpCallPooled(SpFn* F,const char* tag,uintptr_t* retOut,int* writtenOut,char* srcOut,size_t srcSz){
+    *retOut=0; *writtenOut=-1; if(srcOut&&srcSz) strncpy_s(srcOut,srcSz,"-",_TRUNCATE);
+    if(F->grade==SPG_UNRESOLVED){ Markerf("[PS] %s: unresolved -> NOT CALLED (a resolve statement, not a null result)\r\n",tag); return DPCALL_NOTRUN; }
+    if(F->grade==SPG_NULLFUNC){
+        Markerf("[PS] %s: Func@+0xE0 is NULL -> NOT CALLED. That is a MEASUREMENT: this native static "
+                "carries no exec thunk in this process, exactly as S127 measured for the Angelscript "
+                "SpawnDropPodForTeam. Route E (ProcessEvent, RM_DROPPOD bits 7-8) is the successor.\r\n",tag);
+        return DPCALL_NOTRUN; }
+    if(F->grade==SPG_FOLD){
+        Markerf("[PS] %s: Func points at a UNIVERSAL FOLD (ret 0) -> NOT CALLED. The body is STRIPPED in "
+                "this build -- a GAME statement, not an instrument failure, and the same shape as FK-1's "
+                "four server-authority stubs.\r\n",tag);
+        return DPCALL_NOTRUN; }
+    if(g_spSane!=1){ Markerf("[PS] %s: the FProperty SANITY check did not pass -> NOT CALLED (see the SANITY line)\r\n",tag); return DPCALL_NOTRUN; }
+    if(!g_spWco||!GcAlive(g_spWco)){ Markerf("[PS] %s: the WorldContextObject is no longer a live UObject -> NOT CALLED\r\n",tag); return DPCALL_NOTRUN; }
+    if(!g_spPodCls){ Markerf("[PS] %s: no pod UClass -> NOT CALLED\r\n",tag); return DPCALL_NOTRUN; }
+    if(!g_spHavePos){ Markerf("[PS] %s: no derived position -> NOT CALLED (see the refusal above)\r\n",tag); return DPCALL_NOTRUN; }
+    if(!F->bound&&!KSPFORCE){
+        Markerf("[PS] %s: a REQUIRED slot is unbound -> NOT CALLED. REFUSING to pass a fabricated zero; "
+                "rebuild with -DKSPFORCE=1 to call anyway, knowing the outcome would NOT be attributable "
+                "to the pooled spawn.\r\n",tag);
+        return DPCALL_NOTRUN; }
+    if(!F->bound) Markerf("[PS] *** %s: KSPFORCE=1 -- calling with an UNBOUND REQUIRED slot. This arm's "
+                          "result is NOT attributable. ***\r\n",tag);
+    bool bp=(F->grade==SPG_BYTECODE);
+    uint8_t* buf=bp?g_bplocals:g_spparms; size_t cap=bp?sizeof(g_bplocals):sizeof(g_spparms);
+    if(F->psize>cap){ Markerf("[PS] %s: PropertiesSize %u exceeds the %u-byte param buffer -> NOT CALLED "
+                              "(a shim limit, not a game fact)\r\n",tag,F->psize,(unsigned)cap); return DPCALL_NOTRUN; }
+    memset(buf,0,cap);
+    memset(g_rbuf,SP_SENTINEL,sizeof(g_rbuf));            // ★ RESULT_DECL sentinel
+    if(F->ixWco>=0&&F->p[F->ixWco].off+8<=cap) *(uint64_t*)(buf+F->p[F->ixWco].off)=(uint64_t)g_spWco;
+    if(F->ixCls>=0&&F->p[F->ixCls].off+8<=cap) *(uint64_t*)(buf+F->p[F->ixCls].off)=(uint64_t)g_spPodCls;
+    // ★ THE FTransform IS WRITTEN AT THE SIZE THE FProperty DECLARES, and the WHOLE declared slot is
+    //   ZEROED first. S93 truncated it at a hardcoded 0x50 and clipped Scale3D.Z on every actor this
+    //   project has ever spawned; kXfScaleOff / 0x60 are the S106d MEASURED positions, and the slot
+    //   SIZE comes from the live chain, never from a constant.
+    int xfOk=0;
+    if(F->ixXf>=0){
+        PdParm& p=F->p[F->ixXf];
+        uint32_t need=kXfScaleOff+0x18;
+        if(p.off!=0xFFFFFFFF&&p.elem>=need&&p.off+p.elem<=cap){
+            memset(buf+p.off,0,p.elem);
+            *(double*)(buf+p.off+0x18)=1.0;                        // identity quaternion (W)
+            *(double*)(buf+p.off+0x20)=g_spLoc[0];
+            *(double*)(buf+p.off+0x28)=g_spLoc[1];
+            *(double*)(buf+p.off+0x30)=g_spLoc[2];                 // Translation
+            *(double*)(buf+p.off+kXfScaleOff)=1.0;
+            *(double*)(buf+p.off+kXfScaleOff+0x08)=1.0;
+            *(double*)(buf+p.off+kXfScaleOff+0x10)=1.0;            // Scale3D
+            xfOk=1;
+            Markerf("[PS] %s SpawnTransform: slot @0x%X, %u bytes ZEROED then written -- quatW@+0x18, "
+                    "Translation@+0x20=(%.1f,%.1f,%.1f), Scale3D@+0x%X=(1,1,1)\r\n",
+                    tag,p.off,p.elem,g_spLoc[0],g_spLoc[1],g_spLoc[2],kXfScaleOff);
+        } else {
+            Markerf("[PS] %s: the SpawnTransform slot @0x%X size=%u cannot hold this build's FTransform "
+                    "(needs >= %u and must fit the %u-byte buffer) -> NOT CALLED\r\n",
+                    tag,p.off,p.elem,need,(unsigned)cap);
+            return DPCALL_NOTRUN; } }
+    if(!xfOk&&!KSPFORCE){ Markerf("[PS] %s: no SpawnTransform slot was written -> NOT CALLED\r\n",tag); return DPCALL_NOTRUN; }
+    if(F->ixColl >=0&&F->p[F->ixColl].off +1<=cap) buf[F->p[F->ixColl].off ]=(uint8_t)KSPCOLLISION;
+    if(F->ixScale>=0&&F->p[F->ixScale].off+1<=cap) buf[F->p[F->ixScale].off]=(uint8_t)KSPSCALEMETHOD;
+    // Owner / Instigator deliberately left at ZERO (their declared default is nullptr), and SAID so.
+    { char ce[64]="slot unbound", se[64]="slot unbound";
+      if(F->ixColl >=0) SpEnumName(F->p[F->ixColl ],ce,sizeof(ce));
+      if(F->ixScale>=0) SpEnumName(F->p[F->ixScale],se,sizeof(se));
+      Markerf("[PS] %s args: WCO=0x%llX '%s' | ActorClass=0x%llX '%s' | Collision=%d (declared enum '%s') "
+              "| ScaleMethod=%d (declared enum '%s') | Owner=NULL | Instigator=NULL\r\n",
+              tag,(unsigned long long)g_spWco,g_spWcoName,(unsigned long long)g_spPodCls,KSPPODCLASS,
+              (int)KSPCOLLISION,ce,(int)KSPSCALEMETHOD,se);
+      Marker("[PS]        ^ the two enum VALUES are stock UE numbering [I]; the NAMES beside them are read "
+             "live off the FProperty. A '-' means the name could not be read -- an instrument gap, not "
+             "agreement. Neither value can sink the call: they are single bytes in a flat params block, "
+             "not JSON enum strings (the S118 ELokiActivityState failure mode does not apply here).\r\n"); }
+    // ★ RETURN SENTINEL in the params block too, so "wrote null" and "wrote nothing" differ.
+    if(F->ixRet>=0&&F->p[F->ixRet].off+8<=cap) memset(buf+F->p[F->ixRet].off,SP_SENTINEL,8);
+    Markerf("[PS] %s sentinel 0x%02X armed in BOTH the params ReturnValue slot (@0x%X) and RESULT_DECL, so "
+            "'nothing wrote a return' is distinguishable from 'wrote null'.\r\n",
+            tag,(unsigned)SP_SENTINEL,(F->ixRet>=0)?F->p[F->ixRet].off:0xFFFFFFFFu);
+    Markerf("[PS] %s dispatch: thunk=0x%llX -> %s (ProcessInternal is 0x%llX). It is a NATIVE STATIC, so "
+            "'native' is the expected reading; the object is the CDO 0x%llX.\r\n",
+            tag,(unsigned long long)F->thunk,bp?"BYTECODE via CallBPGuarded":"NATIVE via CallNativeGuarded",
+            (unsigned long long)(g_modBase+kPiRva),(unsigned long long)g_spCDO);
+#if KFAULTINFO
+    InterlockedExchange(&g_bpcRefused,0);
+#endif
+    bool flt = bp ? CallBPGuarded(F->fn,(void*)g_spCDO,g_rbuf)
+                  : CallNativeGuarded((void*)F->fn,F->thunk,F->child,(void*)g_spCDO,g_spparms,g_rbuf);
+#if KFAULTINFO
+    if(bp&&InterlockedCompareExchange(&g_bpcRefused,0,0)){
+        Markerf("[PS] %s: the primitive REFUSED to dispatch -> NOT CALLED. NOT a fault.\r\n",tag);
+        return DPCALL_NOTRUN; }
+#endif
+    uintptr_t retP=0; int pW=-1;
+    if(F->ixRet>=0&&F->p[F->ixRet].off+8<=cap){ memcpy(&retP,buf+F->p[F->ixRet].off,8);
+        pW=(retP!=(uintptr_t)SP_SENTINEL64)?1:0; if(!pW) retP=0; }
+    uintptr_t retR=(uintptr_t)g_rbuf[0]; int rW=(retR!=(uintptr_t)SP_SENTINEL64)?1:0; if(!rW) retR=0;
+    uintptr_t used = bp ? (pW?retP:retR) : (rW?retR:retP);
+    const char* src = bp ? (pW?"params slot (BP path)":(rW?"RESULT_DECL (BP FALLBACK)":"neither -- both sentinels intact"))
+                         : (rW?"RESULT_DECL (native path)":(pW?"params slot (native FALLBACK)":"neither -- both sentinels intact"));
+    if(srcOut&&srcSz) strncpy_s(srcOut,srcSz,src,_TRUNCATE);
+    *retOut=used; *writtenOut=(pW==1||rW==1)?1:0;
+    Markerf("[PS] %s AFTER: %s  fault=%s\r\n",tag,flt?"*** FAULTED (SEH-captured) ***":"returned without fault",DP_FAULT);
+    Markerf("[PS] %s AFTER: sentinel -> paramsSlot %s, RESULT_DECL %s | retUSED=0x%llX (source: %s)\r\n",
+            tag,(pW<0)?"n/a (no ReturnValue slot)":(pW?"OVERWRITTEN":"*** 0xA5 INTACT ***"),
+            rW?"OVERWRITTEN":"*** 0xA5 INTACT ***",(unsigned long long)used,src);
+    if(*writtenOut==0)
+        Markerf("[PS] %s AFTER: *** NOTHING WROTE A RETURN. The callee did not complete. This is NOT 'the "
+                "pooled spawn returned null' and it is NOT a statement about the actor pool. ***\r\n",tag);
+    else if(!used)
+        Markerf("[PS] %s AFTER: a return WAS written and it is NULL. THAT is the pooled spawn declining -- "
+                "the exact value S127's bail 2 tested.\r\n",tag);
+    else {
+        char cn[96]="-"; if(GcAlive(used)&&ClassOf(used)) GetFNameStr(NameId(ClassOf(used)),cn,sizeof(cn));
+        Markerf("[PS] %s AFTER: returned 0x%llX, which decodes as %s '%s'\r\n",tag,(unsigned long long)used,
+                GcAlive(used)?"a LIVE UObject":"NOT a live UObject",cn); }
+    Markerf("[PS] %s        ^ 'returned without fault' IS NOT A RESULT. Only the DropPod census delta is.\r\n",tag);
+    return flt?DPCALL_FAULT:DPCALL_OK;
+}
+
+// ---- P3: the non-pooled reference spawn --------------------------------------------------------------
+// BeginDeferredActorSpawnFromClass + FinishSpawningActor, i.e. the ordinary UE spawn path this file has
+// used since S90. ⚠⚠ WITHOUT THIS ARM a null from P1 could just mean "this class cannot spawn in this
+// world", and the pool would be blamed (or exonerated) wrongly.
+//
+// ⚠⚠ THIS ARM BORROWS `SpawnActorCls`, WHICH IS SHARED CODE COMPILED INTO `play` (a hard `.text` sha256
+//    regression gate), SO IT CANNOT BE EDITED. Two things it silently relies on are therefore MEASURED
+//    HERE INSTEAD OF ASSERTED. Both were assertions in the first draft, and both would have produced a
+//    confident wrong reading:
+//
+//    (a) ITS WorldContextObject IS `g_gm2`, WHICH IS **NOT NECESSARILY** `g_spWco`.
+//        `g_gm2` comes from `FindInstByClass("GameMode_Tutorial", ...)` -- a SUBSTRING match that takes
+//        the FIRST hit, with no enumeration and no refusal: the class-lookup blind-spot family (six
+//        recorded members) that this mode avoids everywhere else. `g_spWco` comes from `PhPickGameMode`
+//        (enumerate-and-refuse), and under `KSPWCO=2` it is the DropPlane COMPONENT, not a GameMode at
+//        all -- so on that variant the two are DIFFERENT BY CONSTRUCTION. The first draft PRINTED
+//        "the SAME object P1/P2 used" while never comparing them. They are compared now, the result is
+//        printed, and every verdict that leans on P3 carries the qualifier when they differ.
+//
+//    (b) ITS PARAMETER OFFSETS ARE HARDCODED FALLBACKS (`g_oBWorld=0, g_oBClass=8, g_oBXform=0x10,
+//        g_oBColl=0x70, g_oBRet=0x88, g_oFActor=0, g_oFXform=0x10, g_oFRet=0x70`). `ResolveSpawnSeq`
+//        overwrites each ONLY when `ParamOffset` succeeds, so a PARTIAL resolve failure leaves stale
+//        constants and the arguments land at the wrong offsets. P3 would then produce nothing FOR AN
+//        INSTRUMENT REASON -- and the verdict chain would read that as "this class cannot spawn in this
+//        world", sending a successor to re-stage a world that was never the problem. P1/P2 have exactly
+//        this guard (SANITY + the bind refusal + the transform-size check); P3 had NONE. Every borrowed
+//        offset is now RE-DERIVED BY NAME here and the arm REFUSES on any mismatch.
+static void SpRefSpawn(){
+    if(!g_spPodCls){ Marker("[PS] P3: no pod UClass -> NOT CALLED\r\n"); return; }
+    if(!g_spHavePos){ Marker("[PS] P3: no derived position -> NOT CALLED (no fabricated coordinates)\r\n"); return; }
+    // ResolveSpawnSeq fills g_gm2 / g_gsCDO / g_begin* / g_finish* and the g_xform buffer. Its RETURN
+    // VALUE additionally demands an unrelated tutorial-sequencer class, so it is deliberately IGNORED
+    // and the four things this arm actually needs are checked directly.
+    ResolveSpawnSeq();
+    if(!(g_beginThunk&&g_finishThunk&&g_gm2&&g_gsCDO)){
+        Markerf("[PS] P3: the ordinary spawn path did not resolve (begin=0x%llX finish=0x%llX gm=0x%llX "
+                "gsCDO=0x%llX) -> NOT CALLED. Without P3, a null from P1/P2 cannot be separated from "
+                "'this class cannot spawn here'.\r\n",
+                (unsigned long long)g_beginThunk,(unsigned long long)g_finishThunk,
+                (unsigned long long)g_gm2,(unsigned long long)g_gsCDO);
+        return; }
+    // ---- (b) RE-DERIVE EVERY BORROWED PARAMETER OFFSET BY NAME, AND REFUSE ON ANY MISMATCH ----------
+    { struct { const char* which; uintptr_t child; const char* pname; uint32_t used; } OFF[8]={
+        {"Begin ", g_beginChild,  "WorldContextObject",        g_oBWorld},
+        {"Begin ", g_beginChild,  "ActorClass",                g_oBClass},
+        {"Begin ", g_beginChild,  "SpawnTransform",            g_oBXform},
+        {"Begin ", g_beginChild,  "CollisionHandlingOverride", g_oBColl },
+        {"Begin ", g_beginChild,  "ReturnValue",               g_oBRet  },
+        {"Finish", g_finishChild, "Actor",                     g_oFActor},
+        {"Finish", g_finishChild, "SpawnTransform",            g_oFXform},
+        {"Finish", g_finishChild, "ReturnValue",               g_oFRet  }};
+      int bad=0;
+      for(int i=0;i<8;i++){
+          uint32_t live=OFF[i].child?ParamOffset(OFF[i].child,OFF[i].pname):0xFFFFFFFF;
+          char lb[24]; if(live==0xFFFFFFFF) strcpy_s(lb,"UNRESOLVED"); else _snprintf_s(lb,sizeof(lb),_TRUNCATE,"0x%X",live);
+          bool ok=(live!=0xFFFFFFFF&&live==OFF[i].used);
+          if(!ok) bad++;
+          Markerf("[PS] P3 offset %s %-26s SpawnActorCls-uses=0x%-4X live=%-11s => %s\r\n",
+                  OFF[i].which,OFF[i].pname,OFF[i].used,lb,ok?"OK":"*** MISMATCH / UNRESOLVED ***"); }
+      g_spP3OffOk=(bad==0)?1:0;
+      if(bad){
+          Markerf("[PS] P3: %d of 8 borrowed parameter offset(s) did not re-derive BY NAME -> NOT CALLED. "
+                  "REFUSING: `SpawnActorCls` would write its arguments at STALE HARDCODED offsets "
+                  "(ResolveSpawnSeq only overwrites them when ParamOffset succeeds), P3 would produce "
+                  "nothing for an INSTRUMENT reason, and the verdict chain would read that as 'this class "
+                  "cannot spawn in this world' -- sending a successor to re-stage a world that was never "
+                  "the problem.\r\n",bad);
+          return; }
+      Marker("[PS] P3: all 8 borrowed parameter offsets re-derived BY NAME and AGREE with what "
+             "SpawnActorCls will use. The arguments will land where they are meant to.\r\n"); }
+
+    // ---- (a) COMPARE the two WorldContextObjects. Do not assert they are the same. -------------------
+    g_spP3SameWco=(g_gm2==g_spWco)?1:0;
+    { char gn[128]="?", gc[96]="?"; GetFNameStr(NameId(g_gm2),gn,sizeof(gn));
+      if(ClassOf(g_gm2)) GetFNameStr(NameId(ClassOf(g_gm2)),gc,sizeof(gc));
+      Markerf("[PS] P3 WorldContextObject = 0x%llX '%s' (%s) -- SpawnActorCls's OWN g_gm2, from a "
+              "first-match SUBSTRING lookup, NOT from PhPickGameMode.\r\n"
+              "[PS]        P1/P2 used 0x%llX '%s'. MEASURED: they are %s.\r\n",
+              (unsigned long long)g_gm2,gn,gc,(unsigned long long)g_spWco,g_spWcoName,
+              g_spP3SameWco?"THE SAME OBJECT":"*** DIFFERENT OBJECTS ***");
+      if(!g_spP3SameWco)
+          Marker("[PS] P3 ⚠⚠ STATED CONFOUND #2: P3 therefore varies a SECOND variable against P1/P2, so "
+                 "a 'P1 null / P3 spawns' reading is NOT single-variable. Every verdict below that leans "
+                 "on P3 carries this qualifier. To remove it, re-fly the default (KSPWCO=0) where the "
+                 "auto pick is the GameMode -- and if it STILL differs, PhPickGameMode and "
+                 "FindInstByClass disagree about which GameMode is live, which is itself the finding.\r\n"); }
+
+    memset(g_xform,0,sizeof(g_xform));
+    *(double*)(g_xform+0x18)=1.0;                                  // identity quaternion (W)
+    *(double*)(g_xform+0x20)=g_spLoc[0];
+    *(double*)(g_xform+0x28)=g_spLoc[1];
+    *(double*)(g_xform+0x30)=g_spLoc[2];
+    XfScale(1.0,1.0,1.0);
+    Markerf("[PS] P3: spawning %s at (%.1f,%.1f,%.1f) through BeginDeferredActorSpawnFromClass + "
+            "FinishSpawningActor.\r\n",KSPPODCLASS,g_spLoc[0],g_spLoc[1],g_spLoc[2]);
+    Markerf("[PS] P3 ⚠ STATED CONFOUND #1: SpawnActorCls hardcodes CollisionHandlingOverride=2 "
+            "(AdjustIfPossibleButAlwaysSpawn) and is shared code compiled into `play`, so it is NOT "
+            "edited. P1/P2 passed %d. If P1/P2 return null and P3 spawns, re-fly `poolspawn-collmatch` "
+            "(KSPCOLLISION=2) BEFORE blaming the pool.\r\n",(int)KSPCOLLISION);
+    g_spP3Ret=SpawnActorCls(g_spPodCls,"P3-reference(non-pooled)");
+    g_spP3Ran=1;
+    char cn[96]="-"; if(GcAlive(g_spP3Ret)&&ClassOf(g_spP3Ret)) GetFNameStr(NameId(ClassOf(g_spP3Ret)),cn,sizeof(cn));
+    Markerf("[PS] P3 RESULT: actor=0x%llX (%s '%s')\r\n",(unsigned long long)g_spP3Ret,
+            GcAlive(g_spP3Ret)?"LIVE UObject":"not a live UObject",cn);
+}
+
+// ---- the ladder ---------------------------------------------------------------------------------------
+static void SpLadderStep(){
+    DWORD now=GetTickCount();
+    long step=InterlockedCompareExchange(&g_pslStep,0,0);
+    if(g_pslLastMs&&now-g_pslLastMs<(DWORD)KSPSTEPMS) return;
+    g_pslLastMs=now;
+    switch(step){
+    case 0:
+        Marker("[PS] ========== RM_POOLSPAWN: ROUTE F -- does the pooled spawn need the pool? ==========\r\n");
+        Markerf("[PS] cfg arms=0x%03X podClass=%s wco=%d origin=%d collision=%d scaleMethod=%d force=%d "
+                "stepMs=%d settleMs=%d miniCensus=%d frameInit=%d faultInfo=%d outParmRet=%d\r\n",
+                (unsigned)KSPARMS,KSPPODCLASS,(int)KSPWCO,(int)KSPORIGIN,(int)KSPCOLLISION,
+                (int)KSPSCALEMETHOD,(int)KSPFORCE,(int)KSPSTEPMS,(int)KSPSETTLEMS,(int)KSPMINICENSUS,
+                (int)KFRAMEINIT,(int)KFAULTINFO,(int)KOUTPARMRET);
+        Marker("[PS] NOTE on arming: if [FS] printed 'ZERO TARGETS SWAPPED', ignore its RM_PLAY wording and "
+               "its tutorial_launch_play_hold300.dll suggestion -- for RM_POOLSPAWN it means THIS ladder "
+               "will never advance and the sitting is VOID. Every poolspawn variant already builds with "
+               "KFSNAME=\"\" (every BP UFunction is a target).\r\n");
+        g_pslStep=1; return;
+    case 1:
+        if(!(KSPARMS&0x100)){
+            Marker("[PS] P0c CONTROL disabled by KSPARMS bit8 -> skipped. ⚠ WITHOUT IT, P1's outcome is NOT "
+                   "attributable: 'the pooled spawn returned null' and 'the primitive never dispatched on "
+                   "this thread' read identically.\r\n");
+            g_pslStep=2; return; }
+        Marker("[PS] --- P0c (POSITIVE CONTROL): K2_GetActorLocation() on a NON-ORIGIN actor, cross-checked "
+               "against a pure-RPM read of the same actor's RootComponent->RelativeLocation. ---\r\n");
+        SpControl();
+        g_pslStep=2; return;
+    case 2:
+        if(!(KSPARMS&0x02)){ Marker("[PS] P1 disabled by KSPARMS bit1 -> skipped (no deferred pooled spawn attempted)\r\n"); g_pslStep=4; return; }
+        Marker("[PS] --- P1 (HEADLINE): ULokiGameplayStatics::SpawnPoolableActorFromClassDeferred. This is "
+               "the FIRST LINK of the [I] chain 'PrimePools is disabled => the pooled spawn returns null "
+               "=> SpawnDropPodForTeam bail 2'. Nobody has ever shown that link holds. ---\r\n");
+        g_spP1Faulted=SpCallPooled(&g_spDef,"P1 Deferred",&g_spP1Ret,&g_spP1Written,g_spP1Src,sizeof(g_spP1Src));
+        g_spP1Ran=(g_spP1Faulted!=DPCALL_NOTRUN)?1:0;
+        g_pslStep=3; return;
+    case 3:
+        if(!g_spP1Ran) Marker("[PS] after-P1 census SKIPPED: P1 never dispatched, nothing to attribute\r\n");
+        else if(KSPMINICENSUS&&(KSPARMS&0x04)) DpCensus("after-P1",false,false,&g_spM1);
+        else Marker("[PS] after-P1 mini-census disabled -> P1's delta is not separable from the rest of the run\r\n");
+        g_pslStep=4; return;
+    case 4:
+        if(!(KSPARMS&0x08)){ Marker("[PS] P2 disabled by KSPARMS bit3 -> skipped. ⚠ Without it, a null from "
+                                    "P1 cannot be localised to the DEFERRED path.\r\n"); g_pslStep=6; return; }
+        Marker("[PS] --- P2 (THE CONTROL THAT MAKES P1 INTERPRETABLE): the NON-deferred sibling "
+               "SpawnPoolableActorFromClass, same class, same transform, same WorldContextObject. Deferred "
+               "null + non-deferred actor => the fault is in the DEFERRED path. BOTH null => the pool. ---\r\n");
+        g_spP2Faulted=SpCallPooled(&g_spImm,"P2 NonDeferred",&g_spP2Ret,&g_spP2Written,g_spP2Src,sizeof(g_spP2Src));
+        g_spP2Ran=(g_spP2Faulted!=DPCALL_NOTRUN)?1:0;
+        g_pslStep=5; return;
+    case 5:
+        if(!g_spP2Ran) Marker("[PS] after-P2 census SKIPPED: P2 never dispatched, nothing to attribute\r\n");
+        else if(KSPMINICENSUS&&(KSPARMS&0x10)) DpCensus("after-P2",false,false,&g_spM2);
+        else Marker("[PS] after-P2 mini-census disabled -> P2's delta is not separable\r\n");
+        g_pslStep=6; return;
+    case 6:
+        if(!(KSPARMS&0x20)){ Marker("[PS] P3 disabled by KSPARMS bit5 -> skipped. ⚠ Without it, a null from "
+                                    "P1/P2 cannot be separated from 'this class cannot spawn in this world', "
+                                    "and the pool would be blamed or exonerated wrongly.\r\n"); g_pslStep=8; return; }
+        Marker("[PS] --- P3 (NON-POOLED REFERENCE): the SAME class through the ordinary spawn path. It "
+               "establishes that the class is spawnable HERE, which is the precondition for reading "
+               "anything at all into P1/P2. It runs LAST so it cannot contaminate their deltas. ---\r\n");
+        SpRefSpawn();
+        g_pslStep=7; return;
+    case 7:
+        if(!g_spP3Ran) Marker("[PS] after-P3 census SKIPPED: P3 never dispatched\r\n");
+        else if(KSPMINICENSUS&&(KSPARMS&0x40)) DpCensus("after-P3",false,false,&g_spM3);
+        else Marker("[PS] after-P3 mini-census disabled -> P3's delta is not separable\r\n");
+        g_pslStep=8; return;
+    case 8:
+    default:
+        Marker("[PS] ========== game-thread arms COMPLETE (P4 runs on the worker after a settle) ==========\r\n");
+        g_done=1; return;
+    }
+}
+static void DoPoolSpawn(){
+    __try { SpLadderStep(); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[PS] *** FAULT inside ladder step %ld -- halting the game-thread arms. P4's census still "
+                "runs, which is how we learn whether a PARTIAL spawn happened. fault=%s ***\r\n",
+                (long)g_pslStep,DP_FAULT);
+        g_done=1; }
+}
+
+// ---- P4: the AFTER census, the delta table and the verdict --------------------------------------------
+static void SpFinalReport(){
+    if(!(KSPARMS&0x80)){ Marker("[PS] P4 disabled by KSPARMS bit7 -> NO after-census. Without it this run "
+                                "produced no result, only calls.\r\n"); return; }
+    Markerf("[PS] settling %d ms before the AFTER census...\r\n",(int)KSPSETTLEMS);
+    Sleep((DWORD)KSPSETTLEMS);
+    DpCensus("P4-AFTER",true,false,&g_spA);
+
+    // ⚠ A census that never ran must print `n/a`, never a zero. S127's RM_DROPPOD published fabricated
+    //   zeros beside two real counts, which reads as "pods disappeared and came back".
+    bool h1=(g_spP1Ran&&KSPMINICENSUS&&(KSPARMS&0x04));
+    bool h2=(g_spP2Ran&&KSPMINICENSUS&&(KSPARMS&0x10));
+    bool h3=(g_spP3Ran&&KSPMINICENSUS&&(KSPARMS&0x40));
+    Marker("[PS] ------------- DELTA TABLE (the DropPod row is the Route F result) -------------\r\n");
+    Marker("[PS]   bucket    BEFORE afterP1 afterP2 afterP3   AFTER     dP1     dP2     dP3\r\n");
+    { struct { const char* n; long b,m1,m2,m3,a; } R[3]={
+        {"DropPod  ",g_spB.pod,  g_spM1.pod,  g_spM2.pod,  g_spM3.pod,  g_spA.pod},
+        {"DropPlane",g_spB.plane,g_spM1.plane,g_spM2.plane,g_spM3.plane,g_spA.plane},
+        {"DropShip ",g_spB.ship, g_spM1.ship, g_spM2.ship, g_spM3.ship, g_spA.ship}};
+      for(int i=0;i<3;i++){
+          char c1[16],c2[16],c3[16],d1[16],d2[16],d3[16];
+          long base2=h1?R[i].m1:R[i].b;
+          long base3=h2?R[i].m2:base2;
+          if(h1){ _snprintf_s(c1,sizeof(c1),_TRUNCATE,"%ld",R[i].m1); _snprintf_s(d1,sizeof(d1),_TRUNCATE,"%+ld",R[i].m1-R[i].b); }
+          else  { strcpy_s(c1,"n/a"); strcpy_s(d1,"n/a"); }
+          if(h2){ _snprintf_s(c2,sizeof(c2),_TRUNCATE,"%ld",R[i].m2); _snprintf_s(d2,sizeof(d2),_TRUNCATE,"%+ld",R[i].m2-base2); }
+          else  { strcpy_s(c2,"n/a"); strcpy_s(d2,"n/a"); }
+          if(h3){ _snprintf_s(c3,sizeof(c3),_TRUNCATE,"%ld",R[i].m3); _snprintf_s(d3,sizeof(d3),_TRUNCATE,"%+ld",R[i].m3-base3); }
+          else  { strcpy_s(c3,"n/a"); strcpy_s(d3,"n/a"); }
+          Markerf("[PS]   %s %6ld %7s %7s %7s %7ld  %6s  %6s  %6s%s\r\n",
+                  R[i].n,R[i].b,c1,c2,c3,R[i].a,d1,d2,d3,(i==0)?"   <== ROUTE F":""); } }
+    Markerf("[PS]   objects   %6ld %7ld %7ld %7ld %7ld   (new=%ld gone=%ld; the per-stage columns are "
+            "meaningless wherever the row above read n/a)\r\n",
+            g_spB.hits,g_spM1.hits,g_spM2.hits,g_spM3.hits,g_spA.hits,g_spA.fresh,g_spA.gone);
+    Markerf("[PS]   archetyp  %6ld %7ld %7ld %7ld %7ld   (EXCLUDED from every bucket above)\r\n",
+            g_spB.arche,g_spM1.arche,g_spM2.arche,g_spM3.arche,g_spA.arche);
+    Marker("[PS] call status codes: -1 = NOT CALLED | 0 = called, no fault | 1 = called and FAULTED. "
+           "-1 is NOT a clean run.\r\n");
+    Markerf("[PS] ran: P0c=%d(status=%d verdict=%d) P1=%d(status=%d written=%d ret=0x%llX via %s) "
+            "P2=%d(status=%d written=%d ret=0x%llX via %s) P3=%d(actor=0x%llX sameWCOasP1P2=%d "
+            "borrowedOffsetsOk=%d)\r\n",
+            g_spCtlRan,g_spCtlFaulted,g_spCtlVerdict,
+            g_spP1Ran,g_spP1Faulted,g_spP1Written,(unsigned long long)g_spP1Ret,g_spP1Src[0]?g_spP1Src:"-",
+            g_spP2Ran,g_spP2Faulted,g_spP2Written,(unsigned long long)g_spP2Ret,g_spP2Src[0]?g_spP2Src:"-",
+            g_spP3Ran,(unsigned long long)g_spP3Ret,g_spP3SameWco,g_spP3OffOk);
+    Marker("[PS] P3 qualifier codes: sameWCOasP1P2 1 = P3 held the WorldContextObject constant against "
+           "P1/P2 (single-variable) | 0 = it did NOT (two variables) | -1 = P3 never got that far. "
+           "borrowedOffsetsOk 1 = every parameter offset SpawnActorCls uses re-derived BY NAME.\r\n");
+    Markerf("[PS] targets: class=%s CDO=0x%llX | Deferred grade=%d fn=0x%llX thunk=0x%llX | NonDeferred "
+            "grade=%d fn=0x%llX thunk=0x%llX | WCO=%s | pod=%s | origin=%s | sanity=%d\r\n",
+            g_spClsName,(unsigned long long)g_spCDO,
+            g_spDef.grade,(unsigned long long)g_spDef.fn,(unsigned long long)g_spDef.thunk,
+            g_spImm.grade,(unsigned long long)g_spImm.fn,(unsigned long long)g_spImm.thunk,
+            g_spWcoName,KSPPODCLASS,g_spOriginWhy[0]?g_spOriginWhy:"-",g_spSane);
+    Marker("[PS] grade codes: 0 unresolved | 1 NATIVE thunk (S55 direct-Func) | 2 ProcessInternal "
+           "(bytecode) | 3 universal fold (stripped) | 4 Func == NULL.\r\n");
+
+    // ---- the verdict chain. Every branch names what it is a statement ABOUT. ----------------------
+    // ⚠⚠ A LATCHED ABORT REASON OUTRANKS EVERY GENERIC VERDICT BELOW. Five different `SpResolve`
+    //    failures reach this function and they demand five different successors; without this line the
+    //    report names whichever cause the grade codes happen to imply, which for an early abort is the
+    //    WRONG one (e.g. blaming function registration for a CDO lookup that failed first).
+    if(g_spAbortWhy[0])
+        Markerf("[PS] *** THE RESOLVE ABORTED, AND THIS IS WHY: %s ***\r\n"
+                "[PS]     Nothing was armed and NOTHING was called. Read that sentence rather than the "
+                "generic verdict that follows.\r\n",g_spAbortWhy);
+    // P3 varies its own WorldContextObject (see SpRefSpawn note (a)). Every verdict that LEANS ON P3
+    // carries the qualifier, so a two-variable comparison can never be read as a single-variable one.
+    const char* p3q = (g_spP3Ran&&g_spP3SameWco==0)
+        ? "  *** QUALIFIED: P3 used a DIFFERENT WorldContextObject from P1/P2 (see the 'P3 "
+          "WorldContextObject' line), so this comparison varies TWO variables, not one. ***"
+        : "";
+    if(!(KSPARMS&0x12A)){
+        Marker("[PS] VERDICT: this build made ZERO UFunction calls (the READ-ONLY arm). It is the census's "
+               "own null-delta control: a NON-ZERO DropPod delta here is an INSTRUMENT FAULT and voids "
+               "every other variant's delta. A zero delta is the control passing, and it says NOTHING "
+               "about the actor pool.\r\n");
+        Marker("[PS] ⚠ NOTHING IS UNDONE. Recovery from any spawn = restart the client.\r\n");
+        return; }
+    if(g_spSane!=1){
+        // ⚠ THREE different failures reach here and they demand different successors. Naming the wrong
+        //   one sends the next session to fix a constant that is already correct, or to investigate
+        //   function registration for a run that aborted two steps earlier.
+        if(g_spAbortWhy[0])
+            Markerf("[PS] *** VERDICT: NOT-APPLICABLE. The resolve ABORTED before any call could be made "
+                    "-- %s -- so NOTHING here is a statement about the actor pool, about either pooled "
+                    "spawn, or about FPROP_ELEMSIZE. ***\r\n",g_spAbortWhy);
+        else if(g_spDef.grade==SPG_UNRESOLVED&&g_spImm.grade==SPG_UNRESOLVED)
+            Markerf("[PS] *** VERDICT: NOT-APPLICABLE. NEITHER pooled-spawn UFunction is on the live "
+                    "%s class chain, so nothing was called and this run says NOTHING about the actor "
+                    "pool. It is a REFLECTION statement -- and NOT evidence the functions are absent "
+                    "from the image (FK-1 measured Angelscript UClasses unregistered at the menu, and "
+                    "this mode is only meaningful in a loaded world). ***\r\n",
+                    g_spClsName[0]?g_spClsName:"LokiGameplayStatics");
+        else
+            Marker("[PS] *** VERDICT: SITTING VOID. The live-FProperty SANITY check failed, so no arm "
+                   "called anything and no reading in this file is about the game. Fix the INSTRUMENT "
+                   "(see the SANITY line, which names the failing slot) and re-fly. ***\r\n");
+        Marker("[PS] ⚠ NOTHING IS UNDONE. Recovery from any spawn = restart the client.\r\n");
+        return; }
+    if((KSPARMS&0x100)&&g_spCtlVerdict!=1){
+        Markerf("[PS] *** VERDICT: SITTING VOID for Route F. The P0c control did not reach STRONG PASS "
+                "(verdict=%d: %s), so a call on this thread through this primitive is NOT demonstrated and "
+                "P1's outcome -- fault, null or delta -- is not attributable. A WEAK CONTROL (origin) is "
+                "not a pass. ***\r\n",g_spCtlVerdict,g_spCtlDetail[0]?g_spCtlDetail:"-");
+        Marker("[PS] ⚠ NOTHING IS UNDONE. Recovery from any spawn = restart the client.\r\n");
+        return; }
+    long dPod = g_spA.pod - g_spB.pod;
+    long dP1  = h1 ? (g_spM1.pod-g_spB.pod) : -1;
+    long dP2  = (h1&&h2) ? (g_spM2.pod-g_spM1.pod) : ((h2)?(g_spM2.pod-g_spB.pod):-1);
+    bool p3ok = (g_spP3Ran && GcAlive(g_spP3Ret));
+    bool p1ok = (g_spP1Ran && g_spP1Written==1 && g_spP1Ret && GcAlive(g_spP1Ret));
+    bool p2ok = (g_spP2Ran && g_spP2Written==1 && g_spP2Ret && GcAlive(g_spP2Ret));
+    if(g_spP1Ran&&g_spP1Written==0){
+        Marker("[PS] VERDICT (P1): the return SENTINEL SURVIVED -- nothing wrote a return at all. The callee "
+               "did NOT complete, so this run says nothing about whether the pooled spawn needs the pool. "
+               "Read the fault line and P0c before anything else; this is the same reading that made "
+               "S127's sentinel worth arming.\r\n"); }
+    else if(p1ok){
+        Markerf("[PS] ***** VERDICT (P1): SpawnPoolableActorFromClassDeferred RETURNED A LIVE ACTOR "
+                "(0x%llX) with the pool feature disabled. => THE FIRST LINK OF THE [I] CHAIN IS REFUTED: "
+                "the helper does NOT require the pool, 'PrimePools is not enabled' does NOT explain S127's "
+                "bail 2, and the disabled pool is a RED HERRING. Corroborate against the DropPod dP1 "
+                "column (%s).\r\n",(unsigned long long)g_spP1Ret,h1?"measured":"n/a -- mini-census off"); }
+    else if(g_spP1Ran&&!p1ok&&p2ok){
+        Marker("[PS] ***** VERDICT (P1 vs P2): the DEFERRED helper returned null while the NON-DEFERRED "
+               "sibling returned a live actor -- same world, same class, same transform, same "
+               "WorldContextObject. => the fault is in the DEFERRED PATH SPECIFICALLY, not in the pool as "
+               "such; a pool that could serve neither would have sunk P2 too.\r\n"); }
+    else if(g_spP1Ran&&g_spP2Ran&&!p1ok&&!p2ok&&p3ok){
+        Markerf("[PS] ***** VERDICT: BOTH pooled spawns returned null while the SAME class spawned fine "
+                "through the ordinary non-pooled path. => the class IS spawnable here, so the null belongs "
+                "to the POOL, and the [I] chain 'PrimePools disabled => pooled spawn returns null => "
+                "SpawnDropPodForTeam bail 2' is SUPPORTED at its first link for the first time.%s\r\n",p3q); }
+    else if(g_spP1Ran&&!p1ok&&g_spP3Ran&&!p3ok){
+        Markerf("[PS] VERDICT: the pooled spawn returned null AND the ordinary non-pooled reference spawn "
+                "ALSO produced nothing. => this class cannot spawn in this world at all right now, and the "
+                "actor pool is NEITHER implicated NOR exonerated. That is a STAGING statement -- but read "
+                "the P3 offset table and the P3 WorldContextObject line FIRST: if P3 failed for an "
+                "INSTRUMENT reason it is not a statement about the world either.%s\r\n",p3q); }
+    else if(g_spP1Ran&&!p1ok&&!g_spP3Ran){
+        Marker("[PS] VERDICT: the pooled spawn returned null, but P3 (the non-pooled reference) did not "
+               "run, so 'the pool declined' and 'this class cannot spawn here' are NOT separated. NOT a "
+               "result about the pool. Re-fly with KSPARMS bit5 set.\r\n"); }
+    else {
+        Markerf("[PS] VERDICT: no arm produced a readable outcome (P1 ran=%d, P2 ran=%d, P3 ran=%d). Treat "
+                "this sitting as VOID for Route F and read the per-arm NOT CALLED lines above -- each one "
+                "names its own reason.\r\n",g_spP1Ran,g_spP2Ran,g_spP3Ran); }
+    Markerf("[PS] corroboration: total DropPod delta BEFORE->AFTER = %+ld | dP1=%s | dP2=%s | P3 spawned "
+            "%s. Any pod P3 created is INSIDE the total and is labelled in the dP3 column.\r\n",
+            dPod,(dP1<0)?"n/a":((dP1>0)?"POSITIVE":"0"),(dP2<0)?"n/a":((dP2>0)?"POSITIVE":"0"),
+            p3ok?"an actor":"nothing");
+    Marker("[PS] ⚠ NOTHING IS UNDONE. Any actor these arms spawned is still in the world. Recovery = "
+           "restart the client.\r\n");
+}
+
 // ★★★★ S101 — DRIVE THE GAME'S OWN ABILITY-SYSTEM WIRING CHAIN.
 //
 // S100 measured that the force-open hero has NO ability system: AbilitySystemComponentStorage /
@@ -6750,7 +12050,7 @@ static void DoSpawnPossess(){
         memset(g_rbuf,0,sizeof(g_rbuf));
         CallNative(g_beginFn,g_beginThunk,g_beginChild,(void*)g_gsCDO,g_gsbuf,g_rbuf);
         uintptr_t deferred=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(deferred)) deferred=*(uint64_t*)(g_gsbuf+g_oBRet);
-        g_spStep=2; char dcn[96]="-"; if(LooksLikePtr(deferred)&&ClassOf(deferred))GetFNameStr(NameId(ClassOf(deferred)),dcn,sizeof(dcn));
+        g_pslStep=2; char dcn[96]="-"; if(LooksLikePtr(deferred)&&ClassOf(deferred))GetFNameStr(NameId(ClassOf(deferred)),dcn,sizeof(dcn));
         Markerf("[GS] deferred=0x%llX cls=%s\r\n",(unsigned long long)deferred,dcn);
         // 3. FinishSpawningActor(deferred, xform) -> spawned actor
         uintptr_t actor=0;
@@ -6760,7 +12060,7 @@ static void DoSpawnPossess(){
             CallNative(g_finishFn,g_finishThunk,g_finishChild,(void*)g_gsCDO,g_gsbuf,g_rbuf);
             actor=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(actor)) actor=*(uint64_t*)(g_gsbuf+g_oFRet); if(!LooksLikePtr(actor)) actor=deferred;
         }
-        g_spawnedPawn=actor; g_spStep=3;
+        g_spawnedPawn=actor; g_pslStep=3;
         char acn[96]="-"; if(LooksLikePtr(actor)&&ClassOf(actor))GetFNameStr(NameId(ClassOf(actor)),acn,sizeof(acn));
         Markerf("[GS] spawned actor=0x%llX cls=%s\r\n",(unsigned long long)actor,acn);
         // MESH DIAGNOSTIC (user: ring visible but NO character model): is the hero's SkeletalMesh assigned + visible?
@@ -6795,7 +12095,7 @@ static void DoSpawnPossess(){
         if(kDoPossess && LooksLikePtr(actor) && g_possessThunk){
             memset(g_gsbuf,0,sizeof(g_gsbuf)); *(uint64_t*)(g_gsbuf+g_offInPawn)=(uint64_t)actor; memset(g_rbuf,0,sizeof(g_rbuf));
             CallNative(g_possessFn,g_possessThunk,g_possessChild,(void*)g_pc2,g_gsbuf,g_rbuf);
-            g_spStep=4; Marker("[GS] possess called\r\n");
+            g_pslStep=4; Marker("[GS] possess called\r\n");
         }
         // COSMETICS: the hero's visual mesh is attached by the cosmetics system. Investigate state + try to trigger it.
         if(LooksLikePtr(actor)){
@@ -6860,14 +12160,14 @@ static void DoSpawnPossess(){
         *(uintptr_t*)(g_gm2+GM_DEFPAWN_OFF)=g_heroClass;
         Markerf("[SP] poked DefaultPawnClass@0x%X: %s -> BP_HERO_Ronin_C\r\n",GM_DEFPAWN_OFF,ocn);
     }
-    g_spStep=1; Marker("[SP] >>> calling SpawnDefaultPawnFor\r\n");
+    g_pslStep=1; Marker("[SP] >>> calling SpawnDefaultPawnFor\r\n");
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
     uint8_t* pb=(uint8_t*)g_pbuf;
     *(uint64_t*)(pb+g_offSpawnNP)=(uint64_t)g_pc2;
     *(uint64_t*)(pb+g_offSpawnSS)=(uint64_t)g_startSpot;
     CallNative(g_spawnFn,g_spawnThunk,g_spawnChild,(void*)g_gm2,g_pbuf,g_rbuf);
     uintptr_t pawn=(uintptr_t)g_rbuf[0]; if(!LooksLikePtr(pawn)) pawn=*(uint64_t*)(pb+g_offSpawnRet);
-    g_spawnedPawn=pawn; g_spStep=2;
+    g_spawnedPawn=pawn; g_pslStep=2;
     char pcn[96]="-"; if(LooksLikePtr(pawn)&&ClassOf(pawn)) GetFNameStr(NameId(ClassOf(pawn)),pcn,sizeof(pcn));
     Markerf("[SP] <<< SpawnDefaultPawnFor returned pawn=0x%llX cls=%s\r\n",(unsigned long long)pawn,pcn);
     if(kDoPossess && LooksLikePtr(pawn)){
@@ -6875,7 +12175,7 @@ static void DoSpawnPossess(){
         memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
         *(uint64_t*)((uint8_t*)g_pbuf+g_offInPawn)=(uint64_t)pawn;
         CallNative(g_possessFn,g_possessThunk,g_possessChild,(void*)g_pc2,g_pbuf,g_rbuf);
-        g_spStep=3; Marker("[SP] <<< Possess returned\r\n");
+        g_pslStep=3; Marker("[SP] <<< Possess returned\r\n");
     }
 }
 
@@ -7861,6 +13161,260 @@ static DWORD WINAPI Worker(LPVOID){
             return 10; }
         return (g_phStep>=7)?0:9;
     }
+    // ★★★★★ S125 RM_DROPPLANE — FK-22 arms B0..B4. Heap-only arming; NO module-image write and NO
+    //     memory poke of any kind. Both heavy GUObjectArray sweeps (B0's BEFORE census and B4's AFTER
+    //     census) run HERE, on the worker thread, so neither is a frame hitch inside a live world.
+    if(kRunMode==RM_DROPPLANE){
+        Marker("[DP] drop-plane mode (S125/FK-22): resolve the live DropPlane component -> BEFORE census ->\r\n"
+               "[DP] B0c POSITIVE CONTROL (GetAutoDropLocation, 0 push/0 pop) -> SpawnPlane() -> both phase\r\n"
+               "[DP] handlers direct -> AFTER census + delta table.\r\n"
+               "[DP] Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp -> this). Not meaningful at the menu.\r\n");
+#if KFUNCSWAP
+        Marker("[DP] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        Markerf("[DP] FFrame preparation: KFRAMEINIT=%d (%s). This is the single variable the S93 "
+                "reproduction A/B turns.\r\n",(int)KFRAMEINIT,
+                (KFRAMEINIT==0)?"UNFIXED -- the S93 REPRODUCTION ARM; a fault here is NOT attributable to SpawnPlane"
+                               :((KFRAMEINIT==1)?"ZEROONLY -- zeroes, strictly inside the [M] 0x48..0x80 bracket"
+                                               :"S80 -- the ds_hybrid recipe, the only form of this fix ever flown"));
+        // ★ RESOLVE + BEFORE CENSUS + MARKER SCAN ON THE WORKER THREAD, BEFORE ARMING. Three full
+        //   GUObjectArray sweeps; doing them from inside a game-thread dispatch would be a multi-second
+        //   hitch in a live tutorial world, and on the abort path it would spend that hitch producing a
+        //   diagnostic. Resolving here also means a failed resolve aborts BEFORE anything is armed.
+        if(!DpResolve()){
+            Marker("[DP] ABORT before arming: resolve failed. Nothing was armed, nothing was called, "
+                   "no `.text` was touched, and no game-thread time was spent.\r\n");
+            return 5; }
+        g_dpResolved=true;
+        DpCensus("B0-BEFORE",true,true,&g_dpC0);   // latches the BEFORE set every later census diffs against
+        DpMarkerScan();
+        if(!(KDPARMS&0x2E)){
+            Marker("[DP] KDPARMS selects NO calls -- this is the READ-ONLY arm. It is also the instrument's "
+                   "own null-delta control: any delta it reports voids every other variant's delta.\r\n");
+        }
+        if(!FsArm()){
+            Marker("[DP] FAIL funcswap arm -- no arm was run, nothing was called\r\n");
+            return 6; }
+        FsHold(KDPMODEHOLDMS);       // returns as soon as DoDropPlane sets g_done
+        FsDisarm();
+#else
+        // Deliberate refusal, exactly as RM_CHEATMGR and RM_PHASELADDER do. The alternative delivery
+        // path in this file is InstallHook() = a standing 5-byte .text patch at ProcessInternal,
+        // measured 10/10 armed-window deaths vs 3/36 with no module-image write (S112, Fisher
+        // p = 0.00000008). This mode's whole premise is that its effects are three UFunction calls and
+        // no writes at all; taking a .text patch to deliver them would invert the trade.
+        Marker("[DP] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a 5-byte .text patch at\r\n"
+               "[DP] ProcessInternal, measured 10/10 lethal (S112). Rebuild with KFUNCSWAP=1.\r\n");
+        return 7;
+#endif
+        DpFinalReport();
+        Markerf("[DP] done (step=%ld resolved=%d b1=%d b3a=%d b3b=%d called=%ld hitsGT=%ld)\r\n",
+                (long)g_dpStep,g_dpResolved?1:0,g_dpB1Ran,g_dpH1Ran,g_dpH2Ran,(long)g_called,(long)g_hitsGT);
+        // The exit code must agree with what the marker says, or a harness keying on it reads a starved
+        // ladder as a clean run (the RM_PHASELADDER lesson, applied up front).
+        if(g_dpStep<8){
+            Markerf("[DP] *** ALERT: the ladder did not reach its final step (stopped at %ld). The most "
+                    "likely cause is game-thread STARVATION -- read FsHold's own 8 s verdict line before "
+                    "reading anything else, and re-fly with KFSNAME=\"\" if the swap took no hits. "
+                    "Returning 9. ***\r\n",(long)g_dpStep);
+            return 9; }
+        return 0;
+    }
+    // ★★★★★ S126 RM_DROPMARKERS — ROUTE D: marker residency, then SpawnPlane behind a residency gate.
+    //     Heap-only arming (FsArm); NO module-image write. The ONLY memory writes are two 4-byte FName
+    //     ids inside an engine-owned `AActor.Tags` buffer, readback-verified and restored.
+    //     Every heavy sweep (resolve, BEFORE census, marker scan, victim enumeration) runs HERE on the
+    //     worker thread, before anything is armed, so a failed resolve costs zero game-thread time.
+    if(kRunMode==RM_DROPMARKERS){
+        Marker("[DM] drop-marker mode (S126/FK-22 Route D): resolve -> BEFORE census + marker scan ->\r\n"
+               "[DM] resolve the two marker FNames by TWO independent instruments (+3 controls) ->\r\n"
+               "[DM] pick two victim actors -> GATE-2 before -> write -> GATE-1 readback + GATE-2 after ->\r\n"
+               "[DM] positive control -> SpawnPlane (ONLY if the gate passed) -> restore -> delta table.\r\n"
+               "[DM] Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp -> this). Not meaningful at the menu.\r\n");
+#if KFUNCSWAP
+        Markerf("[DM] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write. "
+                "KOUTPARMRET=%d KFRAMEINIT=%d\r\n",(int)KOUTPARMRET,(int)KFRAMEINIT);
+        // DpResolve gives us the component, SpawnPlane (+ its runtime-read signature) and the B0c
+        // control, with the same enumerate-and-refuse discipline. Reusing it is deliberate: a second
+        // resolver would be a second thing to keep in lockstep.
+        if(!DpResolve()){
+            Marker("[DM] ABORT before arming: resolve failed. Nothing was armed, nothing was called, "
+                   "nothing was written.\r\n");
+            return 5; }
+        g_dpResolved=true;
+        DpCensus("D0-BEFORE",true,true,&g_dpC0);
+        // The BEFORE scan also latches the live TrainingStart actor + its stored FName id, which is the
+        // ground-truth control for the resolution route AND the validation target for UObject.Outer.
+        // ⚠ It runs BEFORE DmResolveNames, so it has no ids yet and matches by STRING; that is exactly
+        //   what makes it independent of the ids it is later used to check.
+        DmScanMarkers("D0-BEFORE",g_dmScanPre,true);
+        if(KDMARMS&0x02){
+            if(!DmResolveNames()){
+                Marker("[DM] ABORT before arming: the marker FNames did not resolve to one agreed id, or a "
+                       "control failed. NOTHING was written and NOTHING was called -- a guessed FName finds "
+                       "nothing and reads exactly like the bug we are trying to fix.\r\n");
+                return 8; }
+        } else { Marker("[DM] D1 disabled by KDMARMS -> no FName resolution, so no write is possible\r\n"); }
+        if((KDMARMS&0x04) && !DmPickVictims()){
+            Marker("[DM] ABORT before arming: victim selection failed. Nothing was written.\r\n");
+            return 8; }
+        DmResolveGat();
+        if(!FsArm()){ Marker("[DM] FAIL funcswap arm -- nothing was called; no tag was written\r\n"); return 6; }
+        FsHold(KDMMODEHOLDMS);
+        FsDisarm();
+#else
+        Marker("[DM] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a 5-byte .text patch at\r\n"
+               "[DM] ProcessInternal, measured 10/10 lethal (S112). Rebuild with KFUNCSWAP=1.\r\n");
+        return 7;
+#endif
+        DmFinalReport();
+        Markerf("[DM] done (step=%ld gate=%d written=%d restored=%d called=%ld hitsGT=%ld)\r\n",
+                (long)g_dmStep,g_dmGateOk,g_dmWritten?1:0,g_dmRestored?1:0,(long)g_called,(long)g_hitsGT);
+        if(g_dmStep<7){
+            Markerf("[DM] *** ALERT: the ladder did not reach its final step (stopped at %ld). Most likely "
+                    "game-thread STARVATION -- read FsHold's own 8 s verdict line first, and re-fly with "
+                    "KFSNAME=\"\" if the swap took no hits. Returning 9. ***\r\n",(long)g_dmStep);
+            return 9; }
+        return 0;
+    }
+    // ★★★★★ S126 RM_DROPPOD — ROUTE C: SpawnDropPodForTeam on the live LokiDropShip actor.
+    //     Heap-only arming; NO module-image write and NO memory poke of any kind. Both heavy
+    //     GUObjectArray sweeps (C0's BEFORE census and C4's AFTER census) run HERE, on the worker
+    //     thread, so neither is a frame hitch inside a live world.
+    if(kRunMode==RM_DROPPOD){
+        Marker("[PD] drop-pod mode (S126/FK-22 Route C): enumerate live LokiDropShip actors -> BEFORE census ->\r\n"
+               "[PD] C0c POSITIVE CONTROL (K2_GetActorLocation cross-checked against RPM) -> read both graded\r\n"
+               "[PD] bail points -> SpawnDropPodForTeam(team, spawnLoc, landLoc) -> AFTER census + delta table.\r\n"
+               "[PD] It needs NO level markers and NO round phase. Inject into the STAGED TUTORIAL WORLD\r\n"
+               "[PD] (gft -> fo -> sp -> this). Not meaningful at the menu -- FK-1 measured AS UClasses\r\n"
+               "[PD] unregistered there, and there is no ship to call on.\r\n");
+#if KFUNCSWAP
+        Marker("[PD] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        // ★ RESOLVE + BEFORE CENSUS ON THE WORKER THREAD, BEFORE ARMING (RM_PLAY's pattern). A failed
+        //   resolve then aborts before anything is armed, so the failure costs no game-thread time.
+        //   ⚠ ORDER MATTERS AND IS STATED: PdResolve MAY run C3's pre-spawn, which CREATES an actor.
+        //     The census is therefore taken first, and RE-TAKEN as the true baseline if C3 ran. The
+        //     DropPod row -- the Route C answer -- is unaffected either way, because SpawnPlane cannot
+        //     produce a pod.
+        DpCensus("C0-BEFORE",true,true,&g_pdB);
+        if(!PdResolve()){
+            Marker("[PD] ABORT before arming: resolve failed. Nothing was armed, no SpawnDropPodForTeam "
+                   "call was made, no `.text` was touched.\r\n");
+            // ★★ S126 FINALIZER FIX (MEDIUM, review). The READ-ONLY arm's whole job is to produce the
+            //    census's null-delta baseline, and the census needs NO ship. Returning here left
+            //    `droppod-readonly` unable to produce a delta table on exactly the world where it is
+            //    wanted (a freshly staged one, where no LokiDropShip exists yet) -- i.e. the control
+            //    was unobtainable in its own use case, and the launch would have yielded only a
+            //    staging statement. The AFTER census still runs; every row must read +0.
+            if(KPDARMS&0x10){
+                Marker("[PD] ...but the AFTER census does NOT need a ship. Running C4 anyway so this arm "
+                       "still yields its null-delta baseline. Route C itself is NOT-APPLICABLE this run.\r\n");
+                PdFinalReport();
+            }
+            return 5; }
+        if(g_pdPreSpawned){
+            Marker("[PD] C3 ran, so the BEFORE census predates a pre-spawned plane. Re-taking it as the "
+                   "true baseline for C1 -- the DropPlane/DropShip rows below are therefore C1-relative, "
+                   "and C3's own effect is stated separately in the pre-spawn lines above.\r\n");
+            DpCensus("C0-BEFORE(re-baselined after C3)",true,true,&g_pdB);
+        }
+        g_pdResolved=true;
+        if(!(KPDARMS&0x1EA))  // ★ S126: bit6 leader probe + bit7 E0 control + bit8 E1 are all real calls
+            Marker("[PD] KPDARMS selects NO calls -- this is the READ-ONLY arm, and it is the instrument's "
+                   "own null-delta control: any DropPod delta it reports voids every other variant's.\r\n");
+        if(!FsArm()){ Marker("[PD] FAIL funcswap arm -- no arm was run, nothing was called\r\n"); return 6; }
+        FsHold(KPDMODEHOLDMS);       // returns as soon as DoDropPod sets g_done
+        FsDisarm();
+#else
+        // Deliberate refusal, exactly as RM_CHEATMGR / RM_PHASELADDER / RM_DROPPLANE do. The alternative
+        // delivery path in this file is InstallHook() = a standing 5-byte .text patch at
+        // ProcessInternal, measured 10/10 armed-window deaths vs 3/36 with no module-image write
+        // (S112, Fisher p = 0.00000008). This mode's whole premise is that its effects are UFunction
+        // calls and no writes at all; taking a .text patch to deliver them would invert the trade.
+        Marker("[PD] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a 5-byte .text patch at\r\n"
+               "[PD] ProcessInternal, measured 10/10 lethal (S112). Rebuild with KFUNCSWAP=1.\r\n");
+        return 7;
+#endif
+        PdFinalReport();
+        Markerf("[PD] done (step=%ld resolved=%d c0c=%d c1=%d preSpawn=%d called=%ld hitsGT=%ld)\r\n",
+                (long)g_pdStep,g_pdResolved?1:0,g_pdCtlRan,g_pdC1Ran,g_pdPreSpawned,(long)g_called,(long)g_hitsGT);
+        // The exit code must agree with what the marker says, or a harness keying on it reads a starved
+        // ladder as a clean run (the RM_PHASELADDER lesson, applied up front).
+        if(g_pdStep<8){   // ★ S126: the ladder grew from 5 steps to 8 (E0 at 2, E1 at 6, after-E1 at 7).
+                          //   A stale threshold here would read a ladder that starved inside Route E as a
+                          //   clean run -- the RM_PHASELADDER lesson, which is why it is updated with them.
+            Markerf("[PD] *** ALERT: the ladder did not reach its final step (stopped at %ld). The most "
+                    "likely cause is game-thread STARVATION -- read FsHold's own 8 s verdict line before "
+                    "reading anything else, and re-fly with KFSNAME=\"\" if the swap took no hits. "
+                    "Returning 9. ***\r\n",(long)g_pdStep);
+            return 9; }
+        return 0;
+    }
+    // ★★★★★ S128 RM_POOLSPAWN — ROUTE F: does the pooled spawn need the actor pool?
+    //     Heap-only arming; NO module-image write and NO memory poke of any kind.
+    //     ⚠⚠ COST, STATED HONESTLY: the two FRAMING GUObjectArray sweeps (P0's BEFORE census and P4's
+    //        AFTER census) run HERE, on the worker thread, so neither is a frame hitch. The THREE
+    //        mini-censuses (ladder steps 3/5/7) do NOT -- they run inside the funcswap callback on the
+    //        GAME THREAD, so this mode costs FIVE full ~200k-object sweeps, three of them on the game
+    //        thread. That is the same shape RM_DROPPOD and RM_DROPPLANE already fly, but an earlier
+    //        draft of this comment claimed only the two worker-thread sweeps existed, which understates
+    //        the frame cost by three. `KSPMINICENSUS=0` drops the three at the price of losing per-arm
+    //        attribution (the dP1/dP2/dP3 columns then read n/a, which the delta table says outright).
+    if(kRunMode==RM_POOLSPAWN){
+        Marker("[PS] poolspawn mode (S128/FK-22 Route F): resolve ULokiGameplayStatics + its CDO + BOTH\r\n"
+               "[PS] pooled-spawn statics -> BEFORE census -> P0c POSITIVE CONTROL -> P1 Deferred ->\r\n"
+               "[PS] P2 NonDeferred -> P3 non-pooled reference -> AFTER census + delta table.\r\n"
+               "[PS] It answers ONE question: is 'PrimePools is not enabled' a real cause of S127's\r\n"
+               "[PS] bail 2, or a red herring? Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp ->\r\n"
+               "[PS] this). Not meaningful at the menu: no world, no GameMode, nothing to spawn into.\r\n");
+#if KFUNCSWAP
+        Marker("[PS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        // ★ RESOLVE + BEFORE CENSUS ON THE WORKER THREAD, BEFORE ARMING (RM_PLAY's pattern). A failed
+        //   resolve then aborts before anything is armed, so the failure costs no game-thread time.
+        //   ⚠ SpResolve makes NO calls, so unlike RM_DROPPOD's C3 it cannot move the baseline; the
+        //     census is taken first purely so a resolve abort still leaves a usable BEFORE row.
+        DpCensus("P0-BEFORE",true,true,&g_spB);
+        if(!SpResolve()){
+            Marker("[PS] ABORT before arming: resolve failed. Nothing was armed, no spawn of any kind was\r\n"
+                   "[PS] attempted, no `.text` was touched.\r\n");
+            // The READ-ONLY arm's whole job is the census's null-delta baseline, and the census needs
+            // none of the things a resolve can fail on. Run P4 anyway so the arm still yields it.
+            if(KSPARMS&0x80){
+                Marker("[PS] ...but the AFTER census does NOT need any of that. Running P4 anyway so this "
+                       "arm still yields its null-delta baseline. Route F itself is NOT-APPLICABLE this run.\r\n");
+                SpFinalReport();
+            }
+            return 5; }
+        g_spResolved=true;
+        if(!(KSPARMS&0x12A))
+            Marker("[PS] KSPARMS selects NO calls -- this is the READ-ONLY arm, and it is the instrument's "
+                   "own null-delta control: any DropPod delta it reports voids every other variant's.\r\n");
+        if(!FsArm()){ Marker("[PS] FAIL funcswap arm -- no arm was run, nothing was called\r\n"); return 6; }
+        FsHold(KSPMODEHOLDMS);       // returns as soon as DoPoolSpawn sets g_done
+        FsDisarm();
+#else
+        // Deliberate refusal, exactly as RM_CHEATMGR / RM_PHASELADDER / RM_DROPPLANE / RM_DROPPOD do.
+        // The alternative delivery path in this file is InstallHook() = a standing 5-byte .text patch at
+        // ProcessInternal, measured 10/10 armed-window deaths vs 3/36 with no module-image write
+        // (S112, Fisher p = 0.00000008). This mode's whole premise is that its effects are UFunction
+        // calls and no writes at all; taking a .text patch to deliver them would invert the trade.
+        Marker("[PS] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a 5-byte .text patch at\r\n"
+               "[PS] ProcessInternal, measured 10/10 lethal (S112). Rebuild with KFUNCSWAP=1.\r\n");
+        return 7;
+#endif
+        SpFinalReport();
+        Markerf("[PS] done (step=%ld resolved=%d p0c=%d p1=%d p2=%d p3=%d called=%ld hitsGT=%ld)\r\n",
+                (long)g_pslStep,g_spResolved?1:0,g_spCtlRan,g_spP1Ran,g_spP2Ran,g_spP3Ran,
+                (long)g_called,(long)g_hitsGT);
+        // The exit code must agree with what the marker says, or a harness keying on it reads a starved
+        // ladder as a clean run (the RM_PHASELADDER lesson, applied up front). The ladder has 9 steps
+        // (0..8); if this mode ever grows one, THIS THRESHOLD MOVES WITH IT.
+        if(g_pslStep<8){
+            Markerf("[PS] *** ALERT: the ladder did not reach its final step (stopped at %ld). The most "
+                    "likely cause is game-thread STARVATION -- read FsHold's own 8 s verdict line before "
+                    "reading anything else. Returning 9. ***\r\n",(long)g_pslStep);
+            return 9; }
+        return 0;
+    }
     if(kRunMode==RM_PLAY){
         Marker("[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)\r\n");
         if(!ResolvePlay()){ Marker("[PL] resolve failed -> abort\r\n"); return 0; }
@@ -7924,7 +13478,7 @@ static DWORD WINAPI Worker(LPVOID){
         UninstallHook();
         char pcn[96]="-"; if(LooksLikePtr(g_spawnedPawn)&&ClassOf(g_spawnedPawn)) GetFNameStr(NameId(ClassOf(g_spawnedPawn)),pcn,sizeof(pcn));
         Markerf("[SP] done step=%ld spawnedPawn=0x%llX cls=%s (called=%ld hitsGT=%ld)\r\n",
-            (long)g_spStep,(unsigned long long)g_spawnedPawn,pcn,(long)g_called,(long)g_hitsGT);
+            (long)g_pslStep,(unsigned long long)g_spawnedPawn,pcn,(long)g_called,(long)g_hitsGT);
         return 0;
     }
     DWORD dl=GetTickCount()+120000; while(GetTickCount()<dl){ Resolve(); if(g_worldCtx&&g_eccThunk&&g_eccChild&&g_offCmd!=0xFFFFFFFF)break; Sleep(500);}
