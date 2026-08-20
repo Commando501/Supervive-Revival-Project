@@ -516,3 +516,69 @@ path calls the allocator on a foreign pointer.
 * ★ **Method note worth keeping: driving the path is what made this readable.** These pages entered
   `merged4.dump.exe` only because R4 executed them. The analysis that closed the gap was possible
   *because* the "uninterpretable" call was made.
+
+---
+
+# 13. ⚠⚠ A LANE'S HEADLINE FIND, REFUTED BY ONE LIVE READ — and why it mattered
+
+The offline follow-up's lane A billed this as *"the lane's most consequential find"*:
+
+> `0x55CE140` (`ULokiRideableComponent` vtable override) reads `World->AuthorityGameMode`,
+> `IsA<ALokiRoundGameMode>`-checks it, and **caches it at `Component+0xE0`** ⇒ a free live readback:
+> read `[RideableComponent + 0xE0]`; non-null means the only thing between us and the success path
+> is the fold.
+
+**It is wrong, and following it would have had S132 reading a delegate and drawing a conclusion.**
+
+## 13.1 The refutation — live reflection, read BY NAME
+
+`scratchpad/s131/tools/rideable_state.py` on the actual component:
+
+```
+OnCanExitChanged             0xD0   16  MulticastInlineDelegateProperty
+OnPlayersInsideCountChanged  0xE0   16  MulticastInlineDelegateProperty   <== NOT a game-mode cache
+OnPlayerEntered              0xF0   16  MulticastInlineDelegateProperty
+```
+
+⇒ **[M] `ULokiRideableComponent + 0xE0` is `OnPlayersInsideCountChanged`, a 16-byte multicast
+delegate** — the same offset lane E independently assigned it from `OnRep_PlayersInsideCount`
+(`0x55E0FC6`). And a raw read of `+0xD8..+0xF0` on **all three** live rideable components returns
+**all zeros**, so the proposed readback would have returned null on every one of them.
+
+## 13.2 Where it went wrong — and lane A's own caveat already said so
+
+`0x55CE140` really does do what lane A describes: `rbx = rcx = this`, `[rbx+0xC0]` (a
+`UActorComponent::WorldPrivate` read), `[rax+0x250]` = `World->AuthorityGameMode`,
+`IsA<ALokiRoundGameMode>`, then `mov [rbx+0xE0], rdi`. **The disassembly is right. The CLASS
+ATTRIBUTION is not.**
+
+Lane A reached `ULokiRideableComponent` from a vtable-boundary walk it flagged in the same paragraph:
+
+> *"The exact vtable slot index is **UNRESOLVED** — adjacent vtables are contiguous in `.rdata` and my
+> boundary walk overruns (it reported 3142 slots, which is nonsense) … [I, strong], not [M]."*
+
+⇒ ⚠⚠ **The report graded the class attribution `[I, strong]` and then stated the consequence as
+`[M]`.** That is a grade silently upgrading across one inference step — the exact failure the brief
+asked verifiers to catch, committed by the lane that was carrying the best news.
+
+## 13.3 What survives, and it is still worth something
+
+The *mechanism* is real and is a **corroboration**, not a lever:
+
+* **[M] some unstripped `UActorComponent` lifecycle override resolves `World->AuthorityGameMode`,
+  `IsA<ALokiRoundGameMode>`-checks it, and caches the result.** That independently confirms lane E's
+  `UWorld::AuthorityGameMode @ UWorld+0x250` and shows the type check is not stripped.
+* ⛔ **It cannot help the wall.** The wall calls a getter that is `xor eax,eax; ret` with **zero memory
+  operands** — no cached value anywhere can be injected into it. §12.2's conclusion is unchanged.
+* ★ **Cheap open follow-up:** identify which component class that is (find the live class with an
+  ObjectProperty at `+0xE0` whose vtable contains `0x55CE140`). If it is resident in a staged world,
+  `[thatComponent + 0xE0]` is a free live pointer to the round game mode. **Useful for any future call
+  site that actually consumes one — which this wall does not.**
+
+## 13.4 The method point
+
+Two lanes were given the same region and **disagreed about one offset**. The disagreement was visible
+only because both reported the offset explicitly, and it was settled in one command by a third
+instrument — live reflection read by name — rather than by preferring the more confident write-up.
+★ **Ask two agents the same structural question and compare their offsets; a silent agreement is worth
+much less than a caught contradiction.**

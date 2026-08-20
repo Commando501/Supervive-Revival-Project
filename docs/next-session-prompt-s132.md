@@ -151,6 +151,35 @@ Full `.data` record-table census, **16,277 records**, 12/12 non-degenerate contr
   Whether AS supplies an alternate route around each of the 23 stubs is what decides whether 23 is the
   real number or an over-count.
 
+### E2. ⚠⚠ ONE LANE'S HEADLINE FIND IS REFUTED — do not chase `[RideableComponent + 0xE0]`
+
+Lane A (`scratchpad/s131/lanes2/r04-*.md`) bills as *"the lane's most consequential find"* that
+`0x55CE140` caches a round game mode at **`ULokiRideableComponent + 0xE0`**, and proposes reading it
+as a free check. **REFUTED live, and following it would have you reading a delegate.**
+
+**[M] `+0xE0` is `OnPlayersInsideCountChanged`, a 16-byte MulticastInlineDelegateProperty** — read BY
+NAME off the live class (`scratchpad/s131/tools/rideable_state.py`), and independently assigned the
+same offset by lane E from `OnRep_PlayersInsideCount` (`0x55E0FC6`). A raw read of `+0xD8..+0xF0` on
+**all three** live rideable components returns **all zeros**.
+
+Where it went wrong: the disassembly is correct, the **class attribution** is not. Lane A reached
+`ULokiRideableComponent` from a vtable-boundary walk it flagged in the same paragraph as UNRESOLVED
+("it reported 3142 slots, which is nonsense") and graded `[I, strong]` — then stated the consequence
+as `[M]`. **A grade upgraded silently across one inference step.**
+
+What survives: **[M] some unstripped `UActorComponent` lifecycle override does resolve
+`World->AuthorityGameMode`, `IsA<ALokiRoundGameMode>`-check it, and cache it.** That corroborates
+`UWorld+0x250` and shows the type check is unstripped. ⛔ It cannot help the wall — a getter with
+**zero memory operands** cannot be fed a cached value from anywhere.
+★ Cheap open follow-up: find which component class it is (live class with an ObjectProperty at
+`+0xE0` whose vtable holds `0x55CE140`); if it is resident, `[that + 0xE0]` is a free live pointer to
+the round game mode — useful for a future call site that actually consumes one.
+
+★★ **METHOD, and it generalises:** two lanes were given the same region and disagreed about one
+offset. The disagreement was visible only because **both printed the offset explicitly**, and it was
+settled in one command by a third instrument (live reflection, read by name) rather than by preferring
+the more confident write-up. **Ask two agents the same structural question and diff their offsets.**
+
 ### F. Corrections to the record that fell out of this
 
 * **`GetLandingTeleportLocation` is REAL** (`0x55D89F0`, 963 B, 0 folds). FK-22 §2.5 lists it
