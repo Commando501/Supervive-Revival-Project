@@ -1,74 +1,67 @@
-# NEXT SESSION (S131) — FK-22: the NULL is settled; the next wall is C8/C9, and one live read remains
+# NEXT SESSION (S131) — FK-22: the NULL is settled end to end; the next wall is C8/C9
 
-**Written 2026-08-20 at the end of S130.** Read `docs/s130-actor-pool-gate-settled.md` (**§11 first**),
-then `docs/fk22-dropphase-reachability.md` §25–§26. This file is the plan; those are the evidence.
+**Written 2026-08-20 at the end of S130.** Read `docs/s130-actor-pool-gate-settled.md` (**§11 then
+§12**), then `docs/fk22-dropphase-reachability.md` §25–§27. This file is the plan; those are the evidence.
 
 ---
 
-## 0. WHAT CHANGED — read this before anything else
+## 0. WHAT CHANGED — the whole S130 plan is complete, including its own successor task
 
-S129 handed over two tasks; **both were done offline, with no launch.** Then the session's own
-first task (C7) was *also* done offline, so **the entire S130 plan is complete and this is a fresh
-frontier.**
-
-1. **The pool gate is named:** `ULokiActorPoolManager` slot 90 returns
+1. **The pool gate is named** — `ULokiActorPoolManager` slot 90 returns
    `Cast<ALokiGameState>(GetWorld()->GameState)->bSupportsActorPoolPriming` (`+0x898`), false because
-   **`BP_LokiGameState_Tutorial`'s shipped class default sets it `False`**. There is **no ini route**;
-   `ActorPoolManagerPrimingConfig` is a USTRUCT with zero properties and no consumer.
-2. ⚠ **The pool was never the blocker.** An unprimed pool **cannot** return NULL — the acquire
+   `BP_LokiGameState_Tutorial`'s shipped class default sets it `False`. **No ini route exists.**
+2. ⚠ **The pool was never the blocker.** An unprimed pool cannot return NULL — the acquire
    `TMap::FindOrAdd`s and a pool miss falls to a shipped fallback into a normal `UWorld::SpawnActor`.
-3. ★★★★★ **THE NULL IS `bCanEverReplicate`.** `C7 @ 0x564820C` is
-   `cmp byte ptr [CDO + 0x6C], 0 ; jne -> NULL`, `AActor+0x6C` is `AActor::bCanEverReplicate`,
-   `AActor`'s ctor sets it **1** (`0x03371841`), neither drop-pod Blueprint overrides it, and
-   `SpawnDropPodForTeam` wraps its entire body in `if (spawn != null)` with **no else**.
-   ⇒ **bail 2 is explained end to end, with no reference to the actor pool.**
+3. ✅ **THE NULL IS `AActor::bCanEverReplicate`.** `C7 @ 0x564820C` is
+   `cmp byte ptr [CDO + 0x6C], 0 ; jne -> NULL`; `AActor`'s ctor sets it **1** (`0x03371841`); neither
+   drop-pod Blueprint overrides it; `SpawnDropPodForTeam` (`LokiDropShip.as:153`) wraps its entire
+   body in `if (spawn != null)` with **no else**. ⇒ **bail 2, explained end to end.**
+4. ✅ **AND THE RUNTIME READ IS FLOWN — the runtime CDO byte IS the cooked class default.**
+   One clean `-NoHook` **menu** launch, read-only RPM, zero injection, no staging:
+   **8/8 pre-registered predictions, 0 failures**, two-sided controls on **two** offsets.
+   ⇒ **C7 fires. Every link in the chain is [M].**
 
-**Do not spend a launch on the actor pool.** It is a shipped design decision, fully characterised.
-
----
-
-## 1. START HERE — ONE read, and it is the only thing blocking the model
-
-**Read `byte[CDO(BP_GemV2_C) + 0x6C]` on any live client that has a world.**
-
-Why this one: the cooked class default says `bCanEverReplicate = true` for **both** the drop pod
-**and** `BP_GemV2` — and gems are the one class Angelscript explicitly opts into pooling
-(`LokiGem.as:1129`), whose caller has the **identical** no-fallback shape. So on cooked values gems
-fail the same gate, which the shipped game appears to contradict. Exactly one of these is true and
-**none is measured**:
-
-| # | hypothesis | what the read shows |
-|---|---|---|
-| 1 | something clears the byte at class load / `PostInitProperties` | reads **0** |
-| 2 | gems/pods never use this path in real matches | reads **1** |
-| 3 | the path is genuinely inert for replicated actors in this build | reads **1** |
-
-★ **If it reads 0, then the runtime CDO is not the cooked value and C7 may not fire at all** — in
-which case re-read `byte[CDO(BP_DropPod_Tutorial_C)+0x6C]` before believing anything downstream.
-⚠ **Until this read exists: C7 is [M] for the COOKED class default and [I, strong] for the RUNTIME
-byte. Do not collapse the two.**
-
-`GUObjectArray` walk: `RVA 0x9E38920`, `ObjObjects` at `+0x10`, chunk table, stride 24, class at
-obj`+0x18`, name id at obj`+0x20`. Find `Default__BP_GemV2_C` and `Default__BP_DropPod_Tutorial_C`.
+**Nothing on the actor pool is worth a launch.** It is a shipped design decision, fully characterised.
 
 ---
 
-## 2. THEN — the repair, if the read confirms 1
+## 1. START HERE — the repair, and it is now measurement-backed
 
-**Poke `CDO(BP_DropPod_Tutorial_C) + 0x6C = 0`**, readback-verify, then dispatch
-`SpawnDropPodForTeam` via the existing Route E (ProcessEvent slot 78, `droppod_pe` build).
+**Poke `CDO(BP_DropPod_C) + 0x6C = 0`**, readback-verify, then dispatch `SpawnDropPodForTeam` via
+Route E (ProcessEvent slot 78, `droppod_pe` build).
+
+★ **Use `BP_DropPod_C`, not the leaf.** `Default__BP_DropPod_Tutorial_C` is **not loaded at the menu**
+(and may not be when the shim runs); `Default__BP_DropPod_C` **is**, it is the leaf's direct parent,
+and it reads **1** live (`0x241BA0290E0` on the S130 run — ASLR-dependent, **re-derive per launch**
+with `tools/re/cdo_flag_readout.py <PID> <BASE>`).
 
 * **Write class:** one aligned byte on a class default object — the safest measured class
   (nothing 0/22 · bytecode 0/9 vs transient `.text` 4/12 · standing `.text` 7/8), free readback.
-* **Arms A → B → A**, single variable, DropPod census as the readout (`dP` delta), exactly as S128.
+* **Arms A → B → A**, single variable, DropPod census (`dP` delta) as the readout, exactly as S128.
 * ⚠ **It mutates a CLASS DEFAULT** — every drop pod for the process lifetime, and it may break the
-  pod's replication. Not a default-set shim.
-* ⚠ **Expect the next wall at C8 or C9**, which are **untested rather than excluded**: C7 returns
-  before either is reached, so nothing downstream of it has ever executed.
+  pod's replication. **Not** a default-set shim.
+* ⚠⚠ **Expect the next wall immediately at C8 or C9. They have NEVER been reached** — C7 returns
+  before either, so nothing downstream of it has ever executed. Budget the sitting for a *new* wall,
+  not for success.
   C8 = `PoolMgr->GetWorld() == null` (`0x5648D97`) · C9 = `UWorld::SpawnActor` null, **or never
   invoked because `rbx == 0` at `0x5648E34`** (`0x5648E6F`).
 * ★ And even a spawned pod hits the **FIFTH wall** at the rider handoff —
   `AuthPlayerEnterWorldAttachedToRidable` (`0x55CD510`) always fails on a stripped fold.
+
+---
+
+## 2. THE ONE THING THE RUNTIME READ DID *NOT* CLOSE
+
+`Default__BP_DropPod_Tutorial_C` was never read directly — it is not loaded at the menu. Its value
+rests on three ancestors reading **1** live, on [M] that it overrides neither flag, and on the
+cooked→runtime mapping being validated **3/3 in both polarities**. **Only staging a tutorial world
+closes it outright**, and the repair in §1 does that anyway — so read it in the same sitting:
+`tools/re/cdo_flag_readout.py` already lists it as a target and will print it once loaded.
+
+⚠ **Also still open, and NOT worth a launch on its own:** gems read **1** too, so the pooled spawn
+returns NULL for them as well. The gem call site is `LokiGem.as:168 SpawnExtraGemWithTeam` — an
+*extra*-gem spawner — but **whether the game's primary gem path uses it is UNESTABLISHED.** Settling
+it needs an offline survey of the other gem spawn routes, not a client.
 
 ---
 
@@ -147,22 +140,23 @@ one-byte change with a built-in positive control**, and it settles what the pool
 ## 7. WHERE FK-22 STANDS
 
 ```
-markers        REFUTED  (S124 -- they exist in LVL_Tutorial; Skylands_WP has none)
+markers        REFUTED  (S124)
 phase          SOLVED   (S124 -- one GoToPhase call self-drives the round to EGP_Combat)
 subscription   DEAD     (S124 -- ServerOnly; the DropPlane component is not in the invocation list)
 SpawnPlane     FAULTS   (S124/S17 -- 2 of 3 tagged markers are not streamed in)
 SpawnDropPodForTeam  runs via ProcessEvent slot 78, returns false   = bail 2
   |
   +- the pooled spawn returns NULL
-       +- NOT because the actor pool is disabled      <-- REFUTED  S130 §25
-       +- because C7 rejects bCanEverReplicate = true <-- SETTLED  S130 §26
-            |
-            +- ONE live read left: byte[CDO(BP_GemV2_C)+0x6C]   <-- YOU ARE HERE
-            +- then the one-byte CDO poke + Route E dispatch
-            +- then C8 / C9, which have NEVER been reached
-            +- and then the FIFTH wall at the rider handoff
-               (AuthPlayerEnterWorldAttachedToRidable, always fails on a stripped fold)
+       +- NOT because the actor pool is disabled       <-- REFUTED S130 §25
+       +- because C7 rejects bCanEverReplicate = true  <-- SETTLED S130 §26
+            +- and the RUNTIME CDO byte == the cooked default  <-- FLOWN, 8/8  S130 §27
+                 |
+                 +- next: poke CDO(BP_DropPod_C)+0x6C = 0, then Route E   <-- YOU ARE HERE
+                 +- then C8 / C9, which have NEVER been reached
+                 +- and then the FIFTH wall at the rider handoff
+                    (AuthPlayerEnterWorldAttachedToRidable, always fails on a stripped fold)
 ```
 
-⚠ **Every arrow above is measured. The only [I] left in the chain is whether the RUNTIME CDO byte
-equals the cooked class default — which is exactly what §1 reads.**
+✅ **Every arrow above is measured.** The only inference left in the chain is the leaf CDO
+(`BP_DropPod_Tutorial_C`), which is one inheritance hop and closes for free the moment a tutorial
+world is staged.

@@ -5,7 +5,11 @@
 > CDO** and the acquire refuses any replicating class (`C7 @ 0x564820C`). `AActor`'s C++ ctor sets
 > that byte to 1 (`0x03371841`), neither Blueprint overrides it, and `SpawnDropPodForTeam` bails on
 > the null **with no fallback** — which is exactly S127's bail 2. **§8's Phase A4 was pre-registered
-> as a live read and did not need one.** Read §11 first; §4's C7 row is superseded by it.
+> as a live read and did not need one.**
+> ✅✅ **AND §12 THEN FLEW THE ONE READ THAT WAS LEFT: the RUNTIME CDO byte EQUALS the cooked class
+> default — 8/8 pre-registered predictions, two-sided controls on two offsets, one clean MENU launch,
+> read-only RPM. C7 FIRES, and the last [I] in the chain is now [M].**
+> Read §11 then §12; §4's C7 row is superseded by them.
 
 **Date:** 2026-08-19/20. **Offline: zero launches, zero injections, zero `.text` writes.**
 Images: `dumps/s129-poolgate/SUPERVIVE-Win64-Shipping.dump.exe` (ImageBase `0x7FF7B86D0000`, `.text`
@@ -544,8 +548,10 @@ world, read `byte[CDO(BP_GemV2_C) + 0x6C]`. If it reads **1**, the cooked value 
 and (2)/(3) are the live options. If it reads **0**, hypothesis (1) is right and the *cooked* value
 is not what C7 sees — in which case the drop pod's runtime byte must be read too, and C7 may not
 fire after all.
-⚠ **Until that read exists, "C7 fires on the live drop pod CDO" is [M] for the COOKED value and
-[I, strong] for the RUNTIME value.** Say it that way; do not collapse the two.
+✅ **THE READ WAS FLOWN — SEE §12.** `Default__BP_GemV2_C + 0x6C` reads **1** live, so hypothesis (1)
+is **REFUTED**; the runtime byte IS the cooked default, and C7 fires. ⚠ The remaining question is now
+(2) vs (3), and §12.5 narrows it: the gem call site is `SpawnExtraGemWithTeam`, an *extra*-gem
+spawner — **but whether the game's primary gem path uses it is UNESTABLISHED.**
 
 ### 11.6 The repair this implies — and it is one byte, on the safest write class
 
@@ -568,3 +574,93 @@ and the command printed **`No matching UFunction '@props' found`**, which reads 
 asset has no such property"* and is not. `@props` wants a UObject export, not a UFunction, precisely
 like `@imports` next to it. **Fixed**; validated by re-dumping `BP_LokiGameState_Tutorial` first and
 reproducing its known `bSupportsActorPoolPriming = False` before trusting the new dumps.
+
+---
+
+## 12. FLOWN — THE RUNTIME CDO **EQUALS** THE COOKED DEFAULT. C7 FIRES. [I, strong] → [M]
+
+**Date:** 2026-08-20. **One clean `-NoHook` MENU launch, read-only RPM, zero injection, zero writes,
+zero `.text` touched, no tutorial staging.** PID 17736, base `0x7FF7C4050000`, 190,085 UObjects,
+**10,371 CDOs** live. Probe: `tools/re/cdo_flag_readout.py` (predictions written into the file
+*before* the first run). Raw output: `scratchpad/s130/evidence/cdo_flag_readout-s130-live.txt`.
+
+### 12.1 The result — 8/8 pre-registered predictions passed, 0 failures
+
+| object | `+0x6C` `bCanEverReplicate` | predicted | `+0x2D3` `bEnablePooling` |
+|---|---|---|---|
+| `Default__Actor` | **1** | 1 ✅ | **0** |
+| `Default__LokiDropPodBase` | **1** | 1 ✅ | 1 |
+| `Default__LokiDropPod` | **1** | 1 ✅ | 1 |
+| `Default__BP_DropPod_C` | **1** | 1 ✅ | 1 ✅ |
+| `Default__LokiGem` | **1** | 1 ✅ | 1 ✅ |
+| `Default__BP_GemV2_C` | **1** | 1 ✅ | 1 ✅ |
+| `Default__LokiHeroHeightIndicator` | **0** | 0 ✅ | 1 ✅ |
+| `Default__BP_HeroHeightIndicator_C` | **0** | 0 ✅ | 1 ✅ |
+| `Default__BP_DropPod_Tutorial_C` | *not loaded* | — | — |
+
+⇒ **THE RUNTIME CDO BYTE IS THE COOKED CLASS DEFAULT.** §11.5's hypothesis (1) — *"something clears
+the byte at class load / `PostInitProperties`"* — is **REFUTED**.
+⇒ **C7 fires on the drop pod. The pooled spawn's NULL is fully explained, and every link is now [M].**
+
+### 12.2 The controls, and why they carry the result
+
+* ★★ **Two-sided on `+0x6C`.** Six objects read **1**, two read **0**, split **exactly** along the
+  cooked value. The probe's own instrument check prints *"targets differ ([0, 1]) — the probe
+  discriminates"*; had everything read the same it would have declared the run **VOID**.
+* ★★ **`Default__Actor + 0x6C = 1` is the disassembly and the live process meeting on one byte** —
+  `AActor::AActor` `0x03371841 mov byte ptr [rdi+0x6c], 1` predicted it, and the running game confirms it.
+* ★★ **A SECOND two-sided control appeared that was NOT predicted:** `Default__Actor + 0x2D3 = **0**`
+  while every poolable class reads **1**. That independently confirms `+0x2D3` is `bEnablePooling`
+  (off on the root, opted into per class) — a control on the *other* offset, from the same read.
+* ★ **The cooked↔runtime mapping is validated 3/3 on loadable classes, in BOTH polarities**
+  (`BP_GemV2_C` true→1, `BP_DropPod_C` true→1, `BP_HeroHeightIndicator_C` false→0).
+
+### 12.3 ⚠ The leaf class was NOT read directly, and here is exactly how strong the claim is
+
+`Default__BP_DropPod_Tutorial_C` **is not loaded at the menu**, so its byte was not read.
+The claim that it is `1` rests on:
+(a) **all three of its ancestors read 1 live** — `LokiDropPodBase`, `LokiDropPod`, `BP_DropPod_C`
+    (its direct parent, [M] `SuperStruct -> BP_DropPod_C`);
+(b) **[M] it overrides neither flag** (`bpdump @props`, a populated 83-line / 23-export dump);
+(c) ★★ **[M] the cooked→runtime mapping is validated 30/30 — 16 cooked-true and 14 cooked-false,
+    both polarities, ZERO disagreements**, over every live CDO joinable against a cooked tag
+    (, one GUObjectArray walk, 10,025 CDOs scanned;
+    evidence ). Its cooked value is `true`.
+    ⚠ The tool refuses to call a one-sided sample discriminating — it prints an explicit
+    *ONE-SIDED SAMPLE … treat as inconclusive* guard, which did not fire here.
+⇒ **[M] for the ancestors and the mapping; the leaf itself is one inheritance hop of inference.**
+Staging a tutorial world would close it outright and is the only thing that would.
+
+### 12.4 ★ A finding that fell out of the failed first attempt
+
+The first probe run found **none** of the four Blueprint CDOs, while 10,371 CDOs were live.
+⇒ **`LogActorPooling: Adding <X> to list of poolable actors` does NOT load the class.** It is an
+**AssetRegistry query** (`bEnablePooling` is `CPF_AssetRegistrySearchable`), so all 176 registrations
+happen at the menu against *cooked tags*, with no CDO in memory.
+⚠ **"Registered as poolable" is therefore NOT evidence that a class is loaded** — a distinction that
+would silently corrupt any census keyed on those log lines. The probe reported `NOT LOADED (this is
+NOT a zero)` rather than reading offset `0x6C` of a null, which is the only reason this surfaced as a
+finding instead of as four confident zeros.
+★ `BP_GemV2_C`, `BP_DropPod_C` and `BP_HeroHeightIndicator_C` **are** loaded at the menu — so the
+registration and the load are independent, and which classes happen to be loaded is not predictable
+from the pooling log.
+
+### 12.5 ⚠ And the §11.5 puzzle is now sharper, not solved
+
+`Default__BP_GemV2_C + 0x6C = 1` **at runtime**, so `SpawnPoolableActorFromClassDeferred` returns
+NULL for gems too — hypothesis (1) is dead, leaving (2) *"gems/pods never use this path in real
+matches"* and (3) *"the path is inert for replicated actors in this build"*.
+★ **One fact narrows it:** the gem call site is `LokiGem.as:168 SpawnExtraGemWithTeam` — an
+***extra***-gem spawner, not demonstrably the primary gem drop. ⚠ **Whether the game's main gem path
+uses this function is UNESTABLISHED** — I did not survey the other gem spawn routes, and the name is
+suggestive, not evidence. Do not upgrade that hunch without the survey.
+⇒ For FK-22 it does not matter: the drop pod's only route **is** `SpawnDropPodForTeam`, which calls
+the pooled deferred spawn and bails on the null with no else. That is settled either way.
+
+### 12.6 What this changes for the repair
+
+The one-byte lever from §11.6 is now backed by a measurement rather than an inference:
+**poke `CDO(BP_DropPod_Tutorial_C) + 0x6C = 0`** (or, since the leaf may not be loaded when the shim
+runs, **`CDO(BP_DropPod_C) + 0x6C = 0`** — measured live at `0x241BA0290E0` this run, ASLR-dependent,
+re-derive per launch), then dispatch `SpawnDropPodForTeam` via Route E.
+⚠ Unchanged: it mutates a **class default**, and **C8/C9 have still never been reached.**
