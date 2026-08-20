@@ -621,3 +621,90 @@ deleted while the object and the type check survive".
 ★ **And lane A's proposed free readback is real after all — on the right object.**
 `Comp_GameMode_DropPlane_Tutorial + 0xE0` is a live, verified `ALokiRoundGameMode*`, available for
 any future call site that genuinely consumes one.
+
+---
+
+# 14. ⚠⚠ CORRECTIONS TO §§10–13, FROM THE ADVERSARIAL VERIFIERS — one of my published claims is WRONG
+
+All ten workflow agents finished (5 lanes + 5 verifiers, 0 errors). The verifiers refuted several
+things, **including claims I had already committed**. Each is re-derived below with my own uncapped
+rel32 scanner (`scratchpad/s131/tools/foldcalls.py`, every target machine-computed) and arbitrated
+against `tools/strxref/index/pdata_union.csv`.
+
+## 14.1 ⛔ WRONG, AND IT WEAKENS THE HEADLINE LEVER: the dismount is NOT fold-free
+
+I wrote, in `CLAUDE.md` and the S132 handoff, that `AuthPlayerDetachPlayerFromRidable` has
+**"ZERO folds"**. **That is false.**
+
+```
+range 0x55CCCB0 .. 0x55CCE68  (440 bytes -- 9 chained .pdata rows, extent confirmed)
+  -> 0x0F7EC20  ret 0 (c2 00 00)   2 site(s)
+       call at 0x55CCD5B
+       call at 0x55CCE4E
+```
+
+**[M] two `ret 0` calls inside the detach.** `0x55CCD5B` takes `rcx = rdi` = the hero character,
+immediately after the `IsA(ALokiHeroCharacter)` gate — i.e. a **stripped method on the character**,
+not the benign "stripped diagnostic reporter" shape seen at `0x55CD7E4` (which marshals an FString).
+
+⇒ **The true claim is "zero `0xF7EB50`", which is narrower than the headline it was supporting.**
+Lever #1 (append to `PlayersAttached`, then call the detach) is still the best route, but
+**"fully implemented and unstripped" is not supported** — two of its own calls do nothing, and what
+they were supposed to do on the hero is unknown. Expect a partial dismount, and treat any null as
+locating one of those two rather than as a failure of the append.
+
+★ A sibling lane had already flagged this and the final report dropped it. **When two lanes disagree,
+the one that reports MORE stripped calls is the one to check first.**
+
+## 14.2 ✔ NOT WRONG: `AuthPlayerEnterWorld` really does call the fold 3× — the verifier truncated the extent
+
+A verifier refuted my "3 `0xF7EB50` calls" with "**it is 1**", over extent `0x55CCE70–0x55CD07D`
+(525 B, "3 chained rows"). **The `.pdata` chain settles it:**
+
+```
+AuthPlayerEnterWorld   rows=6   extent 0x55CCE70..0x55CD506 = 1686 bytes
+  0x55CCE70-0x55CCEFA  0x55CCEFA-0x55CCF0A  0x55CCF0A-0x55CD07D
+  0x55CD07D-0x55CD464  0x55CD464-0x55CD4E7  0x55CD4E7-0x55CD506
+```
+
+`0x55CD07D` **is** a row boundary — so the verifier stopped somewhere that looks legitimate — but the
+chain continues for three more rows. My scan over each candidate extent:
+
+| extent | fold calls |
+|---|---|
+| `0x55CCE70..0x55CD07D` (525 B, truncated) | **1** — `0x55CCF22` |
+| `0x55CCE70..0x55CD506` (1686 B, full chain) | **3** — `0x55CCF22`, `0x55CD405`, `0x55CD4C7` |
+
+⇒ **the published "3" stands.** ★ And this is the *third* time this session that "extent" was the real
+disagreement rather than the count — `strxref`'s per-row extent trap, restated: **chain the rows, and
+print the extent next to any count derived from it, so a disagreement is visible rather than silent.**
+
+## 14.3 Other corrections adopted
+
+* ⚠ **"the wall's ONLY persistent output is one TArray append" is too strong.** It also stamps
+  `movss [hero+0x1C10], xmm0` (`GetServerTime`) and **moves the character** — `LokiTeleportActor`
+  (`0x56680F0`) then `SpawnAndMoveLokiCharacter_MoveStep` (`0x55C1B20`), with collision toggled on and
+  off around them. **Actor position is not transient.** The append is the only *component*-state
+  output; the rest is real world state.
+* ⚠ **`SpawnAndMoveLokiCharacter_MoveStep` has NO record and NO exec thunk** — it is a raw native
+  address, a different dispatch and risk class from the three reflected calls beside it, and it
+  carries 2 `0xF7EC20` calls of its own.
+* ⚠ **`LokiTeleportActor` (`0x56680F0`) is COVERAGE-BLOCKED** — its page is all-zero in `merged4`. Not
+  a known fold, but its body is unread. **Do not call it REAL.**
+* The fifth fold `0x00FC6CF0` has **7** distinct exec thunks, not 5.
+* `Auth*`-but-not-`BlueprintAuthorityOnly` is **44/108 = 40.7 %** gradeable, not 32.8 % (the published
+  denominator mixed gradeable with all-records). **This strengthens the `Auth*` finding.**
+* The two bails log to **different categories** (`0xA036AC0` line 327 vs `0xA035E80` line 299), and the
+  line that actually printed live is emitted at `0x55CD7C9` via `call 0x106B650`; the `call 0xF7EC20`
+  at `0x55CD7E4` is a *second, separate* stripped call. My §10 write-up did not distinguish them.
+
+## 14.4 What survives untouched
+
+Every core claim of §§10–13 was re-derived and **CONFIRMED** by independent verifiers with their own
+PE parsers and capstone: the fold is `33 c0 c3` with zero memory operands (6/6 images); the
+round-game-mode pointer is a **pure guard**, dead after the two checks; the wall's extent is 746 B
+over 5 chained rows; the log records decode to `LokiRideableComponent.cpp:299/327`; and `+0xE0` on the
+rideable component is **not** a game-mode cache.
+★ One verifier added the control I should have asked for and did not: **the success path
+`0x55CD590–0x55CD767` contains ZERO calls to any fold** — which is what rules out "the later use of
+the game mode was itself stripped, leaving an orphan guard over a gutted body".

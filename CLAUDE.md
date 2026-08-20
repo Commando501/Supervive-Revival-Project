@@ -1470,8 +1470,11 @@ The census counts OBJECTS; S131 built the in-arm readout that looks at what the 
   operands**. ⛔ A `Func` swap is dead too — thunk `0x5456380` has **0 direct callers** and the game's own
   AS callers reach the **impl by rel32**.
   ★★★ **THE ROUTE: the wall's ONLY persistent output is `PlayersAttached.Add(PS)`** (`+0x130`/`+0x138`/
-  `+0x13C`), and **`AuthPlayerDetachPlayerFromRidable` (impl `0x55CCCB0`, thunk `0x5456100`, 440 B,
-  ZERO folds) is fully implemented and unstripped, gated ONLY on that array being non-empty.** It
+  `+0x13C`), and **`AuthPlayerDetachPlayerFromRidable` (impl `0x55CCCB0`, thunk `0x5456100`, 440 B) is gated ONLY
+  on that array being non-empty.** ⚠⚠ **CORRECTED (§14.1): it is NOT fold-free — it carries TWO
+  `0xF7EC20` (`ret 0`) calls at `0x55CCD5B` and `0x55CCE4E`**, the first on the HERO immediately after
+  the `IsA(ALokiHeroCharacter)` gate. "zero `0xF7EB50`" is true and is NARROWER than the headline it
+  was supporting. Expect a PARTIAL dismount, and read any null as locating one of those two. It
   un-hides the hero, resolves the landing location and places the character. **The dismount is one
   append away.** Recipe (risk class DATA, 0/22): mirror the wall's own tail using the GAME's own
   `ResizeGrow` `0xF988D0` so the buffer is the game's, then S55-call the detach. ⚠ MEASURED live:
