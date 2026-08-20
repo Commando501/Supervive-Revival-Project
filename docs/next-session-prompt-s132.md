@@ -141,7 +141,9 @@ Full `.data` record-table census, **16,277 records**, 12/12 non-degenerate contr
 * ★★★ **THE ENRICHED CATEGORY IS `Auth*`, NOT "drop".** `Auth*` gradeable **67/158 = 42.4 %** empty
   vs non-`Auth` Loki **260/3,133 = 8.30 %**, Fisher **p = 1.6e-28**, spread over 41 classes. And it is
   the naming convention, not the reflection flag (`Auth*`-but-not-`BlueprintAuthorityOnly` is still
-  32.8 %). Against the **fair** control — the rest of the Loki-owned table — the drop-8 classes are
+  **44/108 = 40.7 %** gradeable; `Auth*`+BAO is 23/50 = 46.0 %).
+  ⚠ The first published figure for that decomposition was **32.8 %** — its denominator mixed
+  *gradeable* with *all records*. The correction STRENGTHENS the finding. Against the **fair** control — the rest of the Loki-owned table — the drop-8 classes are
   **14.6 % vs 9.83 %, p = 0.11, NOT SIGNIFICANT.**
   ⇒ **There was no decision to remove *deploy*. There was one decision to remove *server authority*,
   and deploy is inside it like everything else.**
