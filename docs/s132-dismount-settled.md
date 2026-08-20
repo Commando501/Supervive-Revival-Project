@@ -334,6 +334,38 @@ the same thing after the fact. **When the reference is moving, print the referen
 bytes and was not transcribed. *That it consumes the actor* is measured; *how* it derives Z (the
 -9.85 uu rest offset is the hero's own capsule settling, not necessarily the function's output) is not.
 
+## 6a. THE DISMOUNTED HERO RUNS — and the obvious reading of that is WRONG
+
+With the flight-2 client still up at 1,168 s and the hero standing at the PlayerStart,
+`tutorial_launch_play.dll` (the deployed, regression-gated arm, `.text 9bc10a4552c596e1`) was
+injected onto it:
+
+```
+[PL] teleport hero -> ground (-65,-1770,393)          <-- RM_PLAY's OWN hardcoded teleport
+[PL] *** init complete: body=BUILT; camera + WASD active ***
+[ANIM] self-driven walk START (so the run anim can be captured with no human at the keyboard)
+[ANIM] PlayAnimation(run, loop) ok
+```
+
+RPM sampling then found the hero at `(2880.7, -1770.0, 441.2)` — **+2,945.7 uu in +X from `play`'s
+own teleport target** — then stationary once the auto-walk window closed.
+
+**✅ [M] A hero that has been through the full dismount is not left in a broken state.** `play`
+initialises on it, builds the body, takes the camera, and the hero **runs with real locomotion
+animation**. The dismount costs nothing downstream.
+
+**❌ IT DOES NOT SHOW PLAYABILITY AT THE LANDING POINT, and that was my first reading of it.**
+`RM_PLAY`'s first act is a hardcoded ground-teleport to
+`(KGROUNDX, KGROUNDY, KGROUNDZ) = (-65, -1770, 393)` — S75's known-solid tutorial ground
+(`tutorial_launch.cpp:4822-4830`, applied at `:12315`). **It moved the hero off the landing point
+before anything else happened.** The experiment that would answer the real question needs a `play`
+variant whose teleport is suppressed or retargeted, plus a never-dismounted control — specified in
+`docs/next-session-prompt-s133.md` §1, which is written to stop a successor repeating the misread.
+⚠ The `[GCW] anim swapping DISABLED` line that follows is the S110 idle-anim GC behaviour
+(`KANIMREF` parks the RUN anim, not the idle one) — pre-existing and unrelated to the dismount.
+
+---
+
 ## 6b. WHAT THE OFFLINE LANES ADDED, INCLUDING ONE CORRECTION TO THIS DOCUMENT
 
 Seven offline recon lanes ran in parallel with the flights, each adversarially verified by an
