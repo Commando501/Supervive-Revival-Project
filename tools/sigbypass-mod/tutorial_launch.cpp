@@ -9567,9 +9567,8 @@ static bool PdResolve(){
 static int g_pdPoked = 0;       // how many CDOs we actually wrote
 static int g_pdPokeVerified = 0;
 
-// Read (and optionally clear) the two flags on one CDO.  Returns 1 if the object was found.
-static int PdCdoOne(const char* name, bool doPoke){
-    uintptr_t o = FindObjExact(name);
+// Read (and optionally clear) the two flags on one already-resolved CDO.
+static int PdCdoOne(const char* name, uintptr_t o, bool doPoke){
     if(!o){
         Markerf("[PD] CDO %-34s NOT LOADED -- this is NOT a zero. That class simply has no CDO in "
                 "this process; do not read it as a flag value.\r\n", name);
@@ -9603,6 +9602,15 @@ static int PdCdoOne(const char* name, bool doPoke){
 
 // The four CDOs on the drop pod's inheritance chain, leaf first.  BP_DropPod_C is the one that
 // matters for SpawnDropPodForTeam: TeamDropPodClass is BP_DropPod_C [M, Default__BP_DropPlane_Base_C].
+//
+// ⚠⚠ ONE WALK, NOT FOUR.  The first cut called FindObjExact() per name, i.e. FOUR full
+//   GUObjectArray sweeps back-to-back ON THE GAME THREAD.  The C0 census alone measures
+//   ~1,400 ms for one sweep over ~190k objects, so that was a multi-second frame hitch inside a
+//   live tutorial world -- exactly the hazard the census code next door already warns about
+//   ("a full GUObjectArray sweep does not become a multi-second frame hitch").  This resolves all
+//   four in a SINGLE pass and early-exits once they are all found.
+//   (The S130 attempt-2 death happened BEFORE this arm ran, so it is not attributable to the old
+//    shape -- but four avoidable sweeps on the game thread is a self-inflicted risk either way.)
 static void PdCdoFlags(const char* when, bool doPoke){
     // ⚠ `doPoke` is a PER-CALL argument: the step-3 call passes false even in the poke build,
     //   because that read is the baseline. Labelling it "KPDCDOPOKE=0 / CONTROL arm" would state
@@ -9611,18 +9619,48 @@ static void PdCdoFlags(const char* when, bool doPoke){
     Markerf("[PD] --- CDO FLAGS (%s) | build KPDCDOPOKE=%d (%s arm) | THIS call: %s ---\r\n",
             when, (int)KPDCDOPOKE, (KPDCDOPOKE!=0) ? "POKE" : "CONTROL",
             doPoke ? "*** WRITES bCanEverReplicate = 0 ***" : "read-only");
+
+    static const char* kNames[4] = { "Default__BP_DropPod_Tutorial_C", "Default__BP_DropPod_C",
+                                     "Default__LokiDropPod",           "Default__Actor" };
+    uintptr_t hit[4] = {0,0,0,0};
+    int got = 0;
+    DWORD t0 = GetTickCount();
+    uintptr_t oo = g_modBase+kObjObjectsRva;
+    if(SafeReadable((void*)oo,0x18)){
+        uintptr_t objectsPtr = *(uintptr_t*)oo; int32_t numEl = *(int32_t*)(oo+0x14);
+        if(LooksLikePtr(objectsPtr) && numEl>0 && numEl<=8000000){
+            int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+            for(int ci=0; ci<numChunks && got<4; ci++){
+                if(!SafeReadable((void*)(objectsPtr+ci*8),8)) break;
+                uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk)) continue;
+                int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+                for(int j=0;j<cnt && got<4;j++){
+                    uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE;
+                    if(!SafeReadable((void*)item,8)) continue;
+                    uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj)) continue;
+                    char nb[160]; if(!GetFNameStr(NameId(obj),nb,sizeof(nb))) continue;
+                    if(nb[0]!='D'||nb[1]!='e') continue;           // cheap reject before 4 strcmps
+                    for(int k=0;k<4;k++)
+                        if(!hit[k] && strcmp(nb,kNames[k])==0){ hit[k]=obj; got++; break; }
+                }
+            }
+        } else Marker("[PD] CDO walk: GUObjectArray header implausible -- INSTRUMENT FAILURE, not zeros\r\n");
+    } else Marker("[PD] CDO walk: GUObjectArray unreadable -- INSTRUMENT FAILURE, not zeros\r\n");
+    Markerf("[PD] CDO walk: ONE GUObjectArray pass, %d of 4 resolved, %lu ms\r\n",
+            got,(unsigned long)(GetTickCount()-t0));
+
     int found = 0;
-    found += PdCdoOne("Default__BP_DropPod_Tutorial_C", doPoke);
-    found += PdCdoOne("Default__BP_DropPod_C",          doPoke);
-    found += PdCdoOne("Default__LokiDropPod",           doPoke);
-    found += PdCdoOne("Default__Actor",                 false);   // ROOT CONTROL: never poked.
+    found += PdCdoOne(kNames[0], hit[0], doPoke);
+    found += PdCdoOne(kNames[1], hit[1], doPoke);
+    found += PdCdoOne(kNames[2], hit[2], doPoke);
+    found += PdCdoOne(kNames[3], hit[3], false);   // ROOT CONTROL: Default__Actor is NEVER written.
     Markerf("[PD] CDO flags: %d of 4 objects found. Default__Actor is the ROOT CONTROL and is NEVER "
             "written -- if it ever reads 0, something other than this arm is mutating AActor.\r\n",found);
     if(doPoke)
         Markerf("[PD] poke summary: %d written, %d readback-verified.%s\r\n",
                 g_pdPoked,g_pdPokeVerified,
                 (g_pdPoked && g_pdPoked==g_pdPokeVerified) ? "" :
-                "  ⚠ MISMATCH -- do not attribute any spawn result to the poke.");
+                "  \xE2\x9A\xA0 MISMATCH -- do not attribute any spawn result to the poke.");
 }
 
 // ---- the ladder --------------------------------------------------------------------------------------
