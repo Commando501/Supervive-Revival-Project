@@ -378,7 +378,7 @@ executable region covers it**. A corrupted pointer does not reproduce to the bit
 - ★★★★★ **AND THE TARGET IS NAMED: IT IS `runtime.dll + 1`, MEASURED LIVE.** One `VirtualQueryEx` on the
   live client (`scratchpad/s131/tools/fk31_map_kill_page.py`, read-only) reports the page as
   **`MEM_COMMIT / READONLY / MEM_IMAGE`, `AllocationBase == the address itself`**, and at that base sit
-  **`4d 5a` = `MZ`**, a valid `PE  `, `SizeOfImage 0x4066000`, and 11 sections named
+  **`4d 5a` = `MZ`**, a valid `PE`, `SizeOfImage 0x4066000`, and 11 sections named
   **`.pdata .rwx packer0 packer1 packer2 .rsrc .reloc packer30 packer40 packer31 packer42`** — exactly
   FK-10's recorded layout for `runtime.dll`. `(Get-Process).Modules` reports **no module at that base**
   ⇒ it is **MANUALLY MAPPED and hidden from the module list**, which is why it never appears in a minidump.
@@ -1460,6 +1460,50 @@ The census counts OBJECTS; S131 built the in-arm readout that looks at what the 
   ★ **Method note: driving the path is what made this readable.** Those pages entered
   `dumps/merged4.dump.exe` only because R4 executed them; the analysis that closed the gap was possible
   BECAUSE the "uninterpretable" call was made.
+- ★★★★★ **AND THE OFFLINE FOLLOW-UP FOUND A DATA-CLASS LEVER. Read `docs/next-session-prompt-s132.md`
+  "THE REAL §1", then `scratchpad/s131/lanes2/`.** Two independent lanes agree.
+  **[M] The wall is ONE CALL and the value it fetches is DEAD.** The function is 746 B, fully decrypted,
+  and downstream of `0x55CD572` there are **11 call sites / 10 targets and ZERO folds**. Register-liveness
+  over the fallthrough (every instruction, capstone `regs_access`) shows **ZERO reads of RAX** ⇒ the round
+  game mode is a **PRECONDITION, not a data dependency**.
+  ⛔ **No poke can ever satisfy the getter**: `0xF7EB50` is `33 c0 c3`, three bytes, **zero memory
+  operands**. ⛔ A `Func` swap is dead too — thunk `0x5456380` has **0 direct callers** and the game's own
+  AS callers reach the **impl by rel32**.
+  ★★★ **THE ROUTE: the wall's ONLY persistent output is `PlayersAttached.Add(PS)`** (`+0x130`/`+0x138`/
+  `+0x13C`), and **`AuthPlayerDetachPlayerFromRidable` (impl `0x55CCCB0`, thunk `0x5456100`, 440 B,
+  ZERO folds) is fully implemented and unstripped, gated ONLY on that array being non-empty.** It
+  un-hides the hero, resolves the landing location and places the character. **The dismount is one
+  append away.** Recipe (risk class DATA, 0/22): mirror the wall's own tail using the GAME's own
+  `ResizeGrow` `0xF988D0` so the buffer is the game's, then S55-call the detach. ⚠ MEASURED live:
+  `PlayersAttached` reads `Data=0 Num=0 Max=0`, so `ResizeGrow` IS needed — it is an arm, not an RPM write,
+  and `0xF988D0` is **not a UFunction** so the S55 primitive does not apply to it.
+  ⚠⚠ **ORDERING TRAP:** do NOT poke `PlayersInside` (`+0x120`) first — it makes `HasEverContainedPlayer`
+  true, which turns the wall itself into a SILENT no-op and destroys the error-line receipt.
+  ⚠ **The pod will NEVER self-drive**: `LokiIsClient` impl `0x0B9E1F0` = `mov al,1; ret` (hardcoded TRUE)
+  and `LokiIsServer` impl `0x0F7EB60` = `xor al,al; ret` (hardcoded FALSE), so
+  `ALokiDropPod::KickPlayersFromPod` — the pod's own exit driver — returns immediately, always.
+- ★★★★★ **AND THE STRIPPED-CODE POPULATION IS NOW MEASURED, 16,277 records, 12/12 controls passing**
+  (`scratchpad/s131/lane-d-empty-impl-census.tsv`): **REAL 11,517 (70.8 %) · DARK 3,092 (19.0 %) ·
+  FORWARDER 1,153 (7.1 %) · EMPTY 515 (3.16 %; 4.28 % of gradeable)**.
+  ★★ **A FIFTH FOLD EXISTS: `0x00FC6CF0` = `0f 57 c0 c3` = `xorps xmm0,xmm0; ret` → 0.0f**, 13 records
+  incl. six `ALokiPlayerState` float getters. **A census graded against only the four known folds
+  under-counts. Add it to the fold table.**
+  ⚠⚠ **FK-1's "1.2 % (78/6,669)" is a UNIT ARTIFACT, not an error** — it counted *distinct exec
+  thunks*, which are heavily ICF-folded (`0x5254180` is the registered thunk of 92 records). Per record
+  it is 3.16 %; in FK-1's own unit it is **170**, not 78. **FK-1's conclusion — an empty impl is
+  informative, not ambient — STANDS.**
+  ★★★ **THE ENRICHED CATEGORY IS `Auth*`, NOT "drop"**: `Auth*` gradeable **67/158 = 42.4 %** vs
+  non-`Auth` Loki **8.30 %**, Fisher **p = 1.6e-28**, over 41 classes — and it is the NAMING CONVENTION,
+  not the reflection flag. Against the FAIR control (the rest of the Loki table) the drop-8 classes are
+  **14.6 % vs 9.83 %, p = 0.11, NOT SIGNIFICANT.** ⇒ **there was no decision to remove *deploy*; there
+  was one decision to remove *server authority*, and deploy is inside it like everything else.**
+  ⇒ **BOUNDED for deploy** (~23 stubs, enumerated, almost all pure state mutations a data poke can
+  substitute for), **UNBOUNDED for gameplay** (~200 across 40+ classes). ⚠ The census is **blind to
+  Angelscript entirely** — 0 records for `ALokiDropShip`/`ALokiDropPod` — so it says nothing about the
+  half that actually works.
+  ★ Free corrections: **`GetLandingTeleportLocation` is REAL** (`0x55D89F0`, 963 B, 0 folds — FK-22 §2.5
+  has it COVERAGE-BLOCKED); **`UWorld::AuthorityGameMode @ UWorld+0x250`** [M] (control: `GetGameState`
+  → `+0x258` in the same pass) — the round game mode object EXISTS, only the accessor was deleted.
 - ⚠⚠ **THE FIFTH WALL WAS *NOT* TESTED, AND THE ZERO THAT LOOKS LIKE A TEST IS A TRAP.** The precondition IS met (the pod ships a `LokiRideable_GEN_VARIABLE`; the rideable census rises **+1 per pod**, 20→21 on E1), so `AuthPlayerEnterWorldAttachedToRidable` WAS called — but its impl `0x55CD510` opens `test rdx,rdx; je` on **`rdx = PlayerState`** and **returns SILENTLY on instruction #1** when it is null. `PilotPlayerState` reads null [M] because `GetTeamDropLeader` returns null because `ALokiTeamState_TeamOnly::SetDropLeader` is one of FK-1's four empty stubs. ⇒ `grep "failed to get the round game mode"` = **0 and UNINTERPRETABLE.** ★ The emit is NOT stripped (dispatches through the live logger `0x106B650`), so the grep would work if the branch were reached.
   ⇒ ★ **NEXT LEVER, ONE DATA POKE:** `ALokiPlayerState::IsSpawnTeamLeader` (impl `0x56C2060`, real) is a **pure read of `[TeamState+0x688]`**. Poke that on a live `ALokiTeamState_TeamOnly` and `GetTeamDropLeader` returns non-null without calling either stub — then the rider handoff runs for real.
 - ★ **[M] A pooled DEFERRED spawn never `FinishSpawningActor`'d has a NULL `RootComponent`** (`root=0x0`), with the same class resolving `RelLoc@0x158` by name on three sibling pods in the same dump — a positive control living inside the negative result.
