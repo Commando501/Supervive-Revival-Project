@@ -2524,7 +2524,12 @@ normally."* S21.3 recorded that link as [I] and named it as the gap; it is now m
 class-spawnability precondition (P3) and the collision confound both closed.
 ⇒ **`SpawnDropPodForTeam`'s `false` (S127) is bail 2, caused by the pooled spawn declining.**
 
-**[I] STILL INFERRED — that `PrimePools : Feature is not enabled` is WHY.** The log line and the null
+**[I] STILL INFERRED — that `PrimePools : Feature is not enabled` is WHY.**
+> ⚠⚠ **REFUTED BY S130 (2026-08-20) — see §25 and `docs/s130-actor-pool-gate-settled.md`.**
+> An unprimed pool **cannot** produce this NULL: the acquire uses `TMap::FindOrAdd` (never null) and on a
+> pool miss takes a shipped fallback to a normal `UWorld::SpawnActor`. The [I] grade was correct and the
+> inference was wrong. Read §25 before using anything below this line.
+ The log line and the null
 are consistent and no other cause is in evidence, but nothing yet reads the pool manager's gate and
 shows it is the branch taken. Two facts could still break it: the helper might decline for an
 unrelated reason (no free pooled instance, a subsystem not initialised on a client), and the
@@ -2667,3 +2672,101 @@ and was prepared, but the client had **exited cleanly (0 crashpad handoffs)** be
 3. ⚠ Still unchecked and it changes the fix: **does the pooled SPAWN path consult the same gate**, or
    does it merely fail for want of a primed pool? S23 measured the helpers returning null; nothing yet
    ties that to slot `0x2D0`. "Priming never ran" and "the helper declines" are different repairs.
+
+
+---
+
+## 25. S130 — THE POOL GATE IS NAMED, AND §23's SUSPICION IS REFUTED: THE POOL IS NOT THE BLOCKER
+
+**Date:** 2026-08-20. Offline; zero launches, zero injections, zero `.text` writes.
+**Primary evidence: `docs/s130-actor-pool-gate-settled.md`** — that file governs; this is the summary.
+Six adversarially-verified decode lanes + a session-lead thread; raw JSON in `scratchpad/s130/`.
+
+### 25.1 The gate, named [M]
+`ULokiActorPoolManager` vtable slot 90 (`.rdata 0x08877A80 + 0x2D0 = 0x08877D50` → `0x56363F0`,
+fold multiplicity **1**) returns
+`Cast<ALokiGameState>(GetWorld()->GameState)->bSupportsActorPoolPriming` — a plain
+`UPROPERTY(EditDefaultsOnly, AdvancedDisplay) bool` at **`ALokiGameState + 0x898`**.
+Named from the UHT `FBoolPropertyParams` at `.rdata 0x08983A50` whose **`SetBitFunc 0x053800D0` is
+`mov byte ptr [rcx+0x898], 1; ret`** (multiplicity 1), owned via `PropPointers` index **106 of 155**.
+It is the **only** bool UPROPERTY at that offset image-wide (13,156 Bool records swept).
+`UWorld+0x258 = UWorld::GameState` [M], from `UGameplayStatics::GetGameState` (`0x38047F0`).
+The engine base's slot 90 is `0x0B9E1F0` = `mov al,1; ret` — a **26,444-way fold**, so the *slot*
+returns true and the *address* names nothing.
+
+### 25.2 Why it is false: a shipped Blueprint class default [M]
+C++ ctor sets it TRUE (`.text 0x05676F10 c6 87 98 08 00 00 01`), and
+`tools/extractor/out/bpdump_BP_LokiGameState_Tutorial_PROPS.txt:52` serializes
+`bSupportsActorPoolPriming = False`. The tutorial world runs `BP_LokiGameState_Tutorial_C` (S124).
+Family control: 3 of 6 GameState Blueprints override it and **all three override to False**
+(`_Tutorial`, `_PvE_Holdout`, `_FFA`); the other three inherit `true`.
+⇒ **the pool is off in the tutorial BY DESIGN, in data.**
+
+### 25.3 ⚠⚠⚠ THE CORRECTION: an unprimed pool cannot return NULL [M]
+* the pool lookup `0x334E7A0` is a **`TMap::FindOrAdd`** — one `ret`, every path returns
+  `MapData + idx*0x28 + 8`, inserting on a miss. **Never null.**
+* a pool miss falls to a shipped fallback — `.rdata 0x08B06440 U 'Failed to find an actor in the
+  pool for %s, spawning a new instance from scratch.'` — then `0x5648E48 call 0x39C3DB0`
+  = `UWorld::SpawnActor`, and returns the fresh actor.
+⚠ the fallback's log **emit is stripped** (`0x5648D6F` targets the `ret 0` fold `0x00F7EC20`,
+4,972 call sites), so **its absence from the logs proves nothing** — and indeed it occurs 0 times
+in the 69-file corpus.
+⇒ **`SpawnDropPodForTeam`'s bail 2 is NOT caused by the pool being disabled. §23.3's [I] is dead.**
+
+### 25.4 The pooled spawn never reads the gate [M]
+Chain: thunk `0x537EEE0` → impl **`0x566FF50`** → `0x5647F00` → acquire **`0x5648050`**;
+deferred thunk `0x537F1A0` → impl **`0x5670090`** → acquire **directly**.
+Zero `call qword ptr [reg+0x2D0]` and zero calls to `0x56363F0` anywhere in the family, established
+three times by disjoint methods. The gate has **exactly one** call site image-wide in this family:
+`0x33560C5`, inside `PrimePools`.
+
+### 25.5 What can actually return NULL — and the free receipt that narrows it
+Nine edges reach the acquire's null epilogue `0x5648EA1`. C1–C6 are class-validity and are all
+excluded by the S128 control that the same class spawns fine unpooled. The survivors are
+**C7 `CDO->byte@0x6C != 0`** (`0x5648210`), **C8 `PoolMgr->GetWorld()==null`** (`0x5648D97`),
+**C9 `UWorld::SpawnActor` returned null / was skipped because `rbx==0` at `0x5648E34`** (`0x5648E6F`).
+★ **The non-deferred wrapper logs on NULL** — `.rdata 0x08B06390 'Failed to spawn actor of type %s.'`
+— and it fired **twice** in the S128 flight naming `BP_DropPod_Tutorial_C`. Because it is emitted
+strictly downstream of the outer preconditions, **[M] the World, the GameState, the
+`IsA(ALokiGameState)` test and the pool-manager fetch ALL PASSED live.** The NULL is C7, C8 or C9.
+⚠ [I, strong] the **deferred** arm's null is **silent** (it bypasses the wrapper) — 2 warnings
+≈89 s apart = **one per injection**, not two. Do not read "no warning" as a deferred-arm result.
+★ **Grep `Failed to spawn actor of type` before any further inference here.** The
+`Feature is not enabled` line is ambient (68 occurrences / 69 files); this one is per-attempt.
+★ S128's collision-confound elimination **STANDS**: the result files print
+`Collision=2 (declared enum 'ESpawnActorCollisionHandlingMethod')`, `NumParms=8`, the enum name read
+live off the FProperty.
+
+### 25.6 Repair classes
+**No ini route [M]** — `CPF_Config` clear; 0 of 155 `ALokiGameState` properties are config;
+`ActorPoolManagerPrimingConfig` is a **USTRUCT with zero reflected properties and no UHT consumer**;
+neither pool-manager UCLASS is a config class. Turning pooling ON is a **one-byte DATA poke
+(`GameState+0x898 = 1`) plus a raw direct call to `PrimePools` (`0x3356000`)** — `PrimePools` is
+**not reflected**, has **one caller** (`ALokiGameState::BeginPlay`, vtable slot 119) which has already
+run and skipped, and performs **zero module-image writes**. Handles: `GameState+0x428` = the cached
+manager, `+0x430` = its class.
+⚠ **But none of that is known to fix FK-22**, because of §25.3.
+
+### 25.7 The bypass has a FIFTH wall [M]
+`ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable` (impl **`0x55CD510`**) is a REAL body
+that always fails: `0x55CD572` calls the stripped fold `0xF7EB50` (`33 c0 c3`) and bails into a
+*"failed to get the round game mode"* log; its dead tail has **zero** external rel32 entries in three
+images. Same wall on `AuthPlayerPreSpawnOnAddToPlane` (`0x55CD800`); `AuthPlayerEnterWorldNew` is an
+empty fold. ⇒ **hand-spawning a pod yields a pod and no rider.**
+★★ **NEW GENERAL INSTRUMENT:** the `.data` `{name_ptr, exec_thunk, impl}` record table gives a
+REAL/EMPTY verdict **without the code page being decrypted**, because the fold addresses are known
+constants. **§2.5's 16 COVERAGE-BLOCKED keys are an instrument limit, not a fact, for at least 6 of
+them** (the five `AuthPlayer*` entry points + `GetLandingTeleportLocation`, all on page `0x5456000`).
+Re-running it over all 100 keys is free and unstarted.
+⚠ **REFUTED sub-claim:** `AuthSetSpawnTeamLeader`'s flag feeds **three** Angelscript readers, not
+one, and one of them (`QueueCrewForPodSpawn`) is on the leader-pod path. "The bypass avoids FK-1's
+stubs" holds **only under `bIsTeamLeaderPod == false`** — and the route as transcribed from
+`SpawnDropPodForTeam` passes `true`. This is the incomplete-enumeration failure mode § this very file
+already recorded against a previous agent **on this exact function family**; it recurred.
+
+### 25.8 Where FK-22 stands now
+markers (**refuted**) → phase (**solved**) → subscription (**dead by construction**) →
+`SpawnPlane` (**faults on unstreamed markers**) → `SpawnDropPodForTeam` (**runs, returns false**) →
+bail 2 = the pooled spawn returns NULL → **⚠ NOT because the pool is disabled (refuted here)** →
+**C7 / C8 / C9 inside the acquire `0x5648050`** ← **YOU ARE HERE**, and C7 is settleable by a single
+read-only RPM read of `CDO(BP_DropPod_Tutorial_C) + 0x6C` with no launch at all.

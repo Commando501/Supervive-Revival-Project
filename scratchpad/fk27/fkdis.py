@@ -16,6 +16,7 @@ DUMPS = {
     "merged2": r"G:\git\Supervive Revival Project\dumps\merged2.dump.exe",
     "tuthero": r"G:\git\Supervive Revival Project\dumps\tutorial-hero\SUPERVIVE-Win64-Shipping.dump.exe",
     "merged":  r"G:\git\Supervive Revival Project\dumps\merged.dump.exe",
+    "s129":    r"G:\git\Supervive Revival Project\dumps\s129-poolgate\SUPERVIVE-Win64-Shipping.dump.exe",
 }
 
 class Img:
