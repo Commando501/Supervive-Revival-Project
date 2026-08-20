@@ -1,9 +1,14 @@
 # S132 (2026-08-20) — THE DROP-POD DISMOUNT RUNS. The hero leaves the pod and is placed on the ground.
 
 **One line: appending the PlayerState to `PlayersAttached` with the game's own `ResizeGrow` and then
-calling `AuthPlayerDetachPlayerFromRidable` teleports the hero to the pod's live position, restores its
-collision, un-hides it and hands it back to the movement component — reproduced FOUR times against a
-target moving at 20,000 uu/s, on ONE launch, with a within-run negative control that never moved it.**
+calling `AuthPlayerDetachPlayerFromRidable` takes the hero out of the pod, un-hides it, restores its
+collision and movement, and places it at a chosen landing actor on real terrain, where it stands —
+**five calls across two launches**, four of them against a target moving at 20,000 uu/s, each preceded
+by a within-run negative control that never moved it.**
+
+★ **Flight 1 (§1) established that it RUNS. Flight 2 (§6) established that it is USABLE**: with a
+`LokiPlayerStart` passed as `LandingLocationActor` — 1.49 million uu from the pod at that instant —
+the hero landed at the PlayerStart, settled onto the floor, and held position bit-for-bit for 9 s.
 
 Risk class **DATA**: two aligned `TArray`-header writes plus one element store, inside the game's own
 allocation. **Zero `.text` writes, zero PI hooks, zero CDO pokes.** One launch, one armed window,
@@ -267,9 +272,74 @@ passed the pod **explicitly**. All four behaved identically, and the arm printed
 
 ---
 
-## 6. WHAT IS STILL OPEN
+## 6. FLIGHT 2 — ★★★★★ THE LANDING ACTOR IS CONSUMED, AND THE DISMOUNT IS *USABLE*
 
-- ⛔ **The landing-actor discrimination could not be run and is UNAVAILABLE, not negative.** The arm
+**Second launch, staged the same way, `dismount-landstart` (`KDXLANDING=2`) injected right after
+Route E while the tutorial-start cell was still resident.** The arm enumerated its candidates and
+printed the prediction BEFORE the call:
+
+```
+[DX] land-cand[0] 0x1651B35D6F0 cls=BP_LokiPlayerStart_C obj=BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02
+                  alive=1 loc=(-3206.4, 5070.5, 100.0)
+[DX] land-scan: 1 candidate(s) matching {LokiPlayerStart,PlayerStart,TrainingStart}, 1 GC-alive,
+                over 154,919 objects walked
+[DX] PRE-REGISTERED PREDICTION: if GetLandingTeleportLocation consumes its LandingLocationActor
+     argument, the hero lands NEAR THAT ACTOR, not at the flying pod ... Both are results.
+```
+
+At the moment of the call the two hypotheses were **1,488,146 uu apart**:
+
+```
+[DX] baseline POD  0x1658781B890 loc=(1428272.5, 5070.5, 20100.0)
+[DX] baseline LAND 0x1651B35D6F0 cls=BP_LokiPlayerStart_C loc=(-3206.4, 5070.5, 100.0)
+[DX] baseline HERO 'BP_HERO_Ronin_C'  loc=(0.0, 0.0, 13240.0)
+[DX] D1 RESULT: hero moved=no (as predicted)          <- the negative control, a fifth time
+[DX] D3 ... LandingLocationActor slot[1]@0x8=0x1651B35D6F0 (BP_LokiPlayerStart_C)
+[DX] after D3 POD  loc=(1484940.3, 5070.5, 20100.0)
+[DX] after D3 HERO loc=(-3206.4, 5070.5, 138.0)
+```
+
+⇒ **[M] `GetLandingTeleportLocation` CONSUMES its `LandingLocationActor` argument.** The hero landed
+at the PlayerStart, not at the pod — the two were not confusable.
+
+### 6.1 [M] AND THE HERO STAYS THERE — IT IS STANDING ON GROUND
+
+Live RPM, four samples 3 s apart while the pod kept flying:
+
+```
+t      hero                                    pod X
++ 0s   (   -3206.4,   5070.5,     90.15)      2,861,188.0
++ 3s   (   -3206.4,   5070.5,     90.15)      2,921,192.2
++ 6s   (   -3206.4,   5070.5,     90.15)      2,981,192.8
++ 9s   (   -3206.4,   5070.5,     90.15)      3,041,193.5
+
+PlayerStart = (-3206.4, 5070.4768061953482, 100.0)
+hero        = (-3206.4, 5070.4768061953473,  90.2)
+dX = 0.00 uu    dY = 1 ULP    dZ = -9.85 uu
+```
+
+The hero settled from the teleport target Z = 138.0 to **Z = 90.15 and stopped** — a capsule dropping
+a few uu onto the floor and resting — then held that position **bit-for-bit across 9 s** while the pod
+travelled another 180,000 uu. Contrast flight 1, where the same hero fell through
+`-117,462 → -121,560` in 4 s because the landing point was over open air.
+
+⇒ **The dismount is not merely "it runs". The hero exits the pod, is un-hidden, gets its collision and
+movement back, is placed at a chosen point on real terrain, and stands there.**
+
+★ Method note worth keeping: the discriminator only exists because the arm printed **the pod's live
+position beside the hero's in every state sample**. Flight 1 needed an external RPM read to establish
+the same thing after the fact. **When the reference is moving, print the reference.**
+
+⚠ What is still unmeasured: the landing point comes from `GetLandingTeleportLocation`, which is 963
+bytes and was not transcribed. *That it consumes the actor* is measured; *how* it derives Z (the
+-9.85 uu rest offset is the hero's own capsule settling, not necessarily the function's output) is not.
+
+## 7. WHAT IS STILL OPEN
+
+- ✅ **CLOSED BY FLIGHT 2 (§6): `GetLandingTeleportLocation` DOES consume its
+  `LandingLocationActor` argument, and the hero lands on real terrain and stays there.** The
+  flight-1 attempt is preserved below because the *way* it failed is the useful part.
+- ⚠ **Flight 1: the discrimination could not be run and was UNAVAILABLE, not negative.** The arm
   was built to pass a `LokiPlayerStart` actor instead of the pod, to test whether
   `GetLandingTeleportLocation` actually consumes its `LandingLocationActor` argument. By the time it
   flew, an enumerating scan reported **`0 candidates matching {LokiPlayerStart, PlayerStart,
@@ -292,7 +362,7 @@ passed the pod **explicitly**. All four behaved identically, and the arm printed
 
 ---
 
-## 7. HOW IT WAS FLOWN (reproduce exactly)
+## 8. HOW IT WAS FLOWN (reproduce exactly)
 
 ```
 forceTutorialMatch = true ; go build -C server -o ags.exe ./cmd/ags     (set back to false after)
@@ -314,16 +384,23 @@ window, four dismounts.
 
 | variant | `.text` | note |
 |---|---|---|
-| `dismount` | `03d807ab6d397537` | **the flown arm** (126,976 B) |
-| `dismount-landstart` | rebuilt this session | KDXLANDING=2, the landing-actor discriminator (unflown as designed — see §6) |
+| `dismount` | `53483e6181bb3583` | **at HEAD** (127,488 B) |
+| `dismount` | `03d807ab6d397537` | **THE FLIGHT-1 ARTIFACT** (126,976 B) — the four runs in §1. Reproduce from commit `c2cdc56`; the only difference is the pod/landing-actor lines §6 added to `DxState`. |
+| `dismount-landstart` | `0d5fa554edac53c5` | **THE FLIGHT-2 ARTIFACT** (129,024 B) — `KDXLANDING=2`, §6 |
 | `dismount-readonly` | `16c00d0a16e5b496` | resolve + gates + D0c + D1 only; writes nothing |
 | `dismount-appendonly` | `b3b932579a8a6c07` | append, do not call the detach |
-| `dismount-podland` | `6019eb5fb1122617` | pass the pod explicitly (⚠ same 126,976 B size as `dismount`) |
+| `dismount-podland` | `6019eb5fb1122617` | pass the pod explicitly |
 
-**Regression gates, all MATCH after every edit:** `play` `9bc10a4552c596e1` ·
-`dropplane_b1only` `5b4467b0105dec1a` · `droppod-pe-cdopoke` `249a3cd2190eb334` · and `dismount`
-itself is **byte-identical to the artifact that produced all four results** after the `KDXLANDING=2`
-code was added, i.e. the new path is fully dead-code-eliminated at `KDXLANDING==0`.
+⚠ `dismount` and `dismount-podland` shared a `.text` **size** of 126,976 B before the §6 edit —
+**diff the hash, never the size** (the S131 lesson; the `dismount-readonly` / `-appendonly` hashes
+above predate the same edit and will move on a rebuild, which is why the two FLOWN artifacts are
+pinned to a commit rather than to "whatever `build/` holds").
+
+**Regression gates, re-verified after EVERY edit including the §6 one:** `play` `9bc10a4552c596e1` ·
+`dropplane_b1only` `5b4467b0105dec1a` · `droppod-pe-cdopoke` `249a3cd2190eb334` — all three MATCH.
+★ And at commit `c2cdc56` `dismount` was **byte-identical to the artifact that produced all four
+flight-1 results even after the `KDXLANDING=2` code was added**, i.e. that path is fully
+dead-code-eliminated at `KDXLANDING==0`. The later `DxState` print is what moved it.
 
 `VirtualAlloc`, `VirtualFree` and `FlushInstructionCache` are **absent** from `dismount`'s import
 table, exactly as they are from the deployed `play` — the S112 no-`.text`-write check.
@@ -332,7 +409,7 @@ do not cite it.
 
 ---
 
-## 8. INSTRUMENT ARTIFACTS ADDED THIS SESSION
+## 9. INSTRUMENT ARTIFACTS ADDED THIS SESSION
 
 1. ⚠⚠ **`usmapdump dumpimage` printed `ERROR: process "SUPERVIVE-Win64-Shipping" not found (is the
    game running?)` while the client was demonstrably alive at 650 s.** It needs the **`.exe` suffix**.
