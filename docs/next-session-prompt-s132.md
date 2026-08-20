@@ -1,4 +1,7 @@
-# NEXT SESSION (S132) — the pod is alive, the FIFTH WALL is confirmed, and the blocker is one stripped getter.
+# NEXT SESSION (S132) — the pod is alive, the wall is fully characterised, and there is a DATA-CLASS lever.
+
+**One line: `AuthPlayerDetachPlayerFromRidable` is fully implemented and unstripped, and its only
+gate is the single `TArray` append the wall dies just before performing. Read §"THE REAL §1" first.**
 
 **Written 2026-08-20 at the end of S131.** Read `docs/s131-pod-functionality-settled.md`, then
 `docs/fk22-dropphase-reachability.md` §29. Evidence: `scratchpad/s131/evidence/`.
@@ -43,28 +46,125 @@ client* and confirmed it. Read `docs/s131-pod-functionality-settled.md` §10.
 * ★ By-product: the log category, recorded COVERAGE-BLOCKED by lane 4, **named itself** the moment
   the path ran — **`LogLokiRideable`**.
 
-### ⇒ THE REAL §1 FOR S132: what does `0xF7EB50` REPLACE, and is there another route?
+## ★★★★★ THE REAL §1 FOR S132 — IT IS ANSWERED, AND THERE IS A DATA-CLASS LEVER
 
-The blocker is now precisely one stripped server-side getter, in the same family as FK-1's four empty
-stubs, sitting between a fully working pod spawn and a rider ever boarding. **That is an OFFLINE
-question and it is free:**
+**The offline follow-up ran and the wall is FULLY CHARACTERISED.** Two independent lanes agree on the
+load-bearing claim. Reports: `scratchpad/s131/lanes2/`. Read them before building anything.
 
-1. Identify the call at `0x55CD572` — which round-game-mode accessor was folded to `0xF7EB50`
-   (`xor eax,eax; ret`)? ⚠ `0xF7EB50` is ICF-folded, so the address names a *behaviour*, not a
-   function; identify it from the CALL SITE's surroundings, as lane 1 did for `LokiIsServer`.
-2. Enumerate every other producer of an `ALokiRoundGameMode*` on the client. S124 established the
-   tutorial already RUNS the round mode (`BP_LokiGameMode_Tutorial_C`), so a live round game mode
-   plausibly EXISTS — the question is whether the getter the wall uses is the only route to it.
-   ★ If another accessor is REAL, the wall may be one data poke away rather than a dead end.
-3. Re-run the `.data` record sweep (`scratchpad/s131/tools/rectab.py`) over the round-game-mode
-   accessor family, the way lane 4 did for `ULokiRideableComponent` — it grades REAL vs EMPTY
-   **without the code page being decrypted**.
+### A. The wall is ONE CALL, and the value it fetches is DEAD [M]
 
-★ **THE CANONICAL COLD IMAGE IS NOW `dumps/merged4.dump.exe`.** Chain, all with 0 overlap conflicts:
-`merged2` → **`merged3`** (+43 `.text` pages / 157,916 B, from the live drop-pod process) →
-**`merged4`** (+2 more pages, from the image taken immediately AFTER `RM_RIDEABLE` ran — so the
-wall's own bail block is decrypted in it, which is exactly the code S132 needs to read).
-★ Driving a path forces `.text` decryption. **Dump and merge after every armed window.**
+* `AuthPlayerEnterWorldAttachedToRidable` extent is **`0x55CD510..0x55CD7FA` = 746 B**, 5 chained
+  `.pdata` rows, **fully decrypted in `merged4`** — nothing about it is coverage-blocked.
+* Downstream of `0x55CD572` there are **11 call sites / 10 distinct targets and ZERO folds.** Every
+  callee is a real body.
+* ★★ **Register-liveness over the guard's fallthrough (`0x55CD590..0x55CD5CB`, every instruction,
+  capstone `regs_access`): ZERO reads of RAX.** The round game mode is **a PRECONDITION, not a data
+  dependency** — it is fetched, null-tested, `IsA<ALokiRoundGameMode>`-tested, and then never touched.
+* ⛔ **No poke can satisfy the getter, permanently.** `0xF7EB50` is `33 c0 c3` — three bytes, **zero
+  memory operands**, byte-identical in 4/4 images. It reads no argument, cache or global.
+* ⛔ A `UFunction.Func` swap is also dead: exec thunk `0x5456380` has **0 direct callers**, and the
+  game's own callers (`LokiDropShip.as::SpawnDropPodForTeam`, `LokiDropPod.as::SpawnCrewPod`) reach
+  the **impl by rel32**, bypassing `Func` entirely. Removing an internal `call` needs a standing
+  `.text` write — measured **10/10 lethal**. Not an option.
+
+### B. ★ THE ROUTE: the wall's ONLY persistent output is one TArray append, and its consumer is REAL
+
+The transcribed success path ends with **`this->PlayersAttached.Add(PS)`** (`+0x130` Data / `+0x138`
+Num / `+0x13C` Max). Everything before it is transient (teleport, collision toggles, a timestamp).
+
+And **`ULokiRideableComponent::AuthPlayerDetachPlayerFromRidable`** — impl **`0x55CCCB0`**, thunk
+**`0x5456100`**, 440 B, 15 direct calls, **ZERO folds, no round-game-mode reference of any kind** —
+is **fully implemented and unstripped**, and **its only real gate is that `PlayersAttached` be
+non-empty.** It un-hides the hero, resolves the landing location and places the character.
+
+⇒ **The dismount is one append away from working, and the append is the exact thing the wall dies
+just before doing.**
+
+### C. THE EXPERIMENT, fully specified. Risk class DATA (measured 0/22).
+
+1. Resolve the pod's `LokiRideable` component **by name** (`BP_DropPod_C.LokiRideable @0x6C8`) and a
+   live `ALokiPlayerState`. ★ `scratchpad/s131/tools/rideable_state.py` prints the whole component
+   layout by name and is the readout.
+2. **Append PS to `PlayersAttached`, mirroring the wall's own tail exactly:**
+   `old=[c+0x138]; [c+0x138]=old+1; if (old+1 > [c+0x13C]) call 0xF988D0(rcx=c+0x130, edx=old);`
+   `[[c+0x130] + old*8] = PS`
+   ★ `0xF988D0` is **the game's own `ResizeGrow`** — the same call the real function makes — so the
+   buffer comes from the GAME's allocator. That removes the foreign-pointer hazard that would make a
+   hand-supplied buffer unsafe (any later `Empty()`/`RemoveAt()` would free it).
+   ⚠ **MEASURED LIVE, S131: `PlayersAttached` reads `Data=0, Num=0, Max=0`** — so `ResizeGrow` WILL be
+   needed; this is not a pure RPM write and it needs an arm. `0xF988D0` is **not a UFunction**, so the
+   S55 thunk primitive does not apply — it is a raw direct call and its ABI must be graded first.
+3. Call **`AuthPlayerDetachPlayerFromRidable`** via the S55 direct thunk (`0x5456100`), args
+   `(ALokiPlayerState*, AActor* LandingActor)`; pass `nullptr` for the second and it defaults to the pod.
+4. **Receipts:** RPM readback `[c+0x138] == 1` and `[[c+0x130]] == PS` *before* the call; *after*, the
+   hero's actor location moves and `SetPredropHidden` un-hides it.
+   ⚠ **There is NO log receipt** — the detach is silent (0 log strings in its extent, verified). The
+   physical readout is the instrument, so sample the hero's location either side, as `RdState` does.
+5. ⚠⚠ **ORDERING TRAP:** do NOT also poke `PlayersInside` (`+0x120`) first. That makes
+   `HasEverContainedPlayer` true, which turns **the wall itself into a SILENT no-op** and destroys the
+   error-line receipt any control arm depends on.
+
+### D. ⚠ And the honest counterweight: the pod will never self-drive
+
+**`Loki::LokiIsClient` impl `0x00B9E1F0` = `mov al,1; ret` — hardcoded TRUE. `Loki::LokiIsServer` impl
+`0x00F7EB60` = `xor al,al; ret` — hardcoded FALSE** [M]. ⇒ `ALokiDropPod::KickPlayersFromPod()`, the
+pod's own automatic exit driver — exactly the thing that would iterate `PlayersAttached` and call the
+detach — returns immediately, unconditionally. **We must drive the detach ourselves; it will never
+fire on its own.** Blast radius: 102 `LokiIsClient` / 100 `LokiIsServer` occurrences across 78 AS files.
+
+### E. IS THE DROP PATH BOUNDED? — YES, AND IT IS NOT SPECIALLY TARGETED [M]
+
+Full `.data` record-table census, **16,277 records**, 12/12 non-degenerate controls passing
+(`scratchpad/s131/lane-d-empty-impl-census.tsv`):
+
+| verdict | records | % |
+|---|---:|---:|
+| REAL | 11,517 | 70.76 % |
+| IMPL-PAGE-DARK (coverage-blocked) | 3,092 | 19.00 % |
+| FORWARDER | 1,153 | 7.08 % |
+| **EMPTY** | **515** | **3.16 %** (4.28 % of gradeable) |
+
+* ★★ **A FIFTH FOLD EXISTS AND WAS NEVER ENUMERATED: `0x00FC6CF0` = `0f 57 c0 c3` =
+  `xorps xmm0,xmm0; ret` → 0.0f**, 13 records — including six `ALokiPlayerState` float getters.
+  **Any census graded against only the four known folds under-counts and misses gameplay-authoritative
+  stubs.** Add it to the fold table.
+* ⚠⚠ **FK-1's "1.2 % (78/6,669)" does NOT survive — it is a UNIT artifact, not an error.** FK-1
+  counted *distinct exec thunks*, and thunks are heavily ICF-folded (`0x5254180` alone is the
+  registered thunk of 92 records). Per-record the rate is **3.16 %**; in FK-1's own unit it is **170**,
+  not 78. **FK-1's conclusion — that an empty impl is informative, not ambient — STANDS.**
+* ★★★ **THE ENRICHED CATEGORY IS `Auth*`, NOT "drop".** `Auth*` gradeable **67/158 = 42.4 %** empty
+  vs non-`Auth` Loki **260/3,133 = 8.30 %**, Fisher **p = 1.6e-28**, spread over 41 classes. And it is
+  the naming convention, not the reflection flag (`Auth*`-but-not-`BlueprintAuthorityOnly` is still
+  32.8 %). Against the **fair** control — the rest of the Loki-owned table — the drop-8 classes are
+  **14.6 % vs 9.83 %, p = 0.11, NOT SIGNIFICANT.**
+  ⇒ **There was no decision to remove *deploy*. There was one decision to remove *server authority*,
+  and deploy is inside it like everything else.**
+* **~23 empty native stubs on the immediate deploy chain, enumerated per-record**, and **almost every
+  one is a pure state mutation on a replicated property, not a computation** — i.e. substitutable by
+  this project's safest write class. The two that are not: `ALokiGameMode::SpawnPlayer` (returns a
+  pawn) and `AuthBeginGlideDiveFromDropPod` (starts a movement mode).
+* ⚠ **Unbounded for GAMEPLAY**: the same cut takes all 6 `GatherMovement`, 11 `Add*Stat`,
+  `ALokiBaseItem` (23), `ALokiProjectile` (8), `ALokiMinionCharacter` (9), `ALokiTower` (7) — roughly
+  200 reimplementations across 40+ classes with no reference implementation.
+* ⚠ **The census is blind to Angelscript entirely** (0 records for `ALokiDropShip` / `ALokiDropPod`),
+  so it says nothing about the AS half — which is where the *working* half of the drop path lives.
+  Whether AS supplies an alternate route around each of the 23 stubs is what decides whether 23 is the
+  real number or an over-count.
+
+### F. Corrections to the record that fell out of this
+
+* **`GetLandingTeleportLocation` is REAL** (`0x55D89F0`, 963 B, 0 folds). FK-22 §2.5 lists it
+  COVERAGE-BLOCKED — now resolved, exactly as lane 4 predicted the record table would.
+* `AuthPlayerPreSpawnOnAddToPlane` (`0x55CD800`, 496 B) is REAL with **1** fold call — same wall, third
+  instance (and S131 measured it failing live).
+* **`AuthPlayerEnterWorld` is WORSE, not better**: **3** `0xF7EB50` calls; it does not bail on the
+  null, it stashes it and passes it as `this` to two further stripped methods.
+* **`UWorld::AuthorityGameMode @ UWorld+0x250`** [M], from `UGameplayStatics::GetGameMode` impl
+  `0x37D7BF0`, with `GetGameState` → `+0x258` as the positive control in the same pass. The round game
+  mode object EXISTS and is reachable — only the accessor was deleted. Moot for this wall (dead value).
+* ★ `ULokiBlueprintLibrary::GetLokiGameMode` (`0x5630970`) is the **smoking gun**: the world fetch
+  survived and the return was zeroed (`call get-world; xor eax,eax; ret`), so it did NOT fold onto
+  `0xF7EB50` and is still identifiable. Its twin `GetLokiGameState` is fully REAL.
 
 ---
 
@@ -158,34 +258,36 @@ the UHT send stub, not the `_Implementation`** — never grade an RPC from that 
 
 ---
 
-## 3. FREE AND HIGH-VALUE: THE FK-31 KILL-ADDRESS EXPERIMENT
+## 3. ⛔ FK-31 — THE KILL-ADDRESS EXPERIMENT IS DEAD, BUT THE TARGET IS NAMED
 
-`scratchpad/s131/evidence/FK31-kill-address-is-constant.md`.
+**Read `scratchpad/s131/evidence/FK31-kill-address-is-constant.md` — §7 GOVERNS THAT FILE.**
 
-**[M] The kill jumps to one fixed address per boot session** — `0x7FFB57400001` in the current era,
-bit-identical across every launch, not an offset from any loaded module, covered by no module and no
-executable region. 31 minidumps, 3 eras. It unifies FK-7's `.text`-patch kills and FK-31's staging
-deaths into **one kill routine**.
+[M] The kill jumps to **`runtime.dll + 1`**. One live `VirtualQueryEx` on the S131 client reports the
+page as **`MEM_COMMIT / READONLY / MEM_IMAGE`, `AllocationBase == the address itself`**, and at that
+base sit **`MZ`**, a valid `PE`, `SizeOfImage 0x4066000`, and 11 sections named
+`.pdata .rwx packer0 packer1 packer2 .rsrc .reloc packer30 packer40 packer31 packer42` — exactly
+FK-10's recorded layout for `runtime.dll`. `(Get-Process).Modules` reports **no module at that base**,
+so it is **manually mapped and hidden**, which is why it never appears in a minidump.
 
-**The experiment: map an executable page there before arming.**
-`VirtualAlloc(addr & ~0xFFF, 0x1000, MEM_COMMIT|MEM_RESERVE, PAGE_EXECUTE_READWRITE)`, write `ret` at
-`+1`. Then:
-* the process may **survive** the kill outright, and
-* the **return address on the stack names the caller** — the protector code that decided to kill,
-  which is what FK-10's Wall #7 has been hunting for sessions.
+⇒ **The kill is a deliberate jump into the protector's own read-only DOS header** — the page being
+READONLY is exactly why the fault is an EXECUTE violation. **This VINDICATES CLAUDE.md's
+`RIP == runtime.dll base + 1` rule and measures it live for the first time**, and it explains the
+per-boot constancy (the protector maps itself at a per-boot-stable base).
 
-⚠ Read the address off the most recent crash **in the current boot session** — it changes across
-reboots. ⚠ The page may already be RESERVED (then the alloc fails; the probe must SAY so, not
-continue silently). ⚠ A tail `jmp` rather than a `call` means the stack top is the grandparent frame.
-**All three outcomes are observable and all three beat a silent death.**
+⛔ **The "map an executable page there" experiment is DEAD** — the page is already committed.
+`scratchpad/s131/tools/fk31_map_kill_page.py` is read-only by default and refuses to `--commit`
+unless the page is genuinely FREE.
 
-⚠⚠ **And fix the recorded detection rule while you are there.** `CLAUDE.md` says *detect by
-`RIP == runtime.dll base + 1`* — **[M] `runtime.dll` has no module entry in ANY crashpad minidump**
-(0 of 14 sampled; control `preloader.dll` 14/14). A successor applying that rule will find the module
-missing and conclude the family does not match.
+★ **REPLACEMENT LEAD, purely offline and unstarted:** FK-10 established `runtime.dll` is NOT packed
+(46.6 MB of plaintext x86-64; loader function table at RVA `0x14D8758`, 18,580 entries). **Search it
+for code that computes its own image base + 1 and jumps there.** That lands on the routine that
+decides to kill — what FK-10's Wall #7 has been hunting. Start in `packer30` (2.2 MB,
+`call`-structured, holds the entry function).
 
----
-
+⚠⚠ **And note how that correction happened:** the whole kill-address write-up came from ONE
+instrument (minidumps), whose module list is blind to manually-mapped images BY DESIGN. A single
+query from a different instrument refuted two of its claims within the hour — and it was only run
+because a lever's precondition was being checked before an arm was built.
 ## 4. HOW TO RUN IT (S131's sequence, which worked)
 
 1. `forceTutorialMatch = true` in `server/internal/interactive/interactive.go`, rebuild `ags`.
@@ -251,15 +353,25 @@ markers        REFUTED  (S124)
 phase          SOLVED   (S124)
 subscription   DEAD     (S124)
 SpawnPlane     FAULTS   (S124/S17) -- b1only still creates a live LokiDropShip
-SpawnDropPodForTeam  ->  RETURNS TRUE, DropPod +2                      FIXED S130 §28
+SpawnDropPodForTeam  ->  RETURNS TRUE, pod spawns                       FIXED    S130
   |
-  +- bail 2 was C7: AActor::bCanEverReplicate on the pod CDOs
-  +- the pod is INITIALISED, ALIVE and FLYING at 20,000 uu/s           MEASURED S131 §29
-  |    InitializeDropPod ran 3/3, VFX ticking, engine logs LWC recache
-  |    it flies BECAUSE StartPodGameplay never ran (LokiIsServer is a stub)
-  +- NEXT: the rider handoff, blocked by a NULL DROP LEADER            <-- YOU ARE HERE
-  |    NOT by the fifth wall -- that was never reached this sitting
-  |    lever = poke [TeamState+0x688], bypassing FK-1's two empty stubs
-  +- then the FIFTH WALL for real (AuthPlayerEnterWorldAttachedToRidable)
+  +- InitializeDropPod RAN, 3/3 writes landed                           MEASURED S131
+  +- the pod is ALIVE: 18 components, Niagara VFX ticking, engine
+  |    logging LWC recaches, flying at its cooked 20,000 uu/s           MEASURED S131
+  |    (it flies BECAUSE StartPodGameplay never ran -- LokiIsServer
+  |     is a stripped `return false`)
+  +- the RIDER HANDOFF fails, and the wall is CONFIRMED live            MEASURED S131
+  |    one shared stripped round-game-mode getter, three consumers
+  +- BUT the value it fetches is DEAD (zero RAX reads downstream), and
+  |    the wall's ONLY persistent output is one TArray append           MEASURED S131
+  +- NEXT: append PS to PlayersAttached (+0x130) with the game's own
+  |    ResizeGrow, then call AuthPlayerDetachPlayerFromRidable          <-- YOU ARE HERE
+  |    (0x55CCCB0 / thunk 0x5456100) -- REAL, 0 folds, gate = that array
+  +- the pod will NEVER self-drive: KickPlayersFromPod returns at once
+  |    because LokiIsClient is hardcoded true / LokiIsServer false
   +- C8 / C9 still never fired: unexercised, NOT excluded
 ```
+
+**Bounded?** For deploy, yes: ~23 empty native stubs, enumerated per-record, and almost all are pure
+state mutations substitutable by a data poke. For gameplay, no: ~200 across 40+ classes. And the
+census is blind to the Angelscript half, which is where the working half lives.
