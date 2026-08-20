@@ -2922,3 +2922,82 @@ the name is suggestive, not evidence). For FK-22 it is moot: the pod's only rout
 this run — ASLR-dependent, re-derive per launch; prefer it over the leaf, which may not be loaded when
 a shim runs), then dispatch `SpawnDropPodForTeam` via Route E. ⚠ It mutates a **class default**, and
 **C8/C9 have still never been reached.**
+
+
+---
+
+## 28. FLOWN — ONE BYTE FIXES BAIL 2. THE DROP POD SPAWNS AND `SpawnDropPodForTeam` RETURNS TRUE.
+
+**Date:** 2026-08-20. One staged tutorial world, PID 20024. **Zero `.text` writes** — the only write
+in the whole experiment is ONE BYTE per CDO on the heap.
+**Primary evidence: `docs/s130-actor-pool-gate-settled.md` §13.** Pre-registered (with two
+amendments, all written before the flights they describe) in
+`scratchpad/s130/evidence/PREREG-cdopoke-flight.md`; raw markers in the same directory.
+
+### 28.1 The result
+
+| | before (byte = 1) | after the poke (byte = 0) |
+|---|---|---|
+| `SpawnPoolableActorFromClassDeferred` | **NULL**, `dP1 = +0` (S128) | live `BP_DropPod_Tutorial_C`, **`dP1 = +1`** |
+| `SpawnPoolableActorFromClass` | **NULL**, `dP2 = +0` (S128) | live `BP_DropPod_Tutorial_C`, **`dP2 = +2`** |
+| `SpawnDropPodForTeam` via Route E | **`false`**, DropPod **`+0`** (S127) | **`true`**, DropPod **`+2`** |
+
+⇒ **C7 was the entirety of bail 2. Clearing `AActor::bCanEverReplicate` on the drop-pod CDOs makes
+the pooled spawn produce real actors and `SpawnDropPodForTeam` succeed.**
+
+### 28.2 ★★ The leaf CDO is now MEASURED, so nothing in the chain is inferred
+`Default__BP_DropPod_Tutorial_C` @`0x1D1957E90E0` read **`bCanEverReplicate = 1`** in the staged world
+— the one value §27 could only infer from its ancestors, because the leaf is not loaded at the menu.
+`Default__Actor + 0x2D3 = 0` while all three pod CDOs read 1 reproduced the unpredicted two-sided
+control from the menu run, in a different process.
+Poke: **3 written, 3 readback-verified**, root control `Default__Actor` untouched at 1 — and the poke
+**persisted across two further DLL injections** (the Route E arm, built with `KPDCDOPOKE=0`, read all
+three back as 0).
+
+### 28.3 ⚠ What is attributable, and what the probe refuses to grade
+The probe emits two verdicts about different things, and both belong in the record:
+* `VERDICT: control AGREED, so C1 (status -1, DropPod delta +2) is attributable to SpawnDropPodForTeam.`
+* `*** E-VERDICT: E1 RAN BUT IS NOT ATTRIBUTABLE … E0c — the only control for the
+  [UFunctionVtable+0x378] marshaller, which is the branch E1 takes — is INCONCLUSIVE (no candidate)
+  … Record E1 (fault=0, return-slot written=1, DropPod delta +2) as UNATTRIBUTABLE. ***`
+⚠ The E-VERDICT is about the **dispatch mechanism**, not about whether pods appeared, and E0c is
+*unsatisfiable* on this class chain (S127: of 206 UFunctions exactly 1 takes that exit, and it is not
+blind-callable). **Do not write "Route E is proven to marshal correctly."**
+★★ **But the claim that matters is a DIFFERENCE and survives it:** S127 ran the same E1 dispatch on
+the same function with the same unsatisfiable caveat and got `false`/`+0`. **The limitation is
+identical in both arms, so it cancels in the differential** — what changed is one byte.
+★ And the `poolspawn` arm carries no such caveat: native static, S55 direct-`Func` thunk, `P0c`
+**STRONG PASS** (0.00 uu on |ref|=8377), `0xA5` sentinel showing `RESULT_DECL OVERWRITTEN`.
+**That arm alone settles C7.**
+
+### 28.4 ★★ The pool was still DISABLED, which confirms §25 live
+`bSupportsActorPoolPriming` was never touched and `PrimePools` was never called — the pool was off for
+the entire run and the pooled spawn produced actors anyway. The probe's own S128-era verdict says it:
+*"… with the pool feature disabled … the disabled pool is a RED HERRING."*
+⇒ §25's offline refutation is now **independently confirmed live**.
+
+### 28.5 ⚠ What this does NOT establish
+1. **That the pods are functional.** The census counts objects; nothing shows a pod flies or carries a
+   player. **C8/C9 simply did not fire — they remain unexercised, not excluded.**
+2. **That this is the FIX rather than the DIAGNOSIS.** It mutates a class default for the process
+   lifetime and may break the pod's replication — which is what the flag exists to declare.
+   ⛔ **Do not add it to the default shim set.**
+3. **A within-session A→B→A.** The control is cross-session (S127/S128). `poolspawn-cdoctrl`
+   (`.text 4e9c12ae866f5359`) is byte-for-byte the S128 experiment plus a read-only print — flying it
+   converts the cross-session control into a within-session one, and it is the single cheapest
+   strengthening available.
+
+### 28.6 Blocker chain, current
+```
+markers        REFUTED   (S124)
+phase          SOLVED    (S124)
+subscription   DEAD      (S124)
+SpawnPlane     FAULTS    (S124/S17)  -- but dropplane_b1only still creates a live LokiDropShip
+SpawnDropPodForTeam  ->  RETURNS TRUE, DropPod +2   <-- FIXED S130 §28
+  |
+  +- bail 2 was C7: AActor::bCanEverReplicate on the pod CDOs
+  +- NEXT: are the spawned pods functional? InitializeDropPod / FinishSpawningActor ran inside
+     the caller's `if (spawn != null)` body for the first time -- nothing has looked at what they did.
+  +- AND the rider handoff is still the FIFTH wall
+     (AuthPlayerEnterWorldAttachedToRidable, always fails on a stripped fold)
+```

@@ -664,3 +664,132 @@ The one-byte lever from §11.6 is now backed by a measurement rather than an inf
 runs, **`CDO(BP_DropPod_C) + 0x6C = 0`** — measured live at `0x241BA0290E0` this run, ASLR-dependent,
 re-derive per launch), then dispatch `SpawnDropPodForTeam` via Route E.
 ⚠ Unchanged: it mutates a **class default**, and **C8/C9 have still never been reached.**
+
+---
+
+## 13. FLOWN — THE POKE WORKS, AND THE DROP POD SPAWNS. FK-22's BAIL 2 IS FIXED.
+
+**Date:** 2026-08-20. One staged tutorial world, PID 20024, base `0x7FF7C4050000`.
+**Zero `.text` writes. The only write in the entire experiment is ONE BYTE per CDO on the heap.**
+Pre-registered in `scratchpad/s130/evidence/PREREG-cdopoke-flight.md` (with two amendments, all
+written **before** the flights they describe). Raw markers:
+`RESULT-poolspawn-cdopoke-s130.txt`, `RESULT-routeE-after-poke-s130.txt`.
+
+### 13.1 The headline
+
+| | S128 / S127 (byte = 1) | S130 after the poke (byte = 0) |
+|---|---|---|
+| `SpawnPoolableActorFromClassDeferred` | **NULL**, `dP1 = +0` | **live `BP_DropPod_Tutorial_C`** `0x1D1FFDDE830`, **`dP1 = +1`** |
+| `SpawnPoolableActorFromClass` | **NULL**, `dP2 = +0` | **live `BP_DropPod_Tutorial_C`** `0x1D1A5DA7910`, **`dP2 = +2`** |
+| `SpawnDropPodForTeam` (Route E) | returned **`false`**, DropPod **`+0`** (S127) | returned **`true`**, DropPod **`+2`** |
+
+```
+poolspawn:  bucket    BEFORE afterP1 afterP2 afterP3   AFTER     dP1     dP2     dP3
+            DropPod        2       3       5       7       7      +1      +2      +2
+
+route E:    bucket      BEFORE   afterC1    AFTER   delta
+            DropPod          7         0        9      +2
+```
+
+⇒ **C7 was the whole of FK-22's bail 2, and clearing `AActor::bCanEverReplicate` on the drop-pod CDOs
+fixes it.** The pooled spawn produces real actors and `SpawnDropPodForTeam` now succeeds.
+
+### 13.2 The poke itself [M]
+
+Baseline read, in a staged world, from the same probe run:
+```
+Default__BP_DropPod_Tutorial_C  @0x1D1957E90E0  bCanEverReplicate=1  bEnablePooling=1
+Default__BP_DropPod_C           @0x1D1FF33F020  bCanEverReplicate=1  bEnablePooling=1
+Default__LokiDropPod            @0x1D04B1BB4F0  bCanEverReplicate=1  bEnablePooling=1
+Default__Actor                  @0x1D04AE8E4F0  bCanEverReplicate=1  bEnablePooling=0
+```
+★★ **THIS CLOSES §12.3's LAST INFERENCE.** `Default__BP_DropPod_Tutorial_C` — the leaf, which is **not
+loaded at the menu** and could previously only be inferred from its ancestors — **reads 1, measured
+directly.** Exactly as predicted. Every link in FK-22's chain is now [M] with nothing inferred.
+★ And `Default__Actor + 0x2D3 = 0` while all three pod CDOs read 1 reproduces the unpredicted
+two-sided control from the menu run, in a different process.
+
+Then: `poke summary: 3 written, 3 readback-verified`, `1 -> 0` on all three pod CDOs,
+`Default__Actor` **untouched at 1** (the root control held).
+★★ **The poke persisted across TWO further DLL injections** — the Route E arm, injected later and
+built with `KPDCDOPOKE=0`, read all three pods back as **0** and `Default__Actor` as **1**. A class
+default really does stay poked for the process lifetime, and the root control was never collaterally
+written.
+
+### 13.3 ⚠ What is attributable, and what the probe refuses to grade
+
+The probe emits **two** verdicts and they are about different things. Quote both:
+
+* `VERDICT: control AGREED, so C1 (status -1, DropPod delta +2) is attributable to
+  SpawnDropPodForTeam.`
+* `*** E-VERDICT: E1 RAN BUT IS NOT ATTRIBUTABLE. E0/E0b passed on the SAFE-INVOKE exit, but E0c --
+  the only control for the [UFunctionVtable+0x378] marshaller, which is the branch E1 takes -- is
+  INCONCLUSIVE (no candidate) … Record E1 (fault=0, return-slot written=1, DropPod delta +2) as
+  UNATTRIBUTABLE, not as a game statement. ***`
+
+⚠ **The E-VERDICT is about the DISPATCH MECHANISM, not about whether pods appeared.** E0c is
+*unsatisfiable* on this class chain (S127 measured: of 206 UFunctions, exactly 1 takes the
+alt-dispatch exit and it is not blind-callable), so "wait for E0c" waits for something that cannot
+happen. **Respect it: do not write "Route E is proven to marshal correctly."**
+
+★★ **But the claim that matters survives it, because it is a DIFFERENCE, not an absolute.** S127 ran
+**the same E1 dispatch, on the same function, with the same unsatisfiable E0c caveat**, and measured
+`false` / `+0`. This run measured `true` / `+2`. **The mechanism-grading limitation is identical in
+both arms, so it cancels in the differential.** What changed between them is one byte.
+⇒ **[M] the CHANGE is attributable to `bCanEverReplicate`**, even though the absolute grade of the
+ProcessEvent marshaller path remains ungraded — and that was already true before this session.
+
+★ The `poolspawn` arm carries no such caveat at all: it is a **native static** called through the S55
+direct-`Func` thunk, its `P0c` control was a **STRONG PASS** (0.00 uu on a non-zero reference,
+|ref|=8377), and its `0xA5` sentinel confirmed `RESULT_DECL OVERWRITTEN` — so a real return was
+written and it decoded as a live `BP_DropPod_Tutorial_C`. **That arm alone settles C7.**
+
+### 13.4 ★★ The pool is STILL DISABLED — which re-confirms §25 from the other direction
+
+Nothing in this experiment touched `bSupportsActorPoolPriming`; `PrimePools` was never called and the
+actor pool remained off for the whole run. **The pooled spawn produced actors anyway.** The probe's
+own verdict line, written back in S128 before C7 was known, says it plainly:
+
+> *"SpawnPoolableActorFromClassDeferred RETURNED A LIVE ACTOR … with the pool feature disabled.
+> ⇒ THE FIRST LINK OF THE [I] CHAIN IS REFUTED: the helper does NOT require the pool, 'PrimePools is
+> not enabled' does NOT explain S127's bail 2, and the disabled pool is a RED HERRING."*
+
+⇒ §25's offline refutation of the pool hypothesis is now **independently confirmed live**.
+⚠ Note the probe's wording predates C7 and therefore does not name the real cause; it is right about
+what it denies and silent about what replaces it.
+
+### 13.5 ⚠ What this does NOT establish
+
+1. **That the spawned pods are functional.** The census counts objects. Nothing here shows a pod
+   flies, carries a player, or lands. **C8/C9 were never reached before and are still unexercised as
+   failure paths** — they simply did not fire.
+2. **That this is the right FIX rather than the right DIAGNOSIS.** Clearing `bCanEverReplicate` on a
+   class default is a *probe*, not a shipping change: it mutates a class default for the process
+   lifetime and may well break the pod's replication, which is the thing the flag exists to declare.
+   ⇒ **Do not add this to the default shim set.**
+3. **That the shipped game works this way.** The 96 cooked-`true` poolable classes include gems; on
+   the shipped values their pooled spawns would return NULL too. §12.5's question — whether the
+   primary gem path uses `SpawnExtraGemWithTeam` — is still unanswered and still needs an offline
+   survey, not a client.
+4. **A within-session A→B→A.** The control is **cross-session** (S128/S127 on different clients).
+   The arms are the same probe modulo one byte and the differential is clean, but a same-process
+   reversal was not run: once the CDOs are poked the process is committed, so the control needs its
+   own launch. `poolspawn-cdoctrl` (`.text 4e9c12ae866f5359`) exists and is byte-for-byte the S128
+   experiment plus a read-only print — **fly it to convert the cross-session control into a
+   within-session one.**
+
+### 13.6 Cost, honestly
+
+Four launches for one armed result. Attempt 1 died 9 s after `fo` (FK-31). Attempts 2 and 3 staged,
+armed, and died **silently at the same ladder position** before the CDO arm — the artifact-less class,
+no dump, no handoff. Attempt 4 succeeded and ran to completion, then absorbed **two further manual-map
+injections** (`dropplane_b1only` to create the `LokiDropShip` precondition, then the Route E arm)
+without dying.
+★ **The S127 cross-check is what turned attempt 3's failure into progress:** its successful Route E
+flight reads `DropShip=1` because it injected `dropplane_b1only` first. Mine read `DropShip=0`. **I
+had omitted a precondition, and re-reading the prior flight's own census is what surfaced it** — not
+more launches.
+⚠ **And the better response was to stop needing the precondition:** `RM_POOLSPAWN` tests C7 with no
+ship, no plane and no ProcessEvent. The cheapest experiment was available the whole time.
+⚠ `PdCdoFlags`' single GUObjectArray pass still costs **~2,000–2,300 ms on the game thread** (measured
+and printed). That is a real hitch; it ran twice per arm. Budget for it, or move the read off-thread.
