@@ -1,12 +1,12 @@
-crashwatch: pid 34348 (SUPERVIVE-Win64-Shipping.exe)
+crashwatch: pid 45796 (SUPERVIVE-Win64-Shipping.exe)
   log     : C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log
-  outDir  : G:\git\Supervive Revival Project\dumps\crash-20260820-021955
+  outDir  : G:\git\Supervive Revival Project\dumps\crash-20260820-143225
   poll    : 50 ms   suspend-on-trigger: true
-  log tail starts at offset 344042 (older markers ignored)
+  log tail starts at offset 309260 (older markers ignored)
 
 MISSED: process exited before any crash marker was seen.
-  exit code 57005 (0x0000DEAD) — PROTECTOR NtTerminateProcess(0xDEAD) — deliberate anti-tamper kill (FK-32)
-  elapsed 37791.5s
+  exit code -1 (0xFFFFFFFF) — killed by Stop-Process / TerminateProcess(-1)
+  elapsed 614.8s
   If this was a silent kill (0xDEAD) there is nothing to catch — see the
   header of crashwatch.go. If it was 0xC0000005, the log markers may have
   been buffered; lower -poll or add the marker you saw to crashMarkers.
