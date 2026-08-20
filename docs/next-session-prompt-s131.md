@@ -1,67 +1,59 @@
-# NEXT SESSION (S131) — FK-22: the NULL is settled end to end; the next wall is C8/C9
+# NEXT SESSION (S131) — FK-22: bail 2 is FIXED. The question is now whether the pod is functional.
 
-**Written 2026-08-20 at the end of S130.** Read `docs/s130-actor-pool-gate-settled.md` (**§11 then
-§12**), then `docs/fk22-dropphase-reachability.md` §25–§27. This file is the plan; those are the evidence.
-
----
-
-## 0. WHAT CHANGED — the whole S130 plan is complete, including its own successor task
-
-1. **The pool gate is named** — `ULokiActorPoolManager` slot 90 returns
-   `Cast<ALokiGameState>(GetWorld()->GameState)->bSupportsActorPoolPriming` (`+0x898`), false because
-   `BP_LokiGameState_Tutorial`'s shipped class default sets it `False`. **No ini route exists.**
-2. ⚠ **The pool was never the blocker.** An unprimed pool cannot return NULL — the acquire
-   `TMap::FindOrAdd`s and a pool miss falls to a shipped fallback into a normal `UWorld::SpawnActor`.
-3. ✅ **THE NULL IS `AActor::bCanEverReplicate`.** `C7 @ 0x564820C` is
-   `cmp byte ptr [CDO + 0x6C], 0 ; jne -> NULL`; `AActor`'s ctor sets it **1** (`0x03371841`); neither
-   drop-pod Blueprint overrides it; `SpawnDropPodForTeam` (`LokiDropShip.as:153`) wraps its entire
-   body in `if (spawn != null)` with **no else**. ⇒ **bail 2, explained end to end.**
-4. ✅ **AND THE RUNTIME READ IS FLOWN — the runtime CDO byte IS the cooked class default.**
-   One clean `-NoHook` **menu** launch, read-only RPM, zero injection, no staging:
-   **8/8 pre-registered predictions, 0 failures**, two-sided controls on **two** offsets.
-   ⇒ **C7 fires. Every link in the chain is [M].**
-
-**Nothing on the actor pool is worth a launch.** It is a shipped design decision, fully characterised.
+**Written 2026-08-20 at the end of S130.** Read `docs/s130-actor-pool-gate-settled.md` (**§11 → §13**),
+then `docs/fk22-dropphase-reachability.md` §25–§28.
 
 ---
 
-## 1. START HERE — the repair, and it is now measurement-backed
+## 0. WHAT S130 DID
 
-**Poke `CDO(BP_DropPod_C) + 0x6C = 0`**, readback-verify, then dispatch `SpawnDropPodForTeam` via
-Route E (ProcessEvent slot 78, `droppod_pe` build).
+1. **The pool gate is named** — `ULokiActorPoolManager` slot 90 reads
+   `ALokiGameState::bSupportsActorPoolPriming` (`+0x898`), false because the tutorial GameState
+   Blueprint ships it `False`. **No ini route.**
+2. ⚠ **The pool was never the blocker** — an unprimed pool cannot return NULL (`FindOrAdd` + a
+   shipped fallback into a normal `UWorld::SpawnActor`).
+3. ✅ **The NULL was `AActor::bCanEverReplicate`** (`CDO+0x6C`), which `AActor`'s ctor sets to 1 and
+   the acquire rejects at `C7 @ 0x564820C`.
+4. ✅✅ **AND IT IS FIXED, MEASURED:** poke `CDO->bCanEverReplicate = 0` on the drop-pod CDOs and
+   `SpawnDropPodForTeam` returns **`true`** with **DropPod +2** (S127: `false` / `+0`); both pooled
+   spawns return live actors (S128: NULL / `+0`). One heap byte, readback-verified, zero `.text` writes.
 
-★ **Use `BP_DropPod_C`, not the leaf.** `Default__BP_DropPod_Tutorial_C` is **not loaded at the menu**
-(and may not be when the shim runs); `Default__BP_DropPod_C` **is**, it is the leaf's direct parent,
-and it reads **1** live (`0x241BA0290E0` on the S130 run — ASLR-dependent, **re-derive per launch**
-with `tools/re/cdo_flag_readout.py <PID> <BASE>`).
-
-* **Write class:** one aligned byte on a class default object — the safest measured class
-  (nothing 0/22 · bytecode 0/9 vs transient `.text` 4/12 · standing `.text` 7/8), free readback.
-* **Arms A → B → A**, single variable, DropPod census (`dP` delta) as the readout, exactly as S128.
-* ⚠ **It mutates a CLASS DEFAULT** — every drop pod for the process lifetime, and it may break the
-  pod's replication. **Not** a default-set shim.
-* ⚠⚠ **Expect the next wall immediately at C8 or C9. They have NEVER been reached** — C7 returns
-  before either, so nothing downstream of it has ever executed. Budget the sitting for a *new* wall,
-  not for success.
-  C8 = `PoolMgr->GetWorld() == null` (`0x5648D97`) · C9 = `UWorld::SpawnActor` null, **or never
-  invoked because `rbx == 0` at `0x5648E34`** (`0x5648E6F`).
-* ★ And even a spawned pod hits the **FIFTH wall** at the rider handoff —
-  `AuthPlayerEnterWorldAttachedToRidable` (`0x55CD510`) always fails on a stripped fold.
+**FK-22's bail 2 is closed.** Do not re-open the pool, the gate, or C7.
 
 ---
 
-## 2. THE ONE THING THE RUNTIME READ DID *NOT* CLOSE
+## 1. START HERE — the pods exist; nobody has looked at what they ARE
 
-`Default__BP_DropPod_Tutorial_C` was never read directly — it is not loaded at the menu. Its value
-rests on three ancestors reading **1** live, on [M] that it overrides neither flag, and on the
-cooked→runtime mapping being validated **3/3 in both polarities**. **Only staging a tutorial world
-closes it outright**, and the repair in §1 does that anyway — so read it in the same sitting:
-`tools/re/cdo_flag_readout.py` already lists it as a target and will print it once loaded.
+`SpawnDropPodForTeam` succeeding means its caller's `if (spawn != null)` body ran **for the first
+time**: `GetTeamDropLeader`, `InitializeDropPod`, `FinishSpawningActor`, `RemovePlayerFromPlane`,
+`AuthPlayerEnterWorldAttachedToRidable`, `MulticastOnDropPodLaunched`, `AddTeamDropEvent`.
+**Nothing has inspected any of it.** The census counts objects, not behaviour.
 
-⚠ **Also still open, and NOT worth a launch on its own:** gems read **1** too, so the pooled spawn
-returns NULL for them as well. The gem call site is `LokiGem.as:168 SpawnExtraGemWithTeam` — an
-*extra*-gem spawner — but **whether the game's primary gem path uses it is UNESTABLISHED.** Settling
-it needs an offline survey of the other gem spawn routes, not a client.
+Cheapest first reads on the two spawned pods (read-only RPM, and the probe already prints their
+addresses):
+* is `PodTeamIndex` set (registry default is `-1`)? is `LeaderPod` non-null? `bIsTeamLeaderPod`?
+* did `AuthPlayerEnterWorldAttachedToRidable` do anything — or did it hit the **FIFTH wall**
+  (`0x55CD510`, a real body that always bails on a stripped fold)? That is the *expected* stopping
+  point and confirming it is a result.
+* is the hero attached to a pod? does `RemovePlayerFromPlane` show in the log?
+
+⚠ **C8 and C9 never fired.** They are **unexercised, not excluded** — if a later run produces a null
+again, they are still the branches to read.
+
+---
+
+## 2. THE CHEAPEST STRENGTHENING, IF YOU WANT THE A/B TIGHTER
+
+The control for S130's result is **cross-session** (S127/S128 on different clients). Flying
+`poolspawn-cdoctrl` (`.text 4e9c12ae866f5359`) — byte-for-byte the S128 experiment plus a read-only
+CDO print — converts it into a **within-session** control. One staged launch.
+⚠ It must be a **fresh process**: once the CDOs are poked the process is committed, so a same-process
+reversal is not possible.
+
+⚠⚠ **Do NOT ship the poke.** It mutates a **class default** for the process lifetime and may break the
+pod's replication — which is exactly what `bCanEverReplicate` exists to declare. It is a diagnosis.
+If a durable route is wanted, the question to answer first is *why the shipped game's own drop path
+calls a pooled spawn that its own class defaults forbid* — see §12.5/§13.5, still unanswered.
 
 ---
 
@@ -141,22 +133,16 @@ one-byte change with a built-in positive control**, and it settles what the pool
 
 ```
 markers        REFUTED  (S124)
-phase          SOLVED   (S124 -- one GoToPhase call self-drives the round to EGP_Combat)
-subscription   DEAD     (S124 -- ServerOnly; the DropPlane component is not in the invocation list)
-SpawnPlane     FAULTS   (S124/S17 -- 2 of 3 tagged markers are not streamed in)
-SpawnDropPodForTeam  runs via ProcessEvent slot 78, returns false   = bail 2
+phase          SOLVED   (S124)
+subscription   DEAD     (S124)
+SpawnPlane     FAULTS   (S124/S17) -- but dropplane_b1only still creates a live LokiDropShip
+SpawnDropPodForTeam  ->  RETURNS TRUE, DropPod +2      <-- FIXED S130 §28
   |
-  +- the pooled spawn returns NULL
-       +- NOT because the actor pool is disabled       <-- REFUTED S130 §25
-       +- because C7 rejects bCanEverReplicate = true  <-- SETTLED S130 §26
-            +- and the RUNTIME CDO byte == the cooked default  <-- FLOWN, 8/8  S130 §27
-                 |
-                 +- next: poke CDO(BP_DropPod_C)+0x6C = 0, then Route E   <-- YOU ARE HERE
-                 +- then C8 / C9, which have NEVER been reached
-                 +- and then the FIFTH wall at the rider handoff
-                    (AuthPlayerEnterWorldAttachedToRidable, always fails on a stripped fold)
+  +- bail 2 was C7: AActor::bCanEverReplicate on the pod CDOs
+  +- NEXT: are the spawned pods FUNCTIONAL?             <-- YOU ARE HERE
+  |    the caller's `if (spawn != null)` body ran for the first time and
+  |    nobody has looked at what InitializeDropPod / FinishSpawningActor did
+  +- then the rider handoff, which is the FIFTH wall
+     (AuthPlayerEnterWorldAttachedToRidable 0x55CD510, always bails on a stripped fold)
+  +- C8 / C9 never fired: unexercised, NOT excluded
 ```
-
-✅ **Every arrow above is measured.** The only inference left in the chain is the leaf CDO
-(`BP_DropPod_Tutorial_C`), which is one inheritance hop and closes for free the moment a tutorial
-world is staged.
