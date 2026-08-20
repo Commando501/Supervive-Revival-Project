@@ -37,6 +37,13 @@ addresses):
   point and confirming it is a result.
 * is the hero attached to a pod? does `RemovePlayerFromPlane` show in the log?
 
+⚠⚠ **TAKE THESE READS THE INSTANT THE ARM REPORTS, NOT AFTER.** S130's attempt 4 delivered every
+result and then died artifact-less minutes later, taking its two spawned pods with it — the questions
+above were free at the time and are now gone. **All 3 armed windows in S130 ended in artifact-less
+deaths** (`s130-actor-pool-gate-settled.md` §13.7) against a recorded base rate of 3/36; n=3, so that
+is suggestive rather than established, but **budget one armed window per result and write everything
+to disk as it is produced.**
+
 ⚠ **C8 and C9 never fired.** They are **unexercised, not excluded** — if a later run produces a null
 again, they are still the branches to read.
 
