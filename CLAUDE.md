@@ -375,6 +375,29 @@ executable region covers it**. A corrupted pointer does not reproduce to the bit
   deaths (`s127-fk31-staging-death`, `s128-fk31-longpark`, `s130-cdopoke-att1`, S131's launch-1) and the S114/S115
   menu-route deaths all land on their boot's one address. ⇒ **[M] one kill routine, not three.** ⚠ It says nothing
   about the TRIGGER — two detections can call one killer.
+- ★★★★★ **AND THE TARGET IS NAMED: IT IS `runtime.dll + 1`, MEASURED LIVE.** One `VirtualQueryEx` on the
+  live client (`scratchpad/s131/tools/fk31_map_kill_page.py`, read-only) reports the page as
+  **`MEM_COMMIT / READONLY / MEM_IMAGE`, `AllocationBase == the address itself`**, and at that base sit
+  **`4d 5a` = `MZ`**, a valid `PE  `, `SizeOfImage 0x4066000`, and 11 sections named
+  **`.pdata .rwx packer0 packer1 packer2 .rsrc .reloc packer30 packer40 packer31 packer42`** — exactly
+  FK-10's recorded layout for `runtime.dll`. `(Get-Process).Modules` reports **no module at that base**
+  ⇒ it is **MANUALLY MAPPED and hidden from the module list**, which is why it never appears in a minidump.
+  ⇒ **THE KILL IS A DELIBERATE JUMP INTO THE PROTECTOR'S OWN READ-ONLY DOS HEADER** — a crash primitive,
+  sibling of FK-10's measured `NtTerminateProcess(h, 0xDEAD)` at `runtime.dll` RVA `0x80f7f0`. The page
+  being READONLY is exactly why the fault is an EXECUTE violation (`ExceptionInformation[0]==8`).
+  ★ **This VINDICATES `RIP == runtime.dll base + 1`** and measures it live for the first time; it also
+  explains the per-boot constancy (the protector maps itself at a per-boot-stable base, unlike the
+  ASLR-rebased `preloader.dll` and game exe).
+  ⛔ **The "map an executable page there" experiment is DEAD** — the page is already committed.
+  ★ **BETTER REPLACEMENT LEAD, and it is purely OFFLINE:** FK-10 established `runtime.dll` is NOT packed
+  (46.6 MB of plaintext x86-64, loader function table at RVA `0x14D8758`). **Search it for code that
+  computes its own image base + 1 and jumps there** — that lands on the routine that decides to kill,
+  which is what FK-10's Wall #7 has been hunting. Start in `packer30`.
+  ⚠⚠ **AND THIS WAS A SELF-CORRECTION WITHIN THE SESSION.** The §1–§6 write-up said "no module covers it",
+  from minidumps alone — an instrument blind to manually-mapped images BY DESIGN. **One query from a
+  different instrument refuted it inside the hour**, and it was only run because a lever's precondition
+  was being checked before building an arm. Read `scratchpad/s131/evidence/FK31-kill-address-is-constant.md`
+  §7 — it governs the rest of that file.
 - ⚠⚠ **A RECORDED RULE THAT CANNOT BE APPLIED AS WRITTEN.** This file says *detect the kill by `RIP == runtime.dll
   base + 1`*. **[M] `runtime.dll` has NO module entry in ANY crashpad minidump** (0 of 14 sampled; positive control
   `preloader.dll` present 14/14), so that half is unevaluatable from a minidump and a successor will read the
