@@ -73,9 +73,15 @@ The transcribed success path ends with **`this->PlayersAttached.Add(PS)`** (`+0x
 Num / `+0x13C` Max). Everything before it is transient (teleport, collision toggles, a timestamp).
 
 And **`ULokiRideableComponent::AuthPlayerDetachPlayerFromRidable`** — impl **`0x55CCCB0`**, thunk
-**`0x5456100`**, 440 B, 15 direct calls, **ZERO folds, no round-game-mode reference of any kind** —
-is **fully implemented and unstripped**, and **its only real gate is that `PlayersAttached` be
-non-empty.** It un-hides the hero, resolves the landing location and places the character.
+**`0x5456100`**, 440 B, 15 direct calls, **no round-game-mode reference of any kind** — has as **its
+only real gate that `PlayersAttached` be non-empty.**
+
+⚠⚠ **CORRECTED after adversarial verification — it is NOT fold-free.** My own uncapped rel32 scan
+over its confirmed 9-row `.pdata` extent finds **TWO `0xF7EC20` (`ret 0`) calls, at `0x55CCD5B` and
+`0x55CCE4E`**; the first takes the hero character immediately after the `IsA(ALokiHeroCharacter)`
+gate, i.e. a stripped method ON THE HERO, not a diagnostic reporter. **"ZERO folds" was wrong;
+"zero `0xF7EB50`" is right and is narrower.** Expect a PARTIAL dismount and read a null as locating
+one of those two calls, not as a failure of the append. It un-hides the hero, resolves the landing location and places the character.
 
 ⇒ **The dismount is one append away from working, and the append is the exact thing the wall dies
 just before doing.**
