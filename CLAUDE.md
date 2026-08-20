@@ -1487,8 +1487,35 @@ from commit `c2cdc56`; HEAD is `53483e6181bb3583` after the DxState pod-location
   terminal actions are direct calls to the stripped `0xF7EB50`, and it performs **zero writes to any
   actor or component transform**. Satisfying its `PlayersInside` guard with a poke would move execution
   past the guards and change nothing about where the hero is.
-- ⛔ **THIS IS A DIAGNOSIS, NOT A SHIPPING FIX.** It writes a live component's replicated array by hand
+- ⛔ **THIS IS A DIAGNOSIS, NOT A SHIPPING FIX.** It writes a live component's state array by hand
   and drives an authority-only entry point. **Do not add it to the default shim set.**
+- ★ **What seven adversarially-verified offline lanes added** (`scratchpad/s132/lanes/`), agreeing
+  with the session lead's independent transcription on every load-bearing claim:
+  ⚠⚠ **`PlayersAttached` is NOT replicated** (no `CPF_Net`) — which CORRECTS this file's first
+  draft and makes the write safer than described, not riskier ·
+  ★★ **`0xF7EC20` is `c2 00 00` = `ret imm16 0`, a VOID no-op — it does NOT zero `eax`**; the
+  repo's "ret 0" shorthand reads as "returns zero" and will mislead a future grader ·
+  ★★★ **the detach has exactly ONE game caller and it is DEAD** (`KickPlayersFromPod`, behind
+  `if (LokiIsClient) return;` with `LokiIsClient` hardcoded TRUE) ⇒ **every observable is at a
+  structural baseline of 0**, so nothing measured here can be background activity ·
+  ★ **`TArray::Remove` (`0x11F3860`) writes ONLY `Num`** — no free, no realloc — which is why
+  runs 2–4 print `Max already covers it` and why a poked buffer is never freed by this function ·
+  ⚠ **an unfired crash hazard**: `0x5586530`, called unconditionally on the hero, dereferences
+  `hero+0x460 / +0x1978 / +0x1980` with **no null checks** (survived all five calls on the staged
+  `BP_HERO_Ronin_C`; read them first for any other hero) ·
+  ⚠ the detach carries `FUNC_BlueprintAuthorityOnly` but its **exec thunk contains no authority
+  check**, which is why the S55 thunk route works.
+- ★ **Offsets confirmed by two disjoint instruments each** (lane 4): `PlayersInsideCount @0x11C` ·
+  `PlayersInside @0x120` · `PlayersAttached @0x130/0x138/0x13C` · `bCanExit @0x118` ·
+  `OnPlayersInsideCountChanged @0xE0` · inner = `ObjectProperty`, pointer size 8 · and
+  `AActor::bHidden` → `0x68` mask `0x80`, `bAlwaysRelevant` → `0x68` mask `0x08` **exactly** as the
+  S132 handoff predicted — so the two-sided bool control is well-founded.
+  ⚠⚠ **BUT `FBoolPropertyParams` carries NO `ByteOffset`/`ByteMask`/`FieldMask` fields** — the
+  engine derives them by calling the record's `SetBitFunc` on a zeroed buffer, so a decoder written
+  against the assumed field list reads padding. The shim reads **live `FBoolProperty`** objects
+  (`+0x70..+0x73`), which is the right route. ⚠ And `ALokiDropPod::LokiRideable @0x6C8` is a
+  **Blueprint-generated** component property — no offline instrument can produce its offset; resolve
+  it BY NAME on the live class (which the arm does).
 - **Regression gates, verified after every edit:** `play` `9bc10a4552c596e1` · `dropplane_b1only`
   `5b4467b0105dec1a` · `droppod-pe-cdopoke` `249a3cd2190eb334`, and **`dismount` is byte-identical to
   the artifact that produced all four results** even after the `KDXLANDING=2` code was added.

@@ -334,6 +334,54 @@ the same thing after the fact. **When the reference is moving, print the referen
 bytes and was not transcribed. *That it consumes the actor* is measured; *how* it derives Z (the
 -9.85 uu rest offset is the hero's own capsule settling, not necessarily the function's output) is not.
 
+## 6b. WHAT THE OFFLINE LANES ADDED, INCLUDING ONE CORRECTION TO THIS DOCUMENT
+
+Seven offline recon lanes ran in parallel with the flights, each adversarially verified by an
+independent agent that re-ran the commands rather than checking the prose
+(`scratchpad/s132/lanes/`). They agree with the session lead's independent transcription on every
+load-bearing claim. Five things they added:
+
+1. ⚠⚠ **CORRECTION TO THIS DOCUMENT AND TO THE FIRST COMMIT MESSAGE: `PlayersAttached` is NOT
+   replicated.** [M, lane 4, two disjoint instruments] It carries no `CPF_Net`. The first write-up
+   called it "a live component's *replicated* array"; that is wrong, and the correction makes the
+   write **safer** than described, not riskier — there is no RepNotify or dirty-marking to skip.
+   The rest of the caution stands: it is still a live component's state and an authority-only entry
+   point, so it stays a diagnosis rather than a shipping shim.
+2. ★★ **`0xF7EC20` is `c2 00 00` = `ret imm16 0` — a VOID no-op. It does NOT zero `eax`.**
+   [M, lane 1] The repo's long-standing shorthand *"ret 0"* reads as *"returns zero"*, which is a
+   different claim. It is irrelevant here (neither fold's return is tested) but it will mislead a
+   future grader reading the fold table.
+3. ★★★ **The detach has exactly ONE game caller, and it is dead** [M, lane 1]:
+   `ALokiDropPod::KickPlayersFromPod`, whose entire body sits behind `if (LokiIsClient) return;`
+   with `LokiIsClient` hardcoded TRUE on this client. ⇒ **every observable this arm reads is at a
+   structural baseline of 0** — the game cannot produce a dismount on its own, so nothing measured
+   here can be background activity.
+4. ★ **`TArray::Remove` (`0x11F3860`) writes ONLY `Num`** [M, lane 1] — it does not touch `Data`
+   or `Max`, does not free and does not realloc. That is the mechanism behind the flight observation
+   that runs 2–4 printed `Max already covers it -> no ResizeGrow needed`: the run-1 buffer survives
+   the detach untouched. It also means **a poked buffer is never freed by this function.**
+5. ⚠ **A crash hazard that did not fire, and is still worth recording** [M, lane 1]: `0x5586530`
+   — called unconditionally on the hero — dereferences `hero+0x460`, `hero+0x1978` and
+   `hero+0x1980` with **no null checks**. It survived all five calls on the staged `BP_HERO_Ronin_C`,
+   so it is empirically safe on that hero; a differently-configured hero could fault. Read the three
+   pointers before arming if the hero is not the standard staged one.
+
+★ Lane 4 also confirmed, by two disjoint instruments each, every offset the arm uses:
+`PlayersInsideCount @0x11C` · `PlayersInside @0x120` · `PlayersAttached @0x130/0x138/0x13C` ·
+`bCanExit @0x118` · `OnPlayersInsideCountChanged @0xE0` · inner type = `ObjectProperty`, pointer
+size 8 (four independent routes) · and `AActor::bHidden` → offset `0x68` mask `0x80`,
+`bAlwaysRelevant` → offset `0x68` mask `0x08`, **exactly** as the handoff predicted.
+⚠ But lane 4 also refutes the handoff's *implementation* of that control: **`FBoolPropertyParams`
+carries no `ByteOffset`/`ByteMask`/`FieldMask` fields at all** — the engine derives them at runtime
+by calling the record's `SetBitFunc` on a zeroed buffer. A decoder written against the assumed field
+list would read padding. The shim reads **live `FBoolProperty` objects** (`+0x70..+0x73`), which is
+the correct route, so the control is buildable — just not from the `.rdata` records.
+⚠ And `ALokiDropPod::LokiRideable @0x6C8` is a **Blueprint-generated component property**, neither
+UHT nor Angelscript, so **no offline instrument can produce its offset** — it must be resolved by
+name on the live class, which is what the arm does.
+
+---
+
 ## 7. WHAT IS STILL OPEN
 
 - ✅ **CLOSED BY FLIGHT 2 (§6): `GetLandingTeleportLocation` DOES consume its
@@ -357,7 +405,7 @@ bytes and was not transcribed. *That it consumes the actor* is measured; *how* i
   its two terminal actions are direct calls to the stripped `0xF7EB50`, and it performs **zero writes
   to any actor or component transform**. Satisfying its `PlayersInside` guard with a poke would move
   execution past the guards and change nothing about where the hero is.
-- **This is a diagnosis, not a shipping fix.** It writes a live component's replicated array by hand
+- **This is a diagnosis, not a shipping fix.** It writes a live component's state array by hand
   and drives an authority-only entry point. Do not add it to the default shim set.
 
 ---
