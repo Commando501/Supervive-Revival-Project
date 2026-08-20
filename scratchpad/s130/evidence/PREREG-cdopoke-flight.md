@@ -59,3 +59,43 @@ constant. **That text is FALSE about the build; the behaviour is correct** (step
 design in both arms). The source is already fixed — the label now prints the build constant and the
 per-call behaviour as two separate facts — but the fix is NOT in the flown binary.
 **Identify the arm by the step-6 line and by the `.text` hash, never by the step-3 label.**
+
+---
+
+## Amendment 1 — after attempts 1 and 2 (written before attempt 3)
+
+**Attempt 1:** staging failed, game died 9 s after `fo` (FK-31, ~27% of launches). Dump archived to
+`dumps/crashpad-20260820-010158-s130-cdopoke-att1`. Not evidence about anything.
+
+**Attempt 2:** staged successfully (hero spawned + possessed), probe injected, armed window opened —
+then the client died **silently** partway through the ladder, after the C0-BEFORE census and the
+ship-candidate enumeration but **BEFORE the CDO arm ran**. No crashpad dump, no handoff, no Fatal,
+no assert; `Loki.log` ends mid-normal-operation with client-config polling still running.
+That is the **artifact-less death class (FK-32)**.
+⚠ **This run is VOID for C7** — the arm never executed, so it is not evidence about the poke.
+⚠ It is also **not attributable to the new arm**, which had not run; but see below.
+
+### What attempt 2 did expose, and what changed because of it
+`Default__BP_DropPod_Tutorial_C` **IS loaded in a staged world** (`0x1F20D147910`), unlike at the
+menu — so the leaf read is reachable and S130 §12.3's remaining inference really can be closed here.
+
+⚠⚠ **A self-inflicted risk the run surfaced:** the first cut of `PdCdoFlags` called `FindObjExact`
+once per name, i.e. **four full `GUObjectArray` sweeps back-to-back on the GAME THREAD**. The C0
+census measures ~1,400 ms for a single sweep over ~190k objects, so that was a multi-second frame
+hitch inside a live tutorial world — the exact hazard the census code next door already warns about.
+The arm had not run when the client died, so it did not cause this death, but four avoidable sweeps
+on the game thread is a risk regardless. **Rewritten to ONE pass with an early exit and an
+elapsed-ms readout.**
+
+### Amended arms (attempt 3 onward)
+
+| arm | `.text` sha256 | size | KPDCDOPOKE |
+|---|---|---|---|
+| treatment | **`bc1c1a5b1e66b54a`** | 161,792 | 1 |
+| control | **`780da72fbf4d34e7`** | 161,792 | 0 |
+
+Superseded (flown at attempt 2, four-walk shape): poke `f6b16be64a9ef563`, ctrl `39133126f81a696e`.
+The amended builds also carry the step-3 label fix, so the arm is now identifiable from the marker
+text itself as well as from the hash.
+
+**Predictions are unchanged.** Nothing about P1/P2/P3 depends on the walk shape.
