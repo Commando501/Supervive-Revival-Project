@@ -372,3 +372,77 @@ which is an offline question, and free.
 **Artifacts:** `tutorial_launch_rideable.dll` `.text` **`e221e4e415834067`** (the flown build;
 `3cba72ec28e769b6` was the refusing first build). `play` re-verified **UNCHANGED** at
 `9bc10a4552c596e1`. Build with `build.ps1 -Name tutorial_launch -Variant rideable`.
+
+---
+
+# 11. THE WALL IS SHARED, NOT ONE FUNCTION'S BUG — and `AuthPlayerEnterWorld` is a NAMED GAP
+
+Same live client (47 min), third injection, still zero launches. Pre-registration: Amendment 2 of
+`scratchpad/s131/evidence/PREREG-rideable-direct-call.md`, written with exact baselines before
+injecting. Evidence: `RESULT-rideable-v3-siblings.txt`, `Loki-s131-rideable-v3.log`.
+
+Two `ULokiRideableComponent` entry points that **nothing this project runs had ever called** were
+called, each once per PlayerState candidate.
+
+## 11.1 ★★ R3 — the round-game-mode wall is a SHARED dependency [M]
+
+`AuthPlayerPreSpawnOnAddToPlane` (impl `0x55CD800`, REAL) has its **own distinct bail string**
+(`.rdata 0x8B1CE28`), so the log separates it from the attached variant with no ambiguity.
+
+| counter | baseline | after | predicted |
+|---|---|---|---|
+| `AuthPlayerPreSpawnOnAddToPlane failed to get the round game mode` | **0** | **2** | 2 ✓ |
+
+⇒ **[M] two different `ULokiRideableComponent` entry points, called with valid arguments, both fail on
+the same stripped round-game-mode getter.** The wall is not one function's defect — it is a shared,
+systemic dependency, in the same family as FK-1's four empty server-authority stubs. That materially
+changes what "fix the wall" would mean: one getter, not one function.
+
+⚠⚠ **P7 AS WRITTEN WAS FALSIFIED, BY MY OWN ARM'S DESIGN.** I registered "the `AttachedToRidable`
+count must stay at 2" as a cross-contamination control. It went **2 → 4** — because `KRDARMS` bit 1
+was still set, so **the v3 arm re-ran R1 as well**. The prediction was wrong; the *separation* it was
+meant to establish holds anyway, on two independent grounds: the two functions emit **different
+strings**, and R3's pair lands **1.3 s after** R1's pair (08:07:51.667 vs 08:07:52.933). ★ A control
+must be checked against what the arm actually does, not against what the previous arm did.
+
+## 11.2 ⚠ R4 — `AuthPlayerEnterWorld` is UNINTERPRETABLE, and that is the recorded result
+
+`AuthPlayerEnterWorld` (impl `0x55CCE70`, REAL, large body with a security cookie) was called twice —
+`(PlayerState, Location=(-3206.4, 5070.5, 100.0), EffectClass=null, bRepositionPlayer=1)`, all four
+slots bound from the live FProperty chain.
+
+| readout | before | after |
+|---|---|---|
+| fault | — | **no**, both candidates |
+| hero `BP_HERO_Ronin_C` location | `(0, 0, 13240.0)` | **`(0, 0, 13240.0)`** — unmoved |
+| `PlayersInsideCount` (by name, `@0x11C`) | 0 | 0 |
+| `bCanExit` | 0 | 0 |
+| any new `LogLokiRideable` line | — | **none** |
+
+**Pre-registered reading rule, applied:** *"hero does not move AND no new line ⇒ UNINTERPRETABLE
+without more work. Do NOT record it as 'R4 does nothing'."*
+
+⇒ **That is the record.** What IS established: it is REAL, it dispatched (same primitive, same object,
+thunk present, no fault), and **it did not hit the round-game-mode wall** — no such line appeared for
+it, while R1 and R3's did in the same run. So it bailed through one of its **own** guards, before any
+logging point.
+
+★ That is progress with a name attached: `AuthPlayerEnterWorld` is the one entry point on this
+component NOT blocked by the shared getter, and the only thing standing between it and an effect is a
+guard nobody has read yet. **Transcribing `0x55CCE70`'s prologue guards is the next offline task, and
+it is free.**
+
+⚠ Its silence is also a limit of the instrument: nothing in this arm proves R4's *effects* would have
+been visible if it had produced any. `bRepositionPlayer=1` and the hero-location sampling were chosen
+precisely so a success would be unmissable, but a **partial** success (state written, no reposition)
+would read as this same null.
+
+## 11.3 The instrument held up
+
+`PlayersInsideCount` resolved **by name** at `@0x11C` and was printed on every state line, so "0" is a
+read value rather than an absent one. The hero resolved as exactly **1** live `BP_HERO_Ronin_C`, was
+printed by address, and `RdState` is written to say **UNAVAILABLE** rather than print a zero if it ever
+fails to resolve — so "the hero did not move" cannot be manufactured by a missing hero.
+
+**Artifact:** `tutorial_launch_rideable.dll` `.text` **`dd2281adce965add`**, `KRDARMS=0x3F`,
+`KRDREPOS=1`. `play` `9bc10a4552c596e1` and `dropplane_b1only` `5b4467b0105dec1a` re-verified UNCHANGED.
