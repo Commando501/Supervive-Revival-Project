@@ -398,6 +398,7 @@ the fallback has a precondition not yet read. Either way the NULL's true cause i
 1. **Which of C7 / C8 / C9 fired live.** Phase A4 settles C7 for free.
 2. **What is `AActor` CDO `+0x6C`?** Not named offline; the only class-level hard NULL that survives
    the "ordinary spawn works" control.
+   → an offline attempt was made and abandoned; see item 9 below for why, so it is not repeated.
 3. **Is `this` in `0x5648050` really a `ULokiActorPoolManager`?** Strong circumstantial evidence
    (a `TMap` at `this+0x38`, slot-49 `GetWorld`, the same TU as the ActorPool strings) — **[I]; its
    class was never read.** One RPM read.
@@ -414,3 +415,17 @@ the fallback has a precondition not yet read. Either way the NULL's true cause i
    unexplored.
 8. **Re-run the `.data` record instrument over all 100 keys of FK-22 §2.5** — free, offline, and it
    should collapse the COVERAGE-BLOCKED bucket to near zero.
+
+9. ⚠ **ATTEMPTED AND ABANDONED THIS SESSION — naming `AActor+0x6C` offline.** The technique that
+   named the gate (UHT record → `SetBitFunc` → offset) **does not transfer**, and the reason is worth
+   knowing: `boolscan.py --off 0x6c` returns **11** bool records, but a bool record's `SetBitFunc`
+   displacement is an offset **within its own outer struct**, not within `AActor` — so none of them is
+   evidence about `AActor+0x6C`. Falling back to the generic decoder is worse: `propscan.py --off 0x6c`
+   returns **69** hits and is **demonstrably misaligned** (it prints `MaxDepenetrationVelocity` as
+   `gen=Bool` and `AutoCompleteCVarColor` as `InlineMulticastDelegate`), because `FPropertyParams` has
+   **variant per-type layouts** and the generic reader takes `Offset` from a field that a bool record
+   uses for `SetBitFunc`. ⇒ **doing this properly needs a per-class walk of `AActor`'s `PropPointers`
+   array with correct per-type record decoding**, which is real work and exactly the shape that
+   produces a confident wrong answer if rushed. **One read-only RPM read of the live CDO settles it
+   instead, and that is what §8 Phase A4 pre-registers.** Do not re-attempt the offline route without
+   first fixing the per-type decode and validating it on a gold value.
