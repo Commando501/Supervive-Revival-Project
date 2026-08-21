@@ -62,7 +62,21 @@ from collections import Counter
 HERE = os.path.dirname(os.path.abspath(__file__))
   # 2026-08-20 (S134 audit): DEFAULT MOVED merged2 -> merged10.
   #   merged2  16,625/16,638 pages (54.90/54.95 %)  <- the old default
-  #   merged10 16,755          pages (55.33 %)      <- current (dumps/merged10.dump.exe.txt:19)
+  #   merged10 16,755          pages (55.33 %)      <- was current after the S134 audit
+  # 2026-08-21 (S137): DEFAULT MOVED merged12 -> merged13.
+  #   merged13 = merged12 + dumps/s137-lokibot, +44 pages, 0 overlap conflicts. It is the ONLY
+  #   image in which ALokiBotController::OnPossess 0x5565470 (0/4096 -> 3782/4096) and
+  #   ::Tick 0x556E9F0 (0/4096 -> 3509/4096) are decrypted -- S137 drove the Loki bot path for
+  #   the first time ever, and those pages were dark in EVERY prior image. A run against
+  #   merged12 or earlier still grades both DARK.
+  # 2026-08-21 (S136): DEFAULT MOVED merged10 -> merged12.
+  #   merged11 16,761          pages (55.35 %)      <- S135 (+SpawnBot/MakeNewBotController pages)
+  #   merged12 16,772 / 30,281 pages (55.39 %)      <- current (dumps/merged12.dump.exe.txt)
+  #   VERIFIED STRICT SUPERSET before moving, at page granularity: pages lit in merged10 and dark
+  #   in merged12 = 0; pages gained = 17. Nothing readable before is lost.
+  #   (merged12 = merged11 + dumps/s136-botai, +11 pages, 0 overlap conflicts. It is the image in
+  #    which APawn::SpawnDefaultController 0x3BBF3C0 is first non-zero -- dark in 53 of 55 prior
+  #    images -- so a run against merged10 or earlier still grades that function DARK.)
   # WHY THIS WAS A DEFECT, not just staleness: every un-flagged `strxref.py func` run graded
   # against an image ~1.7 pp behind HEAD, and a page that is decrypted in merged10 but zero in
   # merged2 reads as "COVERAGE-BLOCKED / dark" -- i.e. the tool manufactured exactly the
@@ -74,7 +88,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
   # Override per-run with the explicit dump argument if you need a single-state image;
   # NEVER read a mutable .data global out of a merged image (see CLAUDE.md mergedumps note).
   # 2026-08-14 (S121, FK-18/FK-19) original rationale: docs/fk18-fk19-multistate-merge-settled.md
-DEFAULT_DUMP = r"G:\git\Supervive Revival Project\dumps\merged10.dump.exe"
+DEFAULT_DUMP = r"G:\git\Supervive Revival Project\dumps\merged13.dump.exe"
 INDEX_DIR = os.path.join(HERE, "index")
 INDEX_PATH = os.path.join(INDEX_DIR, "strxref.idx")
 

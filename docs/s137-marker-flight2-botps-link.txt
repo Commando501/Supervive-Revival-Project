@@ -1,0 +1,127 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BS] BUILDSTAMP=S136-guardfix-1
+[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.
+[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never
+[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT
+[BS] use it: Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial, and [M] it has ZERO
+[BS] ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's own
+[BS] ubergraph) -- so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped
+[BS] SpawnPlayer. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7B9CE54A0 stub=0x174A84B1140 funcCls=0x173A414B000 gameTid=49816
+[BS] ---- A0: BASELINE WORLD SCAN (read-only; NO CALL) ----
+[FS] arm: swapped=17563 BP UFunctions  (scan 3734 ms over 155837 objects, 34253 UFunctions total) -- NO .text WRITE
+[BS]   heroCand[0] 0x1751BC02AE0 'BP_HERO_Ronin_C' cls='BP_HERO_Ronin_C' root=0x1752F865950 locOff=0x158 -> USABLE
+[BS]   heroCand[1] 0x17497487720 'LokiHeroCharacterGrid' cls='LokiHeroCharacterGrid' root=0x0 locOff=0x158 -> no readable location
+[BS]   heroCand[2] 0x173EDCE5580 'BP_HERO_Ronin_C' cls='BP_HERO_Ronin_C' root=0x17516506140 locOff=0x158 -> USABLE
+[BS]   heroCand[3] 0x17509B8D560 'BP_HERO_Ronin_C' cls='BP_HERO_Ronin_C' root=0x173EE0090E0 locOff=0x158 -> USABLE
+[BS] census A0       BotOrAIController-chain=2  LokiHeroCharacter-chain=4  (137430 objects, 1024 classes memoised, 4094 ms)
+[BS] hero candidates: 4; chosen=0x1751BC02AE0
+[BS] ---- RESOLVE ----
+[BS] playerHero/WorldContext=0x1751BC02AE0 'BP_HERO_Ronin_C'
+[BS]   heroLoc = (600.0, 0.0, 13240.0)
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[BS] pawnClass 'BP_HERO_Ronin_C' = 0x1756C734300 chain=BP_HERO_Ronin_C<-BP_LokiHeroCharacter_C<-BP_LokiHeroCharacter_Code_C<-LokiHeroCharacter_AS<-LokiHeroCharacter<-LokiCharacter<-Character<-Pawn<-LokiActor<-Actor<-Object -> DERIVES FROM Pawn
+[BS] SpawnAIFromClass fn=0x173B3916590 thunk=0x7FF7BCFD7EC0 cdo=0x173B3C91520
+[BS]   params: WCO@0x0 PawnClass@0x8 BT@0x10 Loc@0x18 Rot@0x30 NoColl@0x48 Owner@0x50 Ret@0x58
+[BS] ARGS: pawnClass='BP_HERO_Ronin_C' spawnLoc=(1200.0, 0.0, 13240.0) BT=null noCollisionFail=1 owner=null
+[BS] ---- A1: STABILITY RE-SCAN after 750 ms settle (still NO CALL) ----
+[FS] *** ARMED AND LIVE: hitsGT=1 allThreadCalls=1 after 8000 ms (~0 game-thread dispatches/s) ***
+[BS] census A1       BotOrAIController-chain=2  LokiHeroCharacter-chain=4  (137430 objects, 1024 classes memoised, 3703 ms)
+[PS] ================ S137: THE bWantsPlayerState EXPERIMENT ================
+[PS] WITHIN-RUN, SINGLE-VARIABLE. Spawn #1 runs with the CDO bit CLEAR and spawn #2 with
+[PS] it SET, same world, same instrument, milliseconds apart -- the ONLY difference is one
+[PS] bit on one CDO. ARM B then runs on controller #1, already printed as PlayerState NULL.
+[PS] KBSPSARMS=0x19 (bit0 control spawn, bit1 poke+treatment, bit2 restore, bit3 ARM B)
+[PS] PRE-REGISTERED: ARM A success => ctl.PlayerState AND pawn.PlayerState both non-null.
+[PS] PRE-REGISTERED: ARM B success => ctl.PlayerState non-null, pawn.PlayerState STILL NULL
+[PS]   (possession already happened; nothing re-runs APawn::SetPlayerState).
+[PS] ---- PRECONDITION: does the world have a GameMode with a PlayerStateClass? ----
+[PS] world=0x1753123D580 'LVL_Tutorial'  AuthorityGameMode@0x250(rec 0x250)=0x0 ''  GameState@0x258(rec 0x258)=0x0 ''
+[PS] AuthorityGameMode is NULL. InitPlayerState has a FALLBACK for exactly this
+[PS] (GameState->GetDefaultGameMode(), 0x36DEE83 -> 0x3841550), so this is not
+[PS] necessarily fatal -- but a null PlayerState afterwards is then UNINTERPRETABLE.
+[PS] ---- SPAWN #1 (CONTROL: no poke) ----
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[BS] SpawnAIFromClass -> ReturnValue=0x17497AFAAC0 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C'
+[BS] ! ReturnValue is a corroborator, NOT the verdict. The CONTROLLER census delta is.
+[PS] CONTROL   pawn=0x17497AFAAC0 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C' FName.Number=2147470911
+[PS] CONTROL     pawn.Controller        @0x400 (rec 0x400) = 0x1747BA70610   [offset AGREES]
+[PS] CONTROL     pawn.PlayerState  (L4) @0x3D8 (rec 0x3D8) = 0x0   [offset AGREES]   NULL
+[PS] CONTROL     pawn.AIControllerClass @0x3D0 (rec 0x3D0) = 0x173B5191280 'AIController'  [offset AGREES]
+[PS] CONTROL     controller=0x1747BA70610 class='AIController' FName.Number=2147470843
+[PS] CONTROL       chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] CONTROL     ctl.bWantsPlayerState (L2) = UNREADABLE   [byte@+0xFFFFFFFF mask 0x00, dword@+0xFFFFFFFF=0x00000000]
+[PS] CONTROL     GATE2 ObjectFlags@+0x0C=0x00000048 bit30(RF_Garbage)=0 -> passes
+[PS] CONTROL     ctl.PlayerState       (L3) @0x3C0 (rec 0x3C0) = 0x0   [offset AGREES]   NULL
+[PS] AIControllerClass from the SPAWNED INSTANCE = 0x173B5191280 'AIController'
+[PS] AIControllerClass from the HERO CLASS's CDO  = 0x173B5191280 'AIController'   -> AGREE
+[PS] target class 0x173B5191280 chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] target CDO @+0x178 = 0x173B3C8D0B0 'Default__AIController'  [name starts Default__ -- looks like a CDO]
+[PS] bWantsPlayerState RESOLVED BY NAME on 'AIController': FProperty=0x173F6828000 off=0x488 type=BoolProperty fs=1 bo=0 bm=0x20 fm=0x20
+[PS]   -> byte at +0x488, mask 0x20.  cross-check vs the RECORDED +0x488 bit 0x20: AGREE
+[PS] CDO bWantsPlayerState (L1 baseline) = clear   <- stock UE clears this in the
+[PS]   AAIController ctor (0x45D19AD `and ecx,~0x20`), so `clear` is the EXPECTED baseline
+[PS]   and a `SET` here would mean something already changed it.
+[PS] ---- POKE + SPAWN #2 SKIPPED by KBSPSARMS bit1 ----
+[PS] ---- ARM B: direct AController::InitPlayerState on controller #1 ----
+[PS] ARM B: vtable=0x7FF7C0DD1398  slot[+0x888]=0x7FF7BC07EE20  rva=0x36DEE20  (expected 0x36DEE20)
+[PS] ARM B: calling. NOT call-only -- this does a SpawnActor(RF_Transient) and writes
+[PS]   controller+0x3C0. SEH-guarded.
+[PS] ARM B returned (dispatched=1 faulted=0). Re-reading controller #1:
+[PS] ARM-B     pawn=0x17497AFAAC0 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C' FName.Number=2147470911
+[PS] ARM-B       pawn.Controller        @0x400 (rec 0x400) = 0x1747BA70610   [offset AGREES]
+[PS] ARM-B       pawn.PlayerState  (L4) @0x3D8 (rec 0x3D8) = 0x0   [offset AGREES]   NULL
+[PS] ARM-B       pawn.AIControllerClass @0x3D0 (rec 0x3D0) = 0x173B5191280 'AIController'  [offset AGREES]
+[PS] ARM-B       controller=0x1747BA70610 class='AIController' FName.Number=2147470843
+[PS] ARM-B         chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ARM-B       ctl.bWantsPlayerState (L2) = clear   [byte@+0x488 mask 0x20, dword@+0x488=0x0000004A]
+[PS] ARM-B       GATE2 ObjectFlags@+0x0C=0x00000048 bit30(RF_Garbage)=0 -> passes
+[PS] ARM-B       ctl.PlayerState       (L3) @0x3C0 (rec 0x3C0) = 0x1751AA18890   [offset AGREES]   *** NON-NULL ***
+[PS] ARM-B         >> PlayerState 0x1751AA18890 'BP_LokiPlayerState_C' class='BP_LokiPlayerState_C'
+[PS] ARM-B            chain=BP_LokiPlayerState_C<-LokiPlayerState<-PlayerState<-Info<-LokiActor<-Actor<-Object  alive=1
+[PS] ---- ARM C: APawn::SetPlayerState on pawn #1 ----
+[PS] ARM C: target=0x7FF7BC55D9F0 rva=0x3BBD9F0 prologue=48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18 57  -> SIGNATURE MATCHES APawn::SetPlayerState
+[PS] ARM C: calling SetPlayerState(pawn=0x17497AFAAC0, ps=0x1751AA18890). NOT call-only -- writes
+[PS]   pawn+0x3D8, syncs PlayerState.PawnPrivate, broadcasts OnPawnSet. SEH-guarded.
+[PS] ARM C returned (done=1 faulted=0). Re-reading pair #1:
+[PS] ARM-C     pawn=0x17497AFAAC0 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C' FName.Number=2147470911
+[PS] ARM-C       pawn.Controller        @0x400 (rec 0x400) = 0x1747BA70610   [offset AGREES]
+[PS] ARM-C       pawn.PlayerState  (L4) @0x3D8 (rec 0x3D8) = 0x1751AA18890   [offset AGREES]   *** NON-NULL ***
+[PS] ARM-C       pawn.AIControllerClass @0x3D0 (rec 0x3D0) = 0x173B5191280 'AIController'  [offset AGREES]
+[PS] ARM-C       controller=0x1747BA70610 class='AIController' FName.Number=2147470843
+[PS] ARM-C         chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ARM-C       ctl.bWantsPlayerState (L2) = clear   [byte@+0x488 mask 0x20, dword@+0x488=0x0000004A]
+[PS] ARM-C       GATE2 ObjectFlags@+0x0C=0x00000048 bit30(RF_Garbage)=0 -> passes
+[PS] ARM-C       ctl.PlayerState       (L3) @0x3C0 (rec 0x3C0) = 0x1751AA18890   [offset AGREES]   *** NON-NULL ***
+[PS] ARM-C         >> PlayerState 0x1751AA18890 'BP_LokiPlayerState_C' class='BP_LokiPlayerState_C'
+[PS] ARM-C            chain=BP_LokiPlayerState_C<-LokiPlayerState<-PlayerState<-Info<-LokiActor<-Actor<-Object  alive=1
+[BS] ---- A2: POST-CALL SCAN ----
+[FS] t=+15s hitsGT=1 called=0 allThreadCalls=72 swapped=17563
+[BS] census A2       BotOrAIController-chain=3  LokiHeroCharacter-chain=5  (137915 objects, 1024 classes memoised, 3641 ms)
+[FS] disarm: restored=17563 of 17563 swapped (scan 3593 ms, 34253 UFunctions live)
+[BS] ---------------- RM_BOTSPAWN SUMMARY ----------------
+[BS] resolved=1 roster=-1 team=-1(player=-999) called=1 faulted=0 refused=0
+[BS] botOrAIControllers A0=2 A1=2 A2=3 | heroCharacters A0=4 A1=4 A2=5
+[PS] ---------------- S137 PLAYERSTATE SUMMARY ----------------
+[PS] PlayerState-chain census A0=17 A1=17 A2=23   (corroborator; the pointer reads below
+[PS]   are the primary readout)
+[PS] bit resolved BY NAME: off=0x488 byteOff=0 mask=0x20
+[PS] spawns=1 pokeOK=-1 restoreOK=-1 | ARM B tried=1 dispatched=1 faulted=0
+[PS] ARM C (pawn link) tried=1 done=1 faulted=0
+[PS] #1 CONTROL   pawn=0x17497AFAAC0 ctl=0x1747BA70610  L2 bit=clear  L3 ctl.PS=0x1751AA18890  L4 pawn.PS=0x1751AA18890
+[PS] #2 TREATMENT pawn=0x0 ctl=0x0  L2 bit=?  L3 ctl.PS=0x0  L4 pawn.PS=0x0
+[PS] VERDICT: ARM A never armed (the CDO poke did not land or was gated off). Any
+[PS]   null below belongs to ARM B alone.
+[PS] ***** ARM C WORKED: pawn+0x3D8 is now 0x1751AA18890 and it EQUALS the controller's
+[PS]   PlayerState. Both sides of the AI pawn are linked, the same shape the
+[PS]   PLAYER's possession has -- which is the positive control for this readout.
+[PS]   ! STILL NOT A BOT: BotController-chain is unchanged and ServerSetHeroClass /
+[PS]   ! SetPlayerTeam remain stripped folds. *****
+[PS] ARM B: dispatched. controller #1 PlayerState is now 0x1751AA18890 (was NULL when read
+[PS]   before the call) and pawn #1 PlayerState is 0x1751AA18890 -- pre-registered to stay
+[PS]   NULL, because possession already happened.
+[BS] ***** VERDICT: AN AI-CONTROLLED PAWN EXISTS. controller +1 and LokiHeroCharacter +1 across the call, against A0=2/4 re-read as A1 with NO call in between. NOTE THE SCOPE: this is the ENGINE default AAIController, NOT a Loki BotController -- expect PlayerState/Brain/Blackboard/Perception all NULL, so no team and no hero-class assignment. Verify with tools/re/obj_by_chain.py and TIMESTAMP the census. *****
+[BS] done (step=4 resolved=1 called=1 faulted=0 dCtl=1 dHero=1 hits=1 hitsGT=1)

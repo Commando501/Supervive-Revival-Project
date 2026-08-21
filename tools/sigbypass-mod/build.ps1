@@ -570,6 +570,45 @@ $Variants = @{
         #   ★ And take a dumpimage EITHER WAY: P4 = APawn::SpawnDefaultController 0x3BBF3C0 going
         #     DARK -> DECRYPTED is a free permanent offline receipt, independent of any census.
         'botai'               = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1')
+        # ---- S137: THE bWantsPlayerState EXPERIMENT ---------------------------------------------
+        # S136 left the AI-controlled pawn with PlayerState NULL on BOTH sides. The cause is one bit:
+        #   AAIController::PostInitializeComponents 0x45D6D10
+        #     0x45D6D1E  test byte [rbx+0x488],0x20   <- bWantsPlayerState
+        #     0x45D6D25  je 0x45D6D4C                 <== GATE 1 (there are THREE; see the source)
+        #     0x45D6D46  call [rax+0x888]             <- AController::InitPlayerState, slot 273
+        # `botps` flies BOTH routes to it in ONE window, with a WITHIN-RUN control:
+        #   spawn #1 (bit clear)  ->  poke CDO(AIControllerClass) bit  ->  spawn #2  ->  restore
+        #   ->  ARM B: call InitPlayerState DIRECTLY on controller #1 (which needs no poke, because
+        #       [M] InitPlayerState does not test the bit -- only GetNetMode()!=NM_Client + GetWorld()).
+        # PRE-REGISTERED DISCRIMINATOR: ARM A gives ctl.PlayerState AND pawn.PlayerState non-null;
+        # ARM B gives ctl.PlayerState non-null with pawn.PlayerState STILL NULL. Different signatures.
+        # Risk: ARM A is one readback-verified, A-B-A-restored byte on a CDO (the S130 class).
+        # ARM B is NOT call-only (SpawnActor + a write to controller+0x3C0). No .text write in either.
+        'botps'               = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1')
+        # READ-ONLY: spawn ONE AI pawn and read out L2/L3/L4 + all three gates + the precondition.
+        # WRITES NOTHING. This is the clean re-measurement of the S136 baseline, and it is what makes
+        # a later non-null attributable -- run it first if there is any doubt the world is staged.
+        'botps-readonly'      = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x01')
+        # ARM A ALONE (control spawn + poke + treatment spawn + restore; no direct call). Use this to
+        # attribute a PlayerState to the CDO poke with nothing else in the window.
+        'botps-arma'          = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x07')
+        # ARM B ALONE (control spawn + direct InitPlayerState; the CDO is never touched). Use this if
+        # ARM A's null needs separating from "InitPlayerState itself cannot succeed on this client".
+        'botps-armb'          = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x09')
+        # S137 FLIGHT 2, and this is the SHIPPING SHAPE of the experiment. Flight 1 REFUTED ARM A
+        # (the CDO poke does not reach the instance -- UStruct::Link never puts a NATIVE class's
+        # property into PostConstructLink, so FObjectInitializer::InitProperties never copies it),
+        # so there is no reason to fly the poke again. This is spawn -> ARM B -> ARM C:
+        #   bit0 spawn one AI pawn   bit3 direct InitPlayerState   bit4 APawn::SetPlayerState
+        # It leaves BOTH sides of the AI pawn linked, the shape the player's own possession has.
+        'botps-link'          = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x19')
+        # Everything, including the now-refuted ARM A. Kept so the refutation is re-runnable.
+        'botps-full'          = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x1F')
+        # S137 ARM D -- the LOKI bot controller, via ONE pointer on the ENGINE APawn CDO.
+        # A-B-A with THREE spawns: baseline -> poke -> treatment -> restore -> reversal. The third
+        # spawn is what makes the restore a measurement rather than a promise.
+        # bit0 off (ARM D does its own spawns), bit5 on.
+        'lokibot'             = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x20')
         # READ-ONLY control arm: resolve, read out all six gates, run the D0c dispatch control and the
         # D1 pre-append negative control -- and then WRITE NOTHING and call no detach on a non-empty
         # array. Any physical change from THIS build would mean the readout is not read-only.

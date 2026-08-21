@@ -608,7 +608,20 @@ The short version, because it has already cost two sessions:
   ⚠ `play-strictroot` / `play-noanimref` share a 161,792-byte `.text`; historically `play` /
   `play-earlywalk` shared identical whole-file AND `.text` SIZES (which is part of why earlywalk was
   DELETED in S110) — **only the hash separates such pairs. Diff `.text`, never size.** Use
-  `tools/sigbypass-mod/verify_dll.py` or the section-hash snippet in `docs/s109-dump-forensics.md` §23.
+  ⚠⚠ **THAT POINTER WAS BROKEN FOR SESSIONS AND IT COST REAL WORK (fixed S136).** It used to read
+  *"use `verify_dll.py` or the section-hash snippet in `docs/s109-dump-forensics.md` §23"* — [M]
+  **`verify_dll.py` contains ZERO hash code** (0 matches for sha256/hashlib/md5/sha1) **and §23 of
+  that doc contains no snippet** (1 hash mention in the whole file). Two sessions followed it, found
+  nothing, and concluded no recipe existed on disk — which is how the S136 handoff came to call
+  writing one "an outstanding task". **THE WORKING IMPLEMENTATIONS ARE:**
+  • **`tools/sigbypass-mod/text_digest.py`** (S136; emits BOTH recipes) — use this.
+  • `configs/fk7-ab-run.ps1:94 Get-TextHash` — RAW; **EMITS it at :131** and persists it to the A/B
+    CSV column `probe_text_sha` (:117, :134). Its own comment already called it *"the ONLY safe way
+    to tell two shim builds apart"*.
+  • `configs/fk24-stage.ps1:77 Get-TextHash` — RAW; prints only inside a stale-shim abort.
+  • `docs/method-rules.md:213` (S134-d) — the **VIRTUALSIZE** variant,
+    `min(VirtualSize, SizeOfRawData)`, which is what produced the S135 bot gates.
+  ⚠ **Two recipes are in concurrent use.** See the S136 digest block below before quoting any gate.
 - ⚠ **`KGCROOT` was silently INERT from S106 until S109.** Its root-bit corroboration used
   `AND(native classes) & ~OR(sampled ordinary objects)` on the false premise that ordinary objects are
   never rooted; **one** rooted sample in 64 vetoed the correct bit, so nothing was ever rooted. Fixed
@@ -1131,6 +1144,417 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   "game-thread starvation" diagnosis that an adversarial lane refuted from the same file. The
   discriminator is **`allThreadCalls`**, not `hitsGT`: `allThreadCalls>0 && called<allThreadCalls`
   means *we are inside our own step* — the OPPOSITE of starvation.
+- ★★★★★ **S136 (2026-08-21) — AN AI-CONTROLLED HERO PAWN EXISTS. Read
+  `docs/s136-ai-controller-settled.md`.** `UAIBlueprintHelperLibrary::SpawnAIFromClass` (`0x4631C50`)
+  spawns the pawn and then tail-calls **`APawn::SpawnDefaultController` (vtable slot 280 =
+  `0x3BBF3C0`)**, which constructs a controller and possesses it — bypassing
+  `MakeNewBotController`'s stripped getter entirely. Reproduced 2× in ONE client, no relaunch,
+  CALL-ONLY, 0 `Fatal`, 0 crashpad. Flight 3 hit **7/7 pre-registered predictions**, `dCtl=+1`.
+  ⚠⚠⚠ **IT IS NOT A BOT, AND DO NOT WRITE THAT IT IS.** [M] `APawn::AIControllerClass @+0x3D0`
+  reads the **engine default `AIController`** on the spawned pawns **and on the PLAYER hero too**;
+  [M] `obj_by_chain BotController` = **0 LIVE** (the CDO is present as a passing search-term
+  control). `MakeNewBotController → BotController → ServerSetHeroClass / SetPlayerTeam` is
+  **UNTOUCHED and still blocked on FK-22's stripped getter.** Say *an AI-controlled hero pawn via
+  the engine's default `AAIController`, with PlayerState / Brain / Blackboard / Perception all
+  NULL* — never *"the bot spawner works"*.
+  ⚠⚠⚠ **SUPERSEDED BY S137 ON BOTH HALVES — READ `docs/s137-playerstate-and-lokibot-settled.md`.**
+  The AI pawn now HAS a real `BP_LokiPlayerState_C` on **both** sides (controller `+0x3C0` and pawn
+  `+0x3D8`, equal), and **an `ALokiBotController` has been created and possesses a hero pawn** —
+  the first `BotController`-derived object in this project's history, A-B-A'd and confirmed by two
+  independently written instruments. See the S137 block below.
+  ⚠⚠ **AND THE `obj_by_chain BotController` CITATION IS A DEGENERATE QUERY.** [M, S137] **no class
+  in this hierarchy is NAMED `BotController`** — the Loki class is `ALokiBotController` (UHT-strips
+  to `LokiBotController`) and its ancestors are `LokiAIController` / `AIController` / `Controller`.
+  Run live **with a `LokiBotController` possessing a pawn in that very process**, `=BotController`
+  returns **`found 0`** AND **`CDOs matched and EXCLUDED: 0`** — i.e. **it has no positive control
+  either**; `=LokiBotController` returns `found 1`. The `'='` exact form that `obj_by_chain.py`'s
+  own header tells you to PREFER is the WRONG instrument for this question. The S136 conclusion was
+  right (no bot controller existed then), but its stated control cannot have passed in that form.
+  **Use `=LokiBotController`, or the substring form.**
+  **[M] The possession handshake is bidirectional:** controller `Pawn`/`Character`/`Instigator` ==
+  the exact pointer `SpawnAIFromClass` returned; pawn `Controller`/`PreviousController`/`Owner` ==
+  that controller. ★ **Positive control:** the player hero, possessed by a real
+  `BP_LokiPlayerController_Dev_C`, shows the IDENTICAL triple ⇒ both sides of the offset set are
+  validated on a known-good possession in this build.
+  ★★★★★ **THE CONTROLLER WAS CREATED *AFTER* THE PAWN — [M], THREE WAYS, ALL FROM A POST-HOC
+  SNAPSHOT.** (1) **`FName.Number` (obj+0x24) is a strictly-DECREASING runtime spawn counter** —
+  6/6 monotone over known-order objects, AIC#1 `2147470967` < botpawn#1 `2147471035`, with a
+  PRE-REGISTERED prediction on botpawn#2 that hit. (2) `AIC+0x198 Instigator = the pawn`, written
+  only by `SpawnActor` from `FActorSpawnParameters` — `Possess`/`SetPawn` never write it, so a
+  controller predating the pawn cannot carry it. (3) the call site `0x4631DD2 cmp [rax+0x400],rbx`
+  / `0x4631DE1 call [rax+0x8c0]` is **guarded on `Controller == NULL`**, and `SpawnDefaultController`
+  early-outs on the same test ⇒ a pre-existing controller is unreachable by this path.
+  ★★ **`FName.Number` IS A FREE CREATION-ORDER ORACLE AND THE REPO'S TOOLS THROW IT AWAY** —
+  `obj_by_chain.objname()` reads only the 4-byte ComparisonIndex and discards the Number, printing
+  `AIController` for `AIController_2147470966`. **Read obj+0x24.**
+  ⚠⚠ **`InternalIndex` IS NOT MONOTONE — REFUTED FROM INSIDE THIS CORPUS.** AIC#2 was created
+  LATER (measured) and has index **172033 < 177838**. `GUObjectArray` reuses freed slots (S110).
+  **Never use index adjacency for creation order.**
+  ★★★★★ **P4: `APawn::SpawnDefaultController 0x3BBF3C0` DARK → DECRYPTED.** Page census, not a
+  byte peek: `merged11` page `0x3BBF000` = **0/4096** non-zero, S136 image = **3714/4096** —
+  **reproduced by two verifiers with independently written code**. Four controls (`Possess`,
+  `SpawnAIFromClass`, both folds) lit in both. **[M] novelty: 53 of 55 images dark, INCLUDING
+  `dumps/s135-botspawn`** ⇒ S135 spawned pawns and never reached this function.
+  ⚠ **GRADE SPLIT:** bytes alone give **[I]** for *"it executed"* (4 KiB page granularity; the fn
+  starts `0x3C0` into its page). **[M, strong]** only WITH the `call [rax+0x8c0]` call-site
+  disassembly plus the live possessed pawn. **Cite both.**
+  ⛔ **Do NOT quote `merged12`'s "51.85 % non-zero" beside a page delta** — wrong instrument; cite
+  **`.text` 16,772 / 30,281 = 55.39 % PAGES**. ⛔ Do not carry `fn 0x3BBDFA0` (a `pdata_union`
+  artifact, blind by construction on dark pages); the true start is `0x3BBF3C0`.
+  ⚠ `SpawnBot 0x556D910` / `MakeNewBotController 0x5563660` read non-zero in `merged11` and zero in
+  the fresh S136 image — correct union semantics (lit in exactly the 3 images containing
+  `s135-botspawn`), NOT a bad read.
+  ⚠⚠⚠ **THE SHIPPED `botai` ARM WAS STATICALLY INCAPABLE OF CALLING.** `BsResolve` does
+  `#if KBSAI { BsResolveAI(hero); return; }`; `BsResolveAI` stores into `g_bsAiFn` and NEVER
+  `g_bsFn`, so every `g_bsFn`/`g_bsComp` store sits **after an unconditional `return;`** (⚠ NOT
+  removed by the preprocessor — that phrasing misleads). clang `-O2` folds the dispatch guard to
+  constant TRUE and **dead-code-eliminates `BsCallAI()`**. [M] the 53-byte banner `THE CALL:
+  UAIBlueprintHelperLibrary::SpawnAIFromClass` had **0** byte occurrences, with a **positive
+  control** (a build with only the gate fix) returning 1.
+  ⚠⚠ **THE MECHANISM IS NON-UNIQUE — EITHER guard term alone folds constant-true.** Build
+  bisection: removing only `!g_bsFn`, or only `!LooksLikePtr(g_bsComp)`, left the branch dead both
+  ways. Do not "fix" this by deleting one term.
+  ★★ **[M] S135's recorded `botai c55cb560cc602e31` is `.text`-identical to that dead arm** ⇒ S135
+  built, digested, documented and handed off as flight-ready **an arm containing no call site.**
+  ⚠ Downgrades inside that finding: *"the KBSARMS-disabled banner did not print"* is **[S], NOT
+  runtime evidence** — with `KBSARMS=0x0F` the test `if(!(0x0F&0x4))` is constant-folded, so the
+  string is absent BY CONSTRUCTION (an instrument artifact committed while writing about them);
+  *"+3072 proves `BsCallAI` was emitted"* is **[I], contaminated** (single-variable cost is
+  **+2,560**); and **byte-absence is NOT a general string test** — `"SpawnAIFromClass"` is
+  materialised as split, out-of-order `movabs` immediates. It is valid only for LONG strings
+  passed as pointers to a non-inlined call. The flight-1 marker (`resolved=1 called=0`) is
+  **NON-DISCRIMINATING** on its own.
+  ⚠⚠ **AND THE CENSUS PREDICATE WAS BLIND TO EXACTLY THIS CONTROLLER.** `BsClassify` tested only
+  `PhChainHas(cls,"BotController")`; the created object's chain is `AIController <- Controller <-
+  LokiActor <- Actor <- Object`. Flight 2's `dCtl=0` was **UNINTERPRETABLE, not a null**. ★ Settled
+  S135's own deferred blind spot: same world, same object, only the predicate changed ⇒ **0 vs 1**.
+  Fixed to `BotController` OR `AIController` (deliberately narrow — a bare `"Controller"` also
+  matches ~190 `Comp_PlayerController_*_C`). **The stale VERDICT string is fixed too**: it said
+  *"A BOT SPAWNED / BotController +N / from a STRUCTURAL ZERO baseline"* while A0 read **1**.
+  ⛔ **Refuted supports — do NOT repeat them:** `Z = 90.15` as a payload fingerprint (floor
+  flatness; S132's number is at a different XY — the strong form is **bot2 resting ON bot1,
+  ΔZ = 176.1008 = 2 × 88.0504 capsule half-heights**) · `Outer = PersistentLevel` (98.8 % of live
+  actors) · "exactly 1 AIController" (**[M] at time T only** — it read 2 minutes later because a
+  third arm flew; **TIMESTAMP every census**).
+  ★★★ **FREE COROLLARY, NOW VERIFIED FROM THE BYTES (S136) — UE ITSELF DOES NOT THINK THIS CLIENT
+  IS `NM_Client`.** `APawn::SpawnDefaultController` has exactly three early-outs before it spawns:
+      `0x3BBF3DD cmp qword [rcx+0x400],0 / jne` → bail if `Controller != NULL`
+      `0x3BBF3EE call <GetNetMode>` · **`0x3BBF3F3 cmp eax,3 / je`** → bail if **`NM_Client`**
+      `0x3BBF404 mov rdi,[rbx+0x3d0] / test / je` → bail if `AIControllerClass == NULL`
+  **[M] a controller WAS created ⇒ all three were passed ⇒ `GetNetMode() != 3`.**
+  ★★ **THIS IS NOT THE SAME FACT AS `LokiIsServer` BEING HARDCODED FALSE, AND THE DIFFERENCE IS
+  LOAD-BEARING.** `LokiIsClient`/`LokiIsServer` (`0x0B9E1F0` = `mov al,1; ret`, `0x0F7EB60` =
+  `xor al,al; ret`) are **Loki's own stripped helpers**; `GetNetMode()` is **the engine's real
+  netmode**, and it is measured NOT-client. ⇒ the FK-1 / FK-22 / FK-42 walls are *Loki's* authority
+  stubs, **not** UE refusing authority to a client.
+  ★★★★★ **ANSWERED (S137, 2026-08-21): IT IS `NM_Standalone`, AND IT HAS BEEN IN EVERY LOG THIS
+  PROJECT EVER TOOK.** The old text here read *"WHICH mode it is (Standalone 0 / ListenServer 2) is
+  NOT [measured] — nobody has read the return value. One read settles it."* The read is one grep:
+      `LogWorldPartition: UWorldPartition::Initialize Context : World NetMode = Standalone,`
+      `    IsServer = 0, IsDedicatedServer = 0, ...`
+  It is the CLIENT WRITING ABOUT ITSELF (so the User-Agent attribution trap cannot apply), and the
+  same line is in `docs/Loki-s124-phaseladder-SUCCESS.log`, `Loki-s125-b1only.log` and
+  `Loki-s127-routeE.log`. **A textbook method-rule-#2 instance — the answer was in the shipped
+  artifact for ~13 sessions.** Corroborated from the BYTES independently: `AActor::GetNetMode`
+  (`0x338E750`) defaults to `xor eax,eax` = **0 = NM_Standalone** when there is no NetDriver.
+  ⇒ [M] `AActor::AActor` writes `ROLE_Authority(3)` to `+0x160` (`0x338E38B c6 83 60 01 00 00 03`),
+  and the live tutorial client prints `PlayerState Role@0x160=3` and `hero Role@0x160=3`
+  ⇒ **engine-level `HasAuthority()` PASSES on this client.** `IsServer = 0` is CONSISTENT, not
+  contradictory: stock `UWorldPartition::IsServer()` is true only for Dedicated/ListenServer.
+  ⚠⚠ **DO NOT OVER-READ IT. This moves NO existing wall.** FK-1's four empty impls and the
+  `ULokiBlueprintLibrary` exec-pin gates (`0x1311870 = C6 02 00 C3`) never consult UE's netmode at
+  all. What it settles is the FRAMING that was already recorded as [I] above — the walls are *Loki's
+  own authority stubs*, not UE refusing authority to a client — and it now rests on a measurement.
+  ★★★★★ **AND S136 THEN SETTLED THE NEXT BLOCKER OFFLINE — IT IS **ONE CDO BIT**, NOT A STRIPPED
+  STUB.** Read `docs/s136-ai-controller-settled.md` §7.
+  **[M] `AController::InitPlayerState = 0x36DEE20`, `AController` vtable slot 273, REAL, 778 B, all
+  14 callees REAL, ZERO folds.** Triple-confirmed by three parties via three routes: **it names
+  itself** (`.rdata 0x8018A50` = *"AController::InitPlayerState: the PlayerStateClass of game mode
+  %s is null…"*, record `0x8018A30` → `Controller.cpp:0x268`, **exactly one** LEA site at
+  `0x36DEF82`); it reads `UWorld::AuthorityGameMode` at FK-22's `+0x250` and `PlayerStateClass` at
+  **`AGameModeBase+0x3E0`**; it calls `UWorld::SpawnActor 0x39C5280`; and it **writes
+  `[controller+0x3C0]`** — the only slot of 400 storing there via a non-frame base register.
+  **[M] THE BLOCKER IS `bWantsPlayerState`:**
+      `AAIController::PostInitializeComponents 0x45D6D10` (REAL)
+        `0x45D6D1E  f6 83 88 04 00 00 20   test byte [rbx+0x488],0x20`   ← bWantsPlayerState
+        `0x45D6D25  74 25                  je  0x45D6D4C`                ← **THE BLOCKER**
+        `0x45D6D46  call qword [rax+0x888]`                              ← InitPlayerState (slot 273)
+  The bit is `0x20` at `+0x488`, from its OWN UHT `SetBitFunc` **`0x45CFA10 = 83 89 88 04 00 00 20
+  c3`** (`or dword [rcx+0x488],0x20; ret`), with the adjacent bit `0x45CFA20` writing `0x40` at the
+  same offset as a PASSING CONTROL. ★ That is the correct instrument — `FBoolPropertyParams` carries
+  no `ByteOffset`/`ByteMask` (S132's recorded trap). **It is explicitly CLEARED in the ctors:**
+  `AAIController 0x45D19AD and ecx,~0x20` · `ALokiBotController 0x554B5A9 and dword [rdi+0x488],
+  ~0x20` · `ALokiAIController` never touches it. ⇒ **NO STRIPPED STUB. The PlayerState is NULL
+  because STOCK UE defaults `bWantsPlayerState = false` on AI controllers.**
+  ★★ **THE ARM: poke `CDO(<pawn's AIControllerClass>) + 0x488 |= 0x20` before spawning, then run
+  `botai` unchanged.** Ordering is why it works: `SpawnActor` runs `PostInitializeComponents`
+  (→ `InitPlayerState`) **before** `SpawnDefaultController` calls `Possess`, and
+  `APawn::SetPlayerState 0x3BBD9F0` (REAL) then copies `controller+0x3C0` → `pawn+0x3D8`.
+  Risk class = **one aligned CDO write, readback-verifiable, class-default scope** — identical to
+  S130's `bCanEverReplicate`. ⚠ It is a CLASS DEFAULT. ⚠⚠ **Read `pawn CDO + 0x3D0` LIVE first** to
+  learn which controller CDO to poke: `APawn::APawn 0x3B809D0` zeroes `+0x3D0` then re-reads it
+  **from the `APawn` CDO chain** (`0x3B80C0D` → `0x3BA4CE0` → `[rax+0x178]` → `[+0x3D0]`), **not**
+  a hard-coded `AAIController::StaticClass()`.
+  ⚠ **Alternative with no CDO write:** call `0x36DEE20` directly on `pawn->Controller` (`pawn+0x400`)
+  as `void __fastcall(AController*)`. **NOT "CALL-ONLY"** — it does a `SpawnActor` (`RF_Transient`)
+  and writes `controller+0x3C0`.
+  ⚠⚠ **A SECOND WALL SITS PAST IT AND BOTH ARE REAL AND SEQUENTIAL.** Everything the PlayerState
+  gate protects in `SpawnBot` is a `"bot%d"` name, one real virtual, and **two stripped folds**
+  (`0x556DE43 → 0x0F7EC20` void, `0x556DE53 → 0x0F7EB60` false); the reflection table independently
+  shows `ServerSetHeroClass` (thunk `0x5438720`) and `SetPlayerTeam` (thunk `0x538AA70`) stripped,
+  with matching arg shapes. ⚠ **[I, strong] on the NAMING, [M] that both sites are folds** —
+  `0x0F7EC20` has 165,789 stored-pointer occurrences, `0x0F7EB60` 106,924; a folded RVA names
+  nothing. ⇒ **a PlayerState buys REACHABILITY of that branch, not hero-class or team assignment**
+  (the pawn already spawns with the right hero class, S135; what is missing is the PlayerState-side
+  record that `CreatedBot`'s `GetPlayerStatesOnTeam` scan reads).
+  ⛔ **THERE IS NO "THIRD GATE" — refuted in review; do NOT pre-register one and do NOT zero
+  `[PS+0x8C8]`.** `+0x8C0` is `ALokiPlayerState::PlatformPlayerID` (UHT rec `0x8A252D8`;
+  `binds_members.csv:44578`), **not** the PlayerName — that is `APlayerState::PlayerNamePrivate
+  @ +0x450`, which is where `InitPlayerState`'s tail writes (slot 257 `0x3CA9D10`, not overridden,
+  ends `lea rcx,[rbx+0x450]`). So `[PS+0x8C8]` stays 0, the `jg` falls through, **the block RUNS**.
+  ★ The lane inferred the field from the write it saw instead of from the property table it already
+  had open; the correction is FAVOURABLE, which is why it had to be made rather than dropped.
+  ⚠ **[M] measurement / [I] label:** `ALokiPlayerController`'s slot 273 IS the void fold while all
+  five other controller classes carry the real `0x36DEE20`. But calling it "a new FK-1-family
+  strip" is [I] — empty virtuals are ORDINARY here (`AController`'s own vtable: **62 of 289** fold
+  slots — ⚠ **QUOTE THE FOLD SET WITH THAT NUMBER**: the per-fold breakdown is void `0xF7EC20`=42,
+  false `0xF7EB60`=17, true `0xB9E1F0`=7, null `0xF7EB50`=3, 0.0f `0xFC6CF0`=0, so it is **62 under
+  the FOUR-fold set and 69 under the FIVE-fold set**. S137 saw a lane report the 69 as a
+  "discrepancy with the digest"; it is not one, and one line of arithmetic dissolves it),
+  and `InitPlayerState` is **not reflected at all** (image-wide name census ascii 0 / wide 0
+  against five passing positive controls), so FK-1's instrument cannot grade it. ★ The AI-controller
+  chain keeps the real engine impl — that is the half that matters.
+  ⚠⚠ **STALE-DOC FIX: `APawn::SpawnDefaultController 0x3BBF3C0` has NO `.pdata` row**, which is
+  exactly why a pdata-based grader reports a wrong entry point for it (`pdataunion.py` drops size-1
+  placeholders BY CONSTRUCTION). Reproduced live: `strxref.py func 0x3BBF3C0` answers
+  `entry 0x3BBDFA0`. **[M] it is pawn vtable slot 280 in `APawn`/`ACharacter`/`ALokiCharacter`/
+  `ALokiHeroCharacter` alike — none overrides it.**
+  ⚠ **`.rdata` class literals are UHT PREFIX-STRIPPED** — the bytes at `0x899A832` / `0x8A2430A` /
+  `0x81B4B9A` are `LokiHeroCharacter` / `LokiPlayerState` / `PlayerState`, NOT the `A`-prefixed
+  forms. FK-13 already records this trap producing false ABSENTs.
+  Arm: `botai` **`5e47c13cf7f0a158`** (raw recipe; guard + census + verdict fixed).
+- ★★★★★ **S137 (2026-08-21) — THE AI PAWN HAS A PLAYERSTATE, AND A **LOKI BOT CONTROLLER** EXISTS.
+  Read `docs/s137-playerstate-and-lokibot-settled.md`; its CORRECTIONS block governs.** Three
+  injections into ONE client, one staged world, no relaunch. Zero `.text` writes, zero PI hooks.
+  ⚠⚠ **THE S137 HANDOFF'S OWN PROPOSED FIX IS REFUTED. Do not re-fly it.** *"poke
+  `CDO(AIControllerClass)+0x488 |= 0x20` before spawning … the same risk class as S130's
+  `bCanEverReplicate`"* — **[M] the poke lands (readback OK, dword delta exactly `0x20`) and the
+  spawned instance still reads the bit CLEAR.** Within-run control: two spawns milliseconds apart,
+  same world, same instrument, the CDO bit the only difference.
+  ★★ **AND AN OFFLINE LANE PREDICTED IT BEFORE THE FLIGHT, WITH THE MECHANISM.** The ORDER is fine
+  (`StaticConstructObject_Internal` calls the ctor at `0x13740CD`, the `~FObjectInitializer` →
+  `PostConstructInit` → `InitProperties` 8 bytes later at `0x13740D5`); the CONTENT is wrong —
+  `InitProperties` branches at `0x1368231` into the **PostConstructLink** chain only, and
+  `UStruct::Link` (`0x1226C80`) never puts a property **owned by a NATIVE class** into that chain.
+  There is **no bulk memcpy of the CDO onto a new instance anywhere on the allocation path.**
+  ⇒ ★★★★★ **THE REUSABLE RULE: a CDO poke reaches a new instance ONLY IF THE CONSUMER READS THE CDO
+  DIRECTLY. It does NOT propagate via `InitProperties` for a native-owned property.** S130's
+  `bCanEverReplicate` never established otherwise — its consumer read the CDO *directly*
+  (`cmp byte [CDO+0x6C],0`). The handoff generalised that precedent to a case it does not cover.
+  ★★★★★ **WHAT WORKS INSTEAD — three arms, all flown, all confirmed by a second instrument:**
+  **ARM B** call `AController::InitPlayerState` (`0x36DEE20`) **directly**, dispatched THROUGH THE
+  VTABLE and REFUSED unless `[[ctl]+0x888]` resolves to `0x36DEE20` (not ceremony: [M]
+  `ALokiPlayerController`'s slot 273 is the void fold). [M] it **does not test `bWantsPlayerState`**
+  — zero `[reg+0x488]` refs in its 180 instructions — so no poke and no propagation are needed.
+  Result: `controller+0x3C0` = a real **`BP_LokiPlayerState_C`**. Reproduced **3×**.
+  **ARM C** `APawn::SetPlayerState` (`0x3BBD9F0`, REAL, 210 B, **NON-VIRTUAL** — so the arm
+  validates it by a **16-byte prologue signature** instead) links `pawn+0x3D8`. Both sides now equal,
+  the identical shape the PLAYER's own possession prints in the same output (the positive control).
+  ⚠ ARM B leaving `pawn+0x3D8` NULL is CORRECT, not a bug, and was PRE-REGISTERED: the copy is
+  `SetPlayerState` **inlined into `APawn::PossessedBy`** (`0x3BB1C64` reads `[Controller+0x3C0]`,
+  `0x3BB1CD5` writes `[pawn+0x3D8]`), and possession already happened.
+  ★ **PlayerArray registration is automatic** — `APlayerState::PostInitializeComponents` calls
+  `AGameStateBase::AddPlayerState`. ⚠ Neither arm is CALL-ONLY (ARM B does a `SpawnActor`).
+  ★★★★★ **ARM D — ONE POINTER MAKES THE ENGINE BUILD A **LOKI** BOT CONTROLLER.**
+  `APawn::SpawnDefaultController` hands `SpawnActor` the **pawn instance's** `[pawn+0x3D0]` [M], and
+  `APawn::APawn` writes that field by reading a CDO **by hand**: `0x3B80BD3 call 0x3BA4CE0` (a lazy
+  `StaticClass()`) → `0x3B80BF3 mov rbx,[rbx+0x178]` → **`0x3B80C0D mov rax,[rbx+0x3d0]`** →
+  `0x3B80C14 mov [rsi],rax`. **Measured live: `Default__Pawn+0x3D0` = the `AIController` UClass every
+  spawned pawn carries.** That is the S130 shape, so poking it WORKS — same idea as ARM A, opposite
+  outcome, **and the difference is who reads the CDO.** Full A-B-A, three spawns:
+      A baseline  → `AIController<-Controller<-LokiActor<-Actor<-Object`          BotController: no
+      B treatment → `LokiBotController<-LokiAIController<-AIController<-...`      BotController: YES
+      C reversal  → `AIController<-...` again        (pokeOK=1 restoreOK=1, all 6 predictions hit)
+  **The third spawn is what makes the restore a measurement rather than a promise.** Confirmed
+  externally: `obj_by_chain =LokiBotController` → `found 1 … obj=0x17443C931A0`, **the same pointer
+  the shim reported**. Then ARM B + ARM C gave THAT controller a PlayerState on both sides.
+  ⚠ **SCOPE: this pokes the ENGINE `APawn` CDO** — while it stands, every newly constructed pawn
+  process-wide inherits it. Poke → one spawn → restore. **NOT a shipping fix.**
+  ⚠ **STILL NOT A COMPLETE BOT:** `ServerSetHeroClass` (`0x556DE43 → 0xF7EC20`) and `SetPlayerTeam`
+  (`0x556DE53 → 0xF7EB60`) remain stripped folds and nothing here went through `SpawnBot`.
+  ★★★★★ **FLIGHT 4 — ARM D REPRODUCED IN A FRESH CLIENT, AND THE LOKI BOT HAS A BRAIN [M].** A
+  second launch, second staged world, different ASLR: same A-B-A, `pokeOK=1 restoreOK=1`. And a
+  **two-sided WITHIN-RUN control** on the components, read externally:
+  | field | ctrl A `AIController` | **`LokiBotController`** | ctrl C `AIController` |
+  |---|---|---|---|
+  | `BrainComponent` +0x498 | **NULL** | **`BTComponent` (`BehaviorTreeComponent`)** | **NULL** |
+  | `Blackboard` +0x4B0 | **NULL** | **`BlackboardComponent`** | **NULL** |
+  | `PerceptionComponent` +0x4A0 | NULL | NULL | NULL |
+  | `PathFollowingComponent` / `CachedGameplayTasksComponent` | present | present | present |
+  The two plain controllers were spawned by the SAME code milliseconds either side of the treatment,
+  into the same world; the last row is the shared-baseline control proving the probe reads these
+  fields correctly. **We passed `BehaviorTree = null`, so `ALokiBotController` built its own.**
+  And it is POPULATED, not a husk: `BehaviorTreeComponent.NodeInstances = **21**`
+  (`DefaultBehaviorTreeAsset` NULL, so it was *started*, not defaulted), `BlackboardComp`/`AIOwner`
+  cross-wired, and `BlackboardComponent.BlackboardAsset = a real BlackboardData` with
+  `KeyInstances = **15**`. ⇒ **the Loki bot's AI machinery is NOT gutted.**
+  ⚠⚠ **IT DOES NOT SHOW THE BOT ACTS.** 21 nodes + a live blackboard mean the tree was BUILT, not
+  that it executes usefully, and **movement was never measured** — the read was attempted and failed
+  for an INSTRUMENT reason (the client had already been FK-32'd and the throwaway probe had no
+  RUN-IS-VOID check, so it printed `UNREADABLE`). `LogBehaviorTree`/`LogAIModule` = 0 **with no
+  positive control** ⇒ UNINTERPRETABLE. **Movement is S138's first item.**
+  ⚠⚠ **AND A SELF-CORRECTION MADE THE SAME SESSION:** on flight 3's death alone I wrote *"repeated
+  injection appears to accumulate FK-32 risk"*. **Flight 4 refutes the phrasing** — it died at the
+  **4th** manual-map after **334 s** vs flight 3's 6th after 1144 s. Across the three recorded
+  `0xDEAD` kills the counts are **7 (S132) / 6 / 4** with unrelated elapsed times: **no dose-response,
+  so "accumulates" is unsupported [I, weak].** All three were multi-injection tutorial sittings.
+  ★★★★ **FREE BY-PRODUCT — DRIVING THE PATH DECRYPTED THE LOKI BOT CODE (the S118 method):**
+  `ALokiBotController::OnPossess 0x5565470` **0/4096 → 3782/4096** and `::Tick 0x556E9F0`
+  **0/4096 → 3509/4096**, with `OnUnPossess 0x55667F0` still 0/4096 (never unpossessed — a correct
+  negative) and three known-lit controls unchanged. `OnPossess` was recorded as COVERAGE-BLOCKED with
+  *no way to read it*; it is now readable offline forever, and `Tick` being lit means **the bot
+  controller was actually ticking**. Banked in `dumps/s137-lokibot/` → **`dumps/merged13.dump.exe`**.
+  ⚠⚠ **THREE GATES, NOT ONE — AND ONE WAS LOST IN COMPRESSION, NOT NEVER FOUND.**
+  `AAIController::PostInitializeComponents` is stock UE's
+  `if (bWantsPlayerState && !IsPendingKillPending() && GetNetMode()!=NM_Client)`. GATE 2 is
+  `ObjectFlags(+0x0C)>>30` (bit 30 `RF_Garbage`) at `0x45D6D31`; GATE 3 is `GetNetMode()` at
+  `0x45D6D36`/`cmp eax,3`. ★ **`docs/s136-ai-controller-settled.md:524` DOES record gate 3** —
+  it was **DROPPED when that doc was compressed into `docs/next-session-prompt-s137.md`**, whose
+  listing jumps straight from `0x45D6D25` to `0x45D6D46`. Only **gate 2** was never recorded
+  anywhere. ⇒ **the digest is the instrument that lost it** — this repo's own "a digest is an
+  instrument" pattern (S115-d) operating one level down, settled-doc → handoff, and a successor
+  reading only the handoff (which is what a handoff is FOR) could not have known.
+  ⚠ *"gates 2 and 3 are known to hold"* was **[I], not [M]** — the existing netmode measurement is
+  on the PAWN, gate 3 tests the CONTROLLER. ARM B settles it from another direction:
+  `InitPlayerState`'s own first branch is that same guard on the controller, and it ran 3×.
+  ★★★★★ **AND THE NEWLY-LIT CODE WAS THEN READ (S137 follow-up, 64 CONFIRMED / 25 DOWNGRADE /
+  10 REFUTED). `ALokiBotController::OnPossess` (`0x5565470`, 2,222 B, slot 269) IS NOT GUTTED:**
+  27 distinct direct call targets, **26 REAL / 1 DARK / ZERO folds**. It chains Super, requires an
+  `ALokiHeroCharacter`, pulls a process-wide bot-config CDO, **calls `RunBehaviorTree(Cfg->[0x240])`
+  via vtable disp `0x940`** (which is what creates `BTComponent` + `BlackboardComponent`), binds
+  `HandleLivingStateChanged`/`UpdateCharacterControllable` onto `hero+0xC38`/`+0xDF8`, applies the
+  `UGameplayEffect`s in `Cfg->[0x320]` to `hero+0xF00` and grants 3 abilities. **It reads NO
+  difficulty, team or hero class** — all of it comes from one global config CDO.
+  ★★ **A BRANCH DEAD ONLY BECAUSE OF OUR ORDERING:** it broadcasts a delegate at
+  `ALokiPlayerState+0x5B0` **only if PlayerState is non-null**, and ARM B installs the PlayerState
+  *after* possession. **Install it BEFORE possessing and that branch lights up** — cheap S138 arm.
+  ★ **`ALokiBotController::Tick` (`0x556E9F0`, 1,261 B, slot 170, zero folds): the ONLY motion
+  driver is a RANDOM WANDER**; no targeting, no ability use, no combat. It gates on
+  `Blackboard != NULL` **and** a blackboard bool key (`.data 0xA0348F0`).
+  ⚠⚠ **TWO OF THE SESSION'S OWN LANES CONTRADICTED EACH OTHER AND THE LIVE READ SETTLED IT.** One
+  concluded `OnPossess` *"calls neither `RunBehaviorTree` nor `UseBlackboard`"* and therefore that
+  the bot ticks with a NULL Blackboard. **REFUTED three ways:** the bytes (`0x55655F6 call qword
+  [rax+0x940]` — the dispatch is **INDIRECT**, and the components are created in the **CALLEE**, so a
+  scan for a direct call / for direct writes to `+0x498`/`+0x4B0` inside `OnPossess` is blind BY
+  CONSTRUCTION); the adversarial pass, unprompted; and the live component table above. ★ Naming
+  closes from both ends — the disp-`0x940` callee loads the wide literal **`BTComponent`** and the
+  live object is **literally named `BTComponent`**. ⚠ `0x3316AF0` is NOT `RunBehaviorTree`'s body but
+  a **4-way ICF-folded dispatch shim**, so using it to NAME disp `0x940` is the folded-RVA error.
+  ★ **`SpawnBot` (`0x556D910`, 1,544 B, REAL) SPEC, corrected by its own refuter:** 43 call
+  instructions = 39 direct + 4 indirect, **28 distinct direct targets — 25 REAL / 2 FOLD / 1 DARK**.
+  Call the **raw impl** with 7 native args (`comp, &heroClassCell, locXYZ, teamIndex, difficulty,
+  premadeController, &botName`; stack at `[rsp+0x20/0x28/0x30]`); **it returns the spawned
+  `ALokiHeroCharacter*` directly**, so the `CreatedBot` out-param trap does not apply to a direct
+  call. ⚠⚠ **`BotName` MUST be a ZEROED 16-byte FString** — SpawnBot fills it and **frees it with the
+  game's `FMemory::Free` (`0xFF9310`) on BOTH exit paths**, so a shim-CRT buffer there is heap
+  corruption. ⚠⚠ **IT IS NOT CALL-ONLY** (the lane claimed it; its refuter REFUTED it): an exhaustive
+  operand scan finds **7 non-stack writes across FOUR objects**.
+  ★ Premade short-circuit confirmed from the bytes: `0x556DA4F mov rax,[rsp+0x70]` / `0x556DAA1 test`
+  / `0x556DAA4 jne 0x556DB32` skips `0x556DAAA..0x556DB30`, whose only writes are three to SpawnBot's
+  own stack frame ⇒ **`MakeNewBotController` is never called.**
+  ⚠ The authority sweep's honest payoff is a **NEGATIVE**: `SpawnBot`, `MakeNewBotController`, the
+  three `LokiRideable` `Auth*` entries, `OnPossess` and `Tick` — **not one** reads `Role` or calls
+  `GetNetMode`. They die on Loki's own stubs and on folds. ⚠ *"`0xF7EB60` IS `LokiIsServer`"* is
+  **[I, strong], not [M]** — 106,924 stored-pointer occurrences; **a folded RVA names nothing.**
+  ⚠ **A SECOND READER of bit `0x20` exists at `0x45D5E55`** (in fn `0x45D5DD0`), found by adversarial
+  review and absent from the handoff — any future arm that sets the bit moves **two** behaviours.
+  ⚠ **The client died at the end by protector kill (`0x0000DEAD`, FK-32) ~8 s AFTER the last capture**,
+  on the **6th** manual-map into one process; S132's own FK-32 came on the **7th**. n=2 across
+  sessions: **suggestive that repeated injection accumulates FK-32 risk, not established.**
+  ⚠ **`TerminateProcess`/`ExitProcess` ARE in every `tutorial_launch` DLL's import table** (0 in the
+  source; they come from the clang/link.exe scaffolding). CLAUDE.md's *"no `TerminateProcess`/
+  `ExitProcess` in any shim source"* is true of the SOURCE only — a successor re-deriving it from the
+  binary will find them. The conclusion is unaffected and in fact strengthened (`play`/`dismount`
+  carry them and never produced `0xDEAD`).
+  ⚠ **An evidence file was destroyed by `| tee` re-running a probe after the client died**
+  (`docs/s137-external-AFTER-flight3.txt`, now a labelled transcript reconstruction).
+  **Do not `tee` over an evidence file.**
+  **Arms** (RAW): `botps` `445fb5ce5b902bc3` · `botps-link` `e287d7ae8c5f4814` · `lokibot`
+  `3119d75ae2ca1859` · `botps-readonly` `f860411a6ef7cb49` · `botps-arma` `623252907a68fd08` ·
+  `botps-armb` `c574c8ce5c3ccf95`. All DISTINCT. Regression gate `botai` `5e47c13cf7f0a158`
+  UNCHANGED across all three source patches (every edit is behind `#if KBSPS`). Readout:
+  **`tools/re/playerstate_readout.py`** (read-only RPM; carries its own positive control — the
+  player's real possession — and says so when that control fails).
+- ★★★★★ **THERE ARE **TWO** `.text` DIGEST RECIPES ON DISK AND THE REPO USES BOTH (S136).**
+  **RAW** = `sha256(.text[PointerToRawData, +SizeOfRawData))[:16]` — `configs/fk24-stage.ps1:77
+  Get-TextHash` (prints only inside a stale-shim abort) and **`configs/fk7-ab-run.ps1:94`, which
+  EMITS it at :131 into the A/B CSV column `probe_text_sha`**.
+  **VIRTUALSIZE** = `sha256(.text[PointerToRawData : +min(VirtualSize, SizeOfRawData)])[:16]` —
+  already written down at **`docs/method-rules.md:213` (S134-d)**, whose four quoted outputs
+  recompute 4/4. They differ only in the file-alignment tail.
+  ⚠⚠ **RETRACTION — S136 FIRST PUBLISHED *"the four S135 bot digests appear NOWHERE in the
+  repo"*. THAT IS FALSE.** All four are recorded (this file, `docs/s135-queue-arms-a-match.md`,
+  `docs/next-session-prompt-s136.md`), and **the VIRTUALSIZE recipe reproduces `botspawn
+  e48c90bc6cf17c93` and `botteam 0c16652dc0338d33` EXACTLY** from today's binaries. The error came
+  from a `grep -rl` over `docs/` that **TIMED OUT at 2 minutes**, whose partial output was then read
+  as a negative — the instrument-artifact pattern again. **Scope your greps and check the exit
+  code.**
+  ★ **NEW [M]: `botspawn_readonly` matches NEITHER recipe today** (raw `319ac875af229f46`, minVS
+  `d96480ad64c1a403`, recorded `f5f9896feeac45dc`) ⇒ **that artifact has changed since its gate was
+  recorded.** Re-record it before using it as a control.
+  ⛔ **"9/9 verbatim" WAS A SELECTION EFFECT.** Honest: **48/87** `tutorial_launch_*.dll` and
+  **55/132** corpus tokens under RAW; **6** VirtualSize-only; **0** for whole-file sha256/md5/sha1.
+  `cheatmgr`'s own table here matches **1 of 4**.
+  ⚠ **"Canonical" is a DECISION, not a measurement.** ≥4 artifacts (`play`, `dismount`,
+  `dropplane_b1only`, `droppod_pe_cdopoke`) have BOTH digests recorded in different files as the
+  same gate, so declaring RAW canonical **silently invalidates six recorded gates — say which**.
+  ⚠ **Degenerate case:** any DLL with `VirtualSize == SizeOfRawData` cannot discriminate the two
+  recipes. Check per file before citing a match as recipe evidence.
+  ★★★★★ **AND THE DUPLICATE SWEEP FOUND TWO DEGENERATE CONTROL ARMS — ARMS THAT MEASURE NOTHING
+  (S136).** `python tools/sigbypass-mod/text_digest.py --dupes tools/sigbypass-mod/build` reports
+  **0 unexplained-hazard duplicate groups** but flags **`play` ≡ `play_nopimutex` ≡
+  `play_strictroot`** under BOTH recipes, and the cause is mechanical, each with a PASSING POSITIVE
+  CONTROL:
+  • **`play-nopimutex` has been inert since S112** — `KPIMUTEX` guards `HookLock()`, reachable only
+    via `InstallHook()`, and RM_PLAY has not installed the PI hook since `KFUNCSWAP` became the
+    default, so `InstallHook` is dead-stripped. Control: the literal `SuperviveMissionsPIHook` is
+    present in exactly the **11 of 87** `tutorial_launch` variants whose run mode calls
+    `InstallHook`, and absent from all three of these.
+  • **`play-strictroot` has been inert since S123** — `KGCROOTSTRICT` selects between two arms of a
+    function only reached when `KGCROOT != 0`, and `KGCROOT` has **defaulted to 0 since S123**.
+    Control: the label literal `FREQ` is present in `play_gcroot` and absent from both.
+  ⇒ **DO NOT FLY EITHER AS A CONTROL — they are byte-identical to `play` and settle nothing.**
+  ⚠ Separately, several `*_cdoctrl` "control" arms are byte-identical to their plain build because
+    the knob already DEFAULTS to the control value (`poolspawn` ≡ `poolspawn_cdoctrl`,
+    `droppod_pe` ≡ `droppod_pe_cdoctrl`, `ds_hybrid` ≡ `ds_hybrid_spectator`). **The real A/B pair
+    is `cdopoke` vs `cdoctrl`, which DO differ.** Expected, documented in `build.ps1` — but a
+    successor reading only the arm NAME would think it flew a control.
+  ⚠⚠ **THE DIGEST IS NOT AN ARTIFACT IDENTIFIER TODAY, AND THE "A/B AGAINST A COPY OF ITSELF"
+  HAZARD IS LIVE:** `play` / `play_nopimutex` / `play_strictroot` share `9bc10a4552c596e1`;
+  `poolspawn` / `poolspawn_cdoctrl` share `85f3cee44c31b1cd`; `droppod_pe` / `droppod_pe_cdoctrl`
+  share `61fd0745c23e89f0`. **Any digest tool must flag duplicate digests across differently-named
+  variants.** `tools/sigbypass-mod/text_digest.py` (new) implements both recipes.
+  ⚠⚠ **ROOT CAUSE OF THE "no recipe on disk" ERROR IS A BROKEN POINTER IN THIS FILE** — it directs
+  readers to *"`verify_dll.py` or the section-hash snippet in `docs/s109-dump-forensics.md` §23"*,
+  and **`verify_dll.py` contains no hash code and §23 contains no snippet.** Two sessions followed
+  it, found nothing, and concluded none existed. **Fix that line.**
+  ⚠⚠ **AN EDIT THAT DOES NOT MOVE `.text` IS AMBIGUOUS** (cached build vs semantic no-op). Insert a
+  deliberately observable marker string to separate them.
+  ⚠⚠ **`strings` IS NOT INSTALLED ON THIS MACHINE.** It returns silence for every token in every
+  file, which reads exactly like a negative. Use a python byte scan and **always include a positive
+  control** (`KERNEL32` reading 0 is what exposed it).
+  ⚠ **`build/` is gitignored and three S136 builds overwrote each other.** Only source-
+  reproducibility (`git show HEAD:` + unmodified `build.ps1`) recovered the flight-1 artifact.
+  **Archive every A/B arm before rebuilding.**
+  ⚠ **`dumps/s133-phase2-{BASE,AFTER}` ARE MIS-NAMED — audited S136, and it is a FILENAME DEFECT
+  ONLY.** The mtimes are inverted (AFTER `19:19:53` predates BASE `19:32:48`) and the CONTENT agrees:
+  AFTER **15,459** non-zero `.text` pages vs BASE **15,512**, with **only-AFTER 0 / only-BASE 53 /
+  0 byte conflicts** ⇒ AFTER is a strict SUBSET, so "BASE" is genuinely the later capture.
+  ★ **But NO published S133 conclusion is wrong**: `0x5879000` is LIT in **both** images (3,861
+  non-zero bytes each), so the S133 DARK→LIT headline cannot have come from this pair — it came from
+  the CANCEL→phase2 diff (16 new, 0 lost). A named-direction diff on this pair yields **0 new /
+  53 lost**, and `text_page_diff.py:54` does surface the `ONLY-BASE` column, so the loss is visible.
+  ⚠ Do not restate this as "the before/after-diff method is threatened" — it is not; the labels are.
 - ⚠ **Nothing matches the player**: the queue is answered by no matchmaker. And FK-15's S118 map
   measured **`matchmakingNotif` as UNBOUND**, so there is no push route — a match-found signal has to
   be HTTP.
@@ -3163,7 +3587,16 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   ⚠⚠ **CANONICAL POINTER MOVED — `dumps/merged10.dump.exe` EXISTS AND IS AHEAD: `.text`
   **16,755 / 30,281 = 55.33 %** (its own manifest `dumps/merged10.dump.exe.txt:19`), and
   `docs/fk22-dropphase-reachability.md:7` already publishes it (`0x5456000` 3,860/4,096 non-zero
-  there). `merged9` also exists. **Use `merged10` for any new offline grading.**
+  there). `merged9` also exists. ~~**Use `merged10` for any new offline grading.**~~
+  ★★ **SUPERSEDED TWICE: `merged12` (S136) and now `dumps/merged13.dump.exe` (S137). USE
+  `merged13`:** 16,800 / 30,281 pages = **55.48 %**, VERIFIED STRICT SUPERSET of `merged12` before
+  the default was moved — pages lost **0**, gained **+28**, byte conflicts on shared pages **0**.
+  ⚠ **`mergedumps` printed "44 pages" for what it TOOK FROM DONORS; the coverage delta is +28.**
+  Those are different quantities and only the second is a coverage claim.
+  It is the ONLY image in which `ALokiBotController::OnPossess 0x5565470` (0/4096 → 3782/4096) and
+  `::Tick 0x556E9F0` (0/4096 → 3509/4096) are decrypted — a run against `merged12` or earlier still
+  grades both DARK. **`strxref.py`'s `DEFAULT_DUMP` was moved to `merged13` in S137** (it had been
+  `merged12`, i.e. one generation behind, which is the recurring defect this line exists to catch).
   ⚠⚠ **AND `tools/strxref/strxref.py:66` STILL DEFAULTS TO `merged2` (54.95 %)** — so every
   un-flagged `strxref.py func` run in this project has been grading against an image ~1.7 pp behind
   HEAD, which is exactly how a LIT function reads as dark. **Pass the image explicitly, or fix the
@@ -3470,7 +3903,8 @@ which is a bad property for a project whose value is its retraction history).
 - **`docs/<fk-n>-*-settled.md`** — the primary evidence for each settled unknown, with the
   measurements and the controls. These are ground truth; this file is a summary of them.
 - **`docs/method-rules.md`** — the two method rules above.
-- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s134.md`** (S133 → S134): FIND MATCH works and nothing answers the queue; the shadow-exe read that could obsolete the coverage problem; and `dumpimage` discarding the protector 52 times.
+- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s138.md`** (S137 → S138): the AI pawn now has a real `BP_LokiPlayerState_C` on both sides and **an `ALokiBotController` possesses a hero pawn** — the first in this project's history. ⚠ Read `docs/s137-playerstate-and-lokibot-settled.md`'s CORRECTIONS block first: **S137's own handoff proposed a `bWantsPlayerState` CDO poke and it is MEASURED REFUTED** (a CDO poke reaches a new instance only if the CONSUMER reads the CDO directly). The next arm is `SpawnBot(PremadeBotController=ours)`.
+  ⚠ `docs/next-session-prompt-s137.md` is the PREVIOUS handoff and its §1.2 arm is the refuted one — keep it as the dated record, do not follow it.
 
 ⚠ **Historical handoffs still say things like "read memory `supervive-x`".** Those are dated
 archives and were deliberately NOT rewritten — editing them would falsify the record of what a past

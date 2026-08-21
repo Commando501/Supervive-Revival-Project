@@ -1,0 +1,11 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.
+[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never
+[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT
+[BS] use it: Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial, and [M] it has ZERO
+[BS] ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's own
+[BS] ubergraph) -- so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped
+[BS] SpawnPlayer. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF60A2854A0 stub=0x1B2C3F51130 funcCls=0x1B27A91B000 gameTid=17376

@@ -1,8 +1,19 @@
-# List UObject instances whose CLASS name contains a substring, via GUObjectArray.
-#   usage: obj_by_class.py <PID> <BASE-hex> <ClassNameSubstr>
-import ctypes, sys
+# List UObject instances whose CLASS LEAF name contains a substring, via GUObjectArray.
+#   usage: obj_by_class.py <PID> <BASE-hex> <ClassNameSubstr> [LIMIT|all]
+#
+# ⚠ MATCHING IS LEAF-NAME SUBSTRING ONLY. It reads UClass->NamePrivate (cls+0x20) and does NOT
+#   walk SuperStruct. So it CANNOT answer "does any AController-DERIVED object exist" — a
+#   subclass named e.g. BP_TutorialBot_C matches nothing. Use tools/re/obj_by_chain.py for that.
+#   (Class-lookup blind-spot family: obj_by_class substring · cheat_reach_probe endswith ·
+#    class_props class-of-class · bpframe_readout first-match.)
+#
+# The optional 4th arg raises/removes the detail-list cap (default 60, see LIMIT below).
+#   "all" or 0 = uncapped.  Env override: OBJ_BY_CLASS_LIMIT.
+import ctypes, os, sys
 from ctypes import wintypes
 PID=int(sys.argv[1],0); BASE=int(sys.argv[2],16); WANT=sys.argv[3]
+_lim = sys.argv[4] if len(sys.argv)>4 else os.environ.get("OBJ_BY_CLASS_LIMIT","60")
+LIMIT = 0 if str(_lim).lower() in ("all","none","0","-1") else int(_lim,0)
 NAMEPOOL=BASE+0x9D81450; OBJOBJECTS=BASE+0x9E38930
 PERCHUNK=65536; STRIDE=0x18
 k32=ctypes.WinDLL("kernel32",use_last_error=True); k32.OpenProcess.restype=wintypes.HANDLE
@@ -66,10 +77,21 @@ print(f"found {len(hits)} LIVE (non-CDO) instance(s) whose class contains '{WANT
 # mission pools were being rejected, which was false.
 # The count above was CORRECT the whole time. The fix is to make truncation impossible to
 # miss, and to say plainly which number to trust.
-LIMIT = 60
-for obj,cn,nm in hits[:LIMIT]:
+# LIMIT is set from argv[4] / OBJ_BY_CLASS_LIMIT at the top of this file; 0 == uncapped.
+_shown = hits if LIMIT == 0 else hits[:LIMIT]
+for obj,cn,nm in _shown:
     print(f"  obj=0x{obj:X}  Class={cn}  Name={nm}")
-if len(hits) > LIMIT:
+if LIMIT and len(hits) > LIMIT:
     print(f"  ... {len(hits)-LIMIT} more not shown (detail list capped at {LIMIT}).")
     print(f"  !! DO NOT COUNT THESE LINES -- the real total is {len(hits)}, printed above.")
     print(f"  !! Pipe to a counter and you will get {LIMIT}, not {len(hits)}. Parse the 'found N' line.")
+    print(f"  !! Pass 'all' as the 4th argument to print every row.")
+else:
+    print(f"  (detail list UNCAPPED: {len(_shown)} of {len(hits)} rows printed)"
+          if LIMIT == 0 else f"  (all {len(hits)} rows printed; cap was {LIMIT})")
+# Per-class tally -- immune to the row cap, and the actual answer to "what classes are these?"
+from collections import Counter
+tally = Counter(cn for _,cn,_ in hits)
+print(f"\ndistinct classes: {len(tally)}")
+for cn,n in tally.most_common():
+    print(f"  {n:6}  {cn}")

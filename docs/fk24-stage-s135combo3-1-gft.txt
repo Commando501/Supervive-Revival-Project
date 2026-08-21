@@ -1,0 +1,58 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.
+[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never
+[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT
+[BS] use it: Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial, and [M] it has ZERO
+[BS] ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's own
+[BS] ubergraph) -- so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped
+[BS] SpawnPlayer. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF60A2854A0 stub=0x1FEFB571130 funcCls=0x1FD9A7EB000 gameTid=4364
+[BS] ---- STEP 0: RESOLVE + BASELINE CENSUS (read-only; NO CALL) ----
+[FS] arm: swapped=17563 BP UFunctions  (scan 3375 ms over 161753 objects, 34253 UFunctions total) -- NO .text WRITE
+[PH] gm-cand[0] 0x1FE5D6F0040 'EndOfGameModel'  chain=EndOfGameModel<-Object  [+0x418]=0x0 not-live
+[PH] world 0x1FF0CF92B80 'LVL_Tutorial' AuthorityGameMode@0x250=0x0  GameState@0x258=0x0
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[PH] gm-cand[1] 0x1FE99F03C40 'Comp_GameMode_EoGFinisher'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[2] 0x1FDEA30D800 'Comp_GameMode_DeathCircle'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x418]=0x1FD9A7EB000 LIVE-UOBJECT
+[PH] gm-cand[3] 0x1FF0A6E5980 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[4] 0x1FEA5A01F00 'Comp_GameMode_ShopKeepers'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x1FE9DEED8A0 not-live
+[PH] gm-cand[5] 0x1FE967A3740 'BP_LokiGameMode_Tutorial_C'  chain=BP_LokiGameMode_Tutorial_C<-LokiTutorialGameMode<-LokiRoundGameMode<-LokiGameMode<-LokiGameModeBase<-GameModeBase<-Info<-LokiActor<-Actor<-Object  [+0x418]=0x1FF560BC040 LIVE-UOBJECT
+[PH] gm-cand[6] 0x1FF037AF580 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x1FE40EE9800 LIVE-UOBJECT
+[PH] gm-cand[7] 0x1FE9484F4C0 'Comp_GameMode_EoGFinisher_GEN_VARIABLE'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x418]=0xACA160000000000 not-live
+[PH] gm-cand[8] 0x1FF6AEA4780 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[9] 0x1FEA78FE600 'Comp_GameMode_DeathCircle_GEN_VARIABLE'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x418]=0xA0000000A not-live
+[PH] gm-cand[10] 0x1FF05FBCE80 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x1FDABAE7400 LIVE-UOBJECT
+[PH] gm-cand[11] 0x1FF64898000 'Comp_GameMode_WipeoutRespawns_GEN_VARIABLE'  chain=Comp_GameMode_WipeoutRespawns_C<-ActorComponent<-Object  [+0x418]=0x1FF677F9D20 not-live
+[PH] gm-cand[12] 0x1FF64899E00 'Comp_GameMode_Vaults_GEN_VARIABLE'  chain=Comp_GameMode_Vaults_C<-ActorComponent<-Object  [+0x418]=0x1FDABAC8D00 LIVE-UOBJECT
+[PH] gm-cand[13] 0x1FF05FBEE00 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x1FEB7526280 LIVE-UOBJECT
+[PH] gm-cand[14] 0x1FF3AA55F20 'Comp_GameMode_QuestManager_GEN_VARIABLE'  chain=Comp_GameMode_QuestManager_C<-ActorComponent<-Object  [+0x418]=0x9FFFFFFFF not-live
+[PH] gm-cand[15] 0x1FEAE518B20 'Comp_GameMode_Biomes_GEN_VARIABLE'  chain=Comp_GameMode_Biomes_C<-Comp_GameMode_Biomes_Code_C<-LokiBiomeManagerComponent<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[16] 0x1FE9A0B2B00 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[17] 0x1FEAE8809A0 'Comp_GameMode_RoundReset_GEN_VARIABLE'  chain=Comp_GameMode_RoundReset_C<-ActorComponent<-Object  [+0x418]=0xACA160000000000 not-live
+[PH] gm enumeration: 18 live *GameMode instance(s), 1 deriving from LokiRoundGameMode; world=0x1FF0CF92B80
+[BS] gameMode=0x1FE967A3740 via the ONLY live instance deriving from LokiRoundGameMode (the class that DECLARES GoToPhase); no World AuthorityGameMode available
+[BS] gameMode class='BP_LokiGameMode_Tutorial_C'
+[BS] Comp_BP_BotSpawner@0x808 = 0x1FEA9942C00  name='Comp_BP_BotSpawner' class='Comp_BP_BotSpawner_C'
+[BS] SpawnableBots@+0xD8: Data=0x1FEA3896380 Num=13 Max=16 (Initialize Bot Options RAN)
+[BS] fn=0x1FE9C6E5A00 params: Team@0x0 Loc@0x8 Diff@0x20 Class@0x28 Level@0x30 CreatedBot@0x38
+[FS] *** ARMED AND LIVE: hitsGT=1 allThreadCalls=1 after 8016 ms (~0 game-thread dispatches/s) ***
+[BS] heroClass 'BP_HERO_Ronin_C' = 0x1FE8E8E5AA0 chain=BP_HERO_Ronin_C<-BP_LokiHeroCharacter_C<-BP_LokiHeroCharacter_Code_C<-LokiHeroCharacter_AS<-LokiHeroCharacter<-LokiCharacter<-Character<-Pawn<-LokiActor<-Actor<-Object -> DERIVES FROM LokiHeroCharacter
+[BS] no player hero location -- REFUSING rather than spawning at world origin. (That is the 'Spawn AI Hero Bot' failure mode this arm exists to avoid.)
+[FS] t=+15s hitsGT=1 called=0 allThreadCalls=1 swapped=17563
+[BS] census A0       BotController-chain=0  LokiHeroCharacter-chain=2
+[BS] ---- STEP 1: STABILITY RE-CENSUS (still NO CALL) ----
+[FS] t=+30s hitsGT=2 called=1 allThreadCalls=2 swapped=17563
+[BS] census A1       BotController-chain=0  LokiHeroCharacter-chain=2
+[BS] STEP 2 DISABLED by KBSARMS -- no call made.
+[BS] ---- STEP 3: POST-CALL CENSUS + VERDICT ----
+[FS] t=+45s hitsGT=194 called=193 allThreadCalls=194 swapped=17563
+[BS] census A2       BotController-chain=0  LokiHeroCharacter-chain=2
+[FS] disarm: restored=17563 of 17563 swapped (scan 3390 ms, 34253 UFunctions live)
+[BS] ---------------- RM_BOTSPAWN SUMMARY ----------------
+[BS] resolved=0 roster=13 team=0(player=-999) called=0 faulted=0 refused=0
+[BS] botControllers A0=0 A1=0 A2=0 | heroCharacters A0=2 A1=2 A2=2
+[BS] VERDICT: NOT RESOLVED -- nothing was called. This is a STAGING/RESOLVE statement and says NOTHING about whether a bot can be spawned.
+[BS] done (step=4 resolved=0 called=0 faulted=0 dCtl=0 dHero=0 hits=194 hitsGT=194)

@@ -1,0 +1,21 @@
+*** THIS RUN IS VOID. IT IS NOT A NEGATIVE RESULT. ***
+The client (PID 38028) had ALREADY been killed by the protector (FK-32, exit 0x0000DEAD) when this
+probe ran, so every `UNREADABLE` below is the process being gone -- NOT the pawn failing to move.
+
+THE PROBE ITSELF IS THE DEFECT: it had no RUN-IS-VOID liveness check, so it printed a confident
+per-target `UNREADABLE` table instead of refusing. tools/re/playerstate_readout.py, written the same
+day, DOES check (`OpenProcess ... failed -- RUN IS VOID`) and would have refused. Preserved verbatim
+as an instrument-artifact instance; the movement question is UNANSWERED and is S138's first item.
+================================================================================================
+
+Is the AI-controlled pawn MOVING? read-only RPM, two samples.
+The two plain-AIController pawns are WITHIN-RUN CONTROLS: same world, same spawner,
+milliseconds either side of the treatment, but with NO BrainComponent and NO Blackboard.
+
+  t=0.0s  LOKIBOT  pawn  UNREADABLE
+  t=0.0s  ctrlA    pawn  UNREADABLE
+  t=0.0s  ctrlC    pawn  UNREADABLE
+
+  t=8.0s LOKIBOT  pawn  UNREADABLE
+  t=8.0s ctrlA    pawn  UNREADABLE
+  t=8.0s ctrlC    pawn  UNREADABLE

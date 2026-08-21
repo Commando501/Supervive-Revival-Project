@@ -14150,6 +14150,36 @@ static void DxFinalReport(){
 #ifndef KBSOFFSET
 #define KBSOFFSET 600.0   // uu in +X from the player hero
 #endif
+#ifndef KBSPS
+#define KBSPS 0           // S137: 1 = the PlayerState experiment. See the big block by BsPsExperiment.
+#endif
+#ifndef KBSPSARMS
+#define KBSPSARMS 0x0F    // bit0 CONTROL spawn (#1, bit clear)   bit1 THE POKE + TREATMENT spawn (#2)
+                          // bit2 RESTORE the CDO bit (A-B-A)     bit3 ARM B: direct InitPlayerState on #1
+                          // bit4 LINK the pawn: APawn::SetPlayerState(pawn, ctl->PlayerState)
+                          // bit5 ARM D: poke CDO(APawn).AIControllerClass -> ALokiBotController, A-B-A
+#endif
+
+#if KBSPS
+// S137 state. Declared HERE, above BsClassify/BsScanWorld, because the census writes two of them.
+static uintptr_t g_psPawn[2]={0,0}, g_psCtl[2]={0,0}, g_psCtlPS[2]={0,0}, g_psPawnPS[2]={0,0};
+static int       g_psBit[2]={-1,-1};                 // bWantsPlayerState ON THE SPAWNED INSTANCE
+static uintptr_t g_psAiCls=0, g_psAiCDO=0;
+static uint32_t  g_psBitOff=0xFFFFFFFF;              // FProperty Offset_Internal of bWantsPlayerState
+static uint8_t   g_psBitByteOff=0, g_psBitMask=0;    // FBoolProperty ByteOffset / FieldMask
+static int       g_psBitByName=0;                    // 1 = resolved by name, 0 = using the recorded offset
+static int       g_psPokeOK=-1, g_psRestoreOK=-1, g_psSpawns=0;
+static int       g_psDirectTried=0, g_psDirectDispatched=0, g_psDirectFaulted=0;
+static int       g_psLinkTried=0, g_psLinkDone=0, g_psLinkFaulted=0;
+static uintptr_t g_psDefPawn=0, g_psBotCls=0, g_psAicOrig=0;
+static uint32_t  g_psOAic=0xFFFFFFFF;
+static int       g_psLbPokeOK=-1, g_psLbRestoreOK=-1, g_psLbSpawns=0, g_psLbIsBot=-1;
+static uintptr_t g_psLbPawn[3]={0,0,0}, g_psLbCtl[3]={0,0,0}, g_psLbAic[3]={0,0,0};
+static char      g_psLbChain[3][192]={{0},{0},{0}};
+static uintptr_t g_psWorld=0, g_psAgm=0, g_psPSClass=0;
+static int       g_psScanPS=-1, g_psA=-1, g_psB=-1, g_psC=-1;   // PlayerState-chain census A0/A1/A2
+static uintptr_t g_psWorldCand[4]={0,0,0,0}; static int g_psWorldN=0;
+#endif
 
 static uintptr_t g_bsGm=0, g_bsComp=0, g_bsFn=0, g_bsHeroCls=0, g_bsPlayerHero=0;
 static uint32_t  g_bsOTeam=0xFFFFFFFF,g_bsOLoc=0xFFFFFFFF,g_bsODiff=0xFFFFFFFF,
@@ -14207,8 +14237,34 @@ static uintptr_t g_bsMemoCls[BS_MEMO]; static uint8_t g_bsMemoVal[BS_MEMO]; stat
 static uint8_t BsClassify(uintptr_t cls){
     for(int i=0;i<g_bsMemoN;i++) if(g_bsMemoCls[i]==cls) return g_bsMemoVal[i];
     char chain[256]; uint8_t v=0;
-    if(PhChainHas(cls,"BotController",chain,sizeof(chain)))     v|=1;
+    // S136: this used to test ONLY "BotController". P1 is written in this arm's own header as
+    //   "BotController/AIController census delta", but UAIBlueprintHelperLibrary::SpawnAIFromClass
+    //   creates a plain engine AIController whose chain is
+    //   AIController <- Controller <- LokiActor <- Actor <- Object -- NO "BotController" anywhere.
+    //   So the predicate was blind to the exact controller the KBSAI route creates, and the S136
+    //   flight-2 arm reported dCtl=0 while an independent read-only chain census over 155,177
+    //   objects found exactly 1 live AIController possessing the pawn we had just spawned
+    //   (Pawn/Character/Instigator == our ReturnValue; pawn.Controller/PreviousController/Owner
+    //   == that controller). The 0 was an INSTRUMENT ARTIFACT, not a null.
+    //   NOTE the deliberately NARROW second term: a bare "Controller" substring also matches the
+    //   ~190 Comp_PlayerController_*_C components and BP_LokiPlayerController_Dev_C, which would
+    //   swamp the delta with world noise. Match the two AI controller families only.
+    if(PhChainHas(cls,"BotController",chain,sizeof(chain))||
+       PhChainHas(cls,"AIController",chain,sizeof(chain)))      v|=1;
     if(PhChainHas(cls,"LokiHeroCharacter",chain,sizeof(chain))) v|=2;
+#if KBSPS
+    // S137. Two more memoised bits, both INDEPENDENT of the primary readout (a direct pointer read
+    // of controller+0x3C0 / pawn+0x3D8):
+    //   v|=4  PlayerState-chain -- the corroborating census. It is what would catch a PlayerState
+    //         that was CREATED but never LINKED, a state the pointer reads alone cannot tell apart
+    //         from "none was created".
+    //   v|=8  the World, by EXACT leaf-class name. PhPickGameMode next door carries a comment about
+    //         the substring trap that a chain-contains test walks straight into; this is an exact
+    //         strcmp, memoised per CLASS, so it costs one FName decode per distinct class rather
+    //         than one per object.
+    if(PhChainHas(cls,"PlayerState",chain,sizeof(chain)))       v|=4;
+    { char cn[128]; cn[0]=0; GetFNameStr(NameId(cls),cn,sizeof(cn)); if(!strcmp(cn,"World")) v|=8; }
+#endif
     if(g_bsMemoN<BS_MEMO){ g_bsMemoCls[g_bsMemoN]=cls; g_bsMemoVal[g_bsMemoN]=v; g_bsMemoN++; }
     return v;
 }
@@ -14221,6 +14277,9 @@ static void BsScanWorld(const char* tag,int* botCtl,int* heroes,uintptr_t* heroO
     uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
     if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return;
     int numChunks=(numEl+PERCHUNK-1)/PERCHUNK, nb=0, nh=0, scanned=0;
+#if KBSPS
+    int nps=0;
+#endif
     DWORD t0=GetTickCount();
     for(int ci=0;ci<numChunks;ci++){
         if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
@@ -14236,6 +14295,20 @@ static void BsScanWorld(const char* tag,int* botCtl,int* heroes,uintptr_t* heroO
             scanned++;
             uint8_t v=BsClassify(cls);
             if(v&1) nb++;
+#if KBSPS
+            if(v&4) nps++;
+            if(v&8){
+                // S137 DEFECT FIX: the original took the FIRST object whose leaf class name is
+                // exactly "World" and stopped. It latched a world named LVL_Tutorial whose
+                // AuthorityGameMode and GameState both read 0 -- WHILE AController::InitPlayerState
+                // was concurrently succeeding on this very client, i.e. the engine's GetWorld()
+                // returned a DIFFERENT World object. (345 live objects have "World" in the class
+                // name.) Keep several and let the precondition read pick one that is populated,
+                // instead of asserting a null it cannot support.
+                if(g_psWorldN<4) g_psWorldCand[g_psWorldN++]=obj;
+                if(!g_psWorld) g_psWorld=obj;
+            }
+#endif
             if(v&2){ nh++;
                 if(heroOut&&heroCountOut){
                     // A hero CANDIDATE must have a readable RootComponent with a readable location:
@@ -14257,7 +14330,10 @@ static void BsScanWorld(const char* tag,int* botCtl,int* heroes,uintptr_t* heroO
         }
     }
     *botCtl=nb; *heroes=nh;
-    Markerf("[BS] census %-8s BotController-chain=%d  LokiHeroCharacter-chain=%d  (%d objects, %d classes memoised, %lu ms)\r\n",
+#if KBSPS
+    g_psScanPS=nps;
+#endif
+    Markerf("[BS] census %-8s BotOrAIController-chain=%d  LokiHeroCharacter-chain=%d  (%d objects, %d classes memoised, %lu ms)\r\n",
             tag,nb,nh,scanned,g_bsMemoN,(unsigned long)(GetTickCount()-t0));
 }
 
@@ -14435,6 +14511,650 @@ static void BsCallAI(){
     Marker("[BS] ! ReturnValue is a corroborator, NOT the verdict. The CONTROLLER census delta is.\r\n");
 }
 
+#if KBSPS
+// ==============================================================================================
+// S137 -- GIVE THE AI CONTROLLER A PLAYERSTATE.  It is ONE BIT, and there are TWO ways to reach it.
+//
+// S136 left the AI-controlled pawn with PlayerState NULL on BOTH sides (controller+0x3C0 and
+// pawn+0x3D8).  The cause was settled offline; it was RE-DERIVED INDEPENDENTLY for this arm from
+// dumps/merged12.dump.exe, and the recorded version turns out to be INCOMPLETE -- there are THREE
+// gates in front of InitPlayerState, not one:
+//
+//   AAIController::PostInitializeComponents  0x45D6D10   REAL (`40 53 48 83 ec 20 48 8b d9 ...`)
+//     0x45D6D19  e8 e2 c2 10 ff             call 0x36E3000     Super::PostInitializeComponents
+//     0x45D6D1E  f6 83 88 04 00 00 20       test byte [rbx+0x488],0x20    <- bWantsPlayerState
+//     0x45D6D25  74 25                      je   0x45D6D4C     <== GATE 1  THE BLOCKER
+//     0x45D6D27  8b 43 0c / c1 e8 1e / f6 d0 / a8 01
+//     0x45D6D31  74 19                      je   0x45D6D4C     <== GATE 2  !IsPendingKillPending()
+//     0x45D6D36  e8 15 7a db fe             call 0x338E750     AActor::GetNetMode
+//     0x45D6D3B  83 f8 03 / 74 0c           je   0x45D6D4C     <== GATE 3  bail if NM_Client(3)
+//     0x45D6D40  48 8b 03 / 48 8b cb        rax = [rbx]  (vtable),  rcx = this
+//     0x45D6D46  ff 90 88 08 00 00          call [rax+0x888]   InitPlayerState, slot 0x888/8 = 273
+//     0x45D6D4C  48 83 bb 98 04 00 00 00    cmp [rbx+0x498],0  <- the je TARGET is the BrainComponent
+//                                              test, i.e. the skipped block is the InitPlayerState
+//                                              call and NOTHING ELSE.
+//   That is stock UE's `if (bWantsPlayerState && !IsPendingKillPending() && GetNetMode()!=NM_Client)`.
+//   GATE 2 reads ObjectFlags (+0x0C in THIS build) >> 30 -- bit 30 is RF_Garbage/RF_MirroredGarbage --
+//   so a freshly spawned object passes it.  GATE 3 is already [M]-passed on this client (a controller
+//   was created at all, S136).  Neither was recorded anywhere, and a successor reading only
+//   "THE BLOCKER" would not know to check them, so both are READ OUT below before the call.
+//
+// !! THE HANDOFF'S "one aligned CDO write" HAS AN UNVERIFIED DEPENDENCY, AND THIS ARM MEASURES IT.
+//   The consumer above reads the INSTANCE (`test byte [rbx+0x488]`, rbx = the controller), while
+//   AAIController's own constructor CLEARS that bit on every instance it builds (0x45D19AD
+//   `and ecx,~0x20`).  So poking the CDO only works if UE copies the CDO's property block onto the
+//   instance AFTER the class constructor runs.  S130's `bCanEverReplicate` precedent does NOT
+//   establish that: its consumer read the CDO DIRECTLY (`cmp byte [CDO+0x6C],0`).  This is a
+//   DIFFERENT claim.  Readout L2 below reads the SPAWNED INSTANCE's bit and settles it either way.
+//
+// * SO THERE ARE TWO ARMS, THEY ARE COMPLEMENTARY, AND BOTH FLY IN ONE WINDOW:
+//   ARM A  poke CDO(AIControllerClass) bWantsPlayerState = 1, THEN spawn.  Depends on propagation.
+//   ARM B  spawn normally, then call AController::InitPlayerState DIRECTLY on the controller.
+//          [M, re-derived here] InitPlayerState (0x36DEE20) does NOT test bWantsPlayerState.  Its
+//          own guards are only:
+//            0x36DEE45 call 0x338E750 / cmp eax,3 / je 0x36DF110      GetNetMode() != NM_Client
+//            0x36DEE5E call 0x338C990 / test rax,rax / je             GetWorld() != null
+//            0x36DEE77 mov rsi,[rax+0x250]                            UWorld::AuthorityGameMode
+//            0x36DEE83 mov rcx,[rax+0x258] -> call 0x3841550          FALLBACK: GameState->GetDefaultGameMode()
+//            0x36DEED3 or dword [rsp+0x84],0x40                       SpawnInfo.ObjectFlags |= RF_Transient
+//          So ARM B needs no poke and no propagation.  It is dispatched THROUGH THE VTABLE
+//          ([[ctl]+0x888]) and REFUSES unless that slot resolves to RVA 0x36DEE20 -- a
+//          self-validating call rather than an address we simply trust.  (It matters: [M]
+//          ALokiPlayerController's slot 273 is the void fold, so "slot 273" is not universally real.)
+//
+// ** THE PRE-REGISTERED DISCRIMINATOR, written before the flight:
+//   ARM A succeeds => controller.PlayerState NON-NULL *and* pawn.PlayerState NON-NULL, because the
+//                     poke is in place before SpawnActor, so InitPlayerState runs inside
+//                     PostInitializeComponents -- i.e. BEFORE SpawnDefaultController calls Possess
+//                     -> PossessedBy -> APawn::SetPlayerState, which is what copies it to the pawn.
+//   ARM B succeeds => controller.PlayerState NON-NULL and pawn.PlayerState STILL NULL, because
+//                     possession already happened and nothing re-runs SetPlayerState.
+//   => the two mechanisms produce DIFFERENT signatures and cannot be mistaken for one another.
+//
+// RISK CLASS.  ARM A is ONE aligned byte OR on a CDO, readback-verified and A-B-A restored -- the
+//   S130 class, this project's safest measured write.  ARM B is NOT call-only: InitPlayerState does
+//   a SpawnActor (RF_Transient) and writes controller+0x3C0.  Both are SEH-guarded and separately
+//   gated by KBSPSARMS.  NO module-image write and NO PI hook in either.
+//
+// ! THE CONTROL IS WITHIN-RUN AND THAT IS THE POINT.  Spawn #1 runs with the bit CLEAR and spawn #2
+//   with it SET, in the same world, same instrument, same instruction stream, milliseconds apart.
+//   The ONLY difference between them is one bit on one CDO.  ARM B then runs on controller #1,
+//   whose PlayerState has already been READ AND PRINTED as NULL, so its delta is attributable too.
+//   A cross-run A/B would have confounded world state, staging schedule and build identity with it.
+// ==============================================================================================
+
+typedef void (__fastcall *PsInitPlayerStateFn)(void*);
+typedef void (__fastcall *PsSetPlayerStateFn)(void*,void*);
+
+// APawn::SetPlayerState. [M] REAL, 210 B, .pdata-EXACT extent 0x3BBD9F0..0x3BBDAC2, and it is
+// NON-VIRTUAL -- so unlike ARM B there is no vtable slot to validate the address against. The
+// substitute is a PROLOGUE SIGNATURE CHECK at runtime: an address this arm cannot recognise is not
+// called. Transcribed from dumps/merged12.dump.exe:
+//   0x3BBD9F0  48 89 5c 24 08         mov [rsp+8],rbx
+//   0x3BBD9F5  48 89 6c 24 10         mov [rsp+0x10],rbp
+//   0x3BBD9FA  48 89 74 24 18         mov [rsp+0x18],rsi
+//   0x3BBD9FF  57                     push rdi
+//   0x3BBDA00  48 83 ec 20            sub rsp,0x20
+//   0x3BBDA04  48 8b a9 d8 03 00 00   mov rbp,[rcx+0x3d8]     <- reads the pawn's CURRENT PlayerState
+//   0x3BBDA0B  48 8b fa               mov rdi,rdx             <- rdx IS the new PlayerState argument
+// => void __fastcall(APawn* pawn, APlayerState* newPS).
+constexpr uintptr_t PS_RVA_SETPLAYERSTATE = 0x3BBD9F0;
+static const uint8_t PS_SIG_SETPLAYERSTATE[16] =
+    {0x48,0x89,0x5c,0x24,0x08,0x48,0x89,0x6c,0x24,0x10,0x48,0x89,0x74,0x24,0x18,0x57};
+
+constexpr uintptr_t PS_VT_INITPLAYERSTATE  = 0x888;      // read out of 0x45D6D46 `call [rax+0x888]`
+constexpr uintptr_t PS_RVA_INITPLAYERSTATE = 0x36DEE20;  // AController::InitPlayerState
+constexpr uintptr_t PS_REC_WANTSPS_OFF     = 0x488;      // recorded, from the UHT SetBitFunc 0x45CFA10
+constexpr uint8_t   PS_REC_WANTSPS_MASK    = 0x20;       // `or dword [rcx+0x488],0x20; ret`
+constexpr uintptr_t PS_CDO_OFF             = 0x178;      // UClass::ClassDefaultObject [M, S130]
+
+// Resolve bWantsPlayerState BY NAME on the live class and decode its FBoolProperty metadata.
+// Falls back to the recorded offset ONLY if that fails, and says so loudly -- because a by-name
+// failure is ALSO evidence about ARM A: if the field is not a reflected UPROPERTY, there is no
+// reason for the CDO's value to be copied onto a new instance at all.
+static int BsPsResolveBit(uintptr_t cls){
+    uint32_t off=0xFFFFFFFF, elem=0; char ty[48], sn[64], ow[64];
+    uintptr_t f=PdFindPropOn(cls,"bWantsPlayerState",&off,&elem,ty,sizeof(ty),sn,sizeof(sn),ow,sizeof(ow));
+    if(f&&off!=0xFFFFFFFF&&!strcmp(ty,"BoolProperty")&&SafeReadable((void*)(f+FBOOLPROP_FIELDSIZE),4)){
+        uint8_t fs=*(uint8_t*)(f+FBOOLPROP_FIELDSIZE), bo=*(uint8_t*)(f+FBOOLPROP_BYTEOFFSET);
+        uint8_t bm=*(uint8_t*)(f+FBOOLPROP_BYTEMASK),  fm=*(uint8_t*)(f+FBOOLPROP_FIELDMASK);
+        Markerf("[PS] bWantsPlayerState RESOLVED BY NAME on '%s': FProperty=0x%llX off=0x%X type=%s "
+                "fs=%u bo=%u bm=0x%02X fm=0x%02X\r\n",ow,(unsigned long long)f,off,ty,
+                (unsigned)fs,(unsigned)bo,(unsigned)bm,(unsigned)fm);
+        if(fs>=1&&fs<=8&&bm&&fm&&bo<=8){
+            g_psBitOff=off; g_psBitByteOff=bo; g_psBitMask=fm; g_psBitByName=1;
+            int agree=((off+bo)==PS_REC_WANTSPS_OFF)&&(fm==PS_REC_WANTSPS_MASK);
+            Markerf("[PS]   -> byte at +0x%X, mask 0x%02X.  cross-check vs the RECORDED +0x%X bit "
+                    "0x%02X: %s\r\n",(unsigned)(off+bo),(unsigned)fm,(unsigned)PS_REC_WANTSPS_OFF,
+                    (unsigned)PS_REC_WANTSPS_MASK,
+                    agree?"AGREE":"*** DISAGREE -- trusting the LIVE resolve, not the record ***");
+            return 1;
+        }
+        Marker("[PS]   -> bool metadata IMPLAUSIBLE (fs/bo/bm/fm out of range); falling back.\r\n");
+    } else {
+        Markerf("[PS] bWantsPlayerState did NOT resolve by name (FProperty=0x%llX off=0x%X type='%s')\r\n"
+                "[PS]   !! That is ALSO evidence about ARM A: an unreflected field has no reason to be\r\n"
+                "[PS]   !! copied from the CDO onto a new instance. Expect L2 to read CLEAR.\r\n",
+                (unsigned long long)f,off,ty);
+    }
+    g_psBitOff=PS_REC_WANTSPS_OFF; g_psBitByteOff=0; g_psBitMask=PS_REC_WANTSPS_MASK; g_psBitByName=0;
+    Marker("[PS]   -> USING THE RECORDED +0x488 / 0x20, from AAIController's own UHT SetBitFunc\r\n"
+           "[PS]      0x45CFA10 = `83 89 88 04 00 00 20 c3` = or dword [rcx+0x488],0x20 ; ret,\r\n"
+           "[PS]      with the adjacent setter 0x45CFA20 writing 0x40 at the SAME offset as a passing\r\n"
+           "[PS]      control. This is a FALLBACK; the by-name route is the primary.\r\n");
+    return 0;
+}
+
+static int BsPsReadBit(uintptr_t obj){
+    if(g_psBitOff==0xFFFFFFFF||!LooksLikePtr(obj)) return -1;
+    uintptr_t a=obj+g_psBitOff+g_psBitByteOff;
+    if(!SafeReadable((void*)a,1)) return -1;
+    return (*(uint8_t*)a & g_psBitMask)?1:0;
+}
+
+// Read out the AuthorityGameMode -> PlayerStateClass chain BEFORE anything is called. If
+// PlayerStateClass is null, InitPlayerState logs its own error
+// ("AController::InitPlayerState: the PlayerStateClass of game mode %s is null...") and bails, and
+// this arm would produce a null that looks exactly like the gate never opening. Read it first so
+// that failure is LOCALISED rather than blamed on the poke.
+static void BsPsPrecondition(){
+    Marker("[PS] ---- PRECONDITION: does the world have a GameMode with a PlayerStateClass? ----\r\n");
+    if(!LooksLikePtr(g_psWorld)){
+        Marker("[PS] no World latched by the census -- cannot read the precondition. A null result\r\n"
+               "[PS] below will NOT be attributable to the poke.\r\n"); return; }
+    // Print EVERY World candidate with its AuthorityGameMode, and prefer one that is populated.
+    // A single latched World reading 0 is NOT evidence the world has no GameMode -- it is evidence
+    // that THAT object is not the one the engine's GetWorld() returns.
+    Markerf("[PS] World candidates: %d\r\n",g_psWorldN);
+    for(int i=0;i<g_psWorldN;i++){
+        uintptr_t w=g_psWorldCand[i]; if(!LooksLikePtr(w)) continue;
+        uint32_t oa2=PropOffsetSuper(ClassOf(w),"AuthorityGameMode");
+        uintptr_t am=(oa2!=0xFFFFFFFF&&SafeReadable((void*)(w+oa2),8))?*(uintptr_t*)(w+oa2):0;
+        char wn2[128]; wn2[0]=0; GetFNameStr(NameId(w),wn2,sizeof(wn2));
+        char an2[128]; an2[0]=0; if(LooksLikePtr(am))GetFNameStr(NameId(ClassOf(am)),an2,sizeof(an2));
+        Markerf("[PS]   [%d] 0x%llX '%s'  AuthorityGameMode=0x%llX '%s'%s\r\n",
+                i,(unsigned long long)w,wn2,(unsigned long long)am,an2,
+                LooksLikePtr(am)?"   <- POPULATED":"");
+        if(LooksLikePtr(am)&&g_psWorld!=w){ g_psWorld=w; Marker("[PS]   -> switching to this one\r\n"); }
+    }
+    uintptr_t wcls=ClassOf(g_psWorld);
+    char wn[128]; wn[0]=0; GetFNameStr(NameId(g_psWorld),wn,sizeof(wn));
+    uint32_t oAgm=PropOffsetSuper(wcls,"AuthorityGameMode");
+    uint32_t oGs =PropOffsetSuper(wcls,"GameState");
+    uintptr_t agm=(oAgm!=0xFFFFFFFF&&SafeReadable((void*)(g_psWorld+oAgm),8))?*(uintptr_t*)(g_psWorld+oAgm):0;
+    uintptr_t gs =(oGs !=0xFFFFFFFF&&SafeReadable((void*)(g_psWorld+oGs ),8))?*(uintptr_t*)(g_psWorld+oGs ):0;
+    g_psAgm=agm;
+    char an[128]; an[0]=0; if(LooksLikePtr(agm))GetFNameStr(NameId(ClassOf(agm)),an,sizeof(an));
+    char gn[128]; gn[0]=0; if(LooksLikePtr(gs ))GetFNameStr(NameId(ClassOf(gs )),gn,sizeof(gn));
+    // The recorded offsets are printed beside the by-name ones: InitPlayerState itself reads
+    // [World+0x250] and [World+0x258], which is a THIRD independent confirmation of FK-22's +0x250.
+    Markerf("[PS] world=0x%llX '%s'  AuthorityGameMode@0x%X(rec 0x250)=0x%llX '%s'  "
+            "GameState@0x%X(rec 0x258)=0x%llX '%s'\r\n",
+            (unsigned long long)g_psWorld,wn,oAgm,(unsigned long long)agm,an,
+            oGs,(unsigned long long)gs,gn);
+    if(!LooksLikePtr(agm)){
+        Marker("[PS] AuthorityGameMode is NULL. InitPlayerState has a FALLBACK for exactly this\r\n"
+               "[PS] (GameState->GetDefaultGameMode(), 0x36DEE83 -> 0x3841550), so this is not\r\n"
+               "[PS] necessarily fatal -- but a null PlayerState afterwards is then UNINTERPRETABLE.\r\n");
+        return; }
+    uint32_t oPsc=PropOffsetSuper(ClassOf(agm),"PlayerStateClass");
+    uintptr_t psc=(oPsc!=0xFFFFFFFF&&SafeReadable((void*)(agm+oPsc),8))?*(uintptr_t*)(agm+oPsc):0;
+    g_psPSClass=psc;
+    char pn[128]; pn[0]=0; if(LooksLikePtr(psc))GetFNameStr(NameId(psc),pn,sizeof(pn));
+    Markerf("[PS] GameMode PlayerStateClass@0x%X(rec 0x3E0) = 0x%llX '%s'  -> %s\r\n",
+            oPsc,(unsigned long long)psc,pn,
+            LooksLikePtr(psc)?"PRECONDITION MET":"*** NULL: InitPlayerState will log its own error and bail ***");
+}
+
+// Everything worth knowing about one spawned pawn and its controller. Every offset is resolved BY
+// NAME off the live class and printed WITH the recorded value beside it, so a successor can audit
+// the decode from the marker alone.
+static void BsPsDumpPair(const char* tag,int slot,uintptr_t pawn){
+    if(slot>=0&&slot<2) g_psPawn[slot]=pawn;
+    if(!LooksLikePtr(pawn)){
+        Markerf("[PS] %s: pawn=0x%llX is not a pointer -- NOTHING TO READ. That is a SPAWN\r\n"
+                "[PS] %s  statement, not a PlayerState result.\r\n",
+                tag,(unsigned long long)pawn,tag); return; }
+    uintptr_t pcls=ClassOf(pawn);
+    char pn[128]; pn[0]=0; GetFNameStr(NameId(pawn),pn,sizeof(pn));
+    char pc[128]; pc[0]=0; if(LooksLikePtr(pcls))GetFNameStr(NameId(pcls),pc,sizeof(pc));
+    // FName.Number (obj+0x24) is [M, S136] a strictly-DECREASING runtime spawn counter, i.e. a free
+    // creation-order oracle. InternalIndex is NOT monotone (GUObjectArray reuses freed slots).
+    uint32_t fnum=SafeReadable((void*)(pawn+NAME_OFF+4),4)?*(uint32_t*)(pawn+NAME_OFF+4):0;
+    Markerf("[PS] %s pawn=0x%llX '%s' class='%s' FName.Number=%u\r\n",
+            tag,(unsigned long long)pawn,pn,pc,fnum);
+
+    uint32_t oCtl=PropOffsetSuper(pcls,"Controller");
+    uint32_t oPPS=PropOffsetSuper(pcls,"PlayerState");
+    uint32_t oAIC=PropOffsetSuper(pcls,"AIControllerClass");
+    uintptr_t ctl=(oCtl!=0xFFFFFFFF&&SafeReadable((void*)(pawn+oCtl),8))?*(uintptr_t*)(pawn+oCtl):0;
+    uintptr_t pps=(oPPS!=0xFFFFFFFF&&SafeReadable((void*)(pawn+oPPS),8))?*(uintptr_t*)(pawn+oPPS):0;
+    uintptr_t aic=(oAIC!=0xFFFFFFFF&&SafeReadable((void*)(pawn+oAIC),8))?*(uintptr_t*)(pawn+oAIC):0;
+    char ain[128]; ain[0]=0; if(LooksLikePtr(aic))GetFNameStr(NameId(aic),ain,sizeof(ain));
+    Markerf("[PS] %s   pawn.Controller        @0x%X (rec 0x400) = 0x%llX   %s\r\n",
+            tag,oCtl,(unsigned long long)ctl,(oCtl==0x400)?"[offset AGREES]":"[** offset DIFFERS from record **]");
+    Markerf("[PS] %s   pawn.PlayerState  (L4) @0x%X (rec 0x3D8) = 0x%llX   %s   %s\r\n",
+            tag,oPPS,(unsigned long long)pps,(oPPS==0x3D8)?"[offset AGREES]":"[** offset DIFFERS **]",
+            LooksLikePtr(pps)?"*** NON-NULL ***":"NULL");
+    Markerf("[PS] %s   pawn.AIControllerClass @0x%X (rec 0x3D0) = 0x%llX '%s'  %s\r\n",
+            tag,oAIC,(unsigned long long)aic,ain,(oAIC==0x3D0)?"[offset AGREES]":"[** offset DIFFERS **]");
+    if(slot>=0&&slot<2) g_psPawnPS[slot]=pps;
+
+    if(!LooksLikePtr(ctl)){
+        Markerf("[PS] %s   NO CONTROLLER on this pawn -- SpawnDefaultController did not run or bailed.\r\n"
+                "[PS] %s   Nothing below is a PlayerState result.\r\n",tag,tag); return; }
+    if(slot>=0&&slot<2) g_psCtl[slot]=ctl;
+    uintptr_t ccls=ClassOf(ctl);
+    char cn[128]; cn[0]=0; if(LooksLikePtr(ccls))GetFNameStr(NameId(ccls),cn,sizeof(cn));
+    char cchain[256]; cchain[0]=0; PhChainHas(ccls,"@never@",cchain,sizeof(cchain));
+    uint32_t cfnum=SafeReadable((void*)(ctl+NAME_OFF+4),4)?*(uint32_t*)(ctl+NAME_OFF+4):0;
+    uint32_t oCPS=PropOffsetSuper(ccls,"PlayerState");
+    uintptr_t cps=(oCPS!=0xFFFFFFFF&&SafeReadable((void*)(ctl+oCPS),8))?*(uintptr_t*)(ctl+oCPS):0;
+    if(slot>=0&&slot<2) g_psCtlPS[slot]=cps;
+    int bit=BsPsReadBit(ctl);
+    if(slot>=0&&slot<2) g_psBit[slot]=bit;
+    uint32_t dw=(g_psBitOff!=0xFFFFFFFF&&SafeReadable((void*)(ctl+g_psBitOff),4))?*(uint32_t*)(ctl+g_psBitOff):0;
+    uint32_t oflags=SafeReadable((void*)(ctl+0x0C),4)?*(uint32_t*)(ctl+0x0C):0;
+    Markerf("[PS] %s   controller=0x%llX class='%s' FName.Number=%u\r\n"
+            "[PS] %s     chain=%s\r\n",
+            tag,(unsigned long long)ctl,cn,cfnum,tag,cchain);
+    Markerf("[PS] %s   ctl.bWantsPlayerState (L2) = %s   [byte@+0x%X mask 0x%02X, dword@+0x%X=0x%08X]\r\n",
+            tag,(bit<0)?"UNREADABLE":(bit?"SET":"clear"),
+            (unsigned)(g_psBitOff+g_psBitByteOff),(unsigned)g_psBitMask,(unsigned)g_psBitOff,dw);
+    // GATE 2 / GATE 3, so a null is localisable to the exact gate rather than to "the poke".
+    Markerf("[PS] %s   GATE2 ObjectFlags@+0x0C=0x%08X bit30(RF_Garbage)=%d -> %s\r\n",
+            tag,oflags,(int)((oflags>>30)&1),((oflags>>30)&1)?"*** WOULD BAIL ***":"passes");
+    Markerf("[PS] %s   ctl.PlayerState       (L3) @0x%X (rec 0x3C0) = 0x%llX   %s   %s\r\n",
+            tag,oCPS,(unsigned long long)cps,(oCPS==0x3C0)?"[offset AGREES]":"[** offset DIFFERS **]",
+            LooksLikePtr(cps)?"*** NON-NULL ***":"NULL");
+    if(LooksLikePtr(cps)){
+        char psn[128]; psn[0]=0; GetFNameStr(NameId(cps),psn,sizeof(psn));
+        char psc2[128]; psc2[0]=0; uintptr_t pcl=ClassOf(cps);
+        if(LooksLikePtr(pcl))GetFNameStr(NameId(pcl),psc2,sizeof(psc2));
+        char pchain[256]; pchain[0]=0; if(LooksLikePtr(pcl))PhChainHas(pcl,"@never@",pchain,sizeof(pchain));
+        Markerf("[PS] %s     >> PlayerState 0x%llX '%s' class='%s'\r\n"
+                "[PS] %s        chain=%s  alive=%d\r\n",
+                tag,(unsigned long long)cps,psn,psc2,tag,pchain,(int)GcAlive(cps));
+    }
+}
+
+// ARM A's write. ONE byte on a CDO, SEH-guarded, readback-verified, and it prints the whole dword
+// before and after so an unintended neighbouring bit would be visible in the marker.
+static int BsPsPoke(int set){
+    if(!LooksLikePtr(g_psAiCDO)||g_psBitOff==0xFFFFFFFF){
+        Marker("[PS] POKE REFUSED: no CDO or no resolved bit.\r\n"); return 0; }
+    uintptr_t a=g_psAiCDO+g_psBitOff+g_psBitByteOff;
+    if(!SafeReadable((void*)a,1)){ Marker("[PS] POKE REFUSED: CDO byte unreadable.\r\n"); return 0; }
+    uint8_t  before=*(uint8_t*)a;
+    uint32_t dwBefore=SafeReadable((void*)(g_psAiCDO+g_psBitOff),4)?*(uint32_t*)(g_psAiCDO+g_psBitOff):0;
+    uint8_t  want = set ? (uint8_t)(before|g_psBitMask) : (uint8_t)(before&(uint8_t)~g_psBitMask);
+    int wrote=0;
+    __try { *(uint8_t*)a = want; wrote=1; }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[PS] *** FAULT writing the CDO byte: %s ***\r\n",DP_FAULT); wrote=0; }
+    uint8_t  after=SafeReadable((void*)a,1)?*(uint8_t*)a:(uint8_t)0xFF;
+    uint32_t dwAfter=SafeReadable((void*)(g_psAiCDO+g_psBitOff),4)?*(uint32_t*)(g_psAiCDO+g_psBitOff):0;
+    int ok = wrote && (after==want);
+    Markerf("[PS] POKE %-5s CDO=0x%llX byte@+0x%X: 0x%02X -> 0x%02X (wanted 0x%02X)  %s\r\n"
+            "[PS]      dword@+0x%X: 0x%08X -> 0x%08X   (delta 0x%08X -- expect exactly bit 0x%02X)\r\n",
+            set?"SET":"CLEAR",(unsigned long long)g_psAiCDO,(unsigned)(g_psBitOff+g_psBitByteOff),
+            (unsigned)before,(unsigned)after,(unsigned)want,
+            ok?"READBACK OK":"*** READBACK FAILED -- THE POKE DID NOT LAND ***",
+            (unsigned)g_psBitOff,dwBefore,dwAfter,dwBefore^dwAfter,(unsigned)g_psBitMask);
+    return ok;
+}
+
+// Find the class whose CDO ARM A must poke. Ground truth is the INSTANCE's own AIControllerClass
+// (that is the field APawn::SpawnDefaultController reads); the hero CLASS's CDO is read too as an
+// independent cross-check, because if the two ever disagree the arm is poking the wrong CDO.
+static void BsPsResolveAiClass(uintptr_t pawn){
+    uintptr_t fromInst=0, fromCdo=0;
+    if(LooksLikePtr(pawn)){
+        uint32_t o=PropOffsetSuper(ClassOf(pawn),"AIControllerClass");
+        if(o!=0xFFFFFFFF&&SafeReadable((void*)(pawn+o),8)) fromInst=*(uintptr_t*)(pawn+o);
+    }
+    if(LooksLikePtr(g_bsHeroCls)&&SafeReadable((void*)(g_bsHeroCls+PS_CDO_OFF),8)){
+        uintptr_t hcdo=*(uintptr_t*)(g_bsHeroCls+PS_CDO_OFF);
+        if(LooksLikePtr(hcdo)){
+            uint32_t o=PropOffsetSuper(ClassOf(hcdo),"AIControllerClass");
+            if(o!=0xFFFFFFFF&&SafeReadable((void*)(hcdo+o),8)) fromCdo=*(uintptr_t*)(hcdo+o);
+        }
+    }
+    char n1[128],n2[128]; n1[0]=n2[0]=0;
+    if(LooksLikePtr(fromInst))GetFNameStr(NameId(fromInst),n1,sizeof(n1));
+    if(LooksLikePtr(fromCdo ))GetFNameStr(NameId(fromCdo ),n2,sizeof(n2));
+    Markerf("[PS] AIControllerClass from the SPAWNED INSTANCE = 0x%llX '%s'\r\n"
+            "[PS] AIControllerClass from the HERO CLASS's CDO  = 0x%llX '%s'   -> %s\r\n",
+            (unsigned long long)fromInst,n1,(unsigned long long)fromCdo,n2,
+            (fromInst&&fromInst==fromCdo)?"AGREE":
+            (fromInst?"** DIFFER -- using the INSTANCE, which is what SpawnDefaultController reads **":
+                      "instance unavailable, falling back to the CDO value"));
+    g_psAiCls = fromInst ? fromInst : fromCdo;
+    if(!LooksLikePtr(g_psAiCls)){ Marker("[PS] no AIControllerClass -- ARM A cannot run.\r\n"); return; }
+    char chain[256]; chain[0]=0; PhChainHas(g_psAiCls,"@never@",chain,sizeof(chain));
+    g_psAiCDO=SafeReadable((void*)(g_psAiCls+PS_CDO_OFF),8)?*(uintptr_t*)(g_psAiCls+PS_CDO_OFF):0;
+    char dn[128]; dn[0]=0; if(LooksLikePtr(g_psAiCDO))GetFNameStr(NameId(g_psAiCDO),dn,sizeof(dn));
+    Markerf("[PS] target class 0x%llX chain=%s\r\n"
+            "[PS] target CDO @+0x%X = 0x%llX '%s'  %s\r\n",
+            (unsigned long long)g_psAiCls,chain,(unsigned)PS_CDO_OFF,
+            (unsigned long long)g_psAiCDO,dn,
+            (strncmp(dn,"Default__",9)==0)?"[name starts Default__ -- looks like a CDO]"
+                                          :"*** name does NOT start with Default__ -- SUSPECT ***");
+    BsPsResolveBit(g_psAiCls);
+    int cdoBit=BsPsReadBit(g_psAiCDO);
+    Markerf("[PS] CDO bWantsPlayerState (L1 baseline) = %s   <- stock UE clears this in the\r\n"
+            "[PS]   AAIController ctor (0x45D19AD `and ecx,~0x20`), so `clear` is the EXPECTED baseline\r\n"
+            "[PS]   and a `SET` here would mean something already changed it.\r\n",
+            (cdoBit<0)?"UNREADABLE":(cdoBit?"SET":"clear"));
+}
+
+// ARM B. Dispatch InitPlayerState THROUGH THE VTABLE and refuse unless the slot resolves to the
+// address we transcribed. [M] ALokiPlayerController's slot 273 is the void fold, so "slot 273" is
+// not universally the real function -- the check is not ceremony.
+static void BsPsDirectInit(int slot){
+    uintptr_t ctl=(slot>=0&&slot<2)?g_psCtl[slot]:0;
+    Markerf("[PS] ---- ARM B: direct AController::InitPlayerState on controller #%d ----\r\n",slot+1);
+    if(!LooksLikePtr(ctl)){ Marker("[PS] ARM B: no controller -- REFUSING.\r\n"); return; }
+    if(LooksLikePtr(g_psCtlPS[slot])){
+        Markerf("[PS] ARM B: controller #%d ALREADY has PlayerState 0x%llX. Calling now would make\r\n"
+                "[PS]   any delta unattributable, so REFUSING. (This is the good outcome: it means\r\n"
+                "[PS]   ARM A already worked on this controller.)\r\n",
+                slot+1,(unsigned long long)g_psCtlPS[slot]); return; }
+    uintptr_t vt=SafeReadable((void*)ctl,8)?*(uintptr_t*)ctl:0;
+    uintptr_t fn=(LooksLikePtr(vt)&&SafeReadable((void*)(vt+PS_VT_INITPLAYERSTATE),8))
+                 ? *(uintptr_t*)(vt+PS_VT_INITPLAYERSTATE):0;
+    uintptr_t rva=(fn>g_modBase)?(fn-g_modBase):0;
+    Markerf("[PS] ARM B: vtable=0x%llX  slot[+0x%X]=0x%llX  rva=0x%llX  (expected 0x%llX)\r\n",
+            (unsigned long long)vt,(unsigned)PS_VT_INITPLAYERSTATE,(unsigned long long)fn,
+            (unsigned long long)rva,(unsigned long long)PS_RVA_INITPLAYERSTATE);
+    if(rva!=PS_RVA_INITPLAYERSTATE){
+        Marker("[PS] ARM B REFUSED: the vtable slot is NOT AController::InitPlayerState. Calling an\r\n"
+               "[PS]   unverified slot is exactly how a fold gets mistaken for a real function.\r\n");
+        return; }
+    g_psDirectTried=1;
+    Marker("[PS] ARM B: calling. NOT call-only -- this does a SpawnActor(RF_Transient) and writes\r\n"
+           "[PS]   controller+0x3C0. SEH-guarded.\r\n");
+    __try { ((PsInitPlayerStateFn)fn)((void*)ctl); g_psDirectDispatched=1; }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        g_psDirectFaulted=1; Markerf("[PS] *** ARM B FAULTED: %s ***\r\n",DP_FAULT); }
+    Sleep(200);
+    Markerf("[PS] ARM B returned (dispatched=%d faulted=%d). Re-reading controller #%d:\r\n",
+            g_psDirectDispatched,g_psDirectFaulted,slot+1);
+    BsPsDumpPair("ARM-B    ",slot,g_psPawn[slot]);
+}
+
+// One spawn's readout for ARM D: what CLASS did the engine actually build as the controller?
+// The verdict is the controller's CLASS CHAIN, not its leaf name -- a leaf-name test is the
+// class-lookup blind spot this project has hit six times.
+static void BsPsLbRead(const char* tag,int i){
+    uintptr_t pawn=g_bsAiReturned;
+    if(i>=0&&i<3) g_psLbPawn[i]=pawn;
+    if(!LooksLikePtr(pawn)){
+        Markerf("[PS] ARM D %s: no pawn returned -- UNINTERPRETABLE, not a null.\r\n",tag); return; }
+    uintptr_t pcls=ClassOf(pawn);
+    uint32_t oAic=PropOffsetSuper(pcls,"AIControllerClass");
+    uint32_t oCtl=PropOffsetSuper(pcls,"Controller");
+    uintptr_t aic=(oAic!=0xFFFFFFFF&&SafeReadable((void*)(pawn+oAic),8))?*(uintptr_t*)(pawn+oAic):0;
+    uintptr_t ctl=(oCtl!=0xFFFFFFFF&&SafeReadable((void*)(pawn+oCtl),8))?*(uintptr_t*)(pawn+oCtl):0;
+    if(i>=0&&i<3){ g_psLbAic[i]=aic; g_psLbCtl[i]=ctl; }
+    char an[128]; an[0]=0; if(LooksLikePtr(aic))GetFNameStr(NameId(aic),an,sizeof(an));
+    char cn[128]; cn[0]=0; uintptr_t ccls=LooksLikePtr(ctl)?ClassOf(ctl):0;
+    if(LooksLikePtr(ccls))GetFNameStr(NameId(ccls),cn,sizeof(cn));
+    char chain[256]; chain[0]=0; if(LooksLikePtr(ccls))PhChainHas(ccls,"@never@",chain,sizeof(chain));
+    if(i>=0&&i<3){ int k=0; while(chain[k]&&k<191){ g_psLbChain[i][k]=chain[k]; k++; } g_psLbChain[i][k]=0; }
+    int isBot = (LooksLikePtr(ccls)&&PhChainHas(ccls,"BotController",nullptr,0))?1:0;
+    if(i==1) g_psLbIsBot=isBot;
+    Markerf("[PS] ARM D %-12s pawn=0x%llX  pawn.AIControllerClass=0x%llX '%s'\r\n"
+            "[PS] ARM D %-12s   controller=0x%llX class='%s'  BotController-chain=%s\r\n"
+            "[PS] ARM D %-12s   chain=%s\r\n",
+            tag,(unsigned long long)pawn,(unsigned long long)aic,an,
+            tag,(unsigned long long)ctl,cn,isBot?"*** YES ***":"no",
+            tag,chain);
+}
+
+// ARM C -- COMPLETE THE PAWN SIDE.
+//
+// ARM B gives the CONTROLLER a PlayerState but leaves pawn+0x3D8 NULL, and that is CORRECT, not a
+// bug: on the possession path the controller->pawn copy is done by APawn::PossessedBy (with
+// SetPlayerState INLINED into it at 0x3BB1C64/0x3BB1CD5), and possession has already happened by the
+// time we call InitPlayerState. Nothing re-runs it. So the copy has to be made explicitly.
+//
+// This calls the very function the engine inlines there, with the same two arguments, which is why
+// it is the surgical choice over re-running Possess: it stores to pawn+0x3D8 (two sites), syncs
+// APlayerState::PawnPrivate, broadcasts APlayerState::OnPawnSet, and tail-dispatches
+// APawn::OnPlayerStateChanged (APawn vtable slot 250). Re-possessing would do all of that PLUS
+// unpossess/repossess bookkeeping on a live pawn, for no extra readout.
+//
+// ! NOT call-only: it writes pawn+0x3D8 and the PlayerState's PawnPrivate, and it broadcasts.
+// ! REFUSES unless the pawn's PlayerState is currently NULL -- otherwise a delta is unattributable.
+// ! REFUSES unless the 16 prologue bytes match. It is non-virtual, so this signature check is the
+//   only self-validation available; ARM B's vtable-slot check has no equivalent here.
+static void BsPsLinkPawn(int slot){
+    Markerf("[PS] ---- ARM C: APawn::SetPlayerState on pawn #%d ----\r\n",slot+1);
+    if(slot<0||slot>1){ Marker("[PS] ARM C: bad slot -- REFUSING.\r\n"); return; }
+    uintptr_t pawn=g_psPawn[slot], ps=g_psCtlPS[slot];
+    if(!LooksLikePtr(pawn)||!LooksLikePtr(ps)){
+        Markerf("[PS] ARM C: pawn=0x%llX ps=0x%llX -- one is missing, REFUSING. (If ps is NULL, ARM B\r\n"
+                "[PS]   did not produce a PlayerState and there is nothing to link.)\r\n",
+                (unsigned long long)pawn,(unsigned long long)ps); return; }
+    uint32_t oPPS=PropOffsetSuper(ClassOf(pawn),"PlayerState");
+    uintptr_t cur=(oPPS!=0xFFFFFFFF&&SafeReadable((void*)(pawn+oPPS),8))?*(uintptr_t*)(pawn+oPPS):0;
+    if(LooksLikePtr(cur)){
+        Markerf("[PS] ARM C: pawn.PlayerState is ALREADY 0x%llX -- REFUSING, a delta would not be\r\n"
+                "[PS]   attributable to this call.\r\n",(unsigned long long)cur); return; }
+    uintptr_t fn=g_modBase+PS_RVA_SETPLAYERSTATE;
+    if(!SafeReadable((void*)fn,16)){ Marker("[PS] ARM C: target unreadable -- REFUSING.\r\n"); return; }
+    const uint8_t* got=(const uint8_t*)fn;
+    char hx[64]; int o=0;
+    for(int i=0;i<16&&o<60;i++) o+=_snprintf_s(hx+o,sizeof(hx)-o,_TRUNCATE,"%02X ",got[i]);
+    int sigok=1; for(int i=0;i<16;i++) if(got[i]!=PS_SIG_SETPLAYERSTATE[i]) sigok=0;
+    Markerf("[PS] ARM C: target=0x%llX rva=0x%llX prologue=%s -> %s\r\n",
+            (unsigned long long)fn,(unsigned long long)PS_RVA_SETPLAYERSTATE,hx,
+            sigok?"SIGNATURE MATCHES APawn::SetPlayerState":"*** SIGNATURE MISMATCH ***");
+    if(!sigok){
+        Marker("[PS] ARM C REFUSED: the bytes at the recorded RVA are not the function transcribed\r\n"
+               "[PS]   offline. Calling an unrecognised address is how a fold gets called by mistake.\r\n");
+        return; }
+    g_psLinkTried=1;
+    Markerf("[PS] ARM C: calling SetPlayerState(pawn=0x%llX, ps=0x%llX). NOT call-only -- writes\r\n"
+            "[PS]   pawn+0x3D8, syncs PlayerState.PawnPrivate, broadcasts OnPawnSet. SEH-guarded.\r\n",
+            (unsigned long long)pawn,(unsigned long long)ps);
+    __try { ((PsSetPlayerStateFn)fn)((void*)pawn,(void*)ps); g_psLinkDone=1; }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        g_psLinkFaulted=1; Markerf("[PS] *** ARM C FAULTED: %s ***\r\n",DP_FAULT); }
+    Sleep(200);
+    Markerf("[PS] ARM C returned (done=%d faulted=%d). Re-reading pair #%d:\r\n",
+            g_psLinkDone,g_psLinkFaulted,slot+1);
+    BsPsDumpPair("ARM-C    ",slot,pawn);
+}
+
+// ==============================================================================================
+// ARM D -- MAKE THE ENGINE BUILD A **LOKI** BOT CONTROLLER, WITH ONE POINTER.
+//
+// Everything up to here produces a GENERIC ENGINE AAIController. The Loki route
+// (SpawnBot -> MakeNewBotController -> ALokiBotController) is blocked by FK-22's stripped getter at
+// 0x55636BB, and zero BotController-derived objects have ever existed in this project.
+//
+// But APawn::SpawnDefaultController does not consult that route at all. [M, S137 lane V8] the class
+// it hands to SpawnActor is read from the PAWN INSTANCE's own AIControllerClass at [pawn+0x3D0].
+// And that field is written by APawn::APawn from a CDO it reads DIRECTLY:
+//
+//   0x3B80A08  lea rsi,[rdi+0x3d0]          rsi = &pawn->AIControllerClass
+//   0x3B80BD3  call 0x3BA4CE0               a lazy StaticClass() singleton
+//   0x3B80BD8  mov rbx,rax
+//   0x3B80BF3  mov rbx,[rbx+0x178]          rbx = ThatClass->ClassDefaultObject
+//   0x3B80C0D  mov rax,[rbx+0x3d0]          <-- reads AIControllerClass OFF THE CDO
+//   0x3B80C14  mov [rsi],rax                pawn->AIControllerClass = it
+//
+// MEASURED LIVE, which is what identifies the CDO: Default__Pawn+0x3D0 holds the very
+// `AIController` UClass pointer that every spawned pawn was observed carrying.
+//
+// ** THIS IS A DIFFERENT MECHANISM FROM ARM A, AND THAT CONTRAST IS THE POINT.
+//   ARM A poked a CDO field that the CONSUMER never reads from the CDO -- it depended on
+//   FObjectInitializer::InitProperties copying CDO -> instance, and that copy walks PostConstructLink,
+//   which UStruct::Link never populates for a property owned by a NATIVE class. ARM A was measured
+//   REFUTED for exactly that reason.
+//   ARM D pokes a CDO field that the CONSTRUCTOR READS OUT OF THE CDO BY HAND. That is the S130
+//   `bCanEverReplicate` shape -- the one CDO-poke pattern this project has already measured working.
+//   Same idea, opposite outcome, and the difference is WHO READS THE CDO.
+//
+// ! SCOPE, and it is wider than ARM A's: this is the ENGINE APawn CDO, so between the poke and the
+//   restore EVERY newly constructed pawn process-wide inherits it. The window is poke -> one spawn
+//   -> restore, and the restore is verified by SPAWNING AGAIN AFTER IT rather than assumed.
+// ! RISK: ALokiBotController::OnPossess (0x5565470) is DARK -- 0/4096 non-zero in every image on
+//   disk, i.e. never executed anywhere, ever. It is where a Loki bot's Blackboard / BehaviorTree
+//   wiring would live and it may well fault with none of that set up. The call is SEH-guarded, and
+//   a fault is still a result: driving the path DECRYPTS the page, which is the only way anyone can
+//   read those bytes (the S118 steerable-decryption method). Take a dumpimage either way.
+//
+// A-B-A, three spawns, and the third is what makes the restore a MEASUREMENT rather than a promise:
+//   spawn A  no poke      -> expect AIController          (baseline)
+//   POKE     -> spawn B   -> expect LokiBotController     (treatment)
+//   RESTORE  -> spawn C   -> expect AIController again    (reversal)
+static void BsPsLokiBot(){
+    Marker("[PS] ================== ARM D: A **LOKI** BOT CONTROLLER ==================\r\n");
+    Marker("[PS] PRE-REGISTERED: spawn A -> AIController; POKE; spawn B -> LokiBotController;\r\n"
+           "[PS]   RESTORE; spawn C -> AIController again. The third spawn is what turns the\r\n"
+           "[PS]   restore into a measurement instead of an assumption.\r\n");
+
+    g_psDefPawn=FindObjExact("Default__Pawn");
+    g_psBotCls =FindClassExact("LokiBotController");
+    if(!LooksLikePtr(g_psDefPawn)||!LooksLikePtr(g_psBotCls)){
+        Markerf("[PS] ARM D REFUSED: Default__Pawn=0x%llX LokiBotController=0x%llX -- one is not "
+                "loaded in this process.\r\n",
+                (unsigned long long)g_psDefPawn,(unsigned long long)g_psBotCls); return; }
+    g_psOAic=PropOffsetSuper(ClassOf(g_psDefPawn),"AIControllerClass");
+    if(g_psOAic==0xFFFFFFFF||!SafeReadable((void*)(g_psDefPawn+g_psOAic),8)){
+        Markerf("[PS] ARM D REFUSED: AIControllerClass did not resolve by name on Default__Pawn "
+                "(off=0x%X).\r\n",g_psOAic); return; }
+    g_psAicOrig=*(uintptr_t*)(g_psDefPawn+g_psOAic);
+    char on0[128]; on0[0]=0; if(LooksLikePtr(g_psAicOrig))GetFNameStr(NameId(g_psAicOrig),on0,sizeof(on0));
+    char bn[128]; bn[0]=0; GetFNameStr(NameId(g_psBotCls),bn,sizeof(bn));
+    char bc[256]; bc[0]=0; PhChainHas(g_psBotCls,"@never@",bc,sizeof(bc));
+    Markerf("[PS] Default__Pawn=0x%llX  AIControllerClass@0x%X (rec 0x3D0) = 0x%llX '%s'\r\n"
+            "[PS] target class = 0x%llX '%s'\r\n[PS]   chain=%s\r\n",
+            (unsigned long long)g_psDefPawn,g_psOAic,(unsigned long long)g_psAicOrig,on0,
+            (unsigned long long)g_psBotCls,bn,bc);
+    if(!PhChainHas(g_psBotCls,"BotController",nullptr,0)){
+        Marker("[PS] ARM D REFUSED: the resolved class's chain does not contain BotController.\r\n"); return; }
+
+    // ---- spawn A: BASELINE, no poke.
+    Marker("[PS] ---- ARM D / SPAWN A (baseline, CDO untouched) ----\r\n");
+    g_bsAiReturned=0; BsCallAI(); g_psLbSpawns++; Sleep(250);
+    BsPsLbRead("A-baseline",0);
+
+    // ---- THE POKE.
+    uintptr_t a=g_psDefPawn+g_psOAic;
+    uintptr_t before=*(uintptr_t*)a; int wrote=0;
+    __try { *(uintptr_t*)a=g_psBotCls; wrote=1; }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[PS] *** FAULT writing Default__Pawn+0x%X: %s ***\r\n",g_psOAic,DP_FAULT); }
+    uintptr_t after=SafeReadable((void*)a,8)?*(uintptr_t*)a:0;
+    g_psLbPokeOK = (wrote && after==g_psBotCls) ? 1 : 0;
+    Markerf("[PS] POKE AIControllerClass: 0x%llX -> 0x%llX (wanted 0x%llX)  %s\r\n",
+            (unsigned long long)before,(unsigned long long)after,(unsigned long long)g_psBotCls,
+            g_psLbPokeOK?"READBACK OK":"*** READBACK FAILED ***");
+    if(g_psLbPokeOK!=1){ Marker("[PS] ARM D: poke did not land -- not spawning a treatment.\r\n"); return; }
+
+    // ---- spawn B: TREATMENT.
+    Marker("[PS] ---- ARM D / SPAWN B (TREATMENT: CDO names LokiBotController) ----\r\n");
+    Marker("[PS]   ! ALokiBotController::OnPossess 0x5565470 is DARK in every image on disk. If this\r\n"
+           "[PS]   ! faults, that is still a result and the page is now decrypted -- dumpimage it.\r\n");
+    g_bsAiReturned=0; BsCallAI(); g_psLbSpawns++; Sleep(250);
+    BsPsLbRead("B-treatment",1);
+
+    // ---- RESTORE, immediately: the CDO is engine-wide while it stands.
+    int rw=0;
+    __try { *(uintptr_t*)a=g_psAicOrig; rw=1; }
+    __except(SEH_FILTER(GetExceptionInformation())){ Marker("[PS] *** FAULT restoring ***\r\n"); }
+    uintptr_t back=SafeReadable((void*)a,8)?*(uintptr_t*)a:0;
+    g_psLbRestoreOK=(rw&&back==g_psAicOrig)?1:0;
+    Markerf("[PS] RESTORE AIControllerClass -> 0x%llX  %s\r\n",(unsigned long long)back,
+            g_psLbRestoreOK?"READBACK OK":"*** READBACK FAILED -- THE ENGINE CDO IS LEFT MODIFIED ***");
+
+    // ---- spawn C: REVERSAL. This is what makes the restore a measurement.
+    Marker("[PS] ---- ARM D / SPAWN C (reversal: must be AIController again) ----\r\n");
+    g_bsAiReturned=0; BsCallAI(); g_psLbSpawns++; Sleep(250);
+    BsPsLbRead("C-reversal",2);
+
+    // ---- give the bot controller a PlayerState, reusing the two arms already measured working.
+    if(LooksLikePtr(g_psLbCtl[1])){
+        Marker("[PS] ---- ARM D: now ARM B + ARM C on the LOKI BOT CONTROLLER ----\r\n");
+        g_psPawn[1]=g_psLbPawn[1]; g_psCtl[1]=g_psLbCtl[1]; g_psCtlPS[1]=0; g_psPawnPS[1]=0;
+        BsPsDirectInit(1);
+        BsPsLinkPawn(1);
+    } else Marker("[PS] ---- ARM D: no treatment controller, so no ARM B/C on it. ----\r\n");
+}
+
+static void BsPsExperiment(){
+    Marker("[PS] ================ S137: THE bWantsPlayerState EXPERIMENT ================\r\n");
+    Marker("[PS] WITHIN-RUN, SINGLE-VARIABLE. Spawn #1 runs with the CDO bit CLEAR and spawn #2 with\r\n"
+           "[PS] it SET, same world, same instrument, milliseconds apart -- the ONLY difference is one\r\n"
+           "[PS] bit on one CDO. ARM B then runs on controller #1, already printed as PlayerState NULL.\r\n");
+    Markerf("[PS] KBSPSARMS=0x%X (bit0 control spawn, bit1 poke+treatment, bit2 restore, bit3 ARM B)\r\n",
+            (unsigned)(KBSPSARMS));
+    Marker("[PS] PRE-REGISTERED: ARM A success => ctl.PlayerState AND pawn.PlayerState both non-null.\r\n"
+           "[PS] PRE-REGISTERED: ARM B success => ctl.PlayerState non-null, pawn.PlayerState STILL NULL\r\n"
+           "[PS]   (possession already happened; nothing re-runs APawn::SetPlayerState).\r\n");
+    BsPsPrecondition();
+
+    // ---- SPAWN #1 -- THE CONTROL. The class default is exactly as the game ships it. ----
+    if(KBSPSARMS&0x1){
+        Marker("[PS] ---- SPAWN #1 (CONTROL: no poke) ----\r\n");
+        g_bsAiReturned=0;
+        BsCallAI(); g_psSpawns++;
+        Sleep(250);
+        // S137 DEFECT FIX: resolve the bit FIRST. The original order dumped the control pair before
+        // BsPsResolveBit had run, so the control's L2 line printed
+        //   ctl.bWantsPlayerState (L2) = UNREADABLE  [byte@+0xFFFFFFFF mask 0x00]
+        // -- the control arm of the experiment, with its key readout blank. The value was still
+        // recoverable from the later ARM-B re-read, so it cost nothing, but a control whose readout
+        // is unreadable is not a control.
+        BsPsResolveAiClass(g_bsAiReturned);
+        BsPsDumpPair("CONTROL  ",0,g_bsAiReturned);
+    } else {
+        Marker("[PS] ---- SPAWN #1 SKIPPED by KBSPSARMS bit0. Without it there is no within-run\r\n"
+               "[PS]   control and nothing below is single-variable. ----\r\n");
+        BsPsResolveAiClass(0);
+    }
+
+    // ---- THE POKE + SPAWN #2 -- THE TREATMENT. ----
+    if(KBSPSARMS&0x2){
+        Marker("[PS] ---- THE POKE (ARM A) ----\r\n");
+        g_psPokeOK=BsPsPoke(1);
+        if(!g_psPokeOK){
+            Marker("[PS] the poke did not land -- SKIPPING spawn #2. A second spawn now would be an\r\n"
+                   "[PS]   uninterpretable repeat of the control, not a treatment.\r\n");
+        } else {
+            Marker("[PS] ---- SPAWN #2 (TREATMENT: CDO bWantsPlayerState = 1) ----\r\n");
+            g_bsAiReturned=0;
+            BsCallAI(); g_psSpawns++;
+            Sleep(250);
+            BsPsDumpPair("TREATMENT",1,g_bsAiReturned);
+        }
+    } else Marker("[PS] ---- POKE + SPAWN #2 SKIPPED by KBSPSARMS bit1 ----\r\n");
+
+    // ---- RESTORE. A-B-A: leave the class default as we found it. ----
+    if((KBSPSARMS&0x4)&&g_psPokeOK==1){
+        Marker("[PS] ---- RESTORE (A-B-A: put the class default back) ----\r\n");
+        g_psRestoreOK=BsPsPoke(0);
+    } else if(g_psPokeOK==1)
+        Marker("[PS] ---- RESTORE SKIPPED by KBSPSARMS bit2 -- THE CDO IS LEFT MODIFIED for the\r\n"
+               "[PS]   rest of the process lifetime. Every controller spawned later inherits it. ----\r\n");
+
+    // ---- ARM B on the CONTROL controller, whose PlayerState is already printed as NULL. ----
+    if(KBSPSARMS&0x8) BsPsDirectInit(0);
+    else Marker("[PS] ---- ARM B SKIPPED by KBSPSARMS bit3 ----\r\n");
+
+    // ---- ARM C: complete the pawn side, on the controller ARM B just fed. ----
+    if(KBSPSARMS&0x10) BsPsLinkPawn(0);
+    else Marker("[PS] ---- ARM C SKIPPED by KBSPSARMS bit4 ----\r\n");
+
+    if(KBSPSARMS&0x20) BsPsLokiBot();
+    else Marker("[PS] ---- ARM D SKIPPED by KBSPSARMS bit5 ----\r\n");
+}
+#endif  // KBSPS
+
 // Resolve everything the call needs. `hero` comes from the A0 world scan (already validated to have
 // a readable RootComponent location), so this never repeats that walk.
 // ⚠ Every failure path prints WHY. The flight-1 version had one message for four different causes.
@@ -14589,6 +15309,9 @@ static void BsLadderStep(){
     uintptr_t hero=0; int heroCands=0;
     Marker("[BS] ---- A0: BASELINE WORLD SCAN (read-only; NO CALL) ----\r\n");
     BsScanWorld("A0",&g_bsBotCtlA,&g_bsHeroA,&hero,&heroCands);
+#if KBSPS
+    g_psA=g_psScanPS;
+#endif
     Markerf("[BS] hero candidates: %d; chosen=0x%llX\r\n",heroCands,(unsigned long long)hero);
 
     Marker("[BS] ---- RESOLVE ----\r\n");
@@ -14599,19 +15322,54 @@ static void BsLadderStep(){
     Markerf("[BS] ---- A1: STABILITY RE-SCAN after %d ms settle (still NO CALL) ----\r\n",(int)(KBSSETTLEMS));
     Sleep((DWORD)(KBSSETTLEMS));
     BsScanWorld("A1",&g_bsBotCtlB,&g_bsHeroB,nullptr,nullptr);
+#if KBSPS
+    g_psB=g_psScanPS;
+#endif
     if(g_bsBotCtlB!=g_bsBotCtlA||g_bsHeroB!=g_bsHeroA)
         Marker("[BS] *** SITTING VOID: the census MOVED with no call. Something else is spawning. "
                "Nothing after this is attributable. ***\r\n");
 
     if(!(KBSARMS&0x4)){
         Marker("[BS] ---- THE CALL IS DISABLED by KBSARMS (read-only arm) ----\r\n");
-    } else if(!g_bsResolved||!g_bsFn||!LooksLikePtr(g_bsComp)){
+    // ⚠⚠ S136: this guard used to read `!LooksLikePtr(g_bsComp)` UNCONDITIONALLY, which silently
+    //   blocked the KBSAI route -- BsResolve() does `#if KBSAI { BsResolveAI(); return; }` and so
+    //   NEVER assigns g_bsComp, the bot-spawner COMPONENT, which SpawnAIFromClass does not use and
+    //   does not need (it is a STATIC library fn called on the CDO). The S136 flight-1 marker read
+    //   `resolved=1 ... called=0` with fn/thunk/cdo/params/ARGS all printed and correct: everything
+    //   resolved, then the call was gated on a variable belonging to the OTHER route. The census
+    //   delta of 0 that produced was UNINTERPRETABLE, not a P1 null.
+    } else if(!g_bsResolved
+#if KBSAI
+              // S136 ROOT CAUSE. This guard used to read `!g_bsResolved||!g_bsFn||
+              //   !LooksLikePtr(g_bsComp)` UNCONDITIONALLY -- both belong to the COMPONENT
+              //   route. Under KBSAI, BsResolve() is `{ BsResolveAI(hero); return; }`, so every
+              //   store to g_bsFn (14488..14563) and to g_bsComp is UNREACHABLE. clang -O2 then
+              //   ⚠ THE MECHANISM IS NON-UNIQUE: EITHER term alone folds constant-true, so
+              //     deleting only the g_bsFn test would NOT have revived the call. Verified by
+              //     build bisection (removing just one term left the branch dead both ways).
+              //   proves the file-static g_bsFn is always 0, folds `!g_bsFn` to constant TRUE,
+              //   and DEAD-CODE-ELIMINATES this whole else-branch: BsCallAI() was never emitted.
+              //   [M] the literal "THE CALL: UAIBlueprintHelperLibrary::SpawnAIFromClass" had
+              //   ZERO byte occurrences in the shipped tutorial_launch_botai.dll while
+              //   BsResolveAI's own literals were present -- the arm resolved fine and could
+              //   never call. S136 flight-1 read `resolved=1 ... called=0` and the summary
+              //   blamed KBSARMS, which was 0x0F with bit2 (THE CALL) SET the whole time.
+              //   Gate the AI route on the AI route's OWN handles, reachably assigned.
+              ||!g_bsAiFn||!g_bsAiThunk||!LooksLikePtr(g_bsAiCDO)
+#else
+              ||!g_bsFn||!LooksLikePtr(g_bsComp)
+#endif
+             ){
         Marker("[BS] ---- NO CALL: resolve failed. A resolve statement, not a result about the bot "
                "spawn. Read the REFUSE(...) line above for which guard stopped it. ----\r\n");
     } else {
 #if KBSAI
+#if KBSPS
+        BsPsExperiment();      // S137 -- two spawns with one CDO bit between them
+#else
         Marker("[BS] ---- THE CALL: UAIBlueprintHelperLibrary::SpawnAIFromClass ----\r\n");
         BsCallAI();
+#endif
 #else
         Markerf("[BS] ---- THE CALL: %s ----\r\n",KBSFUNC);
         memset(g_bplocals,0,sizeof(g_bplocals));
@@ -14651,6 +15409,9 @@ static void BsLadderStep(){
     Sleep((DWORD)(KBSSETTLEMS));
     Marker("[BS] ---- A2: POST-CALL SCAN ----\r\n");
     BsScanWorld("A2",&g_bsBotCtlC,&g_bsHeroC,nullptr,nullptr);
+#if KBSPS
+    g_psC=g_psScanPS;
+#endif
     g_bsStep=4; g_done=1;
 }
 
@@ -14665,8 +15426,107 @@ static void BsFinalReport(){
     Marker("[BS] ---------------- RM_BOTSPAWN SUMMARY ----------------\r\n");
     Markerf("[BS] resolved=%d roster=%d team=%d(player=%d) called=%d faulted=%d refused=%d\r\n",
             g_bsResolved,g_bsRosterNum,g_bsTeam,g_bsPlayerTeam,g_bsCalled,g_bsFaulted,g_bsRefused);
-    Markerf("[BS] botControllers A0=%d A1=%d A2=%d | heroCharacters A0=%d A1=%d A2=%d\r\n",
+    Markerf("[BS] botOrAIControllers A0=%d A1=%d A2=%d | heroCharacters A0=%d A1=%d A2=%d\r\n",
             g_bsBotCtlA,g_bsBotCtlB,g_bsBotCtlC,g_bsHeroA,g_bsHeroB,g_bsHeroC);
+#if KBSPS
+    Markerf("[PS] ---------------- S137 PLAYERSTATE SUMMARY ----------------\r\n");
+    Markerf("[PS] PlayerState-chain census A0=%d A1=%d A2=%d   (corroborator; the pointer reads below\r\n"
+            "[PS]   are the primary readout)\r\n",g_psA,g_psB,g_psC);
+    Markerf("[PS] bit resolved %s: off=0x%X byteOff=%u mask=0x%02X\r\n",
+            g_psBitByName?"BY NAME":"from the RECORDED offset",g_psBitOff,
+            (unsigned)g_psBitByteOff,(unsigned)g_psBitMask);
+    Markerf("[PS] spawns=%d pokeOK=%d restoreOK=%d | ARM B tried=%d dispatched=%d faulted=%d\r\n",
+            g_psSpawns,g_psPokeOK,g_psRestoreOK,g_psDirectTried,g_psDirectDispatched,g_psDirectFaulted);
+    Markerf("[PS] ARM C (pawn link) tried=%d done=%d faulted=%d\r\n",
+            g_psLinkTried,g_psLinkDone,g_psLinkFaulted);
+    if(g_psLbSpawns){
+        Markerf("[PS] ARM D: spawns=%d pokeOK=%d restoreOK=%d\r\n",
+                g_psLbSpawns,g_psLbPokeOK,g_psLbRestoreOK);
+        for(int i=0;i<3;i++)
+            Markerf("[PS] ARM D  [%d] %-11s pawn=0x%llX ctl=0x%llX aic=0x%llX\r\n"
+                    "[PS] ARM D      chain=%s\r\n",
+                    i,(i==0)?"A-baseline":((i==1)?"B-treatment":"C-reversal"),
+                    (unsigned long long)g_psLbPawn[i],(unsigned long long)g_psLbCtl[i],
+                    (unsigned long long)g_psLbAic[i],g_psLbChain[i]);
+        if(g_psLbIsBot==1&&g_psLbPokeOK==1)
+            Marker("[PS] ***** ARM D VERDICT: A **LOKI BOT CONTROLLER** EXISTS AND POSSESSES A HERO PAWN.\r\n"
+                   "[PS]   Its class chain contains BotController -- the census that has read ZERO for this\r\n"
+                   "[PS]   project's entire history. Confirm with tools/re/obj_by_chain.py '=BotController'\r\n"
+                   "[PS]   and TIMESTAMP the census. Compare arms A and C: both must be plain AIController,\r\n"
+                   "[PS]   which is what makes B attributable to the one pointer we moved. *****\r\n");
+        else if(g_psLbPokeOK==1)
+            Marker("[PS] ARM D VERDICT: the poke landed but the treatment controller is NOT\r\n"
+                   "[PS]   BotController-derived. Read the three chains above -- if A and B are the same,\r\n"
+                   "[PS]   the constructor did not read the poked CDO and the ARM-A mechanism applies here too.\r\n");
+    }
+    for(int s=0;s<2;s++)
+        Markerf("[PS] #%d %-9s pawn=0x%llX ctl=0x%llX  L2 bit=%s  L3 ctl.PS=0x%llX  L4 pawn.PS=0x%llX\r\n",
+                s+1,s?"TREATMENT":"CONTROL",(unsigned long long)g_psPawn[s],(unsigned long long)g_psCtl[s],
+                (g_psBit[s]<0)?"?":(g_psBit[s]?"SET":"clear"),
+                (unsigned long long)g_psCtlPS[s],(unsigned long long)g_psPawnPS[s]);
+
+    // The verdict is computed from the raw values above, and every branch says what it does NOT show.
+    if(!g_psSpawns){
+        Marker("[PS] VERDICT: nothing was spawned. A STAGING/RESOLVE statement; it says nothing about\r\n"
+               "[PS]   bWantsPlayerState.\r\n");
+    } else if(!LooksLikePtr(g_psCtl[0])&&!LooksLikePtr(g_psCtl[1])){
+        Marker("[PS] VERDICT: no controller on either pawn. SpawnDefaultController did not run, so the\r\n"
+               "[PS]   gate was never reached. UNINTERPRETABLE as a PlayerState result.\r\n");
+    } else if(g_psPokeOK!=1){
+        Marker("[PS] VERDICT: ARM A never armed (the CDO poke did not land or was gated off). Any\r\n"
+               "[PS]   null below belongs to ARM B alone.\r\n");
+    } else if(LooksLikePtr(g_psCtlPS[1])&&!LooksLikePtr(g_psCtlPS[0])){
+        Markerf("[PS] ***** VERDICT: ARM A WORKED. Controller #2 (bit SET) has PlayerState 0x%llX while\r\n"
+                "[PS]   controller #1 (bit clear), spawned by the SAME code milliseconds earlier, has\r\n"
+                "[PS]   NULL. One CDO bit is the whole difference.\r\n"
+                "[PS]   L2 bit on the spawned instance: #1=%s #2=%s -- if #2 reads SET, the CDO value\r\n"
+                "[PS]   PROPAGATED to the instance, which is a reusable fact this project did not have.\r\n"
+                "[PS]   pawn.PlayerState #2 = 0x%llX (pre-registered NON-NULL for ARM A).\r\n"
+                "[PS]   ! SCOPE: a PlayerState is not a bot. ServerSetHeroClass / SetPlayerTeam are\r\n"
+                "[PS]   ! still stripped folds -- this buys REACHABILITY of that branch, nothing more. *****\r\n",
+                (unsigned long long)g_psCtlPS[1],
+                (g_psBit[0]<0)?"?":(g_psBit[0]?"SET":"clear"),
+                (g_psBit[1]<0)?"?":(g_psBit[1]?"SET":"clear"),
+                (unsigned long long)g_psPawnPS[1]);
+    } else if(LooksLikePtr(g_psCtlPS[1])&&LooksLikePtr(g_psCtlPS[0])){
+        Marker("[PS] VERDICT: BOTH controllers have a PlayerState -- including the one spawned with the\r\n"
+               "[PS]   bit CLEAR. The poke is therefore NOT what produced it and the control is broken.\r\n"
+               "[PS]   Read L2 on #1: if it reads SET, something other than this arm set the bit.\r\n");
+    } else if(!LooksLikePtr(g_psCtlPS[1])&&g_psBit[1]==0){
+        Marker("[PS] VERDICT: THE POKE DID NOT REACH THE INSTANCE. The CDO readback passed but the\r\n"
+               "[PS]   spawned controller's own bit reads CLEAR (L2) -- so UE did NOT copy the CDO's\r\n"
+               "[PS]   value over the constructor's. That REFUTES the CDO-poke route as stated and is\r\n"
+               "[PS]   a real, reusable result. ARM B is the answer for this surface; see its lines.\r\n");
+    } else if(!LooksLikePtr(g_psCtlPS[1])&&g_psBit[1]==1){
+        Marker("[PS] VERDICT: THE BIT PROPAGATED BUT NO PLAYERSTATE APPEARED. The instance reads SET\r\n"
+               "[PS]   (L2) and PlayerState is still NULL, so the failure is INSIDE InitPlayerState or\r\n"
+               "[PS]   at GATE 2/3 -- both printed above. Check the PRECONDITION line for a null\r\n"
+               "[PS]   PlayerStateClass, and grep Loki.log for 'InitPlayerState' -- that function\r\n"
+               "[PS]   names itself in its own UE_LOG on exactly this failure.\r\n");
+    } else {
+        Marker("[PS] VERDICT: no treatment controller to read. See the lines above for which step stopped.\r\n");
+    }
+    if(g_psLinkDone){
+        uint32_t oPPS2=LooksLikePtr(g_psPawn[0])?PropOffsetSuper(ClassOf(g_psPawn[0]),"PlayerState"):0xFFFFFFFF;
+        uintptr_t now=(oPPS2!=0xFFFFFFFF&&SafeReadable((void*)(g_psPawn[0]+oPPS2),8))
+                      ?*(uintptr_t*)(g_psPawn[0]+oPPS2):0;
+        if(LooksLikePtr(now)&&now==g_psCtlPS[0])
+            Markerf("[PS] ***** ARM C WORKED: pawn+0x3D8 is now 0x%llX and it EQUALS the controller's\r\n"
+                    "[PS]   PlayerState. Both sides of the AI pawn are linked, the same shape the\r\n"
+                    "[PS]   PLAYER's possession has -- which is the positive control for this readout.\r\n"
+                    "[PS]   ! STILL NOT A BOT: BotController-chain is unchanged and ServerSetHeroClass /\r\n"
+                    "[PS]   ! SetPlayerTeam remain stripped folds. *****\r\n",(unsigned long long)now);
+        else
+            Markerf("[PS] ARM C: dispatched but pawn+0x3D8 reads 0x%llX (expected 0x%llX). The call ran\r\n"
+                    "[PS]   and the store did not land as expected -- read the ARM-C dump above.\r\n",
+                    (unsigned long long)now,(unsigned long long)g_psCtlPS[0]);
+    }
+    if(g_psDirectDispatched)
+        Markerf("[PS] ARM B: dispatched. controller #1 PlayerState is now 0x%llX (was NULL when read\r\n"
+                "[PS]   before the call) and pawn #1 PlayerState is 0x%llX -- pre-registered to stay\r\n"
+                "[PS]   NULL, because possession already happened.\r\n",
+                (unsigned long long)g_psCtlPS[0],(unsigned long long)g_psPawnPS[0]);
+#endif
 
     if(!g_bsResolved){
         Marker("[BS] VERDICT: NOT RESOLVED -- nothing was called. This is a STAGING/RESOLVE statement "
@@ -14676,7 +15536,18 @@ static void BsFinalReport(){
     if(g_bsBotCtlB>=0&&(g_bsBotCtlB!=g_bsBotCtlA||g_bsHeroB!=g_bsHeroA)){
         Marker("[BS] *** VERDICT: SITTING VOID -- the census moved BEFORE the call. The structural "
                "zero baseline does not hold in this world, so no delta is attributable. ***\r\n"); return; }
-    if(!g_bsCalled){ Marker("[BS] VERDICT: the call was never made (KBSARMS gated it off).\r\n"); return; }
+    if(!g_bsCalled){
+        // S136: this used to assert "(KBSARMS gated it off)" unconditionally, which is WRONG
+        //   whenever KBSARMS bit2 is SET and a PRE-CALL GUARD blocked the else-branch instead.
+        //   It sent S136 hunting a knob that was correct. Distinguish the two causes.
+        if(!(KBSARMS&0x4))
+            Marker("[BS] VERDICT: the call was never made -- KBSARMS bit2 (THE CALL) is CLEAR, "
+                   "so this is a read-only arm BY CONSTRUCTION. Says nothing about the spawn.\r\n");
+        else
+            Marker("[BS] VERDICT: the call was never made even though KBSARMS bit2 (THE CALL) "
+                   "is SET -- so a PRE-CALL GUARD blocked it, NOT the knob. Read the REFUSE(...) "
+                   "/ NO CALL lines above. THE CENSUS DELTA IS UNINTERPRETABLE, NOT A NULL.\r\n");
+        return; }
     if(g_bsRefused){
         Marker("[BS] VERDICT: CallBPGuarded REFUSED to dispatch -- the UFunction failed its validity "
                "check. That is a statement about the resolve, NOT about the spawn. Read the [BPC] "
@@ -14689,11 +15560,21 @@ static void BsFinalReport(){
 
     int dCtl=g_bsBotCtlC-g_bsBotCtlA, dHero=g_bsHeroC-g_bsHeroA;
     if(dCtl>0&&dHero>0){
-        Markerf("[BS] ***** VERDICT: A BOT SPAWNED. BotController +%d and LokiHeroCharacter +%d "
-                "across the call, from a STRUCTURAL ZERO baseline (0 of 1,126 log files contain any "
-                "bot-spawn string). This is the first AI hero in this project's history. Screenshot "
-                "it, then escalate: 'Spawn Random Bot At Loc' proves the roster, 'SpawnBotTeamAtLoc' "
-                "spawns a whole enemy team. *****\r\n",dCtl,dHero);
+        // S136: this string was written for the COMPONENT route and is FALSE on the KBSAI route.
+        //   It said "A BOT SPAWNED / BotController +N / from a STRUCTURAL ZERO baseline" while the
+        //   predicate had been renamed to BotOrAIController-chain and A0 read 1, not 0 -- and while
+        //   [M] ZERO BotController-derived objects exist in the process (the CDO is present as a
+        //   passing search-term control). SpawnAIFromClass produces a GENERIC ENGINE AAIController
+        //   via APawn::SpawnDefaultController; APawn::AIControllerClass @+0x3D0 reads the engine
+        //   default on the PLAYER hero too. MakeNewBotController -> BotController ->
+        //   ServerSetHeroClass / SetPlayerTeam is UNTOUCHED and still blocked on FK-22's getter.
+        //   Never let this line say "the bot spawner works".
+        Markerf("[BS] ***** VERDICT: AN AI-CONTROLLED PAWN EXISTS. controller +%d and "
+                "LokiHeroCharacter +%d across the call, against A0=%d/%d re-read as A1 with NO call "
+                "in between. NOTE THE SCOPE: this is the ENGINE default AAIController, NOT a Loki "
+                "BotController -- expect PlayerState/Brain/Blackboard/Perception all NULL, so no "
+                "team and no hero-class assignment. Verify with tools/re/obj_by_chain.py and "
+                "TIMESTAMP the census. *****\r\n",dCtl,dHero,g_bsBotCtlA,g_bsHeroA);
         return; }
     if(dCtl>0&&dHero<=0){
         Markerf("[BS] VERDICT: a BotController appeared (+%d) but no hero pawn did. The controller "
@@ -16037,6 +16918,7 @@ static DWORD WINAPI Worker(LPVOID){
     // *** S135 RM_BOTSPAWN -- the first AI hero. CALL-ONLY: one CallBPGuarded into
     //   Comp_BP_BotSpawner_C::SpawnClassBotAtLoc. NO module-image write, NO data poke, NO PI hook.
     if(kRunMode==RM_BOTSPAWN){
+        Marker("[BS] BUILDSTAMP=S136-guardfix-1\r\n");
         Marker("[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.\r\n"
                "[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never\r\n"
                "[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT\r\n"
