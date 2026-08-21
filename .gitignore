@@ -206,3 +206,29 @@ __pycache__/
 /scratchpad/s118/
 /scratchpad/s118-*
 /scratchpad/s118_*
+
+# Per-launch console sinks for the launcher's three helper processes. Truncated or
+# overwritten on EVERY launch by their writers:
+#   docs/crashwatch.out.log     <- configs/launch-redirect.ps1:341   (usmapdump crashwatch)
+#   docs/inject-watch.out.log   <- configs/launch-redirect.ps1:426   ($watchOut, `inject watch`)
+#   docs/inject-secondaries.log <- configs/inject-secondaries.ps1:48
+#
+# They churned across 11-14 commits apiece while never carrying curated evidence.
+#
+# ⚠ THEY *ARE* CITED — and that is precisely the argument for untracking them, not
+# against it. docs/next-session-prompt-s121.md:71 cites this file's content as [M]
+# ("pid 81028, 50 ms poll"). That content is ALREADY UNRECOVERABLE: the working copy
+# was overwritten by a later launch, and `git log -S 81028 -- docs/crashwatch.out.log`
+# returns NOTHING, so it was never committed in the first place. Tracking a file that
+# its writer truncates every run preserves whatever the last committer happened to
+# hold, not the run being cited — an evidence trail in appearance only.
+# ⇒ When one of these matters, COPY IT under a run-specific name (the fk7ab/<label>/
+# and capture-s121-* families are how that is done here) and commit the copy.
+# History is unaffected: every version ever committed stays reachable by `git show`.
+#
+# Deliberately three literal paths. Do NOT broaden to /docs/*.out.log — that also
+# swallows docs/abstract-run.out.log, docs/relaunch-*.out.log and the rest of the
+# tracked evidence families this file already warns about twice.
+/docs/crashwatch.out.log
+/docs/inject-watch.out.log
+/docs/inject-secondaries.log
