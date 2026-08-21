@@ -1,5 +1,20 @@
 # FK-22 — The falsification does not generalise: `SpawnPlane` is a per-variant Blueprint override, the markers exist, and the real blockers are a stalled phase machine plus empty server-authority C++ impls
 
+> ★★ **COVERAGE UPDATE (S133, 2026-08-20).** This file files 16 `(class, func)` keys as
+> **COVERAGE-BLOCKED**, most of them on `.text` page **`0x5456000`** (the five
+> `AuthPlayer*` entry points and `GetLandingTeleportLocation`'s thunk `0x5456C80`).
+>
+> **[M] `0x5456000` IS NOW DECRYPTED — 3,860 / 4,096 non-zero in `dumps/merged10.dump.exe`.**
+> S131/S132's rideable and dismount flights lit it. `0x5456C80` likewise went dark→lit from
+> `s131-rideable-live` onward.
+>
+> ⇒ **The §2.5 re-grade this file calls "free, offline and unstarted" is now also
+> UNBLOCKED**, and should be run against `dumps/merged10.dump.exe` (16,755 / 30,281 pages,
+> 55.33 %) rather than the 18-image corpus those verdicts were measured on.
+> ⚠ Still dark and still genuinely blocked: `0x560EE70` (the BR phase-4 body) and
+> `0x55A34E0`. See `docs/fk20-coverage-settled.md` §5.2.
+
+
 **Date:** 2026-08-16 — offline only, zero launches, zero injections, zero `.text` writes.
 **Sources:** six independent investigation lines, each attacked by an adversarial verifier. Where a verifier refuted a line, the verifier governs.
 

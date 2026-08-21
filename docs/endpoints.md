@@ -49,6 +49,34 @@ returns `{}` and every request is logged to `docs/capture.log`.
 | GET | `/core-game/players/{id}` | ✅ | **active poller** (~17/s). "Do I have a match to rejoin?" **usmap ground truth `CoreGamePlayer` (4 props): `ID`(str), `MatchID`(str), `Version`(int64), `CanDisassociate`(bool)** — NOT MatchParticipant/MatchInfo (the old binary-scan model was wrong; those are separate structs). Client waits for a non-empty `MatchID`, then fetches the match. Idle = empty MatchID; S62 sets a real MatchID when `SoloMode` is armed |
 | GET | `/core-game/matches/{matchId}` | ❓ | S62 PROBE: match-details fetch after a MatchID appears. Returns usmap `MatchInfo` (19 props: `GameConfig`{`MapName`,`GameMode`,`SoloModeStartLocation`}, `State`/`StateEnum` `ECoreGameMatchState`, `ConnectionDetails`=`CoreGameServerInfo`{`address`…}, `PlayerInfo`=`MatchParticipant`, `QueueID`,`Region`,`OwnerID`). Local tutorial = EMPTY `address`. Route path is a best guess — confirm from capture.log |
 
+### Party ACTION verbs — the interaction-triggered surface (S122 + S133)
+
+⚠⚠ **THESE ARE INVISIBLE TO A PASSIVE CAPTURE-DIFF.** S122's sweep parsed a 74-minute
+capture and reported "56 client routes, 8 unserved". Every row below was missing from it,
+because the endpoints only fire when a HUMAN CLICKS the control: nobody clicked an activity
+tile (`setTargetQueues`), FIND MATCH (`joinQueue`), cancel (`leaveQueue`), the privacy
+toggle (`setIsOpen`) or an emote (`emote`) during that capture.
+⇒ **A capture-diff enumerates what the client HAPPENED to exercise, not what it can call.
+Drive the interaction, THEN diff. Re-running the sweep for longer does not help.**
+
+★ Note the URL shape: these put their value in the **PATH**, not a JSON body, unlike the
+rest of this backend. `emote/` arrives with an EMPTY tail when the account owns no emote.
+
+★ **Free receipt: the client RETRIES an unaccepted party verb** (`joinQueue` was POSTed
+twice, ~10–35 s apart, until the response was accepted; once accepted it fires exactly
+ONCE). A repeating verb in `capture.log` means your response is being rejected.
+
+| Method | Path | Status | Notes |
+|---|---|---|---|
+| POST | `/party/parties/{partyId}/setTargetQueues` | ✅ | **Activity-tile selection** (S122). Body `{"queueIds":["<id>"]}`. Unserved it fell to the catch-all and the next `/party` poll re-served the old `targetQueueId`, snapping the selection back — the observed grey/un-grey. Persists + echoes the party. |
+| POST | `/party/parties/{partyId}/joinQueue` | ✅ | **FIND MATCH** (S133). Empty body. ★★ **The response must be an `FParty` under an ADVANCED `Version`** — read from the decrypted `UPartyManager::TryJoinQueue` (`0x5875E90`), whose callback `0x5859E10` calls `UPartyModel::SetParty` (`0x587BE90`, the S85 monotonic-Version gate). ★★ **The field that drives the queued UI is `state = "Matchmaking"`** (`EPartyState = {Default, Matchmaking, CustomGame, Unknown}`), **NOT `inQueue`** — serving `inQueue:true` alone was MEASURED insufficient (SetParty ran, `LogJson` silent, UI unmoved). ⚠ Nothing matches the player: no matchmaker answers the queue, and `matchmakingNotif` is UNBOUND (FK-15/S118) so a match-found signal has to be HTTP. Knob `AGS_JOIN_QUEUE=0`. |
+| POST | `/party/parties/{partyId}/leaveQueue` | ✅ | **Cancel** (S133). Registered speculatively alongside `cancelQueue`; the client uses `leaveQueue`, confirmed on the wire. |
+| POST | `/party/parties/{partyId}/setIsOpen/{value}` | ✅ | **Party privacy toggle** (S133). Value in the PATH. ⚠ The client sends **capitalised `True`/`False`** — parse case-insensitively or every value reads as false and it looks exactly like "the toggle does nothing". |
+| POST | `/party/parties/{partyId}/emote/{Emote:Name}` | 🧪 | **Lobby emote** (S133). [M] the id is the **PATH TAIL as a full PrimaryAssetId** (`Emote:Fingerwag`) and the **body is always empty**. Emotes play with the party document echoed UNCHANGED, so no new field is known to be needed — `FParty` names `Emotes`/`Emotes_Played` but a multi-member broadcast is UNTESTED (this backend only serves a solo party). |
+| POST | `/party/parties/{p}/members/{id}/latencies` | 🟡 | client→server upload, no surface |
+| POST | `/party/parties/{p}/refreshRanks` | ❓ | revealed by serving `FPlayerRank` (S122); still unserved |
+| POST | `/party/parties/{p}/members/{id}/refreshMastery` | ❓ | called at login; untraced |
+
 ### Cascade revealed by populating progressiontracks (all new this session, `{}` catch-all, one-shot — not looping)
 
 | Method | Path | Status | Notes |

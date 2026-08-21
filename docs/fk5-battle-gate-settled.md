@@ -1,5 +1,34 @@
 # FK-5 SETTLED — "The BATTLE/PRACTICE blocker is an AccelByte QoS UDP ping responder"
 
+> ⚠⚠ **CORRECTION (S133, 2026-08-20) — ONE `[M]` IN THIS FILE IS REFUTED. READ THIS FIRST.**
+>
+> This file states, graded `[M]`, that *"`0x1F8CFC0` is an all-zero page, so **the packet
+> format is unreadable offline**"* (§6.4 rationale; the same page is cited at :58, :180,
+> :190, :444, :915), and builds a verbatim-echo + hexdump responder plan around recovering
+> the format empirically.
+>
+> **`0x1F8CFC0` IS A ~300-BYTE WRAPPER.** Disassembled, it reads `[Ping] StackSize` from the
+> ini, names a thread from the ANSI literal `"LokiPing"` (`.rdata 0x79C6E80` — the very
+> string this file flags `[SI]`), allocates an 0x80-byte object and tail-calls the real
+> worker at **`0x1F8BE90`**.
+>
+> **[M] `0x1F8BE90` is LIT in `dumps/merged.dump.exe`, in `merged2`, in `menu`, in
+> `tutorial-hero` — in EVERY image this project has ever taken.** The packet-building code
+> was never dark, so the claim was false on the day it was written, and not for a coverage
+> reason. ⇒ **the UDP-echo packet format can be read offline TODAY** from `0x1F8BE90` and
+> its siblings `0x1F8BB50` / `0x1F8B870` / `0x1F8B4F0`.
+>
+> ★ **The rule: before recording "this page is dark, therefore X is unreadable", CHECK THE
+> CALLEE.** A zero wrapper says nothing about the function it calls. ⚠ This is
+> `fk22-dropphase-reachability.md:675` recommitted in a different file — there,
+> `ULokiPreloadComponent::OnRoundPhaseChanged` was filed COVERAGE-BLOCKED on a zero *thunk*
+> whose impl was decrypted. Same family, second instance.
+>
+> ★ Separately: the wrapper itself went dark→lit on 2026-08-15 (S121, the session that
+> created the first `ULatencyMeasurer`), and nobody re-graded. See
+> `docs/fk20-coverage-settled.md` §5.1. The rest of this file stands.
+
+
 **S105 · 2026-07-27 · offline only (no launch, no injection, `server/` unmodified)**
 
 Supersedes the FK-5 entry in `docs/ignorance-map-s101.md` and the two carrying lines in

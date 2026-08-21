@@ -10,7 +10,20 @@ import (
 // Those tabs don't read our StoreOffer packs — they filter the storefront's ItemOffers by
 // the offer's RESOLVED PrimaryAssetType (bpdump of WBP_UI_Storefront_SkinsBundles):
 //   - SKINS       (GetSortedCosmeticsBundlesListForStore) keeps type == "HeroCosmeticsBundle"
-//   - ACCESSORIES keeps type == "SlotCosmetics" (Gliders/Emotes/Wisps/Sprays/Avatars)
+//   - ACCESSORIES keeps type == "SlotCosmetics" (Gliders/Wisps/Sprays/Avatars/SpikeVFX)
+//
+// ⚠⚠ CORRECTED S133: this line used to read "Gliders/Emotes/Wisps/Sprays/Avatars".
+// EMOTES ARE NOT SlotCosmetics. MEASURED: the 536-name SlotCosmeticsAssets map captured
+// live from the client contains ZERO emotes — its slot prefixes are AVATAR(225),
+// SPRAY(146), GLIDER(115), WISP(40), SPIKEVFX(2). `Emote` is its OWN PrimaryAssetType,
+// confirmed three ways: the shipped hero-mastery reward DAs use "SKU":"Emote:SeraphHi";
+// the picker widget WBP_UI_Loadout_Customization_Emotes's own asset name table contains
+// bare `Emote`; and its ubergraph calls
+// WBP_GenericCatalogPicker.SetContentTypeAndPrefix(prefix="", <"Primary Asset Type">).
+// See emotegrant.go. ⚠ ULokiAssetLoader has NO EmoteAssets map (it has HeroAssets,
+// HeroCosmeticsBundleAssets, SlotCosmeticsAssets, StoreOfferAssets, LoginRewardAssets,
+// MissionPoolAssets, EquipmentAssets, PowerAssets) — which is exactly why emotes need
+// catalog_store_fix.dll's AssetManager scan while these tabs populate without any shim.
 // so they need ItemOffers whose SKU resolves to those types. The SKU must be the full
 // "<Type>:<PrimaryAssetName>" PrimaryAssetId string (same rule the StoreOffer tabs needed).
 //
