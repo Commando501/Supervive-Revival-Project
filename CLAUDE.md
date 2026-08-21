@@ -1050,8 +1050,10 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   `SpawnClassBotAtLoc` is `Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent` — no
   `FUNC_Net`, no `FUNC_BlueprintAuthorityOnly`. Roster at `[BotSpawner+0xD8]`, [M] from two disjoint
   functions: `GetSpawnableBots 0xFCCE40` = `48 8d 81 d8 00 00 00 c3` and `SetSpawnableBots
-  0x52EC260` = `48 81 c1 d8 00 00 00 e9`. `SpawnBot 0x556D910` is **DARK, not stripped** (all-zero,
-  vs a fold's `c2 00 00`/`33 c0 c3`). Full plan + traps: **`docs/coop-vs-ai-plan-s135.md`**.
+  0x52EC260` = `48 81 c1 d8 00 00 00 e9`. ~~`SpawnBot 0x556D910` is **DARK, not stripped**~~ ⚠ **STALE since `merged12` -- it is LIT (page
+  `0x556D000` = 3,720/4,096) and S137 transcribed it in full (1,544 B, REAL, 43 call instructions =
+  39 direct + 4 indirect, 28 distinct direct targets, 25 REAL / 2 FOLD / 1 DARK).** The line
+  contradicted this file's own S135 and S137 blocks for two sessions. Full plan + traps: **`docs/coop-vs-ai-plan-s135.md`**.
   ★★★★★ **THE ARM IS BUILT (S135): `build.ps1 -Name tutorial_launch -Variant botspawn`.**
   `RM_BOTSPAWN` (enum 31) makes ONE `CallBPGuarded` into `Comp_BP_BotSpawner_C::SpawnClassBotAtLoc`
   on the live tutorial GameMode's own bot spawner. **Risk class: CALL-ONLY — no module-image write,
@@ -1605,7 +1607,9 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
 - ⚠ **No CUSTOM GAME entry point exists on this client** (`customGameModes` is served and
   `CustomGameList` is `IsEnabledByDefault=true`, so it is NOT toggle-gated — the entry point is
   elsewhere and unidentified). `UPartyManager`'s 7 custom-game impls on `0x5873000`/`0x5874000` and
-  the 6 ready/fill/emote impls on `0x5879000` remain **DARK and unreached**.
+  ~~the 6 ready/fill/emote impls on `0x5879000` remain **DARK and unreached**~~ ⚠ **STALE since
+  `merged10`: page `0x5879000` = 3,861/4,096 = LIT -- and it is contradicted 13 lines above in this
+  same file (`0x5879000` DARK -> LIT). "Unreached" was never re-checked after the page lit.**
 
 ### Before touching anything coverage- / dump- / "that page is undecrypted"-shaped
 ★★★★★ **FK-20 IS SETTLED (S133, 2026-08-20) — read `docs/fk20-coverage-settled.md`.** Offline, zero
@@ -1617,6 +1621,27 @@ that COVERAGE IS EARNED AND NEVER SPENT.**
   `merged6` today — and ~29 were already stale against `merged2`.** They never needed a new capture,
   only someone to look. `python scratchpad/s133/tools/regrade_blocked.py` re-runs the audit; full
   list in `scratchpad/s133/evidence/dark_cited_functions.txt`.
+  ★★ **RE-RUN AT S137 (against `merged13`): 43 adjudicated stale claim-instances across 15 files and
+  14 distinct RVAs** (unit: file:line × RVA pairs, not files and not lines), independently
+  reproduced row-for-row by an adversarial pass. **Only 3 first went stale in `merged13`; 29 have
+  been stale since `merged10` and 6 since `merged2`** — i.e. the problem is almost never a new
+  capture, it is that `regrade_blocked.py` HAS ALREADY BEEN EMITTING THESE AND NOBODY EDITS THEM.
+  ⚠ A lane claimed three were "never flagged by any prior audit"; **REFUTED** — the S133 tool emits
+  all three verbatim. **Four sat in `CLAUDE.md` itself, two contradicting this file elsewhere**;
+  all four are now annotated in place (`0x556D910`, `0x5879000`, the `0x5873280`–`0x5879EE0` band,
+  `0x5456000`). ⚠ The sweep is a **FLOOR**: 294 of 431 keyword lines carry no same-line address and
+  were never graded at all.
+- ⚠⚠★ **AND A COVERAGE NEGATIVE CONTROL IS ONLY VALID UNTIL SOMETHING ON ITS *PAGE* RUNS — WE KILLED
+  ONE OURSELVES (S137).** `docs/fk22-dropphase-reachability.md` designated
+  `ALokiGameState::AuthSetDeathCircle` impl `0x55653E0` as FK-22's coverage negative control
+  ("0/4096 in 13/13 images"). It shares page `0x5565000` with `ALokiBotController::OnPossess`
+  `0x5565470`, **0xB0 bytes away**, so S137's bot flight decrypted it as a side effect: it now
+  reads **3,782/4,096** with a real `jmp 0x338C990` at its entry. Nothing about the drop path
+  changed. ⇒ **choose a control on a page with no plausible neighbour, re-verify it before each
+  use, and state which image you verified against.** ✅ Still-dark in `merged13` (measured
+  2026-08-21): `ULokiRespawnComponent::Respawn 0x5A6AC40`. ⚠ A SECOND control was independently
+  broken: `docs/fk-playability-audit-s134.md` offers `0x5A6AC40` **or** `0x556D910` — but
+  `0x556D910` (SpawnBot) has been LIT since `merged12`. **Use `0x5A6AC40` alone.**
 - ⚠⚠ **AND CHECK THE CALLEE BEFORE RECORDING COVERAGE BLINDNESS.** `docs/fk5-battle-gate-settled.md:664`
   states `[M]` *"`0x1F8CFC0` is an all-zero page, so **the packet format is unreadable offline**"* and
   builds a whole hexdump-responder plan around it. `0x1F8CFC0` is a ~300-byte **wrapper** that reads
@@ -1683,8 +1708,10 @@ that COVERAGE IS EARNED AND NEVER SPENT.**
   not bounded by 394 — only its *anchors* are.
 - ★ **Highest-value next captures are ZERO-RISK and need no relaunch or injection:** (1) a **party /
   queue / custom-game ACTION sweep** — `UPartyManager` has **20 dark impls at
-  `0x5873280`–`0x5879EE0`, including `TryJoinQueue 0x5875E90`, the most-cited dark address in the
-  repo (11 citations)**, and `ignorance-map-s101.md:2270` already wrote the experiment down
+  `0x5873280`–`0x5879EE0`** ⚠ **PARTLY STALE: 5 of that band's 7 pages are LIT as of `merged10` --
+  `0x5875000` 3,896 · `0x5876000` 3,845 · `0x5877000` 3,275 · `0x5878000` 3,822 · `0x5879000` 3,861;
+  only `0x5873000` and `0x5874000` are still 0/4,096. In particular `TryJoinQueue 0x5875E90` -- this
+  file's "most-cited dark address, 11 citations" -- HAS BEEN READABLE SINCE `merged10`,** and `ignorance-map-s101.md:2270` already wrote the experiment down
   (**BOTS → FIND MATCH**, which S122 made work end to end); (2) a **FULL-PAYLOAD** `/lobby` notif
   sweep — S117's bare `{"type":X}` frames cannot reach a per-type deserializer; (3) a settings /
   renderer-permutation sweep. Ranked table in `docs/fk20-coverage-settled.md` §8.
@@ -2838,7 +2865,8 @@ blockers, neither about markers.**
   (plane, EMPTY) and `ULokiGameModeDropPlaneComponent::AddPlayerToDropPlane` (component, REAL) are
   different functions. S93 called the real one.
   ⚠⚠ **The 5 `AuthPlayerEnterWorld*` entry points are COVERAGE-BLOCKED, not absent** — all five sit on
-  `.text` page `0x5456000`, never demand-decrypted in any of 18 images, **together with plain getters**
+  `.text` page `0x5456000` ⚠ **-- STALE since `merged10`: that page reads 3,860/4,096 = LIT, so all
+  five are READABLE OFFLINE TODAY and "COVERAGE-BLOCKED" no longer applies** -- **together with plain getters**
   ⇒ the blocked/covered split there is a **page boundary, not a semantic one.** "No C++ route exists to
   put a player on a rideable" is **not-looked-at**, and reading it as absent would be an artifact.
 - ★ **[M] `TeamDropPodClass` is satisfied from shipped data** — `Default__BP_DropPlane_Base_C` sets it

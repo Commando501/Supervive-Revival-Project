@@ -372,7 +372,21 @@ Where they differed, they differed on **detail, not verdict**, and one of them i
 | **EMPTY gold** `ALokiDropPlane::OverridePlaneLocations` | thunk `0x53372A0` → impl `0x0F7EC20` | last direct call `0x5337378` → `0x0F7EC20` = `c2 00 00` | ✅ ditto |
 | **REAL gold** `ALokiServerAnalyticsManager::AddTeamDropEvent` | impl `0x557eae0`, 926 B | `48 8b c4 48 89 58 10 …`, pdata 926 B (exact) | ✅ |
 | **REAL gold** `ULokiGameModeDropPlaneComponent::AddPlayerToDropPlane` | impl `0x55cbb60` | `40 56 57 48 83 ec 38 …`, pdata 81 B | ✅ |
-| **COVERAGE negative control** `ALokiGameState::AuthSetDeathCircle` | must report separately, never as EMPTY | impl `0x55653e0`, page **0/4096 non-zero in 13/13 images** → reported `COVERAGE-BLOCKED`, ungraded | ✅ |
+| **COVERAGE negative control** `ALokiGameState::AuthSetDeathCircle` | must report separately, never as EMPTY | impl `0x55653e0`, page **0/4096 non-zero in 13/13 images** → reported `COVERAGE-BLOCKED`, ungraded | ⛔ **DEAD AS OF S137 — DO NOT REUSE** |
+
+⚠⚠ **THIS CONTROL IS BROKEN, AND WE BROKE IT OURSELVES (S137, 2026-08-21).** `0x55653E0` shares
+`.text` page `0x5565000` with `ALokiBotController::OnPossess` (`0x5565470`), and S137's flight drove
+OnPossess for the first time in this project's history — so the page decrypted and
+`AuthSetDeathCircle` now reads **3,782/4,096 non-zero** in `dumps/merged13.dump.exe`, with a real
+`jmp 0x338C990` at its entry. It was 0/4096 in `merged2`, `merged10` AND `merged12`.
+→ **A coverage negative control is only valid until something on its PAGE runs.** Nothing about the
+drop path changed; a neighbour 0xB0 bytes away did. Pick a replacement on a page with no plausible
+neighbour, re-verify it before each use, and state the image it was verified against.
+✅ **Verified still-dark replacements (merged13, measured 2026-08-21):**
+`ULokiRespawnComponent::Respawn 0x5A6AC40` (0/4096) · `ALokiBotController::OnUnPossess 0x55667F0`
+(0/4096). ⚠ The second is on the bot path and will light the moment anything unpossesses — prefer
+the first. **Grade note:** page-lit means READABLE OFFLINE, not EXECUTED; a 4 KiB page census cannot
+say which function on the page ran.
 | **grader-defect control** (B) | naive "last direct call" must fail on gold | without excluding `__security_check_cookie` (`0x751deb0`), gold `SpawnPlayer` mis-grades to `0x751deb0` | ✅ defect demonstrated and fixed; fixed grader 6/6 |
 | **vtable-defect avoidance** | require a DIRECT rel32 | `0x545726b: e8 b0 9d 1a 00` and `0x538793b: e8 20 28 2f 00` — both `E8` rel32, no indirect resolution anywhere | ✅ the `exec_chain_grade.py` `impl_of` defect is not present |
 | **MSVC-inlined-tiny-member trap** | a 2–3 instruction body is REAL, not ELIMINATED | `GetCurrentPhase` (3 instr) and `BP_AuthSetCurrentPhase` (5 instr across 2 fragments) both graded **REAL** | ✅ trap avoided |

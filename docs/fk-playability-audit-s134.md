@@ -362,7 +362,7 @@ One line each; they are excluded from A/B/C but several **gate** experiments the
 
 | # | Lever | Settles |
 |---|---|---|
-| **1** | Point `regrade_blocked.py` at `merged10`, replace the broken DARK control (`0x5A6AC40` or `0x556D910` both still dark), re-emit. Update `CLAUDE.md`'s canonical pointer **and `strxref.py:66`'s `merged2` default.** | Every "is this claim still true" judgement downstream |
+| **1** | Point `regrade_blocked.py` at `merged10`, replace the broken DARK control (~~`0x5A6AC40` or `0x556D910` both still dark~~ ⚠ **S137: `0x556D910` (SpawnBot) has been LIT since `merged12` — page 3,720/4,096 — so it is NOT a valid dark control. Use `0x5A6AC40` alone, which reads 0/4096 in `merged13`, and re-verify before each use: S137 also killed FK-22's `0x55653E0` control by lighting its page as a side effect**), re-emit. Update `CLAUDE.md`'s canonical pointer **and `strxref.py:66`'s `merged2` default.** | Every "is this claim still true" judgement downstream |
 | **2** | Re-grade all 100 drop-class `(class,func)` keys with the S130 `.data` record table **plus** a `merged10` disassembly of page `0x5456000`. | The 16 COVERAGE-BLOCKED keys; the mount's success tail |
 | **3** | `strxref.py func 0x5875E90` — transcribe `TryJoinQueue`'s preconditions. | FK-5's own #1 residual; what the client needs before a queue is real |
 | **4** | `strxref.py func 0x56CE5F0` — disassemble `TryUpdateAbilitySystem`. | Whether the reflected near-miss on the GAS bind has a usable branch |
