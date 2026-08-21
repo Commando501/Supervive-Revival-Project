@@ -166,7 +166,7 @@ static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for Spawn
 //   mode: same subject (the round-phase ladder), heap-only arming, and the FK-22 A0'..A5 protocol.
 //   RM_DROPPLANE (25) is the S125 successor: same FK-22 subject one layer down (the DropPlane
 //   COMPONENT rather than the phase), also heap-only arming, and the B0..B4 protocol.
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28, RM_RIDEABLE=29, RM_DISMOUNT=30 };
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28, RM_RIDEABLE=29, RM_DISMOUNT=30, RM_BOTSPAWN=31 };
 #ifndef KRUNMODE
 #define KRUNMODE RM_CHEATSPAWN
 #endif
@@ -398,6 +398,7 @@ static void DoDropPod();                                       // S126 RM_DROPPO
 static void DoDropMarkers();                                    // S126 RM_DROPMARKERS: ROUTE D -- make PlaneStartPoint/PlaneEndPoint resident, then SpawnPlane behind a residency gate
 static void DoRideable();                                      // S131 RM_RIDEABLE:  call the FIFTH WALL directly with a NON-NULL PlayerState (heap-only; NO module-image write)
 static void DoDismount();                                      // S132 RM_DISMOUNT: append the PlayerState to PlayersAttached, then call AuthPlayerDetachPlayerFromRidable (DATA-class write; NO module-image write)
+static void DoBotSpawn();                                      // S135 RM_BOTSPAWN: SpawnClassBotAtLoc on the tutorial GameMode's Comp_BP_BotSpawner (CALL ONLY; NO write of any kind)
 static void DoPoolSpawn();                                     // S128 RM_POOLSPAWN:  ROUTE F -- does SpawnPoolableActorFromClassDeferred need the actor pool? (heap-only; NO module-image write)
 static void PhaseRestore(const char* who);                     //  ...its STOP: re-poke GameState+0xA44 back to 4. Idempotent, callable from any thread.
 
@@ -1270,6 +1271,7 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     if(kRunMode==RM_POOLSPAWN){ DoPoolSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S128 Route F
     if(kRunMode==RM_RIDEABLE){ DoRideable(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S131 the fifth wall
     if(kRunMode==RM_DISMOUNT){ DoDismount(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S132 the dismount
+    if(kRunMode==RM_BOTSPAWN){ DoBotSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S135 the bot spawn
     if(kRunMode==RM_PLAY){ DoPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done) — camera + WASD each hit
     if(kRunMode==RM_TRAINING){ DoTraining(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoTraining (one step per hit)
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
@@ -14051,6 +14053,668 @@ static void DxFinalReport(){
 // Thunks are CLASS-level: resolve them off the native LokiPlayerCheats CDO's class (works even though the live
 // object is a BP subclass Comp_PlayerController_Cheats_C). The live `this` comes from GetLocalLokiPlayerCheatsBP
 // at call time — more robust than a class-name instance scan (the BP subclass name doesn't contain "LokiPlayerCheats").
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ S135 — RM_BOTSPAWN: PUT AN AI HERO IN THE WORLD.
+//
+// WHY THIS ARM EXISTS, AND WHY IT IS CHEAP
+// ----------------------------------------
+// CO-OP VS. AI (`bots`) is ALREADY accessible -- the tile is selectable and FIND MATCH works (S133).
+// What has never happened is a BOT. [M] Across the full 1,126-file log corpus, `SpawnBots`,
+// `MakeNewBotController`, `TrySpawnTeam`, `SpawnBot`, `BotSpawner`, `AIController` and
+// `SetSpawnableBots` occur in ZERO files, against passing positive controls in the identical sweep
+// (`LogNavigation` 284, `BotNavLink` 174, `Recast` 191). => the baseline is a STRUCTURAL zero, so
+// nothing measured after the call can be background activity -- the property that made S132's
+// dismount attributable.
+//
+// !! AND THE QUEUE'S OWN GAMEMODE IS THE WRONG ROUTE. [M] `bots` ->
+// `BP_LokiBattleRoyaleGameMode_Skylands_Bots_C`, which inherits `..._Skylands_Breach_C` and adds
+// exactly ONE CDO property (`bUseObviousBotNames=true`). It IS Breach: a 2,215-cell map this project
+// has never loaded, the full drop chain, and the S131/S132 rideable wall. DO NOT START THERE.
+//
+// *** THE CHEAP ROUTE, AND IT IS ALREADY RESIDENT ON THE WORLD WE STAGE EVERY SESSION.
+// `Comp_BP_BotSpawner_C : ULokiBotSpawnerComponent` is an SCS component on
+// BP_LokiGameMode_Tutorial [M -- BP_LokiGameMode_Tutorial.json carries
+// Comp_BP_BotSpawner_C'BP_LokiGameMode_Tutorial_C:Comp_BP_BotSpawner_GEN_VARIABLE'], and it is
+// FREE OF BOTH OF THIS PROJECT'S STANDING WALLS:
+//
+//   [M] grep -c "ServerOnly|ClientServerSplit|HasAuthority|SpawnPlayer" over the component's FULL
+//       dump AND its ubergraph = 0 and 0, against a POSITIVE CONTROL of 8 in
+//       bpdump_ExecuteUbergraph_BP_LokiGameMode_Tutorial.txt. The grep works; the zero is real.
+//
+//   => no FK-42 exec-pin gate (ULokiBlueprintLibrary::ServerOnly impl 0x1311870 = `mov byte
+//      [rdx],0; ret`, which is why ProgressObjective can never count), and no path through FK-1's
+//      stripped ALokiGameMode::SpawnPlayer (impl 0x0F7EB50 = `xor eax,eax; ret`) -- the stub that
+//      FFA/LokiRespawnComponent::Respawn routes every FFA spawn through.
+//
+// THE CALL
+// --------
+//   Comp_BP_BotSpawner_C::SpawnClassBotAtLoc(
+//       int32 TeamIndex, FVector Location, int32 Difficulty,
+//       TSubclassOf<ALokiHeroCharacter> HeroClassToSpawn, int32 BotLevel,
+//       ALokiHeroCharacter*& CreatedBot /*OUT*/)
+//
+// [M] flags FUNC_Public|FUNC_HasOutParms|FUNC_HasDefaults|FUNC_BlueprintCallable|FUNC_BlueprintEvent
+// -- NO FUNC_Net, NO FUNC_BlueprintAuthorityOnly. It is BP BYTECODE, so the primitive is
+// CallBPGuarded. (The S55 direct-Func thunk is for NATIVE UFunctions; ProcessEvent slot 78 /
+// vtable disp 0x270 is for Angelscript, whose UFunctions have Func @+0xE0 == 0.)
+//
+// RISK CLASS: HEAP / NO WRITES AT ALL. This arm calls a function. It pokes no game data, writes
+// no module image, and installs no hook of its own -- its only standing modification is the shim's
+// existing KFUNCSWAP heap UFunction.Func swap (measured 0/16 deaths at a 600 s hold). It REFUSES
+// to run under KFUNCSWAP=0, whose delivery path is a standing .text patch (10/10 lethal, S112).
+//
+// !!! THE INTERPRETABILITY TRAP -- PRE-REGISTERED, AND IT IS THE WHOLE REASON THIS ARM HAS A SECOND
+// READOUT. Traced from the shipped bytecode:
+//     [2]  CallFunc_SpawnBot_ReturnValue <- SpawnBot(HeroClass, Location, TeamIndex, ...)
+//          ...and that local is assigned ONCE and NEVER READ AGAIN (2 occurrences in the whole dump).
+//     [5]  GetPlayerStatesOnTeam(self, TeamIndex)  -> [8] EX_JumpIfNot -> 739
+//     found: [17] IsBotControlled AND [18] ObjectIsA(HeroClassToSpawn) -> [21] SetBotToLevelX
+//            -> [22] CreatedBot = <the hero>
+//     not found:                                                        [24] CreatedBot = EX_NoObject
+// => A NULL CreatedBot DOES NOT MEAN THE SPAWN FAILED. It means no PlayerState on that team owned a
+// pawn that was both bot-controlled and of that class AT THAT INSTANT -- which a fully successful
+// spawn also produces if the bot's PlayerState has not joined the team array yet. Conversely, if a
+// bot of that class already exists on that team, the loop returns the PRE-EXISTING one. So
+// CreatedBot is reported but is NEVER the verdict; the CENSUS DELTA is.
+//
+// ! BotLevel is a MEASURED NO-OP: SetBotToLevelX's only effect is ALokiCharacter::AuthGrantLevel,
+// whose impl is 0x0F7EC20 (the universal `ret imm16 0` void fold) against the same-class REAL
+// control GetCharacterLevel 0x55a9e40. Passed anyway for shape; do not read a level from it.
+//
+// DO NOT use BP_LokiGameMode_Tutorial_C::"Spawn AI Hero Bot" as the first arm: its location comes
+// from GetAllActorsOfClassWithTag(BP_LokiRespawnBeacon_Unlimited_C,"BotSpawnStart"), and [M]
+// LVL_Tutorial contains ZERO of those across the persistent level and all 67 WP cells (4 positive
+// controls passing in the same pass) -- the bot would spawn at world origin.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+#ifndef KBSARMS
+#define KBSARMS 0x0F      // bit0 resolve+A0, bit1 stability re-census, bit2 THE CALL, bit3 A2+verdict
+#endif
+#ifndef KBSTEAM
+#define KBSTEAM (-1)      // -1 = auto (read the player's team, pick a DIFFERENT one)
+#endif
+#ifndef KBSDIFF
+#define KBSDIFF 1
+#endif
+#ifndef KBSLEVEL
+#define KBSLEVEL 1
+#endif
+#ifndef KBSHERO
+#define KBSHERO "BP_HERO_Ronin_C"
+#endif
+#ifndef KBSFUNC
+#define KBSFUNC "SpawnClassBotAtLoc"
+#endif
+#ifndef KBSNUM
+#define KBSNUM 3
+#endif
+#ifndef KBSOFFSET
+#define KBSOFFSET 600.0   // uu in +X from the player hero
+#endif
+
+static uintptr_t g_bsGm=0, g_bsComp=0, g_bsFn=0, g_bsHeroCls=0, g_bsPlayerHero=0;
+static uint32_t  g_bsOTeam=0xFFFFFFFF,g_bsOLoc=0xFFFFFFFF,g_bsODiff=0xFFFFFFFF,
+                 g_bsOCls=0xFFFFFFFF,g_bsOLvl=0xFFFFFFFF,g_bsORet=0xFFFFFFFF,
+                 g_bsONum=0xFFFFFFFF,g_bsORetArr=0xFFFFFFFF;
+static int  g_bsResolved=0, g_bsRosterNum=-1, g_bsTeam=-1, g_bsPlayerTeam=-999;
+static int  g_bsBotCtlA=-1,g_bsBotCtlB=-1,g_bsBotCtlC=-1;
+static int  g_bsHeroA=-1,g_bsHeroB=-1,g_bsHeroC=-1;
+static int  g_bsCalled=0,g_bsFaulted=0,g_bsRefused=0;
+static uintptr_t g_bsCreatedBot=0;
+static double g_bsLoc[3]={0,0,0}; static int g_bsLocOK=0;
+static volatile long g_bsStep=0; static DWORD g_bsLastMs=0;
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// S135 FLIGHT 1 REPAIR (2026-08-21). Two defects, both found by the READ-ONLY arm before any call
+// was made -- which is exactly why it was flown first.
+//
+// DEFECT 1 -- GAME-THREAD STARVATION. The ladder advanced ONE step per game-thread hit (copied from
+//   DxLadderStep, which works because RM_DISMOUNT is staged with a FLYING POD). MEASURED in flight:
+//       [FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+//       [FS] *** ARMED AND LIVE: hitsGT=1 ... after 8016 ms (~0 game-thread dispatches/s) ***
+//       [FS] t=+15s hitsGT=1 called=0
+//   EXACTLY ONE hit ever arrived, so step 0 ran and steps 1-3 never did: no census delta, no verdict.
+//   ⚠ KFSNAME="" was ALREADY set. The problem is not which functions are swapped -- it is that a
+//   gft->fo->sp world with no pod and no plane dispatches almost NO Blueprint on the game thread.
+//   CORROBORATED across the marker corpus: every non-zero `[FS] hot:` line in this repo comes from a
+//   staging that included the plane/pod (s130/s131/s132 all list BP_DropPlane_Base_C::ReceiveTick or
+//   BP_HERO_Ronin_C::ReceiveTick at 44-58 hits/4 s); every `hot: 0` line is a leaner staging.
+//   ⇒ FIX: do the WHOLE ladder in ONE hit. One hit is what we get, so one hit must be enough.
+//
+// DEFECT 2 -- HERO/LOCATION RESOLUTION FAILED SILENTLY. The arm printed only
+//       [BS] no player hero location -- REFUSING rather than spawning at world origin.
+//   which cannot distinguish "no hero object", "hero found but PlayerState null" and "hero found but
+//   RootComponent/location unreadable". A refusal path with one message is not a diagnosis.
+//   ⚠ ROOT CAUSE [I, strong]: the primary lookup was FindInstByClass("LokiHeroCharacter"), and
+//   FindInstByClass matches the LEAF class name only. The possessed hero is BP_HERO_Ronin_C -- only
+//   its CHAIN contains LokiHeroCharacter. That is the class-lookup blind-spot family (obj_by_class
+//   substring, cheat_reach_probe endswith, class_props class-of-class, bpframe first-match) hit for
+//   a sixth time, in code whose own comments warn about it.
+//   ⇒ FIX: resolve by CLASS CHAIN in the same single world pass, keep every candidate, and print
+//   each rejection reason.
+//
+// PERFORMANCE, because this now runs inside ONE game-thread hit: the old code walked the whole
+// GUObjectArray TWICE PER CENSUS (once per class name) and did a full chain walk per object --
+// 161,753 objects x 2 x 3 censuses. PdCdoFlags is documented at ~2,000-2,300 ms for ONE pass, so
+// that would have been ~12-15 s of held game thread. Now: ONE pass per census, counting both
+// classes, with a per-UClass memo so a repeated class costs a pointer compare instead of a chain
+// walk. Budget ~3 passes plus one deliberate settle gap.
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+// Per-UClass memo. The world has ~161k objects but only a few thousand distinct classes, and the
+// hot classes repeat heavily, so this turns almost every object into a pointer compare.
+#define BS_MEMO 1024
+static uintptr_t g_bsMemoCls[BS_MEMO]; static uint8_t g_bsMemoVal[BS_MEMO]; static int g_bsMemoN=0;
+static uint8_t BsClassify(uintptr_t cls){
+    for(int i=0;i<g_bsMemoN;i++) if(g_bsMemoCls[i]==cls) return g_bsMemoVal[i];
+    char chain[256]; uint8_t v=0;
+    if(PhChainHas(cls,"BotController",chain,sizeof(chain)))     v|=1;
+    if(PhChainHas(cls,"LokiHeroCharacter",chain,sizeof(chain))) v|=2;
+    if(g_bsMemoN<BS_MEMO){ g_bsMemoCls[g_bsMemoN]=cls; g_bsMemoVal[g_bsMemoN]=v; g_bsMemoN++; }
+    return v;
+}
+
+// ONE pass over the world. Counts both classes AND (optionally) collects hero candidates.
+// `heroOut`/`heroCountOut` may be null when only the counts are wanted.
+static void BsScanWorld(const char* tag,int* botCtl,int* heroes,uintptr_t* heroOut,int* heroCountOut){
+    *botCtl=-1; *heroes=-1; if(heroCountOut)*heroCountOut=0;
+    uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return;
+    uintptr_t objectsPtr=*(uintptr_t*)oo; int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000)return;
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK, nb=0, nh=0, scanned=0;
+    DWORD t0=GetTickCount();
+    for(int ci=0;ci<numChunks;ci++){
+        if(!SafeReadable((void*)(objectsPtr+ci*8),8))break;
+        uintptr_t chunk=*(uintptr_t*)(objectsPtr+ci*8); if(!LooksLikePtr(chunk))continue;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE; if(!SafeReadable((void*)item,8))continue;
+            uintptr_t obj=*(uintptr_t*)item; if(!LooksLikePtr(obj))continue;
+            char on[128]; on[0]=0; GetFNameStr(NameId(obj),on,sizeof(on));
+            if(strncmp(on,"Default__",9)==0)continue;      // CDO
+            if(strstr(on,"_GEN_VARIABLE"))continue;        // SCS archetype template
+            uintptr_t cls=ClassOf(obj); if(!LooksLikePtr(cls))continue;
+            scanned++;
+            uint8_t v=BsClassify(cls);
+            if(v&1) nb++;
+            if(v&2){ nh++;
+                if(heroOut&&heroCountOut){
+                    // A hero CANDIDATE must have a readable RootComponent with a readable location:
+                    // that is what separates a live, placed pawn from a template or a stub.
+                    uint32_t rc=PropOffsetSuper(cls,"RootComponent");
+                    uintptr_t root=(rc!=0xFFFFFFFF&&SafeReadable((void*)(obj+rc),8))?*(uintptr_t*)(obj+rc):0;
+                    uint32_t lo=LooksLikePtr(root)?PropOffsetSuper(ClassOf(root),"RelativeLocation"):0xFFFFFFFF;
+                    if(lo==0xFFFFFFFF) lo=0x158;   // [M] USceneComponent::RelativeLocation
+                    bool ok=LooksLikePtr(root)&&SafeReadable((void*)(root+lo),24);
+                    char cn[128]; cn[0]=0; GetFNameStr(NameId(cls),cn,sizeof(cn));
+                    if((*heroCountOut)<8)
+                        Markerf("[BS]   heroCand[%d] 0x%llX '%s' cls='%s' root=0x%llX locOff=0x%X -> %s\r\n",
+                                *heroCountOut,(unsigned long long)obj,on,cn,(unsigned long long)root,lo,
+                                ok?"USABLE":"no readable location");
+                    (*heroCountOut)++;
+                    if(ok&&!*heroOut) *heroOut=obj;
+                }
+            }
+        }
+    }
+    *botCtl=nb; *heroes=nh;
+    Markerf("[BS] census %-8s BotController-chain=%d  LokiHeroCharacter-chain=%d  (%d objects, %d classes memoised, %lu ms)\r\n",
+            tag,nb,nh,scanned,g_bsMemoN,(unsigned long)(GetTickCount()-t0));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════
+// S135c — THE `SpawnAIFromClass` ARM (KBSAI=1). A DIFFERENT ROUTE TO THE SAME GOAL.
+//
+// WHY: the component route (SpawnClassBotAtLoc / SpawnBotTeamAtLoc) SPAWNS PAWNS BUT NEVER A
+// CONTROLLER, and the cause is now read out of the binary end to end:
+//
+//   ULokiBotSpawnerComponent::SpawnBot 0x556D910
+//     0x556DB23 call MakeNewBotController 0x5563660        <- RUNS [M, proven by decryption]
+//          0x55636A8 call 0x35AFC40      GetWorld()            r13 = UWorld*
+//          0x55636B0 mov  rcx, r13
+//          0x55636BB call 0x0F7EB50      STRIPPED -> nullptr   <== THE WALL
+//          0x55636C8 je   0x5563d0c      NULL => jump to EXIT
+//     0x556DD2F mov  rcx,[rsp+0x70]      the controller
+//     0x556DD34 test rcx,rcx / je        NULL => SKIP Possess
+//     0x556DD3C call 0x36E2B60           AController::Possess  <- REAL, and never reached
+//     0x556DBD1 call 0x39C3DB0           UWorld::SpawnActor    <- the PAWN spawns anyway
+//     0x556DD73 test rdi,rdi / je        PlayerState NULL => skip ServerSetHeroClass/SetPlayerTeam
+//
+// [I, strong] that stripped `F(UWorld*) -> ptr` is the SAME getter FK-22 recorded as
+// "ONE GETTER, THREE CONSUMERS" (AuthPlayerEnterWorldAttachedToRidable, AuthPlayerPreSpawnOnAddToPlane,
+// AuthPlayerEnterWorld). MakeNewBotController is a FOURTH consumer -- same fold, same UWorld* arg,
+// same null-test-and-bail. ⚠ NOT [M]: `0x0F7EB50` has ~27,217 call sites and names nothing by itself.
+//
+// ⛔ The getter cannot be poked (`33 c0 c3` -- three bytes, ZERO memory operands) and a Func swap is
+// dead (its AS callers reach the impl by rel32). So this arm does what S123/S130/S132 did: it does
+// NOT try to satisfy the stub -- it uses a DIFFERENT, INTACT entry point.
+//
+// THE ROUTE, graded from the image (three-state: fold / real / dark -- never a two-state test):
+//   UAIBlueprintHelperLibrary::SpawnAIFromClass  0x4631C50  REAL, 2,133 B, **0 stripped-fold calls**
+//     its four notable callees 0x4607AB0 / 0x4609C40 / 0x45CCB60 / 0x39C5280 -- all REAL, 0 folds
+//   AController::Possess  vtable slot 267 (+0x858) -> 0x36E2B60  REAL (`48 89 5c 24 20 55 56 57 ...`)
+//   APawn::SpawnDefaultController slot 280 (+0x8C0) -> 0x3BBF3C0  **DARK** (never decrypted)
+//     ⚠ DARK is NOT "stripped" and NOT "confirmed real" -- it has simply never executed. If this arm
+//       works, that page should DECRYPT, which is itself a free receipt (see below).
+//
+// SIGNATURE (UHT bind table):
+//   APawn SpawnAIFromClass(UObject WorldContextObject, TSubclassOf<APawn> PawnClass,
+//                          UBehaviorTree BehaviorTree, FVector Location, FRotator Rotation,
+//                          bool bNoCollisionFail, AActor Owner)
+// It is `BlueprintCallable` + **STATIC** on a UBlueprintFunctionLibrary => a NATIVE UFunction, so the
+// primitive is the S55 direct thunk (`CallNativeGuarded`) with **context = the CDO**, exactly as the
+// shim already calls the static `GetLocalLokiPlayerCheatsBP`. NOT CallBPGuarded (that is for BP
+// bytecode) and NOT ProcessEvent slot 78 (that is for Angelscript, whose Func is 0).
+//
+// ★★ PRE-REGISTERED PREDICTIONS -- written BEFORE the flight so a null is interpretable:
+//   P1  BotController/AIController census delta > 0  <== THE POINT. The component route is measured
+//       at delta 0 on two independent instruments; if this route also gives 0, the controller is
+//       unreachable by any spawn path and the blocker is deeper than the entry point.
+//   P2  LokiHeroCharacter delta +1 (SpawnAIFromClass spawns the pawn itself).
+//   P3  ReturnValue is the new APawn*, non-null.
+//   P4  `APawn::SpawnDefaultController` 0x3BBF3C0 goes DARK -> DECRYPTED. That is a free, permanent,
+//       offline-checkable receipt that the engine's controller path actually executed -- independent
+//       of any census. Capture a `dumpimage` before the client exits either way.
+//   ⚠ A NULL BehaviorTree is DELIBERATE and is expected to be fine: the engine spawns the pawn and
+//     its default controller first and only then runs a BT if one was supplied. If the controller
+//     appears but does nothing, that is a BEHAVIOUR question, not a spawn failure -- do not conflate.
+//   ⚠ `bNoCollisionFail = true` is REQUIRED here: the staged hero sits at Z≈13,240 (13 km up) and a
+//     colliding spawn would fail for a reason that has nothing to do with the stripped code.
+// ══════════════════════════════════════════════════════════════════════════════════════════════
+#ifndef KBSAI
+#define KBSAI 0
+#endif
+
+static uintptr_t g_bsAiCDO=0, g_bsAiFn=0, g_bsAiThunk=0, g_bsAiChild=0, g_bsAiWorldCtx=0;
+static uint32_t  g_bsAiOWco=0xFFFFFFFF,g_bsAiOCls=0xFFFFFFFF,g_bsAiOBt=0xFFFFFFFF,
+                 g_bsAiOLoc=0xFFFFFFFF,g_bsAiORot=0xFFFFFFFF,g_bsAiONoColl=0xFFFFFFFF,
+                 g_bsAiOOwner=0xFFFFFFFF,g_bsAiORet=0xFFFFFFFF;
+static uint8_t   g_bsAiParams[0x100]={0};
+static uintptr_t g_bsAiReturned=0;
+
+// Resolve the SpawnAIFromClass route. `hero` comes from the A0 world scan and is already known to
+// have a readable RootComponent location. Every failure path names itself.
+static void BsResolveAI(uintptr_t hero){
+    if(!LooksLikePtr(hero)){
+        Marker("[BS] REFUSE(hero): the world scan found no usable LokiHeroCharacter-chain object. "
+               "See the heroCand lines above.\r\n"); return; }
+    g_bsPlayerHero=hero; g_bsAiWorldCtx=hero;      // an actor is a valid WorldContextObject
+    {
+        char hn[128]; hn[0]=0; GetFNameStr(NameId(hero),hn,sizeof(hn));
+        Markerf("[BS] playerHero/WorldContext=0x%llX '%s'\r\n",(unsigned long long)hero,hn);
+        uintptr_t hcl=ClassOf(hero);
+        uint32_t rc=PropOffsetSuper(hcl,"RootComponent");
+        uintptr_t root=(rc!=0xFFFFFFFF&&SafeReadable((void*)(hero+rc),8))?*(uintptr_t*)(hero+rc):0;
+        uint32_t lo=LooksLikePtr(root)?PropOffsetSuper(ClassOf(root),"RelativeLocation"):0xFFFFFFFF;
+        if(lo==0xFFFFFFFF) lo=0x158;
+        if(!LooksLikePtr(root)||!SafeReadable((void*)(root+lo),24)){
+            Markerf("[BS] REFUSE(location): root=0x%llX locOff=0x%X unreadable\r\n",
+                    (unsigned long long)root,lo); return; }
+        g_bsLoc[0]=*(double*)(root+lo); g_bsLoc[1]=*(double*)(root+lo+8); g_bsLoc[2]=*(double*)(root+lo+16);
+        Markerf("[BS]   heroLoc = (%.1f, %.1f, %.1f)\r\n",g_bsLoc[0],g_bsLoc[1],g_bsLoc[2]);
+        g_bsLoc[0]+=(double)(KBSOFFSET); g_bsLocOK=1;
+    }
+
+    // The pawn class, verified BY CHAIN (its LEAF name says nothing about being a hero).
+    g_bsHeroCls=FindClassExact(KBSHERO);
+    if(!g_bsHeroCls){ Markerf("[BS] REFUSE(pawnclass): '%s' is not loaded.\r\n",KBSHERO); return; }
+    { char ch[256];
+      bool ok=PhChainHas(g_bsHeroCls,"Pawn",ch,sizeof(ch));
+      Markerf("[BS] pawnClass '%s' = 0x%llX chain=%s -> %s\r\n",KBSHERO,
+              (unsigned long long)g_bsHeroCls,ch,ok?"DERIVES FROM Pawn":"*** NOT A PAWN ***");
+      if(!ok){ Marker("[BS] REFUSE(pawnclass): SpawnAIFromClass takes a TSubclassOf<APawn>.\r\n"); return; } }
+
+    // The static library function. Context for a STATIC native UFunction is the CDO -- the same
+    // shape the shim already uses for GetLocalLokiPlayerCheatsBP.
+    g_bsAiCDO=FindObjExact("Default__AIBlueprintHelperLibrary");
+    if(!g_bsAiCDO){ Marker("[BS] REFUSE(cdo): Default__AIBlueprintHelperLibrary not found -- the "
+                           "library class is not loaded in this process.\r\n"); return; }
+    uintptr_t cls=ClassOf(g_bsAiCDO);
+    void* fn=nullptr; ResolveFuncSuper(cls,"SpawnAIFromClass",&fn,&g_bsAiThunk,&g_bsAiChild);
+    g_bsAiFn=(uintptr_t)fn;
+    if(!g_bsAiFn||!g_bsAiThunk){
+        Markerf("[BS] REFUSE(function): SpawnAIFromClass fn=0x%llX thunk=0x%llX\r\n",
+                (unsigned long long)g_bsAiFn,(unsigned long long)g_bsAiThunk); return; }
+    if(g_bsAiChild){
+        g_bsAiOWco   =ParamOffset(g_bsAiChild,"WorldContextObject");
+        g_bsAiOCls   =ParamOffset(g_bsAiChild,"PawnClass");
+        g_bsAiOBt    =ParamOffset(g_bsAiChild,"BehaviorTree");
+        g_bsAiOLoc   =ParamOffset(g_bsAiChild,"Location");
+        g_bsAiORot   =ParamOffset(g_bsAiChild,"Rotation");
+        g_bsAiONoColl=ParamOffset(g_bsAiChild,"bNoCollisionFail");
+        g_bsAiOOwner =ParamOffset(g_bsAiChild,"Owner");
+        g_bsAiORet   =ParamOffset(g_bsAiChild,"ReturnValue");
+    }
+    Markerf("[BS] SpawnAIFromClass fn=0x%llX thunk=0x%llX cdo=0x%llX\r\n",
+            (unsigned long long)g_bsAiFn,(unsigned long long)g_bsAiThunk,(unsigned long long)g_bsAiCDO);
+    Markerf("[BS]   params: WCO@0x%X PawnClass@0x%X BT@0x%X Loc@0x%X Rot@0x%X NoColl@0x%X "
+            "Owner@0x%X Ret@0x%X\r\n",g_bsAiOWco,g_bsAiOCls,g_bsAiOBt,g_bsAiOLoc,g_bsAiORot,
+            g_bsAiONoColl,g_bsAiOOwner,g_bsAiORet);
+    // Require only what the call cannot be built without. Optional params legitimately absent must
+    // not refuse the call -- that mistake already cost one injection on the component route.
+    if(g_bsAiOWco==0xFFFFFFFF||g_bsAiOCls==0xFFFFFFFF||g_bsAiOLoc==0xFFFFFFFF){
+        Marker("[BS] REFUSE(params): WorldContextObject/PawnClass/Location did not resolve BY NAME. "
+               "Refusing to write a params blob at guessed offsets.\r\n"); return; }
+    if(sizeof(g_bsAiParams) < 0x80)
+        { Marker("[BS] REFUSE(buffer): params buffer too small\r\n"); return; }
+    Markerf("[BS] ARGS: pawnClass='%s' spawnLoc=(%.1f, %.1f, %.1f) BT=null noCollisionFail=1 owner=null\r\n",
+            KBSHERO,g_bsLoc[0],g_bsLoc[1],g_bsLoc[2]);
+    g_bsResolved=1;
+}
+
+// Make the call. Native static => S55 direct thunk, context = CDO.
+static void BsCallAI(){
+    memset(g_bsAiParams,0,sizeof(g_bsAiParams));
+    memset(g_rbuf,0,sizeof(g_rbuf));
+    if(g_bsAiOWco   !=0xFFFFFFFF) *(uint64_t*)(g_bsAiParams+g_bsAiOWco)=(uint64_t)g_bsAiWorldCtx;
+    if(g_bsAiOCls   !=0xFFFFFFFF) *(uint64_t*)(g_bsAiParams+g_bsAiOCls)=(uint64_t)g_bsHeroCls;
+    if(g_bsAiOBt    !=0xFFFFFFFF) *(uint64_t*)(g_bsAiParams+g_bsAiOBt)=0;          // no BehaviorTree
+    if(g_bsAiOLoc   !=0xFFFFFFFF){ double* L=(double*)(g_bsAiParams+g_bsAiOLoc);
+                                   L[0]=g_bsLoc[0]; L[1]=g_bsLoc[1]; L[2]=g_bsLoc[2]; }
+    if(g_bsAiORot   !=0xFFFFFFFF){ double* R=(double*)(g_bsAiParams+g_bsAiORot);
+                                   R[0]=0.0; R[1]=0.0; R[2]=0.0; }
+    if(g_bsAiONoColl!=0xFFFFFFFF) *(uint8_t*)(g_bsAiParams+g_bsAiONoColl)=1;       // see header
+    if(g_bsAiOOwner !=0xFFFFFFFF) *(uint64_t*)(g_bsAiParams+g_bsAiOOwner)=0;
+    g_bsCalled=1;
+    bool faulted=true;
+    __try{ faulted=CallNativeGuarded((void*)g_bsAiFn,g_bsAiThunk,g_bsAiChild,
+                                     (void*)g_bsAiCDO,g_bsAiParams,g_rbuf); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[BS] *** FAULT around SpawnAIFromClass: %s ***\r\n",DP_FAULT); faulted=true; }
+    if(faulted){ g_bsFaulted=1; Markerf("[BS] SpawnAIFromClass FAULTED (%s)\r\n",DP_FAULT); }
+    else{
+        g_bsAiReturned=(uintptr_t)g_rbuf[0];
+        if(!LooksLikePtr(g_bsAiReturned)&&g_bsAiORet!=0xFFFFFFFF)
+            g_bsAiReturned=*(uint64_t*)(g_bsAiParams+g_bsAiORet);
+        char rn[128]; rn[0]=0; char rc[128]; rc[0]=0;
+        if(LooksLikePtr(g_bsAiReturned)){ GetFNameStr(NameId(g_bsAiReturned),rn,sizeof(rn));
+            uintptr_t c=ClassOf(g_bsAiReturned); if(LooksLikePtr(c))GetFNameStr(NameId(c),rc,sizeof(rc)); }
+        Markerf("[BS] SpawnAIFromClass -> ReturnValue=0x%llX '%s' class='%s'\r\n",
+                (unsigned long long)g_bsAiReturned,rn,rc);
+        g_bsCreatedBot=g_bsAiReturned;
+    }
+    Marker("[BS] ! ReturnValue is a corroborator, NOT the verdict. The CONTROLLER census delta is.\r\n");
+}
+
+// Resolve everything the call needs. `hero` comes from the A0 world scan (already validated to have
+// a readable RootComponent location), so this never repeats that walk.
+// ⚠ Every failure path prints WHY. The flight-1 version had one message for four different causes.
+static void BsResolve(uintptr_t hero){
+#if KBSAI
+    // KBSAI=1: skip the component route entirely (no PhPickGameMode sweep, no bot spawner).
+    BsResolveAI(hero); return;
+#endif
+    const char* why="(unset)";
+    g_bsGm=PhPickGameMode(&why);
+    Markerf("[BS] gameMode=0x%llX via %s\r\n",(unsigned long long)g_bsGm,why);
+    if(!g_bsGm){ Marker("[BS] REFUSE(gamemode): no live GameMode. Nothing was called. STAGING statement.\r\n"); return; }
+    uintptr_t gmCls=ClassOf(g_bsGm); char gcn[128]; gcn[0]=0;
+    if(LooksLikePtr(gmCls))GetFNameStr(NameId(gmCls),gcn,sizeof(gcn));
+    Markerf("[BS] gameMode class='%s'\r\n",gcn);
+
+    // GUARD 2 -- the component, BY REFLECTED PROPERTY off the live GameMode. NOT a GUObjectArray
+    // name search: the SCS archetype Comp_BP_BotSpawner_GEN_VARIABLE coexists with the live instance
+    // and a first-match scan returns the TEMPLATE. [M, flight 1] this resolved 0x1FEA9942C00
+    // name='Comp_BP_BotSpawner' class='Comp_BP_BotSpawner_C' -- the live one.
+    uint32_t oc=PropOffsetSuper(gmCls,"Comp_BP_BotSpawner");
+    if(oc==0xFFFFFFFF){ Marker("[BS] REFUSE(component): no 'Comp_BP_BotSpawner' ObjectProperty on the "
+                               "live GameMode class.\r\n"); return; }
+    if(!SafeReadable((void*)(g_bsGm+oc),8)){ Marker("[BS] REFUSE(component): slot unreadable\r\n"); return; }
+    g_bsComp=*(uintptr_t*)(g_bsGm+oc);
+    char cn[128]; cn[0]=0; char con[128]; con[0]=0;
+    if(LooksLikePtr(g_bsComp)){ GetFNameStr(NameId(g_bsComp),con,sizeof(con));
+        uintptr_t cc=ClassOf(g_bsComp); if(LooksLikePtr(cc))GetFNameStr(NameId(cc),cn,sizeof(cn)); }
+    Markerf("[BS] Comp_BP_BotSpawner@0x%X = 0x%llX  name='%s' class='%s'\r\n",
+            oc,(unsigned long long)g_bsComp,con,cn);
+    if(!LooksLikePtr(g_bsComp)||!GcAlive(g_bsComp)){
+        Marker("[BS] REFUSE(component): null or not a live UObject.\r\n"); return; }
+    if(strstr(con,"_GEN_VARIABLE")){
+        Marker("[BS] REFUSE(component): resolved the SCS ARCHETYPE, not the live instance.\r\n"); return; }
+
+    // GUARD 3 -- the roster. [M] +0xD8 from two disjoint functions (GetSpawnableBots 0xFCCE40 =
+    // `lea rax,[rcx+0xd8]; ret`; SetSpawnableBots 0x52EC260 = `add rcx,0xd8; jmp`), and [M] CONFIRMED
+    // LIVE in flight 1: Num=13 Max=16 => 'Initialize Bot Options' really does run unconditionally on
+    // a non-BR gamemode. SpawnClassBotAtLoc takes an EXPLICIT class and does not need it.
+    if(SafeReadable((void*)(g_bsComp+0xD8),16)){
+        uintptr_t data=*(uintptr_t*)(g_bsComp+0xD8);
+        int32_t num=*(int32_t*)(g_bsComp+0xE0), mx=*(int32_t*)(g_bsComp+0xE4);
+        g_bsRosterNum=num;
+        Markerf("[BS] SpawnableBots@+0xD8: Data=0x%llX Num=%d Max=%d %s\r\n",
+                (unsigned long long)data,num,mx,
+                num>0?"(Initialize Bot Options RAN)":"(roster EMPTY -- not required by SpawnClassBotAtLoc)");
+    }
+
+    void* fn=nullptr; uintptr_t th=0, ch=0;
+    ResolveFuncSuper(ClassOf(g_bsComp),KBSFUNC,&fn,&th,&ch);
+    g_bsFn=(uintptr_t)fn;
+    if(!g_bsFn){ Marker("[BS] REFUSE(function): SpawnClassBotAtLoc not found on the component class.\r\n"); return; }
+    if(ch){ g_bsOTeam=ParamOffset(ch,"TeamIndex");        g_bsOLoc =ParamOffset(ch,"Location");
+            g_bsODiff=ParamOffset(ch,"Difficulty");       g_bsOCls =ParamOffset(ch,"HeroClassToSpawn");
+            g_bsOLvl =ParamOffset(ch,"BotLevel");         g_bsORet =ParamOffset(ch,"CreatedBot");
+            g_bsONum =ParamOffset(ch,"NumBots");           g_bsORetArr=ParamOffset(ch,"CreatedBotTeam"); }
+    Markerf("[BS] fn='%s' 0x%llX params: Team@0x%X Loc@0x%X Diff@0x%X Class@0x%X Num@0x%X Level@0x%X "
+            "CreatedBot@0x%X CreatedBotTeam@0x%X\r\n",KBSFUNC,
+            (unsigned long long)g_bsFn,g_bsOTeam,g_bsOLoc,g_bsODiff,g_bsOCls,g_bsONum,g_bsOLvl,
+            g_bsORet,g_bsORetArr);
+    // ⚠ REQUIRE ONLY WHAT EVERY ENTRY POINT SHARES. HeroClassToSpawn is absent on
+    // SpawnBotTeamAtLoc (it picks from the roster itself), so requiring it here refused a
+    // perfectly resolvable call -- the guard inventing a precondition the game does not have,
+    // which is the same mistake GUARD 4 was already fixed for.
+    if(g_bsOTeam==0xFFFFFFFF||g_bsOLoc==0xFFFFFFFF){
+        Marker("[BS] REFUSE(params): required parameters did not resolve BY NAME. Refusing to write a "
+               "params blob at guessed offsets.\r\n"); g_bsFn=0; return; }
+
+    // GUARD 4 -- the hero class, verified by CHAIN (its LEAF name says nothing).
+    // GUARD 4 is REQUIRED ONLY WHEN THE CHOSEN ENTRY POINT TAKES A CLASS. SpawnBotTeamAtLoc does
+    // not: it picks classes itself (GetSpawnableBots -> Array_NRandom -> loop -> SpawnClassBotAtLoc),
+    // which is why IT consumes the roster and SpawnClassBotAtLoc does not. Refusing here for a
+    // function with no class parameter would invent a precondition the game does not have.
+    if(g_bsOCls==0xFFFFFFFF){
+        Markerf("[BS] '%s' takes no HeroClassToSpawn -- it selects from SpawnableBots itself "
+                "(roster Num=%d). Hero-class guard SKIPPED, not failed.\r\n",KBSFUNC,g_bsRosterNum);
+        if(g_bsRosterNum<=0)
+            Marker("[BS] !! roster is EMPTY -- this entry point has nothing to pick from.\r\n");
+    } else {
+    g_bsHeroCls=FindClassExact(KBSHERO);
+    if(!g_bsHeroCls){ Markerf("[BS] REFUSE(heroclass): '%s' is not loaded.\r\n",KBSHERO); g_bsFn=0; return; }
+    char hchain[256];
+    bool isHero=PhChainHas(g_bsHeroCls,"LokiHeroCharacter",hchain,sizeof(hchain));
+    Markerf("[BS] heroClass '%s' = 0x%llX chain=%s -> %s\r\n",KBSHERO,(unsigned long long)g_bsHeroCls,
+            hchain,isHero?"DERIVES FROM LokiHeroCharacter":"*** NOT A HERO CLASS ***");
+    if(!isHero){ Marker("[BS] REFUSE(heroclass): does not derive from ALokiHeroCharacter.\r\n"); g_bsFn=0; return; }
+    }
+
+    // GUARD 5 -- the PLAYER hero, its location and its team. Per-substep diagnostics: flight 1
+    // printed a single message for four distinct causes and could not be diagnosed afterwards.
+    g_bsPlayerHero=hero;
+    if(!LooksLikePtr(g_bsPlayerHero)){
+        Marker("[BS] REFUSE(hero): the world scan found NO LokiHeroCharacter-chain object with a "
+               "readable RootComponent location. See the heroCand lines above: if there are none, no "
+               "hero exists (did sp run?); if there are some, all of them failed the location read.\r\n");
+        g_bsFn=0; return; }
+    {
+        char hn[128]; hn[0]=0; GetFNameStr(NameId(g_bsPlayerHero),hn,sizeof(hn));
+        char hc[128]; hc[0]=0; uintptr_t hcl=ClassOf(g_bsPlayerHero);
+        if(LooksLikePtr(hcl))GetFNameStr(NameId(hcl),hc,sizeof(hc));
+        Markerf("[BS] playerHero=0x%llX '%s' class='%s'\r\n",(unsigned long long)g_bsPlayerHero,hn,hc);
+
+        uint32_t po=PropOffsetSuper(hcl,"PlayerState");
+        uintptr_t ps=(po!=0xFFFFFFFF&&SafeReadable((void*)(g_bsPlayerHero+po),8))?*(uintptr_t*)(g_bsPlayerHero+po):0;
+        if(po==0xFFFFFFFF)          Marker("[BS]   PlayerState: no such property on the hero class\r\n");
+        else if(!LooksLikePtr(ps))  Markerf("[BS]   PlayerState@0x%X is NULL -> team unknown (not fatal)\r\n",po);
+        else{
+            uint32_t to=PropOffsetSuper(ClassOf(ps),"TeamIndex");
+            if(to==0xFFFFFFFF) to=PropOffsetSuper(ClassOf(ps),"Team");
+            if(to!=0xFFFFFFFF&&SafeReadable((void*)(ps+to),4)) g_bsPlayerTeam=*(int32_t*)(ps+to);
+            Markerf("[BS]   PlayerState=0x%llX teamOff=0x%X playerTeam=%d\r\n",
+                    (unsigned long long)ps,to,g_bsPlayerTeam);
+        }
+
+        uint32_t rc=PropOffsetSuper(hcl,"RootComponent");
+        uintptr_t root=(rc!=0xFFFFFFFF&&SafeReadable((void*)(g_bsPlayerHero+rc),8))?*(uintptr_t*)(g_bsPlayerHero+rc):0;
+        uint32_t lo=LooksLikePtr(root)?PropOffsetSuper(ClassOf(root),"RelativeLocation"):0xFFFFFFFF;
+        if(lo==0xFFFFFFFF) lo=0x158;
+        if(LooksLikePtr(root)&&SafeReadable((void*)(root+lo),24)){
+            g_bsLoc[0]=*(double*)(root+lo); g_bsLoc[1]=*(double*)(root+lo+8); g_bsLoc[2]=*(double*)(root+lo+16);
+            Markerf("[BS]   heroLoc = (%.1f, %.1f, %.1f)  [root=0x%llX locOff=0x%X]\r\n",
+                    g_bsLoc[0],g_bsLoc[1],g_bsLoc[2],(unsigned long long)root,lo);
+            g_bsLoc[0]+=(double)(KBSOFFSET); g_bsLocOK=1;
+        } else {
+            Markerf("[BS] REFUSE(location): root=0x%llX locOff=0x%X unreadable\r\n",(unsigned long long)root,lo);
+            g_bsFn=0; return; }
+    }
+
+    if((int)(KBSTEAM)>=0) g_bsTeam=(int)(KBSTEAM);
+    else                  g_bsTeam=(g_bsPlayerTeam==0)?1:0;
+    Markerf("[BS] ARGS: team=%d (player=%d) spawnLoc=(%.1f, %.1f, %.1f) diff=%d level=%d hero='%s'\r\n",
+            g_bsTeam,g_bsPlayerTeam,g_bsLoc[0],g_bsLoc[1],g_bsLoc[2],(int)(KBSDIFF),(int)(KBSLEVEL),KBSHERO);
+    if(g_bsTeam==g_bsPlayerTeam)
+        Marker("[BS] !! WARNING: bot team == player team. A same-team bot will not fight, and that "
+               "would read as 'bots do not fight'. Override with -DKBSTEAM=<n>.\r\n");
+    g_bsResolved=1;
+}
+
+// ★ ONE-SHOT LADDER. Everything happens in a SINGLE game-thread hit, because [M] one hit is all this
+//   world state delivers (flight 1: hitsGT=1 at t=+15 s, hot list EMPTY). The old paced version
+//   needed four hits and produced no verdict.
+// ⚠ The stability control needs a REAL elapsed window or it is vacuous, so A0 and A1 are separated
+//   by a deliberate settle Sleep. Holding the game thread here is precedented: PdCdoFlags is
+//   documented at ~2,000-2,300 ms per GUObjectArray pass and runs TWICE per arm.
+#ifndef KBSSETTLEMS
+#define KBSSETTLEMS 750
+#endif
+static void BsLadderStep(){
+    if(g_bsStep!=0){ g_done=1; return; }      // one-shot: the first hit does everything
+    g_bsStep=1;
+
+    uintptr_t hero=0; int heroCands=0;
+    Marker("[BS] ---- A0: BASELINE WORLD SCAN (read-only; NO CALL) ----\r\n");
+    BsScanWorld("A0",&g_bsBotCtlA,&g_bsHeroA,&hero,&heroCands);
+    Markerf("[BS] hero candidates: %d; chosen=0x%llX\r\n",heroCands,(unsigned long long)hero);
+
+    Marker("[BS] ---- RESOLVE ----\r\n");
+    BsResolve(hero);
+
+    // STABILITY CONTROL. If the census moves with NO call in between, something else is spawning and
+    // nothing after this is attributable.
+    Markerf("[BS] ---- A1: STABILITY RE-SCAN after %d ms settle (still NO CALL) ----\r\n",(int)(KBSSETTLEMS));
+    Sleep((DWORD)(KBSSETTLEMS));
+    BsScanWorld("A1",&g_bsBotCtlB,&g_bsHeroB,nullptr,nullptr);
+    if(g_bsBotCtlB!=g_bsBotCtlA||g_bsHeroB!=g_bsHeroA)
+        Marker("[BS] *** SITTING VOID: the census MOVED with no call. Something else is spawning. "
+               "Nothing after this is attributable. ***\r\n");
+
+    if(!(KBSARMS&0x4)){
+        Marker("[BS] ---- THE CALL IS DISABLED by KBSARMS (read-only arm) ----\r\n");
+    } else if(!g_bsResolved||!g_bsFn||!LooksLikePtr(g_bsComp)){
+        Marker("[BS] ---- NO CALL: resolve failed. A resolve statement, not a result about the bot "
+               "spawn. Read the REFUSE(...) line above for which guard stopped it. ----\r\n");
+    } else {
+#if KBSAI
+        Marker("[BS] ---- THE CALL: UAIBlueprintHelperLibrary::SpawnAIFromClass ----\r\n");
+        BsCallAI();
+#else
+        Markerf("[BS] ---- THE CALL: %s ----\r\n",KBSFUNC);
+        memset(g_bplocals,0,sizeof(g_bplocals));
+        if(g_bsOTeam!=0xFFFFFFFF) *(int32_t*)(g_bplocals+g_bsOTeam)=g_bsTeam;
+        if(g_bsOLoc !=0xFFFFFFFF){ *(double*)(g_bplocals+g_bsOLoc)   =g_bsLoc[0];
+                                   *(double*)(g_bplocals+g_bsOLoc+8) =g_bsLoc[1];
+                                   *(double*)(g_bplocals+g_bsOLoc+16)=g_bsLoc[2]; }
+        if(g_bsODiff!=0xFFFFFFFF) *(int32_t*)(g_bplocals+g_bsODiff)=(int32_t)(KBSDIFF);
+        if(g_bsOCls !=0xFFFFFFFF) *(uint64_t*)(g_bplocals+g_bsOCls)=(uint64_t)g_bsHeroCls;
+        if(g_bsOLvl !=0xFFFFFFFF) *(int32_t*)(g_bplocals+g_bsOLvl)=(int32_t)(KBSLEVEL);
+        if(g_bsONum !=0xFFFFFFFF){ *(int32_t*)(g_bplocals+g_bsONum)=(int32_t)(KBSNUM);
+            Markerf("[BS] NumBots@0x%X = %d\r\n",g_bsONum,(int)(KBSNUM)); }
+        g_bsCalled=1;
+        bool ok=false;
+        __try{ ok=CallBPGuarded(g_bsFn,(void*)g_bsComp,nullptr); }
+        __except(SEH_FILTER(GetExceptionInformation())){
+            g_bsFaulted=1; Markerf("[BS] *** FAULT inside SpawnClassBotAtLoc: %s ***\r\n",DP_FAULT); }
+#if KFAULTINFO
+        if(g_bpcRefused){ g_bsRefused=1; Marker("[BS] the call was REFUSED by CallBPGuarded (not "
+                                                "dispatched, and NOT a fault).\r\n"); }
+#endif
+        if(!g_bsFaulted&&!g_bsRefused&&g_bsORet!=0xFFFFFFFF)
+            g_bsCreatedBot=*(uintptr_t*)(g_bplocals+g_bsORet);
+        char bn[128]; bn[0]=0; if(LooksLikePtr(g_bsCreatedBot))GetFNameStr(NameId(g_bsCreatedBot),bn,sizeof(bn));
+        Markerf("[BS] call returned ok=%d faulted=%d refused=%d CreatedBot=0x%llX '%s'\r\n",
+                (int)ok,g_bsFaulted,g_bsRefused,(unsigned long long)g_bsCreatedBot,bn);
+        if(g_bsORetArr!=0xFFFFFFFF){
+            uintptr_t ad=*(uintptr_t*)(g_bplocals+g_bsORetArr);
+            int32_t an=*(int32_t*)(g_bplocals+g_bsORetArr+8), am=*(int32_t*)(g_bplocals+g_bsORetArr+12);
+            Markerf("[BS] CreatedBotTeam TArray: Data=0x%llX Num=%d Max=%d\r\n",(unsigned long long)ad,an,am);
+        }
+        Marker("[BS] ! CreatedBot is NOT the verdict -- see the header. The census delta is.\r\n");
+#endif
+    }
+
+    // Give a spawned actor a tick to register before counting it.
+    Sleep((DWORD)(KBSSETTLEMS));
+    Marker("[BS] ---- A2: POST-CALL SCAN ----\r\n");
+    BsScanWorld("A2",&g_bsBotCtlC,&g_bsHeroC,nullptr,nullptr);
+    g_bsStep=4; g_done=1;
+}
+
+static void DoBotSpawn(){
+    __try { BsLadderStep(); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[BS] *** FAULT inside ladder step %ld -- halting. fault=%s ***\r\n",(long)g_bsStep,DP_FAULT);
+        g_done=1; }
+}
+
+static void BsFinalReport(){
+    Marker("[BS] ---------------- RM_BOTSPAWN SUMMARY ----------------\r\n");
+    Markerf("[BS] resolved=%d roster=%d team=%d(player=%d) called=%d faulted=%d refused=%d\r\n",
+            g_bsResolved,g_bsRosterNum,g_bsTeam,g_bsPlayerTeam,g_bsCalled,g_bsFaulted,g_bsRefused);
+    Markerf("[BS] botControllers A0=%d A1=%d A2=%d | heroCharacters A0=%d A1=%d A2=%d\r\n",
+            g_bsBotCtlA,g_bsBotCtlB,g_bsBotCtlC,g_bsHeroA,g_bsHeroB,g_bsHeroC);
+
+    if(!g_bsResolved){
+        Marker("[BS] VERDICT: NOT RESOLVED -- nothing was called. This is a STAGING/RESOLVE statement "
+               "and says NOTHING about whether a bot can be spawned.\r\n"); return; }
+    if(g_bsBotCtlA<0||g_bsBotCtlC<0){
+        Marker("[BS] VERDICT: the census did not run. UNINTERPRETABLE.\r\n"); return; }
+    if(g_bsBotCtlB>=0&&(g_bsBotCtlB!=g_bsBotCtlA||g_bsHeroB!=g_bsHeroA)){
+        Marker("[BS] *** VERDICT: SITTING VOID -- the census moved BEFORE the call. The structural "
+               "zero baseline does not hold in this world, so no delta is attributable. ***\r\n"); return; }
+    if(!g_bsCalled){ Marker("[BS] VERDICT: the call was never made (KBSARMS gated it off).\r\n"); return; }
+    if(g_bsRefused){
+        Marker("[BS] VERDICT: CallBPGuarded REFUSED to dispatch -- the UFunction failed its validity "
+               "check. That is a statement about the resolve, NOT about the spawn. Read the [BPC] "
+               "refuse line for which field was wrong.\r\n"); return; }
+    if(g_bsFaulted){
+        Markerf("[BS] VERDICT: the call FAULTED (%s). That is a REAL result: it localises inside "
+                "SpawnClassBotAtLoc's body, past dispatch. Note native SpawnBot (0x556D910) is DARK "
+                "in all 50 images on disk -- it is NOT stripped (fold multiplicity 1), so a fault "
+                "there is new information about a function nobody has read.\r\n",DP_FAULT); return; }
+
+    int dCtl=g_bsBotCtlC-g_bsBotCtlA, dHero=g_bsHeroC-g_bsHeroA;
+    if(dCtl>0&&dHero>0){
+        Markerf("[BS] ***** VERDICT: A BOT SPAWNED. BotController +%d and LokiHeroCharacter +%d "
+                "across the call, from a STRUCTURAL ZERO baseline (0 of 1,126 log files contain any "
+                "bot-spawn string). This is the first AI hero in this project's history. Screenshot "
+                "it, then escalate: 'Spawn Random Bot At Loc' proves the roster, 'SpawnBotTeamAtLoc' "
+                "spawns a whole enemy team. *****\r\n",dCtl,dHero);
+        return; }
+    if(dCtl>0&&dHero<=0){
+        Markerf("[BS] VERDICT: a BotController appeared (+%d) but no hero pawn did. The controller "
+                "half ran and the possession half did not -- that localises INSIDE SpawnBot, and it "
+                "is exactly the shape FK-1's stripped-authority cut produces elsewhere.\r\n",dCtl);
+        return; }
+    if(dCtl<=0&&dHero>0){
+        Markerf("[BS] VERDICT: a hero pawn appeared (+%d) with NO bot controller. A pawn with no AI "
+                "is not a bot; check whether MakeNewBotController is one of the stripped impls.\r\n",dHero);
+        return; }
+    Marker("[BS] VERDICT: the call DISPATCHED and returned with NO census movement at all.\r\n"
+           "[BS]   That is a real negative, and it is localisable for free:\r\n"
+           "[BS]   - roster Num==0 above => 'Initialize Bot Options' never ran on this gamemode.\r\n"
+           "[BS]     SpawnClassBotAtLoc does not need it, so this is a clue, not the cause.\r\n"
+           "[BS]   - native SpawnBot impl 0x556D910 is DARK in all 50 images and is NOT a known fold\r\n"
+           "[BS]     (multiplicity 1, vs 0xF7EB50/0xF7EC20 which fold 40/371 records). A silent\r\n"
+           "[BS]     no-op there is the leading hypothesis and it is now worth a targeted read --\r\n"
+           "[BS]     the page should be decrypted BY THIS RUN, so dumpimage before you exit.\r\n");
+}
+
+
 static void ResolveCheatSpawn(){
     g_cheatCDO=FindObjExact("Default__LokiPlayerCheats");
     uintptr_t cheatCls = g_cheatCDO ? ClassOf(g_cheatCDO) : 0;
@@ -15370,6 +16034,45 @@ static DWORD WINAPI Worker(LPVOID){
         return 0;
     }
 
+    // *** S135 RM_BOTSPAWN -- the first AI hero. CALL-ONLY: one CallBPGuarded into
+    //   Comp_BP_BotSpawner_C::SpawnClassBotAtLoc. NO module-image write, NO data poke, NO PI hook.
+    if(kRunMode==RM_BOTSPAWN){
+        Marker("[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.\r\n"
+               "[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never\r\n"
+               "[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT\r\n"
+               "[BS] use it: Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial, and [M] it has ZERO\r\n"
+               "[BS] ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's own\r\n"
+               "[BS] ubergraph) -- so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped\r\n"
+               "[BS] SpawnPlayer. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).\r\n");
+#if KFUNCSWAP
+        Marker("[BS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        if(!FsArm()){ Marker("[BS] FAIL funcswap arm -- nothing was armed and nothing was called\r\n"); return 6; }
+        FsHold(KPDMODEHOLDMS);       // returns as soon as the ladder sets g_done
+        FsDisarm();
+#else
+        // Same deliberate refusal as RM_RIDEABLE / RM_DISMOUNT / RM_DROPPOD / RM_POOLSPAWN: the
+        // alternative delivery path is InstallHook(), a standing 5-byte .text patch at
+        // ProcessInternal, measured 10/10 lethal (S112, Fisher p = 0.00000008). This mode's whole
+        // premise is that it writes nothing at all.
+        Marker("[BS] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a standing .text patch.\r\n");
+        return 7;
+#endif
+        BsFinalReport();
+        Markerf("[BS] done (step=%ld resolved=%d called=%d faulted=%d dCtl=%d dHero=%d hits=%ld hitsGT=%ld)\r\n",
+                (long)g_bsStep,g_bsResolved,g_bsCalled,g_bsFaulted,
+                (g_bsBotCtlC>=0&&g_bsBotCtlA>=0)?(g_bsBotCtlC-g_bsBotCtlA):-999,
+                (g_bsHeroC>=0&&g_bsHeroA>=0)?(g_bsHeroC-g_bsHeroA):-999,
+                (long)g_called,(long)g_hitsGT);
+        // The exit code must agree with the marker. The ladder has 4 steps (0..3) and ends at 4;
+        // IF IT GROWS ONE, THIS THRESHOLD MOVES WITH IT (the RM_PHASELADDER lesson, re-learned by
+        // RM_RIDEABLE and again by RM_DISMOUNT).
+        if(g_bsStep<4){
+            Markerf("[BS] *** ALERT: the ladder did not reach its final step (stopped at %ld). Most "
+                    "likely game-thread STARVATION -- read FsHold's own verdict line first, and re-fly "
+                    "with an empty KFSNAME if the swap took no hits. Returning 9. ***\r\n",(long)g_bsStep);
+            return 9; }
+        return 0;
+    }
     if(kRunMode==RM_PLAY){
         Marker("[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)\r\n");
         if(!ResolvePlay()){ Marker("[PL] resolve failed -> abort\r\n"); return 0; }

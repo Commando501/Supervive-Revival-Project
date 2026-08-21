@@ -97,6 +97,11 @@ func main() {
 	// and re-applies its party promptly (the S85 avatar-switch latency fix — the client
 	// applies the party only on a messenger-reconnect resync, not on HTTP polls).
 	interSvc.SetPartyDirtyNotifier(lobbySvc.MarkDirty)
+	// S135 (armqueue.go): /core-game/players/{id} is fetched exactly ONCE per messenger
+	// connection and never polled, so a MatchID written after login is invisible until
+	// the client reconnects. NotifyResource bumps that one resource's version down the
+	// messenger and the client refetches with no reconnect.
+	interSvc.SetResourceNotifier(lobbySvc.NotifyResource)
 	// Version source for the targeted per-resource resync (FK-15 probe #3). Wired
 	// unconditionally; lobby.enableTargetedResync decides whether it is used.
 	lobbySvc.SetPartyVersionFunc(interSvc.PartyVersion)

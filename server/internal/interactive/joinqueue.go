@@ -86,6 +86,10 @@ func (s *Service) handleJoinQueue(w http.ResponseWriter, r *http.Request) {
 	id := partyPathPlayerID(r)
 	log.Printf("interactive: joinQueue player=%s queue=%q", id, s.selectedQueue(id))
 	s.store.update(id, func(st *playerState) { st.InQueue = true })
+	// S135: nothing else in this server ever reads InQueue, so without this the player
+	// sits in a real, timed, cancellable queue forever. No-op unless AGS_ARM_QUEUE is
+	// set AND the queue is in AGS_ARM_QUEUE_QUEUES (default `bots`). See armqueue.go.
+	s.scheduleArm(id, s.selectedQueue(id))
 	s.writeParty(w, r, id)
 }
 
@@ -98,6 +102,10 @@ func (s *Service) handleLeaveQueue(w http.ResponseWriter, r *http.Request) {
 	id := partyPathPlayerID(r)
 	log.Printf("interactive: leaveQueue player=%s", id)
 	s.store.update(id, func(st *playerState) { st.InQueue = false })
+	// Drop any pending or armed match so CANCEL is a real cancel and the next FIND MATCH
+	// starts clean. Without this the S107 failure recurs: once /core-game/players reports
+	// a MatchID it does so forever and every later START is a silent no-op.
+	s.cancelArm(id)
 	s.writeParty(w, r, id)
 }
 
@@ -139,6 +147,17 @@ func applyQueueState(party map[string]any, inQueue bool) {
 	if !inQueue {
 		return // buildSoloParty already emits false; leave the document byte-identical
 	}
+	// ⚠⚠ DEAD KEY, MEASURED (S135). FParty has SIXTEEN properties and none is `inQueue`
+	// (UHT bind table, tools/asdump/out/binds_members.csv: ID, Version, State,
+	// ClientVersion, IsOpen, FillTeam, OwnerID, DiscordJoinSecret, Members,
+	// TargetQueueIDs, ExcludedRegions, Requests, CustomGameDetails, QueueJoinTime,
+	// TargetQueueID, IsRanked). JsonObjectStringToUStruct ignores unknown keys silently,
+	// so this write and the member-level one below have NEVER done anything, and
+	// `state` below is doing 100% of the work. That is independent confirmation of this
+	// file's own PROBE 1 null at :53. Left in place because an unknown key is inert;
+	// annotated so it is not re-believed. ⚠ Do NOT read a `state` null as "the document
+	// was rejected": FParty.State is an FString (property 2), not an enum, so a wrong
+	// value changes the state machine but cannot sink the document.
 	party["inQueue"] = true
 	// EPartyState = { Default, Matchmaking, CustomGame, Unknown } -- read from the usmap's
 	// enum value table (FK-14 confirmed enum VALUE tables are the trustworthy part of a

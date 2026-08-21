@@ -2098,6 +2098,54 @@ different tally defect. Settled 2026-08-20 (S130) → `docs/s130-actor-pool-gate
 
 ---
 
+### FK-42 — "`ProgressObjective` did nothing because the quests are orphans / because of the synthetic FFrame / because the trigger box has no subscribers"
+**Severity: CRITICAL. Three separately-recorded beliefs, one cause, and the cause is engine-wide.
+Found by the S134 playability audit → `docs/fk-playability-audit-s134.md`.**
+
+**[M] `ULokiBlueprintLibrary`'s exec-pin gates always select the NON-server pin on this client.**
+Re-measured from the bytes in **two** images (`merged10`, `merged2`) during S134, and agreeing with
+`docs/fk22-dropphase-reachability.md:589`'s 18-of-18-image measurement:
+
+| gate | thunk → impl | bytes | selects |
+|---|---|---|---|
+| `ServerOnly` | `0x52E12B0` → `0x1311870` | `c6 02 00 c3` = `mov byte [rdx],0; ret` | **Hidden** (Server=1) |
+| `ClientOnly` / `ClientServerSplit` | ICF-folded to the same | same | Client |
+| `CheatsEnabledOnly` | `0x52E0D00` → `0x13852F0` | `c6 01 01 c3` = `mov byte [rcx],1; ret` | **Hidden** |
+
+Enum orders from the UHT enumerator records (`.rdata 0x88BF3E8`/`0x88BF3F8`), with
+`EClientOnlyExecPins` as the control. Internal control: the two-param gates write `rdx`, the
+one-param gate writes `rcx`, exactly as their `binds_members.csv` signatures predict.
+
+| | |
+|---|---|
+| **Beliefs killed** | (a) S92 — *"`ProgressObjective` did nothing because my quests are ORPHANS"*. (b) S93 — *"its `ServerOnly` branch skipped **because I called it from a synthetic `FFrame`**"*. (c) S93 — *"`box.OnActorBeginOverlap InvocationList Num=0` ⇒ it needs the sequencer / TeamState lifecycle"*. |
+| **Actual evidence** | `Comp_GameState_TrainingBase::ProgressObjective` → `ExecuteUbergraph(768)`. At StatementIndex 768: `[31] ServerOnly` → `[32] NotEqual_ByteByte(OutputExecs, 1)` → `[33] JumpIfNot` → `[34] Jump 1391 (EXIT)`, with the increment at **offset 838**. `ServerOnly` writes **0** ⇒ `NotEqual(0,1)` TRUE ⇒ `JumpIfNot` does not jump ⇒ falls into the EXIT jump. **Offset 838 is unreachable on every invocation path.** |
+| **Why each is weaker** | (a) orphanhood is irrelevant — the increment is behind the gate regardless of who owns the quest. (b) it skips on **every** path, synthetic frame or not; the frame was a coincidental co-factor. (c) in `bpdump_ExecuteUbergraph_TrainingQuest_Basics_WASD.txt` the `ClientServerSplit` is `[50]`, `EX_BindDelegate OnWASDTriggerOverlap` is `[59]`, `IncrementObjectiveCount` is `[64]` — **bind, overlap test and increment are all on the SERVER arm.** The client arm pushes four presentation flows and never touches the delegate, so `Num=0` is the *predicted* value, not a lifecycle symptom. |
+| **Blast radius** | Tutorial bpdumps alone: `Comp_GameState_TrainingBase` ×3, `BP_LokiGameMode_Tutorial` ×2, `TrainingQuest_Basics_WASD` ×1, `TrainingQuest_Basics_Base`, the quest sequencer, `Comp_GameMode_DropPlane_Tutorial`, `BP_LokiHeroCharacter` ×13. **Engine-wide, not tutorial-specific** — it will recur on every mode, which is why its value survives whichever target §9.1 eventually names. |
+| **Steers** | The whole "presentation works, simulation doesn't" shape of the project. It also explains S124's *"the DropPlane component is NOT a subscriber"* — that bind is on a `ServerOnly` arm. ⚠ **But narrow it correctly:** `fk22:590` records **two further UNGATED bind sites** of the same handler (`SpawnPlane` `[38]-[40]`, `OnDeathCircleSet` `[90]-[92]`), so **one of three bind sites is dead, not the bind.** |
+| **Lever** | `EX_CallMath` dispatches through `UFunction.Func`, and the three write-0 gates are **distinct `UFunction` objects sharing one ICF-folded target** ⇒ a per-`UFunction` **heap `Func` swap** to a 4-byte stub writing the Server pin is single-variable and writes no module image (`KFUNCSWAP`, **0/16 deaths at 600 s**). Surgical alternative: a **Blueprint bytecode edit** of one gate (`EX_ByteConst 1` → `0`), the class S111 arm J measured at **0/9**. ⛔ **Never patch `0x1311870` in `.text`** — 7/8 lethal. |
+| **Cheapest experiment** | One call: swap `ServerOnly`, then `ProgressObjective(1)` on the live `Comp_GameState_TrainingBase_C`. **Pre-registered readout: `CurrentObjectiveCount` 0 → 1.** |
+| **⚠ The root** | This is one of three branches of a single decision. `Loki::LokiIsServer()` impl `0x0F7EB60` = `32 c0 c3` (`xor al,al; ret`, always FALSE) and `LokiIsClient()` `0x0B9E1F0` = `b0 01 c3` (always TRUE) — both re-measured S134. The other two branches are FK-1's stripped C++ impls and FK-22's deleted round-game-mode getter. **Five separately-tracked walls, one decision.** |
+
+---
+
+### FK-43 — "the bot spawner is unreachable / bots cannot be spawned on this client"
+**Severity: HIGH. Settled S135 (2026-08-21) → `docs/s135-queue-arms-a-match.md`, flight procedure in
+`docs/next-session-prompt-s136.md`.**
+
+| | |
+|---|---|
+| **Belief** | Implicit across the register: `bots` is a matchmaking queue nothing answers, and §5.3 lists "FFA/Arena with bots" as an unattempted route. No entry says a bot could be spawned today. |
+| **MEASURED** | **Bot PAWNS spawn.** `Comp_BP_BotSpawner_C::SpawnClassBotAtLoc` → **+1 hero at the exact location passed** (payload fingerprint); `SpawnBotTeamAtLoc` → **+3 heroes of three GAME-CHOSEN classes** (Sniper/Void/Storm), `CreatedBotTeam.Num=3`, from a verified-stable A0==A1 baseline, on three agreeing readouts. Roster reads `Num=13 Max=16` live. |
+| **The one real gap** | **No AI controller [M]** — two independent instruments (class-CHAIN census in-shim, `obj_by_class` leaf-name) both read **0** for `BotController` and `AIController` over 192,337 objects. Cause read end to end: `SpawnBot 0x556D910` → `MakeNewBotController 0x5563660` → `0x55636BB call 0x0F7EB50` **STRIPPED → nullptr** → bail; controller NULL ⇒ the REAL `AController::Possess 0x36E2B60` is skipped at `0x556DD37`; no PlayerState ⇒ `ServerSetHeroClass` + `SetPlayerTeam` skipped at `0x556DD73`. |
+| **★ The unification** | **[I, strong]** that stripped `F(UWorld*)→nullptr` is a **FOURTH consumer** of FK-22's "ONE GETTER, THREE CONSUMERS" ⇒ the drop-pod rider handoff and the AI bot are the SAME blocker. ⚠ NOT [M] — the fold has ~27,217 call sites and names nothing alone. |
+| **★★ The bypass the game ships** | **[M]** `SpawnBot(..., AController PremadeBotController = nullptr, ...)`. `[rsp+0x70]` is written in exactly two places (`0x556D957` from that parameter, `0x556DB28` from `MakeNewBotController`) and read once — at the `Possess` guard. A non-null premade controller **skips the stripped path and reaches the real `Possess`**. ⇒ **the Blueprint route can never work: `SpawnClassBotAtLoc` hardcodes `EX_NoObject` there.** Found by READING THE DECLARATION in `binds_members.csv`, not by disassembly. |
+| **Also settled** | The matchmaking QUEUE now arms a match (backend-only, reproduced 3×, `UTravelManager` fires); `NotifyResource` drives `/core-game/players/` **[M]**; the client accepts a push from a `Version: 0` baseline **[M]**; and a staged tutorial world is reachable **with `forceTutorialMatch = false`**, the queue-armed MatchID satisfying the stager. |
+| **Next** | Fly `botai` (built, unflown) and read ONE number: the controller census delta. If > 0, build the `PremadeBotController` arm. ⚠ Not before — without a known-good controller source a null cannot separate "the bypass fails" from "we passed a bad controller". |
+| **⚠ Stale rows this creates** | `scratchpad/s131/lane-d-empty-impl-census.tsv` grades `MakeNewBotController` (and `SpawnBot`, `FindValidPositionForCharacter`) `IMPL-PAGE-DARK` — **our own flight decrypted all three**; they are in `dumps/merged11.dump.exe`. §5.3's *"FFA/Arena with bots — no drop plane, no storm"* is also wrong: `bots` → `SkylandsBRBotsGameMode` → a Skylands **battle royale**. |
+
+---
+
 ## 3. The UNKNOWN_UNKNOWN Register
 
 Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 366 commits.
@@ -2243,8 +2291,8 @@ Questions never posed in ~100 sessions of docs, memory, tools, `CLAUDE.md` or 36
 | **UE4SS never loads** | Confirmed **3× independently**: exe import directory has one descriptor (`preloader.dll`); `dwmapi` = 0 occurrences in the 178 MB merged dump; minidump ModuleList resolves dwmapi to `C:\WINDOWS\SYSTEM32`; no `UE4SS.log` anywhere; dwmapi absent from all 86 crash module lists |
 | **`.pdata` is unreadable live AND encrypted on disk** | Merged dump: 1,533–1,534 of 1,534 pages all-zero. On disk: entropy 8.00, zero all-zero pages (RUNTIME_FUNCTION arrays are near-minimum entropy, so 8.00 is decisive). *But see B5 — the minidumps have it.* |
 | **Vivox token is unfixable** | A live measurement (`20127: Access Token Service Unavailable`), correctly scoped to the token. *Scope is the issue, not the fact — see FK-16.* |
-| **Native cheat dispatch is closed** | `AreHotkeyCheatsEnabled_Impl = xor al,al; ret`, `ServerCheatSpawnActor_Impl = ret`, disasm-verified; no live `LokiPlayerCheats` instance (S96); interesting spawn actions have `Key=None`. *The script family is a different surface — FK-6.* |
-| **`BP_TrainingSkill_*` is practice-mode gated** | `bpdump @props` read `ValidStates` off serialized defaults; none lists `BP_LokiGameState_Tutorial_C`; corroborated by asset path and by a live forced-gate experiment |
+| **Native cheat dispatch is closed** | `AreHotkeyCheatsEnabled_Impl = xor al,al; ret`, `ServerCheatSpawnActor_Impl = ret`, disasm-verified; no live `LokiPlayerCheats` instance (S96); interesting spawn actions have `Key=None`. *The script family is a different surface — FK-6.* ⚠⚠ **S134: the supporting facts are true and THE BUCKET IS WRONG.** FK-13 shipped Route B at S114 — a live `UCheatManager` installed with ONE aligned heap qword — and **42 REAL exec verbs are reachable**, including `Summon`, `Teleport`, `DamageTarget`, `DestroyPawns`, `Walk`/`Fly`/`Ghost`. ★ Per-record grading of `ALokiPlayerCheats` gives **14 REAL / 10 EMPTY / 1 dark**, and the split is not random: every progression/cooldown/teleport verb is EMPTY, while **`CheatChangeHero` is REAL (impl `0x1384d50`)**. Only `SpawnBot 0x556D910` is genuinely dark. ⇒ this belongs in §4.3 STALE, not §4.2 CONFIRMED. |
+| **`BP_TrainingSkill_*` is practice-mode gated** | `bpdump @props` read `ValidStates` off serialized defaults; none lists `BP_LokiGameState_Tutorial_C`; corroborated by asset path and by a live forced-gate experiment. ⚠⚠ **S134: TRUE, AND FILED IN THE WRONG BUCKET — it is READ BACKWARDS.** `ValidStates = BP_PracticeGameState_C` does not make this a *wall*; it makes that lesson system **the designed content of `LVL_Practice`**, already shipped and idle. It is a **signpost**, and §5.3 ranks `LVL_Practice` #2 for exactly this reason. ⚠ Note also `tutorial-playability-plan.md` contradicts itself on this family — its nav header (`:13`) calls it *"a proven DEAD END"* while `:158` records a **KEY CORRECTION** that `LVL_Tutorial` drives its lessons via that same family and that `TrainingQuest_Basics_*` has 0 instances there. The header ingested the wrong side. |
 | **No Server-target binary exists** | Confirmed; only the *"no server code is present"* corollary is falsified (§4.3) |
 | **`OnObjectiveComplete` is `FUNC_BlueprintAuthorityOnly`** | The measured basis for the tutorial-vs-DS route decision |
 

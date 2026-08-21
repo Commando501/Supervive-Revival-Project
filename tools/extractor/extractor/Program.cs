@@ -837,11 +837,15 @@ if (cmd == "wherefile")
     if (needles.Length == 0) { Console.WriteLine("usage: wherefile <pathNeedle>..."); return; }
     foreach (var n in needles)
     {
+        // S135 FIX: this was a hard .Take(20) that printed no notice, so `wherefile` on a
+        // World-Partition _Generated_ directory reported exactly 20 cells for a map that has
+        // more -- an instrument cap that reads as a census.
+        var wfLimit = int.TryParse(Environment.GetEnvironmentVariable("EXTRACTOR_WHEREFILE_LIMIT"), out var _wl) && _wl > 0 ? _wl : 20;
         var hits = provider.Files
             .Where(kv => kv.Key.Contains(n, StringComparison.OrdinalIgnoreCase))
-            .Take(20)
+            .Take(wfLimit)
             .ToList();
-        Console.WriteLine($"  '{n}': {hits.Count} hits");
+        Console.WriteLine($"  '{n}': {hits.Count} hits (cap={wfLimit}{(hits.Count == wfLimit ? " -- AT CAP, a FLOOR not a count; set EXTRACTOR_WHEREFILE_LIMIT" : "")})");
         foreach (var h in hits)
         {
             // GameFile has a Vfs property that tells us the source container (pak or IoStore).
@@ -1069,7 +1073,15 @@ if (args.Length >= 3 && args[0] == "namesall")
     var substr = args[1];
     var outFile = Path.IsPathRooted(args[2]) ? args[2] : Path.Combine(outDir, args[2]);
     var targets = provider.Files.Keys
-        .Where(f => f.EndsWith(".uasset", StringComparison.OrdinalIgnoreCase)
+        // S134 LANE-B: also accept .umap. The old filter was .uasset-only, so ANY namesall
+        // query against maps returned 0 assets and read as "the name is absent everywhere" —
+        // the instrument-artifact pattern. Maps are packages too and their NameMap is what
+        // carries actor Tags (FK-22 used exactly this to census TrainingStart/PlaneStartPoint).
+        // WARNING: this WIDENS the denominator. Any previously recorded "namesall found N assets"
+        // figure was taken .uasset-only and is NOT comparable to a post-fix run. Re-derive, do
+        // not compare across this change.
+        .Where(f => (f.EndsWith(".uasset", StringComparison.OrdinalIgnoreCase)
+                     || f.EndsWith(".umap", StringComparison.OrdinalIgnoreCase))
                     && f.Contains(substr, StringComparison.OrdinalIgnoreCase))
         .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
         .ToList();
@@ -1375,7 +1387,7 @@ if (args.Length >= 3 && args[0] == "bpdump")
                     foreach (var cp in f.ChildProperties)
                     {
                         if (cp == null) { ssw.WriteLine($"     [{j++}] (null)"); continue; }
-                        var nm = cp.GetType().GetProperty("Name")?.GetValue(cp)?.ToString() ?? "?";
+                        var nm = cp.GetType().GetProperty("Name")?.GetValue(cp)?.ToString() ?? cp.GetType().GetField("Name")?.GetValue(cp)?.ToString() ?? "?";
                         ssw.WriteLine($"     [{j++}] {cp.GetType().Name}  {nm}");
                     }
                 }
@@ -1405,7 +1417,14 @@ if (args.Length >= 3 && args[0] == "bpdump")
             {
                 if (ch == null) { sw.WriteLine($"#   [{pi++}] (null)"); continue; }
                 var t = ch.GetType();
-                var name = t.GetProperty("Name", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)?.GetValue(ch)?.ToString() ?? "?";
+                // S134 FIX (mislabelled S135 in the first draft): CUE4Parse's FField exposes Name as a
+                // FIELD, not a property, so
+                // GetProperty("Name") returned null and EVERY param/local printed as "?" --
+                // which reads as "the asset does not name its parameters" and is false.
+                // Try the field too. Validated against a known asset before use.
+                var name = t.GetProperty("Name", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)?.GetValue(ch)?.ToString()
+                        ?? t.GetField("Name", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)?.GetValue(ch)?.ToString()
+                        ?? "?";
                 sw.WriteLine($"#   [{pi++}] {t.Name}  {name}");
             }
         }

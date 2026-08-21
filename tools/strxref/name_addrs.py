@@ -186,6 +186,38 @@ def propose_name(refs_txt, nfunc_map):
 def main():
     idx = strxref.Index.load(strxref.INDEX_PATH)
     d = idx._dump()
+
+    # ------------------------------------------------------------------
+    # 2026-08-20 (S134): the UNVERIFIABLE verdict below must NOT be computed
+    # against `d`.
+    #
+    # `d` is the image the INDEX was built on, and that is a SINGLE-STATE dump
+    # (currently dumps/s129-poolgate/...). `.text` is demand-decrypted, so one
+    # process lights only the pages that process happened to execute. Asking
+    # "is this page all-zero *here*?" and reporting "never decrypted" turns one
+    # run's coverage into a claim about the game -- this project's single most
+    # common error (docs/method-rules.md Rule 1).
+    #
+    # MEASURED: pages 0x0233000 / 0x030A000 / 0x0323000 were emitted as
+    # "all-zero ... never decrypted" while carrying 3790 / 3697 / 3723 non-zero
+    # bytes in merged2, merged8 AND merged10 alike. Three rows that had been
+    # correctly resolved to a containing function regressed to UNVERIFIABLE.
+    #
+    # The right instrument for "was this page EVER decrypted" is the UNION
+    # image. merged10 is a strict .text superset of merged2 (+117 pages, -0,
+    # verified by page census), so this can only ever resolve MORE rows.
+    # Fall back to `d` if the merge is missing, and say so rather than
+    # silently reverting to the narrow answer.
+    # ------------------------------------------------------------------
+    zd, zsrc = d, "index image (SINGLE-STATE -- zero-page verdicts are a FLOOR)"
+    try:
+        with open(strxref.DEFAULT_DUMP, "rb") as _f:
+            zd = _f.read()
+        zsrc = strxref.DEFAULT_DUMP
+    except OSError as e:
+        print("WARN: zero-page oracle falling back to the index image (%s)" % e,
+              file=sys.stderr)
+    print("zero-page oracle: %s" % zsrc, file=sys.stderr)
     with open(HARVEST, encoding="utf-8") as f:
         H = json.load(f)
 
@@ -295,7 +327,7 @@ def main():
             rows.append(row)
             continue
 
-        if is_zero_page(d, rva):
+        if is_zero_page(zd, rva):   # zd = union image, NOT the index's single-state dump (S134)
             row["verdict"] = "UNVERIFIABLE"
             row["name_check"] = "n/a"
             row["why"] = "page 0x%07X is all-zero in this dump (never decrypted)" % (

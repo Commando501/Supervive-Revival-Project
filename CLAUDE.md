@@ -20,8 +20,25 @@ keyboard (see "Tutorial sittings" below). ★★ **STABILITY IS LARGELY SOLVED (
 FK-7 — "the run dies within ~1–5 min" — was substantially **our own standing `.text` patch**, and the
 shipped `tutorial_launch_play.dll` no longer makes one (10/10 armed windows died with it vs 2/30
 without, Fisher p = 0.00000008; 16/16 survived a full 600 s hold). What is still open is *simulation*
-(abilities / combat: the hero owns no ability system) and the **staging hazard** — ~25 % of launches
-still die before the probe is injected, with only `gft`+`fo` resident.
+(abilities / combat) and the **staging hazard** — ~25 % of launches still die before the probe is
+injected, with only `gft`+`fo` resident.
+⚠⚠ **"the hero owns no ability system" WAS THE OLD TEXT HERE AND IT IS FALSE — killed by FK-30 at
+S111, and this digest carried it for 22 sessions.** The ASC exists and is populated; what is NULL is
+**`AvatarActor`**, and `ActivatableAbilities` is **0**. ⚠ And the ASC is **the SHIM'S OWN** — the game
+wires nothing on this route, because the designed wiring is inside FK-1's stripped `SpawnPlayer`.
+★★ **The bind function was FOUND and has NEVER BEEN CALLED:** `InitAbilityActorInfo` at
+**`base+0x447F410`** `(rcx=ASC, rdx=Owner, r8=Avatar)`, with `AbilityActorInfo` at `ASC+0x418`
+(`docs/s111-asc-census.md:568` §13; written up as **"TASK ONE"** at `docs/next-session-prompt-s111.md:15`).
+**[M] `grep -rn "447F410\|InitAbilityActorInfo" tools/sigbypass-mod/` returns ZERO.**
+⚠ The register's *"the BIND is not reachable"* (`ignorance-map-s101.md:1688`) is narrowly true (no
+REFLECTED route) and **operationally obsolete** — plain direct calls to non-reflected natives became
+standard at S123 (`AddToRoot 0x489F9B0`, `PrimePools 0x3356000`, `ResizeGrow 0x00F988D0`, flown x7 in
+S132). That register row **never records the address**, so a reader of it alone concludes the bind is
+unlocated. ⚠⚠ **CONFOUND — `#define KWIREGAS 1`** (`tutorial_launch.cpp:4869`) drives
+`WireAbilitySystem(hero, pc)` on EVERY `RM_PLAY` init and `RM_SPAWNPOSSESS` completion: it spawns the
+carrier, builds the ASC and two attribute sets, forces `ROLE_Authority` and writes `@0xF00`. That is
+why `s111-asc-census.md` needed a retraction banner. **An ability-bind result read out of a shim
+already doing all that is uninterpretable unless KWIREGAS is controlled for.**
 
 ## Before doing anything else
 
@@ -951,6 +968,169 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   `setTargetQueues` was missed because nobody clicked a tile; `joinQueue` because nobody clicked FIND
   MATCH. ⇒ **A passive capture-diff enumerates what the client HAPPENED to exercise. Drive the
   interaction, THEN diff — do not just capture for longer.**
+- ★★★★★ **S135 — THE QUEUE CAN NOW BE ANSWERED. `server/internal/interactive/armqueue.go`,
+  knob `AGS_ARM_QUEUE=off|arm|empty` (default **off**, and off is byte-identical to pre-S135).**
+  [M] The reason nothing could arm a `bots` match is structural, not a missing matchmaker:
+  native `IsSpecialQueue` (`0x5854F5F`) puts `{practice,customgame,dropin,tutorialNew,training}`
+  on the SOLO path (`POST /startSoloMode`, the ONLY writer of `SoloMode`) and
+  `{default,deathmatch,bots,tournament,armorydeathmath}` on the QUEUE path (`POST /joinQueue`).
+  `handleCoreGamePlayer` gated on `SoloMode != ""`, which a queued player can never set ⇒
+  `MatchID` stayed `""` forever. The gate is now `SoloMode != "" || MatchID != ""`.
+  ⚠⚠ **AND THE CLIENT DOES NOT POLL THAT ENDPOINT — `interactive.go`'s own comments claiming a
+  ~1/min poll are REFUTED.** [M] `GET /core-game/players/{id}` is fetched **exactly ONCE per
+  messenger connection**, within ~53–82 ms of connect (1:1 across 8 captures / 12 connections /
+  12 fetches). In `capture-phase2.log` two `startSoloMode` calls land at 19:19:50/51 and the only
+  players-fetch in the file is **23 minutes earlier, at login** — so even the SOLO path only ever
+  worked because the write preceded the connection that read it. ⇒ **a MatchID written after login
+  must be PUSHED** (`lobby.NotifyResource`, wired via `SetResourceNotifier`); `UCoreGameManager`'s
+  init `0x57BD610` registers `/core-game/players/` as a messenger resource prefix.
+  ★★★★★ **FLOWN AND CONFIRMED END TO END (2026-08-21). THE `bots` QUEUE PRODUCES A MATCH, AND
+  `UTravelManager` FIRES. First time in this project's history that the MATCHMAKING path has armed
+  anything.** Live client, **no relaunch, no injection, no `.text` write** — one `ags` restart with
+  `AGS_ARM_QUEUE=arm`, then one FIND MATCH click. All seven pre-registered predictions hit:
+      `00:45:25  POST .../joinQueue -> 200`                    (ONCE -- the retry-is-rejection receipt)
+      `00:45:25  armqueue: will arm queue="bots" in 8s`
+      `00:45:33  armqueue: ARMED matchID="match-9b9d..." version=1787291133`
+      `00:45:33  armqueue: pushed /core-game/players/... version=1787291133`
+      `00:45:33  WS NOTIFY[armqueue] -> {"Resource":"/core-game/players/...","Version":1787291133}`
+      `          GET /core-game/players/9b9d...`   <- #3031  THE CLIENT REFETCHED
+      `          GET /core-game/matches/match-9b9d...` <- #3033  AND ESCALATED
+      `[05.45.33:416] LogTravelManager: Attempting to travel to Match: ID:"match-9b9d..." Address:""`
+  ★★★★★ **[S] → [M]: `NotifyResource` DOES drive `/core-game/players/`.** Nobody had ever pushed this
+  resource; the refetch was only [I, strong] by analogy with `/match-history/`. **Measured: fetches
+  went 1 → 2 — EXACTLY ONE refetch**, which is the discriminating count. Zero would mean a dead push;
+  an unbounded stream would mean the too-high-Version loop `push.go` warns about.
+  ★★★★★ **AND THE SECOND [S] IS SETTLED TOO: the client ACCEPTS a positive push from a `Version: 0`
+  baseline.** We serve `Version: 0` while idle, and whether the client caches 0 and adopts any
+  positive push, or ignores the resource until it has a non-zero baseline, was untested and was the
+  most likely cause of a false null. It adopted `1787291133` from a 0 baseline.
+  ★ **The client's OWN log is the attribution** — `LogTravelManager` is in `Loki.log`, so the
+  User-Agent trap (which has fired twice in this project) cannot apply. Canaries **0** `Fatal` /
+  **0** `Deserialization failure` / **0** `Unable to import` / **0** `Invalid response received`;
+  both processes alive afterwards.
+  ⚠ **`Address:""` IS CORRECT, NOT A FAILURE.** The client parks locally rather than opening a
+  NetConnection (S62), which is the precondition the force-open route needs. **No map loads from
+  this** — the world still comes from `docs/tutorial-launch-cmd.txt`. ⇒ what is now proven is the
+  MATCH-ARMING half; the WORLD half is still the force-open shim.
+  ⚠ The evidence log is `docs/ags-armqueue-s135.out.log` (+ `.err.log`); `docs/capture.log` was
+  backed up to `docs/capture.log.pre-armqueue-s135` (226 MB) BEFORE the restart, per the documented
+  truncation hazard.
+  ★ **`AGS_ARM_QUEUE=empty` IS THE CONTROLLED NEGATIVE** — a valid document with an ADVANCING
+  Version and an EMPTY MatchID, i.e. it moves exactly ONE field vs `arm`. Reverting to `off`
+  changes document and version together and is uninterpretable (the S122 `AGS_PLAYER_RANK=0`
+  lesson). `armqueue_test.go` pins this and **was verified to FAIL when the invariant is broken**.
+  ⚠ `AGS_ARM_QUEUE_QUEUES` defaults to **`bots` alone** so the knob cannot silently arm BREACH.
+  ⚠⚠ **`GameConfig.MapName`/`GameMode` CANNOT SELECT THE CLIENT'S WORLD** [M] — the travel URL is
+  built from `ConnectionDetails.Address` alone and the only `?game=` literal in the image belongs
+  to MovieRenderPipeline. With an EMPTY address the client PARKS LOCALLY (S62) and the world comes
+  from the force-open shim reading `docs/tutorial-launch-cmd.txt`. Those two fields are
+  documentation of intent; **do not try to reach a different level by editing them.**
+- ⚠⚠ **`bots` IS BREACH** [M]: `BP_LokiBattleRoyaleGameMode_Skylands_Bots_C` inherits
+  `..._Skylands_Breach_C` and adds exactly ONE CDO property, `bUseObviousBotNames=true`. So making
+  CO-OP VS. AI playable *through its own gamemode* is making BREACH playable — a 2,215-cell map
+  never once loaded. ⇒ **the cheap route is not the queue's gamemode.** `Comp_BP_BotSpawner_C` is
+  an SCS component on **`BP_LokiGameMode_Tutorial`** (`BP_LokiGameMode_Tutorial_C:Comp_BP_BotSpawner_GEN_VARIABLE`),
+  i.e. resident on the world we already stage every session, and [M] it has **0** occurrences of
+  `ServerOnly`/`ClientServerSplit`/`HasAuthority`/`SpawnPlayer` across its full dump AND its
+  ubergraph, against a positive control of **8** in `BP_LokiGameMode_Tutorial`'s ubergraph ⇒ **the
+  bot spawner is free of BOTH the FK-42 exec-pin gates and FK-1's stripped `SpawnPlayer`.**
+  `SpawnClassBotAtLoc` is `Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent` — no
+  `FUNC_Net`, no `FUNC_BlueprintAuthorityOnly`. Roster at `[BotSpawner+0xD8]`, [M] from two disjoint
+  functions: `GetSpawnableBots 0xFCCE40` = `48 8d 81 d8 00 00 00 c3` and `SetSpawnableBots
+  0x52EC260` = `48 81 c1 d8 00 00 00 e9`. `SpawnBot 0x556D910` is **DARK, not stripped** (all-zero,
+  vs a fold's `c2 00 00`/`33 c0 c3`). Full plan + traps: **`docs/coop-vs-ai-plan-s135.md`**.
+  ★★★★★ **THE ARM IS BUILT (S135): `build.ps1 -Name tutorial_launch -Variant botspawn`.**
+  `RM_BOTSPAWN` (enum 31) makes ONE `CallBPGuarded` into `Comp_BP_BotSpawner_C::SpawnClassBotAtLoc`
+  on the live tutorial GameMode's own bot spawner. **Risk class: CALL-ONLY — no module-image write,
+  no data poke, no PI hook**; it REFUSES to run under `KFUNCSWAP=0` (whose delivery path is the
+  standing `.text` patch measured 10/10 lethal). `verify_dll.py` VERDICT **PASS**; imports
+  `KERNEL32.dll` only, with `FlushInstructionCache`/`VirtualAlloc`/`WriteProcessMemory` **absent**.
+  ⚠ `VirtualProtect` is still imported (other modes in the same TU use it), so the S112
+  import-absence signature is SUGGESTIVE here, not a proof — the no-write property rests on the
+  source path and the `KFUNCSWAP=0` refusal.
+  `.text`: **`botspawn ae89d06b91164e5f`** · **`botspawn-readonly f5f9896feeac45dc`** (the read-only
+  control clears the CALL bit, `KBSARMS=0x0B`; **the two are genuinely different builds — verified,
+  because an A/B against a copy of itself has burned a live run in this project before**).
+  Knobs: `-DKBSTEAM` (default −1 = auto, opposite the player's team) · `-DKBSHERO` · `-DKBSDIFF` ·
+  `-DKBSLEVEL` · `-DKBSOFFSET` · `-DKBSARMS`.
+  **Staging: `gft` → `fo` → `sp` → this. NO pod and NO plane are needed — this is not the drop chain.**
+  ⚠⚠ **PRE-REGISTERED, AND IT IS THE WHOLE REASON THE ARM HAS TWO READOUTS: a NULL `CreatedBot` DOES
+  NOT MEAN THE SPAWN FAILED.** From the bytecode: `SpawnBot`'s return is assigned to a local that is
+  **never read again**, and `CreatedBot` is instead filled by a `GetPlayerStatesOnTeam` scan requiring
+  `IsBotControlled ∧ ObjectIsA(HeroClassToSpawn)` **at that instant** — which a fully successful spawn
+  also fails if the bot's PlayerState has not joined the team array yet, and which returns a
+  PRE-EXISTING bot if one is already on that team. ⇒ **the verdict is the `GUObjectArray` CENSUS
+  DELTA** (BotController-chain and LokiHeroCharacter-chain, counted by CLASS CHAIN and excluding CDOs
+  and `_GEN_VARIABLE` archetypes), not the out-param.
+  ★ **The baseline is a STRUCTURAL ZERO** — `SpawnBots`/`MakeNewBotController`/`TrySpawnTeam`/
+  `SpawnBot`/`BotSpawner`/`AIController`/`SetSpawnableBots` occur in **0 of 1,126 log files**, against
+  passing positive controls in the same sweep (`LogNavigation` 284, `BotNavLink` 174, `Recast` 191)
+  ⇒ nothing measured after the call can be background activity. The arm also runs a **stability
+  re-census with no call in between** and declares the sitting VOID if it moves.
+  ⚠ `BotLevel` is a MEASURED NO-OP (`SetBotToLevelX` → `AuthGrantLevel`, impl `0x0F7EC20`, the void
+  fold). ⛔ Do NOT use `"Spawn AI Hero Bot"` as the first arm — its location comes from a
+  `BotSpawnStart`-tagged beacon and **`LVL_Tutorial` has ZERO of those** across the persistent level
+  and all 67 WP cells, so the bot would spawn at world origin.
+  ⚠ **"bots spawn" (S65/S66) is REFUTED** — `DumpPawns` counted *components*, and `asc_census`
+  measured pawn-like = 2, both spectators, in the same world state. **No bot has ever spawned here.**
+  ★ Navmesh is NOT a blocker: it builds in **191 of 202** `LVL_Tutorial` loads ~2 s after map load —
+  which corrects this file's own earlier "~49 s after Combat" framing.
+  ⚠ **CO-OP VS. AI is ALREADY selectable and FIND MATCH already works on it — zero backend or
+  config changes are needed for ACCESSIBILITY.** ⚠ And **serving `queue.restrictions.bots` would be
+  a REGRESSION**, moving it off its unconditional-TRUE arm onto an `AccountLevel` check we have
+  never served. Keep `AGS_QUEUE_UNLOCK` empty for `bots`.
+- ★★★★★ **S135 FLEW IT: BOT PAWNS SPAWN, AND THE ONE REMAINING GAP IS THE AI CONTROLLER. Read
+  `docs/next-session-prompt-s136.md` (the flight procedure), then `docs/s135-queue-arms-a-match.md`
+  (five addenda = the evidence).**
+  **[M] What works:** `SpawnClassBotAtLoc` → **+1 hero at the exact passed location**;
+  `SpawnBotTeamAtLoc` → **+3 heroes of 3 GAME-CHOSEN classes** (Sniper/Void/Storm) with
+  `CreatedBotTeam.Num=3` — three agreeing readouts (out-param, in-shim census, `obj_by_class`), from a
+  verified-stable A0==A1 baseline. Roster `SpawnableBots@+0xD8` reads **Num=13 Max=16** live, so
+  `Initialize Bot Options` runs unconditionally on a non-BR gamemode.
+  ★ **A staged tutorial world is now reachable with `forceTutorialMatch = FALSE`** — the queue-armed
+  MatchID satisfies `fk24-stage.ps1:199`. The documented "set the flag and relaunch" step is obsolete.
+  ⚠⚠ **BUT NO CONTROLLER IS EVER CREATED [M]** (two independent instruments: an in-shim class-CHAIN
+  census and `obj_by_class` leaf-name, both **0** for `BotController` AND `AIController` over 192,337
+  objects). **The cause is read end to end from the binary:**
+      `SpawnBot 0x556D910` → `0x556DB23 call MakeNewBotController 0x5563660`
+          → `0x55636BB call 0x0F7EB50` **STRIPPED → nullptr** → `0x55636C8 je` → EXIT
+      → controller NULL → `0x556DD34 test rcx,rcx / je` → **`AController::Possess 0x36E2B60` (REAL) SKIPPED**
+      → no PlayerState → `0x556DD73 je` skips `ServerSetHeroClass` + `SetPlayerTeam`
+  **[I, strong] that stripped `F(UWorld*)→nullptr` is a FOURTH consumer of FK-22's "ONE GETTER, THREE
+  CONSUMERS"** — so the drop-pod rider handoff and the AI bot are the SAME blocker. ⚠ NOT [M]: the
+  fold has ~27,217 call sites and names nothing alone.
+  ★★★★★ **THE GAME SHIPS ITS OWN BYPASS, AND THE BLUEPRINT LAYER HIDES IT [M]:**
+      `SpawnBot(HeroClass, Location, TeamIndex, Difficulty=4, **AController PremadeBotController = nullptr**, BotName="")`
+  `[rsp+0x70]` is written in exactly TWO places (`0x556D957` from that parameter, `0x556DB28` from
+  `MakeNewBotController`) and read ONCE — at the `Possess` guard. A non-null premade controller
+  **skips the stripped path and lands in the slot `Possess` reads.** ⇒ **the BP route can never work:
+  `SpawnClassBotAtLoc` hardcodes `EX_NoObject` there.** `SpawnBot` is itself reflected, so the S55
+  direct thunk reaches it with our own controller. ★ Found by READING THE DECLARATION
+  (`binds_members.csv`), not by disassembly — method rule #2 applies to a UHT signature table too.
+  **Arms** (⚠ `botspawn`/`botteam` share a `.text` SIZE of 182,272 — **diff the HASH**):
+  `botai c55cb560cc602e31` (built, UNFLOWN — `SpawnAIFromClass 0x4631C50`, REAL, 2,133 B, **0 fold
+  calls**, native+STATIC ⇒ `CallNativeGuarded` with context = the CDO) · `botspawn e48c90bc6cf17c93` ·
+  `botteam 0c16652dc0338d33`. All CALL-ONLY: no module-image write, no data poke, refuse under
+  `KFUNCSWAP=0`. ⚠⚠ **Those digests come from an INLINE hasher and do NOT reproduce the repo's
+  recorded gates** — `build.ps1` emits no digest and `verify_dll.py` prints no section hash, so there
+  is no canonical recipe on disk. **The only sound check is a BEFORE/AFTER differential inside ONE
+  method** (S135 did that: `play`/`dismount` identical from HEAD-source and edited-source builds).
+  **Writing the canonical digest recipe into a script is an open task.**
+  ⚠ **DO NOT fly a `PremadeBotController` arm before `botai` succeeds** — the component has no
+  controller-class property, so without a known-good controller source a null cannot separate "the
+  bypass fails" from "we passed a bad controller".
+  ⚠ **`MakeNewBotController`'s census row (`IMPL-PAGE-DARK`) is STALE** — our own flight decrypted it,
+  along with `SpawnBot` and `FindValidPositionForCharacter`; all three are in **`dumps/merged11.dump.exe`**.
+  ⚠ **Grade three-state: fold / REAL / DARK.** A two-state "is it a fold?" test printed a false
+  "REAL CODE" for the all-zero `APawn::SpawnDefaultController 0x3BBF3C0`. DARK is neither stripped nor
+  confirmed real. `AController::Possess 0x36E2B60` IS real (vtable slot 267 via `vtables.py name`).
+  ⚠⚠ **Never sample a byte offset across unrelated vtables** (`+0x858` is a different method in every
+  hierarchy), and remember **`.rdata` in a dumped image holds ABSOLUTE VAs, not RVAs** — forgetting
+  `ImageBase` found "2 vtable candidates" in a 170 MB UE image; the real count is 7,830.
+  ⚠⚠ **WAIT FOR `[BS] done` BEFORE READING THE MARKER.** S135 read it mid-run and manufactured a
+  "game-thread starvation" diagnosis that an adversarial lane refuted from the same file. The
+  discriminator is **`allThreadCalls`**, not `hitsGT`: `allThreadCalls>0 && called<allThreadCalls`
+  means *we are inside our own step* — the OPPOSITE of starvation.
 - ⚠ **Nothing matches the player**: the queue is answered by no matchmaker. And FK-15's S118 map
   measured **`matchmakingNotif` as UNBOUND**, so there is no push route — a match-found signal has to
   be HTTP.
@@ -1632,6 +1812,58 @@ extractor subcommand works end-to-end; loose-file AR.bin deployment has been
 proven INERT in this IoStore build (UE ignores the loose file even when valid).
 Deployment requires an IoStore mod-pak overlay — non-trivial.
 
+### Before touching anything simulation- / objective- / "the Blueprint does nothing"-shaped
+★★★★★ **THE BLUEPRINT EXEC-PIN GATES ALWAYS ANSWER "NOT SERVER", AND THAT IS THE SYSTEMIC CAUSE OF
+"PRESENTATION WORKS, SIMULATION DOESN'T" (S134 audit, 2026-08-20). It is engine-wide, it has no FK
+number, and it re-attributes at least three separately-recorded nulls to one byte.**
+`ULokiBlueprintLibrary`'s four exec-pin gates are how a Blueprint asks *"am I the server?"*:
+
+| gate | thunk → impl | bytes | selects on this client |
+|---|---|---|---|
+| `ServerOnly` | `0x52E12B0` → **`0x1311870`** | `C6 02 00 C3` = `mov byte [rdx],0; ret` | **Hidden** (Server=1) |
+| `ClientOnly` | same (ICF-folded) | same | Client |
+| `ClientServerSplit` | same (ICF-folded) | same | **Client** |
+| `CheatsEnabledOnly` | `0x52E0D00` → `0x13852F0` | `C6 01 01 C3` = `mov byte [rcx],1; ret` | **Hidden** |
+
+**[M]** `0x1311870 = C6 02 00 C3`, present and identical in **18 of 18** dump images, enum orders read
+from the UHT enumerator records (`.rdata 0x88BF3E8`/`0x88BF3F8`) with `EClientOnlyExecPins` as the
+control — `docs/fk22-dropphase-reachability.md:589`. Internal control: the two-param gates write `rdx`,
+the one-param gate writes `rcx`, exactly as their `binds_members.csv` signatures predict.
+★ It is coherent that `execServerOnly`/`execClientOnly` ICF-fold: on a client both compile to
+"write 0" — Hidden = stop, Client = continue.
+★★★★★ **DECISIVE FOR OBJECTIVE COUNTING, read straight from the shipped bytecode:**
+`Comp_GameState_TrainingBase::ProgressObjective` → `ExecuteUbergraph(768)`, and at StatementIndex 768
+`[31] ServerOnly → [32] NotEqual_ByteByte(OutputExecs,1) → [33] JumpIfNot → [34] Jump 1391 (EXIT)`,
+with the increment at **offset 838**. `ServerOnly` writes **0** ⇒ `NotEqual(0,1)` is TRUE ⇒ the
+`JumpIfNot` does not jump ⇒ control falls into the EXIT jump. **Offset 838 is unreachable on every
+invocation path** ⇒ **`ProgressObjective(N)` can never move `CurrentObjectiveCount`, synthetic
+`FFrame` or not.**
+⚠⚠ **THREE RECORDED CAUSES FOR TUTORIAL NULLS ARE ALL WRONG, AND THIS IS THE REAL ONE:**
+- S92 *"ProgressObjective did nothing because my quests are ORPHANS"* — no; the increment is behind the gate.
+- S93 *"its ServerOnly branch skipped when called from the synthetic FFrame"* — no; it skips on EVERY path.
+- S93 *"`box.OnActorBeginOverlap InvocationList Num=0` ⇒ needs the sequencer/TeamState lifecycle"* — no;
+  in `bpdump_ExecuteUbergraph_TrainingQuest_Basics_WASD.txt` the `ClientServerSplit` is at `[50]`,
+  `EX_BindDelegate OnWASDTriggerOverlap` at `[59]` and `IncrementObjectiveCount` at `[64]` — **the bind,
+  the overlap test and the increment are all on the SERVER arm**; the client arm pushes four
+  presentation flows and never touches the delegate. **The bind is never installed.**
+★ **Blast radius** (tutorial bpdumps alone): `Comp_GameState_TrainingBase` x3 `ServerOnly`,
+`BP_LokiGameMode_Tutorial` x2, `TrainingQuest_Basics_WASD` x1 `ClientServerSplit`,
+`TrainingQuest_Basics_Base`, the quest sequencer, `Comp_GameMode_DropPlane_Tutorial`, and
+`BP_LokiHeroCharacter` x13. **It is engine-wide, not tutorial-specific** — expect it on ANY mode.
+★★ **THE LEVER, and it is in a measured-safe class:** `EX_CallMath` dispatches through
+`UFunction.Func`, and the three write-0 gates are **distinct `UFunction` objects sharing one folded
+target** — so a per-`UFunction` **heap `Func` swap** to a 4-byte stub writing the Server pin is
+single-variable and touches no module image (`KFUNCSWAP`, measured **0/16 deaths at 600 s**). The
+surgical alternative is a **Blueprint bytecode edit** of one gate (`EX_ByteConst 1` → `0`), the class
+S111 arm J measured at **0/9**.
+⛔ **DO NOT patch `0x1311870` in `.text`** — that is the standing-`.text` class, measured **7/8 lethal**.
+⚠ Pre-registered readout for the first arm: call `ProgressObjective(1)` on the live
+`Comp_GameState_TrainingBase_C` and read `CurrentObjectiveCount` **0 → 1**. That one call settles it.
+⚠ It also explains FK-22's *"the DropPlane component is NOT a subscriber"* (S124) — the bind sits on a
+`ServerOnly` arm. **But see `fk22:590`: two FURTHER bind sites of the same handler are UNGATED**
+(`SpawnPlane` `[38]-[40]`, `OnDeathCircleSet` `[90]-[92]`), so **one of three bind sites is dead, not
+the bind.**
+
 ### Before touching anything round-phase- / GoToPhase- / "the round never starts"-shaped
 ★★★★★ **THE ROUND PHASE IS DRIVABLE AND IT SELF-DRIVES TO `EGP_Combat` (S124, 2026-08-16, FLOWN).
 Read `docs/fk22-dropphase-reachability.md` §14-§15.** Two flights on one staged tutorial world, **zero
@@ -2312,8 +2544,17 @@ blockers, neither about markers.**
 - ★★ **The script layer is AOT-TRANSPILED TO C++ and compiled into the exe ("StaticJIT") — it is not
   interpreted.** 1463/1463 cache function Ids appear as `mov edx,imm32` registration-stub immediates
   (control 0/4000); a **1,459-row symbol table** (script fn → raw / `_VMEntry` / `_ParmsEntry` RVAs)
-  was recovered; bodies live at `.text 0x059128B0–0x05A7F070`. ⇒ **script UFunctions are callable by
-  the existing S55 native-call recipe, unchanged.** ⚠ **`Func != ProcessInternal`, so the PI hook
+  was recovered; bodies live at `.text 0x059128B0–0x05A7F070`. ⇒ script UFunctions are CALLABLE.
+  ⚠⚠ **BUT NOT BY THE S55 DIRECT-THUNK RECIPE — "callable by the existing S55 recipe, unchanged" was
+  the old text here and it is MEASURED FALSE.** An Angelscript `UFunction` has **`Func @+0xE0 = 0x0`**
+  (`docs/fk22-dropphase-reachability.md:1697`: `SpawnDropPodForTeam … Func @+0xE0 = 0x0 *** NULL ***`,
+  against a same-run non-null control), so the direct thunk call dereferences null.
+  ★ **The working route is `UObject::ProcessEvent`, vtable displacement `0x270` = SLOT 78**
+  (`fk22:1774`, three agreeing instruments: 3,651 `.rdata` vtables hold it at `+0x270`; the UHT stub
+  `0x54532B0` does `mov rbx,[[rcx]+0x270]`; 32 sampled classes all carry it at slot 78). Flown at
+  `fk22 §21.2`. ⚠ Cite the DISPLACEMENT, not an RVA — `fk22` prints two different ProcessEvent RVAs
+  (`0x1344E10` at `:1774`, `0x3396280` at `:2174`, different images/bases); `0x270` is the part both
+  agree on. ⚠ **`Func != ProcessInternal`, so the PI hook
   NEVER fires for a script UFunction** — the ignorance map's proposed "print every PI-dispatched
   UFunction for 5 s" test returns **zero AS classes even when they are perfectly callable.** It is a
   TRAP; use it only as a negative control.
@@ -2605,7 +2846,8 @@ reading plus the compiled-out refusal.
   ⚠ FK-13's conclusions are UNAFFECTED (its own table records both images agreeing 8/8 and 0/5 —
   that agreement is the control that falsifies the rule's stated reason, not the finding).
   ★ **What actually differs between images is `.text`.** For anything CODE-shaped use
-  **`dumps/merged8.dump.exe` (16,714 decrypted pages, 55.20 % — the union of all 33 states)** or
+  **`dumps/merged10.dump.exe` (16,755 pages, 55.33 % — the current best; `merged8` 16,714 is one
+  generation behind and `strxref.py`'s built-in default `merged2` is TWO)** or
   `dumps/tutorial-hero` (16,112, 53.21 % — best single image, and by itself 96.5 % of the union).
   ⚠ `.rdata` **pointer values** DO differ across ImageBases (1,257,732 relocations; merged vs
   tutorial-hero differ by 2,518,801 bytes). Read pointers only from an image whose base you are using.
@@ -2678,7 +2920,12 @@ with another is the exact error FK-10 exists to correct.
 The keystone technique is a **game-thread native-call primitive**: hook
 `ProcessInternal` (`base+0x13454A0`), capture a live `FFrame`, then call the target
 `UFunction`'s native thunk (`UFunction.Func @ +0xE0`) **directly**. The direct call
-has no guards, so it works where slot-56 `ProcessEvent` no-ops for native functions.
+has no guards, so it works where `ProcessEvent` no-ops for native functions.
+⚠⚠ **"slot-56 `ProcessEvent`" was the old text here and is STALE — `ProcessEvent` is at vtable
+displacement `0x270` = SLOT 78** (`docs/fk22-dropphase-reachability.md:1774`, three instruments).
+⚠⚠ **AND THIS PRIMITIVE DOES NOT REACH ANGELSCRIPT UFUNCTIONS** — theirs have `Func @+0xE0 = 0x0`
+(`fk22:1697`). Native UFunction → S55 direct thunk. **Angelscript UFunction → ProcessEvent slot 78.**
+BP-bytecode UFunction → `CallBPGuarded`. Three routes; picking the wrong one reads as a dead function.
 Param passing, OUT params (`FFrame.OutParms @ +0x80`), and `AsyncLoadPrimaryAssets`
 are all RE'd on top of it. Read `docs/session-55-native-call-primitive.txt` (+ s56/
 s57/s58/s59) and the `missions_nativecall_probe*.cpp` / `tools/re/*.py` families
@@ -2913,7 +3160,17 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
 - **usmapdump mergedumps:** `usmapdump.exe mergedumps <outFile> <in.dump.exe…|dir>` —
   unions several `dumpimage` snapshots into one maximally-covered image (fills each dump's
   demand-decrypt `.text` gaps from the others). A directory arg recurses for `*.dump.exe`.
-  ★★★★★ **THE CANONICAL COLD IMAGE IS `dumps/merged8.dump.exe` — `.text` **16,714 / 30,281**
+  ⚠⚠ **CANONICAL POINTER MOVED — `dumps/merged10.dump.exe` EXISTS AND IS AHEAD: `.text`
+  **16,755 / 30,281 = 55.33 %** (its own manifest `dumps/merged10.dump.exe.txt:19`), and
+  `docs/fk22-dropphase-reachability.md:7` already publishes it (`0x5456000` 3,860/4,096 non-zero
+  there). `merged9` also exists. **Use `merged10` for any new offline grading.**
+  ⚠⚠ **AND `tools/strxref/strxref.py:66` STILL DEFAULTS TO `merged2` (54.95 %)** — so every
+  un-flagged `strxref.py func` run in this project has been grading against an image ~1.7 pp behind
+  HEAD, which is exactly how a LIT function reads as dark. **Pass the image explicitly, or fix the
+  default.** ⇒ before believing ANY "this page is dark" claim, re-grade against `merged10`
+  (S134 audit: **47 of 55** such claims re-grade stale, and `regrade_blocked.py`'s own DARK control
+  `TryJoinQueue` now reads LIT — the re-grade protocol itself needs re-grading).
+  ★★★★★ **THE (superseded) S133 POINTER: `dumps/merged8.dump.exe` — `.text` **16,714 / 30,281**
   decrypted pages (**55.20 %**), measured 2026-08-20, and it is EXACTLY the union of all 33 state
   images on disk (union∖merged6 = 0, merged6∖union = 0, byte-granular audit 0/0/0 defects).
   Ladder: `merged` 15,833 (52.29 %) → `merged2` 16,638 (54.95 %) → `merged3` 16,681 → `merged4`
@@ -3184,7 +3441,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **85 tabulated instances as of S133** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **89 tabulated instances as of S135** — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
