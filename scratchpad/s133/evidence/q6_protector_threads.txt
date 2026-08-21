@@ -1,0 +1,93 @@
+====================================================================================================
+Q6  PROTECTOR RETURN ADDRESSES ON LIVE THREAD STACKS  (runtime.dll RVAs)
+====================================================================================================
+
+C2  register census at the FK-31 fault (unit: reports, n=108)
+   rax       distinct=1     top: [('0x0', 108)]
+   rcx       distinct=1     top: [('0x0', 108)]
+   rsi       distinct=1     top: [('0x0', 108)]
+   rbp       distinct=1     top: [('0x537AC9E1', 108)]
+   rbx       distinct=108   top: [('0xF17175D21AD37204', 1), ('0x71690B96792C897C', 1), ('0xE61E7CF80FB0E25B', 1)]
+   r10       distinct=108   top: [('0xF17175D21AD37204', 1), ('0x71690B96792C897C', 1), ('0xE61E7CF80FB0E25B', 1)]
+   r11       distinct=1     top: [('0x95654773B3BC', 108)]
+   r12       distinct=1     top: [('0x0', 108)]
+   r13       distinct=1     top: [('0x0', 108)]
+   r14       distinct=1     top: [('0x0', 108)]
+   r15       distinct=1     top: [('0x0', 108)]
+   rdi==rsp  distinct=1     top: [('True', 108)]
+
+--- scanning FK-31 reports (first 8) ---
+  2026-08-04T14:02:13 41cdafa3  stacks scanned=136  C1 known-module qwords=18621  hidden-image qwords=6382
+  2026-08-04T18:18:36 3e17e732  stacks scanned=127  C1 known-module qwords=18856  hidden-image qwords=5847
+  2026-08-04T21:03:56 673de738  stacks scanned=153  C1 known-module qwords=22661  hidden-image qwords=7543
+  2026-08-04T23:04:14 d9a2e984  stacks scanned=158  C1 known-module qwords=20565  hidden-image qwords=6974
+  2026-08-05T01:36:27 89a0d1aa  stacks scanned=138  C1 known-module qwords=19044  hidden-image qwords=6723
+  2026-08-05T01:55:56 85f158bd  stacks scanned=143  C1 known-module qwords=20665  hidden-image qwords=6810
+  2026-08-05T02:01:52 e744eeea  stacks scanned=141  C1 known-module qwords=19721  hidden-image qwords=7121
+  2026-08-05T02:18:52 f6b5e184  stacks scanned=140  C1 known-module qwords=19688  hidden-image qwords=6785
+
+--- aggregated runtime.dll RVAs seen on live thread stacks (top 40) ---
+    unit: total qword occurrences across 8 FK-31 reports
+   runtime.dll+0x008A0000   8
+   runtime.dll+0x0087AA5C   8
+   runtime.dll+0x007F918C   8
+   runtime.dll+0x0086AA47   8
+   runtime.dll+0x0087AB52   8
+   runtime.dll+0x0086281C   8
+   runtime.dll+0x00000000   8
+   runtime.dll+0x008820F8   8
+   runtime.dll+0x002BDAD0   8
+   runtime.dll+0x029C3538   8
+   runtime.dll+0x01A7B1A9   8
+   runtime.dll+0x01A65724   8
+   runtime.dll+0x01662F6A   8
+   runtime.dll+0x009419C0   8
+   runtime.dll+0x0147B549   8
+   runtime.dll+0x0147ACC9   8
+   runtime.dll+0x0089FFFF   8
+   runtime.dll+0x0087CD7D   8
+   runtime.dll+0x008D9082   8
+   runtime.dll+0x008FA376   8
+   runtime.dll+0x008A0104   8
+   runtime.dll+0x008A0304   8
+   runtime.dll+0x003460F0   8
+   runtime.dll+0x008D0204   8
+   runtime.dll+0x008B0304   8
+   runtime.dll+0x0089FF00   8
+   runtime.dll+0x008A033C   8
+   runtime.dll+0x008D0304   8
+   runtime.dll+0x0030E8F0   8
+   runtime.dll+0x008A0134   8
+   runtime.dll+0x008D0234   8
+   runtime.dll+0x008A013C   8
+   runtime.dll+0x008D023C   8
+   runtime.dll+0x008A0144   8
+   runtime.dll+0x008A0001   8
+   runtime.dll+0x008A0002   8
+   runtime.dll+0x008A0004   8
+   runtime.dll+0x008D9040   8
+   runtime.dll+0x008A0003   8
+   runtime.dll+0x00890000   8
+
+--- C3 CONTRAST: same scan on the 0x205d family (our own DLL's fault) ---
+  2026-08-04T18:19:15 590cfd83  stacks scanned=151  C1 known-module qwords=22448  hidden-image qwords=7286
+  2026-08-04T23:02:45 e7d14df5  stacks scanned=151  C1 known-module qwords=21998  hidden-image qwords=7618
+  2026-08-04T23:03:34 5e4cce11  stacks scanned=148  C1 known-module qwords=21725  hidden-image qwords=6915
+  2026-08-04T23:10:16 2b109408  stacks scanned=130  C1 known-module qwords=19261  hidden-image qwords=6453
+  2026-08-05T01:08:59 3fa0b7d3  stacks scanned=131  C1 known-module qwords=19607  hidden-image qwords=6827
+   distinct RVAs in contrast family: 1463 ; in FK-31 family: 2447 ; shared: 542
+   runtime.dll+0x008D0000   6
+   runtime.dll+0x008A0000   5
+   runtime.dll+0x0087AA5C   5
+   runtime.dll+0x007F918C   5
+   runtime.dll+0x0086AA47   5
+   runtime.dll+0x0087AB52   5
+   runtime.dll+0x0086281C   5
+   runtime.dll+0x00000000   5
+   runtime.dll+0x008820F8   5
+   runtime.dll+0x002BDAD0   5
+   runtime.dll+0x029C3538   5
+   runtime.dll+0x01A7B1A9   5
+   runtime.dll+0x01A65724   5
+   runtime.dll+0x01662F6A   5
+   runtime.dll+0x009419C0   5

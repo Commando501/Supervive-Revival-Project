@@ -1,0 +1,50 @@
+============================================================================================================
+Q10b  SYSCALL-NUMBER IDIOM:  SSN = ROL32(cell ^ 0x537AC9E1, 7) + imm32
+============================================================================================================
+site RVA     cell RVA     cell sec  W?     cell(disk) add imm32  SSN(disk)  0F05  
+0x00834046   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x00837D7B   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x00854F27   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x00871044   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x00888DB7   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008B9565   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008B95EA   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008BA76F   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008BA847   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008BBBE9   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008BBCA9   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008BC38C        ?       ?         -          ?            ?            ?        no
+0x008E131C   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008E79FD        ?       ?         -          ?            ?            ?        no
+0x008E7B6F   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008ECF17   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008ECFA0   0x0094A82C   ?         -          ?            ?            ?        no
+0x008ED087   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008EF3FF   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008EF47A   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008F062D   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008F0711   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008F1C0E   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008F1CDA   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008F253A   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008F2603   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+0x008FCD53   0x0094A82C   packer2   W      0x6001BD15   0x424585E6   0xFFFFFFFF   yes
+
+decoded 24 of 27 sites;  syscall instruction present in window: 24
+distinct syscall cells: 1
+   cell 0x0094A82C in packer2   used by 24 sites
+SSN(disk) values: [('0xFFFFFFFF', 24)]
+=> every decodable site yields 0xFFFFFFFF on disk.  Probability a random 32-bit
+   value equals 0xFFFFFFFF is 2^-32, so the on-disk cell is a deliberate POISON,
+   not uninitialised data.  This independently reproduces FK-10's recorded
+   observation from a different starting point.
+
+============================================================================================================
+IS THE LIVE SYSCALL CELL IN ANY MINIDUMP?  (would settle FK-10's [I] with zero launches)
+============================================================================================================
+   reports probed: 40 ; cell bytes present in dump: 0
+   NEGATIVE, and the reason is known: crashpad's MemoryList carries thread stacks
+   plus a small fixed set of ranges, and this session already measured ZERO bytes
+   of any image inside it.  This null is EXPLAINED, not evidence about the cell.
+   => one read-only RPM read at <kill_addr & ~0xFFF> + 0x0094A82C on a live client
+      recovers it.  No injection, no .text write.

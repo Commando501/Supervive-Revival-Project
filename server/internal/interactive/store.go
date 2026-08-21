@@ -65,6 +65,21 @@ type playerState struct {
 	// stale S61 "soloMode":"tutorialNew" left in state/interactive.json on next save.)
 	SoloMode string `json:"-"`
 
+	// InQueue is true between the FIND MATCH click (POST .../joinQueue) and a cancel.
+	// Echoed as the party's and the member's `inQueue` boolean so the client's queued
+	// state survives the next /party poll — without it the poll re-serves false and the
+	// UI snaps back, exactly the defect handleSetTargetQueues exists to remove.
+	//
+	// TRANSIENT (json:"-"), for the same reason SoloMode is: a persisted "queued" flag
+	// would make a FRESH boot claim the player is already searching for a match, with no
+	// matchmaker to ever clear it. Queue state is a property of a live session.
+	InQueue bool `json:"-"`
+
+	// PartyIsOpen is the party privacy toggle (POST .../setIsOpen/{True|False}), echoed as
+	// the party's `isOpen` boolean. Transient for the same reason as InQueue and SoloMode:
+	// it is live-session state, and a persisted value would silently outlive the party.
+	PartyIsOpen bool `json:"-"`
+
 	// --- PersonalizationLoadout (customization equips) — see loadout.go ---
 	// LoadoutVersion is bumped on EVERY loadout-affecting write (slot cosmetics,
 	// emotes, titles, hero bundles, luxe chromas, lobby platform). The client's

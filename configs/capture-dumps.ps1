@@ -32,12 +32,45 @@
   reports base drift, because a cross-base dump contributes .text only (its .rdata/.data are
   base-dependent and are skipped, not spliced).
 
-  ** CAPTURE THE TUTORIAL WORLD - it is the highest-yield state reachable today. **
-  configs/fk24-stage.ps1 stages LVL_Tutorial hands-free with the hero spawned and possessed;
-  dumps/tutorial-hero (2026-08-05) came from exactly that and is the best single image on disk
-  (16,112 decrypted .text pages, 53.21%). Still uncaptured and top of the list: hero select,
-  drop phase, a LIVE MATCH, end-of-game. 13,656 .text pages (45.10%, 55.9 MB) are zero in all
-  11 dumps and only executing that code can reach them.
+  ** SUPERSEDED 2026-08-20 (S133, FK-20) - READ docs/fk20-coverage-settled.md BEFORE CAPTURING. **
+  The block above said "CAPTURE THE TUTORIAL WORLD - it is the highest-yield state reachable
+  today ... still uncaptured and top of the list: hero select, drop phase, a LIVE MATCH,
+  end-of-game." That is now measured and it is much weaker than it reads:
+
+    * THE CAPTURE SIDE IS SATURATED. 26 images on disk; their union IS dumps/merged6.dump.exe
+      (16,694 / 30,281 .text pages = 55.13%). 12 images reach that union; the other 14 are worth
+      ZERO pages. tutorial-hero alone is 96.5% of it. Only 82 pages corpus-wide are unique to a
+      single image.
+    * THE EXCHANGE RATE IS 216 PAGES (0.71 pp of .text) FOR EVERYTHING FROM S107 TO S132 -
+      LVL_Tutorial loaded, hero spawned/possessed/walking, GoToPhase driven to EGP_Combat,
+      navmesh, a drop pod flying at 20,000 uu/s, the rideable wall, the dismount. And the MENU
+      family contributes MORE unique pages than the tutorial family (437 vs 216).
+    * 67.91% OF THE DARK SET IS UNREACHABLE BY ANY GAME STATE (9,231 of 13,592 pages, 36.06 MiB):
+      UE's own Chaos ISPC collision kernels, multi-ISA-target so ~2/3 is unreachable on this CPU
+      by construction; editor/authoring modules with no entry point in a packaged client (PCG,
+      MeshModelingTools, Sequencer); and third-party libs (ICU 64, OpenEXR, OpenSSL, Oodle,
+      libwebm, crashpad). The reachable ceiling is 4,361 pages = 32.09% of dark = 17.04 MiB, and
+      that assumes a match runs every line of every gameplay module.
+    * 125 CRASH LIFETIMES PLUS OUR 26 CAPTURES ONLY EVER REACHED 55.27%. The crashpad
+      MemoryInfoListStream is an exact per-page decryption map (NOACCESS vs EXECUTE_READ, and
+      ONLY those two values ever appear over .text). ==> the dark 45% is dark because THE GAME
+      NEVER RAN IT, not because we failed to snapshot it.
+
+  ** SO: DO NOT CAPTURE FOR COVERAGE'S OWN SAKE. DRIVE NEW CODE, THEN RE-GRADE. **
+  Re-dumping an already-explored state is worth 0-5 pages. The highest-yield captures are now
+  ZERO-RISK and need no relaunch or injection - see docs/fk20-coverage-settled.md section 8:
+    1. party / queue / custom-game ACTION sweep (UPartyManager has 20 dark impls incl.
+       TryJoinQueue 0x5875E90, the most-cited dark address in the repo)
+    2. FULL-PAYLOAD /lobby notif sweep (S117's bare {"type":X} frames cannot reach a
+       per-type deserializer)
+    3. settings / renderer permutation sweep
+  The one concentrated reachable target is the Angelscript AOT band 0x59128B0-0x5A7F070:
+  239 of 366 pages dark (65.3%), 2,058 of 3,760 function slots never decrypted in 76 minidumps.
+  That is FK-1's drop/pod/respawn layer and only a real match lights it.
+
+  ** AFTER EVERY CAPTURE, RUN:  python tools/re/dump_coverage_ledger.py **
+  Ten images once sat unmerged for six days because mergedumps manifests name donors by
+  BASENAME only. The ledger reads bytes, not manifests, and exits 1 on an orphan.
 
   PREREQS: run configs/launch-redirect.ps1 first (elevated) - it lands at the main menu with
   the full shim set active. Then navigate the game and snapshot with this script from the
