@@ -130,14 +130,37 @@ a log-side view.
 ⚠ A controller that exists but does not act is a BEHAVIOUR result, not a spawn failure — do not let
 it re-open the settled part.
 
-★ **AND THE OFFLINE READ NOW TELLS YOU EXACTLY WHAT TO WATCH.** `ALokiBotController::Tick`
-(`0x556E9F0`, 1,261 B, zero folds) has **one motion driver and it is a RANDOM WANDER** — no
-targeting, no ability use, no combat. It gates on `Blackboard != NULL` (**satisfied**, §7b) **AND**
-on a blackboard bool key at `.data 0xA0348F0`, the `bCharacterControllable`-family key written by
-`UpdateCharacterControllable` (`0x5570B80`). **That bool is the remaining unknown**, so if the pawn
-does not move, read that key rather than concluding the bot is inert.
-⚠ Also read `pawn+0x658` (`RandomMoveDirection`, the cached direction the tick passes to the movement
-component) — a non-zero value there with a stationary pawn localises the failure past the tick.
+★★ **AND THE MOTOR IS NOW NAMED END TO END, SO READ THE MOTOR, NOT THE LOCATION.**
+`[ULokiCharacterMovementComponent vtable + 0x5E0]` = slot 188 =
+`UCharacterMovementComponent::RequestPathMove` (`0x35F41D0`, inherited unmodified) →
+`UPawnMovementComponent::RequestPathMove` (`0x3642960`) → `APawn::Internal_AddMovementInput`
+(`0x3BACB60`) → **`APawn::ControlInputVector (+0x418) += RandomMoveDirection`**.
+
+**The three reads that answer "does the bot act", in order of decisiveness — all read-only RPM:**
+| read | meaning |
+|---|---|
+| `controller +0x6A0` `bCharacterControllable` | **the gate.** `(LivingState==Alive) && !IsStunned`, forced FALSE by `ForceCharacterNotControllable (+0x602)`. FALSE ⇒ the wander block never runs and the bot is inert BY GATE, not by defect. **No FName decode needed.** |
+| `controller +0x658` `RandomMoveDirection` | the cached wander direction: a horizontal unit vector, **Z exactly 0**, re-randomised every 2.0 s. Non-zero ⇒ Tick reached the driver. |
+| `pawn +0x418` `ControlInputVector` | the motor's output. Non-zero ⇒ the movement input landed and any remaining failure is *past* the motor. |
+⇒ that triple separates "gated shut" / "ticking but not driving" / "driving but not moving", which a
+two-sample location read cannot do.
+⚠ The blackboard key's NAME is [I, very strong] `IsCharacterControllable` of `BB_HeroBots` — decoding
+`FNameEntryId 0x0001A12C` needs the live FNamePool. **You do not need it**: `+0x6A0` is the same
+value, directly readable.
+
+★ **THE BOT-CONFIG CDO IS NAMED — `ULokiCharacterGlobals`** (`/Script/Loki.LokiCharacterGlobals`,
+SizeOf 0x458), reached as `CDO( CDO( UWorld[+0x2D0] → ULokiGameInstance[+0x1D8] )[+0x38] )`.
+`0x240 HeroBotBehaviorTree` · `0x248 HeroBotComponent` · `0x2B0/0x2B8/0x2C0`
+`HeroBotJumpSpell`/`GlideSpell`/`RelocateSpell` · `0x320 BotCheatEffects`. OnPossess reads nothing
+else — no difficulty, team or hero class. ⚠ The accessor RVA a lane gave (`0x55A95A0`) is REFUTED;
+the registered impl is **`0x55AB810`**.
+
+★★ **AND IT SPLITS §7a's "no GameplayEffects" into two testable candidates.** The array is
+`BotCheatEffects` (plausibly empty by default) — but **neither `ALokiCharacter`'s nor
+`ALokiHeroCharacter`'s constructor touches displacement `0xF00`**, so the ASC at `hero+0xF00` is not a
+ctor default subobject. Our bot pawn came from `SpawnAIFromClass`, not from the shim's
+`WireAbilitySystem` (which is what wrote `+0xF00` on the *player* hero), so **a NULL ASC is the
+likelier cause.** Two reads discriminate: `hero+0xF00` and `Cfg+0x320` `ArrayNum`.
 
 ### Other cheap things
 - **Pass a real `BehaviorTree`** to `SpawnAIFromClass` (the `BT@0x10` params slot, deliberately left

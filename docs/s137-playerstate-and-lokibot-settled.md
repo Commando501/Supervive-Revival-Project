@@ -486,6 +486,112 @@ nothing**.
 
 ---
 
+## 7d. THE OFFLINE DE-RISK PASS (41 CONFIRMED / 17 DOWNGRADE / 5 REFUTED)
+
+### The bot's ONE motor output is named end to end
+`[ULokiCharacterMovementComponent vtable + 0x5E0]` is **slot 188 =
+`UCharacterMovementComponent::RequestPathMove(const FVector&)` at `0x35F41D0`**, inherited
+**unmodified** — Loki does not override it. It tail-calls `UPawnMovementComponent::RequestPathMove`
+(`0x3642960`) → `APawn::Internal_AddMovementInput` (`0x3BACB60`) → **`APawn::ControlInputVector
+(+0x418) += RandomMoveDirection`**.
+The argument is `ALokiBotController::RandomMoveDirection` at **`+0x658`** (name *and* offset from the
+UHT property record): a horizontal unit vector, re-randomised every **2.0 s**, with **Z exactly 0** —
+which is why `RequestPathMove`'s `IsMovingOnGround()||IsFalling()` sub-gate is skipped entirely.
+⇒ **The cleanest movement readout is not "sample the location twice".** Read
+`pawn ControlInputVector +0x418` and `controller RandomMoveDirection +0x658`. A non-zero
+`RandomMoveDirection` with a zero `ControlInputVector` localises the failure *at* the motor call; both
+non-zero with a stationary pawn localises it *past* the motor, in the movement component.
+
+**The gate on that motor** is a Bool blackboard key, [I, very strong] `IsCharacterControllable` of
+`BB_HeroBots` — ⚠ **not [M]: decoding `FNameEntryId 0x0001A12C` needs the live FNamePool**, which is
+heap-resident and absent from every module dump by construction. It is written only by
+`ALokiBotController::UpdateCharacterControllable` (`0x5570B80`) as
+`bCharacterControllable (+0x6A0) = (GetLivingState(pawn) == Alive) && !IsStunned(pawn)`, forced FALSE
+when `ForceCharacterNotControllable (+0x602)` is set. **`+0x6A0` is therefore a direct live read that
+needs no FName decode at all.**
+
+### The bot-config CDO is named: `ULokiCharacterGlobals`
+`/Script/Loki.LokiCharacterGlobals`, SizeOf **0x458**, reached as
+`CDO( CDO( UWorld[+0x2D0] → ULokiGameInstance[+0x1D8 GlobalsClass] )[+0x38 CharacterGlobals] )`.
+All four transcribed offsets re-derived independently and now **named**:
+
+| offset | name | type |
+|---|---|---|
+| `0x240` | `HeroBotBehaviorTree` | `UBehaviorTree*` — what `RunBehaviorTree` is handed |
+| `0x248` | `HeroBotComponent` | `TSubclassOf<UActorComponent>` — **the lane's own missed fifth read** |
+| `0x2B0` / `0x2B8` / `0x2C0` | `HeroBotJumpSpell` / `HeroBotGlideSpell` / `HeroBotRelocateSpell` | `TSubclassOf<ULokiGameplaySpell>` |
+| `0x320` | `BotCheatEffects` | `TArray<TSubclassOf<UGameplayEffect>>` |
+
+OnPossess reads **nothing else** off it — no difficulty, playstyle, team or hero class, and not even
+`HeroBotEmoteControlPassive` (`0x2C8`).
+⚠ The lane named the accessor `GetFromContextObject` at `0x55A95A0`; its refuter **REFUTED** that —
+the registered impl is **`0x55AB810`**. The class identity, SizeOf and both `.rdata` addresses were
+independently confirmed.
+
+★★ **AND THIS SHARPENS §7a's "no GameplayEffects" finding into two testable candidates.** The field is
+`BotCheatEffects` — plausibly empty by default. But a second candidate is now on the table and is
+arguably likelier here: **neither `ALokiCharacter`'s nor `ALokiHeroCharacter`'s constructor contains a
+single instruction with displacement `0xF00`**, so the ASC at `hero+0xF00`
+(`AbilitySystemComponentStorage`) is **not a constructor default subobject** — it is written by
+runtime code. Our bot pawn came from `SpawnAIFromClass`, **not** from the shim's `WireAbilitySystem`
+(which is what wrote `+0xF00` on the *player* hero, per the staging log), so **the bot's ASC was very
+likely NULL**. Two read-only RPM reads discriminate: `hero+0xF00` and `Cfg+0x320` `ArrayNum`.
+
+### The authority "hazard" is a clean negative — and it contains a correction that matters more
+Re-derived: **145** `cmp byte [reg+0x160],3` sites, **32** authority-taken. ⚠ Both prior counts
+(14, then 21/23) are REFUTED, and the lane's own "17 enabling" partition was refuted for not summing.
+⚠⚠ **"Branch taken when authority" is NOT "client-only arm", and the flagship counter-example is
+`AController::Possess`** — see §7e. **No presentation path we depend on was found to be at risk.**
+
+---
+
+## 7e. TWO CONTROLS WE BROKE, AND A POLARITY CORRECTION
+
+**⚠⚠★ WE KILLED ONE OF THE REPO'S OWN NEGATIVE CONTROLS.**
+`docs/fk22-dropphase-reachability.md` designated `ALokiGameState::AuthSetDeathCircle` impl
+`0x55653E0` as FK-22's **coverage negative control** ("0/4096 non-zero in 13/13 images"). It shares
+`.text` page `0x5565000` with `ALokiBotController::OnPossess` `0x5565470` — **0xB0 bytes away** — so
+**this session's own bot flight decrypted it as a side effect.** It now reads **3,782/4,096** with a
+real `jmp 0x338C990` at its entry, having been 0/4096 in `merged2`, `merged10` AND `merged12`.
+**Nothing about the drop path changed; a neighbour ran.**
+⇒ **A coverage negative control is only valid until something on its PAGE runs.** Choose one with no
+plausible neighbour, re-verify before each use, and state the image.
+✅ Verified still-dark in `merged13` (2026-08-21): `ULokiRespawnComponent::Respawn 0x5A6AC40`.
+⚠ A second control was independently dead: `docs/fk-playability-audit-s134.md` offers `0x5A6AC40`
+**or** `0x556D910`, and `0x556D910` (SpawnBot) has been LIT since `merged12`. Both annotated in place.
+⚠ Grade: page-lit means **READABLE OFFLINE**, not **EXECUTED** — a 4 KiB page census cannot say which
+function on the page ran.
+
+**THE STALE-CLAIM SWEEP: 43 instances / 15 files / 14 RVAs** (unit: file:line × RVA pairs),
+reproduced row-for-row by an adversarial pass. ⚠ **The shape is the opposite of S133's: only 3 first
+went stale in `merged13`; 29 have been stale since `merged10`.** The problem is not missing captures
+— `regrade_blocked.py` has been emitting these for sessions and nobody edits them. **Four sat in
+`CLAUDE.md` itself, two contradicting the same file elsewhere**; all four now annotated in place.
+⚠ The sweep is a **FLOOR**: 294 of 431 keyword lines carry no same-line address and were never graded.
+⚠ A lane claimed three were "never flagged by any prior audit" — **REFUTED**, the S133 tool emits all
+three verbatim.
+
+**⚠⚠ THE POLARITY CORRECTION, derived independently twice (session lead + a lane):**
+```
+AController::Possess 0x36E2B60
+  0x36E2B86  test byte [rcx+0x448], 4    ; bCanPossessWithoutAuthority
+  0x36E2B93  jne 0x36E2E13               ;   -> PROCEED
+  0x36E2B99  cmp  byte [rcx+0x160], 3    ; Role == ROLE_Authority?
+  0x36E2BA0  je   0x36E2E13              ;   -> PROCEED
+  0x36E2BA6  ...fallthrough = the FMessageLog warning
+  0x36E2E13  mov rsi,[rcx+0x3F8] (Pawn) ... call [rax+0x868]   ; slot 269 = OnPossess
+```
+A lane described `0x36E2BA0` as where Possess "refuses". **It is the jump to SUCCESS.** This is stock
+`if (!bCanPossessWithoutAuthority && !HasAuthority()) return;`.
+⇒ **"branch taken when authority" ≠ "client-only arm"** — semantics require reading the branch
+TARGET, not the condition.
+⇒ ★ **And it retires a pre-flight question outright:** our `LokiBotController` demonstrably reached
+`OnPossess` (it has a `BTComponent`), so that gate **passed** on it — **[M] by consequence**, not
+something to read before the next flight. **Authority is exactly why S137's possession works.**
+★ It also independently confirms `OnPossess` is vtable slot 269 (disp `0x868`), from a third site.
+
+---
+
 ## 9. WHAT IS NOW BUILDABLE (for the successor)
 
 The concrete route to a *real* Loki bot, with every precondition now met or measured:
