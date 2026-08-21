@@ -365,9 +365,35 @@ pooling them under FK-7 would repeat this project's own recorded error of mergin
 mechanisms under one label.
 ★★★★★ **THE KILL JUMPS TO ONE FIXED ADDRESS, AND IT IS THE SAME ADDRESS EVERY LAUNCH (S131, 2026-08-20).
 Read `scratchpad/s131/evidence/FK31-kill-address-is-constant.md`. Offline, from minidumps already on disk; zero launches.**
-Over **31 crashpad minidumps** matching {`0xC0000005`, `ExceptionInformation[0]==8` (EXECUTE), `addr & 0xFFF == 1`}, the
-faulting address takes **exactly three values, one per boot session**: `0x7FFD3B400001` (13), `0x7FFA42600001` (11),
-`0x7FFB57400001` (7). **[M] Within a boot it is bit-identical across every launch** while `SUPERVIVE.exe` and
+Over the crashpad minidumps matching {`0xC0000005`, `ExceptionInformation[0]==8` (EXECUTE), `addr & 0xFFF == 1`}, the
+faulting address takes **exactly three values, one per boot session**.
+⚠⚠ **THE COUNTS RECORDED HERE WERE A LARGE UNDERCOUNT — CORRECTED S133 (2026-08-20), reproduced twice by
+independently written parsers.** This file said *"31 minidumps … 13 / 11 / 7"*. **MEASURED: 361 FILES /
+108 DISTINCT REPORTS**, split `0x7FFD3B400001` **342 files / 99 reports** · `0x7FFA42600001` **11 / 4** ·
+`0x7FFB57400001` **8 / 5**. Whole corpus: **393 exception streams, ALL `0xC0000005`**, `ExceptionInformation[0]`
+= EXECUTE **361** / READ **32**. Eras 2 and 3 reproduce S131 exactly (11 vs 11, 8 vs 7 — the extra is
+`crashpad-20260820-143225`, archived after its sweep); **era 1 does not — S131 saw 13 files from 08-08/08-09
+and missed **310 files / 83 reports** dated 2026-08-04 → 08-07.** ⚠ "329" is `342 − 13` — *files S131
+did not see* — relabelled as a date range; and era-1 files dated 08-08/08-09 number **32**, so 13 is
+not "all of 08-08/09" either.
+⇒ **The per-boot constancy finding is UNAFFECTED and STRENGTHENED** (the three values are exactly the three
+S131 named, now at n=108 distinct reports). What changes is the SHAPE: the recorded 13/11/7 reads as
+near-uniform; the truth is **99 / 4 / 5 by distinct crash — era 1 dominates by ~20×.**
+⚠ Also *"two `0xC0000005` READ faults … correctly EXCLUDED"* undercounts: there are **32 READ faults by file /
+16 by report**, of which **14 are `RIP & 0xFFFF == 0x205d`** (⚠ **`RIP`, not the faulting address** — the faulting
+addresses are 16 distinct values and `0x205d` appears among them zero times; this file's own rule is
+*"classify each death by `RIP & 0xFFFF`"*) — `catalog_store_fix.dll`'s own heap scan (FK-8
+family B, all 2026-08-04→08-06, ending at the S111 fix). Still correctly excluded; the count was wrong.
+★★ **AND THE "unevaluatable from a minidump" RULE IS FALSE FOR THE UECC CORPUS (S133).** A fresh
+  T+9 s FK-31 death (menu route, during D3D12 RHI init) produced
+  `UECC-Windows-D1834DBF…/UEMinidump.dmp` whose **ModuleList NAMES `runtime.dll` at
+  `0x7FFB57400000`** while the fault is at `0x7FFB57400001` — **literally `base + 1`, directly
+  evaluated.** The "no module entry (0 of 14)" measurement is true of the **SENTRY crashpad** corpus
+  and does not generalise. Same scope error as the `.rdata` instrument mix-up.
+⚠ **S131's evidence file calls `scratchpad/s131/tools/{ripfamily,ripdelta,modscan}.py` "read-only, re-runnable";
+they DO NOT EXIST on disk**, which is why its glob could not be reproduced. Re-derive with
+`scratchpad/s133/tools/verify_pagemap.py`-style parsers, and **quote FILES vs DISTINCT REPORTS** — the archiver
+writes a `-DEATH` archive plus an untagged follow-up per crash, so files run ~3.3× reports here. **[M] Within a boot it is bit-identical across every launch** while `SUPERVIVE.exe` and
 `preloader.dll` are re-based by ASLR every launch. **[M] It is NOT an offset from any loaded module** — `RIP - base`
 takes 3 distinct values for ntdll / kernel32 / kernelbase / user32 / combase alike — and **no module and no
 executable region covers it**. A corrupted pointer does not reproduce to the bit across 13 launches.
@@ -896,6 +922,240 @@ ZERO injection — and NO menu surface is a web page.**
 - ⚠ **ALWAYS CHECK `User-Agent` ON A CAPTURED REQUEST.** Our own `curl` verification calls land in
   `docs/capture.log` and read exactly like client traffic; the game is `Loki/UE5-CL-0`, an
   `ActionType: WebURL` click is `Mozilla/…Chrome/…`. This nearly produced a fabricated headline.
+
+### Before touching anything queue- / FIND MATCH- / matchmaking-shaped
+★★★★★ **FIND MATCH WORKS (S133, 2026-08-20) — read `docs/s133-joinqueue-find-match.md`.** The client
+enters a real queued state with a running timer and a working cancel. Backend-only; no shim, no
+injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **`AGS_JOIN_QUEUE=0`**.
+- **[M] TWO ENDPOINTS, BOTH PREVIOUSLY UNSERVED:** `POST /party/parties/{p}/joinQueue` (FIND MATCH)
+  and `POST /party/parties/{p}/leaveQueue` (cancel — a correct speculative guess, confirmed on the
+  wire). Both fell to the `/` catch-all, which is *why* FIND MATCH did nothing and why the client
+  **re-POSTed every ~10–35 s**. ★ **The retry IS the rejection symptom** — once accepted, `joinQueue`
+  fires exactly ONCE. Use that as a free receipt.
+- ★★★★★ **THE RESPONSE MUST BE AN `FParty` UNDER AN ADVANCED `Version`.** Read from the function
+  itself: `TryJoinQueue 0x5875E90` passes callback `0x5859E10`, whose third instruction is
+  `call 0x587BE90` = **`UPartyModel::SetParty`** — the S85 monotonic-Version gate
+  (`cmp [PartyModel+0x568]; jge bail`). So the handler echoes the party through `store.update()`
+  exactly like `handleSetTargetQueues`.
+- ★★ **THE FIELD IS `state`, NOT `inQueue`.** `EPartyState = { Default, `**`Matchmaking`**`,
+  CustomGame, Unknown }` (usmap enum VALUE table — the trustworthy part, FK-14).
+  ⚠⚠ **`inQueue: true` ALONE IS MEASURED INSUFFICIENT, and its null was only interpretable because
+  the disjunction was pre-registered:** `SetParty` **ran** (party-slot widgets rebuilt —
+  `LogBlueprintUserMessages: MENUSPAWNER … Entering SetHero` at the exact timestamp), `LogJson` at
+  Verbose logged **ZERO** import failures, and the UI still did not move ⇒ **wrong FIELD, not a dead
+  route.** Write that disjunction down BEFORE the flight or "nothing happened" means nothing.
+- ★ **`QueueJoinTime` / `MillisInQueue` are NOT needed — the client times the queue LOCALLY.** They
+  were deliberately withheld (unconfirmed UE types; a wrong-typed matched key sinks the whole document
+  and would have made `state` untestable too). **The restraint cost nothing.**
+- ⚠⚠ **THIS IS THE SECOND CORRECTION TO THE S122 UNSERVED-ROUTE SWEEP, SAME BLIND SPOT.**
+  `setTargetQueues` was missed because nobody clicked a tile; `joinQueue` because nobody clicked FIND
+  MATCH. ⇒ **A passive capture-diff enumerates what the client HAPPENED to exercise. Drive the
+  interaction, THEN diff — do not just capture for longer.**
+- ⚠ **Nothing matches the player**: the queue is answered by no matchmaker. And FK-15's S118 map
+  measured **`matchmakingNotif` as UNBOUND**, so there is no push route — a match-found signal has to
+  be HTTP.
+- ★★★★★ **EMOTES WORK — VISIBLE, EQUIPPABLE AND PLAYING IN THE LOBBY (S133).** The recipe is
+  **BACKEND + THE EXISTING `catalog_store_fix.dll`**, and it took three refuted hypotheses to find:
+  (1) `Emote:<Name>` inventory entries with `IsOwned=true`, (2) matching storefront ItemOffers
+  (`Category: "Emotes"`), and (3) **the shim's AssetManager scan**. Knob **`AGS_GRANT_EMOTES`**
+  (`1` = all 331; default empty = byte-identical to pre-S133). Names in
+  `server/internal/menu/data/emotes.txt`, read LIVE from the client's own FNamePool by scanning
+  interned `/Game/Loki/Personalization/Emotes/<Name>/` paths — the registry the game ships, not a
+  guess (the missions `InternalName` lesson).
+  ★★ **WHY THE SHIM IS REQUIRED HERE AND NOT FOR SKINS/GLIDERS/SPRAYS — the asymmetry is the whole
+  answer:** `ULokiAssetLoader` has maps for `HeroAssets`, `HeroCosmeticsBundleAssets` (391),
+  `SlotCosmeticsAssets` (536), `StoreOfferAssets`, `LoginRewardAssets`, `MissionPoolAssets`,
+  `EquipmentAssets`, `PowerAssets` — and **NO `EmoteAssets` map.** So emotes are exactly the
+  cosmetic type that cannot be enumerated without the AssetManager scan. Those other tabs populate
+  fine on a `-NoHook` client; emotes never will.
+  ⚠⚠ **AND THIS CORRECTS `cosmetics.go:13`,** which says the STORE's ACCESSORIES tab covers
+  *"Gliders/**Emotes**/Wisps/Sprays/Avatars"* as type `SlotCosmetics`. **MEASURED: the live 536-name
+  SlotCosmetics map contains ZERO emotes** (prefixes are AVATAR 225 / SPRAY 146 / GLIDER 115 /
+  WISP 40 / SPIKEVFX 2). **`Emote` is its own PrimaryAssetType** — confirmed three ways: the shipped
+  mastery-reward DAs use `"SKU":"Emote:SeraphHi"`, the picker widget
+  `WBP_UI_Loadout_Customization_Emotes`'s own asset name table contains bare `Emote`, and its
+  ubergraph calls `WBP_GenericCatalogPicker.SetContentTypeAndPrefix(prefix="", <"Primary Asset
+  Type">)`.
+  ★ **THREE HYPOTHESES WERE REFUTED BY MEASUREMENT before the right one:** inventory ownership alone
+  (331 served, client refetched, picker empty); storefront offers as the missing half (served AND
+  fetched **3×** by the game UA, still empty); the content manifest hiding them (it is queried
+  `?nonEnabledOnly=true` and we return `Emotes: {}`, so they were already enabled). **Each null was
+  interpretable only because the client was verified to have CONSUMED the document first.**
+- ★★★★★ **THE LOBBY-EMOTE WIRE SHAPE [M]: `POST /party/parties/{p}/emote/Emote:<Name>` — the id is
+  the PATH TAIL as a full PrimaryAssetId, and the BODY IS ALWAYS EMPTY.** Emotes play with the party
+  document echoed unchanged, so no new field is needed for a solo party.
+  ⚠⚠ **The six earlier POSTs that arrived as bare `/emote/` with an empty body were NOT a mystery
+  payload — the account owned no emotes, so the client had nothing to name.** The handler was built
+  as a *body*-logger on the wrong premise and still produced the answer, because it logged the TAIL
+  too. ★ **Log every input channel, not the one your hypothesis names.**
+- ★★★★ **PHASE 2 ALSO LANDED — `0x5879000` DARK → LIT, and it found TWO MORE UNSERVED ENDPOINTS:**
+  `POST /party/parties/{p}/emote/` (×5, **`TrySendEmote`**) and `POST /party/parties/{p}/setIsOpen/True`
+  (×1, **`TrySetIsOpen`**), both still on the `/` catch-all. Note the value-in-path URL shape.
+  ⇒ **THREE endpoints in one afternoon of driving the UI**, on a surface a passive sweep had declared
+  mapped. ⚠ That phase's baseline was CONFOUNDED (an `ags` restart + `AGS_PROBE_FRIEND` sat between
+  baseline and result); the page verdict survives only because **the wire attributes it by name** and
+  7 plausible-alternative control pages stayed DARK. **13 of UPartyManager's 20 dark impls are now
+  readable** (`merged7` 16,707 → `merged8` **16,714**, 55.20 %).
+  ⚠ `TrySetFillPreference` / `TrySendInvite` / `TrySendRequest` / `TrySetIsReady` produced **no
+  traffic** and are NOT shown to have run — no reachable affordance in a solo party.
+- ⚠ **No CUSTOM GAME entry point exists on this client** (`customGameModes` is served and
+  `CustomGameList` is `IsEnabledByDefault=true`, so it is NOT toggle-gated — the entry point is
+  elsewhere and unidentified). `UPartyManager`'s 7 custom-game impls on `0x5873000`/`0x5874000` and
+  the 6 ready/fill/emote impls on `0x5879000` remain **DARK and unreached**.
+
+### Before touching anything coverage- / dump- / "that page is undecrypted"-shaped
+★★★★★ **FK-20 IS SETTLED (S133, 2026-08-20) — read `docs/fk20-coverage-settled.md`.** Offline, zero
+launches. FK-20 was recorded as *"9 menu captures and 0 gameplay captures"* with the prescription
+*"capture hero select / drop / a live match / EoG."* **The capture side is SATURATED; the defect is
+that COVERAGE IS EARNED AND NEVER SPENT.**
+- ★★★★★ **BEFORE BELIEVING ANY "this page is dark / coverage-blocked / 100 % zero in every dump"
+  CLAIM, RE-GRADE IT.** **31 such lines in `CLAUDE.md` + `docs/` name an address that is READABLE in
+  `merged6` today — and ~29 were already stale against `merged2`.** They never needed a new capture,
+  only someone to look. `python scratchpad/s133/tools/regrade_blocked.py` re-runs the audit; full
+  list in `scratchpad/s133/evidence/dark_cited_functions.txt`.
+- ⚠⚠ **AND CHECK THE CALLEE BEFORE RECORDING COVERAGE BLINDNESS.** `docs/fk5-battle-gate-settled.md:664`
+  states `[M]` *"`0x1F8CFC0` is an all-zero page, so **the packet format is unreadable offline**"* and
+  builds a whole hexdump-responder plan around it. `0x1F8CFC0` is a ~300-byte **wrapper** that reads
+  `[Ping] StackSize`, names a thread from the ANSI literal **`"LokiPing"` `0x79C6E80`** and tail-calls
+  the real worker **`0x1F8BE90`** — **which is LIT in `merged.dump.exe`, `merged2`, `menu`,
+  `tutorial-hero`, and every image this project has ever taken.** The packet-building code was never
+  dark. ⇒ **the open task "a UDP echo responder on `PingHost:PingPort`" can read the format offline
+  today** from `0x1F8BE90` + siblings `0x1F8BB50`/`0x1F8B870`/`0x1F8B4F0`, all LIT. Same failure as
+  `fk22-dropphase-reachability.md:675` (COVERAGE-BLOCKED filed on a zero **thunk** whose impl was
+  decrypted), recommitted in a different file.
+- ★ **The wrapper itself went dark→lit on 2026-08-15 = S121**, the session that first created a
+  `ULatencyMeasurer`. **Driving a path decrypts it (S118's steerable decryption); nobody re-graded.**
+- ★★ **QUOTE THE PER-SUBSYSTEM BLINDNESS, NEVER THE IMAGE-WIDE 45 %.** In *functions*: **~9.4 %
+  blind on shared engine/UI/core, 20.9 % on gameplay/net/AI, 54.7 % on Angelscript.** The image-wide
+  number is dominated by code no state can reach and understates blindness where it matters.
+- ★★★★★ **67.91 % OF THE DARK SET IS UNREACHABLE BY ANY GAME STATE** (9,231 of 13,592 pages,
+  36.06 MiB): **UE's own Chaos ISPC-compiled collision kernels**, multi-ISA-target so ~2/3 is
+  unreachable *on this CPU by construction* (26.6 % of dark, but only **0.4 % of dark FUNCTIONS** —
+  quote the unit); editor/authoring modules with no entry point in a packaged client (PCG,
+  MeshModelingTools, Sequencer, MovieRenderPipeline); and third-party libs (ICU 64, OpenEXR, OpenSSL,
+  Oodle, libwebm, crashpad). **The reachable ceiling is 4,361 pages = 32.09 % of dark = 17.04 MiB**,
+  and that assumes a match runs every line of every gameplay module.
+  ⚠⚠ **A first draft of this line said "73.4 %, 9,984 pages, 39.0 MiB" — ARITHMETIC ERROR, and it
+  flattered the conclusion.** `3613+2357+1845+1416 = 9231`; the two complementary shares as first
+  stated summed to **105.54 %**. `9231 + 4361 = 13592` exactly. ★ **Two shares of one whole that do
+  not sum to 100 % is a free self-check — run it before publishing either.**
+  ★★ **"Region A" (`0x1000`–`0xB89000`) is NAMED [M], and calling it "not UE code" was false**:
+  `ispc` occurs **16× ASCII** in `merged6`, in four copies of a block reading
+  `Runtime/Experimental/Chaos/Private/Chaos/PerParticlePBDCollisionConstraint.ispc` (verified at
+  `0x78087B9`). ⚠ The "no ISPC string exists" null came from `strxref.idx`, built on ONE image
+  (`s129-poolgate`) that lights only **50 of Region A's 144** lit pages — **a string index built on
+  one image is a floor.**
+- ★★★ **AND THE FIRST TARGETED SWEEP CONFIRMS THE REFRAMING (S133):** the party/queue action sweep
+  decrypted **183 pages in-process** but only **13 NEW TO THE CORPUS** (`merged6` 16,694 → `merged7`
+  **16,707**). **13 pages is nothing as a percentage — and one of them, `0x5875000`, unblocked a
+  shipped feature.** ⇒ **Stop measuring this work in coverage %. Target the specific dark function
+  that blocks a specific question, then read it.** ★ 90 % of the newly-decrypted pages (129/144)
+  carried no reflected UFunction — an independent re-confirmation of the ~86 % callee figure.
+- ★★ **THE MEASURED EXCHANGE RATE: 216 pages (0.71 pp of `.text`) for EVERYTHING from S107 to S132**
+  — tutorial world, hero walking, `GoToPhase`→`EGP_Combat`, navmesh, a pod flying at 20,000 uu/s, the
+  rideable wall, the dismount. ⚠ And the **MENU family contributes MORE unique pages than the tutorial
+  family** (437 vs 216), the opposite of the standing assumption. **Re-dumping an already-explored
+  state is worth 0–5 pages** [M].
+  ⚠ *"Crash-era `crashwatch` capture is worth 2 pages"* is **CONFOUNDED WITH ROUTE, grade [I]**:
+  6 of the 7 crash images are tutorial-route processes differenced against an already-saturated
+  tutorial corpus, and **no crashwatch capture exists from a driven MENU session**. It is a statement
+  about crash-on-the-tutorial-route. ⚠⚠ And do **not** restate `CRASHWATCH-INFO.txt`'s
+  *"~18,900 pages"* prediction as FALSIFIED — 18,911/18,980 are **pages-NAMED** (unwind entries →
+  spanned pages) while 9,759–15,695 are **pages-NON-ZERO**; `fk18-fk19` §4 measures the gap at
+  **3,117 named-but-byteless**. That is the "100 % readable vs 63.1 % non-zero" two-instrument
+  failure again. Also the "best crash image" is the **T+141 s FK-31 staging death the repo already
+  voids as unmatched**.
+- ★ **The one concentrated reachable target: the Angelscript AOT band `0x59128B0`–`0x5A7F070`** —
+  **239 of 366 pages dark (65.3 %)**, **2,058 of 3,760 function slots never decrypted in 76
+  minidumps**. That is FK-1's drop/pod/respawn layer. The whole tutorial programme bought **+24** of
+  those pages.
+- ⚠ **12,831 dark pages (94.4 %) carry no reflected UFunction at all**, so the reflected-**ANCHOR**
+  ceiling is ≤ 394 dark pages = **1.30 % of `.text`** (2.90 % of the DARK set — ⚠ quote the
+  denominator; both this file and the settled doc first carried 2.9 % against `.text`, which is wrong).
+  ⚠⚠ **That is NOT a ceiling on what driving reflected code decrypts — a reflected call decrypts its
+  NON-REFLECTED callees, and ≈86 % of every page decrypted since S121 hosts no reflected function**
+  (droppod 43 new / 6 with an impl · rideable 45 / 7 · dismount 44 / 6 · landstart 48 / 8 ·
+  `merged6∖merged2` 56 / 8). **The real yield of any driver is its callees**, so the S55 primitive is
+  not bounded by 394 — only its *anchors* are.
+- ★ **Highest-value next captures are ZERO-RISK and need no relaunch or injection:** (1) a **party /
+  queue / custom-game ACTION sweep** — `UPartyManager` has **20 dark impls at
+  `0x5873280`–`0x5879EE0`, including `TryJoinQueue 0x5875E90`, the most-cited dark address in the
+  repo (11 citations)**, and `ignorance-map-s101.md:2270` already wrote the experiment down
+  (**BOTS → FIND MATCH**, which S122 made work end to end); (2) a **FULL-PAYLOAD** `/lobby` notif
+  sweep — S117's bare `{"type":X}` frames cannot reach a per-type deserializer; (3) a settings /
+  renderer-permutation sweep. Ranked table in `docs/fk20-coverage-settled.md` §8.
+- ★★★★★ **THE DECISIVE NUMBER: 125 CRASH LIFETIMES PLUS OUR 26 CAPTURES ONLY EVER REACHED
+  55.27 %.** The crashpad `MemoryInfoListStream` is an exact per-page decryption map — on this build a
+  `.text` page is `PAGE_NOACCESS` if never decrypted and `PAGE_EXECUTE_READ` if decrypted, and **only
+  those two values ever appear** (6,757,306 + 5,173,408 = 11,930,714 = 394 × 30,281 page-observations
+  exactly). Union over all crashes **16,434 (54.27 %)**; combined with `merged6` **16,735 = 55.27 %**;
+  only **41** pages were ever decrypted at a crash and are zero in `merged6`.
+  ⚠⚠ **QUOTE THE UNIT: 55.27 % is "pages KNOWN TO HAVE BEEN DECRYPTED at some moment", NOT "pages we
+  hold BYTES for".** Those 41 pages exist nowhere as bytes — minidump memory inside the game image is
+  **0 in 124/124**. **For offline RE the byte figure is `merged6`'s 16,694 = 55.13 %.**
+  ⇒ **The dark 45 % is dark because THE GAME NEVER RAN IT, not because we failed to snapshot it.**
+  ★★ **And this validates the whole page-bitmap method against an independent instrument:** pairing
+  `dumpimage` non-zero pages against minidump `EXECUTE_READ` pages at the same ImageBase gives
+  **5 exact equalities and 2 at +2, never fewer** — +2 being the direction monotone decryption predicts.
+- ⚠ **FORECLOSED with positive controls, do not re-try:** Sentry crashpad minidumps hold **0 bytes**
+  inside the game image — 396 files / 125 crashes / 10.57 GiB, 96.6 % thread stacks, `Memory64List` in
+  **0/394**, and **the mechanism is named: header `Flags = 0x0` = `MiniDumpNormal`**, so no image bytes
+  will ever be captured until Sentry's config changes. Discriminating control: the same parse finds
+  **170 B of `ntdll.dll` per dump in 394/394** and 0 B of the game image. The 98 UECC crash minidumps
+  hold **`.rdata` only** (520.9 MB of `.rdata` vs **13,824 bytes** of `.text` across all 98).
+  ⚠ `merged6` is a **strict superset of every `.text`-bearing artifact on disk** (32 sources diffed at
+  page granularity, ADDS = 0), including `tools/re/.exec_surface_cache/text_union.bin`, never examined.
+  ★ **But UECC minidumps DO list `runtime.dll` in their ModuleList** (217–222 modules) and capture
+  1.57 MB of it — **CLAUDE.md's "`runtime.dll` has NO module entry in ANY crashpad minidump (0 of
+  14)" is true of the SENTRY corpus and does not generalise.** That is an offline n≈98 instrument for
+  FK-31's per-boot kill-address claim, and it is unused.
+- ⚠⚠ **`tools/strxref/index/pdata_union.csv` IS AN EXECUTION-TRACKING INSTRUMENT, NOT A FUNCTION
+  MAP.** `pdataunion.py` keeps only slots with `End-Begin > 1`; a size-1 slot is the packer's
+  placeholder for a function **not yet decrypted in that process**. So it is **blind by construction on
+  exactly the dark pages you are asking about**, and any filter built on it can only ever admit LIT
+  code. **Two independent agents built that filter and both were caught only by a positive control**
+  (a known-dark address graded "not a function"). Placeholder `BeginAddress` is also **not stable
+  across processes** (737,978 distinct values over 524,439 slots) — treat it as a ±1-page locator.
+- ★★★★★ **BIGGEST BY-PRODUCT, AND IT BELONGS TO FK-10/FK-31: `dumpimage` HAS BEEN DISCARDING THE
+  PROTECTOR, 52 TIMES.** `tools/usmapdump/dumpimage.go:239-240` does
+  `case rg.typ != memPrivate: dumped = "(skip: Image — other module)"` — **every `MEM_IMAGE`
+  executable region, by design**, on the false premise in its own comment that such a region is
+  "other DLLs". A **manually mapped, module-list-hidden** `MEM_IMAGE` region is **the protector**.
+  **[M] The protector signature (`SizeOfImage 0x4066000`, 48,136,192 exec bytes — both matching S131
+  and FK-10) appears in 26/26 manifests, TWICE each = 52 mappings, every one skipped.** Confirmed here
+  straight from the manifests: `0xFF767000 0x1000 Image` and `0xFFF2F000 0x170000 Image` are exactly
+  LOW`+0x7000` and LOW`+0x7CF000` of the predicted region map.
+  ★★★ **AND THE MANIFESTS CORROBORATE FK-31 FROM A NEW INSTRUMENT:** the HIGH bases group by era as
+  `0x7FF90E000000` (9 dumps) · `0x7FFD3B400000` (1) · `0x7FFA42600000` (6) · `0x7FFB57400000` (10),
+  summing to 26 — **the last three are exactly S131's three constant kill addresses minus 1**, plus a
+  **FOURTH era base S131's minidump-only corpus could not see**. ★★ **`runtime.dll` is mapped TWICE and
+  the LOW base is INVARIANT at `0xFF760000`** (26/26 manifests, 123/124 distinct crashes); the HIGH copy
+  alone shows split `READWRITE`/`WRITECOPY` ⇒ [I, strong] HIGH is the executing view, consistent with the
+  kill jumping to HIGH+1. ⚠⚠ **THE DOUBLE MAPPING AND THE SHADOW-EXE MAPPING BELOW ARE *NOT* NEW —
+  `docs/s109-dump-forensics.md` §5 (2026-08-04/05) already tabulates all three hidden images**, with the
+  same LOW/HIGH `EXECUTE_WRITECOPY` vs `EXECUTE_READ` distinction, re-verified at
+  `docs/s109-skeptic-review.md:60-70` against UE's own `<CallStack>`. **What is new is only that the
+  `dumpimage` MANIFESTS carry it too, 52 times, each marked skipped.** ★ *Grep before writing "NEW".*
+  ⚠ **[M] 48,136,192 B (45.90 MiB) of protector executable content sat readable under RPM in every
+  capture and none was written.** A draft said **96.3 MB** by summing both mappings — that
+  **double-counts two `SEC_IMAGE` views of the same 67,511,496-byte file** (observed differentiation
+  between views: **57,344 B**). Proposed patch (NOT applied — it adds ~96 MB per dump to an already-16 GB tree, so make it
+  a flag): skip `MEM_IMAGE` only when `AllocationBase` resolves to a real module; otherwise DUMP IT.
+  Pure RPM. It plausibly yields **plaintext `packer0`** (94.8 % encrypted on disk), where the kill
+  vtable `packer0 RVA 0x1831C0` and its installer `RVA 0x7F86F0` live — FK-10 Wall #7's target.
+- ★ **A THIRD hidden mapping, and it is a lottery ticket worth one command.** In **394/394** minidumps
+  there is exactly one `MEM_IMAGE` allocation of `0xA9E1000` — **the game's own `SizeOfImage`** —
+  `READONLY`, a **single** region with no per-section protections, at a heap address, **124** distinct
+  bases. **0 bytes ever captured.** ⚠ Also recorded in `docs/s109-dump-forensics.md` §5 and never acted
+  on — the lottery ticket has been on the table since 2026-08-04. Control: **the game's real module is `MEM_MAPPED`, not `MEM_IMAGE`
+  (0/394)**, so this is a *second, hidden view of the exe*. [I, strong] a `SEC_IMAGE` raw view ⇒
+  probably the encrypted on-disk bytes; **[S] it could be the plaintext master the fault handler
+  decrypts from — in which case one read-only RPM read yields 100 % of `.text` in one shot.**
+  **Settle it with one `VirtualQueryEx` + two 4 KB reads (base, and base+`0x751EFD0` = the OEP)
+  compared against the on-disk exe and `merged6`. Not settleable offline.**
+- **Process fix: `python tools/re/dump_coverage_ledger.py`** — reads bytes, not manifests; an image is
+  an ORPHAN iff it holds ≥1 decrypted page the reference merge lacks; exit 1 on orphans. Validated
+  both ways (0 orphans vs `merged6`, 6 vs `merged5`). ⚠ Its per-image column is **not additive**.
 
 ### Before touching anything READOUT- / "we can't see what the client is doing"-shaped
 ★★★★★ **S121 built EIGHT read-only RPM probes, and EVERY ONE contradicted something that had been
@@ -2345,8 +2605,8 @@ reading plus the compiled-out refusal.
   ⚠ FK-13's conclusions are UNAFFECTED (its own table records both images agreeing 8/8 and 0/5 —
   that agreement is the control that falsifies the rule's stated reason, not the finding).
   ★ **What actually differs between images is `.text`.** For anything CODE-shaped use
-  `dumps/merged2.dump.exe` (16,625 decrypted pages, **54.90 %** — the union of all 11 states) or
-  `dumps/tutorial-hero` (16,112, 53.21 % — best single image).
+  **`dumps/merged8.dump.exe` (16,714 decrypted pages, 55.20 % — the union of all 33 states)** or
+  `dumps/tutorial-hero` (16,112, 53.21 % — best single image, and by itself 96.5 % of the union).
   ⚠ `.rdata` **pointer values** DO differ across ImageBases (1,257,732 relocations; merged vs
   tutorial-hero differ by 2,518,801 bytes). Read pointers only from an image whose base you are using.
 
@@ -2653,9 +2913,23 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
 - **usmapdump mergedumps:** `usmapdump.exe mergedumps <outFile> <in.dump.exe…|dir>` —
   unions several `dumpimage` snapshots into one maximally-covered image (fills each dump's
   demand-decrypt `.text` gaps from the others). A directory arg recurses for `*.dump.exe`.
-  ★★★★★ **THE CANONICAL COLD IMAGE IS NOW `dumps/merged2.dump.exe` — `.text` 16,625 / 30,281
-  decrypted pages (54.90 %), a STRICT SUPERSET of `merged.dump.exe` (15,833, 52.29 %) with
-  0 regressions. Read `docs/fk18-fk19-multistate-merge-settled.md` before touching any of this.**
+  ★★★★★ **THE CANONICAL COLD IMAGE IS `dumps/merged8.dump.exe` — `.text` **16,714 / 30,281**
+  decrypted pages (**55.20 %**), measured 2026-08-20, and it is EXACTLY the union of all 33 state
+  images on disk (union∖merged6 = 0, merged6∖union = 0, byte-granular audit 0/0/0 defects).
+  Ladder: `merged` 15,833 (52.29 %) → `merged2` 16,638 (54.95 %) → `merged3` 16,681 → `merged4`
+  16,683 → `merged5` 16,689 → `merged6` 16,694 → `merged7` 16,707 → **`merged8` 16,714** (S133). Read `docs/fk20-coverage-settled.md` and
+  `docs/fk18-fk19-multistate-merge-settled.md` before touching any of this.**
+  ⚠⚠ **`merged2 = 16,625 / 54.90 %` vs `16,638 / 54.95 %` — BOTH ARE REAL, and calling either a
+  typo is wrong.** `docs/fk18-fk19-multistate-merge-settled.md:16-18` states it explicitly: §1–§10
+  are measured on the **11-input** union (**16,625**, and that pre-registration is bit-exact), then a
+  still-running process was folded in (§11) taking the **artifact on disk** to a **12-input** merge at
+  **16,638**. `strxref.py:855-856` ships both rows. ⚠ What IS stale is the ~14 **undecorated** copies
+  elsewhere that quote 16,625 while pointing at the file. **Cite the artifact as 16,638 and say which
+  input set you mean.**
+  ⚠ **Ten captured images sat unmerged for six days** because manifests name donors by BASENAME
+  only (`merged2.dump.exe.txt` lists `SUPERVIVE-Win64-Shipping.dump.exe` twelve times, which
+  identifies nothing). **Run `python tools/re/dump_coverage_ledger.py` after every capture** — it
+  reads bytes, not manifests, exits 1 on an orphan, and was validated in both directions.
   ⚠⚠ **THE OLD TEXT HERE WAS WRONG IN BOTH HALVES, AND THE TWO ERRORS SEALED EACH OTHER IN
   (S121, 2026-08-14).** It said (i) *"dump from DIFFERENT game states (login, hero grid, store,
   missions…)"* and (ii) *"CONSTRAINT: all inputs must share the same module base."*
@@ -2910,7 +3184,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **78 tabulated instances as of S132** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **85 tabulated instances as of S133** — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies

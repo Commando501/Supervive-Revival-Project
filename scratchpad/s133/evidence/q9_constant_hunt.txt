@@ -1,0 +1,49 @@
+====================================================================================================
+Q9  HUNT THE FK-31 TRANSFER-SITE CONSTANTS IN THE PLAINTEXT PROTECTOR
+====================================================================================================
+
+--- runtime.dll  (67511496 bytes, 11 sections) ---
+  mov ebp, 0x537AC9E1        (BD ..) bde1c97a53             hits=7
+      file 0x008BAF8B  rva 0x008BC38B  packer1    ctx 48898424a8020000bde1c97a5348c78424b0000000000000
+      file 0x008E65FC  rva 0x008E79FC  packer1    ctx 987d77146098ab61bde1c97a53eb3f666666662e0f1f8400
+      file 0x008E676E  rva 0x008E7B6E  packer1    ctx f2f0480fb116744dbde1c97a53666666662e0f1f84000000
+      file 0x008EBB16  rva 0x008ECF16  packer1    ctx 8b3dac4a050031dbbde1c97a53eb150f1f008b0506d90500
+      file 0x008EBC86  rva 0x008ED086  packer1    ctx faf0490fb1167445bde1c97a530f1f4400008b0596d70500
+      file 0x008EF22C  rva 0x008F062C  packer1    ctx f0440fb121742a41bde1c97a538b05f5a105004431e8c1c0
+      file 0x008F080D  rva 0x008F1C0D  packer1    ctx f0440fb121742a41bde1c97a538b05148c05004431e8c1c0
+  raw dword 0x537AC9E1               e1c97a53               hits=27
+      file 0x00832C46  rva 0x00834046  packer1    ctx 00006685c0742dbfe1c97a53660f1f4400008b05d6671100
+      file 0x0083697B  rva 0x00837D7B  packer1    ctx 00006685c07428bfe1c97a53908b05a62a110031f8c1c007
+      file 0x00853B27  rva 0x00854F27  packer1    ctx 00006685c0742cbbe1c97a530f1f4400008b05f6580f0031
+      file 0x0086FC44  rva 0x00871044  packer1    ctx 66837934007426bbe1c97a530f1f8400000000008b05d697
+      file 0x008879B7  rva 0x00888DB7  packer1    ctx 00006685c0742cbfe1c97a530f1f4400008b05661a0c0031
+      file 0x008B8165  rva 0x008B9565  packer1    ctx 0fb15d00742341bfe1c97a538b05bd1209004431f8c1c007
+      file 0x008B81EA  rva 0x008B95EA  packer1    ctx 81c38813000041bfe1c97a53418b450083e00383f8010f84
+      file 0x008B936F  rva 0x008BA76F  packer1    ctx f00fb129742641bce1c97a538b05b30009004431e0c1c007
+      file 0x008B9447  rva 0x008BA847  packer1    ctx 4881c788130000bbe1c97a53488b4424788b0083e00383f8
+      file 0x008BA7E9  rva 0x008BBBE9  packer1    ctx f00fb129742641bce1c97a538b0539ec08004431e0c1c007
+      file 0x008BA8A9  rva 0x008BBCA9  packer1    ctx 4881c788130000bbe1c97a53488b4424788b0083e00383f8
+      file 0x008BAF8C  rva 0x008BC38C  packer1    ctx 898424a8020000bde1c97a5348c78424b000000000000000
+  mov r11, 0x95654773B3BC (49 BB)    49bbbcb3734765950000   hits=0
+  raw qword 0x95654773B3BC           bcb3734765950000       hits=0
+  raw 6 bytes of 0x95654773B3BC      bcb373476595           hits=0
+  CONTROL raw dword 0x52E6B438       38b4e652               hits=0
+  CONTROL raw dword 0xF2A74DE4       e44da7f2               hits=0
+  CONTROL raw dword 0x669E0D37       370d9e66               hits=0
+  CONTROL raw 6B 0xA6A36513270E      0e271365a3a6           hits=0
+  CONTROL raw 6B 0x128B0C5C7FD0      d07f5c0c8b12           hits=0
+  CONTROL raw 6B 0x892FD23F0824      24083fd22f89           hits=0
+
+--- preloader.dll  (C2)  (26824 bytes, 6 sections) ---
+  mov ebp, 0x537AC9E1        (BD ..) bde1c97a53             hits=0
+  raw dword 0x537AC9E1               e1c97a53               hits=0
+  mov r11, 0x95654773B3BC (49 BB)    49bbbcb3734765950000   hits=0
+  raw qword 0x95654773B3BC           bcb3734765950000       hits=0
+  raw 6 bytes of 0x95654773B3BC      bcb373476595           hits=0
+
+--- SUPERVIVE-Win64-Shipping.exe  (C2)  (174241992 bytes, 10 sections) ---
+  mov ebp, 0x537AC9E1        (BD ..) bde1c97a53             hits=0
+  raw dword 0x537AC9E1               e1c97a53               hits=0
+  mov r11, 0x95654773B3BC (49 BB)    49bbbcb3734765950000   hits=0
+  raw qword 0x95654773B3BC           bcb3734765950000       hits=0
+  raw 6 bytes of 0x95654773B3BC      bcb373476595           hits=0

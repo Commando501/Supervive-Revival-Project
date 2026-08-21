@@ -1,0 +1,79 @@
+============================================================================================================
+Q12  PROTECTOR DIRECT-SYSCALL INVENTORY  (runtime.dll, plaintext on disk)
+============================================================================================================
+sites matching  rol eax,7 ; add eax,imm32 ; ... ; syscall  : 200
+   C2 FALSE-POSITIVE FLOOR with rol 6 instead of 7 : 0 sites
+   C2 FALSE-POSITIVE FLOOR with rol 8 instead of 7 : 0 sites
+   C2 FALSE-POSITIVE FLOOR with rol 5 instead of 7 : 0 sites
+   C2 FALSE-POSITIVE FLOOR with rol 9 instead of 7 : 0 sites
+
+fully decoded sites: 164 ; DISTINCT CELLS: 17
+
+--- the cell table (C3: a per-service table should be small and contiguous) ---
+   cell 0x0094A6D8 packer2   disk=0x65246E45  used by  92 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A6DC packer2   disk=0x13E2BA7A  used by   1 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A6E0 packer2   disk=0xE4E45B8F  used by   1 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A72C packer2   disk=0xA03ED85B  used by   3 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A734 packer2   disk=0x42978408  used by   1 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A744 packer2   disk=0x806E26CD  used by   3 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A74C packer2   disk=0xE382978D  used by   5 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A754 packer2   disk=0xF6253A33  used by   1 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A75C packer2   disk=0x20D463F0  used by   2 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A794 packer2   disk=0x8C147338  used by  12 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A7B0 packer2   disk=0x552977B8  used by   1 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A7F8 packer2   disk=0x4C9376D7  used by   3 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A800 packer2   disk=0x10BFA9CE  used by   3 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A80C packer2   disk=0x3BEEA5A0  used by   2 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A810 packer2   disk=0x53692178  used by   9 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A81C packer2   disk=0x570F40BC  used by   2 sites  one decode -> SSN 0xFFFFFFFF
+   cell 0x0094A82C packer2   disk=0x6001BD15  used by  23 sites  one decode -> SSN 0xFFFFFFFF
+
+--- every decoded site (RVA, key, add, SSN-from-disk) ---
+SSN(disk) histogram: [('0xFFFFFFFF', 156), ('0x43241016', 2), ('0x62DFFDE9', 1), ('0x62A3EFCB', 1), ('0xE2A3F0CB', 1), ('0x62EFFDE9', 1), ('0xE2A3EFCB', 1), ('0x634BFDE9', 1)]
+   site 0x007ECEA4 packer1   cell 0x0094A80C key 0x36E1A608 add 0x787E2BF9 -> 0xFFFFFFFF
+   site 0x007ED2C6 packer1   cell 0x0094A794 key 0x06FDF387 add 0x8B3FA03A -> 0xFFFFFFFF
+   site 0x0080088E packer1   cell 0x0094A6D8 key 0xF57B4820 add 0xD06CCD37 -> 0xFFFFFFFF
+   site 0x0080F804 packer1   cell 0x0094A800 key 0x618E77BF add 0x6710C747 -> 0xFFFFFFFF
+   site 0x00813E55 packer1   cell 0x0094A744 key 0x94096C4E add 0xCC5ABE75 -> 0xFFFFFFFF
+   site 0x00818EC5 packer1   cell 0x0094A6D8 key 0x00008824 add 0xD06CCD37 -> 0x62DFFDE9
+   site 0x00822AEB packer1   cell 0x0094A6DC key 0xFFB0F056 add 0xD6DAE989 -> 0xFFFFFFFF
+   site 0x00830D2F packer1   cell 0x0094A810 key 0x4B1F62BF add 0xC4DE1C73 -> 0xFFFFFFFF
+   site 0x00834058 packer1   cell 0x0094A82C key 0x537AC9E1 add 0x424585E6 -> 0xFFFFFFFF
+   site 0x0084ABDE packer1   cell 0x0094A81C key 0x8C37CA29 add 0x63BAB512 -> 0xFFFFFFFF
+   site 0x0084B711 packer1   cell 0x0094A74C key 0xE916D634 add 0xB5DF237A -> 0xFFFFFFFF
+   site 0x00852761 packer1   cell 0x0094A75C key 0x1FF2D5B1 add 0x6CA4DF60 -> 0xFFFFFFFF
+   site 0x00852951 packer1   cell 0x0094A72C key 0xBDA64E42 add 0x33B4F371 -> 0xFFFFFFFF
+   site 0x008550FB packer1   cell 0x0094A7B0 key 0x1FDFB3B5 add 0x849DF95A -> 0xFFFFFFFF
+   site 0x00866FFB packer1   cell 0x0094A6E0 key 0xC247261B add 0xAE4135EC -> 0xFFFFFFFF
+   site 0x0087C948 packer1   cell 0x0094A7F8 key 0x39B3D60B add 0x6FAF91C5 -> 0xFFFFFFFF
+   site 0x008B44AB packer1   cell 0x0094A6D8 key 0x4C000000 add 0xD06CCD37 -> 0x62A3EFCB
+   site 0x008B51FE packer1   cell 0x0094A6D8 key 0x4D000002 add 0xD06CCD37 -> 0xE2A3F0CB
+   site 0x008B9BDE packer1   cell 0x0094A6D8 key 0x00016824 add 0xD06CCD37 -> 0x62EFFDE9
+   site 0x008BC509 packer1   cell 0x0094A82C key 0x00000001 add 0x424585E6 -> 0x43241016
+   site 0x008D953B packer1   cell 0x0094A754 key 0xA2E2C27F add 0x9C03D9D5 -> 0xFFFFFFFF
+   site 0x008E8EE5 packer1   cell 0x0094A6D8 key 0x4D000000 add 0xD06CCD37 -> 0xE2A3EFCB
+   site 0x008EFAA9 packer1   cell 0x0094A6D8 key 0x0001D024 add 0xD06CCD37 -> 0x634BFDE9
+   site 0x01379C23 packer30  cell 0x0094A734 key 0x04835421 add 0xF597EB5C -> 0xFFFFFFFF
+   (distinct (cell,key,add) triples: 24 of 164 sites)
+
+-> scratchpad/s133/evidence/runtime_syscall_sites.tsv
+
+LIVE RECOVERY RECIPE (read-only, no injection):
+  runtime_base = <the boot session's FK-31 kill address> & ~0xFFF
+  ReadProcessMemory(runtime_base + 0x0094A6D8, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A6DC, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A6E0, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A72C, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A734, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A744, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A74C, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A754, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A75C, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A794, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A7B0, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A7F8, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A800, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A80C, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A810, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A81C, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD
+  ReadProcessMemory(runtime_base + 0x0094A82C, 4) -> cell; SSN = ROL32(cell^KEY,7)+ADD

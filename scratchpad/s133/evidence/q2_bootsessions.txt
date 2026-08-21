@@ -1,0 +1,65 @@
+========================================================================================================
+Q2  BOOT SESSIONS FROM THE CORPUS  (unit: distinct crashpad reports)
+========================================================================================================
+reports: 124
+
+distinct ntdll.dll bases (= candidate boot sessions): 3
+
+--- CONTROL: does each other system image induce the same partition as ntdll? ---
+   kernel32     distinct bases=3    pairwise agreement with ntdll partition: 7626 agree / 0 DISAGREE
+   kernelbase   distinct bases=3    pairwise agreement with ntdll partition: 7626 agree / 0 DISAGREE
+   user32       distinct bases=3    pairwise agreement with ntdll partition: 7626 agree / 0 DISAGREE
+   combase      distinct bases=3    pairwise agreement with ntdll partition: 7626 agree / 0 DISAGREE
+   advapi32     distinct bases=3    pairwise agreement with ntdll partition: 7626 agree / 0 DISAGREE
+   gdi32        distinct bases=3    pairwise agreement with ntdll partition: 7626 agree / 0 DISAGREE
+
+--- NEGATIVE CONTROL: preloader.dll base must VARY inside one boot session ---
+   ntdll 0x7FFD3B150000   n=113 distinct preloader bases=43   (most common seen 20x)
+   ntdll 0x7FFA422D0000   n=6   distinct preloader bases=5    (most common seen 2x)
+   ntdll 0x7FFB57050000   n=5   distinct preloader bases=5    (most common seen 1x)
+
+--- SUPERVIVE-Win64-Shipping.exe base: per BOOT or per LAUNCH? ---
+   ntdll 0x7FFD3B150000   n=113 distinct game bases=10   {'0x7FF6EAA10000': 1, '0x7FF6A6EF0000': 2, '0x7FF7E3CB0000': 8, '0x7FF681610000': 11, '0x7FF6505C0000': 83, '0x7FF650FD0000': 1, '0x7FF6EE4A0000': 2, '0x7FF6E95E0000': 1, '0x7FF6A5280000': 3, '0x7FF628720000': 1}
+   ntdll 0x7FFA422D0000   n=6   distinct game bases=2    {'0x7FF7C7EF0000': 2, '0x7FF7BFF50000': 4}
+   ntdll 0x7FFB57050000   n=5   distinct game bases=4    {'0x7FF7B86D0000': 2, '0x7FF7C4050000': 1, '0x7FF630E90000': 1, '0x7FF7A5A20000': 1}
+
+========================================================================================================
+THE TEST: is the FK-31 kill address constant WITHIN a boot session, and different BETWEEN them?
+========================================================================================================
+FK-31-family reports: 108 of 124
+ntdll base         n_all  n_fam  date span (ProcessCreateTime) distinct kill addrs    kill addr(s)
+0x7FFD3B150000     113    99     2026-08-04 14:02 .. 08-09 01:21        1      0x7FFD3B400001 x99
+0x7FFA422D0000     6      4      2026-08-12 20:36 .. 08-15 20:05        1      0x7FFA42600001 x4
+0x7FFB57050000     5      5      2026-08-19 18:15 .. 08-20 14:28        1      0x7FFB57400001 x5
+
+boot sessions with MORE THAN ONE distinct FK-31 kill address: 0 []
+kill addresses appearing in MORE THAN ONE boot session: {}
+
+--- is kill_addr - <module base> constant across boot sessions? ---
+   kill - ntdll          : 3 distinct deltas  {'0x2B0001': 99, '0x330001': 4, '0x3B0001': 5}
+   kill - kernel32       : 3 distinct deltas  {'0xA70001': 99, '0x1060001': 4, '0xDD0001': 5}
+   kill - kernelbase     : 3 distinct deltas  {'0x2780001': 99, '0x27E0001': 4, '0x2900001': 5}
+   kill - user32         : 3 distinct deltas  {'0x22A0001': 99, '0xF90001': 4, '0x1140001': 5}
+   kill - combase        : 3 distinct deltas  {'0x1AE0001': 99, '0xD40001': 4, '0x14A0001': 5}
+   kill - advapi32       : 3 distinct deltas  {'0x610001': 99, '0x560001': 4, '0x1740001': 5}
+   kill - gdi32          : 3 distinct deltas  {'0xB30001': 99, '0x820001': 4, '0x1550001': 5}
+   kill - game_base      : 16 distinct deltas  ...
+   kill - preloader_base : 49 distinct deltas  ...
+
+--- the 16 reports OUTSIDE the FK-31 family ---
+   2026-08-04T18:19:15  590cfd83  code=0xC0000005 p0=0x0 addr=0x1C835EC205D rip=0x1C835EC205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-04T23:02:45  e7d14df5  code=0xC0000005 p0=0x0 addr=0x14BA020205D rip=0x14BA020205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-04T23:03:34  5e4cce11  code=0xC0000005 p0=0x0 addr=0x1830F7C205D rip=0x1830F7C205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-04T23:10:16  2b109408  code=0xC0000005 p0=0x0 addr=0x2154F6C205D rip=0x2154F6C205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-05T01:08:59  3fa0b7d3  code=0xC0000005 p0=0x0 addr=0x202FAF8205D rip=0x202FAF8205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-05T01:09:34  40d6100a  code=0xC0000005 p0=0x0 addr=0x24F44DC205D rip=0x24F44DC205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-05T23:04:59  27b26cae  code=0xC0000005 p0=0x0 addr=0x22A4945205D rip=0x22A4945205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-05T23:45:38  c3b1b52c  code=0xC0000005 p0=0x0 addr=0x1ECC170205D rip=0x1ECC170205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-05T23:48:29  702ee15a  code=0xC0000005 p0=0x0 addr=0x23C5C40205D rip=0x23C5C40205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-05T23:56:17  06d4cd2c  code=0xC0000005 p0=0x0 addr=0x2A36E7E205D rip=0x2A36E7E205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-05T23:59:37  a62a2996  code=0xC0000005 p0=0x0 addr=0x242ADAF205D rip=0x242ADAF205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-06T00:11:11  105ad569  code=0xC0000005 p0=0x0 addr=0x1747765205D rip=0x1747765205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-06T00:11:39  f053db6e  code=0xC0000005 p0=0x0 addr=0x142AB8F205D rip=0x142AB8F205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-06T00:27:43  dc056ebe  code=0xC0000005 p0=0x0 addr=0x181BAD5205D rip=0x181BAD5205D ripmod=-+-  ntdll=0x7FFD3B150000
+   2026-08-14T15:49:01  bf1d39c0  code=0xC0000005 p0=0x0 addr=0x2B2839218E2 rip=0x2B2839218E2 ripmod=-+-  ntdll=0x7FFA422D0000
+   2026-08-14T15:53:19  271d081e  code=0xC0000005 p0=0x0 addr=0x1D5D5B419F2 rip=0x1D5D5B419F2 ripmod=-+-  ntdll=0x7FFA422D0000

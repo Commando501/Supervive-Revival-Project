@@ -1,0 +1,73 @@
+====================================================================================================
+Q7  VALIDATED PROTECTOR RETURN ADDRESSES
+====================================================================================================
+runtime.dll executable bytes: 48128498 over 4 sections [('0x7000', '0x8000'), ('0x7cf000', '0x93e886'), ('0x127c000', '0x14a9344'), ('0x1520000', '0x3f68628')]
+N1 NEGATIVE CONTROL: 20000 uniformly random exec RVAs -> 30 pass the validator (0.150%)
+
+FK-31 family  reports=5
+   raw distinct runtime.dll RVAs on stacks : 1503
+   VALIDATED as return-after-call          : 84
+   P1 POSITIVE CONTROL (game module qwords): 9345 of 35083 pass (26.6%)
+
+0x205d contrast family  reports=5
+   raw distinct runtime.dll RVAs on stacks : 1463
+   VALIDATED as return-after-call          : 89
+   P1 POSITIVE CONTROL (game module qwords): 12057 of 37995 pass (31.7%)
+
+--- VALIDATED protector call-site RVAs, FK-31 family, by report-count (top 50) ---
+   runtime.dll+0x0087AA5C  E8->0x810580   packer1   in 5 reports
+   runtime.dll+0x007F918C  E8->0x87A9D0   packer1   in 5 reports
+   runtime.dll+0x0086AA47  E8->0x866020   packer1   in 5 reports
+   runtime.dll+0x0087AB52  E8->0x8916D0   packer1   in 5 reports
+   runtime.dll+0x0086281C  E8->0x85E670   packer1   in 5 reports
+   runtime.dll+0x029C3538  E8->0x29C3548  packer31  in 5 reports
+   runtime.dll+0x01A7B1A9  E8->0x1A7B1B4  packer31  in 5 reports
+   runtime.dll+0x01A65724  E8->0x1A6572F  packer31  in 5 reports
+   runtime.dll+0x01662F6A  E8->0x1662F7A  packer31  in 5 reports
+   runtime.dll+0x0147B549  E8->0x1462CBF  packer30  in 5 reports
+   runtime.dll+0x0147ACC9  E8->0x81B950   packer30  in 5 reports
+   runtime.dll+0x0087CD7D  E8->0x7FC350   packer1   in 5 reports
+   runtime.dll+0x008D9082  E8->0x8AE820   packer1   in 5 reports
+   runtime.dll+0x008FA376  E8->0x87C910   packer1   in 5 reports
+   runtime.dll+0x012E4C3F  E8->0x12D55FB  packer30  in 5 reports
+   runtime.dll+0x012E4D78  E8->0x1302380  packer30  in 5 reports
+   runtime.dll+0x031559E5  E8->0x31559F0  packer31  in 5 reports
+   runtime.dll+0x02B69822  E8->0x2B69832  packer31  in 5 reports
+   runtime.dll+0x012F8DA5  E8->0x84ABD0   packer30  in 5 reports
+   runtime.dll+0x008AEA87  E8->0x821B30   packer1   in 5 reports
+   runtime.dll+0x0087CD3E  call reg       packer1   in 5 reports
+   runtime.dll+0x0391F787  E8->0x391F792  packer31  in 5 reports
+   runtime.dll+0x025165F4  E8->0x25165FF  packer31  in 5 reports
+   runtime.dll+0x0139E848  E8->0x12D89A5  packer30  in 5 reports
+   runtime.dll+0x03431720  E8->0x343172B  packer31  in 5 reports
+   runtime.dll+0x0308687F  E8->0x308688A  packer31  in 5 reports
+   runtime.dll+0x013CAC0D  E8->0x1448DA4  packer30  in 5 reports
+   runtime.dll+0x0147B28F  E8->0x14A48C4  packer30  in 5 reports
+   runtime.dll+0x0134FE33  call reg       packer30  in 5 reports
+   runtime.dll+0x012A6E9B  E8->0x138505B  packer30  in 5 reports
+   runtime.dll+0x037C3519  E8->0x37C3524  packer31  in 5 reports
+   runtime.dll+0x01306F76  E8->0x149AB9D  packer30  in 5 reports
+   runtime.dll+0x00837136  call reg       packer1   in 5 reports
+   runtime.dll+0x02432961  E8->0x2432971  packer31  in 5 reports
+   runtime.dll+0x013424A6  E8->0x143A567  packer30  in 5 reports
+   runtime.dll+0x013424F5  E8->0x12E76A3  packer30  in 5 reports
+   runtime.dll+0x01318C82  E8->0x81B950   packer30  in 5 reports
+   runtime.dll+0x02471D93  E8->0x2471DA3  packer31  in 5 reports
+   runtime.dll+0x0245E47E  E8->0x245E48E  packer31  in 5 reports
+   runtime.dll+0x01712B4F  E8->0x1712B5A  packer31  in 5 reports
+   runtime.dll+0x0250E1B6  E8->0x250E1C6  packer31  in 5 reports
+   runtime.dll+0x019445E4  E8->0x19445F4  packer31  in 5 reports
+   runtime.dll+0x02619ABF  E8->0x2619ACA  packer31  in 5 reports
+   runtime.dll+0x012CF548  E8->0x1449323  packer30  in 5 reports
+   runtime.dll+0x017984E7  E8->0x17984F7  packer31  in 5 reports
+   runtime.dll+0x0086A9B6  E8->0x866020   packer1   in 5 reports
+   runtime.dll+0x0136BDB4  E8->0x1280960  packer30  in 5 reports
+   runtime.dll+0x0202A25A  E8->0x202A26A  packer31  in 5 reports
+   runtime.dll+0x0136512C  E8->0x146C87E  packer30  in 5 reports
+   runtime.dll+0x01C5012A  E8->0x1C50135  packer31  in 5 reports
+
+   validated RVAs in FK-31 only : 5
+   validated RVAs in contrast only: 10
+   shared                        : 79
+
+-> scratchpad/s133/evidence/runtime_dll_live_callsites.txt (84 rows)

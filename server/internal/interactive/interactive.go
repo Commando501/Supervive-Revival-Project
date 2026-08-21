@@ -162,6 +162,18 @@ func (s *Service) Register(mux *http.ServeMux) {
 	// the blind spot this exposes in the capture-diff sweep.
 	mux.HandleFunc("POST /party/parties/{partyId}/setTargetQueues", s.handleSetTargetQueues)
 
+	// S133: FIND MATCH. Discovered by DRIVING the button during an FK-20 decryption run,
+	// not by a capture sweep — see joinqueue.go for the wire evidence and for why the
+	// response must be an FParty under an advanced Version (UPartyModel::SetParty).
+	mux.HandleFunc("POST /party/parties/{partyId}/joinQueue", s.handleJoinQueue)
+	mux.HandleFunc("POST /party/parties/{partyId}/leaveQueue", s.handleLeaveQueue)
+	mux.HandleFunc("POST /party/parties/{partyId}/cancelQueue", s.handleLeaveQueue)
+
+	// S133: party privacy + lobby emote. Both put their value in the PATH, not a JSON body,
+	// and `emote` arrives with an EMPTY trailing segment -- see partyactions.go.
+	mux.HandleFunc("POST /party/parties/{partyId}/setIsOpen/{value}", s.handlePartySetIsOpen)
+	mux.HandleFunc("POST /party/parties/{partyId}/emote/", s.handlePartyEmote)
+
 	// ---- Party: matchmaking (available queues â€” unlocks the ActivityPicker tiles) ----
 	// The play menu is WBP_ActivityPickerScreen; its InitializeQueues builds each activity
 	// tile ONLY if the tile's queue id is present in PartyModel.GetQueues() (traced from
@@ -1213,19 +1225,44 @@ func (s *Service) handleMailboxConfigVersion(w http.ResponseWriter, r *http.Requ
 // fields landed and what to trim.
 func (s *Service) handleGetParty(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	display := displayNameFromBearer(r.Header.Get("Authorization"))
 	// Seed the selected activity from the client's own ?defaultQueue=<q> hint (only if the
 	// player hasn't picked one yet) so the party always carries a target queue â€” the
 	// "must always have one activity selected" invariant. Falls back to "default" below.
 	if dq := r.URL.Query().Get("defaultQueue"); dq != "" && s.store.get(id).SelectedQueueID == "" {
 		s.store.update(id, func(st *playerState) { st.SelectedQueueID = dq })
 	}
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
+	s.writeParty(w, r, id)
 }
 
 // selectedQueue returns the player's persisted selected matchmaking activity/queue id,
 // falling back to "default" so the party always carries a non-empty TargetQueueID (the
 // client's Comp_MainMenu_QueueController refuses to modify activity when none is selected).
+// partyIsOpen reports the party privacy toggle. Same AGS_JOIN_QUEUE kill-switch as the
+// queue flag: both are S133 party-verb state and roll back together.
+func (s *Service) partyIsOpen(id string) bool {
+	if os.Getenv("AGS_JOIN_QUEUE") == "0" {
+		return false
+	}
+	st := s.store.get(id)
+	if st == nil {
+		return false
+	}
+	return st.PartyIsOpen
+}
+
+// inQueue reports whether the player has clicked FIND MATCH and not cancelled.
+// Gated by AGS_JOIN_QUEUE=0, which restores the pre-S133 wire byte-for-byte.
+func (s *Service) inQueue(id string) bool {
+	if os.Getenv("AGS_JOIN_QUEUE") == "0" {
+		return false
+	}
+	st := s.store.get(id)
+	if st == nil {
+		return false
+	}
+	return st.InQueue
+}
+
 func (s *Service) selectedQueue(id string) string {
 	if q := s.store.get(id).SelectedQueueID; q != "" {
 		return q
@@ -1272,8 +1309,7 @@ func (s *Service) handleGetPartyDetail(w http.ResponseWriter, r *http.Request) {
 			id = sub
 		}
 	}
-	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
+	s.writeParty(w, r, id)
 }
 
 // handleStartSoloMode answers POST /party/parties/{partyId}/startSoloMode?mode=&hero=&soloModeStartPosition=.
@@ -1304,8 +1340,7 @@ func (s *Service) handleStartSoloMode(w http.ResponseWriter, r *http.Request) {
 	pos := r.URL.Query().Get("soloModeStartPosition")
 	log.Printf("interactive: startSoloMode player=%s mode=%q hero=%q pos=%q", id, mode, hero, pos)
 	s.store.update(id, func(st *playerState) { st.SoloMode = mode })
-	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
+	s.writeParty(w, r, id)
 }
 
 // handleSetTargetQueues answers POST /party/parties/{partyId}/setTargetQueues with body
@@ -1368,8 +1403,7 @@ func (s *Service) handleSetTargetQueues(w http.ResponseWriter, r *http.Request) 
 		log.Printf("interactive: setTargetQueues player=%s queue=%q (was %q)", id, q, s.selectedQueue(id))
 		s.store.update(id, func(st *playerState) { st.SelectedQueueID = q })
 	}
-	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
+	s.writeParty(w, r, id)
 }
 
 // queueIDs is the set of matchmaking queue ids we advertise to the client. The full known
@@ -1657,8 +1691,7 @@ func (s *Service) handleSetPartyMember(w http.ResponseWriter, r *http.Request) {
 
 	// Echo the updated party so the client's optimistic pick is confirmed by the server
 	// state (and matches what the next GET /party/parties poll will return).
-	display := displayNameFromBearer(r.Header.Get("Authorization"))
-	writeJSON(w, buildSoloParty(id, display, s.selectedHero(id), s.selectedCosmetic(id), s.selectedQueue(id), s.loadoutDoc(id), s.store.partyVersion()))
+	s.writeParty(w, r, id)
 }
 
 // heroAssetIDFromBody extracts the selected hero as a "Hero:<name>" PrimaryAssetId string

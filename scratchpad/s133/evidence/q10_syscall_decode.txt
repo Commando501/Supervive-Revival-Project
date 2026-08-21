@@ -1,0 +1,15 @@
+====================================================================================================
+Q10  DECODE THE PROTECTOR'S SYSCALL NUMBERS  (key 0x537AC9E1)
+====================================================================================================
+sites with a fully-decodable idiom: 2 of 27
+
+site RVA     cell RVA     cell sec  cell(disk) add imm32    SSN          known?
+0x008F253A   0x0094A82C   packer2   0x6001BD15   0x424585E6    0xFFFFFFFF   
+0x008F2603   0x0094A82C   packer2   0x6001BD15   0x424585E6    0xFFFFFFFF   
+
+CONTROL: decoded values landing in the plausible SSN range [0,0x200): 0 of 2
+         chance rate for a uniform 32-bit value: 512/2^32 = 1.2e-7 per site
+
+NOTE the cell sections: a cell in a WRITABLE packer section is initialised at
+runtime, so its on-disk value is not the live one and the SSN cannot be recovered
+statically from THAT site.  A cell in a READ-ONLY section can be.

@@ -1,0 +1,13 @@
+== FK-10's recorded kill primitive: runtime.dll RVA 0x80F7F0 ==
+rva 0x0080F7F0 -> file 0x0080E3F0 in packer1
+  bytes: 4c8b51104d85d2741bb8bf778e613305fcaf1300c1c0070547c71067baadde00000f05c331c0c3cccccccccccccccccc5048b866ddee539ce1b2cb480305960b130048c1c03349bb1421ecb4224262fe4931c35849ffe3cccccccccccccccccc
+
+== where is 0xDEAD as an imm32 in runtime.dll? (ba ad de 00 00 = mov edx,0xDEAD) ==
+  #1 file 0x0080E40C rva 0x0080F80C packer1    ctx 8e613305fcaf1300c1c0070547c71067baadde00000f05c331c0c3cccccccccccccccccc5048b866
+  total mov edx,0xDEAD sites: 1
+
+== raw dword 0x0000DEAD anywhere ==
+  2 occurrences of the dword 0x0000DEAD
+
+== CONTROL: the syscall cell RVA 0x0094A82C in the file ==
+  file 0x00948E2C in packer2 ; 32 bytes around it: bc400f57c8dd90e6f547cf201a0ce96f15bd016044d92ff81b892e6a33b23d16

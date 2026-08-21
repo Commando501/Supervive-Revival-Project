@@ -280,6 +280,10 @@ func handleInventory(w http.ResponseWriter, r *http.Request) {
 	appendOwned(ownedAssetEntries(cfg.Store.Bundles, "StoreOffer"))
 	appendOwned(ownedAssetEntries(cfg.Store.Skins, "HeroCosmeticsBundle"))
 	appendOwned(ownedAssetEntries(cfg.Store.Accessories, "SlotCosmetics"))
+	// S133: emotes, knob-gated (AGS_GRANT_EMOTES). Nil unless the knob is set, so the
+	// default document is byte-identical to the pre-S133 wire. See emotegrant.go for why
+	// the ids come from the shipped mastery-reward catalog and not from a guess.
+	appendOwned(emoteInventoryEntries())
 	writeJSON(w, map[string]any{"AssetEntries": entries, "Version": 1})
 }
 
@@ -387,6 +391,11 @@ func handlePlayerStore(w http.ResponseWriter, r *http.Request) {
 	items := storeItemOffers(cfg.Store.Bundles, "Bundles", "StoreOffer")
 	items = append(items, cosmeticOffers(cfg.Store.Skins, "HeroCosmeticsBundle", "Skins")...)
 	items = append(items, cosmeticOffers(cfg.Store.Accessories, "SlotCosmetics", "Accessories")...)
+	// S133: EMOTES. Their own PrimaryAssetType `Emote` -- NOT SlotCosmetics, despite the
+	// comment at cosmetics.go:13; the live 536-name SlotCosmetics map holds zero emotes.
+	// Inventory ownership alone was measured insufficient, so emotes get offers too, which
+	// is the structural half the working cosmetic tabs have. See emotegrant.go.
+	items = append(items, emoteOffers()...)
 	writeJSON(w, map[string]any{
 		"Region":             cfg.Region,
 		"ItemOffers":         items,

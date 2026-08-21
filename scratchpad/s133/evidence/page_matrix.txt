@@ -1,0 +1,75 @@
+[CTRL] dumps/accountpass/SUPERVIVE-Win64-Shipping.dump.exe
+[CTRL] section .text  VSize=0x7649000 VRVA=0x1000 RawSize=0x7649000 RawPtr=0x1000
+[CTRL] file offset == RVA for .text: PASS
+[CTRL] our TEXT_RVA/VSZ constants match header: PASS
+[CTRL] NPAGES = 30281
+
+accountpass                             15395 pages   50.84%
+claimflow-AFTER                         15453 pages   51.03%
+claimflow-BEFORE                        15433 pages   50.97%
+crash-20260815-160759                    9759 pages   32.23%
+crash-20260815-200514                   15350 pages   50.69%
+crash-20260819-181559                   15382 pages   50.80%
+crash-20260819-200129                   15467 pages   51.08%
+crash-20260820-005902                   15461 pages   51.06%
+crash-20260820-021637                   15382 pages   50.80%
+crash-20260820-142858                   15695 pages   51.83%
+heromastery                             15672 pages   51.76%
+loadout                                 15833 pages   52.29%
+lobby-dispatch-decrypted                15381 pages   50.79%
+menu                                    15739 pages   51.98%
+missions                                15833 pages   52.29%
+rcb                                     15485 pages   51.14%
+roster                                  15831 pages   52.28%
+s129-poolgate                           16009 pages   52.87%
+s131-droppod-live                       16047 pages   52.99%
+s131-rideable-live                      16051 pages   53.01%
+s132-dismount-live                      16020 pages   52.90%
+s132-landstart-live                     16054 pages   53.02%
+store                                   15781 pages   52.12%
+toggles                                 15324 pages   50.61%
+tutorial-hero                           16112 pages   53.21%
+vmbuild                                 15406 pages   50.88%
+
+UNION of all 26 images                  16694 pages   55.13%
+
+UNIQUE pages (page decrypted in EXACTLY ONE image):
+  toggles                                   42 unique pages
+  rcb                                       13 unique pages
+  lobby-dispatch-decrypted                  10 unique pages
+  vmbuild                                    5 unique pages
+  heromastery                                4 unique pages
+  s132-landstart-live                        4 unique pages
+  claimflow-AFTER                            3 unique pages
+  s132-dismount-live                         1 unique pages
+  total pages with multiplicity 1: 82
+  total pages with multiplicity 0 (DARK everywhere): 13587
+  pages present in ALL 26 images: 9757
+
+GREEDY INCREMENTAL COVER (max new pages first):
+   1. tutorial-hero                          +16112 new  ->  16112 ( 53.21%)
+   2. loadout                                +  291 new  ->  16403 ( 54.17%)
+   3. toggles                                +  181 new  ->  16584 ( 54.77%)
+   4. s132-landstart-live                    +   65 new  ->  16649 ( 54.98%)
+   5. lobby-dispatch-decrypted               +   13 new  ->  16662 ( 55.02%)
+   6. rcb                                    +   13 new  ->  16675 ( 55.07%)
+   7. heromastery                            +    6 new  ->  16681 ( 55.09%)
+   8. vmbuild                                +    5 new  ->  16686 ( 55.10%)
+   9. claimflow-AFTER                        +    3 new  ->  16689 ( 55.11%)
+  10. s131-rideable-live                     +    2 new  ->  16691 ( 55.12%)
+  11. crash-20260819-200129                  +    2 new  ->  16693 ( 55.13%)
+  12. s132-dismount-live                     +    1 new  ->  16694 ( 55.13%)
+  13. crash-20260819-181559                  +    0 new  ->  16694 ( 55.13%)
+  14. accountpass                            +    0 new  ->  16694 ( 55.13%)
+  15. claimflow-BEFORE                       +    0 new  ->  16694 ( 55.13%)
+  16. crash-20260815-160759                  +    0 new  ->  16694 ( 55.13%)
+  17. crash-20260815-200514                  +    0 new  ->  16694 ( 55.13%)
+  18. crash-20260820-005902                  +    0 new  ->  16694 ( 55.13%)
+  19. crash-20260820-021637                  +    0 new  ->  16694 ( 55.13%)
+  20. crash-20260820-142858                  +    0 new  ->  16694 ( 55.13%)
+  21. menu                                   +    0 new  ->  16694 ( 55.13%)
+  22. missions                               +    0 new  ->  16694 ( 55.13%)
+  23. roster                                 +    0 new  ->  16694 ( 55.13%)
+  24. s129-poolgate                          +    0 new  ->  16694 ( 55.13%)
+  25. s131-droppod-live                      +    0 new  ->  16694 ( 55.13%)
+  26. store                                  +    0 new  ->  16694 ( 55.13%)
