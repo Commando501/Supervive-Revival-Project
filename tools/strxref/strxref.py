@@ -60,10 +60,21 @@ from array import array
 from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-  # 2026-08-14 (S121, FK-18/FK-19): merged2 is the canonical cold image -- same ImageBase
-  # 0x7FF6AF000000, byte-identical .rdata/.data, and a STRICT .text superset (16,625 vs
-  # 15,833 decrypted pages). docs/fk18-fk19-multistate-merge-settled.md
-DEFAULT_DUMP = r"G:\git\Supervive Revival Project\dumps\merged2.dump.exe"
+  # 2026-08-20 (S134 audit): DEFAULT MOVED merged2 -> merged10.
+  #   merged2  16,625/16,638 pages (54.90/54.95 %)  <- the old default
+  #   merged10 16,755          pages (55.33 %)      <- current (dumps/merged10.dump.exe.txt:19)
+  # WHY THIS WAS A DEFECT, not just staleness: every un-flagged `strxref.py func` run graded
+  # against an image ~1.7 pp behind HEAD, and a page that is decrypted in merged10 but zero in
+  # merged2 reads as "COVERAGE-BLOCKED / dark" -- i.e. the tool manufactured exactly the
+  # instrument-artifact this project's method rule #1 exists to prevent. The S134 audit found
+  # 47 of 55 "this is dark" claims re-grade as stale, and regrade_blocked.py's own DARK control
+  # (TryJoinQueue 0x5875E90) now reads LIT.
+  # mergedumps merges .text page-granular and rejects any donor that conflicts on a shared page
+  # (0 conflicts required), so merged10 is a strict superset -- nothing readable before is lost.
+  # Override per-run with the explicit dump argument if you need a single-state image;
+  # NEVER read a mutable .data global out of a merged image (see CLAUDE.md mergedumps note).
+  # 2026-08-14 (S121, FK-18/FK-19) original rationale: docs/fk18-fk19-multistate-merge-settled.md
+DEFAULT_DUMP = r"G:\git\Supervive Revival Project\dumps\merged10.dump.exe"
 INDEX_DIR = os.path.join(HERE, "index")
 INDEX_PATH = os.path.join(INDEX_DIR, "strxref.idx")
 

@@ -537,6 +537,39 @@ $Variants = @{
         #   KDXARMS bits: 0 D0c ContainsPlayer dispatch control | 1 D1 pre-append NEGATIVE control |
         #                 2 D2 the append | 3 D3 the detach | 4 D4 second cycle | 5 D5 restore on bail
         'dismount'            = @('-DKRUNMODE=RM_DISMOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        # ★★★★★ S135 RM_BOTSPAWN -- bots on the TUTORIAL route. CALL-ONLY: no module-image write,
+        #   no data poke, no PI hook; REFUSES under KFUNCSWAP=0. Staging: gft -> fo -> sp -> this
+        #   (NO pod, NO plane -- this is not the drop chain).
+        #   [M] Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial and has ZERO
+        #   ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's ubergraph),
+        #   so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped SpawnPlayer.
+        #   ⚠ THE VERDICT IS THE GUObjectArray CENSUS DELTA, never the CreatedBot out-param (that
+        #     comes from a team scan a SUCCESSFUL spawn can also fail).
+        #   Knobs: -DKBSTEAM (default -1 = opposite the player) -DKBSHERO -DKBSDIFF -DKBSLEVEL
+        #          -DKBSOFFSET -DKBSARMS -DKBSFUNC -DKBSNUM -DKBSAI
+        'botspawn'            = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+
+        #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
+        #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
+        #   specifically did nothing'.
+        'botspawn-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSARMS=0x0B')
+
+        #   SpawnBotTeamAtLoc -- a WHOLE ENEMY TEAM in one call. The hero-class guard is SKIPPED
+        #   (not failed): this entry point has no HeroClassToSpawn and picks from the roster itself
+        #   via GetSpawnableBots -> Array_NRandom (measured live: Num=13 Max=16).
+        #   FLOWN S135: +3 heroes of 3 GAME-CHOSEN classes, CreatedBotTeam.Num=3.
+        'botteam'             = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSFUNC=\"SpawnBotTeamAtLoc\"','-DKBSNUM=3')
+
+        # ★★★★★ S135c THE CONTROLLER ROUTE (BUILT, UNFLOWN). The component route spawns PAWNS but
+        #   never a CONTROLLER: MakeNewBotController 0x5563660 bails on a stripped F(UWorld*)->nullptr
+        #   at 0x55636BB, so the REAL AController::Possess 0x36E2B60 is skipped at 0x556DD37.
+        #   This arm uses a DIFFERENT, INTACT entry point instead of trying to satisfy the stub:
+        #   UAIBlueprintHelperLibrary::SpawnAIFromClass 0x4631C50 -- REAL, 2133 B, 0 fold calls,
+        #   native + STATIC => S55 direct thunk with context = the CDO.
+        #   ★ READ ONE NUMBER: the BotController/AIController census delta (P1).
+        #   ★ And take a dumpimage EITHER WAY: P4 = APawn::SpawnDefaultController 0x3BBF3C0 going
+        #     DARK -> DECRYPTED is a free permanent offline receipt, independent of any census.
+        'botai'               = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1')
         # READ-ONLY control arm: resolve, read out all six gates, run the D0c dispatch control and the
         # D1 pre-append negative control -- and then WRITE NOTHING and call no detach on a non-empty
         # array. Any physical change from THIS build would mean the readout is not read-only.

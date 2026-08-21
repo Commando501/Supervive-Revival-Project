@@ -66,14 +66,53 @@ type playerState struct {
 	SoloMode string `json:"-"`
 
 	// InQueue is true between the FIND MATCH click (POST .../joinQueue) and a cancel.
-	// Echoed as the party's and the member's `inQueue` boolean so the client's queued
-	// state survives the next /party poll — without it the poll re-serves false and the
-	// UI snaps back, exactly the defect handleSetTargetQueues exists to remove.
+	// It is echoed on the party document so the client's queued state survives the next
+	// /party poll -- without it the poll re-serves the idle document and the UI snaps
+	// back, exactly the defect handleSetTargetQueues exists to remove.
+	//
+	// ⚠⚠ CORRECTION (S135): the field that carries this is `state`, NOT `inQueue`.
+	// [M] FParty has SIXTEEN properties (0..15) read from the UHT bind table
+	// (tools/asdump/out/binds_members.csv): ID, Version, State, ClientVersion, IsOpen,
+	// FillTeam, OwnerID, DiscordJoinSecret, Members, TargetQueueIDs, ExcludedRegions,
+	// Requests, CustomGameDetails, QueueJoinTime, TargetQueueID, IsRanked -- and there
+	// is NO `inQueue` on FParty or on FPartyMember. The `inQueue` keys applyQueueState
+	// writes are UNKNOWN keys, which JsonObjectStringToUStruct ignores silently, so they
+	// are DEAD and `state:"Matchmaking"` is doing 100% of the work. That is independent
+	// confirmation of S133's own PROBE-1 null. Left in place because an unknown key is
+	// inert; annotated so a successor cannot re-believe it does something.
 	//
 	// TRANSIENT (json:"-"), for the same reason SoloMode is: a persisted "queued" flag
 	// would make a FRESH boot claim the player is already searching for a match, with no
 	// matchmaker to ever clear it. Queue state is a property of a live session.
 	InQueue bool `json:"-"`
+
+	// ARMED MATCH (S135, co-op vs AI). Set when a QUEUED player's match is armed by
+	// armqueue.go, i.e. the matchmaking-path equivalent of what SoloMode does for the
+	// solo path. handleCoreGamePlayer reports MatchID/MatchVersion when either is set.
+	//
+	// WHY THE SOLO PATH CANNOT BE REUSED: native UPartyManager::IsSpecialQueue
+	// (fn 0x5854F5F) hardcodes the split. {practice,customgame,dropin,tutorialNew,
+	// training} go TryStartSoloMode -> POST /startSoloMode (which is the only writer of
+	// SoloMode); {default,deathmatch,bots,tournament,armorydeathmath} go TryJoinQueue ->
+	// POST /joinQueue and NEVER send startSoloMode. So `bots` could sit in a real, timed,
+	// cancellable queue forever and MatchID would stay "".
+	//
+	// TRANSIENT (json:"-"), for exactly the reason SoloMode and InQueue are, and here the
+	// failure mode is already ON RECORD: S107 measured that once /core-game/players
+	// reports a MatchID it does so forever, so the client believes it is already in a
+	// match and every subsequent START is a silent no-op. A PERSISTED MatchID would make
+	// a FRESH boot claim an active match with no matchmaker in existence to clear it.
+	MatchID string `json:"-"`
+	// MatchVersion is the Version served alongside MatchID. It must be strictly
+	// monotonic per player: /core-game/players is behind the same "pushed/served version
+	// > cached version" gate as every other messenger resource, so a repeat or a
+	// decrease is silently ignored. Read it via CoreGamePlayerVersion(id) -- never
+	// recompute it at the push site (that is the documented push.go too-low/too-high
+	// footgun, and the reason interactive.MatchHistoryVersion exists).
+	MatchVersion int64 `json:"-"`
+	// MatchQueue records WHICH queue id the match was armed for, so the match document
+	// can be built for that queue and so a cancel can tell "my match" from a stale one.
+	MatchQueue string `json:"-"`
 
 	// PartyIsOpen is the party privacy toggle (POST .../setIsOpen/{True|False}), echoed as
 	// the party's `isOpen` boolean. Transient for the same reason as InQueue and SoloMode:

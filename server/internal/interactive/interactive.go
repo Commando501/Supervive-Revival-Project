@@ -27,6 +27,12 @@ type Service struct {
 	// party re-apply (the S85 avatar-switch latency fix â€” see lobby.MarkDirty). nil in
 	// tests / when no lobby service is wired.
 	partyDirty func(id string)
+	// notifyResource, if set, pushes a targeted per-resource version bump down the
+	// messenger so the client refetches ONE resource without a reconnect (lobby's
+	// NotifyResource). Needed by armqueue.go because /core-game/players/{id} is NOT
+	// polled: [M] it is fetched exactly ONCE per messenger connection, so a value
+	// written after login is never seen unless it is pushed. nil in tests.
+	notifyResource func(playerID, resource string, version int64, label string) error
 }
 
 // New constructs the service, loading any persisted player state from
@@ -38,6 +44,28 @@ func New() *Service {
 // SetPartyDirtyNotifier wires the callback invoked after a loadout write (typically
 // lobby.Service.MarkDirty). Called once at startup from cmd/ags.
 func (s *Service) SetPartyDirtyNotifier(fn func(id string)) { s.partyDirty = fn }
+
+// SetResourceNotifier wires lobby.Service.NotifyResource. Called once at startup from
+// cmd/ags, alongside SetPartyDirtyNotifier.
+func (s *Service) SetResourceNotifier(fn func(playerID, resource string, version int64, label string) error) {
+	s.notifyResource = fn
+}
+
+// CoreGamePlayerVersion returns the EXACT Version that GET /core-game/players/{id}
+// will serve right now. Anything pushing that resource must pass this value: the
+// messenger's refetch gate is "pushed version > cached version", so a too-low push is
+// ignored and a too-high one causes an unbounded refetch loop (push.go). This is the
+// same contract as interactive.MatchHistoryVersion, and it exists so the push site and
+// the document cannot drift apart.
+func (s *Service) CoreGamePlayerVersion(id string) int64 {
+	if st := s.store.get(id); st != nil && st.MatchID != "" {
+		return st.MatchVersion
+	}
+	if forceTutorialMatch {
+		return matchStateVersion
+	}
+	return 0
+}
 
 // PartyVersion exposes the monotonic party version for the lobby's targeted
 // per-resource resync (FK-15 probe #3). The messenger's refetch gate is
@@ -935,7 +963,12 @@ var matchStateVersion = time.Now().Unix()
 func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	st := s.store.get(id)
-	active := forceTutorialMatch || (st != nil && st.SoloMode != "")
+	// S135: the SOLO path (SoloMode, written only by POST /startSoloMode) is joined by
+	// the MATCHMAKING path (MatchID, written only by armqueue.go). `bots` and every other
+	// TryJoinQueue-path queue never sends startSoloMode, so without the MatchID term a
+	// queued player's MatchID stays "" forever. With AGS_ARM_QUEUE unset, MatchID is
+	// never written and this expression is byte-identical in behaviour to the old one.
+	active := forceTutorialMatch || (st != nil && (st.SoloMode != "" || st.MatchID != ""))
 
 	resp := map[string]any{
 		"ID":      id,
@@ -951,8 +984,21 @@ func (s *Service) handleCoreGamePlayer(w http.ResponseWriter, r *http.Request) {
 		// Non-empty MatchID + a non-zero Version signals "you have a match" so the
 		// client escalates to fetch the match details (see handleCoreGameMatch). The
 		// Version bumps each ags start so a hot-swap re-triggers the client's re-eval.
-		resp["MatchID"] = tutorialMatchID(id)
-		resp["Version"] = matchStateVersion
+		if st != nil && st.MatchID != "" {
+			resp["MatchID"] = st.MatchID
+		} else {
+			resp["MatchID"] = tutorialMatchID(id)
+			resp["Version"] = matchStateVersion
+		}
+	}
+	// Serve the per-player monotonic version whenever one has been assigned, INCLUDING
+	// when MatchID is empty. That is what makes AGS_ARM_QUEUE=empty a real single-
+	// variable control: it moves the document and the version exactly as `arm` does and
+	// differs ONLY in the MatchID field. Reverting to AGS_ARM_QUEUE=off instead would
+	// change the document AND the version at once and be uninterpretable -- precisely
+	// the AGS_PLAYER_RANK=0 mistake S122 recorded.
+	if st != nil && st.MatchVersion > 0 {
+		resp["Version"] = st.MatchVersion
 	}
 	writeJSON(w, resp)
 }
@@ -992,8 +1038,16 @@ const tutorialMapName = "/Game/Loki/Maps/Tutorial/LVL_Tutorial"
 func buildTutorialMatchInfo(matchID, id, display, heroAssetId string) map[string]any {
 	now := time.Now().UTC().Format(time.RFC3339)
 	gameConfig := map[string]any{
-		"MapName":               tutorialMapName,
-		"GameMode":              "tutorialNew",
+		// ⚠⚠ [M] NEITHER OF THESE SELECTS THE CLIENT'S WORLD. The travel URL is built
+		// from ConnectionDetails.Address alone, and the only "?game=" literal in the
+		// image belongs to MovieRenderPipeline. With an EMPTY address the client parks
+		// locally (S62) and the world is then chosen by the force-open shim reading
+		// docs/tutorial-launch-cmd.txt. So these two are DOCUMENTATION OF INTENT, and
+		// the AGS_ARM_QUEUE_MAP / _GAMEMODE overrides exist to keep the served document
+		// honest about which match was armed -- NOT as a lever on the map.
+		// Do not try to reach a different level by editing them.
+		"MapName":               armQueueMap(tutorialMapName),
+		"GameMode":              armQueueGameMode("tutorialNew"),
 		"ServerCulture":         "en",
 		"CanAlwaysDisassociate": true,
 		"MaxHeroDuplicates":     1,
