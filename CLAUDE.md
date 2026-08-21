@@ -3213,7 +3213,7 @@ which is a bad property for a project whose value is its retraction history).
 - **`docs/<fk-n>-*-settled.md`** — the primary evidence for each settled unknown, with the
   measurements and the controls. These are ground truth; this file is a summary of them.
 - **`docs/method-rules.md`** — the two method rules above.
-- **`docs/next-session-prompt-*.md`** — chronological handoffs.
+- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s134.md`** (S133 → S134): FIND MATCH works and nothing answers the queue; the shadow-exe read that could obsolete the coverage problem; and `dumpimage` discarding the protector 52 times.
 
 ⚠ **Historical handoffs still say things like "read memory `supervive-x`".** Those are dated
 archives and were deliberately NOT rewritten — editing them would falsify the record of what a past
