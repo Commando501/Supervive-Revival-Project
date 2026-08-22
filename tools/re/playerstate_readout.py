@@ -341,6 +341,40 @@ def dump_controller(ctl, tag):
             continue                      # not declared on this chain -- say nothing, claim nothing
         line, _ = readobj(ctl, c, comp, None)
         print("      " + line)
+    # ---- S138: DOES THE BOT ACT? the three reads that separate the failure modes ----------------
+    # ALokiBotController::Tick (0x556E9F0) has exactly ONE motion driver, a random wander:
+    #   [MoveComp vtable+0x5E0] = slot 188 = UCharacterMovementComponent::RequestPathMove 0x35F41D0
+    #     -> UPawnMovementComponent::RequestPathMove 0x3642960
+    #     -> APawn::Internal_AddMovementInput 0x3BACB60
+    #     -> APawn::ControlInputVector (+0x418) += RandomMoveDirection
+    # It is gated on Blackboard != NULL (printed above) AND on a blackboard bool whose value is
+    # mirrored at controller+0x6A0. Reading these three separates:
+    #   gate FALSE                      -> inert BY GATE, not by defect
+    #   gate TRUE, direction zero       -> Tick never reached the wander driver
+    #   direction non-zero, input zero  -> the motor call did not land
+    #   both non-zero, pawn stationary  -> the failure is PAST the motor, in the movement component
+    # ⚠ The blackboard key's NAME is [I] (IsCharacterControllable of BB_HeroBots) because decoding
+    #   FNameEntryId 0x0001A12C needs the live FNamePool. You do NOT need the name: +0x6A0 is the
+    #   same value and is a direct read.
+    if any("BotController" in a for a in chain(c)):
+        b = rpm(ctl + 0x6A0, 1)
+        f2 = rpm(ctl + 0x602, 1)
+        print("      -- S138 motion chain (offsets from the ALokiBotController::Tick transcription) --")
+        print("      bCharacterControllable +0x6A0 = %s%s"
+              % (("%d" % b[0]) if b else "UNREADABLE",
+                 "   <- THE GATE on the ONLY motion driver" if b else ""))
+        print("      ForceCharacterNotControllable +0x602 = %s   (forces the gate FALSE)"
+              % (("%d" % f2[0]) if f2 else "UNREADABLE"))
+        rmd = rpm(ctl + 0x658, 24)
+        if rmd:
+            import struct as _s
+            x, y, z = _s.unpack("<ddd", rmd)
+            print("      RandomMoveDirection +0x658 = (%.4f, %.4f, %.4f)   |v|=%.4f%s"
+                  % (x, y, z, (x * x + y * y + z * z) ** 0.5,
+                     "   [Z is 0 by construction -- horizontal unit vector, re-randomised every 2.0 s]"
+                     if abs(z) < 1e-9 else "   ** Z NON-ZERO -- unexpected, see the Tick transcription **"))
+        else:
+            print("      RandomMoveDirection +0x658 = UNREADABLE")
     if ps:
         psc = ocls(ps)
         print("      >> PlayerState 0x%X class=%s chain=%s" % (ps, clsname(psc), " <- ".join(chain(psc))))
@@ -351,6 +385,15 @@ def dump_controller(ctl, tag):
         print("           " + line)
         line, pctl = readobj(pawn, pc, "Controller", REC_PAWN_CONTROLLER)
         print("           " + line)
+        # S138: the motor's OUTPUT. APawn::ControlInputVector +0x418 is what
+        # Internal_AddMovementInput accumulates into; non-zero means the movement input landed.
+        civ = rpm(pawn + 0x418, 24)
+        if civ:
+            import struct as _s2
+            cx, cy, cz = _s2.unpack("<ddd", civ)
+            print("           ControlInputVector +0x418 = (%.4f, %.4f, %.4f)   |v|=%.4f%s"
+                  % (cx, cy, cz, (cx * cx + cy * cy + cz * cz) ** 0.5,
+                     "   <- the motor's OUTPUT" if (cx or cy or cz) else "   (zero)"))
         line, aic = readobj(pawn, pc, "AIControllerClass", REC_PAWN_AICLASS)
         print("           " + line)
         print("           HANDSHAKE: pawn.Controller %s this controller" % ("==" if pctl == ctl else "!="))
