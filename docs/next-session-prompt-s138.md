@@ -59,6 +59,19 @@ Regression gate **`botai` `5e47c13cf7f0a158` UNCHANGED** across all three source
 
 ## 1. ★ THE NEXT ARM — `SpawnBot` WITH A PREMADE CONTROLLER
 
+★★★ **IT IS BUILT. `build.ps1 -Name tutorial_launch -Variant spawnbot-premade`
+(`ec6ca40c8b46297a`), with a read-only control `spawnbot-readonly` (`a6cad1bb25f78c52`).
+Pre-registration, gates, predictions and the flight order: `docs/s138-ARME-PREREGISTERED.txt` —
+read it before flying, and do not edit it afterwards.**
+Six pre-flight gates read and REFUSE rather than guess (authority · PlatformPlayerID · GameState ·
+TeamStates · the component by reflected property · a 16-byte prologue signature), and two
+**pre-registered page receipts** (`0x5556D50`, `0x55667F0` — both DARK in every image) make the
+result checkable offline afterwards. ⚠ **Fly `spawnbot-readonly` FIRST**: it runs ARM D and every
+gate and calls nothing, so it tells you whether the flight would work for free.
+⚠ **NOT call-only** — 7 non-stack writes across four objects. ⚠ **`lokibot` moved to
+`e934636bea0fb9b4`** (ARM E's census latches compile into every KBSPS arm); the FLOWN S137 artifact
+is still `3119d75ae2ca1859`. `botai` `5e47c13cf7f0a158` unchanged.
+
 Everything this needs now exists:
 1. **`ALokiBotController` is intact and instantiable** — registered, non-abstract, `sizeof 0x6A8`,
    ctor `0x554B430` REAL 577 B, and its entire four-deep construction chain has **zero folds and

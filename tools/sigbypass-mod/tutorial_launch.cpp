@@ -14158,6 +14158,7 @@ static void DxFinalReport(){
                           // bit2 RESTORE the CDO bit (A-B-A)     bit3 ARM B: direct InitPlayerState on #1
                           // bit4 LINK the pawn: APawn::SetPlayerState(pawn, ctl->PlayerState)
                           // bit5 ARM D: poke CDO(APawn).AIControllerClass -> ALokiBotController, A-B-A
+                          // bit6 ARM E: SpawnBot(PremadeBotController = ARM D's controller)
 #endif
 
 #if KBSPS
@@ -14179,6 +14180,23 @@ static char      g_psLbChain[3][192]={{0},{0},{0}};
 static uintptr_t g_psWorld=0, g_psAgm=0, g_psPSClass=0;
 static int       g_psScanPS=-1, g_psA=-1, g_psB=-1, g_psC=-1;   // PlayerState-chain census A0/A1/A2
 static uintptr_t g_psWorldCand[4]={0,0,0,0}; static int g_psWorldN=0;
+#ifndef KBSSBTEAM
+#define KBSSBTEAM 1       // S138 ARM E: TeamIndex passed to SpawnBot.
+#endif
+#ifndef KBSSBCALL
+#define KBSSBCALL 1       // S138 ARM E: 0 = run every pre-flight gate and then make NO CALL.
+                          // This exists so the read-only control arm is a DIFFERENT BINARY.
+                          // Gating it on KBSPSARMS alone would have made `spawnbot-readonly`
+                          // byte-identical to `lokibot` -- a DEGENERATE CONTROL, the hazard this
+                          // repo has recorded three times (play/play_nopimutex/play_strictroot,
+                          // poolspawn/_cdoctrl, droppod_pe/_cdoctrl). ALWAYS diff the digests
+                          // before flying an A/B: an arm compared against a copy of itself has
+                          // burned a live run in this project before.
+#endif
+static uintptr_t g_psGmCand=0, g_psGsCand=0;          // latched by the A0 census (chain-matched)
+static uintptr_t g_psSbComp=0, g_psSbReturned=0;
+static int  g_psSbTried=0, g_psSbCalled=0, g_psSbFaulted=0, g_psSbRefused=0;
+static char g_psSbWhy[192]={0};
 #endif
 
 static uintptr_t g_bsGm=0, g_bsComp=0, g_bsFn=0, g_bsHeroCls=0, g_bsPlayerHero=0;
@@ -14263,6 +14281,15 @@ static uint8_t BsClassify(uintptr_t cls){
     //         strcmp, memoised per CLASS, so it costs one FName decode per distinct class rather
     //         than one per object.
     if(PhChainHas(cls,"PlayerState",chain,sizeof(chain)))       v|=4;
+    // S138 ARM E needs the live GameMode (to reach Comp_BP_BotSpawner by reflected property) and
+    // the live GameState (to read TeamStates for a pre-flight gate). Both are latched here, in the
+    // pass that already runs, rather than by calling PhPickGameMode -- which does its OWN full
+    // GUObjectArray sweep (~2 s of held game thread) and prints a candidate line per hit.
+    // ⚠ The discriminator is PhPickGameMode's, not a new one: a chain merely CONTAINING "GameMode"
+    //   also matches every Comp_GameMode_* ActorComponent (the substring trap that function's own
+    //   comment records). Require the class that DECLARES the round API: LokiRoundGameMode.
+    if(PhChainHas(cls,"LokiRoundGameMode",chain,sizeof(chain))) v|=16;
+    if(PhChainHas(cls,"LokiGameState",chain,sizeof(chain)))     v|=32;
     { char cn[128]; cn[0]=0; GetFNameStr(NameId(cls),cn,sizeof(cn)); if(!strcmp(cn,"World")) v|=8; }
 #endif
     if(g_bsMemoN<BS_MEMO){ g_bsMemoCls[g_bsMemoN]=cls; g_bsMemoVal[g_bsMemoN]=v; g_bsMemoN++; }
@@ -14308,6 +14335,8 @@ static void BsScanWorld(const char* tag,int* botCtl,int* heroes,uintptr_t* heroO
                 if(g_psWorldN<4) g_psWorldCand[g_psWorldN++]=obj;
                 if(!g_psWorld) g_psWorld=obj;
             }
+            if((v&16)&&!g_psGmCand) g_psGmCand=obj;
+            if((v&32)&&!g_psGsCand) g_psGsCand=obj;
 #endif
             if(v&2){ nh++;
                 if(heroOut&&heroCountOut){
@@ -15086,6 +15115,268 @@ static void BsPsLokiBot(){
     } else Marker("[PS] ---- ARM D: no treatment controller, so no ARM B/C on it. ----\r\n");
 }
 
+// ==============================================================================================
+// ARM E (S138) -- `ULokiBotSpawnerComponent::SpawnBot` WITH A **PREMADE** CONTROLLER.
+//
+// WHY THIS IS THE WHOLE POINT. The Loki bot pipeline has always died at ONE place:
+//     SpawnBot 0x556D910 -> MakeNewBotController 0x5563660
+//         0x55636BB call 0x0F7EB50   STRIPPED -> nullptr      <== FK-22's getter
+//         0x55636C8 je  -> EXIT      controller NULL -> Possess skipped -> no PlayerState
+// [M] `SpawnBot` takes an `AController* PremadeBotController`, and a NON-NULL value SHORT-CIRCUITS
+// **BEFORE** MakeNewBotController is ever called:
+//     0x556DA4F  48 8b 44 24 70        mov rax,[rsp+0x70]          the parameter
+//     0x556DAA1  48 85 c0              test rax,rax
+//     0x556DAA4  0f 85 88 00 00 00     jne 0x556DB32               skip 0x556DAAA..0x556DB30
+// and the skipped region's ONLY memory writes are three stores to SpawnBot's own stack frame.
+// ⇒ **MakeNewBotController is never called, so FK-22's stripped getter is never reached.**
+// The Blueprint route cannot do this -- `Comp_BP_BotSpawner_C::SpawnClassBotAtLoc` hardcodes
+// `EX_NoObject` in that slot -- but S137 can now MANUFACTURE the argument: ARM D produces an
+// `ALokiBotController` possessing a hero, and ARM B gives it a real `BP_LokiPlayerState_C` at
+// `+0x3C0`, which is the exact field SpawnBot consumes.
+//
+// THE CALL. The RAW IMPL, not the exec thunk -- 7 native args:
+//   void* __fastcall(void* comp, UClass** heroClassCell, double locXYZ[3], int32 teamIndex,
+//                    uint8 difficulty, void* premadeController, void* botNameFString)
+//   rcx/rdx/r8/r9d then [rsp+0x20] difficulty, [rsp+0x28] premade, [rsp+0x30] &botName.
+// ★ It RETURNS the spawned `ALokiHeroCharacter*` directly, so the `CreatedBot` out-param trap
+//   (a GetPlayerStatesOnTeam scan that can return a PRE-EXISTING bot, or nothing, at that instant)
+//   does NOT apply to a direct call. The census delta is still the verdict; the return is a
+//   corroborator.
+//
+// ⚠⚠ `BotName` MUST BE A ZEROED 16-BYTE FString. SpawnBot fills it and **FREES it with the GAME's
+//   `FMemory::Free` (0xFF9310) on BOTH exit paths**, so a shim-CRT-allocated buffer there is heap
+//   corruption. A zeroed {Data=null,Num=0,Max=0} is correct: the game allocates into it, uses it,
+//   and frees what it itself allocated.
+//
+// ⚠⚠ RISK CLASS: **NOT CALL-ONLY.** A lane graded it CALL-ONLY and its own adversarial refuter
+//   REFUTED that -- an exhaustive operand scan finds **7 non-stack writes across FOUR objects**.
+//   This mutates world state. It is SEH-guarded and separately knob-gated, and it is a DIAGNOSIS,
+//   not a shipping fix.
+//
+// ⚠ It re-possesses: ARM D's controller is already possessing a pawn, so SpawnBot's Possess will
+//   unpossess it first. `ALokiBotController::OnUnPossess` (0x55667F0) is DARK in EVERY image on
+//   disk -- never executed anywhere, ever -- so this drives genuinely unread code. That is a real
+//   hazard AND a free receipt (see the page predictions below).
+//
+// ★★ PRE-REGISTERED PAGE RECEIPTS -- both are binary, permanent and offline-checkable, and both are
+//    independent of any census:
+//      0x5556D50  DARK in 57/57 images. Called at 0x556DEA2, PAST the PlayerState gate. Going
+//                 non-zero proves execution reached the block that FK-22 has never reached.
+//      0x55667F0  ALokiBotController::OnUnPossess, DARK in every image. Going non-zero proves
+//                 Possess ran on our premade controller.
+//    Take a `dumpimage` after the flight EITHER WAY.
+//
+// ⚠ PRE-FLIGHT GATES, all READ AND PRINTED, all refusing rather than guessing. Each turns a
+//   potential silent null into a named cause:
+//   G1 the premade controller passes AController::Possess's authority test. VERIFIED BYTES:
+//        0x36E2B86 test byte [rcx+0x448],4 / 0x36E2B93 jne 0x36E2E13   -> PROCEED
+//        0x36E2B99 cmp  byte [rcx+0x160],3 / 0x36E2BA0 je  0x36E2E13   -> PROCEED
+//        fallthrough 0x36E2BA6 = the FMessageLog warning.
+//      ⚠ A lane described 0x36E2BA0 as where Possess "refuses". It is the jump to SUCCESS; read the
+//        branch TARGET, not the condition. (0x36E2E13 reads Pawn+0x3F8 and calls [rax+0x868] =
+//        slot 269 = OnPossess.) ★ This gate is already [M]-passed by consequence -- ARM D's
+//        controller reached OnPossess -- but it is read out anyway, because "we think it passed" is
+//        not the same as "we watched it pass".
+//   G2 PlayerState PlatformPlayerID: `0x556DD89 cmp dword [rdi+0x8c8],1 / 0x556DD90 jg 0x556DE58`.
+//      If ArrayNum > 1 the jg SKIPS the whole bot-naming + ServerSetHeroClass + SetPlayerTeam block
+//      -- i.e. the interesting half -- while SpawnBot still returns a pawn. A null there would look
+//      like failure and would not be.
+//   G3/G4 a live GameState with a non-empty TeamStates (+0x600): SpawnBot's own GetLokiGameState /
+//      GetTeamState gates sit between the spawn and the dark-page receipt.
+//   G5 the component, resolved BY REFLECTED PROPERTY off the live GameMode (never by name search --
+//      the SCS archetype Comp_BP_BotSpawner_GEN_VARIABLE coexists with the live instance).
+//   G6 a 16-byte PROLOGUE SIGNATURE on 0x556D910. It is a raw impl with no vtable slot to validate
+//      against, so this is the only self-validation available -- the same substitute ARM C uses.
+// ==============================================================================================
+
+typedef void* (__fastcall *PsSpawnBotFn)(void*, void**, double*, int32_t,
+                                         unsigned char, void*, void*);
+
+constexpr uintptr_t PS_RVA_SPAWNBOT = 0x556D910;
+static const uint8_t PS_SIG_SPAWNBOT[16] =
+    {0x40,0x55,0x53,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57,0x48,0x8d,0xac};
+
+static void BsPsSpawnBot(){
+    Marker("[PS] ================ ARM E: SpawnBot(PremadeBotController) ================\r\n");
+    Marker("[PS] PRE-REGISTERED PAGE RECEIPTS (check with a dumpimage EITHER WAY):\r\n"
+           "[PS]   0x5556D50 DARK in 57/57 images -> non-zero means execution passed the PlayerState\r\n"
+           "[PS]     gate at 0x556DEA2, which FK-22's route has never reached.\r\n"
+           "[PS]   0x55667F0 ALokiBotController::OnUnPossess, DARK in every image -> non-zero means\r\n"
+           "[PS]     Possess ran on our premade controller.\r\n");
+    strncpy_s(g_psSbWhy,sizeof(g_psSbWhy),"(unset)",_TRUNCATE);
+
+    uintptr_t ctl=g_psLbCtl[1];
+    if(!LooksLikePtr(ctl)){
+        Marker("[PS] ARM E REFUSED: ARM D produced no LokiBotController. This is a STAGING statement,\r\n"
+               "[PS]   not a result about SpawnBot.\r\n"); g_psSbRefused=1; return; }
+    { char cn[128]; cn[0]=0; uintptr_t cc=ClassOf(ctl);
+      if(LooksLikePtr(cc))GetFNameStr(NameId(cc),cn,sizeof(cn));
+      char ch[256]; ch[0]=0; if(LooksLikePtr(cc))PhChainHas(cc,"@never@",ch,sizeof(ch));
+      Markerf("[PS] premade controller = 0x%llX class='%s'\r\n[PS]   chain=%s\r\n",
+              (unsigned long long)ctl,cn,ch); }
+
+    // ---- G1: the authority test AController::Possess will apply to our controller.
+    {
+        uint8_t role=SafeReadable((void*)(ctl+0x160),1)?*(uint8_t*)(ctl+0x160):0xFF;
+        uint32_t f448=SafeReadable((void*)(ctl+0x448),4)?*(uint32_t*)(ctl+0x448):0;
+        int pass=(role==3)||((f448&4)!=0);
+        Markerf("[PS] G1 Possess authority: Role@+0x160=%u (3=ROLE_Authority)  [ctl+0x448]&4=%u -> %s\r\n"
+                "[PS]    (0x36E2B93 jne / 0x36E2BA0 je BOTH jump to 0x36E2E13 = the MAIN BODY; the\r\n"
+                "[PS]     FALLTHROUGH is the warning. A lane called 0x36E2BA0 the refusal -- it is not.)\r\n",
+                (unsigned)role,(unsigned)(f448&4),pass?"PASSES":"*** WOULD REFUSE ***");
+        if(!pass){ strncpy_s(g_psSbWhy,sizeof(g_psSbWhy),"G1 authority",_TRUNCATE);
+            Marker("[PS] ARM E REFUSED at G1.\r\n"); g_psSbRefused=1; return; }
+    }
+
+    // ---- G2: PlatformPlayerID.ArrayNum, the gate that silently skips the interesting half.
+    {
+        uintptr_t ps=g_psCtlPS[1];
+        if(!LooksLikePtr(ps)){
+            Marker("[PS] G2: the premade controller has NO PlayerState. SpawnBot's block at 0x556DD69\r\n"
+                   "[PS]    bails on that, so ServerSetHeroClass/SetPlayerTeam are skipped and the\r\n"
+                   "[PS]    0x5556D50 receipt cannot fire. REFUSING -- a null here is not a result.\r\n");
+            strncpy_s(g_psSbWhy,sizeof(g_psSbWhy),"G2 no PlayerState",_TRUNCATE);
+            g_psSbRefused=1; return; }
+        int32_t num=SafeReadable((void*)(ps+0x8C8),4)?*(int32_t*)(ps+0x8C8):-1;
+        Markerf("[PS] G2 PlayerState=0x%llX  PlatformPlayerID.ArrayNum [PS+0x8C8]=%d -> %s\r\n"
+                "[PS]    (0x556DD89 cmp dword [rdi+0x8c8],1 / jg 0x556DE58 skips bot-naming +\r\n"
+                "[PS]     ServerSetHeroClass + SetPlayerTeam when >1)\r\n",
+                (unsigned long long)ps,num,(num<=1)?"passes":"*** WOULD SKIP THE BLOCK ***");
+    }
+
+    // ---- G3/G4: a live GameState with TeamStates.
+    {
+        char gsn[128]; gsn[0]=0;
+        if(LooksLikePtr(g_psGsCand)) GetFNameStr(NameId(ClassOf(g_psGsCand)),gsn,sizeof(gsn));
+        int32_t tsNum=-1;
+        if(LooksLikePtr(g_psGsCand)&&SafeReadable((void*)(g_psGsCand+0x608),4))
+            tsNum=*(int32_t*)(g_psGsCand+0x608);
+        Markerf("[PS] G3/G4 LokiGameState=0x%llX '%s'  TeamStates[+0x600].Num=%d\r\n"
+                "[PS]    (informational: SpawnBot calls its OWN GetLokiGameState 0x56F01A0 and\r\n"
+                "[PS]     GetTeamState 0x5696D60; an empty team array makes those gates fail and the\r\n"
+                "[PS]     dark-page receipt not fire, while SpawnBot STILL returns a pawn.)\r\n",
+                (unsigned long long)g_psGsCand,gsn,tsNum);
+    }
+
+    // ---- G5: the component, by reflected property off the live GameMode.
+    {
+        if(!LooksLikePtr(g_psGmCand)){
+            Marker("[PS] ARM E REFUSED at G5: the census latched no LokiRoundGameMode-derived object.\r\n");
+            strncpy_s(g_psSbWhy,sizeof(g_psSbWhy),"G5 no gamemode",_TRUNCATE);
+            g_psSbRefused=1; return; }
+        uintptr_t gmCls=ClassOf(g_psGmCand);
+        char gcn[128]; gcn[0]=0; if(LooksLikePtr(gmCls))GetFNameStr(NameId(gmCls),gcn,sizeof(gcn));
+        uint32_t oc=PropOffsetSuper(gmCls,"Comp_BP_BotSpawner");
+        Markerf("[PS] G5 gameMode=0x%llX class='%s'  Comp_BP_BotSpawner@0x%X\r\n",
+                (unsigned long long)g_psGmCand,gcn,oc);
+        if(oc==0xFFFFFFFF||!SafeReadable((void*)(g_psGmCand+oc),8)){
+            Marker("[PS] ARM E REFUSED at G5: no 'Comp_BP_BotSpawner' ObjectProperty on the live "
+                   "GameMode class.\r\n");
+            strncpy_s(g_psSbWhy,sizeof(g_psSbWhy),"G5 no component prop",_TRUNCATE);
+            g_psSbRefused=1; return; }
+        g_psSbComp=*(uintptr_t*)(g_psGmCand+oc);
+        char con[128]; con[0]=0; char ccn[128]; ccn[0]=0;
+        if(LooksLikePtr(g_psSbComp)){ GetFNameStr(NameId(g_psSbComp),con,sizeof(con));
+            uintptr_t cc=ClassOf(g_psSbComp); if(LooksLikePtr(cc))GetFNameStr(NameId(cc),ccn,sizeof(ccn)); }
+        Markerf("[PS] G5 component = 0x%llX name='%s' class='%s'\r\n",
+                (unsigned long long)g_psSbComp,con,ccn);
+        if(!LooksLikePtr(g_psSbComp)||!GcAlive(g_psSbComp)||strstr(con,"_GEN_VARIABLE")){
+            Marker("[PS] ARM E REFUSED at G5: null, not a live UObject, or the SCS ARCHETYPE rather\r\n"
+                   "[PS]   than the live instance.\r\n");
+            strncpy_s(g_psSbWhy,sizeof(g_psSbWhy),"G5 bad component",_TRUNCATE);
+            g_psSbRefused=1; return; }
+    }
+
+    // ---- G6: the prologue signature. A raw impl has no vtable slot to validate against.
+    uintptr_t fn=g_modBase+PS_RVA_SPAWNBOT;
+    if(!SafeReadable((void*)fn,16)){
+        Marker("[PS] ARM E REFUSED at G6: target unreadable.\r\n"); g_psSbRefused=1; return; }
+    {
+        const uint8_t* got=(const uint8_t*)fn; char hx[64]; int o=0;
+        for(int i=0;i<16&&o<60;i++) o+=_snprintf_s(hx+o,sizeof(hx)-o,_TRUNCATE,"%02X ",got[i]);
+        int sigok=1; for(int i=0;i<16;i++) if(got[i]!=PS_SIG_SPAWNBOT[i]) sigok=0;
+        Markerf("[PS] G6 target=0x%llX rva=0x%llX prologue=%s -> %s\r\n",
+                (unsigned long long)fn,(unsigned long long)PS_RVA_SPAWNBOT,hx,
+                sigok?"SIGNATURE MATCHES SpawnBot":"*** SIGNATURE MISMATCH ***");
+        if(!sigok){
+            Marker("[PS] ARM E REFUSED at G6: the bytes at the recorded RVA are not the function\r\n"
+                   "[PS]   transcribed offline.\r\n");
+            strncpy_s(g_psSbWhy,sizeof(g_psSbWhy),"G6 signature",_TRUNCATE);
+            g_psSbRefused=1; return; }
+    }
+    if(!LooksLikePtr(g_bsHeroCls)){
+        Marker("[PS] ARM E REFUSED: no hero class resolved.\r\n"); g_psSbRefused=1; return; }
+
+    // ---- the call.
+    uintptr_t heroCell=g_bsHeroCls;             // rdx = UClass** (a cell holding the class)
+    double loc[3]={g_bsLoc[0]+300.0,g_bsLoc[1],g_bsLoc[2]};   // offset so it is separable from ARM D's
+    uint8_t botName[16]; memset(botName,0,sizeof(botName));   // ZEROED FString -- see the header
+#if KBSSBCALL
+    Markerf("[PS] ARM E CALLING SpawnBot(comp=0x%llX, heroClass=0x%llX, loc=(%.1f, %.1f, %.1f),\r\n"
+            "[PS]   team=%d, difficulty=%d, PREMADE=0x%llX, &botName=zeroed FString)\r\n"
+            "[PS]   ! NOT call-only: 7 non-stack writes across FOUR objects. SEH-guarded.\r\n",
+            (unsigned long long)g_psSbComp,(unsigned long long)g_bsHeroCls,
+            loc[0],loc[1],loc[2],(int)(KBSSBTEAM),(int)(KBSDIFF),(unsigned long long)ctl);
+#else
+    Markerf("[PS] ARM E NOT CALLING (KBSSBCALL=0, read-only arm). The call WOULD have been\r\n"
+            "[PS]   SpawnBot(comp=0x%llX, heroClass=0x%llX, loc=(%.1f, %.1f, %.1f), team=%d,\r\n"
+            "[PS]   difficulty=%d, PREMADE=0x%llX, &botName=zeroed FString).\r\n",
+            (unsigned long long)g_psSbComp,(unsigned long long)g_bsHeroCls,
+            loc[0],loc[1],loc[2],(int)(KBSSBTEAM),(int)(KBSDIFF),(unsigned long long)ctl);
+#endif
+    g_psSbTried=1;
+    void* ret=nullptr;
+#if KBSSBCALL
+    __try {
+        ret=((PsSpawnBotFn)fn)((void*)g_psSbComp,(void**)&heroCell,loc,
+                               (int32_t)(KBSSBTEAM),(unsigned char)(KBSDIFF),(void*)ctl,botName);
+        g_psSbCalled=1;
+    } __except(SEH_FILTER(GetExceptionInformation())){
+        g_psSbFaulted=1; Markerf("[PS] *** ARM E FAULTED: %s ***\r\n",DP_FAULT); }
+#else
+    Marker("[PS] ---- ARM E: THE CALL IS DISABLED (KBSSBCALL=0). Every gate above was READ;\r\n"
+           "[PS]      nothing was called and nothing was written. This arm is READ-ONLY BY\r\n"
+           "[PS]      CONSTRUCTION, so any world change under it would mean the gate reads are\r\n"
+           "[PS]      NOT read-only. ----\r\n");
+    strncpy_s(g_psSbWhy,sizeof(g_psSbWhy),"KBSSBCALL=0 (read-only arm)",_TRUNCATE);
+#endif
+    Sleep(300);
+    g_psSbReturned=(uintptr_t)ret;
+
+    // The FString the game filled and then freed: report the bytes, do NOT touch its buffer.
+    {
+        uintptr_t bd=*(uintptr_t*)botName; int32_t bn=*(int32_t*)(botName+8), bm=*(int32_t*)(botName+12);
+        Markerf("[PS] ARM E botName FString after the call: Data=0x%llX Num=%d Max=%d\r\n"
+                "[PS]   (the game FREED this with its own FMemory::Free on both exit paths -- the\r\n"
+                "[PS]    pointer is reported for the record and is NOT dereferenced.)\r\n",
+                (unsigned long long)bd,bn,bm);
+    }
+    char rn[128]; rn[0]=0; char rc[128]; rc[0]=0; char rch[256]; rch[0]=0;
+    if(LooksLikePtr(g_psSbReturned)){
+        GetFNameStr(NameId(g_psSbReturned),rn,sizeof(rn));
+        uintptr_t c=ClassOf(g_psSbReturned);
+        if(LooksLikePtr(c)){ GetFNameStr(NameId(c),rc,sizeof(rc)); PhChainHas(c,"@never@",rch,sizeof(rch)); }
+    }
+    Markerf("[PS] ARM E returned (called=%d faulted=%d) ReturnValue=0x%llX '%s' class='%s'\r\n"
+            "[PS]   chain=%s\r\n",
+            g_psSbCalled,g_psSbFaulted,(unsigned long long)g_psSbReturned,rn,rc,rch);
+    Marker("[PS] ! The RETURN is a corroborator. The verdict is the census delta + the two page\r\n"
+           "[PS] ! receipts, which is why both were pre-registered above.\r\n");
+
+    // What happened to the premade controller? It was possessing a pawn before this call.
+    {
+        uintptr_t cc=ClassOf(ctl);
+        uint32_t oPawn=PropOffsetSuper(cc,"Pawn");
+        uintptr_t pw=(oPawn!=0xFFFFFFFF&&SafeReadable((void*)(ctl+oPawn),8))?*(uintptr_t*)(ctl+oPawn):0;
+        char pn[128]; pn[0]=0; if(LooksLikePtr(pw))GetFNameStr(NameId(pw),pn,sizeof(pn));
+        Markerf("[PS] ARM E premade controller Pawn@0x%X is now 0x%llX '%s'  (was 0x%llX before)\r\n"
+                "[PS]   %s\r\n",oPawn,(unsigned long long)pw,pn,(unsigned long long)g_psLbPawn[1],
+                (LooksLikePtr(pw)&&pw==g_psSbReturned)
+                  ? "-> it RE-POSSESSED onto SpawnBot's new pawn (OnUnPossess must have run)"
+                  : "-> NOT the new pawn; read the chain above before concluding anything");
+    }
+}
+
 static void BsPsExperiment(){
     Marker("[PS] ================ S137: THE bWantsPlayerState EXPERIMENT ================\r\n");
     Marker("[PS] WITHIN-RUN, SINGLE-VARIABLE. Spawn #1 runs with the CDO bit CLEAR and spawn #2 with\r\n"
@@ -15152,6 +15443,11 @@ static void BsPsExperiment(){
 
     if(KBSPSARMS&0x20) BsPsLokiBot();
     else Marker("[PS] ---- ARM D SKIPPED by KBSPSARMS bit5 ----\r\n");
+
+    // ARM E depends on ARM D having produced a controller WITH a PlayerState; it refuses otherwise
+    // and says so, rather than calling with a null premade and silently reproducing FK-22's wall.
+    if(KBSPSARMS&0x40) BsPsSpawnBot();
+    else Marker("[PS] ---- ARM E SKIPPED by KBSPSARMS bit6 ----\r\n");
 }
 #endif  // KBSPS
 
@@ -15439,6 +15735,37 @@ static void BsFinalReport(){
             g_psSpawns,g_psPokeOK,g_psRestoreOK,g_psDirectTried,g_psDirectDispatched,g_psDirectFaulted);
     Markerf("[PS] ARM C (pawn link) tried=%d done=%d faulted=%d\r\n",
             g_psLinkTried,g_psLinkDone,g_psLinkFaulted);
+    if(g_psSbTried||g_psSbRefused){
+        Markerf("[PS] ARM E (SpawnBot premade) tried=%d called=%d faulted=%d refused=%d why=%s\r\n"
+                "[PS]   ReturnValue=0x%llX\r\n",
+                g_psSbTried,g_psSbCalled,g_psSbFaulted,g_psSbRefused,g_psSbWhy,
+                (unsigned long long)g_psSbReturned);
+        if(!(KBSSBCALL))
+            Marker("[PS] ARM E VERDICT: THE CALL WAS COMPILED OUT (KBSSBCALL=0). This is a\r\n"
+                   "[PS]   read-only gate report BY CONSTRUCTION and says NOTHING about whether\r\n"
+                   "[PS]   SpawnBot works.\r\n");
+        else if(g_psSbRefused)
+            Marker("[PS] ARM E VERDICT: REFUSED at a pre-flight gate -- see the G-line above. This is\r\n"
+                   "[PS]   a statement about the STAGING, not about SpawnBot, and the census delta is\r\n"
+                   "[PS]   UNINTERPRETABLE for this arm.\r\n");
+        else if(g_psSbFaulted)
+            Markerf("[PS] ARM E VERDICT: FAULTED (%s). That localises INSIDE SpawnBot, past dispatch --\r\n"
+                    "[PS]   real information about a function nobody has executed with a non-null\r\n"
+                    "[PS]   premade controller. dumpimage anyway: the pages it reached are now readable.\r\n",
+                    DP_FAULT);
+        else if(LooksLikePtr(g_psSbReturned))
+            Marker("[PS] ***** ARM E VERDICT: SpawnBot RETURNED A PAWN with a PREMADE controller, so\r\n"
+                   "[PS]   MakeNewBotController -- and with it FK-22's stripped getter at 0x55636BB --\r\n"
+                   "[PS]   was NEVER CALLED. ⚠ CONFIRM BEFORE CLAIMING IT: (1) the census delta, NOT the\r\n"
+                   "[PS]   return value; (2) dumpimage and check 0x5556D50 (DARK in 57/57) and 0x55667F0\r\n"
+                   "[PS]   (OnUnPossess, DARK everywhere) -- if 0x5556D50 is STILL dark, execution did\r\n"
+                   "[PS]   NOT pass the PlayerState gate and the interesting half did not run, whatever\r\n"
+                   "[PS]   the return value says. ⚠ ServerSetHeroClass / SetPlayerTeam remain stripped\r\n"
+                   "[PS]   folds regardless -- a pawn is not a configured bot. *****\r\n");
+        else
+            Marker("[PS] ARM E VERDICT: dispatched and returned NULL. Read the G-lines: G2 (>1) or an\r\n"
+                   "[PS]   empty TeamStates would each produce a null WITHOUT the wall being the cause.\r\n");
+    }
     if(g_psLbSpawns){
         Markerf("[PS] ARM D: spawns=%d pokeOK=%d restoreOK=%d\r\n",
                 g_psLbSpawns,g_psLbPokeOK,g_psLbRestoreOK);

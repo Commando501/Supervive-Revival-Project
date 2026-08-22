@@ -609,6 +609,19 @@ $Variants = @{
         # spawn is what makes the restore a measurement rather than a promise.
         # bit0 off (ARM D does its own spawns), bit5 on.
         'lokibot'             = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x20')
+        # ---- S138 ARM E: SpawnBot with a PREMADE controller -------------------------------------
+        # The Loki bot pipeline has always died at SpawnBot -> MakeNewBotController -> the stripped
+        # getter 0x55636BB. [M] a NON-NULL PremadeBotController short-circuits BEFORE that call
+        # (0x556DA4F/0x556DAA1/0x556DAA4), so the getter is never reached. ARM D manufactures the
+        # argument (an ALokiBotController possessing a hero) and ARM B gives it the PlayerState that
+        # SpawnBot consumes from +0x3C0.  bit5 ARM D + bit6 ARM E.
+        # ⚠ NOT call-only: 7 non-stack writes across FOUR objects. Six pre-flight gates read and
+        #   REFUSE rather than guess. Two pre-registered page receipts: 0x5556D50 and 0x55667F0,
+        #   both DARK in every image -- dumpimage after the flight either way.
+        'spawnbot-premade'    = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60')
+        # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
+        # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
+        'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')
         # READ-ONLY control arm: resolve, read out all six gates, run the D0c dispatch control and the
         # D1 pre-append negative control -- and then WRITE NOTHING and call no detach on a non-empty
         # array. Any physical change from THIS build would mean the readout is not read-only.
