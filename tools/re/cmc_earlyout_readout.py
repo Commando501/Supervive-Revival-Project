@@ -198,6 +198,44 @@ def byname(obj, name, hard):
     return o, ("agrees" if o == hard else "*** DISAGREES with hardcoded 0x%X ***" % hard)
 
 
+def findprop_raw(cls, want):
+    """Like findprop but returns the FProperty* itself, so bitfields can be decoded."""
+    c, seen, wl = cls, set(), want.lower()
+    while lp(c) and c not in seen:
+        seen.add(c)
+        f, g = p(c + CHILDPROPS_OFF), 0
+        while lp(f) and g < 4000:
+            g += 1
+            if fname(u32(f + NAME_OFF)).lower() == wl:
+                return f
+            f = p(f + FIELD_NEXT)
+        c = p(c + SUPER_OFF)
+    return 0
+
+
+def read_bool_uprop(obj, cls, name):
+    """Decode a UHT BITFIELD bool by reading the LIVE FBoolProperty.
+
+    ⚠ FBoolPropertyParams (the .rdata record) carries NO ByteOffset/ByteMask -- the engine derives
+      them by calling the record's SetBitFunc on a zeroed buffer.  That is the repo's documented S132
+      trap.  The only sound offline-free route is the LIVE FBoolProperty object, whose
+      FieldSize/ByteOffset/ByteMask/FieldMask sit at +0x70..+0x73.
+    Returns (value, "how") or (None, why).
+    """
+    fp = findprop_raw(cls, name)
+    if not lp(fp):
+        return None, "no UPROPERTY '%s'" % name
+    base = u32(fp + FPROP_OFFSET)
+    bo = u8(fp + 0x71)
+    bm = u8(fp + 0x72)
+    if base is None or bo is None or bm is None:
+        return None, "FBoolProperty unreadable"
+    b = u8(obj + base + bo)
+    if b is None:
+        return None, "byte @+0x%X unreadable" % (base + bo)
+    return (1 if (b & bm) else 0), "byte@+0x%X mask 0x%02X raw 0x%02X" % (base + bo, bm, b)
+
+
 def objects():
     arr, num = p(OBJOBJECTS), u32(OBJOBJECTS + 0x14)
     if not lp(arr) or not num or num > 4000000: return
@@ -275,6 +313,25 @@ def read_side(pawn, ctl, tag):
     if lp(upd):
         r["R4.UpdatedComponent.class"] = oname(ocls(upd))
         r["R4.Mobility@0x1BB"] = u8(upd + O["scene.mobility"])
+        # ---- ★ THE ONE UNMEASURED ENGINE GATE ----
+        # engine UCharacterMovementComponent::PerformMovement 0x035E9EC0:
+        #   0x035E9FB5 call [UpdatedComponent_vtable + 0x4C0]   ; IsSimulatingPhysics(NAME_None)
+        #   0x035E9FBD jne 0x035EB7CF                           ; BAIL -> StartNewPhysics never runs
+        # Its two sibling gates (MovementMode +0x231 != MOVE_None, Mobility +0x1BB == Movable) are
+        # already measured PASSING on both pawns, so this is the last one standing.
+        ucls = ocls(upd)
+        bi = findprop(ucls, "BodyInstance")
+        r["R6.BodyInstance.off"] = ("@+0x%X" % bi) if bi is not None else "NOT RESOLVED"
+        if bi is not None:
+            bistruct = findprop_raw(ucls, "BodyInstance")
+            inner = p(bistruct + 0x70) if lp(bistruct) else 0   # FStructProperty::Struct
+            for nm in ("bSimulatePhysics", "bEnableGravity", "bNotifyRigidBodyCollision"):
+                if lp(inner):
+                    v, how = read_bool_uprop(upd + bi, inner, nm)
+                else:
+                    v, how = None, "inner UScriptStruct unresolved"
+                r["R6." + nm] = v
+                r["R6." + nm + ".how"] = how
     # ---- RANK 5: role / controller ----
     r["R5.Role@0x160"] = u8(pawn + O["pawn.role"])
     r["R5.RemoteRole@0x72"] = u8(pawn + O["pawn.remoterole"])

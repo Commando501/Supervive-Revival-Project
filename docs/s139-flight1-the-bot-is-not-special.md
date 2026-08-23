@@ -224,21 +224,67 @@ reading** (I did, and it said `CLIENT IS GONE`).
 | P6 | bot `Role` == 3 | **HELD** — first ever measurement |
 | P7 | `AttributeSetStorage` NULL on both, not the cause | **HELD** |
 
+## 7b. ★★★★★ THE BAIL IS NOW NAMED TO THREE INSTRUCTIONS (offline, after the flight)
+
+**Loki's `PerformMovement` reaches its Super unconditionally.** Independently transcribed:
+`0x055B85C1 call 0x35e9ec0` is engine `UCharacterMovementComponent::PerformMovement`, and the two
+forward branches (`0x055B845E jne 0x55B85B4`, `0x055B8474 js 0x55B85B4`) land at `0x055B85B4` —
+**just above the Super call**, skipping only a loop. So the bail is inside the ENGINE function.
+
+Its gate cluster, all three sharing bail target `0x035EB7CF`:
+
+    0x035E9F17  call qword ptr [rdx+0x6b8]        ; HasValidData   -> passes (measured)
+    0x035E9F25  test r13,r13 / je                 ; World == null  -> passes
+    0x035E9F90  cmp  byte ptr [rbx+0x231], r15b   ; MovementMode == MOVE_None?
+    0x035E9F97  je   0x35eb7cf                    ;   MEASURED 3  -> PASSES
+    0x035E9F9D  cmp  byte ptr [rcx+0x1bb], 2      ; Mobility == Movable?
+    0x035E9FA4  jne  0x35eb7cf                    ;   MEASURED 2  -> PASSES
+    0x035E9FB5  call qword ptr [rax+0x4c0]        ; UpdatedComponent->IsSimulatingPhysics(NAME_None)
+    0x035E9FBD  jne  0x35eb7cf                    ;   *** NOT MEASURED -- THE PRIME SUSPECT ***
+
+⇒ ★ **Of the three gates that stand between the Super and `StartNewPhysics`, two are measured
+passing and the third — `IsSimulatingPhysics` on the hero's capsule — has never been read.**
+It is **one read** (`bSimulatePhysics` on the capsule's `FBodyInstance`) and it is the first thing
+the next sitting should do.
+⚠ **Hold one tension honestly:** if the capsule really is PhysX-simulating, then writing `CMC+0xE8`
+should not move the hero either — yet `play` reportedly moves it "WITH collision". Either that
+observation needs re-checking under this lens, or `play`'s `SetMovementMode(5)` changes the state.
+**Do not resolve that tension by assumption; measure `IsSimulatingPhysics` on both pawns.**
+
+⚠ **Correction to the S139 synthesis:** it placed the single `call [rax+0x720]` (StartNewPhysics) at
+`0x035EB7FA`. A scan of `0x035E9EC0..0x035EB810` finds exactly one, at **`0x035EB13A`**. Use that.
+
+### ⚠⚠ ADJUDICATION — a second offline lane concluded "S1 SURVIVES". It is wrong, and here is why
+
+A follow-up transcription lane argued: the HitStop block's zeroed DeltaTime *is* the one handed to
+the Super; the Super is unconditional; engine `PerformMovement` has no delta gate; and a zero delta
+is fatal one level down at engine `StartNewPhysics`'s `comiss xmm6, 1e-6f; jb` (`0x036009A8`).
+Its code reading is right. **Its conclusion is refuted by two facts it did not have:**
+
+1. **`+0x12B0 += xmm6`** (`0x055B8409`–`0x055B8414`) — the accumulator takes *the same register* the
+   HitStop branch zeroes. **Measured live: it advances at 1.0× real time on both pawns.** If HitStop
+   had fired, the accumulate would be `+= 0` and `+0x12B0` would be frozen. ⇒ **xmm6 ≠ 0.**
+2. **The latch is set BEFORE the jump to the engine.** `0x055C2469 mov byte [rcx+0x16C8],1` then
+   `0x055C2470 jmp 0x3600990`. So entering `ULokiCMC::StartNewPhysics` sets the latch *regardless of
+   DeltaTime* — the `MIN_TICK_TIME` bail is downstream of it. **latch == 0 therefore proves
+   `StartNewPhysics` was never ENTERED**, which is a strictly stronger statement than "it was entered
+   and bailed on dt", and it makes the proposed mechanism unreachable.
+
+⇒ **S1 stays refuted.** ★ Note the shape: the offline lane was correct about every byte and wrong
+about the conclusion, because the discriminating facts were *live*. Neither half was sufficient
+alone.
+
 ## 8. OPEN — and the next question is now small
 
 Both post-flight offline items are **DONE** (§2, §3): the `+0x16C8` polarity is read and the
 `+0x12B0` writer is identified. What remains:
 
-- ★ **THE WHOLE QUESTION IS NOW: what happens between `0x055B8414` (the `+0x12B0` store, reached) and
-  the engine's single `call [rax+0x720]` to `StartNewPhysics` (never reached)?** Two sub-questions:
-  1. Does `ULokiCMC::PerformMovement` reach its Super at all? Two forward branches jump toward the
-     Super region — `0x055B845E test byte [CharacterOwner+0x580], 8 / jne 0x55B85B4` and
-     `0x055B846B mov ebp,[rsi+0x1988] / sub ebp,1 / js 0x55B85B4`. **`[CharacterOwner+0x580] & 8` is
-     an unread live byte and a candidate.**
-  2. If it does, which engine gate bails? `HasValidData` (`0x035E9F17`, disp `0x6B8`) and the World
-     null test (`0x035E9F25`) are the first two, and both should pass on our measurements.
-     **`UpdatedComponent->IsSimulatingPhysics()` is the prime remaining suspect and was NOT read
-     this flight** (it was rank 9 and the client died first). One read settles it.
+- ★★★ **ONE READ: `UpdatedComponent->IsSimulatingPhysics()` on both pawns** (§7b). It is the only
+  unmeasured gate between the Super and `StartNewPhysics`, and if it is TRUE it explains every
+  observable at once. Read `bSimulatePhysics` on the capsule's `FBodyInstance`, plus the vtable
+  call's own answer if a call is acceptable.
+  Sub-question if it is FALSE: enumerate the remaining path `0x035E9FC3 .. 0x035EB13A` for further
+  bails — that is ~4.5 KB and untranscribed.
 - Why `bRegistered` is False on a component that is demonstrably being driven per-frame.
 - ⛔ Unchanged: **not a bot.** `ServerSetHeroClass` / `SetPlayerTeam` are still stripped folds, and
   nothing here happens without pokes the game never performs itself.
