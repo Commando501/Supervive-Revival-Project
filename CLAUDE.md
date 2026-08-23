@@ -1501,12 +1501,54 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   ⚠⚠ **FOUR HYPOTHESES REFUTED — do not re-open:** (1) the gate / `LivingState` (it opens);
   (2) `MovementMode` is wrong — **bot and player are BOTH `MOVE_Falling`(3)**; (3) forcing
   `MOVE_Flying` (what `play` does) — poked, held 25 s, **no effect**; (4) the component is
-  deactivated — `bIsActive=True` on both. **STANDING: the controller ticks, the CMC does not** —
-  `ControlInputVector` is never consumed, and stock UE zeroes it inside `TickComponent`.
-  ★ **NEXT: run `play` (which DOES move the player here) and DIFF a moving CMC against the bot's.**
-  Every prior hypothesis failed for want of a moving positive control.
-  ⚠ `UActorComponent::PrimaryComponentTick` is an **`FTickFunction` struct member, NOT a UPROPERTY**,
-  so no `tools/re/` probe can see `bRegistered`/`bCanEverTick`. Derive that offset offline first.
+  deactivated — `bIsActive=True` on both.
+  ⚠⚠ **RETRACTED S139 — the old text here read "STANDING: the controller ticks, the CMC does not —
+  `ControlInputVector` is never consumed, and stock UE zeroes it inside `TickComponent`". BOTH
+  HALVES ARE WRONG.** [M] over all 194 samples in `docs/s138-f8-motion.txt`: `|ControlInputVector|`
+  max **1.0001**, never once above 1.05, and exactly equal to `RandomMoveDirection` in 193/194. The
+  write is `+=` (`APawn::Internal_AddMovementInput`), so an UNCONSUMED `+=` predicts |CIV| ≈ 5820 at
+  a per-frame cadence or ≈ sqrt(44) = 6.6 at the 2 s cadence — **and in the latter case it would not
+  equal the latest direction.** ⇒ **it IS consumed every frame ⇒ `TickComponent` IS entered**
+  ([I, strong]: a second consumer exists, `APawn::ConsumeMovementInputVector 0x03B93470`, and an
+  async arm at `0x036037AF` can skip the consume — the live observation excludes that arm, the
+  claim as first written did not). ★ **The reconciliation: `ConsumeInputVector` is called FIRST, at
+  `0x036037FE`, BEFORE both early-outs (`HasValidData 0x0360381D`, `ShouldSkipUpdate 0x03603834`) —
+  so consumption does NOT imply simulation.** Three lanes + three verifiers agree on those bytes.
+  ⚠⚠ **AND `play` IS NOT THE MOVING CONTROL THE OLD NEXT-STEP ASSUMED.** It moves the hero by
+  **writing `CMC+0xE8` (Velocity) and `CMC+0x328` (Acceleration) every game-thread hit**
+  (`tutorial_launch.cpp:3047`, `:12599`) — it does NOT fix an input path, and S75 measured *forced
+  `AddMovementInput` → ZERO accel/velocity* on the **PLAYER** too (`tutorial_launch.cpp:364-366`).
+  [M, source] `RM_PLAY` calls `DoPlay()` (`:1275`), whose init is teleport / `GravityScale=1` /
+  `ResetIgnoreMoveInput` / `SetMovementMode(KFLYMODE)` / `SetActorHiddenInGame(false)` / body build —
+  **`SetActive` + `SetComponentTickEnabled` + `SetActorTickEnabled` belong to `DoWakeMove` (`:2983`),
+  which runs ONLY under `RM_WAKEMOVE` (`:1240`).** ⇒ `play` is not a tick fix, and the player is a
+  **CONTAMINATED control on `+0xE8`/`+0x328` by construction**. Structural fields only.
+  ★ **NEXT (S139): do NOT whole-struct diff a 0x19D0-byte component.** Read the 10 ranked fields via
+  **`tools/re/cmc_earlyout_readout.py`**, led by **`CMC+0x16C8`** — `ULokiCMC::StartNewPhysics`'s
+  **dt-INDEPENDENT** "PerformMovement reached me" latch (`mov byte [rcx+0x16C8],1` at `0x055C2469`,
+  no DeltaTime test above it; the engine's MIN_TICK_TIME bail is downstream) — paired with
+  **`CMC+0x12B0`** (`TimeSinceFallingStart`, dt-DEPENDENT). `1` + frozen ⇒ the DeltaTime kill;
+  `0` ⇒ an early-out at or above `PerformMovement`.
+  ⚠⚠ **`UActorComponent::PrimaryComponentTick` IS A UPROPERTY, at `UActorComponent+0x40`** [M, S139]
+  (UHT `PropPointers` array `.rdata 0x07F9EFC0` entry 1; the ctor also installs the
+  `FActorComponentTickFunction` vtable `0x07E08B38` there). `AActor::PrimaryActorTick` is at
+  `AActor+0x38`. **`FTickFunction` sizeof `0x28`**: TickGroup`+0x08`, EndTickGroup`+0x09`,
+  flags`+0x0A` (`bTickEvenWhenPaused 0x01`, **`bCanEverTick 0x02`**, `bStartWithTickEnabled 0x04`,
+  `bAllowTickOnDedicatedServer 0x08`, all four [M] from their UHT `SetBitFunc`s), TickState`+0x0B`
+  (0=Disabled 1=Enabled), TickInterval`+0x0C`, **InternalData`+0x20`, and `InternalData == NULL`
+  means NEVER REGISTERED**. Reader: `scratchpad/s139/ticksniff.py`. **The old line here said the
+  opposite and foreclosed the read.**
+  ⚠⚠ **`bCharacterControllable (+0x6A0)` IS ON THE *CONTROLLER*, NOT THE CHARACTER** [M, S139] — its
+  UHT record's `SizeOfOuter` is **`0x6A8`** (vs `sizeof(ALokiCharacter)` = `0x1950`), its `SetBitFunc`
+  is `.text 0x02D7A520`, and its writer `UpdateCharacterControllable 0x05570B80` also dereferences
+  `[this+0x4B0]` Blackboard and `[this+0x498]` BrainComponent — `AAIController` fields.
+  `docs/s138-flight9-movement-not-simulating.md` §2.2 already said so; **the digest dropped it.**
+  ⚠⚠ **THIS BUILD'S `EMovementMode` IS MODIFIED: `MOVE_Dashing` is INSERTED at index 6, so
+  `MOVE_Custom == 7` and `MOVE_MAX == 8`** [M, S139, three instruments: the `.rdata` enumerator run
+  at `0x07E10660`; `StartNewPhysics`'s 8-entry jump table at `0x03600BF8` bounded by `cmp esi,7`,
+  case 6 → disp `0xCC8` (PhysDashing) and case 7 → disp `0x990` (PhysCustom); and
+  `IsDashing 0x035E6810 = cmp byte [rcx+0x231],6`]. **Any probe carrying stock UE's
+  `MOVE_Custom == 6` mis-decodes Loki custom modes by one** — `movementmode_readout.py` does.
   ★ **SETTLED ON THE WAY:** `SpawnBot`'s premade path RUNS (ARM E — `MakeNewBotController`, and with
   it FK-22's stripped getter, is never called), and its early exit is **`0x556DE6A`** =
   `GetTeamState` NULL, measured by `[PS+0x8C8]` going 0→5 with the string `'bot0'`.
@@ -1550,10 +1592,62 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   ⚠ **External `WriteProcessMemory` is UNRESOLVED as a hazard** — used for the first time in this
   project here; the client died ~44 s later with the FK-32 signature, but that is confounded by a
   very high base rate and n=1. Settling it needs a matched no-write sitting.
-  ⚠ Two tracked files are **UNCOMMITTED**: `tools/sigbypass-mod/tutorial_launch.cpp` (ARM F, the
-  `strstr` latch fix and the duplicate-candidate fix) and `build.ps1` (the `driverecompute` variants).
+  ⚠ ~~Two tracked files are **UNCOMMITTED**~~ — committed as `7f7f3e2`.
   ⛔ **Still not a bot:** `ServerSetHeroClass` / `SetPlayerTeam` remain stripped folds, and none of
   this happens without pokes the game never performs itself.
+- ★★★★★ **S139 (2026-08-23) — BOTH MOVEMENT HYPOTHESES ARE DEAD AND THE WALL IS DOWN TO A FEW
+  HUNDRED BYTES: `PerformMovement` RUNS with a real DeltaTime; `StartNewPhysics` NEVER RUNS. Read
+  `docs/s139-flight1-the-bot-is-not-special.md`, then `docs/s139-movement-ladder.md`.**
+  One staged client, ONE injection, read-only RPM; 6 offline RE lanes + 6 adversarial verifiers.
+  ★★ **[M] THE BOT IS NOT SPECIALLY DISADVANTAGED — bot and player read IDENTICALLY on EVERY
+  structural field**: `UpdatedComponent` (both non-null CapsuleComponent) · `Mobility` 2 ·
+  **`Role` 3** · `RemoteRole` 1 · `Controller` non-null · `RF_Garbage` 0 · `MovementMode` 3 ·
+  `MaxAcceleration` 50000 · `bCharacterMovementEnabled` 1 · `Acceleration` (0,0,0) ·
+  `AnalogInputModifier` 0 · latch `+0x16C8` **0** · `bCanEverTick` 1 / `TickState` Enabled /
+  `Prerequisites.Num` 1 / `InternalData` non-null / **`bRegistered` False** / `TaskPointer` 0 /
+  `LastTickGameTimeSeconds` **-1.0** · `bIsActive` True · `AttributeSetStorage` **NULL**.
+  The ONLY structural difference is `AbilitySystemComponentStorage@0xF00` (bot NULL, player non-null
+  — `KWIREGAS` wires the player's). ⇒ **stop looking for a bot/player difference in the movement
+  component; there isn't one.** ★ `Role@+0x160 == 3` on a `SpawnAIFromClass` pawn is the FIRST such
+  measurement and kills ladder exits E6 and E7.
+  ⇒ ★★★ **THE THIRD TIME THE QUESTION HAS BEEN MIS-FRAMED IN THE SAME SHAPE** (S138 `LivingState`:
+  every character Dead; S138 `MovementMode`: both Falling; S139 the whole ladder: identical).
+  **It is not "why does the BOT not move" — it is "why does NO character move on this route".**
+  ★★★★★ **[M] S1 (the "HitStop DeltaTime kill") IS REFUTED, WITH A MECHANISM.** In
+  `ULokiCMC::PerformMovement 0x055B8370`: `0x055B838D movaps xmm6,xmm1` (xmm6 = DeltaSeconds) …
+  `0x055B83B5 call 0x56E7C10` (toggle 120 = HitStop, NULL context) … `0x055B83FA xorps xmm6,xmm6`
+  (the kill) … `0x055B8409 movaps xmm0,xmm6` · `0x055B840C addss xmm0,[rsi+0x12b0]` ·
+  `0x055B8414 movss [rsi+0x12b0],xmm0`. ⇒ **`+0x12B0` accumulates EXACTLY the register HitStop would
+  zero.** MEASURED live: it advances at **1.0× real time on BOTH pawns** (bot 33.14→43.34 over
+  10.2 s; player 380→390). ⇒ DeltaTime is real, HitStop did not fire, **and `PerformMovement` is
+  running.**
+  ★★★★★ **[M] AND `ULokiCMC::StartNewPhysics 0x055C2430` HAS NEVER RUN ON EITHER COMPONENT.** Its
+  latch is `0x055C2469 mov byte [rcx+0x16C8],1`, on the **unconditional fall-through** of the
+  `Iterations==0` path (the `je` at `0x055C243F` skips only a redundant zero-store) — so `+0x16C8`
+  is a valid sticky "ever reached" instrument, and it reads **0** on both.
+  ⇒ ★ **THE WALL IS BETWEEN `0x055B8414` AND the engine's single `call [rax+0x720]` at `0x035EB7FA`.**
+  It also explains with no extra assumption why a `MOVE_Falling` pawn with `GravityScale 1.000` does
+  not fall: **`PhysFalling` is dispatched FROM `StartNewPhysics`.**
+  ★ **NEXT, and it is small:** (a) does Loki's `PerformMovement` reach its Super? two forward
+  branches jump toward it — `0x055B845E test byte [CharacterOwner+0x580],8 / jne` and
+  `0x055B846B mov ebp,[rsi+0x1988] / sub ebp,1 / js`; **`[CharacterOwner+0x580] & 8` is an unread
+  live byte.** (b) if it does, **`UpdatedComponent->IsSimulatingPhysics()` is the prime remaining
+  engine gate and was NOT read** (the client died first). One read each.
+  **Probe: `tools/re/cmc_earlyout_readout.py`** (read-only; 10 ranked fields, two mandatory identity
+  controls). **New instrument: `scratchpad/s139/ticksniff.py`** — decodes `FTickFunction`
+  (`UActorComponent::PrimaryComponentTick` **IS a UPROPERTY at +0x40**; `AActor::PrimaryActorTick`
+  at `+0x38`), 22 passing offline controls.
+  ⚠⚠ **TWO PROBE DEFECTS, EACH OF WHICH READ EXACTLY LIKE A GAME FACT:** `fname` read the FNamePool
+  block table at `NAMEPOOL + 0x10 + 8*blk` (correct: **`NAMEPOOL + 8*blk`**) ⇒ every name decoded `?`
+  ⇒ the probe printed **"NO PLAYER-CONTROLLED PAWN — RUN IS VOID"** on a healthy client; and
+  `findprop` read an `FField`'s name at `+0x28` (correct: **`+0x20`**, same as a `UObject`) ⇒ every
+  by-name lookup failed ⇒ **"no `CharacterMovement` UPROPERTY"**. ★ **Both were localised in minutes
+  by running the known-good `tools/re/movementmode_readout.py` against the same live process as an
+  INSTRUMENT CONTROL.** Keep a second, already-trusted instrument on hand.
+  ⚠ The pre-registration (`docs/s139-f1-PREREGISTERED.txt`) is what kept this honest: P2 said a
+  player latch of 0 makes the bisector **uninterpretable**, and it read 0 — so the bot's 0 was NOT
+  taken as a result until the polarity was re-read from the bytes. Without P2 it would have been
+  written up as "S2 confirmed", and S2 is false.
 - ★★★★★ **THERE ARE **TWO** `.text` DIGEST RECIPES ON DISK AND THE REPO USES BOTH (S136).**
   **RAW** = `sha256(.text[PointerToRawData, +SizeOfRawData))[:16]` — `configs/fk24-stage.ps1:77
   Get-TextHash` (prints only inside a stale-shim abort) and **`configs/fk7-ab-run.ps1:94`, which

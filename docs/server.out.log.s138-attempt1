@@ -1,0 +1,16 @@
+2026/08/21 19:40:40 menu: config "state\\menu-config.json" not read (open state\menu-config.json: The system cannot find the file specified.) — using built-in defaults
+2026/08/21 19:40:40 [pingecho] UDP echo responder on 127.0.0.1:443 (UE ICMP-module ping, 8..128 byte datagrams)
+2026/08/21 19:40:40 SUPERVIVE Revival AGS backend
+2026/08/21 19:40:40   capture log: G:\git\Supervive Revival Project\docs\capture.log
+2026/08/21 19:40:40   ADMIN  panel on http://127.0.0.1:9210/
+2026/08/21 19:40:40   ADMIN  panel on http://[::1]:9210/
+2026/08/21 19:40:40   TLS cert (append to game cacert.pem): G:\git\Supervive Revival Project\certs\root.crt
+2026/08/21 19:40:40   HTTP   listening on :8080
+2026/08/21 19:40:40   HTTPS  listening on :443
+2026/08/21 19:41:11 [pingecho] first ping is 30 bytes: 829bf54a9b3321bc52680000694ae8bca1c1ed010000aaaaaaaabbbbbbbb
+2026/08/21 19:41:11 [pingecho] NOTE: stock UE 5.4 UDPEchoImpl builds 22 bytes; this build sends 30. Echoing verbatim, which is layout-independent.
+2026/08/21 19:41:12 [pingecho] first echo -> 127.0.0.1:64509 (30 bytes); latency should now resolve
+2026/08/21 19:43:26 interactive: joinQueue player=9b9d2c887e2524f918e383a895f2f1c2 queue="bots"
+2026/08/21 19:43:26 interactive: armqueue: will arm player=9b9d2c887e2524f918e383a895f2f1c2 queue="bots" in 8s (mode=1)
+2026/08/21 19:43:34 interactive: armqueue: ARMED player=9b9d2c887e2524f918e383a895f2f1c2 queue="bots" matchID="match-9b9d2c887e2524f918e383a895f2f1c2" version=1787359414 mode=1
+2026/08/21 19:43:34 interactive: armqueue: pushed /core-game/players/9b9d2c887e2524f918e383a895f2f1c2 version=1787359414 label=armqueue

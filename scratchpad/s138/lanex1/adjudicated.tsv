@@ -1,0 +1,43 @@
+CLAUDE.md	1053	0x0556D910	merged12	SpawnBot "DARK, not stripped" -- contradicted twice later in the SAME file
+CLAUDE.md	1608	0x05879000	merged10	"the 6 ready/fill/emote impls on 0x5879000 remain DARK and unreached" -- contradicted at CLAUDE.md:1595
+CLAUDE.md	1686	0x05875E90	merged10	"UPartyManager 20 dark impls at 0x5873280-0x5879EE0 ... most-cited dark address"
+CLAUDE.md	2841	0x05456000	merged10	"all five sit on .text page 0x5456000, never demand-decrypted in any of 18 images"
+docs/fk22-dropphase-reachability.md	375	0x055653E0	merged13	AuthSetDeathCircle impl, FK-22's designated COVERAGE NEGATIVE CONTROL, "0/4096 in 13/13 images"
+docs/fk22-dropphase-reachability.md	154	0x05456000	merged10	AuthPlayerEnterWorldAttachedToRidable COVERAGE-BLOCKED
+docs/fk22-dropphase-reachability.md	201	0x05456000	merged10	"[M] UNRESOLVABLE -- all five sit on page 0x5456000"
+docs/fk22-dropphase-reachability.md	613	0x05456C80	merged10	GetLandingTeleportLocation COVERAGE-BLOCKED, thunk zero in 18/18
+docs/fk5-battle-gate-settled.md	87	0x01F8CFC0	merged10	UDP echo impl "100 % zero page" [M]
+docs/fk5-battle-gate-settled.md	219	0x01F8CFC0	merged10	table row "0 / 4096 | never executed"
+docs/fk5-battle-gate-settled.md	473	0x01F8CFC0	merged10	"what 2.5's all-zero page at 0x1F8CFC0 shows at instruction level"
+docs/fk5-battle-gate-settled.md	693	0x01F8CFC0	merged10	"all-zero page, so the packet format is unreadable offline [M]"
+docs/fk5-battle-gate-settled.md	944	0x01F8CFC0	merged10	"has never executed; unreadable offline"
+docs/fk5-battle-gate-settled.md	88	0x05875000	merged10	TryJoinQueue impl page "100 % zero" [M]
+docs/fk5-battle-gate-settled.md	220	0x05875000	merged10	table row "0 / 4096 | never executed"
+docs/fk5-battle-gate-settled.md	420	0x05875000	merged10	"Page 0x5875000 is 100 % zero" -- the largest residual
+docs/fk5-battle-gate-settled.md	942	0x05875000	merged10	"100 % zero across every dump we own"
+docs/fk5-battle-practice-gate-s105.md	390	0x05875000	merged10	"100 % zero in dumps/merged.dump.exe"
+docs/fk5-battle-practice-gate-s105.md	581	0x05875000	merged10	"Its entry page (0x5875000) is 100 % zero"
+docs/fk5-latency-subsystem-re.md	278	0x01F8CFC0	merged10	"implementation (0x1F8CFC0) is dark. [M]"
+docs/fk5-latency-subsystem-re.md	497	0x01F8CFC0	merged10	table "ICMP-module UDP echo entry (undecrypted)"
+docs/fk5-latency-subsystem-re.md	502	0x05875E90	merged10	table "TryJoinQueue (impl, undecrypted)"
+docs/coverage-audit-s101.md	185	0x01F8CFC0	merged10	"the echo impl 0x1F8CFC0 is a 100 % zero page"
+docs/coverage-audit-s101.md	677	0x01F8CFC0	merged10	"the UDP-echo implementation 0x1F8CFC0 is a 100 % zero page"
+docs/coverage-audit-s101.md	187	0x05875000	merged10	"TryJoinQueue's page 0x5875000 is 100 % zero in every dump"
+docs/coverage-audit-s101.md	685	0x05875000	merged10	"100 % zero in every dump we own"
+docs/ignorance-map-s101.md	392	0x01F8CFC0	merged10	"implementation 0x1F8CFC0 is a 100 % zero page"
+docs/ignorance-map-s101.md	2334	0x01F8CFC0	merged10	"the UDP-echo impl 0x1F8CFC0 is a 100 % zero page"
+docs/ignorance-map-s101.md	416	0x05875000	merged10	"page 0x5875000 is 100 % zero in every dump we own, so its preconditions are unreadable offline"
+docs/fk3-fk4-settled.md	527	0x05302DE0	merged2	PollForFeatureTogglesReady exec "all-zero page" -- NOT previously flagged
+docs/fk3-fk4-settled.md	529	0x056CE5F0	merged2	TryUpdateAbilitySystem impl "all-zero page"
+docs/strxref-open-questions.md	116	0x05302DE0	merged2	"all-zero page -- undecrypted" -- NOT previously flagged
+docs/strxref-open-questions.md	198	0x056CE5F0	merged2	"all-zero page in this dump -- undecrypted. Clean negative:"
+docs/strxref-open-questions.md	339	0x052FD980	merged2	"IsEasyAntiCheatEnabled exec 0x52FD980 (body undecrypted)" -- NOT previously flagged
+docs/fk6-cheat-surface-settled.md	740	0x05426A50	merged2	"Also dark everywhere: ServerCheatSpawnActor thunk 0x5426A50, CheatChangeHero ..."
+docs/coop-vs-ai-plan-s135.md	15	0x0556D910	merged12	"SpawnBot 0x556D910 is DARK, not stripped | raw bytes | all zero"
+docs/coop-vs-ai-plan-s135.md	53	0x0556D910	merged12	"native SpawnBot (0x556D910) is dark"
+docs/fk-playability-audit-s134.md	365	0x0556D910	merged12	proposes 0x5A6AC40 OR 0x556D910 as the DARK control -- half of that pair is now LIT
+docs/s135-queue-arms-a-match.md	478	0x03BBF3C0	merged12	"DARK -- page never decrypted" (superseded by S136, still in place)
+docs/s135-queue-arms-a-match.md	628	0x0556E000	merged13	"Page 0x556E000 is DARK"
+docs/next-session-prompt-s136.md	206	0x0556E000	merged13	"Page 0x556E000 is DARK"
+docs/next-session-prompt-s134.md	132	0x05456000	merged10	"FK-22 2.5's 16 COVERAGE-BLOCKED keys: page 0x5456000"
+docs/next-session-prompt-s134.md	135	0x05875E90	merged10	"Still genuinely dark ... 0x5875E90's neighbours"
