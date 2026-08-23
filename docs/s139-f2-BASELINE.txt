@@ -1,0 +1,64 @@
+======================================================================================================================
+cmc_earlyout_readout (S139 ranked plan)   PID=35608 BASE=0x7FF704F00000   2026-08-23 17:36:50
+  bot pawn=0x0 ctl=0x0 | player pawn=0x26E90802AE0 ctl=0x26E20E9C4F0
+======================================================================================================================
+  [BOT] VOID: no bot (inject the arm first)
+field                                          | BOT                         | PLAYER (control)           
+----------------------------------------------------------------------------------------------------------------------
+pawn                                           | None                        | 0x26E90802AE0              
+ctl                                            | None                        | 0x26E20E9C4F0              
+pawn.class                                     | None                        | BP_HERO_Ronin_C            
+ctl.class                                      | None                        | BP_LokiPlayerController_Dev
+cmc                                            | None                        | 0x26EC6750010              
+cmc.off                                        | None                        | 1112                       
+cmc.class                                      | None                        | LokiCharacterMovementCompon
+CTRL.CharacterOwner==pawn                      | None                        | YES                        
+cmc.CharacterOwner                             | None                        | 0x26E90802AE0              
+CTRL.tickTarget==cmc                           | None                        | YES                        
+cmc.tickTarget                                 | None                        | 0x26EC6750010              
+R1.latch@0x16C8                                | None                        | 0                          
+R1.velsnap@0x16B0                              | None                        | (0.000,0.000,0.000)        
+R2.TimeSinceFallingStart@0x12B0                | None                        | 36.7001                    
+R3.ControlInputVector@0x418                    | None                        | (0.000,0.000,0.000)        
+R3.LastControlInputVector@0x430                | None                        | (0.000,0.000,0.000)        
+R4.UpdatedComponent                            | None                        | 0x26E95CB11E0              
+R4.UpdatedComponent.byname                     | None                        | @0xD0 agrees               
+R4.pawn RF_Garbage(bit30)                      | None                        | 0                          
+R4.UpdatedComponent.class                      | None                        | CapsuleComponent           
+R4.Mobility@0x1BB                              | None                        | 2                          
+R6.BodyInstance.off                            | None                        | @+0x3F0                    
+R6.bSimulatePhysics                            | None                        | 0                          
+R6.bSimulatePhysics.how                        | None                        | byte@+0x10 mask 0x01 raw 0x
+R6.bEnableGravity                              | None                        | 1                          
+R6.bEnableGravity.how                          | None                        | byte@+0x10 mask 0x04 raw 0x
+R6.bNotifyRigidBodyCollision                   | None                        | 0                          
+R6.bNotifyRigidBodyCollision.how               | None                        | byte@+0x12B mask 0x08 raw 0
+R5.Role@0x160                                  | None                        | 3                          
+R5.RemoteRole@0x72                             | None                        | 1                          
+R5.Controller@0x400                            | None                        | 0x26E20E9C4F0              
+R5.bRunPhysicsWithNoController(0x2E9&4)        | None                        | 0                          
+R7.Acceleration@0x328                          | None                        | (0.000,0.000,0.000)        
+R7.AnalogInputModifier@0x3D0                   | None                        | 0                          
+R7.MaxAcceleration@0x28C                       | None                        | 50000                      
+R8.AbilitySystemComponentStorage@0xF00         | None                        | 0x26E7A121A80              
+R8.AttributeSetStorage@0xF08                   | None                        | 0                          
+R8.bCharacterMovementEnabled@0xB59             | None                        | 1                          
+R10.TickState@0x4B                             | None                        | 1                          
+R10.bCanEverTick(0x4A&2)                       | None                        | 1                          
+R10.InternalData@0x60                          | None                        | 0x26D0767CD90              
+R10.bRegistered(*InternalData bit0)            | None                        | 0                          
+MovementMode@0x231                             | None                        | 3                          
+Velocity@0xE8 (CONTAMINATED on player)         | None                        | (0.000,0.000,0.000)        
+location                                       | None                        | (0.000,0.000,13240.000)    
+----------------------------------------------------------------------------------------------------------------------
+  bot: MovementMode=None  Role=None  Mobility=None
+  plr: MovementMode=MOVE_Falling  Role=ROLE_Authority  Mobility=Movable
+
+### RANK-1 VERDICT (the bisector) ###
+  !! CONTROL FAILED: the PLAYER's latch reads 0, expected 1.
+     Either the offset is wrong or the player's PerformMovement has never reached
+     StartNewPhysics either. THE BISECTOR IS UNINTERPRETABLE THIS SITTING.
+
+  ⚠ Acceleration == 0 is UNINTERPRETABLE (3 independent zero-writers). Only non-zero AND
+    collinear with RandomMoveDirection is informative.
+  ⚠ Velocity/Acceleration on the PLAYER are CONTAMINATED if `play` is injected.

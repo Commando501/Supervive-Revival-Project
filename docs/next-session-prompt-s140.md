@@ -1,14 +1,20 @@
-# NEXT SESSION (S140) — one read: is the hero's capsule simulating physics?
+# NEXT SESSION (S140) — six exits, all measured passing, and it still never runs
 
-**One line: the movement wall is down to THREE INSTRUCTIONS. Engine `PerformMovement` runs, and it
-bails at one of three gates before `StartNewPhysics`; two of the three are measured passing, and the
-third — `UpdatedComponent->IsSimulatingPhysics()` — has never been read. Read it.**
+**One line: engine `PerformMovement` runs with a real DeltaTime; `StartNewPhysics` never runs for ANY
+of the 37 movement components in the world; a CFG walk proves exactly SIX branches can skip it; and
+every one of the six has its input measured passing. One of those six readings is measuring
+something other than what its branch tests — and the prime suspect is `IsSimulatingPhysics`, which
+is called with `bGetWelded = true` and so may be answering about a DIFFERENT component.**
+
+⚠ **This supersedes the "one read: is the capsule simulating physics?" framing this file opened with
+in its first draft.** That read was taken — **`bSimulatePhysics = 0`, the gate PASSES** — and the
+question moved. Read `docs/s139-flight2-gate-refuted.md` §5 first.
 
 Written 2026-08-23 at the end of S139. Read `docs/s139-flight1-the-bot-is-not-special.md` first
 (its §7b is the target and its §7b adjudication block governs), then `docs/s139-movement-ladder.md`.
 
-**STATE AT HANDOFF:** no client running (died ~2 min after the reads, 2 injections — FK-32 class;
-all data captured first). `ags` may still be up. Working tree committed at `38d96d9`.
+**STATE AT HANDOFF:** flight-2 client PID 35608 was still ALIVE at write-up (no injection was made
+that flight). The flight-1 client died after 2 injections (FK-32 class), all data captured first.
 
 ---
 
@@ -33,10 +39,32 @@ all data captured first). `ags` may still be up. Working tree committed at `38d9
 
 ---
 
-## 1. ★ START HERE — the three gates, two already measured
+## 0b. ★★★ START HERE (S139 flight 2 result) — the weld question
 
-Engine `UCharacterMovementComponent::PerformMovement 0x035E9EC0`, gate cluster, all three bailing to
-`0x035EB7CF`:
+    0x035E9FB5  call qword ptr [rax+0x4c0]     ; on the CAPSULE's vtable
+    0x03C9B0A0  ...  mov r9d, 0xFFFFFFFF       ; Index = -1
+                     mov r8b, 1                ; *** bGetWelded = TRUE ***
+                     call qword ptr [rax+0x810]  ; GetBodyInstance(BoneName, bGetWelded, Index)
+
+With welding on, `GetBodyInstance` can return **another component's** `FBodyInstance`. So the
+measured `this->BodyInstance.bSimulatePhysics == 0` does **not** settle what the call returns — the
+measured input and the tested condition are provably different objects. That is exactly the shape a
+false "this gate passes" takes, and it is the only one of the six with that property.
+
+**Do this first, and it is mostly OFFLINE:** transcribe `0x03C9B0A0` and its `[vt+0x810]` callee,
+then one read of the capsule's weld state (`BodyInstance.WeldParent` / the returned body's
+`bSimulatePhysics`). `tools/re/cmc_earlyout_readout.py` already resolves `BodyInstance @+0x3F0` and
+decodes its bitfields from the live `FBoolProperty`.
+
+**The banked five** (do not re-measure): `HasValidData` inputs, World, `MovementMode` 3,
+`Mobility` 2, and `bSimulatePhysics` 0 on the capsule itself — all read live with controls.
+
+## 1. Reference — the six exits, CFG-verified
+
+Engine `UCharacterMovementComponent::PerformMovement 0x035E9EC0`. **A recursive-descent CFG walk
+(1,461 reachable instructions; one `ret`; no indirect jumps) proves EXACTLY SIX branches before the
+call can skip it.** ⚠ A linear sweep of the same range decoded only 1,074 instructions — it missed
+~390 and is NOT a sound instrument here, though it happened to get this region right.
 
     0x035E9F17  call qword ptr [rdx+0x6b8]        ; HasValidData          -> PASSES (measured)
     0x035E9F25  test r13,r13 / je                 ; World == null         -> PASSES
@@ -45,26 +73,27 @@ Engine `UCharacterMovementComponent::PerformMovement 0x035E9EC0`, gate cluster, 
     0x035E9F9D  cmp  byte ptr [rcx+0x1bb], 2      ; Mobility==Movable?
     0x035E9FA4  jne  0x35eb7cf                    ;   MEASURED 2  -> PASSES
     0x035E9FB5  call qword ptr [rax+0x4c0]        ; UpdatedComponent->IsSimulatingPhysics(NAME_None)
-    0x035E9FBD  jne  0x35eb7cf                    ;   *** NEVER READ -- READ THIS ***
+    0x035E9FBD  jne  0x35eb7cf                    ;   capsule bSimulatePhysics = 0 -> PASSES
+                                                  ;   *** but bGetWelded=true -- see 0b ***
+    0x035EA255  call qword ptr [rax+0x6b8]        ; HasValidData AGAIN
+    0x035EA25D  je   0x35eb150                    ;   its 3 inputs measured good -> PASSES
 
 (`rcx` = `UpdatedComponent`, loaded at `0x035E9F2E mov rcx,[rbx+0xd0]`; `rax` = its vtable.)
 
-**THE READ:** `bSimulatePhysics` on the capsule's `FBodyInstance`, on the bot AND the player.
-`tools/re/cmc_earlyout_readout.py` already resolves `UpdatedComponent` by name and prints its class
-(`CapsuleComponent`); add the `BodyInstance` walk. Two-sided control is free — both pawns are in the
-same state, so a value that differs would itself be the finding, and a value that agrees and is TRUE
-explains everything at once.
+⚠ The single `call [rax+0x720]` (StartNewPhysics) is at **`0x035EB13A`** — **not** `0x035EB7FA`,
+which the S139 synthesis recorded and which a CFG walk of the whole function does not find.
 
-⚠⚠ **HOLD THIS TENSION HONESTLY AND DO NOT RESOLVE IT BY ASSUMPTION.** If the capsule really is
-PhysX-simulating, then writing `CMC+0xE8` should not move the hero either — yet `play` reportedly
-moves it "WITH collision" (`tools/sigbypass-mod/tutorial_launch.cpp:365`). Either that observation
-needs re-checking under this lens, or `play`'s `SetMovementMode(5)` changes the state. **Measure;
-do not argue.**
+★ **Population control, already banked:** a walk of all 192,369 live objects found **37** movement
+components. **Every one reads `+0x16C8 == 0`**, and **exactly one is doing anything at all** (the
+player hero: `TimeSinceFallingStart 364.712`, `MovementMode 3`; the other 36 are pooled/unpossessed
+with `MovementMode 0` and `TimeSinceFallingStart 0.000`). ⇒ **there is no moving character anywhere
+in this world to use as a control** — do not design another "diff against a working one" experiment.
 
-**If it reads FALSE:** transcribe `0x035E9FC3 .. 0x035EB13A` (~4.5 KB, LIT: pages `0x35E9000`
-3454/4096, `0x35EA000` 3735, `0x35EB000` 3583) and enumerate the remaining bails. The single
-`call [rax+0x720]` is at **`0x035EB13A`** — ⚠ **not** `0x035EB7FA`, which the S139 synthesis
-recorded and which a scan of the whole range does not find.
+⚠⚠ **ONE TENSION TO CARRY, NOT TO RESOLVE BY ASSUMPTION.** If the capsule (or a weld parent) really
+is PhysX-simulating, writing `CMC+0xE8` should not move the hero either — yet `play` reportedly moves
+it "WITH collision" (`tools/sigbypass-mod/tutorial_launch.cpp:365`). Either that observation needs
+re-checking under this lens, or `play`'s `SetMovementMode(5)` changes the state. **Measure; do not
+argue.**
 
 ---
 
