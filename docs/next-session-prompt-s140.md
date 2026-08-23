@@ -1,10 +1,19 @@
 # NEXT SESSION (S140) — six exits, all measured passing, and it still never runs
 
-**One line: engine `PerformMovement` runs with a real DeltaTime; `StartNewPhysics` never runs for ANY
-of the 37 movement components in the world; a CFG walk proves exactly SIX branches can skip it; and
-every one of the six has its input measured passing. One of those six readings is measuring
-something other than what its branch tests — and the prime suspect is `IsSimulatingPhysics`, which
-is called with `bGetWelded = true` and so may be answering about a DIFFERENT component.**
+**One line: `StartNewPhysics` never runs for ANY of the 37 movement components in the world, and the
+whole question can be turned into a LOG LINE — engine `StartNewPhysics` has its own
+`IsSimulatingPhysics` gate that prints an abort string, and `LogCharacterMovement` is currently
+silent with no positive control. Pin the category and read it (§0a).**
+
+⚠⚠ **A CONTRADICTION I PUBLISHED MID-SESSION IS DISSOLVED — and the error is worth carrying.**
+`docs/s139-flight2-gate-refuted.md` §5 says six exits are all measured passing yet the call never
+happens, and calls that "a real contradiction". **It is not.** `+0x12B0` is accumulated at
+`0x055B840C`, which is **UPSTREAM of the Super call at `0x055B85C1`** — so *"`+0x12B0` advances"*
+proves only that **LOKI's** `PerformMovement` ran with dt > 0. It says **nothing** about whether the
+engine's `PerformMovement` got anywhere. I read a fact about the wrapper as a fact about the callee.
+⇒ **The engine's `PerformMovement` may well be bailing at one of its own gates after all**, and
+`latch 0 + dt advancing` is a fully-explained third survivor, not a paradox. **Fix that section
+before building on it.**
 
 ⚠ **This supersedes the "one read: is the capsule simulating physics?" framing this file opened with
 in its first draft.** That read was taken — **`bSimulatePhysics = 0`, the gate PASSES** — and the
@@ -39,7 +48,35 @@ that flight). The flight-1 client died after 2 injections (FK-32 class), all dat
 
 ---
 
-## 0b. ★★★ START HERE (S139 flight 2 result) — the weld question
+## 0a. ★★★★★ START HERE — TURN THE WHOLE QUESTION INTO A LOG LINE
+
+**Engine `UCharacterMovementComponent::StartNewPhysics 0x03600990` has its OWN `IsSimulatingPhysics`
+gate, and it LOGS when it fires:**
+
+    0x036009D3  mov  rcx, [rbx+0xd0]        ; UpdatedComponent
+    0x036009E4  call qword ptr [rax+0x4c0]  ; IsSimulatingPhysics
+    0x036009EC  je   0x3600a57              ; proceed
+                                            ; fall-through -> verbosity gate -> LOG -> RETURN
+
+String: `.rdata 0x07FC0670` — *"UCharacterMovementComponent::StartNewPhysics: UpdateComponent (%s)
+is simulating physics - aborting."*, `CharacterMovementComponent.cpp:3477`, **verbosity threshold
+5 = `Log`** (so it prints at default verbosity *if the category is not pinned down*).
+
+⚠⚠ **I GREPPED FOR IT AND GOT ZERO — AND THAT ZERO IS UNINTERPRETABLE.** `LogCharacterMovement`
+occurs **0 times** in the whole 898 KB `Loki.log`, so **the category has no positive control** and
+the absence says nothing. This is the project's own Class-A-vs-never-ran trap.
+
+★ **THE CHEAP FIX, AND IT IS THE BEST NEXT MOVE IN THE WHOLE SESSION:** FK-11 established that
+`[Core.Log]` in the **user** `Engine.ini` binds (and that `-LogCmds` and `-ini:` do **not**). Run
+`configs\set-log-verbosity.ps1` to pin **`LogCharacterMovement=Log`** (Verbose is unnecessary —
+threshold 5 is `Log`), relaunch, stage, and read. Then:
+- the abort line **present** ⇒ the gate fires ⇒ the weld hypothesis (§0b) is confirmed and named;
+- the abort line **absent, with the category now emitting other lines as the positive control**
+  ⇒ that gate is genuinely passing and the bail is elsewhere.
+**Either way it is a per-frame, per-object receipt for free, and it replaces the entire read plan
+below.** ⚠ Establish the positive control first — a silent category proves nothing.
+
+## 0b. ★★★ THE WELD QUESTION (S139 flight 2 result)
 
     0x035E9FB5  call qword ptr [rax+0x4c0]     ; on the CAPSULE's vtable
     0x03C9B0A0  ...  mov r9d, 0xFFFFFFFF       ; Index = -1

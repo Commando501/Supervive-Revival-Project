@@ -103,6 +103,32 @@ survives a good instrument. **Restore the enumeration to [M] — by CFG walk, no
 ⇒ ⚠⚠ **THEREFORE THE CONTRADICTION IS REAL, NOT AN ARTIFACT:** all six exits have their inputs
 measured passing, and `StartNewPhysics` still never runs.
 
+### ⚠⚠⚠ RETRACTED, SAME DAY — THERE IS NO CONTRADICTION. I MISREAD A WRAPPER FACT AS A CALLEE FACT.
+
+`+0x12B0` is accumulated at **`0x055B840C`**, which is **UPSTREAM of the Super call at
+`0x055B85C1`**. So *"`+0x12B0` advances at real time"* establishes only that **`ULokiCMC::
+PerformMovement` ran with dt > 0** — it establishes **nothing** about whether the *engine's*
+`PerformMovement` reached anything. My §0/§4 leg "engine `PerformMovement` is entered and all six of
+its exits pass" was never supported by that measurement.
+
+⇒ **`latch 0` + `dt advancing` is a fully consistent THIRD SURVIVOR**, not a paradox: Loki's
+`PerformMovement` runs, calls the Super, and the ENGINE bails at one of its own gates to
+`0x035EB7CF` — a block that writes no Velocity and no transform.
+
+★★ And a further gate exists that this document never had: **engine `StartNewPhysics 0x03600990`
+carries its OWN `IsSimulatingPhysics` test** (`0x036009D3` / `0x036009E4` / `0x036009EC`) which
+**logs** *"…UpdateComponent (%s) is simulating physics - aborting."* (`.rdata 0x07FC0670`,
+`CharacterMovementComponent.cpp:3477`, threshold 5 = `Log`). ⚠ Grepped: **0 occurrences — and
+`LogCharacterMovement` occurs 0 times in the whole log, so there is NO positive control and that
+zero is UNINTERPRETABLE.** Pinning the category is S140's first move (`docs/next-session-prompt-s140.md`
+§0a).
+
+★ **Why this matters beyond the fact:** the retraction was produced by an adversarial lane that had
+the same bytes I did and read the *ordering* I skipped. **The measurement was right; the inference
+crossed a function boundary.** Both halves of §3 above now carry the same lesson from opposite
+directions — an unsound instrument that got the right answer, and a sound measurement that carried a
+wrong inference.
+
 ⚠ Related caveat found the same way: I tried live **page protection** (`VirtualQueryEx`) as an
 "has this function executed?" test, exploiting the protector's decrypt-on-execute. All 14 probed
 addresses read `EXECUTE_READ`. **That instrument is too coarse here** — page granularity is 4 KiB and
