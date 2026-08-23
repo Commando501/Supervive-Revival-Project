@@ -1,0 +1,68 @@
+livingstate_sweep  PID=8948 BASE=0x7FF67ABD0000   *** CENSUS TIMESTAMP 2026-08-23 01:28:30 ***
+(read-only RPM. no injection, no write of any kind.)
+
+scanned 36 LokiCharacter-chain objects (of 192349 slots)
+
+====================================================================================================
+THE ENUM -- resolved LIVE off FEnumProperty::Enum (*(prop+0x78)), not guessed
+====================================================================================================
+   ELivingState                      (on 36 objects)
+
+   Known value tables, read offline from the UHT {const char* Name; int64 Value} pairs:
+     EPlayerLivingState:  NoCharacter=0  Dead=1  Knocked=2  Alive=3  Count=4
+     ELivingState:        ELivingStateDead=0  ELivingStateAlive=1  ELivingStateKnocked=2  Count=3
+
+====================================================================================================
+PER-OBJECT
+====================================================================================================
+kind       object           class                              value  rec+1090 resolve
+LIVE       0x2944DAC5580    BP_HERO_Ronin_C                    0      0        by name @+0x1090  AGREE
+LIVE       0x2936E94D560    BP_HERO_Ronin_C                    0      0        by name @+0x1090  AGREE
+LIVE       0x2948DC02AE0    BP_HERO_Ronin_C                    0      0        by name @+0x1090  AGREE
+LIVE       0x2936E94AAC0    BP_HERO_Ronin_C                    0      0        by name @+0x1090  AGREE
+LIVE       0x293702A8020    BP_HERO_Ronin_C                    0      0        by name @+0x1090  AGREE
+LIVE       0x29459992AE0    BP_HERO_Ronin_C                    0      0        by name @+0x1090  AGREE
+CDO        0x29365540040    BP_HERO_Assault_C                  0      0        by name @+0x1090  AGREE
+CDO        0x294BFD62AE0    BP_HERO_BountyHunter_C             0      0        by name @+0x1090  AGREE
+CDO        0x29475092AE0    BP_HERO_BurstCaster_C              0      0        by name @+0x1090  AGREE
+CDO        0x2949E8E8020    BP_HERO_FireFox_C                  0      0        by name @+0x1090  AGREE
+CDO        0x294848CAAC0    BP_HERO_Flex_C                     0      0        by name @+0x1090  AGREE
+CDO        0x2949E8E0040    BP_HERO_Freeze_C                   0      0        by name @+0x1090  AGREE
+CDO        0x2948C5B8020    BP_HERO_Reaper_C                   0      0        by name @+0x1090  AGREE
+CDO        0x294E5510040    BP_HERO_RocketJumper_C             0      0        by name @+0x1090  AGREE
+CDO        0x294DA120040    BP_HERO_Ronin_C                    0      0        by name @+0x1090  AGREE
+CDO        0x294DB32D560    BP_HERO_Sniper_C                   0      0        by name @+0x1090  AGREE
+CDO        0x294D9B0D560    BP_HERO_Void_C                     0      0        by name @+0x1090  AGREE
+CDO        0x294D3E88020    BP_Hero_HookGuy_C                  0      0        by name @+0x1090  AGREE
+CDO        0x294848C0040    BP_Hero_Storm_C                    0      0        by name @+0x1090  AGREE
+CDO        0x294D9B05580    BP_LokiHeroCharacter_C             0      0        by name @+0x1090  AGREE
+CDO        0x2946F80DB70    BP_LokiHeroCharacter_Code_C        0      0        by name @+0x1090  AGREE
+CDO        0x294BCE80010    BP_Minion_C                        0      0        by name @+0x1090  AGREE
+CDO        0x293E676E010    BP_Minion_Code_C                   0      0        by name @+0x1090  AGREE
+CDO        0x293DE019250    BP_Minion_Ghost_C                  0      0        by name @+0x1090  AGREE
+CDO        0x29328BB4930    BP_Minion_KaijuAxeLeader_C         0      0        by name @+0x1090  AGREE
+CDO        0x294DA3A0010    BP_Minion_KaijuAxeLeader_Stagger_T 0      0        by name @+0x1090  AGREE
+CDO        0x29461980010    BP_Minion_KaijuCaster_V2_C         0      0        by name @+0x1090  AGREE
+CDO        0x294BCE824A0    BP_Minion_SquadLeader_C            0      0        by name @+0x1090  AGREE
+CDO        0x29492C44930    BP_Minion_TheWall_Ghost_C          0      0        by name @+0x1090  AGREE
+CDO        0x2945D7A9250    BP_Minion_VaultGuardShooter_C      0      0        by name @+0x1090  AGREE
+CDO        0x29369AADB70    BP_Minion_VaultGuardStunner_C      0      0        by name @+0x1090  AGREE
+CDO        0x2949D39A030    GIE_VaultSwarm_Spawning_C          0      0        by name @+0x1090  AGREE
+CDO        0x2932B489FD0    LokiCharacter                      0      0        by name @+0x1090  AGREE
+CDO        0x2932B4C88B0    LokiHeroCharacter                  0      0        by name @+0x1090  AGREE
+CDO        0x2932B5D3050    LokiHeroCharacter_AS               0      0        by name @+0x1090  AGREE
+CDO        0x2932B4DE880    LokiMinionCharacter                0      0        by name @+0x1090  AGREE
+
+====================================================================================================
+VERDICT
+====================================================================================================
+  LIVE LokiCharacter-chain objects with a readable LivingState : 6
+  value histogram (LIVE only)                                  : 0 x6
+
+  ***** EVERY LIVE CHARACTER READS 0 *****
+  Under BOTH candidate enums 0 is NOT 'Alive' (NoCharacter=0 / Dead=0; Alive=3 / 1).
+  => NOTHING on the force-open route is marked Alive, so the bot is NOT specially
+     gated -- the whole world is. That upgrades the S138 flight-4 [I] to [M] for this
+     route, and it means 'why is the bot inert' was the wrong question.
+  !! Scope it honestly: this is one world, one moment. It says nothing about a REAL
+     match, and it does not identify what WOULD set LivingState.

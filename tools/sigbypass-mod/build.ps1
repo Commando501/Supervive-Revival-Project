@@ -619,6 +619,14 @@ $Variants = @{
         #   REFUSE rather than guess. Two pre-registered page receipts: 0x5556D50 and 0x55667F0,
         #   both DARK in every image -- dumpimage after the flight either way.
         'spawnbot-premade'    = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60')
+        # S138 flight 7 -- ARM D (make the LokiBotController) + ARM F (drive the gate recompute).
+        # NO ARM E: flight 6 already settled that SpawnBot's premade path runs, and leaving it out
+        # keeps ARM F's result attributable to the recompute rather than to a second world change.
+        'driverecompute'      = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0xA0')
+        # READ-ONLY control for ARM F: ARM D runs, ARM F is compiled OUT (bit7 clear), so the gate
+        # must NOT move. It converts an ARM F null from 'something is broken' into 'the call did
+        # nothing'.  (== lokibot's flags; kept as a NAMED control so the intent is explicit.)
+        'driverecompute-ctrl' = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x20')
         # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
         # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
         'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')

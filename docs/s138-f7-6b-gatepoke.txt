@@ -1,0 +1,22 @@
+gatepoke  pid=52212 ctl=0x25B16DBA0C0 pawn=0x259F4E1AAC0  02:49:08
+
+== A BASELINE ==
+  [A       ] GATE+0x6A0=0   LivingState=0   RandDir=(0.000,0.000,0.000)        CIV=(0.000,0.000,0.000)        loc=(600.0,0.0,13240.0)
+
+== B POKE controller+0x6A0 = 1 ==
+  write ok=True READBACK=1
+  Q1 HOLDS.
+  [B+2s    ] GATE+0x6A0=1   LivingState=0   RandDir=(0.000,0.000,0.000)        CIV=(0.000,0.000,0.000)        loc=(600.0,0.0,13240.0)
+  [B+4s    ] GATE+0x6A0=1   LivingState=0   RandDir=(0.000,0.000,0.000)        CIV=(0.000,0.000,0.000)        loc=(600.0,0.0,13240.0)
+  [B+6s    ] GATE+0x6A0=1   LivingState=0   RandDir=(0.000,0.000,0.000)        CIV=(0.000,0.000,0.000)        loc=(600.0,0.0,13240.0)
+  [B+8s    ] GATE+0x6A0=1   LivingState=0   RandDir=(0.000,0.000,0.000)        CIV=(0.000,0.000,0.000)        loc=(600.0,0.0,13240.0)
+  [B+10s   ] GATE+0x6A0=1   LivingState=0   RandDir=(0.000,0.000,0.000)        CIV=(0.000,0.000,0.000)        loc=(600.0,0.0,13240.0)
+  [B+12s   ] GATE+0x6A0=1   LivingState=0   RandDir=(0.000,0.000,0.000)        CIV=(0.000,0.000,0.000)        loc=(600.0,0.0,13240.0)
+
+== C RESTORE controller+0x6A0 = 0 ==
+  [C       ] GATE+0x6A0=0   LivingState=0   RandDir=(0.000,0.000,0.000)        CIV=(0.000,0.000,0.000)        loc=(600.0,0.0,13240.0)
+
+== VERDICT ==
+  Q1 gate poke landed        : YES
+  Q4 pawn LOCATION CHANGED   : NO
+  (read RandDir/CIV above for Q2/Q3)

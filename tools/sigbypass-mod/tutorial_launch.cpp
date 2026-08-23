@@ -5527,6 +5527,28 @@ static bool PhChainHas(uintptr_t cls,const char* sub,char* chainOut,size_t chain
     return hit;
 }
 
+// S138 FIX. PhChainHas above matches a chain element by SUBSTRING, and that produced a published
+//   false claim: `PhChainHas(cls,"LokiGameState")` matches **LokiGameStateUAVComponent**, an
+//   ActorComponent, because strstr("LokiGameStateUAVComponent","LokiGameState") succeeds. The
+//   S138 ARM E pre-flight latched that component as the GameState and then read TeamStates at
+//   [+0x600]/[+0x608] off it -- an offset read on an unrelated object. Both G3 and G4 were VOID,
+//   and the resulting "TeamStates.Num=0" reached docs/s138-flight2-arme-fired.md as fact.
+//   This is the class-lookup blind-spot family again (obj_by_class substring, cheat_reach_probe
+//   endswith, class_props class-of-class, bpframe_readout first-match, and now this).
+//   PhChainHasExact requires an EXACT class-name match on some element of the chain, which a
+//   component can never satisfy for a class it does not derive from.
+static bool PhChainHasExact(uintptr_t cls,const char* want,char* chainOut,size_t chainSz){
+    bool hit=false; size_t w=0; if(chainOut&&chainSz) chainOut[0]=0;
+    int g=0;
+    for(uintptr_t c=cls; LooksLikePtr(c)&&g<12; c=(SafeReadable((void*)(c+0x48),8)?*(uintptr_t*)(c+0x48):0), g++){
+        char n[128]; if(!GetFNameStr(NameId(c),n,sizeof(n))) break;
+        if(!strcmp(n,want)) hit=true;
+        if(chainOut&&chainSz){ size_t l=strlen(n);
+            if(w+l+5<chainSz){ if(w){ memcpy(chainOut+w,"<-",2); w+=2; } memcpy(chainOut+w,n,l); w+=l; chainOut[w]=0; } }
+    }
+    return hit;
+}
+
 // ★★ ENUMERATE EVERY LIVE GameMode AND SHOW THE WORK — this REPLACES the first-substring-match that
 //    `FindInstByClass` performs, and it is not optional hygiene.
 //
@@ -14194,6 +14216,10 @@ static uintptr_t g_psWorldCand[4]={0,0,0,0}; static int g_psWorldN=0;
                           // burned a live run in this project before.
 #endif
 static uintptr_t g_psGmCand=0, g_psGsCand=0;          // latched by the A0 census (chain-matched)
+// S138 FIX: keep EVERY candidate, not just the first. A first-match latch cannot report
+//   ambiguity, and this arm shipped one that silently selected the wrong object.
+static uintptr_t g_psGsCandA[4]={0,0,0,0}; static int g_psGsCandN=0;
+static uintptr_t g_psGmCandA[4]={0,0,0,0}; static int g_psGmCandN=0;
 static uintptr_t g_psSbComp=0, g_psSbReturned=0;
 static int  g_psSbTried=0, g_psSbCalled=0, g_psSbFaulted=0, g_psSbRefused=0;
 static char g_psSbWhy[192]={0};
@@ -14289,7 +14315,9 @@ static uint8_t BsClassify(uintptr_t cls){
     //   also matches every Comp_GameMode_* ActorComponent (the substring trap that function's own
     //   comment records). Require the class that DECLARES the round API: LokiRoundGameMode.
     if(PhChainHas(cls,"LokiRoundGameMode",chain,sizeof(chain))) v|=16;
-    if(PhChainHas(cls,"LokiGameState",chain,sizeof(chain)))     v|=32;
+    // S138 FIX: was PhChainHas (SUBSTRING) and matched LokiGameStateUAVComponent, a COMPONENT.
+    //   Exact chain-element match: only a class that actually derives from ALokiGameState.
+    if(PhChainHasExact(cls,"LokiGameState",chain,sizeof(chain))) v|=32;
     { char cn[128]; cn[0]=0; GetFNameStr(NameId(cls),cn,sizeof(cn)); if(!strcmp(cn,"World")) v|=8; }
 #endif
     if(g_bsMemoN<BS_MEMO){ g_bsMemoCls[g_bsMemoN]=cls; g_bsMemoVal[g_bsMemoN]=v; g_bsMemoN++; }
@@ -14298,6 +14326,28 @@ static uint8_t BsClassify(uintptr_t cls){
 
 // ONE pass over the world. Counts both classes AND (optionally) collects hero candidates.
 // `heroOut`/`heroCountOut` may be null when only the counts are wanted.
+#if KBSPS
+// S138 FIX (found by flight 3's own output). BsScanWorld runs THREE passes (A0/A1/A2) and the
+//   candidate latches were never reset between them, so one object was recorded once PER PASS.
+//   Flight 3 printed "GameState candidates: 2" where both entries were the SAME pointer
+//   0x2C9C76610F0, which then tripped the spurious "more than one candidate -> AMBIGUOUS" warning.
+//   Two guards, because either alone leaves a hole:
+//     BsPsResetCands() -- called at the top of every pass, so the set describes the CURRENT sweep;
+//     BsPsAddCand()    -- de-duplicates on insert, so a repeated object can never be counted twice
+//                         even if a pass is ever re-entered or the reset is missed.
+//   Safe by construction: every consumer (BsPsPrecondition, BsPsSpawnBot) runs AFTER A1 and BEFORE
+//   A2, and nothing reads these latches after A2 -- verified by inspection over the whole file.
+static void BsPsAddCand(uintptr_t* arr,int* n,int cap,uintptr_t obj){
+    for(int i=0;i<*n;i++) if(arr[i]==obj) return;      // already have it: NOT a second candidate
+    if(*n<cap) arr[(*n)++]=obj;
+}
+static void BsPsResetCands(){
+    g_psWorldN=0;  g_psGsCandN=0;  g_psGmCandN=0;
+    g_psWorld=0;   g_psGsCand=0;   g_psGmCand=0;
+    for(int i=0;i<4;i++){ g_psWorldCand[i]=0; g_psGsCandA[i]=0; g_psGmCandA[i]=0; }
+}
+#endif
+
 static void BsScanWorld(const char* tag,int* botCtl,int* heroes,uintptr_t* heroOut,int* heroCountOut){
     *botCtl=-1; *heroes=-1; if(heroCountOut)*heroCountOut=0;
     uintptr_t oo=g_modBase+kObjObjectsRva; if(!SafeReadable((void*)oo,0x18))return;
@@ -14306,6 +14356,7 @@ static void BsScanWorld(const char* tag,int* botCtl,int* heroes,uintptr_t* heroO
     int numChunks=(numEl+PERCHUNK-1)/PERCHUNK, nb=0, nh=0, scanned=0;
 #if KBSPS
     int nps=0;
+    BsPsResetCands();   // S138: per-pass, so the candidate set describes THIS sweep
 #endif
     DWORD t0=GetTickCount();
     for(int ci=0;ci<numChunks;ci++){
@@ -14332,11 +14383,11 @@ static void BsScanWorld(const char* tag,int* botCtl,int* heroes,uintptr_t* heroO
                 // returned a DIFFERENT World object. (345 live objects have "World" in the class
                 // name.) Keep several and let the precondition read pick one that is populated,
                 // instead of asserting a null it cannot support.
-                if(g_psWorldN<4) g_psWorldCand[g_psWorldN++]=obj;
+                BsPsAddCand(g_psWorldCand,&g_psWorldN,4,obj);
                 if(!g_psWorld) g_psWorld=obj;
             }
-            if((v&16)&&!g_psGmCand) g_psGmCand=obj;
-            if((v&32)&&!g_psGsCand) g_psGsCand=obj;
+            if(v&16){ BsPsAddCand(g_psGmCandA,&g_psGmCandN,4,obj); if(!g_psGmCand) g_psGmCand=obj; }
+            if(v&32){ BsPsAddCand(g_psGsCandA,&g_psGsCandN,4,obj); if(!g_psGsCand) g_psGsCand=obj; }
 #endif
             if(v&2){ nh++;
                 if(heroOut&&heroCountOut){
@@ -14627,6 +14678,25 @@ typedef void (__fastcall *PsSetPlayerStateFn)(void*,void*);
 //   0x3BBDA04  48 8b a9 d8 03 00 00   mov rbp,[rcx+0x3d8]     <- reads the pawn's CURRENT PlayerState
 //   0x3BBDA0B  48 8b fa               mov rdi,rdx             <- rdx IS the new PlayerState argument
 // => void __fastcall(APawn* pawn, APlayerState* newPS).
+// ---- ARM F (S138 flight 7): DRIVE THE GATE RECOMPUTE.
+//   Flight 6 poked LivingState=Alive and the gate at controller+0x6A0 did NOT move -- the
+//   PRE-REGISTERED outcome. +0x6A0 is a CACHED flag, and THIS is the function that writes it.
+//   Transcribed from dumps/s138-f3 (page 3621/4096 non-zero => REAL, not dark):
+//     0x5570B80  40 57                 push rdi
+//     0x5570B82  48 83 ec 20           sub  rsp,0x20
+//     0x5570B86  80 b9 02 06 00 00 00  cmp  byte [rcx+0x602],0   <- ForceCharacterNotControllable
+//     0x5570B8D  48 8b f9              mov  rdi,rcx
+//     0x5570B90  74 63                 je   +0x63
+//     0x5570B92  80 b9 a0 06 00 00 00  cmp  byte [rcx+0x6a0],0   <- THE GATE
+//     0x5570B9F  c6 81 a0 06 00 00 00  mov  byte [rcx+0x6a0],0   <- it WRITES the gate
+//     0x5570BA6  48 8b 89 b0 04 00 00  mov  rcx,[rcx+0x4b0]      <- Blackboard
+//   Reads ONLY rcx in its prologue => void __fastcall(ALokiBotController*).
+//   ALokiBotController::HandleLivingStateChanged 0x5560910 is e9 6b 02 01 00 = a tail-jmp
+//   straight here, i.e. this is what the OnLivingStateChanged delegate ultimately calls.
+//   NOT CALL-ONLY: it writes +0x6A0 and touches the Blackboard component.
+constexpr uintptr_t PS_RVA_UPDATECTRL = 0x5570B80;
+static const uint8_t PS_SIG_UPDATECTRL[16] = {
+    0x40,0x57,0x48,0x83,0xEC,0x20,0x80,0xB9,0x02,0x06,0x00,0x00,0x00,0x48,0x8B,0xF9 };
 constexpr uintptr_t PS_RVA_SETPLAYERSTATE = 0x3BBD9F0;
 static const uint8_t PS_SIG_SETPLAYERSTATE[16] =
     {0x48,0x89,0x5c,0x24,0x08,0x48,0x89,0x6c,0x24,0x10,0x48,0x89,0x74,0x24,0x18,0x57};
@@ -15196,6 +15266,75 @@ constexpr uintptr_t PS_RVA_SPAWNBOT = 0x556D910;
 static const uint8_t PS_SIG_SPAWNBOT[16] =
     {0x40,0x55,0x53,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57,0x48,0x8d,0xac};
 
+// ==============================================================================================
+// ARM F -- DRIVE THE RECOMPUTE. The named successor to flight 6.
+//
+// Flight 6 measured: poking pawn+0x1090 = 1 (Alive) LANDS (readback 1, held 10 s), is SPECIFIC
+// (3 unpoked control heroes stayed 0), and does NOT move the gate at controller+0x6A0. That was
+// PRE-REGISTERED as the expected outcome, with this mechanism: +0x6A0 is computed on a
+// state-change event and CACHED, not re-derived per Tick.
+//
+// So: set the INPUT, then call the RECOMPUTE, then read the gate. Two writes, both DATA class.
+// ORDER IS LOAD-BEARING -- the poke must PRECEDE the call, or the recompute reads Dead and
+// stores 0, which is indistinguishable from the call not working.
+// ==============================================================================================
+static void BsPsDriveRecompute(){
+    Marker("[PS] ================ ARM F: drive UpdateCharacterControllable ================\r\n");
+    uintptr_t ctl=g_psLbCtl[1];
+    if(!LooksLikePtr(ctl)){
+        Marker("[PS] ARM F REFUSED: ARM D produced no LokiBotController -- there is no gate to\r\n"
+               "[PS]   recompute. STAGING statement, not a result.\r\n"); return; }
+    uintptr_t pawn=SafeReadable((void*)(ctl+0x3F8),8)?*(uintptr_t*)(ctl+0x3F8):0;
+    if(!LooksLikePtr(pawn)){
+        Marker("[PS] ARM F REFUSED: the controller possesses no pawn.\r\n"); return; }
+    uint8_t ls0=SafeReadable((void*)(pawn+0x1090),1)?*(uint8_t*)(pawn+0x1090):0xFF;
+    uint8_t g0 =SafeReadable((void*)(ctl+0x6A0),1)?*(uint8_t*)(ctl+0x6A0):0xFF;
+    uint8_t f0 =SafeReadable((void*)(ctl+0x602),1)?*(uint8_t*)(ctl+0x602):0xFF;
+    Markerf("[PS] ARM F BEFORE: ctl=0x%llX pawn=0x%llX  LivingState=%u  GATE+0x6A0=%u  force+0x602=%u\r\n",
+            (unsigned long long)ctl,(unsigned long long)pawn,ls0,g0,f0);
+    if(f0!=0){
+        Markerf("[PS] ARM F WARNING: force+0x602=%u is NON-ZERO. The transcribed prologue then\r\n"
+                "[PS]   takes the force branch and STORES 0 into the gate, so a 0 afterwards would\r\n"
+                "[PS]   be EXPECTED AND UNINTERPRETABLE. Proceeding; say so in the write-up.\r\n",f0); }
+    if(ls0!=1){
+        *(uint8_t*)(pawn+0x1090)=1;
+        uint8_t rb=SafeReadable((void*)(pawn+0x1090),1)?*(uint8_t*)(pawn+0x1090):0xFF;
+        Markerf("[PS] ARM F: poked pawn+0x1090 = 1 (Alive)  READBACK=%u\r\n",rb);
+        if(rb!=1){ Marker("[PS] ARM F REFUSED: the input poke did not land.\r\n"); return; } }
+    else Marker("[PS] ARM F: LivingState was ALREADY 1; no input poke needed.\r\n");
+    uintptr_t fn=g_modBase+PS_RVA_UPDATECTRL;
+    if(!SafeReadable((void*)fn,16)){
+        Marker("[PS] ARM F REFUSED: target unreadable (page not decrypted).\r\n"); return; }
+    { const uint8_t* got=(const uint8_t*)fn; char hx[64]; int o=0;
+      for(int i=0;i<16&&o<60;i++) o+=_snprintf_s(hx+o,sizeof(hx)-o,_TRUNCATE,"%02X ",got[i]);
+      int sigok=1; for(int i=0;i<16;i++) if(got[i]!=PS_SIG_UPDATECTRL[i]) sigok=0;
+      Markerf("[PS] ARM F: target=0x%llX rva=0x%llX prologue=%s -> %s\r\n",
+              (unsigned long long)fn,(unsigned long long)PS_RVA_UPDATECTRL,hx,
+              sigok?"SIGNATURE MATCHES UpdateCharacterControllable":"*** MISMATCH ***");
+      if(!sigok){ Marker("[PS] ARM F REFUSED: not the function transcribed offline.\r\n"); return; } }
+    Marker("[PS] ARM F: calling UpdateCharacterControllable(ctl). NOT call-only -- it writes\r\n"
+           "[PS]   +0x6A0 and touches the Blackboard. SEH-guarded.\r\n");
+    int faulted=0;
+    __try { ((PsInitPlayerStateFn)fn)((void*)ctl); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        faulted=1; Markerf("[PS] *** ARM F FAULTED: %s ***\r\n",DP_FAULT); }
+    Sleep(300);
+    uint8_t ls1=SafeReadable((void*)(pawn+0x1090),1)?*(uint8_t*)(pawn+0x1090):0xFF;
+    uint8_t g1 =SafeReadable((void*)(ctl+0x6A0),1)?*(uint8_t*)(ctl+0x6A0):0xFF;
+    Markerf("[PS] ARM F AFTER (faulted=%d): LivingState=%u  GATE+0x6A0=%u  (was %u)\r\n",
+            faulted,ls1,g1,g0);
+    if(g1==1&&g0==0)
+        Marker("[PS] ***** ARM F: THE GATE OPENED. bCharacterControllable 0 -> 1. The wander\r\n"
+               "[PS]   driver in Tick is now ungated as far as THIS term goes -- read\r\n"
+               "[PS]   RandomMoveDirection (+0x658) and the pawn location EXTERNALLY to see\r\n"
+               "[PS]   whether it actually MOVES. *****\r\n");
+    else if(g1==0)
+        Marker("[PS] ARM F: the gate is STILL 0 after a verified call with LivingState=1.\r\n"
+               "[PS]   That locates a FURTHER precondition INSIDE UpdateCharacterControllable --\r\n"
+               "[PS]   its prologue also reads +0x602 and the Blackboard at +0x4B0. It is NOT\r\n"
+               "[PS]   evidence against the LivingState result, which is about other functions.\r\n");
+}
+
 static void BsPsSpawnBot(){
     Marker("[PS] ================ ARM E: SpawnBot(PremadeBotController) ================\r\n");
     Marker("[PS] PRE-REGISTERED PAGE RECEIPTS (check with a dumpimage EITHER WAY):\r\n"
@@ -15245,17 +15384,55 @@ static void BsPsSpawnBot(){
     }
 
     // ---- G3/G4: a live GameState with TeamStates.
+    // S138 FIX. This block used to print ONE first-match candidate and its [+0x608], and that
+    //   candidate was latched by a SUBSTRING chain test which matched LokiGameStateUAVComponent,
+    //   an ActorComponent. The printed "TeamStates[+0x600].Num=0" was an offset read on the wrong
+    //   object, and it was published as fact in docs/s138-flight2-arme-fired.md. Now: EXACT chain
+    //   match upstream, EVERY candidate printed WITH ITS FULL CHAIN so a recurrence is visible in
+    //   the marker itself, an explicit NOT MEASURED state, and a cross-check against the World's
+    //   own GameState pointer, which is authoritative and outranks a census first-match.
     {
-        char gsn[128]; gsn[0]=0;
-        if(LooksLikePtr(g_psGsCand)) GetFNameStr(NameId(ClassOf(g_psGsCand)),gsn,sizeof(gsn));
-        int32_t tsNum=-1;
-        if(LooksLikePtr(g_psGsCand)&&SafeReadable((void*)(g_psGsCand+0x608),4))
-            tsNum=*(int32_t*)(g_psGsCand+0x608);
-        Markerf("[PS] G3/G4 LokiGameState=0x%llX '%s'  TeamStates[+0x600].Num=%d\r\n"
-                "[PS]    (informational: SpawnBot calls its OWN GetLokiGameState 0x56F01A0 and\r\n"
-                "[PS]     GetTeamState 0x5696D60; an empty team array makes those gates fail and the\r\n"
-                "[PS]     dark-page receipt not fire, while SpawnBot STILL returns a pawn.)\r\n",
-                (unsigned long long)g_psGsCand,gsn,tsNum);
+        uintptr_t wgs=0;
+        if(LooksLikePtr(g_psWorld)){
+            uint32_t oGs=PropOffsetSuper(ClassOf(g_psWorld),"GameState");
+            if(oGs==0xFFFFFFFF) oGs=0x258;   // [M] UWorld::GameState
+            if(SafeReadable((void*)(g_psWorld+oGs),8)) wgs=*(uintptr_t*)(g_psWorld+oGs);
+        }
+        Markerf("[PS] G3/G4 GameState candidates: %d   (EXACT chain match on 'LokiGameState')\r\n",g_psGsCandN);
+        for(int i=0;i<g_psGsCandN;i++){
+            uintptr_t gs=g_psGsCandA[i]; if(!LooksLikePtr(gs)) continue;
+            char gsn[128]; gsn[0]=0; GetFNameStr(NameId(ClassOf(gs)),gsn,sizeof(gsn));
+            char ch[256]; ch[0]=0; PhChainHasExact(ClassOf(gs),"@never@",ch,sizeof(ch));
+            int32_t n=-1; if(SafeReadable((void*)(gs+0x608),4)) n=*(int32_t*)(gs+0x608);
+            uintptr_t d=0; if(SafeReadable((void*)(gs+0x600),8)) d=*(uintptr_t*)(gs+0x600);
+            Markerf("[PS]   gsCand[%d] 0x%llX '%s'  TeamStates Data=0x%llX Num=%d%s\r\n"
+                    "[PS]      chain: %s\r\n",
+                    i,(unsigned long long)gs,gsn,(unsigned long long)d,n,
+                    (gs==wgs)?"   <- MATCHES World->GameState":"",ch);
+        }
+        if(LooksLikePtr(wgs)){
+            char wn[128]; wn[0]=0; GetFNameStr(NameId(ClassOf(wgs)),wn,sizeof(wn));
+            int32_t n=-1; if(SafeReadable((void*)(wgs+0x608),4)) n=*(int32_t*)(wgs+0x608);
+            Markerf("[PS]   World->GameState = 0x%llX '%s'  TeamStates.Num=%d  (AUTHORITATIVE)\r\n",
+                    (unsigned long long)wgs,wn,n);
+            g_psGsCand=wgs;   // the World's answer outranks a census first-match
+        } else {
+            Marker("[PS]   World->GameState = NULL or unreadable -- falling back to the census.\r\n");
+        }
+        if(g_psGsCandN==0 && !LooksLikePtr(wgs)){
+            Marker("[PS] G3/G4 = *** NOT MEASURED *** -- no LokiGameState-derived object was latched\r\n"
+                   "[PS]   and the World has no readable GameState. This is NOT 'TeamStates is empty';\r\n"
+                   "[PS]   any downstream claim about team state from THIS run is UNINTERPRETABLE.\r\n");
+        } else if(g_psGsCandN>1){
+            Marker("[PS]   more than one GameState candidate -- the World answer was used; if it is\r\n"
+                   "[PS]   absent above, treat G3/G4 as AMBIGUOUS rather than measured.\r\n");
+        }
+        Marker("[PS]    (informational: SpawnBot calls its OWN GetLokiGameState 0x56F01A0 and\r\n"
+               "[PS]     GetTeamState 0x5696D60; an empty team array makes those gates fail and the\r\n"
+               "[PS]     dark-page receipt not fire, while SpawnBot STILL returns a pawn.)\r\n"
+               "[PS]    S138 OFFLINE RESULT [M]: TeamStates can NEVER be non-empty on a client --\r\n"
+               "[PS]     GetOrCreateTeamState (impl 0x5634BD0) returns nullptr UNCONDITIONALLY and\r\n"
+               "[PS]     SetNumTeams is the void fold. Expect Num=0; do NOT read it as a defect.\r\n");
     }
 
     // ---- G5: the component, by reflected property off the live GameMode.
@@ -15448,6 +15625,9 @@ static void BsPsExperiment(){
     // and says so, rather than calling with a null premade and silently reproducing FK-22's wall.
     if(KBSPSARMS&0x40) BsPsSpawnBot();
     else Marker("[PS] ---- ARM E SKIPPED by KBSPSARMS bit6 ----\r\n");
+
+    if(KBSPSARMS&0x80) BsPsDriveRecompute();
+    else Marker("[PS] ---- ARM F SKIPPED by KBSPSARMS bit7 ----\r\n");
 }
 #endif  // KBSPS
 

@@ -1487,6 +1487,73 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   UNCHANGED across all three source patches (every edit is behind `#if KBSPS`). Readout:
   **`tools/re/playerstate_readout.py`** (read-only RPM; carries its own positive control — the
   player's real possession — and says so when that control fails).
+- ★★★★★ **S138 (2026-08-23) — THE BOT'S AI RUNS END TO END, AND THE WALL MOVED TO THE
+  MOVEMENT COMPONENT. Read `docs/next-session-prompt-s139.md`, then
+  `docs/s138-flight9b-flymode-refuted.md`.** Nine flights; every result below is live and controlled.
+  **[M] THE CHAIN:** nothing writes `LivingState=Alive` (offline: only TWO native writers of
+  `ALokiCharacter::LivingState @ +0x1090`, and BOTH store 0) → every character reads **Dead**
+  (6/6 live + 30/30 CDOs) → poke the byte and call `UpdateCharacterControllable` (impl
+  **`0x5570B80`**) → **the gate `bCharacterControllable` (+0x6A0) OPENS 0→1** → `Tick`'s wander
+  driver RUNS (**44 distinct horizontal unit directions, Z exactly 0, over 97 s / 194 samples**,
+  matching the transcribed 2.0 s cadence) → `ControlInputVector` on the PAWN receives them in
+  **193/194** samples → **and the pawn never moves one unit.**
+  ★★ The controller→pawn motor chain is CONFIRMED IN FLIGHT, not inferred (different objects).
+  ⚠⚠ **FOUR HYPOTHESES REFUTED — do not re-open:** (1) the gate / `LivingState` (it opens);
+  (2) `MovementMode` is wrong — **bot and player are BOTH `MOVE_Falling`(3)**; (3) forcing
+  `MOVE_Flying` (what `play` does) — poked, held 25 s, **no effect**; (4) the component is
+  deactivated — `bIsActive=True` on both. **STANDING: the controller ticks, the CMC does not** —
+  `ControlInputVector` is never consumed, and stock UE zeroes it inside `TickComponent`.
+  ★ **NEXT: run `play` (which DOES move the player here) and DIFF a moving CMC against the bot's.**
+  Every prior hypothesis failed for want of a moving positive control.
+  ⚠ `UActorComponent::PrimaryComponentTick` is an **`FTickFunction` struct member, NOT a UPROPERTY**,
+  so no `tools/re/` probe can see `bRegistered`/`bCanEverTick`. Derive that offset offline first.
+  ★ **SETTLED ON THE WAY:** `SpawnBot`'s premade path RUNS (ARM E — `MakeNewBotController`, and with
+  it FK-22's stripped getter, is never called), and its early exit is **`0x556DE6A`** =
+  `GetTeamState` NULL, measured by `[PS+0x8C8]` going 0→5 with the string `'bot0'`.
+  **`TeamStates` can NEVER be non-empty on a client [M]** (`GetOrCreateTeamState` impl `0x5634BD0`
+  returns nullptr unconditionally; `SetNumTeams` is the void fold) ⇒ anything past `0x556DE6A` is
+  unreachable. **Do not chase it.**
+  ⚠⚠ **RULE U2 IS REFUTED** — *"`0x5556D50` still dark ⇒ the PlayerState gate was not passed"* is a
+  non-sequitur (all three gates rejoin UPSTREAM of that receipt) and was refuted empirically too.
+  ⚠⚠ **`SpawnBot 0x556D910` is `PAGE_NOACCESS` in a live process until it has EXECUTED** — the
+  protector decrypts on EXECUTE, so a prologue-signature READ can never pass on a cold page, and
+  `merged1x` grading it LIT is a UNION across processes, not a live state. Inject `botspawn` first
+  to decrypt it (6/6 pre-registered predictions, reproduced twice).
+  ⚠ **A SIXTH STUB SHAPE defeats the fold test:** `sub rsp,0x28; call <GetWorld>; xor eax,eax; ret`
+  grades **REAL** under a two-state test and is not DARK either. Only reading the instructions works.
+  ⚠ **`ELivingState`: Dead=0 Alive=1 Knocked=2** (NOT `ELokiLivingState` — 0 occurrences in the
+  image, against passing controls). A DIFFERENT enum `EPlayerLivingState` has **Alive=3** and is used
+  by `ALokiPlayerState::GetLivingState` at `+0x3f8` — carrying "Alive==1" across is wrong by two.
+  ⚠ **`botspawn`'s recorded digest was STALE by ~17 h of source drift** — current RAW
+  **`b2203efd62161182`**; `e48c90bc6cf17c93` / `1a8fa5fe06f87019` no longer reproduce.
+  ⚠ **A hardcoded offset that "agrees" with a by-name read is NOT corroboration when both can read
+  zero** — `Velocity` is `CMC+0xE8`, not the `+0xE0` one probe hardcoded.
+  **Arms** (RAW; archived `dumps/s138-arms-v3/`, `dumps/s138-arms-armf/`): `driverecompute`
+  **`a2a952babfed256b`** (ARM D+F) · `driverecompute-ctrl` `2a91f0aa7f3d521b` (ARM F compiled out,
+  the control) · `spawnbot_premade` `6cb296bbf3c8c696` · `botspawn` `b2203efd62161182` · regression
+  gate `botai` **`5e47c13cf7f0a158` UNCHANGED across every S138 patch**.
+  **Tools:** `tools/re/livingstate_sweep.py` · `movementmode_readout.py` · **`motion_watch.py`**
+  (polls until the bot exists, THEN tight-samples — **start the reader BEFORE the injection**;
+  flight 7 lost the key observation by polling afterwards) · `livingstate_poke.py` and
+  `flymode_poke.py` (⚠ each WRITES one aligned byte, with A-B-A and an unpoked specificity control) ·
+  **`configs/s138-autostage.ps1`** (launch→settle→arm→stage with retry; staged on attempt 1 in 4 of 5).
+  ⚠⚠ **THE DRIVER'S OWN DEFECT, WORTH MORE THAN THE DRIVER:** its first version tested the marker
+  for `[SP] done step=4` IMMEDIATELY after `fk24-stage.ps1` returned — but `stage complete` means
+  "finished INJECTING sp", and sp writes its receipt **12 s later**. It `Stop-Process`'d **three
+  clients that had staged perfectly**, and came one attempt from being written up as a fourth
+  consecutive FK-31 death (p=0.005 — the threshold for calling FK-31 systematic). **A stage
+  script's completion message means "I finished my step", NOT "the injected code finished its
+  work." Gate on the payload's own receipt.**
+  ⚠ **A VERDICT LINE CAN LIE:** `livingstate_poke.py` printed `P3 … YES` from a predicate whose
+  terms were all always-true, while its own samples showed the opposite. **Read the samples, not the
+  verdict**; both poke tools now compute verdicts from observed data.
+  ⚠ **External `WriteProcessMemory` is UNRESOLVED as a hazard** — used for the first time in this
+  project here; the client died ~44 s later with the FK-32 signature, but that is confounded by a
+  very high base rate and n=1. Settling it needs a matched no-write sitting.
+  ⚠ Two tracked files are **UNCOMMITTED**: `tools/sigbypass-mod/tutorial_launch.cpp` (ARM F, the
+  `strstr` latch fix and the duplicate-candidate fix) and `build.ps1` (the `driverecompute` variants).
+  ⛔ **Still not a bot:** `ServerSetHeroClass` / `SetPlayerTeam` remain stripped folds, and none of
+  this happens without pokes the game never performs itself.
 - ★★★★★ **THERE ARE **TWO** `.text` DIGEST RECIPES ON DISK AND THE REPO USES BOTH (S136).**
   **RAW** = `sha256(.text[PointerToRawData, +SizeOfRawData))[:16]` — `configs/fk24-stage.ps1:77
   Get-TextHash` (prints only inside a stale-shim abort) and **`configs/fk7-ab-run.ps1:94`, which
@@ -3902,7 +3969,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **89 tabulated instances as of S135** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **96 tabulated instances as of S138** — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
@@ -3931,7 +3998,7 @@ which is a bad property for a project whose value is its retraction history).
 - **`docs/<fk-n>-*-settled.md`** — the primary evidence for each settled unknown, with the
   measurements and the controls. These are ground truth; this file is a summary of them.
 - **`docs/method-rules.md`** — the two method rules above.
-- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s138.md`** (S137 → S138): the AI pawn now has a real `BP_LokiPlayerState_C` on both sides and **an `ALokiBotController` possesses a hero pawn** — the first in this project's history. ⚠ Read `docs/s137-playerstate-and-lokibot-settled.md`'s CORRECTIONS block first: **S137's own handoff proposed a `bWantsPlayerState` CDO poke and it is MEASURED REFUTED** (a CDO poke reaches a new instance only if the CONSUMER reads the CDO directly). The next arm is `SpawnBot(PremadeBotController=ours)`.
+- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s139.md`** (S138 → S139): the bot's AI runs end to end — behaviour tree → blackboard → wander → movement input, all measured live — and the pawn never moves. FOUR hypotheses are already refuted (the gate, `MovementMode`, forcing `MOVE_Flying`, component-deactivated). **Start by running `play`, which DOES move the player on this route, and diffing a MOVING movement component against the bot's non-moving one** — every prior hypothesis failed for want of a moving positive control. ⚠ `docs/next-session-prompt-s138.md` is the previous handoff and is superseded.
   ⚠ `docs/next-session-prompt-s137.md` is the PREVIOUS handoff and its §1.2 arm is the refuted one — keep it as the dated record, do not follow it.
 
 ⚠ **Historical handoffs still say things like "read memory `supervive-x`".** Those are dated
