@@ -1625,9 +1625,50 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   latch is `0x055C2469 mov byte [rcx+0x16C8],1`, on the **unconditional fall-through** of the
   `Iterations==0` path (the `je` at `0x055C243F` skips only a redundant zero-store) — so `+0x16C8`
   is a valid sticky "ever reached" instrument, and it reads **0** on both.
-  ⇒ ★ **THE WALL IS BETWEEN `0x055B8414` AND the engine's single `call [rax+0x720]` at `0x035EB7FA`.**
+  ⇒ ★ **THE WALL IS BETWEEN `0x055B8414` AND the engine's single `call [rax+0x720]`, which is at
+  `0x035EB13A`** (⚠ **not** `0x035EB7FA` — a CFG walk of the whole function finds exactly one, and
+  the S139 synthesis recorded the wrong address).
   It also explains with no extra assumption why a `MOVE_Falling` pawn with `GravityScale 1.000` does
   not fall: **`PhysFalling` is dispatched FROM `StartNewPhysics`.**
+  ⚠⚠ **RETRACTED WITHIN S139 — do not read "`PerformMovement` runs" as "the ENGINE's
+  `PerformMovement` runs".** `+0x12B0` is accumulated at `0x055B840C`, **UPSTREAM of the Super call
+  at `0x055B85C1`**, so its advance establishes only that **`ULokiCMC::PerformMovement`** ran with
+  dt > 0 — nothing about how far the engine impl got. A mid-session write-up called "six engine exits
+  all measured passing yet the call never happens" **a real contradiction; it is not one** — the
+  engine may simply bail at one of its own gates. ★ The measurement was right; the inference crossed
+  a function boundary. Full retraction: `docs/s139-flight2-gate-refuted.md` §3.
+  ★★★★★ **AND THERE IS A GATE NOBODY HAD, WITH A FREE RECEIPT: engine
+  `StartNewPhysics 0x03600990` carries its OWN `IsSimulatingPhysics` test**
+  (`0x036009D3` → `0x036009E4 call [rax+0x4c0]` → `0x036009EC je`) that **LOGS**
+  *"UCharacterMovementComponent::StartNewPhysics: UpdateComponent (%s) is simulating physics -
+  aborting."* (`.rdata 0x07FC0670`, `CharacterMovementComponent.cpp:3477`, threshold 5 = `Log`).
+  ⚠ Grepped: **0 occurrences — and `LogCharacterMovement` occurs 0 times in the whole log, so the
+  category has NO positive control and that zero is UNINTERPRETABLE** (the Class-A-vs-never-ran
+  trap). ⇒ **Pin `LogCharacterMovement=Log` in the USER `Engine.ini`** (FK-11's proven channel;
+  `configs/set-log-verbosity.ps1`) **and the whole question becomes a per-frame log line.** That is
+  S140's first move.
+  ★ **[M] `bSimulatePhysics = 0` on the hero capsule** (`BodyInstance @+0x3F0`; decode control:
+  `bEnableGravity` reads **1** from the SAME byte under a different mask) ⇒ the `PerformMovement`
+  copy of that gate passes. ⚠ But `IsSimulatingPhysics` is called with **`bGetWelded = TRUE`**
+  (`0x03C9B0A0`: `mov r8b,1` → `call [rax+0x810]` `GetBodyInstance`), so it can answer about a
+  **weld parent** — the one gate where the measured input and the tested condition are provably
+  different objects.
+  ★ **POPULATION CONTROL: 37 movement components live, EVERY latch `+0x16C8` = 0, and exactly ONE is
+  doing anything at all.** ⇒ **there is no moving character anywhere in this world to diff against.**
+  ★ Also banked: **`[ALokiCharacter+0x7F0]` is NOT the ASC** — it is the `IAbilitySystemInterface`
+  **secondary VTABLE pointer** (structure [M]; the interface NAME is [I, strong] — MSVC RTTI is
+  stripped), whose slot `+0x10` (`0x055A9610 = mov rax,[rcx+0x710]; ret`) returns **`char+0xF00`**.
+  Both Loki HitStop gates therefore consult the character's OWN ASC, and the **bot's `+0xF00` is
+  measured NULL** ⇒ S1 is dead for the bot in ONE direction. ⚠ **Not "iff"** — a non-null `+0xF00`
+  would still require `IsA<ULokiAbilitySystemComponent>` AND the `State.HitStop` tag true
+  *continuously* for 97 s on a bot that was never damaged.
+  ★ `0x055B2930` **IS `IsStunned`** [M, from the `.data` `{name, thunk, impl}` triple at
+  `0x09BC5A48`, validated by four passing positive controls and one passing negative].
+  ⚠⚠ **A LINEAR DISASSEMBLY SWEEP IS NOT A CFG.** Over engine `PerformMovement` a linear sweep
+  decoded **1,074** instructions where recursive descent finds **1,461** — it missed ~390. It
+  happened to get the exit set right; do not rely on that. ⚠ And **"enumerate forward branches whose
+  target is ≥ the call" is structurally blind to bails that jump BACKWARD** — use backward
+  reachability over the call node.
   ★ **NEXT, and it is small:** (a) does Loki's `PerformMovement` reach its Super? two forward
   branches jump toward it — `0x055B845E test byte [CharacterOwner+0x580],8 / jne` and
   `0x055B846B mov ebp,[rsi+0x1988] / sub ebp,1 / js`; **`[CharacterOwner+0x580] & 8` is an unread
