@@ -15267,6 +15267,115 @@ static const uint8_t PS_SIG_SPAWNBOT[16] =
     {0x40,0x55,0x53,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57,0x48,0x8d,0xac};
 
 // ==============================================================================================
+// ==============================================================================================
+// ARM G (S139 flight 4) -- PORT THE DS ROUTE'S GAS RECIPE ONTO THE BOT.
+//
+// WHY. S139 flight 3 named the input wall from a SIGNED ZERO: the bot's Acceleration (CMC+0x328)
+// carries ControlInputVector's SIGN in 22/22 samples while the input churns, i.e. it is
+// `input * 0`. A never-written field is +0.0 forever and cannot track a sign, so the
+// ScaleInputAcceleration store at 0x035DCD6B EXECUTED every frame:
+//     ControlledCharacterMove RUNS, the whole tick ladder is passed,
+//     and Acceleration = input * GetMaxAcceleration() == 0.
+// GetMaxAcceleration is the GAS-backed getter, and AttributeSetStorage (+0xF08) is NULL.
+//
+// AND THE FIX IS ALREADY IN THIS REPO, LIVE-PROVEN, AND WAS NEVER PORTED (method rule #2).
+// docs/coverage-audit-s101.md:283, ~38 sessions old, recording the DS route:
+//   borrow Default__LokiPlayerState_HeroAffiliated's DEFAULT SUBOBJECTS into the hero's
+//   +0xF00/+0xF08/+0xF10 and write the attribute block -> MEASURED GetMaxSpeed() 0 -> 500,
+//   GetMaxAcceleration() 0 -> 50000, and the hero physically translated through the world via
+//   the STOCK ENGINE CHAIN. Code: ds_hybrid.cpp:2370-2430. :630 ranks porting it
+//   "Single highest-value experiment available".
+//
+// ⛔ DO NOT SPAWN LokiPlayerState_HeroAffiliated -- S80 live-proved an INSTANT client crash (its
+//    ASC/attribute construction derefs server-side context). The CDO's default subobjects are
+//    already fully constructed, so there is nothing to construct and nothing to crash.
+// ⚠⚠ A PARTIAL PORT FAILS, and ds_hybrid.cpp says so from experience: wiring AttributeSetStorage
+//    makes the Loki CMC read EVERY movement value from attributes instead of its base UPROPERTYs,
+//    so a set with only MoveSpeed filled in gives MaxAcceleration = 0 => Acceleration = 0*input
+//    => still no movement (observed). Write the WHOLE block.
+// ⚠ SCOPE: the attribute values go into a CDO's DEFAULT SUBOBJECT, so every actor that borrows
+//   that same subobject sees them, process-wide, for the process lifetime. A DIAGNOSIS, NOT A
+//   SHIPPING FIX. Nothing here is undone.
+//
+// WITHIN-RUN CONTROL, and it is the point of applying this to the BOT and not the player:
+//   the PLAYER hero is left UNTREATED. Its Acceleration must stay a signed zero. If BOTH move,
+//   the change is not specific to what this arm wrote.
+// RISK CLASS: DATA -- three aligned pointer stores on the pawn + float pairs inside an existing
+//   allocation. No module-image write, no PI hook, no SpawnActor.
+// ==============================================================================================
+#ifndef KBSGASMOVESPEED
+#define KBSGASMOVESPEED 500.0f
+#endif
+static void BsPsGasAttrs(){
+    Marker("[GASX] ================ ARM G: port the DS GAS recipe onto the BOT ================\r\n");
+    uintptr_t ctl=g_psLbCtl[1];
+    if(!LooksLikePtr(ctl)){
+        Marker("[GASX] ARM G REFUSED: ARM D produced no LokiBotController. STAGING statement, not a result.\r\n"); return; }
+    uintptr_t pawn=SafeReadable((void*)(ctl+0x3F8),8)?*(uintptr_t*)(ctl+0x3F8):0;
+    if(!LooksLikePtr(pawn)){ Marker("[GASX] ARM G REFUSED: the controller possesses no pawn.\r\n"); return; }
+
+    uintptr_t ha=FindObjExact("Default__LokiPlayerState_HeroAffiliated");
+    if(!LooksLikePtr(ha)){
+        Marker("[GASX] ARM G REFUSED: Default__LokiPlayerState_HeroAffiliated CDO not found.\r\n"
+               "[GASX]   (NOT spawning one -- S80 live-proved that crashes the client instantly.)\r\n"); return; }
+    Markerf("[GASX] CDO = 0x%llX (using its DEFAULT SUBOBJECTS -- deliberately NOT spawning)\r\n",(unsigned long long)ha);
+
+    static const char* kSrc[3]={"AbilitySystemComponent","AttributeSet","AttributeSetHealth"};
+    static const char* kDst[3]={"AbilitySystemComponentStorage","AttributeSetStorage","AttributeSetHealthStorage"};
+    uintptr_t src[3]={0,0,0}; uint32_t so[3],doff[3];
+    for(int i=0;i<3;i++){
+        so[i]=PropOffsetSuper(ClassOf(ha),kSrc[i]);
+        src[i]=(so[i]!=0xFFFFFFFF&&SafeReadable((void*)(ha+so[i]),8))?*(uintptr_t*)(ha+so[i]):0;
+        char cn[96]="-"; if(LooksLikePtr(src[i])&&ClassOf(src[i])) GetFNameStr(NameId(ClassOf(src[i])),cn,sizeof(cn));
+        Markerf("[GASX]   src %-26s @0x%X = 0x%llX (%s)\r\n",kSrc[i],so[i],(unsigned long long)src[i],LooksLikePtr(src[i])?cn:"NULL");
+    }
+    if(!LooksLikePtr(src[1])){
+        Marker("[GASX] ARM G REFUSED: the CDO's AttributeSet is NULL -- there is nothing to borrow,\r\n"
+               "[GASX]   and AttributeSetStorage is the whole point of this arm.\r\n"); return; }
+
+    // --- the three pointer stores, each readback-verified ---
+    int wrote=0;
+    for(int i=0;i<3;i++){
+        doff[i]=PropOffsetSuper(ClassOf(pawn),kDst[i]);
+        if(doff[i]==0xFFFFFFFF){ Markerf("[GASX]   dst %-30s NOT A PROPERTY -> skipped\r\n",kDst[i]); continue; }
+        if(!LooksLikePtr(src[i])){ Markerf("[GASX]   dst %-30s src is NULL -> skipped\r\n",kDst[i]); continue; }
+        if(!SafeWritable((void*)(pawn+doff[i]),8)){ Markerf("[GASX]   dst %-30s @0x%X NOT WRITABLE -> skipped\r\n",kDst[i],doff[i]); continue; }
+        uintptr_t before=*(uintptr_t*)(pawn+doff[i]);
+        *(uintptr_t*)(pawn+doff[i])=src[i];
+        uintptr_t after=*(uintptr_t*)(pawn+doff[i]);
+        Markerf("[GASX]   dst %-30s @0x%X  %llX -> %llX  %s\r\n",kDst[i],doff[i],
+                (unsigned long long)before,(unsigned long long)after,(after==src[i])?"OK":"*** READBACK FAILED ***");
+        if(after==src[i]) wrote++;
+    }
+    // --- the WHOLE movement attribute block (a partial port is measured insufficient) ---
+    struct { const char* n; float v; } attrs[6] = {
+        {"MoveSpeed",                  (float)KBSGASMOVESPEED},
+        {"MaxMoveSpeed",               (float)KBSGASMOVESPEED},
+        {"MaxAcceleration",            50000.0f},
+        {"GroundFriction",             8.0f},
+        {"BrakingDecelerationWalking",  2048.0f},
+        {"Mass",                       100.0f},
+    };
+    int attrOk=0;
+    Marker("[GASX] --- writing the WHOLE movement attribute block (partial ports are measured insufficient) ---\r\n");
+    for(int i=0;i<6;i++){
+        uint32_t ao=PropOffsetSuper(ClassOf(src[1]),attrs[i].n);
+        if(ao==0xFFFFFFFF){ Markerf("[GASX]   attr %-28s NOT FOUND\r\n",attrs[i].n); continue; }
+        if(!SafeWritable((void*)(src[1]+ao+0x8),8)){ Markerf("[GASX]   attr %-28s @0x%X NOT WRITABLE\r\n",attrs[i].n,ao); continue; }
+        *(float*)(src[1]+ao+0x8)=attrs[i].v;   // FGameplayAttributeData::BaseValue
+        *(float*)(src[1]+ao+0xC)=attrs[i].v;   // FGameplayAttributeData::CurrentValue  <- what the getters read
+        float rb=*(float*)(src[1]+ao+0xC);
+        Markerf("[GASX]   attr %-28s @+0x%-4X = %g  readback %g %s\r\n",attrs[i].n,ao,(double)attrs[i].v,(double)rb,
+                (rb==attrs[i].v)?"OK":"*** FAILED ***");
+        if(rb==attrs[i].v) attrOk++;
+    }
+    Markerf("[GASX] ARM G done: storages written %d/3, attributes written %d/6\r\n",wrote,attrOk);
+    if(wrote<1||attrOk<6)
+        Marker("[GASX] ⚠ INCOMPLETE -- a partial port is MEASURED insufficient (ds_hybrid.cpp). Read any\r\n"
+               "[GASX]   null below as UNINTERPRETABLE, not as a refutation of the recipe.\r\n");
+    Marker("[GASX] ⚠ SCOPE: the attribute values live in a CDO DEFAULT SUBOBJECT -- process-wide, not undone.\r\n");
+    Marker("[GASX] ⚠ The PLAYER hero is deliberately UNTREATED: it is the within-run specificity control.\r\n");
+}
 // ARM F -- DRIVE THE RECOMPUTE. The named successor to flight 6.
 //
 // Flight 6 measured: poking pawn+0x1090 = 1 (Alive) LANDS (readback 1, held 10 s), is SPECIFIC
@@ -15628,6 +15737,9 @@ static void BsPsExperiment(){
 
     if(KBSPSARMS&0x80) BsPsDriveRecompute();
     else Marker("[PS] ---- ARM F SKIPPED by KBSPSARMS bit7 ----\r\n");
+
+    if(KBSPSARMS&0x100) BsPsGasAttrs();
+    else Marker("[PS] ---- ARM G SKIPPED by KBSPSARMS bit8 ----\r\n");
 }
 #endif  // KBSPS
 

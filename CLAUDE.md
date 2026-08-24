@@ -1701,6 +1701,34 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   `FGameplayAttributeData` `+0x8` **and** `+0xC`. ⚠ It writes a CDO default subobject — process-wide.
   ★ `tutorial_launch`'s `KWIREGAS` **deliberately writes only `+0xF00`** (`tutorial_launch.cpp:11899`)
   — exactly the gap, and every staged marker has printed `AttributeSetStorage @0xF08 = 0x0 (NULL)`.
+  ★★★★★ **FLOWN AT S139 FLIGHT 4 — THE PORT WORKS, AND IT SPLIT THE WALL IN TWO. Read
+  `docs/s139-flight4-gas-port-works.md`.** ARM G (`BsPsGasAttrs`, `KBSPSARMS` bit 8) borrows the CDO's
+  default subobjects into the BOT's `+0xF00/+0xF08/+0xF10` and writes the whole block —
+  **3/3 storages, 6/6 attributes, every one readback-verified.** Result, 20 live samples:
+  **[M] `Acceleration = ControlInputVector × 50000`** — ratio min 49991.15 / max 50006.32 /
+  **mean 49999.63** over all 40 components, i.e. `ScaleInputAcceleration = GetMaxAcceleration() ×
+  input` with the getter returning exactly the `MaxAcceleration` we supplied.
+  ★★ **PERFECT WITHIN-RUN SPECIFICITY CONTROL: the PLAYER was deliberately left UNTREATED**
+  (`+0xF08` still NULL) and its `Acceleration` was non-zero in **0 of 20** samples, same process,
+  same pass, same code. ⇒ **the input wall is CLOSED.**
+  ⚠⚠ **BUT THE LATCH STAYED 0, `Velocity` stayed (0,0,0), and the pawn moved 0.00 uu ⇒ THE INPUT
+  WALL AND THE PHYSICS-STEP WALL ARE *TWO* PROBLEMS.** That was pre-registered as P4 with BOTH
+  branches written down and neither predicted, so it cannot be reinterpreted after the fact.
+  ⚠⚠ **AND THE PHYSICS CONTRADICTION IS NOW SHARPER:** a written `Acceleration` PROVES
+  `ControlledCharacterMove` runs, which calls `PerformMovement` at `0x035DCDAC` whenever
+  `Role == ROLE_Authority` (measured **3**) — yet `StartNewPhysics` is never entered while all six
+  enumerated exits read passing. **Something bails for a reason none of the six accounts for**, or a
+  seventh path exists that the CFG walk's `target > call` predicate cannot see (⚠ **that predicate is
+  blind to BACKWARD bails**).
+  **Builds:** `gasattr` RAW **`2fcc2536e21f18e3`** · `gasattr-ctrl` RAW **`4465ebc4d7168c03`**
+  (ARM G compiled out; **verified DISTINCT** — not an A/B against a copy of itself). Regression gates
+  `botai` `5e47c13cf7f0a158` and `driverecompute` `a2a952babfed256b` **UNCHANGED**.
+  ⚠ **NOT OBTAINED:** a re-read of the six gate inputs on a TREATED bot — the client died mid-probe
+  and the script threw rather than printing partial values.
+  ⚠ **One honest qualifier on `coverage-audit-s101.md:283`:** the DS route reported the hero
+  **translating**; the identical recipe here produces acceleration and **no translation**, because
+  the physics step is blocked by something the DS route did not have. **Do not read that line as
+  promising movement on the force-open route.**
   ⚠⚠ **RESIDUAL, AND DO NOT ASSUME THE PORT CLOSES IT: `StartNewPhysics` is STILL never entered**
   (latch 0 on the bot, the player, and **all 37** movement components in the world — of which
   **exactly one is doing anything at all**). **A zero `Acceleration` does not stop GRAVITY.** Fly the

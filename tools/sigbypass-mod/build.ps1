@@ -1,4 +1,4 @@
-# build.ps1 -- reproducible builds for the SUPERVIVE Revival native shims.
+﻿# build.ps1 -- reproducible builds for the SUPERVIVE Revival native shims.
 #
 # S106 (2026-07-27). Before this the directory had 63 .cpp shims, 141 built .dll files, no build
 # script and no .dll in git -- nothing in the default injection set was reproducible from a clean clone.
@@ -627,6 +627,12 @@ $Variants = @{
         # must NOT move. It converts an ARM F null from 'something is broken' into 'the call did
         # nothing'.  (== lokibot's flags; kept as a NAMED control so the intent is explicit.)
         'driverecompute-ctrl' = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x20')
+        # S139 flight 4 -- ARM G: port the DS route's GAS recipe (ds_hybrid.cpp:2370-2430) onto the BOT.
+        #   gasattr      = ARM D (make the LokiBotController) + ARM F (open the gate) + ARM G (the GAS block)
+        #   gasattr-ctrl = the SAME arms with ARM G compiled out -- the single-variable control.
+        # The PLAYER hero is deliberately untreated in both, as the within-run specificity control.
+        'gasattr'             = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x1A0')
+        'gasattr-ctrl'        = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x0A0')
         # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
         # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
         'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')
