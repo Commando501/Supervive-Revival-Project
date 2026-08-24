@@ -494,9 +494,54 @@ project's dominant failure mode wearing a new hat.
 * **CONSUMER: NOT ESTABLISHED.** Neither `CheckJumpInput` nor `DoJump` is confirmed, and **the write
   that turns `bPressedJump` into a `Velocity.Z` has not been found.**
 * ⇒ **Do NOT fly this as if the chain were measured.** Its attraction is real but its second half is
-  unread. **The next attempt should start from the WRITE, not from the name:** enumerate every
-  writer of `+0xF8` whose value derives from a `JumpZVelocity`-shaped CMC float field, and work
-  backwards to its callers — the opposite direction from all three failed attempts.
+  unread.
+
+### 5.4 THE WRITE-FIRST SEARCH — it produced a shortlist and a corroboration, and `DoJump` still lost
+
+I then applied §5.3's own lesson and searched **from the write**. Two scanner-control failures on the
+way, both caught:
+
+1. A `+0xF8` scan controlled on the two known `PhysFalling` Velocity.Z writers **failed 2/2** —
+   because those sites are `movsd [rsi+0x10]`, `rsi` being `&Velocity` from `lea rsi,[rdi+0xe8]`.
+   ⇒ ★★ **[M] A `+0xF8` (or `+0xE8`) displacement scan is STRUCTURALLY BLIND to any code that takes
+   `&Velocity` into a register first — and engine `PhysFalling` does exactly that throughout.**
+   This limits §2.4 of `scratchpad/s141/lanes/L5-velocity-writers-imagewide.md` too: its image-wide
+   census is a floor for that reason as well as for decryption coverage.
+2. Re-controlled on three genuinely `+0xF8`-based writers (3/3 PASS), the scan returned **7,377
+   sites** — `+0xF8` is far too generic to anchor anything.
+
+So I bounded it the right way: **`DoJump` is a CMC virtual, so it is ON the CMC vtable.** Over all
+**449** plausible ULokiCMC vtable slots, filtered on an **evidence** signature rather than a guessed
+offset — *writes `[reg+0xF8]`* **and** *calls `SetMovementMode` (disp `0x670`, established
+independently this session)*:
+
+| disp | ULokiCMC | engine | insns | note |
+|---|---|---|---|---|
+| `0x900` | `0x35F9B30` | same | 50 | |
+| **`0x750`** | **`0x55AEB60`** | `0x35E60F0` | 52 | ★ **this is L5's `HandlePendingLaunch`** |
+| `0x4F0` | `0x35F1320` | same | 102 | |
+| `0x760` | `0x35E7010` | same | 128 | ⚠ eliminated — takes an **out-param** in `rdx`, so it cannot be `bool DoJump(bool)` |
+| `0x978` | `0x35EEA50` | same | 392 | |
+| `0x988` | `0x35EF1D0` | same | 405 | |
+| `0x970` | `0x35EF960` | same | 711 | |
+
+★★ **THE REAL PRIZE HERE IS THE CORROBORATION: disp `0x750` = `0x55AEB60` fell out of a
+write-first, evidence-filtered search that knew nothing about L5's work.** Two completely
+independent routes — L5's image-wide store census and this vtable-bounded write search — land on the
+same function as a `Velocity` writer that forces `MOVE_Falling`. **That materially strengthens §5's
+rank-1 `PendingLaunchVelocity` route**, which was previously single-derivation.
+
+⚠⚠ **AND `DoJump` IS STILL NOT ESTABLISHED — four candidates eliminated by reading their bytes**
+(`0x35395E0`, CMC disp `0x608`, CMC disp `0x728`, CMC disp `0x760`). That the signature
+*writes Velocity.Z + calls SetMovementMode* — which stock `DoJump` satisfies exactly — does **not**
+select it out of 449 slots is itself informative. Three live hypotheses, none tested:
+* **inlined** into its only caller (stock `DoJump` is ~6 lines and `CheckJumpInput` is its sole call site);
+* its slot is **DARK** in `merged14`;
+* **Loki replaced the jump path**, in which case the target is the 1,163-byte Loki function
+  **`0x55A63C0`** (pdata `0x55A63C0..0x55A684B`) — which reads `[rcx+0x458]` (the CMC), tests
+  `bPressedJump` at `0x55A655F`/`0x55A65A4`/`0x55A66FD`, clears it at `0x55A6553`/`0x55A6927`, and
+  branches on `MovementMode==7 && CustomMovementMode==3`. **That is the single best remaining lead
+  and it is purely offline.**
 
 ★ **A free cross-validation of L5:** `SetMovementMode` resolves to vtable disp **`0x670`**, which is
 exactly the displacement L5 independently transcribed in `HandlePendingLaunch`
