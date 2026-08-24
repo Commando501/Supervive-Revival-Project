@@ -15920,6 +15920,7 @@ static void ShSampleLoop(){
         prev=kAt[i];
         Markerf("[SNP] ---- sample %d at t=+%lu ms (elapsed %lu ms) ----\r\n",i,(unsigned long)kAt[i],
                 (unsigned long)(GetTickCount()-t0));
+        __try {
         ShDump("BOT",g_shBotCmc); ShDump("PLR",g_shPlrCmc);
         for(int k=0;k<2;k++){
             uintptr_t pawn=k?g_shPlrPawn:g_shBotPawn; if(!LooksLikePtr(pawn))continue;
@@ -15928,6 +15929,16 @@ static void ShSampleLoop(){
             if(LooksLikePtr(root)&&SafeReadable((void*)(root+0x158),24)){
                 const double* L=(const double*)(root+0x158);
                 Markerf("[SNP] %-14s loc (%.3f, %.3f, %.3f)\r\n",k?"PLR":"BOT",L[0],L[1],L[2]); }
+        }
+        } __except(EXCEPTION_EXECUTE_HANDLER){
+            // ⚠ NOT SEH_FILTER/DP_FAULT: FaultStr() has a static buffer AND reads the
+            //   process-global fault record SehCap writes from ANY thread, so using it off
+            //   the game thread would corrupt the game thread own fault record. Off-thread
+            //   reads also carry a real TOCTOU: SafeReadable queries, then the page can be
+            //   decommitted before the read. A GC of the bot mid-sample must not kill the
+            //   client and destroy the evidence already in the marker.
+            Markerf("[SNP] *** sample %d FAULTED (off-thread read race, or the object was "
+                    "collected). Earlier samples still stand; later ones may not. ***\r\n",i);
         }
     }
     // ---- VERDICT, computed from the OBSERVED bytes. A verdict line whose terms are all trivially

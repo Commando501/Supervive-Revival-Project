@@ -1,0 +1,578 @@
+L1 RAW HIT LIST -- disp +0x16B0..+0x16CF, ALL decrypted .text of merged13
+candidates=487  confirmed-real=253  unresolved=4
+unresolved (no back-offset linear sweep ever landed on them): ['0x6E8C421', '0x6E8D22E', '0x6E8ED0D', '0x6E8F252']
+
+--- ALL 487 CANDIDATE DECODES (pre-classification, pre-disambiguation) ---
+0x1266A2E  48898424c0160000           mov      qword ptr [rsp + 0x16c0], rax              base=rsp   disp=0x16c0  REAL
+0x1266A2F  898424c0160000             mov      dword ptr [rsp + 0x16c0], eax              base=rsp   disp=0x16c0  rejected(vote=0)
+0x1266A5A  48898424b0160000           mov      qword ptr [rsp + 0x16b0], rax              base=rsp   disp=0x16b0  REAL
+0x1266A5B  898424b0160000             mov      dword ptr [rsp + 0x16b0], eax              base=rsp   disp=0x16b0  rejected(vote=0)
+0x1266A86  48898424b8160000           mov      qword ptr [rsp + 0x16b8], rax              base=rsp   disp=0x16b8  REAL
+0x1266A87  898424b8160000             mov      dword ptr [rsp + 0x16b8], eax              base=rsp   disp=0x16b8  rejected(vote=0)
+0x1266A9C  4c8b8c24b0160000           mov      r9, qword ptr [rsp + 0x16b0]               base=rsp   disp=0x16b0  REAL
+0x1266A9D  8b8c24b0160000             mov      ecx, dword ptr [rsp + 0x16b0]              base=rsp   disp=0x16b0  rejected(vote=0)
+0x1266AA4  4c8b8424b8160000           mov      r8, qword ptr [rsp + 0x16b8]               base=rsp   disp=0x16b8  REAL
+0x1266AA5  8b8424b8160000             mov      eax, dword ptr [rsp + 0x16b8]              base=rsp   disp=0x16b8  rejected(vote=0)
+0x1266AB3  488b8c24c0160000           mov      rcx, qword ptr [rsp + 0x16c0]              base=rsp   disp=0x16c0  REAL
+0x1266AB4  8b8c24c0160000             mov      ecx, dword ptr [rsp + 0x16c0]              base=rsp   disp=0x16c0  rejected(vote=0)
+0x1266B34  48898424c8160000           mov      qword ptr [rsp + 0x16c8], rax              base=rsp   disp=0x16c8  REAL
+0x1266B35  898424c8160000             mov      dword ptr [rsp + 0x16c8], eax              base=rsp   disp=0x16c8  rejected(vote=0)
+0x1266B4B  488b8c24c8160000           mov      rcx, qword ptr [rsp + 0x16c8]              base=rsp   disp=0x16c8  REAL
+0x1266B4C  8b8c24c8160000             mov      ecx, dword ptr [rsp + 0x16c8]              base=rsp   disp=0x16c8  rejected(vote=0)
+0x127D724  48898424b0160000           mov      qword ptr [rsp + 0x16b0], rax              base=rsp   disp=0x16b0  REAL
+0x127D725  898424b0160000             mov      dword ptr [rsp + 0x16b0], eax              base=rsp   disp=0x16b0  rejected(vote=0)
+0x127D73B  488b8c24b0160000           mov      rcx, qword ptr [rsp + 0x16b0]              base=rsp   disp=0x16b0  REAL
+0x127D73C  8b8c24b0160000             mov      ecx, dword ptr [rsp + 0x16b0]              base=rsp   disp=0x16b0  rejected(vote=0)
+0x127D749  48898424b8160000           mov      qword ptr [rsp + 0x16b8], rax              base=rsp   disp=0x16b8  REAL
+0x127D74A  898424b8160000             mov      dword ptr [rsp + 0x16b8], eax              base=rsp   disp=0x16b8  rejected(vote=0)
+0x127D751  488b9424b8160000           mov      rdx, qword ptr [rsp + 0x16b8]              base=rsp   disp=0x16b8  REAL
+0x127D752  8b9424b8160000             mov      edx, dword ptr [rsp + 0x16b8]              base=rsp   disp=0x16b8  rejected(vote=0)
+0x127D773  48898424c0160000           mov      qword ptr [rsp + 0x16c0], rax              base=rsp   disp=0x16c0  REAL
+0x127D774  898424c0160000             mov      dword ptr [rsp + 0x16c0], eax              base=rsp   disp=0x16c0  rejected(vote=0)
+0x127D782  488b8c24c0160000           mov      rcx, qword ptr [rsp + 0x16c0]              base=rsp   disp=0x16c0  REAL
+0x127D783  8b8c24c0160000             mov      ecx, dword ptr [rsp + 0x16c0]              base=rsp   disp=0x16c0  rejected(vote=0)
+0x127D79F  48898424c8160000           mov      qword ptr [rsp + 0x16c8], rax              base=rsp   disp=0x16c8  REAL
+0x127D7A0  898424c8160000             mov      dword ptr [rsp + 0x16c8], eax              base=rsp   disp=0x16c8  rejected(vote=0)
+0x127D7AE  488b8c24c8160000           mov      rcx, qword ptr [rsp + 0x16c8]              base=rsp   disp=0x16c8  REAL
+0x127D7AF  8b8c24c8160000             mov      ecx, dword ptr [rsp + 0x16c8]              base=rsp   disp=0x16c8  rejected(vote=0)
+0x1293B55  48898424c0160000           mov      qword ptr [rsp + 0x16c0], rax              base=rsp   disp=0x16c0  REAL
+0x1293B56  898424c0160000             mov      dword ptr [rsp + 0x16c0], eax              base=rsp   disp=0x16c0  rejected(vote=0)
+0x1293B81  48898424b0160000           mov      qword ptr [rsp + 0x16b0], rax              base=rsp   disp=0x16b0  REAL
+0x1293B82  898424b0160000             mov      dword ptr [rsp + 0x16b0], eax              base=rsp   disp=0x16b0  rejected(vote=0)
+0x1293BAD  48898424b8160000           mov      qword ptr [rsp + 0x16b8], rax              base=rsp   disp=0x16b8  REAL
+0x1293BAE  898424b8160000             mov      dword ptr [rsp + 0x16b8], eax              base=rsp   disp=0x16b8  rejected(vote=0)
+0x1293BC3  4c8b8c24b0160000           mov      r9, qword ptr [rsp + 0x16b0]               base=rsp   disp=0x16b0  REAL
+0x1293BC4  8b8c24b0160000             mov      ecx, dword ptr [rsp + 0x16b0]              base=rsp   disp=0x16b0  rejected(vote=0)
+0x1293BCB  4c8b8424b8160000           mov      r8, qword ptr [rsp + 0x16b8]               base=rsp   disp=0x16b8  REAL
+0x1293BCC  8b8424b8160000             mov      eax, dword ptr [rsp + 0x16b8]              base=rsp   disp=0x16b8  rejected(vote=0)
+0x1293BDA  488b8c24c0160000           mov      rcx, qword ptr [rsp + 0x16c0]              base=rsp   disp=0x16c0  REAL
+0x1293BDB  8b8c24c0160000             mov      ecx, dword ptr [rsp + 0x16c0]              base=rsp   disp=0x16c0  rejected(vote=0)
+0x1293C67  48898424c8160000           mov      qword ptr [rsp + 0x16c8], rax              base=rsp   disp=0x16c8  REAL
+0x1293C68  898424c8160000             mov      dword ptr [rsp + 0x16c8], eax              base=rsp   disp=0x16c8  rejected(vote=0)
+0x1293C7E  488b8c24c8160000           mov      rcx, qword ptr [rsp + 0x16c8]              base=rsp   disp=0x16c8  REAL
+0x1293C7F  8b8c24c8160000             mov      ecx, dword ptr [rsp + 0x16c8]              base=rsp   disp=0x16c8  rejected(vote=0)
+0x139FD29  488d8c24b0160000           lea      rcx, [rsp + 0x16b0]                        base=rsp   disp=0x16b0  REAL
+0x139FD2A  8d8c24b0160000             lea      ecx, [rsp + 0x16b0]                        base=rsp   disp=0x16b0  rejected(vote=0)
+0x139FD42  488d8c24b4160000           lea      rcx, [rsp + 0x16b4]                        base=rsp   disp=0x16b4  REAL
+0x139FD43  8d8c24b4160000             lea      ecx, [rsp + 0x16b4]                        base=rsp   disp=0x16b4  rejected(vote=0)
+0x139FEF7  488d8c24b8160000           lea      rcx, [rsp + 0x16b8]                        base=rsp   disp=0x16b8  REAL
+0x139FEF8  8d8c24b8160000             lea      ecx, [rsp + 0x16b8]                        base=rsp   disp=0x16b8  rejected(vote=0)
+0x139FF10  488d8c24bc160000           lea      rcx, [rsp + 0x16bc]                        base=rsp   disp=0x16bc  REAL
+0x139FF11  8d8c24bc160000             lea      ecx, [rsp + 0x16bc]                        base=rsp   disp=0x16bc  rejected(vote=0)
+0x13A00C5  488d8c24c0160000           lea      rcx, [rsp + 0x16c0]                        base=rsp   disp=0x16c0  REAL
+0x13A00C6  8d8c24c0160000             lea      ecx, [rsp + 0x16c0]                        base=rsp   disp=0x16c0  rejected(vote=0)
+0x13A00DE  488d8c24c4160000           lea      rcx, [rsp + 0x16c4]                        base=rsp   disp=0x16c4  REAL
+0x13A00DF  8d8c24c4160000             lea      ecx, [rsp + 0x16c4]                        base=rsp   disp=0x16c4  rejected(vote=0)
+0x13A0293  488d8c24c8160000           lea      rcx, [rsp + 0x16c8]                        base=rsp   disp=0x16c8  REAL
+0x13A0294  8d8c24c8160000             lea      ecx, [rsp + 0x16c8]                        base=rsp   disp=0x16c8  rejected(vote=0)
+0x13A02AC  488d8c24cc160000           lea      rcx, [rsp + 0x16cc]                        base=rsp   disp=0x16cc  REAL
+0x13A02AD  8d8c24cc160000             lea      ecx, [rsp + 0x16cc]                        base=rsp   disp=0x16cc  rejected(vote=0)
+0x146E014  80bdc016000001             cmp      byte ptr [rbp + 0x16c0], 1                 base=rbp   disp=0x16c0  REAL
+0x146E03E  0fb685c1160000             movzx    eax, byte ptr [rbp + 0x16c1]               base=rbp   disp=0x16c1  REAL
+0x146E050  c685c016000000             mov      byte ptr [rbp + 0x16c0], 0                 base=rbp   disp=0x16c0  REAL
+0x146E057  0f1185b0160000             movups   xmmword ptr [rbp + 0x16b0], xmm0           base=rbp   disp=0x16b0  REAL
+0x146E058  1185b0160000               adc      dword ptr [rbp + 0x16b0], eax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x148FA26  488d95b8160000             lea      rdx, [rbp + 0x16b8]                        base=rbp   disp=0x16b8  REAL
+0x148FA27  8d95b8160000               lea      edx, [rbp + 0x16b8]                        base=rbp   disp=0x16b8  rejected(vote=0)
+0x148FA8B  488b8db8160000             mov      rcx, qword ptr [rbp + 0x16b8]              base=rbp   disp=0x16b8  REAL
+0x148FA8C  8b8db8160000               mov      ecx, dword ptr [rbp + 0x16b8]              base=rbp   disp=0x16b8  rejected(vote=0)
+0x148FAD4  0f1185c8160000             movups   xmmword ptr [rbp + 0x16c8], xmm0           base=rbp   disp=0x16c8  REAL
+0x148FAD5  1185c8160000               adc      dword ptr [rbp + 0x16c8], eax              base=rbp   disp=0x16c8  rejected(vote=0)
+0x148FB00  4c8d8dc8160000             lea      r9, [rbp + 0x16c8]                         base=rbp   disp=0x16c8  REAL
+0x148FB01  8d8dc8160000               lea      ecx, [rbp + 0x16c8]                        base=rbp   disp=0x16c8  rejected(vote=0)
+0x14B50A0  488d8dc8160000             lea      rcx, [rbp + 0x16c8]                        base=rbp   disp=0x16c8  REAL
+0x14B50A1  8d8dc8160000               lea      ecx, [rbp + 0x16c8]                        base=rbp   disp=0x16c8  rejected(vote=0)
+0x14B88F1  488d8db0160000             lea      rcx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  REAL
+0x14B88F2  8d8db0160000               lea      ecx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  rejected(vote=0)
+0x14B8BD0  4c89bdb0160000             mov      qword ptr [rbp + 0x16b0], r15              base=rbp   disp=0x16b0  REAL
+0x14B8BD1  89bdb0160000               mov      dword ptr [rbp + 0x16b0], edi              base=rbp   disp=0x16b0  rejected(vote=0)
+0x14CCBBF  0f1185b0160000             movups   xmmword ptr [rbp + 0x16b0], xmm0           base=rbp   disp=0x16b0  REAL
+0x14CCBC0  1185b0160000               adc      dword ptr [rbp + 0x16b0], eax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x14CCBD0  488d95c0160000             lea      rdx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  REAL
+0x14CCBD1  8d95c0160000               lea      edx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  rejected(vote=0)
+0x14CCBDA  4c8d8db0160000             lea      r9, [rbp + 0x16b0]                         base=rbp   disp=0x16b0  REAL
+0x14CCBDB  8d8db0160000               lea      ecx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  rejected(vote=0)
+0x14CCC3A  488d8dc0160000             lea      rcx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  REAL
+0x14CCC3B  8d8dc0160000               lea      ecx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  rejected(vote=0)
+0x258AB96  488d8dc0160000             lea      rcx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  REAL
+0x258AB97  8d8dc0160000               lea      ecx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  rejected(vote=0)
+0x27D5171  4c89bdc8160000             mov      qword ptr [rbp + 0x16c8], r15              base=rbp   disp=0x16c8  REAL
+0x27D5172  89bdc8160000               mov      dword ptr [rbp + 0x16c8], edi              base=rbp   disp=0x16c8  rejected(vote=0)
+0x27D5178  660f7f85b0160000           movdqa   xmmword ptr [rbp + 0x16b0], xmm0           base=rbp   disp=0x16b0  REAL
+0x27D5179  0f7f85b0160000             movq     qword ptr [rbp + 0x16b0], mm0              base=rbp   disp=0x16b0  rejected(vote=0)
+0x27D526E  4889bdb0160000             mov      qword ptr [rbp + 0x16b0], rdi              base=rbp   disp=0x16b0  REAL
+0x27D526F  89bdb0160000               mov      dword ptr [rbp + 0x16b0], edi              base=rbp   disp=0x16b0  rejected(vote=0)
+0x27D5275  48899db8160000             mov      qword ptr [rbp + 0x16b8], rbx              base=rbp   disp=0x16b8  REAL
+0x27D5276  899db8160000               mov      dword ptr [rbp + 0x16b8], ebx              base=rbp   disp=0x16b8  rejected(vote=0)
+0x27D527C  4889b5c0160000             mov      qword ptr [rbp + 0x16c0], rsi              base=rbp   disp=0x16c0  REAL
+0x27D527D  89b5c0160000               mov      dword ptr [rbp + 0x16c0], esi              base=rbp   disp=0x16c0  rejected(vote=0)
+0x28873C0  f20f108db8160000           movsd    xmm1, qword ptr [rbp + 0x16b8]             base=rbp   disp=0x16b8  REAL
+0x28873C1  0f108db8160000             movups   xmm1, xmmword ptr [rbp + 0x16b8]           base=rbp   disp=0x16b8  rejected(vote=0)
+0x28873C2  108db8160000               adc      byte ptr [rbp + 0x16b8], cl                base=rbp   disp=0x16b8  rejected(vote=0)
+0x28873D5  f30f1085c0160000           movss    xmm0, dword ptr [rbp + 0x16c0]             base=rbp   disp=0x16c0  REAL
+0x28873D6  0f1085c0160000             movups   xmm0, xmmword ptr [rbp + 0x16c0]           base=rbp   disp=0x16c0  rejected(vote=0)
+0x28873D7  1085c0160000               adc      byte ptr [rbp + 0x16c0], al                base=rbp   disp=0x16c0  rejected(vote=0)
+0x296AF89  498d9ec0160000             lea      rbx, [r14 + 0x16c0]                        base=r14   disp=0x16c0  REAL
+0x296AF8A  8d9ec0160000               lea      ebx, [rsi + 0x16c0]                        base=rsi   disp=0x16c0  rejected(vote=0)
+0x296AFC0  498b9eb0160000             mov      rbx, qword ptr [r14 + 0x16b0]              base=r14   disp=0x16b0  REAL
+0x296AFC1  8b9eb0160000               mov      ebx, dword ptr [rsi + 0x16b0]              base=rsi   disp=0x16b0  rejected(vote=0)
+0x296AFE8  498dbec0160000             lea      rdi, [r14 + 0x16c0]                        base=r14   disp=0x16c0  REAL
+0x296AFE9  8dbec0160000               lea      edi, [rsi + 0x16c0]                        base=rsi   disp=0x16c0  rejected(vote=0)
+0x297B613  488d9ec0160000             lea      rbx, [rsi + 0x16c0]                        base=rsi   disp=0x16c0  REAL
+0x297B614  8d9ec0160000               lea      ebx, [rsi + 0x16c0]                        base=rsi   disp=0x16c0  rejected(vote=0)
+0x298ACCE  488d8bb0160000             lea      rcx, [rbx + 0x16b0]                        base=rbx   disp=0x16b0  REAL
+0x298ACCF  8d8bb0160000               lea      ecx, [rbx + 0x16b0]                        base=rbx   disp=0x16b0  rejected(vote=0)
+0x298FE13  488d8fb0160000             lea      rcx, [rdi + 0x16b0]                        base=rdi   disp=0x16b0  REAL
+0x298FE14  8d8fb0160000               lea      ecx, [rdi + 0x16b0]                        base=rdi   disp=0x16b0  rejected(vote=0)
+0x298FE1F  488d8fb0160000             lea      rcx, [rdi + 0x16b0]                        base=rdi   disp=0x16b0  REAL
+0x298FE20  8d8fb0160000               lea      ecx, [rdi + 0x16b0]                        base=rdi   disp=0x16b0  rejected(vote=0)
+0x29B4C4C  488d8eb0160000             lea      rcx, [rsi + 0x16b0]                        base=rsi   disp=0x16b0  REAL
+0x29B4C4D  8d8eb0160000               lea      ecx, [rsi + 0x16b0]                        base=rsi   disp=0x16b0  rejected(vote=0)
+0x29CC2D4  488d8fb0160000             lea      rcx, [rdi + 0x16b0]                        base=rdi   disp=0x16b0  REAL
+0x29CC2D5  8d8fb0160000               lea      ecx, [rdi + 0x16b0]                        base=rdi   disp=0x16b0  rejected(vote=0)
+0x393471F  c685c016000002             mov      byte ptr [rbp + 0x16c0], 2                 base=rbp   disp=0x16c0  REAL
+0x393478F  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   disp=0x16b0  REAL
+0x3934790  8985b0160000               mov      dword ptr [rbp + 0x16b0], eax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x3934796  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   disp=0x16b8  REAL
+0x39347A3  0f108db0160000             movups   xmm1, xmmword ptr [rbp + 0x16b0]           base=rbp   disp=0x16b0  REAL
+0x39347A4  108db0160000               adc      byte ptr [rbp + 0x16b0], cl                base=rbp   disp=0x16b0  rejected(vote=0)
+0x393485B  f20f1085c0160000           movsd    xmm0, qword ptr [rbp + 0x16c0]             base=rbp   disp=0x16c0  REAL
+0x393485C  0f1085c0160000             movups   xmm0, xmmword ptr [rbp + 0x16c0]           base=rbp   disp=0x16c0  rejected(vote=0)
+0x393485D  1085c0160000               adc      byte ptr [rbp + 0x16c0], al                base=rbp   disp=0x16c0  rejected(vote=0)
+0x393486E  0f1185c8160000             movups   xmmword ptr [rbp + 0x16c8], xmm0           base=rbp   disp=0x16c8  REAL
+0x393486F  1185c8160000               adc      dword ptr [rbp + 0x16c8], eax              base=rbp   disp=0x16c8  rejected(vote=0)
+0x3934875  488985c8160000             mov      qword ptr [rbp + 0x16c8], rax              base=rbp   disp=0x16c8  REAL
+0x3934876  8985c8160000               mov      dword ptr [rbp + 0x16c8], eax              base=rbp   disp=0x16c8  rejected(vote=0)
+0x3934883  0f1085c8160000             movups   xmm0, xmmword ptr [rbp + 0x16c8]           base=rbp   disp=0x16c8  REAL
+0x3934884  1085c8160000               adc      byte ptr [rbp + 0x16c8], al                base=rbp   disp=0x16c8  rejected(vote=0)
+0x3A432CD  4c89b7c0160000             mov      qword ptr [rdi + 0x16c0], r14              base=rdi   disp=0x16c0  REAL
+0x3A432CE  89b7c0160000               mov      dword ptr [rdi + 0x16c0], esi              base=rdi   disp=0x16c0  rejected(vote=0)
+0x3A432D4  4489b7c8160000             mov      dword ptr [rdi + 0x16c8], r14d             base=rdi   disp=0x16c8  REAL
+0x3A432D5  89b7c8160000               mov      dword ptr [rdi + 0x16c8], esi              base=rdi   disp=0x16c8  rejected(vote=0)
+0x3A432DB  c787cc16000080000000       mov      dword ptr [rdi + 0x16cc], 0x80             base=rdi   disp=0x16cc  REAL
+0x3A6CF1C  448b86cc160000             mov      r8d, dword ptr [rsi + 0x16cc]              base=rsi   disp=0x16cc  REAL
+0x3A6CF1D  8b86cc160000               mov      eax, dword ptr [rsi + 0x16cc]              base=rsi   disp=0x16cc  rejected(vote=0)
+0x3A6CF26  8b96c8160000               mov      edx, dword ptr [rsi + 0x16c8]              base=rsi   disp=0x16c8  REAL
+0x3C54F45  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   disp=0x16b0  REAL
+0x3C54F46  8985b0160000               mov      dword ptr [rbp + 0x16b0], eax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x3C54F53  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   disp=0x16b8  REAL
+0x3C54FC8  0f1085b0160000             movups   xmm0, xmmword ptr [rbp + 0x16b0]           base=rbp   disp=0x16b0  REAL
+0x3C54FC9  1085b0160000               adc      byte ptr [rbp + 0x16b0], al                base=rbp   disp=0x16b0  rejected(vote=0)
+0x3C54FF0  c685c016000003             mov      byte ptr [rbp + 0x16c0], 3                 base=rbp   disp=0x16c0  REAL
+0x3C54FF7  f20f108dc0160000           movsd    xmm1, qword ptr [rbp + 0x16c0]             base=rbp   disp=0x16c0  REAL
+0x3C54FF8  0f108dc0160000             movups   xmm1, xmmword ptr [rbp + 0x16c0]           base=rbp   disp=0x16c0  rejected(vote=0)
+0x3C54FF9  108dc0160000               adc      byte ptr [rbp + 0x16c0], cl                base=rbp   disp=0x16c0  rejected(vote=0)
+0x3C54FFF  0f1185c8160000             movups   xmmword ptr [rbp + 0x16c8], xmm0           base=rbp   disp=0x16c8  REAL
+0x3C55000  1185c8160000               adc      dword ptr [rbp + 0x16c8], eax              base=rbp   disp=0x16c8  rejected(vote=0)
+0x3D23C1C  488981b4160000             mov      qword ptr [rcx + 0x16b4], rax              base=rcx   disp=0x16b4  rejected(vote=0)
+0x3D23C1D  8981b4160000               mov      dword ptr [rcx + 0x16b4], eax              base=rcx   disp=0x16b4  rejected(vote=0)
+0x3D23C23  48c781bc1600000000803f     mov      qword ptr [rcx + 0x16bc], 0x3f800000       base=rcx   disp=0x16bc  REAL
+0x3D23C24  c781bc1600000000803f       mov      dword ptr [rcx + 0x16bc], 0x3f800000       base=rcx   disp=0x16bc  rejected(vote=0)
+0x3D23C2E  488981c4160000             mov      qword ptr [rcx + 0x16c4], rax              base=rcx   disp=0x16c4  REAL
+0x3D23C2F  8981c4160000               mov      dword ptr [rcx + 0x16c4], eax              base=rcx   disp=0x16c4  rejected(vote=0)
+0x3D23C35  48c781cc1600000000803f     mov      qword ptr [rcx + 0x16cc], 0x3f800000       base=rcx   disp=0x16cc  REAL
+0x3D23C36  c781cc1600000000803f       mov      dword ptr [rcx + 0x16cc], 0x3f800000       base=rcx   disp=0x16cc  rejected(vote=0)
+0x3D4AAD9  488d05c0160000             lea      rax, [rip + 0x16c0]                        base=rip   disp=0x16c0  REAL
+0x3D4AADA  8d05c0160000               lea      eax, [rip + 0x16c0]                        base=rip   disp=0x16c0  rejected(vote=0)
+0x3FC2787  488d05c2160000             lea      rax, [rip + 0x16c2]                        base=rip   disp=0x16c2  REAL
+0x3FC2788  8d05c2160000               lea      eax, [rip + 0x16c2]                        base=rip   disp=0x16c2  rejected(vote=0)
+0x4073CC9  488d05b0160000             lea      rax, [rip + 0x16b0]                        base=rip   disp=0x16b0  REAL
+0x4073CCA  8d05b0160000               lea      eax, [rip + 0x16b0]                        base=rip   disp=0x16b0  rejected(vote=0)
+0x469AF67  488d05c2160000             lea      rax, [rip + 0x16c2]                        base=rip   disp=0x16c2  REAL
+0x469AF68  8d05c2160000               lea      eax, [rip + 0x16c2]                        base=rip   disp=0x16c2  rejected(vote=0)
+0x46FD2B0  4c89b3b0160000             mov      qword ptr [rbx + 0x16b0], r14              base=rbx   disp=0x16b0  REAL
+0x46FD2B1  89b3b0160000               mov      dword ptr [rbx + 0x16b0], esi              base=rbx   disp=0x16b0  rejected(vote=0)
+0x46FD2B7  4c89b3b8160000             mov      qword ptr [rbx + 0x16b8], r14              base=rbx   disp=0x16b8  REAL
+0x46FD2B8  89b3b8160000               mov      dword ptr [rbx + 0x16b8], esi              base=rbx   disp=0x16b8  rejected(vote=0)
+0x472D166  488d8db0160000             lea      rcx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  REAL
+0x472D167  8d8db0160000               lea      ecx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  rejected(vote=0)
+0x472D182  4c89b5b0160000             mov      qword ptr [rbp + 0x16b0], r14              base=rbp   disp=0x16b0  REAL
+0x472D183  89b5b0160000               mov      dword ptr [rbp + 0x16b0], esi              base=rbp   disp=0x16b0  rejected(vote=0)
+0x472D189  4c89b5b8160000             mov      qword ptr [rbp + 0x16b8], r14              base=rbp   disp=0x16b8  REAL
+0x472D18A  89b5b8160000               mov      dword ptr [rbp + 0x16b8], esi              base=rbp   disp=0x16b8  rejected(vote=0)
+0x472D190  4c89b5c8160000             mov      qword ptr [rbp + 0x16c8], r14              base=rbp   disp=0x16c8  REAL
+0x472D191  89b5c8160000               mov      dword ptr [rbp + 0x16c8], esi              base=rbp   disp=0x16c8  rejected(vote=0)
+0x472D1A5  4488b5c0160000             mov      byte ptr [rbp + 0x16c0], r14b              base=rbp   disp=0x16c0  REAL
+0x472D1A6  88b5c0160000               mov      byte ptr [rbp + 0x16c0], dh                base=rbp   disp=0x16c0  rejected(vote=0)
+0x47E5183  448b8bb8160000             mov      r9d, dword ptr [rbx + 0x16b8]              base=rbx   disp=0x16b8  REAL
+0x47E5184  8b8bb8160000               mov      ecx, dword ptr [rbx + 0x16b8]              base=rbx   disp=0x16b8  rejected(vote=0)
+0x47E518F  4c8b93b0160000             mov      r10, qword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  REAL
+0x47E5190  8b93b0160000               mov      edx, dword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E51B2  8b93b8160000               mov      edx, dword ptr [rbx + 0x16b8]              base=rbx   disp=0x16b8  REAL
+0x47E51BD  8bb3bc160000               mov      esi, dword ptr [rbx + 0x16bc]              base=rbx   disp=0x16bc  REAL
+0x47E51DD  488db3c0160000             lea      rsi, [rbx + 0x16c0]                        base=rbx   disp=0x16c0  REAL
+0x47E51DE  8db3c0160000               lea      esi, [rbx + 0x16c0]                        base=rbx   disp=0x16c0  rejected(vote=0)
+0x47E51E4  4839b3b0160000             cmp      qword ptr [rbx + 0x16b0], rsi              base=rbx   disp=0x16b0  REAL
+0x47E51E5  39b3b0160000               cmp      dword ptr [rbx + 0x16b0], esi              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E5226  488b8bb0160000             mov      rcx, qword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  REAL
+0x47E5227  8b8bb0160000               mov      ecx, dword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E5232  89bbb8160000               mov      dword ptr [rbx + 0x16b8], edi              base=rbx   disp=0x16b8  REAL
+0x47E5242  4889b3b0160000             mov      qword ptr [rbx + 0x16b0], rsi              base=rbx   disp=0x16b0  REAL
+0x47E5243  89b3b0160000               mov      dword ptr [rbx + 0x16b0], esi              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E5249  c783bc16000001000000       mov      dword ptr [rbx + 0x16bc], 1                base=rbx   disp=0x16bc  REAL
+0x47E5278  488dabc0160000             lea      rbp, [rbx + 0x16c0]                        base=rbx   disp=0x16c0  REAL
+0x47E5279  8dabc0160000               lea      ebp, [rbx + 0x16c0]                        base=rbx   disp=0x16c0  rejected(vote=0)
+0x47E5297  8b93b8160000               mov      edx, dword ptr [rbx + 0x16b8]              base=rbx   disp=0x16b8  REAL
+0x47E529D  4839abb0160000             cmp      qword ptr [rbx + 0x16b0], rbp              base=rbx   disp=0x16b0  REAL
+0x47E529E  39abb0160000               cmp      dword ptr [rbx + 0x16b0], ebp              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E52D4  8b93b8160000               mov      edx, dword ptr [rbx + 0x16b8]              base=rbx   disp=0x16b8  REAL
+0x47E52DA  488b8bb0160000             mov      rcx, qword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  REAL
+0x47E52DB  8b8bb0160000               mov      ecx, dword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E52EF  89b3b8160000               mov      dword ptr [rbx + 0x16b8], esi              base=rbx   disp=0x16b8  REAL
+0x47E52FB  89b3b8160000               mov      dword ptr [rbx + 0x16b8], esi              base=rbx   disp=0x16b8  REAL
+0x47E5310  488b83b0160000             mov      rax, qword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  REAL
+0x47E5311  8b83b0160000               mov      eax, dword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E5327  3bbbb8160000               cmp      edi, dword ptr [rbx + 0x16b8]              base=rbx   disp=0x16b8  REAL
+0x47E532F  488b8bb0160000             mov      rcx, qword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  REAL
+0x47E5330  8b8bb0160000               mov      ecx, dword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E5336  488d83c0160000             lea      rax, [rbx + 0x16c0]                        base=rbx   disp=0x16c0  REAL
+0x47E5337  8d83c0160000               lea      eax, [rbx + 0x16c0]                        base=rbx   disp=0x16c0  rejected(vote=0)
+0x47E5347  4889abb0160000             mov      qword ptr [rbx + 0x16b0], rbp              base=rbx   disp=0x16b0  REAL
+0x47E5348  89abb0160000               mov      dword ptr [rbx + 0x16b0], ebp              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E534E  89b3bc160000               mov      dword ptr [rbx + 0x16bc], esi              base=rbx   disp=0x16bc  REAL
+0x47E535E  8b93b8160000               mov      edx, dword ptr [rbx + 0x16b8]              base=rbx   disp=0x16b8  REAL
+0x47E5364  3b93bc160000               cmp      edx, dword ptr [rbx + 0x16bc]              base=rbx   disp=0x16bc  REAL
+0x47E536C  488b83b0160000             mov      rax, qword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  REAL
+0x47E536D  8b83b0160000               mov      eax, dword ptr [rbx + 0x16b0]              base=rbx   disp=0x16b0  rejected(vote=0)
+0x47E5381  ff83b8160000               inc      dword ptr [rbx + 0x16b8]                   base=rbx   disp=0x16b8  REAL
+0x4832F2F  4889b5b0160000             mov      qword ptr [rbp + 0x16b0], rsi              base=rbp   disp=0x16b0  REAL
+0x4832F30  89b5b0160000               mov      dword ptr [rbp + 0x16b0], esi              base=rbp   disp=0x16b0  rejected(vote=0)
+0x4832F36  899db8160000               mov      dword ptr [rbp + 0x16b8], ebx              base=rbp   disp=0x16b8  REAL
+0x4832F40  89b5bc160000               mov      dword ptr [rbp + 0x16bc], esi              base=rbp   disp=0x16bc  REAL
+0x4832F4B  488d8db0160000             lea      rcx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  REAL
+0x4832F4C  8d8db0160000               lea      ecx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  rejected(vote=0)
+0x4832F59  488b8db0160000             mov      rcx, qword ptr [rbp + 0x16b0]              base=rbp   disp=0x16b0  REAL
+0x4832F5A  8b8db0160000               mov      ecx, dword ptr [rbp + 0x16b0]              base=rbp   disp=0x16b0  rejected(vote=0)
+0x4832F85  8885c0160000               mov      byte ptr [rbp + 0x16c0], al                base=rbp   disp=0x16c0  REAL
+0x4832FB0  488985c8160000             mov      qword ptr [rbp + 0x16c8], rax              base=rbp   disp=0x16c8  REAL
+0x4832FB1  8985c8160000               mov      dword ptr [rbp + 0x16c8], eax              base=rbp   disp=0x16c8  rejected(vote=0)
+0x483EB36  488d95c0160000             lea      rdx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  REAL
+0x483EB37  8d95c0160000               lea      edx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  rejected(vote=0)
+0x483EB85  4088b5b0160000             mov      byte ptr [rbp + 0x16b0], sil               base=rbp   disp=0x16b0  REAL
+0x483EB86  88b5b0160000               mov      byte ptr [rbp + 0x16b0], dh                base=rbp   disp=0x16b0  rejected(vote=0)
+0x483EB93  4c89b5b8160000             mov      qword ptr [rbp + 0x16b8], r14              base=rbp   disp=0x16b8  REAL
+0x483EB94  89b5b8160000               mov      dword ptr [rbp + 0x16b8], esi              base=rbp   disp=0x16b8  rejected(vote=0)
+0x483EB9A  4889b5c0160000             mov      qword ptr [rbp + 0x16c0], rsi              base=rbp   disp=0x16c0  REAL
+0x483EB9B  89b5c0160000               mov      dword ptr [rbp + 0x16c0], esi              base=rbp   disp=0x16c0  rejected(vote=0)
+0x483EBA1  4889b5c8160000             mov      qword ptr [rbp + 0x16c8], rsi              base=rbp   disp=0x16c8  REAL
+0x483EBA2  89b5c8160000               mov      dword ptr [rbp + 0x16c8], esi              base=rbp   disp=0x16c8  rejected(vote=0)
+0x4843459  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   disp=0x16b0  REAL
+0x484345A  8985b0160000               mov      dword ptr [rbp + 0x16b0], eax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x484350F  4889b5b8160000             mov      qword ptr [rbp + 0x16b8], rsi              base=rbp   disp=0x16b8  REAL
+0x4843510  89b5b8160000               mov      dword ptr [rbp + 0x16b8], esi              base=rbp   disp=0x16b8  rejected(vote=0)
+0x484351D  4889b5c0160000             mov      qword ptr [rbp + 0x16c0], rsi              base=rbp   disp=0x16c0  REAL
+0x484351E  89b5c0160000               mov      dword ptr [rbp + 0x16c0], esi              base=rbp   disp=0x16c0  rejected(vote=0)
+0x4843539  4088b5c8160000             mov      byte ptr [rbp + 0x16c8], sil               base=rbp   disp=0x16c8  REAL
+0x484353A  88b5c8160000               mov      byte ptr [rbp + 0x16c8], dh                base=rbp   disp=0x16c8  rejected(vote=0)
+0x4843599  488d85b8160000             lea      rax, [rbp + 0x16b8]                        base=rbp   disp=0x16b8  REAL
+0x484359A  8d85b8160000               lea      eax, [rbp + 0x16b8]                        base=rbp   disp=0x16b8  rejected(vote=0)
+0x48472A7  4c8d8db0160000             lea      r9, [rbp + 0x16b0]                         base=rbp   disp=0x16b0  REAL
+0x48472A8  8d8db0160000               lea      ecx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  rejected(vote=0)
+0x48472B5  4c89b5b0160000             mov      qword ptr [rbp + 0x16b0], r14              base=rbp   disp=0x16b0  REAL
+0x48472B6  89b5b0160000               mov      dword ptr [rbp + 0x16b0], esi              base=rbp   disp=0x16b0  rejected(vote=0)
+0x48472D1  4c89b5b8160000             mov      qword ptr [rbp + 0x16b8], r14              base=rbp   disp=0x16b8  rejected(vote=0)
+0x48472D2  89b5b8160000               mov      dword ptr [rbp + 0x16b8], esi              base=rbp   disp=0x16b8  rejected(vote=0)
+0x48472DD  4c89b5c8160000             mov      qword ptr [rbp + 0x16c8], r14              base=rbp   disp=0x16c8  REAL
+0x48472DE  89b5c8160000               mov      dword ptr [rbp + 0x16c8], esi              base=rbp   disp=0x16c8  rejected(vote=0)
+0x48472F2  4488b5c0160000             mov      byte ptr [rbp + 0x16c0], r14b              base=rbp   disp=0x16c0  REAL
+0x48472F3  88b5c0160000               mov      byte ptr [rbp + 0x16c0], dh                base=rbp   disp=0x16c0  rejected(vote=0)
+0x4850F50  488d95b0160000             lea      rdx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  REAL
+0x4850F51  8d95b0160000               lea      edx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  rejected(vote=0)
+0x4850F7F  4c89b5b0160000             mov      qword ptr [rbp + 0x16b0], r14              base=rbp   disp=0x16b0  REAL
+0x4850F80  89b5b0160000               mov      dword ptr [rbp + 0x16b0], esi              base=rbp   disp=0x16b0  rejected(vote=0)
+0x4850F86  4c89b5b8160000             mov      qword ptr [rbp + 0x16b8], r14              base=rbp   disp=0x16b8  REAL
+0x4850F87  89b5b8160000               mov      dword ptr [rbp + 0x16b8], esi              base=rbp   disp=0x16b8  rejected(vote=0)
+0x4850F8D  4c89b5c8160000             mov      qword ptr [rbp + 0x16c8], r14              base=rbp   disp=0x16c8  REAL
+0x4850F8E  89b5c8160000               mov      dword ptr [rbp + 0x16c8], esi              base=rbp   disp=0x16c8  rejected(vote=0)
+0x4850FA2  4488b5c0160000             mov      byte ptr [rbp + 0x16c0], r14b              base=rbp   disp=0x16c0  REAL
+0x4850FA3  88b5c0160000               mov      byte ptr [rbp + 0x16c0], dh                base=rbp   disp=0x16c0  rejected(vote=0)
+0x485A8BC  488985b8160000             mov      qword ptr [rbp + 0x16b8], rax              base=rbp   disp=0x16b8  REAL
+0x485A8BD  8985b8160000               mov      dword ptr [rbp + 0x16b8], eax              base=rbp   disp=0x16b8  rejected(vote=0)
+0x485A8EA  4088b5b0160000             mov      byte ptr [rbp + 0x16b0], sil               base=rbp   disp=0x16b0  REAL
+0x485A8EB  88b5b0160000               mov      byte ptr [rbp + 0x16b0], dh                base=rbp   disp=0x16b0  rejected(vote=0)
+0x485A904  4889b5c0160000             mov      qword ptr [rbp + 0x16c0], rsi              base=rbp   disp=0x16c0  REAL
+0x485A905  89b5c0160000               mov      dword ptr [rbp + 0x16c0], esi              base=rbp   disp=0x16c0  rejected(vote=0)
+0x485A91C  4889b5c8160000             mov      qword ptr [rbp + 0x16c8], rsi              base=rbp   disp=0x16c8  REAL
+0x485A91D  89b5c8160000               mov      dword ptr [rbp + 0x16c8], esi              base=rbp   disp=0x16c8  rejected(vote=0)
+0x485A923  488d95c0160000             lea      rdx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  REAL
+0x485A924  8d95c0160000               lea      edx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  rejected(vote=0)
+0x486225F  4c8d8dc0160000             lea      r9, [rbp + 0x16c0]                         base=rbp   disp=0x16c0  REAL
+0x4862260  8d8dc0160000               lea      ecx, [rbp + 0x16c0]                        base=rbp   disp=0x16c0  rejected(vote=0)
+0x486227A  0f2985c0160000             movaps   xmmword ptr [rbp + 0x16c0], xmm0           base=rbp   disp=0x16c0  REAL
+0x486227B  2985c0160000               sub      dword ptr [rbp + 0x16c0], eax              base=rbp   disp=0x16c0  rejected(vote=0)
+0x48623D9  4c8d8db0160000             lea      r9, [rbp + 0x16b0]                         base=rbp   disp=0x16b0  REAL
+0x48623DA  8d8db0160000               lea      ecx, [rbp + 0x16b0]                        base=rbp   disp=0x16b0  rejected(vote=0)
+0x48623F4  0f2985b0160000             movaps   xmmword ptr [rbp + 0x16b0], xmm0           base=rbp   disp=0x16b0  REAL
+0x48623F5  2985b0160000               sub      dword ptr [rbp + 0x16b0], eax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x4869812  c685c016000002             mov      byte ptr [rbp + 0x16c0], 2                 base=rbp   disp=0x16c0  REAL
+0x4869849  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x486984A  8985b0160000               mov      dword ptr [rbp + 0x16b0], eax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x4869855  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   disp=0x16b8  REAL
+0x4869885  0f1085b0160000             movups   xmm0, xmmword ptr [rbp + 0x16b0]           base=rbp   disp=0x16b0  REAL
+0x4869886  1085b0160000               adc      byte ptr [rbp + 0x16b0], al                base=rbp   disp=0x16b0  rejected(vote=0)
+0x486989A  f20f108dc0160000           movsd    xmm1, qword ptr [rbp + 0x16c0]             base=rbp   disp=0x16c0  REAL
+0x486989B  0f108dc0160000             movups   xmm1, xmmword ptr [rbp + 0x16c0]           base=rbp   disp=0x16c0  rejected(vote=0)
+0x486989C  108dc0160000               adc      byte ptr [rbp + 0x16c0], cl                base=rbp   disp=0x16c0  rejected(vote=0)
+0x486992E  0f1185c8160000             movups   xmmword ptr [rbp + 0x16c8], xmm0           base=rbp   disp=0x16c8  REAL
+0x486992F  1185c8160000               adc      dword ptr [rbp + 0x16c8], eax              base=rbp   disp=0x16c8  rejected(vote=0)
+0x4869947  488985c8160000             mov      qword ptr [rbp + 0x16c8], rax              base=rbp   disp=0x16c8  REAL
+0x4869948  8985c8160000               mov      dword ptr [rbp + 0x16c8], eax              base=rbp   disp=0x16c8  rejected(vote=0)
+0x4869955  0f108dc8160000             movups   xmm1, xmmword ptr [rbp + 0x16c8]           base=rbp   disp=0x16c8  REAL
+0x4869956  108dc8160000               adc      byte ptr [rbp + 0x16c8], cl                base=rbp   disp=0x16c8  rejected(vote=0)
+0x486B7B1  c685c016000002             mov      byte ptr [rbp + 0x16c0], 2                 base=rbp   disp=0x16c0  REAL
+0x486B7E6  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   disp=0x16b0  REAL
+0x486B7E7  8985b0160000               mov      dword ptr [rbp + 0x16b0], eax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x486B7F1  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   disp=0x16b8  REAL
+0x486B807  0f1085b0160000             movups   xmm0, xmmword ptr [rbp + 0x16b0]           base=rbp   disp=0x16b0  REAL
+0x486B808  1085b0160000               adc      byte ptr [rbp + 0x16b0], al                base=rbp   disp=0x16b0  rejected(vote=0)
+0x486B838  f20f108dc0160000           movsd    xmm1, qword ptr [rbp + 0x16c0]             base=rbp   disp=0x16c0  REAL
+0x486B839  0f108dc0160000             movups   xmm1, xmmword ptr [rbp + 0x16c0]           base=rbp   disp=0x16c0  rejected(vote=0)
+0x486B83A  108dc0160000               adc      byte ptr [rbp + 0x16c0], cl                base=rbp   disp=0x16c0  rejected(vote=0)
+0x486BC20  400f1185c8160000           movups   xmmword ptr [rbp + 0x16c8], xmm0           base=rbp   disp=0x16c8  rejected(vote=0)
+0x486BC21  0f1185c8160000             movups   xmmword ptr [rbp + 0x16c8], xmm0           base=rbp   disp=0x16c8  REAL
+0x486BC22  1185c8160000               adc      dword ptr [rbp + 0x16c8], eax              base=rbp   disp=0x16c8  rejected(vote=0)
+0x486BC66  4048899dc8160000           mov      qword ptr [rbp + 0x16c8], rbx              base=rbp   disp=0x16c8  rejected(vote=0)
+0x486BC67  48899dc8160000             mov      qword ptr [rbp + 0x16c8], rbx              base=rbp   disp=0x16c8  REAL
+0x486BC68  899dc8160000               mov      dword ptr [rbp + 0x16c8], ebx              base=rbp   disp=0x16c8  rejected(vote=0)
+0x486BC6E  0f108dc8160000             movups   xmm1, xmmword ptr [rbp + 0x16c8]           base=rbp   disp=0x16c8  REAL
+0x486BC6F  108dc8160000               adc      byte ptr [rbp + 0x16c8], cl                base=rbp   disp=0x16c8  rejected(vote=0)
+0x4AF36F8  4c89b7b0160000             mov      qword ptr [rdi + 0x16b0], r14              base=rdi   disp=0x16b0  REAL
+0x4AF36F9  89b7b0160000               mov      dword ptr [rdi + 0x16b0], esi              base=rdi   disp=0x16b0  rejected(vote=0)
+0x4AF36FF  4489b7b8160000             mov      dword ptr [rdi + 0x16b8], r14d             base=rdi   disp=0x16b8  REAL
+0x4AF3700  89b7b8160000               mov      dword ptr [rdi + 0x16b8], esi              base=rdi   disp=0x16b8  rejected(vote=0)
+0x4AF3706  4c89b7c0160000             mov      qword ptr [rdi + 0x16c0], r14              base=rdi   disp=0x16c0  REAL
+0x4AF3707  89b7c0160000               mov      dword ptr [rdi + 0x16c0], esi              base=rdi   disp=0x16c0  rejected(vote=0)
+0x4AF370D  4489b7c8160000             mov      dword ptr [rdi + 0x16c8], r14d             base=rdi   disp=0x16c8  REAL
+0x4AF370E  89b7c8160000               mov      dword ptr [rdi + 0x16c8], esi              base=rdi   disp=0x16c8  rejected(vote=0)
+0x4B03CC6  4439afc8160000             cmp      dword ptr [rdi + 0x16c8], r13d             base=rdi   disp=0x16c8  REAL
+0x4B03CC7  39afc8160000               cmp      dword ptr [rdi + 0x16c8], ebp              base=rdi   disp=0x16c8  rejected(vote=0)
+0x4B03CD3  488b8fc0160000             mov      rcx, qword ptr [rdi + 0x16c0]              base=rdi   disp=0x16c0  REAL
+0x4B03CD4  8b8fc0160000               mov      ecx, dword ptr [rdi + 0x16c0]              base=rdi   disp=0x16c0  rejected(vote=0)
+0x51E8FE5  488d05b4160000             lea      rax, [rip + 0x16b4]                        base=rip   disp=0x16b4  REAL
+0x51E8FE6  8d05b4160000               lea      eax, [rip + 0x16b4]                        base=rip   disp=0x16b4  rejected(vote=0)
+0x526B99F  488d0dba160000             lea      rcx, [rip + 0x16ba]                        base=rip   disp=0x16ba  REAL
+0x526B9A0  8d0dba160000               lea      ecx, [rip + 0x16ba]                        base=rip   disp=0x16ba  rejected(vote=0)
+0x5284037  488d05b2160000             lea      rax, [rip + 0x16b2]                        base=rip   disp=0x16b2  REAL
+0x5284038  8d05b2160000               lea      eax, [rip + 0x16b2]                        base=rip   disp=0x16b2  rejected(vote=0)
+0x52921E9  488b8bc8160000             mov      rcx, qword ptr [rbx + 0x16c8]              base=rbx   disp=0x16c8  REAL
+0x52921EA  8b8bc8160000               mov      ecx, dword ptr [rbx + 0x16c8]              base=rbx   disp=0x16c8  rejected(vote=0)
+0x52921FA  89abc0160000               mov      dword ptr [rbx + 0x16c0], ebp              base=rbx   disp=0x16c0  REAL
+0x5292200  488b8bb8160000             mov      rcx, qword ptr [rbx + 0x16b8]              base=rbx   disp=0x16b8  REAL
+0x5292201  8b8bb8160000               mov      ecx, dword ptr [rbx + 0x16b8]              base=rbx   disp=0x16b8  rejected(vote=0)
+0x52C994D  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   disp=0x16b0  REAL
+0x52C994E  8985b0160000               mov      dword ptr [rbp + 0x16b0], eax              base=rbp   disp=0x16b0  rejected(vote=0)
+0x52C995B  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   disp=0x16b8  REAL
+0x52C99BA  0f1085b0160000             movups   xmm0, xmmword ptr [rbp + 0x16b0]           base=rbp   disp=0x16b0  REAL
+0x52C99BB  1085b0160000               adc      byte ptr [rbp + 0x16b0], al                base=rbp   disp=0x16b0  rejected(vote=0)
+0x52C99E5  c685c016000003             mov      byte ptr [rbp + 0x16c0], 3                 base=rbp   disp=0x16c0  REAL
+0x52C9A00  f20f108dc0160000           movsd    xmm1, qword ptr [rbp + 0x16c0]             base=rbp   disp=0x16c0  REAL
+0x52C9A01  0f108dc0160000             movups   xmm1, xmmword ptr [rbp + 0x16c0]           base=rbp   disp=0x16c0  rejected(vote=0)
+0x52C9A02  108dc0160000               adc      byte ptr [rbp + 0x16c0], cl                base=rbp   disp=0x16c0  rejected(vote=0)
+0x52C9A08  0f1185c8160000             movups   xmmword ptr [rbp + 0x16c8], xmm0           base=rbp   disp=0x16c8  REAL
+0x52C9A09  1185c8160000               adc      dword ptr [rbp + 0x16c8], eax              base=rbp   disp=0x16c8  rejected(vote=0)
+0x530AB43  80bbc816000000             cmp      byte ptr [rbx + 0x16c8], 0                 base=rbx   disp=0x16c8  REAL
+0x530AB4C  c683c816000000             mov      byte ptr [rbx + 0x16c8], 0                 base=rbx   disp=0x16c8  REAL
+0x530ABF0  80b9c816000000             cmp      byte ptr [rcx + 0x16c8], 0                 base=rcx   disp=0x16c8  REAL
+0x530ABF9  c681c816000000             mov      byte ptr [rcx + 0x16c8], 0                 base=rcx   disp=0x16c8  REAL
+0x530AC10  80b9c816000000             cmp      byte ptr [rcx + 0x16c8], 0                 base=rcx   disp=0x16c8  REAL
+0x530AC16  00b8b0160000               add      byte ptr [rax + 0x16b0], bh                base=rax   disp=0x16b0  rejected(vote=0)
+0x530C7FF  80b9c816000000             cmp      byte ptr [rcx + 0x16c8], 0                 base=rcx   disp=0x16c8  REAL
+0x53A5137  488d05c2160000             lea      rax, [rip + 0x16c2]                        base=rip   disp=0x16c2  REAL
+0x53A5138  8d05c2160000               lea      eax, [rip + 0x16c2]                        base=rip   disp=0x16c2  rejected(vote=0)
+0x54EF8BF  488d0dba160000             lea      rcx, [rip + 0x16ba]                        base=rip   disp=0x16ba  REAL
+0x54EF8C0  8d0dba160000               lea      ecx, [rip + 0x16ba]                        base=rip   disp=0x16ba  rejected(vote=0)
+0x5513BF8  4889afb8160000             mov      qword ptr [rdi + 0x16b8], rbp              base=rdi   disp=0x16b8  REAL
+0x5513BF9  89afb8160000               mov      dword ptr [rdi + 0x16b8], ebp              base=rdi   disp=0x16b8  rejected(vote=0)
+0x5513BFF  89afc0160000               mov      dword ptr [rdi + 0x16c0], ebp              base=rdi   disp=0x16c0  REAL
+0x5513C05  4889afc8160000             mov      qword ptr [rdi + 0x16c8], rbp              base=rdi   disp=0x16c8  REAL
+0x5513C06  89afc8160000               mov      dword ptr [rdi + 0x16c8], ebp              base=rdi   disp=0x16c8  rejected(vote=0)
+0x559C59E  80b8c816000000             cmp      byte ptr [rax + 0x16c8], 0                 base=rax   disp=0x16c8  REAL
+0x559C5A4  00b9b0160000               add      byte ptr [rcx + 0x16b0], bh                base=rcx   disp=0x16b0  rejected(vote=0)
+0x559EA2F  410f1186b0160000           movups   xmmword ptr [r14 + 0x16b0], xmm0           base=r14   disp=0x16b0  REAL
+0x559EA30  0f1186b0160000             movups   xmmword ptr [rsi + 0x16b0], xmm0           base=rsi   disp=0x16b0  rejected(vote=0)
+0x559EA31  1186b0160000               adc      dword ptr [rsi + 0x16b0], eax              base=rsi   disp=0x16b0  rejected(vote=0)
+0x559EA3F  f2410f1186c0160000         movsd    qword ptr [r14 + 0x16c0], xmm0             base=r14   disp=0x16c0  REAL
+0x559EA40  410f1186c0160000           movups   xmmword ptr [r14 + 0x16c0], xmm0           base=r14   disp=0x16c0  rejected(vote=0)
+0x559EA41  0f1186c0160000             movups   xmmword ptr [rsi + 0x16c0], xmm0           base=rsi   disp=0x16c0  rejected(vote=0)
+0x559EA42  1186c0160000               adc      dword ptr [rsi + 0x16c0], eax              base=rsi   disp=0x16c0  rejected(vote=0)
+0x559EA48  664189aec8160000           mov      word ptr [r14 + 0x16c8], bp                base=r14   disp=0x16c8  REAL
+0x559EA49  4189aec8160000             mov      dword ptr [r14 + 0x16c8], ebp              base=r14   disp=0x16c8  rejected(vote=0)
+0x559EA4A  89aec8160000               mov      dword ptr [rsi + 0x16c8], ebp              base=rsi   disp=0x16c8  rejected(vote=0)
+0x559EA50  4188aeca160000             mov      byte ptr [r14 + 0x16ca], bpl               base=r14   disp=0x16ca  REAL
+0x559EA51  88aeca160000               mov      byte ptr [rsi + 0x16ca], ch                base=rsi   disp=0x16ca  rejected(vote=0)
+0x559EA57  4989aecc160000             mov      qword ptr [r14 + 0x16cc], rbp              base=r14   disp=0x16cc  REAL
+0x559EA58  89aecc160000               mov      dword ptr [rsi + 0x16cc], ebp              base=rsi   disp=0x16cc  rejected(vote=0)
+0x559FDF4  4088b7c8160000             mov      byte ptr [rdi + 0x16c8], sil               base=rdi   disp=0x16c8  REAL
+0x559FDF5  88b7c8160000               mov      byte ptr [rdi + 0x16c8], dh                base=rdi   disp=0x16c8  rejected(vote=0)
+0x55A6BCB  0f1186c8160000             movups   xmmword ptr [rsi + 0x16c8], xmm0           base=rsi   disp=0x16c8  REAL
+0x55A6BCC  1186c8160000               adc      dword ptr [rsi + 0x16c8], eax              base=rsi   disp=0x16c8  rejected(vote=0)
+0x55A7562  0f1183c8160000             movups   xmmword ptr [rbx + 0x16c8], xmm0           base=rbx   disp=0x16c8  REAL
+0x55A7563  1183c8160000               adc      dword ptr [rbx + 0x16c8], eax              base=rbx   disp=0x16c8  rejected(vote=0)
+0x55A9A30  0f1081b0160000             movups   xmm0, xmmword ptr [rcx + 0x16b0]           base=rcx   disp=0x16b0  REAL
+0x55A9A31  1081b0160000               adc      byte ptr [rcx + 0x16b0], al                base=rcx   disp=0x16b0  rejected(vote=0)
+0x55A9A3A  f20f1089c0160000           movsd    xmm1, qword ptr [rcx + 0x16c0]             base=rcx   disp=0x16c0  REAL
+0x55A9A3B  0f1089c0160000             movups   xmm1, xmmword ptr [rcx + 0x16c0]           base=rcx   disp=0x16c0  rejected(vote=0)
+0x55A9A3C  1089c0160000               adc      byte ptr [rcx + 0x16c0], cl                base=rcx   disp=0x16c0  rejected(vote=0)
+0x55ACB0A  f30f1087cc160000           movss    xmm0, dword ptr [rdi + 0x16cc]             base=rdi   disp=0x16cc  REAL
+0x55ACB0B  0f1087cc160000             movups   xmm0, xmmword ptr [rdi + 0x16cc]           base=rdi   disp=0x16cc  rejected(vote=0)
+0x55ACB0C  1087cc160000               adc      byte ptr [rdi + 0x16cc], al                base=rdi   disp=0x16cc  rejected(vote=0)
+0x55ACB2B  80bfca16000000             cmp      byte ptr [rdi + 0x16ca], 0                 base=rdi   disp=0x16ca  REAL
+0x55AD533  0f2f81cc160000             comiss   xmm0, dword ptr [rcx + 0x16cc]             base=rcx   disp=0x16cc  REAL
+0x55AD53C  0fb681c9160000             movzx    eax, byte ptr [rcx + 0x16c9]               base=rcx   disp=0x16c9  REAL
+0x55B85E1  f3410f1097cc160000         movss    xmm2, dword ptr [r15 + 0x16cc]             base=r15   disp=0x16cc  REAL
+0x55B85E2  410f1097cc160000           movups   xmm2, xmmword ptr [r15 + 0x16cc]           base=r15   disp=0x16cc  rejected(vote=0)
+0x55B85E3  0f1097cc160000             movups   xmm2, xmmword ptr [rdi + 0x16cc]           base=rdi   disp=0x16cc  rejected(vote=0)
+0x55B85E4  1097cc160000               adc      byte ptr [rdi + 0x16cc], dl                base=rdi   disp=0x16cc  rejected(vote=0)
+0x55B860B  41c687c816000000           mov      byte ptr [r15 + 0x16c8], 0                 base=r15   disp=0x16c8  REAL
+0x55B860C  c687c816000000             mov      byte ptr [rdi + 0x16c8], 0                 base=rdi   disp=0x16c8  rejected(vote=0)
+0x55BDD6C  0f1183c8160000             movups   xmmword ptr [rbx + 0x16c8], xmm0           base=rbx   disp=0x16c8  REAL
+0x55BDD6D  1183c8160000               adc      dword ptr [rbx + 0x16c8], eax              base=rbx   disp=0x16c8  rejected(vote=0)
+0x55BE974  0f1183c8160000             movups   xmmword ptr [rbx + 0x16c8], xmm0           base=rbx   disp=0x16c8  REAL
+0x55BE975  1183c8160000               adc      dword ptr [rbx + 0x16c8], eax              base=rbx   disp=0x16c8  rejected(vote=0)
+0x55C0303  480f1083c8160000           movups   xmm0, xmmword ptr [rbx + 0x16c8]           base=rbx   disp=0x16c8  rejected(vote=0)
+0x55C0304  0f1083c8160000             movups   xmm0, xmmword ptr [rbx + 0x16c8]           base=rbx   disp=0x16c8  REAL
+0x55C0305  1083c8160000               adc      byte ptr [rbx + 0x16c8], al                base=rbx   disp=0x16c8  rejected(vote=0)
+0x55C099E  0f1083c8160000             movups   xmm0, xmmword ptr [rbx + 0x16c8]           base=rbx   disp=0x16c8  REAL
+0x55C099F  1083c8160000               adc      byte ptr [rbx + 0x16c8], al                base=rbx   disp=0x16c8  rejected(vote=0)
+0x55C0D92  8883ca160000               mov      byte ptr [rbx + 0x16ca], al                base=rbx   disp=0x16ca  REAL
+0x55C0D98  f30f11bbcc160000           movss    dword ptr [rbx + 0x16cc], xmm7             base=rbx   disp=0x16cc  REAL
+0x55C0D99  0f11bbcc160000             movups   xmmword ptr [rbx + 0x16cc], xmm7           base=rbx   disp=0x16cc  rejected(vote=0)
+0x55C0D9A  11bbcc160000               adc      dword ptr [rbx + 0x16cc], edi              base=rbx   disp=0x16cc  rejected(vote=0)
+0x55C0DA9  c683c816000001             mov      byte ptr [rbx + 0x16c8], 1                 base=rbx   disp=0x16c8  REAL
+0x55C0DB0  4088bbc9160000             mov      byte ptr [rbx + 0x16c9], dil               base=rbx   disp=0x16c9  REAL
+0x55C0DB1  88bbc9160000               mov      byte ptr [rbx + 0x16c9], bh                base=rbx   disp=0x16c9  rejected(vote=0)
+0x55C0DEC  400fb683c9160000           movzx    eax, byte ptr [rbx + 0x16c9]               base=rbx   disp=0x16c9  rejected(vote=0)
+0x55C0DED  0fb683c9160000             movzx    eax, byte ptr [rbx + 0x16c9]               base=rbx   disp=0x16c9  REAL
+0x55C2438  443881c8160000             cmp      byte ptr [rcx + 0x16c8], r8b               base=rcx   disp=0x16c8  REAL
+0x55C2439  3881c8160000               cmp      byte ptr [rcx + 0x16c8], al                base=rcx   disp=0x16c8  rejected(vote=0)
+0x55C2441  448881c8160000             mov      byte ptr [rcx + 0x16c8], r8b               base=rcx   disp=0x16c8  REAL
+0x55C2442  8881c8160000               mov      byte ptr [rcx + 0x16c8], al                base=rcx   disp=0x16c8  rejected(vote=0)
+0x55C244F  0f1181b0160000             movups   xmmword ptr [rcx + 0x16b0], xmm0           base=rcx   disp=0x16b0  REAL
+0x55C2450  1181b0160000               adc      dword ptr [rcx + 0x16b0], eax              base=rcx   disp=0x16b0  rejected(vote=0)
+0x55C245E  f20f1189c0160000           movsd    qword ptr [rcx + 0x16c0], xmm1             base=rcx   disp=0x16c0  REAL
+0x55C245F  0f1189c0160000             movups   xmmword ptr [rcx + 0x16c0], xmm1           base=rcx   disp=0x16c0  rejected(vote=0)
+0x55C2460  1189c0160000               adc      dword ptr [rcx + 0x16c0], ecx              base=rcx   disp=0x16c0  rejected(vote=0)
+0x55C2469  c681c816000001             mov      byte ptr [rcx + 0x16c8], 1                 base=rcx   disp=0x16c8  REAL
+0x5D724F0  488d05b9160000             lea      rax, [rip + 0x16b9]                        base=rip   disp=0x16b9  REAL
+0x5D724F1  8d05b9160000               lea      eax, [rip + 0x16b9]                        base=rip   disp=0x16b9  rejected(vote=0)
+0x645D1F7  488d05b2160000             lea      rax, [rip + 0x16b2]                        base=rip   disp=0x16b2  REAL
+0x645D1F8  8d05b2160000               lea      eax, [rip + 0x16b2]                        base=rip   disp=0x16b2  rejected(vote=0)
+0x6CA9F54  488d0db5160000             lea      rcx, [rip + 0x16b5]                        base=rip   disp=0x16b5  REAL
+0x6CA9F55  8d0db5160000               lea      ecx, [rip + 0x16b5]                        base=rip   disp=0x16b5  rejected(vote=0)
+0x6E69893  488993c0160000             mov      qword ptr [rbx + 0x16c0], rdx              base=rbx   disp=0x16c0  REAL
+0x6E69894  8993c0160000               mov      dword ptr [rbx + 0x16c0], edx              base=rbx   disp=0x16c0  rejected(vote=0)
+0x6E698A3  8983b0160000               mov      dword ptr [rbx + 0x16b0], eax              base=rbx   disp=0x16b0  REAL
+0x6E698A9  48898bb8160000             mov      qword ptr [rbx + 0x16b8], rcx              base=rbx   disp=0x16b8  REAL
+0x6E698AA  898bb8160000               mov      dword ptr [rbx + 0x16b8], ecx              base=rbx   disp=0x16b8  rejected(vote=0)
+0x6E6AB0D  4c89a3c0160000             mov      qword ptr [rbx + 0x16c0], r12              base=rbx   disp=0x16c0  REAL
+0x6E6AB0E  89a3c0160000               mov      dword ptr [rbx + 0x16c0], esp              base=rbx   disp=0x16c0  rejected(vote=0)
+0x6E6AB14  c783b016000017000000       mov      dword ptr [rbx + 0x16b0], 0x17             base=rbx   disp=0x16b0  REAL
+0x6E6AB1E  4889bbb8160000             mov      qword ptr [rbx + 0x16b8], rdi              base=rbx   disp=0x16b8  REAL
+0x6E6AB1F  89bbb8160000               mov      dword ptr [rbx + 0x16b8], edi              base=rbx   disp=0x16b8  rejected(vote=0)
+0x6E6AE40  4c3981c0160000             cmp      qword ptr [rcx + 0x16c0], r8               base=rcx   disp=0x16c0  REAL
+0x6E6AE41  3981c0160000               cmp      dword ptr [rcx + 0x16c0], eax              base=rcx   disp=0x16c0  rejected(vote=0)
+0x6E6AE4D  3991b0160000               cmp      dword ptr [rcx + 0x16b0], edx              base=rcx   disp=0x16b0  REAL
+0x6E6AEE4  488b97b8160000             mov      rdx, qword ptr [rdi + 0x16b8]              base=rdi   disp=0x16b8  REAL
+0x6E6AEE5  8b97b8160000               mov      edx, dword ptr [rdi + 0x16b8]              base=rdi   disp=0x16b8  rejected(vote=0)
+0x6E80107  8986ca160000               mov      dword ptr [rsi + 0x16ca], eax              base=rsi   disp=0x16ca  REAL
+0x6E80111  668986ce160000             mov      word ptr [rsi + 0x16ce], ax                base=rsi   disp=0x16ce  REAL
+0x6E80112  8986ce160000               mov      dword ptr [rsi + 0x16ce], eax              base=rsi   disp=0x16ce  rejected(vote=0)
+0x6E80B2E  488d99c8160000             lea      rbx, [rcx + 0x16c8]                        base=rcx   disp=0x16c8  REAL
+0x6E80B2F  8d99c8160000               lea      ebx, [rcx + 0x16c8]                        base=rcx   disp=0x16c8  rejected(vote=0)
+0x6E8C421  00b9c8160000               add      byte ptr [rcx + 0x16c8], bh                base=rcx   disp=0x16c8  rejected(vote=0)
+0x6E8CA62  8983ca160000               mov      dword ptr [rbx + 0x16ca], eax              base=rbx   disp=0x16ca  REAL
+0x6E8CA6C  668983ce160000             mov      word ptr [rbx + 0x16ce], ax                base=rbx   disp=0x16ce  REAL
+0x6E8CA6D  8983ce160000               mov      dword ptr [rbx + 0x16ce], eax              base=rbx   disp=0x16ce  rejected(vote=0)
+0x6E8D22E  10b8c8160000               adc      byte ptr [rax + 0x16c8], bh                base=rax   disp=0x16c8  rejected(vote=0)
+0x6E8ED0D  00bac8160000               add      byte ptr [rdx + 0x16c8], bh                base=rdx   disp=0x16c8  rejected(vote=0)
+0x6E8F252  01b8c8160000               add      dword ptr [rax + 0x16c8], edi              base=rax   disp=0x16c8  rejected(vote=0)
+0x6E92CAD  4c8d99c8160000             lea      r11, [rcx + 0x16c8]                        base=rcx   disp=0x16c8  REAL
+0x6E92CAE  8d99c8160000               lea      ebx, [rcx + 0x16c8]                        base=rcx   disp=0x16c8  rejected(vote=0)
+0x6E92D5E  498d93c8160000             lea      rdx, [r11 + 0x16c8]                        base=r11   disp=0x16c8  REAL
+0x6E92D5F  8d93c8160000               lea      edx, [rbx + 0x16c8]                        base=rbx   disp=0x16c8  rejected(vote=0)
+
+--- CONFIRMED WRITES to +0x16B0..+0x16C7 (payload), cmp/test excluded, with real containing fn ---
+0x1266A2E  48898424c0160000           mov      qword ptr [rsp + 0x16c0], rax              base=rsp   fn=0x1265DF0
+0x1266A5A  48898424b0160000           mov      qword ptr [rsp + 0x16b0], rax              base=rsp   fn=0x1265DF0
+0x1266A86  48898424b8160000           mov      qword ptr [rsp + 0x16b8], rax              base=rsp   fn=0x1265DF0
+0x127D724  48898424b0160000           mov      qword ptr [rsp + 0x16b0], rax              base=rsp   fn=0x127BAB0
+0x127D749  48898424b8160000           mov      qword ptr [rsp + 0x16b8], rax              base=rsp   fn=0x127BAB0
+0x127D773  48898424c0160000           mov      qword ptr [rsp + 0x16c0], rax              base=rsp   fn=0x127BAB0
+0x1293B55  48898424c0160000           mov      qword ptr [rsp + 0x16c0], rax              base=rsp   fn=0x128E530
+0x1293B81  48898424b0160000           mov      qword ptr [rsp + 0x16b0], rax              base=rsp   fn=0x128E530
+0x1293BAD  48898424b8160000           mov      qword ptr [rsp + 0x16b8], rax              base=rsp   fn=0x128E530
+0x146E050  c685c016000000             mov      byte ptr [rbp + 0x16c0], 0                 base=rbp   fn=0x146DAD0
+0x146E057  0f1185b0160000             movups   xmmword ptr [rbp + 0x16b0], xmm0           base=rbp   fn=0x146DAD0
+0x14B8BD0  4c89bdb0160000             mov      qword ptr [rbp + 0x16b0], r15              base=rbp   fn=0x14B7F60
+0x14CCBBF  0f1185b0160000             movups   xmmword ptr [rbp + 0x16b0], xmm0           base=rbp   fn=0x14CAB40
+0x27D5178  660f7f85b0160000           movdqa   xmmword ptr [rbp + 0x16b0], xmm0           base=rbp   fn=0x27D48A0
+0x27D526E  4889bdb0160000             mov      qword ptr [rbp + 0x16b0], rdi              base=rbp   fn=0x27D48A0
+0x27D5275  48899db8160000             mov      qword ptr [rbp + 0x16b8], rbx              base=rbp   fn=0x27D48A0
+0x27D527C  4889b5c0160000             mov      qword ptr [rbp + 0x16c0], rsi              base=rbp   fn=0x27D48A0
+0x393471F  c685c016000002             mov      byte ptr [rbp + 0x16c0], 2                 base=rbp   fn=0x3931763
+0x393478F  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   fn=0x3931763
+0x3934796  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   fn=0x3931763
+0x3A432CD  4c89b7c0160000             mov      qword ptr [rdi + 0x16c0], r14              base=rdi   fn=0x3A42D80
+0x3C54F45  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   fn=0x0000000
+0x3C54F53  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   fn=0x0000000
+0x3C54FF0  c685c016000003             mov      byte ptr [rbp + 0x16c0], 3                 base=rbp   fn=0x0000000
+0x3D23C23  48c781bc1600000000803f     mov      qword ptr [rcx + 0x16bc], 0x3f800000       base=rcx   fn=0x3D234C0
+0x3D23C2E  488981c4160000             mov      qword ptr [rcx + 0x16c4], rax              base=rcx   fn=0x3D234C0
+0x46FD2B0  4c89b3b0160000             mov      qword ptr [rbx + 0x16b0], r14              base=rbx   fn=0x0000000
+0x46FD2B7  4c89b3b8160000             mov      qword ptr [rbx + 0x16b8], r14              base=rbx   fn=0x0000000
+0x472D182  4c89b5b0160000             mov      qword ptr [rbp + 0x16b0], r14              base=rbp   fn=0x0000000
+0x472D189  4c89b5b8160000             mov      qword ptr [rbp + 0x16b8], r14              base=rbp   fn=0x0000000
+0x472D1A5  4488b5c0160000             mov      byte ptr [rbp + 0x16c0], r14b              base=rbp   fn=0x0000000
+0x47E5232  89bbb8160000               mov      dword ptr [rbx + 0x16b8], edi              base=rbx   fn=0x47E5170
+0x47E5242  4889b3b0160000             mov      qword ptr [rbx + 0x16b0], rsi              base=rbx   fn=0x47E5170
+0x47E5249  c783bc16000001000000       mov      dword ptr [rbx + 0x16bc], 1                base=rbx   fn=0x47E5170
+0x47E52EF  89b3b8160000               mov      dword ptr [rbx + 0x16b8], esi              base=rbx   fn=0x47E5170
+0x47E52FB  89b3b8160000               mov      dword ptr [rbx + 0x16b8], esi              base=rbx   fn=0x47E5170
+0x47E5347  4889abb0160000             mov      qword ptr [rbx + 0x16b0], rbp              base=rbx   fn=0x47E5170
+0x47E534E  89b3bc160000               mov      dword ptr [rbx + 0x16bc], esi              base=rbx   fn=0x47E5170
+0x47E5381  ff83b8160000               inc      dword ptr [rbx + 0x16b8]                   base=rbx   fn=0x47E5170
+0x4832F2F  4889b5b0160000             mov      qword ptr [rbp + 0x16b0], rsi              base=rbp   fn=0x0000000
+0x4832F36  899db8160000               mov      dword ptr [rbp + 0x16b8], ebx              base=rbp   fn=0x0000000
+0x4832F40  89b5bc160000               mov      dword ptr [rbp + 0x16bc], esi              base=rbp   fn=0x0000000
+0x4832F85  8885c0160000               mov      byte ptr [rbp + 0x16c0], al                base=rbp   fn=0x0000000
+0x483EB85  4088b5b0160000             mov      byte ptr [rbp + 0x16b0], sil               base=rbp   fn=0x483DCEA
+0x483EB93  4c89b5b8160000             mov      qword ptr [rbp + 0x16b8], r14              base=rbp   fn=0x483DCEA
+0x483EB9A  4889b5c0160000             mov      qword ptr [rbp + 0x16c0], rsi              base=rbp   fn=0x483DCEA
+0x4843459  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   fn=0x4842907
+0x484350F  4889b5b8160000             mov      qword ptr [rbp + 0x16b8], rsi              base=rbp   fn=0x4842907
+0x484351D  4889b5c0160000             mov      qword ptr [rbp + 0x16c0], rsi              base=rbp   fn=0x4842907
+0x48472B5  4c89b5b0160000             mov      qword ptr [rbp + 0x16b0], r14              base=rbp   fn=0x0000000
+0x48472F2  4488b5c0160000             mov      byte ptr [rbp + 0x16c0], r14b              base=rbp   fn=0x0000000
+0x4850F7F  4c89b5b0160000             mov      qword ptr [rbp + 0x16b0], r14              base=rbp   fn=0x0000000
+0x4850F86  4c89b5b8160000             mov      qword ptr [rbp + 0x16b8], r14              base=rbp   fn=0x0000000
+0x4850FA2  4488b5c0160000             mov      byte ptr [rbp + 0x16c0], r14b              base=rbp   fn=0x0000000
+0x485A8BC  488985b8160000             mov      qword ptr [rbp + 0x16b8], rax              base=rbp   fn=0x0000000
+0x485A8EA  4088b5b0160000             mov      byte ptr [rbp + 0x16b0], sil               base=rbp   fn=0x0000000
+0x485A904  4889b5c0160000             mov      qword ptr [rbp + 0x16c0], rsi              base=rbp   fn=0x0000000
+0x486227A  0f2985c0160000             movaps   xmmword ptr [rbp + 0x16c0], xmm0           base=rbp   fn=0x485F39F
+0x48623F4  0f2985b0160000             movaps   xmmword ptr [rbp + 0x16b0], xmm0           base=rbp   fn=0x485F39F
+0x4869812  c685c016000002             mov      byte ptr [rbp + 0x16c0], 2                 base=rbp   fn=0x0000000
+0x4869855  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   fn=0x0000000
+0x486B7B1  c685c016000002             mov      byte ptr [rbp + 0x16c0], 2                 base=rbp   fn=0x0000000
+0x486B7E6  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   fn=0x0000000
+0x486B7F1  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   fn=0x0000000
+0x4AF36F8  4c89b7b0160000             mov      qword ptr [rdi + 0x16b0], r14              base=rdi   fn=0x4AF2200
+0x4AF36FF  4489b7b8160000             mov      dword ptr [rdi + 0x16b8], r14d             base=rdi   fn=0x4AF2200
+0x4AF3706  4c89b7c0160000             mov      qword ptr [rdi + 0x16c0], r14              base=rdi   fn=0x4AF2200
+0x52921FA  89abc0160000               mov      dword ptr [rbx + 0x16c0], ebp              base=rbx   fn=0x5292040
+0x52C994D  488985b0160000             mov      qword ptr [rbp + 0x16b0], rax              base=rbp   fn=0x52C91EC
+0x52C995B  8885b8160000               mov      byte ptr [rbp + 0x16b8], al                base=rbp   fn=0x52C91EC
+0x52C99E5  c685c016000003             mov      byte ptr [rbp + 0x16c0], 3                 base=rbp   fn=0x52C91EC
+0x5513BF8  4889afb8160000             mov      qword ptr [rdi + 0x16b8], rbp              base=rdi   fn=0x0000000
+0x5513BFF  89afc0160000               mov      dword ptr [rdi + 0x16c0], ebp              base=rdi   fn=0x0000000
+0x559EA2F  410f1186b0160000           movups   xmmword ptr [r14 + 0x16b0], xmm0           base=r14   fn=0x559E180
+0x559EA3F  f2410f1186c0160000         movsd    qword ptr [r14 + 0x16c0], xmm0             base=r14   fn=0x559E180
+0x55C244F  0f1181b0160000             movups   xmmword ptr [rcx + 0x16b0], xmm0           base=rcx   fn=0x55C2430
+0x55C245E  f20f1189c0160000           movsd    qword ptr [rcx + 0x16c0], xmm1             base=rcx   fn=0x55C2430
+0x6E69893  488993c0160000             mov      qword ptr [rbx + 0x16c0], rdx              base=rbx   fn=0x6E68CB0
+0x6E698A3  8983b0160000               mov      dword ptr [rbx + 0x16b0], eax              base=rbx   fn=0x6E68CB0
+0x6E698A9  48898bb8160000             mov      qword ptr [rbx + 0x16b8], rcx              base=rbx   fn=0x6E68CB0
+0x6E6AB0D  4c89a3c0160000             mov      qword ptr [rbx + 0x16c0], r12              base=rbx   fn=0x6E6A720
+0x6E6AB14  c783b016000017000000       mov      dword ptr [rbx + 0x16b0], 0x17             base=rbx   fn=0x6E6A720
+0x6E6AB1E  4889bbb8160000             mov      qword ptr [rbx + 0x16b8], rdi              base=rbx   fn=0x6E6A720
+count=83

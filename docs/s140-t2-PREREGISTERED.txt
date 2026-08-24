@@ -6,7 +6,7 @@ result goes in docs/s140-tier2-sentinel.md and cites this file.
 
 Date: 2026-08-23
 Arm:  tools/sigbypass-mod/build/tutorial_launch_gasattr_sentinel.dll
-      RAW .text digest 70323cf494241bb9   (VSIZE 56db8ff6b9de173a)
+      RAW .text digest ce56fd715de835a1   (VSIZE 7b0b8c9ef49e07a3)
       build.ps1 -Name tutorial_launch -Variant gasattr-sentinel   (-DKBSPSARMS=0x3A0)
 Probe: tools/re/cmc_earlyout_readout.py <PID> <BASE>   (read-only RPM; the external 2nd instrument)
 
@@ -176,8 +176,8 @@ tools/sigbypass-mod/text_digest.py, RAW recipe:
     gasattr-ctrl         4465ebc4d7168c03   UNCHANGED  (recorded S139 flight 4)
 
   NEW:
-    gasattr-sentinel     70323cf494241bb9   ARM D + F + G + H   (KBSPSARMS 0x3A0)  <- THE ARM
-    sentinel-nogas       6f3b32ee162cb484   ARM D + F + H       (KBSPSARMS 0x2A0)
+    gasattr-sentinel     ce56fd715de835a1   ARM D + F + G + H   (KBSPSARMS 0x3A0)  <- THE ARM
+    sentinel-nogas       f62d3a9cc4cf0562   ARM D + F + H       (KBSPSARMS 0x2A0)
                                             DISTINCT from the above -- verified, because an A/B
                                             against a copy of itself has burned a live run here.
                                             NOT NEEDED for flight 1: gasattr-sentinel already
