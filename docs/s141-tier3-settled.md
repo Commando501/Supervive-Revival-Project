@@ -312,6 +312,45 @@ its controls pass (DARK `0x5A6AC40` = 0/4096, folds 5/5, eight LIT controls). Re
   ⇒ **[M] gravity is integrated BEFORE the `SizeSq2D` clamp on every iteration.** The clamp can
   only zero the horizontal *afterwards*; it can never prevent gravity from having been applied.
 
+### 4.1b ★★★★★ THE AXIS DISCRIMINATOR — one hypothesis now explains BOTH flights
+
+§4.1 was published with an explicit hole: *"S140 T2 flight 3 measured the same bot, same treatment,
+same acceleration, SUSTAINING 500 uu/s. Under this claim the clamp should have fired there too."*
+The only bot-side difference between the two flights is the **kick axis** (X = +600 then, Z = −600
+now). Here is why the axis matters.
+
+**[M] Engine `PhysFalling` zeroes `Velocity.Z` before `CalcVelocity` and restores it after — but on
+only ONE of its four `CalcVelocity` calls:**
+
+| call site | `Velocity.Z = 0` before (`mov [rdi+0xf8], r13`, `r13 == 0` by reaching-defs) | `OldVelocity.Z` restored after | |
+|---|---|---|---|
+| `0x035ECB75` | **no** | **no** | **NOT bracketed** |
+| `0x035ECBD8` | yes (`0x035ECBD1`) | yes (`0x035ECBDE movsd [rdi+0xf8], xmm14`) | **BRACKETED** |
+| `0x035ED549` | **no** | **no** | **NOT bracketed** |
+| `0x035ED5D5` | yes (`0x035ED5CE`) | not within 3 insns — **NOT ESTABLISHED** | — |
+
+Two consequences, and they compose:
+
+1. **A clamp firing on `0x035ECB75` or `0x035ED549` leaves `Velocity.Z` zeroed permanently** — there
+   is no restore to undo it. That alone is a route to the observed all-three zero.
+2. ★★ **Inside the BRACKETED call, a Z-only velocity is INVISIBLE.** `IsExceedingMaxSpeed` tests
+   `Velocity.SizeSquared() > MaxInputSpeed² × 1.01`, and the bracket has just set `Z = 0`:
+   * **flight 3, horizontal `(600,0,0)`:** `SizeSq = 360000 > 500² × 1.01 = 252500` ⇒ **TRUE** ⇒
+     `xmm0 = |Velocity| = 600` ⇒ `comisd 600, 1e-4` ⇒ `jae` ⇒ **normal clamp, scaled to 500.**
+     **That is exactly the sustained 500 uu/s that was measured.**
+   * **tonight, vertical `(0,0,-600)`:** the bracket zeroes Z ⇒ `SizeSq = 0`, not exceeding ⇒
+     **FALSE** ⇒ `xmm0 = xmm11 = MaxInputSpeed`. If `MaxInputSpeed < 1e-4` the **ZeroVector** branch
+     is taken and all three components go to zero.
+
+⇒ **ONE hypothesis retrodicts both flights, and the axis is the variable that switches it.**
+**Grade: `[I]`** — the control-flow facts in the table are `[M]`, but the composition depends on
+`MaxInputSpeed < 1e-4`, which has never been read.
+
+★★ **AND IT GIVES S142 A CLEAN WITHIN-SESSION A/B ON ONE VARIABLE — THE AXIS.** Same arm, same
+treatment, same session: kick the bot **horizontally** and it should sustain ~500 (reproducing
+flight 3); kick it **vertically** and it should zero (reproducing tonight). Two bots, or two
+consecutive kicks on one bot. **If both behave the same, this hypothesis is dead and so is §4.1.**
+
 ### 4.2 The read that settles it, and it is one read
 
 **`AnalogInputModifier` and `GetMaxSpeed()` on the bot.** `MaxInputSpeed = MaxSpeed ×

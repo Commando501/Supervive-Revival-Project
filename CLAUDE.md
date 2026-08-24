@@ -2094,7 +2094,20 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   **That is why the pawn WITH input reaches it and the pawn WITHOUT input does not.**
   ⚠⚠ **BUT IT DOES NOT YET EXPLAIN S140 T2 FLIGHT 3**, where the SAME bot with the SAME treatment
   and the SAME acceleration SUSTAINED 500 uu/s and walked 13,187 uu. **Find that discriminator or
-  drop the candidate.** ⇒ **S142's first move is ONE READ: `AnalogInputModifier` / `[CMC+0x3D0]` /
+  drop the candidate.**
+  ★★★★★ **AND S141 FOUND THE DISCRIMINATOR: IT IS THE KICK AXIS** (`docs/s141-tier3-settled.md`
+  §4.1b). **[M] engine `PhysFalling` brackets only ONE of its four `CalcVelocity` calls with
+  `Velocity.Z = 0` / restore** (`0x035ECBD8` bracketed; `0x035ECB75` and `0x035ED549` NOT;
+  `0x035ED5D5` NOT ESTABLISHED). So (i) a clamp on an unbracketed call zeroes Z **permanently**, and
+  (ii) **inside the bracketed call a Z-only velocity is INVISIBLE to `IsExceedingMaxSpeed`**
+  (`SizeSquared() > MaxInputSpeed² × 1.01`): horizontal 600 gives `360000 > 252500` ⇒ TRUE ⇒ compares
+  `|V| = 600` ⇒ normal clamp ⇒ **scaled to 500, exactly what flight 3 measured**; vertical −600 has
+  its Z zeroed by the bracket ⇒ `SizeSq = 0` ⇒ FALSE ⇒ compares `MaxInputSpeed` ⇒ if `< 1e-4`,
+  **ZeroVector on all three.** **ONE hypothesis retrodicts BOTH flights, `[I]`** (the table is [M];
+  the composition needs `MaxInputSpeed < 1e-4`, never read).
+  ⇒ ★★ **FLY IT AS A TWO-ARM A/B ON THE AXIS IN ONE SITTING** — same arm, kick horizontally (must
+  sustain ~500) and vertically (must zero). **If both behave the same the hypothesis is dead.**
+  ⇒ **And S142's read is ONE READ: `AnalogInputModifier` / `[CMC+0x3D0]` /
   `GetMaxSpeed()` on both pawns.** ⚠ S141 added `GravityScale`/`GravityDirection`/`MovementMode`/
   `+0x1001`/`+0x1678` to the arm's free reads **and missed the one field the hypothesis turns on**
   (defect S141-d).
@@ -4598,7 +4611,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **103 tabulated instances as of S141 Tier 3** (S141 added 7: S141-a..g) ⚠⚠ **AND THE PREVIOUS
+   blind spot recorded as a property of the game. **104 tabulated instances as of S141 Tier 3** (S141 added 8: S141-a..h) ⚠⚠ **AND THE PREVIOUS
    FIGURE HERE WAS WRONG: this line read "112 as of S140 Tier 2" while the table held 96.** The
    tally has now diverged FOUR times, which is exactly why this line says re-derive it — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it

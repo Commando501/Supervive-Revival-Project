@@ -88,11 +88,30 @@ the bot only exists after an injection, so in practice: stage, inject `armk`, th
 * `MaxInputSpeed < 1e-4` on the bot ⇒ **§4.1 CONFIRMED**, and the fix is whichever factor is zero.
 * `MaxInputSpeed ≈ 500` ⇒ **§4.1 REFUTED**; go to MOVE 2.
 
-⚠⚠ **THE COUNTER-EVIDENCE §4.1 DOES NOT YET EXPLAIN, AND IT IS SERIOUS.** S140 Tier 2 flight 3
-measured the **same bot**, **same ARM G treatment**, **same AI acceleration**, *sustaining 500 uu/s
-and walking 13,187 uu*. Under §4.1 the clamp should have fired there too. The only bot-side
-difference between the two flights is the **kick axis** (X=+600 then vs Z=−600 now).
-**Find that discriminator or drop §4.1.** It is the single most important open question.
+### 1a. ★★ THE AXIS DISCRIMINATOR IS FOUND — and it turns MOVE 1 into a two-arm A/B
+
+§4.1 shipped with a hole: S140 T2 flight 3 measured the **same bot**, **same treatment**, **same
+acceleration**, *sustaining 500 uu/s*. `docs/s141-tier3-settled.md` **§4.1b** closes it:
+
+**[M] engine `PhysFalling` brackets only ONE of its four `CalcVelocity` calls with
+`Velocity.Z = 0` / restore** (`0x035ECBD8` is bracketed; `0x035ECB75` and `0x035ED549` are **not**,
+and `0x035ED5D5`'s restore is NOT ESTABLISHED). So (i) a clamp firing on an unbracketed call leaves
+`Velocity.Z` zeroed **permanently**, and (ii) **inside the bracketed call a Z-only velocity is
+INVISIBLE to `IsExceedingMaxSpeed`**, which tests `SizeSquared() > MaxInputSpeed² × 1.01`:
+
+* **flight 3, horizontal `(600,0,0)`** → `360000 > 252500` ⇒ TRUE ⇒ compared value is `|V| = 600`
+  ⇒ `jae` ⇒ normal clamp ⇒ **scaled to 500. Exactly what was measured.**
+* **S141, vertical `(0,0,-600)`** → the bracket zeroes Z ⇒ `SizeSq = 0` ⇒ FALSE ⇒ compared value is
+  `MaxInputSpeed` ⇒ if that is `< 1e-4`, **ZeroVector, all three components.**
+
+**Grade `[I]`** — the table is `[M]`, the composition needs `MaxInputSpeed < 1e-4`, never read.
+
+⇒ ★★ **SO FLY MOVE 1 AS A TWO-ARM A/B ON THE AXIS, IN ONE SITTING.** Same arm, same treatment:
+kick the bot **horizontally** (must sustain ~500, reproducing flight 3) and **vertically** (must
+zero, reproducing S141) — two bots, or two consecutive kicks on one bot with a sample between.
+**If both arms behave the same, this hypothesis is dead and so is §4.1.** Read
+`AnalogInputModifier` / `[CMC+0x3D0]` / `GetMaxSpeed()` in the same pass and the whole thing closes
+or dies in one flight.
 
 ⚠ **I did not read `AnalogInputModifier` in the S141 flight.** I added `GravityScale`,
 `GravityDirection`, `MovementMode`, `byte +0x1001` and `+0x1678` to the free reads and missed the one
