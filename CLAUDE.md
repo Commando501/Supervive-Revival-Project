@@ -1611,7 +1611,11 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   stands and is now joined by the physics-step half.
   One staged client, ONE injection, read-only RPM; 6 offline RE lanes + 6 adversarial verifiers.
   ★★ **[M] THE BOT IS NOT SPECIALLY DISADVANTAGED — bot and player read IDENTICALLY on EVERY
-  structural field**: `UpdatedComponent` (both non-null CapsuleComponent) · `Mobility` 2 ·
+  structural field** ⚠⚠ **S141 CORRECTION: read "every structural field THAT WAS READ".
+  `GravityScale` (`CMC+0x1A0`) is NOT in this list and it is the one field that governs falling:
+  [M] BOT 1.000 / PLAYER 0.000, measured in one pass at S141 and already on record at
+  `docs/s138-flight9-movement-not-simulating.md:17` ("zeroed by `sp`'s LIFT step" -- OUR OWN
+  staging shim). The two pawns are NOT identical.**: `UpdatedComponent` (both non-null CapsuleComponent) · `Mobility` 2 ·
   **`Role` 3** · `RemoteRole` 1 · `Controller` non-null · `RF_Garbage` 0 · `MovementMode` 3 ·
   `MaxAcceleration` 50000 · `bCharacterMovementEnabled` 1 · `Acceleration` (0,0,0) ·
   `AnalogInputModifier` 0 · latch `+0x16C8` **0** · `bCanEverTick` 1 / `TickState` Enabled /
@@ -1875,7 +1879,9 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   ★★★★★ **AND THE MECHANISM IS NAMED — [M, offline], AND IT RETRODICTS 4/4 OBSERVATIONS IN BOTH
   DIRECTIONS FROM A DERIVATION BLIND TO THE FLIGHTS. Engine `PhysFalling` ZEROES `Velocity` below a
   gravity-space `SizeSq2D` gate: `0x035ED98E comisd xmm1,[rip→.rdata 0x077F5180 =
-  0.0009999999747378752 = (double)(float)1e-3]` / `0x035ED996 ja` skips ⇒ the fall-through
+  0.0009999999747378752]` / `0x035ED996 ja` skips  ⚠⚠ **S141 CORRECTION: that constant is
+  `(double)(float)1e-4 * 10.0` = `UE_KINDA_SMALL_NUMBER`(float) x 10, NOT `(double)(float)1e-3`
+  (= 0.0010000000474974513, a DIFFERENT number). Four independent derivations.** ⇒ the fall-through ⇒ the fall-through
   `0x035ED998 xorps xmm0,xmm0 … 0x035ED9BB movups [rsi],xmm0 / 0x035ED9C3 movsd [rsi+0x10],xmm1`
   WRITES Velocity.** `rsi = &Velocity` is [M] **by dominance** — the sole defining
   `lea rsi,[rdi+0xe8]` at `0x035EC9AC` dominates both writes (node-removal False/False).
@@ -1888,6 +1894,14 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   sentinel is zeroed HARDER.** ⇒ ★★ **ARM H's poison-the-payload design is what saved that flight**;
   had it depended on the sentinel surviving it would have returned a false negative for a reason
   nobody had identified yet.
+  ★★★★★ **SETTLED NEGATIVELY AT S141 [M], four independent derivations: `Velocity.Z` is NOT
+  zeroed. The store at `0x035ED9AC` is `movups` = 16 BYTES over a 24-byte `FVector` of DOUBLES,
+  so the gravity-space Z at `[rbp+0x178]` survives and is rotated back verbatim; `xmm1` at
+  `0x035ED9C3` is loaded at `0x035ED9BE` from the transform's OUTPUT. THE FIXED POINT IS 2-D,
+  and it therefore does NOT explain the no-fall.** ⇒ ★ AND **[M] gravity is integrated BEFORE
+  this clamp on every iteration** (`vdom2.py`: the clamp write is dominated by the gravity
+  write, not vice versa), so the clamp can never suppress a fall. Read
+  `docs/s141-tier3-settled.md` §1. The superseded text was:
   ⚠ **[I], not [M]: whether `Velocity.Z` is zeroed too** — the Z store takes `xmm1` and nothing here
   shows `xmm1 == 0`. One instruction read settles it, and it would explain the no-fall phenomenon.
   ⚠ **The PLAYER's decay is a DIFFERENT SITE** — its 600 is far above this gate yet it decayed to 0,
@@ -1922,7 +1936,9 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   actively written to zero every frame" IS WEAKER THAN IT LOOKS.** Both flights put the sentinel
   there themselves, and an adversarial verifier established a mechanism by which **a small non-zero
   `Velocity` CONVERTS A NO-WRITE INTO A WRITE** — below tolerance the three `ucomisd` at
-  `0x055B8838/3E/4A` all fall through to `je 0x55B8865` and **the write is SKIPPED**; and in engine
+  `0x055B8838/3E/4A` all fall through to `je 0x55B8865` and **the write is SKIPPED** ⚠⚠ **S141
+  CORRECTION: that write is to `[rsi+0x12F0]`/`[rsi+0x1300]`, NOT to `Velocity`. [M]
+  `ULokiCMC::PerformMovement 0x055B8370` contains ZERO writes to `+0xE8/+0xF0/+0xF8`.**; and in engine
   `PhysFalling`, `2^-10` gives `SizeSq 9.54e-07` (`0x035ED9B3 call 0x035F4620`) after which
   **`0x035ED9BB movups [rsi],xmm0` + `0x035ED9C3 movsd [rsi+0x10],xmm1` write `Velocity`** on the
   `<= 1e-3` arm. ⇒ **[M] something writes the BOT `Velocity` once it holds a small non-zero value;
@@ -1939,7 +1955,13 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   PROVEN — `preds(0x035D6511) = { 0x035D650F }`, exactly one predecessor, so that store is uniquely
   reached from the INPUT clamp (a second, nearly identical *requested* clamp exists at `0x035D668E`).
   **BUT ITS OWN ADVERSARIAL VERIFIER REFUTED THE APPLICATION [M, derived]:** `GetMaxAcceleration`
-  (disp `0x7D0`) and `GetMaxSpeed` (disp `0x4C8`) are **both GAS-backed through the SAME `+0xC00`
+  (disp `0x7D0`) and `GetMaxSpeed` (disp `0x4C8`) are ⚠⚠ **S141: REFUTED AS STATED -- they are TWO
+  DISTINCT FUNCTIONS, `0x0055AC910` and `0x0055ACB90`; `0x055AC9F0` is a helper at CHARACTER
+  vtable disp `0xC00` that BOTH call. And on the `MOVE_Falling` arm `GetMaxAcceleration` never
+  reads the `MaxAcceleration` attribute at all -- the GAS set acts as a GATE and the 50000 comes
+  from the engine Super. `scratchpad/s141/lanes/L6-gas-per-instance.md` §4; ONE derivation,
+  UNVERIFIED (all S141 verifiers were lost to API 529s), so treat as [I].** Formerly:** both
+  GAS-backed through the SAME `+0xC00`
   slot** (`0x055AC9F0`, base value `min(AttrSet+0xF0+0xC, AttrSet+0x100+0xC)`), behind the same
   guards; S139 flight 4 measured `GetMaxAcceleration() = 50000`, so that slot returned NON-ZERO and
   all three zero-guards passed ⇒ `GetMaxSpeed() != 0` ⇒ `MaxInputSpeed >> 1e-4` ⇒ **the clamp did
@@ -2024,6 +2046,104 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   written up as "S2 confirmed", and S2 is false.
   ★★★★★ **AND S140 SHOWED P2 WAS RIGHT FOR A DEEPER REASON THAN ANYONE KNEW — the latch is
   uninterpretable in EVERY sitting, not just that one.** See the S140 block below.
+- ★★★★★★ **S141 TIER 3 (2026-08-23/24) — THE ENGINE MOVER CHAIN RUNS, AND THE WALL MOVED TO THE PAWN
+  WITH INPUT. Read `docs/s141-tier3-settled.md`; its §4 and §6 govern. Then
+  `docs/next-session-prompt-s142.md`.** Six offline lanes over `merged14` + ONE staged flight
+  (`armk` RAW `8278c6031d05756c`, pre-registered at `docs/s141-t3-armk-PREREGISTERED.txt` BEFORE launch).
+  ★★★★★ **[M] ONE 4-BYTE WRITE OF `GravityScale = 1.0f` AND THE PLAYER HERO FELL 23,189 uu** — from
+  `Z = 13240` to `Z = -9935` in 10 s, `Velocity.Z` pinned at terminal `-4000`. It was given
+  `Velocity = (0, 600, 0)`, i.e. **`Vz` EXACTLY ZERO** ⇒ **gravity integrates from `Velocity.Z == 0`,
+  and `TickComponent → ControlledCharacterMove → PerformMovement → StartNewPhysics → PhysFalling` all
+  execute on this client.** ⛔ **"`Velocity == 0` stops the mover" IS DEAD — do not re-open it.**
+  ★★★★★ **[M] `CMC+0x1A0` IS `GravityScale`** (engine `GetGravityZ 0x035E3650` ends
+  `035e3680 mulss xmm0,[rbx+0x1a0]`; three agreeing instruments incl. `binds_members.csv` property
+  index 0), **and the PLAYER's non-fall was SELF-INFLICTED**: `sp`'s LIFT-TO-SEE block
+  (`tutorial_launch.cpp:12877-12890`) sets it to `0.0f`, `[LIFT] gravity OFF` is line 24 of every
+  staged `sp` marker, and `docs/s138-flight9-movement-not-simulating.md:17` recorded BOT 1.000 /
+  PLAYER 0.000 the day before. ⇒ `docs/s140-t2-armj-THE-BOT-WALKS.md` §2's inference of "a real
+  GAS-treatment dependency in the MOVER" survives for the **horizontal decay** and is **REFUTED for
+  the non-fall.**
+  ★★★★★ **AND IT RESOLVES S132's DISMOUNT [M]:** `0x55CCDC9 mov dword [r14+0x1a0], 0x3f800000` is
+  `GravityScale = 1.0`, and an exhaustive write scan finds **no velocity write in that function** ⇒
+  the hero fell with **X and Y frozen** because it was **pure gravity switched back on**, not a
+  velocity write. Same for `docs/fk22-dropphase-reachability.md`'s `[mv+0x1A0]=1.0f`.
+  ★★★★★ **[M] THE FIXED-POINT GATE IS 2-D: `Velocity.Z` IS NOT ZEROED** — the store at `0x035ED9AC`
+  is `movups`, **16 bytes over a 24-byte `FVector` of doubles**, so gravity-space Z at `[rbp+0x178]`
+  survives and is rotated back verbatim. Four independent derivations. ★ And **[M] gravity is
+  integrated BEFORE that clamp on every iteration** (the clamp write is dominated by the gravity
+  write, not vice versa) ⇒ the clamp can never suppress a fall.
+  ⇒ ★★★★★ **THE BOT IS NOW THE ONLY THING THAT DOES NOT MOVE, AND IT IS THE PAWN WITH INPUT.** Same
+  world, same frame, same pass, both `MOVE_Falling`, both `GravityScale 1.0`, both `GravityDirection
+  (0,0,-1)` (**read live — this KILLS the zero-gravity hypothesis**), both ARM-G treated, both
+  identity controls passing:
+
+      BOT    |Accel| = 50000 (AI wander) · written (0,0,-600) · read (0,0,0) at +250 ms and EVERY
+             sample to +10 s · moved **0.000 uu** five times
+      PLAYER Accel = (0,0,0)             · written (0,600,0)  · fell to Z = -9935 · moved 23,189 uu
+
+  **[M] the bot's zero is NOT self-inflicted:** `KBSPSARMS=0x1BA0` has ARM H2 (the re-write burst,
+  bit 10) **OFF**, the only two `Velocity` writes are marker lines 218/219 (before the armed dump),
+  and the restore is line 344 — **after** all five samples.
+  ★★ **THE LEADING CANDIDATE, `[I, strong]` and UNVERIFIED:** engine `CalcVelocity`'s clamp
+  `0x035D6511-0x035D652F` writes **ZeroVector to ALL THREE components**, guarded by
+  `0x035D64F2 comisd xmm8, [.rdata 0x076B49E8 = (double)(float)1e-4]` / `0x035D650F jae`, on the
+  **ACCELERATE** branch (downstream of `Velocity += Acceleration*dt` at `0x035D64C6..0x035D64EA`).
+  `preds` are UNIQUE at both stores (independently confirmed). `xmm8` is selected by
+  `IsExceedingMaxSpeed` (`[CMCvt+0x4D0] = 0x0363BA00`, byte-matched to stock, same on both CMC
+  vtables) between `|Velocity|` and `xmm11 = max(MaxSpeed × [rbx+0x3D0], GetMinAnalogSpeed())`.
+  **That is why the pawn WITH input reaches it and the pawn WITHOUT input does not.**
+  ⚠⚠ **BUT IT DOES NOT YET EXPLAIN S140 T2 FLIGHT 3**, where the SAME bot with the SAME treatment
+  and the SAME acceleration SUSTAINED 500 uu/s and walked 13,187 uu. **Find that discriminator or
+  drop the candidate.** ⇒ **S142's first move is ONE READ: `AnalogInputModifier` / `[CMC+0x3D0]` /
+  `GetMaxSpeed()` on both pawns.** ⚠ S141 added `GravityScale`/`GravityDirection`/`MovementMode`/
+  `+0x1001`/`+0x1678` to the arm's free reads **and missed the one field the hypothesis turns on**
+  (defect S141-d).
+  ★★★★★ **T3-B ANSWERED — THE GAME'S OWN KICK IS `PendingLaunchVelocity` @ `CMC+0x5C8`.** Write 24
+  bytes; `ULokiCMC::HandlePendingLaunch` (vtable disp `0x750`, Loki `0x55AEB60`; setter `Launch`
+  disp `0x748` = `0x35E7340`) then sets `Velocity`, forces `MOVE_Falling`, sets
+  `bForceNextFloorCheck` and **zeroes the field behind itself** — nothing to restore, no `.text`
+  write, no PI hook, **no authority check on the path**. Its call site `0x035EA160` in engine
+  `PerformMovement` **DOMINATES** the `StartNewPhysics` call `0x035EB13A` (1461 → 181 reachable with
+  it removed). ⚠ ONE derivation, UNVERIFIED; settle doubles-vs-floats at `+0x5C8` and `[this+0xB2]&8`
+  in `Launch()` first. ⚠ And on the BOT it changes the kick's SOURCE, not its SURVIVAL.
+  ⚠⚠ **T3-C IS HALF-ANSWERED AND THE OTHER HALF WAS MIS-DESIGNED.** ARM K1 landed (`PLAYER storages
+  written 3/3`), but the player's `Acceleration` read `(0,0,0)` at every sample — **it has no input
+  driver at all** — so its 600 → 0 decay is correct physics and cannot discriminate "the clamp still
+  fires" from "nothing sustains it". **NOT ESTABLISHED, by my design error, not by a null.**
+  ⚠⚠ **SCOPE CORRECTION TO S140 T2 THAT MATTERS ON ITS OWN: "StartNewPhysics runs" ≠ "the physics
+  step runs".** The payload write at `0x055C244F` is in the **Loki wrapper's prologue**, upstream of
+  `jmp 0x3600990` at `0x055C2470`; engine `StartNewPhysics` has **four** further early-outs before
+  its jump table. **The 23,189 uu fall is what establishes the chain runs** — not the payload.
+  ⚠ **[M] `ULokiCMC::PerformMovement 0x055B8370` contains ZERO writes to `+0xE8/+0xF0/+0xF8`**, and
+  the `0x055B8838/3E/4A` block writes `[rsi+0x12F0]`/`[+0x1300]`, not `Velocity`.
+  ⚠ **`+0x12B0 TimeSinceFallingStart` can NEVER be a `PhysFalling` receipt** — [M] neither
+  `PhysFalling` ever calls `StartNewPhysics` (disp `0x720` absent from both call sets), so its
+  substep writer is unreachable and a 1.0× advance is expected either way. (My own [I, strong]
+  inference from it, refuted by my own follow-up before publication — defect S141-c.)
+  ★ **New offsets [M]:** `+0x1A0 GravityScale` · `+0x1D8/+0x1E8 GravityDirection` (offsets and
+  arithmetic [M]; the NAME is [I, strong]) · `+0x1F0..0x208` / `+0x210..0x228` the two gravity quats
+  (helpers `0x35F4620` grav→world, `0x35F4770` world→grav, both `mov rax,rdx` ⇒ return the out
+  buffer) · `+0x5C8 PendingLaunchVelocity` · `+0x1678` `ULokiCMC::PhysFalling`'s lateral fall-speed
+  limiter (`-1.0f` = DISABLED; ⚠ **SEVEN writers in the Loki CMC band ⇒ NOT a clean receipt**).
+  ⚠⚠ **ALL S141 ADVERSARIAL VERIFICATION WAS LOST TO API `529 Overloaded`** — 7 of 12 agents (every
+  verifier + the adjudicator) and then 4 of 4 in two focused retries. The five lane analyses are
+  **un-refuted except where they converge**, which they do 4-ways on T3-A and the gate constant.
+  ★ Partial recovery: the dead L1 verifier's own scripts (`scratchpad/s141/verify/V1/`) were re-run
+  and confirmed §1/§3/§4.1's attribution from independently written code. **Anything marked "pending
+  verification" in `docs/s141-tier3-settled.md` has ONE derivation — treat it as [I].**
+  ⚠ **Instrument defects S141-a..f** are in `docs/s141-tier3-settled.md` §9. Two generalise:
+  **a displacement scanner must be controlled on sites you already know, IN THE SAME RUN** (S141's
+  first one had two off-by-ones and reported a clean-looking wrong answer, caught only because a
+  known site came back MISSED); and **a marker line can name a value it does not write** (`[SNP] BOT
+  sentinel Velocity = (2^-10,0,0)` was hardcoded while the arm wrote `(0,0,-600)` — fixed).
+  ⚠ Health: staged on attempt 1; FK-32 at **~300 s on the 4th manual-map**, 0 crashpad / 0 `Fatal` /
+  no artifact. The `0xDEAD` series is now **7/6/4/4/4/4/4** — no dose-response, 4 is the mode.
+  ★ Nothing was lost; ⚠ **except the `dumpimage`, attempted after the samples when the client had
+  already gone. TAKE THE DUMP EARLY.**
+  ⚠⚠ **`sentinel-big 52fceb9be6de532f` and every `sentinel-*` / `gasattr-sentinel` digest HAS MOVED**
+  — S141's new free reads live inside `#if (KBSPSARMS & 0x200)`. **Re-digest before reusing any of
+  them as a gate or a control.** Gates `botai 5e47c13cf7f0a158` / `gasattr 2fcc2536e21f18e3` /
+  `gasattr-ctrl 4465ebc4d7168c03` all reproduce EXACTLY.
 - ★★★★★ **S140 (2026-08-23) — OFFLINE, ZERO LAUNCHES. THE PHYSICS-STEP "CONTRADICTION" DISSOLVED:
   THE SIX EXITS ARE COMPLETE AND EXACT, AND THE INSTRUMENT THAT POSED THE QUESTION IS INVALID.
   Read `docs/s140-tier1-cfg.md` (844 lines); its §4 and §5 govern.**
@@ -4478,7 +4598,9 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **112 tabulated instances as of S140 Tier 2** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **103 tabulated instances as of S141 Tier 3** (S141 added 7: S141-a..g) ⚠⚠ **AND THE PREVIOUS
+   FIGURE HERE WAS WRONG: this line read "112 as of S140 Tier 2" while the table held 96.** The
+   tally has now diverged FOUR times, which is exactly why this line says re-derive it — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
@@ -4507,7 +4629,7 @@ which is a bad property for a project whose value is its retraction history).
 - **`docs/<fk-n>-*-settled.md`** — the primary evidence for each settled unknown, with the
   measurements and the controls. These are ground truth; this file is a summary of them.
 - **`docs/method-rules.md`** — the two method rules above.
-- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s141.md`** (S140 Tier 2 -> S141): **`ULokiCMC::StartNewPhysics` RUNS** on both components, essentially every frame [M], measured with a pre-poisoned payload plus a 2 ms sentinel burst (396/400) -- S139's "never runs" is REFUTED. `Velocity` is ACTIVELY WRITTEN TO ZERO every frame. The wall is `CalcVelocity`'s `comisd`-against-`1.0e-4` clamp (`0x035D64F2` -> `0x035D6520 movups [rbx+0xe8], ZeroVector`), and **S141's first move is ONE READ-ONLY RPM RUN with no injection**: `MinAnalogWalkSpeed @CMC+0x290`, already wired into `tools/re/cmc_earlyout_readout.py`. ⚠ `docs/next-session-prompt-s140.md` is SUPERSEDED and its §1 sentinel recipe is DEGENERATE as written (see `docs/s140-tier2-sentinel.md` §4).
+- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s142.md`** (S141 Tier 3 -> S142): ★★★★★ **THE ENGINE MOVER CHAIN RUNS.** One 4-byte `GravityScale = 1.0f` write and the PLAYER hero FELL **23,189 uu** at terminal velocity -- from `Velocity.Z` EXACTLY ZERO ⇒ **gravity integrates from `Vz == 0` and "`Velocity == 0` stops the mover" is DEAD.** The player's non-fall was OUR OWN `sp` LIFT step zeroing `GravityScale` (`CMC+0x1A0`), which also resolves S132's dismount. **[M] the fixed-point gate is 2-D -- `Velocity.Z` is NOT zeroed.** ⇒ **The BOT is now the only thing that does not move, and it is the pawn WITH INPUT** (|Accel| 50000 vs the player's 0, same world/frame/pass). S142's first move is ONE READ: `AnalogInputModifier` + `GetMaxSpeed()` on both pawns, against engine `CalcVelocity`'s all-three-component `ZeroVector` clamp at `0x035D6511-0x035D652F` (guard `comisd` vs `(double)(float)1e-4`, on the ACCELERATE branch). ⚠ ALL S141 adversarial verification was lost to API 529s -- anything marked "pending verification" in `docs/s141-tier3-settled.md` has ONE derivation. ⚠ `docs/next-session-prompt-s141.md` and `docs/next-session-prompt-s141-tier3.md` are SUPERSEDED.
   ⚠ **Previous: `docs/next-session-prompt-s140.md`** (S139 → S140): the movement wall is down to **THREE INSTRUCTIONS**. `ULokiCMC::PerformMovement` RUNS with a real DeltaTime and reaches its Super unconditionally; the ENGINE `PerformMovement` then bails before `StartNewPhysics` (whose latch reads 0 on both pawns). Two of its three gates are measured passing (`MovementMode` 3, `Mobility` Movable); the third — **`UpdatedComponent->IsSimulatingPhysics()` at `0x035E9FB5`/`jne 0x035EB7CF`** — has never been read. **That one read is the whole next session.** ⚠ `docs/next-session-prompt-s139.md` is superseded and its §1 plan is REFUTED: `play` is **not** a moving control (it writes `CMC+0xE8`/`+0x328` directly and enables no tick), and the bot/player diff it proposed comes back **identical on every structural field** — the question was mis-framed for the third time in the same shape.
   ⚠ `docs/next-session-prompt-s137.md` is the PREVIOUS handoff and its §1.2 arm is the refuted one — keep it as the dated record, do not follow it.
 

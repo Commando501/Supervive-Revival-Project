@@ -1,3 +1,13 @@
+> ⚠⚠⚠ **SUPERSEDED BY S141 TIER 3 (2026-08-23/24). DO NOT WORK FROM THIS PLAN.**
+> Read **`docs/s141-tier3-settled.md`** then **`docs/next-session-prompt-s142.md`**.
+> What changed: **[M] the engine mover chain RUNS** — one 4-byte `GravityScale = 1.0f` write and the
+> PLAYER hero fell **23,189 uu** at terminal velocity from `Velocity.Z` **exactly zero**, so gravity
+> integrates from `Vz == 0` and *"`Velocity == 0` stops the mover"* is dead. **The player's non-fall
+> was OUR OWN `sp` LIFT step zeroing `GravityScale` (`CMC+0x1A0`)**, which also resolves S132's
+> dismount. **[M] the fixed-point gate is 2-D — `Velocity.Z` is NOT zeroed.** ⇒ the BOT is now the
+> only thing that does not move, and it is the pawn **with input**. This file is kept as the dated
+> record of what a past session was told; editing it would falsify that record.
+
 # S141 — THE BOT WALKS. `Velocity == 0` is a FIXED POINT. Find what kicks it off zero.
 
 > ⚠⚠ **SUPERSEDED by `docs/next-session-prompt-s141-tier3.md`.** This file was written MID-Tier-2,

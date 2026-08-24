@@ -286,6 +286,32 @@ the **same bot** with the **same ARM G treatment** and the **same AI acceleratio
 500 uu/s and walking 13,187 uu.* Under this claim the clamp should have fired there too.
 **Until that discriminator is found, §4.1 is `[I, strong]`, not `[M]`.**
 
+### 4.1a ★ INDEPENDENT CONFIRMATION, RECOVERED FROM A DEAD VERIFIER'S OWN SCRIPTS
+
+The first workflow's L1 verifier died to an API error **after** writing its scripts to
+`scratchpad/s141/verify/V1/` and **before** writing any conclusion. Those scripts are read-only and
+were written by different code than mine, so re-running them is a genuine second instrument. All of
+its controls pass (DARK `0x5A6AC40` = 0/4096, folds 5/5, eight LIT controls). Results:
+
+* `vcvzero.py` reproduces the CalcVelocity clamp block byte-for-byte and adds
+  **`preds(0x035D6511) = ['0x35D650F']`** and **`preds(0x035D6520) = ['0x35D6518']`** — a
+  **unique-predecessor chain**, so the `ZeroVector` write is reached from **only** the
+  `jae 0x35d6534` at `0x035D650F`. That is an independent confirmation of §4.1's attribution.
+* `vclamp.py` likewise gives **`preds(0x035ED998) = ['0x035ED996']`**,
+  `preds(0x035ED9AC) = ['0x035ED9A9']`, `preds(0x035ED9B3) = ['0x035ED9AC']` — the §1 zeroing block
+  is uniquely reached from the `ja` at `0x035ED996`.
+* `vdom.py` independently reproduces **exactly the two TRUE EXITS** dominating gravity
+  (`0x035EC881`, `0x035EC97C`), classifying the other four dominating branches as RECONVERGING — by
+  successor-reachability rather than my edge-removal. Two methods, same answer.
+* ★★ **`vdom2.py` — NEW, and it strengthens §1 and §3.** Re-rooted at the loop head `0x035EC967`
+  (i.e. on a *second* substep iteration):
+  ```
+  Is the SizeSq2D clamp write 0x035ED9BB dominated by the gravity write 0x035ECCFB?  True
+  Is the gravity write dominated by the clamp write?                                 False
+  ```
+  ⇒ **[M] gravity is integrated BEFORE the `SizeSq2D` clamp on every iteration.** The clamp can
+  only zero the horizontal *afterwards*; it can never prevent gravity from having been applied.
+
 ### 4.2 The read that settles it, and it is one read
 
 **`AnalogInputModifier` and `GetMaxSpeed()` on the bot.** `MaxInputSpeed = MaxSpeed ×

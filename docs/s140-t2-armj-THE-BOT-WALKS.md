@@ -182,6 +182,29 @@ that is worth keeping for any future *inertness* argument — but for THIS gate 
 ⇒ ★★ **ARM H's poison-the-payload design is what saved the flight.** Had it depended on the
 sentinel surviving, it would have returned a false negative for a reason nobody had identified yet.
 
+★★★★★ **SETTLED NEGATIVELY AT S141 [M], four independent derivations
+(`docs/s141-tier3-settled.md` §1): `Velocity.Z` is NOT zeroed.** The store at `0x035ED9AC` is
+`movups` = **16 BYTES** over a 24-byte `FVector` of **DOUBLES**, so the gravity-space Z at
+`[rbp+0x178]` survives and is rotated back verbatim by `0x35F4620`; `xmm1` at `0x035ED9C3` is loaded
+at `0x035ED9BE` from that transform's **OUTPUT**, not from a zero. **THE FIXED POINT IS 2-D, so it
+does NOT explain the no-fall** — and **[M] gravity is integrated BEFORE this clamp on every
+iteration** (the clamp write is dominated by the gravity write, not vice versa), so the clamp can
+never suppress a fall.
+
+⚠⚠ **ALSO CORRECTED AT S141: the gate constant is `(double)(float)1e-4 * 10.0`**
+(= `UE_KINDA_SMALL_NUMBER`(float) × 10 = `0.00099999997473787516`), **NOT `(double)(float)1e-3`**
+(= `0.0010000000474974513`). The decimal string quoted above is correct; only its **identification**
+was wrong. Stock UE's guard is `Velocity.SizeSquared2D() <= UE_KINDA_SMALL_NUMBER * 10.f`.
+
+⚠⚠ **AND §2 ABOVE IS HALF-REFUTED: the PLAYER's non-fall was SELF-INFLICTED.** `sp`'s LIFT-TO-SEE
+step (`tools/sigbypass-mod/tutorial_launch.cpp:12877-12890`) sets `GravityScale` (`CMC+0x1A0`) to
+`0.0f`, and `docs/s138-flight9-movement-not-simulating.md:17` already recorded BOT 1.000 / PLAYER
+0.000. Restoring it to `1.0f` at S141 made the player fall **23,189 uu** at terminal velocity — from
+`Velocity.Z` **exactly zero**, so gravity integrates from `Vz == 0`. **The "real GAS-treatment
+dependency in the MOVER" inferred in §2 survives for the HORIZONTAL DECAY only; the non-fall half is
+refuted.**
+
+The superseded text was:
 ⚠ **[I], not [M]: whether `Velocity.Z` is zeroed too.** The Z store takes `xmm1`, and this document
 does not establish `xmm1 == 0` there. Flight 1 read `(0,0,0)` including Z, and flight 3 shows Z
 accumulating to terminal velocity once above the gate — consistent with Z also being zeroed below
