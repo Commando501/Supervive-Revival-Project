@@ -2,12 +2,12 @@ S141 TIER 3 — ARM K PRE-REGISTRATION
 Written BEFORE the injection. Committed before the client is launched. Do not edit after.
 
 ARTIFACT   tools/sigbypass-mod/build/tutorial_launch_armk.dll
-           .text RAW  99b621298cac3dcb   VSIZE 3262edab81c500f9   rawsize 151552
+           .text RAW  8278c6031d05756c   VSIZE 5f2a0283021acc93   rawsize 151552
 CONTROL    tutorial_launch_armk_ctrl.dll
            .text RAW  3f7323f6f4ba3e57   VSIZE a5e9c192b417cca7   rawsize 150528
            VERIFIED DISTINCT (an A/B against a copy of itself has burned a live run in this repo).
 BUILD      build.ps1 -Name tutorial_launch -Variant armk
-           KBSPSARMS=0x1BA0  KSHSENTX=0.0  KSHSENTZ=-37.0  KSHPLRY=600.0
+           KBSPSARMS=0x1BA0  KSHSENTX=0.0  KSHSENTZ=-600.0  KSHPLRY=600.0
            KSHPLRGRAV=1.0    KBSGASPLAYER=1
 GATES      botai 5e47c13cf7f0a158 · gasattr 2fcc2536e21f18e3 · gasattr-ctrl 4465ebc4d7168c03
            ALL THREE reproduce EXACTLY from the edited source. verify_dll.py VERDICT: PASS,
@@ -41,7 +41,7 @@ S141 established OFFLINE, twice independently (session lead + lane L1, agreeing 
     the jump table. NOTHING measured so far establishes that PhysFalling was ever ENTERED.
 
 ================================================================================================
-ARM A — THE BOT.  Velocity = (0, 0, -37.0).  Purely vertical. SizeSq2D == 0, maximally BELOW the
+ARM A — THE BOT.  Velocity = (0, 0, -600.0).  Purely vertical. SizeSq2D == 0, maximally BELOW the
                   gate. The bot is already ARM-G treated and reads GravityScale 1.000 (S138).
 ================================================================================================
 
@@ -52,14 +52,14 @@ P1  Z SNAPS TO EXACTLY 0.0 within the first sample
 P2  Z GROWS MORE NEGATIVE, toward -4000, and the pawn TRANSLATES DOWNWARD, accelerating
       -> T3-A CONFIRMED LIVE (a Z-only velocity survived the 2-D gate) **and** gravity
          integrates **and** PhysFalling is entered. The non-fall then requires a reason why a
-         velocity of EXACTLY zero is different from -37, which no gate found offline supports.  [M]
+         velocity of EXACTLY zero is different from -600, which no gate found offline supports.  [M]
 
-P3  Z STAYS EXACTLY -37.0 and the pawn TRANSLATES DOWNWARD at a CONSTANT ~37 uu/s
+P3  Z STAYS EXACTLY -600.0 and the pawn TRANSLATES DOWNWARD at a CONSTANT ~600 uu/s
       -> the mover RUNS and moves the pawn, but gravity contributes NOTHING.
          ⇒ Gravity is statically zero. Read GravityDirection@0x1D8 and GravityScale@0x1A0 in the
          same dump to say which. This is lane L1's hypotheses 1/2.                             [M]
 
-P4  Z STAYS EXACTLY -37.0 and the pawn DOES NOT MOVE AT ALL
+P4  Z STAYS EXACTLY -600.0 and the pawn DOES NOT MOVE AT ALL
       -> the mover is not running on this pawn: PhysFalling is not entered.
          ⇒ lane L1's hypothesis 3, and the scope error above is the whole story.               [M]
 
@@ -106,7 +106,7 @@ Q2  DOES THE PLAYER'S +Y VELOCITY SUSTAIN?
         The marker prints that count explicitly.
 
 Q3  CROSS-CONTAMINATION CONTROL. The bot is kicked on Z, the player on Y. If the BOT ever shows a
-    non-zero Y matching 600, or the PLAYER shows a Z matching -37.0, the CMC resolution is wrong
+    non-zero Y matching 600, or the PLAYER shows a Z matching -600.0, the CMC resolution is wrong
     and THE RUN IS VOID.
 
 ================================================================================================

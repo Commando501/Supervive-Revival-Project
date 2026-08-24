@@ -1,31 +1,31 @@
-import sys, capstone
-sys.path.insert(0,r'G:/git/Supervive Revival Project/scratchpad/s141/verify')
-from vimg import V
-
-md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-md.detail = True
-
-def rd(v, start, end):
-    """Recursive descent CFG from start, bounded to [start,end)."""
-    seen={}; work=[start]
-    UNC={capstone.x86.X86_INS_JMP, capstone.x86.X86_INS_RET, capstone.x86.X86_INS_INT3,
-         capstone.x86.X86_INS_UD2}
-    while work:
-        a=work.pop()
-        while True:
-            if a in seen or not (start<=a<end): break
-            try: i=next(md.disasm(v.read(a,16), a))
-            except StopIteration: seen[a]=None; break
-            seen[a]=i
-            nxt=a+i.size
-            grp=set(i.groups)
-            if i.id in (capstone.x86.X86_INS_RET, capstone.x86.X86_INS_INT3, capstone.x86.X86_INS_UD2):
-                break
-            if capstone.x86.X86_GRP_JUMP in grp:
-                op=i.operands[0]
-                if op.type==capstone.x86.X86_OP_IMM:
-                    t=op.imm
-                    if start<=t<end and t not in seen: work.append(t)
-                if i.id==capstone.x86.X86_INS_JMP: break
-            a=nxt
-    return seen
+import sys, struct
+sys.path.insert(0,'G:/git/Supervive Revival Project/scratchpad/s141/tools')
+from peimg import Img
+import capstone
+im=Img(r"G:/git/Supervive Revival Project/dumps/merged14.dump.exe")
+IB=im.imagebase
+md=capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+md.detail=True
+def dis(rva,n=80,stop_ret=True):
+    code=im.read(rva,n*16)
+    cnt=0
+    for i in md.disasm(code, rva):
+        rip=i.address+i.size
+        extra=''
+        # resolve rip-relative
+        for op in i.operands:
+            if op.type==capstone.x86.X86_OP_MEM and op.mem.base==capstone.x86.X86_REG_RIP:
+                t=rip+op.mem.disp
+                extra=f"   ; -> {t:#x}"
+                try:
+                    extra+=f" bytes={im.read(t,8).hex()}"
+                except Exception: pass
+        print(f"  {i.address:#09x}  {i.bytes.hex():<24s} {i.mnemonic:<8s} {i.op_str}{extra}")
+        cnt+=1
+        if cnt>=n: break
+        if stop_ret and i.mnemonic in ('ret','jmp') and i.mnemonic=='ret': break
+if __name__=='__main__':
+    rva=int(sys.argv[1],16); n=int(sys.argv[2]) if len(sys.argv)>2 else 40
+    sr = (len(sys.argv)<=3)
+    print(f"=== {rva:#x} page_nonzero={im.page_nonzero(rva)}/4096")
+    dis(rva,n,sr)
