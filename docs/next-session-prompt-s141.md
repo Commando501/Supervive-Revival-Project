@@ -22,7 +22,10 @@ S140 Tier 2 measured, on two staged clients:
     Acceleration = ControlInputVector x 50000, player untreated non-zero in 0/20    [M, S139 f4]
     ULokiCMC::PerformMovement runs with a real DeltaTime (+0x12B0 at 1.002x)        [M, S139/S140]
     *** ULokiCMC::StartNewPhysics 0x055C2430 RUNS, bot AND player, ~every frame *** [M, S140 T2]
-    *** Velocity is ACTIVELY COMPUTED AND WRITTEN TO ZERO every frame ***           [M, S140 T2]
+    something WRITES the bot Velocity once it holds a small non-zero value        [M, S140 T2]
+      ^ QUALIFIED: both flights put that value there. Whether anything writes an
+        EXACTLY-ZERO Velocity is NOT ESTABLISHED -- and a verifier found a mechanism
+        by which the exactly-zero case SKIPS the write. See section 2, MOVE 2.
     Velocity == (0,0,0).  Translation 0.00 uu.  A MOVE_Falling pawn does not fall.  [M]
 
 ⚠⚠ **S139's `[M]` "StartNewPhysics has NEVER run on either component" is REFUTED.** Tier 1 showed
@@ -138,6 +141,17 @@ longer a hypothesis to test but a site to find. Start from what the verifier est
 - ⚠⚠ **`CalcVelocity` is called up to FOUR times per `PhysFalling`** — `0x035ECB75`, `0x035ECBD8`,
   `0x035ED549`, `0x035ED5D5` — and `NewFallVelocity` (disp `0x7A0`) **three** times (`0x035ECCEF`,
   `0x035ED617`, + one). **So "the wall is ONE compare" was wrong on the count too.**
+- ★★ **A NAMED CANDIDATE SITE, from the lane-2 verifier:** in engine `PhysFalling`, a `2^-10`
+  velocity gives `SizeSq = 9.5367431640625e-07` (`0x035ED9B3 call 0x035F4620`) and then
+  **`0x035ED9BB movups [rsi],xmm0` + `0x035ED9C3 movsd [rsi+0x10],xmm1` write `Velocity`** on the
+  `<= 1e-3` arm. ⚠ It did **not** establish that `0x035ED98E` is reached on a given frame.
+- ★★★ **AND THE STANDING NULL MAY BE A FIXED POINT.** On the below-tolerance arm of a
+  `GetSafeNormal`-shaped block the three `ucomisd` at `0x055B8838/3E/4A` all fall through to
+  `je 0x55B8865` and **the write is SKIPPED**. If `Velocity == 0` skips the write path, then
+  zero ⇒ no write ⇒ stays zero, which is a **much simpler wall** than a routine that computes zero
+  — and it predicts that a LARGE injected `Velocity` would persist and move the pawn. **That is a
+  cheap, decisive follow-up arm** (⚠ and deliberately NOT the inert `2^-10`: this experiment needs
+  a value ABOVE the tolerance, so it perturbs by design and must be flown as such).
 - **`GetGravityZ 0x055AB8C0` (disp `0x4C0`) and `NewFallVelocity 0x055B6AD0` (disp `0x7A0`) ARE Loki
   overrides.** A `MOVE_Falling` pawn with `GravityScale 1.000` that does not fall is a standing
   unexplained phenomenon. **★ Read `GetGravityZ` FIRST** — if it returns 0, the no-fall observation

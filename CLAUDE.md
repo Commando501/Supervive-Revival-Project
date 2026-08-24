@@ -1855,8 +1855,20 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   **vptr == `base+0x088F8570`** on both ⇒ it really is a `ULokiCMC`, so disp `0x720` really is
   `0x055C2430`. ⚠ Had it been the engine base, disp `0x720` is `0x03600990` and nothing touches
   `+0x16C8`/`+0x16B0` — the whole test would have been void; the probe checks for exactly that.
-  ★★★★★ **⇒ THE WALL IS NOW DOWNSTREAM. `Velocity` is measurably WRITTEN TO ZERO, so a writer exists
-  and is on the `PhysFalling`/`CalcVelocity` path — that is a SITE TO FIND, not a hypothesis to test.**
+  ★★★★★ **⇒ THE WALL IS NOW DOWNSTREAM.** ⚠⚠ **BUT QUALIFY THE SECOND HEADLINE: "`Velocity` is
+  actively written to zero every frame" IS WEAKER THAN IT LOOKS.** Both flights put the sentinel
+  there themselves, and an adversarial verifier established a mechanism by which **a small non-zero
+  `Velocity` CONVERTS A NO-WRITE INTO A WRITE** — below tolerance the three `ucomisd` at
+  `0x055B8838/3E/4A` all fall through to `je 0x55B8865` and **the write is SKIPPED**; and in engine
+  `PhysFalling`, `2^-10` gives `SizeSq 9.54e-07` (`0x035ED9B3 call 0x035F4620`) after which
+  **`0x035ED9BB movups [rsi],xmm0` + `0x035ED9C3 movsd [rsi+0x10],xmm1` write `Velocity`** on the
+  `<= 1e-3` arm. ⇒ **[M] something writes the BOT `Velocity` once it holds a small non-zero value;
+  NOT ESTABLISHED that anything writes it when it is EXACTLY ZERO.** The `StartNewPhysics` result
+  is UNAFFECTED — it rests on the POISON being overwritten, and the PLAYER arm is entirely
+  velocity-write-free. ★★ **This may make the standing null a FIXED POINT (zero ⇒ no write ⇒ stays
+  zero), a much simpler wall than a routine that computes zero — and it NAMES A CANDIDATE SITE
+  (`0x035ED9BB`/`0x035ED9C3`, engine `PhysFalling`).** ⚠ Whether `0x035ED98E` is reached on a given
+  frame is NOT established.
   ⚠⚠⚠ **AND THE OBVIOUS CANDIDATE IS [S], WITH THE EVIDENCE LEANING AGAINST IT — do not lead with it.**
   An offline lane transcribed `CalcVelocity`'s input clamp: `0x035D64F2 comisd` vs **`1.0e-4`**
   (`.rdata 0x076B49E8`) → `0x035D6520 movups [rbx+0xe8], ZeroVector` + `0x035D6527 movsd [rbx+0xf8]`,

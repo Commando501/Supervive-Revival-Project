@@ -24,7 +24,9 @@ Evidence: `docs/s140-t2-BASELINE.txt` · `docs/s140-t2-marker-armh.txt` · `docs
 >
 > ⇒ **The whole movement chain runs end to end** — `TickComponent` → `ControlledCharacterMove` →
 > `PerformMovement` → `StartNewPhysics` — with `Acceleration = ControlInputVector × 50000`.
-> **And `Velocity` is actively COMPUTED AND WRITTEN every frame, to ZERO.**
+> **And something WRITES the bot's `Velocity` once it holds a non-zero value** — ⚠ but see §1.5:
+> both flights put that value there themselves, and an exactly-zero `Velocity` may SKIP the write
+> path entirely, which would make the standing null a FIXED POINT rather than a computed zero.
 > The wall is downstream of `StartNewPhysics`, in `PhysFalling` / `CalcVelocity`.
 
 ---
@@ -94,6 +96,36 @@ it is the whole reason the sampler runs on the worker thread (§3).
 `StartNewPhysics` was running every frame. **That is Tier 1's retraction confirmed by observation
 rather than by disassembly alone.** The old S139 inference (`latch == 0 ⇒ never ran`) is now
 empirically false, not just unsound.
+
+
+### 1.5 ⚠⚠ QUALIFICATION — "`Velocity` is actively written to zero" IS WEAKER THAN IT LOOKS
+
+An adversarial verifier, working offline and without sight of the flight, established a mechanism
+that bears directly on this: **a small non-zero `Velocity` can CONVERT A NO-WRITE INTO A WRITE.**
+On the below-tolerance arm of a `GetSafeNormal`-shaped block the three `ucomisd` at
+`0x055B8838 / 0x055B883E / 0x055B884A` all fall through to `je 0x55B8865` and **the write is
+SKIPPED**; above tolerance it executes. And in engine `PhysFalling`, `2^-10` gives
+`SizeSq = 9.5367431640625e-07` (`0x035ED9B3 call 0x035F4620`), after which
+**`0x035ED9BB movups [rsi],xmm0` + `0x035ED9C3 movsd [rsi+0x10],xmm1` write the result into
+`Velocity`** on the `<= 1e-3` arm.
+
+⇒ **What is established, precisely:**
+
+| claim | grade |
+|---|---|
+| `StartNewPhysics` runs on both components | **[M]** — rests on the POISON being overwritten, which is independent of any `Velocity` write, and the PLAYER arm is entirely velocity-write-free |
+| something writes the BOT `Velocity` when it holds a small non-zero value | **[M]** |
+| anything writes `Velocity` when it is EXACTLY ZERO | **NOT ESTABLISHED** — and the mechanism above gives a specific reason the exactly-zero case may SKIP the write |
+
+⚠ **Both flights put the sentinel there themselves**, so every observation of `Velocity` changing is
+made in a world we perturbed. The player, whose `Velocity` we never touched, stayed `(0,0,0)` —
+which is equally consistent with "never written" and with "written to zero".
+
+★★ **This is favourable in one direction: it may make the standing phenomenon a FIXED POINT** —
+zero ⇒ no write ⇒ stays zero — which would be a different and much simpler wall than a routine that
+computes zero. **And it hands the next session a NAMED CANDIDATE SITE**: `0x035ED9BB` /
+`0x035ED9C3` inside engine `PhysFalling`. ⚠ The verifier is explicit that it did **not** establish
+`0x035ED98E` is *reached* on a given frame.
 
 ---
 
