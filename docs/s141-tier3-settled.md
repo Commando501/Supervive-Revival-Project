@@ -376,6 +376,52 @@ mechanism now hinges on.** That is the honest gap. It is a read-only RPM read on
 so on the bot #1 changes the *source* of the kick, not its *survival*. #1's value is that it is
 game-native, authority-free and self-restoring; the zeroing (§4) is a separate, upstream problem.
 
+### 5.1 THE ENGINE KICK SURFACE — graded by hand after lane L3 died
+
+⚠ **Lane L3 (the engine kick surface) was lost to an API error and its output is absent.** An audit
+against the brief's own target list showed that the surviving lanes had incidentally covered
+`LaunchCharacter` / `Launch` / `HandlePendingLaunch` / `AddImpulse` / `SetMovementMode` (via L5's
+image-wide census) but that **`DoJump`, `CheckJumpInput`, `CanJump`, `AddForce`, `AddRadialImpulse`
+and root motion had 0 mentions across every surviving lane.** Graded here from the `.data`
+`{name_ptr, exec_thunk, impl}` record table.
+
+**Instrument control first:** the reader was validated against the repo's recorded triple —
+`.data 0x09BC9AD0` = `{"GetRecentVelocity", thunk 0x0530C7E0, impl 0x0530AC10}` — and reproduced
+both, confirming the layout is `name @+0x00, thunk @+0x08, impl @+0x10`.
+⚠ **`.rdata` rows matching a name pointer are a DIFFERENT table** (their `+0x10` decodes as ASCII —
+the next record's name). Only `.data` rows are records. My first pass printed those `.rdata` rows as
+if they were records; that is defect **S141-i**.
+
+| UFunction | exec thunk | impl | vtable disp | ULokiCMC | engine CMC | Loki override? |
+|---|---|---|---|---|---|---|
+| `CanJump` | `0x354E0D0` REAL | `0x3520580` **REAL** | — | — | — | — |
+| `CanJumpInternal` | `0x354E140` REAL | `0x3520580` **REAL** | — | — | — | ⚠ **same impl as `CanJump`** |
+| `AddForce` | `0x331DC90` REAL | `0x3317490` **REAL** (not a dispatch stub) | — | — | — | — |
+| `AddImpulse` | `0x331E260` **DARK** | `0x3316C58` REAL → dispatch | `0x6F8` | `0x3604B60` REAL | `0x3604B60` | no |
+| `AddRadialImpulse` | `0x331E770` **DARK** | `0x3316C88` REAL → dispatch | `0x718` | `0x35D3A30` REAL | `0x35D3A30` | no |
+| `AddRadialForce` | `0x331E590` **DARK** | `0x3316CB8` REAL → dispatch | `0x738` | **`0x55AC000` REAL** | `0x35E3890` | **YES** |
+| `Jump` | `0x354FB00` REAL | `0x3316B08` REAL → dispatch | `0x958` | **`0x55B2B20` REAL** | `0x35E6E00` | **YES** |
+| `StopJumping` | `0x3554000` REAL | `0x3316B14` REAL → dispatch | `0x960` | `0x35F1DE0` REAL | `0x35F1DE0` | no |
+| `SetMovementMode` | `0x3609180` REAL | `0x35D09F0` REAL → dispatch | `0x670` | **`0x55C0AC0` REAL** | `0x35FACD0` | **YES** |
+
+**[M] ZERO FOLDS. Every impl and every resolved vtable target is REAL code.** So none of the engine
+kick surface is stripped on this client.
+
+★ **A free cross-validation of L5:** `SetMovementMode` resolves to vtable disp **`0x670`**, which is
+exactly the displacement L5 independently transcribed in `HandlePendingLaunch`
+(`0x55AEBE2 call [vt+0x670], edx = 3`). Two lanes, two routes, same number.
+
+⚠ **Three exec thunks are DARK** (`AddImpulse`, `AddRadialImpulse`, `AddRadialForce`) — reflected but
+never executed in any captured image, so the **S55 direct-thunk route cannot read them today** even
+though the impl is REAL. Reach those through the vtable displacement instead.
+
+⚠ **STILL NOT GRADED — the honest residual:** `DoJump`, `CheckJumpInput`, `LaunchCharacter` and
+`HasAnimRootMotion` have **no whole ASCII name string** in `.rdata`/`.data`, so they are not in the
+reflected record table by that name and need a different route (vtable neighbourhood, or an xref
+from `HandlePendingLaunch` / `Jump`'s Loki override `0x55B2B20`). ⚠ `LaunchCharacter` **is**
+`BlueprintCallable` in stock UE, so its absence as ASCII is itself worth one check — FK-13 records
+that UHT names are prefix-stripped and that some are stored wide.
+
 **Refuted / de-ranked as kick routes:** the S132 dismount as a *velocity* source (it is #2, gravity);
 the `PhysFalling` `SizeSq2D` gate as a 3-D fixed point (it is 2-D); `ULokiCMC::PhysCustom`
 (`0x55B88E0`, disp `0x990`) zeroes velocity but is not on our path (mode 7 only).
@@ -449,6 +495,38 @@ Full design: `scratchpad/s141/lanes/L6-gas-per-instance.md` §B. Summary:
    arithmetic [M]; the *name* is [I, strong] — from the shape, not a UHT record) ·
    `+0x1F0..0x208` / `+0x210..0x228` the two gravity quats · `+0x1678` `ULokiCMC::PhysFalling`'s
    lateral fall-speed limiter (`-1.0f` = disabled) · `+0x5C8` `PendingLaunchVelocity`.
+
+---
+
+## 8a. ⚠ WHAT TIER 3 DID **NOT** CLOSE — audited against the brief's own task list
+
+**T3-A: COMPLETE.** `[M]`, four independent derivations, plus a live pre-registered test.
+**T3-D: COMPLETE** as specified (scoped, deliberately not built).
+
+**T3-B: SUBSTANTIALLY complete, with a named residual.** Lane L3 — the engine kick surface — died to
+an API error, and an audit showed that of the brief's explicit target list the surviving lanes had
+**0 mentions** of `DoJump`, `CheckJumpInput`, `CanJump`, `AddForce`, `AddRadialImpulse` and root
+motion. Nine of those were then graded by hand (§5.1 above): **zero folds, every impl REAL.**
+**Still ungraded: `DoJump`, `CheckJumpInput`, `LaunchCharacter`, `HasAnimRootMotion`** — no whole
+ASCII name string, so they need the vtable-neighbourhood route rather than the record table.
+
+**T3-C: HALF complete, and the missing half is a design error rather than a null.** Q1 (does the
+player fall) answered decisively YES. Q2 (does the GAS port let it *sustain* velocity) is **NOT
+ESTABLISHED**: the player's `Acceleration` read `(0,0,0)` at every sample because it has no input
+driver at all, so its 600 → 0 decay is correct physics and discriminates nothing. Fixing it means
+giving the player acceleration first (`AddMovementInput`, or an AI controller), then re-reading.
+
+**PROCESS: the adversarial-verification layer was lost entirely** — 7 of 12 agents in the main
+workflow (every verifier plus the adjudicator) and then 0 of 4 in each of two focused retries, all
+to API `529 Overloaded`. Partial recovery: the dead L1 verifier's own scripts were still on disk and
+re-running them confirmed §1, §3 and §4.1's attribution from independently written code, and
+produced the new gravity-before-clamp ordering fact. **Every claim in this document marked "pending
+verification" has had exactly one derivation and should be read as `[I]`.**
+
+⇒ **Carried into S142** (`docs/next-session-prompt-s142.md`): the axis A/B + the
+`AnalogInputModifier` read (MOVE 1/1a), the `CalcVelocity` writer table (MOVE 2), T3-C's sustaining
+half (MOVE 3), the four ungraded kick targets, and re-running the four verifiers if the API is
+healthy.
 
 ---
 
