@@ -1,0 +1,23 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BS] BUILDSTAMP=S136-guardfix-1
+[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.
+[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never
+[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT
+[BS] use it: Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial, and [M] it has ZERO
+[BS] ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's own
+[BS] ubergraph) -- so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped
+[BS] SpawnPlayer. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7062454A0 stub=0x1A3949C1160 funcCls=0x1A2276FB000 gameTid=7892
+[BS] ---- A0: BASELINE WORLD SCAN (read-only; NO CALL) ----
+[FS] arm: swapped=17563 BP UFunctions  (scan 3500 ms over 154896 objects, 34253 UFunctions total) -- NO .text WRITE
+[BS]   heroCand[0] 0x1A38A7EC940 'LokiHeroCharacterGrid' cls='LokiHeroCharacterGrid' root=0x0 locOff=0x158 -> no readable location
+[BS]   heroCand[1] 0x1A3915E8020 'BP_HERO_Ronin_C' cls='BP_HERO_Ronin_C' root=0x1A3916C7910 locOff=0x158 -> USABLE
+[BS] census A0       BotOrAIController-chain=0  LokiHeroCharacter-chain=2  (136489 objects, 1024 classes memoised, 3985 ms)
+[BS] hero candidates: 2; chosen=0x1A3915E8020
+[BS] ---- RESOLVE ----
+[BS] playerHero/WorldContext=0x1A3915E8020 'BP_HERO_Ronin_C'
+[BS]   heroLoc = (0.0, 0.0, 13240.0)
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)

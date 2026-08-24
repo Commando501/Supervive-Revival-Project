@@ -16019,7 +16019,14 @@ static void BsPsSentinel(){
     if(LooksLikePtr(g_shBotCmc)&&SafeWritable((void*)(g_shBotCmc+0xE8),24)){
         memcpy((void*)(g_shBotCmc+0xE8),kShSentinel,24);
         g_shSentinelOK=ShEq3(g_shBotCmc+0xE8,kShSentinel);
-        Markerf("[SNP] BOT sentinel Velocity = (2^-10, 0, 0) -> readback %s\r\n",
+        // ⚠ S141 INSTRUMENT DEFECT, FIXED HERE. This line used to print a HARDCODED
+        // "(2^-10, 0, 0)" while writing whatever kShSentinel holds. Under ARM K
+        // (KSHSENTX=0.0, KSHSENTZ=-600.0) it therefore announced (2^-10,0,0) while writing
+        // (0,0,-600) -- a message naming a value it does not write. The RAW/dec dump two lines
+        // later carried the truth, which is the only reason the flight was interpretable.
+        // Print the ACTUAL vector.
+        Markerf("[SNP] BOT sentinel Velocity = (%.10g, %.10g, %.10g) -> readback %s\r\n",
+                kShSentinel[0],kShSentinel[1],kShSentinel[2],
                 g_shSentinelOK?"OK":"*** FAILED ***");
     } else if(LooksLikePtr(g_shBotCmc)) Marker("[SNP] BOT Velocity NOT WRITABLE -> no sentinel\r\n");
 
