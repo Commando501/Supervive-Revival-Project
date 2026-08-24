@@ -633,6 +633,16 @@ $Variants = @{
         # The PLAYER hero is deliberately untreated in both, as the within-run specificity control.
         'gasattr'             = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x1A0')
         'gasattr-ctrl'        = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x0A0')
+        # S140 Tier 2 -- ARM H: the payload-poison / sentinel test. Does ULokiCMC::StartNewPhysics
+        #   0x055C2430 actually execute? S139's answer rested on CMC+0x16C8, which S140 Tier 1
+        #   showed is NOT a latch (cleared every frame by vtable disp 0xA50), so it reads 0 in
+        #   every world and settles nothing. ARM H poisons the DURABLE payload at +0x16B0 instead.
+        #   = gasattr (D+F+G) + bit9. ARM G stays IN so the bot's Acceleration is still non-zero;
+        #   the question is what the movement chain does with it.
+        'gasattr-sentinel'    = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x3A0')
+        # ARM H with the GAS port compiled OUT: separates 'StartNewPhysics runs' from 'it runs
+        # only because ARM G gave the bot a non-zero Acceleration'. Single variable vs the above.
+        'sentinel-nogas'      = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x2A0')
         # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
         # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
         'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')

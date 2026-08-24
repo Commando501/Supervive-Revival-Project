@@ -100,13 +100,6 @@ O = {
     "char.ascstore":  0xF00, "char.attrstore": 0xF08, "char.movEnabled": 0xB59,
     "ctl.pawn":       0x3F8, "ctl.gate": 0x6A0,   # +0x6A0 is on the CONTROLLER, not the character
     "ctl.randomdir":  0x658,
-    # ---- S140 Tier 2 additions ----
-    "cmc.world":      0xC0,     # UActorComponent::WorldPrivate -- engine PerformMovement exit 2
-                                #   input, NEVER read live by anyone before S140 (Tier 1 1.6)
-    "cmc.jumpapex":   0x3DC,    # NumJumpApexAttempts
-    "cmc.maxsimstep": 0x3E0,    # MaxSimulationTimeStep
-    "cmc.maxsimiter": 0x3E4,    # MaxSimulationIterations -- engine StartNewPhysics 0x036009B5
-                                #   cmp r8d,[rcx+0x3e4] / jge is a FOURTH early-out, in no S139 doc
 }
 
 k32 = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -361,17 +354,6 @@ def read_side(pawn, ctl, tag):
     r["R10.InternalData@0x60"] = idp
     r["R10.bRegistered(*InternalData bit0)"] = ((u32(idp) or 0) & 1) if lp(idp) else "InternalData NULL => NEVER REGISTERED"
     # misc
-    # ---- S140 Tier 2: RAW FIRST. A formatted double print hides a signed zero, and that exact
-    #      defect cost S139 flight 3 its finding for an hour. Record bytes; derive afterwards.
-    r["S140.payload@0x16B0 RAW"] = hex24(cmc + O["cmc.velsnap"])
-    r["S140.Velocity@0xE8 RAW"] = hex24(cmc + O["cmc.velocity"])
-    r["S140.WorldPrivate@0xC0"] = p(cmc + O["cmc.world"])
-    r["S140.NumJumpApexAttempts@0x3DC"] = u32(cmc + O["cmc.jumpapex"])
-    r["S140.MaxSimulationTimeStep@0x3E0"] = f32(cmc + O["cmc.maxsimstep"])
-    r["S140.MaxSimulationIterations@0x3E4"] = u32(cmc + O["cmc.maxsimiter"])
-    r["S140.vptr"] = p(cmc)
-    r["S140.vptr is ULokiCMC"] = (r["S140.vptr"] == BASE + 0x088F8570)
-    r["S140.vptr is engine UCMC"] = (r["S140.vptr"] == BASE + 0x07FBED58)
     r["MovementMode@0x231"] = u8(cmc + O["cmc.mode"])
     r["Velocity@0xE8 (CONTAMINATED on player)"] = v3(cmc + O["cmc.velocity"])
     root = p(pawn + O["pawn.root"])
@@ -380,21 +362,6 @@ def read_side(pawn, ctl, tag):
         r["ctl.gate@0x6A0(CONTROLLER)"] = u8(ctl + O["ctl.gate"])
         r["ctl.RandomMoveDirection@0x658"] = v3(ctl + O["ctl.randomdir"])
     return r
-
-
-# ---- S140 Tier 2: the payload-poison / sentinel vocabulary. These MUST match tutorial_launch.cpp
-#      ARM H (kShBotPoison / kShPlrPoison / kShSentinel) or the recogniser is silently useless.
-SENT_BOT_POISON = (-9876.5, -8765.25, -7654.125)
-SENT_PLR_POISON = (-1234.5, -2345.25, -3456.125)
-SENT_VALUE      = (0.0009765625, 0.0, 0.0)
-ZERO3           = (0.0, 0.0, 0.0)
-
-
-def hex24(a):
-    b = rpm(a, 24)
-    if not b:
-        return "<unreadable>"
-    return "|".join(b[i:i + 8].hex().upper() for i in range(0, 24, 8))
 
 
 def fmt(v):
@@ -435,66 +402,27 @@ def main():
               % (side, EMOVE.get(mm, mm), EROLE.get(rl, rl), EMOB.get(mb, mb)))
 
     print()
-    print("### RANK-1 -- RETRACTED (S140 Tier 1). THE LATCH IS NOT AN INSTRUMENT. ###")
-    print("  CMC+0x16C8 is NOT a sticky latch. It is a per-frame TOptional<FVector> validity flag: SET by")
-    print("  ULokiCMC::StartNewPhysics at 0x055C2469 and CLEARED later in the SAME engine PerformMovement")
-    print("  call by ULokiCMC vtable disp 0xA50 (0x0530ABF0), on a path the StartNewPhysics call site")
-    print("  DOMINATES. An off-thread reader sees 0 whether the step runs every frame or never runs at")
-    print("  all. Named from its own consumer GetRecentVelocity (.data 0x09BC9AD0 -> impl 0x0530AC10).")
-    print("  See docs/s140-tier1-cfg.md 4.2-4.7.")
-    print("  ==> latch == 0 proves NOTHING. The S139 verdict this probe used to print here rested on it")
-    print("      and is WITHDRAWN. Raw values only:")
-    print("      bot latch=%s   player latch=%s   (0 is expected in EVERY world)"
-          % (fmt(A.get("R1.latch@0x16C8")), fmt(B.get("R1.latch@0x16C8"))))
-    print()
-    print("### S140 TIER 2 -- THE PAYLOAD RECOGNISER (the durable receipt) ###")
-    print("  The PAYLOAD at CMC+0x16B0 IS durable: disp 0xA50 clears only the flag byte, and the only")
-    print("  CMC-side writer of the payload is 0x055C244F inside StartNewPhysics. ARM H")
-    print("  (build.ps1 -Variant gasattr-sentinel) POISONS it first, so never-written and written-with-")
-    print("  zeros are DIFFERENT BYTES -- the degeneracy docs/s140-tier1-cfg.md 7 warns about.")
-    for side, r, own, other in (("BOT", A, SENT_BOT_POISON, SENT_PLR_POISON),
-                                ("PLAYER", B, SENT_PLR_POISON, SENT_BOT_POISON)):
-        pay = r.get("R1.velsnap@0x16B0")
-        vel = r.get("Velocity@0xE8 (CONTAMINATED on player)")
-        if pay is None:
-            print("  %-7s payload UNREADABLE -- no result." % side)
-            continue
-        if pay == other:
-            v = "*** VOID: holds the OTHER object poison -> the CMC resolution is WRONG ***"
-        elif pay == SENT_VALUE:
-            v = "***** StartNewPhysics RAN -- payload holds the SENTINEL from Velocity *****"
-        elif pay == own:
-            v = "***** StartNewPhysics did NOT run since the poison was written *****"
-        elif pay == ZERO3:
-            v = ("payload is EXACT ZERO. If ARM H poisoned this object -> StartNewPhysics RAN"
-                 " and snapshotted a zero Velocity. If ARM H did NOT run -> UNINTERPRETABLE:"
-                 " a never-written buffer is also zero. CHECK THE MARKER FOR [SNP] FIRST.")
-        else:
-            v = "UNMODELLED value -- report the raw hex, do not interpret."
-        print("  %-7s payload  = %-28s RAW %s" % (side, fmt(pay), r.get("S140.payload@0x16B0 RAW")))
-        print("  %-7s Velocity = %-28s RAW %s" % (side, fmt(vel), r.get("S140.Velocity@0xE8 RAW")))
-        print("  %-7s -> %s" % (side, v))
-    print()
-    print("### S140 TIER 2 -- THE THREE FREE READS (Tier 1 7, ranks 2/3/4; never taken live) ###")
-    for side, r in (("BOT", A), ("PLAYER", B)):
-        wp = r.get("S140.WorldPrivate@0xC0")
-        msi = r.get("S140.MaxSimulationIterations@0x3E4")
-        print("  %-7s WorldPrivate@0xC0 = %-20s -> %s" % (side, fmt(wp),
-              "non-null; engine PerformMovement exit 2 input is satisfied"
-              if (wp and wp > 0x10000) else "*** NULL -- EXIT 2 WOULD BAIL ***"))
-        print("  %-7s MaxSimulationIterations@0x3E4 = %-6s -> %s" % (side, fmt(msi),
-              "> 0; the 4th engine-StartNewPhysics early-out 0x036009B5 does NOT bail"
-              if (isinstance(msi, int) and 0 < msi < 1000)
-              else "*** <=0 or implausible -- READ THE RAW VALUE ***"))
-        print("  %-7s MaxSimulationTimeStep@0x3E0 = %-10s NumJumpApexAttempts@0x3DC = %s"
-              % (side, fmt(r.get("S140.MaxSimulationTimeStep@0x3E0")),
-                 fmt(r.get("S140.NumJumpApexAttempts@0x3DC"))))
-        print("  %-7s vptr = %-20s isULokiCMC=%s isEngineUCMC=%s"
-              % (side, fmt(r.get("S140.vptr")), fmt(r.get("S140.vptr is ULokiCMC")),
-                 fmt(r.get("S140.vptr is engine UCMC"))))
-        if not r.get("S140.vptr is ULokiCMC"):
-            print("  %-7s !! NOT the ULokiCMC vtable. If it is the ENGINE UCMC then disp 0x720" % side)
-            print("  %-7s    is 0x03600990 and NOTHING touches +0x16C8/+0x16B0 -- TEST VOID." % side)
+    print("### RANK-1 VERDICT (the bisector) ###")
+    pl = B.get("R1.latch@0x16C8")
+    bl = A.get("R1.latch@0x16C8")
+    if pl != 1:
+        print("  !! CONTROL FAILED: the PLAYER's latch reads %s, expected 1." % fmt(pl))
+        print("     Either the offset is wrong or the player's PerformMovement has never reached")
+        print("     StartNewPhysics either. THE BISECTOR IS UNINTERPRETABLE THIS SITTING.")
+    elif bl is None:
+        print("  bot latch unreadable -- no verdict.")
+    elif bl == 1:
+        print("  BOT LATCH = 1  ==>  S1.  PerformMovement REACHED StartNewPhysics and the pawn is")
+        print("     still frozen  ==>  the DeltaTime kill (ULokiCMC HitStop) is the leading cause.")
+        print("     S2 (an early-out at or above PerformMovement) is ELIMINATED.")
+        print("     Confirm with R2: TimeSinceFallingStart must be FROZEN while the player's advances.")
+    else:
+        print("  BOT LATCH = 0  ==>  S2.  The ladder broke at or ABOVE engine PerformMovement.")
+        print("     S1 is dead unless HitStop also fires upstream. Localise with R4 and R5 above:")
+        print("       UpdatedComponent NULL / RF_Garbage set  -> E1/E3 (HasValidData)")
+        print("       Mobility != Movable                     -> E2 (ShouldSkipUpdate)")
+        print("       Role != 3                               -> E6")
+        print("       Controller NULL + bRunPhysics clear     -> E7  (and that has a one-bit lever)")
     print()
     print("  ⚠ Acceleration == 0 is UNINTERPRETABLE (3 independent zero-writers). Only non-zero AND")
     print("    collinear with RandomMoveDirection is informative.")
