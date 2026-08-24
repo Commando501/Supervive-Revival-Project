@@ -54,39 +54,53 @@ and the restore is line 344 — **after** all five samples (244/263/282/301/320)
 
 ---
 
-## 1. ★ MOVE 1 — ONE READ-ONLY RPM RUN, NO INJECTION. Read `AnalogInputModifier`.
+## 1. ★ MOVE 1 — PARTLY ANSWERED BY ARM L. The clean test is ONE INJECTION, and the arm is BUILT.
 
-The leading candidate (`docs/s141-tier3-settled.md` §4.1, `[I, strong]`) is engine `CalcVelocity`'s
-input clamp:
+**Read `docs/s141-t3-arml-result.md` first — its §2 governs.**
 
-```
-035d6467  call   [rax+0x4d0]              ; IsExceedingMaxSpeed(MaxInputSpeed)   [CMCvt+0x4D0 = 0x0363BA00]
-035d646f  je     0x35d64a3                ;   not exceeding -> xmm0 = xmm11 = MaxInputSpeed
-035d6471..9d                              ;   exceeding     -> xmm0 = |Velocity|
-035d64c6..ea  Velocity += Acceleration*dt ; mulsd by [rbx+0x328], addsd from [rbx+0xe8/f0/f8]
-035d64e6  cvtps2pd xmm8, xmm0
-035d64f2  comisd xmm8, xmm9                ; xmm9 = .rdata 0x076B49E8 = 9.999999747378752e-05
-035d650f  jae    0x35d6534                ;                          = (double)(float)1e-4
-035d6511  movups xmm1,[rip -> 0x099C86A0]  ; ZeroVector
-035d6520  movups [rbx+0xe8], xmm1          ; *** Velocity.X, Velocity.Y := 0
-035d6527  movsd  [rbx+0xf8], xmm2          ; *** Velocity.Z := 0
-```
+**[M] ARM L (2026-08-24) answered the read that ARM K missed:** `CMC+0x3D0` **is**
+`AnalogInputModifier` (by-name resolve AGREES with the offset, both pawns, every sample), and on a
+**walking** bot it reads **1** — so `MaxInputSpeed = GetMaxSpeed() × 1 = 500` and engine
+`CalcVelocity`'s `< 1e-4` ZeroVector clamp at `0x035D6511-0x035D652F` **cannot fire.**
+⇒ **§4.1 is REFUTED for a walking bot.** `MinAnalogWalkSpeed` (`+0x290`) = 0 on both, replicating
+S140 T2 flight 3.
 
-`preds(0x035D6511) = ['0x035D650F']` and `preds(0x035D6520) = ['0x035D6518']` — **unique
-predecessors**, independently confirmed by a second instrument. The site is on the **ACCELERATE**
-branch, which is why the pawn WITH input reaches it and the pawn WITHOUT input does not.
+**[M] AND THE BOT WALKS, REPRODUCIBLY.** One `Velocity = (600,0,0)` from rest: fell at terminal
+velocity, landed, walked at **exactly 500.0 uu/s** (three samples on the cap), 13,196 uu, steered
+by its own AI. **A horizontal kick produced the fall with no Z kick at all** — the 2-D gate of §1
+working in the affirmative direction. S140 T2 flight 3 is now **reproduced in a second sitting.**
 
-`MaxInputSpeed` (`xmm11`) = `max(MaxSpeed × [rbx+0x3D0], GetMinAnalogSpeed())`
-(`0x035D605B mulss xmm11,[rbx+0x3d0]` / `0x035D607A maxss xmm11,xmm0`).
+⚠⚠ **BUT THE AXIS A/B STILL HAS NOT RUN, AND THE REASON IS MY ERROR.** ARM L's kick B landed on a
+bot **already walking at 500 uu/s**, so it tested "vertical added to a moving body", not "vertical
+from rest". The data reaches pre-registered outcome **P2**, whose written reading ("the axis is not
+the variable") **does not follow**. Filed as **S141-l**. ⇒ **§4.1b is neither confirmed nor
+refuted.**
 
-**THE READ:** on a staged client, read on BOTH pawns' CMC —
-`AnalogInputModifier`, `[CMC+0x3D0]`, and what `GetMaxSpeed()` would return
-(`AttributeSetStorage +0xF0 MoveSpeed`, `+0x100 MaxMoveSpeed`).
-Wire them into `tools/re/cmc_earlyout_readout.py`; **no injection is needed for the read**, though
-the bot only exists after an injection, so in practice: stage, inject `armk`, then read externally.
+### THE CLEAN TEST — do this first, it is one injection and the arm exists
 
-* `MaxInputSpeed < 1e-4` on the bot ⇒ **§4.1 CONFIRMED**, and the fix is whichever factor is zero.
-* `MaxInputSpeed ≈ 500` ⇒ **§4.1 REFUTED**; go to MOVE 2.
+**`armk_v2` RAW `988fd61853669d5c`**, archived at `dumps/s141-arms/tutorial_launch_armk_v2.dll`.
+It is `armk` (vertical `(0,0,-600)` from rest) **rebuilt to include the `AnalogInputModifier` read.**
+
+    stage -> inject armk_v2 -> read the samples
+      Velocity zeroed AND AnalogInputModifier == 0  -> §4.1 CONFIRMED, and the axis matters because
+                                                       a Z-only kick leaves AnalogInputModifier 0. [M]
+      Velocity zeroed AND AnalogInputModifier == 1  -> §4.1 REFUTED outright; the zeroing is
+                                                       something else entirely.                   [M]
+      Velocity SUSTAINED (the bot walks)            -> ARM K's freeze does not reproduce; look for
+                                                       what differed between SITTINGS, not kicks.  [M]
+
+★ **And if you want the within-sitting A/B, restore the PRECONDITION**: zero `Velocity`, let it
+settle for a sample, THEN apply kick B. ARM L re-latched the start *location* and not the *velocity
+state*, which is the whole subject of the hypothesis.
+
+⚠ **The cross-sitting comparison is all that currently bears on the axis**, and it is one
+uncontrolled variable away from evidence:
+
+| | ARM K | ARM L |
+|---|---|---|
+| kick, from rest | **vertical** | **horizontal** |
+| `AnalogInputModifier` | **NOT READ** | **1** |
+| result | `(0,0,0)`, moved **0.000 uu ×5** | fell, landed, walked **13,196 uu** |
 
 ### 1a. ★★ THE AXIS DISCRIMINATOR IS FOUND — and it turns MOVE 1 into a two-arm A/B
 
@@ -113,9 +127,10 @@ zero, reproducing S141) — two bots, or two consecutive kicks on one bot with a
 `AnalogInputModifier` / `[CMC+0x3D0]` / `GetMaxSpeed()` in the same pass and the whole thing closes
 or dies in one flight.
 
-⚠ **I did not read `AnalogInputModifier` in the S141 flight.** I added `GravityScale`,
-`GravityDirection`, `MovementMode`, `byte +0x1001` and `+0x1678` to the free reads and missed the one
-field the leading hypothesis turns on. Recorded as instrument defect **S141-d**.
+⚠ **ARM L HAS SINCE READ IT (§1): `AnalogInputModifier = 1` on a walking bot, and
+`CMC+0x3D0` is confirmed as that field. So the §1a composition above is REFUTED for a
+walking bot -- the clamp cannot fire at 1. It survives ONLY for the unmeasured
+vertical-from-rest state, which is what `armk_v2` tests.**
 
 ## 2. MOVE 2 — enumerate what else can zero all three components. Purely offline.
 
@@ -145,7 +160,17 @@ possess it with an AI controller so the wander driver steers it. ★ And that is
 MOVE 1's discriminator from the other side: **a player WITH input either moves (⇒ §4.1 dead) or is
 zeroed like the bot (⇒ §4.1 confirmed, and it is about input, not about being a bot).**
 
-## 4. THE KICK ROUTE IS ANSWERED — use it, don't re-derive it
+## 4. THE KICK ROUTES ARE ANSWERED -- including the full jump chain
+
+**[M] S141 closed T3-B's residual after lane L3 died.** The complete jump chain, zero folds:
+`ACharacter::Jump() 0x3536610` (3 instructions: `or dword [char+0x580],4`, `mov dword [+0x584],0`,
+`ret` -- one bit, no authority check, NOT Loki-overridden) -> `CheckJumpInput 0x3520930` ->
+`CMC->DoJump()` **vtable disp 0x730** = engine `0x35DEAD0` / Loki wrapper `0x55A8110`, which writes
+Velocity at `0x35DEB31`/`0x35DEB40` and calls `SetMovementMode(MOVE_Falling)`.
+See `docs/s141-tier3-settled.md` §5.2 and §5.5.
+
+### 4a. The original T3-B route
+ — use it, don't re-derive it
 
 **T3-B: `PendingLaunchVelocity` @ `CMC+0x5C8`.** Write 24 bytes; the game's own
 `ULokiCMC::HandlePendingLaunch` (vtable disp `0x750`, Loki `0x55AEB60`) then sets `Velocity`, forces
