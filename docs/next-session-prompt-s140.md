@@ -1,9 +1,10 @@
-# NEXT SESSION (S140) — six exits, all measured passing, and it still never runs
+# NEXT SESSION (S140) — the input wall is named; port the fix the repo already proved
 
-**One line: `StartNewPhysics` never runs for ANY of the 37 movement components in the world, and the
-whole question can be turned into a LOG LINE — engine `StartNewPhysics` has its own
-`IsSimulatingPhysics` gate that prints an abort string, and `LogCharacterMovement` is currently
-silent with no positive control. Pin the category and read it (§0a).**
+**One line: the INPUT wall is NAMED — `GetMaxAcceleration()` returns 0, proved by a SIGNED ZERO
+(`Acceleration` carries `ControlInputVector`'s sign in 22/22 samples) — and this repo has a
+LIVE-PROVEN fix for it that was never ported (`ds_hybrid.cpp:2370-2430`). Port it, and read the
+`StartNewPhysics` latch in the SAME pass, because a zero acceleration does not explain the absent
+GRAVITY.**
 
 ⚠⚠ **A CONTRADICTION I PUBLISHED MID-SESSION IS DISSOLVED — and the error is worth carrying.**
 `docs/s139-flight2-gate-refuted.md` §5 says six exits are all measured passing yet the call never
@@ -15,9 +16,12 @@ engine's `PerformMovement` got anywhere. I read a fact about the wrapper as a fa
 `latch 0 + dt advancing` is a fully-explained third survivor, not a paradox. **Fix that section
 before building on it.**
 
-⚠ **This supersedes the "one read: is the capsule simulating physics?" framing this file opened with
-in its first draft.** That read was taken — **`bSimulatePhysics = 0`, the gate PASSES** — and the
-question moved. Read `docs/s139-flight2-gate-refuted.md` §5 first.
+⚠⚠ **THREE EARLIER FRAMINGS OF THIS FILE ARE SUPERSEDED — each was tested, each fell.**
+(1) *"one read: is the capsule simulating physics?"* → taken: **`bSimulatePhysics = 0`, gate PASSES**.
+(2) *"the weld, because `IsSimulatingPhysics` uses `bGetWelded = true`"* → taken:
+**`WeldParent @capsule+0x5F0 = NULL`** ⇒ `GetBodyInstance` returns the capsule's own body ⇒
+**REFUTED**. (3) *"pin `LogCharacterMovement` and read the abort string"* → still worth doing, but
+demoted to §0a: flight 3 answered the bigger question without it.
 
 Written 2026-08-23 at the end of S139. Read `docs/s139-flight1-the-bot-is-not-special.md` first
 (its §7b is the target and its §7b adjudication block governs), then `docs/s139-movement-ladder.md`.
@@ -27,28 +31,68 @@ that flight). The flight-1 client died after 2 injections (FK-32 class), all dat
 
 ---
 
-## 0. THE CHAIN AS IT NOW STANDS — every link measured
+## A. THE CHAIN AS IT NOW STANDS — after three flights
 
     the AI runs: behaviour tree -> blackboard -> wander -> RequestPathMove          [M, S138]
       -> pawn ControlInputVector += direction                                      [M, S138]
-      -> ConsumeInputVector at 0x036037FE drains it EVERY FRAME                    [M, S139]
+      -> ConsumeInputVector at 0x036037FE drains it EVERY FRAME                    [M, S139-f1]
          (|CIV| never exceeds 1.0001 over 194 samples despite "+=" semantics)
-         ** and it is called BEFORE both early-outs, so consumption != simulation **
-      -> the whole E1..E7 early-out ladder is PASSED                               [M, S139]
+         ** it is called BEFORE both early-outs, so consumption != simulation **
+      -> the whole E1..E7 early-out ladder is PASSED                               [M, S139-f1/f3]
          (every structural field identical bot vs player; Role 3; Mobility Movable)
-      -> ULokiCMC::PerformMovement RUNS with a REAL, non-zero DeltaTime            [M, S139]
-         (+0x12B0 += xmm6, and xmm6 is exactly what HitStop would zero; it advances
-          at 1.0x real time on BOTH pawns => HitStop did not fire)
-      -> it reaches its Super UNCONDITIONALLY at 0x055B85C1 -> engine 0x035E9EC0   [M, S139]
-      -> *** the engine bails before StartNewPhysics ***                           [M, S139]
-         (ULokiCMC::StartNewPhysics's latch +0x16C8 reads 0 on BOTH, and that latch
-          is set BEFORE the jmp to the engine, so it was never even ENTERED)
-      -> no StartNewPhysics => no PhysFalling => no gravity => a MOVE_Falling pawn
-         with GravityScale 1.0 sits still. Which is exactly what we see.
+      -> ControlledCharacterMove RUNS                                              [M, S139-f3]
+         (Acceleration@+0x328 carries ControlInputVector's SIGN in 22/22 samples =
+          a signed zero = input x 0. A never-written field cannot track a sign.)
+      -> *** Acceleration = input * GetMaxAcceleration() == 0 ***                  [M, S139-f3]
+         THE INPUT WALL, and the repo has a live-proven fix (section 0).
+      -> ULokiCMC::PerformMovement runs                                            [M, S139-f1]
+         (+0x12B0 += xmm6 at 0x055B840C -- but that is UPSTREAM of the Super, so it
+          says nothing about how far the ENGINE impl gets. See the retraction above.)
+      -> it reaches its Super UNCONDITIONALLY at 0x055B85C1 -> engine 0x035E9EC0   [M, S139-f1]
+      -> ??? ULokiCMC::StartNewPhysics is NEVER ENTERED                            [M, S139-f1/f2]
+         (latch +0x16C8 == 0 on the bot, the player, and ALL 37 components in the
+          world; the latch write at 0x055C2469 is on the unconditional fall-through)
+      -> no StartNewPhysics => no PhysFalling => no gravity.
+         *** STILL UNEXPLAINED. A zero Acceleration does NOT stop gravity. ***
 
 ---
 
-## 0a. ★★★★★ START HERE — TURN THE WHOLE QUESTION INTO A LOG LINE
+## 0. ★★★★★ START HERE — PORT THE GAS RECIPE THE REPO ALREADY LIVE-PROVED
+
+**S139 flight 3 named the input wall: `GetMaxAcceleration()` returns 0.** `Acceleration @CMC+0x328`
+carries `ControlInputVector`'s **SIGN** in 22/22 samples (44 sign bits) — a signed zero, i.e.
+`input × 0`. A never-written field is `+0.0` forever and cannot track a sign ⇒ the
+`ScaleInputAcceleration` store **executed every frame** ⇒ **`ControlledCharacterMove` RUNS and the
+whole tick ladder is PASSED. S2 is refuted.** Read `docs/s139-flight3-controlledcharactermove-runs.md`.
+
+★★★ **THE FIX IS ALREADY IN THIS REPO, LIVE-PROVEN, AND WAS NEVER PORTED.**
+`docs/coverage-audit-s101.md:283` (≈38 sessions old): the DS route borrowed
+`Default__LokiPlayerState_HeroAffiliated`'s default subobjects into the hero's
+`+0xF00/+0xF08/+0xF10` and wrote the attribute block — **measured `GetMaxSpeed()` 0 → 500,
+`GetMaxAcceleration()` 0 → 50000, and the hero physically translated via the stock engine chain.**
+`:630` ranks porting it *"Single highest-value experiment available"*. Code:
+**`tools/sigbypass-mod/ds_hybrid.cpp:2370-2430`**.
+
+- ⛔ **DO NOT SPAWN `LokiPlayerState_HeroAffiliated`** — S80 live-proved an instant client crash.
+  Use the **CDO's default subobjects**, which are already constructed.
+- ⚠⚠ **A PARTIAL PORT FAILS and the source says so from experience:** wiring `AttributeSetStorage`
+  makes the Loki CMC read **every** movement value from attributes instead of its base UPROPERTYs,
+  so a set with only `MoveSpeed` gives `MaxAcceleration = 0` and still no movement (observed).
+  Write the whole block — `MoveSpeed`, `MaxMoveSpeed`, `MaxAcceleration` 50000, `GroundFriction` 8,
+  `BrakingDecelerationWalking` 2048, `Mass` 100 — at `FGameplayAttributeData` `+0x8` **and** `+0xC`.
+- ★ `tutorial_launch`'s `KWIREGAS` **deliberately writes only `+0xF00`** (`tutorial_launch.cpp:11899`),
+  which is exactly the gap; every staged marker has printed `AttributeSetStorage @0xF08 = 0x0`.
+- ⚠ It writes a **CDO default subobject** — process-wide scope. A diagnosis, not a shipping fix.
+
+⚠⚠ **READ THE LATCH `+0x16C8` IN THE SAME PASS.** A zero `Acceleration` does **not** stop gravity,
+and `StartNewPhysics` still never runs (latch 0 on all 37 components). The input wall and the
+physics-step wall may be one problem or two — **flying the port with the latch read settles it in
+one sitting.** Do not assume the port fixes both.
+
+⚠ **First, re-run `docs/s139-f3-signedzero.txt`** (30 s): it is the bit-level confirm of the signed
+zero and it did **not** obtain — the client died and the probe correctly self-voided.
+
+## 0a. ★★ FALLBACK / CONFIRMATION — TURN THE PHYSICS-STEP QUESTION INTO A LOG LINE
 
 **Engine `UCharacterMovementComponent::StartNewPhysics 0x03600990` has its OWN `IsSimulatingPhysics`
 gate, and it LOGS when it fires:**
@@ -70,13 +114,16 @@ the absence says nothing. This is the project's own Class-A-vs-never-ran trap.
 `[Core.Log]` in the **user** `Engine.ini` binds (and that `-LogCmds` and `-ini:` do **not**). Run
 `configs\set-log-verbosity.ps1` to pin **`LogCharacterMovement=Log`** (Verbose is unnecessary —
 threshold 5 is `Log`), relaunch, stage, and read. Then:
-- the abort line **present** ⇒ the gate fires ⇒ the weld hypothesis (§0b) is confirmed and named;
+- the abort line **present** ⇒ that gate fires after all, despite `bSimulatePhysics = 0` and a
+  NULL `WeldParent` — which would be a genuine surprise and worth every minute;
 - the abort line **absent, with the category now emitting other lines as the positive control**
   ⇒ that gate is genuinely passing and the bail is elsewhere.
 **Either way it is a per-frame, per-object receipt for free, and it replaces the entire read plan
 below.** ⚠ Establish the positive control first — a silent category proves nothing.
 
-## 0b. ★★★ THE WELD QUESTION (S139 flight 2 result)
+## 0b. ⛔ THE WELD QUESTION — ASKED AND ANSWERED: `WeldParent @capsule+0x5F0 = NULL`. REFUTED.
+
+Kept as the record of how it was settled, not as a task.
 
     0x035E9FB5  call qword ptr [rax+0x4c0]     ; on the CAPSULE's vtable
     0x03C9B0A0  ...  mov r9d, 0xFFFFFFFF       ; Index = -1
@@ -96,7 +143,7 @@ decodes its bitfields from the live `FBoolProperty`.
 **The banked five** (do not re-measure): `HasValidData` inputs, World, `MovementMode` 3,
 `Mobility` 2, and `bSimulatePhysics` 0 on the capsule itself — all read live with controls.
 
-## 1. Reference — the six exits, CFG-verified
+## B. Reference — the six exits, CFG-verified
 
 Engine `UCharacterMovementComponent::PerformMovement 0x035E9EC0`. **A recursive-descent CFG walk
 (1,461 reachable instructions; one `ret`; no indirect jumps) proves EXACTLY SIX branches before the
@@ -134,7 +181,7 @@ argue.**
 
 ---
 
-## 2. ⚠⚠ WHAT IS REFUTED — DO NOT RE-OPEN ANY OF THESE
+## C. ⚠⚠ WHAT IS REFUTED — DO NOT RE-OPEN ANY OF THESE
 
 | # | claim | why it is dead |
 |---|---|---|
@@ -154,7 +201,7 @@ this route".** Stop looking for a bot/player difference in the movement componen
 
 ---
 
-## 3. FLIGHT PROCEDURE (unchanged, and it works)
+## D. FLIGHT PROCEDURE (unchanged, and it works)
 
 ```powershell
 # ELEVATED PowerShell. Steam must already be running.
@@ -181,7 +228,7 @@ control independent of the arm.
 
 ---
 
-## 4. ⚠ TRAPS
+## E. ⚠ TRAPS
 
 1. ⚠⚠ **Two probe defects in S139 each read exactly like a game fact.** `fname` read the FNamePool
    block table at `NAMEPOOL + 0x10 + 8*blk` (correct: **`NAMEPOOL + 8*blk`**) ⇒ every name decoded
@@ -206,7 +253,7 @@ control independent of the arm.
 
 ---
 
-## 5. ARTIFACTS
+## F. ARTIFACTS
 
 | path | what |
 |---|---|
@@ -218,7 +265,7 @@ control independent of the arm.
 | `tools/re/cmc_earlyout_readout.py` | the probe; both defects fixed and annotated in-file |
 | `scratchpad/s139/ticksniff.py` | new instrument; `PrimaryComponentTick` IS a UPROPERTY at `+0x40` |
 
-## 6. SCOPE — say it correctly
+## G. SCOPE — say it correctly
 
 ⛔ **There is no working bot, and none of this is a shipping fix.** `ServerSetHeroClass`
 (`0x556DE43 → 0xF7EC20`) and `SetPlayerTeam` (`0x556DE53 → 0xF7EB60`) are stripped folds; the bot has

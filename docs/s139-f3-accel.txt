@@ -1,0 +1,41 @@
+bot controller = 0x26E8DEF31A0   pawn = 0x26E866CAAC0
+bot CMC        = 0x26E1C3EAAB0  class=LokiCharacterMovementComponent
+P1 CTRL CharacterOwner==pawn : PASS
+P1 CTRL tickTarget==cmc      : PASS
+P2 AbilitySystemComponentStorage +0xF00 = 0x0  NULL -> IsStunned arm UNREACHABLE
+   AttributeSetStorage          +0xF08 = 0x0
+   latch +0x16C8 = 0   MovementMode +0x231 = 3
+
+t        ControlInputVector +0x418      Acceleration +0x328            Analog+3D0 dt+12B0 
++   0.0s (0.4224,-0.9064,0.0000)        (0.0000,-0.0000,0.0000)        0.0000     52.438  
++   1.0s (-0.9650,0.2622,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     53.438  
++   2.0s (-0.9650,0.2622,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     54.438  
++   3.0s (-0.2485,-0.9686,0.0000)       (-0.0000,-0.0000,0.0000)       0.0000     55.438  
++   4.0s (-0.2485,-0.9686,0.0000)       (-0.0000,-0.0000,0.0000)       0.0000     56.438  
++   5.0s (-0.4035,0.9150,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     57.438  
++   6.0s (-0.4035,0.9150,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     58.438  
++   7.0s (0.8681,0.4964,0.0000)         (0.0000,0.0000,0.0000)         0.0000     59.438  
++   8.0s (0.8681,0.4964,0.0000)         (0.0000,0.0000,0.0000)         0.0000     60.438  
++   9.0s (0.7665,-0.6423,0.0000)        (0.0000,-0.0000,0.0000)        0.0000     61.438  
++  10.0s (0.7665,-0.6423,0.0000)        (0.0000,-0.0000,0.0000)        0.0000     62.438  
++  11.0s (-0.4932,0.8699,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     63.438  
++  12.0s (-0.4932,0.8699,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     64.438  
++  13.0s (-0.4060,0.9139,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     65.438  
++  14.0s (-0.4060,0.9139,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     66.450  
++  15.0s (-0.1998,0.9798,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     67.450  
++  16.0s (-0.1998,0.9798,0.0000)        (-0.0000,0.0000,0.0000)        0.0000     68.450  
++  17.0s (0.8637,-0.5041,0.0000)        (0.0000,-0.0000,0.0000)        0.0000     69.450  
++  18.0s (0.8637,-0.5041,0.0000)        (0.0000,-0.0000,0.0000)        0.0000     70.450  
++  19.0s (0.9773,-0.2117,0.0000)        (0.0000,-0.0000,0.0000)        0.0000     71.450  
++  20.0s (0.9773,-0.2117,0.0000)        (0.0000,-0.0000,0.0000)        0.0000     72.450  
++  21.0s (-0.9361,-0.3517,0.0000)       (-0.0000,-0.0000,0.0000)       0.0000     73.450  
+
+distinct ControlInputVector values : 12
+distinct Acceleration values       : 1
+non-zero Acceleration samples      : 0
+
+VERDICT (P4): Acceleration BIT-FROZEN at (0,0,0) while ControlInputVector CHURNS.
+  With +0xF00 NULL the IsStunned zero-arm is unreachable by construction, so the
+  surviving readings are (a) ControlledCharacterMove NEVER RUNS -- i.e. the tick
+  ladder bails (S2) -- or (c) GetMaxAcceleration returns 0 (GAS attr set is NULL).
+  These two are NOT separated by this read; the pre-registration says so.

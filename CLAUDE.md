@@ -1664,6 +1664,47 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   *continuously* for 97 s on a bot that was never damaged.
   ★ `0x055B2930` **IS `IsStunned`** [M, from the `.data` `{name, thunk, impl}` triple at
   `0x09BC5A48`, validated by four passing positive controls and one passing negative].
+  ★★★★★ **S139 FLIGHT 3 — `ControlledCharacterMove` RUNS, AND THE INPUT WALL IS
+  `GetMaxAcceleration() == 0`. Read `docs/s139-flight3-controlledcharactermove-runs.md`.**
+  **[M] THE PROOF IS A SIGNED ZERO:** `Acceleration @CMC+0x328` carries `ControlInputVector`'s
+  **SIGN** in **22 of 22** samples (44 sign bits) while the input churns — `(-0.0000, 0.0000, 0)`
+  against `(-0.9650, 0.2622, 0)`, and so on. A never-written field is `+0.0` forever and **cannot
+  track a sign** ⇒ the `ScaleInputAcceleration` store at `0x035DCD6B` **executed every frame** ⇒
+  **`ControlledCharacterMove` RUNS and the whole tick ladder E1–E7 is PASSED. S2 IS REFUTED.**
+  ⇒ `Acceleration = input × GetMaxAcceleration()`, and it is ZERO because **the getter is
+  GAS-backed and `AttributeSetStorage @+0xF08` is NULL**.
+  ★ **The BOT was REQUIRED for this and the player could not have given it:** the rival explanation
+  is `ULokiCMC::ConstrainInputAcceleration 0x055A75B0` writing literal `ZeroVector` on its
+  `IsStunned` arm — and `IsStunned 0x055B2930`'s first guard is *NULL ASC → false*, with the **bot's
+  `+0xF00` measured NULL** (the player's is non-null; `KWIREGAS` wires only the player's). The arm is
+  unreachable by construction on the bot.
+  ⚠⚠ **MY OWN VERDICT LINE GOT IT WRONG — `distinct Acceleration values: 1`.** Python hashes
+  `-0.0 == 0.0`, so a `set()` collapsed the signed zeros and hid the entire finding; the **printed
+  samples** carried it. **Record raw, derive afterwards** — the second instance this session
+  (`rootset_census.py` is the other). ⚠ The bit-level re-confirm **did NOT obtain** (client died; the
+  probe self-voided) — `docs/s139-f3-signedzero.txt` is the harness, re-run it first next sitting.
+  ⛔ **THE WELD HYPOTHESIS IS REFUTED** — `GetBodyInstance` is `[capsule vt+0x810] = 0x03C91C60`:
+  `test r8b,r8b / je / mov rax,[rcx+0x5f0] / test / jne / lea rax,[rcx+0x3f0] / ret`, and **live
+  `WeldParent @capsule+0x5F0 == NULL`** ⇒ it returns the capsule's own body ⇒ `bSimulatePhysics = 0`
+  ⇒ the gate genuinely passes. (The `lea rax,[rcx+0x3f0]` independently confirms `BodyInstance @+0x3F0`.)
+  ★★★★★ **AND THE FIX IS ALREADY IN THIS REPO, LIVE-PROVEN, AND WAS NEVER PORTED — a textbook
+  method-rule-#2 instance.** `docs/coverage-audit-s101.md:283` (≈38 sessions old) records the DS route
+  borrowing `Default__LokiPlayerState_HeroAffiliated`'s **default subobjects** into the hero's
+  `+0xF00/+0xF08/+0xF10` and writing the attribute block: **measured `GetMaxSpeed()` 0 → 500,
+  `GetMaxAcceleration()` 0 → 50000, and the hero physically translated through the world via the
+  STOCK ENGINE CHAIN.** `:630` ranks porting it *"Single highest-value experiment available"*. Code:
+  **`ds_hybrid.cpp:2370-2430`**. ⛔ **DO NOT SPAWN the carrier** (S80: instant client crash) — use the
+  CDO's subobjects. ⚠⚠ **A PARTIAL PORT FAILS:** wiring `AttributeSetStorage` makes the Loki CMC read
+  **every** movement value from attributes, so a set with only `MoveSpeed` gives `MaxAcceleration = 0`
+  and still no movement (observed). Write the whole block (`MoveSpeed`, `MaxMoveSpeed`,
+  `MaxAcceleration` 50000, `GroundFriction` 8, `BrakingDecelerationWalking` 2048, `Mass` 100) at
+  `FGameplayAttributeData` `+0x8` **and** `+0xC`. ⚠ It writes a CDO default subobject — process-wide.
+  ★ `tutorial_launch`'s `KWIREGAS` **deliberately writes only `+0xF00`** (`tutorial_launch.cpp:11899`)
+  — exactly the gap, and every staged marker has printed `AttributeSetStorage @0xF08 = 0x0 (NULL)`.
+  ⚠⚠ **RESIDUAL, AND DO NOT ASSUME THE PORT CLOSES IT: `StartNewPhysics` is STILL never entered**
+  (latch 0 on the bot, the player, and **all 37** movement components in the world — of which
+  **exactly one is doing anything at all**). **A zero `Acceleration` does not stop GRAVITY.** Fly the
+  port and read the latch in the SAME pass; that settles whether this is one problem or two.
   ⚠⚠ **A LINEAR DISASSEMBLY SWEEP IS NOT A CFG.** Over engine `PerformMovement` a linear sweep
   decoded **1,074** instructions where recursive descent finds **1,461** — it missed ~390. It
   happened to get the exit set right; do not rely on that. ⚠ And **"enumerate forward branches whose
