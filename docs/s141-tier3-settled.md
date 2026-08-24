@@ -531,7 +531,66 @@ independent routes — L5's image-wide store census and this vtable-bounded writ
 same function as a `Velocity` writer that forces `MOVE_Falling`. **That materially strengthens §5's
 rank-1 `PendingLaunchVelocity` route**, which was previously single-derivation.
 
-⚠⚠ **AND `DoJump` IS STILL NOT ESTABLISHED — four candidates eliminated by reading their bytes**
+### 5.5 ★★★★★ `DoJump` FOUND — CMC vtable disp `0x730`. THE WHOLE KICK CHAIN IS NOW `[M]`, ZERO FOLDS
+
+Found by **completing the enumeration from the caller** rather than guessing from position — the
+discipline S141-k prescribes. `0x3520930` makes exactly three virtual calls; disp `0x728` and
+`0x0A10` were eliminated, leaving **disp `0x730`**:
+
+```
+engine DoJump = 0x35DEAD0   (ULokiCMC override 0x55A8110)
+035dead9  mov rcx,[rcx+0x198]          ; CharacterOwner
+035deae0  test rcx,rcx / je -> return 0
+035deae5  call 0x3520580               ; <== CanJump()  -- the SAME ProcessEvent forwarder §5.1
+035deaea  test al,al / je -> return 0  ;     identified independently, by the record table
+035deaee  test byte [rbx+0x130], 0x10  ; bConstrainToPlane
+035deaf7  movsd xmm0,[rbx+0x110]       ; PlaneConstraintNormal.Z
+035deaff  andps xmm0,[rip]             ; fabs
+035deb06  ucomisd xmm0,[rip] / je -> return 0   ; |.Z| == 1.f ?
+035deb1b  call [rax+0x738]             ; gravity-space "compute jump velocity", out-param [rsp+0x20]
+035deb31  movups [rbx+0xe8], xmm0      ; *** Velocity.X, Velocity.Y
+035deb40  movsd  [rbx+0xf8], xmm1      ; *** Velocity.Z
+035deb2d  lea edx,[r9+3]               ; 3 = MOVE_Falling
+035deb48  call [rax+0x670]             ; SetMovementMode(MOVE_Falling)
+035deb4e  mov al,1 ; ret               ; return true
+```
+
+**That is stock `UCharacterMovementComponent::DoJump` element-for-element** — the `CharacterOwner`
+null-check, `CanJump()`, the distinctive two-term `bConstrainToPlane` / `|PlaneConstraintNormal.Z|
+== 1` guard, the Velocity write, `SetMovementMode(MOVE_Falling)`, `return true`. The disp-`0x738`
+helper is this build's variable-gravity adaptation of stock's direct
+`Velocity.Z = max(Velocity.Z, JumpZVelocity)`.
+
+**Three independent corroborations, so this name rests on evidence, not on position:**
+1. it calls **`0x3520580`**, which §5.1 identified as `CanJump`'s impl **by a completely different
+   route** (the reflected `{name, thunk, impl}` record table);
+2. it is called by `0x3520930`, and stock `CheckJumpInput` is `DoJump`'s **only** caller —
+   ⇒ **this also retroactively confirms `0x3520930` IS `ACharacter::CheckJumpInput`**;
+3. the body structure matches stock element-for-element.
+
+**The ULokiCMC override `0x55A8110` (111 insns) calls the engine `0x35DEAD0` at `0x55A813F` and has
+ZERO Velocity writes of its own** — Loki wraps but does not replace the write; it gates on
+`MovementMode == 7 && CustomMovementMode == 3` first.
+
+★★ **⇒ THE FULL KICK CHAIN, `[M]` END TO END, ZERO FOLDS ANYWHERE:**
+
+    ACharacter::Jump()  0x3536610       or dword [char+0x580],4   (bPressedJump), +0x584 = 0
+      -> ACharacter::CheckJumpInput  0x3520930    tests the bit, calls CanJump() (0x3520580, a BP event)
+        -> CMC->DoJump()  disp 0x730 = 0x35DEAD0  (Loki wrapper 0x55A8110)
+           writes Velocity (0x35DEB31 / 0x35DEB40) and SetMovementMode(MOVE_Falling)
+
+⇒ **T3-B's residual is CLOSED** — this is what lane L3 was supposed to deliver.
+
+⚠⚠ **AND IT LIVE-DEMONSTRATES WHY S141-j MATTERS:** `DoJump`'s helper is CMC vtable disp `0x738` —
+the *same displacement* I earlier mis-resolved as `AddRadialForce`. `AddRadialForce` is a
+`UPrimitiveComponent` method, so its `0x738` belongs to the **primitive** vtable; on the **CMC**
+vtable `0x738` is this jump-velocity helper. **The same number, two hierarchies, two unrelated
+functions** — which retroactively vindicates marking those rows NOT ESTABLISHED rather than graded.
+
+### 5.4a The superseded state of this question
+
+⚠ **What follows was written before §5.5 and is kept as the record of the search.** `DoJump` was
+`NOT ESTABLISHED` at that point, with four candidates eliminated by reading their bytes
 (`0x35395E0`, CMC disp `0x608`, CMC disp `0x728`, CMC disp `0x760`). That the signature
 *writes Velocity.Z + calls SetMovementMode* — which stock `DoJump` satisfies exactly — does **not**
 select it out of 449 slots is itself informative. Three live hypotheses, none tested:
