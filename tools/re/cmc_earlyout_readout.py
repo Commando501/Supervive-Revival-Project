@@ -103,6 +103,13 @@ O = {
     # ---- S140 Tier 2 additions ----
     "cmc.world":      0xC0,     # UActorComponent::WorldPrivate -- engine PerformMovement exit 2
                                 #   input, NEVER read live by anyone before S140 (Tier 1 1.6)
+    "cmc.minanalog":  0x290,    # MinAnalogWalkSpeed -- GetMinAnalogSpeed() (vt disp 0x7C8 ->
+                                #   0x035E3D20, NOT overridden) returns it for MovementMode in
+                                #   {1,2,3}, and both pawns are MOVE_Falling(3). It is the THIRD
+                                #   term of CalcVelocity's clamp:  Velocity := (0,0,0) every frame
+                                #   iff max(GetMaxSpeed()*AnalogInputModifier, MinAnalogWalkSpeed)
+                                #   < 1.0e-4  (0x035D64F2 comisd / 0x035D6520 movups [rbx+0xe8]).
+                                #   *** NEVER READ LIVE -- S140 Tier 2 flight 2 died first. ***
     "cmc.jumpapex":   0x3DC,    # NumJumpApexAttempts
     "cmc.maxsimstep": 0x3E0,    # MaxSimulationTimeStep
     "cmc.maxsimiter": 0x3E4,    # MaxSimulationIterations -- engine StartNewPhysics 0x036009B5
@@ -366,6 +373,7 @@ def read_side(pawn, ctl, tag):
     r["S140.payload@0x16B0 RAW"] = hex24(cmc + O["cmc.velsnap"])
     r["S140.Velocity@0xE8 RAW"] = hex24(cmc + O["cmc.velocity"])
     r["S140.WorldPrivate@0xC0"] = p(cmc + O["cmc.world"])
+    r["S140.MinAnalogWalkSpeed@0x290"] = f32(cmc + O["cmc.minanalog"])
     r["S140.NumJumpApexAttempts@0x3DC"] = u32(cmc + O["cmc.jumpapex"])
     r["S140.MaxSimulationTimeStep@0x3E0"] = f32(cmc + O["cmc.maxsimstep"])
     r["S140.MaxSimulationIterations@0x3E4"] = u32(cmc + O["cmc.maxsimiter"])
@@ -486,6 +494,12 @@ def main():
               "> 0; the 4th engine-StartNewPhysics early-out 0x036009B5 does NOT bail"
               if (isinstance(msi, int) and 0 < msi < 1000)
               else "*** <=0 or implausible -- READ THE RAW VALUE ***"))
+        mas = r.get("S140.MinAnalogWalkSpeed@0x290")
+        print("  %-7s MinAnalogWalkSpeed@0x290 = %-12s -> %s" % (side, fmt(mas),
+              "*** >= 1e-4: the max() CANNOT fall below 1e-4, so CalcVelocity's clamp is NOT what"
+              " zeroes Velocity -- the wall is elsewhere ***" if (isinstance(mas, float) and mas >= 1e-4)
+              else "< 1e-4: the clamp fires iff GetMaxSpeed()*AnalogInputModifier is also < 1e-4."
+                   " THIS PROBE DOES NOT READ GetMaxSpeed(). Not settled -- say so."))
         print("  %-7s MaxSimulationTimeStep@0x3E0 = %-10s NumJumpApexAttempts@0x3DC = %s"
               % (side, fmt(r.get("S140.MaxSimulationTimeStep@0x3E0")),
                  fmt(r.get("S140.NumJumpApexAttempts@0x3DC"))))

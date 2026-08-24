@@ -15941,6 +15941,71 @@ static void ShSampleLoop(){
                     "collected). Earlier samples still stand; later ones may not. ***\r\n",i);
         }
     }
+#if (KBSPSARMS & 0x400)
+    // ==========================================================================================
+    // ARM H2 -- THE FAST BURST. The ONE alternative ARM H cannot exclude on its own.
+    // ARM H measured: poison -> EXACT ZERO on both components. Tier 1 says the only CMC-side
+    // writer of +0x16B0 is 0x055C244F inside StartNewPhysics, so that IS the result -- but that
+    // census is a FLOOR (55.48% of .text decrypted, blind to memcpy/rep-movs and to
+    // register-computed addresses). A targeted routine that zeroes BOTH Velocity and the recent-
+    // velocity snapshot would produce the identical observation.
+    //   (A BULK zeroing of the object is already EXCLUDED by ARM H's own samples: MovementMode
+    //    still reads 3, MaxAcceleration 50000, and TimeSinceFallingStart is ADVANCING.)
+    // THE DISCRIMINATOR: re-write the sentinel into Velocity every ~2 ms and read the payload. If
+    // the payload is a copy of Velocity taken by 0x055C244F, some sample MUST catch it holding
+    // the SENTINEL. If it never does while Velocity is demonstrably still holding the sentinel at
+    // read time, the payload is NOT a copy of Velocity and something else zeroes it.
+    // PRE-REGISTERED:
+    //   hitSent > 0                        -> the payload IS a copy of Velocity via 0x055C244F.
+    //                                         StartNewPhysics RAN. Mechanism validated end to end.
+    //   hitSent == 0 AND velHeld > 0       -> Velocity survived a frame and the payload STILL went
+    //                                         to zero => a NON-StartNewPhysics writer of +0x16B0.
+    //                                         That would REOPEN the ARM H verdict. Say so.
+    //   hitSent == 0 AND velHeld == 0      -> Velocity is zeroed faster than we can observe;
+    //                                         UNINTERPRETABLE, not a refutation.
+    // Risk: 0.001 uu/s written repeatedly into a live component from the worker thread. A torn
+    // 24-byte write just fails the equality test; it cannot fault (the memory stays committed).
+    if(LooksLikePtr(g_shBotCmc)&&SafeWritable((void*)(g_shBotCmc+0xE8),24)){
+        int hitSent=0,hitZero=0,hitPoison=0,hitOther=0,velHeld=0,firstHit=-1;
+        Marker("[SNP] ============ ARM H2: FAST BURST (re-write Velocity, watch the payload) ============\r\n");
+        Marker("[SNP] PRE-REGISTERED: hitSent>0 => the payload IS a copy of Velocity via 0x055C244F.\r\n"
+               "[SNP]   hitSent==0 AND velHeld>0 => a NON-StartNewPhysics writer of +0x16B0; ARM H reopens.\r\n"
+               "[SNP]   hitSent==0 AND velHeld==0 => UNINTERPRETABLE (too fast to see), NOT a refutation.\r\n");
+        for(int n=0;n<400;n++){
+            __try {
+                memcpy((void*)(g_shBotCmc+0xE8),kShSentinel,24);
+                Sleep(2);
+                int ps=ShEq3(g_shBotCmc+0x16B0,kShSentinel);
+                int pz=ShIsZero3(g_shBotCmc+0x16B0);
+                int pp=ShEq3(g_shBotCmc+0x16B0,kShBotPoison);
+                int vs=ShEq3(g_shBotCmc+0xE8,kShSentinel);
+                if(ps){ hitSent++; if(firstHit<0)firstHit=n; }
+                else if(pz) hitZero++;
+                else if(pp) hitPoison++;
+                else hitOther++;
+                if(vs) velHeld++;
+                if(n<8||(ps&&hitSent<=3)){
+                    char hp[128]; ShHex24(g_shBotCmc+0x16B0,hp,sizeof(hp));
+                    Markerf("[SNP] burst[%03d] payload RAW %s  velHeldSentinel=%d%s\r\n",n,hp,vs,
+                            ps?"  <<<< SENTINEL IN THE PAYLOAD":""); }
+            } __except(EXCEPTION_EXECUTE_HANDLER){ Markerf("[SNP] burst[%03d] FAULTED\r\n",n); break; }
+        }
+        Markerf("[SNP] BURST RESULT over 400 iterations at ~2 ms: hitSentinel=%d (first at %d) "
+                "hitZero=%d hitPoison=%d hitOther=%d | velocity-still-sentinel-at-read=%d\r\n",
+                hitSent,firstHit,hitZero,hitPoison,hitOther,velHeld);
+        if(hitSent>0)
+            Marker("[SNP] ***** BURST: the payload HELD THE SENTINEL. It is a copy of Velocity taken\r\n"
+                   "[SNP]   by 0x055C244F, which is INSIDE ULokiCMC::StartNewPhysics. The alternative\r\n"
+                   "[SNP]   (some other routine zeroing both) is REFUTED. *****\r\n");
+        else if(velHeld>0)
+            Marker("[SNP] ***** BURST: Velocity HELD the sentinel at read time %d times and the payload\r\n"
+                   "[SNP]   NEVER did. That is evidence for a NON-StartNewPhysics writer of +0x16B0 and\r\n"
+                   "[SNP]   it REOPENS the ARM H verdict. Report it as such. *****\r\n");
+        else
+            Marker("[SNP] BURST: velocity never survived a read either -- UNINTERPRETABLE, not a\r\n"
+                   "[SNP]   refutation. Velocity is being zeroed faster than a 2 ms poll can see.\r\n");
+    }
+#endif
     // ---- VERDICT, computed from the OBSERVED bytes. A verdict line whose terms are all trivially
     //      true is a recorded defect class in this repo ("a verdict line can lie"), so every cell
     //      below is decided by an equality against a value we wrote or against exact zero.

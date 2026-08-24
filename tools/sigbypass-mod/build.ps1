@@ -643,6 +643,10 @@ $Variants = @{
         # ARM H with the GAS port compiled OUT: separates 'StartNewPhysics runs' from 'it runs
         # only because ARM G gave the bot a non-zero Acceleration'. Single variable vs the above.
         'sentinel-nogas'      = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x2A0')
+        # ARM H2 -- the fast burst. Re-writes the Velocity sentinel every ~2 ms and watches the
+        #   payload, to discriminate 'StartNewPhysics copied Velocity into +0x16B0' from 'some
+        #   other routine zeroed both'. = gasattr-sentinel + bit10.
+        'sentinel-burst'      = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x7A0')
         # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
         # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
         'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')
