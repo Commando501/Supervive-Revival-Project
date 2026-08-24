@@ -1528,7 +1528,12 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   **dt-INDEPENDENT** "PerformMovement reached me" latch (`mov byte [rcx+0x16C8],1` at `0x055C2469`,
   no DeltaTime test above it; the engine's MIN_TICK_TIME bail is downstream) — paired with
   **`CMC+0x12B0`** (`TimeSinceFallingStart`, dt-DEPENDENT). `1` + frozen ⇒ the DeltaTime kill;
-  `0` ⇒ an early-out at or above `PerformMovement`.
+  ~~`0` ⇒ an early-out at or above `PerformMovement`~~.
+  ⚠⚠ **THE `0` BRANCH IS FALSE (S140) — `0` is the resting value in EVERY world**, because disp
+  `0xA50` (`0x0530ABF0`) clears the byte at the tail of every completed `PerformMovement`. The `1`
+  branch is still sound (a sampled `1` means "inside `PerformMovement` right now, past
+  `StartNewPhysics`") but polling for it is hopeless — the window is microseconds of a 16 ms frame.
+  **Use the payload `+0x16B0` with a poked sentinel instead.** See `docs/s140-tier1-cfg.md` §4-§5.
   ⚠⚠ **`UActorComponent::PrimaryComponentTick` IS A UPROPERTY, at `UActorComponent+0x40`** [M, S139]
   (UHT `PropPointers` array `.rdata 0x07F9EFC0` entry 1; the ctor also installs the
   `FActorComponentTickFunction` vtable `0x07E08B38` there). `AActor::PrimaryActorTick` is at
@@ -1596,8 +1601,11 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   ⛔ **Still not a bot:** `ServerSetHeroClass` / `SetPlayerTeam` remain stripped folds, and none of
   this happens without pokes the game never performs itself.
 - ★★★★★ **S139 (2026-08-23) — BOTH MOVEMENT HYPOTHESES ARE DEAD AND THE WALL IS DOWN TO A FEW
-  HUNDRED BYTES: `PerformMovement` RUNS with a real DeltaTime; `StartNewPhysics` NEVER RUNS. Read
-  `docs/s139-flight1-the-bot-is-not-special.md`, then `docs/s139-movement-ladder.md`.**
+  HUNDRED BYTES: `PerformMovement` RUNS with a real DeltaTime; ~~`StartNewPhysics` NEVER RUNS~~.
+  Read `docs/s139-flight1-the-bot-is-not-special.md`, then `docs/s139-movement-ladder.md`.**
+  ⚠⚠⚠ **THE SECOND HALF OF THAT HEADLINE IS RETRACTED (S140) — "`StartNewPhysics` NEVER RUNS" was
+  never measured; its sole support was the `+0x16C8` latch, which is invalid (see below and
+  `docs/s140-tier1-cfg.md`). It is now UNGRADED, not `[M]`.** The DeltaTime half stands.
   One staged client, ONE injection, read-only RPM; 6 offline RE lanes + 6 adversarial verifiers.
   ★★ **[M] THE BOT IS NOT SPECIALLY DISADVANTAGED — bot and player read IDENTICALLY on EVERY
   structural field**: `UpdatedComponent` (both non-null CapsuleComponent) · `Mobility` 2 ·
@@ -1621,15 +1629,33 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   zero.** MEASURED live: it advances at **1.0× real time on BOTH pawns** (bot 33.14→43.34 over
   10.2 s; player 380→390). ⇒ DeltaTime is real, HitStop did not fire, **and `PerformMovement` is
   running.**
-  ★★★★★ **[M] AND `ULokiCMC::StartNewPhysics 0x055C2430` HAS NEVER RUN ON EITHER COMPONENT.** Its
-  latch is `0x055C2469 mov byte [rcx+0x16C8],1`, on the **unconditional fall-through** of the
-  `Iterations==0` path (the `je` at `0x055C243F` skips only a redundant zero-store) — so `+0x16C8`
-  is a valid sticky "ever reached" instrument, and it reads **0** on both.
-  ⇒ ★ **THE WALL IS BETWEEN `0x055B8414` AND the engine's single `call [rax+0x720]`, which is at
-  `0x035EB13A`** (⚠ **not** `0x035EB7FA` — a CFG walk of the whole function finds exactly one, and
-  the S139 synthesis recorded the wrong address).
-  It also explains with no extra assumption why a `MOVE_Falling` pawn with `GravityScale 1.000` does
-  not fall: **`PhysFalling` is dispatched FROM `StartNewPhysics`.**
+  ⚠⚠⚠ **THE OLD TEXT HERE READ "[M] AND `ULokiCMC::StartNewPhysics 0x055C2430` HAS NEVER RUN ON
+  EITHER COMPONENT … `+0x16C8` is a valid sticky 'ever reached' instrument, and it reads 0 on both."
+  RETRACTED S140 (2026-08-23). `+0x16C8` IS NOT A STICKY LATCH AND `latch == 0` IS UNINTERPRETABLE.
+  Read `docs/s140-tier1-cfg.md` §4.** [M] `ULokiCMC` vtable disp **`0xA50` = `0x0530ABF0`**
+  (`80b9c816000000 / 7407 / c681c816000000 / e98bbb2cfe`) **CLEARS** the byte, and engine
+  `PerformMovement` calls that slot at **`0x035EB569 ff90500a0000 call [rax+0xa50]`** with
+  `rcx = rbx = this` — later in the same call, on a path the `StartNewPhysics` call site
+  **DOMINATES**, and the clear **POST-DOMINATES** `0x035EB1CB`. ⇒ **an off-thread read sees `0`
+  whether the step runs every frame or never runs at all.** Derived independently THREE times in one
+  session (session lead, lane L4, lane L6) and re-verified by the adjudicator.
+  ★★ **[M] THE FIELD IS NAMED, FROM ITS OWN CONSUMER — it is a per-frame `TOptional<FVector>`
+  validity flag over the Velocity snapshot at `+0x16B0`.** `.data 0x09BC9AD0` =
+  `{"GetRecentVelocity", thunk 0x0530C7E0, impl 0x0530AC10}`, and the impl is
+  `cmp byte [rcx+0x16c8],0 / mov eax,0x16b0 / mov r8d,0xe8 / cmove eax,r8d` — i.e. return the
+  **snapshot** if the flag is set, else **live `Velocity @+0xE8`**.
+  ★ **THE DURABLE READOUT IS THE PAYLOAD `+0x16B0`, whose only CMC-side writer is `0x055C244F`
+  inside `StartNewPhysics`** — but a resting `Velocity` of `(0,0,0)` makes a written snapshot
+  indistinguishable from a never-written one, so it needs a **poked sentinel** to discriminate.
+  ⚠ Only the **seventh bail** — `0x035EB146 call [rax+0x6b8]` (a SECOND `HasValidData`) →
+  `0x035EB14E jne 0x35EB1CB`, fallthrough `0x035EB150` — leaves the byte at 1. [M] the clear is
+  unreachable from `0x035EB150` and reachable from `0x035EB1CB`.
+  ⚠ **VOID, it rested on the latch:** the old line *"It also explains with no extra assumption why a
+  `MOVE_Falling` pawn with `GravityScale 1.000` does not fall"*. `PhysFalling` really is dispatched
+  from `StartNewPhysics` (case 3 of the bounded 8-entry table at `.text 0x03600BF8`), but **nothing
+  shows `StartNewPhysics` does not run**, so the no-fall observation is now an unexplained
+  phenomenon, not a derived consequence. ⇒ ★ **the old "THE WALL IS BETWEEN `0x055B8414` AND
+  `0x035EB13A`" framing is likewise VOID.**
   ⚠⚠ **RETRACTED WITHIN S139 — do not read "`PerformMovement` runs" as "the ENGINE's
   `PerformMovement` runs".** `+0x12B0` is accumulated at `0x055B840C`, **UPSTREAM of the Super call
   at `0x055B85C1`**, so its advance establishes only that **`ULokiCMC::PerformMovement`** ran with
@@ -1653,8 +1679,14 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   (`0x03C9B0A0`: `mov r8b,1` → `call [rax+0x810]` `GetBodyInstance`), so it can answer about a
   **weld parent** — the one gate where the measured input and the tested condition are provably
   different objects.
-  ★ **POPULATION CONTROL: 37 movement components live, EVERY latch `+0x16C8` = 0, and exactly ONE is
-  doing anything at all.** ⇒ **there is no moving character anywhere in this world to diff against.**
+  ⚠ **POPULATION CONTROL — THE LATCH HALF IS VOID (S140).** The old text read *"37 movement
+  components live, EVERY latch `+0x16C8` = 0, and exactly ONE is doing anything at all ⇒ there is no
+  moving character anywhere in this world to diff against."* **37/37 zeros is equally expected under
+  BOTH readings, so it never discriminated anything.** What survives is the *other* column of the
+  same sweep — 36 of 37 read `TimeSinceFallingStart 0.000` and `MovementMode 0 (MOVE_None)`, i.e.
+  pooled and inert. **"No moving character to diff against" stands on that, not on the latch.**
+  ★ And it should have raised the alarm at the time: under the old reading, 37/37 means *nothing in
+  the world can simulate movement at all* — the far less likely of the two explanations.
   ★ Also banked: **`[ALokiCharacter+0x7F0]` is NOT the ASC** — it is the `IAbilitySystemInterface`
   **secondary VTABLE pointer** (structure [M]; the interface NAME is [I, strong] — MSVC RTTI is
   stripped), whose slot `+0x10` (`0x055A9610 = mov rax,[rcx+0x710]; ret`) returns **`char+0xF00`**.
@@ -1714,12 +1746,27 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   ⚠⚠ **BUT THE LATCH STAYED 0, `Velocity` stayed (0,0,0), and the pawn moved 0.00 uu ⇒ THE INPUT
   WALL AND THE PHYSICS-STEP WALL ARE *TWO* PROBLEMS.** That was pre-registered as P4 with BOTH
   branches written down and neither predicted, so it cannot be reinterpreted after the fact.
-  ⚠⚠ **AND THE PHYSICS CONTRADICTION IS NOW SHARPER:** a written `Acceleration` PROVES
-  `ControlledCharacterMove` runs, which calls `PerformMovement` at `0x035DCDAC` whenever
-  `Role == ROLE_Authority` (measured **3**) — yet `StartNewPhysics` is never entered while all six
-  enumerated exits read passing. **Something bails for a reason none of the six accounts for**, or a
-  seventh path exists that the CFG walk's `target > call` predicate cannot see (⚠ **that predicate is
-  blind to BACKWARD bails**).
+  ⚠⚠⚠ **THE "PHYSICS CONTRADICTION" DISSOLVED AT S140 — THERE WAS NO SEVENTH EXIT, THERE WAS AN
+  INVALID INSTRUMENT.** The old text asked whether *"something bails for a reason none of the six
+  accounts for, or a seventh path exists that the CFG walk's `target > call` predicate cannot see"*.
+  **Both horns are dead** (`docs/s140-tier1-cfg.md`):
+  **(a) [M] THE SIX IS COMPLETE AND EXACT.** Recursive-descent CFG over engine `PerformMovement`
+  `0x035E9EC0`, reproduced by **four independently written instruments**: **1461 instructions**
+  (a linear sweep gets 1074 and is unsound), **148 calls, 0 indirect jumps, 0 decode failures,
+  0 coverage gaps (6538/6538 bytes), 1 `ret`, `|R| = 1075`**. Backward reachability from the call
+  returns **exactly the six** — no additions, no false positives, **0 dead-ended nodes in `R`**, and
+  **exactly 2 backward edges in the whole function, NEITHER in `R`**. ⇒ **there is no backward bail
+  and no seventh path.** The `target > call` predicate happened to be right here, and now it is known
+  *why* rather than assumed. ★ **Five of the six DOMINATE the call; `0x035EA25D` does not** (it is a
+  redundant second `HasValidData` inside the optional root-motion block).
+  ⚠ Keep the general lesson even though it did not bite here: a forward-address predicate is blind to
+  backward bails **and to FALLTHROUGH edges leaving `R`** — engine `TickComponent 0x03603780` has
+  three of the latter, so the trap is real, just not in this function.
+  **(b) [M] "`StartNewPhysics` is never entered" WAS NEVER MEASURED** — its sole support was the
+  `+0x16C8` latch, which reads `0` in every world (see the retraction above). It is now **UNGRADED**.
+  ⇒ ★★ **THE QUESTION IS NO LONGER "why is the physics step never entered". IT IS "why does a
+  correct `Acceleration` produce no `Velocity`"** — which points downstream, at
+  `CalcVelocity` / `PhysFalling` (`0x055B89F0`, disp `0x830`), a function nobody has read.
   **Builds:** `gasattr` RAW **`2fcc2536e21f18e3`** · `gasattr-ctrl` RAW **`4465ebc4d7168c03`**
   (ARM G compiled out; **verified DISTINCT** — not an A/B against a copy of itself). Regression gates
   `botai` `5e47c13cf7f0a158` and `driverecompute` `a2a952babfed256b` **UNCHANGED**.
@@ -1729,20 +1776,62 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   **translating**; the identical recipe here produces acceleration and **no translation**, because
   the physics step is blocked by something the DS route did not have. **Do not read that line as
   promising movement on the force-open route.**
-  ⚠⚠ **RESIDUAL, AND DO NOT ASSUME THE PORT CLOSES IT: `StartNewPhysics` is STILL never entered**
-  (latch 0 on the bot, the player, and **all 37** movement components in the world — of which
-  **exactly one is doing anything at all**). **A zero `Acceleration` does not stop GRAVITY.** Fly the
-  port and read the latch in the SAME pass; that settles whether this is one problem or two.
+  ⚠⚠⚠ **THE OLD "RESIDUAL" LINE IS VOID (S140): it read "`StartNewPhysics` is STILL never entered
+  (latch 0 on the bot, the player, and all 37 movement components)". THE LATCH CANNOT SUPPORT
+  THAT.** What survives untouched is the *phenomenon*: `Velocity` stays `(0,0,0)`, the pawn
+  translates **0.00 uu**, and a `MOVE_Falling` pawn with `GravityScale 1.000` does not fall — all
+  from instruments unrelated to `+0x16C8`. **"A zero `Acceleration` does not stop GRAVITY" still
+  stands, and the input wall and the movement wall are still two problems.** ⚠ But "fly the port and
+  read the latch in the same pass" is now **the wrong experiment** — the latch would read 0 either
+  way. Use the sentinel test below.
   ⚠⚠ **A LINEAR DISASSEMBLY SWEEP IS NOT A CFG.** Over engine `PerformMovement` a linear sweep
   decoded **1,074** instructions where recursive descent finds **1,461** — it missed ~390. It
   happened to get the exit set right; do not rely on that. ⚠ And **"enumerate forward branches whose
   target is ≥ the call" is structurally blind to bails that jump BACKWARD** — use backward
   reachability over the call node.
-  ★ **NEXT, and it is small:** (a) does Loki's `PerformMovement` reach its Super? two forward
-  branches jump toward it — `0x055B845E test byte [CharacterOwner+0x580],8 / jne` and
-  `0x055B846B mov ebp,[rsi+0x1988] / sub ebp,1 / js`; **`[CharacterOwner+0x580] & 8` is an unread
-  live byte.** (b) if it does, **`UpdatedComponent->IsSimulatingPhysics()` is the prime remaining
-  engine gate and was NOT read** (the client died first). One read each.
+  ⚠⚠⚠ **THE S139 "NEXT, and it is small" LIST IS REFUTED IN BOTH ITEMS (S140).** It read:
+  *"(a) does Loki's `PerformMovement` reach its Super? two forward branches jump toward it —
+  `0x055B845E test byte [CharacterOwner+0x580],8 / jne` and `0x055B846B mov ebp,[rsi+0x1988] /
+  sub ebp,1 / js`; `[CharacterOwner+0x580] & 8` is an unread live byte. (b) if it does,
+  `UpdatedComponent->IsSimulatingPhysics()` is the prime remaining engine gate and was NOT read."*
+  **(a) [M] `ULokiCMC::PerformMovement` reaches its Super UNCONDITIONALLY** — 142 of 322
+  instructions can reach `0x055B85C1` and **ZERO edges leave that set** (sound backward
+  reachability). **And BOTH flagged branches target `0x055B85B4`, which is 13 bytes BEFORE the Super
+  call and falls straight into it — they skip a LOOP, not the Super.** Reading
+  `[CharacterOwner+0x580] & 8` live would have settled nothing. That was the handoff's #1 ranked move.
+  **(b) [M] it HAS been read** — S139 flight 3 measured `bSimulatePhysics == 0` (with
+  `bEnableGravity == 1` from the same byte as a two-sided decode control) and
+  `WeldParent @capsule+0x5F0 == NULL`, and `docs/next-session-prompt-s140.md` §0b itself says
+  "ASKED AND ANSWERED". **The gate passes.** ⚠ Also, the handoff said *"three gates"*; the measured
+  count is **five mandatory plus a non-mandatory sixth**. A digest-is-an-instrument instance: the
+  settled S139 docs were right and the compressed handoff line was stale.
+  ★ **NEXT (S141), and it is one experiment:** **THE VELOCITY-SENTINEL TEST.** Write a small
+  distinctive sentinel (e.g. `(0.0009765625, 0, 0)` — exactly representable, negligible speed) into
+  `Velocity @CMC+0xE8/F0/F8`, wait ≥3 frames, then read `CMC+0x16B0..+0x16C7` and re-read `+0xE8` as
+  the probe's own control. **Sentinel present in the payload ⇒ `ULokiCMC::StartNewPhysics` ran with
+  `Iterations == 0` [M]. Payload still `(0,0,0)` while `+0xE8` holds the sentinel ⇒ it did not [M].**
+  The payload is durable (disp `0xA50` clears only the flag byte; the only CMC-side writer of
+  `+0x16B0` is `0x055C244F` inside `StartNewPhysics`). ⚠ Do NOT use a large sentinel — it perturbs
+  the system under test. ⚠ It needs an external `WriteProcessMemory`, a repo-recorded **unresolved
+  hazard** (n=1, confounded); pair it with a matched no-write sitting.
+  ⛔ **The write-free variant is FORECLOSED:** `GetRecentVelocity` is reflected and the S55 primitive
+  could call it with zero writes, but with `Velocity == (0,0,0)` **both arms of its `cmove` return
+  `(0,0,0)`**, so it cannot discriminate.
+  ⛔ **And there is NO free log receipt on this path** — [M] the only three `LogCharacterMovement`
+  sites reachable here are the `IsSimulatingPhysics` abort (`.rdata` record `0x07FC0648` → string
+  `0x07FC0670`, verbosity **5 = Log**, line 3477 — fires only when the gate FAILS, and it passes),
+  an unsupported-movement-mode **Warning** (record `0x07FC0740`, line 3510 — mode 3 is in range), and
+  a root-motion-only Log in `PerformMovement` (record `0x07FC0548`, line 2919). Engine/Loki
+  `TickComponent`, `ControlledCharacterMove` and Loki `PerformMovement` contain **zero** `.rdata`
+  references of any kind. **So S139's "pin `LogCharacterMovement=Log` and the whole question becomes
+  a per-frame log line" does not work as stated.**
+  ★★ **BUT the same work yields the positive control S139 correctly said was missing:** the
+  `LogCharacterMovement` category object is at **`.data 0x9F85E68`** [M, two agreeing derivations —
+  the gate `0x036009EE cmp byte [rip+0x6985473],5` and the logger call's own
+  `0x03600A28 lea rcx,[rip+0x6985439]`], and `FLogCategoryBase.Verbosity` is at **offset 0**.
+  ⇒ **one read-only RPM byte tells you whether the category is suppressed** — reusable for every
+  "category X is silent" question in this project. ⚠ Read it live or from a single-state dump, never
+  from `merged13`'s spliced `.data`.
   **Probe: `tools/re/cmc_earlyout_readout.py`** (read-only; 10 ranked fields, two mandatory identity
   controls). **New instrument: `scratchpad/s139/ticksniff.py`** — decodes `FTickFunction`
   (`UActorComponent::PrimaryComponentTick` **IS a UPROPERTY at +0x40**; `AActor::PrimaryActorTick`
@@ -1758,6 +1847,47 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   player latch of 0 makes the bisector **uninterpretable**, and it read 0 — so the bot's 0 was NOT
   taken as a result until the polarity was re-read from the bytes. Without P2 it would have been
   written up as "S2 confirmed", and S2 is false.
+  ★★★★★ **AND S140 SHOWED P2 WAS RIGHT FOR A DEEPER REASON THAN ANYONE KNEW — the latch is
+  uninterpretable in EVERY sitting, not just that one.** See the S140 block below.
+- ★★★★★ **S140 (2026-08-23) — OFFLINE, ZERO LAUNCHES. THE PHYSICS-STEP "CONTRADICTION" DISSOLVED:
+  THE SIX EXITS ARE COMPLETE AND EXACT, AND THE INSTRUMENT THAT POSED THE QUESTION IS INVALID.
+  Read `docs/s140-tier1-cfg.md` (844 lines); its §4 and §5 govern.**
+  13 agents (6 analysis lanes, 6 adversarial verifiers, 1 adjudicating synthesis) plus the session
+  lead working the same image in parallel. **No launches, no injection, no `.text` writes, no live
+  process touched.**
+  ★★ **[M] THE SIX SURVIVE — exactly, no additions, no subtractions**, reproduced by FOUR
+  independently written CFG instruments: 1461 instructions, 148 calls, **0 indirect jumps, 0 decode
+  failures, 0 coverage gaps (6538/6538 bytes), exactly 2 backward edges and NEITHER in `R`**,
+  `|R| = 1075`. **Five of the six DOMINATE the call.** The motivating worry — that the
+  `target > call` predicate was blind to a backward bail — is measured moot here.
+  ★★★★★ **[M] THE LATCH `CMC+0x16C8` IS NOT A LATCH.** Cleared at the tail of every completed
+  `PerformMovement` by `ULokiCMC` vtable disp `0xA50` = `0x0530ABF0`, called at `0x035EB569`.
+  **Named from its own consumer: `GetRecentVelocity` (`.data 0x09BC9AD0` → impl `0x0530AC10`) makes
+  it a per-frame `TOptional<FVector>` validity flag over the Velocity snapshot at `+0x16B0`.**
+  ⇒ every S139 conclusion resting on it is **UNGRADED, not negative**. Full retraction above.
+  ★ **THE FULL CALL CHAIN IS NOW VERIFIED HOP BY HOP with sound exit analysis** — Loki `TickComponent`
+  → engine `TickComponent` (**0 exits**) → `ControlledCharacterMove` (9, all proven passed by
+  observation) → engine `ControlledCharacterMove` (**0 exits**) → `PerformMovement` (**exactly 1**
+  exit, `CharacterOwner->Role(+0x160)==3`, measured 3 **on the provably same object**) → Super
+  (**0 exits**) → `StartNewPhysics` (the six). **Every hop is unconditional or measured-passing.**
+  ⚠ Note what the `Acceleration` signed-zero proof does NOT cover: the store at `0x035DCD6B` is
+  **upstream** of the Role gate, so it proves the function ran to there, not that `PerformMovement`
+  was called. The chain needs both facts, not one.
+  ⚠ **NEW GAP nobody had noticed: `CMC+0xC0 WorldPrivate` — exit 2's input — has NEVER been read
+  live.** Grade exit 2 **[I, strong]**, not [M].
+  ⚠ **NEW: engine `StartNewPhysics` has a FOURTH early-out** `0x036009B5 cmp r8d,[rcx+0x3e4] / jge`
+  (`MaxSimulationIterations`) and a **third** `HasValidData` at `0x036009C5` — in no prior document.
+  ⚠ **INSTRUMENT DEFECT WORTH KEEPING: capstone 5.0.7 reports `movups` STORES as reads** via
+  `regs_access`, silently hiding 16 CMC-field stores — including `0x055C244F`, the very payload
+  receipt S141 is now told to use. **Classify writes from `operands[0].type == MEM`, never from
+  `regs_access`.**
+  ⚠ **A SECOND ONE, mine:** a scan for rip-relative `lea`s into `.rdata` returned **0** for engine
+  `StartNewPhysics` **with a passing positive control**, and I nearly recorded "the log literal is
+  never referenced". **UE `lea`s a LOG-RECORD STRUCT whose `+0x00` points at the string.** ★ The rule:
+  *a positive control validates the mechanism it exercises, not the question you are asking.*
+  ⚠ **`pdata_union.csv` has NO row covering `0x055C2430`**, so a pdata-seeded census misses
+  `ULokiCMC::StartNewPhysics` entirely — my first `+0x16C8` census failed its own positive control
+  for exactly that reason. Seed from the **vtable** as well.
 - ★★★★★ **THERE ARE **TWO** `.text` DIGEST RECIPES ON DISK AND THE REPO USES BOTH (S136).**
   **RAW** = `sha256(.text[PointerToRawData, +SizeOfRawData))[:16]` — `configs/fk24-stage.ps1:77
   Get-TextHash` (prints only inside a stale-shim abort) and **`configs/fk7-ab-run.ps1:94`, which
