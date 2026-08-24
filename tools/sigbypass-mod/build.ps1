@@ -654,6 +654,22 @@ $Variants = @{
         #   watches whether it persists and whether the pawn TRANSLATES. It PERTURBS BY DESIGN --
         #   that is the point, and it is the opposite of ARM H. bit9 (H) + bit11 (J), NO bit10.
         'sentinel-big'        = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0xBA0','-DKSHSENTX=600.0','-DKSHPLRY=600.0')
+        # ---- S141 TIER 3 ----------------------------------------------------------------------
+        # ARM K -- TWO CLEAN ARMS IN ONE INJECTION, on DIFFERENT PAWNS and DIFFERENT AXES.
+        #   BOT    : Velocity = (0, 0, -37.0).  A purely VERTICAL kick -- SizeSq2D == 0, i.e.
+        #            maximally BELOW engine PhysFalling's 2-D gate at 0x035ED98E. S141 established
+        #            offline [M] that the zeroing store there is `movups`, 16 BYTES over a 24-byte
+        #            FVector-of-doubles, so the gravity-space Z SURVIVES. This tests that LIVE.
+        #   PLAYER : ARM K1 (the same three GAS storages) + ARM K2 (GravityScale 0 -> 1.0, undoing
+        #            `sp`'s own LIFT step) + ARM J's +Y 600 kick. Z answers "does gravity
+        #            integrate", Y answers "does the CalcVelocity clamp still damp it" -- separate
+        #            components, separately readable.
+        # bits: 0x20 D | 0x80 F | 0x100 G | 0x200 H | 0x800 J | 0x1000 K2  = 0x1BA0
+        'armk'                = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x1BA0','-DKSHSENTX=0.0','-DKSHSENTZ=-37.0','-DKSHPLRY=600.0','-DKSHPLRGRAV=1.0','-DKBSGASPLAYER=1')
+        # ARM K CONTROL: identical except the BOT gets NO vertical kick (KSHSENTZ stays 0.0) and
+        # the player gets NO GravityScale write (bit12 clear) and NO ARM K1. i.e. it is S140's
+        # `sentinel-big` shape with a zero bot sentinel -- the arm that changes nothing new.
+        'armk-ctrl'           = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0xBA0','-DKSHSENTX=0.0','-DKSHSENTZ=0.0','-DKSHPLRY=600.0')
         # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
         # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
         'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')

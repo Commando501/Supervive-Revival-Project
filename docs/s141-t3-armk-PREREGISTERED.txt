@@ -1,0 +1,139 @@
+S141 TIER 3 — ARM K PRE-REGISTRATION
+Written BEFORE the injection. Committed before the client is launched. Do not edit after.
+
+ARTIFACT   tools/sigbypass-mod/build/tutorial_launch_armk.dll
+           .text RAW  99b621298cac3dcb   VSIZE 3262edab81c500f9   rawsize 151552
+CONTROL    tutorial_launch_armk_ctrl.dll
+           .text RAW  3f7323f6f4ba3e57   VSIZE a5e9c192b417cca7   rawsize 150528
+           VERIFIED DISTINCT (an A/B against a copy of itself has burned a live run in this repo).
+BUILD      build.ps1 -Name tutorial_launch -Variant armk
+           KBSPSARMS=0x1BA0  KSHSENTX=0.0  KSHSENTZ=-37.0  KSHPLRY=600.0
+           KSHPLRGRAV=1.0    KBSGASPLAYER=1
+GATES      botai 5e47c13cf7f0a158 · gasattr 2fcc2536e21f18e3 · gasattr-ctrl 4465ebc4d7168c03
+           ALL THREE reproduce EXACTLY from the edited source. verify_dll.py VERDICT: PASS,
+           imports KERNEL32.dll only, no C++ exception machinery, no CRT.
+RISK       DATA class only. No module-image write, no PI hook, no CDO poke beyond ARM G's existing
+           one. Writes: bot Velocity (24 B), player Velocity (24 B), player GravityScale (4 B),
+           player storages (3 x 8 B pointers into an existing allocation), plus ARM G's existing
+           attribute writes into the CDO default subobject.
+
+================================================================================================
+WHY THIS ARM. Two clean arms, DIFFERENT PAWNS, DIFFERENT AXES, one injection (FK-32 gives us one).
+================================================================================================
+
+S141 established OFFLINE, twice independently (session lead + lane L1, agreeing on every byte):
+
+  [M] Engine PhysFalling's SizeSq2D gate at 0x035ED98E zeroes ONLY the gravity-space HORIZONTAL
+      components. The store at 0x035ED9AC is `movups` = 16 bytes over a 24-byte FVector-of-doubles;
+      the gravity-space Z at [rbp+0x178] survives and is rotated back verbatim by 0x35F4620.
+      ⇒ Velocity.Z is NOT zeroed. THE FIXED POINT IS 2-D, NOT 3-D.
+
+  [M] Gravity integration (GetGravityZ 0x035ECC21, NewFallVelocity 0x035ECCEF, writing Velocity at
+      0x035ECCFB/0x035ECD06) is dominated by EXACTLY TWO exit branches — DeltaTime < MIN_TICK_TIME
+      and Iterations >= MaxSimulationIterations. NEITHER depends on velocity.
+
+  [M] Both Loki gravity overrides act only on MOVE_Custom(7); at MOVE_Falling(3) both delegate to
+      the engine unchanged. So nothing in the mover explains a MOVE_Falling pawn not falling.
+
+  ⚠ AND THE SCOPE ERROR THAT MAY DISSOLVE IT: S140 Tier 2 measured `ULokiCMC::StartNewPhysics runs`
+    from the payload write at 0x055C244F — which sits in the LOKI WRAPPER'S PROLOGUE, upstream of
+    the `jmp 0x3600990` at 0x055C2470. Engine StartNewPhysics has FOUR further early-outs before
+    the jump table. NOTHING measured so far establishes that PhysFalling was ever ENTERED.
+
+================================================================================================
+ARM A — THE BOT.  Velocity = (0, 0, -37.0).  Purely vertical. SizeSq2D == 0, maximally BELOW the
+                  gate. The bot is already ARM-G treated and reads GravityScale 1.000 (S138).
+================================================================================================
+
+P1  Z SNAPS TO EXACTLY 0.0 within the first sample
+      -> T3-A IS REFUTED. Something zeroes Velocity.Z; the fixed point is 3-D after all.
+         This is the outcome that kills the offline finding, and it is written down first.   [M]
+
+P2  Z GROWS MORE NEGATIVE, toward -4000, and the pawn TRANSLATES DOWNWARD, accelerating
+      -> T3-A CONFIRMED LIVE (a Z-only velocity survived the 2-D gate) **and** gravity
+         integrates **and** PhysFalling is entered. The non-fall then requires a reason why a
+         velocity of EXACTLY zero is different from -37, which no gate found offline supports.  [M]
+
+P3  Z STAYS EXACTLY -37.0 and the pawn TRANSLATES DOWNWARD at a CONSTANT ~37 uu/s
+      -> the mover RUNS and moves the pawn, but gravity contributes NOTHING.
+         ⇒ Gravity is statically zero. Read GravityDirection@0x1D8 and GravityScale@0x1A0 in the
+         same dump to say which. This is lane L1's hypotheses 1/2.                             [M]
+
+P4  Z STAYS EXACTLY -37.0 and the pawn DOES NOT MOVE AT ALL
+      -> the mover is not running on this pawn: PhysFalling is not entered.
+         ⇒ lane L1's hypothesis 3, and the scope error above is the whole story.               [M]
+
+P5  anything else -> UNMODELLED. Report the raw samples; do not interpret.
+
+  ⚠ P3 vs P4 is decided by TRANSLATION, not by Velocity. The sampler already reports "moved N uu"
+    against a latched start location. READ THAT NUMBER.
+  ⚠ The bot's GravityScale is deliberately NOT written by this arm. It already reads 1.000, and
+    leaving it alone keeps the bot's gravity state a measured input rather than an imposed one.
+
+================================================================================================
+ARM B — THE PLAYER.  ARM K1 (three GAS storages) + ARM K2 (GravityScale 0 -> 1.0) + ARM J (+Y 600).
+================================================================================================
+
+Three treatments at once, and that is deliberate: their readouts are on DIFFERENT COMPONENTS of
+one vector, so neither can masquerade as the other.
+
+  Z-COMPONENT / falling  -- tests ARM K2 and the S141 claim that the player's non-fall in S140
+                            flight 3 was SELF-INFLICTED (docs/s138-flight9-...md:17 records
+                            GravityScale 0.000 "zeroed by sp's LIFT step" — OUR staging shim).
+  Y-COMPONENT / 600 kick -- tests whether ARM G generalises: does the CalcVelocity MaxInputSpeed
+                            clamp still damp the player to zero once it has an AttributeSetStorage?
+
+Q1  DOES THE PLAYER FALL?
+      YES, accelerating toward terminal velocity
+        -> ARM K2 confirmed. The player's non-fall was OUR GravityScale zero, not a game fact,
+           and `docs/s140-t2-armj-THE-BOT-WALKS.md` §2's inference of "a real GAS-treatment
+           dependency in the MOVER" from the non-fall half is REFUTED.                          [M]
+        ★ AND IT WOULD BE A MUCH BIGGER RESULT THAN THAT: the player receives NO Z velocity from
+          this arm, so a fall means gravity integrated from Vz == 0. That would REFUTE any
+          "Velocity == 0 stops the mover" reading and localise the bot's problem to the bot.
+      NO
+        -> GravityScale is not sufficient. Then read GravityDirection@0x1D8 on BOTH pawns; if it
+           is the zero vector the answer is there.                                              [M]
+
+Q2  DOES THE PLAYER'S +Y VELOCITY SUSTAIN?
+      Sustains near 600, or settles at the 500 cap (== MoveSpeed/MaxMoveSpeed)
+        -> T3-C YES: the GAS port generalises off the bot. The tutorial hero is movable through
+           the STOCK ENGINE CHAIN, not by `play` writing CMC+0xE8/+0x328 every frame.           [M]
+      Decays monotonically to ~0, reproducing flight 3's 600 -> 33 -> 22 -> 8.7 -> 0.9 -> 0
+        -> T3-C NO: ARM G's storages are not sufficient on the player. Read AnalogInputModifier;
+           if it is still 0 the clamp is still firing and something else feeds it.              [M]
+      ⚠ IF ARM K1 REPORTS "PLAYER storages written 0/3" THEN Q2 IS UNINTERPRETABLE, NOT NEGATIVE.
+        The marker prints that count explicitly.
+
+Q3  CROSS-CONTAMINATION CONTROL. The bot is kicked on Z, the player on Y. If the BOT ever shows a
+    non-zero Y matching 600, or the PLAYER shows a Z matching -37.0, the CMC resolution is wrong
+    and THE RUN IS VOID.
+
+================================================================================================
+FREE READS TAKEN THIS FLIGHT (all pure reads, none has ever been taken)
+================================================================================================
+  CMC+0x1A0  GravityScale        [M, S141: engine GetGravityZ 0x035E3680 `mulss xmm0,[rbx+0x1a0]`]
+  CMC+0x1D8  GravityDirection X,Y  ) [M offsets + arithmetic; the NAME is [I, strong]
+  CMC+0x1E8  GravityDirection Z    ) Gravity = -GravityDirection * GetGravityZ()
+  CMC+0x1001 the byte feeding engine GetGravityZ's `return exactly 0.0f` arm at 0x035E366F
+  CMC+0x231/0x232  MovementMode / CustomMovementMode (both Loki gravity overrides gate on ==7)
+  CMC+0x1678 ULokiCMC::PhysFalling's lateral fall-speed limiter (-1.0f = DISABLED sentinel)
+             ⚠ SEVEN writers in the Loki CMC band -> NOT a clean "PhysFalling ran" receipt.
+                Printed for information only. Do not use it as evidence.
+
+  ★ IF GravityDirection READS (0,0,0) ON EITHER PAWN, THE NON-FALL IS EXPLAINED IN ONE LINE and
+    every other measurement (MOVE_Falling, GravityScale 1.000, StartNewPhysics entered) stands.
+
+================================================================================================
+RUN-IS-VOID CONDITIONS (stated before the run, per this repo's own rules)
+================================================================================================
+ * ARM D produces no LokiBotController -> ARM A is a STAGING statement, not a result.
+ * Either ShResolveCmc identity control fails (CharacterOwner@0x198 != pawn, or
+   TickFn.Target@0x68 != cmc) -> nothing is written to that object; INSTRUMENT statement.
+ * vptr != base+0x088F8570 -> it is not a ULokiCMC and the whole test is void.
+ * cross-contamination per Q3.
+ * the client dies before `[BS] done` -> read only what was captured before the death, and say so.
+
+CAPTURE AS YOU GO. FK-32 has killed the last three flights on the 4th manual-map at ~320 s and
+staging spends 3. Nothing has been lost so far only because every result was copied off as it
+was produced.

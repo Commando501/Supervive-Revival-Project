@@ -15306,6 +15306,11 @@ static const uint8_t PS_SIG_SPAWNBOT[16] =
 #ifndef KBSGASMOVESPEED
 #define KBSGASMOVESPEED 500.0f
 #endif
+// S141 ARM K1 -- when 1, ARM G ALSO writes its three storage pointers onto the PLAYER hero.
+// Default 0, so `gasattr` / `gasattr-ctrl` / `sentinel-*` are byte-identical to their S140 form.
+#ifndef KBSGASPLAYER
+#define KBSGASPLAYER 0
+#endif
 static void BsPsGasAttrs(){
     Marker("[GASX] ================ ARM G: port the DS GAS recipe onto the BOT ================\r\n");
     uintptr_t ctl=g_psLbCtl[1];
@@ -15369,6 +15374,45 @@ static void BsPsGasAttrs(){
                 (rb==attrs[i].v)?"OK":"*** FAILED ***");
         if(rb==attrs[i].v) attrOk++;
     }
+#if KBSGASPLAYER
+    // ==========================================================================================
+    // S141 ARM K1 -- APPLY THE SAME THREE STORAGE POINTERS TO THE **PLAYER** HERO.
+    //
+    // T3-C: does the GAS port generalise off the bot? If it does, the tutorial hero becomes
+    // movable through the STOCK ENGINE CHAIN, instead of by `play` writing CMC+0xE8 and +0x328
+    // every game-thread hit (tutorial_launch.cpp:3047, :12599) -- a capability change, not just
+    // a diagnosis.
+    //
+    // ⚠ THIS COSTS THE WITHIN-RUN SPECIFICITY CONTROL AND THAT IS DELIBERATE. Plain ARM G leaves
+    //   the player untreated precisely so a bot-only effect is attributable. Treating both means
+    //   "both moved" no longer discriminates. What replaces it: the two pawns are given kicks on
+    //   DIFFERENT AXES (bot Z, player Y), so cross-contamination is still visible, and the
+    //   attribute VALUES are shared (see below) so a player effect cannot come from different data.
+    //
+    // ★ NOTE WHAT THIS DOES *NOT* HAVE TO DO: the six attribute values were already written above,
+    //   into `src[1]`, which is the CDO's DEFAULT SUBOBJECT -- process-wide and shared. So
+    //   treating the player is exactly THREE POINTER STORES; no second attribute write, and no
+    //   possibility of the two pawns seeing different attribute values.
+    if(LooksLikePtr(g_bsPlayerHero)){
+        uintptr_t pp=g_bsPlayerHero; int pwrote=0;
+        Markerf("[GASX] --- ARM K1: same three storages onto the PLAYER hero 0x%llX ---\r\n",
+                (unsigned long long)pp);
+        for(int i=0;i<3;i++){
+            uint32_t po=PropOffsetSuper(ClassOf(pp),kDst[i]);
+            if(po==0xFFFFFFFF){ Markerf("[GASX]   PLR %-30s NOT A PROPERTY -> skipped\r\n",kDst[i]); continue; }
+            if(!LooksLikePtr(src[i])){ Markerf("[GASX]   PLR %-30s src is NULL -> skipped\r\n",kDst[i]); continue; }
+            if(!SafeWritable((void*)(pp+po),8)){ Markerf("[GASX]   PLR %-30s @0x%X NOT WRITABLE\r\n",kDst[i],po); continue; }
+            uintptr_t b4=*(uintptr_t*)(pp+po);
+            *(uintptr_t*)(pp+po)=src[i];
+            uintptr_t af=*(uintptr_t*)(pp+po);
+            Markerf("[GASX]   PLR %-30s @0x%X  %llX -> %llX  %s\r\n",kDst[i],po,
+                    (unsigned long long)b4,(unsigned long long)af,(af==src[i])?"OK":"*** READBACK FAILED ***");
+            if(af==src[i]) pwrote++;
+        }
+        Markerf("[GASX] ARM K1 done: PLAYER storages written %d/3\r\n",pwrote);
+        if(pwrote<1) Marker("[GASX] ⚠ ARM K1 wrote NOTHING -- read the player's behaviour as UNTREATED.\r\n");
+    } else Marker("[GASX] ARM K1 SKIPPED: the A0 world scan latched no player hero.\r\n");
+#endif
     Markerf("[GASX] ARM G done: storages written %d/3, attributes written %d/6\r\n",wrote,attrOk);
     if(wrote<1||attrOk<6)
         Marker("[GASX] ⚠ INCOMPLETE -- a partial port is MEASURED insufficient (ds_hybrid.cpp). Read any\r\n"
@@ -15743,7 +15787,22 @@ static const double kShPlrPoison[3]={-1234.5,      -2345.25,     -3456.125};
 #ifndef KSHPLRY
 #define KSHPLRY  0.0
 #endif
-static const double kShSentinel [3]={ (double)(KSHSENTX), 0.0,               0.0};
+// S141 ARM K -- THE VERTICAL-ONLY KICK.  S141 established offline [M] that engine PhysFalling's
+// SizeSq2D gate (0x035ED98E, constant .rdata 0x077F5180 = (double)(float)1e-4 * 10) zeroes ONLY
+// the gravity-space HORIZONTAL components: the store at 0x035ED9AC is `movups`, 16 bytes, over a
+// 24-byte FVector-of-doubles, so the gravity-space Z at [rbp+0x178] SURVIVES and is rotated back
+// verbatim.  ⇒ THE FIXED POINT IS 2-D, NOT 3-D, and a purely vertical velocity is NOT protected
+// by that gate.  KSHSENTZ makes that testable live: a Z-only sentinel has SizeSq2D == 0, i.e. it
+// is maximally BELOW the gate, and yet -- if the offline reading is right -- it must survive.
+#ifndef KSHSENTZ
+#define KSHSENTZ 0.0
+#endif
+// S141 ARM K2 -- the value written to the PLAYER's GravityScale (CMC+0x1A0) when KBSPSARMS bit 12
+// is set. 1.0 is the stock default and is what the BOT already reads.
+#ifndef KSHPLRGRAV
+#define KSHPLRGRAV 1.0
+#endif
+static const double kShSentinel [3]={ (double)(KSHSENTX), 0.0,               (double)(KSHSENTZ)};
 static const double kShPlrVel   [3]={ 0.0,                (double)(KSHPLRY), 0.0};
 
 static uintptr_t g_shBotCmc=0,  g_shPlrCmc=0, g_shBotPawn=0, g_shPlrPawn=0;
@@ -15780,6 +15839,52 @@ static void ShDump(const char* tag,uintptr_t cmc){
     uint8_t fl=SafeReadable((void*)(cmc+0x16C8),1)?*(uint8_t*)(cmc+0x16C8):0xFF;
     float t12=SafeReadable((void*)(cmc+0x12B0),4)?*(float*)(cmc+0x12B0):-1.0f;
     Markerf("[SNP] %-14s flag@0x16C8=%u  TimeSinceFallingStart@0x12B0=%.4f\r\n",tag,fl,(double)t12);
+    // ---- S141 FREE READS, both load-bearing and neither ever taken in the same pass as Velocity.
+    // GravityScale @CMC+0x1A0 is [M, S141]: engine GetGravityZ 0x35e3650 ends
+    //   `035e3680 mulss xmm0, dword ptr [rbx+0x1a0]`, i.e. GetGravityZ() = <volume gravity> * this.
+    //   S132's dismount recipe writes exactly this field (`[mv+0x1A0]=1.0f`, 0x55CCDC2), which is
+    //   why that hero fell with X and Y FROZEN -- a GravityScale RESTORE, not a velocity write.
+    //   S138 measured BOT 1.000 / PLAYER 0.000 ("zeroed by sp's LIFT step" -- OUR OWN staging shim).
+    // MovementMode @+0x231 gates BOTH Loki gravity overrides (they act only on MOVE_Custom == 7 in
+    //   this build; on MOVE_Falling == 3 both delegate to the engine unchanged).
+    // +0x1678 is ULokiCMC::PhysFalling's lateral fall-speed limiter; -1.0f is its DISABLED sentinel
+    //   (written at 0x055B9063). ⚠ It has SEVEN writers in the Loki CMC band, so it is NOT a clean
+    //   "PhysFalling ran" receipt -- printed for information, not as evidence.
+    {
+        float gs =SafeReadable((void*)(cmc+0x1A0),4)?*(float*)(cmc+0x1A0):-999.0f;
+        uint8_t mm=SafeReadable((void*)(cmc+0x231),1)?*(uint8_t*)(cmc+0x231):0xFF;
+        uint8_t cm=SafeReadable((void*)(cmc+0x232),1)?*(uint8_t*)(cmc+0x232):0xFF;
+        float lat=SafeReadable((void*)(cmc+0x1678),4)?*(float*)(cmc+0x1678):-999.0f;
+        Markerf("[SNP] %-14s GravityScale@0x1A0=%.4f  MovementMode@0x231=%u%s  Custom@0x232=%u  "
+                "latLimit@0x1678=%.4f\r\n",tag,(double)gs,mm,
+                (mm==3)?" (MOVE_Falling)":((mm==1)?" (MOVE_Walking)":((mm==5)?" (MOVE_Flying)":
+                (mm==6)?" (MOVE_Dashing -- Loki insert)":((mm==7)?" (MOVE_Custom)":""))),cm,(double)lat);
+        if(gs==0.0f) Markerf("[SNP] %-14s ⚠ GravityScale is ZERO -> engine GetGravityZ returns 0 -> "
+                             "NewFallVelocity adds nothing -> THIS PAWN CANNOT FALL, and that is "
+                             "OUR OWN doing, not a game defect.\r\n",tag);
+        // ---- GravityDirection @CMC+0x1D8 (X,Y as a 16-byte pair) and +0x1E8 (Z), FVector of
+        // doubles. [M] from engine PhysFalling's own arithmetic: 0x035ECC05 movups xmm6,[rdi+0x1d8]
+        // / 0x035ECC12 movsd xmm7,[rdi+0x1e8] / GetGravityZ / three mulsd / three xorps against a
+        // sign mask => Gravity = -GravityDirection * GetGravityZ(). Stock default is (0,0,-1).
+        // ⇒ IF THIS READS (0,0,0) THE WHOLE NON-FALL IS EXPLAINED IN ONE LINE, with every other
+        //   measurement (MOVE_Falling, GravityScale 1.000, StartNewPhysics entered) left intact.
+        //   It has never been read by anyone and appears nowhere in CLAUDE.md.
+        // ⚠ GRADE HONESTLY: the OFFSETS and the arithmetic are [M]; the NAME "GravityDirection" is
+        //   [I, strong] -- from the shape matching UE 5.4, not from a UHT property record.
+        // Also: byte [CMC+0x1001] and vtable disp 0xCE0 are the two inputs to engine GetGravityZ's
+        //   `return exactly 0.0f` arm (0x035E366F). disp 0xCE0 resolves to 0x035E6810 on BOTH CMC
+        //   vtables, which this repo already identifies as IsDashing (cmp byte [rcx+0x231],6), so
+        //   at MOVE_Falling that arm should not be taken -- +0x1001 is printed to confirm it.
+        if(SafeReadable((void*)(cmc+0x1D8),24)){
+            const double* G=(const double*)(cmc+0x1D8);
+            uint8_t b1001=SafeReadable((void*)(cmc+0x1001),1)?*(uint8_t*)(cmc+0x1001):0xFF;
+            Markerf("[SNP] %-14s GravityDirection@0x1D8 (%.10g, %.10g, %.10g)   byte@0x1001=%u\r\n",
+                    tag,G[0],G[1],G[2],b1001);
+            if(G[0]==0.0&&G[1]==0.0&&G[2]==0.0)
+                Markerf("[SNP] %-14s ⚠⚠ GravityDirection IS THE ZERO VECTOR -> Gravity = -0*gz = "
+                        "(0,0,0) -> NewFallVelocity adds nothing. THIS ALONE EXPLAINS THE NON-FALL.\r\n",tag);
+        }
+    }
     if(SafeReadable((void*)(cmc+0x328),24)){ const double* A=(const double*)(cmc+0x328);
         Markerf("[SNP] %-14s Accel@0x328 (%.6g, %.6g, %.6g)\r\n",tag,A[0],A[1],A[2]); }
 }
@@ -15929,6 +16034,44 @@ static void BsPsSentinel(){
         memcpy((void*)(g_shPlrCmc+0xE8),kShPlrVel,24);
         Markerf("[SNP] ARM J: PLAYER Velocity = (0, %g, 0) -> readback %s\r\n",(double)(KSHPLRY),
                 ShEq3(g_shPlrCmc+0xE8,kShPlrVel)?"OK":"*** FAILED ***");
+    }
+#endif
+
+#if (KBSPSARMS & 0x1000)
+    // ==========================================================================================
+    // S141 ARM K2 -- RESTORE THE PLAYER'S GravityScale.
+    //
+    // NOT a game fix: `sp`'s LIFT step -- OUR OWN staging shim -- sets the player hero's
+    // GravityScale to 0 so it hovers at Z=13240, and `docs/s138-flight9-movement-not-simulating.md`
+    // line 17 records exactly that ("0.000 (zeroed by sp's LIFT step)") against the BOT's 1.000.
+    // S140 flight 3 then read the player's failure to fall as an observation about the game and
+    // inferred "a real GAS-treatment dependency in the MOVER" partly from it. It is not: a pawn
+    // with GravityScale == 0 gets GetGravityZ() == 0 (engine 0x35e3680 `mulss xmm0,[rbx+0x1a0]`),
+    // so NewFallVelocity adds nothing and it CANNOT fall, by our own construction.
+    //
+    // ONE aligned 4-byte DATA write to a live component, readback-verified. The BOT's GravityScale
+    // is deliberately NOT touched -- it already reads 1.000, and leaving it alone keeps the two
+    // pawns' gravity state a measured input rather than something this arm imposed on both.
+    //
+    // ⚠ AXIS SEPARATION IS WHAT MAKES THE COMBINED PLAYER ARM INTERPRETABLE. The player receives
+    //   up to three treatments at once (ARM G storages, this GravityScale write, and ARM J's +Y
+    //   kick), but their readouts are on DIFFERENT COMPONENTS: Z answers "does gravity integrate",
+    //   Y answers "does the CalcVelocity MaxInputSpeed clamp still damp it to zero". Neither can
+    //   masquerade as the other.
+    if(LooksLikePtr(g_shPlrCmc)){
+        float g0=SafeReadable((void*)(g_shPlrCmc+0x1A0),4)?*(float*)(g_shPlrCmc+0x1A0):-999.0f;
+        if(!SafeWritable((void*)(g_shPlrCmc+0x1A0),4)){
+            Marker("[SNP] ARM K2 REFUSED: PLAYER GravityScale@0x1A0 not writable.\r\n");
+        } else if(g0!=0.0f){
+            Markerf("[SNP] ARM K2 SKIPPED: PLAYER GravityScale already reads %.4f, not 0. The\r\n"
+                    "[SNP]   premise of this arm (sp zeroed it) does not hold this run -- SAY SO,\r\n"
+                    "[SNP]   and read any fall as NOT attributable to this arm.\r\n",(double)g0);
+        } else {
+            *(float*)(g_shPlrCmc+0x1A0)=(float)(KSHPLRGRAV);
+            float rb=*(float*)(g_shPlrCmc+0x1A0);
+            Markerf("[SNP] ARM K2: PLAYER GravityScale@0x1A0  %.4f -> %.4f  readback %s\r\n",
+                    (double)g0,(double)(KSHPLRGRAV),(rb==(float)(KSHPLRGRAV))?"OK":"*** FAILED ***");
+        }
     }
 #endif
     Marker("[SNP] ---- AFTER THE WRITES (raw) ----\r\n");
