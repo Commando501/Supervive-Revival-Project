@@ -1,4 +1,4 @@
-# S141 — `StartNewPhysics` RUNS, and `Velocity` is written to ZERO. Find the writer.
+# S141 — THE BOT WALKS. `Velocity == 0` is a FIXED POINT. Find what kicks it off zero.
 
 **Paste this whole file as the opening prompt of a fresh session.**
 
@@ -28,6 +28,25 @@ S140 Tier 2 measured, on two staged clients:
         by which the exactly-zero case SKIPS the write. See section 2, MOVE 2.
     Velocity == (0,0,0).  Translation 0.00 uu.  A MOVE_Falling pawn does not fall.  [M]
 
+★★★★★★ **AND THEN FLIGHT 3 CHANGED THE WHOLE PICTURE — READ
+`docs/s140-t2-armj-THE-BOT-WALKS.md` FIRST; EVERYTHING BELOW IT IN THIS FILE IS OLDER.**
+**One write of `Velocity = (600,0,0)`, once, never re-written, and the AI-controlled hero FELL at
+terminal velocity, LANDED on the tutorial floor at `Z = 90.150`, and WALKED — speed capped at
+exactly `500.0 uu/s` = the `MoveSpeed` ARM G wrote — for 13,187 uu, steered by its own AI, until it
+walked off the island edge.**
+
+⇒ **The mover works. Gravity, landing, ground movement, GAS speed clamping and AI steering are all
+measured working.** The wall was never in the mover.
+⇒ **`Velocity == 0` is a FIXED POINT [M].** At exactly zero nothing moves it off zero; perturbed by
+any real amount the whole chain runs and self-sustains. **The remaining problem is a KICK-OFF
+problem.** ⚠ Its MECHANISM is **[S]** and is the single open question.
+⇒ **The `CalcVelocity` clamp is REAL [M], not [S] — §1.2 below is SUPERSEDED.**
+`MinAnalogWalkSpeed @CMC+0x290` measured **0 on both** (`< 1e-4`), so `MaxInputSpeed =
+`GetMaxSpeed() × AnalogInputModifier`. BOT `AnalogInputModifier = 1` ⇒ clamp does not fire ⇒
+sustains 500. PLAYER `= 0` ⇒ clamp fires ⇒ its 600 uu/s decayed to exactly 0 and it never fell.
+**The verifier chain in §1.2 is sound for the BOT and INVALID for the PLAYER** (no attribute set ⇒
+both getters return 0.0f) — it applied a bot-derived premise to the player.
+
 ⚠⚠ **S139's `[M]` "StartNewPhysics has NEVER run on either component" is REFUTED.** Tier 1 showed
 the `+0x16C8` latch is an invalid instrument (it reads 0 in every world, because ULokiCMC vtable
 disp `0xA50` = `0x0530ABF0` clears it later in the same `PerformMovement` call); Tier 2 measured the
@@ -40,7 +59,12 @@ clamp — is **[S] and the evidence leans AGAINST it**. Read §1 before planning
 
 ---
 
-## 1. TRAP: THE OBVIOUS TARGET IS PROBABLY NOT IT — READ THIS BEFORE PLANNING ANYTHING
+## 1. [SUPERSEDED BY FLIGHT 3 — kept as the dated record of what was believed before it]
+
+⚠⚠ **Everything in this section was written BEFORE flight 3 and its conclusion is now CORRECTED:
+the clamp is [M] REAL and it IS the player's wall. Read §0 and
+`docs/s140-t2-armj-THE-BOT-WALKS.md` §3 instead. The bytes below are all still accurate.**
+
 
 An offline lane transcribed a complete mechanism and it is seductive. **Its own adversarial
 verifier refuted the application**, and that refutation plus this session’s measurement leave a

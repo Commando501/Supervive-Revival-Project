@@ -88,7 +88,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
   # Override per-run with the explicit dump argument if you need a single-state image;
   # NEVER read a mutable .data global out of a merged image (see CLAUDE.md mergedumps note).
   # 2026-08-14 (S121, FK-18/FK-19) original rationale: docs/fk18-fk19-multistate-merge-settled.md
-DEFAULT_DUMP = r"G:\git\Supervive Revival Project\dumps\merged13.dump.exe"
+DEFAULT_DUMP = r"G:\git\Supervive Revival Project\dumps\merged14.dump.exe"
 INDEX_DIR = os.path.join(HERE, "index")
 INDEX_PATH = os.path.join(INDEX_DIR, "strxref.idx")
 
