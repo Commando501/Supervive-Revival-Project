@@ -1,0 +1,111 @@
+S141 TIER 3 — ARM L PRE-REGISTRATION (the AXIS A/B)
+Written BEFORE the injection. Committed before the client is launched. Do not edit after.
+
+ARTIFACT   tools/sigbypass-mod/build/tutorial_launch_axisab.dll
+           .text RAW  83bcf5c178846022   VSIZE 5f5d39bdfe623780   rawsize 153088
+CONTROL    tutorial_launch_axisab_ctrl.dll
+           .text RAW  90d90aacec2a38d3   VSIZE 5826dd15f2b6e84d   rawsize 153088
+           ⚠ SAME SIZE, DIFFERENT HASH — verified DISTINCT. (An A/B against a copy of itself has
+             burned a live run in this project; `text_digest.py --dupes` reports the only
+             unexplained duplicate group as the pre-existing driverecompute|gasattr_ctrl pair.)
+BUILD      build.ps1 -Name tutorial_launch -Variant axisab
+           KBSPSARMS=0x3BA0  KSHSENTX=600.0  KSHSENTZ=0.0  KSHAXBZ=-600.0
+           KSHPLRY=600.0  KSHPLRGRAV=1.0  KBSGASPLAYER=1
+GATES      botai 5e47c13cf7f0a158 · gasattr 2fcc2536e21f18e3 · gasattr-ctrl 4465ebc4d7168c03
+           ALL THREE reproduce EXACTLY from the edited source. verify_dll.py VERDICT: PASS.
+RISK       DATA class. One extra 24-byte write into a live component from the WORKER thread after
+           sample 2 — the same class as ARM H2's existing burst. A torn write fails the equality
+           test; it cannot fault (the memory stays committed). No module-image write, no PI hook.
+
+================================================================================================
+THE QUESTION, AND WHY IT IS ONE VARIABLE
+================================================================================================
+
+S140 T2 flight 3: bot kicked HORIZONTALLY (600,0,0) -> SUSTAINED 500 uu/s, walked 13,187 uu.
+S141 ARM K:       SAME bot, same ARM G treatment, same AI acceleration, kicked VERTICALLY
+                  (0,0,-600) -> Velocity read (0,0,0) within 250 ms, moved 0.000 uu x5.
+
+The only bot-side difference between those two flights is the KICK AXIS. S141 offline then found a
+mechanism that predicts exactly that asymmetry (docs/s141-tier3-settled.md §4.1b):
+
+  [M] engine PhysFalling brackets only ONE of its four CalcVelocity calls with Velocity.Z = 0 /
+      restore (0x035ECBD8 bracketed; 0x035ECB75 and 0x035ED549 NOT).
+  => inside the bracketed call a Z-ONLY velocity is INVISIBLE to IsExceedingMaxSpeed, which tests
+     SizeSquared() > MaxInputSpeed^2 * 1.01.
+       horizontal 600 -> 360000 > 252500 -> TRUE  -> compares |V| = 600 -> jae -> normal clamp -> 500
+       vertical  -600 -> Z zeroed by the bracket -> SizeSq = 0 -> FALSE -> compares MaxInputSpeed
+                       -> if < 1e-4, the 0x035D6520/27 ZeroVector store hits ALL THREE components.
+
+ARM L tests this WITHIN ONE SITTING ON ONE BOT, so world state, ARM G treatment, AI acceleration,
+object age, staging and instrument are all held FIXED and the AXIS is the single variable:
+
+    kick A  HORIZONTAL (600, 0, 0)   written on the game thread at t=0   -> samples 0,1,2
+    kick B  VERTICAL   (0, 0, -600)  written by the sampler after sample 2 -> samples 3,4
+    (the start location is RE-LATCHED at the B write, so "moved" in samples 3-4 is from B)
+
+================================================================================================
+PRE-REGISTERED OUTCOMES
+================================================================================================
+
+P1  A SUSTAINS (|V_xy| settles near 500, pawn translates) **and** B GOES TO ZERO (V -> (0,0,0),
+    moved ~0)
+      -> THE AXIS MECHANISM IS CONFIRMED. It reconciles S140 flight 3 with S141 ARM K with one
+         hypothesis, and it promotes the CalcVelocity-clamp candidate (§4.1) from [I] toward [M]. [M]
+
+P2  BOTH SUSTAIN
+      -> the axis is NOT the variable. §4.1b is REFUTED. Then ARM K's vertical null had some other
+         cause and the S140-vs-S141 difference is still unexplained — say so plainly.          [M]
+
+P3  BOTH GO TO ZERO
+      -> the axis is NOT the variable, AND S140 flight 3 is not reproducible in this sitting.
+         §4.1b REFUTED. Look for what differs between the two SITTINGS rather than the two kicks. [M]
+
+P4  A GOES TO ZERO and B SUSTAINS
+      -> the mechanism is INVERTED from the prediction. Report raw; do not rationalise.        [M]
+
+P5  anything else (torn write, kick B readback fails, fault) -> UNINTERPRETABLE for ARM L. The
+    marker says so explicitly at the B write.
+
+⚠ P2/P3/P4 all REFUTE the mechanism. Only P1 confirms it. That asymmetry is deliberate: the
+  hypothesis has one shape and three ways to die.
+
+================================================================================================
+MOVE 1 — the read that was MISSED last flight (defect S141-d)
+================================================================================================
+
+ShDump now prints, on BOTH pawns, at EVERY sample:
+    AnalogInputModifier  resolved BY NAME on the live CMC class (the hardcoded [+0x3D0] printed
+                         ONLY as a cross-check, never as a fallback)
+    MinAnalogWalkSpeed   [+0x290]
+plus the S141 free reads (GravityScale +0x1A0, GravityDirection +0x1D8, MovementMode +0x231,
+byte +0x1001, latLimit +0x1678).
+
+  AnalogInputModifier == 0 on the bot  -> MaxInputSpeed = GetMaxSpeed() * 0 = 0 < 1e-4
+                                       -> the CalcVelocity ZeroVector clamp MUST fire on the
+                                          ACCELERATE branch. That is the mechanism, measured.  [M]
+  AnalogInputModifier != 0 on the bot  -> MaxInputSpeed is large and the clamp CANNOT be firing
+                                          for that reason. §4.1 needs a different explanation.  [M]
+  NOT RESOLVED BY NAME                 -> report as UNRESOLVED. Do NOT substitute [+0x3D0].
+
+================================================================================================
+T3-C (the outstanding Tier-3 half) — what this flight can and CANNOT settle
+================================================================================================
+
+ARM K1 (player storages) + ARM K2 (player GravityScale 0 -> 1.0) + ARM J (player +Y 600) all run
+again. **T3-C's Q2 — does the GAS port let the player SUSTAIN velocity — still CANNOT be answered
+by this arm, and that is stated up front rather than discovered afterwards:** the player has no
+input driver, so its Acceleration will read (0,0,0) and its decay is correct physics either way.
+What this flight DOES add for T3-C is the mechanism: reading the treated player's
+AnalogInputModifier tells us WHY Q2 is unanswerable without input, rather than leaving it a null.
+
+================================================================================================
+RUN-IS-VOID CONDITIONS
+================================================================================================
+ * ARM D produces no LokiBotController -> ARM L is a STAGING statement, not a result.
+ * Either ShResolveCmc identity control fails on the bot -> nothing is written; INSTRUMENT statement.
+ * vptr != base+0x088F8570 -> not a ULokiCMC; void.
+ * kick B readback fails -> samples 3,4 are UNINTERPRETABLE for ARM L (samples 0-2 still stand).
+ * the client dies before `[BS] done` -> read only what was captured, and say so.
+
+CAPTURE AS YOU GO, and ★ TAKE THE dumpimage EARLY — S141 ARM K left it until after the samples and
+the client had already gone. FK-32 kills on the 4th manual-map at ~300-350 s and staging spends 3.

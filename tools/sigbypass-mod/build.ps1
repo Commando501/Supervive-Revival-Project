@@ -670,6 +670,17 @@ $Variants = @{
         # the player gets NO GravityScale write (bit12 clear) and NO ARM K1. i.e. it is S140's
         # `sentinel-big` shape with a zero bot sentinel -- the arm that changes nothing new.
         'armk-ctrl'           = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0xBA0','-DKSHSENTX=0.0','-DKSHSENTZ=0.0','-DKSHPLRY=600.0')
+        # ARM L -- THE AXIS A/B. One bot, one sitting, one variable: the kick AXIS.
+        #   kick A HORIZONTAL (600,0,0) at t=0, observed by samples 0..2
+        #   kick B VERTICAL   (0,0,-600) written by the sampler after sample 2, observed by 3..4
+        # S140 T2 flight 3 sustained 500 on a horizontal kick; S141 ARM K zeroed on a vertical one.
+        # This holds world/treatment/acceleration/object-age fixed and moves ONLY the axis.
+        # Also reads AnalogInputModifier BY NAME -- the field ARM K's free-read list missed.
+        # bits: 0x20 D | 0x80 F | 0x100 G | 0x200 H | 0x800 J | 0x1000 K2 | 0x2000 L = 0x3BA0
+        'axisab'              = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x3BA0','-DKSHSENTX=600.0','-DKSHSENTZ=0.0','-DKSHAXBZ=-600.0','-DKSHPLRY=600.0','-DKSHPLRGRAV=1.0','-DKBSGASPLAYER=1')
+        # ARM L control: identical, but kick B is the SAME axis as kick A (horizontal), so a
+        # difference between samples 0..2 and 3..4 cannot be attributed to the axis.
+        'axisab-ctrl'         = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x3BA0','-DKSHSENTX=600.0','-DKSHSENTZ=0.0','-DKSHAXBZ=0.0','-DKSHPLRY=600.0','-DKSHPLRGRAV=1.0','-DKBSGASPLAYER=1')
         # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
         # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
         'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')

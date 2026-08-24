@@ -15804,6 +15804,31 @@ static const double kShPlrPoison[3]={-1234.5,      -2345.25,     -3456.125};
 #endif
 static const double kShSentinel [3]={ (double)(KSHSENTX), 0.0,               (double)(KSHSENTZ)};
 static const double kShPlrVel   [3]={ 0.0,                (double)(KSHPLRY), 0.0};
+// S141 ARM L -- THE AXIS A/B, one variable, one bot, one injection.
+//
+// S140 T2 flight 3 kicked the bot HORIZONTALLY (600,0,0) and it SUSTAINED 500 uu/s for 13,187 uu.
+// S141 ARM K kicked the SAME bot, same treatment, same acceleration, VERTICALLY (0,0,-600) and its
+// Velocity read (0,0,0) within 250 ms with zero translation. The only bot-side difference between
+// those two flights is the AXIS -- and S141 offline found a mechanism that predicts exactly that
+// asymmetry (docs/s141-tier3-settled.md 4.1b): engine PhysFalling brackets only ONE of its four
+// CalcVelocity calls with Velocity.Z=0 / restore, so inside that call a Z-ONLY velocity is
+// INVISIBLE to IsExceedingMaxSpeed (which tests SizeSquared > MaxInputSpeed^2 * 1.01), while a
+// horizontal one is not -- and the two arms then take different branches of the 1e-4 clamp.
+//
+// ARM L tests it WITHIN ONE SITTING on ONE BOT, so world state, treatment, AI acceleration, object
+// age and staging are all held fixed and the AXIS is the single variable:
+//   kick A (horizontal) at t=0, observed by samples 0..2
+//   kick B (vertical)   written by the sampler after sample 2, observed by samples 3..4
+// PRE-REGISTERED: A sustains ~500 and B goes to zero  => the axis mechanism is CONFIRMED.
+//                 both sustain, or both zero          => it is REFUTED, and so is the
+//                                                        CalcVelocity-clamp candidate that rests
+//                                                        on it. Say so.
+// Risk: the same class as ARM H2's burst -- a 24-byte write into a live component from the worker
+// thread. A torn write fails the equality test; it cannot fault (the memory stays committed).
+#ifndef KSHAXBZ
+#define KSHAXBZ -600.0
+#endif
+static const double kShAxisB[3]={ 0.0, 0.0, (double)(KSHAXBZ) };
 
 static uintptr_t g_shBotCmc=0,  g_shPlrCmc=0, g_shBotPawn=0, g_shPlrPawn=0;
 static int  g_shBotPoisoned=0,  g_shPlrPoisoned=0, g_shSentinelOK=0, g_shArmed=0;
@@ -15875,6 +15900,33 @@ static void ShDump(const char* tag,uintptr_t cmc){
         //   `return exactly 0.0f` arm (0x035E366F). disp 0xCE0 resolves to 0x035E6810 on BOTH CMC
         //   vtables, which this repo already identifies as IsDashing (cmp byte [rcx+0x231],6), so
         //   at MOVE_Falling that arm should not be taken -- +0x1001 is printed to confirm it.
+        // ---- S141 MOVE 1: AnalogInputModifier. THE field the surviving candidate mechanism turns
+        // on, and the one S141's ARM K free-read list MISSED (defect S141-d).
+        //   MaxInputSpeed = max(GetMaxSpeed() * AnalogInputModifier, GetMinAnalogSpeed())
+        // and engine CalcVelocity zeroes ALL THREE Velocity components when that is < 1e-4
+        // (0x035D64F2 comisd vs .rdata 0x076B49E8 = (double)(float)1e-4 / 0x035D650F jae /
+        //  0x035D6520 movups [rbx+0xe8], ZeroVector / 0x035D6527 movsd [rbx+0xf8]).
+        // ⚠ Resolved BY NAME. The hardcoded 0x3D0 is printed ONLY as a cross-check, never as a
+        //   fallback -- a hardcoded offset that "agrees" with a by-name read is not corroboration
+        //   when both can read zero (the recorded S138 Velocity +0xE0 defect).
+        {
+            uintptr_t cls=ClassOf(cmc);
+            uint32_t ao=LooksLikePtr(cls)?PropOffsetSuper(cls,"AnalogInputModifier"):0xFFFFFFFF;
+            float byname = (ao!=0xFFFFFFFF && SafeReadable((void*)(cmc+ao),4)) ? *(float*)(cmc+ao) : -999.0f;
+            float at3d0  = SafeReadable((void*)(cmc+0x3D0),4) ? *(float*)(cmc+0x3D0) : -999.0f;
+            float minaws = SafeReadable((void*)(cmc+0x290),4) ? *(float*)(cmc+0x290) : -999.0f;
+            if(ao==0xFFFFFFFF)
+                Markerf("[SNP] %-14s AnalogInputModifier NOT RESOLVED BY NAME (cross-check [+0x3D0]=%.6g) "
+                        "-- report as UNRESOLVED, do not substitute the offset\r\n",tag,(double)at3d0);
+            else
+                Markerf("[SNP] %-14s AnalogInputModifier@0x%X = %.6g   ([+0x3D0] reads %.6g, %s)   "
+                        "MinAnalogWalkSpeed@0x290 = %.6g\r\n",tag,ao,(double)byname,(double)at3d0,
+                        (at3d0==byname)?"AGREES":"DISAGREES -- by-name wins",(double)minaws);
+            if(ao!=0xFFFFFFFF && byname==0.0f)
+                Markerf("[SNP] %-14s ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 "
+                        "< 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to "
+                        "ALL THREE Velocity components on the ACCELERATE branch.\r\n",tag);
+        }
         if(SafeReadable((void*)(cmc+0x1D8),24)){
             const double* G=(const double*)(cmc+0x1D8);
             uint8_t b1001=SafeReadable((void*)(cmc+0x1001),1)?*(uint8_t*)(cmc+0x1001):0xFF;
@@ -16130,6 +16182,34 @@ static void ShSampleLoop(){
             Markerf("[SNP] *** sample %d FAULTED (off-thread read race, or the object was "
                     "collected). Earlier samples still stand; later ones may not. ***\r\n",i);
         }
+#if (KBSPSARMS & 0x2000)
+        // ---- S141 ARM L: after sample 2 (t=+2 s), switch the BOT's kick to the OTHER AXIS.
+        // Samples 0..2 observe kick A (whatever kShSentinel holds); samples 3..4 observe kick B.
+        // ONE bot, ONE sitting, ONE variable: the axis.
+        if(i==2 && LooksLikePtr(g_shBotCmc)){
+            __try {
+                if(SafeWritable((void*)(g_shBotCmc+0xE8),24)){
+                    memcpy((void*)(g_shBotCmc+0xE8),kShAxisB,24);
+                    int okb=ShEq3(g_shBotCmc+0xE8,kShAxisB);
+                    // re-latch the start location so "moved N uu" is measured from the B kick
+                    uint32_t rc=PropOffsetSuper(ClassOf(g_shBotPawn),"RootComponent");
+                    uintptr_t root=(rc!=0xFFFFFFFF&&SafeReadable((void*)(g_shBotPawn+rc),8))?*(uintptr_t*)(g_shBotPawn+rc):0;
+                    if(LooksLikePtr(root)&&SafeReadable((void*)(root+0x158),24)) memcpy(g_shLoc0[0],(void*)(root+0x158),24);
+                    Markerf("[SNP] ======== ARM L: BOT kick B written -> (%.6g, %.6g, %.6g)  readback %s ========\r\n"
+                            "[SNP]   kick A was (%.6g, %.6g, %.6g) and was observed by samples 0..2.\r\n"
+                            "[SNP]   Samples 3..4 observe kick B. START LOCATION RE-LATCHED, so 'moved'\r\n"
+                            "[SNP]   from here is measured from the B kick, not from the A kick.\r\n"
+                            "[SNP]   PRE-REGISTERED: A sustains and B zeroes => the axis mechanism is\r\n"
+                            "[SNP]   CONFIRMED. Both sustain, or both zero => REFUTED, and so is the\r\n"
+                            "[SNP]   CalcVelocity-clamp candidate that rests on it.\r\n",
+                            kShAxisB[0],kShAxisB[1],kShAxisB[2], okb?"OK":"*** FAILED ***",
+                            kShSentinel[0],kShSentinel[1],kShSentinel[2]);
+                    if(!okb) Marker("[SNP]   ⚠ kick B readback FAILED -> samples 3..4 are UNINTERPRETABLE for ARM L.\r\n");
+                } else Marker("[SNP] ARM L: BOT Velocity NOT WRITABLE -> kick B skipped; ARM L is VOID.\r\n");
+            } __except(EXCEPTION_EXECUTE_HANDLER){
+                Marker("[SNP] ARM L: kick B write FAULTED -> ARM L is VOID.\r\n"); }
+        }
+#endif
     }
 #if (KBSPSARMS & 0x400)
     // ==========================================================================================
