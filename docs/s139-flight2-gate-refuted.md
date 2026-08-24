@@ -1,5 +1,35 @@
 # S139 flight 2 — the prime suspect is refuted, and my own enumeration was unsound
 
+> ## ⚠⚠⚠ PARTIALLY SUPERSEDED — READ THIS FIRST (banner added S142, 2026-08-24)
+>
+> **WHAT STILL STANDS, and it is most of the document:** `bSimulatePhysics == 0` with its same-byte
+> two-sided control, the whole gate census, and — added later, in §3 — the observation that this
+> flight's own exit enumeration was unsound. All of that is good and was independently reproduced.
+>
+> **WHAT IS DEAD: every claim of the form "`StartNewPhysics` has never run".** Its sole support was
+> `CMC+0x16C8 == 0`, and **[M] that byte is not a latch.** `ULokiCMC` vtable disp `0xA50` =
+> `0x0530ABF0` clears it, and engine `PerformMovement` calls that slot at `0x035EB569` — later in
+> the same call, on a path the `StartNewPhysics` call site **dominates**. So the byte reads `0`
+> whether the physics step runs every frame or never runs at all. It is a per-frame
+> `TOptional<FVector>` validity flag over the `+0x16B0` Velocity snapshot, named from its own
+> consumer `GetRecentVelocity` (`.data 0x09BC9AD0` → impl `0x0530AC10`).
+> ⇒ Those claims are **UNGRADED, not negative.** Read `docs/s140-tier1-cfg.md` §4.
+>
+> ⚠ **The MEASUREMENT was correct** — `+0x16C8` really did read `0` on all 37 components. Only the
+> **inference** drawn from it is dead. Nothing here misread a byte.
+>
+> **AND THE UNDERLYING QUESTION IS NOW ANSWERED IN THE OPPOSITE DIRECTION.** The engine mover chain
+> runs on this client: one 4-byte `GravityScale = 1.0f` write made the player hero fall 23,189 uu,
+> and one `Velocity = (600,0,0)` kick made the bot fall, land and walk **13,196 uu at 500.0 uu/s**,
+> reproduced in a second sitting. See `docs/next-session-prompt-s142.md` and
+> `docs/s141-tier3-settled.md`. **The remaining wall is narrower and different:** the bot does not
+> escape `Velocity == 0` on a *Z-only* kick, and the discriminator is the kick axis.
+>
+> ⚠ Also note §7b's *"one of the six readings must be measuring something other than what its branch
+> tests"* — **refuted.** The six readings were fine; the **seventh** reading, the latch, was the bad
+> one. The six exits are complete and exact (four independent CFGs, 1461 instructions, 0 indirect
+> jumps, 0 coverage gaps, 2 backward edges and neither reaching the call).
+
 Written 2026-08-23. Read-only RPM throughout; **no injection at all** this flight (the question was
 answerable from the player alone). Client PID 35608, BASE `0x7FF704F00000`, staged on attempt 1.
 Predecessor: `docs/s139-flight1-the-bot-is-not-special.md`.
@@ -10,6 +40,8 @@ Predecessor: `docs/s139-flight1-the-bot-is-not-special.md`.
 
 **`bSimulatePhysics = 0`. The gate I named as the prime suspect PASSES. And a population control
 shows `StartNewPhysics` has never run for ANY of the 37 movement components in the world.**
+⚠⚠ **RETRACTED (S142) — the second sentence is UNGRADED, not negative. The 37/37 zeros are real; the
+inference is not. `+0x16C8` reads 0 in every world (see the banner).** The first sentence stands.
 
 Then, while writing it up, I found the flaw in my own §7b argument: **the "exactly 6 branches skip
 the call" enumeration came from a LINEAR disassembly sweep over a 4.6 KB function, and a linear
@@ -55,8 +87,12 @@ hardcoded before) — so the "DeltaTime is real" result of flight 1 stands on a 
 
 A walk of all 192,369 live objects found **37** `*CharacterMovement*` components.
 
-- **Every one reads `+0x16C8 == 0`.** ⇒ `ULokiCMC::StartNewPhysics` has never run for any character
-  in this world.
+- **Every one reads `+0x16C8 == 0`.** ~~⇒ `ULokiCMC::StartNewPhysics` has never run for any character
+  in this world.~~
+  ⚠⚠ **THE `⇒` IS RETRACTED (S142).** The measurement is kept; the implication is void — the byte is
+  cleared at the tail of every completed `PerformMovement` (disp `0xA50` = `0x0530ABF0`, called at
+  `0x035EB569`), so `0` is the resting value under both hypotheses. ★ And 37/37 should itself have
+  raised the alarm: under the old reading it means *nothing in this world can move at all*.
 - **Exactly ONE is doing anything at all**: our player hero's (`0x26EC6750010`,
   `TimeSinceFallingStart 364.712`, `MovementMode 3`). The other 36 read `TimeSinceFallingStart 0.000`
   and `MovementMode 0 (MOVE_None)` — pooled/unpossessed, inert.
@@ -100,8 +136,12 @@ The other 50 skip-branches are all at addresses **after** `0x035EB13A`, i.e. dow
 the region that matters.** Both halves belong in the record: the instrument was bad, and the answer
 survives a good instrument. **Restore the enumeration to [M] — by CFG walk, not by linear sweep.**
 
-⇒ ⚠⚠ **THEREFORE THE CONTRADICTION IS REAL, NOT AN ARTIFACT:** all six exits have their inputs
-measured passing, and `StartNewPhysics` still never runs.
+⇒ ~~⚠⚠ **THEREFORE THE CONTRADICTION IS REAL, NOT AN ARTIFACT:** all six exits have their inputs
+measured passing, and `StartNewPhysics` still never runs.~~
+⚠⚠ **RETRACTED AGAIN, AND FOR A SECOND REASON (S142).** The same-day retraction below is correct as
+far as it goes. The deeper answer: **there was never a contradiction to explain, because the second
+half was never measured.** The six exits ARE complete and exact; the latch that supplied
+"still never runs" reads `0` in every world.
 
 ### ⚠⚠⚠ RETRACTED, SAME DAY — THERE IS NO CONTRADICTION. I MISREAD A WRAPPER FACT AS A CALLEE FACT.
 
@@ -143,7 +183,7 @@ discriminator.** It would still be decisive for a function that is alone on its 
 | claim | grade |
 |---|---|
 | `ULokiCMC::PerformMovement` runs with a real, non-zero DeltaTime | **[M]** — `TimeSinceFallingStart` (by-name `+0x12B0`) advances at 1.0× real time; it accumulates `xmm6`, the register HitStop would zero |
-| `ULokiCMC::StartNewPhysics` has never run, for any of 37 components | **[M]** — the latch write at `0x055C2469` is on the unconditional fall-through |
+| ~~`ULokiCMC::StartNewPhysics` has never run, for any of 37 components~~ | ⚠⚠ **[M] → UNGRADED (S142).** The cited write at `0x055C2469` really *is* on the unconditional fall-through — that was never the problem. **The problem is the CLEAR, which nobody looked for**: disp `0xA50` = `0x0530ABF0`, called from engine `PerformMovement` at `0x035EB569`. See `docs/s140-tier1-cfg.md` §4 |
 | The five named gates all pass | **[M]** — each input read live, `bSimulatePhysics` with a same-byte two-sided control |
 | Loki's `PerformMovement` reaches its Super unconditionally | **[M, bounded]** — 0 rets before `0x055B85C1` and the only skip-branch is after it, over a **144-instruction** linear sweep (short enough that desync is unlikely, but it is the same instrument) |
 | **"Exactly 6 branches skip `StartNewPhysics`"** | **[S] — RETRACTED from [M]**, see §3 |
@@ -153,8 +193,13 @@ discriminator.** It would still be decisive for a function that is alone on its 
 ## 5. NEXT — a real contradiction, and the two candidates that survive it
 
 The CFG walk is done (§3) and it made the contradiction sharper rather than dissolving it:
-**six exits, all measured passing, and `StartNewPhysics` still never runs.** One of the six readings
-must be measuring something other than what its branch tests. Ranked:
+~~**six exits, all measured passing, and `StartNewPhysics` still never runs.** One of the six readings
+must be measuring something other than what its branch tests.~~
+⚠⚠ **REFUTED (S142).** The six readings were fine (bar `CMC+0xC0 WorldPrivate`, which was never
+actually read live). **It was the SEVENTH reading — the latch — that was bad.** The six exits are
+complete and exact: four independently written CFGs give 1461 instructions, 0 indirect jumps,
+0 decode failures, 0 coverage gaps, and exactly 2 backward edges *neither* of which can reach the
+call. There is no seventh path and no backward bail. Ranked:
 
 1. ★★★ **Gate #5 — `IsSimulatingPhysics` may be answering about a WELD PARENT, not this capsule.**
    `[capsule vt+0x4C0] = 0x03C9B0A0` opens

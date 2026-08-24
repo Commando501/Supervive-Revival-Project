@@ -1,5 +1,27 @@
 # S139 flight 4 — the GAS port WORKS. `Acceleration = input × 50000`. And the walls are TWO, not one.
 
+> ## ⚠⚠⚠ PARTIALLY SUPERSEDED — READ THIS FIRST (banner added S142, 2026-08-24)
+>
+> **WHAT STILL STANDS:** **the headline: `Acceleration = ControlInputVector × 50000`** (ratio mean 49999.63 over 40 components) with its **perfect within-run specificity control** — the untreated player non-zero in 0 of 20 samples. The GAS attribute port works and the input wall is closed. That result is untouched.
+>
+> **WHAT IS DEAD:** every claim resting on `CMC+0x16C8`. **[M] that byte is NOT a latch.** `ULokiCMC`
+> vtable disp `0xA50` = `0x0530ABF0` clears it, and engine `PerformMovement` calls that slot at
+> `0x035EB569` — later in the same call, on a path the `StartNewPhysics` call site **dominates**. So
+> it reads `0` whether the physics step runs every frame or never runs at all. It is a per-frame
+> `TOptional<FVector>` validity flag over the `+0x16B0` Velocity snapshot, named from its own consumer
+> `GetRecentVelocity` (`.data 0x09BC9AD0` → impl `0x0530AC10`). Those claims are **UNGRADED, not
+> negative.** Read `docs/s140-tier1-cfg.md` §4.
+>
+> ⚠ **The MEASUREMENT was correct** — `+0x16C8` really did read `0`. Only the **inference** is dead.
+> Nothing here misread a byte.
+>
+> **AND THE UNDERLYING QUESTION IS ANSWERED THE OTHER WAY NOW.** The engine mover chain runs on this
+> client: `GravityScale = 1.0f` made the player fall 23,189 uu, and one `Velocity = (600,0,0)` kick
+> made the bot fall, land and walk **13,196 uu at 500.0 uu/s**, reproduced in a second sitting. The
+> remaining wall is narrower: the bot does not escape `Velocity == 0` on a *Z-only* kick, and the
+> discriminator is the kick axis. See `docs/next-session-prompt-s142.md` and
+> `docs/s141-tier3-settled.md`.
+
 Written 2026-08-23. Pre-registration: `docs/s139-f4-PREREGISTERED.txt` (UNEDITED, written before
 staging finished). Client PID 36844, staged on **attempt 1**, one injection.
 Arm: `tutorial_launch_gasattr.dll` RAW **`2fcc2536e21f18e3`**.
@@ -11,15 +33,18 @@ Predecessor: `docs/s139-flight3-controlledcharactermove-runs.md`.
 
 **Porting the DS route's GAS recipe onto the bot turned `GetMaxAcceleration()` from 0 into 50000,
 and the input path now produces a real acceleration vector — while the untreated player's stays
-exactly zero.** The physics step still never runs, so **the input wall and the physics-step wall are
-TWO separate problems**, which is the branch the pre-registration deliberately refused to predict.
+exactly zero.** ~~The physics step still never runs, so~~ ⚠ **(S142: that clause is void — the latch
+cannot support it.)** **The input wall and the movement wall are nonetheless TWO separate problems**,
+which is the branch the pre-registration deliberately refused to predict — and that conclusion
+SURVIVES, on the independent observations that `Velocity` stayed `(0,0,0)` and the pawn moved
+**0.00 uu** while `Acceleration` was correct.
 
 | # | prediction | outcome |
 |---|---|---|
 | **P1** | ARM G writes 3/3 storages and 6/6 attributes, all readback-verified | **HELD** |
 | **P2** | the BOT's `Acceleration` becomes non-zero and collinear with `ControlInputVector` | **HELD — 20/20 samples** |
 | **P3** | the UNTREATED player's `Acceleration` stays a signed zero (specificity) | **HELD — 0/20 non-zero** |
-| **P4** | latch `+0x16C8` → 1 (one problem) **or** stays 0 (two problems) — *deliberately not predicted* | **stays 0 ⇒ TWO problems** |
+| **P4** | latch `+0x16C8` → 1 (one problem) **or** stays 0 (two problems) — *deliberately not predicted* | ⚠⚠ **VOID (S142): the latch reads 0 in BOTH branches, so P4 could only ever land on "stays 0". A pre-registered disjunction whose two arms are not distinguishable by the instrument is not a test.** The two-wall conclusion happens to be right for other reasons |
 | **P5** | if the latch flips, the bot should fall | not reached (latch did not flip) |
 
 ---
@@ -70,7 +95,7 @@ player untreated, one field changed, one side moved.
 | | status |
 |---|---|
 | **input → acceleration** | ★ **FIXED.** `GetMaxAcceleration()` 0 → 50000; `Acceleration` is real and tracks the AI's wander direction. |
-| **acceleration → velocity → displacement** | ⛔ **UNTOUCHED.** `StartNewPhysics` latch `+0x16C8` stays **0** for all 20 samples; `Velocity` stays `(0,0,0)`; the pawn moved **0.00 uu**. |
+| **acceleration → velocity → displacement** | ⛔ **UNTOUCHED** — but ⚠ **for the record (S142): the latch clause is void**; `Velocity` staying `(0,0,0)` and the pawn moving **0.00 uu** are the real, surviving observations. Both were later explained: a *horizontal* kick makes this bot fall, land and walk 13,196 uu. |
 
 This is P4's second branch, written down in advance precisely so it could not be reinterpreted
 afterwards. **A zero acceleration was never able to explain the absent GRAVITY, and now that
@@ -79,9 +104,13 @@ acceleration is non-zero, the absence is unchanged.**
 ⚠⚠ **AND THE PHYSICS-STEP CONTRADICTION IS NOW SHARPER, NOT SOFTER.** `Acceleration` being written
 every frame *proves* `ControlledCharacterMove` runs; `ControlledCharacterMove` calls
 `PerformMovement` at `0x035DCDAC` whenever `Role == ROLE_Authority` (measured **3**); and engine
-`PerformMovement`'s six exits all have their inputs measured passing (flights 1–2). Yet
+`PerformMovement`'s six exits all have their inputs measured passing (flights 1–2). ~~Yet
 `StartNewPhysics` is never entered. **Something in that function bails for a reason none of the six
-named gates accounts for.**
+named gates accounts for.**~~
+⚠⚠⚠ **REFUTED (S142). Nothing bails.** The six exits are complete and exact (four independent CFGs;
+0 indirect jumps, 0 coverage gaps, 2 backward edges and neither reaching the call), and
+"`StartNewPhysics` is never entered" was never measured — the latch reads `0` regardless. **The
+premise of this paragraph does not exist.**
 
 ⚠ **NOT OBTAINED:** a re-read of the six gate inputs on the bot *after* ARM G. The client died
 mid-probe and the script threw rather than printing partial values. Nothing suggests they changed —

@@ -4,6 +4,22 @@ Written 2026-08-23. **Offline: zero launches, zero injections, zero `.text` writ
 §1–§6. Six RE lanes over `dumps/merged13.dump.exe`, each followed by an adversarial verifier whose
 job was to refute it, then a synthesis that re-ran five checks itself. 13 agents, ~4.7 M tokens.
 
+> ## ⚠⚠⚠ PARTIALLY SUPERSEDED — READ THIS FIRST (banner added S142, 2026-08-24)
+>
+> **WHAT STILL STANDS:** the transcription itself, the four dead hypotheses, and the
+> `EMovementMode` finding (`MOVE_Dashing` inserted at index 6 ⇒ `MOVE_Custom == 7`) — all
+> independently reproduced.
+>
+> **WHAT IS DEAD:** §5's bullet *"`+0x16C8` is a STICKY latch, never cleared"* is **flatly false**,
+> and everything built on the latch as a bisector with it. Disp `0xA50` = `0x0530ABF0` clears the
+> byte, called from engine `PerformMovement` at `0x035EB569`. It reads `0` in every world. See
+> `docs/s140-tier1-cfg.md` §4. ⚠ The *other* §5 bullet — that `+0x16C8` collides with a live byte on
+> `ALokiCharacter` — is **correct and still load-bearing**; keep it.
+>
+> **AND THE QUESTION IS ANSWERED THE OTHER WAY:** the engine mover chain runs. One
+> `Velocity = (600,0,0)` kick makes the bot fall, land and walk **13,196 uu at 500.0 uu/s**,
+> reproduced twice. See `docs/next-session-prompt-s142.md`.
+
 Predecessor: `docs/s138-flight9b-flymode-refuted.md`. Its §2 conclusion is **retracted here**.
 
 ---
@@ -167,8 +183,18 @@ Probe: **`tools/re/cmc_earlyout_readout.py`** (read-only), pre-registration
 - **`CMC+0x16C8` collides with a live byte on `ALokiCharacter`.** A probe aimed at the PAWN instead
   of the COMPONENT reads a plausible, moving, WRONG value. **Assert `CMC+0x198 == pawn` first**
   (the probe does, and declares the side VOID otherwise).
-- **`+0x16C8` is a STICKY latch, never cleared.** `1` means "reached at some point", not "this
-  frame". No per-frame rate may be built on it.
+- ~~**`+0x16C8` is a STICKY latch, never cleared.** `1` means "reached at some point", not "this
+  frame". No per-frame rate may be built on it.~~
+  ⚠⚠⚠ **THIS BULLET IS FALSE AND IT IS THE TRAP THIS SECTION EXISTS TO CATALOGUE (retracted S142).**
+  `+0x16C8` **IS** cleared — once per completed `PerformMovement`, by `ULokiCMC` vtable disp `0xA50`
+  = `0x0530ABF0` (`cmp byte [rcx+0x16c8],0 / je / mov byte [rcx+0x16c8],0 / jmp 0x35D6790`), called
+  at `0x035EB569` on a path the `StartNewPhysics` call site dominates. It is a per-frame
+  `TOptional<FVector>` validity flag over the `+0x16B0` Velocity snapshot, named from its own
+  consumer `GetRecentVelocity` (`.data 0x09BC9AD0` → impl `0x0530AC10`).
+  ⇒ ★★★ **The real trap, tabulated as `S140T1-a`: the field was named "a latch" from the site that
+  SETS it, and nobody enumerated the sites that CLEAR it.** For any flag you intend to sample,
+  **enumerate the writers of ZERO before you name it** — this codebase makes set/clear pairs inside
+  one call on purpose (`CMC+0x2E8` bit 6 is save/set/restore in the same function).
 - ⚠⚠ **THIS BUILD'S `EMovementMode` IS MODIFIED: `MOVE_Dashing` is inserted at index 6, so
   `MOVE_Custom == 7`, `MOVE_MAX == 8`** [M, three instruments: the `.rdata` enumerator run at
   `0x07E10660`; `StartNewPhysics`'s 8-entry jump table at `0x03600BF8` bounded by `cmp esi,7`;

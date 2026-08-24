@@ -1,5 +1,27 @@
 # S139 flight 1 — the bot and the player are in the SAME state on every field. S2 is refuted.
 
+> ## ⚠⚠⚠ PARTIALLY SUPERSEDED — READ THIS FIRST (banner added S142, 2026-08-24)
+>
+> **WHAT STILL STANDS:** the whole point of the document — **the bot and the player read IDENTICALLY on every structural field that was read**, which killed the "the bot is specially disadvantaged" framing and is still the reason nobody should look for a bot/player difference in the movement component. Also `Role@+0x160 == 3` on a `SpawnAIFromClass` pawn, and the identity controls.
+>
+> **WHAT IS DEAD:** every claim resting on `CMC+0x16C8`. **[M] that byte is NOT a latch.** `ULokiCMC`
+> vtable disp `0xA50` = `0x0530ABF0` clears it, and engine `PerformMovement` calls that slot at
+> `0x035EB569` — later in the same call, on a path the `StartNewPhysics` call site **dominates**. So
+> it reads `0` whether the physics step runs every frame or never runs at all. It is a per-frame
+> `TOptional<FVector>` validity flag over the `+0x16B0` Velocity snapshot, named from its own consumer
+> `GetRecentVelocity` (`.data 0x09BC9AD0` → impl `0x0530AC10`). Those claims are **UNGRADED, not
+> negative.** Read `docs/s140-tier1-cfg.md` §4.
+>
+> ⚠ **The MEASUREMENT was correct** — `+0x16C8` really did read `0`. Only the **inference** is dead.
+> Nothing here misread a byte.
+>
+> **AND THE UNDERLYING QUESTION IS ANSWERED THE OTHER WAY NOW.** The engine mover chain runs on this
+> client: `GravityScale = 1.0f` made the player fall 23,189 uu, and one `Velocity = (600,0,0)` kick
+> made the bot fall, land and walk **13,196 uu at 500.0 uu/s**, reproduced in a second sitting. The
+> remaining wall is narrower: the bot does not escape `Velocity == 0` on a *Z-only* kick, and the
+> discriminator is the kick axis. See `docs/next-session-prompt-s142.md` and
+> `docs/s141-tier3-settled.md`.
+
 Written 2026-08-23. Pre-registration: `docs/s139-f1-PREREGISTERED.txt` (UNEDITED).
 Probe: `tools/re/cmc_earlyout_readout.py` — **read-only RPM, no write of any kind**.
 Offline basis: `docs/s139-movement-ladder.md`.
@@ -129,7 +151,17 @@ readings were open: (a) `StartNewPhysics` genuinely never runs for either charac
 is never set on the normal path — an instrument artifact, because the `cmp`/`je` polarity had been
 taken from a lane's summary rather than read from the bytes.
 
-★★ **RESOLVED AFTER THE FLIGHT, FROM THE BYTES — (b) IS REFUTED AND THE LATCH IS A VALID INSTRUMENT:**
+~~★★ **RESOLVED AFTER THE FLIGHT, FROM THE BYTES — (b) IS REFUTED AND THE LATCH IS A VALID INSTRUMENT:**~~
+⚠⚠⚠ **HALF-RESOLVED, AND THE VERDICT IS WRONG (S142).** Reading (b) — *"the latch is never set on the
+normal path"* — really was refuted, and every byte below is correct. **But refuting ONE alternative
+does not validate the instrument.** A THIRD reading was never enumerated and it is the true one:
+**the latch is SET and then CLEARED within the same call.** Disp `0xA50` = `0x0530ABF0` clears it;
+engine `PerformMovement` calls that slot at `0x035EB569`.
+⇒ ★★★ **THE METHOD LESSON: refuting one alternative is not the same as validating the instrument.**
+Enumerate the ways a flag can return to 0 — including the ones your hypothesis does not mention.
+⇒ ★★ **AND THIS DOCUMENT'S OWN PRE-REGISTRATION (P2, quoted immediately above) WAS RIGHT.** It said
+a player latch of 0 makes the bisector uninterpretable. That verdict should have been left standing;
+overriding it is what turned a void sitting into a load-bearing `[M]`. Tabulated as `S140T1-g`.
 
     0x055C2433  test  r8d, r8d                        ; r8d = Iterations
     0x055C2436  jne   0x55c2475                       ; Iterations != 0 -> the other arm
@@ -143,12 +175,19 @@ taken from a lane's summary rather than read from the bytes.
 The `je` skips only a redundant zero-store; **`mov byte [rcx+0x16C8], 1` sits on the unconditional
 fall-through and runs every time `StartNewPhysics` is entered with `Iterations == 0`.**
 
-⇒ ★★★ **`latch == 0` on BOTH pawns is a REAL MEASUREMENT: `ULokiCMC::StartNewPhysics` has NEVER been
-called on either component.** Reading (a) is correct.
+~~⇒ ★★★ **`latch == 0` on BOTH pawns is a REAL MEASUREMENT: `ULokiCMC::StartNewPhysics` has NEVER been
+called on either component.** Reading (a) is correct.~~
+⚠⚠ **RETRACTED (S142).** The first half is true — it IS a real measurement. The second half does not
+follow, and reading (a) is **UNGRADED**, not correct. See the banner.
 ⇒ Combined with §2: **`PerformMovement` runs with a real DeltaTime, and `StartNewPhysics` never
 runs.** The wall is between them — a far narrower statement than anything this project has had.
-⇒ It also explains, with no extra assumption, why a `MOVE_Falling` bot with `GravityScale 1.000`
-does not fall: `PhysFalling` is dispatched *from* `StartNewPhysics`, which never runs.
+~~⇒ It also explains, with no extra assumption, why a `MOVE_Falling` bot with `GravityScale 1.000`
+does not fall: `PhysFalling` is dispatched *from* `StartNewPhysics`, which never runs.~~
+⚠⚠ **VOID (S142).** `PhysFalling` really is dispatched only from `StartNewPhysics` (case 3 of the
+bounded 8-entry table at `.text 0x03600BF8`), but the "which never runs" clause is gone, so this
+explains nothing. ★ And the non-fall was later explained outright: **it was OURS** — `sp`'s
+LIFT-TO-SEE step (`tutorial_launch.cpp:12877-12890`) sets `GravityScale = 0` on the player, and
+`CMC+0x1A0` is `GravityScale` (S141 Tier 3).
 
 ★ The pre-registration is what kept this honest. Had P2 not been written down, `bot latch == 0`
 would have been read as "S2 confirmed" — and §0 shows S2 is false. The *correct* use of the byte only
@@ -266,9 +305,11 @@ Its code reading is right. **Its conclusion is refuted by two facts it did not h
    had fired, the accumulate would be `+= 0` and `+0x12B0` would be frozen. ⇒ **xmm6 ≠ 0.**
 2. **The latch is set BEFORE the jump to the engine.** `0x055C2469 mov byte [rcx+0x16C8],1` then
    `0x055C2470 jmp 0x3600990`. So entering `ULokiCMC::StartNewPhysics` sets the latch *regardless of
-   DeltaTime* — the `MIN_TICK_TIME` bail is downstream of it. **latch == 0 therefore proves
-   `StartNewPhysics` was never ENTERED**, which is a strictly stronger statement than "it was entered
-   and bailed on dt", and it makes the proposed mechanism unreachable.
+   DeltaTime* — the `MIN_TICK_TIME` bail is downstream of it. ~~**latch == 0 therefore proves
+   `StartNewPhysics` was never ENTERED**~~ ⚠⚠ **RETRACTED (S142): it proves nothing, because the byte
+   is cleared later in the same `PerformMovement` call.** ★ Note the *set-before-the-jmp* observation
+   is still correct and still useful — it means even a latch caught at **1** would only prove the
+   vtable dispatch happened, not that the engine's own four gates passed.
 
 ⇒ **S1 stays refuted.** ★ Note the shape: the offline lane was correct about every byte and wrong
 about the conclusion, because the discriminating facts were *live*. Neither half was sufficient

@@ -15,17 +15,35 @@
 #       a MOVE_Flying poke inert.  Fits every S138 observation.
 #   S2  An early-out between HasValidData (0x03603825) and ControlledCharacterMove (0x03603B18).
 #
-#   THE BISECTOR -- rank 1 -- is CMC+0x16C8.
-#       ULokiCharacterMovementComponent::StartNewPhysics 0x055C2430, Iterations==0 path:
+#   ~~THE BISECTOR -- rank 1 -- is CMC+0x16C8.~~
+#   ##################################################################################
+#   ## RETRACTED (S140 Tier 1, 2026-08-23).  CMC+0x16C8 IS NOT A LATCH AND IS NOT A  ##
+#   ## BISECTOR.  DO NOT REINSTATE IT.  Read docs/s140-tier1-cfg.md SS4.             ##
+#   ##################################################################################
+#       The bytes below are all CORRECT -- the SET side was never the problem:
 #           0x055C2438  cmp byte [rcx+0x16C8], 0   / je
 #           0x055C2448  snapshot Velocity (CMC+0xE8/+0xF8) -> CMC+0x16B0/+0x16C0
-#           0x055C2469  mov byte [rcx+0x16C8], 1        <-- the latch
+#           0x055C2469  mov byte [rcx+0x16C8], 1        <-- SET (unconditional on Iterations==0)
 #           0x055C2470  jmp 0x3600990 (engine StartNewPhysics)
-#       There is NO DeltaTime test on that path, and the engine's MIN_TICK_TIME bail is DOWNSTREAM.
-#       => the latch is dt-INDEPENDENT: it says "PerformMovement reached StartNewPhysics", which is
-#          exactly the thing S1 and S2 disagree about.
-#         1 + position frozen  => S1 (the DeltaTime kill)
-#         0                    => S2 (an early-out at or above PerformMovement); reads 4/5 localise it
+#       There is NO DeltaTime test on that path, and the engine's MIN_TICK_TIME bail IS downstream.
+#       WHAT WAS MISSED IS WHO CLEARS IT:
+#           ULokiCMC vtable disp 0xA50 = 0x0530ABF0:
+#               cmp byte [rcx+0x16C8],0 / je / mov byte [rcx+0x16C8],0 / jmp 0x35D6790
+#           engine PerformMovement calls that slot at 0x035EB569 (call [rax+0xA50], rcx = this),
+#           LATER IN THE SAME CALL, on a path the StartNewPhysics call site DOMINATES.
+#       => the byte is a per-frame TOptional<FVector> validity flag over the +0x16B0 Velocity
+#          snapshot -- named from its own consumer, .data 0x09BC9AD0 =
+#          {"GetRecentVelocity", thunk 0x0530C7E0, impl 0x0530AC10}:
+#              cmp byte [rcx+0x16c8],0 / mov eax,0x16b0 / mov r8d,0xe8 / cmove eax,r8d
+#       => AN OFF-THREAD READ SEES 0 IN EVERY WORLD.  latch == 0 proves NOTHING.  The old
+#          "0 => S2" / "1 => S1" decision rule below was FALSE in its 0 branch.
+#       ⚠ The MEASUREMENT was always fine (it really did read 0 on all 37 components); only the
+#         INFERENCE was dead.  Do not read this as "the probe misread the byte".
+#       ★ USE THE PAYLOAD INSTEAD: CMC+0x16B0 is durable (disp 0xA50 clears only the flag byte, and
+#         the only CMC-side writer of the payload is 0x055C244F inside StartNewPhysics) -- but it
+#         needs a PRE-POISONED destination, because a resting Velocity of (0,0,0) makes
+#         "snapshotted a zero" and "never written" the same bytes.  See S140T2-a in
+#         docs/method-rules.md.
 #
 # ⚠⚠ MANDATORY IDENTITY CONTROLS, because this probe can silently read the wrong object:
 #   * ALokiCharacter has its OWN live byte at +0x16C8.  A probe aimed at the PAWN instead of the
@@ -35,8 +53,9 @@
 #
 # ⚠⚠ THE PLAYER IS A CONTAMINATED CONTROL ON EXACTLY TWO FIELDS.  The `play` shim writes CMC+0xE8
 #   (Velocity) and CMC+0x328 (Acceleration) every game-thread hit (tutorial_launch.cpp:3047, :12599).
-#   Use the player as a control on STRUCTURAL fields (Role, UpdatedComponent, Mobility, tick state,
-#   +0x16C8) and NEVER on those two.  Also: `play-atlanding` moved the player 2,926 uu at CONSTANT
+#   Use the player as a control on STRUCTURAL fields (Role, UpdatedComponent, Mobility, tick state)
+#   and NEVER on those two.  ⚠ +0x16C8 used to be listed here as a structural control; it is NOT one
+#   -- it reads 0 on both sides in every world, so it cannot discriminate anything (S140 Tier 1).  Also: `play-atlanding` moved the player 2,926 uu at CONSTANT
 #   Z=13,240 -- it HOVERS (KFLYMODE=5).  "the player moved" never means "the player walked".
 #
 # ⚠ Acceleration == (0,0,0) is UNINTERPRETABLE and must not be read as a negative.  Three writers

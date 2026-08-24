@@ -1,5 +1,27 @@
 # S139 flight 3 — the input path RUNS, and the wall is `GetMaxAcceleration() == 0`
 
+> ## ⚠⚠⚠ PARTIALLY SUPERSEDED — READ THIS FIRST (banner added S142, 2026-08-24)
+>
+> **WHAT STILL STANDS:** **the headline, which is excellent and was independently reproduced: the SIGNED ZERO.** `Acceleration @CMC+0x328` carried `ControlInputVector`'s sign in 22/22 samples, proving `ControlledCharacterMove` RUNS and that the input wall was `GetMaxAcceleration() == 0`. Also the weld-hypothesis refutation (`WeldParent == NULL`).
+>
+> **WHAT IS DEAD:** every claim resting on `CMC+0x16C8`. **[M] that byte is NOT a latch.** `ULokiCMC`
+> vtable disp `0xA50` = `0x0530ABF0` clears it, and engine `PerformMovement` calls that slot at
+> `0x035EB569` — later in the same call, on a path the `StartNewPhysics` call site **dominates**. So
+> it reads `0` whether the physics step runs every frame or never runs at all. It is a per-frame
+> `TOptional<FVector>` validity flag over the `+0x16B0` Velocity snapshot, named from its own consumer
+> `GetRecentVelocity` (`.data 0x09BC9AD0` → impl `0x0530AC10`). Those claims are **UNGRADED, not
+> negative.** Read `docs/s140-tier1-cfg.md` §4.
+>
+> ⚠ **The MEASUREMENT was correct** — `+0x16C8` really did read `0`. Only the **inference** is dead.
+> Nothing here misread a byte.
+>
+> **AND THE UNDERLYING QUESTION IS ANSWERED THE OTHER WAY NOW.** The engine mover chain runs on this
+> client: `GravityScale = 1.0f` made the player fall 23,189 uu, and one `Velocity = (600,0,0)` kick
+> made the bot fall, land and walk **13,196 uu at 500.0 uu/s**, reproduced in a second sitting. The
+> remaining wall is narrower: the bot does not escape `Velocity == 0` on a *Z-only* kick, and the
+> discriminator is the kick axis. See `docs/next-session-prompt-s142.md` and
+> `docs/s141-tier3-settled.md`.
+
 Written 2026-08-23. Pre-registration: `docs/s139-f3-PREREGISTERED.txt` (UNEDITED).
 Read-only RPM; one injection (`driverecompute`) into the already-staged flight-2 client, PID 35608.
 Predecessors: `docs/s139-flight2-gate-refuted.md`, `docs/s139-flight1-the-bot-is-not-special.md`.
@@ -109,13 +131,17 @@ sibling shim's source.**
 
 ## 4. ⚠ WHAT THIS DOES **NOT** EXPLAIN — the residual, stated plainly
 
-**`StartNewPhysics` still never runs** (`latch +0x16C8 == 0` on the bot here, and on all 37
+⚠⚠ **RETRACTED (S142) — UNGRADED, not negative; the latch cannot support it (see the banner).**
+~~**`StartNewPhysics` still never runs**~~ (`latch +0x16C8 == 0` on the bot here, and on all 37
 components in flight 2), and **a zero `Acceleration` does not stop gravity.** So:
 
 - The **input** wall is now named and has a known fix (§3).
 - The **gravity / physics-step** wall is **still unexplained**. `ControlledCharacterMove` runs and
   calls `PerformMovement` at `0x035DCDAC`; Loki's `PerformMovement` reaches its Super
-  unconditionally; and yet the latch says `ULokiCMC::StartNewPhysics` was never entered.
+  unconditionally; ~~and yet the latch says `ULokiCMC::StartNewPhysics` was never entered.~~
+  ⚠⚠ **RETRACTED (S142): the latch says nothing** — it reads `0` in every world. ★ And the wall is
+  no longer unexplained: the mover chain **runs**, and the player's non-fall was **ours**
+  (`sp`'s LIFT-TO-SEE step sets `GravityScale = 0`). See the banner.
 
 ⚠ **Do not assume porting the GAS fix also fixes this.** It may — the DS route reportedly moved the
 hero via the stock chain with exactly this fix — or the two may be independent. **Fly the port and
