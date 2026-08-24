@@ -647,6 +647,13 @@ $Variants = @{
         #   payload, to discriminate 'StartNewPhysics copied Velocity into +0x16B0' from 'some
         #   other routine zeroed both'. = gasattr-sentinel + bit10.
         'sentinel-burst'      = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x7A0')
+        # ARM J -- THE FIXED-POINT TEST (S140 Tier 2 follow-up). ARM H's 2^-10 sentinel was chosen
+        #   to be INERT; a verifier then showed a small non-zero Velocity can CONVERT A NO-WRITE
+        #   INTO A WRITE, so what ARM H measured about Velocity may be its own artifact. ARM J
+        #   writes a LARGE velocity ONCE (600 uu/s), on DIFFERENT AXES for bot and player, and
+        #   watches whether it persists and whether the pawn TRANSLATES. It PERTURBS BY DESIGN --
+        #   that is the point, and it is the opposite of ARM H. bit9 (H) + bit11 (J), NO bit10.
+        'sentinel-big'        = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0xBA0','-DKSHSENTX=600.0','-DKSHPLRY=600.0')
         # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
         # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
         'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')

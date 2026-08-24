@@ -15729,11 +15729,27 @@ static void BsPsSpawnBot(){
 #if (KBSPSARMS & 0x200)
 static const double kShBotPoison[3]={-9876.5,      -8765.25,     -7654.125};
 static const double kShPlrPoison[3]={-1234.5,      -2345.25,     -3456.125};
-static const double kShSentinel [3]={ 0.0009765625, 0.0,          0.0};
+// ARM J (S140 Tier 2 follow-up) turns the sentinel MAGNITUDE into a knob. ARM H deliberately used
+// 2^-10 = 0.0009765625 uu/s so it could not perturb the system under test. ARM J deliberately uses
+// a LARGE value, because the question changed: an adversarial verifier showed a small non-zero
+// Velocity can CONVERT A NO-WRITE INTO A WRITE (below-tolerance arms SKIP the store), so what ARM H
+// measured about Velocity may be an artifact of ARM H's own sentinel. ARM J perturbs BY DESIGN.
+#ifndef KSHSENTX
+#define KSHSENTX 0.0009765625
+#endif
+#ifndef KSHPLRX
+#define KSHPLRX  0.0
+#endif
+#ifndef KSHPLRY
+#define KSHPLRY  0.0
+#endif
+static const double kShSentinel [3]={ (double)(KSHSENTX), 0.0,               0.0};
+static const double kShPlrVel   [3]={ 0.0,                (double)(KSHPLRY), 0.0};
 
 static uintptr_t g_shBotCmc=0,  g_shPlrCmc=0, g_shBotPawn=0, g_shPlrPawn=0;
 static int  g_shBotPoisoned=0,  g_shPlrPoisoned=0, g_shSentinelOK=0, g_shArmed=0;
 static int  g_shBotFlag0=-1,    g_shPlrFlag0=-1;
+static double g_shLoc0[2][3]={{0,0,0},{0,0,0}};
 
 // 24 raw bytes -> "xx xx xx ..".  RAW FIRST, DERIVE AFTER: a formatted double print hides a signed
 // zero, and that exact defect cost S139 flight 3 its finding for an hour.
@@ -15902,8 +15918,29 @@ static void BsPsSentinel(){
                 g_shSentinelOK?"OK":"*** FAILED ***");
     } else if(LooksLikePtr(g_shBotCmc)) Marker("[SNP] BOT Velocity NOT WRITABLE -> no sentinel\r\n");
 
+#if (KBSPSARMS & 0x800)
+    // ---- ARM J: the FIXED-POINT TEST. Give the PLAYER its own large velocity, on a DIFFERENT
+    //      AXIS, so the two objects stay distinguishable and cross-contamination is visible.
+    //   The player is UNTREATED by ARM G (no AttributeSetStorage), so this is a two-arm design:
+    //     both move   -> the mover works regardless of GAS; the wall is purely Acceleration->Velocity
+    //     only bot    -> the GAS treatment matters downstream too
+    //     neither     -> the MOVER itself is blocked, and Velocity is not the variable
+    if(LooksLikePtr(g_shPlrCmc)&&SafeWritable((void*)(g_shPlrCmc+0xE8),24)){
+        memcpy((void*)(g_shPlrCmc+0xE8),kShPlrVel,24);
+        Markerf("[SNP] ARM J: PLAYER Velocity = (0, %g, 0) -> readback %s\r\n",(double)(KSHPLRY),
+                ShEq3(g_shPlrCmc+0xE8,kShPlrVel)?"OK":"*** FAILED ***");
+    }
+#endif
     Marker("[SNP] ---- AFTER THE WRITES (raw) ----\r\n");
     ShDump("BOT-armed",g_shBotCmc); ShDump("PLR-armed",g_shPlrCmc);
+    // Latch the start locations so the sampler can report DISTANCE TRAVELLED, which is the only
+    // observable that matters if the velocity persists.
+    for(int k=0;k<2;k++){
+        uintptr_t pawn=k?g_shPlrPawn:g_shBotPawn; if(!LooksLikePtr(pawn))continue;
+        uint32_t rc=PropOffsetSuper(ClassOf(pawn),"RootComponent");
+        uintptr_t root=(rc!=0xFFFFFFFF&&SafeReadable((void*)(pawn+rc),8))?*(uintptr_t*)(pawn+rc):0;
+        if(LooksLikePtr(root)&&SafeReadable((void*)(root+0x158),24)) memcpy(g_shLoc0[k],(void*)(root+0x158),24);
+    }
     g_shArmed=1;
     Marker("[SNP] ARM H armed. THE READ HAPPENS ON THE WORKER THREAD AFTER FsDisarm -- this function\r\n"
            "[SNP] runs on the GAME THREAD, so sleeping here would stop the frames the test needs.\r\n");
@@ -15928,7 +15965,10 @@ static void ShSampleLoop(){
             uintptr_t root=(rc!=0xFFFFFFFF&&SafeReadable((void*)(pawn+rc),8))?*(uintptr_t*)(pawn+rc):0;
             if(LooksLikePtr(root)&&SafeReadable((void*)(root+0x158),24)){
                 const double* L=(const double*)(root+0x158);
-                Markerf("[SNP] %-14s loc (%.3f, %.3f, %.3f)\r\n",k?"PLR":"BOT",L[0],L[1],L[2]); }
+                double dx=L[0]-g_shLoc0[k][0],dy=L[1]-g_shLoc0[k][1],dz=L[2]-g_shLoc0[k][2];
+                double d=(dx*dx+dy*dy+dz*dz); d=(d>0.0)?__builtin_sqrt(d):0.0;
+                Markerf("[SNP] %-14s loc (%.3f, %.3f, %.3f)  moved %.3f uu\r\n",k?"PLR":"BOT",
+                        L[0],L[1],L[2],d); }
         }
         } __except(EXCEPTION_EXECUTE_HANDLER){
             // ⚠ NOT SEH_FILTER/DP_FAULT: FaultStr() has a static buffer AND reads the
