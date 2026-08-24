@@ -392,20 +392,111 @@ both, confirming the layout is `name @+0x00, thunk @+0x08, impl @+0x10`.
 the next record's name). Only `.data` rows are records. My first pass printed those `.rdata` rows as
 if they were records; that is defect **S141-i**.
 
-| UFunction | exec thunk | impl | vtable disp | ULokiCMC | engine CMC | Loki override? |
-|---|---|---|---|---|---|---|
-| `CanJump` | `0x354E0D0` REAL | `0x3520580` **REAL** | — | — | — | — |
-| `CanJumpInternal` | `0x354E140` REAL | `0x3520580` **REAL** | — | — | — | ⚠ **same impl as `CanJump`** |
-| `AddForce` | `0x331DC90` REAL | `0x3317490` **REAL** (not a dispatch stub) | — | — | — | — |
-| `AddImpulse` | `0x331E260` **DARK** | `0x3316C58` REAL → dispatch | `0x6F8` | `0x3604B60` REAL | `0x3604B60` | no |
-| `AddRadialImpulse` | `0x331E770` **DARK** | `0x3316C88` REAL → dispatch | `0x718` | `0x35D3A30` REAL | `0x35D3A30` | no |
-| `AddRadialForce` | `0x331E590` **DARK** | `0x3316CB8` REAL → dispatch | `0x738` | **`0x55AC000` REAL** | `0x35E3890` | **YES** |
-| `Jump` | `0x354FB00` REAL | `0x3316B08` REAL → dispatch | `0x958` | **`0x55B2B20` REAL** | `0x35E6E00` | **YES** |
-| `StopJumping` | `0x3554000` REAL | `0x3316B14` REAL → dispatch | `0x960` | `0x35F1DE0` REAL | `0x35F1DE0` | no |
-| `SetMovementMode` | `0x3609180` REAL | `0x35D09F0` REAL → dispatch | `0x670` | **`0x55C0AC0` REAL** | `0x35FACD0` | **YES** |
+⚠⚠⚠ **THE FIRST VERSION OF THIS TABLE RESOLVED EVERY DISPLACEMENT ON A *CMC* VTABLE, AND THAT IS
+INVALID FOR THE `ACharacter` AND `UPrimitiveComponent` METHODS — this repo's own recorded trap
+("never sample a byte offset across unrelated vtables"), which I had put in my own seed prompt.
+Corrected below; defect S141-j.** The giveaway was in my own output and I did not read it: a
+resolved "impl" that is itself `mov rax,[rcx]; jmp [rax+…]` **cannot be terminal**, and my
+"StopJumping" row was exactly that.
 
-**[M] ZERO FOLDS. Every impl and every resolved vtable target is REAL code.** So none of the engine
-kick surface is stripped on this client.
+**Corrected. Owner class decides which vtable the displacement belongs to.**
+
+| UFunction | owner | exec thunk | dispatch stub → disp | resolved body | grade |
+|---|---|---|---|---|---|
+| **`Jump`** | `ACharacter` | `0x354FB00` REAL | `0x3316B08` → **`0x958`** | **`0x3536610`** on 7 of 12 character vtables | **REAL, and it is stock `ACharacter::Jump()` verbatim** — see below |
+| **`StopJumping`** | `ACharacter` | `0x3554000` REAL | `0x3316B14` → **`0x960`** | `0x354A740` (×4), **`0x55C2630` Loki override (×3)**, `0x31F02F0` (×4), `0x375CF40` (×1) | **REAL** |
+| `CanJump` | `ACharacter` | `0x354E0D0` REAL | — | impl `0x3520580` | ⚠ **NOT a native body — it reads `[rax+0x270]` (`ProcessEvent`, slot 78) and calls `0x1344150`: a BlueprintImplementableEvent forwarder.** `CanJumpInternal` shares it |
+| `AddForce` | `UPrimitiveComponent` | `0x331DC90` REAL | — (not a stub) | `0x3317490` | **REAL** |
+| `AddImpulse` | `UPrimitiveComponent` | `0x331E260` **DARK** | `0x3316C58` → `0x6F8` | ⚠ **NOT RE-RESOLVED — the primitive-component vtable was not located.** The disp is [M]; the target is NOT ESTABLISHED |
+| `AddRadialImpulse` | `UPrimitiveComponent` | `0x331E770` **DARK** | `0x3316C88` → `0x718` | ⚠ same | NOT ESTABLISHED |
+| `AddRadialForce` | `UPrimitiveComponent` | `0x331E590` **DARK** | `0x3316CB8` → `0x738` | ⚠ same | NOT ESTABLISHED |
+| **`SetMovementMode`** | **`UCharacterMovementComponent`** | `0x3609180` REAL | `0x35D09F0` → **`0x670`** | ULokiCMC **`0x55C0AC0`** / engine `0x35FACD0` | **REAL, Loki override.** ★ This row IS valid — `SetMovementMode` is a CMC method, so the CMC vtable is the right one, and it cross-validates L5's `HandlePendingLaunch` (`0x55AEBE2 call [vt+0x670], edx = 3`) |
+
+**[M] Zero folds among everything actually resolved.** ⚠ **But three rows are now NOT ESTABLISHED
+rather than graded**, and one (`CanJump`) turned out not to be native at all.
+
+### 5.2 ★★★★★ AND THE CORRECTION FOUND THE BEST KICK IN THE GAME — `ACharacter::Jump()`
+
+```
+03536610  83898005000004    or  dword ptr [rcx + 0x580], 4     ; bPressedJump = true
+03536617  c781840500000000  mov dword ptr [rcx + 0x584], 0     ; JumpKeyHoldTime = 0
+03536621  c3                ret
+```
+
+**Three instructions. Zero arguments. No authority check. No `.text` write. It sets ONE BIT.**
+Stock `ACharacter::Jump()` verbatim, and **[M] Loki does NOT override it** — the Loki character
+vtables (the three carrying the Loki `StopJumping` override `0x55C2630`) all carry the stock
+`0x3536610`.
+
+**New offsets [M]:** `ACharacter+0x580` bit `4` = **`bPressedJump`**; `ACharacter+0x584` =
+**`JumpKeyHoldTime`**. `StopJumping` clears the same bit (`and dword [rcx+0x580], 0xFFFFFFFB`) and
+tail-jumps `[char vt+0x970]` = `ResetJumpState`.
+
+⇒ **This is the cleanest kick route found this session, and it beats #1 in §5 on every axis:** one
+bit instead of 24 bytes, the game's own jump path, **self-clearing**, and **vertical** — which §1
+establishes the `SizeSq2D` gate preserves.
+
+### 5.3 THE CONSUMER SIDE — what is measured, and where I stopped naming
+
+⚠⚠ **I mis-identified two functions here before catching it, both the same way: naming from the
+control flow I EXPECTED rather than from independent evidence** (defect **S141-k**). Recorded as
+measured-vs-inferred rather than smoothed over.
+
+**[M], no naming required:**
+* `char vt+0x970` = **`0x3540B20`**, identical on **all seven** pawn vtables checked — not
+  overridden. It is the tail-jump target of `StopJumping` (`0x354A74A`) **and** the call target at
+  `0x03539624`, i.e. two independent routes reach the same slot.
+* **`0x3520930`** reads `[rcx+0x598]` → `[rcx+0x59C]`, loads `[rcx+0x458]` (the CMC — the same
+  offset the flight measured), null-checks it, then `test byte [rdi+0x580], 4`. Its pdata row is
+  `0x3520930..0x3520962` (chained; the body runs past it).
+* **CMC vtable disp `0x608`** = engine **`0x35E6830`** / ULokiCMC **`0x55B1740`** (**a Loki
+  override**). The engine body is complete and tiny:
+  `cmp byte [rcx+0x231], 3` / `jne → return 0` / `cmp qword [rcx+0xd0], 0` / `je → return 0` /
+  `mov al,1 ; ret` — i.e. **`MovementMode == MOVE_Falling && UpdatedComponent != null`**.
+
+**[I, strong]:** `0x3520930` is `ACharacter::CheckJumpInput` — the `[+0x598] → [+0x59C]` copy
+matches stock's `JumpCurrentCountPreJump = JumpCurrentCount`, and the CMC-null-check-then-
+`bPressedJump` order matches. **[I]:** `char vt+0x970` is `ResetJumpState`; CMC disp `0x608` is
+`IsFalling`.
+
+⚠⚠ **CORRECTIONS TO WHAT I FIRST WROTE, both made before publication:**
+1. I called **`0x35395E0`** `ACharacter::CheckJumpInput`. **It is not** — it takes four arguments
+   (`rcx, edx, r8b, r9`), tests both bit 4 and bit 2 of `+0x580`, and reads `[rax+0x808]` after a
+   `0x338C990` call. **Unidentified.** `0x3520930` is the better `CheckJumpInput` candidate.
+2. I then called **CMC disp `0x608`** `DoJump`, from that function's `call [rax+0x608]` / `jne`.
+   **It is not** — the body is a two-term boolean predicate that writes nothing.
+   ⇒ **`DoJump`'s vtable displacement is NOT ESTABLISHED**, and therefore **the write that turns
+   `bPressedJump` into a `Velocity.Z` is UNREAD.**
+
+3. I then tried CMC disp **`0x728`** (the virtual called immediately after `0x3520930`'s
+   `bPressedJump` test, which is the structural position `DoJump` occupies). **Also not it** —
+   engine `0x35E67D0` is `mov rax,[rcx]; jmp [rax+0x608]`, a **forwarder to the `0x608` predicate**,
+   and the Loki override `0x55B1380` is
+   `if (disp608() && !(MovementMode==7 && CustomMovementMode==3)) return true` — another boolean
+   that writes nothing.
+
+**[M] AND THE DECISIVE NEGATIVE: `0x3520930`'s whole CFG (57 instructions, 6 calls, 0 indirect
+jumps, 0 decode failures) contains ZERO writes to `+0xE8/+0xF0/+0xF8`.** Its virtual calls are CMC
+disp `0x728`, disp `0x730` (engine `0x35DEAD0` / Loki `0x55A8110`) and char-side disp `0x0A10`; its
+direct calls are `0x1344150` and `0x35395A0`.
+★ **One internal consistency check did land:** `0x1344150` is the **`ProcessEvent` path**, which
+matches §5.1's independent finding that `CanJump`'s impl is a ProcessEvent forwarder — i.e. this
+function really does call `CanJump()` as a Blueprint event. Two routes agreeing.
+
+⇒ ⚠⚠ **`DoJump` REMAINS UNLOCATED after three attempts, and I am stopping rather than guessing a
+fourth time.** Each miss came from the same move — **naming a function from the control flow I
+expected to find, instead of from its own bytes** — which is defect **S141-k** and is this
+project's dominant failure mode wearing a new hat.
+
+⇒ **GRADE THE ROUTE HONESTLY:**
+* **SETTER: `[M]` and excellent.** `ACharacter::Jump() = 0x3536610`, three instructions, one bit,
+  no authority check, not Loki-overridden.
+* **CONSUMER: NOT ESTABLISHED.** Neither `CheckJumpInput` nor `DoJump` is confirmed, and **the write
+  that turns `bPressedJump` into a `Velocity.Z` has not been found.**
+* ⇒ **Do NOT fly this as if the chain were measured.** Its attraction is real but its second half is
+  unread. **The next attempt should start from the WRITE, not from the name:** enumerate every
+  writer of `+0xF8` whose value derives from a `JumpZVelocity`-shaped CMC float field, and work
+  backwards to its callers — the opposite direction from all three failed attempts.
 
 ★ **A free cross-validation of L5:** `SetMovementMode` resolves to vtable disp **`0x670`**, which is
 exactly the displacement L5 independently transcribed in `HandlePendingLaunch`

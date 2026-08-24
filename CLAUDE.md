@@ -4611,7 +4611,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **105 tabulated instances as of S141 Tier 3** (S141 added 9: S141-a..i) ⚠⚠ **AND THE PREVIOUS
+   blind spot recorded as a property of the game. **107 tabulated instances as of S141 Tier 3** (S141 added 11: S141-a..k) ⚠⚠ **AND THE PREVIOUS
    FIGURE HERE WAS WRONG: this line read "112 as of S140 Tier 2" while the table held 96.** The
    tally has now diverged FOUR times, which is exactly why this line says re-derive it — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
