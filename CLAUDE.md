@@ -4611,13 +4611,22 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **108 tabulated instances as of S141 Tier 3** (S141 added 12: S141-a..l) ⚠⚠ **AND THE PREVIOUS
-   FIGURE HERE WAS WRONG: this line read "112 as of S140 Tier 2" while the table held 96.** The
-   tally has now diverged FOUR times, which is exactly why this line says re-derive it — ⚠ **re-derived by
-   COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
-   again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
-   defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
-   the last BYTE of a multi-byte character. **Run it, do not just read it.**),
+   blind spot recorded as a property of the game. **131 tabulated instances as of S142** (S140 Tier 1
+   added 7: `S140T1-a..g`; Tier 2 added 16: `S140T2-a..p`; S141 added 12: `S141-a..l`).
+   ⚠⚠⚠ **THE PRESCRIBED RE-DERIVATION COMMAND WAS ITSELF THE DEFECT, AND THAT IS WHY THIS LINE HAS
+   NOW DIVERGED FIVE TIMES.** The command below used to be
+   `grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*'`, which requires a hyphen **immediately** after the
+   session digits and is therefore **structurally blind to the `S140T1-*` / `S140T2-*` tag shape**
+   (letters between the number and the hyphen). MEASURED 2026-08-24: the old pattern returns **108**,
+   the correct pattern returns **131**, and the 23-row difference is **exactly** the 7 `S140T1` plus
+   16 `S140T2` rows (`comm -23`, no other tag affected). ⇒ **the recorded "108 as of S141 Tier 3" was
+   really 124.** Earlier divergences: "112 as of S140 Tier 2" against a table of 96, and defect
+   **S130-f** (a form with `★+` in it under-counts by half, because `grep` quantifies the last BYTE of
+   a multi-byte character). **USE THIS FORM, and run it — do not read it:**
+   `grep -cE '^\| \*\*[^|]*S[0-9]+[A-Za-z0-9]*-[a-z]+\*\*' docs/method-rules.md`
+   ⇒ ★★ **the lesson is the register's own: a tally line that says "re-derive, do not retype" is
+   worthless if the command it hands you cannot see every row.** Re-derive **and** sanity-check the
+   pattern against the newest tag format before citing the number.
    each of which closed a
    technique, each of which fell in minutes. Read it before recording ANY negative result as a
    property of the game. Includes the nine "how to apply" rules — positive controls, naming the
