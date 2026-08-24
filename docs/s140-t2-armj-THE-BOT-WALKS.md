@@ -136,11 +136,61 @@ translation, and no falling.** One 600 uu/s kick and all of it engaged at once.
 acceleration integration, not gravity — moves it off zero; perturbed by any real amount, the whole
 chain runs correctly and self-sustains.
 
-⚠ **The MECHANISM of the fixed point is [S] and is now the single open question.** The offline
-candidate is the below-tolerance skip the lane-2 verifier found — `0x055B8838 / 0x055B883E /
-`0x055B884A` all falling through to `je 0x55B8865`, and the `<= 1e-3` `SizeSq` arm in engine
-`PhysFalling` around `0x035ED98E` / `0x035ED9BB`. **That is a hypothesis with a named address, not a
-measurement.** It also does not by itself explain why *gravity* fails to accumulate.
+★★ **The MECHANISM is NAMED and it is one `comisd` — see §4b.** It was `[S]` for about an hour.
+
+---
+
+
+## 4b. ★★★★★ THE FIXED-POINT MECHANISM IS NAMED — AND IT RETRODICTS BOTH FLIGHTS, IN OPPOSITE
+##      DIRECTIONS, FROM A DERIVATION THAT NEVER SAW THEM
+
+The 13-agent offline workflow finished after this flight. Its adjudicator — working only from
+`merged13`, with its own PE reader and CFG, and with no knowledge of ARM H or ARM J — derived:
+
+> **[M] Engine `PhysFalling` ZEROES `Velocity` below a gravity-space `SizeSq2D` threshold.**
+> `0x035ED98E comisd xmm1, [rip → .rdata 0x077F5180]`, where that constant is
+> **`0.0009999999747378752` = `(double)(float)1e-3`**; `0x035ED996 ja` skips it, so the
+> fall-through `0x035ED998 xorps xmm0,xmm0 … 0x035ED9BB movups [rsi],xmm0 /`
+> `0x035ED9C3 movsd [rsi+0x10],xmm1` **writes `Velocity`**.
+> `rsi = &Velocity` is **[M] by dominance**: the only defining `lea rsi,[rdi+0xe8]` in the body is
+> `0x035EC9AC` (the other `rsi` def, `0x035EE519`, is the epilogue restore), and node-removal shows
+> it **DOMINATES both writes** (reachable-avoiding-the-lea = `False` for each).
+
+**Checked against every bot observation this session produced:**
+
+| state | `SizeSq2D` | ratio to the gate | predicted | MEASURED |
+|---|---|---|---|---|
+| ARM H sentinel `2^-10` | `9.5367e-07` | **0.00095×** — below | **zeroed** | zeroed within 250 ms ✓ |
+| the resting state `(0,0,0)` | `0` | **0×** — below | **zeroed** | `Velocity` has never left `(0,0,0)` ✓ |
+| ARM J sentinel `600` | `360000` | **3.6e8×** — above | **kept** | fell, landed, walked 13,187 uu ✓ |
+| the bot at +10 s, walking | `250000` | **2.5e8×** — above | **kept** | still walking at the 500 cap ✓ |
+
+⇒ ★★★★★ **THE FIXED POINT IS EXPLAINED, AND ITS GRADE GOES `[S]` → `[M, offline; retrodicts 4/4
+in both directions]`.** `Velocity == 0` ⇒ `SizeSq2D = 0` ⇒ below the gate ⇒ **written back to zero
+every frame** ⇒ it can never leave zero on its own. Any perturbation above `|V_xy| ≈ 0.0316` escapes
+and the whole chain runs. **That is the entire wall, and it is one `comisd`.**
+
+★★ **This is the strongest form of evidence available here**: a mechanism derived offline, blind to
+the flights, that predicts a *reversal* — zeroed below, kept above — and both arms of the reversal
+were measured. Neither could have been fitted to the other.
+
+⚠⚠ **AND IT SAYS THE "INERT SENTINEL" INSTINCT WAS EXACTLY BACKWARDS.** ARM H chose `2^-10`
+*because* it was physically negligible — and negligible is precisely what puts it under the gate.
+**A smaller, "more inert" sentinel is zeroed HARDER.** The adjudicator recommends `2^-20` for a
+different gate (`SizeSq2D < 1e-8`, `|V_xy| < 1e-4`) in `ULokiCMC::PhysFalling` at `0x055B877D`, and
+that is worth keeping for any future *inertness* argument — but for THIS gate no inert value exists.
+⇒ ★★ **ARM H's poison-the-payload design is what saved the flight.** Had it depended on the
+sentinel surviving, it would have returned a false negative for a reason nobody had identified yet.
+
+⚠ **[I], not [M]: whether `Velocity.Z` is zeroed too.** The Z store takes `xmm1`, and this document
+does not establish `xmm1 == 0` there. Flight 1 read `(0,0,0)` including Z, and flight 3 shows Z
+accumulating to terminal velocity once above the gate — consistent with Z also being zeroed below
+it, which would explain the no-fall phenomenon as well. **One read of the instruction settles it.**
+
+⚠ **The PLAYER's decay is a DIFFERENT site.** Its `600` on +Y is also far above this gate, yet it
+decayed monotonically to 0 — that is the `CalcVelocity` `MaxInputSpeed` clamp of §3, which fires
+because the untreated player has `AnalogInputModifier = 0`. **Two distinct zeroing sites, each with
+its own measured signature. Do not merge them.**
 
 ---
 

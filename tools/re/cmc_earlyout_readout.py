@@ -119,6 +119,21 @@ O = {
 k32 = ctypes.WinDLL("kernel32", use_last_error=True)
 k32.OpenProcess.restype = wintypes.HANDLE
 h = k32.OpenProcess(0x1F0FFF, False, PID)
+
+
+def _liveness(handle):
+    """P9 (S140 T2 adjudication): OpenProcess SUCCEEDS on a dead process whose handle is still
+    open, so every read then returns None and the probe prints a table of Nones that reads exactly
+    like a game fact. Check GetExitCodeProcess: STILL_ACTIVE == 259. Name FK-32 on 0x0000DEAD."""
+    code = wintypes.DWORD(0)
+    if not k32.GetExitCodeProcess(handle, ctypes.byref(code)):
+        return "UNKNOWN (GetExitCodeProcess failed)"
+    if code.value == 259:
+        return None
+    if code.value == 0x0000DEAD:
+        return ("DEAD, exit 0x0000DEAD == FK-32, the protector NtTerminateProcess kill. "
+                "No artifact is produced by that class.")
+    return "DEAD, exit code %d (0x%08X)" % (code.value, code.value)
 if not h:
     print("OpenProcess(%d) failed -- err %d. RUN IS VOID." % (PID, ctypes.get_last_error()))
     sys.exit(1)
@@ -415,6 +430,17 @@ def fmt(v):
 
 
 def main():
+    dead = _liveness(h)
+    if dead:
+        print("!! PROCESS IS NOT RUNNING -- %s" % dead)
+        print("!! RUN IS VOID. Every read below would be None and would read like a game fact.")
+        return
+    mz = rpm(BASE, 2)
+    if mz != b"MZ":
+        print("!! NO MZ AT BASE=0x%X (read %r) -- the BASE argument is wrong, or the module moved."
+              % (BASE, mz))
+        print("!! RUN IS VOID -- an image-relative check (the vptr test) cannot mean anything.")
+        return
     bot, botc, plr, plrc = find_actors()
     print("=" * 118)
     print("cmc_earlyout_readout (S139 ranked plan)   PID=%d BASE=0x%X   %s"
@@ -422,8 +448,12 @@ def main():
     print("  bot pawn=0x%X ctl=0x%X | player pawn=0x%X ctl=0x%X" % (bot or 0, botc or 0, plr or 0, plrc or 0))
     print("=" * 118)
     if not lp(plr):
-        print("!! NO PLAYER-CONTROLLED PAWN -- no two-sided control exists. RUN IS VOID.")
-        return
+        # P1 (S140 T2 adjudication): this used to `return`, DISCARDING THE ENTIRE BOT RESULT when
+        # the player was not found. The player is a CONTROL, not a precondition -- losing it
+        # weakens the reading, it does not void the treatment. Warn loudly and continue.
+        print("!! NO PLAYER-CONTROLLED PAWN -- the two-sided control is MISSING and every")
+        print("!! player column below is meaningless. The BOT reading still stands on its own")
+        print("!! internal controls; say so explicitly in any write-up.")
     A = read_side(bot, botc, "BOT") if lp(bot) else {"tag": "BOT", "void": "no bot (inject the arm first)"}
     B = read_side(plr, plrc, "PLAYER")
     for r in (A, B):
@@ -489,7 +519,14 @@ def main():
         msi = r.get("S140.MaxSimulationIterations@0x3E4")
         print("  %-7s WorldPrivate@0xC0 = %-20s -> %s" % (side, fmt(wp),
               "non-null; engine PerformMovement exit 2 input is satisfied"
-              if (wp and wp > 0x10000) else "*** NULL -- EXIT 2 WOULD BAIL ***"))
+              if (wp and wp > 0x10000) else
+              "UNDECIDED -- NOT a bail. A null WorldPrivate falls to a DIRECT call 0x035AFC40 "
+              "which reads OwnerPrivate@+0xB8 and OuterPrivate@+0x28; exit 2 tests WorldPrivate "
+              "OR that fallback. Read those two before concluding anything."))
+        _c = r.get("cmc")
+        if not (wp and wp > 0x10000) and lp(_c):
+            print("  %-7s   OwnerPrivate@0xB8 = %s   OuterPrivate@0x28 = %s"
+                  % (side, fmt(p(_c + 0xB8)), fmt(p(_c + 0x28))))
         print("  %-7s MaxSimulationIterations@0x3E4 = %-6s -> %s" % (side, fmt(msi),
               "> 0; the 4th engine-StartNewPhysics early-out 0x036009B5 does NOT bail"
               if (isinstance(msi, int) and 0 < msi < 1000)

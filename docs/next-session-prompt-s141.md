@@ -39,7 +39,19 @@ walked off the island edge.**
 measured working.** The wall was never in the mover.
 ⇒ **`Velocity == 0` is a FIXED POINT [M].** At exactly zero nothing moves it off zero; perturbed by
 any real amount the whole chain runs and self-sustains. **The remaining problem is a KICK-OFF
-problem.** ⚠ Its MECHANISM is **[S]** and is the single open question.
+problem.**
+★★★★★ **AND THE MECHANISM IS NAMED [M, offline, retrodicts 4/4 in both directions]:** engine
+`PhysFalling` ZEROES `Velocity` below a gravity-space `SizeSq2D` gate —
+`0x035ED98E comisd xmm1,[rip→.rdata 0x077F5180 = 0.0009999999747378752 = (double)(float)1e-3]` /
+`0x035ED996 ja`; the fall-through `0x035ED9BB movups [rsi],xmm0` / `0x035ED9C3 movsd [rsi+0x10],xmm1`
+writes it, with `rsi = &Velocity` proven by dominance from the sole `lea rsi,[rdi+0xe8]` at
+`0x035EC9AC`. Resting `(0,0,0)` ⇒ `SizeSq2D = 0` ⇒ below the gate ⇒ zeroed every frame ⇒ **it can
+never leave zero on its own.** Escape needs `|V_xy| ≳ 0.0316`.
+⇒ **S141 IS NO LONGER "find the mechanism". IT IS: (1) confirm `xmm1 == 0` at `0x035ED9C3` — one
+instruction read, and it would explain the no-fall phenomenon too; (2) find what the GAME uses to
+kick a character off zero (jump / launch / knockback / the initial spawn impulse), because that is
+the shipping-shaped fix; (3) transcribe the path from the `0x830` dispatch to `0x035ED98E` to see
+what else gates it.**
 ⇒ **The `CalcVelocity` clamp is REAL [M], not [S] — §1.2 below is SUPERSEDED.**
 `MinAnalogWalkSpeed @CMC+0x290` measured **0 on both** (`< 1e-4`), so `MaxInputSpeed =
 `GetMaxSpeed() × AnalogInputModifier`. BOT `AnalogInputModifier = 1` ⇒ clamp does not fire ⇒

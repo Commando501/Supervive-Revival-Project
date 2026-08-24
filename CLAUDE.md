@@ -1871,10 +1871,28 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   since S138. **The wall was never in the mover.**
   ⇒ ★★★★★ **`Velocity == 0` IS A FIXED POINT [M]**: at exactly zero nothing — not the acceleration
   integration, not gravity — moves it off zero; perturbed by any real amount the whole chain runs
-  and SELF-SUSTAINS. **The remaining problem is a KICK-OFF problem and it is small.** ⚠ The
-  MECHANISM of the fixed point is **[S]** and is now the single open question; the offline candidate
-  is the below-tolerance skip (`0x055B8838/3E/4A` → `je 0x55B8865`) and the `<= 1e-3` `SizeSq` arm
-  near `0x035ED98E`/`0x035ED9BB`. It does not by itself explain why GRAVITY fails to accumulate.
+  and SELF-SUSTAINS. **The remaining problem is a KICK-OFF problem and it is small.**
+  ★★★★★ **AND THE MECHANISM IS NAMED — [M, offline], AND IT RETRODICTS 4/4 OBSERVATIONS IN BOTH
+  DIRECTIONS FROM A DERIVATION BLIND TO THE FLIGHTS. Engine `PhysFalling` ZEROES `Velocity` below a
+  gravity-space `SizeSq2D` gate: `0x035ED98E comisd xmm1,[rip→.rdata 0x077F5180 =
+  0.0009999999747378752 = (double)(float)1e-3]` / `0x035ED996 ja` skips ⇒ the fall-through
+  `0x035ED998 xorps xmm0,xmm0 … 0x035ED9BB movups [rsi],xmm0 / 0x035ED9C3 movsd [rsi+0x10],xmm1`
+  WRITES Velocity.** `rsi = &Velocity` is [M] **by dominance** — the sole defining
+  `lea rsi,[rdi+0xe8]` at `0x035EC9AC` dominates both writes (node-removal False/False).
+  ⇒ resting `(0,0,0)` gives `SizeSq2D = 0` ⇒ **below the gate ⇒ written back to zero every frame ⇒
+  it can never leave zero on its own.** Escape needs `|V_xy| ≳ 0.0316`.
+  **The reversal was MEASURED both ways: `2^-10` (SizeSq 9.54e-07, 0.00095× the gate) was zeroed in
+  250 ms; `600` (SizeSq 360,000, 3.6e8×) was kept and the bot walked.** Neither could be fitted to
+  the other.
+  ⚠⚠ **AND IT MAKES THE "INERT SENTINEL" INSTINCT EXACTLY BACKWARDS — a SMALLER, more inert
+  sentinel is zeroed HARDER.** ⇒ ★★ **ARM H's poison-the-payload design is what saved that flight**;
+  had it depended on the sentinel surviving it would have returned a false negative for a reason
+  nobody had identified yet.
+  ⚠ **[I], not [M]: whether `Velocity.Z` is zeroed too** — the Z store takes `xmm1` and nothing here
+  shows `xmm1 == 0`. One instruction read settles it, and it would explain the no-fall phenomenon.
+  ⚠ **The PLAYER's decay is a DIFFERENT SITE** — its 600 is far above this gate yet it decayed to 0,
+  which is the `CalcVelocity` `MaxInputSpeed` clamp firing on `AnalogInputModifier = 0`.
+  **TWO distinct zeroing sites, each with its own measured signature. Do not merge them.**
   ★★ **AND THE `CalcVelocity` CLAMP IS REAL AFTER ALL — the S141 handoff's [S] grade is CORRECTED
   to [M], and the refutation of it is itself REFUTED.** `MinAnalogWalkSpeed @CMC+0x290` — the S140
   T2 NOT-OBTAINED read — is now MEASURED **0 on BOTH objects** (`< 1e-4`), so
@@ -4460,7 +4478,7 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **108 tabulated instances as of S140 Tier 2** — ⚠ **re-derived by
+   blind spot recorded as a property of the game. **112 tabulated instances as of S140 Tier 2** — ⚠ **re-derived by
    COUNTING THE TABLE ROWS, not retyped; the tally has now diverged three times, so re-derive it
    again before citing it** (`grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*' docs/method-rules.md` — ⚠ **this command was itself
    defect S130-f**: the obvious form with `★+` in it under-counts by half, because `grep` quantifies
