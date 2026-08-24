@@ -1,5 +1,12 @@
 # S141 — THE BOT WALKS. `Velocity == 0` is a FIXED POINT. Find what kicks it off zero.
 
+> ⚠⚠ **SUPERSEDED by `docs/next-session-prompt-s141-tier3.md`.** This file was written MID-Tier-2,
+> before flight 3. Its §1 is already self-marked superseded, and its MOVE 1–3 are framed around
+> questions flight 3 **answered**: the fixed point is now NAMED (`[M]`, retrodicts 4/4 in both
+> directions), the bot FELL at terminal velocity, landed and walked, and `MinAnalogWalkSpeed` was
+> read (`0` on both). **Kept as the dated record of what was believed before flight 3 — do not work
+> from its plan.**
+
 **Paste this whole file as the opening prompt of a fresh session.**
 
 ---
