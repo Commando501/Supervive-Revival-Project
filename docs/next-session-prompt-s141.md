@@ -1,4 +1,4 @@
-# S141 — `StartNewPhysics` RUNS. The wall is `CalcVelocity`, and the first move is ONE READ-ONLY RPM RUN.
+# S141 — `StartNewPhysics` RUNS, and `Velocity` is written to ZERO. Find the writer.
 
 **Paste this whole file as the opening prompt of a fresh session.**
 
@@ -6,7 +6,8 @@
 
 You are continuing the SUPERVIVE revival project at `G:\git\Supervive Revival Project`.
 Read `CLAUDE.md` first (auto-loaded; current as of this commit), then
-**`docs/s140-tier2-sentinel.md` — its §5 is this session's brief** — then
+**`docs/s140-tier2-sentinel.md` (the measurements) and `scratchpad/s140t2/V5-L5-verify.md` §2 and
+§9 (which refute the obvious next target)** — then
 `docs/s140-tier1-cfg.md` §4 (why the latch is not an instrument).
 
 ---
@@ -30,77 +31,132 @@ disp `0xA50` = `0x0530ABF0` clears it later in the same `PerformMovement` call);
 opposite with a **pre-poisoned payload** — poison overwritten within 250 ms on both components, and
 a 2 ms burst caught the payload holding a `Velocity` sentinel **396 times in 400**.
 
-⇒ **The question is no longer "does the physics step run". It is "why does `CalcVelocity` produce
-zero from a correct `Acceleration`".**
+⇒ **The question is no longer "does the physics step run". It is "WHICH SITE writes `Velocity` to
+zero every frame, given a correct `Acceleration`".** ⚠ The obvious candidate — `CalcVelocity`'s input
+clamp — is **[S] and the evidence leans AGAINST it**. Read §1 before planning anything.
 
 ---
 
-## 1. THE TARGET — one compare, three inputs, two of them never read
+## 1. TRAP: THE OBVIOUS TARGET IS PROBABLY NOT IT — READ THIS BEFORE PLANNING ANYTHING
 
-An offline lane transcribed the mechanism [I, strong — the bytes are read, the live inputs are not]:
+An offline lane transcribed a complete mechanism and it is seductive. **Its own adversarial
+verifier refuted the application**, and that refutation plus this session’s measurement leave a
+genuine open contradiction. **Do not lead with the clamp.**
+
+### 1.1 The mechanism (real, byte-exact; 34/34 checks reproduced by an independent instrument)
 
 ```
 0x035D605B  mulss  xmm11, [rbx+0x3d0]        ; MaxSpeed *= AnalogInputModifier
 0x035D607A  maxss  xmm11, xmm0               ; MaxInputSpeed = max(that, GetMinAnalogSpeed())
    ...
-0x035D64F2  comisd xmm8, xmm9                ; NewMaxInputSpeed  vs  1.0e-4  (.rdata 0x076B49E8)
+0x035D64F2  comisd xmm8, xmm9                ; NewMaxInputSpeed vs 1.0e-4 (.rdata 0x076B49E8)
 0x035D650F  jae    0x035D6534                ; >= 1e-4 -> the normal clamp
 0x035D6511  movups xmm1, [.data 0x99C86A0]   ; ZeroVector
-0x035D6520  movups [rbx+0xe8], xmm1          ; *** Velocity.XY := 0 ***
-0x035D6527  movsd  [rbx+0xf8], xmm2          ; *** Velocity.Z  := 0 ***
+0x035D6520  movups [rbx+0xe8], xmm1          ; Velocity.XY := 0
+0x035D6527  movsd  [rbx+0xf8], xmm2          ; Velocity.Z  := 0
 ```
 
-`MaxInputSpeed < 1e-4` ⇒ **`Velocity` is written to exactly `(0,0,0)` every frame whatever
-`Acceleration` is** — including immediately after the `Velocity += Acceleration*DeltaTime` store two
-instructions earlier. That is a complete mechanical account of everything measured since S139 f4.
+★ **The attribution is PROVEN, not asserted** (a control the lane itself never ran):
+`preds(0x035D6511) = { 0x035D650F }` — **exactly one predecessor** — so the `ZeroVector` store is
+**uniquely reached from the INPUT clamp**. ⚠ A second, nearly identical clamp pair exists in the same
+function (the *requested* clamp, `0x035D668E comisd xmm7,xmm9` → `0x035D66A5/AC`); quoting the wrong
+one changes which variable is on trial.
 
-| term | address | status going into S141 |
-|---|---|---|
-| `AnalogInputModifier` | `CMC+0x3D0` | **[M] = 1 on the ARM-G-treated bot** (0 on the untreated player; **0 on both in S139 f1, i.e. BEFORE ARM G**). **NOT the zero.** |
-| `GetMaxSpeed()` | vt disp `0x4C8` → `0x055ACB90` | **GAS-backed** — tail-jumps to `[Owner_vt+0xC00]`, which returns `0.0f` when `Character+0xF08 AttributeSetStorage == NULL` (`0x055ACB73 xorps xmm0,xmm0; ret`). ARM G fills that storage and writes `MoveSpeed`/`MaxMoveSpeed = 500`. **NEVER READ LIVE.** |
-| `GetMinAnalogSpeed()` | vt disp `0x7C8` → `0x035E3D20`, **not overridden** | returns **`MinAnalogWalkSpeed @CMC+0x290`** for `MovementMode ∈ {1,2,3}`, and both pawns are **`MOVE_Falling(3)`, which is in that set**. **NEVER READ LIVE.** |
+### 1.2 BUT IT ALMOST CERTAINLY DID NOT FIRE — [M, derived] — AND THAT LEAVES A CONTRADICTION
+
+**[M, verifier, from bytes plus one banked measurement]:**
+
+1. `ULokiCMC::GetMaxAcceleration 0x055AC910`, `MovementMode == 3`, routes to `0x055AC982`; the only
+   non-zero exit requires `0x055AC9A0 call [rax+0xc00]` to return non-zero (`0x055AC9AC jne`). The
+   fall-through is `0x055AC9AE xorps xmm0,xmm0; ret` = **0.0f**.
+2. S139 flight 4 measured `Acceleration = ControlInputVector × 50000` ⇒ `GetMaxAcceleration()`
+   returned **50000** on a `MOVE_Falling(3)` bot ⇒ **`[Owner_vt+0xC00]()` returned NON-ZERO**, and
+   all three of `0x055AC9F0`’s zero-returning guards (`+0xF08` NULL, `0x055B18E0`, `[+0xB59]==0`)
+   were passed.
+3. **`GetMaxSpeed 0x055ACB90` reaches the SAME slot on the SAME object behind the SAME two guards**
+   and **tail-jumps** to it (`0x055ACBE6 jmp qword [rax+0xc00]`) ⇒ **`GetMaxSpeed()` was NON-ZERO.**
+4. `ComputeAnalogInputModifier` is vt disp `0x660` → `0x035DB6F0`, **not overridden by `ULokiCMC`**;
+   with `|Accel| ≈ MaxAccel ≈ 50000` it returns **≈ 1.0** — and S140 Tier 2 **MEASURED it = 1** on
+   the treated bot (0 on the untreated player).
+
+⇒ `MaxInputSpeed ≫ 1e-4` ⇒ **the clamp did NOT fire.** Grade the clamp-as-explanation **[S], and
+its own analysis leans against it.** The *mechanism* is [M]; only its **application** is refuted.
+
+⚠⚠ **AND THE VERIFIER’S OWN CONCLUSION IS SUPERSEDED TOO.** It wrote *"flight 4’s null points
+upstream — at the step not running"*, reasoning from S139’s then-current belief. **S140 Tier 2
+measured that the step DOES run.** So the results do not all survive as stated:
+
+> **[M] `StartNewPhysics` runs every frame. [M] `Velocity` is written to zero every frame.**
+> **[M, derived] the input clamp did not fire.**
+> ⇒ **EITHER (a) there is ANOTHER `Velocity`-zeroing site on this path, OR (b) one step of the
+> derivation is wrong — most likely step 3, if `GetMaxSpeed` and `GetMaxAcceleration` pass
+> DIFFERENT attribute selectors to the shared `+0xC00` slot.**
+
+★ **(a) is the more likely answer, and step 3 is the weak link.** `GetMaxAcceleration` returns
+**50000** while ARM G wrote `MaxAcceleration = 50000` **and** `MoveSpeed`/`MaxMoveSpeed = 500` — so
+the two getters demonstrably return DIFFERENT numbers and cannot be selecting the same attribute.
+If `GetMaxSpeed` selects `MoveSpeed` or `MaxMoveSpeed` it returns **500**, `MaxInputSpeed = 500`,
+the clamp is dead, and (a) is what is left.
 
 ---
 
-## 2. ★ MOVE 1 — FREE, NO INJECTION, AND IT MAY SETTLE THE WHOLE THING
+## 2. THE PLAN, RE-RANKED
 
-`CMC+0x290` is **already wired into `tools/re/cmc_earlyout_readout.py`** (S140 T2 added it). Stage a
-client and run the probe. That is the entire first experiment.
+### MOVE 1 — FREE, NO INJECTION. Stage a client and run the probe.
 
 ```powershell
 .\configs\s138-autostage.ps1 -MaxAttempts 5 -Label s141
-# gate on '[SP] done step=4' in docs\tutorial-launch-marker.txt AND a live process
 python tools\re\cmc_earlyout_readout.py <PID> <BASE>
 ```
 
-**PRE-REGISTERED DISJUNCTION — the probe prints it, do not improve on it after the fact:**
+Gate on `[SP] done step=4` in `docs\tutorial-launch-marker.txt` **AND** a live process — never on
+the stager’s own completion message.
 
-- **`MinAnalogWalkSpeed >= 1e-4`** ⇒ the `max()` **cannot** fall below `1e-4`, so **this clamp is NOT
-  what zeroes `Velocity`** and the lane's headline is **REFUTED**. Go to §3.
-- **`MinAnalogWalkSpeed < 1e-4`** ⇒ the clamp fires iff `GetMaxSpeed() * AnalogInputModifier` is also
-  `< 1e-4`. With `AnalogInputModifier = 1` measured on a treated bot, **the whole question reduces to
-  what `GetMaxSpeed()` returns**, which needs §2.1.
+`MinAnalogWalkSpeed @CMC+0x290` is **already wired into the probe** (S140 T2 added it) and is
+**NOT OBTAINED** — the reader was written and the client died (FK-32) before it ran. It is a
+**confirmation read now, not a discriminator**, and the probe prints the disjunction, not a verdict:
 
-⚠ Note the asymmetry: **the untreated PLAYER has `AnalogInputModifier = 0`**, so on the player the
-first term is 0 regardless and only `MinAnalogWalkSpeed` can save it. The bot is the informative
-object here; the player is the control.
+- **`>= 1e-4`** ⇒ the `max()` cannot fall below `1e-4` **whatever `GetMaxSpeed()` does** ⇒ the input
+  clamp is **dead** and §1.2 branch (a) is the answer. **This is the expected outcome.**
+- **`< 1e-4`** ⇒ the clamp still hangs on `GetMaxSpeed()` and branch (b) is live → MOVE 3.
 
-### 2.1 If `GetMaxSpeed()` is needed
+⚠ Note the asymmetry: the untreated PLAYER has `AnalogInputModifier = 0`, so on the player the first
+term is 0 regardless. **The treated bot is the informative object; the player is the control.**
 
-It is **reflected** (`ULokiCMC` vt disp `0x4C8` → `0x055ACB90`), so the **S55 direct-thunk primitive
-reaches it with zero writes**. Two routes, in order of preference:
+### MOVE 2 — THE REAL QUESTION, AND IT IS ENTIRELY OFFLINE
 
-1. **Read the attribute the getter selects.** ARM G wrote `MoveSpeed` and `MaxMoveSpeed = 500` into
-   the CDO's default `AttributeSet` subobject at `FGameplayAttributeData +0x8` **and** `+0xC`.
-   Transcribe `[Owner_vt+0xC00]` offline first and find out **which attribute it reads** — if it
-   reads a third attribute ARM G never wrote, that is the answer and it needs no call at all.
-2. Call `GetMaxSpeed()` through the thunk on the treated bot and on the untreated player.
-   Pre-register: treated returns **500**, untreated returns **0.0f**. **A treated bot returning 0 is
-   the interesting outcome** — it would mean the GAS port does not reach this getter.
+**Enumerate EVERY writer of `CMC+0xE8..+0xFF` reachable from `PhysFalling`.** `Velocity` is now
+*measured* to be written to zero every frame, so a writer **exists and is on this path** — this is no
+longer a hypothesis to test but a site to find. Start from what the verifier established [M]:
+
+- **`ULokiCMC::PhysFalling 0x055B89F0` calls the engine Super UNCONDITIONALLY**
+  (`|reach_backward(0x055B8A2B)| = 14`, entry in R, **exit edges empty**).
+  ⚠ This **REFUTES `docs/s140-tier1-cfg.md:622`.**
+- **engine `PhysFalling 0x035EC850`**, 1482 instructions, `0x035EC850..0x035EE593`.
+- **`CalcVelocity` is vt disp `0x7B0 = 0x035D5D20` and is NOT overridden by `ULokiCMC`**
+  (547 instructions, `0x035D5D20..0x035D6786`).
+- ⚠⚠ **`CalcVelocity` is called up to FOUR times per `PhysFalling`** — `0x035ECB75`, `0x035ECBD8`,
+  `0x035ED549`, `0x035ED5D5` — and `NewFallVelocity` (disp `0x7A0`) **three** times (`0x035ECCEF`,
+  `0x035ED617`, + one). **So "the wall is ONE compare" was wrong on the count too.**
+- **`GetGravityZ 0x055AB8C0` (disp `0x4C0`) and `NewFallVelocity 0x055B6AD0` (disp `0x7A0`) ARE Loki
+  overrides.** A `MOVE_Falling` pawn with `GravityScale 1.000` that does not fall is a standing
+  unexplained phenomenon. **★ Read `GetGravityZ` FIRST** — if it returns 0, the no-fall observation
+  and the zero `Velocity` may be explained together, and it is a one-function read.
+
+★ **Everything on this path is LIT in `merged13` today** (verified S140 T2): `ULokiCMC::PhysFalling`,
+engine `StartNewPhysics`, `GetMaxSpeed`, `ConstrainInputAcceleration`, `GetRecentVelocity`, the
+disp-`0xA50` clear. **There is no coverage blocker — this is all offline work.**
+
+### MOVE 3 — only if MOVE 1 reads `< 1e-4`
+
+`GetMaxSpeed()` is reflected (vt disp `0x4C8` → `0x055ACB90`), so the S55 direct-thunk primitive
+reaches it with zero writes. **Prefer reading the attribute it selects over calling it:** transcribe
+`0x055AC9F0` and find which attribute the `+0xC00` slot fetches — its base value is
+**`min(AttrSet+0xF0+0xC, AttrSet+0x100+0xC)`** [M]. If it reads an attribute ARM G never wrote, that
+is the answer and it needs no call at all.
 
 ---
-
-## 3. IF THE CLAMP IS REFUTED — the ranked alternatives
+## 3. FURTHER OFFLINE TARGETS (all LIT; no coverage blocker)
 
 Everything on this path is **LIT in `merged13` today** (verified S140 T2): `ULokiCMC::PhysFalling
 0x055B89F0`, engine `StartNewPhysics 0x03600990`, `GetMaxSpeed 0x055ACB90`,

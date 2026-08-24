@@ -1855,20 +1855,38 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   **vptr == `base+0x088F8570`** on both ⇒ it really is a `ULokiCMC`, so disp `0x720` really is
   `0x055C2430`. ⚠ Had it been the engine base, disp `0x720` is `0x03600990` and nothing touches
   `+0x16C8`/`+0x16B0` — the whole test would have been void; the probe checks for exactly that.
-  ★★★★★ **⇒ THE WALL IS NOW DOWNSTREAM, IN `CalcVelocity`, AND AN OFFLINE LANE FOUND THE MECHANISM
-  — ONE COMPARE [I, strong]:** `0x035D64F2 comisd` against **`1.0e-4`** (`.rdata 0x076B49E8`);
-  below it, `0x035D6520 movups [rbx+0xe8], ZeroVector` + `0x035D6527 movsd [rbx+0xf8]` write
-  **`Velocity := (0,0,0)` every frame whatever `Acceleration` is** — including immediately after the
-  `Velocity += Acceleration*DeltaTime` store two instructions earlier. The tested quantity is
-  `MaxInputSpeed = max(GetMaxSpeed() * AnalogInputModifier, GetMinAnalogSpeed())`, and:
-  • **`AnalogInputModifier @CMC+0x3D0` reads 1 on the ARM-G-treated bot** (0 on the untreated
-    player; it was **0** on both in S139 flight 1, i.e. BEFORE ARM G) ⇒ **it is NOT the zero** [M].
-  • **`GetMaxSpeed()`** (vt disp `0x4C8` → `0x055ACB90`) is **GAS-backed** — it tail-jumps to
-    `[Owner_vt+0xC00]`, which returns `0.0f` when `Character+0xF08 AttributeSetStorage == NULL`
-    (`0x055ACB73 xorps xmm0,xmm0; ret`). **NEVER READ LIVE.**
-  • **`GetMinAnalogSpeed()`** (vt disp `0x7C8` → `0x035E3D20`, **not overridden**) returns
-    **`MinAnalogWalkSpeed @CMC+0x290`** for `MovementMode ∈ {1,2,3}` — and both pawns are
-    **`MOVE_Falling(3)`, which is in that set**. **NEVER READ LIVE.**
+  ★★★★★ **⇒ THE WALL IS NOW DOWNSTREAM. `Velocity` is measurably WRITTEN TO ZERO, so a writer exists
+  and is on the `PhysFalling`/`CalcVelocity` path — that is a SITE TO FIND, not a hypothesis to test.**
+  ⚠⚠⚠ **AND THE OBVIOUS CANDIDATE IS [S], WITH THE EVIDENCE LEANING AGAINST IT — do not lead with it.**
+  An offline lane transcribed `CalcVelocity`'s input clamp: `0x035D64F2 comisd` vs **`1.0e-4`**
+  (`.rdata 0x076B49E8`) → `0x035D6520 movups [rbx+0xe8], ZeroVector` + `0x035D6527 movsd [rbx+0xf8]`,
+  writing **`Velocity := (0,0,0)` every frame whatever `Acceleration` is**. ★ The attribution is
+  PROVEN — `preds(0x035D6511) = { 0x035D650F }`, exactly one predecessor, so that store is uniquely
+  reached from the INPUT clamp (a second, nearly identical *requested* clamp exists at `0x035D668E`).
+  **BUT ITS OWN ADVERSARIAL VERIFIER REFUTED THE APPLICATION [M, derived]:** `GetMaxAcceleration`
+  (disp `0x7D0`) and `GetMaxSpeed` (disp `0x4C8`) are **both GAS-backed through the SAME `+0xC00`
+  slot** (`0x055AC9F0`, base value `min(AttrSet+0xF0+0xC, AttrSet+0x100+0xC)`), behind the same
+  guards; S139 flight 4 measured `GetMaxAcceleration() = 50000`, so that slot returned NON-ZERO and
+  all three zero-guards passed ⇒ `GetMaxSpeed() != 0` ⇒ `MaxInputSpeed >> 1e-4` ⇒ **the clamp did
+  NOT fire.** And `ComputeAnalogInputModifier` (disp `0x660` → `0x035DB6F0`, NOT Loki-overridden)
+  returns ≈1.0 when `|Accel| ≈ MaxAccel` — **measured = 1 on the treated bot.**
+  ⚠⚠ **THE VERIFIER'S OWN CONCLUSION IS SUPERSEDED TOO** — it inferred *"flight 4's null points
+  upstream, at the step not running"* from S139's then-current belief, and **Tier 2 measured that
+  the step DOES run.** ⇒ **EITHER (a) another `Velocity`-zeroing site exists on this path, OR (b)
+  step 3 is wrong because the two getters pass DIFFERENT attribute selectors to `+0xC00`** — and
+  (a) is likelier, since the two getters demonstrably return DIFFERENT numbers (50000 vs the 500
+  ARM G wrote to `MoveSpeed`/`MaxMoveSpeed`) and so cannot be selecting the same attribute.
+  ⚠⚠ **AND "the wall is ONE compare" IS WRONG ON THE COUNT: `CalcVelocity` is called up to FOUR
+  times per `PhysFalling`** (`0x035ECB75`, `0x035ECBD8`, `0x035ED549`, `0x035ED5D5`) and
+  `NewFallVelocity` (disp `0x7A0`) THREE times. ★ **[M] `ULokiCMC::PhysFalling 0x055B89F0` calls its
+  engine Super UNCONDITIONALLY** (|R| = 14, entry in R, exit edges EMPTY) — which **REFUTES
+  `docs/s140-tier1-cfg.md:622`**; **`CalcVelocity` is disp `0x7B0 = 0x035D5D20`, NOT Loki-overridden**;
+  and **`GetGravityZ 0x055AB8C0` (disp `0x4C0`) and `NewFallVelocity 0x055B6AD0` ARE Loki overrides**
+  — ★ **read `GetGravityZ` first**: a `MOVE_Falling` pawn with `GravityScale 1.000` that does not
+  fall is a standing unexplained phenomenon, and a zero return would explain it and the zero
+  `Velocity` together, in one function read.
+  ★ **Everything on this path is LIT in `merged13` today** (verified S140 T2) ⇒ **no coverage
+  blocker; MOVE 2 is entirely offline.**
   ⚠ **NOT OBTAINED: `CMC+0x290` was never read** — the probe was written and the client died (FK-32)
   before it ran. It is now wired into `tools/re/cmc_earlyout_readout.py`, so **S141’s first move is
   ONE READ-ONLY RPM RUN against a staged client, with NO injection at all.** The probe prints the
