@@ -109,17 +109,33 @@ Tier 1 §7 ranked these 2/3/4 and recorded that **nobody had ever taken them liv
 | **`CMC+0x3DC` `NumJumpApexAttempts`** | 0 | 0 | [M] |
 | **vptr** | `base+0x088F8570` | `base+0x088F8570` | **[M]** |
 
+- ★★★★★ **AND THE PER-EXIT GRADING EXERCISE IS SUPERSEDED, IN THE FAVOURABLE DIRECTION.** Tier 1
+  spent its whole budget establishing that engine `PerformMovement` has **exactly six** exits and
+  grading each one's input. **All six are now proven PASSED by direct observation — the call they
+  all guard demonstrably executes.** That is strictly stronger than reading any individual input,
+  and it does not depend on a single offset being right.
 - ★ **`WorldPrivate` is non-null and it NAMES THE WORLD.** Engine `PerformMovement`'s **exit 2**
-  input is satisfied. Tier 1 graded exit 2 `[I, strong]` precisely because this had never been read
-  and three documents implied it had. **It is now `[M]`.**
+  input is satisfied — Tier 1 graded it `[I, strong]` precisely because this had never been read
+  while three documents implied it had. ⚠ **Grade the field read `[M]` and the gate conclusion
+  by the observation above, not by this read**: an adversarial verifier established that exit 2 is
+  not a bare `WorldPrivate` test but `mov r13,[rcx+0xC0] / test / jne / call 0x035AFC40` — a
+  non-null `+0xC0` is *sufficient* (it skips the fallback), but the field is mutable and was read
+  at time T while the gate runs at T'.
 - ★ **The live component IS a `ULokiCMC`**, so vtable disp `0x720` really is `0x055C2430` — the
   function under test. Had it been the engine base, `0x03600990` would not touch `+0x16C8`/`+0x16B0`
   at all and the whole test would have been void. The probe checks for exactly that.
 - ⚠⚠ **`MaxSimulationIterations = 1`, NOT the stock UE default of 8**, and
-  **`MaxSimulationTimeStep = 0.2`, not the stock 0.05.** Both are overridden in this build. `1 > 0`
-  so the fourth early-out at `0x036009B5` (`cmp r8d,[rcx+0x3e4] / jge`, with `r8d == 0`) does **not**
-  bail — but the *substepping budget is one iteration*, which is a real constraint on any future
-  work in this function and is recorded nowhere else.
+  **`MaxSimulationTimeStep = 0.2`, not the stock 0.05.** `1 > 0` so the fourth early-out at
+  `0x036009B5` (`cmp r8d,[rcx+0x3e4] / jge`, with `r8d == 0`) does **not** bail — but the
+  *substepping budget is one iteration*, a real constraint on any future work in this function and
+  recorded nowhere else.
+  ★ **These are genuine overrides, not a wrong offset** — an adversarial verifier read the
+  constructor writing the stock values at those exact displacements
+  (`0x035CF917 [+0x3E4] = 8`, `[+0x3E0] = 0.05f`) and confirmed both offsets against the UHT
+  records. The ctor sets 8 / 0.05; the live objects read 1 / 0.2. Something overrides them.
+  ⚠ **Do not take either offset from a name search** — `MaxSimulationTimeStep` occurs at Offsets
+  `0x3E0 / 0x198 / 0x1CC` and `MaxSimulationIterations` at `0x3E4 / 0x1A0 / 0x1D0` across different
+  classes image-wide.
 
 ---
 
@@ -241,6 +257,29 @@ injection at all**, and the probe prints the disjunction rather than a verdict:
   needs either an S55 reflected call or reading the attribute the getter selects.
 
 **S141's first move is one read-only RPM run against a staged client. No injection.**
+
+---
+
+### 2.1 ★ Independent convergence: an offline verifier reached this arm's design without seeing it
+
+Six offline lanes and their adversarial verifiers ran in parallel with the build, and lane 1's
+verifier — working only from the binary and Tier 1 — arrived at the same conclusion the arm had
+already implemented:
+
+> *"the shipped instruction — poke Velocity, **wait >= 3 frames**, then read `+0x16B0` — has a
+> FALSE-NEGATIVE MODE in exactly the world where the answer is YES. … The fix is cheaper, safer and
+> one-sided: **poke the PAYLOAD, never Velocity.** It is provably inert, needs no `+0xE8` write at
+> all, and removes the perturbation Tier 1 itself warned about."*
+
+That is the PLAYER arm exactly — poison-only, velocity-write-free — and it is the arm that produced
+the cleanest reading. ⚠ Its stated reason is worth keeping: **the payload is durable against the
+`0xA50` CLEAR but NOT against the next frame's SET.** It is a per-frame refresh, not a write-once
+receipt. That is precisely why the poison (a value the refresh must overwrite) is the receipt, and
+why flight 2 had to re-write its sentinel continuously rather than once.
+
+Its independent CFG of engine `PerformMovement` — a **seventh** instrument — reproduced
+`1461` instructions · `148` calls · `0` indirect jumps · `0` decode failures · `0` coverage gaps ·
+`|reach_backward| = 1075`, identical to all five prior instruments.
 
 ---
 

@@ -1842,6 +1842,10 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   one-shot ladder can never report more than 1 whatever the dispatch rate. Control:
   `docs/fk24-s128-poolspawn-RESULT.txt`, identical `KFSNAME=""` and identical `swapped=17563` but a
   PACED ladder — **`hitsGT=588`, ~73 dispatches/s.**
+  ★★★★★ **AND THE WHOLE PER-EXIT GRADING EXERCISE IS SUPERSEDED, IN THE FAVOURABLE DIRECTION: all
+  SIX exits of engine `PerformMovement` are now proven PASSED BY DIRECT OBSERVATION**, because the
+  call they all guard demonstrably executes. That is strictly stronger than reading any individual
+  gate input, and it does not depend on a single offset being right.
   ★★ **THE THREE FREE READS ARE ALL TAKEN, and reproduce across two clients [M]:**
   **`CMC+0xC0 WorldPrivate` is NON-NULL and names `LVL_Tutorial`** ⇒ engine `PerformMovement` exit 2
   moves **[I,strong] → [M]**; **`CMC+0x3E4 MaxSimulationIterations = 1`** (>0, so the fourth engine-
