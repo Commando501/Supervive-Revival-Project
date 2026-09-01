@@ -6,6 +6,35 @@ official backends are dead. We've redirected the client to a local Go server
 backend RE, IoStore extraction, native shim injection, and asset-registry patching.
 Lots of dead ends. Honor the prior-work docs.
 
+## Current-frontier override — S150 successor-neutral work (2026-08-31)
+
+This block supersedes every later statement in this file that labels S146 or S147 as the
+"current next step." Those sections remain useful historical evidence, but the active execution
+frontier has moved through S148, S149, and two terminal S150 flights.
+
+- The latest gameplay proof is still S147's non-durable InputID-5 activation-state/Mana receipt.
+  No ability effect, damage, bot death, tutorial completion, or repeatable Versus-AI loop is proved.
+- S148 Flight 4 refused before mutation because the fresh selected ASC had `AvatarActor == 0`.
+  S149's bind-only bootstrap was never staged because its single flight stopped at capture-generation
+  admission. S150 Flight 2 then launched a fresh backend and game but refused before Arm/staging
+  because the real watcher emitted five startup lines while the frozen controller required four.
+  The preserved launcher evidence and terminal analysis also proved a second, independent successor
+  blocker: inherited backend stdout mutated a launcher receipt that had been treated as terminal.
+  Cleanup reached the preserved zero-process state.
+- The active task is **offline only**: execute Tasks 1-7 of
+  `docs/superpowers/plans/2026-08-30-s150-successor-neutral-boundaries.md` exactly. The plan hash is
+  `8B886E59DAF0D99D08622AF0376688747DEEC5F9B2E74A8EE70DA7B2FCC874FE`.
+- No successor implementation, identity, controller, manifest, offline GO, or live authorization
+  exists yet. Flight 2 is terminal and immutable. Do not retry it. Do not launch, stage, inject,
+  call `RecoverLaunch`, call `Arm`, allocate a new live identity, or infer permission from old
+  approvals. The neutral plan must stop at `IDENTITY_NEUTRAL_GO` or
+  `IDENTITY_NEUTRAL_NO_GO`; either outcome is non-live.
+- Work only in the existing dirty worktree. Preserve all user changes; do not clean, reset, stash,
+  switch, stage, or commit. `G:\git\Supervive Revival Project` is read-only census scope only.
+
+Read `docs/s150-claude-code-handoff.md` before acting. A ready-to-paste Claude Code opening prompt
+is at `docs/next-session-prompt-s150-claude-code.md`.
+
 The whole front-end menu is now ONLINE: login, the ALL HUNTERS roster (+ click-to-
 refresh), the STORE, COSMETICS, the full MISSIONS page (with working progress
 bars), the PASSES / Hunter's Journey account pass (full 85-tier ladder), and the
@@ -23,22 +52,27 @@ without, Fisher p = 0.00000008; 16/16 survived a full 600 s hold). What is still
 (abilities / combat) and the **staging hazard** — ~25 % of launches still die before the probe is
 injected, with only `gft`+`fo` resident.
 ⚠⚠ **"the hero owns no ability system" WAS THE OLD TEXT HERE AND IT IS FALSE — killed by FK-30 at
-S111, and this digest carried it for 22 sessions.** The ASC exists and is populated; what is NULL is
-**`AvatarActor`**, and `ActivatableAbilities` is **0**. ⚠ And the ASC is **the SHIM'S OWN** — the game
-wires nothing on this route, because the designed wiring is inside FK-1's stripped `SpawnPlayer`.
-★★ **The bind function was FOUND and has NEVER BEEN CALLED:** `InitAbilityActorInfo` at
-**`base+0x447F410`** `(rcx=ASC, rdx=Owner, r8=Avatar)`, with `AbilityActorInfo` at `ASC+0x418`
-(`docs/s111-asc-census.md:568` §13; written up as **"TASK ONE"** at `docs/next-session-prompt-s111.md:15`).
-**[M] `grep -rn "447F410\|InitAbilityActorInfo" tools/sigbypass-mod/` returns ZERO.**
-⚠ The register's *"the BIND is not reachable"* (`ignorance-map-s101.md:1688`) is narrowly true (no
-REFLECTED route) and **operationally obsolete** — plain direct calls to non-reflected natives became
-standard at S123 (`AddToRoot 0x489F9B0`, `PrimePools 0x3356000`, `ResizeGrow 0x00F988D0`, flown x7 in
-S132). That register row **never records the address**, so a reader of it alone concludes the bind is
-unlocated. ⚠⚠ **CONFOUND — `#define KWIREGAS 1`** (`tutorial_launch.cpp:4869`) drives
-`WireAbilitySystem(hero, pc)` on EVERY `RM_PLAY` init and `RM_SPAWNPOSSESS` completion: it spawns the
-carrier, builds the ASC and two attribute sets, forces `ROLE_Authority` and writes `@0xF00`. That is
-why `s111-asc-census.md` needed a retraction banner. **An ability-bind result read out of a shim
-already doing all that is uninterpretable unless KWIREGAS is controlled for.**
+S111. The later "AvatarActor is NULL / ActivatableAbilities is 0" status is now historical too.**
+The ASC is still **the shim's own**, because the designed wiring sits inside FK-1's stripped
+`SpawnPlayer`, but WALL P has advanced through four measured steps:
+
+- **S143:** direct `InitAbilityActorInfo(base+0x447F410)` binds the hero as AvatarActor and persists.
+- **S144:** stock native `GiveAbility` commits a real spec (`Items 0 -> 1`, Handle `1`).
+- **S145:** MiniDash has a real primary instance; Alive, AttributeSets, Mana, primary charge, CDO
+  charge, and full Loki CanActivate can all be made open together.
+- **S146:** exact native Handle-1 activation from the injected callback does not return and is
+  followed by `0xDEAD`, while a matched `INDEX_NONE=-1` call enters the same wrapper, returns
+  `AL=0`, restores the CDO/state, and survives. Therefore reflected dispatch and wrapper entry/ABI
+  are not sufficient causes; the valid-handle/downstream path is implicated.
+
+**Historical S146 status, superseded by S147:** the direct injected valid-handle call had no return,
+active/body/cost/effect/damage receipt. S147's later natural-input flight did measure a real
+InputID-5 active-state transition and Mana cost, but not the strict Ability3 Blueprint witness,
+durable ability-body/effect execution, or damage. The canonical-input experiment described in
+`docs/next-session-prompt-s147.md` is completed history, not the current next step; use the S150
+override at the top of this file.
+⚠ `KWIREGAS` remains a confound outside the controlled `RM_BOTFIGHT` recipe: it creates the carrier,
+ASC and attributes and writes the hero cache. Do not generalize these results to an unshimmed world.
 
 ## Before doing anything else
 
@@ -485,10 +519,13 @@ executable region covers it**. A corrupted pointer does not reproduce to the bit
   ≤8 s `.text` prologue and ≤25.5 s `.rdata` slot-285 patch are CONFOUNDED in every run ever flown.
   ⚠ `KNOLOGINVT` is **FALSIFIED — do not re-run it** (4/4 died, 0/4 map loads, fatal
   `ALokiGameMode::Login failed to Login`, p = 0.0026). Next: patch-then-immediately-restore.
-- **FK-32 — the `0x0000DEAD` residual: 3/36 armed windows**, no artifact of any kind, NOT a protector
-  kill. `0xDEAD` is not ours (no `TerminateProcess`/`ExitProcess` in any shim source; our own
-  `Stop-Process` exits `0xFFFFFFFF`, measured). ⚠ N=2 — suggestive, not established. The exit-code
-  instrument is permanent, so **harvest it, don't spend launches on it.**
+- **FK-32 — historical S112 baseline: the `0x0000DEAD` residual was 3/36 armed windows**, with no
+  artifact. The old “NOT a protector kill / N=2” wording is **REFUTED by S113 and superseded by
+  S145/S146**: the deliberate protector termination mechanism is known, and three later
+  activation-correlated instances are preserved. S146's valid Handle-1 vs `INDEX_NONE` A/B
+  localizes that controlled subset to valid activation selection/downstream, while the invalid
+  control returned and exited cleanly after 14.6 h. Do not universalize that trigger to every
+  artifact-less death. The exit-code instrument remains permanent.
 
 ★★★★★ **FK-7 detail (S112, 2026-08-08).** Final corpus: **standing `.text`
 patch 10/10 armed windows DIED vs no module-image write 3/36 (8 %) — Fisher p = 0.00000007.** The
@@ -499,9 +536,11 @@ full 600 s**. Rollback = `-Variant play-textpatch` (`433cf7d8f6a0770f`), which I
 before the probe is injected and is untouched by this fix — it is now the dominant tutorial-route
 failure. And **no shim-free tutorial run has ever been made**, so a game defect is unsupported but
 not excluded.
-⚠ **The residual is 3/36 and unexplained.** All three left NO artifact; the two instrumented ones
-exit **`0x0000DEAD`** (a silent TerminateProcess sentinel that is NOT ours — our `Stop-Process` exits
-`0xFFFFFFFF`, measured as a control). N=2, reproducible, unattributed.
+⚠ **Historical S112 incidence: residual 3/36.** All three left no artifact; the two instrumented ones
+exited `0x0000DEAD`. **S146 successor:** this is a deliberate protector kill, not merely an
+unattributed sentinel. S145 adds two reflected-activation-correlated kills and S146 adds one native
+valid-handle kill plus a matched invalid-handle clean-exit control. That subset is localized; the
+S112 incidence denominator and unrelated artifact-less deaths remain separate.
 
 ★★★★ **FK-7 WAS RE-TESTED AND LARGELY ANSWERED (S112, 2026-08-07). START AT
 `docs/s112-fk7-fk8-completion-review.md`, then `docs/s112-fk7-ab-results.md`; the S111 handoff below
@@ -1576,7 +1615,10 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   ⚠ **A hardcoded offset that "agrees" with a by-name read is NOT corroboration when both can read
   zero** — `Velocity` is `CMC+0xE8`, not the `+0xE0` one probe hardcoded.
   **Arms** (RAW; archived `dumps/s138-arms-v3/`, `dumps/s138-arms-armf/`): `driverecompute`
-  **`a2a952babfed256b`** (ARM D+F) · `driverecompute-ctrl` `2a91f0aa7f3d521b` (ARM F compiled out,
+  **`a2a952babfed256b`** (ARM D+F ⚠ audit-S142: this is the ARCHIVED S138 flown artifact in
+  `dumps/s140-arms-pre/`; it NO LONGER rebuilds and is NOT a current gate — `build.ps1` now gives
+  `driverecompute` the same `KBSPSARMS` as `gasattr-ctrl`, so a rebuild is byte-identical to it) ·
+  `driverecompute-ctrl` `2a91f0aa7f3d521b` (ARM F compiled out,
   the control) · `spawnbot_premade` `6cb296bbf3c8c696` · `botspawn` `b2203efd62161182` · regression
   gate `botai` **`5e47c13cf7f0a158` UNCHANGED across every S138 patch**.
   **Tools:** `tools/re/livingstate_sweep.py` · `movementmode_readout.py` · **`motion_watch.py`**
@@ -1776,7 +1818,9 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   `CalcVelocity` / `PhysFalling` (`0x055B89F0`, disp `0x830`), a function nobody has read.
   **Builds:** `gasattr` RAW **`2fcc2536e21f18e3`** · `gasattr-ctrl` RAW **`4465ebc4d7168c03`**
   (ARM G compiled out; **verified DISTINCT** — not an A/B against a copy of itself). Regression gates
-  `botai` `5e47c13cf7f0a158` and `driverecompute` `a2a952babfed256b` **UNCHANGED**.
+  `botai` `5e47c13cf7f0a158` **UNCHANGED**. ⚠⚠ **audit-S142: DROPPED `driverecompute a2a952babfed256b`
+  from this gate list — it is a HAZARD, not a gate. It no longer reproduces from current source and is
+  byte-identical to `gasattr-ctrl 4465ebc4d7168c03`. See "IS NOT A VALID GATE" below.**
   ⚠ **NOT OBTAINED:** a re-read of the six gate inputs on a TREATED bot — the client died mid-probe
   and the script threw rather than printing partial values.
   ⚠ **One honest qualifier on `coverage-audit-s101.md:283`:** the DS route reported the hero
@@ -1792,7 +1836,11 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   read the latch in the same pass" is now **the wrong experiment** — the latch would read 0 either
   way. Use the sentinel test below.
   ★★★★★ **AND S140 TIER 2 SETTLED IT: THE PHENOMENON SURVIVES BUT ITS CAUSE IS NAMED. `Velocity` is
-  not merely never written — it is ACTIVELY COMPUTED AND WRITTEN TO ZERO EVERY FRAME [M].** Flight 2
+  not merely never written — it is ACTIVELY COMPUTED AND WRITTEN TO ZERO EVERY FRAME [M].** ⚠ audit-S142:
+  scope the [M] — it holds only when `Velocity` holds a SMALL NON-ZERO value (that is what the burst
+  perturbed); it is **NOT ESTABLISHED for exactly zero** (see the qualification lower in this block),
+  and the bot's zero-from-rest is separately UNEXPLAINED (see the RETRACTED fixed-point line below).
+  Flight 2
   re-wrote a `Velocity` sentinel every ~2 ms for 400 iterations: the payload at `+0x16B0` held the
   sentinel **396/400** (`hitPoison=0`, `hitOther=0`), and `Velocity` had lost it by read time in
   **36 of 400** 2 ms windows — exactly the windows a physics step landed in.
@@ -1873,11 +1921,26 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   ⇒ ★★★★★ **"THE PHYSICS DOES NOT WORK" IS DEAD.** Gravity, landing, ground movement, GAS speed
   clamping and AI steering are ALL measured working on a client this project has called broken
   since S138. **The wall was never in the mover.**
-  ⇒ ★★★★★ **`Velocity == 0` IS A FIXED POINT [M]**: at exactly zero nothing — not the acceleration
-  integration, not gravity — moves it off zero; perturbed by any real amount the whole chain runs
-  and SELF-SUSTAINS. **The remaining problem is a KICK-OFF problem and it is small.**
-  ★★★★★ **AND THE MECHANISM IS NAMED — [M, offline], AND IT RETRODICTS 4/4 OBSERVATIONS IN BOTH
-  DIRECTIONS FROM A DERIVATION BLIND TO THE FLIGHTS. Engine `PhysFalling` ZEROES `Velocity` below a
+  ⇒ ⚠⚠⚠ **RETRACTED (audit-S142) — `Velocity == 0` IS NOT A PASSIVE FIXED POINT, AND "not even
+  gravity moves it off zero" IS FALSE.** The gate below is 2-D (see the "SETTLED NEGATIVELY" line), so
+  it leaves `Velocity.Z` free and gravity drives it off zero every frame — MEASURED (S141 T3): the
+  PLAYER, kicked to `(0,600,0)` with `Vz == 0`, fell **23,189 uu**. The BOT nonetheless holds `(0,0,0)`
+  after a VERTICAL kick (0.000 uu ×5, GravityScale 1.0): **something zeros the bot's `Velocity` that
+  does not zero the player's, downstream of a physics step that demonstrably runs, and it is
+  UNEXPLAINED** — the leading candidate (engine `CalcVelocity`'s `<1e-4` ZeroVector clamp) needs
+  `MaxInputSpeed < 1e-4`, which ARM L measured FALSE on the treated bot (`AnalogInputModifier = 1`), so
+  grade it **[I]**. ⇒ the bot's zero is MAINTAINED, not an equilibrium the system rests in; **the
+  remaining wall is "what zeros the bot's Velocity from rest", NOT a passive kick-off.**
+  ★ The superseded S140-T2 headline was: *"`Velocity == 0` IS A FIXED POINT [M] — perturbed by any real
+  amount the whole chain runs and SELF-SUSTAINS; a small kick-off problem."* Its kick-off half is
+  literally true (ARM J/L: one kick makes the bot walk), but only because motion ABOVE the 2-D gate is
+  not re-zeroed the way rest is.
+  ★★★★ **A NAMED MECHANISM FOR THE 2-D HORIZONTAL GATE — [M, offline]. ⚠ audit-S142: it retrodicts
+  2 INDEPENDENT POINTS, not "4/4" — the genuine below→zeroed / above→kept reversal is rows 1 and 3
+  below; row 2 (resting zero) is DEGENERATE (written-to-zero and never-written are the same bytes,
+  T2 §1.5) and row 4 is a resample of row 3's trajectory whose 500 cap is the `CalcVelocity` clamp, a
+  different mechanism. And it is about the XY gate, NOT "the fixed point", which the 2-D reading shows
+  it does not explain. Engine `PhysFalling` ZEROES `Velocity.XY` below a
   gravity-space `SizeSq2D` gate: `0x035ED98E comisd xmm1,[rip→.rdata 0x077F5180 =
   0.0009999999747378752]` / `0x035ED996 ja` skips  ⚠⚠ **S141 CORRECTION: that constant is
   `(double)(float)1e-4 * 10.0` = `UE_KINDA_SMALL_NUMBER`(float) x 10, NOT `(double)(float)1e-3`
@@ -1947,7 +2010,10 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   velocity-write-free. ★★ **This may make the standing null a FIXED POINT (zero ⇒ no write ⇒ stays
   zero), a much simpler wall than a routine that computes zero — and it NAMES A CANDIDATE SITE
   (`0x035ED9BB`/`0x035ED9C3`, engine `PhysFalling`).** ⚠ Whether `0x035ED98E` is reached on a given
-  frame is NOT established.
+  frame is NOT established. ⚠⚠ **audit-S142: this "fixed point via `0x035ED9BB/C3`" conjecture is
+  SUPERSEDED — S141 T3 showed that gate is 2-D (`Velocity.Z` NOT zeroed) so it does NOT explain the
+  no-fall, and the player fell 23,189 uu from `Vz == 0`. See the RETRACTED line at the head of this
+  block.**
   ⚠⚠⚠ **AND THE OBVIOUS CANDIDATE IS [S], WITH THE EVIDENCE LEANING AGAINST IT — do not lead with it.**
   An offline lane transcribed `CalcVelocity`'s input clamp: `0x035D64F2 comisd` vs **`1.0e-4`**
   (`.rdata 0x076B49E8`) → `0x035D6520 movups [rbx+0xe8], ZeroVector` + `0x035D6527 movsd [rbx+0xf8]`,
@@ -2111,6 +2177,12 @@ injection, no `.text` write. `server/internal/interactive/joinqueue.go`, knob **
   `GetMaxSpeed()` on both pawns.** ⚠ S141 added `GravityScale`/`GravityDirection`/`MovementMode`/
   `+0x1001`/`+0x1678` to the arm's free reads **and missed the one field the hypothesis turns on**
   (defect S141-d).
+  ★★★★★ **S141 ARM L FLOWN (2026-08-24, `axisab`): the read HAPPENED — `AnalogInputModifier = 1` on the
+  walking bot (`= 0` on the player), which REFUTES §4.1 for a walking bot (`MaxInputSpeed ≈ 500 ≫ 1e-4`,
+  the `CalcVelocity` clamp cannot fire). ⚠⚠ BUT THE WITHIN-SITTING AXIS A/B DID NOT RUN — kick B landed
+  on a bot ALREADY walking at 500 uu/s, so it tested "vertical added to motion", not "vertical from
+  rest" (defect S141-l). §4.1b (the axis mechanism) is NEITHER confirmed nor refuted, and the bot's
+  zero-FROM-REST is still open. Read `docs/s141-t3-arml-result.md`.**
   ★★★★★ **T3-B ANSWERED — THE GAME'S OWN KICK IS `PendingLaunchVelocity` @ `CMC+0x5C8`.** Write 24
   bytes; `ULokiCMC::HandlePendingLaunch` (vtable disp `0x750`, Loki `0x55AEB60`; setter `Launch`
   disp `0x748` = `0x35E7340`) then sets `Velocity`, forces `MOVE_Falling`, sets
@@ -3062,6 +3134,76 @@ Read `docs/fk22-dropphase-reachability.md` §14-§15.** Two flights on one stage
   `KFSNAME=""` (`-any`) fixed it (**508 game-thread hits**). Budget arms accordingly.
 
 ### Before touching anything drop- / deploy- / DropPlane- / DropPod- / dismount- / "SpawnPlane faults" shaped
+★★★★★ **S150-drop (2026-09-01) — THE REAL DROP SEQUENCE IS GO, THE `RM_MOUNT` ARM IS BUILT, AND THE
+MOUNT WALL FELL. Read `docs/drop-sequence-status-s150.md` (stage-by-stage census + offline grading +
+arm spec). Committed `d8b7082` (local).** This is a SEPARATE, OPERATOR-DIRECTED target from the
+minimum-bot-fight roadmap (`docs/coop-vs-ai-roadmap-s142.md`, which DEFERRED the drop phase and just
+teleports a hero to the ground): the **real deploy sequence** — load `LVL_Tutorial` → drop-plane flight
+→ player picks a landing spot → pod descends → hero deploys, playable & movable. Everything below is
+OFFLINE (multiple adversarially-verified grading passes, zero launches, zero injections) plus a
+BUILT-but-UNFLOWN arm.
+- ★★★★★ **VERDICT: GO — no `.text` write anywhere, conditional on ONE staged ride flight.** The wall
+  first feared make-or-break — getting a real rider INTO the pod — is beatable.
+  **[M] `AuthPlayerEnterWorldAttachedToRidable` (`0x55CD510`) cannot run** — its round-game-mode getter
+  `call 0x0F7EB50` (`@0x55CD572`, null fold) feeds two hard bails (`test rax,rax; je @0x55CD57A`;
+  `IsA<ALokiRoundGameMode>; je @0x55CD583`). Shut without a `.text` write. **[M] BUT the mount never
+  needed it** — the getter's result is a PURE precondition (never read on the success body
+  `0x55CD590..0x55CD793`), whose only component-state write is the **exact `PlayersAttached` append S132
+  flew** + real decrypted positioning callees (`SpawnAndMoveLokiCharacter_MoveStep 0x55C1B20`,
+  `SetActorEnableCollision 0x339A550`). ⇒ **mount is reachable by S132-style DIRECT REPLICATION of the
+  success writes**, never by calling the gated function.
+- ★★★★★ **[M] THE RIDE IS SETTLED OFFLINE (no flight needed to KNOW it): a poke-appended `PlayersAttached`
+  rider does NOT co-move with the flying pod.** Nothing repositions `PlayersAttached` (`UpdateCharacterLocations`
+  moves only the pilot + `AttachedCrewPods`, gated `DropPodState==4`; `UpdateDropPhaseHiddenActors`
+  iterates `PlayersInside +0x120`, not `+0x130`), and the mount body does no `AttachToComponent`. ⇒ **a
+  REAL pod ride requires the arm to co-move the hero ITSELF** (per-hit reposition, or `AttachToComponent`).
+  ⚠ Residual `[I,strong]` (a native `TickComponent` iterating `[rideable+0x130]` was not excluded by a
+  full `.text` scan); the operative "a poke rider does not co-move" is `[M]`.
+  ⚠ **CORRECTION banked: "`GetRidePosition 0x55DAB50` has zero callers" is FALSE** (two real callers) —
+  the correct claim is "nothing repositions **`PlayersAttached`** riders", not "nothing repositions riders".
+- ★★★★★ **ARM BUILT: `RM_MOUNT` (enum 33), `DoMount` in `tutorial_launch.cpp`.** One source arm,
+  KMTARMS-gated, reusing the proven S132 `RdResolve`/`DxAppend`. Risk class **DATA + CALL-ONLY**,
+  KERNEL32-only, no `.text` write / PI hook / CDO poke. `.text` RAW (diff the HASH, never the size):
+  `mount 51252a69afcf39a1` (recon) · `mount-append eb254544fd35248e` · **`mount-noride 9b298565ac45d1ca`
+  (poke-only CONTROL, frozen rider)** · **`mount-ride 3f2ca00cab62a3b6` (RIDE TREATMENT)** ·
+  `mount-descend b6941b5929723a96` · `mount-phaseb c144ccf255b2cc0b`. KMTARMS bits: 0x01 APPEND ·
+  0x02 UNHIDE · 0x04 POSITION-ONCE · 0x08 POLL(ride) · 0x10 PHASE-B(StartPodGameplay).
+  ✅ Regression gates BYTE-IDENTICAL after the edit: `botai 5e47c13cf7f0a158`, `play 9bc10a4552c596e1`
+  (the arm dead-strips out of every other variant). ✅ `text_digest.py --dupes` clean (`mount-ride` ≠
+  `mount-noride` — a real treatment/control, not an A/B against a copy of itself).
+- ★★★★★ **PHASE-A (plane reacts to the drop phase) — already in `RM_DROPPLANE`; NEW clean variant
+  `dropplane-react` (`KDPARMS=0x35`, `.text cab0bff3ece90318`)** calls `OnRoundPhaseChanged(NewPhase=6=Lineup)`
+  — the **no-spaces** handler (ubergraph 1403, the DROP reaction), NOT the spaces-variant `On Round Phase
+  Changed` (ubergraph 545 = the `GoToPhase` ladder). No ServerOnly fix needed. ⚠ Flight/UX only — it does
+  NOT deploy a rider (terminates at FK-1 stubs). Sibling `dropplane-b1only` still reproduces its gate
+  `5b4467b0105dec1a` (the existing dropplane arms are untouched).
+- ★★ **PHASE-B `StartPodGameplay` — AS UFunction, no server self-gate, via `ProcessEvent` slot 78 (disp
+  0x270), empty params. Receipt `bHasStartedGameplay(pod+0x4B8) 0→1`.** ⚠⚠ **The call STOPS the pod
+  (deactivates the mover) then descent is TIMER-DEFERRED ~6.5 s** — velocity immediately after is ~0, NOT
+  descent (pre-registered; do NOT read a zero as failure). Descent is a single fixed vector toward
+  `CurrPodDestination(pod+0x478)` (no re-homing — the `SetDropPodState` state-write is client-skipped).
+  Live descent is `[I,strong]`/NEEDS_STAGED_TEST.
+- **THE FLIGHT (UNFLOWN; the hands-on loop).** Start the reader FIRST:
+  `python tools/re/drop_ride_readout.py <PID> <BASE-hex>` (read-only RPM; auto-discovers pod+hero,
+  tight-samples hero-X vs pod-X, computes R1/R3/PB from OBSERVED samples — never a hardcoded verdict).
+  Stage: `gft → fo → sp → droppod-pe-cdopoke` (spawn+init a FLYING pod) → `mount-ride` (treatment) vs
+  `mount-noride` (control). **Decisive R3: `mount-ride` must show the hero TRACK the pod; `mount-noride`
+  a FROZEN rider** (confirms the offline verdict). ⚠ `RM_MOUNT` PRESUPPOSES an initialised pod
+  (`RdResolve` REFUSES otherwise) — stage droppod FIRST. ⚠ FK-32 gives ~1 injection per staging.
+- ⚠ **DIAGNOSIS, NOT A SHIPPING FIX** — it pokes live component TArrays + drives authority-only entries.
+  Do NOT add to the default shim set. And the plane/pod REACT and DESCEND, but the game's own code never
+  DEPLOYS a rider (that terminates at FK-1 stubs) — this SUBSTITUTES for it.
+- Offsets `[M]` (match `scratchpad/s131/tools/pod_live_read.py` / `tools/re/motion_watch.py`): pod
+  `LokiRideable@+0x6C8` (resolve BY NAME) · `PlayersInside +0x120` / `PlayersAttached +0x130/+0x138/+0x13C`
+  (append via the game's own `ResizeGrow 0xF988D0`, ⚠ do NOT poke `PlayersInside` first — the S131/S132
+  ordering trap silently no-ops the wall) · `CurrPodDestination +0x478` · `bHasStartedGameplay +0x4B8` ·
+  `DropPodState +0x540` · root `+0x1B0` → loc `+0x158` / vel `+0x1A0`. Plane `ULokiRideableComponent @
+  ALokiDropPlane+0x3c8`; `AddPlayerToDropPlane 0x55CBB60` REAL (does NOT route to the empty
+  `AddPlayerToPlane` stub `0xF7EC20`). `MoveStep 0x55C1B20` is a raw native swept `SetActorLocation`
+  (NOT reflected — the S55 primitive does not apply; cast a plain fn pointer). ⚠ `LokiTeleportActor
+  0x56680F0` is DARK in all 74 on-disk images (a self-attaching arm never needs it; carry a `dumpimage`
+  on any flight to decrypt it). ⚠ `strxref` extents are per-`.pdata`-row, not function size.
+
 ★★★★★ **S132 (2026-08-20) — THE DISMOUNT RUNS. THE HERO LEAVES THE POD AND IS PLACED ON THE GROUND.
 Read `docs/s132-dismount-settled.md`, then `docs/fk22-dropphase-reachability.md` §30.**
 **SEVEN detach calls across FOUR launches; SIX moved the hero** (flight 1 ×4, flights 2 and 3 ×1 each)
@@ -4321,6 +4463,11 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
 - **usmapdump mergedumps:** `usmapdump.exe mergedumps <outFile> <in.dump.exe…|dir>` —
   unions several `dumpimage` snapshots into one maximally-covered image (fills each dump's
   demand-decrypt `.text` gaps from the others). A directory arg recurses for `*.dump.exe`.
+  ⚠⚠⚠ **CURRENT CANONICAL IMAGE (audit-S142, 2026-08-24): `dumps/merged14.dump.exe` — `.text`
+  16,816 / 30,281 = 55.53 %, a STRICT SUPERSET of `merged13` (lost 0, gained +16). It is what
+  `tools/strxref/strxref.py:91 DEFAULT_DUMP` now points at.** ⇒ every "USE `merged13`/`merged10`/
+  `merged2`", "re-grade against `merged10`", and "`strxref.py:66` defaults to `merged2`" pointer BELOW
+  is STALE — read `merged14` for any offline grading. The ladder below is kept as coverage history.
   ⚠⚠ **CANONICAL POINTER MOVED — `dumps/merged10.dump.exe` EXISTS AND IS AHEAD: `.text`
   **16,755 / 30,281 = 55.33 %** (its own manifest `dumps/merged10.dump.exe.txt:19`), and
   `docs/fk22-dropphase-reachability.md:7` already publishes it (`0x5456000` 3,860/4,096 non-zero
@@ -4651,8 +4798,9 @@ which is a bad property for a project whose value is its retraction history).
 - **`docs/<fk-n>-*-settled.md`** — the primary evidence for each settled unknown, with the
   measurements and the controls. These are ground truth; this file is a summary of them.
 - **`docs/method-rules.md`** — the two method rules above.
-- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s142.md`** (S141 Tier 3 -> S142): ★★★★★ **THE ENGINE MOVER CHAIN RUNS.** One 4-byte `GravityScale = 1.0f` write and the PLAYER hero FELL **23,189 uu** at terminal velocity -- from `Velocity.Z` EXACTLY ZERO ⇒ **gravity integrates from `Vz == 0` and "`Velocity == 0` stops the mover" is DEAD.** The player's non-fall was OUR OWN `sp` LIFT step zeroing `GravityScale` (`CMC+0x1A0`), which also resolves S132's dismount. **[M] the fixed-point gate is 2-D -- `Velocity.Z` is NOT zeroed.** ⇒ **The BOT is now the only thing that does not move, and it is the pawn WITH INPUT** (|Accel| 50000 vs the player's 0, same world/frame/pass). S142's first move is ONE READ: `AnalogInputModifier` + `GetMaxSpeed()` on both pawns, against engine `CalcVelocity`'s all-three-component `ZeroVector` clamp at `0x035D6511-0x035D652F` (guard `comisd` vs `(double)(float)1e-4`, on the ACCELERATE branch). ⚠ ALL S141 adversarial verification was lost to API 529s -- anything marked "pending verification" in `docs/s141-tier3-settled.md` has ONE derivation. ⚠ `docs/next-session-prompt-s141.md` and `docs/next-session-prompt-s141-tier3.md` are SUPERSEDED.
-  ⚠ **Previous: `docs/next-session-prompt-s140.md`** (S139 → S140): the movement wall is down to **THREE INSTRUCTIONS**. `ULokiCMC::PerformMovement` RUNS with a real DeltaTime and reaches its Super unconditionally; the ENGINE `PerformMovement` then bails before `StartNewPhysics` (whose latch reads 0 on both pawns). Two of its three gates are measured passing (`MovementMode` 3, `Mobility` Movable); the third — **`UpdatedComponent->IsSimulatingPhysics()` at `0x035E9FB5`/`jne 0x035EB7CF`** — has never been read. **That one read is the whole next session.** ⚠ `docs/next-session-prompt-s139.md` is superseded and its §1 plan is REFUTED: `play` is **not** a moving control (it writes `CMC+0xE8`/`+0x328` directly and enables no tick), and the bot/player diff it proposed comes back **identical on every structural field** — the question was mis-framed for the third time in the same shape.
+- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s147.md`** (S146 → S147): ★★★★★ **WALL P is localized to a valid-handle/downstream activation path, not wrapper entry.** With every measured MiniDash gate open, direct native Handle `1` at `base+0x4493420` produced no return and exit `0xDEAD`; the matched `INDEX_NONE=-1` entry control returned `AL=0`, restored the CDO and all observed state, restored `17,563/17,563` funcswaps, and later exited cleanly after `52,540.2 s`. No activation receipt exists. **Next = canonical engine-originated input:** grant MiniDash at `InputID=5`, Tab/`Toggle Map` twice as a state-restoring open/close focus/action-stack control, then LeftShift/`Ability3`, with no shim activation call; observe BP input hits plus raw spec/primary/charge/Mana state. Read `docs/s146-wallp3-native-handle-fk32.md`, then `docs/s145-wallp3-canactivate-open.md`.
+  ⚠ The separate MOVEMENT-track handoff is **`docs/next-session-prompt-s142.md`** (S141 Tier 3 -> S142): ★★★★★ **THE ENGINE MOVER CHAIN RUNS.** One 4-byte `GravityScale = 1.0f` write and the PLAYER hero FELL **23,189 uu** at terminal velocity -- from `Velocity.Z` EXACTLY ZERO ⇒ **gravity integrates from `Vz == 0` and "`Velocity == 0` stops the mover" is DEAD.** The player's non-fall was OUR OWN `sp` LIFT step zeroing `GravityScale` (`CMC+0x1A0`), which also resolves S132's dismount. **[M] the fixed-point gate is 2-D -- `Velocity.Z` is NOT zeroed.** ⇒ **The BOT is now the only thing that does not move, and it is the pawn WITH INPUT** (|Accel| 50000 vs the player's 0, same world/frame/pass). S142's first move is ONE READ: `AnalogInputModifier` + `GetMaxSpeed()` on both pawns, against engine `CalcVelocity`'s all-three-component `ZeroVector` clamp at `0x035D6511-0x035D652F` (guard `comisd` vs `(double)(float)1e-4`, on the ACCELERATE branch). ⚠ ALL S141 adversarial verification was lost to API 529s -- anything marked "pending verification" in `docs/s141-tier3-settled.md` has ONE derivation. ⚠ `docs/next-session-prompt-s141.md` and `docs/next-session-prompt-s141-tier3.md` are SUPERSEDED.
+  ⚠ **Previous: `docs/next-session-prompt-s140.md`** (S139 → S140). ⚠⚠ **SUPERSEDED by the Latest line above (S140 T2 / S141 T3): `StartNewPhysics` RUNS (the `+0x16C8` "latch" is an invalid instrument, reads 0 in every world), the whole mover chain runs (the player fell 23,189 uu), and the bot/player fields read identical only on the fields that were READ — `GravityScale` differs 1.0/0.0. So "bails before StartNewPhysics (latch reads 0)", "IsSimulatingPhysics … the whole next session", and "identical on every structural field" below are all OBSOLETE; kept as the dated s140 summary.** The movement wall is down to **THREE INSTRUCTIONS**. `ULokiCMC::PerformMovement` RUNS with a real DeltaTime and reaches its Super unconditionally; the ENGINE `PerformMovement` then bails before `StartNewPhysics` (whose latch reads 0 on both pawns). Two of its three gates are measured passing (`MovementMode` 3, `Mobility` Movable); the third — **`UpdatedComponent->IsSimulatingPhysics()` at `0x035E9FB5`/`jne 0x035EB7CF`** — has never been read. **That one read is the whole next session.** ⚠ `docs/next-session-prompt-s139.md` is superseded and its §1 plan is REFUTED: `play` is **not** a moving control (it writes `CMC+0xE8`/`+0x328` directly and enables no tick), and the bot/player diff it proposed comes back **identical on every structural field** — the question was mis-framed for the third time in the same shape.
   ⚠ `docs/next-session-prompt-s137.md` is the PREVIOUS handoff and its §1.2 arm is the refuted one — keep it as the dated record, do not follow it.
 
 ⚠ **Historical handoffs still say things like "read memory `supervive-x`".** Those are dated
