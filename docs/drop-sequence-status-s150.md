@@ -908,6 +908,239 @@ Velocity write.
   at any chosen landing actor, land on real terrain, and be `play`-drivable. This gets us to
   "playable hero via a driven drop" WITHOUT needing the descent to work.
 
+### 6.14 FLIGHT 4 DESIGN — compose-forward (all proven parts, no new code)
+
+**Goal:** Deliver the acceptance predicate ("playable hero via a driven drop") using ONLY
+already-flown arms. Skip descent (§6.13 blocker) and mount+ride (flight 2 proven but adds
+POLL/dismount signaling complexity). The S132 dismount handles append+detach ITSELF, so we
+don't even need a separate mount step.
+
+**Recipe:**
+```
+gft → fo → sp → dumpimage-early → dropplane_b1only → droppod-pe-cdopoke →
+dismount-landstart → play-atlanding-walk
+```
+
+**All arms already built + digested:**
+| step | variant | RAW `.text` | proven | role |
+|---|---|---|---|---|
+| 1-3 | gft/fo/sp | (staging) | flights 1/2/3 | world staged |
+| 5 | dropplane_b1only | `5b4467b0105dec1a` (was) → **`dcb19157cf45f9aa`** | flights 2/3 | creates DropShip |
+| 6 | droppod-pe-cdopoke | `bc1c1a5b1e66b54a` → **`283c1692a2135680`** | flights 2/3 | creates pod actor |
+| 7 | **`dismount-landstart`** | **`0d5fa554edac53c5`** | S132 (6 landings) | appends hero to PlayersAttached, detaches at PlayerStart landing |
+| 8 | **`play-atlanding-walk`** | **`944a27728053359e`** | **BUILT, NEVER FLOWN** | activates WASD + Walking mode (KFLYMODE=1) at landing spot |
+
+**Why this composition:** S132's `dismount-landstart` does the FULL mount+dismount internally
+(D2 = append `PlayersAttached.Num 0→1`, D3 = `AuthPlayerDetachPlayerFromRidable(PS,
+BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02)` which places the hero at
+`(-3206.4, 5070.5, 100.0)`). Flown 6 times, `[M]`. We skip the visible ride (no `mount_ride`
+between droppod and dismount) — the composition test is landing + playability, not cinematic
+ride.
+
+**Pre-registered receipts:**
+
+R7 (dismount landing):
+- `[DX] D2 append: PlayersAttached.Num 0→1` — bookkeeping precondition met
+- `[DX] D3 the detach ran, fault=no` — S132 receipt
+- Hero at `(~-3206.4, ~5070.5, ~90-100)` (settled on TrainingStart terrain, per S132 "landstart"
+  which measured `(-3206.4, 5070.5, 90.15)`)
+- `[DX] VERDICT: THE HERO MOVED AND PlayersAttached.Num DROPPED TO 0. THE DISMOUNT RAN.`
+
+R8 (play-atlanding-walk — the NEW test):
+- `KNOTELE=1` prevents `play`'s hardcoded teleport (S132 correction) — hero stays where dismount
+  put it
+- `KFLYMODE=1` selects Walking mode (not the default Flying mode 5 that S132 flew and observed
+  hovering 13km in the air)
+- `[PL] *** init complete: body=BUILT; camera + WASD active ***`
+- `[ANIM] PlayAnimation(...) ok` — locomotion animating
+- **Decisive:** hero moves horizontally at ~ground level (Z stays 90-100) rather than hovering or
+  falling through. Distance moved should be similar to `play`'s auto-walk (~585 uu/s × N seconds).
+
+**Named failure modes:**
+1. **Walking-mode init crash on `play-atlanding-walk`** — this variant is BUILT but NEVER FLOWN
+   (CLAUDE.md flags it as the untested walkability test). If Walking-mode init crashes, the
+   S132 hazard chain (`0x5586530` unguarded reads on `hero+0x460/+0x1978/+0x1980`) is a
+   candidate — that hazard survived on Ronin, unproven on others. Our hero IS Ronin — so it
+   SHOULD survive.
+2. **Dismount fails because pod already too far** — pod is cruising at 20k uu/s. By the time
+   we inject dismount (~40s after droppod), pod is at ~800,000 uu on X. Dismount reads the pod
+   live at time-of-call, so this shouldn't matter — landing is at PlayerStart (-3206.4, ...),
+   not at pod. But worth watching.
+3. **FK-32 at 7 injections** — same as flight 3. Both survived; not a certainty.
+4. **`play-atlanding-walk` picks a different hero than dismount landed** — play scans
+   GUObjectArray for `BP_HERO_*`. There's only ONE `BP_HERO_Ronin_C` in the world, so this
+   should be safe. If more than one appears (e.g. a bot spawned from earlier), play picks
+   FIRST — hero picker is not RdResolve-gated (uses old startswith filter). Not a concern for
+   this composition since we haven't spawned bots.
+
+**Budget:** 7 injections (dumpimage isn't one). Flights 2 and 3 both survived 6-7. Take
+dumpimage-early after `sp` as always. Reader window: no reader needed for this flight (play's
+own markers give the WASD receipts; no ride to sample).
+
+**Success criterion:**
+- Dismount lands the hero at TrainingStart terrain [M via S132]
+- `play-atlanding-walk` activates and the hero WALKS at ground level (not flying, not falling)
+- Combined receipt: hero X displacement > 0 with Z stable near 90-100 uu
+⇒ **Acceptance predicate met — "playable hero via a driven drop" on this client.**
+
+**If success:** the drop-sequence target is COMPLETE via the cinematic-flight+poked-landing
+hybrid path. The elegant natural-descent path (§6.13's blocker) becomes a later polish task.
+
+**If Walking-mode init crashes:** we still have `play-atlanding` (KFLYMODE default = 5 = Flying)
+as a fallback — hero hovers but is WASD-controllable, which is a weaker but useful result. And
+we've localized the walkability crash to the Walking-mode init specifically.
+
+### 6.15 FLIGHT 4 RESULT — dismount FAULTED (S132 caveat hit) [M] (2026-09-01)
+
+**Composition stopped at step 7. Ship + pod chain reproduced flawlessly (flights 2/3 pattern
+held); dismount hit the exact S132 defect CLAUDE.md documented — "when no PlayerState candidate
+passes GATE 5 the arm proceeds anyway".** Play-atlanding-walk not attempted (hero remained
+airborne, would have tested Walking-mode init on unknown terrain). Evidence:
+`docs/mount-flight-4-final-marker.txt` + `dumps/s150-mount-flight-4-{early,postdismount}/`.
+
+**Sequence flown (6 injections, game survived, terminated cleanly):**
+1-3. gft/fo/sp — staging clean; hero at `0x1A18FAC8020 BP_HERO_Ronin_C`, position
+`(0.0, 0.0, 13240.0)`
+4. dumpimage-early — evidence preserved
+5. `dropplane_b1only` — ship spawned (`DropShip 0→1`, new plane `0x1A1FBB0A060`, expected
+   SpawnPlane fault at rva 0x13495DD reproduced per §6.9)
+6. `droppod-pe-cdopoke` — pod created (`PodTeamIndex=0`, expected fields per S131 reproduced)
+7. `dismount-landstart` — **FAULTED** (see below); PlayersAttached.Num 0→1 then restored to 0
+8. `play-atlanding-walk` — NOT ATTEMPTED (hero still at spawn position, not on ground)
+
+**The dismount fault [M]:**
+```
+[RD] resolve: 1 pod actor(s), 2 live ALokiPlayerState(s)
+[RD] ps-cand[0] 0x1A189DD7BB0 'LokiPlayerState_HeroAffiliated'
+[RD] ps-cand[1] 0x1A022FD1120 'BP_LokiPlayerState_C'
+[DX] GetLokiCharacter did not resolve -> GATE 5 is UNMEASURED here
+[DX] *** NO candidate passes both GATE 5 and GATE 6. Proceeding with cand[0] anyway
+[DX] D3 detach(PS in array) AFTER: fault=*** YES ***
+[DX] VERDICT: the detach FAULTED (code=0xC0000005 READ addr=0xFFFFFFFFFFFFFFFF
+     rip=0x7FF6BAF68C57 rva=0x54F8C57). That is a real result and it localises inside the body,
+     past GATE 4.
+[DX] hero before=(0.0, 0.0, 13240.0)  after=(0.0, 0.0, 13240.0)  <-- unmoved
+```
+
+Fault site `rva 0x54F8C57` is `GetLokiCharacter`'s internal body — matches CLAUDE.md's exact
+S132 caveat text: *"GetLokiCharacter FAULTS on a template PlayerState rather than returning
+null, so GATE 5 is not a clean early-out for a bad argument. Make the no-candidate branch REFUSE."*
+
+**Root cause:** the arm can't RESOLVE `GetLokiCharacter` on `LokiPlayerState_HeroAffiliated`'s
+class chain, so it defaults to cand[0] — but that candidate is the one that faults inside the
+detach body. The other candidate (`BP_LokiPlayerState_C`) was NEVER TRIED.
+
+**Regression note (S132 recorded 6 successful landings — why does it fail now?):** S132 must
+have had ONLY one PS candidate (BP_LokiPlayerState_C-shaped), so first-match worked. This
+flight has TWO PS candidates because staging leaves both `LokiPlayerState_HeroAffiliated` AND
+`BP_LokiPlayerState_C` live simultaneously. The S132 defect existed all along; S132's world
+state hid it.
+
+**Corrections banked:**
+- The dismount PS-picker is NOT robust to multi-PS worlds. CLAUDE.md's own §14.1 flagged this
+  as *"a MEASURED defect in the dismount arm, to fix first (one line)"* — this flight reproduces
+  the defect with an exact rva match. Fix priority is now higher (blocks compose-forward).
+- S132's 6 successful landings likely benefited from a hidden precondition (single PS candidate)
+  that current staging doesn't provide.
+- Flight 4 preserved intact: neither the dropplane nor droppod path regressed. Ship + pod
+  creation reproduced pattern from flights 2/3.
+
+**Next step — small shim fix:**
+Modify `DoDismount`/`DxLadderStep` so that when GATE 5 fails on cand[0], the arm tries cand[1]
+(and cand[2..n]) instead of defaulting to cand[0]. If NO candidate resolves GetLokiCharacter,
+REFUSE rather than proceed (per CLAUDE.md's guidance). This is one function's control flow
+change, no new addresses needed. Then re-fly the compose-forward recipe unchanged.
+
+**Alternative for immediate progress if the shim fix takes time:** use `dismount` (default,
+`KDXLANDING=0`) instead of `dismount-landstart`. That variant may pick a different candidate
+route. But this is [S] — needs offline check first.
+
+**What this DOES NOT change:** flights 1-3's results, the §6.9 primitive fix, or the §6.13
+descent blocker. All prior findings hold.
+
+### 6.16 ★★★★★ FLIGHT 4b — THE ACCEPTANCE PREDICATE IS MET [M] (2026-09-01)
+
+**HISTORIC END-TO-END SUCCESS. "Playable hero via a driven drop" is DONE.** The dismount
+PS-picker fix (per-candidate `GetLokiCharacter` resolve + REFUSE on total failure) worked on the
+first try, and the composition chained forward through all 7 injections to a WALKING HERO ON
+REAL TERRAIN. Game survived 411s, terminated cleanly. Evidence: `docs/mount-flight-4b-final-marker.txt`
++ `dumps/s150-mount-flight-4b-{early,success}/`.
+
+**Full sequence flown (7 injections including staging):**
+| step | arm | receipt |
+|---|---|---|
+| 1-3 | gft/fo/sp | `[SP] done step=4 spawnedPawn=0x226FD000040 cls=BP_HERO_Ronin_C`; hero at `(0,0,13240)` |
+| 4 | dumpimage-early | preserved |
+| 5 | dropplane_b1only | `DropShip 0→1` (fault at rva `0x13495DD` reproduced as expected; ship spawned anyway) |
+| 6 | droppod-pe-cdopoke | pod with `PodTeamIndex=0` + `CurrPodDestination=(-3206.4, 5070.5, 100.0)` |
+| 7 | dismount-landstart (FIXED, `.text 62f257c191027ee3`) | see PS-picker fix below |
+| 8 | play-atlanding-walk (`.text 944a27728053359e`) | Walking mode + WASD + camera + animations + WALK |
+
+**The dismount PS-picker fix worked exactly as designed:**
+```
+[DX] cand[0] ps=0x2270CC63BD0 cls=LokiPlayerState_HeroAffiliated | GATE5 UNMEASURED
+     (GetLokiCharacter did not resolve on this class) -> SKIP
+[DX] cand[1] ps=0x225B90F5560 cls=BP_LokiPlayerState_C -> hero=0x226FD000040
+     cls=BP_HERO_Ronin_C | GATE5 PASS | GATE6 IsA(LokiHeroCharacter) PASS
+[DX] picked cand[1] ... reason: the ONLY/first candidate passing both GATE 5 and GATE 6
+     (via per-candidate GetLokiCharacter resolve)
+[DX] D3 detach(PS in array) AFTER: fault=no
+[DX] hero before=(0.0, 0.0, 13240.0)  after=(-3206.4, 5070.5, 138.0)
+```
+Hero landed on **TrainingStart terrain** at `(-3206.4, 5070.5, 138)` (Z=138 then settled to 90).
+S132's 7th landing (flown 6 times previously), first time on a multi-candidate world.
+
+**Play-atlanding-walk (KFLYMODE=1, Walking mode) — first time flown [M]:**
+```
+[PL] *** init complete: body=BUILT; camera + WASD active ***
+[ANIM] PlayAnimation(run, loop) ok
+[ANIM] PlayAnimation(idle, loop) ok
+[SHOT] idle1 @3.0s hero=(-3206,5070,90) cam=(-3206,6299,2850) anim=idle
+[SHOT] idle2 @8.0s hero=(-3206,5070,90) cam=(-3206,6299,2850) anim=idle
+[SHOT] idle3 @14.0s hero=(-3206,5070,90) cam=(-3206,6299,2850) anim=idle
+[ANIM] self-driven walk START
+[DIAG] hero=(-1960,5070,90) ... comp=0x225EC062770 world=(-1960,5070,90) ... cam=(-1960,6299,2850)
+```
+- Body built, mesh added, animations play
+- Hero WALKED from `(-3206, 5070, 90) → (-1960, 5070, 90)` = **+1,246 uu east on X**
+- **Z stayed at 90 the entire walk** — hero on GROUND, not flying, not falling
+- Camera followed hero (top-down, 2850 uu above)
+- No Walking-mode init crash (S133 concern refuted)
+
+**All pre-registered receipts from §6.14 LANDED:**
+- ✅ R7 (dismount): `PlayersAttached.Num 0→1`, `D3 fault=no`, hero at landing coord
+- ✅ R8 (play walking): `init complete`, `PlayAnimation ok`, hero moves at ground Z
+
+**The acceptance predicate IS MET.** Playable hero via a driven drop: world loads → ship spawns
+via drop-plane arm → pod spawns via drop-pod arm → dismount lands hero on real terrain via S132's
+mechanism → play activates Walking mode + WASD + camera + animations → hero WALKS on ground.
+
+**Regression gates verified byte-identical after the fix:** `botai 5e47c13cf7f0a158`,
+`play 9bc10a4552c596e1`, `dropplane_b1only dcb19157cf45f9aa`, `droppod-pe-cdopoke 283c1692a2135680`,
+`mount-ride 9b7f88af3210c438`, `mount-descend c26e8831f45d7548`. Only `dismount*` variants moved
+(as expected — DxLadderStep changed). New `dismount-landstart` digest: `62f257c191027ee3`.
+
+**What this delivers:**
+- The full drop-and-land chain proven end-to-end via diagnostic pokes
+- CLAUDE.md's §14.1 "one-line fix" done and verified
+- Play-atlanding-walk's untested walkability question RESOLVED — Walking mode works on this route
+- The operator's original goal from the start of the S150-drop session: **"reach a state where we
+  can move our hero around"** via a drop sequence → **DONE**
+
+**What this does NOT replace:**
+- The elegant natural-descent path (§6.13 blocker) — this is a diagnostic composition using
+  poke-based arms, not a shipping fix.
+- The pod DESCENT question — pod cruised horizontally the whole time (no `mount-descend` in
+  this flight). "Cinematic descent onto landing spot" needs §6.13's IntroSequence timer chain
+  fixed. This flight's composition uses direct dismount instead.
+
+**Board:**
+- FK-32 mode of 4 held over multiple flights without firing (4 flights, all survived to
+  intentional termination or user input)
+- 5 flights total (1-4b), each preserved and documented
+- CLAUDE.md-level results: 3 discoveries recorded (§6.5 offline pre-flight, §6.7-15 flight
+  progression, §6.16 acceptance predicate met)
+
 
 
 ### 6.6 Landing-SELECTION UI RE (2026-09-01, offline; 4 lanes + verifier + a widget re-run)

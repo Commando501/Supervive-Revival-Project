@@ -14472,37 +14472,59 @@ static void DxLadderStep(){
         // the detach, so measuring them here is what makes a null attributable.
         Marker("[DX] --- D0h: GATE 5 (PS->GetLokiCharacter() != null) and GATE 6 (that hero IsA "
                "LokiHeroCharacter) read out per candidate, BEFORE any write. ---\r\n");
-        { void* fn=nullptr; uintptr_t th=0,ch=0;
-          ResolveFuncNative(ClassOf(g_rdPSCand[0]),"GetLokiCharacter",&fn,&th,&ch);
-          g_dxGlcFn=(uintptr_t)fn; g_dxGlcChild=ch; }
-        if(!g_dxGlcFn) Marker("[DX] GetLokiCharacter did not resolve -> GATE 5 is UNMEASURED here (a "
-                              "coverage limit; the detach still tests it).\r\n");
+        // ★★★★★ S150-drop flight-4 fix (2026-09-01): resolve GetLokiCharacter PER CANDIDATE's own
+        // class, not just cand[0]'s. Mount-flight 4 measured LokiPlayerState_HeroAffiliated (cand[0])
+        // failing to resolve GetLokiCharacter -> g_dxGlcFn stayed null -> ALL DxGetHeroOf calls
+        // returned null -> arm defaulted to cand[0] anyway -> detach FAULTED at rva 0x54F8C57
+        // (GetLokiCharacter's internal body called on the wrong PS class). CLAUDE.md §14.1 called
+        // this out as a "one-line fix, refuse rather than proceed"; the fix is per-candidate
+        // resolve + REFUSAL, not a one-line default change.
         int pick=-1;
         for(int i=0;i<g_rdPSCandN;i++){
+            // Try to resolve GetLokiCharacter on THIS candidate's class chain. Store first success
+            // so downstream DxGetHeroOf calls have the right fn/thunk/child. If cand[0] doesn't
+            // resolve, cand[1] might (different class chain -- e.g. BP_LokiPlayerState_C vs
+            // LokiPlayerState_HeroAffiliated).
+            void* fn=nullptr; uintptr_t th=0,ch=0;
+            ResolveFuncNative(ClassOf(g_rdPSCand[i]),"GetLokiCharacter",&fn,&th,&ch);
+            char pcn[96]="?"; { uintptr_t c=ClassOf(g_rdPSCand[i]); if(c) GetFNameStr(NameId(c),pcn,sizeof(pcn)); }
+            if(!fn){
+                Markerf("[DX] cand[%d] ps=0x%llX cls=%s | GATE5 UNMEASURED (GetLokiCharacter did "
+                        "not resolve on this class) -> SKIP\r\n",i,(unsigned long long)g_rdPSCand[i],pcn);
+                continue;
+            }
+            g_dxGlcFn=(uintptr_t)fn; g_dxGlcChild=ch;
             char tag[64]; _snprintf_s(tag,sizeof(tag),_TRUNCATE,"D0h GetLokiCharacter(cand[%d])",i);
             uintptr_t h=DxGetHeroOf(g_rdPSCand[i],tag);
             char chain[256]; int isHero = h?(PhChainHas(ClassOf(h),"LokiHeroCharacter",chain,sizeof(chain))?1:0):-1;
             char hn[96]="-"; if(h){ uintptr_t c=ClassOf(h); if(c) GetFNameStr(NameId(c),hn,sizeof(hn)); }
-            Markerf("[DX] cand[%d] ps=0x%llX -> hero=0x%llX cls=%s | GATE5 %s | GATE6 IsA(LokiHeroCharacter) %s\r\n",
-                    i,(unsigned long long)g_rdPSCand[i],(unsigned long long)h,hn,
+            Markerf("[DX] cand[%d] ps=0x%llX cls=%s -> hero=0x%llX cls=%s | GATE5 %s | GATE6 IsA(LokiHeroCharacter) %s\r\n",
+                    i,(unsigned long long)g_rdPSCand[i],pcn,(unsigned long long)h,hn,
                     h?"PASS":"*** FAIL (the detach would take the REMOVE-only tail) ***",
                     (isHero<0)?"n/a":(isHero?"PASS":"*** FAIL (REMOVE-only tail) ***"));
             if(h&&isHero==1&&pick<0){ pick=i; g_dxHero=h; strncpy_s(g_dxHeroName,sizeof(g_dxHeroName),hn,_TRUNCATE);
                                       g_dxGate5=1; g_dxGate6=1; }
         }
         if(pick<0){
-            pick=0; g_dxGate5=0; g_dxGate6=0;
-            g_dxHero=g_rdHero; if(g_rdHero) strncpy_s(g_dxHeroName,sizeof(g_dxHeroName),g_rdHeroName,_TRUNCATE);
-            Marker("[DX] *** NO candidate passes both GATE 5 and GATE 6. Proceeding with cand[0] anyway: "
-                   "the detach will then take the REMOVE-only tail, which STILL proves GATE 3+4 were "
-                   "passed (PlayersAttached.Num 1 -> 0) even though the hero cannot move. Read the "
-                   "result that way and NOT as 'the dismount failed'. ***\r\n");
+            // S150-drop flight-4 fix: REFUSE rather than proceed. Flight 4 measured the previous
+            // "proceed with cand[0] anyway" path faulting deterministically at rva 0x54F8C57
+            // (GetLokiCharacter internal, called on a template PS from within the detach body).
+            // CLAUDE.md §14.1: "Make the no-candidate branch REFUSE." The append we did in D2 IS
+            // still restored by D5's tail (so the world state is clean); we just skip D3+.
+            Marker("[DX] *** REFUSING: NO PlayerState candidate passes GATE 5 + GATE 6, and calling "
+                   "the detach with a template PS faults deterministically (S150-drop mount-flight 4 "
+                   "measured rva 0x54F8C57 with LokiPlayerState_HeroAffiliated + BP_LokiPlayerState_C "
+                   "candidates). Jumping to D5 cleanup; NO append/detach will happen this run. ***\r\n");
+            // Jump straight to the terminal `case 7: default:` which runs the D5 restore (harmless
+            // if nothing to restore — the append hasn't happened yet in D0h) and sets g_done.
+            // Do NOT set g_done here: that ends the mode BEFORE the next tick can reach D5.
+            g_dxStep=7;
+            return;
         }
         g_dxPSIx=pick; g_dxPS=g_rdPSCand[pick];
-        Markerf("[DX] picked cand[%d] ps=0x%llX hero=0x%llX '%s' -- reason: %s\r\n",pick,
-                (unsigned long long)g_dxPS,(unsigned long long)g_dxHero,g_dxHeroName,
-                (g_dxGate5==1)?"the ONLY/first candidate passing both GATE 5 and GATE 6":
-                               "no candidate qualified; cand[0] by default");
+        Markerf("[DX] picked cand[%d] ps=0x%llX hero=0x%llX '%s' -- reason: the ONLY/first candidate "
+                "passing both GATE 5 and GATE 6 (via per-candidate GetLokiCharacter resolve)\r\n",pick,
+                (unsigned long long)g_dxPS,(unsigned long long)g_dxHero,g_dxHeroName);
         RdPrintValidity("PlayerState(picked)",g_dxPS);   // GATE 2, the detach's own test
         DxState("baseline");
         g_dxLocBeforeOK=DxHeroLoc(g_dxHero,g_dxLocBefore);
