@@ -717,17 +717,196 @@ The shim's own [MT] markers are trustworthy because RM_MOUNT already uses that g
   step from here.
 
 **Next possible steps (offline, no launch needed):**
-1. ~~Fix `drop_ride_readout.py` to use the RdResolve filter.~~ **DONE 2026-09-01** —
-   `tools/re/drop_ride_readout.py` now applies the shim's mount gate in `discover()`:
-   `chain_ends_at(cls, "Actor") && chain_has(cls, "DropPod") && PodTeamIndex@+0x460 == 0 &&
-   RootComponent@+0x1B0 != NULL`. Non-qualifying "DropPod"-named UObjects (AnimInstance /
-   UUserWidget / component templates) are rejected AND named in the output so a wrong pick is
-   impossible to hide. Same gate applied to hero discovery for symmetry. Syntax-checked; CLI
-   unchanged. Line count 285 → 415. No behavior change for callers that pass `--pod`/`--hero`.
+1. ~~Fix `drop_ride_readout.py` to use the RdResolve filter.~~ **DONE 2026-09-01** (commit `7f9e96b`).
 2. Design a `mount-descend` flight to test descent (StartPodGameplay via ProcessEvent slot 78).
+   **DONE 2026-09-01 — see §6.12 below.**
 3. Chain toward the acceptance predicate: `mount-descend → dismount@landing (S132 existing) → play`.
 4. Fix the CallBPGuarded primitive's `FFrame+0x80` OutParms miss (§6.9 ROUTE β) — unblocks every
    `FUNC_HasOutParms` UFunction in the project, not just SpawnPlane. Long-term win.
+
+### 6.12 MOUNT-DESCEND flight design (2026-09-01, offline; ready to fly)
+
+**Goal.** Does the pod-descent machinery run on this client and does the rider co-descend with it?
+Flight 2 proved the mount + horizontal-cruise ride works ([MT] RIDE samples). Flight 3 tests
+whether calling `StartPodGameplay` via ProcessEvent slot 78 (§6.9 recipe) makes the pod:
+(a) deactivate its cruise mover immediately, (b) fire its ~6.5s IntroSequence timer, (c) re-
+activate the mover with velocity aimed at `CurrPodDestination(-3206.4, 5070.5, 100.0)`, and
+(d) descend from Z=20100 to Z=100 while the rider (POLL) stays with it.
+
+**Arm chosen: `mount-descend`** (`KMTARMS=0x1F` = all five bits: APPEND + UNHIDE + POSITION-ONCE
++ POLL + PHASE-B). Just-rebuilt (**`.text RAW c26e8831f45d7548`**, VirtualSize `bcdba837886743bc`,
+KERNEL32-only; superseded stale pre-2060cb8 `b6941b5929723a96`).
+
+**Regression gates verified (2026-09-01, post-rebuild):** `botai 5e47c13cf7f0a158` UNCHANGED,
+`play 9bc10a4552c596e1` UNCHANGED. `mount-phaseb` (isolation control) also rebuilt clean:
+**`d69642beacc5e7a8`** (moved from stale `c144ccf255b2cc0b`). All four regression gates hold.
+
+**Staging (identical to flight 2 — the proven recipe):**
+```
+gft → fo → sp → dumpimage-early → dropplane_b1only → droppod-pe-cdopoke → reader → mount_descend
+```
+- gft/fo/sp: standard staging via `configs/fk24-stage.ps1 -SkipProbe`
+- dumpimage-early: preserve evidence RIGHT after sp completes (`[SP] done step=4`)
+- dropplane_b1only: creates the DropShip (still faults at SpawnPlane statement [10] per §6.9,
+  but ship spawn is EARLIER — census `DropShip 0→1` is the gate; flight 2 confirmed [M])
+- droppod-pe-cdopoke: creates the pod actor with PodTeamIndex=0 + CurrPodDestination populated
+- **reader started BEFORE mount_descend, --secs 120** (need 6.5s IntroSequence timer + descent
+  time + margin; flight 2 used 60s for cruise-only test)
+- mount_descend: the treatment
+
+**Pre-registered receipts (write BEFORE the flight — a null is only interpretable against these):**
+
+R1 (mount append) — inherited from flight 2:
+- `[RD] resolve: 1 pod actor(s), 2 live ALokiPlayerState(s)` (RdResolve gate passes on the fresh pod)
+- `[MT] APPEND OK -- R1: PlayersAttached.Num 0 -> 1`
+
+R3 (ride) — inherited from flight 2:
+- `[MT] RIDE:` samples continue firing throughout the descent (POLL is bit 0x08, on in 0x1F)
+
+PB (Phase-B, the NEW receipts this flight tests) — from §6.9:
+- **PB-a [call reached]:** `[MT] PHASE-B: RETURNED. RECEIPT bHasStartedGameplay 0 -> 1`
+- **PB-b [immediate stop]:** pod `ComponentVelocity ~(0,0,0)` IMMEDIATELY after PHASE-B call —
+  expected because StartPodGameplay's first act is `ProjectileMovement.Deactivate()`. A ZERO
+  HERE IS NOT A FAILURE.
+- **PB-c [state byte stays 0]:** pod `DropPodState @+0x540` stays 0 (or reads unchanged) —
+  §6.9 caveat: `SetDropPodState` has `if(LokiIsClient) return`, so the state-write is skipped
+  on this client. A ZERO HERE IS EXPECTED, NOT A FAILURE.
+- **PB-d [DESCENT ONSET, ~6.5s later]:** pod `ComponentVelocity` re-populates with dominant
+  NEGATIVE Z (pod at Z=20100, dest at Z=100). If PB-d holds: `StartPodMovement` re-activated
+  the mover above the client-return gate, exactly as §6.9 predicts.
+- **PB-e [Z trajectory]:** pod `ActorLocation.Z` decreases monotonically toward 100 uu.
+  Descent to ground should take ~5-10s at InitialDropPodSpeed.
+- **PB-f [arrival]:** pod hides (`SetActorHiddenInGame(true)`) on ground contact via
+  `OnDropPodHit → StartDestroyPod`. Pod census -1 (or hidden flag set).
+
+**R3-during-descent (the composed receipt):**
+- `[MT] RIDE:` samples DURING descent should show hero_Z decreasing in lockstep with pod_Z.
+  Reader R3 verdict should be a lateral+vertical co-movement.
+
+**Named failure modes (pre-registered — a fault here is not a null):**
+1. **Phase-B ProcessEvent FAULTS.** §6.9 says StartPodGameplay has 0 params → no OutParms
+   involvement → the FFrame+0x80 primitive bug should NOT fire. But `MtStartPodGameplay`'s SEH
+   catches faults. If `[MT] PHASE-B: ProcessEvent FAULTED` prints, we've hit a new primitive
+   defect — grade offline and consider `mount-phaseb` isolation.
+2. **PB-a fires but PB-d never comes.** `bHasStartedGameplay 0→1` but pod stays stopped.
+   Means StartPodGameplay's body doesn't reach StartPodMovement — an untested gate exists.
+   Fallback: `mount-phaseb` (KMTARMS=0x10, Phase-B only, no mount confound) to isolate.
+3. **Hero de-syncs during descent.** POLL fires on every OnPI hit, but descent may be faster
+   than OnPI's dispatch cadence. Some lag is expected; large de-sync (>1000 uu) means POLL
+   isn't keeping up.
+4. **`KickPlayersFromPod` fires and drops rider.** Per CLAUDE.md, has `if(LokiIsClient) return`
+   — should NOT fire on this client, but worth watching.
+5. **`bHasStartedGameplay` was already 1 before Phase-B call.** MtStartPodGameplay logs this as
+   `⚠ non-zero -> body may no-op at its idempotency guard`. Would mean something ELSE started
+   the pod before us — unexpected and diagnostic.
+
+**Fallback flights if mount-descend fails, in priority order:**
+- **F1: `mount-phaseb` (KMTARMS=0x10, `.text d69642beacc5e7a8`)** — Phase-B ONLY, no mount.
+  Fresh pod, one Phase-B call, watch for PB-a..f. If pod descends here but not in mount-descend,
+  the mount append/POLL is confounding Phase-B (unlikely but possible).
+- **F2: `mount-ride` (`.text 9b7f88af3210c438`) again as sanity control** — same as flight 2,
+  proves the arm+staging still work if the fresh session is misbehaving.
+- **F3: adjust the KMTSEATZ offset if hero clips inside the pod during descent** — currently 120 uu
+  above pod origin (matched pod diameter for the cruise flight). May need larger negative offset
+  for a descending pod to sit correctly.
+
+**Budget:** 6 injections identical to flight 2. Game survived 6 in flights 1 and 2, but FK-32
+mode is 4 — not guaranteed. Take dumpimage EARLY (after sp) so evidence survives mid-arm death.
+Extend reader window to `--secs 120` to catch the 6.5s IntroSequence timer + descent + margin.
+
+**Success criterion:** if all of PB-a, PB-d, PB-e, and R3-during-descent land — pod descends AND
+rider co-descends — we've proven the full drop-and-arrive chain works. This unblocks the S132
+dismount-at-landing composition (§6.10 acceptance chain) — landing the hero on real terrain from
+a driven drop, one flight away from "playable hero via a driven drop" per the operator's original ask.
+
+**Not tested by this flight:** the ACTUAL landing (dismount → play). Even if descent works, the
+hero still needs to be transferred to normal Pawn control (S132 dismount is the recorded route).
+That's the NEXT flight after this one.
+
+### 6.13 MOUNT-FLIGHT 3 RESULT — Phase-B works, descent does NOT auto-fire (2026-09-01)
+
+**Substantial partial success + a new named blocker.** Flight 3 flew `mount-descend`
+(`.text c26e8831f45d7548`, `KMTARMS=0x1F`, all five bits) after the identical proven staging
+recipe. Game died at t=+37.6s in the reader — **user right-click input, unrelated to the arm**;
+did not affect the receipts collected. Evidence at `docs/mount-flight-3-final-marker.txt` (29 KB)
++ `dumps/s150-mount-flight-3-early/`.
+
+**Sequence flown (7 injections including droppod's own arm; game survived them all — right-click
+crash was orthogonal):**
+`gft → fo → sp → dumpimage-early → dropplane_b1only → droppod-pe-cdopoke → reader --secs 120 →
+mount_descend`. Ship census `DropShip 0→1` (fault reproduced as expected, ship spawned anyway,
+matching flight 2). Pod created with `PodTeamIndex=0`, `CurrPodDestination=(-3206.4,5070.5,100.0)`,
+cruise at ~20k uu/s (pod X: 371939 → 375146 in a few s before Phase-B call).
+
+**Pre-registered receipts — LANDED:**
+- ✅ **PB-a (Phase-B call reached AS body):** Reader verdict `PB bHasStartedGameplay reached 1
+  YES  (StartPodGameplay ran)`. Latch flipped 0→1. **[M]**
+- ✅ **PB-b (immediate mover deactivation):** pod velocity read `(0,0,0)` all samples after
+  Phase-B call, and pod position FROZE at `(970632.4, 5070.5, 20100.0)` — 40+ `[MT] RIDE:` samples
+  show the exact same coord. `ProjectileMovement.Deactivate()` confirmed [M].
+- ✅ **R1 (append):** `PlayersAttached.Num 0 → 1` (reader verdict). **[M]**
+- ✅ **R3 (POLL keeps hero AT frozen pod):** all `[MT] RIDE:` samples show
+  `pod=(970632.4,5070.5,20100.0) hero->(970632.4,5070.5,20220.0) AT-POD`. The per-hit reposition
+  continues to work even when the pod is stationary. **[M]**
+
+**Pre-registered receipts — DID NOT LAND (the new blocker):**
+- ❌ **PB-d (descent onset after ~6.5s):** pod velocity never re-populated with negative Z during
+  the ~30s observation window. Pod stayed FROZEN at `(970632.4, 5070.5, 20100.0)` for
+  well past the expected `IntroSequenceTotalTime ≈ 6.5s`. **Descent DID NOT spontaneously
+  occur after Phase-B call.**
+- ❌ **PB-e (Z trajectory):** N/A — no descent to observe.
+- ❌ **PB-f (arrival + hide):** N/A.
+- ❌ **R3-during-descent:** N/A — no descent motion to co-track.
+
+**★★★★★ NEW NAMED BLOCKER — the IntroSequence timer / `OnIntroSequenceFinished` path is NOT
+auto-firing on this client.** §6.9's chain was:
+`StartPodGameplay → arm SetTimer(OnIntroSequenceFinished, ~6.5s) → OnIntroSequenceFinished →
+SetDropPodState(Descending=3) → StartPodMovement`. §6.9 established that `StartPodMovement`
+runs ABOVE the `SetDropPodState`'s `if(LokiIsClient) return`. But flight 3 shows the chain
+STOPS EARLIER — either the timer doesn't fire on the client, or `OnIntroSequenceFinished` has
+its own gate that fails. Since `bHasStartedGameplay` LATCHED (proving StartPodGameplay's body
+ran successfully), the failure is *between* StartPodGameplay's return and StartPodMovement's
+Velocity write.
+
+**Three hypotheses for where the chain breaks (all offline-gradeable):**
+1. **H1 — timer never fires on client:** `System::SetTimer` may skip callbacks on
+   `LokiIsClient==true`, or the timer is registered against a mode-specific timer manager that
+   doesn't tick without full server context.
+2. **H2 — `OnIntroSequenceFinished` has an unrecorded `LokiIsClient/HasAuthority` early-return:**
+   §6.9 only transcribed the `SetDropPodState` client-return, not the timer callback's own
+   guards. `OnIntroSequenceFinished` (LokiDropPod.as ~L4088-4104 per §6.9) has a leader-pod
+   branch — that branch may have its own gate.
+3. **H3 — `StartPodMovement` reads a state field that requires the client-skipped
+   `PodStateEvent.DropPodState` write:** §6.9 said StartPodMovement runs "above" the gate, but
+   "above" may mean "in a different function that gets called only if state==Descending". The
+   state doesn't advance on the client because SetDropPodState client-returns before the write.
+
+**Corrections banked from this flight:**
+- §6.9's "StartPodMovement is called ABOVE the gate and reads CurrPodDestination directly" was
+  **[I], not [M]**, and this flight is the first empirical test of it. **The claim is now
+  REFUTED at the level of live observation:** either the reads happen but produce no Velocity,
+  or the chain never reaches StartPodMovement. Grade §6.9's descent-still-works assertion as
+  **[REFUTED] pending offline localization** of the three hypotheses above.
+- The `mount-descend` arm's POLL correctly repositions the rider to a STATIONARY pod (unexpected
+  bonus — proves the arm is robust to Phase-B's mover deactivation). This is a positive control:
+  if the descent DID fire, POLL would ride the hero down with it.
+- 7 injections + user-input crash. Game survived all 7 injections; only the right-click killed
+  it. This suggests the FK-32 6-injection ceiling may be loosening (or we're seeing selection
+  bias). Not a load-bearing conclusion.
+
+**Route decision for flight 4:**
+- **BEST NEXT STEP — offline first:** transcribe `OnIntroSequenceFinished`'s AS body (LokiDropPod.as
+  around L4088-4104 per §6.9) end to end and enumerate ALL gates on the leader-pod branch. This
+  localizes the H1/H2/H3 disjunction to one hypothesis. Then design the fix as another arm
+  (poke-then-Phase-B, or direct-call StartPodMovement, or set the state byte manually).
+- **Fallback if OnIntroSequenceFinished is a dead end:** direct-call `StartPodMovement` on the
+  pod (bypassing the timer + state chain entirely). This is another ProcessEvent call if it's a
+  reflected AS UFunction; another `MtStartPodGameplay`-style extension to the arm.
+- **Compose forward** — even with the descent unresolved, the mount+static-ride path IS solid
+  enough to consider chaining to the S132 dismount for a "cinematic flight-and-dismount" hybrid
+  (per §6.10 fallback plan): the hero WOULD be visibly mounted on the horizontal cruise, dismount
+  at any chosen landing actor, land on real terrain, and be `play`-drivable. This gets us to
+  "playable hero via a driven drop" WITHOUT needing the descent to work.
 
 
 
