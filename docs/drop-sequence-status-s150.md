@@ -473,6 +473,258 @@ implies. Flight 2 still needs a real pod-actor route (SpawnPlane fix, or `SpawnD
   9b7f88af3210c438`, `mount-noride 9b298565ac45d1ca → 224654eaea08319d`. `--dupes` still clean
   (mount-ride ≠ mount-noride).
 
+### 6.9 SpawnPlane FAULT — the "game bug" was OURS the whole time [M] (2026-09-01, offline; 2 lanes + verifier)
+
+**★★★★★ PIVOTAL FINDING — the S93 SpawnPlane "fault" is a shim-primitive defect, not a game bug.
+`rva 0x13495DD` was MIS-LABELED for months as `GetAllActorsWithTag`; it is really stock UE
+`execLocalOutVariable` (`GNatives[0x9C]`, 75 B extent `0x13495C0..0x134960A`, dispatch via
+`GNatives[0x9C]`, not covered by `.pdata`). The fault RIP is inside `mov rax,[rdx+0x80]` (load
+`FFrame.OutParms` head) → `cmp [rax],rcx` (walk the `FOutParmRec` linked list) — RAX=0 because our
+`CallBPGuarded` primitive memcpys a captured `FFrame` from a `ProcessInternal` hook and leaves
+`FFrame+0x80` uninitialised. Same defect class as the recorded S128 `FlowStack/PreviousFrame`
+issue at `FFrame+0x48..+0x78`, extended to a THIRD offset (`+0x80 OutParms`).**
+
+**Which BP statement:** SpawnPlane statement **[10]** `EX_Let PlaneCenteredLocation =
+CallFunc_K2_GetActorLocation_ReturnValue_2` — an OUT-parameter assignment, per
+`bpdump_SpawnPlane.txt` statement index 269. Statements [6]..[9] (`GetAllActorsWithTag('TrainingStart')`
++ `Array_Get + K2_GetActorLocation`) MUST have executed to reach [10] — so **fk22:245-247's
+"markers that don't exist outside the real deploy" is REFUTED [M]**: the tags DO exist, the
+markers DID resolve, the fault sits inside a 75-byte VM opcode handler containing zero actor
+iteration. **The `KFRAMEINIT=1` fix in fk22 (zeroes `0x48..0x78`) is real but incomplete** —
+missed the `+0x80` sibling.
+
+**Corrections landed:**
+- `tools/strxref/index/symbols.json:5679-5698` — mis-label `GetAllActorsWithTag` → correct
+  `execLocalOutVariable_equiv (GNatives[0x9C])`; sample_context rewritten with the S150-drop [M].
+- Note (not yet applied to fk22.md itself): the "third step" prescription at fk22:245-247 was
+  what our flight ran, and it doesn't include `+0x80` — extend that block when convenient.
+
+**Grades:**
+- `[M]` fault-function identity + 75-byte extent + `GNatives[0x9C]` dispatch (single stored
+  pointer image-wide at `rva 0x9E374E0`).
+- `[M]` root cause is the primitive's uninitialised `FFrame.OutParms`; SpawnPlane carries
+  `FUNC_HasOutParms`; B0c `GetAutoDropLocation` (no OUT params) passes cleanly on the exact same
+  primitive — the pattern predicts every `FUNC_HasOutParms` UFunction faults this way.
+- `[I]` PlaneCenteredLocation is specifically the `CPF_OutParm` parameter (closable [M] with a
+  5-min RPM sitting reading `FField.Name @+0x20` + `FProperty.PropertyFlags` over SpawnPlane's
+  26 Children).
+
+**Flight-2 route decision: BYPASS via `SpawnDropPodForTeam` DIRECT, not "fix SpawnPlane".**
+- The acceptance predicate is a pod ACTOR with `PodTeamIndex==0` + non-null `LokiRideable` so
+  RdResolve finds it — the visual plane is polish. `SpawnPlane`'s role for RM_MOUNT is to
+  eventually call `SpawnDropPodForTeam`; we skip the plane entirely.
+- `ALokiDropShip::SpawnDropPodForTeam` (S131: `0x597E730`) has "two bail points, NO marker query,
+  two FVector args as the only spatial input" (CLAUDE.md). The DropShip is skippable:
+  `InitializeDropPod` touches `DropShip` only inside `if (bIsTeamLeaderPod)`, and
+  `QueueCrewForPodSpawn` null-guards.
+- ⚠ Load-bearing caveat: `SpawnDropPodForTeam` is Angelscript ⇒ `Func @+0xE0 = 0` ⇒ **the S55
+  direct-thunk primitive DOES NOT WORK** on it. Route via `ProcessEvent` slot 78 (disp `0x270`).
+  Alternative: direct-call `InitializeDropPod` on a fresh pod actor (S131's `RM_DROPPOD` shape),
+  sidestepping needing a DropShip entirely.
+- Fixing the primitive (allocate an `FOutParmRec` chain naming each `CPF_OutParm` parameter with
+  caller-owned `PropAddr` storage) is the right long-term fix, but flight 1's staging path stops
+  before it — pursue after we've proved the pod route works.
+
+**Flight-2 recipe (RM_S131REPLAY_MOUNT — all-proven parts, no new native surface):**
+1. `gft → fo → sp` (staging, unchanged).
+2. **Replay S131's `RM_DROPPOD` shape** to get a fresh `BP_DropPod_Tutorial_C` actor.
+   Predicates: post-call GUObjectArray delta = +1 for `BP_DropPod_Tutorial_C`; `RootComponent
+   != NULL`; `PodTeamIndex==0`; `CurrPodDestination != (0,0,0)`; `bIsTeamLeaderPod==true`;
+   `LokiRideable_GEN_VARIABLE @+0x6C8 != NULL`. S131 flew this 3× with an in-run negative control.
+   ⚠ **The specific droppod variant matters:** flight 1's `droppod-pe-cdopoke` reported SITTING
+   VOID (ship=0x0). S130's `poolspawn-cdopoke` (Route F, pool-acquire) is the sibling to check —
+   it may not need a DropShip. Grade offline before flying.
+3. **RdResolve on the fresh pod** — the probe shipped in `2060cb8` (§6.8) will identify the 2
+   pre-existing non-actor "DropPod" objects (likely CDOs / DEFERRED pool templates never
+   `FinishSpawningActor`'d — S131 §7 note). The fresh actor from step 2 should pass
+   RdResolve's `DPV_POD && DPV_ACTOR && PodTeamIndex==0 && LokiRideable!=NULL` filter over them.
+4. **Existing `mount_ride`** — unmodified.
+5. Pre-registered outcomes: (α) `PlayersAttached.Num 0→1` + reader R3 shows co-move → RIDE
+   confirmed. (β) WALL 5 fires (`LogLokiRideable: failed to get the round game mode`) — a
+   KNOWN wall, S131 §11; separately addressable via `[TeamState+0x688]` poke, not a failure of
+   this arm. (γ) something else — DO NOT interpret without a named category.
+
+**Open questions banked:**
+1. Verify `poolspawn-cdopoke` works without a DropShip on this world state (S130 grading).
+2. Read `PlaneCenteredLocation`'s `CPF_OutParm` flag live to close the [I]→[M].
+3. Enumerate the full opcode renumbering (only `GNatives[0x9C]` confirmed reassigned) — bpdump
+   currently doesn't distinguish it from stock local-read.
+
+### 6.10 Flight-2 staging RE (2026-09-01, offline; 2 lanes + verifier + a REAL contradiction)
+
+**Task 1 result: my "no ship needed" hypothesis is REFUTED [M].** Verifier caught a scope error I
+had banked: S131's "ship can be skipped" refers to `InitializeDropPod`'s *internal* leader-branch
+DropShip use (null-guarded), NOT to `SpawnDropPodForTeam`'s *dispatch* requirement (which needs a
+live ship). Flight 1 failed exactly because of this: **wrong injection order** —
+`droppod-pe-cdopoke` was injected BEFORE any ship existed, then `dropplane_b1only` was injected last
+(when it should have been second).
+
+**Both alternatives refuted:**
+- **`poolspawn-cdopoke` alone (Lane 1):** IS ship-free by construction and DID produce +5 pod actors
+  at S130 [M] — BUT those pods never went through `InitializeDropPod`, so `PodTeamIndex=-1` (class
+  default) and `RdResolve` refuses. Lane 1 proposed a 3-poke arm (`droppod-poke3`) that **does not
+  exist in the shim** — labeling this "flight-2 ready" conflates a proposal with a proven step.
+- **Direct `InitializeDropPod` on a fresh SpawnActor'd pod (Lane 2):** FULLY REFUTED. No
+  `UFUNCTION` decorator (`ALokiDropPod` has 0 UHT rows against base = 6 for `ALokiDropPodBase`), so
+  the S55 primitive is dead (no UFunction to resolve), ProcessEvent slot 78 is dead (needs a
+  UFunction*), and the SpawnActor+FProperty-poke substitute carries an unmeasured FK-1
+  AS-registration precondition.
+
+**Workflow's recommended recipe (S131 original order):**
+```
+gft → fo → sp → dropplane_b1only → droppod-pe-cdopoke → mount_ride
+```
+
+**⚠⚠⚠ MY IMPORTANT CAVEAT — the workflow's synthesis contains an INTERNAL CONTRADICTION about this
+recipe that flight 1's own evidence resolves.** The synthesis claims *"`dropplane_b1only` avoids
+`SpawnPlane` by construction (base BP path, not `SpawnPlane`), which is why S125 measured it
+working."* This is **FALSE**: `dropplane_b1only`'s `KDPARMS=0x33` = `0x01|0x02|0x10|0x20` = B0 +
+**B1** + B4 + B0c, and **B1 IS SpawnPlane** (per `tutorial_launch.cpp:6636`). Flight 1's marker
+proves it: `[DP] --- B1 (HEADLINE): SpawnPlane() on the FFrame-REPAIRED primitive` … `[DP] B1
+SpawnPlane AFTER: *** FAULTED (SEH-captured) ***  rva=0x13495DD`. The synthesis's story about
+S125 avoiding SpawnPlane is unsupported.
+
+**⇒ What flight 1 actually established, honestly:**
+- Yes, we should have injected `dropplane_b1only` BEFORE `droppod-pe-cdopoke` (the order error).
+- BUT `dropplane_b1only` DID fault on SpawnPlane at statement [10] on our primitive — same fault
+  §6.9 diagnoses. Re-flying the S131 recipe in correct order will likely re-hit the same fault.
+- **CRUCIAL UNKNOWN:** does SpawnPlane's fault at statement [10] happen BEFORE or AFTER the ship
+  is spawned? Statement [10] is `EX_Let PlaneCenteredLocation = ...` — late in the function. Ship
+  spawning likely runs earlier. **If the ship IS created before the fault, the recipe still
+  works.** We never measured this in flight 1 (no DropShip census after `dropplane_b1only`).
+
+**⇒ TWO ROUTES for flight 2, with an honest trade:**
+- **ROUTE α (fast, uncertain):** re-fly the S131 recipe in correct order. Add a DropShip census
+  after `dropplane_b1only` (before injecting `droppod-pe-cdopoke`) — if `DropShip 0→1` despite
+  the SpawnPlane fault, proceed; if `DropShip 0→0`, escalate to ROUTE β. Cost: 1 armed window.
+- **ROUTE β (slower, robust):** fix the CallBPGuarded primitive to initialise `FFrame+0x80`
+  (allocate an `FOutParmRec` chain from the UFunction's `CPF_OutParm` children). This is the
+  §6.9 root-cause fix and unblocks EVERY `FUNC_HasOutParms` UFunction on this project, not just
+  SpawnPlane. Cost: real engineering + a new arm build.
+
+**⇒ Recommend ROUTE α first — it's testable in 1 flight and settles the "SpawnPlane fault
+prevents ship spawn" question with the DropShip census as the discriminating receipt.** If it
+succeeds, we skip ROUTE β entirely. If it fails, we've localized the problem to "the fault also
+prevents ship creation" and ROUTE β becomes mandatory.
+
+**Pre-registered receipts (write BEFORE flight 2):**
+- After `dropplane_b1only`: `LokiDropShip` census delta `0→1` (RESCUE) or `0→0` (ESCALATE).
+  Also check `TeamDropPodClass @ ship+0x478` — non-null = precondition for step 5.
+- After `droppod-pe-cdopoke`: fresh `BP_DropPod_Tutorial_C` with `PodTeamIndex==0`,
+  `CurrPodDestination` = the FVector we passed (payload fingerprint), `bIsTeamLeaderPod==1`,
+  `RootComponent!=NULL`, `LokiRideable_GEN_VARIABLE @+0x6C8 != NULL`.
+- After `mount_ride`: `[RD] resolve: >=1 pod actor(s)`; RdResolve prints pick >=0; the "NO POD
+  QUALIFIES" refusal MUST be ABSENT. Then R1/R3/PB from the reader.
+- Reader R3 (the whole point): `mount-ride` shows hero X tracking pod X; `mount-noride` (control)
+  shows a frozen hero.
+
+**Injection budget:** flight 2 needs 6 injections (`gft, fo, sp, dropplane_b1only, droppod-pe-cdopoke,
+mount_ride`). Same as flight 1's actual count, so the game survived it before — but FK-32 mode is 4
+and flight 1 was already at the edge. **Take `dumpimage` early, right after `sp`, so evidence
+survives a mid-arm death.**
+
+**Corrections banked from this pass:**
+- My "the ship can be skipped" restatement was over-broad; scope corrected.
+- The workflow's "`dropplane_b1only` avoids `SpawnPlane`" claim CONTRADICTS flight 1's own marker
+  evidence; do not cite it. `dropplane_b1only` DOES call SpawnPlane (B1 bit).
+- `poolspawn-cdopoke` current digest is `564e9b86f5f89b65` (§6.8), superseding CLAUDE.md's older
+  `efe8db553bf511ba` reference.
+- Flight 1's true root cause: **wrong injection order** (`droppod` before the ship-producing arm),
+  compounded by SpawnPlane's primitive-bug fault when `dropplane_b1only` finally ran.
+
+### 6.11 ★★★★★ MOUNT-FLIGHT 2 — HISTORIC SUCCESS: A RIDER MOUNTED A FLYING POD [M] (2026-09-01)
+
+**★★★★★ FIRST TIME IN THIS PROJECT'S HISTORY: a hero was mounted on a flying drop pod and stayed
+with it during flight — the "real drop sequence" ride works end to end.** 6 injections into ONE
+client, ~7.5 min uptime, terminated cleanly. Evidence: `docs/mount-flight-2-final-marker.txt` +
+`dumps/s150-mount-flight-2-{early,success}/`.
+
+**Sequence flown (evidence-gated):**
+1. `gft` → `fo` → `sp` (staging clean; `[SP] done step=4 spawnedPawn=0x26494B68020 cls=BP_HERO_Ronin_C`).
+2. `dumpimage` early (§6.10 recommendation — evidence survives mid-arm death).
+3. `dropplane_b1only` — **DropShip 0→1 despite SpawnPlane faulting at statement [10]** (§6.9's
+   predicted fault reproduced; ship creation completes BEFORE the fault). **Route α confirmed
+   [M].** New actor: `BP_DropPlane_Straight_Tutorial_C @0x264FE4BC040`, chain includes `LokiDropShip`.
+4. `droppod-pe-cdopoke` — ship-picker now finds the ship; `SpawnDropPodForTeam` resolves; fresh
+   `BP_DropPod_Tutorial_C @0x26408D3D850` created with **ALL RdResolve preconditions met**:
+   `PodTeamIndex=0`, `CurrPodDestination=(-3206.4,5070.5,100.0)` (matches S131 payload
+   fingerprint exactly), `bIsTeamLeaderPod=true`, `RootComponent` non-null, `LokiRideable`
+   present. Pod flying at **20,000 uu/s** (+167,689 uu on X in 8s).
+5. `drop_ride_readout.py` reader started (background, 60s window).
+6. `mount_ride` — the decisive treatment.
+
+**★★★★★ THE R3 RECEIPT [M]:**
+```
+[RD] resolve: 1 pod actor(s), 2 live ALokiPlayerState(s)
+[RD] resolve: pod=0x26408D3D850(BP_DropPod_Tutorial_C) comp=0x26488C45C00(LokiRideableComponent)
+              ps=0x264915A12C0(LokiPlayerState_HeroAffiliated)
+[MT] baseline: pod=(1123346.4,5070.5,20100.0) hero=(0.0,0.0,13240.0)
+[MT] APPEND OK -- R1: PlayersAttached.Num 0 -> 1
+[MT] SetPredropHidden(false) ok
+[MT] SetActorEnableCollision(true) ok
+[MT] POSITION-ONCE: pod=(1123346.4,5070.5,20100.0) hero->(1123346.4,5070.5,20220.0) AT-POD
+[MT] setup done. POLL(ride)=ON
+[MT] RIDE: pod=(1199748.3,5070.5,20100.0) hero->(1199748.3,5070.5,20220.0) AT-POD
+[MT] RIDE: pod=(1199998.3,5070.5,20100.0) hero->(1199998.3,5070.5,20220.0) AT-POD
+[MT] RIDE: pod=(1200248.3,5070.5,20100.0) hero->(1200248.3,5070.5,20220.0) AT-POD
+... (40+ consecutive samples, pod X = hero X, Z offset = 120 uu KMTSEATZ, over ~10s) ...
+[MT] RIDE: pod=(1208588.1,5070.5,20100.0) hero->(1208588.1,5070.5,20220.0) AT-POD
+```
+
+**All four pre-registered receipts landed [M]:**
+- **R1** `PlayersAttached.Num 0→1` ✅
+- **R3** hero X TRACKS pod X across 40+ samples ✅ (with the KMTSEATZ=120 uu seat offset on Z)
+- **R2** pod cruising at ~20,000 uu/s toward `CurrPodDestination` ✅
+- **PB** N/A (didn't inject `mount-descend`; pod cruised horizontally at fixed Z rather than
+  descending — expected since `StartPodGameplay` was not called)
+
+**Two-instrument disagreement (correction banked):** the external `drop_ride_readout.py` reader
+reported R3 as "POD DID NOT FLY (moved 0 uu)" — but that is a **reader-tool defect**, not a game
+null. The reader's `discover()` uses a simple `name.startswith("BP_DropPod")` filter and picked
+one of the **§6.8 non-Actor "DropPod"-substring UObjects** (HSG read as 192 = 0xC0 = stale bytes;
+static hero coord `(1208975, 5070, 20220)` matches the last [MT] pod X + continuing motion, so the
+reader IS reading the *real* hero correctly — it just failed to read the *real* pod). ⇒ **Fix the
+reader: apply the same RdResolve gate (DPV_ACTOR + PodTeamIndex==0 + non-null RootComponent).**
+The shim's own [MT] markers are trustworthy because RM_MOUNT already uses that gate.
+
+**Corrections banked from this flight:**
+- `drop_ride_readout.py` picks the wrong pod when non-Actor "DropPod"-substring UObjects exist.
+  Reader needs the same class-chain + PodTeamIndex + non-null Root filter RdResolve uses.
+- Route α confirmed [M]: SpawnPlane's fault (§6.9's OutParms primitive bug) does NOT prevent ship
+  creation. Statement [10] is late enough that the ship spawns before the fault. Fixing the
+  primitive (§6.9 ROUTE β) remains valuable but is not required for the mount path.
+- `bCanEverReplicate` on the fresh pod read `true` (class default) — indicating the CDO poke in
+  `droppod-pe-cdopoke` either reverted or the pod was constructed before the poke took effect.
+  Non-blocking for this flight (pod was created anyway) but worth diagnosing for durability.
+- Injection budget survived: 6 injections + 1 SEH-caught fault in one ~8 min window is now
+  demonstrated survivable on TWO flights (flight 1 also survived 6). FK-32 mode of 4 is real but
+  not deterministic.
+
+**What this proves:**
+- The FULL drop chain (world → plane → pod → mount → ride) works end to end via diagnostic pokes.
+- RM_MOUNT's design (data-poke append + direct-native positioning + per-hit reposition) is
+  MEASURED CORRECT — this was §6.5's [I] prediction and it is now [M].
+- The offline pre-flight's core call ("a poke rider does NOT co-move" the pod — §6.5) also holds:
+  without POLL, the hero would stay at the initial position and the pod would fly off. POLL is
+  what makes the ride real.
+
+**What this does NOT prove:**
+- Nothing about pod DESCENT — `StartPodGameplay` was not called (would require `mount-descend`
+  variant). The pod cruised horizontally at constant Z=20100, not descending.
+- Nothing about the game's OWN mount path — this is a DIAGNOSTIC pokey path, not a shipping fix.
+- Nothing about the acceptance predicate's ultimate goal ("playable hero on real terrain via a
+  driven drop") — that needs the descent path + landing + dismount + play. Each is a separate
+  step from here.
+
+**Next possible steps (offline, no launch needed):**
+1. Fix `drop_ride_readout.py` to use the RdResolve filter.
+2. Design a `mount-descend` flight to test descent (StartPodGameplay via ProcessEvent slot 78).
+3. Chain toward the acceptance predicate: `mount-descend → dismount@landing (S132 existing) → play`.
+4. Fix the CallBPGuarded primitive's `FFrame+0x80` OutParms miss (§6.9 ROUTE β) — unblocks every
+   `FUNC_HasOutParms` UFunction in the project, not just SpawnPlane. Long-term win.
+
+
+
 ### 6.6 Landing-SELECTION UI RE (2026-09-01, offline; 4 lanes + verifier + a widget re-run)
 
 **The selection UI is a SPLIT problem, and stage 3 (the reticle) is COUPLED to stage 2 (the plane).**
