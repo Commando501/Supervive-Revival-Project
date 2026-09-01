@@ -1,0 +1,491 @@
+{
+    "schema":  "s150-successor-historical-baseline/v1",
+    "status":  "HISTORICAL_EVIDENCE_ONLY",
+    "recordedUtc":  "2026-08-31T19:35:27.9000249Z",
+    "flight2":  {
+                    "label":  "s150captureflight2-20260829-192619",
+                    "generationD":  "9135172a-a73b-4cc8-bac2-c9fcbbe93aa1",
+                    "generationN":  "9135172aa73b4cc8bac2c9fcbbe93aa1",
+                    "intendedLocalDate":  "2026-08-29"
+                },
+    "neutralInputs":  [
+                          {
+                              "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\superpowers\\specs\\2026-08-29-s150-successor-watcher-output-ownership-design.md",
+                              "size":  29410,
+                              "sha256":  "07C0CF46D123E911A779AB61A63262AA8225B07CE7AB2FDB0490D546585717C9",
+                              "creationUtcTicks":  639236620226972075,
+                              "lastWriteUtcTicks":  639236625008080469,
+                              "attributes":  "Archive"
+                          },
+                          {
+                              "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\superpowers\\plans\\2026-08-30-s150-successor-neutral-boundaries.md",
+                              "size":  209086,
+                              "sha256":  "8B886E59DAF0D99D08622AF0376688747DEEC5F9B2E74A8EE70DA7B2FCC874FE",
+                              "creationUtcTicks":  639236695069691185,
+                              "lastWriteUtcTicks":  639236755429079339,
+                              "attributes":  "Archive"
+                          }
+                      ],
+    "baselinePathWasAbsentBeforeCreate":  true,
+    "neutralPathAbsences":  {
+                                "docs\\s150-successor-historical-baseline.receipt.json":  true,
+                                "docs\\s150-successor-neutral-offline-audit.json":  true,
+                                "configs\\s150-successor-evidence.ps1":  true,
+                                "tools\\sigbypass-mod\\tests\\s150_successor_watcher_envelope_test.ps1":  true,
+                                "tools\\sigbypass-mod\\tests\\s150_successor_output_ownership_test.ps1":  true,
+                                "tools\\sigbypass-mod\\tests\\s150_successor_controller_contract_test.ps1":  true,
+                                "tools\\sigbypass-mod\\tests\\fixtures\\s150_output_writer_fixture.cpp":  true,
+                                "tools\\sigbypass-mod\\tests\\fixtures\\s150_output_fake_launcher.ps1":  true,
+                                "docs\\s150-successor-neutral-evidence.md":  true,
+                                "docs\\s150-successor-neutral-implementation-review.md":  true,
+                                "docs\\s150-successor-neutral-evidence-review.md":  true,
+                                "tools\\sigbypass-mod\\build\\s150-successor-neutral-output-tests":  true,
+                                "tools\\sigbypass-mod\\build\\s150-successor-neutral-behavior-tests":  true,
+                                "server\\build\\s150-successor-neutral-backend-a":  true,
+                                "server\\build\\s150-successor-neutral-backend-b":  true,
+                                "tools\\sigbypass-mod\\build\\s150-successor-neutral-recovery-a":  true,
+                                "tools\\sigbypass-mod\\build\\s150-successor-neutral-recovery-b":  true,
+                                "tools\\sigbypass-mod\\build\\s150-successor-neutral-regression-natural":  true,
+                                "tools\\sigbypass-mod\\build\\s150-successor-neutral-regression-botai":  true,
+                                "tools\\sigbypass-mod\\build\\s150-successor-neutral-regression-play":  true
+                            },
+    "scopedDirtyTreePreState":  {
+                                    "command":  "git status --porcelain=v1 -uall --",
+                                    "paths":  [
+                                                  "configs\\launch-redirect.ps1",
+                                                  "docs\\superpowers\\specs\\2026-08-29-s150-successor-watcher-output-ownership-design.md",
+                                                  "docs\\superpowers\\plans\\2026-08-30-s150-successor-neutral-boundaries.md",
+                                                  "docs\\s150-successor-historical-baseline.json",
+                                                  "docs\\s150-successor-historical-baseline.receipt.json",
+                                                  "docs\\s150-successor-neutral-offline-audit.json",
+                                                  "configs\\s150-successor-evidence.ps1",
+                                                  "tools\\sigbypass-mod\\tests\\s150_successor_watcher_envelope_test.ps1",
+                                                  "tools\\sigbypass-mod\\tests\\s150_successor_output_ownership_test.ps1",
+                                                  "tools\\sigbypass-mod\\tests\\s150_successor_controller_contract_test.ps1",
+                                                  "tools\\sigbypass-mod\\tests\\fixtures\\s150_output_writer_fixture.cpp",
+                                                  "tools\\sigbypass-mod\\tests\\fixtures\\s150_output_fake_launcher.ps1",
+                                                  "docs\\s150-successor-neutral-evidence.md",
+                                                  "docs\\s150-successor-neutral-implementation-review.md",
+                                                  "docs\\s150-successor-neutral-evidence-review.md",
+                                                  "tools\\sigbypass-mod\\build\\s150-successor-neutral-output-tests",
+                                                  "tools\\sigbypass-mod\\build\\s150-successor-neutral-behavior-tests",
+                                                  "server\\build\\s150-successor-neutral-backend-a",
+                                                  "server\\build\\s150-successor-neutral-backend-b",
+                                                  "tools\\sigbypass-mod\\build\\s150-successor-neutral-recovery-a",
+                                                  "tools\\sigbypass-mod\\build\\s150-successor-neutral-recovery-b",
+                                                  "tools\\sigbypass-mod\\build\\s150-successor-neutral-regression-natural",
+                                                  "tools\\sigbypass-mod\\build\\s150-successor-neutral-regression-botai",
+                                                  "tools\\sigbypass-mod\\build\\s150-successor-neutral-regression-play"
+                                              ],
+                                    "canonicalEncoding":  "UTF-8 no BOM; LF join; no trailing LF",
+                                    "lines":  [
+                                                  " M configs/launch-redirect.ps1",
+                                                  "?? docs/superpowers/plans/2026-08-30-s150-successor-neutral-boundaries.md",
+                                                  "?? docs/superpowers/specs/2026-08-29-s150-successor-watcher-output-ownership-design.md"
+                                              ],
+                                    "sha256":  "BE245AE8986C3A24A6007AA67EAC7BFFE55398F962A6D0CA30561C243130E0F3"
+                                },
+    "pinnedPreState":  [
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\superpowers\\specs\\2026-08-29-s150-flight2-zero-runtime-recovery-design.md",
+                               "size":  15134,
+                               "sha256":  "99AB86DB7EC6FEC240FCA4BC7F94A5012D19C49B21BEA0DAFA61BB71C6CBC584",
+                               "creationUtcTicks":  639236462382980807,
+                               "lastWriteUtcTicks":  639236462892492222,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\superpowers\\plans\\2026-08-29-s150-flight2-zero-runtime-recovery.md",
+                               "size":  129682,
+                               "sha256":  "EF822CB4C3A59CBB0C6C22CCF994DD015C06D17DB0311F8910CC03945EFC3A81",
+                               "creationUtcTicks":  639236467123756777,
+                               "lastWriteUtcTicks":  639236535144119751,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\.superpowers\\sdd\\2026-08-27-s150-capture-generation\\s150-flight2-controller.ps1",
+                               "size":  127309,
+                               "sha256":  "BA6DE0EC5E63CF5064B254EB4BE008986746B377434D391295A8E22D3664BC09",
+                               "creationUtcTicks":  639236511556212455,
+                               "lastWriteUtcTicks":  639236525813347591,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\.superpowers\\sdd\\2026-08-27-s150-capture-generation\\s150-flight2-controller-test.ps1",
+                               "size":  100622,
+                               "sha256":  "BE7E6BF6C1085F3F8863ADD31334C34F68E8740DC26FDC606A05A2D0BEE1EAD6",
+                               "creationUtcTicks":  639236510635201024,
+                               "lastWriteUtcTicks":  639236527059309961,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\.superpowers\\sdd\\2026-08-27-s150-capture-generation\\s150-flight2-review-manifest.json",
+                               "size":  22045,
+                               "sha256":  "83B37B42C1D07B23ECD7F019CFE5396CE4B79A98FDB6ED1967DCFF3AFE92E601",
+                               "creationUtcTicks":  639236537248310379,
+                               "lastWriteUtcTicks":  639236537248430390,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\.superpowers\\sdd\\2026-08-27-s150-capture-generation\\task-5-controller-report.md",
+                               "size":  49213,
+                               "sha256":  "81AA7CFFC1E981DBF1299D294E7EA37AE2BB1665CA97161A2AF1AAEA6282D077",
+                               "creationUtcTicks":  639234662471725675,
+                               "lastWriteUtcTicks":  639236548753785028,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\s150-flight2-recoverlaunch-terminal-watcher-refusal.md",
+                               "size":  17543,
+                               "sha256":  "978AFACEAC1EDF2C8B0BFC9E24C75B126E975BEE768BB154418215D89CBB2021",
+                               "creationUtcTicks":  639236578337123517,
+                               "lastWriteUtcTicks":  639236581836801171,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\s150-flight2-postfailure-audit.json",
+                               "size":  1131,
+                               "sha256":  "EA721DBA7BEAFD48411A1776EC9420199F966397589F5A761895BA8889E515FF",
+                               "creationUtcTicks":  639236581629939140,
+                               "lastWriteUtcTicks":  639236581629939140,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\configs\\s149-bind-gate.ps1",
+                               "size":  42464,
+                               "sha256":  "14FA776F414A245A71C53657B4153B662801C3F7F3988E5ED4ED56E8F5B67CAA",
+                               "creationUtcTicks":  639233193817524253,
+                               "lastWriteUtcTicks":  639233269595331836,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\configs\\s150-capture-generation.ps1",
+                               "size":  39391,
+                               "sha256":  "50EE8181516D5EBA5698B50FD16942A75A4856FE5DC98F7DDD2275767B181866",
+                               "creationUtcTicks":  639234568451015385,
+                               "lastWriteUtcTicks":  639234605658903966,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\usmapdump\\usmapdump.exe",
+                               "size":  3988480,
+                               "sha256":  "6DAA73BF7238C0A0D91490CA10C38096F88CAA3841C333BBA89B8C55A57B2FCF",
+                               "creationUtcTicks":  639233175069854815,
+                               "lastWriteUtcTicks":  639233175069904819,
+                               "attributes":  "Archive"
+                           },
+                           {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\configs\\launch-redirect.ps1",
+                               "size":  37367,
+                               "sha256":  "A07631BB953E2D3187126BA11B179A2461A1493213DAD46645E50B02CA8E7B2D",
+                               "creationUtcTicks":  639233152032860282,
+                               "lastWriteUtcTicks":  639234605792799709,
+                               "attributes":  "Archive"
+                           }
+                       ],
+    "preexistingIdentityNamespaces":  {
+                                          "retirementDirectories":  [
+                                                                        "s150-retirement-s150captureflight1-20260827-164413",
+                                                                        "s150-retirement-s150captureflight2-20260829-192619"
+                                                                    ],
+                                          "dumpDirectories":  [
+                                                                  "crash-s150captureflight1-20260827-164413",
+                                                                  "crash-s150captureflight2-20260829-192619"
+                                                              ]
+                                      },
+    "preexistingIdentityArtifacts":  {
+                                         "ledgerDirectoryPath":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\s149-ledgers",
+                                         "ledgerDirectoryExists":  false,
+                                         "ledgerJsonPaths":  [
+
+                                                             ],
+                                         "runtimeReceiptPaths":  [
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/crashwatch.stderr.log",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/crashwatch.stdout.log",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-child.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-cleanup-result.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-invoked.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-result.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-result.receipt.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher.stderr.log",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher.stdout.log",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/recoverlaunch-invoked.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/recovery-handoff.json"
+                                                                 ],
+                                         "identityLabeledPaths":  [
+                                                                      "docs/s150-retirement-s150captureflight1-20260827-164413",
+                                                                      "docs/s150-retirement-s150captureflight1-20260827-164413/capture-archive",
+                                                                      "docs/s150-retirement-s150captureflight1-20260827-164413/prior-watcher-output-manifest.json",
+                                                                      "docs/s150-retirement-s150captureflight1-20260827-164413/stager-planonly.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/capture-archive",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/capture-archive/9135172aa73b4cc8bac2c9fcbbe93aa1-capture.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/capture-archive/9135172aa73b4cc8bac2c9fcbbe93aa1-capture.log.prev",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/crashwatch.stderr.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/crashwatch.stdout.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-child.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-cleanup-result.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-invoked.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-result.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-result.receipt.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher.stderr.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher.stdout.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/prior-server.out.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/recoverlaunch-invoked.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/recovery-handoff.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/stager-planonly.json",
+                                                                      "dumps/crash-s150captureflight1-20260827-164413",
+                                                                      "dumps/crash-s150captureflight2-20260829-192619"
+                                                                  ],
+                                         "identityControlTraversalExclusions":  {
+                                                                                    "codegraphIndex":  {
+                                                                                                           "path":  ".codegraph",
+                                                                                                           "type":  "Directory",
+                                                                                                           "attributes":  "Directory",
+                                                                                                           "directEntryNames":  [
+                                                                                                                                    ".gitignore"
+                                                                                                                                ]
+                                                                                                       },
+                                                                                    "gitMetadata":  {
+                                                                                                        "path":  ".git",
+                                                                                                        "type":  "File",
+                                                                                                        "attributes":  "Hidden, Archive"
+                                                                                                    }
+                                                                                },
+                                         "identityControlObservedPaths":  [
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight1-controller-test.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight1-controller.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-controller-test.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-controller.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-review-manifest.json",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/task-5-controller-report.md",
+                                                                              "docs/s150-retirement-s150captureflight1-20260827-164413/prior-watcher-output-manifest.json"
+                                                                          ],
+                                         "identityControlArtifactPaths":  [
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight1-controller-test.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight1-controller.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-controller-test.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-controller.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-review-manifest.json",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/task-5-controller-report.md",
+                                                                              "docs/s150-retirement-s150captureflight1-20260827-164413/prior-watcher-output-manifest.json"
+                                                                          ],
+                                         "neutralControllerContractTestPath":  "tools/sigbypass-mod/tests/s150_successor_controller_contract_test.ps1",
+                                         "neutralControllerContractTestPathWasAbsent":  true
+                                     },
+    "runtimeRepoIdentityBoundary":  {
+                                        "root":  "G:\\git\\Supervive Revival Project",
+                                        "docs":  "G:\\git\\Supervive Revival Project\\docs",
+                                        "ledgerDirectory":  "G:\\git\\Supervive Revival Project\\docs\\s149-ledgers",
+                                        "ledgerJsonPaths":  [
+
+                                                            ],
+                                        "s150RuntimeEvidencePaths":  [
+
+                                                                     ]
+                                    },
+    "preEditLauncherRaw":  {
+                               "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\configs\\launch-redirect.ps1",
+                               "size":  37367,
+                               "sha256":  "A07631BB953E2D3187126BA11B179A2461A1493213DAD46645E50B02CA8E7B2D",
+                               "bomHex":  "EF BB BF",
+                               "crlfCount":  425,
+                               "loneLfCount":  222,
+                               "loneCrCount":  0,
+                               "base64":  "77u/PCMNCi5TWU5PUFNJUw0KICBSZWRpcmVjdCB0aGUgU1VQRVJWSVZFIGNsaWVudCdzIGRlYWQgYmFja2VuZHMgdG8gb3VyIGxvY2FsIGNvbW11bml0eSBzZXJ2ZXIgYW5kDQogIGxhdW5jaCB0aGUgZ2FtZS4NCg0KLkRFU0NSSVBUSU9ODQogIEFmdGVyIHRoZSBvZmZpY2lhbCBzZXJ2ZXJzIHdlcmUgcmV0aXJlZCB0aGUgY2xpZW50IGNhbm5vdCBsb2cgaW4uIFJlY29uIG9mIHRoZQ0KICBjbGllbnQgKExva2kubG9nKSBzaG93cyB0aHJlZSBiYWNrZW5kczoNCg0KICAgIDEuIEFjY2VsQnl0ZSAoSUFNL3BsYXRmb3JtL2Jhc2ljKSAtIHJlZGlyZWN0ZWQgdmlhIFVFIC1pbmk6IG92ZXJyaWRlcyB0bw0KICAgICAgIGh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC4gKFRoaXMgYWxyZWFkeSB3b3Jrcy4pDQogICAgMi4gYWNjb3VudHMucHJvamVjdGxva2kudGhlb3J5Y3JhZnRnYW1lcy5jb20gLSBUaGVvcnljcmFmdCdzIG93biBhdXRoIGhvc3QNCiAgICAgICB0aGF0IHRoZSBTdGVhbSBsb2dpbiBhY3R1YWxseSBjYWxscy4gSG9zdCByZWNvcmQgaXMgZ29uZSAoTlhET01BSU4pLCBzbw0KICAgICAgIGxvZ2luIGhhbmdzICgiQXV0aCBGYWlsdXJlIDE0MDA1IikuIFJlZGlyZWN0ZWQgaGVyZSB2aWEgdGhlIGhvc3RzIGZpbGUuDQogICAgMy4gY2xpZW50LWNvbmZpZy1qeC1wcm9kLi4udGhlb3J5Y3JhZnRnYW1lcy5jb20gLSBmZWF0dXJlLWZsYWcgY29uZmlnIChub24NCiAgICAgICBmYXRhbCkuIEFsc28gcmVkaXJlY3RlZCB2aWEgdGhlIGhvc3RzIGZpbGUuDQoNCiAgSG9zdHMgIzIvIzMgdXNlIEhUVFBTIHdpdGggbGliY3VybCBiVmVyaWZ5UGVlcj10cnVlLCBzbyB3ZSBhcHBlbmQgb3VyIHNlcnZlcidzDQogIHNlbGYtc2lnbmVkIGNlcnQgdG8gdGhlIGdhbWUncyBsaWJjdXJsIENBIGJ1bmRsZQ0KICAoTG9raS9Db250ZW50L0NlcnRpZmljYXRlcy9jYWNlcnQucGVtKSBhbmQgc2VydmUgSFRUUFMgb24gOjQ0My4NCg0KICBSZXF1aXJlcyBhZG1pbiAoaG9zdHMgZmlsZSArIDo0NDMgKyBraWxsaW5nIHRoZSBwcmlvciBlbGV2YXRlZCBzZXJ2ZXIpLg0KICBSZS1ydW4gd2l0aCAtUmV2ZXJ0IHRvIHVuZG8gdGhlIGhvc3RzIGFuZCBjYWNlcnQgY2hhbmdlcy4NCg0KLlBBUkFNRVRFUiBHYW1lUm9vdCAgIFNVUEVSVklWRSBpbnN0YWxsIChmb2xkZXIgY29udGFpbmluZyBMb2tpXEJpbmFyaWVzKS4NCi5QQVJBTUVURVIgUmV2ZXJ0ICAgICBVbmRvIGhvc3RzICsgY2FjZXJ0LnBlbSBjaGFuZ2VzIGFuZCBleGl0Lg0KLlBBUkFNRVRFUiBOb0xhdW5jaCAgIFNldCB1cCByZWRpcmVjdCArIHN0YXJ0IHNlcnZlciwgYnV0IGRvbid0IGxhdW5jaCB0aGUgZ2FtZS4NCi5QQVJBTUVURVIgT3BlbiAgICAgICBEZWRpY2F0ZWQtc2VydmVyLXN0dWIgcHJvYmUgIzYgKFVFIGNvbnNvbGUpOiBhcHBlbmQNCiAgICAgICAgICAgICAgICAgICAgICAtRXhlY0NtZHM9Im9wZW4gPE9wZW4+IiB0byB0aGUgZ2FtZSdzIGxhdW5jaCBhcmdzIHNvIHRoZQ0KICAgICAgICAgICAgICAgICAgICAgIFVFIGVuZ2luZSBmaXJlcyBpdHMgYnVpbHQtaW4gTmV0Q29ubmVjdGlvbiB0cmF2ZWwgY29tbWFuZA0KICAgICAgICAgICAgICAgICAgICAgIGFmdGVyIGluaXQuIFVzZSB0byBieXBhc3MgdGhlIG1hdGNobWFraW5nIHN0YXRlIG1hY2hpbmUNCiAgICAgICAgICAgICAgICAgICAgICAod2hpY2ggcHJvYmVzICMxLTUgcHJvdmVkIGlzIHRpY2tldC1pZC1nYXRlZCBhbmQgY2FuJ3QNCiAgICAgICAgICAgICAgICAgICAgICBiZSBzcG9vZmVkIGZyb20gYSBmcmVzaCBtZW51KS4gRm9ybWF0ICJpcDpwb3J0IiwgZS5nLg0KICAgICAgICAgICAgICAgICAgICAgICIxMjcuMC4wLjE6Nzc3NyIuIFRoZSBMb2tpLmxvZyBMb2dOZXQqIC8gTG9nUGxhdGZvcm1GaWxlDQogICAgICAgICAgICAgICAgICAgICAgLyBGYWlsZWQtdG8tY29ubmVjdCBhY3Rpdml0eSB0aGF0IGZvbGxvd3MgaXMgdGhlDQogICAgICAgICAgICAgICAgICAgICAgcHJvdG9jb2wtc2hhcGUgc2lnbmFsIO+/vSBldmVuIHdpdGggbm90aGluZyBsaXN0ZW5pbmcgb24NCiAgICAgICAgICAgICAgICAgICAgICB0aGUgcG9ydCwgdGhlIGNsaWVudC1zaWRlIGhhbmRzaGFrZSBhdHRlbXB0IG5hbWVzIHRoZQ0KICAgICAgICAgICAgICAgICAgICAgIGRyaXZlciwgdGhlIFN0YXRlbGVzc0Nvbm5lY3QgaGFuZGxlciwgYW5kIHRoZSBmaXJzdA0KICAgICAgICAgICAgICAgICAgICAgIGNvbnRyb2wtY2hhbm5lbCBtZXNzYWdlIGl0IHRyaWVzIHRvIHNlbmQuDQoNCi5FWEFNUExFICAuXGxhdW5jaC1yZWRpcmVjdC5wczENCi5FWEFNUExFICAuXGxhdW5jaC1yZWRpcmVjdC5wczEgLVJldmVydA0KLkVYQU1QTEUgIC5cbGF1bmNoLXJlZGlyZWN0LnBzMSAtT3BlbiAiMTI3LjAuMC4xOjc3NzciDQojPg0KcGFyYW0oDQogIFtzdHJpbmddJEdhbWVSb290ID0gIkc6XGdpdFxHQU1FIEJBQ0tVUFMgRk9SIFJFVkVSU0UgRU5HSU5FRVJJTkdcU1VQRVJWSVZFIiwNCiAgW3N3aXRjaF0kUmV2ZXJ0LA0KICBbc3dpdGNoXSROb0xhdW5jaCwNCiAgIyBFeHRyYSByYXcgc3dpdGNoZXMgYXBwZW5kZWQgdG8gdGhlIGdhbWUncyBjb21tYW5kIGxpbmUsIGUuZy4NCiAgIyAgIC1FeHRyYUFyZ3MgJy1pbmk6RW5naW5lOltDb3JlLkxvZ106TG9nT25saW5lPVZlcmJvc2UnLCctTG9nQ21kcz0iTG9nRm9vIFZlcmJvc2UiJw0KICAjIEFkZGVkIFMxMTMgZm9yIEZLLTExIChsb2ctdmVyYm9zaXR5IGNvbnRyb2wgcGxhbmUpLiBUaGUgZW5naW5lIGVjaG9lcyB0aGUgd2hvbGUNCiAgIyBjb21tYW5kIGxpbmUgYXMgYExvZ0luaXQ6IENvbW1hbmQgTGluZTpgLCBzbyBhbnl0aGluZyBwYXNzZWQgaGVyZSBpcyB2ZXJpZmlhYmxlDQogICMgYXMgREVMSVZFUkVEIGluZGVwZW5kZW50bHkgb2Ygd2hldGhlciBpdCB0b29rIGVmZmVjdC4NCiAgW3N0cmluZ1tdXSRFeHRyYUFyZ3MgPSBAKCksDQogIFtzdHJpbmddJE9wZW4gPSAiIiwNCiAgW3N0cmluZ10kSG9vayA9ICIiLCAgICMgcGF0aCB0byBhIHNoaW0gRExMIHRvIGluamVjdCBvbiBsYXVuY2ggKG1hbnVhbC1tYXAgdmlhIGluamVjdC5leGUpLg0KICAgICAgICAgICAgICAgICAgICAgICAgICMgRm9yIGEgd29ya2luZyBTVE9SRSArIEhVTlRFUlMgcm9zdGVyLCB1c2U6DQogICAgICAgICAgICAgICAgICAgICAgICAgIyAgIHRvb2xzXHNpZ2J5cGFzcy1tb2RcY2F0YWxvZ19zdG9yZV9maXguZGxsDQogICAgICAgICAgICAgICAgICAgICAgICAgIyAoQXNzZXRNYW5hZ2VyIHNjYW4gKyBzZWxmLXJlc3RvcmluZyBJc0NhdGFsb2dEYXRhUmVhZHkganotTk9QIHRoYXQNCiAgICAgICAgICAgICAgICAgICAgICAgICAjICBkb2RnZXMgdGhlIDMtNW1pbiBjb2RlLWludGVncml0eSBjaGVjayArIENhdGFsb2dFbnRyeSBwdXJjaGFzYWJsZQ0KICAgICAgICAgICAgICAgICAgICAgICAgICMgIHBva2UpLiBUaGlzIGlzIHRoZSBzaW5nbGUgY29tYmluZWQgc3RvcmUvcm9zdGVyIGhvb2suDQogICAgICAgICAgICAgICAgICAgICAgICAgIyBVc2VzIGluamVjdC5leGUgbGF1bmNoIChDUkVBVEVfU1VTUEVOREVEK21tYXArUmVzdW1lKQ0KICAgICAgICAgICAgICAgICAgICAgICAgICMgc28gdGhlIERMTCBpcyBsb2FkZWQgQkVGT1JFIHRoZSBnYW1lJ3MgZmlyc3QNCiAgICAgICAgICAgICAgICAgICAgICAgICAjIFVFbmdpbmU6OkJyb3dzZSBjYWxsIGF0IHN0YXJ0dXAuIFJlcXVpcmVkIHRvIGNhdGNoDQogICAgICAgICAgICAgICAgICAgICAgICAgIyB0aGUgbmF0dXJhbCBMVkxfTG9naW4gKyBMVkxfTG9iYnlWMiBzdGFydHVwDQogICAgICAgICAgICAgICAgICAgICAgICAgIyBicm93c2VzIGZvciB0ZXN0aW5nIHRoZSBob29rIGVuZC10by1lbmQuDQogIFtzd2l0Y2hdJE5vSG9vaywgICAgICAgIyBza2lwIEFMTCBzaGltIGF1dG8taW5qZWN0aW9uIChjbGVhbiBSRSBydW4pDQogIFtzd2l0Y2hdJE1pc3Npb25zLCAgICAgIyBERVBSRUNBVEVEIG5vLW9wIGFsaWFzOiBtaXNzaW9ucyBhcmUgbm93IGluIHRoZSBERUZBVUxUIHNldC4gS2VwdCBzbyBvbGQNCiAgICAgICAgICAgICAgICAgICAgICAgICAjIGludm9jYXRpb25zIC8gZG9jcyBzdGlsbCB3b3JrLiAoV2FzOiAiZHVyYWJsZSBNaXNzaW9ucyBtb2RlIi4pDQogIFtzd2l0Y2hdJE5vTWlzc2lvbnMsICAgIyBERVBSRUNBVEVEIG5vLW9wOiBtaXNzaW9uc19maXggbGVmdCB0aGUgZGVmYXVsdCBzZXQgMjAyNi0wOC0xNCAodGhlIG1pc3Npb25zDQogICAgICAgICAgICAgICAgICAgICAgICAgIyBwYWdlIGlzIHNlcnZlZCBuYXRpdmVseSBieSB0aGUgYmFja2VuZCBub3cpLiBLZXB0IHNvIG9sZCBpbnZvY2F0aW9ucyB3b3JrLg0KICBbc3dpdGNoXSRXaXRoTWlzc2lvbnNTaGltLCAjIG9wdCBCQUNLIElOIHRvIHRoZSByZXRpcmVkIG1pc3Npb25zX2ZpeC5kbGwgKG9uZS1mbGFnIHJvbGxiYWNrKQ0KICBbc3dpdGNoXSROb0xvYWRvdXQsICAgIyBkcm9wIGxvYWRvdXRfZml4LmRsbCBmcm9tIHRoZSBkZWZhdWx0IHNldCAoaXNvbGF0ZSBub24tY3VzdG9taXphdGlvbiBzdXJmYWNlcykNCiAgW3N3aXRjaF0kTm9QYXNzZXMsICAgICMgZHJvcCBiYXR0bGVwYXNzX2Fkb3B0X2ZpeC5kbGwgKFBBU1NFUyAvIEh1bnRlcidzIEpvdXJuZXkpIGZyb20gdGhlIGRlZmF1bHQgc2V0DQogIFtzd2l0Y2hdJE5vQ3Jhc2hXYXRjaCwgIyBkbyBOT1QgYXJtIHVzbWFwZHVtcCBjcmFzaHdhdGNoLiBBcm1lZCBieSBkZWZhdWx0OiBpdCBpcyBwdXJlIFJQTSBhbmQNCiAgICAgICAgICAgICAgICAgICAgICAgICAjIGlkbGUgdW50aWwgdGhlIGdhbWUgQ1JBU0hFUywgYXQgd2hpY2ggcG9pbnQgaXQgc3VzcGVuZHMgdGhlIGR5aW5nDQogICAgICAgICAgICAgICAgICAgICAgICAgIyBwcm9jZXNzIGFuZCBkdW1wcyBhIGZ1bGwgaW1hZ2UgYmVmb3JlIGl0IGV4aXRzLiBBIGNyYXNoLWVyYSBpbWFnZSBpcw0KICAgICAgICAgICAgICAgICAgICAgICAgICMgd29ydGggfjIsMzM0IC50ZXh0IHBhZ2VzIHRoYXQgbm8gaGVhbHRoeSBkdW1wIGhhcyBieXRlcyBmb3IgLS0gMjV4IGENCiAgICAgICAgICAgICAgICAgICAgICAgICAjIHR1dG9yaWFsIHNpdHRpbmcgLS0gYW5kIGNvc3RzIHplcm8gZXh0cmEgbGF1bmNoZXMgYmVjYXVzZSBydW5zIGRpZSBvbg0KICAgICAgICAgICAgICAgICAgICAgICAgICMgdGhlaXIgb3duIGFueXdheS4gU2VlIGRvY3MvZmsxOC1mazE5LW11bHRpc3RhdGUtbWVyZ2Utc2V0dGxlZC5tZCAxMi4yLg0KICAgICAgICAgICAgICAgICAgICAgICAgICMgVHJhZGUtb2ZmLCBzdGF0ZWQ6IG9uIGEgcmVhbCBjcmFzaCBpdCBGUkVFWkVTIHRoZSBwcm9jZXNzIGZvciB0aGUNCiAgICAgICAgICAgICAgICAgICAgICAgICAjIGR1cmF0aW9uIG9mIHRoZSBkdW1wLiBUaGF0IGlzIGZyZWUgKGl0IGlzIGR5aW5nKSwgYnV0IGlmIGEgbWFya2VyIGV2ZXINCiAgICAgICAgICAgICAgICAgICAgICAgICAjIGZpcmVzIHNwdXJpb3VzbHkgYSBoZWFsdGh5IGdhbWUgd291bGQgZnJlZXplIG9uY2UsIHRoZW4gcmVzdW1lLg0KICBbaW50XSRJbmplY3RHYXBTZWNvbmRzLCAjIFMxMDk6IHNlY29uZHMgYmV0d2VlbiBzdWNjZXNzaXZlIHNlY29uZGFyeSBtYW51YWwtbWFwcy4gSW5qZWN0b3IgZGVmYXVsdCBpcwogICAgICAgICAgICAgICAgICAgICAgICAgIyBub3cgMjAgKHJhaXNlZCBmcm9tIDMgb24gMjAyNi0wOC0wNSkuIEF0IDMgcyB0aGUgZm91ciBzZWNvbmRhcmllcyB3ZXJlCiAgICAgICAgICAgICAgICAgICAgICAgICAjIG1hcHBlZCBpbiBhIH4xMyBzIGJ1cnN0IGFuZCBFVkVSWSBkZWF0aCBpbiB0aGUgUzEwOSBzZXJpZXMgbGFuZGVkIGF0IG9yCiAgICAgICAgICAgICAgICAgICAgICAgICAjIGFmdGVyIGl0OyA+PTEwIHMgZ2FwcyBjdXQgdGhlIGhhemFyZCB+NzF4LiBQYXNzIDMgdG8gcmVzdG9yZSB0aGUgb2xkIGJ1cnN0LgogICAgICAgICAgICAgICAgICAgICAgICAgIyBTZWUgZG9jcy9zMTA5LWR1bXAtZm9yZW5zaWNzLm1kIHNlY3Rpb25zIDE4LTIwLgogIFtzd2l0Y2hdJFMxNTBDb250cm9sbGVkQ2FwdHVyZSwKICBbc3RyaW5nXSRTMTUwQ2FwdHVyZUFyY2hpdmVEaXJlY3RvcnksCiAgW2d1aWRdJFMxNTBDYXB0dXJlR2VuZXJhdGlvbgopCiMgREVGQVVMVCAobm8gZmxhZ3MpOiBwcmltYXJ5IGNhdGFsb2dfc3RvcmVfZml4LmRsbCAoc3RvcmUgKyBIVU5URVJTIHJvc3RlcikgaXMgaW5qZWN0ZWQgYXQgbGF1bmNoLCB0aGVuDQojIGNvbmZpZ3MvaW5qZWN0LXNlY29uZGFyaWVzLnBzMSBpbmplY3RzIHRoZSBmdWxsIHNlY29uZGFyeSBzZXQgb25jZSBpdCBzZXR0bGVzIO+/vSBwaWNrL3JlZnJlc2ggKHBpOCksDQojIHBpY2stY29tbWl0IChjYXRhbG9nX3BpY2tfZml4KSwgY3VzdG9taXphdGlvbiAobG9hZG91dF9maXgpLCBhbmQgbWlzc2lvbnMgKG1pc3Npb25zX2ZpeCkuIFRoZSB0aHJlZQ0KIyBQcm9jZXNzSW50ZXJuYWwtaG9va2luZyBzaGltcyAocGk4LCBsb2Fkb3V0X2ZpeCwgbWlzc2lvbnNfZml4KSBjb2V4aXN0IHZpYSB0aGUgc2hhcmVkDQojIExvY2FsXFN1cGVydml2ZU1pc3Npb25zUElIb29rIG11dGV4IChlYWNoIGluc3RhbGxzIGl0cyBQSSBqbXAgb25seSB0cmFuc2llbnRseSkuIFRoaXMgb25lIGxhdW5jaCBub3cNCiMgZ2l2ZXMgRVZFUlkgZHVyYWJsZSBmaXggYXQgb25jZS4gLU5vTWlzc2lvbnMgLyAtTm9Mb2Fkb3V0IHRyaW0gdGhlIHNldDsgLU5vSG9vayBza2lwcyBhbGwgc2hpbXM7DQojIC1Ib29rIDxwYXRoPiBpbmplY3RzIGV4YWN0bHkgb25lIERMTCBhbmQgbm8gc2Vjb25kYXJpZXMuIFJlcXVpcmVzIGFncyBidWlsdCB3aXRoIC9yZXZpdmFsL21pc3Npb25zLyoNCiMgYW5kIC9yZXZpdmFsL2xvYWRvdXQgKHNlcnZlci9pbnRlcm5hbC9pbnRlcmFjdGl2ZS97bWlzc2lvbnMsbG9hZG91dH0uZ28pLg0KDQokRXJyb3JBY3Rpb25QcmVmZXJlbmNlID0gIlN0b3AiDQokcmVwb1Jvb3QgID0gU3BsaXQtUGF0aCAtUGFyZW50ICRQU1NjcmlwdFJvb3QNCiRzZXJ2ZXJEaXIgPSBKb2luLVBhdGggJHJlcG9Sb290ICJzZXJ2ZXIiDQokY2VydFBhdGggID0gSm9pbi1QYXRoICRyZXBvUm9vdCAiY2VydHNccm9vdC5jcnQiICAgIyBDQSB0byBhcHBlbmQgdG8gZ2FtZSBidW5kbGUNCiRob3N0c0ZpbGUgPSAiJGVudjpTeXN0ZW1Sb290XFN5c3RlbTMyXGRyaXZlcnNcZXRjXGhvc3RzIg0KJGNhQnVuZGxlICA9IEpvaW4tUGF0aCAkR2FtZVJvb3QgIkxva2lcQ29udGVudFxDZXJ0aWZpY2F0ZXNcY2FjZXJ0LnBlbSINCiRnbyAgICAgICAgPSAiJGVudjpQcm9ncmFtRmlsZXNcR29cYmluXGdvLmV4ZSINCg0KJEhvc3RzVG9SZWRpcmVjdCA9IEAoDQogICJhY2NvdW50cy5wcm9qZWN0bG9raS50aGVvcnljcmFmdGdhbWVzLmNvbSIsDQogICJjbGllbnQtY29uZmlnLWp4LXByb2QucHJvZGNsdXN0ZXIuYXdzaW5mcmEudGhlb3J5Y3JhZnRnYW1lcy5jb20iDQopDQokTWFya2VyID0gIiMgU1VQRVJWSVZFLVJFVklWQUwiDQoNCiMgLS0tLSByZXF1aXJlIGFkbWluIC0tLS0KJGlzQWRtaW4gPSAoW1NlY3VyaXR5LlByaW5jaXBhbC5XaW5kb3dzUHJpbmNpcGFsXVtTZWN1cml0eS5QcmluY2lwYWwuV2luZG93c0lkZW50aXR5XTo6R2V0Q3VycmVudCgpKS5Jc0luUm9sZShbU2VjdXJpdHkuUHJpbmNpcGFsLldpbmRvd3NCdWlsdGluUm9sZV06OkFkbWluaXN0cmF0b3IpCmlmICgkUzE1MENvbnRyb2xsZWRDYXB0dXJlKSB7CiAgIyBUaGlzIHJvdXRlIGV4aXN0cyBvbmx5IGZvciB0aGUgc2luZ2xlIHRpZ2h0bHkgY29udHJvbGxlZCBTMTUwIGZsaWdodC4gQWxsCiAgIyBwcmVjb25kaXRpb25zIGFyZSBjaGVja2VkIGJlZm9yZSBjZXJ0aWZpY2F0ZSwgY2FwdHVyZSwgcHJvY2VzcywgaG9zdHMsIENBLAogICMgY3Jhc2h3YXRjaCwgb3IgZ2FtZSBzdGF0ZSBjYW4gYmUgbXV0YXRlZC4KICBpZiAoLW5vdCAkaXNBZG1pbikgeyB0aHJvdyAnUzE1MCBjb250cm9sbGVkIGNhcHR1cmUgcmVxdWlyZXMgYW4gYWxyZWFkeSBlbGV2YXRlZCBzaGVsbDsgaXQgd2lsbCBub3Qgc2VsZi1lbGV2YXRlLicgfQogIGlmICgtbm90ICROb0hvb2spIHsgdGhyb3cgJ1MxNTAgY29udHJvbGxlZCBjYXB0dXJlIHJlcXVpcmVzIC1Ob0hvb2suJyB9CiAgaWYgKC1ub3QgJE5vQ3Jhc2hXYXRjaCkgeyB0aHJvdyAnUzE1MCBjb250cm9sbGVkIGNhcHR1cmUgcmVxdWlyZXMgLU5vQ3Jhc2hXYXRjaC4nIH0KICBpZiAoJFBTQm91bmRQYXJhbWV0ZXJzLkNvbnRhaW5zS2V5KCdIb29rJykpIHsgdGhyb3cgJ1MxNTAgY29udHJvbGxlZCBjYXB0dXJlIHJlamVjdHMgLUhvb2suJyB9CiAgaWYgKCROb0xhdW5jaCkgeyB0aHJvdyAnUzE1MCBjb250cm9sbGVkIGNhcHR1cmUgcmVqZWN0cyAtTm9MYXVuY2guJyB9CiAgaWYgKCRQU0JvdW5kUGFyYW1ldGVycy5Db250YWluc0tleSgnT3BlbicpKSB7IHRocm93ICdTMTUwIGNvbnRyb2xsZWQgY2FwdHVyZSByZWplY3RzIC1PcGVuLicgfQogIGlmICgkUmV2ZXJ0KSB7IHRocm93ICdTMTUwIGNvbnRyb2xsZWQgY2FwdHVyZSByZWplY3RzIC1SZXZlcnQuJyB9CiAgaWYgKC1ub3QgJFBTQm91bmRQYXJhbWV0ZXJzLkNvbnRhaW5zS2V5KCdTMTUwQ2FwdHVyZUdlbmVyYXRpb24nKSAtb3IgJFMxNTBDYXB0dXJlR2VuZXJhdGlvbiAtZXEgW2d1aWRdOjpFbXB0eSkgewogICAgdGhyb3cgJ1MxNTAgY29udHJvbGxlZCBjYXB0dXJlIHJlcXVpcmVzIGFuIGV4cGxpY2l0IG5vbmVtcHR5IC1TMTUwQ2FwdHVyZUdlbmVyYXRpb24gR1VJRC4nCiAgfQogIGlmIChbc3RyaW5nXTo6SXNOdWxsT3JXaGl0ZVNwYWNlKCRTMTUwQ2FwdHVyZUFyY2hpdmVEaXJlY3RvcnkpKSB7CiAgICB0aHJvdyAnUzE1MCBjb250cm9sbGVkIGNhcHR1cmUgcmVxdWlyZXMgLVMxNTBDYXB0dXJlQXJjaGl2ZURpcmVjdG9yeS4nCiAgfQoKICAkUzE1MENhcHR1cmVBcmNoaXZlRGlyZWN0b3J5ID0gW0lPLlBhdGhdOjpHZXRGdWxsUGF0aCgkUzE1MENhcHR1cmVBcmNoaXZlRGlyZWN0b3J5KQogIGlmICgtbm90IFtJTy5EaXJlY3RvcnldOjpFeGlzdHMoJFMxNTBDYXB0dXJlQXJjaGl2ZURpcmVjdG9yeSkpIHsKICAgIHRocm93ICJTMTUwIGNhcHR1cmUgYXJjaGl2ZSBkaXJlY3RvcnkgZG9lcyBub3QgZXhpc3Q6ICRTMTUwQ2FwdHVyZUFyY2hpdmVEaXJlY3RvcnkiCiAgfQogICRzMTUwRG9jc1Jvb3QgPSBbSU8uUGF0aF06OkdldEZ1bGxQYXRoKChKb2luLVBhdGggJHJlcG9Sb290ICdkb2NzJykpCiAgJHMxNTBEb2NzUHJlZml4ID0gJHMxNTBEb2NzUm9vdAogIGlmICgtbm90ICRzMTUwRG9jc1ByZWZpeC5FbmRzV2l0aChbc3RyaW5nXVtJTy5QYXRoXTo6RGlyZWN0b3J5U2VwYXJhdG9yQ2hhcikpIHsKICAgICRzMTUwRG9jc1ByZWZpeCArPSBbSU8uUGF0aF06OkRpcmVjdG9yeVNlcGFyYXRvckNoYXIKICB9CiAgaWYgKC1ub3QgJFMxNTBDYXB0dXJlQXJjaGl2ZURpcmVjdG9yeS5TdGFydHNXaXRoKCRzMTUwRG9jc1ByZWZpeCwgW1N0cmluZ0NvbXBhcmlzb25dOjpPcmRpbmFsSWdub3JlQ2FzZSkpIHsKICAgIHRocm93ICJTMTUwIGNhcHR1cmUgYXJjaGl2ZSBkaXJlY3RvcnkgbXVzdCBiZSBzdHJpY3RseSBiZWxvdyB0aGlzIHdvcmt0cmVlJ3MgZG9jcyBkaXJlY3Rvcnk6ICRzMTUwRG9jc1Jvb3QiCiAgfQoKICAkczE1MFByZVN0YXJ0SW52ZW50b3J5ID0gQChHZXQtUHJvY2VzcyBhZ3MsZ28gLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUpCiAgaWYgKCRzMTUwUHJlU3RhcnRJbnZlbnRvcnkuQ291bnQgLW5lIDApIHsKICAgIHRocm93ICJTMTUwIGNvbnRyb2xsZWQgY2FwdHVyZSByZXF1aXJlcyB6ZXJvIHByZS1zdGFydCBhZ3MvZ28gcHJvY2Vzc2VzOyBmb3VuZCAkKCRzMTUwUHJlU3RhcnRJbnZlbnRvcnkuQ291bnQpLiIKICB9CgogICRzMTUwSGVscGVyUGF0aCA9IEpvaW4tUGF0aCAkUFNTY3JpcHRSb290ICdzMTUwLWNhcHR1cmUtZ2VuZXJhdGlvbi5wczEnCiAgaWYgKC1ub3QgKFRlc3QtUGF0aCAtTGl0ZXJhbFBhdGggJHMxNTBIZWxwZXJQYXRoIC1QYXRoVHlwZSBMZWFmKSkgewogICAgdGhyb3cgIlMxNTAgY2FwdHVyZS1nZW5lcmF0aW9uIGhlbHBlciBub3QgZm91bmQ6ICRzMTUwSGVscGVyUGF0aCIKICB9CiAgLiAkczE1MEhlbHBlclBhdGgKCiAgIyBMZXhpY2FsIGNvbnRhaW5tZW50IGlzIG5vdCBwaHlzaWNhbCBjb250YWlubWVudCBvbiBOVEZTLiBQaW4gZG9jcyBhcyBhbgogICMgb3JkaW5hcnkgYmFzZSBhbmQgcmVqZWN0IGV2ZXJ5IGV4aXN0aW5nIHJlcGFyc2UgY29tcG9uZW50IGJlZm9yZSBhbnkKICAjIGNlcnRpZmljYXRlLCBidWlsZCwgY2FwdHVyZSwgb3IgcHJvY2VzcyBtdXRhdGlvbi4KICAkbnVsbCA9IEFzc2VydC1TMTUwTm9SZXBhcnNlUGF0aCAtUGlubmVkQmFzZURpcmVjdG9yeSAkczE1MERvY3NSb290IGAKICAgIC1UYXJnZXRQYXRoICRzMTUwRG9jc1Jvb3QKICAkbnVsbCA9IEFzc2VydC1TMTUwTm9SZXBhcnNlUGF0aCAtUGlubmVkQmFzZURpcmVjdG9yeSAkczE1MERvY3NSb290IGAKICAgIC1UYXJnZXRQYXRoICRTMTUwQ2FwdHVyZUFyY2hpdmVEaXJlY3RvcnkKICAkczE1MENvbnRyb2xsZWRDYXB0dXJlUGF0aCA9IFtJTy5QYXRoXTo6R2V0RnVsbFBhdGgoKEpvaW4tUGF0aCAkczE1MERvY3NSb290ICdjYXB0dXJlLmxvZycpKQogICRudWxsID0gQXNzZXJ0LVMxNTBOb1JlcGFyc2VQYXRoIC1QaW5uZWRCYXNlRGlyZWN0b3J5ICRzMTUwRG9jc1Jvb3QgYAogICAgLVRhcmdldFBhdGggJHMxNTBDb250cm9sbGVkQ2FwdHVyZVBhdGgKICAkbnVsbCA9IEFzc2VydC1TMTUwTm9SZXBhcnNlUGF0aCAtUGlubmVkQmFzZURpcmVjdG9yeSAkczE1MERvY3NSb290IGAKICAgIC1UYXJnZXRQYXRoICIkczE1MENvbnRyb2xsZWRDYXB0dXJlUGF0aC5wcmV2Igp9CmlmICgtbm90ICRpc0FkbWluKSB7CiAgV3JpdGUtSG9zdCAiRWxldmF0aW9uIHJlcXVpcmVkIChob3N0cyBmaWxlICsgcG9ydCA0NDMpLiBSZWxhdW5jaGluZyBhcyBhZG1pbi4uLiIgLUZvcmVncm91bmRDb2xvciBZZWxsb3cNCiAgJGFyZ0xpc3QgPSBAKCItTm9FeGl0IiwiLUV4ZWN1dGlvblBvbGljeSIsIkJ5cGFzcyIsIi1GaWxlIiwkUFNDb21tYW5kUGF0aCwiLUdhbWVSb290IiwkR2FtZVJvb3QpDQogIGlmICgkUmV2ZXJ0KSAgICAgeyAkYXJnTGlzdCArPSAiLVJldmVydCIgfQ0KICBpZiAoJE5vTGF1bmNoKSAgIHsgJGFyZ0xpc3QgKz0gIi1Ob0xhdW5jaCIgfQ0KICBpZiAoJE9wZW4pICAgICAgIHsgJGFyZ0xpc3QgKz0gQCgiLU9wZW4iLCRPcGVuKSB9DQogIGlmICgkSG9vaykgICAgICAgeyAkYXJnTGlzdCArPSBAKCItSG9vayIsJEhvb2spIH0NCiAgaWYgKCROb0hvb2spICAgICB7ICRhcmdMaXN0ICs9ICItTm9Ib29rIiB9DQogIGlmICgkTWlzc2lvbnMpICAgeyAkYXJnTGlzdCArPSAiLU1pc3Npb25zIiB9ICAgICMgYWNjZXB0ZWQgKG5vLW9wIGFsaWFzKSDvv70gZm9yd2FyZGVkIHNvIGl0IGlzbid0IHNpbGVudGx5IGRyb3BwZWQNCiAgaWYgKCROb01pc3Npb25zKSB7ICRhcmdMaXN0ICs9ICItTm9NaXNzaW9ucyIgfQ0KICBpZiAoJE5vTG9hZG91dCkgIHsgJGFyZ0xpc3QgKz0gIi1Ob0xvYWRvdXQiIH0NCiAgIyBTMTEzOiBmb3J3YXJkIC1FeHRyYUFyZ3MgdG9vLiBDTEFVREUubWQgcmVjb3JkcyB0aGF0IC1Ob1Bhc3NlcyB3YXMgc2lsZW50bHkNCiAgIyBEUk9QUEVEIGFjcm9zcyBlbGV2YXRpb24sIHdoaWNoIGludmFsaWRhdGVkIGEgd2hvbGUgYmlzZWN0aW9uIC0gZG8gbm90IHJlcGVhdCBpdC4NCiAgaWYgKCRFeHRyYUFyZ3MgLWFuZCAkRXh0cmFBcmdzLkNvdW50KSB7ICRhcmdMaXN0ICs9IEAoIi1FeHRyYUFyZ3MiLCAoJEV4dHJhQXJncyAtam9pbiAnLCcpKSB9DQogIFN0YXJ0LVByb2Nlc3MgcG93ZXJzaGVsbCAtVmVyYiBSdW5BcyAtQXJndW1lbnRMaXN0ICRhcmdMaXN0DQogIHJldHVybg0KfQ0KDQojIC0tLS0gZGVmYXVsdCBzdG9yZS9yb3N0ZXIgaG9vazogYXV0by1pbmplY3QgY2F0YWxvZ19zdG9yZV9maXguZGxsIHVubGVzcyAtTm9Ib29rIC0tLS0NCiMgVGhlIG5hdGl2ZSBJc0NhdGFsb2dEYXRhUmVhZHkgZ2F0ZSAoQ2F0TWdyKzB4MzU0KSBpcyBjbGllbnQgc3RhdGUgdGhlIGRlYWQgYmFja2VuZA0KIyBjYW4ndCBzZXQsIHNvIHRoZSBTVE9SRSB0YWJzICsgSFVOVEVSUyByb3N0ZXIgc3RheSBlbXB0eSB3aXRob3V0IGEgcGVyLWxhdW5jaCBzaGltLg0KIyBjYXRhbG9nX3N0b3JlX2ZpeC5kbGwgb3BlbnMgdGhhdCBnYXRlIChzZWxmLXJlc3RvcmluZyBqei1OT1AgdGhhdCBkb2RnZXMgdGhlIH4zLTVtaW4NCiMgY29kZS1pbnRlZ3JpdHkgY2hlY2spIGFuZCBwb2tlcyBDYXRhbG9nRW50cnkgcHVyY2hhc2FibGUgZmxhZ3MuIERlZmF1bHRpbmcgaXQgaGVyZQ0KIyByZW1vdmVzIHRoZSBtYW51YWwgLUhvb2sgc3RlcDsgcGFzcyAtTm9Ib29rIGZvciBhIGNsZWFuIFJFIHJ1biwgb3IgLUhvb2sgPHBhdGg+IGZvciBhDQojIGRpZmZlcmVudCBzaGltLiBPbmx5IHRoZSBlbGV2YXRlZCBsYXVuY2ggcGF0aCByZWFjaGVzIHRoaXMgKG5vbi1hZG1pbiByZXR1cm5lZCBhYm92ZTsNCiMgUmV2ZXJ0L05vTGF1bmNoIGRvbid0IGluamVjdCkuDQppZiAoLW5vdCAkTm9Ib29rIC1hbmQgLW5vdCAkUmV2ZXJ0IC1hbmQgLW5vdCAkTm9MYXVuY2ggLWFuZCAtbm90ICRIb29rKSB7DQogICRkZWZhdWx0SG9vayA9IEpvaW4tUGF0aCAkcmVwb1Jvb3QgInRvb2xzXHNpZ2J5cGFzcy1tb2RcY2F0YWxvZ19zdG9yZV9maXguZGxsIg0KICBpZiAoVGVzdC1QYXRoICRkZWZhdWx0SG9vaykgew0KICAgICRIb29rID0gJGRlZmF1bHRIb29rDQogICAgIyBBZnRlciB0aGUgcHJpbWFyeSBjYXRhbG9nX3N0b3JlX2ZpeCBzZXR0bGVzLCBpbmplY3Qtc2Vjb25kYXJpZXMucHMxIGluamVjdHMgdGhlIEZVTEwgc2Vjb25kYXJ5IHNldDoNCiAgICAjIHBpY2svcmVmcmVzaCAocGk4KSArIHBpY2stY29tbWl0IChjYXRhbG9nX3BpY2tfZml4KSArIGN1c3RvbWl6YXRpb24gKGxvYWRvdXRfZml4KSArIG1pc3Npb25zDQogICAgIyAobWlzc2lvbnNfZml4KS4gVGhlIHRocmVlIFBJLWhvb2tlcnMgY29leGlzdCB2aWEgdGhlIHNoYXJlZCBMb2NhbFxTdXBlcnZpdmVNaXNzaW9uc1BJSG9vayBtdXRleC4NCiAgICAkSW5qZWN0U2Vjb25kYXJpZXMgPSAkdHJ1ZQ0KICAgICRzZWNFeHRyYSA9IEAoKQ0KICAgIGlmICgkV2l0aE1pc3Npb25zU2hpbSkgeyAkc2VjRXh0cmEgKz0gIi1XaXRoTWlzc2lvbnNTaGltIiB9DQogICAgaWYgKCROb0xvYWRvdXQpICB7ICRzZWNFeHRyYSArPSAiLU5vTG9hZG91dCIgfQ0KICAgIGlmICgkTm9QYXNzZXMpICAgeyAkc2VjRXh0cmEgKz0gIi1Ob1Bhc3NlcyIgfQ0KICAgICMgUzEwOTogc3ByZWFkIHRoZSBzZWNvbmRhcnkgbWFudWFsLW1hcHMuIERlZmF1bHQgMyBzIHBhY2tzIGFsbCBmb3VyIGludG8gYSB+MTMgcyBidXJzdCwNCiAgICAjIGFuZCBldmVyeSBkZWF0aCBpbiB0aGUgUzEwOSBzZXJpZXMgbGFuZHMgYXQgb3IgYWZ0ZXIgdGhhdCBidXJzdCAoZG9jcy9zMTA5LWR1bXAtZm9yZW5zaWNzLm1kDQogICAgIyBzZWN0aW9uIDE4KS4gUGFzcyAtSW5qZWN0R2FwU2Vjb25kcyA2MCB0byBzcHJlYWQgaXQuDQogICAgaWYgKCRQU0JvdW5kUGFyYW1ldGVycy5Db250YWluc0tleSgnSW5qZWN0R2FwU2Vjb25kcycpKSB7ICRzZWNFeHRyYSArPSAiLUdhcFNlY29uZHMgJEluamVjdEdhcFNlY29uZHMiIH0NCiAgICAkcGFydHMgPSBAKCJwaWNrL3JlZnJlc2giLCJwaWNrLWNvbW1pdCIpDQogICAgaWYgKC1ub3QgJE5vTG9hZG91dCkgIHsgJHBhcnRzICs9ICJjdXN0b21pemF0aW9uIiB9DQogICAgaWYgKCRXaXRoTWlzc2lvbnNTaGltKSB7ICRwYXJ0cyArPSAibWlzc2lvbnMoc2hpbSxyZXRpcmVkKSIgfQ0KICAgIFdyaXRlLUhvc3QgIkF1dG8taG9vazogc3RvcmUvcm9zdGVyIChjYXRhbG9nX3N0b3JlX2ZpeCkgKyAkKCRwYXJ0cyAtam9pbiAnICsgJykuIE1pc3Npb25zIHJlbmRlciBuYXRpdmVseSAobm8gc2hpbSkuIFVzZSAtTm9Ib29rIChjbGVhbiBSRSksIC1Ob0xvYWRvdXQgdG8gdHJpbSwgLVdpdGhNaXNzaW9uc1NoaW0gdG8gcmVzdG9yZSB0aGUgcmV0aXJlZCBtaXNzaW9uc19maXguIiAtRm9yZWdyb3VuZENvbG9yIEN5YW4NCiAgfSBlbHNlIHsNCiAgICBXcml0ZS1Ib3N0ICJBdXRvLWhvb2s6IGNhdGFsb2dfc3RvcmVfZml4LmRsbCBub3QgZm91bmQgYXQgJGRlZmF1bHRIb29rIiAtRm9yZWdyb3VuZENvbG9yIFllbGxvdw0KICAgIFdyaXRlLUhvc3QgIiAgLT4gbGF1bmNoaW5nIFdJVEhPVVQgdGhlIHN0b3JlL3Jvc3RlciBob29rIChTVE9SRSArIEhVTlRFUlMgd2lsbCBiZSBlbXB0eSkuIiAtRm9yZWdyb3VuZENvbG9yIFllbGxvdw0KICB9DQp9DQoNCmZ1bmN0aW9uIFJlbW92ZS1Ib3N0c0VudHJpZXMgew0KICAjIFJlYWQgKyB3cml0ZSB2aWEgLk5FVCBGaWxlIEFQSXMgKGRldGVybWluaXN0aWMgaGFuZGxlIGNsb3NlKS4gQQ0KICAjIGBHZXQtQ29udGVudCAkaG9zdHNGaWxlIHwgU2V0LUNvbnRlbnQgJGhvc3RzRmlsZWAgcGlwZWxpbmUgbGVmdCB0aGUgcmVhZA0KICAjIGhhbmRsZSBvcGVuIGxvbmcgZW5vdWdoIHRvIGNvbGxpZGUgd2l0aCB0aGUgd3JpdGUgKCJTdHJlYW0gd2FzIG5vdA0KICAjIHJlYWRhYmxlIiwgYW4gQXJndW1lbnRFeGNlcHRpb24gdGhlIG9sZCBJT0V4Y2VwdGlvbi1vbmx5IGNhdGNoIGxldCBlc2NhcGUpLg0KICAjIERlZmVuZGVyIC8gU21hcnRTY3JlZW4gYWxzbyBvY2Nhc2lvbmFsbHkgaG9sZCBhIHNjYW4gaGFuZGxlIG9uIGhvc3RzIGZvcg0KICAjIH4xMDAtNTAwbXMsIHNvIHJldHJ5IG9uIEFOWSB0cmFuc2llbnQgZmFpbHVyZS4NCiAgJG1heFRyaWVzID0gMjANCiAgZm9yICgkaT0wOyAkaSAtbHQgJG1heFRyaWVzOyAkaSsrKSB7DQogICAgdHJ5IHsNCiAgICAgICRrZXB0ID0gW1N5c3RlbS5JTy5GaWxlXTo6UmVhZEFsbExpbmVzKCRob3N0c0ZpbGUpIHwNCiAgICAgICAgV2hlcmUtT2JqZWN0IHsgJF8gLW5vdG1hdGNoIFtyZWdleF06OkVzY2FwZSgkTWFya2VyKSB9DQogICAgICBbU3lzdGVtLklPLkZpbGVdOjpXcml0ZUFsbExpbmVzKCRob3N0c0ZpbGUsIFtzdHJpbmdbXV0ka2VwdCwgW1N5c3RlbS5UZXh0LkVuY29kaW5nXTo6QVNDSUkpDQogICAgICByZXR1cm4NCiAgICB9IGNhdGNoIHsNCiAgICAgIGlmICgkaSAtZXEgJG1heFRyaWVzIC0gMSkgeyB0aHJvdyB9DQogICAgICBTdGFydC1TbGVlcCAtTWlsbGlzZWNvbmRzIDI1MA0KICAgIH0NCiAgfQ0KfQ0KDQojIC0tLS0gcmV2ZXJ0IG1vZGUgLS0tLQ0KaWYgKCRSZXZlcnQpIHsNCiAgV3JpdGUtSG9zdCAiUmV2ZXJ0aW5nIGhvc3RzIGVudHJpZXMuLi4iIC1Gb3JlZ3JvdW5kQ29sb3IgQ3lhbg0KICBSZW1vdmUtSG9zdHNFbnRyaWVzDQogIGlmIChUZXN0LVBhdGggIiRjYUJ1bmRsZS5zdXBlcnZpdmUtYmFrIikgew0KICAgIFdyaXRlLUhvc3QgIlJlc3RvcmluZyBvcmlnaW5hbCBjYWNlcnQucGVtLi4uIiAtRm9yZWdyb3VuZENvbG9yIEN5YW4NCiAgICBDb3B5LUl0ZW0gIiRjYUJ1bmRsZS5zdXBlcnZpdmUtYmFrIiAkY2FCdW5kbGUgLUZvcmNlDQogIH0NCiAgJHVzZXJFbmdpbmVJbmkgPSBKb2luLVBhdGggJGVudjpMT0NBTEFQUERBVEEgIlNVUEVSVklWRVxTYXZlZFxDb25maWdcV2luZG93c0NsaWVudFxFbmdpbmUuaW5pIg0KICBpZiAoVGVzdC1QYXRoICR1c2VyRW5naW5lSW5pKSB7DQogICAgV3JpdGUtSG9zdCAiUmVtb3ZpbmcgYlZlcmlmeVBlZXIgb3ZlcnJpZGUgZnJvbSB1c2VyIEVuZ2luZS5pbmkuLi4iIC1Gb3JlZ3JvdW5kQ29sb3IgQ3lhbg0KICAgIHRyeSB7IChHZXQtSXRlbSAkdXNlckVuZ2luZUluaSkuSXNSZWFkT25seSA9ICRmYWxzZSB9IGNhdGNoIHt9DQogICAgJHR4dCA9IEdldC1Db250ZW50ICR1c2VyRW5naW5lSW5pIC1SYXcNCiAgICAkdHh0ID0gJHR4dCAtcmVwbGFjZSAiKD9tcylccj9cblxbSFRUUFwuQ3VybFxdXHI/XG5iVmVyaWZ5UGVlcj1mYWxzZVxyP1xuXHI/XG5cW1NTTFxdXHI/XG5iVmFsaWRhdGVSb290Q2VydGlmaWNhdGVzPWZhbHNlXHI/XG4/IiwgIiINCiAgICBTZXQtQ29udGVudCAtUGF0aCAkdXNlckVuZ2luZUluaSAtVmFsdWUgJHR4dCAtRW5jb2RpbmcgYXNjaWkgLU5vTmV3bGluZQ0KICB9DQogIFdyaXRlLUhvc3QgIkRvbmUuIFJlZGlyZWN0cyByZW1vdmVkLiIgLUZvcmVncm91bmRDb2xvciBHcmVlbg0KICByZXR1cm4NCn0NCg0KIyAtLS0tIGtpbGwgYW55IHByaW9yIHNlcnZlciBob2xkaW5nIG91ciBwb3J0cyAobGVnYWN5IHJvdXRlIG9ubHkpIC0tLS0KaWYgKC1ub3QgJFMxNTBDb250cm9sbGVkQ2FwdHVyZSkgewogIEdldC1Qcm9jZXNzIGFncyxnbyAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSB8IEZvckVhY2gtT2JqZWN0IHsgdHJ5IHsgU3RvcC1Qcm9jZXNzICRfIC1Gb3JjZSB9IGNhdGNoIHt9IH0KICBTdGFydC1TbGVlcCAtU2Vjb25kcyAyCn0KDQojIHJlZ2VuZXJhdGUgdGhlIGNlcnQgY2hhaW4gZnJlc2ggKHN0cnVjdHVyZSBjaGFuZ2VkOiByb290ICsgbGVhZikKJGNlcnRzRGlyID0gW0lPLlBhdGhdOjpHZXRGdWxsUGF0aCgoSm9pbi1QYXRoICRyZXBvUm9vdCAiY2VydHMiKSkKaWYgKCRTMTUwQ29udHJvbGxlZENhcHR1cmUpIHsKICAkdmVyaWZpZWRXb3JrdHJlZUNlcnRzRGlyID0gW0lPLlBhdGhdOjpHZXRGdWxsUGF0aCgoSm9pbi1QYXRoICRyZXBvUm9vdCAnY2VydHMnKSkKICBpZiAoLW5vdCBbc3RyaW5nXTo6RXF1YWxzKCRjZXJ0c0RpciwgJHZlcmlmaWVkV29ya3RyZWVDZXJ0c0RpciwgW1N0cmluZ0NvbXBhcmlzb25dOjpPcmRpbmFsSWdub3JlQ2FzZSkpIHsKICAgIHRocm93ICJTMTUwIGNlcnRpZmljYXRlIGRpcmVjdG9yeSBpZGVudGl0eSBtaXNtYXRjaDogZXhwZWN0ZWQgJHZlcmlmaWVkV29ya3RyZWVDZXJ0c0RpciwgZ290ICRjZXJ0c0RpciIKICB9CiAgJHMxNTBDZXJ0aWZpY2F0ZVNuYXBzaG90ID0gQ2xlYXItUzE1MENlcnRpZmljYXRlQXJ0aWZhY3RzIC1DZXJ0aWZpY2F0ZURpcmVjdG9yeSAkY2VydHNEaXIKfSBlbHNlaWYgKFRlc3QtUGF0aCAkY2VydHNEaXIpIHsKICBHZXQtQ2hpbGRJdGVtICRjZXJ0c0RpciB8IFJlbW92ZS1JdGVtIC1Gb3JjZSAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZQp9Cg0KIyAtLS0tIGJ1aWxkIHRoZSBzZXJ2ZXIgZmlyc3QgKHNvIHN0YXJ0dXAgaXMgaW5zdGFudCwgbm90IGEgY29sZCBjb21waWxlKSAtLS0tDQppZiAoLW5vdCAoVGVzdC1QYXRoICRnbykpIHsgdGhyb3cgIkdvIG5vdCBmb3VuZCBhdCAkZ28iIH0NCiRhZ3NFeGUgPSBKb2luLVBhdGggJHNlcnZlckRpciAiYWdzLmV4ZSINCldyaXRlLUhvc3QgIkJ1aWxkaW5nIGNvbW11bml0eSBiYWNrZW5kLi4uIiAtRm9yZWdyb3VuZENvbG9yIEN5YW4NCiYgJGdvIGJ1aWxkIC1DICRzZXJ2ZXJEaXIgLW8gJGFnc0V4ZSAuL2NtZC9hZ3MNCmlmICgkTEFTVEVYSVRDT0RFIC1uZSAwKSB7IHRocm93ICJnbyBidWlsZCBmYWlsZWQgKGV4aXQgJExBU1RFWElUQ09ERSkiIH0NCg0KIyAtLS0tIHN0YXJ0IGl0ICg6ODA4MCBIVFRQICsgOjQ0MyBIVFRQUykgLS0tLQ0KV3JpdGUtSG9zdCAiU3RhcnRpbmcgY29tbXVuaXR5IGJhY2tlbmQgKDo4MDgwIEhUVFAgKyA6NDQzIEhUVFBTKS4uLiIgLUZvcmVncm91bmRDb2xvciBDeWFuDQokbG9nQXJnID0gSm9pbi1QYXRoICRyZXBvUm9vdCAiZG9jc1xjYXB0dXJlLmxvZyINCiRzcnZPdXQgPSBKb2luLVBhdGggJHJlcG9Sb290ICJkb2NzXHNlcnZlci5vdXQubG9nIg0KIyBOT1RFOiBwYXRocyBjb250YWluIHNwYWNlcyAoIlN1cGVydml2ZSBSZXZpdmFsIFByb2plY3QiKS4gU3RhcnQtUHJvY2VzcyBkb2VzDQojIE5PVCBxdW90ZSBhcnJheSBlbGVtZW50cywgYW5kIEdvJ3MgZmxhZyBwYXJzZXIgc3RvcHMgYXQgdGhlIGZpcnN0IG5vbi1mbGFnDQojIHRva2VuLCBzbyB1bnF1b3RlZCBzcGFjZSBwYXRocyBzaWxlbnRseSBkcm9wIGxhdGVyIGZsYWdzLiBQYXNzIE9ORSBxdW90ZWQNCiMgYXJndW1lbnQgc3RyaW5nIGluc3RlYWQuDQokYXJnU3RyaW5nID0gIi1odHRwIDo4MDgwIC1odHRwcyA6NDQzIC1sb2cgYCIkbG9nQXJnYCIgLWNlcnRzIGAiJGNlcnRzRGlyYCIiCmlmICgkUzE1MENvbnRyb2xsZWRDYXB0dXJlKSB7CiAgIyBSZWNoZWNrIGltbWVkaWF0ZWx5IGJlZm9yZSBvcGVuaW5nIHRoZSBnZW5lcmF0aW9uLiBBIHByb2Nlc3MgdGhhdCBhcHBlYXJlZAogICMgZHVyaW5nIHRoZSBidWlsZCBpcyByZWZ1c2FsLCBuZXZlciBhIHJlYXNvbiB0byBlbnVtZXJhdGUtYW5kLXN0b3AgYnkgbmFtZS4KICAkczE1MExhdW5jaEludmVudG9yeSA9IEAoR2V0LVByb2Nlc3MgYWdzLGdvIC1FcnJvckFjdGlvbiBTaWxlbnRseUNvbnRpbnVlKQogICRzMTUwUmVzb2x2ZVByb2Nlc3MgPSB7CiAgICBwYXJhbSgkcHJvY2Vzc0lkKQogICAgR2V0LVByb2Nlc3MgLUlkICRwcm9jZXNzSWQgLUVycm9yQWN0aW9uIFN0b3AKICB9CiAgJHMxNTBTdG9wUHJvY2VzcyA9IHsKICAgIHBhcmFtKCRwcm9jZXNzKQogICAgU3RvcC1Qcm9jZXNzIC1JbnB1dE9iamVjdCAkcHJvY2VzcyAtRm9yY2UgLUVycm9yQWN0aW9uIFN0b3AKICAgIGlmICgtbm90ICRwcm9jZXNzLldhaXRGb3JFeGl0KDUwMDApKSB7CiAgICAgIHRocm93ICJTMTUwIGJhY2tlbmQgUElEICQoJHByb2Nlc3MuSWQpIGRpZCBub3QgZXhpdCB3aXRoaW4gNSBzZWNvbmRzLiIKICAgIH0KICB9CiAgJGNvbnRyb2xsZWRMYXVuY2ggPSBJbnZva2UtUzE1MENvbnRyb2xsZWRMYXVuY2ggLUNhcHR1cmVQYXRoICRsb2dBcmcgYAogICAgLUFyY2hpdmVEaXJlY3RvcnkgJFMxNTBDYXB0dXJlQXJjaGl2ZURpcmVjdG9yeSAtR2VuZXJhdGlvbiAkUzE1MENhcHR1cmVHZW5lcmF0aW9uIGAKICAgIC1DYXB0dXJlQmFzZURpcmVjdG9yeSAkczE1MERvY3NSb290IC1BcmNoaXZlQmFzZURpcmVjdG9yeSAkczE1MERvY3NSb290IGAKICAgIC1QcmVTdGFydEludmVudG9yeSAkczE1MExhdW5jaEludmVudG9yeSAtRXhwZWN0ZWRCYWNrZW5kUGF0aCAkYWdzRXhlIGAKICAgIC1TdGFydEJhY2tlbmQgewogICAgICBBc3NlcnQtUzE1MENlcnRpZmljYXRlQXJ0aWZhY3RzQWJzZW50IC1DZXJ0aWZpY2F0ZURpcmVjdG9yeSAkY2VydHNEaXIKICAgICAgU3RhcnQtUHJvY2VzcyAtRmlsZVBhdGggJGFnc0V4ZSAtQXJndW1lbnRMaXN0ICRhcmdTdHJpbmcgLVdvcmtpbmdEaXJlY3RvcnkgJHNlcnZlckRpciBgCiAgICAgICAgLVJlZGlyZWN0U3RhbmRhcmRFcnJvciAkc3J2T3V0IC1QYXNzVGhydQogICAgfSBgCiAgICAtUmVzb2x2ZVByb2Nlc3MgJHMxNTBSZXNvbHZlUHJvY2VzcyBgCiAgICAtUG9zdFN0YXJ0SW52ZW50b3J5IHsKICAgICAgcGFyYW0oJGJhY2tlbmQpCgogICAgICAjIFRoZSBjZXJ0IGRpcmVjdG9yeSB3YXMgY2xlYXJlZCBiZWZvcmUgYnVpbGQsIHNvIHRoaXMgYm91bmRlZCB3YWl0IGNhbgogICAgICAjIG9ubHkgb2JzZXJ2ZSB0aGUgbmV3bHkgc3Bhd25lZCBiYWNrZW5kJ3MgZ2VuZXJhdGVkIGNoYWluLiBSZXZhbGlkYXRlCiAgICAgICMgdGhlIGV4YWN0IHByb2Nlc3MgYmVmb3JlIHRha2luZyB0aGUgcG9zdC1zdGFydCBpbnZlbnRvcnkuCiAgICAgICRleHBlY3RlZENlcnRpZmljYXRlUGF0aHMgPSBAKAogICAgICAgIChKb2luLVBhdGggJGNlcnRzRGlyICdyb290LmNydCcpLAogICAgICAgIChKb2luLVBhdGggJGNlcnRzRGlyICdzZXJ2ZXIuY3J0JyksCiAgICAgICAgKEpvaW4tUGF0aCAkY2VydHNEaXIgJ3NlcnZlci5rZXknKQogICAgICApCiAgICAgICRjZXJ0aWZpY2F0ZXNFeGlzdCA9ICRmYWxzZQogICAgICBmb3IgKCRpPTA7ICRpIC1sdCA2MCAtYW5kIC1ub3QgJGNlcnRpZmljYXRlc0V4aXN0OyAkaSsrKSB7CiAgICAgICAgJGNlcnRpZmljYXRlc0V4aXN0ID0gJHRydWUKICAgICAgICBmb3JlYWNoICgkZXhwZWN0ZWRDZXJ0aWZpY2F0ZVBhdGggaW4gJGV4cGVjdGVkQ2VydGlmaWNhdGVQYXRocykgewogICAgICAgICAgaWYgKC1ub3QgW0lPLkZpbGVdOjpFeGlzdHMoJGV4cGVjdGVkQ2VydGlmaWNhdGVQYXRoKSkgewogICAgICAgICAgICAkY2VydGlmaWNhdGVzRXhpc3QgPSAkZmFsc2UKICAgICAgICAgICAgYnJlYWsKICAgICAgICAgIH0KICAgICAgICB9CiAgICAgICAgaWYgKC1ub3QgJGNlcnRpZmljYXRlc0V4aXN0KSB7IFN0YXJ0LVNsZWVwIC1NaWxsaXNlY29uZHMgNTAwIH0KICAgICAgfQogICAgICBpZiAoLW5vdCAkY2VydGlmaWNhdGVzRXhpc3QpIHsKICAgICAgICBpZiAoVGVzdC1QYXRoIC1MaXRlcmFsUGF0aCAkc3J2T3V0IC1QYXRoVHlwZSBMZWFmKSB7CiAgICAgICAgICBXcml0ZS1Ib3N0ICItLS0gc2VydmVyIG91dHB1dCAtLS0iIC1Gb3JlZ3JvdW5kQ29sb3IgUmVkCiAgICAgICAgICBHZXQtQ29udGVudCAtTGl0ZXJhbFBhdGggJHNydk91dCB8IFdyaXRlLUhvc3QKICAgICAgICB9CiAgICAgICAgdGhyb3cgIlMxNTAgYmFja2VuZCBkaWQgbm90IHByb2R1Y2Ugcm9vdC5jcnQsIHNlcnZlci5jcnQsIGFuZCBzZXJ2ZXIua2V5IHdpdGhpbiAzMCBzZWNvbmRzIChzZWUgJHNydk91dCkuIgogICAgICB9CgogICAgICAkbGl2ZUJhY2tlbmQgPSBHZXQtUHJvY2VzcyAtSWQgJGJhY2tlbmQuSWQgLUVycm9yQWN0aW9uIFN0b3AKICAgICAgJGV4cGVjdGVkSWRlbnRpdHkgPSBHZXQtUzE1MFByb2Nlc3NJZGVudGl0eSAkYmFja2VuZAogICAgICAkbGl2ZUlkZW50aXR5ID0gR2V0LVMxNTBQcm9jZXNzSWRlbnRpdHkgJGxpdmVCYWNrZW5kCiAgICAgIGlmICgtbm90IChUZXN0LVMxNTBQcm9jZXNzSWRlbnRpdHlNYXRjaCAtRXhwZWN0ZWQgJGV4cGVjdGVkSWRlbnRpdHkgLUFjdHVhbCAkbGl2ZUlkZW50aXR5KSkgewogICAgICAgIHRocm93ICdTMTUwIGJhY2tlbmQgaWRlbnRpdHkgbWlzbWF0Y2ggYWZ0ZXIgY2VydGlmaWNhdGUgZ2VuZXJhdGlvbi4nCiAgICAgIH0KCiAgICAgICRjZXJ0aWZpY2F0ZVJlY2VpcHQgPSBUZXN0LVMxNTBDZXJ0aWZpY2F0ZUFydGlmYWN0cyAtQ2VydGlmaWNhdGVEaXJlY3RvcnkgJGNlcnRzRGlyIGAKICAgICAgICAtUHJpb3JTbmFwc2hvdCAkczE1MENlcnRpZmljYXRlU25hcHNob3QgLUJhY2tlbmRTdGFydFV0YyAkZXhwZWN0ZWRJZGVudGl0eS5TdGFydFRpbWVVdGMKICAgICAgaWYgKC1ub3QgJGNlcnRpZmljYXRlUmVjZWlwdC5WYWxpZCkgewogICAgICAgIHRocm93ICJTMTUwIGNlcnRpZmljYXRlIHZhbGlkYXRpb24gZmFpbGVkOiAkKCRjZXJ0aWZpY2F0ZVJlY2VpcHQuUmVhc29uKSIKICAgICAgfQoKICAgICAgQChHZXQtUHJvY2VzcyBhZ3MsZ28gLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUpCiAgICB9IGAKICAgIC1Qcm9iZUJhY2tlbmQgewogICAgICBwYXJhbSgkYmFja2VuZCwgJGdlbmVyYXRpb25UZXh0KQogICAgICAkaGVhbHRoVXJsID0gImh0dHA6Ly8xMjcuMC4wLjE6ODA4MC9oZWFsdGh6P2NhcHR1cmVHZW5lcmF0aW9uPSRnZW5lcmF0aW9uVGV4dCIKICAgICAgJHJlc3BvbnNlID0gSW52b2tlLVdlYlJlcXVlc3QgLVVyaSAkaGVhbHRoVXJsIC1UaW1lb3V0U2VjIDUgLVVzZUJhc2ljUGFyc2luZyAtRXJyb3JBY3Rpb24gU3RvcAogICAgICBpZiAoJHJlc3BvbnNlLlN0YXR1c0NvZGUgLW5lIDIwMCkgewogICAgICAgIHRocm93ICJTMTUwIG1hbmRhdG9yeSBoZWFsdGggcHJvYmUgcmV0dXJuZWQgSFRUUCAkKCRyZXNwb25zZS5TdGF0dXNDb2RlKTogJGhlYWx0aFVybCIKICAgICAgfQogICAgfSBgCiAgICAtU3RvcFByb2Nlc3MgJHMxNTBTdG9wUHJvY2VzcwoKICBpZiAoJGNvbnRyb2xsZWRMYXVuY2guUmVmdXNlZCkgewogICAgdGhyb3cgIlMxNTAgY29udHJvbGxlZCBjYXB0dXJlIHJlZnVzZWQ6ICQoJGNvbnRyb2xsZWRMYXVuY2guUmVhc29uKSIKICB9Cn0gZWxzZSB7CiAgU3RhcnQtUHJvY2VzcyAtRmlsZVBhdGggJGFnc0V4ZSAtQXJndW1lbnRMaXN0ICRhcmdTdHJpbmcgYAogICAgLVdvcmtpbmdEaXJlY3RvcnkgJHNlcnZlckRpciAtUmVkaXJlY3RTdGFuZGFyZEVycm9yICRzcnZPdXQKICAjIHdhaXQgdXAgdG8gMzBzIGZvciB0aGUgY2VydCBjaGFpbgogIGZvciAoJGk9MDsgJGkgLWx0IDYwIC1hbmQgLW5vdCAoVGVzdC1QYXRoICRjZXJ0UGF0aCk7ICRpKyspIHsgU3RhcnQtU2xlZXAgLU1pbGxpc2Vjb25kcyA1MDAgfQogIGlmICgtbm90IChUZXN0LVBhdGggJGNlcnRQYXRoKSkgewogICAgaWYgKFRlc3QtUGF0aCAkc3J2T3V0KSB7IFdyaXRlLUhvc3QgIi0tLSBzZXJ2ZXIgb3V0cHV0IC0tLSIgLUZvcmVncm91bmRDb2xvciBSZWQ7IEdldC1Db250ZW50ICRzcnZPdXQgfCBXcml0ZS1Ib3N0IH0KICAgIHRocm93ICJTZXJ2ZXIgZGlkIG5vdCBwcm9kdWNlICRjZXJ0UGF0aCAoc2VlICRzcnZPdXQpIgogIH0KICBXcml0ZS1Ib3N0ICJTZXJ2ZXIgdXA7IGNlcnQgY2hhaW4gZ2VuZXJhdGVkLiIgLUZvcmVncm91bmRDb2xvciBHcmVlbgogIFN0YXJ0LVNsZWVwIC1TZWNvbmRzIDIKCiAgIyAtLS0tIHZlcmlmeSB0aGUgSFRUUCBtdXggaXMgYWN0dWFsbHkgU0VSVklORyAobm90IGp1c3QgdGhhdCBUTFMgY2VydHMgd2VyZSB3cml0dGVuKSAtLS0tCiAgIyBUaGUgY2VydC1jaGFpbiB3YWl0IHByb3ZlcyBhZ3Mgc3RhcnRlZCArIGNsZWFyZWQgVExTIGluaXQsIGJ1dCBub3QgdGhhdCB0aGUgcmVxdWVzdCBtdXggYW5zd2Vycy4gQQogICMgcXVpY2sgR0VUIG9mIGEgbGlnaHR3ZWlnaHQsIHNpZGUtZWZmZWN0LWZyZWUgcmV2aXZhbCBlbmRwb2ludCBjb25maXJtcyB0aGUgYmFja2VuZCB3aWxsIGFjdHVhbGx5CiAgIyByZXNwb25kIHRvIHRoZSBnYW1lJ3MgbG9naW4vbWVudSBjYWxscyDvv70gY2F0Y2hpbmcgYSBoYWxmLXVwIHNlcnZlciAocGFuaWNrZWQgaGFuZGxlciwgcG9ydCBiaW5kIHJhY2UpCiAgIyBCRUZPUkUgd2UgbGF1bmNoIHRoZSBnYW1lIGFuZCBzdGFyZSBhdCBhIG15c3RlcnkgaGFuZy4gQmVzdC1lZmZvcnQ6IHJldHJ5IH41cywgV0FSTiAoZG9uJ3QgYWJvcnQpIG9uCiAgIyBmYWlsdXJlLCBzaW5jZSBhIHByb2JlIGZhbHNlLW5lZ2F0aXZlIHNob3VsZG4ndCBibG9jayBhIGxhdW5jaCB3aGVuIGFncyBpcyBvdGhlcndpc2UgdXAuCiAgIyAtVXNlQmFzaWNQYXJzaW5nIGF2b2lkcyB0aGUgSUUgZW5naW5lOyAxMjcuMC4wLjEgYnlwYXNzZXMgdGhlIHByb3h5LgogICRoZWFsdGhVcmwgPSAiaHR0cDovLzEyNy4wLjAuMTo4MDgwL3Jldml2YWwvbWlzc2lvbnMvcHJvZ3Jlc3MiCiAgJHNlcnZlZCA9ICRmYWxzZQogIGZvciAoJGk9MDsgJGkgLWx0IDEwIC1hbmQgLW5vdCAkc2VydmVkOyAkaSsrKSB7CiAgICB0cnkgewogICAgICAkcmVzcCA9IEludm9rZS1XZWJSZXF1ZXN0IC1VcmkgJGhlYWx0aFVybCAtVGltZW91dFNlYyAyIC1Vc2VCYXNpY1BhcnNpbmcgLUVycm9yQWN0aW9uIFN0b3AKICAgICAgaWYgKCRyZXNwLlN0YXR1c0NvZGUgLWVxIDIwMCkgeyAkc2VydmVkID0gJHRydWUgfQogICAgfSBjYXRjaCB7IFN0YXJ0LVNsZWVwIC1NaWxsaXNlY29uZHMgNTAwIH0KICB9CiAgaWYgKCRzZXJ2ZWQpIHsKICAgIFdyaXRlLUhvc3QgIkJhY2tlbmQgc2VydmluZyBIVFRQIChwcm9iZSAkaGVhbHRoVXJsIC0+IDIwMCkuIiAtRm9yZWdyb3VuZENvbG9yIEdyZWVuCiAgfSBlbHNlIHsKICAgIFdyaXRlLVdhcm5pbmcgIkJhY2tlbmQgY2VydCBjaGFpbiBpcyB1cCBidXQgJGhlYWx0aFVybCBkaWQgbm90IGFuc3dlciBpbiB+NXMuIgogICAgV3JpdGUtV2FybmluZyAiICBUaGUgZ2FtZSBtYXkgc3RpbGwgd29yaywgYnV0IGlmIGxvZ2luL21lbnUgaGFuZ3MsIGNoZWNrICRzcnZPdXQgZm9yIGEgaGFuZGxlciBwYW5pYyBvciBiaW5kIGVycm9yLiIKICB9Cn0KCiRsYXVuY2hDb250aW51YXRpb24gPSB7CmlmICgkUzE1MENvbnRyb2xsZWRDYXB0dXJlKSB7CiAgV3JpdGUtSG9zdCAiUzE1MCBiYWNrZW5kL2NhcHR1cmUgdmVyaWZpZWQgKFBJRCAkKCRjb250cm9sbGVkTGF1bmNoLkJhY2tlbmRJZGVudGl0eS5JZCksIGdlbmVyYXRpb24gJCgkY29udHJvbGxlZExhdW5jaC5HZW5lcmF0aW9uKSkuIiAtRm9yZWdyb3VuZENvbG9yIEdyZWVuCn0KIyAtLS0tIGFwcGVuZCBvdXIgUk9PVCBDQSB0byB0aGUgZ2FtZSdzIGxpYmN1cmwgQ0EgYnVuZGxlIChmcm9tIGNsZWFuIGJhY2t1cCkgLS0tLQppZiAoLW5vdCAoVGVzdC1QYXRoICRjYUJ1bmRsZSkpIHsgdGhyb3cgIkNBIGJ1bmRsZSBub3QgZm91bmQ6ICRjYUJ1bmRsZSIgfQ0KaWYgKC1ub3QgKFRlc3QtUGF0aCAiJGNhQnVuZGxlLnN1cGVydml2ZS1iYWsiKSkgeyBDb3B5LUl0ZW0gJGNhQnVuZGxlICIkY2FCdW5kbGUuc3VwZXJ2aXZlLWJhayIgfQ0KIyBBbHdheXMgc3RhcnQgZnJvbSB0aGUgcHJpc3RpbmUgYnVuZGxlLCB0aGVuIGFwcGVuZCBvdXIgY3VycmVudCByb290Lg0KQ29weS1JdGVtICIkY2FCdW5kbGUuc3VwZXJ2aXZlLWJhayIgJGNhQnVuZGxlIC1Gb3JjZQ0KV3JpdGUtSG9zdCAiQXBwZW5kaW5nIFJvb3QgQ0EgdG8gZ2FtZSBjYWNlcnQucGVtLi4uIiAtRm9yZWdyb3VuZENvbG9yIEN5YW4NCkFkZC1Db250ZW50IC1QYXRoICRjYUJ1bmRsZSAtVmFsdWUgImBuIyBTVVBFUlZJVkUgUmV2aXZhbCBSb290IENBIiAtRW5jb2RpbmcgYXNjaWkNCkFkZC1Db250ZW50IC1QYXRoICRjYUJ1bmRsZSAtVmFsdWUgKEdldC1Db250ZW50ICRjZXJ0UGF0aCAtUmF3KSAtRW5jb2RpbmcgYXNjaWkNCg0KIyAtLS0tIGhvc3RzIGZpbGUgcmVkaXJlY3QgKGlkZW1wb3RlbnQsIG1hcmtlZCkg77+9IFNJTkdMRSBhdG9taWMgd3JpdGUgLS0tLQ0KIyBSZW1vdmUgYW55IHN0YWxlIG1hcmtlciBsaW5lcyBBTkQgYXBwZW5kIHRoZSBmcmVzaCByZWRpcmVjdCBpbiBPTkUgd3JpdGUsIHdpdGgNCiMgcmV0cnkuIEEgc2VwYXJhdGUgUmVtb3ZlLUhvc3RzRW50cmllcyArIEFkZC1Db250ZW50IHJhY2VkIERlZmVuZGVyJ3Mgc2Nhbi1sb2NrIG9uDQojIHRoZSBmaWxlIHdlJ2QganVzdCB3cml0dGVuICgiaG9zdHMgaXMgYmVpbmcgdXNlZCBieSBhbm90aGVyIHByb2Nlc3MiKTogdGhlIHJlbW92ZQ0KIyB3cml0ZSB0cmlnZ2VycyBhIHJlYWwtdGltZSBzY2FuIHRoYXQgYnJpZWZseSBob2xkcyBob3N0cywgdGhlbiB0aGUgaW1tZWRpYXRlDQojIGFwcGVuZCBmYWlscy4gT25lIHJlYWQtZmlsdGVyLWFwcGVuZC13cml0ZSB3aXRoIHJldHJ5IGF2b2lkcyB0aGUgaW50ZXJtZWRpYXRlDQojIHN0YXRlIGFuZCByaWRlcyBvdXQgdGhlIHRyYW5zaWVudCBsb2NrLg0KJGFkZCA9ICRIb3N0c1RvUmVkaXJlY3QgfCBGb3JFYWNoLU9iamVjdCB7ICIxMjcuMC4wLjFgdCRfYHQkTWFya2VyIiB9DQokbWF4VHJpZXMgPSAzMA0KZm9yICgkaT0wOyAkaSAtbHQgJG1heFRyaWVzOyAkaSsrKSB7DQogIHRyeSB7DQogICAgJGtlcHQgPSBbU3lzdGVtLklPLkZpbGVdOjpSZWFkQWxsTGluZXMoJGhvc3RzRmlsZSkgfA0KICAgICAgV2hlcmUtT2JqZWN0IHsgJF8gLW5vdG1hdGNoIFtyZWdleF06OkVzY2FwZSgkTWFya2VyKSB9DQogICAgW1N5c3RlbS5JTy5GaWxlXTo6V3JpdGVBbGxMaW5lcygkaG9zdHNGaWxlLCBbc3RyaW5nW11dKCRrZXB0ICsgJGFkZCksIFtTeXN0ZW0uVGV4dC5FbmNvZGluZ106OkFTQ0lJKQ0KICAgIGJyZWFrDQogIH0gY2F0Y2ggew0KICAgIGlmICgkaSAtZXEgJG1heFRyaWVzIC0gMSkgeyB0aHJvdyB9DQogICAgU3RhcnQtU2xlZXAgLU1pbGxpc2Vjb25kcyAyNTANCiAgfQ0KfQ0KV3JpdGUtSG9zdCAiSG9zdHMgZW50cmllcyBhZGRlZDoiIC1Gb3JlZ3JvdW5kQ29sb3IgQ3lhbg0KJEhvc3RzVG9SZWRpcmVjdCB8IEZvckVhY2gtT2JqZWN0IHsgV3JpdGUtSG9zdCAiICAxMjcuMC4wLjEgICRfIiB9DQppcGNvbmZpZyAvZmx1c2hkbnMgfCBPdXQtTnVsbA0KDQojIC0tLS0gZGlzYWJsZSBsaWJjdXJsIHBlZXIgdmVyaWZpY2F0aW9uIHZpYSBVU0VSIEVuZ2luZS5pbmkgLS0tLQ0KIyBUaGUgLWluaTogY29tbWFuZCBsaW5lIGlzIGFwcGxpZWQgdG9vIGxhdGUgZm9yIEZDdXJsSHR0cE1hbmFnZXI6OkluaXRDdXJsIChpdA0KIyByZWFkcyBiVmVyaWZ5UGVlciBkdXJpbmcgdmVyeSBlYXJseSBlbmdpbmUgaW5pdCkuIFRoZSB1c2VyL1NhdmVkIEVuZ2luZS5pbmkgaXMNCiMgbWVyZ2VkIGJlZm9yZSB0aGF0LCBzbyB3ZSBzZXQgaXQgdGhlcmUgaW5zdGVhZC4NCiR1c2VyRW5naW5lSW5pID0gSm9pbi1QYXRoICRlbnY6TE9DQUxBUFBEQVRBICJTVVBFUlZJVkVcU2F2ZWRcQ29uZmlnXFdpbmRvd3NDbGllbnRcRW5naW5lLmluaSINCmlmIChUZXN0LVBhdGggJHVzZXJFbmdpbmVJbmkpIHsNCiAgIyBDbGVhciBhbnkgcmVhZC1vbmx5IGZsYWcgZnJvbSBhIHByZXZpb3VzIHJ1biBzbyB3ZSBjYW4gcmV3cml0ZSBpdC4NCiAgdHJ5IHsgKEdldC1JdGVtICR1c2VyRW5naW5lSW5pKS5Jc1JlYWRPbmx5ID0gJGZhbHNlIH0gY2F0Y2gge30NCiAgJGluaSA9IEdldC1Db250ZW50ICR1c2VyRW5naW5lSW5pIC1SYXcNCiAgaWYgKCRpbmkgLW5vdG1hdGNoICIoP20pXlxzKmJWZXJpZnlQZWVyXHMqPSIpIHsNCiAgICBXcml0ZS1Ib3N0ICJEaXNhYmxpbmcgbGliY3VybCBwZWVyIHZlcmlmaWNhdGlvbiBpbiB1c2VyIEVuZ2luZS5pbmkuLi4iIC1Gb3JlZ3JvdW5kQ29sb3IgQ3lhbg0KICAgICRibG9jayA9IEAoIiIsICJbSFRUUC5DdXJsXSIsICJiVmVyaWZ5UGVlcj1mYWxzZSIsICIiLCAiW1NTTF0iLCAiYlZhbGlkYXRlUm9vdENlcnRpZmljYXRlcz1mYWxzZSIpDQogICAgQWRkLUNvbnRlbnQgLVBhdGggJHVzZXJFbmdpbmVJbmkgLVZhbHVlICRibG9jayAtRW5jb2RpbmcgYXNjaWkNCiAgfSBlbHNlIHsgV3JpdGUtSG9zdCAiYlZlcmlmeVBlZXIgb3ZlcnJpZGUgYWxyZWFkeSBwcmVzZW50LiIgLUZvcmVncm91bmRDb2xvciBEYXJrR3JheSB9DQogICMgTWFrZSByZWFkLW9ubHkgc28gdGhlIGdhbWUgY2FuJ3Qgc3RyaXAgb3VyIHNlY3Rpb24gYmVmb3JlIGN1cmwgaW5pdCByZWFkcyBpdC4NCiAgdHJ5IHsgKEdldC1JdGVtICR1c2VyRW5naW5lSW5pKS5Jc1JlYWRPbmx5ID0gJHRydWU7IFdyaXRlLUhvc3QgIiAgKEVuZ2luZS5pbmkgc2V0IHJlYWQtb25seSkiIC1Gb3JlZ3JvdW5kQ29sb3IgRGFya0dyYXkgfSBjYXRjaCB7fQ0KfSBlbHNlIHsNCiAgV3JpdGUtV2FybmluZyAiVXNlciBFbmdpbmUuaW5pIG5vdCBmb3VuZCBhdCAkdXNlckVuZ2luZUluaSAtIHJ1biB0aGUgZ2FtZSBvbmNlIGZpcnN0LiINCn0NCg0KaWYgKCROb0xhdW5jaCkgeyBXcml0ZS1Ib3N0ICJTZXJ2ZXIgKyByZWRpcmVjdCByZWFkeS4gU2tpcHBpbmcgZ2FtZSBsYXVuY2ggKC1Ob0xhdW5jaCkuIiAtRm9yZWdyb3VuZENvbG9yIEdyZWVuOyByZXR1cm4gfQ0KDQojIC0tLS0gcHJlc2VydmUgYW55IHBlbmRpbmcgY3Jhc2hwYWQgcmVwb3J0IEJFRk9SRSB3ZSBsYXVuY2ggKEZLLTksIFMxMDkpIC0tLS0NCiMgV2hlbiB0aGUgZ2FtZSBkaWVzLCBTZW50cnkncyBjcmFzaHBhZCBoYW5kbGVyIC0tIG5vdCBVRSdzIC0tIHdyaXRlcyB0aGUgbWluaWR1bXAsDQojIGludG8gPEdhbWVSb290PlxMb2tpXC5zZW50cnktbmF0aXZlXCB3aXRoIE5PIGBVRUNDLSpgIGRpcmVjdG9yeS4gTUVBU1VSRUQgUzEwOToNCiMgY3Jhc2hwYWQgZmx1c2hlcyBwZW5kaW5nIHJlcG9ydHMgYXQgdGhlIE5FWFQgUFJPQ0VTUyBTVEFSVCwgbm90IG9uIGEgdGltZXIsIHNvIHRoZQ0KIyBsYXVuY2ggd2UgYXJlIGFib3V0IHRvIHBlcmZvcm0gaXMgZXhhY3RseSB3aGF0IGRlc3Ryb3lzIHRoZSBwcmV2aW91cyBydW4ncyBkdW1wLg0KIyBBcmNoaXZpbmcgaGVyZSBpcyB0aGVyZWZvcmUgZGV0ZXJtaW5pc3RpYyBhbmQgY2Fubm90IGxvc2Ugb25lIC0tIG5vIHdhdGNoZXIgbmVlZGVkLg0KIyBTZWUgY29uZmlncy9hcmNoaXZlLWNyYXNoZHVtcHMucHMxIGZvciB0aGUgZXZpZGVuY2UuDQomIChKb2luLVBhdGggJFBTU2NyaXB0Um9vdCAiYXJjaGl2ZS1jcmFzaGR1bXBzLnBzMSIpIC1HYW1lUm9vdCAkR2FtZVJvb3QNCg0KIyAtLS0tIGFybSB0aGUgY3Jhc2gtY2FwdHVyZSBoYXJuZXNzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KIyBBIGNyYXNoaW5nIHByb2Nlc3MgaXMgdGhlIGhpZ2hlc3QtLnRleHQtY292ZXJhZ2Ugc3RhdGUgdGhpcyBwcm9qZWN0IGhhcyBldmVyIG9ic2VydmVkIChiZXN0DQojIGNyYXNoLWVyYSBwcm9jZXNzIDYyLjY4JSB2cyBtZXJnZWQyJ3MgNTQuOTUlKSwgYW5kIG5vYm9keSBoYXMgZXZlciBjYXB0dXJlZCBvbmUsIGJlY2F1c2UgdGhlDQojIHdpbmRvdyBmcm9tIHRoZSBmaXJzdCBjcmFzaCBsb2cgbGluZSB0byBjcmFzaHBhZCBoYW5kb2ZmIGlzIH4zNCBtcyAtLSBmYXIgc2hvcnRlciB0aGFuIGEgZHVtcC4NCiMgY3Jhc2h3YXRjaCBjbG9zZXMgdGhhdCBieSBTVVNQRU5ESU5HIHRoZSBkeWluZyBwcm9jZXNzIG9uIHRyaWdnZXIsIHdoaWNoIHR1cm5zIGFuIHVua25vd24NCiMgc3ViLXNlY29uZCB3aW5kb3cgaW50byB1bmxpbWl0ZWQgdGltZTsgaXQgdGhlbiBkdW1wcyBhbmQgUkVTVU1FUyBzbyBjcmFzaHBhZCBzdGlsbCB3cml0ZXMgaXRzDQojIG93biBtaW5pZHVtcC4gUHVyZSBSUE0sIG5vIGluamVjdGlvbiwgbm8gbW9kdWxlLWltYWdlIHdyaXRlLiBJZGxlIHVudGlsIGEgY3Jhc2ggbWFya2VyIGFwcGVhcnMuDQppZiAoLW5vdCAkTm9DcmFzaFdhdGNoKSB7DQogICR1c21hcEV4ZSA9IEpvaW4tUGF0aCAkcmVwb1Jvb3QgInRvb2xzXHVzbWFwZHVtcFx1c21hcGR1bXAuZXhlIg0KICBpZiAoVGVzdC1QYXRoICR1c21hcEV4ZSkgew0KICAgICRjd1N0YW1wID0gR2V0LURhdGUgLUZvcm1hdCAieXl5eU1NZGQtSEhtbXNzIg0KICAgICRjd091dCAgID0gSm9pbi1QYXRoICRyZXBvUm9vdCAiZHVtcHNcY3Jhc2gtJGN3U3RhbXAiDQogICAgJGN3TG9nICAgPSBKb2luLVBhdGggJHJlcG9Sb290ICJkb2NzXGNyYXNod2F0Y2gub3V0LmxvZyINCiAgICAkY3dBcmdzICA9ICJjcmFzaHdhdGNoIFNVUEVSVklWRS1XaW42NC1TaGlwcGluZy5leGUgYCIkY3dPdXRgIiAtcG9sbCA1MCINCiAgICBTdGFydC1Qcm9jZXNzIC1GaWxlUGF0aCAkdXNtYXBFeGUgLUFyZ3VtZW50TGlzdCAkY3dBcmdzIGANCiAgICAgICAgLVdpbmRvd1N0eWxlIE1pbmltaXplZCBgDQogICAgICAgIC1SZWRpcmVjdFN0YW5kYXJkT3V0cHV0ICRjd0xvZyAtUmVkaXJlY3RTdGFuZGFyZEVycm9yICIkY3dMb2cuZXJyIiB8IE91dC1OdWxsDQogICAgV3JpdGUtSG9zdCAiQ3Jhc2gtY2FwdHVyZSBhcm1lZDogZHVtcHMvY3Jhc2gtJGN3U3RhbXAgKGxvZzogZG9jcy9jcmFzaHdhdGNoLm91dC5sb2cpIiAtRm9yZWdyb3VuZENvbG9yIEN5YW4NCiAgICBXcml0ZS1Ib3N0ICIgIGlkbGUgdW50aWwgdGhlIGdhbWUgY3Jhc2hlczsgdGhlbiBzdXNwZW5kcyBpdCBhbmQgZHVtcHMgYmVmb3JlIGl0IGV4aXRzLiIgLUZvcmVncm91bmRDb2xvciBEYXJrR3JheQ0KICB9IGVsc2Ugew0KICAgIFdyaXRlLUhvc3QgIiAgKHVzbWFwZHVtcC5leGUgbm90IGZvdW5kIC0gY3Jhc2ggY2FwdHVyZSBOT1QgYXJtZWQpIiAtRm9yZWdyb3VuZENvbG9yIFllbGxvdw0KICB9DQp9DQoNCiMgLS0tLSBBY2NlbEJ5dGUgLWluaSBvdmVycmlkZXMgKyBsYXVuY2ggLS0tLQ0KJGV4ZSA9IEpvaW4tUGF0aCAkR2FtZVJvb3QgIkxva2lcQmluYXJpZXNcV2luNjRcU1VQRVJWSVZFLVdpbjY0LVNoaXBwaW5nLmV4ZSINCmlmICgtbm90IChUZXN0LVBhdGggJGV4ZSkpIHsgdGhyb3cgIlNoaXBwaW5nIGV4ZSBub3QgZm91bmQ6ICRleGUiIH0NCiRhYiAgID0gIi9TY3JpcHQvQWNjZWxCeXRlVWU0U2RrLkFjY2VsQnl0ZVNldHRpbmdzIg0KJGxva2kgPSAiL1NjcmlwdC9Mb2tpLkxva2lHYW1lUHJvamVjdFNldHRpbmdzIg0KJGxvY2FsID0gImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCINCiRpbmlBcmdzID0gQCgNCiAgIyBBY2NlbEJ5dGUgU0RLIGJhY2tlbmQgLT4gbG9jYWwgc2VydmVyDQogICItaW5pOkVuZ2luZTpbJGFiXTpCYXNlVXJsPSRsb2NhbCIsDQogICItaW5pOkVuZ2luZTpbJGFiXTpJYW1TZXJ2ZXJVcmw9JGxvY2FsL2lhbSIsDQogICItaW5pOkVuZ2luZTpbJGFiXTpQbGF0Zm9ybVNlcnZlclVybD0kbG9jYWwvcGxhdGZvcm0iLA0KICAiLWluaTpFbmdpbmU6WyRhYl06QmFzaWNTZXJ2ZXJVcmw9JGxvY2FsL2Jhc2ljIiwNCiAgIi1pbmk6RW5naW5lOlskYWJdOkxvYmJ5U2VydmVyVXJsPXdzOi8vbG9jYWxob3N0OjgwODAvbG9iYnkvIiwNCiAgIyBUaGVvcnljcmFmdCBQb3N0QXV0aCAoU3RlYW0gbG9naW4pICsgY2xpZW50LWNvbmZpZyAtPiBsb2NhbCBzZXJ2ZXIgKEhUVFAsIG5vIFRMUykuDQogICMgUmVhZCBhdCBsb2dpbiB0aW1lLCBzbyB0aGUgLWluaSBvdmVycmlkZSBhcHBsaWVzICh1bmxpa2UgZWFybHkgY3VybCBpbml0KS4NCiAgIyBIZWRnZSB0aGUgY29uZmlnIGZpbGU6IHRyeSBib3RoIEVuZ2luZSBhbmQgR2FtZS4NCiAgIi1pbmk6RW5naW5lOlskbG9raV06UHJvZFBvc3RBdXRoVVJMPSRsb2NhbCIsDQogICItaW5pOkVuZ2luZTpbJGxva2ldOlByb2RDbGllbnRDb25maWdVUkw9JGxvY2FsIiwNCiAgIi1pbmk6R2FtZTpbJGxva2ldOlByb2RQb3N0QXV0aFVSTD0kbG9jYWwiLA0KICAiLWluaTpHYW1lOlskbG9raV06UHJvZENsaWVudENvbmZpZ1VSTD0kbG9jYWwiLA0KICAiLWxvZyINCikNCiMgUmF3IGV4dHJhIHN3aXRjaGVzIChTMTEzLCBGSy0xMSkuIEFwcGVuZGVkIHZlcmJhdGltOyB2ZXJpZnkgZGVsaXZlcnkgYnkgcmVhZGluZw0KIyB0aGUgYExvZ0luaXQ6IENvbW1hbmQgTGluZTpgIGVjaG8gYXQgdGhlIHRvcCBvZiBMb2tpLmxvZy4NCmlmICgkRXh0cmFBcmdzIC1hbmQgJEV4dHJhQXJncy5Db3VudCkgew0KICBXcml0ZS1Ib3N0ICJFeHRyYSBjb21tYW5kLWxpbmUgYXJncyAoJCgkRXh0cmFBcmdzLkNvdW50KSk6IiAtRm9yZWdyb3VuZENvbG9yIEN5YW4NCiAgZm9yZWFjaCAoJGEgaW4gJEV4dHJhQXJncykgeyBXcml0ZS1Ib3N0ICIgICRhIiAtRm9yZWdyb3VuZENvbG9yIERhcmtHcmF5OyAkaW5pQXJncyArPSAkYSB9DQp9DQojIFByb2JlICM2OiBhcHBlbmQgVUUncyBidWlsdC1pbiBgb3BlbiA8YWRkcj46PHBvcnQ+YCBjb25zb2xlIGNvbW1hbmQgdmlhDQojIC1FeGVjQ21kcy4gRmlyZXMgYWZ0ZXIgZW5naW5lIGluaXQsIHNvIGl0J2xsIHJhY2UgdGhlIGxvZ2luIGZsb3cgLSBpZiBpdA0KIyB0cmlnZ2VycyBhIE5ldENvbm5lY3Rpb24gYXR0ZW1wdCBiZWZvcmUgbG9naW4gY29tcGxldGVzLCB3ZSBzdGlsbCBnZXQgdGhlDQojIExva2kubG9nIHNpZ25hbCB3ZSB3YW50IChkcml2ZXIgbmFtZSwgY29udHJvbC1jaGFubmVsIGZpcnN0IG1lc3NhZ2UsDQojIGZhaWx1cmUgbW9kZSkuIE5vdGhpbmcgbmVlZHMgdG8gYmUgbGlzdGVuaW5nIG9uIHRoZSBwb3J0IGZvciB0aGUgcHJvYmUNCiMgdG8gYmUgZGlhZ25vc3RpYy4NCmlmICgkT3Blbikgew0KICAjIFByb2JlICM2IHJlc3VsdCAoMjAyNi0wNi0yOSk6IC1FeGVjQ21kcz0ib3BlbiAkT3BlbiIgcmVhY2hlZCB0aGUgZW5naW5lJ3MNCiAgIyBDb21tYW5kTGluZSAobG9nZ2VkIGF0IGVuZ2luZSBpbml0KSBidXQgbmV2ZXIgcHJvZHVjZWQgYSBCcm93c2UgdG8gdGhlDQogICMgdGFyZ2V0IC0gdGhlIERlZmF1bHRNYXAgYnJvd3NlIHRvIExWTF9Mb2dpbiBmaXJlZCBpbiB0aGUgc2FtZSBmcmFtZSBhbmQNCiAgIyBjbG9iYmVyZWQgdGhlIG9wZW4gY29tbWFuZC4gU2hpcHBpbmcgYnVpbGQgYWxzbyBzdHJpcHBlZCB0aGUgZGV2IGNvbnNvbGUNCiAgIyAoQ29uc29sZUtleXMvRW5hYmxlQ2hlYXRzL0NvbnNvbGVDbGFzcyBzdHJpbmdzIEFMTCBhYnNlbnQgZnJvbSB0aGUgZXhlKSwNCiAgIyBzbyBtYW51YWwgY29uc29sZSBlbnRyeSBwb3N0LW1lbnUgaXNuJ3QgYW4gb3B0aW9uIGVpdGhlci4NCiAgIw0KICAjIFByb2JlICM3OiBwb3NpdGlvbmFsIFVSTCBmb3JtLiBVRSdzIHN0YXJ0dXAgcGFyc2VyIHRyZWF0cyB0aGUgZmlyc3QNCiAgIyBub24tc3dpdGNoIGFyZyBhcyB0aGUgaW5pdGlhbCBVUkwgLSBpdCBSRVBMQUNFUyBEZWZhdWx0TWFwIGVudGlyZWx5LCBzbw0KICAjIHRoZXJlJ3Mgbm8gcmFjZSB3aXRoIExWTF9Mb2dpbi4gVGhlIGdhbWUgd29uJ3QgcmVhY2ggdGhlIG1lbnUgKHdlIGdvDQogICMgc3RyYWlnaHQgdG8gYSBOZXRDb25uZWN0aW9uIGF0dGVtcHQpLCBidXQgTG9raS5sb2cgd2lsbCBuYW1lIHRoZQ0KICAjIE5ldERyaXZlciwgdGhlIFN0YXRlbGVzc0Nvbm5lY3QgaGFuZGxlciwgYW5kIHRoZSBmaXJzdCBjb250cm9sLWNoYW5uZWwNCiAgIyBtZXNzYWdlIC0gZXhhY3RseSB0aGUgcHJvdG9jb2wgc3VyZmFjZSB3ZSBuZWVkIHRvIHNpemUgdGhlIFVFNS40IHN0dWINCiAgIyBzZXJ2ZXIgYnVpbGQuDQogIFdyaXRlLUhvc3QgIlByb2JlICM3IGFjdGl2ZTogcG9zaXRpb25hbCBVUkwgJE9wZW4gKHJlcGxhY2VzIERlZmF1bHRNYXAgYnJvd3NlKSIgLUZvcmVncm91bmRDb2xvciBZZWxsb3cNCiAgJGluaUFyZ3MgKz0gJE9wZW4NCn0NCmlmICgkSG9vaykgew0KICBpZiAoLW5vdCAoVGVzdC1QYXRoICRIb29rKSkgew0KICAgIHRocm93ICJIb29rIERMTCBub3QgZm91bmQ6ICRIb29rIg0KICB9DQogICRpbmplY3RFeGUgPSBKb2luLVBhdGggJHJlcG9Sb290ICJ0b29sc1xpbmplY3RcaW5qZWN0LmV4ZSINCiAgaWYgKC1ub3QgKFRlc3QtUGF0aCAkaW5qZWN0RXhlKSkgew0KICAgIHRocm93ICJpbmplY3QuZXhlIG5vdCBmb3VuZCBhdCAkaW5qZWN0RXhlIChidWlsZCBpdCB3aXRoICdnbyBidWlsZCAtQyB0b29scy9pbmplY3QgLW8gaW5qZWN0LmV4ZSAuJykiDQogIH0NCiAgIyB3YXRjaC1ub3cgKG5vdCBsYXVuY2gpOiBwb2xscyBldmVyeSAxbXMgZm9yIHRoZSBTVVBFUlZJVkUgcHJvY2VzcyB0bw0KICAjIGFwcGVhciwgdGhlbiBpbW1lZGlhdGVseSBtYW51YWwtbWFwcyB0aGUgRExMLiBXZSBsYXVuY2ggdGhlIGdhbWUgdmlhDQogICMgdGhlIG5vcm1hbCBgJiAkZXhlIEBpbmlBcmdzYCBwYXRoIHNvIFN0ZWFtJ3MgRFJNIGluaXQgcnVucyBhcyBleHBlY3RlZA0KICAjIChDUkVBVEVfU1VTUEVOREVEICsgUmVzdW1lIGJ5cGFzc2VzIFN0ZWFtIGhhbmRzaGFrZSBhbmQgdGhlIGdhbWUgd29uJ3QNCiAgIyBzaG93IGEgd2luZG93KS4gVGhlIHJhY2Ugd2luZG93IGZvciAiZW5naW5lIGluaXQgZmluaXNoZXMgYmVmb3JlIG91cg0KICAjIG1tYXAgY29tcGxldGVzIiBpcyBvbiB0aGUgb3JkZXIgb2YgMS0yIHNlY29uZHM7IHRoZSBwb2xsaW5nIGxvb3Agd2lucy4NCiAgV3JpdGUtSG9zdCAiU3Bhd25pbmcgaW5qZWN0IHdhdGNoLW5vdyB0byBjYXRjaCB0aGUgZ2FtZSBvbiBsYXVuY2guLi4iIC1Gb3JlZ3JvdW5kQ29sb3IgQ3lhbg0KICBXcml0ZS1Ib3N0ICIgIERMTDogJEhvb2siIC1Gb3JlZ3JvdW5kQ29sb3IgRGFya0dyYXkNCiAgIyBOT1RFOiAkSG9vayBjb250YWlucyBzcGFjZXMgKHRoZSByZXBvIHBhdGgpLiBTdGFydC1Qcm9jZXNzIGRvZXMgTk9UIHF1b3RlDQogICMgaW5kaXZpZHVhbCAtQXJndW1lbnRMaXN0IEFSUkFZIGVsZW1lbnRzLCBzbyB0aGUgYXJyYXkgZm9ybSBzcGxpdHMgdGhlIERMTCBwYXRoDQogICMgYXQgdGhlIHNwYWNlcyBhbmQgaW5qZWN0IHNpbGVudGx5IGZhaWxzIChubyBtYXJrZXIpLiBQYXNzIE9ORSBxdW90ZWQgYXJndW1lbnQNCiAgIyBTVFJJTkcgaW5zdGVhZCDvv70gdGhlIHNhbWUgZml4IHRoZSBhZ3MgU3RhcnQtUHJvY2VzcyBhYm92ZSB1c2VzLiBDYXB0dXJlIGluamVjdCdzDQogICMgc3Rkb3V0L3N0ZGVyciBzbyBhIGZhaWxlZCBtbWFwIGlzIHZpc2libGUgaW4gZG9jcy9pbmplY3Qtd2F0Y2gub3V0LmxvZy4NCiAgJHdhdGNoT3V0ID0gSm9pbi1QYXRoICRyZXBvUm9vdCAiZG9jc1xpbmplY3Qtd2F0Y2gub3V0LmxvZyINCiAgJGluakFyZ3MgID0gIndhdGNoLW5vdyBTVVBFUlZJVkUtV2luNjQtU2hpcHBpbmcuZXhlIGAiJEhvb2tgIiINCiAgJHdhdGNoUHJvYyA9IFN0YXJ0LVByb2Nlc3MgLUZpbGVQYXRoICRpbmplY3RFeGUgLUFyZ3VtZW50TGlzdCAkaW5qQXJncyBgDQogICAgICAtV2luZG93U3R5bGUgTWluaW1pemVkIC1QYXNzVGhydSBgDQogICAgICAtUmVkaXJlY3RTdGFuZGFyZE91dHB1dCAkd2F0Y2hPdXQgLVJlZGlyZWN0U3RhbmRhcmRFcnJvciAiJHdhdGNoT3V0LmVyciINCiAgU3RhcnQtU2xlZXAgLU1pbGxpc2Vjb25kcyAyMDAgICAjIGxldCB3YXRjaC1ub3cncyBwb2xsIGxvb3Agc3BpbiB1cA0KICAjIFNlY29uZGFyeSBzaGltcyAocGljayArIHJlZnJlc2gpIO+/vSBpbmplY3RlZCBieSBhIERFVEFDSEVEIGhlbHBlciB0aGF0IHdhaXRzIGZvciB0aGUNCiAgIyBwcmltYXJ5IGNhdGFsb2dfc3RvcmVfZml4IHRvIGluc3RhbGwgKyBzZWxmLXVuaG9vayBmaXJzdCAoc28gdHdvIHRocmVhZC1zdXNwZW5kaW5nIGhvb2sNCiAgIyBpbnN0YWxscyBuZXZlciByYWNlKS4gRGV0YWNoZWQgc28gaXQgb3V0bGl2ZXMgdGhpcyBsYXVuY2hlciAodGhlIGdhbWUgZXhlIGRldGFjaGVzIGFuZA0KICAjIHRoaXMgc2NyaXB0IGV4aXRzKS4gT25seSBvbiB0aGUgYXV0by1ob29rIHBhdGg7IGFuIGV4cGxpY2l0IC1Ib29rIGluamVjdHMganVzdCB0aGF0IERMTC4NCiAgaWYgKCRJbmplY3RTZWNvbmRhcmllcykgew0KICAgICRzZWNJbmogPSBKb2luLVBhdGggJHJlcG9Sb290ICJjb25maWdzXGluamVjdC1zZWNvbmRhcmllcy5wczEiDQogICAgaWYgKFRlc3QtUGF0aCAkc2VjSW5qKSB7DQogICAgICAkc2V0RGVzYyA9IEAoInBpOCIsImNhdGFsb2dfcGlja19maXgiKQ0KICAgICAgaWYgKC1ub3QgJE5vTG9hZG91dCkgIHsgJHNldERlc2MgKz0gImxvYWRvdXRfZml4IiB9DQogICAgICBpZiAoJFdpdGhNaXNzaW9uc1NoaW0pIHsgJHNldERlc2MgKz0gIm1pc3Npb25zX2ZpeChyZXRpcmVkKSIgfQ0KICAgICAgV3JpdGUtSG9zdCAiICBTZWNvbmRhcnkgc2hpbXMgKCQoJHNldERlc2MgLWpvaW4gJyArICcpKSB3aWxsIGluamVjdCBvbmNlIHRoZSBzdG9yZS9yb3N0ZXIgaG9vayBzZXR0bGVzLiIgLUZvcmVncm91bmRDb2xvciBEYXJrR3JheQ0KICAgICAgIyBRdW90ZSB0aGUgc3BhY2VkIHBhdGhzIGluIE9ORSBhcmd1bWVudCBzdHJpbmcgKFN0YXJ0LVByb2Nlc3MgZG9lcyBub3QgcXVvdGUgLUFyZ3VtZW50TGlzdCBhcnJheQ0KICAgICAgIyBlbGVtZW50cywgc28gdGhlIHJlcG8gcGF0aCB3b3VsZCBzcGxpdCBhbmQgcG93ZXJzaGVsbCBjb3VsZG4ndCBmaW5kIHRoZSBzY3JpcHQpLiBBcHBlbmQgdGhlDQogICAgICAjIC1XaXRoTWlzc2lvbnNTaGltIC8gLU5vTG9hZG91dCB0b2dnbGVzIHRoZSBpbmplY3RvciBob25vdXJzLg0KICAgICAgJHNlY0FyZ3MgPSAiLU5vUHJvZmlsZSAtRXhlY3V0aW9uUG9saWN5IEJ5cGFzcyAtRmlsZSBgIiRzZWNJbmpgIiAtUmVwbyBgIiRyZXBvUm9vdGAiIg0KICAgICAgZm9yZWFjaCAoJGUgaW4gJHNlY0V4dHJhKSB7ICRzZWNBcmdzICs9ICIgJGUiIH0NCiAgICAgIFN0YXJ0LVByb2Nlc3MgcG93ZXJzaGVsbCAtV2luZG93U3R5bGUgSGlkZGVuIC1Bcmd1bWVudExpc3QgJHNlY0FyZ3MgfCBPdXQtTnVsbA0KICAgIH0gZWxzZSB7DQogICAgICBXcml0ZS1Ib3N0ICIgIChpbmplY3Qtc2Vjb25kYXJpZXMucHMxIG5vdCBmb3VuZCDvv70gc2Vjb25kYXJ5IHNoaW1zIHdpbGwgTk9UIGF1dG8taW5qZWN0KSIgLUZvcmVncm91bmRDb2xvciBZZWxsb3cNCiAgICB9DQogIH0NCiAgV3JpdGUtSG9zdCAiTGF1bmNoaW5nIFNVUEVSVklWRSAoUG9zdEF1dGggLT4gJGxvY2FsKS4uLiIgLUZvcmVncm91bmRDb2xvciBDeWFuDQogICYgJGV4ZSBAaW5pQXJncw0KICAjIFdoZW4gdGhlIGdhbWUgZXhpdHMsIHRoZSB3YXRjaC1ub3cgcHJvY2VzcyBpcyBoYXJtbGVzcyAobG9vcCBlbmRzIHdoZW4NCiAgIyBpdCBmaW5kcyB0aGUgcHJvY2VzcykuIEl0IGV4aXRzIG9uIGl0cyBvd24gYWZ0ZXIgYSBzdWNjZXNzZnVsIG1tYXAuDQp9IGVsc2UgewogIFdyaXRlLUhvc3QgIkxhdW5jaGluZyBTVVBFUlZJVkUgKFBvc3RBdXRoIC0+ICRsb2NhbCkuLi4iIC1Gb3JlZ3JvdW5kQ29sb3IgQ3lhbgogICYgJGV4ZSBAaW5pQXJncwp9Cn0KCmlmICgkUzE1MENvbnRyb2xsZWRDYXB0dXJlKSB7CiAgSW52b2tlLVMxNTBDb250cm9sbGVkQ29udGludWF0aW9uIC1CYWNrZW5kSWRlbnRpdHkgJGNvbnRyb2xsZWRMYXVuY2guQmFja2VuZElkZW50aXR5IGAKICAgIC1Db250aW51YXRpb24gJGxhdW5jaENvbnRpbnVhdGlvbiAtUmVzb2x2ZVByb2Nlc3MgJHMxNTBSZXNvbHZlUHJvY2VzcyBgCiAgICAtU3RvcFByb2Nlc3MgJHMxNTBTdG9wUHJvY2VzcyB8IE91dC1OdWxsCn0gZWxzZSB7CiAgJiAkbGF1bmNoQ29udGludWF0aW9uCn0KCiMgLS0tLSBOTyBwb3N0LWV4aXQgc3dlZXAgaGVyZSwgZGVsaWJlcmF0ZWx5IChGSy05LCBTMTA5KSAtLS0tCiMgSSBmaXJzdCBhZGRlZCBhIHNlY29uZCBhcmNoaXZlIGNhbGwgYXQgdGhpcyBwb2ludCwgYXNzdW1pbmcgYCYgJGV4ZWAgYmxvY2tzIHVudGlsIHRoZQ0KIyBnYW1lIGV4aXRzLiBJVCBET0VTIE5PVDogdGhlIHNoaXBwaW5nIGV4ZSBkZXRhY2hlcywgc28gYCYgJGV4ZWAgcmV0dXJucyBpbiB+MSBzIGFuZA0KIyB0aGlzIGxpbmUgcmFuIEJFRk9SRSB0aGUgZ2FtZSBoYWQgZXZlbiBtb3VudGVkIGl0cyBwYWtzLiBNRUFTVVJFRCAyMDI2LTA4LTA0IDE2OjM4IC0tDQojIHRoZSAicG9zdGV4aXQiIGFyY2hpdmUgd2FzIHdyaXR0ZW4gb25lIHNlY29uZCBhZnRlciB0aGUgImJlZm9yZSBsYXVuY2giIG9uZSwgb2YgdGhlDQojIHNhbWUgcmVwb3J0LiBJdCB3YXMgcHVyZSBkdXBsaWNhdGlvbiB1bmRlciBhIG1pc2xlYWRpbmcgbmFtZS4NCiMNCiMgVGhlIHByZS1sYXVuY2ggc3dlZXAgaXMgc3VmZmljaWVudCwgYW5kIHByb3ZhYmx5IHNvOg0KIyAgICogYSBwZW5kaW5nIHJlcG9ydCBpcyBvbmx5IGV2ZXIgZGVzdHJveWVkIGJ5IGEgbGF1bmNoIChNRUFTVVJFRCAxNjozODo1MSAtLSBtZXRhZGF0YQ0KIyAgICAgd2VudCAxNTAgQi9udW1fcmVjb3Jkcz0xIC0+IDE2IEIvbnVtX3JlY29yZHM9MCBpbiB0aGUgc2FtZSBzZWNvbmQgY3Jhc2hwYWRfaGFuZGxlcg0KIyAgICAgc3RhcnRlZCksIGFuZCB3ZSBhcmNoaXZlIGltbWVkaWF0ZWx5IGJlZm9yZSB0aGF0Ow0KIyAgICogYXQgcHJlLWxhdW5jaCB0aW1lIFNhdmVkXExvZ3NcTG9raS5sb2cgaXMgU1RJTEwgdGhlIGRlYWQgc2Vzc2lvbidzIGxvZywgYmVjYXVzZSBVRQ0KIyAgICAgcm90YXRlcyBpdCBhdCBnYW1lIHN0YXJ0dXAgLS0gc28gdGhlIHN3ZWVwIGNhcHR1cmVzIHRoZSBjb3JyZWN0LCB1bnRydW5jYXRlZCBsb2cNCiMgICAgIGZvciB0aGUgZGVhdGggaXQgaXMgYXJjaGl2aW5nLCBub3QgdGhlIG5ldyBydW4ncy4NCiMNCiMgQmxvY2tpbmcgaGVyZSB0byB3YWl0IGZvciB0aGUgZ2FtZSB0byBleGl0IGlzIE5PVCBhbiBvcHRpb246IENMQVVERS5tZCdzIGhhbmRzLWZyZWUNCiMgdHV0b3JpYWwgcmVjaXBlIHJlcXVpcmVzIHRoaXMgc2NyaXB0IHRvIHJldHVybiBwcm9tcHRseSBzbyBmazI0LXN0YWdlLnBzMSBjYW4gcnVuLg0KIyBJZiB5b3Ugd2FudCBhIGR1bXAgaW4gZHVtcHNcIHdpdGhvdXQgd2FpdGluZyBmb3IgdGhlIG5leHQgbGF1bmNoLCBydW4NCiMgYGNvbmZpZ3NcYXJjaGl2ZS1jcmFzaGR1bXBzLnBzMSAtTGFiZWwgPHRhZz5gIGJ5IGhhbmQgYWZ0ZXIgdGhlIGRlYXRoLg0KDQo="
+                           },
+    "retirement":  {
+                       "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\s150-retirement-s150captureflight2-20260829-192619",
+                       "directEntryCount":  14,
+                       "recursiveFileCount":  15,
+                       "reparseEntryCount":  0,
+                       "files":  [
+                                     {
+                                         "path":  "capture-archive\\9135172aa73b4cc8bac2c9fcbbe93aa1-capture.log",
+                                         "size":  81948076,
+                                         "sha256":  "A0BB12840AEDC385D00EE2986461ED0EF3A01AB9A0CA9A0B253FA0D95C9058F6",
+                                         "creationUtcTicks":  639233174350942752,
+                                         "lastWriteUtcTicks":  639234740152436268,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "capture-archive\\9135172aa73b4cc8bac2c9fcbbe93aa1-capture.log.prev",
+                                         "size":  268435077,
+                                         "sha256":  "E96C5193B528B87D4007B95016B5A645AB7B2D58580AB9DBDEB4EA715285B304",
+                                         "creationUtcTicks":  639233174350942752,
+                                         "lastWriteUtcTicks":  639234717188843299,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "crashwatch.stderr.log",
+                                         "size":  0,
+                                         "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                                         "creationUtcTicks":  639236573109078977,
+                                         "lastWriteUtcTicks":  639236573109328977,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "crashwatch.stdout.log",
+                                         "size":  352,
+                                         "sha256":  "CE5A4D371130F9C023BFDAD3528877E9596F246F322A0BE1356564A51EEE4461",
+                                         "creationUtcTicks":  639236573109068977,
+                                         "lastWriteUtcTicks":  639236573111879122,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "launcher.stderr.log",
+                                         "size":  0,
+                                         "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                                         "creationUtcTicks":  639236572944686271,
+                                         "lastWriteUtcTicks":  639236572948126658,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "launcher.stdout.log",
+                                         "size":  625,
+                                         "sha256":  "15E75FB1FC269F8CA3409AB8011986D6AA4E9D85F37CE5545F8A3692E47008DD",
+                                         "creationUtcTicks":  639236572944676261,
+                                         "lastWriteUtcTicks":  639236573108803162,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "launcher-child.json",
+                                         "size":  2372,
+                                         "sha256":  "AEAAF07755FB86DF9135CD75B654981758900481A214B7BF3C17A066F7367737",
+                                         "creationUtcTicks":  639236572953121269,
+                                         "lastWriteUtcTicks":  639236572953131264,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "launcher-cleanup-result.json",
+                                         "size":  910,
+                                         "sha256":  "05BEA16D849709B2D95EE9785DA83A94294138FB05530493BB700F1D2D18CBE2",
+                                         "creationUtcTicks":  639236573232579806,
+                                         "lastWriteUtcTicks":  639236573232589816,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "launcher-invoked.json",
+                                         "size":  1170,
+                                         "sha256":  "15204E0FA6F52D37299BBA07A54C1299029CD88C1D9C1F9B58AC447EF53E42B9",
+                                         "creationUtcTicks":  639236572947906629,
+                                         "lastWriteUtcTicks":  639236572947906629,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "launcher-result.json",
+                                         "size":  2564,
+                                         "sha256":  "DB882D0B9877B31EE4002F64C9F41A46830420B4EB11F39658689C7C51542DD6",
+                                         "creationUtcTicks":  639236573095918215,
+                                         "lastWriteUtcTicks":  639236573095928228,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "launcher-result.receipt.json",
+                                         "size":  516,
+                                         "sha256":  "8A68C9B9A76C17AA3890CBE4BE741C08A466F7BC4ABEC49025EE03782147879C",
+                                         "creationUtcTicks":  639236573096068211,
+                                         "lastWriteUtcTicks":  639236573096068211,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "prior-server.out.log",
+                                         "size":  35646,
+                                         "sha256":  "3C9CAA4DC92C48FDD4126E18D2E2C8CBC7C2A3199BE71E3385D5984A57C5E171",
+                                         "creationUtcTicks":  639233174349767275,
+                                         "lastWriteUtcTicks":  639234739639823957,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "recoverlaunch-invoked.json",
+                                         "size":  600,
+                                         "sha256":  "44D1CEDA891B3290E2D38E918978A4492C3AE91B8680591D659B34F6F8213248",
+                                         "creationUtcTicks":  639236572929861492,
+                                         "lastWriteUtcTicks":  639236572929871526,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "recovery-handoff.json",
+                                         "size":  6745,
+                                         "sha256":  "708D724234416A2AD85856A98364C94E05B6C5719EFFEB802C8E05661827628C",
+                                         "creationUtcTicks":  639236572929991494,
+                                         "lastWriteUtcTicks":  639236572929991494,
+                                         "attributes":  "Archive"
+                                     },
+                                     {
+                                         "path":  "stager-planonly.json",
+                                         "size":  847,
+                                         "sha256":  "228CC16C0E4228CC0553F4E33F53CB9F7531D16FC319A0AA86CAB48ACC3B6A02",
+                                         "creationUtcTicks":  639236572929671485,
+                                         "lastWriteUtcTicks":  639236572929721498,
+                                         "attributes":  "Archive"
+                                     }
+                                 ]
+                   },
+    "dump":  {
+                 "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\dumps\\crash-s150captureflight2-20260829-192619",
+                 "attributes":  "Directory",
+                 "entryCount":  0
+             },
+    "requiredAbsences":  {
+                             "fresh-admission.json":  true,
+                             "stager-invoked.json":  true,
+                             "stager-child.json":  true,
+                             "stager.stdout.log":  true,
+                             "stager.stderr.log":  true,
+                             "stager-result.json":  true,
+                             "stager-result.receipt.json":  true
+                         },
+    "activeState":  [
+                        {
+                            "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\server\\ags.exe",
+                            "size":  11051520,
+                            "sha256":  "115D0999C247DFD3FC107FBB9BEE2F8C130FC0D5EC00AB01FC3D1AB106A895DA",
+                            "creationUtcTicks":  639233174349482602,
+                            "lastWriteUtcTicks":  639236573065325316,
+                            "attributes":  "Archive"
+                        },
+                        {
+                            "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\capture.log",
+                            "size":  394,
+                            "sha256":  "2AFD4C663632BD78E9ED414D98D20C26C70E544EF47A96213A38477A919D4A80",
+                            "creationUtcTicks":  639236573082625040,
+                            "lastWriteUtcTicks":  639236573108765574,
+                            "attributes":  "Archive"
+                        },
+                        {
+                            "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\server.out.log",
+                            "size":  798,
+                            "sha256":  "EC0B90B1FE61E8ECFF0E9615BE0339A31E972032C5BBDE2F21A5D20DEB63D7B1",
+                            "creationUtcTicks":  639233174349767275,
+                            "lastWriteUtcTicks":  639236573084505849,
+                            "attributes":  "Archive"
+                        },
+                        {
+                            "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\certs\\root.crt",
+                            "size":  1196,
+                            "sha256":  "CA587DE228D23041FC5927ED48DC1ECC83F9C4CB42BFC6972F8C60440B7D129C",
+                            "creationUtcTicks":  639233174351570290,
+                            "lastWriteUtcTicks":  639236573084485820,
+                            "attributes":  "Archive"
+                        },
+                        {
+                            "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\certs\\server.crt",
+                            "size":  2599,
+                            "sha256":  "01B80C9C42B31FDF5F64DDF7EEA92811B69AE076DF0D1A2D69BFE90E7E6656A2",
+                            "creationUtcTicks":  639233174351560289,
+                            "lastWriteUtcTicks":  639236573084485820,
+                            "attributes":  "Archive"
+                        },
+                        {
+                            "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\certs\\server.key",
+                            "size":  1679,
+                            "sha256":  "1773ECC40A0725441C97C192C4F53AD9F9520CA2C2FDCA642542826C093F9BFB",
+                            "creationUtcTicks":  639233174351570290,
+                            "lastWriteUtcTicks":  639236573084485820,
+                            "attributes":  "Archive"
+                        }
+                    ],
+    "capturePrevAbsent":  true,
+    "terminalConclusion":  "RECOVERLAUNCH_WATCHER_ADMISSION_REFUSED; BACKEND_AND_GAME_BRIEFLY_LAUNCHED; NO_FRESH_ADMISSION; NO_ARM; NO_STAGER; NO_INJECTION; CLEANUP_STABLE_ZERO; FLIGHT2_TERMINAL_NO_RETRY"
+}
