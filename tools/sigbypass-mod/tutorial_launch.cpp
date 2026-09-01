@@ -6731,7 +6731,7 @@ enum { DPV_KNOWN=1, DPV_PLANE=2, DPV_POD=4, DPV_SHIP=8, DPV_ACTOR=16, DPV_RIDE=3
 //    CDO, so the DELTA TABLE -- the thing this mode declares to be "the result" -- could read +1 with
 //    ZERO actors spawned. Excluding them makes a non-zero delta mean what it says; counting them
 //    separately keeps "a new class got loaded" visible, which is itself informative.
-struct DpCounts { long plane, pod, ship, hits, fresh, gone, arche; };
+struct DpCounts { long plane, pod, ship, hits, fresh, gone, arche, podSubstr, planeSubstr, shipSubstr; };
 
 // UClass-keyed memo. The census runs up to five times; without this each run would FName-decode a
 // 12-deep derivation chain for all ~197k objects. With it, only genuinely NEW classes cost anything --
@@ -6887,10 +6887,23 @@ static void DpCensus(const char* when,bool verbose,bool record,DpCounts* out){
                     Markerf("[DP] %s      0x%llX '%s' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]\r\n",
                             when,(unsigned long long)obj,on); printed++; }
                 continue; }
-            if(v&DPV_PLANE) c.plane++;
-            if(v&DPV_POD)   c.pod++;
-            if(v&DPV_SHIP)  c.ship++;
-            c.hits++;
+            // ★★★★★ S150-drop (2026-09-01) — census/RdResolve population disagreement fix.
+            //   Flight 1 measured DropPod=2 here while RdResolve saw 0 pods, on the same GUObjectArray,
+            //   same instant, same DpClassVerdict. Root cause [M]: DPV_POD is a substring test
+            //   (strstr "DropPod"), so `ABP_DropPod_*_C` (AnimInstance), `WBP_UI_DropPod*` (UUserWidget),
+            //   `Comp_*DropPod*` (UActorComponent) all hit -- but they are NOT AActor-derived and
+            //   RdResolve correctly refuses to select them (feeding a non-Actor into RdResolve's
+            //   `PropOffsetSuper` / `LokiRideable+0x130` writes is a heap-corruption primitive).
+            //   FIX (route b, metric-only): conjoin (v&DPV_ACTOR) so the printed field means "pod ACTORS".
+            //   The companion podSubstr/planeSubstr/shipSubstr buckets preserve the "a class got demand-loaded"
+            //   diagnostic without contaminating the DELTA TABLE. Cost: zero (DPV_ACTOR already computed).
+            if((v&DPV_PLANE) && (v&DPV_ACTOR)) c.plane++;
+            if((v&DPV_POD)   && (v&DPV_ACTOR)) c.pod++;
+            if((v&DPV_SHIP)  && (v&DPV_ACTOR)) c.ship++;
+            if(v&DPV_PLANE) c.planeSubstr++;
+            if(v&DPV_POD)   c.podSubstr++;
+            if(v&DPV_SHIP)  c.shipSubstr++;
+            if(v&DPV_ACTOR) c.hits++;
             // S131 latch: pod ACTORS only (see g_dpPodAct). Archetypes already `continue`d above.
             // Mode-gated for the same reason as the reset above: other variants stay byte-identical.
             if((v&DPV_POD)&&(v&DPV_ACTOR)&&(kRunMode==RM_DROPPOD||kRunMode==RM_POOLSPAWN)){
@@ -6920,11 +6933,18 @@ static void DpCensus(const char* when,bool verbose,bool record,DpCounts* out){
     if(!record){
         for(int k=0;k<g_dpBeforeN;k++) if(!GcAlive(g_dpBefore[k])) c.gone++;
     }
-    Markerf("[DP] %s CENSUS summary: DropPlane=%ld DropPod=%ld DropShip=%ld objects=%ld new=%ld gone=%ld "
+    Markerf("[DP] %s CENSUS summary: DropPlane(actor)=%ld DropPod(actor)=%ld DropShip(actor)=%ld objects=%ld new=%ld gone=%ld "
             "archetypesExcluded=%ld (memo classes=%ld overflow=%ld) elapsed=%lu ms%s\r\n",
             when,c.plane,c.pod,c.ship,c.hits,c.fresh,c.gone,c.arche,g_dpMemoUsed,g_dpMemoFull,
             (unsigned long)(GetTickCount()-t0),
             g_dpBeforeOverflow?"  ** BEFORE-SET OVERFLOWED: 'new' is an UPPER bound **":"");
+    // S150-drop: substring-only buckets, so a disagreement between "actor" and "substring" is visible
+    // in one line. If substring > actor, the delta names how many non-Actor UObjects (AnimInstance,
+    // UUserWidget, UActorComponent) contain the drop-family substring -- a demand-load signal.
+    if(c.planeSubstr!=c.plane || c.podSubstr!=c.pod || c.shipSubstr!=c.ship)
+        Markerf("[DP] %s CENSUS substring vs actor: DropPlane %ld/%ld  DropPod %ld/%ld  DropShip %ld/%ld  "
+                "(a mismatch names non-Actor UObjects whose name contains 'DropPlane'/'DropPod'/'DropShip')\r\n",
+                when,c.planeSubstr,c.plane,c.podSubstr,c.pod,c.shipSubstr,c.ship);
     if(out)*out=c;
 }
 
@@ -13627,6 +13647,21 @@ static void RdResolve(){
             if(strncmp(on,"Default__",9)==0||strstr(on,"_GEN_VARIABLE")) continue;   // archetypes never
             uint32_t v=DpClassVerdict(cls);
             if((v&DPV_POD)&&(v&DPV_ACTOR)){ if(np<16) pods[np++]=obj; continue; }
+            // ★ S150-drop probe: NAME-only "DropPod" hits that are NOT Actor-derived (AnimInstance,
+            //   UUserWidget, UActorComponent whose class name contains "DropPod"). Print the leaf
+            //   class + full derivation chain so a successor knows exactly what the pre-existing
+            //   census "2 DropPods" actually are. Capped at 32 lines/run per FK-25 marker cost.
+            //   `continue` guarantees zero downstream contamination.
+            if((v&DPV_POD)&&!(v&DPV_ACTOR)){
+                static int nRdNonActorPod=0;
+                if(nRdNonActorPod++<32){
+                    char cn[96]="?"; GetFNameStr(NameId(cls),cn,sizeof(cn));
+                    char chainNA[256]; PhChainHas(cls,"@never@",chainNA,sizeof(chainNA));
+                    Markerf("[RD] non-actor DropPod hit obj=0x%llX '%s' cls=%s chain=%s\r\n",
+                            (unsigned long long)obj,on,cn,chainNA);
+                }
+                continue;
+            }
             // PlayerState: exact-ish -- the chain must name LokiPlayerState AND be an Actor.
             char chain[256];
             if((v&DPV_ACTOR)&&PhChainHas(cls,"LokiPlayerState",chain,sizeof(chain))){ if(nps<16) pss[nps++]=obj; }

@@ -374,6 +374,147 @@ pod vel / bHasStartedGameplay / DropPodState / PlayersAttached.Num`, and compute
 receipts from the OBSERVED samples: **R1** append landed, **R3** hero tracks pod (treatment) vs
 frozen (control), **PB** StartPodGameplay ran. Offsets match `pod_live_read.py`/`motion_watch.py`.
 
+### 6.7 Mount-flight ARMED-WINDOW 1 (2026-09-01, 6 injections into ONE client, ~13 min uptime, survived)
+
+**First staged attempt at the RM_MOUNT ride A/B. Result: the arm's safety design works; the staging
+recipe does NOT produce a mountable pod on this world state; SpawnPlane still faults where fk22
+thought it wouldn't. R3 (the decisive ride receipt) NOT MEASURED — no qualifying pod ever existed.**
+Dump preserved at `dumps/s150-mount-flight-1/`; final marker at `docs/mount-flight-1-final-marker.txt`.
+
+**Sequence flown** (evidence-gated + injection-gaps): staging `gft → fo → sp` clean; injection 4
+`droppod-pe-cdopoke`; injection 5 `mount_ride`; injection 6 `dropplane-b1only`.
+
+**Observed:**
+- ✅ **Staging clean:** `[SP] done step=4 spawnedPawn=0x229E822D560 cls=BP_HERO_Ronin_C`; hero spawned
+  + possessed in `LVL_Tutorial`.
+- ⚠ **The staged world holds 2 pre-existing `DropPod` actors + 3 `DropPlane` actors + 0 `DropShip`**
+  (droppod's BEFORE census, archetypes excluded). Nothing about "start from a fresh world" was true here.
+- ⚠ **`droppod-pe-cdopoke` SITTING VOID [M]:** `ship=0x0 TeamDropPodClass=0x0` — the ship-picker
+  found nothing, so both Route C and Route E refused. No new pod created.
+- ✅ **`RM_MOUNT`'s safety design WORKS [M]:** `RdResolve` reported **"0 pod actor(s), 2 live
+  ALokiPlayerState(s)"** and **"NO POD QUALIFIES: none has both PodTeamIndex==0 and a non-null
+  LokiRideable. REFUSING to guess."** g_mtSetup=-1, nothing written, nothing called. The DATA-write
+  arm is provably risk-controlled.
+  ⚠ Note the population disagreement: droppod's census sees 2 DropPod actors; RdResolve sees 0. Same
+  `DpClassVerdict` code, so the 2 the droppod arm counted have some non-actor property RdResolve
+  additionally filters (likely bit for `DPV_ACTOR` — investigate offline before the next flight).
+- ⚠ **`dropplane-b1only` — the S93 SpawnPlane fault REPRODUCED [M]:** B0c control (`GetAutoDropLocation`)
+  PASSED cleanly (⇒ the FFrame primitive fix works, S93's confound is eliminated), then **B1
+  `SpawnPlane` FAULTED**: `0xC0000005 READ addr=0x0 rip=0x7FF6B6DB95DD rva=0x13495DD`, with RCX
+  naming the marker class **`PlaneCenteredLocation`**. SEH captured; game survived. ⇒ SpawnPlane's
+  fault is NOT a marker-existence issue as fk22 argued — the marker class is visibly named at the
+  fault RIP. Real cause is downstream of the marker lookup; needs re-RE against the fresh dump.
+- ✅ **Game survived all 6 injections + 1 caught fault**, well past the FK-32 mode of 4 — a lucky
+  window. Do NOT read this as "6 injections are safe" — the corpus median is 4.
+
+**What this doesn't answer:** R3 (does a poke-appended rider co-move a flying pod). The world had no
+mountable pod ⇒ the RM_MOUNT arm's setup never proceeded past resolve ⇒ nothing was written to
+`PlayersAttached`, nothing was moved. That test is **still open**.
+
+**What the next flight must fix (do OFFLINE first, before any launch):**
+1. Investigate the RdResolve/droppod-census population disagreement (2 vs 0 pods) — one instrument
+   is filtering more than the other. Cheap offline diff of the two class-verdict paths.
+2. Investigate SpawnPlane's real fault at rva `0x13495DD`. The fresh dump `dumps/s150-mount-flight-1/`
+   captures the just-executed page — read the fault site (`rip-24` bytes `8B C8 48 8B 08 48 83 C0 08
+   48 89 42 20 …`) and trace what `PlaneCenteredLocation` context is being deref'd null.
+3. Determine whether **`SpawnDropPodForTeam` can be reached WITHOUT a DropShip on this world** (e.g.
+   pass a manufactured `FDropPodParams` directly, S131 route). If yes → we skip the plane chain
+   entirely and rely on the existing 2 DropPod actors, initializing one of them ourselves to satisfy
+   RdResolve.
+4. Only then attempt a second flight with: `gft → fo → sp` (staging), then a REFINED arm that either
+   fixes SpawnPlane or bypasses the plane entirely to produce a `PodTeamIndex==0` pod.
+
+**⚠ Corrections banked:** the S131 recipe `gft → fo → sp → dropplane_b1only → droppod-pe-cdopoke →
+rideable` DID NOT WORK on this world state (SpawnPlane faulted). Either (a) the world state has
+changed since S131 was recorded and the recipe is now stale, or (b) there is a precondition S131 met
+implicitly that this flight didn't. Do NOT re-fly the S131 recipe without diagnosing why B1 faulted.
+
+### 6.8 RdResolve population disagreement — DIAGNOSED [M] + census fix + probe (2026-09-01, offline)
+
+**Finding [M, verified]:** the discriminator is **`DPV_ACTOR`**. The census counter that prints
+`DropPod=%ld` (`tutorial_launch.cpp:6891` before the fix) gated on `(v & DPV_POD)` alone — a
+**substring** test on the derivation chain. `RdResolve`'s pod-selection gate (`tutorial_launch.cpp:13649`)
+correctly gates on `(v & DPV_POD) && (v & DPV_ACTOR)`. The 2 pre-existing "DropPod" objects the census
+counted are non-Actor UObjects whose class name contains "DropPod" — likely `ABP_DropPod_*_C`
+(UAnimInstance), `WBP_UI_DropPod*` (UUserWidget), or `Comp_*DropPod*` (UActorComponent). `DPV_ACTOR`
+tests exact `strcmp(n,"Actor")==0` (UHT strips the `A`), so only class chains that terminate through
+AActor qualify.
+
+**⚠⚠ This DOES NOT UNBLOCK RM_MOUNT.** `RdResolve` was right to refuse; there really is no pod
+ACTOR in the staged world. Loosening its gate to match the census would be a heap-corruption
+primitive (RM_MOUNT writes to `LokiRideable+0x130` on the resolved object — feeding a non-Actor
+UObject there is UB). The fix is **metric-only**: the census printout now means what its label
+implies. Flight 2 still needs a real pod-actor route (SpawnPlane fix, or `SpawnDropPodForTeam` bypass).
+
+**Applied [M]:**
+- `tutorial_launch.cpp:6734` — `DpCounts` grew `planeSubstr, podSubstr, shipSubstr` fields.
+- `tutorial_launch.cpp:~6890-6900` — plane/pod/ship counters now conjoin `(v & DPV_ACTOR)`; the
+  substring buckets track the pre-fix behaviour.
+- `tutorial_launch.cpp:~6923` — summary prints `DropPlane(actor)=%ld DropPod(actor)=%ld
+  DropShip(actor)=%ld`; a second line prints the substring/actor mismatch if it exists.
+- `tutorial_launch.cpp:~13650` — **RdResolve probe:** on any `(v & DPV_POD) && !(v & DPV_ACTOR)` hit,
+  print `[RD] non-actor DropPod hit obj=… '…' cls=… chain=…` (capped at 32 lines/run). `continue`
+  after — zero downstream contamination. Ground truth on the 2 mystery objects arrives in one armed
+  window with zero additional writes.
+
+**Regression digests after the fix** (diff the HASH, never the size):
+- ✅ `botai 5e47c13cf7f0a158` UNCHANGED (mount/census dead-strip clean).
+- ✅ `play 9bc10a4552c596e1` UNCHANGED.
+- ⚠ **`dropplane_b1only 5b4467b0105dec1a → dcb19157cf45f9aa`** MOVED. The diagnosis's "b1only's build
+  flags don't compile the changed lines" was wrong: `DpCensus` is called by `RM_DROPPLANE` too, so
+  the counter-line edits compile into b1only. **The move is metric-only** — the arm now prints
+  honest `DropPlane(actor)=N` + a substring bucket; behaviour is preserved. **The CLAUDE.md line
+  citing `5b4467b0105dec1a` as b1only's regression gate is now invalidated; the new gate is
+  `dcb19157cf45f9aa`.**
+- ✅ DROPPOD family moved as predicted: `droppod-pe-cdopoke bc1c1a5b1e66b54a → 283c1692a2135680`,
+  `droppod-pe-cdoctrl 61fd0745c23e89f0 → f90890fabda0d3cb`, `poolspawn-cdopoke efe8db553bf511ba →
+  564e9b86f5f89b65`, `poolspawn-cdoctrl 85f3cee44c31b1cd → ca4a82fc8c1754cd`.
+- ✅ Mount digests moved (from the RdResolve probe addition): `mount-ride 3f2ca00cab62a3b6 →
+  9b7f88af3210c438`, `mount-noride 9b298565ac45d1ca → 224654eaea08319d`. `--dupes` still clean
+  (mount-ride ≠ mount-noride).
+
+### 6.6 Landing-SELECTION UI RE (2026-09-01, offline; 4 lanes + verifier + a widget re-run)
+
+**The selection UI is a SPLIT problem, and stage 3 (the reticle) is COUPLED to stage 2 (the plane).**
+- **The selection-open FLAG is shim-drivable [M]:** `ULokiPlayerDropPlaneComponent::OnSelectDropLocationStarted`
+  (reflected BlueprintEvent, `ProcessEvent` slot 78) sets `bCanSelectDropLocation=true` +
+  `SetComponentTickEnabled(true)`, gated only by `IsLocalClient()` (passes on this client).
+- **The COMMIT path is mapped [M/I]:** `SetDropPodDestination` (slot 157) stores the chosen `FVector`
+  at `component+0x118` (byte `+0x130 bDropLocationSelected`); `ServerSetDropPodDestination` is a
+  **stripped** fold; `ServerLaunchDropPod` (slot 152) is **real-but-DARK** →
+  `AuthLaunchDropPodForTeam(FDropPodParams{Destination}) → SpawnDropPodForTeam`. All native-reflected,
+  CALL-ONLY. **No backend/HTTP route.** ⚠ The DARK bodies (`0x56FAE90`/`0x56FACE0`/`0x56FF1D0`) are
+  `[I]` (undecrypted); only the getter `0x56EBA30` + gate `CanLaunchDropPod 0x56DEB00` are `[M]`.
+- ★★★★★ **[M] THE RETICLE KEYS ON THE PLANE, NOT THE FLAG — the make-or-break, settled offline from
+  the reticle's own `OnPaint` bytecode.** `WBP_UI_DropPlane_SpinningDonut::OnPaint` (minimap reticle;
+  the fullscreen twin is `WBP_UI_DropPlane_Slices` in `WBP_UI_ExpandedMap`) draws only if ALL pass:
+  `MapViewComp` valid · `GetLocalLokiPlayerState()` valid · the `LokiPlayerDropPlaneComponent` valid ·
+  **`bDropLocationSelected == false`** · **`component.DropPlane` dynamic-casts to
+  `BP_DropPlane_SpinningDonut_C`** (a live `ALokiDropPlane` actor). **`bCanSelectDropLocation` is read
+  by the reticle ZERO times** (only the input-legend `WBP_UI_DropMap_ButtonInputs` reads it), and the
+  AS `UpdateDropLocationCursor` tick is vestigial (computes into discarded locals, no member store).
+  ⇒ **driving `OnSelectDropLocationStarted` alone will NOT render the reticle** — the reticle is
+  blocked by the PLANE (`component.DropPlane` is null; `ALokiDropPlane::AuthStart` flight is a stripped
+  `0xF7EC20` stub). **Stage 3 is a plane-substitution problem, not a flag flip.**
+  ⇒ ★ **The container half IS client-drivable:** `WBP_UI_ExpandedMap`'s `Enable Drop Phase State`
+  (plain client BlueprintCallable, no ServerOnly gate) switches `WidgetSwitcher_GamePhase →
+  DropPhaseWidgets` on component presence — so the drop-map opens, but its reticle content stays empty
+  without a plane.
+- ⚠ **CORRECTION banked:** `WBP_UI_PredropScreen`/`_PlayerEntry` (the prior guess) is **NOT the
+  reticle** — it's the champions/team-lineup grid. The reticle is `WBP_UI_DropPlane_SpinningDonut`
+  (minimap) / `WBP_UI_DropPlane_Slices` (expanded map). `WBP_Minimap_DropPod_Aim_Indicator` /
+  `WBP_UI_DropPodIndicator_Animated` is the **post-launch pod-aim crosshair**, not the pre-drop reticle.
+- ⇒ ★★ **IMPLICATION FOR THE PLAN:** the selection reticle AND the plane flight are ONE blocker (a
+  live `ALokiDropPlane` actor of the right BP class assigned to `component.DropPlane`, with geometry
+  populated) — `SpawnPlane`'s caller is unresolved and `AuthStart` is stripped. **The POD-ride path
+  (`RM_MOUNT`) is separate and further along, and pod PLACEMENT does not need selection** —
+  `SpawnDropPodForTeam(LandingLocation)` (S131) sets `CurrPodDestination` directly. So the realistic
+  route to "playable hero via a driven drop" is the pod path; the plane+selection is the authentic-BR
+  polish and is gated on plane substitution (an open research problem). Do NOT fly the "flag-only"
+  selection probe — it would predict a null (flag on, reticle blocked) that this RE already establishes.
+  ⚠ Whether the tutorial's configured plane (`BP_DropPlane_Straight_Tutorial`) IS-A
+  `BP_DropPlane_SpinningDonut_C` (the exact cast class) is `[S]` — check before any plane substitution.
+
 ---
 
 ## 7. Do-not-regress (stale / contradicted claims banked)
