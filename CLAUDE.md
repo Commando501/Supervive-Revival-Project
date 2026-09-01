@@ -3134,9 +3134,76 @@ Read `docs/fk22-dropphase-reachability.md` §14-§15.** Two flights on one stage
   `KFSNAME=""` (`-any`) fixed it (**508 game-thread hits**). Budget arms accordingly.
 
 ### Before touching anything drop- / deploy- / DropPlane- / DropPod- / dismount- / "SpawnPlane faults" shaped
-★★★★★ **S150-drop (2026-09-01) — THE REAL DROP SEQUENCE IS GO, THE `RM_MOUNT` ARM IS BUILT, AND THE
-MOUNT WALL FELL. Read `docs/drop-sequence-status-s150.md` (stage-by-stage census + offline grading +
-arm spec). Committed `d8b7082` (local).** This is a SEPARATE, OPERATOR-DIRECTED target from the
+★★★★★ **S150-drop (2026-09-01) — ACCEPTANCE PREDICATE MET [M]: HERO WALKS ON REAL TERRAIN VIA
+A DRIVEN DROP. Read `docs/drop-sequence-status-s150.md` §6.16 (the flight-4b HISTORIC SUCCESS
+record). Committed `8f1e804` (local). Next session's task: `docs/next-session-prompt-s150-drop-dlp.md`
+— wire the 4-arm chain into ONE arm (RM_DROPLANDPLAY).**
+
+**The chain, flown 2026-09-01 across 4 flights + verification, delivers a playable hero via
+a driven drop.** 7 sequential injections: `gft → fo → sp → dropplane_b1only → droppod-pe-cdopoke
+→ dismount-landstart → play-atlanding-walk`. Hero: `(0, 0, 13240)` → landed at `(-3206.4, 5070.5,
+138)` on TrainingStart terrain → walked to `(-1960, 5070, 90)` = **+1246 uu east, Z=90 constant**
+(ground-level locomotion, camera + animations + WASD all active). §6.16 records every receipt.
+
+**Fixes landed in this arc (byte-verified, do not regress):**
+- ★ **`dismount-*` PS-picker fix (`tutorial_launch.cpp` DxLadderStep D0h):** resolve
+  `GetLokiCharacter` PER CANDIDATE's own class (not just cand[0]'s); when no candidate passes
+  GATE 5 + GATE 6, REFUSE by jumping to case 7 (D5 cleanup). CLAUDE.md §14.1's documented
+  one-line fix; was 40 lines because the resolve was global not per-candidate. Two PS candidates
+  live on this world state (`LokiPlayerState_HeroAffiliated` cannot resolve GetLokiCharacter;
+  `BP_LokiPlayerState_C` can) — first-match on cand[0] would fault at `rva 0x54F8C57`. Commit
+  `8f1e804`.
+- ★ **`DpCounts` census/RdResolve fix (`tutorial_launch.cpp:6890-6923`):** all three counters
+  (`plane`, `pod`, `ship`) conjoin `DPV_ACTOR`; companion `podSubstr/planeSubstr/shipSubstr`
+  buckets track substring-only hits separately. Print format now says `DropPod(actor)=N` plus a
+  substring-vs-actor mismatch line. Removes the false-alarm disagreement between census + RdResolve
+  (flight 1). Commit `2060cb8`.
+- ★ **`drop_ride_readout.py` per-candidate gate:** apply the shim's RdResolve gate (DPV_ACTOR +
+  PodTeamIndex==0 + non-null RootComponent) in the reader's `discover()`. Flight 2 tool defect;
+  reader was picking non-Actor "DropPod"-substring UObjects. Commit `7f9e96b`.
+
+**Current post-fix `.text` digest gates** (diff the HASH, never the size — several sessions'
+digests moved during this arc; do not use pre-S150-drop values):
+| arm | digest | role |
+|---|---|---|
+| `botai` | `5e47c13cf7f0a158` | UNCHANGED (regression validator) |
+| `play` | `9bc10a4552c596e1` | UNCHANGED (regression validator) |
+| `dropplane_b1only` | **`dcb19157cf45f9aa`** | POST-`2060cb8` (was `5b4467b0105dec1a`) |
+| `droppod-pe-cdopoke` | **`283c1692a2135680`** | POST-`2060cb8` (was `bc1c1a5b1e66b54a`) |
+| `dismount-landstart` | **`62f257c191027ee3`** | POST-`8f1e804` (was `0d5fa554edac53c5`) |
+| `dismount` | **`0fe6d7ae1f26e16b`** | POST-`8f1e804` |
+| `mount-ride` | `9b7f88af3210c438` | POST-`2060cb8`, flight-2 proven |
+| `mount-descend` | `c26e8831f45d7548` | POST-`2060cb8` rebuild, flight-3 tested (PB works, descent does not auto-fire — §6.13) |
+| `mount-phaseb` | `d69642beacc5e7a8` | POST-`2060cb8` rebuild |
+| `play-atlanding-walk` | `944a27728053359e` | S132, flight-4b proven (Walking mode works) |
+
+**Two S150-drop blockers still OPEN (recorded, next-session targets):**
+- **§6.13 — IntroSequence timer / `OnIntroSequenceFinished` does not auto-fire on client.**
+  StartPodGameplay's `bHasStartedGameplay` latch flips (Phase-B call reached AS body), pod's
+  cruise mover deactivates immediately, but the ~6.5s IntroSequence timer never re-activates the
+  mover with a descent velocity. Chain stops BEFORE StartPodMovement. Three offline-gradable
+  hypotheses (H1 timer/client, H2 leader-pod branch gate, H3 state-write dependency). Fixing this
+  is what makes "cinematic descent" work rather than teleport-to-landing.
+- **§6.9 — `CallBPGuarded` primitive misses `FFrame+0x80 OutParms`.** `rva 0x13495DD` mis-labeled
+  as `GetAllActorsWithTag` for months — it is actually `execLocalOutVariable` at `GNatives[0x9C]`
+  walking `FFrame.OutParms` (linked FOutParmRec). §6.9 is a real project-wide primitive defect
+  extending the S128 `FlowStack/PreviousFrame` bug to a THIRD `FFrame` offset. Fixing it unblocks
+  EVERY `FUNC_HasOutParms` UFunction, not just SpawnPlane. Long-term win.
+
+**Historical (pre-flight-4b) — retained for context:** the flight-1 through flight-4 progression
+lived in the RM_MOUNT arm design + offline pre-flight. Read §6.5-§6.15 for the full progression
+(offline pre-flight → mount-flight 1 [safe refuse] → mount-flight 2 [historic ride] → tool fix
+→ mount-flight 3 [Phase-B works but descent doesn't] → mount-flight 4 [dismount PS-picker
+faulted, CLAUDE.md §14.1 caveat reproduced] → PS-picker fix → mount-flight 4b [acceptance
+predicate met]). Each flight's evidence preserved outside git (dumps + markers gitignored).
+
+**What still needs the game running — the fresh session:** implementing `RM_DROPLANDPLAY` (state-
+machine dispatch over the existing `Do*` functions; ~120-200 line delta gated under
+`#if kRunMode == RM_DROPLANDPLAY`; 4 injections not 7; success criteria + regression gates in the
+handoff). Read `docs/next-session-prompt-s150-drop-dlp.md` before starting.
+
+★★ **PRE-FLIGHT-4b HISTORICAL BLOCK (kept for the offline pre-flight rationale — §6.5-§6.6):**
+This is a SEPARATE, OPERATOR-DIRECTED target from the
 minimum-bot-fight roadmap (`docs/coop-vs-ai-roadmap-s142.md`, which DEFERRED the drop phase and just
 teleports a hero to the ground): the **real deploy sequence** — load `LVL_Tutorial` → drop-plane flight
 → player picks a landing spot → pod descends → hero deploys, playable & movable. Everything below is
